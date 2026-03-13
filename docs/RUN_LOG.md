@@ -8,7 +8,7 @@ Begin Phase 0.3a — Scaffold the repo. Run `npx create-next-app` inside the rep
 
 ### Phase 0.2 — Write the Phase 2 Spec
 
-- **Commit:** `pending`
+- **Commit:** `1049f0e` — `phase0.2: write Phase 2 spec (multilingual extension)`
 - **What was done:** Wrote `docs/PHASE2_SPEC.md` — the multilingual extension spec for Phase 2 (add Spanish language support). Covers: language toggle behavior and placement, what gets translated (all UI text, full AI prompt in Spanish, pre-filled context block, tips, footer, error messages), what does NOT change (logic, data model, existing test IDs), date formatting per language, Spanish reference translations for all error messages, accessibility additions (lang attribute, text expansion), new `data-testid="language-toggle"`, and acceptance criteria. Architecture requirement: adding a third language requires only new translation content, not structural changes.
 - **Files created:** `docs/PHASE2_SPEC.md`
 - **Issues or deviations:** None
