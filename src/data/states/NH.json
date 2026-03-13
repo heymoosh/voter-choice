@@ -1,0 +1,75 @@
+{
+  "stateCode": "NH",
+  "stateName": "New Hampshire",
+  "lastUpdated": "2026-03-01",
+
+  "elections": [
+    {
+      "id": "nh-2026-primary",
+      "name": "2026 New Hampshire State Primary",
+      "date": "2026-09-08",
+      "type": "primary",
+      "isPrimary": true,
+      "primaryType": "semi-open"
+    },
+    {
+      "id": "nh-2026-general",
+      "name": "2026 New Hampshire General Election",
+      "date": "2026-11-03",
+      "type": "general",
+      "isPrimary": false,
+      "primaryType": null
+    }
+  ],
+
+  "registration": {
+    "online": {
+      "available": false,
+      "deadline": null,
+      "url": null
+    },
+    "byMail": {
+      "deadline": "2026-08-29",
+      "sincePostmarked": false
+    },
+    "inPerson": {
+      "deadline": "2026-09-08",
+      "sincePostmarked": false
+    },
+    "sameDayRegistration": true,
+    "registrationCheckUrl": "https://app.sos.nh.gov/viphome"
+  },
+
+  "earlyVoting": {
+    "available": false,
+    "startDate": null,
+    "endDate": null,
+    "notes": "New Hampshire does not offer early voting. Absentee voting is available for voters who will be absent on Election Day, have a disability, or have a religious observance."
+  },
+
+  "votingRules": {
+    "idRequired": true,
+    "acceptedIds": [
+      "Driver's license issued by any state or the federal government",
+      "Non-driver ID card issued by NH DMV or any state",
+      "U.S. armed services ID",
+      "U.S. passport or passport card",
+      "Verification letter from the supervisors of the checklist",
+      "Photo ID from a recognized NH school or college",
+      "Other photo ID deemed acceptable by the moderator"
+    ],
+    "phonesAtPolls": "varies",
+    "phonesAtPollsDetail": "New Hampshire law does not have a statewide ban on phones at polling places. Local moderators may set rules. Photographing your own ballot is generally permitted, but photographing other voters is not. Check with your local election office.",
+    "additionalRules": [
+      "Undeclared (independent) voters may vote in either party's primary and re-register as undeclared afterward",
+      "Registered party voters may only vote in their party's primary"
+    ]
+  },
+
+  "resources": {
+    "stateElectionWebsite": "https://www.sos.nh.gov/elections",
+    "countyElectionLookup": "https://app.sos.nh.gov/viphome",
+    "sampleBallotLookup": "https://app.sos.nh.gov/viphome",
+    "pollingPlaceLookup": "https://app.sos.nh.gov/viphome"
+  }
+}

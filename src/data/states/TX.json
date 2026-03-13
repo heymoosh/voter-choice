@@ -1,0 +1,80 @@
+{
+  "stateCode": "TX",
+  "stateName": "Texas",
+  "lastUpdated": "2026-03-01",
+
+  "elections": [
+    {
+      "id": "tx-2026-primary",
+      "name": "2026 Texas Primary Election",
+      "date": "2026-03-03",
+      "type": "primary",
+      "isPrimary": true,
+      "primaryType": "open"
+    },
+    {
+      "id": "tx-2026-primary-runoff",
+      "name": "2026 Texas Primary Runoff",
+      "date": "2026-05-26",
+      "type": "runoff",
+      "isPrimary": false,
+      "primaryType": null
+    },
+    {
+      "id": "tx-2026-general",
+      "name": "2026 Texas General Election",
+      "date": "2026-11-03",
+      "type": "general",
+      "isPrimary": false,
+      "primaryType": null
+    }
+  ],
+
+  "registration": {
+    "online": {
+      "available": true,
+      "deadline": "2026-02-02",
+      "url": "https://www.votetexas.gov/register-to-vote/"
+    },
+    "byMail": {
+      "deadline": "2026-02-02",
+      "sincePostmarked": true
+    },
+    "inPerson": {
+      "deadline": "2026-02-02",
+      "sincePostmarked": false
+    },
+    "sameDayRegistration": false,
+    "registrationCheckUrl": "https://teamrv-mvp.sos.texas.gov/MVP/mvp.do"
+  },
+
+  "earlyVoting": {
+    "available": true,
+    "startDate": "2026-02-17",
+    "endDate": "2026-02-28",
+    "notes": "Hours vary by county"
+  },
+
+  "votingRules": {
+    "idRequired": true,
+    "acceptedIds": [
+      "Texas driver's license or ID card",
+      "Texas Election Identification Certificate",
+      "Texas personal ID card issued by DPS",
+      "Texas concealed handgun license",
+      "U.S. military ID with photo",
+      "U.S. citizenship certificate with photo",
+      "U.S. passport (book or card)"
+    ],
+    "phonesAtPolls": "prohibited",
+    "phonesAtPollsDetail": "Texas law prohibits wireless communication devices in the voting room. You may bring written notes.",
+    "additionalRules": []
+  },
+
+  "resources": {
+    "stateElectionWebsite": "https://www.votetexas.gov/",
+    "countyElectionLookup": "https://www.votetexas.gov/voting/where.html",
+    "sampleBallotLookup": "https://www.votetexas.gov/voting/ballot-board.html",
+    "pollingPlaceLookup": "https://www.votetexas.gov/voting/where.html"
+  }
+}

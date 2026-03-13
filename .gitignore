@@ -1,68 +1,41 @@
-# Dependencies
-node_modules/
-.pnp
-.pnp.js
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
-# Next.js
-.next/
-out/
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
 
-# Build
-dist/
-build/
+# testing
+/coverage
 
-# Testing & Coverage
-coverage/
-*.lcov
-.nyc_output/
+# next.js
+/.next/
+/out/
 
-# SonarQube (local analysis cache, not the reports we commit)
-.scannerwork/
-.sonar/
+# production
+/build
 
-# Environment
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-
-# Docker
-docker-volumes/
-*.pid
-
-# Virtual environments
-.venv/
-venv/
-env/
-
-# OS
+# misc
 .DS_Store
-Thumbs.db
-*.swp
-*.swo
-*~
+*.pem
 
-# IDE
-.vscode/
-.idea/
-*.sublime-project
-*.sublime-workspace
-
-# Debug
+# debug
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+.pnpm-debug.log*
 
-# Vercel
+# env files (can opt-in for committing if needed)
+.env*
+
+# vercel
 .vercel
 
-# TypeScript
+# typescript
 *.tsbuildinfo
 next-env.d.ts
-
-# Lighthouse (HTML reports are large; we keep the JSON in metrics/)
-*.lighthouse.html
-
-# Misc
-*.log
