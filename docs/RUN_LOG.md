@@ -2,9 +2,16 @@
 
 ## Next
 
-Begin Phase 0.2 — Write the Phase 2 Spec (`docs/PHASE2_SPEC.md`). This is the multilingual extension request (add Spanish language support). Describe desired outcomes and behavior, not implementation. Refer to Phase 0.2 section of `docs/EXPERIMENT_DESIGN.md` for requirements.
+Begin Phase 0.3a — Scaffold the repo. Run `npx create-next-app` inside the repo, configure ESLint (including `eslint-plugin-complexity`) and Prettier, add `.nvmrc` and `engines` field, create stub JSON data for TX/CA/NH, generate `docs/QUALITATIVE_SCORECARD.md` template. Refer to Phase 0.3a section of `docs/EXPERIMENT_DESIGN.md`.
 
 ## Completed
+
+### Phase 0.2 — Write the Phase 2 Spec
+
+- **Commit:** `pending`
+- **What was done:** Wrote `docs/PHASE2_SPEC.md` — the multilingual extension spec for Phase 2 (add Spanish language support). Covers: language toggle behavior and placement, what gets translated (all UI text, full AI prompt in Spanish, pre-filled context block, tips, footer, error messages), what does NOT change (logic, data model, existing test IDs), date formatting per language, Spanish reference translations for all error messages, accessibility additions (lang attribute, text expansion), new `data-testid="language-toggle"`, and acceptance criteria. Architecture requirement: adding a third language requires only new translation content, not structural changes.
+- **Files created:** `docs/PHASE2_SPEC.md`
+- **Issues or deviations:** None
 
 ### Phase 0.1 — Write the Feature Spec
 
