@@ -1,0 +1,1 @@
+Read docs/RUN_LOG.md and the Session Quick Start in docs/EXPERIMENT_DESIGN.md. Continue work.
