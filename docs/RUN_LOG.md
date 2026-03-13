@@ -1,10 +1,17 @@
-2# Run Log
+# Run Log
 
 ## Next
 
-Begin Phase 0.3a — Scaffold the repo. Run `npx create-next-app` inside the repo, configure ESLint (including `eslint-plugin-complexity`) and Prettier, add `.nvmrc` and `engines` field, create stub JSON data for TX/CA/NH, generate `docs/QUALITATIVE_SCORECARD.md` template. Refer to Phase 0.3a section of `docs/EXPERIMENT_DESIGN.md`.
+Begin Phase 0.3b — Measurement automation + branching. Create `npm run measure` script (ESLint, test coverage, complexity, duplication, bundle size, Lighthouse, Playwright e2e). Set up Playwright with shared e2e test suite. Test measure script on scaffold for baseline. Commit, tag as `v0-scaffold`, create all five workflow branches from that tag, push to GitHub. Refer to Phase 0.3b section of `docs/EXPERIMENT_DESIGN.md`.
 
 ## Completed
+
+### Phase 0.3a — Scaffold the Repo
+
+- **Commit:** `b7156af` — `phase0.3a: scaffold repo with Next.js, ESLint, Prettier, and stub data`
+- **What was done:** Ran `npx create-next-app@15.2.4` (then upgraded Next.js to 15.5.12 to resolve security vulnerabilities — 0 audit issues). Configured ESLint with `eslint-plugin-complexity` (max 10) and Prettier integration via `eslint-config-prettier` + `eslint-plugin-prettier`. Pinned all dependencies to exact versions. Added `.nvmrc` (Node 22.14.0) and `engines` field in `package.json`. Created stub JSON data for TX, CA, NH with varied election rules (open/semi-closed/semi-open primaries, different ID and phone policies, same-day registration variations). Created `zip-to-state.json` mapping with sample zip codes including a multi-state entry (86515 → AZ/NM). Generated `docs/QUALITATIVE_SCORECARD.md` template with pre-run and post-run sections for all 5 runs (workflow names TBD in Phase 0.5).
+- **Files created:** `.nvmrc`, `.prettierrc.json`, `.prettierignore`, `package.json`, `eslint.config.mjs`, `next.config.ts`, `tsconfig.json`, `postcss.config.mjs`, `src/data/states/TX.json`, `src/data/states/CA.json`, `src/data/states/NH.json`, `src/data/zip-to-state.json`, `docs/QUALITATIVE_SCORECARD.md`, plus Next.js scaffold files (`src/app/`, `public/`)
+- **Issues or deviations:** `create-next-app` required temporarily moving `.claude/` and `docs/` out of the way (it refuses to run in a directory with existing files). Next.js 15.2.4 had critical security advisories; upgraded to 15.5.12 (same major version, no API changes). `next lint` shows deprecation warning for Next.js 16 — not actionable now, all branches will have the same behavior.
 
 ### Phase 0.2 — Write the Phase 2 Spec
 
