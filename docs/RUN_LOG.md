@@ -2,9 +2,16 @@
 
 ## Next
 
-Begin Phase 0.3b — Measurement automation + branching. Create `npm run measure` script (ESLint, test coverage, complexity, duplication, bundle size, Lighthouse, Playwright e2e). Set up Playwright with shared e2e test suite. Test measure script on scaffold for baseline. Commit, tag as `v0-scaffold`, create all five workflow branches from that tag, push to GitHub. Refer to Phase 0.3b section of `docs/EXPERIMENT_DESIGN.md`.
+Begin Phase 0.4 — Install Workflow Frameworks. On each of the five workflow branches (`workflow/spec-kit`, `workflow/superpowers`, `workflow/bmad`, `workflow/vanilla`, `workflow/compound-engineering`), install and configure the respective workflow framework per its docs. Vanilla branch gets only a minimal CLAUDE.md. Pin and document exact versions in a `docs/FRAMEWORK_VERSIONS.md` file. Refer to Phase 0.4 section of `docs/EXPERIMENT_DESIGN.md`.
 
 ## Completed
+
+### Phase 0.3b — Measurement Automation + Branching
+
+- **Commit:** `c25f44d` — `phase0.3b: measurement automation + branching (tooling + baseline)`
+- **What was done:** Installed Vitest 3.2.1, @vitest/coverage-v8, jscpd 4.0.5, @lhci/cli 0.15.0, @playwright/test 1.52.0. Created `scripts/measure.mjs` — single command that runs ESLint, Vitest coverage, jscpd duplication scan, `next build` bundle analysis, Lighthouse (via lhci), and Playwright e2e, outputting a JSON report to `metrics/<branch>/<phase>.json`. Created `e2e/ballot-tool.spec.ts` with 21 shared tests covering all core user flows (zip entry, state info display, prompt output, copy-to-clipboard, multi-state zip, responsive layout, keyboard accessibility) using `data-testid` selectors from the spec. Ran baseline on scaffold: Lighthouse 100/100/100/100, e2e 2/42 passed (expected — scaffold has no ballot tool UI), duplication 0/220 lines. Tagged `v0-scaffold`, created all 5 workflow branches from that tag, pushed to GitHub.
+- **Files created:** `scripts/measure.mjs`, `e2e/ballot-tool.spec.ts`, `playwright.config.ts`, `vitest.config.ts`, `lighthouserc.js`, `.jscpd.json`, `metrics/main/baseline.json`; updated `package.json`, `.gitignore`, `.prettierignore`
+- **Issues or deviations:** jscpd v4 requires path arg `.` (not `src/`) to pick up the pattern glob — measure script passes `--pattern "src/**/*.{ts,tsx}"` explicitly. Playwright `--reporter=json` on the CLI overrides config reporters (writing to stdout instead of file) — measure script now runs `npx playwright test` without overriding reporters, letting `playwright.config.ts` write to `playwright-report.json`. Set `actionTimeout: 3000` and `expect.timeout: 3000` in playwright config so scaffold tests fail fast rather than waiting 30s each.
 
 ### Phase 0.3a — Scaffold the Repo
 
