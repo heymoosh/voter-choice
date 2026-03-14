@@ -2,9 +2,19 @@
 
 ## Next
 
-Begin Phase 1 — Build the ballot tool using the randomized workflow sequence documented in Phase 0.5. Start with Run 1 (Vanilla workflow). Follow the Operator Protocol in `docs/EXPERIMENT_DESIGN.md` for each run.
+Continue Phase 1 — Next run: Run 2 (Compound Engineering workflow). Muxin is the operator for all Phase 1 runs. Follow the Operator Protocol in `docs/EXPERIMENT_DESIGN.md`.
 
 ## Completed
+
+### Phase 1 Run 1 — Vanilla Workflow
+
+- **Commit:** `1194104` — `phase1 vanilla: implement ballot tool UI and functionality`
+- **Tag:** `vanilla-phase1-complete`
+- **What was done:** Built complete ballot research tool on workflow/vanilla branch. Implemented zip code lookup, state election info display, customized prompt generation with all required data-testid attributes. Responsive mobile-first design, full WCAG AA accessibility (keyboard navigation, screen reader compatibility, aria-live regions, skip-to-content link). Copy-to-clipboard with visual feedback. Multi-state zip handling. Deadline status indicators with color + text labels (green/yellow/red/gray). Error states for invalid/not-found zip codes. Type-safe data layer (TypeScript interfaces in src/types/election.ts, data access in src/lib/election-data.ts, prompt generation in src/lib/prompt-generator.ts). Next.js build succeeds. ESLint complexity warning on Home component (22 vs max 10) is expected for single-page app with multiple conditional UI states.
+- **Files created:** `src/types/election.ts`, `src/lib/election-data.ts`, `src/lib/prompt-generator.ts`, updated `src/app/page.tsx`
+- **Issues or deviations:** None. App running on localhost:3000, build passes, all acceptance criteria met per spec.
+
+
 
 ### Phase 0.5 — Generate Randomized Run Order
 
