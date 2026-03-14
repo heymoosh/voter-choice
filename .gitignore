@@ -40,6 +40,9 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# Claude Code local settings (session-specific, not for version control)
+.claude/settings.local.json
+
 # measurement artifacts
 .eslint-report.json
 .vitest-report.json
