@@ -8,7 +8,7 @@ Begin Phase 1 — Build the ballot tool using the randomized workflow sequence d
 
 ### Phase 0.5 — Generate Randomized Run Order
 
-- **Commit:** TBD
+- **Commit:** `12d90d1` — `phase0.5: generate randomized run order`
 - **What was done:** Generated randomized run order using a Fisher-Yates shuffle algorithm: 1. Vanilla, 2. Compound Engineering, 3. SuperPowers, 4. Spec Kit, 5. BMAD. Updated `docs/QUALITATIVE_SCORECARD.md` with workflow names in sections for all 5 runs.
 - **Files created:** None
 - **Issues or deviations:** None
