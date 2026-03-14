@@ -39,3 +39,11 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# measurement artifacts
+.eslint-report.json
+.vitest-report.json
+.jscpd-report/
+.lighthouseci/
+playwright-report.json
+test-results/

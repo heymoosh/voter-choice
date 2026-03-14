@@ -1,0 +1,18 @@
+{
+  "threshold": 0,
+  "reporters": ["json"],
+  "output": ".jscpd-report",
+  "pattern": "src/**/*.{ts,tsx}",
+  "ignore": [
+    "node_modules",
+    ".next",
+    "coverage",
+    "e2e",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.spec.ts",
+    "**/*.spec.tsx"
+  ],
+  "minLines": 5,
+  "minTokens": 50
+}

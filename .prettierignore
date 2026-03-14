@@ -3,3 +3,8 @@ node_modules
 coverage
 dist
 package-lock.json
+.jscpd-report
+.lighthouseci
+playwright-report.json
+.eslint-report.json
+.vitest-report.json
