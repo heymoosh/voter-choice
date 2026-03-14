@@ -1,51 +1,7 @@
-# Free AI Ballot Research Tool — Know What You're Voting For
+import type { StateElectionData } from "@/types/election";
+import { getNextElection, formatDate } from "./election-data";
 
-## What is this?
-
-This is a free tool that helps you research the candidates and issues on YOUR specific ballot — based on where you live and what matters to you.
-
-It looks at what politicians have **actually done** (their voting records, their donors, their real actions) instead of what they **say** in campaign ads.
-
-It works for any U.S. election, any state, any zip code.
-
----
-
-## How to use it (5 minutes to start)
-
-**Step 1:** Open any AI chatbot with a free tier. The prompt works on all of them. Some examples:
-
-- **Claude** → [claude.ai](https://claude.ai)
-- **ChatGPT** → [chatgpt.com](https://chatgpt.com)
-- **Grok** → [grok.com](https://grok.com)
-- **Gemini** → [gemini.google.com](https://gemini.google.com)
-- Or any other AI chatbot you already use
-
-**Step 2:** Copy the entire prompt in the gray box below and paste it as your first message
-
-**Step 3:** Copy-paste this as your second message (fill in the blanks):
-
-> _Hi! I'm voting in **[your state]**. My zip code is **[your zip code]**. Help me with my ballot._
-
-That's all you need to say — it'll start walking you through the issues right away. Just answer honestly. There are no wrong answers.
-
-**Tips while you're in the conversation:**
-
-- You can say **"I don't know"** or **"I'm not sure where I stand"** — the AI will explain more and help you figure it out
-- You can ask it to **research something** for you ("Can you look up this candidate's voting record?")
-- You can **ask questions** anytime ("What does this position actually do?" or "Why does this matter?")
-- You're not taking a test. You're having a conversation. The AI works _with_ you.
-
-**Step 4:** At the end, it'll give you a summary you can **write down or print** and take to the polls. If your ballot is long, it'll give you a handoff block you can paste into a new chat to keep going.
-
-**That's it.**
-
-**One important note:** AI can make mistakes. This is a research _starting point_. The tool will link you to official sources so you can double-check anything that matters to you.
-
----
-
-## The Prompt
-
-You are a nonpartisan civic research assistant helping a U.S. voter prepare for an upcoming election. Your job is to help me understand what's on my ballot, form my own opinions, and research candidates based on their ACTIONS — not their campaign promises.
+const MAIN_PROMPT = `You are a nonpartisan civic research assistant helping a U.S. voter prepare for an upcoming election. Your job is to help me understand what's on my ballot, form my own opinions, and research candidates based on their ACTIONS — not their campaign promises.
 
 ## HOW TO FORMAT EVERY RESPONSE (follow this strictly)
 
@@ -143,7 +99,7 @@ At the end of the conversation (or when I ask), generate TWO separate outputs:
 
 This is what I bring to the polls. It should fit on a single printed page. Nothing else.
 
-```
+\`\`\`
 MY BALLOT — [County] — [Election Name] — [Date]
 
 [Race Name]: [My Pick]
@@ -155,10 +111,9 @@ Propositions:
 [#]: [YES / NO]
 [#]: [YES / NO]
 ...
-```
+\`\`\`
 
 Rules for this output:
-
 - One line per race. Race name → candidate name. That's it.
 - One line per proposition. Number → YES or NO.
 - No rationale, no analysis, no "based on what you told me." Just the picks.
@@ -169,7 +124,7 @@ Rules for this output:
 
 This is my decision-making profile that I save for future elections. It captures HOW I think, not just what I picked this time.
 
-```
+\`\`\`
 === MY VOTER PROFILE — [Date] ===
 
 LOCATION: [Zip, state, county, districts if known]
@@ -191,10 +146,9 @@ NOTES:
 - [Anything else relevant for future elections]
 
 === END VOTER PROFILE ===
-```
+\`\`\`
 
 Rules for the voter profile:
-
 - Factual only — things I actually said, in my language
 - Captures values, reasoning patterns, and personal context — not just picks
 - Designed to be uploaded at the start of a future election conversation so I don't have to re-answer everything
@@ -205,7 +159,7 @@ Rules for the voter profile:
 
 Generate and offer proactively when approaching context limits, when major races are done but local/judicial remain, when I ask to continue later, or when the conversation is getting long.
 
-```
+\`\`\`
 === VOTER SESSION HANDOFF — Paste into a new chat with this prompt ===
 
 LOCATION: [Zip, state, county, districts]
@@ -229,7 +183,7 @@ NOTES:
 - [Relevant context, e.g., "renter, not homeowner"]
 
 === END HANDOFF ===
-```
+\`\`\`
 
 Handoff rules: factual only (things I actually said), use my language, list what's done and what's left, let me review before using.
 
@@ -252,12 +206,76 @@ If I paste a voter profile from a previous election at the start of the conversa
 - **AI makes mistakes.** Link me to sources so I can verify.
 - **If I say "I don't care" — move on.**
 
-Let's start with Step 1.
+Let's start with Step 1.`;
 
----
+export function generateCustomPrompt(
+  zipCode: string,
+  stateData: StateElectionData,
+): string {
+  const election = getNextElection(stateData);
 
-## Share this
+  if (!election) {
+    return MAIN_PROMPT + "\n\n" + generateNoElectionContext(zipCode, stateData);
+  }
 
-If this was useful, share this doc with friends, family, or your community. It works for any state and any election. The more people vote based on evidence, the better our elections get.
+  const contextBlock = generateContextBlock(zipCode, stateData, election);
+  return MAIN_PROMPT + "\n\n" + contextBlock;
+}
 
-_Created by a human using AI tools, because everyone deserves to know what they're actually voting for._
+function generateContextBlock(
+  zipCode: string,
+  stateData: StateElectionData,
+  election: StateElectionData["elections"][0],
+): string {
+  const { stateName } = stateData;
+  const { registration, earlyVoting, votingRules, resources } = stateData;
+
+  const electionTypeLabel = election.isPrimary
+    ? `${election.primaryType} primary`
+    : election.type;
+
+  const earlyVotingText = earlyVoting.available
+    ? `${formatDate(earlyVoting.startDate!)} through ${formatDate(earlyVoting.endDate!)}${earlyVoting.notes ? ` (${earlyVoting.notes})` : ""}`
+    : "Not available — absentee voting only";
+
+  const idText = votingRules.idRequired
+    ? `Required. Accepted IDs: ${votingRules.acceptedIds.join(", ")}`
+    : "Not required";
+
+  const onlineRegistrationText =
+    registration.online.available && registration.online.deadline
+      ? `Online: ${formatDate(registration.online.deadline)} (${registration.online.url})`
+      : "Online: Not available";
+
+  return `Hi! I'm voting in **${stateName}**. My zip code is **${zipCode}**.
+
+Here's what I know about my upcoming election:
+- **Election:** ${election.name} on ${formatDate(election.date)}
+- **Election type:** ${election.type}${election.isPrimary ? ` (${electionTypeLabel})` : ""}
+- **Registration deadlines:**
+  - ${onlineRegistrationText}
+  - By mail: ${formatDate(registration.byMail.deadline)} (${registration.byMail.sincePostmarked ? "postmark date" : "received date"})
+  - In person: ${formatDate(registration.inPerson.deadline)}
+  - Same-day registration: ${registration.sameDayRegistration ? "Available" : "Not available"}
+  - Check registration status: ${registration.registrationCheckUrl}
+- **Early voting:** ${earlyVotingText}
+- **Voter ID:** ${idText}
+- **Phones at polls:** ${votingRules.phonesAtPollsDetail}
+- **My sample ballot:** ${resources.sampleBallotLookup}
+- **My county election office:** ${resources.countyElectionLookup}
+
+Help me with my ballot.`;
+}
+
+function generateNoElectionContext(
+  zipCode: string,
+  stateData: StateElectionData,
+): string {
+  return `Hi! I'm voting in **${stateData.stateName}**. My zip code is **${zipCode}**.
+
+I don't see any upcoming elections scheduled right now. Please check ${stateData.resources.stateElectionWebsite} for the latest information.`;
+}
+
+export function getMainPrompt(): string {
+  return MAIN_PROMPT;
+}
