@@ -1,23 +1,33 @@
 # CLAUDE.md
 
 ## Project
-Workflow experiment comparing 5 AI coding frameworks. Read `docs/RUN_LOG.md` first (the `## Next` line), then `docs/EXPERIMENT_DESIGN.md` Session Quick Start. Immediately execute the sub-phase described in `## Next` — do NOT pause or wait for confirmation. Do ONE sub-phase per session.
+Voter Choice — a civic tool that helps voters research their ballot.
 
-**After completing a sub-phase, you MUST update `docs/RUN_LOG.md` before doing anything else:**
-1. Move the completed phase from `## Next` into `## Completed` (include commit hash and brief summary).
-2. Write the new next phase into `## Next`.
-3. Commit the RUN_LOG update. The session is NOT complete until RUN_LOG reflects the new state.
+The user enters their zip code, the site looks up their state's election data (dates, registration deadlines, early voting, resources) from static JSON, and generates a customized AI ballot research prompt for them to copy into any free AI chatbot.
 
+Reference the feature spec at `docs/PROJECT_SPEC.md` for full requirements.
 
-## Boundaries
-- **Repo only.** Never read/write/delete anything outside `/Users/Muxin/Documents/GitHub/voter-choice`
-- **No sudo.** No global installs (`npm -g`, system pip). Local `npm install` is fine; pip must use a venv
-- **No force push, no branch deletion, no history rewriting** (rebase, reset --hard, amend pushed commits). Branches and tags are experiment data.
-- **Commit before switching branches.** Pull before pushing.
-- **No privileged Docker containers.** Bind ports to 127.0.0.1 only.
-- **`rm -rf` only on build artifacts** (node_modules, .next, coverage, dist) with exact paths. State what you're deleting before running.
-- Pin exact versions in package.json. Meaningful commit messages: `phase0.1: write feature spec`
-- If anything requires going outside these boundaries, **stop and ask Muxin.**
+## Tech Stack
+- Next.js (App Router), TypeScript
+- Static JSON data in `src/data/`
+- ESLint + Prettier configured
 
 ## Code Style
-TypeScript. ESLint + Prettier (configured in Phase 0.3a as part of scaffold setup).
+- TypeScript. Strict mode.
+- ESLint + Prettier (run `npm run lint` and `npm run format` to check)
+- Pin exact versions in package.json
+- Meaningful commit messages
+
+## Data
+- State election data: `src/data/states/*.json` (TX, CA, NH have stub data)
+- Zip-to-state mapping: `src/data/zip-to-state.json`
+
+## Testing
+- Unit tests: Vitest (`npm test`)
+- E2E: Playwright (`npm run e2e`) — shared test suite, do not modify
+- Measure script: `npm run measure` — runs all metrics
+
+## Boundaries
+- No sudo. No global npm installs.
+- No force push, no branch deletion.
+- `rm -rf` only on build artifacts (node_modules, .next, coverage) with exact paths.
