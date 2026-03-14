@@ -1,0 +1,67 @@
+{
+  "metadata": {
+    "timestamp": "2026-03-14T20:12:57.626Z",
+    "branch": "workflow/vanilla",
+    "commit": "1194104",
+    "nodeVersion": "v22.14.0"
+  },
+  "eslint": {
+    "errors": 0,
+    "warnings": 1,
+    "complexityViolations": 1
+  },
+  "vitest": {
+    "tests": {
+      "total": 0,
+      "passed": 0,
+      "failed": 0,
+      "skipped": "no test files",
+      "passRate": null
+    },
+    "coverage": {
+      "lines": null,
+      "branches": null,
+      "functions": null,
+      "statements": null
+    }
+  },
+  "duplication": {
+    "duplicatedLines": 0,
+    "totalLines": 1257,
+    "percentage": 0,
+    "clones": 0
+  },
+  "bundleSize": {
+    "buildSuccess": true,
+    "pages": [
+      {
+        "route": "/",
+        "size": 9.87,
+        "unit": "kB"
+      },
+      {
+        "route": "/_not-found",
+        "size": 990,
+        "unit": "B"
+      }
+    ],
+    "firstLoadJsShared": {
+      "size": 102,
+      "unit": "kB"
+    }
+  },
+  "lighthouse": {
+    "performance": 100,
+    "accessibility": 100,
+    "bestPractices": 100,
+    "seo": 100
+  },
+  "playwright": {
+    "total": 42,
+    "passed": 36,
+    "failed": 6,
+    "timedOut": 0,
+    "skipped": 0,
+    "passRate": 85.71
+  }
+}
