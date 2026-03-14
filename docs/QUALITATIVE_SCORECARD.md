@@ -6,7 +6,7 @@ Rating scale: 1 = terrible / constantly, 5 = excellent / never
 
 ---
 
-## Run 1 — [Workflow TBD in Phase 0.5]
+## Run 1 — Vanilla
 
 ### Pre-Run Self-Assessment
 
@@ -62,7 +62,7 @@ Rating scale: 1 = terrible / constantly, 5 = excellent / never
 
 ---
 
-## Run 2 — [Workflow TBD in Phase 0.5]
+## Run 2 — Compound Engineering
 
 ### Pre-Run Self-Assessment
 
@@ -118,7 +118,7 @@ Rating scale: 1 = terrible / constantly, 5 = excellent / never
 
 ---
 
-## Run 3 — [Workflow TBD in Phase 0.5]
+## Run 3 — SuperPowers
 
 ### Pre-Run Self-Assessment
 
@@ -174,7 +174,7 @@ Rating scale: 1 = terrible / constantly, 5 = excellent / never
 
 ---
 
-## Run 4 — [Workflow TBD in Phase 0.5]
+## Run 4 — Spec Kit
 
 ### Pre-Run Self-Assessment
 
@@ -230,7 +230,7 @@ Rating scale: 1 = terrible / constantly, 5 = excellent / never
 
 ---
 
-## Run 5 — [Workflow TBD in Phase 0.5]
+## Run 5 — BMAD
 
 ### Pre-Run Self-Assessment
 

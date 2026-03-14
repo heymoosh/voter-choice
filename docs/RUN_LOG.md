@@ -2,9 +2,16 @@
 
 ## Next
 
-Begin Phase 0.5 — Generate Randomized Run Order. Randomly assign the sequence in which Muxin runs the five workflows. Document the order in `docs/RUN_LOG.md` and update `docs/QUALITATIVE_SCORECARD.md` with sections for each run in that randomized order. Refer to Phase 0.5 section of `docs/EXPERIMENT_DESIGN.md`.
+Begin Phase 1 — Build the ballot tool using the randomized workflow sequence documented in Phase 0.5. Start with Run 1 (Vanilla workflow). Follow the Operator Protocol in `docs/EXPERIMENT_DESIGN.md` for each run.
 
 ## Completed
+
+### Phase 0.5 — Generate Randomized Run Order
+
+- **Commit:** TBD
+- **What was done:** Generated randomized run order using a Fisher-Yates shuffle algorithm: 1. Vanilla, 2. Compound Engineering, 3. SuperPowers, 4. Spec Kit, 5. BMAD. Updated `docs/QUALITATIVE_SCORECARD.md` with workflow names in sections for all 5 runs.
+- **Files created:** None
+- **Issues or deviations:** None
 
 ### Phase 0.4 — Install Workflow Frameworks
 
