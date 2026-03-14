@@ -2,9 +2,17 @@
 
 ## Next
 
-Begin Phase 0.4 — Install Workflow Frameworks. On each of the five workflow branches (`workflow/spec-kit`, `workflow/superpowers`, `workflow/bmad`, `workflow/vanilla`, `workflow/compound-engineering`), install and configure the respective workflow framework per its docs. Vanilla branch gets only a minimal CLAUDE.md. Pin and document exact versions in a `docs/FRAMEWORK_VERSIONS.md` file. Refer to Phase 0.4 section of `docs/EXPERIMENT_DESIGN.md`.
+Begin Phase 0.5 — Generate Randomized Run Order. Randomly assign the sequence in which Muxin runs the five workflows. Document the order in `docs/RUN_LOG.md` and update `docs/QUALITATIVE_SCORECARD.md` with sections for each run in that randomized order. Refer to Phase 0.5 section of `docs/EXPERIMENT_DESIGN.md`.
 
 ## Completed
+
+### Phase 0.4 — Install Workflow Frameworks
+
+- **Commit:** `0c0382a` — `phase0.4: add FRAMEWORK_VERSIONS.md to main`
+- **Branch commits:** `cecd0d0` (spec-kit), `c174cea` (superpowers), `1692472` (bmad), `6fc0c7f` (vanilla), `b19c738` (compound-engineering)
+- **What was done:** Installed and configured each workflow framework on its respective branch. BMAD Method v6.1.0 installed via `npx bmad-method` (adds `_bmad/`, `.claude/skills/`). GitHub Spec Kit v0.3.0 installed via `uvx` (adds `.specify/`, 9 `.claude/commands/speckit.*` slash commands). Superpowers v5.0.2 cloned and copied as standalone `.claude/` config (13 skills, 3 commands, 1 agent, session-start hook). Compound Engineering v2.36.4 cloned and copied as standalone `.claude/` config (47 skills, 28 agents). Vanilla branch got a minimal CLAUDE.md only. All versions pinned in `docs/FRAMEWORK_VERSIONS.md`.
+- **Files created:** `docs/FRAMEWORK_VERSIONS.md` (main); per-branch: `.claude/` configs, `_bmad/`, `.specify/`, `CLAUDE.md` (vanilla)
+- **Issues or deviations:** Superpowers and Compound Engineering are Claude Code plugins by design; for per-branch experiment isolation, files were copied as standalone `.claude/` configurations rather than installed globally. Behavior is equivalent.
 
 ### Phase 0.3b — Measurement Automation + Branching
 
