@@ -17,7 +17,14 @@
  */
 
 import { execSync, spawn } from "child_process";
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from "fs";
+import {
+  readFileSync,
+  writeFileSync,
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  statSync,
+} from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 
@@ -394,6 +401,166 @@ function measurePlaywright() {
 }
 
 // ------------------------------------------------------------------
+// 7. Lines of code
+// ------------------------------------------------------------------
+function measureLOC() {
+  log("Lines of code");
+
+  const CODE_EXTENSIONS = new Set([
+    ".ts",
+    ".tsx",
+    ".js",
+    ".jsx",
+    ".mjs",
+    ".css",
+    ".json",
+  ]);
+
+  // Directories that are application code (workflow-generated)
+  const APP_DIRS = ["src"];
+  // Directories that are plugin/framework code (workflow scaffolding)
+  const PLUGIN_DIRS = [".claude/commands", ".bmad", ".superpowers", ".spec-kit"];
+  // Everything else that's project code but not app or plugin
+  const INFRA_DIRS = ["scripts", "e2e"];
+
+  function countLines(filePath) {
+    const content = readFileSync(filePath, "utf-8");
+    const lines = content.split("\n");
+    let total = lines.length;
+    // Don't count trailing empty last line from split
+    if (lines[lines.length - 1] === "") total--;
+    let blank = 0;
+    let comment = 0;
+    let inBlock = false;
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (trimmed === "") {
+        blank++;
+        continue;
+      }
+      if (inBlock) {
+        comment++;
+        if (trimmed.includes("*/")) inBlock = false;
+        continue;
+      }
+      if (trimmed.startsWith("/*")) {
+        comment++;
+        if (!trimmed.includes("*/")) inBlock = false;
+        if (!trimmed.endsWith("*/") && trimmed.includes("/*")) inBlock = true;
+        continue;
+      }
+      if (trimmed.startsWith("//") || trimmed.startsWith("#")) {
+        comment++;
+      }
+    }
+    return { total, blank, comment, code: total - blank - comment };
+  }
+
+  function walkDir(dir) {
+    const results = [];
+    if (!existsSync(dir)) return results;
+    const entries = readdirSync(dir, { withFileTypes: true });
+    for (const entry of entries) {
+      const fullPath = join(dir, entry.name);
+      if (entry.isDirectory()) {
+        if (entry.name === "node_modules" || entry.name === ".next") continue;
+        results.push(...walkDir(fullPath));
+      } else {
+        const ext = entry.name.includes(".")
+          ? "." + entry.name.split(".").pop()
+          : "";
+        if (CODE_EXTENSIONS.has(ext)) {
+          results.push(fullPath);
+        }
+      }
+    }
+    return results;
+  }
+
+  function countCategory(dirs) {
+    let total = 0;
+    let blank = 0;
+    let comment = 0;
+    let code = 0;
+    let fileCount = 0;
+    const byExtension = {};
+
+    for (const dir of dirs) {
+      const absDir = join(ROOT, dir);
+      const files = walkDir(absDir);
+      for (const file of files) {
+        const counts = countLines(file);
+        total += counts.total;
+        blank += counts.blank;
+        comment += counts.comment;
+        code += counts.code;
+        fileCount++;
+        const ext = "." + file.split(".").pop();
+        if (!byExtension[ext]) byExtension[ext] = { files: 0, code: 0 };
+        byExtension[ext].files++;
+        byExtension[ext].code += counts.code;
+      }
+    }
+    return { files: fileCount, total, blank, comment, code, byExtension };
+  }
+
+  // Also count standalone config files in root (exclude lockfiles and generated reports)
+  const EXCLUDE_FILES = new Set([
+    "package-lock.json",
+    "playwright-report.json",
+    ".vitest-report.json",
+    ".eslint-report.json",
+  ]);
+  const rootConfigFiles = [];
+  try {
+    const rootEntries = readdirSync(ROOT, { withFileTypes: true });
+    for (const entry of rootEntries) {
+      if (
+        !entry.isDirectory() &&
+        CODE_EXTENSIONS.has("." + entry.name.split(".").pop()) &&
+        !entry.name.startsWith(".") &&
+        !EXCLUDE_FILES.has(entry.name)
+      ) {
+        rootConfigFiles.push(join(ROOT, entry.name));
+      }
+    }
+  } catch {
+    // ignore
+  }
+
+  const app = countCategory(APP_DIRS);
+  const plugin = countCategory(PLUGIN_DIRS);
+  const infra = countCategory(INFRA_DIRS);
+
+  // Count root config files as infra
+  for (const file of rootConfigFiles) {
+    const counts = countLines(file);
+    infra.total += counts.total;
+    infra.blank += counts.blank;
+    infra.comment += counts.comment;
+    infra.code += counts.code;
+    infra.files++;
+  }
+
+  const summary = {
+    application: { code: app.code, files: app.files, byExtension: app.byExtension },
+    plugin: { code: plugin.code, files: plugin.files, byExtension: plugin.byExtension },
+    infrastructure: { code: infra.code, files: infra.files },
+    total: {
+      code: app.code + plugin.code + infra.code,
+      files: app.files + plugin.files + infra.files,
+    },
+  };
+
+  console.log(`  Application code (src/): ${app.code} lines across ${app.files} files`);
+  console.log(`  Plugin/framework code: ${plugin.code} lines across ${plugin.files} files`);
+  console.log(`  Infrastructure (scripts, e2e, configs): ${infra.code} lines across ${infra.files} files`);
+  console.log(`  Total: ${summary.total.code} lines across ${summary.total.files} files`);
+
+  return summary;
+}
+
+// ------------------------------------------------------------------
 // Main
 // ------------------------------------------------------------------
 async function main() {
@@ -417,6 +584,7 @@ async function main() {
     bundleSize: measureBundleSize(),
     lighthouse: measureLighthouse(),
     playwright: measurePlaywright(),
+    linesOfCode: measureLOC(),
   };
 
   // Determine output path
