@@ -332,6 +332,7 @@ Measured after Phase 1 and after Phase 2 on each branch. The delta between phase
 | Bundle size            | Built-in framework analyzer                 | Dependency bloat?                                     |
 | Lighthouse score       | Lighthouse CLI (against local build)        | Performance, accessibility, SEO                       |
 | E2E test pass rate     | Playwright                                  | Does the app actually work? Core user flows verified. |
+| Lines of code          | cloc (automated in measure script)          | Codebase size — split into application code (`src/`) and plugin/framework code (workflow configs, commands, etc.). Reveals whether a workflow adds significant scaffolding overhead vs. shipping lean application code. |
 | Time to complete       | Git timestamps + scorecard wall-clock times | Raw speed                                             |
 
 **Lighthouse environment:** Lighthouse runs against a local production build (`next build && next start` on localhost) for consistency across all branches. Do not run against deployed Vercel URLs — network conditions and CDN caching introduce noise.
