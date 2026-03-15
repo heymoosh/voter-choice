@@ -1,8 +1,8 @@
 {
   "metadata": {
-    "timestamp": "2026-03-14T20:12:57.626Z",
+    "timestamp": "2026-03-15T14:15:36.655Z",
     "branch": "workflow/vanilla",
-    "commit": "1194104",
+    "commit": "205303f",
     "nodeVersion": "v22.14.0"
   },
   "eslint": {
@@ -63,5 +63,42 @@
     "timedOut": 0,
     "skipped": 0,
     "passRate": 85.71
+  },
+  "linesOfCode": {
+    "application": {
+      "code": 1026,
+      "files": 10,
+      "byExtension": {
+        ".css": {
+          "files": 1,
+          "code": 21
+        },
+        ".tsx": {
+          "files": 2,
+          "code": 468
+        },
+        ".json": {
+          "files": 4,
+          "code": 228
+        },
+        ".ts": {
+          "files": 3,
+          "code": 309
+        }
+      }
+    },
+    "plugin": {
+      "code": 0,
+      "files": 0,
+      "byExtension": {}
+    },
+    "infrastructure": {
+      "code": 844,
+      "files": 11
+    },
+    "total": {
+      "code": 1870,
+      "files": 21
+    }
   }
 }
