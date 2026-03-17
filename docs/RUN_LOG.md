@@ -6,6 +6,14 @@ Continue Phase 1 — Next run: Run 2 (Compound Engineering workflow). Muxin is t
 
 ## Completed
 
+### Vanilla Branch — LOC Metric Update (Post-Phase 1)
+
+- **Commit (workflow/vanilla):** `d23bbad` — `add LOC metric to measurement infrastructure`
+- **Tag:** `vanilla-phase0.3b-complete`
+- **What was done:** After completing Phase 1 Run 1 on workflow/vanilla, discovered the LOC metric in the measure script had a bug (blank/comment line calculation). Fixed the LOC counter to properly distinguish code vs. comments vs. blank lines. Re-ran baseline measurement on workflow/vanilla branch. This was a measurement infrastructure fix, not part of Phase 1 deliverables — the fix applies to all branches equally. The commit `0287e00` on workflow/vanilla updates the baseline.json with corrected LOC metrics showing 1026 lines of application code (src/) and 844 lines of infrastructure (scripts, e2e, configs).
+- **Files modified:** `scripts/measure.mjs`, `metrics/workflow/vanilla/baseline.json`
+- **Issues or deviations:** Cherry-pick to main attempted but aborted due to conflict (main doesn't have metrics/workflow/ directory). This is expected — each branch has its own metrics directory structure. The LOC fix in measure.mjs should be applied to all other workflow branches before their Phase 1 runs.
+
 ### Phase 1 Run 1 — Vanilla Workflow
 
 - **Commit:** `1194104` — `phase1 vanilla: implement ballot tool UI and functionality`
