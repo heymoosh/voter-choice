@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { getStatesForZip, getStateData } from "@/lib/election-data";
 import { generateCustomizedPrompt } from "@/lib/prompt-generator";
-import type { StateElectionData, Election } from "@/types/election";
+import type { StateElectionData } from "@/types/election";
 
 export default function Home() {
   const [zipCode, setZipCode] = useState("");
@@ -23,6 +23,7 @@ export default function Home() {
     if (selectedState) {
       loadStateData(selectedState);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedState]);
 
   async function loadStateData(stateCode: string) {
@@ -107,7 +108,9 @@ export default function Home() {
     return Math.ceil(diff / (1000 * 60 * 60 * 24));
   }
 
-  function getDeadlineStatus(isoDate: string | null): "passed" | "urgent" | "warning" | "ok" {
+  function getDeadlineStatus(
+    isoDate: string | null,
+  ): "passed" | "urgent" | "warning" | "ok" {
     const daysLeft = calculateDaysUntil(isoDate);
     if (daysLeft === null || daysLeft < 0) return "passed";
     if (daysLeft <= 3) return "urgent";
@@ -138,7 +141,12 @@ export default function Home() {
             ? `${daysLeft} days left`
             : `${daysLeft} days left`;
 
-    const postmarkSuffix = postmarked !== undefined ? (postmarked ? " (postmarked)" : " (received)") : "";
+    const postmarkSuffix =
+      postmarked !== undefined
+        ? postmarked
+          ? " (postmarked)"
+          : " (received)"
+        : "";
 
     return (
       <div>
@@ -166,18 +174,22 @@ export default function Home() {
         Skip to content
       </a>
 
-      <main id="main-content" className="flex-1 max-w-4xl mx-auto px-4 py-8 sm:px-6 lg:px-8 w-full">
+      <main
+        id="main-content"
+        className="flex-1 max-w-4xl mx-auto px-4 py-8 sm:px-6 lg:px-8 w-full"
+      >
         {/* Hero Section */}
         <section className="mb-8">
           <h1 className="text-3xl sm:text-4xl font-bold mb-3">
             Free AI Ballot Research Tool
           </h1>
           <p className="text-lg text-gray-700 mb-2">
-            Enter your zip code to get a customized AI prompt pre-filled with your state's
-            election info, deadlines, and resources.
+            Enter your zip code to get a customized AI prompt pre-filled with
+            your state's election info, deadlines, and resources.
           </p>
           <p className="text-base text-gray-600 mb-4">
-            Copy the prompt and paste it into any free AI chatbot — Claude, ChatGPT, Gemini, or Grok.
+            Copy the prompt and paste it into any free AI chatbot — Claude,
+            ChatGPT, Gemini, or Grok.
           </p>
           <div className="flex flex-wrap gap-3 text-sm">
             <a
@@ -217,7 +229,10 @@ export default function Home() {
 
         {/* Zip Code Entry */}
         <section className="mb-8">
-          <form onSubmit={handleZipSubmit} className="flex flex-col sm:flex-row gap-3">
+          <form
+            onSubmit={handleZipSubmit}
+            className="flex flex-col sm:flex-row gap-3"
+          >
             <div className="flex-1">
               <label htmlFor="zip-input" className="sr-only">
                 Enter your zip code
@@ -259,7 +274,10 @@ export default function Home() {
         {/* State Selector (multi-state zip codes) */}
         {stateOptions && stateOptions.length > 1 && !selectedState && (
           <section className="mb-8" data-testid="state-selector">
-            <p className="mb-3 font-semibold">This zip code spans multiple states. Which state are you voting in?</p>
+            <p className="mb-3 font-semibold">
+              This zip code spans multiple states. Which state are you voting
+              in?
+            </p>
             <div className="flex flex-wrap gap-2">
               {stateOptions.map((state) => (
                 <button
@@ -276,13 +294,19 @@ export default function Home() {
 
         {/* State Info Display */}
         {stateData && (
-          <section className="mb-8 border border-gray-300 rounded-lg p-6 bg-gray-50" data-testid="state-info">
+          <section
+            className="mb-8 border border-gray-300 rounded-lg p-6 bg-gray-50"
+            data-testid="state-info"
+          >
             <h2 className="text-2xl font-bold mb-4">{stateData.stateName}</h2>
 
             {upcomingElection ? (
               <>
                 <div className="mb-3">
-                  <h3 className="text-lg font-semibold" data-testid="election-name">
+                  <h3
+                    className="text-lg font-semibold"
+                    data-testid="election-name"
+                  >
                     {upcomingElection.name}
                   </h3>
                   <p data-testid="election-date" className="text-gray-700">
@@ -290,7 +314,9 @@ export default function Home() {
                   </p>
                   <p className="text-gray-700">
                     <strong>Type:</strong> {upcomingElection.type}
-                    {upcomingElection.isPrimary && upcomingElection.primaryType && ` (${upcomingElection.primaryType} primary)`}
+                    {upcomingElection.isPrimary &&
+                      upcomingElection.primaryType &&
+                      ` (${upcomingElection.primaryType} primary)`}
                   </p>
                 </div>
 
@@ -312,7 +338,9 @@ export default function Home() {
                   )}
                   <div>
                     <strong>Same-day registration:</strong>{" "}
-                    {stateData.registration.sameDayRegistration ? "Available" : "Not available"}
+                    {stateData.registration.sameDayRegistration
+                      ? "Available"
+                      : "Not available"}
                   </div>
                 </div>
 
@@ -337,7 +365,8 @@ export default function Home() {
                 <div className="mb-3">
                   <h4 className="font-semibold">Phones at Polls</h4>
                   <p className="text-gray-700">
-                    {stateData.votingRules.phonesAtPollsDetail || stateData.votingRules.phonesAtPolls}
+                    {stateData.votingRules.phonesAtPollsDetail ||
+                      stateData.votingRules.phonesAtPolls}
                   </p>
                 </div>
 
@@ -370,7 +399,8 @@ export default function Home() {
               </>
             ) : (
               <p data-testid="no-election-message" className="text-gray-700">
-                No upcoming elections are currently scheduled for {stateData.stateName}. Check{" "}
+                No upcoming elections are currently scheduled for{" "}
+                {stateData.stateName}. Check{" "}
                 <a
                   href={stateData.resources.stateElectionWebsite}
                   target="_blank"
@@ -389,9 +419,12 @@ export default function Home() {
         {customPrompt && (
           <section className="mb-8">
             <div className="mb-3">
-              <h3 className="text-xl font-semibold mb-2">Your Customized AI Prompt</h3>
+              <h3 className="text-xl font-semibold mb-2">
+                Your Customized AI Prompt
+              </h3>
               <p className="text-gray-700 text-sm">
-                Copy this prompt and paste it as your first message in any AI chatbot.
+                Copy this prompt and paste it as your first message in any AI
+                chatbot.
               </p>
             </div>
             <div
@@ -425,13 +458,25 @@ export default function Home() {
 
         {/* Tips Section */}
         <section className="mb-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
-          <h3 className="text-xl font-semibold mb-3">Tips for Using the Prompt</h3>
+          <h3 className="text-xl font-semibold mb-3">
+            Tips for Using the Prompt
+          </h3>
           <ul className="list-disc list-inside space-y-2 text-gray-700">
-            <li>You can say "I don't know" or "I'm not sure" — the AI will explain more and help you figure it out.</li>
-            <li>Ask it to research something for you: "Can you look up this candidate's voting record?"</li>
-            <li>Ask questions anytime: "What does this position actually do?" or "Why does this matter?"</li>
             <li>
-              <strong>AI can make mistakes.</strong> This is a research starting point. Verify with official sources.
+              You can say "I don't know" or "I'm not sure" — the AI will explain
+              more and help you figure it out.
+            </li>
+            <li>
+              Ask it to research something for you: "Can you look up this
+              candidate's voting record?"
+            </li>
+            <li>
+              Ask questions anytime: "What does this position actually do?" or
+              "Why does this matter?"
+            </li>
+            <li>
+              <strong>AI can make mistakes.</strong> This is a research starting
+              point. Verify with official sources.
             </li>
           </ul>
         </section>
@@ -441,9 +486,12 @@ export default function Home() {
       <footer className="bg-gray-100 border-t border-gray-300 py-6 mt-auto">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <p className="text-gray-700 mb-2">
-            <strong>Share this tool</strong> with friends and family who want to make informed voting decisions.
+            <strong>Share this tool</strong> with friends and family who want to
+            make informed voting decisions.
           </p>
-          <p className="text-gray-600 text-sm">Created by a human using AI tools</p>
+          <p className="text-gray-600 text-sm">
+            Created by a human using AI tools
+          </p>
         </div>
       </footer>
     </div>

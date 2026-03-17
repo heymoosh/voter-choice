@@ -112,11 +112,11 @@ function getNextElection(elections: Election[]): Election | null {
   return upcoming[0] || null;
 }
 
-function getDeadlineStatus(
-  isoDate: string | null,
-): { status: "passed" | "urgent" | "warning" | "ok"; daysLeft: number | null } {
-  if (!isoDate)
-    return { status: "passed", daysLeft: null };
+function getDeadlineStatus(isoDate: string | null): {
+  status: "passed" | "urgent" | "warning" | "ok";
+  daysLeft: number | null;
+} {
+  if (!isoDate) return { status: "passed", daysLeft: null };
 
   const daysLeft = calculateDaysUntil(isoDate);
 
@@ -140,9 +140,15 @@ No upcoming elections are currently scheduled for ${stateData.stateName}. Check 
     return `${MAIN_PROMPT}\n\n---\n\n${contextBlock}`;
   }
 
-  const onlineStatus = getDeadlineStatus(stateData.registration.online.deadline);
-  const byMailStatus = getDeadlineStatus(stateData.registration.byMail.deadline);
-  const inPersonStatus = getDeadlineStatus(stateData.registration.inPerson.deadline);
+  const onlineStatus = getDeadlineStatus(
+    stateData.registration.online.deadline,
+  );
+  const byMailStatus = getDeadlineStatus(
+    stateData.registration.byMail.deadline,
+  );
+  const inPersonStatus = getDeadlineStatus(
+    stateData.registration.inPerson.deadline,
+  );
 
   const formatDeadline = (
     isoDate: string | null,
@@ -154,7 +160,8 @@ No upcoming elections are currently scheduled for ${stateData.stateName}. Check 
     const postmark = postmarkDetail ? " (postmarked)" : " (received)";
     const postmarkSuffix = postmarkDetail !== undefined ? postmark : "";
 
-    if (status.status === "passed") return `${formattedDate}${postmarkSuffix} — **Passed**`;
+    if (status.status === "passed")
+      return `${formattedDate}${postmarkSuffix} — **Passed**`;
     if (status.status === "urgent")
       return `${formattedDate}${postmarkSuffix} — **${status.daysLeft} days left (URGENT)**`;
     if (status.status === "warning")
@@ -170,9 +177,10 @@ No upcoming elections are currently scheduled for ${stateData.stateName}. Check 
     ? `Required. Accepted IDs: ${stateData.votingRules.acceptedIds?.join(", ")}`
     : "Not required";
 
-  const primaryTypeText = election.isPrimary && election.primaryType
-    ? ` (${election.primaryType} primary)`
-    : "";
+  const primaryTypeText =
+    election.isPrimary && election.primaryType
+      ? ` (${election.primaryType} primary)`
+      : "";
 
   const contextBlock = `Hi! I'm voting in **${stateData.stateName}**. My zip code is **${zipCode}**.
 
