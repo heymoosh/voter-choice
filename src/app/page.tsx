@@ -1,7 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { getStatesForZip, getStateData, getNextElection } from "@/lib/election-data";
+import {
+  getStatesForZip,
+  getStateData,
+  getNextElection,
+} from "@/lib/election-data";
 import { generateCustomizedPrompt } from "@/lib/prompt-generator";
 
 export default function Home() {
@@ -98,18 +102,24 @@ export default function Home() {
         Skip to content
       </a>
 
-      <main id="main-content" className="max-w-4xl mx-auto px-4 py-8 sm:px-6 sm:py-12">
+      <main
+        id="main-content"
+        className="max-w-4xl mx-auto px-4 py-8 sm:px-6 sm:py-12"
+      >
         {/* Hero Section */}
         <section className="mb-12">
           <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-4">
             Free AI Ballot Research Tool
           </h1>
           <p className="text-lg text-gray-700 dark:text-gray-300 mb-4">
-            Get a customized AI prompt pre-filled with your local election information. Paste
-            it into any free AI chatbot to research your ballot.
+            Get a customized AI prompt pre-filled with your local election
+            information. Paste it into any free AI chatbot to research your
+            ballot.
           </p>
           <div className="flex flex-wrap gap-3 items-center">
-            <span className="text-sm text-gray-600 dark:text-gray-400">Works with:</span>
+            <span className="text-sm text-gray-600 dark:text-gray-400">
+              Works with:
+            </span>
             <a
               href="https://claude.ai"
               target="_blank"
@@ -147,9 +157,15 @@ export default function Home() {
 
         {/* Zip Code Entry */}
         <section className="mb-8">
-          <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3">
+          <form
+            onSubmit={handleSubmit}
+            className="flex flex-col sm:flex-row gap-3"
+          >
             <div className="flex-1">
-              <label htmlFor="zip-input" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label
+                htmlFor="zip-input"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+              >
                 Enter your 5-digit zip code
               </label>
               <input
@@ -203,7 +219,8 @@ export default function Home() {
           <section className="mb-8">
             <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
               <p className="text-yellow-900 dark:text-yellow-200 mb-3">
-                This zip code spans multiple states. Which state are you voting in?
+                This zip code spans multiple states. Which state are you voting
+                in?
               </p>
               <div className="flex flex-wrap gap-2">
                 {states.map((stateCode) => {
@@ -237,10 +254,16 @@ export default function Home() {
                   <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase mb-1">
                     Next Election
                   </h3>
-                  <p className="text-lg font-medium text-gray-900 dark:text-white" data-testid="election-name">
+                  <p
+                    className="text-lg font-medium text-gray-900 dark:text-white"
+                    data-testid="election-name"
+                  >
                     {nextElection.name}
                   </p>
-                  <p className="text-gray-700 dark:text-gray-300" data-testid="election-date">
+                  <p
+                    className="text-gray-700 dark:text-gray-300"
+                    data-testid="election-date"
+                  >
                     {new Date(nextElection.date).toLocaleDateString("en-US", {
                       month: "long",
                       day: "numeric",
@@ -256,35 +279,54 @@ export default function Home() {
                   <ul className="space-y-2">
                     {stateData.registration.online.available && (
                       <li className="flex items-start gap-2">
-                        <DeadlineIndicator deadline={stateData.registration.online.deadline} />
+                        <DeadlineIndicator
+                          deadline={stateData.registration.online.deadline}
+                        />
                         <span className="text-gray-700 dark:text-gray-300">
                           Online:{" "}
-                          {new Date(stateData.registration.online.deadline!).toLocaleDateString(
-                            "en-US",
-                            { month: "long", day: "numeric", year: "numeric" },
-                          )}
+                          {new Date(
+                            stateData.registration.online.deadline!,
+                          ).toLocaleDateString("en-US", {
+                            month: "long",
+                            day: "numeric",
+                            year: "numeric",
+                          })}
                         </span>
                       </li>
                     )}
                     <li className="flex items-start gap-2">
-                      <DeadlineIndicator deadline={stateData.registration.byMail.deadline} />
+                      <DeadlineIndicator
+                        deadline={stateData.registration.byMail.deadline}
+                      />
                       <span className="text-gray-700 dark:text-gray-300">
                         By mail:{" "}
-                        {new Date(stateData.registration.byMail.deadline!).toLocaleDateString(
-                          "en-US",
-                          { month: "long", day: "numeric", year: "numeric" },
-                        )}{" "}
-                        ({stateData.registration.byMail.sincePostmarked ? "postmark" : "received"})
+                        {new Date(
+                          stateData.registration.byMail.deadline!,
+                        ).toLocaleDateString("en-US", {
+                          month: "long",
+                          day: "numeric",
+                          year: "numeric",
+                        })}{" "}
+                        (
+                        {stateData.registration.byMail.sincePostmarked
+                          ? "postmark"
+                          : "received"}
+                        )
                       </span>
                     </li>
                     <li className="flex items-start gap-2">
-                      <DeadlineIndicator deadline={stateData.registration.inPerson.deadline} />
+                      <DeadlineIndicator
+                        deadline={stateData.registration.inPerson.deadline}
+                      />
                       <span className="text-gray-700 dark:text-gray-300">
                         In person:{" "}
-                        {new Date(stateData.registration.inPerson.deadline!).toLocaleDateString(
-                          "en-US",
-                          { month: "long", day: "numeric", year: "numeric" },
-                        )}
+                        {new Date(
+                          stateData.registration.inPerson.deadline!,
+                        ).toLocaleDateString("en-US", {
+                          month: "long",
+                          day: "numeric",
+                          year: "numeric",
+                        })}
                       </span>
                     </li>
                   </ul>
@@ -296,12 +338,16 @@ export default function Home() {
                       Early Voting
                     </h3>
                     <p className="text-gray-700 dark:text-gray-300">
-                      {new Date(stateData.earlyVoting.startDate!).toLocaleDateString("en-US", {
+                      {new Date(
+                        stateData.earlyVoting.startDate!,
+                      ).toLocaleDateString("en-US", {
                         month: "long",
                         day: "numeric",
                       })}{" "}
                       –{" "}
-                      {new Date(stateData.earlyVoting.endDate!).toLocaleDateString("en-US", {
+                      {new Date(
+                        stateData.earlyVoting.endDate!,
+                      ).toLocaleDateString("en-US", {
                         month: "long",
                         day: "numeric",
                         year: "numeric",
@@ -369,7 +415,8 @@ export default function Home() {
                   Your Customized Prompt
                 </h2>
                 <p className="text-gray-600 dark:text-gray-400">
-                  Copy this prompt and paste it as your first message in any AI chatbot
+                  Copy this prompt and paste it as your first message in any AI
+                  chatbot
                 </p>
               </div>
               <button
@@ -410,32 +457,40 @@ export default function Home() {
           </h2>
           <ul className="space-y-3 text-gray-700 dark:text-gray-300">
             <li className="flex items-start gap-2">
-              <span className="text-blue-600 dark:text-blue-400 font-bold">•</span>
+              <span className="text-blue-600 dark:text-blue-400 font-bold">
+                •
+              </span>
               <span>
-                You can say "I don't know" or "I'm not sure where I stand" — the AI will explain
-                more and help you figure it out
+                You can say &ldquo;I don&rsquo;t know&rdquo; or &ldquo;I&rsquo;m not sure where I stand&rdquo; — the
+                AI will explain more and help you figure it out
               </span>
             </li>
             <li className="flex items-start gap-2">
-              <span className="text-blue-600 dark:text-blue-400 font-bold">•</span>
+              <span className="text-blue-600 dark:text-blue-400 font-bold">
+                •
+              </span>
               <span>
-                Ask it to research something for you ("Can you look up this candidate's voting
-                record?")
+                Ask it to research something for you (&ldquo;Can you look up this
+                candidate&rsquo;s voting record?&rdquo;)
               </span>
             </li>
             <li className="flex items-start gap-2">
-              <span className="text-blue-600 dark:text-blue-400 font-bold">•</span>
+              <span className="text-blue-600 dark:text-blue-400 font-bold">
+                •
+              </span>
               <span>
-                Ask questions anytime ("What does this position actually do?" or "Why does this
-                matter?")
+                Ask questions anytime (&ldquo;What does this position actually do?&rdquo; or
+                &ldquo;Why does this matter?&rdquo;)
               </span>
             </li>
             <li className="flex items-start gap-2">
-              <span className="text-blue-600 dark:text-blue-400 font-bold">•</span>
+              <span className="text-blue-600 dark:text-blue-400 font-bold">
+                •
+              </span>
               <span>
-                <strong>Important:</strong> AI can make mistakes. This is a research starting
-                point. The AI will link you to official sources so you can verify anything that
-                matters to you.
+                <strong>Important:</strong> AI can make mistakes. This is a
+                research starting point. The AI will link you to official
+                sources so you can verify anything that matters to you.
               </span>
             </li>
           </ul>
@@ -447,7 +502,8 @@ export default function Home() {
             Created by a human using AI tools
           </p>
           <p className="text-center text-sm text-gray-500 dark:text-gray-500">
-            Share this tool with friends and family to help them research their ballot
+            Share this tool with friends and family to help them research their
+            ballot
           </p>
         </footer>
       </main>
@@ -457,7 +513,9 @@ export default function Home() {
 
 function DeadlineIndicator({ deadline }: { deadline: string | null }) {
   if (!deadline) {
-    return <span className="inline-block w-3 h-3 rounded-full bg-gray-400 mt-1.5" />;
+    return (
+      <span className="inline-block w-3 h-3 rounded-full bg-gray-400 mt-1.5" />
+    );
   }
 
   const today = new Date();

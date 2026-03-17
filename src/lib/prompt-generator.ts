@@ -217,9 +217,15 @@ export function generateCustomizedPrompt(
   stateData: StateElectionData,
   election: Election,
 ): string {
-  const onlineStatus = getDeadlineStatus(stateData.registration.online.deadline);
-  const byMailStatus = getDeadlineStatus(stateData.registration.byMail.deadline);
-  const inPersonStatus = getDeadlineStatus(stateData.registration.inPerson.deadline);
+  const onlineStatus = getDeadlineStatus(
+    stateData.registration.online.deadline,
+  );
+  const byMailStatus = getDeadlineStatus(
+    stateData.registration.byMail.deadline,
+  );
+  const inPersonStatus = getDeadlineStatus(
+    stateData.registration.inPerson.deadline,
+  );
 
   const onlineDeadlineText = stateData.registration.online.available
     ? `Online by ${formatDate(stateData.registration.online.deadline!)} (${onlineStatus.label})`

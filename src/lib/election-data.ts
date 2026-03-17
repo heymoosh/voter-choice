@@ -20,7 +20,9 @@ export function getStateData(stateCode: string): StateElectionData | null {
   return stateDataMap[stateCode] || null;
 }
 
-export function getNextElection(stateData: StateElectionData): StateElectionData["elections"][0] | null {
+export function getNextElection(
+  stateData: StateElectionData,
+): StateElectionData["elections"][0] | null {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
