@@ -2,7 +2,7 @@
 
 ## Next
 
-Continue Phase 1 — Next run: Run 2 (Compound Engineering workflow). Muxin is the operator for all Phase 1 runs. Follow the Operator Protocol in `docs/EXPERIMENT_DESIGN.md`.
+Continue Phase 1 — Next run: Run 2 (Compound Engineering workflow). Run `/start` from `main` branch. Claude Code will autonomously check out `workflow/compound-engineering`, build the ballot tool, run measurements, and update this log.
 
 ## Completed
 
