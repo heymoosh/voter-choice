@@ -1,8 +1,8 @@
 {
   "metadata": {
-    "timestamp": "2026-03-17T19:36:26.856Z",
+    "timestamp": "2026-03-17T19:38:48.846Z",
     "branch": "workflow/compound-engineering",
-    "commit": "96d6991",
+    "commit": "22905d4",
     "nodeVersion": "v22.14.0"
   },
   "eslint": {
@@ -51,18 +51,18 @@
     }
   },
   "lighthouse": {
-    "performance": null,
-    "accessibility": null,
-    "bestPractices": null,
-    "seo": null
+    "performance": 100,
+    "accessibility": 98,
+    "bestPractices": 100,
+    "seo": 100
   },
   "playwright": {
-    "total": 0,
-    "passed": 0,
+    "total": 42,
+    "passed": 42,
     "failed": 0,
     "timedOut": 0,
     "skipped": 0,
-    "passRate": null
+    "passRate": 100
   },
   "linesOfCode": {
     "application": {
