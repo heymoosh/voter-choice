@@ -2,9 +2,9 @@ export interface Election {
   id: string;
   name: string;
   date: string; // ISO date
-  type: 'primary' | 'general' | 'runoff' | 'special';
+  type: "primary" | "general" | "runoff" | "special";
   isPrimary: boolean;
-  primaryType: 'open' | 'closed' | 'semi-closed' | 'semi-open' | null;
+  primaryType: "open" | "closed" | "semi-closed" | "semi-open" | null;
 }
 
 export interface RegistrationMethod {
@@ -35,7 +35,7 @@ export interface EarlyVoting {
 export interface VotingRules {
   idRequired: boolean;
   acceptedIds: string[];
-  phonesAtPolls: 'prohibited' | 'allowed' | 'varies';
+  phonesAtPolls: "prohibited" | "allowed" | "varies";
   phonesAtPollsDetail: string;
   additionalRules: string[];
 }
@@ -66,6 +66,6 @@ export interface ZipLookupResult {
 export interface DeadlineStatus {
   date: string;
   daysRemaining: number | null;
-  status: 'passed' | 'urgent' | 'warning' | 'good';
+  status: "passed" | "urgent" | "warning" | "good";
   statusText: string;
 }

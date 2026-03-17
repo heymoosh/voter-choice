@@ -1,6 +1,14 @@
-import type { StateElectionData, ZipLookupResult, Election, DeadlineStatus } from '@/types/election';
+import type {
+  StateElectionData,
+  ZipLookupResult,
+  Election,
+  DeadlineStatus,
+} from "@/types/election";
 
-const zipToStateMap: Record<string, string[]> = require('@/data/zip-to-state.json');
+const zipToStateMap: Record<
+  string,
+  string[]
+> = require("@/data/zip-to-state.json");
 
 export function lookupZipCode(zipCode: string): ZipLookupResult | null {
   const states = zipToStateMap[zipCode];
@@ -11,11 +19,13 @@ export function lookupZipCode(zipCode: string): ZipLookupResult | null {
 
   return {
     states,
-    isMultiState: states.length > 1
+    isMultiState: states.length > 1,
   };
 }
 
-export async function getStateElectionData(stateCode: string): Promise<StateElectionData | null> {
+export async function getStateElectionData(
+  stateCode: string,
+): Promise<StateElectionData | null> {
   try {
     const data = require(`@/data/states/${stateCode}.json`);
     return data;
@@ -29,7 +39,7 @@ export function getNextElection(elections: Election[]): Election | null {
   today.setHours(0, 0, 0, 0);
 
   const upcomingElections = elections
-    .filter(election => {
+    .filter((election) => {
       const electionDate = new Date(election.date);
       electionDate.setHours(0, 0, 0, 0);
       return electionDate >= today;
@@ -53,38 +63,41 @@ export function calculateDeadlineStatus(deadlineDate: string): DeadlineStatus {
     return {
       date: deadlineDate,
       daysRemaining: null,
-      status: 'passed',
-      statusText: 'Passed'
+      status: "passed",
+      statusText: "Passed",
     };
   } else if (diffDays <= 3) {
     return {
       date: deadlineDate,
       daysRemaining: diffDays,
-      status: 'urgent',
-      statusText: diffDays === 0 ? 'Today' : `${diffDays} day${diffDays === 1 ? '' : 's'} left`
+      status: "urgent",
+      statusText:
+        diffDays === 0
+          ? "Today"
+          : `${diffDays} day${diffDays === 1 ? "" : "s"} left`,
     };
   } else if (diffDays <= 14) {
     return {
       date: deadlineDate,
       daysRemaining: diffDays,
-      status: 'warning',
-      statusText: `${diffDays} days left`
+      status: "warning",
+      statusText: `${diffDays} days left`,
     };
   } else {
     return {
       date: deadlineDate,
       daysRemaining: diffDays,
-      status: 'good',
-      statusText: `${diffDays} days left`
+      status: "good",
+      statusText: `${diffDays} days left`,
     };
   }
 }
 
 export function formatDate(isoDate: string): string {
   const date = new Date(isoDate);
-  return date.toLocaleDateString('en-US', {
-    month: 'long',
-    day: 'numeric',
-    year: 'numeric'
+  return date.toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
   });
 }

@@ -1,5 +1,9 @@
-import type { StateElectionData, Election } from '@/types/election';
-import { getNextElection, calculateDeadlineStatus, formatDate } from './election-data';
+import type { StateElectionData, Election } from "@/types/election";
+import {
+  getNextElection,
+  calculateDeadlineStatus,
+  formatDate,
+} from "./election-data";
 
 const BASE_PROMPT = `You are a nonpartisan civic research assistant helping a U.S. voter prepare for an upcoming election. Your job is to help me understand what's on my ballot, form my own opinions, and research candidates based on their ACTIONS — not their campaign promises.
 
@@ -102,46 +106,53 @@ Key thing to know: [one notable fact]
 
 export function generateCustomizedPrompt(
   zipCode: string,
-  stateData: StateElectionData
+  stateData: StateElectionData,
 ): string {
   const nextElection = getNextElection(stateData.elections);
 
   if (!nextElection) {
-    return BASE_PROMPT + '\n\n' + generateNoElectionContext(zipCode, stateData);
+    return BASE_PROMPT + "\n\n" + generateNoElectionContext(zipCode, stateData);
   }
 
   const contextBlock = generateContextBlock(zipCode, stateData, nextElection);
 
-  return BASE_PROMPT + '\n\n' + contextBlock;
+  return BASE_PROMPT + "\n\n" + contextBlock;
 }
 
 function generateContextBlock(
   zipCode: string,
   stateData: StateElectionData,
-  election: Election
+  election: Election,
 ): string {
-  const onlineStatus = calculateDeadlineStatus(stateData.registration.online.deadline);
-  const byMailStatus = calculateDeadlineStatus(stateData.registration.byMail.deadline);
-  const inPersonStatus = calculateDeadlineStatus(stateData.registration.inPerson.deadline);
+  const onlineStatus = calculateDeadlineStatus(
+    stateData.registration.online.deadline,
+  );
+  const byMailStatus = calculateDeadlineStatus(
+    stateData.registration.byMail.deadline,
+  );
+  const inPersonStatus = calculateDeadlineStatus(
+    stateData.registration.inPerson.deadline,
+  );
 
   const registrationInfo = `
 - **Registration deadlines:**
-  - Online by ${formatDate(stateData.registration.online.deadline)} (${onlineStatus.statusText})${stateData.registration.online.url ? ` - Register at ${stateData.registration.online.url}` : ''}
-  - By mail by ${formatDate(stateData.registration.byMail.deadline)} (${byMailStatus.statusText})${stateData.registration.byMail.sincePostmarked ? ' (postmarked)' : ' (received)'}
-  - In person by ${formatDate(stateData.registration.inPerson.deadline)} (${inPersonStatus.statusText})${stateData.registration.inPerson.sincePostmarked ? ' (postmarked)' : ' (received)'}${stateData.registration.sameDayRegistration ? '\n  - Same-day registration available' : ''}
+  - Online by ${formatDate(stateData.registration.online.deadline)} (${onlineStatus.statusText})${stateData.registration.online.url ? ` - Register at ${stateData.registration.online.url}` : ""}
+  - By mail by ${formatDate(stateData.registration.byMail.deadline)} (${byMailStatus.statusText})${stateData.registration.byMail.sincePostmarked ? " (postmarked)" : " (received)"}
+  - In person by ${formatDate(stateData.registration.inPerson.deadline)} (${inPersonStatus.statusText})${stateData.registration.inPerson.sincePostmarked ? " (postmarked)" : " (received)"}${stateData.registration.sameDayRegistration ? "\n  - Same-day registration available" : ""}
   - Check registration status: ${stateData.registration.registrationCheckUrl}`;
 
   const earlyVotingInfo = stateData.earlyVoting.available
-    ? `\n- **Early voting:** ${formatDate(stateData.earlyVoting.startDate!)} through ${formatDate(stateData.earlyVoting.endDate!)}${stateData.earlyVoting.notes ? ` (${stateData.earlyVoting.notes})` : ''}`
-    : '\n- **Early voting:** Not available — absentee voting only';
+    ? `\n- **Early voting:** ${formatDate(stateData.earlyVoting.startDate!)} through ${formatDate(stateData.earlyVoting.endDate!)}${stateData.earlyVoting.notes ? ` (${stateData.earlyVoting.notes})` : ""}`
+    : "\n- **Early voting:** Not available — absentee voting only";
 
   const voterIdInfo = stateData.votingRules.idRequired
-    ? `\n- **Voter ID:** Required. Accepted forms: ${stateData.votingRules.acceptedIds.join(', ')}`
-    : '\n- **Voter ID:** Not required';
+    ? `\n- **Voter ID:** Required. Accepted forms: ${stateData.votingRules.acceptedIds.join(", ")}`
+    : "\n- **Voter ID:** Not required";
 
-  const electionTypeInfo = election.isPrimary && election.primaryType
-    ? ` (${election.primaryType} primary)`
-    : '';
+  const electionTypeInfo =
+    election.isPrimary && election.primaryType
+      ? ` (${election.primaryType} primary)`
+      : "";
 
   const contextBlock = `Hi! I'm voting in **${stateData.stateName}**. My zip code is **${zipCode}**.
 
@@ -157,7 +168,10 @@ Help me with my ballot.`;
   return contextBlock;
 }
 
-function generateNoElectionContext(zipCode: string, stateData: StateElectionData): string {
+function generateNoElectionContext(
+  zipCode: string,
+  stateData: StateElectionData,
+): string {
   return `Hi! I'm voting in **${stateData.stateName}**. My zip code is **${zipCode}**.
 
 No upcoming elections are currently scheduled for my state. Please check ${stateData.resources.stateElectionWebsite} for updates on future elections.`;
