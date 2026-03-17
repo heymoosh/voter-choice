@@ -4,14 +4,10 @@ import type {
   Election,
   DeadlineStatus,
 } from "@/types/election";
-
-const zipToStateMap: Record<
-  string,
-  string[]
-> = require("@/data/zip-to-state.json");
+import zipToStateMap from "@/data/zip-to-state.json";
 
 export function lookupZipCode(zipCode: string): ZipLookupResult | null {
-  const states = zipToStateMap[zipCode];
+  const states = (zipToStateMap as Record<string, string[]>)[zipCode];
 
   if (!states) {
     return null;
@@ -27,9 +23,9 @@ export async function getStateElectionData(
   stateCode: string,
 ): Promise<StateElectionData | null> {
   try {
-    const data = require(`@/data/states/${stateCode}.json`);
-    return data;
-  } catch (error) {
+    const data = await import(`@/data/states/${stateCode}.json`);
+    return data.default as StateElectionData;
+  } catch {
     return null;
   }
 }

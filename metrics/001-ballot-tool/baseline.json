@@ -1,12 +1,12 @@
 {
   "metadata": {
-    "timestamp": "2026-03-17T20:31:17.444Z",
+    "timestamp": "2026-03-17T20:32:16.946Z",
     "branch": "001-ballot-tool",
-    "commit": "7773704",
+    "commit": "8dc1ffd",
     "nodeVersion": "v22.14.0"
   },
   "eslint": {
-    "errors": 118,
+    "errors": 3,
     "warnings": 1,
     "complexityViolations": 1
   },
@@ -27,7 +27,7 @@
   },
   "duplication": {
     "duplicatedLines": 0,
-    "totalLines": 940,
+    "totalLines": 1148,
     "percentage": 0,
     "clones": 0
   },
@@ -52,7 +52,7 @@
   },
   "linesOfCode": {
     "application": {
-      "code": 863,
+      "code": 1005,
       "files": 10,
       "byExtension": {
         ".css": {
@@ -61,7 +61,7 @@
         },
         ".tsx": {
           "files": 2,
-          "code": 368
+          "code": 483
         },
         ".json": {
           "files": 4,
@@ -69,7 +69,7 @@
         },
         ".ts": {
           "files": 3,
-          "code": 246
+          "code": 273
         }
       }
     },
@@ -83,7 +83,7 @@
       "files": 11
     },
     "total": {
-      "code": 1707,
+      "code": 1849,
       "files": 21
     }
   }
