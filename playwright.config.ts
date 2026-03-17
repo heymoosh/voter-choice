@@ -12,7 +12,7 @@ export default defineConfig({
   },
   reporter: [["json", { outputFile: "playwright-report.json" }], ["list"]],
   use: {
-    baseURL: "http://127.0.0.1:3000",
+    baseURL: "http://127.0.0.1:3001",
     actionTimeout: 3000,
     trace: "on-first-retry",
   },
@@ -27,8 +27,8 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: "npm run start",
-    url: "http://127.0.0.1:3000",
+    command: "PORT=3001 npm run start",
+    url: "http://127.0.0.1:3001",
     reuseExistingServer: !process.env.CI,
     timeout: 30000,
   },

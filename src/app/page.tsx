@@ -242,7 +242,6 @@ export default function Home() {
                 data-testid="zip-input"
                 type="text"
                 inputMode="numeric"
-                maxLength={5}
                 value={zipCode}
                 onChange={(e) => setZipCode(e.target.value)}
                 placeholder="Enter your 5-digit zip code"
@@ -261,7 +260,11 @@ export default function Home() {
           {zipError && (
             <p
               id="zip-error"
-              data-testid={zipError.includes("don't have data") ? "not-found-message" : "zip-error"}
+              data-testid={
+                zipError.includes("don't have data")
+                  ? "not-found-message"
+                  : "zip-error"
+              }
               className="mt-2 text-red-600 text-sm"
               role="alert"
             >
