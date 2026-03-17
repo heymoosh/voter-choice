@@ -445,8 +445,12 @@ function measureLOC() {
       }
       if (trimmed.startsWith("/*")) {
         comment++;
-        if (!trimmed.includes("*/")) inBlock = false;
-        if (!trimmed.endsWith("*/") && trimmed.includes("/*")) inBlock = true;
+        if (trimmed.includes("*/") && trimmed.endsWith("*/")) {
+          // Single-line block comment /* ... */ — already counted
+        } else {
+          // Multi-line block comment start
+          inBlock = true;
+        }
         continue;
       }
       if (trimmed.startsWith("//") || trimmed.startsWith("#")) {
