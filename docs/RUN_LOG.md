@@ -2,9 +2,17 @@
 
 ## Next
 
-Continue Phase 1 — Next run: Run 2 (Compound Engineering workflow). Run `/start` from `main` branch. Claude Code will autonomously check out `workflow/compound-engineering`, build the ballot tool, run measurements, and update this log.
+Continue Phase 1 — Next run: Complete and measure Run 3 (Superpowers workflow) on `workflow/superpowers` branch. The implementation files exist but need to be committed, measured, tagged, and logged.
 
 ## Completed
+
+### Phase 1 Run 2 — Compound Engineering Workflow
+
+- **Commit:** `ce730fa` — `add phase1 metrics: 42/42 tests, Lighthouse 100/98/100/100`
+- **Tag:** `compound-engineering-phase1-complete`
+- **What was done:** Built complete ballot tool on workflow/compound-engineering branch using Compound Engineering v2.36.4 framework. Implemented zip code lookup, state election info display, customized prompt generation with all required data-testid attributes. Responsive mobile-first design with WCAG AA accessibility. Copy-to-clipboard with visual feedback. Multi-state zip handling. Deadline status indicators. Error states. Type-safe data layer. Next.js build succeeds. All 42/42 Playwright e2e tests pass. Lighthouse scores: 100 Performance, 98 Accessibility, 100 Best Practices, 100 SEO.
+- **Files created:** `src/types/election.ts`, `src/lib/election-data.ts`, `src/lib/prompt-generator.ts`, updated `src/app/page.tsx`
+- **Issues or deviations:** Initial implementation had ESLint errors (unescaped entities, missing HTML attributes) and e2e test failures due to HTML5 validation conflicts. Fixed through iterative debugging. Final implementation passes all automated checks.
 
 ### Vanilla Branch — LOC Metric Update (Post-Phase 1)
 
