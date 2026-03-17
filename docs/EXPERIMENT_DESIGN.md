@@ -49,7 +49,7 @@ Two tools are used in this project. Each has a clear lane. Stay in yours.
 Claude Code does all work that touches the repo: writing specs, writing code, running commands, setting up infrastructure, running tests, generating metrics, drafting the write-up.
 
 * **Owns:** Phase 0 (all sub-phases), Phase 3
-* **Supports:** Phases 1–2 (Muxin is the operator, Claude Code assists when asked)
+* **Owns execution of:** Phases 1–2 (Claude Code builds autonomously via `/start`; Muxin initiates runs and fills out qualitative scorecards)
 * **"Continue work" flow:** Muxin opens Claude Code in the repo directory and says something like: "Read docs/RUN_LOG.md and the Session Quick Start in docs/EXPERIMENT_DESIGN.md. Continue work." Claude Code reads RUN_LOG, summarizes in ≤5 bullets, waits for confirmation, then executes the next sub-phase.
 
 ### Cowork — Planning Support Only
@@ -78,13 +78,16 @@ Cowork's redirect message should be: *"This is a Claude Code task. Open Claude C
 
 For each workflow run (Phases 1 and 2), Muxin follows the same initiation sequence:
 
-1. Open Claude Code in the `voter-choice` repo directory.
-2. Say: "Read docs/RUN_LOG.md and the Session Quick Start in docs/EXPERIMENT_DESIGN.md. Continue work."
-3. Claude Code reads context, summarizes, and waits for confirmation.
-4. Follow that workflow's own getting-started documentation for how to structure the build session. Each framework has its own interaction pattern (Spec Kit consumes the spec as a structured input, SuperPowers uses persona prompts, BMAD follows its methodology steps, Compound Engineering follows its framework conventions, Vanilla uses default Claude Code behavior with the spec as reference).
-5. Work until the "done" criteria are met. Do not polish or manually clean up code — the output is what the workflow produces.
+1. Open Claude Code in the `voter-choice` repo directory (on the `main` branch).
+2. Run `/start`.
+3. Claude Code autonomously: checks out the correct branch, runs the clean environment protocol, builds the ballot tool (Phase 1) or adds Spanish support (Phase 2) using only the workflow's own methodology, runs `npm run measure`, tags the branch, and updates `docs/RUN_LOG.md`.
+4. When Claude Code finishes, Muxin fills out the post-run qualitative scorecard in `docs/QUALITATIVE_SCORECARD.md`.
 
-The operator does not write custom prompts or try to "help" the workflow beyond what its own documentation prescribes. The goal is to test the workflow, not to test Muxin's prompt engineering.
+**Autonomous execution principle:** Claude Code drives the entire build session. It does not stop to ask Muxin for input. If a workflow plugin presents menus, asks clarifying questions, or requests user decisions, Claude Code makes those decisions itself using the spec (`docs/PROJECT_SPEC.md` or `docs/PHASE2_SPEC.md`) as the source of truth and proceeds with reasonable defaults. This ensures consistent operator involvement (zero) across all five workflows, eliminating operator input as a confound.
+
+**Rationale:** Muxin is not a developer. The experiment measures what each workflow produces with minimal human intervention — a realistic scenario for non-technical solo builders using AI coding tools. If a workflow cannot produce good code without constant human steering, that is a meaningful finding.
+
+The operator does not write custom prompts, answer plugin questions, or manually clean up code. The output is what the workflow produces autonomously from the spec.
 
 ---
 
@@ -455,35 +458,29 @@ The repo already exists at `/Users/Muxin/Documents/GitHub/voter-choice` with `do
 * Document it
 * Update the QUALITATIVE_SCORECARD.md template with sections for each run in the randomized order
 
-### Phase 1: Build (Muxin runs, Claude Code supports)
+### Phase 1: Build (Claude Code executes autonomously)
 
-**Claude Code's responsibilities in Phase 1:** Suggest step-by-step commands and edits when asked, keep `RUN_LOG.md` up to date after each run, ensure tests and measure scripts run correctly. Muxin is the operator — Claude Code does not run workflows or make design decisions.
+**Claude Code's responsibilities in Phase 1:** Execute the full build session autonomously via `/start`. Check out the branch, run the clean environment protocol, build the ballot tool from the spec using the workflow's own methodology, run `npm run measure`, tag the branch, update `RUN_LOG.md`. All decisions are made by Claude Code using the spec as the source of truth. No operator input during the build.
 
-**Pacing:** Allow at least one calendar day between runs.
+**Muxin's responsibilities in Phase 1:** Run `/start` to initiate each run. Fill out the qualitative scorecard after Claude Code finishes. Allow at least one calendar day between runs.
 
 For each workflow (in randomized order):
 
-1. Fill out the pre-run self-assessment in the qualitative scorecard
-2. Run clean environment script (checkout branch, delete `node_modules/` and `.next/`, fresh `npm install`)
-3. Muxin runs the session: build the ballot tool from the feature spec using only that workflow (see Operator Protocol above)
-4. Commit regularly, push to remote
-5. When "done" (per definition above), tag the branch
-6. Run `npm run measure`, save the JSON report
-7. Fill out the post-run scorecard and open-ended notes immediately (while memory is fresh)
+1. Muxin runs `/start` from the `main` branch
+2. Claude Code autonomously: checks out the branch, cleans the environment, builds the ballot tool, runs measurements, tags, pushes, and updates `RUN_LOG.md`
+3. Muxin fills out the post-run scorecard and open-ended notes immediately (while memory is fresh)
 
-### Phase 2: Extend (Muxin runs, Claude Code supports)
+### Phase 2: Extend (Claude Code executes autonomously)
 
-**Claude Code's responsibilities in Phase 2:** Same as Phase 1, plus ensuring the Phase 2 spec is loaded at session start and that measurement captures the Phase 1 → Phase 2 delta.
+**Claude Code's responsibilities in Phase 2:** Same as Phase 1, but building from the Phase 1 tag on each branch and following `docs/PHASE2_SPEC.md`. Measurement captures the Phase 1 → Phase 2 delta.
 
-**Pacing:** Allow at least one calendar day between runs.
+**Muxin's responsibilities in Phase 2:** Same as Phase 1 — run `/start`, fill out the scorecard. Allow at least one calendar day between runs.
 
 For each workflow:
 
-1. Fill out the pre-run self-assessment in the qualitative scorecard
-2. Run clean environment script from the Phase 1 tag on that branch
-3. Muxin runs the session: add Spanish language support per the Phase 2 spec (see Operator Protocol above)
-4. Same commit/push/tag/measure/notes process
-5. Fill out the post-run scorecard immediately
+1. Muxin runs `/start` from the `main` branch
+2. Claude Code autonomously: checks out the branch from its Phase 1 tag, cleans the environment, adds Spanish language support per the Phase 2 spec, runs measurements, tags, pushes, and updates `RUN_LOG.md`
+3. Muxin fills out the post-run scorecard immediately
 
 ### Phase 3: Analysis (Claude Code owns)
 
