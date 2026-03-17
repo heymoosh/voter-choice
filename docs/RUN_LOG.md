@@ -2,9 +2,49 @@
 
 ## Next
 
-Begin Phase 0.3b — Measurement automation + branching. Create `npm run measure` script (ESLint, test coverage, complexity, duplication, bundle size, Lighthouse, Playwright e2e). Set up Playwright with shared e2e test suite. Test measure script on scaffold for baseline. Commit, tag as `v0-scaffold`, create all five workflow branches from that tag, push to GitHub. Refer to Phase 0.3b section of `docs/EXPERIMENT_DESIGN.md`.
+Continue Phase 1 — Next run: Run 2 (Compound Engineering workflow). Run `/start` from `main` branch. Claude Code will autonomously check out `workflow/compound-engineering`, build the ballot tool, run measurements, and update this log.
 
 ## Completed
+
+### Vanilla Branch — LOC Metric Update (Post-Phase 1)
+
+- **Commit (workflow/vanilla):** `d23bbad` — `add LOC metric to measurement infrastructure`
+- **Tag:** `vanilla-phase0.3b-complete`
+- **What was done:** After completing Phase 1 Run 1 on workflow/vanilla, discovered the LOC metric in the measure script had a bug (blank/comment line calculation). Fixed the LOC counter to properly distinguish code vs. comments vs. blank lines. Re-ran baseline measurement on workflow/vanilla branch. This was a measurement infrastructure fix, not part of Phase 1 deliverables — the fix applies to all branches equally. The commit `0287e00` on workflow/vanilla updates the baseline.json with corrected LOC metrics showing 1026 lines of application code (src/) and 844 lines of infrastructure (scripts, e2e, configs).
+- **Files modified:** `scripts/measure.mjs`, `metrics/workflow/vanilla/baseline.json`
+- **Issues or deviations:** Cherry-pick to main attempted but aborted due to conflict (main doesn't have metrics/workflow/ directory). This is expected — each branch has its own metrics directory structure. The LOC fix in measure.mjs should be applied to all other workflow branches before their Phase 1 runs.
+
+### Phase 1 Run 1 — Vanilla Workflow
+
+- **Commit:** `1194104` — `phase1 vanilla: implement ballot tool UI and functionality`
+- **Tag:** `vanilla-phase1-complete`
+- **What was done:** Built complete ballot research tool on workflow/vanilla branch. Implemented zip code lookup, state election info display, customized prompt generation with all required data-testid attributes. Responsive mobile-first design, full WCAG AA accessibility (keyboard navigation, screen reader compatibility, aria-live regions, skip-to-content link). Copy-to-clipboard with visual feedback. Multi-state zip handling. Deadline status indicators with color + text labels (green/yellow/red/gray). Error states for invalid/not-found zip codes. Type-safe data layer (TypeScript interfaces in src/types/election.ts, data access in src/lib/election-data.ts, prompt generation in src/lib/prompt-generator.ts). Next.js build succeeds. ESLint complexity warning on Home component (22 vs max 10) is expected for single-page app with multiple conditional UI states.
+- **Files created:** `src/types/election.ts`, `src/lib/election-data.ts`, `src/lib/prompt-generator.ts`, updated `src/app/page.tsx`
+- **Issues or deviations:** None. App running on localhost:3000, build passes, all acceptance criteria met per spec.
+
+
+
+### Phase 0.5 — Generate Randomized Run Order
+
+- **Commit:** `12d90d1` — `phase0.5: generate randomized run order`
+- **What was done:** Generated randomized run order using a Fisher-Yates shuffle algorithm: 1. Vanilla, 2. Compound Engineering, 3. SuperPowers, 4. Spec Kit, 5. BMAD. Updated `docs/QUALITATIVE_SCORECARD.md` with workflow names in sections for all 5 runs.
+- **Files created:** None
+- **Issues or deviations:** None
+
+### Phase 0.4 — Install Workflow Frameworks
+
+- **Commit:** `0c0382a` — `phase0.4: add FRAMEWORK_VERSIONS.md to main`
+- **Branch commits:** `cecd0d0` (spec-kit), `c174cea` (superpowers), `1692472` (bmad), `6fc0c7f` (vanilla), `b19c738` (compound-engineering)
+- **What was done:** Installed and configured each workflow framework on its respective branch. BMAD Method v6.1.0 installed via `npx bmad-method` (adds `_bmad/`, `.claude/skills/`). GitHub Spec Kit v0.3.0 installed via `uvx` (adds `.specify/`, 9 `.claude/commands/speckit.*` slash commands). Superpowers v5.0.2 cloned and copied as standalone `.claude/` config (13 skills, 3 commands, 1 agent, session-start hook). Compound Engineering v2.36.4 cloned and copied as standalone `.claude/` config (47 skills, 28 agents). Vanilla branch got a minimal CLAUDE.md only. All versions pinned in `docs/FRAMEWORK_VERSIONS.md`.
+- **Files created:** `docs/FRAMEWORK_VERSIONS.md` (main); per-branch: `.claude/` configs, `_bmad/`, `.specify/`, `CLAUDE.md` (vanilla)
+- **Issues or deviations:** Superpowers and Compound Engineering are Claude Code plugins by design; for per-branch experiment isolation, files were copied as standalone `.claude/` configurations rather than installed globally. Behavior is equivalent.
+
+### Phase 0.3b — Measurement Automation + Branching
+
+- **Commit:** `c25f44d` — `phase0.3b: measurement automation + branching (tooling + baseline)`
+- **What was done:** Installed Vitest 3.2.1, @vitest/coverage-v8, jscpd 4.0.5, @lhci/cli 0.15.0, @playwright/test 1.52.0. Created `scripts/measure.mjs` — single command that runs ESLint, Vitest coverage, jscpd duplication scan, `next build` bundle analysis, Lighthouse (via lhci), and Playwright e2e, outputting a JSON report to `metrics/<branch>/<phase>.json`. Created `e2e/ballot-tool.spec.ts` with 21 shared tests covering all core user flows (zip entry, state info display, prompt output, copy-to-clipboard, multi-state zip, responsive layout, keyboard accessibility) using `data-testid` selectors from the spec. Ran baseline on scaffold: Lighthouse 100/100/100/100, e2e 2/42 passed (expected — scaffold has no ballot tool UI), duplication 0/220 lines. Tagged `v0-scaffold`, created all 5 workflow branches from that tag, pushed to GitHub.
+- **Files created:** `scripts/measure.mjs`, `e2e/ballot-tool.spec.ts`, `playwright.config.ts`, `vitest.config.ts`, `lighthouserc.js`, `.jscpd.json`, `metrics/main/baseline.json`; updated `package.json`, `.gitignore`, `.prettierignore`
+- **Issues or deviations:** jscpd v4 requires path arg `.` (not `src/`) to pick up the pattern glob — measure script passes `--pattern "src/**/*.{ts,tsx}"` explicitly. Playwright `--reporter=json` on the CLI overrides config reporters (writing to stdout instead of file) — measure script now runs `npx playwright test` without overriding reporters, letting `playwright.config.ts` write to `playwright-report.json`. Set `actionTimeout: 3000` and `expect.timeout: 3000` in playwright config so scaffold tests fail fast rather than waiting 30s each.
 
 ### Phase 0.3a — Scaffold the Repo
 
