@@ -1,12 +1,12 @@
 {
   "metadata": {
-    "timestamp": "2026-03-17T20:32:16.946Z",
+    "timestamp": "2026-03-17T20:32:55.974Z",
     "branch": "001-ballot-tool",
-    "commit": "8dc1ffd",
+    "commit": "84a5cd2",
     "nodeVersion": "v22.14.0"
   },
   "eslint": {
-    "errors": 3,
+    "errors": 0,
     "warnings": 1,
     "complexityViolations": 1
   },
@@ -27,32 +27,46 @@
   },
   "duplication": {
     "duplicatedLines": 0,
-    "totalLines": 1148,
+    "totalLines": 1144,
     "percentage": 0,
     "clones": 0
   },
   "bundleSize": {
     "buildSuccess": true,
-    "pages": [],
-    "firstLoadJsShared": null
+    "pages": [
+      {
+        "route": "/",
+        "size": 7.37,
+        "unit": "kB"
+      },
+      {
+        "route": "/_not-found",
+        "size": 990,
+        "unit": "B"
+      }
+    ],
+    "firstLoadJsShared": {
+      "size": 102,
+      "unit": "kB"
+    }
   },
   "lighthouse": {
-    "performance": null,
-    "accessibility": null,
-    "bestPractices": null,
-    "seo": null
+    "performance": 100,
+    "accessibility": 100,
+    "bestPractices": 100,
+    "seo": 100
   },
   "playwright": {
-    "total": 0,
-    "passed": 0,
-    "failed": 0,
+    "total": 42,
+    "passed": 38,
+    "failed": 4,
     "timedOut": 0,
     "skipped": 0,
-    "passRate": null
+    "passRate": 90.48
   },
   "linesOfCode": {
     "application": {
-      "code": 1005,
+      "code": 1002,
       "files": 10,
       "byExtension": {
         ".css": {
@@ -69,7 +83,7 @@
         },
         ".ts": {
           "files": 3,
-          "code": 273
+          "code": 270
         }
       }
     },
@@ -83,7 +97,7 @@
       "files": 11
     },
     "total": {
-      "code": 1849,
+      "code": 1846,
       "files": 21
     }
   }
