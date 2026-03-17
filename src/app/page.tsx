@@ -185,7 +185,7 @@ export default function Home() {
           </h1>
           <p className="text-lg text-gray-700 mb-2">
             Enter your zip code to get a customized AI prompt pre-filled with
-            your state's election info, deadlines, and resources.
+            your state&apos;s election info, deadlines, and resources.
           </p>
           <p className="text-base text-gray-600 mb-4">
             Copy the prompt and paste it into any free AI chatbot — Claude,
@@ -463,16 +463,16 @@ export default function Home() {
           </h3>
           <ul className="list-disc list-inside space-y-2 text-gray-700">
             <li>
-              You can say "I don't know" or "I'm not sure" — the AI will explain
-              more and help you figure it out.
+              You can say &quot;I don&apos;t know&quot; or &quot;I&apos;m not
+              sure&quot; — the AI will explain more and help you figure it out.
             </li>
             <li>
-              Ask it to research something for you: "Can you look up this
-              candidate's voting record?"
+              Ask it to research something for you: &quot;Can you look up this
+              candidate&apos;s voting record?&quot;
             </li>
             <li>
-              Ask questions anytime: "What does this position actually do?" or
-              "Why does this matter?"
+              Ask questions anytime: &quot;What does this position actually
+              do?&quot; or &quot;Why does this matter?&quot;
             </li>
             <li>
               <strong>AI can make mistakes.</strong> This is a research starting
