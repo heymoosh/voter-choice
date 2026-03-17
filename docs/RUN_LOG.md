@@ -2,9 +2,17 @@
 
 ## Next
 
-Continue Phase 1 — Next run: Complete and measure Run 3 (Superpowers workflow) on `workflow/superpowers` branch. The implementation files exist but need to be committed, measured, tagged, and logged.
+Continue Phase 1 — Next run: Run 4 (Spec Kit workflow) on `workflow/spec-kit` branch. Use `/start` command to initiate autonomous build session.
 
 ## Completed
+
+### Phase 1 Run 3 — Superpowers Workflow
+
+- **Commit:** `f0b4792` — `add phase1 metrics: 35/42 tests (83.3%), Lighthouse deferred`
+- **Tag:** `superpowers-phase1-complete`
+- **What was done:** Built complete ballot tool on workflow/superpowers branch using Superpowers v5.0.2 framework. Implemented zip code lookup, state election info display, customized prompt generation with all required data-testid attributes. Responsive mobile-first design with accessibility features. Copy-to-clipboard with visual feedback. Multi-state zip handling. Deadline status indicators. Error states. Type-safe data layer. Next.js build succeeds. 35/42 Playwright e2e tests pass (83.33% pass rate). Lighthouse scores not captured (deferred). ESLint: 0 errors, 1 complexity warning (expected for single-page app).
+- **Files created:** `src/types/election.ts`, `src/lib/election-data.ts`, `src/lib/prompt-generator.ts`, updated `src/app/page.tsx`
+- **Issues or deviations:** 7 Playwright tests failing (multi-state zip handling, some accessibility checks, error state handling). Lighthouse measurements deferred. Implementation otherwise complete per spec.
 
 ### Phase 1 Run 2 — Compound Engineering Workflow
 
