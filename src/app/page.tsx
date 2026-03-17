@@ -461,8 +461,9 @@ export default function Home() {
                 •
               </span>
               <span>
-                You can say &ldquo;I don&rsquo;t know&rdquo; or &ldquo;I&rsquo;m not sure where I stand&rdquo; — the
-                AI will explain more and help you figure it out
+                You can say &ldquo;I don&rsquo;t know&rdquo; or &ldquo;I&rsquo;m
+                not sure where I stand&rdquo; — the AI will explain more and
+                help you figure it out
               </span>
             </li>
             <li className="flex items-start gap-2">
@@ -470,8 +471,8 @@ export default function Home() {
                 •
               </span>
               <span>
-                Ask it to research something for you (&ldquo;Can you look up this
-                candidate&rsquo;s voting record?&rdquo;)
+                Ask it to research something for you (&ldquo;Can you look up
+                this candidate&rsquo;s voting record?&rdquo;)
               </span>
             </li>
             <li className="flex items-start gap-2">
@@ -479,8 +480,8 @@ export default function Home() {
                 •
               </span>
               <span>
-                Ask questions anytime (&ldquo;What does this position actually do?&rdquo; or
-                &ldquo;Why does this matter?&rdquo;)
+                Ask questions anytime (&ldquo;What does this position actually
+                do?&rdquo; or &ldquo;Why does this matter?&rdquo;)
               </span>
             </li>
             <li className="flex items-start gap-2">
