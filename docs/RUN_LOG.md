@@ -2,9 +2,15 @@
 
 ## Next
 
-Continue Phase 1 — Next run: Run 5 (BMAD workflow) on `workflow/bmad` branch. Use `/start` command to initiate autonomous build session.
+Re-run Phase 1 from scratch. Phase 1 Runs 1–4 are invalidated — framework workflows were bypassed (see `docs/LEARNINGS.md`, Learning 001). Before re-running: create new branches from `v0-scaffold`, write framework-specific `/start` commands and CLAUDE.md additions on each branch, use Opus model for execution. Original branches preserved as experiment data.
 
 ## Completed
+
+### 2026-03-18 — Discovery: Framework Workflows Bypassed (Learning 001)
+
+**What was done:** Audit of all Phase 1 runs revealed that Claude Code bypassed framework-specific workflow commands on all branches. The `/start` command was identical across branches with only soft guidance to use frameworks. CLAUDE.md had no framework-specific instructions. Result: all runs were effectively Vanilla builds with unused framework files present. Documented in `docs/LEARNINGS.md`.
+**Files created:** `docs/LEARNINGS.md`
+**Issues or deviations:** Phase 1 Runs 1–4 invalidated. Require re-run with framework-specific enforcement.
 
 ### Phase 1 Run 4 — Spec Kit Workflow
 
