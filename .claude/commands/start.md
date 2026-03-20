@@ -1,32 +1,155 @@
 You are an autonomous agent. Your job is to execute work, not describe it.
 
-## Step 1: Read context
-- Read `docs/RUN_LOG.md` — find the `## Next` section.
-- Read any source files referenced in that section.
+## Step 1: Read context and determine what to do
 
-## Step 2: Determine phase type and act accordingly
+- Read `docs/RUN_LOG.md` — find the `## Next` section.
+- Determine the **phase type** (Phase 0, 1, 2, or 3) from the text.
+- If Phase 1 or 2: extract the **branch name** from the `## Next` text. It will be in backticks (e.g., `run2/compound-engineering`).
+
+## Step 2: Route by phase type
 
 ### If Phase 0 or Phase 3 (setup / analysis):
-Execute the sub-phase directly. Create files, write code, make commits. Do the actual work NOW. Skip to Step 4.
+Execute the sub-phase directly on main. Create files, write code, make commits. Do the actual work NOW. Skip to **Step 8**.
 
 ### If Phase 1 or Phase 2 (build / extend):
-**STOP.** You are on the `main` branch. Build runs must be executed from the target workflow branch, where the framework-specific `/start` command lives.
+Continue to Step 3.
 
-Tell the operator:
-> You need to check out the target branch first, then run `/start` from there.
-> The branch name is in the `## Next` section of RUN_LOG.md.
-> Example: `git checkout run2/compound-engineering` then run `/start`.
+## Step 3: Auto-checkout the target branch
 
-Do NOT attempt to check out the branch and continue. The branch has its own `/start` with framework-specific workflow enforcement. End the session here.
+Run: `git checkout <branch-name>` (the branch parsed from Step 1).
 
-## Step 3: (Phase 0/3 only) Switch back to main if needed
-- If you switched branches during setup work, return to main.
+If the checkout fails (uncommitted changes, branch not found), STOP and report the error. Do not proceed.
 
-## Step 4: Update RUN_LOG
-- Update `docs/RUN_LOG.md` per the format in `docs/EXPERIMENT_DESIGN.md`.
-- Include: commit hash, key metrics, any issues or deviations.
+## Step 4: Pre-flight checks
+
+**4a. Log build start:**
+
+Identify what model you are running as. Your model name is in your system context (e.g., `claude-opus-4-6`, `claude-sonnet-4-6`). Log it:
+
+```
+mkdir -p metrics && echo '{"event":"build_start","timestamp":"'$(date -Iseconds)'","model":"<YOUR_MODEL_ID>"}' > metrics/timing.jsonl
+```
+
+Replace `<YOUR_MODEL_ID>` with your actual model identifier. Do NOT hardcode a guess.
+
+**4b. Verify measurement infrastructure:**
+
+Confirm these files exist: `scripts/measure.mjs`, `e2e/ballot-tool.spec.ts`, `src/data/states/TX.json`
+
+If any are missing, STOP and tell the operator. Do not proceed with the build.
+
+**4c. Verify framework workflow file:**
+
+Confirm `.claude/commands/workflow.md` exists on this branch.
+
+If missing, STOP and tell the operator: "This branch has no workflow.md. The framework workflow steps are missing."
+
+**4d. Phase 2 only — verify starting point:**
+
+If this is a Phase 2 run (RUN_LOG says Phase 2):
+
+Run: `git describe --tags --exact-match HEAD 2>/dev/null`
+
+Expected tag should contain `phase1-complete`. If HEAD is not at the Phase 1 completion tag, STOP and report.
+
+## Step 5: Clean environment
+
+```
+rm -rf node_modules .next coverage playwright-report.json
+npm install
+```
+
+## Step 6: Execute framework workflow
+
+Read `.claude/commands/workflow.md` from the current branch. It contains the framework-specific workflow steps.
+
+**Execute every instruction in that file completely before returning to Step 7 below.**
+
+The workflow.md file contains:
+- A `## Meta` section with framework name, tag prefix, and framework verification path
+- A `## Workflow Steps` section — the core framework methodology to follow
+- An `## Adherence Check` section — verification commands to run after the build
+
+Execute the `## Workflow Steps` section now. You will execute the `## Adherence Check` section in Step 7.
+
+## Step 7: Post-build measurement
+
+**7a. Log build end:**
+
+```
+echo '{"event":"build_end","timestamp":"'$(date -Iseconds)'"}' >> metrics/timing.jsonl
+```
+
+**7b. Track workflow-generated tests:**
+
+```
+echo "--- Workflow-generated test files ---"
+find src -name "*.test.*" -o -name "*.spec.*" 2>/dev/null | head -20 || echo "None found"
+```
+
+Note the count for the RUN_LOG entry.
+
+**7c. Git build statistics:**
+
+```
+echo '--- Git build statistics ---'
+echo "Commits since scaffold: $(git rev-list --count v0-scaffold..HEAD)"
+git diff --shortstat v0-scaffold..HEAD
+```
+
+Log the commit count and lines added/removed for the RUN_LOG entry.
+
+**7d. Framework adherence verification:**
+
+Read the `## Adherence Check` section of `.claude/commands/workflow.md` and execute those verification commands now.
+
+If any expected artifacts are missing, flag it in the debrief as a **partial workflow bypass** — this is a critical finding for the experiment.
+
+**7e. Run measurement:**
+
+Run `npm run measure` and save the JSON report.
+
+**7f. Phase 2 delta report (Phase 2 only):**
+
+If this is Phase 2, read the Phase 1 metrics JSON from `metrics/` and display a comparison table:
+
+For each metric (e2e pass rate, Lighthouse scores, ESLint errors, duplication %, LOC, complexity), show:
+`Phase 1 value -> Phase 2 value (delta)`
+
+**7g. Tag and push:**
+
+Read the `TAG_PREFIX` from the `## Meta` section of `.claude/commands/workflow.md`.
+
+Tag the branch: `<TAG_PREFIX>-run2-phase<N>-complete` (e.g., `ce-run2-phase1-complete`, `bmad-run2-phase2-complete`).
+
+Push commits and tags to remote.
+
+## Step 8: Operator debrief
+
+Report to Muxin:
+
+1. Key metrics from the measurement JSON
+2. Workflow log summary: which framework commands ran and approximate duration of each (from `metrics/workflow-log.jsonl`)
+3. Number of workflow-generated test files (if any)
+4. Git build statistics: commit count, lines added/removed since scaffold
+5. Framework adherence: which artifacts were produced, any missing steps
+6. Phase 2 only: Phase 1 -> Phase 2 metric deltas
+
+Then ask: **"Build complete. Any observations for the write-up? Anything surprising about the output or metrics?"**
+
+Record her response in the RUN_LOG entry under **Operator notes**.
+If she has nothing to add, note "No additional observations" and proceed.
+
+## Step 9: Switch back to main
+
+Run: `git checkout main`
+
+## Step 10: Update RUN_LOG
+
+Update `docs/RUN_LOG.md` per the format in `docs/EXPERIMENT_DESIGN.md`.
+- Include: commit hash, tag name, key metrics, any issues or deviations.
 - Set the `## Next` section to the next run or phase.
 
-## Step 5: Commit the RUN_LOG update
+## Step 11: Commit the RUN_LOG update
 
 IMPORTANT: Skip straight to Step 1. No preamble. No summary. No "here's what I found." No "ready when you are." Your first tool call must be reading a file. GO.
