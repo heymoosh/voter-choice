@@ -60,6 +60,14 @@ Phase 1 will be re-run with the following changes:
 4. **Model: Opus** — better instruction following for complex multi-step workflows
 5. **New branches from `v0-scaffold`** — original branches preserved as experiment data documenting this learning
 
+### Impact on results
+
+**Vanilla (Run 1) results are kept.** Vanilla has no framework to bypass — its Run 1 results are valid and serve as the baseline. The original `workflow/vanilla` branch and its `vanilla-phase1-complete` tag remain authoritative.
+
+**Runs 2–4 (Compound Engineering, Superpowers, Spec Kit) are invalidated.** Their original branches are preserved as experiment data (tagged `run1-*-final`) but their metrics are excluded from Phase 3 analysis. Run 5 (BMAD) was never executed.
+
+**Re-run branches use `run2/` prefix** (e.g., `run2/compound-engineering`) to distinguish from original branches. Run order is unchanged: 1. Vanilla (kept), 2. Compound Engineering, 3. SuperPowers, 4. Spec Kit, 5. BMAD.
+
 ### Why this matters for the write-up
 
 This is itself a finding worth reporting: **workflow frameworks that rely on users explicitly invoking their commands will be bypassed in autonomous AI execution contexts unless hard enforcement exists.** The fact that 4 out of 5 runs produced nearly identical results despite very different frameworks installed tells you something about the gap between "framework available" and "framework actually used." The re-run with explicit enforcement tests the complementary question: do the frameworks produce meaningfully different results when their methodologies are actually followed?

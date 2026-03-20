@@ -2,9 +2,22 @@
 
 ## Next
 
-Re-run Phase 1 from scratch. Phase 1 Runs 1–4 are invalidated — framework workflows were bypassed (see `docs/LEARNINGS.md`, Learning 001). Before re-running: create new branches from `v0-scaffold`, write framework-specific `/start` commands and CLAUDE.md additions on each branch, use Opus model for execution. Original branches preserved as experiment data.
+**Phase 1 Re-Run — Run 2: Compound Engineering.** Check out `run2/compound-engineering`, run `/start`. Use Opus model. The `/start` command on this branch chains ce:plan → ce:work → ce:review → ce:compound explicitly. CLAUDE.md has hard workflow enforcement. See `docs/LEARNINGS.md` Learning 001 for context on why we re-run.
 
 ## Completed
+
+### 2026-03-20 — Phase 1 Re-Run Preparation
+
+**What was done:** Created 4 new `run2/` branches from framework install commits (preserving original `workflow/` branches as experiment data). Each new branch received:
+1. **Framework-specific `/start` command** — explicitly chains the framework's workflow commands in order (e.g., ce:plan → ce:work → ce:review → ce:compound for CE; speckit.specify → clarify → plan → tasks → analyze → implement for Spec Kit; brainstorming → writing-plans → executing-plans → requesting-code-review → verification-before-completion for Superpowers; product-brief → PRD → architecture → epics-and-stories → sprint-planning → dev-story for BMAD).
+2. **Framework-specific CLAUDE.md enforcement** — "THIS IS A HARD REQUIREMENT. VIOLATION INVALIDATES THE EXPERIMENT" with explicit MUST/MUST NOT rules.
+3. **Autonomous decision-making rules** — when workflow commands ask for user input, Claude Code answers using PROJECT_SPEC.md. No stopping for Muxin.
+4. **LOC metric fix** — cherry-picked `d23bbad` onto all 4 branches (resolved same EXPERIMENT_DESIGN.md conflict on each).
+
+**Branches created:** `run2/compound-engineering`, `run2/superpowers`, `run2/spec-kit`, `run2/bmad`
+**Run order (unchanged):** 1. Vanilla (kept from Run 1), 2. Compound Engineering, 3. Superpowers, 4. Spec Kit, 5. BMAD
+**Model for re-runs:** Opus (Sonnet's shortcutting was a contributing factor in Learning 001)
+**Updated:** `docs/LEARNINGS.md` — added "Impact on results" section noting Vanilla Run 1 kept, Runs 2–4 invalidated
 
 ### 2026-03-18 — Discovery: Framework Workflows Bypassed (Learning 001)
 
