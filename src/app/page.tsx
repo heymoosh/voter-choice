@@ -1,103 +1,125 @@
-import Image from "next/image";
+import { BallotToolClient } from "@/components/BallotToolClient";
+
+export const metadata = {
+  title: "AI Ballot Research Tool — Know What You're Voting For",
+  description:
+    "Enter your zip code to get a customized AI prompt for researching your ballot. Works with Claude, ChatGPT, Gemini, Grok, and any free AI chatbot.",
+};
 
 export default function Home() {
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    <div className="min-h-screen bg-gray-50">
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:bg-white focus:px-4 focus:py-2 focus:rounded focus:shadow-lg focus:text-blue-600 focus:font-semibold"
+      >
+        Skip to main content
+      </a>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
+      <main
+        id="main-content"
+        className="max-w-3xl mx-auto px-4 py-8 sm:py-12 space-y-10"
+      >
+        {/* Hero */}
+        <section className="text-center space-y-4">
+          <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 leading-tight">
+            Know What You&apos;re Voting For
+          </h1>
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            Enter your zip code and get a customized AI research prompt —
+            pre-filled with your state&apos;s election dates, deadlines, and
+            local links. Paste it into any free AI chatbot to start researching
+            your ballot in minutes.
+          </p>
+          <div className="flex flex-wrap justify-center gap-3 text-sm">
+            <span className="font-medium text-gray-700">Works with:</span>
+            <a
+              href="https://claude.ai"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 hover:underline font-medium"
+            >
+              Claude
+            </a>
+            <a
+              href="https://chatgpt.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 hover:underline font-medium"
+            >
+              ChatGPT
+            </a>
+            <a
+              href="https://gemini.google.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 hover:underline font-medium"
+            >
+              Gemini
+            </a>
+            <a
+              href="https://grok.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 hover:underline font-medium"
+            >
+              Grok
+            </a>
+          </div>
+        </section>
+
+        {/* Ballot tool */}
+        <BallotToolClient />
+
+        {/* Tips */}
+        <section className="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
+          <h2 className="text-xl font-bold text-gray-900">
+            Tips for using this prompt
+          </h2>
+          <ul className="space-y-2 text-gray-700">
+            <li className="flex gap-2">
+              <span className="text-blue-500 font-bold flex-shrink-0">→</span>
+              You can say <strong>&quot;I don&apos;t know&quot;</strong> or{" "}
+              <strong>&quot;I&apos;m not sure where I stand&quot;</strong> — the
+              AI will explain more and help you figure it out.
+            </li>
+            <li className="flex gap-2">
+              <span className="text-blue-500 font-bold flex-shrink-0">→</span>
+              You can ask it to <strong>research something</strong> for you:
+              &quot;Can you look up this candidate&apos;s voting record?&quot;
+            </li>
+            <li className="flex gap-2">
+              <span className="text-blue-500 font-bold flex-shrink-0">→</span>
+              At the end, ask for a <strong>printable summary</strong> you can
+              take to the polls.
+            </li>
+            <li className="flex gap-2">
+              <span className="text-blue-500 font-bold flex-shrink-0">→</span>
+              <strong>AI can make mistakes.</strong> Use it as a starting point
+              and verify with official sources.
+            </li>
+            <li className="flex gap-2">
+              <span className="text-blue-500 font-bold flex-shrink-0">→</span>
+              Many states <strong>prohibit phones at polling places</strong>.
+              Print your ballot summary or write it down before you go.
+            </li>
+          </ul>
+        </section>
+
+        {/* Footer */}
+        <footer className="text-center text-sm text-gray-500 space-y-1 pb-4">
+          <p>
+            Share this tool with friends, family, or your community. It works
+            for any U.S. state and any election.
+          </p>
+          <p>
+            <em>
+              Created by a human using AI tools, because everyone deserves to
+              know what they&apos;re actually voting for.
+            </em>
+          </p>
+        </footer>
       </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
     </div>
   );
 }

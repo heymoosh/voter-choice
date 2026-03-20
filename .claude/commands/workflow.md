@@ -15,10 +15,12 @@ Run: `echo '{"step":"lfg","status":"started","timestamp":"'$(date -Iseconds)'"}'
 **Step 2 — Invoke /lfg:**
 
 Use the Skill tool to invoke the `/lfg` skill with argument:
+
 - Phase 1: `"Build the ballot research tool per docs/PROJECT_SPEC.md"`
 - Phase 2: `"Add Spanish language support per docs/PHASE2_SPEC.md"`
 
 AUTONOMOUS RULES (apply to ALL steps within /lfg):
+
 - When ANY CE skill asks you to "ask the user", presents menus, or asks clarifying questions: answer them yourself using `docs/PROJECT_SPEC.md` (Phase 1) or `docs/PHASE2_SPEC.md` (Phase 2) as the source of truth. Do NOT stop or wait.
 - When asked about branches: stay on the current branch. Do not create a new branch.
 - When offered a choice between research levels: choose "standard" (not minimal, not deep).
@@ -35,6 +37,7 @@ After /lfg completes, run: `echo '{"step":"lfg","status":"completed","timestamp"
 ## Adherence Check
 
 Check that the Compound Engineering /lfg pipeline produced its expected artifacts:
+
 - `docs/plans/` must contain at least one plan file (from ce:plan)
 - `docs/solutions/` must contain at least one solution file (from ce:compound)
 - `metrics/workflow-log.jsonl` must contain lfg start/complete entries

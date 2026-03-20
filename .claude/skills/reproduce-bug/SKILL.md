@@ -58,6 +58,7 @@ Reproduce the exact steps from the issue:
 
 1. **Read the issue's reproduction steps**
 2. **Execute each step using Playwright:**
+
    - `browser_click` for clicking elements
    - `browser_type` for filling forms
    - `browser_snapshot` to see the current state

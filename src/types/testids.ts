@@ -1,0 +1,15 @@
+export const TEST_IDS = {
+  ZIP_INPUT: "zip-input",
+  ZIP_SUBMIT: "zip-submit",
+  ZIP_ERROR: "zip-error",
+  STATE_SELECTOR: "state-selector",
+  STATE_INFO: "state-info",
+  PROMPT_OUTPUT: "prompt-output",
+  COPY_BUTTON: "copy-button",
+  COPY_CONFIRMATION: "copy-confirmation",
+  ELECTION_NAME: "election-name",
+  ELECTION_DATE: "election-date",
+  REGISTRATION_STATUS: "registration-status",
+  NO_ELECTION_MESSAGE: "no-election-message",
+  NOT_FOUND_MESSAGE: "not-found-message",
+} as const;

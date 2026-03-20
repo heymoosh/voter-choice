@@ -43,6 +43,7 @@ This command takes a work document (plan, specification, or todo file) and execu
    ```
 
    **If already on a feature branch** (not the default branch):
+
    - Ask: "Continue working on `[current_branch]`, or create a new branch?"
    - If continuing, proceed to step 3
    - If creating new, follow Option A or B below
@@ -50,24 +51,29 @@ This command takes a work document (plan, specification, or todo file) and execu
    **If on the default branch**, choose how to proceed:
 
    **Option A: Create a new branch**
+
    ```bash
    git pull origin [default_branch]
    git checkout -b feature-branch-name
    ```
+
    Use a meaningful name based on the work (e.g., `feat/user-authentication`, `fix/email-validation`).
 
    **Option B: Use a worktree (recommended for parallel development)**
+
    ```bash
    skill: git-worktree
    # The skill will create a new branch from the default branch in an isolated worktree
    ```
 
    **Option C: Continue on the default branch**
+
    - Requires explicit user confirmation
    - Only proceed after user explicitly says "yes, commit to [default_branch]"
    - Never commit directly to the default branch without explicit permission
 
    **Recommendation**: Use worktree if:
+
    - You want to work on multiple features simultaneously
    - You want to keep the default branch clean while experimenting
    - You plan to switch between branches frequently
@@ -101,13 +107,13 @@ This command takes a work document (plan, specification, or todo file) and execu
 
    **System-Wide Test Check** — Before marking a task done, pause and ask:
 
-   | Question | What to do |
-   |----------|------------|
-   | **What fires when this runs?** Callbacks, middleware, observers, event handlers — trace two levels out from your change. | Read the actual code (not docs) for callbacks on models you touch, middleware in the request chain, `after_*` hooks. |
-   | **Do my tests exercise the real chain?** If every dependency is mocked, the test proves your logic works *in isolation* — it says nothing about the interaction. | Write at least one integration test that uses real objects through the full callback/middleware chain. No mocks for the layers that interact. |
+   | Question                                                                                                                                                                                       | What to do                                                                                                                                    |
+   | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+   | **What fires when this runs?** Callbacks, middleware, observers, event handlers — trace two levels out from your change.                                                                       | Read the actual code (not docs) for callbacks on models you touch, middleware in the request chain, `after_*` hooks.                          |
+   | **Do my tests exercise the real chain?** If every dependency is mocked, the test proves your logic works _in isolation_ — it says nothing about the interaction.                               | Write at least one integration test that uses real objects through the full callback/middleware chain. No mocks for the layers that interact. |
    | **Can failure leave orphaned state?** If your code persists state (DB row, cache, file) before calling an external service, what happens when the service fails? Does retry create duplicates? | Trace the failure path with real objects. If state is created before the risky call, test that failure cleans up or that retry is idempotent. |
-   | **What other interfaces expose this?** Mixins, DSLs, alternative entry points (Agent vs Chat vs ChatMethods). | Grep for the method/behavior in related classes. If parity is needed, add it now — not as a follow-up. |
-   | **Do error strategies align across layers?** Retry middleware + application fallback + framework error handling — do they conflict or create double execution? | List the specific error classes at each layer. Verify your rescue list matches what the lower layer actually raises. |
+   | **What other interfaces expose this?** Mixins, DSLs, alternative entry points (Agent vs Chat vs ChatMethods).                                                                                  | Grep for the method/behavior in related classes. If parity is needed, add it now — not as a follow-up.                                        |
+   | **Do error strategies align across layers?** Retry middleware + application fallback + framework error handling — do they conflict or create double execution?                                 | List the specific error classes at each layer. Verify your rescue list matches what the lower layer actually raises.                          |
 
    **When to skip:** Leaf-node changes with no callbacks, no state persistence, no parallel interfaces. If the change is purely additive (new helper method, new view partial), the check takes 10 seconds and the answer is "nothing fires, skip."
 
@@ -119,16 +125,17 @@ This command takes a work document (plan, specification, or todo file) and execu
 
    After completing each task, evaluate whether to create an incremental commit:
 
-   | Commit when... | Don't commit when... |
-   |----------------|---------------------|
-   | Logical unit complete (model, service, component) | Small part of a larger unit |
-   | Tests pass + meaningful progress | Tests failing |
-   | About to switch contexts (backend → frontend) | Purely scaffolding with no behavior |
-   | About to attempt risky/uncertain changes | Would need a "WIP" commit message |
+   | Commit when...                                    | Don't commit when...                |
+   | ------------------------------------------------- | ----------------------------------- |
+   | Logical unit complete (model, service, component) | Small part of a larger unit         |
+   | Tests pass + meaningful progress                  | Tests failing                       |
+   | About to switch contexts (backend → frontend)     | Purely scaffolding with no behavior |
+   | About to attempt risky/uncertain changes          | Would need a "WIP" commit message   |
 
    **Heuristic:** "Can I write a commit message that describes a complete, valuable change? If yes, commit. If the message would be 'WIP' or 'partial X', wait."
 
    **Commit workflow:**
+
    ```bash
    # 1. Verify tests pass (use project's test command)
    # Examples: bin/rails test, npm test, pytest, go test, etc.
@@ -196,6 +203,7 @@ This command takes a work document (plan, specification, or todo file) and execu
    Run configured agents in parallel with Task tool. Present findings and address critical issues.
 
 3. **Final Validation**
+
    - All TodoWrite tasks marked completed
    - All tests pass
    - Linting passes
@@ -240,19 +248,23 @@ This command takes a work document (plan, specification, or todo file) and execu
    For **any** design changes, new views, or UI modifications, you MUST capture and upload screenshots:
 
    **Step 1: Start dev server** (if not running)
+
    ```bash
    bin/dev  # Run in background
    ```
 
    **Step 2: Capture screenshots with agent-browser CLI**
+
    ```bash
    agent-browser open http://localhost:3000/[route]
    agent-browser snapshot -i
    agent-browser screenshot output.png
    ```
+
    See the `agent-browser` skill for detailed usage.
 
    **Step 3: Upload using imgup skill**
+
    ```bash
    skill: imgup
    # Then upload each screenshot:
@@ -261,6 +273,7 @@ This command takes a work document (plan, specification, or todo file) and execu
    ```
 
    **What to capture:**
+
    - **New screens**: Screenshot of the new UI
    - **Modified screens**: Before AND after screenshots
    - **Design implementation**: Screenshot showing Figma design match
@@ -316,6 +329,7 @@ This command takes a work document (plan, specification, or todo file) and execu
 4. **Update Plan Status**
 
    If the input document has YAML frontmatter with a `status` field, update it to `completed`:
+
    ```
    status: active  →  status: completed
    ```
@@ -334,12 +348,12 @@ For complex plans with multiple independent workstreams, enable swarm mode for p
 
 ### When to Use Swarm Mode
 
-| Use Swarm Mode when... | Use Standard Mode when... |
-|------------------------|---------------------------|
-| Plan has 5+ independent tasks | Plan is linear/sequential |
-| Multiple specialists needed (review + test + implement) | Single-focus work |
-| Want maximum parallelism | Simpler mental model preferred |
-| Large feature with clear phases | Small feature or bug fix |
+| Use Swarm Mode when...                                  | Use Standard Mode when...      |
+| ------------------------------------------------------- | ------------------------------ |
+| Plan has 5+ independent tasks                           | Plan is linear/sequential      |
+| Multiple specialists needed (review + test + implement) | Single-focus work              |
+| Want maximum parallelism                                | Simpler mental model preferred |
+| Large feature with clear phases                         | Small feature or bug fix       |
 
 ### Enabling Swarm Mode
 
@@ -354,16 +368,19 @@ Or explicitly request: "Use swarm mode for this work"
 When swarm mode is enabled, the workflow changes:
 
 1. **Create Team**
+
    ```
    Teammate({ operation: "spawnTeam", team_name: "work-{timestamp}" })
    ```
 
 2. **Create Task List with Dependencies**
+
    - Parse plan into TaskCreate items
    - Set up blockedBy relationships for sequential dependencies
    - Independent tasks have no blockers (can run in parallel)
 
 3. **Spawn Specialized Teammates**
+
    ```
    Task({
      team_name: "work-{timestamp}",
@@ -383,6 +400,7 @@ When swarm mode is enabled, the workflow changes:
    ```
 
 4. **Coordinate and Monitor**
+
    - Team lead monitors task completion
    - Spawn additional workers as phases unblock
    - Handle plan approval if required

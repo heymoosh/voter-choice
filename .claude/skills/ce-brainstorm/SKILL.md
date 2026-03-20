@@ -27,6 +27,7 @@ Do not proceed until you have a feature description from the user.
 Evaluate whether brainstorming is needed based on the feature description.
 
 **Clear requirements indicators:**
+
 - Specific acceptance criteria provided
 - Referenced existing patterns to follow
 - Described exact expected behavior
@@ -50,6 +51,7 @@ Focus on: similar features, established patterns, CLAUDE.md guidance.
 Use the **AskUserQuestion tool** to ask questions **one at a time**.
 
 **Guidelines (see `brainstorming` skill for detailed techniques):**
+
 - Prefer multiple choice when natural options exist
 - Start broad (purpose, users) then narrow (constraints, edge cases)
 - Validate assumptions explicitly
@@ -62,6 +64,7 @@ Use the **AskUserQuestion tool** to ask questions **one at a time**.
 Propose **2-3 concrete approaches** based on research and conversation.
 
 For each approach, provide:
+
 - Brief description (2-3 sentences)
 - Pros and cons
 - When it's best suited
@@ -87,6 +90,7 @@ Use **AskUserQuestion tool** to present next steps:
 **Question:** "Brainstorm captured. What would you like to do next?"
 
 **Options:**
+
 1. **Review and refine** - Improve the document through structured self-review
 2. **Proceed to planning** - Run `/ce:plan` (will auto-detect this brainstorm)
 3. **Share to Proof** - Upload to Proof for collaborative review and sharing

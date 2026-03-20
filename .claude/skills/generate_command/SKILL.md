@@ -16,21 +16,25 @@ Create a new skill in `.claude/skills/` for the requested task.
 ## Key Capabilities to Leverage
 
 **File Operations:**
+
 - Read, Edit, Write - modify files precisely
 - Glob, Grep - search codebase
 - MultiEdit - atomic multi-part changes
 
 **Development:**
+
 - Bash - run commands (git, tests, linters)
 - Task - launch specialized agents for complex tasks
 - TodoWrite - track progress with todo lists
 
 **Web & APIs:**
+
 - WebFetch, WebSearch - research documentation
 - GitHub (gh cli) - PRs, issues, reviews
 - Playwright - browser automation, screenshots
 
 **Integrations:**
+
 - AppSignal - logs and monitoring
 - Context7 - framework docs
 - Stripe, Todoist, Featurebase (if relevant)
@@ -57,6 +61,7 @@ argument-hint: "[what arguments the command accepts]"
 ```
 
 **Fields:**
+
 - `name`: Lowercase command identifier (used internally)
 - `description`: Clear, concise summary of command purpose
 - `argument-hint`: Shows user what arguments are expected (e.g., `[file path]`, `[PR number]`, `[optional: format]`)
@@ -71,10 +76,12 @@ argument-hint: "[what arguments the command accepts]"
 ## Steps
 
 1. [First step with specific details]
+
    - Include file paths, patterns, or constraints
    - Reference existing code if applicable
 
 2. [Second step]
+
    - Use parallel tool calls when possible
    - Check/verify results
 
@@ -104,19 +111,23 @@ argument-hint: "[what arguments the command accepts]"
 Implement #$ARGUMENTS following these steps:
 
 1. Research existing patterns
+
    - Search for similar code using Grep
    - Read relevant files to understand approach
 
 2. Plan the implementation
+
    - Think through edge cases and requirements
    - Consider test cases needed
 
 3. Implement
+
    - Follow existing code patterns (reference specific files)
    - Write tests first if doing TDD
    - Ensure code follows CLAUDE.md conventions
 
 4. Verify
+
    - Run tests: `bin/rails test`
    - Run linter: `bundle exec standardrb`
    - Check changes with git diff

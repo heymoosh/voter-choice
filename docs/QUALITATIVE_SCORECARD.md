@@ -10,26 +10,26 @@ Rating scale: 1 = terrible / constantly, 5 = excellent / never
 
 ### Pre-Run Self-Assessment
 
-| Question | Rating (1-5) |
-|----------|--------------|
-| Current familiarity with Next.js / React | __ |
-| Current familiarity with this specific workflow framework | __ |
-| Current energy / motivation level | __ |
+| Question                                                  | Rating (1-5) |
+| --------------------------------------------------------- | ------------ |
+| Current familiarity with Next.js / React                  | \_\_         |
+| Current familiarity with this specific workflow framework | \_\_         |
+| Current energy / motivation level                         | \_\_         |
 
-**Session start time:** __
+**Session start time:** \_\_
 
 ### Phase 1 (Build) — Post-Run Ratings
 
-| Dimension | Rating (1-5) | Notes |
-|-----------|--------------|-------|
-| Ease of getting started (setup, first productive output) | __ | |
-| Quality of generated code on first pass (before any manual edits) | __ | |
-| How much manual cleanup or correction was needed | __ | |
-| How often I had to override or fight the workflow | __ | |
-| Confidence I could hand this codebase to another developer | __ | |
-| Confidence I could keep building on this codebase myself | __ | |
+| Dimension                                                         | Rating (1-5) | Notes |
+| ----------------------------------------------------------------- | ------------ | ----- |
+| Ease of getting started (setup, first productive output)          | \_\_         |       |
+| Quality of generated code on first pass (before any manual edits) | \_\_         |       |
+| How much manual cleanup or correction was needed                  | \_\_         |       |
+| How often I had to override or fight the workflow                 | \_\_         |       |
+| Confidence I could hand this codebase to another developer        | \_\_         |       |
+| Confidence I could keep building on this codebase myself          | \_\_         |       |
 
-**Session end time:** __
+**Session end time:** \_\_
 
 **Post-run open-ended notes:**
 
@@ -40,18 +40,18 @@ Rating scale: 1 = terrible / constantly, 5 = excellent / never
 
 ### Phase 2 (Extend) — Post-Run Ratings
 
-**Session start time:** __
+**Session start time:** \_\_
 
-| Dimension | Rating (1-5) | Notes |
-|-----------|--------------|-------|
-| Ease of getting started (setup, first productive output) | __ | |
-| Quality of generated code on first pass (before any manual edits) | __ | |
-| How much manual cleanup or correction was needed | __ | |
-| How often I had to override or fight the workflow | __ | |
-| Confidence I could hand this codebase to another developer | __ | |
-| Confidence I could keep building on this codebase myself | __ | |
+| Dimension                                                         | Rating (1-5) | Notes |
+| ----------------------------------------------------------------- | ------------ | ----- |
+| Ease of getting started (setup, first productive output)          | \_\_         |       |
+| Quality of generated code on first pass (before any manual edits) | \_\_         |       |
+| How much manual cleanup or correction was needed                  | \_\_         |       |
+| How often I had to override or fight the workflow                 | \_\_         |       |
+| Confidence I could hand this codebase to another developer        | \_\_         |       |
+| Confidence I could keep building on this codebase myself          | \_\_         |       |
 
-**Session end time:** __
+**Session end time:** \_\_
 
 **Post-run open-ended notes:**
 
@@ -66,26 +66,26 @@ Rating scale: 1 = terrible / constantly, 5 = excellent / never
 
 ### Pre-Run Self-Assessment
 
-| Question | Rating (1-5) |
-|----------|--------------|
-| Current familiarity with Next.js / React | __ |
-| Current familiarity with this specific workflow framework | __ |
-| Current energy / motivation level | __ |
+| Question                                                  | Rating (1-5) |
+| --------------------------------------------------------- | ------------ |
+| Current familiarity with Next.js / React                  | \_\_         |
+| Current familiarity with this specific workflow framework | \_\_         |
+| Current energy / motivation level                         | \_\_         |
 
-**Session start time:** __
+**Session start time:** \_\_
 
 ### Phase 1 (Build) — Post-Run Ratings
 
-| Dimension | Rating (1-5) | Notes |
-|-----------|--------------|-------|
-| Ease of getting started (setup, first productive output) | __ | |
-| Quality of generated code on first pass (before any manual edits) | __ | |
-| How much manual cleanup or correction was needed | __ | |
-| How often I had to override or fight the workflow | __ | |
-| Confidence I could hand this codebase to another developer | __ | |
-| Confidence I could keep building on this codebase myself | __ | |
+| Dimension                                                         | Rating (1-5) | Notes |
+| ----------------------------------------------------------------- | ------------ | ----- |
+| Ease of getting started (setup, first productive output)          | \_\_         |       |
+| Quality of generated code on first pass (before any manual edits) | \_\_         |       |
+| How much manual cleanup or correction was needed                  | \_\_         |       |
+| How often I had to override or fight the workflow                 | \_\_         |       |
+| Confidence I could hand this codebase to another developer        | \_\_         |       |
+| Confidence I could keep building on this codebase myself          | \_\_         |       |
 
-**Session end time:** __
+**Session end time:** \_\_
 
 **Post-run open-ended notes:**
 
@@ -96,18 +96,18 @@ Rating scale: 1 = terrible / constantly, 5 = excellent / never
 
 ### Phase 2 (Extend) — Post-Run Ratings
 
-**Session start time:** __
+**Session start time:** \_\_
 
-| Dimension | Rating (1-5) | Notes |
-|-----------|--------------|-------|
-| Ease of getting started (setup, first productive output) | __ | |
-| Quality of generated code on first pass (before any manual edits) | __ | |
-| How much manual cleanup or correction was needed | __ | |
-| How often I had to override or fight the workflow | __ | |
-| Confidence I could hand this codebase to another developer | __ | |
-| Confidence I could keep building on this codebase myself | __ | |
+| Dimension                                                         | Rating (1-5) | Notes |
+| ----------------------------------------------------------------- | ------------ | ----- |
+| Ease of getting started (setup, first productive output)          | \_\_         |       |
+| Quality of generated code on first pass (before any manual edits) | \_\_         |       |
+| How much manual cleanup or correction was needed                  | \_\_         |       |
+| How often I had to override or fight the workflow                 | \_\_         |       |
+| Confidence I could hand this codebase to another developer        | \_\_         |       |
+| Confidence I could keep building on this codebase myself          | \_\_         |       |
 
-**Session end time:** __
+**Session end time:** \_\_
 
 **Post-run open-ended notes:**
 
@@ -122,26 +122,26 @@ Rating scale: 1 = terrible / constantly, 5 = excellent / never
 
 ### Pre-Run Self-Assessment
 
-| Question | Rating (1-5) |
-|----------|--------------|
-| Current familiarity with Next.js / React | __ |
-| Current familiarity with this specific workflow framework | __ |
-| Current energy / motivation level | __ |
+| Question                                                  | Rating (1-5) |
+| --------------------------------------------------------- | ------------ |
+| Current familiarity with Next.js / React                  | \_\_         |
+| Current familiarity with this specific workflow framework | \_\_         |
+| Current energy / motivation level                         | \_\_         |
 
-**Session start time:** __
+**Session start time:** \_\_
 
 ### Phase 1 (Build) — Post-Run Ratings
 
-| Dimension | Rating (1-5) | Notes |
-|-----------|--------------|-------|
-| Ease of getting started (setup, first productive output) | __ | |
-| Quality of generated code on first pass (before any manual edits) | __ | |
-| How much manual cleanup or correction was needed | __ | |
-| How often I had to override or fight the workflow | __ | |
-| Confidence I could hand this codebase to another developer | __ | |
-| Confidence I could keep building on this codebase myself | __ | |
+| Dimension                                                         | Rating (1-5) | Notes |
+| ----------------------------------------------------------------- | ------------ | ----- |
+| Ease of getting started (setup, first productive output)          | \_\_         |       |
+| Quality of generated code on first pass (before any manual edits) | \_\_         |       |
+| How much manual cleanup or correction was needed                  | \_\_         |       |
+| How often I had to override or fight the workflow                 | \_\_         |       |
+| Confidence I could hand this codebase to another developer        | \_\_         |       |
+| Confidence I could keep building on this codebase myself          | \_\_         |       |
 
-**Session end time:** __
+**Session end time:** \_\_
 
 **Post-run open-ended notes:**
 
@@ -152,18 +152,18 @@ Rating scale: 1 = terrible / constantly, 5 = excellent / never
 
 ### Phase 2 (Extend) — Post-Run Ratings
 
-**Session start time:** __
+**Session start time:** \_\_
 
-| Dimension | Rating (1-5) | Notes |
-|-----------|--------------|-------|
-| Ease of getting started (setup, first productive output) | __ | |
-| Quality of generated code on first pass (before any manual edits) | __ | |
-| How much manual cleanup or correction was needed | __ | |
-| How often I had to override or fight the workflow | __ | |
-| Confidence I could hand this codebase to another developer | __ | |
-| Confidence I could keep building on this codebase myself | __ | |
+| Dimension                                                         | Rating (1-5) | Notes |
+| ----------------------------------------------------------------- | ------------ | ----- |
+| Ease of getting started (setup, first productive output)          | \_\_         |       |
+| Quality of generated code on first pass (before any manual edits) | \_\_         |       |
+| How much manual cleanup or correction was needed                  | \_\_         |       |
+| How often I had to override or fight the workflow                 | \_\_         |       |
+| Confidence I could hand this codebase to another developer        | \_\_         |       |
+| Confidence I could keep building on this codebase myself          | \_\_         |       |
 
-**Session end time:** __
+**Session end time:** \_\_
 
 **Post-run open-ended notes:**
 
@@ -178,26 +178,26 @@ Rating scale: 1 = terrible / constantly, 5 = excellent / never
 
 ### Pre-Run Self-Assessment
 
-| Question | Rating (1-5) |
-|----------|--------------|
-| Current familiarity with Next.js / React | __ |
-| Current familiarity with this specific workflow framework | __ |
-| Current energy / motivation level | __ |
+| Question                                                  | Rating (1-5) |
+| --------------------------------------------------------- | ------------ |
+| Current familiarity with Next.js / React                  | \_\_         |
+| Current familiarity with this specific workflow framework | \_\_         |
+| Current energy / motivation level                         | \_\_         |
 
-**Session start time:** __
+**Session start time:** \_\_
 
 ### Phase 1 (Build) — Post-Run Ratings
 
-| Dimension | Rating (1-5) | Notes |
-|-----------|--------------|-------|
-| Ease of getting started (setup, first productive output) | __ | |
-| Quality of generated code on first pass (before any manual edits) | __ | |
-| How much manual cleanup or correction was needed | __ | |
-| How often I had to override or fight the workflow | __ | |
-| Confidence I could hand this codebase to another developer | __ | |
-| Confidence I could keep building on this codebase myself | __ | |
+| Dimension                                                         | Rating (1-5) | Notes |
+| ----------------------------------------------------------------- | ------------ | ----- |
+| Ease of getting started (setup, first productive output)          | \_\_         |       |
+| Quality of generated code on first pass (before any manual edits) | \_\_         |       |
+| How much manual cleanup or correction was needed                  | \_\_         |       |
+| How often I had to override or fight the workflow                 | \_\_         |       |
+| Confidence I could hand this codebase to another developer        | \_\_         |       |
+| Confidence I could keep building on this codebase myself          | \_\_         |       |
 
-**Session end time:** __
+**Session end time:** \_\_
 
 **Post-run open-ended notes:**
 
@@ -208,18 +208,18 @@ Rating scale: 1 = terrible / constantly, 5 = excellent / never
 
 ### Phase 2 (Extend) — Post-Run Ratings
 
-**Session start time:** __
+**Session start time:** \_\_
 
-| Dimension | Rating (1-5) | Notes |
-|-----------|--------------|-------|
-| Ease of getting started (setup, first productive output) | __ | |
-| Quality of generated code on first pass (before any manual edits) | __ | |
-| How much manual cleanup or correction was needed | __ | |
-| How often I had to override or fight the workflow | __ | |
-| Confidence I could hand this codebase to another developer | __ | |
-| Confidence I could keep building on this codebase myself | __ | |
+| Dimension                                                         | Rating (1-5) | Notes |
+| ----------------------------------------------------------------- | ------------ | ----- |
+| Ease of getting started (setup, first productive output)          | \_\_         |       |
+| Quality of generated code on first pass (before any manual edits) | \_\_         |       |
+| How much manual cleanup or correction was needed                  | \_\_         |       |
+| How often I had to override or fight the workflow                 | \_\_         |       |
+| Confidence I could hand this codebase to another developer        | \_\_         |       |
+| Confidence I could keep building on this codebase myself          | \_\_         |       |
 
-**Session end time:** __
+**Session end time:** \_\_
 
 **Post-run open-ended notes:**
 
@@ -234,26 +234,26 @@ Rating scale: 1 = terrible / constantly, 5 = excellent / never
 
 ### Pre-Run Self-Assessment
 
-| Question | Rating (1-5) |
-|----------|--------------|
-| Current familiarity with Next.js / React | __ |
-| Current familiarity with this specific workflow framework | __ |
-| Current energy / motivation level | __ |
+| Question                                                  | Rating (1-5) |
+| --------------------------------------------------------- | ------------ |
+| Current familiarity with Next.js / React                  | \_\_         |
+| Current familiarity with this specific workflow framework | \_\_         |
+| Current energy / motivation level                         | \_\_         |
 
-**Session start time:** __
+**Session start time:** \_\_
 
 ### Phase 1 (Build) — Post-Run Ratings
 
-| Dimension | Rating (1-5) | Notes |
-|-----------|--------------|-------|
-| Ease of getting started (setup, first productive output) | __ | |
-| Quality of generated code on first pass (before any manual edits) | __ | |
-| How much manual cleanup or correction was needed | __ | |
-| How often I had to override or fight the workflow | __ | |
-| Confidence I could hand this codebase to another developer | __ | |
-| Confidence I could keep building on this codebase myself | __ | |
+| Dimension                                                         | Rating (1-5) | Notes |
+| ----------------------------------------------------------------- | ------------ | ----- |
+| Ease of getting started (setup, first productive output)          | \_\_         |       |
+| Quality of generated code on first pass (before any manual edits) | \_\_         |       |
+| How much manual cleanup or correction was needed                  | \_\_         |       |
+| How often I had to override or fight the workflow                 | \_\_         |       |
+| Confidence I could hand this codebase to another developer        | \_\_         |       |
+| Confidence I could keep building on this codebase myself          | \_\_         |       |
 
-**Session end time:** __
+**Session end time:** \_\_
 
 **Post-run open-ended notes:**
 
@@ -264,18 +264,18 @@ Rating scale: 1 = terrible / constantly, 5 = excellent / never
 
 ### Phase 2 (Extend) — Post-Run Ratings
 
-**Session start time:** __
+**Session start time:** \_\_
 
-| Dimension | Rating (1-5) | Notes |
-|-----------|--------------|-------|
-| Ease of getting started (setup, first productive output) | __ | |
-| Quality of generated code on first pass (before any manual edits) | __ | |
-| How much manual cleanup or correction was needed | __ | |
-| How often I had to override or fight the workflow | __ | |
-| Confidence I could hand this codebase to another developer | __ | |
-| Confidence I could keep building on this codebase myself | __ | |
+| Dimension                                                         | Rating (1-5) | Notes |
+| ----------------------------------------------------------------- | ------------ | ----- |
+| Ease of getting started (setup, first productive output)          | \_\_         |       |
+| Quality of generated code on first pass (before any manual edits) | \_\_         |       |
+| How much manual cleanup or correction was needed                  | \_\_         |       |
+| How often I had to override or fight the workflow                 | \_\_         |       |
+| Confidence I could hand this codebase to another developer        | \_\_         |       |
+| Confidence I could keep building on this codebase myself          | \_\_         |       |
 
-**Session end time:** __
+**Session end time:** \_\_
 
 **Post-run open-ended notes:**
 

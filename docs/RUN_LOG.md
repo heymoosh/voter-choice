@@ -28,5 +28,6 @@ Begin Phase 0.3b — Measurement automation + branching. Create `npm run measure
 - **Issues or deviations:** None
 
 ### Phase 0.0 — Commit planning docs
+
 - **Commit:** `0b163c5` — `phase0: add project config, experiment design, and run log`
 - **What:** Committed docs/, CLAUDE.md, .gitignore, .claude/ to git

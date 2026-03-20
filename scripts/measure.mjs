@@ -556,8 +556,16 @@ function measureLOC() {
   }
 
   const summary = {
-    application: { code: app.code, files: app.files, byExtension: app.byExtension },
-    plugin: { code: plugin.code, files: plugin.files, byExtension: plugin.byExtension },
+    application: {
+      code: app.code,
+      files: app.files,
+      byExtension: app.byExtension,
+    },
+    plugin: {
+      code: plugin.code,
+      files: plugin.files,
+      byExtension: plugin.byExtension,
+    },
     infrastructure: { code: infra.code, files: infra.files },
     total: {
       code: app.code + plugin.code + infra.code,
@@ -565,10 +573,18 @@ function measureLOC() {
     },
   };
 
-  console.log(`  Application code (src/): ${app.code} lines across ${app.files} files`);
-  console.log(`  Plugin/framework code: ${plugin.code} lines across ${plugin.files} files`);
-  console.log(`  Infrastructure (scripts, e2e, configs): ${infra.code} lines across ${infra.files} files`);
-  console.log(`  Total: ${summary.total.code} lines across ${summary.total.files} files`);
+  console.log(
+    `  Application code (src/): ${app.code} lines across ${app.files} files`,
+  );
+  console.log(
+    `  Plugin/framework code: ${plugin.code} lines across ${plugin.files} files`,
+  );
+  console.log(
+    `  Infrastructure (scripts, e2e, configs): ${infra.code} lines across ${infra.files} files`,
+  );
+  console.log(
+    `  Total: ${summary.total.code} lines across ${summary.total.files} files`,
+  );
 
   return summary;
 }
