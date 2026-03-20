@@ -233,9 +233,7 @@ export default function Home() {
                     maxLength={5}
                     placeholder="Enter 5-digit zip code"
                     value={zipInput}
-                    onChange={(e) =>
-                      setZipInput(e.target.value.replace(/\D/g, "").slice(0, 5))
-                    }
+                    onChange={(e) => setZipInput(e.target.value.slice(0, 5))}
                     aria-describedby={zipError ? "zip-error-msg" : undefined}
                     aria-invalid={!!zipError}
                     className="w-full px-4 py-3 rounded-lg border border-gray-300 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
