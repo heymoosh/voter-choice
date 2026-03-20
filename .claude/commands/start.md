@@ -2,8 +2,14 @@ You are an autonomous agent. Your job is to execute work, not describe it.
 
 ## Step 1: Read context and determine what to do
 
+**Key terms (do not confuse these):**
+- **Phase** = experiment phase. Phase 1 = build from scratch. Phase 2 = extend with Spanish. Phase 0/3 = setup/analysis.
+- **Run** = iteration number. Run 1 = original (invalidated) runs on `workflow/` branches. Run 2 = re-runs with enforcement on `run2/` branches.
+- "Phase 1 Re-Run" or "Run 2" means **Phase 1** (building from scratch). "Run 2" is NOT Phase 2.
+
+**Parse the `## Next` section:**
 - Read `docs/RUN_LOG.md` — find the `## Next` section.
-- Determine the **phase type** (Phase 0, 1, 2, or 3) from the text.
+- Determine the **phase type** (Phase 0, 1, 2, or 3) from the text. Look for the words "Phase 1" or "Phase 2" — ignore "Run" numbers.
 - If Phase 1 or 2: extract the **branch name** from the `## Next` text. It will be in backticks (e.g., `run2/compound-engineering`).
 
 ## Step 2: Route by phase type
@@ -60,6 +66,10 @@ npm install
 ```
 
 ## Step 6: Execute framework workflow
+
+**Build context:**
+- **Phase 1:** This branch has the framework and scaffold installed but NO existing ballot tool code. You are building the app from scratch per `docs/PROJECT_SPEC.md`.
+- **Phase 2:** This branch has a completed Phase 1 ballot tool. You are extending it with Spanish language support per `docs/PHASE2_SPEC.md`.
 
 Read `.claude/commands/workflow.md` from the current branch. It contains the framework-specific workflow steps.
 
@@ -120,7 +130,9 @@ For each metric (e2e pass rate, Lighthouse scores, ESLint errors, duplication %,
 
 Read the `TAG_PREFIX` from the `## Meta` section of `.claude/commands/workflow.md`.
 
-Tag the branch: `<TAG_PREFIX>-run2-phase<N>-complete` (e.g., `ce-run2-phase1-complete`, `bmad-run2-phase2-complete`).
+Extract the run number from the branch name prefix (e.g., `run2/compound-engineering` → `run2`). If the branch has no `run<N>/` prefix (e.g., `workflow/vanilla`), omit the run segment from the tag.
+
+Tag the branch: `<TAG_PREFIX>-<RUN>-phase<N>-complete` (e.g., `ce-run2-phase1-complete`, `bmad-run2-phase2-complete`).
 
 Push commits and tags to remote.
 

@@ -2,9 +2,16 @@
 
 ## Next
 
-**Learning 004 Fixes: Resolve 3 start.md ambiguities before first run.** See `docs/LEARNINGS.md` Learning 004 "Remaining issues to fix before first run" — fix Issues A (phase vs run number disambiguation), B (fresh build context), and C (hardcoded run2 in tag). Then update this `## Next` to the actual CE run: Run `/start` from main → auto-checkout `run2/compound-engineering` → CE workflow.
+**Phase 1 Run 2: Compound Engineering.** Run `/start` from main → auto-checkout `run2/compound-engineering` → CE workflow (ce:plan → ce:work → ce:review → ce:compound) → measure → tag → debrief → update RUN_LOG.
 
 ## Completed
+
+### 2026-03-20 — Learning 004 Fixes: Resolve start.md Ambiguities
+
+**What was done:** Fixed the 3 ambiguities identified in Learning 004 before first run. Issue A: added explicit Phase vs Run term definitions to Step 1 of start.md ("Run 2" is NOT Phase 2). Issue B: added build context before Step 6 telling Claude the branch state (Phase 1 = no app code yet, build from scratch; Phase 2 = extend existing). Issue C: changed Step 7g to extract run number from branch name prefix instead of hardcoding `run2`.
+**Files modified:** `.claude/commands/start.md`
+**Commits:** `1923443`
+**Issues or deviations:** None.
 
 ### 2026-03-20 — Learning 004: /start Refactored to Single Entry Point
 
