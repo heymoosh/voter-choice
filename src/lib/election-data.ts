@@ -41,12 +41,12 @@ export function getStateData(stateCode: string): StateData | null {
  * Returns null if no upcoming elections found.
  */
 export function getNextElection(state: StateData): Election | null {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  // Compare dates as ISO strings (YYYY-MM-DD) to avoid timezone issues.
+  // Dates are political facts tied to a calendar date, not an instant in time.
+  const todayIso = new Date().toLocaleDateString("en-CA"); // "YYYY-MM-DD" in local TZ
 
   const upcoming = state.elections.filter((e) => {
-    const electionDate = new Date(e.date + "T00:00:00");
-    return electionDate >= today;
+    return e.date >= todayIso;
   });
 
   if (upcoming.length === 0) return null;
@@ -65,9 +65,12 @@ export function getDeadlineInfo(isoDate: string | null): DeadlineInfo {
     return { date: null, status: "none", daysRemaining: null, label: "N/A" };
   }
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const deadline = new Date(isoDate + "T00:00:00");
+  // Use local-date midnight for both today and deadline to avoid timezone drift.
+  // Election deadlines are calendar dates, not UTC instants.
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const [year, month, day] = isoDate.split("-").map(Number);
+  const deadline = new Date(year, month - 1, day);
   const msPerDay = 1000 * 60 * 60 * 24;
   const daysRemaining = Math.round(
     (deadline.getTime() - today.getTime()) / msPerDay,
@@ -81,7 +84,10 @@ export function getDeadlineInfo(isoDate: string | null): DeadlineInfo {
     label = "Passed";
   } else if (daysRemaining <= 3) {
     status = "urgent";
-    label = daysRemaining === 0 ? "Today!" : `${daysRemaining} day${daysRemaining === 1 ? "" : "s"} left`;
+    label =
+      daysRemaining === 0
+        ? "Today!"
+        : `${daysRemaining} day${daysRemaining === 1 ? "" : "s"} left`;
   } else if (daysRemaining <= 14) {
     status = "warning";
     label = `${daysRemaining} days left`;

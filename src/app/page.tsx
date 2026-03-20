@@ -258,7 +258,7 @@ export default function Home() {
                   {zipError}
                 </p>
               )}
-              {!zipError && submitted && states.length > 0 && !zipError && (
+              {!zipError && submitted && states.length > 0 && (
                 <p aria-live="polite" className="sr-only">
                   Results loaded for zip code {zipInput.trim()}
                 </p>
@@ -472,14 +472,16 @@ export default function Home() {
                     </li>
                   )}
                 </ul>
-                <a
-                  href={reg?.registrationCheckUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-2 inline-block text-sm text-blue-600 hover:underline"
-                >
-                  Check your registration status →
-                </a>
+                {reg?.registrationCheckUrl && (
+                  <a
+                    href={reg.registrationCheckUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-2 inline-block text-sm text-blue-600 hover:underline"
+                  >
+                    Check your registration status →
+                  </a>
+                )}
               </div>
 
               {/* Early Voting */}
