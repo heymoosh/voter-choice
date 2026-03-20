@@ -419,9 +419,22 @@ function measureLOC() {
   // Directories that are application code (workflow-generated)
   const APP_DIRS = ["src"];
   // Directories that are plugin/framework code (workflow scaffolding)
-  const PLUGIN_DIRS = [".claude/commands", ".bmad", ".superpowers", ".spec-kit"];
+  // Actual directory names per branch (from Phase 0.4 install):
+  //   CE:          .claude/skills/, .claude/agents/
+  //   BMAD:        _bmad/, .claude/skills/
+  //   Spec Kit:    .specify/, .claude/commands/speckit.* (counted via .claude/commands/)
+  //   Superpowers: .claude/skills/, .claude/agents/, .claude/hooks/
+  //   Vanilla:     (none — minimal CLAUDE.md only)
+  // .claude/commands/start.md is our own infra, but the rest are framework files.
+  const PLUGIN_DIRS = [
+    ".claude/skills",
+    ".claude/agents",
+    ".claude/hooks",
+    "_bmad",
+    ".specify",
+  ];
   // Everything else that's project code but not app or plugin
-  const INFRA_DIRS = ["scripts", "e2e"];
+  const INFRA_DIRS = ["scripts", "e2e", ".claude/commands"];
 
   function countLines(filePath) {
     const content = readFileSync(filePath, "utf-8");

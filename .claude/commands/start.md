@@ -120,15 +120,41 @@ Run: `echo '{"step":"speckit.implement","status":"completed","timestamp":"'$(dat
    Run: `echo "--- Workflow-generated test files ---" && find src -name "*.test.*" -o -name "*.spec.*" 2>/dev/null | head -20 || echo "None found"`
    Note the count for the RUN_LOG entry.
 
-3. **Run measurement:**
+3. **Git build statistics:**
+   Run:
+   ```
+   echo '--- Git build statistics ---'
+   echo "Commits since scaffold: $(git rev-list --count v0-scaffold..HEAD)"
+   git diff --shortstat v0-scaffold..HEAD
+   ```
+   Log the commit count and lines added/removed for the RUN_LOG entry.
+
+4. **Framework adherence verification & artifact inventory:**
+   Check that the Spec Kit workflow produced its expected artifacts:
+   - `.specify/features/` must contain a feature directory with `spec.md` (from speckit.specify)
+   - Feature directory must contain `plan.md` (from speckit.plan) and `tasks.md` (from speckit.tasks)
+   - `metrics/workflow-log.jsonl` must contain completed entries for all 6 steps
+   Run:
+   ```
+   echo '--- Spec Kit Adherence Check ---'
+   echo "Feature directories:" && ls .specify/features/ 2>/dev/null || echo "  NONE — speckit.specify may not have run"
+   echo "Spec files:" && find .specify/features -name "spec.md" 2>/dev/null || echo "  NONE"
+   echo "Plan files:" && find .specify/features -name "plan.md" 2>/dev/null || echo "  NONE"
+   echo "Task files:" && find .specify/features -name "tasks.md" 2>/dev/null || echo "  NONE"
+   echo "Workflow steps completed:" && grep '"status":"completed"' metrics/workflow-log.jsonl 2>/dev/null | grep -o '"step":"[^"]*"' || echo "  NONE"
+   echo "Expected steps: speckit.specify, speckit.clarify, speckit.plan, speckit.tasks, speckit.analyze, speckit.implement"
+   ```
+   If any expected artifacts are missing, flag it in the debrief as a **partial workflow bypass** — this is a critical finding for the experiment.
+
+5. **Run measurement:**
    Run `npm run measure` and save the JSON report.
 
-4. **Phase 2 delta report (Phase 2 only):**
+6. **Phase 2 delta report (Phase 2 only):**
    If this is Phase 2, read the Phase 1 metrics JSON from `metrics/` and display a comparison table:
    For each metric (e2e pass rate, Lighthouse scores, ESLint errors, duplication %, LOC, complexity), show:
    `Phase 1 value → Phase 2 value (delta)`
 
-5. **Tag and push:**
+7. **Tag and push:**
    Tag the branch (e.g., `speckit-run2-phase1-complete`, `speckit-run2-phase2-complete`).
    Push commits and tags to remote.
 
@@ -139,7 +165,9 @@ Report to Muxin:
 1. Key metrics from the measurement JSON
 2. Workflow log summary: which framework commands ran and approximate duration of each (from `metrics/workflow-log.jsonl`)
 3. Number of workflow-generated test files (if any)
-4. Phase 2 only: Phase 1 → Phase 2 metric deltas
+4. Git build statistics: commit count, lines added/removed since scaffold
+5. Framework adherence: which Spec Kit artifacts were produced, any missing steps
+6. Phase 2 only: Phase 1 → Phase 2 metric deltas
 
 Then ask: **"Build complete. Any observations for the write-up? Anything surprising about the output or metrics?"**
 
