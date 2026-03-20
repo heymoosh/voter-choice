@@ -12,6 +12,24 @@ Execute the sub-phase directly. Create files, write code, make commits. Skip to 
 ### If Phase 1 or Phase 2 (build / extend):
 This is a full workflow run. You MUST use the **Compound Engineering workflow loop** described below. Do NOT skip any step. Do NOT code the solution directly without going through these steps.
 
+**Pre-flight checks (automated):**
+
+1. **Log build start:**
+   Run: `mkdir -p metrics && echo '{"event":"build_start","timestamp":"'$(date -Iseconds)'"}' > metrics/timing.jsonl`
+
+2. **Verify measurement infrastructure:**
+   Confirm these files exist: `scripts/measure.mjs`, `e2e/ballot-tool.spec.ts`, `src/data/states/TX.json`
+   If any are missing, STOP and tell the operator. Do not proceed with the build.
+
+3. **Verify Compound Engineering framework:**
+   Confirm `.claude/skills/ce-plan/SKILL.md` exists.
+   If missing, STOP and tell the operator. The framework is not installed.
+
+4. **Phase 2 only — verify starting point:**
+   If this is a Phase 2 run (RUN_LOG says Phase 2):
+   Run: `git describe --tags --exact-match HEAD 2>/dev/null`
+   Expected tag should contain `phase1-complete`. If HEAD is not at the Phase 1 completion tag, STOP and report.
+
 **a) Clean environment:**
 - `rm -rf node_modules .next coverage playwright-report.json`
 - `npm install`
@@ -19,6 +37,9 @@ This is a full workflow run. You MUST use the **Compound Engineering workflow lo
 **b) Execute the Compound Engineering workflow — ALL steps are MANDATORY:**
 
 **Step B1 — Plan (`ce:plan`):**
+
+Run: `echo '{"step":"ce:plan","status":"started","timestamp":"'$(date -Iseconds)'"}' >> metrics/workflow-log.jsonl`
+
 Read and follow `.claude/skills/ce-plan/SKILL.md` with this argument:
 - Phase 1: `"Build the ballot ranking tool per docs/PROJECT_SPEC.md"`
 - Phase 2: `"Add Spanish language support per docs/PHASE2_SPEC.md"`
@@ -30,7 +51,12 @@ AUTONOMOUS RULES for ce:plan:
 - Save the plan to `docs/plans/` as the skill instructs.
 - When the skill completes, note the plan file path for the next step.
 
+Run: `echo '{"step":"ce:plan","status":"completed","timestamp":"'$(date -Iseconds)'"}' >> metrics/workflow-log.jsonl`
+
 **Step B2 — Work (`ce:work`):**
+
+Run: `echo '{"step":"ce:work","status":"started","timestamp":"'$(date -Iseconds)'"}' >> metrics/workflow-log.jsonl`
+
 Read and follow `.claude/skills/ce-work/SKILL.md` with the plan file path from B1 as argument.
 
 AUTONOMOUS RULES for ce:work:
@@ -40,7 +66,12 @@ AUTONOMOUS RULES for ce:work:
 - Commit regularly with meaningful messages prefixed `phase1:` or `phase2:`.
 - Run tests as you go. Fix failures before moving on.
 
+Run: `echo '{"step":"ce:work","status":"completed","timestamp":"'$(date -Iseconds)'"}' >> metrics/workflow-log.jsonl`
+
 **Step B3 — Review (`ce:review`):**
+
+Run: `echo '{"step":"ce:review","status":"started","timestamp":"'$(date -Iseconds)'"}' >> metrics/workflow-log.jsonl`
+
 Read and follow `.claude/skills/ce-review/SKILL.md` with argument `"current branch"`.
 
 AUTONOMOUS RULES for ce:review:
@@ -49,7 +80,12 @@ AUTONOMOUS RULES for ce:review:
 - Fix any critical or high-severity issues found. Commit fixes.
 - Log but skip cosmetic/style-only suggestions.
 
+Run: `echo '{"step":"ce:review","status":"completed","timestamp":"'$(date -Iseconds)'"}' >> metrics/workflow-log.jsonl`
+
 **Step B4 — Compound (`ce:compound`):**
+
+Run: `echo '{"step":"ce:compound","status":"started","timestamp":"'$(date -Iseconds)'"}' >> metrics/workflow-log.jsonl`
+
 Read and follow `.claude/skills/ce-compound/SKILL.md` with argument `"Built ballot ranking tool using Compound Engineering workflow"`.
 
 AUTONOMOUS RULES for ce:compound:
@@ -57,14 +93,42 @@ AUTONOMOUS RULES for ce:compound:
 - Document the solution in `docs/solutions/` as the skill instructs.
 - This step is about knowledge capture — do not skip it.
 
-**c) Post-build measurement:**
-- Run `npm run measure` and save the JSON report.
-- Tag the branch (e.g., `ce-phase1-complete`, `ce-phase2-complete`).
-- Push commits and tags to remote.
+Run: `echo '{"step":"ce:compound","status":"completed","timestamp":"'$(date -Iseconds)'"}' >> metrics/workflow-log.jsonl`
 
-**d) Remind operator:**
-- Tell Muxin to fill out `docs/QUALITATIVE_SCORECARD.md`.
-- Report key metrics from the measurement JSON.
+**c) Post-build measurement:**
+
+1. **Log build end:**
+   Run: `echo '{"event":"build_end","timestamp":"'$(date -Iseconds)'"}' >> metrics/timing.jsonl`
+
+2. **Track workflow-generated tests:**
+   Run: `echo "--- Workflow-generated test files ---" && find src -name "*.test.*" -o -name "*.spec.*" 2>/dev/null | head -20 || echo "None found"`
+   Note the count for the RUN_LOG entry.
+
+3. **Run measurement:**
+   Run `npm run measure` and save the JSON report.
+
+4. **Phase 2 delta report (Phase 2 only):**
+   If this is Phase 2, read the Phase 1 metrics JSON from `metrics/` and display a comparison table:
+   For each metric (e2e pass rate, Lighthouse scores, ESLint errors, duplication %, LOC, complexity), show:
+   `Phase 1 value → Phase 2 value (delta)`
+
+5. **Tag and push:**
+   Tag the branch (e.g., `ce-run2-phase1-complete`, `ce-run2-phase2-complete`).
+   Push commits and tags to remote.
+
+**d) Operator debrief:**
+
+Report to Muxin:
+
+1. Key metrics from the measurement JSON
+2. Workflow log summary: which framework commands ran and approximate duration of each (from `metrics/workflow-log.jsonl`)
+3. Number of workflow-generated test files (if any)
+4. Phase 2 only: Phase 1 → Phase 2 metric deltas
+
+Then ask: **"Build complete. Any observations for the write-up? Anything surprising about the output or metrics?"**
+
+Record her response in the RUN_LOG entry under **Operator notes**.
+If she has nothing to add, note "No additional observations" and proceed.
 
 ## Step 3: Switch back to main
 - `git checkout main`
