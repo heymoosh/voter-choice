@@ -165,3 +165,76 @@ Three ambiguities were identified during sanity check but not yet resolved:
 ### Why this matters
 
 The refactor eliminated a significant UX burden (manual branch management) and a maintenance burden (4-way duplication of infrastructure code). The remaining issues are about making the prompt unambiguous enough that Claude Code can't misinterpret the context. For an experiment where "did the workflow actually run correctly" is the core question, prompt clarity is load-bearing.
+
+---
+
+## Learning 005: Skill Invocation vs. File Reading — CE Multi-Agent Engine Never Activated
+
+**Date discovered:** 2026-03-20
+**Affects:** Phase 1 Run 2 (Compound Engineering re-run on `run2/compound-engineering`)
+**Severity:** Critical — CE's core value proposition (multi-agent orchestration) was never exercised
+
+### What happened
+
+The Run 2 CE build followed the 4-step sequence (ce:plan → ce:work → ce:review → ce:compound) and produced all expected artifacts (plan file in `docs/plans/`, solution doc in `docs/solutions/`, 7 workflow-log entries). The RUN_LOG recorded "Full CE adherence." Post-run deep review revealed this was wrong — Sonnet followed CE's *templates* but never activated CE's *engine*.
+
+### What was skipped
+
+| CE Step | What SKILL.md prescribes | What Sonnet actually did |
+|---------|--------------------------|--------------------------|
+| ce:plan | Spawn `repo-research-analyst` + `learnings-researcher` agents in parallel, optionally `best-practices-researcher` + `framework-docs-researcher`, run `spec-flow-analyzer` | Read PROJECT_SPEC.md, wrote plan using SKILL.md template format. Zero agents spawned. |
+| ce:work | Create TodoWrite task list, system-wide test checks per task | Built systematically with commits (partial compliance). No TodoWrite, no system-wide checks. |
+| ce:review | Load review agents from `compound-engineering.local.md`, spawn parallel review agents (security-sentinel, performance-oracle, etc.), create todo files in `todos/` | Self-reviewed in single pass, found 3 real issues, applied fixes directly. No agents, no todos/ directory. |
+| ce:compound | Spawn 5 parallel sub-agents (Context Analyzer, Solution Extractor, Related Docs Finder, Prevention Strategist, Category Classifier) | Single-pass write of solution doc. Zero agents spawned. |
+
+### Root cause
+
+Two compounding factors:
+
+1. **"Read and follow" ≠ skill invocation.** The experiment's `workflow.md` said "Read and follow `.claude/skills/ce-plan/SKILL.md`" for each step. This made Sonnet read the SKILL.md as reference text — it extracted the output format/template and skipped multi-agent orchestration instructions. CE skills are designed to be *invoked* through the skill system, not *read as prose*. When invoked, the model treats instructions as an executable procedure. When read, it treats them as a reference to cherry-pick from.
+
+2. **CE already has autonomous orchestration (`/lfg`) that the experiment didn't use.** CE ships with `/lfg` ("Let's Fucking Go") — a fully autonomous pipeline that chains `ce:plan → deepen-plan → ce:work → ce:review → resolve_todo_parallel` with GATE checks between steps. It has `disable-model-invocation: true` frontmatter (designed for user-invoked autonomous execution). The experiment's `workflow.md` reinvented `/lfg` poorly by writing custom step-by-step instructions pointing to SKILL.md files.
+
+### How CE is designed to be used
+
+| Mode | Mechanism | Who triggers |
+|------|-----------|--------------|
+| **Manual** | Human types `/ce:plan`, reviews, types `/ce:work`, etc. | Human per step |
+| **Autonomous** | Human types `/lfg "build X"` once, walks away | Human once, CE chains everything |
+| **Swarm** | Human types `/slfg "build X"`, parallelizes work + review | Human once, CE parallelizes |
+
+The experiment wanted autonomous mode but built a custom driver that bypassed the skill invocation mechanism entirely.
+
+### Artifact-based adherence checking is insufficient
+
+The post-build adherence check verified:
+- Plan file exists in `docs/plans/` ✓
+- Solution file exists in `docs/solutions/` ✓
+- Workflow-log entries exist for all 4 steps ✓
+
+All checks passed. But the *process* that produced those artifacts was fundamentally different from CE's design. A single-agent build mimicking the output format passes the same checks as a multi-agent build using the actual framework. **Adherence checks must verify process, not just artifacts.**
+
+### Technical detail: skills/ vs commands/
+
+CE installs its skills to `.claude/skills/` (agent-invocable). The Skill tool only works for commands in `.claude/commands/` (user-invokable). To invoke `/lfg` via the Skill tool from `workflow.md`, it needs to be in `commands/`, not `skills/`.
+
+### Corrective action
+
+1. Create new branch `run3/compound-engineering` from the last infrastructure commit (`65672e0`) on `run2/compound-engineering`
+2. Copy `/lfg` SKILL.md to `.claude/commands/lfg.md` so it's user-invokable
+3. Rewrite `workflow.md` to invoke `/lfg` via the Skill tool instead of manually sequencing "read and follow" instructions
+4. Use Opus — Sonnet consistently simplifies multi-agent orchestration even with enforcement
+5. Old branches (`run2/compound-engineering`, `workflow/compound-engineering`) preserved as experiment data
+
+### Why this matters for the write-up
+
+This is a second-order version of Learning 001:
+- **Learning 001:** Frameworks aren't used at all (no enforcement → model takes shortest path)
+- **Learning 005:** Framework steps are followed in sequence, but the framework's engine is not activated ("read and follow" enforcement → model follows templates, skips multi-agent orchestration)
+
+The progression reveals a spectrum of framework adoption failures:
+1. No enforcement → framework ignored entirely
+2. Step-sequence enforcement → templates followed, engine skipped
+3. Skill invocation enforcement → (to be tested with `/lfg` on `run3/compound-engineering`)
+
+For the experiment: **adherence is not binary.** A framework can be "followed" at the artifact level while its core methodology (the thing that differentiates it from vanilla) is completely bypassed.
