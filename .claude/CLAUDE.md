@@ -26,18 +26,19 @@ TypeScript. ESLint + Prettier (configured in Phase 0.3a as part of scaffold setu
 
 **THIS IS A HARD REQUIREMENT. VIOLATION INVALIDATES THE EXPERIMENT.**
 
-This branch uses the **Compound Engineering** framework. You MUST follow the CE workflow loop for ALL build work:
+This branch uses the **Compound Engineering** framework. You MUST invoke the `/lfg` skill (the CE autonomous pipeline) for ALL build work. `/lfg` chains: ce:plan → deepen-plan → ce:work → ce:review → resolve findings → compound. Each step has GATE checks that must pass before proceeding.
 
-1. **`ce:plan`** — Create a structured plan BEFORE writing any application code. Read and follow `.claude/skills/ce-plan/SKILL.md`.
-2. **`ce:work`** — Execute the plan systematically. Read and follow `.claude/skills/ce-work/SKILL.md`.
-3. **`ce:review`** — Review the completed code using multi-agent analysis. Read and follow `.claude/skills/ce-review/SKILL.md`.
-4. **`ce:compound`** — Document the solution for knowledge compounding. Read and follow `.claude/skills/ce-compound/SKILL.md`.
+**You MUST:**
+
+- Invoke `/lfg` via the Skill tool — this is the ONLY way to start build work
+- When `/lfg` invokes sub-skills (`/ce:plan`, `/ce:work`, etc.), follow their instructions exactly — including spawning sub-agents when the skill says to spawn agents
+- Use the Agent tool when a skill says "run these agents in parallel" or "Task X(args)"
 
 **You MUST NOT:**
 
-- Skip any step in the workflow loop
-- Write application code before completing ce:plan
-- Skip ce:review or ce:compound after building
-- Code the solution directly without going through the workflow
+- Skip `/lfg` and build the app directly
+- Manually read SKILL.md files instead of invoking skills via the Skill tool
+- Skip sub-agent spawning when CE skills instruct you to spawn agents
+- Create a PR or push to remote (the experiment's /start command handles this)
 
 **Autonomous decision-making:** When any CE skill asks for user input, presents menus, or asks clarifying questions — answer them yourself using `docs/PROJECT_SPEC.md` (Phase 1) or `docs/PHASE2_SPEC.md` (Phase 2) as the source of truth. Do not stop or wait for Muxin.
