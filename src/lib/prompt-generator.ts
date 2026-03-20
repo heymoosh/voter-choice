@@ -290,7 +290,7 @@ function buildVoterIdLine(rules: StateElectionData["votingRules"]): string {
 /**
  * Generate the customized context block to append after the main prompt.
  */
-export function generateContextBlock(
+function generateContextBlock(
   state: StateElectionData,
   zip: string,
   election: Election | null,

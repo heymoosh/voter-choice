@@ -62,8 +62,9 @@ export function BallotToolClient() {
   };
 
   const handleStateSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    if (appState.status !== "multi-state") return;
     const stateCode = e.target.value;
-    if (!stateCode || appState.status !== "multi-state") return;
+    if (!stateCode) return;
     resolveState(stateCode, appState.zip);
   };
 

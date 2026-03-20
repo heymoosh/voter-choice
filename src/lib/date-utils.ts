@@ -1,10 +1,13 @@
 import type { DeadlineStatus } from "@/types/election";
 
+const DEADLINE_URGENT_DAYS = 3;
+const DEADLINE_WARNING_DAYS = 14;
+
 /**
  * Get today's date at midnight in local timezone.
  * Use this for deadline comparisons to avoid UTC drift.
  */
-export function getTodayLocal(): Date {
+function getTodayLocal(): Date {
   const now = new Date();
   return new Date(now.getFullYear(), now.getMonth(), now.getDate());
 }
@@ -13,7 +16,10 @@ export function getTodayLocal(): Date {
  * Parse an ISO date string (YYYY-MM-DD) as a local-timezone midnight date.
  * DO NOT use new Date(isoString) — that parses as UTC midnight, causing off-by-one errors.
  */
-export function parseDateLocal(isoDate: string): Date {
+function parseDateLocal(isoDate: string): Date {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(isoDate)) {
+    throw new Error(`Invalid ISO date format: ${isoDate}`);
+  }
   const [y, m, d] = isoDate.split("-").map(Number);
   return new Date(y, m - 1, d);
 }
@@ -30,7 +36,7 @@ export function getTodayISO(): string {
  * Calculate the number of days until an ISO date, using local timezone.
  * Returns negative values for past dates.
  */
-export function getDaysUntil(isoDate: string): number {
+function getDaysUntil(isoDate: string): number {
   const today = getTodayLocal();
   const target = parseDateLocal(isoDate);
   return Math.round((target.getTime() - today.getTime()) / 86400000);
@@ -39,10 +45,10 @@ export function getDaysUntil(isoDate: string): number {
 /**
  * Determine the visual status for a deadline based on days remaining.
  */
-export function getDeadlineStatus(daysRemaining: number): DeadlineStatus {
+function getDeadlineStatus(daysRemaining: number): DeadlineStatus {
   if (daysRemaining < 0) return "passed";
-  if (daysRemaining <= 3) return "urgent";
-  if (daysRemaining <= 14) return "warning";
+  if (daysRemaining <= DEADLINE_URGENT_DAYS) return "urgent";
+  if (daysRemaining <= DEADLINE_WARNING_DAYS) return "warning";
   return "safe";
 }
 
