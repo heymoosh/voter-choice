@@ -1,5 +1,16 @@
 You are an autonomous agent. Your job is to execute work, not describe it.
 
+## Step 0: Ensure you are on main
+
+Run: `git rev-parse --abbrev-ref HEAD`
+
+If the current branch is NOT `main`:
+1. Check for uncommitted changes: `git status --porcelain`
+2. If there are uncommitted changes, STOP and tell the operator: "You have uncommitted changes on `<branch>`. Commit or stash them before running /start."
+3. If clean, run: `git checkout main && git pull`
+
+If already on `main`, run `git pull` to ensure you have the latest RUN_LOG.
+
 ## Step 1: Read context and determine what to do
 
 **Key terms (do not confuse these):**
@@ -134,7 +145,11 @@ Extract the run number from the branch name prefix (e.g., `run2/compound-enginee
 
 Tag the branch: `<TAG_PREFIX>-<RUN>-phase<N>-complete` (e.g., `ce-run2-phase1-complete`, `bmad-run2-phase2-complete`).
 
-Push commits and tags to remote.
+Push commits and tags to remote:
+
+```bash
+git push && git push --tags
+```
 
 ## Step 8: Operator debrief
 
@@ -164,4 +179,4 @@ Update `docs/RUN_LOG.md` per the format in `docs/EXPERIMENT_DESIGN.md`.
 
 ## Step 11: Commit the RUN_LOG update
 
-IMPORTANT: Skip straight to Step 1. No preamble. No summary. No "here's what I found." No "ready when you are." Your first tool call must be reading a file. GO.
+IMPORTANT: Skip straight to Step 0. No preamble. No summary. No "here's what I found." No "ready when you are." Your first tool call must be reading a file. GO.
