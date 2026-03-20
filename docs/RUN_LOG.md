@@ -2,9 +2,21 @@
 
 ## Next
 
-**Phase 1 Re-Run — Run 2: Compound Engineering.** Check out `run2/compound-engineering`, run `/start`. Use Opus model. The `/start` command on this branch chains ce:plan → ce:work → ce:review → ce:compound explicitly. CLAUDE.md has hard workflow enforcement. `/start` now includes pre-flight checks, workflow logging, timing capture, and operator debrief (Learning 002). See `docs/LEARNINGS.md` for context.
+**Phase 1 Re-Run — Run 2: Compound Engineering.** Check out `run2/compound-engineering`, run `/start`. The `/start` command on this branch chains ce:plan → ce:work → ce:review → ce:compound explicitly. CLAUDE.md has hard workflow enforcement. `/start` now includes pre-flight checks, workflow logging, timing capture, adherence verification, git build statistics, framework artifact inventory, and operator debrief (Learnings 002 + 003). See `docs/LEARNINGS.md` for context.
 
 ## Completed
+
+### 2026-03-20 — Learning 003: Additional Measurement Gaps
+
+**What was done:** Pre-execution review identified 4 additional gaps between experiment measurement needs and `/start` data capture. All addressed across main + all 4 run2/ branches:
+1. **Fixed measure.mjs PLUGIN_DIRS** — old dirs (`.bmad`, `.superpowers`, `.spec-kit`) didn't match actual installed paths. Fixed to: `.claude/skills`, `.claude/agents`, `.claude/hooks`, `_bmad`, `.specify`. Moved `.claude/commands` to INFRA_DIRS. Without this fix, plugin LOC would report near-zero for all workflows.
+2. **Added post-build framework adherence verification** — each branch's `/start` now checks that the framework produced its expected artifacts (plan files, solution docs, specs, PRDs, etc.) and lists completed workflow steps from `workflow-log.jsonl`. Missing artifacts flagged as "partial workflow bypass" in debrief. Directly addresses Learning 001's root cause.
+3. **Added git build statistics** — commit count and lines added/removed since `v0-scaffold` tag, captured after every build. Reveals build efficiency differences between workflows.
+4. **Added framework artifact inventory to operator debrief** — debrief now reports adherence status and artifact list alongside metrics.
+5. **Removed Opus model requirement** — Sonnet is sufficient with hardened enforcement (explicit workflow chaining + CLAUDE.md hard rules). If adherence check fails, upgrade to Opus for that run (itself a finding). Opus reserved for critical thinking tasks.
+**Files modified:** `scripts/measure.mjs` (main + all 4 branches), `.claude/commands/start.md` (all 4 run2/ branches), `docs/RUN_LOG.md`
+**Commits:** `b160e72` (main), `384da06` (CE), `613d81a` (Spec Kit), `9031491` (Superpowers), `9508a0e` (BMAD)
+**Issues or deviations:** None. All changes are pre-execution hardening.
 
 ### 2026-03-20 — Learning 002: Harden /start Data Capture
 
