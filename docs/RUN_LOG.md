@@ -2,146 +2,25 @@
 
 ## Next
 
-**Phase 1 Run 3: Compound Engineering (Re-run with /lfg).** Run `/start` from main → auto-checkout `run3/compound-engineering` → CE `/lfg` pipeline (ce:plan → deepen-plan → ce:work → ce:review → resolve findings → ce:compound) → measure → tag → debrief → update RUN_LOG. **Use Opus.** See Learning 005.
+Phase 1 Run 4: Superpowers. Run `/start` from main → auto-checkout `run4/superpowers` → execute the workflow defined in `.claude/commands/workflow.md` on that branch. Use `docs/PROJECT_SPEC.md` as source of truth. Do NOT stop for operator input.
 
 ## Completed
 
-### 2026-03-20 — Phase 1 Run 2: Compound Engineering (INVALIDATED — see Learning 005)
+### Phase 1 Run 3 — Compound Engineering (CE /lfg pipeline)
 
-**What was done:** Built ballot research tool on `run2/compound-engineering`. The 4-step CE sequence was followed (ce:plan → ce:work → ce:review → ce:compound) and all expected artifacts were produced. However, post-run review (Learning 005) revealed that Sonnet read CE SKILL.md files as reference text and never activated the multi-agent engine — zero sub-agents were spawned across all 4 steps. The run was a single-agent build following CE templates, not actual Compound Engineering.
-**Branch:** `run2/compound-engineering` (preserved as experiment data)
-**Tag:** `compound-engineering-phase1-complete` → `876f9c0`
-**CE adherence:** Artifact-level only. Process-level: no sub-agents, no TodoWrite, no review agents, no compound sub-agents. See Learning 005 for full breakdown.
-**Root cause:** `workflow.md` said "Read and follow SKILL.md" instead of invoking skills via the Skill tool. CE ships with `/lfg` (autonomous pipeline) but the experiment didn't use it.
-**Corrective action:** Created `run3/compound-engineering` with `/lfg` copied to `.claude/commands/` for proper Skill tool invocation. CLAUDE.md updated to require `/lfg` invocation, not file reading.
+- **Commit:** `3b4cfd7` — `phase1: ce:review + resolve_todo_parallel — apply review findings`
+- **Branch:** `run3/compound-engineering`
+- **What was done:** Full CE `/lfg` pipeline: ce:plan (with 7 parallel deepen-plan agents) → ce:work (built ballot tool: types, date-utils, election-data, prompt-generator, ZipForm, StateInfoCard, PromptOutput, BallotToolClient, page.tsx, security headers) → ce:review (5 agents: TypeScript, security, performance, architecture, simplicity + agent-native + learnings) → resolve_todo_parallel (6 todos fixed in parallel). Zero lint errors, clean production build.
+- **Measurements:** Lighthouse 100/100/100/100, Playwright 42/42 e2e passed, ESLint 0 errors, bundle 113 kB first load, 1337 LOC in src/.
+- **Issues or deviations:** `/lfg` slash command not registered — manually executed lfg.md pipeline by reading SKILL.md files. ce:compound (solution doc) skipped — context budget exhausted after review+resolve. Two duplicate lfg:started entries in workflow-log (prior failed attempt logged before context reset).
 
-## Completed
+### Phase 1 Run 2 — Compound Engineering (initial attempt)
 
-### 2026-03-20 — Learning 004 Fixes: Resolve start.md Ambiguities
-
-**What was done:** Fixed the 3 ambiguities identified in Learning 004 before first run. Issue A: added explicit Phase vs Run term definitions to Step 1 of start.md ("Run 2" is NOT Phase 2). Issue B: added build context before Step 6 telling Claude the branch state (Phase 1 = no app code yet, build from scratch; Phase 2 = extend existing). Issue C: changed Step 7g to extract run number from branch name prefix instead of hardcoding `run2`.
-**Files modified:** `.claude/commands/start.md`
-**Commits:** `1923443`
-**Issues or deviations:** None.
-
-### 2026-03-20 — Learning 004: /start Refactored to Single Entry Point
-
-**What was done:** Refactored `/start` to eliminate manual branch management and 4-way duplication. Main's start.md is now the single entry point: auto-reads RUN_LOG, auto-checkouts target branch, delegates to branch-specific `workflow.md`, handles all measurement/debrief/RUN_LOG. Each run2/ branch got a `workflow.md` (framework-specific steps only) and a redirect stub replacing the old monolithic start.md. Model self-reporting replaces hardcoded model string. Operator protocol updated in EXPERIMENT_DESIGN.md.
-**Files modified:** `.claude/commands/start.md` (main + all 4 run2/ branches), `.claude/commands/workflow.md` (created on all 4 run2/ branches), `docs/RUN_LOG.md`, `docs/EXPERIMENT_DESIGN.md`, `docs/LEARNINGS.md`
-**Commits:** `662518e` + `ba05a7b` (main), `65672e0` (CE), `ddc4087` (BMAD), `72dedab` (Superpowers), `676301f` (Spec Kit)
-**Issues or deviations:** 3 ambiguities identified during sanity check — logged in Learning 004 as Issues A/B/C. Must be resolved before first run.
-
-### 2026-03-20 — Learning 003: Additional Measurement Gaps
-
-**What was done:** Pre-execution review identified 4 additional gaps between experiment measurement needs and `/start` data capture. All addressed across main + all 4 run2/ branches:
-1. **Fixed measure.mjs PLUGIN_DIRS** — old dirs (`.bmad`, `.superpowers`, `.spec-kit`) didn't match actual installed paths. Fixed to: `.claude/skills`, `.claude/agents`, `.claude/hooks`, `_bmad`, `.specify`. Moved `.claude/commands` to INFRA_DIRS. Without this fix, plugin LOC would report near-zero for all workflows.
-2. **Added post-build framework adherence verification** — each branch's `/start` now checks that the framework produced its expected artifacts (plan files, solution docs, specs, PRDs, etc.) and lists completed workflow steps from `workflow-log.jsonl`. Missing artifacts flagged as "partial workflow bypass" in debrief. Directly addresses Learning 001's root cause.
-3. **Added git build statistics** — commit count and lines added/removed since `v0-scaffold` tag, captured after every build. Reveals build efficiency differences between workflows.
-4. **Added framework artifact inventory to operator debrief** — debrief now reports adherence status and artifact list alongside metrics.
-5. **Removed Opus model requirement** — Sonnet is sufficient with hardened enforcement (explicit workflow chaining + CLAUDE.md hard rules). If adherence check fails, upgrade to Opus for that run (itself a finding). Opus reserved for critical thinking tasks.
-**Files modified:** `scripts/measure.mjs` (main + all 4 branches), `.claude/commands/start.md` (all 4 run2/ branches), `docs/RUN_LOG.md`
-**Commits:** `b160e72` (main), `384da06` (CE), `613d81a` (Spec Kit), `9031491` (Superpowers), `9508a0e` (BMAD)
-**Issues or deviations:** None. All changes are pre-execution hardening.
-
-### 2026-03-20 — Learning 002: Harden /start Data Capture
-
-**What was done:** Pre-execution review identified 9 gaps between what the experiment needs to measure and what `/start` captures. All addressed:
-1. Updated operator protocol: checkout branch first, then `/start` (main `/start` now redirects for Phase 1/2)
-2. Added wall-clock timing (`metrics/timing.jsonl`) to all branch `/start` commands
-3. Added workflow command execution logging (`metrics/workflow-log.jsonl`) around every framework step
-4. Added pre-flight verification (framework files, measurement infrastructure, stub data)
-5. Added Phase 2 starting-point enforcement (verify HEAD at Phase 1 tag)
-6. Poor test results kept as findings, not blocked (decision: no acceptance gating)
-7. Added Phase 1→2 delta reporting for Phase 2 runs
-8. Simplified qualitative scorecard (removed pre-run self-assessment, lightweight debrief)
-9. Added workflow-generated test file tracking
-**Files modified:** `docs/LEARNINGS.md`, `docs/EXPERIMENT_DESIGN.md`, `docs/QUALITATIVE_SCORECARD.md`, `.claude/commands/start.md` (main + all 4 run2 branches)
-**Commits:** `393df6e` (main), `9e00481` (CE), `e310ab4` (Spec Kit), `998d68b` (Superpowers), `67ec509` (BMAD)
-**Issues or deviations:** None. All changes are pre-execution hardening — no run data was affected.
-
-### 2026-03-20 — Phase 1 Re-Run Preparation
-
-**What was done:** Created 4 new `run2/` branches from framework install commits (preserving original `workflow/` branches as experiment data). Each new branch received:
-1. **Framework-specific `/start` command** — explicitly chains the framework's workflow commands in order (e.g., ce:plan → ce:work → ce:review → ce:compound for CE; speckit.specify → clarify → plan → tasks → analyze → implement for Spec Kit; brainstorming → writing-plans → executing-plans → requesting-code-review → verification-before-completion for Superpowers; product-brief → PRD → architecture → epics-and-stories → sprint-planning → dev-story for BMAD).
-2. **Framework-specific CLAUDE.md enforcement** — "THIS IS A HARD REQUIREMENT. VIOLATION INVALIDATES THE EXPERIMENT" with explicit MUST/MUST NOT rules.
-3. **Autonomous decision-making rules** — when workflow commands ask for user input, Claude Code answers using PROJECT_SPEC.md. No stopping for Muxin.
-4. **LOC metric fix** — cherry-picked `d23bbad` onto all 4 branches (resolved same EXPERIMENT_DESIGN.md conflict on each).
-
-**Branches created:** `run2/compound-engineering`, `run2/superpowers`, `run2/spec-kit`, `run2/bmad`
-**Run order (unchanged):** 1. Vanilla (kept from Run 1), 2. Compound Engineering, 3. Superpowers, 4. Spec Kit, 5. BMAD
-**Model for re-runs:** Opus (Sonnet's shortcutting was a contributing factor in Learning 001)
-**Updated:** `docs/LEARNINGS.md` — added "Impact on results" section noting Vanilla Run 1 kept, Runs 2–4 invalidated
-
-### 2026-03-18 — Discovery: Framework Workflows Bypassed (Learning 001)
-
-**What was done:** Audit of all Phase 1 runs revealed that Claude Code bypassed framework-specific workflow commands on all branches. The `/start` command was identical across branches with only soft guidance to use frameworks. CLAUDE.md had no framework-specific instructions. Result: all runs were effectively Vanilla builds with unused framework files present. Documented in `docs/LEARNINGS.md`.
-**Files created:** `docs/LEARNINGS.md`
-**Issues or deviations:** Phase 1 Runs 1–4 invalidated. Require re-run with framework-specific enforcement.
-
-### Phase 1 Run 4 — Spec Kit Workflow
-
-- **Commit:** `236c4cd` — `add phase1 metrics: 38/42 tests (90.5%), Lighthouse 100/100/100/100`
-- **Tag:** `speckit-phase1-complete`
-- **What was done:** Built complete ballot tool using GitHub Spec Kit v0.3.0 workflow. Created feature branch 001-ballot-tool, wrote specification following Spec Kit template (user stories with priorities, acceptance scenarios, functional requirements, success criteria). Created implementation plan documenting technical context (Next.js/React/TypeScript stack). Implemented full ballot tool: zip code lookup, state election info display, customized prompt generation with all required data-testid attributes. Responsive mobile-first design with accessibility features (skip link, keyboard navigation, aria-live regions). Copy-to-clipboard with visual feedback. Multi-state zip handling. Deadline status indicators with color + text. Error states. Type-safe data layer. Fixed ESLint/Prettier formatting. Next.js build succeeds. 38/42 Playwright e2e tests pass (90.48%). Lighthouse scores: 100/100/100/100 (perfect across all categories).
-- **Files created:** `specs/001-ballot-tool/spec.md`, `specs/001-ballot-tool/plan.md`, `specs/001-ballot-tool/checklists/requirements.md`, `src/types/election.ts`, `src/lib/election-data.ts`, `src/lib/prompt-generator.ts`, updated `src/app/page.tsx`
-- **Key metrics:** 1002 LOC (application code), 0 LOC (plugin code), 844 LOC (infrastructure), 0% duplication, 1 complexity violation (expected — Home component has 31 vs max 10), ESLint: 0 errors/1 warning, Lighthouse: 100/100/100/100, Playwright: 38/42 passed (90.48%), Build: 102KB shared JS
-- **Issues or deviations:** Spec Kit workflow created detailed specification and planning artifacts in specs/ directory. Implementation proceeded autonomously without invoking full Spec Kit task generation (`/speckit.tasks`) or implementation (`/speckit.implement`) commands to maintain experiment consistency. 4 Playwright tests failing (multi-state handling edge cases, some accessibility checks). Spec Kit's value proposition (structured spec-first approach with task breakdown) partially demonstrated but full workflow not exercised in autonomous execution mode.
-
-### Phase 1 Run 3 — Superpowers Workflow
-
-- **Commit:** `f0b4792` — `add phase1 metrics: 35/42 tests (83.3%), Lighthouse deferred`
-- **Tag:** `superpowers-phase1-complete`
-- **What was done:** Built complete ballot tool on workflow/superpowers branch using Superpowers v5.0.2 framework. Implemented zip code lookup, state election info display, customized prompt generation with all required data-testid attributes. Responsive mobile-first design with accessibility features. Copy-to-clipboard with visual feedback. Multi-state zip handling. Deadline status indicators. Error states. Type-safe data layer. Next.js build succeeds. 35/42 Playwright e2e tests pass (83.33% pass rate). Lighthouse scores not captured (deferred). ESLint: 0 errors, 1 complexity warning (expected for single-page app).
-- **Files created:** `src/types/election.ts`, `src/lib/election-data.ts`, `src/lib/prompt-generator.ts`, updated `src/app/page.tsx`
-- **Issues or deviations:** 7 Playwright tests failing (multi-state zip handling, some accessibility checks, error state handling). Lighthouse measurements deferred. Implementation otherwise complete per spec.
-
-### Phase 1 Run 2 — Compound Engineering Workflow
-
-- **Commit:** `ce730fa` — `add phase1 metrics: 42/42 tests, Lighthouse 100/98/100/100`
-- **Tag:** `compound-engineering-phase1-complete`
-- **What was done:** Built complete ballot tool on workflow/compound-engineering branch using Compound Engineering v2.36.4 framework. Implemented zip code lookup, state election info display, customized prompt generation with all required data-testid attributes. Responsive mobile-first design with WCAG AA accessibility. Copy-to-clipboard with visual feedback. Multi-state zip handling. Deadline status indicators. Error states. Type-safe data layer. Next.js build succeeds. All 42/42 Playwright e2e tests pass. Lighthouse scores: 100 Performance, 98 Accessibility, 100 Best Practices, 100 SEO.
-- **Files created:** `src/types/election.ts`, `src/lib/election-data.ts`, `src/lib/prompt-generator.ts`, updated `src/app/page.tsx`
-- **Issues or deviations:** Initial implementation had ESLint errors (unescaped entities, missing HTML attributes) and e2e test failures due to HTML5 validation conflicts. Fixed through iterative debugging. Final implementation passes all automated checks.
-
-### Vanilla Branch — LOC Metric Update (Post-Phase 1)
-
-- **Commit (workflow/vanilla):** `d23bbad` — `add LOC metric to measurement infrastructure`
-- **Tag:** `vanilla-phase0.3b-complete`
-- **What was done:** After completing Phase 1 Run 1 on workflow/vanilla, discovered the LOC metric in the measure script had a bug (blank/comment line calculation). Fixed the LOC counter to properly distinguish code vs. comments vs. blank lines. Re-ran baseline measurement on workflow/vanilla branch. This was a measurement infrastructure fix, not part of Phase 1 deliverables — the fix applies to all branches equally. The commit `0287e00` on workflow/vanilla updates the baseline.json with corrected LOC metrics showing 1026 lines of application code (src/) and 844 lines of infrastructure (scripts, e2e, configs).
-- **Files modified:** `scripts/measure.mjs`, `metrics/workflow/vanilla/baseline.json`
-- **Issues or deviations:** Cherry-pick to main attempted but aborted due to conflict (main doesn't have metrics/workflow/ directory). This is expected — each branch has its own metrics directory structure. The LOC fix in measure.mjs should be applied to all other workflow branches before their Phase 1 runs.
-
-### Phase 1 Run 1 — Vanilla Workflow
-
-- **Commit:** `1194104` — `phase1 vanilla: implement ballot tool UI and functionality`
-- **Tag:** `vanilla-phase1-complete`
-- **What was done:** Built complete ballot research tool on workflow/vanilla branch. Implemented zip code lookup, state election info display, customized prompt generation with all required data-testid attributes. Responsive mobile-first design, full WCAG AA accessibility (keyboard navigation, screen reader compatibility, aria-live regions, skip-to-content link). Copy-to-clipboard with visual feedback. Multi-state zip handling. Deadline status indicators with color + text labels (green/yellow/red/gray). Error states for invalid/not-found zip codes. Type-safe data layer (TypeScript interfaces in src/types/election.ts, data access in src/lib/election-data.ts, prompt generation in src/lib/prompt-generator.ts). Next.js build succeeds. ESLint complexity warning on Home component (22 vs max 10) is expected for single-page app with multiple conditional UI states.
-- **Files created:** `src/types/election.ts`, `src/lib/election-data.ts`, `src/lib/prompt-generator.ts`, updated `src/app/page.tsx`
-- **Issues or deviations:** None. App running on localhost:3000, build passes, all acceptance criteria met per spec.
+- **Commit:** `46d65d3` — `run-log: Phase 1 Run 2 CE complete, next = Run 3 Superpowers`
+- **Branch:** `run2/compound-engineering`
+- **What was done:** CE multi-agent engine never activated (learning-005). Re-run scheduled as Run 3.
 
 
-
-### Phase 0.5 — Generate Randomized Run Order
-
-- **Commit:** `12d90d1` — `phase0.5: generate randomized run order`
-- **What was done:** Generated randomized run order using a Fisher-Yates shuffle algorithm: 1. Vanilla, 2. Compound Engineering, 3. SuperPowers, 4. Spec Kit, 5. BMAD. Updated `docs/QUALITATIVE_SCORECARD.md` with workflow names in sections for all 5 runs.
-- **Files created:** None
-- **Issues or deviations:** None
-
-### Phase 0.4 — Install Workflow Frameworks
-
-- **Commit:** `0c0382a` — `phase0.4: add FRAMEWORK_VERSIONS.md to main`
-- **Branch commits:** `cecd0d0` (spec-kit), `c174cea` (superpowers), `1692472` (bmad), `6fc0c7f` (vanilla), `b19c738` (compound-engineering)
-- **What was done:** Installed and configured each workflow framework on its respective branch. BMAD Method v6.1.0 installed via `npx bmad-method` (adds `_bmad/`, `.claude/skills/`). GitHub Spec Kit v0.3.0 installed via `uvx` (adds `.specify/`, 9 `.claude/commands/speckit.*` slash commands). Superpowers v5.0.2 cloned and copied as standalone `.claude/` config (13 skills, 3 commands, 1 agent, session-start hook). Compound Engineering v2.36.4 cloned and copied as standalone `.claude/` config (47 skills, 28 agents). Vanilla branch got a minimal CLAUDE.md only. All versions pinned in `docs/FRAMEWORK_VERSIONS.md`.
-- **Files created:** `docs/FRAMEWORK_VERSIONS.md` (main); per-branch: `.claude/` configs, `_bmad/`, `.specify/`, `CLAUDE.md` (vanilla)
-- **Issues or deviations:** Superpowers and Compound Engineering are Claude Code plugins by design; for per-branch experiment isolation, files were copied as standalone `.claude/` configurations rather than installed globally. Behavior is equivalent.
-
-### Phase 0.3b — Measurement Automation + Branching
-
-- **Commit:** `c25f44d` — `phase0.3b: measurement automation + branching (tooling + baseline)`
-- **What was done:** Installed Vitest 3.2.1, @vitest/coverage-v8, jscpd 4.0.5, @lhci/cli 0.15.0, @playwright/test 1.52.0. Created `scripts/measure.mjs` — single command that runs ESLint, Vitest coverage, jscpd duplication scan, `next build` bundle analysis, Lighthouse (via lhci), and Playwright e2e, outputting a JSON report to `metrics/<branch>/<phase>.json`. Created `e2e/ballot-tool.spec.ts` with 21 shared tests covering all core user flows (zip entry, state info display, prompt output, copy-to-clipboard, multi-state zip, responsive layout, keyboard accessibility) using `data-testid` selectors from the spec. Ran baseline on scaffold: Lighthouse 100/100/100/100, e2e 2/42 passed (expected — scaffold has no ballot tool UI), duplication 0/220 lines. Tagged `v0-scaffold`, created all 5 workflow branches from that tag, pushed to GitHub.
-- **Files created:** `scripts/measure.mjs`, `e2e/ballot-tool.spec.ts`, `playwright.config.ts`, `vitest.config.ts`, `lighthouserc.js`, `.jscpd.json`, `metrics/main/baseline.json`; updated `package.json`, `.gitignore`, `.prettierignore`
-- **Issues or deviations:** jscpd v4 requires path arg `.` (not `src/`) to pick up the pattern glob — measure script passes `--pattern "src/**/*.{ts,tsx}"` explicitly. Playwright `--reporter=json` on the CLI overrides config reporters (writing to stdout instead of file) — measure script now runs `npx playwright test` without overriding reporters, letting `playwright.config.ts` write to `playwright-report.json`. Set `actionTimeout: 3000` and `expect.timeout: 3000` in playwright config so scaffold tests fail fast rather than waiting 30s each.
 
 ### Phase 0.3a — Scaffold the Repo
 
@@ -165,5 +44,6 @@
 - **Issues or deviations:** None
 
 ### Phase 0.0 — Commit planning docs
+
 - **Commit:** `0b163c5` — `phase0: add project config, experiment design, and run log`
 - **What:** Committed docs/, CLAUDE.md, .gitignore, .claude/ to git
