@@ -156,15 +156,37 @@ Run: `echo '{"step":"bmad:code-review","status":"completed","timestamp":"'$(date
    Run: `echo "--- Workflow-generated test files ---" && find src -name "*.test.*" -o -name "*.spec.*" 2>/dev/null | head -20 || echo "None found"`
    Note the count for the RUN_LOG entry.
 
-3. **Run measurement:**
+3. **Git build statistics:**
+   Run:
+   ```
+   echo '--- Git build statistics ---'
+   echo "Commits since scaffold: $(git rev-list --count v0-scaffold..HEAD)"
+   git diff --shortstat v0-scaffold..HEAD
+   ```
+   Log the commit count and lines added/removed for the RUN_LOG entry.
+
+4. **Framework adherence verification & artifact inventory:**
+   Check that the BMAD workflow produced its expected artifacts:
+   - `_bmad/docs/` must contain: product brief, PRD, architecture doc, epics/stories
+   - `metrics/workflow-log.jsonl` must contain completed entries for all 8 steps
+   Run:
+   ```
+   echo '--- BMAD Adherence Check ---'
+   echo "BMAD docs:" && ls _bmad/docs/ 2>/dev/null || echo "  NONE — BMAD analysis phases may not have run"
+   echo "Workflow steps completed:" && grep '"status":"completed"' metrics/workflow-log.jsonl 2>/dev/null | grep -o '"step":"[^"]*"' || echo "  NONE"
+   echo "Expected steps: bmad:product-brief, bmad:prd, bmad:architecture, bmad:epics-and-stories, bmad:implementation-readiness, bmad:sprint-planning, bmad:story-implementation, bmad:code-review"
+   ```
+   If any expected artifacts are missing, flag it in the debrief as a **partial workflow bypass** — this is a critical finding for the experiment.
+
+5. **Run measurement:**
    Run `npm run measure` and save the JSON report.
 
-4. **Phase 2 delta report (Phase 2 only):**
+6. **Phase 2 delta report (Phase 2 only):**
    If this is Phase 2, read the Phase 1 metrics JSON from `metrics/` and display a comparison table:
    For each metric (e2e pass rate, Lighthouse scores, ESLint errors, duplication %, LOC, complexity), show:
    `Phase 1 value → Phase 2 value (delta)`
 
-5. **Tag and push:**
+7. **Tag and push:**
    Tag the branch (e.g., `bmad-run2-phase1-complete`, `bmad-run2-phase2-complete`).
    Push commits and tags to remote.
 
@@ -175,7 +197,9 @@ Report to Muxin:
 1. Key metrics from the measurement JSON
 2. Workflow log summary: which framework commands ran and approximate duration of each (from `metrics/workflow-log.jsonl`)
 3. Number of workflow-generated test files (if any)
-4. Phase 2 only: Phase 1 → Phase 2 metric deltas
+4. Git build statistics: commit count, lines added/removed since scaffold
+5. Framework adherence: which BMAD artifacts were produced, any missing steps
+6. Phase 2 only: Phase 1 → Phase 2 metric deltas
 
 Then ask: **"Build complete. Any observations for the write-up? Anything surprising about the output or metrics?"**
 
