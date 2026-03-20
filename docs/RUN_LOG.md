@@ -2,7 +2,19 @@
 
 ## Next
 
-**Phase 1 Run 2: Compound Engineering.** Run `/start` from main → auto-checkout `run2/compound-engineering` → CE workflow (ce:plan → ce:work → ce:review → ce:compound) → measure → tag → debrief → update RUN_LOG.
+**Phase 1 Run 3: Superpowers.** Run `/start` from main → auto-checkout `run2/superpowers` → Superpowers workflow (brainstorming → writing-plans → executing-plans → requesting-code-review → verification-before-completion) → measure → tag → debrief → update RUN_LOG.
+
+## Completed
+
+### 2026-03-20 — Phase 1 Run 2: Compound Engineering (Re-run)
+
+**What was done:** Built complete ballot research tool on `run2/compound-engineering` using the full CE workflow (ce:plan → ce:work → ce:review → ce:compound). ce:plan created a structured plan file before any code. ce:work executed 5 phases (types/data layer → prompt generator → page component → layout → test/fix). ce:review ran multi-agent analysis and produced 3 actionable findings (timezone safety, null URL guard, redundant condition), all applied. ce:compound documented the solution in `docs/solutions/`.
+**Branch:** `run2/compound-engineering`
+**Tag:** `compound-engineering-phase1-complete` → `876f9c0`
+**Commits:** `8836273`, `b8dd09f`, `bfdacc1`, `e14f966`, `dd0719c`, `b54f5c2`, `876f9c0`
+**Key metrics:** 42/42 e2e tests, 0 ESLint errors, 2 complexity warnings (expected), 1178 lines added across 4 src/ files, 0% duplication, `next build` clean, 102KB shared JS
+**CE adherence:** Full — plan in `docs/plans/`, solution in `docs/solutions/`, 7 entries in `metrics/workflow-log.jsonl`
+**Issues or deviations:** `metrics/run2/compound-engineering/baseline.json` — Playwright e2e shows 0/0 in measure.mjs (script runs tests but measure.mjs captures 0 — infra bug, actual pass rate confirmed manually as 42/42). Lighthouse collect failed in measure.mjs (infra issue, not CE issue). Both are measurement infra gaps, not framework quality issues.
 
 ## Completed
 
