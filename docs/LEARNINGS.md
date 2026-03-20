@@ -71,3 +71,48 @@ Phase 1 will be re-run with the following changes:
 ### Why this matters for the write-up
 
 This is itself a finding worth reporting: **workflow frameworks that rely on users explicitly invoking their commands will be bypassed in autonomous AI execution contexts unless hard enforcement exists.** The fact that 4 out of 5 runs produced nearly identical results despite very different frameworks installed tells you something about the gap between "framework available" and "framework actually used." The re-run with explicit enforcement tests the complementary question: do the frameworks produce meaningfully different results when their methodologies are actually followed?
+
+---
+
+## Learning 002: /start Command Gaps — Data Capture Hardening Before Run 2
+
+**Date discovered:** 2026-03-20
+**Affects:** All future runs (Run 2 onward)
+**Severity:** Moderate — gaps would reduce data quality and reproducibility
+
+### What was found
+
+Pre-execution review of the `/start` command against `EXPERIMENT_DESIGN.md` revealed 9 gaps between what the experiment needs to measure and what `/start` actually captures. These were identified and resolved before any Run 2 execution began.
+
+### Gaps and decisions
+
+1. **Main branch `/start` stale** — Operator protocol said "run `/start` from main" but main's command still had old generic code from Learning 001. The run2 branch-specific `/start` commands would never be reached.
+   **Decision:** Changed protocol to "checkout branch first, then `/start`." Updated EXPERIMENT_DESIGN.md and main's `/start` to redirect if invoked during Phase 1/2.
+
+2. **No wall-clock time capture** — "Time to complete" is an experiment metric but no machine-readable timestamps were logged.
+   **Decision:** Added automated start/end timestamps to `metrics/timing.jsonl` in each branch's `/start`.
+
+3. **No workflow command execution log** — Can't verify post-hoc that frameworks were actually exercised. If Learning 001 recurs at a subtler level (one command skipped), there's no audit trail.
+   **Decision:** Added `metrics/workflow-log.jsonl` with structured entries (step name, status, timestamp) around each framework command. Phase 3 analysis will verify expected commands were all executed.
+
+4. **No pre-build verification** — No sanity checks that framework files, measurement scripts, e2e tests, and stub data are present before building.
+   **Decision:** Added pre-flight checks. Build stops if infrastructure is missing.
+
+5. **No Phase 2 starting-point enforcement** — Phase 2 should start from Phase 1 completion tag but nothing verified this.
+   **Decision:** Added tag verification before Phase 2 builds proceed.
+
+6. **No acceptance criteria gating** — `/start` tags the branch regardless of test results (e.g., 0/42 e2e tests).
+   **Decision:** Kept as-is intentionally. Poor results are a finding about the workflow's quality, not an error to block. Tag it, log it, analyze it in Phase 3.
+
+7. **No Phase 1→2 delta reporting** — "The delta between Phase 1 and Phase 2 metrics is where the most important signal lives" but metrics were reported without comparison.
+   **Decision:** Added automatic Phase 1 vs Phase 2 comparison in the post-measurement debrief for Phase 2 runs.
+
+8. **Qualitative scorecard too heavy** — Pre-run self-assessment and structured 1-5 ratings aren't useful when execution is autonomous. Muxin is hands-off during builds.
+   **Decision:** Stripped scorecard to lightweight post-run debrief. Automated timing replaces manual session timestamps. `/start` asks targeted questions; Muxin answers or skips.
+
+9. **No test generation tracking** — "Did the workflow generate tests?" is a key research question but wasn't tracked.
+   **Decision:** Added post-build count of workflow-generated test files (files matching `*.test.*` or `*.spec.*` in `src/`, distinct from the shared Playwright e2e suite). Whether a workflow forces test creation is observed, not mandated.
+
+### Why this matters
+
+Learning 001 was about the independent variable not being varied. Learning 002 is about the dependent variables not being measured. Both must be fixed for the experiment to produce useful data. Together they represent the difference between "install the framework" and "run a rigorous experiment using the framework."

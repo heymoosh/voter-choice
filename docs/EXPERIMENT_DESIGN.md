@@ -78,10 +78,11 @@ Cowork's redirect message should be: *"This is a Claude Code task. Open Claude C
 
 For each workflow run (Phases 1 and 2), Muxin follows the same initiation sequence:
 
-1. Open Claude Code in the `voter-choice` repo directory (on the `main` branch).
-2. Run `/start`.
-3. Claude Code autonomously: checks out the correct branch, runs the clean environment protocol, builds the ballot tool (Phase 1) or adds Spanish support (Phase 2) using only the workflow's own methodology, runs `npm run measure`, tags the branch, and updates `docs/RUN_LOG.md`.
-4. When Claude Code finishes, Muxin fills out the post-run qualitative scorecard in `docs/QUALITATIVE_SCORECARD.md`.
+1. Open Claude Code in the `voter-choice` repo directory.
+2. Check out the target branch: `git checkout run2/<workflow-name>` (the branch name is in `RUN_LOG.md ## Next`).
+3. Run `/start`.
+4. Claude Code autonomously: runs pre-flight checks, executes the framework's workflow, builds the ballot tool (Phase 1) or adds Spanish support (Phase 2), runs `npm run measure`, tags the branch, switches back to `main`, and updates `docs/RUN_LOG.md`.
+5. When Claude Code reports metrics and asks for observations, Muxin provides any notes or says "nothing to add."
 
 **Autonomous execution principle:** Claude Code drives the entire build session. It does not stop to ask Muxin for input. If a workflow plugin presents menus, asks clarifying questions, or requests user decisions, Claude Code makes those decisions itself using the spec (`docs/PROJECT_SPEC.md` or `docs/PHASE2_SPEC.md`) as the source of truth and proceeds with reasonable defaults. This ensures consistent operator involvement (zero) across all five workflows, eliminating operator input as a confound.
 
@@ -350,41 +351,17 @@ Measurement scripts should be automated — a single command (e.g., `npm run mea
 
 ### Qualitative Scorecard
 
-After each workflow run, Muxin fills out the scorecard in `docs/QUALITATIVE_SCORECARD.md`. The scorecard has two parts: structured ratings for cross-run comparison, and open-ended notes for context.
+After each workflow run completes, the `/start` command reports metrics and asks Muxin a few targeted questions. Her responses are recorded in `docs/QUALITATIVE_SCORECARD.md` and/or the RUN_LOG entry.
 
-**Pre-run self-assessment** (fill out before starting each run):
+**Automated data capture** (no manual input needed):
+* Session timing — captured in `metrics/timing.jsonl` on each branch
+* Workflow command execution log — captured in `metrics/workflow-log.jsonl` on each branch
+* Workflow-generated test file count — captured in the post-build measurement step
 
-| Question | Rating (1-5) |
-|----------|--------------|
-| Current familiarity with Next.js / React | __ |
-| Current familiarity with this specific workflow framework | __ |
-| Current energy / motivation level | __ |
+**Operator debrief** (lightweight, after `/start` finishes):
+The `/start` command asks: "Build complete. Any observations for the write-up? Anything surprising about the output or metrics?" Muxin responds with whatever stands out, or says "nothing to add." This replaces the previous structured 1-5 rating system, which wasn't useful for autonomous execution where the operator is hands-off during the build.
 
-**Session start time:** __ (wall clock, e.g. "2:15 PM")
-
-**Post-run structured ratings** (fill out immediately after each run):
-
-| Dimension | Rating (1-5) | Notes |
-|-----------|--------------|-------|
-| Ease of getting started (setup, first productive output) | __ | |
-| Quality of generated code on first pass (before any manual edits) | __ | |
-| How much manual cleanup or correction was needed | __ | |
-| How often I had to override or fight the workflow | __ | |
-| Confidence I could hand this codebase to another developer | __ | |
-| Confidence I could keep building on this codebase myself | __ | |
-
-Rating scale: 1 = terrible / constantly, 5 = excellent / never
-
-**Session end time:** __ (wall clock, e.g. "5:40 PM")
-
-**Post-run open-ended notes:**
-
-* Biggest friction point(s):
-* Moment(s) of delight (where the workflow genuinely helped):
-* Anything surprising or unexpected:
-* Would I use this workflow again? Why or why not?
-
-Claude Code should generate `docs/QUALITATIVE_SCORECARD.md` in Phase 0.3a as a reusable template with sections for each of the 5 workflow runs (using the randomized order from Phase 0.5).
+`docs/QUALITATIVE_SCORECARD.md` serves as a simple aggregation file — one section per run with whatever notes Muxin provides.
 
 ---
 
@@ -462,25 +439,25 @@ The repo already exists at `/Users/Muxin/Documents/GitHub/voter-choice` with `do
 
 **Claude Code's responsibilities in Phase 1:** Execute the full build session autonomously via `/start`. Check out the branch, run the clean environment protocol, build the ballot tool from the spec using the workflow's own methodology, run `npm run measure`, tag the branch, update `RUN_LOG.md`. All decisions are made by Claude Code using the spec as the source of truth. No operator input during the build.
 
-**Muxin's responsibilities in Phase 1:** Run `/start` to initiate each run. Fill out the qualitative scorecard after Claude Code finishes. Allow at least one calendar day between runs.
+**Muxin's responsibilities in Phase 1:** Check out the target branch and run `/start` to initiate each run. Provide any observations at the post-run debrief prompt. Allow at least one calendar day between runs.
 
 For each workflow (in randomized order):
 
-1. Muxin runs `/start` from the `main` branch
-2. Claude Code autonomously: checks out the branch, cleans the environment, builds the ballot tool, runs measurements, tags, pushes, and updates `RUN_LOG.md`
-3. Muxin fills out the post-run scorecard and open-ended notes immediately (while memory is fresh)
+1. Muxin checks out the target branch and runs `/start`
+2. Claude Code autonomously: runs pre-flight checks, executes the framework workflow, builds the ballot tool, runs measurements, tags, pushes, switches to main, and updates `RUN_LOG.md`
+3. Claude Code reports metrics and asks for observations; Muxin responds or says "nothing to add"
 
 ### Phase 2: Extend (Claude Code executes autonomously)
 
 **Claude Code's responsibilities in Phase 2:** Same as Phase 1, but building from the Phase 1 tag on each branch and following `docs/PHASE2_SPEC.md`. Measurement captures the Phase 1 → Phase 2 delta.
 
-**Muxin's responsibilities in Phase 2:** Same as Phase 1 — run `/start`, fill out the scorecard. Allow at least one calendar day between runs.
+**Muxin's responsibilities in Phase 2:** Same as Phase 1 — check out the branch and run `/start`, respond to the debrief. Allow at least one calendar day between runs.
 
 For each workflow:
 
-1. Muxin runs `/start` from the `main` branch
-2. Claude Code autonomously: checks out the branch from its Phase 1 tag, cleans the environment, adds Spanish language support per the Phase 2 spec, runs measurements, tags, pushes, and updates `RUN_LOG.md`
-3. Muxin fills out the post-run scorecard immediately
+1. Muxin checks out the target branch and runs `/start`
+2. Claude Code autonomously: verifies HEAD is at the Phase 1 completion tag, runs pre-flight checks, executes the framework workflow, adds Spanish language support per the Phase 2 spec, runs measurements (including Phase 1 vs Phase 2 delta report), tags, pushes, switches to main, and updates `RUN_LOG.md`
+3. Claude Code reports metrics and deltas; Muxin responds or says "nothing to add"
 
 ### Phase 3: Analysis (Claude Code owns)
 
