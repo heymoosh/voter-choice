@@ -2,7 +2,7 @@
 
 ## Next
 
-**Phase 1 Re-Run — Run 2: Compound Engineering.** Check out `run2/compound-engineering`, run `/start`. The `/start` command on this branch chains ce:plan → ce:work → ce:review → ce:compound explicitly. CLAUDE.md has hard workflow enforcement. `/start` now includes pre-flight checks, workflow logging, timing capture, adherence verification, git build statistics, framework artifact inventory, and operator debrief (Learnings 002 + 003). See `docs/LEARNINGS.md` for context.
+**Phase 1 Re-Run — Run 2: Compound Engineering.** Run `/start` from main. It will auto-checkout `run2/compound-engineering` and execute the CE workflow (ce:plan → ce:work → ce:review → ce:compound). CLAUDE.md has hard workflow enforcement. `/start` includes pre-flight checks, workflow logging, timing capture, adherence verification, git build statistics, framework artifact inventory, and operator debrief. See `docs/LEARNINGS.md` for context.
 
 ## Completed
 

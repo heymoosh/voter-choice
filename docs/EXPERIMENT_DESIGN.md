@@ -78,11 +78,10 @@ Cowork's redirect message should be: *"This is a Claude Code task. Open Claude C
 
 For each workflow run (Phases 1 and 2), Muxin follows the same initiation sequence:
 
-1. Open Claude Code in the `voter-choice` repo directory.
-2. Check out the target branch: `git checkout run2/<workflow-name>` (the branch name is in `RUN_LOG.md ## Next`).
-3. Run `/start`.
-4. Claude Code autonomously: runs pre-flight checks, executes the framework's workflow, builds the ballot tool (Phase 1) or adds Spanish support (Phase 2), runs `npm run measure`, tags the branch, switches back to `main`, and updates `docs/RUN_LOG.md`.
-5. When Claude Code reports metrics and asks for observations, Muxin provides any notes or says "nothing to add."
+1. Open Claude Code in the `voter-choice` repo directory (on the `main` branch).
+2. Run `/start`. It auto-reads `RUN_LOG.md ## Next`, checks out the target branch, and executes the framework workflow.
+3. Claude Code autonomously: runs pre-flight checks, executes the framework's workflow, builds the ballot tool (Phase 1) or adds Spanish support (Phase 2), runs `npm run measure`, tags the branch, switches back to `main`, and updates `docs/RUN_LOG.md`.
+4. When Claude Code reports metrics and asks for observations, Muxin provides any notes or says "nothing to add."
 
 **Autonomous execution principle:** Claude Code drives the entire build session. It does not stop to ask Muxin for input. If a workflow plugin presents menus, asks clarifying questions, or requests user decisions, Claude Code makes those decisions itself using the spec (`docs/PROJECT_SPEC.md` or `docs/PHASE2_SPEC.md`) as the source of truth and proceeds with reasonable defaults. This ensures consistent operator involvement (zero) across all five workflows, eliminating operator input as a confound.
 
@@ -439,11 +438,11 @@ The repo already exists at `/Users/Muxin/Documents/GitHub/voter-choice` with `do
 
 **Claude Code's responsibilities in Phase 1:** Execute the full build session autonomously via `/start`. Check out the branch, run the clean environment protocol, build the ballot tool from the spec using the workflow's own methodology, run `npm run measure`, tag the branch, update `RUN_LOG.md`. All decisions are made by Claude Code using the spec as the source of truth. No operator input during the build.
 
-**Muxin's responsibilities in Phase 1:** Check out the target branch and run `/start` to initiate each run. Provide any observations at the post-run debrief prompt. Allow at least one calendar day between runs.
+**Muxin's responsibilities in Phase 1:** Run `/start` from main to initiate each run (it auto-checkouts the target branch). Provide any observations at the post-run debrief prompt. Allow at least one calendar day between runs.
 
 For each workflow (in randomized order):
 
-1. Muxin checks out the target branch and runs `/start`
+1. Muxin runs `/start` from main
 2. Claude Code autonomously: runs pre-flight checks, executes the framework workflow, builds the ballot tool, runs measurements, tags, pushes, switches to main, and updates `RUN_LOG.md`
 3. Claude Code reports metrics and asks for observations; Muxin responds or says "nothing to add"
 
@@ -451,11 +450,11 @@ For each workflow (in randomized order):
 
 **Claude Code's responsibilities in Phase 2:** Same as Phase 1, but building from the Phase 1 tag on each branch and following `docs/PHASE2_SPEC.md`. Measurement captures the Phase 1 → Phase 2 delta.
 
-**Muxin's responsibilities in Phase 2:** Same as Phase 1 — check out the branch and run `/start`, respond to the debrief. Allow at least one calendar day between runs.
+**Muxin's responsibilities in Phase 2:** Same as Phase 1 — run `/start` from main, respond to the debrief. Allow at least one calendar day between runs.
 
 For each workflow:
 
-1. Muxin checks out the target branch and runs `/start`
+1. Muxin runs `/start` from main
 2. Claude Code autonomously: verifies HEAD is at the Phase 1 completion tag, runs pre-flight checks, executes the framework workflow, adds Spanish language support per the Phase 2 spec, runs measurements (including Phase 1 vs Phase 2 delta report), tags, pushes, switches to main, and updates `RUN_LOG.md`
 3. Claude Code reports metrics and deltas; Muxin responds or says "nothing to add"
 
