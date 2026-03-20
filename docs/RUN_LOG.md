@@ -2,9 +2,16 @@
 
 ## Next
 
-**Phase 1 Re-Run — Run 2: Compound Engineering.** Run `/start` from main. It will auto-checkout `run2/compound-engineering` and execute the CE workflow (ce:plan → ce:work → ce:review → ce:compound). CLAUDE.md has hard workflow enforcement. `/start` includes pre-flight checks, workflow logging, timing capture, adherence verification, git build statistics, framework artifact inventory, and operator debrief. See `docs/LEARNINGS.md` for context.
+**Learning 004 Fixes: Resolve 3 start.md ambiguities before first run.** See `docs/LEARNINGS.md` Learning 004 "Remaining issues to fix before first run" — fix Issues A (phase vs run number disambiguation), B (fresh build context), and C (hardcoded run2 in tag). Then update this `## Next` to the actual CE run: Run `/start` from main → auto-checkout `run2/compound-engineering` → CE workflow.
 
 ## Completed
+
+### 2026-03-20 — Learning 004: /start Refactored to Single Entry Point
+
+**What was done:** Refactored `/start` to eliminate manual branch management and 4-way duplication. Main's start.md is now the single entry point: auto-reads RUN_LOG, auto-checkouts target branch, delegates to branch-specific `workflow.md`, handles all measurement/debrief/RUN_LOG. Each run2/ branch got a `workflow.md` (framework-specific steps only) and a redirect stub replacing the old monolithic start.md. Model self-reporting replaces hardcoded model string. Operator protocol updated in EXPERIMENT_DESIGN.md.
+**Files modified:** `.claude/commands/start.md` (main + all 4 run2/ branches), `.claude/commands/workflow.md` (created on all 4 run2/ branches), `docs/RUN_LOG.md`, `docs/EXPERIMENT_DESIGN.md`, `docs/LEARNINGS.md`
+**Commits:** `662518e` + `ba05a7b` (main), `65672e0` (CE), `ddc4087` (BMAD), `72dedab` (Superpowers), `676301f` (Spec Kit)
+**Issues or deviations:** 3 ambiguities identified during sanity check — logged in Learning 004 as Issues A/B/C. Must be resolved before first run.
 
 ### 2026-03-20 — Learning 003: Additional Measurement Gaps
 

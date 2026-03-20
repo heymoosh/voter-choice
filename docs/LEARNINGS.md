@@ -116,3 +116,52 @@ Pre-execution review of the `/start` command against `EXPERIMENT_DESIGN.md` reve
 ### Why this matters
 
 Learning 001 was about the independent variable not being varied. Learning 002 is about the dependent variables not being measured. Both must be fixed for the experiment to produce useful data. Together they represent the difference between "install the framework" and "run a rigorous experiment using the framework."
+
+---
+
+## Learning 004: /start Refactored to Single Entry Point + Remaining Ambiguities
+
+**Date:** 2026-03-20
+**Affects:** All future runs
+**Severity:** Low-moderate — refactor complete, but 3 ambiguities remain before first run
+
+### What was done
+
+Refactored the `/start` command system to eliminate operator branch management and reduce duplication:
+
+1. **Main's `start.md` is now the single entry point.** It auto-reads RUN_LOG `## Next`, auto-checkouts the target branch, runs pre-flight checks, delegates to the branch's `workflow.md`, handles all post-build measurement/debrief/RUN_LOG update.
+2. **Framework-specific workflow steps extracted to `workflow.md`** on each run2/ branch. Each file has `## Meta` (framework name, tag prefix, verification path), `## Workflow Steps` (the framework methodology), and `## Adherence Check` (artifact verification commands).
+3. **Branch start.md files replaced with redirect stubs** — if someone accidentally runs `/start` from a branch, they're told to go to main.
+4. **Model self-reporting** replaces hardcoded `"model":"claude-sonnet-4-6"` in timing.jsonl. Claude Code identifies its own model from system context.
+5. **Operator protocol updated** in EXPERIMENT_DESIGN.md and RUN_LOG to remove manual checkout steps.
+
+**Commits:**
+- `662518e` (main) — new start.md
+- `ba05a7b` (main) — docs updates
+- `65672e0` (run2/compound-engineering) — workflow.md + stub
+- `ddc4087` (run2/bmad) — workflow.md + stub
+- `72dedab` (run2/superpowers) — workflow.md + stub
+- `676301f` (run2/spec-kit) — workflow.md + stub
+
+### Remaining issues to fix before first run
+
+Three ambiguities were identified during sanity check but not yet resolved:
+
+**Issue A: Phase vs Run number ambiguity.** The RUN_LOG says "Phase 1 Re-Run — Run 2: Compound Engineering." Start.md says "Determine the phase type (Phase 0, 1, 2, or 3) from the text." The word "Phase 1" and "Run 2" both contain numbers. Claude needs explicit disambiguation:
+- **Phase** = experiment phase (1 = build from scratch, 2 = extend with Spanish)
+- **Run** = iteration number (Run 1 = original invalidated runs, Run 2 = re-runs with enforcement)
+- "Phase 1 Re-Run" means Phase 1. "Run 2" is NOT Phase 2.
+
+**Fix:** Update Step 1 of start.md to explicitly define these terms and how to parse them.
+
+**Issue B: No "fresh build" context.** When workflow.md fires, nothing tells Claude "this branch has scaffold + framework installed but NO existing ballot tool code — you are building the app from scratch." The branch state IS correct (run2/ branches fork from framework install points), but Claude could wonder if it's continuing from existing work.
+
+**Fix:** Add a note after checkout (Step 3 or Step 6) saying: "This is a Phase 1 build. The branch has the framework and scaffold but no application code yet. Build the ballot tool from scratch per the spec."
+
+**Issue C: Tag format hardcodes `run2`.** Step 7g says `<TAG_PREFIX>-run2-phase<N>-complete`. This should derive the run number from the branch name prefix rather than hardcoding it. Currently works, but fragile.
+
+**Fix:** Update Step 7g to extract run number from branch name (e.g., `run2/` → `run2`).
+
+### Why this matters
+
+The refactor eliminated a significant UX burden (manual branch management) and a maintenance burden (4-way duplication of infrastructure code). The remaining issues are about making the prompt unambiguous enough that Claude Code can't misinterpret the context. For an experiment where "did the workflow actually run correctly" is the core question, prompt clarity is load-bearing.
