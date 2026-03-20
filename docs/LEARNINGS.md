@@ -238,3 +238,109 @@ The progression reveals a spectrum of framework adoption failures:
 3. Skill invocation enforcement → (to be tested with `/lfg` on `run3/compound-engineering`)
 
 For the experiment: **adherence is not binary.** A framework can be "followed" at the artifact level while its core methodology (the thing that differentiates it from vanilla) is completely bypassed.
+
+---
+
+## Learning 006: "Read and Follow" Problem Affects All Plugins, Not Just CE
+
+**Date discovered:** 2026-03-20
+**Affects:** All run2/ and run3/ branches (Superpowers, Spec Kit, BMAD — plus CE which was already caught in Learning 005)
+**Severity:** Critical — every workflow.md uses the same broken invocation pattern
+
+### What was found
+
+Post-mortem audit of all four `workflow.md` files revealed that every single one uses the identical "Read and follow `.claude/skills/…/SKILL.md`" pattern that Learning 005 identified as broken for CE. The CE fix (Learning 005 → run3 branch with `/lfg` skill invocation) was treated as CE-specific, but the root cause is structural — it's how all workflow.md files were written in Learning 004's refactor.
+
+### The pattern in each workflow.md
+
+| Plugin | Pattern used | File location | Steps affected |
+|--------|-------------|---------------|----------------|
+| **CE** | "Read and follow `.claude/skills/ce-plan/SKILL.md`" | skills/ | 4 steps (already fixed via run3) |
+| **Superpowers** | "Read and follow `.claude/skills/brainstorming/SKILL.md`" | skills/ | 6 steps |
+| **Spec Kit** | "Read and follow `.claude/commands/speckit.specify.md`" | commands/ | 6 steps |
+| **BMAD** | "Read and follow `.claude/skills/bmad-create-product-brief/SKILL.md`" | skills/ | 8 steps |
+
+### What each plugin loses under "read and follow"
+
+**Superpowers (severity: HIGH)**
+- `subagent-driven-development` — parallel task execution with fresh subagent per task, 2-stage review gates (spec compliance reviewer + code quality reviewer). The framework's core differentiator. Never spawned.
+- `spec-document-reviewer` and `plan-document-reviewer` subagents — review loops after brainstorming and planning steps. Never dispatched.
+- `code-reviewer` subagent — post-implementation review. Never dispatched.
+- Three "Iron Laws" (TDD: "no production code without a failing test first"; systematic-debugging: "no fixes without root cause investigation first"; verification-before-completion: "no completion claims without fresh verification evidence"). Referenced in workflow.md but when read as prose, the enforcement mechanism degrades — the model knows about them but doesn't feel bound by them the way it would when the skill is invoked and the instructions arrive as an executable procedure.
+
+**BMAD (severity: HIGH)**
+- Step-file architecture — BMAD workflows use numbered step files (`step-01-init.md`, `step-02-discovery.md`, etc.) that execute sequentially. "Read and follow" the top-level SKILL.md won't trigger loading these substeps.
+- Agent persona loading — each of BMAD's 13 agents (PM, Architect, Dev, QA, Scrum Master, etc.) loads a persona file with communication style, principles, and specialized knowledge. Never loaded.
+- `bmad-quick-dev-new-preview` — a 5-step pipeline with 3 parallel adversarial reviewers (blind hunter, edge case hunter, acceptance auditor). Exists in the framework but isn't even referenced in our workflow.md.
+- `bmad-party-mode` — multi-agent discussion orchestration. Not referenced.
+
+**Spec Kit (severity: LOWER)**
+- Spec Kit commands live in `.claude/commands/` (not `skills/`), so they CAN be invoked via the Skill tool — making this the easiest plugin to fix.
+- Spec Kit's commands are simpler than the others — structured prompts that generate artifacts, not multi-agent orchestration. The damage from "read and follow" is less severe.
+- However, `speckit.implement` has structured task execution with checklist validation and dependency ordering that will be simplified when read as prose rather than invoked as a procedure.
+
+### Do the other plugins have a `/lfg` equivalent?
+
+A key part of the CE fix was discovering that CE already shipped with `/lfg` — a built-in autonomous pipeline. Audit of the other three plugins:
+
+| Plugin | Built-in autonomous pipeline? | Details |
+|--------|-------------------------------|---------|
+| **CE** | **Yes** — `/lfg` | Chains plan→deepen→work→review→resolve. User invokes once. (Already used in run3 fix.) |
+| **Superpowers** | **No** | Framework expects manual skill invocation per step. Deprecated its own commands (brainstorm.md, write-plan.md, execute-plan.md) in favor of skills. No single "run everything" command. |
+| **Spec Kit** | **No** | Individual commands only, no chaining command. But all commands are in `commands/` so each can be individually Skill-invoked. |
+| **BMAD** | **Partial** — `bmad-quick-dev-new-preview` | 5-step pipeline (clarify→plan→implement→adversarial review→present) with sub-agent dispatch. But it's a skill (in `skills/`), not a command. Also has `bmad-master` agent with menu-driven orchestration. |
+
+### Technical constraint: skills/ vs commands/
+
+The Skill tool only invokes files in `.claude/commands/`. Files in `.claude/skills/` are designed to be activated by the model's internal skill system (triggered by the `using-superpowers` SKILL.md or CE's skill-matching logic), not by the Skill tool.
+
+This means:
+- **Spec Kit** — commands are already in `commands/`. Can be Skill-invoked with no file moves.
+- **Superpowers** — all functionality is in `skills/`. Cannot be Skill-invoked without copying to `commands/`.
+- **BMAD** — all functionality is in `skills/`. Cannot be Skill-invoked without copying to `commands/`.
+- **CE** — already fixed by copying `/lfg` to `commands/` on run3 branch.
+
+### Root cause (why all workflow.md files have this problem)
+
+Learning 004 created the `workflow.md` system. The design assumed that "Read and follow [SKILL.md]" would produce the same behavior as invoking the skill — that the model would treat the instructions as procedural regardless of how they arrived. Learning 005 proved this assumption wrong for CE. This audit proves it wrong for all plugins.
+
+The assumption was reasonable — the instructions are the same text either way. But the invocation mechanism changes how the model relates to the text:
+- **Invoked via Skill tool:** Instructions arrive as "you are now executing this procedure." The model treats them as binding.
+- **Read via Read tool:** Instructions arrive as "here is a reference document." The model treats them as advisory — extracting templates and output formats while skipping orchestration steps it judges unnecessary.
+
+### Corrective action
+
+Create new run3/ branches for all three remaining plugins (Superpowers, Spec Kit, BMAD) with workflow.md files rewritten to use proper invocation mechanisms. The run2/ branches are preserved as experiment data.
+
+**Spec Kit (simplest fix):**
+- Create `run3/spec-kit` from the last infrastructure commit on `run2/spec-kit`
+- Rewrite `workflow.md` to invoke each `speckit.*` command via the Skill tool instead of "read and follow"
+- No file moves needed — commands are already in `commands/`
+
+**Superpowers:**
+- Create `run3/superpowers` from the last infrastructure commit on `run2/superpowers`
+- Copy key skills to `.claude/commands/` so they can be Skill-invoked: `brainstorming`, `writing-plans`, `subagent-driven-development` (or `executing-plans`), `requesting-code-review`, `verification-before-completion`, `finishing-a-development-branch`
+- Rewrite `workflow.md` to invoke each step via the Skill tool
+- Keep originals in `skills/` — the copied commands reference them
+
+**BMAD:**
+- Create `run3/bmad` from the last infrastructure commit on `run2/bmad`
+- Copy `bmad-quick-dev-new-preview` to `.claude/commands/` as the autonomous pipeline (analogous to CE's `/lfg`)
+- If quick-dev-new-preview doesn't cover BMAD's full analysis→planning→solutioning→implementation pipeline, copy individual phase skills to commands instead
+- Rewrite `workflow.md` to Skill-invoke the pipeline or individual phase commands
+
+**All branches:**
+- Use Opus (consistent with CE run3 decision)
+- Add process-level adherence checks: verify subagent dispatch (check for Agent tool usage in the session), not just artifact existence
+
+### Updated spectrum of framework adoption failures
+
+1. **No enforcement** → framework ignored entirely (Learning 001)
+2. **Step-sequence enforcement via "read and follow"** → templates followed, engines skipped (Learning 005, this learning)
+3. **Skill invocation via Skill tool** → engine activated (CE run3, to be tested for remaining plugins)
+
+Level 2→3 requires that the skill be in `.claude/commands/`. The `skills/` → `commands/` distinction in Claude Code's architecture is load-bearing for whether a framework's methodology actually executes.
+
+### Why this matters for the write-up
+
+This generalizes Learning 005 from a CE-specific bug to a systemic design flaw in the experiment's invocation mechanism. It also reveals a practical finding for framework authors: **if your framework installs to `.claude/skills/` and has no commands in `.claude/commands/`, it cannot be autonomously invoked by an orchestrating prompt.** The framework's methodology can only activate if (a) the model's own skill-matching logic triggers it, or (b) someone copies the skills to commands. For autonomous experiment contexts, (b) is the only reliable path.

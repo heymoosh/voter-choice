@@ -2,9 +2,16 @@
 
 ## Next
 
-Phase 1 Run 4: Superpowers. Run `/start` from main → auto-checkout `run4/superpowers` → execute the workflow defined in `.claude/commands/workflow.md` on that branch. Use `docs/PROJECT_SPEC.md` as source of truth. Do NOT stop for operator input.
+Fix workflow.md invocation on remaining plugins (Learning 006). Create run3/ branches for Superpowers, Spec Kit, and BMAD with workflow.md files rewritten to use Skill tool invocation instead of "read and follow." Spec Kit: invoke `/speckit.*` commands directly (already in commands/). Superpowers: copy key skills to commands/, then Skill-invoke. BMAD: copy `bmad-quick-dev-new-preview` or individual phase skills to commands/, then Skill-invoke. After all three branches are ready, resume with Phase 1 Run 4: Superpowers.
 
 ## Completed
+
+### Learning 006 — "Read and Follow" Affects All Plugins
+
+- **Date:** 2026-03-20
+- **What was done:** Audited all four workflow.md files. All use the same "Read and follow SKILL.md" pattern that caused CE's multi-agent engine to never activate (Learning 005). Superpowers loses subagent-driven-development, review subagents, and Iron Law enforcement. BMAD loses step-file architecture, agent persona loading, and adversarial reviewers. Spec Kit is lower severity (commands already in commands/, simpler architecture). Corrective action: create run3/ branches for all three with Skill tool invocation. See `docs/LEARNINGS.md` Learning 006 for full analysis.
+- **Files modified:** `docs/LEARNINGS.md`
+- **Issues or deviations:** None
 
 ### Phase 1 Run 3 — Compound Engineering (CE /lfg pipeline)
 
