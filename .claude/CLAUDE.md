@@ -21,3 +21,28 @@ Workflow experiment comparing 5 AI coding frameworks. Read `docs/RUN_LOG.md` fir
 
 ## Code Style
 TypeScript. ESLint + Prettier (configured in Phase 0.3a as part of scaffold setup).
+
+## Workflow Enforcement — Superpowers
+
+**THIS IS A HARD REQUIREMENT. VIOLATION INVALIDATES THE EXPERIMENT.**
+
+This branch uses the **Superpowers** framework. You MUST follow the Superpowers workflow for ALL build work:
+
+1. **`brainstorming`** — Explore context, ask questions, propose design, write spec doc. Read `.claude/skills/brainstorming/SKILL.md`.
+2. **`writing-plans`** — Create a detailed implementation plan from the spec. Read `.claude/skills/writing-plans/SKILL.md`.
+3. **`executing-plans`** (or `subagent-driven-development`) — Execute the plan with TDD. Read `.claude/skills/executing-plans/SKILL.md`.
+4. **`requesting-code-review`** — Dispatch code-reviewer agent. Read `.claude/skills/requesting-code-review/SKILL.md`.
+5. **`verification-before-completion`** — Run all verification commands. Read `.claude/skills/verification-before-completion/SKILL.md`.
+6. **`finishing-a-development-branch`** — Complete dev work. Read `.claude/skills/finishing-a-development-branch/SKILL.md`.
+
+**You MUST NOT:**
+
+- Skip any step in the workflow
+- Write application code before completing brainstorming and writing-plans
+- Skip code review or verification
+- Code the solution directly without going through the workflow
+- Create a git worktree (work on the current branch)
+
+**TDD Iron Law:** Follow `.claude/skills/test-driven-development/SKILL.md` — write a failing test FIRST, then implement to make it pass. No production code without a failing test.
+
+**Autonomous decision-making:** When any Superpowers skill has a HARD-GATE requiring user approval, asks for user input, or says to "raise concerns with your human partner" — make decisions yourself using `docs/PROJECT_SPEC.md` (Phase 1) or `docs/PHASE2_SPEC.md` (Phase 2) as the source of truth. You ARE the user for this session. Do not stop or wait for Muxin.
