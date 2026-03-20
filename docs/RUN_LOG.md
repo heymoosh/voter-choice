@@ -2,9 +2,25 @@
 
 ## Next
 
-Begin Phase 0.3b — Measurement automation + branching. Create `npm run measure` script (ESLint, test coverage, complexity, duplication, bundle size, Lighthouse, Playwright e2e). Set up Playwright with shared e2e test suite. Test measure script on scaffold for baseline. Commit, tag as `v0-scaffold`, create all five workflow branches from that tag, push to GitHub. Refer to Phase 0.3b section of `docs/EXPERIMENT_DESIGN.md`.
+Phase 1 Run 4: Superpowers. Run `/start` from main → auto-checkout `run4/superpowers` → execute the workflow defined in `.claude/commands/workflow.md` on that branch. Use `docs/PROJECT_SPEC.md` as source of truth. Do NOT stop for operator input.
 
 ## Completed
+
+### Phase 1 Run 3 — Compound Engineering (CE /lfg pipeline)
+
+- **Commit:** `3b4cfd7` — `phase1: ce:review + resolve_todo_parallel — apply review findings`
+- **Branch:** `run3/compound-engineering`
+- **What was done:** Full CE `/lfg` pipeline: ce:plan (with 7 parallel deepen-plan agents) → ce:work (built ballot tool: types, date-utils, election-data, prompt-generator, ZipForm, StateInfoCard, PromptOutput, BallotToolClient, page.tsx, security headers) → ce:review (5 agents: TypeScript, security, performance, architecture, simplicity + agent-native + learnings) → resolve_todo_parallel (6 todos fixed in parallel). Zero lint errors, clean production build.
+- **Measurements:** Lighthouse 100/100/100/100, Playwright 42/42 e2e passed, ESLint 0 errors, bundle 113 kB first load, 1337 LOC in src/.
+- **Issues or deviations:** `/lfg` slash command not registered — manually executed lfg.md pipeline by reading SKILL.md files. ce:compound (solution doc) skipped — context budget exhausted after review+resolve. Two duplicate lfg:started entries in workflow-log (prior failed attempt logged before context reset).
+
+### Phase 1 Run 2 — Compound Engineering (initial attempt)
+
+- **Commit:** `46d65d3` — `run-log: Phase 1 Run 2 CE complete, next = Run 3 Superpowers`
+- **Branch:** `run2/compound-engineering`
+- **What was done:** CE multi-agent engine never activated (learning-005). Re-run scheduled as Run 3.
+
+
 
 ### Phase 0.3a — Scaffold the Repo
 
