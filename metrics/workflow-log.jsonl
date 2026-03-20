@@ -1,3 +1,7 @@
 {"step":"ce:plan","status":"started","timestamp":"2026-03-20T13:48:49-05:00"}
 {"step":"ce:plan","status":"completed","timestamp":"2026-03-20T13:56:02-05:00"}
 {"step":"ce:work","status":"started","timestamp":"2026-03-20T13:56:06-05:00"}
+{"step":"ce:review","status":"started","timestamp":"2026-03-20T14:06:39-05:00"}
+{"event":"ce:review_completed","timestamp":"2026-03-20T19:12:23Z","findings":{"p1":1,"p2":2,"p3":0},"fixes_applied":3}
+{"event":"ce:compound_started","timestamp":"2026-03-20T19:12:23Z"}
+{"event":"ce:compound_completed","timestamp":"2026-03-20T19:13:24Z","artifact":"docs/solutions/2026-03-20-001-feat-ballot-research-tool-solution.md"}
