@@ -2,9 +2,25 @@
 
 ## Next
 
-**Phase 1 Re-Run — Run 2: Compound Engineering.** Check out `run2/compound-engineering`, run `/start`. Use Opus model. The `/start` command on this branch chains ce:plan → ce:work → ce:review → ce:compound explicitly. CLAUDE.md has hard workflow enforcement. See `docs/LEARNINGS.md` Learning 001 for context on why we re-run.
+**Phase 1 Re-Run — Run 2: Compound Engineering.** Check out `run2/compound-engineering`, run `/start`. Use Opus model. The `/start` command on this branch chains ce:plan → ce:work → ce:review → ce:compound explicitly. CLAUDE.md has hard workflow enforcement. `/start` now includes pre-flight checks, workflow logging, timing capture, and operator debrief (Learning 002). See `docs/LEARNINGS.md` for context.
 
 ## Completed
+
+### 2026-03-20 — Learning 002: Harden /start Data Capture
+
+**What was done:** Pre-execution review identified 9 gaps between what the experiment needs to measure and what `/start` captures. All addressed:
+1. Updated operator protocol: checkout branch first, then `/start` (main `/start` now redirects for Phase 1/2)
+2. Added wall-clock timing (`metrics/timing.jsonl`) to all branch `/start` commands
+3. Added workflow command execution logging (`metrics/workflow-log.jsonl`) around every framework step
+4. Added pre-flight verification (framework files, measurement infrastructure, stub data)
+5. Added Phase 2 starting-point enforcement (verify HEAD at Phase 1 tag)
+6. Poor test results kept as findings, not blocked (decision: no acceptance gating)
+7. Added Phase 1→2 delta reporting for Phase 2 runs
+8. Simplified qualitative scorecard (removed pre-run self-assessment, lightweight debrief)
+9. Added workflow-generated test file tracking
+**Files modified:** `docs/LEARNINGS.md`, `docs/EXPERIMENT_DESIGN.md`, `docs/QUALITATIVE_SCORECARD.md`, `.claude/commands/start.md` (main + all 4 run2 branches)
+**Commits:** `393df6e` (main), `9e00481` (CE), `e310ab4` (Spec Kit), `998d68b` (Superpowers), `67ec509` (BMAD)
+**Issues or deviations:** None. All changes are pre-execution hardening — no run data was affected.
 
 ### 2026-03-20 — Phase 1 Re-Run Preparation
 
