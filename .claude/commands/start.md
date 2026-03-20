@@ -15,7 +15,8 @@ This is a full workflow run. You MUST use the **Superpowers workflow** described
 **Pre-flight checks (automated):**
 
 1. **Log build start:**
-   Run: `mkdir -p metrics && echo '{"event":"build_start","timestamp":"'$(date -Iseconds)'"}' > metrics/timing.jsonl`
+   Run: `mkdir -p metrics && echo '{"event":"build_start","timestamp":"'$(date -Iseconds)'","model":"claude-sonnet-4-6"}' > metrics/timing.jsonl`
+   Note: If you are NOT running on Sonnet 4.6, update the model field to match the actual model (e.g., `claude-opus-4-6`).
 
 2. **Verify measurement infrastructure:**
    Confirm these files exist: `scripts/measure.mjs`, `e2e/ballot-tool.spec.ts`, `src/data/states/TX.json`
