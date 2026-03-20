@@ -12,8 +12,9 @@ export interface RegistrationMethod {
   sincePostmarked: boolean;
 }
 
-export interface OnlineRegistration extends RegistrationMethod {
+export interface OnlineRegistration {
   available: boolean;
+  deadline: string | null;
   url: string | null;
 }
 
