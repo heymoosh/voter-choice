@@ -2,9 +2,18 @@
 
 ## Next
 
-Fix workflow.md invocation on remaining plugins (Learning 006). Create run3/ branches for Superpowers and BMAD with workflow.md files rewritten to use Skill tool invocation instead of "read and follow." Superpowers: copy key skills to commands/, then Skill-invoke. BMAD: copy `bmad-quick-dev-new-preview` or individual phase skills to commands/, then Skill-invoke. After both branches are ready, resume with Phase 1 Run 4: Superpowers.
+Fix workflow.md invocation on BMAD (Learning 006). Create run3/bmad branch with workflow.md rewritten to use Skill tool invocation instead of "read and follow." Copy `bmad-quick-dev-new-preview` or individual phase skills to commands/, then Skill-invoke. After BMAD branch is ready, resume with Phase 1 Run 4: Superpowers.
 
 ## Completed
+
+### Learning 006 Fix — Superpowers workflow.md Skill Invocation
+
+- **Date:** 2026-03-21
+- **Commit:** `959b1c7` — `learning-006: rewrite Superpowers workflow.md to use Skill tool invocation`
+- **Branch:** `run3/superpowers` (created from `72dedab` on `run2/superpowers`)
+- **What was done:** Created `run3/superpowers` branch. Copied 7 key skills from `.claude/skills/` to `.claude/commands/` so they can be Skill-invoked: brainstorming, writing-plans, executing-plans, subagent-driven-development, requesting-code-review, verification-before-completion, finishing-a-development-branch. Removed 3 deprecated command stubs (brainstorm.md, write-plan.md, execute-plan.md). Rewrote `workflow.md` to replace all 6 "Read and follow `.claude/skills/X/SKILL.md`" instructions with Skill tool invocations (`skill: "X"`). Updated CLAUDE.md enforcement section to explicitly require Skill tool invocation and prohibit reading skill files as prose. Added adherence check for Skill tool usage.
+- **Files modified:** `.claude/commands/workflow.md`, `.claude/CLAUDE.md`, plus 7 new command files and 3 deleted stubs
+- **Issues or deviations:** None.
 
 ### Learning 006 Fix — Spec Kit workflow.md Skill Invocation
 
