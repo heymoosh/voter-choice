@@ -8,13 +8,15 @@ FRAMEWORK_CHECK: .claude/commands/speckit.specify.md
 
 Execute the Spec Kit workflow — ALL steps are MANDATORY.
 
+**CRITICAL: Use the Skill tool to invoke each command.** Do NOT read command files as reference text. The Skill tool activates the command as an executable procedure. "Read and follow" degrades enforcement — see Learning 005/006.
+
 **Step 1 — Specify (`speckit.specify`):**
 
 Run: `echo '{"step":"speckit.specify","status":"started","timestamp":"'$(date -Iseconds)'"}' >> metrics/workflow-log.jsonl`
 
-Read and follow `.claude/commands/speckit.specify.md` with this argument:
-- Phase 1: `"Build the ballot ranking tool per docs/PROJECT_SPEC.md"`
-- Phase 2: `"Add Spanish language support per docs/PHASE2_SPEC.md"`
+Invoke via the Skill tool:
+- Phase 1: `skill: "speckit.specify", args: "Build the ballot ranking tool per docs/PROJECT_SPEC.md"`
+- Phase 2: `skill: "speckit.specify", args: "Add Spanish language support per docs/PHASE2_SPEC.md"`
 
 AUTONOMOUS RULES for speckit.specify:
 - When the command wants to create a feature branch: do NOT create a new branch. Stay on the current branch. Create the `.specify/features/` directory structure as the command requires, but skip `git checkout -b`.
@@ -28,7 +30,7 @@ Run: `echo '{"step":"speckit.specify","status":"completed","timestamp":"'$(date 
 
 Run: `echo '{"step":"speckit.clarify","status":"started","timestamp":"'$(date -Iseconds)'"}' >> metrics/workflow-log.jsonl`
 
-Read and follow `.claude/commands/speckit.clarify.md`.
+Invoke via the Skill tool: `skill: "speckit.clarify"`
 
 AUTONOMOUS RULES for speckit.clarify:
 - This command asks up to 5 clarification questions about the spec. Answer ALL questions yourself using `docs/PROJECT_SPEC.md` as the source of truth.
@@ -41,7 +43,7 @@ Run: `echo '{"step":"speckit.clarify","status":"completed","timestamp":"'$(date 
 
 Run: `echo '{"step":"speckit.plan","status":"started","timestamp":"'$(date -Iseconds)'"}' >> metrics/workflow-log.jsonl`
 
-Read and follow `.claude/commands/speckit.plan.md`.
+Invoke via the Skill tool: `skill: "speckit.plan"`
 
 AUTONOMOUS RULES for speckit.plan:
 - Generate the technical implementation plan using the spec.
@@ -54,7 +56,7 @@ Run: `echo '{"step":"speckit.plan","status":"completed","timestamp":"'$(date -Is
 
 Run: `echo '{"step":"speckit.tasks","status":"started","timestamp":"'$(date -Iseconds)'"}' >> metrics/workflow-log.jsonl`
 
-Read and follow `.claude/commands/speckit.tasks.md`.
+Invoke via the Skill tool: `skill: "speckit.tasks"`
 
 AUTONOMOUS RULES for speckit.tasks:
 - Generate the dependency-ordered task breakdown from plan.md.
@@ -66,7 +68,7 @@ Run: `echo '{"step":"speckit.tasks","status":"completed","timestamp":"'$(date -I
 
 Run: `echo '{"step":"speckit.analyze","status":"started","timestamp":"'$(date -Iseconds)'"}' >> metrics/workflow-log.jsonl`
 
-Read and follow `.claude/commands/speckit.analyze.md`.
+Invoke via the Skill tool: `skill: "speckit.analyze"`
 
 AUTONOMOUS RULES for speckit.analyze:
 - Run the cross-artifact consistency analysis.
@@ -78,7 +80,7 @@ Run: `echo '{"step":"speckit.analyze","status":"completed","timestamp":"'$(date 
 
 Run: `echo '{"step":"speckit.implement","status":"started","timestamp":"'$(date -Iseconds)'"}' >> metrics/workflow-log.jsonl`
 
-Read and follow `.claude/commands/speckit.implement.md`.
+Invoke via the Skill tool: `skill: "speckit.implement"`
 
 AUTONOMOUS RULES for speckit.implement:
 - Execute ALL tasks from tasks.md sequentially.
@@ -95,6 +97,7 @@ Check that the Spec Kit workflow produced its expected artifacts:
 - `.specify/features/` must contain a feature directory with `spec.md` (from speckit.specify)
 - Feature directory must contain `plan.md` (from speckit.plan) and `tasks.md` (from speckit.tasks)
 - `metrics/workflow-log.jsonl` must contain completed entries for all 6 steps
+- Verify that the Skill tool was used (not just file reads) for command invocation
 
 Run:
 

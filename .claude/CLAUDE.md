@@ -26,14 +26,14 @@ TypeScript. ESLint + Prettier (configured in Phase 0.3a as part of scaffold setu
 
 **THIS IS A HARD REQUIREMENT. VIOLATION INVALIDATES THE EXPERIMENT.**
 
-This branch uses the **GitHub Spec Kit** framework. You MUST follow the Spec Kit workflow for ALL build work:
+This branch uses the **GitHub Spec Kit** framework. You MUST follow the Spec Kit workflow for ALL build work. **Use the Skill tool to invoke each command** — do NOT read command files as reference text ("read and follow" degrades enforcement; see Learning 005/006).
 
-1. **`speckit.specify`** — Create the feature specification from the project spec. Read `.claude/commands/speckit.specify.md`.
-2. **`speckit.clarify`** — Identify and resolve underspecified areas. Read `.claude/commands/speckit.clarify.md`.
-3. **`speckit.plan`** — Create the technical implementation plan. Read `.claude/commands/speckit.plan.md`.
-4. **`speckit.tasks`** — Generate dependency-ordered task breakdown. Read `.claude/commands/speckit.tasks.md`.
-5. **`speckit.analyze`** — Run cross-artifact consistency analysis. Read `.claude/commands/speckit.analyze.md`.
-6. **`speckit.implement`** — Execute all tasks from tasks.md. Read `.claude/commands/speckit.implement.md`.
+1. **`speckit.specify`** — Invoke via Skill tool: `skill: "speckit.specify", args: "<description>"`
+2. **`speckit.clarify`** — Invoke via Skill tool: `skill: "speckit.clarify"`
+3. **`speckit.plan`** — Invoke via Skill tool: `skill: "speckit.plan"`
+4. **`speckit.tasks`** — Invoke via Skill tool: `skill: "speckit.tasks"`
+5. **`speckit.analyze`** — Invoke via Skill tool: `skill: "speckit.analyze"`
+6. **`speckit.implement`** — Invoke via Skill tool: `skill: "speckit.implement"`
 
 **You MUST NOT:**
 
@@ -42,5 +42,6 @@ This branch uses the **GitHub Spec Kit** framework. You MUST follow the Spec Kit
 - Skip analyze or implement
 - Code the solution directly without going through the workflow
 - Create a new git branch (stay on the current branch)
+- Read command files as prose instead of invoking them via the Skill tool
 
 **Autonomous decision-making:** When any Spec Kit command asks for user input, presents choices, or asks clarifying questions — answer them yourself using `docs/PROJECT_SPEC.md` (Phase 1) or `docs/PHASE2_SPEC.md` (Phase 2) as the source of truth. Do not stop or wait for Muxin.
