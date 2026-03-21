@@ -26,14 +26,14 @@ TypeScript. ESLint + Prettier (configured in Phase 0.3a as part of scaffold setu
 
 **THIS IS A HARD REQUIREMENT. VIOLATION INVALIDATES THE EXPERIMENT.**
 
-This branch uses the **Superpowers** framework. You MUST follow the Superpowers workflow for ALL build work:
+This branch uses the **Superpowers** framework. You MUST follow the Superpowers workflow for ALL build work. **Use the Skill tool to invoke each command** — do NOT read skill/command files as reference text ("read and follow" degrades enforcement; see Learning 005/006).
 
-1. **`brainstorming`** — Explore context, ask questions, propose design, write spec doc. Read `.claude/skills/brainstorming/SKILL.md`.
-2. **`writing-plans`** — Create a detailed implementation plan from the spec. Read `.claude/skills/writing-plans/SKILL.md`.
-3. **`executing-plans`** (or `subagent-driven-development`) — Execute the plan with TDD. Read `.claude/skills/executing-plans/SKILL.md`.
-4. **`requesting-code-review`** — Dispatch code-reviewer agent. Read `.claude/skills/requesting-code-review/SKILL.md`.
-5. **`verification-before-completion`** — Run all verification commands. Read `.claude/skills/verification-before-completion/SKILL.md`.
-6. **`finishing-a-development-branch`** — Complete dev work. Read `.claude/skills/finishing-a-development-branch/SKILL.md`.
+1. **`brainstorming`** — Invoke via Skill tool: `skill: "brainstorming", args: "<description>"`
+2. **`writing-plans`** — Invoke via Skill tool: `skill: "writing-plans", args: "<description>"`
+3. **`subagent-driven-development`** (or `executing-plans`) — Invoke via Skill tool: `skill: "subagent-driven-development"` or `skill: "executing-plans"`
+4. **`requesting-code-review`** — Invoke via Skill tool: `skill: "requesting-code-review"`
+5. **`verification-before-completion`** — Invoke via Skill tool: `skill: "verification-before-completion"`
+6. **`finishing-a-development-branch`** — Invoke via Skill tool: `skill: "finishing-a-development-branch"`
 
 **You MUST NOT:**
 
@@ -42,6 +42,7 @@ This branch uses the **Superpowers** framework. You MUST follow the Superpowers 
 - Skip code review or verification
 - Code the solution directly without going through the workflow
 - Create a git worktree (work on the current branch)
+- Read skill/command files as prose instead of invoking them via the Skill tool
 
 **TDD Iron Law:** Follow `.claude/skills/test-driven-development/SKILL.md` — write a failing test FIRST, then implement to make it pass. No production code without a failing test.
 

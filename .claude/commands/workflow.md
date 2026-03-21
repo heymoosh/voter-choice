@@ -2,19 +2,21 @@
 
 FRAMEWORK: Superpowers
 TAG_PREFIX: superpowers
-FRAMEWORK_CHECK: .claude/skills/brainstorming/SKILL.md
+FRAMEWORK_CHECK: .claude/commands/brainstorming.md
 
 ## Workflow Steps
 
 Execute the Superpowers workflow — ALL steps are MANDATORY.
 
+**CRITICAL: Use the Skill tool to invoke each command.** Do NOT read skill/command files as reference text. The Skill tool activates the command as an executable procedure. "Read and follow" degrades enforcement — see Learning 005/006.
+
 **Step 1 — Brainstorm (`brainstorming`):**
 
 Run: `echo '{"step":"brainstorming","status":"started","timestamp":"'$(date -Iseconds)'"}' >> metrics/workflow-log.jsonl`
 
-Read and follow `.claude/skills/brainstorming/SKILL.md`.
-
-Input: Use `docs/PROJECT_SPEC.md` (Phase 1) or `docs/PHASE2_SPEC.md` (Phase 2) as the feature description.
+Invoke via the Skill tool:
+- Phase 1: `skill: "brainstorming", args: "Build the ballot ranking tool per docs/PROJECT_SPEC.md"`
+- Phase 2: `skill: "brainstorming", args: "Add Spanish language support per docs/PHASE2_SPEC.md"`
 
 AUTONOMOUS RULES for brainstorming:
 - The skill has a HARD-GATE requiring user approval of the design. In autonomous mode: once you have explored project context and formulated 2-3 approaches, select the approach that best matches the spec and **approve it yourself**. You ARE the user for this session.
@@ -30,7 +32,7 @@ Run: `echo '{"step":"brainstorming","status":"completed","timestamp":"'$(date -I
 
 Run: `echo '{"step":"writing-plans","status":"started","timestamp":"'$(date -Iseconds)'"}' >> metrics/workflow-log.jsonl`
 
-Read and follow `.claude/skills/writing-plans/SKILL.md`.
+Invoke via the Skill tool: `skill: "writing-plans", args: "Create implementation plan from the design doc in docs/superpowers/specs/"`
 
 AUTONOMOUS RULES for writing-plans:
 - Use the design doc from Step 1 as input.
@@ -41,11 +43,12 @@ AUTONOMOUS RULES for writing-plans:
 
 Run: `echo '{"step":"writing-plans","status":"completed","timestamp":"'$(date -Iseconds)'"}' >> metrics/workflow-log.jsonl`
 
-**Step 3 — Execute Plan (`executing-plans` or `subagent-driven-development`):**
+**Step 3 — Execute Plan (`subagent-driven-development` or `executing-plans`):**
 
 Run: `echo '{"step":"executing-plans","status":"started","timestamp":"'$(date -Iseconds)'"}' >> metrics/workflow-log.jsonl`
 
-Read and follow `.claude/skills/executing-plans/SKILL.md`. If the plan has independent tasks, prefer `.claude/skills/subagent-driven-development/SKILL.md` instead.
+If the plan has independent tasks, invoke via the Skill tool: `skill: "subagent-driven-development", args: "Execute the plan in docs/superpowers/plans/"`
+Otherwise, invoke: `skill: "executing-plans", args: "Execute the plan in docs/superpowers/plans/"`
 
 AUTONOMOUS RULES for executing-plans:
 - Follow the TDD Iron Law from `.claude/skills/test-driven-development/SKILL.md`: write a failing test FIRST, then implement to make it pass.
@@ -59,7 +62,7 @@ Run: `echo '{"step":"executing-plans","status":"completed","timestamp":"'$(date 
 
 Run: `echo '{"step":"requesting-code-review","status":"started","timestamp":"'$(date -Iseconds)'"}' >> metrics/workflow-log.jsonl`
 
-Read and follow `.claude/skills/requesting-code-review/SKILL.md`.
+Invoke via the Skill tool: `skill: "requesting-code-review"`
 
 AUTONOMOUS RULES for requesting-code-review:
 - Dispatch the code-reviewer agent on the current branch.
@@ -72,7 +75,7 @@ Run: `echo '{"step":"requesting-code-review","status":"completed","timestamp":"'
 
 Run: `echo '{"step":"verification-before-completion","status":"started","timestamp":"'$(date -Iseconds)'"}' >> metrics/workflow-log.jsonl`
 
-Read and follow `.claude/skills/verification-before-completion/SKILL.md`.
+Invoke via the Skill tool: `skill: "verification-before-completion"`
 
 AUTONOMOUS RULES for verification:
 - Run ALL verification commands (tests, lint, build).
@@ -84,7 +87,7 @@ Run: `echo '{"step":"verification-before-completion","status":"completed","times
 
 Run: `echo '{"step":"finishing-a-development-branch","status":"started","timestamp":"'$(date -Iseconds)'"}' >> metrics/workflow-log.jsonl`
 
-Read and follow `.claude/skills/finishing-a-development-branch/SKILL.md`.
+Invoke via the Skill tool: `skill: "finishing-a-development-branch"`
 
 AUTONOMOUS RULES for finishing:
 - Do NOT merge to main. Do NOT create a PR. Choose "leave on branch" option.
@@ -98,6 +101,7 @@ Check that the Superpowers workflow produced its expected artifacts:
 - `docs/superpowers/specs/` must contain at least one design doc (from brainstorming)
 - `docs/superpowers/plans/` must contain at least one plan file (from writing-plans)
 - `metrics/workflow-log.jsonl` must contain completed entries for all 6 steps
+- Verify that the Skill tool was used (not just file reads) for command invocation
 
 Run:
 
