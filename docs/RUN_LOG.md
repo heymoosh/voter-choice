@@ -2,9 +2,18 @@
 
 ## Next
 
-Fix workflow.md invocation on remaining plugins (Learning 006). Create run3/ branches for Superpowers, Spec Kit, and BMAD with workflow.md files rewritten to use Skill tool invocation instead of "read and follow." Spec Kit: invoke `/speckit.*` commands directly (already in commands/). Superpowers: copy key skills to commands/, then Skill-invoke. BMAD: copy `bmad-quick-dev-new-preview` or individual phase skills to commands/, then Skill-invoke. After all three branches are ready, resume with Phase 1 Run 4: Superpowers.
+Fix workflow.md invocation on remaining plugins (Learning 006). Create run3/ branches for Superpowers and BMAD with workflow.md files rewritten to use Skill tool invocation instead of "read and follow." Superpowers: copy key skills to commands/, then Skill-invoke. BMAD: copy `bmad-quick-dev-new-preview` or individual phase skills to commands/, then Skill-invoke. After both branches are ready, resume with Phase 1 Run 4: Superpowers.
 
 ## Completed
+
+### Learning 006 Fix — Spec Kit workflow.md Skill Invocation
+
+- **Date:** 2026-03-21
+- **Commit:** `836ac98` — `learning-006: rewrite Spec Kit workflow.md to use Skill tool invocation`
+- **Branch:** `run3/spec-kit` (created from `676301f` on `run2/spec-kit`)
+- **What was done:** Created `run3/spec-kit` branch. Rewrote `workflow.md` to replace all 6 "Read and follow `.claude/commands/speckit.X.md`" instructions with Skill tool invocations (`skill: "speckit.X"`). No file moves needed — Spec Kit commands were already in `.claude/commands/`. Updated CLAUDE.md enforcement section to explicitly require Skill tool invocation and prohibit reading command files as prose. Added adherence check for Skill tool usage.
+- **Files modified:** `.claude/commands/workflow.md`, `.claude/CLAUDE.md`
+- **Issues or deviations:** None. Simplest of the three remaining plugins (commands already in correct location).
 
 ### Learning 006 — "Read and Follow" Affects All Plugins
 
