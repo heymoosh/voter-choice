@@ -54,5 +54,6 @@ This branch uses the **BMAD Method** framework. You MUST follow the BMAD 4-phase
 - Write application code before completing Analysis, Planning, and Solutioning
 - Skip implementation readiness check
 - Code the solution directly without going through the BMAD phases
+- **Read skill/command files as prose instead of invoking them via the Skill tool** — "Read and follow" degrades enforcement (see Learning 005/006). Every BMAD step MUST be invoked using the Skill tool (`skill: "bmad-X"`), not by reading SKILL.md files with the Read tool.
 
 **Autonomous decision-making:** When any BMAD workflow step asks for user input, presents menus, or asks clarifying questions — answer them yourself using `docs/PROJECT_SPEC.md` (Phase 1) or `docs/PHASE2_SPEC.md` (Phase 2) as the source of truth. Do not stop or wait for Muxin.

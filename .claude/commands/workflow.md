@@ -8,13 +8,15 @@ FRAMEWORK_CHECK: _bmad/
 
 Execute the BMAD 4-phase workflow — ALL phases are MANDATORY.
 
+**CRITICAL: Use the Skill tool to invoke each command.** Do NOT read skill/command files as reference text. The Skill tool activates the command as an executable procedure. "Read and follow" degrades enforcement — see Learning 005/006.
+
 **PHASE 1 — Analysis (`bmad-create-product-brief`):**
 
 Run: `echo '{"step":"bmad:product-brief","status":"started","timestamp":"'$(date -Iseconds)'"}' >> metrics/workflow-log.jsonl`
 
-Read and follow `.claude/skills/bmad-create-product-brief/SKILL.md`, which loads `_bmad/bmm/workflows/1-analysis/create-product-brief/workflow.md`.
-
-Input: Use `docs/PROJECT_SPEC.md` (Phase 1) or `docs/PHASE2_SPEC.md` (Phase 2) as the product idea.
+Invoke via the Skill tool:
+- Phase 1: `skill: "bmad-create-product-brief", args: "Create product brief for the ballot ranking tool per docs/PROJECT_SPEC.md"`
+- Phase 2: `skill: "bmad-create-product-brief", args: "Create product brief for Spanish language support per docs/PHASE2_SPEC.md"`
 
 AUTONOMOUS RULES for product brief:
 - The workflow has 6 interactive steps that ask questions about vision, users, metrics, scope. Answer ALL questions yourself using PROJECT_SPEC.md as the source of truth.
@@ -28,7 +30,8 @@ Run: `echo '{"step":"bmad:product-brief","status":"completed","timestamp":"'$(da
 
 Run: `echo '{"step":"bmad:prd","status":"started","timestamp":"'$(date -Iseconds)'"}' >> metrics/workflow-log.jsonl`
 
-Read and follow `.claude/skills/bmad-create-prd/SKILL.md`, which loads `_bmad/bmm/workflows/2-plan-workflows/create-prd/workflow-create-prd.md`.
+Invoke via the Skill tool:
+- `skill: "bmad-create-prd", args: "Create PRD from the product brief in _bmad/docs/"`
 
 AUTONOMOUS RULES for PRD:
 - Use the product brief from Phase 1 as input.
@@ -45,7 +48,8 @@ Step 3a — Architecture:
 
 Run: `echo '{"step":"bmad:architecture","status":"started","timestamp":"'$(date -Iseconds)'"}' >> metrics/workflow-log.jsonl`
 
-Read and follow `.claude/skills/bmad-create-architecture/SKILL.md`, which loads `_bmad/bmm/workflows/3-solutioning/create-architecture/workflow.md`.
+Invoke via the Skill tool:
+- `skill: "bmad-create-architecture", args: "Create architecture from the PRD in _bmad/docs/"`
 
 AUTONOMOUS RULES for architecture:
 - Use the PRD from Phase 2 as input.
@@ -58,7 +62,8 @@ Step 3b — Epics and Stories:
 
 Run: `echo '{"step":"bmad:epics-and-stories","status":"started","timestamp":"'$(date -Iseconds)'"}' >> metrics/workflow-log.jsonl`
 
-Read and follow `.claude/skills/bmad-create-epics-and-stories/SKILL.md`, which loads `_bmad/bmm/workflows/3-solutioning/create-epics-and-stories/workflow.md`.
+Invoke via the Skill tool:
+- `skill: "bmad-create-epics-and-stories", args: "Create epics and stories from the PRD and architecture in _bmad/docs/"`
 
 AUTONOMOUS RULES for epics and stories:
 - Use PRD + architecture as input.
@@ -71,7 +76,8 @@ Step 3c — Implementation Readiness:
 
 Run: `echo '{"step":"bmad:implementation-readiness","status":"started","timestamp":"'$(date -Iseconds)'"}' >> metrics/workflow-log.jsonl`
 
-Read and follow `.claude/skills/bmad-check-implementation-readiness/SKILL.md`, which loads `_bmad/bmm/workflows/3-solutioning/check-implementation-readiness/workflow.md`.
+Invoke via the Skill tool:
+- `skill: "bmad-check-implementation-readiness", args: "Validate all BMAD artifacts in _bmad/docs/ are complete and consistent"`
 
 AUTONOMOUS RULES for readiness check:
 - Validate all artifacts are consistent.
@@ -85,7 +91,8 @@ Step 4a — Sprint Planning:
 
 Run: `echo '{"step":"bmad:sprint-planning","status":"started","timestamp":"'$(date -Iseconds)'"}' >> metrics/workflow-log.jsonl`
 
-Read and follow `.claude/skills/bmad-sprint-planning/SKILL.md`, which loads `_bmad/bmm/workflows/4-implementation/sprint-planning/workflow.md`.
+Invoke via the Skill tool:
+- `skill: "bmad-sprint-planning", args: "Generate sprint plan from epics and stories in _bmad/docs/"`
 
 AUTONOMOUS RULES for sprint planning:
 - Generate sprint plan from epics/stories.
@@ -97,8 +104,13 @@ Step 4b — Story Implementation (for EACH story in the sprint plan):
 
 Run: `echo '{"step":"bmad:story-implementation","status":"started","timestamp":"'$(date -Iseconds)'"}' >> metrics/workflow-log.jsonl`
 
-First, read and follow `.claude/skills/bmad-create-story/SKILL.md` to create the story file.
-Then, read and follow `.claude/skills/bmad-dev-story/SKILL.md` to implement it.
+For each story in the sprint plan, invoke TWO skills in sequence:
+
+First, create the story file:
+- `skill: "bmad-create-story", args: "Create story file for [story identifier from sprint plan]"`
+
+Then, implement the story:
+- `skill: "bmad-dev-story", args: "Implement the story file just created"`
 
 AUTONOMOUS RULES for story implementation:
 - Follow the dev-story workflow checklist exactly.
@@ -112,7 +124,8 @@ Step 4c — Code Review:
 
 Run: `echo '{"step":"bmad:code-review","status":"started","timestamp":"'$(date -Iseconds)'"}' >> metrics/workflow-log.jsonl`
 
-Read and follow `.claude/skills/bmad-code-review/SKILL.md` to review the completed code.
+Invoke via the Skill tool:
+- `skill: "bmad-code-review", args: "Review the completed ballot tool code"`
 
 AUTONOMOUS RULES for code review:
 - Fix critical issues. Log but skip cosmetic suggestions.
@@ -121,9 +134,10 @@ Run: `echo '{"step":"bmad:code-review","status":"completed","timestamp":"'$(date
 
 ## Adherence Check
 
-Check that the BMAD workflow produced its expected artifacts:
+Check that the BMAD workflow produced its expected artifacts AND used proper Skill invocation:
 - `_bmad/docs/` must contain: product brief, PRD, architecture doc, epics/stories
 - `metrics/workflow-log.jsonl` must contain completed entries for all 8 steps
+- Verify Skill tool was used (not "read and follow") for each step
 
 Run:
 
@@ -132,4 +146,5 @@ echo '--- BMAD Adherence Check ---'
 echo "BMAD docs:" && ls _bmad/docs/ 2>/dev/null || echo "  NONE — BMAD analysis phases may not have run"
 echo "Workflow steps completed:" && grep '"status":"completed"' metrics/workflow-log.jsonl 2>/dev/null | grep -o '"step":"[^"]*"' || echo "  NONE"
 echo "Expected steps: bmad:product-brief, bmad:prd, bmad:architecture, bmad:epics-and-stories, bmad:implementation-readiness, bmad:sprint-planning, bmad:story-implementation, bmad:code-review"
+echo "Commands in .claude/commands/:" && ls .claude/commands/bmad-*.md 2>/dev/null | wc -l | xargs echo "  count:"
 ```
