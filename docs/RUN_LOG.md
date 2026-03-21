@@ -2,9 +2,18 @@
 
 ## Next
 
-Fix workflow.md invocation on BMAD (Learning 006). Create run3/bmad branch with workflow.md rewritten to use Skill tool invocation instead of "read and follow." Copy `bmad-quick-dev-new-preview` or individual phase skills to commands/, then Skill-invoke. After BMAD branch is ready, resume with Phase 1 Run 4: Superpowers.
+Phase 1 Run 3: Superpowers. Checkout `run3/superpowers`, run `/start` to execute the Superpowers workflow with Skill tool invocation.
 
 ## Completed
+
+### Learning 006 Fix — BMAD workflow.md Skill Invocation
+
+- **Date:** 2026-03-21
+- **Commit:** `9af3164` — `learning-006: rewrite BMAD workflow.md to use Skill tool invocation`
+- **Branch:** `run3/bmad` (created from `ddc4087` on `run2/bmad`)
+- **What was done:** Created `run3/bmad` branch. Copied 9 BMAD skills from `.claude/skills/` to `.claude/commands/` so they can be Skill-invoked: bmad-create-product-brief, bmad-create-prd, bmad-create-architecture, bmad-create-epics-and-stories, bmad-check-implementation-readiness, bmad-sprint-planning, bmad-create-story, bmad-dev-story, bmad-code-review. Rewrote `workflow.md` to replace all 8 "Read and follow `.claude/skills/X/SKILL.md`" instructions with Skill tool invocations (`skill: "bmad-X"`). Updated CLAUDE.md enforcement section to explicitly require Skill tool invocation and prohibit reading skill files as prose. Added adherence check for Skill tool usage.
+- **Files modified:** `.claude/commands/workflow.md`, `.claude/CLAUDE.md`, plus 9 new command files
+- **Issues or deviations:** Used individual phase skills rather than `bmad-quick-dev-new-preview` — quick-dev-new-preview only covers implementation (clarify→plan→implement→review→present), not the full BMAD 4-phase pipeline (analysis→planning→solutioning→implementation). All 4 BMAD phases with 8 steps are preserved.
 
 ### Learning 006 Fix — Superpowers workflow.md Skill Invocation
 
