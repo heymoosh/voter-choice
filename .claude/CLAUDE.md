@@ -4,11 +4,14 @@
 
 Workflow experiment comparing 5 AI coding frameworks. Read `docs/RUN_LOG.md` first (the `## Next` line), then `docs/EXPERIMENT_DESIGN.md` Session Quick Start. Immediately execute the sub-phase described in `## Next` — do NOT pause or wait for confirmation. Do ONE sub-phase per session.
 
-**After completing a sub-phase, you MUST update `docs/RUN_LOG.md` before doing anything else:**
+**After completing a sub-phase, you MUST update `docs/RUN_LOG.md` on the `main` branch before doing anything else:**
 
-1. Move the completed phase from `## Next` into `## Completed` (include commit hash and brief summary).
-2. Write the new next phase into `## Next`.
-3. Commit the RUN_LOG update. The session is NOT complete until RUN_LOG reflects the new state.
+1. Switch to `main` (commit any pending work on the current branch first).
+2. Move the completed phase from `## Next` into `## Completed` (include commit hash and brief summary).
+3. Write the new next phase into `## Next`.
+4. Commit the RUN_LOG update and switch back to the working branch. The session is NOT complete until `main`'s RUN_LOG reflects the new state.
+
+**Note:** Branch-local copies of `docs/RUN_LOG.md` are git artifacts from fork points — do NOT update them. Only `main`'s copy is canonical.
 
 ## Boundaries
 
