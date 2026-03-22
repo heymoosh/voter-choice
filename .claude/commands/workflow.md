@@ -10,6 +10,41 @@ Execute the BMAD 4-phase workflow — ALL phases are MANDATORY.
 
 **CRITICAL: Use the Skill tool to invoke each command.** Do NOT read skill/command files as reference text. The Skill tool activates the command as an executable procedure. "Read and follow" degrades enforcement — see Learning 005/006.
 
+### Resume Check
+
+Before starting, detect whether a previous session partially completed this workflow. Run:
+
+```bash
+echo '--- Resume Detection ---'
+if [ ! -f metrics/workflow-log.jsonl ]; then
+  echo "RESUME_FROM=phase1"
+else
+  STEPS=("bmad:product-brief" "bmad:prd" "bmad:architecture" "bmad:epics-and-stories" "bmad:implementation-readiness" "bmad:sprint-planning" "bmad:story-implementation" "bmad:code-review")
+  STEP_NUMS=("phase1" "phase2" "step3a" "step3b" "step3c" "step4a" "step4b" "step4c")
+  RESUME="phase1"
+  for i in "${!STEPS[@]}"; do
+    step="${STEPS[$i]}"
+    if grep -q "\"step\":\"$step\".*\"status\":\"completed\"" metrics/workflow-log.jsonl; then
+      next_idx=$((i + 1))
+      if [ $next_idx -lt ${#STEP_NUMS[@]} ]; then
+        RESUME="${STEP_NUMS[$next_idx]}"
+      else
+        RESUME="done"
+      fi
+    fi
+  done
+  echo "RESUME_FROM=$RESUME"
+  echo "Completed steps:"
+  grep '"status":"completed"' metrics/workflow-log.jsonl | grep -o '"step":"[^"]*"' || echo "  none"
+fi
+```
+
+**If RESUME_FROM=done:** All steps completed. Skip to the Adherence Check section.
+**If RESUME_FROM=X:** Skip all steps before X. They already ran and their artifacts are committed. Begin execution at that step (re-logging its "started" entry is fine — the log is append-only).
+**If RESUME_FROM=phase1:** No prior progress. Execute all steps from the beginning.
+
+**Step label mapping:** phase1=PHASE 1, phase2=PHASE 2, step3a=Step 3a, step3b=Step 3b, step3c=Step 3c, step4a=Step 4a, step4b=Step 4b, step4c=Step 4c.
+
 **PHASE 1 — Analysis (`bmad-create-product-brief`):**
 
 Run: `echo '{"step":"bmad:product-brief","status":"started","timestamp":"'$(date -Iseconds)'"}' >> metrics/workflow-log.jsonl`
