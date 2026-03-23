@@ -344,3 +344,83 @@ Level 2→3 requires that the skill be in `.claude/commands/`. The `skills/` →
 ### Why this matters for the write-up
 
 This generalizes Learning 005 from a CE-specific bug to a systemic design flaw in the experiment's invocation mechanism. It also reveals a practical finding for framework authors: **if your framework installs to `.claude/skills/` and has no commands in `.claude/commands/`, it cannot be autonomously invoked by an orchestrating prompt.** The framework's methodology can only activate if (a) the model's own skill-matching logic triggers it, or (b) someone copies the skills to commands. For autonomous experiment contexts, (b) is the only reliable path.
+
+---
+
+## Learning 007: Gap Analysis — Model Consistency, CE Caveats, TDD Enforcement, and BMAD Scope
+
+**Date discovered:** 2026-03-23
+**Affects:** All run3/ branches and Phase 2 planning
+**Severity:** Mixed — one critical fix (TDD), several moderate decisions
+
+### What was found
+
+A systematic review of experiment design goals vs. actual implementation revealed 7 gaps. Three decisions were made and four infrastructure fixes applied.
+
+### Decision 1: Model — Sonnet for all runs (accepted)
+
+Learning 005/006 recommended Opus for run3 branches, but `timing.jsonl` on both CE and Superpowers branches shows `"model":"claude-sonnet-4-6"`. The model is configured at the Claude Code application level, not per-branch.
+
+**Decision:** Accept Sonnet for all remaining runs (Superpowers, Spec Kit, BMAD). Rationale:
+- Consistency with completed runs (CE and Vanilla both used Sonnet)
+- The Skill invocation fix (Learning 005/006) was the primary correction; Opus was belt-and-suspenders
+- If Skill invocation enforcement works on Sonnet, that's a stronger finding than "it only works on Opus"
+- Model inconsistency across runs would introduce a new confound
+
+### Decision 2: CE Run 3 — Accept with documented caveats (no re-run)
+
+CE run3 had two significant deviations:
+1. **`ce:compound` skipped** — context budget exhausted after review+resolve. CE's signature knowledge-compounding feature (5 parallel sub-agents) was never exercised.
+2. **`/lfg` not Skill-invoked** — the slash command wasn't registered, so the pipeline was executed by reading lfg.md. This is the same "read and follow" pattern Learning 005 identified as broken.
+
+Despite this, CE produced excellent metrics: 42/42 e2e (100%), 0 ESLint errors, Lighthouse 100/100/100/100.
+
+**Decision:** Accept results. Rationale:
+- Experiment design principle: "poor results are findings, not errors to block" (Learning 002, decision 6)
+- Re-running creates learning-effect confounds (would be 4th attempt at same build)
+- Deviations are documented — Phase 3 can account for them
+- CE's plan+work+review pipeline strength even when partially degraded is itself a finding
+
+**Write-up footnotes required:** (a) ce:compound untested; (b) multi-agent orchestration within individual steps may have been simplified due to read-and-follow invocation.
+
+### Decision 3: BMAD multi-agent features — defer to Phase 2
+
+BMAD's `bmad-party-mode` (multi-agent discussion) and adversarial reviewers from `bmad-quick-dev-new-preview` (blind hunter, edge case hunter, acceptance auditor) are NOT in the current 10-step workflow.
+
+**Decision:** Accept for Phase 1. The current 10-step workflow is already the most elaborate of any framework. Revisit before Phase 2 — if BMAD Phase 1 review quality is weak, add adversarial reviewers.
+
+### Fix 1: Superpowers TDD — "read and follow" pattern survived (CRITICAL)
+
+The Superpowers `workflow.md` and `CLAUDE.md` both referenced TDD via: *"Follow the TDD Iron Law from `.claude/skills/test-driven-development/SKILL.md`"* — the exact broken pattern Learning 005/006 identified. The TDD skill is in `skills/`, not `commands/`, so it can't be Skill-invoked and degrades to advisory prose.
+
+**Impact:** Without enforcement, Superpowers would produce zero unit tests (like Vanilla and CE), losing the experiment's best chance to observe TDD as a differentiator.
+
+**Fix applied:** Inlined the full TDD Iron Law directly into `workflow.md` AUTONOMOUS RULES and `CLAUDE.md` as hard constraint text. No file reference, no "read and follow." Commit `d2e66fe` on `run3/superpowers`.
+
+### Fix 2: Vanilla workflow.md for Phase 2
+
+The refactored `/start` command requires `workflow.md` on every branch. Vanilla completed Phase 1 before the refactor. Phase 2 would fail at pre-flight Step 3c.
+
+**Fix applied:** Created minimal `workflow.md` on `workflow/vanilla` that preserves vanilla's no-framework identity while satisfying infrastructure requirements. Commit `aae3358` on `workflow/vanilla`.
+
+### Fix 3: measure.mjs enhancements
+
+Added two missing data points to the metrics JSON output:
+- `workflowTests`: count of workflow-generated test files in `src/` (previously captured in debrief text but not in JSON)
+- `workflowTiming`: parsed step durations from `metrics/workflow-log.jsonl` (previously required manual JSONL analysis)
+
+### Fix 4: Post-hoc process adherence analysis
+
+Created `scripts/analyze-adherence.mjs` for Phase 3 analysis. Verifies process-level adherence beyond artifact checks:
+- TDD compliance: test file commit timestamps vs. implementation timestamps
+- Commit pattern analysis: test-related vs. implementation-only commits
+- Workflow log completeness per framework's expected steps
+
+### Why this matters
+
+This gap analysis revealed a spectrum of experiment infrastructure maturity:
+- **Independent variable (framework used):** Fixed by Learnings 001, 005, 006
+- **Dependent variables (metrics captured):** Fixed by Learning 002, enhanced here
+- **Enforcement fidelity (framework actually runs at full capability):** This learning — TDD survived as a "read and follow" reference even after two rounds of fixes targeting exactly this pattern
+
+The TDD finding is particularly instructive: **fixing a class of bugs doesn't mean you've fixed every instance.** The Learning 005/006 fixes correctly moved skills to commands and rewrote workflow.md invocations. But the TDD reference was embedded in AUTONOMOUS RULES prose, not as a standalone step, so it was missed. Pattern-based fixes need pattern-based verification.

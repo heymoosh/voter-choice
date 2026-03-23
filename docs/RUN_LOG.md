@@ -8,6 +8,20 @@ After Superpowers: Phase 1 Run 4 — Spec Kit (`run3/spec-kit`), then Phase 1 Ru
 
 ## Completed
 
+### Learning 007 — Gap Analysis: Design Goals vs. Implementation
+
+- **Date:** 2026-03-23
+- **Branches affected:** `run3/superpowers`, `workflow/vanilla`, `main`
+- **What was done:** Systematic review of experiment design goals vs. actual infrastructure. Found 7 gaps. Applied 4 fixes and made 3 decisions:
+  - **Fix 1 (CRITICAL):** Inlined TDD Iron Law in Superpowers `workflow.md` and `CLAUDE.md` — the TDD reference was using the broken "read and follow" pattern from Learning 005/006. Commit `d2e66fe` on `run3/superpowers`.
+  - **Fix 2:** Created vanilla `workflow.md` for Phase 2 `/start` compatibility. Commit `aae3358` on `workflow/vanilla`.
+  - **Fix 3-4:** Added `workflowTests` (test file count) and `workflowTiming` (step durations) to `measure.mjs` on `main`.
+  - **Fix 5:** Created `scripts/analyze-adherence.mjs` for Phase 3 post-hoc process verification.
+  - **Decision:** Sonnet for all remaining runs (consistent with CE/Vanilla).
+  - **Decision:** Accept CE run3 results with documented caveats (ce:compound skipped, /lfg read-not-invoked).
+  - **Decision:** BMAD multi-agent features (party-mode, adversarial reviewers) deferred to Phase 2 review.
+- **Files modified:** `docs/LEARNINGS.md` (Learning 007), `scripts/measure.mjs`, `scripts/analyze-adherence.mjs` (new), `docs/RUN_LOG.md`
+
 ### Workflow Enhancement — Add Recommended Capabilities to BMAD and Spec Kit
 
 - **Date:** 2026-03-23

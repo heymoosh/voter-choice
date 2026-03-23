@@ -574,6 +574,74 @@ function measureLOC() {
 }
 
 // ------------------------------------------------------------------
+// 8. Workflow-generated test files
+// ------------------------------------------------------------------
+function measureWorkflowTests() {
+  log("Workflow-generated tests");
+  const result = run(
+    "find src -name '*.test.*' -o -name '*.spec.*' 2>/dev/null",
+  );
+  const files = result.stdout.trim().split("\n").filter(Boolean);
+  console.log(`  Test files in src/: ${files.length}`);
+  if (files.length > 0) {
+    for (const f of files) {
+      console.log(`    ${f}`);
+    }
+  }
+  return { count: files.length, files };
+}
+
+// ------------------------------------------------------------------
+// 9. Workflow step timing
+// ------------------------------------------------------------------
+function measureWorkflowTiming() {
+  log("Workflow step timing");
+  const logPath = join(ROOT, "metrics", "workflow-log.jsonl");
+  if (!existsSync(logPath)) {
+    console.log("  No workflow-log.jsonl found — skipping");
+    return null;
+  }
+  const lines = readFileSync(logPath, "utf-8").trim().split("\n").filter(Boolean);
+  const entries = lines
+    .map((l) => {
+      try {
+        return JSON.parse(l);
+      } catch {
+        return null;
+      }
+    })
+    .filter(Boolean);
+
+  const steps = [];
+  for (const entry of entries) {
+    if (entry.status === "started") {
+      const completed = entries.find(
+        (e) => e.step === entry.step && e.status === "completed",
+      );
+      const durationMs =
+        completed && entry.timestamp && completed.timestamp
+          ? new Date(completed.timestamp) - new Date(entry.timestamp)
+          : null;
+      steps.push({
+        step: entry.step,
+        started: entry.timestamp || null,
+        completed: completed?.timestamp || null,
+        durationMs,
+      });
+    }
+  }
+
+  const completedSteps = steps.filter((s) => s.completed).length;
+  console.log(`  Steps: ${completedSteps}/${steps.length} completed`);
+  for (const s of steps) {
+    const dur = s.durationMs != null ? `${Math.round(s.durationMs / 1000)}s` : "incomplete";
+    console.log(`    ${s.step}: ${dur}`);
+  }
+
+  return { steps, totalSteps: steps.length, completedSteps };
+}
+
+// ------------------------------------------------------------------
 // Main
 // ------------------------------------------------------------------
 async function main() {
@@ -598,6 +666,8 @@ async function main() {
     lighthouse: measureLighthouse(),
     playwright: measurePlaywright(),
     linesOfCode: measureLOC(),
+    workflowTests: measureWorkflowTests(),
+    workflowTiming: measureWorkflowTiming(),
   };
 
   // Determine output path
