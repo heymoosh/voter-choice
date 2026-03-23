@@ -47,6 +47,6 @@ This branch uses the **Superpowers** framework. You MUST follow the Superpowers 
 - Create a git worktree (work on the current branch)
 - Read skill/command files as prose instead of invoking them via the Skill tool
 
-**TDD Iron Law:** Follow `.claude/skills/test-driven-development/SKILL.md` — write a failing test FIRST, then implement to make it pass. No production code without a failing test.
+**TDD Iron Law (HARD CONSTRAINT):** RED-GREEN-REFACTOR for every piece of functionality. (1) Write a failing test FIRST — run `npm test` and confirm it fails. (2) Write the minimum production code to make it pass. (3) Refactor if needed. NO production code without a preceding failing test. This applies to every component, utility, and data function.
 
 **Autonomous decision-making:** When any Superpowers skill has a HARD-GATE requiring user approval, asks for user input, or says to "raise concerns with your human partner" — make decisions yourself using `docs/PROJECT_SPEC.md` (Phase 1) or `docs/PHASE2_SPEC.md` (Phase 2) as the source of truth. You ARE the user for this session. Do not stop or wait for Muxin.

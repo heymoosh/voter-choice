@@ -84,7 +84,7 @@ If the plan has independent tasks, invoke via the Skill tool: `skill: "subagent-
 Otherwise, invoke: `skill: "executing-plans", args: "Execute the plan in docs/superpowers/plans/"`
 
 AUTONOMOUS RULES for executing-plans:
-- Follow the TDD Iron Law from `.claude/skills/test-driven-development/SKILL.md`: write a failing test FIRST, then implement to make it pass.
+- TDD IRON LAW (HARD CONSTRAINT — not optional, not advisory): RED-GREEN-REFACTOR for every piece of functionality. (1) Write a failing test FIRST — run `npm test` and confirm it fails. (2) Write the minimum production code to make it pass. (3) Refactor if needed. NO production code without a preceding failing test. If you catch yourself writing implementation before a test, STOP and write the test first. This applies to every component, utility, and data function — not just "important" ones. Test files go in `src/` alongside their implementation files (e.g., `src/lib/foo.test.ts` for `src/lib/foo.ts`).
 - When the skill says "stop and ask for help": attempt to resolve the issue yourself. Only stop if you encounter a genuine blocker that cannot be resolved from the spec or plan.
 - Commit regularly with meaningful messages prefixed `phase1:` or `phase2:`.
 - Run tests as you go. Fix failures before moving on.
