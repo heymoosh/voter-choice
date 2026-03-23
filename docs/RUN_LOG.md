@@ -2,9 +2,26 @@
 
 ## Next
 
-Phase 1 Run 3: Superpowers. Checkout `run3/superpowers`, run `/start` to execute the Superpowers workflow with Skill tool invocation.
+Continue Phase 1 Run 3: Superpowers. Checkout `run3/superpowers`, run `/clear` then `/start`. Brainstorming + writing-plans are complete (committed). Resume at executing-plans (Step 3). The resume logic in workflow.md will detect this from `metrics/workflow-log.jsonl`.
+
+After Superpowers: Phase 1 Run 4 — Spec Kit (`run3/spec-kit`), then Phase 1 Run 5 — BMAD (`run3/bmad`).
 
 ## Completed
+
+### Workflow Enhancement — Add Recommended Capabilities to BMAD and Spec Kit
+
+- **Date:** 2026-03-23
+- **Branches:** `run3/bmad`, `run3/spec-kit`
+- **What was done:** Added framework-recommended capabilities that were installed but not included in the workflow sequences. BMAD: added `bmad-brainstorming` (creative ideation before product brief) and `bmad-create-ux-design` (UX planning after PRD) — both are BMAD skills with full workflow files. Spec Kit: added `speckit.constitution` (project principles before specifying) and `speckit.checklist` (requirements quality validation after tasks). Updated workflow.md resume logic and CLAUDE.md enforcement sections on both branches.
+- **Files modified:** `.claude/commands/workflow.md`, `.claude/CLAUDE.md` on both branches
+
+### Phase 1 Run 3 — Superpowers (in progress)
+
+- **Date:** 2026-03-21 – 2026-03-22
+- **Branch:** `run3/superpowers`
+- **Commits:** `ec3689c` (brainstorming), `baad166` (writing-plans)
+- **What was done:** Completed brainstorming (design spec at `docs/superpowers/specs/2026-03-21-ballot-tool-design.md`) and writing-plans (implementation plan at `docs/superpowers/plans/2026-03-21-ballot-tool.md`). Executing-plans started but not completed. No application code yet.
+- **Issues or deviations:** Session ended mid-execution. Resume logic in workflow.md handles this.
 
 ### Learning 006 Fix — BMAD workflow.md Skill Invocation
 
@@ -54,7 +71,25 @@ Phase 1 Run 3: Superpowers. Checkout `run3/superpowers`, run `/start` to execute
 - **Branch:** `run2/compound-engineering`
 - **What was done:** CE multi-agent engine never activated (learning-005). Re-run scheduled as Run 3.
 
+### Phase 1 Run 1 — Vanilla
 
+- **Branch:** `workflow/vanilla`
+- **Tag:** `vanilla-phase1-complete`
+- **What was done:** Built ballot tool using default Claude Code behavior (no framework). Phase 1 complete — kept as-is, no Run 3 needed. Metrics in `metrics/` on branch.
+
+### Phase 0.5 — Randomized Run Order
+
+- **What was done:** Generated randomized run order: 1. Vanilla, 2. Compound Engineering, 3. Superpowers, 4. Spec Kit, 5. BMAD. Updated `docs/QUALITATIVE_SCORECARD.md` with sections for each run in order.
+
+### Phase 0.4 — Install Workflow Frameworks
+
+- **What was done:** Installed and configured all 5 frameworks on their respective branches: Superpowers v5.0.2, BMAD Method v6.1.0, Spec Kit v0.3.0, Compound Engineering, Vanilla (minimal CLAUDE.md only). Each branch forked from `v0-scaffold` tag.
+
+### Phase 0.3b — Measurement Automation + Branching
+
+- **Commit:** `c25f44d` — `phase0.3b: measurement automation + branching (tooling + baseline)`
+- **Tag:** `v0-scaffold`
+- **What was done:** Created `npm run measure` script (ESLint, test coverage, complexity, duplication, bundle size, Lighthouse, Playwright e2e). Set up Playwright with shared e2e test suite (`e2e/ballot-tool.spec.ts`). Created `npm run clean-start`. Tagged as `v0-scaffold`, created all five workflow branches from that tag. Pushed to GitHub.
 
 ### Phase 0.3a — Scaffold the Repo
 
