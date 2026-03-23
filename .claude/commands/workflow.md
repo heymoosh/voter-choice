@@ -19,9 +19,9 @@ echo '--- Resume Detection ---'
 if [ ! -f metrics/workflow-log.jsonl ]; then
   echo "RESUME_FROM=phase1"
 else
-  STEPS=("bmad:product-brief" "bmad:prd" "bmad:architecture" "bmad:epics-and-stories" "bmad:implementation-readiness" "bmad:sprint-planning" "bmad:story-implementation" "bmad:code-review")
-  STEP_NUMS=("phase1" "phase2" "step3a" "step3b" "step3c" "step4a" "step4b" "step4c")
-  RESUME="phase1"
+  STEPS=("bmad:brainstorming" "bmad:product-brief" "bmad:prd" "bmad:ux-design" "bmad:architecture" "bmad:epics-and-stories" "bmad:implementation-readiness" "bmad:sprint-planning" "bmad:story-implementation" "bmad:code-review")
+  STEP_NUMS=("step0" "phase1" "phase2" "step2b" "step3a" "step3b" "step3c" "step4a" "step4b" "step4c")
+  RESUME="step0"
   for i in "${!STEPS[@]}"; do
     step="${STEPS[$i]}"
     if grep -q "\"step\":\"$step\".*\"status\":\"completed\"" metrics/workflow-log.jsonl; then
@@ -41,9 +41,25 @@ fi
 
 **If RESUME_FROM=done:** All steps completed. Skip to the Adherence Check section.
 **If RESUME_FROM=X:** Skip all steps before X. They already ran and their artifacts are committed. Begin execution at that step (re-logging its "started" entry is fine — the log is append-only).
-**If RESUME_FROM=phase1:** No prior progress. Execute all steps from the beginning.
+**If RESUME_FROM=step0:** No prior progress. Execute all steps from the beginning.
 
-**Step label mapping:** phase1=PHASE 1, phase2=PHASE 2, step3a=Step 3a, step3b=Step 3b, step3c=Step 3c, step4a=Step 4a, step4b=Step 4b, step4c=Step 4c.
+**Step label mapping:** step0=Step 0 (Brainstorming), phase1=PHASE 1, phase2=PHASE 2, step2b=Step 2b (UX Design), step3a=Step 3a, step3b=Step 3b, step3c=Step 3c, step4a=Step 4a, step4b=Step 4b, step4c=Step 4c.
+
+**Step 0 — Brainstorming (`bmad-brainstorming`):**
+
+Run: `echo '{"step":"bmad:brainstorming","status":"started","timestamp":"'$(date -Iseconds)'"}' >> metrics/workflow-log.jsonl`
+
+Invoke via the Skill tool:
+- Phase 1: `skill: "bmad-brainstorming", args: "Brainstorm approaches for building the ballot research tool per docs/PROJECT_SPEC.md"`
+- Phase 2: `skill: "bmad-brainstorming", args: "Brainstorm approaches for adding Spanish language support per docs/PHASE2_SPEC.md"`
+
+AUTONOMOUS RULES for brainstorming:
+- The skill offers multiple creative techniques (SCAMPER, mind mapping, etc.). When asked to choose a technique, select the one most relevant to the project type (web app UI/UX).
+- When asked for brainstorming topics or prompts: derive them from PROJECT_SPEC.md.
+- Complete the full brainstorming session. Save outputs to `_bmad/docs/` or as the skill instructs.
+- Do NOT stop for user input at any step.
+
+Run: `echo '{"step":"bmad:brainstorming","status":"completed","timestamp":"'$(date -Iseconds)'"}' >> metrics/workflow-log.jsonl`
 
 **PHASE 1 — Analysis (`bmad-create-product-brief`):**
 
@@ -76,6 +92,22 @@ AUTONOMOUS RULES for PRD:
 - Do NOT stop for user input at any step.
 
 Run: `echo '{"step":"bmad:prd","status":"completed","timestamp":"'$(date -Iseconds)'"}' >> metrics/workflow-log.jsonl`
+
+**Step 2b — UX Design (`bmad-create-ux-design`):**
+
+Run: `echo '{"step":"bmad:ux-design","status":"started","timestamp":"'$(date -Iseconds)'"}' >> metrics/workflow-log.jsonl`
+
+Invoke via the Skill tool:
+- `skill: "bmad-create-ux-design", args: "Create UX design specifications from the PRD in _bmad/docs/"`
+
+AUTONOMOUS RULES for UX design:
+- Use the PRD from Phase 2 as input.
+- When asked about design preferences: prioritize mobile-first responsive design (the app went viral on Reddit — most users are on phones).
+- When asked about UX patterns: follow PROJECT_SPEC.md for layout, error states, and accessibility requirements.
+- Save UX design doc to `_bmad/docs/`.
+- Do NOT stop for user input at any step.
+
+Run: `echo '{"step":"bmad:ux-design","status":"completed","timestamp":"'$(date -Iseconds)'"}' >> metrics/workflow-log.jsonl`
 
 **PHASE 3 — Solutioning (architecture + epics):**
 
@@ -170,8 +202,8 @@ Run: `echo '{"step":"bmad:code-review","status":"completed","timestamp":"'$(date
 ## Adherence Check
 
 Check that the BMAD workflow produced its expected artifacts AND used proper Skill invocation:
-- `_bmad/docs/` must contain: product brief, PRD, architecture doc, epics/stories
-- `metrics/workflow-log.jsonl` must contain completed entries for all 8 steps
+- `_bmad/docs/` must contain: brainstorming output, product brief, PRD, UX design, architecture doc, epics/stories
+- `metrics/workflow-log.jsonl` must contain completed entries for all 10 steps
 - Verify Skill tool was used (not "read and follow") for each step
 
 Run:
@@ -180,6 +212,6 @@ Run:
 echo '--- BMAD Adherence Check ---'
 echo "BMAD docs:" && ls _bmad/docs/ 2>/dev/null || echo "  NONE — BMAD analysis phases may not have run"
 echo "Workflow steps completed:" && grep '"status":"completed"' metrics/workflow-log.jsonl 2>/dev/null | grep -o '"step":"[^"]*"' || echo "  NONE"
-echo "Expected steps: bmad:product-brief, bmad:prd, bmad:architecture, bmad:epics-and-stories, bmad:implementation-readiness, bmad:sprint-planning, bmad:story-implementation, bmad:code-review"
+echo "Expected steps: bmad:brainstorming, bmad:product-brief, bmad:prd, bmad:ux-design, bmad:architecture, bmad:epics-and-stories, bmad:implementation-readiness, bmad:sprint-planning, bmad:story-implementation, bmad:code-review"
 echo "Commands in .claude/commands/:" && ls .claude/commands/bmad-*.md 2>/dev/null | wc -l | xargs echo "  count:"
 ```

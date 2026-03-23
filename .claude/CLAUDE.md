@@ -29,27 +29,32 @@ TypeScript. ESLint + Prettier (configured in Phase 0.3a as part of scaffold setu
 
 **THIS IS A HARD REQUIREMENT. VIOLATION INVALIDATES THE EXPERIMENT.**
 
-This branch uses the **BMAD Method** framework. You MUST follow the BMAD 4-phase workflow for ALL build work:
+This branch uses the **BMAD Method** framework. You MUST follow the BMAD workflow for ALL build work. **Use the Skill tool to invoke each command** — do NOT read skill/command files as reference text ("read and follow" degrades enforcement; see Learning 005/006).
+
+**Step 0 — Brainstorming:**
+
+0. **`bmad-brainstorming`** — Invoke via Skill tool: `skill: "bmad-brainstorming", args: "<description>"`
 
 **Phase 1 — Analysis:**
 
-1. **`bmad-create-product-brief`** — Create product brief through collaborative discovery. Loads `_bmad/bmm/workflows/1-analysis/create-product-brief/workflow.md`.
+1. **`bmad-create-product-brief`** — Invoke via Skill tool: `skill: "bmad-create-product-brief", args: "<description>"`
 
 **Phase 2 — Planning:**
 
-2. **`bmad-create-prd`** — Create PRD from the product brief. Loads `_bmad/bmm/workflows/2-plan-workflows/create-prd/workflow-create-prd.md`.
+2. **`bmad-create-prd`** — Invoke via Skill tool: `skill: "bmad-create-prd", args: "<description>"`
+3. **`bmad-create-ux-design`** — Invoke via Skill tool: `skill: "bmad-create-ux-design", args: "<description>"`
 
 **Phase 3 — Solutioning:**
 
-3. **`bmad-create-architecture`** — Create architecture design. Loads `_bmad/bmm/workflows/3-solutioning/create-architecture/workflow.md`.
-4. **`bmad-create-epics-and-stories`** — Break into epics and stories. Loads `_bmad/bmm/workflows/3-solutioning/create-epics-and-stories/workflow.md`.
-5. **`bmad-check-implementation-readiness`** — Validate all artifacts. Loads `_bmad/bmm/workflows/3-solutioning/check-implementation-readiness/workflow.md`.
+4. **`bmad-create-architecture`** — Invoke via Skill tool: `skill: "bmad-create-architecture", args: "<description>"`
+5. **`bmad-create-epics-and-stories`** — Invoke via Skill tool: `skill: "bmad-create-epics-and-stories", args: "<description>"`
+6. **`bmad-check-implementation-readiness`** — Invoke via Skill tool: `skill: "bmad-check-implementation-readiness", args: "<description>"`
 
 **Phase 4 — Implementation:**
 
-6. **`bmad-sprint-planning`** — Generate sprint plan. Loads `_bmad/bmm/workflows/4-implementation/sprint-planning/workflow.md`.
-7. **`bmad-create-story`** + **`bmad-dev-story`** — Create and implement each story. Loads `_bmad/bmm/workflows/4-implementation/create-story/workflow.md` and `_bmad/bmm/workflows/4-implementation/dev-story/workflow.md`.
-8. **`bmad-code-review`** — Review completed code. Loads `_bmad/bmm/workflows/4-implementation/code-review/workflow.md`.
+7. **`bmad-sprint-planning`** — Invoke via Skill tool: `skill: "bmad-sprint-planning", args: "<description>"`
+8. **`bmad-create-story`** + **`bmad-dev-story`** — Invoke via Skill tool for each story in sequence.
+9. **`bmad-code-review`** — Invoke via Skill tool: `skill: "bmad-code-review", args: "<description>"`
 
 **You MUST NOT:**
 
