@@ -31,17 +31,19 @@ TypeScript. ESLint + Prettier (configured in Phase 0.3a as part of scaffold setu
 
 This branch uses the **GitHub Spec Kit** framework. You MUST follow the Spec Kit workflow for ALL build work. **Use the Skill tool to invoke each command** — do NOT read command files as reference text ("read and follow" degrades enforcement; see Learning 005/006).
 
+0. **`speckit.constitution`** — Invoke via Skill tool: `skill: "speckit.constitution", args: "<description>"`
 1. **`speckit.specify`** — Invoke via Skill tool: `skill: "speckit.specify", args: "<description>"`
 2. **`speckit.clarify`** — Invoke via Skill tool: `skill: "speckit.clarify"`
 3. **`speckit.plan`** — Invoke via Skill tool: `skill: "speckit.plan"`
 4. **`speckit.tasks`** — Invoke via Skill tool: `skill: "speckit.tasks"`
-5. **`speckit.analyze`** — Invoke via Skill tool: `skill: "speckit.analyze"`
-6. **`speckit.implement`** — Invoke via Skill tool: `skill: "speckit.implement"`
+5. **`speckit.checklist`** — Invoke via Skill tool: `skill: "speckit.checklist", args: "<description>"`
+6. **`speckit.analyze`** — Invoke via Skill tool: `skill: "speckit.analyze"`
+7. **`speckit.implement`** — Invoke via Skill tool: `skill: "speckit.implement"`
 
 **You MUST NOT:**
 
 - Skip any step in the workflow
-- Write application code before completing specify → clarify → plan → tasks
+- Write application code before completing constitution → specify → clarify → plan → tasks → checklist
 - Skip analyze or implement
 - Code the solution directly without going through the workflow
 - Create a new git branch (stay on the current branch)
