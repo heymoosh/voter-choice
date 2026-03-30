@@ -1,0 +1,113 @@
+{
+  "metadata": {
+    "timestamp": "2026-03-30T18:33:25.016Z",
+    "branch": "run3/superpowers",
+    "commit": "0a0ba58",
+    "nodeVersion": "v22.14.0"
+  },
+  "eslint": {
+    "errors": 0,
+    "warnings": 0,
+    "complexityViolations": 0
+  },
+  "vitest": {
+    "tests": {
+      "total": 53,
+      "passed": 53,
+      "failed": 0,
+      "skipped": 0,
+      "passRate": 100
+    },
+    "coverage": {
+      "lines": 80.21,
+      "branches": 79.59,
+      "functions": 90.62,
+      "statements": 80.21
+    }
+  },
+  "duplication": {
+    "duplicatedLines": 0,
+    "totalLines": 1286,
+    "percentage": 0,
+    "clones": 0
+  },
+  "bundleSize": {
+    "buildSuccess": true,
+    "pages": [
+      {
+        "route": "/",
+        "size": 7.92,
+        "unit": "kB"
+      },
+      {
+        "route": "/_not-found",
+        "size": 990,
+        "unit": "B"
+      }
+    ],
+    "firstLoadJsShared": {
+      "size": 102,
+      "unit": "kB"
+    }
+  },
+  "lighthouse": {
+    "performance": 100,
+    "accessibility": 100,
+    "bestPractices": 100,
+    "seo": 100
+  },
+  "playwright": {
+    "total": 42,
+    "passed": 42,
+    "failed": 0,
+    "timedOut": 0,
+    "skipped": 0,
+    "passRate": 100
+  },
+  "linesOfCode": {
+    "application": {
+      "code": 1623,
+      "files": 25,
+      "byExtension": {
+        ".css": {
+          "files": 1,
+          "code": 21
+        },
+        ".tsx": {
+          "files": 12,
+          "code": 929
+        },
+        ".json": {
+          "files": 4,
+          "code": 228
+        },
+        ".ts": {
+          "files": 8,
+          "code": 445
+        }
+      }
+    },
+    "plugin": {
+      "code": 529,
+      "files": 4,
+      "byExtension": {
+        ".js": {
+          "files": 3,
+          "code": 456
+        },
+        ".ts": {
+          "files": 1,
+          "code": 73
+        }
+      }
+    },
+    "infrastructure": {
+      "code": 859,
+      "files": 11
+    },
+    "total": {
+      "code": 3011,
+      "files": 40
+    }
+  }
+}
