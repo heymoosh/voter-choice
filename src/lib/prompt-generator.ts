@@ -1,5 +1,9 @@
 import type { StateData } from "../types/election";
-import { getNextElection, computeDeadlineStatus, formatDate } from "./date-utils";
+import {
+  getNextElection,
+  computeDeadlineStatus,
+  formatDate,
+} from "./date-utils";
 
 // The full ballot research prompt text (from docs/BALLOT_PROMPT.md).
 // Embedded as a constant to avoid runtime file reads in Next.js.
@@ -84,36 +88,44 @@ At the end, generate: (A) 1-page ballot printout, (B) voter profile for future e
 
 Let's start with Step 1.`;
 
+function buildRegistrationDeadlines(stateData: StateData, today: Date): string {
+  const reg = stateData.registration;
+  const onlineStatus = computeDeadlineStatus(
+    reg.online.available ? reg.online.deadline : null,
+    today,
+  );
+  const byMailStatus = computeDeadlineStatus(reg.byMail.deadline, today);
+  const inPersonStatus = computeDeadlineStatus(reg.inPerson.deadline, today);
+  const onlineDeadline = reg.online.available
+    ? `Online by ${formatDate(reg.online.deadline!)} (${onlineStatus.label})`
+    : "Online registration not available";
+  const postmarkNote = reg.byMail.sincePostmarked
+    ? ", postmark date"
+    : ", received date";
+  const byMailDeadline = `By mail by ${formatDate(reg.byMail.deadline)} (${byMailStatus.label}${postmarkNote})`;
+  const inPersonDeadline = `In person by ${formatDate(reg.inPerson.deadline)} (${inPersonStatus.label})`;
+  return `${onlineDeadline}; ${byMailDeadline}; ${inPersonDeadline}`;
+}
+
+function buildEarlyVotingLine(stateData: StateData): string {
+  const ev = stateData.earlyVoting;
+  if (!ev.available || !ev.startDate || !ev.endDate) {
+    return "Not available — absentee voting only";
+  }
+  const notesStr = ev.notes ? ` — ${ev.notes}` : "";
+  return `${formatDate(ev.startDate)} through ${formatDate(ev.endDate)}${notesStr}`;
+}
+
 /** Builds the pre-filled context block ("Hi! I'm voting in..."). */
 export function buildContextBlock(
   stateData: StateData,
   zip: string,
-  today: Date
+  today: Date,
 ): string {
   const nextElection = getNextElection(stateData.elections, today);
-
   const electionLine = nextElection
     ? `- **Election:** ${nextElection.name} on ${formatDate(nextElection.date)}\n- **Election type:** ${nextElection.type}${nextElection.primaryType ? ` (${nextElection.primaryType} primary)` : ""}`
     : "- **Election:** No upcoming elections found — check your state election website for updates.";
-
-  const reg = stateData.registration;
-  const onlineStatus = computeDeadlineStatus(
-    reg.online.available ? reg.online.deadline : null,
-    today
-  );
-  const byMailStatus = computeDeadlineStatus(reg.byMail.deadline, today);
-  const inPersonStatus = computeDeadlineStatus(reg.inPerson.deadline, today);
-
-  const onlineDeadline = reg.online.available
-    ? `Online by ${formatDate(reg.online.deadline!)} (${onlineStatus.label})`
-    : "Online registration not available";
-  const byMailDeadline = `By mail by ${formatDate(reg.byMail.deadline)} (${byMailStatus.label}${reg.byMail.sincePostmarked ? ", postmark date" : ", received date"})`;
-  const inPersonDeadline = `In person by ${formatDate(reg.inPerson.deadline)} (${inPersonStatus.label})`;
-
-  const ev = stateData.earlyVoting;
-  const earlyVotingLine = ev.available && ev.startDate && ev.endDate
-    ? `${formatDate(ev.startDate)} through ${formatDate(ev.endDate)}${ev.notes ? ` — ${ev.notes}` : ""}`
-    : "Not available — absentee voting only";
 
   const rules = stateData.votingRules;
   const voterIdLine = rules.idRequired
@@ -124,8 +136,8 @@ export function buildContextBlock(
 
 Here's what I know about my upcoming election:
 ${electionLine}
-- **Registration deadlines:** ${onlineDeadline}; ${byMailDeadline}; ${inPersonDeadline}
-- **Early voting:** ${earlyVotingLine}
+- **Registration deadlines:** ${buildRegistrationDeadlines(stateData, today)}
+- **Early voting:** ${buildEarlyVotingLine(stateData)}
 - **Voter ID:** ${voterIdLine}
 - **Phones at polls:** ${rules.phonesAtPollsDetail}
 - **My sample ballot:** ${stateData.resources.sampleBallotLookup}
@@ -138,7 +150,11 @@ Help me with my ballot.`;
 export function generatePromptText(
   stateData: StateData,
   zip: string,
-  today: Date
+  today: Date,
 ): string {
-  return BALLOT_PROMPT_TEXT + "\n\n---\n\n" + buildContextBlock(stateData, zip, today);
+  return (
+    BALLOT_PROMPT_TEXT +
+    "\n\n---\n\n" +
+    buildContextBlock(stateData, zip, today)
+  );
 }

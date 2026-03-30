@@ -3,7 +3,7 @@ import type { Election, DeadlineStatus } from "../types/election";
 /** Returns the earliest election with date >= today, or null. */
 export function getNextElection(
   elections: Election[],
-  today: Date
+  today: Date,
 ): Election | null {
   const todayStr = toDateStr(today);
   const upcoming = elections
@@ -15,10 +15,15 @@ export function getNextElection(
 /** Computes urgency + label for a registration deadline. */
 export function computeDeadlineStatus(
   deadline: string | null,
-  today: Date
+  today: Date,
 ): DeadlineStatus {
   if (!deadline) {
-    return { date: null, daysLeft: null, label: "Not available", urgency: "na" };
+    return {
+      date: null,
+      daysLeft: null,
+      label: "Not available",
+      urgency: "na",
+    };
   }
 
   const todayStr = toDateStr(today);
@@ -35,8 +40,7 @@ export function computeDeadlineStatus(
 
   const label = daysLeft === 1 ? "1 day left" : `${daysLeft} days left`;
 
-  const urgency =
-    daysLeft <= 3 ? "urgent" : daysLeft <= 14 ? "warning" : "ok";
+  const urgency = daysLeft <= 3 ? "urgent" : daysLeft <= 14 ? "warning" : "ok";
 
   return { date: deadline, daysLeft, label, urgency };
 }

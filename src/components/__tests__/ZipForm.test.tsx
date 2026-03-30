@@ -15,7 +15,7 @@ describe("ZipForm", () => {
     render(<ZipForm onSubmit={vi.fn()} isLoading={false} />);
     await user.click(screen.getByTestId("zip-submit"));
     expect(screen.getByTestId("zip-error")).toHaveTextContent(
-      "Please enter a zip code"
+      "Please enter a zip code",
     );
   });
 
@@ -25,7 +25,7 @@ describe("ZipForm", () => {
     await user.type(screen.getByTestId("zip-input"), "1234");
     await user.click(screen.getByTestId("zip-submit"));
     expect(screen.getByTestId("zip-error")).toHaveTextContent(
-      "Please enter a valid 5-digit zip code"
+      "Please enter a valid 5-digit zip code",
     );
   });
 
@@ -35,7 +35,7 @@ describe("ZipForm", () => {
     await user.type(screen.getByTestId("zip-input"), "abcde");
     await user.click(screen.getByTestId("zip-submit"));
     expect(screen.getByTestId("zip-error")).toHaveTextContent(
-      "Please enter a valid 5-digit zip code"
+      "Please enter a valid 5-digit zip code",
     );
   });
 

@@ -1,9 +1,15 @@
 "use client";
 
 const STATE_NAMES: Record<string, string> = {
-  TX: "Texas", CA: "California", NH: "New Hampshire",
-  AZ: "Arizona", NM: "New Mexico", NY: "New York",
-  FL: "Florida", WA: "Washington", OR: "Oregon",
+  TX: "Texas",
+  CA: "California",
+  NH: "New Hampshire",
+  AZ: "Arizona",
+  NM: "New Mexico",
+  NY: "New York",
+  FL: "Florida",
+  WA: "Washington",
+  OR: "Oregon",
 };
 
 interface StateSelectorModalProps {
@@ -26,10 +32,7 @@ export function StateSelectorModal({
       className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
     >
       <div className="bg-white rounded-xl p-6 max-w-sm w-full shadow-xl">
-        <h2
-          id="state-selector-title"
-          className="text-lg font-semibold mb-2"
-        >
+        <h2 id="state-selector-title" className="text-lg font-semibold mb-2">
           Which state are you voting in?
         </h2>
         <p className="text-sm text-gray-600 mb-4">

@@ -5,15 +5,30 @@ import { ZipForm } from "./ZipForm";
 import { StateInfoCard } from "./StateInfoCard";
 import { PromptOutput } from "./PromptOutput";
 import { StateSelectorModal } from "./StateSelectorModal";
-import { lookupZip, loadStateData, computeRegistrationStatuses } from "../lib/data";
+import {
+  lookupZip,
+  loadStateData,
+  computeRegistrationStatuses,
+} from "../lib/data";
 import { getNextElection } from "../lib/date-utils";
 import { generatePromptText } from "../lib/prompt-generator";
-import type { StateData, Election, RegistrationStatuses } from "../types/election";
+import type {
+  StateData,
+  Election,
+  RegistrationStatuses,
+} from "../types/election";
 
 type AppState =
   | { stage: "idle" }
   | { stage: "multi-state"; zip: string; stateCodes: string[] }
-  | { stage: "result"; zip: string; stateData: StateData; nextElection: Election | null; regStatuses: RegistrationStatuses; promptText: string }
+  | {
+      stage: "result";
+      zip: string;
+      stateData: StateData;
+      nextElection: Election | null;
+      regStatuses: RegistrationStatuses;
+      promptText: string;
+    }
   | { stage: "not-found"; zip: string };
 
 export function BallotToolClient() {
@@ -51,10 +66,20 @@ export function BallotToolClient() {
     }
 
     const nextElection = getNextElection(stateData.elections, today);
-    const regStatuses = computeRegistrationStatuses(stateData.registration, today);
+    const regStatuses = computeRegistrationStatuses(
+      stateData.registration,
+      today,
+    );
     const promptText = generatePromptText(stateData, zip, today);
 
-    setAppState({ stage: "result", zip, stateData, nextElection, regStatuses, promptText });
+    setAppState({
+      stage: "result",
+      zip,
+      stateData,
+      nextElection,
+      regStatuses,
+      promptText,
+    });
     setIsLoading(false);
   }
 
@@ -87,8 +112,8 @@ export function BallotToolClient() {
         >
           <p className="font-semibold mb-1">Zip code not found</p>
           <p className="text-sm">
-            We don&apos;t have data for zip code <strong>{appState.zip}</strong> yet.
-            We&apos;re working on adding all U.S. zip codes.{" "}
+            We don&apos;t have data for zip code <strong>{appState.zip}</strong>{" "}
+            yet. We&apos;re working on adding all U.S. zip codes.{" "}
             <a
               href="https://www.usa.gov/election-office"
               target="_blank"
@@ -96,7 +121,8 @@ export function BallotToolClient() {
               className="underline"
             >
               Find your state election website
-            </a>.
+            </a>
+            .
           </p>
         </div>
       )}

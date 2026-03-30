@@ -3,7 +3,8 @@ import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { PromptOutput } from "../PromptOutput";
 
-const SAMPLE_PROMPT = "You are a nonpartisan civic research assistant\n\nHi! I'm voting in Texas.";
+const SAMPLE_PROMPT =
+  "You are a nonpartisan civic research assistant\n\nHi! I'm voting in Texas.";
 
 describe("PromptOutput", () => {
   beforeEach(() => {
@@ -27,7 +28,7 @@ describe("PromptOutput", () => {
   it("shows prompt text", () => {
     render(<PromptOutput promptText={SAMPLE_PROMPT} />);
     expect(screen.getByTestId("prompt-output")).toHaveTextContent(
-      "nonpartisan civic research assistant"
+      "nonpartisan civic research assistant",
     );
   });
 
@@ -36,16 +37,22 @@ describe("PromptOutput", () => {
     const user = userEvent.setup();
     await user.click(screen.getByTestId("copy-button"));
     expect(screen.getByTestId("copy-confirmation")).toBeInTheDocument();
-    expect(screen.getByTestId("copy-confirmation")).toHaveTextContent("Copied!");
+    expect(screen.getByTestId("copy-confirmation")).toHaveTextContent(
+      "Copied!",
+    );
   });
 
   it("copy-confirmation disappears after 2 seconds", async () => {
     vi.useFakeTimers();
     render(<PromptOutput promptText={SAMPLE_PROMPT} />);
     // Use fireEvent to avoid userEvent async issues with fake timers
-    await act(async () => { fireEvent.click(screen.getByTestId("copy-button")); });
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("copy-button"));
+    });
     expect(screen.getByTestId("copy-confirmation")).toBeInTheDocument();
-    act(() => { vi.runAllTimers(); });
+    act(() => {
+      vi.runAllTimers();
+    });
     expect(screen.queryByTestId("copy-confirmation")).not.toBeInTheDocument();
     vi.useRealTimers();
   });

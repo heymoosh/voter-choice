@@ -11,7 +11,7 @@ export interface Registration {
   online: {
     available: boolean;
     deadline: string | null;
-    url: string;
+    url: string | null;
   };
   byMail: {
     deadline: string;

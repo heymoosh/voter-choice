@@ -17,7 +17,7 @@ describe("StateInfoCard", () => {
         nextElection={nextElection}
         regStatuses={regStatuses}
         today={today}
-      />
+      />,
     );
     expect(screen.getByTestId("state-info")).toBeInTheDocument();
   });
@@ -29,7 +29,7 @@ describe("StateInfoCard", () => {
         nextElection={nextElection}
         regStatuses={regStatuses}
         today={today}
-      />
+      />,
     );
     expect(screen.getByTestId("election-name")).toBeInTheDocument();
     expect(screen.getByTestId("election-date")).toBeInTheDocument();
@@ -42,7 +42,7 @@ describe("StateInfoCard", () => {
         nextElection={nextElection}
         regStatuses={regStatuses}
         today={today}
-      />
+      />,
     );
     expect(screen.getByTestId("registration-status")).toBeInTheDocument();
   });
@@ -54,7 +54,7 @@ describe("StateInfoCard", () => {
         nextElection={null}
         regStatuses={regStatuses}
         today={today}
-      />
+      />,
     );
     expect(screen.getByTestId("no-election-message")).toBeInTheDocument();
   });
@@ -66,11 +66,11 @@ describe("StateInfoCard", () => {
         nextElection={nextElection}
         regStatuses={regStatuses}
         today={today}
-      />
+      />,
     );
     // TX deadlines are all passed relative to 2026-03-21
     expect(
-      screen.getByText(/Registration deadlines for this election have passed/i)
+      screen.getByText(/Registration deadlines for this election have passed/i),
     ).toBeInTheDocument();
   });
 
@@ -81,7 +81,7 @@ describe("StateInfoCard", () => {
         nextElection={nextElection}
         regStatuses={regStatuses}
         today={today}
-      />
+      />,
     );
     expect(screen.getAllByText(/Texas/).length).toBeGreaterThan(0);
   });

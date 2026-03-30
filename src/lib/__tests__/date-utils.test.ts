@@ -47,9 +47,7 @@ describe("getNextElection", () => {
   });
 
   it("includes today as 'upcoming' (date >= today)", () => {
-    const todayElection: Election[] = [
-      { ...elections[0], date: "2026-03-21" },
-    ];
+    const todayElection: Election[] = [{ ...elections[0], date: "2026-03-21" }];
     expect(getNextElection(todayElection, today)).not.toBeNull();
   });
 });

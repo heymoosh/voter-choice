@@ -2,7 +2,11 @@ import zipToStateRaw from "../data/zip-to-state.json";
 import txData from "../data/states/TX.json";
 import caData from "../data/states/CA.json";
 import nhData from "../data/states/NH.json";
-import type { StateData, Registration, RegistrationStatuses } from "../types/election";
+import type {
+  StateData,
+  Registration,
+  RegistrationStatuses,
+} from "../types/election";
 import { computeDeadlineStatus } from "./date-utils";
 
 const zipToState = zipToStateRaw as Record<string, string[]>;
@@ -27,11 +31,11 @@ export function loadStateData(stateCode: string): StateData | null {
 /** Computes deadline statuses for all three registration methods. */
 export function computeRegistrationStatuses(
   registration: Registration,
-  today: Date
+  today: Date,
 ): RegistrationStatuses {
   const online = computeDeadlineStatus(
     registration.online.available ? registration.online.deadline : null,
-    today
+    today,
   );
   const byMail = computeDeadlineStatus(registration.byMail.deadline, today);
   const inPerson = computeDeadlineStatus(registration.inPerson.deadline, today);

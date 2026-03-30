@@ -12,7 +12,7 @@ describe("StateSelectorModal", () => {
         stateCodes={stateCodes}
         onSelect={vi.fn()}
         onCancel={vi.fn()}
-      />
+      />,
     );
     expect(screen.getByTestId("state-selector")).toBeInTheDocument();
   });
@@ -23,7 +23,7 @@ describe("StateSelectorModal", () => {
         stateCodes={stateCodes}
         onSelect={vi.fn()}
         onCancel={vi.fn()}
-      />
+      />,
     );
     expect(screen.getByText("Arizona")).toBeInTheDocument();
     expect(screen.getByText("New Mexico")).toBeInTheDocument();
@@ -37,7 +37,7 @@ describe("StateSelectorModal", () => {
         stateCodes={stateCodes}
         onSelect={onSelect}
         onCancel={vi.fn()}
-      />
+      />,
     );
     await user.click(screen.getByText("Arizona"));
     expect(onSelect).toHaveBeenCalledWith("AZ");
@@ -51,7 +51,7 @@ describe("StateSelectorModal", () => {
         stateCodes={stateCodes}
         onSelect={vi.fn()}
         onCancel={onCancel}
-      />
+      />,
     );
     await user.click(screen.getByRole("button", { name: /cancel/i }));
     expect(onCancel).toHaveBeenCalled();

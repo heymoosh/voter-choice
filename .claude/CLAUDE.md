@@ -25,28 +25,25 @@ Workflow experiment comparing 5 AI coding frameworks. Read `docs/RUN_LOG.md` fir
 ## Code Style
 TypeScript. ESLint + Prettier (configured in Phase 0.3a as part of scaffold setup).
 
-## Workflow Enforcement — Superpowers
+## Workflow Enforcement — Compound Engineering
 
 **THIS IS A HARD REQUIREMENT. VIOLATION INVALIDATES THE EXPERIMENT.**
 
-This branch uses the **Superpowers** framework. You MUST follow the Superpowers workflow for ALL build work. **Use the Skill tool to invoke each command** — do NOT read skill/command files as reference text ("read and follow" degrades enforcement; see Learning 005/006).
+This branch uses the **Compound Engineering** framework. You MUST invoke the `/lfg` skill (the CE autonomous pipeline) for ALL build work. `/lfg` chains: ce:plan → deepen-plan → ce:work → ce:review → resolve findings → compound. Each step has GATE checks that must pass before proceeding.
 
-1. **`brainstorming`** — Invoke via Skill tool: `skill: "brainstorming", args: "<description>"`
-2. **`writing-plans`** — Invoke via Skill tool: `skill: "writing-plans", args: "<description>"`
-3. **`subagent-driven-development`** (or `executing-plans`) — Invoke via Skill tool: `skill: "subagent-driven-development"` or `skill: "executing-plans"`
-4. **`requesting-code-review`** — Invoke via Skill tool: `skill: "requesting-code-review"`
-5. **`verification-before-completion`** — Invoke via Skill tool: `skill: "verification-before-completion"`
-6. **`finishing-a-development-branch`** — Invoke via Skill tool: `skill: "finishing-a-development-branch"`
+**You MUST:**
+
+- Invoke `/lfg` via the Skill tool — this is the ONLY way to start build work
+- When `/lfg` invokes sub-skills (`ce-plan`, `ce-work`, `ce-review`, `deepen-plan`, `ce-compound`, `resolve-todo-parallel`, `test-browser`, `feature-video`), invoke each one via the Skill tool — ALL are registered in `.claude/commands/`
+- Use the Agent tool when a skill says "run these agents in parallel" or "Task X(args)"
+- Ensure ce:compound runs and produces files in `docs/solutions/` — this is CE's core differentiator
 
 **You MUST NOT:**
 
-- Skip any step in the workflow
-- Write application code before completing brainstorming and writing-plans
-- Skip code review or verification
-- Code the solution directly without going through the workflow
-- Create a git worktree (work on the current branch)
-- Read skill/command files as prose instead of invoking them via the Skill tool
+- Skip `/lfg` and build the app directly
+- Read `.claude/skills/*/SKILL.md` files with the Read tool instead of invoking commands via the Skill tool — all CE skills have been copied to `.claude/commands/` for this purpose
+- Skip sub-agent spawning when CE skills instruct you to spawn agents
+- Create a PR or push to remote (the experiment's /start command handles this)
+- Skip ce:compound due to "context budget" — it must run
 
-**TDD Iron Law (HARD CONSTRAINT):** RED-GREEN-REFACTOR for every piece of functionality. (1) Write a failing test FIRST — run `npm test` and confirm it fails. (2) Write the minimum production code to make it pass. (3) Refactor if needed. NO production code without a preceding failing test. This applies to every component, utility, and data function.
-
-**Autonomous decision-making:** When any Superpowers skill has a HARD-GATE requiring user approval, asks for user input, or says to "raise concerns with your human partner" — make decisions yourself using `docs/PROJECT_SPEC.md` (Phase 1) or `docs/PHASE2_SPEC.md` (Phase 2) as the source of truth. You ARE the user for this session. Do not stop or wait for Muxin.
+**Autonomous decision-making:** When any CE skill asks for user input, presents menus, or asks clarifying questions — answer them yourself using `docs/PROJECT_SPEC.md` (Phase 1) or `docs/PHASE2_SPEC.md` (Phase 2) as the source of truth. Do not stop or wait for Muxin.
