@@ -2,7 +2,19 @@
 
 ## Next
 
-Phase 1 Run 3: Spec Kit. Checkout `run3/spec-kit`, run `/start`.
+Phase 1 Run 3: BMAD. Checkout `run3/bmad`, run `/start`.
+
+## Completed
+
+### Phase 1 Run 3 — Spec Kit (complete)
+
+- **Date:** 2026-03-30
+- **Branch:** `run3/spec-kit`
+- **Tag:** `speckit-run3-phase1-complete` (local; push from host — container has no GitHub credentials)
+- **Commit:** `8dff08b`
+- **What was done:** Full Spec Kit workflow (8 steps): speckit.constitution → speckit.specify → speckit.clarify → speckit.plan → speckit.tasks → speckit.checklist → speckit.analyze → speckit.implement. Built ballot tool using TDD Iron Law (RED→GREEN→REFACTOR→COMMIT). Types, lib functions (lookupZip, getStateData, getDeadlineStatus, generatePrompt), ZipForm, StateInfoCard, PromptOutput, StateSelectorModal, BallotToolClient, page.tsx. Extracted EarlyVotingSection + VoterIdSection subcomponents to fix ESLint complexity violation (13 → ≤10). Spec artifacts landed in `specs/002-ballot-research-tool/` (Spec Kit script redirect due to non-feature branch) with symlinks in `.specify/features/`.
+- **Measurements:** Vitest 72/72 unit (88.3% line coverage), ESLint 0 errors/0 warnings, 0% duplication, first load JS 102 kB, 1838 LOC in src/. Playwright e2e and Lighthouse not measurable (container missing libglib-2.0 — Chromium system deps not installable without root). Re-run `npm run measure` from host for full metrics.
+- **Issues or deviations:** Session continued across two Claude Code contexts due to context limit. E2e and Lighthouse metrics unavailable in Docker container (no sudo for apt-get). Spec Kit feature-branch scripts redirected artifacts to `specs/` prefix; adherence check resolved with symlinks.
 
 ## Completed
 
