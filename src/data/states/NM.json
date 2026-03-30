@@ -1,0 +1,51 @@
+{
+  "stateCode": "NM",
+  "stateName": "New Mexico",
+  "lastUpdated": "2026-03-01",
+  "elections": [
+    {
+      "id": "nm-2026-primary",
+      "name": "2026 New Mexico Primary Election",
+      "date": "2026-06-02",
+      "type": "primary",
+      "isPrimary": true,
+      "primaryType": "closed"
+    }
+  ],
+  "registration": {
+    "online": {
+      "available": true,
+      "deadline": "2026-05-05",
+      "url": "https://portal.sos.state.nm.us/OVR/WebPages/InstructionsStep1.aspx"
+    },
+    "byMail": {
+      "deadline": "2026-05-05",
+      "sincePostmarked": false
+    },
+    "inPerson": {
+      "deadline": "2026-05-30",
+      "sincePostmarked": false
+    },
+    "sameDayRegistration": false,
+    "registrationCheckUrl": "https://voterportal.servis.sos.nm.gov/WhereToVote.aspx"
+  },
+  "earlyVoting": {
+    "available": true,
+    "startDate": "2026-05-14",
+    "endDate": "2026-05-30",
+    "notes": "Early voting available at designated locations"
+  },
+  "votingRules": {
+    "idRequired": false,
+    "acceptedIds": [],
+    "phonesAtPolls": "allowed",
+    "phonesAtPollsDetail": "Phones are permitted at New Mexico polling places.",
+    "additionalRules": ["Voters without ID may vote by affidavit"]
+  },
+  "resources": {
+    "stateElectionWebsite": "https://www.sos.nm.gov/voting-and-elections/",
+    "countyElectionLookup": "https://voterportal.servis.sos.nm.gov/WhereToVote.aspx",
+    "sampleBallotLookup": "https://voterportal.servis.sos.nm.gov/WhereToVote.aspx",
+    "pollingPlaceLookup": "https://voterportal.servis.sos.nm.gov/WhereToVote.aspx"
+  }
+}
