@@ -4,30 +4,34 @@ description: Full autonomous engineering workflow
 argument-hint: "[feature description]"
 ---
 
-CRITICAL: You MUST execute every step below IN ORDER. Do NOT skip any step. Do NOT jump ahead to coding or implementation. The plan phase (steps 2-3) MUST be completed and verified BEFORE any work begins. Violating this order produces bad output.
+CRITICAL: You MUST execute every step below IN ORDER using the Skill tool. Do NOT skip any step. Do NOT jump ahead to coding or implementation. Do NOT read SKILL.md files with the Read tool — use the Skill tool to invoke each command. The plan phase (steps 1-2) MUST be completed and verified BEFORE any work begins. Violating this order produces bad output.
 
-1. **Optional:** If the `ralph-wiggum` skill is available, run `/ralph-wiggum:ralph-loop "finish all slash commands" --completion-promise "DONE"`. If not available or it fails, skip and continue to step 2 immediately.
+Each step below MUST be invoked via the Skill tool like this: `skill: "ce-plan", args: "..."`. The commands are registered in `.claude/commands/` and available to the Skill tool.
 
-2. `/ce:plan $ARGUMENTS`
+1. Invoke: `skill: "ce-plan", args: "$ARGUMENTS"`
 
-   GATE: STOP. Verify that `/ce:plan` produced a plan file in `docs/plans/`. If no plan file was created, run `/ce:plan $ARGUMENTS` again. Do NOT proceed to step 3 until a written plan exists.
+   GATE: STOP. Verify that ce:plan produced a plan file in `docs/plans/`. If no plan file was created, invoke ce-plan again. Do NOT proceed to step 2 until a written plan exists.
 
-3. `/compound-engineering:deepen-plan`
+2. Invoke: `skill: "deepen-plan", args: "[path to plan file from step 1]"`
 
-   GATE: STOP. Confirm the plan has been deepened and updated. The plan file in `docs/plans/` should now contain additional detail. Do NOT proceed to step 4 without a deepened plan.
+   GATE: STOP. Confirm the plan has been deepened and updated. The plan file in `docs/plans/` should now contain additional detail. Do NOT proceed to step 3 without a deepened plan.
 
-4. `/ce:work`
+3. Invoke: `skill: "ce-work"`
 
-   GATE: STOP. Verify that implementation work was performed - files were created or modified beyond the plan. Do NOT proceed to step 5 if no code changes were made.
+   GATE: STOP. Verify that implementation work was performed — files were created or modified beyond the plan. Do NOT proceed to step 4 if no code changes were made.
 
-5. `/ce:review`
+4. Invoke: `skill: "ce-review", args: "--serial"`
 
-6. `/compound-engineering:resolve_todo_parallel`
+5. Invoke: `skill: "resolve-todo-parallel"`
 
-7. `/compound-engineering:test-browser`
+6. Invoke: `skill: "ce-compound"`
 
-8. `/compound-engineering:feature-video`
+   GATE: STOP. Verify that `docs/solutions/` contains at least one solution file. ce:compound is the knowledge-compounding step — CE's core differentiator. Do NOT skip it.
 
-9. Output `<promise>DONE</promise>` when video is in PR
+7. Invoke: `skill: "test-browser"` (if it fails or is unavailable, log and continue)
 
-Start with step 2 now (or step 1 if ralph-wiggum is available). Remember: plan FIRST, then work. Never skip the plan.
+8. Invoke: `skill: "feature-video"` (if it fails or is unavailable, log and continue)
+
+9. Output `<promise>DONE</promise>` when complete.
+
+Start with step 1 now. Remember: plan FIRST, then work. Never skip the plan. Never read SKILL.md files — always use the Skill tool.

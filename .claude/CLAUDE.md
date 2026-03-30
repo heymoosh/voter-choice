@@ -3,10 +3,13 @@
 ## Project
 Workflow experiment comparing 5 AI coding frameworks. Read `docs/RUN_LOG.md` first (the `## Next` line), then `docs/EXPERIMENT_DESIGN.md` Session Quick Start. Immediately execute the sub-phase described in `## Next` — do NOT pause or wait for confirmation. Do ONE sub-phase per session.
 
-**After completing a sub-phase, you MUST update `docs/RUN_LOG.md` before doing anything else:**
-1. Move the completed phase from `## Next` into `## Completed` (include commit hash and brief summary).
-2. Write the new next phase into `## Next`.
-3. Commit the RUN_LOG update. The session is NOT complete until RUN_LOG reflects the new state.
+**After completing a sub-phase, you MUST update `docs/RUN_LOG.md` on the `main` branch before doing anything else:**
+1. Switch to `main` (commit any pending work on the current branch first).
+2. Move the completed phase from `## Next` into `## Completed` (include commit hash and brief summary).
+3. Write the new next phase into `## Next`.
+4. Commit the RUN_LOG update and switch back to the working branch. The session is NOT complete until `main`'s RUN_LOG reflects the new state.
+
+**Note:** Branch-local copies of `docs/RUN_LOG.md` are git artifacts from fork points — do NOT update them. Only `main`'s copy is canonical.
 
 
 ## Boundaries
@@ -31,14 +34,16 @@ This branch uses the **Compound Engineering** framework. You MUST invoke the `/l
 **You MUST:**
 
 - Invoke `/lfg` via the Skill tool — this is the ONLY way to start build work
-- When `/lfg` invokes sub-skills (`/ce:plan`, `/ce:work`, etc.), follow their instructions exactly — including spawning sub-agents when the skill says to spawn agents
+- When `/lfg` invokes sub-skills (`ce-plan`, `ce-work`, `ce-review`, `deepen-plan`, `ce-compound`, `resolve-todo-parallel`, `test-browser`, `feature-video`), invoke each one via the Skill tool — ALL are registered in `.claude/commands/`
 - Use the Agent tool when a skill says "run these agents in parallel" or "Task X(args)"
+- Ensure ce:compound runs and produces files in `docs/solutions/` — this is CE's core differentiator
 
 **You MUST NOT:**
 
 - Skip `/lfg` and build the app directly
-- Manually read SKILL.md files instead of invoking skills via the Skill tool
+- Read `.claude/skills/*/SKILL.md` files with the Read tool instead of invoking commands via the Skill tool — all CE skills have been copied to `.claude/commands/` for this purpose
 - Skip sub-agent spawning when CE skills instruct you to spawn agents
 - Create a PR or push to remote (the experiment's /start command handles this)
+- Skip ce:compound due to "context budget" — it must run
 
 **Autonomous decision-making:** When any CE skill asks for user input, presents menus, or asks clarifying questions — answer them yourself using `docs/PROJECT_SPEC.md` (Phase 1) or `docs/PHASE2_SPEC.md` (Phase 2) as the source of truth. Do not stop or wait for Muxin.
