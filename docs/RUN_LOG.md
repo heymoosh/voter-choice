@@ -2,11 +2,19 @@
 
 ## Next
 
-Phase 1 Run 4: Compound Engineering (re-run with /lfg fix). Checkout `run4/compound-engineering`, run `/start`. All CE sub-skills (ce-plan, ce-work, ce-review, deepen-plan, ce-compound, resolve-todo-parallel, test-browser, feature-video) are now registered in `.claude/commands/` so the /lfg Skill tool chain works end-to-end. ce:compound MUST produce `docs/solutions/`.
-
-After CE: Resume Phase 1 Run 3 Superpowers (`run3/superpowers`, resume at executing-plans Step 3), then Spec Kit (`run3/spec-kit`), then BMAD (`run3/bmad`).
+Phase 1 Run 3: Spec Kit. Checkout `run3/spec-kit`, run `/start`.
 
 ## Completed
+
+### Phase 1 Run 3 — Superpowers (complete)
+
+- **Date:** 2026-03-21 – 2026-03-30
+- **Branch:** `run3/superpowers`
+- **Tag:** `superpowers-run3-phase1-complete`
+- **Commit:** `9283420`
+- **What was done:** Full Superpowers workflow (6 steps): brainstorming → writing-plans → executing-plans → requesting-code-review → verification-before-completion → finishing-a-development-branch. Built ballot tool using TDD Iron Law (RED→GREEN→REFACTOR→COMMIT). Types, date-utils, data layer, prompt-generator, ZipForm, StateInfoCard, PromptOutput, StateSelectorModal, BallotToolClient, page.tsx. Fixed hydration issue (stale production server chunk) by rebuilding before final measure run.
+- **Measurements:** Lighthouse 100/100/100/100, Playwright 42/42 e2e, Vitest 53/53 unit, ESLint 0 errors, 0% duplication, first load JS 102 kB, 1623 LOC in src/.
+- **Issues or deviations:** Session continued across two Claude Code contexts due to context limit. Mid-build stale production server (from a prior killed process) returned 400 on chunk requests, causing 30/42 e2e failures — fixed by killing the stale process and rebuilding.
 
 ### Infra Fix — CE Run4 Branch: Copy Sub-Skills to commands/
 
