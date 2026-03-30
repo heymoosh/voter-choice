@@ -1,4 +1,8 @@
-import type { StateElectionData, CustomizedPrompt, Election } from "../types/election";
+import type {
+  StateElectionData,
+  CustomizedPrompt,
+  Election,
+} from "../types/election";
 
 const BASE_PROMPT = `You are a nonpartisan civic research assistant helping a U.S. voter prepare for an upcoming election. Your job is to help me understand what's on my ballot, form my own opinions, and research candidates based on their ACTIONS — not their campaign promises.
 
@@ -207,7 +211,10 @@ If I paste a voter profile from a previous election at the start of the conversa
 
 Let's start with Step 1.`;
 
-function findUpcomingElection(elections: Election[], todayISO: string): Election {
+function findUpcomingElection(
+  elections: Election[],
+  todayISO: string,
+): Election {
   const upcoming = elections.filter((e) => e.date >= todayISO);
   if (upcoming.length > 0) {
     return upcoming.reduce((min, e) => (e.date < min.date ? e : min));
@@ -215,28 +222,40 @@ function findUpcomingElection(elections: Election[], todayISO: string): Election
   return elections[0];
 }
 
-function buildContextBlock(state: StateElectionData, zipCode: string, election: Election): string {
-  const { stateName, registration, earlyVoting, votingRules, resources } = state;
+function buildContextBlock(
+  state: StateElectionData,
+  zipCode: string,
+  election: Election,
+): string {
+  const { stateName, registration, earlyVoting, votingRules, resources } =
+    state;
 
   // Election type line
-  const electionTypeDetail =
-    election.primaryType ? `${election.type} (${election.primaryType} primary)` : election.type;
+  const electionTypeDetail = election.primaryType
+    ? `${election.type} (${election.primaryType} primary)`
+    : election.type;
 
   // Registration deadlines
-  const onlineDeadline = registration.online.available && registration.online.deadline
-    ? `Online by ${registration.online.deadline}`
-    : null;
-  const mailPostmarkNote = registration.byMail.sincePostmarked ? "postmarked" : "received";
+  const onlineDeadline =
+    registration.online.available && registration.online.deadline
+      ? `Online by ${registration.online.deadline}`
+      : null;
+  const mailPostmarkNote = registration.byMail.sincePostmarked
+    ? "postmarked"
+    : "received";
   const byMailDeadline = `by mail by ${registration.byMail.deadline} (${mailPostmarkNote})`;
   const inPersonDeadline = `in person by ${registration.inPerson.deadline}`;
 
-  const regParts = [onlineDeadline, byMailDeadline, inPersonDeadline].filter(Boolean);
+  const regParts = [onlineDeadline, byMailDeadline, inPersonDeadline].filter(
+    Boolean,
+  );
   const regLine = regParts.join(", ");
 
   // Early voting
-  const earlyVotingLine = earlyVoting.available && earlyVoting.startDate && earlyVoting.endDate
-    ? `${earlyVoting.startDate} through ${earlyVoting.endDate}`
-    : "Not available — absentee voting only";
+  const earlyVotingLine =
+    earlyVoting.available && earlyVoting.startDate && earlyVoting.endDate
+      ? `${earlyVoting.startDate} through ${earlyVoting.endDate}`
+      : "Not available — absentee voting only";
 
   // Voter ID
   const voterIdLine = votingRules.idRequired

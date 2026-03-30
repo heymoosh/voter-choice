@@ -1,8 +1,10 @@
-import type { DeadlineStatus, StatusColor } from "../types/election";
+import type { DeadlineStatus } from "../types/election";
+
+type StatusColor = DeadlineStatus["color"];
 
 export function getDeadlineStatus(
   dateISO: string,
-  todayISO?: string
+  todayISO?: string,
 ): DeadlineStatus {
   const today = todayISO ?? new Date().toISOString().split("T")[0];
   const deadlineMs = new Date(dateISO).getTime();

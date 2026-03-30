@@ -1,6 +1,5 @@
 import { describe, it, expect } from "vitest";
 import { getDeadlineStatus } from "./getDeadlineStatus";
-import type { DeadlineStatus } from "../types/election";
 
 describe("getDeadlineStatus", () => {
   const today = "2026-03-30";
