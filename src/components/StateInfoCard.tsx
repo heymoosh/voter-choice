@@ -14,10 +14,10 @@ function EarlyVotingSection({ earlyVoting }: { earlyVoting: EarlyVoting }) {
       <div className="text-sm text-gray-500 uppercase tracking-wide mb-1">
         Early Voting
       </div>
-      {earlyVoting.available && earlyVoting.startDate ? (
+      {earlyVoting.available && earlyVoting.startDate && earlyVoting.endDate ? (
         <p className="text-sm">
           {formatDate(earlyVoting.startDate)} –{" "}
-          {formatDate(earlyVoting.endDate!)}
+          {formatDate(earlyVoting.endDate)}
           {earlyVoting.notes && (
             <span className="text-gray-500"> ({earlyVoting.notes})</span>
           )}

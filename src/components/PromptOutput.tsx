@@ -13,14 +13,14 @@ export function PromptOutput({ promptText }: PromptOutputProps) {
   async function handleCopy() {
     try {
       await navigator.clipboard.writeText(promptText);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
     } catch {
-      // Fallback: select all text in textarea
+      // Fallback: select all text so user can copy manually
       if (textAreaRef.current) {
         textAreaRef.current.select();
       }
     }
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
   }
 
   return (
