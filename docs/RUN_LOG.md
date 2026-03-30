@@ -2,11 +2,19 @@
 
 ## Next
 
-Continue Phase 1 Run 3: Superpowers. Checkout `run3/superpowers`, run `/clear` then `/start`. Brainstorming + writing-plans are complete (committed). Resume at executing-plans (Step 3). The resume logic in workflow.md will detect this from `metrics/workflow-log.jsonl`.
+Phase 1 Run 4: Compound Engineering (re-run with /lfg fix). Checkout `run4/compound-engineering`, run `/start`. All CE sub-skills (ce-plan, ce-work, ce-review, deepen-plan, ce-compound, resolve-todo-parallel, test-browser, feature-video) are now registered in `.claude/commands/` so the /lfg Skill tool chain works end-to-end. ce:compound MUST produce `docs/solutions/`.
 
-After Superpowers: Phase 1 Run 4 — Spec Kit (`run3/spec-kit`), then Phase 1 Run 5 — BMAD (`run3/bmad`).
+After CE: Resume Phase 1 Run 3 Superpowers (`run3/superpowers`, resume at executing-plans Step 3), then Spec Kit (`run3/spec-kit`), then BMAD (`run3/bmad`).
 
 ## Completed
+
+### Infra Fix — CE Run4 Branch: Copy Sub-Skills to commands/
+
+- **Date:** 2026-03-30
+- **Commit:** `a0f25aa` on `run4/compound-engineering`
+- **Branch:** `run4/compound-engineering` (created from `b9fbafd` — last infra commit on run3/compound-engineering, before build work)
+- **What was done:** Root-caused why /lfg failed in CE run3: the `/lfg` command was in `.claude/commands/` (Skill-invokable), but every sub-skill it chains (ce:plan, ce:work, ce:review, deepen-plan, ce:compound, resolve-todo-parallel, test-browser, feature-video) was only in `.claude/skills/` — unreachable by the Skill tool. The model silently fell back to reading SKILL.md files as prose (Learning 005/006 antipattern). Fixed by copying all 8 sub-skill SKILL.md files to `.claude/commands/`. Rewrote `lfg.md` to use explicit `skill: "ce-plan"` syntax. Updated CLAUDE.md to enforce Skill-only invocation and require ce:compound output.
+- **Issues or deviations:** None.
 
 ### Learning 007 — Gap Analysis: Design Goals vs. Implementation
 
