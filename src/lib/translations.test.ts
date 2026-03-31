@@ -14,7 +14,10 @@ describe("translations", () => {
     const t = translations[lang];
     for (const [key, value] of Object.entries(t)) {
       if (typeof value === "string") {
-        expect(value.length, `${key} should not be empty for ${lang}`).toBeGreaterThan(0);
+        expect(
+          value.length,
+          `${key} should not be empty for ${lang}`,
+        ).toBeGreaterThan(0);
       }
     }
   });
