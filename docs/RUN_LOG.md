@@ -2,7 +2,27 @@
 
 ## Next
 
-Phase 2 Run 1: Vanilla — Add Spanish language support. Checkout `workflow/vanilla`, run `/start`.
+Phase 2 Run 2: Compound Engineering — Add Spanish language support. Checkout `run4/compound-engineering`, run `/start`.
+
+## Completed
+
+### Phase 2 Run 1 — Vanilla (complete)
+
+- **Date:** 2026-03-31
+- **Branch:** `workflow/vanilla`
+- **Tag:** `vanilla-phase2-complete` (local; push from host — container has no GitHub credentials)
+- **Commit:** `435b33a`
+- **What was done:** Added Spanish language support to the Vanilla Phase 1 ballot tool. Architecture: `src/lib/translations.ts` (typed `T` interface + `Record<Language, T>`), `src/lib/i18n.tsx` (React context, `localStorage` persistence, `document.documentElement.lang` update), `formatDate` updated to accept locale parameter for Spanish date formatting (e.g., "3 de marzo de 2026"), `generateCustomPrompt` updated with `lang` parameter + full Spanish BALLOT_PROMPT translation (fluent "tú" voice), separate `generateContextBlockEs/En` functions. Page refactored into 14 sub-components to meet ESLint complexity ≤10. Language toggle button (`data-testid="language-toggle"`) fixed top-right, keyboard accessible. Prompt regenerates on language switch. Active error messages translate when language changes.
+- **Measurements:** ESLint 0 errors/0 warnings/0 complexity violations (improved from Phase 1: 0 errors/1 warning/1 violation). Vitest 19/19 unit tests (new — Phase 1 had 0 tests). 0% duplication. First load JS 102 kB shared (unchanged), page size 17.9 kB (+8 kB from Phase 1's 9.87 kB). Playwright 36/42 e2e (85.71% — same as Phase 1, 6 pre-existing failures). Lighthouse N/A (container). LOC: 1,838 src/ (+812 from Phase 1's 1,026).
+- **Phase 1 → Phase 2 delta:**
+  - E2e pass rate: 36/42 → 36/42 (unchanged — same 6 pre-existing failures)
+  - ESLint errors: 0 → 0 | warnings: 1 → 0 | complexity: 1 → 0
+  - Unit tests: 0 → 19 (+19)
+  - LOC: 1,026 → 1,838 (+812)
+  - Page bundle: 9.87 kB → 17.9 kB (+8 kB); shared JS 102 kB → 102 kB (unchanged)
+- **Adherence:** Vanilla framework — no artifacts expected. `workflow-log.jsonl` has start/complete entries. Build time ~14 min.
+- **Issues or deviations:** HEAD was 7 commits ahead of `vanilla-phase1-complete` tag (infra commits added by operator for Phase 2 setup) — `/start` phase-check noted this and proceeded. Lighthouse not measurable in container. Push from host required (no GitHub auth in container). 6 pre-existing e2e failures confirmed identical to Phase 1 baseline (HTML5 pattern validation blocking JS handler + multi-state `state-selector` strict mode violation).
+- **Operator notes:** No additional observations — autonomous session.
 
 ## Completed
 
