@@ -1,5 +1,5 @@
-import type { StateElectionData } from './types';
-import { formatDate, getDeadlineStatus, getDeadlineLabel } from './date-utils';
+import type { StateElectionData } from "./types";
+import { formatDate, getDeadlineStatus, getDeadlineLabel } from "./date-utils";
 
 const BALLOT_PROMPT = `You are a nonpartisan civic research assistant helping a U.S. voter prepare for an upcoming election. Your job is to help me understand what's on my ballot, form my own opinions, and research candidates based on their ACTIONS — not their campaign promises.
 
@@ -85,55 +85,66 @@ Clean, printable summary I can take to the polls.
 
 Let's start with Step 1.`;
 
-function getNextElection(stateData: StateElectionData, today: Date = new Date()): StateElectionData['elections'][0] | null {
-  const todayStr = today.toISOString().split('T')[0];
+function getNextElection(
+  stateData: StateElectionData,
+  today: Date = new Date(),
+): StateElectionData["elections"][0] | null {
+  const todayStr = today.toISOString().split("T")[0];
   return stateData.elections.find((e) => e.date >= todayStr) ?? null;
 }
 
-function buildRegistrationBlock(stateData: StateElectionData, today: Date): string {
+function buildRegistrationBlock(
+  stateData: StateElectionData,
+  today: Date,
+): string {
   const { registration } = stateData;
   const lines: string[] = [];
 
   const methods = [
-    { name: 'Online', method: registration.online },
-    { name: 'By mail', method: registration.byMail },
-    { name: 'In person', method: registration.inPerson },
+    { name: "Online", method: registration.online },
+    { name: "By mail", method: registration.byMail },
+    { name: "In person", method: registration.inPerson },
   ];
 
   for (const { name, method } of methods) {
     if (method.deadline) {
       const status = getDeadlineStatus(method.deadline, today);
       const label = getDeadlineLabel(method.deadline, today);
-      const postmark = 'sincePostmarked' in method && method.sincePostmarked ? ' (postmarked)' : '';
-      lines.push(`${name} by ${formatDate(method.deadline)}${postmark} — ${label} (${status})`);
+      const postmark =
+        "sincePostmarked" in method && method.sincePostmarked
+          ? " (postmarked)"
+          : "";
+      lines.push(
+        `${name} by ${formatDate(method.deadline)}${postmark} — ${label} (${status})`,
+      );
     }
   }
 
   if (registration.sameDayRegistration) {
-    lines.push('Same-day registration available');
+    lines.push("Same-day registration available");
   }
 
-  return lines.join(', ');
+  return lines.join(", ");
 }
 
 export function generatePrompt(
   stateData: StateElectionData,
   zip: string,
-  today: Date = new Date()
+  today: Date = new Date(),
 ): string {
   const election = getNextElection(stateData, today);
 
   const electionInfo = election
-    ? `**Election:** ${election.name} on ${formatDate(election.date)}\n- **Election type:** ${election.type}${election.isPrimary && election.primaryType ? ` (${election.primaryType} primary)` : ''}`
-    : 'No upcoming elections found';
+    ? `**Election:** ${election.name} on ${formatDate(election.date)}\n- **Election type:** ${election.type}${election.isPrimary && election.primaryType ? ` (${election.primaryType} primary)` : ""}`
+    : "No upcoming elections found";
 
   const earlyVotingInfo = stateData.earlyVoting.available
-    ? `${formatDate(stateData.earlyVoting.startDate!)} through ${formatDate(stateData.earlyVoting.endDate!)}${stateData.earlyVoting.notes ? ` (${stateData.earlyVoting.notes})` : ''}`
-    : 'Not available — absentee voting only';
+    ? `${formatDate(stateData.earlyVoting.startDate!)} through ${formatDate(stateData.earlyVoting.endDate!)}${stateData.earlyVoting.notes ? ` (${stateData.earlyVoting.notes})` : ""}`
+    : "Not available — absentee voting only";
 
   const voterIdInfo = stateData.votingRules.idRequired
-    ? `Required. Accepted: ${stateData.votingRules.acceptedIds.join(', ')}`
-    : 'Not required';
+    ? `Required. Accepted: ${stateData.votingRules.acceptedIds.join(", ")}`
+    : "Not required";
 
   const contextBlock = `Hi! I'm voting in **${stateData.stateName}**. My zip code is **${zip}**.
 

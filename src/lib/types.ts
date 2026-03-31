@@ -1,18 +1,18 @@
-export type DeadlineStatus = 'safe' | 'warning' | 'urgent' | 'passed';
+export type DeadlineStatus = "safe" | "warning" | "urgent" | "passed";
 
 export interface Election {
   id: string;
   name: string;
   date: string;
-  type: 'primary' | 'general' | 'runoff' | 'special';
+  type: "primary" | "general" | "runoff" | "special";
   isPrimary: boolean;
-  primaryType: 'open' | 'closed' | 'semi-closed' | 'semi-open' | null;
+  primaryType: "open" | "closed" | "semi-closed" | "semi-open" | null;
 }
 
 export interface RegistrationMethod {
   available?: boolean;
   deadline: string | null;
-  url?: string;
+  url?: string | null;
   sincePostmarked?: boolean;
 }
 
@@ -34,7 +34,7 @@ export interface EarlyVoting {
 export interface VotingRules {
   idRequired: boolean;
   acceptedIds: string[];
-  phonesAtPolls: 'prohibited' | 'allowed' | 'varies';
+  phonesAtPolls: "prohibited" | "allowed" | "varies";
   phonesAtPollsDetail: string;
   additionalRules: string[];
 }

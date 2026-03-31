@@ -1,0 +1,75 @@
+# generated: 2026-03-31
+# last_updated: 2026-03-31
+# project: voter-choice
+# project_key: NOKEY
+# tracking_system: file-system
+# story_location: _bmad-output/implementation-artifacts
+
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic not yet started
+#   - in-progress: Epic actively being worked on
+#   - done: All stories in epic completed
+#
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - ready-for-dev: Story file created in stories folder
+#   - in-progress: Developer actively working on implementation
+#   - review: Ready for code review
+#   - done: Story completed
+#
+# Retrospective Status:
+#   - optional: Can be completed but not required
+#   - done: Retrospective has been completed
+
+generated: 2026-03-31
+last_updated: 2026-03-31
+project: voter-choice
+project_key: NOKEY
+tracking_system: file-system
+story_location: _bmad-output/implementation-artifacts
+
+development_status:
+  # Epic 1: Data Foundation
+  epic-1: in-progress
+  1-1-typescript-type-definitions: in-progress
+  1-2-date-utility-functions: backlog
+  1-3-zip-lookup-function: backlog
+  1-4-state-data-loader: backlog
+  1-5-prompt-generation-function: backlog
+  epic-1-retrospective: optional
+
+  # Epic 2: Zip Code Entry & State Lookup
+  epic-2: backlog
+  2-1-zipform-component: backlog
+  2-2-state-selector-for-multi-state-zips: backlog
+  epic-2-retrospective: optional
+
+  # Epic 3: State Election Info Display
+  epic-3: backlog
+  3-1-state-info-card-core-display: backlog
+  3-2-registration-deadline-status-indicators: backlog
+  3-3-not-found-message: backlog
+  epic-3-retrospective: optional
+
+  # Epic 4: Prompt Generation & Clipboard
+  epic-4: backlog
+  4-1-prompt-output-display: backlog
+  4-2-copy-to-clipboard: backlog
+  epic-4-retrospective: optional
+
+  # Epic 5: Page Layout & Static Content
+  epic-5: backlog
+  5-1-page-layout-with-server-client-split: backlog
+  5-2-hero-section: backlog
+  5-3-tips-section-and-footer: backlog
+  epic-5-retrospective: optional
+
+  # Epic 6: Integration, Accessibility & Polish
+  epic-6: backlog
+  6-1-ballottoolclient-integration: backlog
+  6-2-responsive-layout: backlog
+  6-3-accessibility-compliance: backlog
+  6-4-build-verification-and-test-suite: backlog
+  epic-6-retrospective: optional
