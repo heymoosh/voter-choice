@@ -1,8 +1,8 @@
 {
   "metadata": {
-    "timestamp": "2026-03-31T03:52:28.768Z",
+    "timestamp": "2026-03-31T18:50:52.132Z",
     "branch": "run4/compound-engineering",
-    "commit": "c40da45",
+    "commit": "d5d59d3",
     "nodeVersion": "v20.20.2"
   },
   "eslint": {
@@ -51,10 +51,10 @@
     }
   },
   "lighthouse": {
-    "performance": 100,
-    "accessibility": 100,
-    "bestPractices": 100,
-    "seo": 100
+    "performance": null,
+    "accessibility": null,
+    "bestPractices": null,
+    "seo": null
   },
   "playwright": {
     "total": 42,
@@ -93,12 +93,12 @@
       "byExtension": {}
     },
     "infrastructure": {
-      "code": 851,
-      "files": 11
+      "code": 880,
+      "files": 12
     },
     "total": {
-      "code": 2606,
-      "files": 34
+      "code": 2635,
+      "files": 35
     }
   }
 }
