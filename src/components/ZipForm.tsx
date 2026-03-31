@@ -18,17 +18,6 @@ export default function ZipForm({
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
     onClearError();
-
-    if (!zip.trim()) {
-      onSubmit("");
-      return;
-    }
-
-    if (!/^\d{5}$/.test(zip.trim())) {
-      onSubmit(zip.trim());
-      return;
-    }
-
     onSubmit(zip.trim());
   }
 
@@ -70,7 +59,7 @@ export default function ZipForm({
           id="zip-error"
           data-testid="zip-error"
           role="alert"
-          className="w-full text-red-600 text-sm mt-1 sm:absolute sm:top-full sm:left-0 sm:mt-2"
+          className="w-full text-red-600 text-sm mt-1"
         >
           {error}
         </div>
