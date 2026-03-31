@@ -2,9 +2,21 @@
 
 ## Next
 
-Phase 1 Run 3: Compound Engineering (CE /lfg re-run). Checkout `run4/compound-engineering`, run `/start`.
+Phase 2 Run 1: Vanilla — Add Spanish language support. Checkout `workflow/vanilla`, run `/start`.
 
 ## Completed
+
+### Phase 1 Run 4 — Compound Engineering re-run (complete)
+
+- **Date:** 2026-03-31
+- **Branch:** `run4/compound-engineering`
+- **Tag:** `ce-run4-phase1-complete` (local; push from host — container has no GitHub credentials)
+- **Commit:** `c5e5b02`
+- **What was done:** Full CE `/lfg` pipeline re-run with fixed infrastructure (sub-skills properly copied to `.claude/commands/` so Skill tool invocation works). Pipeline: ce:plan (plan at `docs/plans/2026-03-31-001-feat-ballot-research-tool-plan.md`) → deepen-plan → ce:work (built ballot tool: types, date-utils, lookupZip, getStateData, generatePrompt, ZipForm, StateInfoCard, PromptOutput, StateSelectorModal, BallotToolClient, page.tsx) → ce:review → resolve findings → ce:compound (solution doc at `docs/solutions/build-patterns`). All CE pipeline steps executed and artifacts produced — resolving the run3 issues where /lfg was read-not-invoked and ce:compound was skipped.
+- **Measurements:** Lighthouse 90/100/100/100 (Perf/A11y/BP/SEO), Playwright 42/42 e2e (100%), Vitest 39/39 unit, ESLint 0 errors/0 warnings, 0% duplication, first load JS 115 kB (102 kB shared), 1755 LOC in src/ across 23 files. 4 workflow-generated test files. 16 commits since scaffold, +43,079/-123 lines.
+- **CE Adherence:** Plan file present (ce:plan), solution file present (ce:compound), workflow-log.jsonl has lfg started + completed entries. All expected CE artifacts produced — no workflow bypass.
+- **Issues or deviations:** Lighthouse Performance 90 (not 100) — likely container resource constraints rather than code issue. No GitHub auth in container — push required from host. Prior session completed the CE pipeline but ran out of context before post-build steps; this session completed measurement, tagging, and RUN_LOG update.
+- **Operator notes:** No additional observations — autonomous session.
 
 ### Phase 1 Run 3 — BMAD (complete)
 
