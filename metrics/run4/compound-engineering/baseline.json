@@ -1,0 +1,104 @@
+{
+  "metadata": {
+    "timestamp": "2026-03-31T03:52:28.768Z",
+    "branch": "run4/compound-engineering",
+    "commit": "c40da45",
+    "nodeVersion": "v20.20.2"
+  },
+  "eslint": {
+    "errors": 0,
+    "warnings": 0,
+    "complexityViolations": 0
+  },
+  "vitest": {
+    "tests": {
+      "total": 39,
+      "passed": 39,
+      "failed": 0,
+      "skipped": 0,
+      "passRate": 100
+    },
+    "coverage": {
+      "lines": 17.42,
+      "branches": 88.23,
+      "functions": 95,
+      "statements": 17.42
+    }
+  },
+  "duplication": {
+    "duplicatedLines": 0,
+    "totalLines": 1662,
+    "percentage": 0,
+    "clones": 0
+  },
+  "bundleSize": {
+    "buildSuccess": true,
+    "pages": [
+      {
+        "route": "/",
+        "size": 12.9,
+        "unit": "kB"
+      },
+      {
+        "route": "/_not-found",
+        "size": 992,
+        "unit": "B"
+      }
+    ],
+    "firstLoadJsShared": {
+      "size": 102,
+      "unit": "kB"
+    }
+  },
+  "lighthouse": {
+    "performance": null,
+    "accessibility": null,
+    "bestPractices": null,
+    "seo": null
+  },
+  "playwright": {
+    "total": 42,
+    "passed": 0,
+    "failed": 42,
+    "timedOut": 0,
+    "skipped": 0,
+    "passRate": 0
+  },
+  "linesOfCode": {
+    "application": {
+      "code": 1755,
+      "files": 23,
+      "byExtension": {
+        ".css": {
+          "files": 1,
+          "code": 21
+        },
+        ".tsx": {
+          "files": 7,
+          "code": 758
+        },
+        ".json": {
+          "files": 6,
+          "code": 356
+        },
+        ".ts": {
+          "files": 9,
+          "code": 620
+        }
+      }
+    },
+    "plugin": {
+      "code": 0,
+      "files": 0,
+      "byExtension": {}
+    },
+    "infrastructure": {
+      "code": 851,
+      "files": 11
+    },
+    "total": {
+      "code": 2606,
+      "files": 34
+    }
+  }
+}
