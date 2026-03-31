@@ -72,8 +72,28 @@ export function getDeadlineStatus(deadline: string): {
   };
 }
 
-export function formatDate(dateStr: string): string {
+export function formatDate(dateStr: string, locale: string = "en-US"): string {
   const date = new Date(dateStr);
+  if (locale === "es" || locale === "es-US") {
+    const day = date.getUTCDate();
+    const months = [
+      "enero",
+      "febrero",
+      "marzo",
+      "abril",
+      "mayo",
+      "junio",
+      "julio",
+      "agosto",
+      "septiembre",
+      "octubre",
+      "noviembre",
+      "diciembre",
+    ];
+    const month = months[date.getUTCMonth()];
+    const year = date.getUTCFullYear();
+    return `${day} de ${month} de ${year}`;
+  }
   return date.toLocaleDateString("en-US", {
     weekday: "long",
     year: "numeric",
