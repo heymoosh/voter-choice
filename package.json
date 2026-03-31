@@ -15,7 +15,10 @@
     "format:check": "prettier --check .",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "e2e": "playwright test",
+    "ensure-browsers": "node scripts/ensure-browsers.mjs",
+    "pree2e": "npm run ensure-browsers",
+    "e2e": "PLAYWRIGHT_BROWSERS_PATH=/tmp/pw-browsers playwright test",
+    "premeasure": "npm run ensure-browsers",
     "measure": "node scripts/measure.mjs",
     "clean-start": "rm -rf node_modules .next coverage .jscpd-report .lighthouseci .vitest-report.json .eslint-report.json playwright-report.json && npm install"
   },
