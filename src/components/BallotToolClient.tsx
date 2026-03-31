@@ -11,9 +11,74 @@ import { generatePrompt } from "@/lib/generatePrompt";
 import { findNextElection } from "@/lib/date-utils";
 import type { AppState, StateData, Election } from "@/lib/types";
 
+// Stable reference: date is fixed at component mount, not recreated each render.
+function useToday(): Date {
+  return useRef(new Date()).current;
+}
+
+interface FoundStateProps {
+  stateData: StateData;
+  zip: string;
+  today: Date;
+}
+
+function FoundState({ stateData, zip, today }: FoundStateProps) {
+  const election = findNextElection(
+    stateData.elections,
+    today,
+  ) as Election | null;
+
+  if (!election) {
+    // No upcoming election — show last known election name + no-election message
+    const lastElection =
+      stateData.elections.length > 0
+        ? stateData.elections[stateData.elections.length - 1]
+        : null;
+    return (
+      <>
+        {lastElection && (
+          <StateInfoCard
+            stateData={stateData}
+            election={lastElection}
+            today={today}
+          />
+        )}
+        <div
+          data-testid="no-election-message"
+          role="status"
+          className="rounded-xl border border-gray-200 bg-gray-50 p-6"
+        >
+          <p className="text-sm text-gray-600">
+            No upcoming elections found for{" "}
+            <strong>{stateData.stateName}</strong>. Check{" "}
+            <a
+              href={stateData.resources.stateElectionWebsite}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-medium text-blue-600 underline"
+            >
+              {stateData.stateName} election website
+            </a>{" "}
+            for updates.
+          </p>
+        </div>
+      </>
+    );
+  }
+
+  const promptText = generatePrompt(stateData, zip, election);
+  return (
+    <>
+      <StateInfoCard stateData={stateData} election={election} today={today} />
+      <PromptOutput promptText={promptText} />
+    </>
+  );
+}
+
 export function BallotToolClient() {
   const [appState, setAppState] = useState<AppState>({ stage: "idle" });
   const resultsRef = useRef<HTMLDivElement>(null);
+  const today = useToday();
 
   function handleZipSubmit(zip: string) {
     setAppState({ stage: "loading" });
@@ -37,28 +102,12 @@ export function BallotToolClient() {
       return;
     }
     setAppState({ stage: "found", zip, stateData: data });
-    // Move focus to results after render
     setTimeout(() => resultsRef.current?.focus(), 50);
   }
 
   function handleStateSelect(stateCode: string) {
     if (appState.stage !== "multi-state") return;
     resolveState(appState.zip, stateCode);
-  }
-
-  const today = new Date();
-
-  function getElectionAndPrompt(
-    stateData: StateData,
-    zip: string,
-  ): { election: Election | null; promptText: string } {
-    const election = findNextElection(
-      stateData.elections,
-      today,
-    ) as Election | null;
-    if (!election) return { election: null, promptText: "" };
-    const promptText = generatePrompt(stateData, zip, election);
-    return { election, promptText };
   }
 
   return (
@@ -111,62 +160,19 @@ export function BallotToolClient() {
       )}
 
       {/* Found — show state info + prompt */}
-      {appState.stage === "found" &&
-        (() => {
-          const { election, promptText } = getElectionAndPrompt(
-            appState.stateData,
-            appState.zip,
-          );
-          return (
-            <div
-              ref={resultsRef}
-              tabIndex={-1}
-              className="flex flex-col gap-6 outline-none"
-            >
-              {election ? (
-                <>
-                  <StateInfoCard
-                    stateData={appState.stateData}
-                    election={election}
-                    today={today}
-                  />
-                  <PromptOutput promptText={promptText} />
-                </>
-              ) : (
-                <>
-                  <StateInfoCard
-                    stateData={appState.stateData}
-                    election={
-                      appState.stateData.elections[
-                        appState.stateData.elections.length - 1
-                      ]
-                    }
-                    today={today}
-                  />
-                  <div
-                    data-testid="no-election-message"
-                    role="status"
-                    className="rounded-xl border border-gray-200 bg-gray-50 p-6"
-                  >
-                    <p className="text-sm text-gray-600">
-                      No upcoming elections found for{" "}
-                      <strong>{appState.stateData.stateName}</strong>. Check{" "}
-                      <a
-                        href={appState.stateData.resources.stateElectionWebsite}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="font-medium text-blue-600 underline"
-                      >
-                        {appState.stateData.stateName} election website
-                      </a>{" "}
-                      for updates.
-                    </p>
-                  </div>
-                </>
-              )}
-            </div>
-          );
-        })()}
+      {appState.stage === "found" && (
+        <div
+          ref={resultsRef}
+          tabIndex={-1}
+          className="flex flex-col gap-6 outline-none"
+        >
+          <FoundState
+            stateData={appState.stateData}
+            zip={appState.zip}
+            today={today}
+          />
+        </div>
+      )}
     </div>
   );
 }
