@@ -2,9 +2,19 @@
 
 ## Next
 
-Phase 1 Run 3: BMAD. Checkout `run3/bmad`, run `/start`.
+Phase 1 Run 3: Compound Engineering (CE /lfg re-run). Checkout `run4/compound-engineering`, run `/start`.
 
 ## Completed
+
+### Phase 1 Run 3 — BMAD (complete)
+
+- **Date:** 2026-03-31
+- **Branch:** `run3/bmad`
+- **Tag:** `bmad-run3-phase1-complete`
+- **Commit:** `e0c7704`
+- **What was done:** Full BMAD 4-phase workflow (10 steps): bmad-brainstorming (108 ideas via SCAMPER/Role Playing/First Principles) → bmad-create-product-brief → bmad-create-prd (38 FRs, 27 NFRs) → bmad-create-ux-design (14-section spec) → bmad-create-architecture (pure function pipeline, server/client split) → bmad-create-epics-and-stories (6 epics, 17 stories) → bmad-check-implementation-readiness (READY) → bmad-sprint-planning → bmad-dev-story (all stories) → bmad-code-review (1 MEDIUM fix). All 10 steps invoked via Skill tool. Built ballot tool: types, date-utils, lookupZip, getStateData, generatePrompt, ZipForm, StateInfoCard, PromptOutput, StateSelectorModal, BallotToolClient, page.tsx. 6 BMAD docs produced (brainstorming, product-brief, prd, ux-design, architecture, epics).
+- **Measurements:** Lighthouse 100/96/100/100, Playwright 42/42 e2e, Vitest 50/50 unit, ESLint 0 errors/0 warnings, 0% duplication, first load JS 109 kB (102 kB shared), 1364 LOC in src/.
+- **Issues or deviations:** Lighthouse Accessibility 96 (not 100) — likely minor contrast or labeling issue. E2e and Lighthouse initially failed in Docker container (no Chromium); re-ran from host Mac successfully. Push from host required (no GitHub auth in container).
 
 ### Phase 1 Run 3 — Spec Kit (complete)
 
