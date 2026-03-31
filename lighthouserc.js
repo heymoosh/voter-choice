@@ -14,6 +14,7 @@ module.exports = {
           "best-practices",
           "seo",
         ],
+        chromeFlags: "--no-sandbox",
       },
     },
     assert: {

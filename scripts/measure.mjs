@@ -265,7 +265,13 @@ function measureLighthouse() {
     run("npx next build 2>&1");
   }
 
-  const result = run("npx lhci collect --config=lighthouserc.js 2>&1");
+  // CHROME_PATH and --no-sandbox required in sandboxed Linux environments (no user namespaces)
+  const chromePath =
+    process.env.CHROME_PATH ||
+    "/tmp/pw-browsers/chromium-1169/chrome-linux/chrome";
+  const result = run(
+    `CHROME_PATH=${chromePath} npx lhci collect --config=lighthouserc.js 2>&1`,
+  );
   if (!result.success && !result.stdout.includes("Done running")) {
     console.log("  Lighthouse collect failed, trying inline approach...");
   }
@@ -338,7 +344,12 @@ function measurePlaywright() {
   }
 
   // Use config reporters (playwright.config.ts writes JSON to playwright-report.json)
-  const result = run("npx playwright test 2>&1");
+  // PLAYWRIGHT_BROWSERS_PATH needed in sandboxed Linux environments
+  const pwBrowsers =
+    process.env.PLAYWRIGHT_BROWSERS_PATH || "/tmp/pw-browsers";
+  const result = run(
+    `PLAYWRIGHT_BROWSERS_PATH=${pwBrowsers} npx playwright test 2>&1`,
+  );
 
   const reportPath = join(ROOT, "playwright-report.json");
   if (existsSync(reportPath)) {

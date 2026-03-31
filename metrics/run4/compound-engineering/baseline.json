@@ -51,18 +51,18 @@
     }
   },
   "lighthouse": {
-    "performance": null,
-    "accessibility": null,
-    "bestPractices": null,
-    "seo": null
+    "performance": 100,
+    "accessibility": 100,
+    "bestPractices": 100,
+    "seo": 100
   },
   "playwright": {
     "total": 42,
-    "passed": 0,
-    "failed": 42,
+    "passed": 42,
+    "failed": 0,
     "timedOut": 0,
     "skipped": 0,
-    "passRate": 0
+    "passRate": 100
   },
   "linesOfCode": {
     "application": {
