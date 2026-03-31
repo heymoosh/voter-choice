@@ -1,9 +1,9 @@
 {
   "metadata": {
-    "timestamp": "2026-03-31T02:13:55.615Z",
+    "timestamp": "2026-03-31T03:22:36.761Z",
     "branch": "run3/bmad",
-    "commit": "81d8584",
-    "nodeVersion": "v20.20.2"
+    "commit": "4e40440",
+    "nodeVersion": "v22.14.0"
   },
   "eslint": {
     "errors": 0,
@@ -41,7 +41,7 @@
       },
       {
         "route": "/_not-found",
-        "size": 992,
+        "size": 990,
         "unit": "B"
       }
     ],
@@ -51,18 +51,18 @@
     }
   },
   "lighthouse": {
-    "performance": null,
-    "accessibility": null,
-    "bestPractices": null,
-    "seo": null
+    "performance": 100,
+    "accessibility": 96,
+    "bestPractices": 100,
+    "seo": 100
   },
   "playwright": {
     "total": 42,
-    "passed": 0,
-    "failed": 42,
+    "passed": 42,
+    "failed": 0,
     "timedOut": 0,
     "skipped": 0,
-    "passRate": 0
+    "passRate": 100
   },
   "linesOfCode": {
     "application": {
