@@ -1,0 +1,110 @@
+{
+  "metadata": {
+    "timestamp": "2026-03-30T21:57:09.659Z",
+    "branch": "run3/spec-kit",
+    "commit": "9254f2c",
+    "nodeVersion": "v20.20.2"
+  },
+  "eslint": {
+    "errors": 0,
+    "warnings": 0,
+    "complexityViolations": 0
+  },
+  "vitest": {
+    "tests": {
+      "total": 72,
+      "passed": 72,
+      "failed": 0,
+      "skipped": 0,
+      "passRate": 100
+    },
+    "coverage": {
+      "lines": 88.32,
+      "branches": 83.16,
+      "functions": 89.65,
+      "statements": 88.32
+    }
+  },
+  "duplication": {
+    "duplicatedLines": 0,
+    "totalLines": 1284,
+    "percentage": 0,
+    "clones": 0
+  },
+  "bundleSize": {
+    "buildSuccess": true,
+    "pages": [
+      {
+        "route": "/",
+        "size": 8.08,
+        "unit": "kB"
+      },
+      {
+        "route": "/_not-found",
+        "size": 992,
+        "unit": "B"
+      }
+    ],
+    "firstLoadJsShared": {
+      "size": 102,
+      "unit": "kB"
+    }
+  },
+  "lighthouse": {
+    "performance": null,
+    "accessibility": null,
+    "bestPractices": null,
+    "seo": null
+  },
+  "playwright": {
+    "total": 42,
+    "passed": 42,
+    "failed": 0,
+    "timedOut": 0,
+    "skipped": 0,
+    "passRate": 100,
+    "note": "Run in Playwright Docker container (mcr.microsoft.com/playwright:v1.52.0-noble)"
+  },
+  "linesOfCode": {
+    "application": {
+      "code": 1838,
+      "files": 29,
+      "byExtension": {
+        ".css": {
+          "files": 1,
+          "code": 21
+        },
+        ".tsx": {
+          "files": 13,
+          "code": 943
+        },
+        ".json": {
+          "files": 6,
+          "code": 334
+        },
+        ".ts": {
+          "files": 9,
+          "code": 540
+        }
+      }
+    },
+    "plugin": {
+      "code": 9,
+      "files": 1,
+      "byExtension": {
+        ".json": {
+          "files": 1,
+          "code": 9
+        }
+      }
+    },
+    "infrastructure": {
+      "code": 858,
+      "files": 11
+    },
+    "total": {
+      "code": 2705,
+      "files": 41
+    }
+  }
+}
