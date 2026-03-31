@@ -1,8 +1,8 @@
 {
   "metadata": {
-    "timestamp": "2026-03-31T02:10:48.714Z",
+    "timestamp": "2026-03-31T02:13:55.615Z",
     "branch": "run3/bmad",
-    "commit": "0c9a81d",
+    "commit": "81d8584",
     "nodeVersion": "v20.20.2"
   },
   "eslint": {
@@ -19,15 +19,15 @@
       "passRate": 100
     },
     "coverage": {
-      "lines": 18.83,
+      "lines": 19.07,
       "branches": 91.07,
       "functions": 95,
-      "statements": 18.83
+      "statements": 19.07
     }
   },
   "duplication": {
     "duplicatedLines": 0,
-    "totalLines": 1205,
+    "totalLines": 1194,
     "percentage": 0,
     "clones": 0
   },
@@ -36,7 +36,7 @@
     "pages": [
       {
         "route": "/",
-        "size": 6.36,
+        "size": 6.32,
         "unit": "kB"
       },
       {
@@ -66,7 +66,7 @@
   },
   "linesOfCode": {
     "application": {
-      "code": 1372,
+      "code": 1364,
       "files": 22,
       "byExtension": {
         ".ts": {
@@ -79,7 +79,7 @@
         },
         ".tsx": {
           "files": 7,
-          "code": 611
+          "code": 603
         },
         ".json": {
           "files": 4,
@@ -102,7 +102,7 @@
       "files": 11
     },
     "total": {
-      "code": 2381,
+      "code": 2373,
       "files": 34
     }
   }
