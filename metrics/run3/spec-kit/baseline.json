@@ -1,9 +1,9 @@
 {
   "metadata": {
-    "timestamp": "2026-03-30T21:57:09.659Z",
+    "timestamp": "2026-03-31T00:38:11.650Z",
     "branch": "run3/spec-kit",
-    "commit": "9254f2c",
-    "nodeVersion": "v20.20.2"
+    "commit": "ee24b01",
+    "nodeVersion": "v22.14.0"
   },
   "eslint": {
     "errors": 0,
@@ -51,10 +51,10 @@
     }
   },
   "lighthouse": {
-    "performance": null,
-    "accessibility": null,
-    "bestPractices": null,
-    "seo": null
+    "performance": 100,
+    "accessibility": 100,
+    "bestPractices": 100,
+    "seo": 100
   },
   "playwright": {
     "total": 42,
@@ -62,8 +62,7 @@
     "failed": 0,
     "timedOut": 0,
     "skipped": 0,
-    "passRate": 100,
-    "note": "Run in Playwright Docker container (mcr.microsoft.com/playwright:v1.52.0-noble)"
+    "passRate": 100
   },
   "linesOfCode": {
     "application": {
@@ -99,11 +98,11 @@
       }
     },
     "infrastructure": {
-      "code": 858,
+      "code": 884,
       "files": 11
     },
     "total": {
-      "code": 2705,
+      "code": 2731,
       "files": 41
     }
   }
