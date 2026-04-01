@@ -1,3 +1,5 @@
+"use client";
+
 import { useLanguage } from "@/lib/i18n";
 import type { StateData, DeadlineInfo, Election } from "@/lib/types";
 import { getDeadlineStatus, formatDate } from "@/lib/date-utils";

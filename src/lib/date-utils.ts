@@ -73,7 +73,7 @@ export function formatDate(
     return translations[lang].stateInfo.notAvailable;
   }
   const date = parseISODate(dateStr);
-  const locale = lang === "es" ? "es-ES" : "en-US";
+  const locale = lang === "es" ? "es-US" : "en-US";
   return date.toLocaleDateString(locale, {
     year: "numeric",
     month: "long",

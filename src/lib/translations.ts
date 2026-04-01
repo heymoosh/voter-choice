@@ -67,6 +67,7 @@ export interface Translations {
     notFoundMessage: (zip: string) => string;
     notFoundLink: string;
     noElection: (stateName: string) => string;
+    noElectionLink: (stateName: string) => string;
     deadlinesPassed: string;
     loading: string;
   };
@@ -178,6 +179,7 @@ const en: Translations = {
     notFoundLink: "Find your state election website \u2192",
     noElection: (stateName: string) =>
       `No upcoming elections found for ${stateName}.`,
+    noElectionLink: (stateName: string) => `${stateName} election website`,
     deadlinesPassed:
       "Registration deadlines for this election have passed. Check your registration status.",
     loading: "Looking up your state\u2026",
@@ -293,6 +295,8 @@ const es: Translations = {
     notFoundLink: "Encuentra el sitio web electoral de tu estado \u2192",
     noElection: (stateName: string) =>
       `No se encontraron elecciones pr\u00f3ximas para ${stateName}.`,
+    noElectionLink: (stateName: string) =>
+      `Sitio web electoral de ${stateName}`,
     deadlinesPassed:
       "Los plazos de registro para esta elecci\u00f3n ya pasaron. Verifica el estado de tu registro.",
     loading: "Buscando tu estado\u2026",

@@ -57,9 +57,7 @@ function FoundState({ stateData, zip, today }: FoundStateProps) {
               rel="noopener noreferrer"
               className="font-medium text-blue-600 underline"
             >
-              {language === "es"
-                ? `Sitio web electoral de ${stateData.stateName}`
-                : `${stateData.stateName} election website`}
+              {t.errors.noElectionLink(stateData.stateName)}
             </a>
           </p>
         </div>

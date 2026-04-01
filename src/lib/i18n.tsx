@@ -2,9 +2,11 @@
 
 import {
   createContext,
+  useCallback,
   useContext,
-  useState,
   useEffect,
+  useMemo,
+  useState,
   type ReactNode,
 } from "react";
 import type { Language, Translations } from "./translations";
@@ -18,11 +20,15 @@ interface I18nContextValue {
 
 const STORAGE_KEY = "voter-choice-language";
 
-const I18nContext = createContext<I18nContextValue>({
+// Default context value used during SSR and before LanguageProvider mounts.
+// Provides English translations so prerender succeeds.
+const defaultValue: I18nContextValue = {
   language: "en",
   setLanguage: () => {},
   t: translations.en,
-});
+};
+
+const I18nContext = createContext<I18nContextValue>(defaultValue);
 
 function announceToScreenReader(message: string) {
   const el = document.createElement("div");
@@ -48,24 +54,23 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     setMounted(true);
   }, []);
 
-  function setLanguage(lang: Language) {
+  const setLanguage = useCallback((lang: Language) => {
     setLanguageState(lang);
     localStorage.setItem(STORAGE_KEY, lang);
     document.documentElement.lang = lang;
     announceToScreenReader(translations[lang].accessibility.languageChanged);
-  }
+  }, []);
+
+  const value = useMemo(
+    () => ({ language, setLanguage, t: translations[language] }),
+    [language, setLanguage],
+  );
 
   if (!mounted) {
     return <>{children}</>;
   }
 
-  return (
-    <I18nContext.Provider
-      value={{ language, setLanguage, t: translations[language] }}
-    >
-      {children}
-    </I18nContext.Provider>
-  );
+  return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
 }
 
 export function useLanguage(): I18nContextValue {
