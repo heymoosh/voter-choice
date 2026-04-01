@@ -1,5 +1,7 @@
 "use client";
 
+import { useLanguage } from "@/lib/i18n";
+
 const STATE_NAMES: Record<string, string> = {
   AL: "Alabama",
   AK: "Alaska",
@@ -64,20 +66,21 @@ export function StateSelectorModal({
   onSelect,
   zip,
 }: StateSelectorModalProps) {
+  const { t } = useLanguage();
+
   return (
     <div className="rounded-xl border border-amber-200 bg-amber-50 p-6">
       <h2 className="mb-1 text-lg font-semibold text-gray-900">
-        This zip code spans multiple states
+        {t.stateSelector.title}
       </h2>
       <p className="mb-4 text-sm text-gray-600">
-        Zip code <strong>{zip}</strong> covers more than one state. Which state
-        are you voting in?
+        {t.stateSelector.description(zip)}
       </p>
       <label
         htmlFor="state-selector"
         className="mb-1 block text-sm font-medium text-gray-700"
       >
-        Select your state
+        {t.stateSelector.label}
       </label>
       <select
         id="state-selector"
@@ -89,7 +92,7 @@ export function StateSelectorModal({
         className="min-h-[44px] w-full max-w-xs rounded-lg border border-gray-300 px-3 py-2 text-base focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
       >
         <option value="" disabled>
-          — Choose a state —
+          {t.stateSelector.placeholder}
         </option>
         {states.map((code) => (
           <option key={code} value={code}>

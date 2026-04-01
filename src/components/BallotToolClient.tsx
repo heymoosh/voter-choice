@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { useLanguage } from "@/lib/i18n";
 import { ZipForm } from "./ZipForm";
 import { StateInfoCard } from "./StateInfoCard";
 import { PromptOutput } from "./PromptOutput";
@@ -23,13 +24,13 @@ interface FoundStateProps {
 }
 
 function FoundState({ stateData, zip, today }: FoundStateProps) {
+  const { language, t } = useLanguage();
   const election = findNextElection(
     stateData.elections,
     today,
   ) as Election | null;
 
   if (!election) {
-    // No upcoming election — show last known election name + no-election message
     const lastElection =
       stateData.elections.length > 0
         ? stateData.elections[stateData.elections.length - 1]
@@ -49,24 +50,24 @@ function FoundState({ stateData, zip, today }: FoundStateProps) {
           className="rounded-xl border border-gray-200 bg-gray-50 p-6"
         >
           <p className="text-sm text-gray-600">
-            No upcoming elections found for{" "}
-            <strong>{stateData.stateName}</strong>. Check{" "}
+            {t.errors.noElection(stateData.stateName)}{" "}
             <a
               href={stateData.resources.stateElectionWebsite}
               target="_blank"
               rel="noopener noreferrer"
               className="font-medium text-blue-600 underline"
             >
-              {stateData.stateName} election website
-            </a>{" "}
-            for updates.
+              {language === "es"
+                ? `Sitio web electoral de ${stateData.stateName}`
+                : `${stateData.stateName} election website`}
+            </a>
           </p>
         </div>
       </>
     );
   }
 
-  const promptText = generatePrompt(stateData, zip, election);
+  const promptText = generatePrompt(stateData, zip, election, language);
   return (
     <>
       <StateInfoCard stateData={stateData} election={election} today={today} />
@@ -79,6 +80,7 @@ export function BallotToolClient() {
   const [appState, setAppState] = useState<AppState>({ stage: "idle" });
   const resultsRef = useRef<HTMLDivElement>(null);
   const today = useToday();
+  const { t } = useLanguage();
 
   function handleZipSubmit(zip: string) {
     setAppState({ stage: "loading" });
@@ -121,7 +123,7 @@ export function BallotToolClient() {
       {/* Loading */}
       {appState.stage === "loading" && (
         <div role="status" aria-live="polite" className="text-sm text-gray-500">
-          Looking up your state…
+          {t.errors.loading}
         </div>
       )}
 
@@ -133,18 +135,17 @@ export function BallotToolClient() {
           className="rounded-xl border border-amber-200 bg-amber-50 p-6"
         >
           <h2 className="mb-1 font-semibold text-gray-900">
-            Zip code not found
+            {t.errors.notFoundTitle}
           </h2>
           <p className="text-sm text-gray-700">
-            We don&apos;t have data for zip code <strong>{appState.zip}</strong>{" "}
-            yet. We&apos;re working on adding all U.S. zip codes.{" "}
+            {t.errors.notFoundMessage(appState.zip)}{" "}
             <a
               href="https://www.usa.gov/state-election-office"
               target="_blank"
               rel="noopener noreferrer"
               className="font-medium text-blue-600 underline"
             >
-              Find your state election website →
+              {t.errors.notFoundLink}
             </a>
           </p>
         </div>

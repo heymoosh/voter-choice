@@ -1,5 +1,7 @@
 import { differenceInCalendarDays, parseISO, startOfDay } from "date-fns";
 import type { DeadlineInfo, DeadlineStatus } from "./types";
+import type { Language } from "./translations";
+import { translations } from "./translations";
 
 /**
  * Parse a YYYY-MM-DD date string safely.
@@ -23,12 +25,15 @@ export function parseISODate(dateStr: string): Date {
 export function getDeadlineStatus(
   deadlineStr: string | null,
   today: Date,
+  lang: Language = "en",
 ): DeadlineInfo {
+  const t = translations[lang].deadlineStatus;
+
   if (!deadlineStr) {
     return {
       status: "unavailable",
       daysRemaining: null,
-      label: "Not available",
+      label: t.unavailable,
     };
   }
 
@@ -41,16 +46,16 @@ export function getDeadlineStatus(
 
   if (days < 0) {
     status = "passed";
-    label = "Passed";
+    label = t.passed;
   } else if (days <= 3) {
     status = "red";
-    label = days === 1 ? "1 day left" : `${days} days left`;
+    label = t.daysLeft(days);
   } else if (days <= 14) {
     status = "yellow";
-    label = `${days} days left`;
+    label = t.daysLeft(days);
   } else {
     status = "green";
-    label = `${days} days left`;
+    label = t.daysLeft(days);
   }
 
   return { status, daysRemaining: days >= 0 ? days : null, label };
@@ -60,10 +65,16 @@ export function getDeadlineStatus(
  * Format a YYYY-MM-DD date string as a human-readable date.
  * Returns "Not available" for null.
  */
-export function formatDate(dateStr: string | null): string {
-  if (!dateStr) return "Not available";
+export function formatDate(
+  dateStr: string | null,
+  lang: Language = "en",
+): string {
+  if (!dateStr) {
+    return translations[lang].stateInfo.notAvailable;
+  }
   const date = parseISODate(dateStr);
-  return date.toLocaleDateString("en-US", {
+  const locale = lang === "es" ? "es-ES" : "en-US";
+  return date.toLocaleDateString(locale, {
     year: "numeric",
     month: "long",
     day: "numeric",

@@ -1,3 +1,4 @@
+import { useLanguage } from "@/lib/i18n";
 import type { StateData, DeadlineInfo, Election } from "@/lib/types";
 import { getDeadlineStatus, formatDate } from "@/lib/date-utils";
 
@@ -14,15 +15,15 @@ function DeadlineBadge({ info }: DeadlineBadgeProps) {
     unavailable: "bg-gray-50 text-gray-500 border-gray-200",
   };
   const icons: Record<string, string> = {
-    green: "✓",
+    green: "\u2713",
     yellow: "!",
-    red: "⚠",
-    passed: "✗",
-    unavailable: "—",
+    red: "\u26a0",
+    passed: "\u2717",
+    unavailable: "\u2014",
   };
 
   const cls = styles[info.status] ?? styles.unavailable;
-  const icon = icons[info.status] ?? "—";
+  const icon = icons[info.status] ?? "\u2014";
 
   return (
     <span
@@ -46,26 +47,33 @@ export function StateInfoCard({
   election,
   today = new Date(),
 }: StateInfoCardProps) {
+  const { language, t } = useLanguage();
   const { registration, earlyVoting, votingRules, resources } = stateData;
 
   const onlineStatus = getDeadlineStatus(
     registration.online.available ? registration.online.deadline : null,
     today,
+    language,
   );
-  const byMailStatus = getDeadlineStatus(registration.byMail.deadline, today);
+  const byMailStatus = getDeadlineStatus(
+    registration.byMail.deadline,
+    today,
+    language,
+  );
   const inPersonStatus = getDeadlineStatus(
     registration.inPerson.deadline,
     today,
+    language,
   );
 
   return (
     <section
       data-testid="state-info"
-      aria-label={`Election information for ${stateData.stateName}`}
+      aria-label={t.accessibility.electionInfoFor(stateData.stateName)}
       className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm"
     >
       <h2 className="mb-4 text-xl font-bold text-gray-900">
-        {stateData.stateName} — Upcoming Election
+        {stateData.stateName} — {t.stateInfo.titleSuffix}
       </h2>
 
       {/* Election */}
@@ -77,47 +85,53 @@ export function StateInfoCard({
           {election.name}
         </p>
         <p data-testid="election-date" className="text-sm text-blue-700">
-          {formatDate(election.date)}
+          {formatDate(election.date, language)}
         </p>
       </div>
 
       {/* Registration deadlines */}
       <div data-testid="registration-status" className="mb-4">
         <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-gray-500">
-          Voter Registration Deadlines
+          {t.stateInfo.registrationDeadlines}
         </h3>
         <ul className="space-y-2 text-sm text-gray-700">
           {registration.online.available ? (
             <li className="flex flex-wrap items-center gap-2">
-              <span className="w-20 shrink-0 font-medium">Online:</span>
-              <span>{formatDate(registration.online.deadline)}</span>
+              <span className="shrink-0 font-medium whitespace-nowrap">
+                {t.stateInfo.online}
+              </span>
+              <span>{formatDate(registration.online.deadline, language)}</span>
               <DeadlineBadge info={onlineStatus} />
             </li>
           ) : (
             <li className="flex flex-wrap items-center gap-2">
-              <span className="w-20 shrink-0 font-medium">Online:</span>
-              <span className="text-gray-500">Not available</span>
+              <span className="shrink-0 font-medium whitespace-nowrap">
+                {t.stateInfo.online}
+              </span>
+              <span className="text-gray-500">{t.stateInfo.notAvailable}</span>
             </li>
           )}
           <li className="flex flex-wrap items-center gap-2">
-            <span className="w-20 shrink-0 font-medium">By mail:</span>
+            <span className="shrink-0 font-medium whitespace-nowrap">
+              {t.stateInfo.byMail}
+            </span>
             <span>
-              {formatDate(registration.byMail.deadline)}
+              {formatDate(registration.byMail.deadline, language)}
               {registration.byMail.sincePostmarked
-                ? " (postmark date counts)"
-                : " (must be received)"}
+                ? ` ${t.stateInfo.postmarkNote}`
+                : ` ${t.stateInfo.receivedNote}`}
             </span>
             <DeadlineBadge info={byMailStatus} />
           </li>
           <li className="flex flex-wrap items-center gap-2">
-            <span className="w-20 shrink-0 font-medium">In person:</span>
-            <span>{formatDate(registration.inPerson.deadline)}</span>
+            <span className="shrink-0 font-medium whitespace-nowrap">
+              {t.stateInfo.inPerson}
+            </span>
+            <span>{formatDate(registration.inPerson.deadline, language)}</span>
             <DeadlineBadge info={inPersonStatus} />
           </li>
           {registration.sameDayRegistration && (
-            <li className="text-green-700">
-              ✓ Same-day registration available on Election Day
-            </li>
+            <li className="text-green-700">{t.stateInfo.sameDayAvailable}</li>
           )}
         </ul>
       </div>
@@ -125,19 +139,19 @@ export function StateInfoCard({
       {/* Early voting */}
       <div className="mb-4">
         <h3 className="mb-1 text-sm font-semibold uppercase tracking-wide text-gray-500">
-          Early Voting
+          {t.stateInfo.earlyVoting}
         </h3>
         {earlyVoting.available ? (
           <p className="text-sm text-gray-700">
-            {formatDate(earlyVoting.startDate)} –{" "}
-            {formatDate(earlyVoting.endDate)}
+            {formatDate(earlyVoting.startDate, language)} –{" "}
+            {formatDate(earlyVoting.endDate, language)}
             {earlyVoting.notes && (
               <span className="ml-1 text-gray-500">({earlyVoting.notes})</span>
             )}
           </p>
         ) : (
           <p className="text-sm text-gray-500">
-            Not available
+            {t.stateInfo.earlyVotingNotAvailable}
             {earlyVoting.notes && ` — ${earlyVoting.notes}`}
           </p>
         )}
@@ -146,11 +160,13 @@ export function StateInfoCard({
       {/* Voter ID */}
       <div className="mb-4">
         <h3 className="mb-1 text-sm font-semibold uppercase tracking-wide text-gray-500">
-          Voter ID
+          {t.stateInfo.voterId}
         </h3>
         {votingRules.idRequired ? (
           <div className="text-sm text-gray-700">
-            <p className="font-medium text-orange-700">Photo ID required</p>
+            <p className="font-medium text-orange-700">
+              {t.stateInfo.idRequired}
+            </p>
             <ul className="mt-1 list-inside list-disc space-y-0.5 text-gray-600">
               {votingRules.acceptedIds.map((id) => (
                 <li key={id}>{id}</li>
@@ -158,14 +174,14 @@ export function StateInfoCard({
             </ul>
           </div>
         ) : (
-          <p className="text-sm text-green-700">No photo ID required</p>
+          <p className="text-sm text-green-700">{t.stateInfo.idNotRequired}</p>
         )}
       </div>
 
       {/* Phones */}
       <div className="mb-4">
         <h3 className="mb-1 text-sm font-semibold uppercase tracking-wide text-gray-500">
-          Phones at Polls
+          {t.stateInfo.phonesAtPolls}
         </h3>
         <p className="text-sm text-gray-700">
           {votingRules.phonesAtPollsDetail}
@@ -180,7 +196,7 @@ export function StateInfoCard({
           rel="noopener noreferrer"
           className="text-sm font-medium text-blue-600 underline hover:text-blue-800"
         >
-          Sample ballot →
+          {t.stateInfo.sampleBallot}
         </a>
         <a
           href={resources.countyElectionLookup}
@@ -188,7 +204,7 @@ export function StateInfoCard({
           rel="noopener noreferrer"
           className="text-sm font-medium text-blue-600 underline hover:text-blue-800"
         >
-          County election office →
+          {t.stateInfo.countyOffice}
         </a>
         <a
           href={stateData.registration.registrationCheckUrl}
@@ -196,7 +212,7 @@ export function StateInfoCard({
           rel="noopener noreferrer"
           className="text-sm font-medium text-blue-600 underline hover:text-blue-800"
         >
-          Check your registration →
+          {t.stateInfo.checkRegistration}
         </a>
       </div>
     </section>

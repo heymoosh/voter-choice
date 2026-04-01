@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import { useLanguage } from "@/lib/i18n";
 
 interface ZipFormProps {
   onSubmit: (zip: string) => void;
@@ -10,13 +11,14 @@ interface ZipFormProps {
 export function ZipForm({ onSubmit, disabled = false }: ZipFormProps) {
   const [value, setValue] = useState("");
   const [error, setError] = useState("");
+  const { t } = useLanguage();
 
   function validate(zip: string): string {
     if (!zip || zip.trim() === "") {
-      return "Please enter a zip code.";
+      return t.zipForm.errorEmpty;
     }
     if (!/^\d{5}$/.test(zip.trim())) {
-      return "Please enter a valid 5-digit zip code.";
+      return t.zipForm.errorInvalid;
     }
     return "";
   }
@@ -39,9 +41,9 @@ export function ZipForm({ onSubmit, disabled = false }: ZipFormProps) {
           htmlFor="zip-input"
           className="text-base font-semibold text-gray-900"
         >
-          Enter your zip code
+          {t.zipForm.label}
         </label>
-        <div className="flex gap-2 flex-wrap">
+        <div className="flex flex-wrap gap-2">
           <input
             id="zip-input"
             data-testid="zip-input"
@@ -57,7 +59,7 @@ export function ZipForm({ onSubmit, disabled = false }: ZipFormProps) {
             disabled={disabled}
             aria-invalid={error ? "true" : "false"}
             aria-describedby={error ? "zip-error" : undefined}
-            placeholder="e.g. 73301"
+            placeholder={t.zipForm.placeholder}
             className="w-40 rounded-lg border border-gray-300 px-4 py-3 text-base focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
           />
           <button
@@ -66,7 +68,7 @@ export function ZipForm({ onSubmit, disabled = false }: ZipFormProps) {
             disabled={disabled}
             className="min-h-[44px] min-w-[120px] rounded-lg bg-blue-600 px-6 py-3 text-base font-semibold text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
           >
-            Look up
+            {t.zipForm.submit}
           </button>
         </div>
         {/* Error container — always in DOM, populated on error */}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useLanguage } from "@/lib/i18n";
 
 interface PromptOutputProps {
   promptText: string;
@@ -30,6 +31,7 @@ export function PromptOutput({ promptText }: PromptOutputProps) {
   const [copied, setCopied] = useState(false);
   const [copyFailed, setCopyFailed] = useState(false);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { t } = useLanguage();
 
   useEffect(() => {
     return () => {
@@ -68,26 +70,25 @@ export function PromptOutput({ promptText }: PromptOutputProps) {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="text-lg font-bold text-gray-900">
-            Your Customized Prompt
+            {t.promptOutput.title}
           </h2>
-          <p className="text-sm text-gray-600">
-            Copy this prompt and paste it as your first message in any AI
-            chatbot.
-          </p>
+          <p className="text-sm text-gray-600">{t.promptOutput.instruction}</p>
         </div>
         <div className="flex flex-col items-end gap-1">
           <button
             type="button"
             data-testid="copy-button"
             onClick={handleCopy}
-            aria-label={copied ? "Copied to clipboard" : "Copy to clipboard"}
+            aria-label={
+              copied ? t.promptOutput.copiedAria : t.promptOutput.copyButton
+            }
             className="min-h-[44px] min-w-[140px] rounded-lg bg-gray-900 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2"
           >
-            {copied ? "✓ Copied!" : "Copy to Clipboard"}
+            {copied ? t.promptOutput.copied : t.promptOutput.copyButton}
           </button>
           {/* Accessible announcement for screen readers */}
           <span aria-live="polite" aria-atomic="true" className="sr-only">
-            {copied ? "Text copied to clipboard" : ""}
+            {copied ? t.promptOutput.copiedAria : ""}
           </span>
         </div>
       </div>
@@ -99,7 +100,7 @@ export function PromptOutput({ promptText }: PromptOutputProps) {
           role="status"
           className="rounded-lg border border-green-200 bg-green-50 px-4 py-2 text-sm font-medium text-green-800"
         >
-          ✓ Copied to clipboard! Open any AI chatbot and paste to begin.
+          {t.promptOutput.copiedMessage}
         </div>
       )}
 
@@ -109,8 +110,7 @@ export function PromptOutput({ promptText }: PromptOutputProps) {
           role="alert"
           className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-800"
         >
-          Could not copy automatically. Select all the text below and press
-          Ctrl+C (Windows) or Cmd+C (Mac) to copy.
+          {t.promptOutput.copyFallback}
         </div>
       )}
 

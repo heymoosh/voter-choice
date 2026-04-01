@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { LanguageProvider } from "@/lib/i18n";
+import { LanguageToggle } from "@/components/LanguageToggle";
+import { SkipLink } from "@/components/SkipLink";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,14 +31,11 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {/* Skip to main content — must be first in body */}
-        <a
-          href="#main-content"
-          className="absolute -top-10 left-0 z-50 rounded-br-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white focus:top-0"
-        >
-          Skip to main content
-        </a>
-        {children}
+        <LanguageProvider>
+          <SkipLink />
+          <LanguageToggle />
+          {children}
+        </LanguageProvider>
       </body>
     </html>
   );
