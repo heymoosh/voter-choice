@@ -1,8 +1,8 @@
 {
   "metadata": {
-    "timestamp": "2026-03-31T18:50:52.132Z",
+    "timestamp": "2026-04-01T14:50:05.834Z",
     "branch": "run4/compound-engineering",
-    "commit": "d5d59d3",
+    "commit": "0465951",
     "nodeVersion": "v20.20.2"
   },
   "eslint": {
@@ -19,15 +19,15 @@
       "passRate": 100
     },
     "coverage": {
-      "lines": 17.42,
-      "branches": 88.23,
-      "functions": 95,
-      "statements": 17.42
+      "lines": 32.78,
+      "branches": 79.1,
+      "functions": 66.66,
+      "statements": 32.78
     }
   },
   "duplication": {
     "duplicatedLines": 0,
-    "totalLines": 1662,
+    "totalLines": 2395,
     "percentage": 0,
     "clones": 0
   },
@@ -36,7 +36,7 @@
     "pages": [
       {
         "route": "/",
-        "size": 12.9,
+        "size": 21.1,
         "unit": "kB"
       },
       {
@@ -66,24 +66,24 @@
   },
   "linesOfCode": {
     "application": {
-      "code": 1755,
-      "files": 23,
+      "code": 2335,
+      "files": 28,
       "byExtension": {
         ".css": {
           "files": 1,
           "code": 21
         },
         ".tsx": {
-          "files": 7,
-          "code": 758
+          "files": 11,
+          "code": 856
         },
         ".json": {
           "files": 6,
           "code": 356
         },
         ".ts": {
-          "files": 9,
-          "code": 620
+          "files": 10,
+          "code": 1102
         }
       }
     },
@@ -97,8 +97,8 @@
       "files": 12
     },
     "total": {
-      "code": 2635,
-      "files": 35
+      "code": 3215,
+      "files": 40
     }
   }
 }
