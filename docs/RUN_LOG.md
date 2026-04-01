@@ -2,9 +2,28 @@
 
 ## Next
 
-Phase 2 Run 2: Compound Engineering — Add Spanish language support. Checkout `run4/compound-engineering`, run `/start`.
+Phase 2 Run 3: Superpowers — Add Spanish language support. Checkout `run3/superpowers`, run `/start`.
 
 ## Completed
+
+### Phase 2 Run 2 — Compound Engineering (complete)
+
+- **Date:** 2026-04-01
+- **Branch:** `run4/compound-engineering`
+- **Tag:** `ce-run4-phase2-complete` (local; push from host — container has no GitHub credentials)
+- **Commit:** `0c039b4`
+- **What was done:** Added Spanish language support via full CE `/lfg` pipeline. Architecture: `src/lib/translations.ts` (typed `Translations` interface with function signatures for interpolated strings + `Record<Language, Translations>`), `src/lib/i18n.tsx` (React context with hydration guard, `useCallback`-stabilized `setLanguage`, `localStorage` persistence, `document.documentElement.lang` sync, screen reader announcements via injected `aria-live` region). `src/components/LanguageToggle.tsx` (fixed top-right, `data-testid="language-toggle"`, keyboard accessible). `formatDate` extended with `es-US` locale for Spanish dates. `generatePrompt` extended with full Spanish `BALLOT_PROMPT_ES` (~210 lines, fluent "tú" voice) and Spanish context block. Server component page.tsx refactored: hero/tips/footer extracted into `PageContent` client component. All 8 existing components updated to use `useLanguage()` hook for translations.
+- **Measurements:** ESLint 0 errors/0 warnings/0 complexity violations. Vitest 39/39 unit tests (unchanged from Phase 1). 0% duplication. First load JS 102 kB shared (unchanged), page size 21.1 kB (+8 kB from Phase 1's ~13 kB). Playwright 42/42 e2e (100% — unchanged from Phase 1). Lighthouse N/A (container). LOC: 2,335 src/ (+580 from Phase 1's 1,755). 28 files (+5).
+- **Phase 1 → Phase 2 delta:**
+  - E2e pass rate: 42/42 → 42/42 (100%, unchanged)
+  - ESLint errors: 0 → 0 | warnings: 0 → 0 | complexity: 0 → 0
+  - Unit tests: 39/39 → 39/39 (unchanged)
+  - LOC: 1,755 → 2,335 (+580)
+  - Page bundle: ~13 kB → 21.1 kB (+8 kB); shared JS 102 kB → 102 kB (unchanged)
+  - Files: 23 → 28 (+5 new: translations.ts, i18n.tsx, LanguageToggle.tsx, SkipLink.tsx, PageContent.tsx)
+- **CE Adherence:** Plan file present (`docs/plans/2026-04-01-001-feat-spanish-language-support-plan.md`, deepened). Solution file present (`docs/solutions/i18n-patterns/nextjs15-client-side-i18n-react-context.md`). `workflow-log.jsonl` has lfg started + completed entries. All expected CE artifacts produced — no workflow bypass. ce:plan → deepen-plan → ce:work → ce:review (--serial, 0 P1 findings, 5 P2/P3 all resolved) → ce:compound.
+- **Issues or deviations:** Lighthouse not measurable in container. Push from host required (no GitHub auth). `phonesAtPollsDetail` remains English per spec (data values not translated). Metadata (`<title>`) stays English (server-side export limitation). `/lfg` skill had `disable-model-invocation` — sub-skills invoked manually per pipeline spec.
+- **Operator notes:** No additional observations — autonomous session.
 
 ### Phase 2 Run 1 — Vanilla (complete)
 
