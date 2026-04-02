@@ -1,0 +1,46 @@
+{
+  "metadata": {
+    "timestamp": "2026-04-02T23:33:41.753Z",
+    "branch": "workflow/vanilla"
+  },
+  "tdd": {
+    "totalCommitsInSrc": 3,
+    "testOnlyCommits": 1,
+    "implOnlyCommits": 1,
+    "mixedCommits": 1,
+    "uniqueTestFiles": 3,
+    "uniqueImplFiles": 7,
+    "tddOrderCorrect": 0,
+    "tddOrderViolated": 1,
+    "tddNeutral": 2,
+    "tddUnchecked": 0,
+    "tddScore": 0,
+    "tddCoverage": 100
+  },
+  "workflowLog": {
+    "framework": "vanilla",
+    "expected": [
+      "vanilla-build"
+    ],
+    "completed": [
+      "vanilla-build"
+    ],
+    "missing": []
+  },
+  "buildStats": {
+    "commitCount": 11,
+    "diffStat": "25 files changed, 2483 insertions(+), 322 deletions(-)"
+  },
+  "timing": {
+    "exists": true,
+    "hasStart": true,
+    "hasEnd": false,
+    "model": "claude-sonnet-4-6",
+    "durationMinutes": null
+  },
+  "measurement": {
+    "exists": false,
+    "fields": {},
+    "missing": []
+  }
+}

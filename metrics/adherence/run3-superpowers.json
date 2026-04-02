@@ -1,0 +1,56 @@
+{
+  "metadata": {
+    "timestamp": "2026-04-02T23:33:35.794Z",
+    "branch": "run3/superpowers"
+  },
+  "tdd": {
+    "totalCommitsInSrc": 11,
+    "testOnlyCommits": 0,
+    "implOnlyCommits": 2,
+    "mixedCommits": 9,
+    "uniqueTestFiles": 8,
+    "uniqueImplFiles": 12,
+    "tddOrderCorrect": 0,
+    "tddOrderViolated": 0,
+    "tddNeutral": 0,
+    "tddUnchecked": 8,
+    "tddScore": null,
+    "tddCoverage": 0
+  },
+  "workflowLog": {
+    "framework": "superpowers",
+    "expected": [
+      "brainstorming",
+      "writing-plans",
+      "executing-plans",
+      "requesting-code-review",
+      "verification-before-completion",
+      "finishing-a-development-branch"
+    ],
+    "completed": [
+      "brainstorming",
+      "writing-plans",
+      "executing-plans",
+      "requesting-code-review",
+      "verification-before-completion",
+      "finishing-a-development-branch"
+    ],
+    "missing": []
+  },
+  "buildStats": {
+    "commitCount": 26,
+    "diffStat": "93 files changed, 15061 insertions(+), 120 deletions(-)"
+  },
+  "timing": {
+    "exists": true,
+    "hasStart": true,
+    "hasEnd": true,
+    "model": "claude-sonnet-4-6",
+    "durationMinutes": 12583
+  },
+  "measurement": {
+    "exists": false,
+    "fields": {},
+    "missing": []
+  }
+}

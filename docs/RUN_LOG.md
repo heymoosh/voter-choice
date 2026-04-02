@@ -41,6 +41,9 @@ Phase 2 Run 3: Superpowers — Add Spanish language support. Checkout `run3/supe
   - Page bundle: 9.87 kB → 17.9 kB (+8 kB); shared JS 102 kB → 102 kB (unchanged)
 - **Adherence:** Vanilla framework — no artifacts expected. `workflow-log.jsonl` has start/complete entries. Build time ~14 min.
 - **Issues or deviations:** HEAD was 7 commits ahead of `vanilla-phase1-complete` tag (infra commits added by operator for Phase 2 setup) — `/start` phase-check noted this and proceeded. Lighthouse not measurable in container. Push from host required (no GitHub auth in container). 6 pre-existing e2e failures confirmed identical to Phase 1 baseline (HTML5 pattern validation blocking JS handler + multi-state `state-selector` strict mode violation).
+- **Findings:**
+  - **E2e gap (UNIQUE TO VANILLA):** 36/42 e2e (85.71%) — Vanilla is the only branch with e2e failures across both phases. All other branches achieved 42/42 (100%). Root cause: HTML5 `pattern` attribute on zip input blocks the JS submit handler in 3 tests, and `state-selector` strict mode violation in multi-state flow causes 3 more. These bugs were introduced in Phase 1 and never fixed — the Vanilla workflow (no framework) did not catch them. This is a measurable quality delta against all framework-guided branches.
+  - **TDD violation:** 1 implementation-only commit (TDD score 67%). Vanilla is the only branch with a confirmed TDD order violation where implementation was committed before its corresponding test.
 - **Operator notes:** No additional observations — autonomous session.
 
 ## Completed

@@ -1,0 +1,50 @@
+{
+  "metadata": {
+    "timestamp": "2026-04-02T20:16:23.183Z",
+    "branch": "run3/bmad"
+  },
+  "tdd": {
+    "totalCommitsInSrc": 4,
+    "testOnlyCommits": 0,
+    "implOnlyCommits": 1,
+    "mixedCommits": 3,
+    "uniqueTestFiles": 5,
+    "uniqueImplFiles": 12,
+    "tddOrderCorrect": 0,
+    "tddOrderViolated": 0,
+    "tddUnchecked": 5,
+    "tddScore": null
+  },
+  "workflowLog": {
+    "framework": "bmad",
+    "expected": [
+      "bmad:brainstorming",
+      "bmad:product-brief",
+      "bmad:prd",
+      "bmad:ux-design",
+      "bmad:architecture",
+      "bmad:epics-and-stories",
+      "bmad:implementation-readiness",
+      "bmad:sprint-planning",
+      "bmad:story-implementation",
+      "bmad:code-review"
+    ],
+    "completed": [
+      "bmad:brainstorming",
+      "bmad:product-brief",
+      "bmad:prd",
+      "bmad:ux-design",
+      "bmad:architecture",
+      "bmad:epics-and-stories",
+      "bmad:implementation-readiness",
+      "bmad:sprint-planning",
+      "bmad:story-implementation",
+      "bmad:code-review"
+    ],
+    "missing": []
+  },
+  "buildStats": {
+    "commitCount": 17,
+    "diffStat": "411 files changed, 48562 insertions(+), 145 deletions(-)"
+  }
+}

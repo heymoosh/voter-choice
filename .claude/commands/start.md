@@ -132,14 +132,133 @@ If any expected artifacts are missing, flag it in the debrief as a **partial wor
 
 Run `npm run measure` and save the JSON report.
 
-**6f. Phase 2 delta report (Phase 2 only):**
+**6f. Adherence analysis + auto-findings:**
+
+Run the adherence analysis script against the current branch:
+
+```bash
+node scripts/analyze-adherence.mjs
+```
+
+This produces `metrics/adherence/<branch>.json` with TDD compliance, workflow log completeness, build statistics, timing validation, and measurement JSON completeness. Git add the report: `git add metrics/adherence/`.
+
+Then read the adherence report JSON and the measurement JSON, and run EVERY check below. This is a checklist, not a suggestion — evaluate each item and record the result (PASS/FINDING).
+
+| # | Check | Condition that triggers a FINDING | What to record |
+|---|-------|----------------------------------|----------------|
+| 1 | **E2e gap** | `e2ePassed` < `e2eTotal` or `e2eTotal` < 42 | Pass count, total count, whether failures are new or pre-existing |
+| 2 | **TDD violation** | `tddScore` < 100 OR `implOnlyCommits` > 0 | TDD score, impl-only commit count, neutral count |
+| 3 | **TDD unassessable** | `tddScore` is null AND `uniqueTestFiles` > 0 | Count of neutral vs unchecked, explain why score is null |
+| 4 | **Workflow gap** | `workflowLog.missing` array has entries | Which steps are missing |
+| 5 | **Lint regression** | `eslintErrors` > 0 OR `eslintWarnings` > 0 | Error and warning counts |
+| 6 | **Bundle anomaly** | First load JS > 130 kB or < 85 kB (±20% from ~102 kB baseline) | Actual bundle size |
+| 7 | **Timing gap** | `timing.hasStart` or `timing.hasEnd` is false | Which entry is missing |
+| 8 | **Measurement gap** | `measurement.missing` array has entries | Which fields are missing from JSON |
+| 9 | **Workflow log empty** | `workflow-log.jsonl` missing or 0 completed entries | Whether file exists, entry count |
+| 10 | **Test generation** | `uniqueTestFiles` == 0 for a non-vanilla framework | Framework name, expected behavior |
+
+Write these findings into the RUN_LOG entry in Step 9 under a **Findings** subsection. Format each finding as:
+- **Finding name (UNIQUE TO <BRANCH> if applicable):** description with specific numbers
+
+If ALL checks pass, write: "No anomalies detected — all 10 checks passed, metrics within expected ranges."
+
+**6f-gate. Data completeness gate (MUST PASS before proceeding):**
+
+Before continuing, verify that all required data artifacts were captured. Run each check and flag any failures. If any check fails, investigate and fix before proceeding — do NOT skip to tagging.
+
+```bash
+echo "=== DATA COMPLETENESS GATE ==="
+echo ""
+
+# 1. timing.jsonl — must have both build_start and build_end
+echo "--- timing.jsonl ---"
+if [ -f metrics/timing.jsonl ]; then
+  HAS_START=$(grep -c '"build_start"' metrics/timing.jsonl || true)
+  HAS_END=$(grep -c '"build_end"' metrics/timing.jsonl || true)
+  if [ "$HAS_START" -ge 1 ] && [ "$HAS_END" -ge 1 ]; then
+    echo "PASS: build_start ($HAS_START) and build_end ($HAS_END) entries present"
+    # Show duration
+    START_TS=$(grep '"build_start"' metrics/timing.jsonl | head -1 | sed 's/.*"timestamp":"\([^"]*\)".*/\1/')
+    END_TS=$(grep '"build_end"' metrics/timing.jsonl | tail -1 | sed 's/.*"timestamp":"\([^"]*\)".*/\1/')
+    echo "  Start: $START_TS"
+    echo "  End:   $END_TS"
+  else
+    echo "FAIL: missing build_start ($HAS_START) or build_end ($HAS_END)"
+  fi
+else
+  echo "FAIL: metrics/timing.jsonl not found"
+fi
+
+echo ""
+
+# 2. workflow-log.jsonl — must exist and have at least one completed entry
+echo "--- workflow-log.jsonl ---"
+if [ -f metrics/workflow-log.jsonl ]; then
+  TOTAL=$(wc -l < metrics/workflow-log.jsonl | tr -d ' ')
+  COMPLETED=$(grep -c '"completed"' metrics/workflow-log.jsonl || true)
+  echo "PASS: $TOTAL entries total, $COMPLETED completed"
+  if [ "$COMPLETED" -eq 0 ]; then
+    echo "WARNING: zero completed entries — workflow steps may not have logged properly"
+  fi
+else
+  echo "FAIL: metrics/workflow-log.jsonl not found — no workflow execution audit trail"
+fi
+
+echo ""
+
+# 3. Adherence report — must exist
+echo "--- adherence report ---"
+BRANCH=$(git branch --show-current)
+SAFE_BRANCH=$(echo "$BRANCH" | tr '/' '-')
+if [ -f "metrics/adherence/${SAFE_BRANCH}.json" ]; then
+  echo "PASS: metrics/adherence/${SAFE_BRANCH}.json exists"
+else
+  echo "FAIL: adherence report not generated"
+fi
+
+echo ""
+
+# 4. Measurement JSON — check for latest report
+echo "--- measurement JSON ---"
+LATEST_MEASURE=$(ls -t metrics/*.json 2>/dev/null | head -1)
+if [ -n "$LATEST_MEASURE" ]; then
+  echo "PASS: $LATEST_MEASURE exists"
+  # Verify required fields
+  for FIELD in eslintErrors eslintWarnings e2eTotal e2ePassed; do
+    if grep -q "\"$FIELD\"" "$LATEST_MEASURE"; then
+      echo "  $FIELD: present"
+    else
+      echo "  WARNING: $FIELD not found in measurement JSON"
+    fi
+  done
+else
+  echo "FAIL: no measurement JSON found in metrics/"
+fi
+
+echo ""
+
+# 5. Test files exist (at least for non-vanilla)
+echo "--- workflow-generated tests ---"
+TEST_COUNT=$(find src -name "*.test.*" -o -name "*.spec.*" 2>/dev/null | wc -l | tr -d ' ')
+echo "Test files in src/: $TEST_COUNT"
+if [ "$TEST_COUNT" -eq 0 ]; then
+  echo "WARNING: zero test files — if this framework should produce tests, this is a finding"
+fi
+
+echo ""
+echo "=== END DATA COMPLETENESS GATE ==="
+```
+
+If any check shows FAIL, investigate immediately. Do NOT proceed to tagging with missing data — the experiment loses that data permanently once the session ends.
+
+**6h. Phase 2 delta report (Phase 2 only):**
 
 If this is Phase 2, read the Phase 1 metrics JSON from `metrics/` and display a comparison table:
 
 For each metric (e2e pass rate, Lighthouse scores, ESLint errors, duplication %, LOC, complexity), show:
 `Phase 1 value -> Phase 2 value (delta)`
 
-**6g. Tag and push:**
+**6i. Tag and push:**
 
 Read the `TAG_PREFIX` from the `## Meta` section of `.claude/commands/workflow.md`.
 
@@ -162,7 +281,9 @@ Report to Muxin:
 3. Number of workflow-generated test files (if any)
 4. Git build statistics: commit count, lines added/removed since scaffold
 5. Framework adherence: which artifacts were produced, any missing steps
-6. Phase 2 only: Phase 1 -> Phase 2 metric deltas
+6. **Auto-findings summary:** list every FINDING from the 10-check table in Step 6f, or "All 10 checks passed"
+7. **Data completeness gate:** PASS or list any FAILs from Step 6f-gate
+8. Phase 2 only: Phase 1 -> Phase 2 metric deltas
 
 Then ask: **"Build complete. Any observations for the write-up? Anything surprising about the output or metrics?"**
 

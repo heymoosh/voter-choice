@@ -86,12 +86,11 @@ function analyzeTDD(branch) {
   let tddOrderCorrect = 0;
   let tddOrderViolated = 0;
   let tddUnchecked = 0;
+  let tddNeutral = 0; // test + impl in same commit (neither correct nor violated)
 
   for (const tf of testFiles) {
     // Derive the likely implementation file
-    const implFile = tf
-      .replace(/\.test\./, ".")
-      .replace(/\.spec\./, ".");
+    const implFile = tf.replace(/\.test\./, ".").replace(/\.spec\./, ".");
 
     if (!implFiles.has(implFile)) {
       tddUnchecked++;
@@ -104,15 +103,31 @@ function analyzeTDD(branch) {
       c.files.includes(implFile),
     );
 
+    if (testFirstCommit === -1 || implFirstCommit === -1) {
+      tddUnchecked++;
+      continue;
+    }
+
     // Note: commits are in reverse chronological order (newest first)
     // So a higher index means an earlier commit
-    if (testFirstCommit >= implFirstCommit) {
+    if (testFirstCommit === implFirstCommit) {
+      // Test and impl first appeared in the same commit — neither TDD nor
+      // violation. Common with mixed commits (frameworks that don't enforce
+      // strict RED→GREEN ordering).
+      tddNeutral++;
+    } else if (testFirstCommit > implFirstCommit) {
+      // testFirstCommit has higher index = earlier commit (reverse chrono)
+      // → test was committed before impl = correct TDD order
       tddOrderCorrect++;
     } else {
       tddOrderViolated++;
     }
   }
 
+  // TDD score: correct / (correct + violated). Neutral commits are excluded
+  // from the score (they don't demonstrate TDD but don't violate it either).
+  // If ALL test files are neutral/unchecked, tddScore is null (can't assess).
+  const tddAssessable = tddOrderCorrect + tddOrderViolated;
   const result = {
     totalCommitsInSrc: commits.length,
     testOnlyCommits,
@@ -122,11 +137,18 @@ function analyzeTDD(branch) {
     uniqueImplFiles: implFiles.size,
     tddOrderCorrect,
     tddOrderViolated,
+    tddNeutral,
     tddUnchecked,
     tddScore:
-      tddOrderCorrect + tddOrderViolated > 0
+      tddAssessable > 0
+        ? Math.round((tddOrderCorrect / tddAssessable) * 100)
+        : null,
+    tddCoverage:
+      testFiles.size > 0
         ? Math.round(
-            (tddOrderCorrect / (tddOrderCorrect + tddOrderViolated)) * 100,
+            ((tddOrderCorrect + tddOrderViolated + tddNeutral) /
+              testFiles.size) *
+              100,
           )
         : null,
   };
@@ -137,10 +159,17 @@ function analyzeTDD(branch) {
   );
   console.log(`  Test files: ${testFiles.size}, Impl files: ${implFiles.size}`);
   console.log(
-    `  TDD order: ${tddOrderCorrect} correct, ${tddOrderViolated} violated, ${tddUnchecked} unchecked`,
+    `  TDD order: ${tddOrderCorrect} correct, ${tddOrderViolated} violated, ${tddNeutral} neutral (same commit), ${tddUnchecked} unchecked`,
   );
   if (result.tddScore != null) {
     console.log(`  TDD score: ${result.tddScore}%`);
+  } else {
+    console.log(
+      `  TDD score: N/A (no assessable test/impl pairs — ${tddNeutral} neutral, ${tddUnchecked} unchecked)`,
+    );
+  }
+  if (result.tddCoverage != null) {
+    console.log(`  TDD coverage: ${result.tddCoverage}% of test files assessable`);
   }
 
   return result;
@@ -273,6 +302,152 @@ function analyzeBuildStats(branch) {
 }
 
 // ------------------------------------------------------------------
+// 4. Timing Validation — build_start and build_end in timing.jsonl
+// ------------------------------------------------------------------
+function analyzeTimingLog(branch) {
+  console.log("\n=== Timing Log Validation ===");
+
+  let logContent;
+  try {
+    logContent = run(
+      `git show ${branch}:metrics/timing.jsonl 2>/dev/null`,
+    );
+  } catch {
+    logContent = "";
+  }
+
+  if (!logContent.trim()) {
+    console.log("  FAIL: metrics/timing.jsonl not found on branch");
+    return {
+      exists: false,
+      hasStart: false,
+      hasEnd: false,
+      model: null,
+      durationMinutes: null,
+    };
+  }
+
+  const entries = logContent
+    .trim()
+    .split("\n")
+    .map((l) => {
+      try {
+        return JSON.parse(l);
+      } catch {
+        return null;
+      }
+    })
+    .filter(Boolean);
+
+  const startEntry = entries.find((e) => e.event === "build_start");
+  const endEntry = entries.find((e) => e.event === "build_end");
+
+  const hasStart = !!startEntry;
+  const hasEnd = !!endEntry;
+  const model = startEntry?.model || null;
+
+  let durationMinutes = null;
+  if (hasStart && hasEnd && startEntry.timestamp && endEntry.timestamp) {
+    const startMs = new Date(startEntry.timestamp).getTime();
+    const endMs = new Date(endEntry.timestamp).getTime();
+    if (!isNaN(startMs) && !isNaN(endMs)) {
+      durationMinutes = Math.round((endMs - startMs) / 60000);
+    }
+  }
+
+  console.log(`  timing.jsonl: ${entries.length} entries`);
+  console.log(`  build_start: ${hasStart ? "PASS" : "FAIL"}`);
+  console.log(`  build_end: ${hasEnd ? "PASS" : "FAIL"}`);
+  if (model) console.log(`  Model: ${model}`);
+  if (durationMinutes != null)
+    console.log(`  Duration: ~${durationMinutes} minutes`);
+
+  return { exists: true, hasStart, hasEnd, model, durationMinutes };
+}
+
+// ------------------------------------------------------------------
+// 5. Measurement JSON Completeness
+// ------------------------------------------------------------------
+function analyzeMeasurementJSON(branch) {
+  console.log("\n=== Measurement JSON Completeness ===");
+
+  // Look for measurement JSON files on the branch
+  let fileList;
+  try {
+    fileList = run(
+      `git ls-tree --name-only ${branch} metrics/ 2>/dev/null`,
+    );
+  } catch {
+    fileList = "";
+  }
+
+  const jsonFiles = fileList
+    .trim()
+    .split("\n")
+    .filter((f) => f.endsWith(".json") && !f.includes("adherence"));
+
+  if (jsonFiles.length === 0) {
+    console.log("  FAIL: no measurement JSON files found in metrics/");
+    return { exists: false, fields: {}, missing: [] };
+  }
+
+  // Read the latest measurement JSON
+  const latestFile = `metrics/${jsonFiles[jsonFiles.length - 1]}`;
+  let content;
+  try {
+    content = run(`git show ${branch}:${latestFile} 2>/dev/null`);
+  } catch {
+    content = "";
+  }
+
+  if (!content.trim()) {
+    console.log(`  FAIL: could not read ${latestFile}`);
+    return { exists: false, fields: {}, missing: [] };
+  }
+
+  let data;
+  try {
+    data = JSON.parse(content);
+  } catch {
+    console.log(`  FAIL: ${latestFile} is not valid JSON`);
+    return { exists: false, fields: {}, missing: [] };
+  }
+
+  // Required fields per EXPERIMENT_DESIGN.md metrics
+  const requiredFields = [
+    "eslintErrors",
+    "eslintWarnings",
+    "e2eTotal",
+    "e2ePassed",
+    "vitestTotal",
+    "vitestPassed",
+    "duplication",
+    "bundleSize",
+    "loc",
+  ];
+
+  const fields = {};
+  const missing = [];
+  for (const field of requiredFields) {
+    if (field in data) {
+      fields[field] = data[field];
+    } else {
+      missing.push(field);
+    }
+  }
+
+  console.log(`  File: ${latestFile}`);
+  console.log(`  Fields present: ${Object.keys(fields).length}/${requiredFields.length}`);
+  if (missing.length > 0) {
+    console.log(`  Missing: ${missing.join(", ")}`);
+  } else {
+    console.log(`  All required fields present`);
+  }
+
+  return { exists: true, file: latestFile, fields, missing };
+}
+
+// ------------------------------------------------------------------
 // Main
 // ------------------------------------------------------------------
 function main() {
@@ -289,6 +464,8 @@ function main() {
     tdd: analyzeTDD(branch),
     workflowLog: analyzeWorkflowLog(branch),
     buildStats: analyzeBuildStats(branch),
+    timing: analyzeTimingLog(branch),
+    measurement: analyzeMeasurementJSON(branch),
   };
 
   // Save report

@@ -1,0 +1,46 @@
+{
+  "metadata": {
+    "timestamp": "2026-04-02T20:16:24.331Z",
+    "branch": "run3/spec-kit"
+  },
+  "tdd": {
+    "totalCommitsInSrc": 2,
+    "testOnlyCommits": 0,
+    "implOnlyCommits": 0,
+    "mixedCommits": 2,
+    "uniqueTestFiles": 10,
+    "uniqueImplFiles": 12,
+    "tddOrderCorrect": 10,
+    "tddOrderViolated": 0,
+    "tddUnchecked": 0,
+    "tddScore": 100
+  },
+  "workflowLog": {
+    "framework": "spec-kit",
+    "expected": [
+      "speckit.constitution",
+      "speckit.specify",
+      "speckit.clarify",
+      "speckit.plan",
+      "speckit.tasks",
+      "speckit.checklist",
+      "speckit.analyze",
+      "speckit.implement"
+    ],
+    "completed": [
+      "speckit.constitution",
+      "speckit.specify",
+      "speckit.clarify",
+      "speckit.plan",
+      "speckit.tasks",
+      "speckit.checklist",
+      "speckit.analyze",
+      "speckit.implement"
+    ],
+    "missing": []
+  },
+  "buildStats": {
+    "commitCount": 18,
+    "diffStat": "74 files changed, 8798 insertions(+), 118 deletions(-)"
+  }
+}
