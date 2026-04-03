@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ZipForm } from "./ZipForm";
 import { StateInfoCard } from "./StateInfoCard";
 import { PromptOutput } from "./PromptOutput";
@@ -38,6 +38,22 @@ export function BallotToolClient() {
   const { lang, t } = useLanguage();
 
   const today = new Date();
+
+  // Re-generate prompt when language changes while a result is displayed
+  useEffect(() => {
+    if (appState.stage === "result") {
+      const promptText = generatePromptText(
+        appState.stateData,
+        appState.zip,
+        new Date(),
+        lang,
+      );
+      setAppState((prev) =>
+        prev.stage === "result" ? { ...prev, promptText } : prev,
+      );
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lang]);
 
   function handleZipSubmit(zip: string) {
     setIsLoading(true);
