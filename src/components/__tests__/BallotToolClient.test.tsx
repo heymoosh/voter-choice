@@ -1,7 +1,8 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { BallotToolClient } from "../BallotToolClient";
+import { LanguageProvider } from "../../lib/i18n";
 
 beforeEach(() => {
   Object.defineProperty(navigator, "clipboard", {
@@ -55,6 +56,53 @@ describe("BallotToolClient", () => {
     await user.click(screen.getByTestId("zip-submit"));
     await waitFor(() => {
       expect(screen.getByTestId("state-selector")).toBeInTheDocument();
+    });
+  });
+});
+
+describe("BallotToolClient — Spanish translations", () => {
+  beforeEach(() => {
+    localStorage.setItem("lang", "es");
+  });
+
+  afterEach(() => {
+    localStorage.clear();
+  });
+
+  function renderEs() {
+    return render(
+      <LanguageProvider>
+        <BallotToolClient />
+      </LanguageProvider>,
+    );
+  }
+
+  it("shows Spanish not-found title after unknown zip", async () => {
+    renderEs();
+    fireEvent.change(screen.getByTestId("zip-input"), {
+      target: { value: "00000" },
+    });
+    fireEvent.click(screen.getByTestId("zip-submit"));
+    await waitFor(() => {
+      expect(
+        screen.getByText("Código postal no encontrado"),
+      ).toBeInTheDocument();
+    });
+  });
+
+  it("prompt output contains Spanish text after valid zip", async () => {
+    renderEs();
+    fireEvent.change(screen.getByTestId("zip-input"), {
+      target: { value: "73301" },
+    });
+    fireEvent.click(screen.getByTestId("zip-submit"));
+    await waitFor(() => {
+      const output = screen.getByTestId("prompt-output") as HTMLTextAreaElement;
+      // Spanish main prompt
+      expect(output.value).toContain("asistente cívico no partidario");
+      // Spanish context block
+      expect(output.value).toContain("¡Hola!");
+      expect(output.value).toContain("Ayúdame con mi boleta.");
     });
   });
 });

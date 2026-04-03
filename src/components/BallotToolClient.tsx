@@ -12,6 +12,7 @@ import {
 } from "../lib/data";
 import { getNextElection } from "../lib/date-utils";
 import { generatePromptText } from "../lib/prompt-generator";
+import { useLanguage } from "../lib/i18n";
 import type {
   StateData,
   Election,
@@ -34,6 +35,7 @@ type AppState =
 export function BallotToolClient() {
   const [appState, setAppState] = useState<AppState>({ stage: "idle" });
   const [isLoading, setIsLoading] = useState(false);
+  const { lang, t } = useLanguage();
 
   const today = new Date();
 
@@ -70,7 +72,7 @@ export function BallotToolClient() {
       stateData.registration,
       today,
     );
-    const promptText = generatePromptText(stateData, zip, today);
+    const promptText = generatePromptText(stateData, zip, today, lang);
 
     setAppState({
       stage: "result",
@@ -110,17 +112,16 @@ export function BallotToolClient() {
           role="alert"
           className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-xl text-yellow-800"
         >
-          <p className="font-semibold mb-1">Zip code not found</p>
+          <p className="font-semibold mb-1">{t.notFound.title}</p>
           <p className="text-sm">
-            We don&apos;t have data for zip code <strong>{appState.zip}</strong>{" "}
-            yet. We&apos;re working on adding all U.S. zip codes.{" "}
+            {t.notFound.description(appState.zip)}{" "}
             <a
               href="https://www.usa.gov/election-office"
               target="_blank"
               rel="noopener noreferrer"
               className="underline"
             >
-              Find your state election website
+              {t.notFound.linkText}
             </a>
             .
           </p>
