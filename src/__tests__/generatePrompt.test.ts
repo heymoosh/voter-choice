@@ -80,3 +80,64 @@ describe("generatePrompt", () => {
     expect(parts.length).toBeGreaterThanOrEqual(2);
   });
 });
+
+describe("generatePrompt — Spanish (lang='es')", () => {
+  it("contains Spanish main prompt when lang='es'", () => {
+    const prompt = generatePrompt(
+      txData as StateElectionData,
+      "73301",
+      today,
+      "es",
+    );
+    expect(prompt).toContain(
+      "Eres un asistente de investigación cívica no partidista",
+    );
+  });
+
+  it("contains Spanish context block with state name", () => {
+    const prompt = generatePrompt(
+      txData as StateElectionData,
+      "73301",
+      today,
+      "es",
+    );
+    expect(prompt).toContain("Voy a votar en **Texas**");
+  });
+
+  it("contains Spanish closing line", () => {
+    const prompt = generatePrompt(
+      txData as StateElectionData,
+      "73301",
+      today,
+      "es",
+    );
+    expect(prompt).toContain("Ayúdame con mi boleta.");
+  });
+
+  it("contains Spanish date format in context block", () => {
+    const prompt = generatePrompt(
+      txData as StateElectionData,
+      "73301",
+      today,
+      "es",
+    );
+    // February in Spanish (registration deadline Feb 2, 2026)
+    expect(prompt).toContain("de febrero de 2026");
+  });
+
+  it("returns English prompt when lang='en' (explicit)", () => {
+    const prompt = generatePrompt(
+      txData as StateElectionData,
+      "73301",
+      today,
+      "en",
+    );
+    expect(prompt).toContain("nonpartisan civic research assistant");
+  });
+
+  it("returns English prompt when lang omitted (default backward compat)", () => {
+    const prompt = generatePrompt(txData as StateElectionData, "73301", today);
+    expect(prompt).toContain("nonpartisan civic research assistant");
+    expect(prompt).toContain("Help me with my ballot.");
+  });
+});

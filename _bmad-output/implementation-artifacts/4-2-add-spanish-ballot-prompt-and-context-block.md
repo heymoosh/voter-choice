@@ -1,6 +1,6 @@
 # Story 4.2: Add Spanish Ballot Prompt and Context Block
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -37,28 +37,28 @@ so that I can paste the prompt into a Spanish-language chatbot session and get u
 
 ## Tasks / Subtasks
 
-- [ ] Add `BALLOT_PROMPT_ES` constant and `buildContextBlockEs` to `src/lib/generatePrompt.ts` (AC: 1, 2, 3)
-  - [ ] Add `BALLOT_PROMPT_ES` constant — complete Spanish translation (see exact text in Dev Notes)
-  - [ ] Add `buildRegistrationBlockEs(stateData, today)` helper — Spanish labels + `formatDate(date, 'es')` + `getDeadlineLabel(deadline, today, 'es')`
-  - [ ] Add `buildContextBlockEs(stateData, zip, today)` — Spanish context block using Spanish structural labels
-- [ ] Extend `generatePrompt` signature with optional `lang` param (AC: 4, 6)
-  - [ ] Change signature to `generatePrompt(stateData, zip, today = new Date(), lang: "en" | "es" = "en")`
-  - [ ] When `lang === 'es'`, return `${BALLOT_PROMPT_ES}\n\n---\n\n${buildContextBlockEs(stateData, zip, today)}`
-  - [ ] When `lang === 'en'` (default), return existing EN behavior unchanged
-- [ ] Modify `src/components/BallotToolClient.tsx` — pass `lang` to `generatePrompt` and re-generate on language switch (AC: 5)
-  - [ ] Change `const { t } = useLanguage()` to `const { lang, t } = useLanguage()`
-  - [ ] Add `useEffect` import to the React imports
-  - [ ] Update `loadState` callback to call `generatePrompt(data, zipCode, new Date(), lang)` and add `lang` to deps array
-  - [ ] Add `useEffect` that re-generates prompt when `lang` changes: `if (stateData && zip) setPromptText(generatePrompt(stateData, zip, new Date(), lang))`
-- [ ] Add tests for Spanish `generatePrompt` to `src/__tests__/generatePrompt.test.ts` (AC: 1, 2, 3, 4)
-  - [ ] Test: `generatePrompt(txData, "73301", today, 'es')` contains "Eres un asistente de investigación cívica"
-  - [ ] Test: `generatePrompt(txData, "73301", today, 'es')` contains "Voy a votar en **Texas**"
-  - [ ] Test: `generatePrompt(txData, "73301", today, 'es')` contains "Ayúdame con mi boleta."
-  - [ ] Test: `generatePrompt(txData, "73301", today, 'es')` contains Spanish date format ("3 de" or "febrero")
-  - [ ] Test: `generatePrompt(txData, "73301", today, 'en')` contains "nonpartisan civic research assistant" (explicit 'en' works)
-  - [ ] Test: `generatePrompt(txData, "73301", today)` still matches Phase 1 output (no lang arg = backward compat)
-- [ ] Run full test suite — verify no regressions
-- [ ] Run `npx tsc --noEmit` — verify no TypeScript errors
+- [x] Add `BALLOT_PROMPT_ES` constant and `buildContextBlockEs` to `src/lib/generatePrompt.ts` (AC: 1, 2, 3)
+  - [x] Add `BALLOT_PROMPT_ES` constant — complete Spanish translation (see exact text in Dev Notes)
+  - [x] Add `buildRegistrationBlockEs(stateData, today)` helper — Spanish labels + `formatDate(date, 'es')` + `getDeadlineLabel(deadline, today, 'es')`
+  - [x] Add `buildContextBlockEs(stateData, zip, today)` — Spanish context block using Spanish structural labels
+- [x] Extend `generatePrompt` signature with optional `lang` param (AC: 4, 6)
+  - [x] Change signature to `generatePrompt(stateData, zip, today = new Date(), lang: "en" | "es" = "en")`
+  - [x] When `lang === 'es'`, return `${BALLOT_PROMPT_ES}\n\n---\n\n${buildContextBlockEs(stateData, zip, today)}`
+  - [x] When `lang === 'en'` (default), return existing EN behavior unchanged
+- [x] Modify `src/components/BallotToolClient.tsx` — pass `lang` to `generatePrompt` and re-generate on language switch (AC: 5)
+  - [x] Change `const { t } = useLanguage()` to `const { lang, t } = useLanguage()`
+  - [x] Add `useEffect` import to the React imports
+  - [x] Update `loadState` callback to call `generatePrompt(data, zipCode, new Date(), lang)` and add `lang` to deps array
+  - [x] Add `useEffect` that re-generates prompt when `lang` changes: `if (stateData && zip) setPromptText(generatePrompt(stateData, zip, new Date(), lang))`
+- [x] Add tests for Spanish `generatePrompt` to `src/__tests__/generatePrompt.test.ts` (AC: 1, 2, 3, 4)
+  - [x] Test: `generatePrompt(txData, "73301", today, 'es')` contains "Eres un asistente de investigación cívica"
+  - [x] Test: `generatePrompt(txData, "73301", today, 'es')` contains "Voy a votar en **Texas**"
+  - [x] Test: `generatePrompt(txData, "73301", today, 'es')` contains "Ayúdame con mi boleta."
+  - [x] Test: `generatePrompt(txData, "73301", today, 'es')` contains Spanish date format ("3 de" or "febrero")
+  - [x] Test: `generatePrompt(txData, "73301", today, 'en')` contains "nonpartisan civic research assistant" (explicit 'en' works)
+  - [x] Test: `generatePrompt(txData, "73301", today)` still matches Phase 1 output (no lang arg = backward compat)
+- [x] Run full test suite — verify no regressions
+- [x] Run `npx tsc --noEmit` — verify no TypeScript errors
 
 ## Dev Notes
 
@@ -334,4 +334,15 @@ claude-sonnet-4-6
 
 ### Completion Notes List
 
+- Added `BALLOT_PROMPT_ES` constant to `generatePrompt.ts` — complete Spanish translation in "tú" voice
+- Added `buildRegistrationBlockEs` helper using Spanish method names, `formatDate(date, 'es')`, `getDeadlineLabel(deadline, today, 'es')`
+- Added `buildContextBlockEs` — Spanish structural labels, data values stay in English (state names, election names, IDs, URLs)
+- Extended `generatePrompt` with `lang: "en" | "es" = "en"` 4th param — default 'en' means all 10 existing tests pass unchanged
+- BallotToolClient: `lang` added to `useLanguage()` destructure, `loadState` passes `lang` to `generatePrompt`, `useEffect` re-generates prompt on lang change
+- 6 new Spanish tests added; 101/101 tests pass, 0 TypeScript errors
+
 ### File List
+
+- `src/lib/generatePrompt.ts` (MODIFIED — BALLOT_PROMPT_ES, buildRegistrationBlockEs, buildContextBlockEs, lang param)
+- `src/components/BallotToolClient.tsx` (MODIFIED — lang destructure, useEffect re-generation)
+- `src/__tests__/generatePrompt.test.ts` (MODIFIED — 6 new Spanish tests)

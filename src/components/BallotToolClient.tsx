@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import ZipForm from "./ZipForm";
 import StateSelectorModal from "./StateSelectorModal";
 import StateInfoCard from "./StateInfoCard";
@@ -20,13 +20,19 @@ export default function BallotToolClient() {
   const [showSelector, setShowSelector] = useState(false);
   const [notFound, setNotFound] = useState(false);
   const resultsRef = useRef<HTMLDivElement>(null);
-  const { t } = useLanguage();
+  const { lang, t } = useLanguage();
+
+  useEffect(() => {
+    if (stateData && zip) {
+      setPromptText(generatePrompt(stateData, zip, new Date(), lang));
+    }
+  }, [lang, stateData, zip]);
 
   const loadState = useCallback(async (stateCode: string, zipCode: string) => {
     const data = await getStateData(stateCode);
     if (data) {
       setStateData(data);
-      setPromptText(generatePrompt(data, zipCode));
+      setPromptText(generatePrompt(data, zipCode, new Date(), lang));
       setShowSelector(false);
       setTimeout(() => {
         resultsRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -34,7 +40,7 @@ export default function BallotToolClient() {
         if (heading) (heading as HTMLElement).focus();
       }, 100);
     }
-  }, []);
+  }, [lang]);
 
   const handleSubmit = useCallback(
     async (inputZip: string) => {
