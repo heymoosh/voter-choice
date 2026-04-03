@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useLanguage } from "../lib/i18n";
 
 interface StateSelectorModalProps {
   stateCodes: string[];
@@ -20,6 +21,7 @@ export default function StateSelectorModal({
   onSelect,
 }: StateSelectorModalProps) {
   const [selected, setSelected] = useState(stateCodes[0]);
+  const { t } = useLanguage();
 
   return (
     <div
@@ -32,7 +34,7 @@ export default function StateSelectorModal({
         id="state-selector-heading"
         className="text-lg font-semibold text-gray-800 mb-3"
       >
-        This zip code spans multiple states. Which state are you voting in?
+        {t("errors.multiState")}
       </h3>
       <div className="space-y-2">
         {stateCodes.map((code) => (
@@ -58,7 +60,7 @@ export default function StateSelectorModal({
         onClick={() => onSelect(selected)}
         className="mt-4 px-6 py-3 bg-[#1e3a5f] text-white rounded-lg font-semibold hover:bg-[#2a4a73] focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 transition-colors min-h-[48px]"
       >
-        Continue
+        {t("form.continue")}
       </button>
     </div>
   );

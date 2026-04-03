@@ -9,6 +9,7 @@ import { lookupZip } from "../lib/lookupZip";
 import { getStateData } from "../lib/getStateData";
 import { generatePrompt } from "../lib/generatePrompt";
 import type { StateElectionData } from "../lib/types";
+import { useLanguage } from "../lib/i18n";
 
 export default function BallotToolClient() {
   const [error, setError] = useState<string | null>(null);
@@ -19,6 +20,7 @@ export default function BallotToolClient() {
   const [showSelector, setShowSelector] = useState(false);
   const [notFound, setNotFound] = useState(false);
   const resultsRef = useRef<HTMLDivElement>(null);
+  const { t } = useLanguage();
 
   const loadState = useCallback(async (stateCode: string, zipCode: string) => {
     const data = await getStateData(stateCode);
@@ -94,17 +96,14 @@ export default function BallotToolClient() {
           data-testid="not-found-message"
           className="bg-yellow-50 border border-yellow-200 rounded-xl p-6 my-4"
         >
-          <p className="text-yellow-800">
-            We don&apos;t have data for this zip code yet. We&apos;re working on
-            adding all U.S. zip codes.
-          </p>
+          <p className="text-yellow-800">{t("errors.zipNotFound")}</p>
           <a
             href="https://www.usa.gov/election-office"
             target="_blank"
             rel="noopener noreferrer"
             className="text-teal-700 hover:text-teal-900 underline text-sm mt-2 inline-block"
           >
-            Find your state election website →
+            {t("errors.findElectionWebsite")}
           </a>
         </div>
       )}

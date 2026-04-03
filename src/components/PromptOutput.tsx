@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback } from "react";
+import { useLanguage } from "../lib/i18n";
 
 interface PromptOutputProps {
   promptText: string;
@@ -9,6 +10,7 @@ interface PromptOutputProps {
 export default function PromptOutput({ promptText }: PromptOutputProps) {
   const [copied, setCopied] = useState(false);
   const textRef = useRef<HTMLPreElement>(null);
+  const { t } = useLanguage();
 
   const handleCopy = useCallback(async () => {
     try {
@@ -29,10 +31,10 @@ export default function PromptOutput({ promptText }: PromptOutputProps) {
   return (
     <section data-testid="prompt-output" className="my-4">
       <h2 className="text-xl font-bold text-[#1e3a5f] mb-3">
-        Your Customized Prompt
+        {t("prompt.heading")}
       </h2>
       <p className="text-sm text-gray-600 mb-3">
-        Copy this prompt and paste it as your first message in any AI chatbot
+        {t("prompt.instructions")}
       </p>
 
       <div className="relative bg-gray-50 border border-gray-200 rounded-xl overflow-hidden">
@@ -43,9 +45,9 @@ export default function PromptOutput({ promptText }: PromptOutputProps) {
             className="px-4 py-2 bg-[#1e3a5f] text-white rounded-lg font-semibold hover:bg-[#2a4a73] focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 transition-colors min-h-[44px] text-sm"
           >
             {copied ? (
-              <span data-testid="copy-confirmation">Copied!</span>
+              <span data-testid="copy-confirmation">{t("prompt.copiedButton")}</span>
             ) : (
-              "Copy to Clipboard"
+              t("prompt.copyButton")
             )}
           </button>
         </div>

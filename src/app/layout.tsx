@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { LanguageProvider } from "../lib/i18n";
+import SkipLink from "../components/SkipLink";
 
 export const metadata: Metadata = {
   title: "Ballot Research Tool — Research Your Ballot with AI",
@@ -15,13 +17,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="bg-[#fafaf9] text-[#1f2937] antialiased font-sans">
-        <a
-          href="#main-content"
-          className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:px-4 focus:py-2 focus:bg-[#1e3a5f] focus:text-white focus:rounded-lg"
-        >
-          Skip to main content
-        </a>
-        {children}
+        <LanguageProvider>
+          <SkipLink />
+          {children}
+        </LanguageProvider>
       </body>
     </html>
   );

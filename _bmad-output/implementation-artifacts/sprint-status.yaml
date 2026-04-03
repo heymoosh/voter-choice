@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-04-03
-last_updated: 2026-04-03T21:30:00+00:00
+last_updated: 2026-04-03T22:00:00+00:00
 project: voter-choice
 project_key: NOKEY
 tracking_system: file-system
@@ -57,7 +57,7 @@ development_status:
   epic-3: in-progress
   3-1-translate-zipform-with-error-as-key-pattern: done
   3-2-translate-stateinfocard-with-locale-aware-dates: done
-  3-3-translate-promptoutput-page-content-tips-and-footer: backlog
+  3-3-translate-promptoutput-page-content-tips-and-footer: review
   epic-3-retrospective: optional
 
   # Epic 4: Prompt and Date Localization
