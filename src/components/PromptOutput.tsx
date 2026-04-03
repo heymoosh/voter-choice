@@ -33,9 +33,7 @@ export default function PromptOutput({ promptText }: PromptOutputProps) {
       <h2 className="text-xl font-bold text-[#1e3a5f] mb-3">
         {t("prompt.heading")}
       </h2>
-      <p className="text-sm text-gray-600 mb-3">
-        {t("prompt.instructions")}
-      </p>
+      <p className="text-sm text-gray-600 mb-3">{t("prompt.instructions")}</p>
 
       <div className="relative bg-gray-50 border border-gray-200 rounded-xl overflow-hidden">
         <div className="sticky top-0 bg-gray-50 border-b border-gray-200 p-3 flex justify-end z-10">
@@ -45,7 +43,9 @@ export default function PromptOutput({ promptText }: PromptOutputProps) {
             className="px-4 py-2 bg-[#1e3a5f] text-white rounded-lg font-semibold hover:bg-[#2a4a73] focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 transition-colors min-h-[44px] text-sm"
           >
             {copied ? (
-              <span data-testid="copy-confirmation">{t("prompt.copiedButton")}</span>
+              <span data-testid="copy-confirmation">
+                {t("prompt.copiedButton")}
+              </span>
             ) : (
               t("prompt.copyButton")
             )}

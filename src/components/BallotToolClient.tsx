@@ -28,19 +28,22 @@ export default function BallotToolClient() {
     }
   }, [lang, stateData, zip]);
 
-  const loadState = useCallback(async (stateCode: string, zipCode: string) => {
-    const data = await getStateData(stateCode);
-    if (data) {
-      setStateData(data);
-      setPromptText(generatePrompt(data, zipCode, new Date(), lang));
-      setShowSelector(false);
-      setTimeout(() => {
-        resultsRef.current?.scrollIntoView({ behavior: "smooth" });
-        const heading = resultsRef.current?.querySelector("h2");
-        if (heading) (heading as HTMLElement).focus();
-      }, 100);
-    }
-  }, [lang]);
+  const loadState = useCallback(
+    async (stateCode: string, zipCode: string) => {
+      const data = await getStateData(stateCode);
+      if (data) {
+        setStateData(data);
+        setPromptText(generatePrompt(data, zipCode, new Date(), lang));
+        setShowSelector(false);
+        setTimeout(() => {
+          resultsRef.current?.scrollIntoView({ behavior: "smooth" });
+          const heading = resultsRef.current?.querySelector("h2");
+          if (heading) (heading as HTMLElement).focus();
+        }, 100);
+      }
+    },
+    [lang],
+  );
 
   const handleSubmit = useCallback(
     async (inputZip: string) => {

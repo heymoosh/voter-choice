@@ -67,7 +67,7 @@ development_status:
   epic-4-retrospective: optional
 
   # Epic 5: Testing, Regression, and Accessibility Verification
-  epic-5: backlog
-  5-1-e2e-tests-for-language-toggle-functionality: backlog
+  epic-5: in-progress
+  5-1-e2e-tests-for-language-toggle-functionality: review
   5-2-accessibility-verification-for-language-features: backlog
   epic-5-retrospective: optional

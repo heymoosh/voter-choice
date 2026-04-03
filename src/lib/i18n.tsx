@@ -28,11 +28,7 @@ const defaultContext: LanguageContextValue = {
 export const LanguageContext =
   createContext<LanguageContextValue>(defaultContext);
 
-export function LanguageProvider({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export function LanguageProvider({ children }: { children: React.ReactNode }) {
   // Always initialize to 'en' — NEVER read localStorage here.
   // Server renders 'en'. Client hydrates to 'en' (no mismatch). useEffect then syncs.
   const [lang, setLangState] = useState<Lang>("en");

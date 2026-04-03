@@ -23,10 +23,7 @@ export function getDeadlineStatus(
   return "safe";
 }
 
-export function formatDate(
-  isoDate: string,
-  lang: "en" | "es" = "en",
-): string {
+export function formatDate(isoDate: string, lang: "en" | "es" = "en"): string {
   const date = new Date(isoDate + "T00:00:00");
   const locale = lang === "es" ? "es-MX" : "en-US";
   return date.toLocaleDateString(locale, {

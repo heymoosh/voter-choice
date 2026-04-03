@@ -90,8 +90,7 @@ export const EN: Translations = {
       "We don't have data for this zip code yet. We're working on adding all U.S. zip codes.",
     multiState:
       "This zip code spans multiple states. Which state are you voting in?",
-    deadlinePassed:
-      "Registration deadlines have passed for the next election.",
+    deadlinePassed: "Registration deadlines have passed for the next election.",
     noElection: "No upcoming elections found for this state.",
     findElectionWebsite: "Find your state election website →",
   },
@@ -130,9 +129,9 @@ export const EN: Translations = {
   },
   tips: {
     heading: "Tips for Using AI Ballot Research",
-    tip1: "You can say \"I don't know\" or \"I'm not sure where I stand\" — the AI will explain more and help you figure it out",
-    tip2: "Ask it to research something for you (\"Can you look up this candidate's voting record?\")",
-    tip3: "Ask questions anytime (\"What does this position actually do?\" or \"Why does this matter?\")",
+    tip1: 'You can say "I don\'t know" or "I\'m not sure where I stand" — the AI will explain more and help you figure it out',
+    tip2: 'Ask it to research something for you ("Can you look up this candidate\'s voting record?")',
+    tip3: 'Ask questions anytime ("What does this position actually do?" or "Why does this matter?")',
     tip4: "You're not taking a test. You're having a conversation. The AI works with you.",
     tip5: "AI can make mistakes. This is a research starting point. Always verify with official sources — the tool links you to them.",
   },
@@ -170,10 +169,8 @@ export const ES: Translations = {
       "Este código postal abarca varios estados. ¿En qué estado vas a votar?",
     deadlinePassed:
       "Las fechas límite de registro ya pasaron para la próxima elección.",
-    noElection:
-      "No se encontraron próximas elecciones para este estado.",
-    findElectionWebsite:
-      "Encuentra el sitio web de elecciones de tu estado →",
+    noElection: "No se encontraron próximas elecciones para este estado.",
+    findElectionWebsite: "Encuentra el sitio web de elecciones de tu estado →",
   },
   stateInfo: {
     lastUpdated: "Última actualización:",
@@ -210,9 +207,9 @@ export const ES: Translations = {
   },
   tips: {
     heading: "Consejos para usar IA en tu investigación de boleta",
-    tip1: "Puedes decir \"No sé\" o \"No estoy seguro/a de mi posición\" — la IA te explicará más y te ayudará a entender",
-    tip2: "Pídele que investigue algo por ti (\"¿Puedes buscar el historial de votación de este candidato?\")",
-    tip3: "Haz preguntas cuando quieras (\"¿Qué hace realmente este cargo?\" o \"¿Por qué importa esto?\")",
+    tip1: 'Puedes decir "No sé" o "No estoy seguro/a de mi posición" — la IA te explicará más y te ayudará a entender',
+    tip2: 'Pídele que investigue algo por ti ("¿Puedes buscar el historial de votación de este candidato?")',
+    tip3: 'Haz preguntas cuando quieras ("¿Qué hace realmente este cargo?" o "¿Por qué importa esto?")',
     tip4: "No estás tomando un examen. Estás teniendo una conversación. La IA trabaja contigo.",
     tip5: "La IA puede cometer errores. Este es un punto de partida para tu investigación. Siempre verifica con fuentes oficiales — la herramienta te enlaza a ellas.",
   },

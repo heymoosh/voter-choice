@@ -240,3 +240,68 @@ test.describe("Keyboard accessibility", () => {
     await expect(zipInput).toBeFocused();
   });
 });
+
+// ---------------------------------------------------------------------------
+// Language toggle (Phase 2)
+// ---------------------------------------------------------------------------
+
+test.describe("Language toggle", () => {
+  test("language toggle is visible on page load", async ({ page }) => {
+    await page.goto("/");
+    const toggle = page.getByTestId("language-toggle");
+    await expect(toggle).toBeVisible();
+    // In English mode, toggle shows "Español" (non-active language)
+    await expect(toggle).toContainText("Español");
+  });
+
+  test("clicking toggle switches UI to Spanish", async ({ page }) => {
+    await page.goto("/");
+    await page.getByTestId("language-toggle").click();
+    // After switching to Spanish, toggle shows "English" (non-active language)
+    const toggle = page.getByTestId("language-toggle");
+    await expect(toggle).toContainText("English");
+    // Spanish placeholder is visible
+    const zipInput = page.getByTestId("zip-input");
+    await expect(zipInput).toHaveAttribute(
+      "placeholder",
+      /código postal/i,
+    );
+  });
+
+  test("clicking toggle twice returns to English", async ({ page }) => {
+    await page.goto("/");
+    const toggle = page.getByTestId("language-toggle");
+    await toggle.click(); // EN → ES
+    await toggle.click(); // ES → EN
+    await expect(toggle).toContainText("Español");
+    const zipInput = page.getByTestId("zip-input");
+    await expect(zipInput).toHaveAttribute("placeholder", /zip code/i);
+  });
+
+  test("state results remain visible after language switch", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    await page.getByTestId("zip-input").fill("73301");
+    await page.getByTestId("zip-submit").click();
+    // Confirm state info and prompt are shown
+    await expect(page.getByTestId("state-info")).toBeVisible();
+    await expect(page.getByTestId("prompt-output")).toBeVisible();
+    // Switch to Spanish
+    await page.getByTestId("language-toggle").click();
+    // Results remain visible (FR-004: language switch doesn't clear state)
+    await expect(page.getByTestId("state-info")).toBeVisible();
+    await expect(page.getByTestId("prompt-output")).toBeVisible();
+  });
+
+  test("persists Spanish after page reload", async ({ page }) => {
+    await page.goto("/");
+    // Switch to Spanish
+    await page.getByTestId("language-toggle").click();
+    await expect(page.getByTestId("language-toggle")).toContainText("English");
+    // Reload the page
+    await page.reload();
+    // Language should still be Spanish (localStorage persistence)
+    await expect(page.getByTestId("language-toggle")).toContainText("English");
+  });
+});
