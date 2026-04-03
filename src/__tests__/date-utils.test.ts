@@ -99,3 +99,56 @@ describe("getDeadlineLabel", () => {
     expect(getDeadlineLabel(null, today)).toBe("Not available");
   });
 });
+
+describe("formatDate with lang param", () => {
+  it("returns Spanish locale date for April when lang='es'", () => {
+    expect(formatDate("2026-04-03", "es")).toBe("3 de abril de 2026");
+  });
+
+  it("returns Spanish locale date for November when lang='es'", () => {
+    expect(formatDate("2026-11-03", "es")).toBe("3 de noviembre de 2026");
+  });
+
+  it("returns Spanish locale date for February when lang='es'", () => {
+    expect(formatDate("2026-02-15", "es")).toBe("15 de febrero de 2026");
+  });
+
+  it("returns English date when lang='en' (explicit)", () => {
+    expect(formatDate("2026-04-03", "en")).toBe("April 3, 2026");
+  });
+
+  it("returns English date when lang omitted (default backward compat)", () => {
+    expect(formatDate("2026-04-03")).toBe("April 3, 2026");
+  });
+});
+
+describe("getDeadlineLabel with lang='es'", () => {
+  it("returns 'Quedan X días' for multiple days remaining", () => {
+    // today = Feb 15, deadline = Feb 27 → 12 days
+    expect(getDeadlineLabel("2026-02-27", today, "es")).toBe("Quedan 12 días");
+  });
+
+  it("returns 'Plazo pasado' for past deadline", () => {
+    expect(getDeadlineLabel("2026-02-10", today, "es")).toBe("Plazo pasado");
+  });
+
+  it("returns '¡Hoy!' for today", () => {
+    expect(getDeadlineLabel("2026-02-15", today, "es")).toBe("¡Hoy!");
+  });
+
+  it("returns 'Queda 1 día' for exactly 1 day remaining", () => {
+    expect(getDeadlineLabel("2026-02-16", today, "es")).toBe("Queda 1 día");
+  });
+
+  it("returns 'No disponible' for null deadline", () => {
+    expect(getDeadlineLabel(null, today, "es")).toBe("No disponible");
+  });
+
+  it("returns English label when lang='en' (explicit)", () => {
+    expect(getDeadlineLabel("2026-02-27", today, "en")).toBe("12 days left");
+  });
+
+  it("returns English label when lang omitted (default backward compat)", () => {
+    expect(getDeadlineLabel("2026-02-27", today)).toBe("12 days left");
+  });
+});
