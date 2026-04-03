@@ -194,7 +194,7 @@ export const ES: Translations = {
     daysLeft: "Quedan {days} días",
     dayLeft: "Queda 1 día",
     today: "¡Hoy!",
-    tomorrow: "¡Mañana!",
+    tomorrow: "Queda 1 día",
     passed: "Plazo pasado",
     notAvailable: "No disponible",
   },

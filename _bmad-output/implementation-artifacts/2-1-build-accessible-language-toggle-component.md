@@ -1,6 +1,6 @@
 # Story 2.1: Build Accessible Language Toggle Component
 
-Status: review
+Status: done
 
 ## Story
 

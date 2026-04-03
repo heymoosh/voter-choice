@@ -1,6 +1,6 @@
 # Story 5.2: Accessibility Verification for Language Features
 
-Status: review
+Status: done
 
 ## Story
 

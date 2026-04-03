@@ -1,6 +1,6 @@
 # Story 3.1: Translate ZipForm with Error-as-Key Pattern
 
-Status: review
+Status: done
 
 ## Story
 

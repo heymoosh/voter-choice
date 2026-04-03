@@ -1,6 +1,6 @@
 # Story 5.1: E2e Tests for Language Toggle Functionality
 
-Status: review
+Status: done
 
 ## Story
 

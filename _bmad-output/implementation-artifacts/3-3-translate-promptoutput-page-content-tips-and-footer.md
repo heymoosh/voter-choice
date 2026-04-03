@@ -1,6 +1,6 @@
 # Story 3.3: Translate PromptOutput, Page Content, Tips, and Footer
 
-Status: review
+Status: done
 
 ## Story
 

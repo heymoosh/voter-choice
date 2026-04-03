@@ -1,6 +1,6 @@
 # Story 1.1: Create Typed Translation Store
 
-Status: review
+Status: done
 
 ## Story
 

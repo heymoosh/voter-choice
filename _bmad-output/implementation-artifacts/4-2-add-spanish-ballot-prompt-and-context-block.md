@@ -1,6 +1,6 @@
 # Story 4.2: Add Spanish Ballot Prompt and Context Block
 
-Status: review
+Status: done
 
 ## Story
 

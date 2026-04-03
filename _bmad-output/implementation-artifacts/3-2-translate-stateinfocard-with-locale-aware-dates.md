@@ -1,6 +1,6 @@
 # Story 3.2: Translate StateInfoCard with Locale-Aware Dates
 
-Status: review
+Status: done
 
 ## Story
 

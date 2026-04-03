@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-04-03
-last_updated: 2026-04-03T22:00:00+00:00
+last_updated: 2026-04-03T23:00:00+00:00
 project: voter-choice
 project_key: NOKEY
 tracking_system: file-system
@@ -54,20 +54,20 @@ development_status:
   epic-2-retrospective: optional
 
   # Epic 3: UI Translation — All Components
-  epic-3: in-progress
+  epic-3: done
   3-1-translate-zipform-with-error-as-key-pattern: done
   3-2-translate-stateinfocard-with-locale-aware-dates: done
-  3-3-translate-promptoutput-page-content-tips-and-footer: review
+  3-3-translate-promptoutput-page-content-tips-and-footer: done
   epic-3-retrospective: optional
 
   # Epic 4: Prompt and Date Localization
-  epic-4: in-progress
-  4-1-extend-date-and-deadline-utilities-with-language-parameter: review
-  4-2-add-spanish-ballot-prompt-and-context-block: review
+  epic-4: done
+  4-1-extend-date-and-deadline-utilities-with-language-parameter: done
+  4-2-add-spanish-ballot-prompt-and-context-block: done
   epic-4-retrospective: optional
 
   # Epic 5: Testing, Regression, and Accessibility Verification
-  epic-5: in-progress
-  5-1-e2e-tests-for-language-toggle-functionality: review
-  5-2-accessibility-verification-for-language-features: review
+  epic-5: done
+  5-1-e2e-tests-for-language-toggle-functionality: done
+  5-2-accessibility-verification-for-language-features: done
   epic-5-retrospective: optional

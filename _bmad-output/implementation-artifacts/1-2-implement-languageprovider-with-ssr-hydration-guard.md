@@ -1,6 +1,6 @@
 # Story 1.2: Implement LanguageProvider with SSR Hydration Guard
 
-Status: review
+Status: done
 
 ## Story
 
