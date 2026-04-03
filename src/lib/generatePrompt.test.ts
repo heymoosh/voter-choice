@@ -114,3 +114,45 @@ describe("generatePrompt", () => {
     expect(result.fullText).toContain(result.contextBlock);
   });
 });
+
+describe("generatePrompt — Spanish mode", () => {
+  it("returns Spanish base prompt when lang='es'", () => {
+    const result = generatePrompt(txData, "73301", "2026-03-30", "es");
+    expect(result.basePrompt).toContain("asistente");
+    expect(result.basePrompt).not.toContain("nonpartisan civic research assistant");
+  });
+
+  it("Spanish context block starts with '¡Hola!'", () => {
+    const result = generatePrompt(txData, "73301", "2026-03-30", "es");
+    expect(result.contextBlock).toContain("¡Hola!");
+  });
+
+  it("Spanish context block contains state name in Spanish labels", () => {
+    const result = generatePrompt(txData, "73301", "2026-03-30", "es");
+    expect(result.contextBlock).toContain("Texas");
+    expect(result.contextBlock).toContain("73301");
+  });
+
+  it("Spanish context block contains Spanish label keys", () => {
+    const result = generatePrompt(txData, "73301", "2026-03-30", "es");
+    expect(result.contextBlock).toMatch(/Elecci[oó]n|Tipo de elecci[oó]n|Fechas/i);
+  });
+
+  it("English prompt unchanged when lang='en' (default)", () => {
+    const enResult = generatePrompt(txData, "73301", "2026-03-30", "en");
+    const defaultResult = generatePrompt(txData, "73301", "2026-03-30");
+    expect(enResult.basePrompt).toBe(defaultResult.basePrompt);
+    expect(enResult.contextBlock).toBe(defaultResult.contextBlock);
+  });
+
+  it("Spanish fullText contains Spanish basePrompt and Spanish contextBlock", () => {
+    const result = generatePrompt(txData, "73301", "2026-03-30", "es");
+    expect(result.fullText).toContain(result.basePrompt);
+    expect(result.fullText).toContain(result.contextBlock);
+  });
+
+  it("Spanish context block ends with help request in Spanish", () => {
+    const result = generatePrompt(txData, "73301", "2026-03-30", "es");
+    expect(result.contextBlock).toContain("Ayúdame");
+  });
+});
