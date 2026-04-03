@@ -1,7 +1,8 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { StateSelectorModal } from "../StateSelectorModal";
+import { LanguageProvider } from "../../lib/i18n";
 
 const stateCodes = ["AZ", "NM"];
 
@@ -55,5 +56,46 @@ describe("StateSelectorModal", () => {
     );
     await user.click(screen.getByRole("button", { name: /cancel/i }));
     expect(onCancel).toHaveBeenCalled();
+  });
+});
+
+describe("StateSelectorModal — Spanish translations", () => {
+  beforeEach(() => {
+    localStorage.setItem("lang", "es");
+  });
+
+  afterEach(() => {
+    localStorage.clear();
+  });
+
+  function renderEs() {
+    return render(
+      <LanguageProvider>
+        <StateSelectorModal
+          stateCodes={["TX", "NM"]}
+          onSelect={vi.fn()}
+          onCancel={vi.fn()}
+        />
+      </LanguageProvider>,
+    );
+  }
+
+  it("shows Spanish title", () => {
+    renderEs();
+    expect(
+      screen.getByText("¿En qué estado vas a votar?"),
+    ).toBeInTheDocument();
+  });
+
+  it("shows Spanish subtitle", () => {
+    renderEs();
+    expect(
+      screen.getByText("Este código postal abarca varios estados."),
+    ).toBeInTheDocument();
+  });
+
+  it("shows Spanish cancel button", () => {
+    renderEs();
+    expect(screen.getByText("Cancelar")).toBeInTheDocument();
   });
 });

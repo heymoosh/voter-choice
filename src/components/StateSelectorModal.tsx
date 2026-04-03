@@ -1,5 +1,7 @@
 "use client";
 
+import { useLanguage } from "../lib/i18n";
+
 const STATE_NAMES: Record<string, string> = {
   TX: "Texas",
   CA: "California",
@@ -23,6 +25,8 @@ export function StateSelectorModal({
   onSelect,
   onCancel,
 }: StateSelectorModalProps) {
+  const { t } = useLanguage();
+
   return (
     <div
       data-testid="state-selector"
@@ -33,10 +37,10 @@ export function StateSelectorModal({
     >
       <div className="bg-white rounded-xl p-6 max-w-sm w-full shadow-xl">
         <h2 id="state-selector-title" className="text-lg font-semibold mb-2">
-          Which state are you voting in?
+          {t.stateSelector.title}
         </h2>
         <p className="text-sm text-gray-600 mb-4">
-          This zip code spans multiple states.
+          {t.stateSelector.subtitle}
         </p>
         <div className="flex flex-col gap-2 mb-4">
           {stateCodes.map((code) => (
@@ -52,9 +56,9 @@ export function StateSelectorModal({
         <button
           onClick={onCancel}
           className="w-full text-center text-sm text-gray-500 hover:text-gray-700 min-h-[44px]"
-          aria-label="Cancel state selection"
+          aria-label={t.stateSelector.cancelAriaLabel}
         >
-          Cancel
+          {t.stateSelector.cancel}
         </button>
       </div>
     </div>
