@@ -45,11 +45,11 @@ export function computeDeadlineStatus(
   return { date: deadline, daysLeft, label, urgency };
 }
 
-/** Formats "YYYY-MM-DD" as "Month D, YYYY". */
-export function formatDate(isoDate: string): string {
+/** Formats "YYYY-MM-DD" as a locale-aware date string. Defaults to en-US. */
+export function formatDate(isoDate: string, locale: string = "en-US"): string {
   const [year, month, day] = isoDate.split("-").map(Number);
   const d = new Date(Date.UTC(year, month - 1, day));
-  return d.toLocaleDateString("en-US", {
+  return d.toLocaleDateString(locale, {
     year: "numeric",
     month: "long",
     day: "numeric",

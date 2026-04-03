@@ -108,4 +108,14 @@ describe("formatDate", () => {
     expect(formatDate("2026-11-03")).toBe("November 3, 2026");
     expect(formatDate("2026-03-21")).toBe("March 21, 2026");
   });
+
+  it("formats date in Spanish locale (es-US) as 'D de mes de YYYY'", () => {
+    expect(formatDate("2026-03-03", "es-US")).toBe("3 de marzo de 2026");
+    expect(formatDate("2026-11-03", "es-US")).toBe("3 de noviembre de 2026");
+    expect(formatDate("2026-02-02", "es-US")).toBe("2 de febrero de 2026");
+  });
+
+  it("defaults to English (en-US) when no locale provided", () => {
+    expect(formatDate("2026-11-03")).toBe("November 3, 2026");
+  });
 });
