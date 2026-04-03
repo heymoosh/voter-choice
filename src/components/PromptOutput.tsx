@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import { useLanguage } from "../lib/i18n";
 
 interface PromptOutputProps {
   promptText: string;
@@ -9,6 +10,7 @@ interface PromptOutputProps {
 export function PromptOutput({ promptText }: PromptOutputProps) {
   const [copied, setCopied] = useState(false);
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
+  const { t } = useLanguage();
 
   async function handleCopy() {
     try {
@@ -26,7 +28,7 @@ export function PromptOutput({ promptText }: PromptOutputProps) {
   return (
     <section className="mt-6">
       <div className="flex items-center justify-between mb-3">
-        <h2 className="text-lg font-semibold">Your Customized Prompt</h2>
+        <h2 className="text-lg font-semibold">{t.promptOutput.title}</h2>
         <div className="flex items-center gap-2">
           {copied && (
             <span
@@ -35,22 +37,20 @@ export function PromptOutput({ promptText }: PromptOutputProps) {
               aria-live="polite"
               className="text-green-600 text-sm font-medium flex items-center gap-1"
             >
-              ✓ Copied!
+              {t.promptOutput.copiedStatus}
             </span>
           )}
           <button
             data-testid="copy-button"
             onClick={handleCopy}
             className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors min-h-[44px]"
-            aria-label="Copy prompt to clipboard"
+            aria-label={t.promptOutput.copyAriaLabel}
           >
-            {copied ? "Copied!" : "Copy to Clipboard"}
+            {copied ? t.promptOutput.copiedButton : t.promptOutput.copyButton}
           </button>
         </div>
       </div>
-      <p className="text-sm text-gray-600 mb-3">
-        Copy this prompt and paste it as your first message in any AI chatbot.
-      </p>
+      <p className="text-sm text-gray-600 mb-3">{t.promptOutput.instructions}</p>
       <textarea
         ref={textAreaRef}
         data-testid="prompt-output"
