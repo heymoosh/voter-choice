@@ -49,8 +49,8 @@ development_status:
   epic-1-retrospective: optional
 
   # Epic 2: Language Toggle Component
-  epic-2: backlog
-  2-1-build-accessible-language-toggle-component: backlog
+  epic-2: done
+  2-1-build-accessible-language-toggle-component: done
   epic-2-retrospective: optional
 
   # Epic 3: UI Translation — All Components

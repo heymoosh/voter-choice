@@ -1,5 +1,6 @@
 import BallotToolClient from "../components/BallotToolClient";
 import { LanguageProvider } from "../lib/i18n";
+import LanguageToggle from "../components/LanguageToggle";
 
 const CHATBOTS = [
   { name: "Claude", url: "https://claude.ai" },
@@ -11,7 +12,8 @@ const CHATBOTS = [
 export default function Home() {
   return (
     <LanguageProvider>
-    <div className="min-h-screen flex flex-col">
+      <LanguageToggle />
+      <div className="min-h-screen flex flex-col">
       <main id="main-content" className="flex-1">
         {/* Hero Section */}
         <section className="bg-[#1e3a5f] text-white py-12 px-4 sm:px-8">
