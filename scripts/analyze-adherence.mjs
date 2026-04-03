@@ -392,7 +392,8 @@ function analyzeMeasurementJSON(branch) {
   }
 
   // Read the latest measurement JSON
-  const latestFile = `metrics/${jsonFiles[jsonFiles.length - 1]}`;
+  // jsonFiles already contain full paths (e.g. "metrics/baseline.json") from git ls-tree
+  const latestFile = jsonFiles[jsonFiles.length - 1];
   let content;
   try {
     content = run(`git show ${branch}:${latestFile} 2>/dev/null`);

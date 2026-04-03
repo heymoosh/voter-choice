@@ -1,0 +1,97 @@
+{
+  "metadata": {
+    "timestamp": "2026-04-03T14:45:32.498Z",
+    "branch": "run3/superpowers"
+  },
+  "tdd": {
+    "totalCommitsInSrc": 25,
+    "testOnlyCommits": 0,
+    "implOnlyCommits": 4,
+    "mixedCommits": 21,
+    "uniqueTestFiles": 12,
+    "uniqueImplFiles": 16,
+    "tddOrderCorrect": 0,
+    "tddOrderViolated": 0,
+    "tddNeutral": 0,
+    "tddUnchecked": 12,
+    "tddScore": null,
+    "tddCoverage": 0
+  },
+  "workflowLog": {
+    "framework": "superpowers",
+    "expected": [
+      "brainstorming",
+      "writing-plans",
+      "executing-plans",
+      "requesting-code-review",
+      "verification-before-completion",
+      "finishing-a-development-branch"
+    ],
+    "completed": [
+      "brainstorming",
+      "writing-plans",
+      "executing-plans",
+      "requesting-code-review",
+      "verification-before-completion",
+      "finishing-a-development-branch",
+      "brainstorming",
+      "writing-plans",
+      "executing-plans",
+      "requesting-code-review",
+      "verification-before-completion",
+      "finishing-a-development-branch"
+    ],
+    "missing": []
+  },
+  "buildStats": {
+    "commitCount": 43,
+    "diffStat": "105 files changed, 19529 insertions(+), 125 deletions(-)"
+  },
+  "timing": {
+    "exists": true,
+    "hasStart": true,
+    "hasEnd": true,
+    "model": "claude-sonnet-4-6",
+    "durationMinutes": 54
+  },
+  "measurement": {
+    "exists": true,
+    "file": "metrics/baseline.json",
+    "fields": {
+      "duplication": {
+        "duplicatedLines": 10,
+        "totalLines": 1914,
+        "percentage": 0.52,
+        "clones": 1
+      },
+      "bundleSize": {
+        "buildSuccess": true,
+        "pages": [
+          {
+            "route": "/",
+            "size": 13.6,
+            "unit": "kB"
+          },
+          {
+            "route": "/_not-found",
+            "size": 992,
+            "unit": "B"
+          }
+        ],
+        "firstLoadJsShared": {
+          "size": 102,
+          "unit": "kB"
+        }
+      }
+    },
+    "missing": [
+      "eslintErrors",
+      "eslintWarnings",
+      "e2eTotal",
+      "e2ePassed",
+      "vitestTotal",
+      "vitestPassed",
+      "loc"
+    ]
+  }
+}
