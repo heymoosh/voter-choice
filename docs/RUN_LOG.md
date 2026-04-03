@@ -2,7 +2,28 @@
 
 ## Next
 
-Phase 3: Analysis and write-up. All 5 Phase 2 runs complete. Aggregate cross-framework metrics from `metrics/` JSON files across all branches, produce comparison tables, and draft the experiment write-up in `docs/ANALYSIS.md`.
+Experiment complete. `docs/ANALYSIS.md` contains the full write-up. Optional follow-up: Muxin review of findings, deploy winning branch (Spec Kit or Superpowers recommended) to Vercel, populate full 50-state JSON data.
+
+## Completed
+
+### Phase 3 — Analysis and Write-up (complete)
+
+- **Date:** 2026-04-03
+- **Branch:** `main`
+- **Commit:** (see below)
+- **What was done:** Aggregated cross-framework metrics from all Phase 1 and Phase 2 measurement JSONs. Compiled comparison tables across 5 dimensions: code quality (e2e, unit tests, coverage, ESLint, duplication, bundle), code size (LOC, files, commit count), framework adherence (workflow completion, TDD score, artifacts), extensibility (Phase 1→2 deltas), and build timing. Drafted `docs/ANALYSIS.md` (~350 lines) covering executive summary, experiment setup, methodology, per-phase results, composite comparison, 7 key findings, and a recommendation.
+- **Key findings:**
+  1. All 4 framework-guided builds shipped 42/42 e2e passing. Vanilla shipped 36/42 (85.7%) with 6 pre-existing failures never fixed.
+  2. Without explicit enforcement, frameworks are bypassed — see Learning 001. This is itself a finding about autonomous AI coding.
+  3. Test coverage varies 3× between frameworks: Spec Kit/Superpowers (TDD Iron Law) → 88–92%; CE/BMAD → 17–38%.
+  4. BMAD uniquely extended the e2e suite in Phase 2 (+20 tests, 62/62 final). All other frameworks maintained 42/42.
+  5. CE added 0 new unit tests in Phase 2 — Spanish i18n shipped without test coverage.
+  6. Planning overhead is real: Vanilla ~14 min < CE ~21 min < Spec Kit ~37 min < Superpowers ~54 min < BMAD ~90 min.
+  7. All Phase 2 codebases are Green scale (< 40 files / < 3k LOC) — scope appropriate for the experiment.
+- **Recommendation:** Spec Kit or Superpowers for maintenance-longevity projects; CE for speed with stable spec; BMAD for multi-sprint feature growth.
+- **Files created:** `docs/ANALYSIS.md`
+- **Issues or deviations:** Lighthouse Phase 2 data available only for Spec Kit (container limitation). Phase 1 build duration not machine-measured (only Phase 2 timing.jsonl captured). Vanilla Phase 2 metrics not re-run (RUN_LOG values used).
+- **Operator notes:** Autonomous session.
 
 ## Completed
 
