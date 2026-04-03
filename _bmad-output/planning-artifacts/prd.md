@@ -15,43 +15,53 @@ stepsCompleted:
   - step-11-polish
   - step-12-complete
 inputDocuments:
-  - '_bmad-output/planning-artifacts/product-brief-voter-choice-2026-03-31.md'
-  - '_bmad-output/brainstorming/brainstorming-session-2026-03-31-0200.md'
+  - '_bmad-output/planning-artifacts/product-brief-voter-choice-2026-04-03.md'
+  - '_bmad-output/brainstorming/brainstorming-session-2026-04-03-2100.md'
+  - 'docs/PHASE2_SPEC.md'
   - 'docs/PROJECT_SPEC.md'
   - 'docs/BALLOT_PROMPT.md'
 workflowType: 'prd'
 classification:
-  projectType: 'web-app'
+  projectType: 'web-app-extension'
   domain: 'civic-technology'
   complexity: 'low'
-  projectContext: 'greenfield'
+  projectContext: 'brownfield'
 ---
 
-# Product Requirements Document - voter-choice
+# Product Requirements Document - voter-choice (Phase 2: Spanish Language Support)
 
 **Author:** Muxin
-**Date:** 2026-03-31
+**Date:** 2026-04-03
+
+---
 
 ## Executive Summary
 
-The Ballot Research Tool is a single-page web application that helps U.S. voters research their ballot using AI chatbots. Users enter their zip code, view state-specific election information (deadlines, early voting, voter ID rules), and receive a customized AI prompt pre-filled with local context. They copy the prompt into any free AI chatbot (Claude, ChatGPT, Gemini, Grok) to begin an interactive ballot research session.
+The voter-choice ballot research tool adds Spanish language support (Phase 2) to serve Spanish-speaking voters who are currently excluded from its core value. The app currently has 42 E2e tests passing, 0 ESLint errors, and Lighthouse 100/100 scores from Phase 1. Phase 2 adds a bilingual experience without regressions.
 
-The tool serves as a bridge between static election data and AI-powered research — it does NOT host or run an LLM, store user data, or require authentication. All data comes from static JSON files served via Next.js.
+**The Core Change:** A language toggle switches the entire app experience — UI chrome, error messages, tips, footer, and most critically the personalized AI prompt output — between English and Spanish. The switch is instant (no reload), stateful (results remain visible), and persistent (localStorage). Architecture ensures adding a third language requires only new translation content, zero component changes.
 
-### What Makes This Special
+**What Does NOT Change:** Application logic, data model, page layout, existing `data-testid` attributes, or any Phase 1 acceptance criteria.
 
-- **Prompt-first design:** The product IS the generated prompt. The state info display supports the prompt, not the other way around.
-- **Chatbot-agnostic:** Works with any AI chatbot. Zero vendor lock-in.
-- **Zero friction:** No signup, no tracking. Enter zip → copy prompt → paste → research. Under 30 seconds.
-- **Mobile-first civic tool:** Designed for viral social media traffic — most users on phones.
-- **Static and fast:** Pre-compiled JSON, no API calls, no server computation.
+---
 
-## Project Classification
+## Product Vision
 
-- **Project Type:** Single-page web application (Next.js + TypeScript + Tailwind CSS)
-- **Domain:** Civic technology / voter information
-- **Complexity:** Low (no auth, no database, no external APIs, static data)
-- **Project Context:** Greenfield — building from scaffold with Next.js 15, ESLint, Prettier, and stub state data already in place
+### Problem Statement
+
+Spanish-speaking voters cannot effectively use the ballot research tool in its current English-only state. The AI prompt output — the core product value — is entirely in English, making it useless for Spanish-language chatbot sessions.
+
+### Proposed Solution
+
+Full bilingual support (English + Spanish) using a React Context + typed TypeScript translation store. A fixed-position language toggle is always visible. Switching language updates all UI text and the prompt output in real time. The page `lang` attribute updates for screen reader compatibility.
+
+### Key Differentiators
+
+- Prompt localization (not just UI chrome translation)
+- Fluent civic Spanish written for native speakers, not machine-translated
+- No external i18n library — typed TypeScript, simple, extensible
+- SSR hydration guard prevents React hydration mismatch
+- Error-as-key pattern enables live error translation (FR-018)
 
 ---
 
@@ -59,310 +69,283 @@ The tool serves as a bridge between static election data and AI-powered research
 
 ### User Success
 
-| Criterion | Target | How Measured |
-|-----------|--------|--------------|
-| User can enter zip and get customized prompt | 100% for stub states | Playwright e2e tests |
-| Time from page load to copied prompt | <30 seconds | Manual UX evaluation |
-| Error states handled clearly | All 6 error cases per spec | Playwright e2e tests |
-| Multi-state zip resolved correctly | 86515 → AZ/NM selector works | Playwright e2e test |
-| Prompt contains all required context fields | 100% per spec | Unit tests + e2e tests |
+- Spanish-mode sessions result in a usable AI prompt that can be pasted into a Spanish-language chatbot
+- Language switch is discoverable (top-right, always visible) and operable by keyboard
+- Language preference persists across page refreshes
+- App state (zip results) is preserved when language switches
 
 ### Technical Success
 
-| Criterion | Target | How Measured |
-|-----------|--------|--------------|
-| Lighthouse Performance | ≥90 | npm run measure |
-| Lighthouse Accessibility | ≥90 | npm run measure |
-| Lighthouse Best Practices | ≥90 | npm run measure |
-| Lighthouse SEO | ≥90 | npm run measure |
-| Playwright e2e pass rate | 42/42 (100%) | npm run measure |
-| ESLint errors | 0 | npm run measure |
-| ESLint warnings | 0 | npm run measure |
-| Code duplication | <5% | npm run measure |
-| First load JS | <120 KB | npm run measure |
-| Production build | Succeeds | next build |
+- 100% of 42 Phase 1 E2e tests continue to pass
+- New E2e and unit tests cover all i18n functionality
+- ESLint: 0 errors, 0 warnings
+- Bundle: shared first load JS ≤130 kB
+- Lighthouse accessibility: 100 (WCAG AA maintained)
+- `lang` attribute on `<html>` updates correctly on switch
 
 ### Business Success
 
-| Criterion | Target | How Measured |
-|-----------|--------|--------------|
-| All 14 data-testid attributes present | 100% | Playwright e2e tests |
-| Responsive at 3 breakpoints | Mobile/tablet/desktop | Manual + e2e |
-| WCAG AA compliance | All requirements met | Lighthouse + manual |
-| Keyboard navigation complete | Full tab order | Manual + e2e |
+- Spanish-speaking voters can use the tool from day 1 post-launch
+- Civic organizations can demonstrate the tool in Spanish outreach
+- Architecture is confirmed extensible to a third language
 
 ---
 
 ## User Journeys
 
-### Journey 1: The Motivated Voter (Jordan)
+### Journey 1: Spanish-Dominant First-Time Voter (María)
 
-Jordan (28) sees the tool shared on Reddit. They open it on their phone, see a clear headline explaining the concept, and immediately enter their zip code (73301). The page displays Texas election information — primary on March 3, registration deadline February 2 (marked red: "Passed"), early voting February 17-28. Below the info card, a customized prompt is ready with all their state details pre-filled. Jordan taps "Copy to Clipboard," sees "Copied!" confirmation, switches to the Claude app, pastes the prompt, and starts researching their ballot within 45 seconds of landing.
+1. Arrives at site via WhatsApp link — sees English interface
+2. Notices "Español" toggle in top-right corner (always visible)
+3. Clicks toggle — all text switches to Spanish instantly, no reload
+4. Enters her zip code in the now-Spanish input field
+5. Gets results with Spanish labels, deadline status in Spanish ("Quedan 12 días")
+6. Copies Spanish AI prompt and pastes into Claude in Spanish
+7. Refreshes page — language is still Spanish (localStorage persisted)
 
-**Key interactions:** Zip entry → state info review → copy prompt → external chatbot
-**Success moment:** Pasting the prompt and getting an immediately useful, personalized response from the chatbot.
+**Critical moment:** Step 2. If the toggle is not discoverable at first glance, María leaves. Fixed top-right position with "Español" text (not icon-only) ensures discoverability.
 
-### Journey 2: The Multi-State Border Voter (Ana)
+### Journey 2: Bilingual Voter Switching Mid-Session (Carlos)
 
-Ana (34) lives near the AZ/NM border. She enters 86515 and sees: "This zip code spans multiple states. Which state are you voting in?" with radio buttons for Arizona and New Mexico. She selects New Mexico, reviews her election info, copies the prompt, and pastes it into ChatGPT. Later she comes back, enters the same zip, selects Arizona to check her mother's election info.
+1. Enters zip code in English — sees results
+2. Realizes his mother is watching — switches to Español
+3. **Results remain visible** (state preserved on switch)
+4. Clicks "Copiar en el portapapeles" — prompt is in Spanish
+5. Switches back to English for himself — results still visible
 
-**Key interactions:** Zip entry → state selector → state info → copy
-**Success moment:** Easy state switching without re-entering zip code.
+**Critical moment:** Step 3. App state preservation on language switch is non-negotiable.
 
-### Journey 3: The Error Recovery Voter (Mike)
+### Journey 3: Voter Who Submitted English, Then Switched to Spanish
 
-Mike (65) types "9021" (only 4 digits) and hits submit. He sees: "Please enter a valid 5-digit zip code." He fixes it to "90210" and gets California election info. He tries his friend's zip "00000" and sees: "We don't have data for this zip code yet." He returns to the tool later with a valid zip and completes the flow.
+1. Submits zip code — English error: "Please enter a valid 5-digit zip code"
+2. Switches to Spanish
+3. Error updates to "Por favor ingresa un código postal válido de 5 dígitos" **without re-submission**
 
-**Key interactions:** Invalid input → error message → correction → success
-**Success moment:** Clear error guidance leads to successful completion.
+**Critical moment:** Step 3. This is the FR-018 / error-as-key pattern. Errors must be stored as translation keys, not translated strings.
 
-### Journey 4: The Advocacy Sharer (Maria)
+### Journey 4: Screen Reader User Switching Language
 
-Maria (45) uses the tool herself, then shares the URL with her extended family via group text. Each person enters their own zip code and gets their state-specific prompt. Maria also looks up zip codes for family in different states.
-
-**Key interactions:** Self-use → share URL → multi-state lookups
-**Success moment:** Family members successfully using the tool independently.
+1. Navigating with screen reader, finds language toggle (labeled "Cambiar a Español")
+2. Activates toggle with Enter/Space
+3. Screen reader announces "Idioma cambiado a español" via aria-live region
+4. `lang` attribute updates to "es" — screen reader uses Spanish pronunciation rules
 
 ---
 
 ## Domain Requirements
 
-### Civic Technology Considerations
+### Civic Technology
 
-- **Nonpartisan presentation:** Visual design must avoid partisan color associations (no red/blue primary colors). Use neutral palette (navy, teal, warm gold).
-- **Data accuracy transparency:** Display "Data last updated: [date]" for each state. Link to official sources for verification.
-- **Accessibility as functional requirement:** This is a civic tool for ALL voters. WCAG AA is a minimum, not a stretch goal.
-- **Phone-at-polls awareness:** The prompt output and tips section must remind voters that many states prohibit phones at polling places.
-- **Trust through transparency:** The generated prompt is fully visible before copying. Users see exactly what they'll send to the chatbot.
+- All translated content must be accurate and usable for civic purposes
+- Spanish civic terminology must be consistent: "código postal", "boleta", "fecha límite de registro", "votación anticipada", "identificación para votar"
+- Date formatting must follow Spanish locale conventions ("3 de abril de 2026")
+- "tú" (informal) voice throughout — consistent with the conversational English original
+- Deadline status strings: "Quedan X días" / "Plazo pasado" must be clear to non-technical voters
 
-### No Compliance Requirements
+### Accessibility (WCAG 2.1 AA)
 
-- No PII storage (no GDPR/CCPA concerns)
-- No financial data (no PCI)
-- No health data (no HIPAA)
-- No authentication (no credential storage)
+- `<html lang>` attribute must update on language switch (WCAG 3.1.1 — Language of Page)
+- Language toggle must be keyboard operable (Enter/Space)
+- Language toggle must have visible focus indicator
+- `aria-live="polite"` region announces language change
+- Toggle must have accessible name in both languages (`aria-label` updates with current language)
+- Spanish text that is longer than English equivalent must not break layouts at any breakpoint
+
+---
+
+## Innovation Patterns
+
+### Hydration Guard Pattern
+
+**Why It Matters:** Next.js pre-renders HTML on the server, which has no access to localStorage. If `LanguageProvider` initializes from localStorage on the server, React's hydration diff will fail (server rendered "en", client renders "es" → hydration error).
+
+**Pattern:** `LanguageProvider` initializes to `'en'` unconditionally. After mount, `useEffect` reads localStorage and applies stored preference. This two-pass render eliminates hydration mismatches without page flash.
+
+### Error-as-Key Pattern (FR-018)
+
+**Why It Matters:** React state stores strings. If an error message string is stored in component state, it captures the translated string at the moment of submission. Switching language later does not update the frozen string.
+
+**Pattern:** State stores translation keys (e.g., `'errors.zipInvalid'`), never translated strings. The render layer calls `t(errorKey)` to display — this re-evaluates on every render with current language context, so errors update live on language switch.
+
+### Typed Translation Store
+
+**Why It Matters:** For a 2-language app, missing a translation key causes a runtime `undefined` display bug. TypeScript can prevent this at compile time.
+
+**Pattern:** `Translations` interface defines every key. EN and ES objects must implement `Translations` completely. TypeScript build fails if any key is missing from either language.
+
+---
+
+## Project Type Requirements
+
+**Type:** Web App Extension (brownfield, adding i18n to existing Phase 1 app)
+
+- Must not break any Phase 1 functionality
+- All existing `data-testid` attributes must remain unchanged
+- New `data-testid="language-toggle"` is additive
+- Component interfaces are extended, not replaced (e.g., `generatePrompt(state, lang?)`)
+- Default exports and function signatures remain backward compatible
+
+---
+
+## MVP Scope
+
+### In Scope
+
+**1. Translation Infrastructure**
+- `src/lib/translations.ts` — `Translations` interface + EN + ES records (all UI strings)
+- `src/lib/i18n.tsx` — `LanguageProvider` with SSR hydration guard, `useLanguage()` hook, localStorage persistence
+- `document.documentElement.lang` sync on language switch
+
+**2. Language Toggle Component**
+- `src/components/LanguageToggle.tsx`
+- Fixed position top-right (`position: fixed; top: 1rem; right: 1rem`)
+- Shows non-active language: "Español" in English mode, "English" in Spanish mode
+- `data-testid="language-toggle"`
+- Keyboard accessible (`<button>`, Enter/Space)
+- `aria-label` updates with language context
+- `aria-live="polite"` region for switch announcement
+
+**3. Component Translation**
+All existing components updated to use `useLanguage()`:
+- `ZipForm.tsx` — label, placeholder, submit button, all error messages (error-as-key pattern)
+- `StateInfoCard.tsx` — all field labels, deadline status strings
+- `PromptOutput.tsx` — section headers, copy button, instructions
+- `BallotToolClient.tsx` — multi-state selector prompt, state results wrapper
+- `app/page.tsx` or `PageContent.tsx` — hero, tips, footer, skip-to-content
+
+**4. Prompt Localization**
+- `BALLOT_PROMPT_ES` — complete Spanish translation of BALLOT_PROMPT.md in "tú" voice
+- `buildContextBlockEs(state)` — Spanish structural labels, English data values
+- `generatePrompt(state, lang?)` extended with optional lang param (defaults to 'en')
+
+**5. Date/Dynamic String Localization**
+- `formatDate(date, locale?)` — uses `Intl.DateTimeFormat`, handles en/es locale
+- `getDeadlineStatus(date, lang?)` — returns "Quedan X días" / "X days left" etc.
+
+**6. Tests**
+- Unit tests: translations completeness, i18n hook, prompt Spanish output, date locale, deadline status Spanish
+- E2e tests: toggle click switches language, Spanish UI renders, state preserved on switch, language persists across navigation
+
+### Out of Scope (Phase 2)
+
+Per PHASE2_SPEC.md:
+- Translating election data values from JSON (state names, election names, ID types)
+- Auto-detecting browser language
+- URL-based language routing
+- RTL language support
+- Third language implementation (architecture supports it; content not created)
+- Chatbot name translation (proper nouns)
+- Data model changes
 
 ---
 
 ## Functional Requirements
 
-### FR-1: Zip Code Entry
+### Language Toggle
 
-| ID | Requirement | Priority |
-|----|-------------|----------|
-| FR-1.1 | Single text input accepts 5-digit numeric zip codes | Must |
-| FR-1.2 | Submit button triggers lookup | Must |
-| FR-1.3 | Empty input shows: "Please enter a zip code" | Must |
-| FR-1.4 | Non-numeric or wrong length shows: "Please enter a valid 5-digit zip code" | Must |
-| FR-1.5 | Input has `data-testid="zip-input"` | Must |
-| FR-1.6 | Submit button has `data-testid="zip-submit"` | Must |
-| FR-1.7 | Error container has `data-testid="zip-error"` | Must |
+- FR-001: User can switch the app language between English and Spanish via a visible toggle
+- FR-002: The language toggle is visible at all times, regardless of scroll position
+- FR-003: Language switch takes effect immediately without a page reload
+- FR-004: Language switch does not clear or reset application state (submitted zip code results remain visible)
+- FR-005: The selected language persists when the user refreshes the page
+- FR-006: The language toggle is keyboard accessible and operable via Enter and Space keys
+- FR-007: The toggle has `data-testid="language-toggle"` for automated testing
 
-### FR-2: State Lookup
+### UI Translation — English Mode
 
-| ID | Requirement | Priority |
-|----|-------------|----------|
-| FR-2.1 | Look up state(s) from zip-to-state.json | Must |
-| FR-2.2 | Valid zip loads state JSON data | Must |
-| FR-2.3 | Unknown zip shows "not found" message with `data-testid="not-found-message"` | Must |
-| FR-2.4 | Multi-state zip shows state selector with `data-testid="state-selector"` | Must |
+- FR-008: All UI text (labels, placeholders, buttons, instructions, tips, footer) is displayed in English when English is active
+- FR-009: All error messages are displayed in English when English is active
+- FR-010: The AI prompt output (main prompt + context block) is generated in English when English is active
 
-### FR-3: State Info Display
+### UI Translation — Spanish Mode
 
-| ID | Requirement | Priority |
-|----|-------------|----------|
-| FR-3.1 | Display state name, next election name and date | Must |
-| FR-3.2 | Show registration deadlines (online, by mail, in person) with status indicators | Must |
-| FR-3.3 | Status indicators: green (>14 days), yellow (≤14 days), red (≤3 days), gray (passed) | Must |
-| FR-3.4 | Show early voting dates or "Not available" | Must |
-| FR-3.5 | Show voter ID requirements and accepted IDs | Must |
-| FR-3.6 | Show phone-at-polls policy and details | Must |
-| FR-3.7 | Link to state election website and sample ballot lookup | Must |
-| FR-3.8 | Container has `data-testid="state-info"` | Must |
-| FR-3.9 | Election name has `data-testid="election-name"` | Must |
-| FR-3.10 | Election date has `data-testid="election-date"` | Must |
-| FR-3.11 | Registration section has `data-testid="registration-status"` | Must |
-| FR-3.12 | No upcoming election shows message with `data-testid="no-election-message"` | Must |
+- FR-011: All UI text (labels, placeholders, buttons, instructions, tips, footer) is displayed in Spanish when Spanish is active
+- FR-012: All error messages are displayed in Spanish when Spanish is active
+- FR-013: The AI prompt output (main prompt + context block) is generated in Spanish when Spanish is active
+- FR-014: Date values are formatted in Spanish locale convention (e.g., "3 de abril de 2026") when Spanish is active
+- FR-015: Deadline status indicators display in Spanish (e.g., "Quedan X días", "Plazo pasado") when Spanish is active
 
-### FR-4: Prompt Generation
+### Prompt Localization
 
-| ID | Requirement | Priority |
-|----|-------------|----------|
-| FR-4.1 | Generate full prompt from BALLOT_PROMPT.md template | Must |
-| FR-4.2 | Append state-specific context block with: election name/date/type, registration deadlines, early voting dates, voter ID info, phone policy, sample ballot link, county election link | Must |
-| FR-4.3 | Prompt output container has `data-testid="prompt-output"` | Must |
+- FR-016: The full ballot prompt (Part 1) is available as a complete, fluent Spanish translation
+- FR-017: The pre-filled context block (Part 2) uses Spanish structural labels when Spanish is active, with data values (state name, election name, dates, URLs) in their original form
+- FR-018: Error messages update to the active language when language is switched, without requiring re-submission of the form
 
-### FR-5: Copy to Clipboard
+### Accessibility
 
-| ID | Requirement | Priority |
-|----|-------------|----------|
-| FR-5.1 | Copy button copies full prompt + context as plain text | Must |
-| FR-5.2 | Button shows "Copy to Clipboard" default, "Copied!" for 2 seconds after copy | Must |
-| FR-5.3 | Fallback: select-all text with Ctrl+C/Cmd+C instructions if Clipboard API unavailable | Must |
-| FR-5.4 | Copy button has `data-testid="copy-button"` | Must |
-| FR-5.5 | Confirmation has `data-testid="copy-confirmation"` | Must |
+- FR-019: The page `lang` attribute updates to match the active language when language is switched
+- FR-020: Screen readers receive an announcement when the language is switched
+- FR-021: The language toggle has an accessible name that describes its purpose in the current language
 
-### FR-6: Hero Section
+### Architecture
 
-| ID | Requirement | Priority |
-|----|-------------|----------|
-| FR-6.1 | Headline explaining tool in one sentence | Must |
-| FR-6.2 | Subtitle (2-3 sentences) explaining: enter zip → get prompt → paste into chatbot | Must |
-| FR-6.3 | Visual list of supported chatbots (Claude, ChatGPT, Gemini, Grok) with links | Must |
-
-### FR-7: Tips Section
-
-| ID | Requirement | Priority |
-|----|-------------|----------|
-| FR-7.1 | Static tips for effective AI ballot research | Must |
-| FR-7.2 | Reminder that AI can make mistakes — verify with official sources | Must |
-
-### FR-8: Footer
-
-| ID | Requirement | Priority |
-|----|-------------|----------|
-| FR-8.1 | "Share this tool" call to action | Must |
-| FR-8.2 | Attribution: "Created by a human using AI tools" | Must |
+- FR-022: All Phase 1 acceptance criteria continue to pass after Phase 2 implementation
+- FR-023: All existing `data-testid` attributes from Phase 1 remain unchanged
+- FR-024: Translation content is stored separately from component code (no hardcoded translated strings in JSX)
 
 ---
 
 ## Non-Functional Requirements
 
-### NFR-1: Performance
+### Performance
 
-| ID | Requirement | Target |
-|----|-------------|--------|
-| NFR-1.1 | Lighthouse Performance score | ≥90 |
-| NFR-1.2 | First load JS bundle | <120 KB |
-| NFR-1.3 | Time to Interactive on 3G | <2 seconds |
-| NFR-1.4 | Static JSON data — no external API calls | 0 API calls |
+- Language switch must complete in ≤100ms (client-side React re-render, no network call)
+- No additional bundle size from translation library (zero new dependencies for i18n)
+- Translation data included in initial JS bundle (no lazy loading needed for 2-language app)
 
-### NFR-2: Accessibility
+### Accessibility
 
-| ID | Requirement | Target |
-|----|-------------|--------|
-| NFR-2.1 | WCAG AA color contrast (4.5:1 normal text, 3:1 large text) | Pass |
-| NFR-2.2 | All interactive elements keyboard navigable | 100% |
-| NFR-2.3 | Tab order follows visual layout | Pass |
-| NFR-2.4 | Form inputs have associated `<label>` elements | 100% |
-| NFR-2.5 | Deadline status uses text labels, not only color | Pass |
-| NFR-2.6 | Error messages use `aria-live="polite"` or `role="alert"` | Pass |
-| NFR-2.7 | Skip-to-content link present | Pass |
-| NFR-2.8 | Logical heading hierarchy (h1 > h2 > h3) | Pass |
-| NFR-2.9 | Lighthouse Accessibility score | ≥90 |
+- WCAG 2.1 AA compliance maintained for all new UI elements
+- Language toggle passes WCAG 4.1.2 (Name, Role, Value) — `button` element, aria-label, keyboard
+- WCAG 3.1.1 (Language of Page) — `html[lang]` attribute updates on switch
+- Spanish text layout maintains readability at all breakpoints (Spanish text ~30% longer on average)
+- Color contrast ratio ≥4.5:1 for all translated text
 
-### NFR-3: Responsive Design
+### Reliability
 
-| ID | Requirement | Target |
-|----|-------------|--------|
-| NFR-3.1 | Mobile layout (< 640px / 375px reference) | Pass |
-| NFR-3.2 | Tablet layout (640-1024px / 768px reference) | Pass |
-| NFR-3.3 | Desktop layout (> 1024px / 1280px reference) | Pass |
-| NFR-3.4 | Touch targets minimum 44x44px on mobile | Pass |
-| NFR-3.5 | Prompt output scrollable on mobile without losing copy button | Pass |
+- SSR hydration must complete without React hydration mismatch errors
+- localStorage failure (private browsing, full storage) must not crash the app — default to 'en'
+- Language toggle must work in all supported browsers (Chrome, Firefox, Safari, Edge)
 
-### NFR-4: Code Quality
+### Maintainability
 
-| ID | Requirement | Target |
-|----|-------------|--------|
-| NFR-4.1 | ESLint errors | 0 |
-| NFR-4.2 | ESLint warnings | 0 |
-| NFR-4.3 | Code duplication | <5% |
-| NFR-4.4 | Function complexity (ESLint max) | ≤10 |
-| NFR-4.5 | TypeScript strict mode | Enabled |
-
-### NFR-5: Security
-
-| ID | Requirement | Target |
-|----|-------------|--------|
-| NFR-5.1 | No user data storage | Pass |
-| NFR-5.2 | No external API calls | Pass |
-| NFR-5.3 | No cookies or local storage for tracking | Pass |
-| NFR-5.4 | Security headers (X-Content-Type-Options, X-Frame-Options) | Configured |
+- Adding a third language requires changes only to `translations.ts` (new record), `getDeadlineStatus` (new case), and toggle UI — zero component changes
+- TypeScript compilation must fail if any translation key is missing from either language record
+- Civic Spanish terminology must be consistent across all translation keys (use glossary)
 
 ---
 
-## Technical Architecture
+## Acceptance Criteria Checklist
 
-### Technology Stack
+### Language Toggle
+- [ ] Toggle visible at all times, fixed position top-right
+- [ ] Clicking toggle switches all UI text between EN and ES
+- [ ] Language preference persists across page refreshes
+- [ ] Language switch does not reset app state (results remain visible)
+- [ ] `data-testid="language-toggle"` present
+- [ ] Keyboard accessible (Enter/Space)
 
-- **Framework:** Next.js 15 (App Router)
-- **Language:** TypeScript (strict mode)
-- **Styling:** Tailwind CSS
-- **Testing:** Vitest (unit), Playwright (e2e)
-- **Linting:** ESLint with complexity plugin, Prettier
-- **Build:** Static export via Next.js
+### Translated Content
+- [ ] All UI labels, instructions, error messages, static content in both languages
+- [ ] Full AI prompt (Part 1) available in fluent Spanish
+- [ ] Context block (Part 2) generates correctly in both languages
+- [ ] Date formatting follows language conventions
+- [ ] Deadline status indicators in selected language
+- [ ] Tips section translated
+- [ ] Footer translated
 
-### Component Architecture
+### Data Handling
+- [ ] State election data values display correctly regardless of language
+- [ ] Injected data in prompt context block works in both languages
+- [ ] No regressions from Phase 1
 
-```
-src/
-├── app/
-│   └── page.tsx              # Server Component — data loading, static sections
-├── components/
-│   ├── BallotToolClient.tsx   # Client Component — orchestrates interactive UI
-│   ├── ZipForm.tsx            # Client Component — zip input + validation
-│   ├── StateInfoCard.tsx      # Client Component — election info display
-│   ├── PromptOutput.tsx       # Client Component — prompt display + copy
-│   └── StateSelectorModal.tsx # Client Component — multi-state resolution
-├── lib/
-│   ├── types.ts               # TypeScript interfaces for state data
-│   ├── date-utils.ts          # Deadline calculation, status, formatting
-│   ├── lookupZip.ts           # Zip → state code(s) lookup
-│   ├── getStateData.ts        # State code → election data
-│   └── generatePrompt.ts     # State data → customized prompt text
-└── data/
-    ├── states/
-    │   ├── TX.json
-    │   ├── CA.json
-    │   └── NH.json
-    └── zip-to-state.json
-```
+### Accessibility
+- [ ] `html[lang]` attribute updates on language switch
+- [ ] Language toggle keyboard-accessible
+- [ ] Spanish text does not break layouts at any breakpoint
+- [ ] All Phase 1 accessibility requirements still pass
 
-### Data Flow
-
-```
-User enters zip → lookupZip(zip) → stateCode[]
-  → if multiple: StateSelectorModal → selected stateCode
-  → getStateData(stateCode) → StateElectionData
-  → StateInfoCard renders election info with deadline statuses
-  → generatePrompt(stateData, zip) → full prompt text
-  → PromptOutput renders prompt with copy button
-```
-
-### Key Design Decisions
-
-1. **Server Components for data, Client Components for interaction.** Static content (hero, tips, footer) rendered server-side. Interactive elements (form, copy, selector) are client components.
-2. **Pure function pipeline.** Each lib function is pure: `input → output`. No side effects. Trivially testable.
-3. **Configurable "today" for date calculations.** All date functions accept an optional `today` parameter. Defaults to `new Date()`. Enables deterministic testing.
-4. **Dynamic import for state data.** State JSON loaded on demand after zip submission — keeps initial bundle small.
-
----
-
-## Scope Boundaries
-
-### In Scope (MVP)
-
-- Single-page app with all sections per PROJECT_SPEC.md
-- Zip code lookup from static JSON (TX, CA, NH stub data)
-- Multi-state zip handling
-- State info display with deadline status indicators
-- Prompt generation with state-specific context
-- Copy to clipboard with confirmation
-- All 14 data-testid attributes
-- Mobile-first responsive design (3 breakpoints)
-- WCAG AA accessibility
-- Keyboard navigation
-- Unit tests (Vitest) + e2e tests (Playwright)
-
-### Out of Scope
-
-- LLM hosting or AI conversation
-- User accounts, authentication, data storage
-- Full 50-state dataset
-- Deployment (Vercel)
-- Analytics or tracking
-- Multiple language support (Phase 2)
-- Geolocation
-- Chatbot deep links or API integration
-- Offline/PWA support
+### Architecture
+- [ ] Adding a third language requires only new translation content
+- [ ] Translation content separated from component code
+- [ ] TypeScript enforces translation completeness

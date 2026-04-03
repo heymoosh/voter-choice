@@ -4,415 +4,498 @@ inputDocuments:
   - '_bmad-output/planning-artifacts/prd.md'
   - '_bmad-output/planning-artifacts/architecture.md'
   - '_bmad-output/planning-artifacts/ux-design-specification.md'
-  - 'docs/PROJECT_SPEC.md'
+  - 'docs/PHASE2_SPEC.md'
 ---
 
-# voter-choice - Epic Breakdown
+# voter-choice (Phase 2) - Epic Breakdown
 
 ## Overview
 
-This document provides the complete epic and story breakdown for the Ballot Research Tool, decomposing the requirements from the PRD, UX Design, and Architecture into implementable stories.
+This document provides the complete epic and story breakdown for the Spanish language support extension (Phase 2), decomposing the 24 FRs and NFRs from the PRD into implementable stories organized by user value.
 
 ## Requirements Inventory
 
 ### Functional Requirements
 
-- FR-1: Zip Code Entry (FR-1.1 through FR-1.7)
-- FR-2: State Lookup (FR-2.1 through FR-2.4)
-- FR-3: State Info Display (FR-3.1 through FR-3.12)
-- FR-4: Prompt Generation (FR-4.1 through FR-4.3)
-- FR-5: Copy to Clipboard (FR-5.1 through FR-5.5)
-- FR-6: Hero Section (FR-6.1 through FR-6.3)
-- FR-7: Tips Section (FR-7.1 through FR-7.2)
-- FR-8: Footer (FR-8.1 through FR-8.2)
+- FR-001: User can switch the app language between English and Spanish via a visible toggle
+- FR-002: The language toggle is visible at all times, regardless of scroll position
+- FR-003: Language switch takes effect immediately without a page reload
+- FR-004: Language switch does not clear or reset application state (submitted zip code results remain visible)
+- FR-005: The selected language persists when the user refreshes the page
+- FR-006: The language toggle is keyboard accessible and operable via Enter and Space keys
+- FR-007: The toggle has `data-testid="language-toggle"` for automated testing
+- FR-008: All UI text is displayed in English when English is active
+- FR-009: All error messages are displayed in English when English is active
+- FR-010: The AI prompt output is generated in English when English is active
+- FR-011: All UI text is displayed in Spanish when Spanish is active
+- FR-012: All error messages are displayed in Spanish when Spanish is active
+- FR-013: The AI prompt output is generated in Spanish when Spanish is active
+- FR-014: Date values are formatted in Spanish locale convention when Spanish is active
+- FR-015: Deadline status indicators display in Spanish when Spanish is active
+- FR-016: The full ballot prompt (Part 1) is available as a complete, fluent Spanish translation
+- FR-017: The pre-filled context block (Part 2) uses Spanish structural labels when Spanish is active, with data values in original form
+- FR-018: Error messages update to the active language when language is switched, without re-submission
+- FR-019: The page `lang` attribute updates to match the active language when language is switched
+- FR-020: Screen readers receive an announcement when the language is switched
+- FR-021: The language toggle has an accessible name that describes its purpose in the current language
+- FR-022: All Phase 1 acceptance criteria continue to pass after Phase 2 implementation
+- FR-023: All existing `data-testid` attributes from Phase 1 remain unchanged
+- FR-024: Translation content is stored separately from component code
 
-### Non-Functional Requirements
+### NonFunctional Requirements
 
-- NFR-1: Performance (Lighthouse ≥90, <120KB JS, <2s TTI)
-- NFR-2: Accessibility (WCAG AA, keyboard nav, screen reader, skip-to-content)
-- NFR-3: Responsive Design (mobile/tablet/desktop, 44px+ touch targets)
-- NFR-4: Code Quality (ESLint 0 errors, complexity ≤10, <5% duplication)
-- NFR-5: Security (no data storage, no tracking)
+- NFR-P1: Language switch completes in ≤100ms (client-side re-render, no network call)
+- NFR-P2: No additional bundle size from i18n library (zero new dependencies)
+- NFR-A1: WCAG 2.1 AA compliance maintained for all new UI elements
+- NFR-A2: Toggle passes WCAG 4.1.2 (Name, Role, Value)
+- NFR-A3: WCAG 3.1.1 (Language of Page) — `html[lang]` updates on switch
+- NFR-A4: Spanish text layout maintains readability at all breakpoints
+- NFR-R1: SSR hydration must complete without React hydration mismatch errors
+- NFR-R2: localStorage failure must not crash the app (default to 'en')
+- NFR-M1: Adding a third language requires changes only to translations.ts and function params — zero component changes
+- NFR-M2: TypeScript compilation must fail if any translation key is missing from either language
 
 ### Additional Requirements
 
-- 14 data-testid attributes per PROJECT_SPEC.md
-- Configurable date for testing (architecture decision)
-- Pure function pipeline for data transformation (architecture pattern)
+- Architecture: No i18n library — plain TypeScript typed store + React Context
+- Architecture: SSR hydration guard — initialize to 'en' on server, useEffect applies stored preference
+- Architecture: Error-as-key pattern — state stores translation keys, not translated strings
+- Architecture: `generatePrompt(state, zip, lang?)` — optional lang param, defaults to 'en'
+- Architecture: `formatDate(date, lang?)` — uses `Intl.DateTimeFormat`, defaults to 'en'
+- Architecture: `getDeadlineStatus(date, today, lang?)` — optional lang param, defaults to 'en'
+- Architecture: Implementation sequence — translations.ts first, then i18n.tsx, then LanguageToggle, then page wrapper, then date/prompt utils, then all components
 
 ### UX Design Requirements
 
-- UX-1: System font stack (no web fonts)
-- UX-2: Navy/teal nonpartisan color palette
-- UX-3: Deadline status indicators with color + text labels
-- UX-4: Smooth scroll to results after zip submission
-- UX-5: Focus management for accessibility
-- UX-6: Two-column desktop layout for results
-- UX-7: Sticky copy button on mobile
-- UX-8: Progressive disclosure pattern
+- UX-DR1: Language toggle fixed position top-right (position: fixed, top: 1rem, right: 1rem, z-index: 50)
+- UX-DR2: Toggle shows non-active language ("Español" in EN mode, "English" in ES mode)
+- UX-DR3: No flag icons — full language names only ("Español" / "English")
+- UX-DR4: Instant switch, no animation — synchronous React context update
+- UX-DR5: aria-live="polite" region announces language change to screen readers
+- UX-DR6: Spanish text uses `word-break: break-word` — no truncation on any translated strings
+- UX-DR7: Toggle aria-label describes the action ("Switch to Spanish" / "Switch to English")
+- UX-DR8: Toggle focus ring visible (not suppressed with outline: none)
 
 ### FR Coverage Map
 
-| Epic | FRs Covered |
-|------|------------|
-| Epic 1: Foundation | Types, data layer, date utils |
-| Epic 2: Zip Entry & Lookup | FR-1, FR-2 |
-| Epic 3: State Info Display | FR-3 |
-| Epic 4: Prompt Generation & Copy | FR-4, FR-5 |
-| Epic 5: Page Layout & Static Sections | FR-6, FR-7, FR-8 |
-| Epic 6: Integration & Polish | NFR-1 through NFR-5, UX-1 through UX-8 |
+FR-001: Epic 2 — Language toggle component with setLang handler
+FR-002: Epic 2 — Fixed position CSS
+FR-003: Epic 1 — React Context synchronous update
+FR-004: Epic 1 — Language context separate from app state
+FR-005: Epic 1 — localStorage read/write in LanguageProvider
+FR-006: Epic 2 — Native `<button>` element
+FR-007: Epic 2 — data-testid attribute on button
+FR-008: Epic 3 — EN record in translations.ts used by all components
+FR-009: Epic 3 — Error key lookups return EN strings
+FR-010: Epic 4 — generatePrompt defaults to 'en'
+FR-011: Epic 3 — ES record in translations.ts used by all components
+FR-012: Epic 3 — Error key lookups return ES strings
+FR-013: Epic 4 — generatePrompt(state, zip, 'es') returns Spanish prompt
+FR-014: Epic 4 — formatDate(date, 'es') returns Spanish locale date
+FR-015: Epic 4 — getDeadlineStatus(date, today, 'es') returns Spanish strings
+FR-016: Epic 4 — BALLOT_PROMPT_ES constant
+FR-017: Epic 4 — buildContextBlockEs() function
+FR-018: Epic 3 — Error-as-key pattern in ZipForm
+FR-019: Epic 1 — document.documentElement.lang = lang in useEffect
+FR-020: Epic 2 — aria-live region in LanguageToggle
+FR-021: Epic 2 — aria-label updated per active language
+FR-022: Epic 5 — All 42 Phase 1 E2e tests run and pass
+FR-023: Epic 5 — No existing data-testid attributes removed or modified
+FR-024: Epic 1 — translations.ts is a separate file, not inline in components
 
 ## Epic List
 
-1. **Epic 1: Data Foundation** — Types, lib functions, date utilities, unit tests
-2. **Epic 2: Zip Code Entry & State Lookup** — ZipForm component, validation, zip-to-state lookup, multi-state handling
-3. **Epic 3: State Election Info Display** — StateInfoCard component with deadline indicators
-4. **Epic 4: Prompt Generation & Clipboard** — PromptOutput component, prompt builder, copy functionality
-5. **Epic 5: Page Layout & Static Content** — Hero, tips, footer, page.tsx, BallotToolClient orchestrator
-6. **Epic 6: Integration, Accessibility & Polish** — Responsive layout, accessibility, keyboard nav, e2e tests, build verification
+### Epic 1: i18n Foundation Infrastructure
+
+Establish the language state management foundation that all other epics build upon. After this epic, the app has a `LanguageProvider` that persists language to localStorage, initializes safely on SSR, syncs the `lang` attribute, and exposes `useLanguage()` to all consuming components. The translations store is typed and complete.
+**FRs covered:** FR-003, FR-004, FR-005, FR-019, FR-024, NFR-M2, NFR-R1, NFR-R2
+
+### Epic 2: Language Toggle Component
+
+Add the visible, accessible language switch control. After this epic, users can switch language via a fixed-position button that is keyboard operable, has an accessible name, and announces the switch to screen readers.
+**FRs covered:** FR-001, FR-002, FR-006, FR-007, FR-020, FR-021, UX-DR1 through UX-DR8
+
+### Epic 3: UI Translation — All Components
+
+Update all UI components (ZipForm, StateInfoCard, PromptOutput, BallotToolClient, page-level content) to use `useLanguage()`. After this epic, switching language changes all UI text including error messages (which update live without re-submission).
+**FRs covered:** FR-008, FR-009, FR-011, FR-012, FR-018
+
+### Epic 4: Prompt and Date Localization
+
+Add Spanish prompt output (both main prompt and context block) and locale-aware date/deadline formatting. After this epic, switching to Spanish delivers a complete Spanish experience including the AI prompt the user copies.
+**FRs covered:** FR-010, FR-013, FR-014, FR-015, FR-016, FR-017
+
+### Epic 5: Testing, Regression, and Accessibility Verification
+
+Extend the test suite with E2e tests for the language toggle, Spanish UI rendering, state preservation, and localStorage persistence. Verify all 42 Phase 1 tests still pass and accessibility requirements are met.
+**FRs covered:** FR-022, FR-023, NFR-A1, NFR-A2, NFR-A3, NFR-A4
 
 ---
 
-## Epic 1: Data Foundation
+## Epic 1: i18n Foundation Infrastructure
 
-Build the TypeScript types, pure utility functions, and data access layer that all components depend on. No UI — just testable library code.
+Establish the core language state management layer. This epic creates the translation data store and the React context that all other epics depend on.
 
-### Story 1.1: TypeScript Type Definitions
+### Story 1.1: Create Typed Translation Store
 
 As a developer,
-I want TypeScript interfaces for all state election data structures,
-So that the compiler catches data shape errors before runtime.
+I want a typed TypeScript translation store with complete EN and ES records,
+So that all UI strings have tested translations and TypeScript enforces completeness at compile time.
 
 **Acceptance Criteria:**
 
-**Given** the state data schema from PROJECT_SPEC.md
-**When** I create src/lib/types.ts
-**Then** it exports interfaces: StateElectionData, Election, Registration, RegistrationMethod, EarlyVoting, VotingRules, Resources
-**And** all interfaces match the JSON schema exactly (stateCode, stateName, lastUpdated, elections[], registration, earlyVoting, votingRules, resources)
-**And** DeadlineStatus type is defined as 'safe' | 'warning' | 'urgent' | 'passed'
+**Given** a `Translations` TypeScript interface is defined with all required keys
+**When** `src/lib/translations.ts` is compiled
+**Then** TypeScript fails compilation if any key is missing from either the EN or ES record
 
-### Story 1.2: Date Utility Functions
+**Given** the EN record in translations.ts
+**When** any translation key is accessed via `t(key)`
+**Then** the function returns a non-empty English string (no `undefined` values)
+
+**Given** the ES record in translations.ts
+**When** any translation key is accessed via `t(key)`
+**Then** the function returns a non-empty Spanish string (no `undefined` values)
+
+**Given** the full set of translation keys
+**When** the keys are enumerated
+**Then** they cover: hero, form (label/placeholder/submit), errors (zipEmpty/zipInvalid/zipNotFound/multiState/deadlinePassed/noElection), stateInfo (all field labels), deadline (daysLeft/passed), prompt (heading/instructions/copyButton/copiedButton), tips (heading + all tip strings), footer (credit), a11y (skipToContent/langToggleToEs/langToggleToEn/langChangedToEs/langChangedToEn)
+
+**Given** translations.ts as a standalone module
+**When** it is imported
+**Then** it exports `EN: Translations`, `ES: Translations`, and a `getTranslation(lang, key)` utility function
+
+### Story 1.2: Implement LanguageProvider with SSR Hydration Guard
 
 As a developer,
-I want pure date calculation functions with configurable "today",
-So that deadline statuses are deterministically testable.
+I want a `LanguageProvider` React context with SSR-safe initialization,
+So that the app has a single source of truth for language state that persists to localStorage without causing React hydration errors.
 
 **Acceptance Criteria:**
 
-**Given** a deadline date string and optional today parameter
-**When** I call getDeadlineStatus(deadline, today)
-**Then** it returns 'safe' when >14 days remaining, 'warning' when ≤14 days, 'urgent' when ≤3 days, 'passed' when deadline has passed
-**And** daysUntil(deadline, today) returns the number of days (negative if passed)
-**And** formatDate(isoDate) returns human-readable date string (e.g., "March 3, 2026")
-**And** all functions are pure (no side effects, no Date.now() calls)
-**And** unit tests cover all status thresholds and edge cases (0 days, negative days, exactly 3 days, exactly 14 days)
+**Given** `src/lib/i18n.tsx` is loaded during SSR (Next.js server render)
+**When** `LanguageProvider` initializes
+**Then** `lang` is always `'en'` on the initial render (no localStorage access on server)
 
-### Story 1.3: Zip Lookup Function
+**Given** a user has `'es'` stored in `localStorage['voter-choice-lang']`
+**When** the page finishes hydration (useEffect fires)
+**Then** `lang` updates to `'es'` (stored preference applied after hydration)
 
-As a developer,
-I want a function that maps zip codes to state codes,
-So that the UI can resolve user input to state data.
+**Given** `localStorage` is unavailable (private browsing, full storage)
+**When** `LanguageProvider` initializes
+**Then** `lang` defaults to `'en'` without throwing an error
 
-**Acceptance Criteria:**
+**Given** `lang` is updated via `setLang('es')`
+**When** the effect runs
+**Then** `document.documentElement.lang` is set to `'es'` AND `localStorage['voter-choice-lang']` is set to `'es'`
 
-**Given** a 5-digit zip code string
-**When** I call lookupZip(zip)
-**Then** it returns an array of state codes (e.g., ["TX"] or ["AZ", "NM"])
-**And** returns null or empty array for unknown zip codes
-**And** unit tests cover: single-state zip, multi-state zip, unknown zip
+**Given** `useLanguage()` is called from any client component
+**When** language context is accessed
+**Then** it returns `{ lang, setLang, t }` where `t('form.label')` returns the correct string for the active language
 
-### Story 1.4: State Data Loader
-
-As a developer,
-I want a function that loads state election data by state code,
-So that components can get full state data from a code.
-
-**Acceptance Criteria:**
-
-**Given** a state code string (e.g., "TX")
-**When** I call getStateData(stateCode)
-**Then** it returns the typed StateElectionData object from the JSON file
-**And** returns null for unknown state codes
-**And** unit tests verify data loads correctly for TX, CA, NH
-
-### Story 1.5: Prompt Generation Function
-
-As a developer,
-I want a function that generates the full customized prompt,
-So that the prompt output component has a single source of prompt text.
-
-**Acceptance Criteria:**
-
-**Given** a StateElectionData object, zip code, and today's date
-**When** I call generatePrompt(stateData, zip, today)
-**Then** it returns the full prompt text including:
-- The ballot research prompt template
-- A pre-filled context block with: state name, zip, election name/date/type, registration deadlines with status, early voting dates, voter ID info, phone policy, sample ballot link, county election link
-**And** the context block matches the format in PROJECT_SPEC.md
-**And** unit tests verify prompt generation for TX, CA, NH with snapshot testing
+**Given** `app/page.tsx` or a client wrapper component
+**When** it renders
+**Then** `LanguageProvider` wraps all content that needs translation context
 
 ---
 
-## Epic 2: Zip Code Entry & State Lookup
+## Epic 2: Language Toggle Component
 
-Build the ZipForm component and StateSelectorModal for multi-state zip codes.
+Add the language switch UI element that users interact with to change language. This epic produces a complete, accessible `LanguageToggle` component ready for user testing.
 
-### Story 2.1: ZipForm Component
+### Story 2.1: Build Accessible Language Toggle Component
 
-As a voter,
-I want to enter my 5-digit zip code and submit it,
-So that I can look up my state's election information.
-
-**Acceptance Criteria:**
-
-**Given** the page is loaded
-**When** I see the zip code input
-**Then** it has data-testid="zip-input" and an associated label
-**And** the submit button has data-testid="zip-submit"
-**And** the input accepts only text entry (validation on submit, not on keystroke)
-**And** pressing Enter in the input triggers submission
-
-**Given** I submit an empty input
-**When** validation runs
-**Then** an error "Please enter a zip code" appears in a container with data-testid="zip-error"
-**And** the error has role="alert" for screen reader announcement
-**And** the input gets aria-invalid="true"
-
-**Given** I submit a non-5-digit or non-numeric value
-**When** validation runs
-**Then** an error "Please enter a valid 5-digit zip code" appears
-**And** error clears when I start typing again
-
-### Story 2.2: State Selector for Multi-State Zips
-
-As a voter in a border area,
-I want to choose which state I'm voting in when my zip spans multiple states,
-So that I get the correct election information.
+As a voter visiting the site,
+I want a visible, always-accessible language toggle button,
+So that I can switch between English and Spanish at any point while using the app.
 
 **Acceptance Criteria:**
 
-**Given** I enter a multi-state zip code (e.g., 86515)
-**When** the lookup returns multiple state codes
-**Then** a state selector appears with data-testid="state-selector"
-**And** it uses radio buttons (not a dropdown) with each state name
-**And** selecting a state loads that state's election data
-**And** the selector is keyboard-navigable (arrow keys between options, Enter to confirm)
+**Given** the user is on any part of the page (top, middle, bottom of scroll)
+**When** they look for the language toggle
+**Then** the toggle is visible in the top-right corner (position: fixed, top: 1rem, right: 1rem)
+
+**Given** the app is in English mode
+**When** the language toggle renders
+**Then** it displays the text "Español" (showing the non-active language)
+
+**Given** the app is in Spanish mode
+**When** the language toggle renders
+**Then** it displays the text "English" (showing the non-active language)
+
+**Given** the language toggle in English mode
+**When** a user clicks it
+**Then** the app switches to Spanish immediately without a page reload
+
+**Given** the language toggle in Spanish mode
+**When** a user clicks it
+**Then** the app switches to English immediately without a page reload
+
+**Given** the language toggle
+**When** it renders
+**Then** it has `data-testid="language-toggle"` attribute
+
+**Given** a keyboard user tabs to the language toggle
+**When** they press Enter or Space
+**Then** the language switches (same behavior as mouse click)
+
+**Given** the language toggle in English mode
+**When** rendered in the DOM
+**Then** it has `aria-label="Switch to Spanish"` (describes the action)
+
+**Given** the language toggle in Spanish mode
+**When** rendered in the DOM
+**Then** it has `aria-label="Cambiar a Inglés"` (describes the action in Spanish)
+
+**Given** a screen reader user activates the language toggle
+**When** the language switches
+**Then** an `aria-live="polite"` region announces "Idioma cambiado a español" (ES) or "Language changed to English" (EN)
+
+**Given** the language toggle
+**When** it receives keyboard focus
+**Then** a visible focus indicator (focus ring) is displayed (not suppressed)
 
 ---
 
-## Epic 3: State Election Info Display
+## Epic 3: UI Translation — All Components
 
-Build the StateInfoCard component showing all election information with deadline status indicators.
+Update all user-facing components to consume `useLanguage()` and display text in the active language. This epic makes the entire UI bilingual — including error messages that update live on language switch.
 
-### Story 3.1: State Info Card — Core Display
+### Story 3.1: Translate ZipForm with Error-as-Key Pattern
 
-As a voter,
-I want to see my state's election information in a clear summary card,
-So that I can quickly understand my upcoming election details.
-
-**Acceptance Criteria:**
-
-**Given** a valid zip code has been submitted and state data loaded
-**When** the state info card renders
-**Then** it has data-testid="state-info"
-**And** shows the state name
-**And** shows the next upcoming election name (data-testid="election-name") and date (data-testid="election-date")
-**And** shows early voting dates or "Not available — absentee voting only"
-**And** shows voter ID requirements (required/not required + accepted IDs list)
-**And** shows phone-at-polls policy with detail text
-**And** links to state election website and sample ballot lookup
-
-**Given** no upcoming election exists for the state
-**When** the card renders
-**Then** a message appears with data-testid="no-election-message"
-
-### Story 3.2: Registration Deadline Status Indicators
-
-As a voter,
-I want to see color-coded deadline statuses for each registration method,
-So that I know if I can still register and how urgent it is.
+As a Spanish-speaking voter,
+I want the zip code form to appear in Spanish when Spanish is active,
+So that I can understand the labels, placeholder, and any error messages in my language.
 
 **Acceptance Criteria:**
 
-**Given** the state info card is rendered
-**When** registration deadlines are displayed
-**Then** the registration section has data-testid="registration-status"
-**And** each deadline shows: method name, date, and status indicator
-**And** status indicators use color AND text: green/"X days left", yellow/"X days left", red/"X days left", gray/"Passed"
-**And** status thresholds: >14 days = green/safe, ≤14 = yellow/warning, ≤3 = red/urgent, past = gray/passed
+**Given** Spanish is the active language
+**When** ZipForm renders
+**Then** the zip code label shows "Código postal"
+**And** the input placeholder shows "Ingresa tu código postal"
+**And** the submit button shows "Encontrar Mi Boleta" (or equivalent spec translation)
 
-### Story 3.3: Not Found Message
+**Given** Spanish is active and user submits an empty zip code
+**When** the error appears
+**Then** the error message reads "Por favor ingresa un código postal"
 
-As a voter with an unmapped zip code,
-I want a helpful message explaining the situation,
-So that I know the tool doesn't support my area yet and can find alternatives.
+**Given** Spanish is active and user submits an invalid zip code
+**When** the error appears
+**Then** the error message reads "Por favor ingresa un código postal válido de 5 dígitos"
+
+**Given** an error message is visible in English
+**When** the user switches to Spanish
+**Then** the error message immediately updates to Spanish WITHOUT requiring the user to re-submit the form (FR-018 error-as-key pattern)
+
+**Given** ZipForm's error state implementation
+**When** examined in the source code
+**Then** `setError()` stores a translation key (e.g., `'errors.zipInvalid'`), NOT a translated string
+
+**Given** English is the active language
+**When** ZipForm renders
+**Then** all strings match Phase 1 behavior exactly (zero regression)
+
+### Story 3.2: Translate StateInfoCard with Locale-Aware Dates
+
+As a Spanish-speaking voter,
+I want the state election information card to show all labels in Spanish and dates in Spanish format,
+So that I can read my election information in my language.
 
 **Acceptance Criteria:**
 
-**Given** I enter a valid 5-digit zip code not in the dataset
-**When** the lookup returns no results
-**Then** a message appears with data-testid="not-found-message"
-**And** the message says "We don't have data for this zip code yet. We're working on adding all U.S. zip codes."
-**And** includes a link to a state election website directory
+**Given** Spanish is active and state election data is displayed
+**When** StateInfoCard renders
+**Then** field labels are in Spanish: "Elección", "Fechas límite de registro", "Votación anticipada", "Identificación para votar", etc.
+
+**Given** Spanish is active
+**When** an election date is displayed (e.g., registration deadline)
+**Then** the date uses Spanish locale format: "3 de abril de 2026" (not "April 3, 2026")
+
+**Given** Spanish is active and a deadline is in the future
+**When** deadline status is displayed
+**Then** it reads "Quedan X días" (not "X days left")
+
+**Given** Spanish is active and a deadline has passed
+**When** deadline status is displayed
+**Then** it reads "Plazo pasado" (or equivalent per spec) (not "Passed")
+
+**Given** English is active
+**When** StateInfoCard renders
+**Then** all field labels and date formats match Phase 1 behavior exactly (zero regression)
+
+**Given** election data values (state names, election names, voter ID types, URLs)
+**When** displayed in either language
+**Then** these values remain in English (data is not translated per Phase 2 scope)
+
+### Story 3.3: Translate PromptOutput, Page Content, Tips, and Footer
+
+As a Spanish-speaking voter,
+I want all remaining UI text (prompt section, tips, footer, skip link) to appear in Spanish,
+So that the entire page is consistent in Spanish mode.
+
+**Acceptance Criteria:**
+
+**Given** Spanish is active
+**When** the PromptOutput section renders
+**Then** the section heading, copy button text ("Copiar en el portapapeles"), and instructions are in Spanish
+
+**Given** user copies the prompt in Spanish mode
+**When** the copy button feedback appears
+**Then** it shows "¡Copiado!" (not "Copied!")
+
+**Given** Spanish is active
+**When** the tips section renders
+**Then** all tip content is in Spanish
+
+**Given** Spanish is active
+**When** the footer renders
+**Then** the attribution reads "Creado por una persona usando herramientas de IA"
+
+**Given** Spanish is active
+**When** a screen reader user navigates
+**Then** the skip-to-content link reads in Spanish
+
+**Given** English is active
+**When** any of these components render
+**Then** they display Phase 1 English strings exactly (zero regression)
 
 ---
 
-## Epic 4: Prompt Generation & Clipboard
+## Epic 4: Prompt and Date Localization
 
-Build the PromptOutput component with the generated prompt and copy-to-clipboard functionality.
+Localize the core product value — the AI chatbot prompt — plus locale-aware date and deadline formatting. This epic ensures the most important output (the copied prompt) is fully in Spanish when Spanish mode is active.
 
-### Story 4.1: Prompt Output Display
-
-As a voter,
-I want to see the customized AI ballot research prompt with my state's information,
-So that I can review what I'll send to the chatbot.
-
-**Acceptance Criteria:**
-
-**Given** state data has been loaded
-**When** the prompt output renders
-**Then** the container has data-testid="prompt-output"
-**And** displays the full prompt including the ballot research template and personalized context block
-**And** the prompt text is in a scrollable container on mobile
-**And** there is clear visual separation between the main prompt and the pre-filled context block
-
-### Story 4.2: Copy to Clipboard
-
-As a voter,
-I want to copy the customized prompt with one click,
-So that I can paste it into an AI chatbot.
-
-**Acceptance Criteria:**
-
-**Given** the prompt output is visible
-**When** I click the copy button (data-testid="copy-button")
-**Then** the full prompt + context is copied to clipboard as plain text
-**And** the button changes to "Copied!" with data-testid="copy-confirmation" visible
-**And** the confirmation reverts after 2 seconds
-**And** the button is keyboard-operable (Enter/Space)
-
-**Given** the Clipboard API is not available
-**When** copy is attempted
-**Then** the text in the prompt area is selected
-**And** a fallback message instructs "Press Ctrl+C / Cmd+C to copy"
-
----
-
-## Epic 5: Page Layout & Static Content
-
-Build the page layout including hero section, tips, footer, and the BallotToolClient orchestrator.
-
-### Story 5.1: Page Layout with Server/Client Split
+### Story 4.1: Extend Date and Deadline Utilities with Language Parameter
 
 As a developer,
-I want a page.tsx that renders static content as Server Components and interactive content as a Client Component,
-So that the initial page load is minimal and fast.
+I want `formatDate` and `getDeadlineStatus` to accept an optional language parameter,
+So that date display and deadline strings are locale-appropriate without changing Phase 1 callers.
 
 **Acceptance Criteria:**
 
-**Given** the page renders
-**When** it loads
-**Then** page.tsx is a Server Component that renders: hero section, BallotToolClient (client), tips section, footer
-**And** the hero section includes a headline, subtitle, and chatbot logos with links
-**And** BallotToolClient orchestrates the interactive flow (form → results)
-**And** the page has a logical heading hierarchy (h1 > h2 > h3)
-**And** a skip-to-content link is the first focusable element
+**Given** `formatDate(date, 'es')` is called
+**When** the date is April 3, 2026
+**Then** it returns "3 de abril de 2026" using `Intl.DateTimeFormat('es-MX')`
 
-### Story 5.2: Hero Section
+**Given** `formatDate(date)` is called without a language argument
+**When** the date is April 3, 2026
+**Then** it returns "April 3, 2026" (English default — backward compatible)
 
-As a voter landing on the page,
-I want to immediately understand what this tool does,
-So that I know how to use it.
+**Given** `getDeadlineStatus(deadline, today, 'es')` with 12 days remaining
+**When** called
+**Then** it returns a status object with label "Quedan 12 días"
+
+**Given** `getDeadlineStatus(deadline, today, 'es')` with a passed deadline
+**When** called
+**Then** it returns a status object with label "Plazo pasado" (or equivalent)
+
+**Given** `getDeadlineStatus(deadline, today)` called without language argument
+**When** called
+**Then** it returns Phase 1 English labels exactly (backward compatible)
+
+**Given** all existing unit tests for `formatDate` and `getDeadlineStatus`
+**When** run after this change
+**Then** all tests pass (zero regression)
+
+### Story 4.2: Add Spanish Ballot Prompt and Context Block
+
+As a Spanish-speaking voter,
+I want the AI chatbot prompt to be in natural Spanish when Spanish mode is active,
+So that I can paste the prompt into a Spanish-language chatbot session and get useful civic guidance.
 
 **Acceptance Criteria:**
 
-**Given** the page loads
-**When** I see the hero section
-**Then** there is a clear headline explaining the tool in one sentence
-**And** a subtitle (2-3 sentences) explaining: enter zip, get prompt, paste into chatbot
-**And** chatbot logos (Claude, ChatGPT, Gemini, Grok) with links to each chatbot
-**And** the zip input is visible without scrolling on mobile
+**Given** `generatePrompt(state, zip, 'es')` is called
+**When** executed
+**Then** it returns a prompt that begins with the Spanish main prompt (`BALLOT_PROMPT_ES`) followed by the Spanish context block
 
-### Story 5.3: Tips Section and Footer
+**Given** the Spanish main prompt (`BALLOT_PROMPT_ES`)
+**When** examined
+**Then** it is a complete translation of BALLOT_PROMPT.md in "tú" (informal) voice
+**And** uses consistent civic Spanish terminology: "código postal", "boleta", "fecha límite", "votación anticipada"
+**And** is stored as a single complete string constant (NOT assembled from fragments)
 
-As a voter,
-I want tips for using the AI prompt effectively,
-So that I get the most out of my chatbot research session.
+**Given** the Spanish context block (`buildContextBlockEs(state, zip)`)
+**When** generated for Texas (state code: TX)
+**Then** structural labels are in Spanish: "¡Hola! Voy a votar en **Texas**", "Esto es lo que sé sobre mi próxima elección"
+**And** data values remain in English: state name "Texas", election name, ID types, URLs
 
-**Acceptance Criteria:**
+**Given** `generatePrompt(state, zip)` called without language argument
+**When** executed
+**Then** it returns the Phase 1 English prompt exactly (backward compatible — default lang = 'en')
 
-**Given** the page renders
-**When** I scroll to the tips section
-**Then** static tips are displayed for effective AI ballot research
-**And** a reminder that AI can make mistakes — verify with official sources
-**And** the footer shows "Share this tool" CTA, attribution "Created by a human using AI tools"
+**Given** PromptOutput component in Spanish mode
+**When** state results are displayed
+**Then** it calls `generatePrompt(stateData, zip, lang)` using current `lang` from `useLanguage()`
+**And** the displayed prompt matches the language of the UI
 
 ---
 
-## Epic 6: Integration, Accessibility & Polish
+## Epic 5: Testing, Regression, and Accessibility Verification
 
-Wire everything together, ensure accessibility, responsive design, and all tests pass.
+Validate the complete Phase 2 implementation through E2e tests for the language toggle, regression tests confirming Phase 1 still works, and accessibility checks for new elements.
 
-### Story 6.1: BallotToolClient Integration
+### Story 5.1: E2e Tests for Language Toggle Functionality
 
-As a developer,
-I want BallotToolClient to orchestrate the full user flow,
-So that all components work together seamlessly.
-
-**Acceptance Criteria:**
-
-**Given** BallotToolClient renders
-**When** the user submits a valid zip code
-**Then** it calls lookupZip, handles single/multi-state, loads state data, renders StateInfoCard and PromptOutput
-**And** smooth scrolls to results after submission
-**And** focus moves to state info heading for screen readers
-**And** a new zip submission replaces previous results
-
-### Story 6.2: Responsive Layout
-
-As a voter on any device,
-I want the layout to work on mobile, tablet, and desktop,
-So that I can use the tool regardless of my device.
+As a QA engineer,
+I want E2e tests covering language toggle behavior,
+So that language switching is automatically verified against the full app on every CI run.
 
 **Acceptance Criteria:**
 
-**Given** the page renders
-**When** viewed at mobile width (<640px)
-**Then** single-column layout, full-width cards, 48px+ touch targets
-**When** viewed at tablet width (640-1024px)
-**Then** centered content, max-width 640px
-**When** viewed at desktop width (>1024px)
-**Then** two-column layout for results (state info left, prompt right), max-width 1200px
+**Given** the E2e test suite for the ballot tool
+**When** the test file is examined
+**Then** it includes tests that click `[data-testid="language-toggle"]` and assert Spanish UI
 
-### Story 6.3: Accessibility Compliance
+**Given** an E2e test that clicks the language toggle
+**When** the toggle is clicked
+**Then** the test asserts Spanish strings are visible (e.g., "Ingresa tu código postal" visible, "Enter your zip code" not visible)
 
-As a voter with disabilities,
-I want the tool to be fully accessible,
-So that I can use it with assistive technology.
+**Given** an E2e test that submits a zip code in English, then clicks the toggle
+**When** the language switches
+**Then** the test asserts state results remain visible in the new language (state preservation)
 
-**Acceptance Criteria:**
+**Given** an E2e test that clicks toggle and navigates away
+**When** a new page load occurs
+**Then** the test asserts the app opens in Spanish (localStorage persistence verified)
 
-**Given** the page renders
-**When** navigating with keyboard
-**Then** all interactive elements are reachable via Tab in logical order
-**And** buttons activate with Enter/Space
-**And** focus is visibly indicated on all elements (3px teal outline)
-**And** skip-to-content link appears on first Tab
-**And** aria-live="polite" on results area announces new content
-**And** color contrast meets WCAG AA (4.5:1 normal text, 3:1 large text)
-**And** deadline indicators use text labels, not only color
+**Given** all 42 Phase 1 E2e tests
+**When** run after Phase 2 implementation
+**Then** all 42 tests pass without modification
 
-### Story 6.4: Build Verification & Test Suite
+**Given** the full E2e test suite (Phase 1 + Phase 2)
+**When** run
+**Then** total passing count is ≥42 (all Phase 1 tests) plus any new Phase 2 tests
 
-As a developer,
-I want all unit tests and the production build to pass,
-So that the application is verified before measurement.
+### Story 5.2: Accessibility Verification for Language Features
+
+As a voter using assistive technology,
+I want the language toggle to be fully accessible,
+So that keyboard users and screen reader users can switch language without barriers.
 
 **Acceptance Criteria:**
 
-**Given** all stories are implemented
-**When** I run the test suite and build
-**Then** `npm run build` succeeds with no errors
-**And** all Vitest unit tests pass
-**And** ESLint reports 0 errors and 0 warnings
-**And** all 14 data-testid attributes are present in the rendered HTML
+**Given** the language toggle is examined for accessibility
+**When** a11y tests run
+**Then** the toggle is a native `<button>` element (not div/span)
+**And** it has an `aria-label` that describes the action (not just the label)
+**And** the `aria-label` is in the current active language
+
+**Given** the page is rendered in English
+**When** the `<html>` element's `lang` attribute is inspected
+**Then** it reads `lang="en"`
+
+**Given** the language toggle is clicked to switch to Spanish
+**When** the `<html>` element's `lang` attribute is inspected after the switch
+**Then** it reads `lang="es"` (WCAG 3.1.1 Language of Page compliance)
+
+**Given** an `aria-live="polite"` region is present in LanguageToggle
+**When** language switches to Spanish
+**Then** the live region text updates to "Idioma cambiado a español"
+
+**Given** the language toggle receives keyboard focus
+**When** inspected visually
+**Then** a focus indicator is visible (ring, outline, or equivalent — not suppressed)
+
+**Given** the ESLint configuration
+**When** the complete Phase 2 implementation is linted
+**Then** ESLint reports 0 errors and 0 warnings

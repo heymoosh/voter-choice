@@ -2,456 +2,446 @@
 stepsCompleted: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
 inputDocuments:
   - '_bmad-output/planning-artifacts/prd.md'
-  - '_bmad-output/planning-artifacts/product-brief-voter-choice-2026-03-31.md'
-  - '_bmad-output/brainstorming/brainstorming-session-2026-03-31-0200.md'
+  - '_bmad-output/planning-artifacts/product-brief-voter-choice-2026-04-03.md'
+  - '_bmad-output/brainstorming/brainstorming-session-2026-04-03-2100.md'
+  - 'docs/PHASE2_SPEC.md'
   - 'docs/PROJECT_SPEC.md'
 ---
 
-# UX Design Specification — voter-choice
+# UX Design Specification — voter-choice (Phase 2: Spanish Language Support)
 
 **Author:** Muxin
-**Date:** 2026-03-31
+**Date:** 2026-04-03
 
 ---
 
 ## 1. UX Discovery Summary
 
-### Product Context
-Single-page civic web tool that generates customized AI ballot research prompts from zip code input. Mobile-first (viral Reddit traffic), zero-friction (no auth), static data (no APIs).
+### Product Context (Phase 2 Extension)
 
-### Key UX Challenges
-1. **Cold start:** User arrives from social media with zero context — must understand and act in <30 seconds
-2. **Copy-paste bridge:** Value is delivered OUTSIDE this app (in the chatbot) — UX must get users there fast
-3. **Multi-state disambiguation:** Border zip codes need smooth resolution without breaking flow
-4. **Deadline urgency:** Time-sensitive civic info must communicate urgency without anxiety
-5. **Universal access:** Civic tool must serve voters of all ages, abilities, and tech comfort levels
+Phase 2 extends the existing Phase 1 ballot research tool (single-page civic app, mobile-first, zero-auth) with bilingual support. The UX design must integrate seamlessly into the existing visual design — no layout restructuring, no new pages. The language toggle is the primary new UI element.
 
-### User Segments
-- **Young first-time voter** (18-30, phone, social media referral)
-- **Time-pressed regular voter** (30-60, phone or desktop, wants efficiency)
-- **Elderly voter** (65+, desktop, low tech confidence, may print)
-- **Advocacy sharer** (any age, looks up multiple zip codes for others)
+**Critical constraint:** The Phase 1 UX is fixed (layout, section order, visual design). Phase 2 UX is additive only.
+
+### Design Goals
+
+1. **Discoverability:** Spanish-speaking users must find the toggle within 3 seconds of landing
+2. **Seamlessness:** Language switch feels instant and natural — no loading state, no reload
+3. **Integrity:** All app state preserved on switch (user feels in control, not disrupted)
+4. **Accessibility:** Toggle is fully operable for keyboard and screen reader users
+5. **Extensibility:** Toggle design accommodates a third language with minimal rework
 
 ---
 
-## 2. Core Experience Definition
+## 2. Core Experience Design
 
-### The One-Line Experience
-"Enter your zip code. Copy your prompt. Research your ballot."
+### Language Toggle Placement
 
-### Experience Principles
-1. **Instant value:** Every second between landing and copied prompt is friction to eliminate
-2. **Copy is king:** The copy button is the most important element on the page after results load
-3. **Progressive disclosure:** Show the essential first, details on demand
-4. **Civic trust:** Transparent, nonpartisan, verifiable — no dark patterns, no manipulation
-5. **Universal access:** If you can vote, you can use this tool
+**Decision: Fixed top-right, always visible**
 
-### Core Flow (3 steps, under 30 seconds)
+Rationale:
+- Conventional position for language toggles across web standards (W3C, vote.gov, government sites)
+- Fixed positioning ensures visibility regardless of scroll (critical for civic tool where user scrolls to read results)
+- Top-right is above the fold on all devices — discoverable on first render
+- Does not compete with the main content flow (left-aligned hero, centered form)
+
+**Position spec:**
+```css
+position: fixed;
+top: 1rem;
+right: 1rem;
+z-index: 50; /* above content, below modals */
 ```
-[1] ENTER → Zip code input in hero section (zero scroll on mobile)
-[2] REVIEW → State info card + customized prompt appear
-[3] COPY → One tap copies prompt to clipboard → user leaves for chatbot
-```
+
+**Visual design:**
+- Plain button, no border (underlined text link style or subtle pill)
+- Font size: 14px / 0.875rem
+- Shows the INACTIVE language ("Español" when current = EN, "English" when current = ES)
+- Color: matches body text color with hover underline — non-intrusive but visible
+- No flag icons (flags connote nationality, not language; avoids political implications)
 
 ---
 
-## 3. Emotional Design
+## 3. Emotional Response & Tone
 
-### Emotional Journey Map
+### English Mode (unchanged from Phase 1)
+- Friendly, civic-minded, approachable
+- "Here's what you need to research your ballot"
 
-| Stage | User Feeling | Design Response |
-|-------|-------------|-----------------|
-| Landing | Curious but skeptical | Clear headline, trusted chatbot logos, no jargon |
-| Zip entry | "Is this legit?" | Minimal input, instant response, professional design |
-| Results load | "Oh, this is useful!" | Rich info card, clear deadline indicators |
-| Reviewing prompt | "This is exactly what I need" | Visible prompt, highlighted personalization |
-| After copy | "That was easy!" | Satisfying confirmation, clear next steps |
-| Sharing | "My friends need this" | Easy share CTAs, memorable URL |
+### Spanish Mode
+- Same emotional tone, but written for native Spanish speakers
+- NOT a translation of English copy — natural Spanish civic register
+- "tú" voice throughout (casual, approachable: "Ingresa tu código postal")
+- Warm but efficient: this is a civic tool, not a marketing page
 
-### Trust Signals
-- Nonpartisan color palette (no red/blue)
-- "Data last updated" transparency
-- Visible prompt (nothing hidden)
-- Links to official sources for verification
-- "Created by a human using AI tools" attribution
-
----
-
-## 4. Design Inspiration
-
-### Reference Patterns
-- **Vote.org** — clean civic tool aesthetic, minimal design
-- **Stripe Docs** — information density with clarity
-- **Linear** — modern web app feel, smooth interactions
-- **Gov.uk** — accessible-first design, clear hierarchy
-
-### Anti-Patterns to Avoid
-- Government form aesthetic (cluttered, institutional)
-- Partisan color schemes (red/blue primary colors)
-- Heavy illustration or mascots (doesn't match civic seriousness)
-- Modal overload (keep flow linear, not popup-driven)
+**Example voice contrast:**
+| English | Spanish |
+|---------|---------|
+| "Enter your zip code" | "Ingresa tu código postal" |
+| "Copy to Clipboard" | "Copiar en el portapapeles" |
+| "12 days left" | "Quedan 12 días" |
+| "Registration deadlines have passed" | "Las fechas límite de registro ya pasaron" |
 
 ---
 
-## 5. Design System Foundation
+## 4. Design System
 
-### Color Palette
+### Existing System (Tailwind CSS — Phase 1)
+Phase 2 uses the same Tailwind CSS setup. No new design tokens needed. The language toggle uses existing text styles and colors.
 
-| Role | Color | Hex | Usage |
-|------|-------|-----|-------|
-| Primary | Navy | #1e3a5f | Headings, primary buttons, header |
-| Secondary | Teal | #0d9488 | Accents, links, interactive elements |
-| Success | Green | #16a34a | Deadline "safe" (>14 days) |
-| Warning | Amber | #d97706 | Deadline "warning" (≤14 days) |
-| Urgent | Red | #dc2626 | Deadline "urgent" (≤3 days) |
-| Muted | Gray | #6b7280 | Deadline "passed", secondary text |
-| Background | Warm White | #fafaf9 | Page background |
-| Surface | White | #ffffff | Cards, input fields |
-| Text | Dark Gray | #1f2937 | Body text |
-| Text Secondary | Medium Gray | #6b7280 | Captions, metadata |
-
-### Typography
-
-| Element | Font | Size | Weight |
-|---------|------|------|--------|
-| H1 (Hero headline) | System sans-serif | 2rem (32px) mobile / 3rem (48px) desktop | 700 |
-| H2 (Section headers) | System sans-serif | 1.5rem (24px) mobile / 2rem (32px) desktop | 600 |
-| H3 (Card headers) | System sans-serif | 1.25rem (20px) | 600 |
-| Body | System sans-serif | 1rem (16px) | 400 |
-| Small / Caption | System sans-serif | 0.875rem (14px) | 400 |
-| Prompt text | System monospace | 0.875rem (14px) | 400 |
-
-**System font stack:** `-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif`
-
-No web fonts. Zero font download cost.
-
-### Spacing Scale
-4px base unit: 4, 8, 12, 16, 24, 32, 48, 64, 96
-
-### Border Radius
-- Buttons: 8px
-- Cards: 12px
-- Inputs: 8px
-- Modals: 16px
-
-### Shadows
-- Card: `0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06)`
-- Elevated card: `0 4px 6px rgba(0,0,0,0.1), 0 2px 4px rgba(0,0,0,0.06)`
-- Input focus: `0 0 0 3px rgba(13, 148, 136, 0.3)` (teal ring)
+### Translation-Aware Typography
+Spanish text averages 20-30% longer than English equivalents. Design guidelines:
+- All buttons: `min-width: 0; width: auto` (not fixed widths that clip Spanish text)
+- Tip text containers: `flex-wrap: wrap` or `min-height` instead of fixed heights
+- Hero headline: allow 2-line wrap on mobile for Spanish (Spanish headlines are longer)
+- Error messages: `word-break: break-word` as fallback for very long Spanish phrases
+- No truncation (`text-overflow: ellipsis`) on any translated strings
 
 ---
 
-## 6. Defining Experience (Key Screens)
+## 5. Visual Foundation
 
-### Screen: Landing State (Before Zip Entry)
+### Color (unchanged)
+All existing Phase 1 colors apply. The language toggle uses:
+- Default state: `text-gray-600` or matching body text
+- Hover state: `text-gray-900` + underline
+- Focus state: standard browser focus ring (2px outline, 2px offset)
 
-```
-┌─────────────────────────────────────┐
-│           HEADER (optional)          │
-├─────────────────────────────────────┤
-│                                     │
-│   🗳️ Research Your Ballot with AI   │  ← H1
-│                                     │
-│   Enter your zip code, get a        │  ← Subtitle
-│   customized prompt, paste it       │
-│   into any free AI chatbot.         │
-│                                     │
-│   [Claude] [ChatGPT] [Gemini] [Grok]│  ← Chatbot logos
-│                                     │
-│   ┌─────────────┐ ┌──────────┐     │
-│   │  Zip Code   │ │  Go  →   │     │  ← Input + Button
-│   └─────────────┘ └──────────┘     │
-│                                     │
-├─────────────────────────────────────┤
-│   Tips for Using AI Ballot Research  │  ← Tips section
-│   • You can say "I don't know"...   │
-│   • AI can make mistakes...         │
-├─────────────────────────────────────┤
-│   Share this tool · Attribution      │  ← Footer
-└─────────────────────────────────────┘
-```
+### Toggle States
 
-### Screen: Results State (After Valid Zip)
+| State | Visual |
+|-------|--------|
+| Default | Text: "Español" in body text color |
+| Hover | Underline + slight darkening |
+| Focus | Visible focus ring (WCAG 2.4.7) |
+| Active (press) | Slight opacity reduction |
+| After switch | Text changes to "English" — no animation needed |
 
-```
-┌─────────────────────────────────────┐
-│   [Hero — compressed with zip in    │
-│    sticky header or inline]         │
-├─────────────────────────────────────┤
-│   ┌─── State Info Card ───────────┐ │
-│   │ 🏛️ Texas                      │ │  ← State name
-│   │ Primary Election · Mar 3, 2026│ │  ← Election info
-│   │                               │ │
-│   │ Registration Deadlines:       │ │
-│   │ 🔴 Online: Feb 2 · Passed    │ │  ← Red status
-│   │ 🔴 By mail: Feb 2 · Passed   │ │
-│   │ 🔴 In person: Feb 2 · Passed │ │
-│   │                               │ │
-│   │ Early Voting: Feb 17-28       │ │
-│   │ Voter ID: Required            │ │
-│   │ Phones at Polls: Prohibited   │ │
-│   │                               │ │
-│   │ [Election Website ↗]          │ │
-│   │ [Sample Ballot ↗]            │ │
-│   └───────────────────────────────┘ │
-├─────────────────────────────────────┤
-│   Your Customized Prompt            │
-│   ┌───────────────────────────────┐ │
-│   │ ┌─[Copy to Clipboard]──────┐ │ │  ← Sticky copy btn
-│   │ │                           │ │ │
-│   │ │ You are a nonpartisan     │ │ │
-│   │ │ civic research assistant  │ │ │
-│   │ │ helping a U.S. voter...   │ │ │
-│   │ │ ...                       │ │ │
-│   │ │ --- Pre-filled Context ---│ │ │
-│   │ │ Hi! I'm voting in Texas.  │ │ │
-│   │ │ My zip code is 73301...   │ │ │
-│   │ └───────────────────────────┘ │ │
-│   └───────────────────────────────┘ │
-├─────────────────────────────────────┤
-│   Next: Open a chatbot and paste    │  ← Instructions
-│   [Claude] [ChatGPT] [Gemini] [Grok]│
-├─────────────────────────────────────┤
-│   Tips · Footer                      │
-└─────────────────────────────────────┘
-```
+---
 
-### Screen: Multi-State Zip
+## 6. Design Directions
 
-```
-┌─────────────────────────────────────┐
-│   This zip code spans multiple      │
-│   states. Which state are you       │
-│   voting in?                        │
-│                                     │
-│   (●) Arizona                       │  ← Radio buttons
-│   ( ) New Mexico                    │  ← Not dropdown
-│                                     │
-│   [Continue]                        │
-└─────────────────────────────────────┘
-```
+### Language Toggle: Text-Only vs. Icon+Text
 
-### Screen: Error States
+**Decision: Text-only ("Español" / "English")**
+
+Rationale:
+- Flag icons carry nationality implications (🇪🇸 = Spain, not Mexico/Colombia/US Spanish speakers)
+- Text is universally understood
+- Shorter and cleaner
+- No icon library dependency
+
+### Toggle Label: Abbreviation vs. Full Name
+
+**Decision: Full language name ("Español" not "ES")**
+
+Rationale:
+- "ES" is ambiguous for users unfamiliar with ISO 639 codes
+- "Español" is understood by both English and Spanish speakers
+- Explicitly confirms the language available, reducing cognitive friction for non-English primary users
+
+### Toggle Feedback: Silent vs. Announced
+
+**Decision: Silent visual + ARIA live region**
+
+Rationale:
+- Sighted users: seeing all text change to Spanish is sufficient confirmation
+- Screen reader users: `aria-live="polite"` region announces "Idioma cambiado a español" / "Language changed to English"
+- No toast notification (intrusive, blocks content)
+
+---
+
+## 7. Defining Experience
+
+### The Key Moment: Language Switch Animation
+
+**Decision: Instant switch, no animation**
+
+Rationale:
+- Animation on text replacement creates visual noise (50+ strings changing simultaneously)
+- Instant switch feels more "native" — like pressing a keyboard language switch
+- Avoids cumulative layout shift (CLS) concerns from sequential text replacement animation
+- Performance: synchronous React context update, all components re-render in one pass
+
+### The Critical Edge Case: Error Messages Mid-Switch
+
+**Design decision:** Error messages must reflect the active language at render time, not at submission time.
+
+UX rationale: If a user sees an error in English, switches to Spanish, and the error remains in English, it breaks the illusion that the app is now in Spanish. More importantly, it confuses Spanish-dominant users who don't read English.
+
+Implementation: store error translation keys in state, not translated strings. UI calls `t(errorKey)` on every render.
+
+---
+
+## 8. User Journey Flows
+
+### Journey 1: First-Time Spanish Speaker
 
 ```
-Inline below zip input:
-┌─────────────────────────────────────┐
-│   ⚠️ Please enter a valid 5-digit   │  ← Red text
-│      zip code                       │
-└─────────────────────────────────────┘
+[Land on English page]
+    ↓
+[See "Español" in top-right] (≤3 sec discovery)
+    ↓
+[Click "Español"]
+    ↓
+[All text → Spanish] (instant, no reload)
+[Toggle now shows "English"]
+    ↓
+[Enter zip code in Spanish context]
+    ↓
+[Get results with Spanish labels]
+    ↓
+[Copy Spanish prompt]
+    ↓
+[Refresh → still in Spanish] (localStorage)
+```
 
-Not found (replaces state info area):
-┌─────────────────────────────────────┐
-│   We don't have data for this zip   │
-│   code yet. We're working on adding │
-│   all U.S. zip codes.               │
-│   [Find your state election website ↗]│
-└─────────────────────────────────────┘
+### Journey 2: State Preservation Test
+
+```
+[Enter zip: 73301 → see TX results in English]
+    ↓
+[Click "Español"]
+    ↓
+[TX results remain visible, now with Spanish labels]
+["Copiar en el portapapeles" button visible]
+    ↓
+[Click copy → Spanish prompt copied]
+```
+
+### Journey 3: Keyboard User
+
+```
+[Tab to "Español" button]
+[See visible focus indicator]
+    ↓
+[Press Enter]
+    ↓
+[Language switches]
+[Screen reader announces via aria-live]
+    ↓
+[Focus remains on toggle (now labeled "English")]
+[Continue tabbing through Spanish UI]
 ```
 
 ---
 
-## 7. Visual Foundation
+## 9. Component Strategy
 
-### Layout Grid
-- **Mobile (< 640px):** Single column, 16px horizontal padding
-- **Tablet (640-1024px):** Single column, 32px horizontal padding, max-width 640px centered
-- **Desktop (> 1024px):** Two-column for results (state info left, prompt right), max-width 1200px centered
+### New Component: LanguageToggle
 
-### Visual Hierarchy (Z-pattern on mobile)
-1. **Hero headline** — first thing seen
-2. **Zip input** — primary action
-3. **State info card** — context
-4. **Copy button** — primary CTA after results
-5. **Prompt text** — the product
-6. **Tips/footer** — supporting content
+**Purpose:** Allows user to switch app language between English and Spanish
 
-### Motion & Animation
-- Results section: fade-in + slide-up (200ms, ease-out)
-- Copy confirmation: scale bounce (150ms)
-- Deadline status: no animation (static, reliable feel)
-- Respect `prefers-reduced-motion`: skip all animations
+**Anatomy:**
+```
+[button.language-toggle]
+  └── span (visible label: "Español" / "English")
+  └── div[aria-live="polite"][aria-atomic="true"] (hidden, announcement text)
+```
+
+**Props/State:**
+- `lang: 'en' | 'es'` — current language from context
+- `setLang: (lang) => void` — setter from context
+- Derived label: current === 'en' ? 'Español' : 'English'
+- `aria-label`: "Switch to Spanish" / "Switch to English" (describes action, not current state)
+
+**States:**
+
+| State | Description |
+|-------|-------------|
+| Default (EN) | Shows "Español", aria-label "Switch to Spanish" |
+| Default (ES) | Shows "English", aria-label "Switch to English" |
+| Hover | Text underline, cursor pointer |
+| Focus | Visible focus ring |
+| After click | Immediately shows opposite language label |
+
+**Keyboard behavior:**
+- Focusable via Tab
+- Activated by Enter or Space (native button behavior)
+- Focus does not move on activation (stays on toggle)
+
+**ARIA:**
+```html
+<button
+  data-testid="language-toggle"
+  aria-label="Switch to Spanish" <!-- or "Switch to English" -->
+  onClick={toggleLanguage}
+>
+  Español <!-- or English -->
+</button>
+<div aria-live="polite" aria-atomic="true" className="sr-only">
+  <!-- Populated on switch: "Language changed to English" / "Idioma cambiado a español" -->
+</div>
+```
+
+**Placement in DOM:**
+```jsx
+// In app layout, above main content
+<>
+  <LanguageToggle />
+  <SkipToContent />
+  <main>...</main>
+</>
+```
+
+### Modified Component: ZipForm
+
+**Change:** All string literals replaced with `t(key)` calls. Error state stores key, not string.
+
+**Error key pattern:**
+```typescript
+// Before (Phase 1)
+setError("Please enter a valid 5-digit zip code")
+
+// After (Phase 2)  
+setError('errors.zipInvalid') // key stored in state
+// Display: <p>{t(error)}</p> — re-evaluates on language switch
+```
+
+### Modified Component: StateInfoCard
+
+**Change:** Field labels ("Election", "Registration deadlines", "Early voting", "Voter ID") use `t(key)`. Data values (election names, dates, ID types) remain unchanged — these come from JSON and stay in English per Phase 2 scope.
+
+**Date formatting:** `formatDate(date, lang)` called at render time using current `lang` from context.
+
+### Modified Component: PromptOutput
+
+**Change:** Section heading, copy button text, instructions use `t(key)`. The prompt content itself is generated by `generatePrompt(state, lang)` — produces Spanish prompt when `lang === 'es'`.
+
+### Modified Component: PageContent (or page.tsx)
+
+**Change:** Hero text, tips array, footer text use `t(key)`. Skip-to-content link text uses `t('a11y.skipToContent')`.
 
 ---
 
-## 8. Design Directions
+## 10. UX Patterns
 
-### Selected Direction: "Modern Civic"
-Clean, trustworthy, and modern. Not a government form, not a startup landing page. Somewhere in between — serious enough for civic content, approachable enough for Gen Z on Reddit.
+### Pattern: Live Language Switch
 
-**Key characteristics:**
-- System fonts for speed and reliability
-- Navy + teal palette avoids partisan associations
-- Cards with subtle shadows for content separation
-- Generous whitespace for readability
-- Bold typography for scanability
-- Zero images — CSS-only visual design
+**Trigger:** User clicks `LanguageToggle`
+**Effect:** Context updates → all `useLanguage()` consumers re-render with new translations
+**Visual:** Text changes synchronously, no flash, no loader
+**State impact:** Zero — app state (zip code, results, errors) preserved
 
----
+### Pattern: Translation Key Error Messages
 
-## 9. User Journey Flows
+**Trigger:** Form validation or API response
+**Effect:** State stores error key (e.g., `'errors.zipNotFound'`)
+**Language switch effect:** Error displays in new language automatically on next render
+**Visual:** Error text changes smoothly with rest of UI on language switch
 
-### Happy Path Flow
-```
-Landing → Enter zip → Submit → State info + Prompt → Copy → Leave to chatbot
-```
+### Pattern: SSR Language Initialization
 
-### Multi-State Flow
-```
-Landing → Enter zip → Multi-state selector → Select state → State info + Prompt → Copy
-```
+**Trigger:** Page initial load
+**Effect:** Server renders in 'en' (no localStorage access on server)
+**Client mount effect:** `useEffect` reads localStorage, updates context if stored preference differs
+**Visual:** On first load in 'es' preference: brief 'en' render → switches to 'es' after hydration
+**Trade-off:** Acceptable for a civic tool (not a pixel-perfect brand experience); avoids hydration mismatch error which would break the app entirely
 
-### Error Recovery Flow
-```
-Landing → Enter invalid zip → Error message → Fix zip → Submit → State info + Prompt → Copy
-```
+### Pattern: Prompt Language Binding
 
-### Not Found Flow
-```
-Landing → Enter valid but unmapped zip → Not found message → Try different zip or visit state directory
-```
-
-### Re-Entry Flow
-```
-(Returning user) → Landing → Enter different zip → New state info + Prompt → Copy
-```
+**Trigger:** User submits zip code OR switches language with results visible
+**Effect:** `generatePrompt(state, currentLang)` re-runs with current language
+**Visual:** Prompt text updates to match UI language (both should always match)
 
 ---
 
-## 10. Component Strategy
+## 11. Responsive Design & Accessibility
 
-### Component Hierarchy
+### Responsive Strategy
 
-| Component | Type | Responsibility |
-|-----------|------|---------------|
-| `page.tsx` | Server | Data loading, static sections (hero, tips, footer) |
-| `BallotToolClient` | Client | Orchestrates form → results flow, manages state |
-| `ZipForm` | Client | Zip input, validation, submit, error display |
-| `StateInfoCard` | Client | Election info display, deadline indicators |
-| `PromptOutput` | Client | Prompt text display, copy button |
-| `StateSelectorModal` | Client | Multi-state radio selection |
+**Mobile-first (unchanged from Phase 1)**
 
-### Interaction States per Component
+Phase 2 adds one new concern: Spanish text is ~30% longer. Each component must be tested at:
+- 320px (iPhone SE width, minimum supported)
+- 375px (iPhone 14 standard)
+- 768px (tablet)
+- 1280px (desktop)
 
-**ZipForm:**
-- Empty (default)
-- Typing (input has value)
-- Submitting (brief loading state)
-- Error (validation message visible)
+**Text overflow prevention:**
+- `word-break: break-word` on all translated elements
+- `min-width: 0` on flex children containing translated text
+- No fixed-width containers for strings (use `max-width` + `width: 100%` pattern)
+- Hero headline: `hyphens: auto; lang="es"` on the HTML element (browser handles Spanish hyphenation)
 
-**StateInfoCard:**
-- Hidden (no zip submitted yet)
-- Visible (showing state data)
-- Deadline states: safe (green), warning (yellow), urgent (red), passed (gray)
+**Language toggle responsive behavior:**
+- Mobile: fixed top-right (1rem from top, 1rem from right) — sits above scroll content
+- Tablet/Desktop: same — fixed position means no layout collision
+- Does not appear in tab order before main content (skip-to-content link comes first)
 
-**PromptOutput:**
-- Hidden (no zip submitted yet)
-- Visible (showing prompt)
-- Copy states: default ("Copy to Clipboard"), copied ("Copied!" for 2s)
+### Breakpoints (unchanged from Phase 1)
 
-**StateSelectorModal:**
-- Hidden (single-state zip or no zip)
-- Visible (multi-state zip detected)
+| Breakpoint | Value | Notes |
+|-----------|-------|-------|
+| Mobile | <640px | Single column, stacked |
+| Tablet | 640-1024px | Wider input, card layout |
+| Desktop | >1024px | Max-width centered container |
 
----
+### Accessibility Requirements (Phase 2 additions)
 
-## 11. UX Patterns
+**WCAG 2.1 AA compliance:**
 
-### Pattern: Inline Validation
-- Validate on submit (not on keystroke — avoids premature errors)
-- Error message appears below input with `role="alert"`
-- Error clears on next keystroke
-- Input gets red border + `aria-invalid="true"`
+| Criterion | Requirement | Implementation |
+|-----------|-------------|----------------|
+| 3.1.1 Language of Page | `<html lang>` reflects active language | `document.documentElement.lang = lang` in `useEffect` |
+| 4.1.2 Name, Role, Value | Toggle button has accessible name | `aria-label` updated per active language |
+| 2.4.7 Focus Visible | Toggle focus indicator visible | Browser default focus ring (not suppressed) |
+| 1.4.3 Contrast | Toggle text meets 4.5:1 ratio | Using existing body text color (Phase 1 verified) |
+| 1.3.1 Info and Relationships | aria-live for language change | `aria-live="polite" aria-atomic="true"` |
+| 2.1.1 Keyboard | Toggle keyboard operable | Native `<button>` element |
 
-### Pattern: Progressive Disclosure
-- State info card shows summary by default
-- Voter ID details, early voting notes expand on interaction
-- Full prompt is visible but scrollable
+**Screen reader experience:**
+1. User navigates to toggle (reads `aria-label`: "Switch to Spanish")
+2. Activates with Enter/Space
+3. `aria-live` region reads: "Idioma cambiado a español"
+4. User continues navigating — all labels now in Spanish
+5. Switching back: `aria-label` reads "Switch to English", live region reads "Language changed to English"
 
-### Pattern: Sticky Copy Button
-- On mobile, copy button stays visible at top of prompt section during scroll
-- Ensures primary CTA is always reachable
+### Testing Strategy
 
-### Pattern: Deadline Status Indicators
-- Color + icon + text label (never color alone)
-- Green circle + "12 days left"
-- Yellow triangle + "3 days left"
-- Red exclamation + "Tomorrow!"
-- Gray dash + "Passed"
+**Spanish text overflow testing:**
+- Check all components in Spanish mode at 320px width
+- Specific elements to verify: error messages, deadline status, voter ID strings, copy button, tips
 
-### Pattern: Smooth Scroll to Results
-- After zip submission, smooth scroll to state info card
-- Focus moves to state info heading for screen readers
+**Keyboard-only test:**
+- Tab to toggle, activate, verify focus stays on toggle
+- Tab through Spanish UI — all interactive elements reachable
 
----
-
-## 12. Responsive Strategy
-
-### Mobile (< 640px)
-- Single column, full-width cards
-- Zip input fills width
-- Touch targets: minimum 48x48px (exceeding 44px spec for safety)
-- Copy button: full-width, prominent
-- Prompt section: scrollable with sticky copy button
-
-### Tablet (640-1024px)
-- Centered content, max-width 640px
-- Same layout as mobile but with more breathing room
-- Larger font sizes for headings
-
-### Desktop (> 1024px)
-- Two-column layout for results: state info (left), prompt output (right)
-- Side-by-side view lets users reference state info while reading prompt
-- Max-width 1200px, centered
+**Screen reader test (automated):**
+- `aria-label` present and correct in both modes
+- `aria-live` region populated on toggle activation
+- `lang` attribute updated
 
 ---
 
-## 13. Accessibility Specification
+## 12. Implementation Guidelines
 
-### Keyboard Navigation
-- Tab order: Skip link → Zip input → Submit → State selector (if visible) → State info links → Copy button → Tips links → Footer links
-- Enter/Space activates buttons
-- Escape closes state selector modal
-- Focus trap in modal when open
+### Do
+- Use `<button>` for the language toggle (not `<div>`, `<a>`, or `<span>`)
+- Store the toggle as a fixed-position element outside the main content flow
+- Update `document.documentElement.lang` in a `useEffect` that responds to `lang` state
+- Test Spanish mode at 320px and 375px on every component
 
-### Screen Reader Support
-- `aria-live="polite"` on results area (announces new content)
-- `role="alert"` on error messages (immediate announcement)
-- `aria-invalid="true"` on input when validation fails
-- `aria-describedby` links input to error message
-- Visually-hidden summary at top of results for screen readers
+### Don't
+- Add animation to the language switch (creates visual noise, CLS)
+- Use CSS `white-space: nowrap` on any translated string
+- Use flag emoji as the toggle label
+- Translate proper nouns (Claude, ChatGPT, state names)
+- Store translated strings in component state (store keys, translate at render)
 
-### Focus Management
-- After zip submission: focus moves to state info heading
-- After state selection: focus moves to state info heading
-- After copy: focus stays on copy button (confirmation is visual + aria-live)
+### Translation Key Naming Convention
 
-### Skip Navigation
-- "Skip to main content" link as first focusable element
-- Hidden until focused (visible on Tab)
-
-### Color & Contrast
-- All text: minimum 4.5:1 contrast ratio (WCAG AA)
-- Large text (≥18px bold or ≥24px): minimum 3:1
-- Interactive elements: visible focus ring (3px teal outline)
-- Deadline status: text labels always present alongside color indicators
-
----
-
-## 14. data-testid Map
-
-| `data-testid` | Component | Element |
-|----------------|-----------|---------|
-| `zip-input` | ZipForm | `<input type="text">` |
-| `zip-submit` | ZipForm | `<button type="submit">` |
-| `zip-error` | ZipForm | Error message `<div>` |
-| `state-selector` | StateSelectorModal | Container `<div>` |
-| `state-info` | StateInfoCard | Outer `<section>` |
-| `prompt-output` | PromptOutput | Outer `<section>` |
-| `copy-button` | PromptOutput | `<button>` |
-| `copy-confirmation` | PromptOutput | "Copied!" `<span>` |
-| `election-name` | StateInfoCard | Election name `<span>` |
-| `election-date` | StateInfoCard | Election date `<span>` |
-| `registration-status` | StateInfoCard | Registration `<div>` |
-| `no-election-message` | StateInfoCard | No election `<div>` |
-| `not-found-message` | BallotToolClient | Not found `<div>` |
+```typescript
+// Organized by component/feature area
+{
+  hero: { headline, subtitle },
+  form: { label, placeholder, submit },
+  errors: { zipEmpty, zipInvalid, zipNotFound, multiState, deadlinePassed, noElection },
+  stateInfo: { election, registrationDeadlines, earlyVoting, voterId, phones, sampleBallot, county },
+  deadline: { daysLeft, passed },
+  prompt: { heading, instructions, copyButton, copiedButton },
+  tips: { heading, tip1, tip2, tip3 },
+  footer: { credit },
+  a11y: { skipToContent, langToggleToEs, langToggleToEn, langChangedToEs, langChangedToEn }
+}
+```
