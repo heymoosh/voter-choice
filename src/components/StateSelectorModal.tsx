@@ -1,5 +1,8 @@
 "use client";
 
+import { useLanguage } from "../lib/i18n";
+import { translations } from "../lib/translations";
+
 interface StateSelectorModalProps {
   states: string[];
   onSelect: (stateCode: string) => void;
@@ -9,6 +12,9 @@ export function StateSelectorModal({
   states,
   onSelect,
 }: StateSelectorModalProps) {
+  const { lang } = useLanguage();
+  const t = translations[lang];
+
   return (
     <div
       data-testid="state-selector"
@@ -16,9 +22,7 @@ export function StateSelectorModal({
       role="dialog"
       aria-label="State selector"
     >
-      <p className="font-medium mb-3">
-        This zip code spans multiple states. Which state are you voting in?
-      </p>
+      <p className="font-medium mb-3">{t.stateSelector.prompt}</p>
       <div className="flex gap-2 flex-wrap">
         {states.map((code) => (
           <button

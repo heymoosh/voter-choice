@@ -1,8 +1,10 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, act } from "@testing-library/react";
 import "@testing-library/jest-dom";
+import React from "react";
 import { StateSelectorModal } from "./StateSelectorModal";
+import { LanguageProvider } from "../lib/i18n";
 
 describe("StateSelectorModal", () => {
   it("renders state-selector data-testid", () => {
@@ -36,5 +38,39 @@ describe("StateSelectorModal", () => {
     );
     const buttons = screen.getAllByRole("button");
     expect(buttons).toHaveLength(3);
+  });
+});
+
+describe("StateSelectorModal — Spanish mode", () => {
+  beforeEach(() => {
+    localStorage.setItem("ballot-tool-lang", "es");
+  });
+  afterEach(() => {
+    localStorage.clear();
+  });
+
+  it("shows Spanish prompt text in Spanish mode", async () => {
+    render(
+      <LanguageProvider>
+        <StateSelectorModal states={["AZ", "NM"]} onSelect={vi.fn()} />
+      </LanguageProvider>,
+    );
+    await act(async () => {});
+    expect(screen.getByTestId("state-selector").textContent).toMatch(
+      /estado|votar/i,
+    );
+  });
+
+  it("shows Spanish select button text in Spanish mode", async () => {
+    render(
+      <LanguageProvider>
+        <StateSelectorModal states={["AZ", "NM"]} onSelect={vi.fn()} />
+      </LanguageProvider>,
+    );
+    await act(async () => {});
+    // The select button label or button text should be in Spanish if applicable
+    expect(screen.getByTestId("state-selector").textContent).toContain(
+      "varios estados",
+    );
   });
 });

@@ -8,11 +8,15 @@ import { ZipForm } from "./ZipForm";
 import { StateInfoCard } from "./StateInfoCard";
 import { PromptOutput } from "./PromptOutput";
 import { StateSelectorModal } from "./StateSelectorModal";
+import { useLanguage } from "../lib/i18n";
+import { translations } from "../lib/translations";
 import type { LookupResult } from "../types/election";
 
 export function BallotToolClient() {
   const [result, setResult] = useState<LookupResult>({ status: "idle" });
   const [currentZip, setCurrentZip] = useState("");
+  const { lang } = useLanguage();
+  const t = translations[lang];
 
   async function handleZipSubmit(zip: string) {
     setCurrentZip(zip);
@@ -61,7 +65,7 @@ export function BallotToolClient() {
 
       {result.status === "loading" && (
         <p className="mt-4 text-gray-600" role="status" aria-live="polite">
-          Loading...
+          {t.loading}
         </p>
       )}
 
@@ -71,8 +75,7 @@ export function BallotToolClient() {
           role="alert"
           className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded text-sm"
         >
-          We don&apos;t have data for this zip code yet. We&apos;re working on
-          adding all U.S. zip codes.{" "}
+          {t.errors.notFound}{" "}
           <a
             href="https://www.usa.gov/states-and-territories"
             target="_blank"
@@ -98,7 +101,7 @@ export function BallotToolClient() {
           role="alert"
           className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded text-sm"
         >
-          No upcoming elections found for {result.state.stateName}. Check the{" "}
+          {t.errors.noElection(result.state.stateName)}{" "}
           <a
             href={result.state.resources.stateElectionWebsite}
             target="_blank"
@@ -106,8 +109,7 @@ export function BallotToolClient() {
             className="underline text-blue-600"
           >
             {result.state.stateName} election website
-          </a>{" "}
-          for updates.
+          </a>
         </div>
       )}
 
@@ -115,7 +117,7 @@ export function BallotToolClient() {
         <div className="mt-6 space-y-6">
           <StateInfoCard state={result.state} />
           <PromptOutput
-            promptText={generatePrompt(result.state, currentZip).fullText}
+            promptText={generatePrompt(result.state, currentZip, undefined, lang).fullText}
           />
         </div>
       )}
