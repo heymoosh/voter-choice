@@ -23,7 +23,7 @@ Experiment complete. `docs/ANALYSIS.md` contains the full write-up. Optional fol
 - **Recommendation:** Spec Kit or Superpowers for maintenance-longevity projects; CE for speed with stable spec; BMAD for multi-sprint feature growth.
 - **Files created:** `docs/ANALYSIS.md`
 - **Issues or deviations:** Lighthouse Phase 2 data available only for Spec Kit (container limitation). Phase 1 build duration not machine-measured (only Phase 2 timing.jsonl captured). Vanilla Phase 2 metrics not re-run (RUN_LOG values used).
-- **Operator notes:** Autonomous session.
+- **Operator notes:** Muxin asked why BMAD was the only framework to extend the e2e suite in Phase 2. Analysis: BMAD's `bmad-create-epics-and-stories` produces stories with behavioral ACs ("when user clicks toggle, page switches to Spanish"), and the `dev-story` Definition of Done checklist explicitly gates on "E2e tests created for critical user flows when story requirements specify them." The other frameworks only asked "are tests present?" — BMAD asked "what kind of test does this deliverable need?" This is structural, not model behavior. Added to Finding 4 in ANALYSIS.md.
 
 ## Completed
 

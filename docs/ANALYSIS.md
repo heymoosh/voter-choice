@@ -291,9 +291,19 @@ Line coverage in Phase 2:
 
 Spec Kit and Superpowers both explicitly require "RED→GREEN→REFACTOR→COMMIT" TDD cycles. The result is ~3× higher coverage than frameworks that don't mandate this. CE added **zero new unit tests** in Phase 2, shipping a full i18n implementation without test coverage for the translation logic.
 
-### Finding 4: BMAD uniquely extended the testing surface
+### Finding 4: BMAD uniquely extended the testing surface — because its DoD mandates it
 
-BMAD is the only framework that added new e2e tests in Phase 2 (62 total vs 42 baseline). BMAD's story-driven development (10 stories in Phase 2) naturally expanded the test suite — each story has acceptance criteria that become e2e tests. The other frameworks treated e2e as a verification gate, not a deliverable to extend.
+BMAD is the only framework that added new e2e tests in Phase 2 (62 total vs 42 baseline). The mechanism is structural, not accidental.
+
+BMAD's `bmad-create-epics-and-stories` step produces user stories with acceptance criteria written in "Given/When/Then" behavioral language — e.g., "when user clicks the language toggle, all page content switches to Spanish." These ACs describe user flows. Then the `dev-story` Definition of Done checklist (at `_bmad/bmm/workflows/4-implementation/dev-story/checklist.md`) has an explicit gate:
+
+> **End-to-End tests:** E2e tests created for critical user flows *when story requirements specify them*
+
+This forced Claude Code to evaluate each story: does this story describe a user flow? If yes, write an e2e test. The language toggle (10 tests) and accessibility (10 tests) stories clearly qualified.
+
+The other frameworks never established this link. Spec Kit and Superpowers have strong unit test cultures (TDD Iron Law) but their task breakdown and DoD focus on unit/integration coverage — not on "each user flow = one e2e scenario." CE's `/lfg` pipeline reviews code quality but has no per-feature e2e requirement. Nobody else's workflow asked "what kind of test does this deliverable need?" — they only asked "are tests present?"
+
+**The implication:** BMAD's story-level AC structure naturally produces a test suite that grows with features, because user flows become e2e tests by construction. Other frameworks require the developer to notice that a new feature warrants a new e2e scenario — which in autonomous execution doesn't happen unless explicitly prompted.
 
 ### Finding 5: Planning overhead has real cost but real benefit
 
