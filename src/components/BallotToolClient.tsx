@@ -43,12 +43,12 @@ export default function BallotToolClient() {
       setNotFound(false);
 
       if (!inputZip.trim()) {
-        setError("Please enter a zip code");
+        setError("errors.zipEmpty");
         return;
       }
 
       if (!/^\d{5}$/.test(inputZip)) {
-        setError("Please enter a valid 5-digit zip code");
+        setError("errors.zipInvalid");
         return;
       }
 
