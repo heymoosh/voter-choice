@@ -182,13 +182,14 @@ describe("StateInfoCard — Spanish mode", () => {
   it("shows Spanish county election office link text", async () => {
     renderEs();
     await act(async () => {});
-    expect(screen.getByTestId("state-info").textContent).toContain(
-      "condado",
-    );
+    expect(screen.getByTestId("state-info").textContent).toContain("condado");
   });
 
   it("shows Spanish absentee notice when no early voting", async () => {
-    renderEs({ ...mockState, earlyVoting: { available: false, startDate: null, endDate: null } });
+    renderEs({
+      ...mockState,
+      earlyVoting: { available: false, startDate: null, endDate: null },
+    });
     await act(async () => {});
     expect(screen.getByTestId("state-info").textContent).toContain("ausencia");
   });

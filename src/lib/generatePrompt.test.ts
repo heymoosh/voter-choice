@@ -119,7 +119,9 @@ describe("generatePrompt — Spanish mode", () => {
   it("returns Spanish base prompt when lang='es'", () => {
     const result = generatePrompt(txData, "73301", "2026-03-30", "es");
     expect(result.basePrompt).toContain("asistente");
-    expect(result.basePrompt).not.toContain("nonpartisan civic research assistant");
+    expect(result.basePrompt).not.toContain(
+      "nonpartisan civic research assistant",
+    );
   });
 
   it("Spanish context block starts with '¡Hola!'", () => {
@@ -135,7 +137,9 @@ describe("generatePrompt — Spanish mode", () => {
 
   it("Spanish context block contains Spanish label keys", () => {
     const result = generatePrompt(txData, "73301", "2026-03-30", "es");
-    expect(result.contextBlock).toMatch(/Elecci[oó]n|Tipo de elecci[oó]n|Fechas/i);
+    expect(result.contextBlock).toMatch(
+      /Elecci[oó]n|Tipo de elecci[oó]n|Fechas/i,
+    );
   });
 
   it("English prompt unchanged when lang='en' (default)", () => {

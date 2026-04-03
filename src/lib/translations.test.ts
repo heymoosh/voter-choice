@@ -56,9 +56,9 @@ describe("translations", () => {
           translations[lang].stateInfo.earlyVotingNotAvailable,
         ).toBeTruthy();
         expect(translations[lang].stateInfo.deadlinePassed).toBeTruthy();
-        expect(
-          typeof translations[lang].stateInfo.deadlineStatus,
-        ).toBe("function");
+        expect(typeof translations[lang].stateInfo.deadlineStatus).toBe(
+          "function",
+        );
         expect(translations[lang].stateInfo.deadlineStatus(5)).toContain("5");
         expect(
           translations[lang].stateInfo.registrationDeadlinePassed,

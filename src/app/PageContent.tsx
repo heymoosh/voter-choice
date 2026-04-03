@@ -65,9 +65,7 @@ export function PageContent({ children }: PageContentProps) {
           <li>{t.tips.tip4}</li>
         </ul>
         <p className="mt-3 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded p-3">
-          <strong>
-            {lang === "en" ? "Important:" : "Importante:"}
-          </strong>{" "}
+          <strong>{lang === "en" ? "Important:" : "Importante:"}</strong>{" "}
           {t.tips.disclaimer}
         </p>
       </section>

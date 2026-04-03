@@ -95,9 +95,7 @@ describe("PromptOutput — Spanish mode", () => {
       </LanguageProvider>,
     );
     await act(async () => {});
-    expect(screen.getByTestId("copy-button").textContent).toContain(
-      "Copiar",
-    );
+    expect(screen.getByTestId("copy-button").textContent).toContain("Copiar");
   });
 
   it("shows Spanish 'Copied!' after successful copy", async () => {
@@ -110,6 +108,8 @@ describe("PromptOutput — Spanish mode", () => {
     await act(async () => {
       fireEvent.click(screen.getByTestId("copy-button"));
     });
-    expect(screen.getByTestId("copy-button").textContent).toContain("¡Copiado!");
+    expect(screen.getByTestId("copy-button").textContent).toContain(
+      "¡Copiado!",
+    );
   });
 });

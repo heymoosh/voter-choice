@@ -3,6 +3,24 @@ import type { Language } from "./translations";
 
 type StatusColor = DeadlineStatus["color"];
 
+function computeColor(daysLeft: number): StatusColor {
+  if (daysLeft < 0) return "passed";
+  if (daysLeft <= 3) return "red";
+  if (daysLeft <= 14) return "yellow";
+  return "green";
+}
+
+function computeLabel(daysLeft: number, lang: Language): string {
+  if (lang === "es") {
+    if (daysLeft < 0) return "Pasado";
+    if (daysLeft === 0) return "Hoy (último día)";
+    return `Quedan ${daysLeft} días`;
+  }
+  if (daysLeft < 0) return "Passed";
+  if (daysLeft === 0) return "Today (last day)";
+  return `${daysLeft} days left`;
+}
+
 export function getDeadlineStatus(
   dateISO: string,
   todayISO?: string,
@@ -13,44 +31,10 @@ export function getDeadlineStatus(
   const todayMs = new Date(today).getTime();
   const daysLeft = Math.round((deadlineMs - todayMs) / 86400000);
 
-  let color: StatusColor;
-  let label: string;
-
-  if (lang === "es") {
-    if (daysLeft < 0) {
-      color = "passed";
-      label = "Pasado";
-    } else if (daysLeft === 0) {
-      color = "red";
-      label = "Hoy (último día)";
-    } else if (daysLeft <= 3) {
-      color = "red";
-      label = `Quedan ${daysLeft} días`;
-    } else if (daysLeft <= 14) {
-      color = "yellow";
-      label = `Quedan ${daysLeft} días`;
-    } else {
-      color = "green";
-      label = `Quedan ${daysLeft} días`;
-    }
-  } else {
-    if (daysLeft < 0) {
-      color = "passed";
-      label = "Passed";
-    } else if (daysLeft === 0) {
-      color = "red";
-      label = "Today (last day)";
-    } else if (daysLeft <= 3) {
-      color = "red";
-      label = `${daysLeft} days left`;
-    } else if (daysLeft <= 14) {
-      color = "yellow";
-      label = `${daysLeft} days left`;
-    } else {
-      color = "green";
-      label = `${daysLeft} days left`;
-    }
-  }
-
-  return { date: dateISO, daysLeft, label, color };
+  return {
+    date: dateISO,
+    daysLeft,
+    label: computeLabel(daysLeft, lang),
+    color: computeColor(daysLeft),
+  };
 }

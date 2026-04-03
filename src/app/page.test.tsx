@@ -9,16 +9,11 @@ vi.mock("../components/BallotToolClient", () => ({
   BallotToolClient: () => <div data-testid="ballot-tool-client" />,
 }));
 vi.mock("../components/LanguageToggle", () => ({
-  LanguageToggle: () => (
-    <button data-testid="language-toggle">Español</button>
-  ),
+  LanguageToggle: () => <button data-testid="language-toggle">Español</button>,
 }));
 vi.mock("./PageContent", () => ({
   PageContent: ({ children }: { children?: React.ReactNode }) => (
-    <div
-      data-testid="page-content"
-      data-tips="true"
-    >
+    <div data-testid="page-content" data-tips="true">
       <h1>Free AI Ballot Research Tool</h1>
       <section data-testid="tips-section">
         <p>AI can make mistakes</p>

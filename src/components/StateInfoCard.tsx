@@ -4,6 +4,7 @@ import { getDeadlineStatus } from "../lib/getDeadlineStatus";
 import { useLanguage } from "../lib/i18n";
 import { translations } from "../lib/translations";
 import type { StateElectionData, DeadlineStatus } from "../types/election";
+import type { Language } from "../lib/translations";
 
 interface StateInfoCardProps {
   state: StateElectionData;
@@ -35,16 +36,59 @@ function DeadlineRow({
   );
 }
 
-export function StateInfoCard({ state }: StateInfoCardProps) {
-  const { lang } = useLanguage();
-  const t = translations[lang];
-  const today = new Date().toISOString().split("T")[0];
+function EarlyVotingSection({
+  earlyVoting,
+  notAvailableText,
+}: {
+  earlyVoting: StateElectionData["earlyVoting"];
+  notAvailableText: string;
+}) {
+  if (earlyVoting.available && earlyVoting.startDate && earlyVoting.endDate) {
+    return (
+      <p className="text-sm">
+        {earlyVoting.startDate} through {earlyVoting.endDate}
+        {earlyVoting.notes && ` — ${earlyVoting.notes}`}
+      </p>
+    );
+  }
+  return <p className="text-sm text-gray-600">{notAvailableText}</p>;
+}
 
-  // Find next upcoming election
-  const upcoming =
-    state.elections.find((e) => e.date >= today) ?? state.elections[0];
+function VoterIdSection({
+  votingRules,
+  requiredText,
+  notRequiredText,
+}: {
+  votingRules: StateElectionData["votingRules"];
+  requiredText: string;
+  notRequiredText: string;
+}) {
+  if (!votingRules.idRequired) {
+    return <p className="text-sm">{notRequiredText}</p>;
+  }
+  return (
+    <div className="text-sm">
+      <p className="font-medium">{requiredText}</p>
+      <ul className="list-disc list-inside mt-1 space-y-0.5">
+        {votingRules.acceptedIds.map((id) => (
+          <li key={id}>{id}</li>
+        ))}
+      </ul>
+    </div>
+  );
+}
 
-  // Deadline statuses (pass lang for localized labels)
+function RegistrationSection({
+  state,
+  lang,
+  t,
+  today,
+}: {
+  state: StateElectionData;
+  lang: Language;
+  t: (typeof translations)[Language];
+  today: string;
+}) {
   const onlineStatus = state.registration.online.available
     ? getDeadlineStatus(state.registration.online.deadline!, today, lang)
     : null;
@@ -59,13 +103,79 @@ export function StateInfoCard({ state }: StateInfoCardProps) {
     lang,
   );
 
-  // All-deadlines-passed check (exclude online if not available)
-  const relevantStatuses = [
-    ...(onlineStatus ? [onlineStatus] : []),
-    byMailStatus,
-    inPersonStatus,
-  ];
-  const allPassed = relevantStatuses.every((s) => s.color === "passed");
+  return (
+    <div data-testid="registration-status" className="space-y-1">
+      {onlineStatus && (
+        <DeadlineRow
+          label={lang === "es" ? "En línea" : "Online"}
+          status={onlineStatus}
+        />
+      )}
+      {!state.registration.online.available && (
+        <div className="text-sm text-gray-500">
+          {lang === "es"
+            ? "Registro en línea: No disponible"
+            : "Online registration: Not available"}
+        </div>
+      )}
+      <DeadlineRow
+        label={lang === "es" ? "Por correo" : "By mail"}
+        status={byMailStatus}
+      />
+      <DeadlineRow
+        label={lang === "es" ? "En persona" : "In person"}
+        status={inPersonStatus}
+      />
+      {[
+        ...(onlineStatus ? [onlineStatus] : []),
+        byMailStatus,
+        inPersonStatus,
+      ].every((s) => s.color === "passed") && (
+        <AllPassedAlert
+          registrationCheckUrl={state.registration.registrationCheckUrl}
+          lang={lang}
+          t={t}
+        />
+      )}
+    </div>
+  );
+}
+
+function AllPassedAlert({
+  registrationCheckUrl,
+  lang,
+  t,
+}: {
+  registrationCheckUrl: string;
+  lang: Language;
+  t: (typeof translations)[Language];
+}) {
+  return (
+    <div
+      role="alert"
+      className="bg-yellow-50 border border-yellow-200 rounded p-3 text-sm text-yellow-800 mt-2"
+    >
+      {t.stateInfo.registrationDeadlinePassed}{" "}
+      <a
+        href={registrationCheckUrl}
+        className="underline"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        {lang === "es" ? "tu estado de registro" : "your registration status"}
+      </a>
+      .
+    </div>
+  );
+}
+
+export function StateInfoCard({ state }: StateInfoCardProps) {
+  const { lang } = useLanguage();
+  const t = translations[lang];
+  const today = new Date().toISOString().split("T")[0];
+
+  const upcoming =
+    state.elections.find((e) => e.date >= today) ?? state.elections[0];
 
   return (
     <div data-testid="state-info" className="rounded-lg border p-4 space-y-4">
@@ -83,87 +193,36 @@ export function StateInfoCard({ state }: StateInfoCardProps) {
         )}
       </div>
 
-      {allPassed && (
-        <div
-          role="alert"
-          className="bg-yellow-50 border border-yellow-200 rounded p-3 text-sm text-yellow-800"
-        >
-          {t.stateInfo.registrationDeadlinePassed}{" "}
-          <a
-            href={state.registration.registrationCheckUrl}
-            className="underline"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            {lang === "es" ? "tu estado de registro" : "your registration status"}
-          </a>
-          .
-        </div>
-      )}
-
       <div>
         <h3 className="font-semibold text-sm mb-2">
           {t.stateInfo.registrationDeadlines}
         </h3>
-        <div data-testid="registration-status" className="space-y-1">
-          {onlineStatus && (
-            <DeadlineRow
-              label={lang === "es" ? "En línea" : "Online"}
-              status={onlineStatus}
-            />
-          )}
-          {!state.registration.online.available && (
-            <div className="text-sm text-gray-500">
-              {lang === "es"
-                ? "Registro en línea: No disponible"
-                : "Online registration: Not available"}
-            </div>
-          )}
-          <DeadlineRow
-            label={lang === "es" ? "Por correo" : "By mail"}
-            status={byMailStatus}
-          />
-          <DeadlineRow
-            label={lang === "es" ? "En persona" : "In person"}
-            status={inPersonStatus}
-          />
-        </div>
+        <RegistrationSection state={state} lang={lang} t={t} today={today} />
       </div>
 
       <div>
-        <h3 className="font-semibold text-sm mb-1">{t.stateInfo.earlyVoting}</h3>
-        {state.earlyVoting.available &&
-        state.earlyVoting.startDate &&
-        state.earlyVoting.endDate ? (
-          <p className="text-sm">
-            {state.earlyVoting.startDate} through {state.earlyVoting.endDate}
-            {state.earlyVoting.notes && ` — ${state.earlyVoting.notes}`}
-          </p>
-        ) : (
-          <p className="text-sm text-gray-600">
-            {t.stateInfo.earlyVotingNotAvailable}
-          </p>
-        )}
+        <h3 className="font-semibold text-sm mb-1">
+          {t.stateInfo.earlyVoting}
+        </h3>
+        <EarlyVotingSection
+          earlyVoting={state.earlyVoting}
+          notAvailableText={t.stateInfo.earlyVotingNotAvailable}
+        />
       </div>
 
       <div>
         <h3 className="font-semibold text-sm mb-1">{t.stateInfo.voterId}</h3>
-        {state.votingRules.idRequired ? (
-          <div className="text-sm">
-            <p className="font-medium">{t.stateInfo.voterIdRequired}</p>
-            <ul className="list-disc list-inside mt-1 space-y-0.5">
-              {state.votingRules.acceptedIds.map((id) => (
-                <li key={id}>{id}</li>
-              ))}
-            </ul>
-          </div>
-        ) : (
-          <p className="text-sm">{t.stateInfo.voterIdNotRequired}</p>
-        )}
+        <VoterIdSection
+          votingRules={state.votingRules}
+          requiredText={t.stateInfo.voterIdRequired}
+          notRequiredText={t.stateInfo.voterIdNotRequired}
+        />
       </div>
 
       <div>
-        <h3 className="font-semibold text-sm mb-1">{t.stateInfo.phonesAtPolls}</h3>
+        <h3 className="font-semibold text-sm mb-1">
+          {t.stateInfo.phonesAtPolls}
+        </h3>
         <p className="text-sm">{state.votingRules.phonesAtPollsDetail}</p>
       </div>
 

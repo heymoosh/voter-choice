@@ -1,15 +1,12 @@
 // @vitest-environment jsdom
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect } from "vitest";
 import { render, screen, act } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import React from "react";
 import { LanguageToggle } from "./LanguageToggle";
 import { LanguageProvider } from "../lib/i18n";
 
-function renderWithProvider(
-  ui: React.ReactElement,
-  initialLang?: "en" | "es",
-) {
+function renderWithProvider(ui: React.ReactElement, initialLang?: "en" | "es") {
   if (initialLang === "es") {
     localStorage.setItem("ballot-tool-lang", "es");
   } else {

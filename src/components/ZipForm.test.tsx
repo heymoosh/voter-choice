@@ -122,9 +122,7 @@ describe("ZipForm — Spanish mode", () => {
   it("shows Spanish submit button label", async () => {
     renderEs();
     await act(async () => {});
-    expect(screen.getByTestId("zip-submit").textContent).toContain(
-      "Buscar",
-    );
+    expect(screen.getByTestId("zip-submit").textContent).toContain("Buscar");
   });
 
   it("shows Spanish label for zip input", async () => {
@@ -178,10 +176,7 @@ describe("ZipForm — FR-018: active error updates on language switch", () => {
       return (
         <>
           <ZipForm onSubmit={vi.fn()} />
-          <button
-            data-testid="switch-to-es"
-            onClick={() => setLang("es")}
-          >
+          <button data-testid="switch-to-es" onClick={() => setLang("es")}>
             Switch to ES
           </button>
         </>

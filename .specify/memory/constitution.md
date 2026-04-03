@@ -1,17 +1,18 @@
 <!--
 SYNC IMPACT REPORT
-Version change: 0.0.0 (template) → 1.0.0 (initial ratification)
-Modified principles: N/A (initial adoption)
+Version change: 1.0.0 → 1.1.0
+Modified principles:
+  - Principle I: Accessibility First — added multilingual accessibility rules
+    (lang attribute, text-expansion tolerance, screen reader language announcements)
 Added sections:
-  - Core Principles (5 principles)
-  - Technology Constraints
-  - Quality Gates
-  - Governance
-Removed sections: None (template placeholders replaced)
+  - Principle VI: Multilingual Architecture (new)
+  - Technology Constraints: translation layer separation requirement added
+  - Quality Gates: language toggle and translation completeness gates added
+Removed sections: None
 Templates requiring updates:
-  - .specify/templates/plan-template.md ✅ Constitution Check section already present; no update needed
-  - .specify/templates/spec-template.md ✅ No conflicting constraints found
-  - .specify/templates/tasks-template.md ✅ Task categories consistent with principles
+  - .specify/templates/plan-template.md ✅ Constitution Check already references principles
+  - .specify/templates/spec-template.md ✅ No conflicting constraints
+  - .specify/templates/tasks-template.md ✅ Task categories still consistent
 Follow-up TODOs: None
 -->
 
@@ -34,8 +35,14 @@ enhancement. Every UI surface MUST meet WCAG AA standards.
 - A skip-to-content link MUST be present for keyboard users.
 - Page MUST have a logical heading hierarchy (h1 > h2 > h3).
 - All interactive elements MUST have minimum 44×44 px touch targets on mobile.
+- The `lang` attribute on `<html>` MUST reflect the active display language at all times.
+- Screen readers MUST be able to detect language changes (via `lang` attribute update).
+- Translated text that is longer than its English equivalent MUST NOT break layouts;
+  UI components MUST accommodate text expansion gracefully at all breakpoints.
 
 **Rationale**: Voting rights depend on equal access. Inaccessible UI is a broken feature.
+Multilingual support extends this principle — Spanish-speaking voters deserve the same
+quality of access.
 
 ### II. Mobile-First Responsive Design
 
@@ -91,17 +98,48 @@ Election data MUST be presented accurately and with appropriate caveats.
 
 **Rationale**: Misinformation about voting deadlines has real civic consequences.
 
+### VI. Multilingual Architecture (NON-NEGOTIABLE)
+
+The tool MUST support multiple display languages without duplicating components, pages,
+or application logic. Spanish is the required second language for Phase 2.
+
+- Translation content MUST be separated from component code — no hardcoded UI strings
+  in JSX/TSX (except internal technical identifiers).
+- All user-facing text MUST be served through a translation lookup layer.
+- The default language is English; Spanish is toggled explicitly by the user.
+- Language preference MUST persist across page refreshes (browser storage — not URL
+  parameters or server state).
+- Switching language MUST update all UI text immediately, without a page reload, and
+  without resetting application state.
+- The language toggle MUST be visible and keyboard-accessible at all times (fixed
+  position, not hidden behind a menu).
+- The language toggle MUST carry `data-testid="language-toggle"`.
+- The full AI prompt (BALLOT_PROMPT.md) MUST be available as a complete, fluent
+  translation — NOT assembled from string fragments.
+- Date formatting MUST follow language conventions: U.S. format for English,
+  Spanish format (e.g., "3 de marzo de 2026") for Spanish.
+- Adding a third language MUST require only new translation content — no structural
+  changes to components or logic.
+- Data values from JSON (state names, election names, accepted IDs) remain in English
+  for Phase 2; the architecture MUST NOT assume these fields are always in the UI language.
+
+**Rationale**: Millions of U.S. voters are Spanish-dominant. A language toggle that
+requires component duplication is a maintenance trap — the architecture must scale.
+
 ## Technology Constraints
 
 - **Framework**: Next.js (exact version pinned in `package.json`), TypeScript strict mode.
 - **Styling**: Tailwind CSS utility classes; no CSS-in-JS or inline styles.
 - **Testing**: Vitest for unit tests; Playwright for e2e tests (shared test suite in
   `e2e/ballot-tool.spec.ts`). All Playwright `data-testid` attributes defined in
-  `docs/PROJECT_SPEC.md` MUST be present on the correct elements.
+  `docs/PROJECT_SPEC.md` and `docs/PHASE2_SPEC.md` MUST be present on correct elements.
 - **Linting**: ESLint with `eslint-plugin-complexity` (max cyclomatic complexity 10) and
   Prettier. Zero lint errors required.
 - **No global installs**: All tooling MUST be in `node_modules`; no `npm -g` or system pip.
 - **Exact version pinning**: All `package.json` dependencies MUST use exact versions.
+- **Translation layer**: All UI strings MUST be managed through a typed translation
+  interface (e.g., `src/lib/translations.ts`). Components MUST consume translations via
+  a context hook — they MUST NOT import translation records directly.
 
 ## Quality Gates
 
@@ -109,10 +147,13 @@ A build is not "done" until ALL of the following pass:
 
 - `next build` completes without errors.
 - `npm run lint` reports 0 errors.
-- All Playwright e2e tests pass (`e2e/ballot-tool.spec.ts`).
-- All Vitest unit tests pass.
+- All Playwright e2e tests pass (`e2e/ballot-tool.spec.ts`), including language-toggle tests.
+- All Vitest unit tests pass, including translation coverage for all keys.
 - Lighthouse scores ≥ 90 for Performance, Accessibility, Best Practices, SEO.
 - Cyclomatic complexity ≤ 10 per function (enforced by ESLint).
+- Language toggle is visible, keyboard-accessible, and `data-testid="language-toggle"` present.
+- All UI text has translations for every supported language (no missing keys at runtime).
+- Switching language does not reset zip code state or previously loaded election results.
 
 ## Governance
 
@@ -127,4 +168,4 @@ migration required for existing code.
 - This document is the source of truth for the Spec Kit workflow. The `speckit.plan` and
   `speckit.analyze` commands MUST verify compliance with these principles.
 
-**Version**: 1.0.0 | **Ratified**: 2026-03-30 | **Last Amended**: 2026-03-30
+**Version**: 1.1.0 | **Ratified**: 2026-03-30 | **Last Amended**: 2026-04-03

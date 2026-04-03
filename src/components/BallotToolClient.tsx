@@ -117,7 +117,9 @@ export function BallotToolClient() {
         <div className="mt-6 space-y-6">
           <StateInfoCard state={result.state} />
           <PromptOutput
-            promptText={generatePrompt(result.state, currentZip, undefined, lang).fullText}
+            promptText={
+              generatePrompt(result.state, currentZip, undefined, lang).fullText
+            }
           />
         </div>
       )}
