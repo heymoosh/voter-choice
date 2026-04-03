@@ -39,9 +39,7 @@ export function StateSelectorModal({
         <h2 id="state-selector-title" className="text-lg font-semibold mb-2">
           {t.stateSelector.title}
         </h2>
-        <p className="text-sm text-gray-600 mb-4">
-          {t.stateSelector.subtitle}
-        </p>
+        <p className="text-sm text-gray-600 mb-4">{t.stateSelector.subtitle}</p>
         <div className="flex flex-col gap-2 mb-4">
           {stateCodes.map((code) => (
             <button

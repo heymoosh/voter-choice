@@ -124,9 +124,7 @@ describe("StateInfoCard — Spanish translations", () => {
 
   it("shows Spanish 'Fechas Límite de Registro' header", () => {
     renderEs();
-    expect(
-      screen.getByText("Fechas Límite de Registro"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("Fechas Límite de Registro")).toBeInTheDocument();
   });
 
   it("shows Spanish 'Votación Anticipada' header", () => {
@@ -136,8 +134,6 @@ describe("StateInfoCard — Spanish translations", () => {
 
   it("shows Spanish voter ID label", () => {
     renderEs();
-    expect(
-      screen.getByText("Identificación para votar:"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("Identificación para votar:")).toBeInTheDocument();
   });
 });

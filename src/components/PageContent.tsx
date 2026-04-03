@@ -56,7 +56,9 @@ export function PageContent() {
               <li key={i}>{item}</li>
             ))}
           </ul>
-          <p className="mt-4 text-sm text-gray-500 italic">{t.tips.disclaimer}</p>
+          <p className="mt-4 text-sm text-gray-500 italic">
+            {t.tips.disclaimer}
+          </p>
         </section>
       </main>
 

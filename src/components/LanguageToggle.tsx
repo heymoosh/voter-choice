@@ -5,8 +5,7 @@ import { useLanguage } from "../lib/i18n";
 export function LanguageToggle() {
   const { lang, setLang } = useLanguage();
   const targetLabel = lang === "en" ? "Español" : "English";
-  const ariaLabel =
-    lang === "en" ? "Switch to Spanish" : "Cambiar a inglés";
+  const ariaLabel = lang === "en" ? "Switch to Spanish" : "Cambiar a inglés";
 
   return (
     <button

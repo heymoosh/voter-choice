@@ -133,7 +133,8 @@ const en: Translations = {
     deadlinePassed: "Passed",
     deadlineToday: "Today",
     deadlineNotAvailable: "Not available",
-    deadlineDaysLeft: (n: number) => (n === 1 ? "1 day left" : `${n} days left`),
+    deadlineDaysLeft: (n: number) =>
+      n === 1 ? "1 day left" : `${n} days left`,
     deadlineStatusLabel: (status: DeadlineStatus) => {
       if (status.urgency === "passed") return "Passed";
       if (status.urgency === "na") return "Not available";
@@ -236,7 +237,9 @@ const es: Translations = {
       if (status.urgency === "passed") return "Pasada";
       if (status.urgency === "na") return "No disponible";
       if (status.daysLeft === 0) return "Hoy";
-      return status.daysLeft === 1 ? "Queda 1 día" : `Quedan ${status.daysLeft} días`;
+      return status.daysLeft === 1
+        ? "Queda 1 día"
+        : `Quedan ${status.daysLeft} días`;
     },
   },
   stateSelector: {

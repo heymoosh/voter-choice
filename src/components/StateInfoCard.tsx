@@ -199,7 +199,11 @@ export function StateInfoCard({
       </div>
 
       {/* Early Voting */}
-      <EarlyVotingSection earlyVoting={stateData.earlyVoting} t={t} lang={lang} />
+      <EarlyVotingSection
+        earlyVoting={stateData.earlyVoting}
+        t={t}
+        lang={lang}
+      />
 
       {/* Voting Rules */}
       <div className="mb-4">

@@ -52,8 +52,6 @@ describe("generatePromptText", () => {
   });
 });
 
-import type { Language } from "../translations";
-
 describe("buildContextBlock — Spanish (lang='es')", () => {
   it("opens with Spanish greeting", () => {
     const block = buildContextBlock(txData, "73301", today, "es");

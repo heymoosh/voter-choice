@@ -82,9 +82,7 @@ describe("StateSelectorModal — Spanish translations", () => {
 
   it("shows Spanish title", () => {
     renderEs();
-    expect(
-      screen.getByText("¿En qué estado vas a votar?"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("¿En qué estado vas a votar?")).toBeInTheDocument();
   });
 
   it("shows Spanish subtitle", () => {

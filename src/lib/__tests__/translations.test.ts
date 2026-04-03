@@ -52,12 +52,8 @@ describe("TRANSLATIONS", () => {
   it("stateInfo.deadlineDaysLeft returns correct singular/plural", () => {
     expect(TRANSLATIONS.en.stateInfo.deadlineDaysLeft(1)).toBe("1 day left");
     expect(TRANSLATIONS.en.stateInfo.deadlineDaysLeft(5)).toBe("5 days left");
-    expect(TRANSLATIONS.es.stateInfo.deadlineDaysLeft(1)).toBe(
-      "Queda 1 día",
-    );
-    expect(TRANSLATIONS.es.stateInfo.deadlineDaysLeft(5)).toBe(
-      "Quedan 5 días",
-    );
+    expect(TRANSLATIONS.es.stateInfo.deadlineDaysLeft(1)).toBe("Queda 1 día");
+    expect(TRANSLATIONS.es.stateInfo.deadlineDaysLeft(5)).toBe("Quedan 5 días");
   });
 
   it("en and es have the same set of top-level keys", () => {

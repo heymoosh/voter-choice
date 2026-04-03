@@ -216,7 +216,10 @@ function deadlineLabelEs(daysLeft: number | null, urgency: string): string {
   return `quedan ${daysLeft} días`;
 }
 
-function buildRegistrationDeadlinesEs(stateData: StateData, today: Date): string {
+function buildRegistrationDeadlinesEs(
+  stateData: StateData,
+  today: Date,
+): string {
   const reg = stateData.registration;
   const onlineStatus = computeDeadlineStatus(
     reg.online.available ? reg.online.deadline : null,
@@ -327,5 +330,7 @@ export function generatePromptText(
   lang: Language = "en",
 ): string {
   const prompt = lang === "es" ? BALLOT_PROMPT_ES : BALLOT_PROMPT_EN;
-  return prompt + "\n\n---\n\n" + buildContextBlock(stateData, zip, today, lang);
+  return (
+    prompt + "\n\n---\n\n" + buildContextBlock(stateData, zip, today, lang)
+  );
 }

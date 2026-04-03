@@ -50,7 +50,9 @@ export function PromptOutput({ promptText }: PromptOutputProps) {
           </button>
         </div>
       </div>
-      <p className="text-sm text-gray-600 mb-3">{t.promptOutput.instructions}</p>
+      <p className="text-sm text-gray-600 mb-3">
+        {t.promptOutput.instructions}
+      </p>
       <textarea
         ref={textAreaRef}
         data-testid="prompt-output"

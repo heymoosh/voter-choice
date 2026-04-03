@@ -18,9 +18,7 @@ function renderWithProvider() {
 describe("PageContent", () => {
   it("renders English hero title by default", () => {
     renderWithProvider();
-    expect(
-      screen.getByText("Know What You're Voting For"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("Know What You're Voting For")).toBeInTheDocument();
   });
 
   it("renders English tips heading by default", () => {
@@ -48,9 +46,7 @@ describe("PageContent — Spanish", () => {
 
   it("renders Spanish hero title when lang=es", () => {
     renderWithProvider();
-    expect(
-      screen.getByText("Sabe por quién vas a votar"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("Sabe por quién vas a votar")).toBeInTheDocument();
   });
 
   it("renders Spanish tips heading when lang=es", () => {
