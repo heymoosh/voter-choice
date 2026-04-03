@@ -7,25 +7,34 @@ import type {
   DeadlineStatus,
 } from "../types/election";
 import { formatDate } from "../lib/date-utils";
+import { useLanguage } from "../lib/i18n";
+import type { Translations } from "../lib/translations";
 
-function EarlyVotingSection({ earlyVoting }: { earlyVoting: EarlyVoting }) {
+function EarlyVotingSection({
+  earlyVoting,
+  t,
+  lang,
+}: {
+  earlyVoting: EarlyVoting;
+  t: Translations;
+  lang: string;
+}) {
+  const locale = lang === "es" ? "es-US" : "en-US";
   return (
     <div className="mb-4">
       <div className="text-sm text-gray-500 uppercase tracking-wide mb-1">
-        Early Voting
+        {t.stateInfo.earlyVoting}
       </div>
       {earlyVoting.available && earlyVoting.startDate && earlyVoting.endDate ? (
         <p className="text-sm">
-          {formatDate(earlyVoting.startDate)} –{" "}
-          {formatDate(earlyVoting.endDate)}
+          {formatDate(earlyVoting.startDate, locale)} –{" "}
+          {formatDate(earlyVoting.endDate, locale)}
           {earlyVoting.notes && (
             <span className="text-gray-500"> ({earlyVoting.notes})</span>
           )}
         </p>
       ) : (
-        <p className="text-sm text-gray-500">
-          Not available — absentee voting only
-        </p>
+        <p className="text-sm text-gray-500">{t.stateInfo.noEarlyVoting}</p>
       )}
     </div>
   );
@@ -50,19 +59,25 @@ function DeadlineRow({
   label,
   status,
   detail,
+  t,
+  lang,
 }: {
   label: string;
   status: DeadlineStatus;
   detail?: string;
+  t: Translations;
+  lang: string;
 }) {
+  const locale = lang === "es" ? "es-US" : "en-US";
+  const statusLabel = t.stateInfo.deadlineStatusLabel(status);
   return (
     <div
       className={`flex justify-between items-center px-3 py-2 rounded border text-sm ${urgencyClasses[status.urgency]}`}
     >
       <span className="font-medium">{label}</span>
       <span>
-        {status.date ? formatDate(status.date) : "N/A"} —{" "}
-        <strong>{status.label}</strong>
+        {status.date ? formatDate(status.date, locale) : "N/A"} —{" "}
+        <strong>{statusLabel}</strong>
         {detail && <span className="text-xs ml-1">({detail})</span>}
       </span>
     </div>
@@ -75,6 +90,8 @@ export function StateInfoCard({
   regStatuses,
 }: StateInfoCardProps) {
   const reg = stateData.registration;
+  const { t, lang } = useLanguage();
+  const locale = lang === "es" ? "es-US" : "en-US";
 
   return (
     <section
@@ -82,26 +99,24 @@ export function StateInfoCard({
       className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm"
     >
       <h2 className="text-xl font-bold mb-4">
-        {stateData.stateName} Election Info
+        {t.stateInfo.stateInfoTitle(stateData.stateName)}
       </h2>
 
       {/* Election */}
       {nextElection ? (
         <div className="mb-4">
           <div className="text-sm text-gray-500 uppercase tracking-wide mb-1">
-            Next Election
+            {t.stateInfo.nextElection}
           </div>
           <div data-testid="election-name" className="font-semibold text-lg">
             {nextElection.name}
           </div>
           <div data-testid="election-date" className="text-gray-600">
-            {formatDate(nextElection.date)}
+            {formatDate(nextElection.date, locale)}
           </div>
           {nextElection.primaryType && (
             <div className="text-sm text-gray-500 mt-1">
-              {nextElection.primaryType.charAt(0).toUpperCase() +
-                nextElection.primaryType.slice(1)}{" "}
-              primary
+              {t.stateInfo.primaryLabel(nextElection.primaryType)}
             </div>
           )}
         </div>
@@ -111,23 +126,22 @@ export function StateInfoCard({
           role="alert"
           className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded text-yellow-800 text-sm"
         >
-          No upcoming elections found for {stateData.stateName}.{" "}
+          {t.stateInfo.noElectionFound(stateData.stateName)}{" "}
           <a
             href={stateData.resources.stateElectionWebsite}
             className="underline"
             target="_blank"
             rel="noopener noreferrer"
           >
-            Check the state election website
-          </a>{" "}
-          for updates.
+            {t.stateInfo.checkStateWebsite}
+          </a>
         </div>
       )}
 
       {/* Registration Deadlines */}
       <div data-testid="registration-status" className="mb-4">
         <div className="text-sm text-gray-500 uppercase tracking-wide mb-2">
-          Registration Deadlines
+          {t.stateInfo.registrationDeadlines}
         </div>
 
         {regStatuses.allPassed && (
@@ -136,14 +150,14 @@ export function StateInfoCard({
             aria-live="polite"
             className="mb-2 p-3 bg-red-50 border border-red-200 rounded text-red-800 text-sm"
           >
-            Registration deadlines for this election have passed.{" "}
+            {t.stateInfo.registrationDeadlinesPassed}{" "}
             <a
               href={reg.registrationCheckUrl}
               className="underline font-medium"
               target="_blank"
               rel="noopener noreferrer"
             >
-              Check your registration status
+              {t.stateInfo.checkRegistration}
             </a>
             .
           </div>
@@ -151,37 +165,55 @@ export function StateInfoCard({
 
         <div className="flex flex-col gap-2">
           {reg.online.available && (
-            <DeadlineRow label="Online" status={regStatuses.online} />
+            <DeadlineRow
+              label={t.stateInfo.onlineLabel}
+              status={regStatuses.online}
+              t={t}
+              lang={lang}
+            />
           )}
           <DeadlineRow
-            label="By mail"
+            label={t.stateInfo.byMailLabel}
             status={regStatuses.byMail}
-            detail={reg.byMail.sincePostmarked ? "postmark" : "received"}
+            detail={
+              reg.byMail.sincePostmarked
+                ? t.stateInfo.postmarkDetail
+                : t.stateInfo.receivedDetail
+            }
+            t={t}
+            lang={lang}
           />
-          <DeadlineRow label="In person" status={regStatuses.inPerson} />
+          <DeadlineRow
+            label={t.stateInfo.inPersonLabel}
+            status={regStatuses.inPerson}
+            t={t}
+            lang={lang}
+          />
         </div>
 
         {reg.sameDayRegistration && (
           <p className="text-sm text-green-700 mt-2">
-            ✓ Same-day registration available
+            {t.stateInfo.sameDayRegistration}
           </p>
         )}
       </div>
 
       {/* Early Voting */}
-      <EarlyVotingSection earlyVoting={stateData.earlyVoting} />
+      <EarlyVotingSection earlyVoting={stateData.earlyVoting} t={t} lang={lang} />
 
       {/* Voting Rules */}
       <div className="mb-4">
         <div className="text-sm text-gray-500 uppercase tracking-wide mb-1">
-          Voting Rules
+          {t.stateInfo.votingRules}
         </div>
         <p className="text-sm">
-          <strong>Voter ID:</strong>{" "}
-          {stateData.votingRules.idRequired ? "Required" : "Not required"}
+          <strong>{t.stateInfo.voterIdLabel}</strong>{" "}
+          {stateData.votingRules.idRequired
+            ? t.stateInfo.voterIdRequired
+            : t.stateInfo.voterIdNotRequired}
         </p>
         <p className="text-sm mt-1">
-          <strong>Phones at polls:</strong>{" "}
+          <strong>{t.stateInfo.phonesAtPollsLabel}</strong>{" "}
           {stateData.votingRules.phonesAtPollsDetail}
         </p>
       </div>
@@ -194,7 +226,7 @@ export function StateInfoCard({
           rel="noopener noreferrer"
           className="text-blue-600 hover:underline text-sm font-medium"
         >
-          County Election Office →
+          {t.stateInfo.countyElectionLink}
         </a>
         <a
           href={stateData.resources.sampleBallotLookup}
@@ -202,7 +234,7 @@ export function StateInfoCard({
           rel="noopener noreferrer"
           className="text-blue-600 hover:underline text-sm font-medium"
         >
-          Sample Ballot Lookup →
+          {t.stateInfo.sampleBallotLink}
         </a>
       </div>
     </section>

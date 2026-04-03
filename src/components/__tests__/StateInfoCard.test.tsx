@@ -1,6 +1,7 @@
 import { render, screen } from "@testing-library/react";
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { StateInfoCard } from "../StateInfoCard";
+import { LanguageProvider } from "../../lib/i18n";
 import { loadStateData, computeRegistrationStatuses } from "../../lib/data";
 import { getNextElection } from "../../lib/date-utils";
 
@@ -84,5 +85,59 @@ describe("StateInfoCard", () => {
       />,
     );
     expect(screen.getAllByText(/Texas/).length).toBeGreaterThan(0);
+  });
+});
+
+describe("StateInfoCard — Spanish translations", () => {
+  beforeEach(() => {
+    localStorage.setItem("lang", "es");
+  });
+
+  afterEach(() => {
+    localStorage.clear();
+  });
+
+  function renderEs() {
+    return render(
+      <LanguageProvider>
+        <StateInfoCard
+          stateData={txData}
+          nextElection={nextElection}
+          regStatuses={regStatuses}
+          today={today}
+        />
+      </LanguageProvider>,
+    );
+  }
+
+  it("shows Spanish state info title", () => {
+    renderEs();
+    expect(
+      screen.getByText("Información Electoral de Texas"),
+    ).toBeInTheDocument();
+  });
+
+  it("shows Spanish 'Próxima Elección' section header", () => {
+    renderEs();
+    expect(screen.getByText("Próxima Elección")).toBeInTheDocument();
+  });
+
+  it("shows Spanish 'Fechas Límite de Registro' header", () => {
+    renderEs();
+    expect(
+      screen.getByText("Fechas Límite de Registro"),
+    ).toBeInTheDocument();
+  });
+
+  it("shows Spanish 'Votación Anticipada' header", () => {
+    renderEs();
+    expect(screen.getByText("Votación Anticipada")).toBeInTheDocument();
+  });
+
+  it("shows Spanish voter ID label", () => {
+    renderEs();
+    expect(
+      screen.getByText("Identificación para votar:"),
+    ).toBeInTheDocument();
   });
 });
