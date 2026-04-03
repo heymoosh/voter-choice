@@ -26,7 +26,7 @@
     }
   },
   "duplication": 0.45,
-  "bundleSize": 0,
+  "bundleSize": 102,
   "lighthouse": {
     "performance": 100,
     "accessibility": 100,
