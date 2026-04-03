@@ -25,31 +25,8 @@
       "statements": 91.62
     }
   },
-  "duplication": {
-    "duplicatedLines": 9,
-    "totalLines": 2010,
-    "percentage": 0.45,
-    "clones": 1
-  },
-  "bundleSize": {
-    "buildSuccess": true,
-    "pages": [
-      {
-        "route": "/",
-        "size": 16,
-        "unit": "kB"
-      },
-      {
-        "route": "/_not-found",
-        "size": 992,
-        "unit": "B"
-      }
-    ],
-    "firstLoadJsShared": {
-      "size": 102,
-      "unit": "kB"
-    }
-  },
+  "duplication": 0.45,
+  "bundleSize": 0,
   "lighthouse": {
     "performance": 100,
     "accessibility": 100,
@@ -105,5 +82,12 @@
       "code": 4087,
       "files": 49
     }
-  }
+  },
+  "eslintErrors": 0,
+  "eslintWarnings": 0,
+  "e2eTotal": 42,
+  "e2ePassed": 42,
+  "vitestTotal": 159,
+  "vitestPassed": 159,
+  "loc": 4087
 }
