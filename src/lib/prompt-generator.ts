@@ -1,13 +1,15 @@
 import type { StateData } from "../types/election";
+import type { Language } from "./translations";
 import {
   getNextElection,
   computeDeadlineStatus,
   formatDate,
 } from "./date-utils";
 
-// The full ballot research prompt text (from docs/BALLOT_PROMPT.md).
-// Embedded as a constant to avoid runtime file reads in Next.js.
-const BALLOT_PROMPT_TEXT = `You are a nonpartisan civic research assistant helping a U.S. voter prepare for an upcoming election. Your job is to help me understand what's on my ballot, form my own opinions, and research candidates based on their ACTIONS — not their campaign promises.
+// ============================================================
+// English ballot prompt (original)
+// ============================================================
+const BALLOT_PROMPT_EN = `You are a nonpartisan civic research assistant helping a U.S. voter prepare for an upcoming election. Your job is to help me understand what's on my ballot, form my own opinions, and research candidates based on their ACTIONS — not their campaign promises.
 
 ## HOW TO FORMAT EVERY RESPONSE (follow this strictly)
 
@@ -88,6 +90,93 @@ At the end, generate: (A) 1-page ballot printout, (B) voter profile for future e
 
 Let's start with Step 1.`;
 
+// ============================================================
+// Spanish ballot prompt (complete fluent translation, "tú" voice)
+// ============================================================
+const BALLOT_PROMPT_ES = `Eres un asistente cívico no partidario que ayuda a un votante de EE.UU. a prepararse para una próxima elección. Tu trabajo es ayudarme a entender lo que hay en mi boleta, formar mis propias opiniones e investigar candidatos según sus ACCIONES — no sus promesas de campaña.
+
+## CÓMO FORMATEAR CADA RESPUESTA (sigue esto estrictamente)
+
+- **Limita cada tema o cargo a un máximo de 4-6 puntos.** Sin párrafos largos.
+- **Resalta en negrita el punto clave** de cada punto para que pueda escanearlo.
+- **Un tema o cargo por respuesta** a menos que me pidas que aceleres.
+- **La conclusión primero.** Comienza con el resumen en 1 oración, luego dame los detalles de apoyo.
+- **Máximo 3-4 oraciones por punto.** Si escribes más, es demasiado.
+- **Usa lenguaje sencillo.** Si un joven de 16 años no lo entendería, reescríbelo.
+- **Nunca resumas lo que ya cubrimos** a menos que te lo pida.
+- Siempre puedo decir "cuéntame más" si quiero profundidad. Por defecto, sé conciso.
+
+## PASO 1: Obtén mi ubicación y empieza de inmediato
+
+Pregúntame mi código postal y estado en una sola pregunta. Luego:
+
+- **Busca el contexto electoral de mi estado.** Qué tipo de elección, cómo funciona (primaria abierta/cerrada), fecha de la elección. **Verifica la fecha de hoy vs. la fecha de la elección** — dime si las urnas están abiertas hoy, si el voto anticipado está en curso o si es próxima. Máximo 2-3 oraciones.
+- **Si es una primaria:** No preguntes qué boleta de partido quiero. Lo descubriremos juntos después de los temas.
+- **Dame un enlace** al sitio de elecciones de mi condado para obtener mi boleta de muestra. Sugiere que la suba — pero **no esperes.** Empieza de inmediato con las carreras estatales.
+- **Si subo una boleta de muestra o comparto distritos**, úsala como fuente definitiva.
+- **Menciona una vez** que los códigos postales pueden abarcar varios distritos, luego continúa.
+- **Presenta cómo funciona esto** en 2-3 oraciones: vamos pasando por los temas juntos, puedes decir "no sé", investigo en segundo plano y crearé un bloque de continuación si necesitamos seguir en un nuevo chat.
+
+Luego ve directamente al Paso 2.
+
+## PASO 2: Repasa los temas conmigo — uno a la vez
+
+**No preguntes "¿qué temas te importan?"** Repásalos conmigo. Para cada tema:
+
+- **Qué está pasando** — situación actual, números reales, lenguaje sencillo
+- **Qué quiere cada lado** — qué significa "sí" vs. "no", o qué han hecho realmente los candidatos
+- **Qué hace mi voto** — ¿ley vinculante o señal no vinculante? Una oración.
+- **A quién afecta** — hazlo concreto y personal ("Si alquilas..." / "Si tienes hijos en escuelas públicas...")
+- **Luego pregúntame qué pienso.** Está bien si digo "no me importa" o "no estoy seguro/a" — eso también es útil.
+
+Si digo "no sé", no lo repitas — enséñame más, luego pregunta de nuevo.
+
+Después de cada 2-3 temas, dame un **resumen de una oración** de lo que mis respuestas sugieren hasta ahora.
+
+## PASO 3: Ayúdame a elegir una primaria (si aplica)
+
+Si esta es una primaria donde elijo una boleta de partido, hazme 3-4 preguntas rápidas sobre **cómo pienso**, no sobre política.
+
+Luego **haz una recomendación clara** en 2-3 oraciones, dame el argumento más fuerte a favor de la otra primaria y déjame decidir.
+
+Si esta es una elección general, omite este paso.
+
+## PASO 4: Investiga los candidatos — carrera por carrera
+
+**Sin biografías de candidatos.** Para cada carrera:
+
+- **¿Qué hace realmente este cargo?** Usa ejemplos concretos.
+- **Investiga en segundo plano.** Busca historial de votación, datos de donantes, avales y noticias.
+- **Presenta a cada candidato en 2-3 oraciones.** Enfócate en: lo que lograron, preocupaciones sobre financiamiento y cómo encajan con lo que me importa.
+- **Señala señales de alerta y avales clave.**
+- **Pregúntame qué pienso o si quiero una recomendación.**
+
+## PASO 5: Propuestas
+
+Para cada una: resumen en lenguaje sencillo de una oración, qué significa sí/no, si se relaciona con lo que me importa.
+
+## PASO 6: Dame mi resumen
+
+Resumen limpio e imprimible que pueda llevar a las urnas.
+
+**Recuérdale al votante:** Muchos estados prohíben los teléfonos en los lugares de votación. Sugiere que escriba o imprima este resumen.
+
+## PASO 7: Genera mis resultados
+
+Al final, genera: (A) Resumen de boleta de 1 página, (B) Perfil de votante para futuras elecciones.
+
+## Reglas importantes
+
+- **Colabora, no rellenes automáticamente.** Recomienda solo cuando te lo pidan.
+- **Acciones > palabras.** Prioriza lo que los candidatos han HECHO.
+- **Enseña antes de preguntar.**
+- **La IA comete errores.** Enlázame a fuentes para que pueda verificar.
+
+Empecemos con el Paso 1.`;
+
+// ============================================================
+// Context block helpers — English
+// ============================================================
 function buildRegistrationDeadlines(stateData: StateData, today: Date): string {
   const reg = stateData.registration;
   const onlineStatus = computeDeadlineStatus(
@@ -116,8 +205,50 @@ function buildEarlyVotingLine(stateData: StateData): string {
   return `${formatDate(ev.startDate)} through ${formatDate(ev.endDate)}${notesStr}`;
 }
 
-/** Builds the pre-filled context block ("Hi! I'm voting in..."). */
-export function buildContextBlock(
+// ============================================================
+// Context block helpers — Spanish
+// ============================================================
+function deadlineLabelEs(daysLeft: number | null, urgency: string): string {
+  if (urgency === "passed") return "pasada";
+  if (urgency === "na") return "no disponible";
+  if (daysLeft === 0) return "hoy";
+  if (daysLeft === 1) return "queda 1 día";
+  return `quedan ${daysLeft} días`;
+}
+
+function buildRegistrationDeadlinesEs(stateData: StateData, today: Date): string {
+  const reg = stateData.registration;
+  const onlineStatus = computeDeadlineStatus(
+    reg.online.available ? reg.online.deadline : null,
+    today,
+  );
+  const byMailStatus = computeDeadlineStatus(reg.byMail.deadline, today);
+  const inPersonStatus = computeDeadlineStatus(reg.inPerson.deadline, today);
+
+  const onlineDeadline = reg.online.available
+    ? `En línea antes del ${formatDate(reg.online.deadline!, "es-US")} (${deadlineLabelEs(onlineStatus.daysLeft, onlineStatus.urgency)})`
+    : "Registro en línea no disponible";
+  const postmarkNote = reg.byMail.sincePostmarked
+    ? ", fecha de matasellos"
+    : ", fecha de recepción";
+  const byMailDeadline = `Por correo antes del ${formatDate(reg.byMail.deadline, "es-US")} (${deadlineLabelEs(byMailStatus.daysLeft, byMailStatus.urgency)}${postmarkNote})`;
+  const inPersonDeadline = `En persona antes del ${formatDate(reg.inPerson.deadline, "es-US")} (${deadlineLabelEs(inPersonStatus.daysLeft, inPersonStatus.urgency)})`;
+  return `${onlineDeadline}; ${byMailDeadline}; ${inPersonDeadline}`;
+}
+
+function buildEarlyVotingLineEs(stateData: StateData): string {
+  const ev = stateData.earlyVoting;
+  if (!ev.available || !ev.startDate || !ev.endDate) {
+    return "No disponible — solo voto en ausencia";
+  }
+  const notesStr = ev.notes ? ` — ${ev.notes}` : "";
+  return `Del ${formatDate(ev.startDate, "es-US")} al ${formatDate(ev.endDate, "es-US")}${notesStr}`;
+}
+
+// ============================================================
+// Context block builders
+// ============================================================
+function buildContextBlockEn(
   stateData: StateData,
   zip: string,
   today: Date,
@@ -146,15 +277,55 @@ ${electionLine}
 Help me with my ballot.`;
 }
 
+function buildContextBlockEs(
+  stateData: StateData,
+  zip: string,
+  today: Date,
+): string {
+  const nextElection = getNextElection(stateData.elections, today);
+  const electionLine = nextElection
+    ? `- **Elección:** ${nextElection.name} el ${formatDate(nextElection.date, "es-US")}\n- **Tipo de elección:** ${nextElection.type}${nextElection.primaryType ? ` (${nextElection.primaryType} primaria)` : ""}`
+    : "- **Elección:** No se encontraron elecciones próximas — consulta el sitio web electoral de tu estado.";
+
+  const rules = stateData.votingRules;
+  const voterIdLine = rules.idRequired
+    ? `Requerida. Aceptados: ${rules.acceptedIds.slice(0, 3).join(", ")}${rules.acceptedIds.length > 3 ? ", y otros" : ""}`
+    : "No requerida";
+
+  return `¡Hola! Voy a votar en **${stateData.stateName}**. Mi código postal es **${zip}**.
+
+Esto es lo que sé sobre mi próxima elección:
+${electionLine}
+- **Fechas límite de registro:** ${buildRegistrationDeadlinesEs(stateData, today)}
+- **Votación anticipada:** ${buildEarlyVotingLineEs(stateData)}
+- **Identificación para votar:** ${voterIdLine}
+- **Teléfonos en las casillas:** ${rules.phonesAtPollsDetail}
+- **Mi boleta de muestra:** ${stateData.resources.sampleBallotLookup}
+- **Mi oficina electoral del condado:** ${stateData.resources.countyElectionLookup}
+
+Ayúdame con mi boleta.`;
+}
+
+/** Builds the pre-filled context block in the requested language. */
+export function buildContextBlock(
+  stateData: StateData,
+  zip: string,
+  today: Date,
+  lang: Language = "en",
+): string {
+  if (lang === "es") {
+    return buildContextBlockEs(stateData, zip, today);
+  }
+  return buildContextBlockEn(stateData, zip, today);
+}
+
 /** Returns the full prompt text = BALLOT_PROMPT + pre-filled context block. */
 export function generatePromptText(
   stateData: StateData,
   zip: string,
   today: Date,
+  lang: Language = "en",
 ): string {
-  return (
-    BALLOT_PROMPT_TEXT +
-    "\n\n---\n\n" +
-    buildContextBlock(stateData, zip, today)
-  );
+  const prompt = lang === "es" ? BALLOT_PROMPT_ES : BALLOT_PROMPT_EN;
+  return prompt + "\n\n---\n\n" + buildContextBlock(stateData, zip, today, lang);
 }
