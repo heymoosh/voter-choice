@@ -1,7 +1,8 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, afterEach, beforeEach } from "vitest";
 import { ZipForm } from "../ZipForm";
+import { LanguageProvider } from "../../lib/i18n";
 
 describe("ZipForm", () => {
   it("renders zip input and submit button with correct testids", () => {
@@ -60,5 +61,56 @@ describe("ZipForm", () => {
     expect(screen.getByTestId("zip-error")).toBeInTheDocument();
     await user.type(screen.getByTestId("zip-input"), "7");
     expect(screen.queryByTestId("zip-error")).not.toBeInTheDocument();
+  });
+});
+
+describe("ZipForm — Spanish translations", () => {
+  beforeEach(() => {
+    localStorage.setItem("lang", "es");
+  });
+
+  afterEach(() => {
+    localStorage.clear();
+  });
+
+  function renderEs() {
+    return render(
+      <LanguageProvider>
+        <ZipForm onSubmit={vi.fn()} isLoading={false} />
+      </LanguageProvider>,
+    );
+  }
+
+  it("shows Spanish label", () => {
+    renderEs();
+    expect(screen.getByText("Tu código postal")).toBeInTheDocument();
+  });
+
+  it("shows Spanish submit button", () => {
+    renderEs();
+    expect(screen.getByTestId("zip-submit")).toHaveTextContent("Buscar");
+  });
+
+  it("shows Spanish required error", async () => {
+    renderEs();
+    fireEvent.click(screen.getByTestId("zip-submit"));
+    await waitFor(() => {
+      expect(screen.getByTestId("zip-error")).toHaveTextContent(
+        "Por favor ingresa un código postal",
+      );
+    });
+  });
+
+  it("shows Spanish invalid error", async () => {
+    renderEs();
+    fireEvent.change(screen.getByTestId("zip-input"), {
+      target: { value: "123" },
+    });
+    fireEvent.click(screen.getByTestId("zip-submit"));
+    await waitFor(() => {
+      expect(screen.getByTestId("zip-error")).toHaveTextContent(
+        "Por favor ingresa un código postal válido de 5 dígitos",
+      );
+    });
   });
 });
