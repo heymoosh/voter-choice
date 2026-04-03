@@ -1,6 +1,8 @@
 "use client";
 
 import { getDeadlineStatus } from "../lib/getDeadlineStatus";
+import { useLanguage } from "../lib/i18n";
+import { translations } from "../lib/translations";
 import type { StateElectionData, DeadlineStatus } from "../types/election";
 
 interface StateInfoCardProps {
@@ -33,64 +35,28 @@ function DeadlineRow({
   );
 }
 
-function EarlyVotingSection({
-  earlyVoting,
-}: {
-  earlyVoting: StateElectionData["earlyVoting"];
-}) {
-  if (earlyVoting.available && earlyVoting.startDate && earlyVoting.endDate) {
-    return (
-      <p className="text-sm">
-        {earlyVoting.startDate} through {earlyVoting.endDate}
-        {earlyVoting.notes && ` — ${earlyVoting.notes}`}
-      </p>
-    );
-  }
-  return (
-    <p className="text-sm text-gray-600">
-      Not available — absentee voting only
-    </p>
-  );
-}
-
-function VoterIdSection({
-  votingRules,
-}: {
-  votingRules: StateElectionData["votingRules"];
-}) {
-  if (!votingRules.idRequired) {
-    return <p className="text-sm">Not required</p>;
-  }
-  return (
-    <div className="text-sm">
-      <p className="font-medium">Required. Accepted IDs:</p>
-      <ul className="list-disc list-inside mt-1 space-y-0.5">
-        {votingRules.acceptedIds.map((id) => (
-          <li key={id}>{id}</li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
 export function StateInfoCard({ state }: StateInfoCardProps) {
+  const { lang } = useLanguage();
+  const t = translations[lang];
   const today = new Date().toISOString().split("T")[0];
 
   // Find next upcoming election
   const upcoming =
     state.elections.find((e) => e.date >= today) ?? state.elections[0];
 
-  // Deadline statuses
+  // Deadline statuses (pass lang for localized labels)
   const onlineStatus = state.registration.online.available
-    ? getDeadlineStatus(state.registration.online.deadline!, today)
+    ? getDeadlineStatus(state.registration.online.deadline!, today, lang)
     : null;
   const byMailStatus = getDeadlineStatus(
     state.registration.byMail.deadline,
     today,
+    lang,
   );
   const inPersonStatus = getDeadlineStatus(
     state.registration.inPerson.deadline,
     today,
+    lang,
   );
 
   // All-deadlines-passed check (exclude online if not available)
@@ -122,14 +88,14 @@ export function StateInfoCard({ state }: StateInfoCardProps) {
           role="alert"
           className="bg-yellow-50 border border-yellow-200 rounded p-3 text-sm text-yellow-800"
         >
-          Registration deadlines for this election have passed. Check{" "}
+          {t.stateInfo.registrationDeadlinePassed}{" "}
           <a
             href={state.registration.registrationCheckUrl}
             className="underline"
             target="_blank"
             rel="noopener noreferrer"
           >
-            your registration status
+            {lang === "es" ? "tu estado de registro" : "your registration status"}
           </a>
           .
         </div>
@@ -137,32 +103,67 @@ export function StateInfoCard({ state }: StateInfoCardProps) {
 
       <div>
         <h3 className="font-semibold text-sm mb-2">
-          Voter Registration Deadlines
+          {t.stateInfo.registrationDeadlines}
         </h3>
         <div data-testid="registration-status" className="space-y-1">
-          {onlineStatus && <DeadlineRow label="Online" status={onlineStatus} />}
+          {onlineStatus && (
+            <DeadlineRow
+              label={lang === "es" ? "En línea" : "Online"}
+              status={onlineStatus}
+            />
+          )}
           {!state.registration.online.available && (
             <div className="text-sm text-gray-500">
-              Online registration: Not available
+              {lang === "es"
+                ? "Registro en línea: No disponible"
+                : "Online registration: Not available"}
             </div>
           )}
-          <DeadlineRow label="By mail" status={byMailStatus} />
-          <DeadlineRow label="In person" status={inPersonStatus} />
+          <DeadlineRow
+            label={lang === "es" ? "Por correo" : "By mail"}
+            status={byMailStatus}
+          />
+          <DeadlineRow
+            label={lang === "es" ? "En persona" : "In person"}
+            status={inPersonStatus}
+          />
         </div>
       </div>
 
       <div>
-        <h3 className="font-semibold text-sm mb-1">Early Voting</h3>
-        <EarlyVotingSection earlyVoting={state.earlyVoting} />
+        <h3 className="font-semibold text-sm mb-1">{t.stateInfo.earlyVoting}</h3>
+        {state.earlyVoting.available &&
+        state.earlyVoting.startDate &&
+        state.earlyVoting.endDate ? (
+          <p className="text-sm">
+            {state.earlyVoting.startDate} through {state.earlyVoting.endDate}
+            {state.earlyVoting.notes && ` — ${state.earlyVoting.notes}`}
+          </p>
+        ) : (
+          <p className="text-sm text-gray-600">
+            {t.stateInfo.earlyVotingNotAvailable}
+          </p>
+        )}
       </div>
 
       <div>
-        <h3 className="font-semibold text-sm mb-1">Voter ID</h3>
-        <VoterIdSection votingRules={state.votingRules} />
+        <h3 className="font-semibold text-sm mb-1">{t.stateInfo.voterId}</h3>
+        {state.votingRules.idRequired ? (
+          <div className="text-sm">
+            <p className="font-medium">{t.stateInfo.voterIdRequired}</p>
+            <ul className="list-disc list-inside mt-1 space-y-0.5">
+              {state.votingRules.acceptedIds.map((id) => (
+                <li key={id}>{id}</li>
+              ))}
+            </ul>
+          </div>
+        ) : (
+          <p className="text-sm">{t.stateInfo.voterIdNotRequired}</p>
+        )}
       </div>
 
       <div>
-        <h3 className="font-semibold text-sm mb-1">Phones at Polls</h3>
+        <h3 className="font-semibold text-sm mb-1">{t.stateInfo.phonesAtPolls}</h3>
         <p className="text-sm">{state.votingRules.phonesAtPollsDetail}</p>
       </div>
 
@@ -173,7 +174,7 @@ export function StateInfoCard({ state }: StateInfoCardProps) {
           rel="noopener noreferrer"
           className="text-blue-600 underline"
         >
-          County election office
+          {t.stateInfo.countyElectionOffice}
         </a>
         <a
           href={state.resources.sampleBallotLookup}
@@ -181,7 +182,7 @@ export function StateInfoCard({ state }: StateInfoCardProps) {
           rel="noopener noreferrer"
           className="text-blue-600 underline"
         >
-          Sample ballot
+          {t.stateInfo.sampleBallot}
         </a>
       </div>
     </div>

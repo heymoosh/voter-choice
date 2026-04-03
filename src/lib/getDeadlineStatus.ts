@@ -1,10 +1,12 @@
 import type { DeadlineStatus } from "../types/election";
+import type { Language } from "./translations";
 
 type StatusColor = DeadlineStatus["color"];
 
 export function getDeadlineStatus(
   dateISO: string,
   todayISO?: string,
+  lang: Language = "en",
 ): DeadlineStatus {
   const today = todayISO ?? new Date().toISOString().split("T")[0];
   const deadlineMs = new Date(dateISO).getTime();
@@ -14,21 +16,40 @@ export function getDeadlineStatus(
   let color: StatusColor;
   let label: string;
 
-  if (daysLeft < 0) {
-    color = "passed";
-    label = "Passed";
-  } else if (daysLeft === 0) {
-    color = "red";
-    label = "Today (last day)";
-  } else if (daysLeft <= 3) {
-    color = "red";
-    label = `${daysLeft} days left`;
-  } else if (daysLeft <= 14) {
-    color = "yellow";
-    label = `${daysLeft} days left`;
+  if (lang === "es") {
+    if (daysLeft < 0) {
+      color = "passed";
+      label = "Pasado";
+    } else if (daysLeft === 0) {
+      color = "red";
+      label = "Hoy (último día)";
+    } else if (daysLeft <= 3) {
+      color = "red";
+      label = `Quedan ${daysLeft} días`;
+    } else if (daysLeft <= 14) {
+      color = "yellow";
+      label = `Quedan ${daysLeft} días`;
+    } else {
+      color = "green";
+      label = `Quedan ${daysLeft} días`;
+    }
   } else {
-    color = "green";
-    label = `${daysLeft} days left`;
+    if (daysLeft < 0) {
+      color = "passed";
+      label = "Passed";
+    } else if (daysLeft === 0) {
+      color = "red";
+      label = "Today (last day)";
+    } else if (daysLeft <= 3) {
+      color = "red";
+      label = `${daysLeft} days left`;
+    } else if (daysLeft <= 14) {
+      color = "yellow";
+      label = `${daysLeft} days left`;
+    } else {
+      color = "green";
+      label = `${daysLeft} days left`;
+    }
   }
 
   return { date: dateISO, daysLeft, label, color };

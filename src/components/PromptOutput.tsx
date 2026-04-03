@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useRef } from "react";
+import { useLanguage } from "../lib/i18n";
+import { translations } from "../lib/translations";
 
 interface PromptOutputProps {
   promptText: string;
@@ -10,6 +12,8 @@ export function PromptOutput({ promptText }: PromptOutputProps) {
   const [copied, setCopied] = useState(false);
   const [fallback, setFallback] = useState(false);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { lang } = useLanguage();
+  const t = translations[lang];
 
   async function handleCopy() {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
@@ -36,7 +40,7 @@ export function PromptOutput({ promptText }: PromptOutputProps) {
   const confirmationText = fallback
     ? "Press Ctrl+C / Cmd+C to copy"
     : copied
-      ? "Copied!"
+      ? t.promptOutput.copiedButton
       : "";
 
   return (
@@ -53,7 +57,7 @@ export function PromptOutput({ promptText }: PromptOutputProps) {
           onClick={handleCopy}
           className="bg-blue-600 text-white px-4 min-h-[44px] min-w-[44px] rounded font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-800"
         >
-          {copied ? "Copied!" : "Copy to Clipboard"}
+          {copied ? t.promptOutput.copiedButton : t.promptOutput.copyButton}
         </button>
         <span
           data-testid="copy-confirmation"

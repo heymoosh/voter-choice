@@ -1,8 +1,10 @@
 // @vitest-environment jsdom
 import { describe, it, expect } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, act } from "@testing-library/react";
 import "@testing-library/jest-dom";
+import React from "react";
 import { StateInfoCard } from "./StateInfoCard";
+import { LanguageProvider } from "../lib/i18n";
 import type { StateElectionData } from "../types/election";
 
 const futureDate = "2027-12-31";
@@ -128,5 +130,66 @@ describe("StateInfoCard", () => {
       l.getAttribute("href")?.includes("where.html"),
     );
     expect(countyLink).toBeDefined();
+  });
+});
+
+describe("StateInfoCard — Spanish mode", () => {
+  beforeEach(() => {
+    localStorage.setItem("ballot-tool-lang", "es");
+  });
+  afterEach(() => {
+    localStorage.clear();
+  });
+
+  function renderEs(state = mockState) {
+    return render(
+      <LanguageProvider>
+        <StateInfoCard state={state} />
+      </LanguageProvider>,
+    );
+  }
+
+  it("shows Spanish registration deadlines heading", async () => {
+    renderEs();
+    await act(async () => {});
+    expect(screen.getByTestId("state-info").textContent).toContain(
+      "registro de votantes",
+    );
+  });
+
+  it("shows Spanish early voting heading", async () => {
+    renderEs();
+    await act(async () => {});
+    expect(screen.getByTestId("state-info").textContent).toContain(
+      "Votación anticipada",
+    );
+  });
+
+  it("shows Spanish voter ID heading", async () => {
+    renderEs();
+    await act(async () => {});
+    expect(screen.getByTestId("state-info").textContent).toContain(
+      "Identificación para votar",
+    );
+  });
+
+  it("shows Spanish deadline label 'Quedan X días' for future deadline", async () => {
+    renderEs();
+    await act(async () => {});
+    expect(screen.getByTestId("state-info").textContent).toContain("Quedan");
+  });
+
+  it("shows Spanish county election office link text", async () => {
+    renderEs();
+    await act(async () => {});
+    expect(screen.getByTestId("state-info").textContent).toContain(
+      "condado",
+    );
+  });
+
+  it("shows Spanish absentee notice when no early voting", async () => {
+    renderEs({ ...mockState, earlyVoting: { available: false, startDate: null, endDate: null } });
+    await act(async () => {});
+    expect(screen.getByTestId("state-info").textContent).toContain("ausencia");
   });
 });

@@ -1,8 +1,10 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, act } from "@testing-library/react";
 import "@testing-library/jest-dom";
+import React from "react";
 import { ZipForm } from "./ZipForm";
+import { LanguageProvider } from "../lib/i18n";
 
 describe("ZipForm", () => {
   it("renders zip-input and zip-submit data-testids", () => {
@@ -77,5 +79,60 @@ describe("ZipForm", () => {
     render(<ZipForm onSubmit={vi.fn()} />);
     fireEvent.click(screen.getByTestId("zip-submit"));
     expect(screen.getByTestId("zip-error")).toHaveAttribute("role", "alert");
+  });
+});
+
+describe("ZipForm — Spanish mode", () => {
+  beforeEach(() => {
+    localStorage.setItem("ballot-tool-lang", "es");
+  });
+  afterEach(() => {
+    localStorage.clear();
+  });
+
+  function renderEs() {
+    return render(
+      <LanguageProvider>
+        <ZipForm onSubmit={vi.fn()} />
+      </LanguageProvider>,
+    );
+  }
+
+  it("shows Spanish empty error message", async () => {
+    renderEs();
+    await act(async () => {});
+    fireEvent.click(screen.getByTestId("zip-submit"));
+    expect(screen.getByTestId("zip-error").textContent).toContain(
+      "Por favor ingresa un código postal",
+    );
+  });
+
+  it("shows Spanish invalid error message", async () => {
+    renderEs();
+    await act(async () => {});
+    fireEvent.change(screen.getByTestId("zip-input"), {
+      target: { value: "abc" },
+    });
+    fireEvent.click(screen.getByTestId("zip-submit"));
+    expect(screen.getByTestId("zip-error").textContent).toContain(
+      "válido de 5 dígitos",
+    );
+  });
+
+  it("shows Spanish submit button label", async () => {
+    renderEs();
+    await act(async () => {});
+    expect(screen.getByTestId("zip-submit").textContent).toContain(
+      "Buscar",
+    );
+  });
+
+  it("shows Spanish label for zip input", async () => {
+    renderEs();
+    await act(async () => {});
+    expect(screen.getByTestId("zip-input")).toHaveAccessibleName();
+    // label should mention "código postal"
+    const label = screen.getByText(/código postal/i);
+    expect(label).toBeInTheDocument();
   });
 });

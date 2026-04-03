@@ -59,3 +59,28 @@ describe("getDeadlineStatus", () => {
     expect(result).toHaveProperty("date");
   });
 });
+
+describe("getDeadlineStatus — Spanish mode", () => {
+  const today = "2026-03-30";
+
+  it("returns Spanish 'Quedan X días' label for future deadline", () => {
+    const result = getDeadlineStatus("2026-04-20", today, "es");
+    expect(result.label).toBe("Quedan 21 días");
+  });
+
+  it("returns Spanish 'Pasado' label for past deadline", () => {
+    const result = getDeadlineStatus("2026-03-01", today, "es");
+    expect(result.label).toBe("Pasado");
+  });
+
+  it("returns Spanish label for 0 days left", () => {
+    const result = getDeadlineStatus("2026-03-30", today, "es");
+    expect(result.label).toMatch(/Hoy|hoy/);
+  });
+
+  it("English label unchanged when lang is 'en'", () => {
+    const enResult = getDeadlineStatus("2026-04-20", today, "en");
+    const defaultResult = getDeadlineStatus("2026-04-20", today);
+    expect(enResult.label).toBe(defaultResult.label);
+  });
+});

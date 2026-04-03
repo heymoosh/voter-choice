@@ -2,7 +2,9 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, fireEvent, act } from "@testing-library/react";
 import "@testing-library/jest-dom";
+import React from "react";
 import { PromptOutput } from "./PromptOutput";
+import { LanguageProvider } from "../lib/i18n";
 
 describe("PromptOutput", () => {
   beforeEach(() => {
@@ -69,5 +71,45 @@ describe("PromptOutput", () => {
     expect(screen.getByTestId("copy-confirmation").textContent).toMatch(
       /Ctrl\+C|Cmd\+C/,
     );
+  });
+});
+
+describe("PromptOutput — Spanish mode", () => {
+  beforeEach(() => {
+    localStorage.setItem("ballot-tool-lang", "es");
+    Object.defineProperty(navigator, "clipboard", {
+      value: { writeText: vi.fn().mockResolvedValue(undefined) },
+      writable: true,
+      configurable: true,
+    });
+  });
+  afterEach(() => {
+    localStorage.clear();
+    vi.clearAllMocks();
+  });
+
+  it("shows Spanish copy button text", async () => {
+    render(
+      <LanguageProvider>
+        <PromptOutput promptText="test" />
+      </LanguageProvider>,
+    );
+    await act(async () => {});
+    expect(screen.getByTestId("copy-button").textContent).toContain(
+      "Copiar",
+    );
+  });
+
+  it("shows Spanish 'Copied!' after successful copy", async () => {
+    render(
+      <LanguageProvider>
+        <PromptOutput promptText="test" />
+      </LanguageProvider>,
+    );
+    await act(async () => {});
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("copy-button"));
+    });
+    expect(screen.getByTestId("copy-button").textContent).toContain("¡Copiado!");
   });
 });

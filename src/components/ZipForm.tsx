@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { useLanguage } from "../lib/i18n";
+import { translations } from "../lib/translations";
 
 interface ZipFormProps {
   onSubmit: (zip: string) => void;
@@ -9,15 +11,17 @@ interface ZipFormProps {
 export function ZipForm({ onSubmit }: ZipFormProps) {
   const [value, setValue] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const { lang } = useLanguage();
+  const t = translations[lang];
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!value.trim()) {
-      setError("Please enter a zip code");
+      setError(t.errors.empty);
       return;
     }
     if (!/^\d{5}$/.test(value.trim())) {
-      setError("Please enter a valid 5-digit zip code");
+      setError(t.errors.invalid);
       return;
     }
     setError(null);
@@ -27,7 +31,7 @@ export function ZipForm({ onSubmit }: ZipFormProps) {
   return (
     <form onSubmit={handleSubmit} noValidate>
       <label htmlFor="zip-input" className="block text-sm font-medium mb-1">
-        Enter your zip code
+        {t.zipForm.label}
       </label>
       <div className="flex gap-2">
         <input
@@ -49,7 +53,7 @@ export function ZipForm({ onSubmit }: ZipFormProps) {
           type="submit"
           className="bg-blue-600 text-white px-4 min-h-[44px] min-w-[44px] rounded font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-800 whitespace-nowrap"
         >
-          Find My Ballot Info
+          {t.zipForm.submit}
         </button>
       </div>
       {error && (
