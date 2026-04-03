@@ -33,15 +33,42 @@ export function formatDate(isoDate: string, lang: "en" | "es" = "en"): string {
   });
 }
 
+const DEADLINE_LABELS: Record<
+  "en" | "es",
+  {
+    notAvailable: string;
+    passed: string;
+    today: string;
+    tomorrow: string;
+    daysLeft: (days: number) => string;
+  }
+> = {
+  en: {
+    notAvailable: "Not available",
+    passed: "Passed",
+    today: "Today!",
+    tomorrow: "Tomorrow!",
+    daysLeft: (days) => `${days} days left`,
+  },
+  es: {
+    notAvailable: "No disponible",
+    passed: "Plazo pasado",
+    today: "¡Hoy!",
+    tomorrow: "Queda 1 día",
+    daysLeft: (days) => `Quedan ${days} días`,
+  },
+};
+
 export function getDeadlineLabel(
   deadline: string | null,
   today: Date = new Date(),
   lang: "en" | "es" = "en",
 ): string {
-  if (!deadline) return lang === "es" ? "No disponible" : "Not available";
+  const labels = DEADLINE_LABELS[lang];
+  if (!deadline) return labels.notAvailable;
   const days = daysUntil(deadline, today);
-  if (days < 0) return lang === "es" ? "Plazo pasado" : "Passed";
-  if (days === 0) return lang === "es" ? "¡Hoy!" : "Today!";
-  if (days === 1) return lang === "es" ? "Queda 1 día" : "Tomorrow!";
-  return lang === "es" ? `Quedan ${days} días` : `${days} days left`;
+  if (days < 0) return labels.passed;
+  if (days === 0) return labels.today;
+  if (days === 1) return labels.tomorrow;
+  return labels.daysLeft(days);
 }

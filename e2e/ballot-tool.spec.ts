@@ -305,3 +305,48 @@ test.describe("Language toggle", () => {
     await expect(page.getByTestId("language-toggle")).toContainText("English");
   });
 });
+
+// ---------------------------------------------------------------------------
+// Accessibility — language features (Phase 2)
+// ---------------------------------------------------------------------------
+
+test.describe("Accessibility — language features", () => {
+  test("language toggle is a native button element", async ({ page }) => {
+    await page.goto("/");
+    const toggle = page.getByTestId("language-toggle");
+    const tagName = await toggle.evaluate((el) => el.tagName.toLowerCase());
+    expect(tagName).toBe("button");
+  });
+
+  test("toggle has correct aria-label in English mode", async ({ page }) => {
+    await page.goto("/");
+    const toggle = page.getByTestId("language-toggle");
+    await expect(toggle).toHaveAttribute("aria-label", "Switch to Spanish");
+  });
+
+  test("html element has lang='en' on initial load", async ({ page }) => {
+    await page.goto("/");
+    const langAttr = await page.evaluate(() =>
+      document.documentElement.getAttribute("lang"),
+    );
+    expect(langAttr).toBe("en");
+  });
+
+  test("html[lang] becomes 'es' after toggle click", async ({ page }) => {
+    await page.goto("/");
+    await page.getByTestId("language-toggle").click();
+    const langAttr = await page.evaluate(() =>
+      document.documentElement.getAttribute("lang"),
+    );
+    expect(langAttr).toBe("es");
+  });
+
+  test("aria-live region announces language change to Spanish", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    await page.getByTestId("language-toggle").click();
+    const liveRegion = page.locator('[aria-live="polite"]');
+    await expect(liveRegion).toContainText("Idioma cambiado a español");
+  });
+});
