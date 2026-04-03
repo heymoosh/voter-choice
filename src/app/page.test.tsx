@@ -4,9 +4,39 @@ import { render, screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import Home from "./page";
 
-// Mock BallotToolClient to isolate page layout tests
+// Mock client components to isolate page layout tests
 vi.mock("../components/BallotToolClient", () => ({
   BallotToolClient: () => <div data-testid="ballot-tool-client" />,
+}));
+vi.mock("../components/LanguageToggle", () => ({
+  LanguageToggle: () => (
+    <button data-testid="language-toggle">Español</button>
+  ),
+}));
+vi.mock("./PageContent", () => ({
+  PageContent: ({ children }: { children?: React.ReactNode }) => (
+    <div
+      data-testid="page-content"
+      data-tips="true"
+    >
+      <h1>Free AI Ballot Research Tool</h1>
+      <section data-testid="tips-section">
+        <p>AI can make mistakes</p>
+        <p>don&apos;t know</p>
+      </section>
+      {children}
+      <footer role="contentinfo">
+        <p>Created by a human using AI tools</p>
+      </footer>
+      <a href="https://claude.ai">Claude</a>
+      <a href="https://chatgpt.com">ChatGPT</a>
+    </div>
+  ),
+}));
+vi.mock("../lib/i18n", () => ({
+  LanguageProvider: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="language-provider">{children}</div>
+  ),
 }));
 
 describe("Home page", () => {
@@ -44,5 +74,20 @@ describe("Home page", () => {
     render(<Home />);
     expect(screen.getByRole("link", { name: /Claude/i })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /ChatGPT/i })).toBeInTheDocument();
+  });
+
+  it("renders LanguageToggle with data-testid='language-toggle'", () => {
+    render(<Home />);
+    expect(screen.getByTestId("language-toggle")).toBeInTheDocument();
+  });
+
+  it("wraps content in LanguageProvider", () => {
+    render(<Home />);
+    expect(screen.getByTestId("language-provider")).toBeInTheDocument();
+  });
+
+  it("renders PageContent component", () => {
+    render(<Home />);
+    expect(screen.getByTestId("page-content")).toBeInTheDocument();
   });
 });

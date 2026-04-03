@@ -69,6 +69,46 @@ describe("LanguageProvider", () => {
   });
 });
 
+describe("html lang attribute", () => {
+  beforeEach(() => {
+    localStorage.clear();
+    document.documentElement.lang = "en";
+  });
+
+  it("sets document.documentElement.lang to 'en' by default", async () => {
+    render(
+      <LanguageProvider>
+        <LanguageConsumer />
+      </LanguageProvider>,
+    );
+    await act(async () => {});
+    expect(document.documentElement.lang).toBe("en");
+  });
+
+  it("sets document.documentElement.lang to 'es' when Spanish stored", async () => {
+    localStorage.setItem("ballot-tool-lang", "es");
+    render(
+      <LanguageProvider>
+        <LanguageConsumer />
+      </LanguageProvider>,
+    );
+    await act(async () => {});
+    expect(document.documentElement.lang).toBe("es");
+  });
+
+  it("updates document.documentElement.lang on setLang", async () => {
+    render(
+      <LanguageProvider>
+        <LanguageConsumer />
+      </LanguageProvider>,
+    );
+    await act(async () => {
+      screen.getByTestId("set-es").click();
+    });
+    expect(document.documentElement.lang).toBe("es");
+  });
+});
+
 describe("useLanguage", () => {
   beforeEach(() => {
     localStorage.clear();
