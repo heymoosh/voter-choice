@@ -1,4 +1,5 @@
 import BallotToolClient from "../components/BallotToolClient";
+import { LanguageProvider } from "../lib/i18n";
 
 const CHATBOTS = [
   { name: "Claude", url: "https://claude.ai" },
@@ -9,6 +10,7 @@ const CHATBOTS = [
 
 export default function Home() {
   return (
+    <LanguageProvider>
     <div className="min-h-screen flex flex-col">
       <main id="main-content" className="flex-1">
         {/* Hero Section */}
@@ -99,5 +101,6 @@ export default function Home() {
         </div>
       </footer>
     </div>
+    </LanguageProvider>
   );
 }

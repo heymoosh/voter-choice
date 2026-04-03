@@ -45,7 +45,7 @@ development_status:
   # Epic 1: i18n Foundation Infrastructure
   epic-1: in-progress
   1-1-create-typed-translation-store: done
-  1-2-implement-languageprovider-with-ssr-hydration-guard: backlog
+  1-2-implement-languageprovider-with-ssr-hydration-guard: done
   epic-1-retrospective: optional
 
   # Epic 2: Language Toggle Component
