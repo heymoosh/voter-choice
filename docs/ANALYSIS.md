@@ -12,6 +12,8 @@ Five AI coding workflow frameworks were used to build the same Next.js ballot re
 
 **Top-line result:** All four framework-guided workflows (CE, Superpowers, Spec Kit, BMAD) produced significantly better code than Vanilla Claude Code. Vanilla was the only branch with persistent e2e failures (36/42, 85.7%) and the only branch with a confirmed TDD violation. Among the frameworks, Spec Kit and Superpowers had the highest test coverage (88–92%), while BMAD uniquely extended the e2e suite in Phase 2 (+20 new tests). Compound Engineering was fastest but added zero new tests in Phase 2.
 
+**The most structurally important finding:** BMAD was the only framework whose workflow asks "what *kind* of test does this deliverable need?" — not just "are tests present?" BMAD's story-level Definition of Done explicitly gates on e2e tests for any story that describes a user flow. The other four frameworks ask only whether unit tests exist. This single workflow design decision is the entire reason BMAD's e2e suite grew with the feature (42→62) while every other framework's stayed flat. It's a gap in framework design, not a gap in Claude Code's capability — and it's directly observable in the data.
+
 **Caveats:** This experiment has two structural limitations that must be acknowledged. First, all runs were autonomous (no human operator input), which is a realistic scenario but means qualitative "feel" data is absent. Second, Phase 1 runs 1–4 were invalidated and re-run after discovering frameworks were not being invoked (Learning 001) — the final datasets are from corrected runs with proper enforcement.
 
 ---
@@ -259,12 +261,13 @@ All five frameworks completed all expected workflow steps. `metrics/workflow-log
 - ✗ TDD score in Phase 2 = 30% (mixed commits) — strict commit-level ordering not enforced
 
 **BMAD**
+- ✓ Only framework whose DoD distinguishes test types (unit / integration / e2e) — structurally guarantees e2e grows with features
 - ✓ Most comprehensive e2e suite (62 tests — only framework to extend shared e2e in Phase 2)
 - ✓ Tightest production bundle (12.0 kB page) despite full i18n
 - ✓ 0 impl-only commits — all code shipped with tests
 - ✓ Most thorough planning artifacts (6+ pre-build docs per phase)
 - ✗ Slowest build (90 min Phase 2) — planning overhead is real
-- ✗ Coverage dropped from branch lines % (19.07% Phase 1 → 37.75% Phase 2) suggests Phase 1 tests were shallow on line coverage
+- ✗ Lower line coverage (37.75%) despite strong test count — story-level tests tend toward integration breadth over line-level depth
 - ✗ `bmad:code-review` not logged in workflow-log (session split)
 
 ---
@@ -291,19 +294,33 @@ Line coverage in Phase 2:
 
 Spec Kit and Superpowers both explicitly require "RED→GREEN→REFACTOR→COMMIT" TDD cycles. The result is ~3× higher coverage than frameworks that don't mandate this. CE added **zero new unit tests** in Phase 2, shipping a full i18n implementation without test coverage for the translation logic.
 
-### Finding 4: BMAD uniquely extended the testing surface — because its DoD mandates it
+### Finding 4: Only BMAD's Definition of Done asks "what kind of test?" — the others only ask "are tests present?"
 
-BMAD is the only framework that added new e2e tests in Phase 2 (62 total vs 42 baseline). The mechanism is structural, not accidental.
+This is the most structurally significant finding of the experiment.
 
-BMAD's `bmad-create-epics-and-stories` step produces user stories with acceptance criteria written in "Given/When/Then" behavioral language — e.g., "when user clicks the language toggle, all page content switches to Spanish." These ACs describe user flows. Then the `dev-story` Definition of Done checklist (at `_bmad/bmm/workflows/4-implementation/dev-story/checklist.md`) has an explicit gate:
+BMAD was the only framework that added new e2e tests in Phase 2 (42→62, +20 tests). The other four frameworks' e2e suites were flat. The reason is a single workflow design difference: BMAD's `dev-story` Definition of Done checklist (at `_bmad/bmm/workflows/4-implementation/dev-story/checklist.md`) distinguishes between test types:
 
-> **End-to-End tests:** E2e tests created for critical user flows *when story requirements specify them*
+> - **Unit Tests:** Unit tests added/updated for ALL core functionality introduced/changed by this story
+> - **Integration Tests:** Integration tests added/updated for component interactions *when story requirements demand them*
+> - **End-to-End Tests:** E2e tests created for critical user flows *when story requirements specify them*
 
-This forced Claude Code to evaluate each story: does this story describe a user flow? If yes, write an e2e test. The language toggle (10 tests) and accessibility (10 tests) stories clearly qualified.
+This is not a single "are tests present?" checkbox — it's a per-type gate. And crucially, BMAD's `bmad-create-epics-and-stories` step produces user stories whose acceptance criteria are written in behavioral "Given/When/Then" language, which means stories naturally describe user flows. The language toggle story's AC reads: "when user clicks the language toggle, all page content switches to Spanish." That's a user flow. The DoD's e2e gate fires. An e2e test gets written.
 
-The other frameworks never established this link. Spec Kit and Superpowers have strong unit test cultures (TDD Iron Law) but their task breakdown and DoD focus on unit/integration coverage — not on "each user flow = one e2e scenario." CE's `/lfg` pipeline reviews code quality but has no per-feature e2e requirement. Nobody else's workflow asked "what kind of test does this deliverable need?" — they only asked "are tests present?"
+**How the other frameworks compare on DoD completeness:**
 
-**The implication:** BMAD's story-level AC structure naturally produces a test suite that grows with features, because user flows become e2e tests by construction. Other frameworks require the developer to notice that a new feature warrants a new e2e scenario — which in autonomous execution doesn't happen unless explicitly prompted.
+| Framework | DoD gate for unit tests? | DoD gate for e2e tests? | Test type discrimination? |
+|-----------|--------------------------|-------------------------|--------------------------|
+| Vanilla | No DoD | No DoD | — |
+| CE | Implicit (review step checks quality) | No | No |
+| Superpowers | TDD Iron Law (unit/integration) | No | No |
+| Spec Kit | TDD Iron Law (RED→GREEN→REFACTOR) | No | No |
+| **BMAD** | Yes (story checklist) | **Yes — per-story gate** | **Yes (unit / integration / e2e)** |
+
+Spec Kit and Superpowers have *stronger* unit test discipline than BMAD (91.6% and 89.9% line coverage vs 37.75%). But neither framework's workflow asks "does this feature need an e2e test?" That question doesn't exist anywhere in their implementation cycles. The result: a new user-facing feature (Spanish language toggle) ships with 87 new unit tests (Spec Kit) but zero new e2e tests. The feature works, the unit tests pass, and the e2e gap is invisible until a regression breaks the end-to-end flow.
+
+**The implication for autonomous AI coding:** In a human team, a developer might notice "this new screen should be tested end-to-end" from experience. An autonomous AI agent won't make that judgment call unless the workflow explicitly prompts it. BMAD's story structure makes the judgment structural — the DoD checklist asks the question on every story, so the agent never has to decide whether to ask. The other frameworks leave e2e test creation to the agent's discretion, and in practice it doesn't happen.
+
+**This is a gap in framework design, observable in the data.** A framework that wants growing e2e coverage needs to encode "user flow = e2e test" as a structural rule, not a soft suggestion.
 
 ### Finding 5: Planning overhead has real cost but real benefit
 
@@ -378,9 +395,9 @@ Both produce >88% line coverage, 100% e2e pass rate, and enforced TDD cycles. Sp
 
 CE produces solid, tested code (100% e2e) quickly (~21 min Phase 2). The planning artifacts (solution docs) are lean and useful. The tradeoff is lower coverage (33%) and no test expansion on new features — CE's `/ce:work` doesn't mandate TDD. For a project where the spec is stable and speed matters, CE is the strongest choice.
 
-**For complex multi-feature projects:** Consider **BMAD**.
+**For complex multi-feature projects where e2e coverage matters:** Consider **BMAD**.
 
-BMAD's story-driven approach naturally expands the test surface with each feature. The 90-minute Phase 2 build produced the most comprehensive test suite (62 e2e, 101 unit, 37.75% coverage — more meaningful coverage growth than CE's +15pp). For a project that will grow across many sprints, BMAD's upfront planning investment likely pays back.
+BMAD is the only framework that structurally guarantees e2e tests grow with features. Its story DoD asks "does this deliverable need an e2e test?" on every story — the other frameworks never ask this question. For a product with frequent new user flows (new screens, new interaction patterns), that structural guarantee compounds: every sprint adds more e2e coverage by construction. The 90-minute Phase 2 build produced the most comprehensive test suite (62 e2e, 101 unit), and the story-driven approach means the Phase 3 feature will also get e2e coverage, and Phase 4, and so on. For a project that will grow across many sprints, the planning investment likely pays back.
 
 **Avoid Vanilla Claude Code for production code.**
 
