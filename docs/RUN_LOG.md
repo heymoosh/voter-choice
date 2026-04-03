@@ -2,9 +2,34 @@
 
 ## Next
 
-Phase 2 Run 3: Superpowers — Add Spanish language support. Checkout `run3/superpowers`, run `/start`.
+Phase 2 Run 4: Spec Kit — Add Spanish language support. Checkout `run3/spec-kit`, run `/start`.
 
 ## Completed
+
+### Phase 2 Run 3 — Superpowers (complete)
+
+- **Date:** 2026-04-03
+- **Branch:** `run3/superpowers`
+- **Tag:** `superpowers-run3-phase2-complete` (local; push from host — container has no GitHub credentials)
+- **Commit:** `a0510ab`
+- **What was done:** Full Superpowers workflow (6 steps): brainstorming → writing-plans → executing-plans → requesting-code-review → verification-before-completion → finishing-a-development-branch. Added Spanish language support. Architecture: `src/lib/translations.ts` (typed `Translations` interface with function signatures for interpolated strings, complete EN/ES records including `voterIdRequired`/`voterIdNotRequired`). `src/lib/i18n.tsx` (React context with SSR hydration guard starting at "en", `useCallback`-stabilized `setLang`, `localStorage` persistence, `document.documentElement.lang` sync). `src/components/LanguageToggle.tsx` (fixed top-right, `data-testid="language-toggle"`, `aria-label` accessible). `formatDate` extended with optional locale param for Spanish dates ("3 de abril de 2026"). `generatePromptText` extended with full Spanish `BALLOT_PROMPT_ES` (~200 lines, fluent "tú" voice) + Spanish context block. `page.tsx` refactored as thin server shell wrapping `LanguageProvider` + `LanguageToggle` + `PageContent`. All 8 components updated to use `useLanguage()` hook. Two code review critical issues fixed: (1) skip link translated (moved to `PageContent.tsx` client component), (2) prompt regeneration on language switch (added `useEffect([lang])` in `BallotToolClient`). Plan had 13 tasks executed via subagent-driven development.
+- **Measurements:** ESLint 0 errors/0 warnings/0 complexity violations. Vitest 107/107 unit tests (100%), coverage 89.9% lines. 0.52% duplication (10 lines / 1914 total). First load JS 102 kB (unchanged). Playwright 42/42 e2e (100%). Lighthouse N/A (container). LOC: 2,589 src/ (+966 from Phase 1's 1,623). Total 3,977 (+966). 33 src files (+15 new).
+- **Phase 1 → Phase 2 delta:**
+  - E2e pass rate: 42/42 → 42/42 (100%, unchanged)
+  - ESLint errors: 0 → 0 | warnings: 0 → 0
+  - Unit tests: 53 → 107 (+54 new tests for i18n, translations, prompt-generator lang, date-utils locale, component translations)
+  - Coverage lines %: 80.21 → 89.9 (+9.7 pp)
+  - Duplication: 0% → 0.52% (minimal increase, 1 clone detected)
+  - Bundle firstLoad: 102 kB → 102 kB (unchanged — translations in JS bundle but within compression budget)
+  - App LOC: 1,623 → 2,589 (+966)
+  - Lighthouse: 100/100 → N/A (container limitation — same as all other Phase 2 runs)
+- **Workflow log:** All 6 steps completed with timestamps. Build duration ~54 minutes. Steps: brainstorming ~10 min, writing-plans ~11 min, executing-plans ~26 min, review ~4 min, verification ~2 min, finish <1 min. 12 workflow-generated test files.
+- **Adherence findings:**
+  - **TDD unassessable:** `tddScore` null — 12 test files all "unchecked" by adherence script. Root cause: test files added in Phase 2 (e.g., `i18n.test.tsx`) correspond to impl files (`i18n.tsx`) introduced in Phase 1, so no matching impl file appears in Phase 2 commit history. Script can't assess TDD order across phase boundaries.
+  - **TDD violation (4 impl-only commits):** Script reports 4 commits with impl files but no test in same commit. These are multi-file integration commits (connecting translations to components) where tests exist in preceding commits. Score null (see above).
+  - **Measurement gap (script limitation):** Adherence script expects flat field names (`eslintErrors`, `e2eTotal`) but all measurement JSONs use nested structure (`eslint.errors`, `playwright.total`). Consistent bug across all branches — 7 fields appear "missing" but are present in the JSON. Also fixed a path-doubling bug in the script (`metrics/metrics/...` → `metrics/...`).
+- **Issues or deviations:** HEAD was 1 commit ahead of `superpowers-run3-phase1-complete` tag (prior infra commit). Noted and proceeded per prior pattern. Push blocked by missing container credentials — push from host required. Lighthouse not measurable (container). `analyze-adherence.mjs` not on branch — copied from main for post-hoc analysis.
+- **Operator notes:** No additional observations — autonomous session.
 
 ### Phase 2 Run 2 — Compound Engineering (complete)
 
