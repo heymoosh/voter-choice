@@ -384,6 +384,8 @@ function analyzeMeasurementJSON(branch) {
   const jsonFiles = fileList
     .trim()
     .split("\n")
+    // git ls-tree returns full paths like "metrics/foo.json" — strip the "metrics/" prefix
+    .map((f) => f.replace(/^metrics\//, ""))
     .filter((f) => f.endsWith(".json") && !f.includes("adherence"));
 
   if (jsonFiles.length === 0) {
