@@ -1,5 +1,5 @@
-# generated: 2026-03-31
-# last_updated: 2026-03-31
+# generated: 2026-04-03
+# last_updated: 2026-04-03
 # project: voter-choice
 # project_key: NOKEY
 # tracking_system: file-system
@@ -12,64 +12,62 @@
 #   - in-progress: Epic actively being worked on
 #   - done: All stories in epic completed
 #
+# Epic Status Transitions:
+#   - backlog → in-progress: Automatically when first story is created (via create-story)
+#   - in-progress → done: Manually when all stories reach 'done' status
+#
 # Story Status:
 #   - backlog: Story only exists in epic file
 #   - ready-for-dev: Story file created in stories folder
 #   - in-progress: Developer actively working on implementation
-#   - review: Ready for code review
+#   - review: Ready for code review (via Dev's code-review workflow)
 #   - done: Story completed
 #
 # Retrospective Status:
 #   - optional: Can be completed but not required
 #   - done: Retrospective has been completed
+#
+# WORKFLOW NOTES:
+# ===============
+# - Epic transitions to 'in-progress' automatically when first story is created
+# - Stories can be worked in parallel if team capacity allows
+# - SM typically creates next story after previous one is 'done' to incorporate learnings
+# - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
-generated: 2026-03-31
-last_updated: 2026-03-31
+generated: 2026-04-03
+last_updated: 2026-04-03T21:30:00+00:00
 project: voter-choice
 project_key: NOKEY
 tracking_system: file-system
 story_location: _bmad-output/implementation-artifacts
 
 development_status:
-  # Epic 1: Data Foundation
+  # Epic 1: i18n Foundation Infrastructure
   epic-1: in-progress
-  1-1-typescript-type-definitions: in-progress
-  1-2-date-utility-functions: backlog
-  1-3-zip-lookup-function: backlog
-  1-4-state-data-loader: backlog
-  1-5-prompt-generation-function: backlog
+  1-1-create-typed-translation-store: done
+  1-2-implement-languageprovider-with-ssr-hydration-guard: backlog
   epic-1-retrospective: optional
 
-  # Epic 2: Zip Code Entry & State Lookup
+  # Epic 2: Language Toggle Component
   epic-2: backlog
-  2-1-zipform-component: backlog
-  2-2-state-selector-for-multi-state-zips: backlog
+  2-1-build-accessible-language-toggle-component: backlog
   epic-2-retrospective: optional
 
-  # Epic 3: State Election Info Display
+  # Epic 3: UI Translation — All Components
   epic-3: backlog
-  3-1-state-info-card-core-display: backlog
-  3-2-registration-deadline-status-indicators: backlog
-  3-3-not-found-message: backlog
+  3-1-translate-zipform-with-error-as-key-pattern: backlog
+  3-2-translate-stateinfocard-with-locale-aware-dates: backlog
+  3-3-translate-promptoutput-page-content-tips-and-footer: backlog
   epic-3-retrospective: optional
 
-  # Epic 4: Prompt Generation & Clipboard
+  # Epic 4: Prompt and Date Localization
   epic-4: backlog
-  4-1-prompt-output-display: backlog
-  4-2-copy-to-clipboard: backlog
+  4-1-extend-date-and-deadline-utilities-with-language-parameter: backlog
+  4-2-add-spanish-ballot-prompt-and-context-block: backlog
   epic-4-retrospective: optional
 
-  # Epic 5: Page Layout & Static Content
+  # Epic 5: Testing, Regression, and Accessibility Verification
   epic-5: backlog
-  5-1-page-layout-with-server-client-split: backlog
-  5-2-hero-section: backlog
-  5-3-tips-section-and-footer: backlog
+  5-1-e2e-tests-for-language-toggle-functionality: backlog
+  5-2-accessibility-verification-for-language-features: backlog
   epic-5-retrospective: optional
-
-  # Epic 6: Integration, Accessibility & Polish
-  epic-6: backlog
-  6-1-ballottoolclient-integration: backlog
-  6-2-responsive-layout: backlog
-  6-3-accessibility-compliance: backlog
-  6-4-build-verification-and-test-suite: backlog
-  epic-6-retrospective: optional
