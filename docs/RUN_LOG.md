@@ -2,9 +2,35 @@
 
 ## Next
 
-Phase 2 Run 5: BMAD — Add Spanish language support. Checkout `run3/bmad`, run `/start`.
+Phase 3: Analysis and write-up. All 5 Phase 2 runs complete. Aggregate cross-framework metrics from `metrics/` JSON files across all branches, produce comparison tables, and draft the experiment write-up in `docs/ANALYSIS.md`.
 
 ## Completed
+
+### Phase 2 Run 5 — BMAD (complete)
+
+- **Date:** 2026-04-03
+- **Branch:** `run3/bmad`
+- **Tag:** `bmad-run3-phase2-complete` (local; push from host — container has no GitHub credentials)
+- **Commit:** `5f3b4a2`
+- **What was done:** Full BMAD Phase 2 workflow — all 10 BMAD steps via Skill tool: bmad-brainstorming → bmad-create-product-brief → bmad-create-prd → bmad-create-ux-design → bmad-create-architecture → bmad-create-epics-and-stories → bmad-check-implementation-readiness (READY) → bmad-sprint-planning → bmad-dev-story × 10 stories → bmad-code-review. 5 epics, 10 stories implemented. New files: `src/lib/translations.ts` (typed `Translations` interface, EN+ES, 46 leaf keys each), `src/lib/i18n.tsx` (React context, SSR hydration guard, localStorage persistence, `document.documentElement.lang` sync), `src/components/LanguageToggle.tsx` (fixed top-right, native `<button>`, `aria-label`, `aria-live="polite"` announcement), `src/components/SkipLink.tsx` (translatable skip-to-content). Modified: all 6 components use `useLanguage()`, `generatePrompt.ts` (full `BALLOT_PROMPT_ES` ~80 lines, Spanish context block, `buildContextBlockEs()`), `date-utils.ts` (lang param + `DEADLINE_LABELS` lookup object, ESLint complexity 12→5). E2e suite extended: 20 new tests (10 Language toggle + 10 Accessibility). Code review finding fixed: ES `deadline.tomorrow` inconsistency between translation stores.
+- **Measurements:** ESLint 0 errors/0 warnings. Vitest 101/101 (100%). 0.34% duplication. First load JS 102 kB (unchanged). Playwright 62/62 e2e (100%). Lighthouse N/A (container). LOC: 2126 src/ across 29 files. 8 test files in src/__tests__/.
+- **Phase 1 → Phase 2 delta:**
+  - E2e pass rate: 42/42 → 62/62 (+20 new tests: 10 Language toggle + 10 Accessibility)
+  - ESLint errors: 0 → 0 | warnings: 0 → 0 | complexity: 0 → 0
+  - Unit tests: 50 → 101 (+51 new for translations, i18n, LanguageToggle, date-utils ES, generatePrompt ES)
+  - Coverage lines %: 19.07 → 37.75 (+18.68 pp)
+  - Coverage branches %: 91.07 → 88.09 (-3.0 pp — new code added with branch paths)
+  - Duplication: 0% → 0.34% (1 clone, minimal)
+  - Bundle shared: 102 kB → 102 kB (unchanged)
+  - App src/ LOC: 1364 → 2126 (+762)
+  - Files: 22 → 29 (+7 new)
+- **Workflow log:** All 8 BMAD planning steps completed with timestamps. Steps: brainstorming ~3.5 min, product-brief ~2 min, prd ~2 min, ux-design ~2 min, architecture ~2.5 min, epics-and-stories ~2.5 min, implementation-readiness ~4 min, sprint-planning ~1 min. Story implementation ~60 min. Code review ~20 min. Total build duration ~90 min. `bmad:story-implementation` logged as started (session split across context limits); `bmad:code-review` not in workflow-log (separate invocation).
+- **Adherence findings:**
+  - **TDD unassessable:** All 12 Phase 2 implementation commits bundle test+impl in single commits (story-by-story BMAD pattern). Cannot determine test-first order from commit history. 0 impl-only commits — every implementation had accompanying tests.
+  - **Workflow gap (minor):** `bmad:story-implementation` shows `started` but no `completed` entry in workflow-log (session split). `bmad:code-review` not logged. All BMAD artifacts present and all stories marked done after review.
+  - **analyze-adherence.mjs not on branch:** Script not installed on this branch (same limitation as all other Phase 2 runs).
+- **Issues or deviations:** Push blocked by missing container GitHub credentials — push from host required. Lighthouse not measurable in container. Session split across two contexts (context limit hit mid-story-4.2). Second session invoked `/start` which was blocked by uncommitted changes; user said "continue where left off" — committed pending Story 4.2 artifacts and resumed. Pre-existing Prettier formatting issues in 5 files blocked `npm run build` — fixed in Story 5.1 before any Phase 2 tests could run (same issue as Story 5.1 note on Spec Kit branch).
+- **Operator notes:** No additional observations — autonomous session.
 
 ### Phase 2 Run 4 — Spec Kit (complete)
 
