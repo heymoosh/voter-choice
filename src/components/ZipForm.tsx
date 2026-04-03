@@ -4,27 +4,32 @@ import { useState } from "react";
 import { useLanguage } from "../lib/i18n";
 import { translations } from "../lib/translations";
 
+type ErrorKey = "empty" | "invalid" | null;
+
 interface ZipFormProps {
   onSubmit: (zip: string) => void;
 }
 
 export function ZipForm({ onSubmit }: ZipFormProps) {
   const [value, setValue] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const [errorKey, setErrorKey] = useState<ErrorKey>(null);
   const { lang } = useLanguage();
   const t = translations[lang];
+
+  // Derive the display string from the current lang — not stored as a snapshot
+  const errorMessage = errorKey ? t.errors[errorKey] : null;
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!value.trim()) {
-      setError(t.errors.empty);
+      setErrorKey("empty");
       return;
     }
     if (!/^\d{5}$/.test(value.trim())) {
-      setError(t.errors.invalid);
+      setErrorKey("invalid");
       return;
     }
-    setError(null);
+    setErrorKey(null);
     onSubmit(value.trim());
   }
 
@@ -43,10 +48,10 @@ export function ZipForm({ onSubmit }: ZipFormProps) {
           value={value}
           onChange={(e) => {
             setValue(e.target.value);
-            if (error) setError(null);
+            if (errorKey) setErrorKey(null);
           }}
           className="border rounded px-3 min-h-[44px] w-full focus:outline-none focus:ring-2 focus:ring-blue-600"
-          aria-describedby={error ? "zip-error" : undefined}
+          aria-describedby={errorMessage ? "zip-error" : undefined}
         />
         <button
           data-testid="zip-submit"
@@ -56,14 +61,14 @@ export function ZipForm({ onSubmit }: ZipFormProps) {
           {t.zipForm.submit}
         </button>
       </div>
-      {error && (
+      {errorMessage && (
         <p
           id="zip-error"
           data-testid="zip-error"
           role="alert"
           className="text-red-600 text-sm mt-1"
         >
-          {error}
+          {errorMessage}
         </p>
       )}
     </form>
