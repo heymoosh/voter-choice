@@ -424,3 +424,42 @@ This gap analysis revealed a spectrum of experiment infrastructure maturity:
 - **Enforcement fidelity (framework actually runs at full capability):** This learning — TDD survived as a "read and follow" reference even after two rounds of fixes targeting exactly this pattern
 
 The TDD finding is particularly instructive: **fixing a class of bugs doesn't mean you've fixed every instance.** The Learning 005/006 fixes correctly moved skills to commands and rewrote workflow.md invocations. But the TDD reference was embedded in AUTONOMOUS RULES prose, not as a standalone step, so it was missed. Pattern-based fixes need pattern-based verification.
+
+---
+
+## Learning 008: LLM Codebase Scaling — Degradation Thresholds
+
+**Date discovered:** 2026-04-03
+**Context:** Post-BMAD Phase 2 debrief observation
+
+### Observation
+
+At ~2k LOC (current scale), errors are already appearing but are fixable:
+- Session context limit hit mid-build (BMAD story 4.2 split across two contexts)
+- Parallel translation stores diverged silently: `translations.ts` `deadline.tomorrow` ES = "¡Mañana!" while `DEADLINE_LABELS.es.tomorrow` = "Queda 1 día" — two sources of truth for the same string, both passing tests
+- Pre-existing Prettier formatting issues went undetected until a full build was triggered
+
+These are early-warning signs of the coherence failures that become reliable at larger scales.
+
+### Degradation thresholds (src/ application code only)
+
+| Scale | Files | LOC | Primary failure modes |
+|-------|-------|-----|----------------------|
+| 🟢 Green | < 40 | < 3k | High coherence; errors fixable in session |
+| 🟡 Yellow | 40–100 | 3–10k | Stale-context errors; hallucinated imports; type drift (`any` casts); test drift |
+| 🔴 Red | > 100 | > 10k+ | Multi-file refactors have silent partial failures; "passes build but wrong" bugs; agents can't hold full dependency graph |
+
+### Specific patterns that fail first
+
+1. **Parallel string stores** — Already observable here at 46 translation keys × 2 languages. At 200+ keys or 3+ languages, keeping multiple string stores synchronized across stories becomes exactly the kind of multi-file coherence problem LLMs fail at silently.
+2. **Cross-file type threading** — Agents start adding `as any` casts to escape TypeScript errors rather than tracing the correct type through 15+ files.
+3. **Context window saturation** — Agents can't hold the full file graph; start guessing what's relevant, missing cascading changes.
+4. **Test drift** — New code added without tests because the agent doesn't know what's already covered.
+
+### Implication for this experiment
+
+Frameworks with strict story-level isolation (BMAD, Spec Kit) degrade more gracefully at larger scales because each story limits context scope. Vanilla Claude Code on a 20k LOC codebase with no workflow structure would choke much earlier than BMAD on the same codebase. **This is a meaningful differentiator that the Phase 3 write-up should address** — the relative value of structured workflows likely increases as codebase size grows.
+
+### Action
+
+Include a codebase scale health check in every `/start` operator debrief (Step 7, item 9). Report src/ LOC + file count + Green/Yellow/Red status against the thresholds above.
