@@ -56,7 +56,7 @@ development_status:
   # Epic 3: UI Translation — All Components
   epic-3: in-progress
   3-1-translate-zipform-with-error-as-key-pattern: done
-  3-2-translate-stateinfocard-with-locale-aware-dates: backlog
+  3-2-translate-stateinfocard-with-locale-aware-dates: done
   3-3-translate-promptoutput-page-content-tips-and-footer: backlog
   epic-3-retrospective: optional
 

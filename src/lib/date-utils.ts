@@ -23,9 +23,13 @@ export function getDeadlineStatus(
   return "safe";
 }
 
-export function formatDate(isoDate: string): string {
+export function formatDate(
+  isoDate: string,
+  lang: "en" | "es" = "en",
+): string {
   const date = new Date(isoDate + "T00:00:00");
-  return date.toLocaleDateString("en-US", {
+  const locale = lang === "es" ? "es-MX" : "en-US";
+  return date.toLocaleDateString(locale, {
     year: "numeric",
     month: "long",
     day: "numeric",
@@ -35,11 +39,12 @@ export function formatDate(isoDate: string): string {
 export function getDeadlineLabel(
   deadline: string | null,
   today: Date = new Date(),
+  lang: "en" | "es" = "en",
 ): string {
-  if (!deadline) return "Not available";
+  if (!deadline) return lang === "es" ? "No disponible" : "Not available";
   const days = daysUntil(deadline, today);
-  if (days < 0) return "Passed";
-  if (days === 0) return "Today!";
-  if (days === 1) return "Tomorrow!";
-  return `${days} days left`;
+  if (days < 0) return lang === "es" ? "Plazo pasado" : "Passed";
+  if (days === 0) return lang === "es" ? "¡Hoy!" : "Today!";
+  if (days === 1) return lang === "es" ? "Queda 1 día" : "Tomorrow!";
+  return lang === "es" ? `Quedan ${days} días` : `${days} days left`;
 }

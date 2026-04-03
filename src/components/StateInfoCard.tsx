@@ -6,6 +6,7 @@ import {
   getDeadlineStatus,
   getDeadlineLabel,
 } from "../lib/date-utils";
+import { useLanguage } from "../lib/i18n";
 
 interface StateInfoCardProps {
   stateData: StateElectionData;
@@ -44,26 +45,27 @@ function RegistrationDeadlines({
   stateData: StateElectionData;
   today: Date;
 }) {
+  const { lang, t } = useLanguage();
   const { registration } = stateData;
   const methods = [
-    { name: "Online", method: registration.online },
-    { name: "By mail", method: registration.byMail },
-    { name: "In person", method: registration.inPerson },
+    { name: t("stateInfo.online"), method: registration.online },
+    { name: t("stateInfo.byMail"), method: registration.byMail },
+    { name: t("stateInfo.inPerson"), method: registration.inPerson },
   ];
 
   return (
     <div data-testid="registration-status" className="space-y-2">
       <h4 className="font-semibold text-gray-700 text-sm uppercase tracking-wide">
-        Registration Deadlines
+        {t("stateInfo.registrationDeadlines")}
       </h4>
       {methods.map(({ name, method }) => {
         if (!method.deadline) return null;
         const status = getDeadlineStatus(method.deadline, today);
-        const label = getDeadlineLabel(method.deadline, today);
+        const label = getDeadlineLabel(method.deadline, today, lang);
         return (
           <div key={name} className="flex items-center justify-between text-sm">
             <span className="text-gray-600">
-              {name}: {formatDate(method.deadline)}
+              {name}: {formatDate(method.deadline, lang)}
             </span>
             <StatusBadge status={status} label={label} />
           </div>
@@ -71,7 +73,7 @@ function RegistrationDeadlines({
       })}
       {registration.sameDayRegistration && (
         <div className="text-sm text-green-700 font-medium">
-          Same-day registration available
+          {t("stateInfo.sameDayReg")}
         </div>
       )}
     </div>
@@ -79,30 +81,34 @@ function RegistrationDeadlines({
 }
 
 function EarlyVotingSection({ stateData }: { stateData: StateElectionData }) {
+  const { lang, t } = useLanguage();
   const { earlyVoting } = stateData;
   return (
     <div>
       <h4 className="font-semibold text-gray-700 text-sm uppercase tracking-wide">
-        Early Voting
+        {t("stateInfo.earlyVoting")}
       </h4>
       <p className="text-sm text-gray-600 mt-1">
         {earlyVoting.available && earlyVoting.startDate && earlyVoting.endDate
-          ? `${formatDate(earlyVoting.startDate)} — ${formatDate(earlyVoting.endDate)}${earlyVoting.notes ? ` (${earlyVoting.notes})` : ""}`
-          : "Not available — absentee voting only"}
+          ? `${formatDate(earlyVoting.startDate, lang)} — ${formatDate(earlyVoting.endDate, lang)}${earlyVoting.notes ? ` (${earlyVoting.notes})` : ""}`
+          : t("stateInfo.earlyVotingNotAvailable")}
       </p>
     </div>
   );
 }
 
 function VoterIdSection({ stateData }: { stateData: StateElectionData }) {
+  const { t } = useLanguage();
   const { votingRules } = stateData;
   return (
     <div>
       <h4 className="font-semibold text-gray-700 text-sm uppercase tracking-wide">
-        Voter ID
+        {t("stateInfo.voterId")}
       </h4>
       <p className="text-sm text-gray-600 mt-1">
-        {votingRules.idRequired ? "Required" : "Not required"}
+        {votingRules.idRequired
+          ? t("stateInfo.voterIdRequired")
+          : t("stateInfo.voterIdNotRequired")}
       </p>
       {votingRules.idRequired && votingRules.acceptedIds.length > 0 && (
         <ul className="text-xs text-gray-500 mt-1 list-disc list-inside">
@@ -119,6 +125,7 @@ export default function StateInfoCard({
   stateData,
   today = new Date(),
 }: StateInfoCardProps) {
+  const { lang, t } = useLanguage();
   const election = getNextElection(stateData, today);
 
   if (!election) {
@@ -128,14 +135,14 @@ export default function StateInfoCard({
         className="bg-yellow-50 border border-yellow-200 rounded-xl p-6 my-4"
       >
         <p className="text-yellow-800">
-          No upcoming elections found for {stateData.stateName}. Check{" "}
+          {t("stateInfo.noElectionMessage")} {stateData.stateName}. Check{" "}
           <a
             href={stateData.resources.stateElectionWebsite}
             target="_blank"
             rel="noopener noreferrer"
             className="underline text-teal-700 hover:text-teal-900"
           >
-            {stateData.stateName} election website
+            {stateData.stateName} {t("stateInfo.checkWebsite")}
           </a>{" "}
           for updates.
         </p>
@@ -153,7 +160,7 @@ export default function StateInfoCard({
           {stateData.stateName}
         </h2>
         <span className="text-sm text-gray-400">
-          Last updated: {stateData.lastUpdated}
+          {t("stateInfo.lastUpdated")} {stateData.lastUpdated}
         </span>
       </div>
 
@@ -163,7 +170,9 @@ export default function StateInfoCard({
             {election.name}
           </span>
           {" · "}
-          <span data-testid="election-date">{formatDate(election.date)}</span>
+          <span data-testid="election-date">
+            {formatDate(election.date, lang)}
+          </span>
         </p>
         {election.isPrimary && election.primaryType && (
           <p className="text-sm text-gray-500 mt-1">
@@ -179,7 +188,7 @@ export default function StateInfoCard({
 
         <div>
           <h4 className="font-semibold text-gray-700 text-sm uppercase tracking-wide">
-            Phones at Polls
+            {t("stateInfo.phonesAtPolls")}
           </h4>
           <p className="text-sm text-gray-600 mt-1">
             {stateData.votingRules.phonesAtPollsDetail}
@@ -193,7 +202,7 @@ export default function StateInfoCard({
             rel="noopener noreferrer"
             className="text-sm text-teal-700 hover:text-teal-900 underline"
           >
-            Election Website ↗
+            {t("stateInfo.electionWebsite")}
           </a>
           <a
             href={stateData.resources.sampleBallotLookup}
@@ -201,7 +210,7 @@ export default function StateInfoCard({
             rel="noopener noreferrer"
             className="text-sm text-teal-700 hover:text-teal-900 underline"
           >
-            Sample Ballot ↗
+            {t("stateInfo.sampleBallot")}
           </a>
         </div>
       </div>
