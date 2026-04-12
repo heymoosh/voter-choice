@@ -204,6 +204,10 @@ function handleAnthropicError(err: unknown): Response {
   return Response.json({ error: "Chat service error" }, { status: 500 });
 }
 
+export async function GET() {
+  return Response.json({ budget: getBudgetStatus() });
+}
+
 export async function POST(request: NextRequest) {
   if (!validateOrigin(request)) {
     return Response.json(

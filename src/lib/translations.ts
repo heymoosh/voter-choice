@@ -75,6 +75,29 @@ export interface Translations {
     noLocationsFound: string;
     privacyNote: string;
   };
+  budget: {
+    notice: string;
+    softClose: string;
+    exhausted: string;
+    resetNote: string;
+  };
+  handoff: {
+    header: string;
+    ballotSoFar: string;
+    voterProfile: string;
+    continueHeader: string;
+    copyContinuation: string;
+    copied: string;
+    downloadProfile: string;
+    continueOn: string;
+    clientFallbackHeader: string;
+    clientFallbackBody: string;
+  };
+  rateLimit: {
+    sessionLimit: string;
+    ipLimit: string;
+    messageCount: (current: number, max: number) => string;
+  };
   a11y: {
     skipToContent: string;
     languageToggleLabel: string;
@@ -167,6 +190,35 @@ const en: Translations = {
     noLocationsFound: "No polling locations found for this address.",
     privacyNote:
       "Your address is sent to Google\u2019s Civic API to find your polling place. We don\u2019t store it.",
+  },
+  budget: {
+    notice:
+      "Free AI chat may be limited later this month. You can always copy the prompt to use in your own chatbot.",
+    softClose:
+      "Our AI chat is at capacity this month, but you can still research your ballot.",
+    exhausted:
+      "Our free AI chat has reached its monthly limit. Copy the prompt below and paste it into any free AI chatbot to continue your research.",
+    resetNote: "Chat resets at the start of each month.",
+  },
+  handoff: {
+    header: "Here\u2019s everything we\u2019ve worked on so far",
+    ballotSoFar: "Your Ballot So Far",
+    voterProfile: "Your Voter Profile",
+    continueHeader: "Continue Where You Left Off",
+    copyContinuation: "Copy Continuation Prompt",
+    copied: "Copied!",
+    downloadProfile: "Download Voter Profile",
+    continueOn: "Continue your research on",
+    clientFallbackHeader: "Your session so far",
+    clientFallbackBody:
+      "We\u2019ve packaged your conversation so you can continue in any AI chatbot.",
+  },
+  rateLimit: {
+    sessionLimit:
+      "You\u2019ve reached the session message limit. Copy the continuation prompt below to keep going in any free AI chatbot.",
+    ipLimit:
+      "To keep this tool free for everyone, we limit sessions per day. Copy the prompt below to continue your research.",
+    messageCount: (current: number, max: number) => `${current}/${max}`,
   },
   a11y: {
     skipToContent: "Skip to main content",
@@ -262,6 +314,35 @@ const es: Translations = {
     noLocationsFound: "No se encontraron casillas para esta direcci\u00f3n.",
     privacyNote:
       "Tu direcci\u00f3n se env\u00eda a la API de Google Civic para encontrar tu casilla. No la almacenamos.",
+  },
+  budget: {
+    notice:
+      "El chat gratuito con IA puede ser limitado m\u00e1s adelante este mes. Siempre puedes copiar el mensaje para usarlo en tu propio chatbot.",
+    softClose:
+      "Nuestro chat con IA est\u00e1 al m\u00e1ximo este mes, pero a\u00fan puedes investigar tu boleta.",
+    exhausted:
+      "Nuestro chat gratuito con IA ha alcanzado su l\u00edmite mensual. Copia el mensaje a continuaci\u00f3n y p\u00e9galo en cualquier chatbot de IA gratuito para continuar tu investigaci\u00f3n.",
+    resetNote: "El chat se reinicia al inicio de cada mes.",
+  },
+  handoff: {
+    header: "Aqu\u00ed est\u00e1 todo en lo que hemos trabajado hasta ahora",
+    ballotSoFar: "Tu boleta hasta ahora",
+    voterProfile: "Tu perfil de votante",
+    continueHeader: "Contin\u00faa donde lo dejaste",
+    copyContinuation: "Copiar mensaje de continuaci\u00f3n",
+    copied: "\u00a1Copiado!",
+    downloadProfile: "Descargar perfil de votante",
+    continueOn: "Contin\u00faa tu investigaci\u00f3n en",
+    clientFallbackHeader: "Tu sesi\u00f3n hasta ahora",
+    clientFallbackBody:
+      "Hemos empaquetado tu conversaci\u00f3n para que puedas continuar en cualquier chatbot de IA.",
+  },
+  rateLimit: {
+    sessionLimit:
+      "Has alcanzado el l\u00edmite de mensajes de la sesi\u00f3n. Copia el mensaje de continuaci\u00f3n a continuaci\u00f3n para seguir en cualquier chatbot de IA gratuito.",
+    ipLimit:
+      "Para mantener esta herramienta gratuita para todos, limitamos las sesiones por d\u00eda. Copia el mensaje a continuaci\u00f3n para continuar tu investigaci\u00f3n.",
+    messageCount: (current: number, max: number) => `${current}/${max}`,
   },
   a11y: {
     skipToContent: "Ir al contenido principal",

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { lookupZip } from "../lib/lookupZip";
 import { getStateData } from "../lib/getStateData";
 import { generatePrompt } from "../lib/generatePrompt";
@@ -15,6 +15,7 @@ import {
   PollingLocationFallback,
 } from "./PollingLocationCard";
 import { Button } from "./ui/Button";
+import { Notice } from "./ui/Notice";
 import { useLanguage } from "../lib/i18n";
 import { translations } from "../lib/translations";
 import type { LookupResult, StateElectionData } from "../types/election";
@@ -27,6 +28,13 @@ interface PollingData {
 }
 
 type AddressStep = "input" | "loading" | "done" | "skipped" | "error";
+
+type BudgetTier = "normal" | "notice" | "soft_close" | "handoff" | "exhausted";
+
+interface BudgetStatus {
+  tier: BudgetTier;
+  percent: number;
+}
 
 function isAddressComplete(step: AddressStep): boolean {
   return step === "done" || step === "skipped" || step === "error";
@@ -82,6 +90,144 @@ function PollingSection({
   return null;
 }
 
+function isChatAvailable(tier: BudgetTier): boolean {
+  return tier === "normal" || tier === "notice";
+}
+
+function useBudgetCheck() {
+  const [budgetStatus, setBudgetStatus] = useState<BudgetStatus>({
+    tier: "normal",
+    percent: 0,
+  });
+  const [budgetChecked, setBudgetChecked] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function checkBudget() {
+      try {
+        const res = await fetch("/api/chat");
+        if (res.ok) {
+          const data = await res.json();
+          if (!cancelled && data.budget) setBudgetStatus(data.budget);
+        }
+      } catch {
+        // Silently fail — default to showing chat
+      } finally {
+        if (!cancelled) setBudgetChecked(true);
+      }
+    }
+    checkBudget();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const handleBudgetUpdate = useCallback((budget: BudgetStatus) => {
+    setBudgetStatus(budget);
+  }, []);
+
+  return { budgetStatus, budgetChecked, handleBudgetUpdate };
+}
+
+function PromptSection({
+  isPrimary,
+  promptText,
+  lang,
+}: {
+  isPrimary: boolean;
+  promptText: string;
+  lang: Language;
+}) {
+  if (isPrimary) {
+    return (
+      <div className="space-y-3">
+        <h3 className="font-semibold text-base">
+          {lang === "es"
+            ? "Copia este mensaje para investigar tu boleta"
+            : "Copy this prompt to research your ballot"}
+        </h3>
+        <PromptOutput promptText={promptText} />
+      </div>
+    );
+  }
+
+  return (
+    <details className="group">
+      <summary className="cursor-pointer text-sm text-primary font-medium hover:underline">
+        {lang === "es"
+          ? "\u00bfPrefieres usar tu propio chatbot? Copia este mensaje"
+          : "Prefer to use your own AI chatbot? Copy this prompt"}
+      </summary>
+      <div className="mt-3">
+        <PromptOutput promptText={promptText} />
+      </div>
+    </details>
+  );
+}
+
+function useAddressLookup() {
+  const [addressStep, setAddressStep] = useState<AddressStep>("input");
+  const [pollingData, setPollingData] = useState<PollingData | null>(null);
+
+  async function handleSubmit(address: string) {
+    setAddressStep("loading");
+    try {
+      const response = await fetch(
+        `/api/civic?address=${encodeURIComponent(address)}`,
+      );
+      if (!response.ok) {
+        setAddressStep("error");
+        return;
+      }
+      const data: PollingData = await response.json();
+      setPollingData(data);
+      setAddressStep("done");
+    } catch {
+      setAddressStep("error");
+    }
+  }
+
+  function skip() {
+    setAddressStep("skipped");
+  }
+
+  return { addressStep, pollingData, handleSubmit, skip };
+}
+
+function ChatCTA({ lang, onOpen }: { lang: Language; onOpen: () => void }) {
+  return (
+    <div className="flex flex-col gap-3">
+      <Button
+        data-testid="chat-cta"
+        variant="cta"
+        size="lg"
+        onClick={onOpen}
+        className="w-full"
+      >
+        {lang === "es" ? "Investigar mi boleta" : "Research My Ballot"}
+      </Button>
+      <p className="text-xs text-on-surface-muted text-center">
+        {lang === "es"
+          ? "Chat con IA gratis \u2014 tu conversaci\u00f3n es privada"
+          : "Free AI chat \u2014 your conversation stays private"}
+      </p>
+    </div>
+  );
+}
+
+function BudgetSoftCloseNotice({ lang }: { lang: Language }) {
+  const t = translations[lang];
+  return (
+    <div data-testid="chat-disabled-message">
+      <Notice variant="warning">
+        <p className="font-semibold mb-1">{t.budget.softClose}</p>
+        <p className="text-xs text-on-surface-muted">{t.budget.resetNote}</p>
+      </Notice>
+    </div>
+  );
+}
+
+// eslint-disable-next-line complexity
 function ElectionResult({
   state,
   zipCode,
@@ -92,82 +238,48 @@ function ElectionResult({
   lang: Language;
 }) {
   const [chatOpen, setChatOpen] = useState(false);
-  const [addressStep, setAddressStep] = useState<AddressStep>("input");
-  const [pollingData, setPollingData] = useState<PollingData | null>(null);
+  const address = useAddressLookup();
+  const { budgetStatus, budgetChecked, handleBudgetUpdate } = useBudgetCheck();
 
-  async function handleAddressSubmit(address: string) {
-    setAddressStep("loading");
-
-    try {
-      const response = await fetch(
-        `/api/civic?address=${encodeURIComponent(address)}`,
-      );
-
-      if (!response.ok) {
-        setAddressStep("error");
-        return;
-      }
-
-      const data: PollingData = await response.json();
-      setPollingData(data);
-      setAddressStep("done");
-    } catch {
-      setAddressStep("error");
-    }
-  }
-
-  const addressDone = isAddressComplete(addressStep);
+  const addressDone = isAddressComplete(address.addressStep);
+  const chatAvailable = isChatAvailable(budgetStatus.tier);
+  const showChatCTA =
+    !chatOpen && addressDone && (chatAvailable || !budgetChecked);
+  const copyPasteIsPrimary = budgetChecked && !chatAvailable && !chatOpen;
 
   return (
     <div className="mt-6 space-y-6">
       <StateInfoCard state={state} />
 
       <PollingSection
-        addressStep={addressStep}
-        pollingData={pollingData}
+        addressStep={address.addressStep}
+        pollingData={address.pollingData}
         fallbackUrl={state.resources.pollingPlaceLookup}
-        onSubmit={handleAddressSubmit}
-        onSkip={() => setAddressStep("skipped")}
+        onSubmit={address.handleSubmit}
+        onSkip={address.skip}
       />
 
-      {!chatOpen && addressDone && (
-        <div className="flex flex-col gap-3">
-          <Button
-            data-testid="chat-cta"
-            variant="cta"
-            size="lg"
-            onClick={() => setChatOpen(true)}
-            className="w-full"
-          >
-            {lang === "es" ? "Investigar mi boleta" : "Research My Ballot"}
-          </Button>
-          <p className="text-xs text-on-surface-muted text-center">
-            {lang === "es"
-              ? "Chat con IA gratis \u2014 tu conversaci\u00f3n es privada"
-              : "Free AI chat \u2014 your conversation stays private"}
-          </p>
-        </div>
+      {copyPasteIsPrimary && addressDone && (
+        <BudgetSoftCloseNotice lang={lang} />
       )}
 
+      {showChatCTA && <ChatCTA lang={lang} onOpen={() => setChatOpen(true)} />}
+
       {chatOpen && (
-        <ChatPanel state={state} zipCode={zipCode} pollingData={pollingData} />
+        <ChatPanel
+          state={state}
+          zipCode={zipCode}
+          pollingData={address.pollingData}
+          onBudgetUpdate={handleBudgetUpdate}
+        />
       )}
 
       {addressDone && (
-        <details className="group">
-          <summary className="cursor-pointer text-sm text-primary font-medium hover:underline">
-            {lang === "es"
-              ? "\u00bfPrefieres usar tu propio chatbot? Copia este mensaje"
-              : "Prefer to use your own AI chatbot? Copy this prompt"}
-          </summary>
-          <div className="mt-3">
-            <PromptOutput
-              promptText={
-                generatePrompt(state, zipCode, undefined, lang).fullText
-              }
-            />
-          </div>
-        </details>
+        <PromptSection
+          isPrimary={copyPasteIsPrimary}
+          promptText={generatePrompt(state, zipCode, undefined, lang).fullText}
+          lang={lang}
+        />
       )}
     </div>
   );
