@@ -8,9 +8,69 @@ import { ZipForm } from "./ZipForm";
 import { StateInfoCard } from "./StateInfoCard";
 import { PromptOutput } from "./PromptOutput";
 import { StateSelectorModal } from "./StateSelectorModal";
+import { ChatPanel } from "./ChatPanel";
+import { Button } from "./ui/Button";
 import { useLanguage } from "../lib/i18n";
 import { translations } from "../lib/translations";
-import type { LookupResult } from "../types/election";
+import type { LookupResult, StateElectionData } from "../types/election";
+import type { Language } from "../lib/translations";
+
+function ElectionResult({
+  state,
+  zipCode,
+  lang,
+}: {
+  state: StateElectionData;
+  zipCode: string;
+  lang: Language;
+}) {
+  const [chatOpen, setChatOpen] = useState(false);
+
+  return (
+    <div className="mt-6 space-y-6">
+      <StateInfoCard state={state} />
+
+      {/* Research My Ballot CTA */}
+      {!chatOpen && (
+        <div className="flex flex-col gap-3">
+          <Button
+            data-testid="chat-cta"
+            variant="cta"
+            size="lg"
+            onClick={() => setChatOpen(true)}
+            className="w-full"
+          >
+            {lang === "es" ? "Investigar mi boleta" : "Research My Ballot"}
+          </Button>
+          <p className="text-xs text-on-surface-muted text-center">
+            {lang === "es"
+              ? "Chat con IA gratis — tu conversación es privada"
+              : "Free AI chat — your conversation stays private"}
+          </p>
+        </div>
+      )}
+
+      {/* Chat Panel */}
+      {chatOpen && <ChatPanel state={state} zipCode={zipCode} />}
+
+      {/* Copy/Paste Fallback - always available */}
+      <details className="group">
+        <summary className="cursor-pointer text-sm text-primary font-medium hover:underline">
+          {lang === "es"
+            ? "¿Prefieres usar tu propio chatbot? Copia este mensaje"
+            : "Prefer to use your own AI chatbot? Copy this prompt"}
+        </summary>
+        <div className="mt-3">
+          <PromptOutput
+            promptText={
+              generatePrompt(state, zipCode, undefined, lang).fullText
+            }
+          />
+        </div>
+      </details>
+    </div>
+  );
+}
 
 export function BallotToolClient() {
   const [result, setResult] = useState<LookupResult>({ status: "idle" });
@@ -64,7 +124,11 @@ export function BallotToolClient() {
       <ZipForm onSubmit={handleZipSubmit} />
 
       {result.status === "loading" && (
-        <p className="mt-4 text-gray-600" role="status" aria-live="polite">
+        <p
+          className="mt-4 text-on-surface-muted"
+          role="status"
+          aria-live="polite"
+        >
           {t.loading}
         </p>
       )}
@@ -73,14 +137,14 @@ export function BallotToolClient() {
         <div
           data-testid="not-found-message"
           role="alert"
-          className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded text-sm"
+          className="mt-4 p-4 bg-surface-low rounded-sm text-sm"
         >
           {t.errors.notFound}{" "}
           <a
             href="https://www.usa.gov/states-and-territories"
             target="_blank"
             rel="noopener noreferrer"
-            className="underline text-blue-600"
+            className="underline text-primary"
           >
             Find your state election website
           </a>
@@ -99,14 +163,14 @@ export function BallotToolClient() {
         <div
           data-testid="no-election-message"
           role="alert"
-          className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded text-sm"
+          className="mt-4 p-4 bg-surface-low rounded-sm text-sm"
         >
           {t.errors.noElection(result.state.stateName)}{" "}
           <a
             href={result.state.resources.stateElectionWebsite}
             target="_blank"
             rel="noopener noreferrer"
-            className="underline text-blue-600"
+            className="underline text-primary"
           >
             {result.state.stateName} election website
           </a>
@@ -114,14 +178,7 @@ export function BallotToolClient() {
       )}
 
       {result.status === "found" && (
-        <div className="mt-6 space-y-6">
-          <StateInfoCard state={result.state} />
-          <PromptOutput
-            promptText={
-              generatePrompt(result.state, currentZip, undefined, lang).fullText
-            }
-          />
-        </div>
+        <ElectionResult state={result.state} zipCode={currentZip} lang={lang} />
       )}
     </div>
   );

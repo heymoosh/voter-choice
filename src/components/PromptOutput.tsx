@@ -47,7 +47,7 @@ export function PromptOutput({ promptText }: PromptOutputProps) {
     <div className="space-y-2">
       <pre
         data-testid="prompt-output"
-        className="whitespace-pre-wrap text-sm bg-gray-50 border rounded p-4 max-h-96 overflow-y-auto font-mono"
+        className="whitespace-pre-wrap text-sm bg-surface-high rounded-sm p-4 max-h-96 overflow-y-auto font-mono text-on-surface"
       >
         {promptText}
       </pre>
@@ -55,14 +55,14 @@ export function PromptOutput({ promptText }: PromptOutputProps) {
         <button
           data-testid="copy-button"
           onClick={handleCopy}
-          className="bg-blue-600 text-white px-4 min-h-[44px] min-w-[44px] rounded font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-800"
+          className="bg-primary text-on-primary px-4 min-h-[44px] min-w-[44px] rounded-sm font-semibold hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-colors"
         >
           {copied ? t.promptOutput.copiedButton : t.promptOutput.copyButton}
         </button>
         <span
           data-testid="copy-confirmation"
           aria-live="polite"
-          className="text-sm text-green-700"
+          className="text-sm text-primary"
         >
           {confirmationText}
         </span>

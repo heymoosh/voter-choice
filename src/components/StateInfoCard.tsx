@@ -3,6 +3,7 @@
 import { getDeadlineStatus } from "../lib/getDeadlineStatus";
 import { useLanguage } from "../lib/i18n";
 import { translations } from "../lib/translations";
+import { Badge } from "./ui/Badge";
 import type { StateElectionData, DeadlineStatus } from "../types/election";
 import type { Language } from "../lib/translations";
 
@@ -11,10 +12,10 @@ interface StateInfoCardProps {
 }
 
 const statusColors: Record<string, string> = {
-  green: "text-green-700 bg-green-50",
-  yellow: "text-yellow-700 bg-yellow-50",
-  red: "text-red-700 bg-red-50",
-  passed: "text-gray-500 bg-gray-50",
+  green: "text-primary bg-surface-lowest",
+  yellow: "text-accent bg-surface-lowest",
+  red: "text-red-700 bg-surface-lowest",
+  passed: "text-on-surface-muted bg-surface-high",
 };
 
 function DeadlineRow({
@@ -28,7 +29,7 @@ function DeadlineRow({
     <div className="flex justify-between items-center text-sm py-1">
       <span className="font-medium">{label}</span>
       <span
-        className={`px-2 py-0.5 rounded text-xs font-medium ${statusColors[status.color]}`}
+        className={`px-2 py-0.5 rounded-sm text-xs font-medium ${statusColors[status.color]}`}
       >
         {status.date} — {status.label}
       </span>
@@ -51,7 +52,7 @@ function EarlyVotingSection({
       </p>
     );
   }
-  return <p className="text-sm text-gray-600">{notAvailableText}</p>;
+  return <p className="text-sm text-on-surface-muted">{notAvailableText}</p>;
 }
 
 function VoterIdSection({
@@ -112,7 +113,7 @@ function RegistrationSection({
         />
       )}
       {!state.registration.online.available && (
-        <div className="text-sm text-gray-500">
+        <div className="text-sm text-on-surface-muted">
           {lang === "es"
             ? "Registro en línea: No disponible"
             : "Online registration: Not available"}
@@ -153,12 +154,12 @@ function AllPassedAlert({
   return (
     <div
       role="alert"
-      className="bg-yellow-50 border border-yellow-200 rounded p-3 text-sm text-yellow-800 mt-2"
+      className="bg-surface-lowest border-l-4 border-l-accent rounded-sm p-3 text-sm text-on-surface mt-2"
     >
       {t.stateInfo.registrationDeadlinePassed}{" "}
       <a
         href={registrationCheckUrl}
-        className="underline"
+        className="underline text-primary"
         target="_blank"
         rel="noopener noreferrer"
       >
@@ -177,16 +178,39 @@ export function StateInfoCard({ state }: StateInfoCardProps) {
   const upcoming =
     state.elections.find((e) => e.date >= today) ?? state.elections[0];
 
+  // Check if early voting is active
+  const earlyVotingActive =
+    state.earlyVoting.available &&
+    state.earlyVoting.startDate &&
+    state.earlyVoting.endDate &&
+    today >= state.earlyVoting.startDate &&
+    today <= state.earlyVoting.endDate;
+
   return (
-    <div data-testid="state-info" className="rounded-lg border p-4 space-y-4">
+    <div
+      data-testid="state-info"
+      className="bg-surface-lowest rounded-sm p-5 space-y-5"
+    >
       <div>
-        <h2 className="text-xl font-bold">{state.stateName}</h2>
+        <div className="flex items-center gap-3 mb-1">
+          <h2 className="text-xl font-bold text-on-surface">
+            {state.stateName}
+          </h2>
+          {earlyVotingActive && (
+            <Badge variant="primary">
+              {lang === "es" ? "Voto anticipado abierto" : "Early Voting Open"}
+            </Badge>
+          )}
+        </div>
         {upcoming && (
           <>
             <p data-testid="election-name" className="font-medium mt-1">
               {upcoming.name}
             </p>
-            <p data-testid="election-date" className="text-gray-600 text-sm">
+            <p
+              data-testid="election-date"
+              className="text-on-surface-muted text-sm"
+            >
               {upcoming.date}
             </p>
           </>
@@ -194,14 +218,14 @@ export function StateInfoCard({ state }: StateInfoCardProps) {
       </div>
 
       <div>
-        <h3 className="font-semibold text-sm mb-2">
+        <h3 className="font-semibold text-xs uppercase tracking-wide text-on-surface-muted mb-2">
           {t.stateInfo.registrationDeadlines}
         </h3>
         <RegistrationSection state={state} lang={lang} t={t} today={today} />
       </div>
 
       <div>
-        <h3 className="font-semibold text-sm mb-1">
+        <h3 className="font-semibold text-xs uppercase tracking-wide text-on-surface-muted mb-1">
           {t.stateInfo.earlyVoting}
         </h3>
         <EarlyVotingSection
@@ -211,7 +235,9 @@ export function StateInfoCard({ state }: StateInfoCardProps) {
       </div>
 
       <div>
-        <h3 className="font-semibold text-sm mb-1">{t.stateInfo.voterId}</h3>
+        <h3 className="font-semibold text-xs uppercase tracking-wide text-on-surface-muted mb-1">
+          {t.stateInfo.voterId}
+        </h3>
         <VoterIdSection
           votingRules={state.votingRules}
           requiredText={t.stateInfo.voterIdRequired}
@@ -220,7 +246,7 @@ export function StateInfoCard({ state }: StateInfoCardProps) {
       </div>
 
       <div>
-        <h3 className="font-semibold text-sm mb-1">
+        <h3 className="font-semibold text-xs uppercase tracking-wide text-on-surface-muted mb-1">
           {t.stateInfo.phonesAtPolls}
         </h3>
         <p className="text-sm">{state.votingRules.phonesAtPollsDetail}</p>
@@ -231,7 +257,7 @@ export function StateInfoCard({ state }: StateInfoCardProps) {
           href={state.resources.countyElectionLookup}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-blue-600 underline"
+          className="text-primary hover:underline"
         >
           {t.stateInfo.countyElectionOffice}
         </a>
@@ -239,7 +265,7 @@ export function StateInfoCard({ state }: StateInfoCardProps) {
           href={state.resources.sampleBallotLookup}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-blue-600 underline"
+          className="text-primary hover:underline"
         >
           {t.stateInfo.sampleBallot}
         </a>

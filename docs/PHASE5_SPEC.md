@@ -77,11 +77,13 @@ The system prompt sent to the API includes:
 
 - **Hard cap:** $20/month via Anthropic Console workspace limit. The API rejects requests once the cap is hit.
 - **Application-level tracking:** The app tracks estimated cumulative spend per calendar month by logging input and output token counts per request. This is an estimate (for progressive warnings), not a billing system.
-- **Progressive degradation thresholds:**
+- **Budget math:** A full 30-message conversation costs ~$1.20 (input tokens grow with context). A handoff response costs ~$0.07. The $20 budget supports ~16 full conversations per month.
+- **Two-threshold system — separate "stop new" from "wrap up existing":**
   - **0-70% of budget:** Normal operation. No user-facing messaging about budget.
-  - **70-90% of budget:** Chat window displays a subtle notice: "Free AI chat may be limited later this month. You can always use the copy-paste option." The copy-paste CTA is slightly more prominent.
-  - **90-100% of budget:** Chat window displays: "Free AI chat is running low this month. Consider using the copy-paste option for an uninterrupted experience." Both paths are equally prominent in the UI.
-  - **100% (API rejects):** Chat window is disabled. A clear message replaces it: "Our free AI chat has reached its monthly limit. You can still research your ballot — copy the prompt below and paste it into any free AI chatbot (Claude, ChatGPT, Gemini, Grok)." The copy-paste flow becomes the primary (and only) path. No error page, no broken experience.
+  - **70-80% of budget:** Chat still fully available. Subtle notice: "Free AI chat may be limited later this month. You can always use the copy-paste option." Informational only.
+  - **80-90% of budget: Soft close — stop admitting new conversations.** Users already in an active chat continue normally. New users who haven't started a chat see the copy/paste flow as the primary experience: "Our AI chat is at capacity this month, but you can still research your ballot." They never see a broken or disabled chat. This protects remaining budget for people already mid-conversation.
+  - **90% of budget: Trigger graceful handoff for all active conversations.** On each active user's next message, inject a system instruction telling the AI to generate a complete session package: ballot-so-far (covered + remaining races), voter profile-so-far, and a session handoff block. Present warmly: "Let me make sure you have everything we've worked on so far." The continuation prompt is self-contained — full ballot prompt + voter profile + handoff block. One copy, one paste into any chatbot, they pick up where they left off.
+  - **100% (API rejects): Client-side fallback.** The UI builds a handoff from the conversation history already in browser memory. Less polished than the AI-generated version but the user still walks away with a continuation prompt. New visitors see copy/paste only.
 - **Budget tracking storage:** The monthly spend estimate can be stored in a lightweight server-side mechanism (e.g., a Vercel KV store, an environment variable updated via API, or a simple JSON file on the server). This is the ONE exception to the "no persistent storage" principle — it tracks aggregate spend, not user data.
 - **Budget resets:** Monthly, aligned with the Anthropic billing cycle.
 
@@ -380,6 +382,26 @@ To be explicit, the site does not store, log, or transmit:
 
 ---
 
+## Google Civic Information API (Added to v1 Scope)
+
+The Google Civic API is integrated in this phase to provide personalized polling location data:
+
+- **API route:** `/api/civic` — takes a street address, returns polling locations and early vote sites
+- **Environment variable:** `GOOGLE_CIVIC_API_KEY` (stored in Bitwarden SM)
+- **Display:** Polling place name, address, hours, with a "Get Directions" link to Google Maps (`https://www.google.com/maps/dir/?api=1&destination={URL_ENCODED_ADDRESS}`)
+- **No embedded map** — the directions link opens Google Maps natively. No Maps JS API or API key needed for links.
+- **Fallback:** If the Civic API fails or returns no data, show county elections website link from TX.json. Never break the page.
+
+## Deferred Features (v2+)
+
+The following features have design mockups in `docs/UI_REFERENCE/` but are NOT in v1 scope:
+
+- **Active Intelligence sidebar** — matched topics, correlation scores, personalized ballot recommendations based on voter profile (`docs/UI_REFERENCE/resumed_research_returning_voter/`)
+- **Embedded Google Maps** — polling place map with drive times, real-time transit, calendar integration (`docs/UI_REFERENCE/unified_voting_location_schedule/`)
+- **Candidate enrichment APIs** — structured candidate data panels via Vote Smart, OpenStates, OpenFEC
+
+These design screens are preserved as the v2 north star. The v1 voter profile upload (simple `.txt` file) is in scope; the intelligent profile-matching system is not.
+
 ## What This Phase Does NOT Do
 
 - Does NOT create user accounts or authentication
@@ -387,6 +409,7 @@ To be explicit, the site does not store, log, or transmit:
 - Does NOT accept donations or payments (future consideration, out of scope)
 - Does NOT use any model other than Claude Sonnet via the Anthropic API
 - Does NOT implement the session handoff block as an automated feature (the AI generates it as text in the conversation per the prompt's instructions — the site does not need to parse or manage handoffs)
+- Does NOT embed Google Maps or use the Maps JavaScript API (directions links only)
 
 ---
 

@@ -7,7 +7,7 @@ export default function Home() {
   return (
     <LanguageProvider>
       <LanguageToggle />
-      <main className="min-h-screen max-w-2xl mx-auto px-4 py-8 space-y-8">
+      <main className="min-h-screen max-w-2xl mx-auto px-4 py-8 space-y-8 font-sans">
         <PageContent>
           <BallotToolClient />
         </PageContent>

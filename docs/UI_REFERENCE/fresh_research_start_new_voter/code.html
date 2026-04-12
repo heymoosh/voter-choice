@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Civic Research | New Voter Fresh Start</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,100..900;1,100..900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-primary-fixed-variant": "#00504a",
+                    "surface-tint": "#006a63",
+                    "surface-bright": "#fbf9f7",
+                    "outline": "#6e7977",
+                    "surface-container-highest": "#e4e2e0",
+                    "primary-fixed": "#9cf2e8",
+                    "error": "#ba1a1a",
+                    "tertiary": "#7f4025",
+                    "inverse-on-surface": "#f2f0ee",
+                    "on-tertiary-fixed-variant": "#72361b",
+                    "surface-container": "#efedec",
+                    "error-container": "#ffdad6",
+                    "on-tertiary-fixed": "#370e00",
+                    "secondary-container": "#c5e6e1",
+                    "on-secondary": "#ffffff",
+                    "tertiary-container": "#9c573a",
+                    "surface-container-low": "#f5f3f1",
+                    "surface-dim": "#dbdad8",
+                    "surface-container-high": "#eae8e6",
+                    "primary": "#005c55",
+                    "on-primary-fixed": "#00201d",
+                    "on-secondary-container": "#4a6864",
+                    "on-secondary-fixed-variant": "#2e4c48",
+                    "on-primary": "#ffffff",
+                    "secondary-fixed-dim": "#accdc8",
+                    "primary-container": "#0f766e",
+                    "tertiary-fixed": "#ffdbce",
+                    "outline-variant": "#bdc9c6",
+                    "on-primary-container": "#a3faef",
+                    "inverse-primary": "#80d5cb",
+                    "on-secondary-fixed": "#00201d",
+                    "on-surface": "#1b1c1b",
+                    "on-background": "#1b1c1b",
+                    "tertiary-fixed-dim": "#ffb598",
+                    "on-error-container": "#93000a",
+                    "secondary-fixed": "#c8e9e4",
+                    "on-tertiary-container": "#ffe5db",
+                    "background": "#fbf9f7",
+                    "on-error": "#ffffff",
+                    "primary-fixed-dim": "#80d5cb",
+                    "on-surface-variant": "#3e4947",
+                    "surface-container-lowest": "#ffffff",
+                    "surface": "#fbf9f7",
+                    "secondary": "#466460",
+                    "inverse-surface": "#30302f",
+                    "surface-variant": "#e4e2e0",
+                    "on-tertiary": "#ffffff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "fontFamily": {
+                    "headline": ["Public Sans"],
+                    "body": ["Public Sans"],
+                    "label": ["Public Sans"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Public Sans', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface min-h-screen flex flex-col">
+<!-- TopAppBar -->
+<header class="bg-[#fcfaf8] dark:bg-slate-900 flex justify-between items-center px-6 py-4 w-full border-b border-[#bdc9c6]/20 top-0 z-50">
+<div class="flex items-center gap-8">
+<span class="text-2xl font-black text-[#005c55] dark:text-teal-500 font-['Public_Sans'] tracking-tight">Civic Research</span>
+<nav class="hidden md:flex gap-6 items-center h-full">
+<a class="text-[#005c55] font-bold border-b-2 border-[#005c55] py-1 transition-opacity active:opacity-80" href="#">Research</a>
+<a class="text-slate-600 dark:text-slate-400 py-1 hover:bg-[#f5f3f1] dark:hover:bg-slate-800 transition-colors" href="#">Resources</a>
+<a class="text-slate-600 dark:text-slate-400 py-1 hover:bg-[#f5f3f1] dark:hover:bg-slate-800 transition-colors" href="#">Archive</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined text-slate-600 dark:text-slate-400 p-2 rounded-sm hover:bg-[#f5f3f1] transition-colors">help</button>
+<div class="w-8 h-8 rounded-full bg-secondary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-sm text-on-secondary-container" style="font-variation-settings: 'FILL' 1;">person</span>
+</div>
+</div>
+</header>
+<div class="flex flex-1 overflow-hidden">
+<!-- SideNavBar -->
+<aside class="bg-[#f5f3f1] dark:bg-slate-800/50 h-screen w-64 border-r border-[#bdc9c6]/20 hidden md:flex flex-col p-4 shrink-0 overflow-y-auto">
+<div class="mb-8 px-2">
+<h2 class="text-lg font-bold text-[#005c55] font-['Public_Sans'] uppercase tracking-wider">Election Guide</h2>
+<p class="text-xs text-slate-500 dark:text-slate-400">Local Civic Utility</p>
+</div>
+<nav class="flex flex-col gap-1 flex-1">
+<div class="mb-2 px-2 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Texas May 2nd</div>
+<button class="flex items-center gap-3 px-3 py-3 text-[#005c55] dark:text-teal-300 font-bold bg-[#ffffff] dark:bg-slate-900 rounded-sm scale-95 transition-transform text-left font-['Public_Sans'] text-sm uppercase tracking-wider">
+<span class="material-symbols-outlined text-[20px]">calendar_today</span>
+<span>Dates</span>
+</button>
+<button class="flex items-center gap-3 px-3 py-3 text-slate-500 dark:text-slate-400 hover:text-[#005c55] hover:bg-[#eae8e6] dark:hover:bg-slate-700 transition-colors text-left font-['Public_Sans'] text-sm uppercase tracking-wider">
+<span class="material-symbols-outlined text-[20px]">badge</span>
+<span>ID Requirements</span>
+</button>
+<button class="flex items-center gap-3 px-3 py-3 text-slate-500 dark:text-slate-400 hover:text-[#005c55] hover:bg-[#eae8e6] dark:hover:bg-slate-700 transition-colors text-left font-['Public_Sans'] text-sm uppercase tracking-wider">
+<span class="material-symbols-outlined text-[20px]">location_on</span>
+<span>Polling Places</span>
+</button>
+<button class="flex items-center gap-3 px-3 py-3 text-slate-500 dark:text-slate-400 hover:text-[#005c55] hover:bg-[#eae8e6] dark:hover:bg-slate-700 transition-colors text-left font-['Public_Sans'] text-sm uppercase tracking-wider">
+<span class="material-symbols-outlined text-[20px]">description</span>
+<span>Sample Ballot</span>
+</button>
+</nav>
+<div class="mt-auto pt-4">
+<button class="w-full bg-primary text-on-primary py-3 px-4 font-bold rounded-sm text-sm uppercase tracking-widest hover:opacity-90 transition-opacity">
+                    Check Registration
+                </button>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="flex-1 flex flex-col bg-surface-bright relative overflow-hidden">
+<!-- Content Area -->
+<div class="flex-1 overflow-y-auto px-6 py-12 md:px-24">
+<div class="max-w-3xl mx-auto space-y-12">
+<!-- Research Memo Card (AI Message) -->
+<div class="bg-surface-container-lowest border-l-4 border-primary p-8 md:p-12 shadow-[0_4px_24px_-10px_rgba(0,0,0,0.05)]">
+<div class="flex items-center gap-2 mb-6">
+<span class="text-[10px] font-bold uppercase tracking-[0.3em] text-primary">Research Memo</span>
+<div class="h-[1px] flex-1 bg-outline-variant opacity-20"></div>
+<span class="text-[10px] font-bold uppercase tracking-[0.3em] text-outline">Ref: TX-2024-05-02</span>
+</div>
+<h1 class="text-3xl md:text-4xl font-black text-on-surface leading-tight mb-6">
+                            Hi! I see you're voting in Texas. Let's get started...
+                        </h1>
+<div class="space-y-6 text-on-surface-variant leading-relaxed text-[14px]">
+<p>
+                                I've initialized your civic dashboard for the upcoming **May 2nd Municipal Election**. To provide you with accurate ballot details and local polling locations, I need a bit more specificity.
+                            </p>
+<p class="font-medium text-on-surface">
+                                Could you please provide your county or specific school district if you know it?
+                            </p>
+<p>
+                                This allows me to verify which local bond measures or city council seats will appear on your specific ballot. If you aren't sure, we can also look it up together using your street address.
+                            </p>
+</div>
+<div class="mt-10 grid grid-cols-1 md:grid-cols-2 gap-4">
+<div class="bg-surface-container-low p-4 rounded-sm border-b-2 border-outline-variant/30">
+<span class="block text-[10px] font-bold text-tertiary uppercase mb-1">Status</span>
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+<span class="text-sm font-bold text-on-surface">Voter File Initialized</span>
+</div>
+</div>
+<div class="bg-surface-container-low p-4 rounded-sm border-b-2 border-outline-variant/30">
+<span class="block text-[10px] font-bold text-tertiary uppercase mb-1">Region</span>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">map</span>
+<span class="text-sm font-bold text-on-surface">State of Texas</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Informational Context (Editorial Layering) -->
+<section class="grid grid-cols-1 md:grid-cols-3 gap-8 pt-8">
+<div class="col-span-2 space-y-4">
+<h3 class="text-xs font-bold uppercase tracking-widest text-outline">Historical Context</h3>
+<p class="text-sm text-on-surface-variant leading-relaxed italic border-l-2 border-outline-variant pl-4">
+                                "Municipal elections in Texas often see lower turnout than general cycles, meaning your individual vote carries significantly more weight in determining local policy and educational funding."
+                            </p>
+</div>
+<div class="bg-surface-container-high p-6 flex flex-col justify-center">
+<span class="text-3xl font-black text-primary mb-1">42</span>
+<span class="text-[10px] font-bold uppercase tracking-tighter text-on-surface-variant">Days until election</span>
+</div>
+</section>
+</div>
+</div>
+<!-- Input Anchor -->
+<div class="p-6 md:px-24 bg-surface-bright/80 backdrop-blur-md border-t border-outline-variant/10">
+<div class="max-w-3xl mx-auto relative">
+<div class="flex items-end gap-4 bg-surface-container-lowest p-4 border-b-2 border-primary focus-within:border-tertiary transition-colors shadow-sm">
+<div class="flex-1">
+<label class="block text-[10px] font-bold text-outline uppercase tracking-widest mb-1 px-1" for="voter-input">Your response</label>
+<textarea class="w-full bg-transparent border-none focus:ring-0 text-[14px] text-on-surface p-1 resize-none placeholder:text-outline/50 placeholder:italic" id="voter-input" placeholder="Type your thoughts, or just say 'I'm not sure'..." rows="1"></textarea>
+</div>
+<button class="bg-primary text-on-primary p-3 rounded-sm flex items-center justify-center hover:bg-on-primary-fixed-variant transition-colors">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">send</span>
+</button>
+</div>
+<div class="mt-3 flex gap-4 overflow-x-auto no-scrollbar pb-2">
+<button class="whitespace-nowrap px-4 py-1.5 rounded-full border border-outline-variant/30 text-[12px] font-medium text-on-surface-variant hover:bg-surface-container-low transition-colors">I'm in Travis County</button>
+<button class="whitespace-nowrap px-4 py-1.5 rounded-full border border-outline-variant/30 text-[12px] font-medium text-on-surface-variant hover:bg-surface-container-low transition-colors">Harris County voter</button>
+<button class="whitespace-nowrap px-4 py-1.5 rounded-full border border-outline-variant/30 text-[12px] font-medium text-on-surface-variant hover:bg-surface-container-low transition-colors">Dallas ISD area</button>
+<button class="whitespace-nowrap px-4 py-1.5 rounded-full border border-outline-variant/30 text-[12px] font-medium text-on-surface-variant hover:bg-surface-container-low transition-colors">I'm not sure</button>
+</div>
+</div>
+</div>
+</main>
+</div>
+<!-- Hidden for desktop but kept for semantic structure -->
+<footer class="md:hidden bg-surface-container flex justify-around items-center py-3 border-t border-outline-variant/10">
+<button class="flex flex-col items-center text-primary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">description</span>
+<span class="text-[10px] font-bold mt-1">Research</span>
+</button>
+<button class="flex flex-col items-center text-outline">
+<span class="material-symbols-outlined">calendar_today</span>
+<span class="text-[10px] font-bold mt-1">Dates</span>
+</button>
+<button class="flex flex-col items-center text-outline">
+<span class="material-symbols-outlined">map</span>
+<span class="text-[10px] font-bold mt-1">Map</span>
+</button>
+</footer>
+</body></html>

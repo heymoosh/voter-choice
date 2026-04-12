@@ -69,42 +69,63 @@ Follow docs/UI_REFERENCE/voter_choice_editorial/DESIGN.md strictly:
 - Buttons: sharp (sm or none roundedness), solid primary for main CTA, ghost for secondary
 - The screens in docs/UI_REFERENCE/ are visual targets — match their layout and feel, adapted for our actual data and functionality
 
-### 1. "Research My Ballot" CTA
+### 1. Shared UI Components (build these FIRST)
 
-After a user enters a TX zip code and sees their election info, a "Research My Ballot" button appears. Clicking it opens a chat panel on the same page (election info stays visible/accessible). Style the CTA with the burnt sienna accent color.
+Before building any features, create reusable components in `src/components/ui/` that encode the design system. Every session after this one will import these — no one-off styling.
 
-### 2. Chat Component
+- **Button** (`Button.tsx`) — variants: `primary` (solid teal #005c55, white text), `cta` (burnt sienna #7f4025, white text), `ghost` (transparent, teal text, subtle hover). All buttons: sharp corners (rounded-sm or none), no heavy shadows. Props: `variant`, `size`, `disabled`, standard button props.
+- **Card** (`Card.tsx`) — white surface on warm background (#fbf9f7). No 1px borders. Tonal layering only. Optional `elevated` prop for subtle shadow.
+- **Notice** (`Notice.tsx`) — for privacy notices, budget warnings, info messages. Warm surface background, left accent bar in teal or sienna depending on severity. Props: `variant` (`info`, `warning`, `success`), `children`.
+- **TextInput** (`TextInput.tsx`) — styled input with label. Consistent with the editorial system (subtle underline or minimal border, Public Sans).
+- **Badge** (`Badge.tsx`) — small status indicators (e.g., "Early Voting Open", message count). Teal or sienna background, white text, sharp corners.
+
+Also set up the Tailwind config with the design system tokens if not already present:
+- Colors: `primary` (#005c55), `surface` (#fbf9f7), `accent` (#7f4025), plus appropriate shades
+- Font family: Public Sans as the only font
+- Border radius: cap the max at `md` (0.375rem) for structural elements
+
+These components will be used across Sessions 3A through 5. Build them as clean, typed React components with sensible defaults.
+
+### 2. "Research My Ballot" CTA
+
+After a user enters a TX zip code and sees their election info, a "Research My Ballot" button appears (use the `Button` component with `variant="cta"`). Clicking it opens a chat panel on the same page (election info stays visible/accessible).
+
+### 3. Chat Component
 
 - Chat panel opens below or alongside the election info — the user should be able to scroll back to election info without closing the chat
-- Message input at bottom, conversation scrolling above
+- Message input at bottom (use `TextInput` component), conversation scrolling above
 - Streaming text display — render tokens as they arrive, not after full response
 - All conversation state in React state (browser memory only)
-- Pre-session privacy notice before first message: "Your conversation stays in your browser only — we don't store it. If you close or refresh this page, your conversation will be lost. Make sure to download your ballot and voter profile before leaving."
+- Pre-session privacy notice before first message (use `Notice` component with `variant="info"`): "Your conversation stays in your browser only — we don't store it. If you close or refresh this page, your conversation will be lost. Make sure to download your ballot and voter profile before leaving."
 - Automatically send the first message context (zip code, state, election info from TX.json) so the AI starts the ballot research flow immediately — the user shouldn't have to explain where they are. Polling location data is NOT available yet (that's Session 3B) — for now, just send what we have from TX.json.
-- Style user messages and assistant messages distinctly using the design system's tonal layering (e.g., user messages on a slightly different surface color)
+- Style user messages in `Card` components. Assistant messages on the base surface. Tonal layering, not borders.
 
-### 3. Don't break the existing flow
+### 4. Don't break the existing flow
 
 The zip → state info → prompt output flow from the codebase must still work. It's the fallback for when chat isn't available. Test that it still renders correctly alongside the new chat panel.
 
-### 4. Required data-testid attributes (for this session)
+### 5. Required data-testid attributes (for this session)
 
 chat-cta, chat-window, chat-input, chat-send, chat-message-user, chat-message-assistant, chat-privacy-notice
 
-### 5. Verify
+### 6. Verify
 
 - npm run build passes
 - The existing zip → election info flow still works
 - Chat opens, streams a response, and displays it token by token
+- Shared UI components exist in `src/components/ui/` and are used by the chat (not one-off styles)
+- Tailwind config has the design system color/font/radius tokens
 
 Commit when done: "launch: add chat UI with streaming and editorial design system"
 ```
 
 **Before moving on, check:**
-- [ ] "Research My Ballot" button appears after zip lookup
+- [ ] Shared UI components exist in `src/components/ui/` (Button, Card, Notice, TextInput, Badge)
+- [ ] Tailwind config has design system tokens (colors, font, border radius)
+- [ ] "Research My Ballot" button appears after zip lookup (uses Button component)
 - [ ] Chat panel opens on same page, election info stays visible
 - [ ] Design matches the editorial system (teal palette, Public Sans, tonal layering, no borders)
-- [ ] Privacy notice shows before first message
+- [ ] Privacy notice shows before first message (uses Notice component)
 - [ ] Streaming works — tokens render as they arrive
 - [ ] First message auto-sends with zip/election context
 - [ ] Existing zip → state info → prompt output flow still works
@@ -130,7 +151,7 @@ Read these docs before starting:
 - docs/UI_REFERENCE/unified_voting_location_schedule/screen.png — visual target for polling location display
 - docs/LAUNCH_PLAN.md — see "API Strategy" section for context on what we're doing with Google Civic
 
-We have a working chat UI (from Session 3A). Now add the Google Civic Information API integration for polling locations.
+We have a working chat UI (from Session 3A) with shared UI components in `src/components/ui/` (Button, Card, Notice, TextInput, Badge). Use these components for any new UI in this session — do not create one-off styled elements. Now add the Google Civic Information API integration for polling locations.
 
 ### 1. Google Civic API Route
 
@@ -230,7 +251,7 @@ Read these docs before starting:
 - docs/UI_REFERENCE/voter_choice_editorial/DESIGN.md — the design system
 - docs/UI_REFERENCE/research_fallback_session_handoff_v2/screen.png — visual target for the handoff package
 
-We have a working chat UI and polling location display (from Sessions 3A and 3B). The /api/chat route already implements budget tracking and graceful handoff on the backend. Now build the frontend behavior that responds to budget state.
+We have a working chat UI and polling location display (from Sessions 3A and 3B). Shared UI components live in `src/components/ui/` (Button, Card, Notice, TextInput, Badge) — use these for all new UI in this session. The /api/chat route already implements budget tracking and graceful handoff on the backend. Now build the frontend behavior that responds to budget state.
 
 ### 1. Two-Path UX
 
@@ -310,7 +331,7 @@ Commit when done: "launch: add two-path UX, budget degradation UI, handoff packa
 **Paste this into a fresh Claude Code session:**
 
 ```
-We have a working chat interface with a graceful handoff system. Now add the formal download features.
+We have a working chat interface with a graceful handoff system. Shared UI components live in `src/components/ui/` (Button, Card, Notice, TextInput, Badge) — use these for all new UI. Now add the formal download features.
 
 ### 1. Downloadable Ballot
 

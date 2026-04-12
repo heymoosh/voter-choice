@@ -35,7 +35,10 @@ export function ZipForm({ onSubmit }: ZipFormProps) {
 
   return (
     <form onSubmit={handleSubmit} noValidate>
-      <label htmlFor="zip-input" className="block text-sm font-medium mb-1">
+      <label
+        htmlFor="zip-input"
+        className="block text-xs font-medium uppercase tracking-wide text-on-surface-muted mb-1"
+      >
         {t.zipForm.label}
       </label>
       <div className="flex gap-2">
@@ -50,13 +53,13 @@ export function ZipForm({ onSubmit }: ZipFormProps) {
             setValue(e.target.value);
             if (errorKey) setErrorKey(null);
           }}
-          className="border rounded px-3 min-h-[44px] w-full focus:outline-none focus:ring-2 focus:ring-blue-600"
+          className="bg-surface-high border-b-2 border-outline-variant px-3 min-h-[44px] w-full rounded-sm focus:outline-none focus:border-primary transition-colors text-on-surface"
           aria-describedby={errorMessage ? "zip-error" : undefined}
         />
         <button
           data-testid="zip-submit"
           type="submit"
-          className="bg-blue-600 text-white px-4 min-h-[44px] min-w-[44px] rounded font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-800 whitespace-nowrap"
+          className="bg-primary text-on-primary px-4 min-h-[44px] min-w-[44px] rounded-sm font-semibold hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 whitespace-nowrap transition-colors"
         >
           {t.zipForm.submit}
         </button>
