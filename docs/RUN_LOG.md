@@ -2,7 +2,20 @@
 
 ## Next
 
-Experiment complete. `docs/ANALYSIS.md` contains the full write-up. Optional follow-up: Muxin review of findings, deploy winning branch (Spec Kit or Superpowers recommended) to Vercel, populate full 50-state JSON data.
+Phase 0.6 — Infrastructure setup for Hermes-orchestrated Phase 3+ runs. This sub-phase runs on `main` (non-container mode) and must complete before any Phase 3 workflow run begins. Tasks:
+
+1. Review and commit `docs/PHASE3_SPEC.md`, `docs/PHASE4_SPEC.md`, `docs/PHASE5_SPEC.md` (currently untracked drafts).
+2. Update `docs/EXPERIMENT_DESIGN.md` with Phase 3/4/5 sections per `docs/PHASE3-5_INTEGRATION.md`.
+3. Extend `scoring/auto-findings-rubric.md` with any Phase 3+ checks that can be written without API keys in hand (API coverage field, translation coverage placeholder, chat e2e placeholders).
+4. Generate a new randomized run order for Phases 3-5 (do NOT reuse the Phase 1-2 order — see `docs/PHASE3-5_INTEGRATION.md` § 5).
+5. Stand up the Hermes VPS per `Projects/Agents/Hermes Agent Requirements - voter-choice Orchestrator.md` (Bitwarden machine account, BWS_ACCESS_TOKEN, Docker, two-worktree setup, Telegram kill switch).
+6. Provision Phase 3 API keys in Bitwarden (Google Civic, Democracy Works, Vote Smart, OpenStates, OpenFEC) per Hermes doc § "Before Phase 3 runs".
+7. Create new `run4/*` branches from the post-scoring-isolation `main` commit for all 5 workflows (Spec Kit, Superpowers, BMAD, Compound Engineering, Vanilla). Legacy `workflow/*`, `run2/*`, `run3/*` branches are permanently contaminated by rubric visibility (see Learning 009) and must not be reused.
+8. Tag `main` as `v1-phase3-ready` when infrastructure is in place.
+
+**Scoring is now executed by Hermes from the host side, not inside the build container.** The rubric lives at `scoring/auto-findings-rubric.md`. The container-side `/start` produces only a committed + tagged build. See `Projects/Agents/Hermes Agent Requirements - voter-choice Orchestrator.md` for the full orchestrator contract and `docs/LEARNINGS.md` → Learning 009 for the rationale.
+
+**Remaining phases after 0.6:** Phase 3 (real ballot data integration, 5 runs × 5 workflows), Phase 4 (Vietnamese/Chinese/Arabic language support, 5 × 5), Phase 5 (LLM chat window + downloadable ballot + voter profile, 5 × 5), Phase 6 (cross-phase analysis).
 
 ## Completed
 

@@ -4,16 +4,20 @@
  * Measurement script for the voter-choice workflow experiment.
  * Runs all automated metrics and outputs a single JSON report.
  *
- * Usage: node scripts/measure.mjs [--output path/to/output.json]
+ * This script lives in `scoring/` on `main` only. It is intentionally
+ * NOT present on workflow branches and NOT mounted into the build
+ * container. Hermes invokes it from a host-side main worktree, pointed
+ * at the target branch worktree via --repo, after the container has
+ * exited with a committed + tagged build.
  *
- * Metrics collected:
- * - ESLint errors/warnings
- * - Vitest test coverage and pass rate
- * - Cyclomatic complexity (via ESLint)
- * - Code duplication (jscpd)
- * - Bundle size (next build)
- * - Lighthouse scores (against local build)
- * - Playwright e2e test results
+ * Workflows must never see this file's contents or its metric list.
+ * Exposing the rubric to workflows enables metric gaming (see
+ * docs/LEARNINGS.md → Learning 009).
+ *
+ * Usage: node /path/to/main/scoring/measure.mjs --repo /path/to/branch-worktree [--output path/to/output.json]
+ *
+ * If --repo is omitted, process.cwd() is used — which lets the script
+ * run from inside the target worktree as well.
  */
 
 import { execSync, spawn } from "child_process";
@@ -25,17 +29,24 @@ import {
   readdirSync,
   statSync,
 } from "fs";
-import { join, dirname } from "path";
+import { join, dirname, resolve } from "path";
 import { fileURLToPath } from "url";
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const ROOT = join(__dirname, "..");
 const args = process.argv.slice(2);
 
 let outputPath = null;
 const outputIdx = args.indexOf("--output");
 if (outputIdx !== -1 && args[outputIdx + 1]) {
   outputPath = args[outputIdx + 1];
+}
+
+// ROOT is the target repository being measured, NOT the location of
+// this script. Hermes (or the operator) passes --repo when invoking
+// from outside the target worktree. Default is cwd.
+let ROOT = process.cwd();
+const repoIdx = args.indexOf("--repo");
+if (repoIdx !== -1 && args[repoIdx + 1]) {
+  ROOT = resolve(args[repoIdx + 1]);
 }
 
 function run(cmd, options = {}) {

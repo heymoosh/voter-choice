@@ -14,6 +14,17 @@ A single-page web application that helps U.S. voters use AI chatbots to research
 
 The site does NOT host or run an LLM. It does NOT store user data. The AI conversation happens in the user's own chatbot session.
 
+### Privacy and security constraints (functional requirements)
+
+These are not suggestions. Workflows that violate them fail the run's security/privacy scan. See `EXPERIMENT_DESIGN.md` → Security & Privacy Requirements for the full measurement suite.
+
+* No client-side persistence of any user input. No `localStorage`, `sessionStorage`, `IndexedDB`, cookies, or Cache API usage. The zip code the user types must live only in component state and must be discarded when the tab closes or the component unmounts.
+* No third-party network requests from the rendered page. No analytics, no error tracking, no telemetry libraries, no external fonts or scripts beyond what the Next.js scaffold already uses.
+* No server-side logging of user input. Zip codes must never appear in any log line, server-rendered HTML outside the intended display, error message, or telemetry payload.
+* No runtime fetches to external APIs. All state election data is served from static JSON files in the repo.
+* Content Security Policy headers must be configured with no `unsafe-inline`, no `unsafe-eval`, and a restrictive `default-src`.
+* No `eval`, no `Function()` constructor, no `dangerouslySetInnerHTML`, no unsanitized user input reaching the DOM.
+
 ---
 
 ## User Flow
@@ -323,6 +334,18 @@ A workflow run is "done" when ALL of the following are true:
 - [ ] ESLint runs without crashing
 - [ ] Playwright e2e tests pass (shared test suite)
 - [ ] Any workflow-generated tests pass
+
+### Security & Privacy (hard requirements — any violation fails the run)
+
+- [ ] No client-side storage APIs used (`localStorage`, `sessionStorage`, `IndexedDB`, cookies, Cache API)
+- [ ] No third-party network requests from the rendered page (no analytics, telemetry, error tracking, external fonts/scripts beyond the scaffold baseline)
+- [ ] No server-side logging of user input (zip codes never appear in any log line)
+- [ ] No runtime fetches to external APIs (all data from static JSON)
+- [ ] Content Security Policy headers configured, no `unsafe-inline` or `unsafe-eval`
+- [ ] No `eval`, `Function()` constructor, or `dangerouslySetInnerHTML` in `src/`
+- [ ] Zero high/critical findings from `npm audit --production`
+- [ ] Zero hits from `gitleaks` across the branch history
+- [ ] Zero `ERROR`-severity findings from Semgrep OWASP Top 10 ruleset
 
 ---
 

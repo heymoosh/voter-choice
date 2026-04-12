@@ -463,3 +463,66 @@ Frameworks with strict story-level isolation (BMAD, Spec Kit) degrade more grace
 ### Action
 
 Include a codebase scale health check in every `/start` operator debrief (Step 7, item 9). Report src/ LOC + file count + Green/Yellow/Red status against the thresholds above.
+
+---
+
+## Learning 009: Scoring Rubric Was Visible to Workflows During Runs 1–3 (Metric Gaming Vector)
+
+**Date discovered:** 2026-04-08
+**Affects:** All runs to date (workflow/*, run2/*, run3/*)
+**Severity:** High — caveats all quantitative comparisons in ANALYSIS.md
+
+### What happened
+
+While planning the Hermes orchestrator and a new metrics suite (Semgrep, Stryker, axe, gitleaks), a review of main's `.claude/commands/start.md` revealed that the post-build auto-findings rubric was embedded directly in the command file Claude Code reads at invocation. Because Claude reads `/start.md` into context at Step 0 and executes its steps sequentially, every workflow run in this experiment has had full visibility of the scoring rubric BEFORE the workflow steps execute in Step 5.
+
+Specifically, the rubric leaked:
+
+* **Exact bundle size window:** "First load JS > 130 kB or < 85 kB (±20% from ~102 kB baseline)"
+* **Zero-warning lint bar:** "eslintErrors > 0 OR eslintWarnings > 0" triggers a finding
+* **Test generation expectation:** "`uniqueTestFiles` == 0 for a non-vanilla framework" — forces every non-vanilla workflow to produce tests regardless of whether its methodology calls for them
+* **TDD scoring:** "tddScore < 100 OR implOnlyCommits > 0" — workflows learned their commit history would be inspected for TDD patterns
+* **E2e threshold:** "e2eTotal < 42" — workflows knew the exact shape of the measurement
+* **Data completeness gate script:** The full gate bash was in the file, telling workflows exactly which JSON fields would be checked
+
+In addition, `scripts/measure.mjs` and `scripts/analyze-adherence.mjs` lived in the container-mounted `scripts/` directory, so any workflow could have `cat`'d them to learn the entire metric suite and its thresholds.
+
+### Root cause
+
+Two compounding errors:
+
+1. **Convenience coupling.** The original `/start.md` was written as an all-in-one "do everything in one command" flow because the operator wanted a single invocation to trigger a complete build + measure + gate + log cycle. That coupling put scoring logic in the same file as workflow orchestration, which Claude reads in full before executing.
+2. **Container mount scope.** `docker/run-claude.sh` bind-mounted the entire repo into `/workspace`, including `scripts/`, because at scaffold time there was no concept of "files the workflow should not see."
+
+### Impact on experiment data
+
+Every numeric comparison in `docs/ANALYSIS.md` is downstream of rubric-visible runs. Workflows may have optimized for the disclosed targets rather than for real code quality. In particular:
+
+* **Bundle size rankings** are the most gameable — the 85-130 kB window is narrow enough that a workflow aware of it can pick dependencies to land inside it
+* **Zero-warning ESLint rankings** are gameable by inserting `eslint-disable` comments or removing warning-emitting code
+* **Test file counts for non-vanilla frameworks** are forced to be non-zero — any framework that would naturally produce zero tests was penalized, so "test count" rankings are an artifact of the rule rather than a measurement of framework behavior
+* **TDD scores** are gameable by reordering commits (test-first commits before impl commits) even when the actual writing order was impl-first
+
+The qualitative findings (framework activation, workflow command usage, subjective code quality) are unaffected because those depend on methodology observations, not rubric thresholds.
+
+### Fix
+
+1. **Scoring scripts moved out of container mount.** `scripts/measure.mjs` → `scoring/measure.mjs`, `scripts/analyze-adherence.mjs` → `scoring/analyze-adherence.mjs` on `main`. The `scoring/` path is masked by an empty tmpfs overlay in `docker/run-claude.sh`, so the container sees it as an empty directory. Workflows cannot read the scoring code.
+2. **Scoring scripts refactored for external invocation.** Both scripts accept a `--repo <path>` argument so they can be invoked from a host-side `main` worktree against any branch worktree. Hermes runs them from outside the container after the container has exited.
+3. **`/start.md` stripped of scoring logic.** Main's `/start.md` now only handles: pre-flight, clean env, execute `workflow.md`, commit, tag, push, exit. Measurement, adherence analysis, auto-findings rubric, data completeness gate, and RUN_LOG updates are all Hermes's responsibilities, executed from the host.
+4. **`npm run measure` removed from `package.json`** so workflows cannot invoke the scoring pipeline even if they somehow reached the script.
+5. **Per-branch `workflow.md` files verified clean.** Grep across all five (`run3/spec-kit`, `run3/superpowers`, `run3/bmad`, `run3/compound-engineering`, `workflow/vanilla`) confirmed no references to specific metrics, thresholds, or scoring tools. The only "accessibility" references are derived from `PROJECT_SPEC.md` functional requirements, not from the scoring suite. No changes needed.
+6. **Hermes Agent Requirements doc updated** to explicitly cover post-container scoring responsibilities and a non-negotiable "scoring isolation" section.
+
+### Legacy branches
+
+Runs 1-3 branches (`workflow/*`, `run2/*`, `run3/*`) have the old `scripts/measure.mjs` and `scripts/analyze-adherence.mjs` baked into their git trees. Those files cannot be removed from those branches without modifying experiment data (which CLAUDE.md forbids). The Docker tmpfs mask was limited to `/workspace/scoring` specifically — it does not mask `/workspace/scripts` on legacy branches, because doing so would make git see the scoring files as deleted and corrupt the branch state on any `git add -A` or `git commit -a`.
+
+**Consequence:** Legacy branches are permanently contaminated. They cannot be used for clean-run comparisons. Any re-runs of Spec Kit, Superpowers, BMAD, CE, or Vanilla must be done on new branches (run4/*, run5/*, etc.) created from a post-fix `main` commit where `scripts/` is absent from the scaffold.
+
+### Action for Phase 3 write-up
+
+1. Explicitly caveat the quantitative rankings in `docs/ANALYSIS.md` with a "Rubric-Visible Runs" note — these are not blind scores, they are scores against a disclosed target.
+2. Separate the "forced test generation" finding for non-vanilla frameworks from any claim about framework testing culture — the rule created the behavior, the framework did not.
+3. If new runs on post-fix branches are executed, compare their rankings head-to-head against the legacy rankings. Divergence is evidence of gaming; convergence is evidence that the rubric visibility did not meaningfully distort results.
+4. Add "rubric isolation" to the methodology section as a lesson learned for anyone replicating this experiment. The one-line takeaway: "Never let the subject of evaluation read the scoring rubric before execution."

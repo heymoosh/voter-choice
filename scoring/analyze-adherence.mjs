@@ -6,9 +6,18 @@
  * Verifies that frameworks were actually exercised at the process level,
  * not just at the artifact level. Runs against a specific branch.
  *
- * Usage: node scripts/analyze-adherence.mjs [branch-name]
+ * This script lives in `scoring/` on `main` only. It is intentionally
+ * NOT present on workflow branches and NOT mounted into the build
+ * container. Hermes invokes it from a host-side main worktree pointed
+ * at the target branch worktree via --repo. Workflows must never read
+ * this file — it enumerates the exact checks being run against their
+ * commit history and would enable gaming of TDD scores, workflow-log
+ * completeness, and commit-pattern analysis.
  *
- * If no branch is specified, analyzes the current branch.
+ * Usage: node /path/to/main/scoring/analyze-adherence.mjs --repo /path/to/branch-worktree [branch-name]
+ *
+ * If --repo is omitted, process.cwd() is used.
+ * If no branch name is passed, analyzes the current branch in --repo.
  *
  * Checks:
  * 1. TDD compliance: test files committed before corresponding implementation
@@ -18,11 +27,17 @@
 
 import { execSync } from "child_process";
 import { readFileSync, existsSync, writeFileSync, mkdirSync } from "fs";
-import { join, dirname } from "path";
+import { join, dirname, resolve } from "path";
 import { fileURLToPath } from "url";
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const ROOT = join(__dirname, "..");
+// ROOT is the target repository being analyzed, NOT the location of
+// this script. Hermes passes --repo when invoking from outside.
+let ROOT = process.cwd();
+const argvSlice = process.argv.slice(2);
+const repoIdx = argvSlice.indexOf("--repo");
+if (repoIdx !== -1 && argvSlice[repoIdx + 1]) {
+  ROOT = resolve(argvSlice[repoIdx + 1]);
+}
 
 function run(cmd) {
   try {
@@ -451,7 +466,16 @@ function analyzeMeasurementJSON(branch) {
 // Main
 // ------------------------------------------------------------------
 function main() {
-  const branch = process.argv[2] || run("git branch --show-current").trim();
+  // Parse positional branch arg, skipping over --repo <path> if present.
+  const positionals = [];
+  for (let i = 0; i < argvSlice.length; i++) {
+    if (argvSlice[i] === "--repo") {
+      i++; // skip value
+      continue;
+    }
+    positionals.push(argvSlice[i]);
+  }
+  const branch = positionals[0] || run("git branch --show-current").trim();
 
   console.log(`Adherence Analysis for: ${branch}`);
   console.log(`Timestamp: ${new Date().toISOString()}`);
