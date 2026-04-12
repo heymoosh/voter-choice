@@ -59,6 +59,10 @@ export interface Translations {
     createdBy: string;
     basedOn: string;
     promptLink: string;
+    privacyPolicy: string;
+    termsOfUse: string;
+    dataLastUpdated: (date: string) => string;
+    copyright: string;
   };
   polling: {
     addressLabel: string;
@@ -204,6 +208,10 @@ const en: Translations = {
     createdBy: "Created by a human using AI tools.",
     basedOn: "Based on the",
     promptLink: "Free AI Ballot Research Prompt",
+    privacyPolicy: "Privacy Policy",
+    termsOfUse: "Terms of Use",
+    dataLastUpdated: (date: string) => `Data last updated: ${date}`,
+    copyright: "\u00a9 2026 Grey Bird LLC. All Rights Reserved.",
   },
   polling: {
     addressLabel: "Enter your full street address for polling location",
@@ -363,6 +371,10 @@ const es: Translations = {
     createdBy: "Creado por una persona usando herramientas de IA",
     basedOn: "Basado en el",
     promptLink: "Mensaje Gratuito de Investigaci\u00f3n Electoral con IA",
+    privacyPolicy: "Pol\u00edtica de Privacidad",
+    termsOfUse: "T\u00e9rminos de Uso",
+    dataLastUpdated: (date: string) => `Datos actualizados: ${date}`,
+    copyright: "\u00a9 2026 Grey Bird LLC. Todos los derechos reservados.",
   },
   polling: {
     addressLabel:

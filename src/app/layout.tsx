@@ -9,9 +9,27 @@ const publicSans = Public_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Free AI Ballot Research Tool",
+  title: "Voter Choice — Free AI Ballot Research Tool",
   description:
-    "Enter your zip code to get a customized AI prompt for researching your ballot. Works with Claude, ChatGPT, Gemini, Grok, and any free AI chatbot.",
+    "Research your ballot with AI. Enter your zip code, chat with an AI assistant about every race and issue, and get a printable ballot to take to the polls. Free, private, nonpartisan.",
+  openGraph: {
+    title: "Voter Choice — Free AI Ballot Research Tool",
+    description:
+      "Research your ballot with AI. Enter your zip code, chat with an AI assistant about every race and issue, and get a printable ballot to take to the polls. Free, private, nonpartisan.",
+    type: "website",
+    locale: "en_US",
+    siteName: "Voter Choice",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Voter Choice — Free AI Ballot Research Tool",
+    description:
+      "Research your ballot with AI. Enter your zip code, chat with an AI assistant about every race and issue, and get a printable ballot to take to the polls.",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function RootLayout({

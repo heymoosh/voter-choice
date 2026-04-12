@@ -85,7 +85,7 @@ export function PageContent({ children }: PageContentProps) {
       {/* Footer */}
       <footer
         role="contentinfo"
-        className="bg-surface-high rounded-sm p-6 text-sm text-on-surface-muted space-y-2"
+        className="bg-surface-high rounded-sm p-6 text-sm text-on-surface-muted space-y-3"
       >
         <p>
           <strong className="text-on-surface">
@@ -106,6 +106,22 @@ export function PageContent({ children }: PageContentProps) {
           </a>
           .
         </p>
+        <div className="flex flex-wrap gap-x-4 gap-y-1 pt-2">
+          <a
+            href="/privacy"
+            className="underline text-primary hover:text-primary-dark"
+          >
+            {t.footer.privacyPolicy}
+          </a>
+          <a
+            href="/terms"
+            className="underline text-primary hover:text-primary-dark"
+          >
+            {t.footer.termsOfUse}
+          </a>
+        </div>
+        <p>{t.footer.dataLastUpdated("April 12, 2026")}</p>
+        <p>{t.footer.copyright}</p>
       </footer>
     </>
   );
