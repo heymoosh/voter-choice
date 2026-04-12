@@ -1,52 +1,31 @@
-# CLAUDE.md
+# CLAUDE.md — Voter Choice
 
 ## Project
-Workflow experiment comparing 5 AI coding frameworks. Read `docs/RUN_LOG.md` first (the `## Next` line), then `docs/EXPERIMENT_DESIGN.md` Session Quick Start. Immediately execute the sub-phase described in `## Next` — do NOT pause or wait for confirmation. Do ONE sub-phase per session.
+Voter Choice is a free AI-powered ballot research tool for Texas voters. Users enter their zip code to get election info, then chat with Claude Sonnet to research their ballot. The app also supports a copy/paste fallback when the chat budget is exhausted.
 
-**After completing a sub-phase, you MUST update `docs/RUN_LOG.md` on the `main` branch before doing anything else:**
-1. Switch to `main` (commit any pending work on the current branch first).
-2. Move the completed phase from `## Next` into `## Completed` (include commit hash and brief summary).
-3. Write the new next phase into `## Next`.
-4. Commit the RUN_LOG update and switch back to the working branch. The session is NOT complete until `main`'s RUN_LOG reflects the new state.
+**Stack:** Next.js 15 (App Router), TypeScript, Tailwind CSS, deployed on Vercel.
 
-**Note:** Branch-local copies of `docs/RUN_LOG.md` are git artifacts from fork points — do NOT update them. Only `main`'s copy is canonical.
+**Branch:** `launch/production` is the production branch. Pushes trigger CI/CD → Vercel deploy.
 
+## Key Files
+- `docs/BALLOT_PROMPT.md` — system prompt for the ballot research chat
+- `docs/PROJECT_SPEC.md` — original project specification
+- `docs/LAUNCH_PLAN.md` — MVP launch plan and session breakdown
+- `src/data/TX.json` — Texas election data (dates, deadlines, per-election)
+- `.github/workflows/deploy.yml` — CI/CD pipeline (Bitwarden SM → Vercel)
 
 ## Boundaries
-- **Repo only.** Never read/write/delete anything outside `/Users/Muxin/Documents/GitHub/voter-choice`
-- **No sudo.** No global installs (`npm -g`, system pip). Local `npm install` is fine; pip must use a venv
-- **No force push, no branch deletion, no history rewriting** (rebase, reset --hard, amend pushed commits). Branches and tags are experiment data.
+- **Repo only.** Never read/write/delete anything outside this repo.
+- **No sudo.** No global installs. Local `npm install` is fine.
+- **No force push, no branch deletion, no history rewriting.**
 - **Commit before switching branches.** Pull before pushing.
-- **No privileged Docker containers.** Bind ports to 127.0.0.1 only.
-- **`rm -rf` only on build artifacts** (node_modules, .next, coverage, dist) with exact paths. State what you're deleting before running.
-- Pin exact versions in package.json. Meaningful commit messages: `phase0.1: write feature spec`
-- If anything requires going outside these boundaries, **stop and ask Muxin.**
+- **`rm -rf` only on build artifacts** (node_modules, .next, coverage, dist) with exact paths.
+- Pin exact versions in package.json.
+- If anything requires going outside these boundaries, **stop and ask.**
 
 ## Code Style
-TypeScript. ESLint + Prettier (configured in Phase 0.3a as part of scaffold setup).
+TypeScript. ESLint + Prettier. Tailwind for styling. React Server Components where possible, client components only when needed for interactivity.
 
-## Workflow Enforcement — Spec Kit
-
-**THIS IS A HARD REQUIREMENT. VIOLATION INVALIDATES THE EXPERIMENT.**
-
-This branch uses the **GitHub Spec Kit** framework. You MUST follow the Spec Kit workflow for ALL build work. **Use the Skill tool to invoke each command** — do NOT read command files as reference text ("read and follow" degrades enforcement; see Learning 005/006).
-
-0. **`speckit.constitution`** — Invoke via Skill tool: `skill: "speckit.constitution", args: "<description>"`
-1. **`speckit.specify`** — Invoke via Skill tool: `skill: "speckit.specify", args: "<description>"`
-2. **`speckit.clarify`** — Invoke via Skill tool: `skill: "speckit.clarify"`
-3. **`speckit.plan`** — Invoke via Skill tool: `skill: "speckit.plan"`
-4. **`speckit.tasks`** — Invoke via Skill tool: `skill: "speckit.tasks"`
-5. **`speckit.checklist`** — Invoke via Skill tool: `skill: "speckit.checklist", args: "<description>"`
-6. **`speckit.analyze`** — Invoke via Skill tool: `skill: "speckit.analyze"`
-7. **`speckit.implement`** — Invoke via Skill tool: `skill: "speckit.implement"`
-
-**You MUST NOT:**
-
-- Skip any step in the workflow
-- Write application code before completing constitution → specify → clarify → plan → tasks → checklist
-- Skip analyze or implement
-- Code the solution directly without going through the workflow
-- Create a new git branch (stay on the current branch)
-- Read command files as prose instead of invoking them via the Skill tool
-
-**Autonomous decision-making:** When any Spec Kit command asks for user input, presents choices, or asks clarifying questions — answer them yourself using `docs/PROJECT_SPEC.md` (Phase 1) or `docs/PHASE2_SPEC.md` (Phase 2) as the source of truth. Do not stop or wait for Muxin.
+## Secrets
+- `ANTHROPIC_API_KEY` — pulled from Bitwarden Secrets Manager at deploy time. For local dev, use `.env.local` (gitignored).
+- Never expose API keys to client-side code. Never log conversation content.

@@ -5,6 +5,8 @@ export interface Election {
   type: "primary" | "general" | "runoff" | "special";
   isPrimary: boolean;
   primaryType: "open" | "closed" | "semi-closed" | "semi-open" | null;
+  registration?: Registration;
+  earlyVoting?: EarlyVoting;
 }
 
 export interface Registration {
