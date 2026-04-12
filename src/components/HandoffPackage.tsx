@@ -6,6 +6,10 @@ import { Button } from "./ui/Button";
 import { Notice } from "./ui/Notice";
 import { useLanguage } from "../lib/i18n";
 import { translations } from "../lib/translations";
+import {
+  openPrintableBallot,
+  downloadProfileAsText,
+} from "../lib/ballot-utils";
 
 interface ParsedHandoff {
   ballot: string | null;
@@ -116,17 +120,6 @@ export function HandoffPackage({
     }
   }
 
-  function handleDownloadProfile() {
-    if (!parsed.voterProfile) return;
-    const blob = new Blob([parsed.voterProfile], { type: "text/plain" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "voter-profile.txt";
-    a.click();
-    URL.revokeObjectURL(url);
-  }
-
   return (
     <div data-testid="chat-handoff-package" className="space-y-4">
       {/* Header */}
@@ -145,9 +138,22 @@ export function HandoffPackage({
           <h4 className="font-semibold text-sm uppercase tracking-wide text-primary mb-2">
             {t.handoff.ballotSoFar}
           </h4>
-          <pre className="text-sm whitespace-pre-wrap font-mono bg-surface-high rounded-sm p-3">
+          <pre
+            data-testid="ballot-preview"
+            className="text-sm whitespace-pre-wrap font-mono bg-surface-high rounded-sm p-3"
+          >
             {parsed.ballot}
           </pre>
+          <div className="mt-2">
+            <Button
+              data-testid="download-ballot-btn"
+              variant="cta"
+              size="sm"
+              onClick={() => openPrintableBallot(parsed.ballot!)}
+            >
+              {t.ballot.downloadBallot}
+            </Button>
+          </div>
         </Card>
       )}
 
@@ -161,7 +167,12 @@ export function HandoffPackage({
             {parsed.voterProfile}
           </pre>
           <div className="mt-2">
-            <Button variant="ghost" size="sm" onClick={handleDownloadProfile}>
+            <Button
+              data-testid="download-profile-btn"
+              variant="ghost"
+              size="sm"
+              onClick={() => downloadProfileAsText(parsed.voterProfile!)}
+            >
               {t.handoff.downloadProfile}
             </Button>
           </div>

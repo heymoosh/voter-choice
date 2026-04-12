@@ -10,6 +10,7 @@ import {
   buildContinuationPrompt,
   buildClientFallbackHandoff,
 } from "./HandoffPackage";
+import { BallotActions } from "./BallotActions";
 import { useLanguage } from "../lib/i18n";
 import { translations } from "../lib/translations";
 import type { StateElectionData } from "../types/election";
@@ -44,6 +45,7 @@ interface ChatPanelProps {
   zipCode: string;
   pollingData?: PollingDataForPrompt | null;
   onBudgetUpdate?: (budget: BudgetStatus) => void;
+  voterProfile?: string | null;
 }
 
 function generateSessionId(): string {
@@ -158,6 +160,8 @@ function ChatMessageBubble({
     );
   }
 
+  const showActions = !isStreaming || !isLast;
+
   return (
     <div data-testid="chat-message-assistant" className="max-w-[85%]">
       <div className="bg-surface-low rounded-sm p-4">
@@ -167,6 +171,7 @@ function ChatMessageBubble({
             <span className="inline-block w-1.5 h-4 bg-primary ml-0.5 animate-pulse" />
           )}
         </div>
+        {showActions && <BallotActions content={msg.content} />}
       </div>
     </div>
   );
@@ -397,6 +402,7 @@ export function ChatPanel({
   zipCode,
   pollingData,
   onBudgetUpdate,
+  voterProfile,
 }: ChatPanelProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
@@ -492,6 +498,7 @@ export function ChatPanel({
             sessionId: sessionIdRef.current,
             messageCount: messageCountRef.current,
             isNewSession: messageCountRef.current === 1,
+            ...(voterProfile ? { voterProfile } : {}),
           }),
         });
 
@@ -538,6 +545,7 @@ export function ChatPanel({
       handleBudgetUpdate,
       disableChat,
       handleApiError,
+      voterProfile,
     ],
   );
 

@@ -14,6 +14,8 @@ import {
   PollingLocationCard,
   PollingLocationFallback,
 } from "./PollingLocationCard";
+import { ProfileUpload } from "./ProfileUpload";
+import { BallotBuilder } from "./BallotBuilder";
 import { Button } from "./ui/Button";
 import { Notice } from "./ui/Notice";
 import { useLanguage } from "../lib/i18n";
@@ -238,6 +240,7 @@ function ElectionResult({
   lang: Language;
 }) {
   const [chatOpen, setChatOpen] = useState(false);
+  const [voterProfile, setVoterProfile] = useState<string | null>(null);
   const address = useAddressLookup();
   const { budgetStatus, budgetChecked, handleBudgetUpdate } = useBudgetCheck();
 
@@ -247,9 +250,22 @@ function ElectionResult({
     !chatOpen && addressDone && (chatAvailable || !budgetChecked);
   const copyPasteIsPrimary = budgetChecked && !chatAvailable && !chatOpen;
 
+  // Include voter profile in copy/paste prompt when available
+  const promptText = voterProfile
+    ? generatePrompt(state, zipCode, undefined, lang).fullText +
+      "\n\n---\n\n[BEGIN USER VOTER PROFILE]\n" +
+      voterProfile +
+      "\n[END USER VOTER PROFILE]"
+    : generatePrompt(state, zipCode, undefined, lang).fullText;
+
   return (
     <div className="mt-6 space-y-6">
       <StateInfoCard state={state} />
+
+      {/* Returning voter profile upload */}
+      {!chatOpen && !voterProfile && (
+        <ProfileUpload onProfileLoaded={setVoterProfile} />
+      )}
 
       <PollingSection
         addressStep={address.addressStep}
@@ -271,16 +287,20 @@ function ElectionResult({
           zipCode={zipCode}
           pollingData={address.pollingData}
           onBudgetUpdate={handleBudgetUpdate}
+          voterProfile={voterProfile}
         />
       )}
 
       {addressDone && (
         <PromptSection
           isPrimary={copyPasteIsPrimary}
-          promptText={generatePrompt(state, zipCode, undefined, lang).fullText}
+          promptText={promptText}
           lang={lang}
         />
       )}
+
+      {/* Path B: Build ballot from paste or manual entry */}
+      {addressDone && <BallotBuilder />}
     </div>
   );
 }

@@ -93,6 +93,37 @@ export interface Translations {
     clientFallbackHeader: string;
     clientFallbackBody: string;
   };
+  ballot: {
+    downloadBallot: string;
+    downloadProfile: string;
+    printReminder: string;
+    buildBallot: string;
+    pasteLabel: string;
+    pastePlaceholder: string;
+    generatePrintable: string;
+    manualEntry: string;
+    manualEntryDesc: string;
+    raceName: string;
+    candidateName: string;
+    addRace: string;
+    addProposition: string;
+    propNumber: string;
+    propVote: string;
+    generateFromManual: string;
+    preview: string;
+    printBallot: string;
+    closePrint: string;
+  };
+  profile: {
+    uploadLabel: string;
+    uploadButton: string;
+    uploadAccept: string;
+    uploadTooLarge: string;
+    uploadInvalidType: string;
+    uploadConfirmation: (date: string) => string;
+    uploadGeneric: string;
+    includeInPrompt: string;
+  };
   rateLimit: {
     sessionLimit: string;
     ipLimit: string;
@@ -212,6 +243,41 @@ const en: Translations = {
     clientFallbackHeader: "Your session so far",
     clientFallbackBody:
       "We\u2019ve packaged your conversation so you can continue in any AI chatbot.",
+  },
+  ballot: {
+    downloadBallot: "Download My Ballot",
+    downloadProfile: "Download My Voter Profile",
+    printReminder:
+      "Texas law bans wireless devices in the voting room. Print this or write it down.",
+    buildBallot: "Build My Ballot",
+    pasteLabel: "Paste the ballot output from your AI chatbot",
+    pastePlaceholder: "Paste the MY BALLOT section here\u2026",
+    generatePrintable: "Generate Printable Ballot",
+    manualEntry: "Or enter your choices manually",
+    manualEntryDesc:
+      "Add each race and your chosen candidate, then generate a printable ballot.",
+    raceName: "Race",
+    candidateName: "Your pick",
+    addRace: "Add race",
+    addProposition: "Add proposition",
+    propNumber: "Prop #",
+    propVote: "YES / NO",
+    generateFromManual: "Generate Printable Ballot",
+    preview: "Ballot Preview",
+    printBallot: "Print Ballot",
+    closePrint: "Close",
+  },
+  profile: {
+    uploadLabel: "Returning voter? Upload your voter profile",
+    uploadButton: "Upload Profile (.txt)",
+    uploadAccept: "Accepts .txt files only, max 10KB",
+    uploadTooLarge: "File is too large. Maximum size is 10KB.",
+    uploadInvalidType: "Please upload a .txt file.",
+    uploadConfirmation: (date: string) =>
+      `Welcome back! I found your profile from ${date}.`,
+    uploadGeneric: "Welcome back! Your voter profile has been loaded.",
+    includeInPrompt:
+      "Your profile will be included when you start the chat or copy the prompt.",
   },
   rateLimit: {
     sessionLimit:
@@ -336,6 +402,43 @@ const es: Translations = {
     clientFallbackHeader: "Tu sesi\u00f3n hasta ahora",
     clientFallbackBody:
       "Hemos empaquetado tu conversaci\u00f3n para que puedas continuar en cualquier chatbot de IA.",
+  },
+  ballot: {
+    downloadBallot: "Descargar mi boleta",
+    downloadProfile: "Descargar mi perfil de votante",
+    printReminder:
+      "La ley de Texas proh\u00edbe dispositivos inal\u00e1mbricos en la sala de votaci\u00f3n. Imprime esto o escr\u00edbelo.",
+    buildBallot: "Construir mi boleta",
+    pasteLabel: "Pega el resultado de la boleta de tu chatbot de IA",
+    pastePlaceholder: "Pega la secci\u00f3n MI BOLETA aqu\u00ed\u2026",
+    generatePrintable: "Generar boleta imprimible",
+    manualEntry: "O ingresa tus elecciones manualmente",
+    manualEntryDesc:
+      "Agrega cada contienda y tu candidato elegido, luego genera una boleta imprimible.",
+    raceName: "Contienda",
+    candidateName: "Tu elecci\u00f3n",
+    addRace: "Agregar contienda",
+    addProposition: "Agregar proposici\u00f3n",
+    propNumber: "Prop #",
+    propVote: "S\u00cd / NO",
+    generateFromManual: "Generar boleta imprimible",
+    preview: "Vista previa de la boleta",
+    printBallot: "Imprimir boleta",
+    closePrint: "Cerrar",
+  },
+  profile: {
+    uploadLabel: "\u00bfVotante que regresa? Sube tu perfil de votante",
+    uploadButton: "Subir perfil (.txt)",
+    uploadAccept: "Solo archivos .txt, m\u00e1ximo 10KB",
+    uploadTooLarge:
+      "El archivo es demasiado grande. El tama\u00f1o m\u00e1ximo es 10KB.",
+    uploadInvalidType: "Por favor sube un archivo .txt.",
+    uploadConfirmation: (date: string) =>
+      `\u00a1Bienvenido/a de vuelta! Encontr\u00e9 tu perfil de ${date}.`,
+    uploadGeneric:
+      "\u00a1Bienvenido/a de vuelta! Tu perfil de votante ha sido cargado.",
+    includeInPrompt:
+      "Tu perfil se incluir\u00e1 cuando inicies el chat o copies el mensaje.",
   },
   rateLimit: {
     sessionLimit:
