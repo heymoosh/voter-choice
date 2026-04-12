@@ -240,3 +240,108 @@ test.describe("Keyboard accessibility", () => {
     await expect(zipInput).toBeFocused();
   });
 });
+
+// ---------------------------------------------------------------------------
+// Legal pages
+// ---------------------------------------------------------------------------
+
+test.describe("Privacy Policy page", () => {
+  test("loads and has correct heading", async ({ page }) => {
+    await page.goto("/privacy");
+    await expect(page).toHaveTitle(/Privacy Policy/i);
+    await expect(
+      page.getByRole("heading", { name: /Privacy Policy/i, level: 1 }),
+    ).toBeVisible();
+  });
+
+  test("contains key privacy sections", async ({ page }) => {
+    await page.goto("/privacy");
+    await expect(
+      page.getByRole("heading", { name: /Zero Data Collection/i }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: /Chat Conversations/i }),
+    ).toBeVisible();
+    await expect(page.getByText(/Grey Bird LLC/i).first()).toBeVisible();
+  });
+
+  test("back link navigates to home", async ({ page }) => {
+    await page.goto("/privacy");
+    await page.getByRole("link", { name: /Back to Voter Choice/i }).click();
+    await expect(page).toHaveURL("/");
+  });
+});
+
+test.describe("Terms of Use page", () => {
+  test("loads and has correct heading", async ({ page }) => {
+    await page.goto("/terms");
+    await expect(page).toHaveTitle(/Terms of Use/i);
+    await expect(
+      page.getByRole("heading", { name: /Terms of Use/i, level: 1 }),
+    ).toBeVisible();
+  });
+
+  test("contains key terms sections", async ({ page }) => {
+    await page.goto("/terms");
+    await expect(
+      page.getByRole("heading", { name: /Research Purposes Only/i }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: /AI Can Make Mistakes/i }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: /Not Affiliated with Government/i }),
+    ).toBeVisible();
+  });
+
+  test("back link navigates to home", async ({ page }) => {
+    await page.goto("/terms");
+    await page.getByRole("link", { name: /Back to Voter Choice/i }).click();
+    await expect(page).toHaveURL("/");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Footer navigation
+// ---------------------------------------------------------------------------
+
+test.describe("Footer links", () => {
+  test("footer contains privacy and terms links", async ({ page }) => {
+    await page.goto("/");
+    const footer = page.getByRole("contentinfo");
+    await expect(footer.getByRole("link", { name: /Privacy/i })).toBeVisible();
+    await expect(footer.getByRole("link", { name: /Terms/i })).toBeVisible();
+  });
+
+  test("privacy link navigates to privacy page", async ({ page }) => {
+    await page.goto("/");
+    const footer = page.getByRole("contentinfo");
+    await footer.getByRole("link", { name: /Privacy/i }).click();
+    await expect(page).toHaveURL("/privacy");
+    await expect(
+      page.getByRole("heading", { name: /Privacy Policy/i }),
+    ).toBeVisible();
+  });
+
+  test("terms link navigates to terms page", async ({ page }) => {
+    await page.goto("/");
+    const footer = page.getByRole("contentinfo");
+    await footer.getByRole("link", { name: /Terms/i }).click();
+    await expect(page).toHaveURL("/terms");
+    await expect(
+      page.getByRole("heading", { name: /Terms of Use/i }),
+    ).toBeVisible();
+  });
+
+  test("footer shows copyright", async ({ page }) => {
+    await page.goto("/");
+    const footer = page.getByRole("contentinfo");
+    await expect(footer).toContainText(/Grey Bird LLC/);
+  });
+
+  test("footer shows data last updated", async ({ page }) => {
+    await page.goto("/");
+    const footer = page.getByRole("contentinfo");
+    await expect(footer).toContainText(/Data last updated/i);
+  });
+});
