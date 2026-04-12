@@ -3,7 +3,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Card } from "./ui/Card";
 import { Notice } from "./ui/Notice";
-import { Button } from "./ui/Button";
 import {
   HandoffPackage,
   parseHandoffMarkers,
@@ -115,28 +114,16 @@ function getDisabledMessage(
 
 /* ── Sub-components ─────────────────────────────────────────── */
 
-function PrivacyNotice({ onStart }: { onStart: () => void }) {
+function InlinePrivacyNotice() {
   const { lang } = useLanguage();
 
   return (
     <div data-testid="chat-privacy-notice" className="mb-4">
-      <Notice variant="info">
-        <p className="font-semibold mb-2">
-          {lang === "es" ? "Antes de comenzar" : "Before we begin"}
-        </p>
-        <p>
-          {lang === "es"
-            ? "Tu conversación permanece solo en tu navegador — no la almacenamos. Si cierras o actualizas esta página, tu conversación se perderá. Asegúrate de descargar tu boleta y perfil de votante antes de salir."
-            : "Your conversation stays in your browser only \u2014 we don\u2019t store it. If you close or refresh this page, your conversation will be lost. Make sure to download your ballot and voter profile before leaving."}
-        </p>
-        <div className="mt-3">
-          <Button variant="primary" size="md" onClick={onStart}>
-            {lang === "es"
-              ? "Entendido, empecemos"
-              : "Got it, let\u2019s start"}
-          </Button>
-        </div>
-      </Notice>
+      <p className="text-xs text-on-surface-muted text-center">
+        {lang === "es"
+          ? "Tu conversación permanece solo en tu navegador — no la almacenamos. Descarga tu boleta antes de salir."
+          : "Your conversation stays in your browser only \u2014 we don\u2019t store it. Download your ballot before leaving."}
+      </p>
     </div>
   );
 }
@@ -406,7 +393,6 @@ export function ChatPanel({
 }: ChatPanelProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
-  const [showPrivacyNotice, setShowPrivacyNotice] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [sessionStarted, setSessionStarted] = useState(false);
   const [budgetStatus, setBudgetStatus] = useState<BudgetStatus>({
@@ -550,11 +536,18 @@ export function ChatPanel({
   );
 
   const startSession = useCallback(() => {
-    setShowPrivacyNotice(false);
     setSessionStarted(true);
     const { contextBlock } = getBasePrompt();
     sendMessage(contextBlock, []);
   }, [getBasePrompt, sendMessage]);
+
+  // Auto-start session on mount
+  useEffect(() => {
+    if (!sessionStarted) {
+      startSession();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const { basePrompt: fullBasePrompt } = getBasePrompt();
   const handoff = useHandoffState(
@@ -568,7 +561,7 @@ export function ChatPanel({
 
   return (
     <div data-testid="chat-window" className="flex flex-col">
-      {showPrivacyNotice && <PrivacyNotice onStart={startSession} />}
+      <InlinePrivacyNotice />
 
       {sessionStarted && (
         <>

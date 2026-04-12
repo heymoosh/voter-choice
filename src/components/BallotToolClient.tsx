@@ -38,10 +38,6 @@ interface BudgetStatus {
   percent: number;
 }
 
-function isAddressComplete(step: AddressStep): boolean {
-  return step === "done" || step === "skipped" || step === "error";
-}
-
 function hasPollingResults(data: PollingData | null): data is PollingData {
   return (
     data !== null &&
@@ -244,10 +240,8 @@ function ElectionResult({
   const address = useAddressLookup();
   const { budgetStatus, budgetChecked, handleBudgetUpdate } = useBudgetCheck();
 
-  const addressDone = isAddressComplete(address.addressStep);
   const chatAvailable = isChatAvailable(budgetStatus.tier);
-  const showChatCTA =
-    !chatOpen && addressDone && (chatAvailable || !budgetChecked);
+  const showChatCTA = !chatOpen && (chatAvailable || !budgetChecked);
   const copyPasteIsPrimary = budgetChecked && !chatAvailable && !chatOpen;
 
   // Include voter profile in copy/paste prompt when available
@@ -267,17 +261,7 @@ function ElectionResult({
         <ProfileUpload onProfileLoaded={setVoterProfile} />
       )}
 
-      <PollingSection
-        addressStep={address.addressStep}
-        pollingData={address.pollingData}
-        fallbackUrl={state.resources.pollingPlaceLookup}
-        onSubmit={address.handleSubmit}
-        onSkip={address.skip}
-      />
-
-      {copyPasteIsPrimary && addressDone && (
-        <BudgetSoftCloseNotice lang={lang} />
-      )}
+      {copyPasteIsPrimary && <BudgetSoftCloseNotice lang={lang} />}
 
       {showChatCTA && <ChatCTA lang={lang} onOpen={() => setChatOpen(true)} />}
 
@@ -291,16 +275,23 @@ function ElectionResult({
         />
       )}
 
-      {addressDone && (
-        <PromptSection
-          isPrimary={copyPasteIsPrimary}
-          promptText={promptText}
-          lang={lang}
-        />
-      )}
+      <PromptSection
+        isPrimary={copyPasteIsPrimary}
+        promptText={promptText}
+        lang={lang}
+      />
 
       {/* Path B: Build ballot from paste or manual entry */}
-      {addressDone && <BallotBuilder />}
+      <BallotBuilder />
+
+      {/* Address lookup is optional — available for polling location data */}
+      <PollingSection
+        addressStep={address.addressStep}
+        pollingData={address.pollingData}
+        fallbackUrl={state.resources.pollingPlaceLookup}
+        onSubmit={address.handleSubmit}
+        onSkip={address.skip}
+      />
     </div>
   );
 }
