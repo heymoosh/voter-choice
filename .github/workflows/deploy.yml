@@ -33,9 +33,9 @@ jobs:
         env:
           BWS_ACCESS_TOKEN: ${{ secrets.BW_ACCESS_TOKEN }}
         run: |
-          ANTHROPIC_API_KEY=$(bws secret get ANTHROPIC_API_KEY --access-token "$BWS_ACCESS_TOKEN" --output json | jq -r '.value')
-          echo "ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY" >> "$GITHUB_ENV"
-          echo "::add-mask::$ANTHROPIC_API_KEY"
+          ANTHROPIC_VOTER_API=$(bws secret get ANTHROPIC_VOTER_API --access-token "$BWS_ACCESS_TOKEN" --output json | jq -r '.value')
+          echo "ANTHROPIC_VOTER_API=$ANTHROPIC_VOTER_API" >> "$GITHUB_ENV"
+          echo "::add-mask::$ANTHROPIC_VOTER_API"
 
       - name: Install Vercel CLI
         run: npm install -g vercel
@@ -52,13 +52,13 @@ jobs:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         run: vercel build --prod --token="$VERCEL_TOKEN"
 
-      - name: Set ANTHROPIC_API_KEY on Vercel
+      - name: Set ANTHROPIC_VOTER_API on Vercel
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
         run: |
-          echo "$ANTHROPIC_API_KEY" | vercel env add ANTHROPIC_API_KEY production --force --token="$VERCEL_TOKEN" 2>/dev/null || true
+          echo "$ANTHROPIC_VOTER_API" | vercel env add ANTHROPIC_VOTER_API production --force --token="$VERCEL_TOKEN" 2>/dev/null || true
 
       - name: Deploy to Vercel
         env:

@@ -27,5 +27,5 @@ Voter Choice is a free AI-powered ballot research tool for Texas voters. Users e
 TypeScript. ESLint + Prettier. Tailwind for styling. React Server Components where possible, client components only when needed for interactivity.
 
 ## Secrets
-- `ANTHROPIC_API_KEY` — pulled from Bitwarden Secrets Manager at deploy time. For local dev, use `.env.local` (gitignored).
+- `ANTHROPIC_VOTER_API` — pulled from Bitwarden Secrets Manager at deploy time. For local dev, use `.env.local` (gitignored).
 - Never expose API keys to client-side code. Never log conversation content.

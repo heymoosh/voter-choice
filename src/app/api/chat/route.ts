@@ -222,7 +222,7 @@ export async function POST(request: NextRequest) {
   const gateError = checkGates(request, body);
   if (gateError) return gateError;
 
-  const apiKey = process.env.ANTHROPIC_API_KEY;
+  const apiKey = process.env.ANTHROPIC_VOTER_API;
   if (!apiKey) {
     return Response.json(
       { error: "Chat service is not configured" },
