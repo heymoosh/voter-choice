@@ -41,12 +41,21 @@ describe("BallotToolClient", () => {
     expect(screen.getByTestId("election-name").textContent).toBeTruthy();
   });
 
-  it("shows prompt-output after submitting a valid TX zip", async () => {
+  it("shows prompt-output after submitting a valid TX zip and skipping address", async () => {
     render(<BallotToolClient />);
     fireEvent.change(screen.getByTestId("zip-input"), {
       target: { value: "73301" },
     });
     fireEvent.click(screen.getByTestId("zip-submit"));
+
+    // Wait for state info, then skip the address input step
+    await waitFor(() => {
+      expect(screen.getByTestId("state-info")).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByText(/Skip/));
+
+    // Open the details/summary to reveal prompt-output
+    fireEvent.click(screen.getByText(/Prefer to use your own AI chatbot/));
 
     await waitFor(() => {
       expect(screen.getByTestId("prompt-output")).toBeInTheDocument();
@@ -131,16 +140,14 @@ describe("BallotToolClient — Spanish mode", () => {
   it("shows Spanish no-election message when no upcoming election", async () => {
     renderEs();
     await act(async () => {});
-    // AK zip — has state data but may have no upcoming election
-    // We'll use 73301 (TX) which has an election, but test the no-election path
-    // by checking the message format if it appears; otherwise test state found in Spanish
+    // TX zip with election — test that state info or no-election appears in Spanish
     fireEvent.change(screen.getByTestId("zip-input"), {
       target: { value: "73301" },
     });
     fireEvent.click(screen.getByTestId("zip-submit"));
     await waitFor(() => {
-      // Either found or no-election — in Spanish mode the prompt should be in Spanish
-      const found = screen.queryByTestId("prompt-output");
+      // Either found (state-info) or no-election
+      const found = screen.queryByTestId("state-info");
       const noElection = screen.queryByTestId("no-election-message");
       expect(found || noElection).toBeTruthy();
     });
@@ -153,6 +160,16 @@ describe("BallotToolClient — Spanish mode", () => {
       target: { value: "73301" },
     });
     fireEvent.click(screen.getByTestId("zip-submit"));
+
+    // Wait for state info, then skip address input
+    await waitFor(() => {
+      expect(screen.getByTestId("state-info")).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByText(/Omitir/));
+
+    // Open the details/summary to reveal prompt-output
+    fireEvent.click(screen.getByText(/Prefieres usar tu propio chatbot/));
+
     await waitFor(() => {
       expect(screen.getByTestId("prompt-output")).toBeInTheDocument();
     });

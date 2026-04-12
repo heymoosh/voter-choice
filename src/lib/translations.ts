@@ -60,6 +60,21 @@ export interface Translations {
     basedOn: string;
     promptLink: string;
   };
+  polling: {
+    addressLabel: string;
+    addressPlaceholder: string;
+    lookUpButton: string;
+    skipLink: string;
+    loadingLocations: string;
+    pollingPlace: string;
+    earlyVoteSites: string;
+    getDirections: string;
+    hours: string;
+    fallbackMessage: string;
+    fallbackLink: string;
+    noLocationsFound: string;
+    privacyNote: string;
+  };
   a11y: {
     skipToContent: string;
     languageToggleLabel: string;
@@ -135,6 +150,23 @@ const en: Translations = {
     createdBy: "Created by a human using AI tools.",
     basedOn: "Based on the",
     promptLink: "Free AI Ballot Research Prompt",
+  },
+  polling: {
+    addressLabel: "Enter your full street address for polling location",
+    addressPlaceholder: "e.g. 123 Main St, Houston, TX 77001",
+    lookUpButton: "Look up my polling place",
+    skipLink: "Skip \u2014 I\u2019ll find it myself",
+    loadingLocations: "Looking up your polling place\u2026",
+    pollingPlace: "Your Polling Place",
+    earlyVoteSites: "Early Vote Sites",
+    getDirections: "Get Directions",
+    hours: "Hours",
+    fallbackMessage:
+      "We couldn\u2019t find your polling location automatically.",
+    fallbackLink: "Find your polling place on your county election website",
+    noLocationsFound: "No polling locations found for this address.",
+    privacyNote:
+      "Your address is sent to Google\u2019s Civic API to find your polling place. We don\u2019t store it.",
   },
   a11y: {
     skipToContent: "Skip to main content",
@@ -213,6 +245,23 @@ const es: Translations = {
     createdBy: "Creado por una persona usando herramientas de IA",
     basedOn: "Basado en el",
     promptLink: "Mensaje Gratuito de Investigaci\u00f3n Electoral con IA",
+  },
+  polling: {
+    addressLabel:
+      "Ingresa tu direcci\u00f3n completa para encontrar tu casilla",
+    addressPlaceholder: "ej. 123 Main St, Houston, TX 77001",
+    lookUpButton: "Buscar mi casilla electoral",
+    skipLink: "Omitir \u2014 la buscar\u00e9 yo mismo/a",
+    loadingLocations: "Buscando tu casilla electoral\u2026",
+    pollingPlace: "Tu casilla electoral",
+    earlyVoteSites: "Sitios de votaci\u00f3n anticipada",
+    getDirections: "C\u00f3mo llegar",
+    hours: "Horario",
+    fallbackMessage: "No pudimos encontrar tu casilla autom\u00e1ticamente.",
+    fallbackLink: "Busca tu casilla en el sitio web electoral de tu condado",
+    noLocationsFound: "No se encontraron casillas para esta direcci\u00f3n.",
+    privacyNote:
+      "Tu direcci\u00f3n se env\u00eda a la API de Google Civic para encontrar tu casilla. No la almacenamos.",
   },
   a11y: {
     skipToContent: "Ir al contenido principal",

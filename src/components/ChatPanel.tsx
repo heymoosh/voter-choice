@@ -7,6 +7,7 @@ import { Button } from "./ui/Button";
 import { useLanguage } from "../lib/i18n";
 import type { StateElectionData } from "../types/election";
 import { generatePrompt } from "../lib/generatePrompt";
+import type { PollingDataForPrompt } from "../lib/generatePrompt";
 
 interface ChatMessage {
   role: "user" | "assistant";
@@ -16,6 +17,7 @@ interface ChatMessage {
 interface ChatPanelProps {
   state: StateElectionData;
   zipCode: string;
+  pollingData?: PollingDataForPrompt | null;
 }
 
 function generateSessionId(): string {
@@ -65,7 +67,7 @@ async function streamResponse(
   }
 }
 
-export function ChatPanel({ state, zipCode }: ChatPanelProps) {
+export function ChatPanel({ state, zipCode, pollingData }: ChatPanelProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
@@ -97,7 +99,13 @@ export function ChatPanel({ state, zipCode }: ChatPanelProps) {
       ];
       setMessages(newMessages);
 
-      const { basePrompt } = generatePrompt(state, zipCode, undefined, lang);
+      const { basePrompt } = generatePrompt(
+        state,
+        zipCode,
+        undefined,
+        lang,
+        pollingData ?? undefined,
+      );
 
       try {
         const response = await fetch("/api/chat", {
@@ -148,16 +156,22 @@ export function ChatPanel({ state, zipCode }: ChatPanelProps) {
         setIsStreaming(false);
       }
     },
-    [state, zipCode, lang],
+    [state, zipCode, lang, pollingData],
   );
 
   const startSession = useCallback(() => {
     setShowPrivacyNotice(false);
     setSessionStarted(true);
 
-    const { contextBlock } = generatePrompt(state, zipCode, undefined, lang);
+    const { contextBlock } = generatePrompt(
+      state,
+      zipCode,
+      undefined,
+      lang,
+      pollingData ?? undefined,
+    );
     sendMessage(contextBlock, []);
-  }, [state, zipCode, lang, sendMessage]);
+  }, [state, zipCode, lang, pollingData, sendMessage]);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

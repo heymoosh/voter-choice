@@ -5,6 +5,18 @@ import type {
 } from "../types/election";
 import type { Language } from "./translations";
 
+export interface PollingLocationData {
+  name: string;
+  address: string;
+  hours: string;
+  notes: string;
+}
+
+export interface PollingDataForPrompt {
+  pollingLocations: PollingLocationData[];
+  earlyVoteSites: PollingLocationData[];
+}
+
 const BASE_PROMPT = `You are a nonpartisan civic research assistant helping a U.S. voter prepare for an upcoming election. Your job is to help me understand what's on my ballot, form my own opinions, and research candidates based on their ACTIONS — not their campaign promises.
 
 ## HOW TO FORMAT EVERY RESPONSE (follow this strictly)
@@ -430,10 +442,57 @@ function findUpcomingElection(
   return elections[0];
 }
 
+function formatPollingBlock(polling: PollingDataForPrompt): string {
+  const lines: string[] = [];
+
+  if (polling.pollingLocations.length > 0) {
+    const loc = polling.pollingLocations[0];
+    lines.push(
+      `- **My polling place:** ${loc.name ? loc.name + ", " : ""}${loc.address}${loc.hours ? " (" + loc.hours + ")" : ""}`,
+    );
+  }
+
+  if (polling.earlyVoteSites.length > 0) {
+    const sites = polling.earlyVoteSites.slice(0, 3);
+    const siteDescs = sites.map(
+      (s) =>
+        `${s.name ? s.name + ", " : ""}${s.address}${s.hours ? " (" + s.hours + ")" : ""}`,
+    );
+    lines.push(`- **Early vote sites near me:** ${siteDescs.join("; ")}`);
+  }
+
+  return lines.join("\n");
+}
+
+function formatPollingBlockEs(polling: PollingDataForPrompt): string {
+  const lines: string[] = [];
+
+  if (polling.pollingLocations.length > 0) {
+    const loc = polling.pollingLocations[0];
+    lines.push(
+      `- **Mi casilla electoral:** ${loc.name ? loc.name + ", " : ""}${loc.address}${loc.hours ? " (" + loc.hours + ")" : ""}`,
+    );
+  }
+
+  if (polling.earlyVoteSites.length > 0) {
+    const sites = polling.earlyVoteSites.slice(0, 3);
+    const siteDescs = sites.map(
+      (s) =>
+        `${s.name ? s.name + ", " : ""}${s.address}${s.hours ? " (" + s.hours + ")" : ""}`,
+    );
+    lines.push(
+      `- **Sitios de votaci\u00f3n anticipada cerca de m\u00ed:** ${siteDescs.join("; ")}`,
+    );
+  }
+
+  return lines.join("\n");
+}
+
 function buildContextBlock(
   state: StateElectionData,
   zipCode: string,
   election: Election,
+  polling?: PollingDataForPrompt,
 ): string {
   const { stateName, registration, earlyVoting, votingRules, resources } =
     state;
@@ -466,6 +525,8 @@ function buildContextBlock(
     ? `Required. ${votingRules.acceptedIds.join(", ")}`
     : "Not required";
 
+  const pollingBlock = polling ? "\n" + formatPollingBlock(polling) : "";
+
   return `Hi! I'm voting in **${stateName}**. My zip code is **${zipCode}**.
 
 Here's what I know about my upcoming election:
@@ -474,7 +535,7 @@ Here's what I know about my upcoming election:
 - **Registration deadlines:** ${regLine}
 - **Early voting:** ${earlyVotingLine}
 - **Voter ID:** ${voterIdLine}
-- **Phones at polls:** ${votingRules.phonesAtPollsDetail}
+- **Phones at polls:** ${votingRules.phonesAtPollsDetail}${pollingBlock}
 - **My sample ballot:** ${resources.sampleBallotLookup}
 - **My county election office:** ${resources.countyElectionLookup}
 
@@ -485,6 +546,7 @@ function buildContextBlockEs(
   state: StateElectionData,
   zipCode: string,
   election: Election,
+  polling?: PollingDataForPrompt,
 ): string {
   const { stateName, registration, earlyVoting, votingRules, resources } =
     state;
@@ -517,6 +579,8 @@ function buildContextBlockEs(
     ? `Requerida. ${votingRules.acceptedIds.join(", ")}`
     : "No requerida";
 
+  const pollingBlock = polling ? "\n" + formatPollingBlockEs(polling) : "";
+
   return `¡Hola! Voy a votar en **${stateName}**. Mi código postal es **${zipCode}**.
 
 Esto es lo que sé sobre mi próxima elección:
@@ -525,7 +589,7 @@ Esto es lo que sé sobre mi próxima elección:
 - **Fechas límite de registro:** ${regLine}
 - **Votación anticipada:** ${earlyVotingLine}
 - **Identificación para votar:** ${voterIdLine}
-- **Teléfonos en las casillas:** ${votingRules.phonesAtPollsDetail}
+- **Teléfonos en las casillas:** ${votingRules.phonesAtPollsDetail}${pollingBlock}
 - **Mi boleta de muestra:** ${resources.sampleBallotLookup}
 - **Mi oficina electoral del condado:** ${resources.countyElectionLookup}
 
@@ -537,6 +601,7 @@ export function generatePrompt(
   zipCode: string,
   todayISO?: string,
   lang: Language = "en",
+  polling?: PollingDataForPrompt,
 ): CustomizedPrompt {
   const today = todayISO ?? new Date().toISOString().slice(0, 10);
   const election = findUpcomingElection(state.elections, today);
@@ -544,8 +609,8 @@ export function generatePrompt(
   const basePrompt = lang === "es" ? BALLOT_PROMPT_ES : BASE_PROMPT;
   const contextBlock =
     lang === "es"
-      ? buildContextBlockEs(state, zipCode, election)
-      : buildContextBlock(state, zipCode, election);
+      ? buildContextBlockEs(state, zipCode, election, polling)
+      : buildContextBlock(state, zipCode, election, polling);
 
   const fullText = basePrompt + "\n\n" + contextBlock;
 
