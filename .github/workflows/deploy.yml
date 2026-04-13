@@ -26,7 +26,10 @@ jobs:
 
       - name: Install Bitwarden Secrets Manager CLI
         run: |
-          npm install -g @bitwarden/cli
+          LATEST=$(curl -sSL https://api.github.com/repos/bitwarden/sdk-sm/releases/latest | jq -r '.tag_name' | sed 's/bws-v//')
+          curl -sSLo bws.zip "https://github.com/bitwarden/sdk-sm/releases/download/bws-v${LATEST}/bws-x86_64-unknown-linux-musl-${LATEST}.zip"
+          unzip -o bws.zip bws
+          sudo install -m 755 bws /usr/local/bin/bws
           bws --version
 
       - name: Pull secrets from Bitwarden SM
