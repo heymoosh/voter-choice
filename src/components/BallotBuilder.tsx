@@ -166,10 +166,12 @@ export function BallotBuilder() {
 
   return (
     <Card>
-      <h3 className="font-semibold text-base mb-4">{t.ballot.buildBallot}</h3>
+      <h3 className="font-semibold text-[1.375rem] mb-4">
+        {t.ballot.buildBallot}
+      </h3>
       <div className="space-y-6">
         <PasteSection />
-        <hr className="border-outline-variant" />
+        <div className="h-px bg-surface-high" />
         <ManualEntrySection />
       </div>
     </Card>

@@ -35,33 +35,36 @@ export function ZipForm({ onSubmit }: ZipFormProps) {
 
   return (
     <form onSubmit={handleSubmit} noValidate>
-      <label
-        htmlFor="zip-input"
-        className="block text-xs font-medium uppercase tracking-wide text-on-surface-muted mb-1"
-      >
-        {t.zipForm.label}
-      </label>
-      <div className="flex gap-2">
-        <input
-          id="zip-input"
-          data-testid="zip-input"
-          type="text"
-          inputMode="numeric"
-          maxLength={5}
-          value={value}
-          onChange={(e) => {
-            setValue(e.target.value);
-            if (errorKey) setErrorKey(null);
-          }}
-          className="bg-surface-high border-b-2 border-outline-variant px-3 min-h-[44px] w-full rounded-sm focus:outline-none focus:border-primary transition-colors text-on-surface"
-          aria-describedby={errorMessage ? "zip-error" : undefined}
-        />
+      <div className="bg-surface-lowest p-2 border-b-2 border-primary flex items-end gap-2 shadow-sm">
+        <div className="flex-grow">
+          <label
+            htmlFor="zip-input"
+            className="block text-xs font-bold uppercase tracking-widest text-primary mb-1 px-1"
+          >
+            {t.zipForm.label}
+          </label>
+          <input
+            id="zip-input"
+            data-testid="zip-input"
+            type="text"
+            inputMode="numeric"
+            maxLength={5}
+            value={value}
+            onChange={(e) => {
+              setValue(e.target.value);
+              if (errorKey) setErrorKey(null);
+            }}
+            className="w-full bg-transparent border-none focus:ring-0 focus:outline-none text-2xl font-bold p-1 placeholder:text-surface-high text-on-surface"
+            placeholder={t.zipForm.placeholder}
+            aria-describedby={errorMessage ? "zip-error" : undefined}
+          />
+        </div>
         <button
           data-testid="zip-submit"
           type="submit"
-          className="bg-primary text-on-primary px-4 min-h-[44px] min-w-[44px] rounded-sm font-semibold hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 whitespace-nowrap transition-colors"
+          className="bg-primary text-on-primary px-6 py-4 font-bold text-base hover:opacity-90 transition-opacity min-h-[44px] min-w-[44px]"
         >
-          {t.zipForm.submit}
+          {lang === "en" ? "View Ballot" : "Ver Boleta"}
         </button>
       </div>
       {errorMessage && (
@@ -69,7 +72,7 @@ export function ZipForm({ onSubmit }: ZipFormProps) {
           id="zip-error"
           data-testid="zip-error"
           role="alert"
-          className="text-red-600 text-sm mt-1"
+          className="text-red-600 text-sm mt-2"
         >
           {errorMessage}
         </p>

@@ -27,7 +27,7 @@ function LocationEntry({ location }: { location: PollingLocation }) {
   const t = translations[lang].polling;
 
   return (
-    <div className="py-3 first:pt-0 last:pb-0">
+    <div>
       {location.name && (
         <p className="font-semibold text-on-surface">{location.name}</p>
       )}
@@ -104,7 +104,7 @@ export function PollingLocationCard({
           <h3 className="font-semibold text-xs uppercase tracking-wide text-on-surface-muted mb-2">
             {t.pollingPlace}
           </h3>
-          <div className="divide-y divide-surface-high">
+          <div className="space-y-4">
             {pollingLocations.map((loc, i) => (
               <LocationEntry key={i} location={loc} />
             ))}
@@ -117,7 +117,7 @@ export function PollingLocationCard({
           <h3 className="font-semibold text-xs uppercase tracking-wide text-on-surface-muted mb-2">
             {t.earlyVoteSites}
           </h3>
-          <div className="divide-y divide-surface-high">
+          <div className="space-y-4">
             {earlyVoteSites.map((loc, i) => (
               <LocationEntry key={i} location={loc} />
             ))}

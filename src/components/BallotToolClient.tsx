@@ -344,7 +344,7 @@ export function BallotToolClient() {
   }
 
   return (
-    <div id="main-content">
+    <div>
       <ZipForm onSubmit={handleZipSubmit} />
 
       {result.status === "loading" && (

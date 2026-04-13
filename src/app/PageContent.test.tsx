@@ -25,29 +25,36 @@ describe("PageContent — English mode", () => {
   it("renders English hero title", () => {
     renderWithProvider();
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
-      "Free AI Ballot Research Tool",
+      "Your Ballot, Your Research, Your Privacy.",
     );
   });
 
-  it("renders tips section in English", () => {
+  it("renders trust signals", () => {
     renderWithProvider();
-    expect(screen.getByTestId("tips-section")).toBeInTheDocument();
-    expect(screen.getByTestId("tips-section").textContent).toMatch(
-      /I don.t know/i,
-    );
+    expect(screen.getByText("No data stored.")).toBeInTheDocument();
+    expect(screen.getByText("No accounts.")).toBeInTheDocument();
+    expect(screen.getByText("100% private.")).toBeInTheDocument();
   });
 
-  it("renders English footer attribution", () => {
+  it("renders English footer with legal links", () => {
     renderWithProvider();
     expect(screen.getByRole("contentinfo").textContent).toContain(
-      "Created by a human using AI tools",
+      "Voter Choice",
     );
+    expect(
+      screen.getByRole("link", { name: "Privacy Policy" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: "Terms of Use" }),
+    ).toBeInTheDocument();
   });
 
-  it("renders chatbot links with proper names", () => {
+  it("renders How it Works section", () => {
     renderWithProvider();
-    expect(screen.getByRole("link", { name: "Claude" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "ChatGPT" })).toBeInTheDocument();
+    expect(screen.getByText("How it Works")).toBeInTheDocument();
+    expect(screen.getByText("Locate Your District")).toBeInTheDocument();
+    expect(screen.getByText("Engage the Archivist")).toBeInTheDocument();
+    expect(screen.getByText("Take Action")).toBeInTheDocument();
   });
 });
 
@@ -58,30 +65,33 @@ describe("PageContent — Spanish mode", () => {
     renderWithProvider("es");
     await act(async () => {});
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
-      "Herramienta",
+      "Tu Boleta",
     );
   });
 
-  it("renders all 4 tips in Spanish", async () => {
+  it("renders Spanish trust signals", async () => {
     renderWithProvider("es");
     await act(async () => {});
-    const tips = screen.getByTestId("tips-section");
-    expect(tips.textContent).toMatch(/No sé|decir/i);
+    expect(screen.getByText("Sin datos almacenados.")).toBeInTheDocument();
+    expect(screen.getByText("Sin cuentas.")).toBeInTheDocument();
+    expect(screen.getByText("100% privado.")).toBeInTheDocument();
   });
 
-  it("renders Spanish footer attribution", async () => {
+  it("renders Spanish footer with legal links", async () => {
     renderWithProvider("es");
     await act(async () => {});
-    expect(screen.getByRole("contentinfo").textContent).toContain(
-      "Creado por una persona usando herramientas de IA",
-    );
+    expect(
+      screen.getByRole("link", { name: "Política de Privacidad" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: "Términos de Uso" }),
+    ).toBeInTheDocument();
   });
 
-  it("keeps chatbot proper names in English in Spanish mode", async () => {
+  it("renders How it Works in Spanish", async () => {
     renderWithProvider("es");
     await act(async () => {});
-    // Chatbot names are proper nouns — never translated
-    expect(screen.getByRole("link", { name: "Claude" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "ChatGPT" })).toBeInTheDocument();
+    expect(screen.getByText("Cómo Funciona")).toBeInTheDocument();
+    expect(screen.getByText("Localiza tu Distrito")).toBeInTheDocument();
   });
 });

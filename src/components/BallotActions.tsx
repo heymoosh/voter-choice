@@ -28,7 +28,7 @@ export function BallotActions({ content }: BallotActionsProps) {
   if (!ballot && !profile) return null;
 
   return (
-    <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-outline-variant">
+    <div className="flex flex-wrap gap-2 mt-4 pt-4">
       {ballot && (
         <Button
           data-testid="download-ballot-btn"

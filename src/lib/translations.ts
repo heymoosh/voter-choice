@@ -133,6 +133,49 @@ export interface Translations {
     ipLimit: string;
     messageCount: (current: number, max: number) => string;
   };
+  landing: {
+    brandName: string;
+    heroHeadline: string;
+    heroSubtext: string;
+    trustNoData: string;
+    trustNoAccounts: string;
+    trustPrivate: string;
+    returningBadge: string;
+    returningHeadline: string;
+    returningSubtext: string;
+    returningNote: string;
+    returningUploadTitle: string;
+    returningUploadHint: string;
+    returningSelectFile: string;
+    returningDragDrop: string;
+    resourcePollingTitle: string;
+    resourcePollingDesc: string;
+    resourcePollingCta: string;
+    resourceDatesTitle: string;
+    resourceDatesDesc: string;
+    resourceIdTitle: string;
+    resourceIdDesc: string;
+    howItWorksTitle: string;
+    howItWorksSubtext: string;
+    step1Title: string;
+    step1Desc: string;
+    step2Title: string;
+    step2Desc: string;
+    step3Title: string;
+    step3Desc: string;
+    ctaHeadline: string;
+    ctaSubtext: string;
+    ctaButton: string;
+    missionTitle: string;
+    missionQuote: string;
+    footerTagline: string;
+    footerResources: string;
+    footerLegal: string;
+    footerConnect: string;
+    footerBallotData: string;
+    footerSourceCode: string;
+    footerSupport: string;
+  };
   a11y: {
     skipToContent: string;
     languageToggleLabel: string;
@@ -293,6 +336,62 @@ const en: Translations = {
     ipLimit:
       "To keep this tool free for everyone, we limit sessions per day. Copy the prompt below to continue your research.",
     messageCount: (current: number, max: number) => `${current}/${max}`,
+  },
+  landing: {
+    brandName: "Civic Research",
+    heroHeadline: "Your Ballot, Your Research, Your Privacy.",
+    heroSubtext:
+      "The Modern Archivist\u2019s approach to democracy. Unbiased data, locally curated, and strictly anonymous. No accounts, no cookies, just the facts.",
+    trustNoData: "No data stored.",
+    trustNoAccounts: "No accounts.",
+    trustPrivate: "100% private.",
+    returningBadge: "Efficiency",
+    returningHeadline: "Returning User? Jumpstart your Personalized Ballot.",
+    returningSubtext:
+      "If you have a Voter Profile from a previous session, upload below to get a quick start on your ballot.",
+    returningNote:
+      "Note: We do NOT store any data. Our unique encryption protocol allows you to save progress locally. When you return, simply reload your file.",
+    returningUploadTitle: "Upload Your Voter Profile",
+    returningUploadHint: "Drag and drop your voter profile .txt file here.",
+    returningSelectFile: "Select File",
+    returningDragDrop: "or drag and drop here",
+    resourcePollingTitle: "Polling Places",
+    resourcePollingDesc:
+      "Find your nearest precinct and early voting locations for the upcoming election. Zero tracking.",
+    resourcePollingCta: "Locate Now",
+    resourceDatesTitle: "Election Dates",
+    resourceDatesDesc:
+      "Check registration deadlines, early voting schedules, and key dates for your election.",
+    resourceIdTitle: "ID Rules",
+    resourceIdDesc:
+      "Detailed breakdown of state-specific ID requirements. Don\u2019t be surprised at the door.",
+    howItWorksTitle: "How it Works",
+    howItWorksSubtext:
+      "Empowering your vote through neutral, data-driven insights. Our platform transforms complex legislative data into clear, non-partisan research.",
+    step1Title: "Locate Your District",
+    step1Desc:
+      "Instantly map your residential zip code to your specific electoral district and candidates.",
+    step2Title: "Engage the Archivist",
+    step2Desc:
+      "Ask anything about candidate voting records, donor history, or legislative impacts.",
+    step3Title: "Take Action",
+    step3Desc:
+      "Download your personalized voter guide to carry into the polling booth.",
+    ctaHeadline: "Ready to choose?",
+    ctaSubtext:
+      "Join thousands of informed citizens using Civic Research for non-partisan guidance.",
+    ctaButton: "Get Started Now",
+    missionTitle: "Mission Statement",
+    missionQuote:
+      "\u201cWe believe democracy thrives when barriers to information are removed. Voter Choice was built to provide a high-fidelity, archival interface for civic data, ensuring that every citizen has access to their local ballot without the cost of their personal privacy.\u201d",
+    footerTagline:
+      "A non-partisan digital archive dedicated to civic clarity. Produced by Civic Research.",
+    footerResources: "Resources",
+    footerLegal: "Legal",
+    footerConnect: "Connect",
+    footerBallotData: "Ballot Data",
+    footerSourceCode: "Source Code",
+    footerSupport: "Support",
   },
   a11y: {
     skipToContent: "Skip to main content",
@@ -458,6 +557,64 @@ const es: Translations = {
     ipLimit:
       "Para mantener esta herramienta gratuita para todos, limitamos las sesiones por d\u00eda. Copia el mensaje a continuaci\u00f3n para continuar tu investigaci\u00f3n.",
     messageCount: (current: number, max: number) => `${current}/${max}`,
+  },
+  landing: {
+    brandName: "Civic Research",
+    heroHeadline: "Tu Boleta, Tu Investigaci\u00f3n, Tu Privacidad.",
+    heroSubtext:
+      "El enfoque del Archivista Moderno hacia la democracia. Datos imparciales, curados localmente, y estrictamente an\u00f3nimos. Sin cuentas, sin cookies, solo los hechos.",
+    trustNoData: "Sin datos almacenados.",
+    trustNoAccounts: "Sin cuentas.",
+    trustPrivate: "100% privado.",
+    returningBadge: "Eficiencia",
+    returningHeadline:
+      "\u00bfUsuario que regresa? Impulsa tu Boleta Personalizada.",
+    returningSubtext:
+      "Si tienes un Perfil de Votante de una sesi\u00f3n anterior, s\u00fabelo a continuaci\u00f3n para comenzar r\u00e1pidamente con tu boleta.",
+    returningNote:
+      "Nota: NO almacenamos ning\u00fan dato. Nuestro protocolo \u00fanico de encriptaci\u00f3n te permite guardar tu progreso localmente. Cuando regreses, simplemente recarga tu archivo.",
+    returningUploadTitle: "Sube tu Perfil de Votante",
+    returningUploadHint:
+      "Arrastra y suelta tu archivo de perfil de votante .txt aqu\u00ed.",
+    returningSelectFile: "Seleccionar Archivo",
+    returningDragDrop: "o arrastra y suelta aqu\u00ed",
+    resourcePollingTitle: "Casillas Electorales",
+    resourcePollingDesc:
+      "Encuentra tu casilla m\u00e1s cercana y los sitios de votaci\u00f3n anticipada para la pr\u00f3xima elecci\u00f3n. Sin rastreo.",
+    resourcePollingCta: "Localizar Ahora",
+    resourceDatesTitle: "Fechas Electorales",
+    resourceDatesDesc:
+      "Consulta fechas l\u00edmite de registro, horarios de votaci\u00f3n anticipada y fechas clave de tu elecci\u00f3n.",
+    resourceIdTitle: "Reglas de ID",
+    resourceIdDesc:
+      "Desglose detallado de los requisitos de identificaci\u00f3n espec\u00edficos de tu estado. No te sorprendas en la puerta.",
+    howItWorksTitle: "C\u00f3mo Funciona",
+    howItWorksSubtext:
+      "Empoderando tu voto con informaci\u00f3n neutral y basada en datos. Nuestra plataforma transforma datos legislativos complejos en investigaci\u00f3n clara y no partidista.",
+    step1Title: "Localiza tu Distrito",
+    step1Desc:
+      "Mapea instant\u00e1neamente tu c\u00f3digo postal a tu distrito electoral espec\u00edfico y candidatos.",
+    step2Title: "Consulta al Archivista",
+    step2Desc:
+      "Pregunta lo que quieras sobre registros de votaci\u00f3n de candidatos, historial de donantes o impactos legislativos.",
+    step3Title: "Toma Acci\u00f3n",
+    step3Desc:
+      "Descarga tu gu\u00eda personalizada de votante para llevar a la casilla electoral.",
+    ctaHeadline: "\u00bfListo para elegir?",
+    ctaSubtext:
+      "\u00danete a miles de ciudadanos informados que usan Civic Research para orientaci\u00f3n no partidista.",
+    ctaButton: "Comienza Ahora",
+    missionTitle: "Declaraci\u00f3n de Misi\u00f3n",
+    missionQuote:
+      "\u201cCreemos que la democracia prospera cuando se eliminan las barreras a la informaci\u00f3n. Voter Choice fue creado para proporcionar una interfaz archiv\u00edstica de alta fidelidad para datos c\u00edvicos, asegurando que cada ciudadano tenga acceso a su boleta local sin el costo de su privacidad personal.\u201d",
+    footerTagline:
+      "Un archivo digital no partidista dedicado a la claridad c\u00edvica. Producido por Civic Research.",
+    footerResources: "Recursos",
+    footerLegal: "Legal",
+    footerConnect: "Conectar",
+    footerBallotData: "Datos Electorales",
+    footerSourceCode: "C\u00f3digo Fuente",
+    footerSupport: "Soporte",
   },
   a11y: {
     skipToContent: "Ir al contenido principal",

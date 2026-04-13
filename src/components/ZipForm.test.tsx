@@ -122,7 +122,9 @@ describe("ZipForm — Spanish mode", () => {
   it("shows Spanish submit button label", async () => {
     renderEs();
     await act(async () => {});
-    expect(screen.getByTestId("zip-submit").textContent).toContain("Buscar");
+    expect(screen.getByTestId("zip-submit").textContent).toContain(
+      "Ver Boleta",
+    );
   });
 
   it("shows Spanish label for zip input", async () => {

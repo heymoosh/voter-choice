@@ -105,7 +105,7 @@ export default function TermsOfUse() {
         </section>
       </article>
 
-      <footer className="text-sm text-on-surface-muted pt-4 border-t border-outline-variant">
+      <footer className="text-sm text-on-surface-muted pt-6 mt-2">
         <p>&copy; 2026 Grey Bird LLC. All Rights Reserved.</p>
       </footer>
     </main>

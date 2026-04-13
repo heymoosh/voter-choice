@@ -7,11 +7,11 @@ export default function Home() {
   return (
     <LanguageProvider>
       <LanguageToggle />
-      <main className="min-h-screen max-w-2xl mx-auto px-4 py-8 space-y-8 font-sans">
+      <div className="min-h-screen bg-surface font-sans">
         <PageContent>
           <BallotToolClient />
         </PageContent>
-      </main>
+      </div>
     </LanguageProvider>
   );
 }
