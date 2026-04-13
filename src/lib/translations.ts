@@ -209,6 +209,36 @@ export interface Translations {
     deepSearchPlaceholder: string;
     nonPartisanNotice: string;
   };
+  portfolio: {
+    badge: string;
+    electionLabel: string;
+    title: string;
+    subtitle: string;
+    printBallot: string;
+    primaryAction: string;
+    profileManifest: string;
+    profileFilename: string;
+    profileSize: string;
+    profileDescription: string;
+    downloadProfile: string;
+    privacyProtocol: string;
+    privacyDetail: string;
+    votingDestination: string;
+    earlyVotingSchedule: string;
+    getDirections: string;
+    addToCalendar: string;
+    selectedCandidates: string;
+    selectionsCount: (n: number) => string;
+    ballotMeasures: string;
+    decisionsCount: (n: number) => string;
+    civicIntegrityTitle: string;
+    civicIntegrityBody: string;
+    shareTemplate: string;
+    readyToVote: string;
+    readyToVoteBody: string;
+    backToChat: string;
+    pollingDataNote: string;
+  };
   a11y: {
     skipToContent: string;
     languageToggleLabel: string;
@@ -462,6 +492,42 @@ const en: Translations = {
       "Ask about candidate history, voting records, or ballot measures...",
     nonPartisanNotice:
       "Verified Non-Partisan Database \u2022 Educational Use Only",
+  },
+  portfolio: {
+    badge: "Verified Research",
+    electionLabel: "Election",
+    title: "Your Research Portfolio",
+    subtitle:
+      "Review your curated selections. These materials are prepared for your personal reference when you head to the polls.",
+    printBallot: "Print My Ballot",
+    primaryAction: "Primary Action",
+    profileManifest: "Encrypted Data Manifest",
+    profileFilename: "voter_profile.txt",
+    profileSize: "TXT Format",
+    profileDescription:
+      "Download this file to your device. You can upload it next election to skip the basic research and pick up right where you left off.",
+    downloadProfile: "Download Profile (.txt)",
+    privacyProtocol: "Privacy Protocol:",
+    privacyDetail:
+      "This file is generated locally on your device. We never receive, store, or transmit your personal data to any external server.",
+    votingDestination: "Your Voting Destination",
+    earlyVotingSchedule: "Early Voting Schedule",
+    getDirections: "Get Directions",
+    addToCalendar: "Add to Calendar",
+    selectedCandidates: "Selected Candidates",
+    selectionsCount: (n: number) => `${n} Selection${n === 1 ? "" : "s"}`,
+    ballotMeasures: "Ballot Measures",
+    decisionsCount: (n: number) => `${n} Decision${n === 1 ? "" : "s"}`,
+    civicIntegrityTitle: "Civic Integrity Notice",
+    civicIntegrityBody:
+      "This research profile is for personal use and is not an official ballot. Ensure your registration is active before Election Day.",
+    shareTemplate: "Share Research Template",
+    readyToVote: "Ready to Vote?",
+    readyToVoteBody:
+      "Print your 1-page ballot summary now. Remember, most Texas polling locations do not allow phones.",
+    backToChat: "Back to Research",
+    pollingDataNote:
+      "Poll data from Google Civic Information API. Verify with your county election office.",
   },
   a11y: {
     skipToContent: "Skip to main content",
@@ -723,6 +789,43 @@ const es: Translations = {
       "Pregunta sobre historial de candidatos, registros de votaci\u00f3n o medidas electorales...",
     nonPartisanNotice:
       "Base de Datos No Partidista Verificada \u2022 Solo Uso Educativo",
+  },
+  portfolio: {
+    badge: "Investigaci\u00f3n Verificada",
+    electionLabel: "Elecci\u00f3n",
+    title: "Tu Portafolio de Investigaci\u00f3n",
+    subtitle:
+      "Revisa tus selecciones curadas. Estos materiales est\u00e1n preparados para tu referencia personal cuando vayas a las casillas.",
+    printBallot: "Imprimir Mi Boleta",
+    primaryAction: "Acci\u00f3n Principal",
+    profileManifest: "Manifiesto de Datos Encriptados",
+    profileFilename: "perfil_votante.txt",
+    profileSize: "Formato TXT",
+    profileDescription:
+      "Descarga este archivo a tu dispositivo. Puedes subirlo en la pr\u00f3xima elecci\u00f3n para saltarte la investigaci\u00f3n b\u00e1sica y continuar donde lo dejaste.",
+    downloadProfile: "Descargar Perfil (.txt)",
+    privacyProtocol: "Protocolo de Privacidad:",
+    privacyDetail:
+      "Este archivo se genera localmente en tu dispositivo. Nunca recibimos, almacenamos ni transmitimos tus datos personales a ning\u00fan servidor externo.",
+    votingDestination: "Tu Destino de Votaci\u00f3n",
+    earlyVotingSchedule: "Horario de Votaci\u00f3n Anticipada",
+    getDirections: "C\u00f3mo Llegar",
+    addToCalendar: "Agregar al Calendario",
+    selectedCandidates: "Candidatos Seleccionados",
+    selectionsCount: (n: number) =>
+      `${n} Selecci${n === 1 ? "\u00f3n" : "ones"}`,
+    ballotMeasures: "Medidas Electorales",
+    decisionsCount: (n: number) => `${n} Decisi${n === 1 ? "\u00f3n" : "ones"}`,
+    civicIntegrityTitle: "Aviso de Integridad C\u00edvica",
+    civicIntegrityBody:
+      "Este perfil de investigaci\u00f3n es para uso personal y no es una boleta oficial. Aseg\u00farate de que tu registro est\u00e9 activo antes del D\u00eda de la Elecci\u00f3n.",
+    shareTemplate: "Compartir Plantilla de Investigaci\u00f3n",
+    readyToVote: "\u00bfListo para Votar?",
+    readyToVoteBody:
+      "Imprime tu resumen de boleta de 1 p\u00e1gina ahora. Recuerda, la mayor\u00eda de las casillas en Texas no permiten tel\u00e9fonos.",
+    backToChat: "Volver a la Investigaci\u00f3n",
+    pollingDataNote:
+      "Datos de casillas de la API de Google Civic Information. Verifica con tu oficina electoral del condado.",
   },
   a11y: {
     skipToContent: "Ir al contenido principal",

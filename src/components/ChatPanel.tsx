@@ -18,6 +18,8 @@ import { translations } from "../lib/translations";
 import type { StateElectionData } from "../types/election";
 import { generatePrompt } from "../lib/generatePrompt";
 import type { PollingDataForPrompt } from "../lib/generatePrompt";
+import { extractBallot, extractVoterProfile } from "../lib/ballot-utils";
+import { ResearchPortfolio } from "./ResearchPortfolio";
 
 interface ChatMessage {
   role: "user" | "assistant";
@@ -617,6 +619,7 @@ function ChatStatusBar({
 
 /* ── Main component ─────────────────────────────────────────── */
 
+// eslint-disable-next-line complexity
 export function ChatPanel({
   state,
   zipCode,
@@ -636,6 +639,7 @@ export function ChatPanel({
   const [disabledReason, setDisabledReason] = useState<DisabledReason | null>(
     null,
   );
+  const [showPortfolio, setShowPortfolio] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const sessionIdRef = useRef(generateSessionId());
   const messageCountRef = useRef(0);
@@ -816,6 +820,39 @@ export function ChatPanel({
     fullContent,
   );
 
+  // Detect ballot completion — auto-show portfolio when ballot is generated
+  const ballotContent = !isStreaming ? extractBallot(fullContent) : null;
+  const profileContent = !isStreaming ? extractVoterProfile(fullContent) : null;
+  const ballotReady = !!ballotContent && !isStreaming;
+
+  // Auto-trigger portfolio view when ballot first appears
+  useEffect(() => {
+    if (ballotReady && !showPortfolio) {
+      setShowPortfolio(true);
+    }
+    // Only trigger when ballotReady transitions to true
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ballotReady]);
+
+  // Get election name for portfolio header
+  const upcoming = state.elections.find(
+    (e) => e.date >= new Date().toISOString().split("T")[0],
+  );
+  const electionName = upcoming?.name;
+
+  // Show portfolio view when ballot is ready and user hasn't gone back to chat
+  if (showPortfolio && ballotContent) {
+    return (
+      <ResearchPortfolio
+        ballotText={ballotContent}
+        profileText={profileContent}
+        pollingData={pollingData ?? null}
+        electionName={electionName}
+        onBackToChat={() => setShowPortfolio(false)}
+      />
+    );
+  }
+
   return (
     <div data-testid="chat-window" className="flex flex-col">
       <InlinePrivacyNotice />
@@ -842,6 +879,25 @@ export function ChatPanel({
             disabledReason={disabledReason}
             error={error}
           />
+
+          {/* Show portfolio button if ballot is ready but user went back to chat */}
+          {ballotReady && !showPortfolio && (
+            <button
+              onClick={() => setShowPortfolio(true)}
+              className="mb-4 w-full bg-primary text-white py-4 font-black text-lg flex items-center justify-center gap-3 hover:opacity-90 active:scale-[0.98] transition-all"
+            >
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+                aria-hidden="true"
+              >
+                <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm-1 7V3.5L18.5 9H13zM8 17h8v-2H8v2zm0-4h8v-2H8v2z" />
+              </svg>
+              {translations[lang].portfolio.title}
+            </button>
+          )}
 
           {!chatDisabled && (
             <>
