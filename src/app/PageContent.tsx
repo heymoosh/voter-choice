@@ -2,6 +2,7 @@
 
 import React from "react";
 import { useLanguage } from "../lib/i18n";
+import { useResearchMode } from "../lib/researchMode";
 import { translations } from "../lib/translations";
 
 interface PageContentProps {
@@ -177,7 +178,34 @@ function CheckCircleIcon({ className = "" }: { className?: string }) {
 
 export function PageContent({ children }: PageContentProps) {
   const { lang } = useLanguage();
+  const { isResearch } = useResearchMode();
   const t = translations[lang];
+
+  if (isResearch) {
+    return (
+      <>
+        {/* Research mode header */}
+        <header className="flex justify-between items-center px-6 py-4 w-full border-b border-outline-variant/20 bg-[#fcfaf8] tracking-tight sticky top-0 z-50">
+          <div className="flex items-center gap-8">
+            <span className="text-2xl font-black text-primary">
+              {t.landing.brandName}
+            </span>
+            <nav className="hidden md:flex gap-6 items-center h-full">
+              <span className="text-primary font-bold border-b-2 border-primary py-1">
+                {t.research.navResearch}
+              </span>
+              <span className="text-on-surface-muted py-1">
+                {t.research.navResources}
+              </span>
+            </nav>
+          </div>
+        </header>
+        <div id="main-content" className="flex-1 flex flex-col overflow-hidden">
+          {children}
+        </div>
+      </>
+    );
+  }
 
   return (
     <>

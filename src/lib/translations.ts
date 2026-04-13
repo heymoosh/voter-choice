@@ -176,6 +176,39 @@ export interface Translations {
     footerSourceCode: string;
     footerSupport: string;
   };
+  research: {
+    sidebarTitle: string;
+    sidebarSubtitle: string;
+    navResearch: string;
+    navResources: string;
+    tabDates: string;
+    tabId: string;
+    tabPolling: string;
+    tabBallot: string;
+    checkRegistration: string;
+    memoLabel: string;
+    ballotSelections: string;
+    statusLabel: string;
+    statusInitialized: string;
+    regionLabel: string;
+    historicalContext: string;
+    historicalContextQuote: string;
+    daysUntilElection: string;
+    inputLabel: string;
+    inputPlaceholder: string;
+    chipNotSure: string;
+    chipCandidates: string;
+    chipBallot: string;
+    chipCounty: string;
+    progressLabel: string;
+    selectionsLabel: string;
+    viewLedger: string;
+    verifiedSources: string;
+    sourcesDisclaimer: string;
+    deepSearchLabel: string;
+    deepSearchPlaceholder: string;
+    nonPartisanNotice: string;
+  };
   a11y: {
     skipToContent: string;
     languageToggleLabel: string;
@@ -392,6 +425,43 @@ const en: Translations = {
     footerBallotData: "Ballot Data",
     footerSourceCode: "Source Code",
     footerSupport: "Support",
+  },
+  research: {
+    sidebarTitle: "Election Guide",
+    sidebarSubtitle: "Local Civic Utility",
+    navResearch: "Research",
+    navResources: "Resources",
+    tabDates: "Dates",
+    tabId: "ID Requirements",
+    tabPolling: "Polling Places",
+    tabBallot: "Sample Ballot",
+    checkRegistration: "Check Registration",
+    memoLabel: "Research Memo",
+    ballotSelections: "Ballot Selections",
+    statusLabel: "Status",
+    statusInitialized: "Voter File Initialized",
+    regionLabel: "Region",
+    historicalContext: "Historical Context",
+    historicalContextQuote:
+      "Municipal elections in Texas often see lower turnout than general cycles, meaning your individual vote carries significantly more weight in determining local policy and educational funding.",
+    daysUntilElection: "Days until election",
+    inputLabel: "Your response",
+    inputPlaceholder: "Type your thoughts, or just say 'I'm not sure'...",
+    chipNotSure: "I'm not sure",
+    chipCandidates: "Tell me about the candidates",
+    chipBallot: "What's on my ballot?",
+    chipCounty: "I'm in Travis County",
+    progressLabel: "Progress",
+    selectionsLabel: "Selections",
+    viewLedger: "View Full Ledger",
+    verifiedSources: "Verified Sources",
+    sourcesDisclaimer:
+      "Sources are from Claude\u2019s training data. Always verify with official records before voting.",
+    deepSearchLabel: "Deep Search Prompt",
+    deepSearchPlaceholder:
+      "Ask about candidate history, voting records, or ballot measures...",
+    nonPartisanNotice:
+      "Verified Non-Partisan Database \u2022 Educational Use Only",
   },
   a11y: {
     skipToContent: "Skip to main content",
@@ -615,6 +685,44 @@ const es: Translations = {
     footerBallotData: "Datos Electorales",
     footerSourceCode: "C\u00f3digo Fuente",
     footerSupport: "Soporte",
+  },
+  research: {
+    sidebarTitle: "Gu\u00eda Electoral",
+    sidebarSubtitle: "Utilidad C\u00edvica Local",
+    navResearch: "Investigaci\u00f3n",
+    navResources: "Recursos",
+    tabDates: "Fechas",
+    tabId: "Requisitos de ID",
+    tabPolling: "Casillas",
+    tabBallot: "Boleta de Muestra",
+    checkRegistration: "Verificar Registro",
+    memoLabel: "Memorando de Investigaci\u00f3n",
+    ballotSelections: "Selecciones de Boleta",
+    statusLabel: "Estado",
+    statusInitialized: "Archivo de Votante Inicializado",
+    regionLabel: "Regi\u00f3n",
+    historicalContext: "Contexto Hist\u00f3rico",
+    historicalContextQuote:
+      "Las elecciones municipales en Texas a menudo ven menor participaci\u00f3n que los ciclos generales, lo que significa que tu voto individual tiene significativamente m\u00e1s peso en determinar la pol\u00edtica local y el financiamiento educativo.",
+    daysUntilElection: "D\u00edas hasta la elecci\u00f3n",
+    inputLabel: "Tu respuesta",
+    inputPlaceholder:
+      "Escribe tus ideas, o simplemente di 'No estoy seguro'...",
+    chipNotSure: "No estoy seguro",
+    chipCandidates: "Cu\u00e9ntame de los candidatos",
+    chipBallot: "\u00bfQu\u00e9 hay en mi boleta?",
+    chipCounty: "Estoy en el Condado de Travis",
+    progressLabel: "Progreso",
+    selectionsLabel: "Selecciones",
+    viewLedger: "Ver Registro Completo",
+    verifiedSources: "Fuentes Verificadas",
+    sourcesDisclaimer:
+      "Las fuentes provienen de los datos de entrenamiento de Claude. Siempre verifica con registros oficiales antes de votar.",
+    deepSearchLabel: "B\u00fasqueda Profunda",
+    deepSearchPlaceholder:
+      "Pregunta sobre historial de candidatos, registros de votaci\u00f3n o medidas electorales...",
+    nonPartisanNotice:
+      "Base de Datos No Partidista Verificada \u2022 Solo Uso Educativo",
   },
   a11y: {
     skipToContent: "Ir al contenido principal",

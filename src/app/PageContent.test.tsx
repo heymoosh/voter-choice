@@ -5,6 +5,7 @@ import "@testing-library/jest-dom";
 import React from "react";
 import { PageContent } from "./PageContent";
 import { LanguageProvider } from "../lib/i18n";
+import { ResearchModeProvider } from "../lib/researchMode";
 
 function renderWithProvider(initialLang?: "es") {
   if (initialLang === "es") {
@@ -13,9 +14,11 @@ function renderWithProvider(initialLang?: "es") {
     localStorage.removeItem("ballot-tool-lang");
   }
   return render(
-    <LanguageProvider>
-      <PageContent />
-    </LanguageProvider>,
+    <ResearchModeProvider>
+      <LanguageProvider>
+        <PageContent />
+      </LanguageProvider>
+    </ResearchModeProvider>,
   );
 }
 

@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import {
   render,
   screen,
@@ -11,48 +11,71 @@ import "@testing-library/jest-dom";
 import React from "react";
 import { BallotToolClient } from "./BallotToolClient";
 import { LanguageProvider } from "../lib/i18n";
+import { ResearchModeProvider } from "../lib/researchMode";
 
-// Mock clipboard
+// Mock scrollIntoView (not available in jsdom)
 beforeEach(() => {
+  Element.prototype.scrollIntoView = vi.fn();
   Object.defineProperty(navigator, "clipboard", {
     value: { writeText: vi.fn().mockResolvedValue(undefined) },
     writable: true,
     configurable: true,
   });
+  // Mock fetch for /api/chat GET (budget check) and POST (chat)
+  vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+    const url = typeof input === "string" ? input : input.toString();
+    if (url === "/api/chat") {
+      return new Response(
+        JSON.stringify({ budget: { tier: "normal", percent: 0 } }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      );
+    }
+    return new Response("Not found", { status: 404 });
+  });
 });
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
+
+function renderWithProviders(ui: React.ReactElement) {
+  return render(
+    <ResearchModeProvider>
+      <LanguageProvider>{ui}</LanguageProvider>
+    </ResearchModeProvider>,
+  );
+}
 
 describe("BallotToolClient", () => {
   it("renders the zip input form initially", () => {
-    render(<BallotToolClient />);
+    renderWithProviders(<BallotToolClient />);
     expect(screen.getByTestId("zip-input")).toBeInTheDocument();
     expect(screen.getByTestId("zip-submit")).toBeInTheDocument();
   });
 
-  it("shows state info card after submitting a valid TX zip", async () => {
-    render(<BallotToolClient />);
+  it("shows research layout after submitting a valid TX zip", async () => {
+    renderWithProviders(<BallotToolClient />);
     fireEvent.change(screen.getByTestId("zip-input"), {
       target: { value: "73301" },
     });
     fireEvent.click(screen.getByTestId("zip-submit"));
 
     await waitFor(() => {
-      expect(screen.getByTestId("state-info")).toBeInTheDocument();
+      expect(screen.getByTestId("chat-window")).toBeInTheDocument();
     });
-    expect(screen.getByTestId("election-name").textContent).toBeTruthy();
   });
 
-  it("shows prompt-output after submitting a valid TX zip and skipping address", async () => {
-    render(<BallotToolClient />);
+  it("shows prompt-output in research view after submitting a valid TX zip", async () => {
+    renderWithProviders(<BallotToolClient />);
     fireEvent.change(screen.getByTestId("zip-input"), {
       target: { value: "73301" },
     });
     fireEvent.click(screen.getByTestId("zip-submit"));
 
-    // Wait for state info, then skip the address input step
+    // Wait for research layout
     await waitFor(() => {
-      expect(screen.getByTestId("state-info")).toBeInTheDocument();
+      expect(screen.getByTestId("chat-window")).toBeInTheDocument();
     });
-    fireEvent.click(screen.getByText(/Skip/));
 
     // Open the details/summary to reveal prompt-output
     fireEvent.click(screen.getByText(/Prefer to use your own AI chatbot/));
@@ -64,7 +87,7 @@ describe("BallotToolClient", () => {
   });
 
   it("shows not-found-message for unknown zip", async () => {
-    render(<BallotToolClient />);
+    renderWithProviders(<BallotToolClient />);
     fireEvent.change(screen.getByTestId("zip-input"), {
       target: { value: "00001" },
     });
@@ -76,7 +99,7 @@ describe("BallotToolClient", () => {
   });
 
   it("shows state-selector for multi-state zip 86515", async () => {
-    render(<BallotToolClient />);
+    renderWithProviders(<BallotToolClient />);
     fireEvent.change(screen.getByTestId("zip-input"), {
       target: { value: "86515" },
     });
@@ -87,16 +110,16 @@ describe("BallotToolClient", () => {
     });
   });
 
-  it("shows a loading indicator while resolving zip", async () => {
-    render(<BallotToolClient />);
+  it("shows research layout after resolving zip", async () => {
+    renderWithProviders(<BallotToolClient />);
     fireEvent.change(screen.getByTestId("zip-input"), {
       target: { value: "73301" },
     });
     fireEvent.click(screen.getByTestId("zip-submit"));
 
-    // Loading state appears briefly — state-info should eventually appear
+    // Research layout should eventually appear
     await waitFor(() => {
-      expect(screen.getByTestId("state-info")).toBeInTheDocument();
+      expect(screen.getByTestId("chat-window")).toBeInTheDocument();
     });
   });
 });
@@ -104,22 +127,13 @@ describe("BallotToolClient", () => {
 describe("BallotToolClient — Spanish mode", () => {
   beforeEach(() => {
     localStorage.setItem("ballot-tool-lang", "es");
-    Object.defineProperty(navigator, "clipboard", {
-      value: { writeText: vi.fn().mockResolvedValue(undefined) },
-      writable: true,
-      configurable: true,
-    });
   });
   afterEach(() => {
     localStorage.clear();
   });
 
   function renderEs() {
-    return render(
-      <LanguageProvider>
-        <BallotToolClient />
-      </LanguageProvider>,
-    );
+    return renderWithProviders(<BallotToolClient />);
   }
 
   it("shows Spanish not-found message for unknown zip", async () => {
@@ -133,23 +147,21 @@ describe("BallotToolClient — Spanish mode", () => {
       expect(screen.getByTestId("not-found-message")).toBeInTheDocument();
     });
     expect(screen.getByTestId("not-found-message").textContent).toContain(
-      "Aún no tenemos datos",
+      "A\u00fan no tenemos datos",
     );
   });
 
-  it("shows Spanish no-election message when no upcoming election", async () => {
+  it("shows research layout when state found in Spanish mode", async () => {
     renderEs();
     await act(async () => {});
-    // TX zip with election — test that state info or no-election appears in Spanish
     fireEvent.change(screen.getByTestId("zip-input"), {
       target: { value: "73301" },
     });
     fireEvent.click(screen.getByTestId("zip-submit"));
     await waitFor(() => {
-      // Either found (state-info) or no-election
-      const found = screen.queryByTestId("state-info");
+      const chatWindow = screen.queryByTestId("chat-window");
       const noElection = screen.queryByTestId("no-election-message");
-      expect(found || noElection).toBeTruthy();
+      expect(chatWindow || noElection).toBeTruthy();
     });
   });
 
@@ -161,11 +173,10 @@ describe("BallotToolClient — Spanish mode", () => {
     });
     fireEvent.click(screen.getByTestId("zip-submit"));
 
-    // Wait for state info, then skip address input
+    // Wait for research layout
     await waitFor(() => {
-      expect(screen.getByTestId("state-info")).toBeInTheDocument();
+      expect(screen.getByTestId("chat-window")).toBeInTheDocument();
     });
-    fireEvent.click(screen.getByText(/Omitir/));
 
     // Open the details/summary to reveal prompt-output
     fireEvent.click(screen.getByText(/Prefieres usar tu propio chatbot/));
@@ -173,7 +184,6 @@ describe("BallotToolClient — Spanish mode", () => {
     await waitFor(() => {
       expect(screen.getByTestId("prompt-output")).toBeInTheDocument();
     });
-    // Spanish prompt contains Spanish text
     expect(screen.getByTestId("prompt-output").textContent).toMatch(
       /asistente|¡Hola!/,
     );
@@ -189,7 +199,6 @@ describe("BallotToolClient — Spanish mode", () => {
     await waitFor(() => {
       expect(screen.getByTestId("state-selector")).toBeInTheDocument();
     });
-    // Spanish selector prompt
     expect(screen.getByTestId("state-selector").textContent).toMatch(
       /estado|votar/i,
     );

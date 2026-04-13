@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Card } from "./ui/Card";
 import { Notice } from "./ui/Notice";
 import {
   HandoffPackage,
@@ -10,6 +9,10 @@ import {
   buildClientFallbackHandoff,
 } from "./HandoffPackage";
 import { BallotActions } from "./BallotActions";
+import { StructuredBlocks } from "./StructuredCards";
+import { ResearchProgressBar } from "./ResearchProgress";
+import { parseStructuredContent, computeProgress } from "../lib/chatParser";
+import type { StructuredBlock } from "../lib/chatParser";
 import { useLanguage } from "../lib/i18n";
 import { translations } from "../lib/translations";
 import type { StateElectionData } from "../types/election";
@@ -128,39 +131,208 @@ function InlinePrivacyNotice() {
   );
 }
 
-function ChatMessageBubble({
+// eslint-disable-next-line complexity
+function ResearchMemoCard({
   msg,
   isLast,
   isStreaming,
+  state,
 }: {
   msg: ChatMessage;
   isLast: boolean;
   isStreaming: boolean;
+  state?: StateElectionData;
 }) {
-  if (msg.role === "user") {
-    return (
-      <div className="flex justify-end">
-        <Card className="max-w-[85%]" data-testid="chat-message-user">
-          <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
-        </Card>
-      </div>
-    );
-  }
-
+  const { lang } = useLanguage();
+  const t = translations[lang];
   const showActions = !isStreaming || !isLast;
 
+  const upcoming = state?.elections.find(
+    (e) => e.date >= new Date().toISOString().split("T")[0],
+  );
+  const ref = upcoming
+    ? `${state?.stateCode}-${upcoming.date}`
+    : (state?.stateCode ?? "");
+
+  const parsed = parseStructuredContent(msg.content);
+
   return (
-    <div data-testid="chat-message-assistant" className="max-w-[85%]">
-      <div className="bg-surface-low rounded-sm p-4">
-        <div className="text-sm whitespace-pre-wrap prose-sm">
-          {msg.content}
+    <div data-testid="chat-message-assistant">
+      <div className="flex items-center gap-2 mb-4">
+        <svg
+          className="text-primary"
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="currentColor"
+          aria-hidden="true"
+        >
+          <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+        </svg>
+        <span className="text-xs font-black uppercase tracking-[0.2em] text-primary">
+          {t.research.memoLabel}{" "}
+          {ref ? `\u2022 ${t.research.ballotSelections}` : ""}
+        </span>
+      </div>
+      <div className="bg-surface-lowest border-l-4 border-primary p-6 md:p-10 shadow-[0_4px_24px_-10px_rgba(0,0,0,0.05)]">
+        {/* Content */}
+        <div className="text-sm whitespace-pre-wrap leading-relaxed text-on-surface-variant">
+          {parsed.displayText}
           {isStreaming && isLast && (
             <span className="inline-block w-1.5 h-4 bg-primary ml-0.5 animate-pulse" />
           )}
         </div>
+
+        {/* Structured cards */}
+        {!isStreaming && parsed.blocks.length > 0 && (
+          <StructuredBlocks blocks={parsed.blocks} />
+        )}
+
+        {/* Verified Sources */}
+        {!isStreaming && parsed.blocks.length > 0 && (
+          <div className="pt-6 mt-6 border-t border-outline-variant/20">
+            <VerifiedSourcesIndicator />
+          </div>
+        )}
+
+        {/* Status indicators */}
+        <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="bg-surface-low p-4 border-b-2 border-outline-variant/30">
+            <span className="block text-[10px] font-bold text-accent uppercase mb-1">
+              {t.research.statusLabel}
+            </span>
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-primary" />
+              <span className="text-sm font-bold text-on-surface">
+                {t.research.statusInitialized}
+              </span>
+            </div>
+          </div>
+          {state && (
+            <div className="bg-surface-low p-4 border-b-2 border-outline-variant/30">
+              <span className="block text-[10px] font-bold text-accent uppercase mb-1">
+                {t.research.regionLabel}
+              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-bold text-on-surface">
+                  State of {state.stateName}
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
+
         {showActions && <BallotActions content={msg.content} />}
       </div>
     </div>
+  );
+}
+
+function VerifiedSourcesIndicator() {
+  const { lang } = useLanguage();
+  const t = translations[lang];
+
+  return (
+    <div className="flex flex-col gap-2">
+      <span className="text-[10px] font-black uppercase tracking-widest text-on-surface-muted">
+        {t.research.verifiedSources}
+      </span>
+      <p className="text-xs text-on-surface-muted">
+        {t.research.sourcesDisclaimer}
+      </p>
+    </div>
+  );
+}
+
+// eslint-disable-next-line complexity
+function ChatMessageBubble({
+  msg,
+  isLast,
+  isStreaming,
+  isFirstAssistant,
+  state,
+}: {
+  msg: ChatMessage;
+  isLast: boolean;
+  isStreaming: boolean;
+  isFirstAssistant?: boolean;
+  state?: StateElectionData;
+}) {
+  const { lang } = useLanguage();
+
+  if (msg.role === "user") {
+    return (
+      <article className="max-w-3xl mx-auto pt-4">
+        <div className="flex gap-4 items-start">
+          <div className="bg-primary p-2 text-white shrink-0">
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+              aria-hidden="true"
+            >
+              <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+            </svg>
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-xs font-black uppercase tracking-[0.2em] text-primary">
+              {lang === "es"
+                ? "ENFOQUE DE INVESTIGACI\u00d3N ACTUAL"
+                : "CURRENT RESEARCH FOCUS"}
+            </h2>
+            <p
+              className="text-xl md:text-2xl font-bold text-on-surface leading-tight tracking-tight"
+              data-testid="chat-message-user"
+            >
+              {msg.content}
+            </p>
+          </div>
+        </div>
+      </article>
+    );
+  }
+
+  if (isFirstAssistant) {
+    return (
+      <ResearchMemoCard
+        msg={msg}
+        isLast={isLast}
+        isStreaming={isStreaming}
+        state={state}
+      />
+    );
+  }
+
+  const showActions = !isStreaming || !isLast;
+  const isCurrentlyStreaming = isStreaming && isLast;
+  const parsed = parseStructuredContent(msg.content);
+
+  return (
+    <article data-testid="chat-message-assistant" className="max-w-3xl mx-auto">
+      <div className="bg-surface-lowest border-l-4 border-primary p-6 md:p-10 shadow-sm">
+        <div className="text-sm whitespace-pre-wrap leading-relaxed text-on-surface-variant">
+          {parsed.displayText}
+          {isCurrentlyStreaming && (
+            <span className="inline-block w-1.5 h-4 bg-primary ml-0.5 animate-pulse" />
+          )}
+        </div>
+
+        {/* Structured cards */}
+        {!isCurrentlyStreaming && parsed.blocks.length > 0 && (
+          <StructuredBlocks blocks={parsed.blocks} />
+        )}
+
+        {/* Verified Sources for messages with structured content */}
+        {!isCurrentlyStreaming && parsed.blocks.length > 0 && (
+          <div className="pt-6 mt-6 border-t border-outline-variant/20">
+            <VerifiedSourcesIndicator />
+          </div>
+        )}
+
+        {showActions && <BallotActions content={msg.content} />}
+      </div>
+    </article>
   );
 }
 
@@ -173,6 +345,7 @@ function ChatInput({
 }) {
   const [input, setInput] = useState("");
   const { lang } = useLanguage();
+  const t = translations[lang];
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -183,40 +356,93 @@ function ChatInput({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex gap-2">
-      <input
-        data-testid="chat-input"
-        type="text"
-        value={input}
-        onChange={(e) => setInput(e.target.value)}
-        placeholder={
-          lang === "es" ? "Escribe tu respuesta..." : "Type your response..."
-        }
-        disabled={isStreaming}
-        className="flex-1 bg-surface-high border-b-2 border-outline-variant px-3 py-2.5 text-base text-on-surface rounded-sm focus:outline-none focus:border-primary transition-colors placeholder:text-on-surface-muted disabled:opacity-50"
-      />
-      <button
-        data-testid="chat-send"
-        type="submit"
-        disabled={isStreaming || !input.trim()}
-        className="bg-primary text-on-primary px-4 py-2.5 rounded-sm font-semibold min-h-[44px] min-w-[44px] hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none transition-colors"
-        aria-label={lang === "es" ? "Enviar" : "Send"}
-      >
-        <svg
-          width="20"
-          height="20"
-          viewBox="0 0 20 20"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-          aria-hidden="true"
-        >
-          <path
-            d="M3.5 10L16.5 3.5L10 16.5L8.5 11.5L3.5 10Z"
-            fill="currentColor"
-          />
-        </svg>
-      </button>
+    <form onSubmit={handleSubmit}>
+      <div className="bg-surface-lowest border-2 border-primary/20 focus-within:border-primary transition-colors shadow-xl">
+        <div className="p-4 flex flex-col">
+          <label
+            className="text-[10px] font-black uppercase tracking-[0.2em] text-primary mb-2"
+            htmlFor="chat-input"
+          >
+            {t.research.deepSearchLabel}
+          </label>
+          <div className="flex items-end gap-4">
+            <textarea
+              data-testid="chat-input"
+              id="chat-input"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSubmit(e);
+                }
+              }}
+              placeholder={t.research.deepSearchPlaceholder}
+              disabled={isStreaming}
+              rows={2}
+              className="flex-1 bg-transparent border-none focus:ring-0 p-0 text-on-surface placeholder:text-on-surface-muted/60 text-sm font-medium resize-none leading-relaxed disabled:opacity-50"
+            />
+            <button
+              data-testid="chat-send"
+              type="submit"
+              disabled={isStreaming || !input.trim()}
+              className="bg-primary text-on-primary p-3 flex items-center justify-center min-h-[44px] min-w-[44px] hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none transition-colors shrink-0 active:scale-95"
+              aria-label={lang === "es" ? "Enviar" : "Send"}
+            >
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 20 20"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                aria-hidden="true"
+              >
+                <path
+                  d="M3.5 10L16.5 3.5L10 16.5L8.5 11.5L3.5 10Z"
+                  fill="currentColor"
+                />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+      <p className="text-[10px] text-center mt-3 text-on-surface-muted font-bold uppercase tracking-wider opacity-60">
+        {t.research.nonPartisanNotice}
+      </p>
     </form>
+  );
+}
+
+function QuickActionChips({
+  onChipClick,
+  isStreaming,
+}: {
+  onChipClick: (text: string) => void;
+  isStreaming: boolean;
+}) {
+  const { lang } = useLanguage();
+  const t = translations[lang];
+  const chips = [
+    t.research.chipCounty,
+    t.research.chipCandidates,
+    t.research.chipBallot,
+    t.research.chipNotSure,
+  ];
+
+  return (
+    <div className="mt-3 flex gap-3 overflow-x-auto pb-2">
+      {chips.map((chip) => (
+        <button
+          key={chip}
+          type="button"
+          disabled={isStreaming}
+          onClick={() => onChipClick(chip)}
+          className="whitespace-nowrap px-4 py-1.5 rounded-full border border-outline-variant/30 text-xs font-medium text-on-surface-variant hover:bg-surface-low transition-colors disabled:opacity-50 disabled:pointer-events-none"
+        >
+          {chip}
+        </button>
+      ))}
+    </div>
   );
 }
 
@@ -280,6 +506,7 @@ function ChatMessageList({
   clientFallback,
   clientContinuationPrompt,
   messagesEndRef,
+  state,
 }: {
   messages: ChatMessage[];
   isStreaming: boolean;
@@ -288,12 +515,16 @@ function ChatMessageList({
   clientFallback: ReturnType<typeof buildClientFallbackHandoff> | null;
   clientContinuationPrompt: string;
   messagesEndRef: React.RefObject<HTMLDivElement | null>;
+  state?: StateElectionData;
 }) {
   const { lang } = useLanguage();
   const t = translations[lang];
 
+  // Track first assistant message index
+  const firstAssistantIdx = messages.findIndex((m) => m.role === "assistant");
+
   return (
-    <div className="space-y-4 mb-4 max-h-[60vh] overflow-y-auto pr-1">
+    <div className="space-y-8 mb-4 overflow-y-auto pr-1 pb-20">
       {messages.map((msg, i) => {
         const isLastAssistant =
           msg.role === "assistant" && i === messages.length - 1;
@@ -315,6 +546,8 @@ function ChatMessageList({
             msg={msg}
             isLast={i === messages.length - 1}
             isStreaming={isStreaming}
+            isFirstAssistant={i === firstAssistantIdx}
+            state={state}
           />
         );
       })}
@@ -559,12 +792,39 @@ export function ChatPanel({
     zipCode,
   );
 
+  const handleChipClick = useCallback(
+    (text: string) => {
+      sendMessage(text, messages);
+    },
+    [sendMessage, messages],
+  );
+
+  // Compute research progress from all assistant messages
+  const allBlocks: StructuredBlock[] = [];
+  const fullContent = messages
+    .filter((m) => m.role === "assistant")
+    .map((m) => {
+      const parsed = parseStructuredContent(m.content);
+      allBlocks.push(...parsed.blocks);
+      return m.content;
+    })
+    .join("\n");
+
+  const progress = computeProgress(
+    allBlocks,
+    messageCountRef.current,
+    fullContent,
+  );
+
   return (
     <div data-testid="chat-window" className="flex flex-col">
       <InlinePrivacyNotice />
 
       {sessionStarted && (
         <>
+          {/* Progress bar — shown once conversation has started */}
+          {messages.length > 0 && <ResearchProgressBar progress={progress} />}
+
           <ChatMessageList
             messages={messages}
             isStreaming={isStreaming}
@@ -573,6 +833,7 @@ export function ChatPanel({
             clientFallback={handoff.clientFallback}
             clientContinuationPrompt={handoff.clientContinuationPrompt}
             messagesEndRef={messagesEndRef}
+            state={state}
           />
 
           <ChatStatusBar
@@ -586,6 +847,10 @@ export function ChatPanel({
             <>
               <ChatInput
                 onSubmit={(msg) => sendMessage(msg, messages)}
+                isStreaming={isStreaming}
+              />
+              <QuickActionChips
+                onChipClick={handleChipClick}
                 isStreaming={isStreaming}
               />
               <p className="text-xs text-on-surface-muted text-right mt-1">

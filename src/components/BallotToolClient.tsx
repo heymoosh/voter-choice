@@ -5,20 +5,11 @@ import { lookupZip } from "../lib/lookupZip";
 import { getStateData } from "../lib/getStateData";
 import { generatePrompt } from "../lib/generatePrompt";
 import { ZipForm } from "./ZipForm";
-import { StateInfoCard } from "./StateInfoCard";
-import { PromptOutput } from "./PromptOutput";
 import { StateSelectorModal } from "./StateSelectorModal";
-import { ChatPanel } from "./ChatPanel";
-import { AddressInput } from "./AddressInput";
-import {
-  PollingLocationCard,
-  PollingLocationFallback,
-} from "./PollingLocationCard";
 import { ProfileUpload } from "./ProfileUpload";
-import { BallotBuilder } from "./BallotBuilder";
-import { Button } from "./ui/Button";
-import { Notice } from "./ui/Notice";
+import { ResearchLayout } from "./ResearchLayout";
 import { useLanguage } from "../lib/i18n";
+import { useResearchMode } from "../lib/researchMode";
 import { translations } from "../lib/translations";
 import type { LookupResult, StateElectionData } from "../types/election";
 import type { Language } from "../lib/translations";
@@ -36,56 +27,6 @@ type BudgetTier = "normal" | "notice" | "soft_close" | "handoff" | "exhausted";
 interface BudgetStatus {
   tier: BudgetTier;
   percent: number;
-}
-
-function hasPollingResults(data: PollingData | null): data is PollingData {
-  return (
-    data !== null &&
-    (data.pollingLocations.length > 0 || data.earlyVoteSites.length > 0)
-  );
-}
-
-function PollingSection({
-  addressStep,
-  pollingData,
-  fallbackUrl,
-  onSubmit,
-  onSkip,
-}: {
-  addressStep: AddressStep;
-  pollingData: PollingData | null;
-  fallbackUrl: string;
-  onSubmit: (address: string) => void;
-  onSkip: () => void;
-}) {
-  if (addressStep === "input" || addressStep === "loading") {
-    return (
-      <AddressInput
-        onSubmit={onSubmit}
-        onSkip={onSkip}
-        isLoading={addressStep === "loading"}
-      />
-    );
-  }
-
-  if (addressStep === "done" && hasPollingResults(pollingData)) {
-    return (
-      <PollingLocationCard
-        pollingLocations={pollingData.pollingLocations}
-        earlyVoteSites={pollingData.earlyVoteSites}
-        fallbackUrl={fallbackUrl}
-      />
-    );
-  }
-
-  if (
-    addressStep === "error" ||
-    (addressStep === "done" && !hasPollingResults(pollingData))
-  ) {
-    return <PollingLocationFallback fallbackUrl={fallbackUrl} />;
-  }
-
-  return null;
 }
 
 function isChatAvailable(tier: BudgetTier): boolean {
@@ -127,42 +68,6 @@ function useBudgetCheck() {
   return { budgetStatus, budgetChecked, handleBudgetUpdate };
 }
 
-function PromptSection({
-  isPrimary,
-  promptText,
-  lang,
-}: {
-  isPrimary: boolean;
-  promptText: string;
-  lang: Language;
-}) {
-  if (isPrimary) {
-    return (
-      <div className="space-y-3">
-        <h3 className="font-semibold text-base">
-          {lang === "es"
-            ? "Copia este mensaje para investigar tu boleta"
-            : "Copy this prompt to research your ballot"}
-        </h3>
-        <PromptOutput promptText={promptText} />
-      </div>
-    );
-  }
-
-  return (
-    <details className="group">
-      <summary className="cursor-pointer text-sm text-primary font-medium hover:underline">
-        {lang === "es"
-          ? "\u00bfPrefieres usar tu propio chatbot? Copia este mensaje"
-          : "Prefer to use your own AI chatbot? Copy this prompt"}
-      </summary>
-      <div className="mt-3">
-        <PromptOutput promptText={promptText} />
-      </div>
-    </details>
-  );
-}
-
 function useAddressLookup() {
   const [addressStep, setAddressStep] = useState<AddressStep>("input");
   const [pollingData, setPollingData] = useState<PollingData | null>(null);
@@ -192,40 +97,6 @@ function useAddressLookup() {
   return { addressStep, pollingData, handleSubmit, skip };
 }
 
-function ChatCTA({ lang, onOpen }: { lang: Language; onOpen: () => void }) {
-  return (
-    <div className="flex flex-col gap-3">
-      <Button
-        data-testid="chat-cta"
-        variant="cta"
-        size="lg"
-        onClick={onOpen}
-        className="w-full"
-      >
-        {lang === "es" ? "Investigar mi boleta" : "Research My Ballot"}
-      </Button>
-      <p className="text-xs text-on-surface-muted text-center">
-        {lang === "es"
-          ? "Chat con IA gratis \u2014 tu conversaci\u00f3n es privada"
-          : "Free AI chat \u2014 your conversation stays private"}
-      </p>
-    </div>
-  );
-}
-
-function BudgetSoftCloseNotice({ lang }: { lang: Language }) {
-  const t = translations[lang];
-  return (
-    <div data-testid="chat-disabled-message">
-      <Notice variant="warning">
-        <p className="font-semibold mb-1">{t.budget.softClose}</p>
-        <p className="text-xs text-on-surface-muted">{t.budget.resetNote}</p>
-      </Notice>
-    </div>
-  );
-}
-
-// eslint-disable-next-line complexity
 function ElectionResult({
   state,
   zipCode,
@@ -235,16 +106,20 @@ function ElectionResult({
   zipCode: string;
   lang: Language;
 }) {
-  const [chatOpen, setChatOpen] = useState(false);
   const [voterProfile, setVoterProfile] = useState<string | null>(null);
   const address = useAddressLookup();
   const { budgetStatus, budgetChecked, handleBudgetUpdate } = useBudgetCheck();
+  const { setResearch } = useResearchMode();
+
+  // Enter research mode on mount
+  useEffect(() => {
+    setResearch(true);
+    return () => setResearch(false);
+  }, [setResearch]);
 
   const chatAvailable = isChatAvailable(budgetStatus.tier);
-  const showChatCTA = !chatOpen && (chatAvailable || !budgetChecked);
-  const copyPasteIsPrimary = budgetChecked && !chatAvailable && !chatOpen;
+  const copyPasteIsPrimary = budgetChecked && !chatAvailable;
 
-  // Include voter profile in copy/paste prompt when available
   const promptText = voterProfile
     ? generatePrompt(state, zipCode, undefined, lang).fullText +
       "\n\n---\n\n[BEGIN USER VOTER PROFILE]\n" +
@@ -253,46 +128,31 @@ function ElectionResult({
     : generatePrompt(state, zipCode, undefined, lang).fullText;
 
   return (
-    <div className="mt-6 space-y-6">
-      <StateInfoCard state={state} />
-
-      {/* Returning voter profile upload */}
-      {!chatOpen && !voterProfile && (
-        <ProfileUpload onProfileLoaded={setVoterProfile} />
+    <>
+      {/* Profile upload banner (shown before research starts if no profile) */}
+      {!voterProfile && (
+        <div className="px-6 py-3 bg-surface-low border-b border-outline-variant/20">
+          <div className="max-w-3xl mx-auto">
+            <ProfileUpload onProfileLoaded={setVoterProfile} />
+          </div>
+        </div>
       )}
 
-      {copyPasteIsPrimary && <BudgetSoftCloseNotice lang={lang} />}
-
-      {showChatCTA && <ChatCTA lang={lang} onOpen={() => setChatOpen(true)} />}
-
-      {chatOpen && (
-        <ChatPanel
-          state={state}
-          zipCode={zipCode}
-          pollingData={address.pollingData}
-          onBudgetUpdate={handleBudgetUpdate}
-          voterProfile={voterProfile}
-        />
-      )}
-
-      <PromptSection
-        isPrimary={copyPasteIsPrimary}
-        promptText={promptText}
-        lang={lang}
-      />
-
-      {/* Path B: Build ballot from paste or manual entry */}
-      <BallotBuilder />
-
-      {/* Address lookup is optional — available for polling location data */}
-      <PollingSection
+      <ResearchLayout
+        state={state}
+        zipCode={zipCode}
         addressStep={address.addressStep}
         pollingData={address.pollingData}
-        fallbackUrl={state.resources.pollingPlaceLookup}
-        onSubmit={address.handleSubmit}
-        onSkip={address.skip}
+        onAddressSubmit={address.handleSubmit}
+        onAddressSkip={address.skip}
+        budgetStatus={budgetStatus}
+        budgetChecked={budgetChecked}
+        onBudgetUpdate={handleBudgetUpdate}
+        voterProfile={voterProfile}
+        promptText={promptText}
+        copyPasteIsPrimary={copyPasteIsPrimary}
       />
-    </div>
+    </>
   );
 }
 
@@ -343,6 +203,14 @@ export function BallotToolClient() {
     await resolveState(stateCode);
   }
 
+  // When a state is found, render the full research layout (no zip form visible)
+  if (result.status === "found") {
+    return (
+      <ElectionResult state={result.state} zipCode={currentZip} lang={lang} />
+    );
+  }
+
+  // Pre-research: show zip form and status messages
   return (
     <div>
       <ZipForm onSubmit={handleZipSubmit} />
@@ -399,10 +267,6 @@ export function BallotToolClient() {
             {result.state.stateName} election website
           </a>
         </div>
-      )}
-
-      {result.status === "found" && (
-        <ElectionResult state={result.state} zipCode={currentZip} lang={lang} />
       )}
     </div>
   );
