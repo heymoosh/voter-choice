@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import {
   HandoffPackage,
   parseHandoffMarkers,
@@ -116,6 +116,47 @@ function getDisabledMessage(
   return t.budget.exhausted;
 }
 
+/* ── Inline markdown renderer (bold + links) ──────────────── */
+
+function MarkdownText({ text }: { text: string }) {
+  const regex = /(\*\*(.+?)\*\*|\[([^\]]+)\]\((https?:\/\/[^)]+)\))/g;
+  const parts: React.ReactNode[] = [];
+  let lastIndex = 0;
+  let match;
+  let key = 0;
+
+  while ((match = regex.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push(text.slice(lastIndex, match.index));
+    }
+    if (match[2]) {
+      parts.push(
+        <strong key={key++} className="font-bold text-on-surface">
+          {match[2]}
+        </strong>,
+      );
+    } else if (match[3] && match[4]) {
+      parts.push(
+        <a
+          key={key++}
+          href={match[4]}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-primary underline hover:opacity-80"
+        >
+          {match[3]}
+        </a>,
+      );
+    }
+    lastIndex = match.index + match[0].length;
+  }
+  if (lastIndex < text.length) {
+    parts.push(text.slice(lastIndex));
+  }
+
+  return <>{parts}</>;
+}
+
 /* ── Sub-components ─────────────────────────────────────────── */
 
 function InlinePrivacyNotice() {
@@ -178,7 +219,7 @@ function ResearchMemoCard({
       <div className="bg-surface-lowest border-l-4 border-primary p-4 md:p-10 shadow-[0_4px_24px_-10px_rgba(0,0,0,0.05)]">
         {/* Content */}
         <div className="text-sm whitespace-pre-wrap leading-relaxed text-on-surface-variant">
-          {parsed.displayText}
+          <MarkdownText text={parsed.displayText} />
           {isStreaming && isLast && (
             <span className="inline-block w-1.5 h-4 bg-primary ml-0.5 animate-pulse" />
           )}
@@ -313,7 +354,7 @@ function ChatMessageBubble({
     <article data-testid="chat-message-assistant" className="max-w-3xl mx-auto">
       <div className="bg-surface-lowest border-l-4 border-primary p-4 md:p-10 shadow-sm">
         <div className="text-sm whitespace-pre-wrap leading-relaxed text-on-surface-variant">
-          {parsed.displayText}
+          <MarkdownText text={parsed.displayText} />
           {isCurrentlyStreaming && (
             <span className="inline-block w-1.5 h-4 bg-primary ml-0.5 animate-pulse" />
           )}
@@ -507,6 +548,7 @@ function ChatMessageList({
   clientFallback,
   clientContinuationPrompt,
   messagesEndRef,
+  lastUserMsgRef,
   state,
 }: {
   messages: ChatMessage[];
@@ -516,16 +558,21 @@ function ChatMessageList({
   clientFallback: ReturnType<typeof buildClientFallbackHandoff> | null;
   clientContinuationPrompt: string;
   messagesEndRef: React.RefObject<HTMLDivElement | null>;
+  lastUserMsgRef: React.RefObject<HTMLDivElement | null>;
   state?: StateElectionData;
 }) {
   const { lang } = useLanguage();
   const t = translations[lang];
 
-  // Track first assistant message index
+  // Track first assistant message index and last user message index
   const firstAssistantIdx = messages.findIndex((m) => m.role === "assistant");
+  const lastUserIdx = messages.reduce(
+    (acc, m, i) => (m.role === "user" ? i : acc),
+    -1,
+  );
 
   return (
-    <div className="space-y-8 mb-4 overflow-y-auto pr-1 pb-20">
+    <div className="space-y-8 mb-4 pr-1 pb-20">
       {messages.map((msg, i) => {
         const isLastAssistant =
           msg.role === "assistant" && i === messages.length - 1;
@@ -542,14 +589,15 @@ function ChatMessageList({
         }
 
         return (
-          <ChatMessageBubble
-            key={i}
-            msg={msg}
-            isLast={i === messages.length - 1}
-            isStreaming={isStreaming}
-            isFirstAssistant={i === firstAssistantIdx}
-            state={state}
-          />
+          <div key={i} ref={i === lastUserIdx ? lastUserMsgRef : undefined}>
+            <ChatMessageBubble
+              msg={msg}
+              isLast={i === messages.length - 1}
+              isStreaming={isStreaming}
+              isFirstAssistant={i === firstAssistantIdx}
+              state={state}
+            />
+          </div>
         );
       })}
 
@@ -661,18 +709,21 @@ export function ChatPanel({
   );
   const [showPortfolio, setShowPortfolio] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const lastUserMsgRef = useRef<HTMLDivElement>(null);
   const sessionIdRef = useRef(generateSessionId());
   const messageCountRef = useRef(0);
   const { lang } = useLanguage();
   const t = translations[lang];
 
-  const scrollToBottom = useCallback(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, []);
-
+  // Pin the user's last message at the top when streaming starts
   useEffect(() => {
-    scrollToBottom();
-  }, [messages, scrollToBottom]);
+    if (isStreaming && lastUserMsgRef.current) {
+      lastUserMsgRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }
+  }, [isStreaming]);
 
   const handleBudgetUpdate = useCallback(
     (budget: BudgetStatus) => {
@@ -890,6 +941,7 @@ export function ChatPanel({
             clientFallback={handoff.clientFallback}
             clientContinuationPrompt={handoff.clientContinuationPrompt}
             messagesEndRef={messagesEndRef}
+            lastUserMsgRef={lastUserMsgRef}
             state={state}
           />
 

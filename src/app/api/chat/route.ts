@@ -191,9 +191,7 @@ function checkGates(request: NextRequest, body: ChatRequest): Response | null {
 
 function handleAnthropicError(err: unknown): Response {
   if (err instanceof Anthropic.APIError) {
-    console.error(
-      `Anthropic API error: ${err.status} ${err.message}`,
-    );
+    console.error(`Anthropic API error: ${err.status} ${err.message}`);
     if (err.status === 429) {
       return Response.json(
         {
@@ -244,9 +242,9 @@ export async function POST(request: NextRequest) {
   const budget = getBudgetStatus();
   try {
     const stream = await new Anthropic({ apiKey }).messages.create({
-      model: "claude-sonnet-4-6-20250514",
+      model: "claude-sonnet-4-6",
       max_tokens: 4096,
-      temperature: 1,
+      temperature: 0.7,
       system: buildSystemPrompt(body.systemPrompt, body.voterProfile),
       messages: prepareMessages(body.messages),
       stream: true,

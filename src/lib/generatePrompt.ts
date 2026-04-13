@@ -678,7 +678,10 @@ export function generatePrompt(
   const today = todayISO ?? new Date().toISOString().slice(0, 10);
   const election = findUpcomingElection(state.elections, today);
 
-  const basePrompt = lang === "es" ? BALLOT_PROMPT_ES : BASE_PROMPT;
+  const dateHeader =
+    lang === "es" ? `Fecha de hoy: ${today}\n\n` : `Today's date: ${today}\n\n`;
+  const basePrompt =
+    dateHeader + (lang === "es" ? BALLOT_PROMPT_ES : BASE_PROMPT);
   const contextBlock =
     lang === "es"
       ? buildContextBlockEs(state, zipCode, election, polling)
