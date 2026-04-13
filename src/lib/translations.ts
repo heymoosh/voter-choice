@@ -326,6 +326,17 @@ export interface Translations {
     skipToContent: string;
     languageToggleLabel: string;
   };
+  common: {
+    online: string;
+    byMail: string;
+    inPerson: string;
+    registrationStatus: string;
+    earlyVotingOpen: string;
+    showLess: string;
+    showFullPrompt: string;
+    copyFallback: string;
+    electionDayEvent: string;
+  };
 }
 
 const en: Translations = {
@@ -712,6 +723,17 @@ const en: Translations = {
   a11y: {
     skipToContent: "Skip to main content",
     languageToggleLabel: "Switch to Spanish",
+  },
+  common: {
+    online: "Online",
+    byMail: "By mail",
+    inPerson: "In person",
+    registrationStatus: "your registration status",
+    earlyVotingOpen: "Early Voting Open",
+    showLess: "Show less",
+    showFullPrompt: "Show full prompt",
+    copyFallback: "Press Ctrl+C / Cmd+C to copy",
+    electionDayEvent: "Election Day",
   },
 };
 
@@ -1108,6 +1130,17 @@ const es: Translations = {
   a11y: {
     skipToContent: "Ir al contenido principal",
     languageToggleLabel: "Cambiar a ingl\u00e9s",
+  },
+  common: {
+    online: "En l\u00ednea",
+    byMail: "Por correo",
+    inPerson: "En persona",
+    registrationStatus: "tu estado de registro",
+    earlyVotingOpen: "Voto anticipado abierto",
+    showLess: "Mostrar menos",
+    showFullPrompt: "Mostrar todo",
+    copyFallback: "Presiona Ctrl+C / Cmd+C para copiar",
+    electionDayEvent: "D\u00eda de Elecci\u00f3n",
   },
 };
 

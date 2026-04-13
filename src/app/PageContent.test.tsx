@@ -42,7 +42,7 @@ describe("PageContent — English mode", () => {
   it("renders English footer with legal links", () => {
     renderWithProvider();
     expect(screen.getByRole("contentinfo").textContent).toContain(
-      "Voter Choice",
+      "Civic Research",
     );
     expect(
       screen.getByRole("link", { name: "Privacy Policy" }),

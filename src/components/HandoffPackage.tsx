@@ -244,7 +244,7 @@ function ContinueSessionPanel({
       </div>
       <div className="space-y-4">
         {/* Session handoff data preview */}
-        <div className="bg-surface-lowest p-3 border border-outline-variant/30">
+        <div className="bg-surface-lowest p-3">
           <pre className="text-[10px] text-on-surface-muted leading-relaxed font-mono whitespace-pre-wrap max-h-28 overflow-y-auto">
             {handoffSummary}
           </pre>
@@ -306,7 +306,7 @@ function AiLinksPanel() {
             href={link.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center justify-between px-4 py-2 bg-surface-lowest hover:bg-surface-low transition-colors border-b-2 border-outline-variant/30 group"
+            className="flex items-center justify-between px-4 py-2 bg-surface-lowest hover:bg-surface-low transition-colors group"
           >
             <span className="text-sm font-bold text-on-surface">
               {link.name}

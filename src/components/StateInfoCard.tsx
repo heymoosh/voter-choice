@@ -69,12 +69,17 @@ function VoterIdSection({
   }
   return (
     <div className="text-sm">
-      <p className="font-medium">{requiredText}</p>
-      <ul className="list-disc list-inside mt-1 space-y-0.5">
+      <p className="font-medium mb-3">{requiredText}</p>
+      <div className="grid grid-cols-2 gap-2">
         {votingRules.acceptedIds.map((id) => (
-          <li key={id}>{id}</li>
+          <div
+            key={id}
+            className="bg-surface-low border-l-4 border-primary p-3 text-xs font-bold text-on-surface leading-snug"
+          >
+            {id}
+          </div>
         ))}
-      </ul>
+      </div>
     </div>
   );
 }
@@ -107,10 +112,7 @@ function RegistrationSection({
   return (
     <div data-testid="registration-status" className="space-y-1">
       {onlineStatus && (
-        <DeadlineRow
-          label={lang === "es" ? "En línea" : "Online"}
-          status={onlineStatus}
-        />
+        <DeadlineRow label={t.common.online} status={onlineStatus} />
       )}
       {!state.registration.online.available && (
         <div className="text-sm text-on-surface-muted">
@@ -119,14 +121,8 @@ function RegistrationSection({
             : "Online registration: Not available"}
         </div>
       )}
-      <DeadlineRow
-        label={lang === "es" ? "Por correo" : "By mail"}
-        status={byMailStatus}
-      />
-      <DeadlineRow
-        label={lang === "es" ? "En persona" : "In person"}
-        status={inPersonStatus}
-      />
+      <DeadlineRow label={t.common.byMail} status={byMailStatus} />
+      <DeadlineRow label={t.common.inPerson} status={inPersonStatus} />
       {[
         ...(onlineStatus ? [onlineStatus] : []),
         byMailStatus,
@@ -134,7 +130,6 @@ function RegistrationSection({
       ].every((s) => s.color === "passed") && (
         <AllPassedAlert
           registrationCheckUrl={state.registration.registrationCheckUrl}
-          lang={lang}
           t={t}
         />
       )}
@@ -144,11 +139,9 @@ function RegistrationSection({
 
 function AllPassedAlert({
   registrationCheckUrl,
-  lang,
   t,
 }: {
   registrationCheckUrl: string;
-  lang: Language;
   t: (typeof translations)[Language];
 }) {
   return (
@@ -163,7 +156,7 @@ function AllPassedAlert({
         target="_blank"
         rel="noopener noreferrer"
       >
-        {lang === "es" ? "tu estado de registro" : "your registration status"}
+        {t.common.registrationStatus}
       </a>
       .
     </div>
@@ -197,9 +190,7 @@ export function StateInfoCard({ state }: StateInfoCardProps) {
             {state.stateName}
           </h2>
           {earlyVotingActive && (
-            <Badge variant="primary">
-              {lang === "es" ? "Voto anticipado abierto" : "Early Voting Open"}
-            </Badge>
+            <Badge variant="primary">{t.common.earlyVotingOpen}</Badge>
           )}
         </div>
         {upcoming && (

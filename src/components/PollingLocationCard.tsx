@@ -144,7 +144,7 @@ function PrimaryLocationCard({
   const earlyNotes = earlyVoteSites.length > 0 ? earlyVoteSites[0].notes : null;
 
   return (
-    <div className="bg-surface-lowest border border-outline-variant/20 overflow-hidden">
+    <div className="bg-surface-lowest overflow-hidden shadow-sm">
       {/* Location Info */}
       <div className="p-4 md:p-6">
         <div className="flex justify-between items-start mb-4 md:mb-6">
@@ -189,7 +189,7 @@ function PrimaryLocationCard({
           <button
             onClick={() =>
               downloadIcs(
-                lang === "es" ? "Día de Elección" : "Election Day",
+                t.electionDayLabel,
                 location.address,
                 location.hours,
                 electionDate,
@@ -213,7 +213,7 @@ function PrimaryLocationCard({
             </a>
             <a
               href={generateCalendarUrl(
-                lang === "es" ? "Día de Elección" : "Election Day",
+                t.electionDayLabel,
                 location.address,
                 electionDate,
               )}
@@ -333,7 +333,7 @@ export function PollingLocationCard({
       {/* Alternative Locations */}
       {alternatives.length > 0 && (
         <section className="space-y-6">
-          <h4 className="text-[11px] font-bold uppercase tracking-widest text-on-surface-muted border-b border-outline-variant/20 pb-2">
+          <h4 className="text-[11px] font-bold uppercase tracking-widest text-on-surface-muted pb-2">
             {t.alternativeLocations}
           </h4>
           {alternatives.map((loc, i) => (

@@ -77,9 +77,7 @@ describe("BallotToolClient", () => {
       expect(screen.getByTestId("chat-window")).toBeInTheDocument();
     });
 
-    // Open the details/summary to reveal prompt-output
-    fireEvent.click(screen.getByText(/Prefer to use your own AI chatbot/));
-
+    // Prompt output is now always visible in the research layout
     await waitFor(() => {
       expect(screen.getByTestId("prompt-output")).toBeInTheDocument();
     });
@@ -178,9 +176,7 @@ describe("BallotToolClient — Spanish mode", () => {
       expect(screen.getByTestId("chat-window")).toBeInTheDocument();
     });
 
-    // Open the details/summary to reveal prompt-output
-    fireEvent.click(screen.getByText(/Prefieres usar tu propio chatbot/));
-
+    // Prompt output is now always visible in the research layout
     await waitFor(() => {
       expect(screen.getByTestId("prompt-output")).toBeInTheDocument();
     });

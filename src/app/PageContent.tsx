@@ -185,7 +185,7 @@ export function PageContent({ children }: PageContentProps) {
     return (
       <>
         {/* Research mode header */}
-        <header className="flex justify-between items-center px-4 md:px-6 py-3 md:py-4 w-full border-b border-outline-variant/20 bg-[#fcfaf8] tracking-tight sticky top-0 z-50">
+        <header className="flex justify-between items-center px-4 md:px-6 py-3 md:py-4 w-full bg-surface-low tracking-tight sticky top-0 z-50">
           <div className="flex items-center gap-4 md:gap-8">
             <span className="text-xl md:text-2xl font-black text-primary">
               {t.landing.brandName}
@@ -218,7 +218,7 @@ export function PageContent({ children }: PageContentProps) {
       </a>
 
       {/* Header */}
-      <header className="flex justify-between items-center px-6 py-4 w-full border-b border-outline-variant/20 bg-[#fcfaf8] tracking-tight">
+      <header className="flex justify-between items-center px-6 py-4 w-full bg-surface-low tracking-tight">
         <div className="text-2xl font-black text-primary">
           {t.landing.brandName}
         </div>
@@ -232,7 +232,7 @@ export function PageContent({ children }: PageContentProps) {
         >
           <h1
             id="hero-heading"
-            className="text-4xl md:text-6xl font-extrabold leading-[1.1] tracking-tighter text-on-surface mb-4 md:mb-6"
+            className="text-4xl md:text-[3.5rem] font-extrabold leading-[1.1] tracking-[-0.02em] text-on-surface mb-4 md:mb-6"
           >
             {t.landing.heroHeadline}
           </h1>
@@ -338,7 +338,7 @@ export function PageContent({ children }: PageContentProps) {
           </div>
 
           {/* ID Rules */}
-          <div className="bg-surface-lowest p-5 md:p-8 border-b border-outline-variant/30">
+          <div className="bg-surface-lowest p-5 md:p-8">
             <h3 className="text-sm font-bold mb-3 uppercase tracking-widest text-primary">
               {t.landing.resourceIdTitle}
             </h3>
@@ -349,7 +349,7 @@ export function PageContent({ children }: PageContentProps) {
         </section>
 
         {/* ── 4. How it Works ── */}
-        <section className="bg-surface border-t border-outline-variant/20 pt-10 md:pt-16">
+        <section className="bg-surface pt-10 md:pt-16">
           <div className="px-4 md:px-6 mb-8 md:mb-12 max-w-3xl">
             <h2 className="font-extrabold text-3xl md:text-5xl tracking-tight text-on-surface leading-[1.1] mb-4">
               {t.landing.howItWorksTitle}
@@ -360,7 +360,7 @@ export function PageContent({ children }: PageContentProps) {
           </div>
 
           {/* Step 1 */}
-          <section className="bg-surface-low px-4 md:px-6 py-8 md:py-12 border-y border-outline-variant/10">
+          <section className="bg-surface-low px-4 md:px-6 py-8 md:py-12">
             <div className="max-w-3xl">
               <div className="flex items-center gap-4 mb-6">
                 <span className="font-black text-5xl md:text-6xl text-primary leading-none">
@@ -466,7 +466,7 @@ export function PageContent({ children }: PageContentProps) {
           </section>
 
           {/* Step 3 */}
-          <section className="bg-surface-low px-4 md:px-6 py-8 md:py-12 border-t border-outline-variant/10">
+          <section className="bg-surface-low px-4 md:px-6 py-8 md:py-12">
             <div className="max-w-3xl">
               <div className="flex items-center gap-4 mb-6">
                 <span className="font-black text-5xl md:text-6xl text-primary leading-none">
@@ -538,7 +538,7 @@ export function PageContent({ children }: PageContentProps) {
         </section>
 
         {/* ── 5. Mission Statement ── */}
-        <section className="py-14 md:py-24 px-4 md:px-6 border-t border-outline-variant/10">
+        <section className="py-14 md:py-24 px-4 md:px-6">
           <div className="max-w-4xl mx-auto text-center">
             <BalanceIcon className="text-primary mx-auto mb-6 md:mb-8" />
             <h2 className="text-3xl md:text-4xl font-extrabold text-on-surface mb-6 md:mb-8 tracking-tight">
@@ -555,12 +555,12 @@ export function PageContent({ children }: PageContentProps) {
       {/* ── 6. Footer ── */}
       <footer
         role="contentinfo"
-        className="bg-surface-high py-10 md:py-16 px-4 md:px-6 border-t border-outline-variant/20"
+        className="bg-surface-high py-10 md:py-16 px-4 md:px-6"
       >
         <div className="max-w-7xl mx-auto flex flex-col gap-10">
           <div className="max-w-xs">
             <div className="text-xl font-black text-primary mb-4">
-              Voter Choice
+              {t.landing.brandName}
             </div>
             <p className="text-sm text-on-surface-variant leading-relaxed">
               {t.landing.footerTagline} &copy; {new Date().getFullYear()}.

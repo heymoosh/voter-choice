@@ -46,7 +46,7 @@ export function PromptOutput({ promptText }: PromptOutputProps) {
   }
 
   const confirmationText = fallback
-    ? "Press Ctrl+C / Cmd+C to copy"
+    ? t.common.copyFallback
     : copied
       ? t.promptOutput.copiedButton
       : "";
@@ -70,13 +70,7 @@ export function PromptOutput({ promptText }: PromptOutputProps) {
           onClick={() => setExpanded(!expanded)}
           className="mt-1 text-[10px] font-bold uppercase tracking-widest text-primary hover:underline"
         >
-          {expanded
-            ? lang === "es"
-              ? "Mostrar menos"
-              : "Show less"
-            : lang === "es"
-              ? "Mostrar todo"
-              : "Show full prompt"}
+          {expanded ? t.common.showLess : t.common.showFullPrompt}
         </button>
       </div>
 
@@ -108,7 +102,7 @@ export function PromptOutput({ promptText }: PromptOutputProps) {
       </div>
 
       {/* AI links */}
-      <div className="pt-4 border-t border-outline-variant/20">
+      <div className="pt-4 mt-2">
         <p className="text-[10px] font-black uppercase tracking-widest text-on-surface-muted mb-3">
           {t.handoff.continueAnalysisOn}
         </p>

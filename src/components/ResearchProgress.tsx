@@ -13,7 +13,7 @@ export function ResearchProgressBar({ progress }: ResearchProgressBarProps) {
   const t = translations[lang];
 
   return (
-    <div className="sticky top-0 z-40 bg-surface border-b border-outline-variant/10">
+    <div className="sticky top-0 z-40 bg-surface-low shadow-sm">
       <div className="max-w-3xl mx-auto px-4 py-3">
         {/* Progress + Selections row */}
         <div className="flex items-center justify-between mb-2">

@@ -185,7 +185,11 @@ function Sidebar({
         </p>
       </div>
 
-      <nav className="flex flex-col gap-1 flex-1">
+      <nav
+        className="flex flex-col gap-1 flex-1"
+        role="tablist"
+        aria-label={t.research.sidebarTitle}
+      >
         <div className="mb-2 px-2 py-1 text-[10px] font-bold text-on-surface-muted uppercase tracking-[0.2em]">
           {electionLabel}
         </div>
@@ -194,6 +198,8 @@ function Sidebar({
           return (
             <button
               key={key}
+              role="tab"
+              aria-selected={isActive}
               onClick={() => onTabChange(key)}
               className={`flex items-center gap-3 px-3 py-3 text-left text-sm uppercase tracking-wider transition-colors ${
                 isActive
@@ -247,9 +253,10 @@ function MobileBottomNav({
   const t = translations[lang];
 
   return (
-    <footer className="md:hidden fixed bottom-0 left-0 right-0 bg-surface-lowest border-t border-outline-variant/20 z-50 pb-[env(safe-area-inset-bottom)]">
+    <footer className="md:hidden fixed bottom-0 left-0 right-0 bg-surface-lowest shadow-[0_-2px_8px_rgba(0,0,0,0.06)] z-50 pb-[env(safe-area-inset-bottom)]">
       <nav
         className="flex justify-around items-stretch"
+        role="tablist"
         aria-label="Mobile navigation"
       >
         {mobileTabIcons.map(({ key, icon: Icon, labelKey }) => {
@@ -257,8 +264,9 @@ function MobileBottomNav({
           return (
             <button
               key={key}
+              role="tab"
+              aria-selected={isActive}
               onClick={() => onTabChange(key)}
-              aria-current={isActive ? "page" : undefined}
               className={`flex flex-col items-center justify-center flex-1 min-h-[56px] min-w-[44px] py-2 transition-colors ${
                 isActive
                   ? "text-primary border-t-2 border-primary -mt-px"
