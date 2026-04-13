@@ -35,12 +35,16 @@ jobs:
         env:
           BWS_ACCESS_TOKEN: ${{ secrets.BW_ACCESS_TOKEN }}
         run: |
-          ANTHROPIC_VOTER_API=$(bws secret get ANTHROPIC_VOTER_API --access-token "$BWS_ACCESS_TOKEN" --output json | jq -r '.value')
-          echo "ANTHROPIC_VOTER_API=$ANTHROPIC_VOTER_API" >> "$GITHUB_ENV"
-          echo "::add-mask::$ANTHROPIC_VOTER_API"
-          GOOGLE_CIVIC_API_KEY=$(bws secret get GOOGLE_CIVIC_API_KEY --access-token "$BWS_ACCESS_TOKEN" --output json | jq -r '.value')
-          echo "GOOGLE_CIVIC_API_KEY=$GOOGLE_CIVIC_API_KEY" >> "$GITHUB_ENV"
-          echo "::add-mask::$GOOGLE_CIVIC_API_KEY"
+          ANTHROPIC_VOTER_API=$(bws secret get ANTHROPIC_VOTER_API --access-token "$BWS_ACCESS_TOKEN" --output json 2>/dev/null | jq -r '.value // empty' || true)
+          if [ -n "$ANTHROPIC_VOTER_API" ]; then
+            echo "ANTHROPIC_VOTER_API=$ANTHROPIC_VOTER_API" >> "$GITHUB_ENV"
+            echo "::add-mask::$ANTHROPIC_VOTER_API"
+          fi
+          GOOGLE_CIVIC_API_KEY=$(bws secret get GOOGLE_CIVIC_API_KEY --access-token "$BWS_ACCESS_TOKEN" --output json 2>/dev/null | jq -r '.value // empty' || true)
+          if [ -n "$GOOGLE_CIVIC_API_KEY" ]; then
+            echo "GOOGLE_CIVIC_API_KEY=$GOOGLE_CIVIC_API_KEY" >> "$GITHUB_ENV"
+            echo "::add-mask::$GOOGLE_CIVIC_API_KEY"
+          fi
 
       - name: Install Vercel CLI
         run: npm install -g vercel
@@ -51,8 +55,12 @@ jobs:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
         run: |
-          echo "$ANTHROPIC_VOTER_API" | vercel env add ANTHROPIC_VOTER_API production --force --token="$VERCEL_TOKEN" 2>/dev/null || true
-          echo "$GOOGLE_CIVIC_API_KEY" | vercel env add GOOGLE_CIVIC_API_KEY production --force --token="$VERCEL_TOKEN" 2>/dev/null || true
+          if [ -n "$ANTHROPIC_VOTER_API" ]; then
+            echo "$ANTHROPIC_VOTER_API" | vercel env add ANTHROPIC_VOTER_API production --force --token="$VERCEL_TOKEN" 2>/dev/null || true
+          fi
+          if [ -n "$GOOGLE_CIVIC_API_KEY" ]; then
+            echo "$GOOGLE_CIVIC_API_KEY" | vercel env add GOOGLE_CIVIC_API_KEY production --force --token="$VERCEL_TOKEN" 2>/dev/null || true
+          fi
 
       - name: Deploy to Vercel
         env:
