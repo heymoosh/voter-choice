@@ -140,10 +140,8 @@ function PrimaryLocationCard({
   const { lang } = useLanguage();
   const t = translations[lang].polling;
 
-  const earlyHours =
-    earlyVoteSites.length > 0 ? earlyVoteSites[0].hours : null;
-  const earlyNotes =
-    earlyVoteSites.length > 0 ? earlyVoteSites[0].notes : null;
+  const earlyHours = earlyVoteSites.length > 0 ? earlyVoteSites[0].hours : null;
+  const earlyNotes = earlyVoteSites.length > 0 ? earlyVoteSites[0].notes : null;
 
   return (
     <div className="bg-surface-lowest border border-outline-variant/20 overflow-hidden">
@@ -174,9 +172,7 @@ function PrimaryLocationCard({
             <span className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-muted mb-1">
               {t.electionDayLabel}
             </span>
-            <p className="text-xs font-black">
-              {location.hours || "\u2014"}
-            </p>
+            <p className="text-xs font-black">{location.hours || "\u2014"}</p>
           </div>
           <div>
             <span className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-muted mb-1">
@@ -237,11 +233,7 @@ function PrimaryLocationCard({
 
 /* ── Alternative Location Card ─────────────────────────────── */
 
-function AlternativeLocationCard({
-  location,
-}: {
-  location: PollingLocation;
-}) {
+function AlternativeLocationCard({ location }: { location: PollingLocation }) {
   const { lang } = useLanguage();
   const t = translations[lang].polling;
 
