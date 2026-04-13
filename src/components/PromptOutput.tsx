@@ -52,7 +52,7 @@ export function PromptOutput({ promptText }: PromptOutputProps) {
       : "";
 
   return (
-    <div className="bg-surface-lowest border-t-4 border-primary p-6 space-y-4">
+    <div className="bg-surface-lowest border-t-4 border-primary p-4 md:p-6 space-y-4">
       {/* Prompt preview */}
       <div className="relative">
         <pre

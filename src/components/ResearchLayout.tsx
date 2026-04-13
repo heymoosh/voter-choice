@@ -247,24 +247,32 @@ function MobileBottomNav({
   const t = translations[lang];
 
   return (
-    <footer className="md:hidden fixed bottom-0 left-0 right-0 bg-surface-high flex justify-around items-center py-3 border-t border-outline-variant/10 z-50">
-      {mobileTabIcons.map(({ key, icon: Icon, labelKey }) => {
-        const isActive = activeTab === key;
-        return (
-          <button
-            key={key}
-            onClick={() => onTabChange(key)}
-            className={`flex flex-col items-center ${
-              isActive ? "text-primary" : "text-on-surface-muted"
-            }`}
-          >
-            <Icon />
-            <span className="text-[10px] font-bold mt-1">
-              {t.research[labelKey]}
-            </span>
-          </button>
-        );
-      })}
+    <footer className="md:hidden fixed bottom-0 left-0 right-0 bg-surface-lowest border-t border-outline-variant/20 z-50 pb-[env(safe-area-inset-bottom)]">
+      <nav
+        className="flex justify-around items-stretch"
+        aria-label="Mobile navigation"
+      >
+        {mobileTabIcons.map(({ key, icon: Icon, labelKey }) => {
+          const isActive = activeTab === key;
+          return (
+            <button
+              key={key}
+              onClick={() => onTabChange(key)}
+              aria-current={isActive ? "page" : undefined}
+              className={`flex flex-col items-center justify-center flex-1 min-h-[56px] min-w-[44px] py-2 transition-colors ${
+                isActive
+                  ? "text-primary border-t-2 border-primary -mt-px"
+                  : "text-on-surface-muted"
+              }`}
+            >
+              <Icon />
+              <span className="text-[9px] font-bold mt-1 uppercase tracking-wider">
+                {t.research[labelKey]}
+              </span>
+            </button>
+          );
+        })}
+      </nav>
     </footer>
   );
 }
@@ -329,7 +337,7 @@ function TimelineMilestone({
       : "border-outline-variant/30";
 
   return (
-    <div className="flex gap-6">
+    <div className="flex gap-3 md:gap-6">
       {/* Timeline track */}
       <div className="flex flex-col items-center w-4 shrink-0">
         <div className={`w-3 h-3 rounded-full ${dotColors[status]} shrink-0`} />
@@ -338,8 +346,10 @@ function TimelineMilestone({
         )}
       </div>
       {/* Content */}
-      <div className={`flex-1 pb-8 ${!isLast ? "" : ""}`}>
-        <div className={`bg-surface-lowest p-6 border-l-4 ${borderColor}`}>
+      <div className={`flex-1 min-w-0 pb-6 md:pb-8`}>
+        <div
+          className={`bg-surface-lowest p-4 md:p-6 border-l-4 ${borderColor}`}
+        >
           <p className="text-xs text-on-surface-muted font-medium tracking-wide mb-1">
             {formatTimelineDate(date)}
           </p>
@@ -424,13 +434,13 @@ function DatesView({
   }
 
   return (
-    <div className="max-w-3xl mx-auto pb-24">
+    <div className="max-w-3xl mx-auto pb-8">
       {/* Header */}
-      <div className="text-center mb-12">
-        <span className="inline-block px-4 py-1.5 bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-[0.2em] mb-6">
+      <div className="text-center mb-8 md:mb-12">
+        <span className="inline-block px-4 py-1.5 bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-[0.2em] mb-4 md:mb-6">
           {tl.officialBadge}
         </span>
-        <h2 className="text-4xl md:text-5xl font-black text-on-surface tracking-tighter leading-tight mb-4">
+        <h2 className="text-3xl md:text-5xl font-black text-on-surface tracking-tighter leading-tight mb-4">
           {tl.headlinePrefix} {monthDay}{" "}
           <em className="not-italic font-black italic text-primary">
             {tl.headlineItalic}
@@ -456,13 +466,13 @@ function DatesView({
       </div>
 
       {/* Election Day Hero Card */}
-      <div className="flex gap-6 mb-16">
+      <div className="flex gap-4 md:gap-6 mb-12 md:mb-16">
         <div className="flex flex-col items-center w-4 shrink-0">
           <div className="w-4 h-4 rotate-45 bg-accent shrink-0" />
         </div>
-        <div className="flex-1">
-          <div className="bg-surface-low p-8 md:p-10">
-            <p className="text-5xl md:text-6xl font-black text-on-surface tracking-tighter mb-2">
+        <div className="flex-1 min-w-0">
+          <div className="bg-surface-low p-6 md:p-10">
+            <p className="text-4xl md:text-6xl font-black text-on-surface tracking-tighter mb-2">
               {electionDate.toLocaleDateString("en-US", {
                 month: "long",
                 day: "2-digit",
@@ -588,13 +598,13 @@ function IdView({ state }: { state: StateElectionData }) {
   const tv = t.voterId;
 
   return (
-    <div className="max-w-4xl mx-auto pb-24">
+    <div className="max-w-4xl mx-auto pb-8">
       {/* Editorial Header */}
-      <section className="mb-12 md:mb-16 border-l-8 border-primary pl-6 md:pl-8">
+      <section className="mb-8 md:mb-16 border-l-4 md:border-l-8 border-primary pl-4 md:pl-8">
         <span className="text-accent font-bold tracking-widest text-xs uppercase mb-2 block">
           {tv.stateLabel}
         </span>
-        <h2 className="text-5xl md:text-7xl font-black text-on-surface tracking-tighter leading-none mb-6">
+        <h2 className="text-4xl md:text-7xl font-black text-on-surface tracking-tighter leading-none mb-4 md:mb-6">
           {tv.headline}
         </h2>
         <p className="text-lg md:text-xl text-on-surface-muted max-w-2xl font-medium leading-relaxed">
@@ -604,7 +614,7 @@ function IdView({ state }: { state: StateElectionData }) {
 
       {/* Critical Warning Banner */}
       {state.votingRules.expirationRule && (
-        <div className="bg-accent text-on-primary p-6 mb-12 md:mb-16 flex items-start gap-4">
+        <div className="bg-accent text-on-primary p-4 md:p-6 mb-8 md:mb-16 flex items-start gap-3 md:gap-4">
           <svg
             className="w-6 h-6 mt-0.5 shrink-0"
             fill="currentColor"
@@ -624,12 +634,12 @@ function IdView({ state }: { state: StateElectionData }) {
 
       {/* Accepted Photo IDs */}
       {state.votingRules.idRequired && (
-        <section className="mb-16 md:mb-24">
-          <div className="flex items-baseline justify-between mb-8">
-            <h3 className="text-2xl md:text-3xl font-black text-on-surface tracking-tight uppercase">
+        <section className="mb-10 md:mb-24">
+          <div className="flex items-baseline justify-between mb-6 md:mb-8">
+            <h3 className="text-xl md:text-3xl font-black text-on-surface tracking-tight uppercase">
               {tv.acceptedTitle}
             </h3>
-            <span className="h-px flex-grow mx-4 md:mx-6 bg-outline-variant/20" />
+            <span className="h-px flex-grow mx-3 md:mx-6 bg-outline-variant/20" />
             <span className="text-primary font-bold text-sm whitespace-nowrap">
               {tv.approvedForms.toUpperCase()}
             </span>
@@ -638,9 +648,9 @@ function IdView({ state }: { state: StateElectionData }) {
             {idCards.map(({ iconPath, nameKey, descKey }, i) => (
               <div
                 key={nameKey}
-                className={`bg-surface-lowest p-6 md:p-8 hover:bg-surface transition-colors ${
+                className={`bg-surface-lowest p-4 md:p-8 hover:bg-surface transition-colors ${
                   i === idCards.length - 1
-                    ? "md:col-span-2 flex items-start gap-6"
+                    ? "md:col-span-2 flex items-start gap-4 md:gap-6"
                     : ""
                 }`}
               >
@@ -668,9 +678,9 @@ function IdView({ state }: { state: StateElectionData }) {
 
       {/* No ID? No Problem */}
       {state.votingRules.impedimentDeclaration && (
-        <section className="mb-16 md:mb-24 bg-surface-low p-8 md:p-10 relative overflow-hidden">
+        <section className="mb-10 md:mb-24 bg-surface-low p-5 md:p-10 relative overflow-hidden">
           <div className="relative z-10">
-            <h3 className="text-3xl md:text-4xl font-black text-on-surface tracking-tighter mb-4">
+            <h3 className="text-2xl md:text-4xl font-black text-on-surface tracking-tighter mb-4">
               {tv.noIdTitle}
             </h3>
             <p className="text-base md:text-lg text-on-surface-muted mb-8 md:mb-10 max-w-xl">
@@ -730,12 +740,12 @@ function IdView({ state }: { state: StateElectionData }) {
                 </div>
               </div>
             )}
-            <div className="mt-10 md:mt-12">
+            <div className="mt-8 md:mt-12">
               <a
                 href="https://www.sos.state.tx.us/elections/forms/pol-sub/reasonable-impediment-declaration.pdf"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-block bg-primary text-on-primary px-8 py-4 font-bold tracking-tight hover:opacity-90 transition-opacity uppercase"
+                className="inline-block w-full md:w-auto text-center bg-primary text-on-primary px-6 md:px-8 py-4 font-bold tracking-tight hover:opacity-90 transition-opacity uppercase"
               >
                 {tv.downloadDeclaration}
               </a>
@@ -755,8 +765,8 @@ function IdView({ state }: { state: StateElectionData }) {
       </section>
 
       {/* Footer */}
-      <footer className="py-8 md:py-12 border-t border-outline-variant/20 flex flex-col md:flex-row justify-between items-center gap-4">
-        <p className="text-on-surface-muted font-medium text-sm italic">
+      <footer className="py-6 md:py-12 border-t border-outline-variant/20 flex flex-col md:flex-row justify-between items-center gap-4">
+        <p className="text-on-surface-muted font-medium text-sm italic text-center md:text-left">
           {tv.footerNotice}
         </p>
         <a
@@ -793,10 +803,10 @@ function PollingView({
   const electionDate = upcoming?.date;
 
   return (
-    <div className="max-w-2xl mx-auto pb-24">
+    <div className="max-w-2xl mx-auto pb-8">
       {/* Hero Search Section */}
-      <section className="mb-10">
-        <h2 className="text-4xl font-black tracking-tighter text-primary mb-6 leading-none">
+      <section className="mb-8 md:mb-10">
+        <h2 className="text-3xl md:text-4xl font-black tracking-tighter text-primary mb-4 md:mb-6 leading-none">
           {t.findYourPrecinct}
         </h2>
         <AddressInput
@@ -901,7 +911,7 @@ function ResearchView({
   return (
     <div className="flex flex-col h-full">
       {/* Scrollable content */}
-      <div className="flex-1 overflow-y-auto px-6 py-8 md:px-16">
+      <div className="flex-1 overflow-y-auto px-4 py-6 md:px-16 md:py-8 pb-20 md:pb-8">
         <div className="max-w-3xl mx-auto space-y-8">
           {/* Historical Context + Countdown */}
           <section className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -1013,7 +1023,7 @@ export function ResearchLayout({
   const { lang } = useLanguage();
 
   return (
-    <div className="flex flex-1 overflow-hidden h-[calc(100vh-57px)]">
+    <div className="flex flex-1 overflow-hidden h-[calc(100vh-49px)] md:h-[calc(100vh-57px)]">
       {/* Desktop Sidebar */}
       <Sidebar
         activeTab={activeTab}
@@ -1043,19 +1053,19 @@ export function ResearchLayout({
 
         {/* Other tabs (mounted on demand) */}
         {activeTab === "dates" && (
-          <div className="flex-1 overflow-y-auto px-6 py-8 md:px-16">
+          <div className="flex-1 overflow-y-auto px-4 py-6 md:px-16 md:py-8 pb-20 md:pb-8">
             <DatesView state={state} onTabChange={setActiveTab} />
           </div>
         )}
 
         {activeTab === "id" && (
-          <div className="flex-1 overflow-y-auto px-6 py-8 md:px-16">
+          <div className="flex-1 overflow-y-auto px-4 py-6 md:px-16 md:py-8 pb-20 md:pb-8">
             <IdView state={state} />
           </div>
         )}
 
         {activeTab === "polling" && (
-          <div className="flex-1 overflow-y-auto px-6 py-8 md:px-16">
+          <div className="flex-1 overflow-y-auto px-4 py-6 md:px-16 md:py-8 pb-20 md:pb-8">
             <PollingView
               state={state}
               addressStep={addressStep}

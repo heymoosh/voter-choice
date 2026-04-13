@@ -94,20 +94,20 @@ function ManualEntrySection() {
       {/* Race entries */}
       <div className="space-y-2">
         {races.map((r, i) => (
-          <div key={i} className="grid grid-cols-2 gap-2">
+          <div key={i} className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <input
               type="text"
               value={r.race}
               onChange={(e) => updateRace(i, "race", e.target.value)}
               placeholder={t.ballot.raceName}
-              className="bg-surface-high px-3 py-2.5 text-sm border-b-2 border-outline-variant/30 focus:border-primary focus:outline-none transition-colors"
+              className="bg-surface-high px-3 py-3 text-sm border-b-2 border-outline-variant/30 focus:border-primary focus:outline-none transition-colors min-h-[44px]"
             />
             <input
               type="text"
               value={r.pick}
               onChange={(e) => updateRace(i, "pick", e.target.value)}
               placeholder={t.ballot.candidateName}
-              className="bg-surface-high px-3 py-2.5 text-sm border-b-2 border-outline-variant/30 focus:border-primary focus:outline-none transition-colors"
+              className="bg-surface-high px-3 py-3 text-sm border-b-2 border-outline-variant/30 focus:border-primary focus:outline-none transition-colors min-h-[44px]"
             />
           </div>
         ))}
@@ -122,20 +122,23 @@ function ManualEntrySection() {
       {/* Proposition entries */}
       <div className="space-y-2">
         {propositions.map((p, i) => (
-          <div key={i} className="grid grid-cols-[6rem_1fr] gap-2">
+          <div
+            key={i}
+            className="grid grid-cols-[5rem_1fr] sm:grid-cols-[6rem_1fr] gap-2"
+          >
             <input
               type="text"
               value={p.number}
               onChange={(e) => updateProp(i, "number", e.target.value)}
               placeholder={t.ballot.propNumber}
-              className="bg-surface-high px-3 py-2.5 text-sm border-b-2 border-outline-variant/30 focus:border-primary focus:outline-none transition-colors"
+              className="bg-surface-high px-3 py-3 text-sm border-b-2 border-outline-variant/30 focus:border-primary focus:outline-none transition-colors min-h-[44px]"
             />
             <input
               type="text"
               value={p.vote}
               onChange={(e) => updateProp(i, "vote", e.target.value)}
               placeholder={t.ballot.propVote}
-              className="bg-surface-high px-3 py-2.5 text-sm border-b-2 border-outline-variant/30 focus:border-primary focus:outline-none transition-colors"
+              className="bg-surface-high px-3 py-3 text-sm border-b-2 border-outline-variant/30 focus:border-primary focus:outline-none transition-colors min-h-[44px]"
             />
           </div>
         ))}
@@ -166,7 +169,7 @@ export function BallotBuilder() {
   const t = translations[lang];
 
   return (
-    <div className="bg-surface-lowest border-l-4 border-accent p-6 md:p-8">
+    <div className="bg-surface-lowest border-l-4 border-accent p-4 md:p-8">
       <div className="flex items-center gap-3 mb-6">
         <svg
           className="text-accent shrink-0"

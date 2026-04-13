@@ -78,3 +78,80 @@ body {
   color: var(--color-on-surface);
   font-family: var(--font-sans);
 }
+
+/* Hide scrollbar for chip carousels */
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+/* ── Print Styles ─────────────────────────────────────────── */
+@media print {
+  /* Reset backgrounds and colors for clean printing */
+  * {
+    background: transparent !important;
+    color: #000 !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+    border-color: #ccc !important;
+  }
+
+  body {
+    font-size: 12pt;
+    line-height: 1.5;
+  }
+
+  /* Hide navigation, headers, footers, and interactive elements */
+  header,
+  footer,
+  nav,
+  [data-testid="chat-input"],
+  [data-testid="chat-send"],
+  [aria-label="Mobile navigation"],
+  .md\:hidden.fixed,
+  button:not([data-print-visible]),
+  .sr-only {
+    display: none !important;
+  }
+
+  /* Remove fixed/sticky positioning */
+  .fixed,
+  .sticky {
+    position: static !important;
+  }
+
+  /* Ensure content flows naturally */
+  .overflow-hidden,
+  .overflow-y-auto {
+    overflow: visible !important;
+  }
+
+  /* Remove height constraints */
+  [class*="h-[calc"] {
+    height: auto !important;
+  }
+
+  /* Page break controls */
+  h1, h2, h3, h4 {
+    page-break-after: avoid;
+  }
+
+  article, section, div {
+    page-break-inside: avoid;
+  }
+
+  /* Ensure links show their URL */
+  a[href^="http"]::after {
+    content: " (" attr(href) ")";
+    font-size: 9pt;
+    color: #666 !important;
+  }
+
+  /* Portfolio-specific print optimizations */
+  .flex-1.overflow-y-auto {
+    padding: 0 !important;
+  }
+}

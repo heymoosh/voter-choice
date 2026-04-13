@@ -181,7 +181,7 @@ function UsageAlertPanel() {
   );
 
   return (
-    <div className="bg-accent/10 p-6 flex flex-col justify-between h-full">
+    <div className="bg-accent/10 p-4 md:p-6 flex flex-col justify-between h-full">
       <div>
         <div className="flex items-center gap-2 text-accent mb-2">
           <ErrorIcon />
@@ -189,7 +189,7 @@ function UsageAlertPanel() {
             {t.handoff.usageAlert}
           </span>
         </div>
-        <h4 className="text-2xl font-black text-on-surface leading-none mb-2">
+        <h4 className="text-xl md:text-2xl font-black text-on-surface leading-none mb-2">
           {t.handoff.budgetReached}
         </h4>
         <p className="text-sm text-on-surface/80 leading-snug">
@@ -233,7 +233,7 @@ function ContinueSessionPanel({
     : continuationPrompt.slice(0, 300);
 
   return (
-    <div className="bg-surface-low p-6 flex flex-col justify-center gap-4 h-full">
+    <div className="bg-surface-low p-4 md:p-6 flex flex-col justify-center gap-4 h-full">
       <div>
         <h5 className="text-xs font-black uppercase tracking-widest text-primary mb-1">
           {t.handoff.continueSession}

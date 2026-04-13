@@ -50,7 +50,7 @@ function CandidateCard({ block }: { block: CandidatesBlock }) {
         {block.candidates.map((candidate) => (
           <div
             key={candidate.name}
-            className={`bg-surface-low p-5 border-b-2 border-transparent transition-all group cursor-default ${statusBorder(candidate.status)}`}
+            className={`bg-surface-low p-4 md:p-5 border-b-2 border-transparent transition-all group cursor-default ${statusBorder(candidate.status)}`}
           >
             <span
               className={`text-[10px] font-black uppercase tracking-widest ${statusColor(candidate.status)} mb-2 block`}
@@ -107,7 +107,7 @@ function PropositionCard({ block }: { block: PropositionBlock }) {
   const { lang } = useLanguage();
 
   return (
-    <div className="my-6 bg-surface-low p-5 border-b-2 border-transparent hover:border-b-primary transition-all">
+    <div className="my-6 bg-surface-low p-4 md:p-5 border-b-2 border-transparent hover:border-b-primary transition-all">
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1">
           <span className="text-[10px] font-black uppercase tracking-widest text-primary mb-1 block">

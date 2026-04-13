@@ -175,7 +175,7 @@ function ResearchMemoCard({
           {ref ? `\u2022 ${t.research.ballotSelections}` : ""}
         </span>
       </div>
-      <div className="bg-surface-lowest border-l-4 border-primary p-6 md:p-10 shadow-[0_4px_24px_-10px_rgba(0,0,0,0.05)]">
+      <div className="bg-surface-lowest border-l-4 border-primary p-4 md:p-10 shadow-[0_4px_24px_-10px_rgba(0,0,0,0.05)]">
         {/* Content */}
         <div className="text-sm whitespace-pre-wrap leading-relaxed text-on-surface-variant">
           {parsed.displayText}
@@ -283,7 +283,7 @@ function ChatMessageBubble({
                 : "CURRENT RESEARCH FOCUS"}
             </h2>
             <p
-              className="text-xl md:text-2xl font-bold text-on-surface leading-tight tracking-tight"
+              className="text-lg md:text-2xl font-bold text-on-surface leading-tight tracking-tight"
               data-testid="chat-message-user"
             >
               {msg.content}
@@ -311,7 +311,7 @@ function ChatMessageBubble({
 
   return (
     <article data-testid="chat-message-assistant" className="max-w-3xl mx-auto">
-      <div className="bg-surface-lowest border-l-4 border-primary p-6 md:p-10 shadow-sm">
+      <div className="bg-surface-lowest border-l-4 border-primary p-4 md:p-10 shadow-sm">
         <div className="text-sm whitespace-pre-wrap leading-relaxed text-on-surface-variant">
           {parsed.displayText}
           {isCurrentlyStreaming && (
@@ -359,14 +359,14 @@ function ChatInput({
   return (
     <form onSubmit={handleSubmit}>
       <div className="bg-surface-lowest border-2 border-primary/20 focus-within:border-primary transition-colors shadow-xl">
-        <div className="p-4 flex flex-col">
+        <div className="p-3 md:p-4 flex flex-col">
           <label
             className="text-[10px] font-black uppercase tracking-[0.2em] text-primary mb-2"
             htmlFor="chat-input"
           >
             {t.research.deepSearchLabel}
           </label>
-          <div className="flex items-end gap-4">
+          <div className="flex items-end gap-2 md:gap-4">
             <textarea
               data-testid="chat-input"
               id="chat-input"
@@ -431,14 +431,14 @@ function QuickActionChips({
   ];
 
   return (
-    <div className="mt-3 flex gap-3 overflow-x-auto pb-2">
+    <div className="mt-3 flex gap-2 md:gap-3 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-none">
       {chips.map((chip) => (
         <button
           key={chip}
           type="button"
           disabled={isStreaming}
           onClick={() => onChipClick(chip)}
-          className="whitespace-nowrap px-4 py-1.5 rounded-full border border-outline-variant/30 text-xs font-medium text-on-surface-variant hover:bg-surface-low transition-colors disabled:opacity-50 disabled:pointer-events-none"
+          className="whitespace-nowrap px-3 md:px-4 py-2 min-h-[36px] rounded-full border border-outline-variant/30 text-xs font-medium text-on-surface-variant hover:bg-surface-low transition-colors disabled:opacity-50 disabled:pointer-events-none"
         >
           {chip}
         </button>

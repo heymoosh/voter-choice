@@ -35,7 +35,7 @@ export function AddressInput({
         >
           {t.enterAddressLabel}
         </label>
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-2">
           <div className="flex-grow relative">
             <input
               id="address-input"
@@ -45,7 +45,7 @@ export function AddressInput({
               placeholder={t.addressPlaceholder}
               maxLength={200}
               disabled={isLoading}
-              className="w-full bg-surface-high border-0 border-b-2 border-outline-variant/20 focus:border-primary focus:ring-0 text-lg font-bold py-3 px-4 transition-colors placeholder:text-on-surface-muted/50 disabled:opacity-50"
+              className="w-full bg-surface-high border-0 border-b-2 border-outline-variant/20 focus:border-primary focus:ring-0 text-base md:text-lg font-bold py-3 px-4 transition-colors placeholder:text-on-surface-muted/50 disabled:opacity-50 min-h-[44px]"
             />
             <svg
               className="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-muted/50"
@@ -61,7 +61,7 @@ export function AddressInput({
           <button
             type="submit"
             disabled={!address.trim() || isLoading}
-            className="bg-primary text-on-primary px-6 py-3 font-bold uppercase text-xs tracking-widest hover:opacity-90 active:scale-95 transition-all disabled:opacity-50"
+            className="bg-primary text-on-primary px-6 py-3 font-bold uppercase text-xs tracking-widest hover:opacity-90 active:scale-95 transition-all disabled:opacity-50 min-h-[44px]"
           >
             {isLoading ? t.loadingLocations : t.searchButton}
           </button>

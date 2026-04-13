@@ -185,9 +185,9 @@ export function PageContent({ children }: PageContentProps) {
     return (
       <>
         {/* Research mode header */}
-        <header className="flex justify-between items-center px-6 py-4 w-full border-b border-outline-variant/20 bg-[#fcfaf8] tracking-tight sticky top-0 z-50">
-          <div className="flex items-center gap-8">
-            <span className="text-2xl font-black text-primary">
+        <header className="flex justify-between items-center px-4 md:px-6 py-3 md:py-4 w-full border-b border-outline-variant/20 bg-[#fcfaf8] tracking-tight sticky top-0 z-50">
+          <div className="flex items-center gap-4 md:gap-8">
+            <span className="text-xl md:text-2xl font-black text-primary">
               {t.landing.brandName}
             </span>
             <nav className="hidden md:flex gap-6 items-center h-full">
@@ -227,16 +227,16 @@ export function PageContent({ children }: PageContentProps) {
       <main>
         {/* ── 1. Hero Section ── */}
         <section
-          className="relative px-6 pt-16 pb-20 max-w-3xl"
+          className="relative px-4 md:px-6 pt-10 md:pt-16 pb-12 md:pb-20 max-w-3xl"
           aria-labelledby="hero-heading"
         >
           <h1
             id="hero-heading"
-            className="text-5xl md:text-6xl font-extrabold leading-[1.1] tracking-tighter text-on-surface mb-6"
+            className="text-4xl md:text-6xl font-extrabold leading-[1.1] tracking-tighter text-on-surface mb-4 md:mb-6"
           >
             {t.landing.heroHeadline}
           </h1>
-          <p className="text-xl text-on-surface-variant mb-10 leading-relaxed">
+          <p className="text-lg md:text-xl text-on-surface-variant mb-8 md:mb-10 leading-relaxed">
             {t.landing.heroSubtext}
           </p>
 
@@ -244,7 +244,7 @@ export function PageContent({ children }: PageContentProps) {
           <div id="main-content">{children}</div>
 
           {/* Trust Signals */}
-          <div className="flex flex-wrap gap-4 text-[13px] font-medium text-on-surface-variant mt-8">
+          <div className="flex flex-wrap gap-3 md:gap-4 text-[12px] md:text-[13px] font-medium text-on-surface-variant mt-6 md:mt-8">
             <div className="flex items-center gap-1">
               <ShieldIcon className="text-primary" />
               {t.landing.trustNoData}
@@ -261,12 +261,12 @@ export function PageContent({ children }: PageContentProps) {
         </section>
 
         {/* ── 2. Returning User (Profile Upload) ── */}
-        <section className="bg-surface-low py-16 px-6">
-          <div className="max-w-3xl space-y-6">
+        <section className="bg-surface-low py-10 md:py-16 px-4 md:px-6">
+          <div className="max-w-3xl space-y-4 md:space-y-6">
             <span className="inline-block px-4 py-1 bg-secondary-container text-on-secondary-container rounded-full text-[10px] font-bold uppercase tracking-widest">
               {t.landing.returningBadge}
             </span>
-            <h2 className="text-3xl font-bold text-on-surface leading-tight">
+            <h2 className="text-2xl md:text-3xl font-bold text-on-surface leading-tight">
               {t.landing.returningHeadline}
             </h2>
             <p className="text-base text-on-surface-variant">
@@ -275,7 +275,7 @@ export function PageContent({ children }: PageContentProps) {
             <p className="text-sm text-on-surface-variant leading-relaxed opacity-80">
               {t.landing.returningNote}
             </p>
-            <div className="bg-surface-lowest p-8 border-l-4 border-accent mt-8">
+            <div className="bg-surface-lowest p-5 md:p-8 border-l-4 border-accent mt-6 md:mt-8">
               <h3 className="text-xl font-bold text-on-surface mb-4">
                 {t.landing.returningUploadTitle}
               </h3>
@@ -298,9 +298,9 @@ export function PageContent({ children }: PageContentProps) {
         </section>
 
         {/* ── 3. Resource Cards ── */}
-        <section className="px-6 py-12 max-w-3xl space-y-4">
+        <section className="px-4 md:px-6 py-8 md:py-12 max-w-3xl space-y-4">
           {/* Polling Places */}
-          <div className="bg-surface-high p-8 flex flex-col justify-between min-h-[200px]">
+          <div className="bg-surface-high p-5 md:p-8 flex flex-col justify-between min-h-[160px] md:min-h-[200px]">
             <div>
               <h3 className="text-xl font-bold mb-3">
                 {t.landing.resourcePollingTitle}
@@ -325,7 +325,7 @@ export function PageContent({ children }: PageContentProps) {
           </div>
 
           {/* Election Dates */}
-          <div className="bg-primary p-8 text-on-primary min-h-[160px] flex flex-col justify-between">
+          <div className="bg-primary p-5 md:p-8 text-on-primary min-h-[140px] md:min-h-[160px] flex flex-col justify-between">
             <CalendarIcon className="text-on-primary mb-4" />
             <div>
               <h3 className="text-xl font-bold mb-2">
@@ -338,7 +338,7 @@ export function PageContent({ children }: PageContentProps) {
           </div>
 
           {/* ID Rules */}
-          <div className="bg-surface-lowest p-8 border-b border-outline-variant/30">
+          <div className="bg-surface-lowest p-5 md:p-8 border-b border-outline-variant/30">
             <h3 className="text-sm font-bold mb-3 uppercase tracking-widest text-primary">
               {t.landing.resourceIdTitle}
             </h3>
@@ -349,9 +349,9 @@ export function PageContent({ children }: PageContentProps) {
         </section>
 
         {/* ── 4. How it Works ── */}
-        <section className="bg-surface border-t border-outline-variant/20 pt-16">
-          <div className="px-6 mb-12 max-w-3xl">
-            <h2 className="font-extrabold text-5xl tracking-tight text-on-surface leading-[1.1] mb-4">
+        <section className="bg-surface border-t border-outline-variant/20 pt-10 md:pt-16">
+          <div className="px-4 md:px-6 mb-8 md:mb-12 max-w-3xl">
+            <h2 className="font-extrabold text-3xl md:text-5xl tracking-tight text-on-surface leading-[1.1] mb-4">
               {t.landing.howItWorksTitle}
             </h2>
             <p className="text-lg text-on-surface-variant leading-relaxed">
@@ -360,10 +360,10 @@ export function PageContent({ children }: PageContentProps) {
           </div>
 
           {/* Step 1 */}
-          <section className="bg-surface-low px-6 py-12 border-y border-outline-variant/10">
+          <section className="bg-surface-low px-4 md:px-6 py-8 md:py-12 border-y border-outline-variant/10">
             <div className="max-w-3xl">
               <div className="flex items-center gap-4 mb-6">
-                <span className="font-black text-6xl text-primary leading-none">
+                <span className="font-black text-5xl md:text-6xl text-primary leading-none">
                   01
                 </span>
                 <div className="bg-primary/10 p-3 rounded-full">
@@ -416,10 +416,10 @@ export function PageContent({ children }: PageContentProps) {
           </section>
 
           {/* Step 2 */}
-          <section className="bg-surface px-6 py-12">
+          <section className="bg-surface px-4 md:px-6 py-8 md:py-12">
             <div className="max-w-3xl">
               <div className="flex items-center gap-4 mb-6">
-                <span className="font-black text-6xl text-primary leading-none">
+                <span className="font-black text-5xl md:text-6xl text-primary leading-none">
                   02
                 </span>
                 <div className="bg-primary/10 p-3 rounded-full">
@@ -466,10 +466,10 @@ export function PageContent({ children }: PageContentProps) {
           </section>
 
           {/* Step 3 */}
-          <section className="bg-surface-low px-6 py-12 border-t border-outline-variant/10">
+          <section className="bg-surface-low px-4 md:px-6 py-8 md:py-12 border-t border-outline-variant/10">
             <div className="max-w-3xl">
               <div className="flex items-center gap-4 mb-6">
-                <span className="font-black text-6xl text-primary leading-none">
+                <span className="font-black text-5xl md:text-6xl text-primary leading-none">
                   03
                 </span>
                 <div className="bg-primary/10 p-3 rounded-full">
@@ -517,8 +517,8 @@ export function PageContent({ children }: PageContentProps) {
           </section>
 
           {/* Ready to choose CTA */}
-          <section className="px-6 py-16 text-center bg-primary text-on-primary mt-12">
-            <h2 className="font-bold text-3xl mb-4 tracking-tight">
+          <section className="px-4 md:px-6 py-10 md:py-16 text-center bg-primary text-on-primary mt-8 md:mt-12">
+            <h2 className="font-bold text-2xl md:text-3xl mb-4 tracking-tight">
               {t.landing.ctaHeadline}
             </h2>
             <p className="text-on-primary/90 mb-8 max-w-xs mx-auto text-base">
@@ -538,10 +538,10 @@ export function PageContent({ children }: PageContentProps) {
         </section>
 
         {/* ── 5. Mission Statement ── */}
-        <section className="py-24 px-6 border-t border-outline-variant/10">
+        <section className="py-14 md:py-24 px-4 md:px-6 border-t border-outline-variant/10">
           <div className="max-w-4xl mx-auto text-center">
-            <BalanceIcon className="text-primary mx-auto mb-8" />
-            <h2 className="text-4xl font-extrabold text-on-surface mb-8 tracking-tight">
+            <BalanceIcon className="text-primary mx-auto mb-6 md:mb-8" />
+            <h2 className="text-3xl md:text-4xl font-extrabold text-on-surface mb-6 md:mb-8 tracking-tight">
               {t.landing.missionTitle}
             </h2>
             <p className="text-xl leading-relaxed text-on-surface font-light">
@@ -555,7 +555,7 @@ export function PageContent({ children }: PageContentProps) {
       {/* ── 6. Footer ── */}
       <footer
         role="contentinfo"
-        className="bg-surface-high py-16 px-6 border-t border-outline-variant/20"
+        className="bg-surface-high py-10 md:py-16 px-4 md:px-6 border-t border-outline-variant/20"
       >
         <div className="max-w-7xl mx-auto flex flex-col gap-10">
           <div className="max-w-xs">

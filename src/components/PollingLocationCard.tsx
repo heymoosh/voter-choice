@@ -146,10 +146,10 @@ function PrimaryLocationCard({
   return (
     <div className="bg-surface-lowest border border-outline-variant/20 overflow-hidden">
       {/* Location Info */}
-      <div className="p-6">
-        <div className="flex justify-between items-start mb-6">
-          <div className="flex-grow">
-            <h3 className="text-2xl font-black text-on-surface leading-tight mb-1">
+      <div className="p-4 md:p-6">
+        <div className="flex justify-between items-start mb-4 md:mb-6">
+          <div className="flex-grow min-w-0">
+            <h3 className="text-xl md:text-2xl font-black text-on-surface leading-tight mb-1">
               {location.name || t.pollingPlace}
             </h3>
             <p className="text-on-surface-muted text-sm font-medium">
@@ -167,7 +167,7 @@ function PrimaryLocationCard({
         </div>
 
         {/* Schedule Grid */}
-        <div className="grid grid-cols-2 gap-4 mb-8 bg-surface-low p-4">
+        <div className="grid grid-cols-2 gap-3 md:gap-4 mb-6 md:mb-8 bg-surface-low p-3 md:p-4">
           <div>
             <span className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-muted mb-1">
               {t.electionDayLabel}
@@ -195,7 +195,7 @@ function PrimaryLocationCard({
                 electionDate,
               )
             }
-            className="w-full py-4 bg-primary text-on-primary font-black uppercase text-xs tracking-widest flex items-center justify-center gap-2 hover:opacity-90 transition-all"
+            className="w-full py-4 min-h-[48px] bg-primary text-on-primary font-black uppercase text-xs tracking-widest flex items-center justify-center gap-2 hover:opacity-90 transition-all"
           >
             <CalendarAddIcon />
             {t.addToCalendarFull}
@@ -206,7 +206,7 @@ function PrimaryLocationCard({
               target="_blank"
               rel="noopener noreferrer"
               data-testid="polling-directions-link"
-              className="py-3 bg-surface-high text-on-surface font-black uppercase text-[10px] tracking-widest flex items-center justify-center gap-2 hover:bg-surface-low transition-colors"
+              className="py-3 min-h-[44px] bg-surface-high text-on-surface font-black uppercase text-[10px] tracking-widest flex items-center justify-center gap-2 hover:bg-surface-low transition-colors"
             >
               <DirectionsIcon />
               {t.directions}
@@ -219,7 +219,7 @@ function PrimaryLocationCard({
               )}
               target="_blank"
               rel="noopener noreferrer"
-              className="py-3 bg-surface-high text-on-surface font-black uppercase text-[10px] tracking-widest flex items-center justify-center gap-2 hover:bg-surface-low transition-colors"
+              className="py-3 min-h-[44px] bg-surface-high text-on-surface font-black uppercase text-[10px] tracking-widest flex items-center justify-center gap-2 hover:bg-surface-low transition-colors"
             >
               <CalendarAddIcon />
               {t.addToCalendar}

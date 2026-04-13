@@ -222,7 +222,7 @@ function PortfolioHeader({ electionName }: { electionName?: string }) {
           </span>
         )}
       </div>
-      <h1 className="text-4xl md:text-5xl font-black text-on-surface tracking-tighter leading-none">
+      <h1 className="text-3xl md:text-5xl font-black text-on-surface tracking-tighter leading-none">
         {t.title}
       </h1>
       <p className="text-lg text-on-surface-variant leading-relaxed">
@@ -245,7 +245,7 @@ function PrintBallotButton({ ballotText }: { ballotText: string }) {
         <span className="block text-xs uppercase tracking-[0.2em] font-bold mb-1 opacity-80">
           {t.primaryAction}
         </span>
-        <span className="text-2xl font-black">{t.printBallot}</span>
+        <span className="text-xl md:text-2xl font-black">{t.printBallot}</span>
       </div>
       <PrintIcon />
     </button>
@@ -425,13 +425,13 @@ function CandidateSelectionCard({ race }: { race: BallotRace }) {
   const isFirst = false; // Could highlight first race with primary border
   return (
     <div
-      className={`bg-surface-lowest border-l-4 ${isFirst ? "border-primary" : "border-outline-variant"} p-6 space-y-4`}
+      className={`bg-surface-lowest border-l-4 ${isFirst ? "border-primary" : "border-outline-variant"} p-4 md:p-6 space-y-3 md:space-y-4`}
     >
       <div>
         <span className="text-xs uppercase font-black tracking-widest text-accent mb-2 block">
           {race.office}
         </span>
-        <h4 className="text-2xl md:text-3xl font-black leading-tight mb-1">
+        <h4 className="text-xl md:text-3xl font-black leading-tight mb-1">
           {race.candidate}
         </h4>
         {race.party && (
@@ -538,7 +538,7 @@ function PortfolioFooter({ ballotText }: { ballotText: string }) {
   const t = translations[lang].portfolio;
 
   return (
-    <div className="pt-12 pb-24 border-t-2 border-on-surface space-y-8">
+    <div className="pt-8 md:pt-12 pb-8 border-t-2 border-on-surface space-y-6 md:space-y-8">
       {/* Civic Integrity Notice */}
       <div className="bg-surface-high/50 p-6 border-l-4 border-primary">
         <h5 className="text-xs font-black uppercase mb-2">
@@ -556,14 +556,14 @@ function PortfolioFooter({ ballotText }: { ballotText: string }) {
           <span>{t.shareTemplate}</span>
         </button>
 
-        <div className="w-full bg-white border border-outline-variant/30 p-8 rounded-sm space-y-6 shadow-sm">
-          <div className="flex items-center gap-6">
-            <div className="bg-surface-low p-5 rounded-xl flex items-center justify-center border border-outline-variant/10">
+        <div className="w-full bg-white border border-outline-variant/30 p-5 md:p-8 rounded-sm space-y-4 md:space-y-6 shadow-sm">
+          <div className="flex items-center gap-4 md:gap-6">
+            <div className="bg-surface-low p-3 md:p-5 rounded-xl flex items-center justify-center border border-outline-variant/10">
               <span className="text-primary">
                 <BallotIcon />
               </span>
             </div>
-            <h2 className="text-3xl font-black text-on-surface tracking-tighter uppercase">
+            <h2 className="text-2xl md:text-3xl font-black text-on-surface tracking-tighter uppercase">
               {t.readyToVote}
             </h2>
           </div>
@@ -604,8 +604,8 @@ export function ResearchPortfolio({
       pollingData.earlyVoteSites.length > 0);
 
   return (
-    <div className="flex-1 overflow-y-auto px-4 py-8 md:px-12 lg:px-20 bg-surface">
-      <div className="max-w-xl mx-auto space-y-12">
+    <div className="flex-1 overflow-y-auto px-4 py-6 md:px-12 md:py-8 lg:px-20 pb-24 md:pb-8 bg-surface">
+      <div className="max-w-xl mx-auto space-y-8 md:space-y-12">
         {/* Back button */}
         <button
           onClick={onBackToChat}

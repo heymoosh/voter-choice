@@ -44,9 +44,10 @@ export function openPrintableBallot(ballotText: string): void {
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>My Ballot</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;700&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;700;900&display=swap');
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
     font-family: 'Public Sans', Arial, Helvetica, sans-serif;
@@ -54,6 +55,24 @@ export function openPrintableBallot(ballotText: string): void {
     background: #fff;
     padding: 1.5cm 2cm;
     line-height: 1.5;
+    max-width: 800px;
+    margin: 0 auto;
+  }
+  .header {
+    border-bottom: 3px solid #005c55;
+    padding-bottom: 0.5em;
+    margin-bottom: 1em;
+  }
+  .header h1 {
+    font-size: 18pt;
+    font-weight: 900;
+    color: #005c55;
+    letter-spacing: -0.5px;
+  }
+  .header .date {
+    font-size: 9pt;
+    color: #666;
+    margin-top: 2px;
   }
   pre {
     font-family: 'Public Sans', Arial, Helvetica, sans-serif;
@@ -64,32 +83,58 @@ export function openPrintableBallot(ballotText: string): void {
   }
   .reminder {
     margin-top: 1.5em;
-    padding-top: 0.75em;
-    border-top: 1px solid #ccc;
+    padding: 0.75em 1em;
+    border: 1px solid #ccc;
+    background: #f9f9f9;
     font-size: 10pt;
     color: #555;
   }
   @media print {
     body { padding: 0.5cm 1cm; }
-    .no-print { display: none; }
+    .no-print { display: none !important; }
+    .reminder { background: none; }
+  }
+  @media screen and (max-width: 600px) {
+    body { padding: 1em; }
+    pre { font-size: 11pt; }
   }
   .no-print {
     text-align: center;
-    margin-bottom: 1em;
+    margin-bottom: 1.5em;
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    flex-wrap: wrap;
   }
   .no-print button {
     font-family: 'Public Sans', Arial, sans-serif;
     font-size: 14pt;
-    padding: 8px 24px;
+    font-weight: 700;
+    padding: 10px 28px;
     cursor: pointer;
-    margin: 0 8px;
+    border: none;
+    min-height: 44px;
+    min-width: 44px;
+    touch-action: manipulation;
+  }
+  .no-print .print-btn {
+    background: #005c55;
+    color: #fff;
+  }
+  .no-print .close-btn {
+    background: #eae8e6;
+    color: #1b1c1b;
   }
 </style>
 </head>
 <body>
 <div class="no-print">
-  <button onclick="window.print()">Print</button>
-  <button onclick="window.close()">Close</button>
+  <button class="print-btn" onclick="window.print()">Print My Ballot</button>
+  <button class="close-btn" onclick="window.close()">Close</button>
+</div>
+<div class="header">
+  <h1>VOTER CHOICE</h1>
+  <div class="date">${new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}</div>
 </div>
 <pre>${escapeHtml(ballotText)}</pre>
 <div class="reminder">

@@ -21,7 +21,7 @@ export function ResearchProgressBar({ progress }: ResearchProgressBarProps) {
             <span className="text-xs font-black uppercase tracking-widest text-primary">
               {t.research.progressLabel}: {progress.percent}%
             </span>
-            <div className="h-1.5 w-32 bg-surface-high overflow-hidden rounded-full">
+            <div className="h-1.5 w-20 md:w-32 bg-surface-high overflow-hidden rounded-full">
               <div
                 className="h-full bg-primary transition-all duration-500"
                 style={{ width: `${progress.percent}%` }}
