@@ -78,6 +78,23 @@ export interface Translations {
     fallbackLink: string;
     noLocationsFound: string;
     privacyNote: string;
+    findYourPrecinct: string;
+    enterAddressLabel: string;
+    searchButton: string;
+    privacyBadge: string;
+    primaryRecommendation: string;
+    electionDayLabel: string;
+    earlyVotingLabel: string;
+    addToCalendar: string;
+    addToCalendarFull: string;
+    directions: string;
+    alternativeLocations: string;
+    adaAccessible: string;
+    pollDataNote: string;
+    countyFallbackTitle: string;
+    countyFallbackBody: string;
+    countyFallbackLink: string;
+    noAddressYet: string;
   };
   budget: {
     notice: string;
@@ -239,6 +256,60 @@ export interface Translations {
     backToChat: string;
     pollingDataNote: string;
   };
+  voterId: {
+    stateLabel: string;
+    headline: string;
+    introText: string;
+    warningTitle: string;
+    acceptedTitle: string;
+    approvedForms: string;
+    idTxDriverLicense: string;
+    idTxDriverLicenseDesc: string;
+    idElectionCert: string;
+    idElectionCertDesc: string;
+    idPersonalId: string;
+    idPersonalIdDesc: string;
+    idHandgun: string;
+    idHandgunDesc: string;
+    idMilitary: string;
+    idMilitaryDesc: string;
+    idCitizenship: string;
+    idCitizenshipDesc: string;
+    idPassport: string;
+    idPassportDesc: string;
+    noIdTitle: string;
+    noIdText: string;
+    ridLabel: string;
+    supportingDocsTitle: string;
+    downloadDeclaration: string;
+    footerNotice: string;
+    phonesTitle: string;
+  };
+  timeline: {
+    officialBadge: string;
+    headlinePrefix: string;
+    headlineItalic: string;
+    introText: string;
+    registrationDeadline: string;
+    strictDeadline: string;
+    earlyVotingBegins: string;
+    periodStarts: string;
+    mailBallotDeadline: string;
+    actionRequired: string;
+    earlyVotingEnds: string;
+    electionDay: string;
+    pollsOpen: string;
+    electionDayDescription: string;
+    findPrecinct: string;
+    quickAccess: string;
+    voterIdGuide: string;
+    sampleBallot: string;
+    pollingMap: string;
+    statusUpcoming: string;
+    statusActive: string;
+    statusImminent: string;
+    statusPassed: string;
+  };
   a11y: {
     skipToContent: string;
     languageToggleLabel: string;
@@ -335,6 +406,27 @@ const en: Translations = {
     noLocationsFound: "No polling locations found for this address.",
     privacyNote:
       "Your address is sent to Google\u2019s Civic API to find your polling place. We don\u2019t store it.",
+    findYourPrecinct: "Find Your Precinct.",
+    enterAddressLabel: "Enter Zip Code or Address",
+    searchButton: "Search",
+    privacyBadge:
+      "Zero tracking. Your location is used only to find your nearest precinct and is never stored.",
+    primaryRecommendation: "Primary Recommendation",
+    electionDayLabel: "Election Day",
+    earlyVotingLabel: "Early Voting",
+    addToCalendar: "Add to Calendar",
+    addToCalendarFull: "Add to Calendar (Incl. Address & Hours)",
+    directions: "Directions",
+    alternativeLocations: "Alternative Locations",
+    adaAccessible: "ADA Accessible",
+    pollDataNote:
+      "Poll data from Google Civic Information API. Verify with your county election office.",
+    countyFallbackTitle: "Find Your Polling Place",
+    countyFallbackBody:
+      "Enter your address above to find your polling location, or visit your county election website.",
+    countyFallbackLink: "Visit County Election Website",
+    noAddressYet:
+      "Enter your address above to find your assigned polling location and early vote sites.",
   },
   budget: {
     notice:
@@ -529,6 +621,67 @@ const en: Translations = {
     pollingDataNote:
       "Poll data from Google Civic Information API. Verify with your county election office.",
   },
+  voterId: {
+    stateLabel: "State of Texas Election Laws",
+    headline: "ID Requirements",
+    introText:
+      "To vote in person in Texas, you must present an acceptable form of photo identification or follow specific procedures if you do not possess one.",
+    warningTitle: "Critical Expiration Rule",
+    acceptedTitle: "Accepted Photo IDs",
+    approvedForms: "7 Approved Forms",
+    idTxDriverLicense: "TX Driver License",
+    idTxDriverLicenseDesc:
+      "Issued by the Texas Department of Public Safety (DPS).",
+    idElectionCert: "Election Identification Certificate",
+    idElectionCertDesc: "Issued by DPS for voting purposes only.",
+    idPersonalId: "Personal ID Card",
+    idPersonalIdDesc: "Personal identification card issued by DPS.",
+    idHandgun: "Handgun License",
+    idHandgunDesc: "Texas Handgun License issued by DPS.",
+    idMilitary: "US Military ID",
+    idMilitaryDesc:
+      "United States Military Identification Card containing a photograph.",
+    idCitizenship: "Citizenship Certificate",
+    idCitizenshipDesc:
+      "United States Citizenship Certificate containing a photograph.",
+    idPassport: "US Passport",
+    idPassportDesc: "United States Passport book or card.",
+    noIdTitle: "No ID? No Problem",
+    noIdText:
+      "If a voter does not possess one of the seven acceptable forms of photo ID and cannot reasonably obtain one, they may still vote by signing a",
+    ridLabel: "Reasonable Impediment Declaration",
+    supportingDocsTitle: "Supporting Documents",
+    downloadDeclaration: "Download Declaration Form (PDF)",
+    footerNotice: "Non-partisan educational resource.",
+    phonesTitle: "Phones at Polls",
+  },
+  timeline: {
+    officialBadge: "Official Voter Guide",
+    headlinePrefix: "The",
+    headlineItalic: "Election Roadmap.",
+    introText:
+      "Essential dates for the upcoming municipal and school board elections. Tap any date for detailed requirements and instructions.",
+    registrationDeadline: "Voter Registration Deadline",
+    strictDeadline: "Strict Deadline",
+    earlyVotingBegins: "Early Voting Begins",
+    periodStarts: "Period Starts",
+    mailBallotDeadline: "Mail Ballot Application Deadline",
+    actionRequired: "Action Required",
+    earlyVotingEnds: "Early Voting Ends",
+    electionDay: "Election Day",
+    pollsOpen: "Polls Open 7am \u2013 7pm",
+    electionDayDescription:
+      "The culmination of the local civic process. Ensure you have your Photo ID ready and know your precinct polling place.",
+    findPrecinct: "Find Your Precinct",
+    quickAccess: "Quick Access Resources",
+    voterIdGuide: "Voter ID Guide",
+    sampleBallot: "Sample Ballot",
+    pollingMap: "Polling Map",
+    statusUpcoming: "Upcoming",
+    statusActive: "Active Now",
+    statusImminent: "Soon",
+    statusPassed: "Passed",
+  },
   a11y: {
     skipToContent: "Skip to main content",
     languageToggleLabel: "Switch to Spanish",
@@ -627,6 +780,27 @@ const es: Translations = {
     noLocationsFound: "No se encontraron casillas para esta direcci\u00f3n.",
     privacyNote:
       "Tu direcci\u00f3n se env\u00eda a la API de Google Civic para encontrar tu casilla. No la almacenamos.",
+    findYourPrecinct: "Encuentra Tu Casilla.",
+    enterAddressLabel: "Ingresa C\u00f3digo Postal o Direcci\u00f3n",
+    searchButton: "Buscar",
+    privacyBadge:
+      "Sin rastreo. Tu ubicaci\u00f3n solo se usa para encontrar tu casilla m\u00e1s cercana y nunca se almacena.",
+    primaryRecommendation: "Recomendaci\u00f3n Principal",
+    electionDayLabel: "D\u00eda de Elecci\u00f3n",
+    earlyVotingLabel: "Votaci\u00f3n Anticipada",
+    addToCalendar: "Agregar al Calendario",
+    addToCalendarFull: "Agregar al Calendario (Incl. Direcci\u00f3n y Horario)",
+    directions: "Direcciones",
+    alternativeLocations: "Ubicaciones Alternativas",
+    adaAccessible: "Accesible ADA",
+    pollDataNote:
+      "Datos de casillas de la API de Google Civic Information. Verifica con la oficina electoral de tu condado.",
+    countyFallbackTitle: "Encuentra Tu Casilla Electoral",
+    countyFallbackBody:
+      "Ingresa tu direcci\u00f3n arriba para encontrar tu casilla, o visita el sitio web electoral de tu condado.",
+    countyFallbackLink: "Visitar Sitio Web Electoral del Condado",
+    noAddressYet:
+      "Ingresa tu direcci\u00f3n arriba para encontrar tu casilla electoral asignada y sitios de votaci\u00f3n anticipada.",
   },
   budget: {
     notice:
@@ -826,6 +1000,68 @@ const es: Translations = {
     backToChat: "Volver a la Investigaci\u00f3n",
     pollingDataNote:
       "Datos de casillas de la API de Google Civic Information. Verifica con tu oficina electoral del condado.",
+  },
+  voterId: {
+    stateLabel: "Leyes Electorales del Estado de Texas",
+    headline: "Requisitos de ID",
+    introText:
+      "Para votar en persona en Texas, debes presentar una forma aceptable de identificaci\u00f3n con foto o seguir procedimientos espec\u00edficos si no posees una.",
+    warningTitle: "Regla Cr\u00edtica de Vencimiento",
+    acceptedTitle: "IDs con Foto Aceptadas",
+    approvedForms: "7 Formas Aprobadas",
+    idTxDriverLicense: "Licencia de Conducir TX",
+    idTxDriverLicenseDesc:
+      "Emitida por el Departamento de Seguridad P\u00fablica de Texas (DPS).",
+    idElectionCert: "Certificado de Identificaci\u00f3n Electoral",
+    idElectionCertDesc: "Emitido por DPS solo para fines de votaci\u00f3n.",
+    idPersonalId: "Tarjeta de ID Personal",
+    idPersonalIdDesc:
+      "Tarjeta de identificaci\u00f3n personal emitida por DPS.",
+    idHandgun: "Licencia de Arma de Fuego",
+    idHandgunDesc: "Licencia de arma de fuego de Texas emitida por DPS.",
+    idMilitary: "ID Militar de EE.UU.",
+    idMilitaryDesc:
+      "Tarjeta de identificaci\u00f3n militar de los Estados Unidos con fotograf\u00eda.",
+    idCitizenship: "Certificado de Ciudadan\u00eda",
+    idCitizenshipDesc:
+      "Certificado de ciudadan\u00eda de los Estados Unidos con fotograf\u00eda.",
+    idPassport: "Pasaporte de EE.UU.",
+    idPassportDesc: "Libro o tarjeta de pasaporte de los Estados Unidos.",
+    noIdTitle: "\u00bfSin ID? \u00a1No hay problema!",
+    noIdText:
+      "Si un votante no posee una de las siete formas aceptables de identificaci\u00f3n con foto y no puede obtener una razonablemente, a\u00fan puede votar firmando una",
+    ridLabel: "Declaraci\u00f3n de Impedimento Razonable",
+    supportingDocsTitle: "Documentos de Apoyo",
+    downloadDeclaration: "Descargar Formulario de Declaraci\u00f3n (PDF)",
+    footerNotice: "Recurso educativo no partidista.",
+    phonesTitle: "Tel\u00e9fonos en las Casillas",
+  },
+  timeline: {
+    officialBadge: "Gu\u00eda Oficial del Votante",
+    headlinePrefix: "La",
+    headlineItalic: "Hoja de Ruta Electoral.",
+    introText:
+      "Fechas esenciales para las pr\u00f3ximas elecciones municipales y de juntas escolares. Toca cualquier fecha para requisitos e instrucciones detalladas.",
+    registrationDeadline: "Fecha L\u00edmite de Registro de Votantes",
+    strictDeadline: "Fecha L\u00edmite Estricta",
+    earlyVotingBegins: "Comienza la Votaci\u00f3n Anticipada",
+    periodStarts: "Inicia el Per\u00edodo",
+    mailBallotDeadline: "Fecha L\u00edmite de Solicitud de Boleta por Correo",
+    actionRequired: "Acci\u00f3n Requerida",
+    earlyVotingEnds: "Termina la Votaci\u00f3n Anticipada",
+    electionDay: "D\u00eda de la Elecci\u00f3n",
+    pollsOpen: "Casillas Abiertas 7am \u2013 7pm",
+    electionDayDescription:
+      "La culminaci\u00f3n del proceso c\u00edvico local. Aseg\u00farate de tener tu identificaci\u00f3n con foto lista y conocer tu casilla de precinto.",
+    findPrecinct: "Encuentra tu Casilla",
+    quickAccess: "Recursos de Acceso R\u00e1pido",
+    voterIdGuide: "Gu\u00eda de ID del Votante",
+    sampleBallot: "Boleta de Muestra",
+    pollingMap: "Mapa de Casillas",
+    statusUpcoming: "Pr\u00f3ximo",
+    statusActive: "Activo Ahora",
+    statusImminent: "Pronto",
+    statusPassed: "Pasado",
   },
   a11y: {
     skipToContent: "Ir al contenido principal",

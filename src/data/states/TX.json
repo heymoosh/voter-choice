@@ -141,6 +141,17 @@
       "U.S. citizenship certificate with photo",
       "U.S. passport (book or card)"
     ],
+    "expirationRule": "IDs can be expired up to 4 years. For voters aged 70 or older, an acceptable photo ID may be expired for any length of time if it is otherwise valid.",
+    "impedimentDeclaration": "If a voter does not possess one of the seven acceptable forms of photo ID and cannot reasonably obtain one, they may still vote by signing a Reasonable Impediment Declaration and providing a supporting document.",
+    "supportingDocs": [
+      "Certified birth certificate",
+      "Current utility bill",
+      "Bank statement",
+      "Government check",
+      "Paycheck",
+      "Voter registration certificate",
+      "Other government document with name and address"
+    ],
     "phonesAtPolls": "prohibited",
     "phonesAtPollsDetail": "Texas law prohibits wireless communication devices in the voting room. You may bring written notes.",
     "additionalRules": []

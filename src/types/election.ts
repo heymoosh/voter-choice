@@ -37,6 +37,9 @@ export interface EarlyVoting {
 export interface VotingRules {
   idRequired: boolean;
   acceptedIds: string[];
+  expirationRule?: string;
+  impedimentDeclaration?: string;
+  supportingDocs?: string[];
   phonesAtPolls: "prohibited" | "allowed" | "varies";
   phonesAtPollsDetail: string;
   additionalRules: string[];

@@ -11,9 +11,8 @@ import {
   PollingLocationCard,
   PollingLocationFallback,
 } from "./PollingLocationCard";
-import { getDeadlineStatus } from "../lib/getDeadlineStatus";
 import { Notice } from "./ui/Notice";
-import type { StateElectionData, DeadlineStatus } from "../types/election";
+import type { StateElectionData } from "../types/election";
 import type { Language } from "../lib/translations";
 import type { PollingLocation } from "./PollingLocationCard";
 
@@ -233,6 +232,7 @@ const mobileTabIcons: {
 }[] = [
   { key: "research", icon: DescriptionIcon, labelKey: "navResearch" },
   { key: "dates", icon: CalendarIcon, labelKey: "tabDates" },
+  { key: "id", icon: BadgeIcon, labelKey: "tabId" },
   { key: "polling", icon: MapIcon, labelKey: "tabPolling" },
 ];
 
@@ -270,245 +270,505 @@ function MobileBottomNav({
   );
 }
 
-/* ── Tab Content: Dates ──────────────────────────────────────── */
+/* ── Tab Content: Election Timeline ─────────────────────────── */
 
-function DeadlineRow({
+function getTimelineStatus(
+  dateStr: string,
+  today: string,
+  isRange?: { end: string },
+): "passed" | "active" | "imminent" | "upcoming" {
+  if (isRange) {
+    if (today > isRange.end) return "passed";
+    if (today >= dateStr && today <= isRange.end) return "active";
+  } else {
+    if (today > dateStr) return "passed";
+  }
+  const target = new Date(dateStr + "T00:00:00");
+  const now = new Date(today + "T00:00:00");
+  const daysUntil = Math.ceil(
+    (target.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
+  );
+  if (daysUntil <= 7) return "imminent";
+  return "upcoming";
+}
+
+function formatTimelineDate(dateStr: string): string {
+  const d = new Date(dateStr + "T00:00:00");
+  return d
+    .toLocaleDateString("en-US", { month: "long", day: "2-digit" })
+    .replace(/(\w+)\s(\d+)/, (_, m, day) => `${m.toUpperCase()} ${day}`);
+}
+
+function TimelineMilestone({
+  date,
   label,
+  badge,
   status,
+  isLast,
 }: {
+  date: string;
   label: string;
-  status: DeadlineStatus;
+  badge?: string;
+  status: "passed" | "active" | "imminent" | "upcoming";
+  isLast?: boolean;
 }) {
-  const statusColors: Record<string, string> = {
-    green: "text-primary bg-surface-lowest",
-    yellow: "text-accent bg-surface-lowest",
-    red: "text-red-700 bg-surface-lowest",
-    passed: "text-on-surface-muted bg-surface-high",
+  const dotColors: Record<string, string> = {
+    passed: "bg-on-surface-muted/30",
+    active: "bg-primary",
+    imminent: "bg-accent",
+    upcoming: "bg-on-surface-muted/50",
   };
+  const badgeColors: Record<string, string> = {
+    passed: "bg-surface-high text-on-surface-muted",
+    active: "bg-primary text-on-primary",
+    imminent: "bg-accent text-on-primary",
+    upcoming: "bg-surface-high text-on-surface-muted",
+  };
+  const borderColor =
+    status === "active" || status === "imminent"
+      ? "border-primary"
+      : "border-outline-variant/30";
 
   return (
-    <div className="flex justify-between items-center text-sm py-2">
-      <span className="font-medium">{label}</span>
-      <span
-        className={`px-3 py-1 rounded-sm text-xs font-medium ${statusColors[status.color]}`}
-      >
-        {status.date} &mdash; {status.label}
-      </span>
+    <div className="flex gap-6">
+      {/* Timeline track */}
+      <div className="flex flex-col items-center w-4 shrink-0">
+        <div className={`w-3 h-3 rounded-full ${dotColors[status]} shrink-0`} />
+        {!isLast && (
+          <div className={`w-px flex-1 ${dotColors[status]} opacity-40`} />
+        )}
+      </div>
+      {/* Content */}
+      <div className={`flex-1 pb-8 ${!isLast ? "" : ""}`}>
+        <div className={`bg-surface-lowest p-6 border-l-4 ${borderColor}`}>
+          <p className="text-xs text-on-surface-muted font-medium tracking-wide mb-1">
+            {formatTimelineDate(date)}
+          </p>
+          <h4 className="text-lg font-bold text-on-surface mb-2">{label}</h4>
+          {badge && (
+            <span
+              className={`inline-block px-3 py-1 text-[10px] font-bold uppercase tracking-widest ${badgeColors[status]}`}
+            >
+              {badge}
+            </span>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
 
 // eslint-disable-next-line complexity
-function DatesView({ state }: { state: StateElectionData }) {
+function DatesView({
+  state,
+  onTabChange,
+}: {
+  state: StateElectionData;
+  onTabChange: (tab: ResearchTab) => void;
+}) {
   const { lang } = useLanguage();
   const t = translations[lang];
+  const tl = t.timeline;
   const today = new Date().toISOString().split("T")[0];
   const upcoming = getUpcomingElection(state);
 
-  const earlyVotingActive =
-    state.earlyVoting.available &&
-    state.earlyVoting.startDate &&
-    state.earlyVoting.endDate &&
-    today >= state.earlyVoting.startDate &&
-    today <= state.earlyVoting.endDate;
+  if (!upcoming) return null;
 
-  const onlineStatus = state.registration.online.available
-    ? getDeadlineStatus(state.registration.online.deadline!, today, lang)
-    : null;
-  const byMailStatus = getDeadlineStatus(
-    state.registration.byMail.deadline,
-    today,
-    lang,
-  );
-  const inPersonStatus = getDeadlineStatus(
-    state.registration.inPerson.deadline,
-    today,
-    lang,
-  );
+  const electionDate = new Date(upcoming.date + "T00:00:00");
+  const monthDay = electionDate.toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+  });
 
-  const daysLeft = upcoming ? getDaysUntilElection(upcoming.date) : null;
+  // Gather milestones from the election's own registration data
+  const reg = upcoming.registration ?? state.registration;
+  const ev = upcoming.earlyVoting ?? state.earlyVoting;
+  const regDeadline = reg.online.deadline ?? reg.byMail.deadline;
+
+  interface Milestone {
+    date: string;
+    label: string;
+    badge?: string;
+    status: "passed" | "active" | "imminent" | "upcoming";
+  }
+
+  const milestones: Milestone[] = [];
+
+  if (regDeadline) {
+    milestones.push({
+      date: regDeadline,
+      label: tl.registrationDeadline,
+      badge: tl.strictDeadline,
+      status: getTimelineStatus(regDeadline, today),
+    });
+  }
+
+  if (ev.available && ev.startDate) {
+    milestones.push({
+      date: ev.startDate,
+      label: tl.earlyVotingBegins,
+      badge: tl.periodStarts,
+      status: getTimelineStatus(
+        ev.startDate,
+        today,
+        ev.endDate ? { end: ev.endDate } : undefined,
+      ),
+    });
+  }
+
+  if (ev.available && ev.endDate) {
+    milestones.push({
+      date: ev.endDate,
+      label: tl.earlyVotingEnds,
+      status: getTimelineStatus(ev.endDate, today),
+    });
+  }
 
   return (
-    <div className="max-w-3xl mx-auto space-y-8">
-      {/* Election header + countdown */}
-      <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
-        <div>
-          <h2 className="text-3xl font-black text-on-surface mb-2">
-            {state.stateName}
-          </h2>
-          {upcoming && (
-            <>
-              <p className="text-lg font-medium">{upcoming.name}</p>
-              <p className="text-on-surface-variant">{upcoming.date}</p>
-              {earlyVotingActive && (
-                <span className="inline-flex items-center px-2 py-0.5 text-xs font-semibold rounded-full bg-primary text-on-primary mt-2">
-                  {lang === "es"
-                    ? "Voto anticipado abierto"
-                    : "Early Voting Open"}
-                </span>
-              )}
-            </>
-          )}
-        </div>
-        {daysLeft !== null && (
-          <div className="bg-surface-high p-6 flex flex-col justify-center shrink-0">
-            <span className="text-3xl font-black text-primary mb-1">
-              {daysLeft}
-            </span>
-            <span className="text-[10px] font-bold uppercase tracking-tighter text-on-surface-variant">
-              {t.research.daysUntilElection}
-            </span>
-          </div>
-        )}
+    <div className="max-w-3xl mx-auto pb-24">
+      {/* Header */}
+      <div className="text-center mb-12">
+        <span className="inline-block px-4 py-1.5 bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-[0.2em] mb-6">
+          {tl.officialBadge}
+        </span>
+        <h2 className="text-4xl md:text-5xl font-black text-on-surface tracking-tighter leading-tight mb-4">
+          {tl.headlinePrefix} {monthDay}{" "}
+          <em className="not-italic font-black italic text-primary">
+            {tl.headlineItalic}
+          </em>
+        </h2>
+        <p className="text-on-surface-muted max-w-md mx-auto leading-relaxed">
+          {tl.introText}
+        </p>
       </div>
 
-      {/* Registration Deadlines */}
-      <div className="bg-surface-lowest p-6 border-l-4 border-primary">
-        <h3 className="text-xs font-bold uppercase tracking-widest text-on-surface-muted mb-4">
-          {t.stateInfo.registrationDeadlines}
-        </h3>
-        <div className="space-y-1">
-          {onlineStatus && (
-            <DeadlineRow
-              label={lang === "es" ? "En l\u00ednea" : "Online"}
-              status={onlineStatus}
-            />
-          )}
-          {!state.registration.online.available && (
-            <p className="text-sm text-on-surface-muted">
-              {lang === "es"
-                ? "Registro en l\u00ednea: No disponible"
-                : "Online registration: Not available"}
-            </p>
-          )}
-          <DeadlineRow
-            label={lang === "es" ? "Por correo" : "By mail"}
-            status={byMailStatus}
+      {/* Timeline */}
+      <div className="mb-8">
+        {milestones.map((m) => (
+          <TimelineMilestone
+            key={m.date + m.label}
+            date={m.date}
+            label={m.label}
+            badge={m.badge}
+            status={m.status}
+            isLast={false}
           />
-          <DeadlineRow
-            label={lang === "es" ? "En persona" : "In person"}
-            status={inPersonStatus}
-          />
+        ))}
+      </div>
+
+      {/* Election Day Hero Card */}
+      <div className="flex gap-6 mb-16">
+        <div className="flex flex-col items-center w-4 shrink-0">
+          <div className="w-4 h-4 rotate-45 bg-accent shrink-0" />
         </div>
-        <div className="mt-4">
+        <div className="flex-1">
+          <div className="bg-surface-low p-8 md:p-10">
+            <p className="text-5xl md:text-6xl font-black text-on-surface tracking-tighter mb-2">
+              {electionDate.toLocaleDateString("en-US", {
+                month: "long",
+                day: "2-digit",
+              })}
+            </p>
+            <span className="inline-block px-3 py-1 bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-[0.2em] mb-4">
+              {tl.electionDay}
+            </span>
+            <p className="text-xl md:text-2xl font-bold text-on-surface mb-4">
+              {tl.pollsOpen}
+            </p>
+            <p className="text-on-surface-muted leading-relaxed mb-6">
+              {tl.electionDayDescription}
+            </p>
+            <button
+              onClick={() => onTabChange("polling")}
+              className="inline-flex items-center gap-2 bg-surface-lowest px-6 py-3 font-bold text-sm text-primary hover:bg-surface-high transition-colors"
+            >
+              <LocationIcon />
+              <span className="uppercase tracking-wider">
+                {tl.findPrecinct}
+              </span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Quick Access Resources */}
+      <div className="mt-16">
+        <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-on-surface-muted text-center mb-8">
+          {tl.quickAccess}
+        </p>
+        <div className="space-y-3">
+          <button
+            onClick={() => onTabChange("id")}
+            className="w-full flex items-center gap-4 bg-surface-lowest p-5 hover:bg-surface-low transition-colors text-left"
+          >
+            <BadgeIcon className="text-primary shrink-0" />
+            <span className="font-bold text-on-surface uppercase tracking-wider text-sm">
+              {tl.voterIdGuide}
+            </span>
+          </button>
           <a
-            href={state.registration.registrationCheckUrl}
+            href={state.resources.sampleBallotLookup}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-primary text-sm font-bold hover:underline"
+            className="w-full flex items-center gap-4 bg-surface-lowest p-5 hover:bg-surface-low transition-colors"
           >
-            {t.research.checkRegistration}
+            <DescriptionIcon className="text-primary shrink-0" />
+            <span className="font-bold text-on-surface uppercase tracking-wider text-sm">
+              {tl.sampleBallot}
+            </span>
           </a>
+          <button
+            onClick={() => onTabChange("polling")}
+            className="w-full flex items-center gap-4 bg-surface-lowest p-5 hover:bg-surface-low transition-colors text-left"
+          >
+            <LocationIcon className="text-primary shrink-0" />
+            <span className="font-bold text-on-surface uppercase tracking-wider text-sm">
+              {tl.pollingMap}
+            </span>
+          </button>
         </div>
-      </div>
-
-      {/* Early Voting */}
-      <div className="bg-surface-lowest p-6 border-l-4 border-accent">
-        <h3 className="text-xs font-bold uppercase tracking-widest text-on-surface-muted mb-3">
-          {t.stateInfo.earlyVoting}
-        </h3>
-        {state.earlyVoting.available &&
-        state.earlyVoting.startDate &&
-        state.earlyVoting.endDate ? (
-          <div>
-            <p className="text-lg font-bold text-on-surface">
-              {state.earlyVoting.startDate} &mdash; {state.earlyVoting.endDate}
-            </p>
-            {state.earlyVoting.notes && (
-              <p className="text-sm text-on-surface-variant mt-1">
-                {state.earlyVoting.notes}
-              </p>
-            )}
-          </div>
-        ) : (
-          <p className="text-sm text-on-surface-muted">
-            {t.stateInfo.earlyVotingNotAvailable}
-          </p>
-        )}
-      </div>
-
-      {/* Resources */}
-      <div className="flex gap-6">
-        <a
-          href={state.resources.countyElectionLookup}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-primary text-sm font-bold hover:underline"
-        >
-          {t.stateInfo.countyElectionOffice}
-        </a>
-        <a
-          href={state.resources.sampleBallotLookup}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-primary text-sm font-bold hover:underline"
-        >
-          {t.stateInfo.sampleBallot}
-        </a>
       </div>
     </div>
   );
 }
 
-/* ── Tab Content: ID Requirements ────────────────────────────── */
+/* ── Tab Content: ID Requirements (Editorial) ──────────────── */
+
+const idCards: {
+  iconPath: string;
+  nameKey: keyof (typeof translations)["en"]["voterId"];
+  descKey: keyof (typeof translations)["en"]["voterId"];
+}[] = [
+  {
+    iconPath:
+      "M20 7h-5V4c0-1.1-.9-2-2-2h-2c-1.1 0-2 .9-2 2v3H4c-1.1 0-2 .9-2 2v11c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V9c0-1.1-.9-2-2-2zM9 12c.83 0 1.5.67 1.5 1.5S9.83 15 9 15s-1.5-.67-1.5-1.5S8.17 12 9 12zm3 6H6v-.75c0-1 2-1.5 3-1.5s3 .5 3 1.5V18zm1-9h-2V4h2v5zm5 7.5h-4V15h4v1.5zm0-3h-4V12h4v1.5z",
+    nameKey: "idTxDriverLicense",
+    descKey: "idTxDriverLicenseDesc",
+  },
+  {
+    iconPath:
+      "M18 11V4c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v7c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2zm-2 0H4V4h12v7zm4-7v16H2v2h20c1.1 0 2-.9 2-2V4h-2z",
+    nameKey: "idElectionCert",
+    descKey: "idElectionCertDesc",
+  },
+  {
+    iconPath:
+      "M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H4V6h16v12zM4 0h16v2H4V0zm0 22h16v2H4v-2zM12 8c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm4 8H8v-1c0-1.33 2.67-2 4-2s4 .67 4 2v1z",
+    nameKey: "idPersonalId",
+    descKey: "idPersonalIdDesc",
+  },
+  {
+    iconPath:
+      "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z",
+    nameKey: "idHandgun",
+    descKey: "idHandgunDesc",
+  },
+  {
+    iconPath:
+      "M6.5 10h-2v7h2v-7zm6 0h-2v7h2v-7zm8.5 9H2v2h19v-2zm-2.5-9h-2v7h2v-7zM11.5 1L2 6v2h19V6l-9.5-5z",
+    nameKey: "idMilitary",
+    descKey: "idMilitaryDesc",
+  },
+  {
+    iconPath:
+      "M5 4v14h14V4H5zm12 12H7V6h10v10zm-5-7c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3zm0 4c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1z",
+    nameKey: "idCitizenship",
+    descKey: "idCitizenshipDesc",
+  },
+  {
+    iconPath:
+      "M21 5V3H3v2l8 9v5H6v2h12v-2h-5v-5l8-9zM5.66 5h12.69l-1.78 2H7.43L5.66 5zM12 13.16L9.21 10h5.58L12 13.16z",
+    nameKey: "idPassport",
+    descKey: "idPassportDesc",
+  },
+];
 
 function IdView({ state }: { state: StateElectionData }) {
   const { lang } = useLanguage();
   const t = translations[lang];
+  const tv = t.voterId;
 
   return (
-    <div className="max-w-3xl mx-auto space-y-8">
-      <h2 className="text-3xl font-black text-on-surface">
-        {t.research.tabId}
-      </h2>
+    <div className="max-w-4xl mx-auto pb-24">
+      {/* Editorial Header */}
+      <section className="mb-12 md:mb-16 border-l-8 border-primary pl-6 md:pl-8">
+        <span className="text-accent font-bold tracking-widest text-xs uppercase mb-2 block">
+          {tv.stateLabel}
+        </span>
+        <h2 className="text-5xl md:text-7xl font-black text-on-surface tracking-tighter leading-none mb-6">
+          {tv.headline}
+        </h2>
+        <p className="text-lg md:text-xl text-on-surface-muted max-w-2xl font-medium leading-relaxed">
+          {tv.introText}
+        </p>
+      </section>
 
-      {/* Voter ID */}
-      <div className="bg-surface-lowest p-6 border-l-4 border-primary">
-        <h3 className="text-xs font-bold uppercase tracking-widest text-on-surface-muted mb-4">
-          {t.stateInfo.voterId}
-        </h3>
-        {state.votingRules.idRequired ? (
-          <div className="space-y-3">
-            <p className="font-medium text-on-surface">
-              {t.stateInfo.voterIdRequired}
-            </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {state.votingRules.acceptedIds.map((id) => (
-                <div
-                  key={id}
-                  className="bg-surface-low p-3 text-sm text-on-surface"
+      {/* Critical Warning Banner */}
+      {state.votingRules.expirationRule && (
+        <div className="bg-accent text-on-primary p-6 mb-12 md:mb-16 flex items-start gap-4">
+          <svg
+            className="w-6 h-6 mt-0.5 shrink-0"
+            fill="currentColor"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" />
+          </svg>
+          <div>
+            <h3 className="font-black tracking-tight text-lg mb-1 uppercase">
+              {tv.warningTitle}
+            </h3>
+            <p>{state.votingRules.expirationRule}</p>
+          </div>
+        </div>
+      )}
+
+      {/* Accepted Photo IDs */}
+      {state.votingRules.idRequired && (
+        <section className="mb-16 md:mb-24">
+          <div className="flex items-baseline justify-between mb-8">
+            <h3 className="text-2xl md:text-3xl font-black text-on-surface tracking-tight uppercase">
+              {tv.acceptedTitle}
+            </h3>
+            <span className="h-px flex-grow mx-4 md:mx-6 bg-outline-variant/20" />
+            <span className="text-primary font-bold text-sm whitespace-nowrap">
+              {tv.approvedForms.toUpperCase()}
+            </span>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-px bg-outline-variant/20 border border-outline-variant/20 overflow-hidden">
+            {idCards.map(({ iconPath, nameKey, descKey }, i) => (
+              <div
+                key={nameKey}
+                className={`bg-surface-lowest p-6 md:p-8 hover:bg-surface transition-colors ${
+                  i === idCards.length - 1
+                    ? "md:col-span-2 flex items-start gap-6"
+                    : ""
+                }`}
+              >
+                <svg
+                  className="text-primary mb-3 shrink-0"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                  width={i === idCards.length - 1 ? 36 : 28}
+                  height={i === idCards.length - 1 ? 36 : 28}
+                  aria-hidden="true"
                 >
-                  {id}
+                  <path d={iconPath} />
+                </svg>
+                <div>
+                  <h4 className="font-bold text-lg md:text-xl mb-1 text-on-surface">
+                    {tv[nameKey]}
+                  </h4>
+                  <p className="text-on-surface-muted text-sm">{tv[descKey]}</p>
                 </div>
-              ))}
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* No ID? No Problem */}
+      {state.votingRules.impedimentDeclaration && (
+        <section className="mb-16 md:mb-24 bg-surface-low p-8 md:p-10 relative overflow-hidden">
+          <div className="relative z-10">
+            <h3 className="text-3xl md:text-4xl font-black text-on-surface tracking-tighter mb-4">
+              {tv.noIdTitle}
+            </h3>
+            <p className="text-base md:text-lg text-on-surface-muted mb-8 md:mb-10 max-w-xl">
+              {tv.noIdText}{" "}
+              <span className="font-bold text-primary">{tv.ridLabel}</span>{" "}
+              {lang === "es"
+                ? "y proporcionando un documento de apoyo."
+                : "and providing a supporting document."}
+            </p>
+            {state.votingRules.supportingDocs && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-0">
+                <div>
+                  <h5 className="text-xs font-black uppercase tracking-widest text-primary mb-4">
+                    {tv.supportingDocsTitle}
+                  </h5>
+                  <ul className="space-y-3">
+                    {state.votingRules.supportingDocs.slice(0, 4).map((doc) => (
+                      <li
+                        key={doc}
+                        className="flex items-center gap-2 text-sm font-semibold"
+                      >
+                        <svg
+                          className="w-4 h-4 text-primary shrink-0"
+                          fill="currentColor"
+                          viewBox="0 0 24 24"
+                          aria-hidden="true"
+                        >
+                          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+                        </svg>
+                        {doc}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="mt-6 sm:mt-0">
+                  <h5 className="text-xs font-black uppercase tracking-widest text-primary mb-4 invisible sm:visible">
+                    &nbsp;
+                  </h5>
+                  <ul className="space-y-3">
+                    {state.votingRules.supportingDocs.slice(4).map((doc) => (
+                      <li
+                        key={doc}
+                        className="flex items-center gap-2 text-sm font-semibold"
+                      >
+                        <svg
+                          className="w-4 h-4 text-primary shrink-0"
+                          fill="currentColor"
+                          viewBox="0 0 24 24"
+                          aria-hidden="true"
+                        >
+                          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+                        </svg>
+                        {doc}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            )}
+            <div className="mt-10 md:mt-12">
+              <a
+                href="https://www.sos.state.tx.us/elections/forms/pol-sub/reasonable-impediment-declaration.pdf"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-block bg-primary text-on-primary px-8 py-4 font-bold tracking-tight hover:opacity-90 transition-opacity uppercase"
+              >
+                {tv.downloadDeclaration}
+              </a>
             </div>
           </div>
-        ) : (
-          <p className="text-sm">{t.stateInfo.voterIdNotRequired}</p>
-        )}
-      </div>
+        </section>
+      )}
 
       {/* Phones at Polls */}
-      <div className="bg-surface-lowest p-6 border-l-4 border-accent">
+      <section className="mb-16 bg-surface-lowest p-6 border-l-4 border-accent">
         <h3 className="text-xs font-bold uppercase tracking-widest text-on-surface-muted mb-3">
-          {t.stateInfo.phonesAtPolls}
+          {tv.phonesTitle}
         </h3>
         <p className="text-sm text-on-surface">
           {state.votingRules.phonesAtPollsDetail}
         </p>
-      </div>
+      </section>
 
-      {/* Resources */}
-      <div>
+      {/* Footer */}
+      <footer className="py-8 md:py-12 border-t border-outline-variant/20 flex flex-col md:flex-row justify-between items-center gap-4">
+        <p className="text-on-surface-muted font-medium text-sm italic">
+          {tv.footerNotice}
+        </p>
         <a
           href={state.resources.countyElectionLookup}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-primary text-sm font-bold hover:underline"
+          className="text-xs font-bold uppercase tracking-widest text-on-surface-muted/40 hover:text-primary transition-colors"
         >
           {t.stateInfo.countyElectionOffice}
         </a>
-      </div>
+      </footer>
     </div>
   );
 }
@@ -529,37 +789,86 @@ function PollingView({
   onAddressSkip: () => void;
 }) {
   const { lang } = useLanguage();
-  const t = translations[lang];
+  const t = translations[lang].polling;
+  const upcoming = getUpcomingElection(state);
+  const electionDate = upcoming?.date;
 
   return (
-    <div className="max-w-3xl mx-auto space-y-8">
-      <h2 className="text-3xl font-black text-on-surface">
-        {t.research.tabPolling}
-      </h2>
-
-      {(addressStep === "input" || addressStep === "loading") && (
+    <div className="max-w-2xl mx-auto pb-24">
+      {/* Hero Search Section */}
+      <section className="mb-10">
+        <h2 className="text-4xl font-black tracking-tighter text-primary mb-6 leading-none">
+          {t.findYourPrecinct}
+        </h2>
         <AddressInput
           onSubmit={onAddressSubmit}
           onSkip={onAddressSkip}
           isLoading={addressStep === "loading"}
         />
-      )}
+      </section>
 
+      {/* Results */}
       {addressStep === "done" && hasPollingResults(pollingData) && (
         <PollingLocationCard
           pollingLocations={pollingData.pollingLocations}
           earlyVoteSites={pollingData.earlyVoteSites}
           fallbackUrl={state.resources.pollingPlaceLookup}
+          electionDate={electionDate}
         />
       )}
 
+      {/* Error / Skipped fallback */}
       {(addressStep === "error" ||
-        addressStep === "skipped" ||
         (addressStep === "done" && !hasPollingResults(pollingData))) && (
         <PollingLocationFallback
           fallbackUrl={state.resources.pollingPlaceLookup}
         />
       )}
+
+      {/* Skipped — show gentle prompt */}
+      {addressStep === "skipped" && (
+        <div className="bg-surface-low p-8 text-center space-y-4">
+          <svg
+            className="mx-auto text-on-surface-muted/40"
+            width="48"
+            height="48"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+            aria-hidden="true"
+          >
+            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
+          </svg>
+          <p className="text-sm text-on-surface-muted">
+            {t.noAddressYet}
+          </p>
+          {state.resources.pollingPlaceLookup && (
+            <a
+              href={state.resources.pollingPlaceLookup}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block text-primary font-bold text-sm hover:underline"
+            >
+              {t.countyFallbackLink}
+            </a>
+          )}
+        </div>
+      )}
+
+      {/* Waiting for input — show prompt */}
+      {addressStep === "input" && (
+        <div className="text-center py-8">
+          <p className="text-sm text-on-surface-muted">
+            {t.noAddressYet}
+          </p>
+        </div>
+      )}
+
+      {/* Footer Note */}
+      <footer className="mt-16 mb-8 text-center px-4">
+        <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-muted opacity-60">
+          {t.pollDataNote}
+        </p>
+      </footer>
     </div>
   );
 }
@@ -724,7 +1033,7 @@ export function ResearchLayout({
         {/* Other tabs (mounted on demand) */}
         {activeTab === "dates" && (
           <div className="flex-1 overflow-y-auto px-6 py-8 md:px-16">
-            <DatesView state={state} />
+            <DatesView state={state} onTabChange={setActiveTab} />
           </div>
         )}
 
