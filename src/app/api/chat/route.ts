@@ -190,16 +190,23 @@ function checkGates(request: NextRequest, body: ChatRequest): Response | null {
 }
 
 function handleAnthropicError(err: unknown): Response {
-  if (err instanceof Anthropic.APIError && err.status === 429) {
-    return Response.json(
-      {
-        error:
-          "Our free AI chat has reached its monthly limit. Copy the prompt below and paste it into any free AI chatbot.",
-        code: "BUDGET_EXHAUSTED",
-        budget: getBudgetStatus(),
-      },
-      { status: 503 },
+  if (err instanceof Anthropic.APIError) {
+    console.error(
+      `Anthropic API error: ${err.status} ${err.message}`,
     );
+    if (err.status === 429) {
+      return Response.json(
+        {
+          error:
+            "Our free AI chat has reached its monthly limit. Copy the prompt below and paste it into any free AI chatbot.",
+          code: "BUDGET_EXHAUSTED",
+          budget: getBudgetStatus(),
+        },
+        { status: 503 },
+      );
+    }
+  } else {
+    console.error("Chat error:", err);
   }
   return Response.json({ error: "Chat service error" }, { status: 500 });
 }
