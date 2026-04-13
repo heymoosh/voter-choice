@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { Card } from "./ui/Card";
 import { Button } from "./ui/Button";
 import { useLanguage } from "../lib/i18n";
 import { translations } from "../lib/translations";
@@ -25,15 +24,17 @@ function PasteSection() {
   const canGenerate = pasteText.trim().length > 0;
 
   return (
-    <div className="space-y-3">
-      <label className="block text-sm font-medium">{t.ballot.pasteLabel}</label>
+    <div className="space-y-4">
+      <label className="block text-xs font-black uppercase tracking-widest text-primary">
+        {t.ballot.pasteLabel}
+      </label>
       <textarea
         data-testid="ballot-paste-input"
         value={pasteText}
         onChange={(e) => setPasteText(e.target.value)}
         placeholder={t.ballot.pastePlaceholder}
-        rows={8}
-        className="w-full bg-surface-high border-b-2 border-outline-variant px-3 py-2.5 text-sm text-on-surface rounded-sm focus:outline-none focus:border-primary transition-colors placeholder:text-on-surface-muted resize-y"
+        rows={6}
+        className="w-full bg-surface-high px-4 py-3 text-sm text-on-surface border-b-2 border-outline-variant/30 focus:border-primary focus:outline-none transition-colors placeholder:text-on-surface-muted/50 resize-y font-mono"
       />
       <Button
         variant="cta"
@@ -80,10 +81,12 @@ function ManualEntrySection() {
   }
 
   return (
-    <div data-testid="ballot-manual-entry" className="space-y-4">
+    <div data-testid="ballot-manual-entry" className="space-y-5">
       <div>
-        <p className="text-sm font-medium mb-1">{t.ballot.manualEntry}</p>
-        <p className="text-xs text-on-surface-muted mb-3">
+        <h4 className="text-xs font-black uppercase tracking-widest text-primary mb-1">
+          {t.ballot.manualEntry}
+        </h4>
+        <p className="text-sm text-on-surface-muted">
           {t.ballot.manualEntryDesc}
         </p>
       </div>
@@ -91,61 +94,59 @@ function ManualEntrySection() {
       {/* Race entries */}
       <div className="space-y-2">
         {races.map((r, i) => (
-          <div key={i} className="flex gap-2">
+          <div key={i} className="grid grid-cols-2 gap-2">
             <input
               type="text"
               value={r.race}
               onChange={(e) => updateRace(i, "race", e.target.value)}
               placeholder={t.ballot.raceName}
-              className="flex-1 bg-surface-high border-b-2 border-outline-variant px-2 py-1.5 text-sm rounded-sm focus:outline-none focus:border-primary"
+              className="bg-surface-high px-3 py-2.5 text-sm border-b-2 border-outline-variant/30 focus:border-primary focus:outline-none transition-colors"
             />
             <input
               type="text"
               value={r.pick}
               onChange={(e) => updateRace(i, "pick", e.target.value)}
               placeholder={t.ballot.candidateName}
-              className="flex-1 bg-surface-high border-b-2 border-outline-variant px-2 py-1.5 text-sm rounded-sm focus:outline-none focus:border-primary"
+              className="bg-surface-high px-3 py-2.5 text-sm border-b-2 border-outline-variant/30 focus:border-primary focus:outline-none transition-colors"
             />
           </div>
         ))}
-        <Button
-          variant="ghost"
-          size="sm"
+        <button
           onClick={() => setRaces((prev) => [...prev, { race: "", pick: "" }])}
+          className="text-xs font-bold uppercase tracking-wider text-primary hover:underline"
         >
           + {t.ballot.addRace}
-        </Button>
+        </button>
       </div>
 
       {/* Proposition entries */}
       <div className="space-y-2">
         {propositions.map((p, i) => (
-          <div key={i} className="flex gap-2">
+          <div key={i} className="grid grid-cols-[6rem_1fr] gap-2">
             <input
               type="text"
               value={p.number}
               onChange={(e) => updateProp(i, "number", e.target.value)}
               placeholder={t.ballot.propNumber}
-              className="w-24 bg-surface-high border-b-2 border-outline-variant px-2 py-1.5 text-sm rounded-sm focus:outline-none focus:border-primary"
+              className="bg-surface-high px-3 py-2.5 text-sm border-b-2 border-outline-variant/30 focus:border-primary focus:outline-none transition-colors"
             />
             <input
               type="text"
               value={p.vote}
               onChange={(e) => updateProp(i, "vote", e.target.value)}
               placeholder={t.ballot.propVote}
-              className="flex-1 bg-surface-high border-b-2 border-outline-variant px-2 py-1.5 text-sm rounded-sm focus:outline-none focus:border-primary"
+              className="bg-surface-high px-3 py-2.5 text-sm border-b-2 border-outline-variant/30 focus:border-primary focus:outline-none transition-colors"
             />
           </div>
         ))}
-        <Button
-          variant="ghost"
-          size="sm"
+        <button
           onClick={() =>
             setPropositions((prev) => [...prev, { number: "", vote: "" }])
           }
+          className="text-xs font-bold uppercase tracking-wider text-primary hover:underline"
         >
           + {t.ballot.addProposition}
-        </Button>
+        </button>
       </div>
 
       <Button
@@ -165,15 +166,27 @@ export function BallotBuilder() {
   const t = translations[lang];
 
   return (
-    <Card>
-      <h3 className="font-semibold text-[1.375rem] mb-4">
-        {t.ballot.buildBallot}
-      </h3>
-      <div className="space-y-6">
+    <div className="bg-surface-lowest border-l-4 border-accent p-6 md:p-8">
+      <div className="flex items-center gap-3 mb-6">
+        <svg
+          className="text-accent shrink-0"
+          width="22"
+          height="22"
+          viewBox="0 0 24 24"
+          fill="currentColor"
+          aria-hidden="true"
+        >
+          <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm-1 7V3.5L18.5 9H13zM8 17h8v-2H8v2zm0-4h8v-2H8v2z" />
+        </svg>
+        <h3 className="font-black text-xl tracking-tight text-on-surface uppercase">
+          {t.ballot.buildBallot}
+        </h3>
+      </div>
+      <div className="space-y-8">
         <PasteSection />
-        <div className="h-px bg-surface-high" />
+        <div className="h-px bg-outline-variant/20" />
         <ManualEntrySection />
       </div>
-    </Card>
+    </div>
   );
 }

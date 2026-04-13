@@ -11,7 +11,6 @@ import {
   PollingLocationCard,
   PollingLocationFallback,
 } from "./PollingLocationCard";
-import { Notice } from "./ui/Notice";
 import type { StateElectionData } from "../types/election";
 import type { Language } from "../lib/translations";
 import type { PollingLocation } from "./PollingLocationCard";
@@ -926,14 +925,28 @@ function ResearchView({
             )}
           </section>
 
-          {/* Budget warning */}
+          {/* Budget warning — warm editorial treatment */}
           {copyPasteIsPrimary && (
-            <Notice variant="warning">
-              <p className="font-semibold mb-1">{t.budget.softClose}</p>
-              <p className="text-xs text-on-surface-muted">
-                {t.budget.resetNote}
-              </p>
-            </Notice>
+            <div className="bg-accent/10 border-t-4 border-accent p-6">
+              <div className="flex items-start gap-4">
+                <svg
+                  className="w-5 h-5 mt-0.5 shrink-0 text-accent"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
+                </svg>
+                <div>
+                  <h4 className="font-black text-lg text-on-surface mb-1 uppercase tracking-tight">
+                    {t.budget.softClose}
+                  </h4>
+                  <p className="text-sm text-on-surface/80 leading-relaxed">
+                    {t.budget.resetNote}
+                  </p>
+                </div>
+              </div>
+            </div>
           )}
 
           {/* Chat or copy/paste fallback */}
@@ -947,28 +960,30 @@ function ResearchView({
             />
           )}
 
-          {/* Copy/paste prompt */}
-          {copyPasteIsPrimary ? (
-            <div className="space-y-3">
-              <h3 className="font-semibold text-base">
-                {lang === "es"
-                  ? "Copia este mensaje para investigar tu boleta"
-                  : "Copy this prompt to research your ballot"}
-              </h3>
-              <PromptOutput promptText={promptText} />
-            </div>
-          ) : (
-            <details className="group">
-              <summary className="cursor-pointer text-sm text-primary font-medium hover:underline">
-                {lang === "es"
-                  ? "\u00bfPrefieres usar tu propio chatbot? Copia este mensaje"
-                  : "Prefer to use your own AI chatbot? Copy this prompt"}
-              </summary>
-              <div className="mt-3">
-                <PromptOutput promptText={promptText} />
+          {/* Copy/paste prompt — first-class editorial section */}
+          <section className={copyPasteIsPrimary ? "" : "mt-4"}>
+            <div className="flex items-center gap-3 mb-4">
+              <svg
+                className="text-primary shrink-0"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+                aria-hidden="true"
+              >
+                <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z" />
+              </svg>
+              <div>
+                <h3 className="font-black text-lg tracking-tight text-on-surface">
+                  {t.promptOutput.ownAiHeading}
+                </h3>
+                <p className="text-sm text-on-surface-muted">
+                  {t.promptOutput.ownAiBody}
+                </p>
               </div>
-            </details>
-          )}
+            </div>
+            <PromptOutput promptText={promptText} />
+          </section>
 
           {/* Ballot Builder */}
           <BallotBuilder />

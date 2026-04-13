@@ -45,6 +45,8 @@ export interface Translations {
     instructions: string;
     copyButton: string;
     copiedButton: string;
+    ownAiHeading: string;
+    ownAiBody: string;
   };
   tips: {
     title: string;
@@ -113,6 +115,16 @@ export interface Translations {
     continueOn: string;
     clientFallbackHeader: string;
     clientFallbackBody: string;
+    usageAlert: string;
+    budgetReached: string;
+    budgetExplanation: string;
+    resetIn: (days: number) => string;
+    continueSession: string;
+    continueBody: string;
+    sessionData: string;
+    copyHandoff: string;
+    partialBallot: string;
+    continueAnalysisOn: string;
   };
   ballot: {
     downloadBallot: string;
@@ -369,6 +381,9 @@ const en: Translations = {
       "Copy this prompt and paste it into any free AI chatbot to start your ballot research.",
     copyButton: "Copy to Clipboard",
     copiedButton: "Copied!",
+    ownAiHeading: "Prefer to Use Your Own AI?",
+    ownAiBody:
+      "Copy this research prompt and paste it into any free AI chatbot to continue your ballot research.",
   },
   tips: {
     title: "Tips for using the prompt",
@@ -449,6 +464,18 @@ const en: Translations = {
     clientFallbackHeader: "Your session so far",
     clientFallbackBody:
       "We\u2019ve packaged your conversation so you can continue in any AI chatbot.",
+    usageAlert: "Usage Alert",
+    budgetReached: "Monthly Chat Budget Reached",
+    budgetExplanation:
+      "Your local compute allocation has been exhausted for this period. Research continues via our external protocols.",
+    resetIn: (days: number) => `Reset in ${days} days`,
+    continueSession: "Continue Your Session",
+    continueBody:
+      "We\u2019ve reached our community budget for today, but your progress is saved. Use these tools to finish your research in any other AI.",
+    sessionData: "Session Handoff Data",
+    copyHandoff: "Copy Handoff to Clipboard",
+    partialBallot: "Partial Ballot",
+    continueAnalysisOn: "Continue Analysis On",
   },
   ballot: {
     downloadBallot: "Download My Ballot",
@@ -743,6 +770,9 @@ const es: Translations = {
       "Copia este mensaje y p\u00e9galo en cualquier chatbot de IA gratuito para comenzar tu investigaci\u00f3n electoral.",
     copyButton: "Copiar al portapapeles",
     copiedButton: "\u00a1Copiado!",
+    ownAiHeading: "\u00bfPrefieres usar tu propia IA?",
+    ownAiBody:
+      "Copia este mensaje de investigaci\u00f3n y p\u00e9galo en cualquier chatbot de IA gratuito para continuar tu investigaci\u00f3n electoral.",
   },
   tips: {
     title: "Consejos para usar el mensaje",
@@ -823,6 +853,18 @@ const es: Translations = {
     clientFallbackHeader: "Tu sesi\u00f3n hasta ahora",
     clientFallbackBody:
       "Hemos empaquetado tu conversaci\u00f3n para que puedas continuar en cualquier chatbot de IA.",
+    usageAlert: "Alerta de Uso",
+    budgetReached: "Presupuesto Mensual de Chat Alcanzado",
+    budgetExplanation:
+      "Tu asignaci\u00f3n de c\u00f3mputo local se ha agotado para este per\u00edodo. La investigaci\u00f3n contin\u00faa a trav\u00e9s de nuestros protocolos externos.",
+    resetIn: (days: number) => `Se reinicia en ${days} d\u00edas`,
+    continueSession: "Contin\u00faa Tu Sesi\u00f3n",
+    continueBody:
+      "Hemos alcanzado nuestro presupuesto comunitario por hoy, pero tu progreso est\u00e1 guardado. Usa estas herramientas para terminar tu investigaci\u00f3n en cualquier otra IA.",
+    sessionData: "Datos de Traspaso de Sesi\u00f3n",
+    copyHandoff: "Copiar Traspaso al Portapapeles",
+    partialBallot: "Boleta Parcial",
+    continueAnalysisOn: "Continuar An\u00e1lisis En",
   },
   ballot: {
     downloadBallot: "Descargar mi boleta",

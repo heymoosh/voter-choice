@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Notice } from "./ui/Notice";
 import {
   HandoffPackage,
   parseHandoffMarkers,
@@ -556,12 +555,14 @@ function ChatMessageList({
 
       {clientFallback && (
         <div>
-          <Notice variant="warning" className="mb-3">
-            <p className="font-semibold mb-1">
+          <div className="bg-surface-low border-l-4 border-primary p-4 mb-3">
+            <p className="font-bold text-sm text-on-surface mb-1">
               {t.handoff.clientFallbackHeader}
             </p>
-            <p>{t.handoff.clientFallbackBody}</p>
-          </Notice>
+            <p className="text-sm text-on-surface-muted">
+              {t.handoff.clientFallbackBody}
+            </p>
+          </div>
           <HandoffPackage
             parsed={clientFallback}
             continuationPrompt={clientContinuationPrompt}
@@ -594,24 +595,43 @@ function ChatStatusBar({
     <>
       {budgetTier === "notice" && !chatDisabled && (
         <div data-testid="chat-budget-notice" className="mb-3">
-          <Notice variant="info">
-            <p className="text-xs">{t.budget.notice}</p>
-          </Notice>
+          <div className="bg-primary/5 border-l-4 border-primary p-4">
+            <p className="text-xs text-on-surface font-medium">
+              {t.budget.notice}
+            </p>
+          </div>
         </div>
       )}
 
       {chatDisabled && (
         <div data-testid="chat-disabled-message" className="mb-3">
-          <Notice variant="warning">
-            <p>{getDisabledMessage(disabledReason, t)}</p>
-          </Notice>
+          <div className="bg-accent/10 border-t-4 border-accent p-6">
+            <div className="flex items-start gap-3">
+              <svg
+                className="w-5 h-5 mt-0.5 shrink-0 text-accent"
+                fill="currentColor"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
+              </svg>
+              <div>
+                <h4 className="font-black text-base text-on-surface mb-1">
+                  {getDisabledMessage(disabledReason, t)}
+                </h4>
+                <p className="text-xs text-on-surface/70">
+                  {t.budget.resetNote}
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
       {error && !chatDisabled && (
-        <Notice variant="warning" className="mb-3">
+        <div className="mb-3 bg-surface-low border-l-4 border-accent p-4 text-sm text-on-surface">
           {error}
-        </Notice>
+        </div>
       )}
     </>
   );
