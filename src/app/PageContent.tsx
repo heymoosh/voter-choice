@@ -391,13 +391,25 @@ export function PageContent({ children }: PageContentProps) {
                       {t.landing.step1Desc}
                     </p>
                   </div>
-                  {/* Visual: mini zip input mockup */}
-                  <div className="bg-surface-lowest p-6 shadow-sm border border-outline-variant/20 max-w-sm">
+                  {/* Visual: mini address input mockup */}
+                  <div className="bg-surface-lowest p-6 shadow-sm border border-outline-variant/20 max-w-md">
                     <div className="flex gap-2">
-                      <div className="w-full bg-surface-low border-0 border-b-2 border-primary p-3 font-bold text-xl text-on-surface-variant">
-                        77001
+                      <div className="flex items-center gap-2 w-full bg-surface-low border-0 border-b-2 border-primary px-3 py-2 min-w-0">
+                        <svg
+                          viewBox="0 0 24 24"
+                          fill="currentColor"
+                          width="16"
+                          height="16"
+                          className="text-on-surface-variant shrink-0"
+                          aria-hidden="true"
+                        >
+                          <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" />
+                        </svg>
+                        <span className="font-medium text-base text-on-surface-variant truncate">
+                          1234 Main St, Houston, TX
+                        </span>
                       </div>
-                      <div className="bg-primary text-on-primary px-5 py-2 font-bold flex items-center justify-center rounded-sm">
+                      <div className="bg-primary text-on-primary px-4 py-2 font-bold flex items-center justify-center rounded-sm shrink-0">
                         <svg
                           viewBox="0 0 24 24"
                           fill="currentColor"
@@ -418,7 +430,7 @@ export function PageContent({ children }: PageContentProps) {
                         className="text-primary"
                         aria-hidden="true"
                       >
-                        <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" />
+                        <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
                       </svg>
                       <span className="text-xs font-bold text-primary uppercase tracking-wider">
                         Harris County &middot; Houston, TX

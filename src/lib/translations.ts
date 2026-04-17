@@ -567,7 +567,7 @@ const en: Translations = {
       "Empowering your vote through neutral, data-driven insights. Our platform transforms complex legislative data into clear, non-partisan research.",
     step1Title: "Locate Your District",
     step1Desc:
-      "Instantly map your residential zip code to your specific electoral district and candidates.",
+      "Enter your home address to instantly find your electoral district and the candidates on your ballot.",
     step2Title: "Engage the Archivist",
     step2Desc:
       "Ask anything about candidate voting records, donor history, or legislative impacts.",
@@ -973,7 +973,7 @@ const es: Translations = {
       "Empoderando tu voto con informaci\u00f3n neutral y basada en datos. Nuestra plataforma transforma datos legislativos complejos en investigaci\u00f3n clara y no partidista.",
     step1Title: "Localiza tu Distrito",
     step1Desc:
-      "Mapea instant\u00e1neamente tu c\u00f3digo postal a tu distrito electoral espec\u00edfico y candidatos.",
+      "Ingresa tu dirección para encontrar instantáneamente tu distrito electoral y los candidatos en tu boleta.",
     step2Title: "Consulta al Archivista",
     step2Desc:
       "Pregunta lo que quieras sobre registros de votaci\u00f3n de candidatos, historial de donantes o impactos legislativos.",
