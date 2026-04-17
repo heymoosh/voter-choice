@@ -11,6 +11,7 @@ export interface Translations {
     label: string;
     placeholder: string;
     submit: string;
+    privacy: string;
   };
   loading: string;
   errors: {
@@ -349,14 +350,17 @@ const en: Translations = {
     worksWith: "Works with:",
   },
   zipForm: {
-    label: "Enter your zip code",
-    placeholder: "e.g. 73301",
+    label: "Enter your address",
+    placeholder: "e.g. 123 Main St, Houston, TX 77057",
     submit: "Find My Ballot Info",
+    privacy:
+      "Your address is only used to look up your ballot and polling places. We never store it.",
   },
   loading: "Loading...",
   errors: {
-    empty: "Please enter a zip code",
-    invalid: "Please enter a valid 5-digit zip code",
+    empty: "Please enter your address",
+    invalid:
+      "Please include your 5-digit zip code (e.g. 123 Main St, Houston, TX 77057)",
     notFound:
       "We don\u2019t have data for this zip code yet. We\u2019re working on adding all U.S. zip codes.",
     noElection: (stateName: string) =>
@@ -747,15 +751,17 @@ const es: Translations = {
     worksWith: "Funciona con:",
   },
   zipForm: {
-    label: "Ingresa tu c\u00f3digo postal",
-    placeholder: "ej. 73301",
+    label: "Ingresa tu direcci\u00f3n",
+    placeholder: "ej. 123 Main St, Houston, TX 77057",
     submit: "Buscar mi informaci\u00f3n electoral",
+    privacy:
+      "Tu direcci\u00f3n solo se usa para buscar tu boleta y casillas electorales. Nunca la almacenamos.",
   },
   loading: "Cargando...",
   errors: {
-    empty: "Por favor ingresa un c\u00f3digo postal",
+    empty: "Por favor ingresa tu direcci\u00f3n",
     invalid:
-      "Por favor ingresa un c\u00f3digo postal v\u00e1lido de 5 d\u00edgitos",
+      "Por favor incluye tu c\u00f3digo postal de 5 d\u00edgitos (ej. 123 Main St, Houston, TX 77057)",
     notFound:
       "A\u00fan no tenemos datos para este c\u00f3digo postal. Estamos trabajando para agregar todos los c\u00f3digos postales de EE. UU.",
     noElection: (stateName: string) =>

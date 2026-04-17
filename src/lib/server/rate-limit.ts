@@ -1,5 +1,5 @@
 const CONCURRENT_LIMIT = 3;
-const DAILY_SESSION_LIMIT = 5;
+const DAILY_SESSION_LIMIT = process.env.NODE_ENV === "production" ? 5 : 20;
 const SESSION_MESSAGE_LIMIT = 60;
 
 interface SessionEntry {

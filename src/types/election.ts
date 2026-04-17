@@ -45,11 +45,32 @@ export interface VotingRules {
   additionalRules: string[];
 }
 
+export interface VoteByMail {
+  universal: boolean;
+  eligibility: string[];
+  applicationDeadline: string;
+  returnDeadline: string;
+  returnDeadlinePlain: string;
+  applicationUrl: string;
+  officialRulesUrl: string;
+}
+
 export interface Resources {
   stateElectionWebsite: string;
   countyElectionLookup: string;
   sampleBallotLookup: string;
   pollingPlaceLookup: string;
+  importantDates?: string;
+  voterIdInfo?: string;
+  earlyVotingInfo?: string;
+}
+
+export interface CountyResource {
+  name: string;
+  ballotLookup: string;
+  pollingPlaces: string;
+  earlyVotingLocations: string;
+  electionsWebsite: string;
 }
 
 export interface StateElectionData {
@@ -60,7 +81,9 @@ export interface StateElectionData {
   registration: Registration;
   earlyVoting: EarlyVoting;
   votingRules: VotingRules;
+  voteByMail?: VoteByMail;
   resources: Resources;
+  countyResources?: Record<string, CountyResource>;
 }
 
 export type StatusColor = "green" | "yellow" | "red" | "passed";

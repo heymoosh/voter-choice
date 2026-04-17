@@ -1,6 +1,12 @@
 // Anthropic pricing for Claude Sonnet (per 1M tokens)
 const INPUT_COST_PER_MILLION = 3.0;
 const OUTPUT_COST_PER_MILLION = 15.0;
+// Cached input tokens are billed at 10% of normal input rate.
+const CACHED_INPUT_COST_PER_MILLION = 0.3;
+// Cache-creation tokens are billed at 1.25x normal input rate.
+const CACHE_WRITE_COST_PER_MILLION = 3.75;
+// Anthropic's web_search server tool is billed per 1000 searches.
+const SEARCH_COST_PER_THOUSAND = 10.0;
 
 const MONTHLY_BUDGET_USD = 20.0;
 
@@ -14,6 +20,9 @@ export type BudgetTier =
 interface BudgetState {
   totalInputTokens: number;
   totalOutputTokens: number;
+  totalCachedInputTokens: number;
+  totalCacheWriteTokens: number;
+  totalSearchCount: number;
   estimatedSpendUSD: number;
   resetAt: number; // timestamp for monthly reset
 }
@@ -29,6 +38,9 @@ function createFreshState(): BudgetState {
   return {
     totalInputTokens: 0,
     totalOutputTokens: 0,
+    totalCachedInputTokens: 0,
+    totalCacheWriteTokens: 0,
+    totalSearchCount: 0,
     estimatedSpendUSD: 0,
     resetAt: resetDate.getTime(),
   };
@@ -40,13 +52,37 @@ function ensureFreshMonth(): void {
   }
 }
 
-export function recordUsage(inputTokens: number, outputTokens: number): void {
+export interface UsageRecord {
+  inputTokens: number;
+  outputTokens: number;
+  cachedInputTokens?: number;
+  cacheWriteTokens?: number;
+  searchCount?: number;
+}
+
+export function recordUsage(
+  inputOrRecord: number | UsageRecord,
+  outputTokens?: number,
+): void {
   ensureFreshMonth();
-  state.totalInputTokens += inputTokens;
-  state.totalOutputTokens += outputTokens;
+
+  const record: UsageRecord =
+    typeof inputOrRecord === "number"
+      ? { inputTokens: inputOrRecord, outputTokens: outputTokens ?? 0 }
+      : inputOrRecord;
+
+  state.totalInputTokens += record.inputTokens;
+  state.totalOutputTokens += record.outputTokens;
+  state.totalCachedInputTokens += record.cachedInputTokens ?? 0;
+  state.totalCacheWriteTokens += record.cacheWriteTokens ?? 0;
+  state.totalSearchCount += record.searchCount ?? 0;
+
   state.estimatedSpendUSD =
     (state.totalInputTokens / 1_000_000) * INPUT_COST_PER_MILLION +
-    (state.totalOutputTokens / 1_000_000) * OUTPUT_COST_PER_MILLION;
+    (state.totalOutputTokens / 1_000_000) * OUTPUT_COST_PER_MILLION +
+    (state.totalCachedInputTokens / 1_000_000) * CACHED_INPUT_COST_PER_MILLION +
+    (state.totalCacheWriteTokens / 1_000_000) * CACHE_WRITE_COST_PER_MILLION +
+    (state.totalSearchCount / 1000) * SEARCH_COST_PER_THOUSAND;
 }
 
 export function getBudgetPercent(): number {

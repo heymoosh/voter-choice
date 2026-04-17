@@ -21,6 +21,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "0.39.0",
+    "@googlemaps/js-api-loader": "2.0.2",
     "next": "15.5.12",
     "react": "19.1.0",
     "react-dom": "19.1.0"

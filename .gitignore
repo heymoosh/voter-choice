@@ -51,3 +51,4 @@ next-env.d.ts
 .lighthouseci/
 playwright-report.json
 test-results/
+.playwright-browsers/

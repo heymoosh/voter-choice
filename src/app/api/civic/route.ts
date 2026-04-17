@@ -9,9 +9,24 @@ interface PollingLocation {
   notes: string;
 }
 
+interface CivicCandidate {
+  name: string;
+  party: string;
+}
+
+interface CivicContest {
+  office: string;
+  district: string;
+  type: string;
+  candidates: CivicCandidate[];
+}
+
 interface CivicApiResponse {
   pollingLocations?: PollingLocation[];
   earlyVoteSites?: PollingLocation[];
+  contests?: CivicContest[];
+  electionName?: string;
+  county?: string;
   error?: string;
 }
 
@@ -62,6 +77,31 @@ function extractLocation(loc: {
   };
 }
 
+function extractContest(contest: {
+  type?: string;
+  office?: string;
+  district?: { name?: string; scope?: string };
+  candidates?: { name?: string; party?: string }[];
+}): CivicContest | null {
+  if (!contest.office) return null;
+  return {
+    office: contest.office,
+    district: contest.district?.name ?? "",
+    type: contest.type ?? "General",
+    candidates: (contest.candidates ?? []).map((c) => ({
+      name: c.name ?? "Unknown",
+      party: c.party ?? "",
+    })),
+  };
+}
+
+function extractCounty(data: {
+  state?: { local_jurisdiction?: { name?: string } }[];
+}): string {
+  const localJurisdiction = data.state?.[0]?.local_jurisdiction;
+  return localJurisdiction?.name ?? "";
+}
+
 function errorResponse(message: string, status: number) {
   return NextResponse.json({ error: message }, { status });
 }
@@ -92,9 +132,16 @@ async function fetchCivicData(
 
   const data = await response.json();
 
+  const contests = (data.contests ?? [])
+    .map(extractContest)
+    .filter((c: CivicContest | null): c is CivicContest => c !== null);
+
   const result: CivicApiResponse = {
     pollingLocations: (data.pollingLocations ?? []).map(extractLocation),
     earlyVoteSites: (data.earlyVoteSites ?? []).map(extractLocation),
+    contests: contests.length > 0 ? contests : undefined,
+    electionName: data.election?.name ?? undefined,
+    county: extractCounty(data) || undefined,
   };
 
   return NextResponse.json(result);

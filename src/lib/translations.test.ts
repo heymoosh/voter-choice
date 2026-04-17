@@ -110,15 +110,15 @@ describe("translations", () => {
   });
 
   describe("Spanish error messages", () => {
-    it("matches spec reference: empty zip", () => {
+    it("matches spec reference: empty address", () => {
       expect(translations.es.errors.empty).toBe(
-        "Por favor ingresa un código postal",
+        "Por favor ingresa tu direcci\u00f3n",
       );
     });
 
-    it("matches spec reference: invalid zip", () => {
-      expect(translations.es.errors.invalid).toBe(
-        "Por favor ingresa un código postal válido de 5 dígitos",
+    it("matches spec reference: invalid address (no zip)", () => {
+      expect(translations.es.errors.invalid).toContain(
+        "código postal de 5 dígitos",
       );
     });
 

@@ -8,6 +8,21 @@ import {
   type BudgetTier,
 } from "../../../lib/server/budget";
 
+// Server-side tools: Anthropic's hosted web_search runs on their infra; we
+// just declare the tool and Claude orchestrates the calls server-side. Billed
+// per search (see budget.ts).
+const WEB_SEARCH_TOOL = {
+  type: "web_search_20250305" as const,
+  name: "web_search",
+  // Keep per-turn usage bounded so a runaway agent can't drain the budget.
+  max_uses: 5,
+};
+
+// Cap a user message at ~8k characters (~2k tokens) before calling the API.
+// Beyond that, the message is almost certainly a paste attack, an uploaded
+// ballot dump, or noise — none of which we want to bill the budget for.
+const MAX_USER_MESSAGE_CHARS = 8000;
+
 const HANDOFF_INSTRUCTION = `IMPORTANT: This is your final response in this session. Generate a complete session package: (1) a partial ballot summary listing races covered so far with the user's picks AND races remaining, (2) a voter profile capturing everything learned about this user, and (3) a session handoff block (use the SESSION HANDOFF format from your prompt). Present this warmly — not as an error, but as "Let me make sure you have everything we've worked on so far." The user should feel taken care of, not cut off.`;
 
 interface ChatMessage {
@@ -58,8 +73,16 @@ function buildSystemPrompt(base: string, voterProfile?: string): string {
   );
 }
 
+function truncateUserMessages(messages: ChatMessage[]): ChatMessage[] {
+  return messages.map((m) =>
+    m.role === "user" && m.content.length > MAX_USER_MESSAGE_CHARS
+      ? { ...m, content: m.content.slice(0, MAX_USER_MESSAGE_CHARS) }
+      : m,
+  );
+}
+
 function prepareMessages(messages: ChatMessage[]): ChatMessage[] {
-  const prepared = [...messages];
+  const prepared = truncateUserMessages(messages);
   if (!shouldTriggerHandoff() || prepared.length === 0) return prepared;
   const last = prepared[prepared.length - 1];
   if (last.role === "user") {
@@ -104,20 +127,141 @@ function ssePayload(data: Record<string, unknown>): string {
   return `data: ${JSON.stringify(data)}\n\n`;
 }
 
+interface StreamUsage {
+  input: number;
+  output: number;
+  cachedInput: number;
+  cacheWrite: number;
+  searchCount: number;
+}
+
+// Track which content blocks are web_search tool invocations so we can stream
+// a "searching" indicator to the UI while results are being fetched.
+interface SearchBlockState {
+  active: boolean;
+  queryFragments: string[];
+}
+
+// The SDK's usage type (0.39.0) doesn't know about server tool counts yet.
+type UsageWithServerTools =
+  | { server_tool_use?: { web_search_requests?: number } }
+  | null
+  | undefined;
+
+function extractSearchCount(usage: UsageWithServerTools): number | undefined {
+  return (usage as { server_tool_use?: { web_search_requests?: number } })
+    ?.server_tool_use?.web_search_requests;
+}
+
+function handleContentBlockDelta(
+  event: Extract<Anthropic.MessageStreamEvent, { type: "content_block_delta" }>,
+  controller: ReadableStreamDefaultController<Uint8Array>,
+  encoder: TextEncoder,
+  searchBlocks: Map<number, SearchBlockState>,
+): void {
+  if (event.delta.type === "text_delta") {
+    controller.enqueue(
+      encoder.encode(ssePayload({ type: "text", text: event.delta.text })),
+    );
+    return;
+  }
+  // Accumulate the search query JSON as it streams so we can surface it.
+  if (event.delta.type === "input_json_delta") {
+    const block = searchBlocks.get(event.index);
+    if (block?.active) {
+      block.queryFragments.push(event.delta.partial_json ?? "");
+    }
+  }
+}
+
+function handleContentBlockStart(
+  event: Extract<Anthropic.MessageStreamEvent, { type: "content_block_start" }>,
+  controller: ReadableStreamDefaultController<Uint8Array>,
+  encoder: TextEncoder,
+  searchBlocks: Map<number, SearchBlockState>,
+): void {
+  // SDK 0.39.0 doesn't yet type the server_tool_use block — cast through
+  // unknown so we can inspect the shape we know the API emits.
+  const block = event.content_block as unknown as {
+    type: string;
+    name?: string;
+  };
+  if (block.type === "server_tool_use" && block.name === "web_search") {
+    searchBlocks.set(event.index, { active: true, queryFragments: [] });
+    controller.enqueue(encoder.encode(ssePayload({ type: "searching" })));
+  }
+}
+
+function handleContentBlockStop(
+  event: Extract<Anthropic.MessageStreamEvent, { type: "content_block_stop" }>,
+  controller: ReadableStreamDefaultController<Uint8Array>,
+  encoder: TextEncoder,
+  searchBlocks: Map<number, SearchBlockState>,
+): void {
+  const block = searchBlocks.get(event.index);
+  if (!block?.active) return;
+  const joined = block.queryFragments.join("");
+  let query: string | undefined;
+  try {
+    const parsed = JSON.parse(joined) as { query?: unknown };
+    if (typeof parsed.query === "string") query = parsed.query;
+  } catch {
+    // Ignore parse failures — we just won't show the query text.
+  }
+  controller.enqueue(
+    encoder.encode(ssePayload({ type: "searching_done", query })),
+  );
+  searchBlocks.delete(event.index);
+}
+
+function handleMessageStart(
+  event: Extract<Anthropic.MessageStreamEvent, { type: "message_start" }>,
+  usage: StreamUsage,
+): void {
+  const u = event.message.usage;
+  usage.input = u?.input_tokens ?? 0;
+  usage.cachedInput = u?.cache_read_input_tokens ?? 0;
+  usage.cacheWrite = u?.cache_creation_input_tokens ?? 0;
+  const searchRequests = extractSearchCount(u as UsageWithServerTools);
+  if (typeof searchRequests === "number") usage.searchCount = searchRequests;
+}
+
+function handleMessageDelta(
+  event: Extract<Anthropic.MessageStreamEvent, { type: "message_delta" }>,
+  usage: StreamUsage,
+): void {
+  usage.output = event.usage?.output_tokens ?? 0;
+  // The final server_tool_use count shows up on message_delta as the message
+  // completes — overwrite with the final value if present.
+  const searchRequests = extractSearchCount(
+    event.usage as UsageWithServerTools,
+  );
+  if (typeof searchRequests === "number") usage.searchCount = searchRequests;
+}
+
 function handleStreamEvent(
   event: Anthropic.MessageStreamEvent,
   controller: ReadableStreamDefaultController<Uint8Array>,
   encoder: TextEncoder,
-  tokens: { input: number; output: number },
+  usage: StreamUsage,
+  searchBlocks: Map<number, SearchBlockState>,
 ): void {
-  if (event.type === "content_block_delta" && "text" in event.delta) {
-    controller.enqueue(
-      encoder.encode(ssePayload({ type: "text", text: event.delta.text })),
-    );
-  } else if (event.type === "message_start") {
-    tokens.input = event.message.usage?.input_tokens ?? 0;
-  } else if (event.type === "message_delta") {
-    tokens.output = event.usage?.output_tokens ?? 0;
+  switch (event.type) {
+    case "content_block_delta":
+      handleContentBlockDelta(event, controller, encoder, searchBlocks);
+      return;
+    case "content_block_start":
+      handleContentBlockStart(event, controller, encoder, searchBlocks);
+      return;
+    case "content_block_stop":
+      handleContentBlockStop(event, controller, encoder, searchBlocks);
+      return;
+    case "message_start":
+      handleMessageStart(event, usage);
+      return;
+    case "message_delta":
+      handleMessageDelta(event, usage);
+      return;
   }
 }
 
@@ -125,16 +269,35 @@ function createSSEStream(
   stream: AsyncIterable<Anthropic.MessageStreamEvent>,
 ): ReadableStream<Uint8Array> {
   const encoder = new TextEncoder();
-  const tokens = { input: 0, output: 0 };
+  const usage: StreamUsage = {
+    input: 0,
+    output: 0,
+    cachedInput: 0,
+    cacheWrite: 0,
+    searchCount: 0,
+  };
+  const searchBlocks = new Map<number, SearchBlockState>();
 
   return new ReadableStream({
     async start(controller) {
       try {
         for await (const event of stream) {
-          handleStreamEvent(event, controller, encoder, tokens);
+          handleStreamEvent(event, controller, encoder, usage, searchBlocks);
         }
-        if (tokens.input > 0 || tokens.output > 0) {
-          recordUsage(tokens.input, tokens.output);
+        if (
+          usage.input > 0 ||
+          usage.output > 0 ||
+          usage.cachedInput > 0 ||
+          usage.cacheWrite > 0 ||
+          usage.searchCount > 0
+        ) {
+          recordUsage({
+            inputTokens: usage.input,
+            outputTokens: usage.output,
+            cachedInputTokens: usage.cachedInput,
+            cacheWriteTokens: usage.cacheWrite,
+            searchCount: usage.searchCount,
+          });
         }
         controller.enqueue(
           encoder.encode(
@@ -193,12 +356,35 @@ function handleAnthropicError(err: unknown): Response {
   if (err instanceof Anthropic.APIError) {
     console.error(`Anthropic API error: ${err.status} ${err.message}`);
     if (err.status === 429) {
+      // Anthropic per-minute rate limit — this is temporary, NOT a budget issue.
+      // Check if the actual budget is exhausted before claiming so.
+      const budget = getBudgetStatus();
+      if (budget.tier === "exhausted") {
+        return Response.json(
+          {
+            error:
+              "Our free AI chat has reached its monthly limit. Copy the prompt below and paste it into any free AI chatbot.",
+            code: "BUDGET_EXHAUSTED",
+            budget,
+          },
+          { status: 503 },
+        );
+      }
       return Response.json(
         {
           error:
-            "Our free AI chat has reached its monthly limit. Copy the prompt below and paste it into any free AI chatbot.",
-          code: "BUDGET_EXHAUSTED",
-          budget: getBudgetStatus(),
+            "The AI service is temporarily busy. Please wait a moment and try again.",
+          code: "API_RATE_LIMIT",
+        },
+        { status: 429 },
+      );
+    }
+    if (err.status === 529) {
+      return Response.json(
+        {
+          error:
+            "The AI service is temporarily overloaded. Please wait a moment and try again.",
+          code: "API_OVERLOADED",
         },
         { status: 503 },
       );
@@ -241,11 +427,24 @@ export async function POST(request: NextRequest) {
 
   const budget = getBudgetStatus();
   try {
+    const systemText = buildSystemPrompt(body.systemPrompt, body.voterProfile);
     const stream = await new Anthropic({ apiKey }).messages.create({
       model: "claude-sonnet-4-6",
       max_tokens: 4096,
       temperature: 0.7,
-      system: buildSystemPrompt(body.systemPrompt, body.voterProfile),
+      // Array form so we can attach cache_control. The system prompt is long
+      // and identical across turns in a session, so caching it pays off after
+      // the first request (cached reads billed at 10% of input rate).
+      system: [
+        {
+          type: "text",
+          text: systemText,
+          cache_control: { type: "ephemeral" },
+        },
+      ],
+      // SDK 0.39.0 hasn't yet typed server tools (web_search); the API
+      // accepts this shape — cast through unknown.
+      tools: [WEB_SEARCH_TOOL] as unknown as Anthropic.Tool[],
       messages: prepareMessages(body.messages),
       stream: true,
     });

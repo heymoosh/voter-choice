@@ -60,19 +60,27 @@ describe("rate-limit", () => {
   });
 
   describe("daily session limit", () => {
-    it("allows up to 5 new sessions per day", () => {
-      for (let i = 1; i <= 5; i++) {
+    // Non-production uses a relaxed limit (20) so local dev isn't hostile.
+    // Production tightens it to 5.
+    const DAILY_LIMIT_TEST = process.env.NODE_ENV === "production" ? 5 : 20;
+
+    it(`allows up to ${DAILY_LIMIT_TEST} new sessions per day`, () => {
+      for (let i = 1; i <= DAILY_LIMIT_TEST; i++) {
         expect(checkRateLimit("1.2.3.4", `sess-${i}`, 1).allowed).toBe(true);
         releaseSession("1.2.3.4", `sess-${i}`);
       }
     });
 
-    it("rejects 6th new session", () => {
-      for (let i = 1; i <= 5; i++) {
+    it(`rejects the ${DAILY_LIMIT_TEST + 1}th new session`, () => {
+      for (let i = 1; i <= DAILY_LIMIT_TEST; i++) {
         checkRateLimit("1.2.3.4", `sess-${i}`, 1);
         releaseSession("1.2.3.4", `sess-${i}`);
       }
-      const result = checkRateLimit("1.2.3.4", "sess-6", 1);
+      const result = checkRateLimit(
+        "1.2.3.4",
+        `sess-${DAILY_LIMIT_TEST + 1}`,
+        1,
+      );
       expect(result.allowed).toBe(false);
       expect(result.code).toBe("DAILY_LIMIT");
     });

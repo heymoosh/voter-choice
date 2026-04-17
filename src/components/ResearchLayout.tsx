@@ -20,6 +20,13 @@ type ResearchTab = "research" | "dates" | "id" | "polling";
 interface PollingData {
   pollingLocations: PollingLocation[];
   earlyVoteSites: PollingLocation[];
+  contests?: {
+    office: string;
+    district: string;
+    type: string;
+    candidates: { name: string; party: string }[];
+  }[];
+  county?: string;
 }
 
 type AddressStep = "input" | "loading" | "done" | "skipped" | "error";
@@ -33,6 +40,7 @@ interface BudgetStatus {
 interface ResearchLayoutProps {
   state: StateElectionData;
   zipCode: string;
+  address?: string;
   addressStep: AddressStep;
   pollingData: PollingData | null;
   onAddressSubmit: (address: string) => void;
@@ -43,6 +51,7 @@ interface ResearchLayoutProps {
   voterProfile: string | null;
   promptText: string;
   copyPasteIsPrimary: boolean;
+  countyName?: string;
 }
 
 /* ── Icons ──────────────────────────────────────────────────── */
@@ -891,6 +900,7 @@ function PollingView({
 function ResearchView({
   state,
   zipCode,
+  address,
   budgetStatus,
   budgetChecked,
   onBudgetUpdate,
@@ -898,9 +908,11 @@ function ResearchView({
   promptText,
   copyPasteIsPrimary,
   pollingData,
+  countyName,
 }: {
   state: StateElectionData;
   zipCode: string;
+  address?: string;
   budgetStatus: BudgetStatus;
   budgetChecked: boolean;
   onBudgetUpdate: (budget: BudgetStatus) => void;
@@ -908,6 +920,7 @@ function ResearchView({
   promptText: string;
   copyPasteIsPrimary: boolean;
   pollingData: PollingData | null;
+  countyName?: string;
 }) {
   const { lang } = useLanguage();
   const t = translations[lang];
@@ -972,9 +985,11 @@ function ResearchView({
             <ChatPanel
               state={state}
               zipCode={zipCode}
+              address={address}
               pollingData={pollingData}
               onBudgetUpdate={onBudgetUpdate}
               voterProfile={voterProfile}
+              countyName={countyName}
             />
           )}
 
@@ -1016,6 +1031,7 @@ function ResearchView({
 export function ResearchLayout({
   state,
   zipCode,
+  address,
   addressStep,
   pollingData,
   onAddressSubmit,
@@ -1026,6 +1042,7 @@ export function ResearchLayout({
   voterProfile,
   promptText,
   copyPasteIsPrimary,
+  countyName,
 }: ResearchLayoutProps) {
   const [activeTab, setActiveTab] = useState<ResearchTab>("research");
   const { lang } = useLanguage();
@@ -1049,6 +1066,7 @@ export function ResearchLayout({
           <ResearchView
             state={state}
             zipCode={zipCode}
+            address={address}
             budgetStatus={budgetStatus}
             budgetChecked={budgetChecked}
             onBudgetUpdate={onBudgetUpdate}
@@ -1056,6 +1074,7 @@ export function ResearchLayout({
             promptText={promptText}
             copyPasteIsPrimary={copyPasteIsPrimary}
             pollingData={pollingData}
+            countyName={countyName}
           />
         </div>
 

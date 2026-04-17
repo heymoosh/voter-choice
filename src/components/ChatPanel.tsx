@@ -19,6 +19,7 @@ import { generatePrompt } from "../lib/generatePrompt";
 import type { PollingDataForPrompt } from "../lib/generatePrompt";
 import { extractBallot, extractVoterProfile } from "../lib/ballot-utils";
 import { ResearchPortfolio } from "./ResearchPortfolio";
+import { MarkdownText } from "./MarkdownText";
 
 interface ChatMessage {
   role: "user" | "assistant";
@@ -34,6 +35,11 @@ interface BudgetStatus {
 
 type DisabledReason = "budget" | "session_limit" | "rate_limit";
 
+interface SearchActivity {
+  status: "searching" | "done";
+  query?: string;
+}
+
 const SESSION_MESSAGE_LIMIT = 60;
 
 const BUDGET_ERROR_CODES = new Set(["BUDGET_EXHAUSTED", "BUDGET_SOFT_CLOSE"]);
@@ -46,41 +52,43 @@ const RATE_ERROR_CODES = new Set([
 interface ChatPanelProps {
   state: StateElectionData;
   zipCode: string;
+  address?: string;
   pollingData?: PollingDataForPrompt | null;
   onBudgetUpdate?: (budget: BudgetStatus) => void;
   voterProfile?: string | null;
+  countyName?: string;
 }
 
 function generateSessionId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 }
 
-function processSSELine(
-  line: string,
-  onText: (text: string) => void,
-  onDone: (budget: BudgetStatus) => void,
-  onError: (error: string) => void,
-) {
+interface StreamCallbacks {
+  onText: (text: string) => void;
+  onDone: (budget: BudgetStatus) => void;
+  onError: (error: string) => void;
+  onSearching?: () => void;
+  onSearchingDone?: (query?: string) => void;
+}
+
+function processSSELine(line: string, cb: StreamCallbacks) {
   if (!line.startsWith("data: ")) return;
   try {
     const data = JSON.parse(line.slice(6));
-    if (data.type === "text") onText(data.text);
-    else if (data.type === "done" && data.budget) onDone(data.budget);
-    else if (data.type === "error") onError(data.error);
+    if (data.type === "text") cb.onText(data.text);
+    else if (data.type === "done" && data.budget) cb.onDone(data.budget);
+    else if (data.type === "error") cb.onError(data.error);
+    else if (data.type === "searching") cb.onSearching?.();
+    else if (data.type === "searching_done") cb.onSearchingDone?.(data.query);
   } catch {
     // Skip malformed SSE lines
   }
 }
 
-async function streamResponse(
-  response: Response,
-  onText: (text: string) => void,
-  onDone: (budget: BudgetStatus) => void,
-  onError: (error: string) => void,
-) {
+async function streamResponse(response: Response, cb: StreamCallbacks) {
   const reader = response.body?.getReader();
   if (!reader) {
-    onError("Failed to read response.");
+    cb.onError("Failed to read response.");
     return;
   }
 
@@ -96,7 +104,7 @@ async function streamResponse(
     buffer = lines.pop() || "";
 
     for (const line of lines) {
-      processSSELine(line, onText, onDone, onError);
+      processSSELine(line, cb);
     }
   }
 }
@@ -116,48 +124,37 @@ function getDisabledMessage(
   return t.budget.exhausted;
 }
 
-/* ── Inline markdown renderer (bold + links) ──────────────── */
-
-function MarkdownText({ text }: { text: string }) {
-  const regex = /(\*\*(.+?)\*\*|\[([^\]]+)\]\((https?:\/\/[^)]+)\))/g;
-  const parts: React.ReactNode[] = [];
-  let lastIndex = 0;
-  let match;
-  let key = 0;
-
-  while ((match = regex.exec(text)) !== null) {
-    if (match.index > lastIndex) {
-      parts.push(text.slice(lastIndex, match.index));
-    }
-    if (match[2]) {
-      parts.push(
-        <strong key={key++} className="font-bold text-on-surface">
-          {match[2]}
-        </strong>,
-      );
-    } else if (match[3] && match[4]) {
-      parts.push(
-        <a
-          key={key++}
-          href={match[4]}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-primary underline hover:opacity-80"
-        >
-          {match[3]}
-        </a>,
-      );
-    }
-    lastIndex = match.index + match[0].length;
-  }
-  if (lastIndex < text.length) {
-    parts.push(text.slice(lastIndex));
-  }
-
-  return <>{parts}</>;
-}
-
 /* ── Sub-components ─────────────────────────────────────────── */
+
+function SearchActivityIndicator({ activity }: { activity: SearchActivity }) {
+  const { lang } = useLanguage();
+  const isSearching = activity.status === "searching";
+  const label = isSearching
+    ? lang === "es"
+      ? "Buscando en la web…"
+      : "Searching the web…"
+    : lang === "es"
+      ? "Búsqueda lista"
+      : "Search complete";
+
+  return (
+    <div
+      data-testid="search-activity-indicator"
+      className="mb-4 flex items-center gap-2 text-xs text-on-surface-muted"
+    >
+      <span
+        className={
+          "inline-block w-2 h-2 rounded-full " +
+          (isSearching ? "bg-primary animate-pulse" : "bg-primary/60")
+        }
+      />
+      <span className="font-medium">{label}</span>
+      {activity.query && (
+        <span className="italic truncate max-w-xs">“{activity.query}”</span>
+      )}
+    </div>
+  );
+}
 
 function InlinePrivacyNotice() {
   const { lang } = useLanguage();
@@ -218,7 +215,7 @@ function ResearchMemoCard({
       </div>
       <div className="bg-surface-lowest border-l-4 border-primary p-4 md:p-10 shadow-[0_4px_24px_-10px_rgba(0,0,0,0.05)]">
         {/* Content */}
-        <div className="text-sm whitespace-pre-wrap leading-relaxed text-on-surface-variant">
+        <div className="text-sm leading-relaxed text-on-surface-variant">
           <MarkdownText text={parsed.displayText} />
           {isStreaming && isLast && (
             <span className="inline-block w-1.5 h-4 bg-primary ml-0.5 animate-pulse" />
@@ -292,17 +289,25 @@ function ChatMessageBubble({
   isLast,
   isStreaming,
   isFirstAssistant,
+  isFirstUser,
   state,
 }: {
   msg: ChatMessage;
   isLast: boolean;
   isStreaming: boolean;
   isFirstAssistant?: boolean;
+  isFirstUser?: boolean;
   state?: StateElectionData;
 }) {
   const { lang } = useLanguage();
 
   if (msg.role === "user") {
+    // The first user message is the auto-generated context block — show only
+    // the intro line (before the first newline) and hide the long payload.
+    const displayContent = isFirstUser
+      ? msg.content.split("\n")[0]
+      : msg.content;
+
     return (
       <article className="max-w-3xl mx-auto pt-4">
         <div className="flex gap-4 items-start">
@@ -323,12 +328,12 @@ function ChatMessageBubble({
                 ? "ENFOQUE DE INVESTIGACI\u00d3N ACTUAL"
                 : "CURRENT RESEARCH FOCUS"}
             </h2>
-            <p
+            <div
               className="text-lg md:text-2xl font-bold text-on-surface leading-tight tracking-tight"
               data-testid="chat-message-user"
             >
-              {msg.content}
-            </p>
+              <MarkdownText text={displayContent} />
+            </div>
           </div>
         </div>
       </article>
@@ -353,7 +358,7 @@ function ChatMessageBubble({
   return (
     <article data-testid="chat-message-assistant" className="max-w-3xl mx-auto">
       <div className="bg-surface-lowest border-l-4 border-primary p-4 md:p-10 shadow-sm">
-        <div className="text-sm whitespace-pre-wrap leading-relaxed text-on-surface-variant">
+        <div className="text-sm leading-relaxed text-on-surface-variant">
           <MarkdownText text={parsed.displayText} />
           {isCurrentlyStreaming && (
             <span className="inline-block w-1.5 h-4 bg-primary ml-0.5 animate-pulse" />
@@ -564,7 +569,8 @@ function ChatMessageList({
   const { lang } = useLanguage();
   const t = translations[lang];
 
-  // Track first assistant message index and last user message index
+  // Track first user, first assistant, and last user message indices
+  const firstUserIdx = messages.findIndex((m) => m.role === "user");
   const firstAssistantIdx = messages.findIndex((m) => m.role === "assistant");
   const lastUserIdx = messages.reduce(
     (acc, m, i) => (m.role === "user" ? i : acc),
@@ -595,6 +601,7 @@ function ChatMessageList({
               isLast={i === messages.length - 1}
               isStreaming={isStreaming}
               isFirstAssistant={i === firstAssistantIdx}
+              isFirstUser={i === firstUserIdx}
               state={state}
             />
           </div>
@@ -691,14 +698,16 @@ function ChatStatusBar({
 export function ChatPanel({
   state,
   zipCode,
+  address,
   pollingData,
   onBudgetUpdate,
   voterProfile,
+  countyName,
 }: ChatPanelProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [sessionStarted, setSessionStarted] = useState(false);
+  const sessionStartedRef = useRef(false);
   const [budgetStatus, setBudgetStatus] = useState<BudgetStatus>({
     tier: "normal",
     percent: 0,
@@ -708,6 +717,9 @@ export function ChatPanel({
     null,
   );
   const [showPortfolio, setShowPortfolio] = useState(false);
+  const [searchActivity, setSearchActivity] = useState<SearchActivity | null>(
+    null,
+  );
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const lastUserMsgRef = useRef<HTMLDivElement>(null);
   const sessionIdRef = useRef(generateSessionId());
@@ -740,8 +752,10 @@ export function ChatPanel({
       undefined,
       lang,
       pollingData ?? undefined,
+      countyName,
+      address,
     );
-  }, [state, zipCode, lang, pollingData]);
+  }, [state, zipCode, lang, pollingData, countyName, address]);
 
   const disableChat = useCallback((reason: DisabledReason) => {
     setChatDisabled(true);
@@ -797,16 +811,23 @@ export function ChatPanel({
         });
 
         if (!response.ok) {
-          handleApiError(await response.json());
+          const errorData = await response.json();
+          handleApiError(errorData);
+          // Undo message count for retryable errors so user can try again
+          const reason = getDisabledReason(errorData.code ?? "");
+          if (!reason) {
+            messageCountRef.current -= 1;
+            // Remove the user message we optimistically added
+            setMessages(currentMessages);
+          }
           setIsStreaming(false);
           return;
         }
 
         setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
 
-        await streamResponse(
-          response,
-          (text) => {
+        await streamResponse(response, {
+          onText: (text) => {
             setMessages((prev) => {
               const updated = [...prev];
               const last = updated[updated.length - 1];
@@ -819,9 +840,18 @@ export function ChatPanel({
               return updated;
             });
           },
-          (budget) => handleBudgetUpdate(budget),
-          (err) => setError(err),
-        );
+          onDone: (budget) => {
+            setSearchActivity(null);
+            handleBudgetUpdate(budget);
+          },
+          onError: (err) => {
+            setSearchActivity(null);
+            setError(err);
+          },
+          onSearching: () => setSearchActivity({ status: "searching" }),
+          onSearchingDone: (query) =>
+            setSearchActivity({ status: "done", query }),
+        });
       } catch {
         setError(
           lang === "es"
@@ -829,6 +859,7 @@ export function ChatPanel({
             : "Connection error. Please try again.",
         );
       } finally {
+        setSearchActivity(null);
         setIsStreaming(false);
       }
     },
@@ -844,16 +875,15 @@ export function ChatPanel({
   );
 
   const startSession = useCallback(() => {
-    setSessionStarted(true);
+    if (sessionStartedRef.current) return;
+    sessionStartedRef.current = true;
     const { contextBlock } = getBasePrompt();
     sendMessage(contextBlock, []);
   }, [getBasePrompt, sendMessage]);
 
   // Auto-start session on mount
   useEffect(() => {
-    if (!sessionStarted) {
-      startSession();
-    }
+    startSession();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -928,7 +958,7 @@ export function ChatPanel({
     <div data-testid="chat-window" className="flex flex-col">
       <InlinePrivacyNotice />
 
-      {sessionStarted && (
+      {messages.length > 0 && (
         <>
           {/* Progress bar — shown once conversation has started */}
           {messages.length > 0 && <ResearchProgressBar progress={progress} />}
@@ -944,6 +974,10 @@ export function ChatPanel({
             lastUserMsgRef={lastUserMsgRef}
             state={state}
           />
+
+          {isStreaming && searchActivity && (
+            <SearchActivityIndicator activity={searchActivity} />
+          )}
 
           <ChatStatusBar
             budgetTier={budgetStatus.tier}

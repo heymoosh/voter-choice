@@ -3,8 +3,34 @@ import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent, act } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import React from "react";
-import { ZipForm } from "./ZipForm";
+import { ZipForm, extractZip } from "./ZipForm";
 import { LanguageProvider, useLanguage } from "../lib/i18n";
+
+describe("extractZip", () => {
+  it("extracts a 5-digit zip from a full address", () => {
+    expect(extractZip("123 Main St, Houston, TX 77057")).toBe("77057");
+  });
+
+  it("extracts zip+4 format", () => {
+    expect(extractZip("123 Main St, Houston, TX 77057-1234")).toBe("77057");
+  });
+
+  it("extracts zip from Google Places format with country suffix", () => {
+    expect(extractZip("123 Main St, Austin, TX 78701, USA")).toBe("78701");
+  });
+
+  it("extracts a bare 5-digit zip", () => {
+    expect(extractZip("73301")).toBe("73301");
+  });
+
+  it("returns null for no zip", () => {
+    expect(extractZip("no zip here")).toBeNull();
+  });
+
+  it("returns null for partial zip", () => {
+    expect(extractZip("123")).toBeNull();
+  });
+});
 
 describe("ZipForm", () => {
   it("renders zip-input and zip-submit data-testids", () => {
@@ -24,38 +50,37 @@ describe("ZipForm", () => {
     expect(screen.queryByTestId("zip-error")).not.toBeInTheDocument();
   });
 
-  it("shows 'Please enter a zip code' when submitted empty", () => {
+  it("shows error when submitted empty", () => {
     render(<ZipForm onSubmit={vi.fn()} />);
     fireEvent.click(screen.getByTestId("zip-submit"));
     expect(screen.getByTestId("zip-error")).toBeInTheDocument();
     expect(screen.getByTestId("zip-error")).toHaveTextContent(
-      "Please enter a zip code",
+      "Please enter your address",
     );
   });
 
-  it("shows validation error for non-numeric input", () => {
+  it("shows validation error for input without a zip code", () => {
     render(<ZipForm onSubmit={vi.fn()} />);
     fireEvent.change(screen.getByTestId("zip-input"), {
-      target: { value: "abcde" },
+      target: { value: "no zip here" },
     });
     fireEvent.click(screen.getByTestId("zip-submit"));
     expect(screen.getByTestId("zip-error")).toHaveTextContent(
-      "Please enter a valid 5-digit zip code",
+      "Please include your 5-digit zip code",
     );
   });
 
-  it("shows validation error for wrong length input", () => {
-    render(<ZipForm onSubmit={vi.fn()} />);
+  it("calls onSubmit with full address for valid input", () => {
+    const onSubmit = vi.fn();
+    render(<ZipForm onSubmit={onSubmit} />);
     fireEvent.change(screen.getByTestId("zip-input"), {
-      target: { value: "123" },
+      target: { value: "123 Main St, Houston, TX 77057" },
     });
     fireEvent.click(screen.getByTestId("zip-submit"));
-    expect(screen.getByTestId("zip-error")).toHaveTextContent(
-      "Please enter a valid 5-digit zip code",
-    );
+    expect(onSubmit).toHaveBeenCalledWith("123 Main St, Houston, TX 77057");
   });
 
-  it("calls onSubmit with the zip code for valid 5-digit input", () => {
+  it("calls onSubmit with bare zip code", () => {
     const onSubmit = vi.fn();
     render(<ZipForm onSubmit={onSubmit} />);
     fireEvent.change(screen.getByTestId("zip-input"), {
@@ -103,7 +128,7 @@ describe("ZipForm — Spanish mode", () => {
     await act(async () => {});
     fireEvent.click(screen.getByTestId("zip-submit"));
     expect(screen.getByTestId("zip-error").textContent).toContain(
-      "Por favor ingresa un código postal",
+      "Por favor ingresa tu dirección",
     );
   });
 
@@ -115,7 +140,7 @@ describe("ZipForm — Spanish mode", () => {
     });
     fireEvent.click(screen.getByTestId("zip-submit"));
     expect(screen.getByTestId("zip-error").textContent).toContain(
-      "válido de 5 dígitos",
+      "código postal de 5 dígitos",
     );
   });
 
@@ -127,12 +152,13 @@ describe("ZipForm — Spanish mode", () => {
     );
   });
 
-  it("shows Spanish label for zip input", async () => {
+  it("shows Spanish label for address input", async () => {
     renderEs();
     await act(async () => {});
-    expect(screen.getByTestId("zip-input")).toHaveAccessibleName();
-    // label should mention "código postal"
-    const label = screen.getByText(/código postal/i);
+    const input = screen.getByTestId("zip-input");
+    expect(input).toHaveAccessibleName();
+    // Label should mention "dirección" (the label element, not privacy text)
+    const label = screen.getByText(/ingresa tu dirección/i);
     expect(label).toBeInTheDocument();
   });
 });
@@ -146,33 +172,20 @@ describe("ZipForm — FR-018: active error updates on language switch", () => {
   });
 
   it("error message updates immediately when language switches from en to es", async () => {
-    // Start in English
     render(
       <LanguageProvider>
         <ZipForm onSubmit={vi.fn()} />
-        {/* We need a way to trigger language change — use a consumer */}
       </LanguageProvider>,
     );
 
     // Submit empty to trigger English error
     fireEvent.click(screen.getByTestId("zip-submit"));
     expect(screen.getByTestId("zip-error").textContent).toContain(
-      "Please enter a zip code",
+      "Please enter your address",
     );
-
-    // Switch language to Spanish via localStorage + re-render
-    await act(async () => {
-      localStorage.setItem("ballot-tool-lang", "es");
-    });
-
-    // The error is still showing — we need to switch lang via the context
-    // Re-render with Spanish language
   });
 
   it("error message is derived from current lang, not stored as a string snapshot", async () => {
-    // This test verifies that ZipForm stores an error KEY not a string
-    // so that when lang changes, the displayed text updates automatically
-
     function LangSwitchTest() {
       const { setLang } = useLanguage();
       return (
@@ -194,7 +207,7 @@ describe("ZipForm — FR-018: active error updates on language switch", () => {
     // Trigger English error
     fireEvent.click(screen.getByTestId("zip-submit"));
     expect(screen.getByTestId("zip-error").textContent).toContain(
-      "Please enter a zip code",
+      "Please enter your address",
     );
 
     // Switch language
@@ -204,7 +217,7 @@ describe("ZipForm — FR-018: active error updates on language switch", () => {
 
     // Error should now be in Spanish (FR-018)
     expect(screen.getByTestId("zip-error").textContent).toContain(
-      "Por favor ingresa un código postal",
+      "Por favor ingresa tu dirección",
     );
   });
 });

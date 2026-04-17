@@ -157,10 +157,101 @@
     "additionalRules": []
   },
 
+  "voteByMail": {
+    "universal": false,
+    "eligibility": [
+      "65 years of age or older on Election Day",
+      "Sick or disabled",
+      "Will be absent from the county during the entire early voting period and on Election Day",
+      "Confined in jail but otherwise eligible to vote"
+    ],
+    "applicationDeadline": "Received by the early voting clerk no later than 11 days before Election Day",
+    "returnDeadline": "Postmarked by 7:00 p.m. on Election Day. Received by the early voting clerk by 5:00 p.m. on the second business day after Election Day.",
+    "returnDeadlinePlain": "Must be postmarked by Election Day and received within 2 business days after. If delivered in person, must arrive by the time polls close on Election Day.",
+    "applicationUrl": "https://www.sos.texas.gov/elections/voter/reqabbm.shtml",
+    "officialRulesUrl": "https://www.votetexas.gov/voting-by-mail/"
+  },
+
   "resources": {
     "stateElectionWebsite": "https://www.votetexas.gov/",
     "countyElectionLookup": "https://www.votetexas.gov/voting/where.html",
     "sampleBallotLookup": "https://www.votetexas.gov/voting/ballot-board.html",
-    "pollingPlaceLookup": "https://www.votetexas.gov/voting/where.html"
+    "pollingPlaceLookup": "https://www.votetexas.gov/voting/where.html",
+    "importantDates": "https://www.sos.state.tx.us/elections/voter/important-election-dates.shtml",
+    "voterIdInfo": "https://www.votetexas.gov/voting/need-id.html",
+    "earlyVotingInfo": "https://www.votetexas.gov/voting/early-voting.html"
+  },
+
+  "countyResources": {
+    "Harris": {
+      "name": "Harris County",
+      "ballotLookup": "https://www.harrisvotes.com/Voter/Whats-on-my-Ballot",
+      "pollingPlaces": "https://www.harrisvotes.com/Voter/Polling-Locations",
+      "earlyVotingLocations": "https://www.harrisvotes.com/Voter/Early-Voting-Locations",
+      "electionsWebsite": "https://www.harrisvotes.com/"
+    },
+    "Dallas": {
+      "name": "Dallas County",
+      "ballotLookup": "https://www.dallascountyvotes.org/sample-ballots/",
+      "pollingPlaces": "https://www.dallascountyvotes.org/polling-locations/",
+      "earlyVotingLocations": "https://www.dallascountyvotes.org/early-voting/",
+      "electionsWebsite": "https://www.dallascountyvotes.org/"
+    },
+    "Bexar": {
+      "name": "Bexar County",
+      "ballotLookup": "https://www.bexar.org/1568/Sample-Ballot",
+      "pollingPlaces": "https://www.bexar.org/1564/Polling-Locations",
+      "earlyVotingLocations": "https://www.bexar.org/1563/Early-Voting",
+      "electionsWebsite": "https://www.bexar.org/1556/Elections-Department"
+    },
+    "Travis": {
+      "name": "Travis County",
+      "ballotLookup": "https://countyclerk.traviscountytx.gov/elections/sample-ballots/",
+      "pollingPlaces": "https://countyclerk.traviscountytx.gov/elections/polling-locations/",
+      "earlyVotingLocations": "https://countyclerk.traviscountytx.gov/elections/early-voting/",
+      "electionsWebsite": "https://countyclerk.traviscountytx.gov/elections/"
+    },
+    "Tarrant": {
+      "name": "Tarrant County",
+      "ballotLookup": "https://www.tarrantcountytx.gov/en/elections/voters/sample-ballots.html",
+      "pollingPlaces": "https://www.tarrantcountytx.gov/en/elections/voters/polling-locations.html",
+      "earlyVotingLocations": "https://www.tarrantcountytx.gov/en/elections/voters/early-voting.html",
+      "electionsWebsite": "https://www.tarrantcountytx.gov/en/elections.html"
+    },
+    "Collin": {
+      "name": "Collin County",
+      "ballotLookup": "https://www.collincountytx.gov/elections/voters/Pages/sample-ballots.aspx",
+      "pollingPlaces": "https://www.collincountytx.gov/elections/voters/Pages/polling-locations.aspx",
+      "earlyVotingLocations": "https://www.collincountytx.gov/elections/voters/Pages/early-voting.aspx",
+      "electionsWebsite": "https://www.collincountytx.gov/elections/"
+    },
+    "Denton": {
+      "name": "Denton County",
+      "ballotLookup": "https://www.votedenton.gov/sample-ballots/",
+      "pollingPlaces": "https://www.votedenton.gov/polling-locations/",
+      "earlyVotingLocations": "https://www.votedenton.gov/early-voting/",
+      "electionsWebsite": "https://www.votedenton.gov/"
+    },
+    "Fort Bend": {
+      "name": "Fort Bend County",
+      "ballotLookup": "https://www.fortbendcountytx.gov/government/county-departments/elections-voter-registration/sample-ballots",
+      "pollingPlaces": "https://www.fortbendcountytx.gov/government/county-departments/elections-voter-registration/polling-locations",
+      "earlyVotingLocations": "https://www.fortbendcountytx.gov/government/county-departments/elections-voter-registration/early-voting",
+      "electionsWebsite": "https://www.fortbendcountytx.gov/government/county-departments/elections-voter-registration"
+    },
+    "Williamson": {
+      "name": "Williamson County",
+      "ballotLookup": "https://www.wilco.org/elections/sample-ballot",
+      "pollingPlaces": "https://www.wilco.org/elections/polling-locations",
+      "earlyVotingLocations": "https://www.wilco.org/elections/early-voting",
+      "electionsWebsite": "https://www.wilco.org/elections"
+    },
+    "Montgomery": {
+      "name": "Montgomery County",
+      "ballotLookup": "https://www.mctx.org/departments/departments_a_-_c/county_clerk/elections/sample_ballots.php",
+      "pollingPlaces": "https://www.mctx.org/departments/departments_a_-_c/county_clerk/elections/polling_locations.php",
+      "earlyVotingLocations": "https://www.mctx.org/departments/departments_a_-_c/county_clerk/elections/early_voting.php",
+      "electionsWebsite": "https://www.mctx.org/departments/departments_a_-_c/county_clerk/elections/"
+    }
   }
 }
