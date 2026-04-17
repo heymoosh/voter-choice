@@ -9,6 +9,25 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
+      - name: Validate commit author email
+        env:
+          AUTHOR_EMAIL: ${{ github.event.head_commit.author.email }}
+          AUTHOR_NAME: ${{ github.event.head_commit.author.name }}
+        run: |
+          echo "HEAD commit author: $AUTHOR_NAME <$AUTHOR_EMAIL>"
+          case "$AUTHOR_EMAIL" in
+            *@*.local|*@experiment.local|speckit@*|*@localhost|"")
+              echo "::error::Vercel will block this deploy: author email '$AUTHOR_EMAIL' is not a valid GitHub-linked email."
+              echo "::error::Fix your local git config and push a new commit:"
+              echo "::error::  git config --global user.email \"your-github-email@example.com\""
+              echo "::error::  git config --global user.name  \"Your Name\""
+              echo "::error::  git config --local --unset user.email  # if overridden at repo level"
+              echo "::error::  git commit --allow-empty -m \"chore: re-author HEAD with valid email\""
+              echo "::error::  git push origin launch/production"
+              exit 1
+              ;;
+          esac
+
       - name: Checkout
         uses: actions/checkout@v4
 
