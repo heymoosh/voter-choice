@@ -42,7 +42,7 @@ describe("PageContent — English mode", () => {
   it("renders English footer with legal links", () => {
     renderWithProvider();
     expect(screen.getByRole("contentinfo").textContent).toContain(
-      "Civic Research",
+      "Voter Choice",
     );
     expect(
       screen.getByRole("link", { name: "Privacy Policy" }),
@@ -54,10 +54,10 @@ describe("PageContent — English mode", () => {
 
   it("renders How it Works section", () => {
     renderWithProvider();
-    expect(screen.getByText("How it Works")).toBeInTheDocument();
-    expect(screen.getByText("Locate Your District")).toBeInTheDocument();
-    expect(screen.getByText("Engage the Archivist")).toBeInTheDocument();
-    expect(screen.getByText("Take Action")).toBeInTheDocument();
+    expect(screen.getByText("How it works")).toBeInTheDocument();
+    expect(screen.getByText("Enter your address")).toBeInTheDocument();
+    expect(screen.getByText("Ask anything")).toBeInTheDocument();
+    expect(screen.getByText("Take it with you")).toBeInTheDocument();
   });
 });
 

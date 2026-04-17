@@ -463,14 +463,14 @@ export function PageContent({ children }: PageContentProps) {
                         <div className="flex items-center gap-2 mb-2">
                           <span className="text-[10px] font-bold uppercase tracking-widest text-on-primary/80">
                             {lang === "en"
-                              ? "Ballot Archivist"
-                              : "Archivista Electoral"}
+                              ? "Voter Choice"
+                              : "Voter Choice"}
                           </span>
                         </div>
                         <p className="text-sm text-on-primary leading-relaxed">
                           {lang === "en"
-                            ? "Your ballot includes 14 state constitutional amendment propositions. Let me walk you through each one, starting with Proposition 1 on property tax relief..."
-                            : "Tu boleta incluye 14 proposiciones de enmienda constitucional estatal. Permíteme guiarte por cada una, comenzando con la Proposición 1 sobre alivio de impuestos a la propiedad..."}
+                            ? "Your ballot has 14 state constitutional amendments. Want to start with Prop 1 (property tax relief), or jump to one you\u2019ve seen in the news?"
+                            : "Tu boleta tiene 14 enmiendas constitucionales estatales. \u00bfQuieres empezar con la Proposici\u00f3n 1 (alivio de impuestos a la propiedad), o saltar a una que hayas visto en las noticias?"}
                         </p>
                       </div>
                     </div>

@@ -34,7 +34,7 @@ Short, functional, no em dashes, no signposting. The hero carries the one stake-
 brandName: "Voter Choice"
 
 heroHeadline: "Know what's on your ballot before you walk in."
-heroSubtext: "Most elections are decided in primaries, and most people skip them. Enter your zip to see every race and ask questions in plain English. Nothing saved, no account."
+heroSubtext: "Most of the policy that affects your daily life is decided in elections most people skip. Enter your address to see every race and ask questions in plain English. Nothing saved, no account."
 
 trustNoData: "Nothing saved."
 trustNoAccounts: "No account."
@@ -60,7 +60,7 @@ resourceIdDesc: "The IDs your state accepts, and what to do if you don't have on
 howItWorksTitle: "How it works"
 howItWorksSubtext: "Three steps. A few minutes. No account."
 
-step1Title: "Enter your zip"
+step1Title: "Enter your address"
 step1Desc: "We'll pull the exact races on your ballot."
 step2Title: "Ask anything"
 step2Desc: "Candidates, propositions, voting records, donors. Plain questions, plain answers."
@@ -68,7 +68,7 @@ step3Title: "Take it with you"
 step3Desc: "Download a one-page summary for the polling booth. Most polls don't allow phones."
 
 ctaHeadline: "Ready?"
-ctaSubtext: "Enter your zip. See your ballot. That's the whole thing."
+ctaSubtext: "Enter your address. See your ballot. That's the whole thing."
 ctaButton: "See my ballot"
 
 missionTitle: "Why this exists"
@@ -108,11 +108,11 @@ These are hardcoded strings in the JSX. They need updates too:
 
 1. **Killed the archivist frame everywhere.** No manifest, no archivist, no curated, no high-fidelity. The tool is a tool.
 2. **Replaced category openings with specifics.** Hero now drops you into the race situation, not the product posture. Mission now states the plain problem, not the philosophical frame.
-3. **Stake-forward line lives in the hero subtext.** *"Most elections are decided in primaries, and most people skip them."* That's true, national, non-partisan, and gives the page a spine. No em dashes.
+3. **Stake-forward line lives in the hero subtext.** *"Most of the policy that affects your daily life is decided in elections most people skip."* That's true, national, non-partisan, and gives the page a spine. No em dashes.
 4. **Removed every rule-of-three except one** (mission: *"subscription, an account, or a research degree"* — used once, for effect, which is fine).
 5. **Microcopy got functional.** "Locate Now" → "See locations." "Take Action" → "Take it with you." Card labels are what the user is looking for, not abstractions.
 6. **Privacy language got plainer.** The "unique encryption protocol" line is gone. In its place: *"Your file lives on your device. That's the whole system."*
-7. **CTA got Muxin energy.** "Ready?" + "Enter your zip. See your ballot. That's the whole thing." Calm, matter-of-fact, no "Join thousands."
+7. **CTA got Muxin energy.** "Ready?" + "Enter your address. See your ballot. That's the whole thing." Calm, matter-of-fact, no "Join thousands."
 
 ---
 
