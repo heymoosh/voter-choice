@@ -1,0 +1,40 @@
+# Source Of Truth Map
+
+Use this map to keep the kit MECE: each concern has one owner, with other files linking instead of restating.
+
+| Concern | Owner | Notes |
+|---|---|---|
+| Source-of-truth ownership map | `docs/ai-coding-practices/source-of-truth-map.md` | Owns the concern-to-owner index and MECE editing rule. |
+| Universal agent contract | `AGENTS.md` | Root, always-on rules only. Keep under 60 lines when possible. |
+| Session bootstrap | `AI_AGENT_START_HERE.md` | First-run handoff for humans and agents. Points to `AGENTS.md`; does not own routing rules. |
+| Claude-specific behavior | `CLAUDE.md` | Delta only. Imports `AGENTS.md`. |
+| Codex-specific behavior | `CODEX.md` | Delta only. Points to `AGENTS.md`. |
+| Human install/use guide | `README.md` | How to copy/use the kit. Not an agent behavior source. |
+| Repo priority index | `TRACKER.md` | Lean state pointer, not task specs. |
+| Orchestration posture | `docs/ai-coding-practices/guardrails/orchestration-posture.md` | Owns default user-facing product posture, user escalation rules, and final review contract. |
+| Drift watch | `docs/ai-coding-practices/guardrails/drift-watch.md` | Owns compact always-on failure-pattern watchlist for orchestrators/evaluators. |
+| Task/artifact routing | `docs/ai-coding-practices/guardrails/request-routing.md` | Owns direct edit vs capture vs work packet vs project brief. |
+| Work packet semantics | `docs/ai-coding-practices/guardrails/work-packet-rules.md` | Owns AC, verification, anti-solutions. |
+| MECE ownership discipline | `docs/ai-coding-practices/guardrails/ownership-discipline.md` | Owns ownership audits, anti-bloat behavior, and orchestration/research/execution boundaries. |
+| QE tool integration | `docs/ai-coding-practices/guardrails/qe-tooling.md` | Owns external QA/QE tool boundaries, including optional Agentic QE evaluator use. |
+| Commercial app readiness | `docs/ai-coding-practices/guardrails/commercial-app-readiness.md` | Owns baseline readiness lanes for real-user, production, paid, or public-launch products. |
+| Operational reproducibility | `docs/ai-coding-practices/guardrails/operational-reproducibility.md` | Owns setup/deploy/config/migration/IaC/manual-step/test-quality reproducibility rules. |
+| Automation policy | `docs/ai-coding-practices/guardrails/automation-policy.md` | Owns what automation is allowed. |
+| Hook/worktree guardrails | `docs/ai-coding-practices/guardrails/hooks-and-worktrees.md` | Owns concrete hook/worktree safety rules. |
+| Model/subagent routing | `docs/ai-coding-practices/guardrails/model-routing.md` | Owns model and worker delegation choices. |
+| Internal command procedures | `docs/ai-coding-practices/commands/*.md` | Thin wrappers only. Link to owner docs for decision rules, execution, and evaluation flows. |
+| Claude command adapters | `.claude/commands/*.md` | Tool-native wrappers only. Point to canonical command procedures; do not own policy. |
+| Claude local/tool adapters | `.claude/` | Tool-native Claude adapters only. `.claude/CLAUDE.md` is a compatibility pointer to root owners; local settings remain operator-specific. |
+| Deferred Agentic QE MCP decision | `docs/ai-coding-practices/adoption-plan.md` | This repo has not installed `.claude/mcp.json` or `.codex/config.toml` yet because `npx -y agentic-qe@latest` requires an explicit tool trust decision. |
+| Artifact schemas | `docs/ai-coding-practices/templates/*.md` | Shape only. Includes work, project, capture, tracker, and correction packet schemas. |
+| Existing repo adoption | `docs/ai-coding-practices/commands/adopt-existing-repo.md`, `docs/ai-coding-practices/templates/adoption-plan.md`, `docs/ai-coding-practices/adoption-plan.md`, `scripts/ai-adoption-scan.sh` | Owns safe migration into repos that already have local instructions, hooks, CI, scripts, or deployment config. |
+| Executable guardrails | `scripts/*.sh`, `.githooks/` | Enforcement only. Includes adoption scan, MECE, packet-readiness, evidence, QE-adapter, preflight, lock, intent, and verification checks. |
+| Learning notes | `docs/ai-coding-practices/learning/` | Explanatory context. Not operational rules. |
+
+## Editing Rule
+
+When adding a rule, first ask: "Which owner owns this concern?"
+
+- If an owner exists, edit that file only.
+- If no owner exists, add one owner to this map.
+- Do not duplicate the same decision logic across root docs, command docs, templates, and scripts.

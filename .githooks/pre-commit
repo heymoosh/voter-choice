@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# Lightweight optional pre-commit hook for AI Coding Practices repos.
+
+set +e
+
+if [ -x scripts/ai-worktree-intent.sh ]; then
+  scripts/ai-worktree-intent.sh check
+fi
+
+if [ -x scripts/ai-mece-check.sh ]; then
+  scripts/ai-mece-check.sh --strict
+  rc=$?
+  [ $rc -ne 0 ] && exit $rc
+fi
+
+if [ -x scripts/ai-qe-check.sh ]; then
+  scripts/ai-qe-check.sh >/dev/null 2>&1
+fi
+
+if [ -x scripts/ai-verify.sh ]; then
+  scripts/ai-verify.sh --staged
+  rc=$?
+  [ $rc -ne 0 ] && exit $rc
+fi
+
+exit 0
