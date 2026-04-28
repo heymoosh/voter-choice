@@ -28,15 +28,15 @@ describe("PageContent — English mode", () => {
   it("renders English hero title", () => {
     renderWithProvider();
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
-      "Your Ballot, Your Research, Your Privacy.",
+      "Know what’s on your ballot before you walk in.",
     );
   });
 
   it("renders trust signals", () => {
     renderWithProvider();
-    expect(screen.getByText("No data stored.")).toBeInTheDocument();
-    expect(screen.getByText("No accounts.")).toBeInTheDocument();
-    expect(screen.getByText("100% private.")).toBeInTheDocument();
+    expect(screen.getByText("Nothing saved.")).toBeInTheDocument();
+    expect(screen.getByText("No account.")).toBeInTheDocument();
+    expect(screen.getByText("No tracking.")).toBeInTheDocument();
   });
 
   it("renders English footer with legal links", () => {

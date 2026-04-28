@@ -300,16 +300,18 @@ if [ ! -f docs/ai-coding-practices/guardrails/operational-reproducibility.md ]; 
   strict_or_warn "operational-reproducibility guardrail missing"
 fi
 
-if [ ! -f .claude/mcp.json ]; then
-  strict_or_warn "Claude Agentic QE MCP adapter missing"
-fi
+if [ -f .ai/enable-aqe ]; then
+  if [ ! -f .claude/mcp.json ]; then
+    strict_or_warn "Claude Agentic QE MCP adapter missing"
+  fi
 
-if ! grep -q 'agentic-qe' .claude/mcp.json 2>/dev/null; then
-  strict_or_warn "Claude MCP config missing agentic-qe server"
-fi
+  if ! grep -q 'agentic-qe' .claude/mcp.json 2>/dev/null; then
+    strict_or_warn "Claude MCP config missing agentic-qe server"
+  fi
 
-if ! grep -q 'mcp_servers.agentic-qe' .codex/config.toml 2>/dev/null; then
-  strict_or_warn "Codex config missing agentic-qe MCP server"
+  if ! grep -q 'mcp_servers.agentic-qe' .codex/config.toml 2>/dev/null; then
+    strict_or_warn "Codex config missing agentic-qe MCP server"
+  fi
 fi
 
 if ! grep -q 'packet drift' docs/ai-coding-practices/commands/evaluate-work.md 2>/dev/null; then

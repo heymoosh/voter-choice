@@ -5,6 +5,12 @@
 set +e
 
 status=0
+AQE_REQUIRED_MARKER=".ai/enable-aqe"
+
+if [ ! -f "$AQE_REQUIRED_MARKER" ]; then
+  echo "[ai-qe-check] Agentic QE disabled until pre-live readiness gate; create $AQE_REQUIRED_MARKER after selecting a trusted pinned version."
+  exit 0
+fi
 
 if [ -f .claude/mcp.json ] && grep -q 'agentic-qe' .claude/mcp.json 2>/dev/null; then
   echo "[ai-qe-check] Claude MCP adapter: configured"

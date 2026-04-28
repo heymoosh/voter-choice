@@ -553,8 +553,7 @@ const en: Translations = {
     returningSelectFile: "Choose file",
     returningDragDrop: "or drag and drop",
     resourcePollingTitle: "Where to vote",
-    resourcePollingDesc:
-      "Find your polling place and early voting sites.",
+    resourcePollingDesc: "Find your polling place and early voting sites.",
     resourcePollingCta: "See locations",
     resourceDatesTitle: "Key dates",
     resourceDatesDesc:
@@ -563,11 +562,9 @@ const en: Translations = {
     resourceIdDesc:
       "The IDs your state accepts, and what to do if you don\u2019t have one.",
     howItWorksTitle: "How it works",
-    howItWorksSubtext:
-      "Three steps. A few minutes. No account.",
+    howItWorksSubtext: "Three steps. A few minutes. No account.",
     step1Title: "Enter your address",
-    step1Desc:
-      "We\u2019ll pull the exact races on your ballot.",
+    step1Desc: "We\u2019ll pull the exact races on your ballot.",
     step2Title: "Ask anything",
     step2Desc:
       "Candidates, propositions, voting records, donors. Plain questions, plain answers.",
@@ -581,8 +578,7 @@ const en: Translations = {
     missionTitle: "Why this exists",
     missionQuote:
       "Voting shouldn\u2019t require a subscription, an account, or a research degree. Voter Choice is free, runs locally, and asks nothing of you. Walk in knowing what you\u2019re looking at.",
-    footerTagline:
-      "Free and non-partisan. Built for voters.",
+    footerTagline: "Free and non-partisan. Built for voters.",
     footerResources: "Resources",
     footerLegal: "Legal",
     footerConnect: "Contact",

@@ -17,8 +17,14 @@ info() { printf '[ai-preflight] %s\n' "$*"; }
 [ -f CLAUDE.md ] || warn "CLAUDE.md missing; Claude Code-specific deltas unavailable."
 [ -f CODEX.md ] || warn "CODEX.md missing; Codex-specific deltas unavailable."
 [ -d .claude/commands ] || warn ".claude/commands missing; Claude slash-command adapters unavailable."
-[ -f .claude/mcp.json ] || warn ".claude/mcp.json missing; Claude Agentic QE MCP adapter unavailable."
 [ -f .codex/config.toml ] || warn ".codex/config.toml missing; Codex preflight hook adapter unavailable."
+
+AQE_REQUIRED_MARKER=".ai/enable-aqe"
+if [ -f "$AQE_REQUIRED_MARKER" ]; then
+  [ -f .claude/mcp.json ] || warn ".claude/mcp.json missing; Claude Agentic QE MCP adapter unavailable."
+else
+  info "Agentic QE MCP adapters intentionally disabled until pre-live readiness gate."
+fi
 
 for d in .ai .ai/inbox .ai/work-packets .ai/project-briefs; do
   [ -d "$d" ] || warn "$d missing; create it if this repo uses the AI Coding Practices workflow."
@@ -61,7 +67,7 @@ else
   warn "scripts/ai-mece-check.sh is not executable; structural MECE checks skipped."
 fi
 
-if [ -x scripts/ai-qe-check.sh ]; then
+if [ -f "$AQE_REQUIRED_MARKER" ] && [ -x scripts/ai-qe-check.sh ]; then
   scripts/ai-qe-check.sh || warn "Agentic QE adapters may be unavailable; evaluators should name this gap if AQE is needed."
 fi
 

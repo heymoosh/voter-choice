@@ -12,7 +12,12 @@ warn() { printf '[ai-bootstrap] warn: %s\n' "$*"; }
 
 if git rev-parse --git-dir >/dev/null 2>&1; then
   git config core.hooksPath .githooks
-  info "configured git hooks path: .githooks"
+  rc=$?
+  if [ $rc -eq 0 ]; then
+    info "configured git hooks path: .githooks"
+  else
+    warn "could not configure git hooks path automatically; run: git config core.hooksPath .githooks"
+  fi
 else
   warn "not inside a git repo; run git init before relying on hooks"
 fi

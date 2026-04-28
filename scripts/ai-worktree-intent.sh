@@ -14,7 +14,7 @@ branch="$(git branch --show-current 2>/dev/null)"
 
 requires_intent=0
 case "$branch" in
-  main|master|"") requires_intent=0 ;;
+  main|master|launch/production|"") requires_intent=0 ;;
   *) requires_intent=1 ;;
 esac
 

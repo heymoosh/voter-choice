@@ -462,9 +462,7 @@ export function PageContent({ children }: PageContentProps) {
                       <div className="bg-primary px-4 py-4 rounded-2xl rounded-tl-none shadow-md border-l-4 border-primary-container">
                         <div className="flex items-center gap-2 mb-2">
                           <span className="text-[10px] font-bold uppercase tracking-widest text-on-primary/80">
-                            {lang === "en"
-                              ? "Voter Choice"
-                              : "Voter Choice"}
+                            {lang === "en" ? "Voter Choice" : "Voter Choice"}
                           </span>
                         </div>
                         <p className="text-sm text-on-primary leading-relaxed">

@@ -18,7 +18,11 @@ if [ -x scripts/ai-qe-check.sh ]; then
 fi
 
 if [ -x scripts/ai-verify.sh ]; then
-  scripts/ai-verify.sh --staged
+  if [ "$(uname -s 2>/dev/null)" = "Darwin" ] && /usr/bin/arch -arm64 /usr/bin/true 2>/dev/null; then
+    /usr/bin/arch -arm64 /bin/bash scripts/ai-verify.sh --staged
+  else
+    scripts/ai-verify.sh --staged
+  fi
   rc=$?
   [ $rc -ne 0 ] && exit $rc
 fi
