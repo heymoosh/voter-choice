@@ -67,6 +67,13 @@ describe("generatePrompt", () => {
     expect(result.basePrompt).toContain("nonpartisan civic research assistant");
   });
 
+  it("basePrompt frames the app as accessibility support rather than persuasion", () => {
+    const result = generatePrompt(txData, "73301", "2026-03-30");
+    expect(result.basePrompt).toContain("civic accessibility tool");
+    expect(result.basePrompt).toContain("not a political campaign tool");
+    expect(result.basePrompt).toContain("Respect my individual choice");
+  });
+
   it("contextBlock contains state name", () => {
     const result = generatePrompt(txData, "73301", "2026-03-30");
     expect(result.contextBlock).toContain("Texas");
@@ -119,6 +126,7 @@ describe("generatePrompt — Spanish mode", () => {
   it("returns Spanish base prompt when lang='es'", () => {
     const result = generatePrompt(txData, "73301", "2026-03-30", "es");
     expect(result.basePrompt).toContain("asistente");
+    expect(result.basePrompt).toContain("herramienta de accesibilidad cívica");
     expect(result.basePrompt).not.toContain(
       "nonpartisan civic research assistant",
     );

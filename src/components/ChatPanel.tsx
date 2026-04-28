@@ -493,6 +493,35 @@ function QuickActionChips({
   );
 }
 
+function OutputRequestButton({
+  onClick,
+  isStreaming,
+}: {
+  onClick: () => void;
+  isStreaming: boolean;
+}) {
+  const { lang } = useLanguage();
+  const label =
+    lang === "es" ? "Generar mi boleta imprimible" : "Generate my printout";
+  const helper =
+    lang === "es"
+      ? "Crea una boleta de una página y mi perfil de votante local."
+      : "Create a one-page ballot and my local voter profile.";
+
+  return (
+    <button
+      type="button"
+      data-testid="generate-output-btn"
+      disabled={isStreaming}
+      onClick={onClick}
+      className="mb-3 w-full border-2 border-primary/30 bg-surface-lowest px-4 py-3 text-left hover:border-primary hover:bg-primary/5 disabled:opacity-50 disabled:pointer-events-none transition-colors"
+    >
+      <span className="block text-sm font-black text-on-surface">{label}</span>
+      <span className="block text-xs text-on-surface-muted mt-1">{helper}</span>
+    </button>
+  );
+}
+
 /* ── Hooks ──────────────────────────────────────────────────── */
 
 function useHandoffState(
@@ -904,6 +933,14 @@ export function ChatPanel({
     [sendMessage, messages],
   );
 
+  const handleOutputRequest = useCallback(() => {
+    const request =
+      lang === "es"
+        ? "Genera ahora el Resultado A: Mi Boleta — 1 Página Impresa y el Resultado B: Mi Perfil de Votante. Incluye solo elecciones que he confirmado claramente; marca cualquier contienda pendiente como INDECISO/A. Déjame revisar el perfil antes de guardarlo."
+        : "Generate Output A: My Ballot — 1 Page Printout and Output B: My Voter Profile now. Include only choices I have clearly confirmed; mark anything still pending as UNDECIDED. Let me review the profile before I save it.";
+    sendMessage(request, messages);
+  }, [lang, sendMessage, messages]);
+
   // Compute research progress from all assistant messages
   const allBlocks: StructuredBlock[] = [];
   const fullContent = messages
@@ -1007,6 +1044,12 @@ export function ChatPanel({
 
           {!chatDisabled && (
             <>
+              {messages.length > 1 && (
+                <OutputRequestButton
+                  onClick={handleOutputRequest}
+                  isStreaming={isStreaming}
+                />
+              )}
               <ChatInput
                 onSubmit={(msg) => sendMessage(msg, messages)}
                 isStreaming={isStreaming}
