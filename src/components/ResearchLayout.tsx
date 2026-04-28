@@ -153,6 +153,45 @@ function hasPollingResults(data: PollingData | null): data is PollingData {
   );
 }
 
+function getContestCount(data: PollingData | null): number {
+  return data?.contests?.length ?? 0;
+}
+
+function BallotDataStatus({
+  pollingData,
+  lang,
+}: {
+  pollingData: PollingData | null;
+  lang: Language;
+}) {
+  const contestCount = getContestCount(pollingData);
+  const hasOfficialContests = contestCount > 0;
+  const title = hasOfficialContests
+    ? lang === "es"
+      ? "Encontramos contiendas oficiales para tu dirección."
+      : "Official contests found for your address."
+    : lang === "es"
+      ? "La boleta oficial puede estar incompleta aquí."
+      : "Official ballot data may be incomplete here.";
+  const body = hasOfficialContests
+    ? lang === "es"
+      ? `${contestCount} contienda${contestCount === 1 ? "" : "s"} se incluirán en la conversación. El asistente aún debe citar fuentes cuando investigue candidatos o propuestas.`
+      : `${contestCount} race${contestCount === 1 ? "" : "s"} will be included in the conversation. The assistant still needs to cite sources when researching candidates or measures.`
+    : lang === "es"
+      ? "Seguiremos con investigación pública y enlaces electorales oficiales. Si una fuente no confirma algo, el asistente debe decirlo claramente."
+      : "We'll continue with public research and official election links. If a source does not confirm something, the assistant should say that plainly.";
+
+  return (
+    <section
+      data-testid="ballot-data-status"
+      className="bg-surface-low border-l-4 border-primary p-4 text-sm text-on-surface-variant"
+    >
+      <p className="font-bold text-on-surface mb-1">{title}</p>
+      <p>{body}</p>
+    </section>
+  );
+}
+
 /* ── Sidebar ─────────────────────────────────────────────────── */
 
 const tabs: {
@@ -979,6 +1018,8 @@ function ResearchView({
               </div>
             </div>
           )}
+
+          <BallotDataStatus pollingData={pollingData} lang={lang} />
 
           {/* Chat or copy/paste fallback */}
           {(chatAvailable || !budgetChecked) && (

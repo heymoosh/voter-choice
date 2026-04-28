@@ -84,6 +84,21 @@ describe("BallotToolClient", () => {
     expect(screen.getByTestId("prompt-output").textContent).toContain("Texas");
   });
 
+  it("shows ballot data status in research view", async () => {
+    renderWithProviders(<BallotToolClient />);
+    fireEvent.change(screen.getByTestId("zip-input"), {
+      target: { value: "73301" },
+    });
+    fireEvent.click(screen.getByTestId("zip-submit"));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("ballot-data-status")).toBeInTheDocument();
+    });
+    expect(screen.getByTestId("ballot-data-status").textContent).toContain(
+      "Official ballot data",
+    );
+  });
+
   it("shows not-found-message for unknown zip", async () => {
     renderWithProviders(<BallotToolClient />);
     fireEvent.change(screen.getByTestId("zip-input"), {
