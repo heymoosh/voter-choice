@@ -6,6 +6,8 @@ import { translations } from "../lib/translations";
 import {
   openPrintableBallot,
   downloadProfileAsText,
+  extractBallot,
+  extractVoterProfile,
 } from "../lib/ballot-utils";
 
 interface ParsedHandoff {
@@ -23,38 +25,23 @@ const AI_LINKS = [
 ];
 
 export function parseHandoffMarkers(content: string): ParsedHandoff | null {
-  const hasHandoff = content.includes("=== VOTER SESSION HANDOFF");
-  const hasBallot = content.includes("MY BALLOT");
-  const hasProfile = content.includes("MY VOTER PROFILE");
+  const hasHandoff =
+    content.includes("=== VOTER SESSION HANDOFF") ||
+    content.includes("=== TRANSFERENCIA DE SESIÓN");
+  const ballot = extractBallot(content);
+  const voterProfile = extractVoterProfile(content);
 
-  if (!hasHandoff && !hasBallot && !hasProfile) return null;
+  if (!hasHandoff && !ballot && !voterProfile) return null;
 
-  let ballot: string | null = null;
-  let voterProfile: string | null = null;
   let handoffBlock: string | null = null;
   let preamble = content;
 
-  // Extract ballot: MY BALLOT — ... until next section or end
-  const ballotMatch = content.match(
-    /^(MY BALLOT\s*[-—][\s\S]+?)(?=\n===|\n### |$)/m,
-  );
-  if (ballotMatch) {
-    ballot = ballotMatch[1].trim();
-    preamble = preamble.replace(ballotMatch[0], "");
-  }
-
-  // Extract voter profile: === MY VOTER PROFILE ... === END VOTER PROFILE ===
-  const profileMatch = content.match(
-    /=== MY VOTER PROFILE[\s\S]*?=== END VOTER PROFILE ===/,
-  );
-  if (profileMatch) {
-    voterProfile = profileMatch[0].trim();
-    preamble = preamble.replace(profileMatch[0], "");
-  }
+  if (ballot) preamble = preamble.replace(ballot, "");
+  if (voterProfile) preamble = preamble.replace(voterProfile, "");
 
   // Extract handoff block: === VOTER SESSION HANDOFF ... === END HANDOFF ===
   const handoffMatch = content.match(
-    /=== VOTER SESSION HANDOFF[\s\S]*?=== END HANDOFF ===/,
+    /=== (?:VOTER SESSION HANDOFF|TRANSFERENCIA DE SESIÓN DE VOTANTE)[\s\S]*?=== (?:END HANDOFF|FIN DE TRANSFERENCIA) ===/,
   );
   if (handoffMatch) {
     handoffBlock = handoffMatch[0].trim();
@@ -404,16 +391,10 @@ export function buildClientFallbackHandoff(
 
   for (const msg of assistantMessages) {
     if (!ballot) {
-      const ballotMatch = msg.match(
-        /^(MY BALLOT\s*[-—][\s\S]+?)(?=\n===|\n### |$)/m,
-      );
-      if (ballotMatch) ballot = ballotMatch[1].trim();
+      ballot = extractBallot(msg);
     }
     if (!voterProfile) {
-      const profileMatch = msg.match(
-        /=== MY VOTER PROFILE[\s\S]*?=== END VOTER PROFILE ===/,
-      );
-      if (profileMatch) voterProfile = profileMatch[0].trim();
+      voterProfile = extractVoterProfile(msg);
     }
   }
 

@@ -6,7 +6,7 @@
 /** Extract "MY BALLOT" (EN) or "MI BOLETA" (ES) block from message content */
 export function extractBallot(content: string): string | null {
   const match = content.match(
-    /^((?:MY BALLOT|MI BOLETA)\s*[-—][\s\S]+?)(?=\n===|\n### |$)/m,
+    /(?:^|\n)((?:(?:===\s*)?(?:MY BALLOT|MI BOLETA)(?:\s*[-—][^\n=]*)?(?:\s*===)?)[\s\S]+?)(?=\n===\s*(?:MY VOTER PROFILE|MI PERFIL DE VOTANTE|VOTER SESSION HANDOFF|TRANSFERENCIA DE SESIÓN DE VOTANTE)|\n### |$)/,
   );
   return match ? match[1].trim() : null;
 }
