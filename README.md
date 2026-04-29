@@ -54,3 +54,39 @@ bash scripts/ai-bootstrap.sh
 ## Deployment
 
 Pushes to `launch/production` run `.github/workflows/deploy.yml`, which runs tests, pulls secrets from Bitwarden Secrets Manager, and deploys to Vercel.
+
+## Production Safeguards
+
+The chat budget, chat rate limits, and Civic lookup throttle use process-local
+memory in local development. For production launch, configure a Redis-compatible
+REST store such as Vercel KV or Upstash Redis with either:
+
+```text
+KV_REST_API_URL
+KV_REST_API_TOKEN
+```
+
+or:
+
+```text
+UPSTASH_REDIS_REST_URL
+UPSTASH_REDIS_REST_TOKEN
+```
+
+When these variables are present, production counters are shared across Vercel
+instances and cold starts. Without them, the app still runs, but spend and abuse
+limits are not durable enough for public traffic.
+
+To provision the Upstash Redis database and store the production secrets with
+minimal manual setup:
+
+```bash
+bash scripts/provision-durable-safeguards.sh
+```
+
+The script uses Terraform/OpenTofu in `infra/upstash`, defaults to Upstash
+region `us-west-1`, and prompts only for missing provider credentials. It stores
+`UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` in GitHub Actions
+secrets. If `VERCEL_TOKEN` is set, it also updates Vercel production env
+directly; otherwise the existing deploy workflow syncs the secrets to Vercel on
+the next `launch/production` deploy.

@@ -74,6 +74,10 @@ jobs:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          KV_REST_API_URL: ${{ secrets.KV_REST_API_URL }}
+          KV_REST_API_TOKEN: ${{ secrets.KV_REST_API_TOKEN }}
+          UPSTASH_REDIS_REST_URL: ${{ secrets.UPSTASH_REDIS_REST_URL }}
+          UPSTASH_REDIS_REST_TOKEN: ${{ secrets.UPSTASH_REDIS_REST_TOKEN }}
         run: |
           if [ -n "$ANTHROPIC_VOTER_API" ]; then
             echo "$ANTHROPIC_VOTER_API" | vercel env add ANTHROPIC_VOTER_API production --force --token="$VERCEL_TOKEN" 2>/dev/null || true
@@ -83,6 +87,18 @@ jobs:
           fi
           if [ -n "$GOOGLE_PLACES_API_KEY" ]; then
             echo "$GOOGLE_PLACES_API_KEY" | vercel env add NEXT_PUBLIC_GOOGLE_PLACES_API_KEY production --force --token="$VERCEL_TOKEN" 2>/dev/null || true
+          fi
+          if [ -n "$KV_REST_API_URL" ]; then
+            echo "$KV_REST_API_URL" | vercel env add KV_REST_API_URL production --force --token="$VERCEL_TOKEN" 2>/dev/null || true
+          fi
+          if [ -n "$KV_REST_API_TOKEN" ]; then
+            echo "$KV_REST_API_TOKEN" | vercel env add KV_REST_API_TOKEN production --force --token="$VERCEL_TOKEN" 2>/dev/null || true
+          fi
+          if [ -n "$UPSTASH_REDIS_REST_URL" ]; then
+            echo "$UPSTASH_REDIS_REST_URL" | vercel env add UPSTASH_REDIS_REST_URL production --force --token="$VERCEL_TOKEN" 2>/dev/null || true
+          fi
+          if [ -n "$UPSTASH_REDIS_REST_TOKEN" ]; then
+            echo "$UPSTASH_REDIS_REST_TOKEN" | vercel env add UPSTASH_REDIS_REST_TOKEN production --force --token="$VERCEL_TOKEN" 2>/dev/null || true
           fi
 
       - name: Deploy to Vercel

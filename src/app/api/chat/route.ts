@@ -1,10 +1,10 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { NextRequest } from "next/server";
-import { checkRateLimit } from "../../../lib/server/rate-limit";
+import { checkRateLimitAsync } from "../../../lib/server/rate-limit";
 import {
-  recordUsage,
-  getBudgetStatus,
-  shouldTriggerHandoff,
+  recordUsageAsync,
+  getBudgetStatusAsync,
+  shouldTriggerHandoffAsync,
   type BudgetTier,
 } from "../../../lib/server/budget";
 
@@ -22,6 +22,11 @@ const WEB_SEARCH_TOOL = {
 // Beyond that, the message is almost certainly a paste attack, an uploaded
 // ballot dump, or noise — none of which we want to bill the budget for.
 const MAX_USER_MESSAGE_CHARS = 8000;
+const MAX_ASSISTANT_MESSAGE_CHARS = 20000;
+const MAX_SYSTEM_PROMPT_CHARS = 80000;
+const MAX_VOTER_PROFILE_CHARS = 20000;
+const MAX_MESSAGES_PER_REQUEST = 80;
+const MAX_SESSION_ID_CHARS = 128;
 
 const HANDOFF_INSTRUCTION = `IMPORTANT: This is your final response in this session. Generate a complete session package: (1) a partial ballot summary listing races covered so far with the user's picks AND races remaining, (2) a voter profile capturing everything learned about this user, and (3) a session handoff block (use the SESSION HANDOFF format from your prompt). Present this warmly — not as an error, but as "Let me make sure you have everything we've worked on so far." The user should feel taken care of, not cut off.`;
 
@@ -81,9 +86,84 @@ function truncateUserMessages(messages: ChatMessage[]): ChatMessage[] {
   );
 }
 
-function prepareMessages(messages: ChatMessage[]): ChatMessage[] {
+function validateMessage(message: unknown): message is ChatMessage {
+  if (!message || typeof message !== "object") return false;
+  const candidate = message as Partial<ChatMessage>;
+  if (candidate.role !== "user" && candidate.role !== "assistant") return false;
+  if (typeof candidate.content !== "string") return false;
+  if (
+    candidate.role === "assistant" &&
+    candidate.content.length > MAX_ASSISTANT_MESSAGE_CHARS
+  ) {
+    return false;
+  }
+  return true;
+}
+
+function validationError(error: string): Response {
+  return Response.json({ error }, { status: 400 });
+}
+
+function validateMessagesField(messages: ChatMessage[]): Response | null {
+  if (
+    messages.length > MAX_MESSAGES_PER_REQUEST ||
+    !messages.every(validateMessage)
+  ) {
+    return validationError("Invalid messages");
+  }
+  return null;
+}
+
+function validateSystemPromptField(systemPrompt: string): Response | null {
+  if (
+    typeof systemPrompt !== "string" ||
+    systemPrompt.length > MAX_SYSTEM_PROMPT_CHARS
+  ) {
+    return validationError("Invalid system prompt");
+  }
+  return null;
+}
+
+function validateSessionIdField(sessionId: string): Response | null {
+  if (
+    typeof sessionId !== "string" ||
+    sessionId.length === 0 ||
+    sessionId.length > MAX_SESSION_ID_CHARS
+  ) {
+    return validationError("Invalid session id");
+  }
+  return null;
+}
+
+function validateMessageCountField(messageCount: number): Response | null {
+  if (
+    typeof messageCount !== "number" ||
+    !Number.isFinite(messageCount) ||
+    messageCount < 1
+  ) {
+    return validationError("Invalid message count");
+  }
+  return null;
+}
+
+function validateVoterProfileField(voterProfile?: string): Response | null {
+  if (
+    voterProfile !== undefined &&
+    (typeof voterProfile !== "string" ||
+      voterProfile.length > MAX_VOTER_PROFILE_CHARS)
+  ) {
+    return validationError("Invalid voter profile");
+  }
+  return null;
+}
+
+async function prepareMessages(
+  messages: ChatMessage[],
+): Promise<ChatMessage[]> {
   const prepared = truncateUserMessages(messages);
-  if (!shouldTriggerHandoff() || prepared.length === 0) return prepared;
+  if (!(await shouldTriggerHandoffAsync()) || prepared.length === 0) {
+    return prepared;
+  }
   const last = prepared[prepared.length - 1];
   if (last.role === "user") {
     prepared[prepared.length - 1] = {
@@ -97,6 +177,7 @@ function prepareMessages(messages: ChatMessage[]): ChatMessage[] {
 function budgetGateResponse(
   tier: BudgetTier,
   isNewSession: boolean | undefined,
+  budget: Awaited<ReturnType<typeof getBudgetStatusAsync>>,
 ): Response | null {
   if (tier === "exhausted") {
     return Response.json(
@@ -104,7 +185,7 @@ function budgetGateResponse(
         error:
           "Our free AI chat has reached its monthly limit. Copy the prompt below and paste it into any free AI chatbot to continue your research.",
         code: "BUDGET_EXHAUSTED",
-        budget: getBudgetStatus(),
+        budget,
       },
       { status: 503 },
     );
@@ -115,7 +196,7 @@ function budgetGateResponse(
         error:
           "Our AI chat is at capacity this month, but you can still research your ballot — copy the prompt and use it in any free AI chatbot.",
         code: "BUDGET_SOFT_CLOSE",
-        budget: getBudgetStatus(),
+        budget,
       },
       { status: 503 },
     );
@@ -291,7 +372,7 @@ function createSSEStream(
           usage.cacheWrite > 0 ||
           usage.searchCount > 0
         ) {
-          recordUsage({
+          await recordUsageAsync({
             inputTokens: usage.input,
             outputTokens: usage.output,
             cachedInputTokens: usage.cachedInput,
@@ -301,7 +382,7 @@ function createSSEStream(
         }
         controller.enqueue(
           encoder.encode(
-            ssePayload({ type: "done", budget: getBudgetStatus() }),
+            ssePayload({ type: "done", budget: await getBudgetStatusAsync() }),
           ),
         );
       } catch (err) {
@@ -327,18 +408,28 @@ async function parseBody(
 }
 
 function validateBody(body: ChatRequest): Response | null {
-  const { messages, systemPrompt, sessionId } = body;
+  const { messages, systemPrompt, sessionId, messageCount, voterProfile } =
+    body;
   if (!messages || !Array.isArray(messages) || !systemPrompt || !sessionId) {
     return Response.json(
       { error: "Missing required fields: messages, systemPrompt, sessionId" },
       { status: 400 },
     );
   }
-  return null;
+  return (
+    validateMessagesField(messages) ??
+    validateSystemPromptField(systemPrompt) ??
+    validateSessionIdField(sessionId) ??
+    validateMessageCountField(messageCount) ??
+    validateVoterProfileField(voterProfile)
+  );
 }
 
-function checkGates(request: NextRequest, body: ChatRequest): Response | null {
-  const rateResult = checkRateLimit(
+async function checkGates(
+  request: NextRequest,
+  body: ChatRequest,
+): Promise<Response | null> {
+  const rateResult = await checkRateLimitAsync(
     getClientIP(request),
     body.sessionId,
     body.messageCount ?? 1,
@@ -349,16 +440,17 @@ function checkGates(request: NextRequest, body: ChatRequest): Response | null {
       { status: 429 },
     );
   }
-  return budgetGateResponse(getBudgetStatus().tier, body.isNewSession);
+  const budget = await getBudgetStatusAsync();
+  return budgetGateResponse(budget.tier, body.isNewSession, budget);
 }
 
-function handleAnthropicError(err: unknown): Response {
+async function handleAnthropicError(err: unknown): Promise<Response> {
   if (err instanceof Anthropic.APIError) {
     console.error(`Anthropic API error: ${err.status} ${err.message}`);
     if (err.status === 429) {
       // Anthropic per-minute rate limit — this is temporary, NOT a budget issue.
       // Check if the actual budget is exhausted before claiming so.
-      const budget = getBudgetStatus();
+      const budget = await getBudgetStatusAsync();
       if (budget.tier === "exhausted") {
         return Response.json(
           {
@@ -396,7 +488,7 @@ function handleAnthropicError(err: unknown): Response {
 }
 
 export async function GET() {
-  return Response.json({ budget: getBudgetStatus() });
+  return Response.json({ budget: await getBudgetStatusAsync() });
 }
 
 export async function POST(request: NextRequest) {
@@ -414,7 +506,7 @@ export async function POST(request: NextRequest) {
   const validationError = validateBody(body);
   if (validationError) return validationError;
 
-  const gateError = checkGates(request, body);
+  const gateError = await checkGates(request, body);
   if (gateError) return gateError;
 
   const apiKey = process.env.ANTHROPIC_VOTER_API;
@@ -425,9 +517,10 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const budget = getBudgetStatus();
+  const budget = await getBudgetStatusAsync();
   try {
     const systemText = buildSystemPrompt(body.systemPrompt, body.voterProfile);
+    const messages = await prepareMessages(body.messages);
     const stream = await new Anthropic({ apiKey }).messages.create({
       model: "claude-sonnet-4-6",
       max_tokens: 4096,
@@ -445,7 +538,7 @@ export async function POST(request: NextRequest) {
       // SDK 0.39.0 hasn't yet typed server tools (web_search); the API
       // accepts this shape — cast through unknown.
       tools: [WEB_SEARCH_TOOL] as unknown as Anthropic.Tool[],
-      messages: prepareMessages(body.messages),
+      messages,
       stream: true,
     });
 

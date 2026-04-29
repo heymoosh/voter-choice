@@ -82,17 +82,9 @@ function useGooglePlaces(
 
       // --- Event-based capture (primary path) ---
       const handleSelect = async (e: Event) => {
-        console.log("[VoterChoice] place event fired:", e.type);
         const place = (e as unknown as Record<string, unknown>).place as
           | Record<string, unknown>
           | undefined;
-        console.log("[VoterChoice] place:", place);
-        if (place) {
-          console.log(
-            "[VoterChoice] place keys:",
-            Object.getOwnPropertyNames(place),
-          );
-        }
 
         // Try formattedAddress directly
         if (place?.formattedAddress) {
@@ -113,15 +105,11 @@ function useGooglePlaces(
               return;
             }
           }
-        } catch (err) {
-          console.warn("[VoterChoice] fetchFields failed:", err);
+        } catch {
+          // Ignore autocomplete enrichment failures; the manual input remains usable.
         }
         // Fall back to inner input
         if (innerInputRef.current?.value) {
-          console.log(
-            "[VoterChoice] using inner input value:",
-            innerInputRef.current.value,
-          );
           onSelectRef.current(innerInputRef.current.value);
           return;
         }
@@ -129,7 +117,6 @@ function useGooglePlaces(
         const elValue = (el as unknown as Record<string, unknown>)
           .value as string;
         if (elValue) {
-          console.log("[VoterChoice] using el.value:", elValue);
           onSelectRef.current(elValue);
         }
       };
@@ -145,7 +132,6 @@ function useGooglePlaces(
         // Search the element itself and the container
         const input = findDeepInput(el) ?? findDeepInput(containerRef.current!);
         if (input) {
-          console.log("[VoterChoice] inner input found");
           innerInputRef.current = input;
         } else if (retries < 50) {
           retries++;
@@ -155,22 +141,12 @@ function useGooglePlaces(
           } else {
             setTimeout(poll, 100);
           }
-        } else {
-          console.warn(
-            "[VoterChoice] could not find inner input after polling",
-          );
-          // Log DOM structure for debugging
-          console.log("[VoterChoice] el.shadowRoot:", el.shadowRoot);
-          console.log("[VoterChoice] el.innerHTML:", el.innerHTML);
-          console.log("[VoterChoice] el.children:", el.children.length);
         }
       };
       requestAnimationFrame(poll);
     }
 
-    init().catch((err) => {
-      console.warn("[VoterChoice] Places init failed:", err);
-    });
+    init().catch(() => {});
   }, [containerRef, innerInputRef]);
 }
 
@@ -227,24 +203,23 @@ export function ZipForm({ onSubmit }: ZipFormProps) {
           >
             {t.zipForm.label}
           </label>
-          {hasPlacesKey ? (
-            <div ref={placesContainerRef} className="w-full" />
-          ) : (
-            <input
-              id="zip-input"
-              data-testid="zip-input"
-              type="text"
-              value={value}
-              onChange={(e) => {
-                setValue(e.target.value);
-                if (errorKey) setErrorKey(null);
-              }}
-              className="w-full bg-transparent border-none focus:ring-0 focus:outline-none text-xl md:text-2xl font-bold p-1 placeholder:text-surface-high text-on-surface"
-              placeholder={t.zipForm.placeholder}
-              autoComplete="off"
-              aria-describedby={errorMessage ? "zip-error" : "address-privacy"}
-            />
-          )}
+          {hasPlacesKey && <div ref={placesContainerRef} className="w-full" />}
+          <input
+            id="zip-input"
+            data-testid="zip-input"
+            type="text"
+            value={value}
+            onChange={(e) => {
+              setValue(e.target.value);
+              if (errorKey) setErrorKey(null);
+            }}
+            className={`w-full bg-transparent border-none focus:ring-0 focus:outline-none text-xl md:text-2xl font-bold p-1 placeholder:text-surface-high text-on-surface ${
+              hasPlacesKey ? "mt-2" : ""
+            }`}
+            placeholder={t.zipForm.placeholder}
+            autoComplete="off"
+            aria-describedby={errorMessage ? "zip-error" : "address-privacy"}
+          />
         </div>
         <button
           data-testid="zip-submit"

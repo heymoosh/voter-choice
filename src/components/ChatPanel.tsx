@@ -52,7 +52,6 @@ const RATE_ERROR_CODES = new Set([
 interface ChatPanelProps {
   state: StateElectionData;
   zipCode: string;
-  address?: string;
   pollingData?: PollingDataForPrompt | null;
   onBudgetUpdate?: (budget: BudgetStatus) => void;
   voterProfile?: string | null;
@@ -163,8 +162,8 @@ function InlinePrivacyNotice() {
     <div data-testid="chat-privacy-notice" className="mb-4">
       <p className="text-xs text-on-surface-muted text-center">
         {lang === "es"
-          ? "Tu conversación permanece solo en tu navegador — no la almacenamos. Descarga tu boleta antes de salir."
-          : "Your conversation stays in your browser only \u2014 we don\u2019t store it. Download your ballot before leaving."}
+          ? "Privacidad: el chat se envía a Anthropic para responder. No escribas tu nombre, dirección exacta, teléfono, correo electrónico ni otros datos identificables."
+          : "Privacy: chat is sent to Anthropic for responses, but we do not include your address in the AI prompt. Do not type your name, exact address, phone, email, or other identifying details."}
       </p>
     </div>
   );
@@ -727,7 +726,6 @@ function ChatStatusBar({
 export function ChatPanel({
   state,
   zipCode,
-  address,
   pollingData,
   onBudgetUpdate,
   voterProfile,
@@ -782,9 +780,8 @@ export function ChatPanel({
       lang,
       pollingData ?? undefined,
       countyName,
-      address,
     );
-  }, [state, zipCode, lang, pollingData, countyName, address]);
+  }, [state, zipCode, lang, pollingData, countyName]);
 
   const disableChat = useCallback((reason: DisabledReason) => {
     setChatDisabled(true);

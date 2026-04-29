@@ -33,6 +33,29 @@ describe("ballot-utils", () => {
     expect(extractBallot(content)).toBe("=== MY BALLOT ===\nCouncil: Alex Lee");
   });
 
+  it("extracts the latest ballot block when earlier drafts exist", () => {
+    const content = [
+      "=== MY BALLOT ===",
+      "Mayor: Earlier Draft",
+      "",
+      "=== MY VOTER PROFILE — 2026-04-28 ===",
+      "Draft profile",
+      "=== END VOTER PROFILE ===",
+      "",
+      "=== MY BALLOT ===",
+      "Mayor: Final Choice",
+      "",
+      "=== MY VOTER PROFILE — 2026-04-28 ===",
+      "Final profile",
+      "=== END VOTER PROFILE ===",
+    ].join("\n");
+
+    expect(extractBallot(content)).toBe(
+      "=== MY BALLOT ===\nMayor: Final Choice",
+    );
+    expect(extractVoterProfile(content)).toContain("Final profile");
+  });
+
   it("extracts Spanish ballot and profile blocks", () => {
     const content = [
       "MI BOLETA — Condado Travis — Mayo 2026",

@@ -1,9 +1,19 @@
-import { describe, it, expect, beforeEach } from "vitest";
-import { checkRateLimit, releaseSession, _resetForTesting } from "./rate-limit";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import {
+  checkRateLimit,
+  checkRateLimitAsync,
+  releaseSession,
+  _resetForTesting,
+} from "./rate-limit";
 
 describe("rate-limit", () => {
   beforeEach(() => {
     _resetForTesting();
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.restoreAllMocks();
   });
 
   describe("session message limit", () => {
@@ -19,6 +29,13 @@ describe("rate-limit", () => {
 
     it("rejects message 61", () => {
       const result = checkRateLimit("1.2.3.4", "sess-1", 61);
+      expect(result.allowed).toBe(false);
+      expect(result.code).toBe("SESSION_LIMIT");
+    });
+
+    it("rejects under-reported continuation after server-side count reaches the limit", () => {
+      expect(checkRateLimit("1.2.3.4", "sess-1", 60).allowed).toBe(true);
+      const result = checkRateLimit("1.2.3.4", "sess-1", 1);
       expect(result.allowed).toBe(false);
       expect(result.code).toBe("SESSION_LIMIT");
     });
@@ -94,6 +111,42 @@ describe("rate-limit", () => {
       // Different IP should be unaffected
       const result = checkRateLimit("2.2.2.2", "sess-1", 1);
       expect(result.allowed).toBe(true);
+    });
+  });
+
+  describe("durable rate limit store", () => {
+    beforeEach(() => {
+      vi.stubEnv("KV_REST_API_URL", "https://redis.example.test");
+      vi.stubEnv("KV_REST_API_TOKEN", "test-token");
+    });
+
+    it("uses durable Redis-compatible commands when configured", async () => {
+      const fetchMock = vi
+        .spyOn(globalThis, "fetch")
+        .mockImplementation(async (_input, init) => {
+          const command = JSON.parse(String(init?.body)) as unknown[];
+          const name = command[0];
+          const result =
+            name === "INCR"
+              ? 1
+              : name === "ZSCORE"
+                ? null
+                : name === "ZCARD"
+                  ? 1
+                  : name === "SET"
+                    ? "OK"
+                    : 1;
+          return new Response(JSON.stringify({ result }), { status: 200 });
+        });
+
+      await expect(
+        checkRateLimitAsync("1.2.3.4", "sess-1", 1),
+      ).resolves.toEqual({ allowed: true });
+      expect(
+        fetchMock.mock.calls.some(([, init]) =>
+          String(init?.body).includes("ZADD"),
+        ),
+      ).toBe(true);
     });
   });
 });

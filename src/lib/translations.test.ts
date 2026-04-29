@@ -142,4 +142,18 @@ describe("translations", () => {
       );
     });
   });
+
+  describe("privacy copy", () => {
+    it("says address is not sent to AI chat", () => {
+      expect(translations.en.zipForm.privacy).toContain("send it to the AI");
+      expect(translations.en.polling.privacyBadge).toContain(
+        "not stored by us or sent to Anthropic",
+      );
+    });
+
+    it("discloses profile chat forwarding", () => {
+      expect(translations.en.profile.includeInPrompt).toContain("Anthropic");
+      expect(translations.en.profile.includeInPrompt).toContain("context");
+    });
+  });
 });

@@ -1,4 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+import {
+  isDurableStoreConfigured,
+  redisCommand,
+} from "../../../lib/server/durable-store";
 
 export const runtime = "nodejs";
 
@@ -30,11 +34,68 @@ interface CivicApiResponse {
   error?: string;
 }
 
+const LOOKUP_WINDOW_MS = 60 * 1000;
+const LOOKUP_LIMIT = process.env.NODE_ENV === "production" ? 30 : 200;
+const lookupBuckets = new Map<string, { count: number; resetAt: number }>();
+
 function sanitizeAddress(raw: string): string | null {
   const trimmed = raw.trim();
   if (!trimmed) return null;
   if (trimmed.length > 200) return null;
   return trimmed;
+}
+
+function getClientIP(request: NextRequest): string {
+  return (
+    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+    request.headers.get("x-real-ip") ??
+    "unknown"
+  );
+}
+
+function validateOrigin(request: NextRequest): boolean {
+  const origin = request.headers.get("origin");
+  const host = request.headers.get("host");
+  if (!origin || !host) return false;
+  try {
+    return new URL(origin).host === host;
+  } catch {
+    return false;
+  }
+}
+
+function checkLookupLimit(ip: string): boolean {
+  const now = Date.now();
+  const existing = lookupBuckets.get(ip);
+  if (!existing || now >= existing.resetAt) {
+    lookupBuckets.set(ip, { count: 1, resetAt: now + LOOKUP_WINDOW_MS });
+    return true;
+  }
+  if (existing.count >= LOOKUP_LIMIT) return false;
+  existing.count++;
+  return true;
+}
+
+async function checkLookupLimitAsync(ip: string): Promise<boolean> {
+  if (!isDurableStoreConfigured()) return checkLookupLimit(ip);
+  try {
+    const key = `voter-choice:civic:${Math.floor(Date.now() / LOOKUP_WINDOW_MS)}:${ip}`;
+    const count = Number((await redisCommand<number>(["INCR", key])) ?? 1);
+    await redisCommand(["EXPIRE", key, Math.ceil(LOOKUP_WINDOW_MS / 1000) + 5]);
+    return count <= LOOKUP_LIMIT;
+  } catch (err) {
+    console.error("Durable civic lookup limit failed:", err);
+    return false;
+  }
+}
+
+async function parseAddress(request: NextRequest): Promise<string | null> {
+  try {
+    const body = (await request.json()) as { address?: unknown };
+    return typeof body.address === "string" ? body.address : null;
+  } catch {
+    return null;
+  }
 }
 
 function extractLocation(loc: {
@@ -147,11 +208,22 @@ async function fetchCivicData(
   return NextResponse.json(result);
 }
 
-export async function GET(request: NextRequest) {
-  const address = request.nextUrl.searchParams.get("address");
+export async function POST(request: NextRequest) {
+  if (!validateOrigin(request)) {
+    return errorResponse("Forbidden.", 403);
+  }
+
+  if (!(await checkLookupLimitAsync(getClientIP(request)))) {
+    return errorResponse(
+      "Too many address lookups. Please try again later.",
+      429,
+    );
+  }
+
+  const address = await parseAddress(request);
 
   if (!address) {
-    return errorResponse("Address parameter is required.", 400);
+    return errorResponse("Address is required.", 400);
   }
 
   const sanitized = sanitizeAddress(address);
@@ -184,4 +256,8 @@ export async function GET(request: NextRequest) {
       502,
     );
   }
+}
+
+export async function GET() {
+  return errorResponse("Use POST for address lookup.", 405);
 }

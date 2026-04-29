@@ -578,6 +578,12 @@ export function PageContent({ children }: PageContentProps) {
                 <p className="text-sm text-on-surface-variant leading-relaxed">
                   {t.landing.footerTagline} &copy; {new Date().getFullYear()}.
                 </p>
+                <p className="text-xs text-on-surface-muted mt-3">
+                  {t.footer.copyright}
+                </p>
+                <p className="text-xs text-on-surface-muted mt-1">
+                  {t.footer.dataLastUpdated("2026-04-12")}
+                </p>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-8">
                 <div>

@@ -5,18 +5,24 @@
 
 /** Extract "MY BALLOT" (EN) or "MI BOLETA" (ES) block from message content */
 export function extractBallot(content: string): string | null {
-  const match = content.match(
-    /(?:^|\n)((?:(?:===\s*)?(?:MY BALLOT|MI BOLETA)(?:\s*[-—][^\n=]*)?(?:\s*===)?)[\s\S]+?)(?=\n===\s*(?:MY VOTER PROFILE|MI PERFIL DE VOTANTE|VOTER SESSION HANDOFF|TRANSFERENCIA DE SESIÓN DE VOTANTE)|\n### |$)/,
-  );
-  return match ? match[1].trim() : null;
+  const matches = [
+    ...content.matchAll(
+      /(?:^|\n)((?:(?:===\s*)?(?:MY BALLOT|MI BOLETA)(?:\s*[-—][^\n=]*)?(?:\s*===)?)[\s\S]+?)(?=\n===\s*(?:MY VOTER PROFILE|MI PERFIL DE VOTANTE|VOTER SESSION HANDOFF|TRANSFERENCIA DE SESIÓN DE VOTANTE)|\n### |$)/g,
+    ),
+  ];
+  const match = matches.at(-1);
+  return match?.[1] ? match[1].trim() : null;
 }
 
 /** Extract voter profile block (EN or ES) from message content */
 export function extractVoterProfile(content: string): string | null {
-  const match = content.match(
-    /=== (?:MY VOTER PROFILE|MI PERFIL DE VOTANTE)[\s\S]*?=== (?:END VOTER PROFILE|FIN DEL PERFIL DE VOTANTE) ===/,
-  );
-  return match ? match[0].trim() : null;
+  const matches = [
+    ...content.matchAll(
+      /=== (?:MY VOTER PROFILE|MI PERFIL DE VOTANTE)[\s\S]*?=== (?:END VOTER PROFILE|FIN DEL PERFIL DE VOTANTE) ===/g,
+    ),
+  ];
+  const match = matches.at(-1);
+  return match?.[0] ? match[0].trim() : null;
 }
 
 /** Extract the date from a voter profile string, if present */
@@ -47,10 +53,9 @@ export function openPrintableBallot(ballotText: string): void {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>My Ballot</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;700;900&display=swap');
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
-    font-family: 'Public Sans', Arial, Helvetica, sans-serif;
+    font-family: Arial, Helvetica, sans-serif;
     color: #000;
     background: #fff;
     padding: 1.5cm 2cm;
@@ -75,7 +80,7 @@ export function openPrintableBallot(ballotText: string): void {
     margin-top: 2px;
   }
   pre {
-    font-family: 'Public Sans', Arial, Helvetica, sans-serif;
+    font-family: Arial, Helvetica, sans-serif;
     font-size: 13pt;
     line-height: 1.6;
     white-space: pre-wrap;
@@ -107,7 +112,7 @@ export function openPrintableBallot(ballotText: string): void {
     flex-wrap: wrap;
   }
   .no-print button {
-    font-family: 'Public Sans', Arial, sans-serif;
+    font-family: Arial, sans-serif;
     font-size: 14pt;
     font-weight: 700;
     padding: 10px 28px;

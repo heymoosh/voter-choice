@@ -354,7 +354,7 @@ const en: Translations = {
     placeholder: "e.g. 123 Main St, Houston, TX 77057",
     submit: "Find My Ballot Info",
     privacy:
-      "Your address is only used to look up your ballot and polling places. We never store it.",
+      "Privacy: your address may be sent to Google Places/Civic to find your ballot and polling places. We do not store it or send it to the AI chat, so we do not have a combined record of where you live and what you say.",
   },
   loading: "Loading...",
   errors: {
@@ -440,7 +440,7 @@ const en: Translations = {
     enterAddressLabel: "Enter Zip Code or Address",
     searchButton: "Search",
     privacyBadge:
-      "Zero tracking. Your location is used only to find your nearest precinct and is never stored.",
+      "Privacy: this address goes to Google Civic for polling lookup. It is not stored by us or sent to Anthropic.",
     primaryRecommendation: "Primary Recommendation",
     electionDayLabel: "Election Day",
     earlyVotingLabel: "Early Voting",
@@ -525,7 +525,7 @@ const en: Translations = {
       `Welcome back! I found your profile from ${date}.`,
     uploadGeneric: "Welcome back! Your voter profile has been loaded.",
     includeInPrompt:
-      "Your profile will be included when you start the chat or copy the prompt.",
+      "Privacy: your profile stays in this browser until you use chat or copy the prompt. Built-in chat sends it to Anthropic as context.",
   },
   rateLimit: {
     sessionLimit:
@@ -639,7 +639,7 @@ const en: Translations = {
     downloadProfile: "Download Profile (.txt)",
     privacyProtocol: "Privacy Protocol:",
     privacyDetail:
-      "This file is generated locally on your device. We never receive, store, or transmit your personal data to any external server.",
+      "Prints and downloads are generated locally on your device. Built-in chat responses are processed by Anthropic, but this saved file is not uploaded by us.",
     votingDestination: "Your Voting Destination",
     earlyVotingSchedule: "Early Voting Schedule",
     getDirections: "Get Directions",
@@ -751,7 +751,7 @@ const es: Translations = {
     placeholder: "ej. 123 Main St, Houston, TX 77057",
     submit: "Buscar mi informaci\u00f3n electoral",
     privacy:
-      "Tu direcci\u00f3n solo se usa para buscar tu boleta y casillas electorales. Nunca la almacenamos.",
+      "Privacidad: tu direcci\u00f3n puede enviarse a Google Places/Civic para encontrar tu boleta y casillas. No la almacenamos ni la enviamos al chat de IA, as\u00ed que no tenemos un registro combinado de d\u00f3nde vives y lo que dices.",
   },
   loading: "Cargando...",
   errors: {
@@ -838,7 +838,7 @@ const es: Translations = {
     enterAddressLabel: "Ingresa C\u00f3digo Postal o Direcci\u00f3n",
     searchButton: "Buscar",
     privacyBadge:
-      "Sin rastreo. Tu ubicaci\u00f3n solo se usa para encontrar tu casilla m\u00e1s cercana y nunca se almacena.",
+      "Privacidad: esta direcci\u00f3n va a Google Civic para buscar casillas. No la almacenamos ni la enviamos a Anthropic.",
     primaryRecommendation: "Recomendaci\u00f3n Principal",
     electionDayLabel: "D\u00eda de Elecci\u00f3n",
     earlyVotingLabel: "Votaci\u00f3n Anticipada",
@@ -925,7 +925,7 @@ const es: Translations = {
     uploadGeneric:
       "\u00a1Bienvenido/a de vuelta! Tu perfil de votante ha sido cargado.",
     includeInPrompt:
-      "Tu perfil se incluir\u00e1 cuando inicies el chat o copies el mensaje.",
+      "Privacidad: tu perfil permanece en este navegador hasta que uses el chat o copies el mensaje. El chat integrado lo env\u00eda a Anthropic como contexto.",
   },
   rateLimit: {
     sessionLimit:
@@ -1046,7 +1046,7 @@ const es: Translations = {
     downloadProfile: "Descargar Perfil (.txt)",
     privacyProtocol: "Protocolo de Privacidad:",
     privacyDetail:
-      "Este archivo se genera localmente en tu dispositivo. Nunca recibimos, almacenamos ni transmitimos tus datos personales a ning\u00fan servidor externo.",
+      "Las impresiones y descargas se generan localmente en tu dispositivo. Las respuestas del chat integrado son procesadas por Anthropic, pero este archivo guardado no lo subimos nosotros.",
     votingDestination: "Tu Destino de Votaci\u00f3n",
     earlyVotingSchedule: "Horario de Votaci\u00f3n Anticipada",
     getDirections: "C\u00f3mo Llegar",

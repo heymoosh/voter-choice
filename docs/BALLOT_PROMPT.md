@@ -206,6 +206,7 @@ NOTES:
 Rules for the voter profile:
 
 - Factual only — things I actually said, in my language
+- Do not include my exact street address, name, phone, email, or other directly identifying details
 - Captures values, reasoning patterns, and personal context — not just picks
 - Designed to be uploaded at the start of a future election conversation so I don't have to re-answer everything
 - Let me review before I save it

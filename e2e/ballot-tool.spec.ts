@@ -44,7 +44,7 @@ test.describe("Input validation", () => {
     await page.getByTestId("zip-submit").click();
     const error = page.getByTestId("zip-error");
     await expect(error).toBeVisible();
-    await expect(error).toContainText(/zip code/i);
+    await expect(error).toContainText(/address/i);
   });
 
   test("shows error for non-numeric input", async ({ page }) => {
@@ -53,7 +53,7 @@ test.describe("Input validation", () => {
     await page.getByTestId("zip-submit").click();
     const error = page.getByTestId("zip-error");
     await expect(error).toBeVisible();
-    await expect(error).toContainText(/valid/i);
+    await expect(error).toContainText(/5-digit zip code/i);
   });
 
   test("shows error for too-short input", async ({ page }) => {
@@ -85,22 +85,23 @@ test.describe("Valid zip code — Texas (73301)", () => {
     await page.getByTestId("zip-submit").click();
   });
 
-  test("displays state info card", async ({ page }) => {
-    const stateInfo = page.getByTestId("state-info");
-    await expect(stateInfo).toBeVisible();
-    await expect(stateInfo).toContainText(/Texas/i);
+  test("displays research workspace", async ({ page }) => {
+    await expect(page.getByTestId("chat-window")).toBeVisible();
+    await expect(page.getByTestId("prompt-output")).toBeVisible();
+    await expect(page.getByTestId("ballot-data-status")).toBeVisible();
   });
 
-  test("shows election name and date", async ({ page }) => {
-    const electionName = page.getByTestId("election-name");
-    const electionDate = page.getByTestId("election-date");
-    await expect(electionName).toBeVisible();
-    await expect(electionDate).toBeVisible();
+  test("shows Texas context in fallback prompt", async ({ page }) => {
+    const promptOutput = page.getByTestId("prompt-output");
+    await expect(promptOutput).toBeVisible();
+    await expect(promptOutput).toContainText(/Texas/i);
+    await expect(promptOutput).toContainText(/73301/);
   });
 
-  test("shows registration status", async ({ page }) => {
-    const regStatus = page.getByTestId("registration-status");
-    await expect(regStatus).toBeVisible();
+  test("shows ballot data completeness status", async ({ page }) => {
+    const ballotStatus = page.getByTestId("ballot-data-status");
+    await expect(ballotStatus).toBeVisible();
+    await expect(ballotStatus).toContainText(/Official ballot data/i);
   });
 
   test("displays customized prompt output", async ({ page }) => {
@@ -130,9 +131,10 @@ test.describe("Valid zip code — California (90210)", () => {
     await page.goto("/");
     await page.getByTestId("zip-input").fill("90210");
     await page.getByTestId("zip-submit").click();
-    const stateInfo = page.getByTestId("state-info");
-    await expect(stateInfo).toBeVisible();
-    await expect(stateInfo).toContainText(/California/i);
+    await expect(page.getByTestId("chat-window")).toBeVisible();
+    await expect(page.getByTestId("prompt-output")).toContainText(
+      /California/i,
+    );
   });
 
   test("displays customized prompt for California", async ({ page }) => {
@@ -224,9 +226,8 @@ test.describe("Keyboard accessibility", () => {
     const zipInput = page.getByTestId("zip-input");
     await zipInput.fill("73301");
     await zipInput.press("Enter");
-    // Should show state info (form submitted via Enter)
-    const stateInfo = page.getByTestId("state-info");
-    await expect(stateInfo).toBeVisible();
+    // Should show research workspace (form submitted via Enter)
+    await expect(page.getByTestId("chat-window")).toBeVisible();
   });
 
   test("can tab through interactive elements", async ({ page }) => {
@@ -257,7 +258,10 @@ test.describe("Privacy Policy page", () => {
   test("contains key privacy sections", async ({ page }) => {
     await page.goto("/privacy");
     await expect(
-      page.getByRole("heading", { name: /Zero Data Collection/i }),
+      page.getByRole("heading", { name: /Minimal Data Collection/i }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: /What We Cannot Provide/i }),
     ).toBeVisible();
     await expect(
       page.getByRole("heading", { name: /Chat Conversations/i }),

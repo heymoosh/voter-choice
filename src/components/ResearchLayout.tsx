@@ -40,7 +40,6 @@ interface BudgetStatus {
 interface ResearchLayoutProps {
   state: StateElectionData;
   zipCode: string;
-  address?: string;
   addressStep: AddressStep;
   pollingData: PollingData | null;
   onAddressSubmit: (address: string) => void;
@@ -939,7 +938,6 @@ function PollingView({
 function ResearchView({
   state,
   zipCode,
-  address,
   budgetStatus,
   budgetChecked,
   onBudgetUpdate,
@@ -951,7 +949,6 @@ function ResearchView({
 }: {
   state: StateElectionData;
   zipCode: string;
-  address?: string;
   budgetStatus: BudgetStatus;
   budgetChecked: boolean;
   onBudgetUpdate: (budget: BudgetStatus) => void;
@@ -1026,7 +1023,6 @@ function ResearchView({
             <ChatPanel
               state={state}
               zipCode={zipCode}
-              address={address}
               pollingData={pollingData}
               onBudgetUpdate={onBudgetUpdate}
               voterProfile={voterProfile}
@@ -1072,7 +1068,6 @@ function ResearchView({
 export function ResearchLayout({
   state,
   zipCode,
-  address,
   addressStep,
   pollingData,
   onAddressSubmit,
@@ -1107,7 +1102,6 @@ export function ResearchLayout({
           <ResearchView
             state={state}
             zipCode={zipCode}
-            address={address}
             budgetStatus={budgetStatus}
             budgetChecked={budgetChecked}
             onBudgetUpdate={onBudgetUpdate}

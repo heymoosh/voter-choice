@@ -1,7 +1,9 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import {
   recordUsage,
+  recordUsageAsync,
   getBudgetStatus,
+  getBudgetStatusAsync,
   shouldAllowNewSession,
   shouldTriggerHandoff,
   _resetForTesting,
@@ -11,6 +13,11 @@ import {
 describe("budget", () => {
   beforeEach(() => {
     _resetForTesting();
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.restoreAllMocks();
   });
 
   describe("recordUsage", () => {
@@ -34,6 +41,50 @@ describe("budget", () => {
       recordUsage(500_000, 0); // $1.50
       const status = getBudgetStatus();
       expect(status.estimatedSpendUSD).toBe(3);
+    });
+  });
+
+  describe("durable budget store", () => {
+    beforeEach(() => {
+      vi.stubEnv("KV_REST_API_URL", "https://redis.example.test");
+      vi.stubEnv("KV_REST_API_TOKEN", "test-token");
+    });
+
+    it("reads shared budget spend when durable store is configured", async () => {
+      vi.spyOn(globalThis, "fetch").mockResolvedValue(
+        new Response(JSON.stringify({ result: "18" }), { status: 200 }),
+      );
+
+      await expect(getBudgetStatusAsync()).resolves.toMatchObject({
+        tier: "handoff",
+        percent: 90,
+        estimatedSpendUSD: 18,
+      });
+    });
+
+    it("records usage through durable store when configured", async () => {
+      const fetchMock = vi
+        .spyOn(globalThis, "fetch")
+        .mockImplementation(
+          async () =>
+            new Response(JSON.stringify({ result: "OK" }), { status: 200 }),
+        );
+
+      await recordUsageAsync({ inputTokens: 1_000_000, outputTokens: 0 });
+
+      expect(fetchMock).toHaveBeenCalledWith(
+        "https://redis.example.test",
+        expect.objectContaining({
+          headers: expect.objectContaining({
+            Authorization: "Bearer test-token",
+          }),
+        }),
+      );
+      expect(
+        fetchMock.mock.calls.some(([, init]) =>
+          String(init?.body).includes("HINCRBYFLOAT"),
+        ),
+      ).toBe(true);
     });
   });
 
