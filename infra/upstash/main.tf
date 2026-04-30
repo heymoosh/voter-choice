@@ -15,10 +15,12 @@ provider "upstash" {
 }
 
 resource "upstash_redis_database" "voter_choice" {
-  database_name = var.database_name
-  region        = var.region
-  tls           = true
-  eviction      = false
+  database_name  = var.database_name
+  region         = "global"
+  primary_region = var.primary_region
+  read_regions   = var.read_regions
+  tls            = true
+  eviction       = false
 }
 
 locals {
@@ -32,6 +34,10 @@ output "database_id" {
 
 output "region" {
   value = upstash_redis_database.voter_choice.region
+}
+
+output "primary_region" {
+  value = upstash_redis_database.voter_choice.primary_region
 }
 
 output "rest_url" {

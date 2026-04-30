@@ -84,8 +84,9 @@ minimal manual setup:
 bash scripts/provision-durable-safeguards.sh
 ```
 
-The script uses Terraform/OpenTofu in `infra/upstash`, defaults to Upstash
-region `us-west-1`, and prompts only for missing provider credentials. It stores
+The script can either store an existing Upstash Redis REST URL/token, or create a
+new Upstash Redis Global database with Terraform/OpenTofu in `infra/upstash`.
+New databases default to primary region `us-west-1`. The script stores
 `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` in GitHub Actions
 secrets. If `VERCEL_TOKEN` is set, it also updates Vercel production env
 directly; otherwise the existing deploy workflow syncs the secrets to Vercel on

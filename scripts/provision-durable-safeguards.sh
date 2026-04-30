@@ -4,19 +4,6 @@ set -euo pipefail
 ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd -P)"
 cd "$ROOT"
 
-TF_BIN="${TF_BIN:-}"
-if [ -z "$TF_BIN" ]; then
-  if command -v terraform >/dev/null 2>&1; then
-    TF_BIN="terraform"
-  elif command -v tofu >/dev/null 2>&1; then
-    TF_BIN="tofu"
-  else
-    echo "Missing Terraform/OpenTofu."
-    echo "Install Terraform or OpenTofu, then rerun this script."
-    exit 1
-  fi
-fi
-
 if ! command -v gh >/dev/null 2>&1; then
   echo "Missing GitHub CLI: gh"
   exit 1
@@ -60,33 +47,82 @@ read_plain() {
   export "$var_name=${value:-$default_value}"
 }
 
-read_plain "Upstash account email" "UPSTASH_EMAIL" ""
-if [ -z "${UPSTASH_EMAIL:-}" ]; then
-  echo "UPSTASH_EMAIL is required."
-  exit 1
+read_yes_no() {
+  local prompt="$1"
+  local var_name="$2"
+  local default_value="$3"
+  local current="${!var_name:-}"
+  if [ -n "$current" ]; then
+    return
+  fi
+  printf "%s [%s]: " "$prompt" "$default_value" >&2
+  IFS= read -r value
+  value="${value:-$default_value}"
+  case "$value" in
+    y|Y|yes|YES|true|TRUE|1) export "$var_name=1" ;;
+    *) export "$var_name=0" ;;
+  esac
+}
+
+if [ -z "${USE_EXISTING_UPSTASH_REDIS:-}" ]; then
+  read_yes_no "Use an existing Upstash Redis REST URL/token instead of creating a database" "USE_EXISTING_UPSTASH_REDIS" "y"
 fi
-read_secret "Upstash API key" "UPSTASH_API_KEY"
-if [ -z "${UPSTASH_API_KEY:-}" ]; then
-  echo "UPSTASH_API_KEY is required."
-  exit 1
+
+if [ "$USE_EXISTING_UPSTASH_REDIS" = "1" ]; then
+  read_plain "Upstash Redis REST URL" "UPSTASH_REDIS_REST_URL" ""
+  if [ -z "${UPSTASH_REDIS_REST_URL:-}" ]; then
+    echo "UPSTASH_REDIS_REST_URL is required."
+    exit 1
+  fi
+  read_secret "Upstash Redis REST token" "UPSTASH_REDIS_REST_TOKEN"
+  if [ -z "${UPSTASH_REDIS_REST_TOKEN:-}" ]; then
+    echo "UPSTASH_REDIS_REST_TOKEN is required."
+    exit 1
+  fi
+  rest_url="$UPSTASH_REDIS_REST_URL"
+  rest_token="$UPSTASH_REDIS_REST_TOKEN"
+else
+  TF_BIN="${TF_BIN:-}"
+  if [ -z "$TF_BIN" ]; then
+    if command -v terraform >/dev/null 2>&1; then
+      TF_BIN="terraform"
+    elif command -v tofu >/dev/null 2>&1; then
+      TF_BIN="tofu"
+    else
+      echo "Missing Terraform/OpenTofu."
+      echo "Install Terraform or OpenTofu, then rerun this script."
+      exit 1
+    fi
+  fi
+
+  read_plain "Upstash account email" "UPSTASH_EMAIL" ""
+  if [ -z "${UPSTASH_EMAIL:-}" ]; then
+    echo "UPSTASH_EMAIL is required."
+    exit 1
+  fi
+  read_secret "Upstash API key" "UPSTASH_API_KEY"
+  if [ -z "${UPSTASH_API_KEY:-}" ]; then
+    echo "UPSTASH_API_KEY is required."
+    exit 1
+  fi
+
+  export TF_VAR_upstash_email="$UPSTASH_EMAIL"
+  export TF_VAR_upstash_api_key="$UPSTASH_API_KEY"
+  export TF_VAR_primary_region="${UPSTASH_REGION:-${UPSTASH_PRIMARY_REGION:-us-west-1}}"
+  export TF_VAR_database_name="${UPSTASH_DATABASE_NAME:-voter-choice-launch-safeguards}"
+
+  (
+    cd "$ROOT/infra/upstash"
+    "$TF_BIN" init
+    "$TF_BIN" apply -auto-approve
+  )
+
+  rest_url="$("$TF_BIN" -chdir="$ROOT/infra/upstash" output -raw rest_url)"
+  rest_token="$("$TF_BIN" -chdir="$ROOT/infra/upstash" output -raw rest_token)"
 fi
-
-export TF_VAR_upstash_email="$UPSTASH_EMAIL"
-export TF_VAR_upstash_api_key="$UPSTASH_API_KEY"
-export TF_VAR_region="${UPSTASH_REGION:-us-west-1}"
-export TF_VAR_database_name="${UPSTASH_DATABASE_NAME:-voter-choice-launch-safeguards}"
-
-(
-  cd "$ROOT/infra/upstash"
-  "$TF_BIN" init
-  "$TF_BIN" apply -auto-approve
-)
-
-rest_url="$("$TF_BIN" -chdir="$ROOT/infra/upstash" output -raw rest_url)"
-rest_token="$("$TF_BIN" -chdir="$ROOT/infra/upstash" output -raw rest_token)"
 
 if [ -z "$rest_url" ] || [ -z "$rest_token" ]; then
-  echo "Terraform completed, but REST URL/token output was empty."
+  echo "REST URL/token output was empty."
   exit 1
 fi
 

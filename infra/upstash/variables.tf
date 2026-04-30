@@ -16,8 +16,14 @@ variable "database_name" {
   default     = "voter-choice-launch-safeguards"
 }
 
-variable "region" {
-  description = "Primary Upstash Redis region. N. California is the launch default selected by the project owner."
+variable "primary_region" {
+  description = "Primary Upstash Redis Global region. N. California is the launch default selected by the project owner."
   type        = string
   default     = "us-west-1"
+}
+
+variable "read_regions" {
+  description = "Optional Upstash Redis Global read regions. Keep empty for launch to avoid extra cost/complexity."
+  type        = set(string)
+  default     = []
 }
