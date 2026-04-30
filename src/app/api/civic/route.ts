@@ -248,7 +248,11 @@ async function fetchCivicData(
     );
   }
 
-  const retryElections = await getRetryElections(first, apiKey);
+  const retryElections = await getRetryElections(
+    first,
+    apiKey,
+    sanitizedAddress,
+  );
   for (const election of retryElections) {
     if (!election.id) continue;
     const next = await fetchVoterInfo(sanitizedAddress, apiKey, election.id);
@@ -320,20 +324,27 @@ async function fetchElectionList(apiKey: string): Promise<CivicElection[]> {
 async function getRetryElections(
   first: { election?: CivicElection; otherElections?: CivicElection[] },
   apiKey: string,
+  address: string,
 ): Promise<CivicElection[]> {
   const today = new Date().toISOString().slice(0, 10);
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() + 370);
   const cutoffISO = cutoff.toISOString().slice(0, 10);
+  const stateHints = stateHintsFromAddress(address);
   const listed = await fetchElectionList(apiKey);
   const candidates = [
     ...(first.otherElections ?? []),
     ...(first.election ? [first.election] : []),
-    ...listed.filter(
-      (e) =>
+    ...listed.filter((e) => {
+      const isUpcoming =
         !e.electionDay ||
-        (e.electionDay >= today && e.electionDay <= cutoffISO),
-    ),
+        (e.electionDay >= today && e.electionDay <= cutoffISO);
+      if (!isUpcoming) return false;
+      if (stateHints.length === 0) return true;
+      return stateHints.some((hint) =>
+        e.name?.toLowerCase().includes(hint.toLowerCase()),
+      );
+    }),
   ];
 
   const seen = new Set<string>();
@@ -344,6 +355,15 @@ async function getRetryElections(
       return true;
     })
     .slice(0, 8);
+}
+
+function stateHintsFromAddress(address: string): string[] {
+  if (/\bTX\b|Texas/i.test(address)) return ["Texas"];
+  if (/\bCA\b|California/i.test(address)) return ["California"];
+  if (/\bNH\b|New Hampshire/i.test(address)) return ["New Hampshire"];
+  if (/\bAZ\b|Arizona/i.test(address)) return ["Arizona"];
+  if (/\bNM\b|New Mexico/i.test(address)) return ["New Mexico"];
+  return [];
 }
 
 function buildCivicResponse(
