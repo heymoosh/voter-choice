@@ -101,7 +101,7 @@ test.describe("Valid zip code — Texas (73301)", () => {
   test("shows ballot data completeness status", async ({ page }) => {
     const ballotStatus = page.getByTestId("ballot-data-status");
     await expect(ballotStatus).toBeVisible();
-    await expect(ballotStatus).toContainText(/Official ballot data/i);
+    await expect(ballotStatus).toContainText(/Exact ballot|Official contests/i);
   });
 
   test("displays customized prompt output", async ({ page }) => {

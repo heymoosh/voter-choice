@@ -7,6 +7,7 @@ import type {
   CountyResource,
   VoteByMail,
 } from "../types/election";
+import type { BallotSourceSummary } from "../types/ballotSource";
 import type { Language } from "./translations";
 
 export interface PollingLocationData {
@@ -28,6 +29,7 @@ export interface PollingDataForPrompt {
   earlyVoteSites: PollingLocationData[];
   contests?: CivicContestData[];
   county?: string;
+  source?: BallotSourceSummary;
 }
 
 const BASE_PROMPT = `You are a nonpartisan civic research assistant for a free U.S. ballot research tool. Your one job: help me understand what's on MY ballot, why it matters to my life, and who's actually running — based on what candidates have DONE, not what they say in ads.
@@ -699,6 +701,46 @@ function formatCivicDataBlock(polling: PollingDataForPrompt | undefined): {
   };
 }
 
+function formatBallotSourceBlock(
+  polling: PollingDataForPrompt | undefined,
+): string {
+  if (!polling?.source) return "";
+  const lines = [
+    "",
+    "## BALLOT SOURCE STATUS",
+    `- **Provider:** ${polling.source.provider}`,
+    `- **Confidence:** ${polling.source.confidence}`,
+    `- **Status:** ${polling.source.message}`,
+  ];
+  if (polling.source.electionName) {
+    lines.push(`- **Provider election:** ${polling.source.electionName}`);
+  }
+  for (const link of polling.source.sourceLinks) {
+    lines.push(`- **Source:** ${link.label} — ${link.url}`);
+  }
+  return lines.join("\n");
+}
+
+function formatBallotSourceBlockEs(
+  polling: PollingDataForPrompt | undefined,
+): string {
+  if (!polling?.source) return "";
+  const lines = [
+    "",
+    "## ESTADO DE LA FUENTE DE BOLETA",
+    `- **Proveedor:** ${polling.source.provider}`,
+    `- **Confianza:** ${polling.source.confidence}`,
+    `- **Estado:** ${polling.source.message}`,
+  ];
+  if (polling.source.electionName) {
+    lines.push(`- **Elección del proveedor:** ${polling.source.electionName}`);
+  }
+  for (const link of polling.source.sourceLinks) {
+    lines.push(`- **Fuente:** ${link.label} — ${link.url}`);
+  }
+  return lines.join("\n");
+}
+
 function formatCountyResourcesBlock(county: CountyResource): string {
   return [
     "",
@@ -796,6 +838,7 @@ function buildContextBlock(
     ? `Required. ${votingRules.acceptedIds.join(", ")}`
     : "Not required";
   const { contestsBlock } = formatCivicDataBlock(polling);
+  const sourceBlock = formatBallotSourceBlock(polling);
   const { county, countyBlock, mailBlock, ballotUrl, officeUrl } =
     resolveCountyData(
       state,
@@ -808,7 +851,7 @@ function buildContextBlock(
   const hasContests = contestsBlock.length > 0;
   const startDirective = hasContests
     ? `\nYou already have my state, county if known, election details, and ballot races above. The app used my address outside this chat to resolve official civic data, but my exact address is intentionally not included here. Treat the listed races as my definitive ballot. Do NOT ask me for my exact address, full name, phone, email, or other identifying details. Follow Step 1 exactly: run web_search on the listed races to enrich them with what's at stake, then give me the ballot-at-a-glance overview (election confirmation → what's on my ballot grouped by level → why it matters → one question). Do NOT dive into a single race — that comes after I pick one.`
-    : `\nYou already have my state, county if known, and election details above. The app used my address outside this chat, but my exact address is intentionally not included here. Do NOT ask me for my exact address, full name, phone, email, or other identifying details, and do NOT ask me to upload a sample ballot. ${county ? `My county is ${county}.` : "Use only the coarse location above."} Follow Step 1 exactly: search "[${county ? county + " County " : ""}${state.stateName} ${election.name} sample ballot" and related queries to confirm the races, then give me the ballot-at-a-glance overview (election confirmation → what's on my ballot grouped by level → why it matters → one question). Do NOT dive into a single race — that comes after I pick one.`;
+    : `\nYou already have my state, county if known, election details, and official election links above. The app used my address outside this chat, but my exact address is intentionally not included here. Do NOT ask me for my exact address, full name, phone, email, or other identifying details. ${county ? `My county is ${county}.` : "Use only the coarse location above."} The app did NOT confirm an exact contest list, so do not claim you have my exact ballot yet. Follow Step 1 by searching "[${county ? county + " County " : ""}${state.stateName} ${election.name} sample ballot" and related official queries. If you cannot confirm candidates or contests from official/public sources, say that plainly and ask me to use the official sample-ballot link or paste/upload my sample ballot. Do NOT fabricate races, candidates, voting records, or ballot measures.`;
 
   return `Hi! I'm voting in **${stateName}**.${zipCode ? ` My zip code is **${zipCode}**.` : ""}${county ? ` My county is **${county}**.` : ""}
 
@@ -821,7 +864,7 @@ Here's what I know about my upcoming election:
 - **Phones at polls:** ${votingRules.phonesAtPollsDetail}
 - **My sample ballot:** ${ballotUrl}
 - **My county election office:** ${officeUrl}
-${contestsBlock}${countyBlock}${mailBlock}${startDirective}
+${sourceBlock}${contestsBlock}${countyBlock}${mailBlock}${startDirective}
 Help me with my ballot.`;
 }
 
@@ -873,6 +916,7 @@ function buildContextBlockEs(
     ? `Requerida. ${votingRules.acceptedIds.join(", ")}`
     : "No requerida";
   const { contestsBlock } = formatCivicDataBlockEs(polling);
+  const sourceBlock = formatBallotSourceBlockEs(polling);
   const { county, countyBlock, mailBlock, ballotUrl, officeUrl } =
     resolveCountyData(
       state,
@@ -885,7 +929,7 @@ function buildContextBlockEs(
   const hasContestsEs = contestsBlock.length > 0;
   const startDirectiveEs = hasContestsEs
     ? `\nYa tienes mi estado, condado si se conoce, detalles de la elección y las contiendas de mi boleta arriba. La app usó mi dirección fuera de este chat para resolver datos cívicos oficiales, pero mi dirección exacta se omite intencionalmente aquí. Trata las contiendas listadas como mi boleta definitiva. NO me pidas mi dirección exacta, nombre completo, teléfono, correo electrónico u otros datos identificables. Sigue el Paso 1 tal cual: usa web_search sobre las contiendas listadas para enriquecerlas con qué está en juego, luego dame el resumen de boleta de un vistazo (confirmación de elección → qué hay en mi boleta por nivel → por qué importa → una pregunta). NO te sumerjas en una sola contienda — eso viene después de que yo elija una.`
-    : `\nYa tienes mi estado, condado si se conoce y detalles de la elección arriba. La app usó mi dirección fuera de este chat, pero mi dirección exacta se omite intencionalmente aquí. NO me pidas mi dirección exacta, nombre completo, teléfono, correo electrónico u otros datos identificables, y NO me pidas subir una boleta de muestra. ${county ? `Mi condado es ${county}.` : "Usa solo la ubicación general de arriba."} Sigue el Paso 1 tal cual: busca "${county ? county + " condado " : ""}${state.stateName} ${election.name} boleta de muestra" y consultas relacionadas para confirmar las contiendas, luego dame el resumen de boleta de un vistazo (confirmación de elección → qué hay en mi boleta por nivel → por qué importa → una pregunta). NO te sumerjas en una sola contienda — eso viene después de que yo elija una.`;
+    : `\nYa tienes mi estado, condado si se conoce, detalles de la elección y enlaces oficiales arriba. La app usó mi dirección fuera de este chat, pero mi dirección exacta se omite intencionalmente aquí. NO me pidas mi dirección exacta, nombre completo, teléfono, correo electrónico u otros datos identificables. ${county ? `Mi condado es ${county}.` : "Usa solo la ubicación general de arriba."} La app NO confirmó una lista exacta de contiendas, así que no digas que ya tienes mi boleta exacta. Sigue el Paso 1 buscando "${county ? county + " condado " : ""}${state.stateName} ${election.name} boleta de muestra" y consultas oficiales relacionadas. Si no puedes confirmar candidatos o contiendas con fuentes oficiales o públicas, dilo claramente y pídeme usar el enlace oficial de boleta de muestra o pegar/subir mi boleta de muestra. NO inventes contiendas, candidatos, historiales de voto ni medidas.`;
 
   return `¡Hola! Voy a votar en **${stateName}**.${zipCode ? ` Mi código postal es **${zipCode}**.` : ""}${county ? ` Mi condado es **${county}**.` : ""}
 
@@ -898,7 +942,7 @@ Esto es lo que sé sobre mi próxima elección:
 - **Teléfonos en las casillas:** ${votingRules.phonesAtPollsDetail}
 - **Mi boleta de muestra:** ${ballotUrl}
 - **Mi oficina electoral del condado:** ${officeUrl}
-${contestsBlock}${countyBlock}${mailBlock}${startDirectiveEs}
+${sourceBlock}${contestsBlock}${countyBlock}${mailBlock}${startDirectiveEs}
 Ayúdame con mi boleta.`;
 }
 

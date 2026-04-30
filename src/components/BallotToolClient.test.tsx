@@ -98,7 +98,7 @@ describe("BallotToolClient", () => {
       expect(screen.getByTestId("ballot-data-status")).toBeInTheDocument();
     });
     expect(screen.getByTestId("ballot-data-status").textContent).toContain(
-      "Official ballot data",
+      "Exact ballot not confirmed",
     );
   });
 

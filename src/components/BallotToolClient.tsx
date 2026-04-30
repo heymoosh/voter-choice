@@ -14,6 +14,7 @@ import { useResearchMode } from "../lib/researchMode";
 import { translations } from "../lib/translations";
 import type { LookupResult, StateElectionData } from "../types/election";
 import type { Language } from "../lib/translations";
+import type { BallotSourceSummary } from "../types/ballotSource";
 import type { PollingLocation } from "./PollingLocationCard";
 
 interface CivicCandidate {
@@ -33,6 +34,7 @@ interface PollingData {
   earlyVoteSites: PollingLocation[];
   contests?: CivicContest[];
   county?: string;
+  source?: BallotSourceSummary;
 }
 
 type AddressStep = "input" | "loading" | "done" | "skipped" | "error";
@@ -152,6 +154,7 @@ function ElectionResult({
         earlyVoteSites: pollingData.earlyVoteSites,
         contests: pollingData.contests,
         county: pollingData.county,
+        source: pollingData.source,
       }
     : undefined;
 

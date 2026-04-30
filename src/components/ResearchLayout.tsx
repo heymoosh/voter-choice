@@ -13,6 +13,7 @@ import {
 } from "./PollingLocationCard";
 import type { StateElectionData } from "../types/election";
 import type { Language } from "../lib/translations";
+import type { BallotSourceSummary } from "../types/ballotSource";
 import type { PollingLocation } from "./PollingLocationCard";
 
 type ResearchTab = "research" | "dates" | "id" | "polling";
@@ -27,6 +28,7 @@ interface PollingData {
     candidates: { name: string; party: string }[];
   }[];
   county?: string;
+  source?: BallotSourceSummary;
 }
 
 type AddressStep = "input" | "loading" | "done" | "skipped" | "error";
@@ -156,29 +158,91 @@ function getContestCount(data: PollingData | null): number {
   return data?.contests?.length ?? 0;
 }
 
+function ballotStatusText(
+  contestCount: number,
+  lang: Language,
+): { title: string; body: string } {
+  if (contestCount > 0) {
+    return {
+      title:
+        lang === "es"
+          ? "Encontramos contiendas oficiales para tu dirección."
+          : "Official contests found for your address.",
+      body:
+        lang === "es"
+          ? `${contestCount} contienda${contestCount === 1 ? "" : "s"} se incluirán en la conversación. El asistente aún debe citar fuentes cuando investigue candidatos o propuestas.`
+          : `${contestCount} race${contestCount === 1 ? "" : "s"} will be included in the conversation. The assistant still needs to cite sources when researching candidates or measures.`,
+    };
+  }
+
+  return {
+    title:
+      lang === "es"
+        ? "Aún no se confirmó tu boleta exacta."
+        : "Exact ballot not confirmed yet.",
+    body:
+      lang === "es"
+        ? "Seguiremos con enlaces oficiales e investigación pública. Si una fuente no confirma candidatos o contiendas, el asistente debe decirlo claramente."
+        : "We'll continue with official source links and public research. If a source does not confirm candidates or contests, the assistant should say that plainly.",
+  };
+}
+
+function ballotSourceLinks({
+  source,
+  state,
+  countyName,
+  lang,
+}: {
+  source?: BallotSourceSummary;
+  state: StateElectionData;
+  countyName?: string;
+  lang: Language;
+}) {
+  const countyResource = countyName
+    ? state.countyResources?.[countyName]
+    : undefined;
+  const countyLinks = countyResource
+    ? [
+        {
+          label: `${countyResource.name} sample ballot`,
+          url: countyResource.ballotLookup,
+        },
+        {
+          label: `${countyResource.name} elections office`,
+          url: countyResource.electionsWebsite,
+        },
+      ]
+    : [];
+
+  return [
+    ...(source?.sourceLinks ?? []),
+    ...countyLinks,
+    {
+      label:
+        lang === "es"
+          ? "Búsqueda estatal de boleta de muestra"
+          : "State sample ballot lookup",
+      url: state.resources.sampleBallotLookup,
+    },
+  ];
+}
+
 function BallotDataStatus({
   pollingData,
   lang,
+  state,
+  countyName,
 }: {
   pollingData: PollingData | null;
   lang: Language;
+  state: StateElectionData;
+  countyName?: string;
 }) {
   const contestCount = getContestCount(pollingData);
   const hasOfficialContests = contestCount > 0;
-  const title = hasOfficialContests
-    ? lang === "es"
-      ? "Encontramos contiendas oficiales para tu dirección."
-      : "Official contests found for your address."
-    : lang === "es"
-      ? "La boleta oficial puede estar incompleta aquí."
-      : "Official ballot data may be incomplete here.";
-  const body = hasOfficialContests
-    ? lang === "es"
-      ? `${contestCount} contienda${contestCount === 1 ? "" : "s"} se incluirán en la conversación. El asistente aún debe citar fuentes cuando investigue candidatos o propuestas.`
-      : `${contestCount} race${contestCount === 1 ? "" : "s"} will be included in the conversation. The assistant still needs to cite sources when researching candidates or measures.`
-    : lang === "es"
-      ? "Seguiremos con investigación pública y enlaces electorales oficiales. Si una fuente no confirma algo, el asistente debe decirlo claramente."
-      : "We'll continue with public research and official election links. If a source does not confirm something, the assistant should say that plainly.";
+  const source = pollingData?.source;
+  const { title, body } = ballotStatusText(contestCount, lang);
+  const sourceLinks = ballotSourceLinks({ source, state, countyName, lang });
 
   return (
     <section
@@ -187,6 +251,27 @@ function BallotDataStatus({
     >
       <p className="font-bold text-on-surface mb-1">{title}</p>
       <p>{body}</p>
+      {source && (
+        <p className="mt-2 text-xs text-on-surface-muted">
+          {source.provider}: {source.message}
+        </p>
+      )}
+      {!hasOfficialContests && (
+        <ul className="mt-3 space-y-1 text-xs">
+          {sourceLinks.map((link) => (
+            <li key={`${link.label}-${link.url}`}>
+              <a
+                href={link.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline text-primary"
+              >
+                {link.label}
+              </a>
+            </li>
+          ))}
+        </ul>
+      )}
     </section>
   );
 }
@@ -1016,7 +1101,12 @@ function ResearchView({
             </div>
           )}
 
-          <BallotDataStatus pollingData={pollingData} lang={lang} />
+          <BallotDataStatus
+            pollingData={pollingData}
+            lang={lang}
+            state={state}
+            countyName={countyName}
+          />
 
           {/* Chat or copy/paste fallback */}
           {(chatAvailable || !budgetChecked) && (

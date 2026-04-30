@@ -3,6 +3,11 @@ import {
   isDurableStoreConfigured,
   redisCommand,
 } from "../../../lib/server/durable-store";
+import type {
+  BallotSourceAttempt,
+  BallotSourceConfidence,
+  BallotSourceSummary,
+} from "../../../types/ballotSource";
 
 export const runtime = "nodejs";
 
@@ -31,7 +36,23 @@ interface CivicApiResponse {
   contests?: CivicContest[];
   electionName?: string;
   county?: string;
+  source: BallotSourceSummary;
   error?: string;
+}
+
+interface CivicElection {
+  id?: string;
+  name?: string;
+  electionDay?: string;
+}
+
+interface CivicVoterInfoData {
+  pollingLocations?: Parameters<typeof extractLocation>[0][];
+  earlyVoteSites?: Parameters<typeof extractLocation>[0][];
+  contests?: Parameters<typeof extractContest>[0][];
+  election?: CivicElection;
+  otherElections?: CivicElection[];
+  state?: { local_jurisdiction?: { name?: string } }[];
 }
 
 const LOOKUP_WINDOW_MS = 60 * 1000;
@@ -163,6 +184,46 @@ function extractCounty(data: {
   return localJurisdiction?.name ?? "";
 }
 
+function hasLocations(data: {
+  pollingLocations?: unknown[];
+  earlyVoteSites?: unknown[];
+}): boolean {
+  return Boolean(
+    (data.pollingLocations && data.pollingLocations.length > 0) ||
+      (data.earlyVoteSites && data.earlyVoteSites.length > 0),
+  );
+}
+
+function sourceMessage(confidence: BallotSourceConfidence): string {
+  if (confidence === "exact_official") {
+    return "Google Civic returned official contests for this address.";
+  }
+  if (confidence === "partial_official") {
+    return "Google Civic returned official voting information, but no contest list for this address.";
+  }
+  return "No exact contest list was returned. Use official election links or a sample ballot to confirm candidates.";
+}
+
+function sourceSummary(params: {
+  confidence: BallotSourceConfidence;
+  electionName?: string;
+  attempts: BallotSourceAttempt[];
+}): BallotSourceSummary {
+  return {
+    provider: "Google Civic Information API",
+    confidence: params.confidence,
+    message: sourceMessage(params.confidence),
+    electionName: params.electionName,
+    sourceLinks: [
+      {
+        label: "Google Civic Information API",
+        url: "https://developers.google.com/civic-information",
+      },
+    ],
+    attempts: params.attempts,
+  };
+}
+
 function errorResponse(message: string, status: number) {
   return NextResponse.json({ error: message }, { status });
 }
@@ -171,41 +232,140 @@ async function fetchCivicData(
   sanitizedAddress: string,
   apiKey: string,
 ): Promise<NextResponse> {
-  const url = `https://www.googleapis.com/civicinfo/v2/voterinfo?address=${encodeURIComponent(sanitizedAddress)}&key=${apiKey}`;
+  const attempts: BallotSourceAttempt[] = [];
+  const first = await fetchVoterInfo(sanitizedAddress, apiKey);
+  const firstContests = extractContests(first);
+  attempts.push({
+    provider: "Google Civic voterinfo",
+    electionId: first.election?.id,
+    electionName: first.election?.name,
+    contestsFound: firstContests.length,
+  });
+
+  if (firstContests.length > 0) {
+    return NextResponse.json(
+      buildCivicResponse(first, firstContests, "exact_official", attempts),
+    );
+  }
+
+  const retryElections = await getRetryElections(first, apiKey);
+  for (const election of retryElections) {
+    if (!election.id) continue;
+    const next = await fetchVoterInfo(sanitizedAddress, apiKey, election.id);
+    const contests = extractContests(next);
+    attempts.push({
+      provider: "Google Civic voterinfo",
+      electionId: election.id,
+      electionName: election.name,
+      contestsFound: contests.length,
+    });
+    if (contests.length > 0) {
+      return NextResponse.json(
+        buildCivicResponse(next, contests, "exact_official", attempts),
+      );
+    }
+  }
+
+  const confidence = hasLocations(first)
+    ? "partial_official"
+    : "source_links_only";
+  return NextResponse.json(buildCivicResponse(first, [], confidence, attempts));
+}
+
+async function fetchVoterInfo(
+  sanitizedAddress: string,
+  apiKey: string,
+  electionId?: string,
+): Promise<CivicVoterInfoData> {
+  const url = new URL("https://www.googleapis.com/civicinfo/v2/voterinfo");
+  url.searchParams.set("address", sanitizedAddress);
+  url.searchParams.set("key", apiKey);
+  if (electionId) url.searchParams.set("electionId", electionId);
 
   const response = await fetch(url, {
     signal: AbortSignal.timeout(8000),
   });
 
   if (!response.ok) {
-    // Google returns 400 for addresses with no election info
+    // Google returns 400 for addresses with no election info. Treat that as
+    // source-links-only rather than a broken product path.
     if (response.status === 400) {
-      return errorResponse(
-        "No election information found for this address. Try a different address or check your county election website.",
-        404,
-      );
+      return {};
     }
-    return errorResponse(
-      "Unable to look up polling locations. Please try again later.",
-      502,
-    );
+    throw new Error(`Google Civic voterinfo failed: ${response.status}`);
   }
 
-  const data = await response.json();
+  return await response.json();
+}
 
-  const contests = (data.contests ?? [])
+function extractContests(data: {
+  contests?: Parameters<typeof extractContest>[0][];
+}): CivicContest[] {
+  return (data.contests ?? [])
     .map(extractContest)
     .filter((c: CivicContest | null): c is CivicContest => c !== null);
+}
 
+async function fetchElectionList(apiKey: string): Promise<CivicElection[]> {
+  const url = new URL("https://www.googleapis.com/civicinfo/v2/elections");
+  url.searchParams.set("key", apiKey);
+  const response = await fetch(url, {
+    signal: AbortSignal.timeout(8000),
+  });
+  if (!response.ok) return [];
+  const data = (await response.json()) as { elections?: CivicElection[] };
+  return data.elections ?? [];
+}
+
+async function getRetryElections(
+  first: { election?: CivicElection; otherElections?: CivicElection[] },
+  apiKey: string,
+): Promise<CivicElection[]> {
+  const today = new Date().toISOString().slice(0, 10);
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() + 370);
+  const cutoffISO = cutoff.toISOString().slice(0, 10);
+  const listed = await fetchElectionList(apiKey);
+  const candidates = [
+    ...(first.otherElections ?? []),
+    ...(first.election ? [first.election] : []),
+    ...listed.filter(
+      (e) =>
+        !e.electionDay ||
+        (e.electionDay >= today && e.electionDay <= cutoffISO),
+    ),
+  ];
+
+  const seen = new Set<string>();
+  return candidates
+    .filter((e) => {
+      if (!e.id || seen.has(e.id)) return false;
+      seen.add(e.id);
+      return true;
+    })
+    .slice(0, 8);
+}
+
+function buildCivicResponse(
+  data: CivicVoterInfoData,
+  contests: CivicContest[],
+  confidence: BallotSourceConfidence,
+  attempts: BallotSourceAttempt[],
+): CivicApiResponse {
   const result: CivicApiResponse = {
     pollingLocations: (data.pollingLocations ?? []).map(extractLocation),
     earlyVoteSites: (data.earlyVoteSites ?? []).map(extractLocation),
     contests: contests.length > 0 ? contests : undefined,
     electionName: data.election?.name ?? undefined,
     county: extractCounty(data) || undefined,
+    source: sourceSummary({
+      confidence,
+      electionName: data.election?.name ?? undefined,
+      attempts,
+    }),
   };
 
-  return NextResponse.json(result);
+  return result;
 }
 
 export async function POST(request: NextRequest) {
