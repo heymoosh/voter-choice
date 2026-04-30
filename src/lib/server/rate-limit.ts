@@ -1,7 +1,8 @@
 import { isDurableStoreConfigured, redisCommand } from "./durable-store";
 
-const CONCURRENT_LIMIT = 3;
-const DAILY_SESSION_LIMIT = process.env.NODE_ENV === "production" ? 5 : 20;
+const DEFAULT_CONCURRENT_LIMIT = 10;
+const DEFAULT_DAILY_SESSION_LIMIT =
+  process.env.NODE_ENV === "production" ? 10 : 20;
 const SESSION_MESSAGE_LIMIT = 60;
 
 interface SessionEntry {
@@ -23,6 +24,27 @@ const dailySessions = new Map<string, DailyEntry>();
 // Session timeout: 30 minutes of inactivity
 const SESSION_TIMEOUT_MS = 30 * 60 * 1000;
 const SESSION_TIMEOUT_SECONDS = SESSION_TIMEOUT_MS / 1000;
+
+function readPositiveIntEnv(name: string, fallback: number): number {
+  const raw = process.env[name];
+  if (!raw) return fallback;
+  const parsed = Number(raw);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function concurrentLimit(): number {
+  return readPositiveIntEnv(
+    "CHAT_CONCURRENT_SESSION_LIMIT",
+    DEFAULT_CONCURRENT_LIMIT,
+  );
+}
+
+function dailySessionLimit(): number {
+  return readPositiveIntEnv(
+    "CHAT_DAILY_SESSION_LIMIT",
+    DEFAULT_DAILY_SESSION_LIMIT,
+  );
+}
 
 function secondsUntilNextUtcMidnight(): number {
   const tomorrow = new Date();
@@ -125,14 +147,14 @@ export function checkRateLimit(
   }
 
   // 2. Concurrent session limit
-  if (isNewSession && sessions.size >= CONCURRENT_LIMIT) {
+  if (isNewSession && sessions.size >= concurrentLimit()) {
     return concurrentLimitResult();
   }
 
   // 3. Daily new session limit
   if (isNewSession) {
     const daily = getDailyEntry(ip);
-    if (daily.count >= DAILY_SESSION_LIMIT) {
+    if (daily.count >= dailySessionLimit()) {
       return dailyLimitResult();
     }
     daily.count++;
@@ -184,7 +206,7 @@ async function checkDurableRateLimit(
   const activeCount = Number(
     (await redisCommand<number>(["ZCARD", activeSessionsKey])) ?? 0,
   );
-  if (isNewSession && activeCount > CONCURRENT_LIMIT) {
+  if (isNewSession && activeCount > concurrentLimit()) {
     await redisCommand(["ZREM", activeSessionsKey, sessionId]);
     await redisCommand(["DEL", sessionMessagesKey]);
     return concurrentLimitResult();
@@ -205,7 +227,7 @@ async function checkDurableRateLimit(
         (await redisCommand<number>(["INCR", dailyCountKey])) ?? 1,
       );
       await redisCommand(["EXPIRE", dailyCountKey, dayTtl]);
-      if (dailyCount > DAILY_SESSION_LIMIT) {
+      if (dailyCount > dailySessionLimit()) {
         await redisCommand(["ZREM", activeSessionsKey, sessionId]);
         await redisCommand(["DEL", sessionMessagesKey]);
         await redisCommand(["DEL", dailySeenKey]);

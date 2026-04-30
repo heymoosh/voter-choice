@@ -77,6 +77,17 @@ When these variables are present, production counters are shared across Vercel
 instances and cold starts. Without them, the app still runs, but spend and abuse
 limits are not durable enough for public traffic.
 
+Optional server-side chat abuse controls:
+
+```text
+CHAT_CONCURRENT_SESSION_LIMIT
+CHAT_DAILY_SESSION_LIMIT
+```
+
+The launch defaults allow 10 active sessions per IP and 10 new chat sessions per
+IP per day. Tune these in Vercel/GitHub secrets if real traffic shows the limits
+are too strict or too loose.
+
 To provision the Upstash Redis database and store the production secrets with
 minimal manual setup:
 

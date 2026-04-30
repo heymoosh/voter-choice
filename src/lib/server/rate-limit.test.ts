@@ -42,13 +42,17 @@ describe("rate-limit", () => {
   });
 
   describe("concurrent session limit", () => {
-    it("allows up to 3 concurrent sessions per IP", () => {
+    beforeEach(() => {
+      vi.stubEnv("CHAT_CONCURRENT_SESSION_LIMIT", "3");
+    });
+
+    it("allows up to configured concurrent sessions per IP", () => {
       expect(checkRateLimit("1.2.3.4", "sess-1", 1).allowed).toBe(true);
       expect(checkRateLimit("1.2.3.4", "sess-2", 1).allowed).toBe(true);
       expect(checkRateLimit("1.2.3.4", "sess-3", 1).allowed).toBe(true);
     });
 
-    it("rejects 4th concurrent session", () => {
+    it("rejects the next concurrent session after the configured limit", () => {
       checkRateLimit("1.2.3.4", "sess-1", 1);
       checkRateLimit("1.2.3.4", "sess-2", 1);
       checkRateLimit("1.2.3.4", "sess-3", 1);
@@ -77,9 +81,11 @@ describe("rate-limit", () => {
   });
 
   describe("daily session limit", () => {
-    // Non-production uses a relaxed limit (20) so local dev isn't hostile.
-    // Production tightens it to 5.
-    const DAILY_LIMIT_TEST = process.env.NODE_ENV === "production" ? 5 : 20;
+    const DAILY_LIMIT_TEST = 4;
+
+    beforeEach(() => {
+      vi.stubEnv("CHAT_DAILY_SESSION_LIMIT", String(DAILY_LIMIT_TEST));
+    });
 
     it(`allows up to ${DAILY_LIMIT_TEST} new sessions per day`, () => {
       for (let i = 1; i <= DAILY_LIMIT_TEST; i++) {
