@@ -56,6 +56,7 @@ interface ChatPanelProps {
   onBudgetUpdate?: (budget: BudgetStatus) => void;
   voterProfile?: string | null;
   countyName?: string;
+  userSampleBallotText?: string;
 }
 
 function generateSessionId(): string {
@@ -730,6 +731,7 @@ export function ChatPanel({
   onBudgetUpdate,
   voterProfile,
   countyName,
+  userSampleBallotText,
 }: ChatPanelProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
@@ -780,8 +782,9 @@ export function ChatPanel({
       lang,
       pollingData ?? undefined,
       countyName,
+      userSampleBallotText,
     );
-  }, [state, zipCode, lang, pollingData, countyName]);
+  }, [state, zipCode, lang, pollingData, countyName, userSampleBallotText]);
 
   const disableChat = useCallback((reason: DisabledReason) => {
     setChatDisabled(true);

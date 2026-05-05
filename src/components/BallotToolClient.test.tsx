@@ -102,6 +102,39 @@ describe("BallotToolClient", () => {
     );
   });
 
+  it("lets voters add sample ballot text to the research prompt", async () => {
+    renderWithProviders(<BallotToolClient />);
+    fireEvent.change(screen.getByTestId("zip-input"), {
+      target: { value: "73301" },
+    });
+    fireEvent.click(screen.getByTestId("zip-submit"));
+
+    await waitFor(() => {
+      expect(
+        screen.getByTestId("user-sample-ballot-input"),
+      ).toBeInTheDocument();
+    });
+
+    fireEvent.change(screen.getByTestId("user-sample-ballot-textarea"), {
+      target: {
+        value: "County Judge\n- Ada Candidate\n- Ben Candidate",
+      },
+    });
+    fireEvent.click(screen.getByTestId("apply-user-sample-ballot"));
+
+    await waitFor(() => {
+      expect(
+        screen.getByTestId("user-sample-ballot-applied"),
+      ).toBeInTheDocument();
+    });
+    expect(screen.getByTestId("prompt-output").textContent).toContain(
+      "Ada Candidate",
+    );
+    expect(screen.getByTestId("prompt-output").textContent).toContain(
+      "USER-PROVIDED SAMPLE BALLOT TEXT",
+    );
+  });
+
   it("shows not-found-message for unknown zip", async () => {
     renderWithProviders(<BallotToolClient />);
     fireEvent.change(screen.getByTestId("zip-input"), {

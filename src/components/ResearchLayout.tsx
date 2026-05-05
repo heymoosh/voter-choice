@@ -53,6 +53,8 @@ interface ResearchLayoutProps {
   promptText: string;
   copyPasteIsPrimary: boolean;
   countyName?: string;
+  userSampleBallotText?: string;
+  onUserSampleBallotTextChange?: (text: string) => void;
 }
 
 /* ── Icons ──────────────────────────────────────────────────── */
@@ -271,6 +273,167 @@ function BallotDataStatus({
             </li>
           ))}
         </ul>
+      )}
+    </section>
+  );
+}
+
+const SAMPLE_BALLOT_COPY = {
+  en: {
+    title: "Use my official sample ballot",
+    withContests:
+      "If you have a more specific sample ballot, paste it here to guide research.",
+    withoutContests:
+      "If automatic lookup did not confirm your races, paste your official ballot text here. Chat will use that list and verify candidates with public sources.",
+    privacy:
+      "Privacy: do not paste your name, exact address, phone, email, or other identifying details.",
+    placeholder: "Paste text copied from your official sample ballot here...",
+    applied: "Working ballot applied to chat.",
+    apply: "Use this ballot",
+    update: "Update chat",
+    upload: "Upload .txt",
+    appliedNotice:
+      "The pasted ballot will be used to restart the research chat.",
+    pdfNotice:
+      "PDFs vary too much to extract text reliably here. Open the PDF, select the ballot text, copy it, and paste it into this box.",
+    fileNotice:
+      "For today, upload a .txt file or paste text copied from the official PDF.",
+    loadedNotice: "Text loaded. Review it, then apply it to the chat.",
+  },
+  es: {
+    title: "Usar mi boleta de muestra oficial",
+    withContests:
+      "Si tienes una boleta de muestra más específica, puedes pegarla aquí para guiar la investigación.",
+    withoutContests:
+      "Si la búsqueda automática no confirmó tus contiendas, pega el texto de tu boleta oficial aquí. El chat usará esa lista y verificará candidatos con fuentes públicas.",
+    privacy:
+      "Privacidad: no pegues tu nombre, dirección exacta, teléfono, correo electrónico ni otros datos identificables.",
+    placeholder: "Pega aquí texto copiado de tu boleta de muestra oficial...",
+    applied: "Boleta de trabajo aplicada al chat.",
+    apply: "Usar esta boleta",
+    update: "Actualizar chat",
+    upload: "Cargar .txt",
+    appliedNotice:
+      "La boleta pegada se usará para reiniciar el chat de investigación.",
+    pdfNotice:
+      "Los PDFs varían demasiado para extraer texto de forma confiable aquí. Abre el PDF, selecciona el texto de la boleta, cópialo y pégalo en este cuadro.",
+    fileNotice:
+      "Para hoy, carga un archivo .txt o pega texto copiado desde el PDF oficial.",
+    loadedNotice: "Texto cargado. Revisa el contenido y aplícalo al chat.",
+  },
+};
+
+function sampleBallotCopy(lang: Language) {
+  return SAMPLE_BALLOT_COPY[lang];
+}
+
+function isPdfFile(file: File): boolean {
+  return file.type === "application/pdf" || file.name.endsWith(".pdf");
+}
+
+function isTextFile(file: File): boolean {
+  return file.name.endsWith(".txt") || file.type === "text/plain";
+}
+
+function UserSampleBallotInput({
+  value,
+  onChange,
+  lang,
+  hasOfficialContests,
+}: {
+  value: string;
+  onChange: (text: string) => void;
+  lang: Language;
+  hasOfficialContests: boolean;
+}) {
+  const [draft, setDraft] = useState(value);
+  const [notice, setNotice] = useState<string | null>(null);
+  const canApply = draft.trim().length > 0 && draft.trim() !== value.trim();
+  const copy = sampleBallotCopy(lang);
+
+  function applyText() {
+    const text = draft.trim();
+    onChange(text);
+    setNotice(copy.appliedNotice);
+  }
+
+  function handleFile(file: File | undefined) {
+    if (!file) return;
+    if (isPdfFile(file)) {
+      setNotice(copy.pdfNotice);
+      return;
+    }
+    if (!isTextFile(file)) {
+      setNotice(copy.fileNotice);
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const text = typeof reader.result === "string" ? reader.result : "";
+      setDraft(text);
+      setNotice(copy.loadedNotice);
+    };
+    reader.readAsText(file);
+  }
+
+  return (
+    <section
+      data-testid="user-sample-ballot-input"
+      className="bg-surface-lowest border-l-4 border-accent p-4 md:p-6"
+    >
+      <div className="mb-4">
+        <h3 className="font-black text-lg tracking-tight text-on-surface">
+          {copy.title}
+        </h3>
+        <p className="text-sm text-on-surface-muted mt-1">
+          {hasOfficialContests ? copy.withContests : copy.withoutContests}
+        </p>
+        <p className="text-xs text-on-surface-muted mt-2">{copy.privacy}</p>
+      </div>
+
+      <textarea
+        data-testid="user-sample-ballot-textarea"
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        rows={8}
+        maxLength={12000}
+        placeholder={copy.placeholder}
+        className="w-full bg-surface-high px-4 py-3 text-sm text-on-surface border-b-2 border-outline-variant/30 focus:border-primary focus:outline-none transition-colors placeholder:text-on-surface-muted/50 resize-y"
+      />
+
+      <div className="mt-4 flex flex-col sm:flex-row gap-3 sm:items-center">
+        <button
+          data-testid="apply-user-sample-ballot"
+          type="button"
+          disabled={!canApply}
+          onClick={applyText}
+          className="bg-primary text-on-primary px-4 py-3 text-xs font-black uppercase tracking-widest disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          {value.trim() ? copy.update : copy.apply}
+        </button>
+        <label className="text-xs font-bold uppercase tracking-wider text-primary hover:underline cursor-pointer">
+          {copy.upload}
+          <input
+            data-testid="user-sample-ballot-file"
+            type="file"
+            accept=".txt,.pdf,text/plain,application/pdf"
+            className="sr-only"
+            onChange={(e) => handleFile(e.target.files?.[0])}
+          />
+        </label>
+        {value.trim() && (
+          <span
+            data-testid="user-sample-ballot-applied"
+            className="text-xs text-on-surface-muted"
+          >
+            {copy.applied}
+          </span>
+        )}
+      </div>
+      {notice && (
+        <p className="mt-3 text-xs text-on-surface-muted" role="status">
+          {notice}
+        </p>
       )}
     </section>
   );
@@ -1031,6 +1194,8 @@ function ResearchView({
   copyPasteIsPrimary,
   pollingData,
   countyName,
+  userSampleBallotText,
+  onUserSampleBallotTextChange,
 }: {
   state: StateElectionData;
   zipCode: string;
@@ -1042,6 +1207,8 @@ function ResearchView({
   copyPasteIsPrimary: boolean;
   pollingData: PollingData | null;
   countyName?: string;
+  userSampleBallotText?: string;
+  onUserSampleBallotTextChange?: (text: string) => void;
 }) {
   const { lang } = useLanguage();
   const t = translations[lang];
@@ -1049,6 +1216,7 @@ function ResearchView({
   const daysLeft = upcoming ? getDaysUntilElection(upcoming.date) : null;
   const chatAvailable =
     budgetStatus.tier === "normal" || budgetStatus.tier === "notice";
+  const hasOfficialContests = getContestCount(pollingData) > 0;
 
   return (
     <div className="flex flex-col h-full">
@@ -1108,15 +1276,26 @@ function ResearchView({
             countyName={countyName}
           />
 
+          {onUserSampleBallotTextChange && (
+            <UserSampleBallotInput
+              value={userSampleBallotText ?? ""}
+              onChange={onUserSampleBallotTextChange}
+              lang={lang}
+              hasOfficialContests={hasOfficialContests}
+            />
+          )}
+
           {/* Chat or copy/paste fallback */}
           {(chatAvailable || !budgetChecked) && (
             <ChatPanel
+              key={`chat-${userSampleBallotText ? userSampleBallotText.slice(0, 48) : "no-sample"}`}
               state={state}
               zipCode={zipCode}
               pollingData={pollingData}
               onBudgetUpdate={onBudgetUpdate}
               voterProfile={voterProfile}
               countyName={countyName}
+              userSampleBallotText={userSampleBallotText}
             />
           )}
 
@@ -1169,6 +1348,8 @@ export function ResearchLayout({
   promptText,
   copyPasteIsPrimary,
   countyName,
+  userSampleBallotText,
+  onUserSampleBallotTextChange,
 }: ResearchLayoutProps) {
   const [activeTab, setActiveTab] = useState<ResearchTab>("research");
   const { lang } = useLanguage();
@@ -1200,6 +1381,8 @@ export function ResearchLayout({
             copyPasteIsPrimary={copyPasteIsPrimary}
             pollingData={pollingData}
             countyName={countyName}
+            userSampleBallotText={userSampleBallotText}
+            onUserSampleBallotTextChange={onUserSampleBallotTextChange}
           />
         </div>
 

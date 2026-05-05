@@ -125,6 +125,7 @@ function ElectionResult({
   initialPollingData: PollingData | null;
 }) {
   const [voterProfile, setVoterProfile] = useState<string | null>(null);
+  const [userSampleBallotText, setUserSampleBallotText] = useState("");
   const [addressStep, setAddressStep] = useState<AddressStep>(
     initialPollingData ? "done" : "skipped",
   );
@@ -167,6 +168,7 @@ function ElectionResult({
           lang,
           pollingForPrompt,
           countyForPrompt,
+          userSampleBallotText,
         ).fullText,
         voterProfile,
       )
@@ -177,6 +179,7 @@ function ElectionResult({
         lang,
         pollingForPrompt,
         countyForPrompt,
+        userSampleBallotText,
       ).fullText;
 
   const handleAddressSubmit = useCallback(async (address: string) => {
@@ -215,6 +218,8 @@ function ElectionResult({
         promptText={promptText}
         copyPasteIsPrimary={copyPasteIsPrimary}
         countyName={countyForPrompt}
+        userSampleBallotText={userSampleBallotText}
+        onUserSampleBallotTextChange={setUserSampleBallotText}
       />
     </>
   );
