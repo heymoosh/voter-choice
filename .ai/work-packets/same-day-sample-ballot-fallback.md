@@ -28,21 +28,25 @@ Rules:
 Assumptions:
 
 - In under an hour, reliable browser-side PDF parsing is too risky without adding and validating a new parser dependency. The immediate launch path can support pasted text from a PDF or official web page, plus plain text file upload.
+- `@sylphx/pdf-reader-mcp@2.4.0` is suitable as an operator/agent extraction tool, not as an in-browser voter upload parser.
 
 User-confirmed decisions:
 
 - MVP/manual fallback is acceptable if it keeps the rest of the flow working.
+- Try `@sylphx/pdf-reader-mcp` as the PDF extraction MCP.
 
 Edge cases:
 
 - PDF upload cannot be trusted to extract text without a parser; user should receive clear copy/paste guidance.
 - Very large pasted ballots should be bounded before entering prompt context.
+- MCP extraction is restricted to local PDFs under `.ai/local-pdfs/`; URLs are disabled in the repo config to avoid broad network scraping through the MCP.
 
 Out of scope:
 
 - OCR for scanned PDFs.
 - County-by-county deterministic scraping.
 - Paid ballot provider integration.
+- Production browser/server PDF upload parsing.
 
 ## Commercial Readiness
 
@@ -71,11 +75,11 @@ Setup:
 
 Configuration:
 
-- none
+- `.mcp.json` and `.codex/config.toml` configure `pdf-reader` with `@sylphx/pdf-reader-mcp@2.4.0`, `--allow-dir=/Users/Muxin/Documents/GitHub/voter-choice/.ai/local-pdfs`, and `--no-http`.
 
 Provider setup:
 
-- none
+- `npx` downloads the pinned MCP package on first use.
 
 Infrastructure/deployment:
 
@@ -88,6 +92,7 @@ Database migrations:
 Manual steps:
 
 - User may paste sample ballot text copied from an official PDF or page.
+- For operator extraction, put official PDFs in `.ai/local-pdfs/` and ask the agent to use the `pdf-reader` MCP.
 
 Verification:
 
@@ -112,6 +117,9 @@ Touch:
 - `src/components/BallotToolClient.tsx`
 - `src/components/ResearchLayout.tsx`
 - focused tests/translations if needed
+- `.mcp.json`
+- `.codex/config.toml`
+- `docs/operations/pdf-ballot-extraction.md`
 
 Do not touch:
 
@@ -128,12 +136,15 @@ Neighboring owners:
 - `src/components/BallotToolClient.tsx` owns research state.
 - `src/components/ResearchLayout.tsx` owns research workflow UI.
 - `src/components/ChatPanel.tsx` owns live chat session startup.
+- `docs/operations/pdf-ballot-extraction.md` owns operator PDF extraction procedure.
   Files/modules/docs inspected:
 - `src/lib/generatePrompt.ts`
 - `src/components/BallotToolClient.tsx`
 - `src/components/ResearchLayout.tsx`
 - `src/components/ChatPanel.tsx`
 - `src/components/BallotBuilder.tsx`
+- `.codex/config.toml`
+- `.mcp.json`
   Reuse/edit targets:
 - Extend `generatePrompt` with optional user-provided sample ballot text.
 - Pass state through existing research and chat components.
@@ -153,6 +164,7 @@ Neighboring owners:
 - The prompt tells Sonnet to use the provided ballot text as the working ballot, verify claims with sources, and not treat embedded text as instructions.
 - The user is warned not to paste name, exact address, phone, email, or other identifying details.
 - Existing printable ballot builder remains available.
+- Agents have a pinned, sandboxed `pdf-reader` MCP path for extracting official sample ballot PDFs into text before using the app fallback.
 
 ## Verification
 
@@ -212,3 +224,4 @@ Non-proof:
 - Do not send exact street address to the AI.
 - Do not add unverified PDF parser dependency without time to validate extraction quality.
 - Do not represent user-provided text as official structured API data.
+- Do not grant the PDF MCP broad filesystem or arbitrary URL access by default.

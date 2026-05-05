@@ -3,3 +3,12 @@
 # Codex does not need Agentic QE for normal development in this repo. Add an
 # `mcp_servers.agentic-qe` entry only at the pre-live readiness gate after
 # choosing and trusting a pinned Agentic QE package version.
+
+[mcp_servers.pdf-reader]
+command = "npx"
+args = [
+  "-y",
+  "@sylphx/pdf-reader-mcp@2.4.0",
+  "--allow-dir=/Users/Muxin/Documents/GitHub/voter-choice/.ai/local-pdfs",
+  "--no-http",
+]

@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "pdf-reader": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@sylphx/pdf-reader-mcp@2.4.0",
+        "--allow-dir=/Users/Muxin/Documents/GitHub/voter-choice/.ai/local-pdfs",
+        "--no-http"
+      ]
+    }
+  }
+}

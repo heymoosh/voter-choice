@@ -55,3 +55,5 @@ test-results/
 
 # AI Coding Practices local tool state
 .agentic-qe/
+.ai/local-pdfs/
+.ai/extracted-ballots/
