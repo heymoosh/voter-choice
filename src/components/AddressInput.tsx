@@ -1,8 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useLanguage } from "../lib/i18n";
 import { translations } from "../lib/translations";
+import {
+  getPlacesApiKey,
+  readInputFromContainer,
+  useGooglePlacesAutocomplete,
+} from "../lib/useGooglePlacesAutocomplete";
 
 interface AddressInputProps {
   onSubmit: (address: string) => void;
@@ -18,10 +23,23 @@ export function AddressInput({
   const [address, setAddress] = useState("");
   const { lang } = useLanguage();
   const t = translations[lang].polling;
+  const placesContainerRef = useRef<HTMLDivElement>(null);
+  const innerInputRef = useRef<HTMLInputElement | null>(null);
+  const hasPlacesKey = !!getPlacesApiKey();
+
+  useGooglePlacesAutocomplete({
+    containerRef: placesContainerRef,
+    innerInputRef,
+    enabled: !isLoading,
+    onSelect: setAddress,
+  });
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const trimmed = address.trim();
+    const trimmed =
+      address.trim() ||
+      innerInputRef.current?.value.trim() ||
+      readInputFromContainer(placesContainerRef.current);
     if (!trimmed) return;
     onSubmit(trimmed);
   }
@@ -37,14 +55,19 @@ export function AddressInput({
         </label>
         <div className="flex flex-col sm:flex-row gap-2">
           <div className="flex-grow relative">
+            {hasPlacesKey && (
+              <div ref={placesContainerRef} className="w-full" />
+            )}
             <input
               id="address-input"
               type="text"
+              data-testid="address-input"
               value={address}
               onChange={(e) => setAddress(e.target.value)}
               placeholder={t.addressPlaceholder}
               maxLength={200}
               disabled={isLoading}
+              autoComplete="street-address"
               className="w-full bg-surface-high border-0 border-b-2 border-outline-variant/20 focus:border-primary focus:ring-0 text-base md:text-lg font-bold py-3 px-4 transition-colors placeholder:text-on-surface-muted/50 disabled:opacity-50 min-h-[44px]"
             />
             <svg

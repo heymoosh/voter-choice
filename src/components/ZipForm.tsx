@@ -1,8 +1,13 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useRef, useState } from "react";
 import { useLanguage } from "../lib/i18n";
 import { translations } from "../lib/translations";
+import {
+  getPlacesApiKey,
+  readInputFromContainer,
+  useGooglePlacesAutocomplete,
+} from "../lib/useGooglePlacesAutocomplete";
 
 type ErrorKey = "empty" | "invalid" | null;
 
@@ -26,130 +31,6 @@ export function extractState(address: string): string | null {
   return match ? match[1].toUpperCase() : null;
 }
 
-/** Recursively search through nested shadow DOMs for an <input>. */
-function findDeepInput(
-  root: Element | DocumentFragment,
-): HTMLInputElement | null {
-  const input = root.querySelector("input");
-  if (input) return input;
-  for (const child of root.querySelectorAll("*")) {
-    if (child.shadowRoot) {
-      const deep = findDeepInput(child.shadowRoot);
-      if (deep) return deep;
-    }
-  }
-  return null;
-}
-
-/**
- * Attach a PlaceAutocompleteElement to the container.
- * Only requires "Places API (New)" — does NOT need the full Maps JS API.
- */
-function useGooglePlaces(
-  containerRef: React.RefObject<HTMLDivElement | null>,
-  innerInputRef: React.MutableRefObject<HTMLInputElement | null>,
-  onSelect: (address: string) => void,
-) {
-  const attachedRef = useRef(false);
-  const onSelectRef = useRef(onSelect);
-  onSelectRef.current = onSelect;
-
-  useEffect(() => {
-    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY;
-    if (!apiKey || !containerRef.current || attachedRef.current) return;
-
-    async function init() {
-      const { setOptions, importLibrary } = await import(
-        "@googlemaps/js-api-loader"
-      );
-      setOptions({ key: apiKey! });
-      const placesLib = (await importLibrary(
-        "places",
-      )) as typeof google.maps.places;
-
-      if (!containerRef.current || attachedRef.current) return;
-      attachedRef.current = true;
-
-      const el = new placesLib.PlaceAutocompleteElement({
-        componentRestrictions: { country: "us" },
-        types: ["address"],
-      });
-
-      el.setAttribute(
-        "style",
-        "width:100%; --gmpx-color-surface: transparent; --gmpx-font-size-base: 1.25rem; --gmpx-font-weight-base: 700;",
-      );
-
-      // --- Event-based capture (primary path) ---
-      const handleSelect = async (e: Event) => {
-        const place = (e as unknown as Record<string, unknown>).place as
-          | Record<string, unknown>
-          | undefined;
-
-        // Try formattedAddress directly
-        if (place?.formattedAddress) {
-          onSelectRef.current(place.formattedAddress as string);
-          return;
-        }
-        // Try fetchFields
-        try {
-          const fetchFn = place?.fetchFields as
-            | ((opts: { fields: string[] }) => Promise<unknown>)
-            | undefined;
-          if (fetchFn) {
-            await fetchFn.call(place, {
-              fields: ["formattedAddress"],
-            });
-            if (place?.formattedAddress) {
-              onSelectRef.current(place.formattedAddress as string);
-              return;
-            }
-          }
-        } catch {
-          // Ignore autocomplete enrichment failures; the manual input remains usable.
-        }
-        // Fall back to inner input
-        if (innerInputRef.current?.value) {
-          onSelectRef.current(innerInputRef.current.value);
-          return;
-        }
-        // Last resort: try el.value (some web components expose this)
-        const elValue = (el as unknown as Record<string, unknown>)
-          .value as string;
-        if (elValue) {
-          onSelectRef.current(elValue);
-        }
-      };
-
-      el.addEventListener("gmp-placeselect", handleSelect);
-      el.addEventListener("gmp-select", handleSelect);
-
-      containerRef.current.appendChild(el);
-
-      // --- Locate the inner <input> (handles nested shadow DOMs) ---
-      let retries = 0;
-      const poll = () => {
-        // Search the element itself and the container
-        const input = findDeepInput(el) ?? findDeepInput(containerRef.current!);
-        if (input) {
-          innerInputRef.current = input;
-        } else if (retries < 50) {
-          retries++;
-          // Use increasing delays: rAF for the first few, then setTimeout
-          if (retries < 10) {
-            requestAnimationFrame(poll);
-          } else {
-            setTimeout(poll, 100);
-          }
-        }
-      };
-      requestAnimationFrame(poll);
-    }
-
-    init().catch(() => {});
-  }, [containerRef, innerInputRef]);
-}
-
 export function ZipForm({ onSubmit }: ZipFormProps) {
   const [value, setValue] = useState("");
   const [errorKey, setErrorKey] = useState<ErrorKey>(null);
@@ -157,29 +38,31 @@ export function ZipForm({ onSubmit }: ZipFormProps) {
   const t = translations[lang];
   const placesContainerRef = useRef<HTMLDivElement>(null);
   const innerInputRef = useRef<HTMLInputElement | null>(null);
-  const hasPlacesKey = !!process.env.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY;
+  const hasPlacesKey = !!getPlacesApiKey();
 
-  useGooglePlaces(placesContainerRef, innerInputRef, (address) => {
-    setValue(address);
-    setErrorKey(null);
+  useGooglePlacesAutocomplete({
+    containerRef: placesContainerRef,
+    innerInputRef,
+    onSelect: (address) => {
+      setValue(address);
+      setErrorKey(null);
+    },
   });
+
+  function handleManualChange(address: string) {
+    setValue(address);
+    if (errorKey) setErrorKey(null);
+  }
 
   const errorMessage = errorKey ? t.errors[errorKey] : null;
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     let trimmed = value.trim();
-    // Fallback: read the actual inner input if React state is empty
     if (!trimmed && innerInputRef.current?.value) {
       trimmed = innerInputRef.current.value.trim();
     }
-    // Last resort: try el.value or any input in the container
-    if (!trimmed && placesContainerRef.current) {
-      const deepInput = findDeepInput(placesContainerRef.current);
-      if (deepInput?.value) {
-        trimmed = deepInput.value.trim();
-      }
-    }
+    if (!trimmed) trimmed = readInputFromContainer(placesContainerRef.current);
     if (!trimmed) {
       setErrorKey("empty");
       return;
@@ -209,15 +92,10 @@ export function ZipForm({ onSubmit }: ZipFormProps) {
             data-testid="zip-input"
             type="text"
             value={value}
-            onChange={(e) => {
-              setValue(e.target.value);
-              if (errorKey) setErrorKey(null);
-            }}
-            className={`w-full bg-transparent border-none focus:ring-0 focus:outline-none text-xl md:text-2xl font-bold p-1 placeholder:text-surface-high text-on-surface ${
-              hasPlacesKey ? "mt-2" : ""
-            }`}
+            onChange={(e) => handleManualChange(e.target.value)}
+            className="w-full bg-transparent border-none focus:ring-0 focus:outline-none text-xl md:text-2xl font-bold p-1 placeholder:text-surface-high text-on-surface"
             placeholder={t.zipForm.placeholder}
-            autoComplete="off"
+            autoComplete="street-address"
             aria-describedby={errorMessage ? "zip-error" : "address-privacy"}
           />
         </div>

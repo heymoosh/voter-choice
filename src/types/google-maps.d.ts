@@ -17,9 +17,17 @@ declare namespace google.maps.places {
   }
 
   interface PlaceAutocompletePlaceSelectEvent extends Event {
-    place: {
+    place?: {
       formattedAddress?: string;
-      fetchFields?(opts: { fields: string[] }): Promise<{ place: unknown }>;
+      formatted_address?: string;
+      fetchFields?(opts: { fields: string[] }): Promise<unknown>;
+    };
+    placePrediction?: {
+      toPlace(): {
+        formattedAddress?: string;
+        formatted_address?: string;
+        fetchFields?(opts: { fields: string[] }): Promise<unknown>;
+      };
     };
   }
 }

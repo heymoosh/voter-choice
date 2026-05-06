@@ -74,6 +74,15 @@ describe("generatePrompt", () => {
     expect(result.basePrompt).toContain("Respect my individual choice");
   });
 
+  it("basePrompt requires a values-first guided conversation", () => {
+    const result = generatePrompt(txData, "73301", "2026-03-30");
+    expect(result.basePrompt).toContain(
+      "Learn my values and tradeoffs before candidate detail",
+    );
+    expect(result.basePrompt).toContain("Do not dump bios");
+    expect(result.basePrompt).toContain("No candidate detail");
+  });
+
   it("contextBlock contains state name", () => {
     const result = generatePrompt(txData, "73301", "2026-03-30");
     expect(result.contextBlock).toContain("Texas");
@@ -143,6 +152,13 @@ describe("generatePrompt", () => {
   it("contextBlock contains sample ballot link", () => {
     const result = generatePrompt(txData, "73301", "2026-03-30");
     expect(result.contextBlock).toContain("votetexas.gov");
+  });
+
+  it("contextBlock tells the chat to start with stakes and one values question", () => {
+    const result = generatePrompt(txData, "73301", "2026-03-30");
+    expect(result.contextBlock).toContain("explain why this election");
+    expect(result.contextBlock).toContain("one values/tradeoff question");
+    expect(result.contextBlock).toContain("Do NOT fabricate races");
   });
 
   it("adds user-provided sample ballot text with instruction-safety boundaries", () => {

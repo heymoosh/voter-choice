@@ -85,8 +85,8 @@ jobs:
           if [ -n "$GOOGLE_CIVIC_API_KEY" ]; then
             echo "$GOOGLE_CIVIC_API_KEY" | vercel env add GOOGLE_CIVIC_API_KEY production --force --token="$VERCEL_TOKEN" 2>/dev/null || true
           fi
-          if [ -n "$GOOGLE_PLACES_API_KEY" ]; then
-            echo "$GOOGLE_PLACES_API_KEY" | vercel env add NEXT_PUBLIC_GOOGLE_PLACES_API_KEY production --force --token="$VERCEL_TOKEN" 2>/dev/null || true
+          if [ -n "$NEXT_PUBLIC_GOOGLE_PLACES_API_KEY" ]; then
+            echo "$NEXT_PUBLIC_GOOGLE_PLACES_API_KEY" | vercel env add NEXT_PUBLIC_GOOGLE_PLACES_API_KEY production --force --token="$VERCEL_TOKEN" 2>/dev/null || true
           fi
           if [ -n "$KV_REST_API_URL" ]; then
             echo "$KV_REST_API_URL" | vercel env add KV_REST_API_URL production --force --token="$VERCEL_TOKEN" 2>/dev/null || true
