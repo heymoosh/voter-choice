@@ -43,6 +43,7 @@ export function ZipForm({ onSubmit }: ZipFormProps) {
   useGooglePlacesAutocomplete({
     containerRef: placesContainerRef,
     innerInputRef,
+    onInputChange: setValue,
     onSelect: (address) => {
       setValue(address);
       setErrorKey(null);
@@ -80,23 +81,34 @@ export function ZipForm({ onSubmit }: ZipFormProps) {
     <form onSubmit={handleSubmit} noValidate>
       <div className="bg-surface-lowest p-2 border-b-2 border-primary flex items-end gap-2 shadow-sm">
         <div className="flex-grow">
-          <label
-            htmlFor="zip-input"
-            className="block text-xs font-bold uppercase tracking-widest text-primary mb-1 px-1"
-          >
+          <label className="block text-xs font-bold uppercase tracking-widest text-primary mb-1 px-1">
             {t.zipForm.label}
           </label>
-          {hasPlacesKey && <div ref={placesContainerRef} className="w-full" />}
+          {hasPlacesKey && (
+            <div className="space-y-2">
+              <div ref={placesContainerRef} className="w-full" />
+              <p className="text-[10px] text-on-surface-muted px-1">
+                {lang === "es"
+                  ? "Empieza a escribir y elige tu dirección del menú."
+                  : "Start typing and choose your address from the dropdown."}
+              </p>
+            </div>
+          )}
           <input
             id="zip-input"
             data-testid="zip-input"
             type="text"
             value={value}
             onChange={(e) => handleManualChange(e.target.value)}
-            className="w-full bg-transparent border-none focus:ring-0 focus:outline-none text-xl md:text-2xl font-bold p-1 placeholder:text-surface-high text-on-surface"
+            className={
+              hasPlacesKey
+                ? "sr-only"
+                : "w-full bg-transparent border-none focus:ring-0 focus:outline-none text-xl md:text-2xl font-bold p-1 placeholder:text-surface-high text-on-surface"
+            }
             placeholder={t.zipForm.placeholder}
             autoComplete="street-address"
             aria-describedby={errorMessage ? "zip-error" : "address-privacy"}
+            aria-label={t.zipForm.label}
           />
         </div>
         <button

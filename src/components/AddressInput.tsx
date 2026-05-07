@@ -31,6 +31,7 @@ export function AddressInput({
     containerRef: placesContainerRef,
     innerInputRef,
     enabled: !isLoading,
+    onInputChange: setAddress,
     onSelect: setAddress,
   });
 
@@ -47,10 +48,7 @@ export function AddressInput({
   return (
     <div className="space-y-4">
       <form onSubmit={handleSubmit}>
-        <label
-          htmlFor="address-input"
-          className="block text-[11px] font-bold uppercase tracking-widest text-on-surface-muted mb-1 ml-1"
-        >
+        <label className="block text-[11px] font-bold uppercase tracking-widest text-on-surface-muted mb-1 ml-1">
           {t.enterAddressLabel}
         </label>
         <div className="flex flex-col sm:flex-row gap-2">
@@ -68,27 +66,29 @@ export function AddressInput({
               maxLength={200}
               disabled={isLoading}
               autoComplete="street-address"
-              className="w-full bg-surface-high border-0 border-b-2 border-outline-variant/20 focus:border-primary focus:ring-0 text-base md:text-lg font-bold py-3 px-4 transition-colors placeholder:text-on-surface-muted/50 disabled:opacity-50 min-h-[44px]"
+              aria-label={t.enterAddressLabel}
+              className={
+                hasPlacesKey
+                  ? "sr-only"
+                  : "w-full bg-surface-high border-0 border-b-2 border-outline-variant/20 focus:border-primary focus:ring-0 text-base md:text-lg font-bold py-3 px-4 transition-colors placeholder:text-on-surface-muted/50 disabled:opacity-50 min-h-[44px]"
+              }
             />
-            <svg
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-muted/50"
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="currentColor"
-              aria-hidden="true"
-            >
-              <path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3c-.46-4.17-3.77-7.48-7.94-7.94V1h-2v2.06C6.83 3.52 3.52 6.83 3.06 11H1v2h2.06c.46 4.17 3.77 7.48 7.94 7.94V23h2v-2.06c4.17-.46 7.48-3.77 7.94-7.94H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z" />
-            </svg>
           </div>
           <button
             type="submit"
-            disabled={!address.trim() || isLoading}
+            disabled={isLoading}
             className="bg-primary text-on-primary px-6 py-3 font-bold uppercase text-xs tracking-widest hover:opacity-90 active:scale-95 transition-all disabled:opacity-50 min-h-[44px]"
           >
             {isLoading ? t.loadingLocations : t.searchButton}
           </button>
         </div>
+        {hasPlacesKey && (
+          <p className="mt-2 ml-1 text-[10px] text-on-surface-muted">
+            {lang === "es"
+              ? "Empieza a escribir y elige tu dirección del menú."
+              : "Start typing and choose your address from the dropdown."}
+          </p>
+        )}
       </form>
 
       <div className="p-4 bg-surface-low flex items-start gap-3">

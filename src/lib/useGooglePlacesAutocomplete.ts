@@ -62,16 +62,20 @@ export function useGooglePlacesAutocomplete({
   containerRef,
   innerInputRef,
   onSelect,
+  onInputChange,
   enabled = true,
 }: {
   containerRef: RefObject<HTMLDivElement | null>;
   innerInputRef: MutableRefObject<HTMLInputElement | null>;
   onSelect: (address: string) => void;
+  onInputChange?: (address: string) => void;
   enabled?: boolean;
 }) {
   const attachedRef = useRef(false);
   const onSelectRef = useRef(onSelect);
+  const onInputChangeRef = useRef(onInputChange);
   onSelectRef.current = onSelect;
+  onInputChangeRef.current = onInputChange;
 
   useEffect(() => {
     const apiKey = getPlacesApiKey();
@@ -125,6 +129,11 @@ export function useGooglePlacesAutocomplete({
         const input = findDeepInput(el) ?? findDeepInput(containerRef.current!);
         if (input) {
           innerInputRef.current = input;
+          if (onInputChangeRef.current) {
+            input.addEventListener("input", () => {
+              onInputChangeRef.current?.(input.value);
+            });
+          }
         } else if (retries < 50) {
           retries++;
           if (retries < 10) requestAnimationFrame(poll);

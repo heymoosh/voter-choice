@@ -102,6 +102,7 @@ Use this exact shape:
    - Give one clear CTA: "Paste your official sample ballot text here or use the official sample ballot link so I can match the exact races."
 4. **Start learning me**
    - Ask exactly ONE easy values/tradeoff question connected to this ballot.
+   - If this is a primary or runoff and party choice, party-runoff eligibility, or ballot scope is not already clear, use this slot to ask which party's ballot or runoff I want help with. Do not assume I am a Democrat, Republican, or any other partisan voter.
    - Example: "When you vote locally, do you care most about lowering costs, protecting rights, public safety, schools, courts, or something else?"
 
 Length cap: 120-180 words. Bullets only. No candidate detail. No deep dive.
@@ -139,6 +140,10 @@ When you do discuss candidates:
 ## PRIMARY OR RUNOFF HELP
 
 If I need to choose a party ballot or navigate a primary/runoff, ask how I think, not just what party I identify with.
+
+- Never assume I want the Democratic ballot, the Republican ballot, or any other party's ballot.
+- If the official contest list or pasted ballot seems to show only one party's runoff, do not treat that as proof of my preference. Explain what you know, note any uncertainty, and ask which ballot I want help with first.
+- In a partisan runoff, confirm whether I want help choosing which party's runoff to evaluate before you frame the stakes as "our side vs. their side" or as a path to the general election.
 
 Use questions like:
 
@@ -859,11 +864,16 @@ function buildContextBlock(
 
   const hasContests = contestsBlock.length > 0;
   const hasUserSampleBallot = userSampleBallotBlock.length > 0;
+  const needsPartyChoice =
+    election.type === "primary" || election.type === "runoff";
+  const partyChoiceDirective = needsPartyChoice
+    ? " Because this is a primary or runoff, do NOT assume I want a Democratic ballot, a Republican ballot, or any other partisan lane. If party choice or runoff scope is unclear, ask me which ballot I want help with before framing partisan stakes."
+    : "";
   const startDirective = hasContests
-    ? `\nYou already have my state, county if known, election details, and ballot races above. The app used my address outside this chat to resolve official civic data, but my exact address is intentionally not included here. Treat the listed races as my definitive ballot. Do NOT ask me for my exact address, full name, phone, email, or other identifying details. Follow Step 1 exactly: explain why this election matters in daily life, show a compact ballot check, then ask one values/tradeoff question. Do NOT analyze candidates yet. Candidate records, donors, endorsements, and voting history belong in background research after you understand what I care about.`
+    ? `\nYou already have my state, county if known, election details, and ballot races above. The app used my address outside this chat to resolve official civic data, but my exact address is intentionally not included here. Treat the listed races as my definitive ballot. Do NOT ask me for my exact address, full name, phone, email, or other identifying details. Follow Step 1 exactly: explain why this election matters in daily life, show a compact ballot check, then ask one values/tradeoff question. Do NOT analyze candidates yet. Candidate records, donors, endorsements, and voting history belong in background research after you understand what I care about.${partyChoiceDirective}`
     : hasUserSampleBallot
-      ? `\nYou already have my state, county if known, election details, official election links, and user-provided sample ballot text above. The app used my address outside this chat, but my exact address is intentionally not included here. Do NOT ask me for my exact address, full name, phone, email, or other identifying details. Treat the pasted sample ballot text as the working ballot for Step 1, while clearly saying it was user-provided and not API-confirmed. Explain why this election matters, show a compact ballot check from the pasted text, then ask one values/tradeoff question. Do NOT fabricate missing races, candidates, voting records, donors, or ballot measures.`
-      : `\nYou already have my state, county if known, election details, and official election links above. The app used my address outside this chat, but my exact address is intentionally not included here. Do NOT ask me for my exact address, full name, phone, email, or other identifying details. ${county ? `My county is ${county}.` : "Use only the coarse location above."} The app did NOT confirm an exact contest list, so do not claim you have my exact ballot yet. Follow Step 1: explain why this election could matter, show only high-level ballot/source status, and give one clear CTA to paste/upload my official sample ballot text or use the sample ballot link. Then ask one values/tradeoff question so you can guide me once the ballot is confirmed. Do NOT fabricate races, candidates, voting records, donors, or ballot measures.`;
+      ? `\nYou already have my state, county if known, election details, official election links, and user-provided sample ballot text above. The app used my address outside this chat, but my exact address is intentionally not included here. Do NOT ask me for my exact address, full name, phone, email, or other identifying details. Treat the pasted sample ballot text as the working ballot for Step 1, while clearly saying it was user-provided and not API-confirmed. Explain why this election matters, show a compact ballot check from the pasted text, then ask one values/tradeoff question. Do NOT fabricate missing races, candidates, voting records, donors, or ballot measures.${partyChoiceDirective}`
+      : `\nYou already have my state, county if known, election details, and official election links above. The app used my address outside this chat, but my exact address is intentionally not included here. Do NOT ask me for my exact address, full name, phone, email, or other identifying details. ${county ? `My county is ${county}.` : "Use only the coarse location above."} The app did NOT confirm an exact contest list, so do not claim you have my exact ballot yet. Follow Step 1: explain why this election could matter, show only high-level ballot/source status, and give one clear CTA to paste/upload my official sample ballot text or use the sample ballot link. Then ask one values/tradeoff question so you can guide me once the ballot is confirmed. Do NOT fabricate races, candidates, voting records, donors, or ballot measures.${partyChoiceDirective}`;
 
   return `Hi! I'm voting in **${stateName}**.${zipCode ? ` My zip code is **${zipCode}**.` : ""}${county ? ` My county is **${county}**.` : ""}
 

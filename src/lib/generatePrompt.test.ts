@@ -83,6 +83,16 @@ describe("generatePrompt", () => {
     expect(result.basePrompt).toContain("No candidate detail");
   });
 
+  it("basePrompt requires neutral ballot choice handling for primaries and runoffs", () => {
+    const result = generatePrompt(txData, "73301", "2026-03-30");
+    expect(result.basePrompt).toContain(
+      "Do not assume I am a Democrat, Republican, or any other partisan voter",
+    );
+    expect(result.basePrompt).toContain(
+      "ask which ballot I want help with first",
+    );
+  });
+
   it("contextBlock contains state name", () => {
     const result = generatePrompt(txData, "73301", "2026-03-30");
     expect(result.contextBlock).toContain("Texas");
@@ -159,6 +169,7 @@ describe("generatePrompt", () => {
     expect(result.contextBlock).toContain("explain why this election");
     expect(result.contextBlock).toContain("one values/tradeoff question");
     expect(result.contextBlock).toContain("Do NOT fabricate races");
+    expect(result.contextBlock).toContain("which ballot I want help with");
   });
 
   it("adds user-provided sample ballot text with instruction-safety boundaries", () => {
