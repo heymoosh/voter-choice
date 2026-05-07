@@ -839,6 +839,7 @@ function buildContextBlock(
   polling?: PollingDataForPrompt,
   countyName?: string,
   userSampleBallotText?: string,
+  preResearchContext?: string,
 ): string {
   const { stateName, votingRules } = state;
   const electionType = election.primaryType
@@ -886,7 +887,7 @@ Here's what I know about my upcoming election:
 - **Phones at polls:** ${votingRules.phonesAtPollsDetail}
 - **My sample ballot:** ${ballotUrl}
 - **My county election office:** ${officeUrl}
-${sourceBlock}${contestsBlock}${userSampleBallotBlock}${countyBlock}${mailBlock}${startDirective}
+${sourceBlock}${contestsBlock}${userSampleBallotBlock}${countyBlock}${mailBlock}${startDirective}${preResearchContext ? `\n\n## PRE-RESEARCH BALLOT CONTEXT\n${preResearchContext}` : ""}
 Help me with my ballot.`;
 }
 
@@ -928,6 +929,7 @@ function buildContextBlockEs(
   polling?: PollingDataForPrompt,
   countyName?: string,
   userSampleBallotText?: string,
+  preResearchContext?: string,
 ): string {
   const { stateName, votingRules } = state;
   const electionType = election.primaryType
@@ -970,7 +972,7 @@ Esto es lo que sé sobre mi próxima elección:
 - **Teléfonos en las casillas:** ${votingRules.phonesAtPollsDetail}
 - **Mi boleta de muestra:** ${ballotUrl}
 - **Mi oficina electoral del condado:** ${officeUrl}
-${sourceBlock}${contestsBlock}${userSampleBallotBlock}${countyBlock}${mailBlock}${startDirectiveEs}
+${sourceBlock}${contestsBlock}${userSampleBallotBlock}${countyBlock}${mailBlock}${startDirectiveEs}${preResearchContext ? `\n\n## CONTEXTO DE BOLETA ANTES DE INVESTIGAR\n${preResearchContext}` : ""}
 Ayúdame con mi boleta.`;
 }
 
@@ -982,6 +984,7 @@ export function generatePrompt(
   polling?: PollingDataForPrompt,
   countyName?: string,
   userSampleBallotText?: string,
+  preResearchContext?: string,
 ): CustomizedPrompt {
   const today = todayISO ?? new Date().toISOString().slice(0, 10);
   const election = findUpcomingElection(state.elections, today);
@@ -999,6 +1002,7 @@ export function generatePrompt(
           polling,
           countyName,
           userSampleBallotText,
+          preResearchContext,
         )
       : buildContextBlock(
           state,
@@ -1007,6 +1011,7 @@ export function generatePrompt(
           polling,
           countyName,
           userSampleBallotText,
+          preResearchContext,
         );
 
   const fullText = basePrompt + "\n\n" + contextBlock;

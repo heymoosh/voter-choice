@@ -238,6 +238,15 @@ export interface Translations {
     deepSearchLabel: string;
     deepSearchPlaceholder: string;
     nonPartisanNotice: string;
+    runoffGateTitle: string;
+    runoffGateBody: string;
+    runoffGateRule: string;
+    runoffGateOptionDemPrimary: string;
+    runoffGateOptionRepPrimary: string;
+    runoffGateOptionDemRunoff: string;
+    runoffGateOptionRepRunoff: string;
+    runoffGateOptionUnsure: string;
+    runoffGateContinue: string;
   };
   portfolio: {
     badge: string;
@@ -622,6 +631,20 @@ const en: Translations = {
       "Ask about candidate history, voting records, or ballot measures...",
     nonPartisanNotice:
       "Verified Non-Partisan Database \u2022 Educational Use Only",
+    runoffGateTitle: "Before we start: Texas runoff ballot check",
+    runoffGateBody:
+      "We need one quick answer before starting research so the app only sends the right ballot context to the AI.",
+    runoffGateRule:
+      "Texas rule: if you voted in one party's March primary this year, you can only vote in that same party's runoff. If you did not vote in March, you may choose either party's runoff.",
+    runoffGateOptionDemPrimary: "I voted in the Democratic primary in March.",
+    runoffGateOptionRepPrimary: "I voted in the Republican primary in March.",
+    runoffGateOptionDemRunoff:
+      "I did not vote in March. Show me the Democratic runoff.",
+    runoffGateOptionRepRunoff:
+      "I did not vote in March. Show me the Republican runoff.",
+    runoffGateOptionUnsure:
+      "I'm not sure. Help me figure out which runoff applies.",
+    runoffGateContinue: "Continue to research",
   },
   portfolio: {
     badge: "Verified Research",
@@ -1029,6 +1052,23 @@ const es: Translations = {
       "Pregunta sobre historial de candidatos, registros de votaci\u00f3n o medidas electorales...",
     nonPartisanNotice:
       "Base de Datos No Partidista Verificada \u2022 Solo Uso Educativo",
+    runoffGateTitle:
+      "Antes de empezar: verificaci\u00f3n de boleta para desempate en Texas",
+    runoffGateBody:
+      "Necesitamos una respuesta r\u00e1pida antes de iniciar la investigaci\u00f3n para enviar al AI el contexto correcto de la boleta.",
+    runoffGateRule:
+      "Regla de Texas: si votaste en la primaria de un partido en marzo de este a\u00f1o, solo puedes votar en el desempate de ese mismo partido. Si no votaste en marzo, puedes elegir el desempate de cualquiera de los dos partidos.",
+    runoffGateOptionDemPrimary:
+      "Vot\u00e9 en la primaria dem\u00f3crata de marzo.",
+    runoffGateOptionRepPrimary:
+      "Vot\u00e9 en la primaria republicana de marzo.",
+    runoffGateOptionDemRunoff:
+      "No vot\u00e9 en marzo. Mu\u00e9strame el desempate dem\u00f3crata.",
+    runoffGateOptionRepRunoff:
+      "No vot\u00e9 en marzo. Mu\u00e9strame el desempate republicano.",
+    runoffGateOptionUnsure:
+      "No estoy seguro/a. Ay\u00fadame a determinar qu\u00e9 desempate aplica.",
+    runoffGateContinue: "Continuar a la investigaci\u00f3n",
   },
   portfolio: {
     badge: "Investigaci\u00f3n Verificada",

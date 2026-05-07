@@ -191,6 +191,24 @@ describe("generatePrompt", () => {
     expect(result.contextBlock).toContain("web_search");
   });
 
+  it("adds pre-research ballot context when provided", () => {
+    const result = generatePrompt(
+      txData,
+      "73301",
+      "2026-03-30",
+      "en",
+      undefined,
+      "Travis",
+      undefined,
+      "The voter says they voted in the Republican primary earlier this year.",
+    );
+
+    expect(result.contextBlock).toContain("PRE-RESEARCH BALLOT CONTEXT");
+    expect(result.contextBlock).toContain(
+      "The voter says they voted in the Republican primary",
+    );
+  });
+
   it("contextBlock contains county election office link", () => {
     const result = generatePrompt(txData, "73301", "2026-03-30");
     expect(result.contextBlock).toContain("voting/where.html");

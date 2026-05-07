@@ -1,5 +1,20 @@
 import { test, expect } from "@playwright/test";
 
+async function resolveTexasRunoffGate(page: import("@playwright/test").Page) {
+  const gate = page.getByTestId("runoff-gate");
+  await gate.waitFor({ state: "visible", timeout: 2500 }).catch(() => null);
+  if (await gate.isVisible().catch(() => false)) {
+    await expect(gate).toBeVisible();
+    await page.getByTestId("runoff-option-unsure").click();
+    await page.waitForFunction(
+      () =>
+        !!document.querySelector('[data-testid="chat-window"]') &&
+        !!document.querySelector('[data-testid="prompt-output"]'),
+      { timeout: 10000 },
+    );
+  }
+}
+
 /**
  * Shared e2e test suite for the ballot research tool.
  * These tests are measurement infrastructure — they run on ALL workflow branches
@@ -83,6 +98,15 @@ test.describe("Valid zip code — Texas (73301)", () => {
     await page.goto("/");
     await page.getByTestId("zip-input").fill("73301");
     await page.getByTestId("zip-submit").click();
+    await resolveTexasRunoffGate(page);
+    await page.getByTestId("chat-window").waitFor({
+      state: "visible",
+      timeout: 10000,
+    });
+    await page.getByTestId("prompt-output").waitFor({
+      state: "visible",
+      timeout: 10000,
+    });
   });
 
   test("displays research workspace", async ({ page }) => {
@@ -173,6 +197,7 @@ test.describe("Copy to clipboard", () => {
     await page.goto("/");
     await page.getByTestId("zip-input").fill("73301");
     await page.getByTestId("zip-submit").click();
+    await resolveTexasRunoffGate(page);
     const copyBtn = page.getByTestId("copy-button");
     await expect(copyBtn).toBeVisible();
   });
@@ -186,6 +211,7 @@ test.describe("Copy to clipboard", () => {
     await page.goto("/");
     await page.getByTestId("zip-input").fill("73301");
     await page.getByTestId("zip-submit").click();
+    await resolveTexasRunoffGate(page);
     await page.getByTestId("copy-button").click();
     const confirmation = page.getByTestId("copy-confirmation");
     await expect(confirmation).toBeVisible();
@@ -226,6 +252,7 @@ test.describe("Keyboard accessibility", () => {
     const zipInput = page.getByTestId("zip-input");
     await zipInput.fill("73301");
     await zipInput.press("Enter");
+    await resolveTexasRunoffGate(page);
     // Should show research workspace (form submitted via Enter)
     await expect(page.getByTestId("chat-window")).toBeVisible();
   });

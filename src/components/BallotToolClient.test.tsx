@@ -50,13 +50,17 @@ function renderWithProviders(ui: React.ReactElement) {
 }
 
 describe("BallotToolClient", () => {
+  function selectTexasRunoffGate(option = "unsure") {
+    fireEvent.click(screen.getByTestId(`runoff-option-${option}`));
+  }
+
   it("renders the zip input form initially", () => {
     renderWithProviders(<BallotToolClient />);
     expect(screen.getByTestId("zip-input")).toBeInTheDocument();
     expect(screen.getByTestId("zip-submit")).toBeInTheDocument();
   });
 
-  it("shows research layout after submitting a valid TX zip", async () => {
+  it("shows the Texas runoff gate before starting research", async () => {
     renderWithProviders(<BallotToolClient />);
     fireEvent.change(screen.getByTestId("zip-input"), {
       target: { value: "73301" },
@@ -64,16 +68,36 @@ describe("BallotToolClient", () => {
     fireEvent.click(screen.getByTestId("zip-submit"));
 
     await waitFor(() => {
-      expect(screen.getByTestId("chat-window")).toBeInTheDocument();
+      expect(screen.getByTestId("runoff-gate")).toBeInTheDocument();
     });
   });
 
-  it("shows prompt-output in research view after submitting a valid TX zip", async () => {
+  it("shows research layout after selecting a Texas runoff path", async () => {
     renderWithProviders(<BallotToolClient />);
     fireEvent.change(screen.getByTestId("zip-input"), {
       target: { value: "73301" },
     });
     fireEvent.click(screen.getByTestId("zip-submit"));
+    await waitFor(() => {
+      expect(screen.getByTestId("runoff-gate")).toBeInTheDocument();
+    });
+    selectTexasRunoffGate();
+
+    await waitFor(() => {
+      expect(screen.getByTestId("chat-window")).toBeInTheDocument();
+    });
+  });
+
+  it("shows prompt-output in research view after selecting a valid TX runoff path", async () => {
+    renderWithProviders(<BallotToolClient />);
+    fireEvent.change(screen.getByTestId("zip-input"), {
+      target: { value: "73301" },
+    });
+    fireEvent.click(screen.getByTestId("zip-submit"));
+    await waitFor(() => {
+      expect(screen.getByTestId("runoff-gate")).toBeInTheDocument();
+    });
+    selectTexasRunoffGate("voted_rep_primary");
 
     // Wait for research layout
     await waitFor(() => {
@@ -85,6 +109,9 @@ describe("BallotToolClient", () => {
       expect(screen.getByTestId("prompt-output")).toBeInTheDocument();
     });
     expect(screen.getByTestId("prompt-output").textContent).toContain("Texas");
+    expect(screen.getByTestId("prompt-output").textContent).toContain(
+      "PRE-RESEARCH BALLOT CONTEXT",
+    );
   });
 
   it("shows ballot data status in research view", async () => {
@@ -93,6 +120,10 @@ describe("BallotToolClient", () => {
       target: { value: "73301" },
     });
     fireEvent.click(screen.getByTestId("zip-submit"));
+    await waitFor(() => {
+      expect(screen.getByTestId("runoff-gate")).toBeInTheDocument();
+    });
+    selectTexasRunoffGate();
 
     await waitFor(() => {
       expect(screen.getByTestId("ballot-data-status")).toBeInTheDocument();
@@ -108,6 +139,10 @@ describe("BallotToolClient", () => {
       target: { value: "73301" },
     });
     fireEvent.click(screen.getByTestId("zip-submit"));
+    await waitFor(() => {
+      expect(screen.getByTestId("runoff-gate")).toBeInTheDocument();
+    });
+    selectTexasRunoffGate();
 
     await waitFor(() => {
       expect(
@@ -165,6 +200,10 @@ describe("BallotToolClient", () => {
       target: { value: "73301" },
     });
     fireEvent.click(screen.getByTestId("zip-submit"));
+    await waitFor(() => {
+      expect(screen.getByTestId("runoff-gate")).toBeInTheDocument();
+    });
+    selectTexasRunoffGate();
 
     // Research layout should eventually appear
     await waitFor(() => {
@@ -179,6 +218,10 @@ describe("BallotToolClient", () => {
       target: { value: "123 Main St, Austin, TX 78701" },
     });
     fireEvent.click(screen.getByTestId("zip-submit"));
+    await waitFor(() => {
+      expect(screen.getByTestId("runoff-gate")).toBeInTheDocument();
+    });
+    selectTexasRunoffGate();
 
     await waitFor(() => {
       expect(fetchMock).toHaveBeenCalledWith(
@@ -236,9 +279,11 @@ describe("BallotToolClient — Spanish mode", () => {
     });
     fireEvent.click(screen.getByTestId("zip-submit"));
     await waitFor(() => {
-      const chatWindow = screen.queryByTestId("chat-window");
-      const noElection = screen.queryByTestId("no-election-message");
-      expect(chatWindow || noElection).toBeTruthy();
+      expect(screen.getByTestId("runoff-gate")).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByTestId("runoff-option-unsure"));
+    await waitFor(() => {
+      expect(screen.getByTestId("chat-window")).toBeInTheDocument();
     });
   });
 
@@ -249,6 +294,10 @@ describe("BallotToolClient — Spanish mode", () => {
       target: { value: "73301" },
     });
     fireEvent.click(screen.getByTestId("zip-submit"));
+    await waitFor(() => {
+      expect(screen.getByTestId("runoff-gate")).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByTestId("runoff-option-unsure"));
 
     // Wait for research layout
     await waitFor(() => {

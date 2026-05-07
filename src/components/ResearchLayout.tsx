@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useLanguage } from "../lib/i18n";
 import { translations } from "../lib/translations";
 import { ChatPanel } from "./ChatPanel";
@@ -55,6 +55,9 @@ interface ResearchLayoutProps {
   countyName?: string;
   userSampleBallotText?: string;
   onUserSampleBallotTextChange?: (text: string) => void;
+  preResearchContext?: string;
+  researchReady?: boolean;
+  preResearchGate?: ReactNode;
 }
 
 /* ── Icons ──────────────────────────────────────────────────── */
@@ -1196,6 +1199,9 @@ function ResearchView({
   countyName,
   userSampleBallotText,
   onUserSampleBallotTextChange,
+  preResearchContext,
+  researchReady = true,
+  preResearchGate,
 }: {
   state: StateElectionData;
   zipCode: string;
@@ -1209,6 +1215,9 @@ function ResearchView({
   countyName?: string;
   userSampleBallotText?: string;
   onUserSampleBallotTextChange?: (text: string) => void;
+  preResearchContext?: string;
+  researchReady?: boolean;
+  preResearchGate?: ReactNode;
 }) {
   const { lang } = useLanguage();
   const t = translations[lang];
@@ -1276,6 +1285,8 @@ function ResearchView({
             countyName={countyName}
           />
 
+          {!researchReady && preResearchGate}
+
           {onUserSampleBallotTextChange && (
             <UserSampleBallotInput
               value={userSampleBallotText ?? ""}
@@ -1286,7 +1297,7 @@ function ResearchView({
           )}
 
           {/* Chat or copy/paste fallback */}
-          {(chatAvailable || !budgetChecked) && (
+          {researchReady && (chatAvailable || !budgetChecked) && (
             <ChatPanel
               key={`chat-${userSampleBallotText ? userSampleBallotText.slice(0, 48) : "no-sample"}`}
               state={state}
@@ -1296,36 +1307,39 @@ function ResearchView({
               voterProfile={voterProfile}
               countyName={countyName}
               userSampleBallotText={userSampleBallotText}
+              preResearchContext={preResearchContext}
             />
           )}
 
           {/* Copy/paste prompt — first-class editorial section */}
-          <section className={copyPasteIsPrimary ? "" : "mt-4"}>
-            <div className="flex items-center gap-3 mb-4">
-              <svg
-                className="text-primary shrink-0"
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-                aria-hidden="true"
-              >
-                <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z" />
-              </svg>
-              <div>
-                <h3 className="font-black text-lg tracking-tight text-on-surface">
-                  {t.promptOutput.ownAiHeading}
-                </h3>
-                <p className="text-sm text-on-surface-muted">
-                  {t.promptOutput.ownAiBody}
-                </p>
+          {researchReady && (
+            <section className={copyPasteIsPrimary ? "" : "mt-4"}>
+              <div className="flex items-center gap-3 mb-4">
+                <svg
+                  className="text-primary shrink-0"
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  aria-hidden="true"
+                >
+                  <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z" />
+                </svg>
+                <div>
+                  <h3 className="font-black text-lg tracking-tight text-on-surface">
+                    {t.promptOutput.ownAiHeading}
+                  </h3>
+                  <p className="text-sm text-on-surface-muted">
+                    {t.promptOutput.ownAiBody}
+                  </p>
+                </div>
               </div>
-            </div>
-            <PromptOutput promptText={promptText} />
-          </section>
+              <PromptOutput promptText={promptText} />
+            </section>
+          )}
 
           {/* Ballot Builder */}
-          <BallotBuilder />
+          {researchReady && <BallotBuilder />}
         </div>
       </div>
     </div>
@@ -1350,6 +1364,9 @@ export function ResearchLayout({
   countyName,
   userSampleBallotText,
   onUserSampleBallotTextChange,
+  preResearchContext,
+  researchReady,
+  preResearchGate,
 }: ResearchLayoutProps) {
   const [activeTab, setActiveTab] = useState<ResearchTab>("research");
   const { lang } = useLanguage();
@@ -1383,6 +1400,9 @@ export function ResearchLayout({
             countyName={countyName}
             userSampleBallotText={userSampleBallotText}
             onUserSampleBallotTextChange={onUserSampleBallotTextChange}
+            preResearchContext={preResearchContext}
+            researchReady={researchReady}
+            preResearchGate={preResearchGate}
           />
         </div>
 
