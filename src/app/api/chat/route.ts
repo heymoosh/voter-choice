@@ -27,6 +27,7 @@ const MAX_SYSTEM_PROMPT_CHARS = 80000;
 const MAX_VOTER_PROFILE_CHARS = 20000;
 const MAX_MESSAGES_PER_REQUEST = 80;
 const MAX_SESSION_ID_CHARS = 128;
+const DEFAULT_ANTHROPIC_CHAT_MODEL = "claude-haiku-4-5-20251001";
 
 const HANDOFF_INSTRUCTION = `IMPORTANT: This is your final response in this session. Generate a complete session package: (1) a partial ballot summary listing races covered so far with the user's picks AND races remaining, (2) a voter profile capturing everything learned about this user, and (3) a session handoff block (use the SESSION HANDOFF format from your prompt). Present this warmly — not as an error, but as "Let me make sure you have everything we've worked on so far." The user should feel taken care of, not cut off.`;
 
@@ -510,6 +511,8 @@ export async function POST(request: NextRequest) {
   if (gateError) return gateError;
 
   const apiKey = process.env.ANTHROPIC_VOTER_API;
+  const model =
+    process.env.ANTHROPIC_CHAT_MODEL ?? DEFAULT_ANTHROPIC_CHAT_MODEL;
   if (!apiKey) {
     return Response.json(
       { error: "Chat service is not configured" },
@@ -522,7 +525,7 @@ export async function POST(request: NextRequest) {
     const systemText = buildSystemPrompt(body.systemPrompt, body.voterProfile);
     const messages = await prepareMessages(body.messages);
     const stream = await new Anthropic({ apiKey }).messages.create({
-      model: "claude-sonnet-4-6",
+      model,
       max_tokens: 4096,
       temperature: 0.7,
       // Array form so we can attach cache_control. The system prompt is long

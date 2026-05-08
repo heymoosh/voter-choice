@@ -68,6 +68,7 @@ export interface Resources {
 export interface CountyResource {
   name: string;
   ballotLookup: string;
+  ballotLookupInstructions?: string;
   pollingPlaces: string;
   earlyVotingLocations: string;
   electionsWebsite: string;

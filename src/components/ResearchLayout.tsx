@@ -187,8 +187,8 @@ function ballotStatusText(
         : "Exact ballot not confirmed yet.",
     body:
       lang === "es"
-        ? "Seguiremos con enlaces oficiales e investigación pública. Si una fuente no confirma candidatos o contiendas, el asistente debe decirlo claramente."
-        : "We'll continue with official source links and public research. If a source does not confirm candidates or contests, the assistant should say that plainly.",
+        ? "Google Civic no devolvió una lista de contiendas para esta búsqueda. Eso no significa que no haya contiendas; usa la boleta oficial del condado o pega el texto copiado del PDF oficial."
+        : "Google Civic did not return a contest list for this lookup. That does not mean there are no races; use the county sample ballot link or paste text copied from the official PDF.",
   };
 }
 
@@ -271,7 +271,7 @@ function BallotDataStatus({
                 rel="noopener noreferrer"
                 className="underline text-primary"
               >
-                {link.label}
+                {link.label}: {link.url}
               </a>
             </li>
           ))}
@@ -298,9 +298,9 @@ const SAMPLE_BALLOT_COPY = {
     appliedNotice:
       "The pasted ballot will be used to restart the research chat.",
     pdfNotice:
-      "PDFs vary too much to extract text reliably here. Open the PDF, select the ballot text, copy it, and paste it into this box.",
+      "Official ballots are often PDFs. For now, open the PDF, select the ballot text, copy it, and paste it here. That is more reliable than automatic PDF extraction.",
     fileNotice:
-      "For today, upload a .txt file or paste text copied from the official PDF.",
+      "For now, upload a .txt file or paste text copied from the official PDF.",
     loadedNotice: "Text loaded. Review it, then apply it to the chat.",
   },
   es: {
@@ -319,9 +319,9 @@ const SAMPLE_BALLOT_COPY = {
     appliedNotice:
       "La boleta pegada se usará para reiniciar el chat de investigación.",
     pdfNotice:
-      "Los PDFs varían demasiado para extraer texto de forma confiable aquí. Abre el PDF, selecciona el texto de la boleta, cópialo y pégalo en este cuadro.",
+      "Las boletas oficiales a menudo son PDFs. Por ahora, abre el PDF, selecciona el texto de la boleta, cópialo y pégalo aquí. Eso es más confiable que la extracción automática.",
     fileNotice:
-      "Para hoy, carga un archivo .txt o pega texto copiado desde el PDF oficial.",
+      "Por ahora, carga un archivo .txt o pega texto copiado desde el PDF oficial.",
     loadedNotice: "Texto cargado. Revisa el contenido y aplícalo al chat.",
   },
 };
@@ -1189,6 +1189,7 @@ function PollingView({
 function ResearchView({
   state,
   zipCode,
+  addressStep,
   budgetStatus,
   budgetChecked,
   onBudgetUpdate,
@@ -1205,6 +1206,7 @@ function ResearchView({
 }: {
   state: StateElectionData;
   zipCode: string;
+  addressStep: AddressStep;
   budgetStatus: BudgetStatus;
   budgetChecked: boolean;
   onBudgetUpdate: (budget: BudgetStatus) => void;
@@ -1226,6 +1228,14 @@ function ResearchView({
   const chatAvailable =
     budgetStatus.tier === "normal" || budgetStatus.tier === "notice";
   const hasOfficialContests = getContestCount(pollingData) > 0;
+  const hasUserSampleBallot = (userSampleBallotText ?? "").trim().length > 0;
+  const ballotLookupFinished =
+    addressStep === "done" ||
+    addressStep === "error" ||
+    addressStep === "skipped";
+  const canStartResearch =
+    researchReady &&
+    (ballotLookupFinished || hasOfficialContests || hasUserSampleBallot);
 
   return (
     <div className="flex flex-col h-full">
@@ -1297,7 +1307,7 @@ function ResearchView({
           )}
 
           {/* Chat or copy/paste fallback */}
-          {researchReady && (chatAvailable || !budgetChecked) && (
+          {canStartResearch && (chatAvailable || !budgetChecked) && (
             <ChatPanel
               key={`chat-${userSampleBallotText ? userSampleBallotText.slice(0, 48) : "no-sample"}`}
               state={state}
@@ -1312,7 +1322,7 @@ function ResearchView({
           )}
 
           {/* Copy/paste prompt — first-class editorial section */}
-          {researchReady && (
+          {canStartResearch && (
             <section className={copyPasteIsPrimary ? "" : "mt-4"}>
               <div className="flex items-center gap-3 mb-4">
                 <svg
@@ -1339,7 +1349,7 @@ function ResearchView({
           )}
 
           {/* Ballot Builder */}
-          {researchReady && <BallotBuilder />}
+          {canStartResearch && <BallotBuilder />}
         </div>
       </div>
     </div>
@@ -1390,6 +1400,7 @@ export function ResearchLayout({
           <ResearchView
             state={state}
             zipCode={zipCode}
+            addressStep={addressStep}
             budgetStatus={budgetStatus}
             budgetChecked={budgetChecked}
             onBudgetUpdate={onBudgetUpdate}

@@ -21,8 +21,39 @@ import React from "react";
 //   1. **bold**
 //   2. *italic*
 //   3. [text](url)
+//   4. bare https://... URLs
 const INLINE_REGEX =
-  /(\*\*(.+?)\*\*|\*([^*\n]+?)\*|\[([^\]]+)\]\((https?:\/\/[^)]+)\))/g;
+  /(\*\*(.+?)\*\*|\*([^*\n]+?)\*|\[([^\]]+)\]\((https?:\/\/[^)]+)\)|(https?:\/\/[^\s<]+))/g;
+
+function splitTrailingUrlPunctuation(url: string): {
+  href: string;
+  trailing: string;
+} {
+  const match = url.match(/^(.+?)([.,;:!?)]*)$/);
+  return {
+    href: match?.[1] ?? url,
+    trailing: match?.[2] ?? "",
+  };
+}
+
+function ExternalLink({
+  href,
+  children,
+}: {
+  href: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="text-primary underline hover:opacity-80"
+    >
+      {children}
+    </a>
+  );
+}
 
 export function InlineMarkdown({ text }: { text: string }) {
   const parts: React.ReactNode[] = [];
@@ -54,16 +85,19 @@ export function InlineMarkdown({ text }: { text: string }) {
     } else if (match[4] && match[5]) {
       // [text](url)
       parts.push(
-        <a
-          key={key++}
-          href={match[5]}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-primary underline hover:opacity-80"
-        >
+        <ExternalLink key={key++} href={match[5]}>
           {match[4]}
-        </a>,
+        </ExternalLink>,
       );
+    } else if (match[6]) {
+      // bare https://... URL
+      const { href, trailing } = splitTrailingUrlPunctuation(match[6]);
+      parts.push(
+        <ExternalLink key={key++} href={href}>
+          {href}
+        </ExternalLink>,
+      );
+      if (trailing) parts.push(trailing);
     }
     lastIndex = match.index + match[0].length;
   }
@@ -79,6 +113,98 @@ export function InlineMarkdown({ text }: { text: string }) {
 function isHorizontalRule(line: string): boolean {
   const trimmed = line.trim();
   return /^(-{3,}|_{3,}|\*{3,})$/.test(trimmed);
+}
+
+function parseTableRow(line: string): string[] | null {
+  const trimmed = line.trim();
+  if (!trimmed.includes("|")) return null;
+
+  let content = trimmed;
+  if (content.startsWith("|")) content = content.slice(1);
+  if (content.endsWith("|")) content = content.slice(0, -1);
+
+  const cells = content.split("|").map((cell) => cell.trim());
+  return cells.length >= 2 ? cells : null;
+}
+
+function isTableDivider(line: string): boolean {
+  const cells = parseTableRow(line);
+  return (
+    cells !== null &&
+    cells.every((cell) => /^:?-{3,}:?$/.test(cell)) &&
+    cells.some((cell) => cell.includes("---"))
+  );
+}
+
+function renderTable(
+  headerCells: string[],
+  bodyRows: string[][],
+  key: number,
+): React.ReactNode {
+  return (
+    <div key={key} className="my-3 overflow-x-auto">
+      <table className="min-w-full border-collapse text-left text-sm text-on-surface-variant">
+        <thead>
+          <tr className="border-b border-outline-variant/40">
+            {headerCells.map((cell, index) => (
+              <th
+                key={index}
+                className="px-3 py-2 font-bold text-on-surface align-top"
+              >
+                <InlineMarkdown text={cell} />
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {bodyRows.map((row, rowIndex) => (
+            <tr
+              key={rowIndex}
+              className="border-b border-outline-variant/20 last:border-b-0"
+            >
+              {row.map((cell, cellIndex) => (
+                <td key={cellIndex} className="px-3 py-2 align-top">
+                  <InlineMarkdown text={cell} />
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function consumeTable(
+  lines: string[],
+  startIndex: number,
+  key: number,
+): { element: React.ReactNode; nextIndex: number } | null {
+  const headerCells = parseTableRow(lines[startIndex]);
+  const nextLine = lines[startIndex + 1];
+  if (
+    !headerCells ||
+    !nextLine ||
+    isTableDivider(lines[startIndex]) ||
+    !isTableDivider(nextLine)
+  ) {
+    return null;
+  }
+
+  const bodyRows: string[][] = [];
+  let rowIndex = startIndex + 2;
+
+  while (rowIndex < lines.length) {
+    const rowCells = parseTableRow(lines[rowIndex]);
+    if (!rowCells || isTableDivider(lines[rowIndex])) break;
+    bodyRows.push(rowCells);
+    rowIndex += 1;
+  }
+
+  return {
+    element: renderTable(headerCells, bodyRows, key),
+    nextIndex: rowIndex - 1,
+  };
 }
 
 export function MarkdownText({ text }: { text: string }) {
@@ -124,6 +250,14 @@ export function MarkdownText({ text }: { text: string }) {
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
+    const tableBlock = consumeTable(lines, i, key);
+    if (tableBlock) {
+      flushAll();
+      elements.push(tableBlock.element);
+      key += 1;
+      i = tableBlock.nextIndex;
+      continue;
+    }
 
     // Horizontal rule
     if (isHorizontalRule(line)) {

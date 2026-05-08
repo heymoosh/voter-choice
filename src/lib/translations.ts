@@ -626,7 +626,7 @@ const en: Translations = {
     verifiedSources: "Verified Sources",
     sourcesDisclaimer:
       "Sources are from Claude\u2019s training data. Always verify with official records before voting.",
-    deepSearchLabel: "Deep Search Prompt",
+    deepSearchLabel: "Ask a question",
     deepSearchPlaceholder:
       "Ask about candidate history, voting records, or ballot measures...",
     nonPartisanNotice:
@@ -1047,7 +1047,7 @@ const es: Translations = {
     verifiedSources: "Fuentes Verificadas",
     sourcesDisclaimer:
       "Las fuentes provienen de los datos de entrenamiento de Claude. Siempre verifica con registros oficiales antes de votar.",
-    deepSearchLabel: "B\u00fasqueda Profunda",
+    deepSearchLabel: "Haz una pregunta",
     deepSearchPlaceholder:
       "Pregunta sobre historial de candidatos, registros de votaci\u00f3n o medidas electorales...",
     nonPartisanNotice:

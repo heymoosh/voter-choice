@@ -41,6 +41,20 @@ describe("InlineMarkdown", () => {
     expect(link).toHaveAttribute("target", "_blank");
   });
 
+  it("renders bare https URLs as anchors with visible full URL text", () => {
+    render(
+      <InlineMarkdown text="Go here: https://www.harrisvotes.com/Voter/Whats-on-my-Ballot." />,
+    );
+    const link = screen.getByRole("link", {
+      name: "https://www.harrisvotes.com/Voter/Whats-on-my-Ballot",
+    });
+    expect(link).toHaveAttribute(
+      "href",
+      "https://www.harrisvotes.com/Voter/Whats-on-my-Ballot",
+    );
+    expect(link).toHaveAttribute("target", "_blank");
+  });
+
   it("does not render italic across newlines", () => {
     // `*foo\nbar*` should stay plain text, not render as a multi-line italic
     const { container } = render(<InlineMarkdown text={"*foo\nbar*"} />);
@@ -95,5 +109,21 @@ describe("MarkdownText", () => {
     expect(quote?.textContent).toContain("quoted line");
     // The "normal line" should be OUTSIDE the blockquote
     expect(quote?.textContent ?? "").not.toContain("normal line");
+  });
+
+  it("renders markdown pipe tables as semantic tables", () => {
+    const { container } = render(
+      <MarkdownText
+        text={
+          "| Candidate | Strength |\n|---|---|\n| Parker | **Experience** |\n| Plummer | Reform focus |"
+        }
+      />,
+    );
+
+    const table = container.querySelector("table");
+    expect(table).not.toBeNull();
+    expect(container.querySelectorAll("th")).toHaveLength(2);
+    expect(container.querySelectorAll("tbody tr")).toHaveLength(2);
+    expect(screen.getByText("Experience").tagName).toBe("STRONG");
   });
 });

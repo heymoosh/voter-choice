@@ -186,6 +186,7 @@
     "Harris": {
       "name": "Harris County",
       "ballotLookup": "https://www.harrisvotes.com/Voter/Whats-on-my-Ballot",
+      "ballotLookupInstructions": "Harris County's ballot lookup may allow you to search with your full name and address. Requirements vary by county, so use the instructions on the county site.",
       "pollingPlaces": "https://www.harrisvotes.com/Voter/Polling-Locations",
       "earlyVotingLocations": "https://www.harrisvotes.com/Voter/Early-Voting-Locations",
       "electionsWebsite": "https://www.harrisvotes.com/"

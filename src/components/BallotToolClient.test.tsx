@@ -72,7 +72,7 @@ describe("BallotToolClient", () => {
     });
   });
 
-  it("shows research layout after selecting a Texas runoff path", async () => {
+  it("loads chat after selecting a Texas runoff path once lookup resolves", async () => {
     renderWithProviders(<BallotToolClient />);
     fireEvent.change(screen.getByTestId("zip-input"), {
       target: { value: "73301" },
@@ -99,12 +99,6 @@ describe("BallotToolClient", () => {
     });
     selectTexasRunoffGate("voted_rep_primary");
 
-    // Wait for research layout
-    await waitFor(() => {
-      expect(screen.getByTestId("chat-window")).toBeInTheDocument();
-    });
-
-    // Prompt output is now always visible in the research layout
     await waitFor(() => {
       expect(screen.getByTestId("prompt-output")).toBeInTheDocument();
     });
@@ -205,7 +199,6 @@ describe("BallotToolClient", () => {
     });
     selectTexasRunoffGate();
 
-    // Research layout should eventually appear
     await waitFor(() => {
       expect(screen.getByTestId("chat-window")).toBeInTheDocument();
     });
@@ -299,12 +292,6 @@ describe("BallotToolClient — Spanish mode", () => {
     });
     fireEvent.click(screen.getByTestId("runoff-option-unsure"));
 
-    // Wait for research layout
-    await waitFor(() => {
-      expect(screen.getByTestId("chat-window")).toBeInTheDocument();
-    });
-
-    // Prompt output is now always visible in the research layout
     await waitFor(() => {
       expect(screen.getByTestId("prompt-output")).toBeInTheDocument();
     });
