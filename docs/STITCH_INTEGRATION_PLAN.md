@@ -80,7 +80,7 @@ Contains the original Stitch design screens — use these as the visual truth wh
 | `src/lib/getStateData.ts` | Async state election data loader |
 | `src/lib/generatePrompt.ts` | Customized prompt builder (EN/ES) |
 | `src/lib/getDeadlineStatus.ts` | Deadline → color/status calculator |
-| `src/lib/chatParser.ts` | Structured content extraction ([CANDIDATES], [PROPOSITION]) |
+| `src/lib/chatParser.ts` | Removed in ballot prompt v2; chat is conversational text only |
 | `src/lib/parseBallotContent.ts` | Ballot summary extraction from chat |
 | `src/lib/ballot-utils.ts` | Ballot + voter profile extraction |
 | `src/lib/i18n.tsx` | Language context provider (EN/ES) |
@@ -241,8 +241,8 @@ Port each page from `reference/civic-research/src/pages/`, connecting to real ba
 - **Pre-work:** Extract streaming logic from `src/components/ChatPanel.tsx` into a `src/hooks/useChat.ts` custom hook (SSE parsing, session ID, message history, error handling)
 - Port the Stitch chat UI (input bar, message display, typing indicator)
 - Wire to `useChat` hook → existing `/api/chat` streaming endpoint
-- Wire structured content extraction → existing `src/lib/chatParser.ts`
-- Port research memo card format for AI responses → integrate with `src/components/StructuredCards.tsx` rendering
+- Do not wire candidate/proposition structured content extraction; that parser was removed in ballot prompt v2.
+- Port research memo card format for AI responses as conversational text only.
 - Port selection chips → wire to `src/lib/ballot-utils.ts` ballot builder logic
 - Wire progress tracker to actual ballot completion state
 - Integrate budget status display from `src/lib/server/budget.ts`

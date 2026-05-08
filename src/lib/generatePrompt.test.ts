@@ -1,5 +1,9 @@
+import fs from "node:fs";
+import path from "node:path";
 import { describe, it, expect } from "vitest";
 import { generatePrompt } from "./generatePrompt";
+import { BALLOT_PROMPT_EN } from "./generated/ballotPromptEn.generated";
+import { BALLOT_PROMPT_ES } from "./generated/ballotPromptEs.generated";
 import type { StateElectionData } from "../types/election";
 
 // Minimal TX-like state data for testing
@@ -47,6 +51,18 @@ const txData: StateElectionData = {
     sampleBallotLookup: "https://www.votetexas.gov/voting/ballot-board.html",
     pollingPlaceLookup: "https://www.votetexas.gov/voting/where.html",
   },
+  countyResources: {
+    Harris: {
+      name: "Harris County",
+      ballotLookup: "https://www.harrisvotes.com/Voter/Whats-on-my-Ballot",
+      ballotLookupInstructions:
+        "Harris County's ballot lookup may allow you to search with your full name and address. Requirements vary by county, so use the instructions on the county site.",
+      pollingPlaces: "https://www.harrisvotes.com/Voter/Polling-Locations",
+      earlyVotingLocations:
+        "https://www.harrisvotes.com/Voter/Early-Voting-Locations",
+      electionsWebsite: "https://www.harrisvotes.com/",
+    },
+  },
 };
 
 const noEarlyVotingData: StateElectionData = {
@@ -54,7 +70,32 @@ const noEarlyVotingData: StateElectionData = {
   earlyVoting: { available: false, startDate: null, endDate: null },
 };
 
+function readPromptDoc(fileName: string): string {
+  const docs = fs.readFileSync(
+    path.resolve(process.cwd(), "docs", fileName),
+    "utf8",
+  );
+  const startMarker = "## The Prompt\n\n";
+  const endMarker = "\n---\n\n## Share this";
+  const startIndex = docs.indexOf(startMarker);
+  const endIndex = docs.indexOf(endMarker);
+
+  if (startIndex >= 0 && endIndex > startIndex) {
+    return docs.slice(startIndex + startMarker.length, endIndex).trim();
+  }
+
+  return docs.trim();
+}
+
 describe("generatePrompt", () => {
+  it("keeps the English runtime prompt synced with docs/BALLOT_PROMPT.md", () => {
+    expect(BALLOT_PROMPT_EN).toBe(readPromptDoc("BALLOT_PROMPT.md"));
+  });
+
+  it("keeps the Spanish runtime prompt synced with docs/BALLOT_PROMPT_ES.md", () => {
+    expect(BALLOT_PROMPT_ES).toBe(readPromptDoc("BALLOT_PROMPT_ES.md"));
+  });
+
   it("returns an object with basePrompt, contextBlock, and fullText", () => {
     const result = generatePrompt(txData, "73301", "2026-03-30");
     expect(result).toHaveProperty("basePrompt");
@@ -69,27 +110,41 @@ describe("generatePrompt", () => {
 
   it("basePrompt frames the app as accessibility support rather than persuasion", () => {
     const result = generatePrompt(txData, "73301", "2026-03-30");
-    expect(result.basePrompt).toContain("civic accessibility tool");
-    expect(result.basePrompt).toContain("not a political campaign tool");
-    expect(result.basePrompt).toContain("Respect my individual choice");
+    expect(result.basePrompt).toContain("You are not a civics professor");
+    expect(result.basePrompt).toContain("You are not a campaign surrogate");
+    expect(result.basePrompt).toContain("respects this voter's time");
   });
 
   it("basePrompt requires a values-first guided conversation", () => {
     const result = generatePrompt(txData, "73301", "2026-03-30");
     expect(result.basePrompt).toContain(
-      "Learn my values and tradeoffs before candidate detail",
+      "Do not ask this voter what they care about",
     );
-    expect(result.basePrompt).toContain("Do not dump bios");
-    expect(result.basePrompt).toContain("No candidate detail");
+    expect(result.basePrompt).toContain("signal questions");
+    expect(result.basePrompt).toContain("Do not name candidates until Act 3");
   });
 
   it("basePrompt requires neutral ballot choice handling for primaries and runoffs", () => {
     const result = generatePrompt(txData, "73301", "2026-03-30");
     expect(result.basePrompt).toContain(
-      "Do not assume I am a Democrat, Republican, or any other partisan voter",
+      "party choice is handled by the app's pre-chat screen",
     );
     expect(result.basePrompt).toContain(
-      "ask which ballot I want help with first",
+      "Do NOT ask the voter which party's ballot they want",
+    );
+  });
+
+  it("runtime prompts suppress party labels and structured card metadata", () => {
+    const en = generatePrompt(txData, "73301", "2026-03-30", "en");
+    const es = generatePrompt(txData, "73301", "2026-03-30", "es");
+
+    expect(en.basePrompt).toContain("Party stays hidden");
+    expect(es.basePrompt).toContain("El partido se mantiene oculto");
+    expect(en.basePrompt).toContain(
+      "Do NOT emit `[CANDIDATES]`, `[PROPOSITION]`",
+    );
+    expect(es.basePrompt).toContain(
+      "NO emitas bloques `[CANDIDATES]`, `[PROPOSITION]`",
     );
   });
 
@@ -148,9 +203,9 @@ describe("generatePrompt", () => {
 
   it("instructs the AI not to ask for identifying details", () => {
     const result = generatePrompt(txData, "73301", "2026-03-30");
-    expect(result.fullText).toContain("exact street address");
+    expect(result.fullText).toContain("exact address");
     expect(result.fullText).toContain("full name");
-    expect(result.fullText).toContain("phone number");
+    expect(result.fullText).toContain("phone");
     expect(result.fullText).toContain("email");
   });
 
@@ -164,12 +219,27 @@ describe("generatePrompt", () => {
     expect(result.contextBlock).toContain("votetexas.gov");
   });
 
-  it("contextBlock tells the chat to start with stakes and one values question", () => {
+  it("contextBlock tells the chat to use the required first-race evidence summary", () => {
     const result = generatePrompt(txData, "73301", "2026-03-30");
     expect(result.contextBlock).toContain("explain why this election");
-    expect(result.contextBlock).toContain("one values/tradeoff question");
+    expect(result.contextBlock).toContain(
+      "use the required first-race evidence summary",
+    );
+    expect(result.contextBlock).toContain(
+      'Do NOT ask a vague "what matters most?"',
+    );
     expect(result.contextBlock).toContain("Do NOT fabricate races");
     expect(result.contextBlock).toContain("which ballot I want help with");
+  });
+
+  it("does not ask the voter to choose a race when the ballot is unconfirmed", () => {
+    const result = generatePrompt(txData, "73301", "2026-03-30");
+    expect(result.contextBlock).toContain(
+      "Do NOT ask which race I want to start with while the ballot is still unconfirmed",
+    );
+    expect(result.contextBlock).toContain(
+      "automatically choose the highest-impact confirmed race",
+    );
   });
 
   it("adds user-provided sample ballot text with instruction-safety boundaries", () => {
@@ -211,7 +281,38 @@ describe("generatePrompt", () => {
 
   it("contextBlock contains county election office link", () => {
     const result = generatePrompt(txData, "73301", "2026-03-30");
-    expect(result.contextBlock).toContain("voting/where.html");
+    expect(result.contextBlock).toContain(
+      "[https://www.votetexas.gov/voting/where.html](https://www.votetexas.gov/voting/where.html)",
+    );
+  });
+
+  it("adds visible clickable county ballot links and lookup guidance when county is known", () => {
+    const result = generatePrompt(
+      txData,
+      "77057",
+      "2026-03-30",
+      "en",
+      undefined,
+      "Harris",
+    );
+    expect(result.contextBlock).toContain(
+      "[https://www.harrisvotes.com/Voter/Whats-on-my-Ballot](https://www.harrisvotes.com/Voter/Whats-on-my-Ballot)",
+    );
+    expect(result.contextBlock).toContain("full name and address");
+    expect(result.contextBlock).toContain("Requirements vary by county");
+    expect(result.contextBlock).not.toContain(
+      "voter registration number or Texas driver's license number",
+    );
+  });
+
+  it("basePrompt tells the assistant to auto-answer the three evidence checks for the top race", () => {
+    const result = generatePrompt(txData, "73301", "2026-03-30");
+    expect(result.basePrompt).toContain("What they built or did");
+    expect(result.basePrompt).toContain("Who's funding them");
+    expect(result.basePrompt).toContain("Their plan vs. the evidence");
+    expect(result.basePrompt).toContain(
+      "Prioritize actual actions over stated positions",
+    );
   });
 
   it("contextBlock contains voter ID info when idRequired is true", () => {
@@ -241,7 +342,7 @@ describe("generatePrompt — Spanish mode", () => {
   it("returns Spanish base prompt when lang='es'", () => {
     const result = generatePrompt(txData, "73301", "2026-03-30", "es");
     expect(result.basePrompt).toContain("asistente");
-    expect(result.basePrompt).toContain("herramienta de accesibilidad cívica");
+    expect(result.basePrompt).toContain("investigación cívica no partidista");
     expect(result.basePrompt).not.toContain(
       "nonpartisan civic research assistant",
     );

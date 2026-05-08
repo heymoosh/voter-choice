@@ -237,12 +237,12 @@ Each session is a fresh Claude Code window. The session prompt, reference files,
 - Currently the AI's markdown output streams as plain text in `ChatMessageBubble`
 - The reference shows: sticky progress bar, "Selections (2)" counter, candidate comparison cards with incumbent/challenger labels, verified sources section
 
-**Approach — JSON markers in the system prompt (same pattern as ballot/profile):**
-The app already uses `=== MY BALLOT ===` and `=== MY VOTER PROFILE ===` markers that the UI parses and renders as structured components. This session extends that same pattern. Update the system prompt in `docs/BALLOT_PROMPT.md` to ask the AI to include JSON blocks alongside its conversational responses when it presents candidate comparisons or proposition analysis. Example: `[CANDIDATES]{ "race": "Mayor", "candidates": [...] }[/CANDIDATES]`. The UI parses the JSON, renders cards, and strips the raw block from the displayed conversation. The AI's natural language response continues to appear as normal chat text — the JSON is invisible metadata for the UI.
+**Historical approach — deprecated:**
+This plan originally proposed hidden JSON metadata markers for candidate and proposition cards. That approach was removed during the ballot prompt v2 migration. The current chat experience is conversational text only; candidate and proposition card parsing/rendering is not part of the runtime.
 
 **Scope:**
-- Update `docs/BALLOT_PROMPT.md` with instructions to emit `[CANDIDATES]...[/CANDIDATES]` and `[PROPOSITION]...[/PROPOSITION]` JSON blocks when presenting comparisons (define the JSON schema in the prompt)
-- Build a parser that extracts these blocks from assistant messages (similar to `parseHandoffMarkers()` in `HandoffPackage.tsx`)
+- Do not revive hidden candidate/proposition JSON metadata markers without a new product decision and work packet.
+- Do not add a parser for candidate/proposition metadata blocks.
 - Render candidate JSON as grid cards: candidate name, incumbent/challenger label, focus areas, "View Full Ledger" expansion
 - Render proposition JSON as cards with measure name, description, YES/NO recommendation
 - Add a progress bar component that estimates completion based on which research steps have been covered (count marker types that have appeared: candidates, propositions, ballot)

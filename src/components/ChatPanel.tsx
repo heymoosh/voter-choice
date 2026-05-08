@@ -8,10 +8,6 @@ import {
   buildClientFallbackHandoff,
 } from "./HandoffPackage";
 import { BallotActions } from "./BallotActions";
-import { StructuredBlocks } from "./StructuredCards";
-import { ResearchProgressBar } from "./ResearchProgress";
-import { parseStructuredContent, computeProgress } from "../lib/chatParser";
-import type { StructuredBlock } from "../lib/chatParser";
 import { useLanguage } from "../lib/i18n";
 import { translations } from "../lib/translations";
 import type { StateElectionData } from "../types/election";
@@ -194,8 +190,6 @@ function ResearchMemoCard({
     ? `${state?.stateCode}-${upcoming.date}`
     : (state?.stateCode ?? "");
 
-  const parsed = parseStructuredContent(msg.content);
-
   return (
     <div data-testid="chat-message-assistant">
       <div className="flex items-center gap-2 mb-4">
@@ -217,48 +211,9 @@ function ResearchMemoCard({
       <div className="bg-surface-lowest border-l-4 border-primary p-4 md:p-10 shadow-[0_4px_24px_-10px_rgba(0,0,0,0.05)]">
         {/* Content */}
         <div className="text-sm leading-relaxed text-on-surface-variant">
-          <MarkdownText text={parsed.displayText} />
+          <MarkdownText text={msg.content} />
           {isStreaming && isLast && (
             <span className="inline-block w-1.5 h-4 bg-primary ml-0.5 animate-pulse" />
-          )}
-        </div>
-
-        {/* Structured cards */}
-        {!isStreaming && parsed.blocks.length > 0 && (
-          <StructuredBlocks blocks={parsed.blocks} />
-        )}
-
-        {/* Verified Sources */}
-        {!isStreaming && parsed.blocks.length > 0 && (
-          <div className="pt-6 mt-6 border-t border-outline-variant/20">
-            <VerifiedSourcesIndicator />
-          </div>
-        )}
-
-        {/* Status indicators */}
-        <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="bg-surface-low p-4 border-b-2 border-outline-variant/30">
-            <span className="block text-[10px] font-bold text-accent uppercase mb-1">
-              {t.research.statusLabel}
-            </span>
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-primary" />
-              <span className="text-sm font-bold text-on-surface">
-                {t.research.statusInitialized}
-              </span>
-            </div>
-          </div>
-          {state && (
-            <div className="bg-surface-low p-4 border-b-2 border-outline-variant/30">
-              <span className="block text-[10px] font-bold text-accent uppercase mb-1">
-                {t.research.regionLabel}
-              </span>
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-bold text-on-surface">
-                  State of {state.stateName}
-                </span>
-              </div>
-            </div>
           )}
         </div>
 
@@ -268,23 +223,6 @@ function ResearchMemoCard({
   );
 }
 
-function VerifiedSourcesIndicator() {
-  const { lang } = useLanguage();
-  const t = translations[lang];
-
-  return (
-    <div className="flex flex-col gap-2">
-      <span className="text-[10px] font-black uppercase tracking-widest text-on-surface-muted">
-        {t.research.verifiedSources}
-      </span>
-      <p className="text-xs text-on-surface-muted">
-        {t.research.sourcesDisclaimer}
-      </p>
-    </div>
-  );
-}
-
-// eslint-disable-next-line complexity
 function ChatMessageBubble({
   msg,
   isLast,
@@ -354,29 +292,16 @@ function ChatMessageBubble({
 
   const showActions = !isStreaming || !isLast;
   const isCurrentlyStreaming = isStreaming && isLast;
-  const parsed = parseStructuredContent(msg.content);
 
   return (
     <article data-testid="chat-message-assistant" className="max-w-3xl mx-auto">
       <div className="bg-surface-lowest border-l-4 border-primary p-4 md:p-10 shadow-sm">
         <div className="text-sm leading-relaxed text-on-surface-variant">
-          <MarkdownText text={parsed.displayText} />
+          <MarkdownText text={msg.content} />
           {isCurrentlyStreaming && (
             <span className="inline-block w-1.5 h-4 bg-primary ml-0.5 animate-pulse" />
           )}
         </div>
-
-        {/* Structured cards */}
-        {!isCurrentlyStreaming && parsed.blocks.length > 0 && (
-          <StructuredBlocks blocks={parsed.blocks} />
-        )}
-
-        {/* Verified Sources for messages with structured content */}
-        {!isCurrentlyStreaming && parsed.blocks.length > 0 && (
-          <div className="pt-6 mt-6 border-t border-outline-variant/20">
-            <VerifiedSourcesIndicator />
-          </div>
-        )}
 
         {showActions && <BallotActions content={msg.content} />}
       </div>
@@ -952,22 +877,10 @@ export function ChatPanel({
     sendMessage(request, messages);
   }, [lang, sendMessage, messages]);
 
-  // Compute research progress from all assistant messages
-  const allBlocks: StructuredBlock[] = [];
   const fullContent = messages
     .filter((m) => m.role === "assistant")
-    .map((m) => {
-      const parsed = parseStructuredContent(m.content);
-      allBlocks.push(...parsed.blocks);
-      return m.content;
-    })
+    .map((m) => m.content)
     .join("\n");
-
-  const progress = computeProgress(
-    allBlocks,
-    messageCountRef.current,
-    fullContent,
-  );
 
   // Detect ballot completion — auto-show portfolio when ballot is generated
   const ballotContent = !isStreaming ? extractBallot(fullContent) : null;
@@ -1008,9 +921,6 @@ export function ChatPanel({
 
       {messages.length > 0 && (
         <>
-          {/* Progress bar — shown once conversation has started */}
-          {messages.length > 0 && <ResearchProgressBar progress={progress} />}
-
           <ChatMessageList
             messages={messages}
             isStreaming={isStreaming}
@@ -1055,12 +965,6 @@ export function ChatPanel({
 
           {!chatDisabled && (
             <>
-              {messages.length > 1 && (
-                <OutputRequestButton
-                  onClick={handleOutputRequest}
-                  isStreaming={isStreaming}
-                />
-              )}
               <ChatInput
                 onSubmit={(msg) => sendMessage(msg, messages)}
                 isStreaming={isStreaming}
@@ -1075,6 +979,12 @@ export function ChatPanel({
                   SESSION_MESSAGE_LIMIT,
                 )}
               </p>
+              {messages.length > 1 && (
+                <OutputRequestButton
+                  onClick={handleOutputRequest}
+                  isStreaming={isStreaming}
+                />
+              )}
             </>
           )}
         </>

@@ -8,15 +8,18 @@
   },
   "scripts": {
     "dev": "next dev --turbopack",
+    "prebuild": "npm run sync:ballot-prompt",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "pretest": "npm run sync:ballot-prompt",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "e2e": "playwright test",
     "measure": "node scripts/measure.mjs",
+    "sync:ballot-prompt": "node scripts/generate-ballot-prompt-module.mjs",
     "clean-start": "rm -rf node_modules .next coverage .jscpd-report .lighthouseci .vitest-report.json .eslint-report.json playwright-report.json && npm install"
   },
   "dependencies": {
