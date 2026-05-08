@@ -1,0 +1,54 @@
+We rethought the UX behavior of this app. I now expect this to happen:
+- A content creator's hook and storytelling intro drives users to ACTION laying out the stakes, the premise, the 'villain' and why this matters to user
+- Anonymized MC questions that have already analyzed each candidate for each race, and asks me what I prefer. Includes: 
+	- Donations history
+	- What they've actually DONE
+- Final evaluation - based on what I selected - of which candidates matches what I care about
+
+
+
+
+
+
+Chatbot behavior - still sounds VERY LLM and not at all like a content creator with great storytelling skills. Here's what I want it to know:
+In this video, Kallaway outlines six powerful storytelling techniques designed to improve short-form content performance:
+The Dance (0:24): Inspired by South Park creators, this technique focuses on the balance between context and conflict. Instead of just stacking events ("and then"), use "but" or "therefore" to create engaging, open-ended tension loops.
+Rhythm (3:27): Drawing from author Gary Provost, vary your sentence lengths to create a musical, soothing flow. Alternating between short, medium, and long sentences prevents the content from feeling monotonous.
+Tone (5:20): Adopt a conversational tone—as if you are speaking to a close friend. Steve Jobs, Casey Neistat, and Emma Chamberlain are cited as masters of breaking down the barrier between creator and viewer.
+Direction (6:57): Apply Christopher Nolan’s approach by starting with the end in mind. Determine your "last dab" (your most memorable line) first, then work backward to structure the middle.
+Storylenses (8:05): Use a unique angle or perspective to differentiate your content on popular topics. Just as a prism splits a beam of light, a "storylens" provides a specific, unique fingerprint that makes your narrative category-defining.
+The Hook (9:17): Your first line must be punchy and clear about the topic. Additionally, use visual hooks—showing the subject on screen immediately—because human eyes perceive information faster than the ears can process audio.
+
+
+
+
+
+
+UI on Chat Page:
+Very cluttered at the top when the chatbot starts. All you need to see:
+- Days until election
+- Status: Which state and ballot we confirmed from user's address and pre-LLM input (if you voted earlier in the year etc).
+- WARNING in red to NEVER share full personal details cause we can't control that. 
+
+- Kill the Build My Ballot section at the bottom of the chat.
+- Kill the 'question pills' below the chat input.
+- There's still a gap between the user's prompt box and the end of the Chat output - remove that gap, there should just be an outline around the user's prompt box that extends from the bottom of the chat.
+
+- The User's prompts get called as 'Research Focus' - kill that. 
+- Also move it to the right. Don't make it so damn big and bold. Right-align anything the user says, left-align anything the chatbot says, keep the white highlight around the USER'S prompt, and remove the white background from the chatbot's response.
+
+
+
+
+The comparisons between candidates feel VERY weak. It first asked me about environmental issues - but I happen to care about CRIME more. What could have helped instead:
+- Before jumping into candidate comparisons, find out what they're platforming on and ID those issues and tell me which issues I care most about FIRST. 
+- This begins the voter profile as well - the chatbot should NOT repeatedly ask me for my issues priority or preferences again and again, it should start to already build that profile on the side and refer to it as it goes through each race and candidate comparison.
+- I would like to see a sidebar that pops out and shows the voter profile being created and updated along the way. 
+
+
+
+
+
+
+
+
