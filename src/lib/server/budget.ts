@@ -10,7 +10,7 @@ const CACHE_WRITE_COST_PER_MILLION = 3.75;
 // Anthropic's web_search server tool is billed per 1000 searches.
 const SEARCH_COST_PER_THOUSAND = 10.0;
 
-const MONTHLY_BUDGET_USD = 20.0;
+const MONTHLY_BUDGET_USD = 50.0;
 
 export type BudgetTier =
   | "normal"
@@ -27,9 +27,17 @@ interface BudgetState {
   totalSearchCount: number;
   estimatedSpendUSD: number;
   resetAt: number; // timestamp for monthly reset
+  // Tracks whether the reserved handoff completion has been served this month.
+  // When true, the next request at/past exhaustion threshold returns 503.
+  // When false, one more completion is allowed (at handoff tier) to let the
+  // voter receive the full handoff block before we lock them out.
+  handoffServed: boolean;
 }
 
 let state: BudgetState = createFreshState();
+
+// Redis hash field name for the handoff flag.
+const HANDOFF_SERVED_FIELD = "handoffServed";
 
 function budgetKey(date = new Date()): string {
   const month = `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}`;
@@ -55,6 +63,7 @@ function createFreshState(): BudgetState {
     totalSearchCount: 0,
     estimatedSpendUSD: 0,
     resetAt: resetDate.getTime(),
+    handoffServed: false,
   };
 }
 
@@ -165,7 +174,11 @@ export function getBudgetPercent(): number {
 
 export function getBudgetTier(): BudgetTier {
   const pct = getBudgetPercent();
-  if (pct >= 100) return "exhausted";
+  if (pct >= 100) {
+    // Only report exhausted once the handoff has been served. If not yet served,
+    // keep reporting handoff so one more completion can deliver the handoff block.
+    return state.handoffServed ? "exhausted" : "handoff";
+  }
   if (pct >= 90) return "handoff";
   if (pct >= 80) return "soft_close";
   if (pct >= 70) return "notice";
@@ -185,15 +198,20 @@ export function getBudgetStatus(): {
   };
 }
 
-function budgetStatusFromSpend(estimatedSpendUSD: number): {
+function budgetStatusFromSpend(
+  estimatedSpendUSD: number,
+  handoffServed = false,
+): {
   tier: BudgetTier;
   percent: number;
   estimatedSpendUSD: number;
 } {
   const percent = Math.min(100, (estimatedSpendUSD / MONTHLY_BUDGET_USD) * 100);
   let tier: BudgetTier = "normal";
-  if (percent >= 100) tier = "exhausted";
-  else if (percent >= 90) tier = "handoff";
+  if (percent >= 100) {
+    // Only report exhausted once the handoff has been served.
+    tier = handoffServed ? "exhausted" : "handoff";
+  } else if (percent >= 90) tier = "handoff";
   else if (percent >= 80) tier = "soft_close";
   else if (percent >= 70) tier = "notice";
   return {
@@ -211,15 +229,20 @@ export async function getBudgetStatusAsync(): Promise<{
   if (!isDurableStoreConfigured()) return getBudgetStatus();
 
   try {
-    const spend = await redisCommand<string>([
-      "HGET",
-      budgetKey(),
-      "estimatedSpendUSD",
+    const key = budgetKey();
+    const [spend, handoffFlag] = await Promise.all([
+      redisCommand<string>(["HGET", key, "estimatedSpendUSD"]),
+      redisCommand<string>(["HGET", key, HANDOFF_SERVED_FIELD]),
     ]);
-    return budgetStatusFromSpend(Number(spend ?? 0));
+    // Defensive: if the flag read returns null/undefined (field missing or
+    // Redis transient error), treat as false so the voter gets their handoff.
+    const handoffServed = handoffFlag === "1";
+    return budgetStatusFromSpend(Number(spend ?? 0), handoffServed);
   } catch (err) {
     console.error("Durable budget status failed:", err);
-    return budgetStatusFromSpend(MONTHLY_BUDGET_USD);
+    // On error, fall back to a safe state: assume handoff NOT yet served so
+    // the voter can still receive the handoff completion.
+    return budgetStatusFromSpend(MONTHLY_BUDGET_USD, false);
   }
 }
 
@@ -242,6 +265,45 @@ export async function shouldTriggerHandoffAsync(): Promise<boolean> {
   return (await getBudgetStatusAsync()).tier === "handoff";
 }
 
+/**
+ * Mark that the reserved handoff completion has been served.
+ * After this, `getBudgetTier()` / `getBudgetStatusAsync()` will report
+ * `exhausted` instead of `handoff` when spend is at or past the cap.
+ *
+ * Persists to the durable store when configured so the flag survives a process
+ * restart. Fails safe on error: in-memory flag is always flipped even if the
+ * durable write fails, which is correct because the current process already
+ * served the handoff.
+ */
+export async function markHandoffServed(): Promise<void> {
+  ensureFreshMonth();
+  state.handoffServed = true;
+
+  if (!isDurableStoreConfigured()) return;
+
+  try {
+    const key = budgetKey();
+    await Promise.all([
+      redisCommand(["HSET", key, HANDOFF_SERVED_FIELD, "1"]),
+      redisCommand(["EXPIRE", key, monthlyResetSeconds()]),
+    ]);
+  } catch (err) {
+    console.error("Durable handoff-served flag write failed:", err);
+    // Non-fatal: in-memory flag already set, so the current process is correct.
+  }
+}
+
+/**
+ * Check whether the reserved handoff completion has been served this month.
+ *
+ * In-memory only — the async path is via `getBudgetStatusAsync()`.
+ * Defaults to false on any error so the voter always gets a chance at handoff.
+ */
+export function wasHandoffServed(): boolean {
+  ensureFreshMonth();
+  return state.handoffServed;
+}
+
 // For testing
 export function _resetForTesting(): void {
   state = createFreshState();
@@ -249,4 +311,8 @@ export function _resetForTesting(): void {
 
 export function _setSpendForTesting(usd: number): void {
   state.estimatedSpendUSD = usd;
+}
+
+export function _setHandoffServedForTesting(value: boolean): void {
+  state.handoffServed = value;
 }

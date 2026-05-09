@@ -5,7 +5,6 @@ import { useLanguage } from "../lib/i18n";
 import { translations } from "../lib/translations";
 import { ChatPanel } from "./ChatPanel";
 import { PromptOutput } from "./PromptOutput";
-import { BallotBuilder } from "./BallotBuilder";
 import { AddressInput } from "./AddressInput";
 import {
   PollingLocationCard,
@@ -281,6 +280,92 @@ function BallotDataStatus({
   );
 }
 
+function compactBallotStatus({
+  state,
+  countyName,
+  pollingData,
+  lang,
+}: {
+  state: StateElectionData;
+  countyName?: string;
+  pollingData: PollingData | null;
+  lang: Language;
+}): string {
+  const contestCount = getContestCount(pollingData);
+  const county = pollingData?.county ?? countyName;
+  const location = [state.stateName, county].filter(Boolean).join(" · ");
+  const countLabel =
+    lang === "es"
+      ? `${contestCount} contienda${contestCount === 1 ? "" : "s"}`
+      : `${contestCount} race${contestCount === 1 ? "" : "s"}`;
+  const confidence =
+    contestCount > 0
+      ? lang === "es"
+        ? "Civic confirmado"
+        : "Civic confirmed"
+      : lang === "es"
+        ? "No confirmado"
+        : "Not confirmed";
+
+  return `${location || state.stateName} · ${countLabel} · ${confidence}`;
+}
+
+function ResearchContextStrip({
+  daysLeft,
+  state,
+  countyName,
+  pollingData,
+  lang,
+}: {
+  daysLeft: number | null;
+  state: StateElectionData;
+  countyName?: string;
+  pollingData: PollingData | null;
+  lang: Language;
+}) {
+  const privacyText =
+    lang === "es"
+      ? "Nunca pegues tu nombre completo, dirección, teléfono, fecha de nacimiento ni ID. No podemos controlar dónde va después."
+      : "Never paste your full name, address, phone, DOB, or ID. We cannot control where it goes after chat.";
+
+  return (
+    <section
+      data-testid="research-context-strip"
+      className="grid grid-cols-1 md:grid-cols-3 gap-3 bg-surface-lowest border border-outline-variant/30 p-3"
+    >
+      <div>
+        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-muted">
+          {lang === "es" ? "Día de elección" : "Election day"}
+        </p>
+        <p className="mt-2 text-3xl font-black text-primary">
+          {daysLeft ?? "—"}
+        </p>
+        <p className="text-[10px] font-black uppercase tracking-widest text-on-surface-muted">
+          {lang === "es" ? "días restantes" : "days left"}
+        </p>
+      </div>
+
+      <div>
+        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-muted">
+          {lang === "es" ? "Boleta" : "Ballot"}
+        </p>
+        <p className="mt-2 text-sm font-bold text-on-surface">
+          {compactBallotStatus({ state, countyName, pollingData, lang })}
+        </p>
+      </div>
+
+      <div className="bg-red-50 border-l-4 border-red-600 px-3 py-2 text-red-800">
+        <p className="text-[10px] font-black uppercase tracking-[0.2em]">
+          {lang === "es" ? "No compartas" : "Don't share"}
+        </p>
+        <p className="mt-1 text-xs font-semibold leading-relaxed">
+          {privacyText}
+        </p>
+      </div>
+    </section>
+  );
+}
+
 const SAMPLE_BALLOT_COPY = {
   en: {
     title: "Use my official sample ballot",
@@ -294,7 +379,7 @@ const SAMPLE_BALLOT_COPY = {
     applied: "Working ballot applied to chat.",
     apply: "Use this ballot",
     update: "Update chat",
-    upload: "Upload .txt",
+    upload: "Upload .txt or .pdf",
     appliedNotice:
       "The pasted ballot will be used to restart the research chat.",
     pdfNotice:
@@ -338,6 +423,37 @@ function isTextFile(file: File): boolean {
   return file.name.endsWith(".txt") || file.type === "text/plain";
 }
 
+const PDF_SCANNED_MIN_CHARS = 50;
+
+async function extractPdfText(file: File): Promise<string> {
+  // Lazy-load pdfjs-dist only on client-side to avoid SSR issues.
+  // Wrap the import + worker setup in its own try/catch so CDN/load failures
+  // surface a distinct "PDF_LOAD_ERROR" rather than the misleading "scanned" message.
+  let pdfjsLib: typeof import("pdfjs-dist");
+  try {
+    pdfjsLib = await import("pdfjs-dist");
+    // Use CDN worker to keep bundle size small.
+    pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.mjs`;
+  } catch {
+    throw new Error("PDF_LOAD_ERROR");
+  }
+
+  const arrayBuffer = await file.arrayBuffer();
+  const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+  const pdf = await loadingTask.promise;
+
+  const textParts: string[] = [];
+  for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+    const page = await pdf.getPage(pageNum);
+    const textContent = await page.getTextContent();
+    const pageText = textContent.items
+      .map((item) => ("str" in item ? item.str : ""))
+      .join(" ");
+    textParts.push(pageText);
+  }
+  return textParts.join("\n").trim();
+}
+
 function UserSampleBallotInput({
   value,
   onChange,
@@ -351,8 +467,10 @@ function UserSampleBallotInput({
 }) {
   const [draft, setDraft] = useState(value);
   const [notice, setNotice] = useState<string | null>(null);
+  const [isPdfLoading, setIsPdfLoading] = useState(false);
   const canApply = draft.trim().length > 0 && draft.trim() !== value.trim();
   const copy = sampleBallotCopy(lang);
+  const t = translations[lang];
 
   function applyText() {
     const text = draft.trim();
@@ -360,10 +478,28 @@ function UserSampleBallotInput({
     setNotice(copy.appliedNotice);
   }
 
-  function handleFile(file: File | undefined) {
+  async function handleFile(file: File | undefined) {
     if (!file) return;
     if (isPdfFile(file)) {
-      setNotice(copy.pdfNotice);
+      setIsPdfLoading(true);
+      setNotice(null);
+      try {
+        const text = await extractPdfText(file);
+        if (text.length < PDF_SCANNED_MIN_CHARS) {
+          setNotice(t.research.pdfScannedError);
+        } else {
+          setDraft(text);
+          setNotice(copy.loadedNotice);
+        }
+      } catch (err) {
+        if (err instanceof Error && err.message === "PDF_LOAD_ERROR") {
+          setNotice(t.research.pdfLoadError);
+        } else {
+          setNotice(t.research.pdfScannedError);
+        }
+      } finally {
+        setIsPdfLoading(false);
+      }
       return;
     }
     if (!isTextFile(file)) {
@@ -414,13 +550,16 @@ function UserSampleBallotInput({
         >
           {value.trim() ? copy.update : copy.apply}
         </button>
-        <label className="text-xs font-bold uppercase tracking-wider text-primary hover:underline cursor-pointer">
-          {copy.upload}
+        <label
+          className={`text-xs font-bold uppercase tracking-wider text-primary hover:underline ${isPdfLoading ? "opacity-50 pointer-events-none" : "cursor-pointer"}`}
+        >
+          {isPdfLoading ? "Extracting PDF…" : copy.upload}
           <input
             data-testid="user-sample-ballot-file"
             type="file"
             accept=".txt,.pdf,text/plain,application/pdf"
             className="sr-only"
+            disabled={isPdfLoading}
             onChange={(e) => handleFile(e.target.files?.[0])}
           />
         </label>
@@ -1239,30 +1378,25 @@ function ResearchView({
 
   return (
     <div className="flex flex-col h-full">
+      {/* Sticky tab-close warning banner */}
+      {canStartResearch && (
+        <div
+          data-testid="tab-close-warning-banner"
+          className="sticky top-0 z-20 bg-amber-50 border-b border-amber-200 px-4 py-2 text-xs text-amber-900 font-medium text-center"
+        >
+          {t.research.tabCloseWarningBanner}
+        </div>
+      )}
       {/* Scrollable content */}
       <div className="flex-1 overflow-y-auto px-4 py-6 md:px-16 md:py-8 pb-20 md:pb-8">
-        <div className="max-w-3xl mx-auto space-y-8">
-          {/* Historical Context + Countdown */}
-          <section className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="col-span-1 md:col-span-2 space-y-4">
-              <h3 className="text-xs font-bold uppercase tracking-widest text-on-surface-muted">
-                {t.research.historicalContext}
-              </h3>
-              <p className="text-sm text-on-surface-variant leading-relaxed italic border-l-2 border-outline-variant pl-4">
-                &ldquo;{t.research.historicalContextQuote}&rdquo;
-              </p>
-            </div>
-            {daysLeft !== null && (
-              <div className="bg-surface-high p-6 flex flex-col justify-center">
-                <span className="text-3xl font-black text-primary mb-1">
-                  {daysLeft}
-                </span>
-                <span className="text-[10px] font-bold uppercase tracking-tighter text-on-surface-variant">
-                  {t.research.daysUntilElection}
-                </span>
-              </div>
-            )}
-          </section>
+        <div className="max-w-3xl mx-auto space-y-5">
+          <ResearchContextStrip
+            daysLeft={daysLeft}
+            state={state}
+            countyName={countyName}
+            pollingData={pollingData}
+            lang={lang}
+          />
 
           {/* Budget warning — warm editorial treatment */}
           {copyPasteIsPrimary && (
@@ -1288,22 +1422,33 @@ function ResearchView({
             </div>
           )}
 
-          <BallotDataStatus
-            pollingData={pollingData}
-            lang={lang}
-            state={state}
-            countyName={countyName}
-          />
+          {!hasOfficialContests && (
+            <BallotDataStatus
+              pollingData={pollingData}
+              lang={lang}
+              state={state}
+              countyName={countyName}
+            />
+          )}
 
           {!researchReady && preResearchGate}
 
           {onUserSampleBallotTextChange && (
-            <UserSampleBallotInput
-              value={userSampleBallotText ?? ""}
-              onChange={onUserSampleBallotTextChange}
-              lang={lang}
-              hasOfficialContests={hasOfficialContests}
-            />
+            <details className="bg-surface-lowest border border-outline-variant/30 p-4">
+              <summary className="cursor-pointer text-sm font-black uppercase tracking-widest text-primary">
+                {lang === "es"
+                  ? "Pegar mi boleta en su lugar"
+                  : "Paste your ballot instead"}
+              </summary>
+              <div className="mt-4">
+                <UserSampleBallotInput
+                  value={userSampleBallotText ?? ""}
+                  onChange={onUserSampleBallotTextChange}
+                  lang={lang}
+                  hasOfficialContests={hasOfficialContests}
+                />
+              </div>
+            </details>
           )}
 
           {/* Chat or copy/paste fallback */}
@@ -1347,9 +1492,6 @@ function ResearchView({
               <PromptOutput promptText={promptText} />
             </section>
           )}
-
-          {/* Ballot Builder */}
-          {canStartResearch && <BallotBuilder />}
         </div>
       </div>
     </div>

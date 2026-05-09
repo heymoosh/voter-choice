@@ -16,6 +16,18 @@ import type { PollingDataForPrompt } from "../lib/generatePrompt";
 import { extractBallot, extractVoterProfile } from "../lib/ballot-utils";
 import { ResearchPortfolio } from "./ResearchPortfolio";
 import { MarkdownText } from "./MarkdownText";
+import { ValuesTagSelector } from "./ValuesTagSelector";
+import { RacePatterns } from "./RacePatterns";
+import {
+  parseValuesTagRequestBlock,
+  stripValuesTagRequestBlocks,
+  hasOpenValuesTagRequestBlock,
+  stripPartialValuesTagRequestBlock,
+  parseRacePatternsBlock,
+  stripRacePatternsBlocks,
+  hasOpenRacePatternsBlock,
+  stripPartialRacePatternsBlock,
+} from "../lib/structured-blocks";
 
 interface ChatMessage {
   role: "user" | "assistant";
@@ -147,78 +159,10 @@ function SearchActivityIndicator({ activity }: { activity: SearchActivity }) {
       />
       <span className="font-medium">{label}</span>
       {activity.query && (
-        <span className="italic truncate max-w-xs">“{activity.query}”</span>
-      )}
-    </div>
-  );
-}
-
-function InlinePrivacyNotice() {
-  const { lang } = useLanguage();
-
-  return (
-    <div data-testid="chat-privacy-notice" className="mb-4">
-      <p className="text-xs text-on-surface-muted text-center">
-        {lang === "es"
-          ? "Privacidad: el chat se envía a Anthropic para responder. No escribas tu nombre, dirección exacta, teléfono, correo electrónico ni otros datos identificables."
-          : "Privacy: chat is sent to Anthropic for responses, but we do not include your address in the AI prompt. Do not type your name, exact address, phone, email, or other identifying details."}
-      </p>
-    </div>
-  );
-}
-
-// eslint-disable-next-line complexity
-function ResearchMemoCard({
-  msg,
-  isLast,
-  isStreaming,
-  state,
-}: {
-  msg: ChatMessage;
-  isLast: boolean;
-  isStreaming: boolean;
-  state?: StateElectionData;
-}) {
-  const { lang } = useLanguage();
-  const t = translations[lang];
-  const showActions = !isStreaming || !isLast;
-
-  const upcoming = state?.elections.find(
-    (e) => e.date >= new Date().toISOString().split("T")[0],
-  );
-  const ref = upcoming
-    ? `${state?.stateCode}-${upcoming.date}`
-    : (state?.stateCode ?? "");
-
-  return (
-    <div data-testid="chat-message-assistant">
-      <div className="flex items-center gap-2 mb-4">
-        <svg
-          className="text-primary"
-          width="14"
-          height="14"
-          viewBox="0 0 24 24"
-          fill="currentColor"
-          aria-hidden="true"
-        >
-          <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
-        </svg>
-        <span className="text-xs font-black uppercase tracking-[0.2em] text-primary">
-          {t.research.memoLabel}{" "}
-          {ref ? `\u2022 ${t.research.ballotSelections}` : ""}
+        <span className="italic truncate max-w-xs">
+          &ldquo;{activity.query}&rdquo;
         </span>
-      </div>
-      <div className="bg-surface-lowest border-l-4 border-primary p-4 md:p-10 shadow-[0_4px_24px_-10px_rgba(0,0,0,0.05)]">
-        {/* Content */}
-        <div className="text-sm leading-relaxed text-on-surface-variant">
-          <MarkdownText text={msg.content} />
-          {isStreaming && isLast && (
-            <span className="inline-block w-1.5 h-4 bg-primary ml-0.5 animate-pulse" />
-          )}
-        </div>
-
-        {showActions && <BallotActions content={msg.content} />}
-      </div>
+      )}
     </div>
   );
 }
@@ -227,19 +171,13 @@ function ChatMessageBubble({
   msg,
   isLast,
   isStreaming,
-  isFirstAssistant,
   isFirstUser,
-  state,
 }: {
   msg: ChatMessage;
   isLast: boolean;
   isStreaming: boolean;
-  isFirstAssistant?: boolean;
   isFirstUser?: boolean;
-  state?: StateElectionData;
 }) {
-  const { lang } = useLanguage();
-
   if (msg.role === "user") {
     // The first user message is the auto-generated context block — show only
     // the intro line (before the first newline) and hide the long payload.
@@ -248,63 +186,33 @@ function ChatMessageBubble({
       : msg.content;
 
     return (
-      <article className="max-w-3xl mx-auto pt-4">
-        <div className="flex gap-4 items-start">
-          <div className="bg-primary p-2 text-white shrink-0">
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="currentColor"
-              aria-hidden="true"
-            >
-              <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
-            </svg>
-          </div>
-          <div className="space-y-2">
-            <h2 className="text-xs font-black uppercase tracking-[0.2em] text-primary">
-              {lang === "es"
-                ? "ENFOQUE DE INVESTIGACI\u00d3N ACTUAL"
-                : "CURRENT RESEARCH FOCUS"}
-            </h2>
-            <div
-              className="text-lg md:text-2xl font-bold text-on-surface leading-tight tracking-tight"
-              data-testid="chat-message-user"
-            >
-              <MarkdownText text={displayContent} />
-            </div>
+      <article className="max-w-3xl mx-auto">
+        <div className="flex justify-end">
+          <div
+            className="max-w-md bg-surface-lowest border border-outline-variant/40 px-4 py-3 text-sm leading-relaxed text-on-surface shadow-sm"
+            data-testid="chat-message-user"
+          >
+            <MarkdownText text={displayContent} />
           </div>
         </div>
       </article>
     );
   }
 
-  if (isFirstAssistant) {
-    return (
-      <ResearchMemoCard
-        msg={msg}
-        isLast={isLast}
-        isStreaming={isStreaming}
-        state={state}
-      />
-    );
-  }
-
   const showActions = !isStreaming || !isLast;
   const isCurrentlyStreaming = isStreaming && isLast;
+  const displayContent = msg.content;
 
   return (
     <article data-testid="chat-message-assistant" className="max-w-3xl mx-auto">
-      <div className="bg-surface-lowest border-l-4 border-primary p-4 md:p-10 shadow-sm">
-        <div className="text-sm leading-relaxed text-on-surface-variant">
-          <MarkdownText text={msg.content} />
-          {isCurrentlyStreaming && (
-            <span className="inline-block w-1.5 h-4 bg-primary ml-0.5 animate-pulse" />
-          )}
-        </div>
-
-        {showActions && <BallotActions content={msg.content} />}
+      <div className="text-sm leading-relaxed text-on-surface">
+        <MarkdownText text={displayContent} />
+        {isCurrentlyStreaming && (
+          <span className="inline-block w-1.5 h-4 bg-primary ml-0.5 animate-pulse" />
+        )}
       </div>
+
+      {showActions && <BallotActions content={displayContent} />}
     </article>
   );
 }
@@ -386,68 +294,6 @@ function ChatInput({
   );
 }
 
-function QuickActionChips({
-  onChipClick,
-  isStreaming,
-}: {
-  onChipClick: (text: string) => void;
-  isStreaming: boolean;
-}) {
-  const { lang } = useLanguage();
-  const t = translations[lang];
-  const chips = [
-    t.research.chipCounty,
-    t.research.chipCandidates,
-    t.research.chipBallot,
-    t.research.chipNotSure,
-  ];
-
-  return (
-    <div className="mt-3 flex gap-2 md:gap-3 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-none">
-      {chips.map((chip) => (
-        <button
-          key={chip}
-          type="button"
-          disabled={isStreaming}
-          onClick={() => onChipClick(chip)}
-          className="whitespace-nowrap px-3 md:px-4 py-2 min-h-[36px] rounded-full border border-outline-variant/30 text-xs font-medium text-on-surface-variant hover:bg-surface-low transition-colors disabled:opacity-50 disabled:pointer-events-none"
-        >
-          {chip}
-        </button>
-      ))}
-    </div>
-  );
-}
-
-function OutputRequestButton({
-  onClick,
-  isStreaming,
-}: {
-  onClick: () => void;
-  isStreaming: boolean;
-}) {
-  const { lang } = useLanguage();
-  const label =
-    lang === "es" ? "Generar mi boleta imprimible" : "Generate my printout";
-  const helper =
-    lang === "es"
-      ? "Crea una boleta de una página y mi perfil de votante local."
-      : "Create a one-page ballot and my local voter profile.";
-
-  return (
-    <button
-      type="button"
-      data-testid="generate-output-btn"
-      disabled={isStreaming}
-      onClick={onClick}
-      className="mb-3 w-full border-2 border-primary/30 bg-surface-lowest px-4 py-3 text-left hover:border-primary hover:bg-primary/5 disabled:opacity-50 disabled:pointer-events-none transition-colors"
-    >
-      <span className="block text-sm font-black text-on-surface">{label}</span>
-      <span className="block text-xs text-on-surface-muted mt-1">{helper}</span>
-    </button>
-  );
-}
-
 /* ── Hooks ──────────────────────────────────────────────────── */
 
 function useHandoffState(
@@ -498,6 +344,172 @@ function useHandoffState(
   };
 }
 
+/* ── Values tag selector rendering ─────────────────────────── */
+
+function ValuesTagSelectorLoadingPlaceholder() {
+  const { lang } = useLanguage();
+  const t = translations[lang];
+  return (
+    <div
+      data-testid="values-tag-selector-loading"
+      className="my-4 bg-surface-low border-l-4 border-primary/40 p-4 flex items-center gap-3"
+    >
+      <span className="inline-block w-2 h-2 rounded-full bg-primary animate-pulse" />
+      <span className="text-xs font-bold uppercase tracking-widest text-on-surface-muted">
+        {t.research.valuesTagSelectorSubmitting}
+      </span>
+    </div>
+  );
+}
+
+function renderValuesTagSelector(
+  msg: ChatMessage,
+  idx: number,
+  isLastAssistant: boolean,
+  isStreaming: boolean,
+  isSubmitted: boolean,
+  submittedTags: string[],
+  onSubmit: (
+    selection: { tags: string[]; custom?: string } | "skipped",
+  ) => void,
+): React.ReactElement | null {
+  if (msg.role !== "assistant" || !isLastAssistant) return null;
+
+  // Streaming placeholder: half-emitted block during stream
+  if (isStreaming) {
+    const isOpenBlock = hasOpenValuesTagRequestBlock(msg.content);
+    const parsedDuringStream = parseValuesTagRequestBlock(msg.content);
+    if (isOpenBlock && !parsedDuringStream) {
+      const leadIn = stripPartialValuesTagRequestBlock(msg.content);
+      return (
+        <article
+          key={idx}
+          data-testid="chat-message-assistant"
+          className="max-w-3xl mx-auto"
+        >
+          {leadIn && (
+            <div className="text-sm leading-relaxed text-on-surface">
+              <MarkdownText text={leadIn} />
+            </div>
+          )}
+          <ValuesTagSelectorLoadingPlaceholder />
+        </article>
+      );
+    }
+    return null;
+  }
+
+  if (!msg.content.includes("[/VALUES_TAG_REQUEST]")) return null;
+  const block = parseValuesTagRequestBlock(msg.content);
+  if (!block) return null;
+
+  const prose = stripValuesTagRequestBlocks(msg.content);
+  return (
+    <article
+      key={idx}
+      data-testid="chat-message-assistant"
+      className="max-w-3xl mx-auto space-y-4"
+    >
+      {prose && (
+        <div className="text-sm leading-relaxed text-on-surface">
+          <MarkdownText text={prose} />
+        </div>
+      )}
+      <ValuesTagSelector
+        block={block}
+        isSubmitted={isSubmitted}
+        submittedTags={submittedTags}
+        onSubmit={onSubmit}
+      />
+    </article>
+  );
+}
+
+/* ── Race patterns rendering ────────────────────────────────── */
+
+function RacePatternsLoadingPlaceholder() {
+  const { lang } = useLanguage();
+  const t = translations[lang];
+  return (
+    <div
+      data-testid="race-patterns-loading"
+      className="my-4 bg-surface-low border-l-4 border-primary/40 p-4 flex items-center gap-3"
+    >
+      <span className="inline-block w-2 h-2 rounded-full bg-primary animate-pulse" />
+      <span className="text-xs font-bold uppercase tracking-widest text-on-surface-muted">
+        {t.research.racePatternsSubmitting}
+      </span>
+    </div>
+  );
+}
+
+function renderRacePatterns(
+  msg: ChatMessage,
+  idx: number,
+  isLastAssistant: boolean,
+  isStreaming: boolean,
+  submittedEntry: { submitted: boolean; pickedId: string | null },
+  onPick: (candidateId: string, candidateName: string) => void,
+  onSkip: () => void,
+  parentIsStreaming: boolean,
+): React.ReactElement | null {
+  if (msg.role !== "assistant" || !isLastAssistant) return null;
+
+  // Streaming placeholder: half-emitted block during stream
+  if (isStreaming) {
+    const isOpenBlock = hasOpenRacePatternsBlock(msg.content);
+    const parsedDuringStream = parseRacePatternsBlock(msg.content);
+    if (isOpenBlock && !parsedDuringStream) {
+      const leadIn = stripPartialRacePatternsBlock(msg.content);
+      return (
+        <article
+          key={idx}
+          data-testid="chat-message-assistant"
+          className="max-w-3xl mx-auto"
+        >
+          {leadIn && (
+            <div className="text-sm leading-relaxed text-on-surface">
+              <MarkdownText text={leadIn} />
+            </div>
+          )}
+          <RacePatternsLoadingPlaceholder />
+        </article>
+      );
+    }
+    return null;
+  }
+
+  if (!msg.content.includes("[/RACE_PATTERNS]")) return null;
+  const block = parseRacePatternsBlock(msg.content);
+  if (!block) return null;
+
+  // Strip any values-tag-request blocks too — race-patterns wins if both present.
+  const prose = stripValuesTagRequestBlocks(
+    stripRacePatternsBlocks(msg.content),
+  );
+  return (
+    <article
+      key={idx}
+      data-testid="chat-message-assistant"
+      className="max-w-3xl mx-auto space-y-4"
+    >
+      {prose && (
+        <div className="text-sm leading-relaxed text-on-surface">
+          <MarkdownText text={prose} />
+        </div>
+      )}
+      <RacePatterns
+        block={block}
+        isSubmitted={submittedEntry.submitted}
+        pickedCandidateId={submittedEntry.pickedId ?? undefined}
+        onPick={onPick}
+        onSkip={onSkip}
+        isStreaming={parentIsStreaming}
+      />
+    </article>
+  );
+}
+
 /* ── Message list ───────────────────────────────────────────── */
 
 function ChatMessageList({
@@ -509,7 +521,11 @@ function ChatMessageList({
   clientContinuationPrompt,
   messagesEndRef,
   lastUserMsgRef,
-  state,
+  submittedValuesSelectors,
+  onSubmitValues,
+  submittedRaceFinals,
+  onPickRaceFinal,
+  onSkipRaceFinal,
 }: {
   messages: ChatMessage[];
   isStreaming: boolean;
@@ -519,21 +535,32 @@ function ChatMessageList({
   clientContinuationPrompt: string;
   messagesEndRef: React.RefObject<HTMLDivElement | null>;
   lastUserMsgRef: React.RefObject<HTMLDivElement | null>;
-  state?: StateElectionData;
+  submittedValuesSelectors: Map<number, string[]>;
+  onSubmitValues: (
+    messageIdx: number,
+    selection: { tags: string[]; custom?: string } | "skipped",
+  ) => void;
+  submittedRaceFinals: Map<number, string | null>;
+  onPickRaceFinal: (
+    messageIdx: number,
+    candidateId: string,
+    candidateName: string,
+    race: string,
+  ) => void;
+  onSkipRaceFinal: (messageIdx: number, race: string) => void;
 }) {
   const { lang } = useLanguage();
   const t = translations[lang];
 
-  // Track first user, first assistant, and last user message indices
+  // Track first user and last user message indices
   const firstUserIdx = messages.findIndex((m) => m.role === "user");
-  const firstAssistantIdx = messages.findIndex((m) => m.role === "assistant");
   const lastUserIdx = messages.reduce(
     (acc, m, i) => (m.role === "user" ? i : acc),
     -1,
   );
 
   return (
-    <div className="space-y-8 mb-4 pr-1 pb-20">
+    <div className="space-y-4 pr-1">
       {messages.map((msg, i) => {
         const isLastAssistant =
           msg.role === "assistant" && i === messages.length - 1;
@@ -549,15 +576,53 @@ function ChatMessageList({
           );
         }
 
+        // Race-patterns wins over values-tag-selector if both somehow appear
+        // in the same message (later-game artifact takes precedence).
+        const submittedEntry = submittedRaceFinals.has(i)
+          ? {
+              submitted: true,
+              pickedId: submittedRaceFinals.get(i) ?? null,
+            }
+          : { submitted: false, pickedId: null };
+        const racePatterns = renderRacePatterns(
+          msg,
+          i,
+          isLastAssistant,
+          isStreaming,
+          submittedEntry,
+          (candidateId, candidateName) => {
+            const block = parseRacePatternsBlock(msg.content);
+            if (block) {
+              onPickRaceFinal(i, candidateId, candidateName, block.race);
+            }
+          },
+          () => {
+            const block = parseRacePatternsBlock(msg.content);
+            if (block) onSkipRaceFinal(i, block.race);
+          },
+          isStreaming,
+        );
+        if (racePatterns) return racePatterns;
+
+        const valuesSubmittedEntry = submittedValuesSelectors.get(i);
+        const valuesSelector = renderValuesTagSelector(
+          msg,
+          i,
+          isLastAssistant,
+          isStreaming,
+          submittedValuesSelectors.has(i),
+          valuesSubmittedEntry ?? [],
+          (selection) => onSubmitValues(i, selection),
+        );
+        if (valuesSelector) return valuesSelector;
+
         return (
           <div key={i} ref={i === lastUserIdx ? lastUserMsgRef : undefined}>
             <ChatMessageBubble
               msg={msg}
               isLast={i === messages.length - 1}
               isStreaming={isStreaming}
-              isFirstAssistant={i === firstAssistantIdx}
               isFirstUser={i === firstUserIdx}
-              state={state}
             />
           </div>
         );
@@ -676,6 +741,13 @@ export function ChatPanel({
   const [searchActivity, setSearchActivity] = useState<SearchActivity | null>(
     null,
   );
+  // submittedValuesSelectors: messageIdx → submitted tag ids (empty array = skipped or custom)
+  const [submittedValuesSelectors, setSubmittedValuesSelectors] = useState<
+    Map<number, string[]>
+  >(() => new Map());
+  const [submittedRaceFinals, setSubmittedRaceFinals] = useState<
+    Map<number, string | null>
+  >(() => new Map());
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const lastUserMsgRef = useRef<HTMLDivElement>(null);
   const sessionIdRef = useRef(generateSessionId());
@@ -839,6 +911,75 @@ export function ChatPanel({
     ],
   );
 
+  const handleValuesSubmit = useCallback(
+    (
+      messageIdx: number,
+      selection: { tags: string[]; custom?: string } | "skipped",
+    ) => {
+      if (submittedValuesSelectors.has(messageIdx) || isStreaming) return;
+
+      let payload: string;
+      let submittedTagIds: string[];
+
+      if (selection === "skipped") {
+        payload = "[VOTER VALUES] skipped";
+        submittedTagIds = [];
+      } else if (
+        selection.custom !== undefined &&
+        selection.custom.trim().length > 0
+      ) {
+        // custom path: JSON.stringify the string to handle embedded quotes safely
+        payload = `[VOTER VALUES] custom=${JSON.stringify(selection.custom.trim())}`;
+        submittedTagIds = [];
+      } else {
+        // tags path: JSON-array-style payload
+        const tagsJson = JSON.stringify(selection.tags);
+        payload = `[VOTER VALUES] tags=${tagsJson}`;
+        submittedTagIds = selection.tags;
+      }
+
+      setSubmittedValuesSelectors((prev) => {
+        const next = new Map(prev);
+        next.set(messageIdx, submittedTagIds);
+        return next;
+      });
+      sendMessage(payload, messages);
+    },
+    [submittedValuesSelectors, isStreaming, sendMessage, messages],
+  );
+
+  const handleRaceFinalPick = useCallback(
+    (
+      messageIdx: number,
+      candidateId: string,
+      candidateName: string,
+      race: string,
+    ) => {
+      if (submittedRaceFinals.has(messageIdx) || isStreaming) return;
+      setSubmittedRaceFinals((prev) => {
+        const next = new Map(prev);
+        next.set(messageIdx, candidateId);
+        return next;
+      });
+      const payload = `[VOTER PICKED] race="${race}" choice="${candidateId}" candidateName="${candidateName}"`;
+      sendMessage(payload, messages);
+    },
+    [submittedRaceFinals, isStreaming, sendMessage, messages],
+  );
+
+  const handleRaceFinalSkip = useCallback(
+    (messageIdx: number, race: string) => {
+      if (submittedRaceFinals.has(messageIdx) || isStreaming) return;
+      setSubmittedRaceFinals((prev) => {
+        const next = new Map(prev);
+        next.set(messageIdx, null);
+        return next;
+      });
+      sendMessage(`[VOTER SKIPPED] race="${race}"`, messages);
+    },
+    [submittedRaceFinals, isStreaming, sendMessage, messages],
+  );
+
   const startSession = useCallback(() => {
     if (sessionStartedRef.current) return;
     sessionStartedRef.current = true;
@@ -862,20 +1003,16 @@ export function ChatPanel({
     zipCode,
   );
 
-  const handleChipClick = useCallback(
-    (text: string) => {
-      sendMessage(text, messages);
-    },
-    [sendMessage, messages],
-  );
-
-  const handleOutputRequest = useCallback(() => {
-    const request =
-      lang === "es"
-        ? "Genera ahora el Resultado A: Mi Boleta — 1 Página Impresa y el Resultado B: Mi Perfil de Votante. Incluye solo elecciones que he confirmado claramente; marca cualquier contienda pendiente como INDECISO/A. Déjame revisar el perfil antes de guardarlo."
-        : "Generate Output A: My Ballot — 1 Page Printout and Output B: My Voter Profile now. Include only choices I have clearly confirmed; mark anything still pending as UNDECIDED. Let me review the profile before I save it.";
-    sendMessage(request, messages);
-  }, [lang, sendMessage, messages]);
+  // Warn before tab close once the session has started but before handoff is finalized.
+  useEffect(() => {
+    if (messages.length === 0 || handoff.parsedHandoff) return;
+    function handleBeforeUnload(e: BeforeUnloadEvent) {
+      e.preventDefault();
+      e.returnValue = "";
+    }
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [messages.length, handoff.parsedHandoff]);
 
   const fullContent = messages
     .filter((m) => m.role === "assistant")
@@ -917,8 +1054,6 @@ export function ChatPanel({
 
   return (
     <div data-testid="chat-window" className="flex flex-col">
-      <InlinePrivacyNotice />
-
       {messages.length > 0 && (
         <>
           <ChatMessageList
@@ -930,7 +1065,11 @@ export function ChatPanel({
             clientContinuationPrompt={handoff.clientContinuationPrompt}
             messagesEndRef={messagesEndRef}
             lastUserMsgRef={lastUserMsgRef}
-            state={state}
+            submittedValuesSelectors={submittedValuesSelectors}
+            onSubmitValues={handleValuesSubmit}
+            submittedRaceFinals={submittedRaceFinals}
+            onPickRaceFinal={handleRaceFinalPick}
+            onSkipRaceFinal={handleRaceFinalSkip}
           />
 
           {isStreaming && searchActivity && (
@@ -964,13 +1103,22 @@ export function ChatPanel({
           )}
 
           {!chatDisabled && (
-            <>
+            <div className="sticky bottom-0 z-30 bg-surface-lowest pt-0">
+              {messages.length > 1 && (
+                <button
+                  type="button"
+                  data-testid="finish-later-btn"
+                  disabled={isStreaming}
+                  onClick={() =>
+                    sendMessage(t.research.finishLaterPrompt, messages)
+                  }
+                  className="mb-2 text-xs font-bold uppercase tracking-widest text-on-surface-muted hover:text-primary disabled:opacity-50"
+                >
+                  {t.research.finishLater}
+                </button>
+              )}
               <ChatInput
                 onSubmit={(msg) => sendMessage(msg, messages)}
-                isStreaming={isStreaming}
-              />
-              <QuickActionChips
-                onChipClick={handleChipClick}
                 isStreaming={isStreaming}
               />
               <p className="text-xs text-on-surface-muted text-right mt-1">
@@ -979,13 +1127,7 @@ export function ChatPanel({
                   SESSION_MESSAGE_LIMIT,
                 )}
               </p>
-              {messages.length > 1 && (
-                <OutputRequestButton
-                  onClick={handleOutputRequest}
-                  isStreaming={isStreaming}
-                />
-              )}
-            </>
+            </div>
           )}
         </>
       )}

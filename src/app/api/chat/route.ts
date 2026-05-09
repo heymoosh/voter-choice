@@ -5,6 +5,8 @@ import {
   recordUsageAsync,
   getBudgetStatusAsync,
   shouldTriggerHandoffAsync,
+  markHandoffServed,
+  wasHandoffServed,
   type BudgetTier,
 } from "../../../lib/server/budget";
 
@@ -180,7 +182,11 @@ function budgetGateResponse(
   isNewSession: boolean | undefined,
   budget: Awaited<ReturnType<typeof getBudgetStatusAsync>>,
 ): Response | null {
-  if (tier === "exhausted") {
+  // The tier logic in budget.ts already withholds "exhausted" until the handoff
+  // has been served (returning "handoff" instead). This belt-and-suspenders check
+  // ensures we never 503 on exhausted unless the handoff is confirmed served —
+  // guarding against any future path that could bypass the tier coercion.
+  if (tier === "exhausted" && wasHandoffServed()) {
     return Response.json(
       {
         error:
@@ -349,6 +355,7 @@ function handleStreamEvent(
 
 function createSSEStream(
   stream: AsyncIterable<Anthropic.MessageStreamEvent>,
+  requestTier: BudgetTier,
 ): ReadableStream<Uint8Array> {
   const encoder = new TextEncoder();
   const usage: StreamUsage = {
@@ -380,6 +387,11 @@ function createSSEStream(
             cacheWriteTokens: usage.cacheWrite,
             searchCount: usage.searchCount,
           });
+        }
+        // If this was a handoff-tier request, mark it served so the next
+        // request at exhaustion returns 503 instead of another handoff.
+        if (requestTier === "handoff") {
+          await markHandoffServed();
         }
         controller.enqueue(
           encoder.encode(
@@ -521,12 +533,15 @@ export async function POST(request: NextRequest) {
   }
 
   const budget = await getBudgetStatusAsync();
+  // Cap max_tokens for handoff-tier requests so the reserved allowance stays
+  // bounded even if the model tries to emit a very long response.
+  const maxTokens = budget.tier === "handoff" ? 4096 : 4096;
   try {
     const systemText = buildSystemPrompt(body.systemPrompt, body.voterProfile);
     const messages = await prepareMessages(body.messages);
     const stream = await new Anthropic({ apiKey }).messages.create({
       model,
-      max_tokens: 4096,
+      max_tokens: maxTokens,
       temperature: 0.7,
       // Array form so we can attach cache_control. The system prompt is long
       // and identical across turns in a session, so caching it pays off after
@@ -545,7 +560,7 @@ export async function POST(request: NextRequest) {
       stream: true,
     });
 
-    return new Response(createSSEStream(stream), {
+    return new Response(createSSEStream(stream, budget.tier), {
       headers: {
         "Content-Type": "text/event-stream",
         "Cache-Control": "no-cache",

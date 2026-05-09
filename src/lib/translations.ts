@@ -216,25 +216,6 @@ export interface Translations {
     tabPolling: string;
     tabBallot: string;
     checkRegistration: string;
-    memoLabel: string;
-    ballotSelections: string;
-    statusLabel: string;
-    statusInitialized: string;
-    regionLabel: string;
-    historicalContext: string;
-    historicalContextQuote: string;
-    daysUntilElection: string;
-    inputLabel: string;
-    inputPlaceholder: string;
-    chipNotSure: string;
-    chipCandidates: string;
-    chipBallot: string;
-    chipCounty: string;
-    progressLabel: string;
-    selectionsLabel: string;
-    viewLedger: string;
-    verifiedSources: string;
-    sourcesDisclaimer: string;
     deepSearchLabel: string;
     deepSearchPlaceholder: string;
     nonPartisanNotice: string;
@@ -247,6 +228,43 @@ export interface Translations {
     runoffGateOptionRepRunoff: string;
     runoffGateOptionUnsure: string;
     runoffGateContinue: string;
+    finishLater: string;
+    finishLaterPrompt: string;
+    // ValuesTagSelector keys
+    valuesTagSelectorTitle: string;
+    valuesTagSelectorInstruction: string;
+    valuesTagSelectorSubmit: string;
+    valuesTagSelectorSkip: string;
+    valuesTagSelectorCustomPlaceholder: string;
+    valuesTagSelectorSubmitting: string;
+    valuesTagSelectorSubmitted: string;
+    // RacePatterns keys
+    racePatternsRevealButton: string;
+    racePatternsPickPrefix: string;
+    racePatternsSkip: string;
+    racePatternsSubmitting: string;
+    racePatternsLockedIn: string;
+    racePatternsSkipped: string;
+    racePatternsValuesHighlightLabel: string;
+    racePatternsEndorsementsHeading: string;
+    racePatternsRetrospectiveHeading: string;
+    racePatternsSourcesHeading: string;
+    racePatternsKeyVotesUnit: string;
+    racePatternsAlignmentHeading: string;
+    racePatternsAlignmentChallenger: string;
+    racePatternsAlignmentUnavailablePrefix: string;
+    racePatternsEndorsementsUnavailablePrefix: string;
+    racePatternsRetrospectiveUnavailablePrefix: string;
+    racePatternsCoalitionHeading: string;
+    racePatternsCoalitionUnavailablePrefix: string;
+    racePatternsSeeDonors: string;
+    racePatternsDonorMethodologyNote: string;
+    racePatternsEndorsementPartisan: string;
+    racePatternsEndorsementNonpartisan: string;
+    racePatternsEndorsementMixed: string;
+    tabCloseWarningBanner: string;
+    pdfScannedError: string;
+    pdfLoadError: string;
   };
   portfolio: {
     badge: string;
@@ -605,27 +623,6 @@ const en: Translations = {
     tabPolling: "Polling Places",
     tabBallot: "Sample Ballot",
     checkRegistration: "Check Registration",
-    memoLabel: "Research Memo",
-    ballotSelections: "Ballot Selections",
-    statusLabel: "Status",
-    statusInitialized: "Voter File Initialized",
-    regionLabel: "Region",
-    historicalContext: "Historical Context",
-    historicalContextQuote:
-      "Municipal elections in Texas often see lower turnout than general cycles, meaning your individual vote carries significantly more weight in determining local policy and educational funding.",
-    daysUntilElection: "Days until election",
-    inputLabel: "Your response",
-    inputPlaceholder: "Type your thoughts, or just say 'I'm not sure'...",
-    chipNotSure: "I'm not sure",
-    chipCandidates: "Tell me about the candidates",
-    chipBallot: "What's on my ballot?",
-    chipCounty: "I'm in Travis County",
-    progressLabel: "Progress",
-    selectionsLabel: "Selections",
-    viewLedger: "View Full Ledger",
-    verifiedSources: "Verified Sources",
-    sourcesDisclaimer:
-      "Sources are from Claude\u2019s training data. Always verify with official records before voting.",
     deepSearchLabel: "Ask a question",
     deepSearchPlaceholder:
       "Ask about candidate history, voting records, or ballot measures...",
@@ -645,6 +642,46 @@ const en: Translations = {
     runoffGateOptionUnsure:
       "I'm not sure. Help me figure out which runoff applies.",
     runoffGateContinue: "Continue to research",
+    finishLater: "Finish this later",
+    finishLaterPrompt:
+      "I need to leave. Please generate my full SESSION HANDOFF block right now so I can save it and resume from this exact point later. Include every decision I've logged, every race we've covered, every race remaining, my issue priorities, my voter profile so far, and the next question you would have asked. Be exhaustive — I will literally paste this back into a new session to continue.",
+    // ValuesTagSelector
+    valuesTagSelectorTitle: "What issues matter most to you?",
+    valuesTagSelectorInstruction:
+      "Select up to 3 issues. We'll highlight which candidates speak to your priorities.",
+    valuesTagSelectorSubmit: "Apply my priorities",
+    valuesTagSelectorSkip: "Skip — no preference",
+    valuesTagSelectorCustomPlaceholder: "Describe your top issue…",
+    valuesTagSelectorSubmitting: "Sending…",
+    valuesTagSelectorSubmitted: "Priorities applied",
+    // RacePatterns
+    racePatternsRevealButton: "Reveal candidates",
+    racePatternsPickPrefix: "Pick",
+    racePatternsSkip: "Skip this race",
+    racePatternsSubmitting: "Sending…",
+    racePatternsLockedIn: "Locked in:",
+    racePatternsSkipped: "Skipped",
+    racePatternsValuesHighlightLabel: "Highlighted for your values:",
+    racePatternsEndorsementsHeading: "Endorsements",
+    racePatternsRetrospectiveHeading: "Track record",
+    racePatternsSourcesHeading: "Sources",
+    racePatternsKeyVotesUnit: "key votes",
+    racePatternsAlignmentHeading: "Voted in line with platform",
+    racePatternsAlignmentChallenger: "Challenger — no voting record yet",
+    racePatternsAlignmentUnavailablePrefix: "Record unavailable —",
+    racePatternsEndorsementsUnavailablePrefix: "Endorsement data unavailable —",
+    racePatternsRetrospectiveUnavailablePrefix: "Track record unavailable —",
+    racePatternsCoalitionHeading: "Donor coalition",
+    racePatternsCoalitionUnavailablePrefix: "Donor data unavailable —",
+    racePatternsSeeDonors: "See individual donors",
+    racePatternsDonorMethodologyNote:
+      "% by total contribution amount · Small donor = under $200 per donation",
+    racePatternsEndorsementPartisan: "Partisan",
+    racePatternsEndorsementNonpartisan: "Nonpartisan",
+    racePatternsEndorsementMixed: "Mixed",
+    tabCloseWarningBanner: `This session isn’t saved. Get the summary or tap “Finish this later” before closing the tab.`,
+    pdfScannedError: `This PDF appears to be scanned and can’t be auto-extracted. Open it, copy the text, and paste it here instead.`,
+    pdfLoadError: `We couldn’t load the PDF reader right now. Please try again in a moment, or open the PDF, copy the text, and paste it here.`,
   },
   portfolio: {
     badge: "Verified Research",
@@ -1025,28 +1062,6 @@ const es: Translations = {
     tabPolling: "Casillas",
     tabBallot: "Boleta de Muestra",
     checkRegistration: "Verificar Registro",
-    memoLabel: "Memorando de Investigaci\u00f3n",
-    ballotSelections: "Selecciones de Boleta",
-    statusLabel: "Estado",
-    statusInitialized: "Archivo de Votante Inicializado",
-    regionLabel: "Regi\u00f3n",
-    historicalContext: "Contexto Hist\u00f3rico",
-    historicalContextQuote:
-      "Las elecciones municipales en Texas a menudo ven menor participaci\u00f3n que los ciclos generales, lo que significa que tu voto individual tiene significativamente m\u00e1s peso en determinar la pol\u00edtica local y el financiamiento educativo.",
-    daysUntilElection: "D\u00edas hasta la elecci\u00f3n",
-    inputLabel: "Tu respuesta",
-    inputPlaceholder:
-      "Escribe tus ideas, o simplemente di 'No estoy seguro'...",
-    chipNotSure: "No estoy seguro",
-    chipCandidates: "Cu\u00e9ntame de los candidatos",
-    chipBallot: "\u00bfQu\u00e9 hay en mi boleta?",
-    chipCounty: "Estoy en el Condado de Travis",
-    progressLabel: "Progreso",
-    selectionsLabel: "Selecciones",
-    viewLedger: "Ver Registro Completo",
-    verifiedSources: "Fuentes Verificadas",
-    sourcesDisclaimer:
-      "Las fuentes provienen de los datos de entrenamiento de Claude. Siempre verifica con registros oficiales antes de votar.",
     deepSearchLabel: "Haz una pregunta",
     deepSearchPlaceholder:
       "Pregunta sobre historial de candidatos, registros de votaci\u00f3n o medidas electorales...",
@@ -1069,6 +1084,48 @@ const es: Translations = {
     runoffGateOptionUnsure:
       "No estoy seguro/a. Ay\u00fadame a determinar qu\u00e9 desempate aplica.",
     runoffGateContinue: "Continuar a la investigaci\u00f3n",
+    finishLater: "Continuar despu\u00e9s",
+    finishLaterPrompt:
+      "Tengo que irme. Por favor genera ahora mismo mi bloque completo de TRANSFERENCIA DE SESI\u00d3N DE VOTANTE para que pueda guardarlo y retomar exactamente desde este punto m\u00e1s tarde. Incluye cada decisi\u00f3n que he registrado, cada contienda que hemos cubierto, cada contienda que queda, mis prioridades de temas, mi perfil de votante hasta ahora y la siguiente pregunta que me ibas a hacer. S\u00e9 exhaustivo \u2014 literalmente voy a pegar esto en una nueva sesi\u00f3n para continuar.",
+    // ValuesTagSelector — EN stubs (ES UI out of scope for this packet)
+    valuesTagSelectorTitle: "What issues matter most to you?",
+    valuesTagSelectorInstruction:
+      "Select up to 3 issues. We'll highlight which candidates speak to your priorities.",
+    valuesTagSelectorSubmit: "Apply my priorities",
+    valuesTagSelectorSkip: "Skip — no preference",
+    valuesTagSelectorCustomPlaceholder: "Describe your top issue…",
+    valuesTagSelectorSubmitting: "Sending…",
+    valuesTagSelectorSubmitted: "Priorities applied",
+    // RacePatterns — EN stubs (ES UI out of scope for this packet)
+    racePatternsRevealButton: "Reveal candidates",
+    racePatternsPickPrefix: "Pick",
+    racePatternsSkip: "Skip this race",
+    racePatternsSubmitting: "Sending…",
+    racePatternsLockedIn: "Locked in:",
+    racePatternsSkipped: "Skipped",
+    racePatternsValuesHighlightLabel: "Highlighted for your values:",
+    racePatternsEndorsementsHeading: "Endorsements",
+    racePatternsRetrospectiveHeading: "Track record",
+    racePatternsSourcesHeading: "Sources",
+    racePatternsKeyVotesUnit: "key votes",
+    racePatternsAlignmentHeading: "Voted in line with platform",
+    racePatternsAlignmentChallenger: "Challenger — no voting record yet",
+    racePatternsAlignmentUnavailablePrefix: "Record unavailable —",
+    racePatternsEndorsementsUnavailablePrefix: "Endorsement data unavailable —",
+    racePatternsRetrospectiveUnavailablePrefix: "Track record unavailable —",
+    racePatternsCoalitionHeading: "Donor coalition",
+    racePatternsCoalitionUnavailablePrefix: "Donor data unavailable —",
+    racePatternsSeeDonors: "See individual donors",
+    racePatternsDonorMethodologyNote:
+      "% by total contribution amount · Small donor = under $200 per donation",
+    racePatternsEndorsementPartisan: "Partisan",
+    racePatternsEndorsementNonpartisan: "Nonpartisan",
+    racePatternsEndorsementMixed: "Mixed",
+    tabCloseWarningBanner: `This session isn’t saved. Get the summary or tap “Finish this later” before closing the tab.`,
+    pdfScannedError:
+      "This PDF appears to be scanned and can’t be auto-extracted. Open it, copy the text, and paste it here instead.",
+    pdfLoadError:
+      "We couldn’t load the PDF reader right now. Please try again in a moment, or open the PDF, copy the text, and paste it here.",
   },
   portfolio: {
     badge: "Investigaci\u00f3n Verificada",

@@ -1,4 +1,5 @@
 import React from "react";
+import { SourcedClaim, parseCitationBody } from "./SourcedClaim";
 
 /* ──────────────────────────────────────────────────────────────
  * Lightweight markdown renderer for assistant messages.
@@ -12,10 +13,22 @@ import React from "react";
  *   - --- horizontal rule
  *   - > blockquote
  *   - blank-line paragraph breaks
+ *   - inline citations:
+ *       [Source: NAME], [Source: NAME, URL]
+ *       [Advocacy: NAME], [Advocacy: NAME, URL]
+ *       Spanish: [Fuente: ...] / [Defensa: ...]
  *
  * Deliberately minimal — this is rendered on every token during
  * streaming. No external dependency.
  * ────────────────────────────────────────────────────────────── */
+
+// Citation tokens. The prefix is case-sensitive (matches what the
+// prompt instructs the model to emit). Body stops at the first `]`.
+const CITATION_RE = /\[(Source|Advocacy|Fuente|Defensa):\s*([^\]]+)\]/g;
+
+function citationKind(prefix: string): "source" | "advocacy" {
+  return prefix === "Advocacy" || prefix === "Defensa" ? "advocacy" : "source";
+}
 
 // Match (in order so that **bold** wins over *italic*):
 //   1. **bold**
@@ -55,11 +68,17 @@ function ExternalLink({
   );
 }
 
-export function InlineMarkdown({ text }: { text: string }) {
+// Render the bold/italic/link/URL inline grammar. Citations have
+// already been peeled off upstream so we don't need to worry about
+// `[Source: ...]` tokens looking like markdown links here.
+function renderInlinePlain(
+  text: string,
+  startKey: number,
+): { nodes: React.ReactNode[]; nextKey: number } {
   const parts: React.ReactNode[] = [];
   let lastIndex = 0;
   let match: RegExpExecArray | null;
-  let key = 0;
+  let key = startKey;
 
   // Reset lastIndex so the global regex starts fresh each call.
   INLINE_REGEX.lastIndex = 0;
@@ -103,6 +122,45 @@ export function InlineMarkdown({ text }: { text: string }) {
   }
   if (lastIndex < text.length) {
     parts.push(text.slice(lastIndex));
+  }
+
+  return { nodes: parts, nextKey: key };
+}
+
+export function InlineMarkdown({ text }: { text: string }) {
+  // Step 1: split off citation tokens. Anything between citations
+  // is plain markdown text and is handed to renderInlinePlain.
+  const parts: React.ReactNode[] = [];
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+  let key = 0;
+
+  CITATION_RE.lastIndex = 0;
+  while ((match = CITATION_RE.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      const plain = text.slice(lastIndex, match.index);
+      const { nodes, nextKey } = renderInlinePlain(plain, key);
+      parts.push(...nodes);
+      key = nextKey;
+    }
+    const prefix = match[1];
+    const body = match[2];
+    const { name, url } = parseCitationBody(body);
+    parts.push(
+      <SourcedClaim
+        key={key++}
+        kind={citationKind(prefix)}
+        name={name}
+        url={url}
+      />,
+    );
+    lastIndex = match.index + match[0].length;
+  }
+  if (lastIndex < text.length) {
+    const tail = text.slice(lastIndex);
+    const { nodes, nextKey } = renderInlinePlain(tail, key);
+    parts.push(...nodes);
+    key = nextKey;
   }
 
   return <>{parts}</>;

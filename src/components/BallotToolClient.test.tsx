@@ -139,10 +139,9 @@ describe("BallotToolClient", () => {
     selectTexasRunoffGate();
 
     await waitFor(() => {
-      expect(
-        screen.getByTestId("user-sample-ballot-input"),
-      ).toBeInTheDocument();
+      expect(screen.getByText("Paste your ballot instead")).toBeInTheDocument();
     });
+    fireEvent.click(screen.getByText("Paste your ballot instead"));
 
     fireEvent.change(screen.getByTestId("user-sample-ballot-textarea"), {
       target: {

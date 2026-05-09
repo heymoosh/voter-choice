@@ -111,6 +111,83 @@ describe("MarkdownText", () => {
     expect(quote?.textContent ?? "").not.toContain("normal line");
   });
 
+  it("renders [Source: NAME] as a chip with a search-fallback URL", () => {
+    render(
+      <InlineMarkdown text="Unemployment dropped [Source: BLS] last year" />,
+    );
+    const chip = screen.getByTitle(/^BLS — Tier 1/);
+    expect(chip.tagName).toBe("A");
+    expect(chip).toHaveAttribute("target", "_blank");
+    expect(chip).toHaveAttribute("rel", "noopener noreferrer");
+    expect(chip).toHaveAttribute("href", "https://www.google.com/search?q=BLS");
+    expect(chip).toHaveAttribute("data-citation-kind", "source");
+    expect(chip.textContent).toContain("BLS");
+  });
+
+  it("renders [Source: NAME, URL] with the explicit URL as href", () => {
+    render(
+      <InlineMarkdown text="Crime fell [Source: FBI UCR 2025, https://ucr.fbi.gov/] in 2025" />,
+    );
+    const chip = screen.getByTitle(/^FBI UCR 2025/);
+    expect(chip).toHaveAttribute("href", "https://ucr.fbi.gov/");
+    expect(chip.textContent).toContain("FBI UCR 2025");
+  });
+
+  it("renders [Advocacy: NAME] with the advocacy variant", () => {
+    render(
+      <InlineMarkdown text="They argue [Advocacy: ACLU Texas] for reform" />,
+    );
+    const chip = screen.getByTitle(/ACLU Texas — Advocacy — click to open/);
+    expect(chip).toHaveAttribute("data-citation-kind", "advocacy");
+    expect(chip.className).toContain("accent");
+    expect(chip.className).not.toContain("bg-primary/10");
+  });
+
+  it("maps Spanish [Fuente: ...] to a source chip", () => {
+    render(
+      <InlineMarkdown text="El desempleo bajó [Fuente: BLS] el año pasado" />,
+    );
+    const chip = screen.getByTitle(/^BLS — Tier 1/);
+    expect(chip).toHaveAttribute("data-citation-kind", "source");
+  });
+
+  it("maps Spanish [Defensa: ...] to an advocacy chip", () => {
+    render(
+      <InlineMarkdown text="Argumentan [Defensa: ACLU Texas] por reforma" />,
+    );
+    const chip = screen.getByTitle(/ACLU Texas — Advocacy — click to open/);
+    expect(chip).toHaveAttribute("data-citation-kind", "advocacy");
+  });
+
+  it("renders multiple citations in one paragraph", () => {
+    render(
+      <InlineMarkdown text="Per [Source: BLS] and [Advocacy: ACLU Texas], wages rose." />,
+    );
+    expect(screen.getByTitle(/^BLS — Tier 1/)).toBeInTheDocument();
+    expect(
+      screen.getByTitle(/ACLU Texas — Advocacy — click to open/),
+    ).toBeInTheDocument();
+  });
+
+  it("preserves surrounding markdown around a citation", () => {
+    render(<InlineMarkdown text="**bold** text [Source: BLS] more text" />);
+    expect(screen.getByText("bold").tagName).toBe("STRONG");
+    expect(screen.getByTitle(/^BLS — Tier 1/)).toBeInTheDocument();
+  });
+
+  it("treats a date with no URL as part of the source name", () => {
+    render(
+      <InlineMarkdown text="Reported [Source: Houston Chronicle, 2024-09-12] last fall" />,
+    );
+    const chip = screen.getByTitle(/^Houston Chronicle, 2024-09-12 — /);
+    // No URL → falls back to a Google search of the full name+date.
+    expect(chip).toHaveAttribute(
+      "href",
+      `https://www.google.com/search?q=${encodeURIComponent("Houston Chronicle, 2024-09-12")}`,
+    );
+    expect(chip.textContent).toContain("Houston Chronicle, 2024-09-12");
+  });
+
   it("renders markdown pipe tables as semantic tables", () => {
     const { container } = render(
       <MarkdownText

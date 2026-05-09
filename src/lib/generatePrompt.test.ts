@@ -115,13 +115,12 @@ describe("generatePrompt", () => {
     expect(result.basePrompt).toContain("respects this voter's time");
   });
 
-  it("basePrompt requires a values-first guided conversation", () => {
+  it("basePrompt drives Act 2 values capture through the [VALUES_TAG_REQUEST] block, not an open interrogation", () => {
     const result = generatePrompt(txData, "73301", "2026-03-30");
-    expect(result.basePrompt).toContain(
-      "Do not ask this voter what they care about",
-    );
-    expect(result.basePrompt).toContain("signal questions");
-    expect(result.basePrompt).toContain("Do not name candidates until Act 3");
+    expect(result.basePrompt).toContain("[VALUES_TAG_REQUEST]");
+    expect(result.basePrompt).toContain("[/VALUES_TAG_REQUEST]");
+    expect(result.basePrompt).toContain("The voter brings their values");
+    expect(result.basePrompt).toContain("Do NOT re-ask values");
   });
 
   it("basePrompt requires neutral ballot choice handling for primaries and runoffs", () => {
@@ -134,18 +133,32 @@ describe("generatePrompt", () => {
     );
   });
 
-  it("runtime prompts suppress party labels and structured card metadata", () => {
+  it("runtime prompts suppress party labels and disallow stray JSON metadata blocks", () => {
     const en = generatePrompt(txData, "73301", "2026-03-30", "en");
     const es = generatePrompt(txData, "73301", "2026-03-30", "es");
 
     expect(en.basePrompt).toContain("Party stays hidden");
     expect(es.basePrompt).toContain("El partido se mantiene oculto");
     expect(en.basePrompt).toContain(
-      "Do NOT emit `[CANDIDATES]`, `[PROPOSITION]`",
+      "Do NOT emit any other structured JSON metadata blocks",
     );
-    expect(es.basePrompt).toContain(
-      "NO emitas bloques `[CANDIDATES]`, `[PROPOSITION]`",
+    expect(en.basePrompt).toContain(
+      "Do NOT emit the legacy `[ISSUE_RANKER]` or `[RACE_FINAL_EVAL]` blocks",
     );
+  });
+
+  it("runtime prompts use a lightweight values tag (Act 2) and have no PROFILE_DELTA mechanic", () => {
+    const en = generatePrompt(txData, "73301", "2026-03-30", "en");
+    const es = generatePrompt(txData, "73301", "2026-03-30", "es");
+
+    expect(en.basePrompt).toContain("VALUES TAG (LIGHTWEIGHT)");
+    expect(en.basePrompt).toContain("[VALUES_TAG_REQUEST]");
+    expect(en.basePrompt).not.toContain("[PROFILE_DELTA]");
+    expect(en.basePrompt).toContain("The values check is over");
+    // Spanish prompt is intentionally still on the previous version while the
+    // English flow is being iterated; assert the legacy ES surface still exists.
+    expect(es.basePrompt).toContain("Escaneo de temas");
+    expect(es.basePrompt).not.toContain("[PROFILE_DELTA]");
   });
 
   it("contextBlock contains state name", () => {
@@ -219,17 +232,19 @@ describe("generatePrompt", () => {
     expect(result.contextBlock).toContain("votetexas.gov");
   });
 
-  it("contextBlock tells the chat to use the required first-race evidence summary", () => {
+  it("contextBlock routes the chat through Acts 1 → 1.5 → 2 → 3 instead of the old Step 1 framing", () => {
     const result = generatePrompt(txData, "73301", "2026-03-30");
-    expect(result.contextBlock).toContain("explain why this election");
+    expect(result.contextBlock).toContain("Begin with Act 1");
+    expect(result.contextBlock).toContain("[VALUES_TAG_REQUEST]");
+    expect(result.contextBlock).toContain("pattern dashboard");
     expect(result.contextBlock).toContain(
-      "use the required first-race evidence summary",
-    );
-    expect(result.contextBlock).toContain(
-      'Do NOT ask a vague "what matters most?"',
+      'Do NOT improvise an open-ended "what matters most?" interrogation',
     );
     expect(result.contextBlock).toContain("Do NOT fabricate races");
     expect(result.contextBlock).toContain("which ballot I want help with");
+    expect(result.contextBlock).not.toContain(
+      "use the required first-race evidence summary",
+    );
   });
 
   it("does not ask the voter to choose a race when the ballot is unconfirmed", () => {
@@ -237,9 +252,8 @@ describe("generatePrompt", () => {
     expect(result.contextBlock).toContain(
       "Do NOT ask which race I want to start with while the ballot is still unconfirmed",
     );
-    expect(result.contextBlock).toContain(
-      "automatically choose the highest-impact confirmed race",
-    );
+    expect(result.contextBlock).toContain("highest-impact confirmed race");
+    expect(result.contextBlock).toContain("Act 3");
   });
 
   it("adds user-provided sample ballot text with instruction-safety boundaries", () => {
@@ -305,13 +319,33 @@ describe("generatePrompt", () => {
     );
   });
 
-  it("basePrompt tells the assistant to auto-answer the three evidence checks for the top race", () => {
+  it("basePrompt scaffolds the four legible patterns in Act 3 (donors, endorsements, platform alignment, retrospective)", () => {
     const result = generatePrompt(txData, "73301", "2026-03-30");
-    expect(result.basePrompt).toContain("What they built or did");
-    expect(result.basePrompt).toContain("Who's funding them");
-    expect(result.basePrompt).toContain("Their plan vs. the evidence");
+    expect(result.basePrompt).toContain("[RACE_PATTERNS");
+    expect(result.basePrompt).toContain("donorCoalition");
+    expect(result.basePrompt).toContain("endorsements");
+    expect(result.basePrompt).toContain("platformAlignment");
+    expect(result.basePrompt).toContain("retrospective");
+    expect(result.basePrompt).toContain("State the pattern, source the data");
+  });
+
+  it("basePrompt references docs/PATTERN_TAXONOMIES.md as the canonical owner of donor-bucket and retrospective-metric vocabularies", () => {
+    const result = generatePrompt(txData, "73301", "2026-03-30");
+    expect(result.basePrompt).toContain("docs/PATTERN_TAXONOMIES.md");
+  });
+
+  it("basePrompt has an ACT 3 (PROPOSITIONS) subsection covering the proposition pattern variant", () => {
+    const result = generatePrompt(txData, "73301", "2026-03-30");
+    expect(result.basePrompt).toContain("ACT 3 (PROPOSITIONS)");
     expect(result.basePrompt).toContain(
-      "Prioritize actual actions over stated positions",
+      "Propositions reuse the `[RACE_PATTERNS]` block with these field overrides",
+    );
+  });
+
+  it("basePrompt specifies YES/NO labeling from the start for propositions (no anonymization beat)", () => {
+    const result = generatePrompt(txData, "73301", "2026-03-30");
+    expect(result.basePrompt).toContain(
+      "Propositions render labeled YES / NO from the start",
     );
   });
 
@@ -335,6 +369,30 @@ describe("generatePrompt", () => {
     const result = generatePrompt(txData, "73301", "2026-03-30");
     expect(result.fullText).toContain(result.basePrompt);
     expect(result.fullText).toContain(result.contextBlock);
+  });
+
+  it("basePrompt states donor coalition methodology: % by total dollar amount, not donor count", () => {
+    const result = generatePrompt(txData, "73301", "2026-03-30");
+    expect(result.basePrompt).toContain("total dollar amount");
+    expect(result.basePrompt).toContain("NOT by number of donors");
+  });
+
+  it("basePrompt includes orgUrl and partisanLean in the endorsement schema", () => {
+    const result = generatePrompt(txData, "73301", "2026-03-30");
+    expect(result.basePrompt).toContain("orgUrl");
+    expect(result.basePrompt).toContain("partisanLean");
+  });
+
+  it("basePrompt allows challenger political history to populate platformAlignment and retrospective", () => {
+    const result = generatePrompt(txData, "73301", "2026-03-30");
+    expect(result.basePrompt).toContain("prior political experience");
+    expect(result.basePrompt).toContain("Former Mayor of Houston");
+  });
+
+  it("basePrompt prohibits prose after the [/RACE_PATTERNS] closing tag", () => {
+    const result = generatePrompt(txData, "73301", "2026-03-30");
+    expect(result.basePrompt).toContain("Do NOT emit any prose");
+    expect(result.basePrompt).toContain("[/RACE_PATTERNS]");
   });
 });
 

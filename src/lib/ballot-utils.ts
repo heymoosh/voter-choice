@@ -161,29 +161,3 @@ export function downloadProfileAsText(profileText: string): void {
   a.click();
   URL.revokeObjectURL(url);
 }
-
-/** Build a ballot string from manual entries */
-export function buildManualBallot(
-  header: string,
-  races: { race: string; pick: string }[],
-  propositions: { number: string; vote: string }[],
-): string {
-  const lines = [header, ""];
-
-  for (const r of races) {
-    if (r.race && r.pick) {
-      lines.push(`${r.race}: ${r.pick}`);
-    }
-  }
-
-  if (propositions.some((p) => p.number && p.vote)) {
-    lines.push("", "Propositions:");
-    for (const p of propositions) {
-      if (p.number && p.vote) {
-        lines.push(`${p.number}: ${p.vote}`);
-      }
-    }
-  }
-
-  return lines.join("\n");
-}
