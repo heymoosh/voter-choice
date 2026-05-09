@@ -1,0 +1,137 @@
+{
+  "stateCode": "NY",
+  "stateName": "New York",
+  "lastUpdated": "2026-05-09",
+
+  "elections": [
+    {
+      "id": "ny-2026-primary",
+      "name": "2026 New York Primary Election",
+      "date": "2026-06-23",
+      "type": "primary",
+      "isPrimary": true,
+      "primaryType": "closed",
+      "registration": {
+        "online": {
+          "available": true,
+          "deadline": "2026-06-13",
+          "url": "https://www.elections.ny.gov/register.html"
+        },
+        "byMail": {
+          "deadline": "2026-06-13",
+          "sincePostmarked": true
+        },
+        "inPerson": {
+          "deadline": "2026-06-13",
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": false,
+        "registrationCheckUrl": "https://voterlookup.elections.ny.gov/"
+      },
+      "earlyVoting": {
+        "available": true,
+        "startDate": "2026-06-13",
+        "endDate": "2026-06-21",
+        "notes": "Early voting hours vary by county. At least 9 days of early voting required by law. TODO verify for 2026 cycle."
+      }
+    },
+    {
+      "id": "ny-2026-general",
+      "name": "2026 New York General Election",
+      "date": "2026-11-03",
+      "type": "general",
+      "isPrimary": false,
+      "primaryType": null,
+      "registration": {
+        "online": {
+          "available": true,
+          "deadline": "2026-10-09",
+          "url": "https://www.elections.ny.gov/register.html"
+        },
+        "byMail": {
+          "deadline": "2026-10-09",
+          "sincePostmarked": true
+        },
+        "inPerson": {
+          "deadline": "2026-10-09",
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": false,
+        "registrationCheckUrl": "https://voterlookup.elections.ny.gov/"
+      },
+      "earlyVoting": {
+        "available": true,
+        "startDate": "2026-10-24",
+        "endDate": "2026-11-01",
+        "notes": "Early voting hours vary by county. TODO verify for 2026 cycle."
+      }
+    }
+  ],
+
+  "registration": {
+    "online": {
+      "available": true,
+      "deadline": "2026-10-09",
+      "url": "https://www.elections.ny.gov/register.html"
+    },
+    "byMail": {
+      "deadline": "2026-10-09",
+      "sincePostmarked": true
+    },
+    "inPerson": {
+      "deadline": "2026-10-09",
+      "sincePostmarked": false
+    },
+    "sameDayRegistration": false,
+    "registrationCheckUrl": "https://voterlookup.elections.ny.gov/"
+  },
+
+  "earlyVoting": {
+    "available": true,
+    "startDate": "2026-10-24",
+    "endDate": "2026-11-01",
+    "notes": "Early voting is required by law; at least 9 days. Hours vary by county. TODO verify exact 2026 dates."
+  },
+
+  "votingRules": {
+    "idRequired": false,
+    "acceptedIds": [],
+    "phonesAtPolls": "allowed",
+    "phonesAtPollsDetail": "New York voters may use phones to refer to voting information. Taking photos inside the voting booth is not permitted.",
+    "additionalRules": [
+      "Closed primary: only voters enrolled in a party may vote in that party's primary. Unaffiliated voters may not vote in partisan primaries.",
+      "Party enrollment change deadline is 25 days before the general election to take effect for the following year's primary. TODO verify for 2026 cycle."
+    ]
+  },
+
+  "voteByMail": {
+    "universal": false,
+    "eligibility": [
+      "Will be absent from county on Election Day and during the entire early voting period",
+      "Temporary or permanent illness or physical disability",
+      "Primary caretaker of one or more ill or disabled persons",
+      "Patient or inmate in a Veterans Administration hospital",
+      "Detained in jail awaiting grand jury action or trial, or confined under a sentence for a conviction that is not a felony"
+    ],
+    "applicationDeadline": "15 days before the election (received by board of elections)",
+    "returnDeadline": "Received by the board of elections no later than the close of polls on Election Day, or postmarked by Election Day and received within 7 days after",
+    "returnDeadlinePlain": "Must arrive by poll closing on Election Day, or be postmarked by Election Day and received within 7 days after.",
+    "applicationUrl": "https://www.elections.ny.gov/VotingAbsentee.html",
+    "officialRulesUrl": "https://www.elections.ny.gov/VotingAbsentee.html"
+  },
+
+  "runoffRules": {
+    "hasRunoff": false,
+    "partyLockedToFirstRoundPrimary": false
+  },
+
+  "resources": {
+    "stateElectionWebsite": "https://www.elections.ny.gov/",
+    "countyElectionLookup": "https://www.elections.ny.gov/CountyBoards.html",
+    "sampleBallotLookup": "https://www.elections.ny.gov/votingresources.html",
+    "pollingPlaceLookup": "https://findmypollsite.vote.nyc/",
+    "importantDates": "https://www.elections.ny.gov/2026Elections.html",
+    "voterIdInfo": "https://www.elections.ny.gov/IDRequirements.html",
+    "earlyVotingInfo": "https://www.elections.ny.gov/VotingEarly.html"
+  }
+}

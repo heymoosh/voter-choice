@@ -32,7 +32,7 @@ Fixed ~20 categories. The model picks 2–4 per candidate from this list. Labels
 
 ---
 
-## Retrospective metric vocabulary by office type (Texas)
+## Retrospective metric vocabulary by office type
 
 Model selects 1–4 per incumbent. Names from the list verbatim. If the office isn't here or no metric is assemblable: emit `retrospectiveUnavailable`.
 
@@ -98,8 +98,8 @@ Model selects 1–4 per incumbent. Names from the list verbatim. If the office i
 
 Propositions don't fit the candidate pattern set. Substitute these four:
 
-1. **Plain-English text.** What the measure literally does, in 2 sentences. Not the ballot title. Source: official ballot language + neutral analysis (League of Women Voters, Texas Legislative Council, Ballotpedia).
-2. **Pro/con coalition shape.** Donor-bucket-style breakdown of who's funding YES vs. NO, drawn from TEC PAC filings for the proposition's campaign committees. Same vocabulary as candidate donor coalitions.
+1. **Plain-English text.** What the measure literally does, in 2 sentences. Not the ballot title. Source: official ballot language + neutral analysis (League of Women Voters, the relevant state legislative research office, Ballotpedia).
+2. **Pro/con coalition shape.** Donor-bucket-style breakdown of who's funding YES vs. NO, drawn from the relevant state campaign finance agency's PAC filings for the proposition's campaign committees. Same vocabulary as candidate donor coalitions.
 3. **Endorsement split.** Editorial boards, civic orgs, advocacy groups for vs. against, grouped by category. Same render as candidate endorsement clusters.
 4. **Fiscal note + comparable history.** What the measure costs / changes (official fiscal note) and the outcome of the most directly comparable measure passed elsewhere or earlier. Source: official fiscal note + one cited comparison.
 

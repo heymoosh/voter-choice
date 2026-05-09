@@ -16,6 +16,19 @@ const prefixRanges: [number, number, string][] = [
   // California
   [900, 961, "CA"],
 
+  // New York
+  [100, 149, "NY"],
+
+  // Florida
+  [320, 349, "FL"],
+
+  // Georgia
+  [300, 319, "GA"],
+  [398, 399, "GA"],
+
+  // North Carolina
+  [270, 289, "NC"],
+
   // New Hampshire
   [30, 38, "NH"],
 

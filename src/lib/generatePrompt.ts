@@ -249,7 +249,7 @@ function formatCountyResourcesBlockEs(county: CountyResource): string {
 function formatVoteByMailBlock(vbm: VoteByMail): string {
   return [
     "",
-    "## VOTE BY MAIL (Texas rules)",
+    "## VOTE BY MAIL",
     `- **Who qualifies:** ${vbm.eligibility.join("; ")}`,
     `- **Application deadline:** ${vbm.applicationDeadline}`,
     `- **Return deadline:** ${vbm.returnDeadlinePlain}`,
@@ -261,7 +261,7 @@ function formatVoteByMailBlock(vbm: VoteByMail): string {
 function formatVoteByMailBlockEs(vbm: VoteByMail): string {
   return [
     "",
-    "## VOTO POR CORREO (reglas de Texas)",
+    "## VOTO POR CORREO",
     `- **Quién califica:** ${vbm.eligibility.join("; ")}`,
     `- **Fecha límite de solicitud:** ${vbm.applicationDeadline}`,
     `- **Fecha límite de devolución:** ${vbm.returnDeadlinePlain}`,

@@ -97,60 +97,62 @@ function getUpcomingElection(state: StateElectionData) {
   return state.elections.find((e) => e.date >= today) ?? state.elections[0];
 }
 
-function requiresTexasRunoffGate(state: StateElectionData): boolean {
+function requiresRunoffGate(state: StateElectionData): boolean {
   const upcoming = getUpcomingElection(state);
   return (
-    state.stateCode === "TX" &&
+    !!state.runoffRules?.partyLockedToFirstRoundPrimary &&
     !!upcoming &&
     (upcoming.type === "primary" || upcoming.type === "runoff")
   );
 }
 
-function texasRunoffContextNote(
+function runoffContextNote(
+  state: StateElectionData,
   choice: TexasRunoffChoice | null,
   lang: Language,
 ): string | undefined {
   if (!choice) return undefined;
 
+  const stateName = state.stateName;
+
   const noteEn: Record<TexasRunoffChoice, string> = {
-    voted_dem_primary:
-      "The voter says they voted in the Democratic primary earlier this year, so they are only eligible for the Democratic runoff in Texas. Focus the conversation on that runoff unless the voter asks a legal or procedural question.",
-    voted_rep_primary:
-      "The voter says they voted in the Republican primary earlier this year, so they are only eligible for the Republican runoff in Texas. Focus the conversation on that runoff unless the voter asks a legal or procedural question.",
+    voted_dem_primary: `The voter says they voted in the Democratic primary earlier this year, so they are only eligible for the Democratic runoff in ${stateName}. Focus the conversation on that runoff unless the voter asks a legal or procedural question.`,
+    voted_rep_primary: `The voter says they voted in the Republican primary earlier this year, so they are only eligible for the Republican runoff in ${stateName}. Focus the conversation on that runoff unless the voter asks a legal or procedural question.`,
     did_not_vote_dem_runoff:
-      "The voter says they did not vote in the March primary and wants help with the Democratic runoff. Treat the Democratic runoff as the ballot lane to research.",
+      "The voter says they did not vote in the primary and wants help with the Democratic runoff. Treat the Democratic runoff as the ballot lane to research.",
     did_not_vote_rep_runoff:
-      "The voter says they did not vote in the March primary and wants help with the Republican runoff. Treat the Republican runoff as the ballot lane to research.",
-    unsure:
-      "The voter is not sure whether they voted in a party primary earlier this year or which runoff applies. Before researching candidates, briefly clarify the Texas runoff rule and help the voter determine the correct ballot lane without assuming a party.",
+      "The voter says they did not vote in the primary and wants help with the Republican runoff. Treat the Republican runoff as the ballot lane to research.",
+    unsure: `The voter is not sure whether they voted in a party primary earlier this year or which runoff applies. Before researching candidates, briefly clarify the ${stateName} runoff rule and help the voter determine the correct ballot lane without assuming a party.`,
   };
 
   const noteEs: Record<TexasRunoffChoice, string> = {
-    voted_dem_primary:
-      "La persona votante dice que votó en la primaria demócrata este año, así que solo puede votar en el desempate demócrata en Texas. Enfoca la conversación en ese desempate salvo que la persona haga una pregunta legal o de procedimiento.",
-    voted_rep_primary:
-      "La persona votante dice que votó en la primaria republicana este año, así que solo puede votar en el desempate republicano en Texas. Enfoca la conversación en ese desempate salvo que la persona haga una pregunta legal o de procedimiento.",
+    voted_dem_primary: `La persona votante dice que votó en la primaria demócrata este año, así que solo puede votar en el desempate demócrata en ${stateName}. Enfoca la conversación en ese desempate salvo que la persona haga una pregunta legal o de procedimiento.`,
+    voted_rep_primary: `La persona votante dice que votó en la primaria republicana este año, así que solo puede votar en el desempate republicano en ${stateName}. Enfoca la conversación en ese desempate salvo que la persona haga una pregunta legal o de procedimiento.`,
     did_not_vote_dem_runoff:
-      "La persona votante dice que no votó en la primaria de marzo y quiere ayuda con el desempate demócrata. Trata el desempate demócrata como la boleta a investigar.",
+      "La persona votante dice que no votó en la primaria y quiere ayuda con el desempate demócrata. Trata el desempate demócrata como la boleta a investigar.",
     did_not_vote_rep_runoff:
-      "La persona votante dice que no votó en la primaria de marzo y quiere ayuda con el desempate republicano. Trata el desempate republicano como la boleta a investigar.",
-    unsure:
-      "La persona votante no está segura de si votó en una primaria partidista este año o de qué desempate le corresponde. Antes de investigar candidatos, aclara brevemente la regla de Texas y ayuda a determinar la boleta correcta sin asumir un partido.",
+      "La persona votante dice que no votó en la primaria y quiere ayuda con el desempate republicano. Trata el desempate republicano como la boleta a investigar.",
+    unsure: `La persona votante no está segura de si votó en una primaria partidista este año o de qué desempate le corresponde. Antes de investigar candidatos, aclara brevemente la regla de ${stateName} y ayuda a determinar la boleta correcta sin asumir un partido.`,
   };
 
   return lang === "es" ? noteEs[choice] : noteEn[choice];
 }
 
-function TexasRunoffGate({
+function RunoffGate({
+  state,
   lang,
   value,
   onChange,
 }: {
+  state: StateElectionData;
   lang: Language;
   value: TexasRunoffChoice | null;
   onChange: (value: TexasRunoffChoice) => void;
 }) {
   const t = translations[lang].research;
+  const stateName = state.stateName;
+  const ruleExplanation =
+    state.runoffRules?.ruleExplanation ?? t.runoffGateRule(stateName);
   const options: { value: TexasRunoffChoice; label: string }[] = [
     { value: "voted_dem_primary", label: t.runoffGateOptionDemPrimary },
     { value: "voted_rep_primary", label: t.runoffGateOptionRepPrimary },
@@ -165,10 +167,10 @@ function TexasRunoffGate({
       className="bg-surface-lowest border-l-4 border-accent p-5 md:p-6"
     >
       <h3 className="font-black text-lg tracking-tight text-on-surface">
-        {t.runoffGateTitle}
+        {t.runoffGateTitle(stateName)}
       </h3>
       <p className="mt-2 text-sm text-on-surface-muted">{t.runoffGateBody}</p>
-      <p className="mt-3 text-sm text-on-surface">{t.runoffGateRule}</p>
+      <p className="mt-3 text-sm text-on-surface">{ruleExplanation}</p>
       <div className="mt-4 space-y-3">
         {options.map((option) => (
           <label
@@ -177,7 +179,7 @@ function TexasRunoffGate({
           >
             <input
               type="radio"
-              name="tx-runoff-choice"
+              name="runoff-choice"
               value={option.value}
               checked={value === option.value}
               onChange={() => onChange(option.value)}
@@ -244,8 +246,8 @@ function ElectionResult({
   );
   const { budgetStatus, budgetChecked, handleBudgetUpdate } = useBudgetCheck();
   const { setResearch } = useResearchMode();
-  const needsRunoffGate = requiresTexasRunoffGate(state);
-  const preResearchContext = texasRunoffContextNote(runoffChoice, lang);
+  const needsRunoffGate = requiresRunoffGate(state);
+  const preResearchContext = runoffContextNote(state, runoffChoice, lang);
   const researchReady = !needsRunoffGate || runoffChoice !== null;
 
   // Resolve county: prefer civic API county, fall back to zip-based lookup
@@ -339,7 +341,8 @@ function ElectionResult({
         researchReady={researchReady}
         preResearchGate={
           needsRunoffGate ? (
-            <TexasRunoffGate
+            <RunoffGate
+              state={state}
               lang={lang}
               value={runoffChoice}
               onChange={setRunoffChoice}

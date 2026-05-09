@@ -386,13 +386,58 @@ describe("generatePrompt", () => {
   it("basePrompt allows challenger political history to populate platformAlignment and retrospective", () => {
     const result = generatePrompt(txData, "73301", "2026-03-30");
     expect(result.basePrompt).toContain("prior political experience");
-    expect(result.basePrompt).toContain("Former Mayor of Houston");
+    expect(result.basePrompt).toContain("Former Mayor");
   });
 
   it("basePrompt prohibits prose after the [/RACE_PATTERNS] closing tag", () => {
     const result = generatePrompt(txData, "73301", "2026-03-30");
     expect(result.basePrompt).toContain("Do NOT emit any prose");
     expect(result.basePrompt).toContain("[/RACE_PATTERNS]");
+  });
+
+  it("basePrompt flags local races as limited public data in the Act 1 ballot check", () => {
+    const result = generatePrompt(txData, "73301", "2026-03-30");
+    expect(result.basePrompt).toContain("local race — limited public data");
+  });
+
+  it("basePrompt includes explicit local-races known gap language in DATA AVAILABILITY HANDLING", () => {
+    const result = generatePrompt(txData, "73301", "2026-03-30");
+    expect(result.basePrompt).toContain("LOCAL RACES — KNOWN GAP");
+    expect(result.basePrompt).toContain(
+      "We don't have voting records or assembled donor data for",
+    );
+    expect(result.basePrompt).toContain(
+      "Federal and state legislators are the only races we can score from public records",
+    );
+  });
+
+  it("basePrompt instructs the model to substitute the actual office in Act 3 lead-in, not default to a specific locale", () => {
+    const result = generatePrompt(txData, "73301", "2026-03-30");
+    expect(result.basePrompt).toContain("substitute the actual office");
+  });
+
+  it("basePrompt references generic state agency for campaign finance, not a TX-specific agency", () => {
+    const result = generatePrompt(txData, "73301", "2026-03-30");
+    expect(result.basePrompt).toContain(
+      "the relevant state campaign finance disclosure agency",
+    );
+    expect(result.basePrompt).not.toContain("Texas Ethics Commission");
+  });
+
+  it("basePrompt references generic state DPS, not TX-specific", () => {
+    const result = generatePrompt(txData, "73301", "2026-03-30");
+    expect(result.basePrompt).toContain(
+      "the relevant state DPS / state police agency",
+    );
+    expect(result.basePrompt).not.toContain("Texas DPS");
+  });
+
+  it("basePrompt ballot summary phones-at-polls reminder is conditional on state, not hardcoded for Texas", () => {
+    const result = generatePrompt(txData, "73301", "2026-03-30");
+    expect(result.basePrompt).toContain("phonesAtPollsDetail");
+    expect(result.basePrompt).not.toContain(
+      "Texas bans wireless devices in the voting room",
+    );
   });
 });
 

@@ -645,7 +645,7 @@ function Sidebar({
               }`}
             >
               <Icon className={isActive ? "text-primary" : ""} />
-              <span>{t.research[labelKey]}</span>
+              <span>{t.research[labelKey] as string}</span>
             </button>
           );
         })}
@@ -712,7 +712,7 @@ function MobileBottomNav({
             >
               <Icon />
               <span className="text-[9px] font-bold mt-1 uppercase tracking-wider">
-                {t.research[labelKey]}
+                {t.research[labelKey] as string}
               </span>
             </button>
           );
@@ -988,72 +988,29 @@ function DatesView({
 
 /* ── Tab Content: ID Requirements (Editorial) ──────────────── */
 
-const idCards: {
-  iconPath: string;
-  nameKey: keyof (typeof translations)["en"]["voterId"];
-  descKey: keyof (typeof translations)["en"]["voterId"];
-}[] = [
-  {
-    iconPath:
-      "M20 7h-5V4c0-1.1-.9-2-2-2h-2c-1.1 0-2 .9-2 2v3H4c-1.1 0-2 .9-2 2v11c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V9c0-1.1-.9-2-2-2zM9 12c.83 0 1.5.67 1.5 1.5S9.83 15 9 15s-1.5-.67-1.5-1.5S8.17 12 9 12zm3 6H6v-.75c0-1 2-1.5 3-1.5s3 .5 3 1.5V18zm1-9h-2V4h2v5zm5 7.5h-4V15h4v1.5zm0-3h-4V12h4v1.5z",
-    nameKey: "idTxDriverLicense",
-    descKey: "idTxDriverLicenseDesc",
-  },
-  {
-    iconPath:
-      "M18 11V4c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v7c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2zm-2 0H4V4h12v7zm4-7v16H2v2h20c1.1 0 2-.9 2-2V4h-2z",
-    nameKey: "idElectionCert",
-    descKey: "idElectionCertDesc",
-  },
-  {
-    iconPath:
-      "M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H4V6h16v12zM4 0h16v2H4V0zm0 22h16v2H4v-2zM12 8c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm4 8H8v-1c0-1.33 2.67-2 4-2s4 .67 4 2v1z",
-    nameKey: "idPersonalId",
-    descKey: "idPersonalIdDesc",
-  },
-  {
-    iconPath:
-      "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z",
-    nameKey: "idHandgun",
-    descKey: "idHandgunDesc",
-  },
-  {
-    iconPath:
-      "M6.5 10h-2v7h2v-7zm6 0h-2v7h2v-7zm8.5 9H2v2h19v-2zm-2.5-9h-2v7h2v-7zM11.5 1L2 6v2h19V6l-9.5-5z",
-    nameKey: "idMilitary",
-    descKey: "idMilitaryDesc",
-  },
-  {
-    iconPath:
-      "M5 4v14h14V4H5zm12 12H7V6h10v10zm-5-7c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3zm0 4c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1z",
-    nameKey: "idCitizenship",
-    descKey: "idCitizenshipDesc",
-  },
-  {
-    iconPath:
-      "M21 5V3H3v2l8 9v5H6v2h12v-2h-5v-5l8-9zM5.66 5h12.69l-1.78 2H7.43L5.66 5zM12 13.16L9.21 10h5.58L12 13.16z",
-    nameKey: "idPassport",
-    descKey: "idPassportDesc",
-  },
-];
+// Generic ID card icon (badge/ID style)
+const ID_ICON_PATH =
+  "M20 7h-5V4c0-1.1-.9-2-2-2h-2c-1.1 0-2 .9-2 2v3H4c-1.1 0-2 .9-2 2v11c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V9c0-1.1-.9-2-2-2zM9 12c.83 0 1.5.67 1.5 1.5S9.83 15 9 15s-1.5-.67-1.5-1.5S8.17 12 9 12zm3 6H6v-.75c0-1 2-1.5 3-1.5s3 .5 3 1.5V18zm1-9h-2V4h2v5zm5 7.5h-4V15h4v1.5zm0-3h-4V12h4v1.5z";
 
 function IdView({ state }: { state: StateElectionData }) {
   const { lang } = useLanguage();
   const t = translations[lang];
   const tv = t.voterId;
+  const acceptedIds = state.votingRules.acceptedIds ?? [];
+  const hasAcceptedIds = acceptedIds.length > 0;
 
   return (
-    <div className="max-w-4xl mx-auto pb-8">
+    <div className="max-w-4xl mx-auto pb-8" data-testid="id-view">
       {/* Editorial Header */}
       <section className="mb-8 md:mb-16 border-l-4 md:border-l-8 border-primary pl-4 md:pl-8">
         <span className="text-accent font-bold tracking-widest text-xs uppercase mb-2 block">
-          {tv.stateLabel}
+          {tv.stateLabel(state.stateName)}
         </span>
         <h2 className="text-4xl md:text-7xl font-black text-on-surface tracking-tighter leading-none mb-4 md:mb-6">
           {tv.headline}
         </h2>
         <p className="text-lg md:text-xl text-on-surface-muted max-w-2xl font-medium leading-relaxed">
-          {tv.introText}
+          {tv.introText(state.stateName)}
         </p>
       </section>
 
@@ -1077,7 +1034,7 @@ function IdView({ state }: { state: StateElectionData }) {
         </div>
       )}
 
-      {/* Accepted Photo IDs */}
+      {/* Accepted Photo IDs — rendered from state.votingRules.acceptedIds */}
       {state.votingRules.idRequired && (
         <section className="mb-10 md:mb-24">
           <div className="flex items-baseline justify-between mb-6 md:mb-8">
@@ -1085,39 +1042,99 @@ function IdView({ state }: { state: StateElectionData }) {
               {tv.acceptedTitle}
             </h3>
             <span className="h-px flex-grow mx-3 md:mx-6 bg-outline-variant/20" />
-            <span className="text-primary font-bold text-sm whitespace-nowrap">
-              {tv.approvedForms.toUpperCase()}
-            </span>
+            {hasAcceptedIds && (
+              <span className="text-primary font-bold text-sm whitespace-nowrap">
+                {acceptedIds.length}{" "}
+                {lang === "es"
+                  ? acceptedIds.length === 1
+                    ? "FORMA APROBADA"
+                    : "FORMAS APROBADAS"
+                  : acceptedIds.length === 1
+                    ? "APPROVED FORM"
+                    : "APPROVED FORMS"}
+              </span>
+            )}
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-px bg-outline-variant/20 border border-outline-variant/20 overflow-hidden">
-            {idCards.map(({ iconPath, nameKey, descKey }, i) => (
-              <div
-                key={nameKey}
-                className={`bg-surface-lowest p-4 md:p-8 hover:bg-surface transition-colors ${
-                  i === idCards.length - 1
-                    ? "md:col-span-2 flex items-start gap-4 md:gap-6"
-                    : ""
-                }`}
-              >
-                <svg
-                  className="text-primary mb-3 shrink-0"
-                  fill="currentColor"
-                  viewBox="0 0 24 24"
-                  width={i === idCards.length - 1 ? 36 : 28}
-                  height={i === idCards.length - 1 ? 36 : 28}
-                  aria-hidden="true"
+          {hasAcceptedIds ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-px bg-outline-variant/20 border border-outline-variant/20 overflow-hidden">
+              {acceptedIds.map((idName, i) => (
+                <div
+                  key={idName}
+                  className={`bg-surface-lowest p-4 md:p-8 hover:bg-surface transition-colors ${
+                    i === acceptedIds.length - 1 && acceptedIds.length % 2 !== 0
+                      ? "md:col-span-2 flex items-start gap-4 md:gap-6"
+                      : ""
+                  }`}
                 >
-                  <path d={iconPath} />
-                </svg>
-                <div>
-                  <h4 className="font-bold text-lg md:text-xl mb-1 text-on-surface">
-                    {tv[nameKey]}
-                  </h4>
-                  <p className="text-on-surface-muted text-sm">{tv[descKey]}</p>
+                  <svg
+                    className="text-primary mb-3 shrink-0"
+                    fill="currentColor"
+                    viewBox="0 0 24 24"
+                    width={
+                      i === acceptedIds.length - 1 &&
+                      acceptedIds.length % 2 !== 0
+                        ? 36
+                        : 28
+                    }
+                    height={
+                      i === acceptedIds.length - 1 &&
+                      acceptedIds.length % 2 !== 0
+                        ? 36
+                        : 28
+                    }
+                    aria-hidden="true"
+                  >
+                    <path d={ID_ICON_PATH} />
+                  </svg>
+                  <div>
+                    <h4 className="font-bold text-lg md:text-xl mb-1 text-on-surface">
+                      {idName}
+                    </h4>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="bg-surface-lowest p-6 border border-outline-variant/20">
+              <p className="font-bold text-on-surface mb-2">
+                {tv.idFallbackTitle}
+              </p>
+              <p className="text-on-surface-muted text-sm mb-4">
+                {tv.idFallbackBody}
+              </p>
+              <a
+                href={state.resources.stateElectionWebsite}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs font-bold uppercase tracking-widest text-primary hover:underline"
+              >
+                {state.stateName}{" "}
+                {lang === "es"
+                  ? "Sitio Web Electoral Estatal"
+                  : "State Election Website"}
+              </a>
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* ID not required notice */}
+      {!state.votingRules.idRequired && (
+        <section className="mb-10 md:mb-24 bg-surface-low p-5 md:p-10 border-l-4 border-primary">
+          <p className="text-lg font-bold text-on-surface">
+            {tv.idNotRequiredText}
+          </p>
+          <a
+            href={state.resources.stateElectionWebsite}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-4 inline-block text-xs font-bold uppercase tracking-widest text-primary hover:underline"
+          >
+            {state.stateName}{" "}
+            {lang === "es"
+              ? "Sitio Web Electoral Estatal"
+              : "State Election Website"}
+          </a>
         </section>
       )}
 
@@ -1187,7 +1204,7 @@ function IdView({ state }: { state: StateElectionData }) {
             )}
             <div className="mt-8 md:mt-12">
               <a
-                href="https://www.sos.state.tx.us/elections/forms/pol-sub/reasonable-impediment-declaration.pdf"
+                href={state.resources.stateElectionWebsite}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-block w-full md:w-auto text-center bg-primary text-on-primary px-6 md:px-8 py-4 font-bold tracking-tight hover:opacity-90 transition-opacity uppercase"

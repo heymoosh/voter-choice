@@ -421,7 +421,7 @@ export function PageContent({ children }: PageContentProps) {
                         <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" />
                       </svg>
                       <span className="text-xs font-bold text-primary uppercase tracking-wider">
-                        Harris County &middot; Houston, TX
+                        Your County &middot; Your State
                       </span>
                     </div>
                   </div>

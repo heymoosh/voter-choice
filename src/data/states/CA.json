@@ -58,6 +58,11 @@
     ]
   },
 
+  "runoffRules": {
+    "hasRunoff": false,
+    "partyLockedToFirstRoundPrimary": false
+  },
+
   "resources": {
     "stateElectionWebsite": "https://www.sos.ca.gov/elections",
     "countyElectionLookup": "https://www.sos.ca.gov/elections/voting-resources/county-elections-offices",

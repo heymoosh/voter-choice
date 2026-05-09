@@ -357,6 +357,14 @@ async function getRetryElections(
     .slice(0, 8);
 }
 
+/**
+ * Returns state name hints extracted from a free-text address string.
+ * Used as a fallback when ZIP-based state lookup is unavailable or ambiguous.
+ * These are scoped to the states we have full election data for — intentionally
+ * not a full 50-state regex, since broadening to all states risks false-positive
+ * fallbacks on unvalidated inputs. TX was our v1 launch state, hence it appears
+ * first, but the list covers all currently supported states equally.
+ */
 function stateHintsFromAddress(address: string): string[] {
   if (/\bTX\b|Texas/i.test(address)) return ["Texas"];
   if (/\bCA\b|California/i.test(address)) return ["California"];

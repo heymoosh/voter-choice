@@ -1,0 +1,174 @@
+{
+  "stateCode": "GA",
+  "stateName": "Georgia",
+  "lastUpdated": "2026-05-09",
+
+  "elections": [
+    {
+      "id": "ga-2026-primary",
+      "name": "2026 Georgia Primary Election",
+      "date": "2026-05-19",
+      "type": "primary",
+      "isPrimary": true,
+      "primaryType": "open",
+      "registration": {
+        "online": {
+          "available": true,
+          "deadline": "2026-04-20",
+          "url": "https://registertovote.sos.ga.gov/"
+        },
+        "byMail": {
+          "deadline": "2026-04-20",
+          "sincePostmarked": false
+        },
+        "inPerson": {
+          "deadline": "2026-04-20",
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": false,
+        "registrationCheckUrl": "https://mvp.sos.ga.gov/"
+      },
+      "earlyVoting": {
+        "available": true,
+        "startDate": "2026-05-04",
+        "endDate": "2026-05-15",
+        "notes": "Early voting period runs from the 4th Monday prior to the election through the Friday before Election Day. TODO verify for 2026 cycle."
+      }
+    },
+    {
+      "id": "ga-2026-primary-runoff",
+      "name": "2026 Georgia Primary Runoff Election",
+      "date": "2026-07-07",
+      "type": "runoff",
+      "isPrimary": false,
+      "primaryType": null,
+      "registration": {
+        "online": {
+          "available": true,
+          "deadline": "2026-06-08",
+          "url": "https://registertovote.sos.ga.gov/"
+        },
+        "byMail": {
+          "deadline": "2026-06-08",
+          "sincePostmarked": false
+        },
+        "inPerson": {
+          "deadline": "2026-06-08",
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": false,
+        "registrationCheckUrl": "https://mvp.sos.ga.gov/"
+      },
+      "earlyVoting": {
+        "available": true,
+        "startDate": "2026-06-22",
+        "endDate": "2026-07-03",
+        "notes": "Early voting for runoff. TODO verify for 2026 cycle."
+      }
+    },
+    {
+      "id": "ga-2026-general",
+      "name": "2026 Georgia General Election",
+      "date": "2026-11-03",
+      "type": "general",
+      "isPrimary": false,
+      "primaryType": null,
+      "registration": {
+        "online": {
+          "available": true,
+          "deadline": "2026-10-05",
+          "url": "https://registertovote.sos.ga.gov/"
+        },
+        "byMail": {
+          "deadline": "2026-10-05",
+          "sincePostmarked": false
+        },
+        "inPerson": {
+          "deadline": "2026-10-05",
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": false,
+        "registrationCheckUrl": "https://mvp.sos.ga.gov/"
+      },
+      "earlyVoting": {
+        "available": true,
+        "startDate": "2026-10-17",
+        "endDate": "2026-10-30",
+        "notes": "Early voting begins the 4th Monday before the election. Saturday early voting is required; additional Saturday and Sunday hours are at county discretion. TODO verify for 2026 cycle."
+      }
+    }
+  ],
+
+  "registration": {
+    "online": {
+      "available": true,
+      "deadline": "2026-10-05",
+      "url": "https://registertovote.sos.ga.gov/"
+    },
+    "byMail": {
+      "deadline": "2026-10-05",
+      "sincePostmarked": false
+    },
+    "inPerson": {
+      "deadline": "2026-10-05",
+      "sincePostmarked": false
+    },
+    "sameDayRegistration": false,
+    "registrationCheckUrl": "https://mvp.sos.ga.gov/"
+  },
+
+  "earlyVoting": {
+    "available": true,
+    "startDate": "2026-10-17",
+    "endDate": "2026-10-30",
+    "notes": "Early voting begins the 4th Monday before the election. Saturday early voting is required. TODO verify for 2026 cycle."
+  },
+
+  "votingRules": {
+    "idRequired": true,
+    "acceptedIds": [
+      "Georgia driver's license (even if expired within the past 4 years)",
+      "Georgia ID card issued by DMVS",
+      "Georgia voter ID card (free from county registrar)",
+      "U.S. passport",
+      "U.S. military ID",
+      "Tribal ID"
+    ],
+    "expirationRule": "Photo ID must not be expired, with the exception of Georgia driver's licenses expired within the past 4 years. TODO verify for 2026 cycle.",
+    "impedimentDeclaration": "Voters without an acceptable photo ID may cast a provisional ballot and present acceptable ID to the county registrar by the third day after the election.",
+    "phonesAtPolls": "allowed",
+    "phonesAtPollsDetail": "Georgia does not prohibit phones inside the polling place. Voters may not photograph their own ballot or others' ballots. No electioneering within 150 feet of the polling place.",
+    "additionalRules": [
+      "Open primary: voters do not register by party; any voter may vote in either party's primary (but not both).",
+      "Runoff rule: if no candidate receives a majority in the primary, the top two advance to a runoff. A voter who participated in one party's primary may only vote in that party's runoff."
+    ]
+  },
+
+  "voteByMail": {
+    "universal": false,
+    "eligibility": [
+      "Any registered voter may request an absentee ballot without providing a reason"
+    ],
+    "applicationDeadline": "11 days before the election (received by county registrar)",
+    "returnDeadline": "Must be received by the county registrar by 7 p.m. on Election Day",
+    "returnDeadlinePlain": "Must arrive at the registrar by poll closing on Election Day. Postmarks do not count.",
+    "applicationUrl": "https://mvp.sos.ga.gov/",
+    "officialRulesUrl": "https://sos.ga.gov/page/absentee-voting"
+  },
+
+  "runoffRules": {
+    "hasRunoff": true,
+    "partyLockedToFirstRoundPrimary": true,
+    "ruleExplanation": "Georgia rule: if you voted in one party's primary, you may only vote in that same party's runoff. If you did not vote in the primary, you may choose either party's runoff."
+  },
+
+  "resources": {
+    "stateElectionWebsite": "https://sos.ga.gov/elections-division",
+    "countyElectionLookup": "https://elections.sos.ga.gov/Elections/countyregistrars.do",
+    "sampleBallotLookup": "https://mvp.sos.ga.gov/",
+    "pollingPlaceLookup": "https://mvp.sos.ga.gov/",
+    "importantDates": "https://sos.ga.gov/page/elections-calendar",
+    "voterIdInfo": "https://sos.ga.gov/page/photo-id-requirements",
+    "earlyVotingInfo": "https://sos.ga.gov/page/advance-voting-information"
+  }
+}

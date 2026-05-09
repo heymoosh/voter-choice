@@ -143,8 +143,8 @@ export function openPrintableBallot(ballotText: string): void {
 </div>
 <pre>${escapeHtml(ballotText)}</pre>
 <div class="reminder">
-  Many states (including Texas) ban phones at polling places.
-  Print this or write it down — you CAN bring written notes but CANNOT use your phone.
+  Many states ban phones at polling places. Print this or write it down
+  — you CAN bring written notes but CANNOT use your phone.
 </div>
 </body>
 </html>`);

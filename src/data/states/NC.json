@@ -1,0 +1,173 @@
+{
+  "stateCode": "NC",
+  "stateName": "North Carolina",
+  "lastUpdated": "2026-05-09",
+
+  "elections": [
+    {
+      "id": "nc-2026-primary",
+      "name": "2026 North Carolina Primary Election",
+      "date": "2026-05-05",
+      "type": "primary",
+      "isPrimary": true,
+      "primaryType": "semi-closed",
+      "registration": {
+        "online": {
+          "available": true,
+          "deadline": "2026-04-10",
+          "url": "https://www.ncsbe.gov/registering/how-register"
+        },
+        "byMail": {
+          "deadline": "2026-04-10",
+          "sincePostmarked": true
+        },
+        "inPerson": {
+          "deadline": "2026-05-05",
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": true,
+        "registrationCheckUrl": "https://vt.ncsbe.gov/RegLkup/"
+      },
+      "earlyVoting": {
+        "available": true,
+        "startDate": "2026-04-16",
+        "endDate": "2026-05-02",
+        "notes": "One-stop early voting (with same-day registration). Hours and locations set by county boards of elections. TODO verify for 2026 cycle."
+      }
+    },
+    {
+      "id": "nc-2026-primary-runoff",
+      "name": "2026 North Carolina Primary Runoff",
+      "date": "2026-07-07",
+      "type": "runoff",
+      "isPrimary": false,
+      "primaryType": null,
+      "registration": {
+        "online": {
+          "available": true,
+          "deadline": "2026-06-12",
+          "url": "https://www.ncsbe.gov/registering/how-register"
+        },
+        "byMail": {
+          "deadline": "2026-06-12",
+          "sincePostmarked": true
+        },
+        "inPerson": {
+          "deadline": "2026-07-07",
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": true,
+        "registrationCheckUrl": "https://vt.ncsbe.gov/RegLkup/"
+      },
+      "earlyVoting": {
+        "available": true,
+        "startDate": "2026-06-18",
+        "endDate": "2026-07-04",
+        "notes": "One-stop early voting for runoff. TODO verify for 2026 cycle."
+      }
+    },
+    {
+      "id": "nc-2026-general",
+      "name": "2026 North Carolina General Election",
+      "date": "2026-11-03",
+      "type": "general",
+      "isPrimary": false,
+      "primaryType": null,
+      "registration": {
+        "online": {
+          "available": true,
+          "deadline": "2026-10-09",
+          "url": "https://www.ncsbe.gov/registering/how-register"
+        },
+        "byMail": {
+          "deadline": "2026-10-09",
+          "sincePostmarked": true
+        },
+        "inPerson": {
+          "deadline": "2026-11-03",
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": true,
+        "registrationCheckUrl": "https://vt.ncsbe.gov/RegLkup/"
+      },
+      "earlyVoting": {
+        "available": true,
+        "startDate": "2026-10-15",
+        "endDate": "2026-10-31",
+        "notes": "One-stop early voting with same-day registration. Hours and locations set by county boards of elections. TODO verify for 2026 cycle."
+      }
+    }
+  ],
+
+  "registration": {
+    "online": {
+      "available": true,
+      "deadline": "2026-10-09",
+      "url": "https://www.ncsbe.gov/registering/how-register"
+    },
+    "byMail": {
+      "deadline": "2026-10-09",
+      "sincePostmarked": true
+    },
+    "inPerson": {
+      "deadline": "2026-11-03",
+      "sincePostmarked": false
+    },
+    "sameDayRegistration": true,
+    "registrationCheckUrl": "https://vt.ncsbe.gov/RegLkup/"
+  },
+
+  "earlyVoting": {
+    "available": true,
+    "startDate": "2026-10-15",
+    "endDate": "2026-10-31",
+    "notes": "One-stop early voting includes same-day registration. Exact locations and hours set by each county board of elections. TODO verify for 2026 cycle."
+  },
+
+  "votingRules": {
+    "idRequired": true,
+    "acceptedIds": [
+      "North Carolina driver's license or DMV-issued ID",
+      "U.S. passport or passport card",
+      "U.S. military ID",
+      "Veterans ID card issued by the U.S. Dept. of Veterans Affairs",
+      "Tribal enrollment card issued by a federally recognized tribe",
+      "Student ID from a North Carolina university or college (public or private)"
+    ],
+    "expirationRule": "Photo ID must not be expired. Voters with an expired photo ID may use it if they became 65 on or after the date it expired. TODO verify for 2026 cycle.",
+    "impedimentDeclaration": "Voters without an acceptable photo ID may cast a provisional ballot by completing a reasonable impediment form citing a reasonable impediment to obtaining ID.",
+    "phonesAtPolls": "allowed",
+    "phonesAtPollsDetail": "North Carolina allows voters to bring phones into the polling place. Voters may not use phones to take photos of their own or others' ballots. No electioneering within 50 feet of the entrance to a voting place.",
+    "additionalRules": [
+      "Semi-closed primary: registered party members vote in their party's primary. Unaffiliated voters may choose to vote in any party's primary.",
+      "North Carolina has runoffs for statewide and federal offices when no candidate receives 30% of the vote in the primary. Runoffs are not party-locked — any eligible registered voter may vote in the runoff regardless of which primary they voted in."
+    ]
+  },
+
+  "voteByMail": {
+    "universal": false,
+    "eligibility": [
+      "Any registered voter may request an absentee ballot without providing a reason"
+    ],
+    "applicationDeadline": "Received by the county board of elections by the Tuesday before the election",
+    "returnDeadline": "Must be received by the county board by 7:30 p.m. on Election Day, or postmarked by Election Day and received within 3 days after",
+    "returnDeadlinePlain": "Must arrive at the county board by poll closing on Election Day, or be postmarked by Election Day and received within 3 days after.",
+    "applicationUrl": "https://www.ncsbe.gov/voting/vote-absentee/absentee-mail-ballot",
+    "officialRulesUrl": "https://www.ncsbe.gov/voting/vote-absentee"
+  },
+
+  "runoffRules": {
+    "hasRunoff": true,
+    "partyLockedToFirstRoundPrimary": false
+  },
+
+  "resources": {
+    "stateElectionWebsite": "https://www.ncsbe.gov/",
+    "countyElectionLookup": "https://www.ncsbe.gov/about-elections/county-board-elections/county-boards-elections",
+    "sampleBallotLookup": "https://vt.ncsbe.gov/OVR/",
+    "pollingPlaceLookup": "https://vt.ncsbe.gov/PPLkup/",
+    "importantDates": "https://www.ncsbe.gov/elections-voting/voter-registration/voter-registration-deadlines",
+    "voterIdInfo": "https://www.ncsbe.gov/voting/voter-id",
+    "earlyVotingInfo": "https://www.ncsbe.gov/voting/vote-early/one-stop-early-voting"
+  }
+}

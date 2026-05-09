@@ -1,0 +1,146 @@
+{
+  "stateCode": "FL",
+  "stateName": "Florida",
+  "lastUpdated": "2026-05-09",
+
+  "elections": [
+    {
+      "id": "fl-2026-primary",
+      "name": "2026 Florida Primary Election",
+      "date": "2026-08-18",
+      "type": "primary",
+      "isPrimary": true,
+      "primaryType": "closed",
+      "registration": {
+        "online": {
+          "available": true,
+          "deadline": "2026-07-20",
+          "url": "https://registertovoteflorida.gov/en/Registration/Index"
+        },
+        "byMail": {
+          "deadline": "2026-07-20",
+          "sincePostmarked": false
+        },
+        "inPerson": {
+          "deadline": "2026-07-20",
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": false,
+        "registrationCheckUrl": "https://registration.elections.myflorida.com/CheckVoterStatus"
+      },
+      "earlyVoting": {
+        "available": true,
+        "startDate": "2026-08-08",
+        "endDate": "2026-08-16",
+        "notes": "Early voting is at least 8 days and up to 14 days before the election. Exact dates and hours set by each county supervisor of elections. TODO verify for 2026 cycle."
+      }
+    },
+    {
+      "id": "fl-2026-general",
+      "name": "2026 Florida General Election",
+      "date": "2026-11-03",
+      "type": "general",
+      "isPrimary": false,
+      "primaryType": null,
+      "registration": {
+        "online": {
+          "available": true,
+          "deadline": "2026-10-05",
+          "url": "https://registertovoteflorida.gov/en/Registration/Index"
+        },
+        "byMail": {
+          "deadline": "2026-10-05",
+          "sincePostmarked": false
+        },
+        "inPerson": {
+          "deadline": "2026-10-05",
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": false,
+        "registrationCheckUrl": "https://registration.elections.myflorida.com/CheckVoterStatus"
+      },
+      "earlyVoting": {
+        "available": true,
+        "startDate": "2026-10-24",
+        "endDate": "2026-11-01",
+        "notes": "Early voting is at least 8 days before the election. Exact dates and hours set by each county supervisor of elections. TODO verify for 2026 cycle."
+      }
+    }
+  ],
+
+  "registration": {
+    "online": {
+      "available": true,
+      "deadline": "2026-10-05",
+      "url": "https://registertovoteflorida.gov/en/Registration/Index"
+    },
+    "byMail": {
+      "deadline": "2026-10-05",
+      "sincePostmarked": false
+    },
+    "inPerson": {
+      "deadline": "2026-10-05",
+      "sincePostmarked": false
+    },
+    "sameDayRegistration": false,
+    "registrationCheckUrl": "https://registration.elections.myflorida.com/CheckVoterStatus"
+  },
+
+  "earlyVoting": {
+    "available": true,
+    "startDate": "2026-10-24",
+    "endDate": "2026-11-01",
+    "notes": "Early voting is at least 8 days before the election. Exact dates and hours set by each county supervisor of elections. TODO verify for 2026 cycle."
+  },
+
+  "votingRules": {
+    "idRequired": true,
+    "acceptedIds": [
+      "Florida driver's license",
+      "Florida ID card issued by DHSMV",
+      "U.S. passport",
+      "Debit or credit card with photo",
+      "Military ID",
+      "Student ID",
+      "Retirement center ID",
+      "Neighborhood association ID",
+      "Public assistance ID",
+      "Veteran health identification card issued by the U.S. Department of Veterans Affairs"
+    ],
+    "expirationRule": "Photo ID must not be expired, unless it is a U.S. military ID, in which case it need not contain an expiration date. TODO verify for 2026 cycle.",
+    "impedimentDeclaration": "If a voter does not have an acceptable photo ID, they may cast a provisional ballot and present acceptable ID to the supervisor of elections by 5 p.m. on the second day after the election.",
+    "phonesAtPolls": "allowed",
+    "phonesAtPollsDetail": "Florida does not prohibit phones at polling places, but voters may not use phones in a way that interferes with the election process. Photography that reveals another voter's ballot is prohibited.",
+    "additionalRules": [
+      "Closed primary: only voters registered with a party may vote in that party's primary. No-party-affiliation (NPA) voters cannot vote in partisan primaries unless all candidates in a race are from one party.",
+      "No runoffs in Florida general elections — the candidate with the most votes wins."
+    ]
+  },
+
+  "voteByMail": {
+    "universal": false,
+    "eligibility": [
+      "Any registered voter may request a vote-by-mail ballot without providing a reason"
+    ],
+    "applicationDeadline": "No later than 7 days before the election (received by the supervisor of elections)",
+    "returnDeadline": "Must be received by the supervisor of elections no later than 7 p.m. on Election Day",
+    "returnDeadlinePlain": "Must arrive at the supervisor of elections office by poll closing on Election Day. Postmarks do not count.",
+    "applicationUrl": "https://dos.myflorida.com/elections/for-voters/voting/vote-by-mail/",
+    "officialRulesUrl": "https://dos.myflorida.com/elections/for-voters/voting/vote-by-mail/"
+  },
+
+  "runoffRules": {
+    "hasRunoff": false,
+    "partyLockedToFirstRoundPrimary": false
+  },
+
+  "resources": {
+    "stateElectionWebsite": "https://dos.myflorida.com/elections/",
+    "countyElectionLookup": "https://dos.myflorida.com/elections/for-voters/election-offices/",
+    "sampleBallotLookup": "https://dos.myflorida.com/elections/for-voters/voting/sample-ballot/",
+    "pollingPlaceLookup": "https://registration.elections.myflorida.com/CheckVoterStatus",
+    "importantDates": "https://dos.myflorida.com/elections/for-voters/voting/",
+    "voterIdInfo": "https://dos.myflorida.com/elections/for-voters/voting/voter-id-law/",
+    "earlyVotingInfo": "https://dos.myflorida.com/elections/for-voters/voting/early-voting/"
+  }
+}

@@ -219,9 +219,9 @@ export interface Translations {
     deepSearchLabel: string;
     deepSearchPlaceholder: string;
     nonPartisanNotice: string;
-    runoffGateTitle: string;
+    runoffGateTitle: (stateName: string) => string;
     runoffGateBody: string;
-    runoffGateRule: string;
+    runoffGateRule: (stateName: string) => string;
     runoffGateOptionDemPrimary: string;
     runoffGateOptionRepPrimary: string;
     runoffGateOptionDemRunoff: string;
@@ -297,26 +297,15 @@ export interface Translations {
     pollingDataNote: string;
   };
   voterId: {
-    stateLabel: string;
+    stateLabel: (stateName: string) => string;
     headline: string;
-    introText: string;
+    introText: (stateName: string) => string;
     warningTitle: string;
     acceptedTitle: string;
-    approvedForms: string;
-    idTxDriverLicense: string;
-    idTxDriverLicenseDesc: string;
-    idElectionCert: string;
-    idElectionCertDesc: string;
-    idPersonalId: string;
-    idPersonalIdDesc: string;
-    idHandgun: string;
-    idHandgunDesc: string;
-    idMilitary: string;
-    idMilitaryDesc: string;
-    idCitizenship: string;
-    idCitizenshipDesc: string;
-    idPassport: string;
-    idPassportDesc: string;
+    idRequiredText: string;
+    idNotRequiredText: string;
+    idFallbackTitle: string;
+    idFallbackBody: string;
     noIdTitle: string;
     noIdText: string;
     ridLabel: string;
@@ -523,7 +512,7 @@ const en: Translations = {
     downloadBallot: "Download My Ballot",
     downloadProfile: "Download My Voter Profile",
     printReminder:
-      "Texas law bans wireless devices in the voting room. Print this or write it down.",
+      "Many states ban phones inside the voting room. Print this or write it down.",
     buildBallot: "Build My Ballot",
     pasteLabel: "Paste the ballot output from your AI chatbot",
     pastePlaceholder: "Paste the MY BALLOT section here\u2026",
@@ -628,17 +617,18 @@ const en: Translations = {
       "Ask about candidate history, voting records, or ballot measures...",
     nonPartisanNotice:
       "Verified Non-Partisan Database \u2022 Educational Use Only",
-    runoffGateTitle: "Before we start: Texas runoff ballot check",
+    runoffGateTitle: (stateName: string) =>
+      `Before we start: ${stateName} runoff ballot check`,
     runoffGateBody:
       "We need one quick answer before starting research so the app only sends the right ballot context to the AI.",
-    runoffGateRule:
-      "Texas rule: if you voted in one party's March primary this year, you can only vote in that same party's runoff. If you did not vote in March, you may choose either party's runoff.",
-    runoffGateOptionDemPrimary: "I voted in the Democratic primary in March.",
-    runoffGateOptionRepPrimary: "I voted in the Republican primary in March.",
+    runoffGateRule: (stateName: string) =>
+      `${stateName} rule: if you voted in one party's primary earlier this year, you can only vote in that same party's runoff. If you did not vote in the primary, you may choose either party's runoff.`,
+    runoffGateOptionDemPrimary: "I voted in the Democratic primary.",
+    runoffGateOptionRepPrimary: "I voted in the Republican primary.",
     runoffGateOptionDemRunoff:
-      "I did not vote in March. Show me the Democratic runoff.",
+      "I did not vote in the primary. Show me the Democratic runoff.",
     runoffGateOptionRepRunoff:
-      "I did not vote in March. Show me the Republican runoff.",
+      "I did not vote in the primary. Show me the Republican runoff.",
     runoffGateOptionUnsure:
       "I'm not sure. Help me figure out which runoff applies.",
     runoffGateContinue: "Continue to research",
@@ -714,39 +704,27 @@ const en: Translations = {
     shareTemplate: "Share Research Template",
     readyToVote: "Ready to Vote?",
     readyToVoteBody:
-      "Print your 1-page ballot summary now. Remember, most Texas polling locations do not allow phones.",
+      "Print your 1-page ballot summary now. Remember, many polling locations do not allow phones.",
     backToChat: "Back to Research",
     pollingDataNote:
       "Poll data from Google Civic Information API. Verify with your county election office.",
   },
   voterId: {
-    stateLabel: "State of Texas Election Laws",
+    stateLabel: (stateName: string) => `State of ${stateName} Election Laws`,
     headline: "ID Requirements",
-    introText:
-      "To vote in person in Texas, you must present an acceptable form of photo identification or follow specific procedures if you do not possess one.",
+    introText: (stateName: string) =>
+      `To vote in person in ${stateName}, you must present an acceptable form of photo identification or follow specific procedures if you do not possess one.`,
     warningTitle: "Critical Expiration Rule",
     acceptedTitle: "Accepted Photo IDs",
-    approvedForms: "7 Approved Forms",
-    idTxDriverLicense: "TX Driver License",
-    idTxDriverLicenseDesc:
-      "Issued by the Texas Department of Public Safety (DPS).",
-    idElectionCert: "Election Identification Certificate",
-    idElectionCertDesc: "Issued by DPS for voting purposes only.",
-    idPersonalId: "Personal ID Card",
-    idPersonalIdDesc: "Personal identification card issued by DPS.",
-    idHandgun: "Handgun License",
-    idHandgunDesc: "Texas Handgun License issued by DPS.",
-    idMilitary: "US Military ID",
-    idMilitaryDesc:
-      "United States Military Identification Card containing a photograph.",
-    idCitizenship: "Citizenship Certificate",
-    idCitizenshipDesc:
-      "United States Citizenship Certificate containing a photograph.",
-    idPassport: "US Passport",
-    idPassportDesc: "United States Passport book or card.",
+    idRequiredText: "Photo ID is required to vote in person.",
+    idNotRequiredText:
+      "Photo ID is not required to vote in person in this state.",
+    idFallbackTitle: "Voter ID Rules",
+    idFallbackBody:
+      "Your state’s voter ID rules — check with your state election office for the current accepted ID list.",
     noIdTitle: "No ID? No Problem",
     noIdText:
-      "If a voter does not possess one of the seven acceptable forms of photo ID and cannot reasonably obtain one, they may still vote by signing a",
+      "If a voter does not possess one of the acceptable forms of photo ID and cannot reasonably obtain one, they may still vote by signing a",
     ridLabel: "Reasonable Impediment Declaration",
     supportingDocsTitle: "Supporting Documents",
     downloadDeclaration: "Download Declaration Form (PDF)",
@@ -954,7 +932,7 @@ const es: Translations = {
     downloadBallot: "Descargar mi boleta",
     downloadProfile: "Descargar mi perfil de votante",
     printReminder:
-      "La ley de Texas proh\u00edbe dispositivos inal\u00e1mbricos en la sala de votaci\u00f3n. Imprime esto o escr\u00edbelo.",
+      "Muchos estados proh\u00edben tel\u00e9fonos dentro de la sala de votaci\u00f3n. Imprime esto o escr\u00edbelo.",
     buildBallot: "Construir mi boleta",
     pasteLabel: "Pega el resultado de la boleta de tu chatbot de IA",
     pastePlaceholder: "Pega la secci\u00f3n MI BOLETA aqu\u00ed\u2026",
@@ -1067,20 +1045,18 @@ const es: Translations = {
       "Pregunta sobre historial de candidatos, registros de votaci\u00f3n o medidas electorales...",
     nonPartisanNotice:
       "Base de Datos No Partidista Verificada \u2022 Solo Uso Educativo",
-    runoffGateTitle:
-      "Antes de empezar: verificaci\u00f3n de boleta para desempate en Texas",
+    runoffGateTitle: (stateName: string) =>
+      `Antes de empezar: verificaci\u00f3n de boleta para desempate en ${stateName}`,
     runoffGateBody:
       "Necesitamos una respuesta r\u00e1pida antes de iniciar la investigaci\u00f3n para enviar al AI el contexto correcto de la boleta.",
-    runoffGateRule:
-      "Regla de Texas: si votaste en la primaria de un partido en marzo de este a\u00f1o, solo puedes votar en el desempate de ese mismo partido. Si no votaste en marzo, puedes elegir el desempate de cualquiera de los dos partidos.",
-    runoffGateOptionDemPrimary:
-      "Vot\u00e9 en la primaria dem\u00f3crata de marzo.",
-    runoffGateOptionRepPrimary:
-      "Vot\u00e9 en la primaria republicana de marzo.",
+    runoffGateRule: (stateName: string) =>
+      `Regla de ${stateName}: si votaste en la primaria de un partido este a\u00f1o, solo puedes votar en el desempate de ese mismo partido. Si no votaste en la primaria, puedes elegir el desempate de cualquiera de los dos partidos.`,
+    runoffGateOptionDemPrimary: "Vot\u00e9 en la primaria dem\u00f3crata.",
+    runoffGateOptionRepPrimary: "Vot\u00e9 en la primaria republicana.",
     runoffGateOptionDemRunoff:
-      "No vot\u00e9 en marzo. Mu\u00e9strame el desempate dem\u00f3crata.",
+      "No vot\u00e9 en la primaria. Mu\u00e9strame el desempate dem\u00f3crata.",
     runoffGateOptionRepRunoff:
-      "No vot\u00e9 en marzo. Mu\u00e9strame el desempate republicano.",
+      "No vot\u00e9 en la primaria. Mu\u00e9strame el desempate republicano.",
     runoffGateOptionUnsure:
       "No estoy seguro/a. Ay\u00fadame a determinar qu\u00e9 desempate aplica.",
     runoffGateContinue: "Continuar a la investigaci\u00f3n",
@@ -1159,40 +1135,29 @@ const es: Translations = {
     shareTemplate: "Compartir Plantilla de Investigaci\u00f3n",
     readyToVote: "\u00bfListo para Votar?",
     readyToVoteBody:
-      "Imprime tu resumen de boleta de 1 p\u00e1gina ahora. Recuerda, la mayor\u00eda de las casillas en Texas no permiten tel\u00e9fonos.",
+      "Imprime tu resumen de boleta de 1 p\u00e1gina ahora. Recuerda, muchas casillas no permiten tel\u00e9fonos.",
     backToChat: "Volver a la Investigaci\u00f3n",
     pollingDataNote:
       "Datos de casillas de la API de Google Civic Information. Verifica con tu oficina electoral del condado.",
   },
   voterId: {
-    stateLabel: "Leyes Electorales del Estado de Texas",
+    stateLabel: (stateName: string) =>
+      `Leyes Electorales del Estado de ${stateName}`,
     headline: "Requisitos de ID",
-    introText:
-      "Para votar en persona en Texas, debes presentar una forma aceptable de identificaci\u00f3n con foto o seguir procedimientos espec\u00edficos si no posees una.",
+    introText: (stateName: string) =>
+      `Para votar en persona en ${stateName}, debes presentar una forma aceptable de identificaci\u00f3n con foto o seguir procedimientos espec\u00edficos si no posees una.`,
     warningTitle: "Regla Cr\u00edtica de Vencimiento",
     acceptedTitle: "IDs con Foto Aceptadas",
-    approvedForms: "7 Formas Aprobadas",
-    idTxDriverLicense: "Licencia de Conducir TX",
-    idTxDriverLicenseDesc:
-      "Emitida por el Departamento de Seguridad P\u00fablica de Texas (DPS).",
-    idElectionCert: "Certificado de Identificaci\u00f3n Electoral",
-    idElectionCertDesc: "Emitido por DPS solo para fines de votaci\u00f3n.",
-    idPersonalId: "Tarjeta de ID Personal",
-    idPersonalIdDesc:
-      "Tarjeta de identificaci\u00f3n personal emitida por DPS.",
-    idHandgun: "Licencia de Arma de Fuego",
-    idHandgunDesc: "Licencia de arma de fuego de Texas emitida por DPS.",
-    idMilitary: "ID Militar de EE.UU.",
-    idMilitaryDesc:
-      "Tarjeta de identificaci\u00f3n militar de los Estados Unidos con fotograf\u00eda.",
-    idCitizenship: "Certificado de Ciudadan\u00eda",
-    idCitizenshipDesc:
-      "Certificado de ciudadan\u00eda de los Estados Unidos con fotograf\u00eda.",
-    idPassport: "Pasaporte de EE.UU.",
-    idPassportDesc: "Libro o tarjeta de pasaporte de los Estados Unidos.",
+    idRequiredText:
+      "Se requiere identificaci\u00f3n con foto para votar en persona.",
+    idNotRequiredText:
+      "No se requiere identificaci\u00f3n con foto para votar en persona en este estado.",
+    idFallbackTitle: "Reglas de Identificaci\u00f3n para Votantes",
+    idFallbackBody:
+      "Las reglas de identificaci\u00f3n de tu estado \u2014 consulta con la oficina electoral estatal para la lista actual de IDs aceptadas.",
     noIdTitle: "\u00bfSin ID? \u00a1No hay problema!",
     noIdText:
-      "Si un votante no posee una de las siete formas aceptables de identificaci\u00f3n con foto y no puede obtener una razonablemente, a\u00fan puede votar firmando una",
+      "Si un votante no posee una de las formas aceptables de identificaci\u00f3n con foto y no puede obtener una razonablemente, a\u00fan puede votar firmando una",
     ridLabel: "Declaraci\u00f3n de Impedimento Razonable",
     supportingDocsTitle: "Documentos de Apoyo",
     downloadDeclaration: "Descargar Formulario de Declaraci\u00f3n (PDF)",

@@ -74,16 +74,37 @@ export interface CountyResource {
   electionsWebsite: string;
 }
 
+export interface RunoffRules {
+  hasRunoff: boolean;
+  /**
+   * True when a voter is locked into the party whose primary they voted in.
+   * The runoff gate renders only when this is true AND the upcoming election
+   * is a primary or runoff. States without this rule (most states) skip the gate.
+   */
+  partyLockedToFirstRoundPrimary: boolean;
+  /**
+   * The explanatory text shown inside the runoff gate UI.
+   * Only used when partyLockedToFirstRoundPrimary === true.
+   */
+  ruleExplanation?: string;
+}
+
 export interface StateElectionData {
   stateCode: string;
   stateName: string;
   lastUpdated: string;
+  /**
+   * "confirmed" — data has been verified for the current cycle.
+   * "unconfirmed" — fallback data; specific deadlines for this state are not yet available.
+   */
+  coverageStatus?: "confirmed" | "unconfirmed";
   elections: Election[];
   registration: Registration;
   earlyVoting: EarlyVoting;
   votingRules: VotingRules;
   voteByMail?: VoteByMail;
   resources: Resources;
+  runoffRules: RunoffRules;
   countyResources?: Record<string, CountyResource>;
 }
 

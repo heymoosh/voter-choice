@@ -236,6 +236,114 @@ describe("BallotToolClient", () => {
   });
 });
 
+describe("BallotToolClient — runoff gate per-state behavior", () => {
+  // TX (primary runoff — gate renders)
+  it("shows runoff gate for TX in a primary/runoff election", async () => {
+    renderWithProviders(<BallotToolClient />);
+    fireEvent.change(screen.getByTestId("zip-input"), {
+      target: { value: "73301" },
+    });
+    fireEvent.click(screen.getByTestId("zip-submit"));
+    await waitFor(() => {
+      expect(screen.getByTestId("runoff-gate")).toBeInTheDocument();
+    });
+    // Gate title should mention Texas
+    expect(screen.getByTestId("runoff-gate").textContent).toContain("Texas");
+  });
+
+  // GA (primary runoff — gate renders, but says "Georgia")
+  it("shows runoff gate for GA with Georgia-flavored copy", async () => {
+    renderWithProviders(<BallotToolClient />);
+    fireEvent.change(screen.getByTestId("zip-input"), {
+      target: { value: "30301" },
+    });
+    fireEvent.click(screen.getByTestId("zip-submit"));
+    await waitFor(() => {
+      expect(screen.getByTestId("runoff-gate")).toBeInTheDocument();
+    });
+    expect(screen.getByTestId("runoff-gate").textContent).toContain("Georgia");
+  });
+
+  // NC (has runoffs but NOT party-locked — gate must NOT render)
+  it("does NOT show runoff gate for NC", async () => {
+    renderWithProviders(<BallotToolClient />);
+    fireEvent.change(screen.getByTestId("zip-input"), {
+      target: { value: "27601" },
+    });
+    fireEvent.click(screen.getByTestId("zip-submit"));
+    await waitFor(() => {
+      // chat-window or prompt-output should be visible without a gate selection
+      expect(
+        screen.queryByTestId("runoff-gate") === null ||
+          screen.queryByTestId("chat-window") !== null,
+      ).toBe(true);
+    });
+  });
+
+  // CA (top-two open, no runoff — gate must NOT render)
+  it("does NOT show runoff gate for CA", async () => {
+    renderWithProviders(<BallotToolClient />);
+    fireEvent.change(screen.getByTestId("zip-input"), {
+      target: { value: "90001" },
+    });
+    fireEvent.click(screen.getByTestId("zip-submit"));
+    await waitFor(() => {
+      expect(
+        screen.queryByTestId("runoff-gate") === null ||
+          screen.queryByTestId("chat-window") !== null,
+      ).toBe(true);
+    });
+  });
+
+  // NY (closed primary, no runoffs — gate must NOT render)
+  it("does NOT show runoff gate for NY", async () => {
+    renderWithProviders(<BallotToolClient />);
+    fireEvent.change(screen.getByTestId("zip-input"), {
+      target: { value: "10001" },
+    });
+    fireEvent.click(screen.getByTestId("zip-submit"));
+    await waitFor(() => {
+      expect(
+        screen.queryByTestId("runoff-gate") === null ||
+          screen.queryByTestId("chat-window") !== null,
+      ).toBe(true);
+    });
+  });
+
+  // FL (closed primary, no runoffs — gate must NOT render)
+  it("does NOT show runoff gate for FL", async () => {
+    renderWithProviders(<BallotToolClient />);
+    fireEvent.change(screen.getByTestId("zip-input"), {
+      target: { value: "32201" },
+    });
+    fireEvent.click(screen.getByTestId("zip-submit"));
+    await waitFor(() => {
+      expect(
+        screen.queryByTestId("runoff-gate") === null ||
+          screen.queryByTestId("chat-window") !== null,
+      ).toBe(true);
+    });
+  });
+
+  // TX context note — still says "Texas" in the AI context note
+  it("TX runoff context note includes Texas in the AI context string", async () => {
+    renderWithProviders(<BallotToolClient />);
+    fireEvent.change(screen.getByTestId("zip-input"), {
+      target: { value: "73301" },
+    });
+    fireEvent.click(screen.getByTestId("zip-submit"));
+    await waitFor(() => {
+      expect(screen.getByTestId("runoff-gate")).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByTestId("runoff-option-voted_rep_primary"));
+    await waitFor(() => {
+      expect(screen.getByTestId("prompt-output")).toBeInTheDocument();
+    });
+    // The PRE-RESEARCH context block should contain Texas-specific note
+    expect(screen.getByTestId("prompt-output").textContent).toContain("Texas");
+  });
+});
+
 describe("BallotToolClient — Spanish mode", () => {
   beforeEach(() => {
     localStorage.setItem("ballot-tool-lang", "es");
@@ -312,5 +420,75 @@ describe("BallotToolClient — Spanish mode", () => {
     expect(screen.getByTestId("state-selector").textContent).toMatch(
       /estado|votar/i,
     );
+  });
+});
+
+describe("IdView — state-specific ID label and accepted IDs", () => {
+  // Navigate to the ID Requirements tab for a given zip and state
+  async function navigateToIdTab(zip: string, selectRunoff = false) {
+    renderWithProviders(<BallotToolClient />);
+    fireEvent.change(screen.getByTestId("zip-input"), {
+      target: { value: zip },
+    });
+    fireEvent.click(screen.getByTestId("zip-submit"));
+
+    if (selectRunoff) {
+      await waitFor(() => {
+        expect(screen.getByTestId("runoff-gate")).toBeInTheDocument();
+      });
+      fireEvent.click(screen.getByTestId("runoff-option-unsure"));
+    }
+
+    await waitFor(() => {
+      expect(screen.getByTestId("chat-window")).toBeInTheDocument();
+    });
+
+    // Click the "ID Requirements" tab (sidebar desktop nav; role=tab)
+    const idTabs = screen.getAllByRole("tab");
+    const idTab = idTabs.find((btn) => btn.textContent?.includes("ID"));
+    expect(idTab).toBeDefined();
+    fireEvent.click(idTab!);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("id-view")).toBeInTheDocument();
+    });
+  }
+
+  it("renders Florida state label (not Texas) for FL zip 32201", async () => {
+    await navigateToIdTab("32201");
+    const idView = screen.getByTestId("id-view");
+    // State-specific label must say Florida
+    expect(idView.textContent).toContain("Florida");
+    // Must NOT say Texas
+    expect(idView.textContent).not.toContain("Texas");
+  });
+
+  it("renders FL accepted IDs from state data for FL zip 32201", async () => {
+    await navigateToIdTab("32201");
+    const idView = screen.getByTestId("id-view");
+    // Florida fixture has "Florida driver's license" in acceptedIds
+    expect(idView.textContent).toContain("Florida driver");
+    // Must NOT contain TX-specific text
+    expect(idView.textContent).not.toContain("Texas driver");
+    expect(idView.textContent).not.toContain("DPS");
+  });
+
+  it("renders CA state label and ID-not-required message for CA zip 90001", async () => {
+    await navigateToIdTab("90001");
+    const idView = screen.getByTestId("id-view");
+    // State label must say California
+    expect(idView.textContent).toContain("California");
+    expect(idView.textContent).not.toContain("Texas");
+    // CA does not require ID — should show not-required text
+    expect(idView.textContent).toMatch(/not required|no.*requir/i);
+  });
+
+  it("renders TX state label for TX zip 73301", async () => {
+    await navigateToIdTab("73301", true);
+    const idView = screen.getByTestId("id-view");
+    // State label must say Texas
+    expect(idView.textContent).toContain("Texas");
+    // TX accepted IDs should include Texas driver license
+    expect(idView.textContent).toContain("Texas driver");
   });
 });
