@@ -36,18 +36,15 @@ jobs:
         run: |
           # ---------------------------------------------------------------
           # DATABASE_URL — Neon Postgres connection string
-          # BWS secret ID: replace <DATABASE_URL_BWS_SECRET_ID> with the
-          # actual UUID from Bitwarden Secrets Manager after provisioning.
           # ---------------------------------------------------------------
-          DATABASE_URL=$(bws secret get <DATABASE_URL_BWS_SECRET_ID> --access-token "$BWS_ACCESS_TOKEN" --output json | jq -r '.value')
+          DATABASE_URL=$(bws secret get 90abeeed-130e-4707-86ff-b446003770c2 --access-token "$BWS_ACCESS_TOKEN" --output json | jq -r '.value')
           echo "DATABASE_URL=$DATABASE_URL" >> "$GITHUB_ENV"
           echo "::add-mask::$DATABASE_URL"
 
           # ---------------------------------------------------------------
           # OPENSTATES_API_KEY — OpenStates legislative data API
-          # BWS secret ID: replace <OPENSTATES_API_KEY_BWS_SECRET_ID>
           # ---------------------------------------------------------------
-          OPENSTATES_API_KEY=$(bws secret get <OPENSTATES_API_KEY_BWS_SECRET_ID> --access-token "$BWS_ACCESS_TOKEN" --output json | jq -r '.value')
+          OPENSTATES_API_KEY=$(bws secret get 85bad136-3cbc-4062-9ccc-b4460037de19 --access-token "$BWS_ACCESS_TOKEN" --output json | jq -r '.value')
           echo "OPENSTATES_API_KEY=$OPENSTATES_API_KEY" >> "$GITHUB_ENV"
           echo "::add-mask::$OPENSTATES_API_KEY"
 
