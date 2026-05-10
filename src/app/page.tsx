@@ -195,7 +195,7 @@ function ZipForm({
 }) {
   return (
     <section className="bg-white rounded-lg shadow-md p-6 mb-8">
-      <form onSubmit={onSubmit}>
+      <form onSubmit={onSubmit} noValidate>
         <label
           htmlFor="zip-input"
           className="block text-lg font-medium text-gray-900 mb-2"
@@ -254,12 +254,11 @@ function MultiStateSelector({
       <h2 className="text-xl font-semibold text-gray-900 mb-4">
         {t.multiStatePrompt}
       </h2>
-      <div className="flex flex-wrap gap-4">
+      <div className="flex flex-wrap gap-4" data-testid="state-selector">
         {states.map((stateCode) => (
           <button
             key={stateCode}
             onClick={() => onSelect(stateCode)}
-            data-testid="state-selector"
             className="px-6 py-3 bg-gray-100 hover:bg-blue-100 border border-gray-300 rounded-md font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[100px]"
           >
             {stateCode}
