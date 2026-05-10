@@ -57,5 +57,37 @@ jobs:
             fi
           fi
 
+          # ---------------------------------------------------------------
+          # INGEST_FAILURE_WEBHOOK_URL — optional; webhook for ingest failure alerts.
+          # UUID: <INGEST_FAILURE_WEBHOOK_BWS_SECRET_ID>
+          # Replace the placeholder with the real BWS secret UUID once provisioned.
+          # Supports any webhook that accepts a JSON POST (Slack, Discord, generic).
+          # ---------------------------------------------------------------
+          set +e
+          WEBHOOK_SECRET=$(bws secret get <INGEST_FAILURE_WEBHOOK_BWS_SECRET_ID> --access-token "$BWS_ACCESS_TOKEN" --output json 2>/dev/null)
+          WEBHOOK_STATUS=$?
+          set -e
+          if [ "$WEBHOOK_STATUS" -eq 0 ]; then
+            INGEST_FAILURE_WEBHOOK_URL=$(echo "$WEBHOOK_SECRET" | jq -r '.value // empty')
+            if [ -n "$INGEST_FAILURE_WEBHOOK_URL" ]; then
+              echo "INGEST_FAILURE_WEBHOOK_URL=$INGEST_FAILURE_WEBHOOK_URL" >> "$GITHUB_ENV"
+              echo "::add-mask::$INGEST_FAILURE_WEBHOOK_URL"
+            fi
+          fi
+
       - name: Run federal votes ingest
         run: npx tsx scripts/ingest/federal-votes.ts
+
+      - name: Notify on ingest failure
+        if: failure()
+        env:
+          WEBHOOK: ${{ env.INGEST_FAILURE_WEBHOOK_URL }}
+        run: |
+          if [ -z "$WEBHOOK" ]; then
+            echo "INGEST_FAILURE_WEBHOOK_URL not set — skipping alert"
+            exit 0
+          fi
+          curl -fsS -X POST "$WEBHOOK" \
+            -H "Content-Type: application/json" \
+            -d "$(jq -n --arg job "${{ github.job }}" --arg run "${{ github.run_id }}" --arg repo "${{ github.repository }}" \
+              '{text: "[voter-choice ingest failure] job=\($job) repo=\($repo) run_id=\($run)"}')"

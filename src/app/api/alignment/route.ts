@@ -123,8 +123,29 @@ export async function GET(request: NextRequest) {
   const paramsOrError = parseAndValidateParams(searchParams);
   if (paramsOrError instanceof Response) return paramsOrError;
 
-  const { candidateName, jurisdiction, canonicalIssue, resolvedStance } =
-    paramsOrError;
+  const {
+    candidateName,
+    stateCode,
+    jurisdiction,
+    canonicalIssue,
+    resolvedStance,
+  } = paramsOrError;
+
+  // Defensive cross-check: for state jurisdictions, stateCode must match
+  // the state embedded in the jurisdiction string (e.g. stateCode=TX must
+  // pair with jurisdiction=state-TX-house/senate). Catches client-side bugs
+  // early before a DB round-trip.
+  if (STATE_JURISDICTION_RE.test(jurisdiction)) {
+    const jurisdictionState = jurisdiction.split("-")[1]?.toUpperCase();
+    if (jurisdictionState !== stateCode) {
+      return Response.json(
+        {
+          error: `stateCode ${stateCode} does not match jurisdiction ${jurisdiction}`,
+        },
+        { status: 400 },
+      );
+    }
+  }
 
   // Resolve candidate
   const candidateId = await resolveCandidateId(candidateName, jurisdiction);

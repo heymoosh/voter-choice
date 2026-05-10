@@ -26,7 +26,8 @@
     "db:smoke": "npx tsx scripts/ingest/_smoke.ts",
     "db:tag-bills": "npx tsx scripts/ingest/tag-bills.ts",
     "db:donors-federal": "npx tsx scripts/ingest/federal-donors.ts",
-    "db:donors-state": "npx tsx scripts/ingest/state-donors.ts"
+    "db:donors-state": "npx tsx scripts/ingest/state-donors.ts",
+    "db:audit-tags": "npx tsx scripts/ingest/_audit-tags.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "0.39.0",

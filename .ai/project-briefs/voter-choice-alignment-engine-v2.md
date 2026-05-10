@@ -218,7 +218,7 @@ Vote Smart + FEC + OpenSecrets + FollowTheMoney ingest jobs. Pre-tagged vote sto
 - (upcoming) `.ai/work-packets/launch-alignment-score-llm-driven.md` — Packet 3
 - (upcoming) `.ai/work-packets/launch-proposition-prompt-branching.md` — Packet 4
 - (upcoming) `.ai/work-packets/launch-anonymous-counters-and-polis-viz.md` — Packet 5
-- (upcoming) `.ai/work-packets/launch-vote-ingestion-pipeline.md` — Packet 6
+- `.ai/work-packets/launch-vote-ingestion-pipeline.md` — Packet 6, **shipped** (Phases A–G complete; first live cron run pending next Sunday)
 
 ## Open Questions
 

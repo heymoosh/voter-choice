@@ -246,32 +246,32 @@ describe("estimateCost", () => {
 
 describe("resolveTagBillsConfig", () => {
   it("defaults to 1000 bill limit", () => {
-    const config = resolveTagBillsConfig({ ANTHROPIC_VOTER_API: "key" }, []);
+    const config = resolveTagBillsConfig({ ANTHROPIC_VOTER_API: "key" } as NodeJS.ProcessEnv, []);
     expect(config.limit).toBe(1000);
   });
 
   it("reads --limit from argv", () => {
-    const config = resolveTagBillsConfig({ ANTHROPIC_VOTER_API: "key" }, ["node", "script.ts", "--limit", "5"]);
+    const config = resolveTagBillsConfig({ ANTHROPIC_VOTER_API: "key" } as NodeJS.ProcessEnv, ["node", "script.ts", "--limit", "5"]);
     expect(config.limit).toBe(5);
   });
 
   it("reads TAGGER_BILL_LIMIT from env", () => {
-    const config = resolveTagBillsConfig({ ANTHROPIC_VOTER_API: "key", TAGGER_BILL_LIMIT: "42" }, []);
+    const config = resolveTagBillsConfig({ ANTHROPIC_VOTER_API: "key", TAGGER_BILL_LIMIT: "42" } as NodeJS.ProcessEnv, []);
     expect(config.limit).toBe(42);
   });
 
   it("prefers --limit argv over env var", () => {
-    const config = resolveTagBillsConfig({ ANTHROPIC_VOTER_API: "key", TAGGER_BILL_LIMIT: "200" }, ["node", "script.ts", "--limit", "7"]);
+    const config = resolveTagBillsConfig({ ANTHROPIC_VOTER_API: "key", TAGGER_BILL_LIMIT: "200" } as NodeJS.ProcessEnv, ["node", "script.ts", "--limit", "7"]);
     expect(config.limit).toBe(7);
   });
 
   it("detects --dry-run flag", () => {
-    const config = resolveTagBillsConfig({ ANTHROPIC_VOTER_API: "key" }, ["node", "script.ts", "--dry-run"]);
+    const config = resolveTagBillsConfig({ ANTHROPIC_VOTER_API: "key" } as NodeJS.ProcessEnv, ["node", "script.ts", "--dry-run"]);
     expect(config.dryRun).toBe(true);
   });
 
   it("detects TAGGER_DRY_RUN=1 env var", () => {
-    const config = resolveTagBillsConfig({ ANTHROPIC_VOTER_API: "key", TAGGER_DRY_RUN: "1" }, []);
+    const config = resolveTagBillsConfig({ ANTHROPIC_VOTER_API: "key", TAGGER_DRY_RUN: "1" } as NodeJS.ProcessEnv, []);
     expect(config.dryRun).toBe(true);
   });
 });
@@ -320,7 +320,6 @@ describe("processBill", () => {
       billsTagged: 0,
       billsSkipped: 0,
       tagsUpserted: 0,
-      tagsDropped: 0,
       apiErrors: 0,
       dbErrors: 0,
       estimatedInputTokens: 0,
@@ -430,7 +429,7 @@ describe("tagBills", () => {
     const counts = await tagBills({
       db,
       client,
-      env: { ANTHROPIC_VOTER_API: "test-key" },
+      env: { ANTHROPIC_VOTER_API: "test-key" } as NodeJS.ProcessEnv,
       argv: [],
     });
 
@@ -446,7 +445,7 @@ describe("tagBills", () => {
     await tagBills({
       db,
       client,
-      env: { ANTHROPIC_VOTER_API: "test-key" },
+      env: { ANTHROPIC_VOTER_API: "test-key" } as NodeJS.ProcessEnv,
       argv: ["node", "tag-bills.ts", "--limit", "5"],
     });
 
@@ -487,7 +486,7 @@ describe("tagBills", () => {
     const counts = await tagBills({
       db,
       client,
-      env: { ANTHROPIC_VOTER_API: "test-key" },
+      env: { ANTHROPIC_VOTER_API: "test-key" } as NodeJS.ProcessEnv,
       argv: [],
     });
 
@@ -502,7 +501,7 @@ describe("tagBills", () => {
       tagBills({
         db,
         client: undefined,
-        env: {},
+        env: {} as NodeJS.ProcessEnv,
         argv: [],
       }),
     ).rejects.toThrow("ANTHROPIC_VOTER_API is not set");

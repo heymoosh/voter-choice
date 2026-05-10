@@ -41,7 +41,7 @@
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import Anthropic from "@anthropic-ai/sdk";
-import { sql, notInArray, isNull } from "drizzle-orm";
+import { sql, notInArray } from "drizzle-orm";
 import { requireDb, type DbClient } from "../../db/client";
 import { bills, issueTags } from "../../db/schema";
 import { CANONICAL_ISSUE_LABELS } from "../../src/lib/canonicalIssues";
@@ -121,7 +121,6 @@ export type TaggerCounts = {
   billsTagged: number;
   billsSkipped: number;
   tagsUpserted: number;
-  tagsDropped: number;
   apiErrors: number;
   dbErrors: number;
   estimatedInputTokens: number;
@@ -487,9 +486,6 @@ export async function processBill(
       `running_usd=${runningCost.estimatedUsd.toFixed(4)}\n`,
   );
 
-  const tagsDropped = tags.length === 0 ? 0 : 0; // validation already happened
-  counts.tagsDropped += tagsDropped;
-
   try {
     const upserted = await upsertTags(db, bill.id, tags, dryRun);
     counts.tagsUpserted += upserted;
@@ -585,7 +581,6 @@ export async function tagBills({
     billsTagged: 0,
     billsSkipped: 0,
     tagsUpserted: 0,
-    tagsDropped: 0,
     apiErrors: 0,
     dbErrors: 0,
     estimatedInputTokens: 0,
@@ -641,7 +636,6 @@ export async function tagBills({
       `bills_tagged=${counts.billsTagged}`,
       `bills_skipped=${counts.billsSkipped}`,
       `tags_upserted=${counts.tagsUpserted}`,
-      `tags_dropped=${counts.tagsDropped}`,
       `api_errors=${counts.apiErrors}`,
       `db_errors=${counts.dbErrors}`,
       `est_total_usd=${finalCost.estimatedUsd.toFixed(4)}`,

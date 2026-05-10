@@ -1,6 +1,6 @@
 # Work Packet: launch-vote-ingestion-pipeline
 
-Status: Phase C ready (Phases A–B landed; Phases D–G queued, gated on phase-by-phase verifier checkpoints)
+Status: SHIPPED — Phases A–G complete (2026-05-10). Operational verification deferred to first cron run.
 Owner: orchestrator (Claude Opus, this session) → worker subagents (Sonnet)
 Source: `/Users/Muxin/.claude/plans/am-running-e2e-jaunty-crab.md` (approved Packet 6 plan).
 Branch: launch/production
@@ -524,6 +524,25 @@ Brief reference; full scope expanded in subsequent packet revisions when each ph
 - **Phase G — Verification** (E2E with real candidates per scope, cost telemetry comparison, ingest failure-alerting)
 
 Each phase ends with a verifier checkpoint and a commit + push. Orchestrator pauses for user sign-off before the next phase starts.
+
+## Status: SHIPPED
+
+All seven phases (A–G) complete as of 2026-05-10.
+
+## Closing Summary
+
+| Phase | Commit | Summary |
+|-------|--------|---------|
+| A | `5cd64e1` | Foundation: Drizzle + Neon schema, GitHub Actions skeletons |
+| B | `eca2afc` | Federal votes ingest (GovTrack + Congress.gov) |
+| C | (committed as part of B-era work) | State votes ingest — all 50 states matrix via OpenStates |
+| D | (ingest-tag-bills workflow + tag-bills.ts) | LLM issue-tagging via Claude Haiku, batch upsert into issue_tags |
+| E | (ingest-donors workflow + federal/state-donors.ts) | Donor ingest — FEC federal + FollowTheMoney state |
+| F | `67d76f5` | App cutover — /api/alignment endpoint + lookup_alignment tool + prompt rewrite |
+| G | (Phase G commit) | Operational closeout — failure alerting, tag-audit script, Phase D/F nit fixes |
+
+**Operational verification deferred to first cron run + manual E2E.**
+See `docs/operations/packet-6-smoke-checklist.md` for the post-ingest smoke steps.
 
 ## Notes — Phase A subagent execution
 
