@@ -159,6 +159,7 @@ export default function Home() {
         <section className="mb-8">
           <form
             onSubmit={handleSubmit}
+            noValidate
             className="flex flex-col sm:flex-row gap-3"
           >
             <div className="flex-1">
@@ -176,7 +177,7 @@ export default function Home() {
                 pattern="[0-9]*"
                 maxLength={5}
                 value={zipCode}
-                onChange={(e) => setZipCode(e.target.value.replace(/\D/g, ""))}
+                onChange={(e) => setZipCode(e.target.value)}
                 className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-lg"
                 placeholder="e.g., 78701"
               />
@@ -222,13 +223,16 @@ export default function Home() {
                 This zip code spans multiple states. Which state are you voting
                 in?
               </p>
-              <div className="flex flex-wrap gap-2">
+              <div
+                className="flex flex-wrap gap-2"
+                data-testid="state-selector"
+              >
                 {states.map((stateCode) => {
                   const data = getStateData(stateCode);
                   return (
                     <button
                       key={stateCode}
-                      data-testid="state-selector"
+                      data-testid={`state-option-${stateCode.toLowerCase()}`}
                       onClick={() => handleStateSelection(stateCode)}
                       className="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg transition-colors min-h-[44px] min-w-[44px]"
                     >
