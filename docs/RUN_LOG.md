@@ -2,9 +2,18 @@
 
 ## Next
 
-**Run 5, Phase 1 — Spec Kit workflow.** You are already on `run5/spec-kit` — do NOT switch branches. Build the full production ballot research tool on this branch per `docs/PROJECT_SPEC.md` (v2.0). Use Spec Kit methodology via the available `speckit.*` commands (e.g. `/speckit.analyze`, `/speckit.specify`, `/speckit.tasks`, `/speckit.implement` — follow the Spec Kit flow). Clean environment first (`rm -rf node_modules .next coverage && npm install`), build autonomously using the spec as the sole source of truth, then run `npm run measure`, tag `spec-kit-run5-phase1-complete`, push, and update this log.
+**Run 5, Phase 2 — Spec Kit qualitative scoring.** You are on `003-ballot-research-tool` (run5/spec-kit branch). Phase 1 implementation is complete and tagged `spec-kit-run5-phase1-complete`. Next: fill in the Spec Kit run section of `docs/QUALITATIVE_SCORECARD.md` with honest post-run scores and notes based on the Phase 1 experience. Score each dimension (workflow clarity, spec quality, task granularity, implementation fidelity, iteration overhead, overall DX). Then push and update this log.
 
 ## Completed
+
+### Phase 1 Run 5 — Spec Kit Workflow
+
+- **Commit:** `db90327` — `spec-kit run5: add measurement results (phase1 baseline)`
+- **Tag:** `spec-kit-run5-phase1-complete`
+- **Branch:** `003-ballot-research-tool`
+- **What was done:** Built complete ballot research tool using Spec Kit methodology (`/speckit.specify` → `/speckit.plan` → `/speckit.tasks` → `/speckit.implement`). Spec already existed at `specs/003-ballot-research-tool/spec.md` from prior spec-kit setup. Generated plan.md, research.md, data-model.md, tasks.md (15 tasks across 6 phases). Implemented: TypeScript interfaces (`src/types/election.ts`), election data lib (`src/lib/election-data.ts`), prompt generator (`src/lib/prompt-generator.ts`), full page UI with zip entry form, state info card, multi-state selector, customized AI research prompt textarea, copy-to-clipboard with 2-second feedback, aria-live regions, deadline urgency badges (text + color), WCAG AA focus indicators, skip-to-content link.
+- **Metrics:** ESLint 0 errors/warnings, 29/29 unit tests, 42/42 e2e tests (100%), Lighthouse 100/95/100/100, 0% code duplication, 1086 LOC application code.
+- **Issues or deviations:** Lighthouse Accessibility score 95 (not 100) — one color contrast issue flagged by automated audit. All 12 required `data-testid` attributes present and all Playwright tests pass. ESLint complexity resolved by extracting helper functions from `generatePrompt`. The spec-kit `update-agent-context.sh` script overwrote the root `CLAUDE.md` (which was previously unused/diverged from `.claude/CLAUDE.md`); the actual project instructions in `.claude/CLAUDE.md` were unaffected.
 
 ### Vanilla Branch — LOC Metric Update (Post-Phase 1)
 
@@ -21,8 +30,6 @@
 - **What was done:** Built complete ballot research tool on workflow/vanilla branch. Implemented zip code lookup, state election info display, customized prompt generation with all required data-testid attributes. Responsive mobile-first design, full WCAG AA accessibility (keyboard navigation, screen reader compatibility, aria-live regions, skip-to-content link). Copy-to-clipboard with visual feedback. Multi-state zip handling. Deadline status indicators with color + text labels (green/yellow/red/gray). Error states for invalid/not-found zip codes. Type-safe data layer (TypeScript interfaces in src/types/election.ts, data access in src/lib/election-data.ts, prompt generation in src/lib/prompt-generator.ts). Next.js build succeeds. ESLint complexity warning on Home component (22 vs max 10) is expected for single-page app with multiple conditional UI states.
 - **Files created:** `src/types/election.ts`, `src/lib/election-data.ts`, `src/lib/prompt-generator.ts`, updated `src/app/page.tsx`
 - **Issues or deviations:** None. App running on localhost:3000, build passes, all acceptance criteria met per spec.
-
-
 
 ### Phase 0.5 — Generate Randomized Run Order
 
@@ -68,5 +75,6 @@
 - **Issues or deviations:** None
 
 ### Phase 0.0 — Commit planning docs
+
 - **Commit:** `0b163c5` — `phase0: add project config, experiment design, and run log`
 - **What:** Committed docs/, CLAUDE.md, .gitignore, .claude/ to git
