@@ -1,20 +1,32 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import {
   getStatesForZip,
   getStateData,
   getNextElection,
 } from "@/lib/election-data";
 import { generateCustomizedPrompt } from "@/lib/prompt-generator";
+import { useLanguage } from "@/context/LanguageContext";
+import { t } from "@/lib/translations";
+import { LanguageToggle } from "@/components/LanguageToggle";
+import {
+  isValidProfile,
+  generateProfileText,
+  type VoterProfileData,
+} from "@/lib/voter-profile";
 
 export default function Home() {
+  const { language } = useLanguage();
   const [zipCode, setZipCode] = useState("");
   const [error, setError] = useState("");
   const [states, setStates] = useState<string[] | null>(null);
   const [selectedState, setSelectedState] = useState<string | null>(null);
   const [customPrompt, setCustomPrompt] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [voterProfile, setVoterProfile] = useState<string | null>(null);
+  const [profileError, setProfileError] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,52 +35,50 @@ export default function Home() {
     setSelectedState(null);
     setCustomPrompt(null);
 
-    // Validate input
-    if (!zipCode) {
-      setError("Please enter a zip code");
+    if (!zipCode.trim()) {
+      setError(t("zip.error.empty", language));
       return;
     }
 
     if (!/^\d{5}$/.test(zipCode)) {
-      setError("Please enter a valid 5-digit zip code");
+      setError(t("zip.error.invalid", language));
       return;
     }
 
-    // Look up zip code
     const foundStates = getStatesForZip(zipCode);
     if (!foundStates) {
-      setError(
-        "We don't have data for this zip code yet. We're working on adding all U.S. zip codes.",
-      );
+      setError(t("zip.error.notFound", language));
       return;
     }
 
     setStates(foundStates);
 
-    // If only one state, show data immediately
     if (foundStates.length === 1) {
       handleStateSelection(foundStates[0]);
     }
   };
 
-  const handleStateSelection = (stateCode: string) => {
-    setSelectedState(stateCode);
-    const stateData = getStateData(stateCode);
+  const handleStateSelection = useCallback(
+    (stateCode: string) => {
+      setSelectedState(stateCode);
+      const stateData = getStateData(stateCode);
 
-    if (!stateData) {
-      setError("State data not available");
-      return;
-    }
+      if (!stateData) {
+        setError(t("zip.error.invalid", language));
+        return;
+      }
 
-    const nextElection = getNextElection(stateData);
-    if (!nextElection) {
-      setCustomPrompt(null);
-      return;
-    }
+      const nextElection = getNextElection(stateData);
+      if (!nextElection) {
+        setCustomPrompt(null);
+        return;
+      }
 
-    const prompt = generateCustomizedPrompt(zipCode, stateData, nextElection);
-    setCustomPrompt(prompt);
-  };
+      const prompt = generateCustomizedPrompt(zipCode, stateData, nextElection);
+      setCustomPrompt(prompt);
+    },
+    [zipCode, language],
+  );
 
   const handleCopyToClipboard = async () => {
     if (!customPrompt) return;
@@ -78,7 +88,6 @@ export default function Home() {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      // Fallback: select the text
       const promptElement = document.getElementById("prompt-output");
       if (promptElement) {
         const range = document.createRange();
@@ -88,6 +97,48 @@ export default function Home() {
         selection?.addRange(range);
       }
     }
+  };
+
+  const handleProfileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setProfileError("");
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      const text = evt.target?.result as string;
+      if (!isValidProfile(text)) {
+        setProfileError(
+          "Invalid profile file. Please upload a .txt file downloaded from this tool.",
+        );
+        return;
+      }
+      setVoterProfile(text);
+    };
+    reader.readAsText(file);
+  };
+
+  const handleProfileDownload = () => {
+    const profileData: VoterProfileData = {
+      date: new Date().toISOString().split("T")[0],
+      location: selectedState
+        ? `${zipCode}, ${getStateData(selectedState)?.stateName ?? selectedState}`
+        : zipCode || "Unknown",
+      values: [],
+      decisionStyle: [],
+      personalContext: [],
+      votingHistory: [],
+      notes: [],
+    };
+
+    const text = generateProfileText(profileData);
+    const blob = new Blob([text], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `voter-profile-${profileData.date}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   const stateData = selectedState ? getStateData(selectedState) : null;
@@ -106,19 +157,22 @@ export default function Home() {
         id="main-content"
         className="max-w-4xl mx-auto px-4 py-8 sm:px-6 sm:py-12"
       >
+        {/* Header with language toggle */}
+        <div className="flex justify-end mb-6">
+          <LanguageToggle />
+        </div>
+
         {/* Hero Section */}
         <section className="mb-12">
           <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-4">
-            Free AI Ballot Research Tool
+            {t("hero.title", language)}
           </h1>
           <p className="text-lg text-gray-700 dark:text-gray-300 mb-4">
-            Get a customized AI prompt pre-filled with your local election
-            information. Paste it into any free AI chatbot to research your
-            ballot.
+            {t("hero.description", language)}
           </p>
           <div className="flex flex-wrap gap-3 items-center">
             <span className="text-sm text-gray-600 dark:text-gray-400">
-              Works with:
+              {t("hero.worksWith", language)}
             </span>
             <a
               href="https://claude.ai"
@@ -155,6 +209,37 @@ export default function Home() {
           </div>
         </section>
 
+        {/* Voter Profile Upload */}
+        <section className="mb-6">
+          <div className="flex flex-wrap items-center gap-3">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".txt"
+              onChange={handleProfileUpload}
+              className="sr-only"
+              aria-label={t("profile.uploadLabel", language)}
+              id="profile-upload"
+            />
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="text-sm px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 transition-colors"
+            >
+              {t("profile.upload", language)}
+            </button>
+            {voterProfile && (
+              <span className="text-sm text-green-600 dark:text-green-400">
+                ✓ Profile loaded
+              </span>
+            )}
+            {profileError && (
+              <span className="text-sm text-red-600 dark:text-red-400">
+                {profileError}
+              </span>
+            )}
+          </div>
+        </section>
+
         {/* Zip Code Entry */}
         <section className="mb-8">
           <form
@@ -167,19 +252,18 @@ export default function Home() {
                 htmlFor="zip-input"
                 className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
               >
-                Enter your 5-digit zip code
+                {t("zip.label", language)}
               </label>
               <input
                 id="zip-input"
                 data-testid="zip-input"
                 type="text"
                 inputMode="numeric"
-                pattern="[0-9]*"
                 maxLength={5}
                 value={zipCode}
                 onChange={(e) => setZipCode(e.target.value)}
                 className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-lg"
-                placeholder="e.g., 78701"
+                placeholder={t("zip.placeholder", language)}
               />
             </div>
             <div className="sm:self-end">
@@ -188,30 +272,36 @@ export default function Home() {
                 data-testid="zip-submit"
                 className="w-full sm:w-auto px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors min-h-[44px] min-w-[44px]"
               >
-                Get My Prompt
+                {t("zip.submit", language)}
               </button>
             </div>
           </form>
 
           {error && (
-            <div
-              data-testid="zip-error"
-              role="alert"
-              className="mt-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-800 dark:text-red-200"
-            >
-              {error}
-              {error.includes("don't have data") && (
-                <a
-                  href="https://www.usa.gov/election-office"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block mt-2 text-sm text-red-700 dark:text-red-300 hover:underline"
+            <>
+              <div
+                data-testid="zip-error"
+                role="alert"
+                className="mt-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-800 dark:text-red-200"
+              >
+                {error}
+              </div>
+              {error === t("zip.error.notFound", language) && (
+                <div
                   data-testid="not-found-message"
+                  className="mt-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg"
                 >
-                  Find your state election website
-                </a>
+                  <a
+                    href="https://www.usa.gov/election-office"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-red-700 dark:text-red-300 hover:underline"
+                  >
+                    {t("zip.error.notFoundLink", language)} →
+                  </a>
+                </div>
               )}
-            </div>
+            </>
           )}
         </section>
 
@@ -220,8 +310,7 @@ export default function Home() {
           <section className="mb-8">
             <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
               <p className="text-yellow-900 dark:text-yellow-200 mb-3">
-                This zip code spans multiple states. Which state are you voting
-                in?
+                {t("multiState.prompt", language)}
               </p>
               <div
                 className="flex flex-wrap gap-2"
@@ -256,7 +345,7 @@ export default function Home() {
               <div className="space-y-4">
                 <div>
                   <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase mb-1">
-                    Next Election
+                    {t("state.nextElection", language)}
                   </h3>
                   <p
                     className="text-lg font-medium text-gray-900 dark:text-white"
@@ -278,7 +367,7 @@ export default function Home() {
 
                 <div data-testid="registration-status">
                   <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase mb-2">
-                    Registration Deadlines
+                    {t("state.registrationDeadlines", language)}
                   </h3>
                   <ul className="space-y-2">
                     {stateData.registration.online.available && (
@@ -287,7 +376,7 @@ export default function Home() {
                           deadline={stateData.registration.online.deadline}
                         />
                         <span className="text-gray-700 dark:text-gray-300">
-                          Online:{" "}
+                          {t("state.online", language)}:{" "}
                           {new Date(
                             stateData.registration.online.deadline!,
                           ).toLocaleDateString("en-US", {
@@ -303,7 +392,7 @@ export default function Home() {
                         deadline={stateData.registration.byMail.deadline}
                       />
                       <span className="text-gray-700 dark:text-gray-300">
-                        By mail:{" "}
+                        {t("state.byMail", language)}:{" "}
                         {new Date(
                           stateData.registration.byMail.deadline!,
                         ).toLocaleDateString("en-US", {
@@ -323,7 +412,7 @@ export default function Home() {
                         deadline={stateData.registration.inPerson.deadline}
                       />
                       <span className="text-gray-700 dark:text-gray-300">
-                        In person:{" "}
+                        {t("state.inPerson", language)}:{" "}
                         {new Date(
                           stateData.registration.inPerson.deadline!,
                         ).toLocaleDateString("en-US", {
@@ -339,7 +428,7 @@ export default function Home() {
                 {stateData.earlyVoting.available && (
                   <div>
                     <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase mb-1">
-                      Early Voting
+                      {t("state.earlyVoting", language)}
                     </h3>
                     <p className="text-gray-700 dark:text-gray-300">
                       {new Date(
@@ -373,7 +462,7 @@ export default function Home() {
                     rel="noopener noreferrer"
                     className="text-blue-600 dark:text-blue-400 hover:underline text-sm"
                   >
-                    View sample ballot →
+                    {t("state.viewSampleBallot", language)}
                   </a>
                   <a
                     href={stateData.resources.countyElectionLookup}
@@ -381,7 +470,7 @@ export default function Home() {
                     rel="noopener noreferrer"
                     className="text-blue-600 dark:text-blue-400 hover:underline text-sm"
                   >
-                    County election office →
+                    {t("state.countyOffice", language)}
                   </a>
                 </div>
               </div>
@@ -416,20 +505,29 @@ export default function Home() {
             <div className="mb-4 flex items-start justify-between gap-4">
               <div>
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                  Your Customized Prompt
+                  {t("prompt.title", language)}
                 </h2>
                 <p className="text-gray-600 dark:text-gray-400">
-                  Copy this prompt and paste it as your first message in any AI
-                  chatbot
+                  {t("prompt.description", language)}
                 </p>
               </div>
-              <button
-                onClick={handleCopyToClipboard}
-                data-testid="copy-button"
-                className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors min-h-[44px] min-w-[44px] whitespace-nowrap"
-              >
-                {copied ? "Copied!" : "Copy to Clipboard"}
-              </button>
+              <div className="flex flex-col gap-2 items-end">
+                <button
+                  onClick={handleCopyToClipboard}
+                  data-testid="copy-button"
+                  className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors min-h-[44px] min-w-[44px] whitespace-nowrap"
+                >
+                  {copied
+                    ? t("prompt.copied", language)
+                    : t("prompt.copy", language)}
+                </button>
+                <button
+                  onClick={handleProfileDownload}
+                  className="text-sm px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400 transition-colors whitespace-nowrap"
+                >
+                  {t("profile.download", language)}
+                </button>
+              </div>
             </div>
 
             {copied && (
@@ -440,7 +538,9 @@ export default function Home() {
                 className="mb-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg text-green-800 dark:text-green-200 flex items-center gap-2"
               >
                 <span>✓</span>
-                <span>Copied to clipboard!</span>
+                <span>
+                  {t("prompt.copied", language)} — paste it into any AI chatbot
+                </span>
               </div>
             )}
 
@@ -457,45 +557,36 @@ export default function Home() {
         {/* Tips Section */}
         <section className="mb-12">
           <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-            Tips for Using This Tool
+            {t("tips.title", language)}
           </h2>
           <ul className="space-y-3 text-gray-700 dark:text-gray-300">
             <li className="flex items-start gap-2">
               <span className="text-blue-600 dark:text-blue-400 font-bold">
                 •
               </span>
-              <span>
-                You can say &ldquo;I don&rsquo;t know&rdquo; or &ldquo;I&rsquo;m
-                not sure where I stand&rdquo; — the AI will explain more and
-                help you figure it out
+              <span>{t("tips.1", language)}</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-blue-600 dark:text-blue-400 font-bold">
+                •
               </span>
+              <span>{t("tips.2", language)}</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-blue-600 dark:text-blue-400 font-bold">
+                •
+              </span>
+              <span>{t("tips.3", language)}</span>
             </li>
             <li className="flex items-start gap-2">
               <span className="text-blue-600 dark:text-blue-400 font-bold">
                 •
               </span>
               <span>
-                Ask it to research something for you (&ldquo;Can you look up
-                this candidate&rsquo;s voting record?&rdquo;)
-              </span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-blue-600 dark:text-blue-400 font-bold">
-                •
-              </span>
-              <span>
-                Ask questions anytime (&ldquo;What does this position actually
-                do?&rdquo; or &ldquo;Why does this matter?&rdquo;)
-              </span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-blue-600 dark:text-blue-400 font-bold">
-                •
-              </span>
-              <span>
-                <strong>Important:</strong> AI can make mistakes. This is a
-                research starting point. The AI will link you to official
-                sources so you can verify anything that matters to you.
+                <strong>
+                  {language === "es" ? "Importante" : "Important"}:
+                </strong>{" "}
+                {t("tips.4", language)}
               </span>
             </li>
           </ul>
@@ -504,11 +595,10 @@ export default function Home() {
         {/* Footer */}
         <footer className="border-t border-gray-200 dark:border-gray-700 pt-8">
           <p className="text-center text-gray-600 dark:text-gray-400 mb-2">
-            Created by a human using AI tools
+            {t("footer.credit", language)}
           </p>
           <p className="text-center text-sm text-gray-500 dark:text-gray-500">
-            Share this tool with friends and family to help them research their
-            ballot
+            {t("footer.share", language)}
           </p>
         </footer>
       </main>
@@ -532,7 +622,7 @@ function DeadlineIndicator({ deadline }: { deadline: string | null }) {
   const diffTime = deadlineDate.getTime() - today.getTime();
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-  let color = "bg-gray-400"; // passed or null
+  let color = "bg-gray-400";
   let label = "Passed";
 
   if (diffDays >= 0) {

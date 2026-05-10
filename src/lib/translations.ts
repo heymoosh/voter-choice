@@ -75,8 +75,7 @@ export const TRANSLATIONS: Record<Language, TranslationMap> = {
     "prompt.copy": "Copy to Clipboard",
     "prompt.copied": "Copied!",
     "chat.title": "Research Your Ballot with AI",
-    "chat.inputPlaceholder":
-      "Ask about candidates, issues, or your ballot...",
+    "chat.inputPlaceholder": "Ask about candidates, issues, or your ballot...",
     "chat.send": "Send",
     "chat.pathA": "Chat on this site",
     "chat.pathB": "Copy prompt for any chatbot",
@@ -84,11 +83,11 @@ export const TRANSLATIONS: Record<Language, TranslationMap> = {
     "chat.error": "Chat unavailable. Use the copy/paste option below.",
     "tips.title": "Tips for Using This Tool",
     "tips.1":
-      "You can say \"I don't know\" or \"I'm not sure where I stand\" — the AI will explain more and help you figure it out",
+      'You can say "I don\'t know" or "I\'m not sure where I stand" — the AI will explain more and help you figure it out',
     "tips.2":
-      "Ask it to research something for you (\"Can you look up this candidate's voting record?\")",
+      'Ask it to research something for you ("Can you look up this candidate\'s voting record?")',
     "tips.3":
-      "Ask questions anytime (\"What does this position actually do?\" or \"Why does this matter?\")",
+      'Ask questions anytime ("What does this position actually do?" or "Why does this matter?")',
     "tips.4":
       "Important: AI can make mistakes. This is a research starting point. The AI will link you to official sources so you can verify anything that matters to you.",
     "profile.upload": "Upload Voter Profile",
@@ -113,8 +112,7 @@ export const TRANSLATIONS: Record<Language, TranslationMap> = {
       "Por favor ingresa un código postal válido de 5 dígitos",
     "zip.error.notFound":
       "Aún no tenemos datos para este código postal. Estamos trabajando en agregar todos los códigos postales de EE.UU.",
-    "zip.error.notFoundLink":
-      "Encuentra el sitio web electoral de tu estado",
+    "zip.error.notFoundLink": "Encuentra el sitio web electoral de tu estado",
     "multiState.prompt":
       "Este código postal abarca varios estados. ¿En qué estado vas a votar?",
     "state.nextElection": "Próxima Elección",
@@ -131,8 +129,7 @@ export const TRANSLATIONS: Record<Language, TranslationMap> = {
     "prompt.copy": "Copiar al Portapapeles",
     "prompt.copied": "¡Copiado!",
     "chat.title": "Investiga Tu Boleta con IA",
-    "chat.inputPlaceholder":
-      "Pregunta sobre candidatos, temas o tu boleta...",
+    "chat.inputPlaceholder": "Pregunta sobre candidatos, temas o tu boleta...",
     "chat.send": "Enviar",
     "chat.pathA": "Chatear en este sitio",
     "chat.pathB": "Copiar mensaje para cualquier chatbot",
@@ -140,11 +137,11 @@ export const TRANSLATIONS: Record<Language, TranslationMap> = {
     "chat.error": "Chat no disponible. Usa la opción de copiar/pegar abajo.",
     "tips.title": "Consejos para Usar Esta Herramienta",
     "tips.1":
-      "Puedes decir \"No sé\" o \"No estoy seguro/a\" — la IA explicará más y te ayudará a entender",
+      'Puedes decir "No sé" o "No estoy seguro/a" — la IA explicará más y te ayudará a entender',
     "tips.2":
-      "Pídele que investigue algo (\"¿Puedes buscar el historial de votación de este candidato?\")",
+      'Pídele que investigue algo ("¿Puedes buscar el historial de votación de este candidato?")',
     "tips.3":
-      "Haz preguntas en cualquier momento (\"¿Qué hace realmente este cargo?\" o \"¿Por qué importa esto?\")",
+      'Haz preguntas en cualquier momento ("¿Qué hace realmente este cargo?" o "¿Por qué importa esto?")',
     "tips.4":
       "Importante: La IA puede cometer errores. Este es un punto de partida para investigar. La IA te enlazará a fuentes oficiales para que puedas verificar lo que te importa.",
     "profile.upload": "Subir Perfil de Votante",
