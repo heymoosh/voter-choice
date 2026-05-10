@@ -1,8 +1,8 @@
 ---
-name: 'step-05-adversarial-review'
-description: 'Construct diff and invoke adversarial review skill'
+name: "step-05-adversarial-review"
+description: "Construct diff and invoke adversarial review skill"
 
-nextStepFile: './step-06-resolve-findings.md'
+nextStepFile: "./step-06-resolve-findings.md"
 ---
 
 # Step 5: Adversarial Code Review

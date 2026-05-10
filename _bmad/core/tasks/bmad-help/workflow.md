@@ -1,4 +1,3 @@
-
 # Task: BMAD Help
 
 ## ROUTING RULES
@@ -14,22 +13,29 @@
 ## DISPLAY RULES
 
 ### Command-Based Workflows
+
 When `command` field has a value:
+
 - Show the command as a skill name in backticks (e.g., `bmad-bmm-create-prd`)
 
 ### Skill-Referenced Workflows
+
 When `workflow-file` starts with `skill:`:
+
 - The value is a skill reference (e.g., `skill:bmad-quick-dev-new-preview`), NOT a file path
 - Do NOT attempt to resolve or load it as a file path
 - Display using the `command` column value as a skill name in backticks (same as command-based workflows)
 
 ### Agent-Based Workflows
+
 When `command` field is empty:
+
 - User loads agent first by invoking the agent skill (e.g., `bmad-pm`)
 - Then invokes by referencing the `code` field or describing the `name` field
 - Do NOT show a slash command — show the code value and agent load instruction instead
 
 Example presentation for empty command:
+
 ```
 Explain Concept (EC)
 Load: tech-writer agent skill, then ask to "EC about [topic]"
@@ -47,6 +53,7 @@ Detect the active module from conversation context, recent workflows, or user qu
 ## INPUT ANALYSIS
 
 Determine what was just completed:
+
 - Explicit completion stated by user
 - Workflow completed in current conversation
 - Artifacts found matching `outputs` patterns
@@ -66,6 +73,7 @@ Determine what was just completed:
 5. **Analyze input** — Task may provide a workflow name/code, conversational phrase, or nothing. Infer what was just completed using INPUT ANALYSIS above.
 
 6. **Present recommendations** — Show next steps based on:
+
    - Completed workflows detected
    - Phase/sequence ordering (ROUTING RULES)
    - Artifact presence
@@ -74,12 +82,14 @@ Determine what was just completed:
    **Required items next** — List the next required workflow
 
    For each item, apply DISPLAY RULES above and include:
+
    - Workflow **name**
    - **Command** OR **Code + Agent load instruction** (per DISPLAY RULES)
    - **Agent** title and display name from the CSV (e.g., "🎨 Alex (Designer)")
    - Brief **description**
 
 7. **Additional guidance to convey**:
+
    - Present all output in `{communication_language}`
    - Run each workflow in a **fresh context window**
    - For **validation workflows**: recommend using a different high-quality LLM if available

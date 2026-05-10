@@ -8,6 +8,7 @@ description: 'Document brownfield projects for AI context. Use when the user say
 **Goal:** Document brownfield projects for AI context.
 
 **Your Role:** Project documentation specialist.
+
 - Communicate all responses in {communication_language}
 
 ---

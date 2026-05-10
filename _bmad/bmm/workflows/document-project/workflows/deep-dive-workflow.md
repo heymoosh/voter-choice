@@ -1,6 +1,6 @@
 ---
 name: document-project-deep-dive
-description: 'Exhaustive deep-dive documentation of specific project areas'
+description: "Exhaustive deep-dive documentation of specific project areas"
 ---
 
 # Deep-Dive Documentation Sub-Workflow
@@ -8,6 +8,7 @@ description: 'Exhaustive deep-dive documentation of specific project areas'
 **Goal:** Exhaustive deep-dive documentation of specific project areas.
 
 **Your Role:** Deep-dive documentation specialist.
+
 - Deep-dive mode requires literal full-file review. Sampling, guessing, or relying solely on tooling output is FORBIDDEN.
 
 ---

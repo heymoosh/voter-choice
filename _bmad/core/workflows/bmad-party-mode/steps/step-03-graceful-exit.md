@@ -93,8 +93,8 @@ Final workflow completion steps:
 ```yaml
 ---
 stepsCompleted: [1, 2, 3]
-user_name: '{{user_name}}'
-date: '{{date}}'
+user_name: "{{user_name}}"
+date: "{{date}}"
 agents_loaded: true
 party_active: false
 workflow_completed: true

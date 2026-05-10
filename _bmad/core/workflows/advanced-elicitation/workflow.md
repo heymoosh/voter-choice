@@ -1,8 +1,8 @@
 ---
 name: advanced-elicitation
-description: 'Push the LLM to reconsider refine and improve its recent output. Use when the user asks for advanced elicitation.'
-methods: '{project-root}/_bmad/core/workflows/advanced-elicitation/methods.csv'
-agent_party: '{project-root}/_bmad/_config/agent-manifest.csv'
+description: "Push the LLM to reconsider refine and improve its recent output. Use when the user asks for advanced elicitation."
+methods: "{project-root}/_bmad/core/workflows/advanced-elicitation/methods.csv"
+agent_party: "{project-root}/_bmad/_config/agent-manifest.csv"
 ---
 
 # Advanced Elicitation Workflow

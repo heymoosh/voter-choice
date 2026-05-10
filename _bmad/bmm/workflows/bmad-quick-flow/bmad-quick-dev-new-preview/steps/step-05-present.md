@@ -1,6 +1,6 @@
 ---
-name: 'step-05-present'
-description: 'Present findings, get approval, create PR'
+name: "step-05-present"
+description: "Present findings, get approval, create PR"
 ---
 
 # Step 5: Present

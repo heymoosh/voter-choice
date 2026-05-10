@@ -1,6 +1,6 @@
 ---
-name: 'step-03-implement'
-description: 'Execute implementation directly or via sub-agent. Local only.'
+name: "step-03-implement"
+description: "Execute implementation directly or via sub-agent. Local only."
 ---
 
 # Step 3: Implement

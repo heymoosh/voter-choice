@@ -1,10 +1,10 @@
 ---
-name: 'step-01-clarify-and-route'
-description: 'Capture intent, route to execution path'
+name: "step-01-clarify-and-route"
+description: "Capture intent, route to execution path"
 
-wipFile: '{implementation_artifacts}/tech-spec-wip.md'
-deferred_work_file: '{implementation_artifacts}/deferred-work.md'
-spec_file: '' # set at runtime before leaving this step
+wipFile: "{implementation_artifacts}/tech-spec-wip.md"
+deferred_work_file: "{implementation_artifacts}/deferred-work.md"
+spec_file: "" # set at runtime before leaving this step
 ---
 
 # Step 1: Clarify and Route
@@ -46,7 +46,6 @@ spec_file: '' # set at runtime before leaving this step
    - **One-shot** — zero blast radius: no plausible path by which this change causes unintended consequences elsewhere. Clear intent, no architectural decisions. `execution_mode = "one-shot"`. → Step 3.
    - **Plan-code-review** — everything else. `execution_mode = "plan-code-review"`. → Step 2.
    - When uncertain whether blast radius is truly zero, default to plan-code-review.
-
 
 ## NEXT
 

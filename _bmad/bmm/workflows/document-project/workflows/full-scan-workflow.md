@@ -1,6 +1,6 @@
 ---
 name: document-project-full-scan
-description: 'Complete project documentation workflow (initial scan or full rescan)'
+description: "Complete project documentation workflow (initial scan or full rescan)"
 ---
 
 # Full Project Scan Sub-Workflow

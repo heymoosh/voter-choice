@@ -1,0 +1,62 @@
+{
+  "stateCode": "NY",
+  "stateName": "New York",
+  "lastUpdated": "2026-03-01",
+  "elections": [
+    {
+      "id": "ny-2026-primary",
+      "name": "2026 New York Primary Election",
+      "date": "2026-06-23",
+      "type": "primary",
+      "isPrimary": true,
+      "primaryType": "closed"
+    },
+    {
+      "id": "ny-2026-general",
+      "name": "2026 New York General Election",
+      "date": "2026-11-03",
+      "type": "general",
+      "isPrimary": false,
+      "primaryType": null
+    }
+  ],
+  "registration": {
+    "online": {
+      "available": true,
+      "deadline": "2026-10-09",
+      "url": "https://www.elections.ny.gov/"
+    },
+    "byMail": {
+      "deadline": "2026-10-09",
+      "sincePostmarked": true
+    },
+    "inPerson": {
+      "deadline": "2026-10-24",
+      "sincePostmarked": false
+    },
+    "sameDayRegistration": false,
+    "registrationCheckUrl": "https://voterlookup.elections.ny.gov/"
+  },
+  "earlyVoting": {
+    "available": true,
+    "startDate": "2026-10-24",
+    "endDate": "2026-11-01",
+    "notes": "Early voting is available in all counties. Hours vary by county."
+  },
+  "votingRules": {
+    "idRequired": false,
+    "acceptedIds": [],
+    "phonesAtPolls": "allowed",
+    "phonesAtPollsDetail": "New York allows phones at polling places. Photographing your own marked ballot is prohibited.",
+    "additionalRules": [
+      "Closed primary: must be registered with a party to vote in that party's primary",
+      "Party enrollment deadline to vote in primary is February 14, 2026"
+    ]
+  },
+  "resources": {
+    "stateElectionWebsite": "https://www.elections.ny.gov/",
+    "countyElectionLookup": "https://www.elections.ny.gov/CountyBoards.html",
+    "sampleBallotLookup": "https://voterlookup.elections.ny.gov/",
+    "pollingPlaceLookup": "https://voterlookup.elections.ny.gov/"
+  }
+}

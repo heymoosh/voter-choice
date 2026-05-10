@@ -419,7 +419,12 @@ function measureLOC() {
   // Directories that are application code (workflow-generated)
   const APP_DIRS = ["src"];
   // Directories that are plugin/framework code (workflow scaffolding)
-  const PLUGIN_DIRS = [".claude/commands", ".bmad", ".superpowers", ".spec-kit"];
+  const PLUGIN_DIRS = [
+    ".claude/commands",
+    ".bmad",
+    ".superpowers",
+    ".spec-kit",
+  ];
   // Everything else that's project code but not app or plugin
   const INFRA_DIRS = ["scripts", "e2e"];
 
@@ -543,8 +548,16 @@ function measureLOC() {
   }
 
   const summary = {
-    application: { code: app.code, files: app.files, byExtension: app.byExtension },
-    plugin: { code: plugin.code, files: plugin.files, byExtension: plugin.byExtension },
+    application: {
+      code: app.code,
+      files: app.files,
+      byExtension: app.byExtension,
+    },
+    plugin: {
+      code: plugin.code,
+      files: plugin.files,
+      byExtension: plugin.byExtension,
+    },
     infrastructure: { code: infra.code, files: infra.files },
     total: {
       code: app.code + plugin.code + infra.code,
@@ -552,10 +565,18 @@ function measureLOC() {
     },
   };
 
-  console.log(`  Application code (src/): ${app.code} lines across ${app.files} files`);
-  console.log(`  Plugin/framework code: ${plugin.code} lines across ${plugin.files} files`);
-  console.log(`  Infrastructure (scripts, e2e, configs): ${infra.code} lines across ${infra.files} files`);
-  console.log(`  Total: ${summary.total.code} lines across ${summary.total.files} files`);
+  console.log(
+    `  Application code (src/): ${app.code} lines across ${app.files} files`,
+  );
+  console.log(
+    `  Plugin/framework code: ${plugin.code} lines across ${plugin.files} files`,
+  );
+  console.log(
+    `  Infrastructure (scripts, e2e, configs): ${infra.code} lines across ${infra.files} files`,
+  );
+  console.log(
+    `  Total: ${summary.total.code} lines across ${summary.total.files} files`,
+  );
 
   return summary;
 }

@@ -919,6 +919,7 @@ Enter number(s) separated by commas (e.g., "1,3,5"), or type 'all':
   <action>For each item in {{selected_items}}:
 
 1. **Identify the part and requirements:**
+
    - Extract part_id from item (if exists)
    - Look up part data in project_parts array from state file
    - Load documentation_requirements for that part's project_type_id
@@ -926,6 +927,7 @@ Enter number(s) separated by commas (e.g., "1,3,5"), or type 'all':
 2. **Route to appropriate generation substep based on doc_type:**
 
    **If doc_type == "architecture":**
+
    - Display: "Generating architecture documentation for {{part_id}}..."
    - Load architecture_match for this part from state file (Step 3 cache)
    - Re-run Step 8 architecture generation logic ONLY for this specific part
@@ -934,6 +936,7 @@ Enter number(s) separated by commas (e.g., "1,3,5"), or type 'all':
    - Validate completeness
 
    **If doc_type == "api-contracts":**
+
    - Display: "Generating API contracts for {{part_id}}..."
    - Load part data and documentation_requirements
    - Re-run Step 4 API scan substep targeting ONLY this part
@@ -942,6 +945,7 @@ Enter number(s) separated by commas (e.g., "1,3,5"), or type 'all':
    - Validate document structure
 
    **If doc_type == "data-models":**
+
    - Display: "Generating data models documentation for {{part_id}}..."
    - Re-run Step 4 data models scan substep targeting ONLY this part
    - Use schema_migration_patterns from documentation_requirements
@@ -949,6 +953,7 @@ Enter number(s) separated by commas (e.g., "1,3,5"), or type 'all':
    - Validate completeness
 
    **If doc_type == "component-inventory":**
+
    - Display: "Generating component inventory for {{part_id}}..."
    - Re-run Step 9 component inventory generation for this specific part
    - Scan components/, ui/, widgets/ folders
@@ -956,6 +961,7 @@ Enter number(s) separated by commas (e.g., "1,3,5"), or type 'all':
    - Validate structure
 
    **If doc_type == "development-guide":**
+
    - Display: "Generating development guide for {{part_id}}..."
    - Re-run Step 9 development guide generation for this specific part
    - Use key_file_patterns and test_file_patterns from documentation_requirements
@@ -963,6 +969,7 @@ Enter number(s) separated by commas (e.g., "1,3,5"), or type 'all':
    - Validate completeness
 
    **If doc_type == "deployment-guide":**
+
    - Display: "Generating deployment guide..."
    - Re-run Step 6 deployment configuration scan
    - Re-run Step 9 deployment guide generation
@@ -970,12 +977,14 @@ Enter number(s) separated by commas (e.g., "1,3,5"), or type 'all':
    - Validate structure
 
    **If doc_type == "integration-architecture":**
+
    - Display: "Generating integration architecture..."
    - Re-run Step 7 integration analysis for all parts
    - Generate integration-architecture.md
    - Validate completeness
 
 3. **Post-generation actions:**
+
    - Confirm file was written successfully
    - Update state file with newly generated output
    - Add to {{newly_generated_docs}} tracking list

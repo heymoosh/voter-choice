@@ -1,0 +1,62 @@
+{
+  "stateCode": "NM",
+  "stateName": "New Mexico",
+  "lastUpdated": "2026-03-01",
+  "elections": [
+    {
+      "id": "nm-2026-primary",
+      "name": "2026 New Mexico Primary Election",
+      "date": "2026-06-02",
+      "type": "primary",
+      "isPrimary": true,
+      "primaryType": "closed"
+    },
+    {
+      "id": "nm-2026-general",
+      "name": "2026 New Mexico General Election",
+      "date": "2026-11-03",
+      "type": "general",
+      "isPrimary": false,
+      "primaryType": null
+    }
+  ],
+  "registration": {
+    "online": {
+      "available": true,
+      "deadline": "2026-05-12",
+      "url": "https://portal.sos.state.nm.us/"
+    },
+    "byMail": {
+      "deadline": "2026-05-12",
+      "sincePostmarked": true
+    },
+    "inPerson": {
+      "deadline": "2026-11-03",
+      "sincePostmarked": false
+    },
+    "sameDayRegistration": true,
+    "registrationCheckUrl": "https://voterportal.servis.sos.state.nm.us/WhereToVote"
+  },
+  "earlyVoting": {
+    "available": true,
+    "startDate": "2026-10-06",
+    "endDate": "2026-10-31",
+    "notes": "Early voting locations vary by county."
+  },
+  "votingRules": {
+    "idRequired": false,
+    "acceptedIds": [],
+    "phonesAtPolls": "allowed",
+    "phonesAtPollsDetail": "New Mexico does not prohibit phones at polling places.",
+    "additionalRules": [
+      "Closed primary: only registered party members vote in party primaries",
+      "Same-day registration available at polls through Election Day"
+    ]
+  },
+  "resources": {
+    "stateElectionWebsite": "https://www.sos.state.nm.us/voting-and-elections/",
+    "countyElectionLookup": "https://www.sos.state.nm.us/voting-and-elections/voter-information-portal/county-clerks/",
+    "sampleBallotLookup": "https://voterportal.servis.sos.state.nm.us/WhereToVote",
+    "pollingPlaceLookup": "https://voterportal.servis.sos.state.nm.us/WhereToVote"
+  }
+}
