@@ -1,6 +1,6 @@
 # Work Packet: launch-vote-ingestion-pipeline
 
-Status: Phase B ready (Phase A landed; Phases C–G queued, gated on phase-by-phase verifier checkpoints)
+Status: Phase C ready (Phases A–B landed; Phases D–G queued, gated on phase-by-phase verifier checkpoints)
 Owner: orchestrator (Claude Opus, this session) → worker subagents (Sonnet)
 Source: `/Users/Muxin/.claude/plans/am-running-e2e-jaunty-crab.md` (approved Packet 6 plan).
 Branch: launch/production
@@ -94,7 +94,7 @@ Goal: get Drizzle + Neon + GitHub Actions skeleton wired so subsequent phases (B
 - Do NOT introduce Prisma or Kysely — Drizzle only.
 - Do NOT commit any real Neon connection string or API key. Secrets via Vercel env + BWS.
 
-## Phase B — Federal votes ingest (current execution)
+## Phase B — Federal votes ingest (shipped)
 
 ### Intent
 
@@ -298,11 +298,225 @@ Primary source shape references:
 - GovTrack/unitedstates bill JSON path: `data/[congress]/bills/[bill_type]/[bill_type][number]/data.json`.
 - Congress.gov enrichment should use the official bill endpoint only when the optional API key is configured.
 
-## Phases C–G (queued, not in this execution)
+## Phase C — State votes ingest (current execution)
+
+### Intent
+
+Replace the Phase A state no-op with a deterministic OpenStates ingest path for state legislative bills and recorded votes, covering all 50 states while allowing a six-state canary/manual run for confidence.
+
+### Original User Intent
+
+Proceed with Packet 6 Phase C after Phase B. The user does not care about the exact rollout mechanics, but wants confidence and wants to ensure all 50 states are definitely covered. If starting with six states helps create the template workflow confidently, start with six; otherwise choose the safest execution pattern.
+
+### Intent Interpretation
+
+Phase C should ship generic state ingest code that works for any state abbreviation and a GitHub Actions workflow that has all 50 states in its executable matrix. The workflow may include a canary/scope control so operators can manually run the original six-state subset before running all 50, but the committed production workflow must not leave the product at six-state-only coverage.
+
+This phase populates the existing Phase A `candidates`, `candidate_offices`, `bills`, and `votes` tables only. It does not classify canonical issues, compute alignment scores, call the app, ingest donors, or republish advocacy scorecard material.
+
+### Business Logic
+
+Rules:
+
+- Preserve no-recommendation discipline: ingestion stores factual public records only.
+- State candidate IDs are stable OpenStates IDs prefixed with `openstates-`.
+- State bill IDs use the existing Phase A format: `openstates-<safe-source-id>`.
+- State jurisdictions are `state-XX-house` or `state-XX-senate` when chamber can be determined; otherwise skip the vote with a counted warning instead of inventing chamber semantics.
+- Vote values normalize to `yea`, `nay`, `present`, `absent`, or `not_voting`.
+- Ingest must be idempotent: reruns update existing candidates/bills and do not duplicate votes.
+- Because the Phase A schema intentionally has unique `(bill_id, candidate_id)`, if the same candidate has multiple recorded votes on the same bill, keep the latest vote date deterministically and retain source details in `raw_metadata`.
+- Cite source URLs; do not store secrets or log connection strings/API keys.
+
+Assumptions:
+
+- OpenStates API v3 is the source for state legislative data. Official docs identify `https://v3.openstates.org/` as the root URL, require API keys via `X-API-KEY` or `apikey`, and expose `/jurisdictions`, `/people`, `/bills`, and bill detail endpoints with `votes` includes.
+- Current active/recent legislative sessions plus one previous regular session per state is enough for Phase C backfill.
+- OpenStates data completeness varies by state. Missing votes, unresolved voters, or chambers should be counted and skipped rather than fabricated.
+
+Out of scope:
+
+- Federal ingest changes beyond shared test/config compatibility.
+- LLM issue tagging and writes to `issue_tags`.
+- Donor ingest and writes to `donor_aggregates`.
+- `/api/alignment`, Anthropic tool calls, prompt rewrites, or v2 UI changes.
+- Advocacy scorecard per-vote data.
+- Spanish path changes.
+
+### Commercial Readiness
+
+Applicability: launch.
+
+Lanes in scope:
+
+- API/contracts: tolerate missing/partial OpenStates data without fabricating records.
+- Persistence/recovery: idempotent upserts into Neon.
+- Deployment/config: GitHub Actions can run all 50 states and can run a six-state canary/manual subset.
+- Observability/support: ingest logs factual counts, skipped records, and source failures without sensitive values.
+
+User decisions needed: none. User delegated execution mechanics and confirmed all-50-state coverage is the priority.
+
+### Operational Reproducibility
+
+Setup:
+
+- Existing `npm install` path; no new dependency expected.
+- Local dry run without `DATABASE_URL` or `OPENSTATES_API_KEY` should fail clearly.
+
+Configuration:
+
+- Required for real ingest: `DATABASE_URL`, `OPENSTATES_API_KEY`.
+- Required per workflow leg: `STATE`.
+- Optional controls: `OPENSTATES_BASE_URL`, `OPENSTATES_PER_PAGE`, `OPENSTATES_SESSION_COUNT`, `OPENSTATES_SESSION_IDS`, `OPENSTATES_MAX_BILLS`.
+
+Provider setup:
+
+- No new provider. Uses existing Neon and existing OpenStates key in BWS secret `85bad136-3cbc-4062-9ccc-b4460037de19`.
+
+Infrastructure/deployment:
+
+- Update `.github/workflows/ingest-states.yml` to run the real state ingest.
+- Workflow must include all 50 state abbreviations in an executable path.
+- Workflow may include `scope=canary|all|single` controls, with canary = `TX, CA, NY, FL, GA, NC`.
+- Do not add DATABASE_URL or OPENSTATES_API_KEY pulls to `.github/workflows/deploy.yml` in this phase.
+
+Database migrations:
+
+- No schema migration expected for Phase C.
+
+Manual steps:
+
+- None for this phase.
+
+Verification:
+
+- Unit tests for OpenStates parsing/normalization/session selection/upsert planning with fixtures and no live network or DB.
+- `npm run lint`
+- `npm run test`
+- `npm run build`
+- Review `git diff` for no secrets, no `deploy.yml` changes, no app/UI/prompt changes, and no writes outside the Phase C owner.
+
+Critical logic trigger: persistence/integration.
+
+### Scope
+
+Touch:
+
+- `.ai/work-packets/launch-vote-ingestion-pipeline.md`
+- `scripts/ingest/state-votes.ts`
+- optional helper/test files under `scripts/ingest/`
+- `.github/workflows/ingest-states.yml`
+- `vitest.config.ts` only if needed to include new tests; it already includes `scripts/ingest/**/*.test.ts`.
+
+Do not touch:
+
+- `src/components/`
+- `src/app/api/chat/route.ts`
+- `docs/BALLOT_PROMPT.md`
+- `docs/BALLOT_PROMPT_ES.md`
+- `scripts/ingest/tag-bills.ts`
+- `.github/workflows/deploy.yml`
+
+### Ownership Audit
+
+Concern: state legislative vote and bill metadata ingestion into the Packet 6 backend store.
+Existing owner: `scripts/ingest/*.ts`, `db/schema.ts`, `db/client.ts`, `db/migrations/`, `drizzle.config.ts`, and `.github/workflows/ingest-*.yml` per `docs/ai-coding-practices/source-of-truth-map.md`.
+Neighboring owners:
+
+- `src/lib/canonicalIssues.ts` owns issue IDs only; Phase C may preserve OpenStates subjects but must not classify canonical issues.
+- `docs/SOURCE_TIERS.md` owns source-tier vocabulary, not ingest code.
+- `docs/PATTERN_TAXONOMIES.md` owns donor/pattern vocabularies, not state vote ingestion.
+- `/api/alignment` does not exist yet and is Phase F.
+
+Files/modules/docs inspected:
+
+- `.ai/work-packets/launch-vote-ingestion-pipeline.md`
+- `.ai/project-briefs/voter-choice-alignment-engine-v2.md`
+- `docs/ai-coding-practices/source-of-truth-map.md`
+- `db/schema.ts`
+- `db/client.ts`
+- `scripts/ingest/state-votes.ts`
+- `.github/workflows/ingest-states.yml`
+- OpenStates API v3 official docs and OpenAPI schema
+
+Reuse/edit targets:
+
+- Replace the Phase A no-op `scripts/ingest/state-votes.ts`.
+- Add local helpers/tests under `scripts/ingest/` only if they reduce real duplication.
+- Update the existing state ingest workflow.
+
+New owner needed: no.
+
+Overlap/bloat risks:
+
+- Creating a second state ingestion path outside `scripts/ingest/`.
+- Tagging canonical issues in Phase C before the Phase D owner exists.
+- Adding app-side reads before Phase F.
+- Duplicating source-tier or canonical-issue vocabularies in code.
+
+Recommendation: implement a small, testable state ingest module with exported pure parsing/normalization/session-selection helpers and a CLI `main()` guarded so tests can import safely.
+
+Execution constraints:
+
+- Do not invent votes, candidates, bill metadata, sessions, or issue tags.
+- Do not log secrets.
+- Keep writes idempotent.
+- Do not leave workflow coverage at six states only.
+
+### Acceptance Criteria
+
+- `scripts/ingest/state-votes.ts` fetches OpenStates bills with vote data for the requested state and selected sessions, then upserts rows into `candidates`, `candidate_offices`, `bills`, and `votes`.
+- The ingest derives state candidate IDs from OpenStates person IDs where present, stores source IDs and raw vote/member metadata, and sets `jurisdiction` to `state-XX-house` or `state-XX-senate`.
+- The ingest stores bill rows using OpenStates bill data, including title, subjects/abstracts/sources in `raw_metadata`, source URL, state jurisdiction, and first action date where present.
+- The ingest skips votes without resolvable bill, chamber, date, voter, or vote option with explicit counts in logs and without failing the whole state job.
+- Reruns are idempotent and use deterministic conflict handling for candidates, offices, bills, and votes.
+- `.github/workflows/ingest-states.yml` runs the real ingest, pulls existing BWS `DATABASE_URL` and `OPENSTATES_API_KEY`, and includes an all-50-state executable matrix plus canary/manual controls.
+- Focused tests cover vote normalization, state/jurisdiction mapping, bill/candidate ID construction, skip behavior, session selection, and idempotent latest-vote planning.
+
+### Verification
+
+- `npm run lint`
+- `npm run test`
+- `npm run build`
+- Review `git diff` for no secrets, no `deploy.yml` changes, no app/UI/prompt changes, and no writes outside the Phase C owner.
+
+### Evidence Plan
+
+Visual evidence: not applicable.
+Behavior evidence: test output names for state ingest parsing/planning and command output showing lint/test/build pass.
+Business logic evidence: fixture with bill vote + unresolved-voter/chamber cases; expected normalized rows/skips; observed test assertions.
+Persistence evidence: code review of Drizzle `onConflictDoUpdate` paths and unique keys; live Neon ingest not required locally because secrets are unavailable in the harness.
+Auth/security evidence: diff review confirms no secret values, only existing BWS UUID references in ingestion workflows.
+Commercial readiness evidence: workflow logs are count-based and secret-safe; all 50 states are present in workflow execution path.
+Operational evidence: workflow supports canary/manual run plus all-state run.
+Integration evidence: source clients target OpenStates API v3 endpoints; tests mock network and DB boundaries.
+Regression evidence: lint/test/build command outputs.
+Proof standard: a reviewer can see the real ingest path, all-state workflow coverage, idempotent write strategy, and green checks without relying on a live secret.
+Non-proof: a script that logs success without performing writes; tests that only assert function existence; hardcoded fixture rows presented as actual ingest; workflow limited to six states only.
+
+### Anti-Solutions
+
+- Using LLMs to infer vote stance or canonical issue tags in Phase C.
+- Hardcoding a small list of states, bills, candidates, sessions, or votes as production data.
+- Treating missing OpenStates vote/voter/chamber data as permission to fabricate records.
+- Writing a second schema or a custom persistence layer outside Drizzle.
+- Adding client-facing alignment reads or changing the ballot prompt.
+- Adding BWS UUID pulls to `.github/workflows/deploy.yml`.
+- Logging `DATABASE_URL`, `OPENSTATES_API_KEY`, or raw environment dumps.
+
+### Notes
+
+Primary source shape references:
+
+- OpenStates API v3 root: `https://v3.openstates.org/`.
+- API key accepted via `X-API-KEY` header or `apikey` query parameter.
+- `/jurisdictions/{jurisdiction_id}?include=legislative_sessions` provides session metadata.
+- `/bills?jurisdiction=<jurisdiction>&session=<session>&include=votes&include=sources&include=abstracts` returns bill/vote records.
+
+## Phases D–G (queued, not in this execution)
 
 Brief reference; full scope expanded in subsequent packet revisions when each phase starts:
 
-- **Phase B — Federal votes ingest** (GovTrack bulk + Congress.gov incremental)
+- **Phase B — Federal votes ingest** (GovTrack JSON + Congress.gov incremental)
 - **Phase C — State votes ingest** (OpenStates, all 50 states matrix)
 - **Phase D — LLM issue-tagging** (batch-tag bills against `canonicalIssues.ts`, cache forever in `issue_tags`)
 - **Phase E — Donor ingest** (FEC bulk, FollowTheMoney; bucket-categorize per `PATTERN_TAXONOMIES.md`)

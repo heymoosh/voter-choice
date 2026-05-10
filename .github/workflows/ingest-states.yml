@@ -4,11 +4,27 @@ on:
   # Sunday 07:30 UTC — after federal ingest starts
   schedule:
     - cron: "30 7 * * 0"
-  # Allow manual trigger; pass state=TX (or any) to run a single matrix leg
+  # Manual controls:
+  # - scope=canary runs TX, CA, NY, FL, GA, NC
+  # - scope=all runs all 50 states
+  # - scope=single runs only the state input
   workflow_dispatch:
     inputs:
+      scope:
+        description: "Run scope"
+        required: true
+        default: "canary"
+        type: choice
+        options:
+          - canary
+          - all
+          - single
       state:
-        description: "State abbreviation to ingest (leave blank for all)"
+        description: "Two-letter state abbreviation when scope=single"
+        required: false
+        default: ""
+      max_bills:
+        description: "Optional OPENSTATES_MAX_BILLS limit for manual runs"
         required: false
         default: ""
 
@@ -16,25 +32,100 @@ jobs:
   ingest:
     runs-on: ubuntu-latest
     strategy:
-      # Phase A: 6 states with fixtures. Phase C expands matrix to all 50.
+      max-parallel: 6
       matrix:
-        state: [TX, CA, NY, FL, GA, NC]
+        state:
+          [
+            AL,
+            AK,
+            AZ,
+            AR,
+            CA,
+            CO,
+            CT,
+            DE,
+            FL,
+            GA,
+            HI,
+            ID,
+            IL,
+            IN,
+            IA,
+            KS,
+            KY,
+            LA,
+            ME,
+            MD,
+            MA,
+            MI,
+            MN,
+            MS,
+            MO,
+            MT,
+            NE,
+            NV,
+            NH,
+            NJ,
+            NM,
+            NY,
+            NC,
+            ND,
+            OH,
+            OK,
+            OR,
+            PA,
+            RI,
+            SC,
+            SD,
+            TN,
+            TX,
+            UT,
+            VT,
+            VA,
+            WA,
+            WV,
+            WI,
+            WY,
+          ]
       fail-fast: false
 
     steps:
+      - name: Decide state scope
+        id: scope
+        shell: bash
+        run: |
+          SHOULD_RUN=false
+          SELECTED_STATE=$(echo "${{ inputs.state }}" | tr '[:lower:]' '[:upper:]')
+          if [[ "${{ github.event_name }}" == "schedule" ]]; then
+            SHOULD_RUN=true
+          elif [[ "${{ inputs.scope }}" == "all" ]]; then
+            SHOULD_RUN=true
+          elif [[ "${{ inputs.scope }}" == "canary" ]]; then
+            case " TX CA NY FL GA NC " in
+              *" ${{ matrix.state }} "*) SHOULD_RUN=true ;;
+            esac
+          elif [[ "${{ inputs.scope }}" == "single" && "${{ matrix.state }}" == "$SELECTED_STATE" ]]; then
+            SHOULD_RUN=true
+          fi
+          echo "run=$SHOULD_RUN" >> "$GITHUB_OUTPUT"
+
       - name: Checkout
+        if: steps.scope.outputs.run == 'true'
         uses: actions/checkout@v6
 
       - name: Setup Node
+        if: steps.scope.outputs.run == 'true'
         uses: actions/setup-node@v6
         with:
           node-version: "22"
           cache: "npm"
 
       - name: Install dependencies
+        if: steps.scope.outputs.run == 'true'
         run: npm ci
 
       - name: Install Bitwarden Secrets Manager CLI
+        if: steps.scope.outputs.run == 'true'
         run: |
           curl -sSLo bws.zip "https://github.com/bitwarden/sdk-sm/releases/download/bws-v2.0.0/bws-x86_64-unknown-linux-musl-2.0.0.zip"
           unzip -o bws.zip bws
@@ -42,6 +133,7 @@ jobs:
           bws --version
 
       - name: Pull secrets from Bitwarden SM
+        if: steps.scope.outputs.run == 'true'
         env:
           BWS_ACCESS_TOKEN: ${{ secrets.BW_ACCESS_TOKEN }}
         run: |
@@ -59,7 +151,9 @@ jobs:
           echo "OPENSTATES_API_KEY=$OPENSTATES_API_KEY" >> "$GITHUB_ENV"
           echo "::add-mask::$OPENSTATES_API_KEY"
 
-      - name: Run state votes ingest — ${{ matrix.state }} (Phase A — no-op skeleton)
+      - name: Run state votes ingest — ${{ matrix.state }}
+        if: steps.scope.outputs.run == 'true'
         env:
           STATE: ${{ matrix.state }}
+          OPENSTATES_MAX_BILLS: ${{ inputs.max_bills }}
         run: npx tsx scripts/ingest/state-votes.ts
