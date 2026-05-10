@@ -55,6 +55,21 @@ Note: **Scoring is executed by Hermes from the host side, not inside the build c
 
 ## Completed
 
+### Phase 0.6 — Infrastructure setup (code tasks complete; Hermes VPS deferred to backlog)
+
+- **Date:** 2026-04-12 to 2026-05-10
+- **Branch:** `main`
+- **Commits:** `8f719ae` (phase specs + Hermes design), `e62377c` (launch features doc), `a2dc04d` (run5 worktree gitignore)
+- **What was done:**
+  1. ✅ Committed `docs/PHASE3_SPEC.md`, `docs/PHASE4_SPEC.md`, `docs/PHASE5_SPEC.md`.
+  2. ✅ Updated `docs/EXPERIMENT_DESIGN.md` with Phase 3/4/5 sections and Hermes orchestration model.
+  3. ✅ Extended `scoring/auto-findings-rubric.md` (API coverage field, translation coverage, chat e2e placeholders).
+  4. ✅ Created `run5/*` branches (spec-kit, compound-engineering, bmad, vanilla, superpowers) from post-scoring-isolation `main`; frameworks installed; each branch RUN_LOG set to "Run 5 Phase 1". All pushed to remote.
+  5. ✅ `docs/LAUNCH_PRODUCTION_FEATURES.md` added documenting the production feature set for the Phase 1 spec update.
+  6. 🔙 Hermes VPS, API keys, and `v1-phase3-ready` tag deferred to Backlog — Run 5 proceeds as manual experiment per Muxin's 2026-05-10 decision.
+- **Files created:** `docs/PHASE3_SPEC.md`, `docs/PHASE4_SPEC.md`, `docs/PHASE5_SPEC.md`, `docs/PHASE3-5_INTEGRATION.md`, `docs/LAUNCH_PLAN.md`, `docs/LAUNCH_PRODUCTION_FEATURES.md`, `scoring/auto-findings-rubric.md`
+- **Issues or deviations:** run5/* branches named with `run5/` prefix (not `run4/` as originally planned) because `run4/compound-engineering` already existed. Legacy `workflow/*`, `run2/*`, `run3/*` branches remain as experiment data (rubric-contaminated; not to be reused for new runs).
+
 ### Phase 3 — Analysis and Write-up (complete)
 
 - **Date:** 2026-04-03
