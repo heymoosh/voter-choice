@@ -1,339 +1,317 @@
 # PROJECT_SPEC.md — Ballot Research Tool Feature Spec
 
-**Version:** 1.0
-**Status:** Draft (Phase 0.1)
-**Last updated:** March 13, 2026
+**Version:** 2.0
+**Status:** Active
+**Last updated:** 2026-05-10
 
-This document describes the desired behavior and outcomes for the ballot research tool. It is the shared input to all five workflow runs. It describes **what** the tool does, not **how** to build it.
-
----
-
-## Overview
-
-A single-page web application that helps U.S. voters use AI chatbots to research their ballot. The user enters their zip code, the site looks up their state's election information, and generates a customized version of the AI ballot research prompt pre-filled with local dates, deadlines, links, and rules. The user copies the prompt and pastes it into any free AI chatbot (Claude, ChatGPT, Gemini, Grok, etc.).
-
-The site does NOT host or run an LLM. It does NOT store user data. The AI conversation happens in the user's own chatbot session.
+This document describes the desired behavior and outcomes for the ballot research tool. It is the shared input to all workflow runs. It describes **what** the tool does, not **how** to build it.
 
 ---
 
-## User Flow
+## Summary
 
-### Page: Home (single page)
-
-The entire application is a single page with the following sequential sections:
-
-#### 1. Hero Section
-
-- Headline explaining what the tool does in one sentence
-- Brief subtitle (2-3 sentences) explaining the concept: enter your zip code, get a customized AI prompt, paste it into any free chatbot
-- Visual list of supported chatbots (Claude, ChatGPT, Gemini, Grok) with links
-
-#### 2. Zip Code Entry
-
-- Single text input for 5-digit U.S. zip code
-- Submit button
-- Input accepts only 5-digit numeric values
-- On submit, the site looks up the state(s) associated with that zip code and displays the customized prompt
-
-#### 3. State Info Display (appears after valid zip code submission)
-
-After a valid zip code is entered, display a summary card showing:
-
-- State name
-- Next upcoming election name and date
-- Voter registration deadlines (online, by mail, in person) with status indicators (e.g., "Deadline passed" / "X days remaining")
-- Early voting dates (if applicable for the state)
-- Link to the state/county election office
-- Link to sample ballot lookup
-- State-specific voting rules summary (ID requirements, phone-at-polls policy)
-
-If a zip code spans multiple states, display a state selector and show info for the selected state.
-
-#### 4. Customized Prompt Output
-
-- The full AI ballot research prompt (from `docs/BALLOT_PROMPT.md`) with state-specific information injected
-- The injected information appears as a pre-filled "second message" appended after the main prompt, in the format: "Hi! I'm voting in **[State]**. My zip code is **[zip code]**. [Additional context about upcoming election, key dates, and links to local resources.]"
-- Clear visual separation between the prompt and the pre-filled context
-- "Copy to Clipboard" button that copies the entire prompt + pre-filled context
-- Visual confirmation when copied (e.g., button text changes to "Copied!" for 2 seconds)
-- Brief instructions above the prompt: "Copy this prompt and paste it as your first message in any AI chatbot"
-
-#### 5. Tips Section
-
-- Static content with tips for using the prompt effectively (derived from the "Tips while you're in the conversation" section of BALLOT_PROMPT.md)
-- Reminder that AI can make mistakes and to verify with official sources
-
-#### 6. Footer
-
-- "Share this tool" call to action
-- Attribution line: "Created by a human using AI tools"
-- Link to the original prompt source (if applicable)
+**Voter Choice** is a free, privacy-first AI ballot research tool for U.S. voters. It guides voters through understanding their ballot using public funding data, endorsements, and voting records — without storing any personal data.
 
 ---
 
-## Data Model
+## Features
 
-All data is served from static JSON files. No external API calls.
+### 1. LLM-Powered Ballot Research Chat
 
-### Zip-to-State Mapping
+An on-site streaming chat powered by Claude (via Anthropic API) that walks voters through a structured 7-act research flow.
 
-A lookup structure mapping 5-digit zip codes to state abbreviations. Zip codes that span multiple states map to an array of state codes.
+- **Model:** Claude Sonnet (configurable; currently `claude-haiku-4-5-20251001`)
+- **Streaming:** Server-Sent Events (SSE) for real-time response
+- **Web search:** Anthropic-hosted `web_search` tool (max 5 uses/turn) for live candidate research
+- **Prompt caching:** System prompt cached for ~10% cost reduction
+- **Session history:** Lives in browser memory only — nothing persisted server-side
 
-```
-{
-  "90210": ["CA"],
-  "73301": ["TX"],
-  "86515": ["AZ", "NM"]
-}
-```
+**The 7-Act Research Prompt (`docs/BALLOT_PROMPT.md`):**
 
-For the experiment, only stub data for 2-3 states is required (see Stub Data below). A full 50-state + territories dataset is populated later on the winning branch.
-
-### State Election Data Schema
-
-Each state has one JSON object with the following structure:
-
-```jsonc
-{
-  "stateCode": "TX", // 2-letter USPS abbreviation
-  "stateName": "Texas", // Full state name
-  "lastUpdated": "2026-03-01", // ISO date of last data update
-
-  "elections": [
-    {
-      "id": "tx-2026-primary",
-      "name": "2026 Texas Primary Election",
-      "date": "2026-03-03", // ISO date
-      "type": "primary", // "primary" | "general" | "runoff" | "special"
-      "isPrimary": true,
-      "primaryType": "open", // "open" | "closed" | "semi-closed" | "semi-open" | null
-    },
-  ],
-
-  "registration": {
-    "online": {
-      "available": true,
-      "deadline": "2026-02-02", // ISO date, null if not available
-      "url": "https://www.votetexas.gov/register-to-vote/",
-    },
-    "byMail": {
-      "deadline": "2026-02-02", // ISO date
-      "sincePostmarked": true, // true = postmark date, false = received date
-    },
-    "inPerson": {
-      "deadline": "2026-02-02", // ISO date
-      "sincePostmarked": false,
-    },
-    "sameDayRegistration": false,
-    "registrationCheckUrl": "https://teamrv-mvp.sos.texas.gov/MVP/mvp.do",
-  },
-
-  "earlyVoting": {
-    "available": true,
-    "startDate": "2026-02-17", // ISO date, null if no early voting
-    "endDate": "2026-02-28", // ISO date
-    "notes": "Hours vary by county", // Optional clarification
-  },
-
-  "votingRules": {
-    "idRequired": true,
-    "acceptedIds": [
-      "Texas driver's license or ID card",
-      "Texas Election Identification Certificate",
-      "Texas personal ID card issued by DPS",
-      "Texas concealed handgun license",
-      "U.S. military ID with photo",
-      "U.S. citizenship certificate with photo",
-      "U.S. passport (book or card)",
-    ],
-    "phonesAtPolls": "prohibited", // "prohibited" | "allowed" | "varies"
-    "phonesAtPollsDetail": "Texas law prohibits wireless communication devices in the voting room. You may bring written notes.",
-    "additionalRules": [], // Array of strings for state-specific notes
-  },
-
-  "resources": {
-    "stateElectionWebsite": "https://www.votetexas.gov/",
-    "countyElectionLookup": "https://www.votetexas.gov/voting/where.html",
-    "sampleBallotLookup": "https://www.votetexas.gov/voting/ballot-board.html",
-    "pollingPlaceLookup": "https://www.votetexas.gov/voting/where.html",
-  },
-}
-```
-
-### Stub Data States
-
-Phase 0.3a creates stub data for these states (chosen for variety):
-
-1. **Texas (TX)** — Open primary, strict voter ID, phones prohibited at polls, no same-day registration
-2. **California (CA)** — Semi-closed primary ("top-two"), vote-by-mail default, same-day registration, phones allowed
-3. **New Hampshire (NH)** — Small state, same-day registration, no early voting period (absentee only), phones vary by town
+| Act | What happens |
+|-----|-------------|
+| 1 | Cold open — time anchor, scale reveal, open loop, ballot verification |
+| 1.5 | Methodology briefing — no recommendations, patterns only, privacy promise |
+| 2 | Values tagging — 5–8 issue chips + free-text + skip option |
+| 2.5 | Concern interpretation — maps voter language to canonical issues |
+| 3 | Pattern dashboard per race — funding, endorsements, voting record, gap analysis |
+| 4 | Proposition deep-dives — framed against voter's stated values |
+| 5 | Downloadable ballot summary (plaintext, printable) |
+| 6 | Downloadable voter profile (for future session reuse) |
+| 7 | Session handoff block (one copy-paste to continue in any chatbot) |
 
 ---
 
-## Prompt Customization Logic
+### 2. Two-Path UX: Chat vs. Copy/Paste
 
-When a user enters a valid zip code:
+Voters get the same research quality whether or not the on-site chat is available.
 
-1. Look up the state(s) for that zip code
-2. Find the next upcoming election (first election in the `elections` array with a date >= today)
-3. Calculate deadline statuses (days remaining or "passed") for each registration method
-4. Generate the pre-filled context block:
-
-```
-Hi! I'm voting in **[State Name]**. My zip code is **[zip code]**.
-
-Here's what I know about my upcoming election:
-- **Election:** [Election name] on [formatted date]
-- **Election type:** [Type] ([primaryType] primary / general)
-- **Registration deadlines:** Online by [date], by mail by [date] (sincePostmarked: [postmarked/received]), in person by [date]
-- **Early voting:** [start date] through [end date] (or "Not available — absentee voting only")
-- **Voter ID:** [Required/Not required]. [Accepted IDs if required]
-- **Phones at polls:** [Policy detail]
-- **My sample ballot:** [sampleBallotLookup URL]
-- **My county election office:** [countyElectionLookup URL]
-
-Help me with my ballot.
-```
-
-5. Append this context block after the main prompt text (from BALLOT_PROMPT.md, starting at "You are a nonpartisan civic research assistant...")
+- **Path A (Default):** On-site streaming chat when budget is available
+- **Path B (Fallback):** Customized prompt generated and copied to clipboard for use in Claude, ChatGPT, Gemini, or Grok
+- Both paths produce identical outputs; path switches automatically based on budget tier
+- Copy button with 2-second "Copied!" confirmation
 
 ---
 
-## UI Behavior
+### 3. Budget Management & Graceful Degradation
 
-### Responsive Design
+Hard monthly cap with four escalating tiers to protect against runaway costs.
 
-- **Mobile-first.** This tool went viral on Reddit — most users are on phones.
-- Breakpoints: mobile (< 640px), tablet (640-1024px), desktop (> 1024px)
-- All interactive elements must be touch-friendly (minimum 44x44px tap targets)
-- The prompt output area must be scrollable on mobile without losing the copy button
+| Tier | Budget % | Behavior |
+|------|----------|----------|
+| Normal | 0–70% | Full chat available |
+| Notice | 70–80% | In-chat notice shown |
+| Soft Close | 80–90% | New sessions see copy/paste fallback; existing sessions continue |
+| Handoff | 90% | AI generates ballot-so-far + voter profile + continuation prompt |
+| Exhausted | 100% | All sessions see copy/paste fallback |
 
-### Loading States
-
-- Show a brief loading indicator after zip code submission while looking up data
-- The lookup is from static JSON so it should be near-instant, but the loading state prevents layout shift
-
-### Error States
-
-| Condition                         | Behavior                                                                                                                                         |
-| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Empty input, submit pressed       | Show inline validation message: "Please enter a zip code"                                                                                        |
-| Non-numeric or wrong length       | Show inline validation message: "Please enter a valid 5-digit zip code"                                                                          |
-| Zip code not found in dataset     | Show message: "We don't have data for this zip code yet. We're working on adding all U.S. zip codes. [Link to state election website directory]" |
-| Multi-state zip code              | Show state selector: "This zip code spans multiple states. Which state are you voting in?"                                                       |
-| All registration deadlines passed | Show alert: "Registration deadlines for this election have passed. Check [registration check URL] to confirm your registration status."          |
-| No upcoming election found        | Show message: "No upcoming elections found for [State]. Check [state election website] for updates."                                             |
-
-### Copy to Clipboard
-
-- Clicking the copy button copies the full prompt text + pre-filled context block as plain text
-- Button shows "Copy to Clipboard" in default state
-- Button changes to "Copied!" with a visual indicator (e.g., checkmark icon) for 2 seconds after successful copy
-- If clipboard API is not available (rare, older browsers), show a fallback: select-all the text in the prompt area and show "Press Ctrl+C / Cmd+C to copy"
-
-### Deadline Status Indicators
-
-- Registration deadlines should show a visual status:
-  - **Green:** More than 14 days remaining
-  - **Yellow/Warning:** 14 days or fewer remaining
-  - **Red/Urgent:** 3 days or fewer remaining
-  - **Gray/Passed:** Deadline has passed
-- Display both the date and a relative indicator ("12 days left" / "Passed")
+- Hard cap: $20/month configured in Anthropic Console
+- Durable budget tracking: Upstash Redis in production (falls back to process-local in dev)
+- Monthly auto-reset
 
 ---
 
-## Accessibility Requirements
+### 4. Rate Limiting
 
-This is a civic tool for ALL voters. Accessibility is a functional requirement.
+Three-layer rate limiting to prevent abuse:
 
-- All interactive elements are keyboard-navigable (tab order follows visual flow)
-- Form inputs have associated `<label>` elements
-- The copy button and state selector are operable via keyboard (Enter/Space)
-- Focus is visibly indicated on all interactive elements
-- Color contrast meets WCAG AA (minimum 4.5:1 for normal text, 3:1 for large text)
-- Deadline status indicators do NOT rely solely on color — include text labels ("Passed", "12 days left")
-- The prompt output area is accessible to screen readers (use appropriate ARIA roles/labels)
-- Images (if any) have alt text
-- The page has a logical heading hierarchy (h1 > h2 > h3)
-- Skip-to-content link for keyboard users
-- Error messages are announced to screen readers (use `aria-live="polite"` or `role="alert"`)
+- **Per-session:** 60 messages max
+- **Per-IP concurrent:** 3 active sessions max
+- **Per-IP daily:** 5 new sessions max
+- Storage: Upstash Redis (production) / in-memory (development)
 
 ---
 
-## Required `data-testid` Attributes
+### 5. Polling Location Lookup
 
-The following `data-testid` attributes MUST be present on the specified elements. These are required by the shared Playwright e2e test suite and must be consistent across all workflow implementations.
-
-| `data-testid`         | Element                                          | Purpose                           |
-| --------------------- | ------------------------------------------------ | --------------------------------- |
-| `zip-input`           | The zip code text input field                    | E2e tests type into this field    |
-| `zip-submit`          | The zip code submit button                       | E2e tests click this to submit    |
-| `zip-error`           | The inline validation/error message container    | E2e tests verify error states     |
-| `state-selector`      | The state selector (for multi-state zip codes)   | E2e tests select a state          |
-| `state-info`          | The state election info summary card             | E2e tests verify info display     |
-| `prompt-output`       | The container holding the full customized prompt | E2e tests verify prompt content   |
-| `copy-button`         | The "Copy to Clipboard" button                   | E2e tests click and verify copy   |
-| `copy-confirmation`   | The "Copied!" confirmation indicator             | E2e tests verify feedback         |
-| `election-name`       | The election name display within state-info      | E2e tests verify correct election |
-| `election-date`       | The election date display within state-info      | E2e tests verify correct date     |
-| `registration-status` | Container for registration deadline statuses     | E2e tests verify deadline logic   |
-| `no-election-message` | Message shown when no upcoming election is found | E2e tests verify this edge case   |
-| `not-found-message`   | Message shown when zip code is not in dataset    | E2e tests verify this edge case   |
+- **API:** Google Civic Information API (free, 25K queries/day)
+- **Address autocomplete:** Google Places API
+- Returns polling place name, address, hours
+- Returns early vote sites with same details
+- "Get Directions" deep link to Google Maps (no embedded map, no Maps billing)
+- County election office fallback when Civic API returns no data
+- State-specific retry filtering
 
 ---
 
-## Acceptance Criteria
+### 6. Voter Profile Upload/Download
 
-A workflow run is "done" when ALL of the following are true:
+Lets returning voters resume where they left off.
 
-### Functional
-
-- [ ] User can enter a 5-digit zip code and submit
-- [ ] Valid zip code displays the correct state election info (verified against stub data)
-- [ ] Valid zip code generates the correct customized prompt with state-specific info injected
-- [ ] The pre-filled context block includes: election name, date, type, registration deadlines, early voting dates, voter ID info, phone-at-polls policy, sample ballot link, and county election office link
-- [ ] Copy button copies the full prompt + context to clipboard
-- [ ] Copy confirmation appears and disappears after ~2 seconds
-- [ ] Multi-state zip codes show a state selector
-- [ ] Invalid inputs show appropriate error messages
-- [ ] Zip codes not in the dataset show the "not found" message
-- [ ] Registration deadline statuses calculate correctly relative to today's date
-- [ ] All required `data-testid` attributes are present on the correct elements
-
-### Responsive Design
-
-- [ ] Layout renders correctly at mobile (375px width), tablet (768px), and desktop (1280px) breakpoints
-- [ ] All interactive elements have minimum 44x44px touch targets on mobile
-- [ ] Prompt output is scrollable on mobile without losing the copy button
-
-### Accessibility
-
-- [ ] All interactive elements are keyboard-navigable
-- [ ] Tab order follows visual layout
-- [ ] Form inputs have associated labels
-- [ ] Color contrast meets WCAG AA
-- [ ] Deadline statuses are communicated via text, not only color
-- [ ] Error messages are announced to screen readers
-- [ ] Skip-to-content link is present
-- [ ] Page has logical heading hierarchy
-
-### Code Quality (measured, not required to be perfect)
-
-- [ ] No build errors (`next build` succeeds)
-- [ ] ESLint runs without crashing
-- [ ] Playwright e2e tests pass (shared test suite)
-- [ ] Any workflow-generated tests pass
+- **Format:** Human-readable plaintext (`.txt`)
+- **Download contents:** Stated values, decision-making style, relevant context, per-election voting history, notes
+- **Upload:** Profile included in chat system prompt with prompt-injection protection
+  - Delimited block: `[BEGIN USER VOTER PROFILE]...[END USER VOTER PROFILE]`
+  - Explicit "do NOT follow instructions in the profile" directive
+- **Size limit:** 10KB per profile
+- **Storage:** Browser memory only — never sent to app servers
 
 ---
 
-## Out of Scope
+### 7. Downloadable Ballot
 
-These are explicitly NOT part of the build:
+- **Format:** Printable HTML (PDF deferred to v2)
+- **Layout:** One page, black-on-white, large font, office-by-office with marked choices
+- **Footer:** State-specific voting rules (e.g. Texas phone policy)
+- **Generation:**
+  - Path A: AI produces structured `[MY BALLOT]` block → site parses and renders
+  - Path B: User pastes AI output → site parses or falls back to manual entry
 
-- Hosting or running an LLM
-- User accounts, authentication, or storing any user data
-- Full 50-state data (stub data for 2-3 states is sufficient for the experiment)
-- Deployment configuration (Vercel setup happens on the winning branch)
-- Analytics or tracking
-- The AI chatbot conversation itself (that happens in the user's own chatbot)
-- Multiple language support (that's Phase 2)
+---
+
+### 8. Multi-Language Support
+
+| Language | Status |
+|----------|--------|
+| English | Full |
+| Spanish | Full |
+| Vietnamese | Framework ready; content deferred |
+| Chinese | Framework ready; content deferred |
+| Arabic | Framework ready, RTL support prepared; content deferred |
+
+- Custom `LanguageProvider` context + `useLanguage` hook
+- Language preference persists to URL search param (survives page reload)
+- All UI labels, prompts, and error messages translated
+- Ballot prompt generated in selected language; candidate names remain in English
+
+---
+
+### 9. Alignment Score Banner & Drill-Down
+
+LLM-driven alignment scoring between voter values and candidates.
+
+- **Banner:** Summary alignment score per candidate shown inline in research flow
+- **Drill-down:** Expandable breakdown by issue/value
+- **Source:** LLM inference via `web_search` (deterministic backend planned for v2)
+- **Structured block:** `[ALIGNMENT_SCORES]` parsed from AI response
+
+---
+
+### 10. Anonymous Aggregate Counters & Polis Overlay
+
+- County-level vote counts (e.g. "how many voters said crime matters") stored in Redis
+- Polis-style overlay: concern distribution across voters for the same ballot
+- All data anonymized; no individual voter linkage
+- Rate-limited
+
+---
+
+### 11. Issue Ranking & Concern Disambiguation
+
+- Drag-and-rank interface for issue priority (`@dnd-kit/core`, `@dnd-kit/sortable`)
+- Free-text concern entry with skip option
+- AI maps free-text concerns to canonical issue taxonomy (`src/lib/canonicalIssues.ts`)
+- Voter confirmation step before proceeding to pattern research
+- Structured blocks: `[VOTER VALUES]`, `[CONCERN_INTERPRETATION]`, `[VOTER CONFIRMED CONCERNS]`
+
+---
+
+### 12. National Scope (Multi-State)
+
+- Zip-to-state lookup (`src/data/zip-to-state.json`)
+- Multi-state zip detection → `StateSelectorModal` disambiguation
+- State data files present: TX, CA, FL, GA, NC, NH, NM, NY, AZ
+- Texas runoff election gate (runoff eligibility check before research proceeds)
+- Generalized for all election types; not Texas-only
+
+---
+
+### 13. Privacy Architecture
+
+- **No server-side logging of user input** — zip codes, messages, profiles never appear in logs
+- **No client-side persistence** — no `localStorage`, `sessionStorage`, `IndexedDB`, or tracking cookies
+- **No third-party scripts** — no analytics, error tracking, or telemetry libraries loaded client-side
+- **API keys server-side only** — never in client bundles
+- **One exception by design:** aggregate monthly spend estimate (not user-identifiable) in Redis
+
+---
+
+### 14. Accessibility (WCAG AA)
+
+- Color contrast 4.5:1 (normal text), 3:1 (large text)
+- Keyboard navigation throughout; visible focus states
+- All form inputs paired with `<label>`
+- Error messages announced to screen readers (`aria-live`, `role="alert"`)
+- Skip-to-content link
+- Deadline indicators: text + color + shape (not color-only)
+- Mobile-first; 44×44px tap targets
+- Semantic HTML + proper heading hierarchy
+
+---
+
+### 15. Deployment Pipeline
+
+- **Platform:** Vercel, deployed via GitHub Actions on push to `launch/production`
+- **Steps:** checkout → Node 24 → install → lint → test → build → pull secrets → deploy
+- **Secrets management:** Bitwarden Secrets Manager (not committed to repo)
+- **Skip flag:** `[skip-deploy]` in commit message bypasses deploy
+
+---
+
+### 16. Testing
+
+| Suite | Count |
+|-------|-------|
+| Unit tests (Vitest) | 72 |
+| E2E tests (Playwright) | 42 |
+
+- Lighthouse scores: 100/100/100/100 (Performance / Accessibility / Best Practices / SEO)
+- ESLint: clean (complexity limits enforced)
+- Prettier: enforced
+- JSCPD: zero duplicate code detected
+- TypeScript: 0 errors
+
+---
+
+### 17. Legal Pages
+
+- `/privacy` — Privacy policy
+- `/terms` — Terms of use
+- Data last-updated note in footer
+
+---
+
+## Database Schema (Phase A — Shipped)
+
+Drizzle ORM + Neon Postgres, 7 tables:
+
+| Table | Purpose |
+|-------|---------|
+| `candidates` | Name, district, office |
+| `candidate_offices` | Office, chamber, state per candidate |
+| `bills` | Title, session, source |
+| `votes` | Candidate × bill × position |
+| `issue_tags` | Bill → canonical issue + stance |
+| `donor_aggregates` | Industry contributions per candidate |
+| `scorecard_meta` | Advocacy org metadata (cite-don't-republish) |
+
+Migration: `db/migrations/0000_first_crystal.sql`
+
+---
+
+## Planned Features (In Pipeline)
+
+### Packet 6 — Backend Vote Ingestion (Phases B–G)
+
+Replacing LLM `web_search` alignment with deterministic data from public sources.
+
+| Phase | What | Source | Status |
+|-------|------|--------|--------|
+| A | Schema + workflow skeletons | — | ✅ Shipped |
+| B | Federal vote ingest | GovTrack bulk data | Queued |
+| C | State vote ingest | OpenStates API | Queued |
+| D | Bill issue tagging | LLM batch (canonical issues) | Queued |
+| E | Donor data ingest | FEC / FollowTheMoney | Queued |
+| F | App cutover to deterministic `/api/alignment` endpoint | — | Queued |
+| G | Verification + quality checks | — | Queued |
+
+**Scheduled workflows (skeletons in `.github/workflows/`):**
+- `ingest-federal.yml` — Sundays 7:00am UTC
+- `ingest-states.yml` — Sundays 7:30am UTC (matrix across all 50 states)
+- `ingest-tag-bills.yml` — Sundays 9:00am UTC
+
+---
+
+### v2 Features (Designed, Not Yet Built)
+
+| Feature | Description |
+|---------|-------------|
+| Deterministic alignment API | `/api/alignment` endpoint backed by Neon Postgres, replaces LLM web_search |
+| Active Intelligence sidebar | Matched topics, correlation scores, personalized recommendations based on voter profile |
+| Advocacy scorecard overlay | Cite-don't-republish — voter toggles org lens, deep links to scorecard page |
+| PDF ballot download | Printable PDF in addition to HTML |
+| Embedded polling maps | Drive times, real-time transit, embedded Google Maps |
+| Vietnamese / Chinese / Arabic | Content completion for framework-ready language slots |
+| 50-state expansion | All election types, candidate enrichment APIs for remaining states |
+| Local races | School board, DA, judges, county commissioners (pending public data availability) |
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Framework | Next.js 15.5.12 (App Router) |
+| Language | TypeScript 5.9.3 |
+| UI | React 19.1.0, Tailwind CSS 4.2.1 |
+| AI | `@anthropic-ai/sdk` 0.39.0 (Claude Sonnet, streaming) |
+| Database | Drizzle ORM 0.45.2 + Neon serverless Postgres |
+| Cache/Rate limiting | Upstash Redis (REST) |
+| Maps/Civic | Google Civic API, Google Places API |
+| Drag/Drop | `@dnd-kit/core`, `@dnd-kit/sortable` |
+| Unit tests | Vitest 3.2.1 |
+| E2E tests | Playwright 1.52.0 |
+| Deployment | Vercel + GitHub Actions + Bitwarden Secrets Manager |
+
+---
+
+## Required Environment Variables
+
+| Variable | Purpose | Required |
+|----------|---------|----------|
+| `ANTHROPIC_VOTER_API` | Claude API key | Yes |
+| `GOOGLE_CIVIC_API_KEY` | Polling location lookup | Yes |
+| `NEXT_PUBLIC_GOOGLE_PLACES_API_KEY` | Address autocomplete | Yes |
+| `UPSTASH_REDIS_REST_URL` | Durable budget + rate limiting | Production only |
+| `UPSTASH_REDIS_REST_TOKEN` | Durable budget + rate limiting | Production only |
+| `DATABASE_URL` | Neon Postgres (Phase F+) | Upcoming |
