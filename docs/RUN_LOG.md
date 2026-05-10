@@ -2,7 +2,7 @@
 
 ## Next
 
-Continue Phase 1 — Next run: Run 2 (Compound Engineering workflow). Run `/start` from `main` branch. Claude Code will autonomously check out `workflow/compound-engineering`, build the ballot tool, run measurements, and update this log.
+**Run 5, Phase 1 — BMAD workflow.** You are already on `run5/bmad` — do NOT switch branches. Build the full production ballot research tool on this branch per `docs/PROJECT_SPEC.md` (v2.0). Use BMAD methodology via the available `bmad-*` skills (e.g. `/bmad-create-prd`, `/bmad-create-architecture`, `/bmad-create-epics-and-stories`, `/bmad-dev-story`, `/bmad-dev` — follow the BMAD flow). Clean environment first (`rm -rf node_modules .next coverage && npm install`), build autonomously using the spec as the sole source of truth, then run `npm run measure`, tag `bmad-run5-phase1-complete`, push, and update this log.
 
 ## Completed
 
