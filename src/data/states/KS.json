@@ -1,0 +1,152 @@
+{
+  "_sources": {
+    "primary": "https://sos.ks.gov/elections/elections-home.html",
+    "secondary": "https://www.ncsl.org/elections-and-campaigns/voter-id",
+    "dateChecked": "2026-05-10",
+    "discrepancies": "Kansas has a strict photo ID requirement per NCSL. Voters without ID may cast a provisional ballot and return by the close of polls on the Monday following Election Day. Kansas primary is the first Tuesday in August per statute. Advanced (early in-person) voting available at county election offices."
+  },
+
+  "stateCode": "KS",
+  "stateName": "Kansas",
+  "lastUpdated": "2026-05-10",
+  "coverageStatus": "confirmed",
+
+  "elections": [
+    {
+      "id": "ks-2026-primary",
+      "name": "2026 Kansas Primary Election",
+      "date": "2026-08-04",
+      "type": "primary",
+      "isPrimary": true,
+      "primaryType": "closed",
+      "registration": {
+        "online": {
+          "available": true,
+          "deadline": "2026-07-14",
+          "url": "https://www.kssos.org/elections/elections_registration.html"
+        },
+        "byMail": {
+          "deadline": "2026-07-14",
+          "sincePostmarked": false
+        },
+        "inPerson": {
+          "deadline": "2026-07-21",
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": false,
+        "registrationCheckUrl": "https://www.kssos.org/elections/elections_voterquery.aspx"
+      },
+      "earlyVoting": {
+        "available": true,
+        "startDate": "2026-07-15",
+        "endDate": "2026-08-03",
+        "notes": "Advance voting in person at county election offices starting 20 days before the election. TODO verify for 2026 cycle."
+      }
+    },
+    {
+      "id": "ks-2026-general",
+      "name": "2026 Kansas General Election",
+      "date": "2026-11-03",
+      "type": "general",
+      "isPrimary": false,
+      "primaryType": null,
+      "registration": {
+        "online": {
+          "available": true,
+          "deadline": "2026-10-13",
+          "url": "https://www.kssos.org/elections/elections_registration.html"
+        },
+        "byMail": {
+          "deadline": "2026-10-13",
+          "sincePostmarked": false
+        },
+        "inPerson": {
+          "deadline": "2026-10-20",
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": false,
+        "registrationCheckUrl": "https://www.kssos.org/elections/elections_voterquery.aspx"
+      },
+      "earlyVoting": {
+        "available": true,
+        "startDate": "2026-10-14",
+        "endDate": "2026-11-02",
+        "notes": "Advance voting in person at county election offices starting 20 days before the election. TODO verify for 2026 cycle."
+      }
+    }
+  ],
+
+  "registration": {
+    "online": {
+      "available": true,
+      "deadline": "2026-10-13",
+      "url": "https://www.kssos.org/elections/elections_registration.html"
+    },
+    "byMail": {
+      "deadline": "2026-10-13",
+      "sincePostmarked": false
+    },
+    "inPerson": {
+      "deadline": "2026-10-20",
+      "sincePostmarked": false
+    },
+    "sameDayRegistration": false,
+    "registrationCheckUrl": "https://www.kssos.org/elections/elections_voterquery.aspx"
+  },
+
+  "earlyVoting": {
+    "available": true,
+    "startDate": "2026-10-14",
+    "endDate": "2026-11-02",
+    "notes": "Advance in-person voting at county election offices beginning 20 days before the general election. Mail ballot automatically sent to advance voters who have requested it. TODO verify for 2026 cycle."
+  },
+
+  "votingRules": {
+    "idRequired": true,
+    "acceptedIds": [
+      "Kansas driver's license",
+      "Kansas nondriver ID card",
+      "U.S. passport or passport card",
+      "U.S. military ID",
+      "Kansas concealed carry handgun license",
+      "Student ID from a Kansas university, college, or technical school (with signature)",
+      "Government-issued photo ID"
+    ],
+    "expirationRule": "Photo ID must not be expired. Exception: voters aged 65 or older may use an expired Kansas-issued photo ID. TODO verify for 2026 cycle.",
+    "impedimentDeclaration": "Voters without acceptable photo ID may cast a provisional ballot. The ballot will be counted if the voter returns with acceptable ID by the close of polls on the Monday following the election.",
+    "phonesAtPolls": "varies",
+    "phonesAtPollsDetail": "Kansas does not have a statewide prohibition on phones in polling places, but individual county election offices may have rules. Photographing your ballot is generally not permitted. Check with your county election office.",
+    "additionalRules": [
+      "Closed primary: only voters registered with a party may vote in that party's primary.",
+      "No runoffs in Kansas — the candidate with the most votes wins.",
+      "Voters may vote by advance mail ballot without providing a reason."
+    ]
+  },
+
+  "voteByMail": {
+    "universal": false,
+    "eligibility": [
+      "Any registered voter may request an advance mail ballot without providing a reason"
+    ],
+    "applicationDeadline": "7 days before the election (received by county election office), or the close of advance voting for in-person advance",
+    "returnDeadline": "Must be received by the county election office by the time polls close on Election Day",
+    "returnDeadlinePlain": "Must arrive at the county election office by poll closing on Election Day. Postmarks do not count.",
+    "applicationUrl": "https://www.kssos.org/elections/elections_registration.html",
+    "officialRulesUrl": "https://sos.ks.gov/elections/elections-home.html"
+  },
+
+  "runoffRules": {
+    "hasRunoff": false,
+    "partyLockedToFirstRoundPrimary": false
+  },
+
+  "resources": {
+    "stateElectionWebsite": "https://sos.ks.gov/elections/elections-home.html",
+    "countyElectionLookup": "https://www.kssos.org/elections/elections_county.html",
+    "sampleBallotLookup": "https://www.kssos.org/elections/elections_voterquery.aspx",
+    "pollingPlaceLookup": "https://www.kssos.org/elections/elections_voterquery.aspx",
+    "importantDates": "https://www.kssos.org/elections/elections_dates.html",
+    "voterIdInfo": "https://www.kssos.org/elections/elections_voterID.html",
+    "earlyVotingInfo": "https://www.kssos.org/elections/elections_advancevoting.html"
+  }
+}

@@ -1,0 +1,137 @@
+{
+  "_sources": {
+    "primary": "https://www.maine.gov/sos/cec/elec/index.html",
+    "secondary": "https://www.ncsl.org/elections-and-campaigns/voter-id",
+    "checked": "2026-05-10",
+    "discrepancies": "No major discrepancies found. Maine uses ranked-choice voting for federal and statewide offices. 2026 registration deadlines estimated based on Maine statute (15 business days before election); TODO verify exact 2026 dates. NCSL classifies Maine as no-document-required for ID."
+  },
+  "stateCode": "ME",
+  "stateName": "Maine",
+  "lastUpdated": "2026-05-10",
+
+  "elections": [
+    {
+      "id": "me-2026-primary",
+      "name": "2026 Maine Primary Election",
+      "date": "2026-06-09",
+      "type": "primary",
+      "isPrimary": true,
+      "primaryType": "semi-open",
+      "registration": {
+        "online": {
+          "available": true,
+          "deadline": "2026-05-19",
+          "url": "https://www.maine.gov/sos/cec/elec/voter-info/votereguide.html"
+        },
+        "byMail": {
+          "deadline": "2026-05-19",
+          "sincePostmarked": false
+        },
+        "inPerson": {
+          "deadline": "2026-06-09",
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": true,
+        "registrationCheckUrl": "https://www.maine.gov/sos/cec/elec/voter-info/votereguide.html"
+      },
+      "earlyVoting": {
+        "available": true,
+        "startDate": "2026-05-25",
+        "endDate": "2026-06-08",
+        "notes": "Absentee voting available; in-person absentee starts ~30 days before Election Day. TODO verify exact 2026 dates."
+      }
+    },
+    {
+      "id": "me-2026-general",
+      "name": "2026 Maine General Election",
+      "date": "2026-11-03",
+      "type": "general",
+      "isPrimary": false,
+      "primaryType": null,
+      "registration": {
+        "online": {
+          "available": true,
+          "deadline": "2026-10-14",
+          "url": "https://www.maine.gov/sos/cec/elec/voter-info/votereguide.html"
+        },
+        "byMail": {
+          "deadline": "2026-10-14",
+          "sincePostmarked": false
+        },
+        "inPerson": {
+          "deadline": "2026-11-03",
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": true,
+        "registrationCheckUrl": "https://www.maine.gov/sos/cec/elec/voter-info/votereguide.html"
+      },
+      "earlyVoting": {
+        "available": true,
+        "startDate": "2026-10-05",
+        "endDate": "2026-11-02",
+        "notes": "Absentee voting (in-person and by mail) available from approximately 30 days before Election Day. TODO verify exact 2026 dates."
+      }
+    }
+  ],
+
+  "registration": {
+    "online": {
+      "available": true,
+      "deadline": "2026-10-14",
+      "url": "https://www.maine.gov/sos/cec/elec/voter-info/votereguide.html"
+    },
+    "byMail": {
+      "deadline": "2026-10-14",
+      "sincePostmarked": false
+    },
+    "inPerson": {
+      "deadline": "2026-11-03",
+      "sincePostmarked": false
+    },
+    "sameDayRegistration": true,
+    "registrationCheckUrl": "https://www.maine.gov/sos/cec/elec/voter-info/votereguide.html"
+  },
+
+  "earlyVoting": {
+    "available": true,
+    "startDate": "2026-10-05",
+    "endDate": "2026-11-02",
+    "notes": "Maine offers in-person absentee voting at town/city clerks' offices beginning approximately 30 days before the election. TODO verify exact 2026 dates."
+  },
+
+  "votingRules": {
+    "idRequired": false,
+    "acceptedIds": [],
+    "phonesAtPolls": "allowed",
+    "phonesAtPollsDetail": "Maine law does not prohibit phones inside polling places. Photography of other voters without consent is not permitted. Electioneering is prohibited within 250 feet of the polling place entrance.",
+    "additionalRules": [
+      "Maine uses ranked-choice voting (RCV) for federal offices (U.S. Senate, U.S. House) and statewide offices (Governor, etc.). Voters rank candidates in order of preference.",
+      "Same-day voter registration is available; bring proof of identity and residency.",
+      "Undeclared (unenrolled) voters may request a party primary ballot on Election Day."
+    ]
+  },
+
+  "voteByMail": {
+    "universal": false,
+    "eligibility": [
+      "Any registered voter may request an absentee ballot without providing a reason (no-excuse absentee)"
+    ],
+    "applicationDeadline": "3 business days before the election (received by town/city clerk)",
+    "returnDeadline": "Must be received by the town/city clerk by the close of polls on Election Day",
+    "returnDeadlinePlain": "Must arrive at the clerk's office by 8 p.m. on Election Day. Postmarks do not count.",
+    "applicationUrl": "https://www.maine.gov/sos/cec/elec/voter-info/absenteeguide.html",
+    "officialRulesUrl": "https://www.maine.gov/sos/cec/elec/voter-info/absenteeguide.html"
+  },
+
+  "runoffRules": {
+    "hasRunoff": false,
+    "partyLockedToFirstRoundPrimary": false
+  },
+
+  "resources": {
+    "stateElectionWebsite": "https://www.maine.gov/sos/cec/elec/index.html",
+    "countyElectionLookup": "https://www.maine.gov/sos/cec/elec/voter-info/votereguide.html",
+    "sampleBallotLookup": "https://www.maine.gov/sos/cec/elec/voter-info/votereguide.html",
+    "pollingPlaceLookup": "https://www.maine.gov/sos/cec/elec/voter-info/votereguide.html"
+  }
+}

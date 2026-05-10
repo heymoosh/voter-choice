@@ -1,0 +1,138 @@
+{
+  "_sources": {
+    "primary": "https://elections.maryland.gov/",
+    "secondary": "https://www.ncsl.org/elections-and-campaigns/voter-id",
+    "checked": "2026-05-10",
+    "discrepancies": "NCSL classifies MD as 'no document required' for ID. Maryland has same-day voter registration and early in-person voting. No-excuse absentee voting is available. 2026 primary date (July 21) follows standard MD schedule for midterm primaries; TODO verify exact 2026 date per State Board of Elections calendar. Registration deadline is 21 days before the election (online/mail) or same-day in person per MD law."
+  },
+  "stateCode": "MD",
+  "stateName": "Maryland",
+  "lastUpdated": "2026-05-10",
+
+  "elections": [
+    {
+      "id": "md-2026-primary",
+      "name": "2026 Maryland Primary Election",
+      "date": "2026-07-21",
+      "type": "primary",
+      "isPrimary": true,
+      "primaryType": "closed",
+      "registration": {
+        "online": {
+          "available": true,
+          "deadline": "2026-06-30",
+          "url": "https://voterservices.elections.maryland.gov/OnlineVoterRegistration/InstructionsStep1"
+        },
+        "byMail": {
+          "deadline": "2026-06-30",
+          "sincePostmarked": false
+        },
+        "inPerson": {
+          "deadline": "2026-07-21",
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": true,
+        "registrationCheckUrl": "https://voterservices.elections.maryland.gov/votersearch"
+      },
+      "earlyVoting": {
+        "available": true,
+        "startDate": "2026-07-09",
+        "endDate": "2026-07-16",
+        "notes": "Maryland provides 8 days of early in-person voting before primary elections. TODO verify exact 2026 dates."
+      }
+    },
+    {
+      "id": "md-2026-general",
+      "name": "2026 Maryland General Election",
+      "date": "2026-11-03",
+      "type": "general",
+      "isPrimary": false,
+      "primaryType": null,
+      "registration": {
+        "online": {
+          "available": true,
+          "deadline": "2026-10-13",
+          "url": "https://voterservices.elections.maryland.gov/OnlineVoterRegistration/InstructionsStep1"
+        },
+        "byMail": {
+          "deadline": "2026-10-13",
+          "sincePostmarked": false
+        },
+        "inPerson": {
+          "deadline": "2026-11-03",
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": true,
+        "registrationCheckUrl": "https://voterservices.elections.maryland.gov/votersearch"
+      },
+      "earlyVoting": {
+        "available": true,
+        "startDate": "2026-10-22",
+        "endDate": "2026-10-29",
+        "notes": "Maryland provides 8 days of early in-person voting before general elections. TODO verify exact 2026 dates."
+      }
+    }
+  ],
+
+  "registration": {
+    "online": {
+      "available": true,
+      "deadline": "2026-10-13",
+      "url": "https://voterservices.elections.maryland.gov/OnlineVoterRegistration/InstructionsStep1"
+    },
+    "byMail": {
+      "deadline": "2026-10-13",
+      "sincePostmarked": false
+    },
+    "inPerson": {
+      "deadline": "2026-11-03",
+      "sincePostmarked": false
+    },
+    "sameDayRegistration": true,
+    "registrationCheckUrl": "https://voterservices.elections.maryland.gov/votersearch"
+  },
+
+  "earlyVoting": {
+    "available": true,
+    "startDate": "2026-10-22",
+    "endDate": "2026-10-29",
+    "notes": "Maryland offers 8 days of early in-person voting at designated vote centers. No-excuse absentee (mail) voting also available. TODO verify exact 2026 dates."
+  },
+
+  "votingRules": {
+    "idRequired": false,
+    "acceptedIds": [],
+    "phonesAtPolls": "allowed",
+    "phonesAtPollsDetail": "Maryland does not prohibit phones in polling places. Voters may not photograph their ballot or other voters. Electioneering is prohibited within 100 feet of a polling place entrance.",
+    "additionalRules": [
+      "No document ID required. First-time voters who registered by mail and did not provide ID at registration may need to show ID at the polls.",
+      "Closed primary: voters must be registered with a party to vote in that party's primary. Independent/unaffiliated voters may not vote in partisan primaries.",
+      "Same-day voter registration available during the early voting period and on Election Day.",
+      "No-excuse absentee voting available for all registered voters."
+    ]
+  },
+
+  "voteByMail": {
+    "universal": false,
+    "eligibility": [
+      "Any registered voter may request an absentee ballot without providing a reason (no-excuse absentee)"
+    ],
+    "applicationDeadline": "7 days before the election online/by mail; 4 days before in person (received by State Board of Elections or local office)",
+    "returnDeadline": "Must be received by the local board of elections by 8 p.m. on Election Day, or postmarked by Election Day and received within 10 days after",
+    "returnDeadlinePlain": "Must arrive by 8 p.m. on Election Day, or be postmarked by Election Day and received within 10 days after.",
+    "applicationUrl": "https://voterservices.elections.maryland.gov/AbsenteeBallotRequest",
+    "officialRulesUrl": "https://elections.maryland.gov/voting/absentee.html"
+  },
+
+  "runoffRules": {
+    "hasRunoff": false,
+    "partyLockedToFirstRoundPrimary": false
+  },
+
+  "resources": {
+    "stateElectionWebsite": "https://elections.maryland.gov/",
+    "countyElectionLookup": "https://elections.maryland.gov/about/county_boards.html",
+    "sampleBallotLookup": "https://voterservices.elections.maryland.gov/votersearch",
+    "pollingPlaceLookup": "https://voterservices.elections.maryland.gov/PollingPlaceSearch"
+  }
+}

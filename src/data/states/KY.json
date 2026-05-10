@@ -1,0 +1,151 @@
+{
+  "_sources": {
+    "primary": "https://elect.ky.gov/voters/Pages/default.aspx",
+    "secondary": "https://ballotpedia.org/Voting_in_Kentucky",
+    "dateChecked": "2026-05-10",
+    "discrepancies": "NCSL lists KY as 'non-photo ID requested'. SoS site confirms Kentucky requires a document showing name and address (non-photo acceptable) or a photo ID. Consistent."
+  },
+  "stateCode": "KY",
+  "stateName": "Kentucky",
+  "lastUpdated": "2026-05-10",
+  "coverageStatus": "confirmed",
+
+  "elections": [
+    {
+      "id": "ky-2026-primary",
+      "name": "2026 Kentucky Primary Election",
+      "date": "2026-05-19",
+      "type": "primary",
+      "isPrimary": true,
+      "primaryType": "closed",
+      "registration": {
+        "online": {
+          "available": true,
+          "deadline": "2026-04-20",
+          "url": "https://vrsws.sos.ky.gov/ovrweb/"
+        },
+        "byMail": {
+          "deadline": "2026-04-20",
+          "sincePostmarked": true
+        },
+        "inPerson": {
+          "deadline": "2026-04-20",
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": false,
+        "registrationCheckUrl": "https://vrsws.sos.ky.gov/VICweb/"
+      },
+      "earlyVoting": {
+        "available": true,
+        "startDate": "2026-05-12",
+        "endDate": "2026-05-16",
+        "notes": "In-person absentee voting (early voting) available the week before the election at the county clerk's office. Hours and locations set by county. TODO verify for 2026 cycle."
+      }
+    },
+    {
+      "id": "ky-2026-general",
+      "name": "2026 Kentucky General Election",
+      "date": "2026-11-03",
+      "type": "general",
+      "isPrimary": false,
+      "primaryType": null,
+      "registration": {
+        "online": {
+          "available": true,
+          "deadline": "2026-10-05",
+          "url": "https://vrsws.sos.ky.gov/ovrweb/"
+        },
+        "byMail": {
+          "deadline": "2026-10-05",
+          "sincePostmarked": true
+        },
+        "inPerson": {
+          "deadline": "2026-10-05",
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": false,
+        "registrationCheckUrl": "https://vrsws.sos.ky.gov/VICweb/"
+      },
+      "earlyVoting": {
+        "available": true,
+        "startDate": "2026-10-27",
+        "endDate": "2026-10-31",
+        "notes": "In-person absentee (early voting) at county clerk's office the week before Election Day. TODO verify for 2026 cycle."
+      }
+    }
+  ],
+
+  "registration": {
+    "online": {
+      "available": true,
+      "deadline": "2026-10-05",
+      "url": "https://vrsws.sos.ky.gov/ovrweb/"
+    },
+    "byMail": {
+      "deadline": "2026-10-05",
+      "sincePostmarked": true
+    },
+    "inPerson": {
+      "deadline": "2026-10-05",
+      "sincePostmarked": false
+    },
+    "sameDayRegistration": false,
+    "registrationCheckUrl": "https://vrsws.sos.ky.gov/VICweb/"
+  },
+
+  "earlyVoting": {
+    "available": true,
+    "startDate": "2026-10-27",
+    "endDate": "2026-10-31",
+    "notes": "In-person absentee (early voting) available at the county clerk's office the week before Election Day. Contact your county clerk for hours and locations."
+  },
+
+  "votingRules": {
+    "idRequired": true,
+    "acceptedIds": [
+      "Kentucky driver's license or state ID card",
+      "U.S. passport",
+      "U.S. military ID with photo",
+      "Medicare or Medicaid card",
+      "Utility bill, bank statement, government check, paycheck, or other government document showing name and address"
+    ],
+    "expirationRule": "Photo ID should be current. Non-photo documents showing name and address are acceptable even if not expired. TODO verify for 2026 cycle.",
+    "impedimentDeclaration": "If a voter cannot provide an acceptable ID, they may cast a provisional ballot and return with ID before 6 p.m. on the second business day after the election to have it counted.",
+    "phonesAtPolls": "prohibited",
+    "phonesAtPollsDetail": "Kentucky prohibits the use of mobile phones inside polling booths. Phones may generally be used in waiting areas only.",
+    "additionalRules": [
+      "Closed primary: only voters registered with a party may vote in that party's primary. Registered Independents and unaffiliated voters may not vote in a partisan primary.",
+      "No legislative primary runoffs in Kentucky."
+    ]
+  },
+
+  "voteByMail": {
+    "universal": false,
+    "eligibility": [
+      "Will be absent from the county on Election Day",
+      "Physical illness or disability",
+      "65 years of age or older",
+      "Service member or overseas citizen"
+    ],
+    "applicationDeadline": "Must be received by the county clerk 7 days before the election",
+    "returnDeadline": "Must be received by the county clerk by 6 p.m. on Election Day",
+    "returnDeadlinePlain": "Absentee ballot must arrive at the county clerk by 6 p.m. on Election Day.",
+    "applicationUrl": "https://elect.ky.gov/voters/Pages/Absentee-Voting.aspx",
+    "officialRulesUrl": "https://elect.ky.gov/voters/Pages/Absentee-Voting.aspx"
+  },
+
+  "runoffRules": {
+    "hasRunoff": false,
+    "partyLockedToFirstRoundPrimary": false
+  },
+
+  "resources": {
+    "stateElectionWebsite": "https://elect.ky.gov/",
+    "countyElectionLookup": "https://elect.ky.gov/About-Us/Pages/County-Clerks.aspx",
+    "sampleBallotLookup": "https://vrsws.sos.ky.gov/VICweb/",
+    "pollingPlaceLookup": "https://vrsws.sos.ky.gov/VICweb/",
+    "importantDates": "https://elect.ky.gov/voters/Pages/Election-Schedule.aspx",
+    "voterIdInfo": "https://elect.ky.gov/voters/Pages/Voter-ID.aspx",
+    "earlyVotingInfo": "https://elect.ky.gov/voters/Pages/Absentee-Voting.aspx"
+  }
+}

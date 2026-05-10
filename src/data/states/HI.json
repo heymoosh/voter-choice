@@ -1,0 +1,147 @@
+{
+  "_sources": {
+    "primary": "https://elections.hawaii.gov/",
+    "secondary": "https://www.ncsl.org/elections-and-campaigns/voter-id",
+    "checked": "2026-05-10",
+    "discrepancies": "Hawaii is a universal vote-by-mail state since 2020 (Act 136). NCSL classifies Hawaii as photo ID requested but not strictly required — signature verification on mail ballots is the primary security mechanism. The Hawaii primary is typically the second Saturday in August. TODO verify exact 2026 primary date; estimated 2026-08-08. Conditional same-day registration is available only for voters who missed the regular deadline due to a qualifying reason."
+  },
+  "stateCode": "HI",
+  "stateName": "Hawaii",
+  "lastUpdated": "2026-05-10",
+  "coverageStatus": "confirmed",
+
+  "elections": [
+    {
+      "id": "hi-2026-primary",
+      "name": "2026 Hawaii Primary Election",
+      "date": "2026-08-08",
+      "type": "primary",
+      "isPrimary": true,
+      "primaryType": "open",
+      "registration": {
+        "online": {
+          "available": true,
+          "deadline": "2026-07-09",
+          "url": "https://olvr.hawaii.gov/"
+        },
+        "byMail": {
+          "deadline": "2026-07-09",
+          "sincePostmarked": false
+        },
+        "inPerson": {
+          "deadline": "2026-07-09",
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": false,
+        "registrationCheckUrl": "https://olvr.hawaii.gov/"
+      },
+      "earlyVoting": {
+        "available": true,
+        "startDate": "2026-07-25",
+        "endDate": "2026-08-07",
+        "notes": "All registered voters receive a mail ballot. In-person voter service centers (VSCs) open for in-person voting and assistance. TODO verify exact 2026 dates."
+      }
+    },
+    {
+      "id": "hi-2026-general",
+      "name": "2026 Hawaii General Election",
+      "date": "2026-11-03",
+      "type": "general",
+      "isPrimary": false,
+      "primaryType": null,
+      "registration": {
+        "online": {
+          "available": true,
+          "deadline": "2026-10-06",
+          "url": "https://olvr.hawaii.gov/"
+        },
+        "byMail": {
+          "deadline": "2026-10-06",
+          "sincePostmarked": false
+        },
+        "inPerson": {
+          "deadline": "2026-10-06",
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": false,
+        "registrationCheckUrl": "https://olvr.hawaii.gov/"
+      },
+      "earlyVoting": {
+        "available": true,
+        "startDate": "2026-10-20",
+        "endDate": "2026-11-02",
+        "notes": "All registered voters receive a mail ballot automatically approximately 18 days before the election. Voter service centers open for in-person voting. TODO verify exact 2026 dates."
+      }
+    }
+  ],
+
+  "registration": {
+    "online": {
+      "available": true,
+      "deadline": "2026-10-06",
+      "url": "https://olvr.hawaii.gov/"
+    },
+    "byMail": {
+      "deadline": "2026-10-06",
+      "sincePostmarked": false
+    },
+    "inPerson": {
+      "deadline": "2026-10-06",
+      "sincePostmarked": false
+    },
+    "sameDayRegistration": false,
+    "registrationCheckUrl": "https://olvr.hawaii.gov/"
+  },
+
+  "earlyVoting": {
+    "available": true,
+    "startDate": "2026-10-20",
+    "endDate": "2026-11-02",
+    "notes": "Hawaii is a universal vote-by-mail state. All registered voters automatically receive a mail ballot. Voter service centers open for in-person voting and ballot drop-off. No traditional polling places — vote from home or at a voter service center."
+  },
+
+  "votingRules": {
+    "idRequired": false,
+    "acceptedIds": [
+      "Hawaii driver's license or state ID",
+      "U.S. passport",
+      "Military ID",
+      "Employee ID with photo and signature",
+      "Student ID from Hawaii school or university",
+      "Any government-issued photo ID"
+    ],
+    "phonesAtPolls": "allowed",
+    "phonesAtPollsDetail": "Hawaii voter service centers allow use of phones and electronic devices to assist with voting. Photography of other voters or completed ballots for public posting requires consent. Hawaii is a vote-by-mail state — most voters vote at home.",
+    "additionalRules": [
+      "Hawaii is a universal vote-by-mail state — all registered voters automatically receive a mail ballot; no application needed.",
+      "Hawaii has an open primary — all voters regardless of party registration may vote in any party's primary. There is no party enrollment system.",
+      "Voter service centers are open for in-person voting if you prefer not to mail your ballot.",
+      "Photo ID may be requested but is not strictly required — signature on ballot envelope is the primary verification mechanism."
+    ]
+  },
+
+  "voteByMail": {
+    "universal": true,
+    "eligibility": [
+      "All registered voters automatically receive a ballot by mail"
+    ],
+    "applicationDeadline": "No application required — ballots are automatically mailed to all registered voters",
+    "returnDeadline": "Must be received by 7:00 p.m. on Election Day, or postmarked by Election Day and received within 10 days",
+    "returnDeadlinePlain": "Drop off by 7 p.m. on Election Day or mail postmarked by Election Day (received within 10 days).",
+    "applicationUrl": "https://elections.hawaii.gov/voters/voting/vote-by-mail/",
+    "officialRulesUrl": "https://elections.hawaii.gov/"
+  },
+
+  "runoffRules": {
+    "hasRunoff": false,
+    "partyLockedToFirstRoundPrimary": false
+  },
+
+  "resources": {
+    "stateElectionWebsite": "https://elections.hawaii.gov/",
+    "countyElectionLookup": "https://elections.hawaii.gov/voters/voter-service-centers-and-drop-boxes/",
+    "sampleBallotLookup": "https://elections.hawaii.gov/voters/sample-ballots/",
+    "pollingPlaceLookup": "https://elections.hawaii.gov/voters/voter-service-centers-and-drop-boxes/",
+    "voterIdInfo": "https://elections.hawaii.gov/voters/voter-id/"
+  }
+}

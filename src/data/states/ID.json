@@ -1,0 +1,147 @@
+{
+  "_sources": {
+    "primary": "https://sos.idaho.gov/elections-division/",
+    "secondary": "https://www.ncsl.org/elections-and-campaigns/voter-id",
+    "checked": "2026-05-10",
+    "discrepancies": "NCSL classifies Idaho as photo ID required. Idaho's primary is typically the third Tuesday in May; estimated 2026-05-19 for 2026. Idaho offers same-day voter registration at the polls. Idaho does not have a statewide early voting law but counties may offer absentee in-person voting. 2026 registration deadlines estimated from Idaho statute (25 days before election for online/mail); TODO verify exact dates."
+  },
+  "stateCode": "ID",
+  "stateName": "Idaho",
+  "lastUpdated": "2026-05-10",
+  "coverageStatus": "confirmed",
+
+  "elections": [
+    {
+      "id": "id-2026-primary",
+      "name": "2026 Idaho Primary Election",
+      "date": "2026-05-19",
+      "type": "primary",
+      "isPrimary": true,
+      "primaryType": "closed",
+      "registration": {
+        "online": {
+          "available": true,
+          "deadline": "2026-04-24",
+          "url": "https://elections.sos.idaho.gov/ElectionLink/RMV/RegistertoVote.aspx"
+        },
+        "byMail": {
+          "deadline": "2026-04-24",
+          "sincePostmarked": false
+        },
+        "inPerson": {
+          "deadline": "2026-05-19",
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": true,
+        "registrationCheckUrl": "https://elections.sos.idaho.gov/ElectionLink/RMV/VoterInformation.aspx"
+      },
+      "earlyVoting": {
+        "available": true,
+        "startDate": "2026-04-20",
+        "endDate": "2026-05-18",
+        "notes": "Absentee in-person voting available at county clerk offices before Election Day. Hours vary by county. TODO verify exact 2026 dates."
+      }
+    },
+    {
+      "id": "id-2026-general",
+      "name": "2026 Idaho General Election",
+      "date": "2026-11-03",
+      "type": "general",
+      "isPrimary": false,
+      "primaryType": null,
+      "registration": {
+        "online": {
+          "available": true,
+          "deadline": "2026-10-09",
+          "url": "https://elections.sos.idaho.gov/ElectionLink/RMV/RegistertoVote.aspx"
+        },
+        "byMail": {
+          "deadline": "2026-10-09",
+          "sincePostmarked": false
+        },
+        "inPerson": {
+          "deadline": "2026-11-03",
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": true,
+        "registrationCheckUrl": "https://elections.sos.idaho.gov/ElectionLink/RMV/VoterInformation.aspx"
+      },
+      "earlyVoting": {
+        "available": true,
+        "startDate": "2026-10-05",
+        "endDate": "2026-11-02",
+        "notes": "Absentee in-person voting available at county clerk offices. No uniform statewide early voting law — availability and hours vary by county. Contact your county clerk for details."
+      }
+    }
+  ],
+
+  "registration": {
+    "online": {
+      "available": true,
+      "deadline": "2026-10-09",
+      "url": "https://elections.sos.idaho.gov/ElectionLink/RMV/RegistertoVote.aspx"
+    },
+    "byMail": {
+      "deadline": "2026-10-09",
+      "sincePostmarked": false
+    },
+    "inPerson": {
+      "deadline": "2026-11-03",
+      "sincePostmarked": false
+    },
+    "sameDayRegistration": true,
+    "registrationCheckUrl": "https://elections.sos.idaho.gov/ElectionLink/RMV/VoterInformation.aspx"
+  },
+
+  "earlyVoting": {
+    "available": true,
+    "startDate": "2026-10-05",
+    "endDate": "2026-11-02",
+    "notes": "Idaho does not have a uniform statewide early voting law. Absentee in-person voting is available at county clerk offices before Election Day. Hours and start dates vary by county. Contact your county clerk for details."
+  },
+
+  "votingRules": {
+    "idRequired": true,
+    "acceptedIds": [
+      "Idaho driver's license or identification card",
+      "U.S. passport or passport card",
+      "ID card issued by a U.S. federal, state, or local government agency",
+      "Tribal identification card",
+      "U.S. military ID card",
+      "Current student ID from an Idaho college or university (photo required)",
+      "License to carry concealed weapons issued by Idaho or any other state"
+    ],
+    "phonesAtPolls": "varies",
+    "phonesAtPollsDetail": "Idaho law prohibits use of a phone or electronic device to photograph a completed ballot in the voting booth. Counties may have additional rules. Contact your county clerk for specific polling place policies.",
+    "additionalRules": [
+      "Idaho has a closed primary — voters must be registered with a party to vote in that party's primary. Unaffiliated voters may register with a party at the polls on primary day.",
+      "Same-day voter registration is available at the polls on Election Day — bring proof of Idaho residency.",
+      "Absentee voting is available to any voter without a required reason."
+    ]
+  },
+
+  "voteByMail": {
+    "universal": false,
+    "eligibility": [
+      "Any registered Idaho voter may request an absentee ballot without providing a reason (no-excuse absentee)"
+    ],
+    "applicationDeadline": "Must be received by the county clerk by 5:00 p.m. on the Friday before the election",
+    "returnDeadline": "Must be received by the county clerk by 8:00 p.m. on Election Day",
+    "returnDeadlinePlain": "Must arrive at the county clerk's office by 8 p.m. on Election Day. Postmarks do not count.",
+    "applicationUrl": "https://sos.idaho.gov/elections-division/absentee-voting/",
+    "officialRulesUrl": "https://sos.idaho.gov/elections-division/"
+  },
+
+  "runoffRules": {
+    "hasRunoff": false,
+    "partyLockedToFirstRoundPrimary": false
+  },
+
+  "resources": {
+    "stateElectionWebsite": "https://sos.idaho.gov/elections-division/",
+    "countyElectionLookup": "https://sos.idaho.gov/elections-division/county-clerks/",
+    "sampleBallotLookup": "https://elections.sos.idaho.gov/ElectionLink/RMV/VoterInformation.aspx",
+    "pollingPlaceLookup": "https://elections.sos.idaho.gov/ElectionLink/RMV/VoterInformation.aspx",
+    "voterIdInfo": "https://sos.idaho.gov/elections-division/voter-information/"
+  }
+}

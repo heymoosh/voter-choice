@@ -1,0 +1,148 @@
+{
+  "_sources": {
+    "primary": "https://sos.wyo.gov/elections/",
+    "secondary": "https://www.ncsl.org/elections-and-campaigns/voter-id",
+    "checked": "2026-05-10",
+    "discrepancies": "NCSL classifies Wyoming as photo ID required. Wyoming passed HB 238 in 2022 strengthening ID requirements. Wyoming's primary is typically in August (third Tuesday in August); estimated 2026-08-18. Wyoming offers same-day voter registration at the polls. 2026 registration deadlines estimated from Wyoming statute (14 days before election for standard registration; Election Day for same-day registration). TODO verify exact 2026 cycle dates with Wyoming SoS."
+  },
+  "stateCode": "WY",
+  "stateName": "Wyoming",
+  "lastUpdated": "2026-05-10",
+  "coverageStatus": "confirmed",
+
+  "elections": [
+    {
+      "id": "wy-2026-primary",
+      "name": "2026 Wyoming Primary Election",
+      "date": "2026-08-18",
+      "type": "primary",
+      "isPrimary": true,
+      "primaryType": "closed",
+      "registration": {
+        "online": {
+          "available": false,
+          "deadline": null,
+          "url": null
+        },
+        "byMail": {
+          "deadline": "2026-08-04",
+          "sincePostmarked": false
+        },
+        "inPerson": {
+          "deadline": "2026-08-18",
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": true,
+        "registrationCheckUrl": "https://sos.wyo.gov/elections/register.aspx"
+      },
+      "earlyVoting": {
+        "available": true,
+        "startDate": "2026-07-20",
+        "endDate": "2026-08-14",
+        "notes": "Wyoming offers absentee in-person voting at county clerk offices approximately 30 days before Election Day. Absentee ballots may be requested by any registered voter. TODO verify exact 2026 dates."
+      }
+    },
+    {
+      "id": "wy-2026-general",
+      "name": "2026 Wyoming General Election",
+      "date": "2026-11-03",
+      "type": "general",
+      "isPrimary": false,
+      "primaryType": null,
+      "registration": {
+        "online": {
+          "available": false,
+          "deadline": null,
+          "url": null
+        },
+        "byMail": {
+          "deadline": "2026-10-20",
+          "sincePostmarked": false
+        },
+        "inPerson": {
+          "deadline": "2026-11-03",
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": true,
+        "registrationCheckUrl": "https://sos.wyo.gov/elections/register.aspx"
+      },
+      "earlyVoting": {
+        "available": true,
+        "startDate": "2026-10-05",
+        "endDate": "2026-11-02",
+        "notes": "Absentee in-person voting available at county clerk offices. Any registered voter may request an absentee ballot without providing a reason. Same-day voter registration available at the polls with valid photo ID and proof of Wyoming residency."
+      }
+    }
+  ],
+
+  "registration": {
+    "online": {
+      "available": false,
+      "deadline": null,
+      "url": null
+    },
+    "byMail": {
+      "deadline": "2026-10-20",
+      "sincePostmarked": false
+    },
+    "inPerson": {
+      "deadline": "2026-11-03",
+      "sincePostmarked": false
+    },
+    "sameDayRegistration": true,
+    "registrationCheckUrl": "https://sos.wyo.gov/elections/register.aspx"
+  },
+
+  "earlyVoting": {
+    "available": true,
+    "startDate": "2026-10-05",
+    "endDate": "2026-11-02",
+    "notes": "Wyoming offers absentee voting for any registered voter without requiring a reason. Absentee in-person voting is available at county clerk offices. No online voter registration — register by mail or in person at the county clerk's office."
+  },
+
+  "votingRules": {
+    "idRequired": true,
+    "acceptedIds": [
+      "Wyoming driver's license or state ID card",
+      "U.S. passport or passport card",
+      "U.S. military ID card",
+      "Tribal ID card",
+      "Student ID from a Wyoming college or university (if current enrollment is verified)",
+      "Other government-issued photo ID"
+    ],
+    "phonesAtPolls": "varies",
+    "phonesAtPollsDetail": "Wyoming law prohibits photographing marked ballots. Cell phones may generally be brought into polling places but must not be used to photograph the ballot or other voters. Contact your county clerk for local polling place rules.",
+    "additionalRules": [
+      "Wyoming has a closed primary — only voters registered with a party may vote in that party's primary. Voters may change party registration at the polls on primary day.",
+      "Same-day voter registration is available at the polls with valid photo ID and proof of Wyoming residency.",
+      "Wyoming does not offer online voter registration — register by mail or at your county clerk's office.",
+      "Any registered voter may request an absentee ballot without providing a reason (no-excuse absentee).",
+      "Photo ID required at polls as of 2022 (HB 238)."
+    ]
+  },
+
+  "voteByMail": {
+    "universal": false,
+    "eligibility": [
+      "Any registered Wyoming voter may request an absentee ballot without providing a reason (no-excuse absentee)"
+    ],
+    "applicationDeadline": "Must be received by the county clerk at least 1 day before the election",
+    "returnDeadline": "Must be received by the county clerk by the time polls close on Election Day (7:00 p.m.)",
+    "returnDeadlinePlain": "Must arrive at the county clerk by 7 p.m. on Election Day. Postmarks do not count — ballot must be received.",
+    "applicationUrl": "https://sos.wyo.gov/elections/absenteevoting.aspx",
+    "officialRulesUrl": "https://sos.wyo.gov/elections/"
+  },
+
+  "runoffRules": {
+    "hasRunoff": false,
+    "partyLockedToFirstRoundPrimary": false
+  },
+
+  "resources": {
+    "stateElectionWebsite": "https://sos.wyo.gov/elections/",
+    "countyElectionLookup": "https://sos.wyo.gov/elections/countycontacts.aspx",
+    "sampleBallotLookup": "https://sos.wyo.gov/elections/",
+    "pollingPlaceLookup": "https://sos.wyo.gov/elections/",
+    "voterIdInfo": "https://sos.wyo.gov/elections/voterinfo.aspx"
+  }
+}

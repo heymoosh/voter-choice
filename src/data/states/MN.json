@@ -1,0 +1,144 @@
+{
+  "_sources": {
+    "primary": "https://www.sos.state.mn.us/elections-voting/",
+    "secondary": "https://www.ncsl.org/elections-and-campaigns/voter-id",
+    "dateChecked": "2026-05-10",
+    "discrepancies": "Minnesota has no photo ID requirement — voters sign the poll book (vouching system also available). NCSL categorizes MN as 'no document required'. First-time voters who register on Election Day must present proof of residence; this is not a photo ID requirement per se. Minnesota's same-day registration is a long-standing feature. Primary is set by statute as the second Tuesday in August."
+  },
+
+  "stateCode": "MN",
+  "stateName": "Minnesota",
+  "lastUpdated": "2026-05-10",
+  "coverageStatus": "confirmed",
+
+  "elections": [
+    {
+      "id": "mn-2026-primary",
+      "name": "2026 Minnesota State Primary",
+      "date": "2026-08-11",
+      "type": "primary",
+      "isPrimary": true,
+      "primaryType": "open",
+      "registration": {
+        "online": {
+          "available": true,
+          "deadline": "2026-08-11",
+          "url": "https://mnvotes.sos.state.mn.us/VoterRegistration/VoterRegistrationMain.aspx"
+        },
+        "byMail": {
+          "deadline": "2026-07-21",
+          "sincePostmarked": false
+        },
+        "inPerson": {
+          "deadline": "2026-08-11",
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": true,
+        "registrationCheckUrl": "https://mnvotes.sos.state.mn.us/"
+      },
+      "earlyVoting": {
+        "available": true,
+        "startDate": "2026-07-17",
+        "endDate": "2026-08-10",
+        "notes": "Early (absentee in-person) voting available starting 46 days before the primary at county auditor or city clerk offices. TODO verify for 2026 cycle."
+      }
+    },
+    {
+      "id": "mn-2026-general",
+      "name": "2026 Minnesota General Election",
+      "date": "2026-11-03",
+      "type": "general",
+      "isPrimary": false,
+      "primaryType": null,
+      "registration": {
+        "online": {
+          "available": true,
+          "deadline": "2026-11-03",
+          "url": "https://mnvotes.sos.state.mn.us/VoterRegistration/VoterRegistrationMain.aspx"
+        },
+        "byMail": {
+          "deadline": "2026-10-13",
+          "sincePostmarked": false
+        },
+        "inPerson": {
+          "deadline": "2026-11-03",
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": true,
+        "registrationCheckUrl": "https://mnvotes.sos.state.mn.us/"
+      },
+      "earlyVoting": {
+        "available": true,
+        "startDate": "2026-09-18",
+        "endDate": "2026-11-02",
+        "notes": "Early in-person absentee voting starts 46 days before the general election. Sites and hours vary by county/city. TODO verify for 2026 cycle."
+      }
+    }
+  ],
+
+  "registration": {
+    "online": {
+      "available": true,
+      "deadline": "2026-11-03",
+      "url": "https://mnvotes.sos.state.mn.us/VoterRegistration/VoterRegistrationMain.aspx"
+    },
+    "byMail": {
+      "deadline": "2026-10-13",
+      "sincePostmarked": false
+    },
+    "inPerson": {
+      "deadline": "2026-11-03",
+      "sincePostmarked": false
+    },
+    "sameDayRegistration": true,
+    "registrationCheckUrl": "https://mnvotes.sos.state.mn.us/"
+  },
+
+  "earlyVoting": {
+    "available": true,
+    "startDate": "2026-09-18",
+    "endDate": "2026-11-02",
+    "notes": "Early in-person absentee voting begins 46 days before the general election and is available at county auditor and city/township clerk offices. Same-day registration available through Election Day. TODO verify for 2026 cycle."
+  },
+
+  "votingRules": {
+    "idRequired": false,
+    "acceptedIds": [],
+    "phonesAtPolls": "allowed",
+    "phonesAtPollsDetail": "Minnesota does not prohibit phones at polling places. Voters may not take photos of their marked ballot. No electioneering within 100 feet of the polling place entrance.",
+    "additionalRules": [
+      "No photo ID required — voters sign the poll book. A registered voter may also vouch for an unregistered neighbor (vouching system).",
+      "Open primary: voters pick any party's primary ballot without declaring affiliation.",
+      "Same-day voter registration available on Election Day at your polling place.",
+      "First-time voters registering on Election Day must present proof of residence (utility bill, bank statement, lease, etc.).",
+      "No runoffs in Minnesota — the candidate with the most votes wins."
+    ]
+  },
+
+  "voteByMail": {
+    "universal": false,
+    "eligibility": [
+      "Any registered voter may request an absentee ballot without providing a reason"
+    ],
+    "applicationDeadline": "1 day before the election (received by the county auditor or city clerk) for mailed application; in-person absentee voting available up through Election Day",
+    "returnDeadline": "Must be received by the county auditor by 3 p.m. on Election Day if returned by mail; or deposited in drop box by 8 p.m. on Election Day",
+    "returnDeadlinePlain": "Mail it back so it arrives by 3 p.m. Election Day, or drop it in a secure drop box by 8 p.m. Election Day.",
+    "applicationUrl": "https://www.sos.state.mn.us/elections-voting/other-ways-to-vote/vote-early-by-absentee-ballot/",
+    "officialRulesUrl": "https://www.sos.state.mn.us/elections-voting/other-ways-to-vote/vote-early-by-absentee-ballot/"
+  },
+
+  "runoffRules": {
+    "hasRunoff": false,
+    "partyLockedToFirstRoundPrimary": false
+  },
+
+  "resources": {
+    "stateElectionWebsite": "https://www.sos.state.mn.us/elections-voting/",
+    "countyElectionLookup": "https://www.sos.state.mn.us/elections-voting/find-county-auditor-election-office/",
+    "sampleBallotLookup": "https://mnvotes.sos.state.mn.us/",
+    "pollingPlaceLookup": "https://pollfinder.sos.state.mn.us/",
+    "importantDates": "https://www.sos.state.mn.us/elections-voting/election-dates-and-deadlines/",
+    "voterIdInfo": "https://www.sos.state.mn.us/elections-voting/register-to-vote/",
+    "earlyVotingInfo": "https://www.sos.state.mn.us/elections-voting/other-ways-to-vote/vote-early-by-absentee-ballot/"
+  }
+}

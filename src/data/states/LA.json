@@ -1,0 +1,155 @@
+{
+  "_sources": {
+    "primary": "https://www.sos.la.gov/ElectionsAndVoting/Pages/default.aspx",
+    "secondary": "https://ballotpedia.org/Voting_in_Louisiana",
+    "dateChecked": "2026-05-10",
+    "discrepancies": "NCSL lists LA as 'photo ID requested' (non-strict). SoS confirms voters without photo ID may sign an affidavit and cast a regular ballot. Louisiana uses a jungle primary (top-two) system, not a party primary runoff. The statewide primary is a nonpartisan jungle primary; runoffs exist but are not party-locked. No party-locked runoff rule applies."
+  },
+  "stateCode": "LA",
+  "stateName": "Louisiana",
+  "lastUpdated": "2026-05-10",
+  "coverageStatus": "confirmed",
+
+  "elections": [
+    {
+      "id": "la-2026-primary",
+      "name": "2026 Louisiana Jungle Primary",
+      "date": "2026-10-10",
+      "type": "primary",
+      "isPrimary": true,
+      "primaryType": "open",
+      "registration": {
+        "online": {
+          "available": true,
+          "deadline": "2026-09-11",
+          "url": "https://voterportal.sos.la.gov/"
+        },
+        "byMail": {
+          "deadline": "2026-09-11",
+          "sincePostmarked": true
+        },
+        "inPerson": {
+          "deadline": "2026-09-11",
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": false,
+        "registrationCheckUrl": "https://voterportal.sos.la.gov/"
+      },
+      "earlyVoting": {
+        "available": true,
+        "startDate": "2026-09-26",
+        "endDate": "2026-10-03",
+        "notes": "Early voting runs 14 to 7 days before the election (excluding Sunday). TODO verify for 2026 cycle."
+      }
+    },
+    {
+      "id": "la-2026-general",
+      "name": "2026 Louisiana General (Runoff) Election",
+      "date": "2026-11-21",
+      "type": "general",
+      "isPrimary": false,
+      "primaryType": null,
+      "registration": {
+        "online": {
+          "available": true,
+          "deadline": "2026-10-23",
+          "url": "https://voterportal.sos.la.gov/"
+        },
+        "byMail": {
+          "deadline": "2026-10-23",
+          "sincePostmarked": true
+        },
+        "inPerson": {
+          "deadline": "2026-10-23",
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": false,
+        "registrationCheckUrl": "https://voterportal.sos.la.gov/"
+      },
+      "earlyVoting": {
+        "available": true,
+        "startDate": "2026-11-07",
+        "endDate": "2026-11-14",
+        "notes": "Early voting for general/runoff. TODO verify for 2026 cycle."
+      }
+    }
+  ],
+
+  "registration": {
+    "online": {
+      "available": true,
+      "deadline": "2026-10-23",
+      "url": "https://voterportal.sos.la.gov/"
+    },
+    "byMail": {
+      "deadline": "2026-10-23",
+      "sincePostmarked": true
+    },
+    "inPerson": {
+      "deadline": "2026-10-23",
+      "sincePostmarked": false
+    },
+    "sameDayRegistration": false,
+    "registrationCheckUrl": "https://voterportal.sos.la.gov/"
+  },
+
+  "earlyVoting": {
+    "available": true,
+    "startDate": "2026-11-07",
+    "endDate": "2026-11-14",
+    "notes": "Early voting runs from 14 to 7 days before the election (Sundays excluded). Hours set by parish. TODO verify for 2026 cycle."
+  },
+
+  "votingRules": {
+    "idRequired": true,
+    "acceptedIds": [
+      "Louisiana driver's license or ID card",
+      "Louisiana special ID card (free for qualifying voters)",
+      "U.S. passport",
+      "U.S. military ID",
+      "Employer-issued photo ID",
+      "Student ID from an accredited Louisiana school",
+      "Hunting or fishing license issued by Louisiana"
+    ],
+    "expirationRule": "Photo ID must not be expired. Louisiana issues free photo IDs for voters who cannot obtain one. TODO verify for 2026 cycle.",
+    "impedimentDeclaration": "Voters without photo ID may cast a provisional ballot. Alternatively, a poll commissioner who knows the voter may vouch for their identity.",
+    "phonesAtPolls": "prohibited",
+    "phonesAtPollsDetail": "Louisiana prohibits use of wireless communication devices in the voting booth. You may bring written notes.",
+    "additionalRules": [
+      "Louisiana uses a jungle primary (nonpartisan blanket primary): all candidates appear on one ballot regardless of party. If no candidate receives a majority, the top two advance to a general election runoff.",
+      "Party-locked runoff rules do not apply — Louisiana's runoff is between the top-two finishers regardless of party."
+    ]
+  },
+
+  "voteByMail": {
+    "universal": false,
+    "eligibility": [
+      "Will be out of the parish on Election Day and early voting period",
+      "Physical illness or disability",
+      "65 years of age or older",
+      "Caretaker of ill or disabled person",
+      "Observing a religious holiday",
+      "Employed as an election commissioner or official"
+    ],
+    "applicationDeadline": "Must be received by the registrar of voters 4 days before the election",
+    "returnDeadline": "Must be received by the registrar of voters by 4:30 p.m. on the day before the election, or by 8 p.m. on Election Day if hand-delivered",
+    "returnDeadlinePlain": "Absentee ballot must arrive at the registrar by 4:30 p.m. the day before Election Day (mail), or by 8 p.m. Election Day (in person).",
+    "applicationUrl": "https://www.sos.la.gov/ElectionsAndVoting/Vote/VoteByAbsenteeBallot/Pages/default.aspx",
+    "officialRulesUrl": "https://www.sos.la.gov/ElectionsAndVoting/Vote/VoteByAbsenteeBallot/Pages/default.aspx"
+  },
+
+  "runoffRules": {
+    "hasRunoff": false,
+    "partyLockedToFirstRoundPrimary": false
+  },
+
+  "resources": {
+    "stateElectionWebsite": "https://www.sos.la.gov/ElectionsAndVoting/Pages/default.aspx",
+    "countyElectionLookup": "https://www.sos.la.gov/ElectionsAndVoting/RegisterToVote/Pages/default.aspx",
+    "sampleBallotLookup": "https://voterportal.sos.la.gov/",
+    "pollingPlaceLookup": "https://voterportal.sos.la.gov/",
+    "importantDates": "https://www.sos.la.gov/ElectionsAndVoting/Pages/default.aspx",
+    "voterIdInfo": "https://www.sos.la.gov/ElectionsAndVoting/Vote/GoVotePhotoIDRequirements/Pages/default.aspx",
+    "earlyVotingInfo": "https://www.sos.la.gov/ElectionsAndVoting/Vote/EarlyVoting/Pages/default.aspx"
+  }
+}

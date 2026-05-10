@@ -1,0 +1,150 @@
+{
+  "_sources": {
+    "primary": "https://vip.sos.nd.gov/",
+    "secondary": "https://www.ncsl.org/elections-and-campaigns/voter-id",
+    "dateChecked": "2026-05-10",
+    "discrepancies": "North Dakota is the only U.S. state with NO voter registration — voters simply appear at the polls with qualifying ID. Because there is no registration system, registration fields in this fixture are intentionally null/false — this is correct data, not missing data. NCSL categorizes ND as 'strict non-photo ID' (residential address ID required; updated to note ND's unique no-registration system). Ohio changed to stricter photo ID in 2023; ND's requirement predates that. ND primary is set by statute as the second Tuesday in June."
+  },
+
+  "stateCode": "ND",
+  "stateName": "North Dakota",
+  "lastUpdated": "2026-05-10",
+  "coverageStatus": "confirmed",
+
+  "elections": [
+    {
+      "id": "nd-2026-primary",
+      "name": "2026 North Dakota Primary Election",
+      "date": "2026-06-09",
+      "type": "primary",
+      "isPrimary": true,
+      "primaryType": "open",
+      "registration": {
+        "online": {
+          "available": false,
+          "deadline": null,
+          "url": "https://vip.sos.nd.gov/"
+        },
+        "byMail": {
+          "deadline": null,
+          "sincePostmarked": false
+        },
+        "inPerson": {
+          "deadline": null,
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": false,
+        "registrationCheckUrl": "https://vip.sos.nd.gov/"
+      },
+      "earlyVoting": {
+        "available": true,
+        "startDate": "2026-05-11",
+        "endDate": "2026-06-08",
+        "notes": "Early (absentee in-person) voting available at county auditor offices. No voter registration required. TODO verify for 2026 cycle."
+      }
+    },
+    {
+      "id": "nd-2026-general",
+      "name": "2026 North Dakota General Election",
+      "date": "2026-11-03",
+      "type": "general",
+      "isPrimary": false,
+      "primaryType": null,
+      "registration": {
+        "online": {
+          "available": false,
+          "deadline": null,
+          "url": "https://vip.sos.nd.gov/"
+        },
+        "byMail": {
+          "deadline": null,
+          "sincePostmarked": false
+        },
+        "inPerson": {
+          "deadline": null,
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": false,
+        "registrationCheckUrl": "https://vip.sos.nd.gov/"
+      },
+      "earlyVoting": {
+        "available": true,
+        "startDate": "2026-10-05",
+        "endDate": "2026-11-02",
+        "notes": "Early (absentee in-person) voting available at county auditor offices. No voter registration required — just bring qualifying ID. TODO verify for 2026 cycle."
+      }
+    }
+  ],
+
+  "registration": {
+    "online": {
+      "available": false,
+      "deadline": null,
+      "url": "https://vip.sos.nd.gov/"
+    },
+    "byMail": {
+      "deadline": null,
+      "sincePostmarked": false
+    },
+    "inPerson": {
+      "deadline": null,
+      "sincePostmarked": false
+    },
+    "sameDayRegistration": false,
+    "registrationCheckUrl": "https://vip.sos.nd.gov/"
+  },
+
+  "earlyVoting": {
+    "available": true,
+    "startDate": "2026-10-05",
+    "endDate": "2026-11-02",
+    "notes": "Early in-person (absentee) voting available at county auditor offices beginning 30 days before the election. Mail absentee ballots are also available on request. No voter registration required. TODO verify for 2026 cycle."
+  },
+
+  "votingRules": {
+    "idRequired": true,
+    "acceptedIds": [
+      "North Dakota driver's license with current residential address",
+      "North Dakota nondriver ID card with current residential address",
+      "Tribal government-issued ID with current residential address",
+      "Long-term care ID issued by a North Dakota facility with current residential address"
+    ],
+    "expirationRule": "ID must bear a current residential address and must not be expired. TODO verify for 2026 cycle.",
+    "impedimentDeclaration": "Voters without qualifying ID may cast a ballot if they are accompanied by a poll worker or another voter who can attest to their identity and address. Alternatively, voters without ID may use an affidavit.",
+    "phonesAtPolls": "varies",
+    "phonesAtPollsDetail": "North Dakota does not have a statewide prohibition on phones at polling places. County rules may apply. Check with your county auditor.",
+    "additionalRules": [
+      "UNIQUE: North Dakota does not require voter registration. Any person who is a U.S. citizen, at least 18 years old, and has resided in North Dakota for 30 days may vote by showing qualifying ID.",
+      "Open primary: voters choose which party's primary ballot to request.",
+      "No runoffs in North Dakota — the candidate with the most votes wins.",
+      "Mail absentee ballots available on request; application must be received by the county auditor at least 7 days before the election."
+    ]
+  },
+
+  "voteByMail": {
+    "universal": false,
+    "eligibility": [
+      "Any qualified North Dakota voter (no registration required) may request an absentee ballot"
+    ],
+    "applicationDeadline": "7 days before the election (received by county auditor)",
+    "returnDeadline": "Must be received by the county auditor by the time polls close on Election Day",
+    "returnDeadlinePlain": "Must arrive at the county auditor by poll closing on Election Day. Postmarks do not count.",
+    "applicationUrl": "https://vip.sos.nd.gov/",
+    "officialRulesUrl": "https://sos.nd.gov/elections/voter/absentee-voting"
+  },
+
+  "runoffRules": {
+    "hasRunoff": false,
+    "partyLockedToFirstRoundPrimary": false
+  },
+
+  "resources": {
+    "stateElectionWebsite": "https://vip.sos.nd.gov/",
+    "countyElectionLookup": "https://sos.nd.gov/elections/election-resources/county-auditors",
+    "sampleBallotLookup": "https://vip.sos.nd.gov/",
+    "pollingPlaceLookup": "https://vip.sos.nd.gov/",
+    "importantDates": "https://sos.nd.gov/elections/election-dates",
+    "voterIdInfo": "https://sos.nd.gov/elections/voter/voter-id-requirements",
+    "earlyVotingInfo": "https://sos.nd.gov/elections/voter/absentee-voting"
+  }
+}

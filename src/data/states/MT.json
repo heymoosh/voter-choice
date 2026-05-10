@@ -1,0 +1,147 @@
+{
+  "_sources": {
+    "primary": "https://sosmt.gov/elections/",
+    "secondary": "https://www.ncsl.org/elections-and-campaigns/voter-id",
+    "checked": "2026-05-10",
+    "discrepancies": "NCSL classifies Montana as photo ID required as of 2023 (HB 176 took effect). Montana's primary is typically the first Tuesday after the third Monday in June; estimated 2026-06-02. Montana offers same-day voter registration only for municipal elections, not partisan primary elections — verify with SoS for 2026 cycle. 2026 registration deadlines estimated from Montana statute (30 days before for mail/online, Election Day for in-person non-partisan). TODO verify exact dates."
+  },
+  "stateCode": "MT",
+  "stateName": "Montana",
+  "lastUpdated": "2026-05-10",
+  "coverageStatus": "confirmed",
+
+  "elections": [
+    {
+      "id": "mt-2026-primary",
+      "name": "2026 Montana Primary Election",
+      "date": "2026-06-02",
+      "type": "primary",
+      "isPrimary": true,
+      "primaryType": "open",
+      "registration": {
+        "online": {
+          "available": true,
+          "deadline": "2026-05-04",
+          "url": "https://sosmt.gov/elections/vote/"
+        },
+        "byMail": {
+          "deadline": "2026-05-04",
+          "sincePostmarked": false
+        },
+        "inPerson": {
+          "deadline": "2026-05-26",
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": false,
+        "registrationCheckUrl": "https://app.mt.gov/voterinfo/"
+      },
+      "earlyVoting": {
+        "available": true,
+        "startDate": "2026-05-04",
+        "endDate": "2026-06-01",
+        "notes": "Montana offers absentee voting (in-person at county election offices) beginning 30 days before the election. All voters may request an absentee ballot without a reason. TODO verify exact 2026 dates."
+      }
+    },
+    {
+      "id": "mt-2026-general",
+      "name": "2026 Montana General Election",
+      "date": "2026-11-03",
+      "type": "general",
+      "isPrimary": false,
+      "primaryType": null,
+      "registration": {
+        "online": {
+          "available": true,
+          "deadline": "2026-10-05",
+          "url": "https://sosmt.gov/elections/vote/"
+        },
+        "byMail": {
+          "deadline": "2026-10-05",
+          "sincePostmarked": false
+        },
+        "inPerson": {
+          "deadline": "2026-11-02",
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": false,
+        "registrationCheckUrl": "https://app.mt.gov/voterinfo/"
+      },
+      "earlyVoting": {
+        "available": true,
+        "startDate": "2026-10-02",
+        "endDate": "2026-11-02",
+        "notes": "Absentee in-person voting available at county election offices starting 30 days before Election Day. Absentee ballots may be returned by mail or in person. Late registration (in-person at election office) may be available through noon the day before the election — check with your county."
+      }
+    }
+  ],
+
+  "registration": {
+    "online": {
+      "available": true,
+      "deadline": "2026-10-05",
+      "url": "https://sosmt.gov/elections/vote/"
+    },
+    "byMail": {
+      "deadline": "2026-10-05",
+      "sincePostmarked": false
+    },
+    "inPerson": {
+      "deadline": "2026-11-02",
+      "sincePostmarked": false
+    },
+    "sameDayRegistration": false,
+    "registrationCheckUrl": "https://app.mt.gov/voterinfo/"
+  },
+
+  "earlyVoting": {
+    "available": true,
+    "startDate": "2026-10-02",
+    "endDate": "2026-11-02",
+    "notes": "Montana does not have traditional early voting polling places. Absentee in-person voting is available at county election offices starting approximately 30 days before the election. Any voter may request an absentee ballot without providing a reason."
+  },
+
+  "votingRules": {
+    "idRequired": true,
+    "acceptedIds": [
+      "Montana driver's license or state ID card",
+      "U.S. passport or passport card",
+      "Military ID card",
+      "Tribal photo ID",
+      "Student photo ID from a Montana college or university (accompanied by proof of current enrollment or a current utility bill)",
+      "Other government-issued photo ID"
+    ],
+    "phonesAtPolls": "varies",
+    "phonesAtPollsDetail": "Montana law prohibits photographing your marked ballot and showing it to others for purposes of vote-buying, but does not have a general ban on phones in polling places. Contact your county election office for local rules.",
+    "additionalRules": [
+      "Montana has an open primary — any registered voter may vote in any party's primary.",
+      "Any voter may request an absentee ballot without providing a reason (no-excuse absentee).",
+      "Late in-person registration may be available at county election offices through noon the day before the election — check with your county.",
+      "Photo ID is now required at the polls as of 2023 (HB 176). Previous rules requiring non-photo ID were changed."
+    ]
+  },
+
+  "voteByMail": {
+    "universal": false,
+    "eligibility": [
+      "Any registered Montana voter may request an absentee ballot without providing a reason (no-excuse absentee)"
+    ],
+    "applicationDeadline": "Must be received by county election office by noon the day before the election",
+    "returnDeadline": "Must be received by county election office by 8:00 p.m. on Election Day",
+    "returnDeadlinePlain": "Must arrive at the county election office by 8 p.m. on Election Day. Postmarks alone do not count — ballot must be received.",
+    "applicationUrl": "https://sosmt.gov/elections/absentee/",
+    "officialRulesUrl": "https://sosmt.gov/elections/"
+  },
+
+  "runoffRules": {
+    "hasRunoff": false,
+    "partyLockedToFirstRoundPrimary": false
+  },
+
+  "resources": {
+    "stateElectionWebsite": "https://sosmt.gov/elections/",
+    "countyElectionLookup": "https://sosmt.gov/elections/county-election-administrators/",
+    "sampleBallotLookup": "https://app.mt.gov/voterinfo/",
+    "pollingPlaceLookup": "https://app.mt.gov/voterinfo/",
+    "voterIdInfo": "https://sosmt.gov/elections/voter-id/"
+  }
+}

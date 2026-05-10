@@ -1,0 +1,187 @@
+{
+  "_sources": {
+    "primary": "https://www.sos.alabama.gov/alabama-votes/voter/election-information",
+    "secondary": "https://ballotpedia.org/Voting_in_Alabama",
+    "dateChecked": "2026-05-10",
+    "discrepancies": "NCSL lists AL as 'photo ID requested' (non-strict); SoS confirms voters without photo ID may show a non-photo ID or vote a provisional ballot. Consistent."
+  },
+  "stateCode": "AL",
+  "stateName": "Alabama",
+  "lastUpdated": "2026-05-10",
+  "coverageStatus": "confirmed",
+
+  "elections": [
+    {
+      "id": "al-2026-primary",
+      "name": "2026 Alabama Primary Election",
+      "date": "2026-05-19",
+      "type": "primary",
+      "isPrimary": true,
+      "primaryType": "open",
+      "registration": {
+        "online": {
+          "available": true,
+          "deadline": "2026-04-20",
+          "url": "https://myinfo.alabamavotes.gov/voterview"
+        },
+        "byMail": {
+          "deadline": "2026-04-20",
+          "sincePostmarked": true
+        },
+        "inPerson": {
+          "deadline": "2026-04-20",
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": false,
+        "registrationCheckUrl": "https://myinfo.alabamavotes.gov/voterview"
+      },
+      "earlyVoting": {
+        "available": false,
+        "startDate": null,
+        "endDate": null,
+        "notes": "Alabama does not have a general early voting period for primaries. Absentee voting is available."
+      }
+    },
+    {
+      "id": "al-2026-primary-runoff",
+      "name": "2026 Alabama Primary Runoff Election",
+      "date": "2026-07-14",
+      "type": "runoff",
+      "isPrimary": false,
+      "primaryType": null,
+      "registration": {
+        "online": {
+          "available": true,
+          "deadline": "2026-06-15",
+          "url": "https://myinfo.alabamavotes.gov/voterview"
+        },
+        "byMail": {
+          "deadline": "2026-06-15",
+          "sincePostmarked": true
+        },
+        "inPerson": {
+          "deadline": "2026-06-15",
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": false,
+        "registrationCheckUrl": "https://myinfo.alabamavotes.gov/voterview"
+      },
+      "earlyVoting": {
+        "available": false,
+        "startDate": null,
+        "endDate": null,
+        "notes": "No early voting for runoffs; absentee voting is available. TODO verify runoff date for 2026 cycle."
+      }
+    },
+    {
+      "id": "al-2026-general",
+      "name": "2026 Alabama General Election",
+      "date": "2026-11-03",
+      "type": "general",
+      "isPrimary": false,
+      "primaryType": null,
+      "registration": {
+        "online": {
+          "available": true,
+          "deadline": "2026-10-05",
+          "url": "https://myinfo.alabamavotes.gov/voterview"
+        },
+        "byMail": {
+          "deadline": "2026-10-05",
+          "sincePostmarked": true
+        },
+        "inPerson": {
+          "deadline": "2026-10-05",
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": false,
+        "registrationCheckUrl": "https://myinfo.alabamavotes.gov/voterview"
+      },
+      "earlyVoting": {
+        "available": false,
+        "startDate": null,
+        "endDate": null,
+        "notes": "Alabama does not have a general early voting period. Absentee voting is available for qualifying voters."
+      }
+    }
+  ],
+
+  "registration": {
+    "online": {
+      "available": true,
+      "deadline": "2026-10-05",
+      "url": "https://myinfo.alabamavotes.gov/voterview"
+    },
+    "byMail": {
+      "deadline": "2026-10-05",
+      "sincePostmarked": true
+    },
+    "inPerson": {
+      "deadline": "2026-10-05",
+      "sincePostmarked": false
+    },
+    "sameDayRegistration": false,
+    "registrationCheckUrl": "https://myinfo.alabamavotes.gov/voterview"
+  },
+
+  "earlyVoting": {
+    "available": false,
+    "startDate": null,
+    "endDate": null,
+    "notes": "Alabama does not have a general early voting period. Absentee voting is available for voters who are 65 or older, have a physical illness or infirmity, or will be absent from the county on Election Day."
+  },
+
+  "votingRules": {
+    "idRequired": true,
+    "acceptedIds": [
+      "Alabama driver's license or non-driver ID",
+      "Alabama photo voter ID card (free from county board of registrars)",
+      "U.S. passport",
+      "U.S. military ID with photo",
+      "State or federal government-issued photo ID",
+      "Tribal ID with photo"
+    ],
+    "expirationRule": "Photo ID must be valid (not expired) to be accepted. TODO verify for 2026 cycle.",
+    "impedimentDeclaration": "Voters without an acceptable photo ID may present a non-photo ID (e.g., utility bill, bank statement, government document with name and address) and may vote a provisional ballot if they do not have any ID.",
+    "phonesAtPolls": "prohibited",
+    "phonesAtPollsDetail": "Alabama prohibits use of wireless communication devices within the polling place. You may bring written notes.",
+    "additionalRules": [
+      "Open primary: any registered voter may choose which party's primary to vote in; party registration is not required.",
+      "Runoff rule: if you voted in one party's primary, you may only vote in that party's runoff."
+    ]
+  },
+
+  "voteByMail": {
+    "universal": false,
+    "eligibility": [
+      "65 years of age or older",
+      "Physical illness or infirmity preventing appearance at the polls",
+      "Absent from the county on Election Day and during absentee voting period",
+      "Have a job that requires working poll hours on Election Day",
+      "Enrolled as a student outside the county",
+      "Caretaker of a sick or infirm person",
+      "Incarcerated in county jail and otherwise eligible"
+    ],
+    "applicationDeadline": "Must be received by the county board of registrars by the Thursday before the election",
+    "returnDeadline": "Must be received by the county board of registrars by noon on the day before the election (for most voters). Emergency absentee ballots may be submitted up to noon on Election Day.",
+    "returnDeadlinePlain": "Must be received by the county by noon the day before Election Day.",
+    "applicationUrl": "https://www.sos.alabama.gov/alabama-votes/voter/absentee-voting",
+    "officialRulesUrl": "https://www.sos.alabama.gov/alabama-votes/voter/absentee-voting"
+  },
+
+  "runoffRules": {
+    "hasRunoff": true,
+    "partyLockedToFirstRoundPrimary": true,
+    "ruleExplanation": "Alabama rule: if you voted in one party's primary, you can only vote in that same party's runoff. If you did not vote in the primary, you may choose either party's runoff."
+  },
+
+  "resources": {
+    "stateElectionWebsite": "https://www.sos.alabama.gov/alabama-votes",
+    "countyElectionLookup": "https://www.sos.alabama.gov/alabama-votes/county-election-offices",
+    "sampleBallotLookup": "https://myinfo.alabamavotes.gov/voterview",
+    "pollingPlaceLookup": "https://myinfo.alabamavotes.gov/voterview",
+    "importantDates": "https://www.sos.alabama.gov/alabama-votes/voter/election-information",
+    "voterIdInfo": "https://www.sos.alabama.gov/alabama-votes/voter/photo-id",
+    "earlyVotingInfo": "https://www.sos.alabama.gov/alabama-votes/voter/absentee-voting"
+  }
+}

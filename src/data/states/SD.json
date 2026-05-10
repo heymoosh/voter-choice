@@ -1,0 +1,183 @@
+{
+  "_sources": {
+    "primary": "https://sdsos.gov/elections-voting/",
+    "secondary": "https://www.ncsl.org/elections-and-campaigns/voter-id",
+    "dateChecked": "2026-05-10",
+    "discrepancies": "South Dakota requests photo ID — NCSL categorizes SD as 'photo ID requested'. Voters without photo ID may provide last four digits of SSN, sign a poll book affidavit, or be vouched for by an election judge. SD has a party-locked primary runoff: if no candidate receives 35% of the vote in the primary, the top two advance to a runoff. A voter who participated in one party's primary may only vote in that party's runoff (similar to TX and GA). Primary is set by statute as the first Tuesday after the first Monday in June."
+  },
+
+  "stateCode": "SD",
+  "stateName": "South Dakota",
+  "lastUpdated": "2026-05-10",
+  "coverageStatus": "confirmed",
+
+  "elections": [
+    {
+      "id": "sd-2026-primary",
+      "name": "2026 South Dakota Primary Election",
+      "date": "2026-06-02",
+      "type": "primary",
+      "isPrimary": true,
+      "primaryType": "closed",
+      "registration": {
+        "online": {
+          "available": true,
+          "deadline": "2026-05-18",
+          "url": "https://sdsos.gov/elections-voting/voting/register-to-vote/default.aspx"
+        },
+        "byMail": {
+          "deadline": "2026-05-18",
+          "sincePostmarked": false
+        },
+        "inPerson": {
+          "deadline": "2026-05-18",
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": false,
+        "registrationCheckUrl": "https://vip.sdsos.gov/VIPLogin.aspx"
+      },
+      "earlyVoting": {
+        "available": true,
+        "startDate": "2026-05-04",
+        "endDate": "2026-06-01",
+        "notes": "Absentee in-person voting available at county auditor offices starting 46 days before the primary. TODO verify for 2026 cycle."
+      }
+    },
+    {
+      "id": "sd-2026-primary-runoff",
+      "name": "2026 South Dakota Primary Runoff Election",
+      "date": "2026-08-04",
+      "type": "runoff",
+      "isPrimary": false,
+      "primaryType": null,
+      "registration": {
+        "online": {
+          "available": true,
+          "deadline": "2026-07-20",
+          "url": "https://sdsos.gov/elections-voting/voting/register-to-vote/default.aspx"
+        },
+        "byMail": {
+          "deadline": "2026-07-20",
+          "sincePostmarked": false
+        },
+        "inPerson": {
+          "deadline": "2026-07-20",
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": false,
+        "registrationCheckUrl": "https://vip.sdsos.gov/VIPLogin.aspx"
+      },
+      "earlyVoting": {
+        "available": true,
+        "startDate": "2026-07-06",
+        "endDate": "2026-08-03",
+        "notes": "Absentee in-person voting available at county auditor offices before the runoff. TODO verify for 2026 cycle."
+      }
+    },
+    {
+      "id": "sd-2026-general",
+      "name": "2026 South Dakota General Election",
+      "date": "2026-11-03",
+      "type": "general",
+      "isPrimary": false,
+      "primaryType": null,
+      "registration": {
+        "online": {
+          "available": true,
+          "deadline": "2026-10-19",
+          "url": "https://sdsos.gov/elections-voting/voting/register-to-vote/default.aspx"
+        },
+        "byMail": {
+          "deadline": "2026-10-19",
+          "sincePostmarked": false
+        },
+        "inPerson": {
+          "deadline": "2026-10-19",
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": false,
+        "registrationCheckUrl": "https://vip.sdsos.gov/VIPLogin.aspx"
+      },
+      "earlyVoting": {
+        "available": true,
+        "startDate": "2026-09-18",
+        "endDate": "2026-11-02",
+        "notes": "Absentee in-person voting available at county auditor offices starting 46 days before the general election. TODO verify for 2026 cycle."
+      }
+    }
+  ],
+
+  "registration": {
+    "online": {
+      "available": true,
+      "deadline": "2026-10-19",
+      "url": "https://sdsos.gov/elections-voting/voting/register-to-vote/default.aspx"
+    },
+    "byMail": {
+      "deadline": "2026-10-19",
+      "sincePostmarked": false
+    },
+    "inPerson": {
+      "deadline": "2026-10-19",
+      "sincePostmarked": false
+    },
+    "sameDayRegistration": false,
+    "registrationCheckUrl": "https://vip.sdsos.gov/VIPLogin.aspx"
+  },
+
+  "earlyVoting": {
+    "available": true,
+    "startDate": "2026-09-18",
+    "endDate": "2026-11-02",
+    "notes": "Absentee in-person voting available at county auditor offices starting 46 days before the general election. TODO verify for 2026 cycle."
+  },
+
+  "votingRules": {
+    "idRequired": true,
+    "acceptedIds": [
+      "South Dakota driver's license or state ID card",
+      "U.S. passport or passport card",
+      "U.S. military ID",
+      "Tribal ID",
+      "Photo ID issued by a South Dakota accredited university or college",
+      "Other U.S. government-issued photo ID"
+    ],
+    "expirationRule": "Photo ID should not be expired. If voter lacks photo ID, they may provide the last four digits of their SSN and sign an election judge affidavit. TODO verify for 2026 cycle.",
+    "impedimentDeclaration": "Voters without acceptable photo ID may provide the last four digits of their SSN plus sign a poll book affidavit, or be vouched for by an election judge who knows the voter.",
+    "phonesAtPolls": "varies",
+    "phonesAtPollsDetail": "South Dakota does not have a statewide prohibition on phones at polling places, but voters may not photograph their ballot or interfere with other voters. Check with your county auditor for local rules.",
+    "additionalRules": [
+      "Closed primary: only voters registered with a party may vote in that party's primary.",
+      "Runoff rule: if no candidate receives 35% of the primary vote, the top two candidates advance to a primary runoff. A voter who voted in one party's primary may only vote in that party's runoff.",
+      "No runoffs in South Dakota general elections — the candidate with the most votes wins."
+    ]
+  },
+
+  "voteByMail": {
+    "universal": false,
+    "eligibility": [
+      "Any registered voter may request an absentee ballot without providing a reason"
+    ],
+    "applicationDeadline": "Day before the election (received by county auditor) for mail ballot; in-person absentee voting available through the Monday before the election",
+    "returnDeadline": "Must be received by the county auditor by the time polls close on Election Day",
+    "returnDeadlinePlain": "Must arrive at the county auditor by poll closing on Election Day. Postmarks do not count.",
+    "applicationUrl": "https://sdsos.gov/elections-voting/voting/absentee-voting/default.aspx",
+    "officialRulesUrl": "https://sdsos.gov/elections-voting/voting/absentee-voting/default.aspx"
+  },
+
+  "runoffRules": {
+    "hasRunoff": true,
+    "partyLockedToFirstRoundPrimary": true,
+    "ruleExplanation": "South Dakota rule: if no candidate receives 35% of the primary vote, the top two candidates advance to a runoff. If you voted in one party's primary, you may only vote in that same party's runoff. If you did not vote in the primary, you may choose either party's runoff."
+  },
+
+  "resources": {
+    "stateElectionWebsite": "https://sdsos.gov/elections-voting/",
+    "countyElectionLookup": "https://sdsos.gov/elections-voting/election-resources/county-auditors-and-election-contacts.aspx",
+    "sampleBallotLookup": "https://vip.sdsos.gov/VIPLogin.aspx",
+    "pollingPlaceLookup": "https://vip.sdsos.gov/VIPLogin.aspx",
+    "importantDates": "https://sdsos.gov/elections-voting/election-resources/election-calendar.aspx",
+    "voterIdInfo": "https://sdsos.gov/elections-voting/voting/voter-id.aspx",
+    "earlyVotingInfo": "https://sdsos.gov/elections-voting/voting/absentee-voting/default.aspx"
+  }
+}

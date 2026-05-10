@@ -1,0 +1,150 @@
+{
+  "_sources": {
+    "primary": "https://www.sos.mo.gov/elections",
+    "secondary": "https://www.ncsl.org/elections-and-campaigns/voter-id",
+    "dateChecked": "2026-05-10",
+    "discrepancies": "Missouri enacted a strict photo ID law (Amendment 6, 2016; implemented 2017). NCSL confirms Missouri as 'photo ID required'. Voters without ID may cast a provisional ballot and sign an affidavit — the provisional ballot counts unless the election authority has evidence of fraud. Missouri primary is the first Tuesday after the first Monday in August per statute. No early voting in Missouri — absentee is the alternative."
+  },
+
+  "stateCode": "MO",
+  "stateName": "Missouri",
+  "lastUpdated": "2026-05-10",
+  "coverageStatus": "confirmed",
+
+  "elections": [
+    {
+      "id": "mo-2026-primary",
+      "name": "2026 Missouri Primary Election",
+      "date": "2026-08-04",
+      "type": "primary",
+      "isPrimary": true,
+      "primaryType": "open",
+      "registration": {
+        "online": {
+          "available": true,
+          "deadline": "2026-07-08",
+          "url": "https://s1.sos.mo.gov/elections/voterregistration/"
+        },
+        "byMail": {
+          "deadline": "2026-07-08",
+          "sincePostmarked": false
+        },
+        "inPerson": {
+          "deadline": "2026-07-08",
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": false,
+        "registrationCheckUrl": "https://voteroutreach.sos.mo.gov/VoterSearch.aspx"
+      },
+      "earlyVoting": {
+        "available": false,
+        "startDate": null,
+        "endDate": null,
+        "notes": "Missouri does not offer early in-person voting. Voters may vote by absentee ballot without providing a reason."
+      }
+    },
+    {
+      "id": "mo-2026-general",
+      "name": "2026 Missouri General Election",
+      "date": "2026-11-03",
+      "type": "general",
+      "isPrimary": false,
+      "primaryType": null,
+      "registration": {
+        "online": {
+          "available": true,
+          "deadline": "2026-10-07",
+          "url": "https://s1.sos.mo.gov/elections/voterregistration/"
+        },
+        "byMail": {
+          "deadline": "2026-10-07",
+          "sincePostmarked": false
+        },
+        "inPerson": {
+          "deadline": "2026-10-07",
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": false,
+        "registrationCheckUrl": "https://voteroutreach.sos.mo.gov/VoterSearch.aspx"
+      },
+      "earlyVoting": {
+        "available": false,
+        "startDate": null,
+        "endDate": null,
+        "notes": "Missouri does not offer early in-person voting. Voters may vote by absentee ballot without providing a reason."
+      }
+    }
+  ],
+
+  "registration": {
+    "online": {
+      "available": true,
+      "deadline": "2026-10-07",
+      "url": "https://s1.sos.mo.gov/elections/voterregistration/"
+    },
+    "byMail": {
+      "deadline": "2026-10-07",
+      "sincePostmarked": false
+    },
+    "inPerson": {
+      "deadline": "2026-10-07",
+      "sincePostmarked": false
+    },
+    "sameDayRegistration": false,
+    "registrationCheckUrl": "https://voteroutreach.sos.mo.gov/VoterSearch.aspx"
+  },
+
+  "earlyVoting": {
+    "available": false,
+    "startDate": null,
+    "endDate": null,
+    "notes": "Missouri does not offer early in-person voting. Any registered voter may vote by absentee ballot without a stated reason beginning 6 weeks before an election."
+  },
+
+  "votingRules": {
+    "idRequired": true,
+    "acceptedIds": [
+      "Missouri driver's license or nondriver ID",
+      "U.S. passport or passport card",
+      "Military ID issued by the U.S. or Missouri government",
+      "ID issued by any Missouri or federal agency with photo, name, and expiration date",
+      "Concealed carry permit with photo"
+    ],
+    "expirationRule": "Photo ID must not be expired (must be current or have been issued by Missouri within the preceding 25 years if the voter is age 62 or older). TODO verify for 2026 cycle.",
+    "impedimentDeclaration": "Voters without acceptable photo ID may cast a provisional ballot and sign an affidavit. The provisional ballot is counted unless the election authority finds evidence of fraud.",
+    "phonesAtPolls": "prohibited",
+    "phonesAtPollsDetail": "Missouri prohibits use of wireless communication devices inside the voting booth. Voters may have phones on their person but must not use them while voting.",
+    "additionalRules": [
+      "Open primary: voters do not register by party; any voter may vote in any one party's primary.",
+      "No runoffs in Missouri — the candidate with the most votes wins.",
+      "Any registered voter may vote by absentee ballot without providing a reason."
+    ]
+  },
+
+  "voteByMail": {
+    "universal": false,
+    "eligibility": [
+      "Any registered voter may request an absentee ballot without providing a reason"
+    ],
+    "applicationDeadline": "5 days before the election (received by the election authority)",
+    "returnDeadline": "Must be received by the local election authority by the time polls close on Election Day",
+    "returnDeadlinePlain": "Must arrive at the local election authority by poll closing on Election Day. Postmarks do not count.",
+    "applicationUrl": "https://www.sos.mo.gov/elections/goVoteMissouri/howtovoteabsentee.asp",
+    "officialRulesUrl": "https://www.sos.mo.gov/elections/goVoteMissouri/howtovoteabsentee.asp"
+  },
+
+  "runoffRules": {
+    "hasRunoff": false,
+    "partyLockedToFirstRoundPrimary": false
+  },
+
+  "resources": {
+    "stateElectionWebsite": "https://www.sos.mo.gov/elections",
+    "countyElectionLookup": "https://www.sos.mo.gov/elections/cantlose/localelectionauthorities.asp",
+    "sampleBallotLookup": "https://voteroutreach.sos.mo.gov/VoterSearch.aspx",
+    "pollingPlaceLookup": "https://voteroutreach.sos.mo.gov/VoterSearch.aspx",
+    "importantDates": "https://www.sos.mo.gov/elections/calendar/importantdates.asp",
+    "voterIdInfo": "https://www.sos.mo.gov/elections/goVoteMissouri/photoid.asp",
+    "earlyVotingInfo": "https://www.sos.mo.gov/elections/goVoteMissouri/howtovoteabsentee.asp"
+  }
+}

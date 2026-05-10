@@ -1,0 +1,151 @@
+{
+  "_sources": {
+    "primary": "https://sos.iowa.gov/elections/",
+    "secondary": "https://www.ncsl.org/elections-and-campaigns/voter-id",
+    "dateChecked": "2026-05-10",
+    "discrepancies": "Iowa's voter ID law: photo ID is requested but not strictly required — voters without ID may use the poll book affidavit as an alternative. NCSL categorizes Iowa as 'photo ID requested'. Iowa enacted same-day registration; voters may register through Election Day. Iowa 2026 primary date set by statute as the first Tuesday after the first Monday in June."
+  },
+
+  "stateCode": "IA",
+  "stateName": "Iowa",
+  "lastUpdated": "2026-05-10",
+  "coverageStatus": "confirmed",
+
+  "elections": [
+    {
+      "id": "ia-2026-primary",
+      "name": "2026 Iowa Primary Election",
+      "date": "2026-06-02",
+      "type": "primary",
+      "isPrimary": true,
+      "primaryType": "closed",
+      "registration": {
+        "online": {
+          "available": true,
+          "deadline": "2026-06-02",
+          "url": "https://mymvd.iowadot.gov/Account/Login?redirect=VoterRegistration"
+        },
+        "byMail": {
+          "deadline": "2026-05-22",
+          "sincePostmarked": false
+        },
+        "inPerson": {
+          "deadline": "2026-06-02",
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": true,
+        "registrationCheckUrl": "https://sos.iowa.gov/elections/voterreg/regtovote/search.aspx"
+      },
+      "earlyVoting": {
+        "available": true,
+        "startDate": "2026-05-04",
+        "endDate": "2026-06-01",
+        "notes": "Early voting (in-person absentee) begins 29 days before the election at county auditor offices. TODO verify for 2026 cycle."
+      }
+    },
+    {
+      "id": "ia-2026-general",
+      "name": "2026 Iowa General Election",
+      "date": "2026-11-03",
+      "type": "general",
+      "isPrimary": false,
+      "primaryType": null,
+      "registration": {
+        "online": {
+          "available": true,
+          "deadline": "2026-11-03",
+          "url": "https://mymvd.iowadot.gov/Account/Login?redirect=VoterRegistration"
+        },
+        "byMail": {
+          "deadline": "2026-10-24",
+          "sincePostmarked": false
+        },
+        "inPerson": {
+          "deadline": "2026-11-03",
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": true,
+        "registrationCheckUrl": "https://sos.iowa.gov/elections/voterreg/regtovote/search.aspx"
+      },
+      "earlyVoting": {
+        "available": true,
+        "startDate": "2026-10-05",
+        "endDate": "2026-11-02",
+        "notes": "Early voting (in-person absentee) begins 29 days before the election. Satellite sites may be available. TODO verify for 2026 cycle."
+      }
+    }
+  ],
+
+  "registration": {
+    "online": {
+      "available": true,
+      "deadline": "2026-11-03",
+      "url": "https://mymvd.iowadot.gov/Account/Login?redirect=VoterRegistration"
+    },
+    "byMail": {
+      "deadline": "2026-10-24",
+      "sincePostmarked": false
+    },
+    "inPerson": {
+      "deadline": "2026-11-03",
+      "sincePostmarked": false
+    },
+    "sameDayRegistration": true,
+    "registrationCheckUrl": "https://sos.iowa.gov/elections/voterreg/regtovote/search.aspx"
+  },
+
+  "earlyVoting": {
+    "available": true,
+    "startDate": "2026-10-05",
+    "endDate": "2026-11-02",
+    "notes": "Early voting (in-person absentee) begins 29 days before the general election at county auditor offices. Satellite early voting locations may be available. TODO verify for 2026 cycle."
+  },
+
+  "votingRules": {
+    "idRequired": true,
+    "acceptedIds": [
+      "Iowa driver's license or state ID",
+      "U.S. passport",
+      "U.S. military ID",
+      "Veterans ID card issued by the U.S. Dept. of Veterans Affairs",
+      "Tribal ID",
+      "Iowa voter ID card (free from county auditor)"
+    ],
+    "expirationRule": "Photo ID must not be expired. Iowa voter ID cards do not expire. TODO verify for 2026 cycle.",
+    "impedimentDeclaration": "Voters without an acceptable photo ID may sign an election day affidavit attesting to their identity. A poll worker who knows the voter may also attest to their identity.",
+    "phonesAtPolls": "allowed",
+    "phonesAtPollsDetail": "Iowa does not prohibit phones at polling places. Voters may not photograph their ballot in a way that reveals how they voted. No electioneering within 300 feet of the polling place.",
+    "additionalRules": [
+      "Closed primary: only voters registered with a party may vote in that party's primary. Unregistered voters may register on Election Day.",
+      "No runoffs in Iowa — the candidate with the most votes wins.",
+      "Same-day registration available on Election Day with proof of Iowa residence."
+    ]
+  },
+
+  "voteByMail": {
+    "universal": false,
+    "eligibility": [
+      "Any registered voter may request an absentee ballot without providing a reason"
+    ],
+    "applicationDeadline": "15 days before the election (received by county auditor)",
+    "returnDeadline": "Must be received by the county auditor by the time polls close on Election Day",
+    "returnDeadlinePlain": "Must arrive at the county auditor by poll closing on Election Day. Postmarks do not count.",
+    "applicationUrl": "https://sos.iowa.gov/elections/absenteeinfo/absenteeoverview.html",
+    "officialRulesUrl": "https://sos.iowa.gov/elections/absenteeinfo/absenteeoverview.html"
+  },
+
+  "runoffRules": {
+    "hasRunoff": false,
+    "partyLockedToFirstRoundPrimary": false
+  },
+
+  "resources": {
+    "stateElectionWebsite": "https://sos.iowa.gov/elections/",
+    "countyElectionLookup": "https://sos.iowa.gov/elections/auditors/auditorslist.html",
+    "sampleBallotLookup": "https://sos.iowa.gov/elections/voterreg/regtovote/search.aspx",
+    "pollingPlaceLookup": "https://sos.iowa.gov/elections/voterreg/regtovote/search.aspx",
+    "importantDates": "https://sos.iowa.gov/elections/electioninfo/electioncalendar.html",
+    "voterIdInfo": "https://sos.iowa.gov/elections/voterreg/voterid.html",
+    "earlyVotingInfo": "https://sos.iowa.gov/elections/absenteeinfo/absenteeoverview.html"
+  }
+}

@@ -1,0 +1,140 @@
+{
+  "_sources": {
+    "primary": "https://www.vote.pa.gov/",
+    "secondary": "https://www.ncsl.org/elections-and-campaigns/voter-id",
+    "checked": "2026-05-10",
+    "discrepancies": "NCSL classifies PA as 'no document required' for ID, though first-time voters who registered by mail may need to show ID. Pennsylvania has no-excuse absentee/mail voting (Act 77, 2019) and no early in-person voting separate from absentee. PA's 2026 primary is typically the third Tuesday in May; TODO verify exact 2026 date. Registration deadline is 15 days before the election per PA law. PA does not have same-day registration."
+  },
+  "stateCode": "PA",
+  "stateName": "Pennsylvania",
+  "lastUpdated": "2026-05-10",
+
+  "elections": [
+    {
+      "id": "pa-2026-primary",
+      "name": "2026 Pennsylvania Primary Election",
+      "date": "2026-05-19",
+      "type": "primary",
+      "isPrimary": true,
+      "primaryType": "closed",
+      "registration": {
+        "online": {
+          "available": true,
+          "deadline": "2026-05-04",
+          "url": "https://www.vote.pa.gov/Register-to-Vote/Pages/Online-Voter-Registration.aspx"
+        },
+        "byMail": {
+          "deadline": "2026-05-04",
+          "sincePostmarked": false
+        },
+        "inPerson": {
+          "deadline": "2026-05-04",
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": false,
+        "registrationCheckUrl": "https://www.vote.pa.gov/Register-to-Vote/Pages/Voter-Registration-Search.aspx"
+      },
+      "earlyVoting": {
+        "available": false,
+        "startDate": null,
+        "endDate": null,
+        "notes": "Pennsylvania does not have traditional early in-person voting. No-excuse mail voting (absentee) is available. Mail ballot applications open as soon as the primary is announced."
+      }
+    },
+    {
+      "id": "pa-2026-general",
+      "name": "2026 Pennsylvania General Election",
+      "date": "2026-11-03",
+      "type": "general",
+      "isPrimary": false,
+      "primaryType": null,
+      "registration": {
+        "online": {
+          "available": true,
+          "deadline": "2026-10-19",
+          "url": "https://www.vote.pa.gov/Register-to-Vote/Pages/Online-Voter-Registration.aspx"
+        },
+        "byMail": {
+          "deadline": "2026-10-19",
+          "sincePostmarked": false
+        },
+        "inPerson": {
+          "deadline": "2026-10-19",
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": false,
+        "registrationCheckUrl": "https://www.vote.pa.gov/Register-to-Vote/Pages/Voter-Registration-Search.aspx"
+      },
+      "earlyVoting": {
+        "available": false,
+        "startDate": null,
+        "endDate": null,
+        "notes": "Pennsylvania does not have traditional early in-person voting. No-excuse mail (absentee) voting is available for all registered voters."
+      }
+    }
+  ],
+
+  "registration": {
+    "online": {
+      "available": true,
+      "deadline": "2026-10-19",
+      "url": "https://www.vote.pa.gov/Register-to-Vote/Pages/Online-Voter-Registration.aspx"
+    },
+    "byMail": {
+      "deadline": "2026-10-19",
+      "sincePostmarked": false
+    },
+    "inPerson": {
+      "deadline": "2026-10-19",
+      "sincePostmarked": false
+    },
+    "sameDayRegistration": false,
+    "registrationCheckUrl": "https://www.vote.pa.gov/Register-to-Vote/Pages/Voter-Registration-Search.aspx"
+  },
+
+  "earlyVoting": {
+    "available": false,
+    "startDate": null,
+    "endDate": null,
+    "notes": "Pennsylvania does not offer traditional early in-person voting. No-excuse vote-by-mail (absentee) is available for all registered voters. Mail ballot applications must be received by the county board of elections 7 days before the election."
+  },
+
+  "votingRules": {
+    "idRequired": false,
+    "acceptedIds": [
+      "First-time voters who registered by mail and did not provide ID at registration must show a photo ID or a current utility bill, bank statement, paycheck, government check, or other government document with name and address"
+    ],
+    "phonesAtPolls": "allowed",
+    "phonesAtPollsDetail": "Pennsylvania does not prohibit phones in polling places. Voters may not photograph their completed ballot. Electioneering is prohibited within 10 feet of a voting machine or within the polling place.",
+    "additionalRules": [
+      "Closed primary: only voters registered with a party may vote in that party's primary. Unaffiliated voters may not vote in partisan primaries.",
+      "No-excuse mail (absentee) voting available for all registered voters since 2019 (Act 77).",
+      "Mail ballot applications must be received by the county board of elections at least 7 days before the election.",
+      "Mail ballots must be enclosed in the secrecy envelope and outer envelope to be counted."
+    ]
+  },
+
+  "voteByMail": {
+    "universal": false,
+    "eligibility": [
+      "Any registered voter may request a mail ballot without providing a reason (no-excuse absentee, enacted via Act 77 in 2019)"
+    ],
+    "applicationDeadline": "7 days before the election (received by county board of elections)",
+    "returnDeadline": "Must be received by the county board of elections by 8 p.m. on Election Day",
+    "returnDeadlinePlain": "Must arrive at the county board of elections by 8 p.m. on Election Day. Postmarks do not count. Must be returned in the inner secrecy envelope.",
+    "applicationUrl": "https://www.vote.pa.gov/Voting-in-PA/Pages/Mail-and-Absentee-Ballot.aspx",
+    "officialRulesUrl": "https://www.vote.pa.gov/Voting-in-PA/Pages/Mail-and-Absentee-Ballot.aspx"
+  },
+
+  "runoffRules": {
+    "hasRunoff": false,
+    "partyLockedToFirstRoundPrimary": false
+  },
+
+  "resources": {
+    "stateElectionWebsite": "https://www.vote.pa.gov/",
+    "countyElectionLookup": "https://www.vote.pa.gov/Resources/Pages/Contact-Your-Election-Officials.aspx",
+    "sampleBallotLookup": "https://www.vote.pa.gov/Voting-in-PA/Pages/Sample-Ballots.aspx",
+    "pollingPlaceLookup": "https://www.vote.pa.gov/Voting-in-PA/Pages/Poll-Worker-Information.aspx"
+  }
+}

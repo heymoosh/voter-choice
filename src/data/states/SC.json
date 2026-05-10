@@ -1,0 +1,187 @@
+{
+  "_sources": {
+    "primary": "https://www.scvotes.net/",
+    "secondary": "https://ballotpedia.org/Voting_in_South_Carolina",
+    "dateChecked": "2026-05-10",
+    "discrepancies": "NCSL lists SC as 'photo ID requested' (non-strict). SoS confirms voters without photo ID may vote a provisional ballot and return with photo ID within 48 hours, or sign an affidavit with a reasonable impediment. Consistent."
+  },
+  "stateCode": "SC",
+  "stateName": "South Carolina",
+  "lastUpdated": "2026-05-10",
+  "coverageStatus": "confirmed",
+
+  "elections": [
+    {
+      "id": "sc-2026-primary",
+      "name": "2026 South Carolina Primary Election",
+      "date": "2026-06-09",
+      "type": "primary",
+      "isPrimary": true,
+      "primaryType": "open",
+      "registration": {
+        "online": {
+          "available": true,
+          "deadline": "2026-05-10",
+          "url": "https://www.scvotes.net/register-to-vote"
+        },
+        "byMail": {
+          "deadline": "2026-05-10",
+          "sincePostmarked": true
+        },
+        "inPerson": {
+          "deadline": "2026-05-10",
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": false,
+        "registrationCheckUrl": "https://www.scvotes.net/check-your-registration"
+      },
+      "earlyVoting": {
+        "available": true,
+        "startDate": "2026-05-26",
+        "endDate": "2026-06-06",
+        "notes": "Early voting (in-person absentee) is available at county election offices. Hours and locations vary. TODO verify for 2026 cycle."
+      }
+    },
+    {
+      "id": "sc-2026-primary-runoff",
+      "name": "2026 South Carolina Primary Runoff Election",
+      "date": "2026-06-23",
+      "type": "runoff",
+      "isPrimary": false,
+      "primaryType": null,
+      "registration": {
+        "online": {
+          "available": true,
+          "deadline": "2026-05-24",
+          "url": "https://www.scvotes.net/register-to-vote"
+        },
+        "byMail": {
+          "deadline": "2026-05-24",
+          "sincePostmarked": true
+        },
+        "inPerson": {
+          "deadline": "2026-05-24",
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": false,
+        "registrationCheckUrl": "https://www.scvotes.net/check-your-registration"
+      },
+      "earlyVoting": {
+        "available": true,
+        "startDate": "2026-06-09",
+        "endDate": "2026-06-20",
+        "notes": "Early voting for runoff. TODO verify for 2026 cycle."
+      }
+    },
+    {
+      "id": "sc-2026-general",
+      "name": "2026 South Carolina General Election",
+      "date": "2026-11-03",
+      "type": "general",
+      "isPrimary": false,
+      "primaryType": null,
+      "registration": {
+        "online": {
+          "available": true,
+          "deadline": "2026-10-04",
+          "url": "https://www.scvotes.net/register-to-vote"
+        },
+        "byMail": {
+          "deadline": "2026-10-04",
+          "sincePostmarked": true
+        },
+        "inPerson": {
+          "deadline": "2026-10-04",
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": false,
+        "registrationCheckUrl": "https://www.scvotes.net/check-your-registration"
+      },
+      "earlyVoting": {
+        "available": true,
+        "startDate": "2026-10-19",
+        "endDate": "2026-10-31",
+        "notes": "Early voting available at county election offices. TODO verify for 2026 cycle."
+      }
+    }
+  ],
+
+  "registration": {
+    "online": {
+      "available": true,
+      "deadline": "2026-10-04",
+      "url": "https://www.scvotes.net/register-to-vote"
+    },
+    "byMail": {
+      "deadline": "2026-10-04",
+      "sincePostmarked": true
+    },
+    "inPerson": {
+      "deadline": "2026-10-04",
+      "sincePostmarked": false
+    },
+    "sameDayRegistration": false,
+    "registrationCheckUrl": "https://www.scvotes.net/check-your-registration"
+  },
+
+  "earlyVoting": {
+    "available": true,
+    "startDate": "2026-10-19",
+    "endDate": "2026-10-31",
+    "notes": "In-person absentee (early voting) is available at county election offices beginning about two weeks before Election Day."
+  },
+
+  "votingRules": {
+    "idRequired": true,
+    "acceptedIds": [
+      "South Carolina driver's license",
+      "South Carolina ID card",
+      "South Carolina Voter Registration Card with photo",
+      "Federal military ID",
+      "U.S. passport",
+      "Employee badge or ID card issued by a state or federal government agency",
+      "Student photo ID from a South Carolina public college or university"
+    ],
+    "expirationRule": "Photo ID must not be expired. TODO verify for 2026 cycle.",
+    "impedimentDeclaration": "Voters without acceptable photo ID may cast a provisional ballot and either present ID within 2 business days, or sign an affidavit stating a reasonable impediment to obtaining photo ID.",
+    "phonesAtPolls": "prohibited",
+    "phonesAtPollsDetail": "South Carolina prohibits use of wireless communication devices in the voting booth. You may not photograph your ballot.",
+    "additionalRules": [
+      "Open primary: any registered voter may choose which party's primary to participate in.",
+      "Runoff rule: if no candidate receives a majority in the primary, the top two advance to a runoff. A voter who voted in one party's primary may only vote in that party's runoff."
+    ]
+  },
+
+  "voteByMail": {
+    "universal": false,
+    "eligibility": [
+      "Will be absent from the county on Election Day",
+      "Physical illness or disability preventing appearance",
+      "65 years of age or older",
+      "Attending to a person who is ill or disabled",
+      "Observing a religious holiday on Election Day",
+      "Workers required at workplace all polling hours"
+    ],
+    "applicationDeadline": "Must be received by the county board 4 days before the election",
+    "returnDeadline": "Must be received by the county board by 7 p.m. on Election Day",
+    "returnDeadlinePlain": "Absentee ballot must arrive at the county board by 7 p.m. on Election Day.",
+    "applicationUrl": "https://www.scvotes.net/absentee-voting",
+    "officialRulesUrl": "https://www.scvotes.net/absentee-voting"
+  },
+
+  "runoffRules": {
+    "hasRunoff": true,
+    "partyLockedToFirstRoundPrimary": true,
+    "ruleExplanation": "South Carolina rule: if you voted in one party's primary, you can only vote in that same party's runoff. If you did not vote in the primary, you may choose either party's runoff."
+  },
+
+  "resources": {
+    "stateElectionWebsite": "https://www.scvotes.net/",
+    "countyElectionLookup": "https://www.scvotes.net/county-election-commissions",
+    "sampleBallotLookup": "https://www.scvotes.net/sample-ballots",
+    "pollingPlaceLookup": "https://www.scvotes.net/find-your-polling-place",
+    "importantDates": "https://www.scvotes.net/election-dates",
+    "voterIdInfo": "https://www.scvotes.net/voter-id",
+    "earlyVotingInfo": "https://www.scvotes.net/absentee-voting"
+  }
+}

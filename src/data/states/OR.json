@@ -1,0 +1,144 @@
+{
+  "_sources": {
+    "primary": "https://sos.oregon.gov/voting/",
+    "secondary": "https://www.ncsl.org/elections-and-campaigns/voter-id",
+    "checked": "2026-05-10",
+    "discrepancies": "Oregon is the original universal vote-by-mail state (since 2000). NCSL classifies Oregon as no document required — identity is verified via signature on ballot return envelope. Oregon does not require photo ID or any ID at polling locations because there are essentially no traditional polling places (drop boxes and county election offices are the in-person options). Oregon primary is typically the third Tuesday in May; estimated 2026-05-19. TODO verify exact 2026 cycle dates with Oregon SoS."
+  },
+  "stateCode": "OR",
+  "stateName": "Oregon",
+  "lastUpdated": "2026-05-10",
+  "coverageStatus": "confirmed",
+
+  "elections": [
+    {
+      "id": "or-2026-primary",
+      "name": "2026 Oregon Primary Election",
+      "date": "2026-05-19",
+      "type": "primary",
+      "isPrimary": true,
+      "primaryType": "closed",
+      "registration": {
+        "online": {
+          "available": true,
+          "deadline": "2026-04-28",
+          "url": "https://sos.oregon.gov/voting/Pages/registeringwhereyoulive.aspx"
+        },
+        "byMail": {
+          "deadline": "2026-04-28",
+          "sincePostmarked": false
+        },
+        "inPerson": {
+          "deadline": "2026-05-19",
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": true,
+        "registrationCheckUrl": "https://sos.oregon.gov/voting/Pages/myvote.aspx"
+      },
+      "earlyVoting": {
+        "available": true,
+        "startDate": "2026-04-29",
+        "endDate": "2026-05-18",
+        "notes": "Oregon mails ballots to all registered voters approximately 2-3 weeks before Election Day. Drop boxes open through 8 p.m. on Election Day. No traditional polling places."
+      }
+    },
+    {
+      "id": "or-2026-general",
+      "name": "2026 Oregon General Election",
+      "date": "2026-11-03",
+      "type": "general",
+      "isPrimary": false,
+      "primaryType": null,
+      "registration": {
+        "online": {
+          "available": true,
+          "deadline": "2026-10-13",
+          "url": "https://sos.oregon.gov/voting/Pages/registeringwhereyoulive.aspx"
+        },
+        "byMail": {
+          "deadline": "2026-10-13",
+          "sincePostmarked": false
+        },
+        "inPerson": {
+          "deadline": "2026-11-03",
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": true,
+        "registrationCheckUrl": "https://sos.oregon.gov/voting/Pages/myvote.aspx"
+      },
+      "earlyVoting": {
+        "available": true,
+        "startDate": "2026-10-14",
+        "endDate": "2026-11-02",
+        "notes": "Oregon mails ballots approximately 14-18 days before Election Day. Ballots may be returned by mail (must be postmarked by Election Day) or dropped in an official drop box by 8 p.m. on Election Day. Same-day voter registration available at county election offices."
+      }
+    }
+  ],
+
+  "registration": {
+    "online": {
+      "available": true,
+      "deadline": "2026-10-13",
+      "url": "https://sos.oregon.gov/voting/Pages/registeringwhereyoulive.aspx"
+    },
+    "byMail": {
+      "deadline": "2026-10-13",
+      "sincePostmarked": false
+    },
+    "inPerson": {
+      "deadline": "2026-11-03",
+      "sincePostmarked": false
+    },
+    "sameDayRegistration": true,
+    "registrationCheckUrl": "https://sos.oregon.gov/voting/Pages/myvote.aspx"
+  },
+
+  "earlyVoting": {
+    "available": true,
+    "startDate": "2026-10-14",
+    "endDate": "2026-11-02",
+    "notes": "Oregon is a universal vote-by-mail state. All registered voters automatically receive a mail ballot approximately 14-18 days before Election Day. Return by mail (postmarked by Election Day) or drop off at any official drop box or county election office by 8 p.m. on Election Day. Same-day registration available at county election offices."
+  },
+
+  "votingRules": {
+    "idRequired": false,
+    "acceptedIds": [
+      "No ID required — Oregon is a universal vote-by-mail state",
+      "Voter identity is verified by signature comparison on the ballot return envelope",
+      "If your signature cannot be verified, you will be contacted to cure the issue"
+    ],
+    "phonesAtPolls": "allowed",
+    "phonesAtPollsDetail": "Oregon is a vote-by-mail state — there are no traditional polling places. You may vote at home using your mailed ballot and refer to any resource you like. Drop boxes are outdoor, unstaffed locations. County election offices accept ballots and allow in-person assistance.",
+    "additionalRules": [
+      "Oregon is a universal vote-by-mail state — all registered voters automatically receive a ballot by mail before every election.",
+      "Oregon has a closed primary — only voters registered with a major party may vote in that party's primary. Unaffiliated voters may register with a party up to 21 days before the primary.",
+      "Same-day voter registration is available at county election offices through 8 p.m. on Election Day.",
+      "Automatic voter registration occurs when eligible Oregon residents interact with the DMV (Oregon Motor Voter Act)."
+    ]
+  },
+
+  "voteByMail": {
+    "universal": true,
+    "eligibility": [
+      "All registered voters automatically receive a ballot by mail"
+    ],
+    "applicationDeadline": "No application required — ballots are automatically mailed to all registered voters approximately 14-18 days before each election",
+    "returnDeadline": "Must be received at a drop box by 8:00 p.m. on Election Day, or postmarked by Election Day and received within a few days",
+    "returnDeadlinePlain": "Drop off at any official drop box or county office by 8 p.m. on Election Day, or mail postmarked by Election Day.",
+    "applicationUrl": "https://sos.oregon.gov/voting/Pages/vote-by-mail.aspx",
+    "officialRulesUrl": "https://sos.oregon.gov/voting/"
+  },
+
+  "runoffRules": {
+    "hasRunoff": false,
+    "partyLockedToFirstRoundPrimary": false
+  },
+
+  "resources": {
+    "stateElectionWebsite": "https://sos.oregon.gov/voting/",
+    "countyElectionLookup": "https://sos.oregon.gov/voting/Pages/countyofficials.aspx",
+    "sampleBallotLookup": "https://sos.oregon.gov/voting/Pages/myvote.aspx",
+    "pollingPlaceLookup": "https://sos.oregon.gov/voting/Pages/drop-box-locator.aspx",
+    "voterIdInfo": "https://sos.oregon.gov/voting/Pages/vote-by-mail.aspx"
+  }
+}

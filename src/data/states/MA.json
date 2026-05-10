@@ -1,0 +1,137 @@
+{
+  "_sources": {
+    "primary": "https://www.sec.state.ma.us/ele/eleidx.htm",
+    "secondary": "https://www.ncsl.org/elections-and-campaigns/voter-id",
+    "checked": "2026-05-10",
+    "discrepancies": "No major discrepancies found. MA uses Secretary of the Commonwealth (not SoS) as elections authority. NCSL classifies MA as no-document-required for ID. Massachusetts has no-excuse absentee voting and early in-person voting. 2026 primary date (Sept 15) is the standard first Tuesday after second Monday in September per MA law; TODO verify for 2026 cycle. Registration deadline is 10 days before each election per MA law."
+  },
+  "stateCode": "MA",
+  "stateName": "Massachusetts",
+  "lastUpdated": "2026-05-10",
+
+  "elections": [
+    {
+      "id": "ma-2026-primary",
+      "name": "2026 Massachusetts State Primary",
+      "date": "2026-09-15",
+      "type": "primary",
+      "isPrimary": true,
+      "primaryType": "semi-closed",
+      "registration": {
+        "online": {
+          "available": true,
+          "deadline": "2026-09-05",
+          "url": "https://www.sec.state.ma.us/ovr/"
+        },
+        "byMail": {
+          "deadline": "2026-09-05",
+          "sincePostmarked": false
+        },
+        "inPerson": {
+          "deadline": "2026-09-05",
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": false,
+        "registrationCheckUrl": "https://www.sec.state.ma.us/voterregistrationsearch/myvoterregstatus.aspx"
+      },
+      "earlyVoting": {
+        "available": true,
+        "startDate": "2026-08-29",
+        "endDate": "2026-09-11",
+        "notes": "In-person early voting available at local election offices for primaries. TODO verify exact 2026 dates."
+      }
+    },
+    {
+      "id": "ma-2026-general",
+      "name": "2026 Massachusetts General Election",
+      "date": "2026-11-03",
+      "type": "general",
+      "isPrimary": false,
+      "primaryType": null,
+      "registration": {
+        "online": {
+          "available": true,
+          "deadline": "2026-10-24",
+          "url": "https://www.sec.state.ma.us/ovr/"
+        },
+        "byMail": {
+          "deadline": "2026-10-24",
+          "sincePostmarked": false
+        },
+        "inPerson": {
+          "deadline": "2026-10-24",
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": false,
+        "registrationCheckUrl": "https://www.sec.state.ma.us/voterregistrationsearch/myvoterregstatus.aspx"
+      },
+      "earlyVoting": {
+        "available": true,
+        "startDate": "2026-10-17",
+        "endDate": "2026-10-30",
+        "notes": "In-person early voting at local election offices. Hours vary by municipality. TODO verify exact 2026 dates."
+      }
+    }
+  ],
+
+  "registration": {
+    "online": {
+      "available": true,
+      "deadline": "2026-10-24",
+      "url": "https://www.sec.state.ma.us/ovr/"
+    },
+    "byMail": {
+      "deadline": "2026-10-24",
+      "sincePostmarked": false
+    },
+    "inPerson": {
+      "deadline": "2026-10-24",
+      "sincePostmarked": false
+    },
+    "sameDayRegistration": false,
+    "registrationCheckUrl": "https://www.sec.state.ma.us/voterregistrationsearch/myvoterregstatus.aspx"
+  },
+
+  "earlyVoting": {
+    "available": true,
+    "startDate": "2026-10-17",
+    "endDate": "2026-10-30",
+    "notes": "Massachusetts offers in-person early voting at local election offices. Dates and hours vary by city/town. TODO verify exact 2026 dates."
+  },
+
+  "votingRules": {
+    "idRequired": false,
+    "acceptedIds": [],
+    "phonesAtPolls": "allowed",
+    "phonesAtPollsDetail": "Massachusetts does not prohibit phones inside polling places. Voters may not interfere with other voters or officials. Electioneering is prohibited within 150 feet of a polling place entrance.",
+    "additionalRules": [
+      "Semi-closed primary: registered party members vote in their party's primary. Unenrolled (independent) voters may request either party's primary ballot and remain unenrolled afterward.",
+      "Massachusetts uses a semi-closed primary system; unenrolled voters choosing a party ballot for the primary are automatically re-enrolled unless they request otherwise at the polls.",
+      "No-excuse absentee voting is available for all registered voters."
+    ]
+  },
+
+  "voteByMail": {
+    "universal": false,
+    "eligibility": [
+      "Any registered voter may request an absentee ballot without providing a reason (no-excuse absentee)"
+    ],
+    "applicationDeadline": "Noon the day before the election (received by local election office)",
+    "returnDeadline": "Must be received by the local election office by 8 p.m. on Election Day",
+    "returnDeadlinePlain": "Must arrive at the local election office by 8 p.m. on Election Day. Postmarks do not count.",
+    "applicationUrl": "https://www.sec.state.ma.us/ele/eleabsentee/absenteeapl.htm",
+    "officialRulesUrl": "https://www.sec.state.ma.us/ele/eleabsentee/absenteeindx.htm"
+  },
+
+  "runoffRules": {
+    "hasRunoff": false,
+    "partyLockedToFirstRoundPrimary": false
+  },
+
+  "resources": {
+    "stateElectionWebsite": "https://www.sec.state.ma.us/ele/eleidx.htm",
+    "countyElectionLookup": "https://www.sec.state.ma.us/ele/eleclk/clkidx.htm",
+    "sampleBallotLookup": "https://www.sec.state.ma.us/ele/eleidx.htm",
+    "pollingPlaceLookup": "https://www.sec.state.ma.us/voterregistrationsearch/myvoterregstatus.aspx"
+  }
+}

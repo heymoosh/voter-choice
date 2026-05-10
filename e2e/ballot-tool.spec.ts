@@ -528,16 +528,17 @@ test.describe("State coverage — New Mexico via multi-state selector (86515)", 
   });
 });
 
-// Wyoming (82001) — unpopulated state: zip not in lookup ranges → not-found-message
-test.describe("State coverage — Wyoming fallback (82001)", () => {
-  test("renders not-found for an unpopulated state zip (Wyoming)", async ({
-    page,
-  }) => {
+// Wyoming (82001) — populated as part of the 50-state expansion. Zip lands
+// on the Wyoming research view; runoff gate does not render (WY has no
+// party-locked legislative-primary runoff).
+test.describe("State coverage — Wyoming (82001)", () => {
+  test("renders Wyoming-specific data for a Wyoming zip", async ({ page }) => {
     await page.goto("/");
     await fillZip(page, "82001");
-    // Wyoming is not in the zip lookup ranges; app shows not-found-message
-    const notFound = page.getByTestId("not-found-message");
-    await expect(notFound).toBeVisible();
+    await expect(page.getByTestId("not-found-message")).toHaveCount(0);
+    await waitForResearchWorkspace(page);
+    const promptOutput = page.getByTestId("prompt-output");
+    await expect(promptOutput).toContainText(/Wyoming/i);
     // Runoff gate should not appear
     await expect(page.getByTestId("runoff-gate")).toHaveCount(0);
   });

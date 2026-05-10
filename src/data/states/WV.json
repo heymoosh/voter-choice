@@ -1,0 +1,153 @@
+{
+  "_sources": {
+    "primary": "https://sos.wv.gov/elections/Pages/default.aspx",
+    "secondary": "https://ballotpedia.org/Voting_in_West_Virginia",
+    "dateChecked": "2026-05-10",
+    "discrepancies": "NCSL lists WV as 'photo ID requested'. SoS confirms voters without photo ID may present a non-photo ID (utility bill, bank statement, government check, paycheck, student ID) or vote a provisional ballot. WV offers a free voter ID card. Consistent."
+  },
+  "stateCode": "WV",
+  "stateName": "West Virginia",
+  "lastUpdated": "2026-05-10",
+  "coverageStatus": "confirmed",
+
+  "elections": [
+    {
+      "id": "wv-2026-primary",
+      "name": "2026 West Virginia Primary Election",
+      "date": "2026-05-12",
+      "type": "primary",
+      "isPrimary": true,
+      "primaryType": "closed",
+      "registration": {
+        "online": {
+          "available": true,
+          "deadline": "2026-04-21",
+          "url": "https://ovr.sos.wv.gov/Register/Landing"
+        },
+        "byMail": {
+          "deadline": "2026-04-21",
+          "sincePostmarked": true
+        },
+        "inPerson": {
+          "deadline": "2026-04-21",
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": false,
+        "registrationCheckUrl": "https://apps.sos.wv.gov/elections/voter/find.aspx"
+      },
+      "earlyVoting": {
+        "available": true,
+        "startDate": "2026-04-29",
+        "endDate": "2026-05-09",
+        "notes": "Early voting available at the county clerk's office. TODO verify dates for 2026 cycle."
+      }
+    },
+    {
+      "id": "wv-2026-general",
+      "name": "2026 West Virginia General Election",
+      "date": "2026-11-03",
+      "type": "general",
+      "isPrimary": false,
+      "primaryType": null,
+      "registration": {
+        "online": {
+          "available": true,
+          "deadline": "2026-10-13",
+          "url": "https://ovr.sos.wv.gov/Register/Landing"
+        },
+        "byMail": {
+          "deadline": "2026-10-13",
+          "sincePostmarked": true
+        },
+        "inPerson": {
+          "deadline": "2026-10-13",
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": false,
+        "registrationCheckUrl": "https://apps.sos.wv.gov/elections/voter/find.aspx"
+      },
+      "earlyVoting": {
+        "available": true,
+        "startDate": "2026-10-21",
+        "endDate": "2026-10-31",
+        "notes": "Early voting at the county clerk's office. Hours vary by county. TODO verify for 2026 cycle."
+      }
+    }
+  ],
+
+  "registration": {
+    "online": {
+      "available": true,
+      "deadline": "2026-10-13",
+      "url": "https://ovr.sos.wv.gov/Register/Landing"
+    },
+    "byMail": {
+      "deadline": "2026-10-13",
+      "sincePostmarked": true
+    },
+    "inPerson": {
+      "deadline": "2026-10-13",
+      "sincePostmarked": false
+    },
+    "sameDayRegistration": false,
+    "registrationCheckUrl": "https://apps.sos.wv.gov/elections/voter/find.aspx"
+  },
+
+  "earlyVoting": {
+    "available": true,
+    "startDate": "2026-10-21",
+    "endDate": "2026-10-31",
+    "notes": "Early voting is available at the county clerk's office for approximately two weeks before Election Day. Contact your county clerk for specific hours and locations."
+  },
+
+  "votingRules": {
+    "idRequired": true,
+    "acceptedIds": [
+      "West Virginia driver's license or state ID card",
+      "West Virginia voter registration card",
+      "WV voter ID card (free from county clerk)",
+      "U.S. passport",
+      "Military ID with photo",
+      "Utility bill, bank statement, government check, paycheck, or other government document showing name and address"
+    ],
+    "expirationRule": "Photo ID must not be expired. West Virginia provides a free voter ID card to any registered voter who does not have another form of acceptable ID. TODO verify for 2026 cycle.",
+    "impedimentDeclaration": "If a voter does not present an acceptable ID, they may vote a provisional ballot. The ballot is counted if the voter provides acceptable ID to the county clerk within 10 days after the election.",
+    "phonesAtPolls": "prohibited",
+    "phonesAtPollsDetail": "West Virginia prohibits use of wireless communication devices in the polling booth. You may bring written notes.",
+    "additionalRules": [
+      "Closed primary: only voters registered with a party may vote in that party's primary. Unaffiliated voters may not vote in a partisan primary.",
+      "No legislative primary runoffs in West Virginia."
+    ]
+  },
+
+  "voteByMail": {
+    "universal": false,
+    "eligibility": [
+      "Will be absent from the county on Election Day and during early voting",
+      "Physical illness or disability",
+      "Observed religious holidays",
+      "Working outside the county or state",
+      "Incarcerated or detained (but otherwise eligible)"
+    ],
+    "applicationDeadline": "Must be received by the county clerk 6 days before the election",
+    "returnDeadline": "Must be received by the county clerk by 7:30 p.m. on Election Day",
+    "returnDeadlinePlain": "Absentee ballot must arrive at the county clerk by 7:30 p.m. on Election Day.",
+    "applicationUrl": "https://sos.wv.gov/elections/Pages/AbsenteeVoting.aspx",
+    "officialRulesUrl": "https://sos.wv.gov/elections/Pages/AbsenteeVoting.aspx"
+  },
+
+  "runoffRules": {
+    "hasRunoff": false,
+    "partyLockedToFirstRoundPrimary": false
+  },
+
+  "resources": {
+    "stateElectionWebsite": "https://sos.wv.gov/elections/Pages/default.aspx",
+    "countyElectionLookup": "https://sos.wv.gov/elections/Pages/CountyClerks.aspx",
+    "sampleBallotLookup": "https://apps.sos.wv.gov/elections/voter/find.aspx",
+    "pollingPlaceLookup": "https://apps.sos.wv.gov/elections/voter/find.aspx",
+    "importantDates": "https://sos.wv.gov/elections/Pages/ElectionCalendar.aspx",
+    "voterIdInfo": "https://sos.wv.gov/elections/Pages/VoterID.aspx",
+    "earlyVotingInfo": "https://sos.wv.gov/elections/Pages/EarlyVoting.aspx"
+  }
+}

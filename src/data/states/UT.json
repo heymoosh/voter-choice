@@ -1,0 +1,147 @@
+{
+  "_sources": {
+    "primary": "https://vote.utah.gov/",
+    "secondary": "https://www.ncsl.org/elections-and-campaigns/voter-id",
+    "checked": "2026-05-10",
+    "discrepancies": "Utah is largely a vote-by-mail state under HB37 (2012) and subsequent legislation — most counties conduct elections entirely by mail. NCSL classifies Utah as non-photo ID requested (utility bill, paycheck, bank statement, or other documentation with name and address). The Utah primary is typically the last Tuesday in June; estimated 2026-06-30. 2026 registration deadlines estimated from Utah statute (30 days before for online/mail; 7 days before for late in-person via DMV-linked process). TODO verify exact 2026 cycle dates."
+  },
+  "stateCode": "UT",
+  "stateName": "Utah",
+  "lastUpdated": "2026-05-10",
+  "coverageStatus": "confirmed",
+
+  "elections": [
+    {
+      "id": "ut-2026-primary",
+      "name": "2026 Utah Primary Election",
+      "date": "2026-06-30",
+      "type": "primary",
+      "isPrimary": true,
+      "primaryType": "closed",
+      "registration": {
+        "online": {
+          "available": true,
+          "deadline": "2026-05-31",
+          "url": "https://vote.utah.gov/vote/menu/index.html"
+        },
+        "byMail": {
+          "deadline": "2026-05-31",
+          "sincePostmarked": false
+        },
+        "inPerson": {
+          "deadline": "2026-06-23",
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": false,
+        "registrationCheckUrl": "https://vote.utah.gov/vote/menu/index.html"
+      },
+      "earlyVoting": {
+        "available": true,
+        "startDate": "2026-06-02",
+        "endDate": "2026-06-29",
+        "notes": "Most Utah counties are vote-by-mail — ballots mailed to all active registered voters. Some counties may have in-person voting locations. TODO verify exact 2026 dates and county-by-county details."
+      }
+    },
+    {
+      "id": "ut-2026-general",
+      "name": "2026 Utah General Election",
+      "date": "2026-11-03",
+      "type": "general",
+      "isPrimary": false,
+      "primaryType": null,
+      "registration": {
+        "online": {
+          "available": true,
+          "deadline": "2026-10-04",
+          "url": "https://vote.utah.gov/vote/menu/index.html"
+        },
+        "byMail": {
+          "deadline": "2026-10-04",
+          "sincePostmarked": false
+        },
+        "inPerson": {
+          "deadline": "2026-10-27",
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": false,
+        "registrationCheckUrl": "https://vote.utah.gov/vote/menu/index.html"
+      },
+      "earlyVoting": {
+        "available": true,
+        "startDate": "2026-10-13",
+        "endDate": "2026-11-02",
+        "notes": "Most Utah counties conduct elections entirely by mail — ballots sent to all active registered voters approximately 21 days before Election Day. Vote centers may be available in some counties for in-person voting."
+      }
+    }
+  ],
+
+  "registration": {
+    "online": {
+      "available": true,
+      "deadline": "2026-10-04",
+      "url": "https://vote.utah.gov/vote/menu/index.html"
+    },
+    "byMail": {
+      "deadline": "2026-10-04",
+      "sincePostmarked": false
+    },
+    "inPerson": {
+      "deadline": "2026-10-27",
+      "sincePostmarked": false
+    },
+    "sameDayRegistration": false,
+    "registrationCheckUrl": "https://vote.utah.gov/vote/menu/index.html"
+  },
+
+  "earlyVoting": {
+    "available": true,
+    "startDate": "2026-10-13",
+    "endDate": "2026-11-02",
+    "notes": "Most Utah counties are vote-by-mail — all active registered voters automatically receive a mail ballot. Some counties may have vote centers for in-person voting. No traditional polling places in most counties. Non-photo ID is requested but signature and address matching are primary verification methods."
+  },
+
+  "votingRules": {
+    "idRequired": false,
+    "acceptedIds": [
+      "Utah driver's license or state ID",
+      "Current utility bill with name and address",
+      "Bank statement with name and address",
+      "Government check or document with name and address",
+      "Paycheck with name and address",
+      "Any government-issued document with name and address"
+    ],
+    "phonesAtPolls": "varies",
+    "phonesAtPollsDetail": "Utah is predominantly a vote-by-mail state. For in-person voting at vote centers, phones are generally permitted for reference purposes. Photography of marked ballots may be restricted. Check with your county clerk for specific rules.",
+    "additionalRules": [
+      "Most Utah counties conduct elections entirely by mail — active registered voters automatically receive a mail ballot.",
+      "Utah has a closed primary — only voters registered with a party may vote in that party's primary.",
+      "Non-photo ID is requested when voting in person, but identity can be established with various documents showing name and address.",
+      "Automatic voter registration is available via Utah DMV and online state services."
+    ]
+  },
+
+  "voteByMail": {
+    "universal": true,
+    "eligibility": [
+      "All registered voters automatically receive a ballot by mail in counties that conduct vote-by-mail elections (most Utah counties)"
+    ],
+    "applicationDeadline": "No application required in vote-by-mail counties — ballots are automatically mailed to active registered voters",
+    "returnDeadline": "Must be received by 8:00 p.m. on Election Day, or postmarked by Election Day and received within specified window",
+    "returnDeadlinePlain": "Return by 8 p.m. on Election Day at a drop box or county office, or mail postmarked by Election Day.",
+    "applicationUrl": "https://vote.utah.gov/vote/menu/index.html",
+    "officialRulesUrl": "https://vote.utah.gov/"
+  },
+
+  "runoffRules": {
+    "hasRunoff": false,
+    "partyLockedToFirstRoundPrimary": false
+  },
+
+  "resources": {
+    "stateElectionWebsite": "https://vote.utah.gov/",
+    "countyElectionLookup": "https://vote.utah.gov/vote/menu/index.html",
+    "sampleBallotLookup": "https://vote.utah.gov/vote/menu/index.html",
+    "pollingPlaceLookup": "https://vote.utah.gov/vote/menu/index.html",
+    "voterIdInfo": "https://vote.utah.gov/vote/menu/index.html"
+  }
+}

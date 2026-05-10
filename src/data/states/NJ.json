@@ -1,0 +1,137 @@
+{
+  "_sources": {
+    "primary": "https://www.state.nj.us/state/elections/voter-registration.shtml",
+    "secondary": "https://www.ncsl.org/elections-and-campaigns/voter-id",
+    "checked": "2026-05-10",
+    "discrepancies": "NCSL classifies NJ as 'no document required' for ID. New Jersey has no-excuse vote-by-mail and mails every registered voter an absentee ballot application before each election. NJ's 2026 primary is typically the first Tuesday in June; TODO verify exact 2026 primary date. Registration deadline is 21 days before the election per NJ law. NJ has online voter registration via the MVC portal."
+  },
+  "stateCode": "NJ",
+  "stateName": "New Jersey",
+  "lastUpdated": "2026-05-10",
+
+  "elections": [
+    {
+      "id": "nj-2026-primary",
+      "name": "2026 New Jersey Primary Election",
+      "date": "2026-06-02",
+      "type": "primary",
+      "isPrimary": true,
+      "primaryType": "closed",
+      "registration": {
+        "online": {
+          "available": true,
+          "deadline": "2026-05-12",
+          "url": "https://voter.svrs.nj.gov/register"
+        },
+        "byMail": {
+          "deadline": "2026-05-12",
+          "sincePostmarked": false
+        },
+        "inPerson": {
+          "deadline": "2026-05-12",
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": false,
+        "registrationCheckUrl": "https://voter.svrs.nj.gov/registration-check"
+      },
+      "earlyVoting": {
+        "available": true,
+        "startDate": "2026-05-26",
+        "endDate": "2026-05-31",
+        "notes": "New Jersey requires 6 days of early in-person voting before each election. TODO verify exact 2026 dates."
+      }
+    },
+    {
+      "id": "nj-2026-general",
+      "name": "2026 New Jersey General Election",
+      "date": "2026-11-03",
+      "type": "general",
+      "isPrimary": false,
+      "primaryType": null,
+      "registration": {
+        "online": {
+          "available": true,
+          "deadline": "2026-10-13",
+          "url": "https://voter.svrs.nj.gov/register"
+        },
+        "byMail": {
+          "deadline": "2026-10-13",
+          "sincePostmarked": false
+        },
+        "inPerson": {
+          "deadline": "2026-10-13",
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": false,
+        "registrationCheckUrl": "https://voter.svrs.nj.gov/registration-check"
+      },
+      "earlyVoting": {
+        "available": true,
+        "startDate": "2026-10-24",
+        "endDate": "2026-11-01",
+        "notes": "New Jersey requires 6 days of early in-person voting. Additional early voting hours may be required. TODO verify exact 2026 dates."
+      }
+    }
+  ],
+
+  "registration": {
+    "online": {
+      "available": true,
+      "deadline": "2026-10-13",
+      "url": "https://voter.svrs.nj.gov/register"
+    },
+    "byMail": {
+      "deadline": "2026-10-13",
+      "sincePostmarked": false
+    },
+    "inPerson": {
+      "deadline": "2026-10-13",
+      "sincePostmarked": false
+    },
+    "sameDayRegistration": false,
+    "registrationCheckUrl": "https://voter.svrs.nj.gov/registration-check"
+  },
+
+  "earlyVoting": {
+    "available": true,
+    "startDate": "2026-10-24",
+    "endDate": "2026-11-01",
+    "notes": "New Jersey mandates at least 6 days of early in-person voting before each election. Locations vary by county. No-excuse vote-by-mail is also available. TODO verify exact 2026 dates."
+  },
+
+  "votingRules": {
+    "idRequired": false,
+    "acceptedIds": [],
+    "phonesAtPolls": "allowed",
+    "phonesAtPollsDetail": "New Jersey does not prohibit phones inside polling places. Voters may not photograph their ballot or other voters. Campaigning is prohibited within 100 feet of a polling place.",
+    "additionalRules": [
+      "No-excuse vote-by-mail: all registered voters receive an absentee ballot application before each election; any voter may request and return a mail ballot.",
+      "Closed primary: only voters registered with a party may vote in that party's primary. Unaffiliated voters may not participate in partisan primaries.",
+      "New Jersey automatically mails a vote-by-mail application to all registered voters."
+    ]
+  },
+
+  "voteByMail": {
+    "universal": false,
+    "eligibility": [
+      "Any registered voter may request a mail-in ballot without providing a reason (no-excuse vote-by-mail)"
+    ],
+    "applicationDeadline": "7 days before the election (received by county clerk); in-person applications accepted until 3 p.m. the day before",
+    "returnDeadline": "Must be received by the county board of elections by 8 p.m. on Election Day, or postmarked by Election Day and received within 7 days after",
+    "returnDeadlinePlain": "Must arrive by poll closing on Election Day, or be postmarked by Election Day and received within 7 days after.",
+    "applicationUrl": "https://www.nj.gov/state/elections/vote-by-mail.shtml",
+    "officialRulesUrl": "https://www.nj.gov/state/elections/vote-by-mail.shtml"
+  },
+
+  "runoffRules": {
+    "hasRunoff": false,
+    "partyLockedToFirstRoundPrimary": false
+  },
+
+  "resources": {
+    "stateElectionWebsite": "https://www.state.nj.us/state/elections/index.shtml",
+    "countyElectionLookup": "https://www.nj.gov/state/elections/county-boards.shtml",
+    "sampleBallotLookup": "https://voter.svrs.nj.gov/",
+    "pollingPlaceLookup": "https://voter.svrs.nj.gov/polling-place"
+  }
+}

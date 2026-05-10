@@ -1,0 +1,152 @@
+{
+  "_sources": {
+    "primary": "https://mvic.sos.state.mi.us/",
+    "secondary": "https://www.ncsl.org/elections-and-campaigns/voter-id",
+    "dateChecked": "2026-05-10",
+    "discrepancies": "Michigan enacted Proposal 2 (2022) which added same-day registration, 9 days of early voting, and other provisions. NCSL categorizes Michigan as 'photo ID requested' — voters without ID sign an affidavit. The Michigan SoS confirms photo ID is requested but not strictly required: voters may sign a statement of identity instead. Michigan's 2026 primary date is set by statute as the first Tuesday after the second Monday in August."
+  },
+
+  "stateCode": "MI",
+  "stateName": "Michigan",
+  "lastUpdated": "2026-05-10",
+  "coverageStatus": "confirmed",
+
+  "elections": [
+    {
+      "id": "mi-2026-primary",
+      "name": "2026 Michigan Primary Election",
+      "date": "2026-08-04",
+      "type": "primary",
+      "isPrimary": true,
+      "primaryType": "open",
+      "registration": {
+        "online": {
+          "available": true,
+          "deadline": "2026-08-04",
+          "url": "https://mvic.sos.state.mi.us/RegisterVoter"
+        },
+        "byMail": {
+          "deadline": "2026-07-20",
+          "sincePostmarked": false
+        },
+        "inPerson": {
+          "deadline": "2026-08-04",
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": true,
+        "registrationCheckUrl": "https://mvic.sos.state.mi.us/Voter/Index"
+      },
+      "earlyVoting": {
+        "available": true,
+        "startDate": "2026-07-25",
+        "endDate": "2026-08-02",
+        "notes": "Michigan requires 9 days of early voting (Proposal 2, 2022). Exact locations set by local clerks. TODO verify for 2026 cycle."
+      }
+    },
+    {
+      "id": "mi-2026-general",
+      "name": "2026 Michigan General Election",
+      "date": "2026-11-03",
+      "type": "general",
+      "isPrimary": false,
+      "primaryType": null,
+      "registration": {
+        "online": {
+          "available": true,
+          "deadline": "2026-11-03",
+          "url": "https://mvic.sos.state.mi.us/RegisterVoter"
+        },
+        "byMail": {
+          "deadline": "2026-10-19",
+          "sincePostmarked": false
+        },
+        "inPerson": {
+          "deadline": "2026-11-03",
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": true,
+        "registrationCheckUrl": "https://mvic.sos.state.mi.us/Voter/Index"
+      },
+      "earlyVoting": {
+        "available": true,
+        "startDate": "2026-10-24",
+        "endDate": "2026-11-01",
+        "notes": "Michigan requires at least 9 days of early voting before Election Day. Locations and hours set by local clerks. TODO verify for 2026 cycle."
+      }
+    }
+  ],
+
+  "registration": {
+    "online": {
+      "available": true,
+      "deadline": "2026-11-03",
+      "url": "https://mvic.sos.state.mi.us/RegisterVoter"
+    },
+    "byMail": {
+      "deadline": "2026-10-19",
+      "sincePostmarked": false
+    },
+    "inPerson": {
+      "deadline": "2026-11-03",
+      "sincePostmarked": false
+    },
+    "sameDayRegistration": true,
+    "registrationCheckUrl": "https://mvic.sos.state.mi.us/Voter/Index"
+  },
+
+  "earlyVoting": {
+    "available": true,
+    "startDate": "2026-10-24",
+    "endDate": "2026-11-01",
+    "notes": "Michigan requires at least 9 days of early in-person voting, ending the Sunday before Election Day. Locations set by local clerks. Same-day registration available through Election Day at your local clerk's office. TODO verify for 2026 cycle."
+  },
+
+  "votingRules": {
+    "idRequired": true,
+    "acceptedIds": [
+      "Michigan driver's license",
+      "Michigan state ID card",
+      "U.S. passport",
+      "U.S. military ID",
+      "Student ID from a Michigan college or university",
+      "Tribal ID"
+    ],
+    "expirationRule": "Photo ID should not be expired. If a voter does not have an acceptable photo ID, they may sign a statement of identity (affidavit) and their ballot will be counted. TODO verify for 2026 cycle.",
+    "impedimentDeclaration": "Voters without photo ID may sign an affidavit (statement of identity) and vote a regular ballot — no provisional ballot required.",
+    "phonesAtPolls": "allowed",
+    "phonesAtPollsDetail": "Michigan does not prohibit phones at polling places. Voters may not photograph their ballot in a way that reveals how they voted. No electioneering within 100 feet of the polling place.",
+    "additionalRules": [
+      "Open primary: voters may vote in either party's primary without registering with a party.",
+      "No runoffs in Michigan — the candidate with the most votes wins.",
+      "All registered voters automatically receive an absentee ballot application before each election.",
+      "Same-day voter registration available through Election Day at your local clerk's office."
+    ]
+  },
+
+  "voteByMail": {
+    "universal": false,
+    "eligibility": [
+      "Any registered voter may request an absentee ballot without providing a reason"
+    ],
+    "applicationDeadline": "5 p.m. on the Friday before the election for mailed applications; applications in person at the clerk's office accepted through 4 p.m. on Election Day",
+    "returnDeadline": "Must be received by the local clerk by 8 p.m. on Election Day",
+    "returnDeadlinePlain": "Must arrive at the local clerk by poll closing (8 p.m.) on Election Day. Postmarks do not count.",
+    "applicationUrl": "https://mvic.sos.state.mi.us/",
+    "officialRulesUrl": "https://www.michigan.gov/sos/elections/absentee"
+  },
+
+  "runoffRules": {
+    "hasRunoff": false,
+    "partyLockedToFirstRoundPrimary": false
+  },
+
+  "resources": {
+    "stateElectionWebsite": "https://mvic.sos.state.mi.us/",
+    "countyElectionLookup": "https://mvic.sos.state.mi.us/Clerk",
+    "sampleBallotLookup": "https://mvic.sos.state.mi.us/Voter/Index",
+    "pollingPlaceLookup": "https://mvic.sos.state.mi.us/Voter/Index",
+    "importantDates": "https://www.michigan.gov/sos/elections/voters",
+    "voterIdInfo": "https://www.michigan.gov/sos/elections/voters/photo-id",
+    "earlyVotingInfo": "https://www.michigan.gov/sos/elections/voters/early-voting"
+  }
+}

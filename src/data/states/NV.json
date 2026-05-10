@@ -1,0 +1,144 @@
+{
+  "_sources": {
+    "primary": "https://www.nvsos.gov/sos/elections",
+    "secondary": "https://www.ncsl.org/elections-and-campaigns/voter-id",
+    "checked": "2026-05-10",
+    "discrepancies": "NCSL classifies Nevada as no document required — Nevada verifies voter identity through signature comparison on mail ballots and does not require ID to vote in person (voter states name and address). Nevada is not a universal vote-by-mail state but all active registered voters receive a mail ballot automatically for primary and general elections under AB 321 (2021). 2026 Nevada primary estimated June 9 (second Tuesday in June). TODO verify exact 2026 cycle dates with Nevada SoS."
+  },
+  "stateCode": "NV",
+  "stateName": "Nevada",
+  "lastUpdated": "2026-05-10",
+  "coverageStatus": "confirmed",
+
+  "elections": [
+    {
+      "id": "nv-2026-primary",
+      "name": "2026 Nevada Primary Election",
+      "date": "2026-06-09",
+      "type": "primary",
+      "isPrimary": true,
+      "primaryType": "closed",
+      "registration": {
+        "online": {
+          "available": true,
+          "deadline": "2026-05-22",
+          "url": "https://www.nvsos.gov/sos/elections/voters/registering-to-vote"
+        },
+        "byMail": {
+          "deadline": "2026-05-22",
+          "sincePostmarked": false
+        },
+        "inPerson": {
+          "deadline": "2026-06-09",
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": true,
+        "registrationCheckUrl": "https://www.nvsos.gov/sos/elections/voters/view-your-voter-information"
+      },
+      "earlyVoting": {
+        "available": true,
+        "startDate": "2026-05-23",
+        "endDate": "2026-06-05",
+        "notes": "All active registered voters receive a mail ballot automatically. In-person early voting available at polling locations statewide. TODO verify exact 2026 dates."
+      }
+    },
+    {
+      "id": "nv-2026-general",
+      "name": "2026 Nevada General Election",
+      "date": "2026-11-03",
+      "type": "general",
+      "isPrimary": false,
+      "primaryType": null,
+      "registration": {
+        "online": {
+          "available": true,
+          "deadline": "2026-10-13",
+          "url": "https://www.nvsos.gov/sos/elections/voters/registering-to-vote"
+        },
+        "byMail": {
+          "deadline": "2026-10-13",
+          "sincePostmarked": false
+        },
+        "inPerson": {
+          "deadline": "2026-11-03",
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": true,
+        "registrationCheckUrl": "https://www.nvsos.gov/sos/elections/voters/view-your-voter-information"
+      },
+      "earlyVoting": {
+        "available": true,
+        "startDate": "2026-10-17",
+        "endDate": "2026-10-30",
+        "notes": "All active registered voters receive a mail ballot automatically approximately 2 weeks before the election. In-person early voting locations available statewide. Same-day registration available through Election Day."
+      }
+    }
+  ],
+
+  "registration": {
+    "online": {
+      "available": true,
+      "deadline": "2026-10-13",
+      "url": "https://www.nvsos.gov/sos/elections/voters/registering-to-vote"
+    },
+    "byMail": {
+      "deadline": "2026-10-13",
+      "sincePostmarked": false
+    },
+    "inPerson": {
+      "deadline": "2026-11-03",
+      "sincePostmarked": false
+    },
+    "sameDayRegistration": true,
+    "registrationCheckUrl": "https://www.nvsos.gov/sos/elections/voters/view-your-voter-information"
+  },
+
+  "earlyVoting": {
+    "available": true,
+    "startDate": "2026-10-17",
+    "endDate": "2026-10-30",
+    "notes": "Nevada automatically sends mail ballots to all active registered voters. In-person early voting is also available at multiple locations in each county for approximately 14 days before Election Day. Same-day voter registration is available through Election Day at in-person voting locations."
+  },
+
+  "votingRules": {
+    "idRequired": false,
+    "acceptedIds": [
+      "No ID document required — voters state their name and address at the polls",
+      "Signature comparison on mail ballots is primary verification mechanism",
+      "If poll worker cannot verify identity, voter may cast a provisional ballot"
+    ],
+    "phonesAtPolls": "varies",
+    "phonesAtPollsDetail": "Nevada law prohibits photographing your marked ballot for the purpose of showing how you voted. Nevada is a no-ID-required state; poll workers verify identity by matching voter records. Contact your county for local polling place rules.",
+    "additionalRules": [
+      "Nevada has a closed primary — only voters registered with a political party may vote in that party's primary. Non-partisan and minor party voters receive a separate ballot.",
+      "Same-day voter registration is available at in-person voting locations through Election Day.",
+      "All active registered voters automatically receive a mail ballot before each election (AB 321, 2021).",
+      "No ID required in person — simply state your name and address."
+    ]
+  },
+
+  "voteByMail": {
+    "universal": false,
+    "eligibility": [
+      "All active registered voters automatically receive a ballot by mail before each primary and general election"
+    ],
+    "applicationDeadline": "No application required — ballots are automatically mailed to all active registered voters",
+    "returnDeadline": "Must be received by 7:00 p.m. on Election Day, or postmarked by Election Day and received within 7 days",
+    "returnDeadlinePlain": "Return by 7 p.m. on Election Day in person or at a drop box, or mail postmarked by Election Day (received within 7 days).",
+    "applicationUrl": "https://www.nvsos.gov/sos/elections/voters/voting-by-mail",
+    "officialRulesUrl": "https://www.nvsos.gov/sos/elections"
+  },
+
+  "runoffRules": {
+    "hasRunoff": false,
+    "partyLockedToFirstRoundPrimary": false
+  },
+
+  "resources": {
+    "stateElectionWebsite": "https://www.nvsos.gov/sos/elections",
+    "countyElectionLookup": "https://www.nvsos.gov/sos/elections/voters/find-your-election-officials",
+    "sampleBallotLookup": "https://www.nvsos.gov/sos/elections/voters/view-your-voter-information",
+    "pollingPlaceLookup": "https://www.nvsos.gov/sos/elections/voters/find-your-polling-place",
+    "voterIdInfo": "https://www.nvsos.gov/sos/elections/voters/voter-id"
+  }
+}

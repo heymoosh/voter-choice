@@ -1,0 +1,139 @@
+{
+  "_sources": {
+    "primary": "https://dcboe.org/",
+    "secondary": "https://www.ncsl.org/elections-and-campaigns/voter-id",
+    "checked": "2026-05-10",
+    "discrepancies": "DC uses the Board of Elections (DCBOE), not a Secretary of State. NCSL classifies DC as 'no document required' for ID. DC is a universal vote-by-mail jurisdiction — all registered voters automatically receive a mail ballot. DC also has automatic voter registration via DMV. DC's 2026 primary is typically in late June; TODO verify exact 2026 date. DC voters elect non-voting delegate to Congress (Eleanor Holmes Norton), DC Council, Mayor, and other local offices. DC has same-day registration. No statewide runoff rule."
+  },
+  "stateCode": "DC",
+  "stateName": "Washington, D.C.",
+  "lastUpdated": "2026-05-10",
+
+  "elections": [
+    {
+      "id": "dc-2026-primary",
+      "name": "2026 DC Democratic Primary",
+      "date": "2026-06-16",
+      "type": "primary",
+      "isPrimary": true,
+      "primaryType": "closed",
+      "registration": {
+        "online": {
+          "available": true,
+          "deadline": "2026-06-16",
+          "url": "https://dcboe.org/Voters/Register-To-Vote/Online-Voter-Registration"
+        },
+        "byMail": {
+          "deadline": "2026-05-27",
+          "sincePostmarked": false
+        },
+        "inPerson": {
+          "deadline": "2026-06-16",
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": true,
+        "registrationCheckUrl": "https://dcboe.org/Voters/Register-To-Vote/Voter-Registration-Status"
+      },
+      "earlyVoting": {
+        "available": true,
+        "startDate": "2026-06-06",
+        "endDate": "2026-06-14",
+        "notes": "DC offers early in-person voting at vote centers across the District. All active registered voters also receive mail ballots automatically. TODO verify exact 2026 dates."
+      }
+    },
+    {
+      "id": "dc-2026-general",
+      "name": "2026 DC General Election",
+      "date": "2026-11-03",
+      "type": "general",
+      "isPrimary": false,
+      "primaryType": null,
+      "registration": {
+        "online": {
+          "available": true,
+          "deadline": "2026-11-03",
+          "url": "https://dcboe.org/Voters/Register-To-Vote/Online-Voter-Registration"
+        },
+        "byMail": {
+          "deadline": "2026-10-14",
+          "sincePostmarked": false
+        },
+        "inPerson": {
+          "deadline": "2026-11-03",
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": true,
+        "registrationCheckUrl": "https://dcboe.org/Voters/Register-To-Vote/Voter-Registration-Status"
+      },
+      "earlyVoting": {
+        "available": true,
+        "startDate": "2026-10-24",
+        "endDate": "2026-11-01",
+        "notes": "DC offers early in-person voting at vote centers. All active registered voters receive mail ballots automatically. TODO verify exact 2026 dates."
+      }
+    }
+  ],
+
+  "registration": {
+    "online": {
+      "available": true,
+      "deadline": "2026-11-03",
+      "url": "https://dcboe.org/Voters/Register-To-Vote/Online-Voter-Registration"
+    },
+    "byMail": {
+      "deadline": "2026-10-14",
+      "sincePostmarked": false
+    },
+    "inPerson": {
+      "deadline": "2026-11-03",
+      "sincePostmarked": false
+    },
+    "sameDayRegistration": true,
+    "registrationCheckUrl": "https://dcboe.org/Voters/Register-To-Vote/Voter-Registration-Status"
+  },
+
+  "earlyVoting": {
+    "available": true,
+    "startDate": "2026-10-24",
+    "endDate": "2026-11-01",
+    "notes": "DC is a universal vote-by-mail jurisdiction. All active registered voters automatically receive a mail ballot. Early in-person voting also available at vote centers. TODO verify exact 2026 dates."
+  },
+
+  "votingRules": {
+    "idRequired": false,
+    "acceptedIds": [],
+    "phonesAtPolls": "allowed",
+    "phonesAtPollsDetail": "DC does not prohibit phones in polling places. Voters may not photograph their ballot or interfere with other voters. Electioneering is prohibited within 50 feet of a polling place.",
+    "additionalRules": [
+      "DC is a universal vote-by-mail jurisdiction: all active registered voters automatically receive a mail ballot before each election.",
+      "Automatic voter registration via DC DMV when applying for or renewing a driver's license or ID.",
+      "Same-day voter registration available at polling places and vote centers.",
+      "DC voters elect a non-voting Delegate to the U.S. House of Representatives and local officials (Mayor, DC Council, etc.).",
+      "No senators or voting representatives in Congress — DC residents have limited federal representation."
+    ]
+  },
+
+  "voteByMail": {
+    "universal": true,
+    "eligibility": [
+      "All active registered voters automatically receive a mail ballot — no application needed"
+    ],
+    "applicationDeadline": "Not required; ballots automatically mailed to all active registered voters",
+    "returnDeadline": "Must be received by DCBOE by 8 p.m. on Election Day, or postmarked by Election Day and received within 7 days after",
+    "returnDeadlinePlain": "Must arrive at DCBOE by 8 p.m. on Election Day, or be postmarked by Election Day and received within 7 days after. May also be dropped in an official drop box.",
+    "applicationUrl": "https://dcboe.org/Voters/Voting-Options/Vote-By-Mail",
+    "officialRulesUrl": "https://dcboe.org/Voters/Voting-Options/Vote-By-Mail"
+  },
+
+  "runoffRules": {
+    "hasRunoff": false,
+    "partyLockedToFirstRoundPrimary": false
+  },
+
+  "resources": {
+    "stateElectionWebsite": "https://dcboe.org/",
+    "countyElectionLookup": "https://dcboe.org/",
+    "sampleBallotLookup": "https://dcboe.org/Elections/Sample-Ballots",
+    "pollingPlaceLookup": "https://dcboe.org/Voters/Voting-Options/Vote-In-Person/Polling-Place-Locator"
+  }
+}

@@ -1,0 +1,154 @@
+{
+  "_sources": {
+    "primary": "https://sos.tn.gov/elections",
+    "secondary": "https://ballotpedia.org/Voting_in_Tennessee",
+    "dateChecked": "2026-05-10",
+    "discrepancies": "NCSL lists TN as 'strict photo ID'. SoS confirms voters without acceptable photo ID must vote a provisional ballot; provisional ballot is not counted unless voter presents acceptable ID by the close of business on the second business day after the election. Consistent."
+  },
+  "stateCode": "TN",
+  "stateName": "Tennessee",
+  "lastUpdated": "2026-05-10",
+  "coverageStatus": "confirmed",
+
+  "elections": [
+    {
+      "id": "tn-2026-primary",
+      "name": "2026 Tennessee Primary Election",
+      "date": "2026-08-06",
+      "type": "primary",
+      "isPrimary": true,
+      "primaryType": "open",
+      "registration": {
+        "online": {
+          "available": true,
+          "deadline": "2026-07-07",
+          "url": "https://ovr.govote.tn.gov/"
+        },
+        "byMail": {
+          "deadline": "2026-07-07",
+          "sincePostmarked": true
+        },
+        "inPerson": {
+          "deadline": "2026-07-07",
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": false,
+        "registrationCheckUrl": "https://ovr.govote.tn.gov/"
+      },
+      "earlyVoting": {
+        "available": true,
+        "startDate": "2026-07-17",
+        "endDate": "2026-08-01",
+        "notes": "Early voting begins 20 days before the primary and ends 5 days before. Hours and sites set by county. TODO verify for 2026 cycle."
+      }
+    },
+    {
+      "id": "tn-2026-general",
+      "name": "2026 Tennessee General Election",
+      "date": "2026-11-03",
+      "type": "general",
+      "isPrimary": false,
+      "primaryType": null,
+      "registration": {
+        "online": {
+          "available": true,
+          "deadline": "2026-10-05",
+          "url": "https://ovr.govote.tn.gov/"
+        },
+        "byMail": {
+          "deadline": "2026-10-05",
+          "sincePostmarked": true
+        },
+        "inPerson": {
+          "deadline": "2026-10-05",
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": false,
+        "registrationCheckUrl": "https://ovr.govote.tn.gov/"
+      },
+      "earlyVoting": {
+        "available": true,
+        "startDate": "2026-10-14",
+        "endDate": "2026-10-29",
+        "notes": "Early voting begins 20 days before and ends 5 days before Election Day. TODO verify for 2026 cycle."
+      }
+    }
+  ],
+
+  "registration": {
+    "online": {
+      "available": true,
+      "deadline": "2026-10-05",
+      "url": "https://ovr.govote.tn.gov/"
+    },
+    "byMail": {
+      "deadline": "2026-10-05",
+      "sincePostmarked": true
+    },
+    "inPerson": {
+      "deadline": "2026-10-05",
+      "sincePostmarked": false
+    },
+    "sameDayRegistration": false,
+    "registrationCheckUrl": "https://ovr.govote.tn.gov/"
+  },
+
+  "earlyVoting": {
+    "available": true,
+    "startDate": "2026-10-14",
+    "endDate": "2026-10-29",
+    "notes": "Early voting runs from 20 days to 5 days before Election Day. Hours and locations vary by county."
+  },
+
+  "votingRules": {
+    "idRequired": true,
+    "acceptedIds": [
+      "Tennessee driver's license or photo ID card",
+      "U.S. passport or passport card",
+      "Photo ID issued by Tennessee or federal government",
+      "U.S. military ID with photo",
+      "Tennessee handgun carry permit with photo",
+      "Photo ID issued by a Tennessee college or university"
+    ],
+    "expirationRule": "Photo ID must not be expired at time of voting. TODO verify for 2026 cycle.",
+    "impedimentDeclaration": "Strict photo ID state: voters without acceptable photo ID must cast a provisional ballot and present acceptable ID to the county election commission by close of business on the second business day after the election for it to be counted.",
+    "phonesAtPolls": "prohibited",
+    "phonesAtPollsDetail": "Tennessee prohibits the use of mobile phones in the voting booth. You may not photograph your marked ballot.",
+    "additionalRules": [
+      "Open primary: any registered voter may choose which party's primary to vote in; party registration is not required.",
+      "No legislative primary runoffs in Tennessee."
+    ]
+  },
+
+  "voteByMail": {
+    "universal": false,
+    "eligibility": [
+      "Will be outside the county on Election Day and during the early voting period",
+      "Have a specific illness or physical disability",
+      "Hospitalized as an emergency patient within 5 days before the election",
+      "A caretaker of a person confined due to illness or disability",
+      "A resident of a licensed care facility",
+      "Enrolled in college outside the county"
+    ],
+    "applicationDeadline": "Must be received by the county election commission 7 days before the election",
+    "returnDeadline": "Must be received by the county election commission by the close of polls on Election Day",
+    "returnDeadlinePlain": "Absentee ballot must arrive at the county election commission by the close of polls on Election Day.",
+    "applicationUrl": "https://sos.tn.gov/elections/absentee-voting",
+    "officialRulesUrl": "https://sos.tn.gov/elections/absentee-voting"
+  },
+
+  "runoffRules": {
+    "hasRunoff": false,
+    "partyLockedToFirstRoundPrimary": false
+  },
+
+  "resources": {
+    "stateElectionWebsite": "https://sos.tn.gov/elections",
+    "countyElectionLookup": "https://sos.tn.gov/elections/county-election-commissions",
+    "sampleBallotLookup": "https://ovr.govote.tn.gov/",
+    "pollingPlaceLookup": "https://ovr.govote.tn.gov/",
+    "importantDates": "https://sos.tn.gov/elections/election-dates",
+    "voterIdInfo": "https://sos.tn.gov/elections/photo-id",
+    "earlyVotingInfo": "https://sos.tn.gov/elections/early-voting"
+  }
+}

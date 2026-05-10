@@ -1,0 +1,149 @@
+{
+  "_sources": {
+    "primary": "https://www.in.gov/sos/elections/",
+    "secondary": "https://www.ncsl.org/elections-and-campaigns/voter-id",
+    "dateChecked": "2026-05-10",
+    "discrepancies": "Indiana has strict photo ID requirement per NCSL. SoS confirms: must present government-issued photo ID with name and expiration date. Voters without ID may cast provisional ballot and return with ID by noon on the Monday after Election Day. No early voting in Indiana — the state calls it 'in-person absentee voting' available at county clerk offices."
+  },
+
+  "stateCode": "IN",
+  "stateName": "Indiana",
+  "lastUpdated": "2026-05-10",
+  "coverageStatus": "confirmed",
+
+  "elections": [
+    {
+      "id": "in-2026-primary",
+      "name": "2026 Indiana Primary Election",
+      "date": "2026-05-05",
+      "type": "primary",
+      "isPrimary": true,
+      "primaryType": "semi-open",
+      "registration": {
+        "online": {
+          "available": true,
+          "deadline": "2026-04-06",
+          "url": "https://indianavoters.in.gov/"
+        },
+        "byMail": {
+          "deadline": "2026-04-06",
+          "sincePostmarked": false
+        },
+        "inPerson": {
+          "deadline": "2026-04-06",
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": false,
+        "registrationCheckUrl": "https://indianavoters.in.gov/"
+      },
+      "earlyVoting": {
+        "available": true,
+        "startDate": "2026-04-07",
+        "endDate": "2026-05-04",
+        "notes": "Indiana calls this 'in-person absentee voting' — available at county clerk offices starting 28 days before the election. No separate early voting locations. TODO verify for 2026 cycle."
+      }
+    },
+    {
+      "id": "in-2026-general",
+      "name": "2026 Indiana General Election",
+      "date": "2026-11-03",
+      "type": "general",
+      "isPrimary": false,
+      "primaryType": null,
+      "registration": {
+        "online": {
+          "available": true,
+          "deadline": "2026-10-05",
+          "url": "https://indianavoters.in.gov/"
+        },
+        "byMail": {
+          "deadline": "2026-10-05",
+          "sincePostmarked": false
+        },
+        "inPerson": {
+          "deadline": "2026-10-05",
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": false,
+        "registrationCheckUrl": "https://indianavoters.in.gov/"
+      },
+      "earlyVoting": {
+        "available": true,
+        "startDate": "2026-10-06",
+        "endDate": "2026-11-02",
+        "notes": "In-person absentee voting at county clerk offices. Satellite sites may be available. TODO verify for 2026 cycle."
+      }
+    }
+  ],
+
+  "registration": {
+    "online": {
+      "available": true,
+      "deadline": "2026-10-05",
+      "url": "https://indianavoters.in.gov/"
+    },
+    "byMail": {
+      "deadline": "2026-10-05",
+      "sincePostmarked": false
+    },
+    "inPerson": {
+      "deadline": "2026-10-05",
+      "sincePostmarked": false
+    },
+    "sameDayRegistration": false,
+    "registrationCheckUrl": "https://indianavoters.in.gov/"
+  },
+
+  "earlyVoting": {
+    "available": true,
+    "startDate": "2026-10-06",
+    "endDate": "2026-11-02",
+    "notes": "Indiana offers in-person absentee voting at county clerk offices from 28 days before Election Day. Hours and satellite locations vary by county. TODO verify for 2026 cycle."
+  },
+
+  "votingRules": {
+    "idRequired": true,
+    "acceptedIds": [
+      "Indiana driver's license or state ID card",
+      "U.S. military ID",
+      "U.S. passport",
+      "Other photo ID issued by the U.S. government or Indiana government with photo, name, and expiration date"
+    ],
+    "expirationRule": "Photo ID must not be expired. Exception: voters aged 60 or older may use an expired Indiana-issued ID.",
+    "impedimentDeclaration": "Voters without acceptable ID may cast a provisional ballot and present ID to the county election board by noon on the Monday after Election Day for the vote to count.",
+    "phonesAtPolls": "prohibited",
+    "phonesAtPollsDetail": "Indiana prohibits electronic communication devices in the voting booth. Devices must be powered off or silenced before entering. Check with your county clerk for specific rules.",
+    "additionalRules": [
+      "Semi-open primary: voters must publicly declare party affiliation to receive that party's ballot. Declaration is not permanent registration.",
+      "No runoffs in Indiana — the candidate with the most votes wins.",
+      "Absentee (mail) ballot available without excuse. Application must be received by the county 12 days before the election."
+    ]
+  },
+
+  "voteByMail": {
+    "universal": false,
+    "eligibility": [
+      "Any registered voter may request an absentee ballot without providing a reason"
+    ],
+    "applicationDeadline": "12 days before the election (received by the county election board)",
+    "returnDeadline": "Must be received by the county election board by noon on Election Day",
+    "returnDeadlinePlain": "Must arrive at the county election board by noon on Election Day. Postmarks do not count.",
+    "applicationUrl": "https://www.in.gov/sos/elections/voter-information/absentee-voting/",
+    "officialRulesUrl": "https://www.in.gov/sos/elections/voter-information/absentee-voting/"
+  },
+
+  "runoffRules": {
+    "hasRunoff": false,
+    "partyLockedToFirstRoundPrimary": false
+  },
+
+  "resources": {
+    "stateElectionWebsite": "https://www.in.gov/sos/elections/",
+    "countyElectionLookup": "https://www.in.gov/sos/elections/voter-information/county-election-offices/",
+    "sampleBallotLookup": "https://indianavoters.in.gov/",
+    "pollingPlaceLookup": "https://indianavoters.in.gov/",
+    "importantDates": "https://www.in.gov/sos/elections/election-administration/election-calendar/",
+    "voterIdInfo": "https://www.in.gov/sos/elections/voter-information/photo-id/",
+    "earlyVotingInfo": "https://www.in.gov/sos/elections/voter-information/absentee-voting/"
+  }
+}

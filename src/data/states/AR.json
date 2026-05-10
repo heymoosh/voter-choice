@@ -1,0 +1,185 @@
+{
+  "_sources": {
+    "primary": "https://www.sos.arkansas.gov/elections/voter-information/",
+    "secondary": "https://ballotpedia.org/Voting_in_Arkansas",
+    "dateChecked": "2026-05-10",
+    "discrepancies": "NCSL lists AR as 'photo ID requested' (non-strict); SoS site confirms voters without photo ID may sign an affidavit and cast a regular ballot. Consistent."
+  },
+  "stateCode": "AR",
+  "stateName": "Arkansas",
+  "lastUpdated": "2026-05-10",
+  "coverageStatus": "confirmed",
+
+  "elections": [
+    {
+      "id": "ar-2026-primary",
+      "name": "2026 Arkansas Primary Election",
+      "date": "2026-05-19",
+      "type": "primary",
+      "isPrimary": true,
+      "primaryType": "open",
+      "registration": {
+        "online": {
+          "available": true,
+          "deadline": "2026-04-20",
+          "url": "https://www.sos.arkansas.gov/elections/voter-information/voter-registration-information/"
+        },
+        "byMail": {
+          "deadline": "2026-04-20",
+          "sincePostmarked": true
+        },
+        "inPerson": {
+          "deadline": "2026-04-20",
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": false,
+        "registrationCheckUrl": "https://www.voterview.ar-nova.org/voterview"
+      },
+      "earlyVoting": {
+        "available": true,
+        "startDate": "2026-05-04",
+        "endDate": "2026-05-16",
+        "notes": "Early voting begins 15 days before the election and ends the Saturday before. Hours vary by county. TODO verify for 2026 cycle."
+      }
+    },
+    {
+      "id": "ar-2026-primary-runoff",
+      "name": "2026 Arkansas Primary Runoff Election",
+      "date": "2026-06-16",
+      "type": "runoff",
+      "isPrimary": false,
+      "primaryType": null,
+      "registration": {
+        "online": {
+          "available": true,
+          "deadline": "2026-05-18",
+          "url": "https://www.sos.arkansas.gov/elections/voter-information/voter-registration-information/"
+        },
+        "byMail": {
+          "deadline": "2026-05-18",
+          "sincePostmarked": true
+        },
+        "inPerson": {
+          "deadline": "2026-05-18",
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": false,
+        "registrationCheckUrl": "https://www.voterview.ar-nova.org/voterview"
+      },
+      "earlyVoting": {
+        "available": true,
+        "startDate": "2026-06-01",
+        "endDate": "2026-06-13",
+        "notes": "Early voting for runoff. TODO verify for 2026 cycle."
+      }
+    },
+    {
+      "id": "ar-2026-general",
+      "name": "2026 Arkansas General Election",
+      "date": "2026-11-03",
+      "type": "general",
+      "isPrimary": false,
+      "primaryType": null,
+      "registration": {
+        "online": {
+          "available": true,
+          "deadline": "2026-10-05",
+          "url": "https://www.sos.arkansas.gov/elections/voter-information/voter-registration-information/"
+        },
+        "byMail": {
+          "deadline": "2026-10-05",
+          "sincePostmarked": true
+        },
+        "inPerson": {
+          "deadline": "2026-10-05",
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": false,
+        "registrationCheckUrl": "https://www.voterview.ar-nova.org/voterview"
+      },
+      "earlyVoting": {
+        "available": true,
+        "startDate": "2026-10-19",
+        "endDate": "2026-10-31",
+        "notes": "Early voting begins 15 days before the election and ends the Saturday before. TODO verify for 2026 cycle."
+      }
+    }
+  ],
+
+  "registration": {
+    "online": {
+      "available": true,
+      "deadline": "2026-10-05",
+      "url": "https://www.sos.arkansas.gov/elections/voter-information/voter-registration-information/"
+    },
+    "byMail": {
+      "deadline": "2026-10-05",
+      "sincePostmarked": true
+    },
+    "inPerson": {
+      "deadline": "2026-10-05",
+      "sincePostmarked": false
+    },
+    "sameDayRegistration": false,
+    "registrationCheckUrl": "https://www.voterview.ar-nova.org/voterview"
+  },
+
+  "earlyVoting": {
+    "available": true,
+    "startDate": "2026-10-19",
+    "endDate": "2026-10-31",
+    "notes": "Early voting runs for 15 days before the election and ends the Saturday before Election Day. Hours vary by county."
+  },
+
+  "votingRules": {
+    "idRequired": true,
+    "acceptedIds": [
+      "Arkansas driver's license or state ID card",
+      "U.S. passport",
+      "U.S. military ID with photo",
+      "Student ID from an Arkansas public college or university (with photo and address)",
+      "Concealed carry handgun license",
+      "Any document issued by the federal, state, or local government that shows name and photo"
+    ],
+    "expirationRule": "Photo ID must not be expired at time of voting. TODO verify for 2026 cycle.",
+    "impedimentDeclaration": "If a voter does not have an acceptable photo ID, they may sign an affidavit and cast a regular (non-provisional) ballot.",
+    "phonesAtPolls": "prohibited",
+    "phonesAtPollsDetail": "Arkansas prohibits use of wireless communication devices in the polling area. Voters may not photograph their ballot.",
+    "additionalRules": [
+      "Open primary: any registered voter may choose which party's primary to participate in; party registration is not required.",
+      "Runoff rule: a voter who participated in one party's primary may only vote in that party's runoff."
+    ]
+  },
+
+  "voteByMail": {
+    "universal": false,
+    "eligibility": [
+      "Will be unavoidably absent from the county on Election Day",
+      "Physical illness or disability",
+      "65 years of age or older",
+      "Caregiving responsibilities for an ill or disabled person",
+      "Scheduled to work all poll hours on Election Day"
+    ],
+    "applicationDeadline": "Must be received by the county clerk 7 days before the election",
+    "returnDeadline": "Must be received by the county clerk by 7:30 p.m. on Election Day",
+    "returnDeadlinePlain": "Absentee ballot must arrive at the county clerk by poll closing on Election Day. Postmarks do not count.",
+    "applicationUrl": "https://www.sos.arkansas.gov/elections/voter-information/absentee-voting/",
+    "officialRulesUrl": "https://www.sos.arkansas.gov/elections/voter-information/absentee-voting/"
+  },
+
+  "runoffRules": {
+    "hasRunoff": true,
+    "partyLockedToFirstRoundPrimary": true,
+    "ruleExplanation": "Arkansas rule: if you voted in one party's primary, you can only vote in that same party's runoff. If you did not vote in the primary, you may choose either party's runoff."
+  },
+
+  "resources": {
+    "stateElectionWebsite": "https://www.sos.arkansas.gov/elections/",
+    "countyElectionLookup": "https://www.sos.arkansas.gov/elections/county-clerks/",
+    "sampleBallotLookup": "https://www.voterview.ar-nova.org/voterview",
+    "pollingPlaceLookup": "https://www.voterview.ar-nova.org/voterview",
+    "importantDates": "https://www.sos.arkansas.gov/elections/voter-information/election-calendar/",
+    "voterIdInfo": "https://www.sos.arkansas.gov/elections/voter-information/voter-id/",
+    "earlyVotingInfo": "https://www.sos.arkansas.gov/elections/voter-information/early-voting/"
+  }
+}

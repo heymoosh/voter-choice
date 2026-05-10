@@ -1,0 +1,186 @@
+{
+  "_sources": {
+    "primary": "https://www.sos.ms.gov/elections-voting",
+    "secondary": "https://ballotpedia.org/Voting_in_Mississippi",
+    "dateChecked": "2026-05-10",
+    "discrepancies": "NCSL lists MS as 'strict photo ID' — one of the strictest categories. SoS site confirms voters without photo ID must vote a provisional ballot and present ID before a set deadline or it will not be counted. Consistent."
+  },
+  "stateCode": "MS",
+  "stateName": "Mississippi",
+  "lastUpdated": "2026-05-10",
+  "coverageStatus": "confirmed",
+
+  "elections": [
+    {
+      "id": "ms-2026-primary",
+      "name": "2026 Mississippi Primary Election",
+      "date": "2026-06-02",
+      "type": "primary",
+      "isPrimary": true,
+      "primaryType": "open",
+      "registration": {
+        "online": {
+          "available": false,
+          "deadline": null,
+          "url": "https://www.sos.ms.gov/elections-voting/voter-registration"
+        },
+        "byMail": {
+          "deadline": "2026-05-03",
+          "sincePostmarked": true
+        },
+        "inPerson": {
+          "deadline": "2026-05-03",
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": false,
+        "registrationCheckUrl": "https://www.msegov.com/sos/voter_registration/AmIRegistered"
+      },
+      "earlyVoting": {
+        "available": false,
+        "startDate": null,
+        "endDate": null,
+        "notes": "Mississippi does not have early voting. Absentee voting is available for qualifying voters."
+      }
+    },
+    {
+      "id": "ms-2026-primary-runoff",
+      "name": "2026 Mississippi Primary Runoff Election",
+      "date": "2026-06-23",
+      "type": "runoff",
+      "isPrimary": false,
+      "primaryType": null,
+      "registration": {
+        "online": {
+          "available": false,
+          "deadline": null,
+          "url": "https://www.sos.ms.gov/elections-voting/voter-registration"
+        },
+        "byMail": {
+          "deadline": "2026-05-24",
+          "sincePostmarked": true
+        },
+        "inPerson": {
+          "deadline": "2026-05-24",
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": false,
+        "registrationCheckUrl": "https://www.msegov.com/sos/voter_registration/AmIRegistered"
+      },
+      "earlyVoting": {
+        "available": false,
+        "startDate": null,
+        "endDate": null,
+        "notes": "No early voting for runoffs. TODO verify runoff date for 2026 cycle."
+      }
+    },
+    {
+      "id": "ms-2026-general",
+      "name": "2026 Mississippi General Election",
+      "date": "2026-11-03",
+      "type": "general",
+      "isPrimary": false,
+      "primaryType": null,
+      "registration": {
+        "online": {
+          "available": false,
+          "deadline": null,
+          "url": "https://www.sos.ms.gov/elections-voting/voter-registration"
+        },
+        "byMail": {
+          "deadline": "2026-10-05",
+          "sincePostmarked": true
+        },
+        "inPerson": {
+          "deadline": "2026-10-05",
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": false,
+        "registrationCheckUrl": "https://www.msegov.com/sos/voter_registration/AmIRegistered"
+      },
+      "earlyVoting": {
+        "available": false,
+        "startDate": null,
+        "endDate": null,
+        "notes": "Mississippi does not have early voting. Absentee voting is available for qualifying voters."
+      }
+    }
+  ],
+
+  "registration": {
+    "online": {
+      "available": false,
+      "deadline": null,
+      "url": "https://www.sos.ms.gov/elections-voting/voter-registration"
+    },
+    "byMail": {
+      "deadline": "2026-10-05",
+      "sincePostmarked": true
+    },
+    "inPerson": {
+      "deadline": "2026-10-05",
+      "sincePostmarked": false
+    },
+    "sameDayRegistration": false,
+    "registrationCheckUrl": "https://www.msegov.com/sos/voter_registration/AmIRegistered"
+  },
+
+  "earlyVoting": {
+    "available": false,
+    "startDate": null,
+    "endDate": null,
+    "notes": "Mississippi does not have a general early voting period. Absentee voting is available for voters who qualify (illness, disability, absence, etc.)."
+  },
+
+  "votingRules": {
+    "idRequired": true,
+    "acceptedIds": [
+      "Mississippi driver's license or state ID card",
+      "Mississippi voter ID card (free from circuit clerk)",
+      "U.S. passport",
+      "Government employee ID with photo",
+      "U.S. military ID with photo",
+      "Tribal photo ID",
+      "Mississippi firearms license with photo"
+    ],
+    "expirationRule": "Photo ID must not be expired except for Mississippi driver's licenses which may be used if expired within 10 years. TODO verify for 2026 cycle.",
+    "impedimentDeclaration": "Voters without photo ID must vote provisionally and present a valid photo ID to the circuit clerk's office by noon 5 business days after the election. Alternatively, they may cast a provisional ballot and sign an affidavit at a circuit court within that window.",
+    "phonesAtPolls": "prohibited",
+    "phonesAtPollsDetail": "Mississippi prohibits use of mobile phones and other communication devices in the polling booth.",
+    "additionalRules": [
+      "Open primary: any registered voter may vote in any party's primary.",
+      "Runoff rule: if no candidate receives a majority in the primary, the top two advance to a runoff. A voter who voted in one party's primary may only vote in that party's runoff."
+    ]
+  },
+
+  "voteByMail": {
+    "universal": false,
+    "eligibility": [
+      "Will be absent from the county on Election Day",
+      "Physical illness or disability",
+      "65 years of age or older",
+      "Religious objection to Saturday voting (for Saturday special elections)",
+      "Caretaker of disabled person"
+    ],
+    "applicationDeadline": "Must be received by the circuit clerk 5 days before the election",
+    "returnDeadline": "Must be received by the circuit clerk by 5 p.m. on Election Day",
+    "returnDeadlinePlain": "Absentee ballot must arrive at the circuit clerk by 5 p.m. on Election Day. Postmarks do not count.",
+    "applicationUrl": "https://www.sos.ms.gov/elections-voting/absentee-voting",
+    "officialRulesUrl": "https://www.sos.ms.gov/elections-voting/absentee-voting"
+  },
+
+  "runoffRules": {
+    "hasRunoff": true,
+    "partyLockedToFirstRoundPrimary": true,
+    "ruleExplanation": "Mississippi rule: if you voted in one party's primary, you can only vote in that same party's runoff. If you did not vote in the primary, you may choose either party's runoff."
+  },
+
+  "resources": {
+    "stateElectionWebsite": "https://www.sos.ms.gov/elections-voting",
+    "countyElectionLookup": "https://www.sos.ms.gov/elections-voting/circuit-clerks",
+    "sampleBallotLookup": "https://www.msegov.com/sos/voter_registration/AmIRegistered",
+    "pollingPlaceLookup": "https://www.msegov.com/sos/voter_registration/AmIRegistered",
+    "importantDates": "https://www.sos.ms.gov/elections-voting/election-dates",
+    "voterIdInfo": "https://www.sos.ms.gov/elections-voting/voter-id",
+    "earlyVotingInfo": "https://www.sos.ms.gov/elections-voting/absentee-voting"
+  }
+}

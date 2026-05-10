@@ -1,0 +1,142 @@
+{
+  "_sources": {
+    "primary": "https://elections.delaware.gov/",
+    "secondary": "https://www.ncsl.org/elections-and-campaigns/voter-id",
+    "checked": "2026-05-10",
+    "discrepancies": "NCSL classifies DE as 'non-photo ID requested' — voters provide name and address; poll workers may ask for a document showing name and address but it is not strictly required. Delaware does not have early in-person voting but offers no-excuse absentee voting. 2026 primary date (Sept 12) follows standard DE schedule; TODO verify exact 2026 date. Registration deadline is 24 days before the election per DE law."
+  },
+  "stateCode": "DE",
+  "stateName": "Delaware",
+  "lastUpdated": "2026-05-10",
+
+  "elections": [
+    {
+      "id": "de-2026-primary",
+      "name": "2026 Delaware Primary Election",
+      "date": "2026-09-12",
+      "type": "primary",
+      "isPrimary": true,
+      "primaryType": "closed",
+      "registration": {
+        "online": {
+          "available": true,
+          "deadline": "2026-08-19",
+          "url": "https://ivote.de.gov/"
+        },
+        "byMail": {
+          "deadline": "2026-08-19",
+          "sincePostmarked": false
+        },
+        "inPerson": {
+          "deadline": "2026-08-19",
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": false,
+        "registrationCheckUrl": "https://ivote.de.gov/voterlogin.aspx"
+      },
+      "earlyVoting": {
+        "available": false,
+        "startDate": null,
+        "endDate": null,
+        "notes": "Delaware does not offer traditional early in-person voting. No-excuse absentee (mail) voting is available for all registered voters."
+      }
+    },
+    {
+      "id": "de-2026-general",
+      "name": "2026 Delaware General Election",
+      "date": "2026-11-03",
+      "type": "general",
+      "isPrimary": false,
+      "primaryType": null,
+      "registration": {
+        "online": {
+          "available": true,
+          "deadline": "2026-10-10",
+          "url": "https://ivote.de.gov/"
+        },
+        "byMail": {
+          "deadline": "2026-10-10",
+          "sincePostmarked": false
+        },
+        "inPerson": {
+          "deadline": "2026-10-10",
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": false,
+        "registrationCheckUrl": "https://ivote.de.gov/voterlogin.aspx"
+      },
+      "earlyVoting": {
+        "available": false,
+        "startDate": null,
+        "endDate": null,
+        "notes": "Delaware does not offer traditional early in-person voting. No-excuse absentee (mail) voting is available for all registered voters."
+      }
+    }
+  ],
+
+  "registration": {
+    "online": {
+      "available": true,
+      "deadline": "2026-10-10",
+      "url": "https://ivote.de.gov/"
+    },
+    "byMail": {
+      "deadline": "2026-10-10",
+      "sincePostmarked": false
+    },
+    "inPerson": {
+      "deadline": "2026-10-10",
+      "sincePostmarked": false
+    },
+    "sameDayRegistration": false,
+    "registrationCheckUrl": "https://ivote.de.gov/voterlogin.aspx"
+  },
+
+  "earlyVoting": {
+    "available": false,
+    "startDate": null,
+    "endDate": null,
+    "notes": "Delaware does not offer traditional early in-person voting. No-excuse absentee voting (mail or in-person at county election offices) is available for all registered voters."
+  },
+
+  "votingRules": {
+    "idRequired": false,
+    "acceptedIds": [
+      "Any document showing name and address (utility bill, bank statement, paycheck, etc.)",
+      "Delaware driver's license or ID",
+      "U.S. passport",
+      "Other government-issued ID"
+    ],
+    "phonesAtPolls": "allowed",
+    "phonesAtPollsDetail": "Delaware does not have a statewide ban on phones in polling places. Voters may not photograph their ballot or interfere with other voters. No electioneering within 50 feet of a polling place.",
+    "additionalRules": [
+      "Non-photo ID requested but not required. Poll workers may ask for a document showing name and address.",
+      "Closed primary: only voters registered with a party may vote in that party's primary. Unregistered or independent voters may not participate.",
+      "No-excuse absentee voting available; voters may also return ballots in person at county election offices."
+    ]
+  },
+
+  "voteByMail": {
+    "universal": false,
+    "eligibility": [
+      "Any registered voter may request an absentee ballot without providing a reason (no-excuse absentee)"
+    ],
+    "applicationDeadline": "4 days before the election (received by county department of elections)",
+    "returnDeadline": "Must be received by the county department of elections by 8 p.m. on Election Day",
+    "returnDeadlinePlain": "Must arrive at the county election office by 8 p.m. on Election Day. Postmarks do not count.",
+    "applicationUrl": "https://elections.delaware.gov/services/voter/absentee/index.shtml",
+    "officialRulesUrl": "https://elections.delaware.gov/services/voter/absentee/index.shtml"
+  },
+
+  "runoffRules": {
+    "hasRunoff": false,
+    "partyLockedToFirstRoundPrimary": false
+  },
+
+  "resources": {
+    "stateElectionWebsite": "https://elections.delaware.gov/",
+    "countyElectionLookup": "https://elections.delaware.gov/information/countyoffices.shtml",
+    "sampleBallotLookup": "https://ivote.de.gov/",
+    "pollingPlaceLookup": "https://ivote.de.gov/"
+  }
+}

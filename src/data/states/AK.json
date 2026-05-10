@@ -1,0 +1,147 @@
+{
+  "_sources": {
+    "primary": "https://www.elections.alaska.gov/",
+    "secondary": "https://www.ncsl.org/elections-and-campaigns/voter-id",
+    "checked": "2026-05-10",
+    "discrepancies": "Alaska uses ranked-choice voting (RCV) for general elections for federal and statewide offices since Ballot Measure 2 passed in 2020. NCSL classifies Alaska as non-photo ID (ID requested but not strictly required if voter is known). No separate runoff election exists because RCV functions as an instant-runoff system. 2026 primary and general registration deadlines estimated from Alaska statutes (30 days before election); TODO verify exact 2026 cycle dates with elections.alaska.gov."
+  },
+  "stateCode": "AK",
+  "stateName": "Alaska",
+  "lastUpdated": "2026-05-10",
+  "coverageStatus": "confirmed",
+
+  "elections": [
+    {
+      "id": "ak-2026-primary",
+      "name": "2026 Alaska Primary Election",
+      "date": "2026-08-18",
+      "type": "primary",
+      "isPrimary": true,
+      "primaryType": "open",
+      "registration": {
+        "online": {
+          "available": true,
+          "deadline": "2026-07-19",
+          "url": "https://voterregistration.alaska.gov/"
+        },
+        "byMail": {
+          "deadline": "2026-07-19",
+          "sincePostmarked": false
+        },
+        "inPerson": {
+          "deadline": "2026-07-19",
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": false,
+        "registrationCheckUrl": "https://myvoterinformation.alaska.gov/"
+      },
+      "earlyVoting": {
+        "available": true,
+        "startDate": "2026-07-20",
+        "endDate": "2026-08-14",
+        "notes": "Absentee in-person voting available from approximately 15 days before the election at regional offices. Mail ballots sent to all active registered voters. TODO verify exact 2026 dates."
+      }
+    },
+    {
+      "id": "ak-2026-general",
+      "name": "2026 Alaska General Election",
+      "date": "2026-11-03",
+      "type": "general",
+      "isPrimary": false,
+      "primaryType": null,
+      "registration": {
+        "online": {
+          "available": true,
+          "deadline": "2026-10-04",
+          "url": "https://voterregistration.alaska.gov/"
+        },
+        "byMail": {
+          "deadline": "2026-10-04",
+          "sincePostmarked": false
+        },
+        "inPerson": {
+          "deadline": "2026-10-04",
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": false,
+        "registrationCheckUrl": "https://myvoterinformation.alaska.gov/"
+      },
+      "earlyVoting": {
+        "available": true,
+        "startDate": "2026-10-05",
+        "endDate": "2026-10-30",
+        "notes": "Mail ballots sent to all active registered voters approximately 15 days before Election Day. In-person early voting available at Division of Elections regional offices. RCV ballots used for general election — rank candidates 1st through 4th."
+      }
+    }
+  ],
+
+  "registration": {
+    "online": {
+      "available": true,
+      "deadline": "2026-10-04",
+      "url": "https://voterregistration.alaska.gov/"
+    },
+    "byMail": {
+      "deadline": "2026-10-04",
+      "sincePostmarked": false
+    },
+    "inPerson": {
+      "deadline": "2026-10-04",
+      "sincePostmarked": false
+    },
+    "sameDayRegistration": false,
+    "registrationCheckUrl": "https://myvoterinformation.alaska.gov/"
+  },
+
+  "earlyVoting": {
+    "available": true,
+    "startDate": "2026-10-05",
+    "endDate": "2026-10-30",
+    "notes": "Alaska mails ballots to all active registered voters. Absentee in-person voting available at Division of Elections regional offices statewide. Alaska uses ranked-choice voting (RCV) for general elections — voters rank up to 4 candidates."
+  },
+
+  "votingRules": {
+    "idRequired": false,
+    "acceptedIds": [
+      "Alaska driver's license or ID card",
+      "U.S. passport or passport card",
+      "Military ID",
+      "Tribal ID",
+      "If voter is personally known to poll worker, ID may not be required"
+    ],
+    "phonesAtPolls": "varies",
+    "phonesAtPollsDetail": "Alaska law does not explicitly prohibit phones at polling places, but photographing your ballot or other voters is not permitted. Check with your Division of Elections regional office for local polling place rules.",
+    "additionalRules": [
+      "Alaska uses ranked-choice voting (RCV) in general elections for federal and statewide offices. Voters rank up to 4 candidates. If no candidate receives more than 50% of first-choice votes, lower-ranked votes are redistributed until a winner is determined.",
+      "The Alaska primary is a top-four open primary — all candidates appear on one ballot regardless of party, and the top four vote-getters advance to the general election.",
+      "Non-photo ID is requested but a voter personally known to the poll worker may vote without presenting ID."
+    ]
+  },
+
+  "voteByMail": {
+    "universal": false,
+    "eligibility": [
+      "All active registered voters automatically receive a mail ballot for most elections",
+      "Voters may also vote in-person at polling places or regional offices"
+    ],
+    "applicationDeadline": "Ballots mailed automatically to active registered voters; no application required in most cases",
+    "returnDeadline": "Must be received by 8:00 p.m. on Election Day, or postmarked by Election Day and received within 10 days",
+    "returnDeadlinePlain": "Return by 8 p.m. Election Day in person, or mail postmarked by Election Day and received within 10 days.",
+    "applicationUrl": "https://www.elections.alaska.gov/AbsenteeVoting.php",
+    "officialRulesUrl": "https://www.elections.alaska.gov/"
+  },
+
+  "runoffRules": {
+    "hasRunoff": false,
+    "partyLockedToFirstRoundPrimary": false,
+    "ruleExplanation": "Alaska uses ranked-choice voting (RCV) in general elections, which functions as an instant-runoff system. There is no separate runoff election."
+  },
+
+  "resources": {
+    "stateElectionWebsite": "https://www.elections.alaska.gov/",
+    "countyElectionLookup": "https://www.elections.alaska.gov/RegionalOffices.php",
+    "sampleBallotLookup": "https://myvoterinformation.alaska.gov/",
+    "pollingPlaceLookup": "https://myvoterinformation.alaska.gov/",
+    "voterIdInfo": "https://www.elections.alaska.gov/Voters.php"
+  }
+}

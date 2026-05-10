@@ -1,0 +1,140 @@
+{
+  "_sources": {
+    "primary": "https://portal.ct.gov/SOTS/Election-Services/Election-Information/Election-Information",
+    "secondary": "https://www.ncsl.org/elections-and-campaigns/voter-id",
+    "checked": "2026-05-10",
+    "discrepancies": "NCSL classifies CT as 'non-photo ID requested' (voters without ID may sign an affidavit). Connecticut enacted no-excuse absentee voting in 2023 via constitutional amendment. Early in-person voting was also added beginning with the 2024 election cycle. 2026 primary date (Aug 11) follows standard CT schedule; TODO verify for 2026 cycle. Registration deadline is 7 days before the election per CT law (online/mail); same-day registration available at polls."
+  },
+  "stateCode": "CT",
+  "stateName": "Connecticut",
+  "lastUpdated": "2026-05-10",
+
+  "elections": [
+    {
+      "id": "ct-2026-primary",
+      "name": "2026 Connecticut Primary Election",
+      "date": "2026-08-11",
+      "type": "primary",
+      "isPrimary": true,
+      "primaryType": "closed",
+      "registration": {
+        "online": {
+          "available": true,
+          "deadline": "2026-08-04",
+          "url": "https://voterregistration.ct.gov/OLVR/welcome.do"
+        },
+        "byMail": {
+          "deadline": "2026-08-04",
+          "sincePostmarked": false
+        },
+        "inPerson": {
+          "deadline": "2026-08-11",
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": true,
+        "registrationCheckUrl": "https://portaldir.ct.gov/sots/LookUp.aspx"
+      },
+      "earlyVoting": {
+        "available": true,
+        "startDate": "2026-07-27",
+        "endDate": "2026-08-09",
+        "notes": "Connecticut added early in-person voting beginning 2024. TODO verify exact 2026 primary early voting dates."
+      }
+    },
+    {
+      "id": "ct-2026-general",
+      "name": "2026 Connecticut General Election",
+      "date": "2026-11-03",
+      "type": "general",
+      "isPrimary": false,
+      "primaryType": null,
+      "registration": {
+        "online": {
+          "available": true,
+          "deadline": "2026-10-27",
+          "url": "https://voterregistration.ct.gov/OLVR/welcome.do"
+        },
+        "byMail": {
+          "deadline": "2026-10-27",
+          "sincePostmarked": false
+        },
+        "inPerson": {
+          "deadline": "2026-11-03",
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": true,
+        "registrationCheckUrl": "https://portaldir.ct.gov/sots/LookUp.aspx"
+      },
+      "earlyVoting": {
+        "available": true,
+        "startDate": "2026-10-19",
+        "endDate": "2026-11-01",
+        "notes": "Early in-person voting at designated locations. Hours vary by municipality. TODO verify exact 2026 dates."
+      }
+    }
+  ],
+
+  "registration": {
+    "online": {
+      "available": true,
+      "deadline": "2026-10-27",
+      "url": "https://voterregistration.ct.gov/OLVR/welcome.do"
+    },
+    "byMail": {
+      "deadline": "2026-10-27",
+      "sincePostmarked": false
+    },
+    "inPerson": {
+      "deadline": "2026-11-03",
+      "sincePostmarked": false
+    },
+    "sameDayRegistration": true,
+    "registrationCheckUrl": "https://portaldir.ct.gov/sots/LookUp.aspx"
+  },
+
+  "earlyVoting": {
+    "available": true,
+    "startDate": "2026-10-19",
+    "endDate": "2026-11-01",
+    "notes": "Connecticut added early in-person voting beginning 2024. No-excuse absentee (mail) voting also available. TODO verify exact 2026 dates."
+  },
+
+  "votingRules": {
+    "idRequired": false,
+    "acceptedIds": [
+      "Any document showing name and address (utility bill, bank statement, etc.)",
+      "Non-photo ID is requested for first-time voters who registered by mail and did not provide ID at registration"
+    ],
+    "phonesAtPolls": "allowed",
+    "phonesAtPollsDetail": "Connecticut does not have a statewide ban on phones in polling places. Voters should not interfere with others or photograph ballots. Electioneering is prohibited within 75 feet of a polling place.",
+    "additionalRules": [
+      "No-excuse absentee voting enacted via constitutional amendment, effective 2023. Any registered voter may request a mail ballot.",
+      "Closed primary: only voters registered with a party may vote in that party's primary. Unregistered or independent voters may not participate in partisan primaries.",
+      "Same-day voter registration available at polls with proof of identity and Connecticut residency."
+    ]
+  },
+
+  "voteByMail": {
+    "universal": false,
+    "eligibility": [
+      "Any registered voter may request an absentee ballot without providing a reason (no-excuse absentee, enacted 2023)"
+    ],
+    "applicationDeadline": "Ballot request must be received by town clerk by 1 day before election; applications submitted in person by noon the day before the election",
+    "returnDeadline": "Must be received by the town clerk by 8 p.m. on Election Day",
+    "returnDeadlinePlain": "Must arrive at the town clerk by 8 p.m. on Election Day. Postmarks do not count.",
+    "applicationUrl": "https://portal.ct.gov/SOTS/Election-Services/Voter-Information/Absentee-Voting",
+    "officialRulesUrl": "https://portal.ct.gov/SOTS/Election-Services/Voter-Information/Absentee-Voting"
+  },
+
+  "runoffRules": {
+    "hasRunoff": false,
+    "partyLockedToFirstRoundPrimary": false
+  },
+
+  "resources": {
+    "stateElectionWebsite": "https://portal.ct.gov/SOTS/Election-Services/Election-Information/Election-Information",
+    "countyElectionLookup": "https://portal.ct.gov/SOTS/Election-Services/Voter-Information/Town-Clerks",
+    "sampleBallotLookup": "https://portal.ct.gov/SOTS/Election-Services/Election-Information/Election-Information",
+    "pollingPlaceLookup": "https://portaldir.ct.gov/sots/LookUp.aspx"
+  }
+}

@@ -1,0 +1,154 @@
+{
+  "_sources": {
+    "primary": "https://myvote.wi.gov/en-us/",
+    "secondary": "https://www.ncsl.org/elections-and-campaigns/voter-id",
+    "dateChecked": "2026-05-10",
+    "discrepancies": "Wisconsin has a strict photo ID requirement per NCSL. The Wisconsin Elections Commission (WEC) confirms a wide range of acceptable photo IDs including Wisconsin ID cards, driver licenses, military IDs, tribal IDs, and student IDs from Wisconsin accredited schools. Voters without ID may receive a free Wisconsin voter ID from the DMV. Wisconsin primary is the second Tuesday in August per statute. Same-day registration is available in Wisconsin through Election Day."
+  },
+
+  "stateCode": "WI",
+  "stateName": "Wisconsin",
+  "lastUpdated": "2026-05-10",
+  "coverageStatus": "confirmed",
+
+  "elections": [
+    {
+      "id": "wi-2026-primary",
+      "name": "2026 Wisconsin Primary Election",
+      "date": "2026-08-11",
+      "type": "primary",
+      "isPrimary": true,
+      "primaryType": "open",
+      "registration": {
+        "online": {
+          "available": true,
+          "deadline": "2026-08-11",
+          "url": "https://myvote.wi.gov/en-us/RegisterToVote"
+        },
+        "byMail": {
+          "deadline": "2026-07-22",
+          "sincePostmarked": false
+        },
+        "inPerson": {
+          "deadline": "2026-08-11",
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": true,
+        "registrationCheckUrl": "https://myvote.wi.gov/en-us/FindMyPollingPlace"
+      },
+      "earlyVoting": {
+        "available": true,
+        "startDate": "2026-07-14",
+        "endDate": "2026-08-09",
+        "notes": "In-person absentee voting available at municipal clerk offices starting 14 business days before the primary. Weekend hours vary. TODO verify for 2026 cycle."
+      }
+    },
+    {
+      "id": "wi-2026-general",
+      "name": "2026 Wisconsin General Election",
+      "date": "2026-11-03",
+      "type": "general",
+      "isPrimary": false,
+      "primaryType": null,
+      "registration": {
+        "online": {
+          "available": true,
+          "deadline": "2026-11-03",
+          "url": "https://myvote.wi.gov/en-us/RegisterToVote"
+        },
+        "byMail": {
+          "deadline": "2026-10-14",
+          "sincePostmarked": false
+        },
+        "inPerson": {
+          "deadline": "2026-11-03",
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": true,
+        "registrationCheckUrl": "https://myvote.wi.gov/en-us/FindMyPollingPlace"
+      },
+      "earlyVoting": {
+        "available": true,
+        "startDate": "2026-10-13",
+        "endDate": "2026-11-01",
+        "notes": "In-person absentee voting begins 14 business days before Election Day at the municipal clerk's office. Weekend hours required in final weeks. TODO verify for 2026 cycle."
+      }
+    }
+  ],
+
+  "registration": {
+    "online": {
+      "available": true,
+      "deadline": "2026-11-03",
+      "url": "https://myvote.wi.gov/en-us/RegisterToVote"
+    },
+    "byMail": {
+      "deadline": "2026-10-14",
+      "sincePostmarked": false
+    },
+    "inPerson": {
+      "deadline": "2026-11-03",
+      "sincePostmarked": false
+    },
+    "sameDayRegistration": true,
+    "registrationCheckUrl": "https://myvote.wi.gov/en-us/FindMyPollingPlace"
+  },
+
+  "earlyVoting": {
+    "available": true,
+    "startDate": "2026-10-13",
+    "endDate": "2026-11-01",
+    "notes": "In-person absentee voting at municipal clerk offices begins 14 business days before Election Day. Weekend hours required in the two weeks before the election. Same-day registration available through Election Day. TODO verify for 2026 cycle."
+  },
+
+  "votingRules": {
+    "idRequired": true,
+    "acceptedIds": [
+      "Wisconsin driver's license or state ID card (including expired within 2 years)",
+      "U.S. military ID with expiration date or issuance date within 2 years",
+      "U.S. passport or passport card",
+      "Tribal ID",
+      "Student ID from a Wisconsin accredited institution (with signature and expiration date)",
+      "Employee ID from a Wisconsin government employer",
+      "Naturalization certificate issued within 2 years",
+      "Wisconsin voter ID card (free from the DMV)"
+    ],
+    "expirationRule": "IDs must generally not be expired more than 2 years. Student IDs must not be expired. Wisconsin driver's licenses and state IDs may be expired up to 2 years. TODO verify for 2026 cycle.",
+    "impedimentDeclaration": "Voters without acceptable ID may obtain a free Wisconsin voter ID card from any DMV service center before Election Day.",
+    "phonesAtPolls": "allowed",
+    "phonesAtPollsDetail": "Wisconsin allows phones at polling places but prohibits photography that reveals how a voter marked their ballot. No electioneering within 100 feet of the polling place entrance.",
+    "additionalRules": [
+      "Open primary: voters do not register by party; voters choose which party's primary ballot to vote on election day.",
+      "Same-day voter registration available on Election Day with proof of residence.",
+      "No runoffs in Wisconsin — the candidate with the most votes wins.",
+      "Free photo ID is available from any Wisconsin DMV service center."
+    ]
+  },
+
+  "voteByMail": {
+    "universal": false,
+    "eligibility": [
+      "Any registered voter may request an absentee ballot without providing a reason"
+    ],
+    "applicationDeadline": "5 p.m. on the Thursday before the election for online/mail requests; in-person absentee available through the Sunday before the election",
+    "returnDeadline": "Must be received by the municipal clerk by 8 p.m. on Election Day",
+    "returnDeadlinePlain": "Must arrive at the municipal clerk by 8 p.m. on Election Day. Postmarks do not count.",
+    "applicationUrl": "https://myvote.wi.gov/en-us/Vote-Absentee",
+    "officialRulesUrl": "https://elections.wi.gov/voters/absentee"
+  },
+
+  "runoffRules": {
+    "hasRunoff": false,
+    "partyLockedToFirstRoundPrimary": false
+  },
+
+  "resources": {
+    "stateElectionWebsite": "https://myvote.wi.gov/en-us/",
+    "countyElectionLookup": "https://elections.wi.gov/about/county-municipal-clerks",
+    "sampleBallotLookup": "https://myvote.wi.gov/en-us/MyBallot",
+    "pollingPlaceLookup": "https://myvote.wi.gov/en-us/FindMyPollingPlace",
+    "importantDates": "https://elections.wi.gov/elections-voting/important-dates",
+    "voterIdInfo": "https://elections.wi.gov/voters/photo-id-law",
+    "earlyVotingInfo": "https://myvote.wi.gov/en-us/Vote-Absentee"
+  }
+}

@@ -12,6 +12,57 @@ const stateModules: Record<string, JsonImport> = {
   NH: () => import("../data/states/NH.json"),
   AZ: () => import("../data/states/AZ.json"),
   NM: () => import("../data/states/NM.json"),
+  // Northeast + DC batch
+  CT: () => import("../data/states/CT.json"),
+  DC: () => import("../data/states/DC.json"),
+  DE: () => import("../data/states/DE.json"),
+  MA: () => import("../data/states/MA.json"),
+  MD: () => import("../data/states/MD.json"),
+  ME: () => import("../data/states/ME.json"),
+  NJ: () => import("../data/states/NJ.json"),
+  PA: () => import("../data/states/PA.json"),
+  RI: () => import("../data/states/RI.json"),
+  VT: () => import("../data/states/VT.json"),
+
+  // SE batch — Alabama, Arkansas, Kentucky, Louisiana, Mississippi,
+  //            Oklahoma, South Carolina, Tennessee, Virginia, West Virginia
+  AL: () => import("../data/states/AL.json"),
+  AR: () => import("../data/states/AR.json"),
+  KY: () => import("../data/states/KY.json"),
+  LA: () => import("../data/states/LA.json"),
+  MS: () => import("../data/states/MS.json"),
+  OK: () => import("../data/states/OK.json"),
+  SC: () => import("../data/states/SC.json"),
+  TN: () => import("../data/states/TN.json"),
+  VA: () => import("../data/states/VA.json"),
+  WV: () => import("../data/states/WV.json"),
+
+  // MW batch (Phase 2) — IL, IN, IA, KS, MI, MN, MO, NE, ND, OH, SD, WI
+  IL: () => import("../data/states/IL.json"),
+  IN: () => import("../data/states/IN.json"),
+  IA: () => import("../data/states/IA.json"),
+  KS: () => import("../data/states/KS.json"),
+  MI: () => import("../data/states/MI.json"),
+  MN: () => import("../data/states/MN.json"),
+  MO: () => import("../data/states/MO.json"),
+  NE: () => import("../data/states/NE.json"),
+  ND: () => import("../data/states/ND.json"),
+  OH: () => import("../data/states/OH.json"),
+  SD: () => import("../data/states/SD.json"),
+  WI: () => import("../data/states/WI.json"),
+
+  // West + Mountain batch (Phase 2 W agent)
+  // AK, CO, HI, ID, MT, NV, OR, UT, WA, WY
+  AK: () => import("../data/states/AK.json"),
+  CO: () => import("../data/states/CO.json"),
+  HI: () => import("../data/states/HI.json"),
+  ID: () => import("../data/states/ID.json"),
+  MT: () => import("../data/states/MT.json"),
+  NV: () => import("../data/states/NV.json"),
+  OR: () => import("../data/states/OR.json"),
+  UT: () => import("../data/states/UT.json"),
+  WA: () => import("../data/states/WA.json"),
+  WY: () => import("../data/states/WY.json"),
 };
 
 /**

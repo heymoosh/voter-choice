@@ -1,0 +1,145 @@
+{
+  "_sources": {
+    "primary": "https://www.sos.wa.gov/elections/",
+    "secondary": "https://www.ncsl.org/elections-and-campaigns/voter-id",
+    "checked": "2026-05-10",
+    "discrepancies": "Washington is a universal vote-by-mail state (all active registered voters automatically receive a mail ballot since 2011). NCSL classifies Washington as no document required — identity is verified via signature on the ballot return envelope; no ID is needed at any point in the voting process. Washington's primary is typically in August (first Tuesday after the third Monday); estimated 2026-08-04. General election November 3. 2026 registration deadlines estimated from Washington statute (8 days before election online/mail; Election Day with online account). TODO verify exact 2026 dates."
+  },
+  "stateCode": "WA",
+  "stateName": "Washington",
+  "lastUpdated": "2026-05-10",
+  "coverageStatus": "confirmed",
+
+  "elections": [
+    {
+      "id": "wa-2026-primary",
+      "name": "2026 Washington Primary Election",
+      "date": "2026-08-04",
+      "type": "primary",
+      "isPrimary": true,
+      "primaryType": "open",
+      "registration": {
+        "online": {
+          "available": true,
+          "deadline": "2026-07-27",
+          "url": "https://voter.votewa.gov/WhereToVote.aspx"
+        },
+        "byMail": {
+          "deadline": "2026-07-27",
+          "sincePostmarked": false
+        },
+        "inPerson": {
+          "deadline": "2026-08-04",
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": false,
+        "registrationCheckUrl": "https://voter.votewa.gov/WhereToVote.aspx"
+      },
+      "earlyVoting": {
+        "available": true,
+        "startDate": "2026-07-14",
+        "endDate": "2026-08-03",
+        "notes": "Ballots mailed to all active registered voters approximately 18 days before Election Day. Drop boxes open during this period. No traditional polling places in Washington. TODO verify exact 2026 dates."
+      }
+    },
+    {
+      "id": "wa-2026-general",
+      "name": "2026 Washington General Election",
+      "date": "2026-11-03",
+      "type": "general",
+      "isPrimary": false,
+      "primaryType": null,
+      "registration": {
+        "online": {
+          "available": true,
+          "deadline": "2026-10-26",
+          "url": "https://voter.votewa.gov/WhereToVote.aspx"
+        },
+        "byMail": {
+          "deadline": "2026-10-26",
+          "sincePostmarked": false
+        },
+        "inPerson": {
+          "deadline": "2026-11-03",
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": false,
+        "registrationCheckUrl": "https://voter.votewa.gov/WhereToVote.aspx"
+      },
+      "earlyVoting": {
+        "available": true,
+        "startDate": "2026-10-16",
+        "endDate": "2026-11-02",
+        "notes": "Washington mails ballots to all active registered voters approximately 18 days before Election Day. Ballots may be returned by mail (postmarked by Election Day) or at any official drop box by 8 p.m. on Election Day. County auditor offices available for in-person assistance and ballot drop-off."
+      }
+    }
+  ],
+
+  "registration": {
+    "online": {
+      "available": true,
+      "deadline": "2026-10-26",
+      "url": "https://voter.votewa.gov/WhereToVote.aspx"
+    },
+    "byMail": {
+      "deadline": "2026-10-26",
+      "sincePostmarked": false
+    },
+    "inPerson": {
+      "deadline": "2026-11-03",
+      "sincePostmarked": false
+    },
+    "sameDayRegistration": false,
+    "registrationCheckUrl": "https://voter.votewa.gov/WhereToVote.aspx"
+  },
+
+  "earlyVoting": {
+    "available": true,
+    "startDate": "2026-10-16",
+    "endDate": "2026-11-02",
+    "notes": "Washington is a universal vote-by-mail state. All active registered voters automatically receive a mail ballot approximately 18 days before Election Day. Return by mail (postmarked by Election Day) or at any official drop box by 8 p.m. on Election Day. No traditional polling places — county auditor offices provide in-person assistance."
+  },
+
+  "votingRules": {
+    "idRequired": false,
+    "acceptedIds": [
+      "No ID required — Washington is a universal vote-by-mail state",
+      "Voter identity is verified by signature comparison on the ballot return envelope",
+      "If your signature cannot be verified, you will be contacted to cure (sign a declaration)"
+    ],
+    "phonesAtPolls": "allowed",
+    "phonesAtPollsDetail": "Washington is a vote-by-mail state — there are no traditional polling places. You may vote at home and use any reference you like. Drop boxes are unstaffed outdoor locations. County auditor offices provide in-person assistance.",
+    "additionalRules": [
+      "Washington is a universal vote-by-mail state — all active registered voters automatically receive a ballot every election without needing to apply.",
+      "Washington uses a top-two primary (also called a jungle primary or blanket primary) — all candidates appear on one ballot regardless of party, and the top two vote-getters advance to the general election.",
+      "No ID is required at any point in the voting process — identity is verified by signature on the ballot return envelope.",
+      "Automatic voter registration is available through the Washington DMV and online state services.",
+      "Voters may register or update their registration online up to 8 days before the election."
+    ]
+  },
+
+  "voteByMail": {
+    "universal": true,
+    "eligibility": [
+      "All registered voters automatically receive a ballot by mail"
+    ],
+    "applicationDeadline": "No application required — ballots are automatically mailed to all active registered voters approximately 18 days before each election",
+    "returnDeadline": "Must be received at a drop box or county auditor by 8:00 p.m. on Election Day, or postmarked by Election Day",
+    "returnDeadlinePlain": "Drop off at any official drop box or county auditor office by 8 p.m. on Election Day, or mail with postmark by Election Day.",
+    "applicationUrl": "https://www.sos.wa.gov/elections/voters/vote-by-mail/",
+    "officialRulesUrl": "https://www.sos.wa.gov/elections/"
+  },
+
+  "runoffRules": {
+    "hasRunoff": false,
+    "partyLockedToFirstRoundPrimary": false
+  },
+
+  "resources": {
+    "stateElectionWebsite": "https://www.sos.wa.gov/elections/",
+    "countyElectionLookup": "https://www.sos.wa.gov/elections/auditors/",
+    "sampleBallotLookup": "https://voter.votewa.gov/WhereToVote.aspx",
+    "pollingPlaceLookup": "https://www.sos.wa.gov/elections/voters/drop-box-locator/",
+    "voterIdInfo": "https://www.sos.wa.gov/elections/voters/voting-by-mail/"
+  }
+}

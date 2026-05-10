@@ -1,0 +1,143 @@
+{
+  "_sources": {
+    "primary": "https://vote.sos.ri.gov/",
+    "secondary": "https://www.ncsl.org/elections-and-campaigns/voter-id",
+    "checked": "2026-05-10",
+    "discrepancies": "NCSL classifies RI as 'photo ID requested' (not required). Rhode Island requests but does not require photo ID; voters without an acceptable photo ID may cast a regular ballot after providing their name, address, and signature. Rhode Island enacted no-excuse absentee voting in 2021. 2026 primary date (Sept 8) follows standard RI schedule; TODO verify for 2026 cycle. Registration deadline is 30 days before the election per RI law."
+  },
+  "stateCode": "RI",
+  "stateName": "Rhode Island",
+  "lastUpdated": "2026-05-10",
+
+  "elections": [
+    {
+      "id": "ri-2026-primary",
+      "name": "2026 Rhode Island Primary Election",
+      "date": "2026-09-08",
+      "type": "primary",
+      "isPrimary": true,
+      "primaryType": "semi-closed",
+      "registration": {
+        "online": {
+          "available": true,
+          "deadline": "2026-08-09",
+          "url": "https://vote.sos.ri.gov/"
+        },
+        "byMail": {
+          "deadline": "2026-08-09",
+          "sincePostmarked": false
+        },
+        "inPerson": {
+          "deadline": "2026-08-09",
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": false,
+        "registrationCheckUrl": "https://vote.sos.ri.gov/"
+      },
+      "earlyVoting": {
+        "available": true,
+        "startDate": "2026-08-25",
+        "endDate": "2026-09-07",
+        "notes": "In-person early voting available. TODO verify exact 2026 dates."
+      }
+    },
+    {
+      "id": "ri-2026-general",
+      "name": "2026 Rhode Island General Election",
+      "date": "2026-11-03",
+      "type": "general",
+      "isPrimary": false,
+      "primaryType": null,
+      "registration": {
+        "online": {
+          "available": true,
+          "deadline": "2026-10-04",
+          "url": "https://vote.sos.ri.gov/"
+        },
+        "byMail": {
+          "deadline": "2026-10-04",
+          "sincePostmarked": false
+        },
+        "inPerson": {
+          "deadline": "2026-10-04",
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": false,
+        "registrationCheckUrl": "https://vote.sos.ri.gov/"
+      },
+      "earlyVoting": {
+        "available": true,
+        "startDate": "2026-10-19",
+        "endDate": "2026-11-01",
+        "notes": "In-person early voting at local boards of canvassers. TODO verify exact 2026 dates."
+      }
+    }
+  ],
+
+  "registration": {
+    "online": {
+      "available": true,
+      "deadline": "2026-10-04",
+      "url": "https://vote.sos.ri.gov/"
+    },
+    "byMail": {
+      "deadline": "2026-10-04",
+      "sincePostmarked": false
+    },
+    "inPerson": {
+      "deadline": "2026-10-04",
+      "sincePostmarked": false
+    },
+    "sameDayRegistration": false,
+    "registrationCheckUrl": "https://vote.sos.ri.gov/"
+  },
+
+  "earlyVoting": {
+    "available": true,
+    "startDate": "2026-10-19",
+    "endDate": "2026-11-01",
+    "notes": "Rhode Island offers in-person early voting at local boards of canvassers. No-excuse absentee mail voting is also available. TODO verify exact 2026 dates."
+  },
+
+  "votingRules": {
+    "idRequired": false,
+    "acceptedIds": [
+      "Rhode Island driver's license or state ID",
+      "U.S. passport",
+      "U.S. military ID",
+      "Student ID from a Rhode Island school",
+      "Other government-issued photo ID"
+    ],
+    "phonesAtPolls": "allowed",
+    "phonesAtPollsDetail": "Rhode Island does not have a statewide prohibition on phones in polling places. Voters may not photograph their ballot or other voters. Electioneering is prohibited within 50 feet of a polling place entrance.",
+    "additionalRules": [
+      "Photo ID is requested but not required. Voters without an acceptable photo ID may sign the poll book and vote a regular ballot after providing their name and address.",
+      "Semi-closed primary: registered party members vote in their party's primary. Unaffiliated voters may not vote in partisan primaries.",
+      "No-excuse absentee voting is available for all registered voters."
+    ]
+  },
+
+  "voteByMail": {
+    "universal": false,
+    "eligibility": [
+      "Any registered voter may request a mail ballot without providing a reason (no-excuse absentee voting, enacted 2021)"
+    ],
+    "applicationDeadline": "4 days before the election (received by local board of canvassers); online/in-person applications accepted until 4 days before",
+    "returnDeadline": "Must be received by the local board of canvassers by 8 p.m. on Election Day",
+    "returnDeadlinePlain": "Must arrive at the board of canvassers by 8 p.m. on Election Day. Postmarks do not count.",
+    "applicationUrl": "https://vote.sos.ri.gov/Voter/AbsenteeApplication",
+    "officialRulesUrl": "https://vote.sos.ri.gov/Voter/Absentee"
+  },
+
+  "runoffRules": {
+    "hasRunoff": false,
+    "partyLockedToFirstRoundPrimary": false
+  },
+
+  "resources": {
+    "stateElectionWebsite": "https://vote.sos.ri.gov/",
+    "countyElectionLookup": "https://vote.sos.ri.gov/Voter/LocalBoardsOfCanvassers",
+    "sampleBallotLookup": "https://vote.sos.ri.gov/",
+    "pollingPlaceLookup": "https://vote.sos.ri.gov/Voter/PollingPlace"
+  }
+}

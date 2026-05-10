@@ -1,0 +1,137 @@
+{
+  "_sources": {
+    "primary": "https://sos.vermont.gov/elections/voters/",
+    "secondary": "https://www.ncsl.org/elections-and-campaigns/voter-id",
+    "checked": "2026-05-10",
+    "discrepancies": "No major discrepancies found. Vermont is a universal vote-by-mail state as of 2022; all active registered voters automatically receive a mail ballot. NCSL classifies Vermont as no-document-required for ID. 2026 registration and early voting dates estimated from Vermont statute (voter registration closes at close of polls on Election Day via SDR). TODO verify exact 2026 primary date."
+  },
+  "stateCode": "VT",
+  "stateName": "Vermont",
+  "lastUpdated": "2026-05-10",
+
+  "elections": [
+    {
+      "id": "vt-2026-primary",
+      "name": "2026 Vermont Primary Election",
+      "date": "2026-08-11",
+      "type": "primary",
+      "isPrimary": true,
+      "primaryType": "open",
+      "registration": {
+        "online": {
+          "available": true,
+          "deadline": "2026-08-11",
+          "url": "https://olvr.vermont.gov/"
+        },
+        "byMail": {
+          "deadline": "2026-07-28",
+          "sincePostmarked": false
+        },
+        "inPerson": {
+          "deadline": "2026-08-11",
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": true,
+        "registrationCheckUrl": "https://mvp.vermont.gov/"
+      },
+      "earlyVoting": {
+        "available": true,
+        "startDate": "2026-07-14",
+        "endDate": "2026-08-10",
+        "notes": "All active registered voters automatically receive a mail ballot. In-person early voting available at town clerk offices. TODO verify exact 2026 dates."
+      }
+    },
+    {
+      "id": "vt-2026-general",
+      "name": "2026 Vermont General Election",
+      "date": "2026-11-03",
+      "type": "general",
+      "isPrimary": false,
+      "primaryType": null,
+      "registration": {
+        "online": {
+          "available": true,
+          "deadline": "2026-11-03",
+          "url": "https://olvr.vermont.gov/"
+        },
+        "byMail": {
+          "deadline": "2026-10-21",
+          "sincePostmarked": false
+        },
+        "inPerson": {
+          "deadline": "2026-11-03",
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": true,
+        "registrationCheckUrl": "https://mvp.vermont.gov/"
+      },
+      "earlyVoting": {
+        "available": true,
+        "startDate": "2026-10-06",
+        "endDate": "2026-11-02",
+        "notes": "All active registered voters receive mail ballots automatically. In-person early voting at town clerk offices. TODO verify exact 2026 dates."
+      }
+    }
+  ],
+
+  "registration": {
+    "online": {
+      "available": true,
+      "deadline": "2026-11-03",
+      "url": "https://olvr.vermont.gov/"
+    },
+    "byMail": {
+      "deadline": "2026-10-21",
+      "sincePostmarked": false
+    },
+    "inPerson": {
+      "deadline": "2026-11-03",
+      "sincePostmarked": false
+    },
+    "sameDayRegistration": true,
+    "registrationCheckUrl": "https://mvp.vermont.gov/"
+  },
+
+  "earlyVoting": {
+    "available": true,
+    "startDate": "2026-10-06",
+    "endDate": "2026-11-02",
+    "notes": "Vermont is a universal vote-by-mail state. All active registered voters automatically receive a mail ballot. Early in-person voting is available at town clerk offices. TODO verify exact 2026 dates."
+  },
+
+  "votingRules": {
+    "idRequired": false,
+    "acceptedIds": [],
+    "phonesAtPolls": "allowed",
+    "phonesAtPollsDetail": "Vermont does not prohibit phones inside polling places. Voters may not interfere with other voters or election officials. No electioneering within 100 feet of the polling place entrance.",
+    "additionalRules": [
+      "Vermont is a universal vote-by-mail state: all active registered voters automatically receive a mail ballot before each election.",
+      "Voters may still vote in person on Election Day or during the early voting period.",
+      "Open primary: any registered voter may vote in any party's primary."
+    ]
+  },
+
+  "voteByMail": {
+    "universal": true,
+    "eligibility": [
+      "All active registered voters automatically receive a mail ballot — no application needed"
+    ],
+    "applicationDeadline": "Not required; ballots mailed automatically to all active registered voters",
+    "returnDeadline": "Must be received by the town clerk by 7 p.m. on Election Day",
+    "returnDeadlinePlain": "Must arrive at the town clerk by 7 p.m. on Election Day. May also be dropped in an official drop box or voted in person.",
+    "applicationUrl": "https://sos.vermont.gov/elections/voters/absentee-early-voting/",
+    "officialRulesUrl": "https://sos.vermont.gov/elections/voters/absentee-early-voting/"
+  },
+
+  "runoffRules": {
+    "hasRunoff": false,
+    "partyLockedToFirstRoundPrimary": false
+  },
+
+  "resources": {
+    "stateElectionWebsite": "https://sos.vermont.gov/elections/",
+    "countyElectionLookup": "https://mvp.vermont.gov/",
+    "sampleBallotLookup": "https://mvp.vermont.gov/",
+    "pollingPlaceLookup": "https://mvp.vermont.gov/"
+  }
+}
