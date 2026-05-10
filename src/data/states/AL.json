@@ -2,7 +2,7 @@
   "_sources": {
     "primary": "https://www.sos.alabama.gov/alabama-votes/voter/election-information",
     "secondary": "https://ballotpedia.org/Voting_in_Alabama",
-    "dateChecked": "2026-05-10",
+    "checked": "2026-05-10",
     "discrepancies": "NCSL lists AL as 'photo ID requested' (non-strict); SoS confirms voters without photo ID may show a non-photo ID or vote a provisional ballot. Consistent."
   },
   "stateCode": "AL",

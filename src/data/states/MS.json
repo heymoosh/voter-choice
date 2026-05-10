@@ -2,7 +2,7 @@
   "_sources": {
     "primary": "https://www.sos.ms.gov/elections-voting",
     "secondary": "https://ballotpedia.org/Voting_in_Mississippi",
-    "dateChecked": "2026-05-10",
+    "checked": "2026-05-10",
     "discrepancies": "NCSL lists MS as 'strict photo ID' — one of the strictest categories. SoS site confirms voters without photo ID must vote a provisional ballot and present ID before a set deadline or it will not be counted. Consistent."
   },
   "stateCode": "MS",

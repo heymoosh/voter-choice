@@ -2,7 +2,7 @@
   "_sources": {
     "primary": "https://www.scvotes.net/",
     "secondary": "https://ballotpedia.org/Voting_in_South_Carolina",
-    "dateChecked": "2026-05-10",
+    "checked": "2026-05-10",
     "discrepancies": "NCSL lists SC as 'photo ID requested' (non-strict). SoS confirms voters without photo ID may vote a provisional ballot and return with photo ID within 48 hours, or sign an affidavit with a reasonable impediment. Consistent."
   },
   "stateCode": "SC",

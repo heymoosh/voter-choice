@@ -2,7 +2,7 @@
   "_sources": {
     "primary": "https://vip.sos.nd.gov/",
     "secondary": "https://www.ncsl.org/elections-and-campaigns/voter-id",
-    "dateChecked": "2026-05-10",
+    "checked": "2026-05-10",
     "discrepancies": "North Dakota is the only U.S. state with NO voter registration — voters simply appear at the polls with qualifying ID. Because there is no registration system, registration fields in this fixture are intentionally null/false — this is correct data, not missing data. NCSL categorizes ND as 'strict non-photo ID' (residential address ID required; updated to note ND's unique no-registration system). Ohio changed to stricter photo ID in 2023; ND's requirement predates that. ND primary is set by statute as the second Tuesday in June."
   },
 

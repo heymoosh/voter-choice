@@ -2,7 +2,7 @@
   "_sources": {
     "primary": "https://www.elections.il.gov/",
     "secondary": "https://www.ncsl.org/elections-and-campaigns/voter-id",
-    "dateChecked": "2026-05-10",
+    "checked": "2026-05-10",
     "discrepancies": "Illinois has no voter ID requirement — voters affirm identity by signing the poll book. NCSL confirms 'no document required'. Voter registration deadline is 28 days before election by mail/online; same-day registration available during early voting and on Election Day."
   },
 

@@ -2,7 +2,7 @@
   "_sources": {
     "primary": "https://www.sos.la.gov/ElectionsAndVoting/Pages/default.aspx",
     "secondary": "https://ballotpedia.org/Voting_in_Louisiana",
-    "dateChecked": "2026-05-10",
+    "checked": "2026-05-10",
     "discrepancies": "NCSL lists LA as 'photo ID requested' (non-strict). SoS confirms voters without photo ID may sign an affidavit and cast a regular ballot. Louisiana uses a jungle primary (top-two) system, not a party primary runoff. The statewide primary is a nonpartisan jungle primary; runoffs exist but are not party-locked. No party-locked runoff rule applies."
   },
   "stateCode": "LA",

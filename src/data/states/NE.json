@@ -2,7 +2,7 @@
   "_sources": {
     "primary": "https://sos.nebraska.gov/elections/elections-division",
     "secondary": "https://www.ncsl.org/elections-and-campaigns/voter-id",
-    "dateChecked": "2026-05-10",
+    "checked": "2026-05-10",
     "discrepancies": "Nebraska enacted photo ID requirement (LB 514, 2023; effective 2024 general). NCSL confirms Nebraska as requiring photo ID. Voters without ID may cast provisional ballot and return with ID by the second Friday after the election. IMPORTANT: Nebraska's unicameral state legislature (the Legislature) is officially nonpartisan — legislative primaries do not have party lanes. Candidates file without party affiliation; top-two advance to the general. Consequently runoffRules.partyLockedToFirstRoundPrimary is false, not because Nebraska lacks a runoff structure, but because the Legislature's nonpartisan nature means party-lock is inapplicable for those races. Statewide and federal races are partisan with a standard plurality result (no runoffs). Primary date is set by statute as the second Tuesday in May."
   },
 

@@ -2,7 +2,7 @@
   "_sources": {
     "primary": "https://elect.ky.gov/voters/Pages/default.aspx",
     "secondary": "https://ballotpedia.org/Voting_in_Kentucky",
-    "dateChecked": "2026-05-10",
+    "checked": "2026-05-10",
     "discrepancies": "NCSL lists KY as 'non-photo ID requested'. SoS site confirms Kentucky requires a document showing name and address (non-photo acceptable) or a photo ID. Consistent."
   },
   "stateCode": "KY",

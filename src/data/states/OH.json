@@ -2,7 +2,7 @@
   "_sources": {
     "primary": "https://www.ohiosos.gov/elections/voters/",
     "secondary": "https://www.ncsl.org/elections-and-campaigns/voter-id",
-    "dateChecked": "2026-05-10",
+    "checked": "2026-05-10",
     "discrepancies": "Ohio enacted HB 458 (2023) which changed the ID requirement from 'non-photo' to 'photo ID' effective 2024. NCSL categorizes Ohio as 'strict non-photo ID' in some versions — as of 2026 the correct characterization is photo ID required per the 2023 law change. Voters without acceptable photo ID may use the last four digits of their SSN plus address verification as an alternative (unique Ohio provision). TODO verify for 2026 cycle whether the HB 458 photo ID rules remain unchanged. Ohio primary is the first Tuesday after the first Monday in May. Ohio does offer early in-person voting starting 28 days before the election."
   },
 

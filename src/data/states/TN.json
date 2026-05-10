@@ -2,7 +2,7 @@
   "_sources": {
     "primary": "https://sos.tn.gov/elections",
     "secondary": "https://ballotpedia.org/Voting_in_Tennessee",
-    "dateChecked": "2026-05-10",
+    "checked": "2026-05-10",
     "discrepancies": "NCSL lists TN as 'strict photo ID'. SoS confirms voters without acceptable photo ID must vote a provisional ballot; provisional ballot is not counted unless voter presents acceptable ID by the close of business on the second business day after the election. Consistent."
   },
   "stateCode": "TN",

@@ -2,7 +2,7 @@
   "_sources": {
     "primary": "https://sos.wv.gov/elections/Pages/default.aspx",
     "secondary": "https://ballotpedia.org/Voting_in_West_Virginia",
-    "dateChecked": "2026-05-10",
+    "checked": "2026-05-10",
     "discrepancies": "NCSL lists WV as 'photo ID requested'. SoS confirms voters without photo ID may present a non-photo ID (utility bill, bank statement, government check, paycheck, student ID) or vote a provisional ballot. WV offers a free voter ID card. Consistent."
   },
   "stateCode": "WV",

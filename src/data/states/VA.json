@@ -2,7 +2,7 @@
   "_sources": {
     "primary": "https://www.elections.virginia.gov/",
     "secondary": "https://ballotpedia.org/Voting_in_Virginia",
-    "dateChecked": "2026-05-10",
+    "checked": "2026-05-10",
     "discrepancies": "NCSL lists VA as 'non-photo ID requested'. SoS confirms voters may show a non-photo document (utility bill, bank statement, paycheck, government document with name and address) or a photo ID. Virginia implemented expanded no-excuse absentee voting (any registered voter may vote absentee)."
   },
   "stateCode": "VA",

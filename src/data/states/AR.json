@@ -2,7 +2,7 @@
   "_sources": {
     "primary": "https://www.sos.arkansas.gov/elections/voter-information/",
     "secondary": "https://ballotpedia.org/Voting_in_Arkansas",
-    "dateChecked": "2026-05-10",
+    "checked": "2026-05-10",
     "discrepancies": "NCSL lists AR as 'photo ID requested' (non-strict); SoS site confirms voters without photo ID may sign an affidavit and cast a regular ballot. Consistent."
   },
   "stateCode": "AR",
