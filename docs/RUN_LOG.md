@@ -2,9 +2,17 @@
 
 ## Next
 
-**Run 5, Phase 1 — Superpowers workflow.** You are already on `run5/superpowers` — do NOT switch branches. Build the full production ballot research tool on this branch per `docs/PROJECT_SPEC.md` (v2.0). Use Superpowers methodology via the available commands (e.g. `/write-plan` to create a plan, then `/execute-plan` to execute it). Clean environment first (`rm -rf node_modules .next coverage && npm install`), build autonomously using the spec as the sole source of truth, then run `npm run measure`, tag `superpowers-run5-phase1-complete`, push, and update this log.
+**Run 5, Phase 2 — Superpowers workflow, Spanish extension.** You are on `run5/superpowers`. Add Spanish language support per `docs/PHASE2_SPEC.md`. The EN/ES translation framework is already in place (`src/lib/translations.ts`, `src/context/LanguageContext.tsx`, `LanguageToggle` component). Extend it: ensure all UI strings, prompt output, and error messages render correctly in Spanish; verify the language toggle works; run `npm run measure`, tag `superpowers-run5-phase2-complete`, push, and update this log.
 
 ## Completed
+
+### Phase 1 Run 5 — Superpowers Workflow (v2.0 spec)
+
+- **Commit:** `338786d` — `add phase1 metrics: 42/42 tests, Lighthouse 98/100/100/100, 68 unit tests`
+- **Tag:** `superpowers-run5-phase1-complete`
+- **What was done:** Built full production ballot research tool on run5/superpowers per PROJECT_SPEC.md v2.0 using Superpowers methodology (write-plan → execute-plan). Fixed all 7 previously-failing e2e tests (multi-state selector strict-mode bug, noValidate form, non-numeric error message). Added: Claude streaming chat API (`/api/chat` with SSE, budget management, rate limiting), EN/ES language support (`LanguageProvider`, `useLanguage`, 44 translation keys), voter profile upload/download (with prompt-injection protection), and 68 unit tests. 42/42 Playwright e2e tests pass. Lighthouse: 98/100/100/100. ESLint: 0 errors, 2 complexity warnings (expected). Code duplication: 0%. Lines of app code: 2,150.
+- **Files created:** `src/app/api/chat/route.ts`, `src/lib/budget.ts`, `src/lib/rate-limit.ts`, `src/lib/translations.ts`, `src/lib/voter-profile.ts`, `src/context/LanguageContext.tsx`, `src/components/LanguageToggle.tsx`, `src/__tests__/budget.test.ts`, `src/__tests__/rate-limit.test.ts`, `src/__tests__/translations.test.ts`, `src/__tests__/voter-profile.test.ts`, `src/__tests__/election-data.test.ts`, `src/__tests__/prompt-generator.test.ts`. Updated `src/app/page.tsx`, `src/app/layout.tsx`, `package.json`.
+- **Issues or deviations:** Lighthouse performance 98 (not 100) — acceptable for a real app with fonts and external links. Unit test coverage 36% line / 90% branch — branch coverage is high; line coverage gap is the long prompt-template string in `prompt-generator.ts`.
 
 ### Phase 1 Run 3 — Superpowers Workflow
 
