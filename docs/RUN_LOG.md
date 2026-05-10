@@ -2,20 +2,28 @@
 
 ## Next
 
-**Run 5, Phase 1** — Build the production ballot research tool on remaining 4 framework branches against the updated spec (`docs/PROJECT_SPEC.md` v2.0). `run5/vanilla` is complete (see below).
+**Phase 0.7–0.9 — Consolidate to 5 clean `experiment/<framework>` branches and enable autonomous Phase 1→5 execution.**
 
-**Remaining branches:**
+Active experiment branches (replacing all legacy `run*/` and `workflow/` branches):
 
 | Branch | Framework | Status |
 |--------|-----------|--------|
-| `run5/bmad` | BMAD Method | Pending |
-| `run5/compound-engineering` | Compound Engineering | Pending |
-| `run5/spec-kit` | Spec Kit | Pending |
-| `run5/superpowers` | Superpowers | Pending |
+| `experiment/vanilla` | Vanilla Claude Code | Pending creation |
+| `experiment/bmad` | BMAD Method | Pending creation |
+| `experiment/compound-engineering` | Compound Engineering | Pending creation |
+| `experiment/spec-kit` | Spec Kit | Pending creation |
+| `experiment/superpowers` | Superpowers | Pending creation |
 
-**To start a run:** Check out `run5/<framework>` and invoke `/start`.
+**To start a full experiment run:** Check out `experiment/<framework>` and invoke `/run-phases`. It chains `/start` across Phase 1 → 5 with no human-in-loop between phases.
 
-**Measurement targets:**
+**Phase progression per branch:**
+- Phase 1: Copy-paste ballot tool (PROJECT_SPEC.md v2.0 Path B baseline)
+- Phase 2: Add Spanish i18n (PHASE2_SPEC.md)
+- Phase 3: Replace stub data with real APIs — Google Civic, Vote Smart, OpenStates, OpenFEC (PHASE3_SPEC.md)
+- Phase 4: Scale to 5 languages including Arabic RTL (PHASE4_SPEC.md)
+- Phase 5: On-site Claude Sonnet chat + budget management + downloadable ballot/profile (PHASE5_SPEC.md) → v2.0 complete
+
+**Measurement targets (per phase):**
 - Playwright e2e: all passing (target 100%)
 - Vitest unit tests + line coverage %
 - ESLint: 0 errors, 0 warnings, 0 complexity violations
@@ -58,6 +66,21 @@ Note: **Scoring is executed by Hermes from the host side, not inside the build c
 - **Measurements:** ESLint 0 errors/0 warnings/0 complexity violations. Vitest 19/19 (100%), coverage lines=31.96%, branches=52.38%. Duplication 0%. First load JS 102 kB. Playwright e2e 42/42 (100%). Lighthouse 100/100/100/100. LOC: 1837 src/ across 15 files, 844 infrastructure, 2681 total.
 - **Files modified:** `src/app/page.tsx` (noValidate + state-selector testid fix), `metrics/run5/vanilla/baseline.json`
 - **Issues or deviations:** Branch pre-loaded with Spanish i18n (Phase 2 features) before Phase 1 measurement. The v2.0 spec describes a full production tool (LLM streaming chat, budget management, polling location API, etc.) — features requiring external API keys (Anthropic, Google, Upstash Redis) were not implemented; what was measured is the copy-paste fallback path (Path B) plus multi-language support.
+
+### Phase 0.6 — Infrastructure setup (code tasks complete; Hermes VPS deferred to backlog)
+
+- **Date:** 2026-04-12 to 2026-05-10
+- **Branch:** `main`
+- **Commits:** `8f719ae` (phase specs + Hermes design), `e62377c` (launch features doc), `a2dc04d` (run5 worktree gitignore)
+- **What was done:**
+  1. ✅ Committed `docs/PHASE3_SPEC.md`, `docs/PHASE4_SPEC.md`, `docs/PHASE5_SPEC.md`.
+  2. ✅ Updated `docs/EXPERIMENT_DESIGN.md` with Phase 3/4/5 sections and Hermes orchestration model.
+  3. ✅ Extended `scoring/auto-findings-rubric.md` (API coverage field, translation coverage, chat e2e placeholders).
+  4. ✅ Created `run5/*` branches (spec-kit, compound-engineering, bmad, vanilla, superpowers) from post-scoring-isolation `main`; frameworks installed; each branch RUN_LOG set to "Run 5 Phase 1". All pushed to remote.
+  5. ✅ `docs/LAUNCH_PRODUCTION_FEATURES.md` added documenting the production feature set for the Phase 1 spec update.
+  6. 🔙 Hermes VPS, API keys, and `v1-phase3-ready` tag deferred to Backlog — Run 5 proceeds as manual experiment per Muxin's 2026-05-10 decision.
+- **Files created:** `docs/PHASE3_SPEC.md`, `docs/PHASE4_SPEC.md`, `docs/PHASE5_SPEC.md`, `docs/PHASE3-5_INTEGRATION.md`, `docs/LAUNCH_PLAN.md`, `docs/LAUNCH_PRODUCTION_FEATURES.md`, `scoring/auto-findings-rubric.md`
+- **Issues or deviations:** run5/* branches named with `run5/` prefix (not `run4/` as originally planned) because `run4/compound-engineering` already existed. Legacy `workflow/*`, `run2/*`, `run3/*` branches remain as experiment data (rubric-contaminated; not to be reused for new runs).
 
 ### Phase 3 — Analysis and Write-up (complete)
 

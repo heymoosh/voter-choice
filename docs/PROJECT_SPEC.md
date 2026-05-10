@@ -1,29 +1,29 @@
 # PROJECT_SPEC.md — Ballot Research Tool Feature Spec
 
-**Version:** 1.0
-**Status:** Draft (Phase 0.1)
-**Last updated:** March 13, 2026
+**Version:** 2.0 (Production)
+**Status:** Active
+**Last updated:** April 12, 2026
 
-This document describes the desired behavior and outcomes for the ballot research tool. It is the shared input to all five workflow runs. It describes **what** the tool does, not **how** to build it.
+This document describes the desired behavior and outcomes for the ballot research tool.
 
 ---
 
 ## Overview
 
-A single-page web application that helps U.S. voters use AI chatbots to research their ballot. The user enters their zip code, the site looks up their state's election information, and generates a customized version of the AI ballot research prompt pre-filled with local dates, deadlines, links, and rules. The user copies the prompt and pastes it into any free AI chatbot (Claude, ChatGPT, Gemini, Grok, etc.).
+A single-page web application that helps U.S. voters research their ballot with an AI-powered conversation. The user enters their zip code, the site looks up their state's election information, and opens an on-site chat with Claude Sonnet that walks them through every race and issue. At the end, the user gets a printable ballot summary and a downloadable voter profile for future elections.
 
-The site does NOT host or run an LLM. It does NOT store user data. The AI conversation happens in the user's own chatbot session.
+When the monthly chat budget is exhausted, the site gracefully degrades to a copy-paste experience: users get a customized prompt they can take to any free AI chatbot (Claude, ChatGPT, Gemini, Grok).
 
-### Privacy and security constraints (functional requirements)
+The site does NOT store user data. Chat conversations live in browser memory only. No accounts, no cookies, no analytics.
 
-These are not suggestions. Workflows that violate them fail the run's security/privacy scan. See `EXPERIMENT_DESIGN.md` → Security & Privacy Requirements for the full measurement suite.
+### Privacy and security constraints (hard requirements)
 
 * No client-side persistence of any user input. No `localStorage`, `sessionStorage`, `IndexedDB`, cookies, or Cache API usage. The zip code the user types must live only in component state and must be discarded when the tab closes or the component unmounts.
-* No third-party network requests from the rendered page. No analytics, no error tracking, no telemetry libraries, no external fonts or scripts beyond what the Next.js scaffold already uses.
-* No server-side logging of user input. Zip codes must never appear in any log line, server-rendered HTML outside the intended display, error message, or telemetry payload.
-* No runtime fetches to external APIs. All state election data is served from static JSON files in the repo.
-* Content Security Policy headers must be configured with no `unsafe-inline`, no `unsafe-eval`, and a restrictive `default-src`.
+* No third-party network requests from the rendered page except to the app's own API routes and the Anthropic API (proxied server-side). No analytics, no error tracking, no telemetry libraries.
+* No server-side logging of user input. Zip codes and chat messages must never appear in any log line, server-rendered HTML outside the intended display, error message, or telemetry payload.
+* API keys must be server-side only — never exposed in client bundles.
 * No `eval`, no `Function()` constructor, no `dangerouslySetInnerHTML`, no unsanitized user input reaching the DOM.
+* Uploaded voter profiles must be treated as untrusted input with prompt injection protections.
 
 ---
 
@@ -334,18 +334,6 @@ A workflow run is "done" when ALL of the following are true:
 - [ ] ESLint runs without crashing
 - [ ] Playwright e2e tests pass (shared test suite)
 - [ ] Any workflow-generated tests pass
-
-### Security & Privacy (hard requirements — any violation fails the run)
-
-- [ ] No client-side storage APIs used (`localStorage`, `sessionStorage`, `IndexedDB`, cookies, Cache API)
-- [ ] No third-party network requests from the rendered page (no analytics, telemetry, error tracking, external fonts/scripts beyond the scaffold baseline)
-- [ ] No server-side logging of user input (zip codes never appear in any log line)
-- [ ] No runtime fetches to external APIs (all data from static JSON)
-- [ ] Content Security Policy headers configured, no `unsafe-inline` or `unsafe-eval`
-- [ ] No `eval`, `Function()` constructor, or `dangerouslySetInnerHTML` in `src/`
-- [ ] Zero high/critical findings from `npm audit --production`
-- [ ] Zero hits from `gitleaks` across the branch history
-- [ ] Zero `ERROR`-severity findings from Semgrep OWASP Top 10 ruleset
 
 ---
 
