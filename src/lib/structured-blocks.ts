@@ -475,6 +475,197 @@ export function stripPartialRacePatternsBlock(content: string): string {
   return content.slice(0, lastOpen).replace(/\s+$/, "");
 }
 
+/* ── Alignment Scores block ─────────────────────────────────── */
+
+export type AlignmentVoteCast = "with" | "against";
+
+export interface ContributingVote {
+  billTitle: string;
+  voteCast: AlignmentVoteCast;
+  date: string;
+  source: SourceRef;
+}
+
+export interface AlignmentScore {
+  canonicalIssue: string;
+  issueLabel: string;
+  resolvedStance: string;
+  kept: number;
+  total: number;
+  contributingVotes: ContributingVote[];
+}
+
+export interface AlignmentScoresEntry {
+  candidateId: string;
+  scores: AlignmentScore[] | null;
+  unavailable?: { reason: string };
+}
+
+export interface AlignmentScoresBlock {
+  race: string;
+  entries: AlignmentScoresEntry[];
+}
+
+const ALIGNMENT_SCORES_BLOCK_RE =
+  /\[ALIGNMENT_SCORES\s+race="([^"]+)"\]([\s\S]*?)\[\/ALIGNMENT_SCORES\]/g;
+
+function sanitizeContributingVote(value: unknown): ContributingVote | null {
+  if (!value || typeof value !== "object") return null;
+  const v = value as Record<string, unknown>;
+
+  if (!isNonEmptyString(v.billTitle)) return null;
+  if (v.voteCast !== "with" && v.voteCast !== "against") return null;
+  if (!isNonEmptyString(v.date)) return null;
+  const src = sanitizeSourceRef(v.source);
+  if (!src) return null;
+
+  return {
+    billTitle: v.billTitle,
+    voteCast: v.voteCast,
+    date: v.date,
+    source: src,
+  };
+}
+
+function sanitizeAlignmentScore(value: unknown): AlignmentScore | null {
+  if (!value || typeof value !== "object") return null;
+  const v = value as Record<string, unknown>;
+
+  if (!isNonEmptyString(v.canonicalIssue)) return null;
+  if (!isNonEmptyString(v.issueLabel)) return null;
+  if (!isNonEmptyString(v.resolvedStance)) return null;
+
+  if (
+    typeof v.kept !== "number" ||
+    typeof v.total !== "number" ||
+    !Number.isFinite(v.kept) ||
+    !Number.isFinite(v.total) ||
+    !Number.isInteger(v.kept) ||
+    !Number.isInteger(v.total) ||
+    v.kept < 0 ||
+    v.total <= 0 ||
+    v.kept > v.total
+  )
+    return null;
+
+  const contributingVotes: ContributingVote[] = [];
+  if (Array.isArray(v.contributingVotes)) {
+    for (const cv of v.contributingVotes) {
+      const sanitized = sanitizeContributingVote(cv);
+      if (sanitized !== null) contributingVotes.push(sanitized);
+    }
+  }
+
+  return {
+    canonicalIssue: v.canonicalIssue,
+    issueLabel: v.issueLabel,
+    resolvedStance: v.resolvedStance,
+    kept: v.kept,
+    total: v.total,
+    contributingVotes,
+  };
+}
+
+function buildAlignmentScoresEntry(
+  parsed: Record<string, unknown>,
+): AlignmentScoresEntry | null {
+  if (!isNonEmptyString(parsed.candidateId)) return null;
+
+  const scores: AlignmentScore[] = [];
+  if (Array.isArray(parsed.scores)) {
+    for (const s of parsed.scores) {
+      const sanitized = sanitizeAlignmentScore(s);
+      if (sanitized !== null) scores.push(sanitized);
+    }
+  }
+
+  const unavailable = sanitizeUnavailable(parsed.unavailable);
+
+  if (scores.length === 0) {
+    if (!unavailable) return null; // no valid scores, no unavailable → drop entry
+    return { candidateId: parsed.candidateId, scores: null, unavailable };
+  }
+
+  const entry: AlignmentScoresEntry = {
+    candidateId: parsed.candidateId,
+    scores,
+  };
+  if (unavailable) entry.unavailable = unavailable;
+  return entry;
+}
+
+/**
+ * Find and parse the LAST [ALIGNMENT_SCORES] block in content.
+ * Returns null if absent, malformed, or has zero valid entries.
+ */
+export function parseAlignmentScoresBlock(
+  content: string,
+): AlignmentScoresBlock | null {
+  if (!content) return null;
+
+  const matches = [...content.matchAll(ALIGNMENT_SCORES_BLOCK_RE)];
+  if (matches.length === 0) return null;
+
+  const last = matches[matches.length - 1];
+  const race = last[1].trim();
+  const body = last[2];
+
+  const entries: AlignmentScoresEntry[] = [];
+  for (const rawLine of body.split("\n")) {
+    const line = rawLine.trim();
+    if (!line) continue;
+    try {
+      const parsed = JSON.parse(line);
+      if (parsed && typeof parsed === "object") {
+        const entry = buildAlignmentScoresEntry(
+          parsed as Record<string, unknown>,
+        );
+        if (entry !== null) entries.push(entry);
+      }
+    } catch {
+      // Skip malformed JSON lines.
+    }
+  }
+
+  if (entries.length === 0) return null;
+
+  return { race, entries };
+}
+
+/** Strip all [ALIGNMENT_SCORES]...[/ALIGNMENT_SCORES] blocks from text. */
+export function stripAlignmentScoresBlocks(content: string): string {
+  if (!content) return "";
+  return content
+    .replace(ALIGNMENT_SCORES_BLOCK_RE, "")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+/**
+ * Detects whether content contains an open [ALIGNMENT_SCORES...] tag without a
+ * matching closing tag. Used to switch the chat UI to a "building..."
+ * placeholder during streaming.
+ */
+export function hasOpenAlignmentScoresBlock(content: string): boolean {
+  if (!content) return false;
+  const openCount = (content.match(/\[ALIGNMENT_SCORES\b/g) ?? []).length;
+  const closeCount = (content.match(/\[\/ALIGNMENT_SCORES\]/g) ?? []).length;
+  return openCount > closeCount;
+}
+
+/**
+ * Strips a half-emitted [ALIGNMENT_SCORES...] tag (open without close) from
+ * the end of content. Returns the prose preceding the partial block.
+ */
+export function stripPartialAlignmentScoresBlock(content: string): string {
+  if (!content) return "";
+  const lastOpen = content.lastIndexOf("[ALIGNMENT_SCORES");
+  if (lastOpen === -1) return content;
+  const closeAfter = content.indexOf("[/ALIGNMENT_SCORES]", lastOpen);
+  if (closeAfter !== -1) return content;
+  return content.slice(0, lastOpen).replace(/\s+$/, "");
+}
+
 /* ── Concern Interpretation block ───────────────────────────── */
 
 export type ConcernInterpretationConfidence = "clear" | "low" | "off_topic";

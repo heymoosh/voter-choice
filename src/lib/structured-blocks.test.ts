@@ -12,6 +12,10 @@ import {
   stripConcernInterpretationBlocks,
   hasOpenConcernInterpretationBlock,
   stripPartialConcernInterpretationBlock,
+  parseAlignmentScoresBlock,
+  stripAlignmentScoresBlocks,
+  hasOpenAlignmentScoresBlock,
+  stripPartialAlignmentScoresBlock,
 } from "./structured-blocks";
 
 /* ── Values Tag Request ─────────────────────────────────────────── */
@@ -919,5 +923,497 @@ describe("stripPartialConcernInterpretationBlock", () => {
       "just prose",
     );
     expect(stripPartialConcernInterpretationBlock("")).toBe("");
+  });
+});
+
+/* ── Alignment Scores ───────────────────────────────────────────── */
+
+// Reusable building blocks for the happy-path block
+const vote1A = JSON.stringify({
+  billTitle: "H.R. 1234 - Affordable Healthcare Expansion Act",
+  voteCast: "with",
+  date: "2024-03-15",
+  source: { name: "Vote Smart Key Votes", url: "https://votesmart.org/vote/1" },
+});
+const vote2A = JSON.stringify({
+  billTitle: "S. 567 - Medicare Drug Pricing",
+  voteCast: "against",
+  date: "2023-11-20",
+  source: { name: "GovTrack", url: "https://govtrack.us/vote/2" },
+});
+const vote3A = JSON.stringify({
+  billTitle: "H.R. 999 - Public Option Act",
+  voteCast: "with",
+  date: "2022-06-01",
+  source: { name: "Congress.gov", url: "https://congress.gov/bill/999" },
+});
+const vote1B = JSON.stringify({
+  billTitle: "H.R. 2000 - Gun Safety Measures Act",
+  voteCast: "with",
+  date: "2024-01-10",
+  source: { name: "Vote Smart Key Votes", url: "https://votesmart.org/vote/3" },
+});
+const vote2B = JSON.stringify({
+  billTitle: "S. 300 - Second Amendment Protection Act",
+  voteCast: "against",
+  date: "2023-05-22",
+  source: { name: "GovTrack", url: "https://govtrack.us/vote/4" },
+});
+
+const candidateALine = JSON.stringify({
+  candidateId: "A",
+  scores: [
+    {
+      canonicalIssue: "healthcare_affordability",
+      issueLabel: "Healthcare affordability",
+      resolvedStance: "expand healthcare access",
+      kept: 7,
+      total: 10,
+      contributingVotes: [
+        JSON.parse(vote1A),
+        JSON.parse(vote2A),
+        JSON.parse(vote3A),
+      ],
+    },
+    {
+      canonicalIssue: "gun_safety",
+      issueLabel: "Gun safety",
+      resolvedStance: "support background checks",
+      kept: 3,
+      total: 5,
+      contributingVotes: [JSON.parse(vote1B)],
+    },
+  ],
+});
+
+const candidateBLine = JSON.stringify({
+  candidateId: "B",
+  scores: [
+    {
+      canonicalIssue: "healthcare_affordability",
+      issueLabel: "Healthcare affordability",
+      resolvedStance: "expand healthcare access",
+      kept: 2,
+      total: 4,
+      contributingVotes: [JSON.parse(vote1B), JSON.parse(vote2B)],
+    },
+    {
+      canonicalIssue: "gun_safety",
+      issueLabel: "Gun safety",
+      resolvedStance: "support background checks",
+      kept: 1,
+      total: 3,
+      contributingVotes: [JSON.parse(vote2B)],
+    },
+  ],
+});
+
+const wellFormedAlignmentScores = [
+  '[ALIGNMENT_SCORES race="Harris County District Attorney"]',
+  candidateALine,
+  candidateBLine,
+  "[/ALIGNMENT_SCORES]",
+].join("\n");
+
+describe("parseAlignmentScoresBlock", () => {
+  it("happy path: 2 candidates each with 2 scores and multiple contributing votes", () => {
+    const result = parseAlignmentScoresBlock(
+      `Lead-in.\n\n${wellFormedAlignmentScores}\n\nTrailing.`,
+    );
+    expect(result).not.toBeNull();
+    expect(result?.race).toBe("Harris County District Attorney");
+    expect(result?.entries).toHaveLength(2);
+
+    const entryA = result?.entries[0];
+    expect(entryA?.candidateId).toBe("A");
+    expect(entryA?.scores).toHaveLength(2);
+
+    const score0 = entryA?.scores?.[0];
+    expect(score0?.canonicalIssue).toBe("healthcare_affordability");
+    expect(score0?.issueLabel).toBe("Healthcare affordability");
+    expect(score0?.resolvedStance).toBe("expand healthcare access");
+    expect(score0?.kept).toBe(7);
+    expect(score0?.total).toBe(10);
+    expect(score0?.contributingVotes).toHaveLength(3);
+    expect(score0?.contributingVotes[0].billTitle).toBe(
+      "H.R. 1234 - Affordable Healthcare Expansion Act",
+    );
+    expect(score0?.contributingVotes[0].voteCast).toBe("with");
+    expect(score0?.contributingVotes[0].date).toBe("2024-03-15");
+    expect(score0?.contributingVotes[0].source.name).toBe(
+      "Vote Smart Key Votes",
+    );
+    expect(score0?.contributingVotes[0].source.url).toBe(
+      "https://votesmart.org/vote/1",
+    );
+
+    expect(score0?.contributingVotes[1].voteCast).toBe("against");
+
+    const entryB = result?.entries[1];
+    expect(entryB?.candidateId).toBe("B");
+    expect(entryB?.scores).toHaveLength(2);
+    expect(entryB?.scores?.[0].kept).toBe(2);
+    expect(entryB?.scores?.[0].total).toBe(4);
+    expect(entryB?.scores?.[1].kept).toBe(1);
+    expect(entryB?.scores?.[1].total).toBe(3);
+    expect(entryB?.unavailable).toBeUndefined();
+  });
+
+  it("malformed JSON line is skipped; rest of block is preserved", () => {
+    const block = [
+      '[ALIGNMENT_SCORES race="State Senate District 7"]',
+      candidateALine,
+      "this is not json at all",
+      candidateBLine,
+      '{"candidateId":"C","scores":[{"canonicalIssue":"x","issueLabel":"X","resolvedStance":"y","kept":1,"total":2,"contributingVotes":[{"billTitle":"T","voteCast":"with","date":"2024-01-01","source":{"name":"S"}}]}]}',
+      "[/ALIGNMENT_SCORES]",
+    ].join("\n");
+    const result = parseAlignmentScoresBlock(block);
+    expect(result).not.toBeNull();
+    // malformed line is dropped; A, B, and C are preserved
+    expect(result?.entries).toHaveLength(3);
+    expect(result?.entries.map((e) => e.candidateId)).toEqual(["A", "B", "C"]);
+  });
+
+  it("score with kept > total is dropped", () => {
+    const badScoreLine = JSON.stringify({
+      candidateId: "X",
+      scores: [
+        {
+          canonicalIssue: "healthcare_affordability",
+          issueLabel: "Healthcare affordability",
+          resolvedStance: "expand access",
+          kept: 9, // kept > total
+          total: 5,
+          contributingVotes: [],
+        },
+        {
+          canonicalIssue: "gun_safety",
+          issueLabel: "Gun safety",
+          resolvedStance: "support background checks",
+          kept: 2,
+          total: 4,
+          contributingVotes: [],
+        },
+      ],
+    });
+    const goodLine = candidateBLine;
+    const block = [
+      '[ALIGNMENT_SCORES race="Sheriff"]',
+      badScoreLine,
+      goodLine,
+      "[/ALIGNMENT_SCORES]",
+    ].join("\n");
+    const result = parseAlignmentScoresBlock(block);
+    expect(result).not.toBeNull();
+    // X keeps only the valid score (gun_safety); healthcare score is dropped
+    const entryX = result?.entries.find((e) => e.candidateId === "X");
+    expect(entryX?.scores).toHaveLength(1);
+    expect(entryX?.scores?.[0].canonicalIssue).toBe("gun_safety");
+  });
+
+  it("score with non-finite numbers is dropped", () => {
+    // JSON doesn't support Infinity/NaN so we serialize with a workaround:
+    // parse an object where kept is a string instead of number
+    const badScoreLine = JSON.stringify({
+      candidateId: "Y",
+      scores: [
+        {
+          canonicalIssue: "climate",
+          issueLabel: "Climate",
+          resolvedStance: "support clean energy",
+          kept: "not_a_number", // non-numeric type → dropped
+          total: 10,
+          contributingVotes: [],
+        },
+        {
+          canonicalIssue: "gun_safety",
+          issueLabel: "Gun safety",
+          resolvedStance: "support background checks",
+          kept: 3,
+          total: 5,
+          contributingVotes: [],
+        },
+      ],
+    });
+    const block = [
+      '[ALIGNMENT_SCORES race="Mayor"]',
+      badScoreLine,
+      candidateBLine,
+      "[/ALIGNMENT_SCORES]",
+    ].join("\n");
+    const result = parseAlignmentScoresBlock(block);
+    const entryY = result?.entries.find((e) => e.candidateId === "Y");
+    expect(entryY?.scores).toHaveLength(1);
+    expect(entryY?.scores?.[0].canonicalIssue).toBe("gun_safety");
+  });
+
+  it("contributing vote with missing source.name is silently dropped", () => {
+    const lineWithBadVote = JSON.stringify({
+      candidateId: "Z",
+      scores: [
+        {
+          canonicalIssue: "healthcare_affordability",
+          issueLabel: "Healthcare affordability",
+          resolvedStance: "expand access",
+          kept: 2,
+          total: 3,
+          contributingVotes: [
+            // valid vote
+            {
+              billTitle: "H.R. 100 - Good Bill",
+              voteCast: "with",
+              date: "2024-01-01",
+              source: { name: "Vote Smart", url: "https://votesmart.org/" },
+            },
+            // missing source.name → dropped
+            {
+              billTitle: "H.R. 200 - Bad Source Bill",
+              voteCast: "against",
+              date: "2023-06-15",
+              source: { url: "https://example.com" },
+            },
+            // no source at all → dropped
+            {
+              billTitle: "H.R. 300 - No Source Bill",
+              voteCast: "with",
+              date: "2022-11-08",
+            },
+          ],
+        },
+      ],
+    });
+    const block = [
+      '[ALIGNMENT_SCORES race="City Council"]',
+      lineWithBadVote,
+      candidateBLine,
+      "[/ALIGNMENT_SCORES]",
+    ].join("\n");
+    const result = parseAlignmentScoresBlock(block);
+    const entryZ = result?.entries.find((e) => e.candidateId === "Z");
+    expect(entryZ?.scores?.[0].contributingVotes).toHaveLength(1);
+    expect(entryZ?.scores?.[0].contributingVotes[0].billTitle).toBe(
+      "H.R. 100 - Good Bill",
+    );
+  });
+
+  it("entry with empty scores + unavailable is preserved as unavailable shape", () => {
+    const unavailableLine = JSON.stringify({
+      candidateId: "C",
+      scores: [],
+      unavailable: {
+        reason: "No voting record yet — first-time candidate",
+      },
+    });
+    const block = [
+      '[ALIGNMENT_SCORES race="US Senate"]',
+      candidateALine,
+      unavailableLine,
+      "[/ALIGNMENT_SCORES]",
+    ].join("\n");
+    const result = parseAlignmentScoresBlock(block);
+    expect(result).not.toBeNull();
+    expect(result?.entries).toHaveLength(2);
+    const entryC = result?.entries.find((e) => e.candidateId === "C");
+    expect(entryC?.scores).toBeNull();
+    expect(entryC?.unavailable?.reason).toBe(
+      "No voting record yet — first-time candidate",
+    );
+  });
+
+  it("entry with empty scores and no unavailable is dropped", () => {
+    const emptyNoUnavailableLine = JSON.stringify({
+      candidateId: "D",
+      scores: [],
+      // no unavailable field
+    });
+    const block = [
+      '[ALIGNMENT_SCORES race="Governor"]',
+      candidateALine,
+      emptyNoUnavailableLine,
+      "[/ALIGNMENT_SCORES]",
+    ].join("\n");
+    const result = parseAlignmentScoresBlock(block);
+    expect(result).not.toBeNull();
+    // D is dropped; only A remains
+    expect(result?.entries).toHaveLength(1);
+    expect(result?.entries[0].candidateId).toBe("A");
+  });
+
+  it("empty block (no valid entries) returns null", () => {
+    const block = [
+      '[ALIGNMENT_SCORES race="Empty Race"]',
+      // All entries have empty scores and no unavailable → all dropped
+      JSON.stringify({ candidateId: "X", scores: [] }),
+      JSON.stringify({ candidateId: "Y", scores: [] }),
+      "[/ALIGNMENT_SCORES]",
+    ].join("\n");
+    expect(parseAlignmentScoresBlock(block)).toBeNull();
+  });
+
+  it("returns null when no block is present", () => {
+    expect(parseAlignmentScoresBlock("just regular prose")).toBeNull();
+    expect(parseAlignmentScoresBlock("")).toBeNull();
+  });
+
+  it("uses the LAST block when multiple appear", () => {
+    const first = [
+      '[ALIGNMENT_SCORES race="first race"]',
+      candidateALine,
+      candidateBLine,
+      "[/ALIGNMENT_SCORES]",
+    ].join("\n");
+    const secondEntry = JSON.stringify({
+      candidateId: "Z",
+      scores: [
+        {
+          canonicalIssue: "climate",
+          issueLabel: "Climate",
+          resolvedStance: "support clean energy",
+          kept: 4,
+          total: 6,
+          contributingVotes: [],
+        },
+      ],
+    });
+    const second = [
+      '[ALIGNMENT_SCORES race="second race"]',
+      secondEntry,
+      candidateBLine,
+      "[/ALIGNMENT_SCORES]",
+    ].join("\n");
+    const result = parseAlignmentScoresBlock(`${first}\n\n${second}`);
+    expect(result?.race).toBe("second race");
+    expect(result?.entries).toHaveLength(2);
+    expect(result?.entries[0].candidateId).toBe("Z");
+  });
+
+  it("drops entry whose candidateId is an empty string", () => {
+    const emptyIdLine = JSON.stringify({
+      candidateId: "",
+      scores: [
+        {
+          canonicalIssue: "healthcare_affordability",
+          issueLabel: "Healthcare affordability",
+          resolvedStance: "expand access",
+          kept: 3,
+          total: 5,
+          contributingVotes: [],
+        },
+      ],
+    });
+    const block = [
+      '[ALIGNMENT_SCORES race="Some Race"]',
+      emptyIdLine,
+      candidateBLine,
+      "[/ALIGNMENT_SCORES]",
+    ].join("\n");
+    const result = parseAlignmentScoresBlock(block);
+    expect(result?.entries).toHaveLength(1);
+    expect(result?.entries[0].candidateId).toBe("B");
+  });
+
+  it("source.url is optional — vote without url is preserved", () => {
+    const lineNoUrl = JSON.stringify({
+      candidateId: "W",
+      scores: [
+        {
+          canonicalIssue: "education",
+          issueLabel: "Education funding",
+          resolvedStance: "increase school funding",
+          kept: 5,
+          total: 7,
+          contributingVotes: [
+            {
+              billTitle: "HB 5 - School Funding Act",
+              voteCast: "with",
+              date: "2024-02-14",
+              source: { name: "Texas Legislature Online" }, // no url
+            },
+          ],
+        },
+      ],
+    });
+    const block = [
+      '[ALIGNMENT_SCORES race="State Rep District 1"]',
+      lineNoUrl,
+      candidateBLine,
+      "[/ALIGNMENT_SCORES]",
+    ].join("\n");
+    const result = parseAlignmentScoresBlock(block);
+    const entryW = result?.entries.find((e) => e.candidateId === "W");
+    expect(entryW?.scores?.[0].contributingVotes).toHaveLength(1);
+    expect(entryW?.scores?.[0].contributingVotes[0].source.name).toBe(
+      "Texas Legislature Online",
+    );
+    expect(entryW?.scores?.[0].contributingVotes[0].source.url).toBeUndefined();
+  });
+});
+
+describe("stripAlignmentScoresBlocks", () => {
+  it("removes the block and trims whitespace", () => {
+    const content = `Lead-in prose.\n\n${wellFormedAlignmentScores}\n\nTrailing prose.`;
+    const stripped = stripAlignmentScoresBlocks(content);
+    expect(stripped).not.toContain("[ALIGNMENT_SCORES");
+    expect(stripped).not.toContain("[/ALIGNMENT_SCORES");
+    expect(stripped).toContain("Lead-in prose.");
+    expect(stripped).toContain("Trailing prose.");
+  });
+
+  it("returns empty string for empty input", () => {
+    expect(stripAlignmentScoresBlocks("")).toBe("");
+  });
+});
+
+describe("hasOpenAlignmentScoresBlock", () => {
+  it("returns true when an open tag has no matching close", () => {
+    const partial = [
+      "Lead-in prose.",
+      '[ALIGNMENT_SCORES race="Harris County DA"]',
+      candidateALine,
+    ].join("\n");
+    expect(hasOpenAlignmentScoresBlock(partial)).toBe(true);
+  });
+
+  it("returns false for a complete block", () => {
+    expect(hasOpenAlignmentScoresBlock(wellFormedAlignmentScores)).toBe(false);
+  });
+
+  it("returns false when no alignment-scores block is present", () => {
+    expect(hasOpenAlignmentScoresBlock("just some prose")).toBe(false);
+    expect(hasOpenAlignmentScoresBlock("")).toBe(false);
+  });
+
+  it("returns true when one block is closed and another is open", () => {
+    const closedThenOpen = [
+      wellFormedAlignmentScores,
+      "",
+      "More prose.",
+      '[ALIGNMENT_SCORES race="Sheriff"]',
+      candidateALine,
+    ].join("\n");
+    expect(hasOpenAlignmentScoresBlock(closedThenOpen)).toBe(true);
+  });
+});
+
+describe("stripPartialAlignmentScoresBlock", () => {
+  it("returns prose before an open tag, trimmed", () => {
+    const partial = [
+      "Lead-in prose.",
+      "",
+      '[ALIGNMENT_SCORES race="Harris County DA"]',
+      candidateALine,
+    ].join("\n");
+    expect(stripPartialAlignmentScoresBlock(partial)).toBe("Lead-in prose.");
+  });
+
+  it("returns content unchanged when the block is closed", () => {
+    const content = `Lead-in.\n\n${wellFormedAlignmentScores}\n\nTrailing.`;
+    expect(stripPartialAlignmentScoresBlock(content)).toBe(content);
+  });
+
+  it("returns content unchanged when there is no alignment-scores tag", () => {
+    expect(stripPartialAlignmentScoresBlock("just prose")).toBe("just prose");
+    expect(stripPartialAlignmentScoresBlock("")).toBe("");
   });
 });

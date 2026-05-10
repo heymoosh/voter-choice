@@ -552,4 +552,79 @@ describe("ChatPanel", () => {
       screen.queryByTestId("concern-interpretation"),
     ).not.toBeInTheDocument();
   });
+
+  /* ── Alignment scores dispatch tests ───────────────────────── */
+
+  it("renders RacePatterns without alignment banner when only [RACE_PATTERNS] block is present", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      streamResponse(`Here is the race dashboard.\n\n${racePatternsBlock}`),
+    );
+
+    renderChatPanel();
+
+    await waitFor(() => {
+      expect(screen.getByTestId("race-patterns")).toBeInTheDocument();
+    });
+
+    // No alignment banner — no [ALIGNMENT_SCORES] block in message
+    expect(
+      screen.queryByTestId(/alignment-score-banner-/),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByTestId(/alignment-score-unavailable-/),
+    ).not.toBeInTheDocument();
+  });
+
+  it("renders merged dashboard with alignment banner when both [RACE_PATTERNS] and [ALIGNMENT_SCORES] blocks are present", async () => {
+    const alignmentScoresBlock = [
+      '[ALIGNMENT_SCORES race="Harris County DA"]',
+      '{"candidateId":"A","scores":[{"canonicalIssue":"healthcare_access","issueLabel":"Healthcare access","resolvedStance":"expand healthcare access","kept":3,"total":5,"contributingVotes":[{"billTitle":"HB 100","voteCast":"with","date":"2021-05-12","source":{"name":"TX House","url":"https://capitol.texas.gov/"}}]}]}',
+      '{"candidateId":"B","scores":null,"unavailable":{"reason":"No voting record yet — first-time candidate"}}',
+      "[/ALIGNMENT_SCORES]",
+    ].join("\n");
+
+    const combined = `Lead-in.\n\n${racePatternsBlock}\n\n${alignmentScoresBlock}`;
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(streamResponse(combined));
+
+    renderChatPanel();
+
+    await waitFor(() => {
+      expect(screen.getByTestId("race-patterns")).toBeInTheDocument();
+    });
+
+    // Alignment banner for candidate A
+    expect(screen.getByTestId("alignment-score-banner-A")).toBeInTheDocument();
+    // Unavailable state for candidate B
+    expect(
+      screen.getByTestId("alignment-score-unavailable-B"),
+    ).toBeInTheDocument();
+  });
+
+  it("handles a partial [ALIGNMENT_SCORES] block in final content without crashing", async () => {
+    // Send a complete [RACE_PATTERNS] block but no [ALIGNMENT_SCORES] closing tag.
+    // The parser should gracefully degrade — the dashboard renders without alignment data.
+    const contentWithPartialAlignment =
+      `Some prose.\n\n${racePatternsBlock}\n` +
+      '[ALIGNMENT_SCORES race="Harris County DA"]\n' +
+      '{"candidateId":"A","scores":['; // truncated, no close tag
+
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      streamResponse(contentWithPartialAlignment),
+    );
+
+    renderChatPanel();
+
+    // Should not crash — race patterns dashboard renders without alignment banner
+    await waitFor(() => {
+      expect(screen.getByTestId("race-patterns")).toBeInTheDocument();
+    });
+
+    // Prose stripped cleanly
+    expect(screen.getByText(/Some prose/i)).toBeInTheDocument();
+
+    // No alignment banner (incomplete block was stripped)
+    expect(
+      screen.queryByTestId(/alignment-score-banner-/),
+    ).not.toBeInTheDocument();
+  });
 });

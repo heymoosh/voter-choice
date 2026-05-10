@@ -269,6 +269,7 @@ export interface Translations {
     racePatternsEndorsementPartisan: string;
     racePatternsEndorsementNonpartisan: string;
     racePatternsEndorsementMixed: string;
+    racePatternsDisclaimer: string;
     tabCloseWarningBanner: string;
     pdfScannedError: string;
     pdfLoadError: string;
@@ -283,6 +284,22 @@ export interface Translations {
     concernInterpretationOffTopic: string;
     concernInterpretationDisambiguatePrompt: string;
     concernInterpretationConfirmPerEntry: string;
+    // AlignmentScoreBanner + AlignmentDrilldown
+    alignmentScoreBannerHeading: string;
+    alignmentScoreOfVotes: (kept: number, total: number) => string;
+    alignmentScoreThinRecord: (total: number) => string;
+    alignmentScoreUnavailablePrefix: string;
+    alignmentScoreYourSide: string;
+    alignmentScoreDrillDownLabel: string;
+    alignmentScoreDrillDownClose: string;
+    alignmentScoreVotedWith: string;
+    alignmentScoreVotedAgainst: string;
+    alignmentDrilldownHeading: (
+      kept: number,
+      total: number,
+      issueLabel: string,
+    ) => string;
+    alignmentDrilldownDisclaimer: string;
   };
   portfolio: {
     badge: string;
@@ -695,6 +712,8 @@ const en: Translations = {
     racePatternsEndorsementPartisan: "Partisan",
     racePatternsEndorsementNonpartisan: "Nonpartisan",
     racePatternsEndorsementMixed: "Mixed",
+    racePatternsDisclaimer:
+      "AI can make mistakes. Tap any score to see the contributing votes and verify the sources.",
     tabCloseWarningBanner: `This session isn’t saved. Get the summary or tap “Finish this later” before closing the tab.`,
     pdfScannedError: `This PDF appears to be scanned and can’t be auto-extracted. Open it, copy the text, and paste it here instead.`,
     pdfLoadError: `We couldn’t load the PDF reader right now. Please try again in a moment, or open the PDF, copy the text, and paste it here.`,
@@ -712,6 +731,25 @@ const en: Translations = {
     concernInterpretationDisambiguatePrompt:
       "Which of these best matches your view?",
     concernInterpretationConfirmPerEntry: "Looks right",
+    // AlignmentScoreBanner + AlignmentDrilldown
+    alignmentScoreBannerHeading: "Voted with you on...",
+    alignmentScoreOfVotes: (kept: number, total: number) =>
+      `${kept} of ${total} votes`,
+    alignmentScoreThinRecord: (total: number) =>
+      `Based on ${total} ${total === 1 ? "vote" : "votes"}`,
+    alignmentScoreUnavailablePrefix: "Voting record not available —",
+    alignmentScoreYourSide: "Your side:",
+    alignmentScoreDrillDownLabel: "See contributing votes",
+    alignmentScoreDrillDownClose: "Close",
+    alignmentScoreVotedWith: "Voted with",
+    alignmentScoreVotedAgainst: "Voted against",
+    alignmentDrilldownHeading: (
+      kept: number,
+      total: number,
+      issueLabel: string,
+    ) => `Why ${kept} of ${total} on ${issueLabel}?`,
+    alignmentDrilldownDisclaimer:
+      "AI can make mistakes. Click any source to verify.",
   },
   portfolio: {
     badge: "Verified Research",
@@ -1145,11 +1183,13 @@ const es: Translations = {
     racePatternsEndorsementPartisan: "Partisan",
     racePatternsEndorsementNonpartisan: "Nonpartisan",
     racePatternsEndorsementMixed: "Mixed",
+    racePatternsDisclaimer:
+      "AI can make mistakes. Tap any score to see the contributing votes and verify the sources.",
     tabCloseWarningBanner: `This session isn’t saved. Get the summary or tap “Finish this later” before closing the tab.`,
     pdfScannedError:
-      "This PDF appears to be scanned and can’t be auto-extracted. Open it, copy the text, and paste it here instead.",
+      "This PDF appears to be scanned and can't be auto-extracted. Open it, copy the text, and paste it here instead.",
     pdfLoadError:
-      "We couldn’t load the PDF reader right now. Please try again in a moment, or open the PDF, copy the text, and paste it here.",
+      "We couldn't load the PDF reader right now. Please try again in a moment, or open the PDF, copy the text, and paste it here.",
     // ConcernInterpretation — EN stubs (ES UI out of scope for this packet)
     concernInterpretationHeading: "Did we get this right?",
     concernInterpretationSubhead:
@@ -1164,6 +1204,25 @@ const es: Translations = {
     concernInterpretationDisambiguatePrompt:
       "Which of these best matches your view?",
     concernInterpretationConfirmPerEntry: "Looks right",
+    // AlignmentScoreBanner + AlignmentDrilldown \u2014 EN stubs (ES UI out of scope for this packet)
+    alignmentScoreBannerHeading: "Voted with you on...",
+    alignmentScoreOfVotes: (kept: number, total: number) =>
+      `${kept} of ${total} votes`,
+    alignmentScoreThinRecord: (total: number) =>
+      `Based on ${total} ${total === 1 ? "vote" : "votes"}`,
+    alignmentScoreUnavailablePrefix: "Voting record not available \u2014",
+    alignmentScoreYourSide: "Your side:",
+    alignmentScoreDrillDownLabel: "See contributing votes",
+    alignmentScoreDrillDownClose: "Close",
+    alignmentScoreVotedWith: "Voted with",
+    alignmentScoreVotedAgainst: "Voted against",
+    alignmentDrilldownHeading: (
+      kept: number,
+      total: number,
+      issueLabel: string,
+    ) => `Why ${kept} of ${total} on ${issueLabel}?`,
+    alignmentDrilldownDisclaimer:
+      "AI can make mistakes. Click any source to verify.",
   },
   portfolio: {
     badge: "Investigaci\u00f3n Verificada",

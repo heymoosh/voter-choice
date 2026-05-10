@@ -538,4 +538,55 @@ describe("generatePrompt — Spanish mode", () => {
     const result = generatePrompt(txData, "73301", "2026-03-30", "es");
     expect(result.contextBlock).toContain("Ayúdame");
   });
+
+  /* ── Alignment scores prompt assertions ─────────────────── */
+
+  it("basePrompt instructs the model to emit [ALIGNMENT_SCORES] block after [RACE_PATTERNS]", () => {
+    const result = generatePrompt(txData, "73301", "2026-03-30");
+    expect(result.basePrompt).toContain("[ALIGNMENT_SCORES");
+    expect(result.basePrompt).toContain("[/ALIGNMENT_SCORES]");
+  });
+
+  it("basePrompt describes alignment scores as a factual count, not a recommendation", () => {
+    const result = generatePrompt(txData, "73301", "2026-03-30");
+    // Prompt must hold the factual-count framing
+    expect(result.basePrompt).toMatch(/factual count/i);
+    // Must not recommend or aggregate
+    expect(result.basePrompt).toMatch(
+      /not a recommendation|No.*recommendation/i,
+    );
+  });
+
+  it("basePrompt conditions alignment scores on [VOTER CONFIRMED CONCERNS] — skipped Act 2 yields no alignment block", () => {
+    const result = generatePrompt(txData, "73301", "2026-03-30");
+    // The prompt must tie the block to VOTER CONFIRMED CONCERNS
+    expect(result.basePrompt).toContain("[VOTER CONFIRMED CONCERNS]");
+    // And must explicitly say: if voter skipped Act 2, don't emit
+    expect(result.basePrompt).toMatch(
+      /skip.*Act 2|Act 2.*skip|skipped.*Act 2|\[VOTER VALUES\] skipped/i,
+    );
+    expect(result.basePrompt).toMatch(
+      /DO NOT emit \[ALIGNMENT_SCORES\]|do not emit.*alignment/i,
+    );
+  });
+
+  it("basePrompt instructs web_search against Vote Smart Key Votes for alignment scores", () => {
+    const result = generatePrompt(txData, "73301", "2026-03-30");
+    expect(result.basePrompt).toMatch(/web_search/i);
+    expect(result.basePrompt).toMatch(/Vote Smart Key Votes|Vote Smart/i);
+  });
+
+  it("basePrompt prohibits aggregate overall % for alignment scores", () => {
+    const result = generatePrompt(txData, "73301", "2026-03-30");
+    // Must say no aggregate overall %
+    expect(result.basePrompt).toMatch(/aggregate|overall %/i);
+  });
+
+  it("basePrompt excludes [ALIGNMENT_SCORES] for propositions", () => {
+    const result = generatePrompt(txData, "73301", "2026-03-30");
+    // The propositions section should explicitly exclude alignment scores
+    expect(result.basePrompt).toMatch(
+      /proposition.*not.*alignment|DO NOT emit.*alignment.*proposition|proposition.*DO NOT emit.*ALIGNMENT/is,
+    );
+  });
 });

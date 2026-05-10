@@ -30,11 +30,16 @@ import {
   stripRacePatternsBlocks,
   hasOpenRacePatternsBlock,
   stripPartialRacePatternsBlock,
+  parseAlignmentScoresBlock,
+  stripAlignmentScoresBlocks,
+  hasOpenAlignmentScoresBlock,
+  stripPartialAlignmentScoresBlock,
   parseConcernInterpretationBlock,
   stripConcernInterpretationBlocks,
   hasOpenConcernInterpretationBlock,
   stripPartialConcernInterpretationBlock,
 } from "../lib/structured-blocks";
+import type { AlignmentScoresEntry } from "../lib/structured-blocks";
 
 interface ChatMessage {
   role: "user" | "assistant";
@@ -462,10 +467,18 @@ function renderRacePatterns(
 
   // Streaming placeholder: half-emitted block during stream
   if (isStreaming) {
-    const isOpenBlock = hasOpenRacePatternsBlock(msg.content);
+    const isOpenRaceBlock = hasOpenRacePatternsBlock(msg.content);
+    const isOpenAlignmentBlock = hasOpenAlignmentScoresBlock(msg.content);
     const parsedDuringStream = parseRacePatternsBlock(msg.content);
-    if (isOpenBlock && !parsedDuringStream) {
-      const leadIn = stripPartialRacePatternsBlock(msg.content);
+    // Show placeholder if any relevant block is open (race or alignment),
+    // OR if race block is still being built. When alignment block is open but
+    // race block is complete, we still wait for alignment to finish.
+    const anyBlockOpen = isOpenRaceBlock || isOpenAlignmentBlock;
+    if (anyBlockOpen && (!parsedDuringStream || isOpenAlignmentBlock)) {
+      // Strip both partial blocks to get clean lead-in prose
+      const leadIn = stripPartialAlignmentScoresBlock(
+        stripPartialRacePatternsBlock(msg.content),
+      );
       return (
         <article
           key={idx}
@@ -488,9 +501,20 @@ function renderRacePatterns(
   const block = parseRacePatternsBlock(msg.content);
   if (!block) return null;
 
-  // Strip any values-tag-request blocks too — race-patterns wins if both present.
+  // Parse the optional sibling alignment scores block (same race)
+  let alignmentScoresByCandidate: Map<string, AlignmentScoresEntry> | undefined;
+  if (msg.content.includes("[/ALIGNMENT_SCORES]")) {
+    const alignmentBlock = parseAlignmentScoresBlock(msg.content);
+    if (alignmentBlock && alignmentBlock.race === block.race) {
+      alignmentScoresByCandidate = new Map(
+        alignmentBlock.entries.map((e) => [e.candidateId, e]),
+      );
+    }
+  }
+
+  // Strip both block types and values-tag-request blocks from prose
   const prose = stripValuesTagRequestBlocks(
-    stripRacePatternsBlocks(msg.content),
+    stripAlignmentScoresBlocks(stripRacePatternsBlocks(msg.content)),
   );
   return (
     <article
@@ -510,6 +534,7 @@ function renderRacePatterns(
         onPick={onPick}
         onSkip={onSkip}
         isStreaming={parentIsStreaming}
+        alignmentScoresByCandidate={alignmentScoresByCandidate}
       />
     </article>
   );

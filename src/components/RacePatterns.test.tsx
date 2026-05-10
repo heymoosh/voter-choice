@@ -5,7 +5,10 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import { RacePatterns } from "./RacePatterns";
 import { LanguageProvider } from "../lib/i18n";
-import type { RacePatternsBlock } from "../lib/structured-blocks";
+import type {
+  RacePatternsBlock,
+  AlignmentScoresEntry,
+} from "../lib/structured-blocks";
 
 /* ── Fixtures ─────────────────────────────────────────────── */
 
@@ -561,5 +564,236 @@ describe("RacePatterns — proposition variant", () => {
     const footer = screen.getByTestId("race-patterns-sources-footer");
     expect(footer).toHaveTextContent(/TEC PAC filings/);
     expect(footer).toHaveTextContent(/City Controller fiscal note/);
+  });
+});
+
+/* ── Alignment score fixtures ─────────────────────────────── */
+
+const alignmentEntryA: AlignmentScoresEntry = {
+  candidateId: "cand-a",
+  scores: [
+    {
+      canonicalIssue: "healthcare_access",
+      issueLabel: "Healthcare access",
+      resolvedStance: "expand healthcare access",
+      kept: 3,
+      total: 5,
+      contributingVotes: [
+        {
+          billTitle: "HB 100 — Medicaid Expansion",
+          voteCast: "with",
+          date: "2021-05-12",
+          source: {
+            name: "Texas House Clerk",
+            url: "https://capitol.texas.gov/",
+          },
+        },
+        {
+          billTitle: "SB 200 — Insurance Mandate Repeal",
+          voteCast: "against",
+          date: "2022-03-08",
+          source: {
+            name: "Texas Senate Journal",
+            url: "https://journal.senate.texas.gov/",
+          },
+        },
+      ],
+    },
+    {
+      canonicalIssue: "public_safety",
+      issueLabel: "Public safety",
+      resolvedStance: "expand law enforcement funding",
+      kept: 4,
+      total: 4,
+      contributingVotes: [
+        {
+          billTitle: "HB 500 — Police Funding Increase",
+          voteCast: "with",
+          date: "2023-04-20",
+          source: {
+            name: "Texas House Clerk",
+            url: "https://capitol.texas.gov/",
+          },
+        },
+      ],
+    },
+  ],
+};
+
+const alignmentEntryB: AlignmentScoresEntry = {
+  candidateId: "cand-b",
+  scores: null,
+  unavailable: { reason: "No voting record yet — first-time candidate" },
+};
+
+const alignmentScoresMap = new Map<string, AlignmentScoresEntry>([
+  ["cand-a", alignmentEntryA],
+  ["cand-b", alignmentEntryB],
+]);
+
+/* ── Tests — alignment score banner ──────────────────────── */
+
+describe("RacePatterns — alignment score banner", () => {
+  it("renders AlignmentScoreBanner for candidate when alignmentScoresByCandidate is provided", () => {
+    renderPatterns(candidateBlock, {
+      alignmentScoresByCandidate: alignmentScoresMap,
+    });
+    expect(
+      screen.getByTestId("alignment-score-banner-cand-a"),
+    ).toBeInTheDocument();
+  });
+
+  it("renders unavailable banner for candidate with null scores + unavailable", () => {
+    renderPatterns(candidateBlock, {
+      alignmentScoresByCandidate: alignmentScoresMap,
+    });
+    expect(
+      screen.getByTestId("alignment-score-unavailable-cand-b"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByTestId("alignment-score-unavailable-cand-b"),
+    ).toHaveTextContent(/first-time candidate/i);
+  });
+
+  it("does not render alignment banner when alignmentScoresByCandidate is omitted", () => {
+    renderPatterns(candidateBlock);
+    expect(
+      screen.queryByTestId("alignment-score-banner-cand-a"),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByTestId("alignment-score-unavailable-cand-b"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("does not render alignment banner for candidate with no entry in the map", () => {
+    const partialMap = new Map<string, AlignmentScoresEntry>([
+      ["cand-a", alignmentEntryA],
+    ]);
+    renderPatterns(candidateBlock, {
+      alignmentScoresByCandidate: partialMap,
+    });
+    expect(
+      screen.getByTestId("alignment-score-banner-cand-a"),
+    ).toBeInTheDocument();
+    // cand-b has no entry — no banner of any kind
+    expect(
+      screen.queryByTestId("alignment-score-banner-cand-b"),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByTestId("alignment-score-unavailable-cand-b"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("renders disclaimer above the dashboard when alignment scores are provided", () => {
+    renderPatterns(candidateBlock, {
+      alignmentScoresByCandidate: alignmentScoresMap,
+    });
+    expect(
+      screen.getByTestId("race-patterns-alignment-disclaimer"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByTestId("race-patterns-alignment-disclaimer"),
+    ).toHaveTextContent(/AI can make mistakes/i);
+  });
+
+  it("does not render disclaimer when alignmentScoresByCandidate is omitted", () => {
+    renderPatterns(candidateBlock);
+    expect(
+      screen.queryByTestId("race-patterns-alignment-disclaimer"),
+    ).not.toBeInTheDocument();
+  });
+});
+
+/* ── Tests — alignment drill-down ────────────────────────── */
+
+describe("RacePatterns — alignment drill-down", () => {
+  it("tapping a score card expands the drilldown inline below the banner", () => {
+    renderPatterns(candidateBlock, {
+      alignmentScoresByCandidate: alignmentScoresMap,
+    });
+    // Drilldown not present initially
+    expect(
+      screen.queryByTestId("alignment-drilldown-healthcare_access"),
+    ).not.toBeInTheDocument();
+
+    // Tap the healthcare_access score card for cand-a
+    fireEvent.click(
+      screen.getByTestId("alignment-score-card-healthcare_access"),
+    );
+
+    expect(
+      screen.getByTestId("alignment-drilldown-healthcare_access"),
+    ).toBeInTheDocument();
+  });
+
+  it("tapping the close button collapses the drilldown", () => {
+    renderPatterns(candidateBlock, {
+      alignmentScoresByCandidate: alignmentScoresMap,
+    });
+    fireEvent.click(
+      screen.getByTestId("alignment-score-card-healthcare_access"),
+    );
+    expect(
+      screen.getByTestId("alignment-drilldown-healthcare_access"),
+    ).toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId("alignment-drilldown-close"));
+    expect(
+      screen.queryByTestId("alignment-drilldown-healthcare_access"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("tapping the same score again collapses it (toggle behavior)", () => {
+    renderPatterns(candidateBlock, {
+      alignmentScoresByCandidate: alignmentScoresMap,
+    });
+    const card = screen.getByTestId("alignment-score-card-healthcare_access");
+    fireEvent.click(card);
+    expect(
+      screen.getByTestId("alignment-drilldown-healthcare_access"),
+    ).toBeInTheDocument();
+
+    fireEvent.click(card);
+    expect(
+      screen.queryByTestId("alignment-drilldown-healthcare_access"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("tapping a different score swaps the drilldown", () => {
+    renderPatterns(candidateBlock, {
+      alignmentScoresByCandidate: alignmentScoresMap,
+    });
+    fireEvent.click(
+      screen.getByTestId("alignment-score-card-healthcare_access"),
+    );
+    expect(
+      screen.getByTestId("alignment-drilldown-healthcare_access"),
+    ).toBeInTheDocument();
+
+    // Tap public_safety card — swaps to that one
+    fireEvent.click(screen.getByTestId("alignment-score-card-public_safety"));
+    expect(
+      screen.queryByTestId("alignment-drilldown-healthcare_access"),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByTestId("alignment-drilldown-public_safety"),
+    ).toBeInTheDocument();
+  });
+
+  it("existing four-pattern tests still pass without alignment data", () => {
+    // This test replicates the basic four-pattern check to guard against regression.
+    renderPatterns(candidateBlock);
+    expect(screen.getByTestId("race-patterns")).toBeInTheDocument();
+    expect(
+      screen.getByTestId("race-patterns-comparison-strip"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByTestId("race-patterns-candidate-cand-a"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByTestId("race-patterns-candidate-cand-b"),
+    ).toBeInTheDocument();
+    // No alignment content without the prop
+    expect(screen.queryByTestId(/alignment-score-/)).not.toBeInTheDocument();
   });
 });

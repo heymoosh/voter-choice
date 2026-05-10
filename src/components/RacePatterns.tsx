@@ -10,9 +10,12 @@ import type {
   EndorsementEntry,
   RetrospectiveEntry,
   SourceRef,
+  AlignmentScoresEntry,
 } from "../lib/structured-blocks";
 import { FunderBars } from "./FunderBars";
 import { PlatformAlignmentRatio } from "./PlatformAlignmentRatio";
+import { AlignmentScoreBanner } from "./AlignmentScoreBanner";
+import { AlignmentDrilldown } from "./AlignmentDrilldown";
 
 /* ──────────────────────────────────────────────────────────────
  * RacePatterns — four-pattern candidate/proposition dashboard.
@@ -41,6 +44,7 @@ export interface RacePatternsProps {
   isSubmitted?: boolean;
   pickedCandidateId?: string;
   isStreaming?: boolean;
+  alignmentScoresByCandidate?: Map<string, AlignmentScoresEntry>;
 }
 
 /* ── Anonymous label helpers ──────────────────────────────── */
@@ -319,6 +323,10 @@ function CandidateSection({
   registry,
   onPick,
   t,
+  alignmentEntry,
+  expandedDrilldownIssue,
+  onDrillDown,
+  onDrillDownClose,
 }: {
   candidate: RacePatternsCandidate;
   idx: number;
@@ -330,6 +338,10 @@ function CandidateSection({
   registry: SourceRegistry;
   onPick: () => void;
   t: (typeof translations)["en"]["research"];
+  alignmentEntry?: AlignmentScoresEntry;
+  expandedDrilldownIssue?: string | null;
+  onDrillDown: (canonicalIssue: string) => void;
+  onDrillDownClose: () => void;
 }) {
   const showName = isProposition || revealed;
   const displayLabel = showName
@@ -338,11 +350,34 @@ function CandidateSection({
   const pickDisabled =
     submitting || submitted || (!isProposition && !revealed) || isStreaming;
 
+  // Find the expanded score object (if any) for this candidate's drilldown
+  const expandedScore =
+    alignmentEntry?.scores && expandedDrilldownIssue
+      ? (alignmentEntry.scores.find(
+          (s) => s.canonicalIssue === expandedDrilldownIssue,
+        ) ?? null)
+      : null;
+
   return (
     <section
       data-testid={`race-patterns-candidate-${candidate.id}`}
       className="bg-surface-lowest border-l-4 border-primary border border-outline-variant/40 px-4 py-4 space-y-4"
     >
+      {/* Alignment score banner — above the four-pattern content */}
+      {alignmentEntry && (
+        <AlignmentScoreBanner
+          entry={alignmentEntry}
+          candidateLabel={displayLabel}
+          onDrillDown={onDrillDown}
+          expandedIssue={expandedDrilldownIssue}
+        />
+      )}
+
+      {/* Inline drilldown — below the banner, above pattern sections */}
+      {expandedScore && (
+        <AlignmentDrilldown score={expandedScore} onClose={onDrillDownClose} />
+      )}
+
       {/* Header */}
       <header className="flex items-start justify-between gap-3">
         <div>
@@ -581,12 +616,36 @@ export function RacePatterns({
   isSubmitted = false,
   pickedCandidateId,
   isStreaming = false,
+  alignmentScoresByCandidate,
 }: RacePatternsProps) {
   const { lang } = useLanguage();
   const t = translations[lang].research;
 
   const isProp = isPropositionBlock(block);
   const [revealed, setRevealed] = useState(isProp);
+
+  // Drilldown state: which (candidateId, canonicalIssue) is expanded
+  const [expandedDrilldown, setExpandedDrilldown] = useState<{
+    candidateId: string | null;
+    canonicalIssue: string | null;
+  }>({ candidateId: null, canonicalIssue: null });
+
+  function handleDrillDown(candidateId: string, canonicalIssue: string) {
+    setExpandedDrilldown((prev) => {
+      // Tapping the same score collapses; tapping a different one swaps
+      if (
+        prev.candidateId === candidateId &&
+        prev.canonicalIssue === canonicalIssue
+      ) {
+        return { candidateId: null, canonicalIssue: null };
+      }
+      return { candidateId, canonicalIssue };
+    });
+  }
+
+  function handleDrillDownClose() {
+    setExpandedDrilldown({ candidateId: null, canonicalIssue: null });
+  }
 
   // Pre-build a source registry by walking all candidate data imperatively.
   // This must happen before the JSX return so the SourceFooter can receive
@@ -625,6 +684,16 @@ export function RacePatterns({
         <div className="mt-2 h-px bg-on-surface/15" aria-hidden="true" />
       </header>
 
+      {/* Disclaimer — shown when alignment scores are present */}
+      {alignmentScoresByCandidate && alignmentScoresByCandidate.size > 0 && (
+        <p
+          data-testid="race-patterns-alignment-disclaimer"
+          className="text-[10px] italic text-on-surface-muted"
+        >
+          {t.racePatternsDisclaimer}
+        </p>
+      )}
+
       {/* Sticky comparison strip — donor coalition side-by-side */}
       <div>
         <div
@@ -656,21 +725,36 @@ export function RacePatterns({
 
       {/* Candidate sections */}
       <div className="space-y-4">
-        {block.candidates.map((c, idx) => (
-          <CandidateSection
-            key={c.id}
-            candidate={c}
-            idx={idx}
-            isProposition={isProp}
-            revealed={revealed}
-            submitted={isSubmitted}
-            submitting={isSubmitting}
-            isStreaming={isStreaming}
-            registry={registry}
-            onPick={() => onPick(c.id, c.name)}
-            t={t}
-          />
-        ))}
+        {block.candidates.map((c, idx) => {
+          const alignmentEntry = alignmentScoresByCandidate?.get(c.id);
+          const isThisCandidateExpanded =
+            expandedDrilldown.candidateId === c.id;
+          return (
+            <CandidateSection
+              key={c.id}
+              candidate={c}
+              idx={idx}
+              isProposition={isProp}
+              revealed={revealed}
+              submitted={isSubmitted}
+              submitting={isSubmitting}
+              isStreaming={isStreaming}
+              registry={registry}
+              onPick={() => onPick(c.id, c.name)}
+              t={t}
+              alignmentEntry={alignmentEntry}
+              expandedDrilldownIssue={
+                isThisCandidateExpanded
+                  ? expandedDrilldown.canonicalIssue
+                  : null
+              }
+              onDrillDown={(canonicalIssue) =>
+                handleDrillDown(c.id, canonicalIssue)
+              }
+              onDrillDownClose={handleDrillDownClose}
+            />
+          );
+        })}
       </div>
 
       {/* Reveal button — candidate variant only, before reveal */}
