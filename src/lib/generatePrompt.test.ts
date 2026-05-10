@@ -350,6 +350,57 @@ describe("generatePrompt", () => {
     );
   });
 
+  it("basePrompt tells model NOT to label a guess at voter lean for propositions", () => {
+    const result = generatePrompt(txData, "73301", "2026-03-30");
+    // No-labeled-guess rule must appear in the propositions section
+    expect(result.basePrompt).toContain(
+      "Do NOT infer or label a recommended lean",
+    );
+    // The tradeoff-as-question pattern must be present
+    expect(result.basePrompt).toContain("YES locks in funding now");
+    expect(result.basePrompt).toContain("Which side do you weigh more");
+  });
+
+  it("basePrompt instructs a 2-3 sentence YES/NO lead-in before [RACE_PATTERNS] for propositions", () => {
+    const result = generatePrompt(txData, "73301", "2026-03-30");
+    // Lead-in subsection must be present with the sentence-count cap
+    expect(result.basePrompt).toContain(
+      "Conversational lead-in for propositions",
+    );
+    expect(result.basePrompt).toContain("2–3 sentences max");
+    // Lead-in must include YES and NO plain-language clauses
+    expect(result.basePrompt).toContain('States what "YES" actually does');
+    expect(result.basePrompt).toContain('States what "NO" actually does');
+  });
+
+  it("basePrompt references [VOTER CONFIRMED CONCERNS] in the proposition lead-in framing", () => {
+    const result = generatePrompt(txData, "73301", "2026-03-30");
+    // The propositions section must reference confirmed concerns for the lead-in
+    expect(result.basePrompt).toContain(
+      "touches what you said about [concern]",
+    );
+    // Must use confirmed concerns, not raw chip ids
+    expect(result.basePrompt).toContain("[VOTER CONFIRMED CONCERNS]");
+  });
+
+  it("basePrompt preserves no-anonymization rule for propositions (YES/NO labeled from start)", () => {
+    const result = generatePrompt(txData, "73301", "2026-03-30");
+    // The YES/NO-from-the-start rule must still be present
+    expect(result.basePrompt).toContain(
+      "Propositions render labeled YES / NO from the start",
+    );
+    expect(result.basePrompt).toContain("there is nothing to anonymize");
+  });
+
+  it("basePrompt preserves no-alignment-scores rule for propositions from prior packets", () => {
+    const result = generatePrompt(txData, "73301", "2026-03-30");
+    // The proposition alignment exclusion must still be in the prompt
+    // (line: "Do NOT emit `[ALIGNMENT_SCORES]` for propositions.")
+    expect(result.basePrompt).toMatch(
+      /Do NOT emit.*ALIGNMENT_SCORES.*for propositions|for propositions.*Do NOT emit.*ALIGNMENT/is,
+    );
+  });
+
   it("contextBlock contains voter ID info when idRequired is true", () => {
     const result = generatePrompt(txData, "73301", "2026-03-30");
     expect(result.contextBlock).toContain("Texas driver");
