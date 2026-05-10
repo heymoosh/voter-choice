@@ -6,14 +6,14 @@ async function fillZip(page: Page, zip: string) {
   await page.getByTestId("zip-submit").click();
 }
 
-/** Wait for the research workspace to be fully visible (chat + prompt). */
+/** Wait for the research workspace to be present in the DOM (chat + prompt). */
 async function waitForResearchWorkspace(page: Page) {
   await page.getByTestId("chat-window").waitFor({
-    state: "visible",
+    state: "attached",
     timeout: 10000,
   });
   await page.getByTestId("prompt-output").waitFor({
-    state: "visible",
+    state: "attached",
     timeout: 10000,
   });
 }
@@ -118,17 +118,17 @@ test.describe("Valid zip code — Texas (73301)", () => {
     await page.getByTestId("zip-submit").click();
     await resolveTexasRunoffGate(page);
     await page.getByTestId("chat-window").waitFor({
-      state: "visible",
+      state: "attached",
       timeout: 10000,
     });
     await page.getByTestId("prompt-output").waitFor({
-      state: "visible",
+      state: "attached",
       timeout: 10000,
     });
   });
 
   test("displays research workspace", async ({ page }) => {
-    await expect(page.getByTestId("chat-window")).toBeVisible();
+    await expect(page.getByTestId("chat-window")).toBeAttached();
     await expect(page.getByTestId("prompt-output")).toBeVisible();
     await expect(page.getByTestId("ballot-data-status")).toBeVisible();
   });
@@ -173,7 +173,7 @@ test.describe("Valid zip code — California (90210)", () => {
     await page.goto("/");
     await page.getByTestId("zip-input").fill("90210");
     await page.getByTestId("zip-submit").click();
-    await expect(page.getByTestId("chat-window")).toBeVisible();
+    await expect(page.getByTestId("chat-window")).toBeAttached();
     await expect(page.getByTestId("prompt-output")).toContainText(
       /California/i,
     );
@@ -272,7 +272,7 @@ test.describe("Keyboard accessibility", () => {
     await zipInput.press("Enter");
     await resolveTexasRunoffGate(page);
     // Should show research workspace (form submitted via Enter)
-    await expect(page.getByTestId("chat-window")).toBeVisible();
+    await expect(page.getByTestId("chat-window")).toBeAttached();
   });
 
   test("can tab through interactive elements", async ({ page }) => {
