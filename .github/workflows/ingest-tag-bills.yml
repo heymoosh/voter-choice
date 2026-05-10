@@ -42,11 +42,21 @@ jobs:
           echo "::add-mask::$DATABASE_URL"
 
           # ---------------------------------------------------------------
-          # OPENSTATES_API_KEY — available for future Phase D calls
+          # OPENSTATES_API_KEY — retained for context; not used by tag-bills
           # ---------------------------------------------------------------
           OPENSTATES_API_KEY=$(bws secret get 85bad136-3cbc-4062-9ccc-b4460037de19 --access-token "$BWS_ACCESS_TOKEN" --output json | jq -r '.value')
           echo "OPENSTATES_API_KEY=$OPENSTATES_API_KEY" >> "$GITHUB_ENV"
           echo "::add-mask::$OPENSTATES_API_KEY"
 
-      - name: Run bill issue tagger (Phase A — no-op skeleton)
+          # ---------------------------------------------------------------
+          # ANTHROPIC_VOTER_API — Anthropic API key used for LLM tagging
+          # UUID: c569bc18-1095-4532-b5df-b42a00f87c2e
+          # Same secret as the chat API (deploy.yml). Pulled here so the
+          # tagger can call Claude without app-side access.
+          # ---------------------------------------------------------------
+          ANTHROPIC_VOTER_API=$(bws secret get c569bc18-1095-4532-b5df-b42a00f87c2e --access-token "$BWS_ACCESS_TOKEN" --output json | jq -r '.value')
+          echo "ANTHROPIC_VOTER_API=$ANTHROPIC_VOTER_API" >> "$GITHUB_ENV"
+          echo "::add-mask::$ANTHROPIC_VOTER_API"
+
+      - name: Run bill issue tagger (Phase D — LLM tagging)
         run: npx tsx scripts/ingest/tag-bills.ts

@@ -23,7 +23,8 @@
     "clean-start": "rm -rf node_modules .next coverage .jscpd-report .lighthouseci .vitest-report.json .eslint-report.json playwright-report.json && npm install",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "db:smoke": "npx tsx scripts/ingest/_smoke.ts"
+    "db:smoke": "npx tsx scripts/ingest/_smoke.ts",
+    "db:tag-bills": "npx tsx scripts/ingest/tag-bills.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "0.39.0",
