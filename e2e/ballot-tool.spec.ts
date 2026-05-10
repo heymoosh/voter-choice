@@ -1,4 +1,22 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
+
+/** Fill the zip-code form and submit. */
+async function fillZip(page: Page, zip: string) {
+  await page.getByTestId("zip-input").fill(zip);
+  await page.getByTestId("zip-submit").click();
+}
+
+/** Wait for the research workspace to be fully visible (chat + prompt). */
+async function waitForResearchWorkspace(page: Page) {
+  await page.getByTestId("chat-window").waitFor({
+    state: "visible",
+    timeout: 10000,
+  });
+  await page.getByTestId("prompt-output").waitFor({
+    state: "visible",
+    timeout: 10000,
+  });
+}
 
 async function resolveTexasRunoffGate(page: import("@playwright/test").Page) {
   const gate = page.getByTestId("runoff-gate");
@@ -374,5 +392,153 @@ test.describe("Footer links", () => {
     await page.goto("/");
     const footer = page.getByRole("contentinfo");
     await expect(footer).toContainText(/Data last updated/i);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Per-state coverage — all 9 populated states + Wyoming fallback
+// ---------------------------------------------------------------------------
+
+// Texas (73301) — runoff gate should be visible (runoff upcoming, partyLocked=true)
+test.describe("State coverage — Texas runoff gate (73301)", () => {
+  test("shows runoff gate for Texas address", async ({ page }) => {
+    await page.goto("/");
+    await fillZip(page, "73301");
+    const gate = page.getByTestId("runoff-gate");
+    await gate.waitFor({ state: "visible", timeout: 8000 });
+    await expect(gate).toBeVisible();
+    // Gate title references Texas
+    await expect(gate).toContainText(/Texas/i);
+  });
+});
+
+// New York (10007) — no runoff gate; prompt contains state name and registration deadline
+test.describe("State coverage — New York (10007)", () => {
+  test("renders New York-specific data for a NY address", async ({ page }) => {
+    await page.goto("/");
+    await fillZip(page, "10007");
+    await expect(page.getByTestId("not-found-message")).toHaveCount(0);
+    // No runoff gate for NY
+    await expect(page.getByTestId("runoff-gate")).toHaveCount(0);
+    await waitForResearchWorkspace(page);
+    const promptOutput = page.getByTestId("prompt-output");
+    await expect(promptOutput).toContainText(/New York/i);
+    // Registration deadline from NY top-level registration (general: 2026-10-09)
+    await expect(promptOutput).toContainText(/2026-10-09/);
+  });
+});
+
+// Florida (32399) — no runoff gate; state name in prompt
+test.describe("State coverage — Florida (32399)", () => {
+  test("renders Florida-specific data for a FL address", async ({ page }) => {
+    await page.goto("/");
+    await fillZip(page, "32399");
+    await expect(page.getByTestId("not-found-message")).toHaveCount(0);
+    await expect(page.getByTestId("runoff-gate")).toHaveCount(0);
+    await waitForResearchWorkspace(page);
+    const promptOutput = page.getByTestId("prompt-output");
+    await expect(promptOutput).toContainText(/Florida/i);
+    // Registration deadline from FL top-level registration: 2026-10-05
+    await expect(promptOutput).toContainText(/2026-10-05/);
+  });
+});
+
+// Georgia (30303) — runoff gate IS visible (runoff upcoming, partyLocked=true)
+test.describe("State coverage — Georgia runoff gate (30303)", () => {
+  test("shows runoff gate for Georgia address", async ({ page }) => {
+    await page.goto("/");
+    await fillZip(page, "30303");
+    const gate = page.getByTestId("runoff-gate");
+    await gate.waitFor({ state: "visible", timeout: 8000 });
+    await expect(gate).toBeVisible();
+    // Gate title references Georgia
+    await expect(gate).toContainText(/Georgia/i);
+  });
+});
+
+// North Carolina (27601) — runoff upcoming but partyLocked=false → no runoff gate
+test.describe("State coverage — North Carolina (27601)", () => {
+  test("renders North Carolina-specific data for a NC address", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    await fillZip(page, "27601");
+    await expect(page.getByTestId("not-found-message")).toHaveCount(0);
+    // NC has runoff but partyLockedToFirstRoundPrimary=false → no runoff gate
+    await expect(page.getByTestId("runoff-gate")).toHaveCount(0);
+    await waitForResearchWorkspace(page);
+    const promptOutput = page.getByTestId("prompt-output");
+    await expect(promptOutput).toContainText(/North Carolina/i);
+    // Registration deadline from NC top-level registration: 2026-10-09
+    await expect(promptOutput).toContainText(/2026-10-09/);
+  });
+});
+
+// New Hampshire (03301) — no online reg deadline (SDR state); no runoff gate
+test.describe("State coverage — New Hampshire (03301)", () => {
+  test("renders New Hampshire-specific data for a NH address", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    await fillZip(page, "03301");
+    await expect(page.getByTestId("not-found-message")).toHaveCount(0);
+    await expect(page.getByTestId("runoff-gate")).toHaveCount(0);
+    await waitForResearchWorkspace(page);
+    const promptOutput = page.getByTestId("prompt-output");
+    await expect(promptOutput).toContainText(/New Hampshire/i);
+    // NH has no online registration deadline (same-day registration state)
+    // Confirm state name appears without asserting an online deadline date
+  });
+});
+
+// Arizona (86515 — multi-state AZ/NM; user must select state)
+test.describe("State coverage — Arizona via multi-state selector (86515)", () => {
+  test("shows state selector then renders Arizona data", async ({ page }) => {
+    await page.goto("/");
+    await fillZip(page, "86515");
+    // Multi-state selector appears (renders state codes as button labels)
+    const stateSelector = page.getByTestId("state-selector");
+    await expect(stateSelector).toBeVisible();
+    // Select Arizona — buttons show state code "AZ"
+    await stateSelector.getByRole("button", { name: "AZ" }).click();
+    await expect(page.getByTestId("not-found-message")).toHaveCount(0);
+    await expect(page.getByTestId("runoff-gate")).toHaveCount(0);
+    await waitForResearchWorkspace(page);
+    const promptOutput = page.getByTestId("prompt-output");
+    await expect(promptOutput).toContainText(/Arizona/i);
+    // Registration deadline from AZ top-level registration: 2026-07-06
+    await expect(promptOutput).toContainText(/2026-07-06/);
+  });
+});
+
+// New Mexico (86515 — multi-state AZ/NM; user selects NM)
+test.describe("State coverage — New Mexico via multi-state selector (86515)", () => {
+  test("shows state selector then renders New Mexico data", async ({ page }) => {
+    await page.goto("/");
+    await fillZip(page, "86515");
+    const stateSelector = page.getByTestId("state-selector");
+    await expect(stateSelector).toBeVisible();
+    // Select New Mexico — buttons show state code "NM"
+    await stateSelector.getByRole("button", { name: "NM" }).click();
+    await expect(page.getByTestId("not-found-message")).toHaveCount(0);
+    await expect(page.getByTestId("runoff-gate")).toHaveCount(0);
+    await waitForResearchWorkspace(page);
+    const promptOutput = page.getByTestId("prompt-output");
+    await expect(promptOutput).toContainText(/New Mexico/i);
+  });
+});
+
+// Wyoming (82001) — unpopulated state: zip not in lookup ranges → not-found-message
+test.describe("State coverage — Wyoming fallback (82001)", () => {
+  test("renders not-found for an unpopulated state zip (Wyoming)", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    await fillZip(page, "82001");
+    // Wyoming is not in the zip lookup ranges; app shows not-found-message
+    const notFound = page.getByTestId("not-found-message");
+    await expect(notFound).toBeVisible();
+    // Runoff gate should not appear
+    await expect(page.getByTestId("runoff-gate")).toHaveCount(0);
   });
 });
