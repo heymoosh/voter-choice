@@ -250,6 +250,22 @@ function ElectionResult({
   const preResearchContext = runoffContextNote(state, runoffChoice, lang);
   const researchReady = !needsRunoffGate || runoffChoice !== null;
 
+  // Derive primary lane for polis counters from runoff gate choice
+  const primaryLane: "DEM" | "REP" | "OPEN" | "GENERAL" = (() => {
+    if (!runoffChoice) return "GENERAL";
+    if (
+      runoffChoice === "voted_dem_primary" ||
+      runoffChoice === "did_not_vote_dem_runoff"
+    )
+      return "DEM";
+    if (
+      runoffChoice === "voted_rep_primary" ||
+      runoffChoice === "did_not_vote_rep_runoff"
+    )
+      return "REP";
+    return "OPEN";
+  })();
+
   // Resolve county: prefer civic API county, fall back to zip-based lookup
   const civicCounty = pollingData?.county ?? null;
   const zipCounty = lookupCounty(state.stateCode, zipCode);
@@ -339,6 +355,7 @@ function ElectionResult({
         onUserSampleBallotTextChange={setUserSampleBallotText}
         preResearchContext={preResearchContext}
         researchReady={researchReady}
+        primary={primaryLane}
         preResearchGate={
           needsRunoffGate ? (
             <RunoffGate

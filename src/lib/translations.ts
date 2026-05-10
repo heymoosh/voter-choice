@@ -300,6 +300,24 @@ export interface Translations {
       issueLabel: string,
     ) => string;
     alignmentDrilldownDisclaimer: string;
+    // PrivacyCallout
+    privacyCalloutP1: string;
+    privacyCalloutP2: string;
+    privacyCalloutP3: string;
+    privacyCalloutCompactHeadline: string;
+    privacyCalloutCompactExpand: string;
+    privacyCalloutCompactCollapse: string;
+    // PolisOverlay
+    polisOverlayLoading: string;
+    polisOverlayLockedHeading: (scopeName: string) => string;
+    polisOverlayUnlockCounter: (n: number) => string;
+    polisOverlayHeading: (scopeName: string) => string;
+    polisOverlayShapeFraming: string;
+    polisOverlayYouLabel: string;
+    polisOverlayNoYouCaption: string;
+    polisOverlayConsensusHeading: string;
+    polisOverlayConsensusSubtitle: string;
+    polisOverlaySampleFooter: (sampleSize: number, scopeName: string) => string;
   };
   portfolio: {
     badge: string;
@@ -714,7 +732,7 @@ const en: Translations = {
     racePatternsEndorsementMixed: "Mixed",
     racePatternsDisclaimer:
       "AI can make mistakes. Tap any score to see the contributing votes and verify the sources.",
-    tabCloseWarningBanner: `This session isn’t saved. Get the summary or tap “Finish this later” before closing the tab.`,
+    tabCloseWarningBanner: `We save anonymous counts only — never who said what. Get your summary before closing the tab; without it, your in-progress research is gone.`,
     pdfScannedError: `This PDF appears to be scanned and can’t be auto-extracted. Open it, copy the text, and paste it here instead.`,
     pdfLoadError: `We couldn’t load the PDF reader right now. Please try again in a moment, or open the PDF, copy the text, and paste it here.`,
     // ConcernInterpretation
@@ -750,6 +768,34 @@ const en: Translations = {
     ) => `Why ${kept} of ${total} on ${issueLabel}?`,
     alignmentDrilldownDisclaimer:
       "AI can make mistakes. Click any source to verify.",
+    // PrivacyCallout
+    privacyCalloutP1:
+      "No accounts. No tracking. No persistent storage on your device. We count what people care about — never who said what.",
+    privacyCalloutP2:
+      "When you finish your session, we add to running totals for your county and primary. There is no record anywhere that says “this voter answered X.” There are only counts.",
+    privacyCalloutP3:
+      "Even with a subpoena, we couldn’t tell anyone your answers. The records don’t exist to compel.",
+    privacyCalloutCompactHeadline:
+      "We save anonymous counts only — never who said what.",
+    privacyCalloutCompactExpand: "Read more",
+    privacyCalloutCompactCollapse: "Show less",
+    // PolisOverlay
+    polisOverlayLoading: "Loading the shape of your county…",
+    polisOverlayLockedHeading: (scopeName: string) =>
+      `This view unlocks once enough ${scopeName} voters have used the tool.`,
+    polisOverlayUnlockCounter: (n: number) => `About ${n} more to go.`,
+    polisOverlayHeading: (scopeName: string) =>
+      `How ${scopeName} voters are sorting themselves.`,
+    polisOverlayShapeFraming:
+      "This is the shape of your county, not a record of who voted.",
+    polisOverlayYouLabel: "you",
+    polisOverlayNoYouCaption:
+      "You didn’t state priorities, so we don’t have a position for you on this map. Here’s the broader pattern.",
+    polisOverlayConsensusHeading: "Top shared priorities across primaries",
+    polisOverlayConsensusSubtitle:
+      "Shared priority means voters across primaries flagged this issue. They may still disagree on the policy answer.",
+    polisOverlaySampleFooter: (sampleSize: number, scopeName: string) =>
+      `Based on ${sampleSize} ${scopeName} sessions through this tool.`,
   },
   portfolio: {
     badge: "Verified Research",
@@ -1185,9 +1231,9 @@ const es: Translations = {
     racePatternsEndorsementMixed: "Mixed",
     racePatternsDisclaimer:
       "AI can make mistakes. Tap any score to see the contributing votes and verify the sources.",
-    tabCloseWarningBanner: `This session isn’t saved. Get the summary or tap “Finish this later” before closing the tab.`,
+    tabCloseWarningBanner: `We save anonymous counts only — never who said what. Get your summary before closing the tab; without it, your in-progress research is gone.`,
     pdfScannedError:
-      "This PDF appears to be scanned and can't be auto-extracted. Open it, copy the text, and paste it here instead.",
+      "This PDF appears to be scanned and can’t be auto-extracted. Open it, copy the text, and paste it here instead.",
     pdfLoadError:
       "We couldn't load the PDF reader right now. Please try again in a moment, or open the PDF, copy the text, and paste it here.",
     // ConcernInterpretation — EN stubs (ES UI out of scope for this packet)
@@ -1223,6 +1269,34 @@ const es: Translations = {
     ) => `Why ${kept} of ${total} on ${issueLabel}?`,
     alignmentDrilldownDisclaimer:
       "AI can make mistakes. Click any source to verify.",
+    // PrivacyCallout \u2014 EN stubs (ES translation held back per packet)
+    privacyCalloutP1:
+      "No accounts. No tracking. No persistent storage on your device. We count what people care about \u2014 never who said what.",
+    privacyCalloutP2:
+      "When you finish your session, we add to running totals for your county and primary. There is no record anywhere that says \u201cthis voter answered X.\u201d There are only counts.",
+    privacyCalloutP3:
+      "Even with a subpoena, we couldn\u2019t tell anyone your answers. The records don\u2019t exist to compel.",
+    privacyCalloutCompactHeadline:
+      "We save anonymous counts only \u2014 never who said what.",
+    privacyCalloutCompactExpand: "Read more",
+    privacyCalloutCompactCollapse: "Show less",
+    // PolisOverlay \u2014 EN stubs (ES translation held back per packet)
+    polisOverlayLoading: "Loading the shape of your county\u2026",
+    polisOverlayLockedHeading: (scopeName: string) =>
+      `This view unlocks once enough ${scopeName} voters have used the tool.`,
+    polisOverlayUnlockCounter: (n: number) => `About ${n} more to go.`,
+    polisOverlayHeading: (scopeName: string) =>
+      `How ${scopeName} voters are sorting themselves.`,
+    polisOverlayShapeFraming:
+      "This is the shape of your county, not a record of who voted.",
+    polisOverlayYouLabel: "you",
+    polisOverlayNoYouCaption:
+      "You didn\u2019t state priorities, so we don\u2019t have a position for you on this map. Here\u2019s the broader pattern.",
+    polisOverlayConsensusHeading: "Top shared priorities across primaries",
+    polisOverlayConsensusSubtitle:
+      "Shared priority means voters across primaries flagged this issue. They may still disagree on the policy answer.",
+    polisOverlaySampleFooter: (sampleSize: number, scopeName: string) =>
+      `Based on ${sampleSize} ${scopeName} sessions through this tool.`,
   },
   portfolio: {
     badge: "Investigaci\u00f3n Verificada",

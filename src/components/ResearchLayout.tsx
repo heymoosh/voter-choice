@@ -57,6 +57,8 @@ interface ResearchLayoutProps {
   preResearchContext?: string;
   researchReady?: boolean;
   preResearchGate?: ReactNode;
+  /** Primary lane for polis counter (derived from runoff gate). */
+  primary?: "DEM" | "REP" | "OPEN" | "GENERAL";
 }
 
 /* ── Icons ──────────────────────────────────────────────────── */
@@ -1359,6 +1361,7 @@ function ResearchView({
   preResearchContext,
   researchReady = true,
   preResearchGate,
+  primary,
 }: {
   state: StateElectionData;
   zipCode: string;
@@ -1376,6 +1379,7 @@ function ResearchView({
   preResearchContext?: string;
   researchReady?: boolean;
   preResearchGate?: ReactNode;
+  primary?: "DEM" | "REP" | "OPEN" | "GENERAL";
 }) {
   const { lang } = useLanguage();
   const t = translations[lang];
@@ -1480,6 +1484,7 @@ function ResearchView({
               countyName={countyName}
               userSampleBallotText={userSampleBallotText}
               preResearchContext={preResearchContext}
+              primary={primary}
             />
           )}
 
@@ -1536,6 +1541,7 @@ export function ResearchLayout({
   preResearchContext,
   researchReady,
   preResearchGate,
+  primary,
 }: ResearchLayoutProps) {
   const [activeTab, setActiveTab] = useState<ResearchTab>("research");
   const { lang } = useLanguage();
@@ -1573,6 +1579,7 @@ export function ResearchLayout({
             preResearchContext={preResearchContext}
             researchReady={researchReady}
             preResearchGate={preResearchGate}
+            primary={primary}
           />
         </div>
 

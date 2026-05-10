@@ -640,4 +640,29 @@ describe("generatePrompt — Spanish mode", () => {
       /proposition.*not.*alignment|DO NOT emit.*alignment.*proposition|proposition.*DO NOT emit.*ALIGNMENT/is,
     );
   });
+
+  /* ── Act 1.5 privacy posture assertions ─────────────────── */
+
+  it("Act 1.5 briefing mentions anonymous county-level counts", () => {
+    const result = generatePrompt(txData, "73301", "2026-03-30");
+    expect(result.basePrompt).toMatch(/anonymous county-level counts/i);
+  });
+
+  it("Act 1.5 briefing contains the subpoena trust anchor", () => {
+    const result = generatePrompt(txData, "73301", "2026-03-30");
+    expect(result.basePrompt).toMatch(/subpoena/i);
+    expect(result.basePrompt).toMatch(/records don't exist to compel/i);
+  });
+
+  it("Act 1.5 briefing no longer claims 'I do NOT save your data'", () => {
+    const result = generatePrompt(txData, "73301", "2026-03-30");
+    expect(result.basePrompt).not.toContain("I do NOT save your data");
+  });
+
+  it("Act 1.5 briefing still tells the user to get the summary before closing the tab", () => {
+    const result = generatePrompt(txData, "73301", "2026-03-30");
+    expect(result.basePrompt).toMatch(
+      /get the summary|grab.*summary|summary.*before.*closing|before stepping away/i,
+    );
+  });
 });

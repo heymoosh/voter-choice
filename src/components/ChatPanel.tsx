@@ -78,6 +78,8 @@ interface ChatPanelProps {
   countyName?: string;
   userSampleBallotText?: string;
   preResearchContext?: string;
+  /** Primary lane for polis counter (derived from runoff gate). */
+  primary?: "DEM" | "REP" | "OPEN" | "GENERAL";
 }
 
 function generateSessionId(): string {
@@ -644,6 +646,11 @@ function ChatMessageList({
   onConfirmConcerns,
   onReinterpretConcern,
   onRemoveConcern,
+  stateCode,
+  county,
+  countyName,
+  stateName,
+  primary,
 }: {
   messages: ChatMessage[];
   isStreaming: boolean;
@@ -674,6 +681,11 @@ function ChatMessageList({
     newText: string,
   ) => void;
   onRemoveConcern: (messageIdx: number, rank: number) => void;
+  stateCode?: string;
+  county?: string;
+  countyName?: string;
+  stateName?: string;
+  primary?: "DEM" | "REP" | "OPEN" | "GENERAL";
 }) {
   const { lang } = useLanguage();
   const t = translations[lang];
@@ -697,6 +709,12 @@ function ChatMessageList({
               <HandoffPackage
                 parsed={parsedHandoff}
                 continuationPrompt={continuationPrompt}
+                messages={messages}
+                stateCode={stateCode}
+                county={county}
+                countyName={countyName}
+                stateName={stateName}
+                primary={primary}
               />
             </div>
           );
@@ -862,6 +880,7 @@ export function ChatPanel({
   countyName,
   userSampleBallotText,
   preResearchContext,
+  primary,
 }: ChatPanelProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
@@ -1242,6 +1261,11 @@ export function ChatPanel({
             onConfirmConcerns={handleConfirmConcerns}
             onReinterpretConcern={handleReinterpretConcern}
             onRemoveConcern={handleRemoveConcern}
+            stateCode={state.stateCode}
+            county={countyName}
+            countyName={countyName}
+            stateName={state.stateName}
+            primary={primary}
           />
 
           {isStreaming && searchActivity && (

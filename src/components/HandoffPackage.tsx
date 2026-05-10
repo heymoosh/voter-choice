@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useLanguage } from "../lib/i18n";
 import { translations } from "../lib/translations";
 import {
@@ -9,8 +9,10 @@ import {
   extractBallot,
   extractVoterProfile,
 } from "../lib/ballot-utils";
+import { PolisOverlay } from "./PolisOverlay";
+import type { PolisData } from "./PolisOverlay";
 
-interface ParsedHandoff {
+export interface ParsedHandoff {
   ballot: string | null;
   voterProfile: string | null;
   handoffBlock: string | null;
@@ -71,9 +73,103 @@ export function buildContinuationPrompt(
   return prompt;
 }
 
+/* ── Session context helpers ───────────────────────────────── */
+
+/** Parse canonicalIssue ids from a [VOTER CONFIRMED CONCERNS] payload. */
+export function parseConfirmedConcerns(
+  messages: { role: string; content: string }[],
+): string[] {
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const msg = messages[i];
+    if (msg.role !== "user") continue;
+    const match = msg.content.match(
+      /\[VOTER CONFIRMED CONCERNS\]\s+confirmations=(\[[\s\S]*?\])/,
+    );
+    if (!match) continue;
+    try {
+      const confirmations = JSON.parse(match[1]) as Array<{
+        canonicalIssue?: string;
+      }>;
+      return confirmations
+        .map((c) => c.canonicalIssue)
+        .filter((id): id is string => typeof id === "string" && id.length > 0);
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
+/** Parse race picks from all [VOTER PICKED] payloads in the conversation. */
+export function parsePicks(
+  messages: { role: string; content: string }[],
+): Array<{ race: string; candidateId: string }> {
+  const picks: Array<{ race: string; candidateId: string }> = [];
+  for (const msg of messages) {
+    if (msg.role !== "user") continue;
+    const match = msg.content.match(
+      /\[VOTER PICKED\]\s+race="([^"]+)"\s+choice="([^"]+)"/,
+    );
+    if (match) {
+      picks.push({ race: match[1], candidateId: match[2] });
+    }
+  }
+  return picks;
+}
+
+/** Derive primary lane from TexasRunoffChoice-style string. */
+export function derivePrimary(
+  runoffChoice: string | null | undefined,
+): "DEM" | "REP" | "OPEN" | "GENERAL" {
+  if (!runoffChoice) return "GENERAL";
+  if (
+    runoffChoice === "voted_dem_primary" ||
+    runoffChoice === "did_not_vote_dem_runoff"
+  )
+    return "DEM";
+  if (
+    runoffChoice === "voted_rep_primary" ||
+    runoffChoice === "did_not_vote_rep_runoff"
+  )
+    return "REP";
+  return "OPEN";
+}
+
+/** Generate a random session id that never persists beyond the tab. */
+function generateCounterSessionId(): string {
+  if (typeof crypto !== "undefined" && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
+/* ── Empty fallback polis data (threshold not met) ──────────── */
+
+const EMPTY_POLIS_DATA: PolisData = {
+  scope: "county",
+  sampleSize: 0,
+  thresholdMet: false,
+  countToUnlock: undefined,
+  dots: [],
+  you: null,
+  consensus: [],
+};
+
 interface HandoffPackageProps {
   parsed: ParsedHandoff;
   continuationPrompt: string;
+  /** All conversation messages — used to extract confirmed concerns and picks. */
+  messages?: { role: string; content: string }[];
+  /** Two-letter state code (e.g. "TX"). */
+  stateCode?: string;
+  /** County name (e.g. "Harris"). */
+  county?: string;
+  /** Primary lane derived from runoff gate selection. */
+  primary?: "DEM" | "REP" | "OPEN" | "GENERAL";
+  /** County display name for the polis overlay. */
+  countyName?: string;
+  /** State display name for the polis overlay. */
+  stateName?: string;
 }
 
 function ErrorIcon() {
@@ -313,9 +409,89 @@ function AiLinksPanel() {
 export function HandoffPackage({
   parsed,
   continuationPrompt,
+  messages = [],
+  stateCode,
+  county,
+  primary = "GENERAL",
+  countyName,
+  stateName,
 }: HandoffPackageProps) {
   const [copied, setCopied] = useState(false);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [polisData, setPolisData] = useState<PolisData | null>(null);
+  const [polisLoading, setPolisLoading] = useState(false);
+  // Track whether we've fired the one-time counter write
+  const counterFiredRef = useRef(false);
+  // Stable session id for idempotency — generated once per HandoffPackage mount
+  const counterSessionIdRef = useRef<string>(generateCounterSessionId());
+
+  // Derive confirmed concerns and picks from messages
+  const confirmedConcerns = parseConfirmedConcerns(messages);
+  const picks = parsePicks(messages);
+
+  // Capture latest values in refs so the one-shot effect can access them
+  // without re-triggering when arrays change identity on re-render.
+  const confirmedConcernsRef = useRef(confirmedConcerns);
+  const picksRef = useRef(picks);
+  const stateCodeRef = useRef(stateCode);
+  const countyRef = useRef(county);
+  const primaryRef = useRef(primary);
+  confirmedConcernsRef.current = confirmedConcerns;
+  picksRef.current = picks;
+  stateCodeRef.current = stateCode;
+  countyRef.current = county;
+  primaryRef.current = primary;
+
+  // Fire counter-write once on mount (fire-and-forget)
+  useEffect(() => {
+    if (counterFiredRef.current) return;
+    if (!stateCodeRef.current || !countyRef.current) return;
+    counterFiredRef.current = true;
+
+    void fetch("/api/counters", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        sessionId: counterSessionIdRef.current,
+        stateCode: stateCodeRef.current,
+        county: countyRef.current,
+        primary: primaryRef.current,
+        confirmedConcerns: confirmedConcernsRef.current.map((id) => ({
+          canonicalIssue: id,
+        })),
+        picks: picksRef.current,
+      }),
+    }).catch((err) => {
+      console.log("[counters] write failed (non-blocking):", err);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Fetch polis data once when mounted (stateCode + county required)
+  useEffect(() => {
+    if (!stateCode || !county) return;
+
+    setPolisLoading(true);
+    const params = new URLSearchParams({ stateCode, county });
+    if (confirmedConcerns.length > 0) {
+      params.set("userConcerns", confirmedConcerns.join(","));
+    }
+
+    void fetch(`/api/polis?${params.toString()}`)
+      .then(async (res) => {
+        if (!res.ok) return;
+        const data = (await res.json()) as PolisData;
+        setPolisData(data);
+      })
+      .catch((err) => {
+        console.log("[polis] fetch failed (non-blocking):", err);
+      })
+      .finally(() => {
+        setPolisLoading(false);
+      });
+    // Only run once on mount — deps are stable values derived at mount time
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function handleCopy() {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
@@ -335,6 +511,9 @@ export function HandoffPackage({
       timeoutRef.current = setTimeout(() => setCopied(false), 2000);
     }
   }
+
+  // Show polis overlay when stateCode + county are present (loading or data)
+  const showPolisOverlay = !!(stateCode && county);
 
   return (
     <div data-testid="chat-handoff-package">
@@ -369,6 +548,18 @@ export function HandoffPackage({
           </div>
         </div>
       </div>
+
+      {/* Polis overlay — renders below the handoff card when location is known */}
+      {showPolisOverlay && (
+        <div className="mt-6" data-testid="polis-overlay-section">
+          <PolisOverlay
+            data={polisData ?? EMPTY_POLIS_DATA}
+            loading={polisLoading}
+            countyName={countyName ?? county}
+            stateName={stateName}
+          />
+        </div>
+      )}
     </div>
   );
 }
