@@ -42,11 +42,20 @@ jobs:
           echo "::add-mask::$DATABASE_URL"
 
           # ---------------------------------------------------------------
-          # OPENSTATES_API_KEY — OpenStates legislative data API
+          # CONGRESS_GOV_API_KEY — optional bill metadata enrichment
           # ---------------------------------------------------------------
-          OPENSTATES_API_KEY=$(bws secret get 85bad136-3cbc-4062-9ccc-b4460037de19 --access-token "$BWS_ACCESS_TOKEN" --output json | jq -r '.value')
-          echo "OPENSTATES_API_KEY=$OPENSTATES_API_KEY" >> "$GITHUB_ENV"
-          echo "::add-mask::$OPENSTATES_API_KEY"
+          set +e
+          CONGRESS_GOV_SECRET=$(bws secret get 306d6600-cd70-492a-9b46-b44600383766 --access-token "$BWS_ACCESS_TOKEN" --output json 2>/dev/null)
+          CONGRESS_GOV_STATUS=$?
+          set -e
 
-      - name: Run federal votes ingest (Phase A — no-op skeleton)
+          if [ "$CONGRESS_GOV_STATUS" -eq 0 ]; then
+            CONGRESS_GOV_API_KEY=$(echo "$CONGRESS_GOV_SECRET" | jq -r '.value // empty')
+            if [ -n "$CONGRESS_GOV_API_KEY" ]; then
+              echo "CONGRESS_GOV_API_KEY=$CONGRESS_GOV_API_KEY" >> "$GITHUB_ENV"
+              echo "::add-mask::$CONGRESS_GOV_API_KEY"
+            fi
+          fi
+
+      - name: Run federal votes ingest
         run: npx tsx scripts/ingest/federal-votes.ts

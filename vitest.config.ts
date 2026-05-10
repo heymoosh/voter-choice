@@ -9,6 +9,7 @@ export default defineConfig({
       "src/**/*.test.{ts,tsx}",
       "src/**/*.spec.{ts,tsx}",
       "db/**/*.test.ts",
+      "scripts/ingest/**/*.test.ts",
     ],
     globals: true,
     environment: "jsdom",
