@@ -40,6 +40,13 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# git worktrees (run5 experiment sessions)
+voter-choice-bmad/
+voter-choice-compound/
+voter-choice-speckit/
+voter-choice-superpowers/
+voter-choice-vanilla/
+
 # measurement artifacts
 .eslint-report.json
 .vitest-report.json
