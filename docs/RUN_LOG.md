@@ -2,7 +2,7 @@
 
 ## Next
 
-Continue Phase 1 — Next run: Run 2 (Compound Engineering workflow). Run `/start` from `main` branch. Claude Code will autonomously check out `workflow/compound-engineering`, build the ballot tool, run measurements, and update this log.
+**Run 5, Phase 1 — Compound Engineering workflow.** You are already on `run5/compound-engineering` — do NOT switch branches. Build the full production ballot research tool on this branch per `docs/PROJECT_SPEC.md` (v2.0). Use Compound Engineering methodology via the available `ce-*` skills (e.g. `/ce-compound`, `/ce-plan`, `/ce-brainstorm`, `/ce-work`, `/ce-review` — follow the CE flow). Clean environment first (`rm -rf node_modules .next coverage && npm install`), build autonomously using the spec as the sole source of truth, then run `npm run measure`, tag `compound-engineering-run5-phase1-complete`, push, and update this log.
 
 ## Completed
 
