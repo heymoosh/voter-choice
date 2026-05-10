@@ -1,0 +1,104 @@
+{
+  "metadata": {
+    "timestamp": "2026-05-10T18:34:41.466Z",
+    "branch": "003-ballot-research-tool",
+    "commit": "6d77aad",
+    "nodeVersion": "v22.14.0"
+  },
+  "eslint": {
+    "errors": 0,
+    "warnings": 0,
+    "complexityViolations": 0
+  },
+  "vitest": {
+    "tests": {
+      "total": 29,
+      "passed": 29,
+      "failed": 0,
+      "skipped": 0,
+      "passRate": 100
+    },
+    "coverage": {
+      "lines": 17.82,
+      "branches": 77.77,
+      "functions": 90.9,
+      "statements": 17.82
+    }
+  },
+  "duplication": {
+    "duplicatedLines": 0,
+    "totalLines": 870,
+    "percentage": 0,
+    "clones": 0
+  },
+  "bundleSize": {
+    "buildSuccess": true,
+    "pages": [
+      {
+        "route": "/",
+        "size": 4.76,
+        "unit": "kB"
+      },
+      {
+        "route": "/_not-found",
+        "size": 995,
+        "unit": "B"
+      }
+    ],
+    "firstLoadJsShared": {
+      "size": 102,
+      "unit": "kB"
+    }
+  },
+  "lighthouse": {
+    "performance": 100,
+    "accessibility": 95,
+    "bestPractices": 100,
+    "seo": 100
+  },
+  "playwright": {
+    "total": 42,
+    "passed": 42,
+    "failed": 0,
+    "timedOut": 0,
+    "skipped": 0,
+    "passRate": 100
+  },
+  "linesOfCode": {
+    "application": {
+      "code": 1086,
+      "files": 12,
+      "byExtension": {
+        ".ts": {
+          "files": 5,
+          "code": 418
+        },
+        ".css": {
+          "files": 1,
+          "code": 21
+        },
+        ".tsx": {
+          "files": 2,
+          "code": 419
+        },
+        ".json": {
+          "files": 4,
+          "code": 228
+        }
+      }
+    },
+    "plugin": {
+      "code": 0,
+      "files": 0,
+      "byExtension": {}
+    },
+    "infrastructure": {
+      "code": 865,
+      "files": 11
+    },
+    "total": {
+      "code": 1951,
+      "files": 23
+    }
+  }
+}
