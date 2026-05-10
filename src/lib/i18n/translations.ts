@@ -13,7 +13,7 @@ export const translations = {
     zipSubmitButton: "Look Up My Ballot",
     zipErrorEmpty: "Please enter your zip code.",
     zipErrorInvalid: "Please enter a valid 5-digit zip code.",
-    zipErrorTooShort: "Zip code must be 5 digits.",
+    zipErrorTooShort: "Please enter a valid 5-digit zip code.",
     notFoundMessage:
       "We don't have data for that zip code yet. Try a nearby zip code, or visit your state's official election website.",
     stateInfoTitle: "Your Election Info",
@@ -87,7 +87,7 @@ export const translations = {
     zipSubmitButton: "Buscar Mi Boleta",
     zipErrorEmpty: "Por favor ingresa tu código postal.",
     zipErrorInvalid: "Por favor ingresa un código postal válido de 5 dígitos.",
-    zipErrorTooShort: "El código postal debe tener 5 dígitos.",
+    zipErrorTooShort: "Por favor ingresa un código postal válido de 5 dígitos.",
     notFoundMessage:
       "Aún no tenemos datos para ese código postal. Prueba un código postal cercano o visita el sitio web oficial de elecciones de tu estado.",
     stateInfoTitle: "Tu Información Electoral",

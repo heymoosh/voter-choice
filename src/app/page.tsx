@@ -408,7 +408,7 @@ export default function Home() {
                     maxLength={5}
                     value={zipInput}
                     onChange={(e) => {
-                      setZipInput(e.target.value.replace(/\D/g, ""));
+                      setZipInput(e.target.value);
                       setZipError(null);
                     }}
                     onKeyDown={(e) => {
@@ -757,44 +757,42 @@ export default function Home() {
                   </div>
                 )}
 
-                {/* Copy/Paste Mode */}
-                {!chat.chatAvailable && (
-                  <div className="px-6 py-4">
-                    <p className="text-sm text-gray-600 mb-3">
-                      {t.copyModeDescription}
-                    </p>
-                    <div className="relative">
-                      <pre
-                        data-testid="prompt-output"
-                        className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-xs text-gray-800 whitespace-pre-wrap font-mono max-h-64 overflow-y-auto leading-relaxed"
-                        tabIndex={0}
-                        aria-label={t.promptTitle}
+                {/* Copy/Paste Prompt — always visible */}
+                <div className="px-6 py-4 border-t border-gray-100">
+                  <p className="text-sm text-gray-600 mb-3">
+                    {t.copyModeDescription}
+                  </p>
+                  <div className="relative">
+                    <pre
+                      data-testid="prompt-output"
+                      className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-xs text-gray-800 whitespace-pre-wrap font-mono max-h-64 overflow-y-auto leading-relaxed"
+                      tabIndex={0}
+                      aria-label={t.promptTitle}
+                    >
+                      {promptText}
+                    </pre>
+                    <div className="mt-3 flex items-center gap-3">
+                      <button
+                        data-testid="copy-button"
+                        onClick={handleCopy}
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 min-h-[44px] transition-colors"
+                        aria-label={t.copyButton}
                       >
-                        {promptText}
-                      </pre>
-                      <div className="mt-3 flex items-center gap-3">
-                        <button
-                          data-testid="copy-button"
-                          onClick={handleCopy}
-                          className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 min-h-[44px] transition-colors"
-                          aria-label={t.copyButton}
+                        {t.copyButton}
+                      </button>
+                      {copyConfirmed && (
+                        <span
+                          data-testid="copy-confirmation"
+                          role="status"
+                          aria-live="polite"
+                          className="text-sm text-green-700 font-medium"
                         >
-                          {t.copyButton}
-                        </button>
-                        {copyConfirmed && (
-                          <span
-                            data-testid="copy-confirmation"
-                            role="status"
-                            aria-live="polite"
-                            className="text-sm text-green-700 font-medium"
-                          >
-                            {t.copyConfirmation}
-                          </span>
-                        )}
-                      </div>
+                          {t.copyConfirmation}
+                        </span>
+                      )}
                     </div>
                   </div>
-                )}
+                </div>
               </section>
 
               {/* Tips */}

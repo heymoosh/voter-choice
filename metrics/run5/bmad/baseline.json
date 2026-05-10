@@ -1,0 +1,119 @@
+{
+  "metadata": {
+    "timestamp": "2026-05-10T16:44:12.949Z",
+    "branch": "run5/bmad",
+    "commit": "e33c78e",
+    "nodeVersion": "v22.14.0"
+  },
+  "eslint": {
+    "errors": 0,
+    "warnings": 4,
+    "complexityViolations": 3
+  },
+  "vitest": {
+    "tests": {
+      "total": 46,
+      "passed": 46,
+      "failed": 0,
+      "skipped": 0,
+      "passRate": 100
+    },
+    "coverage": {
+      "lines": 21.53,
+      "branches": 69.76,
+      "functions": 80.64,
+      "statements": 21.53
+    }
+  },
+  "duplication": {
+    "duplicatedLines": 12,
+    "totalLines": 2685,
+    "percentage": 0.45,
+    "clones": 1
+  },
+  "bundleSize": {
+    "buildSuccess": true,
+    "pages": [
+      {
+        "route": "/",
+        "size": 9.99,
+        "unit": "kB"
+      },
+      {
+        "route": "/_not-found",
+        "size": 990,
+        "unit": "B"
+      },
+      {
+        "route": "/api/chat",
+        "size": 123,
+        "unit": "B"
+      },
+      {
+        "route": "/privacy",
+        "size": 164,
+        "unit": "B"
+      },
+      {
+        "route": "/terms",
+        "size": 164,
+        "unit": "B"
+      }
+    ],
+    "firstLoadJsShared": {
+      "size": 102,
+      "unit": "kB"
+    }
+  },
+  "lighthouse": {
+    "performance": 100,
+    "accessibility": 100,
+    "bestPractices": 100,
+    "seo": 100
+  },
+  "playwright": {
+    "total": 42,
+    "passed": 42,
+    "failed": 0,
+    "timedOut": 0,
+    "skipped": 0,
+    "passRate": 100
+  },
+  "linesOfCode": {
+    "application": {
+      "code": 2493,
+      "files": 26,
+      "byExtension": {
+        ".ts": {
+          "files": 12,
+          "code": 903
+        },
+        ".css": {
+          "files": 1,
+          "code": 21
+        },
+        ".tsx": {
+          "files": 5,
+          "code": 1074
+        },
+        ".json": {
+          "files": 8,
+          "code": 495
+        }
+      }
+    },
+    "plugin": {
+      "code": 0,
+      "files": 0,
+      "byExtension": {}
+    },
+    "infrastructure": {
+      "code": 866,
+      "files": 11
+    },
+    "total": {
+      "code": 3359,
+      "files": 37
+    }
+  }
+}
