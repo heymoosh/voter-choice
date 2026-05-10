@@ -138,6 +138,7 @@ function VoteDots({ kept, total }: { kept: number; total: number }) {
 
 export function AlignmentScoreBanner({
   entry,
+  candidateLabel,
   onDrillDown,
   expandedIssue,
 }: AlignmentScoreBannerProps) {
@@ -154,6 +155,7 @@ export function AlignmentScoreBanner({
     return (
       <div
         data-testid={`alignment-score-unavailable-${entry.candidateId}`}
+        aria-label={`Alignment scores for ${candidateLabel}`}
         className="px-3 py-2.5 border border-outline-variant/40 bg-surface-lowest"
       >
         <p className="text-[10px] font-black uppercase tracking-[0.18em] text-on-surface-muted mb-0.5">
@@ -171,6 +173,7 @@ export function AlignmentScoreBanner({
   return (
     <div
       data-testid={`alignment-score-banner-${entry.candidateId}`}
+      aria-label={`Alignment scores for ${candidateLabel}`}
       className="space-y-1"
     >
       {/* Section heading */}

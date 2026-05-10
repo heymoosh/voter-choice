@@ -250,6 +250,72 @@ describe("PolisOverlay — threshold-met, without 'you' dot", () => {
   });
 });
 
+describe("PolisOverlay — colorblind-safe shape encoding", () => {
+  it("renders different SVG element types for DEM (circle) vs REP (polygon) dots", () => {
+    const { container } = renderOverlay(unlockedDataWithYou);
+    // baseDots contains both DEM and REP primaries
+    const circles = container.querySelectorAll("[data-testid='polis-dot'][cx]");
+    const polygons = container.querySelectorAll(
+      "[data-testid='polis-dot'][points]",
+    );
+    // DEM dots render as circles, REP and OPEN as polygons
+    expect(circles.length).toBeGreaterThan(0);
+    expect(polygons.length).toBeGreaterThan(0);
+  });
+
+  it("renders the shape legend when there is at least one dot", () => {
+    renderOverlay(unlockedDataWithYou);
+    expect(screen.getByTestId("polis-shape-legend")).toBeInTheDocument();
+  });
+
+  it("legend shows Democratic label when DEM dots are present", () => {
+    renderOverlay(unlockedDataWithYou);
+    expect(screen.getByTestId("polis-legend-dem")).toBeInTheDocument();
+    expect(screen.getByTestId("polis-legend-dem")).toHaveTextContent(
+      "Democratic",
+    );
+  });
+
+  it("legend shows Republican label when REP dots are present", () => {
+    renderOverlay(unlockedDataWithYou);
+    expect(screen.getByTestId("polis-legend-rep")).toBeInTheDocument();
+    expect(screen.getByTestId("polis-legend-rep")).toHaveTextContent(
+      "Republican",
+    );
+  });
+
+  it("legend shows Open/General label when OPEN dots are present", () => {
+    renderOverlay(unlockedDataWithYou);
+    expect(screen.getByTestId("polis-legend-open")).toBeInTheDocument();
+    expect(screen.getByTestId("polis-legend-open")).toHaveTextContent(
+      "Open / General",
+    );
+  });
+
+  it("does not render the legend when there are no dots", () => {
+    const noDotsData: PolisData = {
+      ...unlockedDataWithYou,
+      dots: [],
+    };
+    renderOverlay(noDotsData);
+    expect(screen.queryByTestId("polis-shape-legend")).not.toBeInTheDocument();
+  });
+
+  it("DEM-only data does not render REP or OPEN legend items", () => {
+    const demOnlyData: PolisData = {
+      ...unlockedDataWithYou,
+      dots: [
+        { x: 0.2, y: 0.3, primary: "DEM" },
+        { x: 0.6, y: 0.7, primary: "DEM" },
+      ],
+    };
+    renderOverlay(demOnlyData);
+    expect(screen.getByTestId("polis-legend-dem")).toBeInTheDocument();
+    expect(screen.queryByTestId("polis-legend-rep")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("polis-legend-open")).not.toBeInTheDocument();
+  });
+});
+
 describe("PolisOverlay — animation & accessibility", () => {
   it("each aggregate dot has a <title> for screen readers", () => {
     const { container } = renderOverlay(unlockedDataWithYou);

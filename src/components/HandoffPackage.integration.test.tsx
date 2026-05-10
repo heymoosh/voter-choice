@@ -332,6 +332,48 @@ describe("HandoffPackage — polis overlay + counter write", () => {
     });
   });
 
+  it("does not fire /api/polis before parsed handoff is provided", async () => {
+    // Render without parsed (null) — polis fetch must not fire yet
+    const { rerender } = render(
+      <HandoffPackage
+        parsed={null}
+        continuationPrompt="Continue here"
+        stateCode="TX"
+        county="Harris"
+        primary="DEM"
+        messages={[]}
+      />,
+      { wrapper },
+    );
+
+    // Give effects a tick to run
+    await new Promise((r) => setTimeout(r, 50));
+
+    const polisCallsBefore = fetchMock.mock.calls.filter(
+      (call) => typeof call[0] === "string" && call[0].includes("/api/polis"),
+    );
+    expect(polisCallsBefore).toHaveLength(0);
+
+    // Now supply a parsed handoff — polis fetch should fire once
+    rerender(
+      <HandoffPackage
+        parsed={MINIMAL_PARSED}
+        continuationPrompt="Continue here"
+        stateCode="TX"
+        county="Harris"
+        primary="DEM"
+        messages={[]}
+      />,
+    );
+
+    await waitFor(() => {
+      const polisCallsAfter = fetchMock.mock.calls.filter(
+        (call) => typeof call[0] === "string" && call[0].includes("/api/polis"),
+      );
+      expect(polisCallsAfter).toHaveLength(1);
+    });
+  });
+
   it("does not fire counter-write twice on re-render", async () => {
     const { rerender } = render(
       <HandoffPackage

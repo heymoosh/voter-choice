@@ -197,6 +197,95 @@ function LockedState({
   );
 }
 
+/* ── Primary shape mapping (colorblind-safe parallel cue) ───── */
+
+/**
+ * Returns the SVG shape type for a primary lane.
+ * DEM = circle, REP = diamond (square rotated 45°), OPEN/GENERAL = triangle.
+ * "You" is always a circle regardless of primary.
+ */
+function primaryShape(primary: string): "circle" | "diamond" | "triangle" {
+  const p = primary.toUpperCase();
+  if (p === "DEM" || p === "DEMOCRATIC") return "circle";
+  if (p === "REP" || p === "REPUBLICAN") return "diamond";
+  return "triangle";
+}
+
+/**
+ * Render one aggregate dot using the shape for its primary lane.
+ * r is the effective radius (used as half-size for polygon shapes).
+ */
+function DotShape({
+  cx,
+  cy,
+  r,
+  color,
+  primary,
+  delay,
+  primaryLabel,
+}: {
+  cx: number;
+  cy: number;
+  r: number;
+  color: string;
+  primary: string;
+  delay: string;
+  primaryLabel: string;
+}) {
+  const shape = primaryShape(primary);
+  const animStyle = {
+    animation: `polis-dot-fadein 400ms ease-out ${delay} both`,
+  };
+  const title = <title>{`Aggregate voter dot, ${primaryLabel} primary`}</title>;
+
+  if (shape === "diamond") {
+    // Diamond: square rotated 45° — polygon with 4 points at cardinal positions
+    const pts = `${cx},${cy - r} ${cx + r},${cy} ${cx},${cy + r} ${cx - r},${cy}`;
+    return (
+      <polygon
+        data-testid="polis-dot"
+        points={pts}
+        fill={color}
+        fillOpacity={0.7}
+        style={animStyle}
+      >
+        {title}
+      </polygon>
+    );
+  }
+
+  if (shape === "triangle") {
+    // Equilateral-ish triangle pointing up
+    const pts = `${cx},${cy - r} ${cx + r},${cy + r} ${cx - r},${cy + r}`;
+    return (
+      <polygon
+        data-testid="polis-dot"
+        points={pts}
+        fill={color}
+        fillOpacity={0.7}
+        style={animStyle}
+      >
+        {title}
+      </polygon>
+    );
+  }
+
+  // Default: circle (DEM)
+  return (
+    <circle
+      data-testid="polis-dot"
+      cx={cx}
+      cy={cy}
+      r={r}
+      fill={color}
+      fillOpacity={0.7}
+      style={animStyle}
+    >
+      {title}
+    </circle>
+  );
+}
+
 /* ── Scatter SVG ─────────────────────────────────────────────── */
 
 function ScatterPlot({
@@ -229,88 +318,121 @@ function ScatterPlot({
 
   const youDelay = MAX_STAGGER_MS;
 
+  // Determine which primaries appear in the data (for legend visibility)
+  const presentPrimaries = useMemo(() => {
+    const set = new Set(dots.map((d) => d.primary.toUpperCase()));
+    return {
+      hasDem: set.has("DEM") || set.has("DEMOCRATIC"),
+      hasRep: set.has("REP") || set.has("REPUBLICAN"),
+      hasOpen: set.has("OPEN") || set.has("GENERAL"),
+    };
+  }, [dots]);
+
   return (
-    <svg
-      data-testid="polis-scatter-svg"
-      viewBox={`0 0 ${VIEWBOX_W} ${VIEWBOX_H}`}
-      className="w-full h-auto"
-      role="img"
-      aria-label="Scatter plot showing how county voters are distributed by issue priorities"
-    >
-      {/* Aggregate dots */}
-      {dots.map((dot, i) => {
-        const cx = scaleX(dot.x);
-        const cy = scaleY(dot.y);
-        const color = primaryColor(dot.primary);
-        const delay = `${dotDelays[i]}ms`;
-        const primaryLabel =
-          dot.primary.charAt(0).toUpperCase() +
-          dot.primary.slice(1).toLowerCase();
+    <>
+      <svg
+        data-testid="polis-scatter-svg"
+        viewBox={`0 0 ${VIEWBOX_W} ${VIEWBOX_H}`}
+        className="w-full h-auto"
+        role="img"
+        aria-label="Scatter plot showing how county voters are distributed by issue priorities"
+      >
+        {/* Aggregate dots */}
+        {dots.map((dot, i) => {
+          const cx = scaleX(dot.x);
+          const cy = scaleY(dot.y);
+          const color = primaryColor(dot.primary);
+          const delay = `${dotDelays[i]}ms`;
+          const primaryLabel =
+            dot.primary.charAt(0).toUpperCase() +
+            dot.primary.slice(1).toLowerCase();
 
-        return (
-          <circle
-            key={i}
-            data-testid="polis-dot"
-            cx={cx}
-            cy={cy}
-            r={DOT_R}
-            fill={color}
-            fillOpacity={0.7}
+          return (
+            <DotShape
+              key={i}
+              cx={cx}
+              cy={cy}
+              r={DOT_R}
+              color={color}
+              primary={dot.primary}
+              delay={delay}
+              primaryLabel={primaryLabel}
+            />
+          );
+        })}
+
+        {/* "You" dot — always circle with halo, regardless of primary */}
+        {you && (
+          <g
+            data-testid="polis-you-dot"
             style={{
-              animation: `polis-dot-fadein 400ms ease-out ${delay} both`,
+              animation: `polis-dot-fadein 400ms ease-out ${youDelay}ms both`,
             }}
           >
-            <title>{`Aggregate voter dot, ${primaryLabel} primary`}</title>
-          </circle>
-        );
-      })}
+            {/* Halo */}
+            <circle
+              cx={scaleX(you.x)}
+              cy={scaleY(you.y)}
+              r={YOU_HALO_R}
+              fill="currentColor"
+              fillOpacity={0.3}
+              className="text-primary"
+              style={{
+                animation: `polis-you-pulse 2.5s ease-in-out ${youDelay + 400}ms infinite`,
+              }}
+              aria-hidden="true"
+            />
+            {/* Solid dot */}
+            <circle
+              cx={scaleX(you.x)}
+              cy={scaleY(you.y)}
+              r={YOU_DOT_R}
+              fill="currentColor"
+              className="text-primary"
+            >
+              <title>You</title>
+            </circle>
+            {/* Label */}
+            <text
+              x={scaleX(you.x) + YOU_DOT_R + 4}
+              y={scaleY(you.y) - YOU_DOT_R - 2}
+              fontSize="11"
+              fontWeight="600"
+              fill="currentColor"
+              className="text-primary"
+              aria-hidden="true"
+            >
+              {t.polisOverlayYouLabel}
+            </text>
+          </g>
+        )}
+      </svg>
 
-      {/* "You" dot */}
-      {you && (
-        <g
-          data-testid="polis-you-dot"
-          style={{
-            animation: `polis-dot-fadein 400ms ease-out ${youDelay}ms both`,
-          }}
+      {/* Shape legend — colorblind-safe parallel cue */}
+      {dots.length > 0 && (
+        <div
+          data-testid="polis-shape-legend"
+          className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-on-surface-muted"
+          aria-label="Primary lane shape key"
         >
-          {/* Halo */}
-          <circle
-            cx={scaleX(you.x)}
-            cy={scaleY(you.y)}
-            r={YOU_HALO_R}
-            fill="currentColor"
-            fillOpacity={0.3}
-            className="text-primary"
-            style={{
-              animation: `polis-you-pulse 2.5s ease-in-out ${youDelay + 400}ms infinite`,
-            }}
-            aria-hidden="true"
-          />
-          {/* Solid dot */}
-          <circle
-            cx={scaleX(you.x)}
-            cy={scaleY(you.y)}
-            r={YOU_DOT_R}
-            fill="currentColor"
-            className="text-primary"
-          >
-            <title>You</title>
-          </circle>
-          {/* Label */}
-          <text
-            x={scaleX(you.x) + YOU_DOT_R + 4}
-            y={scaleY(you.y) - YOU_DOT_R - 2}
-            fontSize="11"
-            fontWeight="600"
-            fill="currentColor"
-            className="text-primary"
-            aria-hidden="true"
-          >
-            {t.polisOverlayYouLabel}
-          </text>
-        </g>
+          {presentPrimaries.hasDem && (
+            <span data-testid="polis-legend-dem">
+              ● {t.polisOverlayLegendDemocratic}
+            </span>
+          )}
+          {presentPrimaries.hasRep && (
+            <span data-testid="polis-legend-rep">
+              ◆ {t.polisOverlayLegendRepublican}
+            </span>
+          )}
+          {presentPrimaries.hasOpen && (
+            <span data-testid="polis-legend-open">
+              ▲ {t.polisOverlayLegendOpen}
+            </span>
+          )}
+        </div>
       )}
-    </svg>
+    </>
   );
 }
 

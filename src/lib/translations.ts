@@ -318,6 +318,9 @@ export interface Translations {
     polisOverlayConsensusHeading: string;
     polisOverlayConsensusSubtitle: string;
     polisOverlaySampleFooter: (sampleSize: number, scopeName: string) => string;
+    polisOverlayLegendDemocratic: string;
+    polisOverlayLegendRepublican: string;
+    polisOverlayLegendOpen: string;
   };
   portfolio: {
     badge: string;
@@ -796,6 +799,9 @@ const en: Translations = {
       "Shared priority means voters across primaries flagged this issue. They may still disagree on the policy answer.",
     polisOverlaySampleFooter: (sampleSize: number, scopeName: string) =>
       `Based on ${sampleSize} ${scopeName} sessions through this tool.`,
+    polisOverlayLegendDemocratic: "Democratic",
+    polisOverlayLegendRepublican: "Republican",
+    polisOverlayLegendOpen: "Open / General",
   },
   portfolio: {
     badge: "Verified Research",
@@ -1297,6 +1303,9 @@ const es: Translations = {
       "Shared priority means voters across primaries flagged this issue. They may still disagree on the policy answer.",
     polisOverlaySampleFooter: (sampleSize: number, scopeName: string) =>
       `Based on ${sampleSize} ${scopeName} sessions through this tool.`,
+    polisOverlayLegendDemocratic: "Democratic",
+    polisOverlayLegendRepublican: "Republican",
+    polisOverlayLegendOpen: "Open / General",
   },
   portfolio: {
     badge: "Investigaci\u00f3n Verificada",

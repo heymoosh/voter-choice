@@ -156,7 +156,7 @@ const EMPTY_POLIS_DATA: PolisData = {
 };
 
 interface HandoffPackageProps {
-  parsed: ParsedHandoff;
+  parsed: ParsedHandoff | null;
   continuationPrompt: string;
   /** All conversation messages — used to extract confirmed concerns and picks. */
   messages?: { role: string; content: string }[];
@@ -422,6 +422,8 @@ export function HandoffPackage({
   const [polisLoading, setPolisLoading] = useState(false);
   // Track whether we've fired the one-time counter write
   const counterFiredRef = useRef(false);
+  // Track whether we've fired the one-time polis fetch
+  const polisFiredRef = useRef(false);
   // Stable session id for idempotency — generated once per HandoffPackage mount
   const counterSessionIdRef = useRef<string>(generateCounterSessionId());
 
@@ -464,12 +466,14 @@ export function HandoffPackage({
     }).catch((err) => {
       console.log("[counters] write failed (non-blocking):", err);
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Fetch polis data once when mounted (stateCode + county required)
+  // Fetch polis data once after parsedHandoff lands (stateCode + county also required)
   useEffect(() => {
     if (!stateCode || !county) return;
+    if (!parsed) return;
+    if (polisFiredRef.current) return;
+    polisFiredRef.current = true;
 
     setPolisLoading(true);
     const params = new URLSearchParams({ stateCode, county });
@@ -489,9 +493,8 @@ export function HandoffPackage({
       .finally(() => {
         setPolisLoading(false);
       });
-    // Only run once on mount — deps are stable values derived at mount time
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [stateCode, county, parsed]);
 
   async function handleCopy() {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
@@ -518,7 +521,7 @@ export function HandoffPackage({
   return (
     <div data-testid="chat-handoff-package">
       {/* Preamble text from the AI */}
-      {parsed.preamble && (
+      {parsed?.preamble && (
         <div className="text-sm whitespace-pre-wrap mb-4 text-on-surface-muted">
           {parsed.preamble}
         </div>
@@ -534,12 +537,14 @@ export function HandoffPackage({
 
           {/* Continue Session (center) */}
           <div className="lg:col-span-5">
-            <ContinueSessionPanel
-              parsed={parsed}
-              continuationPrompt={continuationPrompt}
-              copied={copied}
-              onCopy={handleCopy}
-            />
+            {parsed && (
+              <ContinueSessionPanel
+                parsed={parsed}
+                continuationPrompt={continuationPrompt}
+                copied={copied}
+                onCopy={handleCopy}
+              />
+            )}
           </div>
 
           {/* AI Links (right) */}

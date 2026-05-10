@@ -226,3 +226,19 @@ describe("AlignmentScoreBanner — banner heading", () => {
     expect(screen.getByText("Voted with you on...")).toBeInTheDocument();
   });
 });
+
+describe("AlignmentScoreBanner — aria-label accessibility", () => {
+  it("wrapper element carries aria-label containing the candidateLabel", () => {
+    renderBanner(multiScoreEntry, { candidateLabel: "Candidate B" });
+    expect(
+      screen.getByLabelText("Alignment scores for Candidate B"),
+    ).toBeInTheDocument();
+  });
+
+  it("unavailable state wrapper also carries aria-label containing the candidateLabel", () => {
+    renderBanner(unavailableEntry, { candidateLabel: "Candidate C" });
+    expect(
+      screen.getByLabelText("Alignment scores for Candidate C"),
+    ).toBeInTheDocument();
+  });
+});
