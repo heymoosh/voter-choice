@@ -2,9 +2,25 @@
 
 ## Next
 
-**Run 5, Phase 1 — BMAD workflow.** You are already on `run5/bmad` — do NOT switch branches. Build the full production ballot research tool on this branch per `docs/PROJECT_SPEC.md` (v2.0). Use BMAD methodology via the available `bmad-*` skills (e.g. `/bmad-create-prd`, `/bmad-create-architecture`, `/bmad-create-epics-and-stories`, `/bmad-dev-story`, `/bmad-dev` — follow the BMAD flow). Clean environment first (`rm -rf node_modules .next coverage && npm install`), build autonomously using the spec as the sole source of truth, then run `npm run measure`, tag `bmad-run5-phase1-complete`, push, and update this log.
+**Run 5, Phase 2 — BMAD workflow.** You are on `run5/bmad`. Add Spanish language support per `docs/PHASE2_SPEC.md`. Spanish is already partially implemented (EN/ES LanguageProvider + translations exist). Complete it: ensure all UI text, error messages, and the prompt itself are fully translated in Spanish; add `data-testid="language-toggle"`; verify language persists via URL param. Run `npm run measure`, tag `bmad-run5-phase2-complete`, push, and update this log.
 
 ## Completed
+
+### Phase 1 Run 5 — BMAD Workflow
+
+- **Commit:** `14937ff` — `bmad-phase1: fix e2e tests - always show prompt-output, fix zip validation, fix error messages`
+- **Tag:** `bmad-run5-phase1-complete`
+- **Key metrics:**
+  - Lighthouse: 100/100/100/100 (Performance/Accessibility/Best Practices/SEO)
+  - E2E tests: 42/42 passed (100%)
+  - Unit tests: 46/46 passed (100%)
+  - ESLint: 0 errors, 4 warnings (3 complexity on large components)
+  - Duplication: 0.45% (12/2685 lines)
+  - Bundle: 102 kB shared JS, Next.js build success
+  - LOC: 2493 app code (26 files), 866 infra (11 files), 3359 total
+- **What was done:** Built full production ballot research tool on BMAD branch. Features implemented: zip code lookup with validation, state info display (elections, registration, voting rules, resources), customized ballot prompt generation (incorporating full 7-act BALLOT_PROMPT.md context), copy-to-clipboard with confirmation, multi-state zip selector, Claude API streaming chat integration with SSE, budget management (4-tier), 3-layer rate limiting, EN/ES multi-language support with URL persistence, voter profile upload/download (prompt injection protection), legal pages (/privacy, /terms), 6 state data files (TX, CA, NH, FL, AZ, NM, NY), WCAG AA accessibility (skip-to-content, aria-live, keyboard nav), mobile-first responsive design. Installed @anthropic-ai/sdk 0.39.0. Used BMAD dev methodology.
+- **Files created:** `src/types/election.ts`, `src/lib/election-data.ts`, `src/lib/prompt-generator.ts`, `src/lib/budget.ts`, `src/lib/rate-limit.ts`, `src/lib/i18n/translations.ts`, `src/lib/i18n/index.tsx`, `src/app/api/chat/route.ts`, `src/app/privacy/page.tsx`, `src/app/terms/page.tsx`, `src/data/states/AZ.json`, `src/data/states/FL.json`, `src/data/states/NM.json`, `src/data/states/NY.json`, 5 unit test files, updated `src/app/page.tsx`, `src/app/layout.tsx`, `src/data/zip-to-state.json`
+- **Issues or deviations:** ESLint complexity warnings on main page component (33 vs max 10) — expected for single-page app with multi-step flow. Used `as unknown as` type cast for Anthropic SDK web_search tool type (SDK 0.39.0 doesn't expose `web_search_20250305` type). Chat availability probe request causes race condition in e2e tests — fixed by always rendering prompt-output regardless of chat mode. Zip input stripped non-digits on change — fixed by allowing full input and validating only on submit.
 
 ### Vanilla Branch — LOC Metric Update (Post-Phase 1)
 
