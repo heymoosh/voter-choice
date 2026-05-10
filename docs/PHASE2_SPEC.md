@@ -35,8 +35,8 @@ The architecture should make adding a third language (e.g., Simplified Chinese, 
 
 ### Required `data-testid`
 
-| `data-testid` | Element | Purpose |
-|----------------|---------|---------|
+| `data-testid`     | Element                     | Purpose                            |
+| ----------------- | --------------------------- | ---------------------------------- |
 | `language-toggle` | The language switch control | E2e tests click to change language |
 
 ---
@@ -65,7 +65,7 @@ Every piece of user-facing text on the page must be available in both languages.
 
 - **Labels** for data fields (e.g., "Election date," "Voter ID required") are translated
 - **Data values** from the JSON (e.g., state names, election names, accepted ID types, voting rule details) remain in English for Phase 2. Translating 50 states of election-specific data is a data quality issue, not a UI issue — it can be done later without changing the architecture
-- **Exception:** The `earlyVoting.notes` and `votingRules.phonesAtPollsDetail` fields contain human-readable sentences. These remain in English for Phase 2 but should be structured so they *could* be translated later (i.e., the display layer should not assume these fields are always in the UI language)
+- **Exception:** The `earlyVoting.notes` and `votingRules.phonesAtPollsDetail` fields contain human-readable sentences. These remain in English for Phase 2 but should be structured so they _could_ be translated later (i.e., the display layer should not assume these fields are always in the UI language)
 
 ### The Customized AI Prompt Output
 
@@ -136,14 +136,14 @@ Ayúdame con mi boleta.
 
 All error messages have Spanish equivalents:
 
-| English | Spanish |
-|---------|---------|
-| "Please enter a zip code" | "Por favor ingresa un código postal" |
-| "Please enter a valid 5-digit zip code" | "Por favor ingresa un código postal válido de 5 dígitos" |
-| "We don't have data for this zip code yet..." | "Aún no tenemos datos para este código postal..." |
+| English                                                               | Spanish                                                                 |
+| --------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| "Please enter a zip code"                                             | "Por favor ingresa un código postal"                                    |
+| "Please enter a valid 5-digit zip code"                               | "Por favor ingresa un código postal válido de 5 dígitos"                |
+| "We don't have data for this zip code yet..."                         | "Aún no tenemos datos para este código postal..."                       |
 | "This zip code spans multiple states. Which state are you voting in?" | "Este código postal abarca varios estados. ¿En qué estado vas a votar?" |
-| "Registration deadlines for this election have passed..." | "Las fechas límite de registro para esta elección ya pasaron..." |
-| "No upcoming elections found for [State]..." | "No se encontraron elecciones próximas para [State]..." |
+| "Registration deadlines for this election have passed..."             | "Las fechas límite de registro para esta elección ya pasaron..."        |
+| "No upcoming elections found for [State]..."                          | "No se encontraron elecciones próximas para [State]..."                 |
 
 These are provided as reference translations — the workflow may organize and store them however it chooses.
 

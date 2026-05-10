@@ -36,6 +36,7 @@ Before proceeding, the orchestrator MUST:
 1. **Assess context usage**: Check how long the current conversation has been running. If there has been significant back-and-forth (many tool calls, large file reads, extensive debugging), context is likely constrained.
 
 2. **Warn the user**:
+
    ```
    ⚠️ Context Budget Check
 
@@ -47,6 +48,7 @@ Before proceeding, the orchestrator MUST:
    ```
 
 3. **Offer the user a choice**:
+
    ```
    How would you like to proceed?
 
@@ -74,34 +76,39 @@ Phase 1 subagents return TEXT DATA to the orchestrator. They must NOT use Write,
 Launch these subagents IN PARALLEL. Each returns text data to the orchestrator.
 
 #### 1. **Context Analyzer**
-   - Extracts conversation history
-   - Identifies problem type, component, symptoms
-   - Validates against schema
-   - Returns: YAML frontmatter skeleton
+
+- Extracts conversation history
+- Identifies problem type, component, symptoms
+- Validates against schema
+- Returns: YAML frontmatter skeleton
 
 #### 2. **Solution Extractor**
-   - Analyzes all investigation steps
-   - Identifies root cause
-   - Extracts working solution with code examples
-   - Returns: Solution content block
+
+- Analyzes all investigation steps
+- Identifies root cause
+- Extracts working solution with code examples
+- Returns: Solution content block
 
 #### 3. **Related Docs Finder**
-   - Searches `docs/solutions/` for related documentation
-   - Identifies cross-references and links
-   - Finds related GitHub issues
-   - Returns: Links and relationships
+
+- Searches `docs/solutions/` for related documentation
+- Identifies cross-references and links
+- Finds related GitHub issues
+- Returns: Links and relationships
 
 #### 4. **Prevention Strategist**
-   - Develops prevention strategies
-   - Creates best practices guidance
-   - Generates test cases if applicable
-   - Returns: Prevention/testing content
+
+- Develops prevention strategies
+- Creates best practices guidance
+- Generates test cases if applicable
+- Returns: Prevention/testing content
 
 #### 5. **Category Classifier**
-   - Determines optimal `docs/solutions/` category
-   - Validates category against schema
-   - Suggests filename based on slug
-   - Returns: Final path and filename
+
+- Determines optimal `docs/solutions/` category
+- Validates category against schema
+- Suggests filename based on slug
+- Returns: Final path and filename
 
 </parallel_tasks>
 
@@ -160,6 +167,7 @@ The orchestrator (main conversation) performs ALL of the following in one sequen
 4. **Skip specialized agent reviews** (Phase 3) to conserve context
 
 **Compact-safe output:**
+
 ```
 ✓ Documentation complete (compact-safe mode)
 
@@ -218,11 +226,11 @@ re-run /compound in a fresh session.
 
 ## Common Mistakes to Avoid
 
-| ❌ Wrong | ✅ Correct |
-|----------|-----------|
+| ❌ Wrong                                                              | ✅ Correct                                                     |
+| --------------------------------------------------------------------- | -------------------------------------------------------------- |
 | Subagents write files like `context-analysis.md`, `solution-draft.md` | Subagents return text data; orchestrator writes one final file |
-| Research and assembly run in parallel | Research completes → then assembly runs |
-| Multiple files created during workflow | Single file: `docs/solutions/[category]/[filename].md` |
+| Research and assembly run in parallel                                 | Research completes → then assembly runs                        |
+| Multiple files created during workflow                                | Single file: `docs/solutions/[category]/[filename].md`         |
 
 ## Success Output
 
@@ -290,22 +298,26 @@ Build → Test → Find Issue → Research → Improve → Document → Validate
 Based on problem type, these agents can enhance documentation:
 
 ### Code Quality & Review
+
 - **kieran-rails-reviewer**: Reviews code examples for Rails best practices
 - **code-simplicity-reviewer**: Ensures solution code is minimal and clear
 - **pattern-recognition-specialist**: Identifies anti-patterns or repeating issues
 
 ### Specific Domain Experts
+
 - **performance-oracle**: Analyzes performance_issue category solutions
 - **security-sentinel**: Reviews security_issue solutions for vulnerabilities
 - **cora-test-reviewer**: Creates test cases for prevention strategies
 - **data-integrity-guardian**: Reviews database_issue migrations and queries
 
 ### Enhancement & Documentation
+
 - **best-practices-researcher**: Enriches solution with industry best practices
 - **every-style-editor**: Reviews documentation style and clarity
 - **framework-docs-researcher**: Links to Rails/gem documentation references
 
 ### When to Invoke
+
 - **Auto-triggered** (optional): Agents can run post-documentation for enhancement
 - **Manual trigger**: User can invoke agents after /ce:compound completes for deeper review
 - **Customize agents**: Edit `compound-engineering.local.md` or invoke the `setup` skill to configure which review agents are used across all workflows

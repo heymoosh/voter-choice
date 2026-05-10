@@ -22,8 +22,6 @@
 - **Files created:** `src/types/election.ts`, `src/lib/election-data.ts`, `src/lib/prompt-generator.ts`, updated `src/app/page.tsx`
 - **Issues or deviations:** None. App running on localhost:3000, build passes, all acceptance criteria met per spec.
 
-
-
 ### Phase 0.5 — Generate Randomized Run Order
 
 - **Commit:** `12d90d1` — `phase0.5: generate randomized run order`
@@ -68,5 +66,6 @@
 - **Issues or deviations:** None
 
 ### Phase 0.0 — Commit planning docs
+
 - **Commit:** `0b163c5` — `phase0: add project config, experiment design, and run log`
 - **What:** Committed docs/, CLAUDE.md, .gitignore, .claude/ to git

@@ -1,0 +1,75 @@
+{
+  "stateCode": "FL",
+  "stateName": "Florida",
+  "lastUpdated": "2026-05-10",
+
+  "elections": [
+    {
+      "id": "fl-2026-primary",
+      "name": "2026 Florida Primary Election",
+      "date": "2026-08-18",
+      "type": "primary",
+      "isPrimary": true,
+      "primaryType": "closed"
+    },
+    {
+      "id": "fl-2026-general",
+      "name": "2026 Florida General Election",
+      "date": "2026-11-03",
+      "type": "general",
+      "isPrimary": false,
+      "primaryType": null
+    }
+  ],
+
+  "registration": {
+    "online": {
+      "available": true,
+      "deadline": "2026-07-20",
+      "url": "https://registertovoteflorida.gov"
+    },
+    "byMail": {
+      "deadline": "2026-07-20",
+      "sincePostmarked": false
+    },
+    "inPerson": {
+      "deadline": "2026-07-20",
+      "sincePostmarked": false
+    },
+    "sameDayRegistration": false,
+    "registrationCheckUrl": "https://registration.elections.myflorida.com/Voter/CheckVoterStatus"
+  },
+
+  "earlyVoting": {
+    "available": true,
+    "startDate": "2026-08-08",
+    "endDate": "2026-08-16",
+    "notes": "Minimum 8 hours per day; some counties offer extended hours"
+  },
+
+  "votingRules": {
+    "idRequired": true,
+    "acceptedIds": [
+      "Florida driver's license or ID card",
+      "U.S. passport",
+      "Debit or credit card with photo",
+      "Military ID",
+      "Student ID",
+      "Retirement center ID",
+      "Neighborhood association ID",
+      "Public assistance ID"
+    ],
+    "phonesAtPolls": "allowed",
+    "phonesAtPollsDetail": "Phones are allowed at Florida polling places, but no photography inside the voting booth.",
+    "additionalRules": [
+      "Florida has a closed primary: only registered party members may vote in their party's primary"
+    ]
+  },
+
+  "resources": {
+    "stateElectionWebsite": "https://dos.fl.gov/elections/",
+    "countyElectionLookup": "https://dos.fl.gov/elections/for-voters/voter-registration/county-supervisor-of-elections/",
+    "sampleBallotLookup": "https://registration.elections.myflorida.com/Voter/CheckVoterStatus",
+    "pollingPlaceLookup": "https://registration.elections.myflorida.com/Voter/CheckVoterStatus"
+  }
+}

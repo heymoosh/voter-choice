@@ -1,0 +1,71 @@
+{
+  "stateCode": "GA",
+  "stateName": "Georgia",
+  "lastUpdated": "2026-05-10",
+
+  "elections": [
+    {
+      "id": "ga-2026-primary",
+      "name": "2026 Georgia Primary Election",
+      "date": "2026-05-19",
+      "type": "primary",
+      "isPrimary": true,
+      "primaryType": "open"
+    },
+    {
+      "id": "ga-2026-general",
+      "name": "2026 Georgia General Election",
+      "date": "2026-11-03",
+      "type": "general",
+      "isPrimary": false,
+      "primaryType": null
+    }
+  ],
+
+  "registration": {
+    "online": {
+      "available": true,
+      "deadline": "2026-04-20",
+      "url": "https://registertovote.sos.ga.gov"
+    },
+    "byMail": {
+      "deadline": "2026-04-20",
+      "sincePostmarked": false
+    },
+    "inPerson": {
+      "deadline": "2026-04-20",
+      "sincePostmarked": false
+    },
+    "sameDayRegistration": false,
+    "registrationCheckUrl": "https://mvp.sos.ga.gov"
+  },
+
+  "earlyVoting": {
+    "available": true,
+    "startDate": "2026-05-04",
+    "endDate": "2026-05-15",
+    "notes": "Includes two mandatory Saturdays; some counties open Sundays"
+  },
+
+  "votingRules": {
+    "idRequired": true,
+    "acceptedIds": [
+      "Georgia driver's license (even if expired)",
+      "Georgia ID card issued by DDS",
+      "U.S. passport",
+      "Government employee ID with photo",
+      "Military ID",
+      "Tribal ID"
+    ],
+    "phonesAtPolls": "allowed",
+    "phonesAtPollsDetail": "Phones allowed but not in the voting booth itself. Audio/video recording inside a polling place may be restricted.",
+    "additionalRules": []
+  },
+
+  "resources": {
+    "stateElectionWebsite": "https://sos.ga.gov/elections-division",
+    "countyElectionLookup": "https://sos.ga.gov/elections-division/county-resources",
+    "sampleBallotLookup": "https://mvp.sos.ga.gov",
+    "pollingPlaceLookup": "https://mvp.sos.ga.gov"
+  }
+}

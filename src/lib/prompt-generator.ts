@@ -129,11 +129,17 @@ function getDeadlineStatus(isoDate: string | null): {
 export function generateCustomizedPrompt(
   stateData: StateElectionData,
   zipCode: string,
+  language: string = "en",
 ): string {
   const election = getNextElection(stateData.elections);
 
   if (!election) {
-    const contextBlock = `Hi! I'm voting in **${stateData.stateName}**. My zip code is **${zipCode}**.
+    const contextBlock =
+      language === "es"
+        ? `¡Hola! Voto en **${stateData.stateName}**. Mi código postal es **${zipCode}**.
+
+No hay elecciones próximas programadas para ${stateData.stateName}. Consulta ${stateData.resources.stateElectionWebsite} para actualizaciones.`
+        : `Hi! I'm voting in **${stateData.stateName}**. My zip code is **${zipCode}**.
 
 No upcoming elections are currently scheduled for ${stateData.stateName}. Check ${stateData.resources.stateElectionWebsite} for updates.`;
 
@@ -182,7 +188,27 @@ No upcoming elections are currently scheduled for ${stateData.stateName}. Check 
       ? ` (${election.primaryType} primary)`
       : "";
 
-  const contextBlock = `Hi! I'm voting in **${stateData.stateName}**. My zip code is **${zipCode}**.
+  const isSpanish = language === "es";
+  const contextBlock = isSpanish
+    ? `¡Hola! Voto en **${stateData.stateName}**. Mi código postal es **${zipCode}**.
+
+Aquí está la información sobre mi próxima elección:
+- **Elección:** ${election.name} el ${formatDate(election.date)}
+- **Tipo de elección:** ${election.type}${primaryTypeText}
+- **Fechas límite de registro:**
+  - En línea: ${formatDeadline(stateData.registration.online.deadline, onlineStatus)}
+  - Por correo: ${formatDeadline(stateData.registration.byMail.deadline, byMailStatus, stateData.registration.byMail.sincePostmarked)}
+  - En persona: ${formatDeadline(stateData.registration.inPerson.deadline, inPersonStatus, stateData.registration.inPerson.sincePostmarked)}
+  - Registro el mismo día: ${stateData.registration.sameDayRegistration ? "Disponible" : "No disponible"}
+- **Votación anticipada:** ${earlyVotingText}
+- **Identificación para votar:** ${voterIdText}
+- **Teléfonos en las urnas:** ${stateData.votingRules.phonesAtPollsDetail || stateData.votingRules.phonesAtPolls}
+- **Mi boleta de muestra:** ${stateData.resources.sampleBallotLookup}
+- **Mi oficina electoral del condado:** ${stateData.resources.countyElectionLookup}
+- **Verificar mi registro:** ${stateData.registration.registrationCheckUrl}
+
+Ayúdame con mi boleta.`
+    : `Hi! I'm voting in **${stateData.stateName}**. My zip code is **${zipCode}**.
 
 Here's what I know about my upcoming election:
 - **Election:** ${election.name} on ${formatDate(election.date)}

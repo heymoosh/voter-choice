@@ -189,13 +189,14 @@ agent-browser snapshot -i --json
 ```
 
 Returns:
+
 ```json
 {
   "success": true,
   "data": {
     "refs": {
-      "e1": {"name": "Submit", "role": "button"},
-      "e2": {"name": "Email", "role": "textbox"}
+      "e1": { "name": "Submit", "role": "button" },
+      "e2": { "name": "Email", "role": "textbox" }
     },
     "snapshot": "- button \"Submit\" [ref=e1]\n- textbox \"Email\" [ref=e2]"
   }
@@ -305,20 +306,22 @@ agent-browser drag @e1 @e2                              # Drag from element to e
 
 ## vs Playwright MCP
 
-| Feature | agent-browser (CLI) | Playwright MCP |
-|---------|---------------------|----------------|
-| Interface | Bash commands | MCP tools |
-| Selection | Refs (@e1) | Refs (e1) |
-| Output | Text/JSON | Tool responses |
-| Parallel | Sessions | Tabs |
-| Best for | Quick automation | Tool integration |
+| Feature   | agent-browser (CLI) | Playwright MCP   |
+| --------- | ------------------- | ---------------- |
+| Interface | Bash commands       | MCP tools        |
+| Selection | Refs (@e1)          | Refs (e1)        |
+| Output    | Text/JSON           | Tool responses   |
+| Parallel  | Sessions            | Tabs             |
+| Best for  | Quick automation    | Tool integration |
 
 Use agent-browser when:
+
 - You prefer Bash-based workflows
 - You want simpler CLI commands
 - You need quick one-off automation
 
 Use Playwright MCP when:
+
 - You need deep MCP tool integration
 - You want tool-based responses
 - You're building complex automation

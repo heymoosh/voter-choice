@@ -31,11 +31,13 @@ ls -la docs/brainstorms/*.md 2>/dev/null | head -10
 ```
 
 **Relevance criteria:** A brainstorm is relevant if:
+
 - The topic (from filename or YAML frontmatter) semantically matches the feature description
 - Created within the last 14 days
 - If multiple candidates match, use the most recent one
 
 **If a relevant brainstorm exists:**
+
 1. Read the brainstorm document **thoroughly** — every section matters
 2. Announce: "Found brainstorm from [date]: [topic]. Using as foundation for planning."
 3. Extract and carry forward **ALL** of the following into the plan:
@@ -86,6 +88,7 @@ Run these agents **in parallel** to gather local context:
 - Task compound-engineering:research:learnings-researcher(feature_description)
 
 **What to look for:**
+
 - **Repo research:** existing patterns, CLAUDE.md guidance, technology familiarity, pattern consistency
 - **Learnings:** documented solutions in `docs/solutions/` that might apply (gotchas, patterns, lessons learned)
 
@@ -104,6 +107,7 @@ Based on signals from Step 0 and findings from Step 1, decide on external resear
 **Announce the decision and proceed.** Brief explanation, then continue. User can redirect if needed.
 
 Examples:
+
 - "Your codebase has solid patterns for this. Proceeding without external research."
 - "This involves payment processing, so I'll research current best practices first."
 
@@ -191,7 +195,7 @@ title: [Issue Title]
 type: [feat|fix|refactor]
 status: active
 date: YYYY-MM-DD
-origin: docs/brainstorms/YYYY-MM-DD-<topic>-brainstorm.md  # if originated from brainstorm, otherwise omit
+origin: docs/brainstorms/YYYY-MM-DD-<topic>-brainstorm.md # if originated from brainstorm, otherwise omit
 ---
 
 # [Issue Title]
@@ -246,7 +250,7 @@ title: [Issue Title]
 type: [feat|fix|refactor]
 status: active
 date: YYYY-MM-DD
-origin: docs/brainstorms/YYYY-MM-DD-<topic>-brainstorm.md  # if originated from brainstorm, otherwise omit
+origin: docs/brainstorms/YYYY-MM-DD-<topic>-brainstorm.md # if originated from brainstorm, otherwise omit
 ---
 
 # [Issue Title]
@@ -321,7 +325,7 @@ title: [Issue Title]
 type: [feat|fix|refactor]
 status: active
 date: YYYY-MM-DD
-origin: docs/brainstorms/YYYY-MM-DD-<topic>-brainstorm.md  # if originated from brainstorm, otherwise omit
+origin: docs/brainstorms/YYYY-MM-DD-<topic>-brainstorm.md # if originated from brainstorm, otherwise omit
 ---
 
 # [Issue Title]
@@ -485,7 +489,6 @@ Apply best practices for clarity and actionability, making the issue easy to sca
 ````markdown
 # Good example with syntax highlighting and line references
 
-
 ```ruby
 # app/services/user_service.rb:42
 def process_user(user)
@@ -518,6 +521,7 @@ end
 **Brainstorm cross-check (if plan originated from a brainstorm):**
 
 Before finalizing, re-read the brainstorm document and verify:
+
 - [ ] Every key decision from the brainstorm is reflected in the plan
 - [ ] The chosen approach matches what was decided in the brainstorm
 - [ ] Constraints and requirements from the brainstorm are captured in acceptance criteria
@@ -562,6 +566,7 @@ docs/plans/YYYY-MM-DD-NNN-<type>-<descriptive-name>-plan.md
 ```
 
 Examples:
+
 - ✅ `docs/plans/2026-01-15-001-feat-user-authentication-flow-plan.md`
 - ✅ `docs/plans/2026-02-03-001-fix-checkout-race-condition-plan.md`
 - ✅ `docs/plans/2026-03-10-002-refactor-api-client-extraction-plan.md`
@@ -577,6 +582,7 @@ After writing the plan file, use the **AskUserQuestion tool** to present these o
 **Question:** "Plan ready at `docs/plans/YYYY-MM-DD-NNN-<type>-<name>-plan.md`. What would you like to do next?"
 
 **Options:**
+
 1. **Open plan in editor** - Open the plan file for review
 2. **Run `/deepen-plan`** - Enhance each section with parallel research agents (best practices, performance, UI)
 3. **Review and refine** - Improve the document through structured self-review
@@ -586,6 +592,7 @@ After writing the plan file, use the **AskUserQuestion tool** to present these o
 7. **Create Issue** - Create issue in project tracker (GitHub/Linear)
 
 Based on selection:
+
 - **Open plan in editor** → Run `open docs/plans/<plan_filename>.md` to open the file in the user's default editor
 - **`/deepen-plan`** → Call the /deepen-plan command with the plan file path to enhance with research
 - **Review and refine** → Load `document-review` skill.
@@ -613,6 +620,7 @@ Loop back to options after Simplify or Other changes until user selects `/ce:wor
 When user selects "Create Issue", detect their project tracker from CLAUDE.md:
 
 1. **Check for tracker preference** in user's CLAUDE.md (global or project):
+
    - Look for `project_tracker: github` or `project_tracker: linear`
    - Or look for mentions of "GitHub Issues" or "Linear" in their workflow section
 
@@ -632,6 +640,7 @@ When user selects "Create Issue", detect their project tracker from CLAUDE.md:
 
 4. **If no tracker configured:**
    Ask user: "Which project tracker do you use? (GitHub/Linear/Other)"
+
    - Suggest adding `project_tracker: github` or `project_tracker: linear` to their CLAUDE.md
 
 5. **After creation:**

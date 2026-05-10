@@ -1,19 +1,27 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { getStatesForZip, getStateData } from "@/lib/election-data";
 import { generateCustomizedPrompt } from "@/lib/prompt-generator";
+import { useLanguage } from "@/lib/language-context";
+import { LanguageToggle } from "@/components/LanguageToggle";
+import { VoterProfile } from "@/components/VoterProfile";
 import type { StateElectionData } from "@/types/election";
 
 export default function Home() {
+  const { t, language } = useLanguage();
+
   const [zipCode, setZipCode] = useState("");
   const [zipError, setZipError] = useState("");
+  const [notFound, setNotFound] = useState(false);
   const [stateOptions, setStateOptions] = useState<string[] | null>(null);
   const [selectedState, setSelectedState] = useState<string | null>(null);
   const [stateData, setStateData] = useState<StateElectionData | null>(null);
   const [customPrompt, setCustomPrompt] = useState<string>("");
   const [copied, setCopied] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [voterProfile, setVoterProfile] = useState<string>("");
 
   const upcomingElection = stateData
     ? stateData.elections.find((e) => new Date(e.date) >= new Date()) || null
@@ -26,30 +34,37 @@ export default function Home() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedState]);
 
+  useEffect(() => {
+    if (stateData) {
+      setCustomPrompt(generateCustomizedPrompt(stateData, zipCode, language));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [language, stateData]);
+
   async function loadStateData(stateCode: string) {
     const data = await getStateData(stateCode);
     if (data) {
       setStateData(data);
-      const prompt = generateCustomizedPrompt(data, zipCode);
-      setCustomPrompt(prompt);
+      setCustomPrompt(generateCustomizedPrompt(data, zipCode, language));
     }
   }
 
   function handleZipSubmit(e: React.FormEvent) {
     e.preventDefault();
     setZipError("");
+    setNotFound(false);
     setStateOptions(null);
     setSelectedState(null);
     setStateData(null);
     setCustomPrompt("");
 
     if (!zipCode.trim()) {
-      setZipError("Please enter a zip code");
+      setZipError(t.errors.emptyZip);
       return;
     }
 
     if (!/^\d{5}$/.test(zipCode.trim())) {
-      setZipError("Please enter a valid 5-digit zip code");
+      setZipError(t.errors.invalidZip);
       return;
     }
 
@@ -57,9 +72,7 @@ export default function Home() {
     const states = getStatesForZip(zipCode.trim());
 
     if (!states) {
-      setZipError(
-        "We don't have data for this zip code yet. We're working on adding all U.S. zip codes.",
-      );
+      setNotFound(true);
       setIsLoading(false);
       return;
     }
@@ -77,7 +90,6 @@ export default function Home() {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      // Fallback: select the text
       const promptArea = document.getElementById("prompt-output");
       if (promptArea) {
         const range = document.createRange();
@@ -90,8 +102,9 @@ export default function Home() {
   }
 
   function formatDate(isoDate: string): string {
+    const locale = language === "es" ? "es-US" : "en-US";
     const date = new Date(isoDate);
-    return date.toLocaleDateString("en-US", {
+    return date.toLocaleDateString(locale, {
       month: "long",
       day: "numeric",
       year: "numeric",
@@ -132,20 +145,23 @@ export default function Home() {
       ok: "text-green-600",
     };
 
+    const { deadlineStatus } = t;
     const statusText =
       status === "passed"
-        ? "Passed"
+        ? deadlineStatus.passed
         : status === "urgent"
-          ? `${daysLeft} days left (URGENT)`
-          : status === "warning"
-            ? `${daysLeft} days left`
-            : `${daysLeft} days left`;
+          ? `${daysLeft} ${deadlineStatus.urgent}`
+          : `${daysLeft} ${deadlineStatus.daysLeft}`;
 
     const postmarkSuffix =
       postmarked !== undefined
         ? postmarked
-          ? " (postmarked)"
-          : " (received)"
+          ? language === "es"
+            ? " (matasellos)"
+            : " (postmarked)"
+          : language === "es"
+            ? " (recibido)"
+            : " (received)"
         : "";
 
     return (
@@ -157,6 +173,8 @@ export default function Home() {
             {postmarkSuffix} —{" "}
             <span className={statusColors[status]}>{statusText}</span>
           </>
+        ) : language === "es" ? (
+          "No disponible"
         ) : (
           "Not available"
         )}
@@ -166,31 +184,29 @@ export default function Home() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      {/* Skip to content link */}
       <a
         href="#main-content"
         className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-blue-600 text-white px-4 py-2 rounded z-50"
       >
-        Skip to content
+        {language === "es" ? "Ir al contenido principal" : "Skip to content"}
       </a>
+
+      <header className="border-b border-gray-200 py-3 px-4">
+        <div className="max-w-4xl mx-auto flex justify-end">
+          <LanguageToggle />
+        </div>
+      </header>
 
       <main
         id="main-content"
         className="flex-1 max-w-4xl mx-auto px-4 py-8 sm:px-6 lg:px-8 w-full"
       >
-        {/* Hero Section */}
         <section className="mb-8">
           <h1 className="text-3xl sm:text-4xl font-bold mb-3">
-            Free AI Ballot Research Tool
+            {t.hero.title}
           </h1>
-          <p className="text-lg text-gray-700 mb-2">
-            Enter your zip code to get a customized AI prompt pre-filled with
-            your state&apos;s election info, deadlines, and resources.
-          </p>
-          <p className="text-base text-gray-600 mb-4">
-            Copy the prompt and paste it into any free AI chatbot — Claude,
-            ChatGPT, Gemini, or Grok.
-          </p>
+          <p className="text-lg text-gray-700 mb-2">{t.hero.subtitle}</p>
+          <p className="text-base text-gray-600 mb-4">{t.hero.description}</p>
           <div className="flex flex-wrap gap-3 text-sm">
             <a
               href="https://claude.ai"
@@ -227,7 +243,6 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Zip Code Entry */}
         <section className="mb-8">
           <form
             onSubmit={handleZipSubmit}
@@ -235,7 +250,7 @@ export default function Home() {
           >
             <div className="flex-1">
               <label htmlFor="zip-input" className="sr-only">
-                Enter your zip code
+                {t.zipForm.label}
               </label>
               <input
                 id="zip-input"
@@ -244,9 +259,15 @@ export default function Home() {
                 inputMode="numeric"
                 value={zipCode}
                 onChange={(e) => setZipCode(e.target.value)}
-                placeholder="Enter your 5-digit zip code"
+                placeholder={t.zipForm.placeholder}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base"
-                aria-describedby={zipError ? "zip-error" : undefined}
+                aria-describedby={
+                  zipError
+                    ? "zip-error"
+                    : notFound
+                      ? "not-found-message"
+                      : undefined
+                }
               />
             </div>
             <button
@@ -254,32 +275,36 @@ export default function Home() {
               data-testid="zip-submit"
               className="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 min-w-[120px] min-h-[44px]"
             >
-              {isLoading ? "Loading..." : "Get Prompt"}
+              {isLoading ? t.zipForm.loading : t.zipForm.submit}
             </button>
           </form>
+
           {zipError && (
             <p
               id="zip-error"
-              data-testid={
-                zipError.includes("don't have data")
-                  ? "not-found-message"
-                  : "zip-error"
-              }
+              data-testid="zip-error"
               className="mt-2 text-red-600 text-sm"
               role="alert"
             >
               {zipError}
             </p>
           )}
+
+          {notFound && (
+            <p
+              id="not-found-message"
+              data-testid="not-found-message"
+              className="mt-2 text-red-600 text-sm"
+              role="alert"
+            >
+              {t.errors.notFound}
+            </p>
+          )}
         </section>
 
-        {/* State Selector (multi-state zip codes) */}
         {stateOptions && stateOptions.length > 1 && !selectedState && (
           <section className="mb-8" data-testid="state-selector">
-            <p className="mb-3 font-semibold">
-              This zip code spans multiple states. Which state are you voting
-              in?
-            </p>
+            <p className="mb-3 font-semibold">{t.stateSelector.heading}</p>
             <div className="flex flex-wrap gap-2">
               {stateOptions.map((state) => (
                 <button
@@ -294,7 +319,6 @@ export default function Home() {
           </section>
         )}
 
-        {/* State Info Display */}
         {stateData && (
           <section
             className="mb-8 border border-gray-300 rounded-lg p-6 bg-gray-50"
@@ -312,10 +336,12 @@ export default function Home() {
                     {upcomingElection.name}
                   </h3>
                   <p data-testid="election-date" className="text-gray-700">
-                    <strong>Date:</strong> {formatDate(upcomingElection.date)}
+                    <strong>{t.stateInfo.electionDate}:</strong>{" "}
+                    {formatDate(upcomingElection.date)}
                   </p>
                   <p className="text-gray-700">
-                    <strong>Type:</strong> {upcomingElection.type}
+                    <strong>{t.stateInfo.electionType}:</strong>{" "}
+                    {upcomingElection.type}
                     {upcomingElection.isPrimary &&
                       upcomingElection.primaryType &&
                       ` (${upcomingElection.primaryType} primary)`}
@@ -323,49 +349,55 @@ export default function Home() {
                 </div>
 
                 <div className="mb-3" data-testid="registration-status">
-                  <h4 className="font-semibold mb-1">Registration Deadlines</h4>
+                  <h4 className="font-semibold mb-1">
+                    {t.stateInfo.registrationDeadlines}
+                  </h4>
                   {renderDeadlineWithStatus(
                     stateData.registration.online.deadline,
-                    "Online",
+                    t.stateInfo.online,
                   )}
                   {renderDeadlineWithStatus(
                     stateData.registration.byMail.deadline,
-                    "By mail",
+                    t.stateInfo.byMail,
                     stateData.registration.byMail.sincePostmarked,
                   )}
                   {renderDeadlineWithStatus(
                     stateData.registration.inPerson.deadline,
-                    "In person",
+                    t.stateInfo.inPerson,
                     stateData.registration.inPerson.sincePostmarked,
                   )}
                   <div>
-                    <strong>Same-day registration:</strong>{" "}
+                    <strong>
+                      {language === "es"
+                        ? "Registro el mismo día:"
+                        : "Same-day registration:"}
+                    </strong>{" "}
                     {stateData.registration.sameDayRegistration
-                      ? "Available"
-                      : "Not available"}
+                      ? t.stateInfo.sameDayAvailable
+                      : t.stateInfo.sameDayNotAvailable}
                   </div>
                 </div>
 
                 <div className="mb-3">
-                  <h4 className="font-semibold">Early Voting</h4>
+                  <h4 className="font-semibold">{t.stateInfo.earlyVoting}</h4>
                   <p className="text-gray-700">
                     {stateData.earlyVoting.available
-                      ? `${formatDate(stateData.earlyVoting.startDate!)} through ${formatDate(stateData.earlyVoting.endDate!)}${stateData.earlyVoting.notes ? ` (${stateData.earlyVoting.notes})` : ""}`
-                      : "Not available — absentee voting only"}
+                      ? `${formatDate(stateData.earlyVoting.startDate!)} — ${formatDate(stateData.earlyVoting.endDate!)}${stateData.earlyVoting.notes ? ` (${stateData.earlyVoting.notes})` : ""}`
+                      : t.stateInfo.earlyVotingNotAvailable}
                   </p>
                 </div>
 
                 <div className="mb-3">
-                  <h4 className="font-semibold">Voter ID</h4>
+                  <h4 className="font-semibold">{t.stateInfo.voterId}</h4>
                   <p className="text-gray-700">
                     {stateData.votingRules.idRequired
-                      ? `Required. Accepted IDs: ${stateData.votingRules.acceptedIds?.join(", ")}`
-                      : "Not required"}
+                      ? `${language === "es" ? "Requerida. IDs aceptadas:" : "Required. Accepted IDs:"} ${stateData.votingRules.acceptedIds?.join(", ")}`
+                      : t.stateInfo.voterIdNotRequired}
                   </p>
                 </div>
 
                 <div className="mb-3">
-                  <h4 className="font-semibold">Phones at Polls</h4>
+                  <h4 className="font-semibold">{t.stateInfo.phonesAtPolls}</h4>
                   <p className="text-gray-700">
                     {stateData.votingRules.phonesAtPollsDetail ||
                       stateData.votingRules.phonesAtPolls}
@@ -379,7 +411,7 @@ export default function Home() {
                     rel="noopener noreferrer"
                     className="text-blue-600 hover:underline block"
                   >
-                    View sample ballot
+                    {t.stateInfo.viewSampleBallot}
                   </a>
                   <a
                     href={stateData.resources.countyElectionLookup}
@@ -387,7 +419,7 @@ export default function Home() {
                     rel="noopener noreferrer"
                     className="text-blue-600 hover:underline block"
                   >
-                    Find county election office
+                    {t.stateInfo.findCountyOffice}
                   </a>
                   <a
                     href={stateData.registration.registrationCheckUrl}
@@ -395,46 +427,44 @@ export default function Home() {
                     rel="noopener noreferrer"
                     className="text-blue-600 hover:underline block"
                   >
-                    Check registration status
+                    {t.stateInfo.checkRegistration}
                   </a>
                 </div>
               </>
             ) : (
               <p data-testid="no-election-message" className="text-gray-700">
-                No upcoming elections are currently scheduled for{" "}
-                {stateData.stateName}. Check{" "}
+                {t.stateInfo.noUpcomingElection} {stateData.stateName}.{" "}
                 <a
                   href={stateData.resources.stateElectionWebsite}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-blue-600 hover:underline"
                 >
-                  the state election website
-                </a>{" "}
-                for updates.
+                  {language === "es"
+                    ? "Ver sitio web electoral del estado"
+                    : "Check the state election website"}
+                </a>
               </p>
             )}
           </section>
         )}
 
-        {/* Customized Prompt Output */}
         {customPrompt && (
           <section className="mb-8">
             <div className="mb-3">
-              <h3 className="text-xl font-semibold mb-2">
-                Your Customized AI Prompt
-              </h3>
-              <p className="text-gray-700 text-sm">
-                Copy this prompt and paste it as your first message in any AI
-                chatbot.
-              </p>
+              <h3 className="text-xl font-semibold mb-2">{t.prompt.heading}</h3>
+              <p className="text-gray-700 text-sm">{t.prompt.description}</p>
             </div>
             <div
               id="prompt-output"
               data-testid="prompt-output"
               className="bg-gray-100 border border-gray-300 rounded-lg p-4 mb-3 whitespace-pre-wrap font-mono text-sm max-h-96 overflow-y-auto"
               role="region"
-              aria-label="Customized AI ballot research prompt"
+              aria-label={
+                language === "es"
+                  ? "Aviso de investigación electoral de IA personalizado"
+                  : "Customized AI ballot research prompt"
+              }
             >
               {customPrompt}
             </div>
@@ -443,7 +473,7 @@ export default function Home() {
               data-testid="copy-button"
               className="px-6 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 min-h-[44px]"
             >
-              {copied ? "Copied!" : "Copy to Clipboard"}
+              {copied ? t.prompt.copied : t.prompt.copyButton}
             </button>
             {copied && (
               <span
@@ -452,48 +482,48 @@ export default function Home() {
                 role="status"
                 aria-live="polite"
               >
-                ✓ Copied
+                {t.prompt.copyConfirmation}
               </span>
             )}
           </section>
         )}
 
-        {/* Tips Section */}
+        <section className="mb-8">
+          <VoterProfile profile={voterProfile} setProfile={setVoterProfile} />
+        </section>
+
         <section className="mb-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
-          <h3 className="text-xl font-semibold mb-3">
-            Tips for Using the Prompt
-          </h3>
+          <h3 className="text-xl font-semibold mb-3">{t.tips.heading}</h3>
           <ul className="list-disc list-inside space-y-2 text-gray-700">
+            <li>{t.tips.tip1}</li>
+            <li>{t.tips.tip2}</li>
+            <li>{t.tips.tip3}</li>
             <li>
-              You can say &quot;I don&apos;t know&quot; or &quot;I&apos;m not
-              sure&quot; — the AI will explain more and help you figure it out.
-            </li>
-            <li>
-              Ask it to research something for you: &quot;Can you look up this
-              candidate&apos;s voting record?&quot;
-            </li>
-            <li>
-              Ask questions anytime: &quot;What does this position actually
-              do?&quot; or &quot;Why does this matter?&quot;
-            </li>
-            <li>
-              <strong>AI can make mistakes.</strong> This is a research starting
-              point. Verify with official sources.
+              <strong>
+                {language === "es"
+                  ? "La IA puede cometer errores."
+                  : "AI can make mistakes."}
+              </strong>{" "}
+              {language === "es"
+                ? "Este es un punto de partida. Verifica con fuentes oficiales."
+                : "This is a research starting point. Verify with official sources."}
             </li>
           </ul>
         </section>
       </main>
 
-      {/* Footer */}
       <footer className="bg-gray-100 border-t border-gray-300 py-6 mt-auto">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <p className="text-gray-700 mb-2">
-            <strong>Share this tool</strong> with friends and family who want to
-            make informed voting decisions.
-          </p>
-          <p className="text-gray-600 text-sm">
-            Created by a human using AI tools
-          </p>
+          <p className="text-gray-700 mb-2">{t.footer.share}</p>
+          <div className="flex justify-center gap-4 text-sm mb-2">
+            <Link href="/privacy" className="text-blue-600 hover:underline">
+              {t.footer.privacy}
+            </Link>
+            <Link href="/terms" className="text-blue-600 hover:underline">
+              {t.footer.terms}
+            </Link>
+          </div>
+          <p className="text-gray-600 text-sm">{t.footer.credit}</p>
         </div>
       </footer>
     </div>

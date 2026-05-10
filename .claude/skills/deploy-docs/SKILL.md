@@ -66,7 +66,7 @@ on:
   push:
     branches: [main]
     paths:
-      - 'plugins/compound-engineering/docs/**'
+      - "plugins/compound-engineering/docs/**"
   workflow_dispatch:
 
 permissions:
@@ -89,7 +89,7 @@ jobs:
       - uses: actions/configure-pages@v4
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: 'plugins/compound-engineering/docs'
+          path: "plugins/compound-engineering/docs"
       - uses: actions/deploy-pages@v4
 ```
 
