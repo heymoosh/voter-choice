@@ -2,7 +2,7 @@
 
 ## Next
 
-Continue Phase 1 — Next run: Run 4 (Spec Kit workflow) on `workflow/spec-kit` branch. Use `/start` command to initiate autonomous build session.
+**Run 5, Phase 1 — Superpowers workflow.** You are already on `run5/superpowers` — do NOT switch branches. Build the full production ballot research tool on this branch per `docs/PROJECT_SPEC.md` (v2.0). Use Superpowers methodology via the available commands (e.g. `/write-plan` to create a plan, then `/execute-plan` to execute it). Clean environment first (`rm -rf node_modules .next coverage && npm install`), build autonomously using the spec as the sole source of truth, then run `npm run measure`, tag `superpowers-run5-phase1-complete`, push, and update this log.
 
 ## Completed
 
