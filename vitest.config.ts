@@ -5,7 +5,11 @@ import path from "path";
 export default defineConfig({
   plugins: [react()],
   test: {
-    include: ["src/**/*.test.{ts,tsx}", "src/**/*.spec.{ts,tsx}"],
+    include: [
+      "src/**/*.test.{ts,tsx}",
+      "src/**/*.spec.{ts,tsx}",
+      "db/**/*.test.ts",
+    ],
     globals: true,
     environment: "jsdom",
     coverage: {

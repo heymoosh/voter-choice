@@ -1,0 +1,55 @@
+name: Tag Bills with Issues
+
+on:
+  # Sunday 09:00 UTC — after both ingest jobs have had time to complete
+  schedule:
+    - cron: "0 9 * * 0"
+  # Allow manual trigger for re-tagging or backfill
+  workflow_dispatch:
+
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Bitwarden Secrets Manager CLI
+        run: |
+          curl -sSLo bws.zip "https://github.com/bitwarden/sdk-sm/releases/download/bws-v2.0.0/bws-x86_64-unknown-linux-musl-2.0.0.zip"
+          unzip -o bws.zip bws
+          sudo install -m 755 bws /usr/local/bin/bws
+          bws --version
+
+      - name: Pull secrets from Bitwarden SM
+        env:
+          BWS_ACCESS_TOKEN: ${{ secrets.BW_ACCESS_TOKEN }}
+        run: |
+          # ---------------------------------------------------------------
+          # DATABASE_URL — Neon Postgres connection string
+          # BWS secret ID: replace <DATABASE_URL_BWS_SECRET_ID> with the
+          # actual UUID from Bitwarden Secrets Manager after provisioning.
+          # ---------------------------------------------------------------
+          DATABASE_URL=$(bws secret get <DATABASE_URL_BWS_SECRET_ID> --access-token "$BWS_ACCESS_TOKEN" --output json | jq -r '.value')
+          echo "DATABASE_URL=$DATABASE_URL" >> "$GITHUB_ENV"
+          echo "::add-mask::$DATABASE_URL"
+
+          # ---------------------------------------------------------------
+          # OPENSTATES_API_KEY — available for future Phase D calls
+          # BWS secret ID: replace <OPENSTATES_API_KEY_BWS_SECRET_ID>
+          # ---------------------------------------------------------------
+          OPENSTATES_API_KEY=$(bws secret get <OPENSTATES_API_KEY_BWS_SECRET_ID> --access-token "$BWS_ACCESS_TOKEN" --output json | jq -r '.value')
+          echo "OPENSTATES_API_KEY=$OPENSTATES_API_KEY" >> "$GITHUB_ENV"
+          echo "::add-mask::$OPENSTATES_API_KEY"
+
+      - name: Run bill issue tagger (Phase A — no-op skeleton)
+        run: npx tsx scripts/ingest/tag-bills.ts

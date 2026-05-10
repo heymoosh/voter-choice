@@ -57,3 +57,6 @@ test-results/
 .agentic-qe/
 .ai/local-pdfs/
 .ai/extracted-ballots/
+
+# Drizzle Kit journal / meta (generated, not committed)
+db/migrations/meta/

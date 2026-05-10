@@ -66,6 +66,10 @@ jobs:
           echo "NEXT_PUBLIC_GOOGLE_PLACES_API_KEY=$GOOGLE_PLACES_API_KEY" >> "$GITHUB_ENV"
           echo "::add-mask::$GOOGLE_PLACES_API_KEY"
 
+          # NOTE (Packet 6): DATABASE_URL and OPENSTATES_API_KEY pulls land in
+          # Phase F when /api/alignment is added. Until then, the deployed app
+          # has no need for them; ingest workflows pull them directly.
+
       - name: Install Vercel CLI
         run: npm install -g vercel
 
@@ -99,6 +103,12 @@ jobs:
           fi
           if [ -n "$UPSTASH_REDIS_REST_TOKEN" ]; then
             echo "$UPSTASH_REDIS_REST_TOKEN" | vercel env add UPSTASH_REDIS_REST_TOKEN production --force --token="$VERCEL_TOKEN" 2>/dev/null || true
+          fi
+          if [ -n "$DATABASE_URL" ]; then
+            echo "$DATABASE_URL" | vercel env add DATABASE_URL production --force --token="$VERCEL_TOKEN" 2>/dev/null || true
+          fi
+          if [ -n "$OPENSTATES_API_KEY" ]; then
+            echo "$OPENSTATES_API_KEY" | vercel env add OPENSTATES_API_KEY production --force --token="$VERCEL_TOKEN" 2>/dev/null || true
           fi
 
       - name: Deploy to Vercel

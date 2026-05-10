@@ -1,0 +1,68 @@
+name: Ingest State Votes
+
+on:
+  # Sunday 07:30 UTC — after federal ingest starts
+  schedule:
+    - cron: "30 7 * * 0"
+  # Allow manual trigger; pass state=TX (or any) to run a single matrix leg
+  workflow_dispatch:
+    inputs:
+      state:
+        description: "State abbreviation to ingest (leave blank for all)"
+        required: false
+        default: ""
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    strategy:
+      # Phase A: 6 states with fixtures. Phase C expands matrix to all 50.
+      matrix:
+        state: [TX, CA, NY, FL, GA, NC]
+      fail-fast: false
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Bitwarden Secrets Manager CLI
+        run: |
+          curl -sSLo bws.zip "https://github.com/bitwarden/sdk-sm/releases/download/bws-v2.0.0/bws-x86_64-unknown-linux-musl-2.0.0.zip"
+          unzip -o bws.zip bws
+          sudo install -m 755 bws /usr/local/bin/bws
+          bws --version
+
+      - name: Pull secrets from Bitwarden SM
+        env:
+          BWS_ACCESS_TOKEN: ${{ secrets.BW_ACCESS_TOKEN }}
+        run: |
+          # ---------------------------------------------------------------
+          # DATABASE_URL — Neon Postgres connection string
+          # BWS secret ID: replace <DATABASE_URL_BWS_SECRET_ID> with the
+          # actual UUID from Bitwarden Secrets Manager after provisioning.
+          # ---------------------------------------------------------------
+          DATABASE_URL=$(bws secret get <DATABASE_URL_BWS_SECRET_ID> --access-token "$BWS_ACCESS_TOKEN" --output json | jq -r '.value')
+          echo "DATABASE_URL=$DATABASE_URL" >> "$GITHUB_ENV"
+          echo "::add-mask::$DATABASE_URL"
+
+          # ---------------------------------------------------------------
+          # OPENSTATES_API_KEY — OpenStates legislative data API
+          # BWS secret ID: replace <OPENSTATES_API_KEY_BWS_SECRET_ID>
+          # ---------------------------------------------------------------
+          OPENSTATES_API_KEY=$(bws secret get <OPENSTATES_API_KEY_BWS_SECRET_ID> --access-token "$BWS_ACCESS_TOKEN" --output json | jq -r '.value')
+          echo "OPENSTATES_API_KEY=$OPENSTATES_API_KEY" >> "$GITHUB_ENV"
+          echo "::add-mask::$OPENSTATES_API_KEY"
+
+      - name: Run state votes ingest — ${{ matrix.state }} (Phase A — no-op skeleton)
+        env:
+          STATE: ${{ matrix.state }}
+        run: npx tsx scripts/ingest/state-votes.ts

@@ -20,7 +20,10 @@
     "e2e": "playwright test",
     "measure": "node scripts/measure.mjs",
     "sync:ballot-prompt": "node scripts/generate-ballot-prompt-module.mjs",
-    "clean-start": "rm -rf node_modules .next coverage .jscpd-report .lighthouseci .vitest-report.json .eslint-report.json playwright-report.json && npm install"
+    "clean-start": "rm -rf node_modules .next coverage .jscpd-report .lighthouseci .vitest-report.json .eslint-report.json playwright-report.json && npm install",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:smoke": "npx tsx scripts/ingest/_smoke.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "0.39.0",
@@ -28,6 +31,8 @@
     "@dnd-kit/sortable": "10.0.0",
     "@dnd-kit/utilities": "3.2.2",
     "@googlemaps/js-api-loader": "2.0.2",
+    "@neondatabase/serverless": "1.1.0",
+    "drizzle-orm": "0.45.2",
     "next": "15.5.12",
     "pdfjs-dist": "5.7.284",
     "react": "19.1.0",
@@ -35,6 +40,7 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "3.3.5",
+    "drizzle-kit": "0.31.10",
     "@lhci/cli": "0.15.0",
     "@playwright/test": "1.52.0",
     "@tailwindcss/postcss": "4.2.1",
