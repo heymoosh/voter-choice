@@ -1,0 +1,109 @@
+{
+  "metadata": {
+    "timestamp": "2026-05-10T16:51:04.874Z",
+    "branch": "run5/superpowers",
+    "commit": "b49d317",
+    "nodeVersion": "v22.14.0"
+  },
+  "eslint": {
+    "errors": 0,
+    "warnings": 2,
+    "complexityViolations": 2
+  },
+  "vitest": {
+    "tests": {
+      "total": 68,
+      "passed": 68,
+      "failed": 0,
+      "skipped": 0,
+      "passRate": 100
+    },
+    "coverage": {
+      "lines": 36.24,
+      "branches": 90.47,
+      "functions": 96.96,
+      "statements": 36.24
+    }
+  },
+  "duplication": {
+    "duplicatedLines": 0,
+    "totalLines": 2134,
+    "percentage": 0,
+    "clones": 0
+  },
+  "bundleSize": {
+    "buildSuccess": true,
+    "pages": [
+      {
+        "route": "/",
+        "size": 12.4,
+        "unit": "kB"
+      },
+      {
+        "route": "/_not-found",
+        "size": 996,
+        "unit": "B"
+      },
+      {
+        "route": "/api/chat",
+        "size": 123,
+        "unit": "B"
+      }
+    ],
+    "firstLoadJsShared": {
+      "size": 102,
+      "unit": "kB"
+    }
+  },
+  "lighthouse": {
+    "performance": 98,
+    "accessibility": 100,
+    "bestPractices": 100,
+    "seo": 100
+  },
+  "playwright": {
+    "total": 42,
+    "passed": 42,
+    "failed": 0,
+    "timedOut": 0,
+    "skipped": 0,
+    "passRate": 100
+  },
+  "linesOfCode": {
+    "application": {
+      "code": 2150,
+      "files": 23,
+      "byExtension": {
+        ".ts": {
+          "files": 14,
+          "code": 1213
+        },
+        ".css": {
+          "files": 1,
+          "code": 21
+        },
+        ".tsx": {
+          "files": 4,
+          "code": 689
+        },
+        ".json": {
+          "files": 4,
+          "code": 227
+        }
+      }
+    },
+    "plugin": {
+      "code": 0,
+      "files": 0,
+      "byExtension": {}
+    },
+    "infrastructure": {
+      "code": 845,
+      "files": 11
+    },
+    "total": {
+      "code": 2995,
+      "files": 34
+    }
+  }
+}
