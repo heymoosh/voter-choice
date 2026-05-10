@@ -154,7 +154,8 @@ describe("generatePrompt", () => {
     expect(en.basePrompt).toContain("VALUES TAG (LIGHTWEIGHT)");
     expect(en.basePrompt).toContain("[VALUES_TAG_REQUEST]");
     expect(en.basePrompt).not.toContain("[PROFILE_DELTA]");
-    expect(en.basePrompt).toContain("The values check is over");
+    // The values check ends without re-asking — now flows through concern interpretation gate
+    expect(en.basePrompt).toContain("Do NOT re-ask values");
     // Spanish prompt is intentionally still on the previous version while the
     // English flow is being iterated; assert the legacy ES surface still exists.
     expect(es.basePrompt).toContain("Escaneo de temas");
@@ -438,6 +439,57 @@ describe("generatePrompt", () => {
     expect(result.basePrompt).not.toContain(
       "Texas bans wireless devices in the voting room",
     );
+  });
+
+  it("basePrompt documents the new ranked= payload shape for [VOTER VALUES]", () => {
+    const result = generatePrompt(txData, "73301", "2026-03-30");
+    expect(result.basePrompt).toContain("[VOTER VALUES] ranked=");
+    expect(result.basePrompt).toContain('"type":"tag"');
+    expect(result.basePrompt).toContain('"type":"freeText"');
+    expect(result.basePrompt).not.toContain("[VOTER VALUES] tags=");
+    expect(result.basePrompt).not.toContain("[VOTER VALUES] custom=");
+  });
+
+  it("basePrompt documents [CONCERN_INTERPRETATION] block and its schema", () => {
+    const result = generatePrompt(txData, "73301", "2026-03-30");
+    expect(result.basePrompt).toContain("[CONCERN_INTERPRETATION]");
+    expect(result.basePrompt).toContain("[/CONCERN_INTERPRETATION]");
+    expect(result.basePrompt).toContain("confidence");
+    expect(result.basePrompt).toContain('"clear"');
+    expect(result.basePrompt).toContain('"low"');
+    expect(result.basePrompt).toContain('"off_topic"');
+    expect(result.basePrompt).toContain("disambiguationQuestion");
+    expect(result.basePrompt).toContain("disambiguationOptions");
+  });
+
+  it("basePrompt documents [VOTER CONFIRMED CONCERNS] payload", () => {
+    const result = generatePrompt(txData, "73301", "2026-03-30");
+    expect(result.basePrompt).toContain("[VOTER CONFIRMED CONCERNS]");
+    expect(result.basePrompt).toContain("resolvedInterpretation");
+  });
+
+  it("basePrompt documents [VOTER REINTERPRET] and [VOTER REMOVE_CONCERN] payloads", () => {
+    const result = generatePrompt(txData, "73301", "2026-03-30");
+    expect(result.basePrompt).toContain("[VOTER REINTERPRET]");
+    expect(result.basePrompt).toContain("[VOTER REMOVE_CONCERN]");
+    expect(result.basePrompt).toContain("sourceRank");
+  });
+
+  it("basePrompt holds the no-labeled-guess line for ambiguous concerns", () => {
+    const result = generatePrompt(txData, "73301", "2026-03-30");
+    // Model must ask, not guess
+    expect(result.basePrompt).toContain(
+      "You NEVER guess the stance for ambiguous concerns — you ask the user to pick a frame",
+    );
+    expect(result.basePrompt).toContain("non-leading question");
+  });
+
+  it("basePrompt documents mixed chip + free-text handling in the ranked concern list", () => {
+    const result = generatePrompt(txData, "73301", "2026-03-30");
+    expect(result.basePrompt).toContain("sourceType");
+    expect(result.basePrompt).toContain("sourceTagId");
+    expect(result.basePrompt).toContain("sourceText");
+    expect(result.basePrompt).toContain("free-text entries");
   });
 });
 

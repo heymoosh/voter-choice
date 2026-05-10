@@ -235,9 +235,16 @@ export interface Translations {
     valuesTagSelectorInstruction: string;
     valuesTagSelectorSubmit: string;
     valuesTagSelectorSkip: string;
-    valuesTagSelectorCustomPlaceholder: string;
     valuesTagSelectorSubmitting: string;
     valuesTagSelectorSubmitted: string;
+    valuesTagSelectorRankedHeading: string;
+    valuesTagSelectorFreeTextPlaceholder: string;
+    valuesTagSelectorFreeTextAdd: string;
+    valuesTagSelectorReorderHint: string;
+    valuesTagSelectorEmpty: string;
+    valuesTagSelectorAtCap: string;
+    valuesTagSelectorRemoveLabel: string;
+    valuesTagSelectorRankBadge: (rank: number) => string;
     // RacePatterns keys
     racePatternsRevealButton: string;
     racePatternsPickPrefix: string;
@@ -265,6 +272,17 @@ export interface Translations {
     tabCloseWarningBanner: string;
     pdfScannedError: string;
     pdfLoadError: string;
+    // ConcernInterpretation keys
+    concernInterpretationHeading: string;
+    concernInterpretationSubhead: string;
+    concernInterpretationConfirm: string;
+    concernInterpretationSubmitting: string;
+    concernInterpretationSubmitted: string;
+    concernInterpretationEdit: string;
+    concernInterpretationRemove: string;
+    concernInterpretationOffTopic: string;
+    concernInterpretationDisambiguatePrompt: string;
+    concernInterpretationConfirmPerEntry: string;
   };
   portfolio: {
     badge: string;
@@ -638,12 +656,20 @@ const en: Translations = {
     // ValuesTagSelector
     valuesTagSelectorTitle: "What issues matter most to you?",
     valuesTagSelectorInstruction:
-      "Select up to 3 issues. We'll highlight which candidates speak to your priorities.",
+      "Pick up to 3 priorities — chips, your own words, or both.",
     valuesTagSelectorSubmit: "Apply my priorities",
     valuesTagSelectorSkip: "Skip — no preference",
-    valuesTagSelectorCustomPlaceholder: "Describe your top issue…",
     valuesTagSelectorSubmitting: "Sending…",
     valuesTagSelectorSubmitted: "Priorities applied",
+    valuesTagSelectorRankedHeading: "Your ranked priorities",
+    valuesTagSelectorFreeTextPlaceholder:
+      "Add your own (e.g., 'healthcare costs')",
+    valuesTagSelectorFreeTextAdd: "Add",
+    valuesTagSelectorReorderHint: "Drag to reorder. Most important on top.",
+    valuesTagSelectorEmpty: "Pick a chip or type a concern below to begin.",
+    valuesTagSelectorAtCap: "Up to 3 priorities. Remove one to add another.",
+    valuesTagSelectorRemoveLabel: "Remove",
+    valuesTagSelectorRankBadge: (rank: number) => `#${rank}`,
     // RacePatterns
     racePatternsRevealButton: "Reveal candidates",
     racePatternsPickPrefix: "Pick",
@@ -672,6 +698,20 @@ const en: Translations = {
     tabCloseWarningBanner: `This session isn’t saved. Get the summary or tap “Finish this later” before closing the tab.`,
     pdfScannedError: `This PDF appears to be scanned and can’t be auto-extracted. Open it, copy the text, and paste it here instead.`,
     pdfLoadError: `We couldn’t load the PDF reader right now. Please try again in a moment, or open the PDF, copy the text, and paste it here.`,
+    // ConcernInterpretation
+    concernInterpretationHeading: "Did we get this right?",
+    concernInterpretationSubhead:
+      "We interpreted your concerns. Confirm, edit, or remove anything that doesn't match.",
+    concernInterpretationConfirm: "Confirm and continue",
+    concernInterpretationSubmitting: "Confirming...",
+    concernInterpretationSubmitted: "Concerns confirmed",
+    concernInterpretationEdit: "Edit",
+    concernInterpretationRemove: "Remove",
+    concernInterpretationOffTopic:
+      "This doesn't look like a ballot-relevant concern. Remove or rephrase.",
+    concernInterpretationDisambiguatePrompt:
+      "Which of these best matches your view?",
+    concernInterpretationConfirmPerEntry: "Looks right",
   },
   portfolio: {
     badge: "Verified Research",
@@ -1066,12 +1106,20 @@ const es: Translations = {
     // ValuesTagSelector — EN stubs (ES UI out of scope for this packet)
     valuesTagSelectorTitle: "What issues matter most to you?",
     valuesTagSelectorInstruction:
-      "Select up to 3 issues. We'll highlight which candidates speak to your priorities.",
+      "Pick up to 3 priorities — chips, your own words, or both.",
     valuesTagSelectorSubmit: "Apply my priorities",
     valuesTagSelectorSkip: "Skip — no preference",
-    valuesTagSelectorCustomPlaceholder: "Describe your top issue…",
     valuesTagSelectorSubmitting: "Sending…",
     valuesTagSelectorSubmitted: "Priorities applied",
+    valuesTagSelectorRankedHeading: "Your ranked priorities",
+    valuesTagSelectorFreeTextPlaceholder:
+      "Add your own (e.g., 'healthcare costs')",
+    valuesTagSelectorFreeTextAdd: "Add",
+    valuesTagSelectorReorderHint: "Drag to reorder. Most important on top.",
+    valuesTagSelectorEmpty: "Pick a chip or type a concern below to begin.",
+    valuesTagSelectorAtCap: "Up to 3 priorities. Remove one to add another.",
+    valuesTagSelectorRemoveLabel: "Remove",
+    valuesTagSelectorRankBadge: (rank: number) => `#${rank}`,
     // RacePatterns — EN stubs (ES UI out of scope for this packet)
     racePatternsRevealButton: "Reveal candidates",
     racePatternsPickPrefix: "Pick",
@@ -1102,6 +1150,20 @@ const es: Translations = {
       "This PDF appears to be scanned and can’t be auto-extracted. Open it, copy the text, and paste it here instead.",
     pdfLoadError:
       "We couldn’t load the PDF reader right now. Please try again in a moment, or open the PDF, copy the text, and paste it here.",
+    // ConcernInterpretation — EN stubs (ES UI out of scope for this packet)
+    concernInterpretationHeading: "Did we get this right?",
+    concernInterpretationSubhead:
+      "We interpreted your concerns. Confirm, edit, or remove anything that doesn’t match.",
+    concernInterpretationConfirm: "Confirm and continue",
+    concernInterpretationSubmitting: "Confirming...",
+    concernInterpretationSubmitted: "Concerns confirmed",
+    concernInterpretationEdit: "Edit",
+    concernInterpretationRemove: "Remove",
+    concernInterpretationOffTopic:
+      "This doesn’t look like a ballot-relevant concern. Remove or rephrase.",
+    concernInterpretationDisambiguatePrompt:
+      "Which of these best matches your view?",
+    concernInterpretationConfirmPerEntry: "Looks right",
   },
   portfolio: {
     badge: "Investigaci\u00f3n Verificada",

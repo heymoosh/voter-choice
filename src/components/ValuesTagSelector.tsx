@@ -1,113 +1,288 @@
 "use client";
 
 import React, { useState } from "react";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+  arrayMove,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { useLanguage } from "../lib/i18n";
 import { translations } from "../lib/translations";
 import type { ValuesTagRequestBlock } from "../lib/structured-blocks";
 
 /* ──────────────────────────────────────────────────────────────
- * ValuesTagSelector
+ * ValuesTagSelector v2
  *
- * Renders a [VALUES_TAG_REQUEST] block as a multi-select chip set
- * with optional free-text ("custom") entry and a skip affordance.
+ * Renders a [VALUES_TAG_REQUEST] block as:
+ *   - A chip set for issue tags (including show_ballot special chip)
+ *   - A "Ranked priorities" list with drag-and-drop reorder
+ *   - A free-text input (always visible) for custom concerns
  *
  * Special item IDs:
- *   "show_ballot" — single-select; selecting it clears all other
- *                   selections; selecting any other tag clears it.
- *   "custom"      — reveals a free-text input; submitting with a
- *                   non-empty string sends { tags: [], custom }.
- *                   Selecting custom clears any selected tags.
+ *   "show_ballot" — single-select; selecting it clears everything else.
+ *   "custom"      — ignored/hidden in chip rendering (free-text input
+ *                   is always available as a sibling, not chip-gated).
  *
- * Max tag selections: 3 (excluding show_ballot and custom).
+ * Cap: 3 total ranked entries (chips + free-text combined).
+ *
+ * Submit payload shape:
+ *   { ranked: RankedEntry[] } | "skipped"
+ *   RankedEntry = { type: "tag"; id: string; rank: number }
+ *               | { type: "freeText"; text: string; rank: number }
  * ────────────────────────────────────────────────────────────── */
 
-const MAX_TAG_SELECTIONS = 3;
+const MAX_ENTRIES = 3;
+
+export type RankedEntry =
+  | { type: "tag"; id: string; rank: number }
+  | { type: "freeText"; text: string; rank: number };
+
+export type SubmitPayload = { ranked: RankedEntry[] } | "skipped";
 
 export interface ValuesTagSelectorProps {
   block: ValuesTagRequestBlock;
-  onSubmit: (
-    selection: { tags: string[]; custom?: string } | "skipped",
-  ) => void;
+  onSubmit: (selection: SubmitPayload) => void;
   isSubmitting?: boolean;
   isSubmitted?: boolean;
-  submittedTags?: string[]; // for read-only post-submit display
+  /** New: for read-only post-submit display using the new ranked shape. */
+  submittedRanked?: RankedEntry[];
 }
 
 function isSpecial(id: string): boolean {
   return id === "show_ballot" || id === "custom";
 }
 
+/* ── Internal ranked list item type (with a stable key for dnd) ── */
+type TagItem = { key: string; type: "tag"; id: string };
+type FreeTextItem = { key: string; type: "freeText"; text: string };
+type RankedListItem = TagItem | FreeTextItem;
+
+/* ── Sortable item subcomponent ─────────────────────────────── */
+interface SortableItemProps {
+  item: RankedListItem;
+  rank: number;
+  removeLabel: string;
+  onRemove: (key: string) => void;
+  disabled: boolean;
+}
+
+function SortableItem({
+  item,
+  rank,
+  removeLabel,
+  onRemove,
+  disabled,
+}: SortableItemProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: item.key, disabled });
+
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  const label = item.type === "tag" ? item.id : item.text;
+
+  return (
+    <li
+      ref={setNodeRef}
+      style={style}
+      data-testid={`ranked-item-${item.key}`}
+      className="flex items-center gap-2 bg-surface-lowest border border-outline-variant/40 px-3 py-2"
+    >
+      {/* Drag handle */}
+      {!disabled && (
+        <span
+          {...attributes}
+          {...listeners}
+          data-testid={`drag-handle-${item.key}`}
+          aria-label="Drag to reorder"
+          className="cursor-grab text-on-surface-muted hover:text-primary select-none touch-none"
+        >
+          ⠿
+        </span>
+      )}
+
+      {/* Rank badge */}
+      <span
+        data-testid={`rank-badge-${item.key}`}
+        className="text-xs font-black text-primary min-w-[1.5rem]"
+      >
+        #{rank}
+      </span>
+
+      {/* Label */}
+      <span
+        className={
+          "flex-1 text-xs " +
+          (item.type === "freeText"
+            ? "italic text-on-surface"
+            : "font-bold uppercase tracking-widest text-on-surface")
+        }
+      >
+        {label}
+        {item.type === "freeText" && (
+          <span className="ml-1 text-[10px] font-bold uppercase tracking-widest text-primary/70 not-italic">
+            custom
+          </span>
+        )}
+      </span>
+
+      {/* Remove button */}
+      <button
+        type="button"
+        data-testid={`remove-item-${item.key}`}
+        aria-label={`${removeLabel}: ${label}`}
+        disabled={disabled}
+        onClick={() => onRemove(item.key)}
+        className="text-on-surface-muted hover:text-primary disabled:opacity-40 text-sm leading-none px-1"
+      >
+        ✕
+      </button>
+    </li>
+  );
+}
+
+/* ── Main component ─────────────────────────────────────────── */
 export function ValuesTagSelector({
   block,
   onSubmit,
   isSubmitting = false,
   isSubmitted = false,
-  submittedTags = [],
+  submittedRanked = [],
 }: ValuesTagSelectorProps) {
   const { lang } = useLanguage();
   const t = translations[lang].research;
 
-  const [selectedTags, setSelectedTags] = useState<Set<string>>(new Set());
-  const [showCustom, setShowCustom] = useState(false);
-  const [customText, setCustomText] = useState("");
+  /* Ranked list state */
+  const [rankedItems, setRankedItems] = useState<RankedListItem[]>([]);
+  /* Free-text input state */
+  const [freeText, setFreeText] = useState("");
+  /* show_ballot special state */
+  const [showBallotSelected, setShowBallotSelected] = useState(false);
 
   const disabled = isSubmitting || isSubmitted;
+  const atCap = rankedItems.length >= MAX_ENTRIES;
 
+  /* The set of tag IDs currently in the ranked list */
+  const selectedTagIds = new Set(
+    rankedItems.filter((i) => i.type === "tag").map((i) => (i as TagItem).id),
+  );
+
+  /* dnd-kit sensors */
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
+  );
+
+  /* ── Chip click ─────────────────────────────────────────── */
   function handleChipClick(id: string) {
     if (disabled) return;
 
     if (id === "show_ballot") {
-      // Single-select; clear everything else.
-      if (selectedTags.has("show_ballot")) {
-        setSelectedTags(new Set());
+      if (showBallotSelected) {
+        setShowBallotSelected(false);
       } else {
-        setSelectedTags(new Set(["show_ballot"]));
-        setShowCustom(false);
-        setCustomText("");
+        setShowBallotSelected(true);
+        setRankedItems([]);
       }
       return;
     }
 
-    if (id === "custom") {
-      // Toggle custom input; clears tag selections.
-      if (showCustom) {
-        setShowCustom(false);
-        setCustomText("");
-      } else {
-        setShowCustom(true);
-        setSelectedTags(new Set());
-      }
-      return;
-    }
-
-    // Issue tag toggle.
-    const next = new Set(selectedTags);
-    // Clear show_ballot if it was selected.
-    next.delete("show_ballot");
-
-    if (next.has(id)) {
-      next.delete(id);
+    /* Regular tag toggle */
+    if (selectedTagIds.has(id)) {
+      /* Deselect: remove from ranked list */
+      setRankedItems((prev) =>
+        prev.filter((i) => !(i.type === "tag" && (i as TagItem).id === id)),
+      );
     } else {
-      // Enforce max; reject if at limit and not custom path.
-      if (next.size >= MAX_TAG_SELECTIONS) return;
-      // Selecting an issue tag clears custom.
-      if (showCustom) {
-        setShowCustom(false);
-        setCustomText("");
-      }
-      next.add(id);
+      /* Select: add to ranked list if under cap */
+      if (atCap) return;
+      setShowBallotSelected(false);
+      const key = `tag-${id}`;
+      setRankedItems((prev) => [...prev, { key, type: "tag", id }]);
     }
-    setSelectedTags(next);
   }
 
+  /* ── Free-text add ──────────────────────────────────────── */
+  function handleFreeTextAdd() {
+    const text = freeText.trim();
+    if (!text || atCap || disabled) return;
+    const key = `ft-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    setRankedItems((prev) => [...prev, { key, type: "freeText", text }]);
+    setFreeText("");
+  }
+
+  function handleFreeTextKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleFreeTextAdd();
+    }
+  }
+
+  /* ── Remove from ranked list ────────────────────────────── */
+  function handleRemove(key: string) {
+    if (disabled) return;
+    setRankedItems((prev) => prev.filter((i) => i.key !== key));
+  }
+
+  /* ── Drag end ───────────────────────────────────────────── */
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      setRankedItems((prev) => {
+        const oldIndex = prev.findIndex((i) => i.key === active.id);
+        const newIndex = prev.findIndex((i) => i.key === over.id);
+        return arrayMove(prev, oldIndex, newIndex);
+      });
+    }
+  }
+
+  /* ── Submit ─────────────────────────────────────────────── */
   function handleSubmit() {
     if (disabled) return;
-
-    if (showCustom && customText.trim().length > 0) {
-      onSubmit({ tags: [], custom: customText.trim() });
-    } else {
-      onSubmit({ tags: Array.from(selectedTags) });
+    if (showBallotSelected) {
+      onSubmit({
+        ranked: [{ type: "tag", id: "show_ballot", rank: 1 }],
+      });
+      return;
     }
+    const ranked: RankedEntry[] = rankedItems.map((item, i) => {
+      if (item.type === "tag") {
+        return {
+          type: "tag",
+          id: (item as TagItem).id,
+          rank: i + 1,
+        };
+      }
+      return {
+        type: "freeText",
+        text: (item as FreeTextItem).text,
+        rank: i + 1,
+      };
+    });
+    onSubmit({ ranked });
   }
 
   function handleSkip() {
@@ -115,9 +290,8 @@ export function ValuesTagSelector({
     onSubmit("skipped");
   }
 
-  // ── Submitted read-only state ──────────────────────────────
+  /* ── Submitted read-only state ──────────────────────────── */
   if (isSubmitted) {
-    const displayTags = submittedTags.length > 0 ? submittedTags : [];
     return (
       <section
         data-testid="values-tag-selector"
@@ -132,37 +306,49 @@ export function ValuesTagSelector({
         >
           {t.valuesTagSelectorSubmitted}
         </p>
-        {displayTags.length > 0 && (
-          <ul
-            className="flex flex-wrap gap-2 list-none p-0"
-            aria-label="Your submitted priorities"
+        {submittedRanked.length > 0 && (
+          <ol
+            className="space-y-1 list-none p-0"
+            aria-label="Submitted priorities"
           >
-            {displayTags.map((tag) => {
-              const item = block.items.find((i) => i.id === tag);
+            {submittedRanked.map((entry) => {
+              const displayText =
+                entry.type === "tag"
+                  ? (block.items.find((i) => i.id === entry.id)?.label ??
+                    entry.id)
+                  : entry.text;
               return (
-                <li key={tag}>
-                  <span className="inline-flex items-center px-3 py-1.5 text-xs font-bold uppercase tracking-widest border border-primary text-primary bg-primary/10">
-                    {item ? item.label : tag}
+                <li key={entry.rank} className="flex items-center gap-2">
+                  <span className="text-xs font-black text-primary">
+                    #{entry.rank}
+                  </span>
+                  <span
+                    className={
+                      "text-xs " +
+                      (entry.type === "freeText"
+                        ? "italic text-on-surface"
+                        : "font-bold uppercase tracking-widest text-on-surface")
+                    }
+                  >
+                    {displayText}
+                    {entry.type === "freeText" && (
+                      <span className="ml-1 text-[10px] font-bold uppercase tracking-widest text-primary/70 not-italic">
+                        custom
+                      </span>
+                    )}
                   </span>
                 </li>
               );
             })}
-          </ul>
+          </ol>
         )}
       </section>
     );
   }
 
-  // ── Interactive state ──────────────────────────────────────
+  /* ── Interactive state ──────────────────────────────────── */
   const regularItems = block.items.filter((i) => !isSpecial(i.id));
   const showBallotItem = block.items.find((i) => i.id === "show_ballot");
-  const customItem = block.items.find((i) => i.id === "custom");
-
-  const isShowBallotSelected = selectedTags.has("show_ballot");
-  const regularSelectedCount = [...selectedTags].filter(
-    (id) => !isSpecial(id),
-  ).length;
-  const atMax = regularSelectedCount >= MAX_TAG_SELECTIONS;
 
   return (
     <section
@@ -178,15 +364,15 @@ export function ValuesTagSelector({
         </p>
       </header>
 
-      {/* Regular issue tags */}
+      {/* Regular issue tag chips */}
       <ul
         className="flex flex-wrap gap-2 list-none p-0"
         role="group"
         aria-label="Issue priorities"
       >
         {regularItems.map((item) => {
-          const selected = selectedTags.has(item.id);
-          const reachedMax = atMax && !selected && !isShowBallotSelected;
+          const selected = selectedTagIds.has(item.id);
+          const reachedMax = atCap && !selected && !showBallotSelected;
           return (
             <li key={item.id}>
               <button
@@ -211,58 +397,106 @@ export function ValuesTagSelector({
         })}
       </ul>
 
-      {/* Special items: show_ballot and custom */}
-      <div className="flex flex-wrap gap-2">
-        {showBallotItem && (
+      {/* show_ballot special chip */}
+      {showBallotItem && (
+        <div>
           <button
             type="button"
             data-testid="values-tag-chip-show_ballot"
-            aria-pressed={isShowBallotSelected}
+            aria-pressed={showBallotSelected}
             disabled={disabled}
             onClick={() => handleChipClick("show_ballot")}
             className={
               "px-3 py-1.5 text-xs font-bold uppercase tracking-widest border transition-colors " +
-              (isShowBallotSelected
+              (showBallotSelected
                 ? "bg-primary text-on-primary border-primary"
                 : "border-outline-variant/40 text-on-surface-muted hover:border-primary/60 hover:text-primary")
             }
           >
             {showBallotItem.label}
           </button>
-        )}
-        {customItem && (
-          <button
-            type="button"
-            data-testid="values-tag-chip-custom"
-            aria-pressed={showCustom}
-            disabled={disabled}
-            onClick={() => handleChipClick("custom")}
-            className={
-              "px-3 py-1.5 text-xs font-bold uppercase tracking-widest border transition-colors " +
-              (showCustom
-                ? "bg-primary text-on-primary border-primary"
-                : "border-outline-variant/40 text-on-surface-muted hover:border-primary/60 hover:text-primary")
-            }
+        </div>
+      )}
+
+      {/* Ranked list */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <h4 className="text-xs font-black uppercase tracking-widest text-on-surface-muted">
+            {rankedItems.length === 0
+              ? t.valuesTagSelectorEmpty
+              : t.valuesTagSelectorRankedHeading}
+          </h4>
+          {rankedItems.length > 1 && (
+            <span className="text-[10px] text-on-surface-muted">
+              {t.valuesTagSelectorReorderHint}
+            </span>
+          )}
+        </div>
+
+        {rankedItems.length > 0 && (
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
           >
-            {customItem.label}
-          </button>
+            <SortableContext
+              items={rankedItems.map((i) => i.key)}
+              strategy={verticalListSortingStrategy}
+            >
+              <ul
+                data-testid="ranked-list"
+                className="space-y-1 list-none p-0"
+                aria-label="Ranked priorities"
+              >
+                {rankedItems.map((item, idx) => (
+                  <SortableItem
+                    key={item.key}
+                    item={item}
+                    rank={idx + 1}
+                    removeLabel={t.valuesTagSelectorRemoveLabel}
+                    onRemove={handleRemove}
+                    disabled={disabled}
+                  />
+                ))}
+              </ul>
+            </SortableContext>
+          </DndContext>
+        )}
+
+        {/* At-cap notice */}
+        {atCap && (
+          <p
+            data-testid="at-cap-notice"
+            className="text-[10px] font-bold uppercase tracking-widest text-primary"
+          >
+            {t.valuesTagSelectorAtCap}
+          </p>
         )}
       </div>
 
-      {/* Custom text input */}
-      {showCustom && (
-        <div>
-          <input
-            type="text"
-            data-testid="values-tag-custom-input"
-            value={customText}
-            onChange={(e) => setCustomText(e.target.value)}
-            placeholder={t.valuesTagSelectorCustomPlaceholder}
-            disabled={disabled}
-            className="w-full px-3 py-2 text-sm border border-outline-variant/40 bg-surface-lowest text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/60 placeholder:text-on-surface-muted/60"
-          />
-        </div>
-      )}
+      {/* Free-text input */}
+      <div className="flex gap-2">
+        <input
+          type="text"
+          data-testid="values-tag-freetext-input"
+          value={freeText}
+          onChange={(e) => setFreeText(e.target.value)}
+          onKeyDown={handleFreeTextKeyDown}
+          placeholder={t.valuesTagSelectorFreeTextPlaceholder}
+          disabled={disabled || atCap}
+          aria-label={t.valuesTagSelectorFreeTextPlaceholder}
+          className="flex-1 px-3 py-2 text-sm border border-outline-variant/40 bg-surface-lowest text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/60 placeholder:text-on-surface-muted/60 disabled:opacity-50"
+        />
+        <button
+          type="button"
+          data-testid="values-tag-freetext-add"
+          onClick={handleFreeTextAdd}
+          disabled={disabled || atCap || !freeText.trim()}
+          className="px-4 py-2 text-xs font-black uppercase tracking-wide bg-primary text-on-primary hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition"
+        >
+          {t.valuesTagSelectorFreeTextAdd}
+        </button>
+      </div>
 
       {/* Footer actions */}
       <div className="flex justify-end items-center gap-3 pt-1">

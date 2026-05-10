@@ -8,6 +8,10 @@ import {
   stripRacePatternsBlocks,
   hasOpenRacePatternsBlock,
   stripPartialRacePatternsBlock,
+  parseConcernInterpretationBlock,
+  stripConcernInterpretationBlocks,
+  hasOpenConcernInterpretationBlock,
+  stripPartialConcernInterpretationBlock,
 } from "./structured-blocks";
 
 /* ── Values Tag Request ─────────────────────────────────────────── */
@@ -612,5 +616,308 @@ describe("stripPartialRacePatternsBlock", () => {
   it("returns content unchanged when there is no race-patterns tag", () => {
     expect(stripPartialRacePatternsBlock("just prose")).toBe("just prose");
     expect(stripPartialRacePatternsBlock("")).toBe("");
+  });
+});
+
+/* ── Concern Interpretation ─────────────────────────────────────── */
+
+const wellFormedConcernInterpretation = [
+  "[CONCERN_INTERPRETATION]",
+  '{"sourceType":"tag","sourceTagId":"a","rank":1,"interpretation":"Crime / public safety","canonicalIssue":"crime_public_safety","confidence":"clear"}',
+  '{"sourceType":"freeText","sourceText":"healthcare costs are killing me","rank":2,"interpretation":"Healthcare affordability and access","canonicalIssue":"healthcare_affordability","stance":"expand access","confidence":"clear"}',
+  '{"sourceType":"freeText","sourceText":"reproductive rights","rank":3,"interpretation":"Abortion and reproductive healthcare","confidence":"low","disambiguationQuestion":"Which side of the reproductive-rights conversation matches your view?","disambiguationOptions":["Pro-choice / abortion access protections","Pro-life / abortion restrictions"]}',
+  "[/CONCERN_INTERPRETATION]",
+].join("\n");
+
+describe("parseConcernInterpretationBlock", () => {
+  it("happy path: 3 entries mixing tag, freeText, and confidence levels", () => {
+    const result = parseConcernInterpretationBlock(
+      `Lead-in prose.\n\n${wellFormedConcernInterpretation}\n\nTrailing.`,
+    );
+    expect(result).not.toBeNull();
+    expect(result?.entries).toHaveLength(3);
+
+    const entry1 = result?.entries[0];
+    expect(entry1?.sourceType).toBe("tag");
+    expect(entry1?.sourceTagId).toBe("a");
+    expect(entry1?.rank).toBe(1);
+    expect(entry1?.interpretation).toBe("Crime / public safety");
+    expect(entry1?.canonicalIssue).toBe("crime_public_safety");
+    expect(entry1?.confidence).toBe("clear");
+    expect(entry1?.disambiguationOptions).toBeUndefined();
+
+    const entry2 = result?.entries[1];
+    expect(entry2?.sourceType).toBe("freeText");
+    expect(entry2?.sourceText).toBe("healthcare costs are killing me");
+    expect(entry2?.rank).toBe(2);
+    expect(entry2?.interpretation).toBe("Healthcare affordability and access");
+    expect(entry2?.canonicalIssue).toBe("healthcare_affordability");
+    expect(entry2?.stance).toBe("expand access");
+    expect(entry2?.confidence).toBe("clear");
+
+    const entry3 = result?.entries[2];
+    expect(entry3?.sourceType).toBe("freeText");
+    expect(entry3?.rank).toBe(3);
+    expect(entry3?.confidence).toBe("low");
+    expect(entry3?.disambiguationQuestion).toBe(
+      "Which side of the reproductive-rights conversation matches your view?",
+    );
+    expect(entry3?.disambiguationOptions).toEqual([
+      "Pro-choice / abortion access protections",
+      "Pro-life / abortion restrictions",
+    ]);
+    expect(entry3?.canonicalIssue).toBeUndefined();
+  });
+
+  it("skips malformed JSON line; rest of block preserved", () => {
+    const mixed = [
+      "[CONCERN_INTERPRETATION]",
+      '{"sourceType":"tag","sourceTagId":"a","rank":1,"interpretation":"Crime","confidence":"clear"}',
+      "this is not json at all",
+      '{"sourceType":"freeText","sourceText":"housing","rank":2,"interpretation":"Housing affordability","canonicalIssue":"housing","confidence":"clear"}',
+      "[/CONCERN_INTERPRETATION]",
+    ].join("\n");
+    const result = parseConcernInterpretationBlock(mixed);
+    expect(result).not.toBeNull();
+    expect(result?.entries).toHaveLength(2);
+    expect(result?.entries[0].rank).toBe(1);
+    expect(result?.entries[1].rank).toBe(2);
+  });
+
+  it("drops entry missing required field 'confidence'", () => {
+    const block = [
+      "[CONCERN_INTERPRETATION]",
+      '{"sourceType":"tag","sourceTagId":"a","rank":1,"interpretation":"Crime"}',
+      '{"sourceType":"freeText","sourceText":"taxes","rank":2,"interpretation":"Property taxes","confidence":"clear"}',
+      "[/CONCERN_INTERPRETATION]",
+    ].join("\n");
+    const result = parseConcernInterpretationBlock(block);
+    expect(result).not.toBeNull();
+    expect(result?.entries).toHaveLength(1);
+    expect(result?.entries[0].rank).toBe(2);
+  });
+
+  it("drops entry missing required field 'interpretation'", () => {
+    const block = [
+      "[CONCERN_INTERPRETATION]",
+      '{"sourceType":"tag","sourceTagId":"a","rank":1,"confidence":"clear"}',
+      '{"sourceType":"freeText","sourceText":"taxes","rank":2,"interpretation":"Property taxes","confidence":"clear"}',
+      "[/CONCERN_INTERPRETATION]",
+    ].join("\n");
+    const result = parseConcernInterpretationBlock(block);
+    expect(result?.entries).toHaveLength(1);
+  });
+
+  it("drops entry with empty-string 'interpretation'", () => {
+    const block = [
+      "[CONCERN_INTERPRETATION]",
+      '{"sourceType":"tag","sourceTagId":"a","rank":1,"interpretation":"   ","confidence":"clear"}',
+      '{"sourceType":"freeText","sourceText":"housing","rank":2,"interpretation":"Housing","confidence":"clear"}',
+      "[/CONCERN_INTERPRETATION]",
+    ].join("\n");
+    const result = parseConcernInterpretationBlock(block);
+    expect(result?.entries).toHaveLength(1);
+    expect(result?.entries[0].rank).toBe(2);
+  });
+
+  it("drops confidence:'low' entry without disambiguationOptions (defensive)", () => {
+    const block = [
+      "[CONCERN_INTERPRETATION]",
+      '{"sourceType":"freeText","sourceText":"reproductive rights","rank":1,"interpretation":"Abortion","confidence":"low","disambiguationQuestion":"Which side?"}',
+      '{"sourceType":"tag","sourceTagId":"b","rank":2,"interpretation":"Taxes","confidence":"clear"}',
+      "[/CONCERN_INTERPRETATION]",
+    ].join("\n");
+    const result = parseConcernInterpretationBlock(block);
+    expect(result?.entries).toHaveLength(1);
+    expect(result?.entries[0].rank).toBe(2);
+  });
+
+  it("drops confidence:'low' entry with empty disambiguationOptions array", () => {
+    const block = [
+      "[CONCERN_INTERPRETATION]",
+      '{"sourceType":"freeText","sourceText":"reproductive rights","rank":1,"interpretation":"Abortion","confidence":"low","disambiguationQuestion":"Which side?","disambiguationOptions":[]}',
+      '{"sourceType":"tag","sourceTagId":"b","rank":2,"interpretation":"Taxes","confidence":"clear"}',
+      "[/CONCERN_INTERPRETATION]",
+    ].join("\n");
+    const result = parseConcernInterpretationBlock(block);
+    expect(result?.entries).toHaveLength(1);
+    expect(result?.entries[0].rank).toBe(2);
+  });
+
+  it("preserves confidence:'off_topic' without disambiguation fields", () => {
+    const block = [
+      "[CONCERN_INTERPRETATION]",
+      '{"sourceType":"freeText","sourceText":"I want to know about my dog","rank":1,"interpretation":"Not ballot-relevant","confidence":"off_topic"}',
+      "[/CONCERN_INTERPRETATION]",
+    ].join("\n");
+    const result = parseConcernInterpretationBlock(block);
+    expect(result).not.toBeNull();
+    expect(result?.entries).toHaveLength(1);
+    expect(result?.entries[0].confidence).toBe("off_topic");
+    expect(result?.entries[0].disambiguationOptions).toBeUndefined();
+    expect(result?.entries[0].disambiguationQuestion).toBeUndefined();
+  });
+
+  it("returns null when the block has zero valid entries after sanitization", () => {
+    const block = [
+      "[CONCERN_INTERPRETATION]",
+      '{"sourceType":"tag","rank":0,"interpretation":"Crime","confidence":"clear"}',
+      '{"sourceType":"freeText","rank":1}',
+      "[/CONCERN_INTERPRETATION]",
+    ].join("\n");
+    expect(parseConcernInterpretationBlock(block)).toBeNull();
+  });
+
+  it("returns null when no block is present", () => {
+    expect(parseConcernInterpretationBlock("just prose")).toBeNull();
+    expect(parseConcernInterpretationBlock("")).toBeNull();
+  });
+
+  it("uses the LAST block when multiple appear", () => {
+    const first = [
+      "[CONCERN_INTERPRETATION]",
+      '{"sourceType":"tag","sourceTagId":"a","rank":1,"interpretation":"First","confidence":"clear"}',
+      "[/CONCERN_INTERPRETATION]",
+    ].join("\n");
+    const second = [
+      "[CONCERN_INTERPRETATION]",
+      '{"sourceType":"tag","sourceTagId":"b","rank":1,"interpretation":"Second","confidence":"clear"}',
+      "[/CONCERN_INTERPRETATION]",
+    ].join("\n");
+    const result = parseConcernInterpretationBlock(`${first}\n\n${second}`);
+    expect(result?.entries[0].interpretation).toBe("Second");
+  });
+
+  it("drops entry with rank < 1 (non-positive integer)", () => {
+    const block = [
+      "[CONCERN_INTERPRETATION]",
+      '{"sourceType":"tag","sourceTagId":"a","rank":0,"interpretation":"Crime","confidence":"clear"}',
+      '{"sourceType":"freeText","sourceText":"taxes","rank":1,"interpretation":"Taxes","confidence":"clear"}',
+      "[/CONCERN_INTERPRETATION]",
+    ].join("\n");
+    const result = parseConcernInterpretationBlock(block);
+    expect(result?.entries).toHaveLength(1);
+    expect(result?.entries[0].rank).toBe(1);
+  });
+
+  it("drops entry with non-integer rank", () => {
+    const block = [
+      "[CONCERN_INTERPRETATION]",
+      '{"sourceType":"tag","sourceTagId":"a","rank":1.5,"interpretation":"Crime","confidence":"clear"}',
+      '{"sourceType":"freeText","sourceText":"taxes","rank":2,"interpretation":"Taxes","confidence":"clear"}',
+      "[/CONCERN_INTERPRETATION]",
+    ].join("\n");
+    const result = parseConcernInterpretationBlock(block);
+    expect(result?.entries).toHaveLength(1);
+    expect(result?.entries[0].rank).toBe(2);
+  });
+
+  it("drops entry with invalid sourceType", () => {
+    const block = [
+      "[CONCERN_INTERPRETATION]",
+      '{"sourceType":"unknown","rank":1,"interpretation":"Crime","confidence":"clear"}',
+      '{"sourceType":"tag","sourceTagId":"b","rank":2,"interpretation":"Taxes","confidence":"clear"}',
+      "[/CONCERN_INTERPRETATION]",
+    ].join("\n");
+    const result = parseConcernInterpretationBlock(block);
+    expect(result?.entries).toHaveLength(1);
+  });
+
+  it("drops entry with invalid confidence value", () => {
+    const block = [
+      "[CONCERN_INTERPRETATION]",
+      '{"sourceType":"tag","sourceTagId":"a","rank":1,"interpretation":"Crime","confidence":"medium"}',
+      '{"sourceType":"tag","sourceTagId":"b","rank":2,"interpretation":"Taxes","confidence":"clear"}',
+      "[/CONCERN_INTERPRETATION]",
+    ].join("\n");
+    const result = parseConcernInterpretationBlock(block);
+    expect(result?.entries).toHaveLength(1);
+  });
+
+  it("optional fields not included when absent", () => {
+    const block = [
+      "[CONCERN_INTERPRETATION]",
+      '{"sourceType":"tag","rank":1,"interpretation":"Public safety","confidence":"clear"}',
+      "[/CONCERN_INTERPRETATION]",
+    ].join("\n");
+    const result = parseConcernInterpretationBlock(block);
+    expect(result?.entries[0].sourceTagId).toBeUndefined();
+    expect(result?.entries[0].sourceText).toBeUndefined();
+    expect(result?.entries[0].canonicalIssue).toBeUndefined();
+    expect(result?.entries[0].stance).toBeUndefined();
+  });
+});
+
+describe("stripConcernInterpretationBlocks", () => {
+  it("removes the block and trims whitespace", () => {
+    const content = `Lead-in.\n\n${wellFormedConcernInterpretation}\n\nTrailing.`;
+    const stripped = stripConcernInterpretationBlocks(content);
+    expect(stripped).not.toContain("[CONCERN_INTERPRETATION");
+    expect(stripped).not.toContain("[/CONCERN_INTERPRETATION");
+    expect(stripped).toContain("Lead-in.");
+    expect(stripped).toContain("Trailing.");
+  });
+
+  it("returns empty string for empty input", () => {
+    expect(stripConcernInterpretationBlocks("")).toBe("");
+  });
+});
+
+describe("hasOpenConcernInterpretationBlock", () => {
+  it("returns true when an open tag has no matching close (partial stream)", () => {
+    const partial = [
+      "Lead-in prose.",
+      "[CONCERN_INTERPRETATION]",
+      '{"sourceType":"tag","sourceTagId":"a","rank":1,"interpretation":"Crime","confidence":"clear"}',
+    ].join("\n");
+    expect(hasOpenConcernInterpretationBlock(partial)).toBe(true);
+  });
+
+  it("returns false for a complete block", () => {
+    expect(
+      hasOpenConcernInterpretationBlock(wellFormedConcernInterpretation),
+    ).toBe(false);
+  });
+
+  it("returns false when no concern-interpretation block is present", () => {
+    expect(hasOpenConcernInterpretationBlock("just prose")).toBe(false);
+    expect(hasOpenConcernInterpretationBlock("")).toBe(false);
+  });
+
+  it("returns true when one block is closed and another is open", () => {
+    const closedThenOpen = [
+      wellFormedConcernInterpretation,
+      "",
+      "More prose.",
+      "[CONCERN_INTERPRETATION]",
+      '{"sourceType":"tag","sourceTagId":"a","rank":1,"interpretation":"Crime","confidence":"clear"}',
+    ].join("\n");
+    expect(hasOpenConcernInterpretationBlock(closedThenOpen)).toBe(true);
+  });
+});
+
+describe("stripPartialConcernInterpretationBlock", () => {
+  it("returns prose before an open tag, trimmed", () => {
+    const partial = [
+      "Lead-in prose.",
+      "",
+      "[CONCERN_INTERPRETATION]",
+      '{"sourceType":"tag","sourceTagId":"a","rank":1,"interpretation":"Crime","confidence":"clear"}',
+    ].join("\n");
+    expect(stripPartialConcernInterpretationBlock(partial)).toBe(
+      "Lead-in prose.",
+    );
+  });
+
+  it("returns content unchanged when the block is closed", () => {
+    const content = `Lead-in.\n\n${wellFormedConcernInterpretation}\n\nTrailing.`;
+    expect(stripPartialConcernInterpretationBlock(content)).toBe(content);
+  });
+
+  it("returns content unchanged when there is no concern-interpretation tag", () => {
+    expect(stripPartialConcernInterpretationBlock("just prose")).toBe(
+      "just prose",
+    );
+    expect(stripPartialConcernInterpretationBlock("")).toBe("");
   });
 });

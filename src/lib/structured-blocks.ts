@@ -474,3 +474,202 @@ export function stripPartialRacePatternsBlock(content: string): string {
   if (closeAfter !== -1) return content;
   return content.slice(0, lastOpen).replace(/\s+$/, "");
 }
+
+/* ── Concern Interpretation block ───────────────────────────── */
+
+export type ConcernInterpretationConfidence = "clear" | "low" | "off_topic";
+export type ConcernInterpretationSourceType = "tag" | "freeText";
+
+export interface ConcernInterpretationEntry {
+  sourceType: ConcernInterpretationSourceType;
+  sourceTagId?: string; // present when sourceType === "tag"
+  sourceText?: string; // present when sourceType === "freeText"
+  rank: number; // 1-based; preserves user-supplied rank
+  interpretation: string; // human-readable
+  canonicalIssue?: string; // canonical id for downstream alignment lookup
+  stance?: string; // optional; LLM may include for clear-confidence entries
+  confidence: ConcernInterpretationConfidence;
+  disambiguationQuestion?: string; // present when confidence === "low"
+  disambiguationOptions?: string[]; // present when confidence === "low"; 2-4 entries
+}
+
+export interface ConcernInterpretationBlock {
+  entries: ConcernInterpretationEntry[];
+}
+
+const CONCERN_INTERPRETATION_BLOCK_RE =
+  /\[CONCERN_INTERPRETATION\]([\s\S]*?)\[\/CONCERN_INTERPRETATION\]/g;
+
+const CONCERN_INTERPRETATION_CONFIDENCE_VALUES: readonly ConcernInterpretationConfidence[] =
+  ["clear", "low", "off_topic"];
+
+function isValidConfidence(v: unknown): v is ConcernInterpretationConfidence {
+  return (
+    typeof v === "string" &&
+    (CONCERN_INTERPRETATION_CONFIDENCE_VALUES as readonly string[]).includes(v)
+  );
+}
+
+function isValidSourceType(v: unknown): v is ConcernInterpretationSourceType {
+  return v === "tag" || v === "freeText";
+}
+
+/**
+ * Sanitize a single parsed JSON object into a ConcernInterpretationEntry.
+ * Returns null if any required field fails validation.
+ *
+ * Required fields: sourceType, rank (positive integer), interpretation
+ * (non-empty, trimmed), confidence (one of three literals).
+ *
+ * When confidence === "low", both disambiguationQuestion and a non-empty
+ * disambiguationOptions array are required; without them the entry is dropped.
+ */
+function sanitizeConcernInterpretationEntry(
+  value: unknown,
+): ConcernInterpretationEntry | null {
+  if (!value || typeof value !== "object") return null;
+  const v = value as Record<string, unknown>;
+
+  // sourceType — required
+  if (!isValidSourceType(v.sourceType)) return null;
+
+  // rank — required, must be a finite positive integer
+  if (
+    typeof v.rank !== "number" ||
+    !Number.isFinite(v.rank) ||
+    !Number.isInteger(v.rank) ||
+    v.rank < 1
+  )
+    return null;
+
+  // interpretation — required, non-empty after trim
+  if (
+    typeof v.interpretation !== "string" ||
+    v.interpretation.trim().length === 0
+  )
+    return null;
+
+  // confidence — required, must be one of the three literals
+  if (!isValidConfidence(v.confidence)) return null;
+
+  // confidence === "low" requires disambiguationQuestion + non-empty disambiguationOptions
+  if (v.confidence === "low") {
+    if (
+      typeof v.disambiguationQuestion !== "string" ||
+      v.disambiguationQuestion.trim().length === 0
+    )
+      return null;
+    if (
+      !Array.isArray(v.disambiguationOptions) ||
+      (v.disambiguationOptions as unknown[]).filter(
+        (o) => typeof o === "string" && (o as string).trim().length > 0,
+      ).length === 0
+    )
+      return null;
+  }
+
+  const entry: ConcernInterpretationEntry = {
+    sourceType: v.sourceType,
+    rank: v.rank,
+    interpretation: v.interpretation.trim(),
+    confidence: v.confidence,
+  };
+
+  // Optional fields
+  if (v.sourceType === "tag" && isNonEmptyString(v.sourceTagId)) {
+    entry.sourceTagId = v.sourceTagId;
+  }
+  if (v.sourceType === "freeText" && isNonEmptyString(v.sourceText)) {
+    entry.sourceText = v.sourceText;
+  }
+  if (isNonEmptyString(v.canonicalIssue)) {
+    entry.canonicalIssue = v.canonicalIssue;
+  }
+  if (isNonEmptyString(v.stance)) {
+    entry.stance = v.stance;
+  }
+  if (v.confidence === "low") {
+    entry.disambiguationQuestion = (v.disambiguationQuestion as string).trim();
+    entry.disambiguationOptions = (v.disambiguationOptions as unknown[])
+      .filter(
+        (o): o is string =>
+          typeof o === "string" && (o as string).trim().length > 0,
+      )
+      .map((o) => o.trim());
+  }
+
+  return entry;
+}
+
+/**
+ * Find and parse the LAST [CONCERN_INTERPRETATION] block in content.
+ * Returns null if absent, malformed, or has zero valid entries after
+ * sanitization.
+ */
+export function parseConcernInterpretationBlock(
+  content: string,
+): ConcernInterpretationBlock | null {
+  if (!content) return null;
+
+  const matches = [...content.matchAll(CONCERN_INTERPRETATION_BLOCK_RE)];
+  if (matches.length === 0) return null;
+
+  const last = matches[matches.length - 1];
+  const body = last[1];
+
+  const entries: ConcernInterpretationEntry[] = [];
+  for (const rawLine of body.split("\n")) {
+    const line = rawLine.trim();
+    if (!line) continue;
+    try {
+      const parsed = JSON.parse(line);
+      const entry = sanitizeConcernInterpretationEntry(parsed);
+      if (entry !== null) {
+        entries.push(entry);
+      }
+    } catch {
+      // Skip malformed JSON lines.
+    }
+  }
+
+  if (entries.length === 0) return null;
+
+  return { entries };
+}
+
+/** Strip all [CONCERN_INTERPRETATION]...[/CONCERN_INTERPRETATION] blocks from text. */
+export function stripConcernInterpretationBlocks(content: string): string {
+  if (!content) return "";
+  return content
+    .replace(CONCERN_INTERPRETATION_BLOCK_RE, "")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+/**
+ * Detects whether content contains an open [CONCERN_INTERPRETATION] tag without
+ * a matching closing tag. Used to switch the chat UI to a "building..."
+ * placeholder during streaming.
+ */
+export function hasOpenConcernInterpretationBlock(content: string): boolean {
+  if (!content) return false;
+  const openCount = (content.match(/\[CONCERN_INTERPRETATION\b/g) ?? []).length;
+  const closeCount = (content.match(/\[\/CONCERN_INTERPRETATION\]/g) ?? [])
+    .length;
+  return openCount > closeCount;
+}
+
+/**
+ * Strips a half-emitted [CONCERN_INTERPRETATION] tag (open without close) from
+ * the end of content. Returns the prose preceding the partial block.
+ */
+export function stripPartialConcernInterpretationBlock(
+  content: string,
+): string {
+  if (!content) return "";
+  const lastOpen = content.lastIndexOf("[CONCERN_INTERPRETATION");
+  if (lastOpen === -1) return content;
+  const closeAfter = content.indexOf("[/CONCERN_INTERPRETATION]", lastOpen);
+  if (closeAfter !== -1) return content;
+  return content.slice(0, lastOpen).replace(/\s+$/, "");
+}

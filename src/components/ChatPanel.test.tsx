@@ -93,6 +93,13 @@ const valuesTagBlock = [
   "[/VALUES_TAG_REQUEST]",
 ].join("\n");
 
+const concernInterpretationBlock = [
+  "[CONCERN_INTERPRETATION]",
+  '{"sourceType":"tag","sourceTagId":"a","rank":1,"interpretation":"Crime and public safety","canonicalIssue":"crime_public_safety","confidence":"clear"}',
+  '{"sourceType":"freeText","sourceText":"healthcare costs","rank":2,"interpretation":"Healthcare access and affordability","canonicalIssue":"healthcare_access","stance":"expand healthcare access","confidence":"clear"}',
+  "[/CONCERN_INTERPRETATION]",
+].join("\n");
+
 const racePatternsBlock = [
   '[RACE_PATTERNS race="Harris County DA"]',
   '{"id":"A","name":"Alice","incumbent":true,"donorCoalition":[{"label":"Legal industry","percent":60},{"label":"Small individual donors (under $200)","percent":40}],"donorSource":{"name":"TEC","url":"https://ethics.state.tx.us/"},"endorsements":[{"name":"Houston Police Union","category":"labor"}],"endorsementSource":{"name":"Ballotpedia","url":"https://ballotpedia.org/"},"platformAlignment":{"kept":8,"total":12},"alignmentSource":{"name":"VoteSmart","url":"https://justfacts.votesmart.org/"},"retrospective":null,"retrospectiveUnavailable":{"reason":"Data not assembled"},"valuesHighlight":null}',
@@ -179,7 +186,7 @@ describe("ChatPanel", () => {
     expect(screen.getByText(/Here is the race dashboard/i)).toBeInTheDocument();
   });
 
-  it("sends [VOTER VALUES] tags payload when ValuesTagSelector submits with tags", async () => {
+  it("sends [VOTER VALUES] payload when ValuesTagSelector submits with a chip", async () => {
     const fetchMock = vi.spyOn(globalThis, "fetch");
     // First call: session init
     fetchMock.mockResolvedValueOnce(
@@ -207,7 +214,10 @@ describe("ChatPanel", () => {
     const body = JSON.parse(secondCall[1]?.body as string);
     const lastUserMsg = body.messages[body.messages.length - 1];
     expect(lastUserMsg.role).toBe("user");
-    expect(lastUserMsg.content).toBe('[VOTER VALUES] tags=["a"]');
+    // Strict-match the new ranked= payload shape
+    expect(lastUserMsg.content).toBe(
+      '[VOTER VALUES] ranked=[{"type":"tag","id":"a","rank":1}]',
+    );
   });
 
   it("sends [VOTER VALUES] skipped when ValuesTagSelector is skipped", async () => {
@@ -235,7 +245,7 @@ describe("ChatPanel", () => {
     expect(lastUserMsg.content).toBe("[VOTER VALUES] skipped");
   });
 
-  it("sends [VOTER VALUES] custom payload when ValuesTagSelector submits custom text", async () => {
+  it("sends [VOTER VALUES] payload when ValuesTagSelector submits free-text concern", async () => {
     const fetchMock = vi.spyOn(globalThis, "fetch");
     fetchMock.mockResolvedValueOnce(
       streamResponse(`Lead-in.\n\n${valuesTagBlock}`),
@@ -248,12 +258,12 @@ describe("ChatPanel", () => {
       expect(screen.getByTestId("values-tag-selector")).toBeInTheDocument();
     });
 
-    // Click "custom" chip to show text input
-    fireEvent.click(screen.getByTestId("values-tag-chip-custom"));
-    const customInput = screen.getByTestId("values-tag-custom-input");
-    fireEvent.change(customInput, {
+    // Type a concern into the always-visible free-text input (v2 behavior)
+    const freetextInput = screen.getByTestId("values-tag-freetext-input");
+    fireEvent.change(freetextInput, {
       target: { value: "School board accountability" },
     });
+    fireEvent.click(screen.getByTestId("values-tag-freetext-add"));
     fireEvent.click(screen.getByTestId("values-tag-submit"));
 
     await waitFor(() => {
@@ -263,8 +273,9 @@ describe("ChatPanel", () => {
     const secondCall = fetchMock.mock.calls[1];
     const body = JSON.parse(secondCall[1]?.body as string);
     const lastUserMsg = body.messages[body.messages.length - 1];
+    // Strict-match the new ranked= freeText payload shape
     expect(lastUserMsg.content).toBe(
-      '[VOTER VALUES] custom="School board accountability"',
+      '[VOTER VALUES] ranked=[{"type":"freeText","text":"School board accountability","rank":1}]',
     );
   });
 
@@ -411,5 +422,134 @@ describe("ChatPanel", () => {
 
     // ValuesTagSelector should NOT render when race-patterns block is present
     expect(screen.queryByTestId("values-tag-selector")).not.toBeInTheDocument();
+  });
+
+  /* ── ConcernInterpretation dispatch tests ──────────────────── */
+
+  it("renders ConcernInterpretation when assistant message contains [CONCERN_INTERPRETATION] block", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      streamResponse(
+        `Here is what we understood.\n\n${concernInterpretationBlock}`,
+      ),
+    );
+
+    renderChatPanel();
+
+    await waitFor(() => {
+      expect(screen.getByTestId("concern-interpretation")).toBeInTheDocument();
+    });
+
+    // Prose above the block should appear
+    expect(screen.getByText(/Here is what we understood/i)).toBeInTheDocument();
+  });
+
+  it("sends [VOTER CONFIRMED CONCERNS] when ConcernInterpretation Confirm is clicked", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch");
+    fetchMock.mockResolvedValueOnce(streamResponse(concernInterpretationBlock));
+    fetchMock.mockResolvedValueOnce(streamResponse("Confirmed, moving on."));
+
+    renderChatPanel();
+
+    await waitFor(() => {
+      expect(screen.getByTestId("concern-interpretation")).toBeInTheDocument();
+    });
+
+    // Both entries are clear confidence — confirm button should be enabled
+    fireEvent.click(screen.getByTestId("concern-interpretation-confirm"));
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+
+    const secondCall = fetchMock.mock.calls[1];
+    const body = JSON.parse(secondCall[1]?.body as string);
+    const lastUserMsg = body.messages[body.messages.length - 1];
+    expect(lastUserMsg.role).toBe("user");
+    expect(lastUserMsg.content).toMatch(
+      /^\[VOTER CONFIRMED CONCERNS\] confirmations=\[/,
+    );
+    // Should contain rank 1 and rank 2 confirmations
+    const parsed = JSON.parse(
+      lastUserMsg.content.replace(
+        "[VOTER CONFIRMED CONCERNS] confirmations=",
+        "",
+      ),
+    );
+    expect(parsed).toHaveLength(2);
+    expect(parsed[0].rank).toBe(1);
+    expect(parsed[1].rank).toBe(2);
+  });
+
+  it("sends [VOTER REINTERPRET] when a concern entry edit is committed", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch");
+    fetchMock.mockResolvedValueOnce(streamResponse(concernInterpretationBlock));
+    fetchMock.mockResolvedValueOnce(streamResponse(concernInterpretationBlock));
+
+    renderChatPanel();
+
+    await waitFor(() => {
+      expect(screen.getByTestId("concern-interpretation")).toBeInTheDocument();
+    });
+
+    // Click edit on entry rank 1
+    fireEvent.click(screen.getByTestId("concern-entry-edit-1"));
+
+    // Type new text
+    const editInput = screen.getByTestId("concern-entry-edit-input-1");
+    fireEvent.change(editInput, { target: { value: "border security" } });
+
+    // Commit edit
+    fireEvent.click(screen.getByTestId("concern-entry-edit-commit-1"));
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+
+    const secondCall = fetchMock.mock.calls[1];
+    const body = JSON.parse(secondCall[1]?.body as string);
+    const lastUserMsg = body.messages[body.messages.length - 1];
+    expect(lastUserMsg.content).toBe(
+      '[VOTER REINTERPRET] sourceRank=1 newText="border security"',
+    );
+  });
+
+  it("sends [VOTER REMOVE_CONCERN] when a concern entry is removed", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch");
+    fetchMock.mockResolvedValueOnce(streamResponse(concernInterpretationBlock));
+    fetchMock.mockResolvedValueOnce(streamResponse(concernInterpretationBlock));
+
+    renderChatPanel();
+
+    await waitFor(() => {
+      expect(screen.getByTestId("concern-interpretation")).toBeInTheDocument();
+    });
+
+    // Click remove on entry rank 2
+    fireEvent.click(screen.getByTestId("concern-entry-remove-2"));
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+
+    const secondCall = fetchMock.mock.calls[1];
+    const body = JSON.parse(secondCall[1]?.body as string);
+    const lastUserMsg = body.messages[body.messages.length - 1];
+    expect(lastUserMsg.content).toBe("[VOTER REMOVE_CONCERN] sourceRank=2");
+  });
+
+  it("[RACE_PATTERNS] wins over [CONCERN_INTERPRETATION] in dispatch precedence", async () => {
+    const bothBlocks = `Some prose.\n\n${concernInterpretationBlock}\n\n${racePatternsBlock}`;
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(streamResponse(bothBlocks));
+
+    renderChatPanel();
+
+    await waitFor(() => {
+      expect(screen.getByTestId("race-patterns")).toBeInTheDocument();
+    });
+
+    // ConcernInterpretation should NOT render when race-patterns block is present
+    expect(
+      screen.queryByTestId("concern-interpretation"),
+    ).not.toBeInTheDocument();
   });
 });

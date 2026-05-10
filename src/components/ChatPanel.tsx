@@ -17,7 +17,10 @@ import { extractBallot, extractVoterProfile } from "../lib/ballot-utils";
 import { ResearchPortfolio } from "./ResearchPortfolio";
 import { MarkdownText } from "./MarkdownText";
 import { ValuesTagSelector } from "./ValuesTagSelector";
+import type { SubmitPayload, RankedEntry } from "./ValuesTagSelector";
 import { RacePatterns } from "./RacePatterns";
+import { ConcernInterpretation } from "./ConcernInterpretation";
+import type { ConcernConfirmation } from "./ConcernInterpretation";
 import {
   parseValuesTagRequestBlock,
   stripValuesTagRequestBlocks,
@@ -27,6 +30,10 @@ import {
   stripRacePatternsBlocks,
   hasOpenRacePatternsBlock,
   stripPartialRacePatternsBlock,
+  parseConcernInterpretationBlock,
+  stripConcernInterpretationBlocks,
+  hasOpenConcernInterpretationBlock,
+  stripPartialConcernInterpretationBlock,
 } from "../lib/structured-blocks";
 
 interface ChatMessage {
@@ -368,10 +375,8 @@ function renderValuesTagSelector(
   isLastAssistant: boolean,
   isStreaming: boolean,
   isSubmitted: boolean,
-  submittedTags: string[],
-  onSubmit: (
-    selection: { tags: string[]; custom?: string } | "skipped",
-  ) => void,
+  submittedRanked: RankedEntry[],
+  onSubmit: (selection: SubmitPayload) => void,
 ): React.ReactElement | null {
   if (msg.role !== "assistant" || !isLastAssistant) return null;
 
@@ -418,7 +423,7 @@ function renderValuesTagSelector(
       <ValuesTagSelector
         block={block}
         isSubmitted={isSubmitted}
-        submittedTags={submittedTags}
+        submittedRanked={submittedRanked}
         onSubmit={onSubmit}
       />
     </article>
@@ -510,6 +515,90 @@ function renderRacePatterns(
   );
 }
 
+/* ── Concern interpretation rendering ───────────────────────── */
+
+function ConcernInterpretationLoadingPlaceholder() {
+  const { lang } = useLanguage();
+  const t = translations[lang];
+  return (
+    <div
+      data-testid="concern-interpretation-loading"
+      className="my-4 bg-surface-low border-l-4 border-primary/40 p-4 flex items-center gap-3"
+    >
+      <span className="inline-block w-2 h-2 rounded-full bg-primary animate-pulse" />
+      <span className="text-xs font-bold uppercase tracking-widest text-on-surface-muted">
+        {t.research.concernInterpretationSubmitting}
+      </span>
+    </div>
+  );
+}
+
+function renderConcernInterpretation(
+  msg: ChatMessage,
+  idx: number,
+  isLastAssistant: boolean,
+  isStreaming: boolean,
+  isSubmitted: boolean,
+  onConfirm: (confirmations: ConcernConfirmation[]) => void,
+  onReinterpret: (rank: number, newText: string) => void,
+  onRemove: (rank: number) => void,
+): React.ReactElement | null {
+  if (msg.role !== "assistant" || !isLastAssistant) return null;
+
+  // Streaming placeholder: half-emitted block during stream
+  if (isStreaming) {
+    const isOpenBlock = hasOpenConcernInterpretationBlock(msg.content);
+    const parsedDuringStream = parseConcernInterpretationBlock(msg.content);
+    if (isOpenBlock && !parsedDuringStream) {
+      const leadIn = stripPartialConcernInterpretationBlock(msg.content);
+      return (
+        <article
+          key={idx}
+          data-testid="chat-message-assistant"
+          className="max-w-3xl mx-auto"
+        >
+          {leadIn && (
+            <div className="text-sm leading-relaxed text-on-surface">
+              <MarkdownText text={leadIn} />
+            </div>
+          )}
+          <ConcernInterpretationLoadingPlaceholder />
+        </article>
+      );
+    }
+    return null;
+  }
+
+  if (!msg.content.includes("[/CONCERN_INTERPRETATION]")) return null;
+  const block = parseConcernInterpretationBlock(msg.content);
+  if (!block) return null;
+
+  // Strip both [CONCERN_INTERPRETATION] and [VALUES_TAG_REQUEST] blocks from prose
+  const prose = stripValuesTagRequestBlocks(
+    stripConcernInterpretationBlocks(msg.content),
+  );
+  return (
+    <article
+      key={idx}
+      data-testid="chat-message-assistant"
+      className="max-w-3xl mx-auto space-y-4"
+    >
+      {prose && (
+        <div className="text-sm leading-relaxed text-on-surface">
+          <MarkdownText text={prose} />
+        </div>
+      )}
+      <ConcernInterpretation
+        block={block}
+        onConfirm={onConfirm}
+        onReinterpret={onReinterpret}
+        onRemove={onRemove}
+        isSubmitted={isSubmitted}
+      />
+    </article>
+  );
+}
+
 /* ── Message list ───────────────────────────────────────────── */
 
 function ChatMessageList({
@@ -526,6 +615,10 @@ function ChatMessageList({
   submittedRaceFinals,
   onPickRaceFinal,
   onSkipRaceFinal,
+  submittedConcernInterpretations,
+  onConfirmConcerns,
+  onReinterpretConcern,
+  onRemoveConcern,
 }: {
   messages: ChatMessage[];
   isStreaming: boolean;
@@ -535,11 +628,8 @@ function ChatMessageList({
   clientContinuationPrompt: string;
   messagesEndRef: React.RefObject<HTMLDivElement | null>;
   lastUserMsgRef: React.RefObject<HTMLDivElement | null>;
-  submittedValuesSelectors: Map<number, string[]>;
-  onSubmitValues: (
-    messageIdx: number,
-    selection: { tags: string[]; custom?: string } | "skipped",
-  ) => void;
+  submittedValuesSelectors: Map<number, RankedEntry[]>;
+  onSubmitValues: (messageIdx: number, selection: SubmitPayload) => void;
   submittedRaceFinals: Map<number, string | null>;
   onPickRaceFinal: (
     messageIdx: number,
@@ -548,6 +638,17 @@ function ChatMessageList({
     race: string,
   ) => void;
   onSkipRaceFinal: (messageIdx: number, race: string) => void;
+  submittedConcernInterpretations: Map<number, true>;
+  onConfirmConcerns: (
+    messageIdx: number,
+    confirmations: ConcernConfirmation[],
+  ) => void;
+  onReinterpretConcern: (
+    messageIdx: number,
+    rank: number,
+    newText: string,
+  ) => void;
+  onRemoveConcern: (messageIdx: number, rank: number) => void;
 }) {
   const { lang } = useLanguage();
   const t = translations[lang];
@@ -576,8 +677,8 @@ function ChatMessageList({
           );
         }
 
-        // Race-patterns wins over values-tag-selector if both somehow appear
-        // in the same message (later-game artifact takes precedence).
+        // Dispatch precedence: race-patterns > concern-interpretation > values-tag-selector.
+        // Later-game artifacts take precedence over earlier-game ones.
         const submittedEntry = submittedRaceFinals.has(i)
           ? {
               submitted: true,
@@ -603,6 +704,18 @@ function ChatMessageList({
           isStreaming,
         );
         if (racePatterns) return racePatterns;
+
+        const concernInterpretation = renderConcernInterpretation(
+          msg,
+          i,
+          isLastAssistant,
+          isStreaming,
+          submittedConcernInterpretations.has(i),
+          (confirmations) => onConfirmConcerns(i, confirmations),
+          (rank, newText) => onReinterpretConcern(i, rank, newText),
+          (rank) => onRemoveConcern(i, rank),
+        );
+        if (concernInterpretation) return concernInterpretation;
 
         const valuesSubmittedEntry = submittedValuesSelectors.get(i);
         const valuesSelector = renderValuesTagSelector(
@@ -741,13 +854,16 @@ export function ChatPanel({
   const [searchActivity, setSearchActivity] = useState<SearchActivity | null>(
     null,
   );
-  // submittedValuesSelectors: messageIdx → submitted tag ids (empty array = skipped or custom)
+  // submittedValuesSelectors: messageIdx → submitted ranked entries (empty array = skipped)
   const [submittedValuesSelectors, setSubmittedValuesSelectors] = useState<
-    Map<number, string[]>
+    Map<number, RankedEntry[]>
   >(() => new Map());
   const [submittedRaceFinals, setSubmittedRaceFinals] = useState<
     Map<number, string | null>
   >(() => new Map());
+  // submittedConcernInterpretations: messageIdx → true once the user has confirmed
+  const [submittedConcernInterpretations, setSubmittedConcernInterpretations] =
+    useState<Map<number, true>>(() => new Map());
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const lastUserMsgRef = useRef<HTMLDivElement>(null);
   const sessionIdRef = useRef(generateSessionId());
@@ -912,35 +1028,25 @@ export function ChatPanel({
   );
 
   const handleValuesSubmit = useCallback(
-    (
-      messageIdx: number,
-      selection: { tags: string[]; custom?: string } | "skipped",
-    ) => {
+    (messageIdx: number, selection: SubmitPayload) => {
       if (submittedValuesSelectors.has(messageIdx) || isStreaming) return;
 
       let payload: string;
-      let submittedTagIds: string[];
+      let submittedRanked: RankedEntry[];
 
       if (selection === "skipped") {
         payload = "[VOTER VALUES] skipped";
-        submittedTagIds = [];
-      } else if (
-        selection.custom !== undefined &&
-        selection.custom.trim().length > 0
-      ) {
-        // custom path: JSON.stringify the string to handle embedded quotes safely
-        payload = `[VOTER VALUES] custom=${JSON.stringify(selection.custom.trim())}`;
-        submittedTagIds = [];
+        submittedRanked = [];
       } else {
-        // tags path: JSON-array-style payload
-        const tagsJson = JSON.stringify(selection.tags);
-        payload = `[VOTER VALUES] tags=${tagsJson}`;
-        submittedTagIds = selection.tags;
+        // ranked path: JSON-array payload
+        const rankedJson = JSON.stringify(selection.ranked);
+        payload = `[VOTER VALUES] ranked=${rankedJson}`;
+        submittedRanked = selection.ranked;
       }
 
       setSubmittedValuesSelectors((prev) => {
         const next = new Map(prev);
-        next.set(messageIdx, submittedTagIds);
+        next.set(messageIdx, submittedRanked);
         return next;
       });
       sendMessage(payload, messages);
@@ -978,6 +1084,43 @@ export function ChatPanel({
       sendMessage(`[VOTER SKIPPED] race="${race}"`, messages);
     },
     [submittedRaceFinals, isStreaming, sendMessage, messages],
+  );
+
+  const handleConfirmConcerns = useCallback(
+    (messageIdx: number, confirmations: ConcernConfirmation[]) => {
+      if (submittedConcernInterpretations.has(messageIdx) || isStreaming)
+        return;
+      setSubmittedConcernInterpretations((prev) => {
+        const next = new Map(prev);
+        next.set(messageIdx, true);
+        return next;
+      });
+      const confirmationsJson = JSON.stringify(confirmations);
+      sendMessage(
+        `[VOTER CONFIRMED CONCERNS] confirmations=${confirmationsJson}`,
+        messages,
+      );
+    },
+    [submittedConcernInterpretations, isStreaming, sendMessage, messages],
+  );
+
+  const handleReinterpretConcern = useCallback(
+    (messageIdx: number, rank: number, newText: string) => {
+      if (isStreaming) return;
+      sendMessage(
+        `[VOTER REINTERPRET] sourceRank=${rank} newText=${JSON.stringify(newText)}`,
+        messages,
+      );
+    },
+    [isStreaming, sendMessage, messages],
+  );
+
+  const handleRemoveConcern = useCallback(
+    (messageIdx: number, rank: number) => {
+      if (isStreaming) return;
+      sendMessage(`[VOTER REMOVE_CONCERN] sourceRank=${rank}`, messages);
+    },
+    [isStreaming, sendMessage, messages],
   );
 
   const startSession = useCallback(() => {
@@ -1070,6 +1213,10 @@ export function ChatPanel({
             submittedRaceFinals={submittedRaceFinals}
             onPickRaceFinal={handleRaceFinalPick}
             onSkipRaceFinal={handleRaceFinalSkip}
+            submittedConcernInterpretations={submittedConcernInterpretations}
+            onConfirmConcerns={handleConfirmConcerns}
+            onReinterpretConcern={handleReinterpretConcern}
+            onRemoveConcern={handleRemoveConcern}
           />
 
           {isStreaming && searchActivity && (
