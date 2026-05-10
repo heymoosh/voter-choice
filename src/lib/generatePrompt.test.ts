@@ -621,10 +621,18 @@ describe("generatePrompt — Spanish mode", () => {
     );
   });
 
-  it("basePrompt instructs web_search against Vote Smart Key Votes for alignment scores", () => {
+  it("basePrompt instructs lookup_alignment tool (not web_search) for alignment scores", () => {
     const result = generatePrompt(txData, "73301", "2026-03-30");
-    expect(result.basePrompt).toMatch(/web_search/i);
-    expect(result.basePrompt).toMatch(/Vote Smart Key Votes|Vote Smart/i);
+    // Must mention the lookup_alignment tool
+    expect(result.basePrompt).toContain("lookup_alignment");
+    // Must explicitly prohibit web_search for alignment scoring
+    expect(result.basePrompt).toContain(
+      "Do NOT use `web_search` for alignment scoring under any circumstances",
+    );
+    // Old Vote Smart Key Votes web_search copy must be gone
+    expect(result.basePrompt).not.toContain(
+      "use `web_search` to find Vote Smart Key Votes",
+    );
   });
 
   it("basePrompt prohibits aggregate overall % for alignment scores", () => {
@@ -639,6 +647,20 @@ describe("generatePrompt — Spanish mode", () => {
     expect(result.basePrompt).toMatch(
       /proposition.*not.*alignment|DO NOT emit.*alignment.*proposition|proposition.*DO NOT emit.*ALIGNMENT/is,
     );
+  });
+
+  it("basePrompt references lookup_alignment in the [ALIGNMENT_SCORES] rules section", () => {
+    const result = generatePrompt(txData, "73301", "2026-03-30");
+    expect(result.basePrompt).toContain("lookup_alignment");
+    expect(result.basePrompt).toContain("candidate_name");
+    expect(result.basePrompt).toContain("canonical_issue");
+    expect(result.basePrompt).toContain("resolved_stance");
+  });
+
+  it("basePrompt instructs model to surface unavailable as genuine coverage gap (not fall back to web_search)", () => {
+    const result = generatePrompt(txData, "73301", "2026-03-30");
+    expect(result.basePrompt).toContain("genuine coverage gaps");
+    expect(result.basePrompt).toContain("do NOT fall back to");
   });
 
   /* ── Act 1.5 privacy posture assertions ─────────────────── */

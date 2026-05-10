@@ -9,6 +9,10 @@ import {
   wasHandoffServed,
   type BudgetTier,
 } from "../../../lib/server/budget";
+import {
+  resolveCandidateId,
+  lookupAlignment,
+} from "../../../lib/server/alignment";
 
 // Server-side tools: Anthropic's hosted web_search runs on their infra; we
 // just declare the tool and Claude orchestrates the calls server-side. Billed
@@ -18,6 +22,54 @@ const WEB_SEARCH_TOOL = {
   name: "web_search",
   // Keep per-turn usage bounded so a runaway agent can't drain the budget.
   max_uses: 5,
+};
+
+// lookup_alignment: deterministic backend lookup for alignment scoring.
+// The model calls this for every (candidate, canonicalIssue) pair when
+// emitting [ALIGNMENT_SCORES] blocks. Results come from the pre-tagged
+// votes database — not from web_search.
+const LOOKUP_ALIGNMENT_TOOL: Anthropic.Tool = {
+  name: "lookup_alignment",
+  description:
+    "Look up a candidate's voting alignment with a user-stated concern. " +
+    "Use this for every (candidate, canonical_issue) pair when emitting [ALIGNMENT_SCORES] blocks. " +
+    "Returns deterministic kept/total counts + contributing votes from a backend database of " +
+    "public official voting records (federal House/Senate + all 50 state legislatures). " +
+    "Replaces web_search for alignment scoring purposes — do NOT fall back to web_search for alignment.",
+  input_schema: {
+    type: "object" as const,
+    properties: {
+      candidate_name: {
+        type: "string",
+        description: "Full candidate name as it appears on the ballot",
+      },
+      state_code: {
+        type: "string",
+        description: "2-letter state code, e.g., TX",
+      },
+      jurisdiction: {
+        type: "string",
+        description:
+          "federal-house, federal-senate, state-XX-house, or state-XX-senate",
+      },
+      canonical_issue: {
+        type: "string",
+        description:
+          "Canonical issue id from the vocabulary the model receives in the system prompt",
+      },
+      resolved_stance: {
+        type: "string",
+        enum: ["in_favor", "opposed"],
+      },
+    },
+    required: [
+      "candidate_name",
+      "state_code",
+      "jurisdiction",
+      "canonical_issue",
+      "resolved_stance",
+    ],
+  },
 };
 
 // Cap a user message at ~8k characters (~2k tokens) before calling the API.
@@ -230,6 +282,15 @@ interface SearchBlockState {
   queryFragments: string[];
 }
 
+// Track lookup_alignment client-side tool calls accumulating across the stream
+interface LookupToolBlock {
+  id: string;
+  inputFragments: string[];
+}
+
+// Maximum number of lookup_alignment tool call rounds to prevent runaway loops
+const MAX_TOOL_ROUNDS = 10;
+
 // The SDK's usage type (0.39.0) doesn't know about server tool counts yet.
 type UsageWithServerTools =
   | { server_tool_use?: { web_search_requests?: number } }
@@ -246,6 +307,7 @@ function handleContentBlockDelta(
   controller: ReadableStreamDefaultController<Uint8Array>,
   encoder: TextEncoder,
   searchBlocks: Map<number, SearchBlockState>,
+  lookupBlocks: Map<number, LookupToolBlock>,
 ): void {
   if (event.delta.type === "text_delta") {
     controller.enqueue(
@@ -255,9 +317,13 @@ function handleContentBlockDelta(
   }
   // Accumulate the search query JSON as it streams so we can surface it.
   if (event.delta.type === "input_json_delta") {
-    const block = searchBlocks.get(event.index);
-    if (block?.active) {
-      block.queryFragments.push(event.delta.partial_json ?? "");
+    const searchBlock = searchBlocks.get(event.index);
+    if (searchBlock?.active) {
+      searchBlock.queryFragments.push(event.delta.partial_json ?? "");
+    }
+    const lookupBlock = lookupBlocks.get(event.index);
+    if (lookupBlock) {
+      lookupBlock.inputFragments.push(event.delta.partial_json ?? "");
     }
   }
 }
@@ -267,16 +333,26 @@ function handleContentBlockStart(
   controller: ReadableStreamDefaultController<Uint8Array>,
   encoder: TextEncoder,
   searchBlocks: Map<number, SearchBlockState>,
+  lookupBlocks: Map<number, LookupToolBlock>,
 ): void {
   // SDK 0.39.0 doesn't yet type the server_tool_use block — cast through
   // unknown so we can inspect the shape we know the API emits.
   const block = event.content_block as unknown as {
     type: string;
     name?: string;
+    id?: string;
   };
   if (block.type === "server_tool_use" && block.name === "web_search") {
     searchBlocks.set(event.index, { active: true, queryFragments: [] });
     controller.enqueue(encoder.encode(ssePayload({ type: "searching" })));
+  }
+  // Track client-side lookup_alignment tool calls
+  if (
+    block.type === "tool_use" &&
+    block.name === "lookup_alignment" &&
+    block.id
+  ) {
+    lookupBlocks.set(event.index, { id: block.id, inputFragments: [] });
   }
 }
 
@@ -285,21 +361,25 @@ function handleContentBlockStop(
   controller: ReadableStreamDefaultController<Uint8Array>,
   encoder: TextEncoder,
   searchBlocks: Map<number, SearchBlockState>,
+  lookupBlocks: Map<number, LookupToolBlock>,
 ): void {
-  const block = searchBlocks.get(event.index);
-  if (!block?.active) return;
-  const joined = block.queryFragments.join("");
-  let query: string | undefined;
-  try {
-    const parsed = JSON.parse(joined) as { query?: unknown };
-    if (typeof parsed.query === "string") query = parsed.query;
-  } catch {
-    // Ignore parse failures — we just won't show the query text.
+  const searchBlock = searchBlocks.get(event.index);
+  if (searchBlock?.active) {
+    const joined = searchBlock.queryFragments.join("");
+    let query: string | undefined;
+    try {
+      const parsed = JSON.parse(joined) as { query?: unknown };
+      if (typeof parsed.query === "string") query = parsed.query;
+    } catch {
+      // Ignore parse failures — we just won't show the query text.
+    }
+    controller.enqueue(
+      encoder.encode(ssePayload({ type: "searching_done", query })),
+    );
+    searchBlocks.delete(event.index);
   }
-  controller.enqueue(
-    encoder.encode(ssePayload({ type: "searching_done", query })),
-  );
-  searchBlocks.delete(event.index);
+  // Clean up any lookup_alignment tracking for this block index
+  lookupBlocks.delete(event.index);
 }
 
 function handleMessageStart(
@@ -333,16 +413,35 @@ function handleStreamEvent(
   encoder: TextEncoder,
   usage: StreamUsage,
   searchBlocks: Map<number, SearchBlockState>,
+  lookupBlocks: Map<number, LookupToolBlock>,
 ): void {
   switch (event.type) {
     case "content_block_delta":
-      handleContentBlockDelta(event, controller, encoder, searchBlocks);
+      handleContentBlockDelta(
+        event,
+        controller,
+        encoder,
+        searchBlocks,
+        lookupBlocks,
+      );
       return;
     case "content_block_start":
-      handleContentBlockStart(event, controller, encoder, searchBlocks);
+      handleContentBlockStart(
+        event,
+        controller,
+        encoder,
+        searchBlocks,
+        lookupBlocks,
+      );
       return;
     case "content_block_stop":
-      handleContentBlockStop(event, controller, encoder, searchBlocks);
+      handleContentBlockStop(
+        event,
+        controller,
+        encoder,
+        searchBlocks,
+        lookupBlocks,
+      );
       return;
     case "message_start":
       handleMessageStart(event, usage);
@@ -353,10 +452,74 @@ function handleStreamEvent(
   }
 }
 
+// ---------------------------------------------------------------------------
+// Tool resolution helpers
+// ---------------------------------------------------------------------------
+
+interface LookupAlignmentInput {
+  candidate_name?: string;
+  state_code?: string;
+  jurisdiction?: string;
+  canonical_issue?: string;
+  resolved_stance?: string;
+}
+
+async function resolveLookupAlignmentTool(
+  input: LookupAlignmentInput,
+): Promise<{ found: boolean; [key: string]: unknown }> {
+  const { candidate_name, jurisdiction, canonical_issue, resolved_stance } =
+    input;
+
+  if (
+    !candidate_name ||
+    !jurisdiction ||
+    !canonical_issue ||
+    !resolved_stance ||
+    (resolved_stance !== "in_favor" && resolved_stance !== "opposed")
+  ) {
+    return {
+      found: false,
+      unavailable: { reason: "Invalid tool input — required fields missing" },
+    };
+  }
+
+  const candidateId = await resolveCandidateId(candidate_name, jurisdiction);
+  if (!candidateId) {
+    return {
+      found: false,
+      unavailable: {
+        reason:
+          "Candidate not found in our voting record database — this may be a first-time candidate or local race we don't cover yet",
+      },
+    };
+  }
+
+  const result = await lookupAlignment(
+    candidateId,
+    canonical_issue,
+    resolved_stance,
+  );
+  return result as unknown as { found: boolean; [key: string]: unknown };
+}
+
+// ---------------------------------------------------------------------------
+// SSE stream factory with tool-call loop support
+// ---------------------------------------------------------------------------
+
+interface CreateSSEStreamOptions {
+  initialStream: AsyncIterable<Anthropic.MessageStreamEvent>;
+  requestTier: BudgetTier;
+  client: Anthropic;
+  createContinuationStream: (
+    assistantContent: Anthropic.MessageParam["content"],
+    toolResults: Anthropic.ToolResultBlockParam[],
+  ) => Promise<AsyncIterable<Anthropic.MessageStreamEvent>>;
+}
+
 function createSSEStream(
-  stream: AsyncIterable<Anthropic.MessageStreamEvent>,
-  requestTier: BudgetTier,
+  options: CreateSSEStreamOptions,
 ): ReadableStream<Uint8Array> {
+  const { initialStream, requestTier, createContinuationStream } = options;
   const encoder = new TextEncoder();
   const usage: StreamUsage = {
     input: 0,
@@ -365,14 +528,105 @@ function createSSEStream(
     cacheWrite: 0,
     searchCount: 0,
   };
-  const searchBlocks = new Map<number, SearchBlockState>();
 
   return new ReadableStream({
     async start(controller) {
       try {
-        for await (const event of stream) {
-          handleStreamEvent(event, controller, encoder, usage, searchBlocks);
+        let currentStream: AsyncIterable<Anthropic.MessageStreamEvent> =
+          initialStream;
+        let rounds = 0;
+
+        while (rounds < MAX_TOOL_ROUNDS) {
+          rounds++;
+          const searchBlocks = new Map<number, SearchBlockState>();
+          const lookupBlocks = new Map<number, LookupToolBlock>();
+
+          // Collect the full assistant response content for potential tool calls
+          const assistantContent: Anthropic.ContentBlock[] = [];
+          let stopReason: string | null = null;
+
+          for await (const event of currentStream) {
+            handleStreamEvent(
+              event,
+              controller,
+              encoder,
+              usage,
+              searchBlocks,
+              lookupBlocks,
+            );
+
+            // Accumulate content blocks for tool_use resolution
+            if (event.type === "content_block_start") {
+              const cb = event.content_block as Anthropic.ContentBlock;
+              assistantContent.push(cb);
+            }
+            if (event.type === "content_block_delta") {
+              const last = assistantContent[assistantContent.length - 1];
+              if (
+                last &&
+                event.delta.type === "text_delta" &&
+                last.type === "text"
+              ) {
+                (last as Anthropic.TextBlock).text += event.delta.text;
+              }
+              if (
+                last &&
+                event.delta.type === "input_json_delta" &&
+                last.type === "tool_use"
+              ) {
+                const toolBlock = last as Anthropic.ToolUseBlock;
+                const existing =
+                  typeof toolBlock.input === "string" ? toolBlock.input : "";
+                (toolBlock as { input: unknown }).input =
+                  existing + (event.delta.partial_json ?? "");
+              }
+            }
+            if (event.type === "message_delta") {
+              stopReason = event.delta.stop_reason ?? null;
+            }
+          }
+
+          // If the model stopped due to tool use, resolve lookup_alignment calls
+          if (stopReason !== "tool_use") break;
+
+          const toolUseBlocks = assistantContent.filter(
+            (b): b is Anthropic.ToolUseBlock =>
+              b.type === "tool_use" && b.name === "lookup_alignment",
+          );
+
+          if (toolUseBlocks.length === 0) break;
+
+          // Resolve all tool calls in parallel
+          const toolResults: Anthropic.ToolResultBlockParam[] =
+            await Promise.all(
+              toolUseBlocks.map(async (block) => {
+                // Parse accumulated input string into object
+                let parsedInput: LookupAlignmentInput = {};
+                try {
+                  const raw = block.input;
+                  parsedInput =
+                    typeof raw === "string"
+                      ? (JSON.parse(raw) as LookupAlignmentInput)
+                      : (raw as LookupAlignmentInput);
+                } catch {
+                  // malformed input — return error result
+                }
+                const result = await resolveLookupAlignmentTool(parsedInput);
+                return {
+                  type: "tool_result" as const,
+                  tool_use_id: block.id,
+                  content: JSON.stringify(result),
+                };
+              }),
+            );
+
+          // Build the next stream continuation
+          currentStream = await createContinuationStream(
+            assistantContent,
+            toolResults,
+          );
         }
+
         if (
           usage.input > 0 ||
           usage.output > 0 ||
@@ -539,7 +793,9 @@ export async function POST(request: NextRequest) {
   try {
     const systemText = buildSystemPrompt(body.systemPrompt, body.voterProfile);
     const messages = await prepareMessages(body.messages);
-    const stream = await new Anthropic({ apiKey }).messages.create({
+    const anthropic = new Anthropic({ apiKey });
+
+    const baseParams = {
       model,
       max_tokens: maxTokens,
       temperature: 0.7,
@@ -548,27 +804,60 @@ export async function POST(request: NextRequest) {
       // the first request (cached reads billed at 10% of input rate).
       system: [
         {
-          type: "text",
+          type: "text" as const,
           text: systemText,
-          cache_control: { type: "ephemeral" },
+          cache_control: { type: "ephemeral" as const },
         },
       ],
       // SDK 0.39.0 hasn't yet typed server tools (web_search); the API
       // accepts this shape — cast through unknown.
-      tools: [WEB_SEARCH_TOOL] as unknown as Anthropic.Tool[],
+      tools: [
+        WEB_SEARCH_TOOL,
+        LOOKUP_ALIGNMENT_TOOL,
+      ] as unknown as Anthropic.Tool[],
+    };
+
+    const initialStream = await anthropic.messages.create({
+      ...baseParams,
       messages,
       stream: true,
     });
 
-    return new Response(createSSEStream(stream, budget.tier), {
-      headers: {
-        "Content-Type": "text/event-stream",
-        "Cache-Control": "no-cache",
-        Connection: "keep-alive",
-        "X-Budget-Tier": budget.tier,
-        "X-Budget-Percent": String(budget.percent),
+    // Build a continuation stream factory for tool-call rounds
+    const conversationMessages: Anthropic.MessageParam[] = [...messages];
+    const createContinuationStream = async (
+      assistantContent: Anthropic.MessageParam["content"],
+      toolResults: Anthropic.ToolResultBlockParam[],
+    ): Promise<AsyncIterable<Anthropic.MessageStreamEvent>> => {
+      conversationMessages.push({
+        role: "assistant",
+        content: assistantContent,
+      });
+      conversationMessages.push({ role: "user", content: toolResults });
+      return anthropic.messages.create({
+        ...baseParams,
+        messages: conversationMessages,
+        stream: true,
+      });
+    };
+
+    return new Response(
+      createSSEStream({
+        initialStream,
+        requestTier: budget.tier,
+        client: anthropic,
+        createContinuationStream,
+      }),
+      {
+        headers: {
+          "Content-Type": "text/event-stream",
+          "Cache-Control": "no-cache",
+          Connection: "keep-alive",
+          "X-Budget-Tier": budget.tier,
+          "X-Budget-Percent": String(budget.percent),
+        },
       },
-    });
+    );
   } catch (err) {
     return handleAnthropicError(err);
   }
