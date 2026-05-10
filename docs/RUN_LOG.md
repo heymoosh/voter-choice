@@ -2,20 +2,56 @@
 
 ## Next
 
-Phase 0.6 — Infrastructure setup for Hermes-orchestrated Phase 3+ runs. This sub-phase runs on `main` (non-container mode) and must complete before any Phase 3 workflow run begins. Tasks:
+**Run 5, Phase 1** — Build the production ballot research tool on all 5 framework branches against the updated spec.
 
+**Spec:** `docs/PROJECT_SPEC.md` v2.0 (updated 2026-05-10) — full production feature set from `launch/production`: on-site LLM chat (Claude Sonnet, SSE streaming), two-path UX (chat + copy/paste fallback), 4-tier budget management ($20/month cap, Upstash Redis), three-layer rate limiting, Google Civic polling location lookup + Google Places autocomplete, voter profile upload/download with prompt-injection protection, downloadable ballot (HTML), English + Spanish (Vietnamese/Chinese/Arabic framework-ready), LLM-driven alignment score banner + drill-down, anonymous aggregate counters + Polis overlay, issue drag-ranking + concern disambiguation, multi-state support (TX, CA, FL, GA, NC, NH, NM, NY, AZ), Drizzle ORM + Neon Postgres schema (Phase A), Vercel deploy pipeline via GitHub Actions + Bitwarden secrets, WCAG AA, 72 unit tests + 42 e2e tests, Lighthouse 100/100/100/100.
+
+**Branches** (forked from `workflow/*` scaffold — framework CLAUDE.md and plugin tools pre-installed):
+
+| Branch | Framework |
+|--------|-----------|
+| `run5/bmad` | BMAD Method |
+| `run5/compound-engineering` | Compound Engineering |
+| `run5/spec-kit` | Spec Kit |
+| `run5/superpowers` | Superpowers |
+| `run5/vanilla` | Vanilla Claude Code (baseline) |
+
+**Run order:** Randomize before starting each session (do not reuse the Phase 1-2 order — see `docs/EXPERIMENT_DESIGN.md` § randomization).
+
+**To start a run:** Check out `run5/<framework>` and invoke `/start`. The framework CLAUDE.md will direct the autonomous build using `docs/PROJECT_SPEC.md` as the source of truth for all decisions.
+
+**Measurement targets (same rubric as prior phases):**
+- Playwright e2e: all passing (target 100%)
+- Vitest unit tests + line coverage %
+- ESLint: 0 errors, 0 warnings, 0 complexity violations
+- Lighthouse: 4× 100 (Performance / Accessibility / Best Practices / SEO)
+- Bundle: first-load JS shared + page-specific (kB)
+- Duplication: JSCPD % and clone count
+- LOC and file count in `src/`
+- Build duration (via `workflow-log.jsonl` step timestamps)
+- Framework adherence (workflow-log.jsonl completion + TDD score via `analyze-adherence.mjs`)
+
+---
+
+## Backlog
+
+### Phase 0.6 — Hermes Orchestration Infrastructure (deferred)
+
+Deferred in favor of Run 5 manual experiment. Restore to `## Next` when ready to automate Phase 3+ orchestration via Hermes VPS.
+
+Original tasks:
 1. Review and commit `docs/PHASE3_SPEC.md`, `docs/PHASE4_SPEC.md`, `docs/PHASE5_SPEC.md` (currently untracked drafts).
 2. Update `docs/EXPERIMENT_DESIGN.md` with Phase 3/4/5 sections per `docs/PHASE3-5_INTEGRATION.md`.
-3. Extend `scoring/auto-findings-rubric.md` with any Phase 3+ checks that can be written without API keys in hand (API coverage field, translation coverage placeholder, chat e2e placeholders).
-4. Generate a new randomized run order for Phases 3-5 (do NOT reuse the Phase 1-2 order — see `docs/PHASE3-5_INTEGRATION.md` § 5).
+3. Extend `scoring/auto-findings-rubric.md` with any Phase 3+ checks that can be written without API keys in hand.
+4. Generate a new randomized run order for Phases 3-5 (do NOT reuse the Phase 1-2 order).
 5. Stand up the Hermes VPS per `Projects/Agents/Hermes Agent Requirements - voter-choice Orchestrator.md` (Bitwarden machine account, BWS_ACCESS_TOKEN, Docker, two-worktree setup, Telegram kill switch).
 6. Provision Phase 3 API keys in Bitwarden (Google Civic, Democracy Works, Vote Smart, OpenStates, OpenFEC) per Hermes doc § "Before Phase 3 runs".
-7. Create new `run4/*` branches from the post-scoring-isolation `main` commit for all 5 workflows (Spec Kit, Superpowers, BMAD, Compound Engineering, Vanilla). Legacy `workflow/*`, `run2/*`, `run3/*` branches are permanently contaminated by rubric visibility (see Learning 009) and must not be reused.
+7. Create new run branches from the post-scoring-isolation `main` commit for all 5 workflows.
 8. Tag `main` as `v1-phase3-ready` when infrastructure is in place.
 
-**Scoring is now executed by Hermes from the host side, not inside the build container.** The rubric lives at `scoring/auto-findings-rubric.md`. The container-side `/start` produces only a committed + tagged build. See `Projects/Agents/Hermes Agent Requirements - voter-choice Orchestrator.md` for the full orchestrator contract and `docs/LEARNINGS.md` → Learning 009 for the rationale.
+Note: **Scoring is executed by Hermes from the host side, not inside the build container.** The rubric lives at `scoring/auto-findings-rubric.md`. See `Projects/Agents/Hermes Agent Requirements - voter-choice Orchestrator.md` for the full orchestrator contract and `docs/LEARNINGS.md` → Learning 009 for the rationale.
 
-**Remaining phases after 0.6:** Phase 3 (real ballot data integration, 5 runs × 5 workflows), Phase 4 (Vietnamese/Chinese/Arabic language support, 5 × 5), Phase 5 (LLM chat window + downloadable ballot + voter profile, 5 × 5), Phase 6 (cross-phase analysis).
+---
 
 ## Completed
 
