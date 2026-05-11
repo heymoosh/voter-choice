@@ -1,0 +1,290 @@
+{
+  "metadata": {
+    "timestamp": "2026-05-11T20:36:38.336Z",
+    "branch": "experiment/superpowers-r3",
+    "commit": "c61bdf9",
+    "phase": 1,
+    "nodeVersion": "v22.14.0"
+  },
+  "eslint": {
+    "errors": 0,
+    "warnings": 0,
+    "complexityViolations": 0
+  },
+  "complexity": {
+    "count": 21,
+    "average": 3.57,
+    "max": 9,
+    "p50": 3,
+    "p75": 4,
+    "p95": 8,
+    "distribution": {
+      "simple_1_5": 18,
+      "moderate_6_10": 3,
+      "complex_11_15": 0,
+      "highComplex_16_20": 0,
+      "critical_21plus": 0
+    },
+    "perFunction": [
+      {
+        "file": "src/components/StateInfoCard.tsx",
+        "name": "StateInfoCard",
+        "complexity": 9,
+        "line": 23
+      },
+      {
+        "file": "src/lib/deadlineUtils.ts",
+        "name": "getDeadlineInfo",
+        "complexity": 8,
+        "line": 9
+      },
+      {
+        "file": "src/app/page.tsx",
+        "name": "Home",
+        "complexity": 6,
+        "line": 10
+      },
+      {
+        "file": "src/hooks/useElectionData.ts",
+        "name": "<anonymous>",
+        "complexity": 5,
+        "line": 29
+      },
+      {
+        "file": "src/lib/promptBuilder.ts",
+        "name": "buildContextBlock",
+        "complexity": 5,
+        "line": 40
+      },
+      {
+        "file": "src/lib/promptBuilder.ts",
+        "name": "formatElectionLine",
+        "complexity": 4,
+        "line": 19
+      },
+      {
+        "file": "src/app/api/state/[code]/route.ts",
+        "name": "<anonymous>",
+        "complexity": 3,
+        "line": 7
+      },
+      {
+        "file": "src/components/DeadlineStatus.tsx",
+        "name": "DeadlineStatus",
+        "complexity": 3,
+        "line": 16
+      },
+      {
+        "file": "src/components/PromptOutput.tsx",
+        "name": "PromptOutput",
+        "complexity": 3,
+        "line": 8
+      },
+      {
+        "file": "src/components/PromptOutput.tsx",
+        "name": "<anonymous>",
+        "complexity": 3,
+        "line": 12
+      },
+      {
+        "file": "src/components/ZipForm.tsx",
+        "name": "ZipForm",
+        "complexity": 3,
+        "line": 9
+      },
+      {
+        "file": "src/components/ZipForm.tsx",
+        "name": "<arrow>",
+        "complexity": 3,
+        "line": 13
+      },
+      {
+        "file": "src/hooks/useElectionData.ts",
+        "name": "<anonymous>",
+        "complexity": 3,
+        "line": 51
+      },
+      {
+        "file": "src/lib/promptBuilder.ts",
+        "name": "formatVoterIdInfo",
+        "complexity": 3,
+        "line": 32
+      },
+      {
+        "file": "src/components/StateInfoCard.tsx",
+        "name": "getNextElection",
+        "complexity": 2,
+        "line": 4
+      },
+      {
+        "file": "src/components/StateSelector.tsx",
+        "name": "<arrow>",
+        "complexity": 2,
+        "line": 73
+      },
+      {
+        "file": "src/components/ZipForm.tsx",
+        "name": "<arrow>",
+        "complexity": 2,
+        "line": 19
+      },
+      {
+        "file": "src/components/ZipForm.tsx",
+        "name": "<arrow>",
+        "complexity": 2,
+        "line": 47
+      },
+      {
+        "file": "src/hooks/useElectionData.ts",
+        "name": "<anonymous>",
+        "complexity": 2,
+        "line": 15
+      },
+      {
+        "file": "src/lib/promptBuilder.ts",
+        "name": "formatEarlyVoting",
+        "complexity": 2,
+        "line": 27
+      },
+      {
+        "file": "src/lib/zipLookup.ts",
+        "name": "lookupZip",
+        "complexity": 2,
+        "line": 3
+      }
+    ]
+  },
+  "vitest": {
+    "tests": {
+      "total": 24,
+      "passed": 24,
+      "failed": 0,
+      "skipped": "no test files",
+      "passRate": 100
+    },
+    "coverage": {
+      "lines": null,
+      "branches": null,
+      "functions": null,
+      "statements": null
+    }
+  },
+  "duplication": {
+    "duplicatedLines": 22,
+    "totalLines": 1134,
+    "percentage": 1.94,
+    "clones": 2
+  },
+  "bundleSize": {
+    "buildSuccess": true,
+    "pages": [],
+    "firstLoadJsShared": null
+  },
+  "lighthouse": {
+    "performance": null,
+    "accessibility": null,
+    "bestPractices": null,
+    "seo": null
+  },
+  "playwright": {
+    "total": 42,
+    "passed": 42,
+    "failed": 0,
+    "timedOut": 0,
+    "skipped": 0,
+    "passRate": 100
+  },
+  "linesOfCode": {
+    "application": {
+      "code": 1075,
+      "files": 20,
+      "byExtension": {
+        ".ts": {
+          "files": 6,
+          "code": 216
+        },
+        ".css": {
+          "files": 1,
+          "code": 21
+        },
+        ".tsx": {
+          "files": 9,
+          "code": 610
+        },
+        ".json": {
+          "files": 4,
+          "code": 228
+        }
+      }
+    },
+    "plugin": {
+      "code": 529,
+      "files": 4,
+      "byExtension": {
+        ".js": {
+          "files": 3,
+          "code": 456
+        },
+        ".ts": {
+          "files": 1,
+          "code": 73
+        }
+      }
+    },
+    "infrastructure": {
+      "code": 356,
+      "files": 10
+    },
+    "total": {
+      "code": 1960,
+      "files": 34
+    }
+  },
+  "workflowTests": {
+    "count": 0,
+    "files": []
+  },
+  "workflowTiming": {
+    "steps": [
+      {
+        "step": "brainstorming",
+        "started": "2026-05-11T15:17:42-05:00",
+        "completed": "2026-05-11T15:18:51-05:00",
+        "durationMs": 69000
+      },
+      {
+        "step": "writing-plans",
+        "started": "2026-05-11T15:18:51-05:00",
+        "completed": "2026-05-11T15:21:13-05:00",
+        "durationMs": 142000
+      },
+      {
+        "step": "executing-plans",
+        "started": "2026-05-11T15:21:13-05:00",
+        "completed": "2026-05-11T15:26:52-05:00",
+        "durationMs": 339000
+      },
+      {
+        "step": "requesting-code-review",
+        "started": "2026-05-11T15:26:52-05:00",
+        "completed": "2026-05-11T15:27:54-05:00",
+        "durationMs": 62000
+      },
+      {
+        "step": "verification-before-completion",
+        "started": "2026-05-11T15:27:54-05:00",
+        "completed": "2026-05-11T15:28:24-05:00",
+        "durationMs": 30000
+      },
+      {
+        "step": "finishing-a-development-branch",
+        "started": "2026-05-11T15:28:24-05:00",
+        "completed": "2026-05-11T15:28:36-05:00",
+        "durationMs": 12000
+      }
+    ],
+    "totalSteps": 6,
+    "completedSteps": 6
+  },
+  "diffHygiene": null
+}

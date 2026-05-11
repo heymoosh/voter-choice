@@ -479,10 +479,10 @@ function measurePlaywright() {
     return { total: 0, passed: 0, failed: 0, skipped: "no e2e directory" };
   }
 
-  // Build if needed
-  if (!existsSync(join(ROOT, ".next"))) {
+  // Build if needed (use npm run build to respect package.json scripts, e.g. --turbo flag)
+  if (!existsSync(join(ROOT, ".next")) || !existsSync(join(ROOT, ".next/BUILD_ID"))) {
     console.log("  Building first...");
-    run("npx next build 2>&1");
+    run("npm run build 2>&1");
   }
 
   // Use config reporters (playwright.config.ts writes JSON to playwright-report.json)
