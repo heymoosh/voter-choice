@@ -1,0 +1,190 @@
+name: Ingest State Votes
+
+on:
+  # Sunday 07:30 UTC — after federal ingest starts
+  schedule:
+    - cron: "30 7 * * 0"
+  # Manual controls:
+  # - scope=canary runs TX, CA, NY, FL, GA, NC
+  # - scope=all runs all 50 states
+  # - scope=single runs only the state input
+  workflow_dispatch:
+    inputs:
+      scope:
+        description: "Run scope"
+        required: true
+        default: "canary"
+        type: choice
+        options:
+          - canary
+          - all
+          - single
+      state:
+        description: "Two-letter state abbreviation when scope=single"
+        required: false
+        default: ""
+      max_bills:
+        description: "Optional OPENSTATES_MAX_BILLS limit for manual runs"
+        required: false
+        default: ""
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 6
+      matrix:
+        state:
+          [
+            AL,
+            AK,
+            AZ,
+            AR,
+            CA,
+            CO,
+            CT,
+            DE,
+            FL,
+            GA,
+            HI,
+            ID,
+            IL,
+            IN,
+            IA,
+            KS,
+            KY,
+            LA,
+            ME,
+            MD,
+            MA,
+            MI,
+            MN,
+            MS,
+            MO,
+            MT,
+            NE,
+            NV,
+            NH,
+            NJ,
+            NM,
+            NY,
+            NC,
+            ND,
+            OH,
+            OK,
+            OR,
+            PA,
+            RI,
+            SC,
+            SD,
+            TN,
+            TX,
+            UT,
+            VT,
+            VA,
+            WA,
+            WV,
+            WI,
+            WY,
+          ]
+      fail-fast: false
+
+    steps:
+      - name: Decide state scope
+        id: scope
+        shell: bash
+        run: |
+          SHOULD_RUN=false
+          SELECTED_STATE=$(echo "${{ inputs.state }}" | tr '[:lower:]' '[:upper:]')
+          if [[ "${{ github.event_name }}" == "schedule" ]]; then
+            SHOULD_RUN=true
+          elif [[ "${{ inputs.scope }}" == "all" ]]; then
+            SHOULD_RUN=true
+          elif [[ "${{ inputs.scope }}" == "canary" ]]; then
+            case " TX CA NY FL GA NC " in
+              *" ${{ matrix.state }} "*) SHOULD_RUN=true ;;
+            esac
+          elif [[ "${{ inputs.scope }}" == "single" && "${{ matrix.state }}" == "$SELECTED_STATE" ]]; then
+            SHOULD_RUN=true
+          fi
+          echo "run=$SHOULD_RUN" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout
+        if: steps.scope.outputs.run == 'true'
+        uses: actions/checkout@v6
+
+      - name: Setup Node
+        if: steps.scope.outputs.run == 'true'
+        uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install dependencies
+        if: steps.scope.outputs.run == 'true'
+        run: npm ci
+
+      - name: Install Bitwarden Secrets Manager CLI
+        if: steps.scope.outputs.run == 'true'
+        run: |
+          curl -sSLo bws.zip "https://github.com/bitwarden/sdk-sm/releases/download/bws-v2.0.0/bws-x86_64-unknown-linux-musl-2.0.0.zip"
+          unzip -o bws.zip bws
+          sudo install -m 755 bws /usr/local/bin/bws
+          bws --version
+
+      - name: Pull secrets from Bitwarden SM
+        if: steps.scope.outputs.run == 'true'
+        env:
+          BWS_ACCESS_TOKEN: ${{ secrets.BW_ACCESS_TOKEN }}
+        run: |
+          # ---------------------------------------------------------------
+          # DATABASE_URL — Neon Postgres connection string
+          # ---------------------------------------------------------------
+          DATABASE_URL=$(bws secret get 90abeeed-130e-4707-86ff-b446003770c2 --access-token "$BWS_ACCESS_TOKEN" --output json | jq -r '.value')
+          echo "DATABASE_URL=$DATABASE_URL" >> "$GITHUB_ENV"
+          echo "::add-mask::$DATABASE_URL"
+
+          # ---------------------------------------------------------------
+          # OPENSTATES_API_KEY — OpenStates legislative data API
+          # ---------------------------------------------------------------
+          OPENSTATES_API_KEY=$(bws secret get 85bad136-3cbc-4062-9ccc-b4460037de19 --access-token "$BWS_ACCESS_TOKEN" --output json | jq -r '.value')
+          echo "OPENSTATES_API_KEY=$OPENSTATES_API_KEY" >> "$GITHUB_ENV"
+          echo "::add-mask::$OPENSTATES_API_KEY"
+
+          # ---------------------------------------------------------------
+          # INGEST_FAILURE_WEBHOOK_URL — optional; webhook for ingest failure alerts.
+          # UUID: <INGEST_FAILURE_WEBHOOK_BWS_SECRET_ID>
+          # Replace the placeholder with the real BWS secret UUID once provisioned.
+          # ---------------------------------------------------------------
+          set +e
+          WEBHOOK_SECRET=$(bws secret get <INGEST_FAILURE_WEBHOOK_BWS_SECRET_ID> --access-token "$BWS_ACCESS_TOKEN" --output json 2>/dev/null)
+          WEBHOOK_STATUS=$?
+          set -e
+          if [ "$WEBHOOK_STATUS" -eq 0 ]; then
+            INGEST_FAILURE_WEBHOOK_URL=$(echo "$WEBHOOK_SECRET" | jq -r '.value // empty')
+            if [ -n "$INGEST_FAILURE_WEBHOOK_URL" ]; then
+              echo "INGEST_FAILURE_WEBHOOK_URL=$INGEST_FAILURE_WEBHOOK_URL" >> "$GITHUB_ENV"
+              echo "::add-mask::$INGEST_FAILURE_WEBHOOK_URL"
+            fi
+          fi
+
+      - name: Run state votes ingest — ${{ matrix.state }}
+        if: steps.scope.outputs.run == 'true'
+        env:
+          STATE: ${{ matrix.state }}
+          OPENSTATES_MAX_BILLS: ${{ inputs.max_bills }}
+        run: npx tsx scripts/ingest/state-votes.ts
+
+      - name: Notify on ingest failure
+        if: failure()
+        env:
+          WEBHOOK: ${{ env.INGEST_FAILURE_WEBHOOK_URL }}
+        run: |
+          if [ -z "$WEBHOOK" ]; then
+            echo "INGEST_FAILURE_WEBHOOK_URL not set — skipping alert"
+            exit 0
+          fi
+          curl -fsS -X POST "$WEBHOOK" \
+            -H "Content-Type: application/json" \
+            -d "$(jq -n --arg job "${{ github.job }}" --arg run "${{ github.run_id }}" --arg repo "${{ github.repository }}" \
+              '{text: "[voter-choice ingest failure] job=\($job) repo=\($repo) run_id=\($run)"}')"

@@ -1,0 +1,32 @@
+{
+  "phase": 2,
+  "feature": "Spanish i18n",
+  "rationale": "Adding Spanish translation requires creating an i18n abstraction and threading useLanguage() through every existing component. The translations, i18n provider, and language toggle are in-scope. Component edits and prompt/date string edits are adjacent — required to consume the abstraction. Anything outside src/ (scoring, e2e suite additions are fine but the e2e harness itself is not, scripts, infra) is unexpected for an i18n feature.",
+  "expectedGlobs": [
+    "src/lib/translations.*",
+    "src/lib/translations/**",
+    "src/lib/i18n.*",
+    "src/lib/i18n/**",
+    "src/components/LanguageToggle.*",
+    "src/components/LanguageSelector.*",
+    "src/components/SkipLink.*",
+    "src/components/PageContent.*",
+    "src/app/PageContent.*"
+  ],
+  "adjacentAllowed": [
+    "src/app/page.tsx",
+    "src/app/layout.tsx",
+    "src/components/**/*.tsx",
+    "src/components/**/*.ts",
+    "src/lib/generatePrompt.*",
+    "src/lib/generate-prompt.*",
+    "src/lib/prompt-generator.*",
+    "src/lib/date-utils.*",
+    "src/lib/getDeadlineStatus.*",
+    "src/lib/election-data.*",
+    "src/__tests__/**",
+    "src/**/*.test.*",
+    "src/**/*.spec.*",
+    "e2e/**"
+  ]
+}
