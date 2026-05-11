@@ -1,0 +1,297 @@
+{
+  "metadata": {
+    "timestamp": "2026-05-11T16:06:31.705Z",
+    "branch": "experiment/vanilla-r1",
+    "commit": "364c46a",
+    "phase": 1,
+    "nodeVersion": "v22.14.0"
+  },
+  "eslint": {
+    "errors": 0,
+    "warnings": 2,
+    "complexityViolations": 2
+  },
+  "complexity": {
+    "count": 26,
+    "average": 4.81,
+    "max": 41,
+    "p50": 3,
+    "p75": 4,
+    "p95": 13,
+    "distribution": {
+      "simple_1_5": 23,
+      "moderate_6_10": 1,
+      "complex_11_15": 1,
+      "highComplex_16_20": 0,
+      "critical_21plus": 1
+    },
+    "perFunction": [
+      {
+        "file": "src/app/page.tsx",
+        "name": "Home",
+        "complexity": 41,
+        "line": 56
+      },
+      {
+        "file": "src/app/page.tsx",
+        "name": "<anonymous>",
+        "complexity": 13,
+        "line": 154
+      },
+      {
+        "file": "src/lib/ballot-data.ts",
+        "name": "getDeadlineInfo",
+        "complexity": 8,
+        "line": 121
+      },
+      {
+        "file": "src/lib/ballot-data.ts",
+        "name": "registrationLines",
+        "complexity": 5,
+        "line": 260
+      },
+      {
+        "file": "src/app/page.tsx",
+        "name": "<anonymous>",
+        "complexity": 4,
+        "line": 114
+      },
+      {
+        "file": "src/lib/ballot-data.ts",
+        "name": "electionLines",
+        "complexity": 4,
+        "line": 248
+      },
+      {
+        "file": "src/lib/ballot-data.ts",
+        "name": "earlyVotingLine",
+        "complexity": 4,
+        "line": 276
+      },
+      {
+        "file": "src/app/page.tsx",
+        "name": "validateZip",
+        "complexity": 3,
+        "line": 80
+      },
+      {
+        "file": "src/app/page.tsx",
+        "name": "<arrow>",
+        "complexity": 3,
+        "line": 279
+      },
+      {
+        "file": "src/lib/ballot-data.test.ts",
+        "name": "<arrow>",
+        "complexity": 3,
+        "line": 156
+      },
+      {
+        "file": "src/lib/ballot-data.test.ts",
+        "name": "<arrow>",
+        "complexity": 3,
+        "line": 162
+      },
+      {
+        "file": "src/lib/ballot-data.test.ts",
+        "name": "<arrow>",
+        "complexity": 3,
+        "line": 170
+      },
+      {
+        "file": "src/lib/ballot-data.test.ts",
+        "name": "<arrow>",
+        "complexity": 3,
+        "line": 177
+      },
+      {
+        "file": "src/lib/ballot-data.test.ts",
+        "name": "<arrow>",
+        "complexity": 3,
+        "line": 184
+      },
+      {
+        "file": "src/lib/ballot-data.ts",
+        "name": "getNextElection",
+        "complexity": 3,
+        "line": 88
+      },
+      {
+        "file": "src/app/page.tsx",
+        "name": "DeadlineBadge",
+        "complexity": 2,
+        "line": 37
+      },
+      {
+        "file": "src/app/page.tsx",
+        "name": "<arrow>",
+        "complexity": 2,
+        "line": 73
+      },
+      {
+        "file": "src/app/page.tsx",
+        "name": "<anonymous>",
+        "complexity": 2,
+        "line": 89
+      },
+      {
+        "file": "src/app/page.tsx",
+        "name": "<arrow>",
+        "complexity": 2,
+        "line": 275
+      },
+      {
+        "file": "src/lib/ballot-data.test.ts",
+        "name": "<arrow>",
+        "complexity": 2,
+        "line": 103
+      },
+      {
+        "file": "src/lib/ballot-data.test.ts",
+        "name": "<arrow>",
+        "complexity": 2,
+        "line": 109
+      },
+      {
+        "file": "src/lib/ballot-data.test.ts",
+        "name": "<arrow>",
+        "complexity": 2,
+        "line": 121
+      },
+      {
+        "file": "src/lib/ballot-data.test.ts",
+        "name": "<arrow>",
+        "complexity": 2,
+        "line": 191
+      },
+      {
+        "file": "src/lib/ballot-data.ts",
+        "name": "lookupZip",
+        "complexity": 2,
+        "line": 65
+      },
+      {
+        "file": "src/lib/ballot-data.ts",
+        "name": "<anonymous>",
+        "complexity": 2,
+        "line": 73
+      },
+      {
+        "file": "src/lib/ballot-data.ts",
+        "name": "voterIdLine",
+        "complexity": 2,
+        "line": 284
+      }
+    ]
+  },
+  "vitest": {
+    "tests": {
+      "total": 31,
+      "passed": 31,
+      "failed": 0,
+      "skipped": 0,
+      "passRate": 100
+    },
+    "coverage": {
+      "lines": 16.06,
+      "branches": 78.04,
+      "functions": 92.3,
+      "statements": 16.06
+    }
+  },
+  "duplication": {
+    "duplicatedLines": 11,
+    "totalLines": 1717,
+    "percentage": 0.64,
+    "clones": 1
+  },
+  "bundleSize": {
+    "buildSuccess": true,
+    "pages": [
+      {
+        "route": "/",
+        "size": 8.09,
+        "unit": "kB"
+      },
+      {
+        "route": "/_not-found",
+        "size": 990,
+        "unit": "B"
+      }
+    ],
+    "firstLoadJsShared": {
+      "size": 102,
+      "unit": "kB"
+    }
+  },
+  "lighthouse": {
+    "performance": 100,
+    "accessibility": 95,
+    "bestPractices": 100,
+    "seo": 100
+  },
+  "playwright": {
+    "total": 42,
+    "passed": 42,
+    "failed": 0,
+    "timedOut": 0,
+    "skipped": 0,
+    "passRate": 100
+  },
+  "linesOfCode": {
+    "application": {
+      "code": 1410,
+      "files": 9,
+      "byExtension": {
+        ".css": {
+          "files": 1,
+          "code": 21
+        },
+        ".tsx": {
+          "files": 2,
+          "code": 723
+        },
+        ".json": {
+          "files": 4,
+          "code": 228
+        },
+        ".ts": {
+          "files": 2,
+          "code": 438
+        }
+      }
+    },
+    "plugin": {
+      "code": 0,
+      "files": 0,
+      "byExtension": {}
+    },
+    "infrastructure": {
+      "code": 351,
+      "files": 10
+    },
+    "total": {
+      "code": 1761,
+      "files": 19
+    }
+  },
+  "workflowTests": {
+    "count": 1,
+    "files": [
+      "src/lib/ballot-data.test.ts"
+    ]
+  },
+  "workflowTiming": {
+    "steps": [
+      {
+        "step": "vanilla-build",
+        "started": "2026-05-11T11:00:37-05:00",
+        "completed": "2026-05-11T11:06:12-05:00",
+        "durationMs": 335000
+      }
+    ],
+    "totalSteps": 1,
+    "completedSteps": 1
+  },
+  "diffHygiene": null
+}
