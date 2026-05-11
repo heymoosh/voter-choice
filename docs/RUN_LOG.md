@@ -57,145 +57,27 @@ Note: **Scoring is executed by Hermes from the host side, not inside the build c
 
 
 
+### Phase 1 replicate — superpowers r3 (auto)
+
+- **Date:** 2026-05-11T20:46:35.651Z
+- **Branch:** `experiment/superpowers-r3`
+- **Tag:** `superpowers-r3-phase1-complete`
+- **Status:** ✓
+- **Replicate:** r3
+- **Summary:** e2e 42/42, vitest 24/24, lint 0e/0w, LOC 1075
+- **Metrics:** LOC 1075, complexity avg 3.57 max 9
+
+
 ### Phase 1 replicate — superpowers r2 (auto)
 
-- **Date:** 2026-05-11T20:13:07.161Z
+- **Date:** 2026-05-11T20:11:01.837Z
 - **Branch:** `experiment/superpowers-r2`
 - **Tag:** `superpowers-r2-phase1-complete`
 - **Status:** ✓
 - **Replicate:** r2
 - **Summary:** e2e 42/42, vitest 18/18, lint 0e/0w, LOC 1470
+- **Metrics:** coverage 16.1%, LOC 1470, complexity avg 3.69 max 9
 
-
-### Phase 1 replicate — superpowers r1 (auto)
-
-- **Date:** 2026-05-11T21:38:00.000Z
-- **Branch:** `experiment/superpowers-r1`
-- **Tag:** `superpowers-r1-phase1-complete`
-- **Status:** ✓
-- **Replicate:** r1
-- **Summary:** e2e 42/42, vitest 20/20, lint 0e/0w, LOC 1328
-- **Metrics:** e2e 42/42, coverage 17.3%, LOC 1328, complexity avg 3.17 max 8
-
-### Phase 1 replicate — spec-kit r3 (auto)
-
-- **Date:** 2026-05-11T19:16:16.416Z
-- **Branch:** `experiment/spec-kit-r3`
-- **Tag:** `spec-kit-r3-phase1-complete`
-- **Status:** ✓
-- **Replicate:** r3
-- **Summary:** e2e 42/42, vitest 29/29, lint 0e/0w, LOC 1574
-- **Metrics:** coverage 13.6%, LOC 1574, complexity avg 3.00 max 6
-
-
-### Phase 1 replicate — spec-kit r2 (auto)
-
-- **Date:** 2026-05-11T18:47:54.065Z
-- **Branch:** `experiment/spec-kit-r2`
-- **Tag:** `spec-kit-r2-phase1-complete`
-- **Status:** ✓
-- **Replicate:** r2
-- **Summary:** e2e 42/42, vitest 40/40, lint 0e/3w, LOC 2089
-- **Metrics:** coverage 13.7%, LOC 2089, complexity avg 5.14 max 18
-
-<<<<<<< HEAD
-### Phase 1 replicate — spec-kit r1 (auto)
-
-- **Date:** 2026-05-11T18:25:40.273Z
-- **Branch:** `experiment/spec-kit-r1`
-- **Tag:** `spec-kit-r1-phase1-complete`
-- **Status:** ✓
-- **Replicate:** r1
-- **Summary:** e2e 42/42, vitest 35/35, lint 0e/0w, LOC 1661
-- **Metrics:** coverage 14.1%, LOC 1661, complexity avg 4.39 max 10
-
-### Phase 1 replicate — bmad r3 (auto)
-
-- **Date:** 2026-05-11T18:06:37.053Z
-- **Branch:** `experiment/bmad-r3`
-- **Tag:** `bmad-r3-phase1-complete`
-- **Status:** ✓
-- **Replicate:** r3
-- **Summary:** e2e 42/42, vitest 45/45, lint 0e/2w, LOC 1861
-- **Metrics:** coverage 12.9%, LOC 1861, complexity avg 4.11 max 19
-
-
-### Phase 1 replicate — bmad r2 (auto)
-
-- **Date:** 2026-05-11T17:44:05.034Z
-- **Branch:** `experiment/bmad-r2`
-- **Tag:** `bmad-r2-phase1-complete`
-- **Status:** ✓
-- **Replicate:** r2
-- **Summary:** e2e 42/42, vitest 45/45, lint 0e/2w, LOC 1861
-- **Metrics:** coverage 12.8%, LOC 1861, complexity avg 4.14 max 20
-
-
-### Phase 1 replicate — bmad r1 (auto)
-
-- **Date:** 2026-05-11T17:15:15.433Z
-- **Branch:** `experiment/bmad-r1`
-- **Tag:** `bmad-r1-phase1-complete`
-- **Status:** ✓
-- **Replicate:** r1
-- **Summary:** e2e 42/42, vitest 26/26, lint 0e/2w, LOC 1564
-
-
-
-### Phase 1 replicate — vanilla r3 (auto)
-
-- **Date:** 2026-05-11T16:56:35.394Z
-- **Branch:** `experiment/vanilla-r3`
-- **Tag:** `vanilla-r3-phase1-complete`
-- **Status:** ✓
-- **Replicate:** r3
-- **Summary:** e2e 42/42, vitest 46/46, lint 0e/2w, LOC 1428
-
-
-### Phase 1 replicate — vanilla r2 (auto)
-
-- **Date:** 2026-05-11T16:40:26.534Z
-- **Branch:** `experiment/vanilla-r2`
-- **Tag:** `vanilla-r2-phase1-complete`
-- **Status:** ✓
-- **Replicate:** r2
-- **Summary:** e2e 42/42, vitest 18/18, lint 0e/0w, LOC 1204
-
-
-### Phase 1 replicate — vanilla r1 (auto)
-
-- **Date:** 2026-05-11T16:10:12.616Z
-- **Branch:** `experiment/vanilla-r1`
-- **Tag:** `vanilla-r1-phase1-complete`
-- **Status:** ✓
-- **Replicate:** r1
-- **Summary:** e2e 42/42, vitest 31/31, lint 0e/2w, LOC 1410
-
-
-### Phase 0.14 — Aggregator + per-action RUN_LOG + alignment-score in Phase 5 (complete)
-
-- **Date:** 2026-05-10
-- **Branch:** `main` + all 5 `experiment/<fw>` branches
-- **Commits:** `862a1d9` (main), `e05a785` (experiment/vanilla), `9be1fcb` (bmad), `3d39e7a` (spec-kit), `90f9172` (superpowers), `1fe6bd4` (compound-engineering)
-- **What was done:** Closed three remaining "wake up tomorrow with an answer" gaps before kicking off the autonomous run.
-  1. Added `scoring/aggregate-experiment.mjs` — reads every per-phase, per-branch JSON across all 5 frameworks, evaluates checks 1/5/6/7/11/12/13 of the auto-findings rubric, computes a 5-axis composite maintainability score (test quality 25%, complexity 25%, diff hygiene 20%, completion 20%, variance 10%), and produces `metrics/experiment/FINAL_REPORT.json` + `metrics/experiment/FINAL_RANKING.md`. Graceful degradation: partial runs still produce a partial ranking with explicit "phases completed" flags.
-  2. Added `scoring/log-run.mjs` — small utility that inserts a `### ` RUN_LOG entry directly after the `## Completed` header. Reads the per-phase JSON to auto-populate a metrics summary line if the file is in the working tree.
-  3. Wired both into `.claude/commands/start.md`: each sub-agent prompt now captures a summary string while still on the experiment branch (so the metrics file is readable), switches to `main`, calls `log-run.mjs`, and pushes. When the discovery script returns empty, the orchestrator runs `aggregate-experiment.mjs`, commits the final report to main, and prints the FINAL_RANKING.md.
-  4. Extended `docs/PHASE5_SPEC.md` with the alignment-score banner + drill-down feature (per-candidate 0-100 score, per-issue breakdown with citations, `[ALIGNMENT_SCORES]` structured block, banner/drill-down `data-testid` contract, translation behavior, accessibility requirements). Updated `scoring/phase-scopes/phase5.json` to include `src/components/Alignment*` and `src/lib/alignment/**` in `expectedGlobs` so the diff-hygiene check stays honest about the larger Phase 5 surface area.
-- **Files modified:** `.claude/commands/start.md`, `docs/PHASE5_SPEC.md`, `scoring/phase-scopes/phase5.json`
-- **Files created:** `scoring/aggregate-experiment.mjs`, `scoring/log-run.mjs`
-- **Why alignment-score added now:** experiment goal is to test workflows on feature parity with launch/production. Alignment score is in LAUNCH_PRODUCTION_FEATURES.md #9 and was the one launch feature Phase 5 hadn't covered. Adding it pre-run means every framework gets the same scope.
-
-### Phase 0.13 — /start rewritten as sub-agent orchestrator (complete)
-
-- **Date:** 2026-05-10
-- **Branch:** `main` + all 5 `experiment/<fw>` branches
-- **Commits:** `a92ef97` (main), `3b6bab9` (experiment/vanilla), `95c99e1` (bmad), `d42e6a3` (spec-kit), `5090837` (superpowers), `7216a03` (compound-engineering)
-- **What was done:** Rewrote `.claude/commands/start.md` so `/start` is a lightweight orchestrator that dispatches sub-agents (via the Agent tool) rather than doing build work itself. Each of the 40 actions (15 Phase 1 replicates + 5 representative selections + 20 forward-iteration phases) is now dispatched to a fresh `general-purpose` sub-agent with an isolated context. The orchestrator's context grows only ~200 tokens per completed action rather than accumulating full build output across all 40 builds. Sub-agent prompt templates cover all three action types: `phase1_replicate`, `select_representative`, `phase_forward`. Each template instructs the sub-agent to checkout the branch, run the framework's own `.claude/commands/workflow.md` methodology, log responder decisions, iterate to green, commit, tag, measure, and push — then return a single summary paragraph. Pushed to `origin/main` and cherry-picked onto all 5 `experiment/<fw>` branches.
-- **Files modified:** `.claude/commands/start.md`
-- **Issues or deviations:** None. The CLAUDE.md `## Next` section already described the state post-phase0.12; no `## Next` update was needed — it already correctly says "Run `/start`."
-=======
->>>>>>> 0e68693 (run-log: phase1 spec-kit r3 auto-entry)
 
 ### Phase 1 Run 5 — Vanilla (complete)
 
