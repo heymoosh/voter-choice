@@ -54,6 +54,15 @@ Note: **Scoring is executed by Hermes from the host side, not inside the build c
 
 ## Completed
 
+### Phase 0.13 — /start rewritten as sub-agent orchestrator (complete)
+
+- **Date:** 2026-05-10
+- **Branch:** `main` + all 5 `experiment/<fw>` branches
+- **Commits:** `a92ef97` (main), `3b6bab9` (experiment/vanilla), `95c99e1` (bmad), `d42e6a3` (spec-kit), `5090837` (superpowers), `7216a03` (compound-engineering)
+- **What was done:** Rewrote `.claude/commands/start.md` so `/start` is a lightweight orchestrator that dispatches sub-agents (via the Agent tool) rather than doing build work itself. Each of the 40 actions (15 Phase 1 replicates + 5 representative selections + 20 forward-iteration phases) is now dispatched to a fresh `general-purpose` sub-agent with an isolated context. The orchestrator's context grows only ~200 tokens per completed action rather than accumulating full build output across all 40 builds. Sub-agent prompt templates cover all three action types: `phase1_replicate`, `select_representative`, `phase_forward`. Each template instructs the sub-agent to checkout the branch, run the framework's own `.claude/commands/workflow.md` methodology, log responder decisions, iterate to green, commit, tag, measure, and push — then return a single summary paragraph. Pushed to `origin/main` and cherry-picked onto all 5 `experiment/<fw>` branches.
+- **Files modified:** `.claude/commands/start.md`
+- **Issues or deviations:** None. The CLAUDE.md `## Next` section already described the state post-phase0.12; no `## Next` update was needed — it already correctly says "Run `/start`."
+
 ### Phase 1 Run 5 — Vanilla (complete)
 
 - **Date:** 2026-05-10
