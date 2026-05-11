@@ -1,0 +1,357 @@
+{
+  "metadata": {
+    "timestamp": "2026-05-11T19:39:56.665Z",
+    "branch": "experiment/superpowers-r1",
+    "commit": "7c472b7",
+    "phase": 1,
+    "nodeVersion": "v22.14.0"
+  },
+  "eslint": {
+    "errors": 0,
+    "warnings": 0,
+    "complexityViolations": 0
+  },
+  "complexity": {
+    "count": 29,
+    "average": 3.17,
+    "max": 8,
+    "p50": 3,
+    "p75": 4,
+    "p95": 7,
+    "distribution": {
+      "simple_1_5": 27,
+      "moderate_6_10": 2,
+      "complex_11_15": 0,
+      "highComplex_16_20": 0,
+      "critical_21plus": 0
+    },
+    "perFunction": [
+      {
+        "file": "src/lib/generatePrompt.ts",
+        "name": "generatePrompt",
+        "complexity": 8,
+        "line": 45
+      },
+      {
+        "file": "src/lib/deadlineStatus.ts",
+        "name": "getDeadlineStatus",
+        "complexity": 7,
+        "line": 8
+      },
+      {
+        "file": "src/components/StateInfoCard.tsx",
+        "name": "StateInfoCard",
+        "complexity": 5,
+        "line": 234
+      },
+      {
+        "file": "src/app/page.tsx",
+        "name": "Home",
+        "complexity": 4,
+        "line": 21
+      },
+      {
+        "file": "src/components/PromptOutput.tsx",
+        "name": "PromptOutput",
+        "complexity": 4,
+        "line": 9
+      },
+      {
+        "file": "src/components/PromptOutput.tsx",
+        "name": "<anonymous>",
+        "complexity": 4,
+        "line": 13
+      },
+      {
+        "file": "src/components/StateInfoCard.tsx",
+        "name": "RegistrationSection",
+        "complexity": 4,
+        "line": 94
+      },
+      {
+        "file": "src/components/StateInfoCard.tsx",
+        "name": "VotingRulesSection",
+        "complexity": 4,
+        "line": 151
+      },
+      {
+        "file": "src/components/ZipForm.tsx",
+        "name": "ZipForm",
+        "complexity": 4,
+        "line": 9
+      },
+      {
+        "file": "src/lib/lookupState.ts",
+        "name": "lookupState",
+        "complexity": 4,
+        "line": 5
+      },
+      {
+        "file": "src/app/page.tsx",
+        "name": "handleZipSubmit",
+        "complexity": 3,
+        "line": 24
+      },
+      {
+        "file": "src/components/StateSelector.tsx",
+        "name": "<arrow>",
+        "complexity": 3,
+        "line": 28
+      },
+      {
+        "file": "src/components/ZipForm.tsx",
+        "name": "validate",
+        "complexity": 3,
+        "line": 13
+      },
+      {
+        "file": "src/components/ZipForm.tsx",
+        "name": "handleSubmit",
+        "complexity": 3,
+        "line": 20
+      },
+      {
+        "file": "src/lib/__tests__/getStateData.test.ts",
+        "name": "<arrow>",
+        "complexity": 3,
+        "line": 5
+      },
+      {
+        "file": "src/lib/generatePrompt.ts",
+        "name": "formatElectionType",
+        "complexity": 3,
+        "line": 37
+      },
+      {
+        "file": "src/app/page.tsx",
+        "name": "handleStateSelect",
+        "complexity": 2,
+        "line": 40
+      },
+      {
+        "file": "src/app/page.tsx",
+        "name": "resolveState",
+        "complexity": 2,
+        "line": 46
+      },
+      {
+        "file": "src/components/Footer.tsx",
+        "name": "Footer",
+        "complexity": 2,
+        "line": 1
+      },
+      {
+        "file": "src/components/StateInfoCard.tsx",
+        "name": "formatDate",
+        "complexity": 2,
+        "line": 11
+      },
+      {
+        "file": "src/components/StateInfoCard.tsx",
+        "name": "DeadlineRow",
+        "complexity": 2,
+        "line": 30
+      },
+      {
+        "file": "src/components/StateInfoCard.tsx",
+        "name": "ElectionSection",
+        "complexity": 2,
+        "line": 50
+      },
+      {
+        "file": "src/components/ZipForm.tsx",
+        "name": "handleKeyDown",
+        "complexity": 2,
+        "line": 31
+      },
+      {
+        "file": "src/components/ZipForm.tsx",
+        "name": "<arrow>",
+        "complexity": 2,
+        "line": 60
+      },
+      {
+        "file": "src/lib/__tests__/getStateData.test.ts",
+        "name": "<arrow>",
+        "complexity": 2,
+        "line": 12
+      },
+      {
+        "file": "src/lib/__tests__/getStateData.test.ts",
+        "name": "<arrow>",
+        "complexity": 2,
+        "line": 21
+      },
+      {
+        "file": "src/lib/generatePrompt.ts",
+        "name": "findNextElection",
+        "complexity": 2,
+        "line": 4
+      },
+      {
+        "file": "src/lib/generatePrompt.ts",
+        "name": "<arrow>",
+        "complexity": 2,
+        "line": 19
+      },
+      {
+        "file": "src/lib/getStateData.ts",
+        "name": "getStateData",
+        "complexity": 2,
+        "line": 12
+      }
+    ]
+  },
+  "vitest": {
+    "tests": {
+      "total": 20,
+      "passed": 20,
+      "failed": 0,
+      "skipped": 0,
+      "passRate": 100
+    },
+    "coverage": {
+      "lines": 17.34,
+      "branches": 73.8,
+      "functions": 87.5,
+      "statements": 17.34
+    }
+  },
+  "duplication": {
+    "duplicatedLines": 0,
+    "totalLines": 1471,
+    "percentage": 0,
+    "clones": 0
+  },
+  "bundleSize": {
+    "buildSuccess": true,
+    "pages": [
+      {
+        "route": "/",
+        "size": 9.13,
+        "unit": "kB"
+      },
+      {
+        "route": "/_not-found",
+        "size": 0,
+        "unit": "B"
+      }
+    ],
+    "firstLoadJsShared": {
+      "size": 127,
+      "unit": "kB"
+    }
+  },
+  "lighthouse": {
+    "performance": 100,
+    "accessibility": 100,
+    "bestPractices": 100,
+    "seo": 100
+  },
+  "playwright": {
+    "total": 42,
+    "passed": 42,
+    "failed": 0,
+    "timedOut": 0,
+    "skipped": 0,
+    "passRate": 100
+  },
+  "linesOfCode": {
+    "application": {
+      "code": 1328,
+      "files": 23,
+      "byExtension": {
+        ".css": {
+          "files": 1,
+          "code": 21
+        },
+        ".tsx": {
+          "files": 8,
+          "code": 740
+        },
+        ".json": {
+          "files": 4,
+          "code": 228
+        },
+        ".ts": {
+          "files": 10,
+          "code": 339
+        }
+      }
+    },
+    "plugin": {
+      "code": 602,
+      "files": 4,
+      "byExtension": {
+        ".js": {
+          "files": 3,
+          "code": 523
+        },
+        ".ts": {
+          "files": 1,
+          "code": 79
+        }
+      }
+    },
+    "infrastructure": {
+      "code": 351,
+      "files": 10
+    },
+    "total": {
+      "code": 2281,
+      "files": 37
+    }
+  },
+  "workflowTests": {
+    "count": 4,
+    "files": [
+      "src/lib/__tests__/deadlineStatus.test.ts",
+      "src/lib/__tests__/generatePrompt.test.ts",
+      "src/lib/__tests__/getStateData.test.ts",
+      "src/lib/__tests__/lookupState.test.ts"
+    ]
+  },
+  "workflowTiming": {
+    "steps": [
+      {
+        "step": "brainstorming",
+        "started": "2026-05-11T14:24:52-05:00",
+        "completed": "2026-05-11T14:25:47-05:00",
+        "durationMs": 55000
+      },
+      {
+        "step": "writing-plans",
+        "started": "2026-05-11T14:25:51-05:00",
+        "completed": "2026-05-11T14:26:53-05:00",
+        "durationMs": 62000
+      },
+      {
+        "step": "executing-plans",
+        "started": "2026-05-11T14:26:58-05:00",
+        "completed": "2026-05-11T14:35:36-05:00",
+        "durationMs": 518000
+      },
+      {
+        "step": "requesting-code-review",
+        "started": "2026-05-11T14:35:43-05:00",
+        "completed": "2026-05-11T14:36:03-05:00",
+        "durationMs": 20000
+      },
+      {
+        "step": "verification-before-completion",
+        "started": "2026-05-11T14:36:07-05:00",
+        "completed": "2026-05-11T14:36:31-05:00",
+        "durationMs": 24000
+      },
+      {
+        "step": "finishing-a-development-branch",
+        "started": "2026-05-11T14:36:37-05:00",
+        "completed": "2026-05-11T14:36:37-05:00",
+        "durationMs": 0
+      }
+    ],
+    "totalSteps": 6,
+    "completedSteps": 6
+  },
+  "diffHygiene": null
+}
