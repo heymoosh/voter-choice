@@ -60,7 +60,7 @@ Both paths converge on the same outputs. The site is the ballot builder — the 
 The system prompt sent to the API includes:
 
 1. The full ballot research prompt from `docs/BALLOT_PROMPT.md` (in the user's selected language from Phase 4)
-2. The user's full election context from Phase 3, including: location (zip, state, county, districts), election dates and deadlines, ballot contests and measures, candidate info with voting records/donors/endorsements from Vote Smart/OpenStates/OpenFEC, polling location, sample ballot URL, and voter ID requirements from the static JSON. All of this context should be in the user's selected language where applicable (labels and descriptions translated; proper nouns and candidate names in English).
+2. The user's full election context from Phase 3, including: location (zip, state, county, districts), election dates and deadlines, ballot contests and measures, candidate info with voting records/donors/endorsements (retrieved via Anthropic `web_search` at expand-time, optionally augmented by OpenStates/OpenFEC), polling location, sample ballot URL, and voter ID requirements from the static JSON. All of this context should be in the user's selected language where applicable (labels and descriptions translated; proper nouns and candidate names in English).
 3. If a voter profile was uploaded: the profile contents, with the instruction "The user has provided their voter profile from a previous session. Acknowledge it, don't re-ask values questions, and flag anything that might have changed."
 4. A structured output instruction: "When the user has made all their choices, or when they ask, generate Output A (ballot) and Output B (voter profile) in the exact formats specified."
 
@@ -295,13 +295,13 @@ Overall: 78 / 100
 
 Climate (you said: high priority)    → 92 / 100
   Candidate co-sponsored 2025 Clean Air Renewal Act; voted yes on EV
-  incentives. Sourced from: Vote Smart key vote 2025-04, GovTrack roll
-  call 119-H-432.
+  incentives. Sources: Congress.gov roll call 119-H-432,
+  Ballotpedia candidate profile.
 
 Healthcare (you said: high priority) → 65 / 100
   Mixed record — supported Medicare expansion but opposed prescription
-  price negotiation. Sourced from: Vote Smart key votes 2024-08 and
-  2024-11.
+  price negotiation. Sources: Senate.gov vote record 2024-08-15,
+  OpenFEC contributor data (optional).
 
 Crime (you said: moderate priority)  → 80 / 100
   ...
@@ -311,7 +311,7 @@ Each issue row shows: issue name, the user's stated priority for that issue (fro
 
 ### Source of Truth
 
-- **Phase 5 implementation:** LLM inference. The chat path uses the LLM directly; the copy-paste path uses the external chatbot's `web_search`-equipped response. Both must cite at least one public source per scored issue (Vote Smart, OpenStates, OpenFEC, official rollcalls, or candidate statements).
+- **Phase 5 implementation:** LLM inference. The chat path uses the LLM with Anthropic `web_search` enabled; the copy-paste path uses the external chatbot's `web_search`-equipped response. Both must cite at least one public source per scored issue. Acceptable sources include: Congress.gov roll calls, Senate.gov / House.gov vote records, Ballotpedia, state legislature websites, official candidate statements, news coverage, OpenStates (state legislator records), OpenFEC (federal campaign finance). Vote Smart pages are also acceptable if reached via web search — we don't depend on the Vote Smart API directly.
 - **Deterministic backend planned for post-experiment v2** (`/api/alignment` backed by Neon Postgres). Not in scope for the experiment.
 - The score MUST be derived from the issues the user actually flagged, not from a generic "candidate profile." Two voters researching the same race should see different alignment scores if their priorities differ.
 
@@ -330,10 +330,10 @@ To make the copy-paste path renderable, both the on-site LLM and the external ch
       "issues": [
         {"issue": "Climate", "userPriority": "high", "score": 92,
          "rationale": "Co-sponsored 2025 Clean Air Renewal Act...",
-         "sources": ["Vote Smart key vote 2025-04", "GovTrack 119-H-432"]},
+         "sources": ["Congress.gov roll call 119-H-432", "Ballotpedia: Doe, Jane"]},
         {"issue": "Healthcare", "userPriority": "high", "score": 65,
          "rationale": "Mixed record — supported Medicare expansion...",
-         "sources": ["Vote Smart 2024-08", "Vote Smart 2024-11"]}
+         "sources": ["Senate.gov vote record 2024-08-15", "Senate.gov vote record 2024-11-02"]}
       ]
     },
     {"candidate": "John Smith", "overall": 41, "issues": [...]}
