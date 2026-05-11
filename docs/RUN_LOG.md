@@ -4,7 +4,7 @@
 
 **Run `/start`.** That's it.
 
-`/start` is now the autonomous orchestrator. It reads git tags + metric files to detect what's done, picks the next pending action, executes it, commits, tags, pushes, loops. Across all 5 frameworks, all 3 Phase 1 replicates each, representative selection, and Phase 2–5 forward iteration. 40 discrete actions total. You don't need to update `## Next` manually anymore — the orchestrator works from disk state.
+`/start` is now the autonomous orchestrator. It reads git tags + metric files to detect what's done, picks the next pending action, executes it, commits, tags, pushes, loops. Across all 5 frameworks, all 3 Phase 1 replicates each, representative selection, and Phase 2–6 forward iteration. 45 discrete actions total. Every sub-agent is dispatched with `model: "sonnet"` to keep model class constant across runs. You don't need to update `## Next` manually anymore — the orchestrator works from disk state.
 
 For hands-off operation across multiple sessions: `/loop /start` — the harness re-invokes `/start` automatically until it reports "EXPERIMENT COMPLETE."
 
@@ -18,6 +18,7 @@ For hands-off operation across multiple sessions: `/loop /start` — the harness
 | Phase 3 forward | 5 builds (requires API keys for Civic/VoteSmart/OpenStates/OpenFEC) | `docs/PHASE3_SPEC.md` |
 | Phase 4 forward | 5 builds | `docs/PHASE4_SPEC.md` |
 | Phase 5 forward | 5 builds (requires Anthropic API key) | `docs/PHASE5_SPEC.md` |
+| Phase 6 forward | 5 builds (requires Upstash Redis + reuses Anthropic) | `docs/PHASE6_SPEC.md` |
 
 The orchestrator handles every transition automatically. See `docs/FRAMING.md` for what claims the resulting data supports and `.claude/commands/start.md` for the orchestrator logic.
 
