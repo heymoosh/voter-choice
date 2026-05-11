@@ -1,7 +1,7 @@
 {
   "phase": 5,
-  "feature": "On-site LLM chat (Claude Sonnet) + budget management + downloadable ballot + voter profile",
-  "rationale": "Phase 5 introduces server-side runtime (API routes), budget tracking, and two converging user paths (chat + copy-paste). Expected: chat UI, chat server route, budget tracker, ballot/profile generation, voter profile schema. Adjacent: components that need to support both paths (ZipForm, PromptOutput), prompt generator extensions. NOT expected: i18n changes (Phase 4 should have settled that), data-access layer changes (Phase 3), additional translations.",
+  "feature": "On-site LLM chat (Claude Sonnet) + budget management + downloadable ballot + voter profile + alignment-score banner & drill-down",
+  "rationale": "Phase 5 introduces server-side runtime (API routes), budget tracking, two converging user paths (chat + copy-paste), and per-candidate alignment scoring. Expected: chat UI, chat server route, budget tracker, ballot/profile generation, voter profile schema, alignment-score banner + drill-down components, [ALIGNMENT_SCORES] parser. Adjacent: components that need to support both paths (ZipForm, PromptOutput), prompt generator extensions. NOT expected: i18n changes (Phase 4 should have settled that), data-access layer changes (Phase 3), additional translations.",
   "expectedGlobs": [
     "src/lib/chat/**",
     "src/lib/budget/**",
@@ -9,6 +9,9 @@
     "src/lib/ballot-output/**",
     "src/lib/voter-profile/**",
     "src/lib/profile/**",
+    "src/lib/alignment/**",
+    "src/lib/alignment-scores/**",
+    "src/lib/alignment-parser.*",
     "src/lib/anthropic.*",
     "src/lib/streaming.*",
     "src/lib/rate-limit.*",
@@ -16,12 +19,17 @@
     "src/app/api/budget/**",
     "src/app/api/ballot/**",
     "src/app/api/profile/**",
+    "src/app/api/alignment/**",
     "src/components/Chat*",
     "src/components/Ballot*",
     "src/components/VoterProfile*",
     "src/components/Budget*",
     "src/components/DownloadBallot*",
-    "src/components/UploadProfile*"
+    "src/components/UploadProfile*",
+    "src/components/Alignment*",
+    "src/components/AlignmentBanner*",
+    "src/components/AlignmentDrillDown*",
+    "src/components/CandidateCard*"
   ],
   "adjacentAllowed": [
     "src/app/page.tsx",
