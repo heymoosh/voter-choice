@@ -255,6 +255,130 @@ When a voter profile is uploaded and included in the system prompt, the followin
 
 ---
 
+## Alignment Score Banner & Drill-Down
+
+A summary alignment score between the user's stated values and each candidate, shown inline in the research flow. This is the feature that turns "show me the candidates" into "show me how each candidate aligns with what I care about."
+
+### What It Is
+
+For every candidate in every contested race on the user's ballot, the AI computes a numeric alignment score (0-100) plus a per-issue breakdown showing which of the user's values that score is built from. The score is rendered as a banner attached to each candidate card, and the user can expand it to see the per-issue drill-down.
+
+### Where It Appears
+
+- **Chat path (Path A):** Inline within the chat, after the user has shared their values and the AI has analyzed the candidates. Each candidate referenced in the conversation gets a banner with their alignment score. The drill-down expands inline in the chat.
+- **Copy-paste path (Path B):** A new section in the customized prompt instructs the external chatbot to produce alignment scores using a structured block (see "Structured Output" below). When the user pastes the chatbot's response back, the site parses the block and renders the same banner + drill-down UI.
+
+Both paths render the same banner component — the data source differs but the UI is shared.
+
+### Banner Format
+
+Per candidate:
+
+```
+┌─────────────────────────────────────────────┐
+│ [Candidate Name]                            │
+│ Alignment: 78 / 100      [Expand breakdown] │
+└─────────────────────────────────────────────┘
+```
+
+- The number is the overall alignment percentage
+- Color cue (accessible — not color-alone): green ≥ 70, amber 40-69, red < 40, with a textual qualifier ("Strong alignment", "Mixed alignment", "Weak alignment")
+- Clicking "Expand breakdown" reveals the drill-down
+
+### Drill-Down Format
+
+Per candidate, expanded:
+
+```
+Alignment breakdown — [Candidate Name]
+Overall: 78 / 100
+
+Climate (you said: high priority)    → 92 / 100
+  Candidate co-sponsored 2025 Clean Air Renewal Act; voted yes on EV
+  incentives. Sourced from: Vote Smart key vote 2025-04, GovTrack roll
+  call 119-H-432.
+
+Healthcare (you said: high priority) → 65 / 100
+  Mixed record — supported Medicare expansion but opposed prescription
+  price negotiation. Sourced from: Vote Smart key votes 2024-08 and
+  2024-11.
+
+Crime (you said: moderate priority)  → 80 / 100
+  ...
+```
+
+Each issue row shows: issue name, the user's stated priority for that issue (from their values discussion or uploaded voter profile), the per-issue score, and a 1-3 sentence rationale citing the underlying public data.
+
+### Source of Truth
+
+- **Phase 5 implementation:** LLM inference. The chat path uses the LLM directly; the copy-paste path uses the external chatbot's `web_search`-equipped response. Both must cite at least one public source per scored issue (Vote Smart, OpenStates, OpenFEC, official rollcalls, or candidate statements).
+- **Deterministic backend planned for post-experiment v2** (`/api/alignment` backed by Neon Postgres). Not in scope for the experiment.
+- The score MUST be derived from the issues the user actually flagged, not from a generic "candidate profile." Two voters researching the same race should see different alignment scores if their priorities differ.
+
+### Structured Output (`[ALIGNMENT_SCORES]` block)
+
+To make the copy-paste path renderable, both the on-site LLM and the external chatbot are instructed to emit a structured block:
+
+```
+[ALIGNMENT_SCORES]
+{
+  "race": "Texas US Senate 2026",
+  "scores": [
+    {
+      "candidate": "Jane Doe",
+      "overall": 78,
+      "issues": [
+        {"issue": "Climate", "userPriority": "high", "score": 92,
+         "rationale": "Co-sponsored 2025 Clean Air Renewal Act...",
+         "sources": ["Vote Smart key vote 2025-04", "GovTrack 119-H-432"]},
+        {"issue": "Healthcare", "userPriority": "high", "score": 65,
+         "rationale": "Mixed record — supported Medicare expansion...",
+         "sources": ["Vote Smart 2024-08", "Vote Smart 2024-11"]}
+      ]
+    },
+    {"candidate": "John Smith", "overall": 41, "issues": [...]}
+  ]
+}
+[/ALIGNMENT_SCORES]
+```
+
+- The site parses this block from the AI response and renders the banner + drill-down
+- If the block is malformed or missing, the site gracefully degrades: it shows the candidate cards without alignment scores and surfaces an inline note ("Alignment scores couldn't be generated for this response — try asking the AI to score the candidates again")
+- The parser must be lenient about whitespace, indentation, and trailing commas — external chatbots vary
+
+### Translation
+
+- The banner text, issue labels, and qualifiers ("Strong alignment", etc.) are translated via Phase 4's i18n system
+- The candidate names and the AI-generated rationales are NOT auto-translated — the AI is instructed to produce rationales in the user's selected language (the system prompt already enforces this from earlier sections)
+
+### Required `data-testid`
+
+For e2e coverage:
+- `alignment-banner-<candidate-slug>` on each banner
+- `alignment-score-overall-<candidate-slug>` on the overall number
+- `alignment-drill-down-<candidate-slug>` on the expandable section
+- `alignment-issue-row-<candidate-slug>-<issue-slug>` on each per-issue row
+
+### Accessibility
+
+- The banner is announced as a region (`role="region"` with an `aria-label="Alignment with [Candidate Name]: [score] out of 100"`)
+- Color cues are paired with the textual qualifier — never color-alone
+- The expand/collapse control is a native `<button>` with `aria-expanded` state
+- Each per-issue row is keyboard-focusable for screen reader users to read rationales
+
+### Acceptance Criteria
+
+- [ ] Every candidate in every contested race on the rendered ballot has an alignment banner
+- [ ] Clicking "Expand breakdown" reveals per-issue scores with rationales and source citations
+- [ ] The score reflects the user's flagged priorities — not a generic candidate profile
+- [ ] Both Path A (chat) and Path B (copy-paste) render the same banner using the same structured block
+- [ ] Malformed `[ALIGNMENT_SCORES]` blocks degrade gracefully with an inline note
+- [ ] Banner labels translate via the Phase 4 i18n system
+- [ ] All required `data-testid` attributes are present
+- [ ] Color is paired with text qualifier; banners are keyboard-accessible
+
+---
+
 ## Updated Copy-Paste Prompt (Path B enhancements)
 
 The existing copy-paste prompt output must be updated to support the new features. **The copy-paste prompt is always generated in the user's Phase 4-selected language** — the full prompt text, the pre-filled context block, and any appended voter profile are all in the active language.
