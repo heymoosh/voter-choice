@@ -56,6 +56,15 @@ Note: **Scoring is executed by Hermes from the host side, not inside the build c
 ## Completed
 
 
+### Phase 1 replicate — bmad r1 (auto)
+
+- **Date:** 2026-05-11T17:15:15.433Z
+- **Branch:** `experiment/bmad-r1`
+- **Tag:** `bmad-r1-phase1-complete`
+- **Status:** ✓
+- **Replicate:** r1
+- **Summary:** e2e 42/42, vitest 26/26, lint 0e/2w, LOC 1564
+
 
 
 ### Phase 1 replicate — vanilla r3 (auto)
