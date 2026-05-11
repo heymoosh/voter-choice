@@ -140,12 +140,12 @@ Google Civic Information API handles this mapping when given an address. The app
 
 The following environment variables are required. They must be documented in a `.env.example` file (committed) with placeholder values. Actual keys go in `.env.local` (gitignored).
 
-| Variable | Required | Purpose |
-|----------|----------|---------|
-| `GOOGLE_CIVIC_API_KEY` | yes | Google Civic Information API |
-| `ANTHROPIC_VOTER_API` | yes | Anthropic API key (reuses Phase 5 key) for `web_search`-backed candidate enrichment |
-| `OPENSTATES_API_KEY` | optional | OpenStates API — only needed if framework chooses to integrate alongside web_search |
-| `OPENFEC_API_KEY` | optional | OpenFEC API — only needed if framework chooses to integrate alongside web_search |
+| Variable               | Required | Purpose                                                                             |
+| ---------------------- | -------- | ----------------------------------------------------------------------------------- |
+| `GOOGLE_CIVIC_API_KEY` | yes      | Google Civic Information API                                                        |
+| `ANTHROPIC_VOTER_API`  | yes      | Anthropic API key (reuses Phase 5 key) for `web_search`-backed candidate enrichment |
+| `OPENSTATES_API_KEY`   | optional | OpenStates API — only needed if framework chooses to integrate alongside web_search |
+| `OPENFEC_API_KEY`      | optional | OpenFEC API — only needed if framework chooses to integrate alongside web_search    |
 
 ### API Key Security
 
@@ -176,11 +176,11 @@ The state info card from Phases 1-2 now displays real data instead of stubs. The
 
 Existing error states from Phases 1-2 remain. New error states:
 
-| Condition | Display | `data-testid` |
-|-----------|---------|---------------|
-| API partially unavailable | Warning banner with available data shown | `api-partial-error` |
-| All APIs unavailable | Fallback to static data + explanation | `api-full-error` |
-| API timeout (>10s) | Same as partial unavailable for timed-out source | (uses `api-partial-error`) |
+| Condition                 | Display                                          | `data-testid`              |
+| ------------------------- | ------------------------------------------------ | -------------------------- |
+| API partially unavailable | Warning banner with available data shown         | `api-partial-error`        |
+| All APIs unavailable      | Fallback to static data + explanation            | `api-full-error`           |
+| API timeout (>10s)        | Same as partial unavailable for timed-out source | (uses `api-partial-error`) |
 
 ---
 
@@ -188,15 +188,15 @@ Existing error states from Phases 1-2 remain. New error states:
 
 These are additive to the existing `data-testid` attributes from Phases 1-2.
 
-| `data-testid` | Element | Purpose |
-|----------------|---------|---------|
-| `polling-location` | Polling place display | E2e tests verify polling data renders |
-| `ballot-contests` | Ballot contests section | E2e tests verify contest data renders |
-| `candidate-detail` | Individual candidate info block | E2e tests verify candidate enrichment |
-| `data-loading` | Any section in loading state | E2e tests verify loading UX |
-| `api-partial-error` | Partial API failure banner | E2e tests verify graceful degradation |
-| `api-full-error` | Full API failure fallback | E2e tests verify fallback behavior |
-| `data-attribution` | Data source footer | E2e tests verify attribution present |
+| `data-testid`       | Element                         | Purpose                               |
+| ------------------- | ------------------------------- | ------------------------------------- |
+| `polling-location`  | Polling place display           | E2e tests verify polling data renders |
+| `ballot-contests`   | Ballot contests section         | E2e tests verify contest data renders |
+| `candidate-detail`  | Individual candidate info block | E2e tests verify candidate enrichment |
+| `data-loading`      | Any section in loading state    | E2e tests verify loading UX           |
+| `api-partial-error` | Partial API failure banner      | E2e tests verify graceful degradation |
+| `api-full-error`    | Full API failure fallback       | E2e tests verify fallback behavior    |
+| `data-attribution`  | Data source footer              | E2e tests verify attribution present  |
 
 ---
 
@@ -205,9 +205,11 @@ These are additive to the existing `data-testid` attributes from Phases 1-2.
 The pre-filled context block appended to the prompt now includes richer data from the APIs:
 
 **Current (Phase 2):**
+
 > Hi! I'm voting in **Texas**. My zip code is **77001**. The next election is the 2026 primary on March 3, 2026. [basic dates and links]
 
 **Phase 3:**
+
 > Hi! I'm voting in **Texas**. My zip code is **77001** (Harris County, TX-18, TX Senate District 13, TX House District 134). The next election is the 2026 primary on March 3, 2026. [dates, deadlines, early voting]. My ballot includes: [list of races and measures from Google Civic]. Key candidates: [names with brief voting record summaries from Vote Smart]. My polling place is [location from Google Civic]. Sample ballot: [link from Democracy Works]. Voter ID: Texas requires photo ID. [accepted forms, exceptions]. Full details: [state election office link].
 
 The pre-filled context should be as complete as possible so the AI chatbot has maximum information to work with. But it must remain a single copy-pasteable block — no interactive elements or links that only work in a browser.

@@ -23,7 +23,7 @@ The entire UI lives in one page (`src/app/page.tsx`) with sections revealed prog
 2. **`src/components/ZipForm.tsx`** — Zip code input + submit. Handles validation. Emits `onSubmit(zip)`.
 3. **`src/components/StateSelector.tsx`** — Shown when zip spans multiple states. Emits `onSelect(stateCode)`.
 4. **`src/components/StateInfoCard.tsx`** — Displays state election info: election name/date, registration deadlines with status indicators, early voting, voting rules, resource links.
-5. **`src/components/PromptOutput.tsx`** — Shows customized prompt + copy button + confirmation. 
+5. **`src/components/PromptOutput.tsx`** — Shows customized prompt + copy button + confirmation.
 6. **`src/components/TipsSection.tsx`** — Static tips content.
 7. **`src/components/Footer.tsx`** — Share CTA + attribution.
 8. **`src/lib/lookupState.ts`** — Pure function: zip → state codes array (from JSON).
@@ -52,6 +52,7 @@ User types zip → ZipForm validates → lookupState(zip) →
 ## Components Detail
 
 ### ZipForm
+
 - `data-testid="zip-input"` on input
 - `data-testid="zip-submit"` on button
 - `data-testid="zip-error"` on error message (conditionally rendered)
@@ -60,6 +61,7 @@ User types zip → ZipForm validates → lookupState(zip) →
 - Error messages per spec: "Please enter a zip code" / "Please enter a valid 5-digit zip code"
 
 ### StateInfoCard
+
 - `data-testid="state-info"` on container
 - `data-testid="election-name"` on election name element
 - `data-testid="election-date"` on election date element
@@ -69,18 +71,21 @@ User types zip → ZipForm validates → lookupState(zip) →
 - Shows text labels alongside color indicators (accessibility)
 
 ### PromptOutput
+
 - `data-testid="prompt-output"` on prompt container
 - `data-testid="copy-button"` on copy button
 - `data-testid="copy-confirmation"` on confirmation (shown for 2s after copy)
 - Clipboard API with fallback (select-all + Ctrl+C/Cmd+C instructions)
 
 ### StateSelector
+
 - `data-testid="state-selector"` on selector container
 - Select or radio buttons for each state code
 
 ## Prompt Generation Logic
 
 From `generatePrompt(stateData, zip)`:
+
 1. Find next upcoming election: first election with `date >= today`
 2. Calculate deadline statuses for each registration method
 3. Build context block string with all required fields per spec
@@ -88,12 +93,12 @@ From `generatePrompt(stateData, zip)`:
 
 ## Error States
 
-| Condition | Component | testid |
-|-----------|-----------|--------|
-| Empty zip | ZipForm | `zip-error` |
-| Invalid format | ZipForm | `zip-error` |
-| Zip not found | Page | `not-found-message` |
-| Multi-state zip | Page | `state-selector` |
+| Condition            | Component     | testid                |
+| -------------------- | ------------- | --------------------- |
+| Empty zip            | ZipForm       | `zip-error`           |
+| Invalid format       | ZipForm       | `zip-error`           |
+| Zip not found        | Page          | `not-found-message`   |
+| Multi-state zip      | Page          | `state-selector`      |
 | No upcoming election | StateInfoCard | `no-election-message` |
 
 ## Testing Strategy

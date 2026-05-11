@@ -13,6 +13,7 @@ It works for any U.S. election, any state, any zip code.
 ## How to use it (5 minutes to start)
 
 **Step 1:** Open any AI chatbot with a free tier. The prompt works on all of them. Some examples:
+
 - **Claude** → [claude.ai](https://claude.ai)
 - **ChatGPT** → [chatgpt.com](https://chatgpt.com)
 - **Grok** → [grok.com](https://grok.com)
@@ -23,21 +24,22 @@ It works for any U.S. election, any state, any zip code.
 
 **Step 3:** Copy-paste this as your second message (fill in the blanks):
 
-> *Hi! I'm voting in **[your state]**. My zip code is **[your zip code]**. Help me with my ballot.*
+> _Hi! I'm voting in **[your state]**. My zip code is **[your zip code]**. Help me with my ballot._
 
 That's all you need to say — it'll start walking you through the issues right away. Just answer honestly. There are no wrong answers.
 
 **Tips while you're in the conversation:**
+
 - You can say **"I don't know"** or **"I'm not sure where I stand"** — the AI will explain more and help you figure it out
 - You can ask it to **research something** for you ("Can you look up this candidate's voting record?")
 - You can **ask questions** anytime ("What does this position actually do?" or "Why does this matter?")
-- You're not taking a test. You're having a conversation. The AI works *with* you.
+- You're not taking a test. You're having a conversation. The AI works _with_ you.
 
 **Step 4:** At the end, it'll give you a summary you can **write down or print** and take to the polls. If your ballot is long, it'll give you a handoff block you can paste into a new chat to keep going.
 
 **That's it.**
 
-**One important note:** AI can make mistakes. This is a research *starting point*. The tool will link you to official sources so you can double-check anything that matters to you.
+**One important note:** AI can make mistakes. This is a research _starting point_. The tool will link you to official sources so you can double-check anything that matters to you.
 
 ---
 
@@ -156,6 +158,7 @@ Propositions:
 ```
 
 Rules for this output:
+
 - One line per race. Race name → candidate name. That's it.
 - One line per proposition. Number → YES or NO.
 - No rationale, no analysis, no "based on what you told me." Just the picks.
@@ -191,6 +194,7 @@ NOTES:
 ```
 
 Rules for the voter profile:
+
 - Factual only — things I actually said, in my language
 - Captures values, reasoning patterns, and personal context — not just picks
 - Designed to be uploaded at the start of a future election conversation so I don't have to re-answer everything
@@ -256,4 +260,4 @@ Let's start with Step 1.
 
 If this was useful, share this doc with friends, family, or your community. It works for any state and any election. The more people vote based on evidence, the better our elections get.
 
-*Created by a human using AI tools, because everyone deserves to know what they're actually voting for.*
+_Created by a human using AI tools, because everyone deserves to know what they're actually voting for._

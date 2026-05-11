@@ -22,17 +22,17 @@ An on-site streaming chat powered by Claude (via Anthropic API) that walks voter
 
 **The 7-Act Research Prompt (`docs/BALLOT_PROMPT.md`):**
 
-| Act | What happens |
-|-----|-------------|
-| 1 | Cold open — time anchor, scale reveal, open loop, ballot verification |
-| 1.5 | Methodology briefing — no recommendations, patterns only, privacy promise |
-| 2 | Values tagging — 5–8 issue chips + free-text + skip option |
-| 2.5 | Concern interpretation — maps voter language to canonical issues |
-| 3 | Pattern dashboard per race — funding, endorsements, voting record, gap analysis |
-| 4 | Proposition deep-dives — framed against voter's stated values |
-| 5 | Downloadable ballot summary (plaintext, printable) |
-| 6 | Downloadable voter profile (for future session reuse) |
-| 7 | Session handoff block (one copy-paste to continue in any chatbot) |
+| Act | What happens                                                                    |
+| --- | ------------------------------------------------------------------------------- |
+| 1   | Cold open — time anchor, scale reveal, open loop, ballot verification           |
+| 1.5 | Methodology briefing — no recommendations, patterns only, privacy promise       |
+| 2   | Values tagging — 5–8 issue chips + free-text + skip option                      |
+| 2.5 | Concern interpretation — maps voter language to canonical issues                |
+| 3   | Pattern dashboard per race — funding, endorsements, voting record, gap analysis |
+| 4   | Proposition deep-dives — framed against voter's stated values                   |
+| 5   | Downloadable ballot summary (plaintext, printable)                              |
+| 6   | Downloadable voter profile (for future session reuse)                           |
+| 7   | Session handoff block (one copy-paste to continue in any chatbot)               |
 
 ---
 
@@ -51,13 +51,13 @@ Voters get the same research quality whether or not the on-site chat is availabl
 
 Hard monthly cap with four escalating tiers to protect against runaway costs.
 
-| Tier | Budget % | Behavior |
-|------|----------|----------|
-| Normal | 0–70% | Full chat available |
-| Notice | 70–80% | In-chat notice shown |
-| Soft Close | 80–90% | New sessions see copy/paste fallback; existing sessions continue |
-| Handoff | 90% | AI generates ballot-so-far + voter profile + continuation prompt |
-| Exhausted | 100% | All sessions see copy/paste fallback |
+| Tier       | Budget % | Behavior                                                         |
+| ---------- | -------- | ---------------------------------------------------------------- |
+| Normal     | 0–70%    | Full chat available                                              |
+| Notice     | 70–80%   | In-chat notice shown                                             |
+| Soft Close | 80–90%   | New sessions see copy/paste fallback; existing sessions continue |
+| Handoff    | 90%      | AI generates ballot-so-far + voter profile + continuation prompt |
+| Exhausted  | 100%     | All sessions see copy/paste fallback                             |
 
 - Hard cap: $20/month configured in Anthropic Console
 - Durable budget tracking: Upstash Redis in production (falls back to process-local in dev)
@@ -115,13 +115,13 @@ Lets returning voters resume where they left off.
 
 ### 8. Multi-Language Support
 
-| Language | Status |
-|----------|--------|
-| English | Full |
-| Spanish | Full |
-| Vietnamese | Framework ready; content deferred |
-| Chinese | Framework ready; content deferred |
-| Arabic | Framework ready, RTL support prepared; content deferred |
+| Language   | Status                                                  |
+| ---------- | ------------------------------------------------------- |
+| English    | Full                                                    |
+| Spanish    | Full                                                    |
+| Vietnamese | Framework ready; content deferred                       |
+| Chinese    | Framework ready; content deferred                       |
+| Arabic     | Framework ready, RTL support prepared; content deferred |
 
 - Custom `LanguageProvider` context + `useLanguage` hook
 - Language preference persists to URL search param (survives page reload)
@@ -204,10 +204,10 @@ LLM-driven alignment scoring between voter values and candidates.
 
 ### 16. Testing
 
-| Suite | Count |
-|-------|-------|
-| Unit tests (Vitest) | 72 |
-| E2E tests (Playwright) | 42 |
+| Suite                  | Count |
+| ---------------------- | ----- |
+| Unit tests (Vitest)    | 72    |
+| E2E tests (Playwright) | 42    |
 
 - Lighthouse scores: 100/100/100/100 (Performance / Accessibility / Best Practices / SEO)
 - ESLint: clean (complexity limits enforced)
@@ -229,15 +229,15 @@ LLM-driven alignment scoring between voter values and candidates.
 
 Drizzle ORM + Neon Postgres, 7 tables:
 
-| Table | Purpose |
-|-------|--------|
-| `candidates` | Name, district, office |
-| `candidate_offices` | Office, chamber, state per candidate |
-| `bills` | Title, session, source |
-| `votes` | Candidate × bill × position |
-| `issue_tags` | Bill → canonical issue + stance |
-| `donor_aggregates` | Industry contributions per candidate |
-| `scorecard_meta` | Advocacy org metadata (cite-don't-republish) |
+| Table               | Purpose                                      |
+| ------------------- | -------------------------------------------- |
+| `candidates`        | Name, district, office                       |
+| `candidate_offices` | Office, chamber, state per candidate         |
+| `bills`             | Title, session, source                       |
+| `votes`             | Candidate × bill × position                  |
+| `issue_tags`        | Bill → canonical issue + stance              |
+| `donor_aggregates`  | Industry contributions per candidate         |
+| `scorecard_meta`    | Advocacy org metadata (cite-don't-republish) |
 
 Migration: `db/migrations/0000_first_crystal.sql`
 
@@ -249,17 +249,18 @@ Migration: `db/migrations/0000_first_crystal.sql`
 
 Replacing LLM `web_search` alignment with deterministic data from public sources.
 
-| Phase | What | Source | Status |
-|-------|------|--------|--------|
-| A | Schema + workflow skeletons | — | ✅ Shipped |
-| B | Federal vote ingest | GovTrack bulk data | Queued |
-| C | State vote ingest | OpenStates API | Queued |
-| D | Bill issue tagging | LLM batch (canonical issues) | Queued |
-| E | Donor data ingest | FEC / FollowTheMoney | Queued |
-| F | App cutover to deterministic `/api/alignment` endpoint | — | Queued |
-| G | Verification + quality checks | — | Queued |
+| Phase | What                                                   | Source                       | Status     |
+| ----- | ------------------------------------------------------ | ---------------------------- | ---------- |
+| A     | Schema + workflow skeletons                            | —                            | ✅ Shipped |
+| B     | Federal vote ingest                                    | GovTrack bulk data           | Queued     |
+| C     | State vote ingest                                      | OpenStates API               | Queued     |
+| D     | Bill issue tagging                                     | LLM batch (canonical issues) | Queued     |
+| E     | Donor data ingest                                      | FEC / FollowTheMoney         | Queued     |
+| F     | App cutover to deterministic `/api/alignment` endpoint | —                            | Queued     |
+| G     | Verification + quality checks                          | —                            | Queued     |
 
 **Scheduled workflows (skeletons in `.github/workflows/`):**
+
 - `ingest-federal.yml` — Sundays 7:00am UTC
 - `ingest-states.yml` — Sundays 7:30am UTC (matrix across all 50 states)
 - `ingest-tag-bills.yml` — Sundays 9:00am UTC
@@ -268,44 +269,44 @@ Replacing LLM `web_search` alignment with deterministic data from public sources
 
 ### v2 Features (Designed, Not Yet Built)
 
-| Feature | Description |
-|---------|-------------|
-| Deterministic alignment API | `/api/alignment` endpoint backed by Neon Postgres, replaces LLM web_search |
-| Active Intelligence sidebar | Matched topics, correlation scores, personalized recommendations based on voter profile |
-| Advocacy scorecard overlay | Cite-don't-republish — voter toggles org lens, deep links to scorecard page |
-| PDF ballot download | Printable PDF in addition to HTML |
-| Embedded polling maps | Drive times, real-time transit, embedded Google Maps |
-| Vietnamese / Chinese / Arabic | Content completion for framework-ready language slots |
-| 50-state expansion | All election types, candidate enrichment APIs for remaining states |
-| Local races | School board, DA, judges, county commissioners (pending public data availability) |
+| Feature                       | Description                                                                             |
+| ----------------------------- | --------------------------------------------------------------------------------------- |
+| Deterministic alignment API   | `/api/alignment` endpoint backed by Neon Postgres, replaces LLM web_search              |
+| Active Intelligence sidebar   | Matched topics, correlation scores, personalized recommendations based on voter profile |
+| Advocacy scorecard overlay    | Cite-don't-republish — voter toggles org lens, deep links to scorecard page             |
+| PDF ballot download           | Printable PDF in addition to HTML                                                       |
+| Embedded polling maps         | Drive times, real-time transit, embedded Google Maps                                    |
+| Vietnamese / Chinese / Arabic | Content completion for framework-ready language slots                                   |
+| 50-state expansion            | All election types, candidate enrichment APIs for remaining states                      |
+| Local races                   | School board, DA, judges, county commissioners (pending public data availability)       |
 
 ---
 
 ## Tech Stack
 
-| Layer | Technology |
-|-------|----------|
-| Framework | Next.js 15.5.12 (App Router) |
-| Language | TypeScript 5.9.3 |
-| UI | React 19.1.0, Tailwind CSS 4.2.1 |
-| AI | `@anthropic-ai/sdk` 0.39.0 (Claude Sonnet, streaming) |
-| Database | Drizzle ORM 0.45.2 + Neon serverless Postgres |
-| Cache/Rate limiting | Upstash Redis (REST) |
-| Maps/Civic | Google Civic API, Google Places API |
-| Drag/Drop | `@dnd-kit/core`, `@dnd-kit/sortable` |
-| Unit tests | Vitest 3.2.1 |
-| E2E tests | Playwright 1.52.0 |
-| Deployment | Vercel + GitHub Actions + Bitwarden Secrets Manager |
+| Layer               | Technology                                            |
+| ------------------- | ----------------------------------------------------- |
+| Framework           | Next.js 15.5.12 (App Router)                          |
+| Language            | TypeScript 5.9.3                                      |
+| UI                  | React 19.1.0, Tailwind CSS 4.2.1                      |
+| AI                  | `@anthropic-ai/sdk` 0.39.0 (Claude Sonnet, streaming) |
+| Database            | Drizzle ORM 0.45.2 + Neon serverless Postgres         |
+| Cache/Rate limiting | Upstash Redis (REST)                                  |
+| Maps/Civic          | Google Civic API, Google Places API                   |
+| Drag/Drop           | `@dnd-kit/core`, `@dnd-kit/sortable`                  |
+| Unit tests          | Vitest 3.2.1                                          |
+| E2E tests           | Playwright 1.52.0                                     |
+| Deployment          | Vercel + GitHub Actions + Bitwarden Secrets Manager   |
 
 ---
 
 ## Required Environment Variables
 
-| Variable | Purpose | Required |
-|----------|---------|----------|
-| `ANTHROPIC_VOTER_API` | Claude API key | Yes |
-| `GOOGLE_CIVIC_API_KEY` | Polling location lookup | Yes |
-| `NEXT_PUBLIC_GOOGLE_PLACES_API_KEY` | Address autocomplete | Yes |
-| `UPSTASH_REDIS_REST_URL` | Durable budget + rate limiting | Production only |
-| `UPSTASH_REDIS_REST_TOKEN` | Durable budget + rate limiting | Production only |
-| `DATABASE_URL` | Neon Postgres (Phase F+) | Upcoming |
+| Variable                            | Purpose                        | Required        |
+| ----------------------------------- | ------------------------------ | --------------- |
+| `ANTHROPIC_VOTER_API`               | Claude API key                 | Yes             |
+| `GOOGLE_CIVIC_API_KEY`              | Polling location lookup        | Yes             |
+| `NEXT_PUBLIC_GOOGLE_PLACES_API_KEY` | Address autocomplete           | Yes             |
+| `UPSTASH_REDIS_REST_URL`            | Durable budget + rate limiting | Production only |
+| `UPSTASH_REDIS_REST_TOKEN`          | Durable budget + rate limiting | Production only |
+| `DATABASE_URL`                      | Neon Postgres (Phase F+)       | Upcoming        |

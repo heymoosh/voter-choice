@@ -212,12 +212,17 @@ function measureComplexity() {
     };
   }
 
-  const sorted = [...perFunction].map((f) => f.complexity).sort((a, b) => a - b);
+  const sorted = [...perFunction]
+    .map((f) => f.complexity)
+    .sort((a, b) => a - b);
   const sum = sorted.reduce((a, b) => a + b, 0);
   const average = +(sum / sorted.length).toFixed(2);
   const max = sorted[sorted.length - 1];
   const pct = (p) => {
-    const idx = Math.min(sorted.length - 1, Math.ceil((p / 100) * sorted.length) - 1);
+    const idx = Math.min(
+      sorted.length - 1,
+      Math.ceil((p / 100) * sorted.length) - 1,
+    );
     return sorted[Math.max(0, idx)];
   };
   const distribution = {
@@ -704,8 +709,16 @@ function measureLOC() {
   }
 
   const summary = {
-    application: { code: app.code, files: app.files, byExtension: app.byExtension },
-    plugin: { code: plugin.code, files: plugin.files, byExtension: plugin.byExtension },
+    application: {
+      code: app.code,
+      files: app.files,
+      byExtension: app.byExtension,
+    },
+    plugin: {
+      code: plugin.code,
+      files: plugin.files,
+      byExtension: plugin.byExtension,
+    },
     infrastructure: { code: infra.code, files: infra.files },
     total: {
       code: app.code + plugin.code + infra.code,
@@ -713,10 +726,18 @@ function measureLOC() {
     },
   };
 
-  console.log(`  Application code (src/): ${app.code} lines across ${app.files} files`);
-  console.log(`  Plugin/framework code: ${plugin.code} lines across ${plugin.files} files`);
-  console.log(`  Infrastructure (scripts, e2e, configs): ${infra.code} lines across ${infra.files} files`);
-  console.log(`  Total: ${summary.total.code} lines across ${summary.total.files} files`);
+  console.log(
+    `  Application code (src/): ${app.code} lines across ${app.files} files`,
+  );
+  console.log(
+    `  Plugin/framework code: ${plugin.code} lines across ${plugin.files} files`,
+  );
+  console.log(
+    `  Infrastructure (scripts, e2e, configs): ${infra.code} lines across ${infra.files} files`,
+  );
+  console.log(
+    `  Total: ${summary.total.code} lines across ${summary.total.files} files`,
+  );
 
   return summary;
 }
@@ -787,7 +808,10 @@ function measureWorkflowTiming() {
     console.log("  No workflow-log.jsonl found — skipping");
     return null;
   }
-  const lines = readFileSync(logPath, "utf-8").trim().split("\n").filter(Boolean);
+  const lines = readFileSync(logPath, "utf-8")
+    .trim()
+    .split("\n")
+    .filter(Boolean);
   const entries = lines
     .map((l) => {
       try {
@@ -820,7 +844,10 @@ function measureWorkflowTiming() {
   const completedSteps = steps.filter((s) => s.completed).length;
   console.log(`  Steps: ${completedSteps}/${steps.length} completed`);
   for (const s of steps) {
-    const dur = s.durationMs != null ? `${Math.round(s.durationMs / 1000)}s` : "incomplete";
+    const dur =
+      s.durationMs != null
+        ? `${Math.round(s.durationMs / 1000)}s`
+        : "incomplete";
     console.log(`    ${s.step}: ${dur}`);
   }
 
@@ -865,7 +892,8 @@ async function main() {
     if (!existsSync(metricsDir)) {
       mkdirSync(metricsDir, { recursive: true });
     }
-    const filename = phaseNumber != null ? `phase${phaseNumber}.json` : "baseline.json";
+    const filename =
+      phaseNumber != null ? `phase${phaseNumber}.json` : "baseline.json";
     outputPath = join(metricsDir, filename);
   }
 

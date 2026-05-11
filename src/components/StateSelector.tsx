@@ -21,10 +21,7 @@ export function StateSelector({ stateCodes, onSelect }: StateSelectorProps) {
       role="group"
       aria-labelledby="state-selector-heading"
     >
-      <p
-        id="state-selector-heading"
-        className="text-gray-800 font-medium mb-3"
-      >
+      <p id="state-selector-heading" className="text-gray-800 font-medium mb-3">
         This zip code spans multiple states. Which state are you voting in?
       </p>
       <div className="flex flex-wrap gap-3">

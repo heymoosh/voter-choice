@@ -24,7 +24,7 @@ export function PromptOutput({ promptText }: PromptOutputProps) {
     // Fallback: select the textarea
     setShowFallback(true);
     const textarea = document.getElementById(
-      "prompt-textarea"
+      "prompt-textarea",
     ) as HTMLTextAreaElement | null;
     if (textarea) {
       textarea.select();

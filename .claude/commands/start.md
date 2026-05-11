@@ -99,6 +99,7 @@ Go back to Step 1. Don't pause between actions. Don't ask for confirmation. Just
 ### When to exit
 
 Exit only when:
+
 - Discovery script returns empty (experiment done).
 - You've dispatched at least 3 sub-agents and notice your orchestration is degrading (missed steps, confused state). Commit nothing — sub-agents already pushed. Exit. Next `/start` picks up where tags left off.
 - A sub-agent reports a hard failure it couldn't recover (bad API key, infrastructure down). Log to `metrics/failures.jsonl` (check it out to main, commit, push), then exit for human review.
@@ -111,7 +112,7 @@ Exit only when:
 
 Use when discovery output is `phase1_replicate <fw> <r>`.
 
-```
+````
 You are a build agent running a single Phase 1 replicate in a workflow-comparison experiment.
 
 Task: build the voter-choice app on branch `experiment/<FW>-<R>` using the framework's own methodology.
@@ -158,7 +159,7 @@ Repo path: /Users/Muxin/Documents/GitHub/voter-choice
 
 ## Return value
 Return exactly one paragraph: which branch you built, whether lint/vitest/playwright passed or what failed, which tag was pushed, total LOC from the measure output, and confirmation that the RUN_LOG entry was appended on main.
-```
+````
 
 ---
 
@@ -166,7 +167,7 @@ Return exactly one paragraph: which branch you built, whether lint/vitest/playwr
 
 Use when discovery output is `select_representative <fw>`.
 
-```
+````
 You are a selection agent picking the representative Phase 1 replicate for one framework in a workflow-comparison experiment.
 
 Task: run the representative-selection script for framework `<FW>` and commit the result to main.
@@ -194,7 +195,7 @@ Repo path: /Users/Muxin/Documents/GitHub/voter-choice
 
 ## Return value
 Return exactly one paragraph: which replicate was chosen, what its LOC was, what the variance across r1/r2/r3 was, and confirm the push succeeded.
-```
+````
 
 ---
 
@@ -202,7 +203,7 @@ Return exactly one paragraph: which replicate was chosen, what its LOC was, what
 
 Use when discovery output is `phase_forward <fw> <phase>`.
 
-```
+````
 You are a build agent running a forward-iteration phase in a workflow-comparison experiment.
 
 Task: build Phase <PHASE> of the voter-choice app for framework `<FW>` on its chosen representative replicate branch.
@@ -254,7 +255,7 @@ Repo path: /Users/Muxin/Documents/GitHub/voter-choice
 
 ## Return value
 Return exactly one paragraph: which branch/phase you built, whether tests passed or what failed, what tag was pushed, the key deltas (coverage Δ, LOC Δ, complexity Δ) from the measure output, and confirmation that the RUN_LOG entry was appended on main.
-```
+````
 
 ---
 

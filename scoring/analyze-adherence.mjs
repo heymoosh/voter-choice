@@ -80,8 +80,8 @@ function analyzeTDD(branch) {
   let implFiles = new Set();
 
   for (const commit of commits) {
-    const tests = commit.files.filter(
-      (f) => f.match(/\.(test|spec)\.(ts|tsx|js|jsx)$/),
+    const tests = commit.files.filter((f) =>
+      f.match(/\.(test|spec)\.(ts|tsx|js|jsx)$/),
     );
     const impls = commit.files.filter(
       (f) =>
@@ -184,7 +184,9 @@ function analyzeTDD(branch) {
     );
   }
   if (result.tddCoverage != null) {
-    console.log(`  TDD coverage: ${result.tddCoverage}% of test files assessable`);
+    console.log(
+      `  TDD coverage: ${result.tddCoverage}% of test files assessable`,
+    );
   }
 
   return result;
@@ -303,12 +305,8 @@ function analyzeWorkflowLog(branch) {
 function analyzeBuildStats(branch) {
   console.log("\n=== Build Statistics ===");
 
-  const commitCount = run(
-    `git rev-list --count v0-scaffold..${branch}`,
-  ).trim();
-  const diffStat = run(
-    `git diff --shortstat v0-scaffold..${branch}`,
-  ).trim();
+  const commitCount = run(`git rev-list --count v0-scaffold..${branch}`).trim();
+  const diffStat = run(`git diff --shortstat v0-scaffold..${branch}`).trim();
 
   console.log(`  Commits since scaffold: ${commitCount}`);
   console.log(`  Changes: ${diffStat}`);
@@ -324,9 +322,7 @@ function analyzeTimingLog(branch) {
 
   let logContent;
   try {
-    logContent = run(
-      `git show ${branch}:metrics/timing.jsonl 2>/dev/null`,
-    );
+    logContent = run(`git show ${branch}:metrics/timing.jsonl 2>/dev/null`);
   } catch {
     logContent = "";
   }
@@ -389,9 +385,7 @@ function analyzeMeasurementJSON(branch) {
   // Look for measurement JSON files on the branch
   let fileList;
   try {
-    fileList = run(
-      `git ls-tree --name-only ${branch} metrics/ 2>/dev/null`,
-    );
+    fileList = run(`git ls-tree --name-only ${branch} metrics/ 2>/dev/null`);
   } catch {
     fileList = "";
   }
@@ -452,7 +446,9 @@ function analyzeMeasurementJSON(branch) {
   }
 
   console.log(`  File: ${latestFile}`);
-  console.log(`  Fields present: ${Object.keys(fields).length}/${requiredFields.length}`);
+  console.log(
+    `  Fields present: ${Object.keys(fields).length}/${requiredFields.length}`,
+  );
   if (missing.length > 0) {
     console.log(`  Missing: ${missing.join(", ")}`);
   } else {

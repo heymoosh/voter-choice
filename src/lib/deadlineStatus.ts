@@ -7,7 +7,7 @@ export type DeadlineStatus = {
 
 export function getDeadlineStatus(
   isoDate: string | null | undefined,
-  today: Date = new Date()
+  today: Date = new Date(),
 ): DeadlineStatus {
   if (!isoDate) {
     return {
@@ -22,7 +22,11 @@ export function getDeadlineStatus(
   const [year, month, day] = isoDate.split("-").map(Number);
   const deadlineMs = Date.UTC(year, month - 1, day);
   // Normalize today to UTC midnight using UTC date components
-  const todayMs = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate());
+  const todayMs = Date.UTC(
+    today.getUTCFullYear(),
+    today.getUTCMonth(),
+    today.getUTCDate(),
+  );
   const diffMs = deadlineMs - todayMs;
   const daysLeft = Math.round(diffMs / (1000 * 60 * 60 * 24));
 

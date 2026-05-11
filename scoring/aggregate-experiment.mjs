@@ -31,7 +31,13 @@ function argValue(name) {
 }
 
 const ROOT = argValue("--repo") ? resolve(argValue("--repo")) : process.cwd();
-const FRAMEWORKS = ["vanilla", "bmad", "spec-kit", "superpowers", "compound-engineering"];
+const FRAMEWORKS = [
+  "vanilla",
+  "bmad",
+  "spec-kit",
+  "superpowers",
+  "compound-engineering",
+];
 const REPLICATES = ["r1", "r2", "r3"];
 const FORWARD_PHASES = [2, 3, 4, 5, 6];
 
@@ -271,11 +277,12 @@ function computeComposite(framework, frameworkData) {
   const { replicates, representative, phases, deltas } = frameworkData;
   const phase1 = representative?.chosen
     ? replicates[representative.chosen]?.data
-    : Object.values(replicates).find((r) => r?.data)?.data ?? null;
-  const lastCompletedPhase = [6, 5, 4, 3, 2, 1].find(
-    (p) => p === 1 ? phase1 : phases[p],
+    : (Object.values(replicates).find((r) => r?.data)?.data ?? null);
+  const lastCompletedPhase = [6, 5, 4, 3, 2, 1].find((p) =>
+    p === 1 ? phase1 : phases[p],
   );
-  const phaseLast = lastCompletedPhase === 1 ? phase1 : phases[lastCompletedPhase ?? 1];
+  const phaseLast =
+    lastCompletedPhase === 1 ? phase1 : phases[lastCompletedPhase ?? 1];
 
   // Axis 1: Test quality drift (P1 -> last completed)
   let testQuality = null;
@@ -396,10 +403,30 @@ function computeComposite(framework, frameworkData) {
 
   // Composite — weighted mean of available axes
   const axes = [
-    { name: "testQuality", weight: 0.25, score: testQuality, notes: testQualityNotes },
-    { name: "complexity", weight: 0.25, score: complexity, notes: complexityNotes },
-    { name: "diffHygiene", weight: 0.2, score: diffHygiene, notes: diffHygieneNotes },
-    { name: "completion", weight: 0.2, score: completion, notes: completionNotes },
+    {
+      name: "testQuality",
+      weight: 0.25,
+      score: testQuality,
+      notes: testQualityNotes,
+    },
+    {
+      name: "complexity",
+      weight: 0.25,
+      score: complexity,
+      notes: complexityNotes,
+    },
+    {
+      name: "diffHygiene",
+      weight: 0.2,
+      score: diffHygiene,
+      notes: diffHygieneNotes,
+    },
+    {
+      name: "completion",
+      weight: 0.2,
+      score: completion,
+      notes: completionNotes,
+    },
     { name: "variance", weight: 0.1, score: variance, notes: varianceNotes },
   ];
   const presentAxes = axes.filter((a) => a.score != null);
@@ -446,12 +473,16 @@ function aggregateFramework(framework) {
   }
 
   // Responder log (live file on the chosen replicate branch, or fallback)
-  const responder = chosen ? loadResponderLog(framework, chosen) : { ref: null, entries: [] };
+  const responder = chosen
+    ? loadResponderLog(framework, chosen)
+    : { ref: null, entries: [] };
 
   // Apply rubric per phase
   const findingsByPhase = {};
   // Phase 1 — use the chosen replicate's data (or whichever exists)
-  const phase1Data = chosen ? replicates[chosen]?.data : Object.values(replicates).find((r) => r?.data)?.data;
+  const phase1Data = chosen
+    ? replicates[chosen]?.data
+    : Object.values(replicates).find((r) => r?.data)?.data;
   if (phase1Data) {
     findingsByPhase[1] = applyRubric(phase1Data, {
       framework,
@@ -527,8 +558,12 @@ function renderMarkdown(report) {
     if (b.composite == null) return -1;
     return b.composite - a.composite;
   });
-  lines.push("| Rank | Framework | Composite | Test Quality | Complexity | Diff Hygiene | Completion | Variance | Phases | Findings |");
-  lines.push("|------|-----------|-----------|--------------|------------|--------------|------------|----------|--------|----------|");
+  lines.push(
+    "| Rank | Framework | Composite | Test Quality | Complexity | Diff Hygiene | Completion | Variance | Phases | Findings |",
+  );
+  lines.push(
+    "|------|-----------|-----------|--------------|------------|--------------|------------|----------|--------|----------|",
+  );
   for (let i = 0; i < ranked.length; i++) {
     const f = ranked[i];
     const axes = Object.fromEntries(f.axes.map((a) => [a.name, a.score]));
@@ -550,11 +585,17 @@ function renderMarkdown(report) {
     lines.push("");
     lines.push(`- **Composite:** ${f.composite ?? "—"}`);
     lines.push(`- **Replicates found:** ${f.replicatesFound}/3`);
-    lines.push(`- **Chosen representative:** ${f.chosen ?? "—"}${f.rationale ? ` (${f.rationale})` : ""}`);
-    lines.push(`- **Phases with metrics:** ${f.completedPhases.join(", ") || "none"}`);
+    lines.push(
+      `- **Chosen representative:** ${f.chosen ?? "—"}${f.rationale ? ` (${f.rationale})` : ""}`,
+    );
+    lines.push(
+      `- **Phases with metrics:** ${f.completedPhases.join(", ") || "none"}`,
+    );
     lines.push(`- **Responder-log entries:** ${f.responderEntries}`);
     if (f.noisyMetrics.length > 0) {
-      lines.push(`- **Noisy metrics (RSD > 25%):** ${f.noisyMetrics.map((m) => `${m.metric} (${m.rsd}%)`).join(", ")}`);
+      lines.push(
+        `- **Noisy metrics (RSD > 25%):** ${f.noisyMetrics.map((m) => `${m.metric} (${m.rsd}%)`).join(", ")}`,
+      );
     }
     lines.push("");
     lines.push("**Axes:**");
@@ -588,7 +629,9 @@ function renderMarkdown(report) {
   // Cross-framework metrics table (per phase)
   lines.push("## Cross-framework metric comparison");
   lines.push("");
-  lines.push("Each row is a metric; each column is a framework. Cell = `phase1 → last-completed` (Phase 6 if everything ran). Missing values shown as `—`.");
+  lines.push(
+    "Each row is a metric; each column is a framework. Cell = `phase1 → last-completed` (Phase 6 if everything ran). Missing values shown as `—`.",
+  );
   lines.push("");
   const metricSpecs = [
     ["E2e pass rate", (p) => p?.playwright?.passRate, "%"],
@@ -597,7 +640,11 @@ function renderMarkdown(report) {
     ["File count", (p) => p?.linesOfCode?.application?.files, ""],
     ["Complexity avg", (p) => p?.complexity?.average, ""],
     ["Complexity max", (p) => p?.complexity?.max, ""],
-    ["Bundle first-load (kB)", (p) => p?.bundleSize?.firstLoadJsShared?.size, ""],
+    [
+      "Bundle first-load (kB)",
+      (p) => p?.bundleSize?.firstLoadJsShared?.size,
+      "",
+    ],
     ["Duplication %", (p) => p?.duplication?.percentage, "%"],
   ];
   lines.push(`| Metric | ${ranked.map((f) => f.framework).join(" | ")} |`);
@@ -606,7 +653,8 @@ function renderMarkdown(report) {
     const cells = ranked.map((f) => {
       const p1 = getter(f._raw?.phase1);
       const pLast = getter(f._raw?.lastPhase);
-      const fmt = (v) => (v == null ? "—" : typeof v === "number" ? `${v.toFixed(1)}${unit}` : v);
+      const fmt = (v) =>
+        v == null ? "—" : typeof v === "number" ? `${v.toFixed(1)}${unit}` : v;
       return `${fmt(p1)} → ${fmt(pLast)}`;
     });
     lines.push(`| ${label} | ${cells.join(" | ")} |`);
@@ -618,17 +666,33 @@ function renderMarkdown(report) {
   lines.push("");
   lines.push("Composite score is a weighted mean of:");
   lines.push("");
-  lines.push("- **Test quality (25%)** — Phase 1 → last-completed-phase coverage delta + last-completed-phase e2e pass rate.");
-  lines.push("- **Complexity (25%)** — Last-completed phase's avg complexity + trajectory penalty if any phase added > 1.5 to avg.");
-  lines.push("- **Diff hygiene (20%)** — Mean `scopeAdherence` across Phases 2–6; penalty if total unexpected LOC > 500.");
-  lines.push("- **Scope completion (20%)** — Phases completed / 6. A framework that hit a blocker at Phase 3 maxes out at ~50.");
-  lines.push("- **Variance (10%)** — Inverse of mean RSD across Phase 1 metrics (lower variance scores higher).");
+  lines.push(
+    "- **Test quality (25%)** — Phase 1 → last-completed-phase coverage delta + last-completed-phase e2e pass rate.",
+  );
+  lines.push(
+    "- **Complexity (25%)** — Last-completed phase's avg complexity + trajectory penalty if any phase added > 1.5 to avg.",
+  );
+  lines.push(
+    "- **Diff hygiene (20%)** — Mean `scopeAdherence` across Phases 2–6; penalty if total unexpected LOC > 500.",
+  );
+  lines.push(
+    "- **Scope completion (20%)** — Phases completed / 6. A framework that hit a blocker at Phase 3 maxes out at ~50.",
+  );
+  lines.push(
+    "- **Variance (10%)** — Inverse of mean RSD across Phase 1 metrics (lower variance scores higher).",
+  );
   lines.push("");
-  lines.push("Composite weights only the axes that have data — a framework with no representative.json still gets a composite from the four other axes, just with the variance term dropped.");
+  lines.push(
+    "Composite weights only the axes that have data — a framework with no representative.json still gets a composite from the four other axes, just with the variance term dropped.",
+  );
   lines.push("");
-  lines.push("Findings come from the 13-check rubric in [scoring/auto-findings-rubric.md](../../scoring/auto-findings-rubric.md). Only checks 1, 5, 6, 7, 11, 12, 13 are programmatically applied here; the rest depend on adherence-report JSON not produced by the autonomous pipeline.");
+  lines.push(
+    "Findings come from the 13-check rubric in [scoring/auto-findings-rubric.md](../../scoring/auto-findings-rubric.md). Only checks 1, 5, 6, 7, 11, 12, 13 are programmatically applied here; the rest depend on adherence-report JSON not produced by the autonomous pipeline.",
+  );
   lines.push("");
-  lines.push("Open the per-phase JSON in `metrics/experiment/<framework>-<replicate>/phase<N>.json` for full per-function complexity, every test name, and bundle-size detail. Open `metrics/experiment/<framework>-<replicate>/delta-phase<N-1>-to-phase<N>.md` for the per-phase Markdown delta render.");
+  lines.push(
+    "Open the per-phase JSON in `metrics/experiment/<framework>-<replicate>/phase<N>.json` for full per-function complexity, every test name, and bundle-size detail. Open `metrics/experiment/<framework>-<replicate>/delta-phase<N-1>-to-phase<N>.md` for the per-phase Markdown delta render.",
+  );
   lines.push("");
 
   return lines.join("\n");
@@ -649,24 +713,34 @@ function main() {
     // Stash raw phase data for the metric comparison table
     const phase1Data = summary.chosen
       ? readJsonIfExists(
-          join(ROOT, "metrics", "experiment", `${fw}-${summary.chosen}`, "phase1.json"),
-        )
-      : null;
-    const lastPhaseNum = summary.completedPhases[summary.completedPhases.length - 1];
-    const lastPhase = lastPhaseNum && summary.chosen
-      ? readJsonIfExists(
           join(
             ROOT,
             "metrics",
             "experiment",
             `${fw}-${summary.chosen}`,
-            `phase${lastPhaseNum}.json`,
+            "phase1.json",
           ),
         )
-      : phase1Data;
+      : null;
+    const lastPhaseNum =
+      summary.completedPhases[summary.completedPhases.length - 1];
+    const lastPhase =
+      lastPhaseNum && summary.chosen
+        ? readJsonIfExists(
+            join(
+              ROOT,
+              "metrics",
+              "experiment",
+              `${fw}-${summary.chosen}`,
+              `phase${lastPhaseNum}.json`,
+            ),
+          )
+        : phase1Data;
     summary._raw = { phase1: phase1Data, lastPhase };
     frameworks.push(summary);
-    console.log(`    composite=${summary.composite ?? "—"}, phases=${summary.completedPhases.length}/6, findings=${Object.values(summary.findingsByPhase).reduce((s, a) => s + a.length, 0)}`);
+    console.log(
+      `    composite=${summary.composite ?? "—"}, phases=${summary.completedPhases.length}/6, findings=${Object.values(summary.findingsByPhase).reduce((s, a) => s + a.length, 0)}`,
+    );
   }
 
   const report = {
@@ -674,7 +748,8 @@ function main() {
       generatedAt: new Date().toISOString(),
       repo: ROOT,
       frameworks: FRAMEWORKS,
-      rubric: "scoring/auto-findings-rubric.md (checks 1, 5, 6, 7, 11, 12, 13 programmatically applied)",
+      rubric:
+        "scoring/auto-findings-rubric.md (checks 1, 5, 6, 7, 11, 12, 13 programmatically applied)",
     },
     frameworks,
   };

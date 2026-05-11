@@ -97,11 +97,16 @@ function readGitFile(ref, path) {
 
 const candidates = [];
 if (prevRefOverride) {
-  const path = prevPathOverride || `metrics/${branchName}/phase${phase - 1}.json`;
+  const path =
+    prevPathOverride || `metrics/${branchName}/phase${phase - 1}.json`;
   candidates.push({ ref: prevRefOverride, path });
 }
-const autoTag = prevTagOverride || `${frameworkSlug}-phase${phase - 1}-complete`;
-candidates.push({ ref: autoTag, path: `metrics/${branchName}/phase${phase - 1}.json` });
+const autoTag =
+  prevTagOverride || `${frameworkSlug}-phase${phase - 1}-complete`;
+candidates.push({
+  ref: autoTag,
+  path: `metrics/${branchName}/phase${phase - 1}.json`,
+});
 candidates.push({ ref: autoTag, path: `metrics/${branchName}/baseline.json` });
 
 let priorContent = null;
@@ -193,7 +198,10 @@ const output = {
 if (!existsSync(branchMetricsDir)) {
   mkdirSync(branchMetricsDir, { recursive: true });
 }
-const jsonPath = join(branchMetricsDir, `delta-phase${phase - 1}-to-phase${phase}.json`);
+const jsonPath = join(
+  branchMetricsDir,
+  `delta-phase${phase - 1}-to-phase${phase}.json`,
+);
 writeFileSync(jsonPath, JSON.stringify(output, null, 2));
 
 function renderMarkdown(o) {
@@ -224,7 +232,10 @@ function renderMarkdown(o) {
   return lines.join("\n") + "\n";
 }
 
-const mdPath = join(branchMetricsDir, `delta-phase${phase - 1}-to-phase${phase}.md`);
+const mdPath = join(
+  branchMetricsDir,
+  `delta-phase${phase - 1}-to-phase${phase}.md`,
+);
 writeFileSync(mdPath, renderMarkdown(output));
 
 console.log(`Wrote ${jsonPath}`);

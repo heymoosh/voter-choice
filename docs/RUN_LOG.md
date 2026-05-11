@@ -10,19 +10,20 @@ For hands-off operation across multiple sessions: `/loop /start` — the harness
 
 **Experiment plan (auto-driven):**
 
-| Stage | Actions | Source of truth |
-|-------|---------|-----------------|
-| Phase 1 replicates | 15 builds (3 per framework on `experiment/<fw>-r{1,2,3}`) | `docs/PROJECT_SPEC.md` |
-| Representative selection | 5 (one per framework, median-LOC) | `scoring/select-representative.mjs` |
-| Phase 2 forward | 5 builds on chosen replicates | `docs/PHASE2_SPEC.md` |
-| Phase 3 forward | 5 builds (requires API keys for Civic/VoteSmart/OpenStates/OpenFEC) | `docs/PHASE3_SPEC.md` |
-| Phase 4 forward | 5 builds | `docs/PHASE4_SPEC.md` |
-| Phase 5 forward | 5 builds (requires Anthropic API key) | `docs/PHASE5_SPEC.md` |
-| Phase 6 forward | 5 builds (requires Upstash Redis + reuses Anthropic) | `docs/PHASE6_SPEC.md` |
+| Stage                    | Actions                                                             | Source of truth                     |
+| ------------------------ | ------------------------------------------------------------------- | ----------------------------------- |
+| Phase 1 replicates       | 15 builds (3 per framework on `experiment/<fw>-r{1,2,3}`)           | `docs/PROJECT_SPEC.md`              |
+| Representative selection | 5 (one per framework, median-LOC)                                   | `scoring/select-representative.mjs` |
+| Phase 2 forward          | 5 builds on chosen replicates                                       | `docs/PHASE2_SPEC.md`               |
+| Phase 3 forward          | 5 builds (requires API keys for Civic/VoteSmart/OpenStates/OpenFEC) | `docs/PHASE3_SPEC.md`               |
+| Phase 4 forward          | 5 builds                                                            | `docs/PHASE4_SPEC.md`               |
+| Phase 5 forward          | 5 builds (requires Anthropic API key)                               | `docs/PHASE5_SPEC.md`               |
+| Phase 6 forward          | 5 builds (requires Upstash Redis + reuses Anthropic)                | `docs/PHASE6_SPEC.md`               |
 
 The orchestrator handles every transition automatically. See `docs/FRAMING.md` for what claims the resulting data supports and `.claude/commands/start.md` for the orchestrator logic.
 
 **Measurement targets (per phase):**
+
 - Playwright e2e: all passing (target 100%)
 - Vitest unit tests + line coverage %
 - ESLint: 0 errors, 0 warnings, 0 complexity violations
@@ -40,6 +41,7 @@ The orchestrator handles every transition automatically. See `docs/FRAMING.md` f
 Deferred in favor of Run 5 manual experiment. Restore to `## Next` when ready to automate Phase 3+ orchestration via Hermes VPS.
 
 Original tasks:
+
 1. Review and commit `docs/PHASE3_SPEC.md`, `docs/PHASE4_SPEC.md`, `docs/PHASE5_SPEC.md` (currently untracked drafts).
 2. Update `docs/EXPERIMENT_DESIGN.md` with Phase 3/4/5 sections per `docs/PHASE3-5_INTEGRATION.md`.
 3. Extend `scoring/auto-findings-rubric.md` with any Phase 3+ checks that can be written without API keys in hand.
@@ -79,7 +81,7 @@ Note: **Scoring is executed by Hermes from the host side, not inside the build c
   5. ✅ `docs/LAUNCH_PRODUCTION_FEATURES.md` added documenting the production feature set for the Phase 1 spec update.
   6. 🔙 Hermes VPS, API keys, and `v1-phase3-ready` tag deferred to Backlog — Run 5 proceeds as manual experiment per Muxin's 2026-05-10 decision.
 - **Files created:** `docs/PHASE3_SPEC.md`, `docs/PHASE4_SPEC.md`, `docs/PHASE5_SPEC.md`, `docs/PHASE3-5_INTEGRATION.md`, `docs/LAUNCH_PLAN.md`, `docs/LAUNCH_PRODUCTION_FEATURES.md`, `scoring/auto-findings-rubric.md`
-- **Issues or deviations:** run5/* branches named with `run5/` prefix (not `run4/` as originally planned) because `run4/compound-engineering` already existed. Legacy `workflow/*`, `run2/*`, `run3/*` branches remain as experiment data (rubric-contaminated; not to be reused for new runs).
+- **Issues or deviations:** run5/_ branches named with `run5/` prefix (not `run4/` as originally planned) because `run4/compound-engineering` already existed. Legacy `workflow/_`, `run2/_`, `run3/_` branches remain as experiment data (rubric-contaminated; not to be reused for new runs).
 
 ### Phase 3 — Analysis and Write-up (complete)
 
@@ -109,7 +111,7 @@ Note: **Scoring is executed by Hermes from the host side, not inside the build c
 - **Tag:** `bmad-run3-phase2-complete` (local; push from host — container has no GitHub credentials)
 - **Commit:** `5f3b4a2`
 - **What was done:** Full BMAD Phase 2 workflow — all 10 BMAD steps via Skill tool: bmad-brainstorming → bmad-create-product-brief → bmad-create-prd → bmad-create-ux-design → bmad-create-architecture → bmad-create-epics-and-stories → bmad-check-implementation-readiness (READY) → bmad-sprint-planning → bmad-dev-story × 10 stories → bmad-code-review. 5 epics, 10 stories implemented. New files: `src/lib/translations.ts` (typed `Translations` interface, EN+ES, 46 leaf keys each), `src/lib/i18n.tsx` (React context, SSR hydration guard, localStorage persistence, `document.documentElement.lang` sync), `src/components/LanguageToggle.tsx` (fixed top-right, native `<button>`, `aria-label`, `aria-live="polite"` announcement), `src/components/SkipLink.tsx` (translatable skip-to-content). Modified: all 6 components use `useLanguage()`, `generatePrompt.ts` (full `BALLOT_PROMPT_ES` ~80 lines, Spanish context block, `buildContextBlockEs()`), `date-utils.ts` (lang param + `DEADLINE_LABELS` lookup object, ESLint complexity 12→5). E2e suite extended: 20 new tests (10 Language toggle + 10 Accessibility). Code review finding fixed: ES `deadline.tomorrow` inconsistency between translation stores.
-- **Measurements:** ESLint 0 errors/0 warnings. Vitest 101/101 (100%). 0.34% duplication. First load JS 102 kB (unchanged). Playwright 62/62 e2e (100%). Lighthouse N/A (container). LOC: 2126 src/ across 29 files. 8 test files in src/__tests__/.
+- **Measurements:** ESLint 0 errors/0 warnings. Vitest 101/101 (100%). 0.34% duplication. First load JS 102 kB (unchanged). Playwright 62/62 e2e (100%). Lighthouse N/A (container). LOC: 2126 src/ across 29 files. 8 test files in src/**tests**/.
 - **Phase 1 → Phase 2 delta:**
   - E2e pass rate: 42/42 → 62/62 (+20 new tests: 10 Language toggle + 10 Accessibility)
   - ESLint errors: 0 → 0 | warnings: 0 → 0 | complexity: 0 → 0

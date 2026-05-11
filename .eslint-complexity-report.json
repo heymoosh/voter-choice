@@ -1,0 +1,408 @@
+[
+  {
+    "filePath": "/Users/Muxin/Documents/GitHub/voter-choice/src/app/layout.tsx",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": []
+  },
+  {
+    "filePath": "/Users/Muxin/Documents/GitHub/voter-choice/src/app/page.tsx",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": []
+  },
+  {
+    "filePath": "/Users/Muxin/Documents/GitHub/voter-choice/src/components/Footer.tsx",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": []
+  },
+  {
+    "filePath": "/Users/Muxin/Documents/GitHub/voter-choice/src/components/HeroSection.tsx",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": []
+  },
+  {
+    "filePath": "/Users/Muxin/Documents/GitHub/voter-choice/src/components/PromptOutput.tsx",
+    "messages": [
+      {
+        "ruleId": "complexity",
+        "severity": 1,
+        "message": "Function 'PromptOutput' has a complexity of 3. Maximum allowed is 1.",
+        "line": 9,
+        "column": 16,
+        "nodeType": "FunctionDeclaration",
+        "messageId": "complex",
+        "endLine": 9,
+        "endColumn": 37
+      },
+      {
+        "ruleId": "complexity",
+        "severity": 1,
+        "message": "Async function 'handleCopy' has a complexity of 4. Maximum allowed is 1.",
+        "line": 13,
+        "column": 3,
+        "nodeType": "FunctionDeclaration",
+        "messageId": "complex",
+        "endLine": 13,
+        "endColumn": 28
+      },
+      {
+        "ruleId": "complexity",
+        "severity": 1,
+        "message": "Function 'fallbackCopy' has a complexity of 2. Maximum allowed is 1.",
+        "line": 30,
+        "column": 3,
+        "nodeType": "FunctionDeclaration",
+        "messageId": "complex",
+        "endLine": 30,
+        "endColumn": 24
+      }
+    ],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 3,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "source": "\"use client\";\n\nimport { useState, useRef } from \"react\";\n\ninterface Props {\n  prompt: string;\n}\n\nexport default function PromptOutput({ prompt }: Props) {\n  const [copied, setCopied] = useState(false);\n  const textAreaRef = useRef<HTMLTextAreaElement>(null);\n\n  async function handleCopy() {\n    try {\n      if (\n        navigator.clipboard &&\n        typeof navigator.clipboard.writeText === \"function\"\n      ) {\n        await navigator.clipboard.writeText(prompt);\n        showCopied();\n      } else {\n        // Fallback: select text and prompt keyboard copy\n        fallbackCopy();\n      }\n    } catch {\n      fallbackCopy();\n    }\n  }\n\n  function fallbackCopy() {\n    if (textAreaRef.current) {\n      textAreaRef.current.select();\n      textAreaRef.current.setSelectionRange(\n        0,\n        textAreaRef.current.value.length,\n      );\n      // Show keyboard instructions\n      setCopied(false);\n      // Focus the textarea so user can press Ctrl+C / Cmd+C\n      textAreaRef.current.focus();\n    }\n  }\n\n  function showCopied() {\n    setCopied(true);\n    setTimeout(() => setCopied(false), 2000);\n  }\n\n  return (\n    <section\n      aria-label=\"Customized ballot research prompt\"\n      className=\"bg-white border border-gray-200 rounded-xl p-6 shadow-sm\"\n    >\n      <h2 className=\"text-xl font-bold text-gray-900 mb-2\">\n        Your Customized Prompt\n      </h2>\n      <p className=\"text-gray-600 text-sm mb-4\">\n        Copy this prompt and paste it as your first message in any AI chatbot\n        (Claude, ChatGPT, Gemini, or Grok).\n      </p>\n\n      <div className=\"relative\">\n        <textarea\n          ref={textAreaRef}\n          data-testid=\"prompt-output\"\n          readOnly\n          value={prompt}\n          aria-label=\"Customized ballot research prompt text\"\n          aria-multiline=\"true\"\n          className=\"w-full h-64 sm:h-80 p-4 text-sm font-mono bg-gray-50 border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-600 overflow-y-auto\"\n        />\n      </div>\n\n      <div className=\"mt-4 flex items-center gap-3\">\n        <button\n          data-testid=\"copy-button\"\n          onClick={handleCopy}\n          aria-label=\"Copy prompt to clipboard\"\n          className=\"flex items-center gap-2 bg-blue-700 text-white rounded-lg px-5 py-3 text-base font-semibold min-h-[44px] hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2 transition-colors\"\n        >\n          {copied ? (\n            <>\n              <svg\n                aria-hidden=\"true\"\n                className=\"w-5 h-5\"\n                fill=\"none\"\n                stroke=\"currentColor\"\n                viewBox=\"0 0 24 24\"\n              >\n                <path\n                  strokeLinecap=\"round\"\n                  strokeLinejoin=\"round\"\n                  strokeWidth={2}\n                  d=\"M5 13l4 4L19 7\"\n                />\n              </svg>\n              Copied!\n            </>\n          ) : (\n            <>\n              <svg\n                aria-hidden=\"true\"\n                className=\"w-5 h-5\"\n                fill=\"none\"\n                stroke=\"currentColor\"\n                viewBox=\"0 0 24 24\"\n              >\n                <path\n                  strokeLinecap=\"round\"\n                  strokeLinejoin=\"round\"\n                  strokeWidth={2}\n                  d=\"M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3\"\n                />\n              </svg>\n              Copy to Clipboard\n            </>\n          )}\n        </button>\n\n        {copied && (\n          <span\n            data-testid=\"copy-confirmation\"\n            role=\"status\"\n            aria-live=\"polite\"\n            className=\"text-green-700 font-medium text-sm\"\n          >\n            Copied to clipboard!\n          </span>\n        )}\n      </div>\n    </section>\n  );\n}\n",
+    "usedDeprecatedRules": []
+  },
+  {
+    "filePath": "/Users/Muxin/Documents/GitHub/voter-choice/src/components/StateInfoCard.tsx",
+    "messages": [
+      {
+        "ruleId": "complexity",
+        "severity": 1,
+        "message": "Function 'DeadlineBadge' has a complexity of 2. Maximum allowed is 1.",
+        "line": 22,
+        "column": 1,
+        "nodeType": "FunctionDeclaration",
+        "messageId": "complex",
+        "endLine": 22,
+        "endColumn": 23
+      }
+    ],
+    "suppressedMessages": [
+      {
+        "ruleId": "complexity",
+        "severity": 1,
+        "message": "Function 'StateInfoCard' has a complexity of 14. Maximum allowed is 1.",
+        "line": 44,
+        "column": 16,
+        "nodeType": "FunctionDeclaration",
+        "messageId": "complex",
+        "endLine": 44,
+        "endColumn": 38,
+        "suppressions": [{ "kind": "directive", "justification": "" }]
+      }
+    ],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 1,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "source": "\"use client\";\n\nimport type { StateData, Election, DeadlineStatus } from \"@/types\";\nimport {\n  getDeadlineStatus,\n  formatDate,\n  allDeadlinesPassed,\n} from \"@/lib/deadlineUtils\";\n\ninterface Props {\n  stateData: StateData;\n  nextElection: Election | null;\n}\n\nconst tierStyles: Record<DeadlineStatus[\"tier\"], string> = {\n  green: \"text-green-700 bg-green-50 border-green-200\",\n  yellow: \"text-amber-800 bg-amber-50 border-amber-200\",\n  red: \"text-red-800 bg-red-50 border-red-200\",\n  passed: \"text-gray-600 bg-gray-50 border-gray-200\",\n};\n\nfunction DeadlineBadge({\n  deadline,\n  label,\n}: {\n  deadline: string | null;\n  label: string;\n}) {\n  if (!deadline)\n    return <span className=\"text-gray-500 text-sm\">Not available</span>;\n  const status = getDeadlineStatus(deadline);\n  return (\n    <span\n      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded border text-xs font-medium ${tierStyles[status.tier]}`}\n    >\n      <span>{label}:</span>\n      <span>{formatDate(deadline)}</span>\n      <span aria-label={`Status: ${status.label}`}>({status.label})</span>\n    </span>\n  );\n}\n\n// eslint-disable-next-line complexity\nexport default function StateInfoCard({ stateData, nextElection }: Props) {\n  const { stateName, registration, earlyVoting, votingRules, resources } =\n    stateData;\n\n  const deadlinesPassed = nextElection\n    ? allDeadlinesPassed(registration)\n    : false;\n\n  return (\n    <article\n      data-testid=\"state-info\"\n      aria-label={`Election information for ${stateName}`}\n      className=\"bg-white border border-gray-200 rounded-xl p-6 shadow-sm\"\n    >\n      <h2 className=\"text-2xl font-bold text-gray-900 mb-4\">\n        {stateName} Election Info\n      </h2>\n\n      {/* No upcoming election */}\n      {!nextElection && (\n        <div\n          data-testid=\"no-election-message\"\n          role=\"alert\"\n          className=\"p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-800 mb-4\"\n        >\n          <p className=\"font-semibold\">\n            No upcoming elections found for {stateName}.\n          </p>\n          <p className=\"text-sm mt-1\">\n            Check{\" \"}\n            <a\n              href={resources.stateElectionWebsite}\n              target=\"_blank\"\n              rel=\"noopener noreferrer\"\n              className=\"underline hover:text-yellow-700\"\n            >\n              {stateName}&apos;s election website\n            </a>{\" \"}\n            for updates.\n          </p>\n        </div>\n      )}\n\n      {/* Election details */}\n      {nextElection && (\n        <div className=\"space-y-4\">\n          <div className=\"flex flex-col gap-1\">\n            <span className=\"text-sm font-medium text-gray-500 uppercase tracking-wide\">\n              Upcoming Election\n            </span>\n            <span\n              data-testid=\"election-name\"\n              className=\"text-lg font-semibold text-gray-800\"\n            >\n              {nextElection.name}\n            </span>\n            <span data-testid=\"election-date\" className=\"text-gray-600\">\n              {formatDate(nextElection.date)}\n            </span>\n          </div>\n\n          {/* All deadlines passed alert */}\n          {deadlinesPassed && (\n            <div\n              role=\"alert\"\n              className=\"p-3 bg-red-50 border border-red-200 rounded-lg text-red-800 text-sm\"\n            >\n              <strong>\n                Registration deadlines for this election have passed.\n              </strong>{\" \"}\n              <a\n                href={registration.registrationCheckUrl}\n                target=\"_blank\"\n                rel=\"noopener noreferrer\"\n                className=\"underline hover:text-red-700\"\n              >\n                Check your registration status\n              </a>\n              .\n            </div>\n          )}\n\n          {/* Registration deadlines */}\n          <div>\n            <h3 className=\"text-base font-semibold text-gray-700 mb-2\">\n              Voter Registration\n            </h3>\n            <div\n              data-testid=\"registration-status\"\n              className=\"flex flex-col gap-2\"\n            >\n              <div className=\"flex items-center gap-2 flex-wrap\">\n                <span className=\"text-sm text-gray-600 w-16 shrink-0\">\n                  Online:\n                </span>\n                <DeadlineBadge\n                  deadline={\n                    registration.online.available\n                      ? registration.online.deadline\n                      : null\n                  }\n                  label=\"Online\"\n                />\n              </div>\n              <div className=\"flex items-center gap-2 flex-wrap\">\n                <span className=\"text-sm text-gray-600 w-16 shrink-0\">\n                  By mail:\n                </span>\n                <DeadlineBadge\n                  deadline={registration.byMail.deadline}\n                  label=\"Mail\"\n                />\n                {registration.byMail.sincePostmarked && (\n                  <span className=\"text-xs text-gray-500\">(by postmark)</span>\n                )}\n              </div>\n              <div className=\"flex items-center gap-2 flex-wrap\">\n                <span className=\"text-sm text-gray-600 w-16 shrink-0\">\n                  In person:\n                </span>\n                <DeadlineBadge\n                  deadline={registration.inPerson.deadline}\n                  label=\"In person\"\n                />\n              </div>\n              {registration.sameDayRegistration && (\n                <p className=\"text-sm text-green-700 font-medium\">\n                  Same-day registration available\n                </p>\n              )}\n            </div>\n          </div>\n\n          {/* Early voting */}\n          {earlyVoting.available &&\n            earlyVoting.startDate &&\n            earlyVoting.endDate && (\n              <div>\n                <h3 className=\"text-base font-semibold text-gray-700 mb-1\">\n                  Early Voting\n                </h3>\n                <p className=\"text-sm text-gray-600\">\n                  {formatDate(earlyVoting.startDate)} –{\" \"}\n                  {formatDate(earlyVoting.endDate)}\n                  {earlyVoting.notes && (\n                    <span className=\"text-gray-500\">\n                      {\" \"}\n                      ({earlyVoting.notes})\n                    </span>\n                  )}\n                </p>\n              </div>\n            )}\n\n          {/* Voting rules */}\n          <div>\n            <h3 className=\"text-base font-semibold text-gray-700 mb-1\">\n              Voting Rules\n            </h3>\n            <ul className=\"text-sm text-gray-600 space-y-1 list-disc list-inside\">\n              {votingRules.idRequired ? (\n                <li>\n                  <strong>Photo ID required.</strong>{\" \"}\n                  {votingRules.acceptedIds.length > 0 && (\n                    <span>{votingRules.acceptedIds[0]}, and others.</span>\n                  )}\n                </li>\n              ) : (\n                <li>Photo ID not required.</li>\n              )}\n              <li>{votingRules.phonesAtPollsDetail}</li>\n            </ul>\n          </div>\n\n          {/* Resources */}\n          <div>\n            <h3 className=\"text-base font-semibold text-gray-700 mb-1\">\n              Resources\n            </h3>\n            <ul className=\"text-sm space-y-1\">\n              <li>\n                <a\n                  href={resources.sampleBallotLookup}\n                  target=\"_blank\"\n                  rel=\"noopener noreferrer\"\n                  className=\"text-blue-700 hover:underline\"\n                >\n                  Sample ballot lookup\n                </a>\n              </li>\n              <li>\n                <a\n                  href={resources.countyElectionLookup}\n                  target=\"_blank\"\n                  rel=\"noopener noreferrer\"\n                  className=\"text-blue-700 hover:underline\"\n                >\n                  County election office\n                </a>\n              </li>\n              <li>\n                <a\n                  href={resources.stateElectionWebsite}\n                  target=\"_blank\"\n                  rel=\"noopener noreferrer\"\n                  className=\"text-blue-700 hover:underline\"\n                >\n                  {stateName} election website\n                </a>\n              </li>\n            </ul>\n          </div>\n        </div>\n      )}\n    </article>\n  );\n}\n",
+    "usedDeprecatedRules": []
+  },
+  {
+    "filePath": "/Users/Muxin/Documents/GitHub/voter-choice/src/components/TipsSection.tsx",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": []
+  },
+  {
+    "filePath": "/Users/Muxin/Documents/GitHub/voter-choice/src/components/ZipLookup.tsx",
+    "messages": [
+      {
+        "ruleId": "complexity",
+        "severity": 1,
+        "message": "Function 'validateZip' has a complexity of 3. Maximum allowed is 1.",
+        "line": 34,
+        "column": 3,
+        "nodeType": "FunctionDeclaration",
+        "messageId": "complex",
+        "endLine": 34,
+        "endColumn": 23
+      },
+      {
+        "ruleId": "complexity",
+        "severity": 1,
+        "message": "Async function 'handleSubmit' has a complexity of 4. Maximum allowed is 1.",
+        "line": 41,
+        "column": 3,
+        "nodeType": "FunctionDeclaration",
+        "messageId": "complex",
+        "endLine": 41,
+        "endColumn": 30
+      },
+      {
+        "ruleId": "complexity",
+        "severity": 1,
+        "message": "Async function 'loadState' has a complexity of 3. Maximum allowed is 1.",
+        "line": 63,
+        "column": 3,
+        "nodeType": "FunctionDeclaration",
+        "messageId": "complex",
+        "endLine": 63,
+        "endColumn": 27
+      },
+      {
+        "ruleId": "complexity",
+        "severity": 1,
+        "message": "Function 'handleKeyDown' has a complexity of 2. Maximum allowed is 1.",
+        "line": 82,
+        "column": 3,
+        "nodeType": "FunctionDeclaration",
+        "messageId": "complex",
+        "endLine": 82,
+        "endColumn": 25
+      },
+      {
+        "ruleId": "complexity",
+        "severity": 1,
+        "message": "Arrow function has a complexity of 2. Maximum allowed is 1.",
+        "line": 114,
+        "column": 27,
+        "nodeType": "ArrowFunctionExpression",
+        "messageId": "complex",
+        "endLine": 114,
+        "endColumn": 29
+      }
+    ],
+    "suppressedMessages": [
+      {
+        "ruleId": "complexity",
+        "severity": 1,
+        "message": "Function 'ZipLookup' has a complexity of 11. Maximum allowed is 1.",
+        "line": 27,
+        "column": 16,
+        "nodeType": "FunctionDeclaration",
+        "messageId": "complex",
+        "endLine": 27,
+        "endColumn": 34,
+        "suppressions": [{ "kind": "directive", "justification": "" }]
+      }
+    ],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 5,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "source": "\"use client\";\n\nimport { useState } from \"react\";\nimport type { StateData, Election } from \"@/types\";\nimport { lookupZip } from \"@/lib/zipLookup\";\nimport { getStateData } from \"@/lib/stateData\";\nimport { findNextElection } from \"@/lib/deadlineUtils\";\nimport { buildCustomizedPrompt } from \"@/lib/promptBuilder\";\nimport StateInfoCard from \"./StateInfoCard\";\nimport PromptOutput from \"./PromptOutput\";\n\ntype LookupState =\n  | { status: \"idle\" }\n  | { status: \"loading\" }\n  | { status: \"multistate\"; zip: string; states: string[] }\n  | { status: \"notfound\"; zip: string }\n  | {\n      status: \"loaded\";\n      zip: string;\n      stateData: StateData;\n      nextElection: Election | null;\n      prompt: string;\n    }\n  | { status: \"nostate\"; stateCode: string };\n\n// eslint-disable-next-line complexity\nexport default function ZipLookup() {\n  const [zipValue, setZipValue] = useState(\"\");\n  const [error, setError] = useState<string | null>(null);\n  const [lookupState, setLookupState] = useState<LookupState>({\n    status: \"idle\",\n  });\n\n  function validateZip(value: string): string | null {\n    if (!value.trim()) return \"Please enter a zip code\";\n    if (!/^\\d{5}$/.test(value.trim()))\n      return \"Please enter a valid 5-digit zip code\";\n    return null;\n  }\n\n  async function handleSubmit(zip: string) {\n    const trimmed = zip.trim();\n    const validationError = validateZip(trimmed);\n    if (validationError) {\n      setError(validationError);\n      return;\n    }\n    setError(null);\n    setLookupState({ status: \"loading\" });\n\n    const states = lookupZip(trimmed);\n    if (!states) {\n      setLookupState({ status: \"notfound\", zip: trimmed });\n      return;\n    }\n    if (states.length > 1) {\n      setLookupState({ status: \"multistate\", zip: trimmed, states });\n      return;\n    }\n    await loadState(trimmed, states[0]);\n  }\n\n  async function loadState(zip: string, stateCode: string) {\n    setLookupState({ status: \"loading\" });\n    const stateData = await getStateData(stateCode);\n    if (!stateData) {\n      setLookupState({ status: \"nostate\", stateCode });\n      return;\n    }\n    const nextElection = findNextElection(stateData.elections);\n    const prompt = nextElection\n      ? buildCustomizedPrompt(stateData, zip, nextElection)\n      : \"\";\n    setLookupState({ status: \"loaded\", zip, stateData, nextElection, prompt });\n  }\n\n  function handleFormSubmit(e: React.FormEvent) {\n    e.preventDefault();\n    handleSubmit(zipValue);\n  }\n\n  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {\n    if (e.key === \"Enter\") {\n      handleSubmit(zipValue);\n    }\n  }\n\n  return (\n    <section\n      aria-label=\"Zip code lookup\"\n      className=\"w-full max-w-2xl mx-auto px-4\"\n    >\n      <form\n        onSubmit={handleFormSubmit}\n        noValidate\n        className=\"flex flex-col gap-3\"\n      >\n        <label\n          htmlFor=\"zip-input\"\n          className=\"text-lg font-semibold text-gray-800\"\n        >\n          Enter your zip code\n        </label>\n        <div className=\"flex gap-2 flex-col sm:flex-row\">\n          <input\n            id=\"zip-input\"\n            data-testid=\"zip-input\"\n            type=\"text\"\n            inputMode=\"numeric\"\n            pattern=\"[0-9]*\"\n            maxLength={5}\n            placeholder=\"e.g., 73301\"\n            value={zipValue}\n            onChange={(e) => {\n              setZipValue(e.target.value);\n              if (error) setError(null);\n            }}\n            onKeyDown={handleKeyDown}\n            aria-label=\"5-digit zip code\"\n            aria-describedby={error ? \"zip-error\" : undefined}\n            aria-invalid={error ? \"true\" : undefined}\n            className=\"flex-1 border border-gray-300 rounded-lg px-4 py-3 text-base min-h-[44px] focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent\"\n          />\n          <button\n            type=\"submit\"\n            data-testid=\"zip-submit\"\n            className=\"bg-blue-700 text-white rounded-lg px-6 py-3 text-base font-semibold min-h-[44px] min-w-[120px] hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2 transition-colors\"\n          >\n            Look up\n          </button>\n        </div>\n\n        {error && (\n          <p\n            id=\"zip-error\"\n            data-testid=\"zip-error\"\n            role=\"alert\"\n            className=\"text-red-700 text-sm font-medium\"\n          >\n            {error}\n          </p>\n        )}\n      </form>\n\n      {/* Loading state */}\n      {lookupState.status === \"loading\" && (\n        <div\n          role=\"status\"\n          aria-live=\"polite\"\n          className=\"mt-6 text-center text-gray-600\"\n        >\n          <span className=\"inline-block animate-pulse\">\n            Looking up your zip code…\n          </span>\n        </div>\n      )}\n\n      {/* Not found */}\n      {lookupState.status === \"notfound\" && (\n        <div\n          data-testid=\"not-found-message\"\n          role=\"alert\"\n          className=\"mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-800\"\n        >\n          <p className=\"font-semibold\">Zip code not found</p>\n          <p className=\"mt-1 text-sm\">\n            We don&apos;t have data for zip code {lookupState.zip} yet.\n            We&apos;re working on adding all U.S. zip codes.{\" \"}\n            <a\n              href=\"https://www.usa.gov/election-office\"\n              target=\"_blank\"\n              rel=\"noopener noreferrer\"\n              className=\"underline text-yellow-900 hover:text-yellow-700\"\n            >\n              Find your state election website\n            </a>\n            .\n          </p>\n        </div>\n      )}\n\n      {/* Multi-state selector */}\n      {lookupState.status === \"multistate\" && (\n        <div className=\"mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg\">\n          <p className=\"font-semibold text-blue-900 mb-3\">\n            This zip code spans multiple states. Which state are you voting in?\n          </p>\n          <div\n            data-testid=\"state-selector\"\n            className=\"flex flex-col sm:flex-row gap-2\"\n          >\n            {lookupState.states.map((stateCode) => (\n              <button\n                key={stateCode}\n                onClick={() => loadState(lookupState.zip, stateCode)}\n                className=\"flex-1 bg-white border border-blue-300 text-blue-800 rounded-lg px-4 py-3 text-base font-medium min-h-[44px] hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-600 transition-colors\"\n              >\n                {stateCode}\n              </button>\n            ))}\n          </div>\n        </div>\n      )}\n\n      {/* No state data */}\n      {lookupState.status === \"nostate\" && (\n        <div\n          data-testid=\"not-found-message\"\n          role=\"alert\"\n          className=\"mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-800\"\n        >\n          <p className=\"font-semibold\">State data not available</p>\n          <p className=\"mt-1 text-sm\">\n            We don&apos;t have data for {lookupState.stateCode} yet. We&apos;re\n            working on expanding coverage.{\" \"}\n            <a\n              href=\"https://www.usa.gov/election-office\"\n              target=\"_blank\"\n              rel=\"noopener noreferrer\"\n              className=\"underline text-yellow-900 hover:text-yellow-700\"\n            >\n              Find your state election website\n            </a>\n            .\n          </p>\n        </div>\n      )}\n\n      {/* Loaded: show state info card and prompt */}\n      {lookupState.status === \"loaded\" && (\n        <div className=\"mt-6 flex flex-col gap-6\">\n          <StateInfoCard\n            stateData={lookupState.stateData}\n            nextElection={lookupState.nextElection}\n          />\n          {lookupState.nextElection && lookupState.prompt && (\n            <PromptOutput prompt={lookupState.prompt} />\n          )}\n        </div>\n      )}\n    </section>\n  );\n}\n",
+    "usedDeprecatedRules": []
+  },
+  {
+    "filePath": "/Users/Muxin/Documents/GitHub/voter-choice/src/lib/__tests__/deadlineUtils.test.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": []
+  },
+  {
+    "filePath": "/Users/Muxin/Documents/GitHub/voter-choice/src/lib/__tests__/promptBuilder.test.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": []
+  },
+  {
+    "filePath": "/Users/Muxin/Documents/GitHub/voter-choice/src/lib/__tests__/zipLookup.test.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": []
+  },
+  {
+    "filePath": "/Users/Muxin/Documents/GitHub/voter-choice/src/lib/ballotPrompt.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": []
+  },
+  {
+    "filePath": "/Users/Muxin/Documents/GitHub/voter-choice/src/lib/deadlineUtils.ts",
+    "messages": [
+      {
+        "ruleId": "complexity",
+        "severity": 1,
+        "message": "Function 'getDeadlineStatus' has a complexity of 6. Maximum allowed is 1.",
+        "line": 8,
+        "column": 8,
+        "nodeType": "FunctionDeclaration",
+        "messageId": "complex",
+        "endLine": 8,
+        "endColumn": 34
+      },
+      {
+        "ruleId": "complexity",
+        "severity": 1,
+        "message": "Function 'findNextElection' has a complexity of 2. Maximum allowed is 1.",
+        "line": 63,
+        "column": 8,
+        "nodeType": "FunctionDeclaration",
+        "messageId": "complex",
+        "endLine": 63,
+        "endColumn": 61
+      }
+    ],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 2,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "source": "import type { DeadlineStatus, DeadlineStatusTier } from \"@/types\";\n\n/**\n * Calculate deadline status relative to today.\n * @param isoDate - ISO date string \"YYYY-MM-DD\"\n * @returns DeadlineStatus with tier, daysRemaining, label, and date\n */\nexport function getDeadlineStatus(isoDate: string): DeadlineStatus {\n  const today = new Date();\n  today.setHours(0, 0, 0, 0);\n\n  const deadline = new Date(isoDate + \"T00:00:00\");\n  deadline.setHours(0, 0, 0, 0);\n\n  const diffMs = deadline.getTime() - today.getTime();\n  const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));\n\n  let tier: DeadlineStatusTier;\n  let daysRemaining: number | null;\n  let label: string;\n\n  if (diffDays < 0) {\n    tier = \"passed\";\n    daysRemaining = null;\n    label = \"Passed\";\n  } else if (diffDays === 0) {\n    tier = \"red\";\n    daysRemaining = 0;\n    label = \"Today — last day!\";\n  } else if (diffDays <= 3) {\n    tier = \"red\";\n    daysRemaining = diffDays;\n    label = `${diffDays} day${diffDays === 1 ? \"\" : \"s\"} left`;\n  } else if (diffDays <= 14) {\n    tier = \"yellow\";\n    daysRemaining = diffDays;\n    label = `${diffDays} days left`;\n  } else {\n    tier = \"green\";\n    daysRemaining = diffDays;\n    label = `${diffDays} days left`;\n  }\n\n  return { tier, daysRemaining, label, date: isoDate };\n}\n\n/**\n * Format an ISO date string to a human-readable date.\n * e.g., \"2026-03-03\" → \"March 3, 2026\"\n */\nexport function formatDate(isoDate: string): string {\n  const date = new Date(isoDate + \"T00:00:00\");\n  return date.toLocaleDateString(\"en-US\", {\n    year: \"numeric\",\n    month: \"long\",\n    day: \"numeric\",\n  });\n}\n\n/**\n * Find the next upcoming election (first election with date >= today).\n */\nexport function findNextElection<T extends { date: string }>(\n  elections: T[],\n): T | null {\n  const today = new Date();\n  today.setHours(0, 0, 0, 0);\n\n  const found = elections.find((e) => {\n    const electionDate = new Date(e.date + \"T00:00:00\");\n    electionDate.setHours(0, 0, 0, 0);\n    return electionDate >= today;\n  });\n  return found ?? null;\n}\n\n/**\n * Check if all registration deadlines have passed.\n */\nexport function allDeadlinesPassed(registration: {\n  online: { deadline: string | null };\n  byMail: { deadline: string };\n  inPerson: { deadline: string };\n}): boolean {\n  const deadlines = [\n    registration.online.deadline,\n    registration.byMail.deadline,\n    registration.inPerson.deadline,\n  ].filter(Boolean) as string[];\n\n  return deadlines.every((d) => getDeadlineStatus(d).tier === \"passed\");\n}\n",
+    "usedDeprecatedRules": []
+  },
+  {
+    "filePath": "/Users/Muxin/Documents/GitHub/voter-choice/src/lib/promptBuilder.ts",
+    "messages": [],
+    "suppressedMessages": [
+      {
+        "ruleId": "complexity",
+        "severity": 1,
+        "message": "Function 'buildCustomizedPrompt' has a complexity of 12. Maximum allowed is 1.",
+        "line": 10,
+        "column": 8,
+        "nodeType": "FunctionDeclaration",
+        "messageId": "complex",
+        "endLine": 10,
+        "endColumn": 38,
+        "suppressions": [{ "kind": "directive", "justification": "" }]
+      }
+    ],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": []
+  },
+  {
+    "filePath": "/Users/Muxin/Documents/GitHub/voter-choice/src/lib/stateData.ts",
+    "messages": [
+      {
+        "ruleId": "complexity",
+        "severity": 1,
+        "message": "Async function 'getStateData' has a complexity of 3. Maximum allowed is 1.",
+        "line": 16,
+        "column": 8,
+        "nodeType": "FunctionDeclaration",
+        "messageId": "complex",
+        "endLine": 16,
+        "endColumn": 35
+      }
+    ],
+    "suppressedMessages": [
+      {
+        "ruleId": "@typescript-eslint/no-explicit-any",
+        "severity": 2,
+        "message": "Unexpected any. Specify a different type.",
+        "line": 4,
+        "column": 44,
+        "nodeType": "TSAnyKeyword",
+        "messageId": "unexpectedAny",
+        "endLine": 4,
+        "endColumn": 47,
+        "suggestions": [
+          {
+            "messageId": "suggestUnknown",
+            "fix": { "range": [149, 152], "text": "unknown" },
+            "desc": "Use `unknown` instead, this will force you to explicitly, and safely assert the type is correct."
+          },
+          {
+            "messageId": "suggestNever",
+            "fix": { "range": [149, 152], "text": "never" },
+            "desc": "Use `never` instead, this is useful when instantiating generic type parameters that you don't need to know the type of."
+          }
+        ],
+        "suppressions": [{ "kind": "directive", "justification": "" }]
+      }
+    ],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 1,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "source": "import type { StateData } from \"@/types\";\n\n// eslint-disable-next-line @typescript-eslint/no-explicit-any\ntype JsonImport = () => Promise<{ default: any }>;\n\nconst stateModules: Record<string, JsonImport> = {\n  TX: () => import(\"@/data/states/TX.json\"),\n  CA: () => import(\"@/data/states/CA.json\"),\n  NH: () => import(\"@/data/states/NH.json\"),\n};\n\n/**\n * Load state election data for a given state code.\n * @returns StateData or null if state not found in dataset.\n */\nexport async function getStateData(\n  stateCode: string,\n): Promise<StateData | null> {\n  const loader = stateModules[stateCode.toUpperCase()];\n  if (!loader) return null;\n  try {\n    const mod = await loader();\n    return mod.default as StateData;\n  } catch {\n    return null;\n  }\n}\n",
+    "usedDeprecatedRules": []
+  },
+  {
+    "filePath": "/Users/Muxin/Documents/GitHub/voter-choice/src/lib/zipLookup.ts",
+    "messages": [
+      {
+        "ruleId": "complexity",
+        "severity": 1,
+        "message": "Function 'lookupZip' has a complexity of 3. Maximum allowed is 1.",
+        "line": 10,
+        "column": 8,
+        "nodeType": "FunctionDeclaration",
+        "messageId": "complex",
+        "endLine": 10,
+        "endColumn": 26
+      }
+    ],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 1,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "source": "import type { ZipToStateMap } from \"@/types\";\nimport zipData from \"@/data/zip-to-state.json\";\n\nconst zipToStateMap: ZipToStateMap = zipData as ZipToStateMap;\n\n/**\n * Look up state code(s) for a given 5-digit zip code.\n * @returns Array of 2-letter state codes, or null if not found.\n */\nexport function lookupZip(zip: string): string[] | null {\n  const states = zipToStateMap[zip];\n  if (!states || states.length === 0) return null;\n  return states;\n}\n",
+    "usedDeprecatedRules": []
+  },
+  {
+    "filePath": "/Users/Muxin/Documents/GitHub/voter-choice/src/types/index.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": []
+  }
+]

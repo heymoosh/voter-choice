@@ -19,12 +19,8 @@
   },
   "workflowLog": {
     "framework": "vanilla",
-    "expected": [
-      "vanilla-build"
-    ],
-    "completed": [
-      "vanilla-build"
-    ],
+    "expected": ["vanilla-build"],
+    "completed": ["vanilla-build"],
     "missing": []
   },
   "buildStats": {

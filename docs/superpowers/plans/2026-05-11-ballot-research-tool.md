@@ -15,6 +15,7 @@
 ### Task 1: deadlineStatus utility
 
 **Files:**
+
 - Create: `src/lib/deadlineStatus.ts`
 - Create: `src/lib/__tests__/deadlineStatus.test.ts`
 
@@ -65,6 +66,7 @@ describe("getDeadlineStatus", () => {
 ```bash
 npx vitest run src/lib/__tests__/deadlineStatus.test.ts
 ```
+
 Expected: FAIL — "Cannot find module '../deadlineStatus'"
 
 - [ ] **Step 3: Implement deadlineStatus.ts**
@@ -80,31 +82,56 @@ export type DeadlineStatus = {
 
 export function getDeadlineStatus(
   isoDate: string | null | undefined,
-  today: Date = new Date()
+  today: Date = new Date(),
 ): DeadlineStatus {
   if (!isoDate) {
-    return { status: "passed", label: "N/A", colorClass: "text-gray-500", daysLeft: null };
+    return {
+      status: "passed",
+      label: "N/A",
+      colorClass: "text-gray-500",
+      daysLeft: null,
+    };
   }
 
   const deadline = new Date(isoDate + "T00:00:00");
   const todayNormalized = new Date(
     today.getFullYear(),
     today.getMonth(),
-    today.getDate()
+    today.getDate(),
   );
   const diffMs = deadline.getTime() - todayNormalized.getTime();
   const daysLeft = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
   if (daysLeft < 1) {
-    return { status: "passed", label: "Passed", colorClass: "text-gray-500", daysLeft: 0 };
+    return {
+      status: "passed",
+      label: "Passed",
+      colorClass: "text-gray-500",
+      daysLeft: 0,
+    };
   }
   if (daysLeft <= 3) {
-    return { status: "urgent", label: `${daysLeft} day${daysLeft === 1 ? "" : "s"} left`, colorClass: "text-red-600", daysLeft };
+    return {
+      status: "urgent",
+      label: `${daysLeft} day${daysLeft === 1 ? "" : "s"} left`,
+      colorClass: "text-red-600",
+      daysLeft,
+    };
   }
   if (daysLeft <= 14) {
-    return { status: "warning", label: `${daysLeft} days left`, colorClass: "text-yellow-600", daysLeft };
+    return {
+      status: "warning",
+      label: `${daysLeft} days left`,
+      colorClass: "text-yellow-600",
+      daysLeft,
+    };
   }
-  return { status: "ok", label: `${daysLeft} days left`, colorClass: "text-green-600", daysLeft };
+  return {
+    status: "ok",
+    label: `${daysLeft} days left`,
+    colorClass: "text-green-600",
+    daysLeft,
+  };
 }
 ```
 
@@ -113,6 +140,7 @@ export function getDeadlineStatus(
 ```bash
 npx vitest run src/lib/__tests__/deadlineStatus.test.ts
 ```
+
 Expected: PASS (5 tests)
 
 - [ ] **Step 5: Commit**
@@ -127,6 +155,7 @@ git commit -m "phase1: add deadlineStatus utility (TDD)"
 ### Task 2: lookupState utility
 
 **Files:**
+
 - Create: `src/lib/lookupState.ts`
 - Create: `src/lib/__tests__/lookupState.test.ts`
 
@@ -168,6 +197,7 @@ describe("lookupState", () => {
 ```bash
 npx vitest run src/lib/__tests__/lookupState.test.ts
 ```
+
 Expected: FAIL
 
 - [ ] **Step 3: Implement lookupState.ts**
@@ -190,6 +220,7 @@ export function lookupState(zip: string): string[] | null {
 ```bash
 npx vitest run src/lib/__tests__/lookupState.test.ts
 ```
+
 Expected: PASS (5 tests)
 
 - [ ] **Step 5: Commit**
@@ -204,6 +235,7 @@ git commit -m "phase1: add lookupState utility (TDD)"
 ### Task 3: getStateData utility
 
 **Files:**
+
 - Create: `src/lib/getStateData.ts`
 - Create: `src/lib/__tests__/getStateData.test.ts`
 
@@ -244,6 +276,7 @@ describe("getStateData", () => {
 ```bash
 npx vitest run src/lib/__tests__/getStateData.test.ts
 ```
+
 Expected: FAIL
 
 - [ ] **Step 3: Implement getStateData.ts**
@@ -320,6 +353,7 @@ export type StateData = {
 ```bash
 npx vitest run src/lib/__tests__/getStateData.test.ts
 ```
+
 Expected: PASS
 
 - [ ] **Step 6: Commit**
@@ -334,6 +368,7 @@ git commit -m "phase1: add getStateData + StateData types (TDD)"
 ### Task 4: generatePrompt utility
 
 **Files:**
+
 - Create: `src/lib/ballotPromptText.ts`
 - Create: `src/lib/generatePrompt.ts`
 - Create: `src/lib/__tests__/generatePrompt.test.ts`
@@ -390,6 +425,7 @@ describe("generatePrompt", () => {
 ```bash
 npx vitest run src/lib/__tests__/generatePrompt.test.ts
 ```
+
 Expected: FAIL
 
 - [ ] **Step 3: Implement ballotPromptText.ts** (export static ballot prompt)
@@ -412,6 +448,7 @@ git commit -m "phase1: add generatePrompt utility (TDD)"
 ### Task 5: ZipForm component
 
 **Files:**
+
 - Create: `src/components/ZipForm.tsx`
 
 - [ ] **Step 1: Implement ZipForm with required data-testid attributes**
@@ -425,6 +462,7 @@ git commit -m "phase1: add ZipForm component"
 ### Task 6: StateInfoCard component
 
 **Files:**
+
 - Create: `src/components/StateInfoCard.tsx`
 
 - [ ] **Step 1: Implement StateInfoCard with deadline status indicators**
@@ -438,6 +476,7 @@ git commit -m "phase1: add StateInfoCard component"
 ### Task 7: PromptOutput component
 
 **Files:**
+
 - Create: `src/components/PromptOutput.tsx`
 
 - [ ] **Step 1: Implement PromptOutput with copy button and confirmation**
@@ -451,6 +490,7 @@ git commit -m "phase1: add PromptOutput component"
 ### Task 8: StateSelector, TipsSection, Footer components
 
 **Files:**
+
 - Create: `src/components/StateSelector.tsx`
 - Create: `src/components/TipsSection.tsx`
 - Create: `src/components/Footer.tsx`
@@ -465,6 +505,7 @@ git commit -m "phase1: add PromptOutput component"
 ### Task 9: Assemble page.tsx
 
 **Files:**
+
 - Modify: `src/app/page.tsx`
 - Modify: `src/app/layout.tsx`
 
@@ -480,7 +521,7 @@ git commit -m "phase1: add PromptOutput component"
 ### Task 10: Build + test passes
 
 - [ ] **Step 1: npm run lint** — fix any errors
-- [ ] **Step 2: npx vitest run** — fix any failures  
+- [ ] **Step 2: npx vitest run** — fix any failures
 - [ ] **Step 3: npm run build** — fix any build errors (use --turbo if WasmHash bug)
 - [ ] **Step 4: npx playwright test** — fix any e2e failures
 - [ ] **Step 5: Commit all fixes**

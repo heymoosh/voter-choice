@@ -1,9 +1,9 @@
 export function Footer() {
   const shareText = encodeURIComponent(
-    "Free AI ballot research tool — helps you research your ballot in any state. No accounts, no data collection."
+    "Free AI ballot research tool — helps you research your ballot in any state. No accounts, no data collection.",
   );
   const shareUrl = encodeURIComponent(
-    typeof window !== "undefined" ? window.location.href : ""
+    typeof window !== "undefined" ? window.location.href : "",
   );
 
   return (
