@@ -8,7 +8,7 @@
 import { createHash } from "node:crypto";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
-import { sql } from "drizzle-orm";
+import { inArray, sql } from "drizzle-orm";
 import { requireDb, type DbClient } from "../../db/client";
 import { bills, candidateOffices, candidates, votes } from "../../db/schema";
 
@@ -50,6 +50,7 @@ export type RuntimeConfig = {
   congressGovBaseUrl: string;
   congressGovApiKey?: string;
   pageSize: number;
+  resetVotes: boolean;
 };
 
 type BillIdentity = {
@@ -207,9 +208,6 @@ export function planGovTrackVote(
       voteCast,
       voteDate,
       sourceUrl,
-      vote,
-      member: entry.member,
-      rollCallDataUrl: options.dataUrl,
     });
 
     plan.candidates.set(candidateId, candidate);
@@ -266,6 +264,7 @@ export function resolveRuntimeConfig(
     ),
     congressGovApiKey: env.CONGRESS_GOV_API_KEY || undefined,
     pageSize: parsePositiveInteger(env.GOVTRACK_PAGE_SIZE, 600),
+    resetVotes: parseBoolean(env.FEDERAL_RESET_VOTES),
   };
 }
 
@@ -292,7 +291,7 @@ export async function ingestFederalVotes({
   }
 
   const enrichmentFailures = await enrichBills(plan, config, fetcher);
-  await writeFederalPlan(db, plan);
+  await writeFederalPlan(db, plan, { resetVotes: config.resetVotes });
 
   console.log(
     [
@@ -564,8 +563,10 @@ function mergeBillEnrichment(
 async function writeFederalPlan(
   db: DbClient,
   plan: PlannedFederalRows,
+  options: { resetVotes: boolean },
 ): Promise<void> {
   const batchSize = 500;
+  const voteBatchSize = 250;
   const now = new Date();
   const candidateRows = [...plan.candidates.values()].map((row) => ({
     ...row,
@@ -580,10 +581,11 @@ async function writeFederalPlan(
   const candidateBatches = chunkRows(candidateRows, batchSize);
   const officeBatches = chunkRows(officeRows, batchSize);
   const billBatches = chunkRows(billRows, batchSize);
-  const voteBatches = chunkRows(voteRows, batchSize);
+  const voteBatches = chunkRows(voteRows, voteBatchSize);
 
   async function writeBatch<T>(
     table: string,
+    phase: string,
     batchIndex: number,
     batchCount: number,
     batch: T[],
@@ -592,25 +594,47 @@ async function writeFederalPlan(
     const startedAt = Date.now();
     const batchNumber = batchIndex + 1;
     console.log(
-      `[federal-votes] db_write_start table=${table} phase=upsert batch=${batchNumber}/${batchCount} rows=${batch.length}`,
+      `[federal-votes] db_write_start table=${table} phase=${phase} batch=${batchNumber}/${batchCount} rows=${batch.length}`,
     );
 
     try {
       await write();
       console.log(
-        `[federal-votes] db_write_done table=${table} phase=upsert batch=${batchNumber}/${batchCount} rows=${batch.length} elapsed_ms=${Date.now() - startedAt}`,
+        `[federal-votes] db_write_done table=${table} phase=${phase} batch=${batchNumber}/${batchCount} rows=${batch.length} elapsed_ms=${Date.now() - startedAt}`,
       );
     } catch (error) {
       console.error(
-        `[federal-votes] db_write_failed table=${table} phase=upsert batch=${batchNumber}/${batchCount} rows=${batch.length} elapsed_ms=${Date.now() - startedAt} error=${safeErrorMessage(error)}`,
+        `[federal-votes] db_write_failed table=${table} phase=${phase} batch=${batchNumber}/${batchCount} rows=${batch.length} elapsed_ms=${Date.now() - startedAt} error=${safeErrorMessage(error)}`,
       );
       throw error;
     }
   }
 
+  if (options.resetVotes && billRows.length > 0) {
+    const billIds = billRows.map((row) => row.id);
+    const resetBatches = chunkRows(billIds, 100);
+    console.log(
+      `[federal-votes] db_reset_start table=votes scope=planned_federal_bills bills=${billIds.length} batches=${resetBatches.length}`,
+    );
+    for (const [batchIndex, batch] of resetBatches.entries()) {
+      await writeBatch(
+        "votes",
+        "delete",
+        batchIndex,
+        resetBatches.length,
+        batch,
+        () => db.delete(votes).where(inArray(votes.billId, batch)),
+      );
+    }
+    console.log(
+      `[federal-votes] db_reset_done table=votes scope=planned_federal_bills bills=${billIds.length} batches=${resetBatches.length}`,
+    );
+  }
+
   for (const [batchIndex, batch] of candidateBatches.entries()) {
     await writeBatch(
       "candidates",
+      "upsert",
       batchIndex,
       candidateBatches.length,
       batch,
@@ -635,6 +659,7 @@ async function writeFederalPlan(
   for (const [batchIndex, batch] of officeBatches.entries()) {
     await writeBatch(
       "candidate_offices",
+      "upsert",
       batchIndex,
       officeBatches.length,
       batch,
@@ -657,41 +682,53 @@ async function writeFederalPlan(
   }
 
   for (const [batchIndex, batch] of billBatches.entries()) {
-    await writeBatch("bills", batchIndex, billBatches.length, batch, () =>
-      db
-        .insert(bills)
-        .values(batch)
-        .onConflictDoUpdate({
-          target: bills.id,
-          set: {
-            title: sql`excluded.title`,
-            summary: sql`excluded.summary`,
-            source: sql`excluded.source`,
-            sourceUrl: sql`excluded.source_url`,
-            jurisdiction: sql`excluded.jurisdiction`,
-            introducedDate: sql`excluded.introduced_date`,
-            rawMetadata: sql`excluded.raw_metadata`,
-            updatedAt: now,
-          },
-        }),
+    await writeBatch(
+      "bills",
+      "upsert",
+      batchIndex,
+      billBatches.length,
+      batch,
+      () =>
+        db
+          .insert(bills)
+          .values(batch)
+          .onConflictDoUpdate({
+            target: bills.id,
+            set: {
+              title: sql`excluded.title`,
+              summary: sql`excluded.summary`,
+              source: sql`excluded.source`,
+              sourceUrl: sql`excluded.source_url`,
+              jurisdiction: sql`excluded.jurisdiction`,
+              introducedDate: sql`excluded.introduced_date`,
+              rawMetadata: sql`excluded.raw_metadata`,
+              updatedAt: now,
+            },
+          }),
     );
   }
 
   for (const [batchIndex, batch] of voteBatches.entries()) {
-    await writeBatch("votes", batchIndex, voteBatches.length, batch, () =>
-      db
-        .insert(votes)
-        .values(batch)
-        .onConflictDoUpdate({
-          target: [votes.billId, votes.candidateId],
-          set: {
-            voteCast: sql`excluded.vote_cast`,
-            voteDate: sql`excluded.vote_date`,
-            sourceUrl: sql`excluded.source_url`,
-            rawMetadata: sql`excluded.raw_metadata`,
-          },
-          setWhere: sql`excluded.vote_date >= ${votes.voteDate}`,
-        }),
+    await writeBatch(
+      "votes",
+      "upsert",
+      batchIndex,
+      voteBatches.length,
+      batch,
+      () =>
+        db
+          .insert(votes)
+          .values(batch)
+          .onConflictDoUpdate({
+            target: [votes.billId, votes.candidateId],
+            set: {
+              voteCast: sql`excluded.vote_cast`,
+              voteDate: sql`excluded.vote_date`,
+              sourceUrl: sql`excluded.source_url`,
+              rawMetadata: sql`excluded.raw_metadata`,
+            },
+            setWhere: sql`excluded.vote_date >= ${votes.voteDate}`,
+          }),
     );
   }
 }
@@ -782,18 +819,12 @@ function buildVoteRow({
   voteCast,
   voteDate,
   sourceUrl,
-  vote,
-  member,
-  rollCallDataUrl,
 }: {
   billId: string;
   candidateId: string;
   voteCast: NormalizedVoteCast;
   voteDate: string;
   sourceUrl: string;
-  vote: UnknownRecord;
-  member: UnknownRecord;
-  rollCallDataUrl: string;
 }): VoteRow {
   return {
     billId,
@@ -801,13 +832,7 @@ function buildVoteRow({
     voteCast,
     voteDate,
     sourceUrl,
-    rawMetadata: stripUndefined({
-      govtrack: {
-        rollCall: stripRollCallForVoteMetadata(vote),
-        member,
-        dataUrl: rollCallDataUrl,
-      },
-    }),
+    rawMetadata: null,
   };
 }
 
@@ -927,12 +952,9 @@ function getMemberName(member: UnknownRecord): string {
 }
 
 function stripRollCallForBillMetadata(vote: UnknownRecord): UnknownRecord {
-  const { votes: _votes, voters: _voters, ...rest } = vote;
-  return rest;
-}
-
-function stripRollCallForVoteMetadata(vote: UnknownRecord): UnknownRecord {
-  const { votes: _votes, voters: _voters, ...rest } = vote;
+  const rest = { ...vote };
+  delete rest.votes;
+  delete rest.voters;
   return rest;
 }
 
@@ -1026,6 +1048,10 @@ function parsePositiveInteger(
   if (!value) return fallback;
   const parsed = Number.parseInt(value, 10);
   return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function parseBoolean(value: string | undefined): boolean {
+  return value?.trim().toLowerCase() === "true";
 }
 
 function normalizeBillType(value: string | null): string | null {

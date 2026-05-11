@@ -117,6 +117,9 @@ describe("federal-votes helpers", () => {
     expect(plan.votes.get("govtrack-hr21-118|federal-B001298")?.voteCast).toBe(
       "nay",
     );
+    expect(
+      plan.votes.get("govtrack-hr21-118|federal-A000370")?.rawMetadata,
+    ).toBeNull();
   });
 
   it("skips non-bill roll calls with explicit counts", () => {
@@ -190,5 +193,14 @@ describe("federal-votes helpers", () => {
     );
     expect(config.congresses).toEqual([119, 118]);
     expect(config.govtrackBaseUrl).toBe("https://www.govtrack.us/api/v2");
+    expect(config.resetVotes).toBe(false);
+  });
+
+  it("reads the federal vote reset flag from env", () => {
+    const config = resolveRuntimeConfig(
+      { FEDERAL_RESET_VOTES: "true" } as NodeJS.ProcessEnv,
+      new Date("2026-05-10T12:00:00Z"),
+    );
+    expect(config.resetVotes).toBe(true);
   });
 });
