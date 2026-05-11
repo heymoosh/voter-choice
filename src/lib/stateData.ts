@@ -16,7 +16,7 @@ export function loadStateData(stateCode: string): StateData | null {
 
 export function getNextElection(
   stateData: StateData,
-  today: Date = new Date()
+  today: Date = new Date(),
 ): Election | null {
   const todayStr = today.toISOString().split("T")[0];
   return stateData.elections.find((e) => e.date >= todayStr) ?? null;

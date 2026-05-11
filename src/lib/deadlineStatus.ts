@@ -2,7 +2,7 @@ import type { DeadlineInfo } from "../types/state";
 
 export function getDeadlineInfo(
   deadline: string | null,
-  today: Date = new Date()
+  today: Date = new Date(),
 ): DeadlineInfo {
   if (!deadline) {
     return {
@@ -16,11 +16,11 @@ export function getDeadlineInfo(
   // Parse both dates as UTC to avoid timezone issues
   const deadlineDate = new Date(deadline + "T00:00:00Z");
   const todayUTC = new Date(
-    Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate())
+    Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()),
   );
   const msPerDay = 1000 * 60 * 60 * 24;
   const daysRemaining = Math.round(
-    (deadlineDate.getTime() - todayUTC.getTime()) / msPerDay
+    (deadlineDate.getTime() - todayUTC.getTime()) / msPerDay,
   );
 
   if (daysRemaining < 0) {
