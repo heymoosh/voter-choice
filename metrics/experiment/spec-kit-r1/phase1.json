@@ -1,0 +1,281 @@
+{
+  "metadata": {
+    "timestamp": "2026-05-11T18:23:29.581Z",
+    "branch": "experiment/spec-kit-r1",
+    "commit": "1ac6279",
+    "phase": 1,
+    "nodeVersion": "v22.14.0"
+  },
+  "eslint": {
+    "errors": 0,
+    "warnings": 0,
+    "complexityViolations": 0
+  },
+  "complexity": {
+    "count": 18,
+    "average": 4.39,
+    "max": 10,
+    "p50": 3,
+    "p75": 5,
+    "p95": 10,
+    "distribution": {
+      "simple_1_5": 14,
+      "moderate_6_10": 4,
+      "complex_11_15": 0,
+      "highComplex_16_20": 0,
+      "critical_21plus": 0
+    },
+    "perFunction": [
+      {
+        "file": "src/lib/promptBuilder.ts",
+        "name": "buildContextBlock",
+        "complexity": 10,
+        "line": 21
+      },
+      {
+        "file": "src/components/StateInfoCard.tsx",
+        "name": "RegistrationSection",
+        "complexity": 8,
+        "line": 93
+      },
+      {
+        "file": "src/components/BallotTool.tsx",
+        "name": "BallotTool",
+        "complexity": 7,
+        "line": 41
+      },
+      {
+        "file": "src/lib/electionUtils.ts",
+        "name": "getDeadlineStatus",
+        "complexity": 7,
+        "line": 30
+      },
+      {
+        "file": "src/components/BallotTool.tsx",
+        "name": "<anonymous>",
+        "complexity": 5,
+        "line": 45
+      },
+      {
+        "file": "src/components/PromptOutput.tsx",
+        "name": "PromptOutput",
+        "complexity": 5,
+        "line": 9
+      },
+      {
+        "file": "src/components/StateInfoCard.tsx",
+        "name": "EarlyVotingSection",
+        "complexity": 5,
+        "line": 182
+      },
+      {
+        "file": "src/components/PromptOutput.tsx",
+        "name": "<anonymous>",
+        "complexity": 4,
+        "line": 13
+      },
+      {
+        "file": "src/components/StateInfoCard.tsx",
+        "name": "VotingRulesSection",
+        "complexity": 4,
+        "line": 203
+      },
+      {
+        "file": "src/components/BallotTool.tsx",
+        "name": "<anonymous>",
+        "complexity": 3,
+        "line": 83
+      },
+      {
+        "file": "src/components/StateInfoCard.tsx",
+        "name": "ElectionSection",
+        "complexity": 3,
+        "line": 40
+      },
+      {
+        "file": "src/components/StateSelector.tsx",
+        "name": "<arrow>",
+        "complexity": 3,
+        "line": 74
+      },
+      {
+        "file": "src/components/ZipForm.tsx",
+        "name": "ZipForm",
+        "complexity": 3,
+        "line": 8
+      },
+      {
+        "file": "src/lib/promptBuilder.ts",
+        "name": "formatElectionInfo",
+        "complexity": 3,
+        "line": 70
+      },
+      {
+        "file": "src/lib/zipLookup.ts",
+        "name": "lookupState",
+        "complexity": 3,
+        "line": 12
+      },
+      {
+        "file": "src/components/BallotTool.tsx",
+        "name": "<anonymous>",
+        "complexity": 2,
+        "line": 74
+      },
+      {
+        "file": "src/components/StateInfoCard.tsx",
+        "name": "StateInfoCard",
+        "complexity": 2,
+        "line": 276
+      },
+      {
+        "file": "src/lib/electionUtils.ts",
+        "name": "findNextElection",
+        "complexity": 2,
+        "line": 7
+      }
+    ]
+  },
+  "vitest": {
+    "tests": {
+      "total": 35,
+      "passed": 35,
+      "failed": 0,
+      "skipped": 0,
+      "passRate": 100
+    },
+    "coverage": {
+      "lines": 14.08,
+      "branches": 68.88,
+      "functions": 85,
+      "statements": 14.08
+    }
+  },
+  "duplication": {
+    "duplicatedLines": 0,
+    "totalLines": 1721,
+    "percentage": 0,
+    "clones": 0
+  },
+  "bundleSize": {
+    "buildSuccess": true,
+    "pages": [
+      {
+        "route": "/",
+        "size": 8.89,
+        "unit": "kB"
+      },
+      {
+        "route": "/_not-found",
+        "size": 990,
+        "unit": "B"
+      }
+    ],
+    "firstLoadJsShared": {
+      "size": 102,
+      "unit": "kB"
+    }
+  },
+  "lighthouse": {
+    "performance": 100,
+    "accessibility": 96,
+    "bestPractices": 100,
+    "seo": 100
+  },
+  "playwright": {
+    "total": 42,
+    "passed": 42,
+    "failed": 0,
+    "timedOut": 0,
+    "skipped": 0,
+    "passRate": 100
+  },
+  "linesOfCode": {
+    "application": {
+      "code": 1661,
+      "files": 22,
+      "byExtension": {
+        ".css": {
+          "files": 1,
+          "code": 11
+        },
+        ".tsx": {
+          "files": 9,
+          "code": 873
+        },
+        ".json": {
+          "files": 4,
+          "code": 228
+        },
+        ".ts": {
+          "files": 8,
+          "code": 549
+        }
+      }
+    },
+    "plugin": {
+      "code": 0,
+      "files": 0,
+      "byExtension": {}
+    },
+    "infrastructure": {
+      "code": 351,
+      "files": 10
+    },
+    "total": {
+      "code": 2012,
+      "files": 32
+    }
+  },
+  "workflowTests": {
+    "count": 3,
+    "files": [
+      "src/lib/__tests__/electionUtils.test.ts",
+      "src/lib/__tests__/zipLookup.test.ts",
+      "src/lib/__tests__/promptBuilder.test.ts"
+    ]
+  },
+  "workflowTiming": {
+    "steps": [
+      {
+        "step": "speckit.specify",
+        "started": "2026-05-11T13:11:50-05:00",
+        "completed": "2026-05-11T13:13:07-05:00",
+        "durationMs": 77000
+      },
+      {
+        "step": "speckit.clarify",
+        "started": "2026-05-11T13:13:07-05:00",
+        "completed": "2026-05-11T13:13:22-05:00",
+        "durationMs": 15000
+      },
+      {
+        "step": "speckit.plan",
+        "started": "2026-05-11T13:13:22-05:00",
+        "completed": "2026-05-11T13:13:58-05:00",
+        "durationMs": 36000
+      },
+      {
+        "step": "speckit.tasks",
+        "started": "2026-05-11T13:13:58-05:00",
+        "completed": "2026-05-11T13:14:24-05:00",
+        "durationMs": 26000
+      },
+      {
+        "step": "speckit.analyze",
+        "started": "2026-05-11T13:14:24-05:00",
+        "completed": "2026-05-11T13:14:31-05:00",
+        "durationMs": 7000
+      },
+      {
+        "step": "speckit.implement",
+        "started": "2026-05-11T13:14:31-05:00",
+        "completed": "2026-05-11T13:22:46-05:00",
+        "durationMs": 495000
+      }
+    ],
+    "totalSteps": 6,
+    "completedSteps": 6
+  },
+  "diffHygiene": null
+}
