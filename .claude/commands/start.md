@@ -1,26 +1,28 @@
-You are the experiment orchestrator. Drive the experiment to completion across all 5 frameworks. State lives on disk (tags + metric files), not in this conversation. Loop until done. Do not stop for confirmation.
+You are the experiment orchestrator. Your job is lightweight: figure out the next action, dispatch a sub-agent to do it, log the result, loop. Do not do build work yourself — sub-agents do that. This keeps your context clean across all 40 actions.
 
 ## How this works
 
 The experiment has three kinds of work, in this order:
 
-1. **Phase 1 replicates** — 3 builds per framework × 5 frameworks = 15 builds total. Each on its own `experiment/<framework>-r<N>` branch. Variance estimation.
-2. **Representative selection** — 5 selections, one per framework. Picks the median-LOC replicate. Pure script invocation, ~5 seconds each.
-3. **Phase 2–5 forward iteration** — 4 phases × 5 frameworks = 20 builds total. Each runs on the chosen replicate branch (e.g., `experiment/bmad-r2` if r2 was selected). Iterates the codebase through Spanish i18n → real APIs → 5 languages w/ RTL → on-site LLM chat.
+1. **Phase 1 replicates** — 3 builds per framework × 5 frameworks = 15 builds total. Each on its own `experiment/<framework>-r<N>` branch.
+2. **Representative selection** — 5 selections, one per framework. Picks the median-LOC replicate. Fast script invocation.
+3. **Phase 2–5 forward iteration** — 4 phases × 5 frameworks = 20 builds total. Runs on the chosen replicate branch.
 
-Total: 15 + 5 + 20 = **40 discrete actions**. You do as many as you can per session, then exit. The next `/start` invocation picks up where you left off because **state is on disk, not in conversation**.
+Total: 15 + 5 + 20 = **40 discrete actions**. You dispatch one sub-agent per action, log its 1-paragraph summary, loop. Exit when context degrades or the experiment is complete. Re-invoke `/start` to resume — state lives on disk (git tags + metric files), not in this conversation.
+
+---
 
 ## The loop
 
-### Step 1: Pull latest from origin
+### Step 1: Pull latest state from origin
 
 ```bash
 git fetch origin --tags --prune
 ```
 
-### Step 2: Compute the next action
+### Step 2: Run the discovery script
 
-Run this discovery script (paste verbatim, capture the first non-empty line of output):
+Paste and run verbatim. Capture the first non-empty line of stdout:
 
 ```bash
 FRAMEWORKS=(vanilla bmad spec-kit superpowers compound-engineering)
@@ -73,149 +75,171 @@ fi
 echo "$NEXT_ACTION"
 ```
 
-If output is empty: **print "EXPERIMENT COMPLETE" with the summary table from the bottom of this file, then exit.**
+### Step 3: Check the output
 
-Otherwise: the output is one of:
-- `phase1_replicate <framework> <r>`
-- `select_representative <framework>`
-- `phase_forward <framework> <phase>`
+- **Empty output** → print the final summary table (bottom of this file) and exit. Experiment is complete.
+- **Non-empty** → continue to Step 4.
 
-### Step 3: Execute the action
+### Step 4: Dispatch a sub-agent
 
-Pick the matching section below. Execute every step in order. Commit, tag, push.
+Use the Agent tool with `subagent_type: "general-purpose"`. Pick the prompt template below matching the action type. Fill in `<fw>`, `<r>`, and `<phase>` from the discovery output. The repo path is `/Users/Muxin/Documents/GitHub/voter-choice` (primary repo) or the current worktree path if different.
 
-### Step 4: Loop
+**Do not do any build work yourself.** The sub-agent handles everything: checkout, install, build, test, commit, tag, push.
 
-Go back to Step 1. Don't pause. Don't summarize between actions. Just keep going.
+### Step 5: Log the result
+
+When the sub-agent returns, note its 1-paragraph summary (which action it ran, what succeeded/failed, what tag it pushed). Keep it brief — this is your only persistent record in this conversation.
+
+### Step 6: Loop
+
+Go back to Step 1. Don't pause between actions. Don't ask for confirmation. Just keep dispatching sub-agents until the discovery script returns empty or you've taken 5+ actions and notice context/tool degradation.
 
 ### When to exit
 
 Exit only when:
-- The discovery script outputs empty (experiment done — print the final summary).
-- You've taken at least 3 actions and notice your responses are degrading, tool calls are failing in unexpected ways, or you're losing track of context. Commit current state, push, exit. The next `/start` will resume.
-- An action fails 3 consecutive times with the same error. Log to `metrics/failures.jsonl`, push, exit so a human can investigate.
+- Discovery script returns empty (experiment done).
+- You've dispatched at least 3 sub-agents and notice your orchestration is degrading (missed steps, confused state). Commit nothing — sub-agents already pushed. Exit. Next `/start` picks up where tags left off.
+- A sub-agent reports a hard failure it couldn't recover (bad API key, infrastructure down). Log to `metrics/failures.jsonl` (check it out to main, commit, push), then exit for human review.
 
 ---
 
-## Action: phase1_replicate <framework> <r>
+## Sub-agent prompt templates
 
-```bash
-BRANCH="experiment/${fw}-${r}"
-git checkout "$BRANCH"
-bash scripts/load-secrets.sh 2>/dev/null || true
-rm -rf node_modules .next coverage playwright-report.json
-npm install
-mkdir -p metrics
-echo "{\"event\":\"build_start\",\"timestamp\":\"$(date -Iseconds)\",\"branch\":\"$BRANCH\"}" > metrics/timing.jsonl
+### Template: phase1_replicate
+
+Use when discovery output is `phase1_replicate <fw> <r>`.
+
 ```
+You are a build agent running a single Phase 1 replicate in a workflow-comparison experiment.
 
-Then execute the framework workflow:
-1. Read `.claude/commands/workflow.md` on this branch.
-2. Execute every step in its `## Workflow Steps` section using `docs/PROJECT_SPEC.md` as the Phase 1 source of truth.
-3. **Responder logging is mandatory:** every time the framework asks you a clarification, menu choice, or decision, append to `metrics/responder-log.jsonl` per the protocol documented in this file's `## Responder logging` section.
-4. Run `npm run lint`, `npx vitest run`, `npx playwright test`. Iterate until green or document an unrecoverable blocker.
+Task: build the voter-choice app on branch `experiment/<FW>-<R>` using the framework's own methodology.
 
-Then close the phase:
-```bash
-echo "{\"event\":\"build_end\",\"timestamp\":\"$(date -Iseconds)\"}" >> metrics/timing.jsonl
-git add .
-git commit -m "phase1: ${fw} replicate ${r}"
-git tag "${fw}-${r}-phase1-complete"
-node scoring/measure.mjs --phase 1 --repo "$(pwd)"
-git add metrics/
-git commit -m "measure: phase 1 ${fw} ${r}" 2>/dev/null || true
-git push origin "$BRANCH"
-git push --tags
-```
+Repo path: /Users/Muxin/Documents/GitHub/voter-choice
 
----
+## Steps (execute in order, no skipping)
 
-## Action: select_representative <framework>
+1. git fetch origin --tags --prune
+2. git checkout experiment/<FW>-<R>
+3. bash scripts/load-secrets.sh 2>/dev/null || true
+4. Deleting build artifacts: rm -rf node_modules .next coverage playwright-report.json
+5. npm install
+6. mkdir -p metrics metrics/experiment
+7. echo "{\"event\":\"build_start\",\"timestamp\":\"$(date -Iseconds)\",\"branch\":\"experiment/<FW>-<R>\"}" > metrics/timing.jsonl
+8. Read .claude/commands/workflow.md on this branch. Execute every step under its `## Workflow Steps` section using `docs/PROJECT_SPEC.md` as the Phase 1 source of truth.
+9. **Responder logging is mandatory.** Every time the framework asks a clarifying question, menu choice, or decision, BEFORE answering append to metrics/responder-log.jsonl:
+   {"timestamp":"<ISO-8601>","phase":1,"framework":"<FW>","question":"<verbatim>","decisionRule":"<spec section>","answer":"<your response>","autoChosen":true}
+   `decisionRule` must cite the actual spec section (e.g. "PROJECT_SPEC.md FR-003"). If no spec section grounds it, write "reasonable default — no spec coverage".
+10. Run: npm run lint
+11. Run: npx vitest run
+12. Run: npx playwright test
+    Iterate (fix → re-run) until all three pass or document an unrecoverable blocker. If unrecoverable, write to metrics/failures.jsonl and stop.
+13. echo "{\"event\":\"build_end\",\"timestamp\":\"$(date -Iseconds)\"}" >> metrics/timing.jsonl
+14. git add .
+15. git commit -m "phase1: <FW> replicate <R>"
+16. git tag <FW>-<R>-phase1-complete
+17. node scoring/measure.mjs --phase 1 --repo "$(pwd)"
+18. git add metrics/
+19. git commit -m "measure: phase 1 <FW> <R>" 2>/dev/null || true
+20. git push origin experiment/<FW>-<R>
+21. git push --tags
 
-```bash
-git checkout main
-git pull --no-rebase origin main
-node scoring/select-representative.mjs --framework "${fw}" --repo "$(pwd)"
-git add metrics/experiment/${fw}-representative.json
-git commit -m "select-representative: ${fw} (chose median-LOC replicate)"
-git push origin HEAD:main
-```
-
-The output `metrics/experiment/${fw}-representative.json` contains a `chosen` field (e.g., `"r2"`) that subsequent phase_forward actions read.
-
----
-
-## Action: phase_forward <framework> <phase>
-
-Read the chosen replicate first:
-```bash
-CHOSEN=$(node -e "console.log(JSON.parse(require('fs').readFileSync('metrics/experiment/${fw}-representative.json')).chosen)")
-BRANCH="experiment/${fw}-${CHOSEN}"
-git checkout "$BRANCH"
-bash scripts/load-secrets.sh 2>/dev/null || true
-rm -rf node_modules .next coverage playwright-report.json
-npm install
-mkdir -p metrics
-echo "{\"event\":\"build_start\",\"timestamp\":\"$(date -Iseconds)\",\"branch\":\"$BRANCH\",\"phase\":${phase}}" >> metrics/timing.jsonl
-```
-
-Then execute the framework workflow for this phase:
-1. Read `.claude/commands/workflow.md` on this branch.
-2. Execute every step in `## Workflow Steps` using `docs/PHASE${phase}_SPEC.md` as the source of truth.
-3. Phase 3+ may require API keys (Google Civic, Vote Smart, Anthropic, etc.). If `bash scripts/load-secrets.sh` failed and the phase spec requires API access, document the unrecoverable blocker, write to `metrics/failures.jsonl`, push, exit — a human needs to provision keys.
-4. Responder logging is mandatory.
-5. Iterate to green.
-
-Then close:
-```bash
-echo "{\"event\":\"build_end\",\"timestamp\":\"$(date -Iseconds)\"}" >> metrics/timing.jsonl
-git add .
-git commit -m "phase${phase}: ${fw}"
-git tag "${fw}-phase${phase}-complete"
-node scoring/measure.mjs --phase "${phase}" --repo "$(pwd)"
-node scoring/compute-deltas.mjs --branch "$BRANCH" --phase "${phase}" --repo "$(pwd)"
-git add metrics/
-git commit -m "measure: phase ${phase} ${fw}" 2>/dev/null || true
-git push origin "$BRANCH"
-git push --tags
+## Return value
+Return exactly one paragraph: which branch you built, whether lint/vitest/playwright passed or what failed, which tag was pushed, and total LOC from the measure output.
 ```
 
 ---
 
-## Responder logging
+### Template: select_representative
 
-Whenever the framework workflow asks you a menu choice, clarification question, or decision, before answering, append a single line to `metrics/responder-log.jsonl`:
+Use when discovery output is `select_representative <fw>`.
 
-```json
-{"timestamp":"<ISO-8601>","phase":<N>,"framework":"<fw>","question":"<verbatim>","decisionRule":"<spec section that grounded the answer>","answer":"<your response>","autoChosen":true}
+```
+You are a selection agent picking the representative Phase 1 replicate for one framework in a workflow-comparison experiment.
+
+Task: run the representative-selection script for framework `<FW>` and commit the result to main.
+
+Repo path: /Users/Muxin/Documents/GitHub/voter-choice
+
+## Steps
+
+1. git fetch origin --tags --prune
+2. git checkout main
+3. git pull --no-rebase origin main
+4. node scoring/select-representative.mjs --framework <FW> --repo "$(pwd)"
+   This reads metrics/experiment/<FW>-r{1,2,3}/phase1.json, picks the median-LOC run, and writes metrics/experiment/<FW>-representative.json.
+5. git add metrics/experiment/<FW>-representative.json
+6. git commit -m "select-representative: <FW> (chose median-LOC replicate)"
+7. git push origin HEAD:main
+
+## Return value
+Return exactly one paragraph: which replicate was chosen, what its LOC was, what the variance across r1/r2/r3 was, and confirm the push succeeded.
 ```
 
-Rules:
-- `question` is verbatim from the framework, not a paraphrase.
-- `decisionRule` cites the actual spec section (`PHASE2_SPEC.md FR-018`, etc.). If no spec section grounds the answer, write `"reasonable default — no spec coverage"`.
-- `answer` is the response or menu choice. For skipped questions, set `answer: "skipped"`, `autoChosen: false`.
-- One entry per question. Don't batch.
+---
 
-The rubric checks this log later. Thin log on a question-heavy framework (BMAD, Spec Kit) = FINDING.
+### Template: phase_forward
+
+Use when discovery output is `phase_forward <fw> <phase>`.
+
+```
+You are a build agent running a forward-iteration phase in a workflow-comparison experiment.
+
+Task: build Phase <PHASE> of the voter-choice app for framework `<FW>` on its chosen representative replicate branch.
+
+Repo path: /Users/Muxin/Documents/GitHub/voter-choice
+
+## Steps (execute in order, no skipping)
+
+1. git fetch origin --tags --prune
+2. git checkout main && git pull --no-rebase origin main
+3. Read the chosen replicate:
+   CHOSEN=$(node -e "console.log(JSON.parse(require('fs').readFileSync('metrics/experiment/<FW>-representative.json')).chosen)")
+   BRANCH="experiment/<FW>-${CHOSEN}"
+4. git checkout "$BRANCH"
+5. bash scripts/load-secrets.sh 2>/dev/null || true
+   If this fails AND Phase <PHASE> spec requires external API keys, document the blocker in metrics/failures.jsonl, push, and stop.
+6. Deleting build artifacts: rm -rf node_modules .next coverage playwright-report.json
+7. npm install
+8. mkdir -p metrics metrics/experiment
+9. echo "{\"event\":\"build_start\",\"timestamp\":\"$(date -Iseconds)\",\"branch\":\"$BRANCH\",\"phase\":<PHASE>}" >> metrics/timing.jsonl
+10. Read .claude/commands/workflow.md on this branch. Execute every step under its `## Workflow Steps` section using `docs/PHASE<PHASE>_SPEC.md` as the source of truth.
+11. **Responder logging is mandatory** — same protocol as Phase 1: append to metrics/responder-log.jsonl before answering every framework question.
+12. Run: npm run lint
+13. Run: npx vitest run
+14. Run: npx playwright test
+    Iterate until green or document an unrecoverable blocker.
+15. echo "{\"event\":\"build_end\",\"timestamp\":\"$(date -Iseconds)\"}" >> metrics/timing.jsonl
+16. git add .
+17. git commit -m "phase<PHASE>: <FW>"
+18. git tag <FW>-phase<PHASE>-complete
+19. node scoring/measure.mjs --phase <PHASE> --repo "$(pwd)"
+20. node scoring/compute-deltas.mjs --branch "$BRANCH" --phase <PHASE> --repo "$(pwd)"
+21. git add metrics/
+22. git commit -m "measure: phase <PHASE> <FW>" 2>/dev/null || true
+23. git push origin "$BRANCH"
+24. git push --tags
+
+## Return value
+Return exactly one paragraph: which branch/phase you built, whether tests passed or what failed, what tag was pushed, and the key deltas (coverage Δ, LOC Δ, complexity Δ) from the measure output.
+```
 
 ---
 
 ## Final summary table
 
-When the discovery script outputs empty, print this and exit:
+When the discovery script returns empty, print this and exit:
 
 ```
 EXPERIMENT COMPLETE
 
-Framework            | r1 | r2 | r3 | Chosen | P2 | P3 | P4 | P5
----------------------|----|----|----|--------|----|----|----|----
-vanilla              | ✓  | ✓  | ✓  | r2     | ✓  | ✓  | ✓  | ✓
-bmad                 | ✓  | ✓  | ✓  | r1     | ✓  | ✓  | ✓  | ✓
-compound-engineering | ✓  | ✓  | ✓  | r3     | ✓  | ✓  | ✓  | ✓
-spec-kit             | ✓  | ✓  | ✓  | r2     | ✓  | ✓  | ✓  | ✓
-superpowers          | ✓  | ✓  | ✓  | r1     | ✓  | ✓  | ✓  | ✓
+Framework            | r1 | r2 | r3 | Rep | P2 | P3 | P4 | P5
+---------------------|----|----|-----|-----|----|----|----|----|
+vanilla              |    |    |    |     |    |    |    |
+bmad                 |    |    |    |     |    |    |    |
+spec-kit             |    |    |    |     |    |    |    |
+superpowers          |    |    |    |     |    |    |    |
+compound-engineering |    |    |    |     |    |    |    |
 
-All 40 actions complete. See docs/RUN_LOG.md for per-phase metrics summary and metrics/experiment/ for full data.
+Fill each cell with ✓ (tag present) or — (not present) by checking git tag -l.
+All 40 actions complete. See docs/RUN_LOG.md for metrics summary and metrics/experiment/ for full data.
 ```
-
-If only partial: print which actions completed this session and which are still pending. Tell the operator to run `/start` again to continue (or `/loop /start` for hands-off).
