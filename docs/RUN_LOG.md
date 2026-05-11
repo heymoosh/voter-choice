@@ -54,6 +54,20 @@ Note: **Scoring is executed by Hermes from the host side, not inside the build c
 
 ## Completed
 
+### Phase 0.14 — Aggregator + per-action RUN_LOG + alignment-score in Phase 5 (complete)
+
+- **Date:** 2026-05-10
+- **Branch:** `main` + all 5 `experiment/<fw>` branches
+- **Commits:** `862a1d9` (main), `e05a785` (experiment/vanilla), `9be1fcb` (bmad), `3d39e7a` (spec-kit), `90f9172` (superpowers), `1fe6bd4` (compound-engineering)
+- **What was done:** Closed three remaining "wake up tomorrow with an answer" gaps before kicking off the autonomous run.
+  1. Added `scoring/aggregate-experiment.mjs` — reads every per-phase, per-branch JSON across all 5 frameworks, evaluates checks 1/5/6/7/11/12/13 of the auto-findings rubric, computes a 5-axis composite maintainability score (test quality 25%, complexity 25%, diff hygiene 20%, completion 20%, variance 10%), and produces `metrics/experiment/FINAL_REPORT.json` + `metrics/experiment/FINAL_RANKING.md`. Graceful degradation: partial runs still produce a partial ranking with explicit "phases completed" flags.
+  2. Added `scoring/log-run.mjs` — small utility that inserts a `### ` RUN_LOG entry directly after the `## Completed` header. Reads the per-phase JSON to auto-populate a metrics summary line if the file is in the working tree.
+  3. Wired both into `.claude/commands/start.md`: each sub-agent prompt now captures a summary string while still on the experiment branch (so the metrics file is readable), switches to `main`, calls `log-run.mjs`, and pushes. When the discovery script returns empty, the orchestrator runs `aggregate-experiment.mjs`, commits the final report to main, and prints the FINAL_RANKING.md.
+  4. Extended `docs/PHASE5_SPEC.md` with the alignment-score banner + drill-down feature (per-candidate 0-100 score, per-issue breakdown with citations, `[ALIGNMENT_SCORES]` structured block, banner/drill-down `data-testid` contract, translation behavior, accessibility requirements). Updated `scoring/phase-scopes/phase5.json` to include `src/components/Alignment*` and `src/lib/alignment/**` in `expectedGlobs` so the diff-hygiene check stays honest about the larger Phase 5 surface area.
+- **Files modified:** `.claude/commands/start.md`, `docs/PHASE5_SPEC.md`, `scoring/phase-scopes/phase5.json`
+- **Files created:** `scoring/aggregate-experiment.mjs`, `scoring/log-run.mjs`
+- **Why alignment-score added now:** experiment goal is to test workflows on feature parity with launch/production. Alignment score is in LAUNCH_PRODUCTION_FEATURES.md #9 and was the one launch feature Phase 5 hadn't covered. Adding it pre-run means every framework gets the same scope.
+
 ### Phase 0.13 — /start rewritten as sub-agent orchestrator (complete)
 
 - **Date:** 2026-05-10
