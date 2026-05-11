@@ -55,6 +55,30 @@ Note: **Scoring is executed by Hermes from the host side, not inside the build c
 
 ## Completed
 
+
+
+### Phase 1 replicate — vanilla r1 (auto)
+
+- **Date:** 2026-05-11T16:09:36.628Z
+- **Branch:** `experiment/vanilla-r1`
+- **Tag:** `vanilla-r1-phase1-complete`
+- **Status:** ✓
+- **Replicate:** r1
+- **Summary:** e2e 42/42, vitest 31/31, lint 0e/2w, LOC 1410
+- **Metrics:** coverage 16.1%, LOC 1410, complexity avg 4.81 max 41
+
+
+### Phase 1 replicate — vanilla r1 (auto)
+
+- **Date:** 2026-05-11T16:08:54.194Z
+- **Branch:** `experiment/vanilla-r1`
+- **Tag:** `vanilla-r1-phase1-complete`
+- **Status:** ✓
+- **Replicate:** r1
+- **Summary:** e2e 42/42, vitest 31/31, lint 0e/2w, LOC 1410
+- **Metrics:** coverage 16.1%, LOC 1410, complexity avg 4.81 max 41
+
+
 ### Phase 1 Run 5 — Vanilla (complete)
 
 - **Date:** 2026-05-10
