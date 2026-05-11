@@ -1,102 +1,125 @@
-import Image from "next/image";
+import BallotTool from "@/components/BallotTool";
+import ShareButton from "@/components/ShareButton";
+
+const CHATBOTS = [
+  { name: "Claude", url: "https://claude.ai", desc: "by Anthropic" },
+  { name: "ChatGPT", url: "https://chatgpt.com", desc: "by OpenAI" },
+  { name: "Gemini", url: "https://gemini.google.com", desc: "by Google" },
+  { name: "Grok", url: "https://grok.com", desc: "by xAI" },
+];
+
+const TIPS = [
+  {
+    heading: 'Say "I don\'t know" anytime',
+    body: "The AI will explain more and help you figure out where you stand — you're not being tested.",
+  },
+  {
+    heading: "Ask it to research things",
+    body: '"Can you look up this candidate\'s voting record?" or "Who funds this ballot measure?" — it\'ll dig in.',
+  },
+  {
+    heading: "Ask questions",
+    body: '"What does this position actually do?" or "Why does this matter?" — no question is too basic.',
+  },
+  {
+    heading: "Print your summary",
+    body: "Many states ban phones at the polling place. Print or write down your choices before you go.",
+  },
+  {
+    heading: "AI can make mistakes",
+    body: "This is a research starting point. The AI will link you to official sources so you can verify anything that matters.",
+  },
+];
 
 export default function Home() {
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    <div className="min-h-screen flex flex-col">
+      {/* Header */}
+      <header className="bg-white border-b border-gray-200 px-4 py-4">
+        <div className="max-w-4xl mx-auto">
+          <span className="text-xl font-bold text-blue-700">Voter Choice</span>
+        </div>
+      </header>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+      <main id="main-content" className="flex-1 px-4 py-8 sm:py-12">
+        <div className="max-w-4xl mx-auto space-y-12">
+          {/* Hero Section */}
+          <section
+            aria-labelledby="hero-heading"
+            className="text-center sm:text-left"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+            <h1
+              id="hero-heading"
+              className="text-3xl sm:text-4xl font-bold text-gray-900 leading-tight mb-4"
+            >
+              Research your ballot with AI — for free
+            </h1>
+            <p className="text-lg text-gray-600 mb-4 max-w-2xl">
+              Enter your zip code to get your state&apos;s election info and a
+              customized research prompt. Paste it into any free AI chatbot and
+              get a personalized guide to every race and issue on your ballot.
+            </p>
+            <p className="text-base text-gray-500 mb-6 max-w-2xl">
+              Works with any of these free AI chatbots:
+            </p>
+
+            {/* Chatbot links */}
+            <div className="flex flex-wrap gap-3 justify-center sm:justify-start mb-8">
+              {CHATBOTS.map((bot) => (
+                <a
+                  key={bot.name}
+                  href={bot.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:border-blue-300 hover:text-blue-700 transition-colors min-h-[44px]"
+                  aria-label={`${bot.name} — ${bot.desc}`}
+                >
+                  <span className="font-semibold">{bot.name}</span>
+                  <span className="text-gray-400 text-xs">{bot.desc}</span>
+                </a>
+              ))}
+            </div>
+          </section>
+
+          {/* Main Tool */}
+          <BallotTool />
+
+          {/* Tips Section */}
+          <section aria-labelledby="tips-heading" className="max-w-2xl mx-auto">
+            <h2
+              id="tips-heading"
+              className="text-xl font-bold text-gray-900 mb-4"
+            >
+              Tips for getting the most out of it
+            </h2>
+            <div className="space-y-4">
+              {TIPS.map((tip) => (
+                <div
+                  key={tip.heading}
+                  className="bg-white rounded-xl border border-gray-100 p-4"
+                >
+                  <h3 className="text-sm font-semibold text-gray-900 mb-1">
+                    {tip.heading}
+                  </h3>
+                  <p className="text-sm text-gray-600">{tip.body}</p>
+                </div>
+              ))}
+            </div>
+          </section>
         </div>
       </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
+
+      {/* Footer */}
+      <footer className="bg-white border-t border-gray-200 px-4 py-6 mt-8">
+        <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <ShareButton />
+          </div>
+          <p className="text-sm text-gray-500 text-center sm:text-right">
+            Created by a human using AI tools. Not affiliated with any campaign
+            or party.
+          </p>
+        </div>
       </footer>
     </div>
   );
