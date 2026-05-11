@@ -60,10 +60,10 @@ When switching from Arabic back to an LTR language, the layout must fully revert
 
 The existing `language-toggle` test ID from Phase 2 should remain (the element is now a selector, but the test ID stays for backward compatibility). Additional:
 
-| `data-testid` | Element | Purpose |
-|----------------|---------|---------|
-| `language-toggle` | The language selector control (unchanged ID) | E2e tests interact with language switching |
-| `language-option-{code}` | Individual language options (e.g., `language-option-vi`) | E2e tests select specific languages |
+| `data-testid`            | Element                                                  | Purpose                                    |
+| ------------------------ | -------------------------------------------------------- | ------------------------------------------ |
+| `language-toggle`        | The language selector control (unchanged ID)             | E2e tests interact with language switching |
+| `language-option-{code}` | Individual language options (e.g., `language-option-vi`) | E2e tests select specific languages        |
 
 ---
 
@@ -96,13 +96,13 @@ The full prompt from `docs/BALLOT_PROMPT.md` must be translated into all 5 langu
 
 The context block appended to the prompt (with the user's location, dates, and ballot data from Phase 3) must be generated in the selected language. Date formatting should follow the conventions of each language:
 
-| Language | Date format example | Note |
-|----------|-------------------|------|
-| English | March 3, 2026 | Month name, day, year |
-| Spanish | 3 de marzo de 2026 | Day de month de year (existing) |
-| Vietnamese | 3 tháng 3, 2026 | Day tháng month, year |
-| Chinese | 2026年3月3日 | Year年month月day日 |
-| Arabic | 3 مارس 2026 | Day month-name year (RTL) |
+| Language   | Date format example | Note                            |
+| ---------- | ------------------- | ------------------------------- |
+| English    | March 3, 2026       | Month name, day, year           |
+| Spanish    | 3 de marzo de 2026  | Day de month de year (existing) |
+| Vietnamese | 3 tháng 3, 2026     | Day tháng month, year           |
+| Chinese    | 2026年3月3日        | Year年month月day日              |
+| Arabic     | 3 مارس 2026         | Day month-name year (RTL)       |
 
 ### Deadline status indicators
 
@@ -137,12 +137,12 @@ All translations must use UTF-8 encoding. Vietnamese diacritics (ă, â, ê, ô,
 
 Translations vary significantly in length. The UI must handle this without breaking:
 
-| Language | Relative length vs English | Note |
-|----------|---------------------------|------|
-| Spanish | ~20-30% longer | Already handled in Phase 2 |
-| Vietnamese | ~10-20% longer | Diacritics add visual height |
-| Chinese | ~30-50% shorter | Denser characters carry more meaning per character |
-| Arabic | ~20-30% longer | RTL, different character widths |
+| Language   | Relative length vs English | Note                                               |
+| ---------- | -------------------------- | -------------------------------------------------- |
+| Spanish    | ~20-30% longer             | Already handled in Phase 2                         |
+| Vietnamese | ~10-20% longer             | Diacritics add visual height                       |
+| Chinese    | ~30-50% shorter            | Denser characters carry more meaning per character |
+| Arabic     | ~20-30% longer             | RTL, different character widths                    |
 
 - Buttons, labels, and cards should accommodate the longest translation without truncation or overflow
 - Chinese text may look sparse in containers sized for English — ensure it still looks intentional, not broken

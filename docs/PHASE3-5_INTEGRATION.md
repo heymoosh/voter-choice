@@ -28,6 +28,7 @@ The `/start` command already parses `## Next` for phase number, branch name, and
 Each branch already has Phase 1 and Phase 2 code. Phase 3 builds on top of Phase 2 on each branch.
 
 **Tagging convention (continues existing pattern):**
+
 - Phase 2 tags already exist: `speckit-run3-phase2-complete`, `vanilla-phase2-complete`, etc.
 - Phase 3 tags: `speckit-phase3-complete`, `superpowers-phase3-complete`, etc.
 - Phase 4 tags: `speckit-phase4-complete`, etc.
@@ -98,6 +99,7 @@ Here's the full sequence for running Phases 3-5, maintaining the experiment's co
 ### Phase 3 Runs (same pattern as Phases 1-2)
 
 For each workflow (in new randomized order):
+
 1. Muxin runs `/start` from main
 2. Claude Code autonomously builds Phase 3, measures, tags, updates RUN_LOG
 3. Muxin provides observations or says "nothing to add"

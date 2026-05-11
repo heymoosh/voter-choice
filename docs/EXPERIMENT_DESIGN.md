@@ -48,29 +48,29 @@ Two tools are used in this project. Each has a clear lane. Stay in yours.
 
 Claude Code does all work that touches the repo: writing specs, writing code, running commands, setting up infrastructure, running tests, generating metrics, drafting the write-up.
 
-* **Owns:** Phase 0 (all sub-phases), Phase 3
-* **Owns execution of:** Phases 1–2 (Claude Code builds autonomously via `/start`; Muxin initiates runs and fills out qualitative scorecards)
-* **"Continue work" flow:** Muxin opens Claude Code in the repo directory and says something like: "Read docs/RUN_LOG.md and the Session Quick Start in docs/EXPERIMENT_DESIGN.md. Continue work." Claude Code reads RUN_LOG, summarizes in ≤5 bullets, waits for confirmation, then executes the next sub-phase.
+- **Owns:** Phase 0 (all sub-phases), Phase 3
+- **Owns execution of:** Phases 1–2 (Claude Code builds autonomously via `/start`; Muxin initiates runs and fills out qualitative scorecards)
+- **"Continue work" flow:** Muxin opens Claude Code in the repo directory and says something like: "Read docs/RUN_LOG.md and the Session Quick Start in docs/EXPERIMENT_DESIGN.md. Continue work." Claude Code reads RUN_LOG, summarizes in ≤5 bullets, waits for confirmation, then executes the next sub-phase.
 
 ### Cowork — Planning Support Only
 
 Cowork can help Muxin think through decisions, review specs, discuss strategy, or organize Obsidian files. Cowork does NOT touch the repo.
 
-* **Does:** Reviews specs Muxin shares with it, helps think through experiment design questions, organizes notes in Obsidian
-* **Does NOT do:** Write code, run terminal commands, create/edit repo files, set up infrastructure, install packages, run tests, or any task that belongs in Claude Code
+- **Does:** Reviews specs Muxin shares with it, helps think through experiment design questions, organizes notes in Obsidian
+- **Does NOT do:** Write code, run terminal commands, create/edit repo files, set up infrastructure, install packages, run tests, or any task that belongs in Claude Code
 
 ### Cowork Guard Rail
 
 If Muxin asks Cowork to do any of the following, Cowork must refuse and redirect to Claude Code:
 
-* Write or edit any file in `/Users/Muxin/Documents/GitHub/voter-choice`
-* Run terminal commands (npm, git, etc.)
-* Create specs, configs, or scripts
-* Install or configure workflow frameworks
-* Run measurement scripts or tests
-* Any task listed under Phase 0, 1, 2, or 3 in the Execution Plan
+- Write or edit any file in `/Users/Muxin/Documents/GitHub/voter-choice`
+- Run terminal commands (npm, git, etc.)
+- Create specs, configs, or scripts
+- Install or configure workflow frameworks
+- Run measurement scripts or tests
+- Any task listed under Phase 0, 1, 2, or 3 in the Execution Plan
 
-Cowork's redirect message should be: *"This is a Claude Code task. Open Claude Code in the voter-choice repo and say 'continue work' — it'll pick up from where RUN_LOG left off."*
+Cowork's redirect message should be: _"This is a Claude Code task. Open Claude Code in the voter-choice repo and say 'continue work' — it'll pick up from where RUN_LOG left off."_
 
 ---
 
@@ -95,27 +95,27 @@ The operator does not write custom prompts, answer plugin questions, or manually
 
 ### Role Boundaries
 
-* Claude Code owns Phase 0 and Phase 3. It drafts specs, sets up infrastructure, aggregates metrics, and produces the final write-up.
-* Phases 1–2 are Muxin's. Claude Code supports (suggesting commands, keeping logs updated, running measurement scripts) but does not make decisions about experiment design, workflow selection, or feature scope.
-* This document is the authority. If anything in chat contradicts this doc, this doc wins.
+- Claude Code owns Phase 0 and Phase 3. It drafts specs, sets up infrastructure, aggregates metrics, and produces the final write-up.
+- Phases 1–2 are Muxin's. Claude Code supports (suggesting commands, keeping logs updated, running measurement scripts) but does not make decisions about experiment design, workflow selection, or feature scope.
+- This document is the authority. If anything in chat contradicts this doc, this doc wins.
 
 ### Context Management Rules
 
 Claude Code and Cowork both have finite context. These rules prevent drift and wasted tokens.
 
-* At the start of any new session or after a long break, re-read `docs/RUN_LOG.md` (for current status) and whatever phase-specific doc is relevant (e.g., `docs/PROJECT_SPEC.md` during Phase 1 setup, `docs/PHASE2_SPEC.md` during Phase 2). Do NOT reload the entire `EXPERIMENT_DESIGN.md` every session — use the Session Quick Start block above for orientation, then go deeper only if needed.
-* For each major phase transition (0→1, 1→2, 2→3), treat it as a fresh context: reload core docs rather than assuming past messages are available or accurate.
-* Do not rely on prior chat history. Always reload context from the files listed in Project Files below.
-* All important information goes into files, not chat. If a decision is made, a deviation occurs, or a clarification arises mid-experiment, update the relevant doc (typically `EXPERIMENT_DESIGN.md` or `RUN_LOG.md`). Do not keep anything "only in the chat."
-* If conflicting assumptions are detected between current understanding and the docs, stop, flag the conflict, re-read the relevant files, and reconcile the discrepancy in writing before proceeding.
+- At the start of any new session or after a long break, re-read `docs/RUN_LOG.md` (for current status) and whatever phase-specific doc is relevant (e.g., `docs/PROJECT_SPEC.md` during Phase 1 setup, `docs/PHASE2_SPEC.md` during Phase 2). Do NOT reload the entire `EXPERIMENT_DESIGN.md` every session — use the Session Quick Start block above for orientation, then go deeper only if needed.
+- For each major phase transition (0→1, 1→2, 2→3), treat it as a fresh context: reload core docs rather than assuming past messages are available or accurate.
+- Do not rely on prior chat history. Always reload context from the files listed in Project Files below.
+- All important information goes into files, not chat. If a decision is made, a deviation occurs, or a clarification arises mid-experiment, update the relevant doc (typically `EXPERIMENT_DESIGN.md` or `RUN_LOG.md`). Do not keep anything "only in the chat."
+- If conflicting assumptions are detected between current understanding and the docs, stop, flag the conflict, re-read the relevant files, and reconcile the discrepancy in writing before proceeding.
 
 ### Checkpoint and Stop Rules
 
 Claude Code must stop and hand back control at these points:
 
-* **After completing each numbered sub-phase** (0.1, 0.2, 0.3a, 0.3b, etc.): commit your work, update RUN_LOG (including the `## Next` line), and stop. Wait for Muxin to start a new session for the next sub-phase.
-* **When approaching context limits:** If a task is taking many turns or quality is degrading, stop mid-task, save progress to files, update RUN_LOG with what's done and what remains, and tell Muxin to continue in a new session.
-* **When a decision is needed:** If something not covered in this doc comes up, stop and ask Muxin. Do not guess and do not burn context exploring options.
+- **After completing each numbered sub-phase** (0.1, 0.2, 0.3a, 0.3b, etc.): commit your work, update RUN_LOG (including the `## Next` line), and stop. Wait for Muxin to start a new session for the next sub-phase.
+- **When approaching context limits:** If a task is taking many turns or quality is degrading, stop mid-task, save progress to files, update RUN_LOG with what's done and what remains, and tell Muxin to continue in a new session.
+- **When a decision is needed:** If something not covered in this doc comes up, stop and ask Muxin. Do not guess and do not burn context exploring options.
 
 The goal is many short, focused sessions — not one marathon that degrades. Each session should accomplish one sub-phase or less.
 
@@ -129,15 +129,15 @@ The goal is many short, focused sessions — not one marathon that degrades. Eac
 
 These files live in the repo at `/Users/Muxin/Documents/GitHub/voter-choice`. Claude Code must maintain them. They are the single source of truth — not chat history.
 
-| File | Purpose | Owner |
-|------|---------|-------|
-| `docs/EXPERIMENT_DESIGN.md` | This handoff doc | Muxin (Claude Code maintains) |
-| `docs/PROJECT_SPEC.md` | Feature spec for the ballot tool — Phase 1 (outcomes & behavior, not code) | Claude Code drafts, Muxin approves |
-| `docs/PHASE2_SPEC.md` | Multilingual extension spec — Phase 2 | Claude Code drafts, Muxin approves |
-| `docs/BALLOT_PROMPT.md` | The full AI ballot research prompt that gets customized per user's zip code. This is the core content the site delivers. | Muxin provides ✅ (already in repo) |
-| `docs/RUN_LOG.md` | Chronological log — see RUN_LOG Format below | Claude Code |
-| `docs/QUALITATIVE_SCORECARD.md` | Structured post-run assessment template — see Qualitative Scorecard below | Muxin fills out after each run |
-| `metrics/<branch>/<phase>.json` | Outputs from `npm run measure` per branch and phase | Automated (Claude Code sets up) |
+| File                            | Purpose                                                                                                                  | Owner                               |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------ | ----------------------------------- |
+| `docs/EXPERIMENT_DESIGN.md`     | This handoff doc                                                                                                         | Muxin (Claude Code maintains)       |
+| `docs/PROJECT_SPEC.md`          | Feature spec for the ballot tool — Phase 1 (outcomes & behavior, not code)                                               | Claude Code drafts, Muxin approves  |
+| `docs/PHASE2_SPEC.md`           | Multilingual extension spec — Phase 2                                                                                    | Claude Code drafts, Muxin approves  |
+| `docs/BALLOT_PROMPT.md`         | The full AI ballot research prompt that gets customized per user's zip code. This is the core content the site delivers. | Muxin provides ✅ (already in repo) |
+| `docs/RUN_LOG.md`               | Chronological log — see RUN_LOG Format below                                                                             | Claude Code                         |
+| `docs/QUALITATIVE_SCORECARD.md` | Structured post-run assessment template — see Qualitative Scorecard below                                                | Muxin fills out after each run      |
+| `metrics/<branch>/<phase>.json` | Outputs from `npm run measure` per branch and phase                                                                      | Automated (Claude Code sets up)     |
 
 There is no separate DECISIONS.md file. Decisions belong in `EXPERIMENT_DESIGN.md` where they have context. Don't create another file to keep in sync.
 
@@ -184,9 +184,9 @@ Claude Code does NOT need and should NOT load: campaign plans, social post templ
 
 ### The Operator
 
-* All 8 workflows run autonomously via Hermes. Muxin initiates the orchestrator and reviews results — she does not manually trigger each run.
-* She has zero prior experience with any of the workflow frameworks. This is a feature, not a bug — it controls for familiarity (all equally unfamiliar). Learning curve effects should be noted in qualitative logs and the pre-run self-assessment (see Qualitative Scorecard).
-* Randomize the run order to control for fatigue and learning-across-runs effects. Generate the random order before starting.
+- All 8 workflows run autonomously via Hermes. Muxin initiates the orchestrator and reviews results — she does not manually trigger each run.
+- She has zero prior experience with any of the workflow frameworks. This is a feature, not a bug — it controls for familiarity (all equally unfamiliar). Learning curve effects should be noted in qualitative logs and the pre-run self-assessment (see Qualitative Scorecard).
+- Randomize the run order to control for fatigue and learning-across-runs effects. Generate the random order before starting.
 
 ### The Feature: Ballot Tool Website
 
@@ -194,32 +194,32 @@ A real, shippable civic tool — not a throwaway. Based on Muxin's existing AI b
 
 **What the site does:**
 
-* User enters their zip code
-* Site looks up their state's election dates, registration deadlines, early voting info, and local resource URLs from a database
-* Site generates a customized version of the AI ballot prompt with the user's local dates, links, and state-specific info pre-filled
-* User copies the customized prompt to clipboard and pastes it into any free AI chatbot (Claude, ChatGPT, Gemini, Grok, etc.)
-* Responsive design (mobile-first — this went viral on Reddit, people are on phones)
+- User enters their zip code
+- Site looks up their state's election dates, registration deadlines, early voting info, and local resource URLs from a database
+- Site generates a customized version of the AI ballot prompt with the user's local dates, links, and state-specific info pre-filled
+- User copies the customized prompt to clipboard and pastes it into any free AI chatbot (Claude, ChatGPT, Gemini, Grok, etc.)
+- Responsive design (mobile-first — this went viral on Reddit, people are on phones)
 
 **What the site does NOT do:**
 
-* Host or run an LLM (costs money, makes it hard to keep free)
-* Hold any user data (no accounts, no PII, no legal liability)
-* The AI conversation happens in the user's own chatbot session, not on this site
+- Host or run an LLM (costs money, makes it hard to keep free)
+- Hold any user data (no accounts, no PII, no legal liability)
+- The AI conversation happens in the user's own chatbot session, not on this site
 
 **Data model includes:**
 
-* All 50 states + territories
-* Election dates (primary, general, runoff where applicable)
-* Registration deadlines (online, by mail, in person)
-* Early voting dates
-* Links to state/county election offices
-* Links to sample ballot lookup tools
-* State-specific voting rules (ID requirements, phone-at-polls rules, etc.)
+- All 50 states + territories
+- Election dates (primary, general, runoff where applicable)
+- Registration deadlines (online, by mail, in person)
+- Early voting dates
+- Links to state/county election offices
+- Links to sample ballot lookup tools
+- State-specific voting rules (ID requirements, phone-at-polls rules, etc.)
 
 **Reference docs:**
 
-* Full prompt text: `docs/BALLOT_PROMPT.md` (in repo)
-* Democracy group context: `/Users/Muxin/Documents/Personal Obsidian/Projects/US_Democracy_Group.md` (Nick Garner in this group is a software dev + community organizer — potential collaborator post-experiment)
+- Full prompt text: `docs/BALLOT_PROMPT.md` (in repo)
+- Democracy group context: `/Users/Muxin/Documents/Personal Obsidian/Projects/US_Democracy_Group.md` (Nick Garner in this group is a software dev + community organizer — potential collaborator post-experiment)
 
 ### Framework: Next.js — Fixed
 
@@ -227,10 +227,10 @@ A real, shippable civic tool — not a throwaway. Based on Muxin's existing AI b
 
 **Rationale:**
 
-* Closest to what Muxin will use for Maestro (React-based), so learnings transfer
-* Largest ecosystem and community support
-* The framework AI coding tools have the most training data on — no workflow is disadvantaged by an obscure framework
-* Pairs naturally with Vercel for deployment
+- Closest to what Muxin will use for Maestro (React-based), so learnings transfer
+- Largest ecosystem and community support
+- The framework AI coding tools have the most training data on — no workflow is disadvantaged by an obscure framework
+- Pairs naturally with Vercel for deployment
 
 ### Election Data: Static JSON — Fixed
 
@@ -250,9 +250,9 @@ A live API can be swapped in later on the winning branch if needed. The static J
 
 **Rationale:**
 
-* Free tier is sufficient for this project's scale
-* Natural pairing with Next.js (same company)
-* Zero-config deployments from Git
+- Free tier is sufficient for this project's scale
+- Natural pairing with Next.js (same company)
+- Zero-config deployments from Git
 
 ### Publishing Scope: Small Slack Group — Fixed for Now
 
@@ -260,9 +260,9 @@ A live API can be swapped in later on the winning branch if needed. The static J
 
 This means:
 
-* Documentation should be thorough enough for the Slack audience to evaluate (these are practitioners who care about methodology), but doesn't need the polish of a public blog post
-* The write-up (Phase 3) should still be structured well enough that it could be published later if Muxin decides to — but that's a future decision, not a current requirement
-* No need to anonymize or sanitize anything for public consumption at this stage
+- Documentation should be thorough enough for the Slack audience to evaluate (these are practitioners who care about methodology), but doesn't need the polish of a public blog post
+- The write-up (Phase 3) should still be structured well enough that it could be published later if Muxin decides to — but that's a future decision, not a current requirement
+- No need to anonymize or sanitize anything for public consumption at this stage
 
 ---
 
@@ -276,12 +276,12 @@ Each run builds the full ballot tool from the spec.
 **Phase 2 — Extend**
 Each run receives the same modification request: **Add Spanish language support.** Specifically:
 
-* Language toggle (English ↔ Spanish), with architecture that doesn't make adding a third language painful
-* All UI text, labels, instructions, and static content available in both languages
-* The customized AI prompt output adapted for the selected language
-* The spec describes the desired outcome only — how each workflow approaches implementation (i18n library, static translation files, etc.) is part of what we're observing
+- Language toggle (English ↔ Spanish), with architecture that doesn't make adding a third language painful
+- All UI text, labels, instructions, and static content available in both languages
+- The customized AI prompt output adapted for the selected language
+- The spec describes the desired outcome only — how each workflow approaches implementation (i18n library, static translation files, etc.) is part of what we're observing
 
-**Why Phase 2 matters:** This is the real test. Phase 1 tells you which workflow builds cleanly. Phase 2 tells you which workflow *extends* cleanly — does it refactor toward i18n, or does it duplicate every file? The delta between Phase 1 and Phase 2 metrics is where the most important signal lives. This maps directly to the experience of maintaining a growing SaaS over time.
+**Why Phase 2 matters:** This is the real test. Phase 1 tells you which workflow builds cleanly. Phase 2 tells you which workflow _extends_ cleanly — does it refactor toward i18n, or does it duplicate every file? The delta between Phase 1 and Phase 2 metrics is where the most important signal lives. This maps directly to the experience of maintaining a growing SaaS over time.
 
 ---
 
@@ -289,16 +289,16 @@ Each run receives the same modification request: **Add Spanish language support.
 
 All running on Claude Code as the base agent. Workflow is the only independent variable.
 
-| Branch | Workflow | What It Is |
-|--------|----------|------------|
-| A | Spec Kit | Spec-first: full requirements doc before any code |
-| B | SuperPowers | Persona-enhanced in-context workflow |
-| C | BMAD | BMAD methodology |
-| D | Vanilla | Claude Code Baseline — default CLAUDE.md rules, no framework |
-| E | Compound Engineering | Community framework by Every (Dan Shipper & Kieran Klaassen) |
-| F | GSD (Get Shit Done) | Context-rot-prevention framework; structured 6-phase cycle with parallel wave execution and XML task planning. v1.34.0 (Feb 2026). Install: `npx get-shit-done-cc@latest` |
-| G | OpenSpec | Lightweight spec-driven middleware. Propose → apply → archive pattern per feature. Minimal ceremony, designed explicitly for AI coding assistants. v1.2.0 (Feb 2026). Install: `npm install -g @fission-ai/openspec@latest` |
-| H | Vanilla + Codex Critic | Branch D (Vanilla) plus the OpenAI Codex plugin for Claude Code (`github.com/openai/codex-plugin-cc`). Claude writes code → GPT-4-based Codex reviews cross-provider → Stop hook blocks completion until flagged issues are addressed. Paired with Vanilla specifically to isolate the critic's contribution: same zero-framework baseline, one variable added. Directly answers: what does a cross-provider critic layer actually add to code quality? |
+| Branch | Workflow               | What It Is                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| ------ | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A      | Spec Kit               | Spec-first: full requirements doc before any code                                                                                                                                                                                                                                                                                                                                                                                                       |
+| B      | SuperPowers            | Persona-enhanced in-context workflow                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| C      | BMAD                   | BMAD methodology                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| D      | Vanilla                | Claude Code Baseline — default CLAUDE.md rules, no framework                                                                                                                                                                                                                                                                                                                                                                                            |
+| E      | Compound Engineering   | Community framework by Every (Dan Shipper & Kieran Klaassen)                                                                                                                                                                                                                                                                                                                                                                                            |
+| F      | GSD (Get Shit Done)    | Context-rot-prevention framework; structured 6-phase cycle with parallel wave execution and XML task planning. v1.34.0 (Feb 2026). Install: `npx get-shit-done-cc@latest`                                                                                                                                                                                                                                                                               |
+| G      | OpenSpec               | Lightweight spec-driven middleware. Propose → apply → archive pattern per feature. Minimal ceremony, designed explicitly for AI coding assistants. v1.2.0 (Feb 2026). Install: `npm install -g @fission-ai/openspec@latest`                                                                                                                                                                                                                             |
+| H      | Vanilla + Codex Critic | Branch D (Vanilla) plus the OpenAI Codex plugin for Claude Code (`github.com/openai/codex-plugin-cc`). Claude writes code → GPT-4-based Codex reviews cross-provider → Stop hook blocks completion until flagged issues are addressed. Paired with Vanilla specifically to isolate the critic's contribution: same zero-framework baseline, one variable added. Directly answers: what does a cross-provider critic layer actually add to code quality? |
 
 **Note on run count:** Eight workflows × 2 phases = 16 runs. With Hermes orchestrating autonomously, the time cost is absorbed. Phase 3 analysis complexity increases modestly — account for this in the write-up timeline.
 
@@ -310,21 +310,21 @@ All running on Claude Code as the base agent. Workflow is the only independent v
 
 **Clean environment protocol — fresh install per run.**
 
-* **Purpose:** prevents cross-contamination between runs (packages, configs, caches from Run A don't leak into Run B)
-* Before each run: check out the correct branch, delete `node_modules/` and `.next/`, run a fresh `npm install` from the tagged starting point
-* Claude Code should script this as a single command (e.g., `npm run clean-start`) so it's repeatable and consistent
-* No Docker — git branching + clean installs provide sufficient isolation for a solo-operator experiment without the infrastructure overhead
+- **Purpose:** prevents cross-contamination between runs (packages, configs, caches from Run A don't leak into Run B)
+- Before each run: check out the correct branch, delete `node_modules/` and `.next/`, run a fresh `npm install` from the tagged starting point
+- Claude Code should script this as a single command (e.g., `npm run clean-start`) so it's repeatable and consistent
+- No Docker — git branching + clean installs provide sufficient isolation for a solo-operator experiment without the infrastructure overhead
 
 **Git — strict branching and tagging.**
 
-* Repo: `/Users/Muxin/Documents/GitHub/voter-choice` (local). Push to GitHub remote regularly.
-* Initial commit: the CLI-generated template, tagged as `v0-scaffold`
-* Eight branches: `workflow/spec-kit`, `workflow/superpowers`, `workflow/bmad`, `workflow/vanilla`, `workflow/compound-engineering`, `workflow/gsd`, `workflow/openspec`, `workflow/vanilla-codex`
-* All branches fork from `v0-scaffold`
-* Tag after Phase 1 completion on each branch (e.g., `speckit-phase1-complete`)
-* Tag after Phase 2 completion on each branch
-* Timestamped commits throughout (for reconstructing wall-clock time)
-* Push regularly to remote (cloud backup, not just local)
+- Repo: `/Users/Muxin/Documents/GitHub/voter-choice` (local). Push to GitHub remote regularly.
+- Initial commit: the CLI-generated template, tagged as `v0-scaffold`
+- Eight branches: `workflow/spec-kit`, `workflow/superpowers`, `workflow/bmad`, `workflow/vanilla`, `workflow/compound-engineering`, `workflow/gsd`, `workflow/openspec`, `workflow/vanilla-codex`
+- All branches fork from `v0-scaffold`
+- Tag after Phase 1 completion on each branch (e.g., `speckit-phase1-complete`)
+- Tag after Phase 2 completion on each branch
+- Timestamped commits throughout (for reconstructing wall-clock time)
+- Push regularly to remote (cloud backup, not just local)
 
 ---
 
@@ -332,35 +332,35 @@ All running on Claude Code as the base agent. Workflow is the only independent v
 
 Measured after Phase 1 and after Phase 2 on each branch. The delta between phases is as important as the absolute values.
 
-| Metric | Tool | What It Reveals |
-|--------|------|-----------------|
-| Test coverage (%) | Vitest with coverage | Did the workflow generate tests? Blind spots? |
-| Test pass rate (%) | Vitest | Did new code break existing code? |
-| ESLint errors/warnings | ESLint | How clean is the generated code? |
-| Cyclomatic complexity | eslint-plugin-complexity | Well-structured or monolithic? |
-| Code duplication (%) | jscpd | Copy-paste vs. proper abstraction |
-| Bundle size | Built-in framework analyzer | Dependency bloat? |
-| Lighthouse score | Lighthouse CLI (against local build) | Performance, accessibility, SEO |
-| E2E test pass rate | Playwright | Does the app actually work? Core user flows verified. |
-| Lines of code          | cloc (automated in measure script)          | Codebase size — split into application code (`src/`) and plugin/framework code (workflow configs, commands, etc.). Reveals whether a workflow adds significant scaffolding overhead vs. shipping lean application code. |
-| Time to complete | Git timestamps + scorecard wall-clock times | Raw speed |
-| OWASP security scan | Semgrep with `p/owasp-top-ten` and `p/typescript` rulesets | Did the workflow introduce injection, XSS, insecure deserialization, unsafe auth patterns, or other OWASP Top 10 issues? |
-| Security lint rules | `eslint-plugin-security` + `eslint-plugin-no-unsanitized` | Catches `eval`, `Function()`, `dangerouslySetInnerHTML`, unsafe regex, and other footguns at lint time. Zero violations is the expectation for a civic tool. |
-| Dependency CVEs | `npm audit --json` (production scope) | Did the workflow pull in vulnerable or unmaintained packages? A proxy for dependency discipline. |
-| Secret leakage scan | `gitleaks` or `trufflehog` across the branch history | Catches API keys, tokens, or credentials accidentally committed. Zero hits is the expectation; any hit is a hard fail for that run. |
-| Privacy scan | Grep-based + Semgrep rule suite (see Security & Privacy Requirements) | Did the workflow violate the "no storage, no third-party, no logging of user input" constraints? |
-| Type strictness | Count of `any`, `as`, `// @ts-ignore`, `// @ts-expect-error` occurrences in `src/` | Workflows that bypass the type system to make things compile are eroding maintainability invisibly. Coverage doesn't catch this. |
-| Dead code / unused exports | `knip` (or `ts-prune`) | Leftover scaffolding, unused files, orphaned exports. A signal of workflow discipline. |
-| Mutation score (subset) | Stryker Mutator on one designated module per phase | Coverage tells you lines were executed; mutation testing tells you tests actually assert meaningful behavior. Run on a single module per phase to keep runtime bounded. |
-| Build reproducibility | Two consecutive `next build` runs, hash-diff the output | Catches non-deterministic builds (timestamp leaks, random IDs, unpinned transitive deps). |
-| Accessibility deep scan | `@axe-core/playwright` run inside the existing Playwright suite | Lighthouse gives a score; axe gives specific violations. Since UX HITL is skipped, this is the only structured a11y signal. |
-| Git hygiene | Commit count, median commit size, conventional-commits compliance rate, whether the branch has a single "done" mega-commit vs. incremental commits | A workflow that produces one 2,000-line commit is a worse collaborator than one that commits incrementally, even if the final code is identical. |
+| Metric                     | Tool                                                                                                                                               | What It Reveals                                                                                                                                                                                                         |
+| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Test coverage (%)          | Vitest with coverage                                                                                                                               | Did the workflow generate tests? Blind spots?                                                                                                                                                                           |
+| Test pass rate (%)         | Vitest                                                                                                                                             | Did new code break existing code?                                                                                                                                                                                       |
+| ESLint errors/warnings     | ESLint                                                                                                                                             | How clean is the generated code?                                                                                                                                                                                        |
+| Cyclomatic complexity      | eslint-plugin-complexity                                                                                                                           | Well-structured or monolithic?                                                                                                                                                                                          |
+| Code duplication (%)       | jscpd                                                                                                                                              | Copy-paste vs. proper abstraction                                                                                                                                                                                       |
+| Bundle size                | Built-in framework analyzer                                                                                                                        | Dependency bloat?                                                                                                                                                                                                       |
+| Lighthouse score           | Lighthouse CLI (against local build)                                                                                                               | Performance, accessibility, SEO                                                                                                                                                                                         |
+| E2E test pass rate         | Playwright                                                                                                                                         | Does the app actually work? Core user flows verified.                                                                                                                                                                   |
+| Lines of code              | cloc (automated in measure script)                                                                                                                 | Codebase size — split into application code (`src/`) and plugin/framework code (workflow configs, commands, etc.). Reveals whether a workflow adds significant scaffolding overhead vs. shipping lean application code. |
+| Time to complete           | Git timestamps + scorecard wall-clock times                                                                                                        | Raw speed                                                                                                                                                                                                               |
+| OWASP security scan        | Semgrep with `p/owasp-top-ten` and `p/typescript` rulesets                                                                                         | Did the workflow introduce injection, XSS, insecure deserialization, unsafe auth patterns, or other OWASP Top 10 issues?                                                                                                |
+| Security lint rules        | `eslint-plugin-security` + `eslint-plugin-no-unsanitized`                                                                                          | Catches `eval`, `Function()`, `dangerouslySetInnerHTML`, unsafe regex, and other footguns at lint time. Zero violations is the expectation for a civic tool.                                                            |
+| Dependency CVEs            | `npm audit --json` (production scope)                                                                                                              | Did the workflow pull in vulnerable or unmaintained packages? A proxy for dependency discipline.                                                                                                                        |
+| Secret leakage scan        | `gitleaks` or `trufflehog` across the branch history                                                                                               | Catches API keys, tokens, or credentials accidentally committed. Zero hits is the expectation; any hit is a hard fail for that run.                                                                                     |
+| Privacy scan               | Grep-based + Semgrep rule suite (see Security & Privacy Requirements)                                                                              | Did the workflow violate the "no storage, no third-party, no logging of user input" constraints?                                                                                                                        |
+| Type strictness            | Count of `any`, `as`, `// @ts-ignore`, `// @ts-expect-error` occurrences in `src/`                                                                 | Workflows that bypass the type system to make things compile are eroding maintainability invisibly. Coverage doesn't catch this.                                                                                        |
+| Dead code / unused exports | `knip` (or `ts-prune`)                                                                                                                             | Leftover scaffolding, unused files, orphaned exports. A signal of workflow discipline.                                                                                                                                  |
+| Mutation score (subset)    | Stryker Mutator on one designated module per phase                                                                                                 | Coverage tells you lines were executed; mutation testing tells you tests actually assert meaningful behavior. Run on a single module per phase to keep runtime bounded.                                                 |
+| Build reproducibility      | Two consecutive `next build` runs, hash-diff the output                                                                                            | Catches non-deterministic builds (timestamp leaks, random IDs, unpinned transitive deps).                                                                                                                               |
+| Accessibility deep scan    | `@axe-core/playwright` run inside the existing Playwright suite                                                                                    | Lighthouse gives a score; axe gives specific violations. Since UX HITL is skipped, this is the only structured a11y signal.                                                                                             |
+| Git hygiene                | Commit count, median commit size, conventional-commits compliance rate, whether the branch has a single "done" mega-commit vs. incremental commits | A workflow that produces one 2,000-line commit is a worse collaborator than one that commits incrementally, even if the final code is identical.                                                                        |
 
 **Lighthouse environment:** Lighthouse runs against a local production build (`next build && next start` on localhost) for consistency across all branches. Do not run against deployed Vercel URLs — network conditions and CDN caching introduce noise.
 
-**Metric-gaming safeguards:** The more metrics are listed in the per-branch `/start` files, the more each workflow may converge on the metric rather than on real quality. Two mitigations: (1) per-branch `/start` files should describe the *quality bar* generically ("the codebase must pass automated quality checks including security, privacy, accessibility, and maintainability scans") without enumerating the exact tool list; (2) one metric — mutation score on a designated hold-out module — is applied *post-run* and is never referenced in any `/start` file. If the hold-out metric rankings diverge significantly from the disclosed-metric rankings, that's evidence of gaming and gets discussed in Phase 3 analysis.
+**Metric-gaming safeguards:** The more metrics are listed in the per-branch `/start` files, the more each workflow may converge on the metric rather than on real quality. Two mitigations: (1) per-branch `/start` files should describe the _quality bar_ generically ("the codebase must pass automated quality checks including security, privacy, accessibility, and maintainability scans") without enumerating the exact tool list; (2) one metric — mutation score on a designated hold-out module — is applied _post-run_ and is never referenced in any `/start` file. If the hold-out metric rankings diverge significantly from the disclosed-metric rankings, that's evidence of gaming and gets discussed in Phase 3 analysis.
 
-**Playwright e2e tests:** Claude Code sets up a shared Playwright test suite in Phase 0.3b as part of the scaffold (before branches are created, so all branches inherit the same tests). These tests verify core user flows: entering a zip code produces the correct customized prompt, the copy-to-clipboard function works, responsive layout renders correctly at mobile and desktop breakpoints, and error states display properly for invalid inputs. The e2e tests are *not* workflow-generated — they're part of the measurement infrastructure, same as ESLint or Vitest. They test whether the built app works, regardless of which workflow built it.
+**Playwright e2e tests:** Claude Code sets up a shared Playwright test suite in Phase 0.3b as part of the scaffold (before branches are created, so all branches inherit the same tests). These tests verify core user flows: entering a zip code produces the correct customized prompt, the copy-to-clipboard function works, responsive layout renders correctly at mobile and desktop breakpoints, and error states display properly for invalid inputs. The e2e tests are _not_ workflow-generated — they're part of the measurement infrastructure, same as ESLint or Vitest. They test whether the built app works, regardless of which workflow built it.
 
 Measurement scripts are automated and live at `scoring/measure.mjs` and `scoring/analyze-adherence.mjs` on `main`. They accept a `--repo <path>` argument so they can be invoked against any branch worktree from outside that worktree. Hermes runs them from a `main` worktree on the VPS, pointed at the target branch worktree, after the workflow container has exited. The per-branch JSON reports are written to `metrics/<branch>/<phase>.json` inside the branch worktree.
 
@@ -372,28 +372,28 @@ Legacy branches (`workflow/*`, `run2/*`, `run3/*`) were created before this isol
 
 ## Security & Privacy Requirements
 
-Because UX HITL and code-review HITL are both intentionally skipped to preserve experiment cleanliness, the automated security and privacy suite is the *only* line of defense against a workflow quietly introducing unsafe patterns. These requirements define what the suite must enforce and what the workflows must respect.
+Because UX HITL and code-review HITL are both intentionally skipped to preserve experiment cleanliness, the automated security and privacy suite is the _only_ line of defense against a workflow quietly introducing unsafe patterns. These requirements define what the suite must enforce and what the workflows must respect.
 
 ### Security bar
 
 The expected state at the end of every run, on every branch:
 
-* Zero findings from Semgrep `p/owasp-top-ten` and `p/typescript` rulesets at `ERROR` severity. `WARNING`-level findings are recorded but do not fail the run.
-* Zero violations from `eslint-plugin-security` and `eslint-plugin-no-unsanitized`. No `eval`, no `Function()` constructor, no `dangerouslySetInnerHTML`, no unsanitized user input flowing into the DOM or HTTP responses.
-* Zero high-severity or critical findings from `npm audit --production`. Moderate findings are recorded. Workflows must pin exact versions (no `^` or `~` ranges) so audit results are reproducible across runs.
-* Zero hits from `gitleaks` across the full branch history for that workflow. Any hit is a hard fail for that run and must be surfaced in RUN_LOG.
-* Content Security Policy headers configured in `next.config.ts` with no `unsafe-inline`, no `unsafe-eval`, and a restrictive `default-src`. The automated scan should parse the built response headers and confirm.
-* No new outbound network dependencies beyond what the scaffold already declared. The scan should diff the set of imported packages against the scaffold baseline and flag additions.
+- Zero findings from Semgrep `p/owasp-top-ten` and `p/typescript` rulesets at `ERROR` severity. `WARNING`-level findings are recorded but do not fail the run.
+- Zero violations from `eslint-plugin-security` and `eslint-plugin-no-unsanitized`. No `eval`, no `Function()` constructor, no `dangerouslySetInnerHTML`, no unsanitized user input flowing into the DOM or HTTP responses.
+- Zero high-severity or critical findings from `npm audit --production`. Moderate findings are recorded. Workflows must pin exact versions (no `^` or `~` ranges) so audit results are reproducible across runs.
+- Zero hits from `gitleaks` across the full branch history for that workflow. Any hit is a hard fail for that run and must be surfaced in RUN_LOG.
+- Content Security Policy headers configured in `next.config.ts` with no `unsafe-inline`, no `unsafe-eval`, and a restrictive `default-src`. The automated scan should parse the built response headers and confirm.
+- No new outbound network dependencies beyond what the scaffold already declared. The scan should diff the set of imported packages against the scaffold baseline and flag additions.
 
 ### Privacy bar
 
 This is a civic tool. The baseline privacy promise ("close the tab and it's gone") is a starting point, not the whole picture. Every workflow must respect the following constraints, and the measurement suite must verify them:
 
-* **No client-side storage of user input.** No `localStorage`, `sessionStorage`, `IndexedDB`, `document.cookie` writes, or Cache API usage. The zip code the user types must live only in React state and must be discarded on unmount or tab close. A Semgrep rule should flag any usage of these APIs in `src/`.
-* **No third-party requests from the rendered page.** No analytics (GA, Plausible, Fathom, Vercel Analytics), no error tracking (Sentry, LogRocket), no font CDNs, no image CDNs outside what the scaffold already uses, no external script tags. The automated scan should parse the built HTML and any `<script>` or `<link>` tags and fail if a domain appears that is not on the scaffold allowlist.
-* **No server-side logging of user input.** Zip codes must never be logged by any server-side code path (including Next.js API routes, middleware, or server components). A Semgrep rule should flag any `console.log`, `console.error`, or logger call whose argument chain traces back to the zip code input.
-* **No telemetry packages.** The dependency diff check should explicitly fail if any package on a known-telemetry list is added (`@vercel/analytics`, `@sentry/*`, `posthog-js`, `mixpanel-browser`, `amplitude-*`, etc.).
-* **Static data only.** No runtime fetches to external APIs. All state election data is served from the static JSON files in the repo. The build scan should confirm no `fetch()`, `axios`, or equivalent calls target non-localhost origins.
+- **No client-side storage of user input.** No `localStorage`, `sessionStorage`, `IndexedDB`, `document.cookie` writes, or Cache API usage. The zip code the user types must live only in React state and must be discarded on unmount or tab close. A Semgrep rule should flag any usage of these APIs in `src/`.
+- **No third-party requests from the rendered page.** No analytics (GA, Plausible, Fathom, Vercel Analytics), no error tracking (Sentry, LogRocket), no font CDNs, no image CDNs outside what the scaffold already uses, no external script tags. The automated scan should parse the built HTML and any `<script>` or `<link>` tags and fail if a domain appears that is not on the scaffold allowlist.
+- **No server-side logging of user input.** Zip codes must never be logged by any server-side code path (including Next.js API routes, middleware, or server components). A Semgrep rule should flag any `console.log`, `console.error`, or logger call whose argument chain traces back to the zip code input.
+- **No telemetry packages.** The dependency diff check should explicitly fail if any package on a known-telemetry list is added (`@vercel/analytics`, `@sentry/*`, `posthog-js`, `mixpanel-browser`, `amplitude-*`, etc.).
+- **Static data only.** No runtime fetches to external APIs. All state election data is served from the static JSON files in the repo. The build scan should confirm no `fetch()`, `axios`, or equivalent calls target non-localhost origins.
 
 ### What the measurement suite must produce
 
@@ -403,10 +403,10 @@ A dedicated `security-privacy` block in each branch's per-phase JSON report cont
 
 These are things the experiment cannot automatically detect and that are being intentionally accepted as residual risk:
 
-* Subtle logic bugs that pass all automated checks but produce wrong output for edge-case zip codes
-* Accessibility regressions that axe doesn't catch (e.g., confusing focus order, poor screen reader narration flow)
-* Social-engineering-style content (e.g., a workflow that inserts misleading text about voting rules)
-* Supply chain attacks via a compromised package that passes `npm audit` at scan time
+- Subtle logic bugs that pass all automated checks but produce wrong output for edge-case zip codes
+- Accessibility regressions that axe doesn't catch (e.g., confusing focus order, poor screen reader narration flow)
+- Social-engineering-style content (e.g., a workflow that inserts misleading text about voting rules)
+- Supply chain attacks via a compromised package that passes `npm audit` at scan time
 
 Phase 3 analysis should explicitly note that these gaps exist, so the write-up doesn't overclaim on the basis of automated checks alone.
 
@@ -419,9 +419,10 @@ Phase 3 analysis should explicitly note that these gaps exist, so the write-up d
 After each workflow run completes, the `/start` command reports metrics and asks Muxin a few targeted questions. Her responses are recorded in `docs/QUALITATIVE_SCORECARD.md` and/or the RUN_LOG entry.
 
 **Automated data capture** (no manual input needed):
-* Session timing — captured in `metrics/timing.jsonl` on each branch
-* Workflow command execution log — captured in `metrics/workflow-log.jsonl` on each branch
-* Workflow-generated test file count — captured in the post-build measurement step
+
+- Session timing — captured in `metrics/timing.jsonl` on each branch
+- Workflow command execution log — captured in `metrics/workflow-log.jsonl` on each branch
+- Workflow-generated test file count — captured in the post-build measurement step
 
 **Operator debrief** (lightweight, after `/start` finishes):
 The `/start` command asks: "Build complete. Any observations for the write-up? Anything surprising about the output or metrics?" Muxin responds with whatever stands out, or says "nothing to add." This replaces the previous structured 1-5 rating system, which wasn't useful for autonomous execution where the operator is hands-off during the build.
@@ -434,13 +435,13 @@ The `/start` command asks: "Build complete. Any observations for the write-up? A
 
 For each phase, a run is "done" when:
 
-* The feature works as described in the spec (manual verification against a checklist)
-* The customized prompt output is correct — entering a zip code produces a properly populated prompt with that state's dates, links, and rules filled in
-* Tests exist and pass (the workflow is responsible for generating tests — whether it does is part of what we're measuring)
-* Playwright e2e tests pass (these are part of the shared measurement infrastructure, not workflow-generated)
-* No build errors
-* ESLint runs without crashing (errors are measured, not required to be zero)
-* Basic accessibility requirements are met: all interactive elements are keyboard-navigable, form inputs have associated labels, images have alt text, color contrast meets WCAG AA, and the site is usable with a screen reader. This is a civic tool for all voters — accessibility is a functional requirement, not a nice-to-have. (Lighthouse accessibility score captures some of this, but manual spot-check is also needed.)
+- The feature works as described in the spec (manual verification against a checklist)
+- The customized prompt output is correct — entering a zip code produces a properly populated prompt with that state's dates, links, and rules filled in
+- Tests exist and pass (the workflow is responsible for generating tests — whether it does is part of what we're measuring)
+- Playwright e2e tests pass (these are part of the shared measurement infrastructure, not workflow-generated)
+- No build errors
+- ESLint runs without crashing (errors are measured, not required to be zero)
+- Basic accessibility requirements are met: all interactive elements are keyboard-navigable, form inputs have associated labels, images have alt text, color contrast meets WCAG AA, and the site is usable with a screen reader. This is a civic tool for all voters — accessibility is a functional requirement, not a nice-to-have. (Lighthouse accessibility score captures some of this, but manual spot-check is also needed.)
 
 Muxin does NOT manually clean up code after a run. The whole point is measuring what the workflow produces without human polishing.
 
@@ -455,13 +456,13 @@ Muxin does NOT manually clean up code after a run. The whole point is measuring 
 **0.1 — Write the Feature Spec**
 A locked document describing exactly what the ballot tool does, page by page, component by component. This is the "prompt" that all eight workflow runs receive. It should describe desired outcomes and behavior, NOT implementation details or code. Include:
 
-* Page-by-page user flow
-* Data model (what fields, what sources) — derive the JSON schema from `docs/BALLOT_PROMPT.md`
-* UI behavior (responsive, error states, edge cases like zip codes spanning multiple districts)
-* Acceptance criteria checklist (for determining "done")
-* What the customized prompt output should look like
-* Accessibility requirements (keyboard navigation, screen reader compatibility, WCAG AA contrast)
-* Required `data-testid` attributes on key interactive elements (e.g., zip input, prompt output, copy button, error messages). These are needed so the shared Playwright e2e tests can find elements across all 5 implementations without being coupled to any workflow's DOM structure. List them in the acceptance criteria.
+- Page-by-page user flow
+- Data model (what fields, what sources) — derive the JSON schema from `docs/BALLOT_PROMPT.md`
+- UI behavior (responsive, error states, edge cases like zip codes spanning multiple districts)
+- Acceptance criteria checklist (for determining "done")
+- What the customized prompt output should look like
+- Accessibility requirements (keyboard navigation, screen reader compatibility, WCAG AA contrast)
+- Required `data-testid` attributes on key interactive elements (e.g., zip input, prompt output, copy button, error messages). These are needed so the shared Playwright e2e tests can find elements across all 5 implementations without being coupled to any workflow's DOM structure. List them in the acceptance criteria.
 
 **0.2 — Write the Phase 2 Spec**
 The multilingual modification request. Same format: outcomes and behavior, not implementation.
@@ -469,39 +470,39 @@ The multilingual modification request. Same format: outcomes and behavior, not i
 **0.3a — Scaffold the Repo**
 The repo already exists at `/Users/Muxin/Documents/GitHub/voter-choice` with `docs/` pre-populated. Claude Code's job:
 
-* Run `npx create-next-app` inside the repo to generate the framework template
-* Configure ESLint (including `eslint-plugin-complexity` for cyclomatic complexity measurement) and Prettier
-* Add an `.nvmrc` file pinning the Node.js version and an `engines` field in `package.json` — all branches must use the same Node version throughout the experiment
-* Create stub JSON data files for 2-3 states (enough to build and test against) based on the schema defined in 0.1
-* Generate `docs/QUALITATIVE_SCORECARD.md` as a reusable template
-* Commit and push
+- Run `npx create-next-app` inside the repo to generate the framework template
+- Configure ESLint (including `eslint-plugin-complexity` for cyclomatic complexity measurement) and Prettier
+- Add an `.nvmrc` file pinning the Node.js version and an `engines` field in `package.json` — all branches must use the same Node version throughout the experiment
+- Create stub JSON data files for 2-3 states (enough to build and test against) based on the schema defined in 0.1
+- Generate `docs/QUALITATIVE_SCORECARD.md` as a reusable template
+- Commit and push
 
 **0.3b — Measurement Automation + Branching**
 
-* Create `npm run measure` script that runs: ESLint, test coverage, complexity analysis, duplication scan, bundle size analysis, Lighthouse CLI (against local build), Playwright e2e tests. Output: a single JSON report file per run.
-* Set up Playwright with a shared e2e test suite that verifies core user flows (zip code entry → correct prompt output, copy-to-clipboard, responsive layout at mobile/desktop breakpoints, error states for invalid input). These tests are measurement infrastructure — they ship on all branches and are not modified by workflows.
-* **E2e test selector strategy:** Tests must work across 5 independent implementations with potentially different DOM structures. To make this possible without constraining how workflows generate code, the feature spec (`PROJECT_SPEC.md`) must prescribe a small set of required `data-testid` attributes on key interactive elements (e.g., `data-testid="zip-input"`, `data-testid="prompt-output"`, `data-testid="copy-button"`). These are part of the acceptance criteria, not implementation guidance — they tell the workflow *what the test harness expects to find*, not how to build the component. Claude Code should add these required test IDs to the feature spec in Phase 0.1 (or amend it here if 0.1 is already done).
-* Test the measure script on the scaffold to establish baseline measurements. **Expected baseline behavior:** Playwright e2e tests should skip gracefully on the scaffold (the stock Next.js template has no ballot tool UI, so there are no `data-testid` elements to find). The measure script must handle this without crashing — output `null` or `"skipped"` for e2e results in the baseline JSON report. All other metrics (ESLint, bundle size, etc.) should run and produce real values.
-* Commit everything and tag as `v0-scaffold`
-* Create all eight branches from that tag (so all branches inherit the measurement tooling, stub data, and e2e tests)
-* Push to GitHub remote
+- Create `npm run measure` script that runs: ESLint, test coverage, complexity analysis, duplication scan, bundle size analysis, Lighthouse CLI (against local build), Playwright e2e tests. Output: a single JSON report file per run.
+- Set up Playwright with a shared e2e test suite that verifies core user flows (zip code entry → correct prompt output, copy-to-clipboard, responsive layout at mobile/desktop breakpoints, error states for invalid input). These tests are measurement infrastructure — they ship on all branches and are not modified by workflows.
+- **E2e test selector strategy:** Tests must work across 5 independent implementations with potentially different DOM structures. To make this possible without constraining how workflows generate code, the feature spec (`PROJECT_SPEC.md`) must prescribe a small set of required `data-testid` attributes on key interactive elements (e.g., `data-testid="zip-input"`, `data-testid="prompt-output"`, `data-testid="copy-button"`). These are part of the acceptance criteria, not implementation guidance — they tell the workflow _what the test harness expects to find_, not how to build the component. Claude Code should add these required test IDs to the feature spec in Phase 0.1 (or amend it here if 0.1 is already done).
+- Test the measure script on the scaffold to establish baseline measurements. **Expected baseline behavior:** Playwright e2e tests should skip gracefully on the scaffold (the stock Next.js template has no ballot tool UI, so there are no `data-testid` elements to find). The measure script must handle this without crashing — output `null` or `"skipped"` for e2e results in the baseline JSON report. All other metrics (ESLint, bundle size, etc.) should run and produce real values.
+- Commit everything and tag as `v0-scaffold`
+- Create all eight branches from that tag (so all branches inherit the measurement tooling, stub data, and e2e tests)
+- Push to GitHub remote
 
 **0.4 — Install Workflow Frameworks**
 
-* On each branch, install and configure the respective workflow framework (Spec Kit, SuperPowers, BMAD, Compound Engineering, GSD, OpenSpec) per their docs
-* GSD: install via `npx get-shit-done-cc@latest`, pin version in FRAMEWORK_VERSIONS.md
-* OpenSpec: install via `npm install -g @fission-ai/openspec@latest` and run `openspec init`, pin version
-* Vanilla branch gets only a minimal CLAUDE.md
-* Branch H (`workflow/vanilla-codex`) only: install the OpenAI Codex plugin for Claude Code (`github.com/openai/codex-plugin-cc`) and configure the Stop hook. Do NOT install on any other branch — the critic is the independent variable being tested on this branch, not a shared tool.
-* Document what was installed/configured on each branch
-* Pin and document the exact version installed for each framework (e.g., in RUN_LOG or a `docs/FRAMEWORK_VERSIONS.md`). Frameworks update frequently — if a major update ships mid-experiment, all branches must use the version that was current at experiment start.
-* **If a framework can't be installed** (repo gone, breaking incompatibility, requires setup that conflicts with the scaffold): document the blocker in RUN_LOG, stop, and ask Muxin. Do not improvise a workaround — that changes the independent variable.
+- On each branch, install and configure the respective workflow framework (Spec Kit, SuperPowers, BMAD, Compound Engineering, GSD, OpenSpec) per their docs
+- GSD: install via `npx get-shit-done-cc@latest`, pin version in FRAMEWORK_VERSIONS.md
+- OpenSpec: install via `npm install -g @fission-ai/openspec@latest` and run `openspec init`, pin version
+- Vanilla branch gets only a minimal CLAUDE.md
+- Branch H (`workflow/vanilla-codex`) only: install the OpenAI Codex plugin for Claude Code (`github.com/openai/codex-plugin-cc`) and configure the Stop hook. Do NOT install on any other branch — the critic is the independent variable being tested on this branch, not a shared tool.
+- Document what was installed/configured on each branch
+- Pin and document the exact version installed for each framework (e.g., in RUN_LOG or a `docs/FRAMEWORK_VERSIONS.md`). Frameworks update frequently — if a major update ships mid-experiment, all branches must use the version that was current at experiment start.
+- **If a framework can't be installed** (repo gone, breaking incompatibility, requires setup that conflicts with the scaffold): document the blocker in RUN_LOG, stop, and ask Muxin. Do not improvise a workaround — that changes the independent variable.
 
 **0.5 — Generate Randomized Run Order**
 
-* Randomly assign the sequence in which the eight workflows run
-* Document it
-* Update the QUALITATIVE_SCORECARD.md template with sections for each run in the randomized order
+- Randomly assign the sequence in which the eight workflows run
+- Document it
+- Update the QUALITATIVE_SCORECARD.md template with sections for each run in the randomized order
 
 ### Phase 1: Build (Claude Code executes autonomously)
 
@@ -531,24 +532,24 @@ For each workflow:
 
 **Claude Code's responsibilities in Phase 3:** Aggregate all JSON metric reports into comparison tables, calculate Phase 1 → Phase 2 deltas per metric per workflow, produce visualizations (charts comparing workflows across metrics), integrate Muxin's qualitative scorecard data, and draft the write-up.
 
-* Compile all JSON metric reports into a comparison table
-* Calculate Phase 1 → Phase 2 deltas per metric per workflow
-* Visualize results (charts comparing workflows across metrics)
-* Integrate Muxin's qualitative scorecard (structured ratings + open-ended notes)
-* Contextualize results against Known Limitations (learning effects, spec-format bias)
-* Draft the write-up
+- Compile all JSON metric reports into a comparison table
+- Calculate Phase 1 → Phase 2 deltas per metric per workflow
+- Visualize results (charts comparing workflows across metrics)
+- Integrate Muxin's qualitative scorecard (structured ratings + open-ended notes)
+- Contextualize results against Known Limitations (learning effects, spec-format bias)
+- Draft the write-up
 
 ---
 
 ## Reference Documents
 
-| Document | Location | Purpose |
-|----------|----------|---------|
-| Workflow experiment research | `/Users/Muxin/Documents/Personal Obsidian/Projects/Workflow Design as the Real Variable in AI Coding.md` | Research foundation, benchmarks, prior art |
-| Codebase quality metrics | `/Users/Muxin/Documents/Personal Obsidian/Projects/Codebase Quality Metrics for AI-Assisted Solo Builders.md` | Metric definitions, tool recommendations, scoring rubric |
-| AI ballot prompt | `docs/BALLOT_PROMPT.md` (in repo) | The full prompt that gets customized per user's zip code |
-| Website product vision | `/Users/Muxin/Documents/Personal Obsidian/Civic AI/ideas-website.md` | Broader product roadmap (for architectural awareness, not experiment scope) |
-| Democracy group profiles | Uploaded in chat session | Community context, potential collaborators |
+| Document                     | Location                                                                                                      | Purpose                                                                     |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| Workflow experiment research | `/Users/Muxin/Documents/Personal Obsidian/Projects/Workflow Design as the Real Variable in AI Coding.md`      | Research foundation, benchmarks, prior art                                  |
+| Codebase quality metrics     | `/Users/Muxin/Documents/Personal Obsidian/Projects/Codebase Quality Metrics for AI-Assisted Solo Builders.md` | Metric definitions, tool recommendations, scoring rubric                    |
+| AI ballot prompt             | `docs/BALLOT_PROMPT.md` (in repo)                                                                             | The full prompt that gets customized per user's zip code                    |
+| Website product vision       | `/Users/Muxin/Documents/Personal Obsidian/Civic AI/ideas-website.md`                                          | Broader product roadmap (for architectural awareness, not experiment scope) |
+| Democracy group profiles     | Uploaded in chat session                                                                                      | Community context, potential collaborators                                  |
 
 ---
 

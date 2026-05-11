@@ -17,12 +17,8 @@
   },
   "workflowLog": {
     "framework": "compound-engineering",
-    "expected": [
-      "lfg"
-    ],
-    "completed": [
-      "lfg"
-    ],
+    "expected": ["lfg"],
+    "completed": ["lfg"],
     "missing": []
   },
   "buildStats": {

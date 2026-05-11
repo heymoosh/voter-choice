@@ -1,0 +1,510 @@
+[
+  {
+    "filePath": "/Users/Muxin/Documents/GitHub/voter-choice/src/app/layout.tsx",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": []
+  },
+  {
+    "filePath": "/Users/Muxin/Documents/GitHub/voter-choice/src/app/page.tsx",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": []
+  },
+  {
+    "filePath": "/Users/Muxin/Documents/GitHub/voter-choice/src/components/BallotTool.tsx",
+    "messages": [
+      {
+        "ruleId": "complexity",
+        "severity": 1,
+        "message": "Function 'BallotTool' has a complexity of 5. Maximum allowed is 1.",
+        "line": 29,
+        "column": 16,
+        "nodeType": "FunctionDeclaration",
+        "messageId": "complex",
+        "endLine": 29,
+        "endColumn": 35
+      },
+      {
+        "ruleId": "complexity",
+        "severity": 1,
+        "message": "Arrow function has a complexity of 4. Maximum allowed is 1.",
+        "line": 38,
+        "column": 21,
+        "nodeType": "ArrowFunctionExpression",
+        "messageId": "complex",
+        "endLine": 38,
+        "endColumn": 23
+      },
+      {
+        "ruleId": "complexity",
+        "severity": 1,
+        "message": "Arrow function has a complexity of 3. Maximum allowed is 1.",
+        "line": 75,
+        "column": 25,
+        "nodeType": "ArrowFunctionExpression",
+        "messageId": "complex",
+        "endLine": 75,
+        "endColumn": 27
+      }
+    ],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 3,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "source": "\"use client\";\n\nimport { useState, useCallback, useMemo } from \"react\";\nimport { StateData, Election } from \"@/lib/types\";\nimport {\n  getStateCodesForZip,\n  getStateData,\n  findNextElection,\n} from \"@/lib/stateData\";\nimport { buildPrompt } from \"@/lib/promptBuilder\";\nimport ZipForm from \"./ZipForm\";\nimport StateInfo from \"./StateInfo\";\nimport StateSelector from \"./StateSelector\";\nimport PromptOutput from \"./PromptOutput\";\n\ntype AppState =\n  | { status: \"idle\" }\n  | { status: \"loading\" }\n  | { status: \"multi-state\"; zipCode: string; stateCodes: string[] }\n  | {\n      status: \"result\";\n      zipCode: string;\n      stateData: StateData;\n      election: Election | null;\n      promptText: string;\n    }\n  | { status: \"not-found\"; zipCode: string };\n\nexport default function BallotTool() {\n  const [appState, setAppState] = useState<AppState>({ status: \"idle\" });\n  const today = useMemo(() => new Date(), []);\n\n  const handleZipSubmit = useCallback(\n    (zipCode: string) => {\n      setAppState({ status: \"loading\" });\n\n      // Simulate minimal async (prevents layout shift, per PROJECT_SPEC.md)\n      setTimeout(() => {\n        const stateCodes = getStateCodesForZip(zipCode);\n\n        if (stateCodes.length === 0) {\n          setAppState({ status: \"not-found\", zipCode });\n          return;\n        }\n\n        if (stateCodes.length > 1) {\n          setAppState({ status: \"multi-state\", zipCode, stateCodes });\n          return;\n        }\n\n        const stateCode = stateCodes[0];\n        const data = getStateData(stateCode);\n\n        if (!data) {\n          setAppState({ status: \"not-found\", zipCode });\n          return;\n        }\n\n        const election = findNextElection(data.elections, today);\n        const promptText = buildPrompt(data, zipCode, election);\n\n        setAppState({\n          status: \"result\",\n          zipCode,\n          stateData: data,\n          election,\n          promptText,\n        });\n      }, 150);\n    },\n    [today],\n  );\n\n  const handleStateSelect = useCallback(\n    (stateCode: string) => {\n      if (appState.status !== \"multi-state\") return;\n      const { zipCode } = appState;\n\n      const data = getStateData(stateCode);\n      if (!data) {\n        setAppState({ status: \"not-found\", zipCode });\n        return;\n      }\n\n      const election = findNextElection(data.elections, today);\n      const promptText = buildPrompt(data, zipCode, election);\n\n      setAppState({\n        status: \"result\",\n        zipCode,\n        stateData: data,\n        election,\n        promptText,\n      });\n    },\n    [appState, today],\n  );\n\n  return (\n    <div className=\"w-full max-w-2xl mx-auto space-y-8\">\n      {/* Zip Code Entry */}\n      <section aria-label=\"Zip code entry\">\n        <ZipForm\n          onSubmit={handleZipSubmit}\n          isLoading={appState.status === \"loading\"}\n        />\n      </section>\n\n      {/* Loading indicator */}\n      {appState.status === \"loading\" && (\n        <div\n          role=\"status\"\n          aria-live=\"polite\"\n          aria-label=\"Looking up your zip code\"\n          className=\"flex items-center gap-3 text-gray-600\"\n        >\n          <svg\n            className=\"w-5 h-5 animate-spin text-blue-600\"\n            fill=\"none\"\n            viewBox=\"0 0 24 24\"\n            aria-hidden=\"true\"\n          >\n            <circle\n              className=\"opacity-25\"\n              cx=\"12\"\n              cy=\"12\"\n              r=\"10\"\n              stroke=\"currentColor\"\n              strokeWidth=\"4\"\n            />\n            <path\n              className=\"opacity-75\"\n              fill=\"currentColor\"\n              d=\"M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z\"\n            />\n          </svg>\n          <span>Looking up your zip code...</span>\n        </div>\n      )}\n\n      {/* Not found */}\n      {appState.status === \"not-found\" && (\n        <div\n          data-testid=\"not-found-message\"\n          role=\"alert\"\n          aria-live=\"polite\"\n          className=\"bg-amber-50 border border-amber-200 rounded-xl p-5 text-amber-800\"\n        >\n          <h3 className=\"font-semibold text-base mb-1\">Zip code not found</h3>\n          <p className=\"text-sm\">\n            We don&apos;t have data for zip code{\" \"}\n            <strong>{appState.zipCode}</strong> yet. We&apos;re working on\n            adding all U.S. zip codes.{\" \"}\n            <a\n              href=\"https://www.usa.gov/state-election-office\"\n              target=\"_blank\"\n              rel=\"noopener noreferrer\"\n              className=\"underline hover:text-amber-900\"\n            >\n              Find your state election website\n            </a>\n            .\n          </p>\n        </div>\n      )}\n\n      {/* Multi-state selector */}\n      {appState.status === \"multi-state\" && (\n        <StateSelector\n          stateCodes={appState.stateCodes}\n          selectedState={null}\n          onSelect={handleStateSelect}\n        />\n      )}\n\n      {/* Results */}\n      {appState.status === \"result\" && (\n        <>\n          <StateInfo\n            stateData={appState.stateData}\n            election={appState.election}\n            today={today}\n            registrationCheckUrl={\n              appState.stateData.registration.registrationCheckUrl\n            }\n          />\n          <PromptOutput promptText={appState.promptText} />\n        </>\n      )}\n    </div>\n  );\n}\n",
+    "usedDeprecatedRules": []
+  },
+  {
+    "filePath": "/Users/Muxin/Documents/GitHub/voter-choice/src/components/DeadlineStatus.tsx",
+    "messages": [
+      {
+        "ruleId": "complexity",
+        "severity": 1,
+        "message": "Function 'DeadlineStatus' has a complexity of 4. Maximum allowed is 1.",
+        "line": 47,
+        "column": 16,
+        "nodeType": "FunctionDeclaration",
+        "messageId": "complex",
+        "endLine": 47,
+        "endColumn": 39
+      }
+    ],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 1,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "source": "\"use client\";\n\nimport { DeadlineStatus as StatusEnum } from \"@/lib/types\";\nimport {\n  getDeadlineStatus,\n  getDeadlineLabel,\n  formatDate,\n} from \"@/lib/deadlineUtils\";\n\ninterface DeadlineStatusProps {\n  label: string;\n  isoDate: string | null;\n  today: Date;\n  additionalInfo?: string;\n}\n\nconst statusConfig: Record<\n  StatusEnum,\n  { textColor: string; bgColor: string; borderColor: string; label: string }\n> = {\n  [StatusEnum.GREEN]: {\n    textColor: \"text-green-800\",\n    bgColor: \"bg-green-50\",\n    borderColor: \"border-green-200\",\n    label: \"Open\",\n  },\n  [StatusEnum.YELLOW]: {\n    textColor: \"text-yellow-800\",\n    bgColor: \"bg-yellow-50\",\n    borderColor: \"border-yellow-200\",\n    label: \"Closing Soon\",\n  },\n  [StatusEnum.RED]: {\n    textColor: \"text-red-800\",\n    bgColor: \"bg-red-50\",\n    borderColor: \"border-red-200\",\n    label: \"Urgent\",\n  },\n  [StatusEnum.PASSED]: {\n    textColor: \"text-gray-600\",\n    bgColor: \"bg-gray-50\",\n    borderColor: \"border-gray-200\",\n    label: \"Passed\",\n  },\n};\n\nexport default function DeadlineStatus({\n  label,\n  isoDate,\n  today,\n  additionalInfo,\n}: DeadlineStatusProps) {\n  const status = getDeadlineStatus(isoDate, today);\n  const relativeLabel = getDeadlineLabel(isoDate, today);\n  const config = statusConfig[status];\n\n  return (\n    <div\n      className={`flex items-start justify-between p-3 rounded-lg border ${config.bgColor} ${config.borderColor}`}\n    >\n      <div className=\"flex-1 min-w-0\">\n        <div className=\"flex items-center gap-2 flex-wrap\">\n          <span className={`text-sm font-semibold ${config.textColor}`}>\n            {label}\n          </span>\n          <span\n            className={`text-xs px-2 py-0.5 rounded-full font-medium ${config.bgColor} ${config.textColor} border ${config.borderColor}`}\n          >\n            {config.label}\n          </span>\n        </div>\n        {isoDate && (\n          <p className={`text-sm mt-0.5 ${config.textColor}`}>\n            {formatDate(isoDate)}\n          </p>\n        )}\n        {!isoDate && (\n          <p className={`text-sm mt-0.5 ${config.textColor}`}>Not available</p>\n        )}\n        {additionalInfo && (\n          <p className=\"text-xs text-gray-500 mt-0.5\">{additionalInfo}</p>\n        )}\n      </div>\n      <span\n        className={`text-sm font-medium ml-3 whitespace-nowrap ${config.textColor}`}\n      >\n        {relativeLabel}\n      </span>\n    </div>\n  );\n}\n",
+    "usedDeprecatedRules": []
+  },
+  {
+    "filePath": "/Users/Muxin/Documents/GitHub/voter-choice/src/components/PromptOutput.tsx",
+    "messages": [
+      {
+        "ruleId": "complexity",
+        "severity": 1,
+        "message": "Function 'PromptOutput' has a complexity of 4. Maximum allowed is 1.",
+        "line": 9,
+        "column": 16,
+        "nodeType": "FunctionDeclaration",
+        "messageId": "complex",
+        "endLine": 9,
+        "endColumn": 37
+      },
+      {
+        "ruleId": "complexity",
+        "severity": 1,
+        "message": "Async function 'handleCopy' has a complexity of 5. Maximum allowed is 1.",
+        "line": 14,
+        "column": 3,
+        "nodeType": "FunctionDeclaration",
+        "messageId": "complex",
+        "endLine": 14,
+        "endColumn": 28
+      }
+    ],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 2,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "source": "\"use client\";\n\nimport { useState, useRef } from \"react\";\n\ninterface PromptOutputProps {\n  promptText: string;\n}\n\nexport default function PromptOutput({ promptText }: PromptOutputProps) {\n  const [copied, setCopied] = useState(false);\n  const [showFallback, setShowFallback] = useState(false);\n  const textAreaRef = useRef<HTMLTextAreaElement>(null);\n\n  async function handleCopy() {\n    if (navigator.clipboard && navigator.clipboard.writeText) {\n      try {\n        await navigator.clipboard.writeText(promptText);\n        setCopied(true);\n        setTimeout(() => setCopied(false), 2000);\n        return;\n      } catch {\n        // Fall through to fallback\n      }\n    }\n    // Fallback: select the text in the textarea\n    if (textAreaRef.current) {\n      textAreaRef.current.select();\n      setShowFallback(true);\n    }\n  }\n\n  return (\n    <section\n      className=\"bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden\"\n      aria-label=\"Customized ballot research prompt\"\n    >\n      <div className=\"px-6 py-4 border-b border-gray-100 bg-gray-50\">\n        <h2 className=\"text-lg font-bold text-gray-900\">\n          Your Customized Ballot Research Prompt\n        </h2>\n        <p className=\"text-sm text-gray-600 mt-1\">\n          Copy this prompt and paste it as your first message in any AI chatbot\n        </p>\n      </div>\n\n      <div className=\"p-6 space-y-4\">\n        {/* Instructions */}\n        <div className=\"flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between\">\n          <div className=\"text-sm text-gray-600\">\n            <strong>How to use:</strong> Copy below → open any free AI chatbot →\n            paste as your first message\n          </div>\n          <div className=\"flex items-center gap-2\">\n            <button\n              data-testid=\"copy-button\"\n              onClick={handleCopy}\n              className=\"flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 min-h-[44px] min-w-[44px]\"\n              aria-label=\"Copy prompt to clipboard\"\n            >\n              {copied ? (\n                <>\n                  <svg\n                    className=\"w-4 h-4\"\n                    fill=\"none\"\n                    stroke=\"currentColor\"\n                    viewBox=\"0 0 24 24\"\n                    aria-hidden=\"true\"\n                  >\n                    <path\n                      strokeLinecap=\"round\"\n                      strokeLinejoin=\"round\"\n                      strokeWidth={2}\n                      d=\"M5 13l4 4L19 7\"\n                    />\n                  </svg>\n                  Copied!\n                </>\n              ) : (\n                <>\n                  <svg\n                    className=\"w-4 h-4\"\n                    fill=\"none\"\n                    stroke=\"currentColor\"\n                    viewBox=\"0 0 24 24\"\n                    aria-hidden=\"true\"\n                  >\n                    <path\n                      strokeLinecap=\"round\"\n                      strokeLinejoin=\"round\"\n                      strokeWidth={2}\n                      d=\"M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z\"\n                    />\n                  </svg>\n                  Copy to Clipboard\n                </>\n              )}\n            </button>\n            {copied && (\n              <span\n                data-testid=\"copy-confirmation\"\n                role=\"status\"\n                aria-live=\"polite\"\n                className=\"text-sm text-green-700 font-medium\"\n              >\n                ✓ Copied to clipboard!\n              </span>\n            )}\n          </div>\n        </div>\n\n        {showFallback && (\n          <div\n            role=\"alert\"\n            aria-live=\"polite\"\n            className=\"text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-3\"\n          >\n            Clipboard not available. The text is selected — press{\" \"}\n            <kbd className=\"px-1.5 py-0.5 bg-amber-100 rounded text-xs font-mono\">\n              Ctrl+C\n            </kbd>{\" \"}\n            /{\" \"}\n            <kbd className=\"px-1.5 py-0.5 bg-amber-100 rounded text-xs font-mono\">\n              Cmd+C\n            </kbd>{\" \"}\n            to copy.\n          </div>\n        )}\n\n        {/* Prompt text area */}\n        <div\n          data-testid=\"prompt-output\"\n          className=\"relative\"\n          role=\"region\"\n          aria-label=\"Full ballot research prompt text\"\n        >\n          <textarea\n            ref={textAreaRef}\n            readOnly\n            value={promptText}\n            rows={20}\n            className=\"w-full p-4 text-sm font-mono bg-gray-50 border border-gray-200 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800 leading-relaxed\"\n            aria-label=\"Ballot research prompt — read only, use copy button above\"\n            aria-readonly=\"true\"\n          />\n        </div>\n      </div>\n    </section>\n  );\n}\n",
+    "usedDeprecatedRules": []
+  },
+  {
+    "filePath": "/Users/Muxin/Documents/GitHub/voter-choice/src/components/ShareButton.tsx",
+    "messages": [
+      {
+        "ruleId": "complexity",
+        "severity": 1,
+        "message": "Function 'handleShare' has a complexity of 2. Maximum allowed is 1.",
+        "line": 4,
+        "column": 3,
+        "nodeType": "FunctionDeclaration",
+        "messageId": "complex",
+        "endLine": 4,
+        "endColumn": 23
+      }
+    ],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 1,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "source": "\"use client\";\n\nexport default function ShareButton() {\n  function handleShare() {\n    if (navigator.share) {\n      navigator.share({\n        title: \"Voter Choice — AI Ballot Research\",\n        text: \"Free AI ballot research tool — enter your zip code and get a personalized prompt for any AI chatbot.\",\n        url: window.location.href,\n      });\n    } else {\n      navigator.clipboard.writeText(window.location.href).catch(() => {});\n    }\n  }\n\n  return (\n    <button\n      onClick={handleShare}\n      className=\"text-blue-600 hover:text-blue-800 font-medium underline underline-offset-2 min-h-[44px] flex items-center\"\n    >\n      Share this tool\n    </button>\n  );\n}\n",
+    "usedDeprecatedRules": []
+  },
+  {
+    "filePath": "/Users/Muxin/Documents/GitHub/voter-choice/src/components/StateInfo.tsx",
+    "messages": [
+      {
+        "ruleId": "complexity",
+        "severity": 1,
+        "message": "Function 'StateInfo' has a complexity of 19. Maximum allowed is 1.",
+        "line": 14,
+        "column": 16,
+        "nodeType": "FunctionDeclaration",
+        "messageId": "complex",
+        "endLine": 14,
+        "endColumn": 34
+      }
+    ],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 1,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "source": "\"use client\";\n\nimport { StateData, Election } from \"@/lib/types\";\nimport { formatDate, allDeadlinesPassed } from \"@/lib/deadlineUtils\";\nimport DeadlineStatus from \"./DeadlineStatus\";\n\ninterface StateInfoProps {\n  stateData: StateData;\n  election: Election | null;\n  today: Date;\n  registrationCheckUrl: string;\n}\n\nexport default function StateInfo({\n  stateData,\n  election,\n  today,\n  registrationCheckUrl,\n}: StateInfoProps) {\n  const reg = stateData.registration;\n  const ev = stateData.earlyVoting;\n  const rules = stateData.votingRules;\n  const resources = stateData.resources;\n\n  const deadlines = [\n    reg.online.available ? reg.online.deadline : null,\n    reg.byMail.deadline,\n    reg.inPerson.deadline,\n  ];\n  const deadlinesPassed = allDeadlinesPassed(deadlines, today);\n\n  return (\n    <section\n      data-testid=\"state-info\"\n      aria-label={`Election information for ${stateData.stateName}`}\n      className=\"bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden\"\n    >\n      {/* Header */}\n      <div className=\"bg-blue-600 text-white px-6 py-4\">\n        <h2 className=\"text-xl font-bold\">{stateData.stateName}</h2>\n        {election ? (\n          <>\n            <p\n              data-testid=\"election-name\"\n              className=\"text-blue-100 text-sm mt-1\"\n            >\n              {election.name}\n            </p>\n            <p\n              data-testid=\"election-date\"\n              className=\"text-white font-semibold text-base mt-0.5\"\n            >\n              {formatDate(election.date)}\n            </p>\n          </>\n        ) : (\n          <>\n            <p\n              data-testid=\"election-name\"\n              className=\"text-blue-100 text-sm mt-1\"\n            >\n              No upcoming elections found\n            </p>\n            <p data-testid=\"election-date\" className=\"sr-only\">\n              N/A\n            </p>\n          </>\n        )}\n      </div>\n\n      <div className=\"p-6 space-y-6\">\n        {/* No upcoming election message */}\n        {!election && (\n          <div\n            data-testid=\"no-election-message\"\n            role=\"alert\"\n            className=\"bg-gray-50 border border-gray-200 rounded-xl p-4 text-sm text-gray-700\"\n          >\n            No upcoming elections found for {stateData.stateName}. Check the{\" \"}\n            <a\n              href={resources.stateElectionWebsite}\n              target=\"_blank\"\n              rel=\"noopener noreferrer\"\n              className=\"text-blue-600 underline hover:text-blue-800\"\n            >\n              {stateData.stateName} election website\n            </a>{\" \"}\n            for updates.\n          </div>\n        )}\n\n        {/* All deadlines passed alert */}\n        {deadlinesPassed && election && (\n          <div\n            role=\"alert\"\n            className=\"bg-orange-50 border border-orange-200 rounded-xl p-4 text-sm text-orange-800\"\n          >\n            <strong>\n              Registration deadlines for this election have passed.\n            </strong>{\" \"}\n            Check{\" \"}\n            <a\n              href={registrationCheckUrl}\n              target=\"_blank\"\n              rel=\"noopener noreferrer\"\n              className=\"underline hover:text-orange-900\"\n            >\n              your registration status\n            </a>{\" \"}\n            to confirm you&apos;re registered.\n          </div>\n        )}\n\n        {/* Registration deadlines */}\n        <div>\n          <h3 className=\"text-base font-semibold text-gray-900 mb-3\">\n            Voter Registration Deadlines\n          </h3>\n          <div\n            data-testid=\"registration-status\"\n            className=\"space-y-2\"\n            aria-label=\"Voter registration deadlines\"\n          >\n            {reg.online.available && (\n              <DeadlineStatus\n                label=\"Online registration\"\n                isoDate={reg.online.deadline}\n                today={today}\n              />\n            )}\n            {!reg.online.available && (\n              <div className=\"p-3 rounded-lg border bg-gray-50 border-gray-200\">\n                <span className=\"text-sm font-semibold text-gray-600\">\n                  Online registration\n                </span>\n                <p className=\"text-sm text-gray-500 mt-0.5\">Not available</p>\n              </div>\n            )}\n            <DeadlineStatus\n              label=\"By mail\"\n              isoDate={reg.byMail.deadline}\n              today={today}\n              additionalInfo={\n                reg.byMail.sincePostmarked\n                  ? \"Postmark by this date\"\n                  : \"Must be received by this date\"\n              }\n            />\n            <DeadlineStatus\n              label=\"In person\"\n              isoDate={reg.inPerson.deadline}\n              today={today}\n            />\n            {reg.sameDayRegistration && (\n              <div className=\"p-3 rounded-lg border bg-green-50 border-green-200\">\n                <span className=\"text-sm font-semibold text-green-800\">\n                  Same-day registration available\n                </span>\n                <p className=\"text-sm text-green-700 mt-0.5\">\n                  You can register on Election Day\n                </p>\n              </div>\n            )}\n          </div>\n        </div>\n\n        {/* Early voting */}\n        <div>\n          <h3 className=\"text-base font-semibold text-gray-900 mb-3\">\n            Early Voting\n          </h3>\n          {ev.available && ev.startDate && ev.endDate ? (\n            <div className=\"p-3 rounded-lg border bg-green-50 border-green-200\">\n              <p className=\"text-sm font-semibold text-green-800\">\n                {formatDate(ev.startDate)} – {formatDate(ev.endDate)}\n              </p>\n              {ev.notes && (\n                <p className=\"text-sm text-green-700 mt-0.5\">{ev.notes}</p>\n              )}\n            </div>\n          ) : (\n            <div className=\"p-3 rounded-lg border bg-gray-50 border-gray-200\">\n              <p className=\"text-sm text-gray-600\">\n                {ev.notes ??\n                  \"Early voting not available. Absentee voting may be available.\"}\n              </p>\n            </div>\n          )}\n        </div>\n\n        {/* Voting rules */}\n        <div>\n          <h3 className=\"text-base font-semibold text-gray-900 mb-3\">\n            Voting Rules\n          </h3>\n          <div className=\"space-y-2 text-sm\">\n            <div className=\"p-3 rounded-lg border bg-gray-50 border-gray-200\">\n              <span className=\"font-semibold text-gray-800\">Photo ID: </span>\n              <span className=\"text-gray-700\">\n                {rules.idRequired ? \"Required\" : \"Not required\"}\n              </span>\n              {rules.idRequired && rules.acceptedIds.length > 0 && (\n                <p className=\"text-gray-600 mt-1 text-xs\">\n                  Accepted: {rules.acceptedIds.slice(0, 3).join(\", \")}\n                  {rules.acceptedIds.length > 3 ? \", and more\" : \"\"}\n                </p>\n              )}\n            </div>\n            <div className=\"p-3 rounded-lg border bg-gray-50 border-gray-200\">\n              <span className=\"font-semibold text-gray-800\">\n                Phones at polls:{\" \"}\n              </span>\n              <span className=\"text-gray-700\">{rules.phonesAtPolls}</span>\n              <p className=\"text-gray-600 mt-1 text-xs\">\n                {rules.phonesAtPollsDetail}\n              </p>\n            </div>\n          </div>\n        </div>\n\n        {/* Resources */}\n        <div>\n          <h3 className=\"text-base font-semibold text-gray-900 mb-3\">\n            Official Resources\n          </h3>\n          <div className=\"space-y-2\">\n            <a\n              href={resources.stateElectionWebsite}\n              target=\"_blank\"\n              rel=\"noopener noreferrer\"\n              className=\"flex items-center gap-2 p-3 rounded-lg border border-blue-100 bg-blue-50 text-blue-700 hover:bg-blue-100 text-sm font-medium transition-colors min-h-[44px]\"\n            >\n              <svg\n                className=\"w-4 h-4 flex-shrink-0\"\n                fill=\"none\"\n                stroke=\"currentColor\"\n                viewBox=\"0 0 24 24\"\n                aria-hidden=\"true\"\n              >\n                <path\n                  strokeLinecap=\"round\"\n                  strokeLinejoin=\"round\"\n                  strokeWidth={2}\n                  d=\"M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14\"\n                />\n              </svg>\n              {stateData.stateName} Election Website\n            </a>\n            <a\n              href={resources.sampleBallotLookup}\n              target=\"_blank\"\n              rel=\"noopener noreferrer\"\n              className=\"flex items-center gap-2 p-3 rounded-lg border border-blue-100 bg-blue-50 text-blue-700 hover:bg-blue-100 text-sm font-medium transition-colors min-h-[44px]\"\n            >\n              <svg\n                className=\"w-4 h-4 flex-shrink-0\"\n                fill=\"none\"\n                stroke=\"currentColor\"\n                viewBox=\"0 0 24 24\"\n                aria-hidden=\"true\"\n              >\n                <path\n                  strokeLinecap=\"round\"\n                  strokeLinejoin=\"round\"\n                  strokeWidth={2}\n                  d=\"M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z\"\n                />\n              </svg>\n              Sample Ballot Lookup\n            </a>\n            <a\n              href={resources.countyElectionLookup}\n              target=\"_blank\"\n              rel=\"noopener noreferrer\"\n              className=\"flex items-center gap-2 p-3 rounded-lg border border-blue-100 bg-blue-50 text-blue-700 hover:bg-blue-100 text-sm font-medium transition-colors min-h-[44px]\"\n            >\n              <svg\n                className=\"w-4 h-4 flex-shrink-0\"\n                fill=\"none\"\n                stroke=\"currentColor\"\n                viewBox=\"0 0 24 24\"\n                aria-hidden=\"true\"\n              >\n                <path\n                  strokeLinecap=\"round\"\n                  strokeLinejoin=\"round\"\n                  strokeWidth={2}\n                  d=\"M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z\"\n                />\n              </svg>\n              County Election Office\n            </a>\n          </div>\n        </div>\n      </div>\n    </section>\n  );\n}\n",
+    "usedDeprecatedRules": []
+  },
+  {
+    "filePath": "/Users/Muxin/Documents/GitHub/voter-choice/src/components/StateSelector.tsx",
+    "messages": [
+      {
+        "ruleId": "complexity",
+        "severity": 1,
+        "message": "Function 'StateSelector' has a complexity of 2. Maximum allowed is 1.",
+        "line": 64,
+        "column": 16,
+        "nodeType": "FunctionDeclaration",
+        "messageId": "complex",
+        "endLine": 64,
+        "endColumn": 38
+      },
+      {
+        "ruleId": "complexity",
+        "severity": 1,
+        "message": "Arrow function has a complexity of 2. Maximum allowed is 1.",
+        "line": 99,
+        "column": 32,
+        "nodeType": "ArrowFunctionExpression",
+        "messageId": "complex",
+        "endLine": 99,
+        "endColumn": 34
+      }
+    ],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 2,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "source": "\"use client\";\n\nimport { ChangeEvent } from \"react\";\n\ninterface StateSelectorProps {\n  stateCodes: string[];\n  selectedState: string | null;\n  onSelect: (stateCode: string) => void;\n}\n\nconst STATE_NAMES: Record<string, string> = {\n  AL: \"Alabama\",\n  AK: \"Alaska\",\n  AZ: \"Arizona\",\n  AR: \"Arkansas\",\n  CA: \"California\",\n  CO: \"Colorado\",\n  CT: \"Connecticut\",\n  DE: \"Delaware\",\n  FL: \"Florida\",\n  GA: \"Georgia\",\n  HI: \"Hawaii\",\n  ID: \"Idaho\",\n  IL: \"Illinois\",\n  IN: \"Indiana\",\n  IA: \"Iowa\",\n  KS: \"Kansas\",\n  KY: \"Kentucky\",\n  LA: \"Louisiana\",\n  ME: \"Maine\",\n  MD: \"Maryland\",\n  MA: \"Massachusetts\",\n  MI: \"Michigan\",\n  MN: \"Minnesota\",\n  MS: \"Mississippi\",\n  MO: \"Missouri\",\n  MT: \"Montana\",\n  NE: \"Nebraska\",\n  NV: \"Nevada\",\n  NH: \"New Hampshire\",\n  NJ: \"New Jersey\",\n  NM: \"New Mexico\",\n  NY: \"New York\",\n  NC: \"North Carolina\",\n  ND: \"North Dakota\",\n  OH: \"Ohio\",\n  OK: \"Oklahoma\",\n  OR: \"Oregon\",\n  PA: \"Pennsylvania\",\n  RI: \"Rhode Island\",\n  SC: \"South Carolina\",\n  SD: \"South Dakota\",\n  TN: \"Tennessee\",\n  TX: \"Texas\",\n  UT: \"Utah\",\n  VT: \"Vermont\",\n  VA: \"Virginia\",\n  WA: \"Washington\",\n  WV: \"West Virginia\",\n  WI: \"Wisconsin\",\n  WY: \"Wyoming\",\n};\n\nexport default function StateSelector({\n  stateCodes,\n  selectedState,\n  onSelect,\n}: StateSelectorProps) {\n  function handleChange(e: ChangeEvent<HTMLSelectElement>) {\n    onSelect(e.target.value);\n  }\n\n  return (\n    <div\n      className=\"bg-amber-50 border border-amber-200 rounded-xl p-4\"\n      role=\"region\"\n      aria-label=\"Multi-state zip code selector\"\n    >\n      <p className=\"text-sm font-medium text-amber-800 mb-3\">\n        This zip code spans multiple states. Which state are you voting in?\n      </p>\n      <label\n        htmlFor=\"state-select\"\n        className=\"block text-sm font-medium text-gray-700 mb-1.5\"\n      >\n        Select your state\n      </label>\n      <select\n        id=\"state-select\"\n        data-testid=\"state-selector\"\n        value={selectedState ?? \"\"}\n        onChange={handleChange}\n        className=\"w-full sm:w-auto px-4 py-2.5 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-[44px] bg-white\"\n        aria-label=\"Select your state\"\n      >\n        <option value=\"\" disabled>\n          — Select a state —\n        </option>\n        {stateCodes.map((code) => (\n          <option key={code} value={code}>\n            {STATE_NAMES[code] ?? code}\n          </option>\n        ))}\n      </select>\n    </div>\n  );\n}\n",
+    "usedDeprecatedRules": []
+  },
+  {
+    "filePath": "/Users/Muxin/Documents/GitHub/voter-choice/src/components/ZipForm.tsx",
+    "messages": [
+      {
+        "ruleId": "complexity",
+        "severity": 1,
+        "message": "Function 'ZipForm' has a complexity of 7. Maximum allowed is 1.",
+        "line": 10,
+        "column": 16,
+        "nodeType": "FunctionDeclaration",
+        "messageId": "complex",
+        "endLine": 10,
+        "endColumn": 32
+      },
+      {
+        "ruleId": "complexity",
+        "severity": 1,
+        "message": "Function 'validate' has a complexity of 3. Maximum allowed is 1.",
+        "line": 17,
+        "column": 3,
+        "nodeType": "FunctionDeclaration",
+        "messageId": "complex",
+        "endLine": 17,
+        "endColumn": 20
+      },
+      {
+        "ruleId": "complexity",
+        "severity": 1,
+        "message": "Function 'handleSubmit' has a complexity of 2. Maximum allowed is 1.",
+        "line": 29,
+        "column": 3,
+        "nodeType": "FunctionDeclaration",
+        "messageId": "complex",
+        "endLine": 29,
+        "endColumn": 24
+      },
+      {
+        "ruleId": "complexity",
+        "severity": 1,
+        "message": "Function 'handleChange' has a complexity of 2. Maximum allowed is 1.",
+        "line": 41,
+        "column": 3,
+        "nodeType": "FunctionDeclaration",
+        "messageId": "complex",
+        "endLine": 41,
+        "endColumn": 24
+      }
+    ],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 4,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "source": "\"use client\";\n\nimport { useState, FormEvent, ChangeEvent } from \"react\";\n\ninterface ZipFormProps {\n  onSubmit: (zipCode: string) => void;\n  isLoading?: boolean;\n}\n\nexport default function ZipForm({ onSubmit, isLoading = false }: ZipFormProps) {\n  const [rawValue, setRawValue] = useState(\"\");\n  const [error, setError] = useState<string | null>(null);\n\n  // Derive display value: only digits, max 5 chars\n  const zipCode = rawValue.replace(/\\D/g, \"\").slice(0, 5);\n\n  function validate(raw: string): string | null {\n    const trimmed = raw.trim();\n    if (!trimmed) {\n      return \"Please enter a zip code\";\n    }\n    // If the raw input contained non-digit characters or is wrong length\n    if (!/^\\d{5}$/.test(trimmed)) {\n      return \"Please enter a valid 5-digit zip code\";\n    }\n    return null;\n  }\n\n  function handleSubmit(e: FormEvent<HTMLFormElement>) {\n    e.preventDefault();\n    // Validate against the raw value so non-numeric attempts are caught\n    const validationError = validate(rawValue);\n    if (validationError) {\n      setError(validationError);\n      return;\n    }\n    setError(null);\n    onSubmit(zipCode);\n  }\n\n  function handleChange(e: ChangeEvent<HTMLInputElement>) {\n    setRawValue(e.target.value);\n    if (error) {\n      setError(null);\n    }\n  }\n\n  return (\n    <form onSubmit={handleSubmit} noValidate className=\"w-full\">\n      <div className=\"flex flex-col sm:flex-row gap-3\">\n        <div className=\"flex-1\">\n          <label\n            htmlFor=\"zip-code-input\"\n            className=\"block text-sm font-medium text-gray-700 mb-1.5\"\n          >\n            Your zip code\n          </label>\n          <input\n            id=\"zip-code-input\"\n            type=\"text\"\n            inputMode=\"numeric\"\n            pattern=\"[0-9]{5}\"\n            maxLength={10}\n            data-testid=\"zip-input\"\n            value={rawValue}\n            onChange={handleChange}\n            placeholder=\"e.g. 73301\"\n            aria-label=\"5-digit US zip code\"\n            aria-describedby={error ? \"zip-error-msg\" : undefined}\n            aria-invalid={error ? \"true\" : \"false\"}\n            className={`w-full px-4 py-3 text-lg border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors min-h-[48px]\n              ${\n                error\n                  ? \"border-red-400 focus:border-red-400 focus:ring-red-300\"\n                  : \"border-gray-300 focus:border-blue-500\"\n              }`}\n            disabled={isLoading}\n          />\n          {error && (\n            <p\n              id=\"zip-error-msg\"\n              data-testid=\"zip-error\"\n              role=\"alert\"\n              aria-live=\"polite\"\n              className=\"mt-2 text-sm text-red-600 flex items-center gap-1.5\"\n            >\n              <svg\n                className=\"w-4 h-4 flex-shrink-0\"\n                fill=\"currentColor\"\n                viewBox=\"0 0 20 20\"\n                aria-hidden=\"true\"\n              >\n                <path\n                  fillRule=\"evenodd\"\n                  d=\"M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z\"\n                  clipRule=\"evenodd\"\n                />\n              </svg>\n              {error}\n            </p>\n          )}\n        </div>\n        <div className=\"sm:self-end\">\n          <button\n            type=\"submit\"\n            data-testid=\"zip-submit\"\n            disabled={isLoading}\n            className=\"w-full sm:w-auto px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 min-h-[48px] min-w-[44px] disabled:opacity-60 disabled:cursor-not-allowed\"\n          >\n            {isLoading ? (\n              <span className=\"flex items-center gap-2\">\n                <svg\n                  className=\"w-4 h-4 animate-spin\"\n                  fill=\"none\"\n                  viewBox=\"0 0 24 24\"\n                  aria-hidden=\"true\"\n                >\n                  <circle\n                    className=\"opacity-25\"\n                    cx=\"12\"\n                    cy=\"12\"\n                    r=\"10\"\n                    stroke=\"currentColor\"\n                    strokeWidth=\"4\"\n                  />\n                  <path\n                    className=\"opacity-75\"\n                    fill=\"currentColor\"\n                    d=\"M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z\"\n                  />\n                </svg>\n                Looking up...\n              </span>\n            ) : (\n              \"Look up my ballot\"\n            )}\n          </button>\n        </div>\n      </div>\n    </form>\n  );\n}\n",
+    "usedDeprecatedRules": []
+  },
+  {
+    "filePath": "/Users/Muxin/Documents/GitHub/voter-choice/src/lib/__tests__/deadlineUtils.test.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": []
+  },
+  {
+    "filePath": "/Users/Muxin/Documents/GitHub/voter-choice/src/lib/__tests__/promptBuilder.test.ts",
+    "messages": [
+      {
+        "ruleId": "complexity",
+        "severity": 1,
+        "message": "Arrow function has a complexity of 2. Maximum allowed is 1.",
+        "line": 24,
+        "column": 56,
+        "nodeType": "ArrowFunctionExpression",
+        "messageId": "complex",
+        "endLine": 24,
+        "endColumn": 58
+      }
+    ],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 1,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "source": "import { describe, it, expect } from \"vitest\";\nimport { buildContextBlock, buildPrompt } from \"../promptBuilder\";\nimport { getStateData } from \"../stateData\";\nimport { findNextElection } from \"../stateData\";\n\nconst TODAY = new Date(2026, 4, 11); // May 11, 2026\n\ndescribe(\"buildContextBlock\", () => {\n  it(\"includes state name in context block\", () => {\n    const stateData = getStateData(\"TX\")!;\n    const election = findNextElection(stateData.elections, TODAY);\n    const context = buildContextBlock(stateData, \"73301\", election);\n    expect(context).toContain(\"Texas\");\n    expect(context).toContain(\"73301\");\n  });\n\n  it(\"includes zip code in context block\", () => {\n    const stateData = getStateData(\"CA\")!;\n    const election = findNextElection(stateData.elections, TODAY);\n    const context = buildContextBlock(stateData, \"90210\", election);\n    expect(context).toContain(\"90210\");\n  });\n\n  it(\"includes election name when election exists\", () => {\n    const stateData = getStateData(\"TX\")!;\n    const election = findNextElection(stateData.elections, TODAY);\n    const context = buildContextBlock(stateData, \"73301\", election);\n    if (election) {\n      expect(context).toContain(election.name);\n    }\n  });\n\n  it(\"includes registration deadline info\", () => {\n    const stateData = getStateData(\"TX\")!;\n    const election = findNextElection(stateData.elections, TODAY);\n    const context = buildContextBlock(stateData, \"73301\", election);\n    expect(context).toMatch(/registration/i);\n  });\n\n  it(\"includes sample ballot link\", () => {\n    const stateData = getStateData(\"TX\")!;\n    const election = findNextElection(stateData.elections, TODAY);\n    const context = buildContextBlock(stateData, \"73301\", election);\n    expect(context).toContain(stateData.resources.sampleBallotLookup);\n  });\n\n  it(\"includes county election office link\", () => {\n    const stateData = getStateData(\"TX\")!;\n    const election = findNextElection(stateData.elections, TODAY);\n    const context = buildContextBlock(stateData, \"73301\", election);\n    expect(context).toContain(stateData.resources.countyElectionLookup);\n  });\n\n  it(\"handles null election gracefully\", () => {\n    const stateData = getStateData(\"TX\")!;\n    const context = buildContextBlock(stateData, \"73301\", null);\n    expect(context).toContain(\"Texas\");\n    expect(context).toMatch(/no upcoming election/i);\n  });\n\n  it(\"includes 'Help me with my ballot' call to action\", () => {\n    const stateData = getStateData(\"TX\")!;\n    const election = findNextElection(stateData.elections, TODAY);\n    const context = buildContextBlock(stateData, \"73301\", election);\n    expect(context).toContain(\"Help me with my ballot\");\n  });\n});\n\ndescribe(\"buildPrompt\", () => {\n  it(\"starts with the main prompt text\", () => {\n    const stateData = getStateData(\"TX\")!;\n    const election = findNextElection(stateData.elections, TODAY);\n    const prompt = buildPrompt(stateData, \"73301\", election);\n    expect(prompt).toContain(\"nonpartisan civic research assistant\");\n  });\n\n  it(\"contains the context block after the main prompt\", () => {\n    const stateData = getStateData(\"TX\")!;\n    const election = findNextElection(stateData.elections, TODAY);\n    const prompt = buildPrompt(stateData, \"73301\", election);\n    expect(prompt).toContain(\"Texas\");\n    expect(prompt).toContain(\"73301\");\n    // Context block should come after the main prompt\n    const mainPromptIdx = prompt.indexOf(\"nonpartisan civic research\");\n    const contextIdx = prompt.indexOf(\"I'm voting in\");\n    expect(contextIdx).toBeGreaterThan(mainPromptIdx);\n  });\n\n  it(\"builds California prompt correctly\", () => {\n    const stateData = getStateData(\"CA\")!;\n    const election = findNextElection(stateData.elections, TODAY);\n    const prompt = buildPrompt(stateData, \"90210\", election);\n    expect(prompt).toContain(\"California\");\n    expect(prompt).toContain(\"90210\");\n  });\n});\n",
+    "usedDeprecatedRules": []
+  },
+  {
+    "filePath": "/Users/Muxin/Documents/GitHub/voter-choice/src/lib/__tests__/stateData.test.ts",
+    "messages": [
+      {
+        "ruleId": "complexity",
+        "severity": 1,
+        "message": "Arrow function has a complexity of 3. Maximum allowed is 1.",
+        "line": 35,
+        "column": 35,
+        "nodeType": "ArrowFunctionExpression",
+        "messageId": "complex",
+        "endLine": 35,
+        "endColumn": 37
+      },
+      {
+        "ruleId": "complexity",
+        "severity": 1,
+        "message": "Arrow function has a complexity of 2. Maximum allowed is 1.",
+        "line": 42,
+        "column": 40,
+        "nodeType": "ArrowFunctionExpression",
+        "messageId": "complex",
+        "endLine": 42,
+        "endColumn": 42
+      },
+      {
+        "ruleId": "complexity",
+        "severity": 1,
+        "message": "Arrow function has a complexity of 2. Maximum allowed is 1.",
+        "line": 48,
+        "column": 43,
+        "nodeType": "ArrowFunctionExpression",
+        "messageId": "complex",
+        "endLine": 48,
+        "endColumn": 45
+      },
+      {
+        "ruleId": "complexity",
+        "severity": 1,
+        "message": "Arrow function has a complexity of 3. Maximum allowed is 1.",
+        "line": 89,
+        "column": 47,
+        "nodeType": "ArrowFunctionExpression",
+        "messageId": "complex",
+        "endLine": 89,
+        "endColumn": 49
+      },
+      {
+        "ruleId": "complexity",
+        "severity": 1,
+        "message": "Arrow function has a complexity of 2. Maximum allowed is 1.",
+        "line": 110,
+        "column": 51,
+        "nodeType": "ArrowFunctionExpression",
+        "messageId": "complex",
+        "endLine": 110,
+        "endColumn": 53
+      }
+    ],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 5,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "source": "import { describe, it, expect } from \"vitest\";\nimport {\n  getStateCodesForZip,\n  getStateData,\n  findNextElection,\n} from \"../stateData\";\nimport { Election } from \"../types\";\n\ndescribe(\"getStateCodesForZip\", () => {\n  it(\"returns Texas for 73301\", () => {\n    expect(getStateCodesForZip(\"73301\")).toEqual([\"TX\"]);\n  });\n\n  it(\"returns California for 90210\", () => {\n    expect(getStateCodesForZip(\"90210\")).toEqual([\"CA\"]);\n  });\n\n  it(\"returns New Hampshire for 03031\", () => {\n    expect(getStateCodesForZip(\"03031\")).toEqual([\"NH\"]);\n  });\n\n  it(\"returns multiple states for multi-state zip 86515\", () => {\n    const codes = getStateCodesForZip(\"86515\");\n    expect(codes).toContain(\"AZ\");\n    expect(codes).toContain(\"NM\");\n    expect(codes.length).toBe(2);\n  });\n\n  it(\"returns empty array for unknown zip\", () => {\n    expect(getStateCodesForZip(\"00000\")).toEqual([]);\n  });\n});\n\ndescribe(\"getStateData\", () => {\n  it(\"loads Texas state data\", () => {\n    const data = getStateData(\"TX\");\n    expect(data).not.toBeNull();\n    expect(data?.stateName).toBe(\"Texas\");\n    expect(data?.stateCode).toBe(\"TX\");\n  });\n\n  it(\"loads California state data\", () => {\n    const data = getStateData(\"CA\");\n    expect(data).not.toBeNull();\n    expect(data?.stateName).toBe(\"California\");\n  });\n\n  it(\"loads New Hampshire state data\", () => {\n    const data = getStateData(\"NH\");\n    expect(data).not.toBeNull();\n    expect(data?.stateName).toBe(\"New Hampshire\");\n  });\n\n  it(\"returns null for unknown state\", () => {\n    expect(getStateData(\"ZZ\")).toBeNull();\n  });\n});\n\ndescribe(\"findNextElection\", () => {\n  const elections: Election[] = [\n    {\n      id: \"past\",\n      name: \"Past Election\",\n      date: \"2026-03-03\",\n      type: \"primary\",\n      isPrimary: true,\n      primaryType: \"open\",\n    },\n    {\n      id: \"upcoming\",\n      name: \"Upcoming Election\",\n      date: \"2026-11-03\",\n      type: \"general\",\n      isPrimary: false,\n      primaryType: null,\n    },\n    {\n      id: \"runoff\",\n      name: \"Runoff Election\",\n      date: \"2026-05-26\",\n      type: \"runoff\",\n      isPrimary: false,\n      primaryType: null,\n    },\n  ];\n\n  const TODAY = new Date(2026, 4, 11); // May 11, 2026\n\n  it(\"returns the next upcoming election\", () => {\n    const result = findNextElection(elections, TODAY);\n    expect(result?.id).toBe(\"runoff\");\n    expect(result?.date).toBe(\"2026-05-26\");\n  });\n\n  it(\"returns null when no upcoming elections\", () => {\n    const pastElections: Election[] = [\n      {\n        id: \"old\",\n        name: \"Old Election\",\n        date: \"2025-11-03\",\n        type: \"general\",\n        isPrimary: false,\n        primaryType: null,\n      },\n    ];\n    const result = findNextElection(pastElections, TODAY);\n    expect(result).toBeNull();\n  });\n\n  it(\"includes election on same day as today\", () => {\n    const todayElections: Election[] = [\n      {\n        id: \"today\",\n        name: \"Today's Election\",\n        date: \"2026-05-11\",\n        type: \"primary\",\n        isPrimary: true,\n        primaryType: \"open\",\n      },\n    ];\n    const result = findNextElection(todayElections, TODAY);\n    expect(result?.id).toBe(\"today\");\n  });\n\n  it(\"returns null for empty elections array\", () => {\n    expect(findNextElection([], TODAY)).toBeNull();\n  });\n});\n",
+    "usedDeprecatedRules": []
+  },
+  {
+    "filePath": "/Users/Muxin/Documents/GitHub/voter-choice/src/lib/deadlineUtils.ts",
+    "messages": [
+      {
+        "ruleId": "complexity",
+        "severity": 1,
+        "message": "Function 'getDeadlineStatus' has a complexity of 5. Maximum allowed is 1.",
+        "line": 25,
+        "column": 8,
+        "nodeType": "FunctionDeclaration",
+        "messageId": "complex",
+        "endLine": 25,
+        "endColumn": 34
+      },
+      {
+        "ruleId": "complexity",
+        "severity": 1,
+        "message": "Function 'getDeadlineLabel' has a complexity of 5. Maximum allowed is 1.",
+        "line": 40,
+        "column": 8,
+        "nodeType": "FunctionDeclaration",
+        "messageId": "complex",
+        "endLine": 40,
+        "endColumn": 33
+      },
+      {
+        "ruleId": "complexity",
+        "severity": 1,
+        "message": "Function 'allDeadlinesPassed' has a complexity of 2. Maximum allowed is 1.",
+        "line": 65,
+        "column": 8,
+        "nodeType": "FunctionDeclaration",
+        "messageId": "complex",
+        "endLine": 65,
+        "endColumn": 35
+      }
+    ],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 3,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "source": "import { DeadlineStatus } from \"./types\";\n\n/**\n * Calculate the number of days remaining until a deadline.\n * Negative values indicate the deadline has passed.\n */\nexport function getDaysRemaining(isoDate: string, today: Date): number {\n  const deadline = new Date(isoDate + \"T00:00:00\");\n  const todayMidnight = new Date(\n    today.getFullYear(),\n    today.getMonth(),\n    today.getDate(),\n  );\n  const diffMs = deadline.getTime() - todayMidnight.getTime();\n  return Math.floor(diffMs / (1000 * 60 * 60 * 24));\n}\n\n/**\n * Get the visual status for a registration deadline.\n * - GREEN: > 14 days remaining\n * - YELLOW: 1-14 days remaining\n * - RED: 0-3 days remaining (≤3 days)\n * - PASSED: deadline has passed (negative days)\n */\nexport function getDeadlineStatus(\n  isoDate: string | null,\n  today: Date,\n): DeadlineStatus {\n  if (!isoDate) return DeadlineStatus.PASSED;\n  const days = getDaysRemaining(isoDate, today);\n  if (days < 0) return DeadlineStatus.PASSED;\n  if (days <= 3) return DeadlineStatus.RED;\n  if (days <= 14) return DeadlineStatus.YELLOW;\n  return DeadlineStatus.GREEN;\n}\n\n/**\n * Format a relative deadline label for display.\n */\nexport function getDeadlineLabel(isoDate: string | null, today: Date): string {\n  if (!isoDate) return \"Not available\";\n  const days = getDaysRemaining(isoDate, today);\n  if (days < 0) return \"Passed\";\n  if (days === 0) return \"Today — Last Day\";\n  if (days === 1) return \"1 day left\";\n  return `${days} days left`;\n}\n\n/**\n * Format an ISO date for display (e.g. \"March 3, 2026\").\n */\nexport function formatDate(isoDate: string): string {\n  const [year, month, day] = isoDate.split(\"-\").map(Number);\n  const date = new Date(year, month - 1, day);\n  return date.toLocaleDateString(\"en-US\", {\n    year: \"numeric\",\n    month: \"long\",\n    day: \"numeric\",\n  });\n}\n\n/**\n * Check if all registration deadlines have passed.\n */\nexport function allDeadlinesPassed(\n  deadlines: (string | null)[],\n  today: Date,\n): boolean {\n  const validDeadlines = deadlines.filter((d) => d !== null) as string[];\n  if (validDeadlines.length === 0) return true;\n  return validDeadlines.every((d) => getDaysRemaining(d, today) < 0);\n}\n",
+    "usedDeprecatedRules": []
+  },
+  {
+    "filePath": "/Users/Muxin/Documents/GitHub/voter-choice/src/lib/promptBuilder.ts",
+    "messages": [
+      {
+        "ruleId": "complexity",
+        "severity": 1,
+        "message": "Function 'buildContextBlock' has a complexity of 17. Maximum allowed is 1.",
+        "line": 136,
+        "column": 8,
+        "nodeType": "FunctionDeclaration",
+        "messageId": "complex",
+        "endLine": 136,
+        "endColumn": 34
+      },
+      {
+        "ruleId": "complexity",
+        "severity": 1,
+        "message": "Arrow function has a complexity of 2. Maximum allowed is 1.",
+        "line": 191,
+        "column": 19,
+        "nodeType": "ArrowFunctionExpression",
+        "messageId": "complex",
+        "endLine": 191,
+        "endColumn": 21
+      }
+    ],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 2,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "source": "import { StateData, Election } from \"./types\";\nimport { formatDate } from \"./deadlineUtils\";\n\n// The main ballot research prompt (content starting from \"You are a nonpartisan...\")\n// This is a static copy of the prompt text from docs/BALLOT_PROMPT.md\nconst MAIN_PROMPT = `You are a nonpartisan civic research assistant helping a U.S. voter prepare for an upcoming election. Your job is to help me understand what's on my ballot, form my own opinions, and research candidates based on their ACTIONS — not their campaign promises.\n\n## HOW TO FORMAT EVERY RESPONSE (follow this strictly)\n\n- **Keep each issue or race to 4-6 bullet points max.** No long paragraphs.\n- **Bold the key takeaway** in each bullet so I can scan.\n- **One issue or race per response** unless I ask you to speed up.\n- **Bottom line first.** Lead with the 1-sentence summary, then give me supporting detail I can expand on.\n- **3-4 sentences per bullet max.** If you're writing more, you're writing too much.\n- **Use plain language.** If a 16-year-old wouldn't understand it, rewrite it.\n- **Never recap what we already covered** unless I ask.\n- I can always say \"tell me more\" if I want depth. Default to concise.\n\n## STEP 1: Get my location and start immediately\n\nAsk me my zip code and state in one question. Then:\n\n- **Search for my state's election context.** What type of election, how it works (open/closed primary), election date. **Verify today's date vs. election date** — tell me if polls are open today, early voting is underway, or it's upcoming. 2-3 sentences max.\n- **If this is a primary:** Don't ask which party ballot. We'll figure that out together after the issues.\n- **Give me one link** to my county election site for my sample ballot. Suggest I upload it — but **don't wait.** Start immediately with statewide races.\n- **If I upload a sample ballot or share districts**, use that as the definitive source.\n- **Flag once** that zip codes can span multiple districts, then move on.\n- **Preview how this works** in 2-3 sentences: we walk through issues together, you can say \"I don't know,\" I research in the background, and I'll create a handoff block if we need to continue in a new chat.\n\nThen go straight to Step 2.\n\n## STEP 2: Walk me through the issues — one at a time\n\n**Don't ask \"what issues matter to you.\"** Walk me through them. For each issue:\n\n- **What's happening** — current situation, real numbers, plain language\n- **What each side wants** — what \"yes\" vs. \"no\" means, or what candidates have actually done\n- **What my vote does** — binding law or non-binding signal? One sentence.\n- **Who this affects** — make it concrete and personal (\"If you rent...\" / \"If you have kids in public school...\")\n- **Then ask what I think.** It's okay if I say \"I don't care\" or \"I'm not sure\" — that's useful too.\n\nIf I say \"I don't know,\" don't restate — teach me more, then ask again.\n\nAfter every 2-3 issues, give me a **one-sentence summary** of what my answers suggest so far.\n\n## STEP 3: Help me pick a primary (if applicable)\n\nIf this is a primary where I choose a party ballot, ask me 3-4 quick questions about **how I think**, not policy. Examples:\n\n- Track record of getting things done vs. strong public voice for your values?\n- Realistic winner in November vs. expressing what you believe?\n- Keep a bad actor out vs. nominate the strongest candidate on your side?\n- Small-dollar donor base vs. voting record that shows independence from big donors?\n\nThen **make a clear recommendation** in 2-3 sentences, give me the strongest counterargument for the other primary, and let me decide.\n\nIf this is a general election, skip this step.\n\n## STEP 4: Research candidates — race by race\n\n**No candidate bios.** For each race:\n\n- **What does this position actually do?** Don't assume I know. Use concrete examples: \"This court handles evictions and small claims\" or \"This office decides whether polluters get sued.\"\n- **Research in the background.** Search voting records (congress.gov, state legislature sites, VoteSmart, Ballotpedia), donor data (OpenSecrets, state ethics commissions), endorsements, and news. Look at actions, funding, and whether words match deeds.\n- **When Ballotpedia surveys are empty** (common for local races), check: League of Women Voters guides, local journalism Q&As, advocacy org endorsements across the spectrum (labor, chambers of commerce, law enforcement, teachers' unions, environmental groups, etc.), and local newspaper endorsement interviews.\n- **Present each candidate in 2-3 sentences.** Focus on: what they got done, money trail concerns, and how they match what I care about.\n- **Flag red flags and key endorsements.**\n- **Ask me what I think or if I want a recommendation.** Don't auto-fill my ballot. Recommend only when I ask.\n- **First-time candidates with no record** — say so. Tell me their endorsements and what those signal.\n\n## STEP 5: Propositions\n\nConsolidate any we haven't covered yet. For each:\n\n- **One-sentence plain language summary**\n- What \"yes\" and \"no\" actually mean in practice\n- Whether it connects to what I said I care about\n- My likely lean (flag if it's a guess)\n\n## STEP 6: Give me my summary\n\nClean, printable summary I can take to the polls.\n\n**Remind the voter:** Many states prohibit phones at polling places (Texas law bans wireless devices in the voting room). Suggest they write down or print this summary — they CAN bring written notes but CANNOT use their phone to reference choices while voting.\n\n**My Ballot Summary — [Location] — [Election Name] — [Date]**\n\n**[Race Name]**\nCandidates: [list]\nBased on what you told me: [1-2 sentences on alignment]\nKey thing to know: [one notable fact]\n\n**Propositions**\n[#]: [Summary] — You'd likely lean [yes/no]. Consider: [trade-off]\n\n## STEP 7: Generate my outputs\n\nAt the end of the conversation (or when I ask), generate TWO separate outputs:\n\n### Output A: My Ballot — 1 Page Printout\n\nThis is what I bring to the polls. It should fit on a single printed page. Nothing else.\n\nRules for this output:\n- One line per race. Race name → candidate name. That's it.\n- One line per proposition. Number → YES or NO.\n- No rationale, no analysis, no \"based on what you told me.\" Just the picks.\n- Must fit on a single printed page.\n- Remind me: many states (including Texas) ban phones at polling places. Print this or write it down.\n\n### Output B: My Voter Profile\n\nThis is my decision-making profile that I save for future elections. It captures HOW I think, not just what I picked this time.\n\nRules for the voter profile:\n- Factual only — things I actually said, in my language\n- Captures values, reasoning patterns, and personal context — not just picks\n- Designed to be uploaded at the start of a future election conversation so I don't have to re-answer everything\n- Let me review before I save it\n\n## Important rules\n\n- **Collaborate, don't auto-fill.** Recommend only when asked.\n- **Actions > words.** Prioritize what candidates have DONE.\n- **Teach before you ask.** Never ask my opinion on something I don't understand yet.\n- **Make it personal.** \"This affects renters because...\" beats abstract policy talk.\n- **AI makes mistakes.** Link me to sources so I can verify.\n- **If I say \"I don't care\" — move on.**\n\nLet's start with Step 1.`;\n\n/**\n * Build the pre-filled context block that gets appended to the main prompt.\n * Format per PROJECT_SPEC.md Prompt Customization Logic.\n */\nexport function buildContextBlock(\n  stateData: StateData,\n  zipCode: string,\n  election: Election | null,\n): string {\n  const reg = stateData.registration;\n  const ev = stateData.earlyVoting;\n  const rules = stateData.votingRules;\n  const resources = stateData.resources;\n\n  const electionLine = election\n    ? `**Election:** ${election.name} on ${formatDate(election.date)}`\n    : \"**Election:** No upcoming election found — check state election website\";\n\n  const electionTypeLine = election\n    ? `**Election type:** ${election.type}${election.primaryType ? ` (${election.primaryType} primary)` : \"\"}`\n    : \"\";\n\n  const onlineReg = reg.online.available\n    ? `Online by ${reg.online.deadline ? formatDate(reg.online.deadline) : \"N/A\"}`\n    : \"Online registration not available\";\n\n  const mailReg = reg.byMail.deadline\n    ? `By mail by ${formatDate(reg.byMail.deadline)} (${reg.byMail.sincePostmarked ? \"postmark date\" : \"received date\"})`\n    : \"Mail registration not available\";\n\n  const inPersonReg = reg.inPerson.deadline\n    ? `In person by ${formatDate(reg.inPerson.deadline)}`\n    : \"In-person registration deadline N/A\";\n\n  const earlyVotingLine =\n    ev.available && ev.startDate && ev.endDate\n      ? `**Early voting:** ${formatDate(ev.startDate)} through ${formatDate(ev.endDate)}${ev.notes ? ` — ${ev.notes}` : \"\"}`\n      : `**Early voting:** Not available${ev.notes ? ` — ${ev.notes}` : \" — absentee voting only\"}`;\n\n  const idLine = rules.idRequired\n    ? `**Voter ID:** Required. Accepted: ${rules.acceptedIds.slice(0, 3).join(\", \")}${rules.acceptedIds.length > 3 ? \", and others\" : \"\"}`\n    : \"**Voter ID:** Not required\";\n\n  const phoneLine = `**Phones at polls:** ${rules.phonesAtPollsDetail}`;\n\n  const lines = [\n    `Hi! I'm voting in **${stateData.stateName}**. My zip code is **${zipCode}**.`,\n    \"\",\n    \"Here's what I know about my upcoming election:\",\n    `- ${electionLine}`,\n    electionTypeLine ? `- ${electionTypeLine}` : \"\",\n    `- **Registration deadlines:** ${onlineReg}; ${mailReg}; ${inPersonReg}`,\n    `- ${earlyVotingLine}`,\n    `- ${idLine}`,\n    `- ${phoneLine}`,\n    `- **My sample ballot:** ${resources.sampleBallotLookup}`,\n    `- **My county election office:** ${resources.countyElectionLookup}`,\n    \"\",\n    \"Help me with my ballot.\",\n  ].filter((line) => line !== null && line !== undefined);\n\n  return lines.join(\"\\n\");\n}\n\n/**\n * Build the full prompt: main prompt + context block.\n */\nexport function buildPrompt(\n  stateData: StateData,\n  zipCode: string,\n  election: Election | null,\n): string {\n  const contextBlock = buildContextBlock(stateData, zipCode, election);\n  return `${MAIN_PROMPT}\\n\\n---\\n\\n${contextBlock}`;\n}\n",
+    "usedDeprecatedRules": []
+  },
+  {
+    "filePath": "/Users/Muxin/Documents/GitHub/voter-choice/src/lib/stateData.ts",
+    "messages": [
+      {
+        "ruleId": "complexity",
+        "severity": 1,
+        "message": "Function 'getStateCodesForZip' has a complexity of 2. Maximum allowed is 1.",
+        "line": 19,
+        "column": 8,
+        "nodeType": "FunctionDeclaration",
+        "messageId": "complex",
+        "endLine": 19,
+        "endColumn": 36
+      },
+      {
+        "ruleId": "complexity",
+        "severity": 1,
+        "message": "Function 'getStateData' has a complexity of 2. Maximum allowed is 1.",
+        "line": 27,
+        "column": 8,
+        "nodeType": "FunctionDeclaration",
+        "messageId": "complex",
+        "endLine": 27,
+        "endColumn": 29
+      },
+      {
+        "ruleId": "complexity",
+        "severity": 1,
+        "message": "Function 'findNextElection' has a complexity of 2. Maximum allowed is 1.",
+        "line": 35,
+        "column": 8,
+        "nodeType": "FunctionDeclaration",
+        "messageId": "complex",
+        "endLine": 35,
+        "endColumn": 33
+      }
+    ],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 3,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "source": "import { StateData, ZipLookup, Election } from \"./types\";\nimport zipToStateData from \"../data/zip-to-state.json\";\nimport txData from \"../data/states/TX.json\";\nimport caData from \"../data/states/CA.json\";\nimport nhData from \"../data/states/NH.json\";\n\nconst zipToState: ZipLookup = zipToStateData as ZipLookup;\n\nconst stateDataMap: Record<string, StateData> = {\n  TX: txData as StateData,\n  CA: caData as StateData,\n  NH: nhData as StateData,\n};\n\n/**\n * Look up state codes for a given zip code.\n * Returns an empty array if zip not found.\n */\nexport function getStateCodesForZip(zipCode: string): string[] {\n  return zipToState[zipCode] ?? [];\n}\n\n/**\n * Load state data by state code.\n * Returns null if state not in dataset.\n */\nexport function getStateData(stateCode: string): StateData | null {\n  return stateDataMap[stateCode] ?? null;\n}\n\n/**\n * Find the next upcoming election on or after today.\n * Returns null if no upcoming elections exist.\n */\nexport function findNextElection(\n  elections: Election[],\n  today: Date,\n): Election | null {\n  const todayStr = today.toISOString().split(\"T\")[0];\n  const upcoming = elections.filter((e) => e.date >= todayStr);\n  if (upcoming.length === 0) return null;\n  // Sort by date ascending and return first\n  upcoming.sort((a, b) => a.date.localeCompare(b.date));\n  return upcoming[0];\n}\n",
+    "usedDeprecatedRules": []
+  },
+  {
+    "filePath": "/Users/Muxin/Documents/GitHub/voter-choice/src/lib/types.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": []
+  }
+]

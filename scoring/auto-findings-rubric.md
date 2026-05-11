@@ -49,21 +49,21 @@ Run these checks against the branch worktree:
 
 Apply after the data completeness gate passes. Evaluate every row and record the result (PASS / FINDING) with specific numbers. Read from both the measurement JSON and the adherence report JSON.
 
-| # | Check | Condition that triggers a FINDING | What to record |
-|---|-------|-----------------------------------|----------------|
-| 1 | **E2e gap** | `e2ePassed` < `e2eTotal` or `e2eTotal` < 42 | Pass count, total count, whether failures are new or pre-existing |
-| 2 | **TDD violation** | `tddScore` < 100 OR `implOnlyCommits` > 0 | TDD score, impl-only commit count, neutral count |
-| 3 | **TDD unassessable** | `tddScore` is null AND `uniqueTestFiles` > 0 | Count of neutral vs unchecked, explain why score is null |
-| 4 | **Workflow gap** | `workflowLog.missing` array has entries | Which steps are missing |
-| 5 | **Lint regression** | `eslintErrors` > 0 OR `eslintWarnings` > 0 | Error and warning counts |
-| 6 | **Bundle anomaly** | First load JS > 130 kB or < 85 kB (±20% from ~102 kB baseline) | Actual bundle size |
-| 7 | **Timing gap** | `timing.hasStart` or `timing.hasEnd` is false | Which entry is missing |
-| 8 | **Measurement gap** | `measurement.missing` array has entries | Which fields are missing from JSON |
-| 9 | **Workflow log empty** | `workflow-log.jsonl` missing or 0 completed entries | Whether file exists, entry count |
-| 10 | **Test generation** | `uniqueTestFiles` == 0 for a non-vanilla framework | Framework name, expected behavior |
-| 11 | **Diff sprawl** (Phase 2+) | `diffHygiene.summary.unexpected.locAdded` > 200 OR `diffHygiene.scopeAdherence` < 0.7 | Files in `unexpectedFiles`, scope-adherence ratio. Compare against `scoring/phase-scopes/phase<N>.json` to see what the phase was supposed to touch. |
-| 12 | **Complexity regression** (Phase 2+) | Phase delta on `complexity.average` > +2.0 OR `complexity.max` > +5 OR `complexity.distribution.critical_21plus` increased | Per-function complexity averages, top functions by complexity in `complexity.perFunction[:10]`. Indicates abstraction quality degraded across iteration. |
-| 13 | **Responder transparency** | `metrics/responder-log.jsonl` missing OR (framework ∈ {bmad, spec-kit} AND entry count < 3) | Entry count, framework. A thin log on a question-heavy framework suggests the wrapper inlined answers without recording its reasoning. |
+| #   | Check                                | Condition that triggers a FINDING                                                                                          | What to record                                                                                                                                           |
+| --- | ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | **E2e gap**                          | `e2ePassed` < `e2eTotal` or `e2eTotal` < 42                                                                                | Pass count, total count, whether failures are new or pre-existing                                                                                        |
+| 2   | **TDD violation**                    | `tddScore` < 100 OR `implOnlyCommits` > 0                                                                                  | TDD score, impl-only commit count, neutral count                                                                                                         |
+| 3   | **TDD unassessable**                 | `tddScore` is null AND `uniqueTestFiles` > 0                                                                               | Count of neutral vs unchecked, explain why score is null                                                                                                 |
+| 4   | **Workflow gap**                     | `workflowLog.missing` array has entries                                                                                    | Which steps are missing                                                                                                                                  |
+| 5   | **Lint regression**                  | `eslintErrors` > 0 OR `eslintWarnings` > 0                                                                                 | Error and warning counts                                                                                                                                 |
+| 6   | **Bundle anomaly**                   | First load JS > 130 kB or < 85 kB (±20% from ~102 kB baseline)                                                             | Actual bundle size                                                                                                                                       |
+| 7   | **Timing gap**                       | `timing.hasStart` or `timing.hasEnd` is false                                                                              | Which entry is missing                                                                                                                                   |
+| 8   | **Measurement gap**                  | `measurement.missing` array has entries                                                                                    | Which fields are missing from JSON                                                                                                                       |
+| 9   | **Workflow log empty**               | `workflow-log.jsonl` missing or 0 completed entries                                                                        | Whether file exists, entry count                                                                                                                         |
+| 10  | **Test generation**                  | `uniqueTestFiles` == 0 for a non-vanilla framework                                                                         | Framework name, expected behavior                                                                                                                        |
+| 11  | **Diff sprawl** (Phase 2+)           | `diffHygiene.summary.unexpected.locAdded` > 200 OR `diffHygiene.scopeAdherence` < 0.7                                      | Files in `unexpectedFiles`, scope-adherence ratio. Compare against `scoring/phase-scopes/phase<N>.json` to see what the phase was supposed to touch.     |
+| 12  | **Complexity regression** (Phase 2+) | Phase delta on `complexity.average` > +2.0 OR `complexity.max` > +5 OR `complexity.distribution.critical_21plus` increased | Per-function complexity averages, top functions by complexity in `complexity.perFunction[:10]`. Indicates abstraction quality degraded across iteration. |
+| 13  | **Responder transparency**           | `metrics/responder-log.jsonl` missing OR (framework ∈ {bmad, spec-kit} AND entry count < 3)                                | Entry count, framework. A thin log on a question-heavy framework suggests the wrapper inlined answers without recording its reasoning.                   |
 
 **Finding format (for the RUN_LOG entry):**
 
