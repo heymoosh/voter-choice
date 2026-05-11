@@ -899,13 +899,44 @@ function withCongressGovParams(
 }
 
 async function fetchJson(url: string, fetcher: Fetcher): Promise<unknown> {
-  const response = await fetcher(url, {
-    headers: { "user-agent": "voter-choice-federal-ingest" },
-  });
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status}`);
+  const RETRYABLE = new Set([502, 503, 504]);
+  const MAX_RETRIES = 3;
+  let lastErr: unknown;
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      const response = await fetcher(url, {
+        headers: { "user-agent": "voter-choice-federal-ingest" },
+      });
+      if (!response.ok) {
+        if (RETRYABLE.has(response.status) && attempt < MAX_RETRIES) {
+          const waitMs = 2000 * Math.pow(2, attempt);
+          console.error(
+            `[federal-votes] retryable ${response.status} on ${url} attempt=${attempt + 1}/${MAX_RETRIES + 1} wait_ms=${waitMs}`,
+          );
+          await new Promise((r) => setTimeout(r, waitMs));
+          continue;
+        }
+        throw new Error(`HTTP ${response.status}`);
+      }
+      return response.json();
+    } catch (e) {
+      lastErr = e;
+      if (
+        attempt < MAX_RETRIES &&
+        e instanceof Error &&
+        /fetch failed|ECONNRESET|ETIMEDOUT/i.test(e.message)
+      ) {
+        const waitMs = 2000 * Math.pow(2, attempt);
+        console.error(
+          `[federal-votes] network error attempt=${attempt + 1}/${MAX_RETRIES + 1} wait_ms=${waitMs} err=${e.message}`,
+        );
+        await new Promise((r) => setTimeout(r, waitMs));
+        continue;
+      }
+      throw e;
+    }
   }
-  return response.json();
+  throw lastErr;
 }
 
 function congressionalSessionDates(congress: number): {

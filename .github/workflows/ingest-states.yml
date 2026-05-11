@@ -32,7 +32,7 @@ jobs:
   ingest:
     runs-on: ubuntu-latest
     strategy:
-      max-parallel: 6
+      max-parallel: 2
       matrix:
         state:
           [
