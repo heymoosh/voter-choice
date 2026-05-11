@@ -1,0 +1,41 @@
+{
+  "phase": 3,
+  "feature": "Real API integration (Google Civic, Vote Smart, OpenStates, OpenFEC + curated static fallback)",
+  "rationale": "Phase 3 replaces stub election data with a multi-source data-access layer. The data-access abstraction, API clients, caching, error handling, and loading-state components are in-scope. Components that already consume election data are adjacent (they shift from static-JSON imports to async data calls). Spanish i18n files (Phase 2) should NOT need to change again — if they do, that's a sign Phase 2's abstraction didn't anticipate dynamic data. Scoring, e2e harness, and infrastructure are unexpected.",
+  "expectedGlobs": [
+    "src/lib/api/**",
+    "src/lib/api-clients/**",
+    "src/lib/data-access/**",
+    "src/lib/election-data.*",
+    "src/lib/election-data/**",
+    "src/lib/civic.*",
+    "src/lib/vote-smart.*",
+    "src/lib/openstates.*",
+    "src/lib/openfec.*",
+    "src/lib/democracy-works.*",
+    "src/lib/caching.*",
+    "src/lib/cache.*",
+    "src/app/api/civic/**",
+    "src/app/api/elections/**",
+    "src/components/Loading*",
+    "src/components/Error*",
+    "src/data/**"
+  ],
+  "adjacentAllowed": [
+    "src/app/page.tsx",
+    "src/app/layout.tsx",
+    "src/components/StateInfoCard.*",
+    "src/components/BallotToolClient.*",
+    "src/components/PollingLocation*",
+    "src/components/PromptOutput.*",
+    "src/components/ZipForm.*",
+    "src/lib/generatePrompt.*",
+    "src/lib/prompt-generator.*",
+    "src/__tests__/**",
+    "src/**/*.test.*",
+    "src/**/*.spec.*",
+    "e2e/**",
+    ".env.example",
+    "package.json"
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "phase": 4,
+  "feature": "Extended language support (Vietnamese, Chinese Simplified, Arabic with RTL) on top of EN+ES",
+  "rationale": "Phase 4 stress-tests Phase 2's i18n abstraction by scaling from 2 to 5 languages including RTL. Expected: translation files for 3 new languages, language selector replacing the toggle, RTL CSS/styling helpers, dir=auto handling. Adjacent: every component needing RTL-aware spacing/alignment, and the layout file for the dir attribute. NOT expected: data-access changes (Phase 3 should have settled that), prompt generation logic changes other than language switches.",
+  "expectedGlobs": [
+    "src/lib/translations.*",
+    "src/lib/translations/**",
+    "src/lib/translations-vi.*",
+    "src/lib/translations-zh.*",
+    "src/lib/translations-ar.*",
+    "src/lib/i18n.*",
+    "src/lib/i18n/**",
+    "src/lib/rtl.*",
+    "src/lib/direction.*",
+    "src/components/LanguageSelector.*",
+    "src/components/LanguageToggle.*",
+    "src/styles/rtl.*",
+    "src/styles/direction.*"
+  ],
+  "adjacentAllowed": [
+    "src/app/page.tsx",
+    "src/app/layout.tsx",
+    "src/components/**/*.tsx",
+    "src/components/**/*.ts",
+    "src/lib/date-utils.*",
+    "src/lib/generatePrompt.*",
+    "src/lib/prompt-generator.*",
+    "src/lib/getDeadlineStatus.*",
+    "tailwind.config.*",
+    "src/app/globals.css",
+    "src/__tests__/**",
+    "src/**/*.test.*",
+    "src/**/*.spec.*",
+    "e2e/**"
+  ]
+}
