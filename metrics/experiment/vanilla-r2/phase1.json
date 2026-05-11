@@ -1,0 +1,292 @@
+{
+  "metadata": {
+    "timestamp": "2026-05-11T16:33:04.706Z",
+    "branch": "experiment/vanilla-r2",
+    "commit": "8766505",
+    "phase": 1,
+    "nodeVersion": "v22.14.0"
+  },
+  "eslint": {
+    "errors": 0,
+    "warnings": 0,
+    "complexityViolations": 0
+  },
+  "complexity": {
+    "count": 25,
+    "average": 3.48,
+    "max": 8,
+    "p50": 3,
+    "p75": 4,
+    "p95": 7,
+    "distribution": {
+      "simple_1_5": 21,
+      "moderate_6_10": 4,
+      "complex_11_15": 0,
+      "highComplex_16_20": 0,
+      "critical_21plus": 0
+    },
+    "perFunction": [
+      {
+        "file": "src/components/BallotTool.tsx",
+        "name": "StateInfoCard",
+        "complexity": 8,
+        "line": 112
+      },
+      {
+        "file": "src/components/BallotTool.tsx",
+        "name": "BallotTool",
+        "complexity": 7,
+        "line": 304
+      },
+      {
+        "file": "src/lib/deadlines.ts",
+        "name": "calcDeadline",
+        "complexity": 7,
+        "line": 7
+      },
+      {
+        "file": "src/components/BallotTool.tsx",
+        "name": "<arrow>",
+        "complexity": 6,
+        "line": 317
+      },
+      {
+        "file": "src/lib/promptBuilder.ts",
+        "name": "buildRegistrationStr",
+        "complexity": 5,
+        "line": 108
+      },
+      {
+        "file": "src/components/BallotTool.tsx",
+        "name": "RegistrationDeadlines",
+        "complexity": 4,
+        "line": 53
+      },
+      {
+        "file": "src/components/BallotTool.tsx",
+        "name": "<arrow>",
+        "complexity": 4,
+        "line": 309
+      },
+      {
+        "file": "src/lib/promptBuilder.ts",
+        "name": "buildEarlyVotingStr",
+        "complexity": 4,
+        "line": 123
+      },
+      {
+        "file": "src/lib/promptBuilder.ts",
+        "name": "buildContextBlock",
+        "complexity": 4,
+        "line": 133
+      },
+      {
+        "file": "src/components/BallotTool.tsx",
+        "name": "DeadlineBadge",
+        "complexity": 3,
+        "line": 25
+      },
+      {
+        "file": "src/components/BallotTool.tsx",
+        "name": "PromptOutput",
+        "complexity": 3,
+        "line": 234
+      },
+      {
+        "file": "src/components/BallotTool.tsx",
+        "name": "<anonymous>",
+        "complexity": 3,
+        "line": 238
+      },
+      {
+        "file": "src/components/BallotTool.tsx",
+        "name": "<arrow>",
+        "complexity": 3,
+        "line": 357
+      },
+      {
+        "file": "src/lib/stateData.test.ts",
+        "name": "<arrow>",
+        "complexity": 3,
+        "line": 34
+      },
+      {
+        "file": "src/lib/stateData.ts",
+        "name": "getStatesForZip",
+        "complexity": 3,
+        "line": 19
+      },
+      {
+        "file": "src/components/BallotTool.tsx",
+        "name": "<arrow>",
+        "complexity": 2,
+        "line": 389
+      },
+      {
+        "file": "src/components/BallotTool.tsx",
+        "name": "<arrow>",
+        "complexity": 2,
+        "line": 393
+      },
+      {
+        "file": "src/components/BallotTool.tsx",
+        "name": "<arrow>",
+        "complexity": 2,
+        "line": 446
+      },
+      {
+        "file": "src/lib/deadlines.test.ts",
+        "name": "<arrow>",
+        "complexity": 2,
+        "line": 70
+      },
+      {
+        "file": "src/lib/deadlines.test.ts",
+        "name": "<arrow>",
+        "complexity": 2,
+        "line": 86
+      },
+      {
+        "file": "src/lib/deadlines.ts",
+        "name": "findNextElection",
+        "complexity": 2,
+        "line": 62
+      },
+      {
+        "file": "src/lib/stateData.test.ts",
+        "name": "<arrow>",
+        "complexity": 2,
+        "line": 20
+      },
+      {
+        "file": "src/lib/stateData.test.ts",
+        "name": "<arrow>",
+        "complexity": 2,
+        "line": 41
+      },
+      {
+        "file": "src/lib/stateData.test.ts",
+        "name": "<arrow>",
+        "complexity": 2,
+        "line": 47
+      },
+      {
+        "file": "src/lib/stateData.ts",
+        "name": "getStateData",
+        "complexity": 2,
+        "line": 27
+      }
+    ]
+  },
+  "vitest": {
+    "tests": {
+      "total": 18,
+      "passed": 18,
+      "failed": 0,
+      "skipped": 0,
+      "passRate": 100
+    },
+    "coverage": {
+      "lines": 11.09,
+      "branches": 88.88,
+      "functions": 90,
+      "statements": 11.09
+    }
+  },
+  "duplication": {
+    "duplicatedLines": 0,
+    "totalLines": 1437,
+    "percentage": 0,
+    "clones": 0
+  },
+  "bundleSize": {
+    "buildSuccess": true,
+    "pages": [
+      {
+        "route": "/",
+        "size": 8.39,
+        "unit": "kB"
+      },
+      {
+        "route": "/_not-found",
+        "size": 0,
+        "unit": "B"
+      }
+    ],
+    "firstLoadJsShared": {
+      "size": 128,
+      "unit": "kB"
+    }
+  },
+  "lighthouse": {
+    "performance": 100,
+    "accessibility": 100,
+    "bestPractices": 100,
+    "seo": 100
+  },
+  "playwright": {
+    "total": 42,
+    "passed": 42,
+    "failed": 0,
+    "timedOut": 0,
+    "skipped": 0,
+    "passRate": 100
+  },
+  "linesOfCode": {
+    "application": {
+      "code": 1204,
+      "files": 14,
+      "byExtension": {
+        ".css": {
+          "files": 1,
+          "code": 21
+        },
+        ".tsx": {
+          "files": 3,
+          "code": 585
+        },
+        ".json": {
+          "files": 4,
+          "code": 228
+        },
+        ".ts": {
+          "files": 6,
+          "code": 370
+        }
+      }
+    },
+    "plugin": {
+      "code": 0,
+      "files": 0,
+      "byExtension": {}
+    },
+    "infrastructure": {
+      "code": 351,
+      "files": 10
+    },
+    "total": {
+      "code": 1555,
+      "files": 24
+    }
+  },
+  "workflowTests": {
+    "count": 2,
+    "files": [
+      "src/lib/deadlines.test.ts",
+      "src/lib/stateData.test.ts"
+    ]
+  },
+  "workflowTiming": {
+    "steps": [
+      {
+        "step": "vanilla-build",
+        "started": "2026-05-11T11:13:39-05:00",
+        "completed": "2026-05-11T11:26:03-05:00",
+        "durationMs": 744000
+      }
+    ],
+    "totalSteps": 1,
+    "completedSteps": 1
+  },
+  "diffHygiene": null
+}

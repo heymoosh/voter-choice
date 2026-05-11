@@ -356,7 +356,7 @@ function measureDuplication() {
 // ------------------------------------------------------------------
 function measureBundleSize() {
   log("Bundle size (next build)");
-  const result = run("npx next build 2>&1");
+  const result = run("npm run build 2>&1");
   if (!result.success && !result.stdout) {
     console.log("  Build failed");
     return { buildSuccess: false, pages: null };
