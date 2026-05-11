@@ -1,14 +1,11 @@
 import type { StateData, Election } from "./types";
 import { BALLOT_PROMPT_TEXT } from "./ballotPromptText";
 
-function findNextElection(
-  elections: Election[],
-  today: Date
-): Election | null {
+function findNextElection(elections: Election[], today: Date): Election | null {
   const todayMs = Date.UTC(
     today.getUTCFullYear(),
     today.getUTCMonth(),
-    today.getUTCDate()
+    today.getUTCDate(),
   );
 
   const upcoming = elections.filter((e) => {
@@ -38,7 +35,7 @@ function formatDate(isoDate: string): string {
 }
 
 function formatElectionType(election: Election): string {
-  const parts = [election.type];
+  const parts: string[] = [election.type];
   if (election.isPrimary && election.primaryType) {
     parts.push(`${election.primaryType} primary`);
   }
@@ -48,7 +45,7 @@ function formatElectionType(election: Election): string {
 export function generatePrompt(
   stateData: StateData,
   zip: string,
-  today: Date = new Date()
+  today: Date = new Date(),
 ): string {
   const nextElection = findNextElection(stateData.elections, today);
   const { registration, earlyVoting, votingRules, resources, stateName } =
