@@ -577,74 +577,122 @@ async function writeFederalPlan(
     updatedAt: now,
   }));
   const voteRows = [...plan.votes.values()];
+  const candidateBatches = chunkRows(candidateRows, batchSize);
+  const officeBatches = chunkRows(officeRows, batchSize);
+  const billBatches = chunkRows(billRows, batchSize);
+  const voteBatches = chunkRows(voteRows, batchSize);
 
-  for (const batch of chunkRows(candidateRows, batchSize)) {
-    await db
-      .insert(candidates)
-      .values(batch)
-      .onConflictDoUpdate({
-        target: candidates.id,
-        set: {
-          fullName: sql`excluded.full_name`,
-          sourceId: sql`excluded.source_id`,
-          jurisdiction: sql`excluded.jurisdiction`,
-          isIncumbent: sql`excluded.is_incumbent`,
-          rawMetadata: sql`excluded.raw_metadata`,
-          updatedAt: now,
-        },
-      });
+  async function writeBatch<T>(
+    table: string,
+    batchIndex: number,
+    batchCount: number,
+    batch: T[],
+    write: () => Promise<unknown>,
+  ): Promise<void> {
+    const startedAt = Date.now();
+    const batchNumber = batchIndex + 1;
+    console.log(
+      `[federal-votes] db_write_start table=${table} phase=upsert batch=${batchNumber}/${batchCount} rows=${batch.length}`,
+    );
+
+    try {
+      await write();
+      console.log(
+        `[federal-votes] db_write_done table=${table} phase=upsert batch=${batchNumber}/${batchCount} rows=${batch.length} elapsed_ms=${Date.now() - startedAt}`,
+      );
+    } catch (error) {
+      console.error(
+        `[federal-votes] db_write_failed table=${table} phase=upsert batch=${batchNumber}/${batchCount} rows=${batch.length} elapsed_ms=${Date.now() - startedAt} error=${safeErrorMessage(error)}`,
+      );
+      throw error;
+    }
   }
 
-  for (const batch of chunkRows(officeRows, batchSize)) {
-    await db
-      .insert(candidateOffices)
-      .values(batch)
-      .onConflictDoUpdate({
-        target: candidateOffices.id,
-        set: {
-          candidateId: sql`excluded.candidate_id`,
-          officeLabel: sql`excluded.office_label`,
-          jurisdiction: sql`excluded.jurisdiction`,
-          termStart: sql`excluded.term_start`,
-          termEnd: sql`excluded.term_end`,
-          sourceUrl: sql`excluded.source_url`,
-        },
-      });
+  for (const [batchIndex, batch] of candidateBatches.entries()) {
+    await writeBatch(
+      "candidates",
+      batchIndex,
+      candidateBatches.length,
+      batch,
+      () =>
+        db
+          .insert(candidates)
+          .values(batch)
+          .onConflictDoUpdate({
+            target: candidates.id,
+            set: {
+              fullName: sql`excluded.full_name`,
+              sourceId: sql`excluded.source_id`,
+              jurisdiction: sql`excluded.jurisdiction`,
+              isIncumbent: sql`excluded.is_incumbent`,
+              rawMetadata: sql`excluded.raw_metadata`,
+              updatedAt: now,
+            },
+          }),
+    );
   }
 
-  for (const batch of chunkRows(billRows, batchSize)) {
-    await db
-      .insert(bills)
-      .values(batch)
-      .onConflictDoUpdate({
-        target: bills.id,
-        set: {
-          title: sql`excluded.title`,
-          summary: sql`excluded.summary`,
-          source: sql`excluded.source`,
-          sourceUrl: sql`excluded.source_url`,
-          jurisdiction: sql`excluded.jurisdiction`,
-          introducedDate: sql`excluded.introduced_date`,
-          rawMetadata: sql`excluded.raw_metadata`,
-          updatedAt: now,
-        },
-      });
+  for (const [batchIndex, batch] of officeBatches.entries()) {
+    await writeBatch(
+      "candidate_offices",
+      batchIndex,
+      officeBatches.length,
+      batch,
+      () =>
+        db
+          .insert(candidateOffices)
+          .values(batch)
+          .onConflictDoUpdate({
+            target: candidateOffices.id,
+            set: {
+              candidateId: sql`excluded.candidate_id`,
+              officeLabel: sql`excluded.office_label`,
+              jurisdiction: sql`excluded.jurisdiction`,
+              termStart: sql`excluded.term_start`,
+              termEnd: sql`excluded.term_end`,
+              sourceUrl: sql`excluded.source_url`,
+            },
+          }),
+    );
   }
 
-  for (const batch of chunkRows(voteRows, batchSize)) {
-    await db
-      .insert(votes)
-      .values(batch)
-      .onConflictDoUpdate({
-        target: [votes.billId, votes.candidateId],
-        set: {
-          voteCast: sql`excluded.vote_cast`,
-          voteDate: sql`excluded.vote_date`,
-          sourceUrl: sql`excluded.source_url`,
-          rawMetadata: sql`excluded.raw_metadata`,
-        },
-        setWhere: sql`excluded.vote_date >= ${votes.voteDate}`,
-      });
+  for (const [batchIndex, batch] of billBatches.entries()) {
+    await writeBatch("bills", batchIndex, billBatches.length, batch, () =>
+      db
+        .insert(bills)
+        .values(batch)
+        .onConflictDoUpdate({
+          target: bills.id,
+          set: {
+            title: sql`excluded.title`,
+            summary: sql`excluded.summary`,
+            source: sql`excluded.source`,
+            sourceUrl: sql`excluded.source_url`,
+            jurisdiction: sql`excluded.jurisdiction`,
+            introducedDate: sql`excluded.introduced_date`,
+            rawMetadata: sql`excluded.raw_metadata`,
+            updatedAt: now,
+          },
+        }),
+    );
+  }
+
+  for (const [batchIndex, batch] of voteBatches.entries()) {
+    await writeBatch("votes", batchIndex, voteBatches.length, batch, () =>
+      db
+        .insert(votes)
+        .values(batch)
+        .onConflictDoUpdate({
+          target: [votes.billId, votes.candidateId],
+          set: {
+            voteCast: sql`excluded.vote_cast`,
+            voteDate: sql`excluded.vote_date`,
+            sourceUrl: sql`excluded.source_url`,
+            rawMetadata: sql`excluded.raw_metadata`,
+          },
+          setWhere: sql`excluded.vote_date >= ${votes.voteDate}`,
+        }),
+    );
   }
 }
 
