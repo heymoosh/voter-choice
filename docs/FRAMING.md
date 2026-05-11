@@ -7,7 +7,7 @@
 
 ## The claim this experiment supports
 
-This experiment ranks 5 AI coding workflows (Vanilla Claude Code, BMAD, Compound Engineering, Spec Kit, Superpowers) on **maintainability across iterations** — measured by automated metrics across 5 staged build phases of a single Next.js civic tool — when run **autonomously, without human-in-the-loop intervention**, on the **same model class** (Claude Sonnet 4.6 / Opus 4.7), starting from the **same scaffold** and the **same v2.0 production spec**, with **n=3 replicates at Phase 1** (median-LOC run picked as the representative) and **n=1 forward iteration** through Phases 2–5.
+This experiment ranks 5 AI coding workflows (Vanilla Claude Code, BMAD, Compound Engineering, Spec Kit, Superpowers) on **maintainability across iterations** — measured by automated metrics across 6 staged build phases of a single Next.js civic tool — when run **autonomously, without human-in-the-loop intervention**, on the **same model class** (Claude Sonnet, enforced via `model: "sonnet"` on every sub-agent dispatch in `.claude/commands/start.md`), starting from the **same scaffold** and the **same v2.0 production spec**, with **n=3 replicates at Phase 1** (median-LOC run picked as the representative) and **n=1 forward iteration** through Phases 2–6. Phases cover progressive feature parity with the launch-production target: i18n, real APIs, multi-language w/ RTL, on-site LLM chat + alignment-score banner, drag-rank issue prioritization + concern disambiguation + Polis-style aggregate counters.
 
 The thing the experiment is actually trying to answer is: *which workflow produces a codebase that stays maintainable as it grows through multiple iterations of changes?*
 
