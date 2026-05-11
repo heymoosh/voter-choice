@@ -57,6 +57,17 @@ Note: **Scoring is executed by Hermes from the host side, not inside the build c
 
 
 
+
+### Phase 1 replicate — vanilla r3 (auto)
+
+- **Date:** 2026-05-11T16:56:35.394Z
+- **Branch:** `experiment/vanilla-r3`
+- **Tag:** `vanilla-r3-phase1-complete`
+- **Status:** ✓
+- **Replicate:** r3
+- **Summary:** e2e 42/42, vitest 46/46, lint 0e/2w, LOC 1428
+
+
 ### Phase 1 replicate — vanilla r2 (auto)
 
 - **Date:** 2026-05-11T16:40:26.534Z
