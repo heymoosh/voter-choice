@@ -1,0 +1,70 @@
+{
+  "stateCode": "AZ",
+  "stateName": "Arizona",
+  "lastUpdated": "2026-03-01",
+
+  "elections": [
+    {
+      "id": "az-2026-primary",
+      "name": "2026 Arizona Primary Election",
+      "date": "2026-08-04",
+      "type": "primary",
+      "isPrimary": true,
+      "primaryType": "closed"
+    },
+    {
+      "id": "az-2026-general",
+      "name": "2026 Arizona General Election",
+      "date": "2026-11-03",
+      "type": "general",
+      "isPrimary": false,
+      "primaryType": null
+    }
+  ],
+
+  "registration": {
+    "online": {
+      "available": true,
+      "deadline": "2026-07-06",
+      "url": "https://servicearizona.com/VoterRegistration"
+    },
+    "byMail": {
+      "deadline": "2026-07-06",
+      "sincePostmarked": false
+    },
+    "inPerson": {
+      "deadline": "2026-07-06",
+      "sincePostmarked": false
+    },
+    "sameDayRegistration": false,
+    "registrationCheckUrl": "https://my.arizona.vote/WhereToVote.aspx"
+  },
+
+  "earlyVoting": {
+    "available": true,
+    "startDate": "2026-07-08",
+    "endDate": "2026-08-03",
+    "notes": "All registered voters are automatically mailed a ballot. In-person early voting available at county recorder offices."
+  },
+
+  "votingRules": {
+    "idRequired": true,
+    "acceptedIds": [
+      "Arizona driver license or non-operating license",
+      "Arizona tribal enrollment card or other tribal ID",
+      "U.S. federal, state, or local government-issued photo ID",
+      "U.S. military ID with photo",
+      "U.S. passport"
+    ],
+    "phonesAtPolls": "allowed",
+    "phonesAtPollsDetail": "Arizona allows voters to use phones at polling places to reference voting information. Photography of other voters is prohibited.",
+    "additionalRules": []
+  },
+
+  "resources": {
+    "stateElectionWebsite": "https://azsos.gov/elections",
+    "countyElectionLookup": "https://my.arizona.vote/WhereToVote.aspx",
+    "sampleBallotLookup": "https://my.arizona.vote/WhereToVote.aspx",
+    "pollingPlaceLookup": "https://my.arizona.vote/WhereToVote.aspx"
+  }
+}

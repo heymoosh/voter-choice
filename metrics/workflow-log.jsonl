@@ -1,0 +1,16 @@
+{"step":"bmad:product-brief","status":"started","timestamp":"2026-05-11T12:03:33-05:00"}
+{"step":"bmad:product-brief","status":"completed","timestamp":"2026-05-11T12:04:43-05:00"}
+{"step":"bmad:prd","status":"started","timestamp":"2026-05-11T12:04:47-05:00"}
+{"step":"bmad:prd","status":"completed","timestamp":"2026-05-11T12:05:50-05:00"}
+{"step":"bmad:architecture","status":"started","timestamp":"2026-05-11T12:05:55-05:00"}
+{"step":"bmad:architecture","status":"completed","timestamp":"2026-05-11T12:06:30-05:00"}
+{"step":"bmad:epics-and-stories","status":"started","timestamp":"2026-05-11T12:06:34-05:00"}
+{"step":"bmad:epics-and-stories","status":"completed","timestamp":"2026-05-11T12:07:11-05:00"}
+{"step":"bmad:implementation-readiness","status":"started","timestamp":"2026-05-11T12:07:15-05:00"}
+{"step":"bmad:implementation-readiness","status":"completed","timestamp":"2026-05-11T12:07:27-05:00"}
+{"step":"bmad:sprint-planning","status":"started","timestamp":"2026-05-11T12:07:32-05:00"}
+{"step":"bmad:sprint-planning","status":"completed","timestamp":"2026-05-11T12:07:32-05:00"}
+{"step":"bmad:story-implementation","status":"started","timestamp":"2026-05-11T12:07:43-05:00"}
+{"step":"bmad:story-implementation","status":"completed","timestamp":"2026-05-11T12:14:06-05:00"}
+{"step":"bmad:code-review","status":"started","timestamp":"2026-05-11T12:14:11-05:00"}
+{"step":"bmad:code-review","status":"completed","timestamp":"2026-05-11T12:14:24-05:00"}

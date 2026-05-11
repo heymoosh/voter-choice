@@ -1,0 +1,67 @@
+export interface Election {
+  id: string;
+  name: string;
+  date: string; // ISO date string
+  type: "primary" | "general" | "runoff" | "special";
+  isPrimary: boolean;
+  primaryType: "open" | "closed" | "semi-closed" | "semi-open" | null;
+}
+
+export interface Registration {
+  online: {
+    available: boolean;
+    deadline: string | null;
+    url: string | null;
+  };
+  byMail: {
+    deadline: string | null;
+    sincePostmarked: boolean;
+  };
+  inPerson: {
+    deadline: string | null;
+    sincePostmarked: boolean;
+  };
+  sameDayRegistration: boolean;
+  registrationCheckUrl: string;
+}
+
+export interface EarlyVoting {
+  available: boolean;
+  startDate: string | null;
+  endDate: string | null;
+  notes: string;
+}
+
+export interface VotingRules {
+  idRequired: boolean;
+  acceptedIds: string[];
+  phonesAtPolls: "prohibited" | "allowed" | "varies";
+  phonesAtPollsDetail: string;
+  additionalRules: string[];
+}
+
+export interface Resources {
+  stateElectionWebsite: string;
+  countyElectionLookup: string;
+  sampleBallotLookup: string;
+  pollingPlaceLookup: string;
+}
+
+export interface StateElectionData {
+  stateCode: string;
+  stateName: string;
+  lastUpdated: string;
+  elections: Election[];
+  registration: Registration;
+  earlyVoting: EarlyVoting;
+  votingRules: VotingRules;
+  resources: Resources;
+}
+
+export type DeadlineStatus = "passed" | "urgent" | "warning" | "ok" | "na";
+
+export interface DeadlineResult {
+  status: DeadlineStatus;
+  daysRemaining: number | null;
+  label: string;
+}
