@@ -1,4 +1,4 @@
-You are the experiment orchestrator. Your job is lightweight: figure out the next action, dispatch a sub-agent to do it, log the result, loop. Do not do build work yourself — sub-agents do that. This keeps your context clean across all 40 actions.
+You are the experiment orchestrator. Your job is lightweight: figure out the next action, dispatch a sub-agent to do it, log the result, loop. Do not do build work yourself — sub-agents do that. This keeps your context clean across all 45 actions.
 
 ## How this works
 
@@ -6,9 +6,11 @@ The experiment has three kinds of work, in this order:
 
 1. **Phase 1 replicates** — 3 builds per framework × 5 frameworks = 15 builds total. Each on its own `experiment/<framework>-r<N>` branch.
 2. **Representative selection** — 5 selections, one per framework. Picks the median-LOC replicate. Fast script invocation.
-3. **Phase 2–5 forward iteration** — 4 phases × 5 frameworks = 20 builds total. Runs on the chosen replicate branch.
+3. **Phase 2–6 forward iteration** — 5 phases × 5 frameworks = 25 builds total. Runs on the chosen replicate branch.
 
-Total: 15 + 5 + 20 = **40 discrete actions**. You dispatch one sub-agent per action, log its 1-paragraph summary, loop. Exit when context degrades or the experiment is complete. Re-invoke `/start` to resume — state lives on disk (git tags + metric files), not in this conversation.
+Total: 15 + 5 + 25 = **45 discrete actions**. You dispatch one sub-agent per action, log its 1-paragraph summary, loop. Exit when context degrades or the experiment is complete. Re-invoke `/start` to resume — state lives on disk (git tags + metric files), not in this conversation.
+
+**Model policy for sub-agents:** every Agent tool dispatch in this orchestrator must include `model: "sonnet"`. This forces every of the 45 build actions to run on the same model class regardless of which model is driving the orchestrator session. Variance across model versions is one of the deliberate confounds we control for — sub-agents must not inherit Opus or Haiku silently.
 
 ---
 
@@ -54,14 +56,14 @@ if [ -z "$NEXT_ACTION" ]; then
   done
 fi
 
-# Then phase 2–5 forward (only after ALL 5 frameworks have a representative)
+# Then phase 2–6 forward (only after ALL 5 frameworks have a representative)
 if [ -z "$NEXT_ACTION" ]; then
   ALL_REPS=1
   for fw in "${FRAMEWORKS[@]}"; do
     [ -f "metrics/experiment/${fw}-representative.json" ] || ALL_REPS=0
   done
   if [ "$ALL_REPS" = "1" ]; then
-    for p in 2 3 4 5; do
+    for p in 2 3 4 5 6; do
       for fw in "${FRAMEWORKS[@]}"; do
         if ! git tag -l | grep -qx "${fw}-phase${p}-complete"; then
           NEXT_ACTION="phase_forward ${fw} ${p}"
@@ -82,7 +84,7 @@ echo "$NEXT_ACTION"
 
 ### Step 4: Dispatch a sub-agent
 
-Use the Agent tool with `subagent_type: "general-purpose"`. Pick the prompt template below matching the action type. Fill in `<fw>`, `<r>`, and `<phase>` from the discovery output. The repo path is `/Users/Muxin/Documents/GitHub/voter-choice` (primary repo) or the current worktree path if different.
+Use the Agent tool with `subagent_type: "general-purpose"` AND `model: "sonnet"`. The `model: "sonnet"` is non-negotiable — it ensures every of the 45 actions runs on the same model class regardless of orchestrator model. Pick the prompt template below matching the action type. Fill in `<fw>`, `<r>`, and `<phase>` from the discovery output. The repo path is `/Users/Muxin/Documents/GitHub/voter-choice` (primary repo) or the current worktree path if different.
 
 **Do not do any build work yourself.** The sub-agent handles everything: checkout, install, build, test, commit, tag, push.
 
@@ -272,14 +274,14 @@ git push origin HEAD:main
 Then read `metrics/experiment/FINAL_RANKING.md` and print its contents to the user, prefaced with:
 
 ```
-EXPERIMENT COMPLETE — 40 actions done.
+EXPERIMENT COMPLETE — 45 actions done.
 
 Final ranking and metric comparison written to metrics/experiment/FINAL_RANKING.md.
 Findings per the 13-check rubric are inline. Read it in light of docs/FRAMING.md
 to keep the claim scoped to what this experiment can actually support.
 ```
 
-Also print the completion checkbox table so the user can verify all 40 actions landed:
+Also print the completion checkbox table so the user can verify all 45 actions landed:
 
 ```bash
 echo "Tag completion check:"
@@ -289,7 +291,7 @@ for fw in vanilla bmad spec-kit superpowers compound-engineering; do
     if git tag -l | grep -qx "$fw-$r-phase1-complete"; then row="$row | ✓"; else row="$row | —"; fi
   done
   if [ -f "metrics/experiment/$fw-representative.json" ]; then row="$row | ✓"; else row="$row | —"; fi
-  for p in 2 3 4 5; do
+  for p in 2 3 4 5 6; do
     if git tag -l | grep -qx "$fw-phase$p-complete"; then row="$row | ✓"; else row="$row | —"; fi
   done
   echo "$row"
@@ -300,4 +302,4 @@ Then exit. The user can read the FINAL_RANKING.md and the RUN_LOG entries to und
 
 ### If partial
 
-If the orchestrator exits before all 40 actions complete (context degraded, fatal failure), the aggregator still runs against partial data and produces a partial ranking. The composite scores reflect "what's been measured so far"; the per-framework `completedPhases` field tells the user which frameworks finished and which didn't. Tell the user to re-invoke `/start` (or `/loop /start`) to resume.
+If the orchestrator exits before all 45 actions complete (context degraded, fatal failure), the aggregator still runs against partial data and produces a partial ranking. The composite scores reflect "what's been measured so far"; the per-framework `completedPhases` field tells the user which frameworks finished and which didn't. Tell the user to re-invoke `/start` (or `/loop /start`) to resume.

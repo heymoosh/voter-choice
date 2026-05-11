@@ -33,7 +33,7 @@ function argValue(name) {
 const ROOT = argValue("--repo") ? resolve(argValue("--repo")) : process.cwd();
 const FRAMEWORKS = ["vanilla", "bmad", "spec-kit", "superpowers", "compound-engineering"];
 const REPLICATES = ["r1", "r2", "r3"];
-const FORWARD_PHASES = [2, 3, 4, 5];
+const FORWARD_PHASES = [2, 3, 4, 5, 6];
 
 const QUESTION_HEAVY = new Set(["bmad", "spec-kit"]);
 
@@ -116,6 +116,7 @@ function loadResponderLog(framework, chosenReplicate) {
   const branch = `experiment/${framework}-${chosenReplicate}`;
   // Tag-based read first (the build commit tagged it), else live file.
   for (const ref of [
+    `${framework}-phase6-complete`,
     `${framework}-phase5-complete`,
     `${framework}-phase4-complete`,
     `${framework}-phase3-complete`,
@@ -271,28 +272,28 @@ function computeComposite(framework, frameworkData) {
   const phase1 = representative?.chosen
     ? replicates[representative.chosen]?.data
     : Object.values(replicates).find((r) => r?.data)?.data ?? null;
-  const phase5 = phases[5];
-  const lastCompletedPhase = [5, 4, 3, 2, 1].find(
+  const lastCompletedPhase = [6, 5, 4, 3, 2, 1].find(
     (p) => p === 1 ? phase1 : phases[p],
   );
+  const phaseLast = lastCompletedPhase === 1 ? phase1 : phases[lastCompletedPhase ?? 1];
 
   // Axis 1: Test quality drift (P1 -> last completed)
   let testQuality = null;
   let testQualityNotes = "no data";
-  if (phase1 && phase5) {
+  if (phase1 && phaseLast && lastCompletedPhase !== 1) {
     const covP1 = safeNum(phase1.vitest?.coverage?.lines);
-    const covP5 = safeNum(phase5.vitest?.coverage?.lines);
-    const passRateP5 = safeNum(phase5.playwright?.passRate);
-    if (covP1 != null && covP5 != null && passRateP5 != null) {
+    const covLast = safeNum(phaseLast.vitest?.coverage?.lines);
+    const passRateLast = safeNum(phaseLast.playwright?.passRate);
+    if (covP1 != null && covLast != null && passRateLast != null) {
       // Reward: coverage holding or growing, e2e at 100%
-      const coverageDelta = covP5 - covP1;
+      const coverageDelta = covLast - covP1;
       const coverageBonus = Math.max(0, Math.min(40, coverageDelta * 2));
-      const baselineCoverage = Math.min(40, covP5 * 0.4);
-      const e2eBonus = passRateP5 >= 99 ? 20 : passRateP5 >= 90 ? 10 : 0;
+      const baselineCoverage = Math.min(40, covLast * 0.4);
+      const e2eBonus = passRateLast >= 99 ? 20 : passRateLast >= 90 ? 10 : 0;
       testQuality = Math.round(coverageBonus + baselineCoverage + e2eBonus);
-      testQualityNotes = `cov P1=${covP1.toFixed(1)}% → P5=${covP5.toFixed(
+      testQualityNotes = `cov P1=${covP1.toFixed(1)}% → P${lastCompletedPhase}=${covLast.toFixed(
         1,
-      )}% (Δ${coverageDelta.toFixed(1)}pp), e2e P5=${passRateP5.toFixed(0)}%`;
+      )}% (Δ${coverageDelta.toFixed(1)}pp), e2e P${lastCompletedPhase}=${passRateLast.toFixed(0)}%`;
     } else {
       testQualityNotes = "partial data";
     }
@@ -369,8 +370,9 @@ function computeComposite(framework, frameworkData) {
   let completionNotes = "";
   const phasesCompleted =
     (phase1 ? 1 : 0) + FORWARD_PHASES.filter((p) => phases[p]).length;
-  completion = Math.round((phasesCompleted / 5) * 100);
-  completionNotes = `${phasesCompleted}/5 phases produced metrics`;
+  const totalPhases = 1 + FORWARD_PHASES.length;
+  completion = Math.round((phasesCompleted / totalPhases) * 100);
+  completionNotes = `${phasesCompleted}/${totalPhases} phases produced metrics`;
 
   // Axis 5: Variance discipline (RSD averaged across key Phase 1 metrics; lower is better)
   let variance = null;
@@ -479,7 +481,7 @@ function aggregateFramework(framework) {
   const completedPhases = [
     phase1Data ? 1 : null,
     ...FORWARD_PHASES.map((p) => (phases[p] ? p : null)),
-  ].filter(Boolean);
+  ].filter((p) => p != null);
 
   return {
     framework,
@@ -508,11 +510,11 @@ function renderMarkdown(report) {
   lines.push(`**Generated:** ${ts}`);
   lines.push("");
   lines.push(
-    "This is the auto-generated cross-framework rollup. The composite score is a weighted mean of five maintainability axes. See **methodology** at the bottom for the weighting and what data went into each axis.",
+    "This is the auto-generated cross-framework rollup of all 45 actions (15 Phase 1 replicates + 5 representative selections + 25 forward-iteration builds across Phases 2–6). The composite score is a weighted mean of five maintainability axes. See **methodology** at the bottom for the weighting and what data went into each axis.",
   );
   lines.push("");
   lines.push(
-    "**Read this in light of [docs/FRAMING.md](../../docs/FRAMING.md).** The result supports a narrow claim: best workflow on this Next.js project, run autonomously, n=3 replicates at Phase 1, n=1 forward iteration on the median-LOC representative.",
+    "**Read this in light of [docs/FRAMING.md](../../docs/FRAMING.md).** The result supports a narrow claim: best workflow on this Next.js project, run autonomously, n=3 replicates at Phase 1, n=1 forward iteration on the median-LOC representative across Phases 2–6.",
   );
   lines.push("");
 
@@ -535,7 +537,7 @@ function renderMarkdown(report) {
       0,
     );
     lines.push(
-      `| ${i + 1} | **${f.framework}** | ${f.composite ?? "—"} | ${axes.testQuality ?? "—"} | ${axes.complexity ?? "—"} | ${axes.diffHygiene ?? "—"} | ${axes.completion ?? "—"} | ${axes.variance ?? "—"} | ${f.completedPhases.length}/5 | ${totalFindings} |`,
+      `| ${i + 1} | **${f.framework}** | ${f.composite ?? "—"} | ${axes.testQuality ?? "—"} | ${axes.complexity ?? "—"} | ${axes.diffHygiene ?? "—"} | ${axes.completion ?? "—"} | ${axes.variance ?? "—"} | ${f.completedPhases.length}/6 | ${totalFindings} |`,
     );
   }
   lines.push("");
@@ -586,7 +588,7 @@ function renderMarkdown(report) {
   // Cross-framework metrics table (per phase)
   lines.push("## Cross-framework metric comparison");
   lines.push("");
-  lines.push("Each row is a metric; each column is a framework. Cell = `phase1 → phase5` or `phase1 → last-completed`. Missing values shown as `—`.");
+  lines.push("Each row is a metric; each column is a framework. Cell = `phase1 → last-completed` (Phase 6 if everything ran). Missing values shown as `—`.");
   lines.push("");
   const metricSpecs = [
     ["E2e pass rate", (p) => p?.playwright?.passRate, "%"],
@@ -616,10 +618,10 @@ function renderMarkdown(report) {
   lines.push("");
   lines.push("Composite score is a weighted mean of:");
   lines.push("");
-  lines.push("- **Test quality (25%)** — Phase 1 → Phase 5 coverage delta + Phase 5 e2e pass rate.");
+  lines.push("- **Test quality (25%)** — Phase 1 → last-completed-phase coverage delta + last-completed-phase e2e pass rate.");
   lines.push("- **Complexity (25%)** — Last-completed phase's avg complexity + trajectory penalty if any phase added > 1.5 to avg.");
-  lines.push("- **Diff hygiene (20%)** — Mean `scopeAdherence` across Phases 2–5; penalty if total unexpected LOC > 500.");
-  lines.push("- **Scope completion (20%)** — Phases completed / 5. A framework that hit a blocker at Phase 3 maxes out at 60.");
+  lines.push("- **Diff hygiene (20%)** — Mean `scopeAdherence` across Phases 2–6; penalty if total unexpected LOC > 500.");
+  lines.push("- **Scope completion (20%)** — Phases completed / 6. A framework that hit a blocker at Phase 3 maxes out at ~50.");
   lines.push("- **Variance (10%)** — Inverse of mean RSD across Phase 1 metrics (lower variance scores higher).");
   lines.push("");
   lines.push("Composite weights only the axes that have data — a framework with no representative.json still gets a composite from the four other axes, just with the variance term dropped.");
@@ -664,7 +666,7 @@ function main() {
       : phase1Data;
     summary._raw = { phase1: phase1Data, lastPhase };
     frameworks.push(summary);
-    console.log(`    composite=${summary.composite ?? "—"}, phases=${summary.completedPhases.length}/5, findings=${Object.values(summary.findingsByPhase).reduce((s, a) => s + a.length, 0)}`);
+    console.log(`    composite=${summary.composite ?? "—"}, phases=${summary.completedPhases.length}/6, findings=${Object.values(summary.findingsByPhase).reduce((s, a) => s + a.length, 0)}`);
   }
 
   const report = {
