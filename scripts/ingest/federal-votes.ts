@@ -356,6 +356,8 @@ async function fetchGovTrackVotePage(
 ): Promise<UnknownRecord[]> {
   const votes: UnknownRecord[] = [];
   let offset = 0;
+  // GovTrack rejects requests with offset > 1000 (returns HTTP 400).
+  const GOVTRACK_MAX_OFFSET = 1000;
 
   while (true) {
     const url = withGovTrackParams(`${config.govtrackBaseUrl}/vote`, {
@@ -375,7 +377,16 @@ async function fetchGovTrackVotePage(
     const totalCount = getNumber(meta, "total_count") ?? votes.length;
     offset += objects.length;
 
-    if (objects.length === 0 || offset >= totalCount) {
+    if (
+      objects.length === 0 ||
+      offset >= totalCount ||
+      offset >= GOVTRACK_MAX_OFFSET
+    ) {
+      if (offset >= GOVTRACK_MAX_OFFSET && offset < totalCount) {
+        console.warn(
+          `[federal-votes] govtrack_offset_cap reached: congress=${congress} fetched=${votes.length} total=${totalCount} (offset cap=${GOVTRACK_MAX_OFFSET})`,
+        );
+      }
       break;
     }
   }

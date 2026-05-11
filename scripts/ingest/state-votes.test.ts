@@ -291,7 +291,8 @@ describe("state-votes helpers", () => {
 
     expect(config.state).toBe("CA");
     expect(config.openStatesBaseUrl).toBe("https://openstates.test");
-    expect(config.perPage).toBe(25);
+    // OPENSTATES_PER_PAGE=25 is clamped to 20 (OpenStates max_per_page enforcement)
+    expect(config.perPage).toBe(20);
     expect(config.sessionCount).toBe(3);
     expect(config.explicitSessionIds).toEqual(["2025", "2023"]);
     expect(config.maxBills).toBe(10);

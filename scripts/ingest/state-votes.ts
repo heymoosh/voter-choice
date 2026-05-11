@@ -335,6 +335,8 @@ export function resolveRuntimeConfig(
   const state = normalizeStateAbbreviation(requireEnv(env, "STATE"));
   const apiKey = requireEnv(env, "OPENSTATES_API_KEY");
 
+  // OpenStates /bills endpoint enforces max_per_page=20 and returns HTTP 400 if exceeded.
+  const OPENSTATES_MAX_PER_PAGE = 20;
   return {
     state,
     jurisdictionId: buildStateJurisdictionId(state),
@@ -342,7 +344,10 @@ export function resolveRuntimeConfig(
       env.OPENSTATES_BASE_URL ?? "https://v3.openstates.org",
     ),
     openStatesApiKey: apiKey,
-    perPage: parsePositiveInteger(env.OPENSTATES_PER_PAGE, 50),
+    perPage: Math.min(
+      parsePositiveInteger(env.OPENSTATES_PER_PAGE, OPENSTATES_MAX_PER_PAGE),
+      OPENSTATES_MAX_PER_PAGE,
+    ),
     sessionCount: parsePositiveInteger(env.OPENSTATES_SESSION_COUNT, 2),
     explicitSessionIds: parseList(env.OPENSTATES_SESSION_IDS),
     maxBills: parseOptionalPositiveInteger(env.OPENSTATES_MAX_BILLS),
