@@ -1,0 +1,93 @@
+name: Tag Bills with Issues
+
+on:
+  # Sunday 09:00 UTC — after both ingest jobs have had time to complete
+  schedule:
+    - cron: "0 9 * * 0"
+  # Allow manual trigger for re-tagging or backfill
+  workflow_dispatch:
+
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Bitwarden Secrets Manager CLI
+        run: |
+          curl -sSLo bws.zip "https://github.com/bitwarden/sdk-sm/releases/download/bws-v2.0.0/bws-x86_64-unknown-linux-musl-2.0.0.zip"
+          unzip -o bws.zip bws
+          sudo install -m 755 bws /usr/local/bin/bws
+          bws --version
+
+      - name: Pull secrets from Bitwarden SM
+        env:
+          BWS_ACCESS_TOKEN: ${{ secrets.BW_ACCESS_TOKEN }}
+        run: |
+          # ---------------------------------------------------------------
+          # DATABASE_URL — Neon Postgres connection string
+          # ---------------------------------------------------------------
+          DATABASE_URL=$(bws secret get 90abeeed-130e-4707-86ff-b446003770c2 --access-token "$BWS_ACCESS_TOKEN" --output json | jq -r '.value')
+          echo "DATABASE_URL=$DATABASE_URL" >> "$GITHUB_ENV"
+          echo "::add-mask::$DATABASE_URL"
+
+          # ---------------------------------------------------------------
+          # OPENSTATES_API_KEY — retained for context; not used by tag-bills
+          # ---------------------------------------------------------------
+          OPENSTATES_API_KEY=$(bws secret get 85bad136-3cbc-4062-9ccc-b4460037de19 --access-token "$BWS_ACCESS_TOKEN" --output json | jq -r '.value')
+          echo "OPENSTATES_API_KEY=$OPENSTATES_API_KEY" >> "$GITHUB_ENV"
+          echo "::add-mask::$OPENSTATES_API_KEY"
+
+          # ---------------------------------------------------------------
+          # ANTHROPIC_VOTER_API — Anthropic API key used for LLM tagging
+          # UUID: c569bc18-1095-4532-b5df-b42a00f87c2e
+          # Same secret as the chat API (deploy.yml). Pulled here so the
+          # tagger can call Claude without app-side access.
+          # ---------------------------------------------------------------
+          ANTHROPIC_VOTER_API=$(bws secret get c569bc18-1095-4532-b5df-b42a00f87c2e --access-token "$BWS_ACCESS_TOKEN" --output json | jq -r '.value')
+          echo "ANTHROPIC_VOTER_API=$ANTHROPIC_VOTER_API" >> "$GITHUB_ENV"
+          echo "::add-mask::$ANTHROPIC_VOTER_API"
+
+          # ---------------------------------------------------------------
+          # INGEST_FAILURE_WEBHOOK_URL — optional; webhook for ingest failure alerts.
+          # UUID: <INGEST_FAILURE_WEBHOOK_BWS_SECRET_ID>
+          # Replace the placeholder with the real BWS secret UUID once provisioned.
+          # ---------------------------------------------------------------
+          set +e
+          WEBHOOK_SECRET=$(bws secret get <INGEST_FAILURE_WEBHOOK_BWS_SECRET_ID> --access-token "$BWS_ACCESS_TOKEN" --output json 2>/dev/null)
+          WEBHOOK_STATUS=$?
+          set -e
+          if [ "$WEBHOOK_STATUS" -eq 0 ]; then
+            INGEST_FAILURE_WEBHOOK_URL=$(echo "$WEBHOOK_SECRET" | jq -r '.value // empty')
+            if [ -n "$INGEST_FAILURE_WEBHOOK_URL" ]; then
+              echo "INGEST_FAILURE_WEBHOOK_URL=$INGEST_FAILURE_WEBHOOK_URL" >> "$GITHUB_ENV"
+              echo "::add-mask::$INGEST_FAILURE_WEBHOOK_URL"
+            fi
+          fi
+
+      - name: Run bill issue tagger (Phase D — LLM tagging)
+        run: npx tsx scripts/ingest/tag-bills.ts
+
+      - name: Notify on ingest failure
+        if: failure()
+        env:
+          WEBHOOK: ${{ env.INGEST_FAILURE_WEBHOOK_URL }}
+        run: |
+          if [ -z "$WEBHOOK" ]; then
+            echo "INGEST_FAILURE_WEBHOOK_URL not set — skipping alert"
+            exit 0
+          fi
+          curl -fsS -X POST "$WEBHOOK" \
+            -H "Content-Type: application/json" \
+            -d "$(jq -n --arg job "${{ github.job }}" --arg run "${{ github.run_id }}" --arg repo "${{ github.repository }}" \
+              '{text: "[voter-choice ingest failure] job=\($job) repo=\($repo) run_id=\($run)"}')"
