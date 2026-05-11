@@ -30,7 +30,7 @@ The result will not, by itself, tell you:
 | Spec-format bias | A uniform `PROJECT_SPEC.md` is the fairest *practical* input but not the most neutral one. Spec-first workflows are designed for this format. | Likely favors Spec Kit and BMAD over more conversational workflows. |
 | Next.js-only | Stack diversity is an entire follow-on experiment. | Workflows that have Next.js-specific tooling (Vercel-flavored, etc.) get an unfair leg up. |
 | Autonomous-only | Skill drift across trials would be a worse confound. Trading ecological validity for internal validity is the right call. | Penalizes workflows whose value is operator-collaborative. |
-| n=3 only at Phase 1 | Full-phase replicates would cost 5× compute. Phase 1 is the cleanest signal for variance. | Variance estimate doesn't account for compounding drift across iterations. |
+| n=3 only at Phase 1 | Full-phase replicates would cost 5× compute. Phase 1 is the cleanest signal for variance. Replicates are forked from `experiment/<framework>` into `experiment/<framework>-r1`, `-r2`, `-r3`; median-LOC run becomes the representative; Phases 2–5 run on that. | Variance estimate doesn't account for compounding drift across iterations. |
 | Model fixed (Sonnet/Opus class) | Lets the workflow be the independent variable. | Cannot separate "this workflow needs Opus" from "this workflow is good." |
 | Rubric isolation only for Runs 4–5 | Runs 1–3 were intentionally rubric-exposed as the "what not to do" demonstration. Their data is documented as failure-mode reference (see `docs/LEARNINGS.md` Learning 009), not as comparable data. | Aggregating across all runs would invalidate cross-workflow comparison; the experiment uses only Runs 4–5+ for ranking. |
 

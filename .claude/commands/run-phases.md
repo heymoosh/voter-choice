@@ -4,15 +4,18 @@ You are an autonomous agent. Your job is to execute work, not describe it. No pr
 
 Chains `/start` across all experiment phases (1 → 5) for the current `experiment/<framework>` branch. Each phase calls `/start`, which builds, measures, commits, and tags. This command advances through every phase without stopping for operator input.
 
+**Replicate mode:** If the current branch is `experiment/<framework>-r<N>` (e.g., `experiment/bmad-r2`), this command runs Phase 1 only and stops. This is the n=3 replicate protocol from `docs/FRAMING.md` — variance estimate at Phase 1 only, forward iteration on the chosen representative.
+
 ## Pre-flight
 
-1. Confirm you are on an `experiment/<framework>` branch. Run `git rev-parse --abbrev-ref HEAD`. If not on `experiment/*`, STOP and report.
+1. Confirm you are on an `experiment/<framework>` branch (or `experiment/<framework>-r<N>` for replicate mode). Run `git rev-parse --abbrev-ref HEAD`. If not, STOP and report.
 2. Load API keys: `bash scripts/load-secrets.sh` — this populates `.env.local` from Bitwarden. Required for Phase 3+ (Google Civic, Vote Smart, etc.) and Phase 5 (Anthropic API). If the script fails, log the error and continue — Phase 1 and Phase 2 do not require API keys.
-3. Note the framework: extract from branch name (`experiment/bmad` → BMAD, `experiment/vanilla` → Vanilla, etc.).
+3. Note the framework: extract from branch name (`experiment/bmad` → BMAD, `experiment/vanilla` → Vanilla, `experiment/bmad-r2` → BMAD replicate r2).
+4. Detect replicate mode: if branch matches `experiment/<framework>-r<N>`, set `STOP_AFTER_PHASE=1`. Otherwise, run all 5 phases.
 
 ## Phase loop
 
-For each phase from 1 to 5, in order:
+For each phase from 1 to 5 (or stop at `STOP_AFTER_PHASE` in replicate mode), in order:
 
 **Before each phase:**
 - Read `docs/RUN_LOG.md` `## Next`. Confirm the next entry refers to this branch and this phase number. If RUN_LOG says a different branch or phase, stop and report the mismatch.

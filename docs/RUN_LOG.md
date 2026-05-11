@@ -2,22 +2,29 @@
 
 ## Next
 
-**Phase 0.7–0.9 — Consolidate to 5 clean `experiment/<framework>` branches and enable autonomous Phase 1→5 execution.**
+**Phase 1 (n=3 replicates) — variance estimation per workflow.**
 
-Active experiment branches (replacing all legacy `run*/` and `workflow/` branches):
+Per the audit remediation in `docs/FRAMING.md`, each framework runs Phase 1 three times on its own replicate branch. After all 15 replicates land, `scoring/select-representative.mjs` picks the median-LOC run as the representative; Phases 2–5 fork from there.
 
-| Branch | Framework | Status |
-|--------|-----------|--------|
-| `experiment/vanilla` | Vanilla Claude Code | Pending creation |
-| `experiment/bmad` | BMAD Method | Pending creation |
-| `experiment/compound-engineering` | Compound Engineering | Pending creation |
-| `experiment/spec-kit` | Spec Kit | Pending creation |
-| `experiment/superpowers` | Superpowers | Pending creation |
+Replicate branches (15 total, all forked from `experiment/<framework>` at the pre-Phase-1 commit):
 
-**To start a full experiment run:** Check out `experiment/<framework>` and invoke `/run-phases`. It chains `/start` across Phase 1 → 5 with no human-in-loop between phases.
+| Framework | Replicate branches | Status |
+|-----------|-------------------|--------|
+| Vanilla | `experiment/vanilla-r1`, `-r2`, `-r3` | Pending Phase 1 |
+| BMAD | `experiment/bmad-r1`, `-r2`, `-r3` | Pending Phase 1 |
+| Compound Engineering | `experiment/compound-engineering-r1`, `-r2`, `-r3` | Pending Phase 1 |
+| Spec Kit | `experiment/spec-kit-r1`, `-r2`, `-r3` | Pending Phase 1 |
+| Superpowers | `experiment/superpowers-r1`, `-r2`, `-r3` | Pending Phase 1 |
 
-**Phase progression per branch:**
-- Phase 1: Copy-paste ballot tool (PROJECT_SPEC.md v2.0 Path B baseline)
+**To run a replicate:** Check out an `experiment/<framework>-r<N>` branch and invoke `/run-phases`. It detects replicate mode and stops after Phase 1.
+
+**After all 15 replicates complete:**
+1. For each framework, run `node scoring/select-representative.mjs --framework <fw> --repo <main-worktree>` → writes `metrics/experiment/<fw>-representative.json` with the chosen replicate + variance report.
+2. Update `experiment/<framework>` branch to point at the representative replicate's commit (regular branch update, no force-push).
+3. Update `## Next` here to schedule forward iteration: Phase 2 → 5 on the 5 representative branches.
+
+**Phase progression per branch (post-replicate, forward iteration):**
+- Phase 1: Copy-paste ballot tool (PROJECT_SPEC.md v2.0 Path B baseline) — done in replicate
 - Phase 2: Add Spanish i18n (PHASE2_SPEC.md)
 - Phase 3: Replace stub data with real APIs — Google Civic, Vote Smart, OpenStates, OpenFEC (PHASE3_SPEC.md)
 - Phase 4: Scale to 5 languages including Arabic RTL (PHASE4_SPEC.md)
