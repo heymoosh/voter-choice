@@ -55,6 +55,18 @@ Note: **Scoring is executed by Hermes from the host side, not inside the build c
 
 ## Completed
 
+
+### Phase 1 replicate — spec-kit r3 (auto)
+
+- **Date:** 2026-05-11T19:16:16.416Z
+- **Branch:** `experiment/spec-kit-r3`
+- **Tag:** `spec-kit-r3-phase1-complete`
+- **Status:** ✓
+- **Replicate:** r3
+- **Summary:** e2e 42/42, vitest 29/29, lint 0e/0w, LOC 1574
+- **Metrics:** coverage 13.6%, LOC 1574, complexity avg 3.00 max 6
+
+
 ### Phase 1 replicate — spec-kit r2 (auto)
 
 - **Date:** 2026-05-11T18:47:54.065Z
@@ -65,6 +77,7 @@ Note: **Scoring is executed by Hermes from the host side, not inside the build c
 - **Summary:** e2e 42/42, vitest 40/40, lint 0e/3w, LOC 2089
 - **Metrics:** coverage 13.7%, LOC 2089, complexity avg 5.14 max 18
 
+<<<<<<< HEAD
 ### Phase 1 replicate — spec-kit r1 (auto)
 
 - **Date:** 2026-05-11T18:25:40.273Z
@@ -160,6 +173,8 @@ Note: **Scoring is executed by Hermes from the host side, not inside the build c
 - **What was done:** Rewrote `.claude/commands/start.md` so `/start` is a lightweight orchestrator that dispatches sub-agents (via the Agent tool) rather than doing build work itself. Each of the 40 actions (15 Phase 1 replicates + 5 representative selections + 20 forward-iteration phases) is now dispatched to a fresh `general-purpose` sub-agent with an isolated context. The orchestrator's context grows only ~200 tokens per completed action rather than accumulating full build output across all 40 builds. Sub-agent prompt templates cover all three action types: `phase1_replicate`, `select_representative`, `phase_forward`. Each template instructs the sub-agent to checkout the branch, run the framework's own `.claude/commands/workflow.md` methodology, log responder decisions, iterate to green, commit, tag, measure, and push — then return a single summary paragraph. Pushed to `origin/main` and cherry-picked onto all 5 `experiment/<fw>` branches.
 - **Files modified:** `.claude/commands/start.md`
 - **Issues or deviations:** None. The CLAUDE.md `## Next` section already described the state post-phase0.12; no `## Next` update was needed — it already correctly says "Run `/start`."
+=======
+>>>>>>> 0e68693 (run-log: phase1 spec-kit r3 auto-entry)
 
 ### Phase 1 Run 5 — Vanilla (complete)
 
