@@ -1,0 +1,43 @@
+{
+  "phase": 6,
+  "feature": "Issue ranking (drag-and-rank) + concern disambiguation (free-text → canonical taxonomy) + anonymous aggregate counters with Polis overlay",
+  "rationale": "Phase 6 introduces a new structured-input UX (drag-rank), a server-side AI-assist endpoint (concern disambiguation), and a server-side aggregate counter (Upstash KV). Expected: issue-ranking components, concern-disambiguation API + UI, canonical issues taxonomy, aggregate-counter API + Polis overlay. Adjacent: Phase 5 chat system prompt needs to consume ranked issues + confirmed concerns; copy-paste prompt generator extends with new structured blocks. NOT expected: changes to Phase 5 budget infrastructure, changes to Phase 4 i18n primitives, changes to Phase 3 data layer (counts API uses zip→county derived from Phase 3 Civic data).",
+  "expectedGlobs": [
+    "src/lib/canonicalIssues.*",
+    "src/lib/issue-ranking/**",
+    "src/lib/concern-disambiguation/**",
+    "src/lib/issue-counts/**",
+    "src/lib/polis/**",
+    "src/lib/upstash.*",
+    "src/lib/redis.*",
+    "src/app/api/disambiguate-concerns/**",
+    "src/app/api/issue-counts/**",
+    "src/components/IssueRank*",
+    "src/components/IssueRanking*",
+    "src/components/ConcernDisambiguation*",
+    "src/components/ConcernInput*",
+    "src/components/IssueCount*",
+    "src/components/PolisOverlay*",
+    "src/components/CanonicalIssue*"
+  ],
+  "adjacentAllowed": [
+    "src/app/page.tsx",
+    "src/app/layout.tsx",
+    "src/components/BallotToolClient.*",
+    "src/components/Chat*",
+    "src/components/PromptOutput.*",
+    "src/lib/generatePrompt.*",
+    "src/lib/prompt-generator.*",
+    "src/lib/translations.*",
+    "src/lib/i18n.*",
+    "src/lib/anthropic.*",
+    "src/lib/budget/**",
+    "src/lib/rate-limit.*",
+    "src/__tests__/**",
+    "src/**/*.test.*",
+    "src/**/*.spec.*",
+    "e2e/**",
+    ".env.example",
+    "package.json"
+  ]
+}
