@@ -451,6 +451,16 @@ async function enrichBills(
 ): Promise<number> {
   if (!config.congressGovApiKey) return 0;
 
+  const total = plan.bills.size;
+  console.log(`[federal-votes] congressgov_enrichment_start bills=${total}`);
+
+  // Congress.gov free-tier limit is 5,000 req/hour (~1.4 req/s); registered
+  // keys are typically higher. Two calls per bill (bill + summaries).
+  // A 250ms inter-bill delay (~4 req/s) keeps us well within free-tier limits
+  // and adds ~7 minutes for 1699 bills — acceptable for a weekly batch job.
+  const INTER_BILL_DELAY_MS = 250;
+
+  let enriched = 0;
   let failures = 0;
   for (const [billId, bill] of plan.bills) {
     const identity = parsePlannedBillId(billId);
@@ -464,6 +474,7 @@ async function enrichBills(
       );
       if (enrichment) {
         plan.bills.set(billId, mergeBillEnrichment(bill, enrichment));
+        enriched += 1;
       }
     } catch (error) {
       failures += 1;
@@ -471,7 +482,15 @@ async function enrichBills(
         `[federal-votes] congressgov_enrichment_failed bill=${billId} error=${safeErrorMessage(error)}`,
       );
     }
+
+    if (INTER_BILL_DELAY_MS > 0) {
+      await new Promise((resolve) => setTimeout(resolve, INTER_BILL_DELAY_MS));
+    }
   }
+
+  console.log(
+    `[federal-votes] congressgov_enrichment_done enriched=${enriched} failures=${failures} total=${total}`,
+  );
   return failures;
 }
 
