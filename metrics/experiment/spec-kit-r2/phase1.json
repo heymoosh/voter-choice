@@ -1,0 +1,347 @@
+{
+  "metadata": {
+    "timestamp": "2026-05-11T18:45:24.486Z",
+    "branch": "experiment/spec-kit-r2",
+    "commit": "5e9687d",
+    "phase": 1,
+    "nodeVersion": "v22.14.0"
+  },
+  "eslint": {
+    "errors": 0,
+    "warnings": 3,
+    "complexityViolations": 3
+  },
+  "complexity": {
+    "count": 29,
+    "average": 5.14,
+    "max": 18,
+    "p50": 4,
+    "p75": 7,
+    "p95": 16,
+    "distribution": {
+      "simple_1_5": 19,
+      "moderate_6_10": 7,
+      "complex_11_15": 1,
+      "highComplex_16_20": 2,
+      "critical_21plus": 0
+    },
+    "perFunction": [
+      {
+        "file": "src/lib/prompt-builder.ts",
+        "name": "buildContextBlock",
+        "complexity": 18,
+        "line": 21
+      },
+      {
+        "file": "src/components/StateInfo.tsx",
+        "name": "StateInfo",
+        "complexity": 16,
+        "line": 30
+      },
+      {
+        "file": "src/app/page.tsx",
+        "name": "Home",
+        "complexity": 12,
+        "line": 36
+      },
+      {
+        "file": "src/components/ZipCodeForm.tsx",
+        "name": "ZipCodeForm",
+        "complexity": 9,
+        "line": 10
+      },
+      {
+        "file": "src/lib/lookup.ts",
+        "name": "<anonymous>",
+        "complexity": 8,
+        "line": 81
+      },
+      {
+        "file": "src/app/page.tsx",
+        "name": "<anonymous>",
+        "complexity": 7,
+        "line": 46
+      },
+      {
+        "file": "src/components/PromptOutput.tsx",
+        "name": "CopyButton",
+        "complexity": 7,
+        "line": 163
+      },
+      {
+        "file": "src/components/RegistrationStatus.tsx",
+        "name": "RegistrationStatus",
+        "complexity": 7,
+        "line": 61
+      },
+      {
+        "file": "src/lib/deadline-status.ts",
+        "name": "getDeadlineStatus",
+        "complexity": 7,
+        "line": 13
+      },
+      {
+        "file": "src/lib/lookup.ts",
+        "name": "<anonymous>",
+        "complexity": 7,
+        "line": 7
+      },
+      {
+        "file": "src/components/PromptOutput.tsx",
+        "name": "<anonymous>",
+        "complexity": 5,
+        "line": 16
+      },
+      {
+        "file": "src/app/page.tsx",
+        "name": "<anonymous>",
+        "complexity": 4,
+        "line": 110
+      },
+      {
+        "file": "src/components/PromptOutput.tsx",
+        "name": "PromptOutput",
+        "complexity": 4,
+        "line": 9
+      },
+      {
+        "file": "src/components/ZipCodeForm.tsx",
+        "name": "validate",
+        "complexity": 4,
+        "line": 14
+      },
+      {
+        "file": "src/lib/lookup.ts",
+        "name": "zipLookupSync",
+        "complexity": 4,
+        "line": 60
+      },
+      {
+        "file": "src/components/PromptOutput.tsx",
+        "name": "fallbackCopy",
+        "complexity": 3,
+        "line": 40
+      },
+      {
+        "file": "src/components/RegistrationStatus.tsx",
+        "name": "DeadlineRow",
+        "complexity": 3,
+        "line": 25
+      },
+      {
+        "file": "src/app/page.tsx",
+        "name": "<arrow>",
+        "complexity": 2,
+        "line": 338
+      },
+      {
+        "file": "src/components/StateSelector.tsx",
+        "name": "getStateName",
+        "complexity": 2,
+        "line": 11
+      },
+      {
+        "file": "src/components/ZipCodeForm.tsx",
+        "name": "handleChange",
+        "complexity": 2,
+        "line": 24
+      },
+      {
+        "file": "src/components/ZipCodeForm.tsx",
+        "name": "handleSubmit",
+        "complexity": 2,
+        "line": 33
+      },
+      {
+        "file": "src/components/ZipCodeForm.tsx",
+        "name": "<arrow>",
+        "complexity": 2,
+        "line": 63
+      },
+      {
+        "file": "src/lib/deadline-status.ts",
+        "name": "formatDate",
+        "complexity": 2,
+        "line": 71
+      },
+      {
+        "file": "src/lib/deadline-status.ts",
+        "name": "allDeadlinesPassed",
+        "complexity": 2,
+        "line": 85
+      },
+      {
+        "file": "src/lib/deadline-status.ts",
+        "name": "<arrow>",
+        "complexity": 2,
+        "line": 89
+      },
+      {
+        "file": "src/lib/lookup.test.ts",
+        "name": "<arrow>",
+        "complexity": 2,
+        "line": 100
+      },
+      {
+        "file": "src/lib/lookup.test.ts",
+        "name": "<arrow>",
+        "complexity": 2,
+        "line": 107
+      },
+      {
+        "file": "src/lib/lookup.test.ts",
+        "name": "<arrow>",
+        "complexity": 2,
+        "line": 120
+      },
+      {
+        "file": "src/lib/lookup.ts",
+        "name": "findNextElection",
+        "complexity": 2,
+        "line": 44
+      }
+    ]
+  },
+  "vitest": {
+    "tests": {
+      "total": 40,
+      "passed": 40,
+      "failed": 0,
+      "skipped": 0,
+      "passRate": 100
+    },
+    "coverage": {
+      "lines": 13.74,
+      "branches": 80,
+      "functions": 89.47,
+      "statements": 13.74
+    }
+  },
+  "duplication": {
+    "duplicatedLines": 44,
+    "totalLines": 2344,
+    "percentage": 1.88,
+    "clones": 3
+  },
+  "bundleSize": {
+    "buildSuccess": true,
+    "pages": [
+      {
+        "route": "/",
+        "size": 11.8,
+        "unit": "kB"
+      },
+      {
+        "route": "/_not-found",
+        "size": 990,
+        "unit": "B"
+      }
+    ],
+    "firstLoadJsShared": {
+      "size": 102,
+      "unit": "kB"
+    }
+  },
+  "lighthouse": {
+    "performance": 100,
+    "accessibility": 100,
+    "bestPractices": 100,
+    "seo": 100
+  },
+  "playwright": {
+    "total": 42,
+    "passed": 42,
+    "failed": 0,
+    "timedOut": 0,
+    "skipped": 0,
+    "passRate": 100
+  },
+  "linesOfCode": {
+    "application": {
+      "code": 2089,
+      "files": 22,
+      "byExtension": {
+        ".css": {
+          "files": 1,
+          "code": 21
+        },
+        ".tsx": {
+          "files": 9,
+          "code": 1089
+        },
+        ".json": {
+          "files": 4,
+          "code": 228
+        },
+        ".ts": {
+          "files": 8,
+          "code": 751
+        }
+      }
+    },
+    "plugin": {
+      "code": 0,
+      "files": 0,
+      "byExtension": {}
+    },
+    "infrastructure": {
+      "code": 351,
+      "files": 10
+    },
+    "total": {
+      "code": 2440,
+      "files": 32
+    }
+  },
+  "workflowTests": {
+    "count": 3,
+    "files": [
+      "src/lib/deadline-status.test.ts",
+      "src/lib/lookup.test.ts",
+      "src/lib/prompt-builder.test.ts"
+    ]
+  },
+  "workflowTiming": {
+    "steps": [
+      {
+        "step": "speckit.specify",
+        "started": "2026-05-11T13:31:05-05:00",
+        "completed": "2026-05-11T13:32:10-05:00",
+        "durationMs": 65000
+      },
+      {
+        "step": "speckit.clarify",
+        "started": "2026-05-11T13:32:14-05:00",
+        "completed": "2026-05-11T13:32:24-05:00",
+        "durationMs": 10000
+      },
+      {
+        "step": "speckit.plan",
+        "started": "2026-05-11T13:32:34-05:00",
+        "completed": "2026-05-11T13:33:45-05:00",
+        "durationMs": 71000
+      },
+      {
+        "step": "speckit.tasks",
+        "started": "2026-05-11T13:33:50-05:00",
+        "completed": "2026-05-11T13:34:26-05:00",
+        "durationMs": 36000
+      },
+      {
+        "step": "speckit.analyze",
+        "started": "2026-05-11T13:34:30-05:00",
+        "completed": "2026-05-11T13:34:37-05:00",
+        "durationMs": 7000
+      },
+      {
+        "step": "speckit.implement",
+        "started": "2026-05-11T13:34:42-05:00",
+        "completed": "2026-05-11T13:44:34-05:00",
+        "durationMs": 592000
+      }
+    ],
+    "totalSteps": 6,
+    "completedSteps": 6
+  },
+  "diffHygiene": null
+}
