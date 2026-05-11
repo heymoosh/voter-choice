@@ -364,6 +364,18 @@ export async function ingestStateVotes({
   env?: NodeJS.ProcessEnv;
 } = {}): Promise<PlannedStateRows> {
   const config = resolveRuntimeConfig(env);
+
+  // Stagger startup across matrix jobs to prevent all 6 parallel jobs from
+  // firing their first OpenStates request simultaneously and triggering 429s.
+  // Hash the state abbreviation to a deterministic 0-29s window.
+  const startupJitterMs = computeStartupJitter(config.state);
+  if (startupJitterMs > 0) {
+    console.log(
+      `[state-votes:${config.state}] startup_jitter_ms=${startupJitterMs}`,
+    );
+    await new Promise((resolve) => setTimeout(resolve, startupJitterMs));
+  }
+
   console.log(
     `[state-votes:${config.state}] starting jurisdiction=${config.jurisdictionId}`,
   );
@@ -1139,6 +1151,20 @@ function trimTrailingSlash(value: string): string {
 function safeErrorMessage(error: unknown): string {
   if (error instanceof Error) return error.message.replace(/\s+/gu, " ");
   return "unknown";
+}
+
+/**
+ * Returns a deterministic startup delay (0–29 seconds) for a given state,
+ * derived from a simple hash of the state abbreviation. This staggers the
+ * first OpenStates API request from each matrix job so that parallel jobs
+ * don't all fire simultaneously and exhaust the shared API key rate limit.
+ */
+function computeStartupJitter(state: string): number {
+  // Cheap hash: sum char codes and map to a 0-29s window in 5s increments.
+  const hash = state
+    .split("")
+    .reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  return (hash % 6) * 5_000; // 0, 5000, 10000, 15000, 20000, or 25000 ms
 }
 
 function isCliExecution(): boolean {
