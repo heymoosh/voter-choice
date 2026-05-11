@@ -1,0 +1,101 @@
+name: Ingest Donor Data
+
+on:
+  # Sunday 08:30 UTC — after federal (07:00) and state (07:30) vote ingests,
+  # before the bill tagger (09:00). Donors are independent of bills.
+  schedule:
+    - cron: "30 8 * * 0"
+  # Allow manual trigger for testing / backfill
+  workflow_dispatch:
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Bitwarden Secrets Manager CLI
+        run: |
+          curl -sSLo bws.zip "https://github.com/bitwarden/sdk-sm/releases/download/bws-v2.0.0/bws-x86_64-unknown-linux-musl-2.0.0.zip"
+          unzip -o bws.zip bws
+          sudo install -m 755 bws /usr/local/bin/bws
+          bws --version
+
+      - name: Pull secrets from Bitwarden SM
+        env:
+          BWS_ACCESS_TOKEN: ${{ secrets.BW_ACCESS_TOKEN }}
+        run: |
+          # ---------------------------------------------------------------
+          # DATABASE_URL — Neon Postgres connection string
+          # UUID: 90abeeed-130e-4707-86ff-b446003770c2
+          # ---------------------------------------------------------------
+          DATABASE_URL=$(bws secret get 90abeeed-130e-4707-86ff-b446003770c2 --access-token "$BWS_ACCESS_TOKEN" --output json | jq -r '.value')
+          echo "DATABASE_URL=$DATABASE_URL" >> "$GITHUB_ENV"
+          echo "::add-mask::$DATABASE_URL"
+
+          # ---------------------------------------------------------------
+          # FEC_API_KEY — optional; public tier works without it.
+          # UUID: 17e983ad-82bd-45fe-8499-b446003890ac
+          # Higher rate limits when present (> 1k req/hr).
+          # ---------------------------------------------------------------
+          FEC_API_KEY=$(bws secret get 17e983ad-82bd-45fe-8499-b446003890ac --access-token "$BWS_ACCESS_TOKEN" --output json | jq -r '.value')
+          echo "FEC_API_KEY=$FEC_API_KEY" >> "$GITHUB_ENV"
+          echo "::add-mask::$FEC_API_KEY"
+
+          # ---------------------------------------------------------------
+          # FOLLOWTHEMONEY_API_KEY — optional; free tier works without it.
+          # FollowTheMoney's public API does not require a key. A key provides
+          # higher rate limits if available.
+          # TODO: add the BWS secret ID here once you register for a FTM key.
+          # Until then, the script runs on the free public tier.
+          # FOLLOWTHEMONEY_API_KEY=$(bws secret get <FOLLOWTHEMONEY_API_KEY_BWS_SECRET_ID> --access-token "$BWS_ACCESS_TOKEN" --output json | jq -r '.value')
+          # echo "FOLLOWTHEMONEY_API_KEY=$FOLLOWTHEMONEY_API_KEY" >> "$GITHUB_ENV"
+          # echo "::add-mask::$FOLLOWTHEMONEY_API_KEY"
+          # ---------------------------------------------------------------
+
+          # ---------------------------------------------------------------
+          # INGEST_FAILURE_WEBHOOK_URL — optional; webhook for ingest failure alerts.
+          # UUID: <INGEST_FAILURE_WEBHOOK_BWS_SECRET_ID>
+          # Replace the placeholder with the real BWS secret UUID once provisioned.
+          # ---------------------------------------------------------------
+          set +e
+          WEBHOOK_SECRET=$(bws secret get <INGEST_FAILURE_WEBHOOK_BWS_SECRET_ID> --access-token "$BWS_ACCESS_TOKEN" --output json 2>/dev/null)
+          WEBHOOK_STATUS=$?
+          set -e
+          if [ "$WEBHOOK_STATUS" -eq 0 ]; then
+            INGEST_FAILURE_WEBHOOK_URL=$(echo "$WEBHOOK_SECRET" | jq -r '.value // empty')
+            if [ -n "$INGEST_FAILURE_WEBHOOK_URL" ]; then
+              echo "INGEST_FAILURE_WEBHOOK_URL=$INGEST_FAILURE_WEBHOOK_URL" >> "$GITHUB_ENV"
+              echo "::add-mask::$INGEST_FAILURE_WEBHOOK_URL"
+            fi
+          fi
+
+      - name: Run federal donor ingest (Phase E)
+        run: npx tsx scripts/ingest/federal-donors.ts
+
+      - name: Run state donor ingest (Phase E)
+        run: npx tsx scripts/ingest/state-donors.ts
+
+      - name: Notify on ingest failure
+        if: failure()
+        env:
+          WEBHOOK: ${{ env.INGEST_FAILURE_WEBHOOK_URL }}
+        run: |
+          if [ -z "$WEBHOOK" ]; then
+            echo "INGEST_FAILURE_WEBHOOK_URL not set — skipping alert"
+            exit 0
+          fi
+          curl -fsS -X POST "$WEBHOOK" \
+            -H "Content-Type: application/json" \
+            -d "$(jq -n --arg job "${{ github.job }}" --arg run "${{ github.run_id }}" --arg repo "${{ github.repository }}" \
+              '{text: "[voter-choice ingest failure] job=\($job) repo=\($repo) run_id=\($run)"}')"

@@ -49,6 +49,19 @@ if (repoIdx !== -1 && args[repoIdx + 1]) {
   ROOT = resolve(args[repoIdx + 1]);
 }
 
+// Optional --phase N. When provided, output goes to phase<N>.json instead
+// of baseline.json. Required by compute-deltas.mjs (sub-task 2 of the
+// deferred-audit-concerns plan).
+let phaseNumber = null;
+const phaseIdx = args.indexOf("--phase");
+if (phaseIdx !== -1 && args[phaseIdx + 1]) {
+  phaseNumber = parseInt(args[phaseIdx + 1], 10);
+  if (Number.isNaN(phaseNumber) || phaseNumber < 1) {
+    console.error("Invalid --phase value:", args[phaseIdx + 1]);
+    process.exit(2);
+  }
+}
+
 function run(cmd, options = {}) {
   try {
     const result = execSync(cmd, {
@@ -109,6 +122,130 @@ function measureEslint() {
   }
   console.log("  ESLint report not generated");
   return { errors: null, warnings: null, complexityViolations: null };
+}
+
+// ------------------------------------------------------------------
+// 1b. Per-function cyclomatic complexity
+// ------------------------------------------------------------------
+// Runs a second ESLint pass with the `complexity` rule forced to threshold 1
+// so every function emits a "has a complexity of N" message regardless of
+// the on-disk threshold. Parses the messages to extract per-function detail.
+// The on-disk eslint.config.mjs is untouched — override is via CLI --rule.
+//
+// Why: measureEslint() above only captures the violation count. To track
+// abstraction quality phase-over-phase we need average + max + distribution
+// across all functions, not just those above a static threshold.
+function measureComplexity() {
+  log("Per-function cyclomatic complexity");
+  const reportPath = join(ROOT, ".eslint-complexity-report.json");
+  // Force complexity threshold to 1 so every function emits a message.
+  // Use shell-escaped JSON for the --rule argument. The single quotes
+  // around the JSON keep the shell from interpreting the inner double quotes.
+  const cmd =
+    `npx eslint --rule '{"complexity":["warn",1]}' ` +
+    `--format json --output-file .eslint-complexity-report.json ` +
+    `'src/**/*.{ts,tsx,js,jsx,mjs}' 2>/dev/null || true`;
+  run(cmd);
+
+  if (!existsSync(reportPath)) {
+    console.log("  Complexity report not generated");
+    return null;
+  }
+
+  let report;
+  try {
+    report = JSON.parse(readFileSync(reportPath, "utf-8"));
+  } catch {
+    console.log("  Could not parse complexity report");
+    return null;
+  }
+
+  const fnRegex = /Function '([^']+)' has a complexity of (\d+)/;
+  const methodRegex = /Method '([^']+)' has a complexity of (\d+)/;
+  const arrowRegex = /Arrow function has a complexity of (\d+)/;
+  const genericRegex = /has a complexity of (\d+)/;
+
+  const perFunction = [];
+  for (const file of report) {
+    const relPath = file.filePath.replace(ROOT + "/", "");
+    for (const msg of file.messages || []) {
+      if (msg.ruleId !== "complexity") continue;
+      let name = "<anonymous>";
+      let complexity = null;
+      const fnMatch = msg.message.match(fnRegex);
+      const methodMatch = msg.message.match(methodRegex);
+      const arrowMatch = msg.message.match(arrowRegex);
+      const generic = msg.message.match(genericRegex);
+      if (fnMatch) {
+        name = fnMatch[1];
+        complexity = parseInt(fnMatch[2], 10);
+      } else if (methodMatch) {
+        name = methodMatch[1];
+        complexity = parseInt(methodMatch[2], 10);
+      } else if (arrowMatch) {
+        name = "<arrow>";
+        complexity = parseInt(arrowMatch[1], 10);
+      } else if (generic) {
+        complexity = parseInt(generic[1], 10);
+      }
+      if (complexity == null) continue;
+      perFunction.push({
+        file: relPath,
+        name,
+        complexity,
+        line: msg.line ?? null,
+      });
+    }
+  }
+
+  if (perFunction.length === 0) {
+    console.log("  No functions found");
+    return {
+      count: 0,
+      average: null,
+      max: null,
+      p50: null,
+      p75: null,
+      p95: null,
+      distribution: null,
+      perFunction: [],
+    };
+  }
+
+  const sorted = [...perFunction].map((f) => f.complexity).sort((a, b) => a - b);
+  const sum = sorted.reduce((a, b) => a + b, 0);
+  const average = +(sum / sorted.length).toFixed(2);
+  const max = sorted[sorted.length - 1];
+  const pct = (p) => {
+    const idx = Math.min(sorted.length - 1, Math.ceil((p / 100) * sorted.length) - 1);
+    return sorted[Math.max(0, idx)];
+  };
+  const distribution = {
+    simple_1_5: sorted.filter((c) => c <= 5).length,
+    moderate_6_10: sorted.filter((c) => c >= 6 && c <= 10).length,
+    complex_11_15: sorted.filter((c) => c >= 11 && c <= 15).length,
+    highComplex_16_20: sorted.filter((c) => c >= 16 && c <= 20).length,
+    critical_21plus: sorted.filter((c) => c >= 21).length,
+  };
+
+  // Sort perFunction descending by complexity for human-readable JSON;
+  // keep top 50 to bound the report size.
+  perFunction.sort((a, b) => b.complexity - a.complexity);
+  const topFunctions = perFunction.slice(0, 50);
+
+  console.log(
+    `  Functions: ${sorted.length}, avg=${average}, max=${max}, p95=${pct(95)}`,
+  );
+  return {
+    count: sorted.length,
+    average,
+    max,
+    p50: pct(50),
+    p75: pct(75),
+    p95: pct(95),
+    distribution,
+    perFunction: topFunctions,
+  };
 }
 
 // ------------------------------------------------------------------
@@ -603,6 +740,44 @@ function measureWorkflowTests() {
 }
 
 // ------------------------------------------------------------------
+// 8b. Diff hygiene (only when --phase >= 2)
+// ------------------------------------------------------------------
+// Delegates to scoring/diff-hygiene.mjs which lives next to this file.
+// Skipped when --phase is not provided or phase is 1 (no prior tag to
+// diff against). The script must succeed end-to-end; if it errors,
+// embed null and continue rather than failing the whole measurement.
+function measureDiffHygiene(branch, phase) {
+  log("Diff hygiene");
+  if (phase == null || phase < 2) {
+    console.log("  Skipping (phase < 2 or no --phase provided)");
+    return null;
+  }
+  const __filename = fileURLToPath(import.meta.url);
+  const scriptPath = join(dirname(__filename), "diff-hygiene.mjs");
+  if (!existsSync(scriptPath)) {
+    console.log("  diff-hygiene.mjs not found at", scriptPath);
+    return null;
+  }
+  const result = run(
+    `node "${scriptPath}" --branch "${branch}" --phase ${phase} --repo "${ROOT}"`,
+  );
+  if (!result.success) {
+    console.log("  diff-hygiene.mjs failed:", result.stderr || result.stdout);
+    return null;
+  }
+  try {
+    const parsed = JSON.parse(result.stdout);
+    console.log(
+      `  Scope adherence: ${parsed.scopeAdherence}, unexpected files: ${parsed.summary.unexpected.filesChanged}`,
+    );
+    return parsed;
+  } catch {
+    console.log("  Could not parse diff-hygiene output");
+    return null;
+  }
+}
+
+// ------------------------------------------------------------------
 // 9. Workflow step timing
 // ------------------------------------------------------------------
 function measureWorkflowTiming() {
@@ -668,9 +843,11 @@ async function main() {
       timestamp: new Date().toISOString(),
       branch,
       commit,
+      phase: phaseNumber,
       nodeVersion: process.version,
     },
     eslint: measureEslint(),
+    complexity: measureComplexity(),
     vitest: measureVitest(),
     duplication: measureDuplication(),
     bundleSize: measureBundleSize(),
@@ -679,6 +856,7 @@ async function main() {
     linesOfCode: measureLOC(),
     workflowTests: measureWorkflowTests(),
     workflowTiming: measureWorkflowTiming(),
+    diffHygiene: measureDiffHygiene(branch, phaseNumber),
   };
 
   // Determine output path
@@ -687,7 +865,8 @@ async function main() {
     if (!existsSync(metricsDir)) {
       mkdirSync(metricsDir, { recursive: true });
     }
-    outputPath = join(metricsDir, "baseline.json");
+    const filename = phaseNumber != null ? `phase${phaseNumber}.json` : "baseline.json";
+    outputPath = join(metricsDir, filename);
   }
 
   // Ensure output directory exists

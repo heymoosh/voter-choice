@@ -23,6 +23,11 @@ For each phase from 1 to 5, in order:
 - `/start` updates `docs/RUN_LOG.md ## Next` to advance to the next phase automatically. Trust it.
 - If `/start` fails (build errors, test failures, tag not created): log the failure to `metrics/run-phases-log.jsonl` with `{"phase": N, "status": "failed", "timestamp": "..."}`, then continue to the next phase rather than halting. The goal is to get as far as possible in one unattended run.
 
+**Measurement (host-side, after the phase commits and tags):**
+- Run `node scoring/measure.mjs --repo "$(pwd)" --phase <N>` to produce `metrics/<branch>/phase<N>.json`. Note: the scoring scripts live on `main`, not on the experiment branch. If running locally without Hermes, invoke from a separate `main` worktree pointed at this branch via `--repo`.
+- If phase ≥ 2, also run `node scoring/compute-deltas.mjs --branch <branch> --phase <N> --repo "$(pwd)"` to produce the delta JSON + Markdown comparing this phase against the prior tag.
+- Diff-hygiene runs automatically inside `measure.mjs` when `--phase >= 2` and `scoring/phase-scopes/phase<N>.json` exists.
+
 **After each phase:**
 - Append a success entry to `metrics/run-phases-log.jsonl`: `{"phase": N, "status": "complete", "tag": "<tag-name>", "timestamp": "..."}`
 

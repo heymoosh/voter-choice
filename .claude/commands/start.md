@@ -59,6 +59,9 @@ npm install
 **Build context:**
 - **Phase 1:** This branch has the framework and scaffold installed but NO existing ballot tool code. You are building the app from scratch per `docs/PROJECT_SPEC.md`.
 - **Phase 2:** This branch has a completed Phase 1 ballot tool. You are extending it with Spanish language support per `docs/PHASE2_SPEC.md`.
+- **Phase 3:** Real API integration replacing stub data per `docs/PHASE3_SPEC.md`.
+- **Phase 4:** Extended language support (5 languages including Arabic RTL) per `docs/PHASE4_SPEC.md`.
+- **Phase 5:** On-site LLM chat, budget management, downloadable ballot, voter profile per `docs/PHASE5_SPEC.md`.
 
 Read `.claude/commands/workflow.md` from the current branch. It contains the framework-specific workflow steps.
 
@@ -70,6 +73,22 @@ The workflow.md file contains:
 - An `## Adherence Check` section — artifact verification commands to run after the build
 
 Execute the `## Workflow Steps` section now. You will execute the `## Adherence Check` section in Step 4.
+
+### Responder logging (REQUIRED during Step 3)
+
+When the framework presents a menu, asks a clarifying question, or requests a decision, BEFORE proceeding append a JSON entry to `metrics/responder-log.jsonl` with this exact shape:
+
+```json
+{"timestamp":"<ISO-8601>","phase":<N>,"framework":"<framework-name>","question":"<verbatim prompt text>","decisionRule":"<spec section that grounded the answer>","answer":"<the response you gave>","autoChosen":true}
+```
+
+Rules:
+- `question` must be the verbatim text the framework asked, not a paraphrase.
+- `decisionRule` must cite the actual spec section that justified the choice (e.g., `PHASE2_SPEC.md FR-018`, `PROJECT_SPEC.md § "User Flow"`). If no spec section grounds the answer, write `"reasonable default — no spec coverage"` and proceed.
+- `answer` is the response you gave or the menu choice you selected. For free-text responses, include the text. For skipped questions (e.g., "offer visual companion" with no visual surface), set `answer: "skipped"` and `autoChosen: false`.
+- Append one entry per question. Do not batch.
+
+This log is later read by the scoring rubric to verify the autonomous wrapper represented each framework fairly. If the log is empty or suspiciously thin for a framework that asks many questions (BMAD, Spec Kit), the rubric flags a finding.
 
 ## Step 4: Post-build close-out
 
