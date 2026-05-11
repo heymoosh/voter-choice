@@ -2,26 +2,24 @@
 
 ## Next
 
-**Phase 0.7–0.9 — Consolidate to 5 clean `experiment/<framework>` branches and enable autonomous Phase 1→5 execution.**
+**Run `/start`.** That's it.
 
-Active experiment branches (replacing all legacy `run*/` and `workflow/` branches):
+`/start` is now the autonomous orchestrator. It reads git tags + metric files to detect what's done, picks the next pending action, executes it, commits, tags, pushes, loops. Across all 5 frameworks, all 3 Phase 1 replicates each, representative selection, and Phase 2–5 forward iteration. 40 discrete actions total. You don't need to update `## Next` manually anymore — the orchestrator works from disk state.
 
-| Branch | Framework | Status |
-|--------|-----------|--------|
-| `experiment/vanilla` | Vanilla Claude Code | Pending creation |
-| `experiment/bmad` | BMAD Method | Pending creation |
-| `experiment/compound-engineering` | Compound Engineering | Pending creation |
-| `experiment/spec-kit` | Spec Kit | Pending creation |
-| `experiment/superpowers` | Superpowers | Pending creation |
+For hands-off operation across multiple sessions: `/loop /start` — the harness re-invokes `/start` automatically until it reports "EXPERIMENT COMPLETE."
 
-**To start a full experiment run:** Check out `experiment/<framework>` and invoke `/run-phases`. It chains `/start` across Phase 1 → 5 with no human-in-loop between phases.
+**Experiment plan (auto-driven):**
 
-**Phase progression per branch:**
-- Phase 1: Copy-paste ballot tool (PROJECT_SPEC.md v2.0 Path B baseline)
-- Phase 2: Add Spanish i18n (PHASE2_SPEC.md)
-- Phase 3: Replace stub data with real APIs — Google Civic, Vote Smart, OpenStates, OpenFEC (PHASE3_SPEC.md)
-- Phase 4: Scale to 5 languages including Arabic RTL (PHASE4_SPEC.md)
-- Phase 5: On-site Claude Sonnet chat + budget management + downloadable ballot/profile (PHASE5_SPEC.md) → v2.0 complete
+| Stage | Actions | Source of truth |
+|-------|---------|-----------------|
+| Phase 1 replicates | 15 builds (3 per framework on `experiment/<fw>-r{1,2,3}`) | `docs/PROJECT_SPEC.md` |
+| Representative selection | 5 (one per framework, median-LOC) | `scoring/select-representative.mjs` |
+| Phase 2 forward | 5 builds on chosen replicates | `docs/PHASE2_SPEC.md` |
+| Phase 3 forward | 5 builds (requires API keys for Civic/VoteSmart/OpenStates/OpenFEC) | `docs/PHASE3_SPEC.md` |
+| Phase 4 forward | 5 builds | `docs/PHASE4_SPEC.md` |
+| Phase 5 forward | 5 builds (requires Anthropic API key) | `docs/PHASE5_SPEC.md` |
+
+The orchestrator handles every transition automatically. See `docs/FRAMING.md` for what claims the resulting data supports and `.claude/commands/start.md` for the orchestrator logic.
 
 **Measurement targets (per phase):**
 - Playwright e2e: all passing (target 100%)
