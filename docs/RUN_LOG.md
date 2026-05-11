@@ -55,6 +55,16 @@ Note: **Scoring is executed by Hermes from the host side, not inside the build c
 
 ## Completed
 
+### Phase 1 replicate — spec-kit r2 (auto)
+
+- **Date:** 2026-05-11T18:47:54.065Z
+- **Branch:** `experiment/spec-kit-r2`
+- **Tag:** `spec-kit-r2-phase1-complete`
+- **Status:** ✓
+- **Replicate:** r2
+- **Summary:** e2e 42/42, vitest 40/40, lint 0e/3w, LOC 2089
+- **Metrics:** coverage 13.7%, LOC 2089, complexity avg 5.14 max 18
+
 ### Phase 1 replicate — spec-kit r1 (auto)
 
 - **Date:** 2026-05-11T18:25:40.273Z
