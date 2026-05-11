@@ -6,6 +6,12 @@ on:
     - cron: "0 7 * * 0"
   # Allow manual trigger for testing / backfill
   workflow_dispatch:
+    inputs:
+      reset_votes:
+        description: "Delete existing federal vote rows for planned GovTrack bills before ingest."
+        required: false
+        default: false
+        type: boolean
 
 jobs:
   ingest:
@@ -76,6 +82,8 @@ jobs:
           fi
 
       - name: Run federal votes ingest
+        env:
+          FEDERAL_RESET_VOTES: ${{ github.event_name == 'workflow_dispatch' && inputs.reset_votes || false }}
         run: npx tsx scripts/ingest/federal-votes.ts
 
       - name: Notify on ingest failure
