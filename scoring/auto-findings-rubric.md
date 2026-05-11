@@ -61,6 +61,9 @@ Apply after the data completeness gate passes. Evaluate every row and record the
 | 8 | **Measurement gap** | `measurement.missing` array has entries | Which fields are missing from JSON |
 | 9 | **Workflow log empty** | `workflow-log.jsonl` missing or 0 completed entries | Whether file exists, entry count |
 | 10 | **Test generation** | `uniqueTestFiles` == 0 for a non-vanilla framework | Framework name, expected behavior |
+| 11 | **Diff sprawl** (Phase 2+) | `diffHygiene.summary.unexpected.locAdded` > 200 OR `diffHygiene.scopeAdherence` < 0.7 | Files in `unexpectedFiles`, scope-adherence ratio. Compare against `scoring/phase-scopes/phase<N>.json` to see what the phase was supposed to touch. |
+| 12 | **Complexity regression** (Phase 2+) | Phase delta on `complexity.average` > +2.0 OR `complexity.max` > +5 OR `complexity.distribution.critical_21plus` increased | Per-function complexity averages, top functions by complexity in `complexity.perFunction[:10]`. Indicates abstraction quality degraded across iteration. |
+| 13 | **Responder transparency** | `metrics/responder-log.jsonl` missing OR (framework ∈ {bmad, spec-kit} AND entry count < 3) | Entry count, framework. A thin log on a question-heavy framework suggests the wrapper inlined answers without recording its reasoning. |
 
 **Finding format (for the RUN_LOG entry):**
 
@@ -77,6 +80,8 @@ The numeric thresholds above (42 e2e tests, 85-130 kB bundle, TDD score 100) are
 ## 3. Phase 2+ Delta Report Format
 
 When the completed sub-phase is Phase 2 or later, produce a comparison table against the previous phase on the same branch.
+
+**This is automated.** Run `node scoring/compute-deltas.mjs --branch <branch> --phase <N> --repo <branch-worktree>` after `measure.mjs` completes. It reads `metrics/<branch>/phase<N>.json` (current) and `metrics/<branch>/phase<N-1>.json` from the prior tag (`<framework>-phase<N-1>-complete`), then writes both `delta-phase<N-1>-to-phase<N>.json` and a Markdown render with the table below.
 
 Read the previous phase's measurement JSON from the tagged commit (`<tag-prefix>-run<N>-phase<M-1>-complete`) and produce a row for each metric:
 
