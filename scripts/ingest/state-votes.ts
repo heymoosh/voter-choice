@@ -463,16 +463,44 @@ async function fetchOpenStatesJson(
     url.searchParams.append("include", "abstracts");
   }
 
-  const response = await fetcher(url.href, {
-    headers: {
-      "user-agent": "voter-choice-state-ingest",
-      "X-API-KEY": config.openStatesApiKey,
-    },
-  });
-  if (!response.ok) {
-    throw new Error(`OpenStates HTTP ${response.status}`);
+  // Retry on 429 (rate limit) with exponential backoff.
+  // The matrix runs 6 parallel jobs against the same API key, so rate limiting
+  // is expected and transient.
+  const MAX_RETRIES = 5;
+  let delayMs = 10_000; // start at 10s, doubles each attempt
+
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    const response = await fetcher(url.href, {
+      headers: {
+        "user-agent": "voter-choice-state-ingest",
+        "X-API-KEY": config.openStatesApiKey,
+      },
+    });
+
+    if (response.status === 429) {
+      if (attempt === MAX_RETRIES) {
+        throw new Error(`OpenStates HTTP 429 after ${MAX_RETRIES} retries`);
+      }
+      const retryAfter = response.headers.get("Retry-After");
+      const waitMs = retryAfter
+        ? Number(retryAfter) * 1000
+        : delayMs;
+      console.warn(
+        `[state-votes] rate_limited attempt=${attempt + 1}/${MAX_RETRIES} wait_ms=${waitMs} path=${path}`,
+      );
+      await new Promise((resolve) => setTimeout(resolve, waitMs));
+      delayMs *= 2;
+      continue;
+    }
+
+    if (!response.ok) {
+      throw new Error(`OpenStates HTTP ${response.status}`);
+    }
+    return response.json();
   }
-  return response.json();
+
+  // Unreachable but satisfies TypeScript
+  throw new Error("OpenStates fetch exhausted retries");
 }
 
 async function writeStatePlan(
