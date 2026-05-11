@@ -463,11 +463,12 @@ async function fetchOpenStatesJson(
     url.searchParams.append("include", "abstracts");
   }
 
-  // Retry on 429 (rate limit) with exponential backoff.
-  // The matrix runs 6 parallel jobs against the same API key, so rate limiting
-  // is expected and transient.
-  const MAX_RETRIES = 5;
-  let delayMs = 10_000; // start at 10s, doubles each attempt
+  // Retry on 429 (rate limit) with exponential backoff + full jitter.
+  // The matrix runs 6 parallel jobs against the same API key. Without jitter,
+  // all jobs back off in lockstep and re-hit the rate limit together every cycle.
+  // Full jitter (0 .. cap) spreads retries across the window so they stagger.
+  const MAX_RETRIES = 8;
+  let capMs = 15_000; // doubles each attempt: 15s, 30s, 60s, 120s, 240s, ...
 
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     const response = await fetcher(url.href, {
@@ -482,14 +483,15 @@ async function fetchOpenStatesJson(
         throw new Error(`OpenStates HTTP 429 after ${MAX_RETRIES} retries`);
       }
       const retryAfter = response.headers.get("Retry-After");
+      // Full jitter: sleep random(0, cap) unless server gives Retry-After
       const waitMs = retryAfter
         ? Number(retryAfter) * 1000
-        : delayMs;
+        : Math.floor(Math.random() * capMs);
       console.warn(
         `[state-votes] rate_limited attempt=${attempt + 1}/${MAX_RETRIES} wait_ms=${waitMs} path=${path}`,
       );
       await new Promise((resolve) => setTimeout(resolve, waitMs));
-      delayMs *= 2;
+      capMs = Math.min(capMs * 2, 300_000); // cap at 5 minutes
       continue;
     }
 
