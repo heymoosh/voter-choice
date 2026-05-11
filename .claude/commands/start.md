@@ -142,9 +142,20 @@ Repo path: /Users/Muxin/Documents/GitHub/voter-choice
 19. git commit -m "measure: phase 1 <FW> <R>" 2>/dev/null || true
 20. git push origin experiment/<FW>-<R>
 21. git push --tags
+22. **Log this run to RUN_LOG.md on main.** Capture summary first (while metrics file is in working tree), then switch branches:
+    ```
+    SUMMARY=$(node -e "const m=JSON.parse(require('fs').readFileSync('metrics/experiment/<FW>-<R>/phase1.json','utf-8'));process.stdout.write(\`e2e \${m.playwright?.passing??'?'}/\${m.playwright?.total??'?'}, vitest \${m.vitest?.tests?.passing??'?'}/\${m.vitest?.tests?.total??'?'}, lint \${m.eslint?.errors??'?'}e/\${m.eslint?.warnings??'?'}w, LOC \${m.linesOfCode?.application?.code??'?'}\`)" 2>/dev/null || echo "metrics unreadable")
+    git checkout main
+    git pull --no-rebase origin main
+    node scoring/log-run.mjs --phase 1 --framework <FW> --replicate <R> --branch experiment/<FW>-<R> --tag <FW>-<R>-phase1-complete --status ok --summary "$SUMMARY" --repo "$(pwd)"
+    git add docs/RUN_LOG.md
+    git commit -m "run-log: phase1 <FW> <R> auto-entry"
+    git push origin HEAD:main
+    ```
+    If `--status` should be `blocked` or `partial` (because tests didn't pass or you hit a blocker), use that instead of `ok` and put the failure reason in `--summary`.
 
 ## Return value
-Return exactly one paragraph: which branch you built, whether lint/vitest/playwright passed or what failed, which tag was pushed, and total LOC from the measure output.
+Return exactly one paragraph: which branch you built, whether lint/vitest/playwright passed or what failed, which tag was pushed, total LOC from the measure output, and confirmation that the RUN_LOG entry was appended on main.
 ```
 
 ---
@@ -169,7 +180,15 @@ Repo path: /Users/Muxin/Documents/GitHub/voter-choice
    This reads metrics/experiment/<FW>-r{1,2,3}/phase1.json, picks the median-LOC run, and writes metrics/experiment/<FW>-representative.json.
 5. git add metrics/experiment/<FW>-representative.json
 6. git commit -m "select-representative: <FW> (chose median-LOC replicate)"
-7. git push origin HEAD:main
+7. **Append a RUN_LOG entry** for the selection:
+    ```
+    CHOSEN=$(node -e "console.log(JSON.parse(require('fs').readFileSync('metrics/experiment/<FW>-representative.json')).chosen)")
+    RATIONALE=$(node -e "console.log(JSON.parse(require('fs').readFileSync('metrics/experiment/<FW>-representative.json')).rationale)")
+    node scoring/log-run.mjs --phase 1 --framework <FW> --branch main --tag select-representative-<FW> --status ok --summary "chose $CHOSEN — $RATIONALE" --repo "$(pwd)"
+    git add docs/RUN_LOG.md
+    git commit -m "run-log: select-representative <FW> auto-entry"
+    ```
+8. git push origin HEAD:main
 
 ## Return value
 Return exactly one paragraph: which replicate was chosen, what its LOC was, what the variance across r1/r2/r3 was, and confirm the push succeeded.
@@ -218,28 +237,67 @@ Repo path: /Users/Muxin/Documents/GitHub/voter-choice
 22. git commit -m "measure: phase <PHASE> <FW>" 2>/dev/null || true
 23. git push origin "$BRANCH"
 24. git push --tags
+25. **Log this run to RUN_LOG.md on main.** Capture summary first (while still on $BRANCH where metrics live), then switch branches:
+    ```
+    SUMMARY=$(BRANCH="$BRANCH" node -e "const m=JSON.parse(require('fs').readFileSync(\`metrics/\${process.env.BRANCH}/phase<PHASE>.json\`,'utf-8'));process.stdout.write(\`e2e \${m.playwright?.passing??'?'}/\${m.playwright?.total??'?'}, coverage \${m.vitest?.coverage?.lines?.toFixed(1)??'?'}%, LOC \${m.linesOfCode?.application?.code??'?'}, complexity avg \${m.complexity?.average?.toFixed(2)??'?'}, scope adherence \${m.diffHygiene?.scopeAdherence?.toFixed(2)??'?'}\`)" 2>/dev/null || echo "metrics unreadable")
+    SAVED_BRANCH="$BRANCH"
+    git checkout main
+    git pull --no-rebase origin main
+    node scoring/log-run.mjs --phase <PHASE> --framework <FW> --branch "$SAVED_BRANCH" --tag <FW>-phase<PHASE>-complete --status ok --summary "$SUMMARY" --repo "$(pwd)"
+    git add docs/RUN_LOG.md
+    git commit -m "run-log: phase<PHASE> <FW> auto-entry"
+    git push origin HEAD:main
+    ```
+    If `--status` should be `blocked` or `partial`, use that and put the failure reason in `--summary`.
 
 ## Return value
-Return exactly one paragraph: which branch/phase you built, whether tests passed or what failed, what tag was pushed, and the key deltas (coverage Δ, LOC Δ, complexity Δ) from the measure output.
+Return exactly one paragraph: which branch/phase you built, whether tests passed or what failed, what tag was pushed, the key deltas (coverage Δ, LOC Δ, complexity Δ) from the measure output, and confirmation that the RUN_LOG entry was appended on main.
 ```
 
 ---
 
-## Final summary table
+## Final summary — run the aggregator and report
 
-When the discovery script returns empty, print this and exit:
+When the discovery script returns empty, the experiment is data-complete. Run the aggregator from the orchestrator (not as a sub-agent — it's fast and the orchestrator wants to inspect the result before exiting):
+
+```bash
+git checkout main
+git pull --no-rebase origin main
+node scoring/aggregate-experiment.mjs --repo "$(pwd)"
+git add metrics/experiment/FINAL_REPORT.json metrics/experiment/FINAL_RANKING.md
+git commit -m "experiment: final aggregator output"
+git push origin HEAD:main
+```
+
+Then read `metrics/experiment/FINAL_RANKING.md` and print its contents to the user, prefaced with:
 
 ```
-EXPERIMENT COMPLETE
+EXPERIMENT COMPLETE — 40 actions done.
 
-Framework            | r1 | r2 | r3 | Rep | P2 | P3 | P4 | P5
----------------------|----|----|-----|-----|----|----|----|----|
-vanilla              |    |    |    |     |    |    |    |
-bmad                 |    |    |    |     |    |    |    |
-spec-kit             |    |    |    |     |    |    |    |
-superpowers          |    |    |    |     |    |    |    |
-compound-engineering |    |    |    |     |    |    |    |
-
-Fill each cell with ✓ (tag present) or — (not present) by checking git tag -l.
-All 40 actions complete. See docs/RUN_LOG.md for metrics summary and metrics/experiment/ for full data.
+Final ranking and metric comparison written to metrics/experiment/FINAL_RANKING.md.
+Findings per the 13-check rubric are inline. Read it in light of docs/FRAMING.md
+to keep the claim scoped to what this experiment can actually support.
 ```
+
+Also print the completion checkbox table so the user can verify all 40 actions landed:
+
+```bash
+echo "Tag completion check:"
+for fw in vanilla bmad spec-kit superpowers compound-engineering; do
+  row="$fw"
+  for r in r1 r2 r3; do
+    if git tag -l | grep -qx "$fw-$r-phase1-complete"; then row="$row | ✓"; else row="$row | —"; fi
+  done
+  if [ -f "metrics/experiment/$fw-representative.json" ]; then row="$row | ✓"; else row="$row | —"; fi
+  for p in 2 3 4 5; do
+    if git tag -l | grep -qx "$fw-phase$p-complete"; then row="$row | ✓"; else row="$row | —"; fi
+  done
+  echo "$row"
+done
+```
+
+Then exit. The user can read the FINAL_RANKING.md and the RUN_LOG entries to understand what happened overnight.
+
+### If partial
+
+If the orchestrator exits before all 40 actions complete (context degraded, fatal failure), the aggregator still runs against partial data and produces a partial ranking. The composite scores reflect "what's been measured so far"; the per-framework `completedPhases` field tells the user which frameworks finished and which didn't. Tell the user to re-invoke `/start` (or `/loop /start`) to resume.
