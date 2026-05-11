@@ -1,15 +1,16 @@
 # CLAUDE.md
 
 ## Project
-Workflow experiment comparing 5 AI coding frameworks. Read `docs/RUN_LOG.md` first (the `## Next` line), then `docs/EXPERIMENT_DESIGN.md` Session Quick Start. Immediately execute the sub-phase described in `## Next` — do NOT pause or wait for confirmation. Do ONE sub-phase per session.
+Workflow experiment comparing 5 AI coding frameworks (vanilla, BMAD, Compound Engineering, Spec Kit, Superpowers).
 
-**After completing a sub-phase, you MUST update `docs/RUN_LOG.md` on the `main` branch before doing anything else:**
-1. Switch to `main` (commit any pending work on the current branch first).
-2. Move the completed phase from `## Next` into `## Completed` (include commit hash and brief summary).
-3. Write the new next phase into `## Next`.
-4. Commit the RUN_LOG update and switch back to the working branch. The session is NOT complete until `main`'s RUN_LOG reflects the new state.
+**To run the experiment:** invoke `/start`. It auto-detects from git tags + metric files what's done and what's pending, then orchestrates the next action across all 40 actions in the experiment (15 Phase 1 replicates + 5 representative selections + 20 forward-iteration phases). It loops within the session and exits when the experiment is complete OR when context degrades. Re-invoke `/start` to resume.
 
-**Note:** Branch-local copies of `docs/RUN_LOG.md` are git artifacts from fork points — do NOT update them. Only `main`'s copy is canonical.
+**For fully hands-off operation:** `/loop /start` will re-invoke `/start` automatically until it reports "EXPERIMENT COMPLETE."
+
+**State lives on disk, not in `## Next`:**
+- Git tags drive completion detection: `<framework>-r<N>-phase1-complete`, `<framework>-phase<N>-complete`
+- `metrics/experiment/<framework>-representative.json` marks selection done
+- `docs/RUN_LOG.md ## Next` is for human reading only; the orchestrator doesn't depend on it.
 
 
 ## Boundaries
