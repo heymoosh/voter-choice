@@ -56,6 +56,17 @@ Note: **Scoring is executed by Hermes from the host side, not inside the build c
 ## Completed
 
 
+
+### Phase 1 replicate — superpowers r2 (auto)
+
+- **Date:** 2026-05-11T20:13:07.161Z
+- **Branch:** `experiment/superpowers-r2`
+- **Tag:** `superpowers-r2-phase1-complete`
+- **Status:** ✓
+- **Replicate:** r2
+- **Summary:** e2e 42/42, vitest 18/18, lint 0e/0w, LOC 1470
+
+
 ### Phase 1 replicate — superpowers r1 (auto)
 
 - **Date:** 2026-05-11T21:38:00.000Z
