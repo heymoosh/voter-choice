@@ -55,6 +55,17 @@ Note: **Scoring is executed by Hermes from the host side, not inside the build c
 
 ## Completed
 
+
+### Phase 1 replicate — vanilla r1 (auto)
+
+- **Date:** 2026-05-11T16:10:12.616Z
+- **Branch:** `experiment/vanilla-r1`
+- **Tag:** `vanilla-r1-phase1-complete`
+- **Status:** ✓
+- **Replicate:** r1
+- **Summary:** e2e 42/42, vitest 31/31, lint 0e/2w, LOC 1410
+
+
 ### Phase 0.14 — Aggregator + per-action RUN_LOG + alignment-score in Phase 5 (complete)
 
 - **Date:** 2026-05-10
