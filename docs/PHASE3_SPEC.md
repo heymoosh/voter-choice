@@ -22,37 +22,38 @@ This phase is an architectural stress test. The app moves from a simple static-d
 
 All APIs below are free. API keys should be stored as environment variables, never committed to the codebase.
 
-#### 1. Google Civic Information API
+**Architecture note:** Launch/production uses Google Civic as the primary structured data source, and Anthropic web_search at runtime for candidate research that goes beyond what Civic provides. This experiment follows the same approach. Two optional APIs (OpenStates, OpenFEC) are also provisioned in case a framework's interpretation of the spec chooses to integrate them for richer candidate data.
+
+#### 1. Google Civic Information API (REQUIRED)
 
 - **Provides:** Polling locations by address, election dates, candidate information, ballot contests/measures, state election official contact info
-- **Auth:** API key (free, register at Google Cloud Console)
+- **Auth:** API key (free, register at Google Cloud Console). Env var: `GOOGLE_CIVIC_API_KEY`.
 - **Rate limit:** 25,000 queries/day
 - **Coverage:** 40+ states + DC
 - **Primary use in this app:** Election dates, candidate info, ballot contests, polling locations
 
-#### 2. Democracy Works Elections API
+#### 2. Anthropic API + web_search (REQUIRED for candidate enrichment)
 
-- **Provides:** Election dates and deadlines, voter registration deadlines (state-specific), early voting dates, absentee ballot deadlines, sample ballot URLs, local election office contact info
-- **Auth:** Registration required (free tier)
-- **Primary use in this app:** Registration deadlines, early voting dates, sample ballot URLs, local election office links
+- **Provides:** When the user expands a candidate panel for voting records / donors / endorsements, the app calls Anthropic with `web_search` enabled. Claude searches the live web (Vote Smart pages, Ballotpedia, FEC.gov filings, state election sites, news coverage) and returns a structured summary with citations.
+- **Auth:** API key (already required for Phase 5 chat). Env var: `ANTHROPIC_VOTER_API` / `ANTHROPIC_API_KEY`.
+- **Why this approach:** Avoids hard dependency on Vote Smart / Democracy Works (paid demos), keeps the candidate-enrichment layer flexible, and matches the production architecture.
+- **Primary use in this app:** Candidate voting record summaries, donor highlights, endorsements, issue positions
 
-#### 3. Vote Smart API
-
-- **Provides:** Candidate voting records, issue positions, campaign contributions, ratings and endorsements, candidate backgrounds
-- **Auth:** API key (free, no registration required)
-- **Primary use in this app:** Candidate voting records and issue positions (feeds the AI prompt context)
-
-#### 4. OpenStates API
+#### 3. OpenStates API (OPTIONAL)
 
 - **Provides:** State legislators and contact info, state bills and voting records, committee memberships
-- **Auth:** API key (free, register at open.pluralpolicy.com)
-- **Primary use in this app:** State legislator info, voting records for state-level races
+- **Auth:** API key (free, register at open.pluralpolicy.com). Env var: `OPENSTATES_API_KEY`.
+- **Primary use in this app:** Optional state-level candidate enrichment. If integrated, complements Anthropic web_search for state legislator races. If not integrated, web_search covers the same ground.
 
-#### 5. OpenFEC API
+#### 4. OpenFEC API (OPTIONAL)
 
 - **Provides:** Federal campaign contributions, spending data, political committee filings, candidate finance data
-- **Auth:** API key (free, maintained by Federal Election Commission)
-- **Primary use in this app:** Campaign finance data for federal races (Senate, House, President)
+- **Auth:** API key (free, maintained by Federal Election Commission). Env var: `OPENFEC_API_KEY`.
+- **Primary use in this app:** Optional federal-race campaign finance data. If integrated, surfaces deterministic FEC numbers alongside web_search summaries. If not integrated, web_search covers the same ground.
+
+#### Not used in this experiment
+
+Vote Smart and Democracy Works APIs are referenced in some older planning docs but are **not** available for this experiment (require sales/demo or paid tier). Their data domain — candidate voting records and election deadlines — is fully covered by the combination of Google Civic + Anthropic web_search above.
 
 ### Static JSON (gap coverage)
 
@@ -139,13 +140,12 @@ Google Civic Information API handles this mapping when given an address. The app
 
 The following environment variables are required. They must be documented in a `.env.example` file (committed) with placeholder values. Actual keys go in `.env.local` (gitignored).
 
-| Variable | Purpose |
-|----------|---------|
-| `GOOGLE_CIVIC_API_KEY` | Google Civic Information API |
-| `DEMOCRACY_WORKS_API_KEY` | Democracy Works Elections API |
-| `VOTE_SMART_API_KEY` | Vote Smart API |
-| `OPENSTATES_API_KEY` | OpenStates API |
-| `OPENFEC_API_KEY` | OpenFEC API |
+| Variable | Required | Purpose |
+|----------|----------|---------|
+| `GOOGLE_CIVIC_API_KEY` | yes | Google Civic Information API |
+| `ANTHROPIC_VOTER_API` | yes | Anthropic API key (reuses Phase 5 key) for `web_search`-backed candidate enrichment |
+| `OPENSTATES_API_KEY` | optional | OpenStates API — only needed if framework chooses to integrate alongside web_search |
+| `OPENFEC_API_KEY` | optional | OpenFEC API — only needed if framework chooses to integrate alongside web_search |
 
 ### API Key Security
 
@@ -162,8 +162,8 @@ The state info card from Phases 1-2 now displays real data instead of stubs. The
 
 - **Polling location** — new field showing the user's assigned polling place (from Google Civic, based on zip code)
 - **Ballot contests** — new section listing the races and measures on the user's specific ballot (from Google Civic)
-- **Candidate info enrichment** — within the ballot contests section, for each candidate listed in a race, show a "View voting record" expandable panel that displays Vote Smart / OpenStates / OpenFEC data (voting record summary, top donors, key endorsements). The panel is collapsed by default; clicking expands it inline.
-- **Data source attribution** — small footer text on the info card: "Election data from Google Civic Information, Democracy Works, Vote Smart, OpenStates, and OpenFEC. Verify at [state election office link]."
+- **Candidate info enrichment** — within the ballot contests section, for each candidate listed in a race, show a "View voting record" expandable panel that displays the candidate's voting record summary, top donors, and key endorsements. Data is retrieved at expand-time via Anthropic web_search (optionally augmented with OpenStates / OpenFEC if those keys are present). The panel is collapsed by default; clicking expands it inline.
+- **Data source attribution** — small footer text on the info card: "Election data from Google Civic Information and live web search via Anthropic. Verify at [state election office link]."
 - **Last updated indicator** — show when the data was fetched: "Updated [timestamp]"
 
 ### Loading States (new)
