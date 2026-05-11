@@ -483,24 +483,40 @@ async function fetchOpenStatesJson(
   let capMs = 15_000; // doubles each attempt: 15s, 30s, 60s, 120s, 240s, ...
 
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    const requestStartedAt = Date.now();
     const response = await fetcher(url.href, {
       headers: {
         "user-agent": "voter-choice-state-ingest",
         "X-API-KEY": config.openStatesApiKey,
       },
     });
+    const responseMs = Date.now() - requestStartedAt;
 
     if (response.status === 429) {
+      const body = await readResponseBodySample(response, 1024);
+      const retryAfter = response.headers.get("Retry-After");
+      console.warn(
+        `[state-votes] rate_limited attempt=${attempt + 1}/${MAX_RETRIES} response_ms=${responseMs} path=${path} url=${url.pathname}${url.search}`,
+      );
+      console.warn(
+        `[state-votes] rate_limited_headers attempt=${attempt + 1}/${MAX_RETRIES} headers=${JSON.stringify(
+          pickOpenStatesRateLimitHeaders(response),
+        )}`,
+      );
+      if (body) {
+        console.warn(
+          `[state-votes] rate_limited_body attempt=${attempt + 1}/${MAX_RETRIES} body=${body}`,
+        );
+      }
       if (attempt === MAX_RETRIES) {
         throw new Error(`OpenStates HTTP 429 after ${MAX_RETRIES} retries`);
       }
-      const retryAfter = response.headers.get("Retry-After");
       // Full jitter: sleep random(0, cap) unless server gives Retry-After
       const waitMs = retryAfter
         ? Number(retryAfter) * 1000
         : Math.floor(Math.random() * capMs);
       console.warn(
-        `[state-votes] rate_limited attempt=${attempt + 1}/${MAX_RETRIES} wait_ms=${waitMs} path=${path}`,
+        `[state-votes] rate_limited_retry attempt=${attempt + 1}/${MAX_RETRIES} wait_ms=${waitMs} path=${path}`,
       );
       await new Promise((resolve) => setTimeout(resolve, waitMs));
       capMs = Math.min(capMs * 2, 300_000); // cap at 5 minutes
@@ -508,13 +524,47 @@ async function fetchOpenStatesJson(
     }
 
     if (!response.ok) {
-      throw new Error(`OpenStates HTTP ${response.status}`);
+      const body = await readResponseBodySample(response, 1024);
+      throw new Error(
+        `OpenStates HTTP ${response.status} response_ms=${responseMs} path=${path} body=${body || "<empty>"}`,
+      );
     }
     return response.json();
   }
 
   // Unreachable but satisfies TypeScript
   throw new Error("OpenStates fetch exhausted retries");
+}
+
+function pickOpenStatesRateLimitHeaders(
+  response: Response,
+): Record<string, string> {
+  const wantedHeaders = [
+    "retry-after",
+    "x-ratelimit-limit",
+    "x-ratelimit-remaining",
+    "x-ratelimit-reset",
+    "x-request-id",
+    "cf-cache-status",
+    "cf-ray",
+    "server",
+    "date",
+    "content-type",
+  ];
+  const headers: Record<string, string> = {};
+  for (const headerName of wantedHeaders) {
+    const value = response.headers.get(headerName);
+    if (value) headers[headerName] = value;
+  }
+  return headers;
+}
+
+async function readResponseBodySample(
+  response: Response,
+  maxChars: number,
+): Promise<string> {
+  const text = await response.text();
+  return text.slice(0, maxChars).replace(/\s+/g, " ").trim();
 }
 
 async function writeStatePlan(
@@ -1015,7 +1065,8 @@ function getSourceUrl(record: UnknownRecord): string | null {
 }
 
 function stripVoteEventForMetadata(voteEvent: UnknownRecord): UnknownRecord {
-  const { votes: _votes, ...rest } = voteEvent;
+  const { votes, ...rest } = voteEvent;
+  void votes;
   return rest;
 }
 
