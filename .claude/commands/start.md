@@ -126,7 +126,7 @@ Repo path: /Users/Muxin/Documents/GitHub/voter-choice
 4. Deleting build artifacts: rm -rf node_modules .next coverage playwright-report.json
 5. npm install
 6. mkdir -p metrics metrics/experiment
-7. echo "{\"event\":\"build_start\",\"timestamp\":\"$(date -Iseconds)\",\"branch\":\"experiment/<FW>-<R>\"}" > metrics/timing.jsonl
+7. bash scripts/emit-timing.sh --event build_start --phase 1 --branch "experiment/<FW>-<R>" --file metrics/timing.jsonl
 8. Read .claude/commands/workflow.md on this branch. Execute every step under its `## Workflow Steps` section using `docs/PROJECT_SPEC.md` as the Phase 1 source of truth.
 9. **Responder logging is mandatory.** Every time the framework asks a clarifying question, menu choice, or decision, BEFORE answering append to metrics/responder-log.jsonl:
    {"timestamp":"<ISO-8601>","phase":1,"framework":"<FW>","question":"<verbatim>","decisionRule":"<spec section>","answer":"<your response>","autoChosen":true}
@@ -135,7 +135,7 @@ Repo path: /Users/Muxin/Documents/GitHub/voter-choice
 11. Run: npx vitest run
 12. Run: npx playwright test
     Iterate (fix → re-run) until all three pass or document an unrecoverable blocker. If unrecoverable, write to metrics/failures.jsonl and stop.
-13. echo "{\"event\":\"build_end\",\"timestamp\":\"$(date -Iseconds)\"}" >> metrics/timing.jsonl
+13. bash scripts/emit-timing.sh --event build_end --phase 1 --branch "experiment/<FW>-<R>" --file metrics/timing.jsonl
 14. git add .
 15. git commit -m "phase1: <FW> replicate <R>"
 16. git tag <FW>-<R>-phase1-complete
@@ -222,14 +222,14 @@ Repo path: /Users/Muxin/Documents/GitHub/voter-choice
 6. Deleting build artifacts: rm -rf node_modules .next coverage playwright-report.json
 7. npm install
 8. mkdir -p metrics metrics/experiment
-9. echo "{\"event\":\"build_start\",\"timestamp\":\"$(date -Iseconds)\",\"branch\":\"$BRANCH\",\"phase\":<PHASE>}" >> metrics/timing.jsonl
+9. bash scripts/emit-timing.sh --event build_start --phase <PHASE> --branch "$BRANCH" --file metrics/timing.jsonl
 10. Read .claude/commands/workflow.md on this branch. Execute every step under its `## Workflow Steps` section using `docs/PHASE<PHASE>_SPEC.md` as the source of truth.
 11. **Responder logging is mandatory** — same protocol as Phase 1: append to metrics/responder-log.jsonl before answering every framework question.
 12. Run: npm run lint
 13. Run: npx vitest run
 14. Run: npx playwright test
     Iterate until green or document an unrecoverable blocker.
-15. echo "{\"event\":\"build_end\",\"timestamp\":\"$(date -Iseconds)\"}" >> metrics/timing.jsonl
+15. bash scripts/emit-timing.sh --event build_end --phase <PHASE> --branch "$BRANCH" --file metrics/timing.jsonl
 16. git add .
 17. git commit -m "phase<PHASE>: <FW>"
 18. git tag <FW>-phase<PHASE>-complete
