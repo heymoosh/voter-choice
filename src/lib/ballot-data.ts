@@ -5,6 +5,7 @@
  */
 
 import zipToState from "@/data/zip-to-state.json";
+import { getTranslations, type Language, type T } from "./translations";
 
 // ---- Types -----------------------------------------------------------------
 
@@ -96,12 +97,17 @@ export function getNextElection(
   return upcoming.sort((a, b) => a.date.localeCompare(b.date))[0];
 }
 
-/** Formats an ISO date string to a human-readable date like "March 3, 2026". */
-export function formatDate(isoDate: string): string {
+/**
+ * Formats an ISO date string to a human-readable date.
+ * English: "March 3, 2026"
+ * Spanish: "3 de marzo de 2026"
+ */
+export function formatDate(isoDate: string, lang: Language = "en"): string {
   // Parse as UTC to avoid timezone shifts
   const [year, month, day] = isoDate.split("-").map(Number);
   const d = new Date(Date.UTC(year, month - 1, day));
-  return d.toLocaleDateString("en-US", {
+  const locale = lang === "es" ? "es-US" : "en-US";
+  return d.toLocaleDateString(locale, {
     year: "numeric",
     month: "long",
     day: "numeric",
@@ -110,6 +116,35 @@ export function formatDate(isoDate: string): string {
 }
 
 // ---- Deadline helpers ------------------------------------------------------
+
+type DeadlineBadgeT = Pick<
+  T,
+  | "deadlineBadgePassed"
+  | "deadlineBadgeToday"
+  | "deadlineBadgeDaysLeft"
+  | "deadlineBadgeDayLeft"
+>;
+
+function deadlineLabel(daysLeft: number, t: DeadlineBadgeT): string {
+  if (daysLeft < 0) return t.deadlineBadgePassed;
+  if (daysLeft === 0) return t.deadlineBadgeToday;
+  if (daysLeft === 1) return t.deadlineBadgeDayLeft;
+  return t.deadlineBadgeDaysLeft.replace("{n}", String(daysLeft));
+}
+
+function deadlineStatus(daysLeft: number): DeadlineStatus {
+  if (daysLeft < 0) return "passed";
+  if (daysLeft <= 3) return "red";
+  if (daysLeft <= 14) return "yellow";
+  return "green";
+}
+
+const DEFAULT_BADGE_T: DeadlineBadgeT = {
+  deadlineBadgePassed: "Passed",
+  deadlineBadgeToday: "Today!",
+  deadlineBadgeDaysLeft: "{n} days left",
+  deadlineBadgeDayLeft: "1 day left",
+};
 
 /**
  * Calculates deadline status given a deadline ISO date and today's date.
@@ -121,6 +156,7 @@ export function formatDate(isoDate: string): string {
 export function getDeadlineInfo(
   deadlineIso: string | null,
   today: Date = new Date(),
+  t?: Partial<DeadlineBadgeT>,
 ): DeadlineInfo | null {
   if (!deadlineIso) return null;
   const [year, month, day] = deadlineIso.split("-").map(Number);
@@ -132,27 +168,9 @@ export function getDeadlineInfo(
   const daysLeft = Math.round(
     (deadline.getTime() - todayUtc.getTime()) / msPerDay,
   );
-
-  let status: DeadlineStatus;
-  let label: string;
-
-  if (daysLeft < 0) {
-    status = "passed";
-    label = "Passed";
-  } else if (daysLeft <= 3) {
-    status = "red";
-    label =
-      daysLeft === 0
-        ? "Today!"
-        : `${daysLeft} day${daysLeft === 1 ? "" : "s"} left`;
-  } else if (daysLeft <= 14) {
-    status = "yellow";
-    label = `${daysLeft} days left`;
-  } else {
-    status = "green";
-    label = `${daysLeft} days left`;
-  }
-
+  const badgeT = { ...DEFAULT_BADGE_T, ...t };
+  const status = deadlineStatus(daysLeft);
+  const label = deadlineLabel(daysLeft, badgeT);
   return { date: deadlineIso, daysLeft, status, label };
 }
 
@@ -245,47 +263,67 @@ Let's start with Step 1.`;
 
 // ---- Context block helpers (extracted to reduce complexity) ----------------
 
-function electionLines(election: Election | null): string[] {
-  if (!election) return ["- **Election:** No upcoming elections found"];
+function electionLines(
+  election: Election | null,
+  t: T,
+  lang: Language,
+): string[] {
+  if (!election) return [`- **${t.ctxElection}** ${t.ctxNoElection}`];
+  const primaryTypeMap: Record<string, string> = {
+    open: t.primaryTypeOpen,
+    closed: t.primaryTypeClosed,
+    "semi-closed": t.primaryTypeSemiClosed,
+    "semi-open": t.primaryTypeSemiOpen,
+  };
   const electionType =
     election.isPrimary && election.primaryType
-      ? `${election.primaryType} primary`
+      ? `${primaryTypeMap[election.primaryType] ?? election.primaryType} ${t.electionTypePrimary}`
       : election.type;
   return [
-    `- **Election:** ${election.name} on ${formatDate(election.date)}`,
-    `- **Election type:** ${electionType}`,
+    `- **${t.ctxElection}** ${election.name} on ${formatDate(election.date, lang)}`,
+    `- **${t.ctxElectionType}** ${electionType}`,
   ];
 }
 
-function registrationLines(reg: StateData["registration"]): string[] {
+function registrationLines(
+  reg: StateData["registration"],
+  t: T,
+  lang: Language,
+): string[] {
   const onlineStr = reg.online.available
     ? reg.online.deadline
-      ? `Online by ${formatDate(reg.online.deadline)}`
-      : "Online registration not available"
-    : "Online registration not available";
-  const byMailStr = `by mail by ${formatDate(reg.byMail.deadline)} (${reg.byMail.sincePostmarked ? "postmark date" : "received date"})`;
-  const inPersonStr = `in person by ${formatDate(reg.inPerson.deadline)}`;
+      ? `${t.ctxOnline} ${formatDate(reg.online.deadline, lang)}`
+      : t.ctxOnlineNA
+    : t.ctxOnlineNA;
+  const postmarkLabel = reg.byMail.sincePostmarked
+    ? t.ctxPostmark
+    : t.ctxReceivedDate;
+  const byMailStr = `${t.ctxByMail} ${formatDate(reg.byMail.deadline, lang)} (${postmarkLabel})`;
+  const inPersonStr = `${t.ctxInPerson} ${formatDate(reg.inPerson.deadline, lang)}`;
   const lines = [
-    `- **Registration deadlines:** ${onlineStr}, ${byMailStr}, ${inPersonStr}`,
+    `- **${t.ctxRegistration}** ${onlineStr}, ${byMailStr}, ${inPersonStr}`,
   ];
-  if (reg.sameDayRegistration)
-    lines.push("  - Same-day registration available");
+  if (reg.sameDayRegistration) lines.push(`  - ${t.ctxSameDayReg}`);
   return lines;
 }
 
-function earlyVotingLine(ev: StateData["earlyVoting"]): string {
+function earlyVotingLine(
+  ev: StateData["earlyVoting"],
+  t: T,
+  lang: Language,
+): string {
   if (ev.available && ev.startDate) {
     const notes = ev.notes ? ` (${ev.notes})` : "";
-    return `- **Early voting:** ${formatDate(ev.startDate)} through ${formatDate(ev.endDate!)}${notes}`;
+    return `- **${t.ctxEarlyVoting}** ${formatDate(ev.startDate, lang)} ${t.ctxEarlyThrough} ${formatDate(ev.endDate!, lang)}${notes}`;
   }
-  return "- **Early voting:** Not available — absentee voting only";
+  return `- **${t.ctxEarlyVoting}** ${t.ctxEarlyVotingNA}`;
 }
 
-function voterIdLine(rules: StateData["votingRules"]): string {
+function voterIdLine(rules: StateData["votingRules"], t: T): string {
   if (rules.idRequired) {
-    return `- **Voter ID:** Required. Accepted IDs: ${rules.acceptedIds.join(", ")}`;
+    return `- **${t.ctxVoterId}** ${t.ctxVoterIdRequired} ${rules.acceptedIds.join(", ")}`;
   }
-  return "- **Voter ID:** Not required";
+  return `- **${t.ctxVoterId}** ${t.ctxVoterIdNotRequired}`;
 }
 
 /** Generates the pre-filled context block appended to the ballot prompt. */
@@ -293,25 +331,34 @@ export function generateContextBlock(
   stateData: StateData,
   zip: string,
   election: Election | null,
+  t?: T,
 ): string {
+  // Default to English if no translations provided (backward compatible)
+  const tr = t ?? getTranslations("en");
+  const lang = tr.lang;
+
   const lines: string[] = [
-    `Hi! I'm voting in **${stateData.stateName}**. My zip code is **${zip}**.`,
+    `${tr.ctxHello} **${stateData.stateName}**. ${tr.ctxZip} **${zip}**.`,
     "",
-    "Here's what I know about my upcoming election:",
-    ...electionLines(election),
-    ...registrationLines(stateData.registration),
-    earlyVotingLine(stateData.earlyVoting),
-    voterIdLine(stateData.votingRules),
-    `- **Phones at polls:** ${stateData.votingRules.phonesAtPollsDetail}`,
-    `- **My sample ballot:** ${stateData.resources.sampleBallotLookup}`,
-    `- **My county election office:** ${stateData.resources.countyElectionLookup}`,
+    tr.ctxKnow,
+    ...electionLines(election, tr, lang),
+    ...registrationLines(stateData.registration, tr, lang),
+    earlyVotingLine(stateData.earlyVoting, tr, lang),
+    voterIdLine(stateData.votingRules, tr),
+    `- **${tr.ctxPhones}** ${stateData.votingRules.phonesAtPollsDetail}`,
+    `- **${tr.ctxSampleBallot}** ${stateData.resources.sampleBallotLookup}`,
+    `- **${tr.ctxCountyOffice}** ${stateData.resources.countyElectionLookup}`,
     "",
-    "Help me with my ballot.",
+    tr.ctxHelp,
   ];
   return lines.join("\n");
 }
 
 /** Returns the full copyable prompt: ballot prompt + context block. */
-export function buildFullPrompt(contextBlock: string): string {
-  return `${BALLOT_PROMPT}\n\n---\n\n${contextBlock}`;
+export function buildFullPrompt(
+  contextBlock: string,
+  ballotPrompt?: string,
+): string {
+  const promptText = ballotPrompt ?? BALLOT_PROMPT;
+  return `${promptText}\n\n---\n\n${contextBlock}`;
 }

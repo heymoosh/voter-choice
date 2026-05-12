@@ -240,3 +240,64 @@ test.describe("Keyboard accessibility", () => {
     await expect(zipInput).toBeFocused();
   });
 });
+
+// ---------------------------------------------------------------------------
+// Language toggle (Phase 2)
+// ---------------------------------------------------------------------------
+
+test.describe("Language toggle", () => {
+  test("language toggle button is visible", async ({ page }) => {
+    await page.goto("/");
+    const toggle = page.getByTestId("language-toggle");
+    await expect(toggle).toBeVisible();
+  });
+
+  test("language toggle shows Español by default (English mode)", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    const toggle = page.getByTestId("language-toggle");
+    await expect(toggle).toContainText("Español");
+  });
+
+  test("clicking language toggle switches to Spanish", async ({ page }) => {
+    await page.goto("/");
+    const toggle = page.getByTestId("language-toggle");
+    await toggle.click();
+    // After switching to Spanish, toggle should show "English"
+    await expect(toggle).toContainText("English");
+  });
+
+  test("switching to Spanish translates hero title", async ({ page }) => {
+    await page.goto("/");
+    const toggle = page.getByTestId("language-toggle");
+    await toggle.click();
+    // Hero title should be in Spanish
+    await expect(page.locator("h1")).toContainText("Herramienta");
+  });
+
+  test("switching language preserves zip code results", async ({ page }) => {
+    await page.goto("/");
+    // Submit a zip code
+    const zipInput = page.getByTestId("zip-input");
+    await zipInput.fill("73301");
+    await page.getByTestId("zip-submit").click();
+    // Wait for state info
+    const stateInfo = page.getByTestId("state-info");
+    await expect(stateInfo).toBeVisible();
+    // Toggle language
+    const toggle = page.getByTestId("language-toggle");
+    await toggle.click();
+    // State info should still be visible (no page reset)
+    await expect(stateInfo).toBeVisible();
+  });
+
+  test("language toggle is keyboard accessible", async ({ page }) => {
+    await page.goto("/");
+    const toggle = page.getByTestId("language-toggle");
+    await toggle.focus();
+    await page.keyboard.press("Enter");
+    // Should have switched languages
+    await expect(toggle).toContainText("English");
+  });
+});

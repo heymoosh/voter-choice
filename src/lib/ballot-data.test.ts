@@ -9,6 +9,7 @@ import {
   type Election,
   type StateData,
 } from "./ballot-data";
+import { getTranslations } from "./translations";
 
 // ---- Test fixtures ----------------------------------------------------------
 
@@ -144,6 +145,16 @@ describe("formatDate", () => {
   it("formats a date in November", () => {
     expect(formatDate("2026-11-03")).toBe("November 3, 2026");
   });
+
+  it("formats a date in Spanish locale", () => {
+    const result = formatDate("2026-03-03", "es");
+    expect(result).toContain("2026");
+    expect(result).toContain("marzo");
+  });
+
+  it("defaults to English when no lang arg provided", () => {
+    expect(formatDate("2026-03-03")).toBe("March 3, 2026");
+  });
 });
 
 // ---- getDeadlineInfo --------------------------------------------------------
@@ -260,5 +271,91 @@ describe("buildFullPrompt", () => {
   it("separates prompt and context with a horizontal rule", () => {
     const result = buildFullPrompt("context");
     expect(result).toContain("---");
+  });
+
+  it("uses custom ballot prompt when provided", () => {
+    const result = buildFullPrompt("context", "Custom prompt text");
+    expect(result).toContain("Custom prompt text");
+    expect(result).toContain("context");
+  });
+});
+
+// ---- Spanish i18n context block -------------------------------------------
+
+describe("generateContextBlock (Spanish)", () => {
+  const today = new Date("2026-09-01");
+  const election = getNextElection(TX_ELECTIONS, today)!;
+  const t = getTranslations("es");
+
+  it("generates context block in Spanish", () => {
+    const block = generateContextBlock(TX_STATE, "73301", election, t);
+    expect(block).toContain("Voy a votar en");
+  });
+
+  it("includes state name in Spanish context", () => {
+    const block = generateContextBlock(TX_STATE, "73301", election, t);
+    expect(block).toContain("Texas");
+    expect(block).toContain("73301");
+  });
+
+  it("includes Spanish election label", () => {
+    const block = generateContextBlock(TX_STATE, "73301", election, t);
+    expect(block).toContain("Elección:");
+  });
+
+  it("includes Spanish registration deadline label", () => {
+    const block = generateContextBlock(TX_STATE, "73301", election, t);
+    expect(block).toContain("Fechas límite de registro:");
+  });
+
+  it("includes Spanish early voting label", () => {
+    const block = generateContextBlock(TX_STATE, "73301", election, t);
+    expect(block).toContain("Votación anticipada:");
+  });
+
+  it("includes Spanish voter ID label", () => {
+    const block = generateContextBlock(TX_STATE, "73301", election, t);
+    expect(block).toContain("Identificación para votar:");
+  });
+
+  it("handles null election gracefully in Spanish", () => {
+    const block = generateContextBlock(TX_STATE, "73301", null, t);
+    expect(block).toContain("No se encontraron elecciones");
+  });
+
+  it("English context block unchanged when no lang arg", () => {
+    const block = generateContextBlock(TX_STATE, "73301", election);
+    expect(block).toContain("Hi! I'm voting in");
+  });
+});
+
+// ---- getDeadlineInfo (Spanish labels) --------------------------------------
+
+describe("getDeadlineInfo (with Spanish translations)", () => {
+  const t = getTranslations("es");
+
+  it("returns Spanish 'Pasada' for past deadline", () => {
+    const result = getDeadlineInfo("2026-01-01", new Date("2026-03-01"), t);
+    expect(result?.label).toBe("Pasada");
+    expect(result?.status).toBe("passed");
+  });
+
+  it("returns Spanish '¡Hoy!' for today", () => {
+    const today = new Date(2026, 2, 1);
+    const result = getDeadlineInfo("2026-03-01", today, t);
+    expect(result?.label).toBe("¡Hoy!");
+  });
+
+  it("returns Spanish 'Quedan N días' for multiple days", () => {
+    const today = new Date(2026, 2, 1);
+    const result = getDeadlineInfo("2026-03-10", today, t);
+    expect(result?.label).toContain("9");
+    expect(result?.label).toContain("días");
+  });
+
+  it("returns Spanish single day label for 1 day", () => {
+    const today = new Date(2026, 2, 1);
+    const result = getDeadlineInfo("2026-03-02", today, t);
+    expect(result?.label).toBe("Queda 1 día");
   });
 });
