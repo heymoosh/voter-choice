@@ -63,6 +63,16 @@ Note: **Scoring is executed by Hermes from the host side, not inside the build c
 
 
 
+
+### Phase 1 forward — compound-engineering (auto)
+
+- **Date:** 2026-05-12T03:33:58.850Z
+- **Branch:** `main`
+- **Tag:** `select-representative-compound-engineering`
+- **Status:** ✓
+- **Summary:** chose r1 — median LOC (1782); replicates span 1458..1808, RSD 9.46%
+
+
 ### Phase 1 forward — superpowers (auto)
 
 - **Date:** 2026-05-12T03:21:54.552Z
