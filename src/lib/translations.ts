@@ -4,7 +4,7 @@
  * All keys must match the `T` interface exactly.
  */
 
-export type Language = "en" | "es";
+export type Language = "en" | "es" | "vi" | "zh" | "ar";
 
 export interface T {
   // Meta
@@ -477,6 +477,466 @@ const es: T = {
   ctxBallotContests: "Mi boleta incluye:",
 };
 
+// ---- Vietnamese translations ------------------------------------------------
+
+const vi: T = {
+  lang: "vi",
+  langToggleLabel: "English",
+
+  heroTitle: "Công Cụ Nghiên Cứu Bầu Cử AI Miễn Phí",
+  heroSubtitle:
+    "Nhập mã bưu chính của bạn để nhận gợi ý nghiên cứu AI được cá nhân hóa. Dán vào bất kỳ chatbot AI miễn phí nào — Claude, ChatGPT, Gemini hoặc Grok — và nó sẽ hướng dẫn bạn qua từng cuộc đua và vấn đề trên lá phiếu cụ thể của bạn.",
+  chatbotsLabel: "Mở chatbot",
+
+  step1Label: "Bước 1: Nhập mã bưu chính của bạn",
+  zipPlaceholder: "ví dụ: 73301",
+  zipAriaLabel: "Mã bưu chính Hoa Kỳ 5 chữ số",
+  submitButton: "Lấy Gợi Ý Của Tôi",
+  submitButtonLoading: "Đang tra cứu…",
+
+  errorEmpty: "Vui lòng nhập mã bưu chính",
+  errorInvalidZip: "Vui lòng nhập mã bưu chính hợp lệ gồm 5 chữ số",
+
+  notFoundTitle: "Chúng tôi chưa có dữ liệu cho mã bưu chính {zip}.",
+  notFoundBody:
+    "Chúng tôi đang làm việc để thêm tất cả mã bưu chính của Hoa Kỳ.",
+  notFoundLink: "Tìm trang web bầu cử tiểu bang của bạn",
+
+  stateSelectorPrompt:
+    "Mã bưu chính này trải rộng nhiều tiểu bang. Bạn đang bỏ phiếu ở tiểu bang nào?",
+
+  loadingLabel: "Đang tải dữ liệu bầu cử…",
+
+  deadlinesPassedTitle: "Hạn chót đăng ký cho cuộc bầu cử này đã qua.",
+  deadlinesPassedBody: "để xác nhận bạn vẫn còn đăng ký.",
+  deadlinesPassedLink: "Kiểm tra trạng thái đăng ký của bạn",
+
+  noElectionText: "Không tìm thấy cuộc bầu cử sắp tới cho {stateName}.",
+  noElectionLink: "Kiểm tra trang web bầu cử tiểu bang",
+
+  stateInfoAriaLabel: "Thông tin bầu cử {stateName}",
+  stateInfoHeading: "{stateName} — Thông Tin Bầu Cử",
+  nextElectionLabel: "Cuộc Bầu Cử Tiếp Theo",
+  registrationDeadlinesLabel: "Hạn Chót Đăng Ký",
+  registrationOnline: "Trực tuyến",
+  registrationByMail: "Qua thư",
+  registrationInPerson: "Trực tiếp",
+  sameDayRegistration: "Có thể đăng ký trong ngày bầu cử",
+  checkRegistrationLink: "Kiểm tra trạng thái đăng ký của bạn",
+  earlyVotingLabel: "Bỏ Phiếu Sớm",
+  earlyVotingNotAvailable: "Không có — chỉ bỏ phiếu vắng mặt",
+  voterIdLabel: "Chứng Minh Cử Tri",
+  voterIdNotRequired: "Không bắt buộc",
+  voterIdRequired: "Bắt buộc. Giấy tờ được chấp nhận:",
+  phonesAtPollsLabel: "Điện thoại tại phòng bỏ phiếu:",
+  officialResourcesLabel: "Tài Nguyên Chính Thức",
+  stateElectionWebsiteLink: "Trang web bầu cử tiểu bang",
+  sampleBallotLink: "Tra cứu lá phiếu mẫu của bạn",
+  countyElectionLink: "Văn phòng bầu cử quận",
+
+  deadlineBadgePassed: "Đã qua",
+  deadlineBadgeToday: "Hôm nay!",
+  deadlineBadgeDaysLeft: "Còn {n} ngày",
+  deadlineBadgeDayLeft: "Còn 1 ngày",
+
+  electionTypePrimary: "sơ bộ",
+  primaryTypeOpen: "mở",
+  primaryTypeClosed: "đóng",
+  primaryTypeSemiClosed: "nửa đóng",
+  primaryTypeSemiOpen: "nửa mở",
+  earlyVotingThrough: "đến",
+
+  step2Label: "Bước 2: Sao chép gợi ý này",
+  promptInstructions:
+    'Sao chép gợi ý này và dán làm tin nhắn đầu tiên của bạn trong bất kỳ chatbot AI nào. Khối thứ hai (bắt đầu bằng "Xin chào! Tôi đang bỏ phiếu tại…") là thông tin ngữ cảnh đã điền sẵn — đã được bao gồm.',
+  copyButton: "Sao Chép vào Bảng Nhớ Tạm",
+  copiedButton: "Đã sao chép!",
+  promptAriaLabel: "Gợi ý nghiên cứu bầu cử được tùy chỉnh",
+
+  tipsAriaLabel: "Mẹo sử dụng gợi ý",
+  tipsHeading: "Mẹo cho cuộc trò chuyện của bạn",
+  tip1: 'Bạn có thể nói <strong>"Tôi không biết"</strong> hoặc <strong>"Tôi chưa chắc về quan điểm của mình"</strong> — AI sẽ giải thích thêm và giúp bạn tìm ra.',
+  tip2: 'Bạn có thể yêu cầu AI <strong>nghiên cứu điều gì đó</strong> cho bạn (ví dụ: "Bạn có thể tra cứu lịch sử bỏ phiếu của ứng cử viên này không?").',
+  tip3: 'Bạn có thể <strong>đặt câu hỏi</strong> bất cứ lúc nào ("Vị trí này thực sự làm gì?" hoặc "Tại sao điều này quan trọng?").',
+  tip4: "Bạn không phải đang làm bài kiểm tra. Bạn đang có một cuộc trò chuyện. AI làm việc <em>cùng</em> bạn.",
+  tipWarning:
+    "<strong>Quan trọng:</strong> AI có thể mắc lỗi. Đây là điểm khởi đầu nghiên cứu. Luôn xác minh thông tin quan trọng với các nguồn chính thức.",
+
+  footerShare:
+    "Chia sẻ công cụ này — nó hoạt động cho bất kỳ tiểu bang nào của Hoa Kỳ và bất kỳ cuộc bầu cử nào.",
+  footerAttribution:
+    "Được tạo ra bởi con người sử dụng công cụ AI, vì mọi người đều xứng đáng biết họ đang thực sự bỏ phiếu cho điều gì.",
+
+  ctxHello: "Xin chào! Tôi đang bỏ phiếu tại",
+  ctxZip: "Mã bưu chính của tôi là",
+  ctxKnow: "Đây là những gì tôi biết về cuộc bầu cử sắp tới của mình:",
+  ctxElection: "Cuộc bầu cử:",
+  ctxElectionType: "Loại bầu cử:",
+  ctxRegistration: "Hạn chót đăng ký:",
+  ctxOnline: "Trực tuyến trước ngày",
+  ctxOnlineNA: "Đăng ký trực tuyến không có sẵn",
+  ctxByMail: "qua thư trước ngày",
+  ctxPostmark: "ngày đóng dấu bưu điện",
+  ctxReceivedDate: "ngày nhận",
+  ctxInPerson: "trực tiếp trước ngày",
+  ctxSameDayReg: "Có thể đăng ký trong ngày bầu cử",
+  ctxEarlyVoting: "Bỏ phiếu sớm:",
+  ctxEarlyVotingNA: "Không có — chỉ bỏ phiếu vắng mặt",
+  ctxEarlyThrough: "đến",
+  ctxVoterId: "Chứng minh cử tri:",
+  ctxVoterIdNotRequired: "Không bắt buộc",
+  ctxVoterIdRequired: "Bắt buộc. Giấy tờ được chấp nhận:",
+  ctxPhones: "Điện thoại tại phòng bỏ phiếu:",
+  ctxSampleBallot: "Lá phiếu mẫu của tôi:",
+  ctxCountyOffice: "Văn phòng bầu cử quận của tôi:",
+  ctxHelp: "Hãy giúp tôi với lá phiếu của mình.",
+  ctxNoElection: "Không tìm thấy cuộc bầu cử sắp tới",
+
+  // Phase 3
+  pollingLocationLabel: "Địa Điểm Bỏ Phiếu",
+  pollingLocationNotFound:
+    "Không tìm thấy địa điểm bỏ phiếu cho địa chỉ của bạn",
+  pollingLocationHours: "Giờ:",
+  pollingLocationNotes: "Ghi chú:",
+  ballotContestsLabel: "Các Cuộc Đua Trên Lá Phiếu Của Bạn",
+  ballotContestsNone: "Không tìm thấy thông tin cuộc đua",
+  candidateLabel: "Ứng cử viên",
+  candidatesLabel: "Các ứng cử viên",
+  viewVotingRecord: "Xem lịch sử bỏ phiếu",
+  closeVotingRecord: "Đóng",
+  candidateResearching: "Đang nghiên cứu…",
+  candidateSummaryLabel: "Tiểu sử",
+  candidateVotingRecordLabel: "Lịch Sử Bỏ Phiếu",
+  candidateDonorsLabel: "Nhà Tài Trợ Hàng Đầu",
+  candidateEndorsementsLabel: "Sự Chứng Thực",
+  candidateSourcesLabel: "Nguồn",
+  candidateResearchError: "Không thể tải nghiên cứu. Thử lại.",
+  dataAttributionLabel:
+    "Dữ liệu bầu cử từ Google Civic Information và tìm kiếm web trực tiếp qua Anthropic.",
+  dataLastUpdated: "Cập nhật {timestamp}",
+  dataLoadingLabel: "Đang tải dữ liệu bầu cử…",
+  dataPartialError:
+    "Một số dữ liệu bầu cử tạm thời không có sẵn. Thông tin hiển thị là hiện tại.",
+  dataFullError:
+    "Chúng tôi đang gặp khó khăn khi tải dữ liệu bầu cử trực tiếp. Đây là những gì chúng tôi biết về bỏ phiếu tại {stateName}.",
+  dataVerifyLink: "để biết thêm chi tiết đầy đủ",
+  districtLabel: "Các Khu Vực Của Bạn",
+  districtCounty: "Quận:",
+  districtCongress: "Khu Vực Quốc Hội:",
+  districtStateSenate: "Thượng Viện Tiểu Bang:",
+  districtStateHouse: "Hạ Viện Tiểu Bang:",
+  referendumLabel: "Trưng Cầu Dân Ý",
+  voterIdVerifyNote: "Xác minh các yêu cầu hiện tại tại",
+
+  ctxDistricts: "Các khu vực của tôi:",
+  ctxPollingPlace: "Địa điểm bỏ phiếu của tôi:",
+  ctxBallotContests: "Lá phiếu của tôi bao gồm:",
+};
+
+// ---- Chinese (Simplified Mandarin) translations ----------------------------
+
+const zh: T = {
+  lang: "zh",
+  langToggleLabel: "English",
+
+  heroTitle: "免费AI选票研究工具",
+  heroSubtitle:
+    "输入您的邮政编码，获取个性化的AI研究提示。将其粘贴到任何免费AI聊天机器人中——Claude、ChatGPT、Gemini或Grok——它将引导您了解您选票上的每个候选人和议题。",
+  chatbotsLabel: "打开聊天机器人",
+
+  step1Label: "第一步：输入您的邮政编码",
+  zipPlaceholder: "例如：73301",
+  zipAriaLabel: "美国5位邮政编码",
+  submitButton: "获取我的提示",
+  submitButtonLoading: "查询中…",
+
+  errorEmpty: "请输入邮政编码",
+  errorInvalidZip: "请输入有效的5位邮政编码",
+
+  notFoundTitle: "我们尚未有邮政编码 {zip} 的数据。",
+  notFoundBody: "我们正在努力添加所有美国邮政编码。",
+  notFoundLink: "查找您所在州的选举网站",
+
+  stateSelectorPrompt: "此邮政编码跨越多个州。您在哪个州投票？",
+
+  loadingLabel: "正在加载选举数据…",
+
+  deadlinesPassedTitle: "此次选举的注册截止日期已过。",
+  deadlinesPassedBody: "以确认您仍然已注册。",
+  deadlinesPassedLink: "检查您的注册状态",
+
+  noElectionText: "未找到 {stateName} 即将举行的选举。",
+  noElectionLink: "查看州选举网站",
+
+  stateInfoAriaLabel: "{stateName} 选举信息",
+  stateInfoHeading: "{stateName} — 选举信息",
+  nextElectionLabel: "下次选举",
+  registrationDeadlinesLabel: "注册截止日期",
+  registrationOnline: "在线",
+  registrationByMail: "邮寄",
+  registrationInPerson: "亲自",
+  sameDayRegistration: "可在选举当日注册",
+  checkRegistrationLink: "检查您的注册状态",
+  earlyVotingLabel: "提前投票",
+  earlyVotingNotAvailable: "不可用——仅限缺席投票",
+  voterIdLabel: "选民身份证",
+  voterIdNotRequired: "不需要",
+  voterIdRequired: "需要。可接受的证件：",
+  phonesAtPollsLabel: "投票站手机使用：",
+  officialResourcesLabel: "官方资源",
+  stateElectionWebsiteLink: "州选举网站",
+  sampleBallotLink: "查找您的样本选票",
+  countyElectionLink: "县选举办公室",
+
+  deadlineBadgePassed: "已过",
+  deadlineBadgeToday: "今天！",
+  deadlineBadgeDaysLeft: "还剩 {n} 天",
+  deadlineBadgeDayLeft: "还剩1天",
+
+  electionTypePrimary: "初选",
+  primaryTypeOpen: "开放",
+  primaryTypeClosed: "封闭",
+  primaryTypeSemiClosed: "半封闭",
+  primaryTypeSemiOpen: "半开放",
+  earlyVotingThrough: "至",
+
+  step2Label: "第二步：复制此提示",
+  promptInstructions:
+    '复制此提示并将其粘贴为您在任何AI聊天机器人中的第一条消息。第二个块（以"你好！我正在……投票"开头）是您预填的上下文——已包含在内。',
+  copyButton: "复制到剪贴板",
+  copiedButton: "已复制！",
+  promptAriaLabel: "定制化选票研究提示",
+
+  tipsAriaLabel: "使用提示的建议",
+  tipsHeading: "对话建议",
+  tip1: '你可以说<strong>"我不知道"</strong>或<strong>"我不确定我的立场"</strong>——AI会进一步解释并帮助你弄清楚。',
+  tip2: '你可以要求AI为你<strong>研究某些内容</strong>（例如："你能查一下这位候选人的投票记录吗？"）。',
+  tip3: '你随时可以<strong>提问</strong>（"这个职位实际上是做什么的？"或"为什么这很重要？"）。',
+  tip4: "你不是在参加考试。你在进行对话。AI与你<em>一起</em>工作。",
+  tipWarning:
+    "<strong>重要：</strong>AI可能会犯错。这只是研究的起点。请务必通过官方来源核实重要信息。",
+
+  footerShare: "分享此工具——适用于美国任何州和任何选举。",
+  footerAttribution:
+    "由人类使用AI工具创建，因为每个人都值得知道他们真正在为什么投票。",
+
+  ctxHello: "你好！我正在",
+  ctxZip: "我的邮政编码是",
+  ctxKnow: "以下是我对即将到来的选举的了解：",
+  ctxElection: "选举：",
+  ctxElectionType: "选举类型：",
+  ctxRegistration: "注册截止日期：",
+  ctxOnline: "在线截止",
+  ctxOnlineNA: "不提供在线注册",
+  ctxByMail: "邮寄截止",
+  ctxPostmark: "邮戳日期",
+  ctxReceivedDate: "收到日期",
+  ctxInPerson: "亲自截止",
+  ctxSameDayReg: "可在选举当日注册",
+  ctxEarlyVoting: "提前投票：",
+  ctxEarlyVotingNA: "不可用——仅限缺席投票",
+  ctxEarlyThrough: "至",
+  ctxVoterId: "选民身份证：",
+  ctxVoterIdNotRequired: "不需要",
+  ctxVoterIdRequired: "需要。可接受的证件：",
+  ctxPhones: "投票站手机使用：",
+  ctxSampleBallot: "我的样本选票：",
+  ctxCountyOffice: "我的县选举办公室：",
+  ctxHelp: "请帮助我了解我的选票。",
+  ctxNoElection: "未找到即将举行的选举",
+
+  // Phase 3
+  pollingLocationLabel: "投票地点",
+  pollingLocationNotFound: "未找到您地址的投票地点",
+  pollingLocationHours: "时间：",
+  pollingLocationNotes: "备注：",
+  ballotContestsLabel: "您选票上的候选项目",
+  ballotContestsNone: "未找到候选信息",
+  candidateLabel: "候选人",
+  candidatesLabel: "候选人",
+  viewVotingRecord: "查看投票记录",
+  closeVotingRecord: "关闭",
+  candidateResearching: "研究中…",
+  candidateSummaryLabel: "背景",
+  candidateVotingRecordLabel: "投票记录",
+  candidateDonorsLabel: "主要捐赠者",
+  candidateEndorsementsLabel: "背书",
+  candidateSourcesLabel: "来源",
+  candidateResearchError: "无法加载研究。请重试。",
+  dataAttributionLabel:
+    "选举数据来自Google Civic Information和通过Anthropic的实时网络搜索。",
+  dataLastUpdated: "更新于 {timestamp}",
+  dataLoadingLabel: "正在加载选举数据…",
+  dataPartialError: "部分选举数据暂时不可用。显示的信息是最新的。",
+  dataFullError:
+    "我们在加载实时选举数据时遇到问题。以下是我们对在 {stateName} 投票的了解。",
+  dataVerifyLink: "获取完整详情",
+  districtLabel: "您的选区",
+  districtCounty: "县：",
+  districtCongress: "国会选区：",
+  districtStateSenate: "州参议院：",
+  districtStateHouse: "州众议院：",
+  referendumLabel: "公民投票",
+  voterIdVerifyNote: "在以下网址核实当前要求",
+
+  ctxDistricts: "我的选区：",
+  ctxPollingPlace: "我的投票地点：",
+  ctxBallotContests: "我的选票包括：",
+};
+
+// ---- Arabic translations ---------------------------------------------------
+
+const ar: T = {
+  lang: "ar",
+  langToggleLabel: "English",
+
+  heroTitle: "أداة بحث الاقتراع المجانية بالذكاء الاصطناعي",
+  heroSubtitle:
+    "أدخل الرمز البريدي للحصول على موجّه بحث مخصص بالذكاء الاصطناعي. الصقه في أي روبوت دردشة ذكاء اصطناعي مجاني — Claude أو ChatGPT أو Gemini أو Grok — وسيرشدك خلال كل سباق وقضية في ورقة اقتراعك.",
+  chatbotsLabel: "افتح روبوت دردشة",
+
+  step1Label: "الخطوة الأولى: أدخل رمزك البريدي",
+  zipPlaceholder: "مثال: 73301",
+  zipAriaLabel: "الرمز البريدي الأمريكي المكون من 5 أرقام",
+  submitButton: "احصل على موجّهي",
+  submitButtonLoading: "جارٍ البحث…",
+
+  errorEmpty: "يرجى إدخال الرمز البريدي",
+  errorInvalidZip: "يرجى إدخال رمز بريدي صالح مكون من 5 أرقام",
+
+  notFoundTitle: "ليس لدينا بيانات للرمز البريدي {zip} حتى الآن.",
+  notFoundBody: "نعمل على إضافة جميع الرموز البريدية الأمريكية.",
+  notFoundLink: "ابحث عن موقع انتخابات ولايتك",
+
+  stateSelectorPrompt:
+    "يمتد هذا الرمز البريدي عبر ولايات متعددة. في أي ولاية ستصوت؟",
+
+  loadingLabel: "جارٍ تحميل بيانات الانتخابات…",
+
+  deadlinesPassedTitle: "انتهت مواعيد تسجيل هذه الانتخابات.",
+  deadlinesPassedBody: "للتأكد من أنك لا تزال مسجلاً.",
+  deadlinesPassedLink: "تحقق من حالة تسجيلك",
+
+  noElectionText: "لم يتم العثور على انتخابات قادمة لـ {stateName}.",
+  noElectionLink: "تحقق من موقع انتخابات الولاية",
+
+  stateInfoAriaLabel: "معلومات انتخابات {stateName}",
+  stateInfoHeading: "{stateName} — معلومات الانتخابات",
+  nextElectionLabel: "الانتخابات القادمة",
+  registrationDeadlinesLabel: "مواعيد التسجيل النهائية",
+  registrationOnline: "إلكتروني",
+  registrationByMail: "بالبريد",
+  registrationInPerson: "شخصياً",
+  sameDayRegistration: "التسجيل في يوم الانتخابات متاح",
+  checkRegistrationLink: "تحقق من حالة تسجيلك",
+  earlyVotingLabel: "التصويت المبكر",
+  earlyVotingNotAvailable: "غير متاح — التصويت الغيابي فقط",
+  voterIdLabel: "هوية الناخب",
+  voterIdNotRequired: "غير مطلوبة",
+  voterIdRequired: "مطلوبة. الوثائق المقبولة:",
+  phonesAtPollsLabel: "الهواتف في مراكز الاقتراع:",
+  officialResourcesLabel: "الموارد الرسمية",
+  stateElectionWebsiteLink: "موقع انتخابات الولاية",
+  sampleBallotLink: "ابحث عن نموذج ورقة اقتراعك",
+  countyElectionLink: "مكتب انتخابات المقاطعة",
+
+  deadlineBadgePassed: "انتهى",
+  deadlineBadgeToday: "اليوم!",
+  deadlineBadgeDaysLeft: "باقي {n} أيام",
+  deadlineBadgeDayLeft: "باقي يوم واحد",
+
+  electionTypePrimary: "تمهيدية",
+  primaryTypeOpen: "مفتوحة",
+  primaryTypeClosed: "مغلقة",
+  primaryTypeSemiClosed: "شبه مغلقة",
+  primaryTypeSemiOpen: "شبه مفتوحة",
+  earlyVotingThrough: "حتى",
+
+  step2Label: "الخطوة الثانية: انسخ هذا الموجّه",
+  promptInstructions:
+    'انسخ هذا الموجّه والصقه كرسالتك الأولى في أي روبوت دردشة. الكتلة الثانية (التي تبدأ بـ "مرحباً! سأصوت في…") هي سياقك المعبأ مسبقاً — وهو مضمّن بالفعل.',
+  copyButton: "نسخ إلى الحافظة",
+  copiedButton: "تم النسخ!",
+  promptAriaLabel: "موجّه بحث الاقتراع المخصص",
+
+  tipsAriaLabel: "نصائح لاستخدام الموجّه",
+  tipsHeading: "نصائح لمحادثتك",
+  tip1: 'يمكنك قول <strong>"لا أعرف"</strong> أو <strong>"لست متأكداً من موقفي"</strong> — سيشرح الذكاء الاصطناعي أكثر ويساعدك في معرفة ذلك.',
+  tip2: 'يمكنك طلب منه <strong>البحث عن شيء ما</strong> لك (مثل: "هل يمكنك البحث عن سجل التصويت لهذا المرشح؟").',
+  tip3: 'يمكنك <strong>طرح الأسئلة</strong> في أي وقت ("ماذا يفعل هذا المنصب فعلاً؟" أو "لماذا هذا مهم؟").',
+  tip4: "أنت لست في اختبار. أنت في محادثة. الذكاء الاصطناعي يعمل <em>معك</em>.",
+  tipWarning:
+    "<strong>مهم:</strong> قد يرتكب الذكاء الاصطناعي أخطاء. هذه نقطة بداية للبحث. تحقق دائماً من المعلومات المهمة مع المصادر الرسمية.",
+
+  footerShare: "شارك هذه الأداة — تعمل لأي ولاية أمريكية وأي انتخابات.",
+  footerAttribution:
+    "أُنشئ بواسطة إنسان باستخدام أدوات الذكاء الاصطناعي، لأن كل شخص يستحق أن يعرف ما يصوت له حقاً.",
+
+  ctxHello: "مرحباً! سأصوت في",
+  ctxZip: "رمزي البريدي هو",
+  ctxKnow: "إليك ما أعرفه عن انتخاباتي القادمة:",
+  ctxElection: "الانتخابات:",
+  ctxElectionType: "نوع الانتخابات:",
+  ctxRegistration: "مواعيد التسجيل النهائية:",
+  ctxOnline: "إلكترونياً بحلول",
+  ctxOnlineNA: "التسجيل الإلكتروني غير متاح",
+  ctxByMail: "بالبريد بحلول",
+  ctxPostmark: "تاريخ الطابع البريدي",
+  ctxReceivedDate: "تاريخ الاستلام",
+  ctxInPerson: "شخصياً بحلول",
+  ctxSameDayReg: "التسجيل في يوم الانتخابات متاح",
+  ctxEarlyVoting: "التصويت المبكر:",
+  ctxEarlyVotingNA: "غير متاح — التصويت الغيابي فقط",
+  ctxEarlyThrough: "حتى",
+  ctxVoterId: "هوية الناخب:",
+  ctxVoterIdNotRequired: "غير مطلوبة",
+  ctxVoterIdRequired: "مطلوبة. الوثائق المقبولة:",
+  ctxPhones: "الهواتف في مراكز الاقتراع:",
+  ctxSampleBallot: "نموذج ورقة اقتراعي:",
+  ctxCountyOffice: "مكتب انتخابات مقاطعتي:",
+  ctxHelp: "ساعدني في ورقة اقتراعي.",
+  ctxNoElection: "لم يتم العثور على انتخابات قادمة",
+
+  // Phase 3
+  pollingLocationLabel: "مركز الاقتراع",
+  pollingLocationNotFound: "لم يتم العثور على مركز اقتراع لعنوانك",
+  pollingLocationHours: "الساعات:",
+  pollingLocationNotes: "ملاحظات:",
+  ballotContestsLabel: "مسابقات ورقة اقتراعك",
+  ballotContestsNone: "لم يتم العثور على معلومات المسابقات",
+  candidateLabel: "مرشح",
+  candidatesLabel: "المرشحون",
+  viewVotingRecord: "عرض سجل التصويت",
+  closeVotingRecord: "إغلاق",
+  candidateResearching: "جارٍ البحث…",
+  candidateSummaryLabel: "الخلفية",
+  candidateVotingRecordLabel: "سجل التصويت",
+  candidateDonorsLabel: "أبرز المانحين",
+  candidateEndorsementsLabel: "التأييدات",
+  candidateSourcesLabel: "المصادر",
+  candidateResearchError: "تعذر تحميل البحث. حاول مرة أخرى.",
+  dataAttributionLabel:
+    "بيانات الانتخابات من Google Civic Information والبحث المباشر عبر Anthropic.",
+  dataLastUpdated: "تم التحديث في {timestamp}",
+  dataLoadingLabel: "جارٍ تحميل بيانات الانتخابات…",
+  dataPartialError:
+    "بعض بيانات الانتخابات غير متاحة مؤقتاً. المعلومات المعروضة محدّثة.",
+  dataFullError:
+    "نواجه صعوبة في تحميل بيانات الانتخابات المباشرة. إليك ما نعرفه عن التصويت في {stateName}.",
+  dataVerifyLink: "للتفاصيل الكاملة",
+  districtLabel: "مناطقك الانتخابية",
+  districtCounty: "المقاطعة:",
+  districtCongress: "الدائرة الكونغرسية:",
+  districtStateSenate: "مجلس الشيوخ الولائي:",
+  districtStateHouse: "مجلس النواب الولائي:",
+  referendumLabel: "استفتاء",
+  voterIdVerifyNote: "تحقق من المتطلبات الحالية في",
+
+  ctxDistricts: "مناطقي الانتخابية:",
+  ctxPollingPlace: "مركز اقتراعي:",
+  ctxBallotContests: "تتضمن ورقة اقتراعي:",
+};
+
 // ---- Spanish BALLOT_PROMPT -------------------------------------------------
 
 export const BALLOT_PROMPT_ES = `Eres un asistente de investigación cívica no partidista que ayuda a un votante de EE.UU. a prepararse para una próxima elección. Tu trabajo es ayudarme a entender qué hay en mi boleta, formarme mis propias opiniones e investigar a los candidatos basándome en sus ACCIONES — no en sus promesas de campaña.
@@ -564,10 +1024,287 @@ Resumen limpio e imprimible que puedo llevar a las urnas.
 
 Empecemos con el Paso 1.`;
 
+// ---- Vietnamese BALLOT_PROMPT -----------------------------------------------
+
+export const BALLOT_PROMPT_VI = `Bạn là trợ lý nghiên cứu công dân không thiên vị, giúp cử tri Hoa Kỳ chuẩn bị cho cuộc bầu cử sắp tới. Công việc của bạn là giúp tôi hiểu những gì có trên lá phiếu của mình, hình thành quan điểm riêng và nghiên cứu các ứng cử viên dựa trên HÀNH ĐỘNG của họ — không phải lời hứa tranh cử.
+
+## CÁCH ĐỊNH DẠNG MỖI PHẢN HỒI (tuân thủ nghiêm ngặt)
+
+- **Giới hạn mỗi vấn đề hoặc cuộc đua ở tối đa 4-6 điểm.** Không có đoạn văn dài.
+- **In đậm điểm chính** trong mỗi gạch đầu dòng để tôi có thể lướt qua.
+- **Một vấn đề hoặc cuộc đua mỗi phản hồi** trừ khi bạn yêu cầu tôi tăng tốc.
+- **Kết luận trước.** Bắt đầu với tóm tắt 1 câu, sau đó cho tôi các chi tiết hỗ trợ mà tôi có thể mở rộng.
+- **Tối đa 3-4 câu mỗi gạch đầu dòng.** Nếu bạn viết nhiều hơn thế, là quá nhiều rồi.
+- **Dùng ngôn ngữ đơn giản.** Nếu một học sinh 16 tuổi không hiểu được, hãy viết lại.
+- **Không bao giờ tóm tắt những gì chúng ta đã đề cập** trừ khi tôi yêu cầu.
+- Tôi luôn có thể nói "cho tôi biết thêm" nếu tôi muốn đi sâu hơn. Mặc định hãy ngắn gọn.
+
+## BƯỚC 1: Lấy vị trí của tôi và bắt đầu ngay
+
+Hỏi tôi mã bưu chính và tiểu bang trong một câu hỏi. Sau đó:
+
+- **Tìm kiếm bối cảnh bầu cử của tiểu bang tôi.** Loại bầu cử gì, cách thức hoạt động (bầu cử sơ bộ mở/đóng), ngày bầu cử. **Kiểm tra ngày hôm nay so với ngày bầu cử** — cho tôi biết nếu các phòng bỏ phiếu mở hôm nay, đang diễn ra bỏ phiếu sớm, hay sắp tới. Tối đa 2-3 câu.
+- **Nếu đây là bầu cử sơ bộ:** Không hỏi về phiếu của đảng nào. Chúng ta sẽ cùng tìm hiểu sau khi xem qua các vấn đề.
+- **Cho tôi một liên kết** đến trang web bầu cử của quận tôi để xem lá phiếu mẫu. Đề nghị tôi tải lên — nhưng **đừng chờ đợi.** Bắt đầu ngay với các cuộc đua cấp tiểu bang.
+- **Nếu tôi tải lên lá phiếu mẫu hoặc chia sẻ các khu vực bầu cử**, hãy dùng đó làm nguồn chính thức.
+- **Lưu ý một lần** rằng các mã bưu chính có thể bao gồm nhiều khu vực bầu cử, rồi tiếp tục.
+- **Xem trước cách thức hoạt động** trong 2-3 câu: chúng ta đi qua từng vấn đề cùng nhau, bạn có thể nói "không biết", tôi nghiên cứu trong nền và sẽ tạo khối bàn giao nếu chúng ta cần tiếp tục trong một cuộc trò chuyện mới.
+
+Sau đó đi thẳng đến Bước 2.
+
+## BƯỚC 2: Đi qua các vấn đề — từng vấn đề một
+
+**Đừng hỏi "vấn đề nào quan trọng với bạn?"** Hãy đi qua chúng. Với mỗi vấn đề:
+
+- **Điều gì đang xảy ra** — tình huống hiện tại, con số thực, ngôn ngữ đơn giản
+- **Mỗi bên muốn gì** — ý nghĩa của "có" so với "không", hoặc các ứng cử viên đã thực sự làm gì
+- **Phiếu của tôi làm gì** — luật ràng buộc hay tín hiệu không ràng buộc? Một câu.
+- **Ai bị ảnh hưởng** — làm cho nó cụ thể và cá nhân ("Nếu bạn đang thuê nhà..." / "Nếu bạn có con trong trường công...")
+- **Sau đó hỏi tôi nghĩ gì.** Không sao nếu tôi nói "không quan tâm" hay "không chắc" — điều đó cũng hữu ích.
+
+Nếu tôi nói "không biết", đừng lặp lại — dạy tôi thêm, rồi hỏi lại.
+
+Sau mỗi 2-3 vấn đề, cho tôi một **tóm tắt một câu** về những gì câu trả lời của tôi gợi ý cho đến nay.
+
+## BƯỚC 3: Giúp tôi chọn bầu cử sơ bộ (nếu áp dụng)
+
+Nếu đây là bầu cử sơ bộ có chọn phiếu đảng, hãy hỏi tôi 3-4 câu hỏi nhanh về **cách tôi suy nghĩ**, không phải về chính sách. Ví dụ:
+
+- Thành tích đã đạt được vs. tiếng nói công chúng mạnh mẽ cho các giá trị của bạn?
+- Người chiến thắng thực tế vào tháng 11 vs. bày tỏ những gì bạn tin?
+- Ngăn chặn kẻ xấu vs. đề cử ứng cử viên mạnh nhất của phe bạn?
+- Nguồn tài trợ từ đóng góp nhỏ vs. lịch sử bỏ phiếu cho thấy sự độc lập với các nhà tài trợ lớn?
+
+Sau đó **đưa ra một khuyến nghị rõ ràng** trong 2-3 câu, cho tôi lập luận phản bác mạnh nhất cho bầu cử sơ bộ kia, và để tôi quyết định.
+
+Nếu đây là cuộc bầu cử phổ thông, hãy bỏ qua bước này.
+
+## BƯỚC 4: Nghiên cứu ứng cử viên — từng cuộc đua một
+
+**Không có tiểu sử ứng cử viên.** Với mỗi cuộc đua:
+
+- **Vị trí này thực sự làm gì?** Đừng cho rằng tôi biết.
+- **Nghiên cứu trong nền.** Tìm kiếm lịch sử bỏ phiếu, dữ liệu nhà tài trợ, chứng thực và tin tức. Xem xét hành động, nguồn tài trợ và liệu lời nói có khớp với việc làm không.
+- **Trình bày từng ứng cử viên trong 2-3 câu.** Tập trung vào: những gì họ đã đạt được, mối lo ngại về dấu vết tiền bạc và cách họ phù hợp với những gì tôi quan tâm.
+- **Nêu các dấu hiệu đáng lo ngại và chứng thực quan trọng.**
+- **Hỏi tôi nghĩ gì hoặc nếu tôi muốn khuyến nghị.** Đừng tự động điền vào lá phiếu của tôi.
+
+## BƯỚC 5: Các đề xuất
+
+Với mỗi đề xuất: tóm tắt một câu bằng ngôn ngữ đơn giản, ý nghĩa thực sự của "có" và "không", liệu nó có liên quan đến những gì tôi quan tâm, và xu hướng có thể của tôi.
+
+## BƯỚC 6: Cho tôi tóm tắt
+
+Tóm tắt sạch sẽ, có thể in ra để tôi mang đến phòng bỏ phiếu.
+
+## BƯỚC 7: Tạo kết quả của tôi
+
+**Kết quả A:** Một trang in lá phiếu chỉ với các lựa chọn của tôi.
+**Kết quả B:** Hồ sơ cử tri của tôi cho các cuộc bầu cử trong tương lai.
+
+## Quy tắc quan trọng
+
+- **Cộng tác, đừng tự động điền.** Chỉ khuyến nghị khi được yêu cầu.
+- **Hành động > lời nói.** Ưu tiên những gì ứng cử viên đã LÀM.
+- **Dạy trước khi hỏi.** Không bao giờ hỏi ý kiến tôi về điều gì đó tôi chưa hiểu.
+- **AI mắc lỗi.** Liên kết cho tôi đến các nguồn để tôi có thể xác minh.
+
+Hãy bắt đầu với Bước 1.`;
+
+// ---- Chinese BALLOT_PROMPT -------------------------------------------------
+
+export const BALLOT_PROMPT_ZH = `你是一位无党派公民研究助手，帮助美国选民为即将到来的选举做准备。你的工作是帮助我了解选票上的内容，形成自己的观点，并根据候选人的行动——而非竞选承诺——来研究他们。
+
+## 每次回复的格式要求（严格遵守）
+
+- **每个议题或选举限制在最多4-6个要点。** 不要长篇大论。
+- **加粗每个要点的关键结论**，让我可以快速浏览。
+- **每次回复只讨论一个议题或选举**，除非我要求加快进度。
+- **先说结论。** 以1句话摘要开始，然后给我可以展开的支持细节。
+- **每个要点最多3-4句话。** 如果你写了更多，就是太多了。
+- **使用简单语言。** 如果16岁的学生看不懂，就重写。
+- **不要重复我们已经讨论过的内容**，除非我要求。
+- 如果我想深入了解，我会说"告诉我更多"。默认保持简洁。
+
+## 第一步：获取我的位置并立即开始
+
+用一个问题问我的邮政编码和州。然后：
+
+- **搜索我所在州的选举背景。** 选举类型、运作方式（开放/封闭式初选）、选举日期。**核对今天日期与选举日期**——告诉我今天是否在投票、是否在提前投票期，还是即将到来。最多2-3句话。
+- **如果是初选：** 不要问哪个党的选票。我们在讨论完议题后再一起决定。
+- **给我一个链接**，链接到我所在县的选举网站以获取样本选票。建议我上传它——但**不要等待。** 立即开始讨论全州范围的选举。
+- **如果我上传了样本选票或分享了选区**，将其作为权威来源。
+- **提醒一次**邮政编码可能覆盖多个选区，然后继续。
+- **用2-3句话预览这是如何工作的：** 我们一起逐个讨论议题，你可以说"我不知道"，我在后台研究，如果需要在新对话中继续，我会创建一个交接块。
+
+然后直接进入第二步。
+
+## 第二步：逐一讨论议题
+
+**不要问"哪些议题对你重要？"** 直接逐一讨论。对于每个议题：
+
+- **正在发生什么**——当前情况、真实数字、简单语言
+- **各方想要什么**——"赞成"和"反对"意味着什么，或候选人实际做了什么
+- **我的投票有什么用**——具有约束力的法律还是无约束力的信号？一句话。
+- **谁会受影响**——具体化、个人化（"如果你在租房……"/"如果你有孩子在公立学校……"）
+- **然后问我的想法。** 说"不在乎"或"不确定"也没关系——这也有价值。
+
+如果我说"不知道"，不要重复——多教我一些，然后再问。
+
+每讨论2-3个议题后，给我一个**一句话总结**，说明我的回答到目前为止意味着什么。
+
+## 第三步：帮我选择初选（如适用）
+
+如果是需要选择党派选票的初选，问我3-4个关于**我如何思考**而非政策的快速问题。示例：
+
+- 有成绩记录的人 vs. 为你的价值观发出强烈公共声音的人？
+- 11月份能赢的现实主义者 vs. 表达你真正相信的人？
+- 排除坏人 vs. 提名你这边最强的候选人？
+- 小额捐款人基础 vs. 显示独立于大捐款人的投票记录？
+
+然后用2-3句话**给出明确建议**，告诉我另一个初选的最强反驳论点，让我自己决定。
+
+如果是普选，跳过这一步。
+
+## 第四步：逐个选举研究候选人
+
+**不要介绍候选人简历。** 对于每个选举：
+
+- **这个职位实际上做什么？** 不要假设我知道。
+- **在后台研究。** 搜索投票记录、捐款数据、背书和新闻。看行动、资金来源，以及话语是否与行动一致。
+- **用2-3句话介绍每位候选人。** 重点关注：他们取得了什么成就、对资金路径的担忧，以及他们如何与我关心的内容契合。
+- **标记主要红旗和重要背书。**
+- **问我的想法或是否需要建议。** 不要自动填写我的选票。
+
+## 第五步：提案
+
+对于每个提案：一句话简单语言摘要，"赞成"和"反对"的真实含义，是否与我关心的内容相关，以及我可能的倾向。
+
+## 第六步：给我总结
+
+简洁、可打印的总结，我可以带去投票站。
+
+## 第七步：生成我的输出
+
+**输出A：** 只有我的选择的一页选票打印件。
+**输出B：** 我的选民档案，用于未来的选举。
+
+## 重要规则
+
+- **合作，不要自动填写。** 只有在被要求时才建议。
+- **行动 > 话语。** 优先考虑候选人已经做过的事。
+- **先教后问。** 永远不要问我对我还不了解的事情的看法。
+- **AI会犯错。** 给我链接到来源，以便我可以核实。
+
+让我们从第一步开始。`;
+
+// ---- Arabic BALLOT_PROMPT --------------------------------------------------
+
+export const BALLOT_PROMPT_AR = `أنت مساعد بحث مدني غير حزبي يساعد ناخباً أمريكياً على الاستعداد لانتخابات قادمة. مهمتك مساعدتي على فهم ما هو موجود في ورقة اقتراعي، وتكوين آرائي الخاصة، والبحث عن المرشحين بناءً على أفعالهم — لا وعودهم الانتخابية.
+
+## كيفية تنسيق كل رد (اتبع هذا بدقة)
+
+- **حدّ كل قضية أو سباق بـ 4-6 نقاط كحد أقصى.** لا فقرات طويلة.
+- **اجعل النقطة الرئيسية** في كل نقطة بارزة حتى أتمكن من الاطلاع عليها سريعاً.
+- **قضية أو سباق واحد لكل رد** إلا إذا طلبت منك التسريع.
+- **الخلاصة أولاً.** ابدأ بملخص من جملة واحدة، ثم أعطني تفاصيل داعمة يمكنني التعمق فيها.
+- **3-4 جمل كحد أقصى لكل نقطة.** إذا كتبت أكثر من ذلك، فهذا كثير.
+- **استخدم لغة بسيطة.** إذا كان طالب في السادسة عشرة لن يفهم هذا، فأعد كتابته.
+- **لا تلخص ما ناقشناه من قبل** إلا إذا طلبت ذلك.
+- دائماً يمكنني قول "أخبرني المزيد" إذا أردت التعمق. كن موجزاً بشكل افتراضي.
+
+## الخطوة الأولى: احصل على موقعي وابدأ فوراً
+
+اسألني عن رمزي البريدي والولاية في سؤال واحد. ثم:
+
+- **ابحث عن سياق انتخابات ولايتي.** نوع الانتخابات، كيفية عملها (انتخابات تمهيدية مفتوحة/مغلقة)، تاريخ الانتخابات. **تحقق من تاريخ اليوم مقارنة بتاريخ الانتخابات** — أخبرني إذا كانت مراكز الاقتراع مفتوحة اليوم، أو إذا كان التصويت المبكر جارياً، أو إذا كانت قادمة. 2-3 جمل كحد أقصى.
+- **إذا كانت انتخابات تمهيدية:** لا تسألني عن ورقة اقتراع الحزب. سنحل ذلك معاً بعد مناقشة القضايا.
+- **أعطني رابطاً** لموقع انتخابات مقاطعتي لنموذج ورقة الاقتراع. اقترح عليّ تحميلها — لكن **لا تنتظر.** ابدأ فوراً بالسباقات على مستوى الولاية.
+- **إذا حمّلت نموذج ورقة اقتراع أو شاركت مناطقي الانتخابية**، استخدمها كمصدر رسمي.
+- **أشر مرة واحدة** إلى أن الرموز البريدية يمكن أن تمتد عبر مناطق متعددة، ثم تابع.
+- **قدّم معاينة لكيفية عمل هذا** في 2-3 جمل: نمر بالقضايا معاً، يمكنك قول "لا أعرف"، أبحث في الخلفية وسأنشئ كتلة تسليم إذا احتجنا للمتابعة في محادثة جديدة.
+
+ثم انتقل مباشرة إلى الخطوة الثانية.
+
+## الخطوة الثانية: مرّ على القضايا — قضية واحدة في كل مرة
+
+**لا تسأل "ما القضايا التي تهمك؟"** مرّ عليها. لكل قضية:
+
+- **ما الذي يحدث** — الوضع الحالي، الأرقام الحقيقية، لغة بسيطة
+- **ماذا يريد كل طرف** — ما معنى "نعم" مقابل "لا"، أو ما الذي فعله المرشحون فعلاً
+- **ماذا يفعل صوتي** — قانون ملزم أم إشارة غير ملزمة؟ جملة واحدة.
+- **من يتأثر** — اجعله ملموساً وشخصياً ("إذا كنت مستأجراً..." / "إذا كان لديك أطفال في المدارس الحكومية...")
+- **ثم اسألني ما أعتقده.** لا بأس إذا قلت "لا يهمني" أو "لست متأكداً" — هذا مفيد أيضاً.
+
+إذا قلت "لا أعرف"، لا تكرر — علّمني المزيد، ثم اسأل مجدداً.
+
+بعد كل 2-3 قضايا، أعطني **ملخصاً من جملة واحدة** عما تشير إليه إجاباتي حتى الآن.
+
+## الخطوة الثالثة: ساعدني في اختيار الانتخابات التمهيدية (إن انطبق)
+
+إذا كانت انتخابات تمهيدية أختار فيها ورقة اقتراع حزبية، اسألني 3-4 أسئلة سريعة عن **طريقة تفكيري**، لا عن السياسات. أمثلة:
+
+- سجل الإنجازات مقابل صوت عام قوي لقيمك؟
+- فائز واقعي في نوفمبر مقابل التعبير عما تؤمن به؟
+- إبعاد شخص سيئ مقابل ترشيح أقوى مرشح من جانبك؟
+- قاعدة المانحين الصغار مقابل سجل التصويت الذي يظهر الاستقلالية عن المانحين الكبار؟
+
+ثم **قدّم توصية واضحة** في 2-3 جمل، أعطني أقوى حجة مضادة للانتخابات التمهيدية الأخرى، ودعني أقرر.
+
+إذا كانت انتخابات عامة، تخطّ هذه الخطوة.
+
+## الخطوة الرابعة: ابحث عن المرشحين — سباقاً سباقاً
+
+**لا تراجم للمرشحين.** لكل سباق:
+
+- **ماذا يفعل هذا المنصب فعلاً؟** لا تفترض أنني أعرف.
+- **ابحث في الخلفية.** ابحث عن سجلات التصويت، بيانات المانحين، التأييدات والأخبار. انظر إلى الأفعال والتمويل وما إذا كانت الأقوال تتطابق مع الأفعال.
+- **قدّم كل مرشح في 2-3 جمل.** ركّز على: ما أنجزوه، مخاوف مسار الأموال، وكيف يتوافقون مع ما يهمني.
+- **أشر إلى العلامات الحمراء والتأييدات الرئيسية.**
+- **اسألني ما أعتقده أو إذا أردت توصية.** لا تملأ ورقة اقتراعي تلقائياً.
+
+## الخطوة الخامسة: المقترحات
+
+لكل مقترح: ملخص بسيط من جملة واحدة، ما يعنيه "نعم" و"لا" حقاً، ما إذا كان يرتبط بما يهمني، وميلي المحتمل.
+
+## الخطوة السادسة: أعطني ملخصي
+
+ملخص نظيف وقابل للطباعة يمكنني أخذه إلى مركز الاقتراع.
+
+## الخطوة السابعة: أنشئ مخرجاتي
+
+**المخرج أ:** صفحة واحدة من ورقة الاقتراع القابلة للطباعة مع خياراتي فقط.
+**المخرج ب:** ملف ناخبي للانتخابات المستقبلية.
+
+## قواعد مهمة
+
+- **تعاون، لا تملأ تلقائياً.** أوصِ فقط عند الطلب.
+- **الأفعال > الكلام.** أعطِ الأولوية لما فعله المرشحون فعلاً.
+- **علّم قبل أن تسأل.** لا تسألني رأيي في شيء لا أفهمه بعد.
+- **الذكاء الاصطناعي يرتكب أخطاء.** أرسل لي روابط للمصادر حتى أتمكن من التحقق.
+
+لنبدأ بالخطوة الأولى.`;
+
 // ---- Exports ---------------------------------------------------------------
 
-export const translations: Record<Language, T> = { en, es };
+export const translations: Record<Language, T> = { en, es, vi, zh, ar };
 
 export function getTranslations(lang: Language): T {
   return translations[lang];
+}
+
+/** Map from Language code to its ballot prompt (undefined = use English default) */
+export function getBallotPrompt(lang: Language): string | undefined {
+  switch (lang) {
+    case "es":
+      return BALLOT_PROMPT_ES;
+    case "vi":
+      return BALLOT_PROMPT_VI;
+    case "zh":
+      return BALLOT_PROMPT_ZH;
+    case "ar":
+      return BALLOT_PROMPT_AR;
+    default:
+      return undefined;
+  }
 }

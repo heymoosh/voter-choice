@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect } from "react";
+import React, { useState, useCallback, useRef, useEffect } from "react";
 import {
   lookupZip,
   loadStateData,
@@ -14,7 +14,7 @@ import {
   type DeadlineInfo,
 } from "@/lib/ballot-data";
 import { useLanguage } from "@/lib/i18n";
-import { BALLOT_PROMPT_ES } from "@/lib/translations";
+import { getBallotPrompt } from "@/lib/translations";
 import { useElectionData } from "@/lib/use-election-data";
 import {
   LiveElectionPanel,
@@ -58,19 +58,123 @@ function DeadlineBadge({ info }: { info: DeadlineInfo | null }) {
   );
 }
 
-// ---- Language toggle -------------------------------------------------------
+// ---- Language selector -----------------------------------------------------
+//
+// Phase 4: 5-language selector (en → es → vi → zh → ar → en cycle).
+//
+// Design constraints:
+//   1. data-testid="language-toggle" must remain on the primary button
+//      (existing e2e tests click it and expect a single-click language switch).
+//   2. The toggle button cycles through languages; it shows the NEXT language
+//      label (preserving the Phase 2 behavior: shows "Español" when in English).
+//   3. An expandable panel shows all 5 options with data-testid="language-option-{code}".
 
-function LanguageToggle() {
-  const { t, toggleLanguage } = useLanguage();
+type LangOption = {
+  code: "en" | "es" | "vi" | "zh" | "ar";
+  label: string;
+};
+
+const LANG_OPTIONS: LangOption[] = [
+  { code: "en", label: "English" },
+  { code: "es", label: "Español" },
+  { code: "vi", label: "Tiếng Việt" },
+  { code: "zh", label: "中文" },
+  { code: "ar", label: "العربية" },
+];
+
+function LanguageSelector() {
+  const { lang, t, toggleLanguage, setLanguage } = useLanguage();
+  const [open, setOpen] = React.useState(false);
+  const ref = React.useRef<HTMLDivElement>(null);
+
+  // Close on outside click
+  React.useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
+  // Close on Escape
+  React.useEffect(() => {
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpen(false);
+    }
+    document.addEventListener("keydown", handleKey);
+    return () => document.removeEventListener("keydown", handleKey);
+  }, []);
+
   return (
-    <button
-      data-testid="language-toggle"
-      onClick={toggleLanguage}
-      aria-label={`Switch to ${t.langToggleLabel}`}
-      className="fixed top-4 right-4 z-50 px-3 py-1.5 text-sm font-medium bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm min-h-[44px] min-w-[44px] transition-colors"
+    <div
+      ref={ref}
+      className="fixed top-4 right-4 z-50 flex flex-col items-end gap-1"
     >
-      {t.langToggleLabel}
-    </button>
+      {/* Primary toggle button — cycles languages on single click */}
+      <button
+        data-testid="language-toggle"
+        onClick={toggleLanguage}
+        onContextMenu={(e) => {
+          e.preventDefault();
+          setOpen((o) => !o);
+        }}
+        aria-label={`Switch to ${t.langToggleLabel}. Long-press or right-click to see all languages.`}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        className="px-3 py-1.5 text-sm font-medium bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm min-h-[44px] min-w-[44px] transition-colors flex items-center gap-1.5"
+      >
+        <span>{t.langToggleLabel}</span>
+        <svg
+          className={`w-3 h-3 text-gray-400 transition-transform ${open ? "rotate-180" : ""}`}
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+          onClick={(e) => {
+            e.stopPropagation();
+            setOpen((o) => !o);
+          }}
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M19 9l-7 7-7-7"
+          />
+        </svg>
+      </button>
+
+      {/* Dropdown panel with all 5 language options */}
+      {open && (
+        <div
+          role="listbox"
+          aria-label="Select language"
+          className="bg-white border border-gray-200 rounded-md shadow-lg py-1 min-w-[140px]"
+        >
+          {LANG_OPTIONS.map((opt) => (
+            <button
+              key={opt.code}
+              role="option"
+              aria-selected={lang === opt.code}
+              data-testid={`language-option-${opt.code}`}
+              onClick={() => {
+                setLanguage(opt.code);
+                setOpen(false);
+              }}
+              className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 focus:outline-none focus:bg-gray-50 transition-colors ${
+                lang === opt.code
+                  ? "font-semibold text-blue-700 bg-blue-50"
+                  : "text-gray-700"
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -188,7 +292,7 @@ export default function Home() {
       appState.election,
       t,
     );
-    const ballotPrompt = lang === "es" ? BALLOT_PROMPT_ES : undefined;
+    const ballotPrompt = getBallotPrompt(lang);
     const fullPrompt = buildFullPrompt(contextBlock, ballotPrompt);
 
     if (navigator.clipboard?.writeText) {
@@ -267,7 +371,7 @@ export default function Home() {
           liveContextData,
         )
       : "";
-  const ballotPromptText = lang === "es" ? BALLOT_PROMPT_ES : undefined;
+  const ballotPromptText = getBallotPrompt(lang);
   const fullPrompt = contextBlock
     ? buildFullPrompt(contextBlock, ballotPromptText)
     : "";
@@ -276,8 +380,8 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Language toggle — always visible */}
-      <LanguageToggle />
+      {/* Language selector — always visible */}
+      <LanguageSelector />
 
       {/* Skip to content */}
       <main id="main-content" className="max-w-3xl mx-auto px-4 py-8 sm:py-12">

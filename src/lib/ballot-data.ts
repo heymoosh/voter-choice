@@ -98,21 +98,63 @@ export function getNextElection(
 }
 
 /**
- * Formats an ISO date string to a human-readable date.
- * English: "March 3, 2026"
- * Spanish: "3 de marzo de 2026"
+ * Formats an ISO date string to a human-readable date per locale conventions.
+ * English:    "March 3, 2026"
+ * Spanish:    "3 de marzo de 2026"
+ * Vietnamese: "3 tháng 3, 2026"
+ * Chinese:    "2026年3月3日"
+ * Arabic:     "3 مارس 2026"
+ *
+ * Note: Arabic uses Western Arabic numerals (0-9) intentionally per spec.
+ * Intl.DateTimeFormat with "ar-u-nu-latn" forces Latin digits in Arabic.
  */
 export function formatDate(isoDate: string, lang: Language = "en"): string {
   // Parse as UTC to avoid timezone shifts
   const [year, month, day] = isoDate.split("-").map(Number);
   const d = new Date(Date.UTC(year, month - 1, day));
-  const locale = lang === "es" ? "es-US" : "en-US";
-  return d.toLocaleDateString(locale, {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-    timeZone: "UTC",
-  });
+
+  switch (lang) {
+    case "vi":
+      // Vietnamese: "3 tháng 3, 2026"
+      return d.toLocaleDateString("vi-VN", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+        timeZone: "UTC",
+      });
+    case "zh":
+      // Chinese: "2026年3月3日"
+      return d.toLocaleDateString("zh-CN", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+        timeZone: "UTC",
+      });
+    case "ar": {
+      // Arabic MSA: "3 مارس 2026" with Western (Latin) digits
+      const parts = d.toLocaleDateString("ar-EG-u-nu-latn", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+        timeZone: "UTC",
+      });
+      return parts;
+    }
+    case "es":
+      return d.toLocaleDateString("es-US", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+        timeZone: "UTC",
+      });
+    default:
+      return d.toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+        timeZone: "UTC",
+      });
+  }
 }
 
 // ---- Deadline helpers ------------------------------------------------------
