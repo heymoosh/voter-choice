@@ -62,6 +62,16 @@ Note: **Scoring is executed by Hermes from the host side, not inside the build c
 
 
 
+
+### Phase 1 forward — superpowers (auto)
+
+- **Date:** 2026-05-12T03:21:54.552Z
+- **Branch:** `main`
+- **Tag:** `select-representative-superpowers`
+- **Status:** ✓
+- **Summary:** chose r1 — median LOC (1328); replicates span 1075..1470, RSD 12.65%
+
+
 ### Phase 1 forward — spec-kit (auto)
 
 - **Date:** 2026-05-12T03:08:18.845Z
