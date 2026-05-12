@@ -2,14 +2,9 @@
 
 ## Next
 
-**Phase B smoke run B1 gate needs a clean re-run of Phase 1.** Three bugs were found and fixed during B1 diagnostics (see Learning 012 below). The `experiment/vanilla-r1-v2` branch has a contaminated Phase 1 commit (`7e1f5c5`) that must be superseded by a clean run on a fresh branch using the fixed infrastructure:
+**Phase B smoke gate B1 is COMPLETE.** Three bugs were diagnosed and fixed (see Learnings 012 and 013). The fresh smoke branch `experiment/vanilla-r1-v2c` (tag `vanilla-r1-v2c-phase1-complete`, commit `cd8d76b`) passes all four B1 checks.
 
-1. **Create fresh branch** `experiment/vanilla-r1-v2b` from `490c6db` (current pensive HEAD with all fixes).
-2. **Add vanilla workflow.md** (from `experiment/vanilla-r1`).
-3. **Run B1 smoke gate** (validate-container-git, validate-container-claude, Phase 1 build, verify clean commit).
-4. **Continue B2–B8** (Phases 2–6, delta scoring, aggregator smoke).
-
-After B8 passes, proceed to Phase C (clean re-run of 45 actions).
+**Next: B2–B8** — Run Phases 2–6 on `experiment/vanilla-r1-v2c`, verify clean commits for each phase, run compute-deltas and aggregate-experiment for the smoke framework. After B8 passes, proceed to Phase C (clean re-run of 45 actions).
 
 **B1 diagnostic findings (2026-05-12):**
 
@@ -22,7 +17,7 @@ After B8 passes, proceed to Phase C (clean re-run of 45 actions).
 | B1a validate-container-git: PASS | ✓ |
 | B1b validate-container-claude: PASS | ✓ |
 | B1c Phase 1 completes in container: PASS | ✓ (6 min, timing proven) |
-| B1d Phase 1 commit is clean: NEEDS CLEAN RE-RUN | `7e1f5c5` is contaminated; re-run on fresh branch required |
+| B1d Phase 1 commit is clean: PASS | `cd8d76b` on `experiment/vanilla-r1-v2c` — 0 docs/scoring/metrics deletions |
 
 Do not skip the smoke run and jump to the full rerun. Phase A is green, but Phase B is the gate that proves the new `/workspace/metrics` scratch-mount plus `scripts/post-build-score.sh` architecture works end-to-end before scaling to all 45 actions.
 
