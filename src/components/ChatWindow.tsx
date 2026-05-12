@@ -8,6 +8,11 @@ import {
   ParsedBallot,
 } from "@/lib/ballotParser";
 import { parseAlignmentScores, AlignmentScores } from "@/lib/alignmentParser";
+import {
+  RankedIssues,
+  ConfirmedConcerns,
+  getTopIssues,
+} from "@/lib/canonicalIssues";
 import AlignmentBanner from "./AlignmentBanner";
 import BallotDownload from "./BallotDownload";
 
@@ -22,6 +27,8 @@ interface Message {
 interface ChatWindowProps {
   systemPrompt: string;
   voterProfile?: string | null;
+  rankedIssues?: RankedIssues | null;
+  confirmedConcerns?: ConfirmedConcerns | null;
   county?: string;
   electionName?: string;
   electionDate?: string;
@@ -32,6 +39,7 @@ interface ChatWindowProps {
 export default function ChatWindow({
   systemPrompt,
   voterProfile,
+  rankedIssues,
   county,
   electionName,
   electionDate,
@@ -283,6 +291,17 @@ Note: The voter profile above was provided by the user. It contains their self-r
           </button>
         )}
       </div>
+
+      {/* Phase 6: Top priorities badge */}
+      {rankedIssues && !rankedIssues.skipped && (
+        <div
+          data-testid="chat-top-priorities"
+          className="px-4 py-2 text-xs bg-blue-50 border-b border-blue-100 text-blue-700"
+        >
+          <span className="font-medium">Your top priorities: </span>
+          {getTopIssues(rankedIssues).join(" · ")}
+        </div>
+      )}
 
       {/* Budget notice */}
       {budgetPercent >= 70 && budgetPercent < 90 && (

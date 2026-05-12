@@ -156,3 +156,7 @@ export interface CandidateDetail {
   citations: string[];
   fetchedAt: string;
 }
+
+// ─── Phase 6: Issue Ranking, Concern Disambiguation, Polis Overlay ──────────
+
+export type { RankedIssues, ConfirmedConcerns } from "./canonicalIssues";

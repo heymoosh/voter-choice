@@ -25,10 +25,29 @@ This document is your personal notes, not an official ballot.`;
 
 const MOCK_STREAMING_RESPONSE = `Hello! I'm ready to help you research your ballot. Let's start by looking at the races in your area.`;
 
-async function submitZip(page: Parameters<typeof test.fn>[0] & { goto: (url: string) => Promise<void> }, zip: string) {
+import { Page } from "@playwright/test";
+
+async function submitZip(page: Page, zip: string) {
   await page.getByTestId("zip-input").fill(zip);
   await page.getByTestId("zip-submit").click();
   await expect(page.getByTestId("state-info")).toBeVisible({ timeout: 5000 });
+}
+
+// Phase 6 introduced an issue ranking + concern step before the chat.
+// Helper to skip through both steps to reach the chat window.
+async function skipToChat(page: Page) {
+  await page.getByTestId("chat-cta").click();
+  // Skip issue ranking if it appears
+  const skipRanking = page.getByTestId("issue-rank-skip-button");
+  if (await skipRanking.isVisible({ timeout: 2000 }).catch(() => false)) {
+    await skipRanking.click();
+  }
+  // Skip concern disambiguation if it appears
+  const skipConcern = page.getByRole("button", { name: /skip/i }).last();
+  if (await skipConcern.isVisible({ timeout: 2000 }).catch(() => false)) {
+    await skipConcern.click();
+  }
+  await expect(page.getByTestId("chat-window")).toBeVisible({ timeout: 5000 });
 }
 
 // ---------------------------------------------------------------------------
@@ -46,7 +65,7 @@ test.describe("Phase 5: Chat CTA", () => {
   test("clicking chat CTA shows the chat window", async ({ page }) => {
     await page.goto("/");
     await submitZip(page, "73301");
-    await page.getByTestId("chat-cta").click();
+    await skipToChat(page);
     const chatWindow = page.getByTestId("chat-window");
     await expect(chatWindow).toBeVisible({ timeout: 3000 });
   });
@@ -60,7 +79,7 @@ test.describe("Phase 5: Chat privacy notice", () => {
   test("privacy notice visible when chat opens", async ({ page }) => {
     await page.goto("/");
     await submitZip(page, "73301");
-    await page.getByTestId("chat-cta").click();
+    await skipToChat(page);
     const notice = page.getByTestId("chat-privacy-notice");
     await expect(notice).toBeVisible({ timeout: 3000 });
     await expect(notice).toContainText(/conversation stays in your browser/i);
@@ -69,7 +88,7 @@ test.describe("Phase 5: Chat privacy notice", () => {
   test("privacy notice can be dismissed", async ({ page }) => {
     await page.goto("/");
     await submitZip(page, "73301");
-    await page.getByTestId("chat-cta").click();
+    await skipToChat(page);
     await page.getByText("Got it").click();
     const notice = page.getByTestId("chat-privacy-notice");
     await expect(notice).not.toBeVisible();
@@ -84,7 +103,7 @@ test.describe("Phase 5: Chat input", () => {
   test("chat input and send button are visible", async ({ page }) => {
     await page.goto("/");
     await submitZip(page, "73301");
-    await page.getByTestId("chat-cta").click();
+    await skipToChat(page);
     await expect(page.getByTestId("chat-input")).toBeVisible();
     await expect(page.getByTestId("chat-send")).toBeVisible();
   });
@@ -92,7 +111,7 @@ test.describe("Phase 5: Chat input", () => {
   test("can type in chat input", async ({ page }) => {
     await page.goto("/");
     await submitZip(page, "73301");
-    await page.getByTestId("chat-cta").click();
+    await skipToChat(page);
     const input = page.getByTestId("chat-input");
     await input.fill("Hello, help me with my ballot");
     await expect(input).toHaveValue("Hello, help me with my ballot");
@@ -131,7 +150,7 @@ test.describe("Phase 5: Chat streaming response", () => {
 
     await page.goto("/");
     await submitZip(page, "73301");
-    await page.getByTestId("chat-cta").click();
+    await skipToChat(page);
     await page.getByTestId("chat-input").fill("Hello!");
     await page.getByTestId("chat-send").click();
 
@@ -177,7 +196,7 @@ test.describe("Phase 5: Ballot generation from chat (Path A)", () => {
 
     await page.goto("/");
     await submitZip(page, "73301");
-    await page.getByTestId("chat-cta").click();
+    await skipToChat(page);
     await page.getByTestId("chat-input").fill("I'm done, generate my ballot.");
     await page.getByTestId("chat-send").click();
 
@@ -214,7 +233,7 @@ test.describe("Phase 5: Budget degradation", () => {
 
     await page.goto("/");
     await submitZip(page, "73301");
-    await page.getByTestId("chat-cta").click();
+    await skipToChat(page);
 
     const notice = page.getByTestId("chat-budget-notice");
     await expect(notice).toBeVisible({ timeout: 3000 });
@@ -244,7 +263,7 @@ test.describe("Phase 5: Budget degradation", () => {
 
     await page.goto("/");
     await submitZip(page, "73301");
-    await page.getByTestId("chat-cta").click();
+    await skipToChat(page);
 
     await expect(page.getByTestId("chat-disabled-message")).toBeVisible({
       timeout: 3000,

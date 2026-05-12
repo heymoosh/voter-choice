@@ -1,7 +1,13 @@
 import { describe, it, expect } from "vitest";
-import { buildContextBlock, buildPrompt } from "../promptBuilder";
+import {
+  buildContextBlock,
+  buildPrompt,
+  buildRankingPreamble,
+  buildConcernsPreamble,
+} from "../promptBuilder";
 import { getStateData } from "../stateData";
 import { findNextElection } from "../stateData";
+import type { RankedIssues, ConfirmedConcerns } from "../canonicalIssues";
 
 const TODAY = new Date(2026, 4, 11); // May 11, 2026
 
@@ -130,5 +136,104 @@ describe("buildPrompt", () => {
     );
     // State name still present
     expect(prompt).toContain("Texas");
+  });
+});
+
+// ─── Phase 6: buildRankingPreamble ──────────────────────────────────────────
+
+describe("buildRankingPreamble", () => {
+  const ranking: RankedIssues = {
+    ordered: ["housing", "healthcare", "education", "economy-jobs"],
+    skipped: false,
+    timestamp: "2026-01-01T00:00:00.000Z",
+  };
+
+  it("includes top 3 priorities", () => {
+    const preamble = buildRankingPreamble(ranking);
+    expect(preamble).toContain("Housing");
+    expect(preamble).toContain("Healthcare");
+    expect(preamble).toContain("Education");
+  });
+
+  it("includes all ranked issues", () => {
+    const preamble = buildRankingPreamble(ranking);
+    expect(preamble).toContain("Economy & Jobs");
+  });
+
+  it("returns empty string when skipped", () => {
+    const skipped: RankedIssues = {
+      ordered: ["housing"],
+      skipped: true,
+      timestamp: "2026-01-01T00:00:00.000Z",
+    };
+    expect(buildRankingPreamble(skipped)).toBe("");
+  });
+
+  it("returns empty string for empty ordered array", () => {
+    const empty: RankedIssues = {
+      ordered: [],
+      skipped: false,
+      timestamp: "2026-01-01T00:00:00.000Z",
+    };
+    expect(buildRankingPreamble(empty)).toBe("");
+  });
+
+  it("contains the VOTER ISSUE PRIORITIES marker", () => {
+    const preamble = buildRankingPreamble(ranking);
+    expect(preamble).toContain("[VOTER ISSUE PRIORITIES");
+    expect(preamble).toContain("[END VOTER ISSUE PRIORITIES]");
+  });
+});
+
+// ─── Phase 6: buildConcernsPreamble ─────────────────────────────────────────
+
+describe("buildConcernsPreamble", () => {
+  const concerns: ConfirmedConcerns = {
+    primaryIssues: ["housing", "economy-jobs"],
+    originalText: "I can't afford rent in my city",
+    rationale: "Maps to housing and economic issues.",
+    skipped: false,
+  };
+
+  it("includes original text", () => {
+    const preamble = buildConcernsPreamble(concerns);
+    expect(preamble).toContain("I can't afford rent in my city");
+  });
+
+  it("includes rationale", () => {
+    const preamble = buildConcernsPreamble(concerns);
+    expect(preamble).toContain("Maps to housing and economic issues.");
+  });
+
+  it("includes confirmed issue labels", () => {
+    const preamble = buildConcernsPreamble(concerns);
+    expect(preamble).toContain("Housing");
+    expect(preamble).toContain("Economy & Jobs");
+  });
+
+  it("returns empty string when skipped", () => {
+    const skipped: ConfirmedConcerns = {
+      primaryIssues: ["housing"],
+      originalText: "rent",
+      rationale: "housing",
+      skipped: true,
+    };
+    expect(buildConcernsPreamble(skipped)).toBe("");
+  });
+
+  it("returns empty string for empty primaryIssues", () => {
+    const empty: ConfirmedConcerns = {
+      primaryIssues: [],
+      originalText: "something",
+      rationale: "nothing matched",
+      skipped: false,
+    };
+    expect(buildConcernsPreamble(empty)).toBe("");
+  });
+
+  it("contains the VOTER SPECIFIC CONCERN marker", () => {
+    const preamble = buildConcernsPreamble(concerns);
+    expect(preamble).toContain("[VOTER SPECIFIC CONCERN");
+    expect(preamble).toContain("[END VOTER SPECIFIC CONCERN]");
   });
 });

@@ -1029,3 +1029,48 @@ export function buildPrompt(
   const contextBlock = buildContextBlock(stateData, zipCode, election, lang);
   return `${mainPrompt}\n\n---\n\n${contextBlock}`;
 }
+
+// ─── Phase 6: Preamble builders ─────────────────────────────────────────────
+
+import type { RankedIssues, ConfirmedConcerns } from "./canonicalIssues";
+import { getIssueLabel, getTopIssues } from "./canonicalIssues";
+
+/**
+ * Build a system-prompt preamble from the voter's ranked issues.
+ * Prepended to the main prompt so the AI knows the voter's top priorities.
+ */
+export function buildRankingPreamble(ranking: RankedIssues): string {
+  if (ranking.skipped || ranking.ordered.length === 0) return "";
+  const top3 = getTopIssues(ranking, 3);
+  const allRanked = ranking.ordered
+    .map((slug, i) => `${i + 1}. ${getIssueLabel(slug)}`)
+    .join("\n");
+  return `[VOTER ISSUE PRIORITIES — set by the voter before this session]
+The voter has ranked their policy priorities. Use this to personalize your research.
+
+Top 3 key priorities:
+${top3.map((label, i) => `${i + 1}. ${label}`).join("\n")}
+
+Full ranking:
+${allRanked}
+
+When discussing any race or proposition, connect it to these priorities when relevant.
+[END VOTER ISSUE PRIORITIES]`;
+}
+
+/**
+ * Build a system-prompt preamble from the voter's confirmed concerns.
+ * Prepended to the main prompt so the AI has the concern context.
+ */
+export function buildConcernsPreamble(concerns: ConfirmedConcerns): string {
+  if (concerns.skipped || concerns.primaryIssues.length === 0) return "";
+  const issueLabels = concerns.primaryIssues.map(getIssueLabel).join(", ");
+  return `[VOTER SPECIFIC CONCERN — entered by the voter before this session]
+The voter described a specific personal concern: "${concerns.originalText}"
+AI mapping: ${concerns.rationale}
+Confirmed issues: ${issueLabels}
+
+When discussing candidates or propositions, connect them to this concern when relevant.
+Do NOT repeat this concern back verbatim — use it as context silently.
+[END VOTER SPECIFIC CONCERN]`;
+}

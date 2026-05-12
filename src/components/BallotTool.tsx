@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import { StateData, Election, LiveElectionData } from "@/lib/types";
 import {
   getStateCodesForZip,
@@ -8,8 +8,13 @@ import {
   findNextElection,
 } from "@/lib/stateData";
 import { fetchElectionData } from "@/lib/electionData";
-import { buildPrompt } from "@/lib/promptBuilder";
+import {
+  buildPrompt,
+  buildRankingPreamble,
+  buildConcernsPreamble,
+} from "@/lib/promptBuilder";
 import { useLanguage } from "@/lib/i18n";
+import { RankedIssues, ConfirmedConcerns } from "@/lib/canonicalIssues";
 import ZipForm from "./ZipForm";
 import StateInfo from "./StateInfo";
 import StateSelector from "./StateSelector";
@@ -17,6 +22,8 @@ import PromptOutput from "./PromptOutput";
 import ChatWindow from "./ChatWindow";
 import BallotDownload from "./BallotDownload";
 import VoterProfileUpload from "./VoterProfileUpload";
+import IssueRanking from "./IssueRanking";
+import ConcernDisambiguation from "./ConcernDisambiguation";
 
 type AppState =
   | { status: "idle" }
@@ -41,6 +48,40 @@ export default function BallotTool() {
   const [showChat, setShowChat] = useState(false);
   const [voterProfile, setVoterProfile] = useState<string | null>(null);
 
+  // Phase 6: Issue ranking + concern disambiguation state
+  type Phase6Step = "ranking" | "concerns" | "done";
+  const [phase6Step, setPhase6Step] = useState<Phase6Step | null>(null);
+  const [rankedIssues, setRankedIssues] = useState<RankedIssues | null>(null);
+  const [confirmedConcerns, setConfirmedConcerns] =
+    useState<ConfirmedConcerns | null>(null);
+  const [issueCounts, setIssueCounts] = useState<Record<string, number> | null>(
+    null,
+  );
+  const [countyFips, setCountyFips] = useState<string | null>(null);
+
+  // Fetch county FIPS from live data when available
+  useEffect(() => {
+    if (appState.status === "result" && appState.liveData?.districts?.county) {
+      // Use Google Civic county info if available; fall back to a known FIPS pattern
+      const fipsRaw = appState.liveData.districts.county;
+      // If it looks like a FIPS code already, use it
+      if (/^\d{5}$/.test(fipsRaw)) {
+        setCountyFips(fipsRaw);
+      }
+    }
+  }, [appState]);
+
+  // Fetch issue counts when we have a county FIPS
+  useEffect(() => {
+    if (!countyFips) return;
+    fetch(`/api/issue-counts?countyFips=${encodeURIComponent(countyFips)}`)
+      .then((r) => r.json())
+      .then((data: { issueCounts?: Record<string, number> }) => {
+        if (data.issueCounts) setIssueCounts(data.issueCounts);
+      })
+      .catch(() => {});
+  }, [countyFips]);
+
   // Build the prompt on-the-fly based on current language so it updates when lang changes
   const promptText = useMemo(() => {
     if (appState.status !== "result") return "";
@@ -51,6 +92,84 @@ export default function BallotTool() {
       lang,
     );
   }, [appState, lang]);
+
+  // Build Phase 6 enriched system prompt
+  const enrichedSystemPrompt = useMemo(() => {
+    let prompt = promptText;
+    if (rankedIssues) {
+      prompt = buildRankingPreamble(rankedIssues) + "\n\n" + prompt;
+    }
+    if (confirmedConcerns && !confirmedConcerns.skipped) {
+      prompt = buildConcernsPreamble(confirmedConcerns) + "\n\n" + prompt;
+    }
+    return prompt;
+  }, [promptText, rankedIssues, confirmedConcerns]);
+
+  // Build Phase 6 enriched copy-paste context
+  const enrichedPromptText = useMemo(() => {
+    let prompt = promptText;
+    if (rankedIssues && !rankedIssues.skipped) {
+      const top3 = rankedIssues.ordered.slice(0, 3);
+      prompt =
+        `[VOTER PRIORITIES]\n${top3.map((s, i) => `${i + 1}. ${s}`).join("\n")}\n[/VOTER PRIORITIES]\n\n` +
+        prompt;
+    }
+    if (confirmedConcerns && !confirmedConcerns.skipped) {
+      prompt =
+        `[VOTER CONFIRMED CONCERNS]\n${JSON.stringify({ primaryIssues: confirmedConcerns.primaryIssues, rationale: confirmedConcerns.rationale }, null, 2)}\n[/VOTER CONFIRMED CONCERNS]\n\n` +
+        prompt;
+    }
+    return prompt;
+  }, [promptText, rankedIssues, confirmedConcerns]);
+
+  const handleRankingConfirm = useCallback(
+    async (ranking: RankedIssues) => {
+      setRankedIssues(ranking);
+      // Increment counters for ranked issues (fire and forget)
+      if (countyFips) {
+        ranking.ordered.forEach((slug) => {
+          fetch("/api/issue-counts", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ countyFips, issueSlug: slug }),
+          }).catch(() => {});
+        });
+      }
+      setPhase6Step("concerns");
+    },
+    [countyFips],
+  );
+
+  const handleRankingSkip = useCallback(() => {
+    setRankedIssues({
+      ordered: [],
+      skipped: true,
+      timestamp: new Date().toISOString(),
+    });
+    setPhase6Step("concerns");
+  }, []);
+
+  const handleConcernsConfirm = useCallback((concerns: ConfirmedConcerns) => {
+    setConfirmedConcerns(concerns);
+    setPhase6Step("done");
+    setShowChat(true);
+  }, []);
+
+  const handleConcernsSkip = useCallback(() => {
+    setConfirmedConcerns({
+      primaryIssues: [],
+      originalText: "",
+      rationale: "",
+      skipped: true,
+    });
+    setPhase6Step("done");
+    setShowChat(true);
+  }, []);
+
+  const handleOpenChat = useCallback(() => {
+    // Start Phase 6 flow before opening chat
+    setPhase6Step("ranking");
+  }, []);
 
   const handleZipSubmit = useCallback(
     async (zipCode: string) => {
@@ -268,13 +387,40 @@ export default function BallotTool() {
             isLiveLoading={appState.isLiveLoading}
           />
 
-          {/* Phase 5: Chat CTA and Chat Window */}
+          {/* Phase 6: Issue Ranking + Concern Disambiguation flow */}
+          {phase6Step === "ranking" && (
+            <section
+              aria-label="Issue priority ranking"
+              className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm"
+            >
+              <IssueRanking
+                onConfirm={handleRankingConfirm}
+                onSkip={handleRankingSkip}
+                countyFips={countyFips ?? undefined}
+                issueCounts={issueCounts ?? undefined}
+              />
+            </section>
+          )}
+
+          {phase6Step === "concerns" && (
+            <section
+              aria-label="Concern disambiguation"
+              className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm"
+            >
+              <ConcernDisambiguation
+                onConfirm={handleConcernsConfirm}
+                onSkip={handleConcernsSkip}
+              />
+            </section>
+          )}
+
+          {/* Phase 5 + 6: Chat CTA and Chat Window */}
           <section aria-label="AI ballot research chat">
-            {!showChat ? (
+            {phase6Step === null && !showChat ? (
               <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
                 <button
                   data-testid="chat-cta"
-                  onClick={() => setShowChat(true)}
+                  onClick={handleOpenChat}
                   className="flex items-center gap-2 px-5 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 shadow-sm"
                 >
                   <svg
@@ -297,10 +443,12 @@ export default function BallotTool() {
                   — or scroll down to copy the prompt for any AI chatbot
                 </span>
               </div>
-            ) : (
+            ) : showChat ? (
               <ChatWindow
-                systemPrompt={promptText}
+                systemPrompt={enrichedSystemPrompt}
                 voterProfile={voterProfile}
+                rankedIssues={rankedIssues}
+                confirmedConcerns={confirmedConcerns}
                 county={appState.stateData?.stateName}
                 electionName={
                   appState.liveData?.electionName ?? appState.election?.name
@@ -311,12 +459,15 @@ export default function BallotTool() {
                 phonePolicyNote={
                   appState.stateData?.votingRules?.phonesAtPollsDetail
                 }
-                onClose={() => setShowChat(false)}
+                onClose={() => {
+                  setShowChat(false);
+                  setPhase6Step(null);
+                }}
               />
-            )}
+            ) : null}
           </section>
 
-          <PromptOutput promptText={promptText} />
+          <PromptOutput promptText={enrichedPromptText} />
 
           {/* Phase 5: Path B ballot builder */}
           <section
