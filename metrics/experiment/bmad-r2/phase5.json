@@ -1,0 +1,695 @@
+{
+  "metadata": {
+    "timestamp": "2026-05-12T10:29:42.822Z",
+    "branch": "experiment/bmad-r2",
+    "commit": "d018f2c",
+    "phase": 5,
+    "nodeVersion": "v22.14.0"
+  },
+  "eslint": {
+    "errors": 0,
+    "warnings": 17,
+    "complexityViolations": 17
+  },
+  "complexity": {
+    "count": 107,
+    "average": 6.07,
+    "max": 35,
+    "p50": 3,
+    "p75": 6,
+    "p95": 21,
+    "distribution": {
+      "simple_1_5": 77,
+      "moderate_6_10": 13,
+      "complex_11_15": 3,
+      "highComplex_16_20": 8,
+      "critical_21plus": 6
+    },
+    "perFunction": [
+      {
+        "file": "src/components/StateInfo.tsx",
+        "name": "StateInfo",
+        "complexity": 35,
+        "line": 21
+      },
+      {
+        "file": "src/app/api/civic/route.ts",
+        "name": "<anonymous>",
+        "complexity": 29,
+        "line": 135
+      },
+      {
+        "file": "src/components/ChatWindow.tsx",
+        "name": "<anonymous>",
+        "complexity": 29,
+        "line": 84
+      },
+      {
+        "file": "src/lib/deadlineUtils.ts",
+        "name": "getDeadlineLabel",
+        "complexity": 26,
+        "line": 42
+      },
+      {
+        "file": "src/components/BallotTool.tsx",
+        "name": "BallotTool",
+        "complexity": 25,
+        "line": 35
+      },
+      {
+        "file": "src/components/ChatWindow.tsx",
+        "name": "ChatWindow",
+        "complexity": 21,
+        "line": 32
+      },
+      {
+        "file": "src/components/BallotDownload.tsx",
+        "name": "BallotDownload",
+        "complexity": 19,
+        "line": 96
+      },
+      {
+        "file": "src/app/api/chat/route.ts",
+        "name": "<anonymous>",
+        "complexity": 18,
+        "line": 43
+      },
+      {
+        "file": "src/lib/promptBuilder.ts",
+        "name": "buildContextBlockEn",
+        "complexity": 17,
+        "line": 716
+      },
+      {
+        "file": "src/lib/promptBuilder.ts",
+        "name": "buildContextBlockEs",
+        "complexity": 17,
+        "line": 775
+      },
+      {
+        "file": "src/lib/promptBuilder.ts",
+        "name": "buildContextBlockVi",
+        "complexity": 17,
+        "line": 835
+      },
+      {
+        "file": "src/lib/promptBuilder.ts",
+        "name": "buildContextBlockZh",
+        "complexity": 17,
+        "line": 894
+      },
+      {
+        "file": "src/lib/promptBuilder.ts",
+        "name": "buildContextBlockAr",
+        "complexity": 17,
+        "line": 953
+      },
+      {
+        "file": "src/app/api/candidate-detail/route.ts",
+        "name": "<anonymous>",
+        "complexity": 16,
+        "line": 9
+      },
+      {
+        "file": "src/app/api/chat/route.ts",
+        "name": "<anonymous>",
+        "complexity": 15,
+        "line": 138
+      },
+      {
+        "file": "src/lib/ballotParser.ts",
+        "name": "parseBallotOutput",
+        "complexity": 15,
+        "line": 23
+      },
+      {
+        "file": "src/app/api/civic/route.ts",
+        "name": "parseDistricts",
+        "complexity": 11,
+        "line": 103
+      },
+      {
+        "file": "src/components/BallotContests.tsx",
+        "name": "BallotContests",
+        "complexity": 10,
+        "line": 140
+      },
+      {
+        "file": "src/components/BallotContests.tsx",
+        "name": "CandidateCard",
+        "complexity": 8,
+        "line": 19
+      },
+      {
+        "file": "src/components/BallotTool.tsx",
+        "name": "<anonymous>",
+        "complexity": 8,
+        "line": 56
+      },
+      {
+        "file": "src/components/PollingLocation.tsx",
+        "name": "PollingLocation",
+        "complexity": 8,
+        "line": 11
+      },
+      {
+        "file": "src/components/VoterProfileUpload.tsx",
+        "name": "VoterProfileUpload",
+        "complexity": 8,
+        "line": 14
+      },
+      {
+        "file": "src/components/ZipForm.tsx",
+        "name": "ZipForm",
+        "complexity": 8,
+        "line": 12
+      },
+      {
+        "file": "src/components/ApiErrorBanner.tsx",
+        "name": "ApiErrorBanner",
+        "complexity": 6,
+        "line": 11
+      },
+      {
+        "file": "src/components/BallotDownload.tsx",
+        "name": "generateBallotHtml",
+        "complexity": 6,
+        "line": 31
+      },
+      {
+        "file": "src/components/ChatWindow.tsx",
+        "name": "<arrow>",
+        "complexity": 6,
+        "line": 378
+      },
+      {
+        "file": "src/lib/__tests__/alignmentParser.test.ts",
+        "name": "<arrow>",
+        "complexity": 6,
+        "line": 53
+      },
+      {
+        "file": "src/lib/__tests__/ballotParser.test.ts",
+        "name": "<arrow>",
+        "complexity": 6,
+        "line": 45
+      },
+      {
+        "file": "src/lib/deadlineUtils.ts",
+        "name": "formatDate",
+        "complexity": 6,
+        "line": 123
+      },
+      {
+        "file": "src/lib/promptBuilder.ts",
+        "name": "buildContextBlock",
+        "complexity": 6,
+        "line": 650
+      },
+      {
+        "file": "src/app/api/civic/route.ts",
+        "name": "parsePollingLocation",
+        "complexity": 5,
+        "line": 50
+      },
+      {
+        "file": "src/components/AlignmentBanner.tsx",
+        "name": "AlignmentBanner",
+        "complexity": 5,
+        "line": 17
+      },
+      {
+        "file": "src/components/AlignmentBanner.tsx",
+        "name": "<arrow>",
+        "complexity": 5,
+        "line": 83
+      },
+      {
+        "file": "src/components/BallotContests.tsx",
+        "name": "<anonymous>",
+        "complexity": 5,
+        "line": 26
+      },
+      {
+        "file": "src/components/PromptOutput.tsx",
+        "name": "<anonymous>",
+        "complexity": 5,
+        "line": 16
+      },
+      {
+        "file": "src/components/VoterProfileUpload.tsx",
+        "name": "handleFileChange",
+        "complexity": 5,
+        "line": 30
+      },
+      {
+        "file": "src/lib/alignmentParser.ts",
+        "name": "parseAlignmentScores",
+        "complexity": 5,
+        "line": 29
+      },
+      {
+        "file": "src/lib/deadlineUtils.ts",
+        "name": "getDeadlineStatus",
+        "complexity": 5,
+        "line": 26
+      },
+      {
+        "file": "src/app/api/civic/route.ts",
+        "name": "parseContest",
+        "complexity": 4,
+        "line": 81
+      },
+      {
+        "file": "src/components/BallotDownload.tsx",
+        "name": "handleDownloadBallot",
+        "complexity": 4,
+        "line": 154
+      },
+      {
+        "file": "src/components/BallotTool.tsx",
+        "name": "<anonymous>",
+        "complexity": 4,
+        "line": 132
+      },
+      {
+        "file": "src/components/DataAttribution.tsx",
+        "name": "DataAttribution",
+        "complexity": 4,
+        "line": 10
+      },
+      {
+        "file": "src/components/DeadlineStatus.tsx",
+        "name": "DeadlineStatus",
+        "complexity": 4,
+        "line": 18
+      },
+      {
+        "file": "src/components/PromptOutput.tsx",
+        "name": "PromptOutput",
+        "complexity": 4,
+        "line": 10
+      },
+      {
+        "file": "src/components/StateSelector.tsx",
+        "name": "StateSelector",
+        "complexity": 4,
+        "line": 65
+      },
+      {
+        "file": "src/lib/__tests__/ballotParser.test.ts",
+        "name": "<arrow>",
+        "complexity": 4,
+        "line": 55
+      },
+      {
+        "file": "src/lib/__tests__/ballotParser.test.ts",
+        "name": "<arrow>",
+        "complexity": 4,
+        "line": 62
+      },
+      {
+        "file": "src/lib/alignmentParser.ts",
+        "name": "getAlignmentColorClass",
+        "complexity": 4,
+        "line": 68
+      },
+      {
+        "file": "src/lib/alignmentParser.ts",
+        "name": "getAlignmentBarColor",
+        "complexity": 4,
+        "line": 81
+      },
+      {
+        "file": "src/app/api/chat/route.ts",
+        "name": "getClientIp",
+        "complexity": 3,
+        "line": 33
+      }
+    ]
+  },
+  "vitest": {
+    "tests": {
+      "total": 96,
+      "passed": 96,
+      "failed": 0,
+      "skipped": 0,
+      "passRate": 100
+    },
+    "coverage": {
+      "lines": 30.85,
+      "branches": 64.59,
+      "functions": 89.58,
+      "statements": 30.85
+    }
+  },
+  "duplication": {
+    "duplicatedLines": 74,
+    "totalLines": 5886,
+    "percentage": 1.26,
+    "clones": 4
+  },
+  "bundleSize": {
+    "buildSuccess": true,
+    "pages": [
+      {
+        "route": "/",
+        "size": 40.5,
+        "unit": "kB"
+      },
+      {
+        "route": "/_not-found",
+        "size": 0,
+        "unit": "B"
+      },
+      {
+        "route": "/api/candidate-detail",
+        "size": 0,
+        "unit": "B"
+      },
+      {
+        "route": "/api/chat",
+        "size": 0,
+        "unit": "B"
+      },
+      {
+        "route": "/api/civic",
+        "size": 0,
+        "unit": "B"
+      }
+    ],
+    "firstLoadJsShared": {
+      "size": 145,
+      "unit": "kB"
+    }
+  },
+  "lighthouse": {
+    "performance": 100,
+    "accessibility": 95,
+    "bestPractices": 100,
+    "seo": 100
+  },
+  "playwright": {
+    "total": 144,
+    "passed": 144,
+    "failed": 0,
+    "timedOut": 0,
+    "skipped": 0,
+    "passRate": 100
+  },
+  "linesOfCode": {
+    "application": {
+      "code": 7261,
+      "files": 93,
+      "byExtension": {
+        ".ts": {
+          "files": 18,
+          "code": 3294
+        },
+        ".css": {
+          "files": 1,
+          "code": 10
+        },
+        ".tsx": {
+          "files": 19,
+          "code": 2881
+        },
+        ".json": {
+          "files": 55,
+          "code": 1076
+        }
+      }
+    },
+    "plugin": {
+      "code": 0,
+      "files": 0,
+      "byExtension": {}
+    },
+    "infrastructure": {
+      "code": 2096,
+      "files": 14
+    },
+    "total": {
+      "code": 9357,
+      "files": 107
+    }
+  },
+  "workflowTests": {
+    "count": 6,
+    "files": [
+      "src/lib/__tests__/ballotParser.test.ts",
+      "src/lib/__tests__/alignmentParser.test.ts",
+      "src/lib/__tests__/deadlineUtils.test.ts",
+      "src/lib/__tests__/translations.test.ts",
+      "src/lib/__tests__/promptBuilder.test.ts",
+      "src/lib/__tests__/stateData.test.ts"
+    ]
+  },
+  "workflowTiming": {
+    "steps": [
+      {
+        "step": "bmad:product-brief",
+        "started": "2026-05-11T12:25:18-05:00",
+        "completed": "2026-05-11T12:26:09-05:00",
+        "durationMs": 51000
+      },
+      {
+        "step": "bmad:prd",
+        "started": "2026-05-11T12:26:14-05:00",
+        "completed": "2026-05-11T12:26:56-05:00",
+        "durationMs": 42000
+      },
+      {
+        "step": "bmad:architecture",
+        "started": "2026-05-11T12:26:56-05:00",
+        "completed": "2026-05-11T12:27:23-05:00",
+        "durationMs": 27000
+      },
+      {
+        "step": "bmad:epics-and-stories",
+        "started": "2026-05-11T12:27:23-05:00",
+        "completed": "2026-05-11T12:27:51-05:00",
+        "durationMs": 28000
+      },
+      {
+        "step": "bmad:implementation-readiness",
+        "started": "2026-05-11T12:27:51-05:00",
+        "completed": "2026-05-11T12:27:56-05:00",
+        "durationMs": 5000
+      },
+      {
+        "step": "bmad:sprint-planning",
+        "started": "2026-05-11T12:27:56-05:00",
+        "completed": "2026-05-11T12:27:56-05:00",
+        "durationMs": 0
+      },
+      {
+        "step": "bmad:story-implementation",
+        "started": "2026-05-11T12:28:01-05:00",
+        "completed": "2026-05-11T12:36:57-05:00",
+        "durationMs": 536000
+      },
+      {
+        "step": "bmad:code-review",
+        "started": "2026-05-11T12:36:57-05:00",
+        "completed": "2026-05-11T12:36:57-05:00",
+        "durationMs": 0
+      },
+      {
+        "step": "bmad:product-brief-phase2",
+        "started": "2026-05-11T22:40:18-05:00",
+        "completed": "2026-05-11T22:40:41-05:00",
+        "durationMs": 23000
+      },
+      {
+        "step": "bmad:prd-phase2",
+        "started": "2026-05-11T22:40:41-05:00",
+        "completed": "2026-05-11T22:41:08-05:00",
+        "durationMs": 27000
+      },
+      {
+        "step": "bmad:architecture-phase2",
+        "started": "2026-05-11T22:41:08-05:00",
+        "completed": "2026-05-11T22:41:35-05:00",
+        "durationMs": 27000
+      },
+      {
+        "step": "bmad:epics-and-stories-phase2",
+        "started": "2026-05-11T22:41:35-05:00",
+        "completed": "2026-05-11T22:42:05-05:00",
+        "durationMs": 30000
+      },
+      {
+        "step": "bmad:implementation-readiness-phase2",
+        "started": "2026-05-11T22:42:05-05:00",
+        "completed": "2026-05-11T22:42:05-05:00",
+        "durationMs": 0
+      },
+      {
+        "step": "bmad:sprint-planning-phase2",
+        "started": "2026-05-11T22:42:05-05:00",
+        "completed": "2026-05-11T22:42:05-05:00",
+        "durationMs": 0
+      },
+      {
+        "step": "bmad:story-implementation-phase2",
+        "started": "2026-05-11T22:42:05-05:00",
+        "completed": "2026-05-11T22:50:30-05:00",
+        "durationMs": 505000
+      },
+      {
+        "step": "bmad:code-review-phase2",
+        "started": "2026-05-11T22:50:30-05:00",
+        "completed": "2026-05-11T22:50:30-05:00",
+        "durationMs": 0
+      },
+      {
+        "step": "bmad:product-brief",
+        "started": "2026-05-12T00:49:26-05:00",
+        "completed": "2026-05-11T12:26:09-05:00",
+        "durationMs": -44597000
+      },
+      {
+        "step": "bmad:prd",
+        "started": "2026-05-12T00:50:37-05:00",
+        "completed": "2026-05-11T12:26:56-05:00",
+        "durationMs": -44621000
+      },
+      {
+        "step": "bmad:architecture",
+        "started": "2026-05-12T00:51:03-05:00",
+        "completed": "2026-05-11T12:27:23-05:00",
+        "durationMs": -44620000
+      },
+      {
+        "step": "bmad:epics-and-stories",
+        "started": "2026-05-12T00:51:36-05:00",
+        "completed": "2026-05-11T12:27:51-05:00",
+        "durationMs": -44625000
+      },
+      {
+        "step": "bmad:implementation-readiness",
+        "started": "2026-05-12T00:51:56-05:00",
+        "completed": "2026-05-11T12:27:56-05:00",
+        "durationMs": -44640000
+      },
+      {
+        "step": "bmad:sprint-planning",
+        "started": "2026-05-12T00:52:00-05:00",
+        "completed": "2026-05-11T12:27:56-05:00",
+        "durationMs": -44644000
+      },
+      {
+        "step": "bmad:story-implementation",
+        "started": "2026-05-12T00:52:05-05:00",
+        "completed": "2026-05-11T12:36:57-05:00",
+        "durationMs": -44108000
+      },
+      {
+        "step": "bmad:code-review",
+        "started": "2026-05-12T01:03:09-05:00",
+        "completed": "2026-05-11T12:36:57-05:00",
+        "durationMs": -44772000
+      },
+      {
+        "step": "bmad:product-brief",
+        "started": "2026-05-12T02:56:32-05:00",
+        "completed": "2026-05-11T12:26:09-05:00",
+        "durationMs": -52223000
+      },
+      {
+        "step": "bmad:prd",
+        "started": "2026-05-12T02:57:02-05:00",
+        "completed": "2026-05-11T12:26:56-05:00",
+        "durationMs": -52206000
+      },
+      {
+        "step": "bmad:architecture",
+        "started": "2026-05-12T02:57:34-05:00",
+        "completed": "2026-05-11T12:27:23-05:00",
+        "durationMs": -52211000
+      },
+      {
+        "step": "bmad:epics-and-stories",
+        "started": "2026-05-12T02:58:10-05:00",
+        "completed": "2026-05-11T12:27:51-05:00",
+        "durationMs": -52219000
+      },
+      {
+        "step": "bmad:implementation-readiness",
+        "started": "2026-05-12T02:58:53-05:00",
+        "completed": "2026-05-11T12:27:56-05:00",
+        "durationMs": -52257000
+      },
+      {
+        "step": "bmad:sprint-planning",
+        "started": "2026-05-12T02:59:05-05:00",
+        "completed": "2026-05-11T12:27:56-05:00",
+        "durationMs": -52269000
+      },
+      {
+        "step": "bmad:story-implementation",
+        "started": "2026-05-12T02:59:16-05:00",
+        "completed": "2026-05-11T12:36:57-05:00",
+        "durationMs": -51739000
+      },
+      {
+        "step": "bmad:code-review",
+        "started": "2026-05-12T03:11:15-05:00",
+        "completed": "2026-05-11T12:36:57-05:00",
+        "durationMs": -52458000
+      },
+      {
+        "step": "bmad:product-brief",
+        "started": "2026-05-12T05:15:49-05:00",
+        "completed": "2026-05-11T12:26:09-05:00",
+        "durationMs": -60580000
+      },
+      {
+        "step": "bmad:prd",
+        "started": "2026-05-12T05:16:07-05:00",
+        "completed": "2026-05-11T12:26:56-05:00",
+        "durationMs": -60551000
+      },
+      {
+        "step": "bmad:architecture",
+        "started": "2026-05-12T05:16:07-05:00",
+        "completed": "2026-05-11T12:27:23-05:00",
+        "durationMs": -60524000
+      },
+      {
+        "step": "bmad:epics-and-stories",
+        "started": "2026-05-12T05:16:07-05:00",
+        "completed": "2026-05-11T12:27:51-05:00",
+        "durationMs": -60496000
+      },
+      {
+        "step": "bmad:implementation-readiness",
+        "started": "2026-05-12T05:16:07-05:00",
+        "completed": "2026-05-11T12:27:56-05:00",
+        "durationMs": -60491000
+      },
+      {
+        "step": "bmad:sprint-planning",
+        "started": "2026-05-12T05:16:07-05:00",
+        "completed": "2026-05-11T12:27:56-05:00",
+        "durationMs": -60491000
+      },
+      {
+        "step": "bmad:story-implementation",
+        "started": "2026-05-12T05:16:07-05:00",
+        "completed": "2026-05-11T12:36:57-05:00",
+        "durationMs": -59950000
+      },
+      {
+        "step": "bmad:code-review",
+        "started": "2026-05-12T05:29:18-05:00",
+        "completed": "2026-05-11T12:36:57-05:00",
+        "durationMs": -60741000
+      }
+    ],
+    "totalSteps": 40,
+    "completedSteps": 40
+  },
+  "diffHygiene": null
+}
