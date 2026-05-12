@@ -10,8 +10,10 @@
 Run these before dispatching ANY Phase C action:
 
 ```bash
-# 1. API budget check — must pass before each action
-bash scripts/api-budget-check.sh
+# 1. phase-B-complete tag must exist — Phase B fully green.
+#    (Phase A = infrastructure; Phase B = live smoke that proves the infrastructure.
+#     They are separate gates. Do not confuse them or reuse tags.)
+git tag -l phase-B-complete | grep -q . || { echo "MISSING: phase-B-complete — run B4-B6 first"; exit 1; }
 
 # 2. Phase B gate — all 6 smoke phases must be tagged
 for p in 1 2 3 4 5 6; do
@@ -20,34 +22,50 @@ done
 
 # 3. AC-N pickup — each phase must have tagged tests
 for p in 1 2 3 4 5 6; do
-  echo "Phase $p AC-N hits:"
-  git show "vanilla-r1-v2c-phase${p}-complete":e2e/ 2>/dev/null \
-    | grep -cE "AC-${p}\." || echo "0 — FIX BEFORE PHASE C"
+  count=$(git show "vanilla-r1-v2c-phase${p}-complete":e2e/ 2>/dev/null \
+    | grep -cE "AC-${p}\." || echo 0)
+  echo "Phase $p AC-N refs: $count"
+  [ "$count" -gt 0 ] || echo "  WARNING: 0 AC-${p}.N refs — fix before Phase C"
 done
 
 # 4. Infrastructure smoke — container still works
 bash scripts/validate-container-git.sh
 bash scripts/validate-container-claude.sh /path/to/a/workflow-worktree
 
-# 5. phase-A-complete tag must be CURRENT (not the old premature tag)
-git tag -l phase-A-complete
-git log phase-A-complete --oneline -1
-# Should point to a commit AFTER all Phase A infrastructure work
+# 5. api-budget-check.sh first-run verification (BEFORE action 1 of Wave 1).
+#    This is the first time the script runs against a live API after each
+#    quota reset. Confirm it reports sensible numbers before trusting it.
+bash scripts/api-budget-check.sh
+echo "Verify the output above looks reasonable before proceeding."
+echo "If it crashes or reports wildly off estimates, fix before dispatching."
 ```
 
 ---
 
 ## Wave structure (quota-aware)
 
-Phase C has 45 actions. Run them in three waves to stay within quota limits:
+Phase C has 45 actions × ~3% per action = **~135% of one quota window**. Phase C requires **at minimum 2 quota windows** (likely 2-3 given retry slack). Do not plan to finish Phase C in one window.
 
-| Wave | Actions | Type | Estimated quota |
-|------|---------|------|-----------------|
-| Wave 1 | 15 Phase 1 replicates (3 × 5 frameworks) | Fresh builds | ~33% |
-| Wave 2 | 5 representative selections | Script invocations, fast | ~5% |
-| Wave 3 | 25 forward phases (5 frameworks × Phases 2-6) | Incremental builds | ~60% |
+Wave boundaries are set to use ≤25% of a quota window, leaving 8% slack per wave for retry-after-failure cases. A wave that fills to exactly 33% has zero slack — if any action needs one retry, you overflow.
 
-**Rule:** If `api-budget-check.sh` shows < 20% remaining, pause and wait for reset.
+| Wave | Actions | Count | Est. quota | Slack |
+|------|---------|-------|------------|-------|
+| 1a | Phase 1 replicates: vanilla, bmad, spec-kit | 9 | ~27% | ~6% |
+| 1b | Phase 1 replicates: superpowers, compound-eng | 6 | ~18% | ~7% |
+| 2 | Representative selections (5 script invocations) | 5 | ~5% | large |
+| 3a | Forward phases 2-3 for all 5 frameworks | 10 | ~30% | ~3% |
+| 3b | Forward phases 4-5 for all 5 frameworks | 10 | ~30% | ~3% |
+| 3c | Forward phase 6 for all 5 frameworks | 5 | ~15% | ~10% |
+
+Total: 6 sub-waves across 2-3 quota windows.
+
+**Wave 3a-3c are the riskiest** (Phase 5 = LLM-at-runtime, Phase 6 = Redis). Run `api-budget-check.sh` before EACH sub-wave start, not just once per window.
+
+**Rule:** If `api-budget-check.sh` shows < 20% remaining, pause and wait for reset. Never start a sub-wave you can't complete — a partial sub-wave leaves a framework with orphaned phases.
+
+### Run order within each wave
+
+Randomize within the wave to distribute learning effects. Record the selected order in `docs/RUN_LOG.md` BEFORE starting (write the plan, then execute; don't reconstruct after).
 
 ### Run order (randomized from EXPERIMENT_DESIGN.md)
 
@@ -161,3 +179,14 @@ Then:
 1. Run `node scoring/aggregate-experiment.mjs`
 2. Write `docs/ANALYSIS.md` v2 section (Run 5 vs Run 6 comparison)
 3. Tag `phase-C-complete`
+
+### Tag semantics (do not confuse)
+
+| Tag | Meaning |
+|-----|---------|
+| `phase-A-complete` | All infrastructure tasks (A1-A9) pass their verification scripts. Smoke run not required. |
+| `phase-B-complete` | Live vanilla smoke (Phases 1-6) passes all gates including B8 re-scoped. Proves infrastructure works end-to-end. |
+| `phase-B-partial-1-through-3` | Phases 1-3 verified; 4-6 blocked by API budget. |
+| `phase-C-complete` | All 45 actions run, aggregate computes, ANALYSIS.md written. |
+
+These are distinct gates. `phase-B-complete` does NOT replace or update `phase-A-complete`.

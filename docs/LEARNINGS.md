@@ -691,6 +691,14 @@ Build time (15-25 min per phase) is predictable and manageable. API quota is a h
 3. **Pre-flight the quota** before each container dispatch: refuse to start if estimated usage exceeds remaining.
 4. **Hard stop before limit.** If a container exits with a 400 quota error, log and halt immediately rather than retrying (retries consume more quota).
 
+### Correct budget math for Phase C
+
+- 3% per action × 45 actions = **135% of one quota window** — Phase C spans at least 2 windows
+- Never plan a wave that fills to exactly the wave budget — leave ≥7% slack for retry-after-failure
+- Wave sizing: ≤25% of quota per sub-wave (9-10 actions), allowing one retry per wave without overflow
+- Check `api-budget-check.sh` before each sub-wave start, not just once per quota window
+- Run `api-budget-check.sh` standalone before action 1 of Wave 1 (first live run after a quota reset) — confirm it reports sensibly before trusting it to gate production dispatches
+
 ### Decision
 
-Add `scripts/api-budget-check.sh` that gates action dispatch. Wire it into the Phase C launch sequence so no action starts without a confirmed-adequate budget. Budget estimate per action (conservative): 3% of monthly quota. Plan waves of 20-25 actions.
+Add `scripts/api-budget-check.sh` that gates action dispatch. Wire it into Phase C launch. Budget estimate: 3% per action, conservative. Plan 6 sub-waves across 2-3 quota windows (see `docs/PHASE_C_RUNBOOK.md`). Do NOT conflate `phase-A-complete` (infrastructure gate) with `phase-B-complete` (live smoke gate) — they are separate.
