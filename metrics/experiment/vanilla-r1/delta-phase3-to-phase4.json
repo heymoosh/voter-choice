@@ -1,0 +1,427 @@
+{
+  "metadata": {
+    "branch": "experiment/vanilla-r1",
+    "fromPhase": 3,
+    "toPhase": 4,
+    "fromCommit": "742f6a7",
+    "toCommit": "8a9bdd9",
+    "priorSource": "disk:/Users/Muxin/Documents/GitHub/voter-choice/metrics/experiment/vanilla-r1/phase3.json",
+    "computedAt": "2026-05-12T07:48:27.787Z"
+  },
+  "deltas": {
+    "metadata.phase": {
+      "prev": 3,
+      "curr": 4,
+      "delta": 1,
+      "pctChange": 33.33
+    },
+    "eslint.errors": {
+      "prev": 0,
+      "curr": 0,
+      "delta": 0,
+      "pctChange": null
+    },
+    "eslint.warnings": {
+      "prev": 9,
+      "curr": 9,
+      "delta": 0,
+      "pctChange": 0
+    },
+    "eslint.complexityViolations": {
+      "prev": 9,
+      "curr": 9,
+      "delta": 0,
+      "pctChange": 0
+    },
+    "complexity.count": {
+      "prev": 63,
+      "curr": 69,
+      "delta": 6,
+      "pctChange": 9.52
+    },
+    "complexity.average": {
+      "prev": 5.1,
+      "curr": 4.93,
+      "delta": -0.17,
+      "pctChange": -3.33
+    },
+    "complexity.max": {
+      "prev": 46,
+      "curr": 45,
+      "delta": -1,
+      "pctChange": -2.17
+    },
+    "complexity.p50": {
+      "prev": 3,
+      "curr": 3,
+      "delta": 0,
+      "pctChange": 0
+    },
+    "complexity.p75": {
+      "prev": 4,
+      "curr": 4,
+      "delta": 0,
+      "pctChange": 0
+    },
+    "complexity.p95": {
+      "prev": 14,
+      "curr": 14,
+      "delta": 0,
+      "pctChange": 0
+    },
+    "complexity.distribution.simple_1_5": {
+      "prev": 50,
+      "curr": 55,
+      "delta": 5,
+      "pctChange": 10
+    },
+    "complexity.distribution.moderate_6_10": {
+      "prev": 4,
+      "curr": 5,
+      "delta": 1,
+      "pctChange": 25
+    },
+    "complexity.distribution.complex_11_15": {
+      "prev": 6,
+      "curr": 6,
+      "delta": 0,
+      "pctChange": 0
+    },
+    "complexity.distribution.highComplex_16_20": {
+      "prev": 2,
+      "curr": 2,
+      "delta": 0,
+      "pctChange": 0
+    },
+    "complexity.distribution.critical_21plus": {
+      "prev": 1,
+      "curr": 1,
+      "delta": 0,
+      "pctChange": 0
+    },
+    "vitest.tests.total": {
+      "prev": 62,
+      "curr": 94,
+      "delta": 32,
+      "pctChange": 51.61
+    },
+    "vitest.tests.passed": {
+      "prev": 62,
+      "curr": 94,
+      "delta": 32,
+      "pctChange": 51.61
+    },
+    "vitest.tests.failed": {
+      "prev": 0,
+      "curr": 0,
+      "delta": 0,
+      "pctChange": null
+    },
+    "vitest.tests.skipped": {
+      "prev": 0,
+      "curr": 0,
+      "delta": 0,
+      "pctChange": null
+    },
+    "vitest.tests.passRate": {
+      "prev": 100,
+      "curr": 100,
+      "delta": 0,
+      "pctChange": 0
+    },
+    "vitest.coverage.lines": {
+      "prev": 21.71,
+      "curr": 34.18,
+      "delta": 12.47,
+      "pctChange": 57.44
+    },
+    "vitest.coverage.branches": {
+      "prev": 74.62,
+      "curr": 73.68,
+      "delta": -0.94,
+      "pctChange": -1.26
+    },
+    "vitest.coverage.functions": {
+      "prev": 96,
+      "curr": 96.15,
+      "delta": 0.15,
+      "pctChange": 0.16
+    },
+    "vitest.coverage.statements": {
+      "prev": 21.71,
+      "curr": 34.18,
+      "delta": 12.47,
+      "pctChange": 57.44
+    },
+    "duplication.duplicatedLines": {
+      "prev": 36,
+      "curr": 36,
+      "delta": 0,
+      "pctChange": 0
+    },
+    "duplication.totalLines": {
+      "prev": 4368,
+      "curr": 4070,
+      "delta": -298,
+      "pctChange": -6.82
+    },
+    "duplication.percentage": {
+      "prev": 0.82,
+      "curr": 0.88,
+      "delta": 0.06,
+      "pctChange": 7.32
+    },
+    "duplication.clones": {
+      "prev": 3,
+      "curr": 3,
+      "delta": 0,
+      "pctChange": 0
+    },
+    "bundleSize.firstLoadJsShared.size": {
+      "prev": 102,
+      "curr": 102,
+      "delta": 0,
+      "pctChange": 0
+    },
+    "lighthouse.performance": {
+      "prev": 100,
+      "curr": 100,
+      "delta": 0,
+      "pctChange": 0
+    },
+    "lighthouse.accessibility": {
+      "prev": 95,
+      "curr": 95,
+      "delta": 0,
+      "pctChange": 0
+    },
+    "lighthouse.bestPractices": {
+      "prev": 100,
+      "curr": 100,
+      "delta": 0,
+      "pctChange": 0
+    },
+    "lighthouse.seo": {
+      "prev": 100,
+      "curr": 100,
+      "delta": 0,
+      "pctChange": 0
+    },
+    "playwright.total": {
+      "prev": 66,
+      "curr": 106,
+      "delta": 40,
+      "pctChange": 60.61
+    },
+    "playwright.passed": {
+      "prev": 66,
+      "curr": 106,
+      "delta": 40,
+      "pctChange": 60.61
+    },
+    "playwright.failed": {
+      "prev": 0,
+      "curr": 0,
+      "delta": 0,
+      "pctChange": null
+    },
+    "playwright.timedOut": {
+      "prev": 0,
+      "curr": 0,
+      "delta": 0,
+      "pctChange": null
+    },
+    "playwright.skipped": {
+      "prev": 0,
+      "curr": 0,
+      "delta": 0,
+      "pctChange": null
+    },
+    "playwright.passRate": {
+      "prev": 100,
+      "curr": 100,
+      "delta": 0,
+      "pctChange": 0
+    },
+    "linesOfCode.application.code": {
+      "prev": 3349,
+      "curr": 4160,
+      "delta": 811,
+      "pctChange": 24.22
+    },
+    "linesOfCode.application.files": {
+      "prev": 26,
+      "curr": 26,
+      "delta": 0,
+      "pctChange": 0
+    },
+    "linesOfCode.application.byExtension..ts.files": {
+      "prev": 11,
+      "curr": 11,
+      "delta": 0,
+      "pctChange": 0
+    },
+    "linesOfCode.application.byExtension..ts.code": {
+      "prev": 1760,
+      "curr": 2475,
+      "delta": 715,
+      "pctChange": 40.63
+    },
+    "linesOfCode.application.byExtension..css.files": {
+      "prev": 1,
+      "curr": 1,
+      "delta": 0,
+      "pctChange": 0
+    },
+    "linesOfCode.application.byExtension..css.code": {
+      "prev": 21,
+      "curr": 21,
+      "delta": 0,
+      "pctChange": 0
+    },
+    "linesOfCode.application.byExtension..tsx.files": {
+      "prev": 4,
+      "curr": 4,
+      "delta": 0,
+      "pctChange": 0
+    },
+    "linesOfCode.application.byExtension..tsx.code": {
+      "prev": 1249,
+      "curr": 1345,
+      "delta": 96,
+      "pctChange": 7.69
+    },
+    "linesOfCode.application.byExtension..json.files": {
+      "prev": 10,
+      "curr": 10,
+      "delta": 0,
+      "pctChange": 0
+    },
+    "linesOfCode.application.byExtension..json.code": {
+      "prev": 319,
+      "curr": 319,
+      "delta": 0,
+      "pctChange": 0
+    },
+    "linesOfCode.plugin.code": {
+      "prev": 0,
+      "curr": 0,
+      "delta": 0,
+      "pctChange": null
+    },
+    "linesOfCode.plugin.files": {
+      "prev": 0,
+      "curr": 0,
+      "delta": 0,
+      "pctChange": null
+    },
+    "linesOfCode.infrastructure.code": {
+      "prev": 600,
+      "curr": 828,
+      "delta": 228,
+      "pctChange": 38
+    },
+    "linesOfCode.infrastructure.files": {
+      "prev": 10,
+      "curr": 11,
+      "delta": 1,
+      "pctChange": 10
+    },
+    "linesOfCode.total.code": {
+      "prev": 3949,
+      "curr": 4988,
+      "delta": 1039,
+      "pctChange": 26.31
+    },
+    "linesOfCode.total.files": {
+      "prev": 36,
+      "curr": 37,
+      "delta": 1,
+      "pctChange": 2.78
+    },
+    "workflowTests.count": {
+      "prev": 2,
+      "curr": 2,
+      "delta": 0,
+      "pctChange": 0
+    },
+    "workflowTiming.totalSteps": {
+      "prev": 3,
+      "curr": 4,
+      "delta": 1,
+      "pctChange": 33.33
+    },
+    "workflowTiming.completedSteps": {
+      "prev": 3,
+      "curr": 4,
+      "delta": 1,
+      "pctChange": 33.33
+    },
+    "diffHygiene.metadata.phase": {
+      "prev": 3,
+      "curr": null,
+      "delta": null,
+      "pctChange": null
+    },
+    "diffHygiene.scopeAdherence": {
+      "prev": 0.0374,
+      "curr": null,
+      "delta": null,
+      "pctChange": null
+    },
+    "diffHygiene.summary.inScope.filesChanged": {
+      "prev": 6,
+      "curr": null,
+      "delta": null,
+      "pctChange": null
+    },
+    "diffHygiene.summary.inScope.locAdded": {
+      "prev": 97,
+      "curr": null,
+      "delta": null,
+      "pctChange": null
+    },
+    "diffHygiene.summary.inScope.locRemoved": {
+      "prev": 0,
+      "curr": null,
+      "delta": null,
+      "pctChange": null
+    },
+    "diffHygiene.summary.adjacent.filesChanged": {
+      "prev": 4,
+      "curr": null,
+      "delta": null,
+      "pctChange": null
+    },
+    "diffHygiene.summary.adjacent.locAdded": {
+      "prev": 334,
+      "curr": null,
+      "delta": null,
+      "pctChange": null
+    },
+    "diffHygiene.summary.adjacent.locRemoved": {
+      "prev": 21,
+      "curr": null,
+      "delta": null,
+      "pctChange": null
+    },
+    "diffHygiene.summary.unexpected.filesChanged": {
+      "prev": 22,
+      "curr": null,
+      "delta": null,
+      "pctChange": null
+    },
+    "diffHygiene.summary.unexpected.locAdded": {
+      "prev": 2494,
+      "curr": null,
+      "delta": null,
+      "pctChange": null
+    },
+    "diffHygiene.summary.unexpected.locRemoved": {
+      "prev": 4,
+      "curr": null,
+      "delta": null,
+      "pctChange": null
+    }
+  }
+}
