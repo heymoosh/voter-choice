@@ -1,17 +1,16 @@
 import type { StateData } from "@/types/state";
 import type { OpenStatesCandidateContext } from "@/lib/openstates/types";
+import { getBallotPrompt } from "@/lib/i18n/prompts";
+import type { Language } from "@/lib/i18n/translations";
 
-const BASE_PROMPT = `You are a nonpartisan civic research assistant helping a U.S. voter prepare for an upcoming election. Your job is to help me understand what's on my ballot, form my own opinions, and research candidates based on their ACTIONS - not their campaign promises.
-
-Keep each issue or race concise, teach before you ask, and always ground advice in public sources. When you have enough information, produce the ballot summary and voter profile in the formats requested by the prompt.`;
-
-function formatDate(date: string): string {
+function formatDate(date: string, language: Language = "en"): string {
   const parsed = new Date(`${date}T00:00:00`);
   if (Number.isNaN(parsed.getTime())) {
     return date;
   }
 
-  return new Intl.DateTimeFormat("en-US", {
+  const locale = language === "es" ? "es-ES" : "en-US";
+  return new Intl.DateTimeFormat(locale, {
     month: "long",
     day: "numeric",
     year: "numeric",
@@ -44,14 +43,23 @@ function describeDeadline(label: string, deadline: string | null): string {
   return `${label}: ${formatDate(deadline)}`;
 }
 
-function buildContextBlock(stateData: StateData, zip: string): string {
+function describeDeadlineDate(
+  deadline: string | null,
+  language: Language,
+): string {
+  if (!deadline) {
+    return language === "es" ? "no disponible" : "not available";
+  }
+
+  return formatDate(deadline, language);
+}
+
+function buildContextBlock(
+  stateData: StateData,
+  zip: string,
+  language: Language = "en",
+): string {
   const election = getNextElection(stateData);
-  const electionLine = election
-    ? `- Election: ${election.name} on ${formatDate(election.date)}`
-    : `- Election: no upcoming election found`;
-  const typeLine = election
-    ? `- Election type: ${election.type}${election.primaryType ? ` (${election.primaryType} primary)` : ""}`
-    : "- Election type: not available";
   const registration = stateData.registration;
   const earlyVoting = stateData.earlyVoting;
   const voterId = stateData.votingRules.idRequired
@@ -60,6 +68,42 @@ function buildContextBlock(stateData: StateData, zip: string): string {
   const phonePolicy = stateData.votingRules.phonesAtPollsDetail
     ? `${stateData.votingRules.phonesAtPolls}: ${stateData.votingRules.phonesAtPollsDetail}`
     : stateData.votingRules.phonesAtPolls;
+
+  if (language === "es") {
+    const electionLine = election
+      ? `- **Elección:** ${election.name} el ${formatDate(election.date, "es")}`
+      : `- **Elección:** no se encontraron elecciones próximas`;
+    const typeLine = election
+      ? `- **Tipo de elección:** ${election.type}${election.primaryType ? ` (primaria ${election.primaryType})` : ""}`
+      : "- **Tipo de elección:** no disponible";
+    const regLine = `- **Fechas límite de registro:** En línea antes del ${describeDeadlineDate(registration.online.deadline, "es")}, por correo antes del ${describeDeadlineDate(registration.byMail.deadline, "es")} (${registration.byMail.sincePostmarked ? "fecha de matasellos" : "fecha de recepción"}), en persona antes del ${describeDeadlineDate(registration.inPerson.deadline, "es")}`;
+    const earlyLine = earlyVoting.available
+      ? `- **Votación anticipada:** Del ${formatDate(earlyVoting.startDate ?? "", "es")} al ${formatDate(earlyVoting.endDate ?? "", "es")}${earlyVoting.notes ? ` (${earlyVoting.notes})` : ""}`
+      : "- **Votación anticipada:** No disponible";
+
+    return [
+      `¡Hola! Voy a votar en **${stateData.stateName}**. Mi código postal es **${zip}**.`,
+      "",
+      "Esto es lo que sé sobre mi próxima elección:",
+      electionLine,
+      typeLine,
+      regLine,
+      earlyLine,
+      `- **Identificación para votar:** ${stateData.votingRules.idRequired ? `Requerida. ${stateData.votingRules.acceptedIds.join("; ")}` : "No requerida."}`,
+      `- **Teléfonos en las casillas:** ${phonePolicy}`,
+      `- **Mi boleta de muestra:** ${stateData.resources.sampleBallotLookup}`,
+      `- **Mi oficina electoral del condado:** ${stateData.resources.countyElectionLookup}`,
+      "",
+      "Ayúdame con mi boleta.",
+    ].join("\n");
+  }
+
+  const electionLine = election
+    ? `- Election: ${election.name} on ${formatDate(election.date)}`
+    : `- Election: no upcoming election found`;
+  const typeLine = election
+    ? `- Election type: ${election.type}${election.primaryType ? ` (${election.primaryType} primary)` : ""}`
+    : "- Election type: not available";
 
   return [
     `Hi! I'm voting in **${stateData.stateName}**. My zip code is **${zip}**.`,
@@ -118,10 +162,16 @@ export function buildFullPrompt(
   stateData: StateData,
   zip: string,
   candidateContext?: OpenStatesCandidateContext | null,
+  language: Language = "en",
 ): string {
+  const basePrompt = getBallotPrompt(language);
   const openStatesBlock = buildOpenStatesContext(candidateContext);
 
-  return [BASE_PROMPT, buildContextBlock(stateData, zip), openStatesBlock]
+  return [
+    basePrompt,
+    buildContextBlock(stateData, zip, language),
+    openStatesBlock,
+  ]
     .filter(Boolean)
     .join("\n\n");
 }

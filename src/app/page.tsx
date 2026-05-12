@@ -3,12 +3,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { buildFullPrompt } from "@/lib/promptBuilder";
 import { getStateCodesForZip, getStateData } from "@/lib/stateRegistry";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
+import { LanguageToggle } from "@/components/LanguageToggle";
 import type { StateData } from "@/types/state";
 
 type LoadState = {
   code: string;
   data: StateData;
   prompt: string;
+  zip: string;
 };
 
 const ZIP_PATTERN = /^\d{5}$/;
@@ -17,7 +20,7 @@ function normalizeZip(value: string): string {
   return value.trim().slice(0, 5);
 }
 
-function getRegistrationStatus(stateData: StateData): string {
+function getRegistrationStatusText(stateData: StateData): string {
   if (stateData.registration.sameDayRegistration) {
     return "Same-day registration available";
   }
@@ -29,33 +32,48 @@ function getRegistrationStatus(stateData: StateData): string {
   return "Registration deadline information available";
 }
 
-function getElectionSummary(stateData: StateData): string {
+function getElectionSummary(stateData: StateData, language: string): string {
   const upcoming = [...stateData.elections].sort((left, right) =>
     left.date.localeCompare(right.date),
   )[0];
 
-  return upcoming
-    ? `${upcoming.name} on ${upcoming.date}`
-    : "No upcoming election found";
+  if (!upcoming) {
+    return language === "es" ? "Sin datos de elección" : "No election data";
+  }
+
+  const date = new Date(`${upcoming.date}T00:00:00`);
+  const locale = language === "es" ? "es-ES" : "en-US";
+  const formatted = new Intl.DateTimeFormat(locale, {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(date);
+
+  return `${upcoming.name} on ${formatted}`;
 }
 
 function ResultCard({
   stateData,
   prompt,
   onCopy,
+  copyConfirmation,
 }: {
   stateData: StateData;
   prompt: string;
   onCopy: () => void;
+  copyConfirmation: boolean;
 }) {
+  const { t, language } = useLanguage();
+
   return (
     <section className="panel result-card" data-testid="state-info">
       <div className="row row-spread">
         <div>
-          <p className="eyebrow">State snapshot</p>
+          <p className="eyebrow">{t.stateSnapshotEyebrow}</p>
           <h2 className="result-title">{stateData.stateName}</h2>
           <p className="muted">
-            {stateData.stateCode} · Updated {stateData.lastUpdated}
+            {stateData.stateCode} · {t.updatedLabel} {stateData.lastUpdated}
           </p>
         </div>
         <button
@@ -64,53 +82,55 @@ function ResultCard({
           onClick={onCopy}
           type="button"
         >
-          Copy prompt
+          {copyConfirmation ? t.copyButtonCopied : t.copyButton}
         </button>
       </div>
 
       <div className="metric-grid">
         <div className="metric-card">
-          <p className="metric-label">Election</p>
+          <p className="metric-label">{t.electionLabel}</p>
           <p className="metric-value" data-testid="election-name">
-            {stateData.elections[0]?.name ?? "No election data"}
+            {stateData.elections[0]?.name ?? t.noElectionData}
           </p>
           <p className="muted" data-testid="election-date">
-            {getElectionSummary(stateData)}
+            {getElectionSummary(stateData, language)}
           </p>
         </div>
         <div className="metric-card">
-          <p className="metric-label">Registration</p>
+          <p className="metric-label">{t.registrationLabel}</p>
           <p className="metric-value" data-testid="registration-status">
-            {getRegistrationStatus(stateData)}
+            {getRegistrationStatusText(stateData)}
           </p>
           <p className="muted">
-            Check {stateData.registration.registrationCheckUrl} before Election
-            Day.
+            {t.registrationCheckPrefix}{" "}
+            {stateData.registration.registrationCheckUrl}{" "}
+            {t.registrationCheckSuffix}
           </p>
         </div>
       </div>
 
       <div className="metric-grid">
         <div className="metric-card">
-          <p className="metric-label">Early voting</p>
+          <p className="metric-label">{t.earlyVotingLabel}</p>
           <p className="muted">
             {stateData.earlyVoting.available
-              ? `${stateData.earlyVoting.startDate ?? "TBD"} through ${stateData.earlyVoting.endDate ?? "TBD"}`
-              : "Not available"}
+              ? `${stateData.earlyVoting.startDate ?? "TBD"} ${t.earlyVotingThrough} ${stateData.earlyVoting.endDate ?? "TBD"}`
+              : t.noEarlyVoting}
           </p>
         </div>
         <div className="metric-card">
-          <p className="metric-label">Voting rules</p>
+          <p className="metric-label">{t.votingRulesLabel}</p>
           <p className="muted">
             {stateData.votingRules.phonesAtPolls === "prohibited"
-              ? "Phones are prohibited at the polls."
-              : "Phone policy varies or is allowed."}
+              ? t.phonesProhibited
+              : t.phonesPolicyVaries}
           </p>
         </div>
       </div>
 
       <label className="prompt-label">
-        <span className="eyebrow">Customized prompt</span>
+        <span className="eyebrow">{t.promptEyebrow}</span>
+        <p className="prompt-instructions">{t.promptInstructions}</p>
         <pre className="prompt-box" data-testid="prompt-output">
           {prompt}
         </pre>
@@ -119,7 +139,26 @@ function ResultCard({
   );
 }
 
+function TipsSection() {
+  const { t } = useLanguage();
+
+  return (
+    <section className="panel tips-section">
+      <h2 className="tips-title">{t.tipsTitle}</h2>
+      <ul className="tips-list">
+        {t.tips.map((tip, index) => (
+          <li key={index} className="tip-item">
+            {tip}
+          </li>
+        ))}
+      </ul>
+      <p className="tips-warning">{t.tipsWarning}</p>
+    </section>
+  );
+}
+
 export default function Home() {
+  const { t, language } = useLanguage();
   const [zipInput, setZipInput] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -136,6 +175,23 @@ export default function Home() {
 
     return getStateData(selectedCode);
   }, [selectedCode]);
+
+  // Rebuild prompt when language changes so the toggle updates the prompt
+  useEffect(() => {
+    if (result) {
+      const stateData = getStateData(result.code);
+      if (stateData) {
+        const newPrompt = buildFullPrompt(
+          stateData,
+          result.zip,
+          null,
+          language,
+        );
+        setResult((prev) => (prev ? { ...prev, prompt: newPrompt } : null));
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [language]);
 
   useEffect(() => {
     if (!copyConfirmation) {
@@ -169,7 +225,8 @@ export default function Home() {
       setResult({
         code,
         data: stateData,
-        prompt: buildFullPrompt(stateData, zip),
+        prompt: buildFullPrompt(stateData, zip, null, language),
+        zip,
       });
       setStateChoices([]);
     } finally {
@@ -185,12 +242,12 @@ export default function Home() {
     setStateChoices([]);
 
     if (!zip) {
-      setError("Please enter a zip code.");
+      setError(t.errorEmptyZip);
       return;
     }
 
     if (!ZIP_PATTERN.test(zip)) {
-      setError("Please enter a valid 5-digit zip code.");
+      setError(t.errorInvalidZip);
       return;
     }
 
@@ -198,9 +255,7 @@ export default function Home() {
 
     const codes = getStateCodesForZip(zip);
     if (codes.length === 0) {
-      setNotFound(
-        "We don't have data for this zip code yet. We're working on adding all U.S. zip codes.",
-      );
+      setNotFound(t.errorZipNotFound);
       return;
     }
 
@@ -213,120 +268,157 @@ export default function Home() {
   }
 
   return (
-    <main className="shell">
-      <div className="shell-inner">
-        <header className="hero">
-          <p className="eyebrow">Voter Choice</p>
-          <h1 className="hero-title">
-            Ballot research, with local election context and candidate history.
-          </h1>
-          <p className="hero-copy">
-            Enter a zip code to see the state election context, a copyable
-            prompt, and any OpenStates enrichment we can match for the office or
-            candidate.
-          </p>
-        </header>
+    <>
+      <a className="skip-link" href="#main-content">
+        {t.skipToContent}
+      </a>
+      <main className="shell" id="main-content">
+        <div className="shell-inner">
+          <div className="page-header">
+            <header className="hero">
+              <p className="eyebrow">{t.heroEyebrow}</p>
+              <h1 className="hero-title">{t.heroTitle}</h1>
+              <p className="hero-copy">{t.heroCopy}</p>
+              <p className="chatbot-label">{t.chatbotLinksLabel}</p>
+              <div className="chatbot-links">
+                <a
+                  href="https://claude.ai"
+                  rel="noopener noreferrer"
+                  target="_blank"
+                >
+                  Claude
+                </a>
+                <a
+                  href="https://chatgpt.com"
+                  rel="noopener noreferrer"
+                  target="_blank"
+                >
+                  ChatGPT
+                </a>
+                <a
+                  href="https://gemini.google.com"
+                  rel="noopener noreferrer"
+                  target="_blank"
+                >
+                  Gemini
+                </a>
+                <a
+                  href="https://grok.com"
+                  rel="noopener noreferrer"
+                  target="_blank"
+                >
+                  Grok
+                </a>
+              </div>
+            </header>
+            <div className="language-toggle-wrapper">
+              <LanguageToggle />
+            </div>
+          </div>
 
-        <section className="panel">
-          <form
-            className="form-row"
-            onSubmit={(event) => {
-              event.preventDefault();
-              submitZip();
-            }}
-          >
-            <label className="zip-label">
-              <span className="sr-only">Zip code</span>
-              <input
-                className="zip-input"
-                data-testid="zip-input"
-                inputMode="numeric"
-                maxLength={5}
-                onChange={(event) => {
-                  setZipInput(event.target.value);
-                  setError(null);
-                  setNotFound(null);
-                }}
-                placeholder="Enter your 5-digit zip code"
-                value={zipInput}
-              />
-            </label>
-            <button
-              className="button button-primary"
-              data-testid="zip-submit"
-              disabled={loading}
-              type="submit"
+          <section className="panel">
+            <form
+              className="form-row"
+              onSubmit={(event) => {
+                event.preventDefault();
+                submitZip();
+              }}
             >
-              {loading ? "Loading..." : "Research ballot"}
-            </button>
-          </form>
+              <label className="zip-label">
+                <span className="sr-only">{t.zipLabel}</span>
+                <input
+                  className="zip-input"
+                  data-testid="zip-input"
+                  inputMode="numeric"
+                  maxLength={5}
+                  onChange={(event) => {
+                    setZipInput(event.target.value);
+                    setError(null);
+                    setNotFound(null);
+                  }}
+                  placeholder={t.zipPlaceholder}
+                  value={zipInput}
+                />
+              </label>
+              <button
+                className="button button-primary"
+                data-testid="zip-submit"
+                disabled={loading}
+                type="submit"
+              >
+                {loading ? t.submitButtonLoading : t.submitButton}
+              </button>
+            </form>
 
-          {error ? (
-            <p
-              className="notice notice-error"
-              data-testid="zip-error"
-              role="alert"
-            >
-              {error}
-            </p>
+            {error ? (
+              <p
+                className="notice notice-error"
+                data-testid="zip-error"
+                role="alert"
+              >
+                {error}
+              </p>
+            ) : null}
+
+            {notFound ? (
+              <p
+                className="notice notice-muted"
+                data-testid="not-found-message"
+                role="status"
+              >
+                {notFound}
+              </p>
+            ) : null}
+
+            {stateChoices.length > 0 ? (
+              <section className="state-selector" data-testid="state-selector">
+                <p className="eyebrow">{t.stateSelectorEyebrow}</p>
+                <h2 className="selector-title">{t.stateSelectorTitle}</h2>
+                <div className="state-choice-row">
+                  {stateChoices.map((code) => (
+                    <button
+                      key={code}
+                      className="button button-ghost"
+                      onClick={() => loadState(code, normalizeZip(zipInput))}
+                      type="button"
+                    >
+                      {code}
+                    </button>
+                  ))}
+                </div>
+              </section>
+            ) : null}
+          </section>
+
+          {selectedState && result ? (
+            <ResultCard
+              copyConfirmation={copyConfirmation}
+              onCopy={() => {
+                void copyPrompt();
+              }}
+              prompt={result.prompt}
+              stateData={result.data}
+            />
           ) : null}
 
-          {notFound ? (
+          {copyConfirmation ? (
             <p
-              className="notice notice-muted"
-              data-testid="not-found-message"
+              className="copy-toast"
+              data-testid="copy-confirmation"
               role="status"
             >
-              {notFound}
+              {t.copyConfirmation}
             </p>
           ) : null}
 
-          {stateChoices.length > 0 ? (
-            <section className="state-selector" data-testid="state-selector">
-              <p className="eyebrow">This zip spans multiple states</p>
-              <h2 className="selector-title">Which state are you voting in?</h2>
-              <div className="state-choice-row">
-                {stateChoices.map((code) => (
-                  <button
-                    key={code}
-                    className="button button-ghost"
-                    onClick={() => loadState(code, normalizeZip(zipInput))}
-                    type="button"
-                  >
-                    {code}
-                  </button>
-                ))}
-              </div>
-            </section>
-          ) : null}
-        </section>
+          <TipsSection />
 
-        {selectedState && result ? (
-          <ResultCard
-            onCopy={() => {
-              void copyPrompt();
-            }}
-            prompt={result.prompt}
-            stateData={result.data}
-          />
-        ) : null}
-
-        {copyConfirmation ? (
-          <p
-            className="copy-toast"
-            data-testid="copy-confirmation"
-            role="status"
-          >
-            Prompt copied
-          </p>
-        ) : null}
-
-        <footer className="footer-note">
-          The prompt includes the current state context and stays optional for
-          missing OpenStates data. If a candidate match is unavailable, the app
-          falls back to the normal election prompt.
-        </footer>
-      </div>
-    </main>
+          <footer className="footer-note">
+            <p className="footer-share">{t.footerShare}</p>
+            <p>{t.footerAttribution}</p>
+          </footer>
+        </div>
+      </main>
+    </>
   );
 }
