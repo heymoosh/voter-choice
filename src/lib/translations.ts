@@ -124,6 +124,63 @@ export interface Translations {
   dataAttribution: string;
   dataUpdated: string;
   voterIdVerifyNote: string;
+
+  // Phase 5: Chat window
+  chatCtaButton: string;
+  chatWindowTitle: string;
+  chatPrivacyNotice: string;
+  chatInputPlaceholder: string;
+  chatSendButton: string;
+  chatBudgetNotice70: string;
+  chatBudgetNotice90: string;
+  chatDisabledMessage: string;
+  chatSessionLimitMessage: string;
+  chatRateLimitMessage: string;
+
+  // Phase 5: Downloadable ballot
+  downloadBallotBtn: string;
+  ballotPreviewTitle: string;
+  ballotPasteInputLabel: string;
+  ballotPasteInputPlaceholder: string;
+  ballotParseError: string;
+  ballotManualEntryTitle: string;
+  ballotManualRaceLabel: string;
+  ballotManualCandidateLabel: string;
+  ballotManualAddRace: string;
+  ballotManualGenerate: string;
+  ballotHeader: string;
+  ballotPropositions: string;
+  ballotReminder: string;
+  ballotDisclaimer: string;
+
+  // Phase 5: Voter profile
+  downloadProfileBtn: string;
+  uploadProfileLabel: string;
+  uploadProfileHint: string;
+  uploadProfileError: string;
+  uploadProfileTooBig: string;
+  uploadProfileWrongType: string;
+  profileConfirmationTitle: string;
+  profileConfirmationDismiss: string;
+
+  // Phase 5: Alignment scores
+  alignmentStrong: string;
+  alignmentMixed: string;
+  alignmentWeak: string;
+  alignmentExpandBtn: string;
+  alignmentCollapseBtn: string;
+  alignmentParseError: string;
+  alignmentOverallLabel: string;
+  alignmentPriority: string;
+
+  // Phase 5: Path B enhancements
+  pathBSectionHeading: string;
+  pathBPasteHeading: string;
+  pathBPasteInstructions: string;
+  pathBGenerateBallot: string;
+  pathBProfileHeading: string;
+  pathBPasteProfilePlaceholder: string;
+  pathBGenerateProfile: string;
 }
 
 export const en: Translations = {
@@ -264,6 +321,75 @@ export const en: Translations = {
   dataUpdated: "Updated",
   voterIdVerifyNote:
     "Verify current requirements at your state election office.",
+
+  // Phase 5: Chat window
+  chatCtaButton: "Research My Ballot Here",
+  chatWindowTitle: "AI Ballot Research Chat",
+  chatPrivacyNotice:
+    "Your conversation stays in your browser only — we don't store it. If you close or refresh this page, your conversation will be lost. Download your ballot and voter profile before leaving.",
+  chatInputPlaceholder: "Type your message...",
+  chatSendButton: "Send",
+  chatBudgetNotice70:
+    "Free AI chat may be limited later this month. You can always use the copy-paste option.",
+  chatBudgetNotice90:
+    "Free AI chat is running low this month. Consider using the copy-paste option for an uninterrupted experience.",
+  chatDisabledMessage:
+    "Our free AI chat has reached its monthly limit. You can still research your ballot — copy the prompt below and paste it into any free AI chatbot (Claude, ChatGPT, Gemini, Grok).",
+  chatSessionLimitMessage:
+    "You've reached the session message limit. To keep this tool free for everyone, we limit messages per session. You can continue your research by copying the prompt below.",
+  chatRateLimitMessage:
+    "To keep this tool free for everyone, we limit sessions per day. You can continue your research by copying the prompt below.",
+
+  // Phase 5: Downloadable ballot
+  downloadBallotBtn: "Download My Ballot",
+  ballotPreviewTitle: "Your Ballot Choices",
+  ballotPasteInputLabel: "Paste AI ballot output here",
+  ballotPasteInputPlaceholder:
+    "Paste the 'MY BALLOT' section from your AI conversation here...",
+  ballotParseError:
+    "We couldn't read that format. Try copying just the 'MY BALLOT' section from your AI conversation, or enter your choices manually below.",
+  ballotManualEntryTitle: "Enter Your Choices Manually",
+  ballotManualRaceLabel: "Race / Measure",
+  ballotManualCandidateLabel: "Your Choice (Yes/No or Candidate Name)",
+  ballotManualAddRace: "Add Another Race",
+  ballotManualGenerate: "Build My Ballot",
+  ballotHeader: "MY BALLOT",
+  ballotPropositions: "Propositions",
+  ballotReminder: "REMINDER",
+  ballotDisclaimer:
+    "This document is your personal notes, not an official ballot.",
+
+  // Phase 5: Voter profile
+  downloadProfileBtn: "Download My Voter Profile",
+  uploadProfileLabel: "Returning voter? Upload your voter profile.",
+  uploadProfileHint: "Upload a .txt voter profile from a previous session",
+  uploadProfileError: "Could not read the voter profile file.",
+  uploadProfileTooBig: "File must be under 10KB.",
+  uploadProfileWrongType: "Please upload a .txt file.",
+  profileConfirmationTitle: "Voter Profile Loaded",
+  profileConfirmationDismiss: "Dismiss",
+
+  // Phase 5: Alignment scores
+  alignmentStrong: "Strong alignment",
+  alignmentMixed: "Mixed alignment",
+  alignmentWeak: "Weak alignment",
+  alignmentExpandBtn: "Expand breakdown",
+  alignmentCollapseBtn: "Collapse breakdown",
+  alignmentParseError:
+    "Alignment scores couldn't be generated for this response — try asking the AI to score the candidates again.",
+  alignmentOverallLabel: "Alignment",
+  alignmentPriority: "you said",
+
+  // Phase 5: Path B enhancements
+  pathBSectionHeading: "Build Your Ballot From AI Output",
+  pathBPasteHeading: "Paste Your AI Ballot Summary",
+  pathBPasteInstructions:
+    "After your AI conversation, paste the 'MY BALLOT' section here to generate a printable ballot.",
+  pathBGenerateBallot: "Generate Ballot",
+  pathBProfileHeading: "Paste Your AI Voter Profile",
+  pathBPasteProfilePlaceholder:
+    "Paste the voter profile section from your AI conversation here...",
+  pathBGenerateProfile: "Save Voter Profile",
 };
 
 export const es: Translations = {
@@ -404,6 +530,75 @@ export const es: Translations = {
   dataUpdated: "Actualizado",
   voterIdVerifyNote:
     "Verifica los requisitos actuales en tu oficina electoral estatal.",
+
+  // Phase 5: Chat window
+  chatCtaButton: "Investigar Mi Boleta Aquí",
+  chatWindowTitle: "Chat de Investigación Electoral con IA",
+  chatPrivacyNotice:
+    "Tu conversación permanece solo en tu navegador — no la almacenamos. Si cierras o actualizas esta página, tu conversación se perderá. Descarga tu boleta y perfil de votante antes de salir.",
+  chatInputPlaceholder: "Escribe tu mensaje...",
+  chatSendButton: "Enviar",
+  chatBudgetNotice70:
+    "El chat de IA gratuito podría estar limitado más adelante este mes. Siempre puedes usar la opción de copiar y pegar.",
+  chatBudgetNotice90:
+    "El chat de IA gratuito está llegando a su límite este mes. Considera usar la opción de copiar y pegar para una experiencia sin interrupciones.",
+  chatDisabledMessage:
+    "Nuestro chat de IA gratuito ha alcanzado su límite mensual. Aún puedes investigar tu boleta — copia el mensaje a continuación y pégalo en cualquier chatbot de IA gratuito.",
+  chatSessionLimitMessage:
+    "Has alcanzado el límite de mensajes de la sesión. Para mantener esta herramienta gratuita para todos, limitamos los mensajes por sesión.",
+  chatRateLimitMessage:
+    "Para mantener esta herramienta gratuita para todos, limitamos las sesiones por día. Puedes continuar tu investigación copiando el mensaje a continuación.",
+
+  // Phase 5: Downloadable ballot
+  downloadBallotBtn: "Descargar Mi Boleta",
+  ballotPreviewTitle: "Tus Elecciones de Boleta",
+  ballotPasteInputLabel: "Pega aquí la boleta generada por la IA",
+  ballotPasteInputPlaceholder:
+    "Pega la sección 'MI BOLETA' de tu conversación de IA aquí...",
+  ballotParseError:
+    "No pudimos leer ese formato. Intenta copiar solo la sección 'MI BOLETA' de tu conversación de IA, o ingresa tus elecciones manualmente a continuación.",
+  ballotManualEntryTitle: "Ingresa Tus Elecciones Manualmente",
+  ballotManualRaceLabel: "Cargo / Medida",
+  ballotManualCandidateLabel: "Tu Elección (Sí/No o Nombre del Candidato)",
+  ballotManualAddRace: "Agregar Otro Cargo",
+  ballotManualGenerate: "Crear Mi Boleta",
+  ballotHeader: "MI BOLETA",
+  ballotPropositions: "Proposiciones",
+  ballotReminder: "RECORDATORIO",
+  ballotDisclaimer:
+    "Este documento es tu referencia personal, no una boleta oficial.",
+
+  // Phase 5: Voter profile
+  downloadProfileBtn: "Descargar Mi Perfil de Votante",
+  uploadProfileLabel: "¿Votante habitual? Sube tu perfil de votante.",
+  uploadProfileHint: "Sube un perfil de votante .txt de una sesión anterior",
+  uploadProfileError: "No se pudo leer el archivo de perfil de votante.",
+  uploadProfileTooBig: "El archivo debe ser menor de 10KB.",
+  uploadProfileWrongType: "Por favor sube un archivo .txt.",
+  profileConfirmationTitle: "Perfil de Votante Cargado",
+  profileConfirmationDismiss: "Cerrar",
+
+  // Phase 5: Alignment scores
+  alignmentStrong: "Alta alineación",
+  alignmentMixed: "Alineación mixta",
+  alignmentWeak: "Baja alineación",
+  alignmentExpandBtn: "Ver desglose",
+  alignmentCollapseBtn: "Ocultar desglose",
+  alignmentParseError:
+    "No se pudieron generar puntuaciones de alineación para esta respuesta — intenta pedirle a la IA que puntúe a los candidatos nuevamente.",
+  alignmentOverallLabel: "Alineación",
+  alignmentPriority: "dijiste",
+
+  // Phase 5: Path B enhancements
+  pathBSectionHeading: "Crea Tu Boleta Desde la Salida de la IA",
+  pathBPasteHeading: "Pega Tu Resumen de Boleta de la IA",
+  pathBPasteInstructions:
+    "Después de tu conversación con la IA, pega la sección 'MI BOLETA' aquí para generar una boleta imprimible.",
+  pathBGenerateBallot: "Generar Boleta",
+  pathBProfileHeading: "Pega Tu Perfil de Votante de la IA",
+  pathBPasteProfilePlaceholder:
+    "Pega la sección del perfil de votante de tu conversación de IA aquí...",
+  pathBGenerateProfile: "Guardar Perfil de Votante",
 };
 
 export const vi: Translations = {
@@ -543,6 +738,75 @@ export const vi: Translations = {
   dataUpdated: "Cập nhật",
   voterIdVerifyNote:
     "Xác minh yêu cầu hiện tại tại văn phòng bầu cử tiểu bang của bạn.",
+
+  // Phase 5: Chat window
+  chatCtaButton: "Nghiên Cứu Lá Phiếu Của Tôi Tại Đây",
+  chatWindowTitle: "Chat Nghiên Cứu Bầu Cử AI",
+  chatPrivacyNotice:
+    "Cuộc trò chuyện của bạn chỉ lưu trong trình duyệt — chúng tôi không lưu trữ nó. Nếu bạn đóng hoặc làm mới trang, cuộc trò chuyện sẽ mất. Hãy tải xuống lá phiếu và hồ sơ cử tri trước khi rời đi.",
+  chatInputPlaceholder: "Nhập tin nhắn của bạn...",
+  chatSendButton: "Gửi",
+  chatBudgetNotice70:
+    "Chat AI miễn phí có thể bị giới hạn sau này trong tháng. Bạn luôn có thể sử dụng tùy chọn sao chép và dán.",
+  chatBudgetNotice90:
+    "Chat AI miễn phí đang cạn dần trong tháng này. Hãy xem xét sử dụng tùy chọn sao chép và dán để có trải nghiệm không bị gián đoạn.",
+  chatDisabledMessage:
+    "Chat AI miễn phí của chúng tôi đã đạt giới hạn hàng tháng. Bạn vẫn có thể nghiên cứu lá phiếu — sao chép câu lệnh bên dưới và dán vào bất kỳ chatbot AI miễn phí nào.",
+  chatSessionLimitMessage:
+    "Bạn đã đạt giới hạn tin nhắn phiên. Để giữ công cụ này miễn phí cho mọi người, chúng tôi giới hạn tin nhắn mỗi phiên.",
+  chatRateLimitMessage:
+    "Để giữ công cụ này miễn phí cho mọi người, chúng tôi giới hạn số phiên mỗi ngày. Bạn có thể tiếp tục nghiên cứu bằng cách sao chép câu lệnh bên dưới.",
+
+  // Phase 5: Downloadable ballot
+  downloadBallotBtn: "Tải Xuống Lá Phiếu Của Tôi",
+  ballotPreviewTitle: "Lựa Chọn Bầu Cử Của Bạn",
+  ballotPasteInputLabel: "Dán kết quả lá phiếu AI vào đây",
+  ballotPasteInputPlaceholder:
+    "Dán phần 'LÁ PHIẾU CỦA TÔI' từ cuộc trò chuyện AI của bạn vào đây...",
+  ballotParseError:
+    "Chúng tôi không thể đọc định dạng đó. Hãy thử sao chép chỉ phần 'LÁ PHIẾU CỦA TÔI' từ cuộc trò chuyện AI của bạn, hoặc nhập lựa chọn của bạn thủ công bên dưới.",
+  ballotManualEntryTitle: "Nhập Lựa Chọn Của Bạn Thủ Công",
+  ballotManualRaceLabel: "Cuộc Đua / Biện Pháp",
+  ballotManualCandidateLabel: "Lựa Chọn Của Bạn (Có/Không hoặc Tên Ứng Viên)",
+  ballotManualAddRace: "Thêm Cuộc Đua Khác",
+  ballotManualGenerate: "Tạo Lá Phiếu Của Tôi",
+  ballotHeader: "LÁ PHIẾU CỦA TÔI",
+  ballotPropositions: "Đề Xuất",
+  ballotReminder: "NHẮC NHỞ",
+  ballotDisclaimer:
+    "Tài liệu này là ghi chú cá nhân của bạn, không phải lá phiếu chính thức.",
+
+  // Phase 5: Voter profile
+  downloadProfileBtn: "Tải Xuống Hồ Sơ Cử Tri Của Tôi",
+  uploadProfileLabel: "Cử tri quay lại? Tải lên hồ sơ cử tri của bạn.",
+  uploadProfileHint: "Tải lên hồ sơ cử tri .txt từ phiên trước",
+  uploadProfileError: "Không thể đọc tệp hồ sơ cử tri.",
+  uploadProfileTooBig: "Tệp phải nhỏ hơn 10KB.",
+  uploadProfileWrongType: "Vui lòng tải lên tệp .txt.",
+  profileConfirmationTitle: "Đã Tải Hồ Sơ Cử Tri",
+  profileConfirmationDismiss: "Đóng",
+
+  // Phase 5: Alignment scores
+  alignmentStrong: "Phù hợp mạnh",
+  alignmentMixed: "Phù hợp hỗn hợp",
+  alignmentWeak: "Phù hợp yếu",
+  alignmentExpandBtn: "Xem chi tiết",
+  alignmentCollapseBtn: "Thu gọn chi tiết",
+  alignmentParseError:
+    "Không thể tạo điểm phù hợp cho phản hồi này — hãy thử yêu cầu AI chấm điểm các ứng viên một lần nữa.",
+  alignmentOverallLabel: "Phù Hợp",
+  alignmentPriority: "bạn nói",
+
+  // Phase 5: Path B enhancements
+  pathBSectionHeading: "Tạo Lá Phiếu Từ Kết Quả AI",
+  pathBPasteHeading: "Dán Tóm Tắt Lá Phiếu AI Của Bạn",
+  pathBPasteInstructions:
+    "Sau cuộc trò chuyện AI, dán phần 'LÁ PHIẾU CỦA TÔI' vào đây để tạo lá phiếu có thể in.",
+  pathBGenerateBallot: "Tạo Lá Phiếu",
+  pathBProfileHeading: "Dán Hồ Sơ Cử Tri AI Của Bạn",
+  pathBPasteProfilePlaceholder:
+    "Dán phần hồ sơ cử tri từ cuộc trò chuyện AI của bạn vào đây...",
+  pathBGenerateProfile: "Lưu Hồ Sơ Cử Tri",
 };
 
 export const zh: Translations = {
@@ -671,6 +935,72 @@ export const zh: Translations = {
     "选举数据来自 Google Civic Information 和通过 Anthropic 的实时网络搜索。",
   dataUpdated: "更新于",
   voterIdVerifyNote: "请在你的州选举办公室核实当前要求。",
+
+  // Phase 5: Chat window
+  chatCtaButton: "在此研究我的选票",
+  chatWindowTitle: "AI选票研究聊天",
+  chatPrivacyNotice:
+    "您的对话仅保留在您的浏览器中——我们不存储它。如果您关闭或刷新此页面，您的对话将丢失。离开前请下载您的选票和选民档案。",
+  chatInputPlaceholder: "输入您的消息...",
+  chatSendButton: "发送",
+  chatBudgetNotice70:
+    "免费AI聊天本月稍后可能受限。您始终可以使用复制粘贴选项。",
+  chatBudgetNotice90:
+    "免费AI聊天本月即将用完。考虑使用复制粘贴选项以获得不间断的体验。",
+  chatDisabledMessage:
+    "我们的免费AI聊天已达到月度限制。您仍可以研究您的选票——复制下面的提示并粘贴到任何免费AI聊天机器人中。",
+  chatSessionLimitMessage:
+    "您已达到会话消息限制。为了让每个人都能免费使用此工具，我们限制每次会话的消息数量。",
+  chatRateLimitMessage:
+    "为了让每个人都能免费使用此工具，我们限制每天的会话数量。您可以通过复制下面的提示来继续研究。",
+
+  // Phase 5: Downloadable ballot
+  downloadBallotBtn: "下载我的选票",
+  ballotPreviewTitle: "您的选票选择",
+  ballotPasteInputLabel: "在此粘贴AI选票输出",
+  ballotPasteInputPlaceholder: "在此粘贴AI对话中的「我的选票」部分...",
+  ballotParseError:
+    "我们无法读取该格式。尝试只从您的AI对话中复制「我的选票」部分，或在下面手动输入您的选择。",
+  ballotManualEntryTitle: "手动输入您的选择",
+  ballotManualRaceLabel: "竞选 / 措施",
+  ballotManualCandidateLabel: "您的选择（是/否或候选人姓名）",
+  ballotManualAddRace: "添加另一场竞选",
+  ballotManualGenerate: "生成我的选票",
+  ballotHeader: "我的选票",
+  ballotPropositions: "提案",
+  ballotReminder: "提醒",
+  ballotDisclaimer: "本文档是您的个人笔记，不是官方选票。",
+
+  // Phase 5: Voter profile
+  downloadProfileBtn: "下载我的选民档案",
+  uploadProfileLabel: "回头客？上传您的选民档案。",
+  uploadProfileHint: "上传上次会话的.txt选民档案",
+  uploadProfileError: "无法读取选民档案文件。",
+  uploadProfileTooBig: "文件必须小于10KB。",
+  uploadProfileWrongType: "请上传.txt文件。",
+  profileConfirmationTitle: "选民档案已加载",
+  profileConfirmationDismiss: "关闭",
+
+  // Phase 5: Alignment scores
+  alignmentStrong: "高度契合",
+  alignmentMixed: "部分契合",
+  alignmentWeak: "低度契合",
+  alignmentExpandBtn: "展开详情",
+  alignmentCollapseBtn: "收起详情",
+  alignmentParseError:
+    "无法为此回复生成契合度分数——尝试要求AI再次为候选人打分。",
+  alignmentOverallLabel: "契合度",
+  alignmentPriority: "您说",
+
+  // Phase 5: Path B enhancements
+  pathBSectionHeading: "从AI输出创建您的选票",
+  pathBPasteHeading: "粘贴您的AI选票摘要",
+  pathBPasteInstructions:
+    "AI对话结束后，在此粘贴「我的选票」部分以生成可打印的选票。",
+  pathBGenerateBallot: "生成选票",
+  pathBProfileHeading: "粘贴您的AI选民档案",
+  pathBPasteProfilePlaceholder: "在此粘贴AI对话中的选民档案部分...",
+  pathBGenerateProfile: "保存选民档案",
 };
 
 export const ar: Translations = {
@@ -807,6 +1137,74 @@ export const ar: Translations = {
     "بيانات الانتخابات من Google Civic Information والبحث المباشر على الويب عبر Anthropic.",
   dataUpdated: "آخر تحديث",
   voterIdVerifyNote: "تحقق من المتطلبات الحالية في مكتب انتخابات ولايتك.",
+
+  // Phase 5: Chat window
+  chatCtaButton: "ابحث في ورقة اقتراعي هنا",
+  chatWindowTitle: "محادثة بحث الاقتراع بالذكاء الاصطناعي",
+  chatPrivacyNotice:
+    "محادثتك تبقى في متصفحك فقط — لا نقوم بتخزينها. إذا أغلقت أو أعدت تحميل الصفحة، ستفقد محادثتك. تأكد من تنزيل ورقة الاقتراع وملف الناخب قبل المغادرة.",
+  chatInputPlaceholder: "اكتب رسالتك...",
+  chatSendButton: "إرسال",
+  chatBudgetNotice70:
+    "قد تكون محادثة الذكاء الاصطناعي المجانية محدودة لاحقاً هذا الشهر. يمكنك دائماً استخدام خيار النسخ واللصق.",
+  chatBudgetNotice90:
+    "محادثة الذكاء الاصطناعي المجانية تقترب من حدها هذا الشهر. فكر في استخدام خيار النسخ واللصق للحصول على تجربة غير منقطعة.",
+  chatDisabledMessage:
+    "وصلت محادثة الذكاء الاصطناعي المجانية لدينا إلى حدها الشهري. لا يزال بإمكانك البحث في ورقة اقتراعك — انسخ الرسالة أدناه والصقها في أي روبوت محادثة ذكاء اصطناعي مجاني.",
+  chatSessionLimitMessage:
+    "لقد وصلت إلى حد الرسائل للجلسة. للحفاظ على هذه الأداة مجانية للجميع، نحدد الرسائل لكل جلسة.",
+  chatRateLimitMessage:
+    "للحفاظ على هذه الأداة مجانية للجميع، نحدد عدد الجلسات يومياً. يمكنك متابعة البحث بنسخ الرسالة أدناه.",
+
+  // Phase 5: Downloadable ballot
+  downloadBallotBtn: "تنزيل ورقة اقتراعي",
+  ballotPreviewTitle: "اختياراتك في ورقة الاقتراع",
+  ballotPasteInputLabel: "الصق هنا نتيجة ورقة الاقتراع من الذكاء الاصطناعي",
+  ballotPasteInputPlaceholder:
+    "الصق قسم 'ورقة اقتراعي' من محادثتك مع الذكاء الاصطناعي هنا...",
+  ballotParseError:
+    "لم نتمكن من قراءة ذلك التنسيق. حاول نسخ قسم 'ورقة اقتراعي' فقط من محادثتك مع الذكاء الاصطناعي، أو أدخل اختياراتك يدوياً أدناه.",
+  ballotManualEntryTitle: "أدخل اختياراتك يدوياً",
+  ballotManualRaceLabel: "السباق / المقترح",
+  ballotManualCandidateLabel: "اختيارك (نعم/لا أو اسم المرشح)",
+  ballotManualAddRace: "إضافة سباق آخر",
+  ballotManualGenerate: "إنشاء ورقة اقتراعي",
+  ballotHeader: "ورقة اقتراعي",
+  ballotPropositions: "المقترحات",
+  ballotReminder: "تذكير",
+  ballotDisclaimer: "هذه الوثيقة هي ملاحظاتك الشخصية، وليست ورقة اقتراع رسمية.",
+
+  // Phase 5: Voter profile
+  downloadProfileBtn: "تنزيل ملف الناخب الخاص بي",
+  uploadProfileLabel: "ناخب عائد؟ ارفع ملف الناخب الخاص بك.",
+  uploadProfileHint: "ارفع ملف ناخب .txt من جلسة سابقة",
+  uploadProfileError: "تعذّر قراءة ملف ملف الناخب.",
+  uploadProfileTooBig: "يجب أن يكون حجم الملف أقل من 10 كيلوبايت.",
+  uploadProfileWrongType: "يرجى رفع ملف .txt.",
+  profileConfirmationTitle: "تم تحميل ملف الناخب",
+  profileConfirmationDismiss: "إغلاق",
+
+  // Phase 5: Alignment scores
+  alignmentStrong: "توافق قوي",
+  alignmentMixed: "توافق مختلط",
+  alignmentWeak: "توافق ضعيف",
+  alignmentExpandBtn: "توسيع التفاصيل",
+  alignmentCollapseBtn: "طي التفاصيل",
+  alignmentParseError:
+    "تعذّر إنشاء درجات التوافق لهذه الاستجابة — حاول مطالبة الذكاء الاصطناعي بتسجيل المرشحين مرة أخرى.",
+  alignmentOverallLabel: "التوافق",
+  alignmentPriority: "قلت",
+
+  // Phase 5: Path B enhancements
+  pathBSectionHeading: "أنشئ ورقة اقتراعك من نتيجة الذكاء الاصطناعي",
+  pathBPasteHeading: "الصق ملخص ورقة اقتراعك من الذكاء الاصطناعي",
+  pathBPasteInstructions:
+    "بعد محادثتك مع الذكاء الاصطناعي، الصق قسم 'ورقة اقتراعي' هنا لإنشاء ورقة اقتراع قابلة للطباعة.",
+  pathBGenerateBallot: "إنشاء ورقة الاقتراع",
+  pathBProfileHeading: "الصق ملف الناخب من الذكاء الاصطناعي",
+  pathBPasteProfilePlaceholder:
+    "الصق قسم ملف الناخب من محادثتك مع الذكاء الاصطناعي هنا...",
+  pathBGenerateProfile: "حفظ ملف الناخب",
 };
 
 /**

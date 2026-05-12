@@ -14,6 +14,9 @@ import ZipForm from "./ZipForm";
 import StateInfo from "./StateInfo";
 import StateSelector from "./StateSelector";
 import PromptOutput from "./PromptOutput";
+import ChatWindow from "./ChatWindow";
+import BallotDownload from "./BallotDownload";
+import VoterProfileUpload from "./VoterProfileUpload";
 
 type AppState =
   | { status: "idle" }
@@ -33,6 +36,10 @@ export default function BallotTool() {
   const [appState, setAppState] = useState<AppState>({ status: "idle" });
   const today = useMemo(() => new Date(), []);
   const { lang, t } = useLanguage();
+
+  // Phase 5: Chat state
+  const [showChat, setShowChat] = useState(false);
+  const [voterProfile, setVoterProfile] = useState<string | null>(null);
 
   // Build the prompt on-the-fly based on current language so it updates when lang changes
   const promptText = useMemo(() => {
@@ -161,6 +168,15 @@ export default function BallotTool() {
 
   return (
     <div className="w-full max-w-2xl mx-auto space-y-8">
+      {/* Phase 5: Voter Profile Upload (top of page for returning voters) */}
+      <section aria-label="Returning voter profile upload">
+        <VoterProfileUpload
+          onProfileLoaded={setVoterProfile}
+          uploadedProfile={voterProfile}
+          onDismiss={() => setVoterProfile(null)}
+        />
+      </section>
+
       {/* Zip Code Entry */}
       <section aria-label="Zip code entry">
         <ZipForm
@@ -251,7 +267,87 @@ export default function BallotTool() {
             liveData={appState.liveData}
             isLiveLoading={appState.isLiveLoading}
           />
+
+          {/* Phase 5: Chat CTA and Chat Window */}
+          <section aria-label="AI ballot research chat">
+            {!showChat ? (
+              <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+                <button
+                  data-testid="chat-cta"
+                  onClick={() => setShowChat(true)}
+                  className="flex items-center gap-2 px-5 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 shadow-sm"
+                >
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
+                    />
+                  </svg>
+                  {t("chatCtaButton")}
+                </button>
+                <span className="text-sm text-gray-500">
+                  — or scroll down to copy the prompt for any AI chatbot
+                </span>
+              </div>
+            ) : (
+              <ChatWindow
+                systemPrompt={promptText}
+                voterProfile={voterProfile}
+                county={appState.stateData?.stateName}
+                electionName={
+                  appState.liveData?.electionName ?? appState.election?.name
+                }
+                electionDate={
+                  appState.liveData?.electionDate ?? appState.election?.date
+                }
+                phonePolicyNote={
+                  appState.stateData?.votingRules?.phonesAtPollsDetail
+                }
+                onClose={() => setShowChat(false)}
+              />
+            )}
+          </section>
+
           <PromptOutput promptText={promptText} />
+
+          {/* Phase 5: Path B ballot builder */}
+          <section
+            aria-label={t("pathBSectionHeading")}
+            className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm"
+          >
+            <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
+              <h2 className="text-lg font-bold text-gray-900">
+                {t("pathBSectionHeading")}
+              </h2>
+              <p className="text-sm text-gray-600 mt-1">
+                After your AI conversation, paste your results here to download
+                your ballot.
+              </p>
+            </div>
+            <div className="p-6">
+              <BallotDownload
+                county={appState.stateData?.stateName}
+                electionName={
+                  appState.liveData?.electionName ?? appState.election?.name
+                }
+                electionDate={
+                  appState.liveData?.electionDate ?? appState.election?.date
+                }
+                phonePolicyNote={
+                  appState.stateData?.votingRules?.phonesAtPollsDetail
+                }
+                showPathB={true}
+              />
+            </div>
+          </section>
         </>
       )}
     </div>
