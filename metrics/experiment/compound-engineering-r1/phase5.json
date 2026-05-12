@@ -1,0 +1,580 @@
+{
+  "metadata": {
+    "timestamp": "2026-05-12T12:01:35.598Z",
+    "branch": "experiment/compound-engineering-r1",
+    "commit": "f06ea8f",
+    "phase": 5,
+    "nodeVersion": "v22.14.0"
+  },
+  "eslint": {
+    "errors": 0,
+    "warnings": 14,
+    "complexityViolations": 14
+  },
+  "complexity": {
+    "count": 123,
+    "average": 6.5,
+    "max": 63,
+    "p50": 3,
+    "p75": 6,
+    "p95": 21,
+    "distribution": {
+      "simple_1_5": 91,
+      "moderate_6_10": 18,
+      "complex_11_15": 3,
+      "highComplex_16_20": 4,
+      "critical_21plus": 7
+    },
+    "perFunction": [
+      {
+        "file": "src/lib/openstates/derive.ts",
+        "name": "deriveOpenStatesData",
+        "complexity": 63,
+        "line": 155
+      },
+      {
+        "file": "src/lib/openstates/derive.ts",
+        "name": "<arrow>",
+        "complexity": 57,
+        "line": 310
+      },
+      {
+        "file": "src/lib/promptBuilder.ts",
+        "name": "buildContextBlock",
+        "complexity": 52,
+        "line": 106
+      },
+      {
+        "file": "src/app/page.tsx",
+        "name": "ResultCard",
+        "complexity": 40,
+        "line": 66
+      },
+      {
+        "file": "src/lib/promptBuilder.ts",
+        "name": "buildCivicContextBlock",
+        "complexity": 34,
+        "line": 297
+      },
+      {
+        "file": "src/components/ChatWindow.tsx",
+        "name": "<anonymous>",
+        "complexity": 28,
+        "line": 53
+      },
+      {
+        "file": "src/app/api/chat/route.ts",
+        "name": "<anonymous>",
+        "complexity": 21,
+        "line": 108
+      },
+      {
+        "file": "src/lib/enrichment/candidateEnrichment.ts",
+        "name": "<anonymous>",
+        "complexity": 19,
+        "line": 18
+      },
+      {
+        "file": "src/app/page.tsx",
+        "name": "Home",
+        "complexity": 17,
+        "line": 247
+      },
+      {
+        "file": "src/lib/ballotParser.ts",
+        "name": "parseBallotBlock",
+        "complexity": 17,
+        "line": 52
+      },
+      {
+        "file": "src/lib/openstates/derive.ts",
+        "name": "buildVoteSummary",
+        "complexity": 16,
+        "line": 69
+      },
+      {
+        "file": "src/lib/civic/mapper.ts",
+        "name": "mapCivicResponseToElectionInfo",
+        "complexity": 15,
+        "line": 105
+      },
+      {
+        "file": "src/components/CandidateDetail.tsx",
+        "name": "CandidateDetail",
+        "complexity": 14,
+        "line": 14
+      },
+      {
+        "file": "src/lib/civic/mapper.ts",
+        "name": "extractDistricts",
+        "complexity": 12,
+        "line": 18
+      },
+      {
+        "file": "src/app/api/chat/route.ts",
+        "name": "<anonymous>",
+        "complexity": 10,
+        "line": 248
+      },
+      {
+        "file": "src/components/BallotDownload.tsx",
+        "name": "BallotDownload",
+        "complexity": 10,
+        "line": 24
+      },
+      {
+        "file": "src/components/CandidateDetail.tsx",
+        "name": "<anonymous>",
+        "complexity": 10,
+        "line": 27
+      },
+      {
+        "file": "src/lib/ballotParser.ts",
+        "name": "renderBallotHtml",
+        "complexity": 10,
+        "line": 154
+      },
+      {
+        "file": "src/lib/promptBuilder.ts",
+        "name": "buildOpenStatesContext",
+        "complexity": 10,
+        "line": 262
+      },
+      {
+        "file": "src/components/BallotContests.tsx",
+        "name": "<arrow>",
+        "complexity": 8,
+        "line": 23
+      },
+      {
+        "file": "src/components/ChatWindow.tsx",
+        "name": "ChatWindow",
+        "complexity": 8,
+        "line": 31
+      },
+      {
+        "file": "src/lib/civic/client.ts",
+        "name": "<anonymous>",
+        "complexity": 8,
+        "line": 34
+      },
+      {
+        "file": "src/lib/civic/mapper.ts",
+        "name": "<arrow>",
+        "complexity": 8,
+        "line": 64
+      },
+      {
+        "file": "src/app/api/candidate/[id]/route.ts",
+        "name": "<anonymous>",
+        "complexity": 7,
+        "line": 4
+      },
+      {
+        "file": "src/app/page.tsx",
+        "name": "<arrow>",
+        "complexity": 7,
+        "line": 276
+      },
+      {
+        "file": "src/components/AlignmentBanner.tsx",
+        "name": "AlignmentBanner",
+        "complexity": 7,
+        "line": 11
+      },
+      {
+        "file": "src/lib/civic/client.ts",
+        "name": "<anonymous>",
+        "complexity": 7,
+        "line": 72
+      },
+      {
+        "file": "src/lib/dataLayer.ts",
+        "name": "<anonymous>",
+        "complexity": 7,
+        "line": 33
+      },
+      {
+        "file": "src/lib/openstates/derive.ts",
+        "name": "<arrow>",
+        "complexity": 7,
+        "line": 119
+      },
+      {
+        "file": "src/lib/promptBuilder.ts",
+        "name": "formatDate",
+        "complexity": 7,
+        "line": 16
+      },
+      {
+        "file": "src/components/ZipForm.tsx",
+        "name": "ZipForm",
+        "complexity": 6,
+        "line": 10
+      },
+      {
+        "file": "src/lib/openstates/derive.ts",
+        "name": "<arrow>",
+        "complexity": 6,
+        "line": 454
+      },
+      {
+        "file": "src/app/page.tsx",
+        "name": "submitZip",
+        "complexity": 5,
+        "line": 377
+      },
+      {
+        "file": "src/components/ApiErrorBanner.tsx",
+        "name": "ApiErrorBanner",
+        "complexity": 5,
+        "line": 11
+      },
+      {
+        "file": "src/components/VoterProfile.tsx",
+        "name": "VoterProfile",
+        "complexity": 5,
+        "line": 14
+      },
+      {
+        "file": "src/components/VoterProfile.tsx",
+        "name": "handleFileChange",
+        "complexity": 5,
+        "line": 23
+      },
+      {
+        "file": "src/lib/i18n/prompts.ts",
+        "name": "getBallotPrompt",
+        "complexity": 5,
+        "line": 478
+      },
+      {
+        "file": "src/lib/openstates/derive.ts",
+        "name": "mergeSourceUrls",
+        "complexity": 5,
+        "line": 143
+      },
+      {
+        "file": "src/app/api/election/[zip]/route.ts",
+        "name": "<anonymous>",
+        "complexity": 4,
+        "line": 6
+      },
+      {
+        "file": "src/app/page.tsx",
+        "name": "getRegistrationStatusText",
+        "complexity": 4,
+        "line": 33
+      },
+      {
+        "file": "src/app/page.tsx",
+        "name": "getElectionSummary",
+        "complexity": 4,
+        "line": 45
+      },
+      {
+        "file": "src/app/page.tsx",
+        "name": "<anonymous>",
+        "complexity": 4,
+        "line": 313
+      },
+      {
+        "file": "src/components/CandidateDetail.tsx",
+        "name": "handleToggle",
+        "complexity": 4,
+        "line": 62
+      },
+      {
+        "file": "src/components/ChatWindow.tsx",
+        "name": "<arrow>",
+        "complexity": 4,
+        "line": 292
+      },
+      {
+        "file": "src/components/DataAttribution.tsx",
+        "name": "DataAttribution",
+        "complexity": 4,
+        "line": 10
+      },
+      {
+        "file": "src/components/PollingLocation.tsx",
+        "name": "PollingLocation",
+        "complexity": 4,
+        "line": 10
+      },
+      {
+        "file": "src/lib/budgetTracker.ts",
+        "name": "getBudgetState",
+        "complexity": 4,
+        "line": 53
+      },
+      {
+        "file": "src/lib/i18n/LanguageContext.tsx",
+        "name": "<arrow>",
+        "complexity": 4,
+        "line": 42
+      },
+      {
+        "file": "src/lib/openstates/derive.ts",
+        "name": "asString",
+        "complexity": 4,
+        "line": 14
+      },
+      {
+        "file": "src/lib/openstates/derive.ts",
+        "name": "normalizeStateCode",
+        "complexity": 4,
+        "line": 59
+      }
+    ]
+  },
+  "vitest": {
+    "tests": {
+      "total": 37,
+      "passed": 37,
+      "failed": 0,
+      "skipped": "no test files",
+      "passRate": 100
+    },
+    "coverage": {
+      "lines": null,
+      "branches": null,
+      "functions": null,
+      "statements": null
+    }
+  },
+  "duplication": {
+    "duplicatedLines": 29,
+    "totalLines": 8297,
+    "percentage": 0.35,
+    "clones": 2
+  },
+  "bundleSize": {
+    "buildSuccess": true,
+    "pages": [
+      {
+        "route": "/",
+        "size": 30.8,
+        "unit": "kB"
+      },
+      {
+        "route": "/_not-found",
+        "size": 990,
+        "unit": "B"
+      },
+      {
+        "route": "/api/candidate/[id]",
+        "size": 131,
+        "unit": "B"
+      },
+      {
+        "route": "/api/chat",
+        "size": 131,
+        "unit": "B"
+      },
+      {
+        "route": "/api/election/[zip]",
+        "size": 131,
+        "unit": "B"
+      }
+    ],
+    "firstLoadJsShared": {
+      "size": 102,
+      "unit": "kB"
+    }
+  },
+  "lighthouse": {
+    "performance": 100,
+    "accessibility": 100,
+    "bestPractices": 100,
+    "seo": 100
+  },
+  "playwright": {
+    "total": 154,
+    "passed": 154,
+    "failed": 0,
+    "timedOut": 0,
+    "skipped": 0,
+    "passRate": 100
+  },
+  "linesOfCode": {
+    "application": {
+      "code": 7007,
+      "files": 49,
+      "byExtension": {
+        ".ts": {
+          "files": 24,
+          "code": 4281
+        },
+        ".css": {
+          "files": 1,
+          "code": 527
+        },
+        ".tsx": {
+          "files": 16,
+          "code": 1918
+        },
+        ".json": {
+          "files": 8,
+          "code": 281
+        }
+      }
+    },
+    "plugin": {
+      "code": 0,
+      "files": 0,
+      "byExtension": {}
+    },
+    "infrastructure": {
+      "code": 902,
+      "files": 13
+    },
+    "total": {
+      "code": 7909,
+      "files": 62
+    }
+  },
+  "workflowTests": {
+    "count": 0,
+    "files": []
+  },
+  "workflowTiming": {
+    "steps": [
+      {
+        "step": "ce:plan",
+        "started": "2026-05-11T19:49:31-05:00",
+        "completed": "2026-05-11T19:50:38-05:00",
+        "durationMs": 67000
+      },
+      {
+        "step": "ce:work",
+        "started": "2026-05-11T19:50:38-05:00",
+        "completed": "2026-05-11T20:09:21-05:00",
+        "durationMs": 1123000
+      },
+      {
+        "step": "ce:plan",
+        "started": "2026-05-11T20:07:47-05:00",
+        "completed": "2026-05-11T19:50:38-05:00",
+        "durationMs": -1029000
+      },
+      {
+        "step": "ce:work",
+        "started": "2026-05-11T20:08:23-05:00",
+        "completed": "2026-05-11T20:09:21-05:00",
+        "durationMs": 58000
+      },
+      {
+        "step": "ce:review",
+        "started": "2026-05-11T20:09:26-05:00",
+        "completed": "2026-05-11T20:10:09-05:00",
+        "durationMs": 43000
+      },
+      {
+        "step": "ce:compound",
+        "started": "2026-05-11T20:10:14-05:00",
+        "completed": "2026-05-11T20:10:42-05:00",
+        "durationMs": 28000
+      },
+      {
+        "step": "ce:plan",
+        "started": "2026-05-11T23:46:00-05:00",
+        "completed": "2026-05-11T19:50:38-05:00",
+        "durationMs": -14122000
+      },
+      {
+        "step": "ce:work",
+        "started": "2026-05-11T23:46:48-05:00",
+        "completed": "2026-05-11T20:09:21-05:00",
+        "durationMs": -13047000
+      },
+      {
+        "step": "ce:review",
+        "started": "2026-05-11T23:52:57-05:00",
+        "completed": "2026-05-11T20:10:09-05:00",
+        "durationMs": -13368000
+      },
+      {
+        "step": "ce:compound",
+        "started": "2026-05-11T23:53:41-05:00",
+        "completed": "2026-05-11T20:10:42-05:00",
+        "durationMs": -13379000
+      },
+      {
+        "step": "ce:plan",
+        "started": "2026-05-12T02:09:37-05:00",
+        "completed": "2026-05-11T19:50:38-05:00",
+        "durationMs": -22739000
+      },
+      {
+        "step": "ce:work",
+        "started": "2026-05-12T02:10:42-05:00",
+        "completed": "2026-05-11T20:09:21-05:00",
+        "durationMs": -21681000
+      },
+      {
+        "step": "ce:review",
+        "started": "2026-05-12T02:22:15-05:00",
+        "completed": "2026-05-11T20:10:09-05:00",
+        "durationMs": -22326000
+      },
+      {
+        "step": "ce:compound",
+        "started": "2026-05-12T02:22:50-05:00",
+        "completed": "2026-05-11T20:10:42-05:00",
+        "durationMs": -22328000
+      },
+      {
+        "step": "ce:plan",
+        "started": "2026-05-12T04:19:37-05:00",
+        "completed": "2026-05-11T19:50:38-05:00",
+        "durationMs": -30539000
+      },
+      {
+        "step": "ce:work",
+        "started": "2026-05-12T04:20:22-05:00",
+        "completed": "2026-05-11T20:09:21-05:00",
+        "durationMs": -29461000
+      },
+      {
+        "step": "ce:review",
+        "started": "2026-05-12T04:29:37-05:00",
+        "completed": "2026-05-11T20:10:09-05:00",
+        "durationMs": -29968000
+      },
+      {
+        "step": "ce:compound",
+        "started": "2026-05-12T04:29:54-05:00",
+        "completed": "2026-05-11T20:10:42-05:00",
+        "durationMs": -29952000
+      },
+      {
+        "step": "ce:plan",
+        "started": "2026-05-12T06:38:01-05:00",
+        "completed": "2026-05-11T19:50:38-05:00",
+        "durationMs": -38843000
+      },
+      {
+        "step": "ce:work",
+        "started": "2026-05-12T06:39:17-05:00",
+        "completed": "2026-05-11T20:09:21-05:00",
+        "durationMs": -37796000
+      },
+      {
+        "step": "ce:review",
+        "started": "2026-05-12T06:59:53-05:00",
+        "completed": "2026-05-11T20:10:09-05:00",
+        "durationMs": -38984000
+      },
+      {
+        "step": "ce:compound",
+        "started": "2026-05-12T07:00:23-05:00",
+        "completed": "2026-05-11T20:10:42-05:00",
+        "durationMs": -38981000
+      }
+    ],
+    "totalSteps": 22,
+    "completedSteps": 22
+  },
+  "diffHygiene": null
+}
