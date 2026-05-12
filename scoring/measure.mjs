@@ -356,7 +356,7 @@ function measureDuplication() {
 // ------------------------------------------------------------------
 function measureBundleSize() {
   log("Bundle size (next build)");
-  const result = run("npx next build 2>&1");
+  const result = run("npm run build 2>&1");
   if (!result.success && !result.stdout) {
     console.log("  Build failed");
     return { buildSuccess: false, pages: null };
@@ -410,7 +410,7 @@ function measureLighthouse() {
   // Build first, then start the server in background
   if (!existsSync(join(ROOT, ".next"))) {
     console.log("  Building first...");
-    run("npx next build 2>&1");
+    run("npm run build 2>&1");
   }
 
   const result = run("npx lhci collect --config=lighthouserc.js 2>&1");
@@ -482,7 +482,7 @@ function measurePlaywright() {
   // Build if needed
   if (!existsSync(join(ROOT, ".next"))) {
     console.log("  Building first...");
-    run("npx next build 2>&1");
+    run("npm run build 2>&1");
   }
 
   // Use config reporters (playwright.config.ts writes JSON to playwright-report.json)
