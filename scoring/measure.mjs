@@ -29,10 +29,16 @@ import {
   readdirSync,
   statSync,
 } from "fs";
-import { join, dirname, resolve } from "path";
+import { join, dirname, resolve, relative } from "path";
 import { fileURLToPath } from "url";
 
 const args = process.argv.slice(2);
+const printOnly = args.includes("--print-only");
+const originalConsoleLog = console.log.bind(console);
+
+if (printOnly) {
+  console.log = () => {};
+}
 
 let outputPath = null;
 const outputIdx = args.indexOf("--output");
@@ -560,12 +566,12 @@ function measureLOC() {
     ".js",
     ".jsx",
     ".mjs",
+    ".sh",
     ".css",
     ".json",
   ]);
+  const DOC_EXTENSIONS = new Set([".md"]);
 
-  // Directories that are application code (workflow-generated)
-  const APP_DIRS = ["src"];
   // Directories that are plugin/framework code (workflow scaffolding)
   // Actual directory names per branch (from Phase 0.4 install):
   //   CE:          .claude/skills/, .claude/agents/
@@ -582,7 +588,16 @@ function measureLOC() {
     ".specify",
   ];
   // Everything else that's project code but not app or plugin
-  const INFRA_DIRS = ["scripts", "e2e", ".claude/commands"];
+  const INFRA_DIRS = ["scripts", ".claude/commands"];
+  const EXCLUDED_DIRS = new Set([
+    ".git",
+    "node_modules",
+    ".next",
+    "coverage",
+    "dist",
+    "test-results",
+    "playwright-report",
+  ]);
 
   function countLines(filePath) {
     const content = readFileSync(filePath, "utf-8");
@@ -617,20 +632,21 @@ function measureLOC() {
     return { total, blank, comment, code: total - blank - comment };
   }
 
-  function walkDir(dir) {
+  function walkDir(dir, allowedExtensions) {
     const results = [];
     if (!existsSync(dir)) return results;
     const entries = readdirSync(dir, { withFileTypes: true });
     for (const entry of entries) {
       const fullPath = join(dir, entry.name);
       if (entry.isDirectory()) {
-        if (entry.name === "node_modules" || entry.name === ".next") continue;
-        results.push(...walkDir(fullPath));
+        if (EXCLUDED_DIRS.has(entry.name)) continue;
+        if (fullPath === join(ROOT, ".claude", "worktrees")) continue;
+        results.push(...walkDir(fullPath, allowedExtensions));
       } else {
         const ext = entry.name.includes(".")
           ? "." + entry.name.split(".").pop()
           : "";
-        if (CODE_EXTENSIONS.has(ext)) {
+        if (allowedExtensions.has(ext)) {
           results.push(fullPath);
         }
       }
@@ -638,7 +654,7 @@ function measureLOC() {
     return results;
   }
 
-  function countCategory(dirs) {
+  function countCategory(files) {
     let total = 0;
     let blank = 0;
     let comment = 0;
@@ -646,23 +662,44 @@ function measureLOC() {
     let fileCount = 0;
     const byExtension = {};
 
-    for (const dir of dirs) {
-      const absDir = join(ROOT, dir);
-      const files = walkDir(absDir);
-      for (const file of files) {
-        const counts = countLines(file);
-        total += counts.total;
-        blank += counts.blank;
-        comment += counts.comment;
-        code += counts.code;
-        fileCount++;
-        const ext = "." + file.split(".").pop();
-        if (!byExtension[ext]) byExtension[ext] = { files: 0, code: 0 };
-        byExtension[ext].files++;
-        byExtension[ext].code += counts.code;
-      }
+    for (const file of files) {
+      const counts = countLines(file);
+      total += counts.total;
+      blank += counts.blank;
+      comment += counts.comment;
+      code += counts.code;
+      fileCount++;
+      const ext = "." + file.split(".").pop();
+      if (!byExtension[ext]) byExtension[ext] = { files: 0, code: 0 };
+      byExtension[ext].files++;
+      byExtension[ext].code += counts.code;
     }
+
     return { files: fileCount, total, blank, comment, code, byExtension };
+  }
+
+  function uniqueFiles(files) {
+    return Array.from(new Set(files));
+  }
+
+  function appRelative(file) {
+    return relative(ROOT, file).split("\\").join("/");
+  }
+
+  function isTestFile(relPath) {
+    return (
+      /^e2e\/.*\.ts$/.test(relPath) ||
+      /^src\/__tests__\//.test(relPath) ||
+      /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(relPath)
+    );
+  }
+
+  function isDataFile(relPath) {
+    return (
+      /^src\/.*\.json$/.test(relPath) ||
+      /^public\/.*\.json$/.test(relPath) ||
+      /^data\/.*\.json$/.test(relPath)
+    );
   }
 
   // Also count standalone config files in root (exclude lockfiles and generated reports)
@@ -671,6 +708,7 @@ function measureLOC() {
     "playwright-report.json",
     ".vitest-report.json",
     ".eslint-report.json",
+    ".eslint-complexity-report.json",
   ]);
   const rootConfigFiles = [];
   try {
@@ -689,31 +727,82 @@ function measureLOC() {
     // ignore
   }
 
-  const app = countCategory(APP_DIRS);
-  const plugin = countCategory(PLUGIN_DIRS);
-  const infra = countCategory(INFRA_DIRS);
+  const srcFiles = walkDir(join(ROOT, "src"), CODE_EXTENSIONS);
+  const e2eFiles = walkDir(join(ROOT, "e2e"), CODE_EXTENSIONS);
+  const publicJsonFiles = walkDir(join(ROOT, "public"), new Set([".json"]));
+  const dataJsonFiles = walkDir(join(ROOT, "data"), new Set([".json"]));
+  const markdownFiles = walkDir(ROOT, DOC_EXTENSIONS);
 
-  // Count root config files as infra
-  for (const file of rootConfigFiles) {
-    const counts = countLines(file);
-    infra.total += counts.total;
-    infra.blank += counts.blank;
-    infra.comment += counts.comment;
-    infra.code += counts.code;
-    infra.files++;
+  const productionFiles = [];
+  const testFiles = [];
+  const dataFiles = [...publicJsonFiles, ...dataJsonFiles];
+
+  for (const file of srcFiles) {
+    const relPath = appRelative(file);
+    if (isTestFile(relPath)) {
+      testFiles.push(file);
+    } else if (isDataFile(relPath)) {
+      dataFiles.push(file);
+    } else {
+      productionFiles.push(file);
+    }
+  }
+  for (const file of e2eFiles) {
+    const relPath = appRelative(file);
+    if (isTestFile(relPath)) {
+      testFiles.push(file);
+    }
+  }
+
+  const pluginFiles = uniqueFiles(
+    PLUGIN_DIRS.flatMap((dir) => walkDir(join(ROOT, dir), CODE_EXTENSIONS)),
+  );
+  const infraFiles = uniqueFiles([
+    ...INFRA_DIRS.flatMap((dir) => walkDir(join(ROOT, dir), CODE_EXTENSIONS)),
+    ...rootConfigFiles,
+  ]);
+
+  const production = countCategory(uniqueFiles(productionFiles));
+  const tests = countCategory(uniqueFiles(testFiles));
+  const data = countCategory(uniqueFiles(dataFiles));
+  const docs = countCategory(uniqueFiles(markdownFiles));
+  const plugin = countCategory(pluginFiles);
+  const infra = countCategory(infraFiles);
+
+  const appByExtension = {};
+  for (const category of [production.byExtension, tests.byExtension, data.byExtension]) {
+    for (const [ext, stats] of Object.entries(category)) {
+      if (!appByExtension[ext]) appByExtension[ext] = { files: 0, code: 0 };
+      appByExtension[ext].files += stats.files;
+      appByExtension[ext].code += stats.code;
+    }
   }
 
   const summary = {
-    application: { code: app.code, files: app.files, byExtension: app.byExtension },
+    productionLOC: production.code,
+    testLOC: tests.code,
+    dataLOC: data.code,
+    docLOC: docs.code,
+    totalApplication: production.code + tests.code + data.code,
     plugin: { code: plugin.code, files: plugin.files, byExtension: plugin.byExtension },
     infrastructure: { code: infra.code, files: infra.files },
+    byExtension: appByExtension,
+    application: {
+      code: production.code + tests.code + data.code,
+      files: production.files + tests.files + data.files,
+      byExtension: appByExtension,
+    },
     total: {
-      code: app.code + plugin.code + infra.code,
-      files: app.files + plugin.files + infra.files,
+      code: production.code + tests.code + data.code + docs.code + plugin.code + infra.code,
+      files:
+        production.files + tests.files + data.files + docs.files + plugin.files + infra.files,
     },
   };
 
-  console.log(`  Application code (src/): ${app.code} lines across ${app.files} files`);
+  console.log(`  Production LOC: ${production.code} lines across ${production.files} files`);
+  console.log(`  Test LOC: ${tests.code} lines across ${tests.files} files`);
+  console.log(`  Data LOC: ${data.code} lines across ${data.files} files`);
+  console.log(`  Doc LOC: ${docs.code} lines across ${docs.files} files`);
   console.log(`  Plugin/framework code: ${plugin.code} lines across ${plugin.files} files`);
   console.log(`  Infrastructure (scripts, e2e, configs): ${infra.code} lines across ${infra.files} files`);
   console.log(`  Total: ${summary.total.code} lines across ${summary.total.files} files`);
@@ -902,6 +991,11 @@ async function main() {
     workflowTiming: measureWorkflowTiming(),
     diffHygiene: measureDiffHygiene(branch, phaseNumber),
   };
+
+  if (printOnly) {
+    process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
+    return;
+  }
 
   // Determine output path
   if (!outputPath) {

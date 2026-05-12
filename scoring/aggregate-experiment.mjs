@@ -31,11 +31,64 @@ function argValue(name) {
 }
 
 const ROOT = argValue("--repo") ? resolve(argValue("--repo")) : process.cwd();
+const DRY_RUN = args.includes("--dry-run");
+const TARGET = argValue("--target");
 const FRAMEWORKS = ["vanilla", "bmad", "spec-kit", "superpowers", "compound-engineering"];
 const REPLICATES = ["r1", "r2", "r3"];
 const FORWARD_PHASES = [2, 3, 4, 5, 6];
 
 const QUESTION_HEAVY = new Set(["bmad", "spec-kit"]);
+const WORKFLOW_EXPECTATIONS = {
+  vanilla: [],
+  bmad: [
+    "bmad:product-brief",
+    "bmad:prd",
+    "bmad:architecture",
+    "bmad:epics-and-stories",
+    "bmad:implementation-readiness",
+    "bmad:sprint-planning",
+    "bmad:story-implementation",
+    "bmad:code-review",
+  ],
+  "spec-kit": [
+    "speckit.specify",
+    "speckit.clarify",
+    "speckit.plan",
+    "speckit.tasks",
+    "speckit.analyze",
+    "speckit.implement",
+  ],
+  superpowers: [
+    "brainstorming",
+    "writing-plans",
+    "executing-plans",
+    "requesting-code-review",
+    "verification-before-completion",
+    "finishing-a-development-branch",
+  ],
+  "compound-engineering": ["ce:plan", "ce:work", "ce:review", "ce:compound"],
+};
+const EXPECTED_FIELD_PATHS = [
+  "metadata.branch",
+  "metadata.phase",
+  "eslint.errors",
+  "eslint.warnings",
+  "complexity.average",
+  "complexity.max",
+  "complexity.distribution.critical_21plus",
+  "vitest.coverage.lines",
+  "bundleSize.firstLoadJsShared.size",
+  "playwright.total",
+  "playwright.passed",
+  "playwright.passRate",
+  "linesOfCode.productionLOC",
+  "linesOfCode.testLOC",
+  "linesOfCode.dataLOC",
+  "linesOfCode.docLOC",
+  "linesOfCode.totalApplication",
+  "workflowTests.count",
+  "workflowTiming.steps",
+];
 
 // ------------------------------------------------------------------
 // Helpers
@@ -144,6 +197,63 @@ function loadResponderLog(framework, chosenReplicate) {
   return { ref: null, entries: [] };
 }
 
+function loadWorkflowLog(framework, chosenReplicate) {
+  const branch = `experiment/${framework}-${chosenReplicate}`;
+  const refs = [
+    `${framework}-phase6-complete`,
+    `${framework}-phase5-complete`,
+    `${framework}-phase4-complete`,
+    `${framework}-phase3-complete`,
+    `${framework}-phase2-complete`,
+    `${framework}-${chosenReplicate}-phase1-complete`,
+    branch,
+  ];
+  const candidatePaths = [
+    `metrics/${branch}/workflow-log.jsonl`,
+    "metrics/workflow-log.jsonl",
+  ];
+
+  for (const ref of refs) {
+    for (const path of candidatePaths) {
+      const content = gitShowFile(ref, path);
+      if (!content) continue;
+      const entries = content
+        .split("\n")
+        .map((line) => line.trim())
+        .filter(Boolean)
+        .map((line) => {
+          try {
+            return JSON.parse(line);
+          } catch {
+            return null;
+          }
+        })
+        .filter(Boolean);
+      return { ref, path, entries };
+    }
+  }
+
+  for (const path of candidatePaths) {
+    const diskPath = join(ROOT, path);
+    if (!existsSync(diskPath)) continue;
+    const entries = readFileSync(diskPath, "utf-8")
+      .split("\n")
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .map((line) => {
+        try {
+          return JSON.parse(line);
+        } catch {
+          return null;
+        }
+      })
+      .filter(Boolean);
+    return { ref: "disk", path, entries };
+  }
+
+  return { ref: null, path: null, entries: [] };
+}
+
 // ------------------------------------------------------------------
 // Rubric application (the 13 checks from auto-findings-rubric.md)
 // ------------------------------------------------------------------
@@ -152,7 +262,38 @@ function applyRubric(phaseData, context) {
   const findings = [];
   if (!phaseData) return findings;
 
-  const { framework, phase, delta, responderEntries } = context;
+  const { framework, phase, delta, responderEntries, workflowLogEntries } = context;
+
+  function getPath(obj, path) {
+    return path.split(".").reduce((value, key) => {
+      if (value == null || !(key in value)) return undefined;
+      return value[key];
+    }, obj);
+  }
+
+  function collectNullLeafPaths(value, prefix = "", out = []) {
+    if (value === null) {
+      out.push(prefix || "<root>");
+      return out;
+    }
+    if (Array.isArray(value)) {
+      value.forEach((item, index) => {
+        collectNullLeafPaths(item, `${prefix}[${index}]`, out);
+      });
+      return out;
+    }
+    if (typeof value === "object" && value !== null) {
+      for (const [key, child] of Object.entries(value)) {
+        const childPath = prefix ? `${prefix}.${key}` : key;
+        collectNullLeafPaths(child, childPath, out);
+      }
+    }
+    return out;
+  }
+
+  function normalizeWorkflowStep(step) {
+    return typeof step === "string" ? step.replace(/-phase\d+$/, "") : step;
+  }
 
   // Check 1 — E2e gap
   const e2ePassed = safeNum(phaseData.playwright?.passing);
@@ -168,6 +309,22 @@ function applyRubric(phaseData, context) {
     }
   } else {
     findings.push({ id: 1, name: "E2e missing", detail: "no playwright data" });
+  }
+
+  // Check 4 — Workflow gap
+  const expectedSteps = WORKFLOW_EXPECTATIONS[framework] ?? [];
+  const observedSteps = new Set(
+    (phaseData.workflowTiming?.steps ?? [])
+      .map((step) => normalizeWorkflowStep(step?.step))
+      .filter(Boolean),
+  );
+  const missingSteps = expectedSteps.filter((step) => !observedSteps.has(step));
+  if (missingSteps.length > 0) {
+    findings.push({
+      id: 4,
+      name: "Workflow gap",
+      detail: `missing steps: ${missingSteps.join(", ")}`,
+    });
   }
 
   // Check 5 — Lint regression
@@ -198,6 +355,42 @@ function applyRubric(phaseData, context) {
       id: 7,
       name: "Timing gap",
       detail: `start=${timing.hasStart} end=${timing.hasEnd}`,
+    });
+  }
+
+  // Check 8 — Measurement gap
+  const nullLeafPaths = collectNullLeafPaths(phaseData);
+  const missingFieldPaths = EXPECTED_FIELD_PATHS.filter((path) => {
+    if (phase < 2 && path.startsWith("diffHygiene.")) return false;
+    return getPath(phaseData, path) === undefined;
+  });
+  const measurementGaps = [...new Set([...nullLeafPaths, ...missingFieldPaths])].sort();
+  if (measurementGaps.length > 0) {
+    findings.push({
+      id: 8,
+      name: "Measurement gap",
+      detail: measurementGaps.slice(0, 8).join(", "),
+      paths: measurementGaps,
+    });
+  }
+
+  // Check 9 — Workflow log empty
+  const workflowLogCount = workflowLogEntries?.length ?? 0;
+  if (workflowLogCount < 1) {
+    findings.push({
+      id: 9,
+      name: "Workflow log empty",
+      detail: `workflow-log entries=${workflowLogCount}`,
+    });
+  }
+
+  // Check 10 — Test generation
+  const workflowTestCount = safeNum(phaseData.workflowTests?.count, 0);
+  if (framework !== "vanilla" && workflowTestCount < 1) {
+    findings.push({
+      id: 10,
+      name: "Test generation",
+      detail: `${framework} produced ${workflowTestCount} workflow test files`,
     });
   }
 
@@ -447,6 +640,9 @@ function aggregateFramework(framework) {
 
   // Responder log (live file on the chosen replicate branch, or fallback)
   const responder = chosen ? loadResponderLog(framework, chosen) : { ref: null, entries: [] };
+  const workflowLog = chosen
+    ? loadWorkflowLog(framework, chosen)
+    : { ref: null, path: null, entries: [] };
 
   // Apply rubric per phase
   const findingsByPhase = {};
@@ -458,6 +654,7 @@ function aggregateFramework(framework) {
       phase: 1,
       delta: null,
       responderEntries: responder.entries,
+      workflowLogEntries: workflowLog.entries,
     });
   }
   for (const p of FORWARD_PHASES) {
@@ -467,6 +664,7 @@ function aggregateFramework(framework) {
       phase: p,
       delta: deltas[`${p - 1}_to_${p}`],
       responderEntries: responder.entries,
+      workflowLogEntries: workflowLog.entries,
     });
   }
 
@@ -494,6 +692,7 @@ function aggregateFramework(framework) {
     axes: composite.axes,
     rationale: representative?.rationale ?? null,
     noisyMetrics: representative?.noisyMetrics ?? [],
+    workflowLogEntries: workflowLog.entries.length,
   };
 }
 
@@ -593,8 +792,9 @@ function renderMarkdown(report) {
   const metricSpecs = [
     ["E2e pass rate", (p) => p?.playwright?.passRate, "%"],
     ["Vitest coverage (lines)", (p) => p?.vitest?.coverage?.lines, "%"],
-    ["LOC (src/)", (p) => p?.linesOfCode?.application?.code, ""],
-    ["File count", (p) => p?.linesOfCode?.application?.files, ""],
+    ["Production LOC", (p) => p?.linesOfCode?.productionLOC, ""],
+    ["Test LOC", (p) => p?.linesOfCode?.testLOC, ""],
+    ["Application file count", (p) => p?.linesOfCode?.application?.files, ""],
     ["Complexity avg", (p) => p?.complexity?.average, ""],
     ["Complexity max", (p) => p?.complexity?.max, ""],
     ["Bundle first-load (kB)", (p) => p?.bundleSize?.firstLoadJsShared?.size, ""],
@@ -642,8 +842,14 @@ function main() {
   console.log("Voter Choice — Cross-framework Aggregator");
   console.log(`Repo: ${ROOT}`);
 
+  const selectedFrameworks = TARGET ? FRAMEWORKS.filter((fw) => fw === TARGET) : FRAMEWORKS;
+  if (TARGET && selectedFrameworks.length === 0) {
+    console.error(`Unknown --target framework: ${TARGET}`);
+    process.exit(2);
+  }
+
   const frameworks = [];
-  for (const fw of FRAMEWORKS) {
+  for (const fw of selectedFrameworks) {
     console.log(`\n  ${fw}…`);
     const summary = aggregateFramework(fw);
     // Stash raw phase data for the metric comparison table
@@ -673,11 +879,29 @@ function main() {
     metadata: {
       generatedAt: new Date().toISOString(),
       repo: ROOT,
-      frameworks: FRAMEWORKS,
-      rubric: "scoring/auto-findings-rubric.md (checks 1, 5, 6, 7, 11, 12, 13 programmatically applied)",
+      frameworks: selectedFrameworks,
+      rubric: "scoring/auto-findings-rubric.md (checks 1, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13 programmatically applied)",
     },
     frameworks,
   };
+
+  if (DRY_RUN) {
+    console.log("\nDry run rubric coverage:");
+    console.log("check 4 implemented");
+    console.log("check 8 implemented");
+    console.log("check 9 implemented");
+    console.log("check 10 implemented");
+    for (const framework of frameworks) {
+      for (const [phase, findings] of Object.entries(framework.findingsByPhase)) {
+        for (const finding of findings.filter((entry) => [4, 8, 9, 10].includes(entry.id))) {
+          console.log(
+            `${framework.framework} phase ${phase}: check ${finding.id} ${finding.name} — ${finding.detail}`,
+          );
+        }
+      }
+    }
+    return;
+  }
 
   const outDir = join(ROOT, "metrics", "experiment");
   if (!existsSync(outDir)) mkdirSync(outDir, { recursive: true });
