@@ -201,9 +201,12 @@ export function parseAndValidateTags(
   rawJson: string,
   billId: string,
 ): ValidatedTag[] {
+  // Strip markdown code fences if the model ignored the "no markdown" instruction
+  const fenceMatch = rawJson.match(/```(?:json)?\s*([\s\S]*?)```/);
+  const cleaned = fenceMatch ? fenceMatch[1].trim() : rawJson;
   let parsed: unknown;
   try {
-    parsed = JSON.parse(rawJson);
+    parsed = JSON.parse(cleaned);
   } catch {
     process.stderr.write(
       `[tag-bills] skip bill=${billId} reason=malformed_json\n`,
@@ -521,9 +524,10 @@ export function resolveTagBillsConfig(
   env: NodeJS.ProcessEnv = process.env,
   argv: string[] = process.argv,
 ): TaggerRuntimeConfig {
-  const limit = parseLimitFlag(argv) ?? parsePositiveInteger(env.TAGGER_BILL_LIMIT, DEFAULT_LIMIT);
-  const dryRun =
-    argv.includes("--dry-run") || env.TAGGER_DRY_RUN === "1";
+  const limit =
+    parseLimitFlag(argv) ??
+    parsePositiveInteger(env.TAGGER_BILL_LIMIT, DEFAULT_LIMIT);
+  const dryRun = argv.includes("--dry-run") || env.TAGGER_DRY_RUN === "1";
   const anthropicApiKey = env.ANTHROPIC_VOTER_API ?? "";
 
   return {
@@ -542,7 +546,10 @@ function parseLimitFlag(argv: string[]): number | null {
   return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
 }
 
-function parsePositiveInteger(value: string | undefined, fallback: number): number {
+function parsePositiveInteger(
+  value: string | undefined,
+  fallback: number,
+): number {
   if (!value) return fallback;
   const parsed = Number.parseInt(value, 10);
   return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
@@ -571,8 +578,7 @@ export async function tagBills({
     );
   }
 
-  const anthropic =
-    client ?? new Anthropic({ apiKey: config.anthropicApiKey });
+  const anthropic = client ?? new Anthropic({ apiKey: config.anthropicApiKey });
 
   const systemPrompt = buildSystemPrompt();
 
@@ -595,12 +601,12 @@ export async function tagBills({
   const untagged = await fetchUntaggedBills(db, config.limit);
   counts.billsQueried = untagged.length;
 
-  process.stderr.write(
-    `[tag-bills] found ${untagged.length} bills to tag\n`,
-  );
+  process.stderr.write(`[tag-bills] found ${untagged.length} bills to tag\n`);
 
   if (untagged.length === 0) {
-    process.stderr.write("[tag-bills] nothing to do — all bills already tagged for this version\n");
+    process.stderr.write(
+      "[tag-bills] nothing to do — all bills already tagged for this version\n",
+    );
     return counts;
   }
 
@@ -613,7 +619,14 @@ export async function tagBills({
     );
 
     for (const bill of chunk) {
-      await processBill(bill, db, anthropic, systemPrompt, counts, config.dryRun);
+      await processBill(
+        bill,
+        db,
+        anthropic,
+        systemPrompt,
+        counts,
+        config.dryRun,
+      );
     }
 
     // Pause between chunks (not after the last one).
@@ -657,8 +670,7 @@ function isCliExecution(): boolean {
 
 if (isCliExecution()) {
   tagBills().catch((error) => {
-    const message =
-      error instanceof Error ? error.message : String(error);
+    const message = error instanceof Error ? error.message : String(error);
     console.error(`[tag-bills] fatal: ${message}`);
     process.exitCode = 1;
   });
