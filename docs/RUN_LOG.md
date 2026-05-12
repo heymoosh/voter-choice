@@ -70,6 +70,16 @@ Note: **Scoring is executed by Hermes from the host side, not inside the build c
 
 
 
+
+### Phase 3 forward — superpowers (auto)
+
+- **Date:** 2026-05-12T07:04:52.335Z
+- **Branch:** `experiment/superpowers-r1`
+- **Tag:** `superpowers-phase3-complete`
+- **Status:** ✓
+- **Summary:** e2e 68/68, coverage 24.6%, LOC 3710, complexity avg 5.51, scope adherence N/A (diff hygiene unavailable)
+
+
 ### Phase 3 forward — spec-kit (auto)
 
 - **Date:** 2026-05-12T06:38:52.956Z
