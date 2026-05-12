@@ -55,6 +55,42 @@ Note: **Scoring is executed by Hermes from the host side, not inside the build c
 
 ## Completed
 
+
+
+
+### Phase 1 replicate — compound-engineering r2 (auto)
+
+- **Date:** 2026-05-12T02:14:13.437Z
+- **Branch:** `experiment/compound-engineering-r2`
+- **Tag:** `compound-engineering-r2-phase1-complete`
+- **Status:** ✓
+- **Replicate:** r2
+- **Summary:** e2e 42/42, vitest 12/12, lint 0e/3w, LOC 1808
+- **Metrics:** coverage 16.5%, LOC 1808, complexity avg 4.60 max 27
+
+
+### Phase 1 replicate — superpowers r3 (auto)
+
+- **Date:** 2026-05-11T20:46:35.651Z
+- **Branch:** `experiment/superpowers-r3`
+- **Tag:** `superpowers-r3-phase1-complete`
+- **Status:** ✓
+- **Replicate:** r3
+- **Summary:** e2e 42/42, vitest 24/24, lint 0e/0w, LOC 1075
+- **Metrics:** LOC 1075, complexity avg 3.57 max 9
+
+
+### Phase 1 replicate — superpowers r2 (auto)
+
+- **Date:** 2026-05-11T20:11:01.837Z
+- **Branch:** `experiment/superpowers-r2`
+- **Tag:** `superpowers-r2-phase1-complete`
+- **Status:** ✓
+- **Replicate:** r2
+- **Summary:** e2e 42/42, vitest 18/18, lint 0e/0w, LOC 1470
+- **Metrics:** coverage 16.1%, LOC 1470, complexity avg 3.69 max 9
+
+
 ### Phase 1 Run 5 — Vanilla (complete)
 
 - **Date:** 2026-05-10
