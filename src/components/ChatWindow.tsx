@@ -6,6 +6,8 @@ import type {
   ChatMessage,
   ParsedBallot,
   BudgetStatus,
+  RankedIssues,
+  ConfirmedConcerns,
 } from "@/lib/types";
 import type { Language } from "@/lib/i18n";
 import { tStr } from "@/lib/i18n";
@@ -20,6 +22,8 @@ type ChatWindowProps = {
   zip: string;
   language?: Language;
   voterProfile: string | null;
+  rankedIssues?: RankedIssues | null;
+  confirmedConcerns?: ConfirmedConcerns | null;
 };
 
 export function ChatWindow({
@@ -27,6 +31,8 @@ export function ChatWindow({
   zip,
   language = "en",
   voterProfile,
+  rankedIssues,
+  confirmedConcerns,
 }: ChatWindowProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputText, setInputText] = useState("");
@@ -85,6 +91,8 @@ export function ChatWindow({
           zip,
           language,
           voterProfile,
+          rankedIssues: rankedIssues ?? null,
+          confirmedConcerns: confirmedConcerns ?? null,
         }),
       });
 

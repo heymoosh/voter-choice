@@ -1,7 +1,12 @@
 import { NextRequest } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import type { MessageParam } from "@anthropic-ai/sdk/resources/messages";
-import type { BallotData, ChatMessage } from "@/lib/types";
+import type {
+  BallotData,
+  ChatMessage,
+  RankedIssues,
+  ConfirmedConcerns,
+} from "@/lib/types";
 import type { Language } from "@/lib/i18n";
 import { buildChatSystemPrompt } from "@/lib/chatSystemPrompt";
 import { getBudgetStatus, recordUsage } from "@/lib/budgetTracker";
@@ -48,6 +53,8 @@ export async function POST(req: NextRequest): Promise<Response> {
     zip: string;
     language: Language;
     voterProfile: string | null;
+    rankedIssues?: RankedIssues | null;
+    confirmedConcerns?: ConfirmedConcerns | null;
   };
 
   try {
@@ -108,6 +115,8 @@ export async function POST(req: NextRequest): Promise<Response> {
     body.zip,
     body.language ?? "en",
     body.voterProfile ?? null,
+    body.rankedIssues ?? null,
+    body.confirmedConcerns ?? null,
   );
 
   // Convert messages to Anthropic format

@@ -11,14 +11,28 @@ import { LanguageToggle } from "@/components/LanguageToggle";
 import { ChatWindow } from "@/components/ChatWindow";
 import { BallotBuilder } from "@/components/BallotBuilder";
 import { VoterProfile } from "@/components/VoterProfile";
+import { IssueRanking } from "@/components/IssueRanking";
+import { ConcernDisambiguation } from "@/components/ConcernDisambiguation";
+import { PolisOverlay } from "@/components/PolisOverlay";
 import { generatePrompt } from "@/lib/generatePrompt";
 import { useLanguage, tStr } from "@/lib/i18n";
-import type { BallotData, DataStatus } from "@/lib/types";
+import type {
+  BallotData,
+  DataStatus,
+  RankedIssues,
+  ConfirmedConcerns,
+} from "@/lib/types";
 
 export default function Home() {
   const [pageState, setPageState] = useState<DataStatus>({ status: "idle" });
   const [chatOpen, setChatOpen] = useState(false);
   const [voterProfile, setVoterProfile] = useState<string | null>(null);
+  const [rankedIssues, setRankedIssues] = useState<RankedIssues | null>(null);
+  const [confirmedConcerns, setConfirmedConcerns] =
+    useState<ConfirmedConcerns | null>(null);
+  const [rankingStep, setRankingStep] = useState<
+    "ranking" | "concerns" | "done"
+  >("ranking");
   const { language } = useLanguage();
 
   async function handleZipSubmit(zip: string) {
@@ -100,6 +114,8 @@ export default function Home() {
           new Date(),
           language,
           pageState.ballotData,
+          rankedIssues,
+          confirmedConcerns,
         )
       : "";
 
@@ -280,6 +296,99 @@ export default function Home() {
               ballotData={pageState.ballotData}
               language={language}
             />
+
+            {/* Phase 6: Issue Ranking + Concern Disambiguation */}
+            <section
+              aria-labelledby="priority-section-heading"
+              className="bg-white border border-gray-200 rounded-xl p-5 space-y-6"
+            >
+              <h2
+                id="priority-section-heading"
+                className="text-xl font-bold text-gray-900"
+              >
+                Your Priorities
+              </h2>
+
+              {rankingStep === "ranking" && (
+                <IssueRanking
+                  onConfirm={(ranked) => {
+                    setRankedIssues(ranked);
+                    setRankingStep("concerns");
+                  }}
+                />
+              )}
+
+              {rankingStep === "concerns" && (
+                <ConcernDisambiguation
+                  onConfirm={(concerns) => {
+                    setConfirmedConcerns(concerns);
+                    setRankingStep("done");
+                    // Increment aggregate counts for ranked issues
+                    if (
+                      rankedIssues &&
+                      !rankedIssues.skipped &&
+                      pageState.ballotData.districts?.county
+                    ) {
+                      const countyFips = pageState.ballotData.zip ?? "";
+                      rankedIssues.ordered.forEach((issueKey) => {
+                        import("@/lib/canonicalIssues").then(
+                          ({ slugForIssue }) => {
+                            const slug = slugForIssue(issueKey);
+                            fetch("/api/issue-counts/increment", {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({
+                                countyFips,
+                                issueSlug: slug,
+                              }),
+                            }).catch(() => {
+                              // Graceful degradation — ignore errors
+                            });
+                          },
+                        );
+                      });
+                    }
+                  }}
+                />
+              )}
+
+              {rankingStep === "done" && (
+                <div className="space-y-4">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-700">
+                        Priorities saved
+                      </p>
+                      {rankedIssues && !rankedIssues.skipped && (
+                        <p className="text-sm text-gray-500 mt-1">
+                          Top 3: {rankedIssues.ordered.slice(0, 3).join(", ")}
+                        </p>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => {
+                        setRankingStep("ranking");
+                        setRankedIssues(null);
+                        setConfirmedConcerns(null);
+                      }}
+                      className="text-xs text-blue-600 underline focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
+                    >
+                      Edit
+                    </button>
+                  </div>
+                  {/* Polis overlay */}
+                  {pageState.ballotData.zip && (
+                    <PolisOverlay
+                      countyFips={pageState.ballotData.zip}
+                      countyName={
+                        pageState.ballotData.districts?.county ?? undefined
+                      }
+                    />
+                  )}
+                </div>
+              )}
+            </section>
+
             <PromptOutput promptText={promptText} language={language} />
 
             {/* Phase 5: Chat CTA */}
@@ -307,6 +416,8 @@ export default function Home() {
                   zip={pageState.zip}
                   language={language}
                   voterProfile={voterProfile}
+                  rankedIssues={rankedIssues}
+                  confirmedConcerns={confirmedConcerns}
                 />
               )}
             </section>

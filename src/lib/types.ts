@@ -125,6 +125,26 @@ export type ParsedBallot = {
 
 export type BudgetStatus = "ok" | "warning" | "critical" | "exhausted";
 
+// --- Phase 6: Issue Ranking + Concern Disambiguation ---
+
+export type RankedIssues = {
+  ordered: string[]; // canonical issue keys, top priority first
+  skipped: boolean;
+  timestamp: string; // ISO-8601, browser-local
+};
+
+export type DisambiguatedIssue = {
+  issue: string;
+  quote: string;
+  confidence: "high" | "medium" | "low";
+};
+
+export type ConfirmedConcerns = {
+  freeText: string | null;
+  confirmedIssues: string[]; // canonical keys the user checked
+  skipped: boolean;
+};
+
 export type StateData = {
   stateCode: string;
   stateName: string;

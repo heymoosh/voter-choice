@@ -1,4 +1,10 @@
-import type { StateData, Election, BallotData } from "./types";
+import type {
+  StateData,
+  Election,
+  BallotData,
+  RankedIssues,
+  ConfirmedConcerns,
+} from "./types";
 import { BALLOT_PROMPT_TEXT } from "./ballotPromptText";
 import { BALLOT_PROMPT_TEXT_ES } from "./ballotPromptTextEs";
 import { BALLOT_PROMPT_TEXT_VI } from "./ballotPromptTextVi";
@@ -84,6 +90,8 @@ export function generatePrompt(
   today: Date = new Date(),
   language: Language = "en",
   ballotData?: BallotData,
+  rankedIssues?: RankedIssues | null,
+  confirmedConcerns?: ConfirmedConcerns | null,
 ): string {
   const nextElection = findNextElection(stateData.elections, today);
   const { registration, earlyVoting, votingRules, resources, stateName } =
@@ -268,6 +276,53 @@ export function generatePrompt(
     `- **${countyLabel}:** ${resources.countyElectionLookup}\n\n` +
     `${closing}`;
 
+  // Phase 6: Voter values + concern blocks for copy-paste path
+  let voterValuesBlock = "";
+  if (
+    rankedIssues &&
+    !rankedIssues.skipped &&
+    rankedIssues.ordered.length > 0
+  ) {
+    const top3 = rankedIssues.ordered.slice(0, 3);
+    voterValuesBlock =
+      `\n\n[VOTER VALUES]\n` +
+      JSON.stringify(
+        { rankedIssues: rankedIssues.ordered, topPriorities: top3 },
+        null,
+        2,
+      ) +
+      `\n[/VOTER VALUES]`;
+  }
+
+  let concernBlock = "";
+  if (
+    confirmedConcerns &&
+    !confirmedConcerns.skipped &&
+    (confirmedConcerns.freeText || confirmedConcerns.confirmedIssues.length > 0)
+  ) {
+    concernBlock =
+      `\n\n[CONCERN_INTERPRETATION]\n` +
+      JSON.stringify(
+        {
+          freeText: confirmedConcerns.freeText,
+          confirmedIssues: confirmedConcerns.confirmedIssues,
+        },
+        null,
+        2,
+      ) +
+      `\n[/CONCERN_INTERPRETATION]` +
+      `\n\n[VOTER CONFIRMED CONCERNS]\n` +
+      JSON.stringify(
+        {
+          primaryIssues: confirmedConcerns.confirmedIssues,
+          rationale: "User confirmed AI mapping",
+        },
+        null,
+        2,
+      ) +
+      `\n[/VOTER CONFIRMED CONCERNS]`;
+  }
+
   const PROMPT_MAP: Record<Language, string> = {
     en: BALLOT_PROMPT_TEXT,
     es: BALLOT_PROMPT_TEXT_ES,
@@ -276,5 +331,5 @@ export function generatePrompt(
     ar: BALLOT_PROMPT_TEXT_AR,
   };
   const promptText = PROMPT_MAP[language] ?? BALLOT_PROMPT_TEXT;
-  return promptText + "\n\n" + contextBlock;
+  return promptText + "\n\n" + contextBlock + voterValuesBlock + concernBlock;
 }
