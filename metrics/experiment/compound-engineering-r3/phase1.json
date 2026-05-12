@@ -1,0 +1,286 @@
+{
+  "metadata": {
+    "timestamp": "2026-05-12T02:40:43.470Z",
+    "branch": "experiment/compound-engineering-r3",
+    "commit": "ba1f6cc",
+    "phase": 1,
+    "nodeVersion": "v22.14.0"
+  },
+  "eslint": {
+    "errors": 0,
+    "warnings": 2,
+    "complexityViolations": 2
+  },
+  "complexity": {
+    "count": 21,
+    "average": 4.67,
+    "max": 17,
+    "p50": 3,
+    "p75": 6,
+    "p95": 13,
+    "distribution": {
+      "simple_1_5": 15,
+      "moderate_6_10": 4,
+      "complex_11_15": 1,
+      "highComplex_16_20": 1,
+      "critical_21plus": 0
+    },
+    "perFunction": [
+      {
+        "file": "src/lib/promptBuilder.ts",
+        "name": "buildContextBlock",
+        "complexity": 17,
+        "line": 114
+      },
+      {
+        "file": "src/app/page.tsx",
+        "name": "StateInfoCard",
+        "complexity": 13,
+        "line": 67
+      },
+      {
+        "file": "src/app/page.tsx",
+        "name": "<arrow>",
+        "complexity": 9,
+        "line": 408
+      },
+      {
+        "file": "src/app/page.tsx",
+        "name": "Home",
+        "complexity": 8,
+        "line": 376
+      },
+      {
+        "file": "src/lib/deadlineUtils.ts",
+        "name": "getDeadlineInfo",
+        "complexity": 8,
+        "line": 23
+      },
+      {
+        "file": "src/app/page.tsx",
+        "name": "<arrow>",
+        "complexity": 6,
+        "line": 387
+      },
+      {
+        "file": "src/app/page.tsx",
+        "name": "RegistrationRow",
+        "complexity": 3,
+        "line": 40
+      },
+      {
+        "file": "src/app/page.tsx",
+        "name": "PromptOutputCard",
+        "complexity": 3,
+        "line": 231
+      },
+      {
+        "file": "src/app/page.tsx",
+        "name": "<anonymous>",
+        "complexity": 3,
+        "line": 235
+      },
+      {
+        "file": "src/app/page.tsx",
+        "name": "<arrow>",
+        "complexity": 3,
+        "line": 452
+      },
+      {
+        "file": "src/lib/deadlineUtils.ts",
+        "name": "formatDate",
+        "complexity": 3,
+        "line": 96
+      },
+      {
+        "file": "src/lib/deadlineUtils.ts",
+        "name": "getNextElection",
+        "complexity": 3,
+        "line": 113
+      },
+      {
+        "file": "src/lib/stateRegistry.ts",
+        "name": "getStateCodesForZip",
+        "complexity": 3,
+        "line": 18
+      },
+      {
+        "file": "src/__tests__/deadlineUtils.test.ts",
+        "name": "<arrow>",
+        "complexity": 2,
+        "line": 108
+      },
+      {
+        "file": "src/__tests__/deadlineUtils.test.ts",
+        "name": "<arrow>",
+        "complexity": 2,
+        "line": 120
+      },
+      {
+        "file": "src/__tests__/deadlineUtils.test.ts",
+        "name": "<arrow>",
+        "complexity": 2,
+        "line": 126
+      },
+      {
+        "file": "src/app/page.tsx",
+        "name": "<arrow>",
+        "complexity": 2,
+        "line": 247
+      },
+      {
+        "file": "src/app/page.tsx",
+        "name": "<arrow>",
+        "complexity": 2,
+        "line": 383
+      },
+      {
+        "file": "src/app/page.tsx",
+        "name": "<arrow>",
+        "complexity": 2,
+        "line": 527
+      },
+      {
+        "file": "src/app/page.tsx",
+        "name": "<arrow>",
+        "complexity": 2,
+        "line": 609
+      },
+      {
+        "file": "src/lib/stateRegistry.ts",
+        "name": "getStateData",
+        "complexity": 2,
+        "line": 27
+      }
+    ]
+  },
+  "vitest": {
+    "tests": {
+      "total": 27,
+      "passed": 27,
+      "failed": 0,
+      "skipped": 0,
+      "passRate": 100
+    },
+    "coverage": {
+      "lines": 17.4,
+      "branches": 63.41,
+      "functions": 100,
+      "statements": 17.4
+    }
+  },
+  "duplication": {
+    "duplicatedLines": 13,
+    "totalLines": 1774,
+    "percentage": 0.73,
+    "clones": 1
+  },
+  "bundleSize": {
+    "buildSuccess": true,
+    "pages": [
+      {
+        "route": "/",
+        "size": 10.1,
+        "unit": "kB"
+      },
+      {
+        "route": "/_not-found",
+        "size": 994,
+        "unit": "B"
+      }
+    ],
+    "firstLoadJsShared": {
+      "size": 102,
+      "unit": "kB"
+    }
+  },
+  "lighthouse": {
+    "performance": 100,
+    "accessibility": 96,
+    "bestPractices": 100,
+    "seo": 100
+  },
+  "playwright": {
+    "total": 42,
+    "passed": 42,
+    "failed": 0,
+    "timedOut": 0,
+    "skipped": 0,
+    "passRate": 100
+  },
+  "linesOfCode": {
+    "application": {
+      "code": 1458,
+      "files": 13,
+      "byExtension": {
+        ".ts": {
+          "files": 6,
+          "code": 510
+        },
+        ".css": {
+          "files": 1,
+          "code": 21
+        },
+        ".tsx": {
+          "files": 2,
+          "code": 699
+        },
+        ".json": {
+          "files": 4,
+          "code": 228
+        }
+      }
+    },
+    "plugin": {
+      "code": 0,
+      "files": 0,
+      "byExtension": {}
+    },
+    "infrastructure": {
+      "code": 351,
+      "files": 10
+    },
+    "total": {
+      "code": 1809,
+      "files": 23
+    }
+  },
+  "workflowTests": {
+    "count": 2,
+    "files": [
+      "src/__tests__/deadlineUtils.test.ts",
+      "src/__tests__/promptBuilder.test.ts"
+    ]
+  },
+  "workflowTiming": {
+    "steps": [
+      {
+        "step": "ce:plan",
+        "started": "2026-05-11T21:25:20-05:00",
+        "completed": "2026-05-11T21:26:04-05:00",
+        "durationMs": 44000
+      },
+      {
+        "step": "ce:work",
+        "started": "2026-05-11T21:26:04-05:00",
+        "completed": "2026-05-11T21:39:31-05:00",
+        "durationMs": 807000
+      },
+      {
+        "step": "ce:review",
+        "started": "2026-05-11T21:39:31-05:00",
+        "completed": "2026-05-11T21:39:43-05:00",
+        "durationMs": 12000
+      },
+      {
+        "step": "ce:compound",
+        "started": "2026-05-11T21:39:43-05:00",
+        "completed": "2026-05-11T21:40:22-05:00",
+        "durationMs": 39000
+      }
+    ],
+    "totalSteps": 4,
+    "completedSteps": 4
+  },
+  "diffHygiene": null
+}
