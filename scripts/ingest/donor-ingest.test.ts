@@ -76,7 +76,9 @@ function makeFetcher(responses: Record<string, unknown>) {
   return vi.fn().mockImplementation((url: string) => {
     // Find the first matching key
     const matchKey = Object.keys(responses).find((key) => url.includes(key));
-    const body = matchKey ? responses[matchKey] : { results: [], pagination: { pages: 1 } };
+    const body = matchKey
+      ? responses[matchKey]
+      : { results: [], pagination: { pages: 1 } };
     return Promise.resolve({
       ok: true,
       json: () => Promise.resolve(body),
@@ -85,7 +87,9 @@ function makeFetcher(responses: Record<string, unknown>) {
 }
 
 function makeErrorFetcher(message = "Network error") {
-  return vi.fn().mockRejectedValue(new Error(message)) as unknown as typeof fetch;
+  return vi
+    .fn()
+    .mockRejectedValue(new Error(message)) as unknown as typeof fetch;
 }
 
 // ---------------------------------------------------------------------------
@@ -107,7 +111,9 @@ describe("DONOR_BUCKET_LABELS", () => {
     expect(DONOR_BUCKET_LABELS).toContain("Trade unions (non-public-safety)");
     expect(DONOR_BUCKET_LABELS).toContain("Public safety unions");
     expect(DONOR_BUCKET_LABELS).toContain("Education employees");
-    expect(DONOR_BUCKET_LABELS).toContain("Small individual donors (under $200)");
+    expect(DONOR_BUCKET_LABELS).toContain(
+      "Small individual donors (under $200)",
+    );
     expect(DONOR_BUCKET_LABELS).toContain("Large individual donors ($200+)");
     expect(DONOR_BUCKET_LABELS).toContain("Self-funded");
     expect(DONOR_BUCKET_LABELS).toContain("Party committees");
@@ -126,13 +132,19 @@ describe("DONOR_BUCKET_LABELS", () => {
 describe("mapEmployerToBucket", () => {
   // Real estate & development
   it("maps 'ABC Real Estate Group' to Real estate & development", () => {
-    expect(mapEmployerToBucket("ABC Real Estate Group")).toBe("Real estate & development");
+    expect(mapEmployerToBucket("ABC Real Estate Group")).toBe(
+      "Real estate & development",
+    );
   });
   it("maps 'National Realtor Association' to Real estate & development", () => {
-    expect(mapEmployerToBucket("National Realtor Association")).toBe("Real estate & development");
+    expect(mapEmployerToBucket("National Realtor Association")).toBe(
+      "Real estate & development",
+    );
   });
   it("maps 'Sunrise Property Developer LLC' to Real estate & development", () => {
-    expect(mapEmployerToBucket("Sunrise Property Developer LLC")).toBe("Real estate & development");
+    expect(mapEmployerToBucket("Sunrise Property Developer LLC")).toBe(
+      "Real estate & development",
+    );
   });
 
   // Oil, gas & energy
@@ -140,10 +152,14 @@ describe("mapEmployerToBucket", () => {
     expect(mapEmployerToBucket("ConocoPhillips")).toBe("Oil, gas & energy");
   });
   it("maps 'ExxonMobil Corporation' to Oil, gas & energy", () => {
-    expect(mapEmployerToBucket("ExxonMobil Corporation")).toBe("Oil, gas & energy");
+    expect(mapEmployerToBucket("ExxonMobil Corporation")).toBe(
+      "Oil, gas & energy",
+    );
   });
   it("maps 'Midland Basin Petroleum LLC' to Oil, gas & energy", () => {
-    expect(mapEmployerToBucket("Midland Basin Petroleum LLC")).toBe("Oil, gas & energy");
+    expect(mapEmployerToBucket("Midland Basin Petroleum LLC")).toBe(
+      "Oil, gas & energy",
+    );
   });
   it("maps 'Shell Oil Company' to Oil, gas & energy", () => {
     expect(mapEmployerToBucket("Shell Oil Company")).toBe("Oil, gas & energy");
@@ -151,35 +167,53 @@ describe("mapEmployerToBucket", () => {
 
   // Healthcare industry
   it("maps 'Texas Medical Center' to Healthcare industry", () => {
-    expect(mapEmployerToBucket("Texas Medical Center")).toBe("Healthcare industry");
+    expect(mapEmployerToBucket("Texas Medical Center")).toBe(
+      "Healthcare industry",
+    );
   });
   it("maps 'Blue Cross Blue Shield' to Healthcare industry", () => {
-    expect(mapEmployerToBucket("Blue Cross Blue Shield")).toBe("Healthcare industry");
+    expect(mapEmployerToBucket("Blue Cross Blue Shield")).toBe(
+      "Healthcare industry",
+    );
   });
   it("maps 'St. Luke's Hospital' to Healthcare industry", () => {
-    expect(mapEmployerToBucket("St. Luke's Hospital")).toBe("Healthcare industry");
+    expect(mapEmployerToBucket("St. Luke's Hospital")).toBe(
+      "Healthcare industry",
+    );
   });
 
   // Pharmaceutical & medical device — wins over Healthcare industry
   it("maps 'Pfizer Inc' to Pharmaceutical & medical device", () => {
-    expect(mapEmployerToBucket("Pfizer Inc")).toBe("Pharmaceutical & medical device");
+    expect(mapEmployerToBucket("Pfizer Inc")).toBe(
+      "Pharmaceutical & medical device",
+    );
   });
   it("maps 'Biotech Innovations Corp' to Pharmaceutical & medical device", () => {
-    expect(mapEmployerToBucket("Biotech Innovations Corp")).toBe("Pharmaceutical & medical device");
+    expect(mapEmployerToBucket("Biotech Innovations Corp")).toBe(
+      "Pharmaceutical & medical device",
+    );
   });
   it("maps 'Merck Sharp & Dohme' to Pharmaceutical & medical device", () => {
-    expect(mapEmployerToBucket("Merck Sharp & Dohme")).toBe("Pharmaceutical & medical device");
+    expect(mapEmployerToBucket("Merck Sharp & Dohme")).toBe(
+      "Pharmaceutical & medical device",
+    );
   });
 
   // Finance, banking & insurance
   it("maps 'First National Bank' to Finance, banking & insurance", () => {
-    expect(mapEmployerToBucket("First National Bank")).toBe("Finance, banking & insurance");
+    expect(mapEmployerToBucket("First National Bank")).toBe(
+      "Finance, banking & insurance",
+    );
   });
   it("maps 'Goldman Sachs & Co' to Finance, banking & insurance", () => {
-    expect(mapEmployerToBucket("Goldman Sachs & Co")).toBe("Finance, banking & insurance");
+    expect(mapEmployerToBucket("Goldman Sachs & Co")).toBe(
+      "Finance, banking & insurance",
+    );
   });
   it("maps 'State Farm Insurance' to Finance, banking & insurance", () => {
-    expect(mapEmployerToBucket("State Farm Insurance")).toBe("Finance, banking & insurance");
+    expect(mapEmployerToBucket("State Farm Insurance")).toBe(
+      "Finance, banking & insurance",
+    );
   });
 
   // Technology
@@ -195,15 +229,21 @@ describe("mapEmployerToBucket", () => {
 
   // Legal industry
   it("maps 'Smith & Jones Law Firm' to Legal industry", () => {
-    expect(mapEmployerToBucket("Smith & Jones Law Firm")).toBe("Legal industry");
+    expect(mapEmployerToBucket("Smith & Jones Law Firm")).toBe(
+      "Legal industry",
+    );
   });
   it("maps 'Trial Lawyers Association of Texas' to Legal industry", () => {
-    expect(mapEmployerToBucket("Trial Lawyers Association of Texas")).toBe("Legal industry");
+    expect(mapEmployerToBucket("Trial Lawyers Association of Texas")).toBe(
+      "Legal industry",
+    );
   });
 
   // Agriculture
   it("maps 'Texas Cattle Ranchers Association' to Agriculture", () => {
-    expect(mapEmployerToBucket("Texas Cattle Ranchers Association")).toBe("Agriculture");
+    expect(mapEmployerToBucket("Texas Cattle Ranchers Association")).toBe(
+      "Agriculture",
+    );
   });
   it("maps 'Cargill Agriculture' to Agriculture", () => {
     expect(mapEmployerToBucket("Cargill Agriculture")).toBe("Agriculture");
@@ -211,59 +251,89 @@ describe("mapEmployerToBucket", () => {
 
   // Telecom & utilities
   it("maps 'AT&T Services Inc' to Telecom & utilities", () => {
-    expect(mapEmployerToBucket("AT&T Services Inc")).toBe("Telecom & utilities");
+    expect(mapEmployerToBucket("AT&T Services Inc")).toBe(
+      "Telecom & utilities",
+    );
   });
   it("maps 'Comcast Corporation' to Telecom & utilities", () => {
-    expect(mapEmployerToBucket("Comcast Corporation")).toBe("Telecom & utilities");
+    expect(mapEmployerToBucket("Comcast Corporation")).toBe(
+      "Telecom & utilities",
+    );
   });
   it("maps 'CenterPoint Energy Utilities' to Telecom & utilities", () => {
-    expect(mapEmployerToBucket("CenterPoint Energy Utilities")).toBe("Telecom & utilities");
+    expect(mapEmployerToBucket("CenterPoint Energy Utilities")).toBe(
+      "Telecom & utilities",
+    );
   });
 
   // Retail & hospitality
   it("maps 'Walmart Stores Inc' to Retail & hospitality", () => {
-    expect(mapEmployerToBucket("Walmart Stores Inc")).toBe("Retail & hospitality");
+    expect(mapEmployerToBucket("Walmart Stores Inc")).toBe(
+      "Retail & hospitality",
+    );
   });
   it("maps 'Marriott International Hotel' to Retail & hospitality", () => {
-    expect(mapEmployerToBucket("Marriott International Hotel")).toBe("Retail & hospitality");
+    expect(mapEmployerToBucket("Marriott International Hotel")).toBe(
+      "Retail & hospitality",
+    );
   });
 
   // Trade unions (non-public-safety)
   it("maps 'United Auto Workers UAW Local 12' to Trade unions (non-public-safety)", () => {
-    expect(mapEmployerToBucket("United Auto Workers UAW Local 12")).toBe("Trade unions (non-public-safety)");
+    expect(mapEmployerToBucket("United Auto Workers UAW Local 12")).toBe(
+      "Trade unions (non-public-safety)",
+    );
   });
   it("maps 'Teamsters Local 507' to Trade unions (non-public-safety)", () => {
-    expect(mapEmployerToBucket("Teamsters Local 507")).toBe("Trade unions (non-public-safety)");
+    expect(mapEmployerToBucket("Teamsters Local 507")).toBe(
+      "Trade unions (non-public-safety)",
+    );
   });
   it("maps 'SEIU Healthcare Workers' to Trade unions (non-public-safety)", () => {
-    expect(mapEmployerToBucket("SEIU Healthcare Workers")).toBe("Trade unions (non-public-safety)");
+    expect(mapEmployerToBucket("SEIU Healthcare Workers")).toBe(
+      "Trade unions (non-public-safety)",
+    );
   });
 
   // Public safety unions — wins over Trade unions
   it("maps 'Fraternal Order of Police Lodge 7' to Public safety unions", () => {
-    expect(mapEmployerToBucket("Fraternal Order of Police Lodge 7")).toBe("Public safety unions");
+    expect(mapEmployerToBucket("Fraternal Order of Police Lodge 7")).toBe(
+      "Public safety unions",
+    );
   });
   it("maps 'International Association of Firefighters IAFF' to Public safety unions", () => {
-    expect(mapEmployerToBucket("International Association of Firefighters IAFF")).toBe("Public safety unions");
+    expect(
+      mapEmployerToBucket("International Association of Firefighters IAFF"),
+    ).toBe("Public safety unions");
   });
   it("maps 'Dallas Police Association' to Public safety unions", () => {
-    expect(mapEmployerToBucket("Dallas Police Association")).toBe("Public safety unions");
+    expect(mapEmployerToBucket("Dallas Police Association")).toBe(
+      "Public safety unions",
+    );
   });
 
   // Education employees
   it("maps 'National Education Association NEA' to Education employees", () => {
-    expect(mapEmployerToBucket("National Education Association NEA")).toBe("Education employees");
+    expect(mapEmployerToBucket("National Education Association NEA")).toBe(
+      "Education employees",
+    );
   });
   it("maps 'Houston Independent School District' to Education employees", () => {
-    expect(mapEmployerToBucket("Houston Independent School District")).toBe("Education employees");
+    expect(mapEmployerToBucket("Houston Independent School District")).toBe(
+      "Education employees",
+    );
   });
   it("maps 'University of Texas' to Education employees", () => {
-    expect(mapEmployerToBucket("University of Texas")).toBe("Education employees");
+    expect(mapEmployerToBucket("University of Texas")).toBe(
+      "Education employees",
+    );
   });
 
   // Self-funded
   it("maps 'Self Employed Energy Consultant' to Self-funded (not Oil)", () => {
-    expect(mapEmployerToBucket("Self Employed Energy Consultant")).toBe("Self-funded");
+    expect(mapEmployerToBucket("Self Employed Energy Consultant")).toBe(
+      "Self-funded",
+    );
   });
   it("maps 'Self-Funded Campaign' to Self-funded", () => {
     expect(mapEmployerToBucket("Self-Funded Campaign")).toBe("Self-funded");
@@ -271,7 +341,9 @@ describe("mapEmployerToBucket", () => {
 
   // Party committees
   it("maps 'Texas Republican Party Committee' to Party committees", () => {
-    expect(mapEmployerToBucket("Texas Republican Party Committee")).toBe("Party committees");
+    expect(mapEmployerToBucket("Texas Republican Party Committee")).toBe(
+      "Party committees",
+    );
   });
   it("maps 'NRCC' to Party committees", () => {
     expect(mapEmployerToBucket("NRCC")).toBe("Party committees");
@@ -290,7 +362,9 @@ describe("mapEmployerToBucket", () => {
 
   // Case insensitivity
   it("is case-insensitive — 'REAL ESTATE' matches", () => {
-    expect(mapEmployerToBucket("REAL ESTATE LLC")).toBe("Real estate & development");
+    expect(mapEmployerToBucket("REAL ESTATE LLC")).toBe(
+      "Real estate & development",
+    );
   });
   it("is case-insensitive — 'google' lowercase matches Technology", () => {
     expect(mapEmployerToBucket("google inc")).toBe("Technology");
@@ -303,15 +377,27 @@ describe("mapEmployerToBucket", () => {
 
 describe("bucketIndividualByAmount", () => {
   it("returns Small individual donors for amount under $200", () => {
-    expect(bucketIndividualByAmount(50)).toBe("Small individual donors (under $200)");
-    expect(bucketIndividualByAmount(199.99)).toBe("Small individual donors (under $200)");
-    expect(bucketIndividualByAmount(0)).toBe("Small individual donors (under $200)");
+    expect(bucketIndividualByAmount(50)).toBe(
+      "Small individual donors (under $200)",
+    );
+    expect(bucketIndividualByAmount(199.99)).toBe(
+      "Small individual donors (under $200)",
+    );
+    expect(bucketIndividualByAmount(0)).toBe(
+      "Small individual donors (under $200)",
+    );
   });
 
   it("returns Large individual donors for amount $200 and above", () => {
-    expect(bucketIndividualByAmount(200)).toBe("Large individual donors ($200+)");
-    expect(bucketIndividualByAmount(500)).toBe("Large individual donors ($200+)");
-    expect(bucketIndividualByAmount(2800)).toBe("Large individual donors ($200+)");
+    expect(bucketIndividualByAmount(200)).toBe(
+      "Large individual donors ($200+)",
+    );
+    expect(bucketIndividualByAmount(500)).toBe(
+      "Large individual donors ($200+)",
+    );
+    expect(bucketIndividualByAmount(2800)).toBe(
+      "Large individual donors ($200+)",
+    );
   });
 });
 
@@ -321,7 +407,11 @@ describe("bucketIndividualByAmount", () => {
 
 describe("extractFecCandidateId", () => {
   it("extracts from sourceId when it looks like an FEC ID", () => {
-    const candidate = { id: "federal-H1234567", sourceId: "H1234567", rawMetadata: {} };
+    const candidate = {
+      id: "federal-H1234567",
+      sourceId: "H1234567",
+      rawMetadata: {},
+    };
     expect(extractFecCandidateId(candidate)).toBe("H1234567");
   });
 
@@ -335,7 +425,11 @@ describe("extractFecCandidateId", () => {
   });
 
   it("returns null when no FEC ID is available", () => {
-    const candidate = { id: "federal-abc", sourceId: "ABCDEF", rawMetadata: {} };
+    const candidate = {
+      id: "federal-abc",
+      sourceId: "ABCDEF",
+      rawMetadata: {},
+    };
     expect(extractFecCandidateId(candidate)).toBeNull();
   });
 });
@@ -426,9 +520,7 @@ describe("parseFtmIndustryResponse", () => {
   });
 
   it("handles array response format", () => {
-    const response = [
-      { industry_name: "Agriculture", total: 10000 },
-    ];
+    const response = [{ industry_name: "Agriculture", total: 10000 }];
     const buckets = parseFtmIndustryResponse(response);
     expect(buckets.get("Agriculture")).toBe(10000);
   });
@@ -464,7 +556,12 @@ describe("resolveFederalConfig", () => {
   });
 
   it("reads --limit from argv", () => {
-    const config = resolveFederalConfig({}, ["node", "script.ts", "--limit", "50"]);
+    const config = resolveFederalConfig({}, [
+      "node",
+      "script.ts",
+      "--limit",
+      "50",
+    ]);
     expect(config.limit).toBe(50);
   });
 
@@ -504,12 +601,20 @@ describe("resolveStateConfig", () => {
   });
 
   it("reads --limit from argv", () => {
-    const config = resolveStateConfig({}, ["node", "script.ts", "--limit", "25"]);
+    const config = resolveStateConfig({}, [
+      "node",
+      "script.ts",
+      "--limit",
+      "25",
+    ]);
     expect(config.limit).toBe(25);
   });
 
   it("sets FTM API key when provided", () => {
-    const config = resolveStateConfig({ FOLLOWTHEMONEY_API_KEY: "ftm-key" }, []);
+    const config = resolveStateConfig(
+      { FOLLOWTHEMONEY_API_KEY: "ftm-key" },
+      [],
+    );
     expect(config.ftmApiKey).toBe("ftm-key");
   });
 
@@ -605,7 +710,12 @@ describe("fetchEmployerBuckets", () => {
         pagination: { pages: 1 },
       },
     });
-    const buckets = await fetchEmployerBuckets("C00123456", "2026", config, fetcher);
+    const buckets = await fetchEmployerBuckets(
+      "C00123456",
+      "2026",
+      config,
+      fetcher,
+    );
     expect(buckets.get("Technology")).toBe(15000);
     expect(buckets.get("Finance, banking & insurance")).toBe(8000);
     expect(buckets.get("Other")).toBe(2000);
@@ -618,7 +728,12 @@ describe("fetchEmployerBuckets", () => {
         pagination: { pages: 1 },
       },
     });
-    const buckets = await fetchEmployerBuckets("C99999999", "2026", config, fetcher);
+    const buckets = await fetchEmployerBuckets(
+      "C99999999",
+      "2026",
+      config,
+      fetcher,
+    );
     expect(buckets.size).toBe(0);
   });
 });
@@ -671,7 +786,9 @@ describe("buildFederalDonorRows", () => {
     });
     const rows = await buildFederalDonorRows(candidate, config, fetcher);
     expect(rows.length).toBeGreaterThan(0);
-    const smallDonorRow = rows.find((r) => r.bucketLabel === "Small individual donors (under $200)");
+    const smallDonorRow = rows.find(
+      (r) => r.bucketLabel === "Small individual donors (under $200)",
+    );
     expect(smallDonorRow).toBeDefined();
     expect(smallDonorRow?.amountTotal).toBe("5000.00");
     expect(smallDonorRow?.source).toBe("fec_api");
@@ -723,7 +840,7 @@ describe("buildStateDonorRows", () => {
       rawMetadata: { followthemoney: { candidate_id: "FTM-987" } },
     };
     const fetcher = makeFetcher({
-      "/api/": {
+      "/": {
         records: [
           { industry_name: "Oil & Gas", total: 40000 },
           { industry_name: "Health", total: 15000 },
@@ -745,7 +862,7 @@ describe("buildStateDonorRows", () => {
       jurisdiction: "state-CA-senate",
       rawMetadata: {},
     };
-    const fetcher = makeFetcher({ "/api/": { records: [] } });
+    const fetcher = makeFetcher({ "/": { records: [] } });
     const rows = await buildStateDonorRows(candidate, config, fetcher);
     expect(rows).toHaveLength(0);
   });
@@ -812,7 +929,7 @@ describe("upsertStateDonorRows", () => {
         bucketLabel: "Agriculture",
         amountTotal: "10000.00",
         source: "followthemoney_api",
-        sourceUrl: "https://api.followthemoney.org/api/?mode=summary",
+        sourceUrl: "https://api.followthemoney.org/?mode=summary",
         rawMetadata: { ftmCandidateId: null, state: "TX", cycle: "2026" },
       },
     ];
@@ -852,9 +969,19 @@ describe("ingestFederalDonors", () => {
   it("skips candidates that produce no rows, continues others", async () => {
     const federalCandidates = [
       // No FEC ID → will be skipped
-      { id: "federal-abc", sourceId: "ABCDEF", jurisdiction: "federal-house", rawMetadata: {} },
+      {
+        id: "federal-abc",
+        sourceId: "ABCDEF",
+        jurisdiction: "federal-house",
+        rawMetadata: {},
+      },
       // Valid FEC ID → will be processed
-      { id: "federal-H1234567", sourceId: "H1234567", jurisdiction: "federal-house", rawMetadata: {} },
+      {
+        id: "federal-H1234567",
+        sourceId: "H1234567",
+        jurisdiction: "federal-house",
+        rawMetadata: {},
+      },
     ];
 
     const db = makeDbClient({ candidates: federalCandidates });
@@ -896,8 +1023,18 @@ describe("ingestFederalDonors", () => {
     // This tests that a failed/skipped candidate doesn't abort the batch.
     const federalCandidates = [
       // ABCDEFGH is not a valid FEC ID (no single-letter prefix + 7-8 digits)
-      { id: "federal-ABCDEFGH", sourceId: "ABCDEFGH", jurisdiction: "federal-house", rawMetadata: {} },
-      { id: "federal-H2222222", sourceId: "H2222222", jurisdiction: "federal-senate", rawMetadata: {} },
+      {
+        id: "federal-ABCDEFGH",
+        sourceId: "ABCDEFGH",
+        jurisdiction: "federal-house",
+        rawMetadata: {},
+      },
+      {
+        id: "federal-H2222222",
+        sourceId: "H2222222",
+        jurisdiction: "federal-senate",
+        rawMetadata: {},
+      },
     ];
 
     const db = makeDbClient({ candidates: federalCandidates });
@@ -905,16 +1042,19 @@ describe("ingestFederalDonors", () => {
       if (url.includes("H2222222/totals")) {
         return Promise.resolve({
           ok: true,
-          json: () => Promise.resolve({
-            results: [{
-              individual_unitemized_contributions: 500,
-              individual_itemized_contributions: 0,
-              other_political_committee_contributions: 0,
-              political_party_committee_contributions: 0,
-              candidate_contribution: 0,
-            }],
-            pagination: { pages: 1 },
-          }),
+          json: () =>
+            Promise.resolve({
+              results: [
+                {
+                  individual_unitemized_contributions: 500,
+                  individual_itemized_contributions: 0,
+                  other_political_committee_contributions: 0,
+                  political_party_committee_contributions: 0,
+                  candidate_contribution: 0,
+                },
+              ],
+              pagination: { pages: 1 },
+            }),
         });
       }
       return Promise.resolve({
@@ -950,10 +1090,8 @@ describe("ingestFederalDonors", () => {
     });
 
     // Verify limit was passed to the DB query
-    const limitCall = (db.select as ReturnType<typeof vi.fn>).mock.results[0]?.value
-      ?.from.mock.results[0]?.value
-      ?.where.mock.results[0]?.value
-      ?.limit;
+    const limitCall = (db.select as ReturnType<typeof vi.fn>).mock.results[0]
+      ?.value?.from.mock.results[0]?.value?.where.mock.results[0]?.value?.limit;
     expect(limitCall).toHaveBeenCalledWith(10);
   });
 });
@@ -991,10 +1129,8 @@ describe("ingestStateDonors", () => {
 
     const db = makeDbClient({ candidates: stateCandidates });
     const fetcher = makeFetcher({
-      "/api/": {
-        records: [
-          { industry_name: "Agriculture", total: 25000 },
-        ],
+      "/": {
+        records: [{ industry_name: "Agriculture", total: 25000 }],
       },
     });
 
@@ -1012,22 +1148,36 @@ describe("ingestStateDonors", () => {
 
   it("FTM API error on one candidate: that candidate skipped, others continue", async () => {
     const stateCandidates = [
-      { id: "openstates-tx-001", fullName: "Alice TX", jurisdiction: "state-TX-house", rawMetadata: {} },
-      { id: "openstates-ca-001", fullName: "Bob CA", jurisdiction: "state-CA-senate", rawMetadata: {} },
+      {
+        id: "openstates-tx-001",
+        fullName: "Alice TX",
+        jurisdiction: "state-TX-house",
+        rawMetadata: {},
+      },
+      {
+        id: "openstates-ca-001",
+        fullName: "Bob CA",
+        jurisdiction: "state-CA-senate",
+        rawMetadata: {},
+      },
     ];
     const db = makeDbClient({ candidates: stateCandidates });
 
     let callCount = 0;
     const fetcher = vi.fn().mockImplementation((url: string) => {
       callCount += 1;
-      if (url.includes("can_nam=Alice+TX") || url.includes("can_nam=Alice%20TX")) {
+      if (
+        url.includes("can_nam=Alice+TX") ||
+        url.includes("can_nam=Alice%20TX")
+      ) {
         return Promise.reject(new Error("FTM HTTP 500"));
       }
       return Promise.resolve({
         ok: true,
-        json: () => Promise.resolve({
-          records: [{ industry_name: "Real Estate", total: 10000 }],
-        }),
+        json: () =>
+          Promise.resolve({
+            records: [{ industry_name: "Real Estate", total: 10000 }],
+          }),
       });
     }) as unknown as typeof fetch;
 
@@ -1053,10 +1203,8 @@ describe("ingestStateDonors", () => {
       argv: ["node", "script.ts", "--limit", "20"],
     });
 
-    const limitCall = (db.select as ReturnType<typeof vi.fn>).mock.results[0]?.value
-      ?.from.mock.results[0]?.value
-      ?.where.mock.results[0]?.value
-      ?.limit;
+    const limitCall = (db.select as ReturnType<typeof vi.fn>).mock.results[0]
+      ?.value?.from.mock.results[0]?.value?.where.mock.results[0]?.value?.limit;
     expect(limitCall).toHaveBeenCalledWith(20);
   });
 });
