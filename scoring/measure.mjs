@@ -828,6 +828,60 @@ function measureWorkflowTests() {
   return { count: files.length, files };
 }
 
+function measureTypeSafety() {
+  log("Type safety");
+  const __filename = fileURLToPath(import.meta.url);
+  const scriptPath = join(dirname(__filename), "type-safety.mjs");
+  if (!existsSync(scriptPath)) {
+    console.log("  type-safety.mjs not found at", scriptPath);
+    return null;
+  }
+  const result = run(`node "${scriptPath}" --repo "${ROOT}"`);
+  if (!result.success) {
+    console.log("  type-safety.mjs failed:", result.stderr || result.stdout);
+    return null;
+  }
+  try {
+    const parsed = JSON.parse(result.stdout);
+    console.log(
+      `  strictErrors=${parsed.typeSafety?.strictErrors ?? "?"}, escapeHatches=${
+        parsed.typeSafety?.escapeHatches ?? "?"
+      }`,
+    );
+    return parsed.typeSafety ?? null;
+  } catch {
+    console.log("  Could not parse type-safety output");
+    return null;
+  }
+}
+
+function measureCoupling() {
+  log("Coupling");
+  const __filename = fileURLToPath(import.meta.url);
+  const scriptPath = join(dirname(__filename), "coupling.mjs");
+  if (!existsSync(scriptPath)) {
+    console.log("  coupling.mjs not found at", scriptPath);
+    return null;
+  }
+  const result = run(`node "${scriptPath}" --repo "${ROOT}"`);
+  if (!result.success) {
+    console.log("  coupling.mjs failed:", result.stderr || result.stdout);
+    return null;
+  }
+  try {
+    const parsed = JSON.parse(result.stdout);
+    console.log(
+      `  nodes=${parsed.coupling?.nodes ?? "?"}, edges=${parsed.coupling?.edges ?? "?"}, circular=${
+        parsed.coupling?.circular ?? "?"
+      }`,
+    );
+    return parsed.coupling ?? null;
+  } catch {
+    console.log("  Could not parse coupling output");
+    return null;
+  }
+}
+
 // ------------------------------------------------------------------
 // 8b. Diff hygiene (only when --phase >= 2)
 // ------------------------------------------------------------------
@@ -988,6 +1042,8 @@ async function main() {
     playwright: measurePlaywright(),
     linesOfCode: measureLOC(),
     workflowTests: measureWorkflowTests(),
+    coupling: measureCoupling(),
+    typeSafety: measureTypeSafety(),
     workflowTiming: measureWorkflowTiming(),
     diffHygiene: measureDiffHygiene(branch, phaseNumber),
   };
