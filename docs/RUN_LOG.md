@@ -61,6 +61,16 @@ Note: **Scoring is executed by Hermes from the host side, not inside the build c
 
 
 
+
+### Phase 1 forward — spec-kit (auto)
+
+- **Date:** 2026-05-12T03:08:18.845Z
+- **Branch:** `main`
+- **Tag:** `select-representative-spec-kit`
+- **Status:** ✓
+- **Summary:** chose r1 — median LOC (1661); replicates span 1574..2089, RSD 12.68%
+
+
 ### Phase 1 forward — bmad (auto)
 
 - **Date:** 2026-05-12T02:57:01.795Z
