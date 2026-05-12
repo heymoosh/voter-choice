@@ -161,7 +161,7 @@ async function fetchFtmJson(
   apiKey?: string,
 ): Promise<unknown> {
   const parsed = new URL(url);
-  parsed.searchParams.set("output", "json");
+  parsed.searchParams.set("mode", "json");
   if (apiKey) parsed.searchParams.set("APIKey", apiKey);
 
   const response = await fetcher(parsed.href, {
