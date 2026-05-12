@@ -620,6 +620,18 @@ function createSSEStream(
               }),
             );
 
+          // Parse any tool_use inputs accumulated as strings back into objects
+          // before passing to the API (Anthropic requires input to be an object).
+          for (const block of assistantContent) {
+            if (block.type === "tool_use" && typeof block.input === "string") {
+              try {
+                (block as { input: unknown }).input = JSON.parse(block.input);
+              } catch {
+                (block as { input: unknown }).input = {};
+              }
+            }
+          }
+
           // Build the next stream continuation
           currentStream = await createContinuationStream(
             assistantContent,
