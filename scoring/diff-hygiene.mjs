@@ -66,13 +66,16 @@ const frameworkSlug = branchName
   .replace(/^archive\//, "")
   .replace(/\//g, "-");
 
-const prevTag = prevTagOverride || `${frameworkSlug}-phase${phase - 1}-complete`;
+const prevTag =
+  prevTagOverride || `${frameworkSlug}-phase${phase - 1}-complete`;
 
 const scopePath =
   scopeFileOverride || join(__dirname, "phase-scopes", `phase${phase}.json`);
 if (!existsSync(scopePath)) {
   console.error(`Phase-scope file not found: ${scopePath}`);
-  console.error("Diff-hygiene cannot run without a scope contract for this phase.");
+  console.error(
+    "Diff-hygiene cannot run without a scope contract for this phase.",
+  );
   process.exit(1);
 }
 
@@ -98,7 +101,17 @@ function globToRegex(pattern) {
     } else if (c === "?") {
       re += "[^/]";
       i++;
-    } else if (c === "." || c === "(" || c === ")" || c === "+" || c === "$" || c === "^" || c === "|" || c === "{" || c === "}") {
+    } else if (
+      c === "." ||
+      c === "(" ||
+      c === ")" ||
+      c === "+" ||
+      c === "$" ||
+      c === "^" ||
+      c === "|" ||
+      c === "{" ||
+      c === "}"
+    ) {
       re += "\\" + c;
       i++;
     } else {

@@ -57,9 +57,9 @@ When the user finishes ranking (or skips), the ranking is exposed as a `RankedIs
 
 ```ts
 type RankedIssues = {
-  ordered: string[];  // canonical issue keys, top priority first
+  ordered: string[]; // canonical issue keys, top priority first
   skipped: boolean;
-  timestamp: string;  // ISO-8601, browser-local
+  timestamp: string; // ISO-8601, browser-local
 };
 ```
 
@@ -124,23 +124,34 @@ Mapping to issues we track:
 `POST /api/disambiguate-concerns`
 
 **Request:**
+
 ```json
 { "concernText": "I rent and can't afford housing..." }
 ```
 
 **Response:**
+
 ```json
 {
   "interpretation": "Housing affordability is a primary concern, with healthcare costs (specifically chronic condition management) as a secondary concern.",
   "matchedIssues": [
-    {"issue": "Housing", "quote": "rent and can't afford housing", "confidence": "high"},
-    {"issue": "Healthcare", "quote": "kid has Type 1 diabetes", "confidence": "high"}
+    {
+      "issue": "Housing",
+      "quote": "rent and can't afford housing",
+      "confidence": "high"
+    },
+    {
+      "issue": "Healthcare",
+      "quote": "kid has Type 1 diabetes",
+      "confidence": "high"
+    }
   ],
   "unmatched": []
 }
 ```
 
 **Security:**
+
 - Same rate-limit and budget controls as the Phase 5 chat API
 - Concern text counts toward the $20/month Anthropic budget cap
 - No server-side logging of concern text
@@ -151,7 +162,7 @@ Mapping to issues we track:
 ```ts
 type ConfirmedConcerns = {
   freeText: string | null;
-  confirmedIssues: string[];  // canonical keys the user checked
+  confirmedIssues: string[]; // canonical keys the user checked
   skipped: boolean;
 };
 ```
@@ -234,6 +245,7 @@ The application must explicitly document this exception in user-facing privacy c
 `POST /api/issue-counts/increment`
 
 **Request:**
+
 ```json
 { "countyFips": "48201", "issueSlug": "housing" }
 ```
@@ -242,6 +254,7 @@ The application must explicitly document this exception in user-facing privacy c
 - Single increment per session per issue (deduplicate via a short-lived signed token in the response of the issue-ranking step, never via a user identifier)
 
 **Response:**
+
 ```json
 { "success": true }
 ```
@@ -249,6 +262,7 @@ The application must explicitly document this exception in user-facing privacy c
 `GET /api/issue-counts?countyFips=<fips>`
 
 **Response:**
+
 ```json
 {
   "countyFips": "48201",
@@ -307,10 +321,10 @@ The bar visualizes this issue's count relative to the top-counted issue in the s
 
 ## Environment Variables (new in Phase 6)
 
-| Env Var | Purpose | Provisioning |
-|---------|---------|--------------|
-| `UPSTASH_REDIS_REST_URL` | Aggregate counter backend | Required for Feature 3; Phase 6 builds without it should leave the overlay off but ship the rest |
-| `UPSTASH_REDIS_REST_TOKEN` | Aggregate counter auth | Same as above |
+| Env Var                    | Purpose                   | Provisioning                                                                                     |
+| -------------------------- | ------------------------- | ------------------------------------------------------------------------------------------------ |
+| `UPSTASH_REDIS_REST_URL`   | Aggregate counter backend | Required for Feature 3; Phase 6 builds without it should leave the overlay off but ship the rest |
+| `UPSTASH_REDIS_REST_TOKEN` | Aggregate counter auth    | Same as above                                                                                    |
 
 The Phase 5 `ANTHROPIC_API_KEY` is reused for concern disambiguation (no new key).
 

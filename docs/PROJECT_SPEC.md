@@ -18,12 +18,12 @@ The site does NOT store user data. Chat conversations live in browser memory onl
 
 ### Privacy and security constraints (hard requirements)
 
-* No client-side persistence of any user input. No `localStorage`, `sessionStorage`, `IndexedDB`, cookies, or Cache API usage. The zip code the user types must live only in component state and must be discarded when the tab closes or the component unmounts.
-* No third-party network requests from the rendered page except to the app's own API routes and the Anthropic API (proxied server-side). No analytics, no error tracking, no telemetry libraries.
-* No server-side logging of user input. Zip codes and chat messages must never appear in any log line, server-rendered HTML outside the intended display, error message, or telemetry payload.
-* API keys must be server-side only — never exposed in client bundles.
-* No `eval`, no `Function()` constructor, no `dangerouslySetInnerHTML`, no unsanitized user input reaching the DOM.
-* Uploaded voter profiles must be treated as untrusted input with prompt injection protections.
+- No client-side persistence of any user input. No `localStorage`, `sessionStorage`, `IndexedDB`, cookies, or Cache API usage. The zip code the user types must live only in component state and must be discarded when the tab closes or the component unmounts.
+- No third-party network requests from the rendered page except to the app's own API routes and the Anthropic API (proxied server-side). No analytics, no error tracking, no telemetry libraries.
+- No server-side logging of user input. Zip codes and chat messages must never appear in any log line, server-rendered HTML outside the intended display, error message, or telemetry payload.
+- API keys must be server-side only — never exposed in client bundles.
+- No `eval`, no `Function()` constructor, no `dangerouslySetInnerHTML`, no unsanitized user input reaching the DOM.
+- Uploaded voter profiles must be treated as untrusted input with prompt injection protections.
 
 ---
 
@@ -106,44 +106,44 @@ Each state has one JSON object with the following structure:
 
 ```jsonc
 {
-  "stateCode": "TX",                        // 2-letter USPS abbreviation
-  "stateName": "Texas",                     // Full state name
-  "lastUpdated": "2026-03-01",              // ISO date of last data update
+  "stateCode": "TX", // 2-letter USPS abbreviation
+  "stateName": "Texas", // Full state name
+  "lastUpdated": "2026-03-01", // ISO date of last data update
 
   "elections": [
     {
       "id": "tx-2026-primary",
       "name": "2026 Texas Primary Election",
-      "date": "2026-03-03",                 // ISO date
-      "type": "primary",                    // "primary" | "general" | "runoff" | "special"
+      "date": "2026-03-03", // ISO date
+      "type": "primary", // "primary" | "general" | "runoff" | "special"
       "isPrimary": true,
-      "primaryType": "open"                 // "open" | "closed" | "semi-closed" | "semi-open" | null
-    }
+      "primaryType": "open", // "open" | "closed" | "semi-closed" | "semi-open" | null
+    },
   ],
 
   "registration": {
     "online": {
       "available": true,
-      "deadline": "2026-02-02",             // ISO date, null if not available
-      "url": "https://www.votetexas.gov/register-to-vote/"
+      "deadline": "2026-02-02", // ISO date, null if not available
+      "url": "https://www.votetexas.gov/register-to-vote/",
     },
     "byMail": {
-      "deadline": "2026-02-02",             // ISO date
-      "sincePostmarked": true               // true = postmark date, false = received date
+      "deadline": "2026-02-02", // ISO date
+      "sincePostmarked": true, // true = postmark date, false = received date
     },
     "inPerson": {
-      "deadline": "2026-02-02",             // ISO date
-      "sincePostmarked": false
+      "deadline": "2026-02-02", // ISO date
+      "sincePostmarked": false,
     },
     "sameDayRegistration": false,
-    "registrationCheckUrl": "https://teamrv-mvp.sos.texas.gov/MVP/mvp.do"
+    "registrationCheckUrl": "https://teamrv-mvp.sos.texas.gov/MVP/mvp.do",
   },
 
   "earlyVoting": {
     "available": true,
-    "startDate": "2026-02-17",              // ISO date, null if no early voting
-    "endDate": "2026-02-28",                // ISO date
-    "notes": "Hours vary by county"         // Optional clarification
+    "startDate": "2026-02-17", // ISO date, null if no early voting
+    "endDate": "2026-02-28", // ISO date
+    "notes": "Hours vary by county", // Optional clarification
   },
 
   "votingRules": {
@@ -155,19 +155,19 @@ Each state has one JSON object with the following structure:
       "Texas concealed handgun license",
       "U.S. military ID with photo",
       "U.S. citizenship certificate with photo",
-      "U.S. passport (book or card)"
+      "U.S. passport (book or card)",
     ],
-    "phonesAtPolls": "prohibited",          // "prohibited" | "allowed" | "varies"
+    "phonesAtPolls": "prohibited", // "prohibited" | "allowed" | "varies"
     "phonesAtPollsDetail": "Texas law prohibits wireless communication devices in the voting room. You may bring written notes.",
-    "additionalRules": []                   // Array of strings for state-specific notes
+    "additionalRules": [], // Array of strings for state-specific notes
   },
 
   "resources": {
     "stateElectionWebsite": "https://www.votetexas.gov/",
     "countyElectionLookup": "https://www.votetexas.gov/voting/where.html",
     "sampleBallotLookup": "https://www.votetexas.gov/voting/ballot-board.html",
-    "pollingPlaceLookup": "https://www.votetexas.gov/voting/where.html"
-  }
+    "pollingPlaceLookup": "https://www.votetexas.gov/voting/where.html",
+  },
 }
 ```
 
@@ -226,14 +226,14 @@ Help me with my ballot.
 
 ### Error States
 
-| Condition | Behavior |
-|-----------|----------|
-| Empty input, submit pressed | Show inline validation message: "Please enter a zip code" |
-| Non-numeric or wrong length | Show inline validation message: "Please enter a valid 5-digit zip code" |
-| Zip code not found in dataset | Show message: "We don't have data for this zip code yet. We're working on adding all U.S. zip codes. [Link to state election website directory]" |
-| Multi-state zip code | Show state selector: "This zip code spans multiple states. Which state are you voting in?" |
-| All registration deadlines passed | Show alert: "Registration deadlines for this election have passed. Check [registration check URL] to confirm your registration status." |
-| No upcoming election found | Show message: "No upcoming elections found for [State]. Check [state election website] for updates." |
+| Condition                         | Behavior                                                                                                                                         |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Empty input, submit pressed       | Show inline validation message: "Please enter a zip code"                                                                                        |
+| Non-numeric or wrong length       | Show inline validation message: "Please enter a valid 5-digit zip code"                                                                          |
+| Zip code not found in dataset     | Show message: "We don't have data for this zip code yet. We're working on adding all U.S. zip codes. [Link to state election website directory]" |
+| Multi-state zip code              | Show state selector: "This zip code spans multiple states. Which state are you voting in?"                                                       |
+| All registration deadlines passed | Show alert: "Registration deadlines for this election have passed. Check [registration check URL] to confirm your registration status."          |
+| No upcoming election found        | Show message: "No upcoming elections found for [State]. Check [state election website] for updates."                                             |
 
 ### Copy to Clipboard
 
@@ -275,21 +275,21 @@ This is a civic tool for ALL voters. Accessibility is a functional requirement.
 
 The following `data-testid` attributes MUST be present on the specified elements. These are required by the shared Playwright e2e test suite and must be consistent across all workflow implementations.
 
-| `data-testid` | Element | Purpose |
-|----------------|---------|---------|
-| `zip-input` | The zip code text input field | E2e tests type into this field |
-| `zip-submit` | The zip code submit button | E2e tests click this to submit |
-| `zip-error` | The inline validation/error message container | E2e tests verify error states |
-| `state-selector` | The state selector (for multi-state zip codes) | E2e tests select a state |
-| `state-info` | The state election info summary card | E2e tests verify info display |
-| `prompt-output` | The container holding the full customized prompt | E2e tests verify prompt content |
-| `copy-button` | The "Copy to Clipboard" button | E2e tests click and verify copy |
-| `copy-confirmation` | The "Copied!" confirmation indicator | E2e tests verify feedback |
-| `election-name` | The election name display within state-info | E2e tests verify correct election |
-| `election-date` | The election date display within state-info | E2e tests verify correct date |
-| `registration-status` | Container for registration deadline statuses | E2e tests verify deadline logic |
-| `no-election-message` | Message shown when no upcoming election is found | E2e tests verify this edge case |
-| `not-found-message` | Message shown when zip code is not in dataset | E2e tests verify this edge case |
+| `data-testid`         | Element                                          | Purpose                           |
+| --------------------- | ------------------------------------------------ | --------------------------------- |
+| `zip-input`           | The zip code text input field                    | E2e tests type into this field    |
+| `zip-submit`          | The zip code submit button                       | E2e tests click this to submit    |
+| `zip-error`           | The inline validation/error message container    | E2e tests verify error states     |
+| `state-selector`      | The state selector (for multi-state zip codes)   | E2e tests select a state          |
+| `state-info`          | The state election info summary card             | E2e tests verify info display     |
+| `prompt-output`       | The container holding the full customized prompt | E2e tests verify prompt content   |
+| `copy-button`         | The "Copy to Clipboard" button                   | E2e tests click and verify copy   |
+| `copy-confirmation`   | The "Copied!" confirmation indicator             | E2e tests verify feedback         |
+| `election-name`       | The election name display within state-info      | E2e tests verify correct election |
+| `election-date`       | The election date display within state-info      | E2e tests verify correct date     |
+| `registration-status` | Container for registration deadline statuses     | E2e tests verify deadline logic   |
+| `no-election-message` | Message shown when no upcoming election is found | E2e tests verify this edge case   |
+| `not-found-message`   | Message shown when zip code is not in dataset    | E2e tests verify this edge case   |
 
 ---
 

@@ -18,7 +18,7 @@ Claude Code did not use any framework-specific workflow commands during Phase 1 
 
 Three compounding factors:
 
-1. **Generic `/start` command.** The `/start` command was identical on all branches. It contained a single soft instruction: *"If the workflow has its own slash commands or skills, use them as the workflow intends."* This was guidance, not enforcement. The command then immediately proceeded to "Build autonomously," giving CC an easy path that bypassed the frameworks entirely.
+1. **Generic `/start` command.** The `/start` command was identical on all branches. It contained a single soft instruction: _"If the workflow has its own slash commands or skills, use them as the workflow intends."_ This was guidance, not enforcement. The command then immediately proceeded to "Build autonomously," giving CC an easy path that bypassed the frameworks entirely.
 
 2. **No framework-specific CLAUDE.md.** The `.claude/CLAUDE.md` was identical across all branches (including Vanilla). No branch had instructions like "You MUST use `/ce:plan` before writing any code" or "Follow the Spec Kit workflow sequence."
 
@@ -31,23 +31,27 @@ The experiment was measuring "Claude Code with framework files present in `.clau
 ### Specific framework features that were never exercised
 
 **Compound Engineering (47 skills, 28 agents):**
+
 - `/ce:compound` — the signature knowledge-compounding command (5 parallel subagents documenting solutions in `docs/solutions/`)
 - `/ce:plan`, `/ce:work`, `/ce:review` — the core workflow loop
 - 14 review agents (security-sentinel, performance-oracle, architecture-strategist, etc.)
 - 5 research agents, swarm orchestration
 
 **Spec Kit (9 commands):**
+
 - Only `/speckit.specify` and `/speckit.plan` were used (spec + plan creation)
 - `/speckit.tasks` (task breakdown), `/speckit.implement` (automated execution), `/speckit.analyze` (consistency analysis) were all skipped
-- RUN_LOG explicitly noted: *"Implementation proceeded autonomously without invoking full Spec Kit task generation or implementation commands"*
+- RUN*LOG explicitly noted: *"Implementation proceeded autonomously without invoking full Spec Kit task generation or implementation commands"\_
 
 **Superpowers (14 skills, 1 agent):**
+
 - Session-start hook fired (injecting context), but no evidence of skill invocation
 - `subagent-driven-development` (fresh subagent per task with 2-stage review) — never used
 - `test-driven-development` Iron Law ("no production code without a failing test first") — never enforced
 - `code-reviewer` agent — never dispatched
 
 **BMAD (13 agents, 39 skills, 25 workflows):**
+
 - Not yet run (was scheduled as Run 5), but at high risk of same bypass
 
 ### Corrective action
@@ -136,6 +140,7 @@ Refactored the `/start` command system to eliminate operator branch management a
 5. **Operator protocol updated** in EXPERIMENT_DESIGN.md and RUN_LOG to remove manual checkout steps.
 
 **Commits:**
+
 - `662518e` (main) — new start.md
 - `ba05a7b` (main) — docs updates
 - `65672e0` (run2/compound-engineering) — workflow.md + stub
@@ -148,6 +153,7 @@ Refactored the `/start` command system to eliminate operator branch management a
 Three ambiguities were identified during sanity check but not yet resolved:
 
 **Issue A: Phase vs Run number ambiguity.** The RUN_LOG says "Phase 1 Re-Run — Run 2: Compound Engineering." Start.md says "Determine the phase type (Phase 0, 1, 2, or 3) from the text." The word "Phase 1" and "Run 2" both contain numbers. Claude needs explicit disambiguation:
+
 - **Phase** = experiment phase (1 = build from scratch, 2 = extend with Spanish)
 - **Run** = iteration number (Run 1 = original invalidated runs, Run 2 = re-runs with enforcement)
 - "Phase 1 Re-Run" means Phase 1. "Run 2" is NOT Phase 2.
@@ -176,43 +182,44 @@ The refactor eliminated a significant UX burden (manual branch management) and a
 
 ### What happened
 
-The Run 2 CE build followed the 4-step sequence (ce:plan → ce:work → ce:review → ce:compound) and produced all expected artifacts (plan file in `docs/plans/`, solution doc in `docs/solutions/`, 7 workflow-log entries). The RUN_LOG recorded "Full CE adherence." Post-run deep review revealed this was wrong — Sonnet followed CE's *templates* but never activated CE's *engine*.
+The Run 2 CE build followed the 4-step sequence (ce:plan → ce:work → ce:review → ce:compound) and produced all expected artifacts (plan file in `docs/plans/`, solution doc in `docs/solutions/`, 7 workflow-log entries). The RUN*LOG recorded "Full CE adherence." Post-run deep review revealed this was wrong — Sonnet followed CE's \_templates* but never activated CE's _engine_.
 
 ### What was skipped
 
-| CE Step | What SKILL.md prescribes | What Sonnet actually did |
-|---------|--------------------------|--------------------------|
-| ce:plan | Spawn `repo-research-analyst` + `learnings-researcher` agents in parallel, optionally `best-practices-researcher` + `framework-docs-researcher`, run `spec-flow-analyzer` | Read PROJECT_SPEC.md, wrote plan using SKILL.md template format. Zero agents spawned. |
-| ce:work | Create TodoWrite task list, system-wide test checks per task | Built systematically with commits (partial compliance). No TodoWrite, no system-wide checks. |
-| ce:review | Load review agents from `compound-engineering.local.md`, spawn parallel review agents (security-sentinel, performance-oracle, etc.), create todo files in `todos/` | Self-reviewed in single pass, found 3 real issues, applied fixes directly. No agents, no todos/ directory. |
-| ce:compound | Spawn 5 parallel sub-agents (Context Analyzer, Solution Extractor, Related Docs Finder, Prevention Strategist, Category Classifier) | Single-pass write of solution doc. Zero agents spawned. |
+| CE Step     | What SKILL.md prescribes                                                                                                                                                  | What Sonnet actually did                                                                                   |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| ce:plan     | Spawn `repo-research-analyst` + `learnings-researcher` agents in parallel, optionally `best-practices-researcher` + `framework-docs-researcher`, run `spec-flow-analyzer` | Read PROJECT_SPEC.md, wrote plan using SKILL.md template format. Zero agents spawned.                      |
+| ce:work     | Create TodoWrite task list, system-wide test checks per task                                                                                                              | Built systematically with commits (partial compliance). No TodoWrite, no system-wide checks.               |
+| ce:review   | Load review agents from `compound-engineering.local.md`, spawn parallel review agents (security-sentinel, performance-oracle, etc.), create todo files in `todos/`        | Self-reviewed in single pass, found 3 real issues, applied fixes directly. No agents, no todos/ directory. |
+| ce:compound | Spawn 5 parallel sub-agents (Context Analyzer, Solution Extractor, Related Docs Finder, Prevention Strategist, Category Classifier)                                       | Single-pass write of solution doc. Zero agents spawned.                                                    |
 
 ### Root cause
 
 Two compounding factors:
 
-1. **"Read and follow" ≠ skill invocation.** The experiment's `workflow.md` said "Read and follow `.claude/skills/ce-plan/SKILL.md`" for each step. This made Sonnet read the SKILL.md as reference text — it extracted the output format/template and skipped multi-agent orchestration instructions. CE skills are designed to be *invoked* through the skill system, not *read as prose*. When invoked, the model treats instructions as an executable procedure. When read, it treats them as a reference to cherry-pick from.
+1. **"Read and follow" ≠ skill invocation.** The experiment's `workflow.md` said "Read and follow `.claude/skills/ce-plan/SKILL.md`" for each step. This made Sonnet read the SKILL.md as reference text — it extracted the output format/template and skipped multi-agent orchestration instructions. CE skills are designed to be _invoked_ through the skill system, not _read as prose_. When invoked, the model treats instructions as an executable procedure. When read, it treats them as a reference to cherry-pick from.
 
 2. **CE already has autonomous orchestration (`/lfg`) that the experiment didn't use.** CE ships with `/lfg` ("Let's Fucking Go") — a fully autonomous pipeline that chains `ce:plan → deepen-plan → ce:work → ce:review → resolve_todo_parallel` with GATE checks between steps. It has `disable-model-invocation: true` frontmatter (designed for user-invoked autonomous execution). The experiment's `workflow.md` reinvented `/lfg` poorly by writing custom step-by-step instructions pointing to SKILL.md files.
 
 ### How CE is designed to be used
 
-| Mode | Mechanism | Who triggers |
-|------|-----------|--------------|
-| **Manual** | Human types `/ce:plan`, reviews, types `/ce:work`, etc. | Human per step |
-| **Autonomous** | Human types `/lfg "build X"` once, walks away | Human once, CE chains everything |
-| **Swarm** | Human types `/slfg "build X"`, parallelizes work + review | Human once, CE parallelizes |
+| Mode           | Mechanism                                                 | Who triggers                     |
+| -------------- | --------------------------------------------------------- | -------------------------------- |
+| **Manual**     | Human types `/ce:plan`, reviews, types `/ce:work`, etc.   | Human per step                   |
+| **Autonomous** | Human types `/lfg "build X"` once, walks away             | Human once, CE chains everything |
+| **Swarm**      | Human types `/slfg "build X"`, parallelizes work + review | Human once, CE parallelizes      |
 
 The experiment wanted autonomous mode but built a custom driver that bypassed the skill invocation mechanism entirely.
 
 ### Artifact-based adherence checking is insufficient
 
 The post-build adherence check verified:
+
 - Plan file exists in `docs/plans/` ✓
 - Solution file exists in `docs/solutions/` ✓
 - Workflow-log entries exist for all 4 steps ✓
 
-All checks passed. But the *process* that produced those artifacts was fundamentally different from CE's design. A single-agent build mimicking the output format passes the same checks as a multi-agent build using the actual framework. **Adherence checks must verify process, not just artifacts.**
+All checks passed. But the _process_ that produced those artifacts was fundamentally different from CE's design. A single-agent build mimicking the output format passes the same checks as a multi-agent build using the actual framework. **Adherence checks must verify process, not just artifacts.**
 
 ### Technical detail: skills/ vs commands/
 
@@ -229,10 +236,12 @@ CE installs its skills to `.claude/skills/` (agent-invocable). The Skill tool on
 ### Why this matters for the write-up
 
 This is a second-order version of Learning 001:
+
 - **Learning 001:** Frameworks aren't used at all (no enforcement → model takes shortest path)
 - **Learning 005:** Framework steps are followed in sequence, but the framework's engine is not activated ("read and follow" enforcement → model follows templates, skips multi-agent orchestration)
 
 The progression reveals a spectrum of framework adoption failures:
+
 1. No enforcement → framework ignored entirely
 2. Step-sequence enforcement → templates followed, engine skipped
 3. Skill invocation enforcement → (to be tested with `/lfg` on `run3/compound-engineering`)
@@ -253,28 +262,31 @@ Post-mortem audit of all four `workflow.md` files revealed that every single one
 
 ### The pattern in each workflow.md
 
-| Plugin | Pattern used | File location | Steps affected |
-|--------|-------------|---------------|----------------|
-| **CE** | "Read and follow `.claude/skills/ce-plan/SKILL.md`" | skills/ | 4 steps (already fixed via run3) |
-| **Superpowers** | "Read and follow `.claude/skills/brainstorming/SKILL.md`" | skills/ | 6 steps |
-| **Spec Kit** | "Read and follow `.claude/commands/speckit.specify.md`" | commands/ | 6 steps |
-| **BMAD** | "Read and follow `.claude/skills/bmad-create-product-brief/SKILL.md`" | skills/ | 8 steps |
+| Plugin          | Pattern used                                                          | File location | Steps affected                   |
+| --------------- | --------------------------------------------------------------------- | ------------- | -------------------------------- |
+| **CE**          | "Read and follow `.claude/skills/ce-plan/SKILL.md`"                   | skills/       | 4 steps (already fixed via run3) |
+| **Superpowers** | "Read and follow `.claude/skills/brainstorming/SKILL.md`"             | skills/       | 6 steps                          |
+| **Spec Kit**    | "Read and follow `.claude/commands/speckit.specify.md`"               | commands/     | 6 steps                          |
+| **BMAD**        | "Read and follow `.claude/skills/bmad-create-product-brief/SKILL.md`" | skills/       | 8 steps                          |
 
 ### What each plugin loses under "read and follow"
 
 **Superpowers (severity: HIGH)**
+
 - `subagent-driven-development` — parallel task execution with fresh subagent per task, 2-stage review gates (spec compliance reviewer + code quality reviewer). The framework's core differentiator. Never spawned.
 - `spec-document-reviewer` and `plan-document-reviewer` subagents — review loops after brainstorming and planning steps. Never dispatched.
 - `code-reviewer` subagent — post-implementation review. Never dispatched.
 - Three "Iron Laws" (TDD: "no production code without a failing test first"; systematic-debugging: "no fixes without root cause investigation first"; verification-before-completion: "no completion claims without fresh verification evidence"). Referenced in workflow.md but when read as prose, the enforcement mechanism degrades — the model knows about them but doesn't feel bound by them the way it would when the skill is invoked and the instructions arrive as an executable procedure.
 
 **BMAD (severity: HIGH)**
+
 - Step-file architecture — BMAD workflows use numbered step files (`step-01-init.md`, `step-02-discovery.md`, etc.) that execute sequentially. "Read and follow" the top-level SKILL.md won't trigger loading these substeps.
 - Agent persona loading — each of BMAD's 13 agents (PM, Architect, Dev, QA, Scrum Master, etc.) loads a persona file with communication style, principles, and specialized knowledge. Never loaded.
 - `bmad-quick-dev-new-preview` — a 5-step pipeline with 3 parallel adversarial reviewers (blind hunter, edge case hunter, acceptance auditor). Exists in the framework but isn't even referenced in our workflow.md.
 - `bmad-party-mode` — multi-agent discussion orchestration. Not referenced.
 
 **Spec Kit (severity: LOWER)**
+
 - Spec Kit commands live in `.claude/commands/` (not `skills/`), so they CAN be invoked via the Skill tool — making this the easiest plugin to fix.
 - Spec Kit's commands are simpler than the others — structured prompts that generate artifacts, not multi-agent orchestration. The damage from "read and follow" is less severe.
 - However, `speckit.implement` has structured task execution with checklist validation and dependency ordering that will be simplified when read as prose rather than invoked as a procedure.
@@ -283,18 +295,19 @@ Post-mortem audit of all four `workflow.md` files revealed that every single one
 
 A key part of the CE fix was discovering that CE already shipped with `/lfg` — a built-in autonomous pipeline. Audit of the other three plugins:
 
-| Plugin | Built-in autonomous pipeline? | Details |
-|--------|-------------------------------|---------|
-| **CE** | **Yes** — `/lfg` | Chains plan→deepen→work→review→resolve. User invokes once. (Already used in run3 fix.) |
-| **Superpowers** | **No** | Framework expects manual skill invocation per step. Deprecated its own commands (brainstorm.md, write-plan.md, execute-plan.md) in favor of skills. No single "run everything" command. |
-| **Spec Kit** | **No** | Individual commands only, no chaining command. But all commands are in `commands/` so each can be individually Skill-invoked. |
-| **BMAD** | **Partial** — `bmad-quick-dev-new-preview` | 5-step pipeline (clarify→plan→implement→adversarial review→present) with sub-agent dispatch. But it's a skill (in `skills/`), not a command. Also has `bmad-master` agent with menu-driven orchestration. |
+| Plugin          | Built-in autonomous pipeline?              | Details                                                                                                                                                                                                   |
+| --------------- | ------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **CE**          | **Yes** — `/lfg`                           | Chains plan→deepen→work→review→resolve. User invokes once. (Already used in run3 fix.)                                                                                                                    |
+| **Superpowers** | **No**                                     | Framework expects manual skill invocation per step. Deprecated its own commands (brainstorm.md, write-plan.md, execute-plan.md) in favor of skills. No single "run everything" command.                   |
+| **Spec Kit**    | **No**                                     | Individual commands only, no chaining command. But all commands are in `commands/` so each can be individually Skill-invoked.                                                                             |
+| **BMAD**        | **Partial** — `bmad-quick-dev-new-preview` | 5-step pipeline (clarify→plan→implement→adversarial review→present) with sub-agent dispatch. But it's a skill (in `skills/`), not a command. Also has `bmad-master` agent with menu-driven orchestration. |
 
 ### Technical constraint: skills/ vs commands/
 
 The Skill tool only invokes files in `.claude/commands/`. Files in `.claude/skills/` are designed to be activated by the model's internal skill system (triggered by the `using-superpowers` SKILL.md or CE's skill-matching logic), not by the Skill tool.
 
 This means:
+
 - **Spec Kit** — commands are already in `commands/`. Can be Skill-invoked with no file moves.
 - **Superpowers** — all functionality is in `skills/`. Cannot be Skill-invoked without copying to `commands/`.
 - **BMAD** — all functionality is in `skills/`. Cannot be Skill-invoked without copying to `commands/`.
@@ -305,6 +318,7 @@ This means:
 Learning 004 created the `workflow.md` system. The design assumed that "Read and follow [SKILL.md]" would produce the same behavior as invoking the skill — that the model would treat the instructions as procedural regardless of how they arrived. Learning 005 proved this assumption wrong for CE. This audit proves it wrong for all plugins.
 
 The assumption was reasonable — the instructions are the same text either way. But the invocation mechanism changes how the model relates to the text:
+
 - **Invoked via Skill tool:** Instructions arrive as "you are now executing this procedure." The model treats them as binding.
 - **Read via Read tool:** Instructions arrive as "here is a reference document." The model treats them as advisory — extracting templates and output formats while skipping orchestration steps it judges unnecessary.
 
@@ -313,23 +327,27 @@ The assumption was reasonable — the instructions are the same text either way.
 Create new run3/ branches for all three remaining plugins (Superpowers, Spec Kit, BMAD) with workflow.md files rewritten to use proper invocation mechanisms. The run2/ branches are preserved as experiment data.
 
 **Spec Kit (simplest fix):**
+
 - Create `run3/spec-kit` from the last infrastructure commit on `run2/spec-kit`
 - Rewrite `workflow.md` to invoke each `speckit.*` command via the Skill tool instead of "read and follow"
 - No file moves needed — commands are already in `commands/`
 
 **Superpowers:**
+
 - Create `run3/superpowers` from the last infrastructure commit on `run2/superpowers`
 - Copy key skills to `.claude/commands/` so they can be Skill-invoked: `brainstorming`, `writing-plans`, `subagent-driven-development` (or `executing-plans`), `requesting-code-review`, `verification-before-completion`, `finishing-a-development-branch`
 - Rewrite `workflow.md` to invoke each step via the Skill tool
 - Keep originals in `skills/` — the copied commands reference them
 
 **BMAD:**
+
 - Create `run3/bmad` from the last infrastructure commit on `run2/bmad`
 - Copy `bmad-quick-dev-new-preview` to `.claude/commands/` as the autonomous pipeline (analogous to CE's `/lfg`)
 - If quick-dev-new-preview doesn't cover BMAD's full analysis→planning→solutioning→implementation pipeline, copy individual phase skills to commands instead
 - Rewrite `workflow.md` to Skill-invoke the pipeline or individual phase commands
 
 **All branches:**
+
 - Use Opus (consistent with CE run3 decision)
 - Add process-level adherence checks: verify subagent dispatch (check for Agent tool usage in the session), not just artifact existence
 
@@ -362,6 +380,7 @@ A systematic review of experiment design goals vs. actual implementation reveale
 Learning 005/006 recommended Opus for run3 branches, but `timing.jsonl` on both CE and Superpowers branches shows `"model":"claude-sonnet-4-6"`. The model is configured at the Claude Code application level, not per-branch.
 
 **Decision:** Accept Sonnet for all remaining runs (Superpowers, Spec Kit, BMAD). Rationale:
+
 - Consistency with completed runs (CE and Vanilla both used Sonnet)
 - The Skill invocation fix (Learning 005/006) was the primary correction; Opus was belt-and-suspenders
 - If Skill invocation enforcement works on Sonnet, that's a stronger finding than "it only works on Opus"
@@ -370,12 +389,14 @@ Learning 005/006 recommended Opus for run3 branches, but `timing.jsonl` on both 
 ### Decision 2: CE Run 3 — Accept with documented caveats (no re-run)
 
 CE run3 had two significant deviations:
+
 1. **`ce:compound` skipped** — context budget exhausted after review+resolve. CE's signature knowledge-compounding feature (5 parallel sub-agents) was never exercised.
 2. **`/lfg` not Skill-invoked** — the slash command wasn't registered, so the pipeline was executed by reading lfg.md. This is the same "read and follow" pattern Learning 005 identified as broken.
 
 Despite this, CE produced excellent metrics: 42/42 e2e (100%), 0 ESLint errors, Lighthouse 100/100/100/100.
 
 **Decision:** Accept results. Rationale:
+
 - Experiment design principle: "poor results are findings, not errors to block" (Learning 002, decision 6)
 - Re-running creates learning-effect confounds (would be 4th attempt at same build)
 - Deviations are documented — Phase 3 can account for them
@@ -391,7 +412,7 @@ BMAD's `bmad-party-mode` (multi-agent discussion) and adversarial reviewers from
 
 ### Fix 1: Superpowers TDD — "read and follow" pattern survived (CRITICAL)
 
-The Superpowers `workflow.md` and `CLAUDE.md` both referenced TDD via: *"Follow the TDD Iron Law from `.claude/skills/test-driven-development/SKILL.md`"* — the exact broken pattern Learning 005/006 identified. The TDD skill is in `skills/`, not `commands/`, so it can't be Skill-invoked and degrades to advisory prose.
+The Superpowers `workflow.md` and `CLAUDE.md` both referenced TDD via: _"Follow the TDD Iron Law from `.claude/skills/test-driven-development/SKILL.md`"_ — the exact broken pattern Learning 005/006 identified. The TDD skill is in `skills/`, not `commands/`, so it can't be Skill-invoked and degrades to advisory prose.
 
 **Impact:** Without enforcement, Superpowers would produce zero unit tests (like Vanilla and CE), losing the experiment's best chance to observe TDD as a differentiator.
 
@@ -406,12 +427,14 @@ The refactored `/start` command requires `workflow.md` on every branch. Vanilla 
 ### Fix 3: measure.mjs enhancements
 
 Added two missing data points to the metrics JSON output:
+
 - `workflowTests`: count of workflow-generated test files in `src/` (previously captured in debrief text but not in JSON)
 - `workflowTiming`: parsed step durations from `metrics/workflow-log.jsonl` (previously required manual JSONL analysis)
 
 ### Fix 4: Post-hoc process adherence analysis
 
 Created `scripts/analyze-adherence.mjs` for Phase 3 analysis. Verifies process-level adherence beyond artifact checks:
+
 - TDD compliance: test file commit timestamps vs. implementation timestamps
 - Commit pattern analysis: test-related vs. implementation-only commits
 - Workflow log completeness per framework's expected steps
@@ -419,6 +442,7 @@ Created `scripts/analyze-adherence.mjs` for Phase 3 analysis. Verifies process-l
 ### Why this matters
 
 This gap analysis revealed a spectrum of experiment infrastructure maturity:
+
 - **Independent variable (framework used):** Fixed by Learnings 001, 005, 006
 - **Dependent variables (metrics captured):** Fixed by Learning 002, enhanced here
 - **Enforcement fidelity (framework actually runs at full capability):** This learning — TDD survived as a "read and follow" reference even after two rounds of fixes targeting exactly this pattern
@@ -435,6 +459,7 @@ The TDD finding is particularly instructive: **fixing a class of bugs doesn't me
 ### Observation
 
 At ~2k LOC (current scale), errors are already appearing but are fixable:
+
 - Session context limit hit mid-build (BMAD story 4.2 split across two contexts)
 - Parallel translation stores diverged silently: `translations.ts` `deadline.tomorrow` ES = "¡Mañana!" while `DEADLINE_LABELS.es.tomorrow` = "Queda 1 día" — two sources of truth for the same string, both passing tests
 - Pre-existing Prettier formatting issues went undetected until a full build was triggered
@@ -443,11 +468,11 @@ These are early-warning signs of the coherence failures that become reliable at 
 
 ### Degradation thresholds (src/ application code only)
 
-| Scale | Files | LOC | Primary failure modes |
-|-------|-------|-----|----------------------|
-| 🟢 Green | < 40 | < 3k | High coherence; errors fixable in session |
-| 🟡 Yellow | 40–100 | 3–10k | Stale-context errors; hallucinated imports; type drift (`any` casts); test drift |
-| 🔴 Red | > 100 | > 10k+ | Multi-file refactors have silent partial failures; "passes build but wrong" bugs; agents can't hold full dependency graph |
+| Scale     | Files  | LOC    | Primary failure modes                                                                                                     |
+| --------- | ------ | ------ | ------------------------------------------------------------------------------------------------------------------------- |
+| 🟢 Green  | < 40   | < 3k   | High coherence; errors fixable in session                                                                                 |
+| 🟡 Yellow | 40–100 | 3–10k  | Stale-context errors; hallucinated imports; type drift (`any` casts); test drift                                          |
+| 🔴 Red    | > 100  | > 10k+ | Multi-file refactors have silent partial failures; "passes build but wrong" bugs; agents can't hold full dependency graph |
 
 ### Specific patterns that fail first
 
@@ -469,7 +494,7 @@ Include a codebase scale health check in every `/start` operator debrief (Step 7
 ## Learning 009: Scoring Rubric Was Visible to Workflows During Runs 1–3 (Metric Gaming Vector)
 
 **Date discovered:** 2026-04-08
-**Affects:** All runs to date (workflow/*, run2/*, run3/*)
+**Affects:** All runs to date (workflow/_, run2/_, run3/\*)
 **Severity:** High — caveats all quantitative comparisons in ANALYSIS.md
 
 ### What happened
@@ -478,12 +503,12 @@ While planning the Hermes orchestrator and a new metrics suite (Semgrep, Stryker
 
 Specifically, the rubric leaked:
 
-* **Exact bundle size window:** "First load JS > 130 kB or < 85 kB (±20% from ~102 kB baseline)"
-* **Zero-warning lint bar:** "eslintErrors > 0 OR eslintWarnings > 0" triggers a finding
-* **Test generation expectation:** "`uniqueTestFiles` == 0 for a non-vanilla framework" — forces every non-vanilla workflow to produce tests regardless of whether its methodology calls for them
-* **TDD scoring:** "tddScore < 100 OR implOnlyCommits > 0" — workflows learned their commit history would be inspected for TDD patterns
-* **E2e threshold:** "e2eTotal < 42" — workflows knew the exact shape of the measurement
-* **Data completeness gate script:** The full gate bash was in the file, telling workflows exactly which JSON fields would be checked
+- **Exact bundle size window:** "First load JS > 130 kB or < 85 kB (±20% from ~102 kB baseline)"
+- **Zero-warning lint bar:** "eslintErrors > 0 OR eslintWarnings > 0" triggers a finding
+- **Test generation expectation:** "`uniqueTestFiles` == 0 for a non-vanilla framework" — forces every non-vanilla workflow to produce tests regardless of whether its methodology calls for them
+- **TDD scoring:** "tddScore < 100 OR implOnlyCommits > 0" — workflows learned their commit history would be inspected for TDD patterns
+- **E2e threshold:** "e2eTotal < 42" — workflows knew the exact shape of the measurement
+- **Data completeness gate script:** The full gate bash was in the file, telling workflows exactly which JSON fields would be checked
 
 In addition, `scripts/measure.mjs` and `scripts/analyze-adherence.mjs` lived in the container-mounted `scripts/` directory, so any workflow could have `cat`'d them to learn the entire metric suite and its thresholds.
 
@@ -498,10 +523,10 @@ Two compounding errors:
 
 Every numeric comparison in `docs/ANALYSIS.md` is downstream of rubric-visible runs. Workflows may have optimized for the disclosed targets rather than for real code quality. In particular:
 
-* **Bundle size rankings** are the most gameable — the 85-130 kB window is narrow enough that a workflow aware of it can pick dependencies to land inside it
-* **Zero-warning ESLint rankings** are gameable by inserting `eslint-disable` comments or removing warning-emitting code
-* **Test file counts for non-vanilla frameworks** are forced to be non-zero — any framework that would naturally produce zero tests was penalized, so "test count" rankings are an artifact of the rule rather than a measurement of framework behavior
-* **TDD scores** are gameable by reordering commits (test-first commits before impl commits) even when the actual writing order was impl-first
+- **Bundle size rankings** are the most gameable — the 85-130 kB window is narrow enough that a workflow aware of it can pick dependencies to land inside it
+- **Zero-warning ESLint rankings** are gameable by inserting `eslint-disable` comments or removing warning-emitting code
+- **Test file counts for non-vanilla frameworks** are forced to be non-zero — any framework that would naturally produce zero tests was penalized, so "test count" rankings are an artifact of the rule rather than a measurement of framework behavior
+- **TDD scores** are gameable by reordering commits (test-first commits before impl commits) even when the actual writing order was impl-first
 
 The qualitative findings (framework activation, workflow command usage, subjective code quality) are unaffected because those depend on methodology observations, not rubric thresholds.
 
@@ -518,7 +543,7 @@ The qualitative findings (framework activation, workflow command usage, subjecti
 
 Runs 1-3 branches (`workflow/*`, `run2/*`, `run3/*`) have the old `scripts/measure.mjs` and `scripts/analyze-adherence.mjs` baked into their git trees. Those files cannot be removed from those branches without modifying experiment data (which CLAUDE.md forbids). The Docker tmpfs mask was limited to `/workspace/scoring` specifically — it does not mask `/workspace/scripts` on legacy branches, because doing so would make git see the scoring files as deleted and corrupt the branch state on any `git add -A` or `git commit -a`.
 
-**Consequence:** Legacy branches are permanently contaminated. They cannot be used for clean-run comparisons. Any re-runs of Spec Kit, Superpowers, BMAD, CE, or Vanilla must be done on new branches (run4/*, run5/*, etc.) created from a post-fix `main` commit where `scripts/` is absent from the scaffold.
+**Consequence:** Legacy branches are permanently contaminated. They cannot be used for clean-run comparisons. Any re-runs of Spec Kit, Superpowers, BMAD, CE, or Vanilla must be done on new branches (run4/_, run5/_, etc.) created from a post-fix `main` commit where `scripts/` is absent from the scaffold.
 
 ### Action for Phase 3 write-up
 

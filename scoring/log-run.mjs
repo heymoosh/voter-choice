@@ -78,9 +78,10 @@ if (existsSync(metricsPath)) {
       typeof m.vitest?.coverage?.lines === "number"
         ? `coverage ${m.vitest.coverage.lines.toFixed(1)}%`
         : null;
-    const loc = m.linesOfCode?.application?.code != null
-      ? `LOC ${m.linesOfCode.application.code}`
-      : null;
+    const loc =
+      m.linesOfCode?.application?.code != null
+        ? `LOC ${m.linesOfCode.application.code}`
+        : null;
     const complex =
       typeof m.complexity?.average === "number"
         ? `complexity avg ${m.complexity.average.toFixed(2)} max ${m.complexity.max ?? "?"}`
@@ -89,7 +90,9 @@ if (existsSync(metricsPath)) {
       typeof m.diffHygiene?.scopeAdherence === "number"
         ? `scope adherence ${m.diffHygiene.scopeAdherence.toFixed(2)}`
         : null;
-    metricsLine = [e2e, cov, loc, complex, adherence].filter(Boolean).join(", ");
+    metricsLine = [e2e, cov, loc, complex, adherence]
+      .filter(Boolean)
+      .join(", ");
   } catch (err) {
     // Soft failure — entry still records that the build happened
     metricsLine = `(could not parse ${metricsPath}: ${err.message})`;
@@ -97,15 +100,16 @@ if (existsSync(metricsPath)) {
 }
 
 const statusBadge =
-  status === "ok" ? "✓"
-  : status === "blocked" ? "✗ BLOCKED"
-  : status === "partial" ? "△ PARTIAL"
-  : status;
+  status === "ok"
+    ? "✓"
+    : status === "blocked"
+      ? "✗ BLOCKED"
+      : status === "partial"
+        ? "△ PARTIAL"
+        : status;
 
 const ts = new Date().toISOString();
-const replicateLine = isReplicate
-  ? `- **Replicate:** ${replicate}\n`
-  : "";
+const replicateLine = isReplicate ? `- **Replicate:** ${replicate}\n` : "";
 
 const entry = `
 ### ${title}
@@ -123,7 +127,9 @@ let runLog = readFileSync(runLogPath, "utf-8");
 // Insert right after the first `## Completed` line so most recent is at top.
 const completedMatch = runLog.match(/^## Completed\s*$/m);
 if (!completedMatch) {
-  console.error("RUN_LOG.md has no `## Completed` section — refusing to append blindly");
+  console.error(
+    "RUN_LOG.md has no `## Completed` section — refusing to append blindly",
+  );
   process.exit(2);
 }
 const insertAt = completedMatch.index + completedMatch[0].length;

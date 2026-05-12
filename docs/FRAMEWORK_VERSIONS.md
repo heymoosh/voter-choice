@@ -16,6 +16,7 @@ Frameworks update frequently — all branches must use the version current at ex
 **GitHub:** https://github.com/bmad-code-org/BMAD-METHOD
 **Release date:** 2026-03-13
 **What installed:**
+
 - `_bmad/` — Core agents, workflows, BMM module (34 skills, 10 agents)
 - `.claude/skills/` — 44 BMAD skills for Claude Code (bmad-analyst, bmad-architect, bmad-dev, bmad-pm, bmad-qa, bmad-sm, etc.)
 - `_bmad-output/` — Output directories for planning and implementation artifacts
@@ -30,6 +31,7 @@ Frameworks update frequently — all branches must use the version current at ex
 **Install command:** `uvx --from git+https://github.com/github/spec-kit.git specify init --here --ai claude --force`
 **GitHub:** https://github.com/github/spec-kit
 **What installed:**
+
 - `.specify/` — Project directory (templates, scripts, memory, init-options.json)
 - `.claude/commands/speckit.*` — 9 slash commands:
   - `/speckit.constitution` — Establish project principles
@@ -52,11 +54,14 @@ Frameworks update frequently — all branches must use the version current at ex
 **Install method:** Cloned repo, copied skills/commands/agents/hooks to `.claude/` as standalone configuration
 **GitHub:** https://github.com/obra/superpowers
 **Official install (for session use):**
-  ```
-  /plugin marketplace add obra/superpowers-marketplace
-  /plugin install superpowers@superpowers-marketplace
-  ```
+
+```
+/plugin marketplace add obra/superpowers-marketplace
+/plugin install superpowers@superpowers-marketplace
+```
+
 **What installed (standalone):**
+
 - `.claude/skills/` — 13 skills: brainstorming, dispatching-parallel-agents, executing-plans, finishing-a-development-branch, receiving-code-review, requesting-code-review, subagent-driven-development, systematic-debugging, test-driven-development, using-git-worktrees, using-superpowers, verification-before-completion, writing-plans, writing-skills
 - `.claude/commands/` — 3 slash commands: `/brainstorm`, `/write-plan`, `/execute-plan`
 - `.claude/agents/code-reviewer.md`
@@ -75,11 +80,14 @@ Frameworks update frequently — all branches must use the version current at ex
 **Install method:** Cloned repo, copied skills/agents to `.claude/` as standalone configuration
 **GitHub:** https://github.com/EveryInc/compound-engineering-plugin
 **Official install (for session use):**
-  ```
-  /plugin marketplace add EveryInc/compound-engineering-plugin
-  /plugin install compound-engineering
-  ```
+
+```
+/plugin marketplace add EveryInc/compound-engineering-plugin
+/plugin install compound-engineering
+```
+
 **What installed (standalone):**
+
 - `.claude/skills/` — 47 skills including core workflow: `ce-plan`, `ce-work`, `ce-review`, `ce-compound`, `ce-brainstorm` (plus brainstorming, compound-docs, git-worktree, orchestrating-swarms, and many more)
 - `.claude/agents/` — 28 agents across 5 categories: review (14), research (5), design (3), docs (1), workflow (4)
 

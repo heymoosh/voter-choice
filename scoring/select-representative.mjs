@@ -44,7 +44,13 @@ const summaryDir = join(ROOT, "metrics", "experiment", framework);
 const replicates = [];
 for (const r of ["r1", "r2", "r3"]) {
   // Each replicate is its own branch with its own metrics directory.
-  const path = join(ROOT, "metrics", "experiment", `${framework}-${r}`, "phase1.json");
+  const path = join(
+    ROOT,
+    "metrics",
+    "experiment",
+    `${framework}-${r}`,
+    "phase1.json",
+  );
   if (!existsSync(path)) {
     console.warn(`Missing: ${path}`);
     continue;
@@ -58,7 +64,9 @@ for (const r of ["r1", "r2", "r3"]) {
 }
 
 if (replicates.length === 0) {
-  console.error(`No replicate metrics found for framework '${framework}' under ${baseDir}`);
+  console.error(
+    `No replicate metrics found for framework '${framework}' under ${baseDir}`,
+  );
   process.exit(1);
 }
 
@@ -69,10 +77,9 @@ function stat(name, getter) {
   if (values.length === 0) return null;
   const nums = values.map((v) => v.value);
   const mean = nums.reduce((a, b) => a + b, 0) / nums.length;
-  const variance =
-    nums.reduce((s, n) => s + (n - mean) ** 2, 0) / nums.length;
+  const variance = nums.reduce((s, n) => s + (n - mean) ** 2, 0) / nums.length;
   const stdDev = Math.sqrt(variance);
-  const rsd = mean !== 0 ? +(stdDev / Math.abs(mean) * 100).toFixed(2) : null;
+  const rsd = mean !== 0 ? +((stdDev / Math.abs(mean)) * 100).toFixed(2) : null;
   const sortedAsc = [...values].sort((a, b) => a.value - b.value);
   return {
     name,
@@ -97,7 +104,10 @@ const dims = [
   ["complexity.average", (d) => d.complexity?.average],
   ["complexity.max", (d) => d.complexity?.max],
   ["duplication.percentage", (d) => d.duplication?.percentage],
-  ["bundleSize.firstLoadJsShared.size", (d) => d.bundleSize?.firstLoadJsShared?.size],
+  [
+    "bundleSize.firstLoadJsShared.size",
+    (d) => d.bundleSize?.firstLoadJsShared?.size,
+  ],
 ];
 
 const varianceByMetric = {};
@@ -135,7 +145,10 @@ const report = {
   noisyMetrics: noisyMetrics.map((s) => ({
     metric: s.name,
     rsd: s.rsd,
-    note: s.rsd > 50 ? "very high variance — flag in FRAMING.md" : "moderate variance",
+    note:
+      s.rsd > 50
+        ? "very high variance — flag in FRAMING.md"
+        : "moderate variance",
   })),
   varianceByMetric,
 };
