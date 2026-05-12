@@ -22,6 +22,8 @@ The result will not, by itself, tell you:
 - **Best workflow under tight time pressure.** Wall-clock time is captured but not weighted in the ranking. A workflow that takes 4× longer to produce the same result is not penalized here — it would be in a real project.
 - **Workflow vs. model contribution.** The experiment holds model class constant. It does not isolate "this workflow plus a weaker model" vs. "no workflow plus a stronger model."
 
+**Scope of v2 claim:** The v2 ranking represents workflow-as-defined-by-its-prompts paired with Claude Sonnet, executed autonomously on a single Next.js project, n=3 Phase 1 replicates + n=1 forward-phase replicate per framework. It does not claim generalization to: (a) human developers using these frameworks, (b) non-Sonnet models, (c) projects outside the Next.js / React / TypeScript / Tailwind stack, or (d) codebases above ~10k LOC. Phase D (if executed) provides a sanity check on model-effect magnitude but does not extend the generalization range.
+
 ## Acknowledged confounds
 
 | Confound | Rationale for accepting it | Where it might bias the result |
@@ -32,7 +34,7 @@ The result will not, by itself, tell you:
 | Autonomous-only | Skill drift across trials would be a worse confound. Trading ecological validity for internal validity is the right call. | Penalizes workflows whose value is operator-collaborative. |
 | n=3 only at Phase 1 | Full-phase replicates would cost 5× compute. Phase 1 is the cleanest signal for variance. Replicates are forked from `experiment/<framework>` into `experiment/<framework>-r1`, `-r2`, `-r3`; median-LOC run becomes the representative; Phases 2–5 run on that. | Variance estimate doesn't account for compounding drift across iterations. |
 | Model fixed (Sonnet/Opus class) | Lets the workflow be the independent variable. | Cannot separate "this workflow needs Opus" from "this workflow is good." |
-| Rubric isolation only for Runs 4–5 | Runs 1–3 were intentionally rubric-exposed as the "what not to do" demonstration. Their data is documented as failure-mode reference (see `docs/LEARNINGS.md` Learning 009), not as comparable data. | Aggregating across all runs would invalidate cross-workflow comparison; the experiment uses only Runs 4–5+ for ranking. |
+| Rubric isolation only for Runs 1–5 | Runs 1–5 document the failure mode and partial mitigations that preceded the v2 isolation deployment. Run 6 is the first run that should be treated as fully isolated under the Docker tmpfs masking plan. | Aggregating across pre-v2 and v2 runs would blur a material methodology change; public claims should anchor on the isolated v2 rerun. |
 
 ## How to talk about results publicly
 

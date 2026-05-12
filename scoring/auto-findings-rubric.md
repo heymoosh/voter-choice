@@ -1,6 +1,6 @@
 # Auto-Findings Rubric
 
-**Purpose:** This file is the authoritative rubric Hermes applies post-build, from the host side, after a workflow container exits cleanly. It contains the 10-check auto-findings table, the data completeness gate, and the Phase 2+ delta report format.
+**Purpose:** This file is the authoritative rubric Hermes applies post-build, from the host side, after a workflow container exits cleanly. It contains the 13-check auto-findings table plus checks 14-17 for the v2 axes, the data completeness gate, and the Phase 2+ delta report format.
 
 **Who reads this:** Hermes only. This file lives in `scoring/` which is masked by a tmpfs overlay inside the build container, so workflows cannot read it during execution. Keeping it out of container view is what prevents metric gaming (see `docs/LEARNINGS.md` → Learning 009).
 
@@ -45,7 +45,7 @@ Run these checks against the branch worktree:
 
 ---
 
-## 2. Ten-Check Auto-Findings Table
+## 2. Auto-Findings Table
 
 Apply after the data completeness gate passes. Evaluate every row and record the result (PASS / FINDING) with specific numbers. Read from both the measurement JSON and the adherence report JSON.
 
@@ -64,6 +64,10 @@ Apply after the data completeness gate passes. Evaluate every row and record the
 | 11 | **Diff sprawl** (Phase 2+) | `diffHygiene.summary.unexpected.locAdded` > 200 OR `diffHygiene.scopeAdherence` < 0.7 | Files in `unexpectedFiles`, scope-adherence ratio. Compare against `scoring/phase-scopes/phase<N>.json` to see what the phase was supposed to touch. |
 | 12 | **Complexity regression** (Phase 2+) | Phase delta on `complexity.average` > +2.0 OR `complexity.max` > +5 OR `complexity.distribution.critical_21plus` increased | Per-function complexity averages, top functions by complexity in `complexity.perFunction[:10]`. Indicates abstraction quality degraded across iteration. |
 | 13 | **Responder transparency** | `metrics/responder-log.jsonl` missing OR (framework ∈ {bmad, spec-kit} AND entry count < 3) | Entry count, framework. A thin log on a question-heavy framework suggests the wrapper inlined answers without recording its reasoning. |
+| 14 | **Acceptance coverage gap** | `acceptanceCoverage.coverage` < 1.0 | Coverage ratio and missing `AC-N` IDs |
+| 15 | **NFR compliance gap** | `nfrCompliance.passRate` < 1.0 | Pass rate plus failed `NFR-N` checks |
+| 16 | **Coupling regression** | `coupling.density` grew > 50% phase-over-phase OR `coupling.circular` > 0 | Density delta, cycle count, fan-in/out context |
+| 17 | **Type safety regression** | `typeSafety.strictErrors` > 0 OR `typeSafety.escapeHatches` increased from prior phase | Strict-mode error count and escape-hatch delta |
 
 **Finding format (for the RUN_LOG entry):**
 
@@ -134,4 +138,25 @@ This file and the rest of `scoring/` must never be:
 - Referenced by name in any per-branch `.claude/commands/workflow.md`
 - Passed as a prompt, env var, or mounted file into the Claude Code container
 
-Hermes enforces isolation by running the scoring scripts from a separate `main` worktree on the VPS host, never from inside the container. See `docker/run-claude.sh` for the tmpfs overlay that masks `/workspace/scoring` at container runtime, and `docs/LEARNINGS.md` → Learning 009 for the full gaming-vector post-mortem.
+Hermes now enforces isolation with a deployed Docker tmpfs overlay, not the older VPS-only concept. The build container masks these paths:
+
+- `/workspace/scoring`
+- `/workspace/metrics`
+- `/workspace/docs/RUN_LOG.md`
+- `/workspace/docs/LEARNINGS.md`
+- `/workspace/docs/EXPERIMENT_HISTORY.md`
+- `/workspace/docs/EXPERIMENT_V2_PLAN.md`
+- `/workspace/docs/FINAL_RANKING.md`
+
+Build-time workflows receive only the spec and app code they need. The host-side scorer runs after container exit against the bind-mounted output directory, not from inside the isolated container. See `docker/run-claude.sh` for the active masking rules and `docs/LEARNINGS.md` → Learning 009 for the gaming-vector post-mortem.
+
+## 6. v2 Tag Convention
+
+Run 6 uses a uniform tag format for every phase:
+
+- `<framework>-r<N>-phase1-complete`
+- `<framework>-r<N>-phase2-complete`
+- ...
+- `<framework>-r<N>-phase6-complete`
+
+Legacy Run 5 analysis may still encounter forward tags without the replicate suffix (for example, `<framework>-phase3-complete`). Scoring scripts must continue resolving that legacy form as a fallback, but all new v2 orchestration should emit the uniform replicate-suffixed convention.

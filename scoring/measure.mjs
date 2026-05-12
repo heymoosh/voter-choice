@@ -55,6 +55,10 @@ if (repoIdx !== -1 && args[repoIdx + 1]) {
   ROOT = resolve(args[repoIdx + 1]);
 }
 
+const branchOverride = argValue("--branch");
+const timingLogOverride = argValue("--timing-log");
+const workflowLogOverride = argValue("--workflow-log");
+
 // Optional --phase N. When provided, output goes to phase<N>.json instead
 // of baseline.json. Required by compute-deltas.mjs (sub-task 2 of the
 // deferred-audit-concerns plan).
@@ -86,6 +90,11 @@ function run(cmd, options = {}) {
       exitCode: err.status,
     };
   }
+}
+
+function argValue(name) {
+  const idx = args.indexOf(name);
+  return idx !== -1 && args[idx + 1] ? args[idx + 1] : null;
 }
 
 function log(msg) {
@@ -828,6 +837,79 @@ function measureWorkflowTests() {
   return { count: files.length, files };
 }
 
+function measureBuildTiming() {
+  log("Build timing");
+  const logPath = timingLogOverride || join(ROOT, "metrics", "timing.jsonl");
+  if (!existsSync(logPath)) {
+    console.log("  No timing.jsonl found — skipping");
+    return { exists: false, hasStart: false, hasEnd: false, entryCount: 0 };
+  }
+
+  const entries = readFileSync(logPath, "utf-8")
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      try {
+        return JSON.parse(line);
+      } catch {
+        return null;
+      }
+    })
+    .filter(Boolean);
+
+  const startEntry = entries.find((entry) => entry.event === "build_start");
+  const endEntry = [...entries].reverse().find((entry) => entry.event === "build_end");
+  const durationMs =
+    startEntry?.timestamp && endEntry?.timestamp
+      ? new Date(endEntry.timestamp) - new Date(startEntry.timestamp)
+      : null;
+
+  console.log(
+    `  build_start=${startEntry ? "yes" : "no"}, build_end=${endEntry ? "yes" : "no"}`,
+  );
+
+  return {
+    exists: true,
+    hasStart: Boolean(startEntry),
+    hasEnd: Boolean(endEntry),
+    entryCount: entries.length,
+    start: startEntry?.timestamp || null,
+    end: endEntry?.timestamp || null,
+    durationMs,
+    source: logPath,
+  };
+}
+
+function measureWorkflowLogSummary() {
+  log("Workflow log");
+  const logPath = workflowLogOverride || join(ROOT, "metrics", "workflow-log.jsonl");
+  if (!existsSync(logPath)) {
+    console.log("  No workflow-log.jsonl found — skipping");
+    return { exists: false, entryCount: 0, completedCount: 0, source: logPath };
+  }
+  const entries = readFileSync(logPath, "utf-8")
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      try {
+        return JSON.parse(line);
+      } catch {
+        return null;
+      }
+    })
+    .filter(Boolean);
+  const completedCount = entries.filter((entry) => entry.status === "completed").length;
+  console.log(`  Entries: ${entries.length}, completed: ${completedCount}`);
+  return {
+    exists: true,
+    entryCount: entries.length,
+    completedCount,
+    source: logPath,
+  };
+}
+
 function measureTypeSafety() {
   log("Type safety");
   const __filename = fileURLToPath(import.meta.url);
@@ -925,7 +1007,7 @@ function measureDiffHygiene(branch, phase) {
 // ------------------------------------------------------------------
 function measureWorkflowTiming() {
   log("Workflow step timing");
-  const logPath = join(ROOT, "metrics", "workflow-log.jsonl");
+  const logPath = workflowLogOverride || join(ROOT, "metrics", "workflow-log.jsonl");
   if (!existsSync(logPath)) {
     console.log("  No workflow-log.jsonl found — skipping");
     return null;
@@ -1021,7 +1103,7 @@ async function main() {
   console.log("Voter Choice — Measurement Script");
   console.log(`Timestamp: ${new Date().toISOString()}`);
 
-  const branch = run("git branch --show-current").stdout.trim();
+  const branch = branchOverride || run("git branch --show-current").stdout.trim();
   const commit = run("git rev-parse --short HEAD").stdout.trim();
   console.log(`Branch: ${branch}, Commit: ${commit}`);
 
@@ -1042,6 +1124,8 @@ async function main() {
     playwright: measurePlaywright(),
     linesOfCode: measureLOC(),
     workflowTests: measureWorkflowTests(),
+    timing: measureBuildTiming(),
+    workflowLog: measureWorkflowLogSummary(),
     coupling: measureCoupling(),
     typeSafety: measureTypeSafety(),
     workflowTiming: measureWorkflowTiming(),

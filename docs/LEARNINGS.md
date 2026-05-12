@@ -526,3 +526,34 @@ Runs 1-3 branches (`workflow/*`, `run2/*`, `run3/*`) have the old `scripts/measu
 2. Separate the "forced test generation" finding for non-vanilla frameworks from any claim about framework testing culture — the rule created the behavior, the framework did not.
 3. If new runs on post-fix branches are executed, compare their rankings head-to-head against the legacy rankings. Divergence is evidence of gaming; convergence is evidence that the rubric visibility did not meaningfully distort results.
 4. Add "rubric isolation" to the methodology section as a lesson learned for anyone replicating this experiment. The one-line takeaway: "Never let the subject of evaluation read the scoring rubric before execution."
+
+---
+
+## Learning 010: In-container `measure.mjs` Calls Violate Hermes Isolation
+
+**Date discovered:** 2026-05-12
+**Affects:** v2 rebuild architecture and all future isolated runs
+**Severity:** Critical — container-side measurement pierces the scoring boundary
+
+### What happened
+
+The v2 plan required masking `/workspace/scoring` and `/workspace/metrics` during workflow execution, but the orchestrator still instructed the build agent to run `node scoring/measure.mjs` inside the container and to treat the repo's canonical `metrics/` tree as the live build output location.
+
+### Why this is a contradiction
+
+- If `scoring/` is correctly masked, the in-container `measure.mjs` call fails.
+- If `scoring/` is exposed so `measure.mjs` can run, Hermes isolation is broken.
+- If `/workspace/metrics` is masked without a scratch mount, timing and workflow logs disappear during the build.
+
+This is not a local bug. It is an architecture conflict between isolation and measurement responsibilities.
+
+### Correct v2 pattern
+
+- The container emits only `timing.jsonl` and `workflow-log.jsonl`.
+- Those logs go to a per-run scratch dir bind-mounted at `/workspace/metrics`.
+- Host path pattern: `metrics/run-outputs/<run-id>/`.
+- After container exit, the host checks out the workflow branch, runs `measure.mjs`, merges the scratch timing/workflow logs into `metrics/<branch>/phase<N>.json`, then runs `compute-deltas.mjs` and `diff-hygiene.mjs`.
+
+### Decision
+
+Host-side scoring after container exit is the v2 pattern. Container-side workflows should never invoke `measure.mjs`, `compute-deltas.mjs`, or `diff-hygiene.mjs`.

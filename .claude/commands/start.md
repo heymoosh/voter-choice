@@ -139,25 +139,12 @@ Repo path: /Users/Muxin/Documents/GitHub/voter-choice
 14. git add .
 15. git commit -m "phase1: <FW> replicate <R>"
 16. git tag <FW>-<R>-phase1-complete
-17. node scoring/measure.mjs --phase 1 --repo "$(pwd)"
-18. git add metrics/
-19. git commit -m "measure: phase 1 <FW> <R>" 2>/dev/null || true
-20. git push origin experiment/<FW>-<R>
-21. git push --tags
-22. **Log this run to RUN_LOG.md on main.** Capture summary first (while metrics file is in working tree), then switch branches:
-    ```
-    SUMMARY=$(node -e "const m=JSON.parse(require('fs').readFileSync('metrics/experiment/<FW>-<R>/phase1.json','utf-8'));process.stdout.write(\`e2e \${m.playwright?.passing??'?'}/\${m.playwright?.total??'?'}, vitest \${m.vitest?.tests?.passing??'?'}/\${m.vitest?.tests?.total??'?'}, lint \${m.eslint?.errors??'?'}e/\${m.eslint?.warnings??'?'}w, LOC \${m.linesOfCode?.application?.code??'?'}\`)" 2>/dev/null || echo "metrics unreadable")
-    git checkout main
-    git pull --no-rebase origin main
-    node scoring/log-run.mjs --phase 1 --framework <FW> --replicate <R> --branch experiment/<FW>-<R> --tag <FW>-<R>-phase1-complete --status ok --summary "$SUMMARY" --repo "$(pwd)"
-    git add docs/RUN_LOG.md
-    git commit -m "run-log: phase1 <FW> <R> auto-entry"
-    git push origin HEAD:main
-    ```
-    If `--status` should be `blocked` or `partial` (because tests didn't pass or you hit a blocker), use that instead of `ok` and put the failure reason in `--summary`.
+17. git push origin experiment/<FW>-<R>
+18. git push --tags
+19. Stop after the build/tag push. Host-side Hermes will harvest the scratch `metrics/` mount after container exit, run `scripts/post-build-score.sh`, write `metrics/<branch>/phase1.json`, and handle any post-build reporting.
 
 ## Return value
-Return exactly one paragraph: which branch you built, whether lint/vitest/playwright passed or what failed, which tag was pushed, total LOC from the measure output, and confirmation that the RUN_LOG entry was appended on main.
+Return exactly one paragraph: which branch you built, whether lint/vitest/playwright passed or what failed, and which tag was pushed. Do not claim that measurement or RUN_LOG updates already happened; those are host-side post-build steps.
 ```
 
 ---
@@ -233,27 +220,12 @@ Repo path: /Users/Muxin/Documents/GitHub/voter-choice
 16. git add .
 17. git commit -m "phase<PHASE>: <FW>"
 18. git tag <FW>-phase<PHASE>-complete
-19. node scoring/measure.mjs --phase <PHASE> --repo "$(pwd)"
-20. node scoring/compute-deltas.mjs --branch "$BRANCH" --phase <PHASE> --repo "$(pwd)"
-21. git add metrics/
-22. git commit -m "measure: phase <PHASE> <FW>" 2>/dev/null || true
-23. git push origin "$BRANCH"
-24. git push --tags
-25. **Log this run to RUN_LOG.md on main.** Capture summary first (while still on $BRANCH where metrics live), then switch branches:
-    ```
-    SUMMARY=$(BRANCH="$BRANCH" node -e "const m=JSON.parse(require('fs').readFileSync(\`metrics/\${process.env.BRANCH}/phase<PHASE>.json\`,'utf-8'));process.stdout.write(\`e2e \${m.playwright?.passing??'?'}/\${m.playwright?.total??'?'}, coverage \${m.vitest?.coverage?.lines?.toFixed(1)??'?'}%, LOC \${m.linesOfCode?.application?.code??'?'}, complexity avg \${m.complexity?.average?.toFixed(2)??'?'}, scope adherence \${m.diffHygiene?.scopeAdherence?.toFixed(2)??'?'}\`)" 2>/dev/null || echo "metrics unreadable")
-    SAVED_BRANCH="$BRANCH"
-    git checkout main
-    git pull --no-rebase origin main
-    node scoring/log-run.mjs --phase <PHASE> --framework <FW> --branch "$SAVED_BRANCH" --tag <FW>-phase<PHASE>-complete --status ok --summary "$SUMMARY" --repo "$(pwd)"
-    git add docs/RUN_LOG.md
-    git commit -m "run-log: phase<PHASE> <FW> auto-entry"
-    git push origin HEAD:main
-    ```
-    If `--status` should be `blocked` or `partial`, use that and put the failure reason in `--summary`.
+19. git push origin "$BRANCH"
+20. git push --tags
+21. Stop after the build/tag push. Host-side Hermes will harvest the scratch `metrics/` mount after container exit, run `scripts/post-build-score.sh`, write `metrics/<branch>/phase<PHASE>.json`, then compute deltas and post-build reports from the host.
 
 ## Return value
-Return exactly one paragraph: which branch/phase you built, whether tests passed or what failed, what tag was pushed, the key deltas (coverage Δ, LOC Δ, complexity Δ) from the measure output, and confirmation that the RUN_LOG entry was appended on main.
+Return exactly one paragraph: which branch/phase you built, whether tests passed or what failed, and what tag was pushed. Do not claim that scoring, deltas, or RUN_LOG updates already happened; those are host-side post-build steps.
 ```
 
 ---
