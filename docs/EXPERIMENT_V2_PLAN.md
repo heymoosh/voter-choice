@@ -452,6 +452,8 @@ Merged into per-phase JSON.
 
 **File:** `docker/run-claude.sh`. Read it first — Learning 009 already established part of the isolation (`/workspace/scoring` is masked).
 
+**Auth pattern (canonical — see Learning 015):** In-container Claude Code authenticates via the bind-mounted `~/.claude/` subscription session. `ANTHROPIC_API_KEY` from `.env.local` is stripped from the `claude` subprocess env via `env -u ANTHROPIC_API_KEY claude ...`. App processes (vitest/playwright) still inherit `ANTHROPIC_API_KEY`. This prevents workflow builds from charging the experiment workspace API budget.
+
 **Changes:**
 1. **Extend tmpfs mounts** to additionally mask:
    - `/workspace/metrics`
@@ -463,6 +465,7 @@ Merged into per-phase JSON.
 2. **Container entrypoint assertion:** at startup, run `[ -z "$(ls /workspace/scoring 2>/dev/null)" ] || { echo "isolation breach: scoring/ visible" >&2; exit 1; }` and abort if not empty. Add equivalent assertions for the metrics and docs masks.
 3. **Bind-mount transcript dir read-only** for A4.6: `-v "${HOST_TRANSCRIPT_DIR}:/transcripts:ro"`. Pick a stable host path under the experiment workspace (suggest `metrics/transcripts/<run-id>/`).
 4. **Host-side scorer pattern:** the scorer runs AFTER the container exits, on the host, reading the bind-mounted output dir. Confirm this is already the pattern (it should be from Learning 009); document it explicitly in the script comments.
+5. **Subscription auth strip:** `env -u ANTHROPIC_API_KEY claude ...` is the canonical invocation pattern. See `docker/run-claude.sh` CONTAINER_CMD.
 
 **In-container vs. host-side scoring responsibilities**
 
@@ -484,6 +487,11 @@ Merged into per-phase JSON.
   5. Run `compute-deltas.mjs` and `diff-hygiene.mjs` on the host
   6. Preserve the harvested logs under the canonical branch metrics dir for auditability
 
+**Smoke gate scripts (all must pass before B2):**
+- `scripts/validate-container-git.sh` — git worktree resolution inside container
+- `scripts/validate-container-claude.sh` — trivial prompt completes (now tests subscription auth, not API-key auth)
+- `scripts/validate-container-claude-subscription.sh` — three-layer proof: structural strip, runtime env check, e2e prompt
+
 **Verification:**
 ```bash
 # Smoke test the container in isolation
@@ -494,6 +502,10 @@ Merged into per-phase JSON.
 # Negative test — disable masking, expect failure
 ./docker/run-claude.sh --dry-run --no-isolation --shell "ls /workspace/scoring"
 # Pass: assertion fires, exit code != 0
+
+# Subscription auth validation
+bash scripts/validate-container-claude-subscription.sh
+# Pass: all 3 checks OK
 ```
 
 ### A6. Spec restructuring
