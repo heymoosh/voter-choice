@@ -139,9 +139,9 @@ Expected: a clear "we don't have data for this race" message. If a generic error
 | co_tracer_bulk | CO | 97 | 1,245 | `co-tracer-donors.ts` |
 | va_sbe_bulk | VA | 91 | 592 | `va-sbe-donors.ts` |
 | hi_cfb_bulk | HI | 60 | 698 | `hi-cfb-donors.ts` |
-| pa_dos_bulk | PA | 35 | 62 | `pa-dos-donors.ts` |
+| pa_dos_bulk | PA | 154 | 669 | `pa-dos-donors.ts` (fixed: now uses FILERTYPE=2 committee IDs) |
 | wi_cfis_bulk | WI | 12 | 17 | ⚠️ DATA QUALITY: amounts implausibly large ($26M for state senator); do not display. Delete rows or re-ingest with correct committee filtering. |
-| **TOTAL** | **14 states + federal** | **2,263** | **18,566** | |
+| **TOTAL** | **14 states + federal** | **2,382** | **19,173** | |
 
 **Notes:**
 - `issue_tags=39,688` (54% bill coverage): All 7 Anthropic Batch API collections complete (64,802 bills submitted, ~54% resulted in at least one canonical issue tag). Remaining 46% returned empty arrays (no relevant issue) or malformed JSON — both handled gracefully (bills simply don't contribute to alignment scores).
