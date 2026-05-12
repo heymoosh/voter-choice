@@ -1,6 +1,6 @@
 # Work Packet: launch-guided-values-chat-and-address-autocomplete
 
-Status: ready
+Status: completed — guided ballot flow + address autocomplete + runoff prompt shipped (commits 6d35bd2, 6a9626c)
 Owner: orchestrator
 Source: live deployed-site feedback
 Branch: launch/production

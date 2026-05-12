@@ -1,6 +1,6 @@
 # Work Packet: launch-issue-ranking-and-concern-disambiguation
 
-Status: ready
+Status: completed — drag-rank issue priority + free-text concerns + interpretation gate shipped (commit 6cd6c98)
 Owner: orchestrator (Claude Opus, this session) → worker subagents (Sonnet)
 Source: `.ai/project-briefs/voter-choice-alignment-engine-v2.md` § Phasing → Packet 2.
 Branch: launch/production
@@ -24,6 +24,7 @@ This is the input layer for the alignment score (Packet 3). Packet 2 ships the A
 ## Business Logic
 
 Rules:
+
 - Total of 3 ranked priorities cap, mixing chips and free-text. The cap is on the rank list, not separately per type.
 - Drag-and-drop reorder via `@dnd-kit/sortable` (already in `package.json`). Numbered badges (1, 2, 3) reflect rank position.
 - Free-text concern entry: user types one short concern at a time; submitting it adds it to the ranked list. Cap enforced. User can drag-reorder a free-text concern alongside chips.
@@ -35,17 +36,20 @@ Rules:
 - Hold the no-labeled-guess line: the LLM does NOT recommend whether the voter "really means" pro-choice or pro-life. It says "the phrase 'reproductive rights' typically means abortion access; some voters use it to mean the opposite. Which lens do you want?" — a question, not a guess.
 
 Assumptions:
-- The existing `valuesHighlight` field on `RacePatternsCandidate` continues to work — the LLM uses the *confirmed* concern list (not the raw chips) to populate it in Act 3. No schema change to RacePatterns yet (Packet 3 may extend if needed for alignment score).
+
+- The existing `valuesHighlight` field on `RacePatternsCandidate` continues to work — the LLM uses the _confirmed_ concern list (not the raw chips) to populate it in Act 3. No schema change to RacePatterns yet (Packet 3 may extend if needed for alignment score).
 - ES path stays held back. New translation keys ship EN only with EN copies in ES bodies.
 - Drag-and-drop on mobile is acceptable per @dnd-kit/sortable defaults.
 
 User-confirmed decisions:
+
 - Drag-rank for issue priority, capped at 3.
 - Free-text and chips coexist in the same ranked list.
 - Hold no-labeled-guess for disambiguation; ask, don't guess.
 - Single chat prompt with branching (already settled for candidates vs propositions); concern interpretation works for both paths.
 
 Edge cases:
+
 - Voter submits 0 chips and 0 free-text and skips → `[VOTER VALUES] skipped`. No interpretation block; flow proceeds without highlights (matches today's `valuesHighlight: null` behavior).
 - Voter types a free-text concern that maps cleanly to a canonical issue with no ambiguity → interpretation block lists it with `confidence: "clear"` and no disambiguation options. Edit-and-confirm UI shows it as a confirmed mapping.
 - Voter types a free-text concern that is genuinely off-topic ("I want to know about my dog") → LLM emits `confidence: "off_topic"` with no canonical mapping; user gets to remove it from their ranked list.
@@ -53,6 +57,7 @@ Edge cases:
 - Voter confirms all without editing → fast path, single tap.
 
 Out of scope:
+
 - Alignment score computation (Packet 3).
 - Backend pipeline for vote/donor data (Packet 6).
 - Polis viz (Packet 5).
@@ -78,10 +83,11 @@ Test quality: existing vitest discipline. New tests cover drag reorder, free-tex
 ## Scope
 
 Touch:
+
 - `src/components/ValuesTagSelector.tsx` — add drag-rank for selected chips; add free-text input field; total cap 3 across chip + free-text; update submit payload to `ranked: [{type, id?, text?, rank}]` shape OR `"skipped"`.
 - `src/components/ValuesTagSelector.test.tsx` — extend test coverage for drag reorder, free-text entry, total cap enforcement, new payload shape.
-- `src/components/ConcernInterpretation.tsx` *(new)* — renders a parsed `[CONCERN_INTERPRETATION]` block. For each entry: shows the user's original concern, the LLM's interpretation, the stance/confidence; if ambiguous, shows disambiguation options as a chip select; allows edit (re-type the original concern) or remove. Confirm button emits the confirmation payload.
-- `src/components/ConcernInterpretation.test.tsx` *(new)* — tests for clear-mapping render, ambiguous-mapping render with options, off-topic render, edit/remove flow, confirm payload shape.
+- `src/components/ConcernInterpretation.tsx` _(new)_ — renders a parsed `[CONCERN_INTERPRETATION]` block. For each entry: shows the user's original concern, the LLM's interpretation, the stance/confidence; if ambiguous, shows disambiguation options as a chip select; allows edit (re-type the original concern) or remove. Confirm button emits the confirmation payload.
+- `src/components/ConcernInterpretation.test.tsx` _(new)_ — tests for clear-mapping render, ambiguous-mapping render with options, off-topic render, edit/remove flow, confirm payload shape.
 - `src/lib/structured-blocks.ts` — add `[CONCERN_INTERPRETATION]` parser family (parse, strip, hasOpen, stripPartial). New types: `ConcernInterpretationEntry`, `ConcernInterpretationBlock`. Mirror the patterns of existing parsers.
 - `src/lib/structured-blocks.test.ts` — tests for the new parser family.
 - `src/components/ChatPanel.tsx` — add render branch for `[CONCERN_INTERPRETATION]` (uses `ConcernInterpretation`); add send path for `[VOTER CONFIRMED CONCERNS]`; update existing `[VOTER VALUES]` send path for the new ranked payload shape.
@@ -92,6 +98,7 @@ Touch:
 - `src/lib/generatePrompt.test.ts` — assertions for the new prompt content.
 
 Do not touch:
+
 - `src/components/RacePatterns.tsx`, `RacePatterns.test.tsx` — Act 3 dashboard stays as-is.
 - Per-state data, runoff gate, prompt taxonomies — Packet 1 work.
 - Budget code.
@@ -103,6 +110,7 @@ Do not touch:
 Concern: Act 2 input UX, concern interpretation gate, ChatPanel dispatch additions, prompt's Act 2 + new block.
 
 Existing owners:
+
 - `src/components/ValuesTagSelector.tsx` — Act 2 UI.
 - `src/lib/structured-blocks.ts` — block parsers (extend, don't fragment).
 - `src/components/ChatPanel.tsx` — render dispatch + send paths.
@@ -110,11 +118,13 @@ Existing owners:
 - `src/lib/translations.ts` — UI strings.
 
 New owner needed:
+
 - `src/components/ConcernInterpretation.tsx` — new owner of the interpretation gate UI. Boundary: the component renders a parsed block and emits a confirmation event; it does NOT call the LLM or hold network state. The chat panel handles send.
 
 Reuse/edit targets: All listed in Scope > Touch.
 
 Overlap/bloat risks:
+
 - Don't fork the structured-blocks parser; add the new family to the existing file. Avoid creating a parallel parser.
 - Don't reimplement chip rendering — `ValuesTagSelector` already has it. Just add drag + free-text on top.
 - Don't extend `valuesHighlight` schema in this packet; consume the confirmed concerns in Act 3 prompt-side without a schema change.
@@ -122,6 +132,7 @@ Overlap/bloat risks:
 Recommendation: Three-phase execution. Phase 1 has two parallel agents (one for `ValuesTagSelector` updates, one for the new `ConcernInterpretation` component + parser). Phase 2 wires it together in `ChatPanel` and updates the prompt. Phase 3 verifier audits.
 
 Execution constraints:
+
 - Do not introduce a "weight slider" or "tap-order ranking" — drag-rank only.
 - Do not let the LLM "guess" stance for ambiguous concerns; ask one disambiguating question per ambiguous concern.
 - Do not break existing `[VALUES_TAG_REQUEST]` emission or skip behavior.
@@ -206,18 +217,19 @@ Three-phase subagent execution:
   - Add send path for `[VOTER CONFIRMED CONCERNS] confirmations=[...]`.
   - Add send path for `[VOTER REINTERPRET] sourceRank=N newText="..."` (used by the edit affordance).
   - Update `ChatPanel.test.tsx`.
-  Update `docs/BALLOT_PROMPT.md` Act 2:
+    Update `docs/BALLOT_PROMPT.md` Act 2:
   - Document the new `[VOTER VALUES] ranked=[...]` payload format the model receives.
   - Instruct the model to emit `[CONCERN_INTERPRETATION]` listing each ranked entry with interpretation, stance, confidence, and (when ambiguous) disambiguation options + a non-leading question.
   - Tell the model to wait for `[VOTER CONFIRMED CONCERNS]` before proceeding to Act 3.
   - Reference the no-labeled-guess line in the disambiguation rule.
   - Add `[CONCERN_INTERPRETATION]` and `[VOTER CONFIRMED CONCERNS]` to the OUTPUT FORMAT section.
-  Run `npm run sync:ballot-prompt`. Update `generatePrompt.test.ts` with assertions on the new prompt content. Skip Spanish path entirely.
+    Run `npm run sync:ballot-prompt`. Update `generatePrompt.test.ts` with assertions on the new prompt content. Skip Spanish path entirely.
 
 **Phase 3 (verifier subagent):**
 Run lint + test + build. Walk acceptance criteria. Grep audit for old payload shapes vs new. Output verification report. Make zero edits.
 
 Pinning down the source map for any agent that needs it:
+
 - `@dnd-kit/sortable` reuse pattern: see git log for the deleted `IssueRanker.tsx` (commit pre-`bb355f8`) for the prior pattern.
 - Existing parser shape: see `parseRacePatternsBlock` and `parseValuesTagRequestBlock` in `structured-blocks.ts` for the four-function quartet (parse, strip, hasOpen, stripPartial).
 - Existing render-dispatch pattern: see `renderRacePatterns` and `renderValuesTagSelector` in `ChatPanel.tsx`.

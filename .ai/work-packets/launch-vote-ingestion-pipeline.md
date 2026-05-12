@@ -33,7 +33,7 @@ Goal: get Drizzle + Neon + GitHub Actions skeleton wired so subsequent phases (B
   - `candidate_offices` — id (uuid PK), candidate_id FK, office_label, jurisdiction, term_start (date), term_end (date nullable), source_url.
   - `bills` — id (text PK, format: `<source>-<source_id>`, e.g., `govtrack-hr1234-118`), title, summary (text), source (text: `govtrack`/`openstates`/etc.), source_url, jurisdiction (text), introduced_date (date), raw_metadata (jsonb), inserted_at, updated_at.
   - `votes` — id (uuid PK), bill_id FK, candidate_id FK, vote_cast (text: `yea`/`nay`/`present`/`absent`/`not_voting`), vote_date (date), source_url, raw_metadata (jsonb), inserted_at. Unique index on `(bill_id, candidate_id)`.
-  - `issue_tags` — id (uuid PK), bill_id FK, canonical_issue (text — joins to `src/lib/canonicalIssues.ts` ids), stance_lens (text: `in_favor`/`opposed` describing what voting yea on this bill _means_ for the issue), tagger_version (text: e.g., `claude-opus-4-7-2026-05-09`), tagger_confidence (numeric 0-1 nullable), tagged_at. Unique index on `(bill_id, canonical_issue)`.
+  - `issue_tags` — id (uuid PK), bill*id FK, canonical_issue (text — joins to `src/lib/canonicalIssues.ts` ids), stance_lens (text: `in_favor`/`opposed` describing what voting yea on this bill \_means* for the issue), tagger_version (text: e.g., `claude-opus-4-7-2026-05-09`), tagger_confidence (numeric 0-1 nullable), tagged_at. Unique index on `(bill_id, canonical_issue)`.
   - `donor_aggregates` — id (uuid PK), candidate_id FK, election_cycle (text: e.g., `2026`), bucket_label (text — joins to donor bucket vocabulary in `PATTERN_TAXONOMIES.md`), amount_total (numeric), source (text), source_url, raw_metadata (jsonb), inserted_at. Unique index on `(candidate_id, election_cycle, bucket_label)`.
   - `scorecard_meta` — id (text PK), name, url, partisan_lean (text: `partisan`/`nonpartisan`/`mixed`), contact (text nullable), notes (text nullable). **No per-vote records here.** This is metadata only; per-vote scorecard tags are fetched on-demand later (Packet 6.2+).
 
@@ -531,15 +531,15 @@ All seven phases (A–G) complete as of 2026-05-10.
 
 ## Closing Summary
 
-| Phase | Commit | Summary |
-|-------|--------|---------|
-| A | `5cd64e1` | Foundation: Drizzle + Neon schema, GitHub Actions skeletons |
-| B | `eca2afc` | Federal votes ingest (GovTrack + Congress.gov) |
-| C | (committed as part of B-era work) | State votes ingest — all 50 states matrix via OpenStates |
-| D | (ingest-tag-bills workflow + tag-bills.ts) | LLM issue-tagging via Claude Haiku, batch upsert into issue_tags |
-| E | (ingest-donors workflow + federal/state-donors.ts) | Donor ingest — FEC federal + FollowTheMoney state |
-| F | `67d76f5` | App cutover — /api/alignment endpoint + lookup_alignment tool + prompt rewrite |
-| G | (Phase G commit) | Operational closeout — failure alerting, tag-audit script, Phase D/F nit fixes |
+| Phase | Commit                                             | Summary                                                                        |
+| ----- | -------------------------------------------------- | ------------------------------------------------------------------------------ |
+| A     | `5cd64e1`                                          | Foundation: Drizzle + Neon schema, GitHub Actions skeletons                    |
+| B     | `eca2afc`                                          | Federal votes ingest (GovTrack + Congress.gov)                                 |
+| C     | (committed as part of B-era work)                  | State votes ingest — all 50 states matrix via OpenStates                       |
+| D     | (ingest-tag-bills workflow + tag-bills.ts)         | LLM issue-tagging via Claude Haiku, batch upsert into issue_tags               |
+| E     | (ingest-donors workflow + federal/state-donors.ts) | Donor ingest — FEC federal + FollowTheMoney state                              |
+| F     | `67d76f5`                                          | App cutover — /api/alignment endpoint + lookup_alignment tool + prompt rewrite |
+| G     | (Phase G commit)                                   | Operational closeout — failure alerting, tag-audit script, Phase D/F nit fixes |
 
 **Operational verification deferred to first cron run + manual E2E.**
 See `docs/operations/packet-6-smoke-checklist.md` for the post-ingest smoke steps.

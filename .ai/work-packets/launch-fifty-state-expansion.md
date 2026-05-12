@@ -1,6 +1,6 @@
 # Work Packet: launch-fifty-state-expansion
 
-Status: Phase 1 ready
+Status: completed — phases 1, 2, and follow-ups shipped (commits 137f5cc, 7ba296f, f41b968)
 Source: `/Users/Muxin/.claude/plans/am-running-e2e-jaunty-crab.md` (approved 2026-05-10).
 Branch: launch/production
 
@@ -22,6 +22,7 @@ Verify the existing 9-state population works end-to-end via Playwright, then pop
 - Reuse existing `fillAddress` / `expectStateLanded` helpers if present; otherwise add small shared helpers.
 
 Sample zips per state:
+
 - NY = 10007 (Manhattan)
 - FL = 32399 (Tallahassee)
 - GA = 30303 (Atlanta)
@@ -30,11 +31,13 @@ Sample zips per state:
 - WY (fallback) = 82001 (Cheyenne)
 
 Phase 1 acceptance:
+
 - `npm run e2e` passes; all 9 populated states + Wyoming covered.
 - `npm run lint`, `npm run test`, `npm run build` clean.
 - No flaky tests (run twice; both pass).
 
 Phase 1 constraints:
+
 - Do NOT touch `src/components/`, server code, or any state fixture in this phase. Phase 1 is browser-side verification only.
 - Do NOT add npm dependencies.
 - Do NOT touch ES content.
@@ -42,6 +45,7 @@ Phase 1 constraints:
 ## Phase 2 deliverables
 
 42 new state fixtures populated to research-grade quality. Three edit points per state:
+
 1. `src/data/states/<CODE>.json` — full schema matching `TX.json` template.
 2. `src/lib/getStateData.ts` — add to `stateModules` map.
 3. `src/lib/lookupZip.ts` — add prefix range tuple(s) to `prefixRanges`.
@@ -60,6 +64,7 @@ Total: 43 jurisdictions across the 4 agents (one batch is 11 due to DC; others 1
 ### Per-state research-grade requirements
 
 Each fixture's TOP-OF-FILE comment must cite:
+
 - **Primary**: state SoS election website URL.
 - **Secondary**: NCSL voter-ID DB / Vote.org / Ballotpedia URL.
 - **Date checked** (today's date, 2026-05-10).
@@ -103,6 +108,7 @@ Runs at the end with full lint/test/build/e2e + grep audit + spot-check of 5 ran
 ## Notes
 
 Reuse contracts:
+
 - Canonical fixture shape: `src/data/states/TX.json` (264 lines).
 - Fallback shape contract: `getFallbackStateData()` in `src/lib/getStateData.ts`.
 - Runoff rule schema: TX = party-locked, GA = party-locked, NC = open runoff. Use these as references for AL/AR/MS/OK/SC/SD.

@@ -1,6 +1,6 @@
 # Work Packet: same-day-sample-ballot-fallback
 
-Status: ready
+Status: completed — sample ballot fallback flow shipped (commit 4859215)
 Owner: orchestrator
 Source: user request — same-day launch rescue path
 Branch: launch/production

@@ -1,6 +1,6 @@
 # Work Packet: launch-national-scope-generalization
 
-Status: ready
+Status: completed — runoff gate generalized, six-state fixtures, IdView fix shipped (commit 654631b)
 Owner: orchestrator (Claude Opus, this session) → worker subagents (Sonnet)
 Source: `.ai/project-briefs/voter-choice-alignment-engine-v2.md` § Phasing → Packet 1.
 Branch: launch/production
@@ -26,6 +26,7 @@ The "local races: known gap" copy is the honesty tax. We don't have voting recor
 ## Business Logic
 
 Rules:
+
 - All TX-specific assumptions in the codebase get expressed as per-state config or removed. No string match on "TX", "Texas", "Harris" outside data files going forward.
 - The runoff gate fires only when the active state's data declares the runoff disambiguation rule. States without runoffs (most of them) skip it.
 - State data fixtures share a common type interface. New state additions follow the same shape.
@@ -34,17 +35,20 @@ Rules:
 - Six states populated for v2 launch: TX (already done), CA, NY, FL, GA, NC. This set covers the major primary models (TX/GA/NC have party-locked runoffs; CA top-two open; NY closed primary; FL closed primary, no runoffs).
 
 Assumptions:
+
 - Spanish path stays held back per ongoing decision. Don't update ES translations or the ES prompt.
 - Other 44 states' data is out of scope for this packet — they get added as users from those states arrive. The structure must make addition trivial (drop a fixture file in, register it).
 - Runoff disambiguation logic only matters for primary or runoff election types. General elections aren't gated.
 - The Texas runoff gate's specific business rule (you can only vote in the runoff of the party whose primary you voted in) generalizes to: each state declares whether its runoff is "party-locked to first-round primary." For states where the answer is "no," the gate doesn't render.
 
 User-confirmed decisions:
+
 - National federal + state scope confirmed.
 - Local races stay an acknowledged gap, surfaced honestly.
 - Six states populated for v2 launch (TX + CA + NY + FL + GA + NC).
 
 Edge cases:
+
 - A state with a primary AND no runoff (FL) — gate must not fire even if `election.type === "primary"`.
 - A state with same-day registration (some) — current registration data shape supports this.
 - A state with no early voting (a few) — current shape supports this.
@@ -52,6 +56,7 @@ Edge cases:
 - A user pastes a ballot containing local races (city council, school board, etc.) — the prompt acknowledges them honestly: "we don't have voting records for [race name] — federal and state legislators are the only races we can score from public records."
 
 Out of scope:
+
 - Spanish path updates.
 - All 50 state fixtures (only 6 ship in this packet).
 - Vote ingestion pipeline (separate packet, packet 6).
@@ -80,6 +85,7 @@ Critical logic trigger: not applicable.
 ## Scope
 
 Touch:
+
 - `src/types/election.ts` — extend or refine `StateElectionData` to include explicit `runoffRules` (replaces implicit "TX is special") and any other fields needed for per-state config.
 - `src/lib/getStateData.ts` — TX content stays unchanged. Add five new state files / branches: CA, NY, FL, GA, NC. Each populated with real-but-recent registration deadlines, voter ID rules, early voting, county lookup links (state-level for now; county-level can be sparse), runoff rules.
 - `src/components/BallotToolClient.tsx` — `requiresTexasRunoffGate` renamed to `requiresRunoffGate`, parameterized on the state's `runoffRules.partyLockedToFirstRoundPrimary` flag. The TX-specific copy in `texasRunoffContextNote` becomes per-state copy or generic copy; the gate UI labels become state-aware (it should say "Texas runoff rule" only when the state is TX).
@@ -92,6 +98,7 @@ Touch:
 - New file: `src/lib/states/` directory with one TypeScript module per state, each exporting a `StateElectionData` object. `getStateData.ts` imports them and dispatches on state code. (Optional refactor: if all 6 states fit cleanly in `getStateData.ts` itself, leave as-is. Pick the cleaner option.)
 
 Do not touch:
+
 - `docs/BALLOT_PROMPT_ES.md` and `src/lib/generated/ballotPromptEs.generated.ts` content — Spanish held back.
 - ES translation bodies for existing keys.
 - `src/components/RacePatterns.tsx`, `ValuesTagSelector.tsx`, `ChatPanel.tsx` — no v2 product surface in this packet.
@@ -103,24 +110,29 @@ Do not touch:
 Concern: per-state election data, the runoff gate, prompt's national framing, taxonomy doc national applicability.
 
 Existing owners:
+
 - `src/lib/getStateData.ts` — single source of truth for state data; today only TX.
 - `src/components/BallotToolClient.tsx` — owns the pre-research gating UI, including `TexasRunoffGate`.
 - `docs/BALLOT_PROMPT.md` — single source of truth for the EN ballot prompt.
 - `docs/PATTERN_TAXONOMIES.md` — donor bucket vocabulary and per-office retrospective metrics.
 
 Reuse/edit targets:
+
 - All listed in Scope > Touch. Existing structure (the `StateElectionData` shape, the `texasRunoffContextNote` function pattern) is the right shape; just generalized.
 
 New owner needed:
+
 - If the per-state files split out (`src/lib/states/`), that directory becomes the new owner. Boundary: each file holds one state's election data; `getStateData.ts` dispatches. If files don't split, no new owner.
 
 Overlap/bloat risks:
+
 - Don't double-own state data between fixtures and the prompt context. Prompt context block stays generated from fixtures (already does).
 - Don't reintroduce TX-specific strings in places the fixture should own.
 
 Recommendation: Two-agent parallel execution. One agent owns the data + runoff gate refactor (TypeScript work). The other owns the prompt + taxonomy generalization (markdown + prompt-test work). Verifier closes the loop.
 
 Execution constraints:
+
 - Do not change existing TX behavior. Texas users see exactly what they see today.
 - Do not invent fake election data for any new state. Use real registration deadlines, voter ID rules, etc. from the state SoS or Vote.org as of today's date (2026-05-09). Where unsure, use the most recent known values; mark with a comment if a value is approximate.
 - Do not break the prompt-sync test (`generatePrompt.test.ts > keeps the English runtime prompt synced with docs/BALLOT_PROMPT.md`).
@@ -175,6 +187,7 @@ Non-proof: "the file compiles" is not enough. The fallback path must be exercise
 Two-phase execution by subagents:
 
 **Phase 1 (parallel — 2 subagents):**
+
 - **Agent A — Data + runoff gate refactor.** TypeScript work in `src/types/election.ts`, `src/lib/getStateData.ts` (or `src/lib/states/*.ts`), `src/components/BallotToolClient.tsx`, `src/lib/translations.ts`. Populates TX (unchanged) + CA + NY + FL + GA + NC. Generalizes the runoff gate. Adds fallback for unpopulated states. Tests for each. The TX runoff gate copy stays state-specific (it's a TX rule); other states get generic / no-gate behavior.
 - **Agent B — Prompt + taxonomy national-ization.** Markdown work in `docs/BALLOT_PROMPT.md` and `docs/PATTERN_TAXONOMIES.md`. Replaces TX-specific city/county/union examples with generic ones. Adds explicit "local races: known gap" copy in Act 1 and Act 3. Runs `npm run sync:ballot-prompt`. Updates `generatePrompt.test.ts` accordingly.
 
@@ -182,6 +195,7 @@ Two-phase execution by subagents:
 Run lint + test + build. Walk acceptance criteria. Grep audit for surviving TX-specific strings outside fixtures. Output verification report. Make zero edits.
 
 Real state-data sources for Agent A to use (as of 2026-05-09):
+
 - Registration deadlines: each state's Secretary of State website or Vote.org
 - Voter ID rules: each state's SoS website or NCSL voter ID database (https://www.ncsl.org/elections-and-campaigns/voter-id)
 - Early voting / mail voting: NCSL early voting database

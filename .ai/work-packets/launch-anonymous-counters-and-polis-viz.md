@@ -1,6 +1,6 @@
 # Work Packet: launch-anonymous-counters-and-polis-viz
 
-Status: ready (gated on Vercel KV provisioning)
+Status: completed — anonymous counters + polis overlay shipped (commit 7ab152e)
 Owner: orchestrator (Claude Opus, this session) → worker subagents (Sonnet)
 Source: `.ai/project-briefs/voter-choice-alignment-engine-v2.md` § Phasing → Packet 5; user-supplied Polis-style overlap viz spec.
 Branch: launch/production
@@ -22,6 +22,7 @@ The viz itself: aggregate scatter (one dot per synthetic voter session, colored 
 ## Business Logic
 
 Rules:
+
 - **No individual record is ever written.** Counters increment at end of session. Keys: `voter-choice:counters:{stateCode}:{county}:{primary}:total` and `:issue:{canonicalIssue}` and `:pick:{race}:{candidateId}`. No user id, no session id, no IP, no timestamp tied to identity.
 - **Counter-write is idempotent on session id.** A short-lived in-memory `sessionId` (random per session, never persisted client-side beyond the tab) gates the increment. If the client retries the counter-write call, the second one no-ops (server keeps a tiny TTL'd dedupe set keyed by session-id with 1-hour expiry, per-key only — that set IS NOT persistent identity, just an idempotency token that auto-expires).
 - **Threshold gate: 200+ sessions per (county, primary) bucket** before the viz unlocks. Below threshold, render a placeholder with the unlock counter and a soft viral hook.
@@ -37,15 +38,17 @@ Rules:
   > Even with a subpoena, we couldn't tell anyone your answers. The records don't exist to compel.
 - **Subpoena line gets its own paragraph for impact** (per the spec).
 - **Animation:** dots fade in at final positions, staggered 600–900ms total. "You" arrives last with a subtle pulse. No fake "settling" animation — that implies motion that didn't happen.
-- **Copy discipline:** observation, not promise. *"Most Harris County voters — across both primaries — cluster around shared priorities."* NOT *"You agree with 86% of Harris County."*
+- **Copy discipline:** observation, not promise. _"Most Harris County voters — across both primaries — cluster around shared priorities."_ NOT _"You agree with 86% of Harris County."_
 
 Assumptions:
+
 - Vercel KV / Upstash Redis is provisioned with `KV_REST_API_URL` + `KV_REST_API_TOKEN` (or `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN`) before this packet executes. The existing `src/lib/server/budget.ts` already initializes a Redis client with those env vars; reuse the connection.
 - Dimension reduction = simple PCA over a low-dim issue-priority space. Defer UMAP/t-SNE. PCA is interpretable, stable, and fast enough server-side.
 - ES path stays held back. New translation keys ship EN only with EN copies in ES bodies.
 - Spanish privacy callout is intentionally NOT translated yet (the rewrite touches the trust framing; ES gets a focused pass when we un-pause that path).
 
 User-confirmed decisions:
+
 - Privacy callout: loud, brand-asset prominent.
 - User provisions Vercel KV; this packet executes after env vars are live.
 - 200+ sessions per (county, primary) threshold gate.
@@ -53,6 +56,7 @@ User-confirmed decisions:
 - Synthetic dots from aggregate distribution.
 
 Edge cases:
+
 - County has < 200 sessions but state has > 200: viz unlocks at state level with explicit copy "showing state-wide pattern — your county doesn't have enough sessions yet."
 - Both county and state below threshold: render the placeholder with unlock counter, no viz yet.
 - Voter skipped Act 2 (no confirmed concerns) → "you" dot can't be computed → render the consensus panel without a "you" dot, with copy explaining "you didn't state priorities, so we don't have a position for you on this map. Here's the broader pattern."
@@ -60,6 +64,7 @@ Edge cases:
 - Counter-write failure (Redis unavailable): log, don't crash the session. The handoff and ballot summary still complete.
 
 Out of scope:
+
 - Per-issue drill-down on the viz (deferred per spec).
 - Cluster-click interactivity (deferred per spec).
 - Mobile-specific design tuning beyond reasonable defaults (defer per spec).
@@ -70,13 +75,14 @@ Out of scope:
 ## Scope
 
 Touch:
-- `src/lib/server/counters.ts` *(new)* — counter-write helpers, threshold-check, aggregate-fetch. Reuses the Redis connection from `src/lib/server/budget.ts` (refactor budget.ts so the connection is exported as a shared module if needed; do NOT duplicate connection logic).
-- `src/lib/server/counters.test.ts` *(new)* — tests for counter-increment, idempotency-by-session-id, threshold check, aggregate-fetch.
-- `src/app/api/counters/route.ts` *(new)* — POST endpoint to increment counters at session-end. Accepts `{ sessionId, stateCode, county, primary, confirmedConcerns: [{canonicalIssue, ...}], picks: [{race, candidateId}] }`. Returns `{ ok, alreadyCounted? }`.
-- `src/app/api/polis/route.ts` *(new)* — GET endpoint returning the polis viz data: `{ thresholdMet, scope: "county"|"state", sampleSize, dots: [{x, y, primary}], you: {x, y} | null, consensus: [{issueLabel, percent}] }`. Computes aggregates from counters, runs PCA, generates synthetic dots, computes "you" position.
-- `src/components/PolisOverlay.tsx` *(new)* — the visualization component. Scatter plot with halo + label for "you", consensus panel below, privacy callout prominently placed, sample size footer, animation per spec.
-- `src/components/PolisOverlay.test.tsx` *(new)* — tests for threshold-met render, threshold-not-met placeholder render, "you" dot positioning, consensus panel rendering, privacy callout presence.
-- `src/components/PrivacyCallout.tsx` *(new, reused)* — three-paragraph privacy-promise component. Used inside the polis viz AND linkable from the Act 1.5 briefing if the model wants to reference it.
+
+- `src/lib/server/counters.ts` _(new)_ — counter-write helpers, threshold-check, aggregate-fetch. Reuses the Redis connection from `src/lib/server/budget.ts` (refactor budget.ts so the connection is exported as a shared module if needed; do NOT duplicate connection logic).
+- `src/lib/server/counters.test.ts` _(new)_ — tests for counter-increment, idempotency-by-session-id, threshold check, aggregate-fetch.
+- `src/app/api/counters/route.ts` _(new)_ — POST endpoint to increment counters at session-end. Accepts `{ sessionId, stateCode, county, primary, confirmedConcerns: [{canonicalIssue, ...}], picks: [{race, candidateId}] }`. Returns `{ ok, alreadyCounted? }`.
+- `src/app/api/polis/route.ts` _(new)_ — GET endpoint returning the polis viz data: `{ thresholdMet, scope: "county"|"state", sampleSize, dots: [{x, y, primary}], you: {x, y} | null, consensus: [{issueLabel, percent}] }`. Computes aggregates from counters, runs PCA, generates synthetic dots, computes "you" position.
+- `src/components/PolisOverlay.tsx` _(new)_ — the visualization component. Scatter plot with halo + label for "you", consensus panel below, privacy callout prominently placed, sample size footer, animation per spec.
+- `src/components/PolisOverlay.test.tsx` _(new)_ — tests for threshold-met render, threshold-not-met placeholder render, "you" dot positioning, consensus panel rendering, privacy callout presence.
+- `src/components/PrivacyCallout.tsx` _(new, reused)_ — three-paragraph privacy-promise component. Used inside the polis viz AND linkable from the Act 1.5 briefing if the model wants to reference it.
 - `src/components/HandoffPackage.tsx` — wire the polis viz to render at session-end (after handoff, but only for sessions where the voter walked through Act 2/3). One viz per session — show after they have their summary.
 - `src/components/ResearchLayout.tsx` — update the sticky tab-close banner copy to reference the new privacy posture (one-line: "We save anonymous counts only. Get your summary before closing the tab — there's no recovery if you don't.").
 - `docs/BALLOT_PROMPT.md` — Act 1.5 briefing rewrite. Replace "I do NOT save your data" with the new tighter framing. Add the subpoena line. Maintain the get-the-summary urgency. New rule: at session-end, the model emits a `[POLIS_VIZ_TRIGGER]` block to signal the UI should render the polis overlay. (Or simpler: trigger via the existing handoff flow without a new structured block — pick whichever is simpler.)
@@ -86,6 +92,7 @@ Touch:
 - `src/components/HandoffPackage.test.ts` — tests for the polis trigger wiring.
 
 Do not touch:
+
 - Spanish content.
 - Budget logic outside extracting the shared Redis connection.
 - `[RACE_PATTERNS]`, `[ALIGNMENT_SCORES]`, `[VALUES_TAG_REQUEST]`, `[CONCERN_INTERPRETATION]` schemas.
@@ -121,10 +128,12 @@ Do not touch:
 ## Notes — phased execution
 
 **Phase 1 (parallel — 2 subagents):**
+
 - **Agent A — Server: counters API + polis API.** Creates `src/lib/server/counters.ts`, the two route handlers, tests. Reuses the Redis connection from budget. PCA implementation is small (~50 lines of math; reference an existing PCA library only if `package.json` already has one — otherwise inline math is fine for a 5-dim → 2-dim projection).
 - **Agent B — Client: PolisOverlay + PrivacyCallout components.** Creates `PolisOverlay.tsx`, `PrivacyCallout.tsx`, tests. Renders all the viz states (locked / unlocked / unlocked-without-you-dot). Animation via CSS keyframes with `animation-delay` per dot. SVG scatter (no canvas; SVG is more accessible).
 
 **Phase 2 (single subagent — depends on Phase 1):**
+
 - **Agent C — Integration: HandoffPackage + ResearchLayout + Act 1.5 prompt rewrite + translations.** Wires PolisOverlay into HandoffPackage (renders after session-end handoff). Updates ResearchLayout sticky banner copy. Rewrites Act 1.5 briefing in BALLOT_PROMPT.md per the new privacy posture. Regen + prompt tests.
 
 **Phase 3 (verifier subagent):**

@@ -1,6 +1,6 @@
 # Work Packet: launch-alignment-score-llm-driven
 
-Status: ready
+Status: completed — LLM-driven alignment score banner + drill-down shipped (commit a528c72)
 Owner: orchestrator (Claude Opus, this session) → worker subagents (Sonnet)
 Source: `.ai/project-briefs/voter-choice-alignment-engine-v2.md` § Phasing → Packet 3.
 Branch: launch/production
@@ -22,6 +22,7 @@ A separate `[ALIGNMENT_SCORES]` block (one per race, alongside `[RACE_PATTERNS]`
 ## Business Logic
 
 Rules:
+
 - Score is **factual count**: "voted with your side N of M times." Never a verdict, never a recommendation.
 - Score appears above the four-pattern dashboard for each candidate. Visual hierarchy: score banner → reveal button → patterns.
 - For each user-confirmed concern, render one score per candidate. Multiple scores stack as small cards inside the alignment banner.
@@ -34,11 +35,13 @@ Rules:
 - Hold the no-recommendation line. The score IS the answer; no editorial gloss on top.
 
 Assumptions:
+
 - Confirmed concerns from Packet 2's `[VOTER CONFIRMED CONCERNS]` are the input set. Each carries a `canonicalIssue` id and a `resolvedStance`.
 - The model uses `web_search` to find Vote Smart Key Votes (or roll-call records) per (candidate, canonicalIssue). Costs scale per session — acceptable for v2 launch traffic; Packet 6 moves this to a backend pipeline.
 - ES path stays held back.
 
 User-confirmed decisions:
+
 - Score above patterns, not in place of them.
 - LLM-driven for v2 launch; backend pipeline in Packet 6.
 - Disclaimer top of dashboard + bottom of each drill-down.
@@ -46,12 +49,14 @@ User-confirmed decisions:
 - Anonymized → reveal stays.
 
 Edge cases:
+
 - User skipped Act 2 → no confirmed concerns → no alignment scores rendered (graceful degrade to four-pattern-only dashboard).
 - Voted unanimously with the user's side on every contributing vote (N == M, perfect alignment) → render the count plainly, no "100%" hyperbole.
 - Voted against on every contributing vote (N == 0) → render plainly.
 - Thin record (e.g., total < 5 votes) → render with explicit "based on N votes" label; no hidden floor.
 
 Out of scope:
+
 - Backend ingestion pipeline (Packet 6).
 - Polis viz (Packet 5).
 - Proposition routing (Packet 4 — propositions don't get alignment scores in this packet; v1 of the proposition flow stays).
@@ -60,11 +65,12 @@ Out of scope:
 ## Scope
 
 Touch:
+
 - `src/lib/structured-blocks.ts` — new `[ALIGNMENT_SCORES]` parser family (parse, strip, hasOpen, stripPartial). New types: `ContributingVote`, `AlignmentScore`, `AlignmentScoresEntry`, `AlignmentScoresBlock`.
 - `src/lib/structured-blocks.test.ts` — tests for the new parser family.
-- `src/components/AlignmentScoreBanner.tsx` *(new)* — renders a candidate's alignment scores as compact stacked cards. Each score: issue label, "N of M" ratio, "based on N votes" label when thin, drill-down trigger.
-- `src/components/AlignmentDrilldown.tsx` *(new)* — expandable panel listing contributing votes per score. Bill title, vote cast (with/against the user's side), date, source chip. Disclaimer at the bottom.
-- `src/components/AlignmentScoreBanner.test.tsx` and `src/components/AlignmentDrilldown.test.tsx` *(new)*.
+- `src/components/AlignmentScoreBanner.tsx` _(new)_ — renders a candidate's alignment scores as compact stacked cards. Each score: issue label, "N of M" ratio, "based on N votes" label when thin, drill-down trigger.
+- `src/components/AlignmentDrilldown.tsx` _(new)_ — expandable panel listing contributing votes per score. Bill title, vote cast (with/against the user's side), date, source chip. Disclaimer at the bottom.
+- `src/components/AlignmentScoreBanner.test.tsx` and `src/components/AlignmentDrilldown.test.tsx` _(new)_.
 - `src/components/RacePatterns.tsx` — accept an optional `alignmentScores` prop (Map keyed by candidate id) and render `AlignmentScoreBanner` at the top of each candidate section, above the existing four-pattern content.
 - `src/components/RacePatterns.test.tsx` — extend tests.
 - `src/components/ChatPanel.tsx` — render dispatch for `[ALIGNMENT_SCORES]` block (parsed alongside `[RACE_PATTERNS]` for the same race; merged into one dashboard render).
@@ -74,6 +80,7 @@ Touch:
 - `src/lib/generatePrompt.test.ts` — assertions for the new prompt content.
 
 Do not touch:
+
 - ES content.
 - Budget code, state fixtures.
 - `[RACE_PATTERNS]` block schema (alignment scores are a sibling block, not a field on RACE_PATTERNS).
