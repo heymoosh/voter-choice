@@ -1,0 +1,190 @@
+{
+  "metadata": {
+    "framework": "compound-engineering",
+    "selectedAt": "2026-05-12T03:33:09.193Z",
+    "replicatesFound": 3,
+    "replicateIds": [
+      "r1",
+      "r2",
+      "r3"
+    ]
+  },
+  "chosen": "r1",
+  "rationale": "median LOC (1782); replicates span 1458..1808, RSD 9.46%",
+  "noisyMetrics": [
+    {
+      "metric": "vitest.tests.total",
+      "rsd": 62.57,
+      "note": "very high variance — flag in FRAMING.md"
+    },
+    {
+      "metric": "eslint.warnings",
+      "rsd": 27.22,
+      "note": "moderate variance"
+    },
+    {
+      "metric": "complexity.max",
+      "rsd": 55.39,
+      "note": "very high variance — flag in FRAMING.md"
+    },
+    {
+      "metric": "duplication.percentage",
+      "rsd": 87.32,
+      "note": "very high variance — flag in FRAMING.md"
+    }
+  ],
+  "varianceByMetric": {
+    "linesOfCode.application.code": {
+      "name": "linesOfCode.application.code",
+      "perReplicate": {
+        "r1": 1782,
+        "r2": 1808,
+        "r3": 1458
+      },
+      "mean": 1682.67,
+      "stdDev": 159.22,
+      "rsd": 9.46,
+      "minId": "r3",
+      "medianId": "r1",
+      "maxId": "r2"
+    },
+    "linesOfCode.application.files": {
+      "name": "linesOfCode.application.files",
+      "perReplicate": {
+        "r1": 18,
+        "r2": 20,
+        "r3": 13
+      },
+      "mean": 17,
+      "stdDev": 2.94,
+      "rsd": 17.32,
+      "minId": "r3",
+      "medianId": "r1",
+      "maxId": "r2"
+    },
+    "vitest.tests.total": {
+      "name": "vitest.tests.total",
+      "perReplicate": {
+        "r1": 5,
+        "r2": 12,
+        "r3": 27
+      },
+      "mean": 14.67,
+      "stdDev": 9.18,
+      "rsd": 62.57,
+      "minId": "r1",
+      "medianId": "r2",
+      "maxId": "r3"
+    },
+    "vitest.coverage.lines": {
+      "name": "vitest.coverage.lines",
+      "perReplicate": {
+        "r2": 16.47,
+        "r3": 17.4
+      },
+      "mean": 16.93,
+      "stdDev": 0.46,
+      "rsd": 2.75,
+      "minId": "r2",
+      "medianId": "r3",
+      "maxId": "r3"
+    },
+    "playwright.passRate": {
+      "name": "playwright.passRate",
+      "perReplicate": {
+        "r2": 100,
+        "r3": 100
+      },
+      "mean": 100,
+      "stdDev": 0,
+      "rsd": 0,
+      "minId": "r2",
+      "medianId": "r3",
+      "maxId": "r3"
+    },
+    "eslint.errors": {
+      "name": "eslint.errors",
+      "perReplicate": {
+        "r1": 0,
+        "r2": 0,
+        "r3": 0
+      },
+      "mean": 0,
+      "stdDev": 0,
+      "rsd": null,
+      "minId": "r1",
+      "medianId": "r2",
+      "maxId": "r3"
+    },
+    "eslint.warnings": {
+      "name": "eslint.warnings",
+      "perReplicate": {
+        "r1": 4,
+        "r2": 3,
+        "r3": 2
+      },
+      "mean": 3,
+      "stdDev": 0.82,
+      "rsd": 27.22,
+      "minId": "r3",
+      "medianId": "r2",
+      "maxId": "r1"
+    },
+    "complexity.average": {
+      "name": "complexity.average",
+      "perReplicate": {
+        "r1": 6.17,
+        "r2": 4.6,
+        "r3": 4.67
+      },
+      "mean": 5.15,
+      "stdDev": 0.72,
+      "rsd": 14.07,
+      "minId": "r2",
+      "medianId": "r3",
+      "maxId": "r1"
+    },
+    "complexity.max": {
+      "name": "complexity.max",
+      "perReplicate": {
+        "r1": 63,
+        "r2": 27,
+        "r3": 17
+      },
+      "mean": 35.67,
+      "stdDev": 19.75,
+      "rsd": 55.39,
+      "minId": "r3",
+      "medianId": "r2",
+      "maxId": "r1"
+    },
+    "duplication.percentage": {
+      "name": "duplication.percentage",
+      "perReplicate": {
+        "r1": 0,
+        "r2": 1.78,
+        "r3": 0.73
+      },
+      "mean": 0.84,
+      "stdDev": 0.73,
+      "rsd": 87.32,
+      "minId": "r1",
+      "medianId": "r3",
+      "maxId": "r2"
+    },
+    "bundleSize.firstLoadJsShared.size": {
+      "name": "bundleSize.firstLoadJsShared.size",
+      "perReplicate": {
+        "r1": 102,
+        "r2": 114,
+        "r3": 102
+      },
+      "mean": 106,
+      "stdDev": 5.66,
+      "rsd": 5.34,
+      "minId": "r1",
+      "medianId": "r3",
+      "maxId": "r2"
+    }
+  }
+}

@@ -1,0 +1,457 @@
+{
+  "metadata": {
+    "timestamp": "2026-05-12T03:32:13.824Z",
+    "branch": "experiment/compound-engineering-r1",
+    "commit": "16951fb",
+    "phase": null,
+    "nodeVersion": "v22.14.0"
+  },
+  "eslint": {
+    "errors": 0,
+    "warnings": 4,
+    "complexityViolations": 4
+  },
+  "complexity": {
+    "count": 48,
+    "average": 6.17,
+    "max": 63,
+    "p50": 3,
+    "p75": 4,
+    "p95": 16,
+    "distribution": {
+      "simple_1_5": 38,
+      "moderate_6_10": 6,
+      "complex_11_15": 1,
+      "highComplex_16_20": 1,
+      "critical_21plus": 2
+    },
+    "perFunction": [
+      {
+        "file": "src/lib/openstates/derive.ts",
+        "name": "deriveOpenStatesData",
+        "complexity": 63,
+        "line": 155
+      },
+      {
+        "file": "src/lib/openstates/derive.ts",
+        "name": "<arrow>",
+        "complexity": 57,
+        "line": 310
+      },
+      {
+        "file": "src/lib/openstates/derive.ts",
+        "name": "buildVoteSummary",
+        "complexity": 16,
+        "line": 69
+      },
+      {
+        "file": "src/lib/promptBuilder.ts",
+        "name": "buildContextBlock",
+        "complexity": 11,
+        "line": 47
+      },
+      {
+        "file": "src/app/page.tsx",
+        "name": "Home",
+        "complexity": 10,
+        "line": 122
+      },
+      {
+        "file": "src/lib/promptBuilder.ts",
+        "name": "buildOpenStatesContext",
+        "complexity": 10,
+        "line": 82
+      },
+      {
+        "file": "src/app/page.tsx",
+        "name": "ResultCard",
+        "complexity": 7,
+        "line": 42
+      },
+      {
+        "file": "src/lib/openstates/derive.ts",
+        "name": "<arrow>",
+        "complexity": 7,
+        "line": 119
+      },
+      {
+        "file": "src/components/ZipForm.tsx",
+        "name": "ZipForm",
+        "complexity": 6,
+        "line": 10
+      },
+      {
+        "file": "src/lib/openstates/derive.ts",
+        "name": "<arrow>",
+        "complexity": 6,
+        "line": 454
+      },
+      {
+        "file": "src/app/page.tsx",
+        "name": "submitZip",
+        "complexity": 5,
+        "line": 180
+      },
+      {
+        "file": "src/lib/openstates/derive.ts",
+        "name": "mergeSourceUrls",
+        "complexity": 5,
+        "line": 143
+      },
+      {
+        "file": "src/app/page.tsx",
+        "name": "getRegistrationStatus",
+        "complexity": 4,
+        "line": 20
+      },
+      {
+        "file": "src/lib/openstates/derive.ts",
+        "name": "asString",
+        "complexity": 4,
+        "line": 14
+      },
+      {
+        "file": "src/lib/openstates/derive.ts",
+        "name": "normalizeStateCode",
+        "complexity": 4,
+        "line": 59
+      },
+      {
+        "file": "src/lib/promptBuilder.ts",
+        "name": "getNextElection",
+        "complexity": 4,
+        "line": 22
+      },
+      {
+        "file": "src/components/ZipForm.tsx",
+        "name": "validate",
+        "complexity": 3,
+        "line": 14
+      },
+      {
+        "file": "src/components/ZipForm.tsx",
+        "name": "handleSubmit",
+        "complexity": 3,
+        "line": 21
+      },
+      {
+        "file": "src/components/ZipForm.tsx",
+        "name": "handleChange",
+        "complexity": 3,
+        "line": 39
+      },
+      {
+        "file": "src/lib/openstates/derive.ts",
+        "name": "<arrow>",
+        "complexity": 3,
+        "line": 32
+      },
+      {
+        "file": "src/lib/openstates/derive.ts",
+        "name": "<arrow>",
+        "complexity": 3,
+        "line": 41
+      },
+      {
+        "file": "src/lib/openstates/derive.ts",
+        "name": "normalizeStateCodeFromDivision",
+        "complexity": 3,
+        "line": 48
+      },
+      {
+        "file": "src/lib/openstates/derive.ts",
+        "name": "<arrow>",
+        "complexity": 3,
+        "line": 99
+      },
+      {
+        "file": "src/lib/openstates/derive.ts",
+        "name": "summarizeVotes",
+        "complexity": 3,
+        "line": 113
+      },
+      {
+        "file": "src/lib/openstates/derive.ts",
+        "name": "<arrow>",
+        "complexity": 3,
+        "line": 319
+      },
+      {
+        "file": "src/lib/openstates/derive.ts",
+        "name": "<arrow>",
+        "complexity": 3,
+        "line": 323
+      },
+      {
+        "file": "src/lib/openstates/derive.ts",
+        "name": "<arrow>",
+        "complexity": 3,
+        "line": 394
+      },
+      {
+        "file": "src/lib/openstates/load.ts",
+        "name": "<anonymous>",
+        "complexity": 3,
+        "line": 14
+      },
+      {
+        "file": "src/lib/stateRegistry.ts",
+        "name": "getStateName",
+        "complexity": 3,
+        "line": 27
+      },
+      {
+        "file": "src/app/page.tsx",
+        "name": "getElectionSummary",
+        "complexity": 2,
+        "line": 32
+      },
+      {
+        "file": "src/app/page.tsx",
+        "name": "<arrow>",
+        "complexity": 2,
+        "line": 132
+      },
+      {
+        "file": "src/app/page.tsx",
+        "name": "<arrow>",
+        "complexity": 2,
+        "line": 140
+      },
+      {
+        "file": "src/app/page.tsx",
+        "name": "<anonymous>",
+        "complexity": 2,
+        "line": 149
+      },
+      {
+        "file": "src/app/page.tsx",
+        "name": "loadState",
+        "complexity": 2,
+        "line": 158
+      },
+      {
+        "file": "src/components/StateSelector.tsx",
+        "name": "<arrow>",
+        "complexity": 2,
+        "line": 80
+      },
+      {
+        "file": "src/components/ZipForm.tsx",
+        "name": "handleKeyDown",
+        "complexity": 2,
+        "line": 33
+      },
+      {
+        "file": "src/lib/openstates/derive.ts",
+        "name": "asDate",
+        "complexity": 2,
+        "line": 26
+      },
+      {
+        "file": "src/lib/openstates/derive.ts",
+        "name": "toSourceLinks",
+        "complexity": 2,
+        "line": 30
+      },
+      {
+        "file": "src/lib/openstates/derive.ts",
+        "name": "toIdentifiers",
+        "complexity": 2,
+        "line": 39
+      },
+      {
+        "file": "src/lib/openstates/derive.ts",
+        "name": "<arrow>",
+        "complexity": 2,
+        "line": 419
+      },
+      {
+        "file": "src/lib/openstates/derive.ts",
+        "name": "lookupOpenStatesCandidate",
+        "complexity": 2,
+        "line": 444
+      },
+      {
+        "file": "src/lib/openstates/lookup.ts",
+        "name": "getCandidateEnrichment",
+        "complexity": 2,
+        "line": 8
+      },
+      {
+        "file": "src/lib/promptBuilder.ts",
+        "name": "formatDate",
+        "complexity": 2,
+        "line": 8
+      },
+      {
+        "file": "src/lib/promptBuilder.ts",
+        "name": "<arrow>",
+        "complexity": 2,
+        "line": 32
+      },
+      {
+        "file": "src/lib/promptBuilder.ts",
+        "name": "describeDeadline",
+        "complexity": 2,
+        "line": 39
+      },
+      {
+        "file": "src/lib/stateDataLoader.ts",
+        "name": "<anonymous>",
+        "complexity": 2,
+        "line": 5
+      },
+      {
+        "file": "src/lib/stateRegistry.ts",
+        "name": "getStateData",
+        "complexity": 2,
+        "line": 13
+      },
+      {
+        "file": "src/lib/stateRegistry.ts",
+        "name": "getStateCodesForZip",
+        "complexity": 2,
+        "line": 21
+      }
+    ]
+  },
+  "vitest": {
+    "tests": {
+      "total": 5,
+      "passed": 5,
+      "failed": 0,
+      "skipped": "no test files",
+      "passRate": 100
+    },
+    "coverage": {
+      "lines": null,
+      "branches": null,
+      "functions": null,
+      "statements": null
+    }
+  },
+  "duplication": {
+    "duplicatedLines": 0,
+    "totalLines": 1670,
+    "percentage": 0,
+    "clones": 0
+  },
+  "bundleSize": {
+    "buildSuccess": true,
+    "pages": [
+      {
+        "route": "/",
+        "size": 5.05,
+        "unit": "kB"
+      },
+      {
+        "route": "/_not-found",
+        "size": 986,
+        "unit": "B"
+      }
+    ],
+    "firstLoadJsShared": {
+      "size": 102,
+      "unit": "kB"
+    }
+  },
+  "lighthouse": {
+    "performance": null,
+    "accessibility": null,
+    "bestPractices": null,
+    "seo": null
+  },
+  "playwright": {
+    "total": 0,
+    "passed": 0,
+    "failed": 0,
+    "timedOut": 0,
+    "skipped": 0,
+    "passRate": null
+  },
+  "linesOfCode": {
+    "application": {
+      "code": 1782,
+      "files": 18,
+      "byExtension": {
+        ".css": {
+          "files": 1,
+          "code": 284
+        },
+        ".tsx": {
+          "files": 4,
+          "code": 486
+        },
+        ".json": {
+          "files": 5,
+          "code": 231
+        },
+        ".ts": {
+          "files": 8,
+          "code": 781
+        }
+      }
+    },
+    "plugin": {
+      "code": 0,
+      "files": 0,
+      "byExtension": {}
+    },
+    "infrastructure": {
+      "code": 351,
+      "files": 10
+    },
+    "total": {
+      "code": 2133,
+      "files": 28
+    }
+  },
+  "workflowTests": {
+    "count": 0,
+    "files": []
+  },
+  "workflowTiming": {
+    "steps": [
+      {
+        "step": "ce:plan",
+        "started": "2026-05-11T19:49:31-05:00",
+        "completed": "2026-05-11T19:50:38-05:00",
+        "durationMs": 67000
+      },
+      {
+        "step": "ce:work",
+        "started": "2026-05-11T19:50:38-05:00",
+        "completed": "2026-05-11T20:09:21-05:00",
+        "durationMs": 1123000
+      },
+      {
+        "step": "ce:plan",
+        "started": "2026-05-11T20:07:47-05:00",
+        "completed": "2026-05-11T19:50:38-05:00",
+        "durationMs": -1029000
+      },
+      {
+        "step": "ce:work",
+        "started": "2026-05-11T20:08:23-05:00",
+        "completed": "2026-05-11T20:09:21-05:00",
+        "durationMs": 58000
+      },
+      {
+        "step": "ce:review",
+        "started": "2026-05-11T20:09:26-05:00",
+        "completed": "2026-05-11T20:10:09-05:00",
+        "durationMs": 43000
+      },
+      {
+        "step": "ce:compound",
+        "started": "2026-05-11T20:10:14-05:00",
+        "completed": "2026-05-11T20:10:42-05:00",
+        "durationMs": 28000
+      }
+    ],
+    "totalSteps": 6,
+    "completedSteps": 6
+  },
+  "diffHygiene": null
+}
