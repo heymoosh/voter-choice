@@ -2,11 +2,9 @@
 
 ## Next
 
-**Run `/start`.** That's it.
+**Phase B smoke run is next.** Create a fresh `experiment/vanilla-r1-v2` worktree from `main`, run all six vanilla phases through the isolated build flow, and verify that host-side harvest/scoring produces complete non-null phase JSONs plus valid timing/workflow logs.
 
-`/start` is now the autonomous orchestrator. It reads git tags + metric files to detect what's done, picks the next pending action, executes it, commits, tags, pushes, loops. Across all 5 frameworks, all 3 Phase 1 replicates each, representative selection, and Phase 2–6 forward iteration. 45 discrete actions total. Every sub-agent is dispatched with `model: "sonnet"` to keep model class constant across runs. You don't need to update `## Next` manually anymore — the orchestrator works from disk state.
-
-For hands-off operation across multiple sessions: `/loop /start` — the harness re-invokes `/start` automatically until it reports "EXPERIMENT COMPLETE."
+Do not skip the smoke run and jump to the full rerun. Phase A is green, but Phase B is the gate that proves the new `/workspace/metrics` scratch-mount plus `scripts/post-build-score.sh` architecture works end-to-end before scaling to all 45 actions.
 
 **Experiment plan (auto-driven):**
 
