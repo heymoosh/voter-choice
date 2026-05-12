@@ -116,7 +116,7 @@ Expected: a clear "we don't have data for this race" message. If a generic error
 
 | Step                                               | Result | Notes |
 | -------------------------------------------------- | ------ | ----- |
-| 1. DB tables non-empty                             | ✅ PASS | bills:65,696 votes:5,416,530 candidates:7,382 issue_tags:39,688 (54% bill coverage) donor_aggregates:21,927 rows covering 2,675 unique candidates across 17 sources |
+| 1. DB tables non-empty                             | ✅ PASS | bills:65,696 votes:5,416,530 candidates:7,382 issue_tags:39,688 (54% bill coverage) donor_aggregates:22,765 rows covering 2,795 unique candidates across 18 sources |
 | 2. Alignment API returns found/not-found correctly | ✅ PASS | found:true for Aicha Davis TX-house property_taxes (1 contributing vote returned); found:false for fictional candidate |
 | 3. Chat uses `lookup_alignment`, not `web_search`  | ✅ PASS | Browser session confirmed: Arrington TX-19 healthcare query triggered lookup_alignment (12/28 votes returned, 34/47 key votes shown). No 400 error. tool_use input fix verified live on 2026-05-12. |
 | 4. 50 tag samples reviewed, no systematic errors   | ✅ PASS | 50 samples audited via `_audit-tags.ts`; canonical_issue accurate, stance_lens correct, no systematic errors. Coverage growing as tag-bills runs. |
@@ -142,8 +142,9 @@ Expected: a clear "we don't have data for this race" message. If a generic error
 | pa_dos_bulk | PA | 154 | 669 | `pa-dos-donors.ts` (fixed: now uses FILERTYPE=2 committee IDs) |
 | in_cfa_bulk | IN | 147 | 1,427 | `in-cfa-donors.ts` (direct ZIP from campaignfinance.in.gov) |
 | ok_ethics_bulk | OK | 146 | 1,327 | `ok-ethics-donors.ts` (direct ZIP from guardian.ok.gov) |
+| wv_cfrs_bulk | WV | 120 | 838 | `wv-cfrs-donors.ts` (API→pre-signed S3 URL, or --use-local-file) |
 | wi_cfis_bulk | WI | 12 | 17 | ⚠️ DATA QUALITY: amounts implausibly large ($26M for state senator); do not display. Delete rows or re-ingest. |
-| **TOTAL** | **16 states + federal** | **2,675** | **21,927** | |
+| **TOTAL** | **17 states + federal** | **2,795** | **22,765** | |
 
 **Notes:**
 - `issue_tags=39,688` (54% bill coverage): All 7 Anthropic Batch API collections complete (64,802 bills submitted, ~54% resulted in at least one canonical issue tag). Remaining 46% returned empty arrays (no relevant issue) or malformed JSON — both handled gracefully (bills simply don't contribute to alignment scores).
