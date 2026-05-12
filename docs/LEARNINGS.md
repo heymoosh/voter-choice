@@ -580,6 +580,7 @@ The dry-run simulation in `docker/run-claude.sh` correctly honored `--shell`, bu
 - `docker/run-claude.sh --shell '...'` must execute the provided command in both dry-run and live Docker modes.
 - Live Docker runs that invoke Claude must mount both `~/.claude/` and `~/.claude.json` read-only for the `runner` user.
 - Live Claude prompts should be passed via environment or another non-interpolating transport, not embedded directly into the shell command string.
+- Headless Docker invocation should prefer `claude --bare` with `ANTHROPIC_API_KEY` sourced from `/workspace/.env.local`, because desktop login state is not reliable inside the container.
 - Isolation verification should use the real per-run scratch dir mount pattern `metrics/run-outputs/<run-id>/ -> /workspace/metrics`, not just the dry-run sandbox.
 
 ### Decision

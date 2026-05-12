@@ -121,7 +121,7 @@ ASSERTIONS='[ -z "$(ls -A /workspace/scoring 2>/dev/null)" ] || { echo "isolatio
 if [[ -n "$SHELL_CMD" ]]; then
   CONTAINER_CMD="$SHELL_CMD"
 else
-  CONTAINER_CMD='claude --dangerously-skip-permissions -p "$CLAUDE_PROMPT"'
+  CONTAINER_CMD='if [[ -f /workspace/.env.local ]]; then set -a; source /workspace/.env.local; set +a; fi; claude --bare --dangerously-skip-permissions -p "$CLAUDE_PROMPT"'
 fi
 
 TMPFS_FLAGS=(
