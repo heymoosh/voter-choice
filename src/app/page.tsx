@@ -8,12 +8,17 @@ import { PromptOutput } from "@/components/PromptOutput";
 import { TipsSection } from "@/components/TipsSection";
 import { Footer } from "@/components/Footer";
 import { LanguageToggle } from "@/components/LanguageToggle";
+import { ChatWindow } from "@/components/ChatWindow";
+import { BallotBuilder } from "@/components/BallotBuilder";
+import { VoterProfile } from "@/components/VoterProfile";
 import { generatePrompt } from "@/lib/generatePrompt";
 import { useLanguage, tStr } from "@/lib/i18n";
 import type { BallotData, DataStatus } from "@/lib/types";
 
 export default function Home() {
   const [pageState, setPageState] = useState<DataStatus>({ status: "idle" });
+  const [chatOpen, setChatOpen] = useState(false);
+  const [voterProfile, setVoterProfile] = useState<string | null>(null);
   const { language } = useLanguage();
 
   async function handleZipSubmit(zip: string) {
@@ -145,6 +150,18 @@ export default function Home() {
           </div>
         </section>
 
+        {/* Voter Profile Upload (Phase 5 — returning voter) */}
+        <section aria-labelledby="profile-section-heading">
+          <h2 id="profile-section-heading" className="sr-only">
+            Voter Profile
+          </h2>
+          <VoterProfile
+            language={language}
+            onProfileLoaded={setVoterProfile}
+            profileContent={voterProfile}
+          />
+        </section>
+
         {/* Zip Code Entry */}
         <section aria-labelledby="zip-section-heading">
           <h2 id="zip-section-heading" className="sr-only">
@@ -264,6 +281,38 @@ export default function Home() {
               language={language}
             />
             <PromptOutput promptText={promptText} language={language} />
+
+            {/* Phase 5: Chat CTA */}
+            <section
+              aria-labelledby="chat-section-heading"
+              className="space-y-4"
+            >
+              <h2
+                id="chat-section-heading"
+                className="text-xl font-bold text-gray-900"
+              >
+                Research My Ballot with AI Chat
+              </h2>
+              {!chatOpen ? (
+                <button
+                  data-testid="chat-cta"
+                  onClick={() => setChatOpen(true)}
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl px-6 py-3 text-base min-h-[44px] focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                >
+                  {tStr(language, "chatCta")}
+                </button>
+              ) : (
+                <ChatWindow
+                  ballotData={pageState.ballotData}
+                  zip={pageState.zip}
+                  language={language}
+                  voterProfile={voterProfile}
+                />
+              )}
+            </section>
+
+            {/* Phase 5: Ballot Builder (copy-paste path) */}
+            <BallotBuilder language={language} />
           </>
         )}
 

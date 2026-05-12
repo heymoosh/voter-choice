@@ -84,6 +84,47 @@ export type Election = {
   primaryType: "open" | "closed" | "semi-closed" | "semi-open" | null;
 };
 
+// --- Phase 5: Chat, Ballot Download, Voter Profile ---
+
+export type ChatMessage = {
+  role: "user" | "assistant";
+  content: string;
+};
+
+export type AlignmentIssue = {
+  issue: string;
+  userPriority: string;
+  score: number;
+  rationale: string;
+  sources: string[];
+};
+
+export type AlignmentScore = {
+  candidate: string;
+  overall: number;
+  issues: AlignmentIssue[];
+};
+
+export type AlignmentScoresBlock = {
+  race: string;
+  scores: AlignmentScore[];
+};
+
+export type BallotEntry = {
+  race: string;
+  choice: string;
+};
+
+export type ParsedBallot = {
+  county: string;
+  electionName: string;
+  date: string;
+  entries: BallotEntry[];
+  reminder?: string;
+};
+
+export type BudgetStatus = "ok" | "warning" | "critical" | "exhausted";
+
 export type StateData = {
   stateCode: string;
   stateName: string;
