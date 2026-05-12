@@ -1,0 +1,22 @@
+{
+  "state": "FL",
+  "voterIdRequired": true,
+  "idType": "strict-photo",
+  "acceptedIds": [
+    "Florida driver's license or ID card",
+    "US passport",
+    "Debit or credit card with photo",
+    "Military ID with photo",
+    "Student ID with photo",
+    "Retirement center ID with photo",
+    "Neighborhood association ID with photo",
+    "Public assistance ID with photo"
+  ],
+  "exceptions": "Without acceptable photo ID, voter may cast a provisional ballot and present ID to Supervisor of Elections by 5 PM on the second day after election.",
+  "provisionalBallot": true,
+  "provisionalBallotRules": "Present acceptable photo ID within 2 days after election.",
+  "phonesAtPolls": false,
+  "phonesAtPollsDetail": "No cell phones in polling room. Must be put away.",
+  "sourceUrl": "https://dos.fl.gov/elections/for-voters/voter-id/",
+  "lastVerified": "2026-04-03"
+}

@@ -1,0 +1,19 @@
+{
+  "state": "WI",
+  "voterIdRequired": true,
+  "idType": "strict-photo",
+  "acceptedIds": [
+    "Wisconsin driver's license or state ID card",
+    "US passport",
+    "Military ID with photo and signature",
+    "Tribal ID with photo and signature",
+    "Student ID from Wisconsin accredited school (with proof of enrollment)"
+  ],
+  "exceptions": "Without acceptable photo ID, voter casts a provisional ballot and has until 4 PM the Friday after election to provide ID.",
+  "provisionalBallot": true,
+  "provisionalBallotRules": "Present acceptable photo ID by 4 PM Friday following election.",
+  "phonesAtPolls": false,
+  "phonesAtPollsDetail": "No photography of ballot or inside voting booth.",
+  "sourceUrl": "https://elections.wi.gov/voters/voter-id-law",
+  "lastVerified": "2026-04-03"
+}

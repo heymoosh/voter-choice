@@ -1,0 +1,13 @@
+{
+  "state": "WA",
+  "voterIdRequired": false,
+  "idType": "no-id",
+  "acceptedIds": [],
+  "exceptions": "Washington is a vote-by-mail state. Signature comparison is the primary verification method. No ID document required.",
+  "provisionalBallot": false,
+  "provisionalBallotRules": "",
+  "phonesAtPolls": true,
+  "phonesAtPollsDetail": "Voters complete ballots at home or drop boxes. No polling place restrictions.",
+  "sourceUrl": "https://www.sos.wa.gov/elections/voters/voter-id.aspx",
+  "lastVerified": "2026-04-03"
+}

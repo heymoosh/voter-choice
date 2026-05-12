@@ -1,0 +1,19 @@
+{
+  "state": "TN",
+  "voterIdRequired": true,
+  "idType": "strict-photo",
+  "acceptedIds": [
+    "Tennessee driver's license or ID card",
+    "US passport",
+    "US military ID with photo",
+    "Government employee photo ID",
+    "Handgun carry permit with photo"
+  ],
+  "exceptions": "Without acceptable photo ID, voter casts a provisional ballot. Must return with ID to county election commission by 2nd Thursday after election.",
+  "provisionalBallot": true,
+  "provisionalBallotRules": "Return with acceptable photo ID by 2nd Thursday after election day.",
+  "phonesAtPolls": false,
+  "phonesAtPollsDetail": "Cell phones not permitted in voting booth.",
+  "sourceUrl": "https://sos.tn.gov/elections/voter-information/voter-id",
+  "lastVerified": "2026-04-03"
+}

@@ -1,0 +1,19 @@
+{
+  "state": "OK",
+  "voterIdRequired": true,
+  "idType": "strict-photo",
+  "acceptedIds": [
+    "Oklahoma driver's license or ID card",
+    "US passport",
+    "Military ID with photo",
+    "Government employee photo ID",
+    "Voter ID card issued by county election board with photo"
+  ],
+  "exceptions": "Without acceptable ID, voter may cast a provisional ballot and return with ID to county election board by Friday following the election.",
+  "provisionalBallot": true,
+  "provisionalBallotRules": "Return with acceptable ID by Friday following election.",
+  "phonesAtPolls": false,
+  "phonesAtPollsDetail": "No photography inside polling place.",
+  "sourceUrl": "https://www.elections.ok.gov/voters/voter-id/",
+  "lastVerified": "2026-04-03"
+}

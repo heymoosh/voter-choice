@@ -1,0 +1,13 @@
+{
+  "state": "MD",
+  "voterIdRequired": false,
+  "idType": "no-id",
+  "acceptedIds": [],
+  "exceptions": "First-time voters who registered by mail must show ID. Otherwise voters sign poll book.",
+  "provisionalBallot": true,
+  "provisionalBallotRules": "Provisional ballot available to any voter.",
+  "phonesAtPolls": true,
+  "phonesAtPollsDetail": "Voters may use phones. Photography of ballot or other voters prohibited.",
+  "sourceUrl": "https://elections.maryland.gov/voting/voter_ID.html",
+  "lastVerified": "2026-04-03"
+}

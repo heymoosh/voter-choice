@@ -1,0 +1,13 @@
+{
+  "state": "MN",
+  "voterIdRequired": false,
+  "idType": "no-id",
+  "acceptedIds": [],
+  "exceptions": "Voters who cannot confirm identity with photo ID or documents may be vouched for by a registered voter of the same precinct.",
+  "provisionalBallot": false,
+  "provisionalBallotRules": "",
+  "phonesAtPolls": true,
+  "phonesAtPollsDetail": "Voters may use phones to reference materials. No photography of ballot.",
+  "sourceUrl": "https://www.sos.state.mn.us/elections-voting/election-day-registration/vouching/",
+  "lastVerified": "2026-04-03"
+}

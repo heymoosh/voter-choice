@@ -1,0 +1,18 @@
+{
+  "state": "SC",
+  "voterIdRequired": true,
+  "idType": "strict-photo",
+  "acceptedIds": [
+    "South Carolina driver's license or ID card",
+    "US passport",
+    "Military ID with photo",
+    "SC voter registration card with photo"
+  ],
+  "exceptions": "Without photo ID, voter may cast provisional ballot and sign a reasonable impediment affidavit or present ID to county board by election certification.",
+  "provisionalBallot": true,
+  "provisionalBallotRules": "Sign reasonable impediment declaration; ballot counted unless contested.",
+  "phonesAtPolls": false,
+  "phonesAtPollsDetail": "No cell phone use inside polling location.",
+  "sourceUrl": "https://www.scvotes.gov/how-vote/voter-id",
+  "lastVerified": "2026-04-03"
+}

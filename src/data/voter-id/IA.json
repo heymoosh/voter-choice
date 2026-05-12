@@ -1,0 +1,19 @@
+{
+  "state": "IA",
+  "voterIdRequired": true,
+  "idType": "strict-photo",
+  "acceptedIds": [
+    "Iowa driver's license or non-driver ID",
+    "Iowa voter ID card (free from county auditor)",
+    "US passport",
+    "Military ID with photo",
+    "Veteran ID card"
+  ],
+  "exceptions": "Without acceptable photo ID, voter may sign an affidavit or cast a provisional ballot. First-time voters without ID may sign an oath.",
+  "provisionalBallot": true,
+  "provisionalBallotRules": "Provisional ballot available; voter has until the day before the canvass to provide ID.",
+  "phonesAtPolls": false,
+  "phonesAtPollsDetail": "No use of electronic devices while in voting booth.",
+  "sourceUrl": "https://sos.iowa.gov/elections/voterinformation/voterid.html",
+  "lastVerified": "2026-04-03"
+}

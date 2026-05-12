@@ -1,0 +1,19 @@
+{
+  "state": "MO",
+  "voterIdRequired": true,
+  "idType": "nonphoto",
+  "acceptedIds": [
+    "Missouri driver's license or ID card",
+    "US passport",
+    "Military ID",
+    "Government-issued photo ID",
+    "Utility bill, bank statement, paycheck, government check, or other government document with name and address"
+  ],
+  "exceptions": "Without ID, voter may sign an affidavit to vote a regular ballot.",
+  "provisionalBallot": true,
+  "provisionalBallotRules": "Provisional ballot available if voter declines affidavit.",
+  "phonesAtPolls": false,
+  "phonesAtPollsDetail": "No photography inside polling place.",
+  "sourceUrl": "https://www.sos.mo.gov/elections/goVoteMissouri/photoID",
+  "lastVerified": "2026-04-03"
+}

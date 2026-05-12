@@ -1,0 +1,13 @@
+{
+  "state": "NJ",
+  "voterIdRequired": false,
+  "idType": "no-id",
+  "acceptedIds": [],
+  "exceptions": "First-time voters who registered by mail must present ID. Returning voters verified by signature.",
+  "provisionalBallot": true,
+  "provisionalBallotRules": "Provisional ballot available to any voter.",
+  "phonesAtPolls": false,
+  "phonesAtPollsDetail": "No campaigning within 100 feet of polling place.",
+  "sourceUrl": "https://www.nj.gov/state/elections/vote-voter-id.shtml",
+  "lastVerified": "2026-04-03"
+}

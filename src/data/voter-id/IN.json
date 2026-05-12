@@ -1,0 +1,19 @@
+{
+  "state": "IN",
+  "voterIdRequired": true,
+  "idType": "strict-photo",
+  "acceptedIds": [
+    "Indiana driver's license or state ID",
+    "US passport",
+    "Military ID with photo",
+    "US government-issued ID with photo",
+    "Indiana state university ID with photo"
+  ],
+  "exceptions": "Voters without ID may cast provisional ballots and visit the county clerk within 10 days to show ID or execute an affidavit.",
+  "provisionalBallot": true,
+  "provisionalBallotRules": "Show ID to county clerk within 10 days or execute affidavit.",
+  "phonesAtPolls": false,
+  "phonesAtPollsDetail": "No photography in voting area.",
+  "sourceUrl": "https://www.in.gov/sos/elections/2403.htm",
+  "lastVerified": "2026-04-03"
+}

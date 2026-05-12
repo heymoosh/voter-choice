@@ -1,0 +1,20 @@
+{
+  "state": "UT",
+  "voterIdRequired": true,
+  "idType": "nonphoto",
+  "acceptedIds": [
+    "Utah driver's license or ID card",
+    "US passport",
+    "Military ID with photo",
+    "Valid photo ID of any kind",
+    "Voter registration card (paper)",
+    "Utility bill, paycheck, bank statement, or government document with name and address"
+  ],
+  "exceptions": "Without any ID, voter may sign a poll book affidavit and vote a regular ballot.",
+  "provisionalBallot": false,
+  "provisionalBallotRules": "",
+  "phonesAtPolls": true,
+  "phonesAtPollsDetail": "Voters may use phones to reference materials. No photography of ballot.",
+  "sourceUrl": "https://elections.utah.gov/voters/voter-id",
+  "lastVerified": "2026-04-03"
+}

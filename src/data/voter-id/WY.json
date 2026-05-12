@@ -1,0 +1,19 @@
+{
+  "state": "WY",
+  "voterIdRequired": true,
+  "idType": "photo",
+  "acceptedIds": [
+    "Wyoming driver's license or ID card",
+    "US passport",
+    "Military ID with photo",
+    "Student ID from Wyoming school with photo",
+    "Tribal ID with photo"
+  ],
+  "exceptions": "Without photo ID, voter may sign an affidavit of identity and vote a regular ballot.",
+  "provisionalBallot": false,
+  "provisionalBallotRules": "",
+  "phonesAtPolls": false,
+  "phonesAtPollsDetail": "No photography inside polling place.",
+  "sourceUrl": "https://sos.wyo.gov/elections/vote/identification.aspx",
+  "lastVerified": "2026-04-03"
+}

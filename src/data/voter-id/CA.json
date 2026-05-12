@@ -1,0 +1,13 @@
+{
+  "state": "CA",
+  "voterIdRequired": false,
+  "idType": "no-id",
+  "acceptedIds": [],
+  "exceptions": "First-time voters who registered by mail and did not provide identification number at registration must show ID. Otherwise no ID required — signature verification used.",
+  "provisionalBallot": true,
+  "provisionalBallotRules": "Provisional ballot available to any voter whose eligibility cannot be confirmed.",
+  "phonesAtPolls": true,
+  "phonesAtPollsDetail": "Voters may use phones to reference voting materials. Cannot photograph or record others.",
+  "sourceUrl": "https://www.sos.ca.gov/elections/voter-registration/voter-id",
+  "lastVerified": "2026-04-03"
+}

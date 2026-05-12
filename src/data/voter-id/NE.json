@@ -1,0 +1,18 @@
+{
+  "state": "NE",
+  "voterIdRequired": true,
+  "idType": "strict-photo",
+  "acceptedIds": [
+    "Nebraska driver's license or ID card",
+    "US passport",
+    "Military ID with photo",
+    "Government-issued photo ID"
+  ],
+  "exceptions": "Without photo ID, voter may cast a provisional ballot and provide ID to the county election official within 7 days.",
+  "provisionalBallot": true,
+  "provisionalBallotRules": "Provide acceptable photo ID within 7 days after election.",
+  "phonesAtPolls": false,
+  "phonesAtPollsDetail": "No photography inside polling place.",
+  "sourceUrl": "https://sos.nebraska.gov/elections/voter-id",
+  "lastVerified": "2026-04-03"
+}

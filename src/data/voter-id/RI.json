@@ -1,0 +1,19 @@
+{
+  "state": "RI",
+  "voterIdRequired": true,
+  "idType": "photo",
+  "acceptedIds": [
+    "Rhode Island driver's license or ID card",
+    "US passport",
+    "Military ID with photo",
+    "Government employee photo ID",
+    "Voter ID card from Rhode Island (if enrolled in ID card program)"
+  ],
+  "exceptions": "Without acceptable photo ID, voter may cast a provisional ballot and return with ID by 7 PM on election day.",
+  "provisionalBallot": true,
+  "provisionalBallotRules": "Return with ID by 7 PM election day.",
+  "phonesAtPolls": false,
+  "phonesAtPollsDetail": "No photography inside polling place.",
+  "sourceUrl": "https://elections.ri.gov/elections/voter-id-requirements/",
+  "lastVerified": "2026-04-03"
+}

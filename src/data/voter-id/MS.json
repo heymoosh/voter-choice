@@ -1,0 +1,20 @@
+{
+  "state": "MS",
+  "voterIdRequired": true,
+  "idType": "strict-photo",
+  "acceptedIds": [
+    "Mississippi driver's license or ID card",
+    "US passport",
+    "Government employee photo ID",
+    "US military photo ID",
+    "Mississippi voter ID card (free from circuit clerk)",
+    "Student ID from Mississippi public university"
+  ],
+  "exceptions": "Without photo ID, voter may cast a provisional ballot and present ID at county circuit clerk's office.",
+  "provisionalBallot": true,
+  "provisionalBallotRules": "Present ID at county circuit clerk before the canvass.",
+  "phonesAtPolls": false,
+  "phonesAtPollsDetail": "No cell phone use in voting booth.",
+  "sourceUrl": "https://www.sos.ms.gov/elections-voting/voter-id",
+  "lastVerified": "2026-04-03"
+}

@@ -1,0 +1,20 @@
+{
+  "state": "NC",
+  "voterIdRequired": true,
+  "idType": "photo",
+  "acceptedIds": [
+    "North Carolina driver's license or ID card",
+    "US passport",
+    "Military ID with photo",
+    "Veterans ID with photo",
+    "Tribal enrollment card with photo",
+    "NC voter ID card (free from county board of elections)"
+  ],
+  "exceptions": "Without acceptable photo ID, voter may cast a provisional ballot and complete a reasonable impediment exception form.",
+  "provisionalBallot": true,
+  "provisionalBallotRules": "Reasonable impediment declaration counted if consistent.",
+  "phonesAtPolls": false,
+  "phonesAtPollsDetail": "No campaigning or photography inside polling place.",
+  "sourceUrl": "https://www.ncsbe.gov/registering/voter-id",
+  "lastVerified": "2026-04-03"
+}

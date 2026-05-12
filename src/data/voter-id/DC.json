@@ -1,0 +1,13 @@
+{
+  "state": "DC",
+  "voterIdRequired": false,
+  "idType": "no-id",
+  "acceptedIds": [],
+  "exceptions": "First-time voters may be asked for ID. Otherwise, poll workers verify registration by name and address.",
+  "provisionalBallot": true,
+  "provisionalBallotRules": "Any voter may request a provisional ballot.",
+  "phonesAtPolls": true,
+  "phonesAtPollsDetail": "Voters may reference materials on their phones. Photography of other voters prohibited.",
+  "sourceUrl": "https://www.dcboe.org/Voters/Voting-in-DC/Voter-ID-Requirements",
+  "lastVerified": "2026-04-03"
+}

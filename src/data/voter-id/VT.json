@@ -1,0 +1,13 @@
+{
+  "state": "VT",
+  "voterIdRequired": false,
+  "idType": "no-id",
+  "acceptedIds": [],
+  "exceptions": "Voters state name and address; poll workers verify registration. No ID required.",
+  "provisionalBallot": false,
+  "provisionalBallotRules": "",
+  "phonesAtPolls": true,
+  "phonesAtPollsDetail": "No campaigning within 100 feet of entrance. Phone use otherwise permitted.",
+  "sourceUrl": "https://sos.vermont.gov/elections/voters/",
+  "lastVerified": "2026-04-03"
+}

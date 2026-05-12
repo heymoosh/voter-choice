@@ -1,0 +1,20 @@
+{
+  "state": "AR",
+  "voterIdRequired": true,
+  "idType": "strict-photo",
+  "acceptedIds": [
+    "Arkansas driver's license or ID card",
+    "US passport",
+    "Government employee photo ID",
+    "Military photo ID",
+    "Student photo ID from Arkansas public college or university",
+    "Concealed handgun carry license"
+  ],
+  "exceptions": "Voters without ID may sign a provisional ballot affidavit; ballot counted if signature matches and affidavit verified.",
+  "provisionalBallot": true,
+  "provisionalBallotRules": "Voter must return with ID or sign affidavit. Ballot canvassed after election.",
+  "phonesAtPolls": false,
+  "phonesAtPollsDetail": "Cell phones must be silenced; photography of ballot prohibited.",
+  "sourceUrl": "https://www.sos.arkansas.gov/elections/voter-information",
+  "lastVerified": "2026-04-03"
+}

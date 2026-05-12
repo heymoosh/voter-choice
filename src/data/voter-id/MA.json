@@ -1,0 +1,13 @@
+{
+  "state": "MA",
+  "voterIdRequired": false,
+  "idType": "no-id",
+  "acceptedIds": [],
+  "exceptions": "First-time voters may be asked to show ID. All other voters sign poll book.",
+  "provisionalBallot": true,
+  "provisionalBallotRules": "Provisional ballot (provisional voting certificate) available.",
+  "phonesAtPolls": false,
+  "phonesAtPollsDetail": "No campaigning within 150 feet of polling place.",
+  "sourceUrl": "https://www.sec.state.ma.us/divisions/elections/voting/voter-id.htm",
+  "lastVerified": "2026-04-03"
+}

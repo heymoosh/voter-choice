@@ -1,0 +1,13 @@
+{
+  "state": "ME",
+  "voterIdRequired": false,
+  "idType": "no-id",
+  "acceptedIds": [],
+  "exceptions": "Voters state their name; poll workers look up registration. If name is not found, voter may register same-day at the polls.",
+  "provisionalBallot": false,
+  "provisionalBallotRules": "",
+  "phonesAtPolls": true,
+  "phonesAtPollsDetail": "No electioneering within 250 feet of polling place. Phone use otherwise permitted.",
+  "sourceUrl": "https://www.maine.gov/sos/cec/elec/voter-info/voterguide.html",
+  "lastVerified": "2026-04-03"
+}

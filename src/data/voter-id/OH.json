@@ -1,0 +1,18 @@
+{
+  "state": "OH",
+  "voterIdRequired": true,
+  "idType": "strict-photo",
+  "acceptedIds": [
+    "Ohio driver's license or ID card",
+    "US passport or passport card",
+    "Military ID with photo",
+    "Ohio voter ID card (free from county board of elections)"
+  ],
+  "exceptions": "Without acceptable photo ID, voter may cast provisional ballot and provide ID to county board of elections by 7 days after election.",
+  "provisionalBallot": true,
+  "provisionalBallotRules": "Present ID to county board within 7 days after election.",
+  "phonesAtPolls": false,
+  "phonesAtPollsDetail": "No photography or video recording inside voting area.",
+  "sourceUrl": "https://www.ohiosos.gov/elections/voters/id-requirements/",
+  "lastVerified": "2026-04-03"
+}

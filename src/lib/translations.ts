@@ -112,6 +112,18 @@ export interface Translations {
   // Language toggle
   languageToggleLabel: string;
   languageToggleAnnouncement: string;
+
+  // Phase 3: Live data
+  pollingLocationHeading: string;
+  ballotContestsHeading: string;
+  viewVotingRecord: string;
+  candidateLoading: string;
+  electionDataLoading: string;
+  apiPartialError: string;
+  apiFullError: string;
+  dataAttribution: string;
+  dataUpdated: string;
+  voterIdVerifyNote: string;
 }
 
 export const en: Translations = {
@@ -236,6 +248,22 @@ export const en: Translations = {
   // Language toggle
   languageToggleLabel: "Switch to Español",
   languageToggleAnnouncement: "Language changed to English",
+
+  // Phase 3: Live data
+  pollingLocationHeading: "Your Polling Location",
+  ballotContestsHeading: "Races on Your Ballot",
+  viewVotingRecord: "View voting record",
+  candidateLoading: "Loading candidate information...",
+  electionDataLoading: "Loading election data...",
+  apiPartialError:
+    "Some election data is temporarily unavailable. The information shown is current. Visit your",
+  apiFullError:
+    "We're having trouble loading live election data. Here's what we know about voting in your state. Visit your state election office for current dates and deadlines.",
+  dataAttribution:
+    "Election data from Google Civic Information and live web search via Anthropic.",
+  dataUpdated: "Updated",
+  voterIdVerifyNote:
+    "Verify current requirements at your state election office.",
 };
 
 export const es: Translations = {
@@ -360,6 +388,22 @@ export const es: Translations = {
   // Language toggle
   languageToggleLabel: "Switch to English",
   languageToggleAnnouncement: "Idioma cambiado a español",
+
+  // Phase 3: Live data
+  pollingLocationHeading: "Tu lugar de votación",
+  ballotContestsHeading: "Candidaturas en tu boleta",
+  viewVotingRecord: "Ver historial de votación",
+  candidateLoading: "Cargando información del candidato...",
+  electionDataLoading: "Cargando datos electorales...",
+  apiPartialError:
+    "Algunos datos electorales no están disponibles temporalmente. La información que se muestra está actualizada. Visita tu",
+  apiFullError:
+    "Tenemos problemas para cargar los datos electorales en vivo. Aquí está lo que sabemos sobre votar en tu estado. Visita tu oficina electoral estatal para fechas y plazos actuales.",
+  dataAttribution:
+    "Datos electorales de Google Civic Information y búsqueda web en vivo a través de Anthropic.",
+  dataUpdated: "Actualizado",
+  voterIdVerifyNote:
+    "Verifica los requisitos actuales en tu oficina electoral estatal.",
 };
 
 /**

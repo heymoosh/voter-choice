@@ -1,0 +1,18 @@
+{
+  "state": "ND",
+  "voterIdRequired": true,
+  "idType": "strict-nonphoto",
+  "acceptedIds": [
+    "North Dakota driver's license or ID card",
+    "Long-term care certificate (for residents of ND long-term care facilities)",
+    "Tribal government ID with name and residential address",
+    "US passport (with additional address documentation)"
+  ],
+  "exceptions": "ID must include name, residential address, and date of birth. No provisional ballot option — voters without qualifying ID cannot vote.",
+  "provisionalBallot": false,
+  "provisionalBallotRules": "",
+  "phonesAtPolls": false,
+  "phonesAtPollsDetail": "No photography inside polling place.",
+  "sourceUrl": "https://vip.sos.nd.gov/PortalListDetails.aspx?ptlhPKID=51&ptlPKID=7",
+  "lastVerified": "2026-04-03"
+}

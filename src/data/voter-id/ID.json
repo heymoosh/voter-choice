@@ -1,0 +1,20 @@
+{
+  "state": "ID",
+  "voterIdRequired": true,
+  "idType": "photo",
+  "acceptedIds": [
+    "Idaho driver's license or ID card",
+    "US passport",
+    "Military ID with photo",
+    "Tribal ID with photo",
+    "Student ID from Idaho school/university",
+    "License to carry concealed weapon"
+  ],
+  "exceptions": "Voters without ID may sign a personal affidavit to vote.",
+  "provisionalBallot": false,
+  "provisionalBallotRules": "",
+  "phonesAtPolls": false,
+  "phonesAtPollsDetail": "No photography inside polling place.",
+  "sourceUrl": "https://sos.idaho.gov/elections-division/voter-information/",
+  "lastVerified": "2026-04-03"
+}

@@ -1,15 +1,21 @@
 "use client";
 
-import { StateData, Election } from "@/lib/types";
+import { StateData, Election, LiveElectionData } from "@/lib/types";
 import { formatDate, allDeadlinesPassed } from "@/lib/deadlineUtils";
 import { useLanguage } from "@/lib/i18n";
 import DeadlineStatus from "./DeadlineStatus";
+import PollingLocation from "./PollingLocation";
+import BallotContests from "./BallotContests";
+import ApiErrorBanner from "./ApiErrorBanner";
+import DataAttribution from "./DataAttribution";
 
 interface StateInfoProps {
   stateData: StateData;
   election: Election | null;
   today: Date;
   registrationCheckUrl: string;
+  liveData?: LiveElectionData;
+  isLiveLoading?: boolean;
 }
 
 export default function StateInfo({
@@ -17,6 +23,8 @@ export default function StateInfo({
   election,
   today,
   registrationCheckUrl,
+  liveData,
+  isLiveLoading = false,
 }: StateInfoProps) {
   const { lang, t } = useLanguage();
   const reg = stateData.registration;
@@ -260,6 +268,41 @@ export default function StateInfo({
           </div>
         </div>
 
+        {/* Phase 3: Live data error banner (partial failure) */}
+        {liveData &&
+          liveData.errors &&
+          liveData.errors.length > 0 &&
+          (liveData.stateCodes.length > 0 ? (
+            <ApiErrorBanner
+              type="partial"
+              stateElectionUrl={resources.stateElectionWebsite}
+              stateName={stateData.stateName}
+            />
+          ) : (
+            <ApiErrorBanner
+              type="full"
+              stateElectionUrl={resources.stateElectionWebsite}
+              stateName={stateData.stateName}
+            />
+          ))}
+
+        {/* Phase 3: Live polling location */}
+        {(liveData?.pollingLocation || isLiveLoading) && (
+          <div>
+            <PollingLocation
+              pollingLocation={liveData?.pollingLocation}
+              isLoading={isLiveLoading}
+            />
+          </div>
+        )}
+
+        {/* Phase 3: Ballot contests */}
+        {(liveData?.ballotContests || isLiveLoading) && (
+          <div>
+            <BallotContests liveData={liveData} isLoading={isLiveLoading} />
+          </div>
+        )}
+
         {/* Resources */}
         <div>
           <h3 className="text-base font-semibold text-gray-900 mb-3">
@@ -334,6 +377,13 @@ export default function StateInfo({
             </a>
           </div>
         </div>
+        {/* Phase 3: Data attribution footer */}
+        {liveData && (
+          <DataAttribution
+            fetchedAt={liveData.fetchedAt}
+            stateElectionUrl={resources.stateElectionWebsite}
+          />
+        )}
       </div>
     </section>
   );

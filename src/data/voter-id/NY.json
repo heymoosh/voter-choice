@@ -1,0 +1,13 @@
+{
+  "state": "NY",
+  "voterIdRequired": false,
+  "idType": "no-id",
+  "acceptedIds": [],
+  "exceptions": "First-time voters who registered by mail must show ID. Others verified by signature.",
+  "provisionalBallot": true,
+  "provisionalBallotRules": "Affidavit ballot available if voter cannot be confirmed.",
+  "phonesAtPolls": false,
+  "phonesAtPollsDetail": "No electioneering within 100 feet of polling place.",
+  "sourceUrl": "https://www.elections.ny.gov/VoterID.html",
+  "lastVerified": "2026-04-03"
+}

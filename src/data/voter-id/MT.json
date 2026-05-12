@@ -1,0 +1,19 @@
+{
+  "state": "MT",
+  "voterIdRequired": true,
+  "idType": "photo",
+  "acceptedIds": [
+    "Montana driver's license or ID card",
+    "US passport",
+    "Military ID with photo",
+    "Student ID from Montana school",
+    "Tribal ID with photo"
+  ],
+  "exceptions": "Without photo ID, voter may sign a written oath or present utility bill, government document, or similar showing name and address.",
+  "provisionalBallot": false,
+  "provisionalBallotRules": "",
+  "phonesAtPolls": false,
+  "phonesAtPollsDetail": "No photography of completed ballot.",
+  "sourceUrl": "https://sosmt.gov/elections/voters/voting/id-requirements/",
+  "lastVerified": "2026-04-03"
+}

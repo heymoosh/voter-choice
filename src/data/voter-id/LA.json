@@ -1,0 +1,19 @@
+{
+  "state": "LA",
+  "voterIdRequired": true,
+  "idType": "strict-photo",
+  "acceptedIds": [
+    "Louisiana driver's license or ID card",
+    "US passport",
+    "Government employee ID with photo",
+    "Military ID with photo",
+    "Louisiana Special ID (free for eligible voters)"
+  ],
+  "exceptions": "Without acceptable ID, voter may sign an attestation or have a poll commissioner attest to their identity.",
+  "provisionalBallot": true,
+  "provisionalBallotRules": "Provisional ballot available if ID cannot be verified.",
+  "phonesAtPolls": false,
+  "phonesAtPollsDetail": "Electronic devices must be stored in a designated area while voting.",
+  "sourceUrl": "https://www.sos.la.gov/ElectionsAndVoting/Vote/WhatAreTheVoterIDRequirements/Pages/default.aspx",
+  "lastVerified": "2026-04-03"
+}

@@ -1,0 +1,21 @@
+{
+  "state": "TX",
+  "voterIdRequired": true,
+  "idType": "strict-photo",
+  "acceptedIds": [
+    "Texas driver's license or ID card",
+    "Texas Election Identification Certificate",
+    "Texas personal ID card issued by DPS",
+    "US military ID card with photo",
+    "US citizenship certificate with photo",
+    "US passport (book or card)",
+    "Texas license to carry a handgun"
+  ],
+  "exceptions": "Voters without acceptable ID can sign a Reasonable Impediment Declaration and present alternative ID (utility bill, bank statement, government document with name and address, paycheck, certified birth certificate).",
+  "provisionalBallot": true,
+  "provisionalBallotRules": "Voters who do not present ID or sign a declaration can cast a provisional ballot and provide ID within 6 calendar days.",
+  "phonesAtPolls": false,
+  "phonesAtPollsDetail": "Texas law prohibits wireless communication devices in the voting room. You may bring written notes.",
+  "sourceUrl": "https://www.sos.texas.gov/elections/voter/photo-id.shtml",
+  "lastVerified": "2026-04-03"
+}

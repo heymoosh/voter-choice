@@ -1,0 +1,13 @@
+{
+  "state": "DE",
+  "voterIdRequired": false,
+  "idType": "no-id",
+  "acceptedIds": [],
+  "exceptions": "First-time voters who registered by mail must show photo ID or non-photo ID with name/address. Returning voters verified by signature.",
+  "provisionalBallot": true,
+  "provisionalBallotRules": "Provisional ballot available to any voter.",
+  "phonesAtPolls": false,
+  "phonesAtPollsDetail": "No electioneering in polling place.",
+  "sourceUrl": "https://elections.delaware.gov/services/voter/idreqs.shtml",
+  "lastVerified": "2026-04-03"
+}

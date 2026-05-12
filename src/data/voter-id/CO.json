@@ -1,0 +1,21 @@
+{
+  "state": "CO",
+  "voterIdRequired": true,
+  "idType": "photo",
+  "acceptedIds": [
+    "Colorado driver's license or ID",
+    "US passport",
+    "Employee ID with photo",
+    "Student ID with photo",
+    "Military ID with photo",
+    "Medicare or Medicaid card",
+    "Utility bill, bank statement, or government document with name and address"
+  ],
+  "exceptions": "Colorado is a vote-by-mail state. In-person voters present ID or show documentation with name/address.",
+  "provisionalBallot": true,
+  "provisionalBallotRules": "Provisional ballot available; signature verification used if no ID.",
+  "phonesAtPolls": true,
+  "phonesAtPollsDetail": "Voters may use phones to reference materials. Recording others is prohibited.",
+  "sourceUrl": "https://www.sos.state.co.us/pubs/elections/vote/voter_id.html",
+  "lastVerified": "2026-04-03"
+}

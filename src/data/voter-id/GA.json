@@ -1,0 +1,20 @@
+{
+  "state": "GA",
+  "voterIdRequired": true,
+  "idType": "strict-photo",
+  "acceptedIds": [
+    "Georgia driver's license or ID card",
+    "US passport",
+    "Government employee photo ID",
+    "Military photo ID",
+    "Tribal photo ID",
+    "Georgia voter ID card (free, issued by Secretary of State)"
+  ],
+  "exceptions": "Without photo ID, voter may cast a provisional ballot and present ID or sign a sworn statement by the Friday following the election.",
+  "provisionalBallot": true,
+  "provisionalBallotRules": "Present ID or sworn affidavit by Friday following election.",
+  "phonesAtPolls": false,
+  "phonesAtPollsDetail": "Cell phones permitted inside but no photography of ballot or other voters.",
+  "sourceUrl": "https://sos.ga.gov/how-to-guides/georgia-voter-id",
+  "lastVerified": "2026-04-03"
+}

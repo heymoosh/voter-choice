@@ -1,0 +1,19 @@
+{
+  "state": "AZ",
+  "voterIdRequired": true,
+  "idType": "strict-photo",
+  "acceptedIds": [
+    "Arizona driver's license or non-driver ID",
+    "US passport",
+    "Any government-issued photo ID",
+    "Tribal enrollment card with photo",
+    "US military ID with photo"
+  ],
+  "exceptions": "Without photo ID, voter may present two non-photo documents showing name and address (utility bill, bank statement, etc.) or cast a provisional ballot.",
+  "provisionalBallot": true,
+  "provisionalBallotRules": "Provisional ballot counted if voter provides acceptable ID by 5 PM on Election Day +5.",
+  "phonesAtPolls": false,
+  "phonesAtPollsDetail": "No photography allowed inside polling places.",
+  "sourceUrl": "https://azsos.gov/elections/voters/voting-faqs",
+  "lastVerified": "2026-04-03"
+}

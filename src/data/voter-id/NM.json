@@ -1,0 +1,13 @@
+{
+  "state": "NM",
+  "voterIdRequired": false,
+  "idType": "no-id",
+  "acceptedIds": [],
+  "exceptions": "First-time voters who registered by mail must show ID. Otherwise voters state their name; poll worker verifies registration.",
+  "provisionalBallot": true,
+  "provisionalBallotRules": "Provisional ballot available.",
+  "phonesAtPolls": true,
+  "phonesAtPollsDetail": "Voters may reference information on phones. No photography of ballot.",
+  "sourceUrl": "https://www.sos.nm.gov/voter-information/voter-id/",
+  "lastVerified": "2026-04-03"
+}

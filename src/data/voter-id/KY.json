@@ -1,0 +1,19 @@
+{
+  "state": "KY",
+  "voterIdRequired": true,
+  "idType": "strict-photo",
+  "acceptedIds": [
+    "Kentucky driver's license or ID card",
+    "US passport",
+    "Military ID",
+    "Government-issued photo ID",
+    "Social Security card (with poll worker attestation)"
+  ],
+  "exceptions": "Without acceptable ID, voter may sign a sworn affidavit or a county clerk may recognize the voter.",
+  "provisionalBallot": true,
+  "provisionalBallotRules": "Provisional ballot available; signature compared to registration.",
+  "phonesAtPolls": false,
+  "phonesAtPollsDetail": "No cell phone calls or photography in voting booth.",
+  "sourceUrl": "https://elect.ky.gov/Voters/Pages/Voter-ID.aspx",
+  "lastVerified": "2026-04-03"
+}

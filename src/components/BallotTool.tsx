@@ -1,12 +1,13 @@
 "use client";
 
 import { useState, useCallback, useMemo } from "react";
-import { StateData, Election } from "@/lib/types";
+import { StateData, Election, LiveElectionData } from "@/lib/types";
 import {
   getStateCodesForZip,
   getStateData,
   findNextElection,
 } from "@/lib/stateData";
+import { fetchElectionData } from "@/lib/electionData";
 import { buildPrompt } from "@/lib/promptBuilder";
 import { useLanguage } from "@/lib/i18n";
 import ZipForm from "./ZipForm";
@@ -23,6 +24,8 @@ type AppState =
       zipCode: string;
       stateData: StateData;
       election: Election | null;
+      liveData?: LiveElectionData;
+      isLiveLoading?: boolean;
     }
   | { status: "not-found"; zipCode: string };
 
@@ -43,46 +46,83 @@ export default function BallotTool() {
   }, [appState, lang]);
 
   const handleZipSubmit = useCallback(
-    (zipCode: string) => {
+    async (zipCode: string) => {
       setAppState({ status: "loading" });
 
-      // Simulate minimal async (prevents layout shift, per PROJECT_SPEC.md)
-      setTimeout(() => {
-        const stateCodes = getStateCodesForZip(zipCode);
+      // Resolve static data first (fast, synchronous)
+      const stateCodes = getStateCodesForZip(zipCode);
 
-        if (stateCodes.length === 0) {
-          setAppState({ status: "not-found", zipCode });
-          return;
+      if (stateCodes.length === 0) {
+        // Try live API even for unknown zips — Civic might know the state
+        try {
+          const liveData = await fetchElectionData(zipCode);
+          if (liveData.stateCodes.length > 0) {
+            const stateCode = liveData.stateCodes[0];
+            const data = getStateData(stateCode);
+            if (data) {
+              const election = findNextElection(data.elections, today);
+              setAppState({
+                status: "result",
+                zipCode,
+                stateData: data,
+                election,
+                liveData,
+                isLiveLoading: false,
+              });
+              return;
+            }
+          }
+        } catch {
+          // Fall through to not-found
         }
+        setAppState({ status: "not-found", zipCode });
+        return;
+      }
 
-        if (stateCodes.length > 1) {
-          setAppState({ status: "multi-state", zipCode, stateCodes });
-          return;
-        }
+      if (stateCodes.length > 1) {
+        setAppState({ status: "multi-state", zipCode, stateCodes });
+        return;
+      }
 
-        const stateCode = stateCodes[0];
-        const data = getStateData(stateCode);
+      const stateCode = stateCodes[0];
+      const data = getStateData(stateCode);
 
-        if (!data) {
-          setAppState({ status: "not-found", zipCode });
-          return;
-        }
+      if (!data) {
+        setAppState({ status: "not-found", zipCode });
+        return;
+      }
 
-        const election = findNextElection(data.elections, today);
+      const election = findNextElection(data.elections, today);
 
-        setAppState({
-          status: "result",
-          zipCode,
-          stateData: data,
-          election,
+      // Show static results immediately, then fetch live data
+      setAppState({
+        status: "result",
+        zipCode,
+        stateData: data,
+        election,
+        isLiveLoading: true,
+      });
+
+      // Fetch live data in background (progressive loading)
+      try {
+        const liveData = await fetchElectionData(zipCode);
+        setAppState((prev) => {
+          if (prev.status !== "result") return prev;
+          return { ...prev, liveData, isLiveLoading: false };
         });
-      }, 150);
+      } catch {
+        // Live data unavailable — static data still shows
+        setAppState((prev) => {
+          if (prev.status !== "result") return prev;
+          return { ...prev, isLiveLoading: false };
+        });
+      }
     },
     [today],
   );
 
   const handleStateSelect = useCallback(
-    (stateCode: string) => {
+    async (stateCode: string) => {
       if (appState.status !== "multi-state") return;
       const { zipCode } = appState;
 
@@ -99,7 +139,22 @@ export default function BallotTool() {
         zipCode,
         stateData: data,
         election,
+        isLiveLoading: true,
       });
+
+      // Fetch live data in background
+      try {
+        const liveData = await fetchElectionData(zipCode);
+        setAppState((prev) => {
+          if (prev.status !== "result") return prev;
+          return { ...prev, liveData, isLiveLoading: false };
+        });
+      } catch {
+        setAppState((prev) => {
+          if (prev.status !== "result") return prev;
+          return { ...prev, isLiveLoading: false };
+        });
+      }
     },
     [appState, today],
   );
@@ -193,6 +248,8 @@ export default function BallotTool() {
             registrationCheckUrl={
               appState.stateData.registration.registrationCheckUrl
             }
+            liveData={appState.liveData}
+            isLiveLoading={appState.isLiveLoading}
           />
           <PromptOutput promptText={promptText} />
         </>

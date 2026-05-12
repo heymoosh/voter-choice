@@ -1,0 +1,21 @@
+{
+  "state": "VA",
+  "voterIdRequired": true,
+  "idType": "photo",
+  "acceptedIds": [
+    "Virginia driver's license or ID card",
+    "US passport",
+    "Military ID with photo",
+    "Student ID from Virginia school",
+    "Employee ID with photo",
+    "Tribal ID with photo",
+    "Virginia voter photo ID card (free)"
+  ],
+  "exceptions": "Without photo ID, voter may cast a provisional ballot and return with photo ID by noon on the Friday following the election.",
+  "provisionalBallot": true,
+  "provisionalBallotRules": "Return with photo ID by noon on Friday following election.",
+  "phonesAtPolls": false,
+  "phonesAtPollsDetail": "No photography inside polling place.",
+  "sourceUrl": "https://www.elections.virginia.gov/casting-a-ballot/photo-id/",
+  "lastVerified": "2026-04-03"
+}

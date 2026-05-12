@@ -1,0 +1,20 @@
+{
+  "state": "PA",
+  "voterIdRequired": true,
+  "idType": "nonphoto",
+  "acceptedIds": [
+    "Pennsylvania driver's license or ID card",
+    "US passport",
+    "Military ID with photo",
+    "Voter registration card (non-photo)",
+    "Non-photo government ID",
+    "Utility bill, bank statement, government paycheck, or government document with name and address"
+  ],
+  "exceptions": "Without any ID, voter may cast a provisional ballot. Ballot counted if signature is verified.",
+  "provisionalBallot": true,
+  "provisionalBallotRules": "Provisional ballot available; voter can return with ID within 6 days.",
+  "phonesAtPolls": false,
+  "phonesAtPollsDetail": "No use of cell phones in voting booth.",
+  "sourceUrl": "https://www.vote.pa.gov/Voting-in-PA/Pages/Voter-ID.aspx",
+  "lastVerified": "2026-04-03"
+}

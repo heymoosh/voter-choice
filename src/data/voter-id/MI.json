@@ -1,0 +1,20 @@
+{
+  "state": "MI",
+  "voterIdRequired": true,
+  "idType": "photo",
+  "acceptedIds": [
+    "Michigan driver's license or ID card",
+    "US passport",
+    "Military ID with photo",
+    "Student ID from Michigan college or university",
+    "Tribal enrollment card with photo",
+    "Other government-issued photo ID"
+  ],
+  "exceptions": "Without photo ID, voter may sign an affidavit and cast a regular ballot.",
+  "provisionalBallot": false,
+  "provisionalBallotRules": "",
+  "phonesAtPolls": false,
+  "phonesAtPollsDetail": "No photography inside polling place.",
+  "sourceUrl": "https://mvic.sos.state.mi.us/",
+  "lastVerified": "2026-04-03"
+}

@@ -1,0 +1,18 @@
+{
+  "state": "HI",
+  "voterIdRequired": true,
+  "idType": "strict-photo",
+  "acceptedIds": [
+    "Hawaii driver's license or state ID",
+    "US passport",
+    "US military ID",
+    "Hawaii government-issued ID with photo"
+  ],
+  "exceptions": "If voter lacks acceptable ID, voter may cast a provisional ballot. Ballot counted if signature is verified against registration record.",
+  "provisionalBallot": true,
+  "provisionalBallotRules": "Signature verification determines ballot validity.",
+  "phonesAtPolls": true,
+  "phonesAtPollsDetail": "Phones allowed. Ballot photography prohibited.",
+  "sourceUrl": "https://elections.hawaii.gov/voters/voter-id/",
+  "lastVerified": "2026-04-03"
+}

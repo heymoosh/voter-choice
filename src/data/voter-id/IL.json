@@ -1,0 +1,13 @@
+{
+  "state": "IL",
+  "voterIdRequired": false,
+  "idType": "no-id",
+  "acceptedIds": [],
+  "exceptions": "First-time voters who registered by mail may need to show ID. Otherwise voters sign poll book; signature compared to registration record.",
+  "provisionalBallot": true,
+  "provisionalBallotRules": "Provisional ballot available to any voter.",
+  "phonesAtPolls": true,
+  "phonesAtPollsDetail": "Voters may use phones to reference materials. No photography of ballot.",
+  "sourceUrl": "https://www.elections.il.gov/VotersEd/RegisterToVote/Identification.aspx",
+  "lastVerified": "2026-04-03"
+}

@@ -1,0 +1,19 @@
+{
+  "state": "AK",
+  "voterIdRequired": true,
+  "idType": "nonphoto",
+  "acceptedIds": [
+    "Alaska driver's license or ID card",
+    "US passport",
+    "US military ID",
+    "Photo ID issued by the state or federal government",
+    "Voter ID card issued by the state"
+  ],
+  "exceptions": "If voter is known to the poll worker, no ID is required. If not carrying ID, voter may cast a questioned ballot.",
+  "provisionalBallot": true,
+  "provisionalBallotRules": "Questioned ballot counted if signature matches registration.",
+  "phonesAtPolls": false,
+  "phonesAtPollsDetail": "No cell phone use allowed inside polling area.",
+  "sourceUrl": "https://elections.alaska.gov/voters/voter-id/",
+  "lastVerified": "2026-04-03"
+}

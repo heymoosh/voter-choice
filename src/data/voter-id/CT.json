@@ -1,0 +1,20 @@
+{
+  "state": "CT",
+  "voterIdRequired": true,
+  "idType": "nonphoto",
+  "acceptedIds": [
+    "Any ID with name, address, and photo",
+    "Social Security card",
+    "Medicare or Medicaid card",
+    "Pistol permit",
+    "Student ID",
+    "Utility bill or government document with name and address"
+  ],
+  "exceptions": "First-time voters who registered by mail must show ID. If ID not available, voter may sign written affirmation.",
+  "provisionalBallot": true,
+  "provisionalBallotRules": "Provisional ballot available. Counted after verification.",
+  "phonesAtPolls": false,
+  "phonesAtPollsDetail": "No electioneering in polling place. Phone use restricted.",
+  "sourceUrl": "https://portal.ct.gov/sots/election-services/voter-information/voter-id",
+  "lastVerified": "2026-04-03"
+}

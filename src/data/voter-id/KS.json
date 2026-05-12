@@ -1,0 +1,19 @@
+{
+  "state": "KS",
+  "voterIdRequired": true,
+  "idType": "strict-photo",
+  "acceptedIds": [
+    "Kansas driver's license or ID card",
+    "US passport",
+    "Government photo ID",
+    "Military photo ID",
+    "Tribal ID with photo"
+  ],
+  "exceptions": "Without ID, voter casts provisional ballot and returns with ID by the close of the election.",
+  "provisionalBallot": true,
+  "provisionalBallotRules": "Return with acceptable photo ID by closing time on election day.",
+  "phonesAtPolls": false,
+  "phonesAtPollsDetail": "No photography in polling place.",
+  "sourceUrl": "https://sos.ks.gov/elections/voter-information.aspx",
+  "lastVerified": "2026-04-03"
+}

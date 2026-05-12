@@ -1,0 +1,19 @@
+{
+  "state": "NV",
+  "voterIdRequired": true,
+  "idType": "nonphoto",
+  "acceptedIds": [
+    "Nevada driver's license or ID card",
+    "US passport",
+    "Military ID with photo",
+    "Utility bill, bank statement, or government document with name and address",
+    "Indian census card"
+  ],
+  "exceptions": "Voters who cannot present any ID may sign an affidavit and vote a provisional ballot.",
+  "provisionalBallot": true,
+  "provisionalBallotRules": "Provisional ballot available; signature compared to registration record.",
+  "phonesAtPolls": true,
+  "phonesAtPollsDetail": "Voters may use phones. No photography of ballot.",
+  "sourceUrl": "https://nvsos.gov/sos/elections/voters/voter-information",
+  "lastVerified": "2026-04-03"
+}

@@ -1,0 +1,20 @@
+{
+  "state": "AL",
+  "voterIdRequired": true,
+  "idType": "strict-photo",
+  "acceptedIds": [
+    "Alabama driver's license or non-driver ID",
+    "Alabama Law Enforcement Agency digital ID",
+    "US passport",
+    "Government employee ID",
+    "US military photo ID",
+    "Tribal ID with photo"
+  ],
+  "exceptions": "Voters without acceptable photo ID may cast a provisional ballot and return within 5 days with ID or sign a voter ID affidavit before a notary or two witnesses.",
+  "provisionalBallot": true,
+  "provisionalBallotRules": "Return within 5 business days with acceptable ID.",
+  "phonesAtPolls": false,
+  "phonesAtPollsDetail": "Cell phones may not be used for communication inside polling places.",
+  "sourceUrl": "https://www.sos.alabama.gov/alabama-votes/voter/faqs",
+  "lastVerified": "2026-04-03"
+}

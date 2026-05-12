@@ -1,0 +1,19 @@
+{
+  "state": "WV",
+  "voterIdRequired": true,
+  "idType": "nonphoto",
+  "acceptedIds": [
+    "West Virginia driver's license or ID card",
+    "US passport",
+    "Military ID with photo",
+    "Voter registration card",
+    "Utility bill, bank statement, government document, or paycheck with name and address"
+  ],
+  "exceptions": "Without any ID, poll worker may personally vouch for voter, or voter may sign affidavit.",
+  "provisionalBallot": true,
+  "provisionalBallotRules": "Provisional ballot available to voters who cannot present ID or be vouched for.",
+  "phonesAtPolls": false,
+  "phonesAtPollsDetail": "No photography inside polling place.",
+  "sourceUrl": "https://sos.wv.gov/elections/Pages/VoterRegistration.aspx",
+  "lastVerified": "2026-04-03"
+}

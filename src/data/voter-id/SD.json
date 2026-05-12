@@ -1,0 +1,18 @@
+{
+  "state": "SD",
+  "voterIdRequired": true,
+  "idType": "strict-photo",
+  "acceptedIds": [
+    "South Dakota driver's license or ID card",
+    "US passport",
+    "Tribal ID with photo",
+    "US military ID with photo"
+  ],
+  "exceptions": "Without photo ID, voter may sign a personal identification affidavit and cast a regular ballot.",
+  "provisionalBallot": false,
+  "provisionalBallotRules": "",
+  "phonesAtPolls": false,
+  "phonesAtPollsDetail": "No photography inside voting area.",
+  "sourceUrl": "https://sdsos.gov/elections-voting/voting/voter-registration/voter-id.aspx",
+  "lastVerified": "2026-04-03"
+}

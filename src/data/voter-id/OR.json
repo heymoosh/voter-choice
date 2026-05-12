@@ -1,0 +1,13 @@
+{
+  "state": "OR",
+  "voterIdRequired": false,
+  "idType": "no-id",
+  "acceptedIds": [],
+  "exceptions": "Oregon is an all-mail-ballot state. ID required for voter registration, not for voting. Signature comparison used for ballot verification.",
+  "provisionalBallot": false,
+  "provisionalBallotRules": "",
+  "phonesAtPolls": true,
+  "phonesAtPollsDetail": "Voters complete ballots at home or at drop boxes. No polling place restrictions.",
+  "sourceUrl": "https://sos.oregon.gov/elections/Pages/voter-information.aspx",
+  "lastVerified": "2026-04-03"
+}
