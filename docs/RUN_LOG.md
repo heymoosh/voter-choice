@@ -73,6 +73,16 @@ Note: **Scoring is executed by Hermes from the host side, not inside the build c
 
 
 
+
+### Phase 4 forward — bmad (auto)
+
+- **Date:** 2026-05-12T08:15:20.147Z
+- **Branch:** `experiment/bmad-r2`
+- **Tag:** `bmad-phase4-complete`
+- **Status:** ✓
+- **Summary:** e2e ?/104, coverage 34.0%, LOC 5238, complexity avg 5.70, scope adherence N/A
+
+
 ### Phase 4 forward — vanilla (auto)
 
 - **Date:** 2026-05-12T07:50:06.427Z
