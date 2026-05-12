@@ -566,18 +566,20 @@ Host-side scoring after container exit is the v2 pattern. Container-side workflo
 
 ### What happened
 
-The dry-run simulation in `docker/run-claude.sh` correctly honored `--shell`, but the live Docker path ignored `--shell` and always launched `claude -p ...` instead. The live path also mounted `~/.claude/` but not `~/.claude.json`, so even the fallback Claude entrypoint failed before the build started.
+The dry-run simulation in `docker/run-claude.sh` correctly honored `--shell`, but the live Docker path ignored `--shell` and always launched `claude -p ...` instead. The live path also mounted `~/.claude/` but not `~/.claude.json`, so even the fallback Claude entrypoint failed before the build started. After fixing that, a second live-only bug appeared: prompt text was interpolated directly into `bash -lc`, so shell metacharacters inside the prompt were executed before Claude received them.
 
 ### Why this matters
 
 - The Phase A dry-run check proved the masking model, but not the real container entry behavior.
 - Phase B's B1 gate caught the divergence immediately: the operator could not run a real in-container assertion/build command, and the live Claude path lacked required configuration.
+- Even after the config fix, the prompt transport was still unsafe until it stopped flowing through inline shell interpolation.
 - Without this fix, Hermes isolation looked correct on paper while the production path was not runnable.
 
 ### Correct v2 pattern
 
 - `docker/run-claude.sh --shell '...'` must execute the provided command in both dry-run and live Docker modes.
 - Live Docker runs that invoke Claude must mount both `~/.claude/` and `~/.claude.json` read-only for the `runner` user.
+- Live Claude prompts should be passed via environment or another non-interpolating transport, not embedded directly into the shell command string.
 - Isolation verification should use the real per-run scratch dir mount pattern `metrics/run-outputs/<run-id>/ -> /workspace/metrics`, not just the dry-run sandbox.
 
 ### Decision

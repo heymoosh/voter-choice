@@ -121,7 +121,7 @@ ASSERTIONS='[ -z "$(ls -A /workspace/scoring 2>/dev/null)" ] || { echo "isolatio
 if [[ -n "$SHELL_CMD" ]]; then
   CONTAINER_CMD="$SHELL_CMD"
 else
-  CONTAINER_CMD="claude --dangerously-skip-permissions -p \"$PROMPT\""
+  CONTAINER_CMD='claude --dangerously-skip-permissions -p "$CLAUDE_PROMPT"'
 fi
 
 TMPFS_FLAGS=(
@@ -145,6 +145,7 @@ docker run -it --rm \
   --network host \
   --ipc=host \
   -e PLAYWRIGHT_BROWSERS_PATH=/ms-playwright \
+  -e CLAUDE_PROMPT="$PROMPT" \
   claude-runner \
   bash -lc "$ASSERTIONS; $CONTAINER_CMD"
 
