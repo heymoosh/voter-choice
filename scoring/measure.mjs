@@ -798,33 +798,77 @@ function measureWorkflowTiming() {
     })
     .filter(Boolean);
 
-  const steps = [];
+  const completionEntries = entries.filter((entry) => entry.status === "completed");
+  const stepCandidates = new Map();
+
   for (const entry of entries) {
-    if (entry.status === "started") {
-      const completed = entries.find(
-        (e) => e.step === entry.step && e.status === "completed",
-      );
-      const durationMs =
-        completed && entry.timestamp && completed.timestamp
-          ? new Date(completed.timestamp) - new Date(entry.timestamp)
-          : null;
-      steps.push({
-        step: entry.step,
-        started: entry.timestamp || null,
-        completed: completed?.timestamp || null,
-        durationMs,
-      });
+    if (entry.status !== "started" || !entry.step) continue;
+
+    const startedMs = entry.timestamp ? new Date(entry.timestamp).getTime() : null;
+    const completed = completionEntries
+      .filter((candidate) => {
+        if (candidate.step !== entry.step || !candidate.timestamp) return false;
+        if (startedMs == null) return true;
+        return new Date(candidate.timestamp).getTime() >= startedMs;
+      })
+      .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())[0];
+
+    const durationMs =
+      completed && entry.timestamp && completed.timestamp
+        ? new Date(completed.timestamp) - new Date(entry.timestamp)
+        : null;
+    const candidate = {
+      step: entry.step,
+      started: entry.timestamp || null,
+      completed: completed?.timestamp || null,
+      durationMs,
+    };
+
+    if (!stepCandidates.has(entry.step)) {
+      stepCandidates.set(entry.step, []);
     }
+    stepCandidates.get(entry.step).push(candidate);
   }
 
+  const rawStepCount = Array.from(stepCandidates.values()).reduce(
+    (total, candidates) => total + candidates.length,
+    0,
+  );
+  const steps = [];
+
+  for (const [stepName, candidates] of stepCandidates.entries()) {
+    const winner = candidates
+      .filter((candidate) => candidate.durationMs != null && candidate.durationMs > 0)
+      .sort((a, b) => {
+        const aStarted = a.started ? new Date(a.started).getTime() : -Infinity;
+        const bStarted = b.started ? new Date(b.started).getTime() : -Infinity;
+        return bStarted - aStarted;
+      })[0];
+
+    if (!winner) {
+      console.log(`  Dropping duplicate/incomplete timing entries for step '${stepName}'`);
+      continue;
+    }
+
+    steps.push(winner);
+  }
+
+  steps.sort((a, b) => {
+    const aStarted = a.started ? new Date(a.started).getTime() : Infinity;
+    const bStarted = b.started ? new Date(b.started).getTime() : Infinity;
+    return aStarted - bStarted;
+  });
+
+  const dedupedCount = rawStepCount - steps.length;
   const completedSteps = steps.filter((s) => s.completed).length;
   console.log(`  Steps: ${completedSteps}/${steps.length} completed`);
+  console.log(`  Deduped entries: ${dedupedCount}`);
   for (const s of steps) {
     const dur = s.durationMs != null ? `${Math.round(s.durationMs / 1000)}s` : "incomplete";
     console.log(`    ${s.step}: ${dur}`);
   }
 
-  return { steps, totalSteps: steps.length, completedSteps };
+  return { steps, totalSteps: steps.length, completedSteps, dedupedCount };
 }
 
 // ------------------------------------------------------------------
