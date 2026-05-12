@@ -43,8 +43,8 @@ const SOURCE = "pa_dos_bulk";
 const SOURCE_URL =
   "https://www.pa.gov/agencies/dos/resources/voting-and-elections-resources/campaign-finance-data";
 
-// PA FILERTYPE codes
-const CANDIDATE_FILERTYPE = "1";
+// PA FILERTYPE codes — contributions flow through campaign committees (type 2)
+const COMMITTEE_FILERTYPE = "2";
 
 // PA OFFICE codes for state legislature
 const STATE_OFFICES = new Set(["STH", "STS"]);
@@ -216,18 +216,46 @@ function normalizeName(name: string): string {
     .trim();
 }
 
+// Words to skip when tokenizing PA committee names (generic non-name words)
+const COMMITTEE_SKIP_WORDS = new Set([
+  "friends", "citizens", "committee", "for", "of", "to", "elect", "by",
+  "vote", "pa", "pennsylvania", "state", "senate", "house", "assembly",
+  "district", "campaign", "fund", "pac", "change", "team", "people",
+  "neighbors", "be", "the", "and", "freedom", "families",
+]);
+
 /**
- * Extract last name from a filer name string.
- * PA filer names may be "LAST, FIRST" or "FIRST LAST" or "FIRSTNAME LASTNAME".
+ * Extract candidate name tokens from a PA campaign committee name (FILERTYPE=2).
+ * PA committee names use many formats:
+ *   "LAST, FIRST FRIENDS OF"      → [last]
+ *   "FRIENDS OF [First] [Last]"   → [last]
+ *   "CITIZENS FOR [First] [Last]" → [last]
+ *   "[First] [Last] FOR PA"       → [last]
+ *   "COMMITTEE TO ELECT [Name]"   → [last]
+ *   "CAMPAIGN FUND FOR [Name]"    → [last]
+ * Returns all candidate-name tokens to try against the last-name index.
  */
-function extractLastName(fullName: string): string {
-  const trimmed = fullName.trim();
+function extractCommitteeTokens(committeeName: string): string[] {
+  const trimmed = committeeName.trim();
+  // "LAST, FIRST ..." → definitive last name before comma
   const commaIdx = trimmed.indexOf(",");
   if (commaIdx !== -1) {
-    return normalizeName(trimmed.substring(0, commaIdx));
+    const last = normalizeName(trimmed.substring(0, commaIdx));
+    return last ? [last] : [];
   }
-  const parts = trimmed.split(/\s+/u);
-  return normalizeName(parts[parts.length - 1] ?? trimmed);
+  // Tokenize, skip generic words, return all candidate-word candidates
+  const words = trimmed.toUpperCase().match(/[A-Z]+/gu) ?? [];
+  return words
+    .map((w) => normalizeName(w))
+    .filter((w) => w.length > 2 && !COMMITTEE_SKIP_WORDS.has(w));
+}
+
+/**
+ * Extract last name from a candidate name (DB format: "First [Middle] Last").
+ */
+function extractLastName(fullName: string): string {
+  const parts = fullName.trim().split(/\s+/u);
+  return normalizeName(parts[parts.length - 1] ?? fullName);
 }
 
 // ---------------------------------------------------------------------------
@@ -247,33 +275,35 @@ async function loadPaFilers(): Promise<{
     // columns: CampaignfinanceID[0], FILERID[1], EYEAR[2], SubmittedDate[3],
     //          CYCLE[4], AMMEND[5], TERMINATE[6], FILERTYPE[7], FILERNAME[8],
     //          OFFICE[9], DISTRICT[10], ...
-    const filerType = row["FILERTYPE"] ?? "";
-    if (filerType !== CANDIDATE_FILERTYPE) return;
+    // Contributions are filed by campaign committees (FILERTYPE=2), not by
+    // individual candidates (FILERTYPE=1). Only type-2 FilerIDs appear in
+    // contrib_2024.txt, so we must index committees rather than candidates.
+    const filerType = (row["FILERTYPE"] ?? "").replace(/^"|"$/g, "").trim();
+    if (filerType !== COMMITTEE_FILERTYPE) return;
 
-    const office = (row["OFFICE"] ?? "").trim().toUpperCase();
+    const office = (row["OFFICE"] ?? "").replace(/^"|"$/g, "").trim().toUpperCase();
     if (!STATE_OFFICES.has(office)) return;
 
     const filerId = (row["FILERID"] ?? "").replace(/^"|"$/g, "").trim();
     if (!filerId) return;
 
-    const filerName = (row["FILERNAME"] ?? "").trim();
-    const filerNameLast = extractLastName(filerName);
+    const filerName = (row["FILERNAME"] ?? "").replace(/^"|"$/g, "").trim();
 
     const info: PaFilerInfo = {
       filerId,
       filerName,
-      filerNameLast,
+      filerNameLast: "", // not used for committees — we index by tokens below
       office,
-      district: (row["DISTRICT"] ?? "").trim(),
+      district: (row["DISTRICT"] ?? "").replace(/^"|"$/g, "").trim(),
     };
 
     byId.set(filerId, info);
 
-    const normalized = normalizeName(filerNameLast);
-    if (normalized) {
-      const existing = byLastName.get(normalized) ?? [];
+    // Index each candidate-name token from the committee name
+    for (const token of extractCommitteeTokens(filerName)) {
+      const existing = byLastName.get(token) ?? [];
       existing.push(info);
-      byLastName.set(normalized, existing);
+      byLastName.set(token, existing);
     }
   });
 
