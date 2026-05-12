@@ -1,0 +1,481 @@
+{
+  "metadata": {
+    "timestamp": "2026-05-12T10:05:01.170Z",
+    "branch": "experiment/vanilla-r1",
+    "commit": "6c38534",
+    "phase": 5,
+    "nodeVersion": "v22.14.0"
+  },
+  "eslint": {
+    "errors": 0,
+    "warnings": 13,
+    "complexityViolations": 13
+  },
+  "complexity": {
+    "count": 110,
+    "average": 5.29,
+    "max": 54,
+    "p50": 3,
+    "p75": 5,
+    "p95": 17,
+    "distribution": {
+      "simple_1_5": 84,
+      "moderate_6_10": 13,
+      "complex_11_15": 7,
+      "highComplex_16_20": 3,
+      "critical_21plus": 3
+    },
+    "perFunction": [
+      {
+        "file": "src/app/page.tsx",
+        "name": "Home",
+        "complexity": 54,
+        "line": 188
+      },
+      {
+        "file": "src/components/ChatWindow.tsx",
+        "name": "<anonymous>",
+        "complexity": 33,
+        "line": 245
+      },
+      {
+        "file": "src/lib/structured-output.ts",
+        "name": "parseBallot",
+        "complexity": 22,
+        "line": 71
+      },
+      {
+        "file": "src/app/api/election-data/route.ts",
+        "name": "<anonymous>",
+        "complexity": 20,
+        "line": 23
+      },
+      {
+        "file": "src/app/api/chat/route.ts",
+        "name": "<anonymous>",
+        "complexity": 18,
+        "line": 107
+      },
+      {
+        "file": "src/components/LiveElectionPanel.tsx",
+        "name": "CandidateDetail",
+        "complexity": 17,
+        "line": 167
+      },
+      {
+        "file": "src/app/api/chat/route.ts",
+        "name": "<anonymous>",
+        "complexity": 14,
+        "line": 233
+      },
+      {
+        "file": "src/lib/civic-client.ts",
+        "name": "<anonymous>",
+        "complexity": 14,
+        "line": 198
+      },
+      {
+        "file": "src/app/page.tsx",
+        "name": "<anonymous>",
+        "complexity": 13,
+        "line": 298
+      },
+      {
+        "file": "src/lib/civic-client.ts",
+        "name": "parseDistricts",
+        "complexity": 13,
+        "line": 125
+      },
+      {
+        "file": "src/app/api/candidate-detail/route.ts",
+        "name": "<anonymous>",
+        "complexity": 11,
+        "line": 27
+      },
+      {
+        "file": "src/lib/ballot-data.ts",
+        "name": "generateContextBlock",
+        "complexity": 11,
+        "line": 390
+      },
+      {
+        "file": "src/lib/civic-client.ts",
+        "name": "parsePollingLocation",
+        "complexity": 11,
+        "line": 91
+      },
+      {
+        "file": "src/components/ChatWindow.tsx",
+        "name": "ChatWindow",
+        "complexity": 10,
+        "line": 210
+      },
+      {
+        "file": "src/lib/structured-output.ts",
+        "name": "parseVoterProfile",
+        "complexity": 9,
+        "line": 162
+      },
+      {
+        "file": "src/components/BallotBuilder.tsx",
+        "name": "BallotPreview",
+        "complexity": 8,
+        "line": 22
+      },
+      {
+        "file": "src/components/ChatWindow.tsx",
+        "name": "<arrow>",
+        "complexity": 8,
+        "line": 458
+      },
+      {
+        "file": "src/lib/structured-output.ts",
+        "name": "parseAlignmentScores",
+        "complexity": 8,
+        "line": 207
+      },
+      {
+        "file": "src/components/BallotBuilder.tsx",
+        "name": "handlePrint",
+        "complexity": 7,
+        "line": 32
+      },
+      {
+        "file": "src/components/ChatWindow.tsx",
+        "name": "MessageContent",
+        "complexity": 7,
+        "line": 153
+      },
+      {
+        "file": "src/components/VoterProfile.tsx",
+        "name": "handleFile",
+        "complexity": 7,
+        "line": 24
+      },
+      {
+        "file": "src/lib/civic-client.ts",
+        "name": "parseContest",
+        "complexity": 7,
+        "line": 113
+      },
+      {
+        "file": "src/components/LiveElectionPanel.tsx",
+        "name": "<anonymous>",
+        "complexity": 6,
+        "line": 185
+      },
+      {
+        "file": "src/lib/ballot-data.ts",
+        "name": "formatDate",
+        "complexity": 6,
+        "line": 111
+      },
+      {
+        "file": "src/lib/civic-client.ts",
+        "name": "parseCandidate",
+        "complexity": 6,
+        "line": 103
+      },
+      {
+        "file": "src/lib/civic-client.ts",
+        "name": "<anonymous>",
+        "complexity": 6,
+        "line": 259
+      },
+      {
+        "file": "src/app/page.tsx",
+        "name": "<arrow>",
+        "complexity": 5,
+        "line": 391
+      },
+      {
+        "file": "src/components/BallotBuilder.tsx",
+        "name": "BallotBuilder",
+        "complexity": 5,
+        "line": 174
+      },
+      {
+        "file": "src/lib/ballot-data.ts",
+        "name": "electionLines",
+        "complexity": 5,
+        "line": 308
+      },
+      {
+        "file": "src/lib/ballot-data.ts",
+        "name": "registrationLines",
+        "complexity": 5,
+        "line": 330
+      },
+      {
+        "file": "src/lib/translations.ts",
+        "name": "getBallotPrompt",
+        "complexity": 5,
+        "line": 1660
+      },
+      {
+        "file": "src/app/page.tsx",
+        "name": "<anonymous>",
+        "complexity": 4,
+        "line": 258
+      },
+      {
+        "file": "src/components/ChatWindow.tsx",
+        "name": "<arrow>",
+        "complexity": 4,
+        "line": 58
+      },
+      {
+        "file": "src/components/LiveElectionPanel.tsx",
+        "name": "PollingLocationSection",
+        "complexity": 4,
+        "line": 116
+      },
+      {
+        "file": "src/components/LiveElectionPanel.tsx",
+        "name": "<arrow>",
+        "complexity": 4,
+        "line": 353
+      },
+      {
+        "file": "src/components/LiveElectionPanel.tsx",
+        "name": "LiveElectionPanel",
+        "complexity": 4,
+        "line": 438
+      },
+      {
+        "file": "src/components/VoterProfile.tsx",
+        "name": "ProfileUpload",
+        "complexity": 4,
+        "line": 18
+      },
+      {
+        "file": "src/lib/ballot-data.ts",
+        "name": "deadlineLabel",
+        "complexity": 4,
+        "line": 170
+      },
+      {
+        "file": "src/lib/ballot-data.ts",
+        "name": "deadlineStatus",
+        "complexity": 4,
+        "line": 177
+      },
+      {
+        "file": "src/lib/ballot-data.ts",
+        "name": "earlyVotingLine",
+        "complexity": 4,
+        "line": 352
+      },
+      {
+        "file": "src/lib/budget-tracker.ts",
+        "name": "getBudgetStatus",
+        "complexity": 4,
+        "line": 59
+      },
+      {
+        "file": "src/lib/rate-limiter.ts",
+        "name": "checkAndStartSession",
+        "complexity": 4,
+        "line": 50
+      },
+      {
+        "file": "src/lib/translations.test.ts",
+        "name": "<arrow>",
+        "complexity": 4,
+        "line": 71
+      },
+      {
+        "file": "src/lib/use-election-data.ts",
+        "name": "<anonymous>",
+        "complexity": 4,
+        "line": 32
+      },
+      {
+        "file": "src/app/api/chat/route.ts",
+        "name": "<anonymous>",
+        "complexity": 3,
+        "line": 198
+      },
+      {
+        "file": "src/app/page.tsx",
+        "name": "LanguageSelector",
+        "complexity": 3,
+        "line": 90
+      },
+      {
+        "file": "src/app/page.tsx",
+        "name": "handleClick",
+        "complexity": 3,
+        "line": 97
+      },
+      {
+        "file": "src/app/page.tsx",
+        "name": "validateZip",
+        "complexity": 3,
+        "line": 220
+      },
+      {
+        "file": "src/app/page.tsx",
+        "name": "<arrow>",
+        "complexity": 3,
+        "line": 408
+      },
+      {
+        "file": "src/app/page.tsx",
+        "name": "<arrow>",
+        "complexity": 3,
+        "line": 478
+      }
+    ]
+  },
+  "vitest": {
+    "tests": {
+      "total": 94,
+      "passed": 94,
+      "failed": 0,
+      "skipped": 0,
+      "passRate": 100
+    },
+    "coverage": {
+      "lines": 27.62,
+      "branches": 75.9,
+      "functions": 96.96,
+      "statements": 27.62
+    }
+  },
+  "duplication": {
+    "duplicatedLines": 36,
+    "totalLines": 6832,
+    "percentage": 0.53,
+    "clones": 3
+  },
+  "bundleSize": {
+    "buildSuccess": true,
+    "pages": [
+      {
+        "route": "/",
+        "size": 17.1,
+        "unit": "kB"
+      },
+      {
+        "route": "/_not-found",
+        "size": 990,
+        "unit": "B"
+      },
+      {
+        "route": "/api/candidate-detail",
+        "size": 131,
+        "unit": "B"
+      },
+      {
+        "route": "/api/chat",
+        "size": 131,
+        "unit": "B"
+      },
+      {
+        "route": "/api/election-data",
+        "size": 131,
+        "unit": "B"
+      }
+    ],
+    "firstLoadJsShared": {
+      "size": 102,
+      "unit": "kB"
+    }
+  },
+  "lighthouse": {
+    "performance": 100,
+    "accessibility": 95,
+    "bestPractices": 100,
+    "seo": 100
+  },
+  "playwright": {
+    "total": 142,
+    "passed": 142,
+    "failed": 0,
+    "timedOut": 0,
+    "skipped": 0,
+    "passRate": 100
+  },
+  "linesOfCode": {
+    "application": {
+      "code": 6057,
+      "files": 33,
+      "byExtension": {
+        ".ts": {
+          "files": 15,
+          "code": 3347
+        },
+        ".css": {
+          "files": 1,
+          "code": 21
+        },
+        ".tsx": {
+          "files": 7,
+          "code": 2370
+        },
+        ".json": {
+          "files": 10,
+          "code": 319
+        }
+      }
+    },
+    "plugin": {
+      "code": 0,
+      "files": 0,
+      "byExtension": {}
+    },
+    "infrastructure": {
+      "code": 1049,
+      "files": 12
+    },
+    "total": {
+      "code": 7106,
+      "files": 45
+    }
+  },
+  "workflowTests": {
+    "count": 2,
+    "files": [
+      "src/lib/translations.test.ts",
+      "src/lib/ballot-data.test.ts"
+    ]
+  },
+  "workflowTiming": {
+    "steps": [
+      {
+        "step": "vanilla-build",
+        "started": "2026-05-11T11:00:37-05:00",
+        "completed": "2026-05-11T11:06:12-05:00",
+        "durationMs": 335000
+      },
+      {
+        "step": "vanilla-build",
+        "started": "2026-05-12T00:13:36-05:00",
+        "completed": "2026-05-11T11:06:12-05:00",
+        "durationMs": -47244000
+      },
+      {
+        "step": "vanilla-build",
+        "started": "2026-05-12T00:24:06-05:00",
+        "completed": "2026-05-11T11:06:12-05:00",
+        "durationMs": -47874000
+      },
+      {
+        "step": "vanilla-build",
+        "started": "2026-05-12T02:33:01-05:00",
+        "completed": "2026-05-11T11:06:12-05:00",
+        "durationMs": -55609000
+      },
+      {
+        "step": "vanilla-build",
+        "started": "2026-05-12T04:39:57-05:00",
+        "completed": "2026-05-11T11:06:12-05:00",
+        "durationMs": -63225000
+      }
+    ],
+    "totalSteps": 5,
+    "completedSteps": 5
+  },
+  "diffHygiene": null
+}

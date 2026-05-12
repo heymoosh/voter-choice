@@ -1,0 +1,385 @@
+{
+  "metadata": {
+    "branch": "experiment/superpowers-r1",
+    "fromPhase": 4,
+    "toPhase": 5,
+    "fromCommit": "b84ffa4",
+    "toCommit": "59ab862",
+    "priorSource": "disk:/Users/Muxin/Documents/GitHub/voter-choice/metrics/experiment/superpowers-r1/phase4.json",
+    "computedAt": "2026-05-12T11:28:32.045Z"
+  },
+  "deltas": {
+    "metadata.phase": {
+      "prev": 4,
+      "curr": 5,
+      "delta": 1,
+      "pctChange": 25
+    },
+    "eslint.errors": {
+      "prev": 0,
+      "curr": 0,
+      "delta": 0,
+      "pctChange": null
+    },
+    "eslint.warnings": {
+      "prev": 7,
+      "curr": 11,
+      "delta": 4,
+      "pctChange": 57.14
+    },
+    "eslint.complexityViolations": {
+      "prev": 7,
+      "curr": 11,
+      "delta": 4,
+      "pctChange": 57.14
+    },
+    "complexity.count": {
+      "prev": 53,
+      "curr": 95,
+      "delta": 42,
+      "pctChange": 79.25
+    },
+    "complexity.average": {
+      "prev": 5.77,
+      "curr": 5.34,
+      "delta": -0.43,
+      "pctChange": -7.45
+    },
+    "complexity.max": {
+      "prev": 47,
+      "curr": 47,
+      "delta": 0,
+      "pctChange": 0
+    },
+    "complexity.p50": {
+      "prev": 3,
+      "curr": 3,
+      "delta": 0,
+      "pctChange": 0
+    },
+    "complexity.p75": {
+      "prev": 6,
+      "curr": 6,
+      "delta": 0,
+      "pctChange": 0
+    },
+    "complexity.p95": {
+      "prev": 16,
+      "curr": 16,
+      "delta": 0,
+      "pctChange": 0
+    },
+    "complexity.distribution.simple_1_5": {
+      "prev": 39,
+      "curr": 69,
+      "delta": 30,
+      "pctChange": 76.92
+    },
+    "complexity.distribution.moderate_6_10": {
+      "prev": 7,
+      "curr": 15,
+      "delta": 8,
+      "pctChange": 114.29
+    },
+    "complexity.distribution.complex_11_15": {
+      "prev": 4,
+      "curr": 6,
+      "delta": 2,
+      "pctChange": 50
+    },
+    "complexity.distribution.highComplex_16_20": {
+      "prev": 1,
+      "curr": 3,
+      "delta": 2,
+      "pctChange": 200
+    },
+    "complexity.distribution.critical_21plus": {
+      "prev": 2,
+      "curr": 2,
+      "delta": 0,
+      "pctChange": 0
+    },
+    "vitest.tests.total": {
+      "prev": 70,
+      "curr": 92,
+      "delta": 22,
+      "pctChange": 31.43
+    },
+    "vitest.tests.passed": {
+      "prev": 70,
+      "curr": 92,
+      "delta": 22,
+      "pctChange": 31.43
+    },
+    "vitest.tests.failed": {
+      "prev": 0,
+      "curr": 0,
+      "delta": 0,
+      "pctChange": null
+    },
+    "vitest.tests.skipped": {
+      "prev": 0,
+      "curr": 0,
+      "delta": 0,
+      "pctChange": null
+    },
+    "vitest.tests.passRate": {
+      "prev": 100,
+      "curr": 100,
+      "delta": 0,
+      "pctChange": 0
+    },
+    "vitest.coverage.lines": {
+      "prev": 35.61,
+      "curr": 33.34,
+      "delta": -2.27,
+      "pctChange": -6.37
+    },
+    "vitest.coverage.branches": {
+      "prev": 69.41,
+      "curr": 72.52,
+      "delta": 3.11,
+      "pctChange": 4.48
+    },
+    "vitest.coverage.functions": {
+      "prev": 74.02,
+      "curr": 75.25,
+      "delta": 1.23,
+      "pctChange": 1.66
+    },
+    "vitest.coverage.statements": {
+      "prev": 35.61,
+      "curr": 33.34,
+      "delta": -2.27,
+      "pctChange": -6.37
+    },
+    "duplication.duplicatedLines": {
+      "prev": 0,
+      "curr": 0,
+      "delta": 0,
+      "pctChange": null
+    },
+    "duplication.totalLines": {
+      "prev": 4777,
+      "curr": 7047,
+      "delta": 2270,
+      "pctChange": 47.52
+    },
+    "duplication.percentage": {
+      "prev": 0,
+      "curr": 0,
+      "delta": 0,
+      "pctChange": null
+    },
+    "duplication.clones": {
+      "prev": 0,
+      "curr": 0,
+      "delta": 0,
+      "pctChange": null
+    },
+    "bundleSize.firstLoadJsShared.size": {
+      "prev": 129,
+      "curr": 130,
+      "delta": 1,
+      "pctChange": 0.78
+    },
+    "lighthouse.performance": {
+      "prev": 100,
+      "curr": 100,
+      "delta": 0,
+      "pctChange": 0
+    },
+    "lighthouse.accessibility": {
+      "prev": 96,
+      "curr": 100,
+      "delta": 4,
+      "pctChange": 4.17
+    },
+    "lighthouse.bestPractices": {
+      "prev": 100,
+      "curr": 100,
+      "delta": 0,
+      "pctChange": 0
+    },
+    "lighthouse.seo": {
+      "prev": 100,
+      "curr": 100,
+      "delta": 0,
+      "pctChange": 0
+    },
+    "playwright.total": {
+      "prev": 112,
+      "curr": 152,
+      "delta": 40,
+      "pctChange": 35.71
+    },
+    "playwright.passed": {
+      "prev": 112,
+      "curr": 152,
+      "delta": 40,
+      "pctChange": 35.71
+    },
+    "playwright.failed": {
+      "prev": 0,
+      "curr": 0,
+      "delta": 0,
+      "pctChange": null
+    },
+    "playwright.timedOut": {
+      "prev": 0,
+      "curr": 0,
+      "delta": 0,
+      "pctChange": null
+    },
+    "playwright.skipped": {
+      "prev": 0,
+      "curr": 0,
+      "delta": 0,
+      "pctChange": null
+    },
+    "playwright.passRate": {
+      "prev": 100,
+      "curr": 100,
+      "delta": 0,
+      "pctChange": 0
+    },
+    "linesOfCode.application.code": {
+      "prev": 4452,
+      "curr": 6327,
+      "delta": 1875,
+      "pctChange": 42.12
+    },
+    "linesOfCode.application.files": {
+      "prev": 50,
+      "curr": 65,
+      "delta": 15,
+      "pctChange": 30
+    },
+    "linesOfCode.application.byExtension..ts.files": {
+      "prev": 25,
+      "curr": 36,
+      "delta": 11,
+      "pctChange": 44
+    },
+    "linesOfCode.application.byExtension..ts.code": {
+      "prev": 2706,
+      "curr": 3727,
+      "delta": 1021,
+      "pctChange": 37.73
+    },
+    "linesOfCode.application.byExtension..css.files": {
+      "prev": 1,
+      "curr": 1,
+      "delta": 0,
+      "pctChange": 0
+    },
+    "linesOfCode.application.byExtension..css.code": {
+      "prev": 31,
+      "curr": 31,
+      "delta": 0,
+      "pctChange": 0
+    },
+    "linesOfCode.application.byExtension..tsx.files": {
+      "prev": 10,
+      "curr": 14,
+      "delta": 4,
+      "pctChange": 40
+    },
+    "linesOfCode.application.byExtension..tsx.code": {
+      "prev": 1306,
+      "curr": 2160,
+      "delta": 854,
+      "pctChange": 65.39
+    },
+    "linesOfCode.application.byExtension..json.files": {
+      "prev": 14,
+      "curr": 14,
+      "delta": 0,
+      "pctChange": 0
+    },
+    "linesOfCode.application.byExtension..json.code": {
+      "prev": 409,
+      "curr": 409,
+      "delta": 0,
+      "pctChange": 0
+    },
+    "linesOfCode.plugin.code": {
+      "prev": 602,
+      "curr": 602,
+      "delta": 0,
+      "pctChange": 0
+    },
+    "linesOfCode.plugin.files": {
+      "prev": 4,
+      "curr": 4,
+      "delta": 0,
+      "pctChange": 0
+    },
+    "linesOfCode.plugin.byExtension..js.files": {
+      "prev": 3,
+      "curr": 3,
+      "delta": 0,
+      "pctChange": 0
+    },
+    "linesOfCode.plugin.byExtension..js.code": {
+      "prev": 523,
+      "curr": 523,
+      "delta": 0,
+      "pctChange": 0
+    },
+    "linesOfCode.plugin.byExtension..ts.files": {
+      "prev": 1,
+      "curr": 1,
+      "delta": 0,
+      "pctChange": 0
+    },
+    "linesOfCode.plugin.byExtension..ts.code": {
+      "prev": 79,
+      "curr": 79,
+      "delta": 0,
+      "pctChange": 0
+    },
+    "linesOfCode.infrastructure.code": {
+      "prev": 721,
+      "curr": 1128,
+      "delta": 407,
+      "pctChange": 56.45
+    },
+    "linesOfCode.infrastructure.files": {
+      "prev": 12,
+      "curr": 15,
+      "delta": 3,
+      "pctChange": 25
+    },
+    "linesOfCode.total.code": {
+      "prev": 5775,
+      "curr": 8057,
+      "delta": 2282,
+      "pctChange": 39.52
+    },
+    "linesOfCode.total.files": {
+      "prev": 66,
+      "curr": 84,
+      "delta": 18,
+      "pctChange": 27.27
+    },
+    "workflowTests.count": {
+      "prev": 7,
+      "curr": 11,
+      "delta": 4,
+      "pctChange": 57.14
+    },
+    "workflowTiming.totalSteps": {
+      "prev": 24,
+      "curr": 30,
+      "delta": 6,
+      "pctChange": 25
+    },
+    "workflowTiming.completedSteps": {
+      "prev": 24,
+      "curr": 30,
+      "delta": 6,
+      "pctChange": 25
+    }
+  }
+}

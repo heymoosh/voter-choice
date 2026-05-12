@@ -1,0 +1,701 @@
+{
+  "metadata": {
+    "timestamp": "2026-05-12T13:32:47.887Z",
+    "branch": "experiment/spec-kit-r1",
+    "commit": "544169a",
+    "phase": 6,
+    "nodeVersion": "v22.14.0"
+  },
+  "eslint": {
+    "errors": 0,
+    "warnings": 23,
+    "complexityViolations": 22
+  },
+  "complexity": {
+    "count": 154,
+    "average": 5.95,
+    "max": 58,
+    "p50": 3,
+    "p75": 7,
+    "p95": 18,
+    "distribution": {
+      "simple_1_5": 106,
+      "moderate_6_10": 26,
+      "complex_11_15": 14,
+      "highComplex_16_20": 2,
+      "critical_21plus": 6
+    },
+    "perFunction": [
+      {
+        "file": "src/components/BallotTool.tsx",
+        "name": "BallotToolInner",
+        "complexity": 58,
+        "line": 40
+      },
+      {
+        "file": "src/components/ChatWindow.tsx",
+        "name": "ChatWindow",
+        "complexity": 42,
+        "line": 54
+      },
+      {
+        "file": "src/components/BallotBuilder.tsx",
+        "name": "BallotBuilder",
+        "complexity": 26,
+        "line": 31
+      },
+      {
+        "file": "src/components/ChatWindow.tsx",
+        "name": "<anonymous>",
+        "complexity": 24,
+        "line": 103
+      },
+      {
+        "file": "src/components/CandidateDetailPanel.tsx",
+        "name": "CandidateDetailPanel",
+        "complexity": 22,
+        "line": 13
+      },
+      {
+        "file": "src/lib/ballotParser.ts",
+        "name": "parseBallot",
+        "complexity": 22,
+        "line": 15
+      },
+      {
+        "file": "src/components/ConcernDisambiguation.tsx",
+        "name": "ConcernDisambiguation",
+        "complexity": 18,
+        "line": 39
+      },
+      {
+        "file": "src/components/StateInfoCard.tsx",
+        "name": "StateInfoCard",
+        "complexity": 18,
+        "line": 350
+      },
+      {
+        "file": "src/app/api/disambiguate-concerns/route.ts",
+        "name": "<anonymous>",
+        "complexity": 14,
+        "line": 63
+      },
+      {
+        "file": "src/lib/anthropicEnrich.ts",
+        "name": "<anonymous>",
+        "complexity": 14,
+        "line": 10
+      },
+      {
+        "file": "src/lib/civicApi.ts",
+        "name": "<anonymous>",
+        "complexity": 14,
+        "line": 122
+      },
+      {
+        "file": "src/lib/promptBuilder.ts",
+        "name": "buildContextBlockEn",
+        "complexity": 14,
+        "line": 201
+      },
+      {
+        "file": "src/components/ApiErrorBanner.tsx",
+        "name": "ApiErrorBanner",
+        "complexity": 13,
+        "line": 13
+      },
+      {
+        "file": "src/components/ChatMessage.tsx",
+        "name": "ChatMessage",
+        "complexity": 13,
+        "line": 26
+      },
+      {
+        "file": "src/lib/dataAccess.ts",
+        "name": "<anonymous>",
+        "complexity": 13,
+        "line": 32
+      },
+      {
+        "file": "src/lib/promptBuilder.ts",
+        "name": "buildContextBlockEs",
+        "complexity": 13,
+        "line": 273
+      },
+      {
+        "file": "src/lib/promptBuilder.ts",
+        "name": "buildContextBlockVi",
+        "complexity": 13,
+        "line": 345
+      },
+      {
+        "file": "src/lib/promptBuilder.ts",
+        "name": "buildContextBlockZh",
+        "complexity": 13,
+        "line": 416
+      },
+      {
+        "file": "src/lib/promptBuilder.ts",
+        "name": "buildContextBlockAr",
+        "complexity": 13,
+        "line": 485
+      },
+      {
+        "file": "src/components/VoterProfilePanel.tsx",
+        "name": "<arrow>",
+        "complexity": 12,
+        "line": 32
+      },
+      {
+        "file": "src/components/IssueRankingList.tsx",
+        "name": "SortableItem",
+        "complexity": 11,
+        "line": 38
+      },
+      {
+        "file": "src/components/VoterProfilePanel.tsx",
+        "name": "VoterProfilePanel",
+        "complexity": 11,
+        "line": 22
+      },
+      {
+        "file": "src/components/IssueRankingList.tsx",
+        "name": "IssueRankingList",
+        "complexity": 10,
+        "line": 154
+      },
+      {
+        "file": "src/lib/civicApi.ts",
+        "name": "parseDistricts",
+        "complexity": 10,
+        "line": 98
+      },
+      {
+        "file": "src/lib/promptBuilder.ts",
+        "name": "buildPromptWithProfile",
+        "complexity": 10,
+        "line": 66
+      },
+      {
+        "file": "src/app/api/chat/route.ts",
+        "name": "<anonymous>",
+        "complexity": 9,
+        "line": 52
+      },
+      {
+        "file": "src/components/AlignmentBanner.tsx",
+        "name": "getQualifier",
+        "complexity": 9,
+        "line": 21
+      },
+      {
+        "file": "src/components/AlignmentBanner.tsx",
+        "name": "AlignmentBanner",
+        "complexity": 9,
+        "line": 49
+      },
+      {
+        "file": "src/components/BallotTool.tsx",
+        "name": "<anonymous>",
+        "complexity": 9,
+        "line": 102
+      },
+      {
+        "file": "src/app/api/candidate/route.ts",
+        "name": "<anonymous>",
+        "complexity": 8,
+        "line": 4
+      },
+      {
+        "file": "src/app/api/chat/route.ts",
+        "name": "<anonymous>",
+        "complexity": 8,
+        "line": 146
+      },
+      {
+        "file": "src/app/api/issue-counts/increment/route.ts",
+        "name": "<anonymous>",
+        "complexity": 8,
+        "line": 27
+      },
+      {
+        "file": "src/components/DataAttribution.tsx",
+        "name": "DataAttribution",
+        "complexity": 8,
+        "line": 10
+      },
+      {
+        "file": "src/components/StateInfoCard.tsx",
+        "name": "RegistrationSection",
+        "complexity": 8,
+        "line": 121
+      },
+      {
+        "file": "src/lib/alignmentParser.ts",
+        "name": "parseAlignmentScores",
+        "complexity": 8,
+        "line": 16
+      },
+      {
+        "file": "src/components/BallotTool.tsx",
+        "name": "<anonymous>",
+        "complexity": 7,
+        "line": 350
+      },
+      {
+        "file": "src/components/PolisOverlay.tsx",
+        "name": "PolisOverlayBar",
+        "complexity": 7,
+        "line": 24
+      },
+      {
+        "file": "src/lib/__tests__/alignmentParser.test.ts",
+        "name": "<arrow>",
+        "complexity": 7,
+        "line": 37
+      },
+      {
+        "file": "src/lib/__tests__/ballotParser.test.ts",
+        "name": "<arrow>",
+        "complexity": 7,
+        "line": 22
+      },
+      {
+        "file": "src/lib/electionUtils.ts",
+        "name": "getDeadlineStatus",
+        "complexity": 7,
+        "line": 30
+      },
+      {
+        "file": "src/lib/upstashClient.ts",
+        "name": "<anonymous>",
+        "complexity": 7,
+        "line": 46
+      },
+      {
+        "file": "src/components/BallotContests.tsx",
+        "name": "BallotContests",
+        "complexity": 6,
+        "line": 12
+      },
+      {
+        "file": "src/components/CandidateDetailPanel.tsx",
+        "name": "<anonymous>",
+        "complexity": 6,
+        "line": 26
+      },
+      {
+        "file": "src/lib/__tests__/civicApi.test.ts",
+        "name": "<anonymous>",
+        "complexity": 6,
+        "line": 15
+      },
+      {
+        "file": "src/lib/ballotDownload.ts",
+        "name": "generateBallotHTML",
+        "complexity": 6,
+        "line": 70
+      },
+      {
+        "file": "src/lib/promptBuilder.ts",
+        "name": "buildSystemPrompt",
+        "complexity": 6,
+        "line": 27
+      },
+      {
+        "file": "src/lib/promptBuilder.ts",
+        "name": "buildContextBlock",
+        "complexity": 6,
+        "line": 130
+      },
+      {
+        "file": "src/lib/upstashClient.ts",
+        "name": "<anonymous>",
+        "complexity": 6,
+        "line": 91
+      },
+      {
+        "file": "src/app/api/chat/route.ts",
+        "name": "getClientIp",
+        "complexity": 5,
+        "line": 28
+      },
+      {
+        "file": "src/app/api/civic/route.ts",
+        "name": "<anonymous>",
+        "complexity": 5,
+        "line": 4
+      }
+    ]
+  },
+  "vitest": {
+    "tests": {
+      "total": 169,
+      "passed": 169,
+      "failed": 0,
+      "skipped": 0,
+      "passRate": 100
+    },
+    "coverage": {
+      "lines": 24.29,
+      "branches": 74.71,
+      "functions": 93.38,
+      "statements": 24.29
+    }
+  },
+  "duplication": {
+    "duplicatedLines": 74,
+    "totalLines": 9655,
+    "percentage": 0.77,
+    "clones": 7
+  },
+  "bundleSize": {
+    "buildSuccess": true,
+    "pages": [
+      {
+        "route": "/",
+        "size": 79.2,
+        "unit": "kB"
+      },
+      {
+        "route": "/_not-found",
+        "size": 990,
+        "unit": "B"
+      },
+      {
+        "route": "/api/budget",
+        "size": 139,
+        "unit": "B"
+      },
+      {
+        "route": "/api/candidate",
+        "size": 139,
+        "unit": "B"
+      },
+      {
+        "route": "/api/chat",
+        "size": 139,
+        "unit": "B"
+      },
+      {
+        "route": "/api/civic",
+        "size": 139,
+        "unit": "B"
+      },
+      {
+        "route": "/api/disambiguate-concerns",
+        "size": 139,
+        "unit": "B"
+      },
+      {
+        "route": "/api/issue-counts",
+        "size": 139,
+        "unit": "B"
+      },
+      {
+        "route": "/api/issue-counts/increment",
+        "size": 139,
+        "unit": "B"
+      }
+    ],
+    "firstLoadJsShared": {
+      "size": 102,
+      "unit": "kB"
+    }
+  },
+  "lighthouse": {
+    "performance": 100,
+    "accessibility": 96,
+    "bestPractices": 100,
+    "seo": 100
+  },
+  "playwright": {
+    "total": 110,
+    "passed": 110,
+    "failed": 0,
+    "timedOut": 0,
+    "skipped": 0,
+    "passRate": 100
+  },
+  "linesOfCode": {
+    "application": {
+      "code": 9730,
+      "files": 87,
+      "byExtension": {
+        ".ts": {
+          "files": 56,
+          "code": 6357
+        },
+        ".css": {
+          "files": 1,
+          "code": 11
+        },
+        ".tsx": {
+          "files": 26,
+          "code": 3134
+        },
+        ".json": {
+          "files": 4,
+          "code": 228
+        }
+      }
+    },
+    "plugin": {
+      "code": 0,
+      "files": 0,
+      "byExtension": {}
+    },
+    "infrastructure": {
+      "code": 931,
+      "files": 10
+    },
+    "total": {
+      "code": 10661,
+      "files": 97
+    }
+  },
+  "workflowTests": {
+    "count": 16,
+    "files": [
+      "src/lib/__tests__/dataAccess.test.ts",
+      "src/lib/__tests__/ballotParser.test.ts",
+      "src/lib/__tests__/alignmentParser.test.ts",
+      "src/lib/__tests__/profileParser.test.ts",
+      "src/lib/__tests__/chatBudget.test.ts",
+      "src/lib/__tests__/electionUtils.test.ts",
+      "src/lib/__tests__/upstashClient.test.ts",
+      "src/lib/__tests__/zipLookup.test.ts",
+      "src/lib/__tests__/civicApi.test.ts",
+      "src/lib/__tests__/ballotDownload.test.ts",
+      "src/lib/__tests__/issueRanking.test.ts",
+      "src/lib/__tests__/confirmedConcerns.test.ts",
+      "src/lib/__tests__/rateLimiter.test.ts",
+      "src/lib/__tests__/promptBuilder.test.ts",
+      "src/lib/i18n/__tests__/formatDate.test.ts",
+      "src/lib/i18n/__tests__/I18nContext.test.ts"
+    ]
+  },
+  "workflowTiming": {
+    "steps": [
+      {
+        "step": "speckit.specify",
+        "started": "2026-05-11T13:11:50-05:00",
+        "completed": "2026-05-11T13:13:07-05:00",
+        "durationMs": 77000
+      },
+      {
+        "step": "speckit.clarify",
+        "started": "2026-05-11T13:13:07-05:00",
+        "completed": "2026-05-11T13:13:22-05:00",
+        "durationMs": 15000
+      },
+      {
+        "step": "speckit.plan",
+        "started": "2026-05-11T13:13:22-05:00",
+        "completed": "2026-05-11T13:13:58-05:00",
+        "durationMs": 36000
+      },
+      {
+        "step": "speckit.tasks",
+        "started": "2026-05-11T13:13:58-05:00",
+        "completed": "2026-05-11T13:14:24-05:00",
+        "durationMs": 26000
+      },
+      {
+        "step": "speckit.analyze",
+        "started": "2026-05-11T13:14:24-05:00",
+        "completed": "2026-05-11T13:14:31-05:00",
+        "durationMs": 7000
+      },
+      {
+        "step": "speckit.implement",
+        "started": "2026-05-11T13:14:31-05:00",
+        "completed": "2026-05-11T13:22:46-05:00",
+        "durationMs": 495000
+      },
+      {
+        "step": "speckit.specify",
+        "started": "2026-05-11T23:01:12-05:00",
+        "completed": "2026-05-11T13:13:07-05:00",
+        "durationMs": -35285000
+      },
+      {
+        "step": "speckit.clarify",
+        "started": "2026-05-11T23:02:13-05:00",
+        "completed": "2026-05-11T13:13:22-05:00",
+        "durationMs": -35331000
+      },
+      {
+        "step": "speckit.plan",
+        "started": "2026-05-11T23:02:28-05:00",
+        "completed": "2026-05-11T13:13:58-05:00",
+        "durationMs": -35310000
+      },
+      {
+        "step": "speckit.tasks",
+        "started": "2026-05-11T23:03:14-05:00",
+        "completed": "2026-05-11T13:14:24-05:00",
+        "durationMs": -35330000
+      },
+      {
+        "step": "speckit.analyze",
+        "started": "2026-05-11T23:03:48-05:00",
+        "completed": "2026-05-11T13:14:31-05:00",
+        "durationMs": -35357000
+      },
+      {
+        "step": "speckit.implement",
+        "started": "2026-05-11T23:04:00-05:00",
+        "completed": "2026-05-11T13:22:46-05:00",
+        "durationMs": -34874000
+      },
+      {
+        "step": "speckit.specify",
+        "started": "2026-05-12T01:16:49-05:00",
+        "completed": "2026-05-11T13:13:07-05:00",
+        "durationMs": -43422000
+      },
+      {
+        "step": "speckit.clarify",
+        "started": "2026-05-12T01:18:03-05:00",
+        "completed": "2026-05-11T13:13:22-05:00",
+        "durationMs": -43481000
+      },
+      {
+        "step": "speckit.plan",
+        "started": "2026-05-12T01:18:16-05:00",
+        "completed": "2026-05-11T13:13:58-05:00",
+        "durationMs": -43458000
+      },
+      {
+        "step": "speckit.tasks",
+        "started": "2026-05-12T01:19:13-05:00",
+        "completed": "2026-05-11T13:14:24-05:00",
+        "durationMs": -43489000
+      },
+      {
+        "step": "speckit.analyze",
+        "started": "2026-05-12T01:19:55-05:00",
+        "completed": "2026-05-11T13:14:31-05:00",
+        "durationMs": -43524000
+      },
+      {
+        "step": "speckit.implement",
+        "started": "2026-05-12T01:20:07-05:00",
+        "completed": "2026-05-11T13:22:46-05:00",
+        "durationMs": -43041000
+      },
+      {
+        "step": "speckit.specify",
+        "started": "2026-05-12T03:22:59-05:00",
+        "completed": "2026-05-11T13:13:07-05:00",
+        "durationMs": -50992000
+      },
+      {
+        "step": "speckit.clarify",
+        "started": "2026-05-12T03:24:12-05:00",
+        "completed": "2026-05-11T13:13:22-05:00",
+        "durationMs": -51050000
+      },
+      {
+        "step": "speckit.plan",
+        "started": "2026-05-12T03:24:19-05:00",
+        "completed": "2026-05-11T13:13:58-05:00",
+        "durationMs": -51021000
+      },
+      {
+        "step": "speckit.tasks",
+        "started": "2026-05-12T03:24:50-05:00",
+        "completed": "2026-05-11T13:14:24-05:00",
+        "durationMs": -51026000
+      },
+      {
+        "step": "speckit.analyze",
+        "started": "2026-05-12T03:25:19-05:00",
+        "completed": "2026-05-11T13:14:31-05:00",
+        "durationMs": -51048000
+      },
+      {
+        "step": "speckit.implement",
+        "started": "2026-05-12T03:25:25-05:00",
+        "completed": "2026-05-11T13:22:46-05:00",
+        "durationMs": -50559000
+      },
+      {
+        "step": "speckit.specify",
+        "started": "2026-05-12T05:38:14-05:00",
+        "completed": "2026-05-11T13:13:07-05:00",
+        "durationMs": -59107000
+      },
+      {
+        "step": "speckit.clarify",
+        "started": "2026-05-12T05:39:43-05:00",
+        "completed": "2026-05-11T13:13:22-05:00",
+        "durationMs": -59181000
+      },
+      {
+        "step": "speckit.plan",
+        "started": "2026-05-12T05:40:09-05:00",
+        "completed": "2026-05-11T13:13:58-05:00",
+        "durationMs": -59171000
+      },
+      {
+        "step": "speckit.tasks",
+        "started": "2026-05-12T05:41:29-05:00",
+        "completed": "2026-05-11T13:14:24-05:00",
+        "durationMs": -59225000
+      },
+      {
+        "step": "speckit.analyze",
+        "started": "2026-05-12T05:42:19-05:00",
+        "completed": "2026-05-11T13:14:31-05:00",
+        "durationMs": -59268000
+      },
+      {
+        "step": "speckit.implement",
+        "started": "2026-05-12T05:42:38-05:00",
+        "completed": "2026-05-11T13:22:46-05:00",
+        "durationMs": -58792000
+      },
+      {
+        "step": "speckit.specify",
+        "started": "2026-05-12T08:00:07-05:00",
+        "completed": "2026-05-11T13:13:07-05:00",
+        "durationMs": -67620000
+      },
+      {
+        "step": "speckit.clarify",
+        "started": "2026-05-12T08:01:22-05:00",
+        "completed": "2026-05-11T13:13:22-05:00",
+        "durationMs": -67680000
+      },
+      {
+        "step": "speckit.plan",
+        "started": "2026-05-12T08:01:28-05:00",
+        "completed": "2026-05-11T13:13:58-05:00",
+        "durationMs": -67650000
+      },
+      {
+        "step": "speckit.tasks",
+        "started": "2026-05-12T08:01:56-05:00",
+        "completed": "2026-05-11T13:14:24-05:00",
+        "durationMs": -67652000
+      },
+      {
+        "step": "speckit.analyze",
+        "started": "2026-05-12T08:02:15-05:00",
+        "completed": "2026-05-11T13:14:31-05:00",
+        "durationMs": -67664000
+      },
+      {
+        "step": "speckit.implement",
+        "started": "2026-05-12T08:02:20-05:00",
+        "completed": "2026-05-11T13:22:46-05:00",
+        "durationMs": -67174000
+      }
+    ],
+    "totalSteps": 36,
+    "completedSteps": 36
+  },
+  "diffHygiene": null
+}

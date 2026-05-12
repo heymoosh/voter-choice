@@ -1,0 +1,305 @@
+{
+  "metadata": {
+    "timestamp": "2026-05-11T16:51:09.777Z",
+    "branch": "experiment/vanilla-r3",
+    "commit": "f10c3b9",
+    "phase": 1,
+    "nodeVersion": "v22.14.0"
+  },
+  "eslint": {
+    "errors": 0,
+    "warnings": 2,
+    "complexityViolations": 2
+  },
+  "complexity": {
+    "count": 27,
+    "average": 3.93,
+    "max": 15,
+    "p50": 3,
+    "p75": 4,
+    "p95": 11,
+    "distribution": {
+      "simple_1_5": 23,
+      "moderate_6_10": 2,
+      "complex_11_15": 2,
+      "highComplex_16_20": 0,
+      "critical_21plus": 0
+    },
+    "perFunction": [
+      {
+        "file": "src/lib/promptBuilder.ts",
+        "name": "buildContextBlock",
+        "complexity": 15,
+        "line": 87
+      },
+      {
+        "file": "src/components/BallotTool.tsx",
+        "name": "RegistrationStatus",
+        "complexity": 11,
+        "line": 50
+      },
+      {
+        "file": "src/components/BallotTool.tsx",
+        "name": "StateInfoCard",
+        "complexity": 10,
+        "line": 130
+      },
+      {
+        "file": "src/components/BallotTool.tsx",
+        "name": "BallotTool",
+        "complexity": 7,
+        "line": 383
+      },
+      {
+        "file": "src/components/BallotTool.tsx",
+        "name": "<arrow>",
+        "complexity": 4,
+        "line": 389
+      },
+      {
+        "file": "src/components/BallotTool.tsx",
+        "name": "<arrow>",
+        "complexity": 4,
+        "line": 409
+      },
+      {
+        "file": "src/lib/__tests__/stateData.test.ts",
+        "name": "<arrow>",
+        "complexity": 4,
+        "line": 70
+      },
+      {
+        "file": "src/lib/deadlines.ts",
+        "name": "getDeadlineStatus",
+        "complexity": 4,
+        "line": 20
+      },
+      {
+        "file": "src/lib/deadlines.ts",
+        "name": "calcDeadline",
+        "complexity": 4,
+        "line": 31
+      },
+      {
+        "file": "src/components/BallotTool.tsx",
+        "name": "PromptOutput",
+        "complexity": 3,
+        "line": 281
+      },
+      {
+        "file": "src/components/BallotTool.tsx",
+        "name": "<anonymous>",
+        "complexity": 3,
+        "line": 296
+      },
+      {
+        "file": "src/components/BallotTool.tsx",
+        "name": "<arrow>",
+        "complexity": 3,
+        "line": 397
+      },
+      {
+        "file": "src/components/BallotTool.tsx",
+        "name": "<arrow>",
+        "complexity": 3,
+        "line": 437
+      },
+      {
+        "file": "src/lib/__tests__/stateData.test.ts",
+        "name": "<arrow>",
+        "complexity": 3,
+        "line": 34
+      },
+      {
+        "file": "src/lib/__tests__/stateData.test.ts",
+        "name": "<arrow>",
+        "complexity": 3,
+        "line": 57
+      },
+      {
+        "file": "src/lib/__tests__/stateData.test.ts",
+        "name": "<arrow>",
+        "complexity": 3,
+        "line": 63
+      },
+      {
+        "file": "src/components/BallotTool.tsx",
+        "name": "<arrow>",
+        "complexity": 2,
+        "line": 481
+      },
+      {
+        "file": "src/components/BallotTool.tsx",
+        "name": "<arrow>",
+        "complexity": 2,
+        "line": 485
+      },
+      {
+        "file": "src/lib/__tests__/deadlines.test.ts",
+        "name": "<arrow>",
+        "complexity": 2,
+        "line": 129
+      },
+      {
+        "file": "src/lib/__tests__/deadlines.test.ts",
+        "name": "<arrow>",
+        "complexity": 2,
+        "line": 152
+      },
+      {
+        "file": "src/lib/__tests__/promptBuilder.test.ts",
+        "name": "<arrow>",
+        "complexity": 2,
+        "line": 26
+      },
+      {
+        "file": "src/lib/__tests__/stateData.test.ts",
+        "name": "<arrow>",
+        "complexity": 2,
+        "line": 41
+      },
+      {
+        "file": "src/lib/__tests__/stateData.test.ts",
+        "name": "<arrow>",
+        "complexity": 2,
+        "line": 47
+      },
+      {
+        "file": "src/lib/deadlines.ts",
+        "name": "daysUntil",
+        "complexity": 2,
+        "line": 7
+      },
+      {
+        "file": "src/lib/deadlines.ts",
+        "name": "findNextElection",
+        "complexity": 2,
+        "line": 50
+      },
+      {
+        "file": "src/lib/stateData.ts",
+        "name": "getStatesForZip",
+        "complexity": 2,
+        "line": 19
+      },
+      {
+        "file": "src/lib/stateData.ts",
+        "name": "getStateData",
+        "complexity": 2,
+        "line": 28
+      }
+    ]
+  },
+  "vitest": {
+    "tests": {
+      "total": 46,
+      "passed": 46,
+      "failed": 0,
+      "skipped": 0,
+      "passRate": 100
+    },
+    "coverage": {
+      "lines": 17.06,
+      "branches": 86,
+      "functions": 92.3,
+      "statements": 17.06
+    }
+  },
+  "duplication": {
+    "duplicatedLines": 0,
+    "totalLines": 1583,
+    "percentage": 0,
+    "clones": 0
+  },
+  "bundleSize": {
+    "buildSuccess": true,
+    "pages": [
+      {
+        "route": "/",
+        "size": 7.86,
+        "unit": "kB"
+      },
+      {
+        "route": "/_not-found",
+        "size": 990,
+        "unit": "B"
+      }
+    ],
+    "firstLoadJsShared": {
+      "size": 102,
+      "unit": "kB"
+    }
+  },
+  "lighthouse": {
+    "performance": 100,
+    "accessibility": 100,
+    "bestPractices": 100,
+    "seo": 100
+  },
+  "playwright": {
+    "total": 42,
+    "passed": 42,
+    "failed": 0,
+    "timedOut": 0,
+    "skipped": 0,
+    "passRate": 100
+  },
+  "linesOfCode": {
+    "application": {
+      "code": 1428,
+      "files": 15,
+      "byExtension": {
+        ".css": {
+          "files": 1,
+          "code": 21
+        },
+        ".tsx": {
+          "files": 3,
+          "code": 657
+        },
+        ".json": {
+          "files": 4,
+          "code": 228
+        },
+        ".ts": {
+          "files": 7,
+          "code": 522
+        }
+      }
+    },
+    "plugin": {
+      "code": 0,
+      "files": 0,
+      "byExtension": {}
+    },
+    "infrastructure": {
+      "code": 351,
+      "files": 10
+    },
+    "total": {
+      "code": 1779,
+      "files": 25
+    }
+  },
+  "workflowTests": {
+    "count": 3,
+    "files": [
+      "src/lib/__tests__/deadlines.test.ts",
+      "src/lib/__tests__/promptBuilder.test.ts",
+      "src/lib/__tests__/stateData.test.ts"
+    ]
+  },
+  "workflowTiming": {
+    "steps": [
+      {
+        "step": "vanilla-build",
+        "started": "2026-05-11T11:45:14-05:00",
+        "completed": "2026-05-11T11:50:36-05:00",
+        "durationMs": 322000
+      }
+    ],
+    "totalSteps": 1,
+    "completedSteps": 1
+  },
+  "diffHygiene": null
+}
