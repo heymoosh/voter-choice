@@ -83,6 +83,16 @@ Note: **Scoring is executed by Hermes from the host side, not inside the build c
 
 
 
+
+### Phase 6 forward — bmad (auto)
+
+- **Date:** 2026-05-12T12:54:30.993Z
+- **Branch:** `experiment/bmad-r2`
+- **Tag:** `bmad-phase6-complete`
+- **Status:** ✓
+- **Summary:** e2e 182/182, coverage 27.3%, LOC 8287, complexity avg 5.76, scope adherence ?
+
+
 ### Phase 6 forward — vanilla (auto)
 
 - **Date:** 2026-05-12T12:29:23.882Z
