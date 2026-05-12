@@ -35,6 +35,7 @@ The result will not, by itself, tell you:
 | n=3 only at Phase 1 | Full-phase replicates would cost 5× compute. Phase 1 is the cleanest signal for variance. Replicates are forked from `experiment/<framework>` into `experiment/<framework>-r1`, `-r2`, `-r3`; median-LOC run becomes the representative; Phases 2–5 run on that. | Variance estimate doesn't account for compounding drift across iterations. |
 | Model fixed (Sonnet/Opus class) | Lets the workflow be the independent variable. | Cannot separate "this workflow needs Opus" from "this workflow is good." |
 | Rubric isolation only for Runs 1–5 | Runs 1–5 document the failure mode and partial mitigations that preceded the v2 isolation deployment. Run 6 is the first run that should be treated as fully isolated under the Docker tmpfs masking plan. | Aggregating across pre-v2 and v2 runs would blur a material methodology change; public claims should anchor on the isolated v2 rerun. |
+| Mounted `.git/` exposes prior refs to non-adversarial agents | Docker worktrees need the main repo's `.git/` mounted at its host absolute path or Git breaks. For v2 we accept the residual risk that an agent could manually inspect prior tags through Git plumbing, rather than adding ref-sanitization complexity up front. | A deliberately curious workflow could inspect Run 5 refs or historical metrics, which would bias gameable axes upward. If Run 6 shows anomalously high gameable-axis scores, escalate to a sanitized Git mount in a follow-on rerun. |
 
 ## How to talk about results publicly
 

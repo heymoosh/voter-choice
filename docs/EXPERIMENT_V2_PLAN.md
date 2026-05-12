@@ -752,6 +752,7 @@ All `OK`s = Phase A green. Any failure = fix before proceeding.
 **Create:**
 - `scripts/emit-timing.sh` — A1.2 host-side timing wrapper
 - `scripts/post-build-score.sh` — A5 host-side harvester + scorer
+- `scripts/validate-container-git.sh` — A5 live regression check for Git worktrees inside Docker
 - `scoring/acceptance-coverage.mjs` — A4.1
 - `scoring/nfr-compliance.mjs` — A4.2
 - `scoring/tdd-signal.mjs` — A4.3
@@ -797,21 +798,23 @@ After each Phase gate passes:
 
 2. **Hermes isolation breaks if `metrics/` is masked before measure.mjs runs and you don't provide a scratch mount.** The intended pattern is: container runs the build → writes only to `metrics/run-outputs/<run-id>/` mounted at `/workspace/metrics` → exits → host runs the scorer against the repo checkout plus that scratch dir. Measure.mjs runs OUTSIDE the container, so it can see `scoring/` and merge the scratch timing/workflow logs into canonical `metrics/<branch>/phase<N>.json`. Don't accidentally invert this.
 
-3. **Tag convention drift.** Run 5 used `<framework>-phase<N>-complete` for forward phases (no replicate). Run 6 should use `<framework>-r<N>-phase<N>-complete` uniformly. The scoring scripts handle both via fallback, but new tags emitted by `/start` orchestration must use the v2 convention.
+3. **Git worktrees need the main repo's `.git/` mounted live.** A worktree `.git` is a pointer file to the main repo's `.git/worktrees/<name>/` metadata, not a standalone directory. Mounting only the worktree path into Docker makes live Git resolution fail even when dry-run simulation looks fine. Container execution must mount both the worktree path and the main repo's `.git/` at their host absolute paths, and `scripts/validate-container-git.sh` should pass before any smoke/full build starts.
 
-4. **Spec restructuring can drift from existing tests.** When adding AC-N IDs to specs, also retrofit at least one e2e/integration test per AC to reference the ID in its `describe()` name. Otherwise A4.1 will report 0% coverage on Run 5 data — which is technically correct but useless for the Run 5 vs Run 6 comparison.
+4. **Tag convention drift.** Run 5 used `<framework>-phase<N>-complete` for forward phases (no replicate). Run 6 should use `<framework>-r<N>-phase<N>-complete` uniformly. The scoring scripts handle both via fallback, but new tags emitted by `/start` orchestration must use the v2 convention.
 
-5. **Sub-agent transcripts may not be available depending on Claude Code config.** A4.6 assumes transcripts are written somewhere host-readable. If not, treat `subagentCalls` as optional and emit `null`; the Process Fidelity axis should weight other components more heavily in that case.
+5. **Spec restructuring can drift from existing tests.** When adding AC-N IDs to specs, also retrofit at least one e2e/integration test per AC to reference the ID in its `describe()` name. Otherwise A4.1 will report 0% coverage on Run 5 data — which is technically correct but useless for the Run 5 vs Run 6 comparison.
 
-6. **`madge` can choke on circular deps.** A4.4 should handle the `circular` field gracefully and not crash on cycles. Use `madge --json` (machine-readable) rather than `madge --circular` (CLI-formatted).
+6. **Sub-agent transcripts may not be available depending on Claude Code config.** A4.6 assumes transcripts are written somewhere host-readable. If not, treat `subagentCalls` as optional and emit `null`; the Process Fidelity axis should weight other components more heavily in that case.
 
-7. **`tsc --strict` may fail if the project's tsconfig.json already disables it.** A4.5 needs to invoke tsc with explicit `--strict` even when the project config disables it — that's the whole point of measuring "would this code pass strict mode."
+7. **`madge` can choke on circular deps.** A4.4 should handle the `circular` field gracefully and not crash on cycles. Use `madge --json` (machine-readable) rather than `madge --circular` (CLI-formatted).
 
-8. **Run 5 data must not be deleted.** Phase C6 compares Run 5 ranking to Run 6 ranking. If you accidentally regenerate FINAL_RANKING.md before capturing the Run 5 version, recover it from git history: `git show <run5-tag>:metrics/experiment/FINAL_RANKING.md`.
+8. **`tsc --strict` may fail if the project's tsconfig.json already disables it.** A4.5 needs to invoke tsc with explicit `--strict` even when the project config disables it — that's the whole point of measuring "would this code pass strict mode."
 
-9. **CE coverage will need backfill OR re-runs.** Run 5's `compound-engineering` phase JSONs have `vitest.coverage = None` for Phases 2-6. In Run 6, this is moot (clean re-run captures coverage). But if you ever need to retroactively analyze Run 5, you'll need to check out each `compound-engineering-phase<N>-complete` tag and run `npx vitest run --coverage`.
+9. **Run 5 data must not be deleted.** Phase C6 compares Run 5 ranking to Run 6 ranking. If you accidentally regenerate FINAL_RANKING.md before capturing the Run 5 version, recover it from git history: `git show <run5-tag>:metrics/experiment/FINAL_RANKING.md`.
 
-10. **Process Fidelity axis must NOT reward vanilla.** Vanilla has no declared workflow — it should score lowest on this axis by construction. If your sanity check (B8) shows vanilla scoring high here, the axis is rewarding the wrong thing (e.g., "no workflow violations" because there's no workflow to violate). Fix by anchoring the score to declared-step coverage, not to absence of violations.
+10. **CE coverage will need backfill OR re-runs.** Run 5's `compound-engineering` phase JSONs have `vitest.coverage = None` for Phases 2-6. In Run 6, this is moot (clean re-run captures coverage). But if you ever need to retroactively analyze Run 5, you'll need to check out each `compound-engineering-phase<N>-complete` tag and run `npx vitest run --coverage`.
+
+11. **Process Fidelity axis must NOT reward vanilla.** Vanilla has no declared workflow — it should score lowest on this axis by construction. If your sanity check (B8) shows vanilla scoring high here, the axis is rewarding the wrong thing (e.g., "no workflow violations" because there's no workflow to violate). Fix by anchoring the score to declared-step coverage, not to absence of violations.
 
 ---
 

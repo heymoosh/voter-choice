@@ -23,20 +23,29 @@
 set -euo pipefail
 
 REPO_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+WORKTREE_PATH="$REPO_DIR"
+COMMON_GIT_DIR_RAW="$(git -C "$WORKTREE_PATH" rev-parse --git-common-dir)"
+if [[ "$COMMON_GIT_DIR_RAW" = /* ]]; then
+  COMMON_GIT_DIR="$COMMON_GIT_DIR_RAW"
+else
+  COMMON_GIT_DIR="$(cd "$WORKTREE_PATH" && cd "$COMMON_GIT_DIR_RAW" && pwd)"
+fi
+HOST_MAIN_REPO="$(dirname "$COMMON_GIT_DIR")"
+MAIN_GIT_DIR="$HOST_MAIN_REPO/.git"
 CLAUDE_DIR="$HOME/.claude"
 CLAUDE_CONFIG_FILE="$HOME/.claude.json"
 TIMESTAMP="$(date -u +%Y%m%dT%H%M%SZ)"
-CURRENT_BRANCH="$(git -C "$REPO_DIR" branch --show-current 2>/dev/null | tr '/ ' '--')"
+CURRENT_BRANCH="$(git -C "$WORKTREE_PATH" branch --show-current 2>/dev/null | tr '/ ' '--')"
 RUN_ID="${CURRENT_BRANCH:-run}-${TIMESTAMP}"
-RUN_OUTPUT_DIR="$REPO_DIR/metrics/run-outputs/$RUN_ID"
+RUN_OUTPUT_DIR="$WORKTREE_PATH/metrics/run-outputs/$RUN_ID"
 DOC_FILE_MOUNTS=(
-  -v "$REPO_DIR/docs/PROJECT_SPEC.md:/workspace/docs/PROJECT_SPEC.md:ro"
-  -v "$REPO_DIR/docs/PHASE2_SPEC.md:/workspace/docs/PHASE2_SPEC.md:ro"
-  -v "$REPO_DIR/docs/PHASE3_SPEC.md:/workspace/docs/PHASE3_SPEC.md:ro"
-  -v "$REPO_DIR/docs/PHASE4_SPEC.md:/workspace/docs/PHASE4_SPEC.md:ro"
-  -v "$REPO_DIR/docs/PHASE5_SPEC.md:/workspace/docs/PHASE5_SPEC.md:ro"
-  -v "$REPO_DIR/docs/PHASE6_SPEC.md:/workspace/docs/PHASE6_SPEC.md:ro"
-  -v "$REPO_DIR/docs/BALLOT_PROMPT.md:/workspace/docs/BALLOT_PROMPT.md:ro"
+  -v "$WORKTREE_PATH/docs/PROJECT_SPEC.md:$WORKTREE_PATH/docs/PROJECT_SPEC.md:ro"
+  -v "$WORKTREE_PATH/docs/PHASE2_SPEC.md:$WORKTREE_PATH/docs/PHASE2_SPEC.md:ro"
+  -v "$WORKTREE_PATH/docs/PHASE3_SPEC.md:$WORKTREE_PATH/docs/PHASE3_SPEC.md:ro"
+  -v "$WORKTREE_PATH/docs/PHASE4_SPEC.md:$WORKTREE_PATH/docs/PHASE4_SPEC.md:ro"
+  -v "$WORKTREE_PATH/docs/PHASE5_SPEC.md:$WORKTREE_PATH/docs/PHASE5_SPEC.md:ro"
+  -v "$WORKTREE_PATH/docs/PHASE6_SPEC.md:$WORKTREE_PATH/docs/PHASE6_SPEC.md:ro"
+  -v "$WORKTREE_PATH/docs/BALLOT_PROMPT.md:$WORKTREE_PATH/docs/BALLOT_PROMPT.md:ro"
 )
 CLAUDE_FILE_MOUNTS=()
 
@@ -65,7 +74,7 @@ while [[ $# -gt 0 ]]; do
       ;;
     --run-id)
       RUN_ID="${2:-}"
-      RUN_OUTPUT_DIR="$REPO_DIR/metrics/run-outputs/$RUN_ID"
+      RUN_OUTPUT_DIR="$WORKTREE_PATH/metrics/run-outputs/$RUN_ID"
       shift 2
       ;;
     *)
@@ -83,23 +92,23 @@ if [[ "$DRY_RUN" -eq 1 ]]; then
   mkdir -p "$WORKSPACE_ROOT"
 
   if [[ "$NO_ISOLATION" -eq 1 ]]; then
-    ln -s "$REPO_DIR/scoring" "$WORKSPACE_ROOT/scoring"
-    ln -s "$REPO_DIR/metrics" "$WORKSPACE_ROOT/metrics"
-    ln -s "$REPO_DIR/docs" "$WORKSPACE_ROOT/docs"
+    ln -s "$WORKTREE_PATH/scoring" "$WORKSPACE_ROOT/scoring"
+    ln -s "$WORKTREE_PATH/metrics" "$WORKSPACE_ROOT/metrics"
+    ln -s "$WORKTREE_PATH/docs" "$WORKSPACE_ROOT/docs"
   else
     mkdir -p "$WORKSPACE_ROOT/scoring" "$WORKSPACE_ROOT/metrics" "$WORKSPACE_ROOT/docs"
-    cp "$REPO_DIR/docs/PROJECT_SPEC.md" "$WORKSPACE_ROOT/docs/PROJECT_SPEC.md"
-    cp "$REPO_DIR/docs/PHASE2_SPEC.md" "$WORKSPACE_ROOT/docs/PHASE2_SPEC.md"
-    cp "$REPO_DIR/docs/PHASE3_SPEC.md" "$WORKSPACE_ROOT/docs/PHASE3_SPEC.md"
-    cp "$REPO_DIR/docs/PHASE4_SPEC.md" "$WORKSPACE_ROOT/docs/PHASE4_SPEC.md"
-    cp "$REPO_DIR/docs/PHASE5_SPEC.md" "$WORKSPACE_ROOT/docs/PHASE5_SPEC.md"
-    cp "$REPO_DIR/docs/PHASE6_SPEC.md" "$WORKSPACE_ROOT/docs/PHASE6_SPEC.md"
-    cp "$REPO_DIR/docs/BALLOT_PROMPT.md" "$WORKSPACE_ROOT/docs/BALLOT_PROMPT.md"
+    cp "$WORKTREE_PATH/docs/PROJECT_SPEC.md" "$WORKSPACE_ROOT/docs/PROJECT_SPEC.md"
+    cp "$WORKTREE_PATH/docs/PHASE2_SPEC.md" "$WORKSPACE_ROOT/docs/PHASE2_SPEC.md"
+    cp "$WORKTREE_PATH/docs/PHASE3_SPEC.md" "$WORKSPACE_ROOT/docs/PHASE3_SPEC.md"
+    cp "$WORKTREE_PATH/docs/PHASE4_SPEC.md" "$WORKSPACE_ROOT/docs/PHASE4_SPEC.md"
+    cp "$WORKTREE_PATH/docs/PHASE5_SPEC.md" "$WORKSPACE_ROOT/docs/PHASE5_SPEC.md"
+    cp "$WORKTREE_PATH/docs/PHASE6_SPEC.md" "$WORKSPACE_ROOT/docs/PHASE6_SPEC.md"
+    cp "$WORKTREE_PATH/docs/BALLOT_PROMPT.md" "$WORKSPACE_ROOT/docs/BALLOT_PROMPT.md"
   fi
 
   HOST_ASSERTIONS='[ -z "$(ls -A __WORKSPACE__/scoring 2>/dev/null)" ] || { echo "isolation breach: scoring/ visible" >&2; exit 1; }; [ -z "$(ls -A __WORKSPACE__/metrics 2>/dev/null)" ] || { echo "isolation breach: metrics/ visible" >&2; exit 1; }; [ ! -e __WORKSPACE__/docs/RUN_LOG.md ] || { echo "isolation breach: RUN_LOG.md visible" >&2; exit 1; }; [ ! -e __WORKSPACE__/docs/LEARNINGS.md ] || { echo "isolation breach: LEARNINGS.md visible" >&2; exit 1; }; [ ! -e __WORKSPACE__/docs/EXPERIMENT_HISTORY.md ] || { echo "isolation breach: EXPERIMENT_HISTORY.md visible" >&2; exit 1; }; [ ! -e __WORKSPACE__/docs/EXPERIMENT_V2_PLAN.md ] || { echo "isolation breach: EXPERIMENT_V2_PLAN.md visible" >&2; exit 1; }; [ ! -e __WORKSPACE__/docs/FINAL_RANKING.md ] || { echo "isolation breach: FINAL_RANKING.md visible" >&2; exit 1; }'
   HOST_ASSERTIONS="${HOST_ASSERTIONS//__WORKSPACE__/$WORKSPACE_ROOT}"
-  HOST_CMD="${SHELL_CMD//\/workspace/$WORKSPACE_ROOT}"
+  HOST_CMD="${SHELL_CMD//$WORKTREE_PATH/$WORKSPACE_ROOT}"
   bash -lc "$HOST_ASSERTIONS; ${HOST_CMD:-true}; echo 'isolation ok'"
   rm -rf "$DRY_ROOT"
   exit 0
@@ -110,23 +119,25 @@ echo "Building claude-runner image..."
 docker build -t claude-runner "$REPO_DIR/docker"
 
 echo "Starting Claude Code in isolated container..."
-echo "  Repo mounted at: /workspace"
+echo "  Worktree path:    $WORKTREE_PATH"
+echo "  Main .git mount:  $MAIN_GIT_DIR"
 echo "  Running as:      runner (non-root)"
-echo "  Scoring masked:  /workspace/scoring (tmpfs)"
-echo "  Scratch metrics: $RUN_OUTPUT_DIR -> /workspace/metrics"
+echo "  Scoring masked:  $WORKTREE_PATH/scoring (tmpfs)"
+echo "  Scratch metrics: $RUN_OUTPUT_DIR -> $WORKTREE_PATH/metrics"
 echo ""
 
-ASSERTIONS='[ -z "$(ls -A /workspace/scoring 2>/dev/null)" ] || { echo "isolation breach: scoring/ visible" >&2; exit 1; }; [ -z "$(ls -A /workspace/metrics 2>/dev/null)" ] || { echo "isolation breach: metrics/ visible" >&2; exit 1; }; [ ! -e /workspace/docs/RUN_LOG.md ] || { echo "isolation breach: RUN_LOG.md visible" >&2; exit 1; }; [ ! -e /workspace/docs/LEARNINGS.md ] || { echo "isolation breach: LEARNINGS.md visible" >&2; exit 1; }; [ ! -e /workspace/docs/EXPERIMENT_HISTORY.md ] || { echo "isolation breach: EXPERIMENT_HISTORY.md visible" >&2; exit 1; }; [ ! -e /workspace/docs/EXPERIMENT_V2_PLAN.md ] || { echo "isolation breach: EXPERIMENT_V2_PLAN.md visible" >&2; exit 1; }; [ ! -e /workspace/docs/FINAL_RANKING.md ] || { echo "isolation breach: FINAL_RANKING.md visible" >&2; exit 1; }'
+ASSERTIONS='[ -z "$(ls -A __WORKTREE__/scoring 2>/dev/null)" ] || { echo "isolation breach: scoring/ visible" >&2; exit 1; }; [ -z "$(ls -A __WORKTREE__/metrics 2>/dev/null)" ] || { echo "isolation breach: metrics/ visible" >&2; exit 1; }; [ ! -e __WORKTREE__/docs/RUN_LOG.md ] || { echo "isolation breach: RUN_LOG.md visible" >&2; exit 1; }; [ ! -e __WORKTREE__/docs/LEARNINGS.md ] || { echo "isolation breach: LEARNINGS.md visible" >&2; exit 1; }; [ ! -e __WORKTREE__/docs/EXPERIMENT_HISTORY.md ] || { echo "isolation breach: EXPERIMENT_HISTORY.md visible" >&2; exit 1; }; [ ! -e __WORKTREE__/docs/EXPERIMENT_V2_PLAN.md ] || { echo "isolation breach: EXPERIMENT_V2_PLAN.md visible" >&2; exit 1; }; [ ! -e __WORKTREE__/docs/FINAL_RANKING.md ] || { echo "isolation breach: FINAL_RANKING.md visible" >&2; exit 1; }'
+ASSERTIONS="${ASSERTIONS//__WORKTREE__/$WORKTREE_PATH}"
 
 if [[ -n "$SHELL_CMD" ]]; then
   CONTAINER_CMD="$SHELL_CMD"
 else
-  CONTAINER_CMD='if [[ -f /workspace/.env.local ]]; then set -a; source /workspace/.env.local; set +a; fi; claude --bare --dangerously-skip-permissions -p "$CLAUDE_PROMPT"'
+  CONTAINER_CMD='if [[ -f "$WORKTREE_PATH/.env.local" ]]; then set -a; source "$WORKTREE_PATH/.env.local"; set +a; fi; claude --bare --dangerously-skip-permissions -p "$CLAUDE_PROMPT"'
 fi
 
 TMPFS_FLAGS=(
-  --tmpfs /workspace/scoring:rw,size=1m
-  --tmpfs /workspace/docs:rw,size=8m
+  --tmpfs "$WORKTREE_PATH/scoring:rw,size=1m"
+  --tmpfs "$WORKTREE_PATH/docs:rw,size=8m"
 )
 
 if [[ "$NO_ISOLATION" -eq 1 ]]; then
@@ -136,8 +147,9 @@ fi
 
 docker run -it --rm \
   --name claude-runner \
-  -v "$REPO_DIR:/workspace" \
-  -v "$RUN_OUTPUT_DIR:/workspace/metrics" \
+  -v "$MAIN_GIT_DIR:$MAIN_GIT_DIR:rw" \
+  -v "$WORKTREE_PATH:$WORKTREE_PATH:rw" \
+  -v "$RUN_OUTPUT_DIR:$WORKTREE_PATH/metrics" \
   -v "$CLAUDE_DIR:/home/runner/.claude" \
   "${CLAUDE_FILE_MOUNTS[@]}" \
   "${TMPFS_FLAGS[@]}" \
@@ -146,11 +158,13 @@ docker run -it --rm \
   --ipc=host \
   -e PLAYWRIGHT_BROWSERS_PATH=/ms-playwright \
   -e CLAUDE_PROMPT="$PROMPT" \
+  -e WORKTREE_PATH="$WORKTREE_PATH" \
+  -w "$WORKTREE_PATH" \
   claude-runner \
   bash -lc "$ASSERTIONS; $CONTAINER_CMD"
 
 if [[ "$DRY_RUN" -eq 0 ]]; then
   if [[ -f "$RUN_OUTPUT_DIR/timing.jsonl" ]]; then
-    bash "$REPO_DIR/scripts/post-build-score.sh" --repo "$REPO_DIR" --run-dir "$RUN_OUTPUT_DIR"
+    bash "$WORKTREE_PATH/scripts/post-build-score.sh" --repo "$WORKTREE_PATH" --run-dir "$RUN_OUTPUT_DIR"
   fi
 fi

@@ -558,31 +558,31 @@ This is not a local bug. It is an architecture conflict between isolation and me
 
 Host-side scoring after container exit is the v2 pattern. Container-side workflows should never invoke `measure.mjs`, `compute-deltas.mjs`, or `diff-hygiene.mjs`.
 
-## Learning 011: Dry-run Success Can Hide Live Docker Entry Gaps
+## Learning 011: Worktree `.git` Is a Pointer File, Not a Directory
 
 **Date discovered:** 2026-05-12
-**Affects:** Hermes isolation validation and Phase B smoke-run readiness
-**Severity:** High — dry-run passed while live Docker could not execute the intended entry path
+**Affects:** Hermes Docker worktree execution and all future smoke/full reruns
+**Severity:** Critical — live container can silently lose Git history and branch state
 
 ### What happened
 
-The dry-run simulation in `docker/run-claude.sh` correctly honored `--shell`, but the live Docker path ignored `--shell` and always launched `claude -p ...` instead. The live path also mounted `~/.claude/` but not `~/.claude.json`, so even the fallback Claude entrypoint failed before the build started. After fixing that, a second live-only bug appeared: prompt text was interpolated directly into `bash -lc`, so shell metacharacters inside the prompt were executed before Claude received them.
+The first live Phase B smoke run mounted only the worktree path into Docker. That works for plain repos but not for Git worktrees: the worktree's `.git` file is just a pointer to the main repo's `.git/worktrees/<name>/` directory, and object/ref storage still lives in the main repo's `.git/`.
+
+Inside the container, that absolute pointer target did not exist. Git therefore behaved as if the checkout had no history and the agent ended up operating in what looked like an uninitialized repository.
 
 ### Why this matters
 
-- The Phase A dry-run check proved the masking model, but not the real container entry behavior.
-- Phase B's B1 gate caught the divergence immediately: the operator could not run a real in-container assertion/build command, and the live Claude path lacked required configuration.
-- Even after the config fix, the prompt transport was still unsafe until it stopped flowing through inline shell interpolation.
-- Without this fix, Hermes isolation looked correct on paper while the production path was not runnable.
+- A dry-run sandbox can mask the issue because it never exercises real Git resolution through the worktree pointer file.
+- The live container is the only trustworthy validation path for this bug class.
+- If the main repo's `.git/` is missing, branch detection, tags, `git status`, `git log`, and commits can all break or silently target the wrong repository state.
 
 ### Correct v2 pattern
 
-- `docker/run-claude.sh --shell '...'` must execute the provided command in both dry-run and live Docker modes.
-- Live Docker runs that invoke Claude must mount both `~/.claude/` and `~/.claude.json` read-only for the `runner` user.
-- Live Claude prompts should be passed via environment or another non-interpolating transport, not embedded directly into the shell command string.
-- Headless Docker invocation should prefer `claude --bare` with `ANTHROPIC_API_KEY` sourced from `/workspace/.env.local`, because desktop login state is not reliable inside the container.
-- Isolation verification should use the real per-run scratch dir mount pattern `metrics/run-outputs/<run-id>/ -> /workspace/metrics`, not just the dry-run sandbox.
+- Mount the worktree at its host absolute path inside the container.
+- Mount the main repo's `.git/` at its host absolute path inside the container.
+- Run the container with `-w <worktree-host-absolute-path>`, not a synthetic `/workspace` cwd.
+- Keep the A5 regression check (`scripts/validate-container-git.sh`) in the verification loop before smoke/full experiment runs.
 
 ### Decision
 
-Treat any live-vs-dry-run mismatch in `docker/run-claude.sh` as a Phase A infrastructure bug. Fix it before continuing the smoke run or the full rerun.
+Container mounts must include the main repo's `.git/` at its host absolute path. Dry-run mode cannot validate this; live container execution is the required test.
