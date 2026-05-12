@@ -1,0 +1,19 @@
+{
+  "state": "NH",
+  "voterIdRequired": true,
+  "idType": "photo",
+  "acceptedIds": [
+    "New Hampshire driver's license or non-driver ID",
+    "US passport or passport card",
+    "Military ID",
+    "Student ID from NH school",
+    "Any government-issued photo ID showing name and address"
+  ],
+  "exceptions": "Voters without qualifying ID may sign an affidavit of identity and vote. A poll worker may challenge the affidavit. Voter will be photographed if using the affidavit.",
+  "provisionalBallot": true,
+  "provisionalBallotRules": "Voters may cast a challenged ballot, which is set aside pending verification.",
+  "phonesAtPolls": true,
+  "phonesAtPollsDetail": "Phones are permitted but recording marked ballots is prohibited.",
+  "sourceUrl": "https://www.sos.nh.gov/elections/voters/id-requirements",
+  "lastVerified": "2026-04-03"
+}

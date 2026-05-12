@@ -451,3 +451,183 @@ input {
     min-width: 180px;
   }
 }
+
+/* ---- Phase 3: Loading skeleton ---- */
+.loading-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(7, 13, 24, 0.4);
+}
+
+.skeleton-line {
+  height: 14px;
+  border-radius: 8px;
+  background: linear-gradient(90deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.12) 50%, rgba(255,255,255,0.06) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+.skeleton-line-wide { width: 100%; }
+.skeleton-line-medium { width: 68%; }
+.skeleton-line-narrow { width: 42%; }
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ---- Phase 3: API error banners ---- */
+.notice-warning {
+  border: 1px solid rgba(251, 191, 36, 0.35);
+  background: rgba(251, 191, 36, 0.08);
+  color: #fde68a;
+}
+
+/* ---- Phase 3: Ballot contests ---- */
+.ballot-contests-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.contest-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.contest-card {
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(7, 13, 24, 0.5);
+  padding: 14px 16px;
+}
+
+.contest-title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--foreground);
+}
+
+.contest-subtitle,
+.contest-district {
+  font-size: 0.87rem;
+}
+
+.referendum-text {
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+/* ---- Phase 3: Candidates ---- */
+.candidates-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.candidate-card {
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(255, 255, 255, 0.04);
+  padding: 10px 12px;
+}
+
+.candidate-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.candidate-info {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  flex-wrap: wrap;
+}
+
+.candidate-name {
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.candidate-party {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.candidate-expand {
+  font-size: 0.8rem;
+  padding: 6px 12px;
+  min-height: 36px;
+  flex-shrink: 0;
+}
+
+.candidate-enrichment {
+  margin-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  padding-top: 12px;
+}
+
+.enrichment-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.enrichment-section {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.enrichment-sources {
+  margin-top: 4px;
+}
+
+.source-list {
+  list-style: none;
+  padding: 0;
+  margin: 4px 0 0 0;
+}
+
+.source-list li {
+  font-size: 0.82rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.source-link {
+  color: var(--primary);
+  text-decoration: underline;
+  font-size: 0.82rem;
+}
+
+/* ---- Phase 3: Data attribution ---- */
+.data-attribution {
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  padding-top: 12px;
+}
+
+.attribution-text,
+.attribution-time {
+  font-size: 0.82rem;
+  margin: 0;
+}
+
+/* ---- Phase 3: Voter ID card ---- */
+.voter-id-card {
+  border-color: rgba(143, 211, 255, 0.12);
+}
+
+.small {
+  font-size: 0.82rem !important;
+}

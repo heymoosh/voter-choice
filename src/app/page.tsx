@@ -1,11 +1,17 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { buildFullPrompt } from "@/lib/promptBuilder";
 import { getStateCodesForZip, getStateData } from "@/lib/stateRegistry";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { LanguageToggle } from "@/components/LanguageToggle";
+import { LoadingSkeleton } from "@/components/LoadingSkeleton";
+import { ApiErrorBanner } from "@/components/ApiErrorBanner";
+import { PollingLocation } from "@/components/PollingLocation";
+import { BallotContests } from "@/components/BallotContests";
+import { DataAttribution } from "@/components/DataAttribution";
 import type { StateData } from "@/types/state";
+import type { ElectionDataResult } from "@/lib/dataLayer";
 
 type LoadState = {
   code: string;
@@ -58,13 +64,20 @@ function ResultCard({
   prompt,
   onCopy,
   copyConfirmation,
+  electionData,
+  civicLoading,
 }: {
   stateData: StateData;
   prompt: string;
   onCopy: () => void;
   copyConfirmation: boolean;
+  electionData: ElectionDataResult | null;
+  civicLoading: boolean;
 }) {
   const { t, language } = useLanguage();
+
+  const stateElectionUrl =
+    stateData.resources.stateElectionWebsite ?? undefined;
 
   return (
     <section className="panel result-card" data-testid="state-info">
@@ -86,11 +99,29 @@ function ResultCard({
         </button>
       </div>
 
+      {/* API error banners */}
+      {electionData?.status === "partial" && (
+        <ApiErrorBanner
+          type="partial"
+          stateElectionUrl={stateElectionUrl}
+          stateName={stateData.stateName}
+        />
+      )}
+      {electionData?.status === "fallback" && (
+        <ApiErrorBanner
+          type="full"
+          stateElectionUrl={stateElectionUrl}
+          stateName={stateData.stateName}
+        />
+      )}
+
       <div className="metric-grid">
         <div className="metric-card">
           <p className="metric-label">{t.electionLabel}</p>
           <p className="metric-value" data-testid="election-name">
-            {stateData.elections[0]?.name ?? t.noElectionData}
+            {electionData?.civicData?.election?.name ??
+              stateData.elections[0]?.name ??
+              t.noElectionData}
           </p>
           <p className="muted" data-testid="election-date">
             {getElectionSummary(stateData, language)}
@@ -128,6 +159,58 @@ function ResultCard({
         </div>
       </div>
 
+      {/* Voter ID section (from static JSON) */}
+      {electionData?.voterIdInfo && (
+        <div className="metric-card voter-id-card">
+          <p className="metric-label">{t.voterIdLabel}</p>
+          <p className="metric-value">
+            {electionData.voterIdInfo.voterIdRequired
+              ? t.voterIdRequiredText
+              : t.voterIdNotRequiredText}
+          </p>
+          {electionData.voterIdInfo.exceptions && (
+            <p className="muted">{electionData.voterIdInfo.exceptions}</p>
+          )}
+          <p className="muted small">{t.voterIdVerifyNote}</p>
+        </div>
+      )}
+
+      {/* Civic data section: polling location */}
+      {civicLoading && !electionData?.civicData?.pollingLocation && (
+        <LoadingSkeleton
+          label={
+            language === "es"
+              ? "Cargando datos electorales..."
+              : "Loading election data..."
+          }
+        />
+      )}
+      {electionData?.civicData?.pollingLocation && (
+        <PollingLocation location={electionData.civicData.pollingLocation} />
+      )}
+
+      {/* Civic data section: ballot contests */}
+      {civicLoading && !electionData?.civicData?.ballotContests.length && (
+        <LoadingSkeleton
+          label={language === "es" ? "Cargando boleta..." : "Loading ballot..."}
+        />
+      )}
+      {electionData?.civicData?.ballotContests &&
+        electionData.civicData.ballotContests.length > 0 && (
+          <BallotContests
+            contests={electionData.civicData.ballotContests}
+            state={stateData.stateCode}
+          />
+        )}
+
+      {/* Data attribution */}
+      {electionData?.civicData && (
+        <DataAttribution
+          fetchedAt={electionData.civicData.fetchedAt}
+          stateElectionUrl={stateElectionUrl}
+        />
+      )}
+
       <label className="prompt-label">
         <span className="eyebrow">{t.promptEyebrow}</span>
         <p className="prompt-instructions">{t.promptInstructions}</p>
@@ -162,9 +245,13 @@ export default function Home() {
   const [zipInput, setZipInput] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [civicLoading, setCivicLoading] = useState(false);
   const [copyConfirmation, setCopyConfirmation] = useState(false);
   const [stateChoices, setStateChoices] = useState<string[]>([]);
   const [result, setResult] = useState<LoadState | null>(null);
+  const [electionData, setElectionData] = useState<ElectionDataResult | null>(
+    null,
+  );
   const [notFound, setNotFound] = useState<string | null>(null);
 
   const selectedCode = result?.code ?? null;
@@ -176,7 +263,7 @@ export default function Home() {
     return getStateData(selectedCode);
   }, [selectedCode]);
 
-  // Rebuild prompt when language changes so the toggle updates the prompt
+  // Rebuild prompt when language changes or civic data arrives
   useEffect(() => {
     if (result) {
       const stateData = getStateData(result.code);
@@ -186,12 +273,14 @@ export default function Home() {
           result.zip,
           null,
           language,
+          electionData?.civicData ?? null,
+          electionData?.voterIdInfo ?? null,
         );
         setResult((prev) => (prev ? { ...prev, prompt: newPrompt } : null));
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [language]);
+  }, [language, electionData]);
 
   useEffect(() => {
     if (!copyConfirmation) {
@@ -211,6 +300,45 @@ export default function Home() {
     setCopyConfirmation(true);
   }
 
+  const fetchCivicData = useCallback(
+    async (code: string, zip: string) => {
+      setCivicLoading(true);
+      setElectionData(null);
+      try {
+        const response = await fetch(
+          `/api/election/${zip}?state=${encodeURIComponent(code)}`,
+        );
+        if (!response.ok) {
+          throw new Error(`Election API error: ${response.status}`);
+        }
+        const data = (await response.json()) as ElectionDataResult;
+        setElectionData(data);
+
+        // Update prompt with enriched data
+        const stateData = getStateData(code);
+        if (stateData) {
+          const enrichedPrompt = buildFullPrompt(
+            stateData,
+            zip,
+            null,
+            language,
+            data.civicData,
+            data.voterIdInfo,
+          );
+          setResult((prev) =>
+            prev ? { ...prev, prompt: enrichedPrompt } : null,
+          );
+        }
+      } catch (err) {
+        console.error("[page] civic data fetch error:", err);
+        // Silently degrade — static data still shows
+      } finally {
+        setCivicLoading(false);
+      }
+    },
+    [language],
+  );
+
   function loadState(code: string, zip: string) {
     const stateData = getStateData(code);
     if (!stateData) {
@@ -222,6 +350,7 @@ export default function Home() {
 
     setLoading(true);
     try {
+      setElectionData(null);
       setResult({
         code,
         data: stateData,
@@ -229,6 +358,8 @@ export default function Home() {
         zip,
       });
       setStateChoices([]);
+      // Kick off civic data fetch in background (progressive)
+      void fetchCivicData(code, zip);
     } finally {
       setLoading(false);
     }
@@ -239,6 +370,7 @@ export default function Home() {
     setCopyConfirmation(false);
     setNotFound(null);
     setResult(null);
+    setElectionData(null);
     setStateChoices([]);
 
     if (!zip) {
@@ -393,6 +525,8 @@ export default function Home() {
           {selectedState && result ? (
             <ResultCard
               copyConfirmation={copyConfirmation}
+              electionData={electionData}
+              civicLoading={civicLoading}
               onCopy={() => {
                 void copyPrompt();
               }}

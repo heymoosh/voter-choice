@@ -68,6 +68,40 @@ export interface Translations {
 
   // Accessibility
   skipToContent: string;
+
+  // Phase 3: Polling location
+  pollingLocationLabel: string;
+  pollingHoursLabel: string;
+
+  // Phase 3: Ballot contests
+  ballotContestsLabel: string;
+
+  // Phase 3: Candidate enrichment
+  candidateExpand: string;
+  candidateCollapse: string;
+  candidateVotingRecord: string;
+  candidateTopDonors: string;
+  candidateEndorsements: string;
+  candidateIssuePositions: string;
+  candidateSources: string;
+  candidateEnrichmentError: string;
+
+  // Phase 3: API errors
+  apiPartialError: string;
+  apiFullError: string;
+  stateElectionOfficeLinkText: string;
+
+  // Phase 3: Data attribution
+  dataAttributionText: string;
+  dataAttributionVerify: string;
+  updatedAtLabel: string;
+
+  // Phase 3: Voter ID
+  voterIdLabel: string;
+  voterIdRequiredText: string;
+  voterIdNotRequiredText: string;
+  voterIdExceptionsLabel: string;
+  voterIdVerifyNote: string;
 }
 
 export const en: Translations = {
@@ -150,6 +184,44 @@ export const en: Translations = {
 
   // Accessibility
   skipToContent: "Skip to main content",
+
+  // Phase 3: Polling location
+  pollingLocationLabel: "Your polling place",
+  pollingHoursLabel: "Hours",
+
+  // Phase 3: Ballot contests
+  ballotContestsLabel: "Your ballot",
+
+  // Phase 3: Candidate enrichment
+  candidateExpand: "View voting record",
+  candidateCollapse: "Hide details",
+  candidateVotingRecord: "Voting record",
+  candidateTopDonors: "Top donors",
+  candidateEndorsements: "Endorsements",
+  candidateIssuePositions: "Issue positions",
+  candidateSources: "Sources",
+  candidateEnrichmentError: "Candidate information temporarily unavailable.",
+
+  // Phase 3: API errors
+  apiPartialError:
+    "Some election data is temporarily unavailable. The information shown is current.",
+  apiFullError:
+    "We're having trouble loading live election data. Here's what we know about voting in {stateName}. Visit your state election office for current dates and deadlines.",
+  stateElectionOfficeLinkText: "State election office",
+
+  // Phase 3: Data attribution
+  dataAttributionText:
+    "Election data from Google Civic Information and live web search via Anthropic.",
+  dataAttributionVerify: "Verify at",
+  updatedAtLabel: "Updated",
+
+  // Phase 3: Voter ID
+  voterIdLabel: "Voter ID requirement",
+  voterIdRequiredText: "Photo ID required",
+  voterIdNotRequiredText: "No photo ID required",
+  voterIdExceptionsLabel: "Exceptions",
+  voterIdVerifyNote:
+    "Verify current requirements at your state election office.",
 };
 
 export const es: Translations = {
@@ -233,6 +305,45 @@ export const es: Translations = {
 
   // Accessibility
   skipToContent: "Ir al contenido principal",
+
+  // Phase 3: Polling location
+  pollingLocationLabel: "Tu lugar de votación",
+  pollingHoursLabel: "Horario",
+
+  // Phase 3: Ballot contests
+  ballotContestsLabel: "Tu boleta electoral",
+
+  // Phase 3: Candidate enrichment
+  candidateExpand: "Ver historial de votación",
+  candidateCollapse: "Ocultar detalles",
+  candidateVotingRecord: "Historial de votación",
+  candidateTopDonors: "Principales donantes",
+  candidateEndorsements: "Respaldos",
+  candidateIssuePositions: "Posiciones en temas clave",
+  candidateSources: "Fuentes",
+  candidateEnrichmentError:
+    "Información del candidato temporalmente no disponible.",
+
+  // Phase 3: API errors
+  apiPartialError:
+    "Algunos datos electorales no están disponibles temporalmente. La información que se muestra es actual.",
+  apiFullError:
+    "Tenemos problemas para cargar datos electorales en tiempo real. Aquí está lo que sabemos sobre votar en {stateName}. Visita la oficina electoral de tu estado para fechas y plazos actuales.",
+  stateElectionOfficeLinkText: "Oficina electoral del estado",
+
+  // Phase 3: Data attribution
+  dataAttributionText:
+    "Datos electorales de Google Civic Information y búsqueda web en tiempo real via Anthropic.",
+  dataAttributionVerify: "Verifica en",
+  updatedAtLabel: "Actualizado",
+
+  // Phase 3: Voter ID
+  voterIdLabel: "Requisito de identificación",
+  voterIdRequiredText: "Se requiere identificación con foto",
+  voterIdNotRequiredText: "No se requiere identificación con foto",
+  voterIdExceptionsLabel: "Excepciones",
+  voterIdVerifyNote:
+    "Verifica los requisitos actuales en la oficina electoral de tu estado.",
 };
 
 export const translations: Record<Language, Translations> = { en, es };

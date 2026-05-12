@@ -1,0 +1,13 @@
+{
+  "state": "CA",
+  "voterIdRequired": false,
+  "idType": "none",
+  "acceptedIds": [],
+  "exceptions": "California does not require photo ID to vote. First-time voters who registered by mail may be asked for ID, but a wide range of documents qualify including student ID, utility bill, or bank statement.",
+  "provisionalBallot": true,
+  "provisionalBallotRules": "If your eligibility cannot be confirmed, you can cast a provisional ballot. It will be counted after election officials verify your registration.",
+  "phonesAtPolls": true,
+  "phonesAtPollsDetail": "California allows voters to use phones in the polling place but not to take photos of marked ballots.",
+  "sourceUrl": "https://www.sos.ca.gov/elections/voter-registration/",
+  "lastVerified": "2026-04-03"
+}

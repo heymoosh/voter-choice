@@ -1,5 +1,7 @@
 import type { StateData } from "@/types/state";
 import type { OpenStatesCandidateContext } from "@/lib/openstates/types";
+import type { CivicElectionInfo } from "@/lib/civic/types";
+import type { VoterIdInfo } from "@/data/voter-id/index";
 import { getBallotPrompt } from "@/lib/i18n/prompts";
 import type { Language } from "@/lib/i18n/translations";
 
@@ -158,14 +160,134 @@ function buildOpenStatesContext(
     .join("\n");
 }
 
+function buildCivicContextBlock(
+  civicData: CivicElectionInfo,
+  voterIdInfo: VoterIdInfo | null,
+  zip: string,
+  language: Language,
+): string {
+  const lines: string[] = [];
+
+  // Districts
+  const districts = civicData.districts;
+  const districtParts = [
+    civicData.county ? civicData.county : null,
+    districts?.congressional
+      ? `Congressional: ${districts.congressional}`
+      : null,
+    districts?.stateSenate ? `State Senate: ${districts.stateSenate}` : null,
+    districts?.stateHouse ? `State House: ${districts.stateHouse}` : null,
+  ].filter(Boolean);
+
+  const zipLine = districtParts.length
+    ? `${zip} (${districtParts.join(", ")})`
+    : zip;
+
+  if (language === "es") {
+    lines.push(`¡Hola! Voy a votar. Mi código postal es **${zipLine}**.`);
+    lines.push("");
+  } else {
+    lines.push(`Hi! I'm voting. My zip code is **${zipLine}**.`);
+    lines.push("Here's what I know about my upcoming election:");
+  }
+
+  // Election
+  if (civicData.election) {
+    const dateStr = civicData.election.date;
+    const formattedDate =
+      language === "es"
+        ? new Intl.DateTimeFormat("es-ES", {
+            month: "long",
+            day: "numeric",
+            year: "numeric",
+            timeZone: "UTC",
+          }).format(new Date(`${dateStr}T00:00:00`))
+        : new Intl.DateTimeFormat("en-US", {
+            month: "long",
+            day: "numeric",
+            year: "numeric",
+            timeZone: "UTC",
+          }).format(new Date(`${dateStr}T00:00:00`));
+    lines.push(
+      language === "es"
+        ? `- Elección: ${civicData.election.name} el ${formattedDate}`
+        : `- Election: ${civicData.election.name} on ${formattedDate}`,
+    );
+  }
+
+  // Polling location
+  if (civicData.pollingLocation) {
+    const loc = civicData.pollingLocation;
+    const locationStr = loc.name ? `${loc.name}, ${loc.address}` : loc.address;
+    lines.push(
+      language === "es"
+        ? `- Lugar de votación: ${locationStr}${loc.pollingHours ? ` (${loc.pollingHours})` : ""}`
+        : `- Polling place: ${locationStr}${loc.pollingHours ? ` (${loc.pollingHours})` : ""}`,
+    );
+  }
+
+  // Ballot contests (top 5 to keep prompt manageable)
+  const contests = civicData.ballotContests.slice(0, 5);
+  if (contests.length > 0) {
+    lines.push(
+      language === "es" ? "- Mi boleta incluye:" : "- My ballot includes:",
+    );
+    for (const contest of contests) {
+      const candidateNames =
+        contest.candidates?.map((c) => c.name).join(", ") ?? "";
+      lines.push(
+        `  - ${contest.title}${candidateNames ? `: ${candidateNames}` : ""}`,
+      );
+    }
+  }
+
+  // Voter ID
+  if (voterIdInfo) {
+    const idSummary = voterIdInfo.voterIdRequired
+      ? language === "es"
+        ? `Requerida. ${voterIdInfo.acceptedIds.slice(0, 3).join("; ")}`
+        : `Required. ${voterIdInfo.acceptedIds.slice(0, 3).join("; ")}`
+      : language === "es"
+        ? "No requerida."
+        : "Not required.";
+    lines.push(
+      language === "es"
+        ? `- Identificación para votar: ${idSummary}`
+        : `- Voter ID: ${idSummary}`,
+    );
+  }
+
+  lines.push("");
+  lines.push(
+    language === "es" ? "Ayúdame con mi boleta." : "Help me with my ballot.",
+  );
+
+  return lines.join("\n");
+}
+
 export function buildFullPrompt(
   stateData: StateData,
   zip: string,
   candidateContext?: OpenStatesCandidateContext | null,
   language: Language = "en",
+  civicData?: CivicElectionInfo | null,
+  voterIdInfo?: VoterIdInfo | null,
 ): string {
   const basePrompt = getBallotPrompt(language);
   const openStatesBlock = buildOpenStatesContext(candidateContext);
+
+  // If civic data is available, use it for a richer prompt
+  if (civicData) {
+    const civicBlock = buildCivicContextBlock(
+      civicData,
+      voterIdInfo ?? null,
+      zip,
+      language,
+    );
+    return [basePrompt, civicBlock, openStatesBlock]
+      .filter(Boolean)
+      .join("\n\n");
+  }
 
   return [
     basePrompt,
