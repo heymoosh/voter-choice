@@ -702,3 +702,51 @@ Build time (15-25 min per phase) is predictable and manageable. API quota is a h
 ### Decision
 
 Add `scripts/api-budget-check.sh` that gates action dispatch. Wire it into Phase C launch. Budget estimate: 3% per action, conservative. Plan 6 sub-waves across 2-3 quota windows (see `docs/PHASE_C_RUNBOOK.md`). Do NOT conflate `phase-A-complete` (infrastructure gate) with `phase-B-complete` (live smoke gate) — they are separate.
+
+---
+
+## Learning 015: Claude Code in Docker Must Authenticate via Subscription, Not API Key
+
+**Date discovered:** 2026-05-12
+**Affects:** All in-container Claude Code workflow execution (Phase B onward)
+**Severity:** High — without this pattern, workflow builds silently charge the experiment Anthropic workspace
+
+### What happened
+
+In-container Claude Code was authenticating via `ANTHROPIC_API_KEY` sourced from `.env.local`. That key belongs to the experiment's Anthropic workspace (own spend cap), not to the operator's Claude Max subscription. Phase B used API-key auth for Phases 1-3 and hit the workspace budget cap before Phase 4, halting progress until the next billing window.
+
+The operator's Claude Max subscription ($200/month) has independent capacity and should be the auth source for Claude Code workflow execution. The `~/.claude/` bind-mount was already present in `docker/run-claude.sh`, but Claude Code reads `ANTHROPIC_API_KEY` from the environment if present and falls back to it even when `~/.claude/` contains valid subscription session credentials.
+
+### The fix
+
+Strip `ANTHROPIC_API_KEY` explicitly from the claude subprocess env:
+
+```bash
+env -u ANTHROPIC_API_KEY claude --bare --dangerously-skip-permissions -p "$CLAUDE_PROMPT"
+```
+
+This leaves `ANTHROPIC_API_KEY` in the broader shell environment so app processes spawned by vitest/playwright still find it from `.env.local`. Only the `claude` process itself is stripped.
+
+### Two distinct auth scopes (canonical pattern from v2 onward)
+
+| Scope | Auth source | Why |
+|---|---|---|
+| Claude Code workflow execution (in-container) | `~/.claude/` subscription session | Subscription capacity; no per-token cost |
+| Next.js app processes (Phase 3 enrichment, Phase 5 chat, Phase 6 disambiguation, e2e tests) | `ANTHROPIC_API_KEY` from `.env.local` | App features must use the API key; subscription is not an API credential |
+
+### Regression test
+
+`scripts/validate-container-claude-subscription.sh` asserts three things:
+1. **Structural:** `docker/run-claude.sh` contains the `env -u ANTHROPIC_API_KEY claude` strip
+2. **Runtime:** `.env.local` sourced (key present in shell) but absent from the subprocess env
+3. **End-to-end:** a trivial prompt completes (subscription auth actually works, not just configured)
+
+Run this before any smoke or full experiment build. `validate-container-claude.sh` passing also means subscription auth works — it no longer tests API-key auth.
+
+### Methodology footnote (vanilla smoke run)
+
+Phases 1-3 of the vanilla smoke run (`experiment/vanilla-r1-v2c`) were built with API-key auth. Subscription Sonnet and API-key Sonnet are the same model. Phases 4-6 used subscription auth. This is documented here as a methodology footnote, not a contamination — the independent variable (workflow methodology) is unaffected.
+
+### Operator action required
+
+Set the experiment Anthropic workspace's monthly cap to ~$20 in [console.anthropic.com](https://console.anthropic.com). Without this cap, any accidental future fallback to API-key auth continues to cost money silently. With a $20 cap, fallback fails loudly at the cap and the regression is caught immediately.
