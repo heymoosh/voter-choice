@@ -116,16 +116,38 @@ Expected: a clear "we don't have data for this race" message. If a generic error
 
 | Step                                               | Result | Notes |
 | -------------------------------------------------- | ------ | ----- |
-| 1. DB tables non-empty                             | ✅ PASS | bills:65,696 votes:5,416,530 candidates:7,382 issue_tags:39,688 (54% bill coverage) donor_aggregates:4,619 rows covering 831 candidates (593 federal via FEC, 141 TX via TEC, 97 CO via TRACER) |
+| 1. DB tables non-empty                             | ✅ PASS | bills:65,696 votes:5,416,530 candidates:7,382 issue_tags:39,688 (54% bill coverage) donor_aggregates:18,566 rows covering 2,263 candidates across 15 sources |
 | 2. Alignment API returns found/not-found correctly | ✅ PASS | found:true for Aicha Davis TX-house property_taxes (1 contributing vote returned); found:false for fictional candidate |
 | 3. Chat uses `lookup_alignment`, not `web_search`  | ✅ PASS | Browser session confirmed: Arrington TX-19 healthcare query triggered lookup_alignment (12/28 votes returned, 34/47 key votes shown). No 400 error. tool_use input fix verified live on 2026-05-12. |
 | 4. 50 tag samples reviewed, no systematic errors   | ✅ PASS | 50 samples audited via `_audit-tags.ts`; canonical_issue accurate, stance_lens correct, no systematic errors. Coverage growing as tag-bills runs. |
 | 5. Wyoming empty state renders correctly           | ✅ PASS | /api/alignment returns found:false with clear unavailable.reason for unknown candidates |
 
+**Donor coverage by source (as of 2026-05-12):**
+
+| Source | State | Candidates | Rows | Script |
+|--------|-------|-----------|------|--------|
+| fec | Federal | 593 | 1,146 | `federal-donors.ts` |
+| ny_boe_bulk | NY | 182 | 1,324 | `ny-boe-donors.ts` |
+| ct_seec_bulk | CT | 178 | 668 | `ct-seec-donors.ts` |
+| me_cfis_bulk | ME | 175 | 486 | `me-cfis-donors.ts` |
+| wa_pdc_bulk | WA | 165 | 2,648 | `wa-pdc-donors.ts` |
+| ma_ocpf_bulk | MA | 151 | 1,526 | `ma-ocpf-donors.ts` |
+| ia_iec_bulk | IA | 144 | 1,058 | `ia-iec-donors.ts` |
+| tec_bulk | TX | 141 | 2,228 | `tx-tec-donors.ts` |
+| mn_cfb_bulk | MN | 129 | 647 | `mn-cfb-donors.ts` |
+| ca_calaccess_bulk | CA | 110 | 4,221 | `ca-calaccess-donors.ts` |
+| co_tracer_bulk | CO | 97 | 1,245 | `co-tracer-donors.ts` |
+| va_sbe_bulk | VA | 91 | 592 | `va-sbe-donors.ts` |
+| hi_cfb_bulk | HI | 60 | 698 | `hi-cfb-donors.ts` |
+| pa_dos_bulk | PA | 35 | 62 | `pa-dos-donors.ts` |
+| wi_cfis_bulk | WI | 12 | 17 | ⚠️ DATA QUALITY: amounts implausibly large ($26M for state senator); do not display. Delete rows or re-ingest with correct committee filtering. |
+| **TOTAL** | **14 states + federal** | **2,263** | **18,566** | |
+
 **Notes:**
 - `issue_tags=39,688` (54% bill coverage): All 7 Anthropic Batch API collections complete (64,802 bills submitted, ~54% resulted in at least one canonical issue tag). Remaining 46% returned empty arrays (no relevant issue) or malformed JSON — both handled gracefully (bills simply don't contribute to alignment scores).
-- `donor_aggregates=4,619 rows, 831 candidates`: Federal via FEC (593 candidates, 94% coverage), TX via Texas Ethics Commission bulk ZIP (141 candidates, 92% match), CO via Colorado TRACER bulk ZIP (97 candidates, 93% match). Both TEC and TRACER are free public downloads requiring no registration.
-- **State donors for 48 remaining states**: Requires FTM API key (free, requires registration at followthemoney.org). BLOCKER: FTM registration requires a human to (1) create account at followthemoney.org/account/sign-up/, (2) verify email, (3) copy API key from account page, (4) store as `FOLLOWTHEMONEY_API_KEY` in Vercel + BWS secrets, then run `scripts/ingest/state-donors.ts`. Script bug fixed (was using `output=json`, now uses `mode=json`). Alternative parsers available for TX (scripts/ingest/tx-tec-donors.ts) and CO (scripts/ingest/co-tracer-donors.ts) which bypass FTM entirely for those states. Other states with free public data: MN (cfb.mn.gov - dynamic download), WA (PDC - Socrata API unreachable), CA (CAL-ACCESS - 3.4GB, complex format), PA (bot-protected). These require additional development work.
+- **WI data quality issue**: `wi_cfis_bulk` has 17 rows but amounts are implausibly large ($26M "Party committees" for a state senate candidate). Possible cause: WI CFIS tRPC API returns party-committee pass-through aggregates, not individual donor contributions. These rows should be deleted before launch (`DELETE FROM donor_aggregates WHERE source='wi_cfis_bulk'`).
+- **NE (Nebraska)**: `ne-nadc-donors.ts` script is ready. Blocked on loading NE candidates via `state-votes.ts STATE=NE` (OpenStates API rate-limited at 10 req/min — unicameral legislature with 49 senators, expect ~1–2 hours to complete).
+- **Remaining ~35 states**: Bot-protected (FL, OH, IL: Cloudflare; NJ, NV, VT: Incapsula; UT: F5 TSPD) or require per-state Playwright scraping. The cross-state solution is FollowTheMoney (FTM) API.
+- **FTM BLOCKER**: FTM registration requires a human to: (1) create account at followthemoney.org/account/sign-up/, (2) verify email, (3) copy API key from account page, (4) store as `FOLLOWTHEMONEY_API_KEY` in Vercel + BWS secrets, then run `scripts/ingest/state-donors.ts`. This is the only scalable path to the remaining ~35 states.
 - `candidate_count=7,382`: 6,753 state candidates from OpenStates pgdump + 629 federal from GovTrack ingest.
-- `ingest-states.yml` cron failing: OpenStates API hit 250/day free limit during initial pgdump load (today). Will reset by Sunday. If using free tier key, may hit limit again on heavy run weeks. Consider upgrading to OpenStates paid plan for production.
 - FEC donor industry breakdown not populated: requires FEC API calls per-candidate (`/schedule_e`). Current data is aggregate totals only. Alignment scoring works without this.
