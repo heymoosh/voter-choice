@@ -59,6 +59,16 @@ Note: **Scoring is executed by Hermes from the host side, not inside the build c
 
 
 
+
+### Phase 1 forward — vanilla (auto)
+
+- **Date:** 2026-05-12T02:50:56.368Z
+- **Branch:** `main`
+- **Tag:** `select-representative-vanilla`
+- **Status:** ✓
+- **Summary:** chose r1 — median LOC (1410); replicates span 1204..1428, RSD 7.54%
+
+
 ### Phase 1 replicate — compound-engineering r3 (auto)
 
 - **Date:** 2026-05-12T02:43:00.605Z
