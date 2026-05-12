@@ -119,7 +119,7 @@ Expected: a clear "we don't have data for this race" message. If a generic error
 | 1. DB tables non-empty                             | ✅ PASS | bills:65,696 votes:5,416,530 candidates:7,382 issue_tags:growing donor_aggregates:0 (see note) |
 | 2. Alignment API returns found/not-found correctly | ✅ PASS | found:true for Aicha Davis TX-house property_taxes (1 contributing vote returned); found:false for fictional candidate |
 | 3. Chat uses `lookup_alignment`, not `web_search`  | ⏳ pending | Requires live browser session; alignment tool confirmed functional via Step 2 |
-| 4. 50 tag samples reviewed, no systematic errors   | ⏳ pending | tag-bills running; early samples show correct canonical_issue/stance_lens assignments |
+| 4. 50 tag samples reviewed, no systematic errors   | ✅ PASS | 50 samples audited via `_audit-tags.ts`; canonical_issue accurate, stance_lens correct, no systematic errors. Coverage growing as tag-bills runs. |
 | 5. Wyoming empty state renders correctly           | ✅ PASS | /api/alignment returns found:false with clear unavailable.reason for unknown candidates |
 
 **Notes:**
