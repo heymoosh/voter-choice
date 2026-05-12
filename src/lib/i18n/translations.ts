@@ -1,4 +1,4 @@
-export type Language = "en" | "es";
+export type Language = "en" | "es" | "vi" | "zh" | "ar";
 
 export interface Translations {
   // Language toggle
@@ -106,8 +106,8 @@ export interface Translations {
 
 export const en: Translations = {
   // Language toggle
-  languageToggleLabel: "Español",
-  languageToggleAnnouncement: "Language changed to Spanish",
+  languageToggleLabel: "English",
+  languageToggleAnnouncement: "Language changed to English",
 
   // Hero section
   heroEyebrow: "Voter Choice",
@@ -226,7 +226,7 @@ export const en: Translations = {
 
 export const es: Translations = {
   // Language toggle
-  languageToggleLabel: "English",
+  languageToggleLabel: "Español",
   languageToggleAnnouncement: "Idioma cambiado a español",
 
   // Hero section
@@ -346,4 +346,365 @@ export const es: Translations = {
     "Verifica los requisitos actuales en la oficina electoral de tu estado.",
 };
 
-export const translations: Record<Language, Translations> = { en, es };
+export const vi: Translations = {
+  // Language toggle
+  languageToggleLabel: "Tiếng Việt",
+  languageToggleAnnouncement: "Đã chuyển sang tiếng Việt",
+
+  // Hero section
+  heroEyebrow: "Voter Choice",
+  heroTitle:
+    "Nghiên cứu phiếu bầu với bối cảnh bầu cử địa phương và lịch sử ứng cử viên.",
+  heroCopy:
+    "Nhập mã zip để xem bối cảnh bầu cử của tiểu bang bạn, câu lệnh có thể sao chép, và thông tin về ứng cử viên. Sao chép câu lệnh và dán vào bất kỳ chatbot AI miễn phí nào để bắt đầu nghiên cứu phiếu bầu.",
+  chatbotLinksLabel: "Dùng được với bất kỳ chatbot AI nào:",
+
+  // Zip code form
+  zipLabel: "Mã zip",
+  zipPlaceholder: "Nhập mã zip 5 chữ số của bạn",
+  submitButton: "Nghiên cứu phiếu bầu",
+  submitButtonLoading: "Đang tải...",
+
+  // Error messages
+  errorEmptyZip: "Vui lòng nhập mã zip.",
+  errorInvalidZip: "Vui lòng nhập mã zip hợp lệ gồm 5 chữ số.",
+  errorZipNotFound:
+    "Chúng tôi chưa có dữ liệu cho mã zip này. Chúng tôi đang làm việc để thêm tất cả mã zip của Hoa Kỳ.",
+  errorRegistrationPassed:
+    "Thời hạn đăng ký cho cuộc bầu cử này đã qua. Bạn vẫn có thể bỏ phiếu nếu đã đăng ký.",
+  errorNoElection: (stateName: string) =>
+    `Không tìm thấy cuộc bầu cử sắp tới cho ${stateName}. Kiểm tra trang web bầu cử tiểu bang của bạn để cập nhật.`,
+
+  // State selector
+  stateSelectorEyebrow: "Mã zip này bao gồm nhiều tiểu bang",
+  stateSelectorTitle: "Bạn đang bỏ phiếu ở tiểu bang nào?",
+
+  // State info card
+  stateSnapshotEyebrow: "Thông tin tiểu bang",
+  updatedLabel: "Cập nhật",
+  electionLabel: "Cuộc bầu cử",
+  registrationLabel: "Đăng ký",
+  earlyVotingLabel: "Bỏ phiếu sớm",
+  votingRulesLabel: "Quy định bỏ phiếu",
+  noElectionData: "Không có dữ liệu bầu cử",
+  noEarlyVoting: "Không có",
+  earlyVotingThrough: "đến",
+  phonesProhibited: "Điện thoại bị cấm tại phòng bỏ phiếu.",
+  phonesPolicyVaries: "Chính sách điện thoại khác nhau hoặc được phép.",
+  registrationCheckPrefix: "Kiểm tra",
+  registrationCheckSuffix: "trước Ngày Bầu Cử.",
+
+  // Deadline status
+  daysLeft: (days: number) => `Còn ${days} ngày`,
+  deadlinePassed: "Đã qua",
+  deadlineNotAvailable: "Không có",
+
+  // Prompt section
+  promptEyebrow: "Câu lệnh tùy chỉnh",
+  promptInstructions:
+    "Sao chép câu lệnh này và dán vào tin nhắn đầu tiên trong bất kỳ chatbot AI nào.",
+  copyButton: "Sao chép vào Clipboard",
+  copyButtonCopied: "Đã sao chép!",
+
+  // Copy confirmation
+  copyConfirmation: "Đã sao chép câu lệnh",
+
+  // Tips section
+  tipsTitle: "Mẹo cho cuộc trò chuyện của bạn",
+  tips: [
+    'Bạn có thể nói "Tôi không biết" hoặc "Tôi chưa chắc quan điểm của mình" — AI sẽ giải thích thêm và giúp bạn tìm ra.',
+    'Bạn có thể yêu cầu AI nghiên cứu điều gì đó cho bạn ("Bạn có thể tra cứu hồ sơ bỏ phiếu của ứng cử viên này không?").',
+    "Bạn không đang thi. Bạn đang trò chuyện. AI làm việc cùng với bạn.",
+    "Cuối cùng, AI sẽ cung cấp bản tóm tắt bạn có thể ghi lại hoặc in để mang theo khi bỏ phiếu.",
+  ],
+  tipsWarning:
+    "AI có thể mắc lỗi. Đây là điểm khởi đầu nghiên cứu. Công cụ sẽ liên kết bạn đến các nguồn chính thức để bạn có thể kiểm tra lại những gì quan trọng với bạn.",
+
+  // Footer
+  footerShare: "Chia sẻ công cụ này",
+  footerAttribution: "Được tạo bởi con người sử dụng công cụ AI",
+
+  // Accessibility
+  skipToContent: "Chuyển đến nội dung chính",
+
+  // Phase 3: Polling location
+  pollingLocationLabel: "Địa điểm bỏ phiếu của bạn",
+  pollingHoursLabel: "Giờ mở cửa",
+
+  // Phase 3: Ballot contests
+  ballotContestsLabel: "Phiếu bầu của bạn",
+
+  // Phase 3: Candidate enrichment
+  candidateExpand: "Xem hồ sơ bỏ phiếu",
+  candidateCollapse: "Ẩn chi tiết",
+  candidateVotingRecord: "Hồ sơ bỏ phiếu",
+  candidateTopDonors: "Nhà tài trợ hàng đầu",
+  candidateEndorsements: "Sự ủng hộ",
+  candidateIssuePositions: "Lập trường về các vấn đề",
+  candidateSources: "Nguồn",
+  candidateEnrichmentError: "Thông tin ứng cử viên tạm thời không có.",
+
+  // Phase 3: API errors
+  apiPartialError:
+    "Một số dữ liệu bầu cử tạm thời không có. Thông tin hiển thị là hiện tại.",
+  apiFullError:
+    "Chúng tôi gặp sự cố khi tải dữ liệu bầu cử trực tiếp. Đây là những gì chúng tôi biết về việc bỏ phiếu ở {stateName}. Truy cập văn phòng bầu cử tiểu bang của bạn để biết ngày và thời hạn hiện tại.",
+  stateElectionOfficeLinkText: "Văn phòng bầu cử tiểu bang",
+
+  // Phase 3: Data attribution
+  dataAttributionText:
+    "Dữ liệu bầu cử từ Google Civic Information và tìm kiếm web trực tiếp qua Anthropic.",
+  dataAttributionVerify: "Xác minh tại",
+  updatedAtLabel: "Cập nhật",
+
+  // Phase 3: Voter ID
+  voterIdLabel: "Yêu cầu ID cử tri",
+  voterIdRequiredText: "Yêu cầu ID có ảnh",
+  voterIdNotRequiredText: "Không yêu cầu ID có ảnh",
+  voterIdExceptionsLabel: "Ngoại lệ",
+  voterIdVerifyNote:
+    "Xác minh các yêu cầu hiện tại tại văn phòng bầu cử tiểu bang của bạn.",
+};
+
+export const zh: Translations = {
+  // Language toggle
+  languageToggleLabel: "中文",
+  languageToggleAnnouncement: "语言已切换为中文",
+
+  // Hero section
+  heroEyebrow: "Voter Choice",
+  heroTitle: "选票研究，提供本地选举背景和候选人历史记录。",
+  heroCopy:
+    "输入邮政编码，查看你所在州的选举背景、可复制的提示词，以及候选人的相关信息。复制提示词并粘贴到任何免费AI聊天机器人中，开始研究你的选票。",
+  chatbotLinksLabel: "适用于任何AI聊天机器人：",
+
+  // Zip code form
+  zipLabel: "邮政编码",
+  zipPlaceholder: "输入你的5位邮政编码",
+  submitButton: "研究选票",
+  submitButtonLoading: "加载中...",
+
+  // Error messages
+  errorEmptyZip: "请输入邮政编码。",
+  errorInvalidZip: "请输入有效的5位邮政编码。",
+  errorZipNotFound:
+    "我们目前还没有此邮政编码的数据。我们正在努力覆盖所有美国邮政编码。",
+  errorRegistrationPassed:
+    "此次选举的登记截止日期已过。如果你已经登记，仍然可以投票。",
+  errorNoElection: (stateName: string) =>
+    `未找到${stateName}即将举行的选举。请查看你所在州的选举网站获取最新信息。`,
+
+  // State selector
+  stateSelectorEyebrow: "此邮政编码跨越多个州",
+  stateSelectorTitle: "你在哪个州投票？",
+
+  // State info card
+  stateSnapshotEyebrow: "州信息概览",
+  updatedLabel: "更新时间",
+  electionLabel: "选举",
+  registrationLabel: "登记",
+  earlyVotingLabel: "提前投票",
+  votingRulesLabel: "投票规则",
+  noElectionData: "无选举数据",
+  noEarlyVoting: "不可用",
+  earlyVotingThrough: "至",
+  phonesProhibited: "投票站内禁止使用手机。",
+  phonesPolicyVaries: "手机政策因地而异或允许使用。",
+  registrationCheckPrefix: "请查看",
+  registrationCheckSuffix: "在选举日之前。",
+
+  // Deadline status
+  daysLeft: (days: number) => `还剩 ${days} 天`,
+  deadlinePassed: "已过期",
+  deadlineNotAvailable: "不可用",
+
+  // Prompt section
+  promptEyebrow: "定制提示词",
+  promptInstructions: "复制此提示词并粘贴为任何AI聊天机器人的第一条消息。",
+  copyButton: "复制到剪贴板",
+  copyButtonCopied: "已复制！",
+
+  // Copy confirmation
+  copyConfirmation: "提示词已复制",
+
+  // Tips section
+  tipsTitle: "对话建议",
+  tips: [
+    '你可以说"我不知道"或"我还没确定立场"——AI会进一步解释并帮助你弄清楚。',
+    '你可以让它为你研究某事（"你能查一下这位候选人的投票记录吗？"）。',
+    "这不是考试，而是一次对话。AI会配合你。",
+    "最后，它会给你一份总结，你可以记下来或打印出来带去投票站。",
+  ],
+  tipsWarning:
+    "AI可能会犯错。这只是研究的起点。该工具会为你提供官方来源链接，以便你核实任何重要信息。",
+
+  // Footer
+  footerShare: "分享此工具",
+  footerAttribution: "由人类使用AI工具创建",
+
+  // Accessibility
+  skipToContent: "跳至主要内容",
+
+  // Phase 3: Polling location
+  pollingLocationLabel: "你的投票地点",
+  pollingHoursLabel: "开放时间",
+
+  // Phase 3: Ballot contests
+  ballotContestsLabel: "你的选票",
+
+  // Phase 3: Candidate enrichment
+  candidateExpand: "查看投票记录",
+  candidateCollapse: "隐藏详情",
+  candidateVotingRecord: "投票记录",
+  candidateTopDonors: "主要捐款人",
+  candidateEndorsements: "背书支持",
+  candidateIssuePositions: "议题立场",
+  candidateSources: "来源",
+  candidateEnrichmentError: "候选人信息暂时不可用。",
+
+  // Phase 3: API errors
+  apiPartialError: "部分选举数据暂时不可用。显示的信息是最新的。",
+  apiFullError:
+    "我们在加载实时选举数据时遇到问题。以下是我们了解到的关于在{stateName}投票的信息。请访问你所在州的选举办公室获取最新日期和截止日期。",
+  stateElectionOfficeLinkText: "州选举办公室",
+
+  // Phase 3: Data attribution
+  dataAttributionText:
+    "选举数据来自Google Civic Information和通过Anthropic进行的实时网络搜索。",
+  dataAttributionVerify: "核实于",
+  updatedAtLabel: "更新时间",
+
+  // Phase 3: Voter ID
+  voterIdLabel: "选民身份证要求",
+  voterIdRequiredText: "需要附照片身份证",
+  voterIdNotRequiredText: "不需要附照片身份证",
+  voterIdExceptionsLabel: "例外情况",
+  voterIdVerifyNote: "请在你所在州的选举办公室核实当前要求。",
+};
+
+export const ar: Translations = {
+  // Language toggle
+  languageToggleLabel: "العربية",
+  languageToggleAnnouncement: "تم تغيير اللغة إلى العربية",
+
+  // Hero section
+  heroEyebrow: "Voter Choice",
+  heroTitle:
+    "البحث في بطاقة الاقتراع مع السياق الانتخابي المحلي وتاريخ المرشحين.",
+  heroCopy:
+    "أدخل الرمز البريدي للاطلاع على السياق الانتخابي لولايتك، وعبارة موجهة قابلة للنسخ، وأي معلومات متاحة عن المرشحين. انسخ العبارة وألصقها في أي روبوت دردشة ذكاء اصطناعي مجاني لبدء البحث في بطاقة اقتراعك.",
+  chatbotLinksLabel: "يعمل مع أي روبوت دردشة ذكاء اصطناعي:",
+
+  // Zip code form
+  zipLabel: "الرمز البريدي",
+  zipPlaceholder: "أدخل رمزك البريدي المكون من 5 أرقام",
+  submitButton: "البحث في بطاقة الاقتراع",
+  submitButtonLoading: "جارٍ التحميل...",
+
+  // Error messages
+  errorEmptyZip: "يرجى إدخال الرمز البريدي.",
+  errorInvalidZip: "يرجى إدخال رمز بريدي صحيح مكون من 5 أرقام.",
+  errorZipNotFound:
+    "ليس لدينا بيانات لهذا الرمز البريدي حتى الآن. نعمل على إضافة جميع الرموز البريدية الأمريكية.",
+  errorRegistrationPassed:
+    "انتهت مواعيد تسجيل هذه الانتخابات. قد تتمكن من التصويت إذا كنت مسجلاً بالفعل.",
+  errorNoElection: (stateName: string) =>
+    `لم يتم العثور على انتخابات قادمة في ${stateName}. راجع موقع الانتخابات في ولايتك للحصول على آخر المستجدات.`,
+
+  // State selector
+  stateSelectorEyebrow: "هذا الرمز البريدي يشمل ولايات متعددة",
+  stateSelectorTitle: "في أي ولاية ستصوت؟",
+
+  // State info card
+  stateSnapshotEyebrow: "ملخص الولاية",
+  updatedLabel: "تاريخ التحديث",
+  electionLabel: "الانتخابات",
+  registrationLabel: "التسجيل",
+  earlyVotingLabel: "التصويت المبكر",
+  votingRulesLabel: "قواعد التصويت",
+  noElectionData: "لا توجد بيانات انتخابية",
+  noEarlyVoting: "غير متاح",
+  earlyVotingThrough: "حتى",
+  phonesProhibited: "يُحظر استخدام الهواتف في مراكز الاقتراع.",
+  phonesPolicyVaries: "سياسة الهواتف تتفاوت أو مسموح بها.",
+  registrationCheckPrefix: "تحقق من",
+  registrationCheckSuffix: "قبل يوم الانتخابات.",
+
+  // Deadline status
+  daysLeft: (days: number) => `${days} يوم متبقٍ`,
+  deadlinePassed: "انتهى",
+  deadlineNotAvailable: "غير متاح",
+
+  // Prompt section
+  promptEyebrow: "عبارة موجهة مخصصة",
+  promptInstructions:
+    "انسخ هذه العبارة الموجهة وألصقها كأول رسالة في أي روبوت دردشة ذكاء اصطناعي.",
+  copyButton: "نسخ إلى الحافظة",
+  copyButtonCopied: "تم النسخ!",
+
+  // Copy confirmation
+  copyConfirmation: "تم نسخ العبارة الموجهة",
+
+  // Tips section
+  tipsTitle: "نصائح لمحادثتك",
+  tips: [
+    'يمكنك قول "لا أعرف" أو "لست متأكداً من موقفي" — سيشرح الذكاء الاصطناعي أكثر ويساعدك على التوصل إلى إجابة.',
+    'يمكنك أن تطلب منه البحث في شيء ما ("هل يمكنك الاطلاع على سجل تصويت هذا المرشح؟").',
+    "أنت لست في امتحان. أنت في محادثة. الذكاء الاصطناعي يعمل معك.",
+    "في النهاية، سيعطيك ملخصاً يمكنك كتابته أو طباعته وأخذه إلى مركز الاقتراع.",
+  ],
+  tipsWarning:
+    "قد يرتكب الذكاء الاصطناعي أخطاء. هذه نقطة بداية للبحث. ستوفر الأداة روابط لمصادر رسمية حتى تتمكن من التحقق من أي معلومات مهمة.",
+
+  // Footer
+  footerShare: "شارك هذه الأداة",
+  footerAttribution: "أُنشئت بواسطة إنسان باستخدام أدوات الذكاء الاصطناعي",
+
+  // Accessibility
+  skipToContent: "انتقل إلى المحتوى الرئيسي",
+
+  // Phase 3: Polling location
+  pollingLocationLabel: "مركز الاقتراع الخاص بك",
+  pollingHoursLabel: "ساعات العمل",
+
+  // Phase 3: Ballot contests
+  ballotContestsLabel: "بطاقة اقتراعك",
+
+  // Phase 3: Candidate enrichment
+  candidateExpand: "عرض سجل التصويت",
+  candidateCollapse: "إخفاء التفاصيل",
+  candidateVotingRecord: "سجل التصويت",
+  candidateTopDonors: "أبرز المانحين",
+  candidateEndorsements: "التأييدات",
+  candidateIssuePositions: "مواقف من القضايا",
+  candidateSources: "المصادر",
+  candidateEnrichmentError: "معلومات المرشح غير متاحة مؤقتاً.",
+
+  // Phase 3: API errors
+  apiPartialError:
+    "بعض البيانات الانتخابية غير متاحة مؤقتاً. المعلومات المعروضة محدثة.",
+  apiFullError:
+    "نواجه مشكلة في تحميل البيانات الانتخابية المباشرة. إليك ما نعرفه عن التصويت في {stateName}. تفضل بزيارة مكتب الانتخابات في ولايتك للحصول على التواريخ والمواعيد النهائية الحالية.",
+  stateElectionOfficeLinkText: "مكتب الانتخابات بالولاية",
+
+  // Phase 3: Data attribution
+  dataAttributionText:
+    "بيانات الانتخابات من Google Civic Information والبحث المباشر على الإنترنت عبر Anthropic.",
+  dataAttributionVerify: "تحقق من",
+  updatedAtLabel: "تاريخ التحديث",
+
+  // Phase 3: Voter ID
+  voterIdLabel: "متطلبات هوية الناخب",
+  voterIdRequiredText: "بطاقة هوية بصورة مطلوبة",
+  voterIdNotRequiredText: "لا تُشترط بطاقة هوية بصورة",
+  voterIdExceptionsLabel: "الاستثناءات",
+  voterIdVerifyNote: "تحقق من المتطلبات الحالية في مكتب الانتخابات بولايتك.",
+};
+
+export const translations: Record<Language, Translations> = {
+  en,
+  es,
+  vi,
+  zh,
+  ar,
+};
