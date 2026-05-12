@@ -546,13 +546,14 @@ async function ingestState(
   pool: Pool,
   db: DbClient,
 ): Promise<StateSummary> {
+  const sessionLimit = Number(process.env.SESSION_LIMIT ?? "2");
   const sessionsRes = await pool.query<DumpSession>(
     `SELECT id, identifier, start_date, end_date
      FROM opencivicdata_legislativesession
      WHERE jurisdiction_id = $1
      ORDER BY start_date DESC NULLS LAST
-     LIMIT 2`,
-    [jurisdiction.id],
+     LIMIT $2`,
+    [jurisdiction.id, sessionLimit],
   );
   const sessions = sessionsRes.rows;
   const sessionIds = sessions.map((s) => s.id);
@@ -655,7 +656,7 @@ async function loadJurisdictions(
   const res = await pool.query<DumpJurisdiction>(
     `SELECT id, name
      FROM opencivicdata_jurisdiction
-     WHERE classification = 'government'
+     WHERE classification = 'state'
        AND (${likeConditions})`,
   );
   return res.rows;
