@@ -4,7 +4,17 @@
 
 **Phase B smoke gate B1 is COMPLETE.** Three bugs were diagnosed and fixed (see Learnings 012 and 013). The fresh smoke branch `experiment/vanilla-r1-v2c` (tag `vanilla-r1-v2c-phase1-complete`, commit `cd8d76b`) passes all four B1 checks.
 
-**Next: B2–B8** — Run Phases 2–6 on `experiment/vanilla-r1-v2c`, verify clean commits for each phase, run compute-deltas and aggregate-experiment for the smoke framework. After B8 passes, proceed to Phase C (clean re-run of 45 actions).
+**Pre-B2 fixes applied (2026-05-12):**
+- acceptance-coverage.mjs + nfr-compliance.mjs integrated into measure.mjs
+- post-build-score.sh handles split timing + always uses orchestration scoring scripts
+- run-claude.sh uses pensive post-build-score.sh (not workflow branch copy)
+- start.md templates: mandatory AC-N tagging instruction added
+- B1 e2e tests: AC-N tags added as measurement infrastructure fixup (87f0531)
+- phase1.json generated: productionLOC=981, acceptance=100%, nfrCompliance=80%, coupling.density=0.011, typeSafety.strictErrors=0
+
+**B8 re-scope for single-framework smoke:** With n=1 framework, comparative Process Fidelity ranking is meaningless. B8 for smoke = "all 7 axes produce non-null numeric values; composite computes without crash."
+
+**Next: B2–B7** — Run Phases 2–6 on `experiment/vanilla-r1-v2c`, verify clean commits + non-null phase JSONs + tags. At B7 run aggregate-experiment.mjs. After B8 (re-scoped) passes → Phase C.
 
 **B1 diagnostic findings (2026-05-12):**
 
