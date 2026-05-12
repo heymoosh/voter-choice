@@ -80,6 +80,16 @@ Note: **Scoring is executed by Hermes from the host side, not inside the build c
 
 
 
+
+### Phase 5 forward — superpowers (auto)
+
+- **Date:** 2026-05-12T11:31:59.631Z
+- **Branch:** `experiment/superpowers-r1`
+- **Tag:** `superpowers-phase5-complete`
+- **Status:** ✓
+- **Summary:** e2e 152/152, coverage 33.3%, LOC 6327, complexity avg 5.34, scope adherence N/A
+
+
 ### Phase 5 forward — spec-kit (auto)
 
 - **Date:** 2026-05-12T11:04:20.516Z
