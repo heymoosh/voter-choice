@@ -8,6 +8,16 @@ describe("translations", () => {
     expect(enKeys).toEqual(esKeys);
   });
 
+  it("has all required keys in vi, zh, ar", () => {
+    const enKeys = Object.keys(translations.en).sort();
+    const viKeys = Object.keys(translations.vi).sort();
+    const zhKeys = Object.keys(translations.zh).sort();
+    const arKeys = Object.keys(translations.ar).sort();
+    expect(viKeys).toEqual(enKeys);
+    expect(zhKeys).toEqual(enKeys);
+    expect(arKeys).toEqual(enKeys);
+  });
+
   it("tStr returns a string for string keys", () => {
     expect(typeof tStr("en", "heroHeadline")).toBe("string");
     expect(typeof tStr("es", "heroHeadline")).toBe("string");
@@ -59,5 +69,25 @@ describe("daysLeftLabel", () => {
 
   it("returns Spanish singular label", () => {
     expect(daysLeftLabel("es", 1)).toBe("Quedan 1 día");
+  });
+
+  it("returns Vietnamese label", () => {
+    expect(daysLeftLabel("vi", 5)).toBe("Còn 5 ngày");
+  });
+
+  it("returns Chinese label", () => {
+    expect(daysLeftLabel("zh", 3)).toBe("还有 3 天");
+  });
+
+  it("returns Arabic singular label", () => {
+    expect(daysLeftLabel("ar", 1)).toBe("يوم واحد متبقي");
+  });
+
+  it("returns Arabic dual label", () => {
+    expect(daysLeftLabel("ar", 2)).toBe("يومان متبقيان");
+  });
+
+  it("returns Arabic plural label", () => {
+    expect(daysLeftLabel("ar", 5)).toBe("5 أيام متبقية");
   });
 });

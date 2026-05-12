@@ -1,6 +1,9 @@
 import type { StateData, Election, BallotData } from "./types";
 import { BALLOT_PROMPT_TEXT } from "./ballotPromptText";
 import { BALLOT_PROMPT_TEXT_ES } from "./ballotPromptTextEs";
+import { BALLOT_PROMPT_TEXT_VI } from "./ballotPromptTextVi";
+import { BALLOT_PROMPT_TEXT_ZH } from "./ballotPromptTextZh";
+import { BALLOT_PROMPT_TEXT_AR } from "./ballotPromptTextAr";
 import type { Language } from "./i18n";
 import { translations } from "./i18n";
 
@@ -28,7 +31,28 @@ function findNextElection(elections: Election[], today: Date): Election | null {
 
 function formatDate(isoDate: string, language: Language = "en"): string {
   const [y, m, d] = isoDate.split("-").map(Number);
+
+  if (language === "zh") {
+    // Chinese: 2026年3月3日
+    return `${y}年${m}月${d}日`;
+  }
+  if (language === "vi") {
+    // Vietnamese: 3 tháng 3, 2026
+    return `${d} tháng ${m}, ${y}`;
+  }
+
   const date = new Date(Date.UTC(y, m - 1, d));
+
+  if (language === "ar") {
+    // Arabic: use Intl for Arabic month names
+    return date.toLocaleDateString("ar-SA", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      timeZone: "UTC",
+    });
+  }
+
   const locale = language === "es" ? "es" : "en-US";
   return date.toLocaleDateString(locale, {
     year: "numeric",
@@ -244,7 +268,13 @@ export function generatePrompt(
     `- **${countyLabel}:** ${resources.countyElectionLookup}\n\n` +
     `${closing}`;
 
-  const promptText =
-    language === "es" ? BALLOT_PROMPT_TEXT_ES : BALLOT_PROMPT_TEXT;
+  const PROMPT_MAP: Record<Language, string> = {
+    en: BALLOT_PROMPT_TEXT,
+    es: BALLOT_PROMPT_TEXT_ES,
+    vi: BALLOT_PROMPT_TEXT_VI,
+    zh: BALLOT_PROMPT_TEXT_ZH,
+    ar: BALLOT_PROMPT_TEXT_AR,
+  };
+  const promptText = PROMPT_MAP[language] ?? BALLOT_PROMPT_TEXT;
   return promptText + "\n\n" + contextBlock;
 }

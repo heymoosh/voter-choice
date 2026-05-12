@@ -24,3 +24,19 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* RTL layout support for Arabic */
+[dir="rtl"] {
+  text-align: right;
+}
+
+/* Ensure Arabic text uses appropriate font stack */
+[dir="rtl"] body,
+[dir="rtl"] * {
+  font-family: "Segoe UI", "Tahoma", "Arial", "Helvetica Neue", sans-serif;
+}
+
+/* Flip directional icons in RTL mode */
+[dir="rtl"] .rtl-flip {
+  transform: scaleX(-1);
+}

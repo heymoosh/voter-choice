@@ -105,3 +105,111 @@ describe("generatePrompt (Spanish)", () => {
     expect(result).toContain("votetexas.gov");
   });
 });
+
+describe("generatePrompt (Vietnamese)", () => {
+  it("returns Vietnamese prompt when language is vi", () => {
+    const stateData = getStateData("TX")!;
+    const result = generatePrompt(
+      stateData,
+      "73301",
+      new Date("2026-05-11"),
+      "vi",
+    );
+    expect(result).toContain("không đảng phái");
+  });
+
+  it("returns Vietnamese context greeting when language is vi", () => {
+    const stateData = getStateData("TX")!;
+    const result = generatePrompt(
+      stateData,
+      "73301",
+      new Date("2026-05-11"),
+      "vi",
+    );
+    expect(result).toContain("Texas");
+    expect(result).toContain("73301");
+  });
+
+  it("formats dates in Vietnamese style (d tháng m, y)", () => {
+    const stateData = getStateData("TX")!;
+    const result = generatePrompt(
+      stateData,
+      "73301",
+      new Date("2026-05-11"),
+      "vi",
+    );
+    expect(result).toMatch(/\d+ tháng \d+, \d{4}/);
+  });
+});
+
+describe("generatePrompt (Chinese)", () => {
+  it("returns Chinese prompt when language is zh", () => {
+    const stateData = getStateData("TX")!;
+    const result = generatePrompt(
+      stateData,
+      "73301",
+      new Date("2026-05-11"),
+      "zh",
+    );
+    expect(result).toContain("无党派公民研究助手");
+  });
+
+  it("returns Chinese context greeting", () => {
+    const stateData = getStateData("TX")!;
+    const result = generatePrompt(
+      stateData,
+      "73301",
+      new Date("2026-05-11"),
+      "zh",
+    );
+    expect(result).toContain("Texas");
+    expect(result).toContain("73301");
+  });
+
+  it("formats dates in Chinese style (y年m月d日)", () => {
+    const stateData = getStateData("TX")!;
+    const result = generatePrompt(
+      stateData,
+      "73301",
+      new Date("2026-05-11"),
+      "zh",
+    );
+    expect(result).toMatch(/\d{4}年\d+月\d+日/);
+  });
+});
+
+describe("generatePrompt (Arabic)", () => {
+  it("returns Arabic prompt when language is ar", () => {
+    const stateData = getStateData("TX")!;
+    const result = generatePrompt(
+      stateData,
+      "73301",
+      new Date("2026-05-11"),
+      "ar",
+    );
+    expect(result).toContain("غير حزبي");
+  });
+
+  it("returns Arabic context greeting", () => {
+    const stateData = getStateData("TX")!;
+    const result = generatePrompt(
+      stateData,
+      "73301",
+      new Date("2026-05-11"),
+      "ar",
+    );
+    expect(result).toContain("Texas");
+    expect(result).toContain("73301");
+  });
+
+  it("includes sample ballot link in Arabic mode", () => {
+    const stateData = getStateData("TX")!;
+    const result = generatePrompt(
+      stateData,
+      "73301",
+      new Date("2026-05-11"),
+      "ar",
+    );
+    expect(result).toContain("votetexas.gov");
+  });
+});

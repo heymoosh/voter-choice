@@ -11,6 +11,8 @@ import React, {
 import type { Language } from "./translations";
 
 const STORAGE_KEY = "voter-choice-lang";
+const VALID_LANGS: Language[] = ["en", "es", "vi", "zh", "ar"];
+const RTL_LANGS = new Set<Language>(["ar"]);
 
 type LanguageContextValue = {
   language: Language;
@@ -29,17 +31,18 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored === "en" || stored === "es") {
-        setLanguageState(stored);
+      if (stored && VALID_LANGS.includes(stored as Language)) {
+        setLanguageState(stored as Language);
       }
     } catch {
       // localStorage unavailable (SSR / private browsing)
     }
   }, []);
 
-  // Update html lang attribute and persist to localStorage when language changes
+  // Update html lang/dir attributes and persist to localStorage when language changes
   useEffect(() => {
     document.documentElement.lang = language;
+    document.documentElement.dir = RTL_LANGS.has(language) ? "rtl" : "ltr";
     try {
       localStorage.setItem(STORAGE_KEY, language);
     } catch {
