@@ -124,4 +124,59 @@ export const es: Translations = {
         "Tenemos problemas para cargar datos electorales en vivo. Aquí está lo que sabemos sobre votar en tu estado.",
     },
   },
+  phase5: {
+    chat: {
+      ctaButton: "Investigar mi boleta con IA",
+      privacyNotice:
+        "Tu conversación permanece solo en tu navegador — no la almacenamos. Si cierras o refrescas esta página, tu conversación se perderá. Descarga tu boleta y perfil de votante antes de salir.",
+      inputPlaceholder: "Escribe tu mensaje...",
+      sendButton: "Enviar",
+      budgetNotice70:
+        "El chat de IA gratuito puede tener límites más tarde este mes. Siempre puedes usar la opción de copiar y pegar.",
+      budgetNotice90:
+        "El chat de IA gratuito está agotándose este mes. Considera usar la opción de copiar y pegar para una experiencia sin interrupciones.",
+      chatDisabledMessage:
+        "Nuestro chat de IA gratuito ha alcanzado su límite mensual. Aún puedes investigar tu boleta — copia el prompt abajo y pégalo en cualquier chatbot de IA gratuito.",
+      sessionLimitMessage:
+        "Para mantener esta herramienta gratuita para todos, limitamos las sesiones por día. Puedes continuar tu investigación copiando el prompt abajo.",
+      loadingMessage: "Pensando...",
+    },
+    ballot: {
+      sectionHeading: "Crear mi boleta",
+      pasteAreaLabel: "Pega aquí el resultado de la IA para tu boleta",
+      pasteInstructions:
+        "Después de tu conversación con la IA, copia la sección 'MI BOLETA' y pégala aquí para generar tu boleta descargable.",
+      parseErrorMessage:
+        "No pudimos leer ese formato. Intenta copiar solo la sección 'MI BOLETA' de tu conversación con la IA, o ingresa tus elecciones manualmente abajo.",
+      manualEntryHeading: "Ingresar elecciones manualmente",
+      manualAddRaceButton: "Agregar contienda",
+      downloadButton: "Descargar / Imprimir mi boleta",
+      previewHeading: "Vista previa de la boleta",
+      disclaimer:
+        "Esta es tu referencia personal, no una boleta oficial. Verifica toda la información en tu oficina electoral estatal.",
+    },
+    profile: {
+      uploadLabel: "¿Votante habitual? Sube tu perfil de votante",
+      uploadPrivacyNotice:
+        "Tu perfil se usa solo para esta sesión y no se almacena en nuestros servidores.",
+      confirmationMessage:
+        "Perfil de votante cargado. Esto se incluirá en tu conversación con la IA.",
+      downloadButton: "Descargar mi perfil de votante",
+      downloadNote:
+        "Guarda este archivo en un lugar que encuentres antes de las próximas elecciones. Cuando regreses, súbelo para no tener que empezar desde cero.",
+      sizeError:
+        "El archivo es demasiado grande. Los perfiles de votante deben ser menores de 10KB.",
+      typeError: "Por favor sube un archivo .txt.",
+    },
+    alignment: {
+      strongLabel: "Alineación fuerte",
+      mixedLabel: "Alineación mixta",
+      weakLabel: "Alineación débil",
+      expandButton: "Expandir desglose",
+      collapseButton: "Contraer desglose",
+      parseError:
+        "No se pudieron generar puntajes de alineación para esta respuesta — intenta pedirle a la IA que califique a los candidatos de nuevo.",
+      overallLabel: "Alineación",
+    },
+  },
 };

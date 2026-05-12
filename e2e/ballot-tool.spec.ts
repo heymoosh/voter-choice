@@ -653,3 +653,314 @@ test.describe("Phase 4 — Prompt in Selected Language", () => {
     expect(text).toMatch(/اقتراع|الانتخابات|ناخب/);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Phase 5: Chat CTA and Chat Window
+// ---------------------------------------------------------------------------
+
+test.describe("Phase 5: Chat CTA", () => {
+  test("chat CTA button appears after data loads", async ({ page }) => {
+    await page.goto("/");
+    await page.getByTestId("zip-input").fill("73301");
+    await page.getByTestId("zip-submit").click();
+    const chatCta = page.getByTestId("chat-cta");
+    await expect(chatCta).toBeVisible({ timeout: 10000 });
+  });
+
+  test("clicking chat CTA opens chat window", async ({ page }) => {
+    await page.goto("/");
+    await page.getByTestId("zip-input").fill("73301");
+    await page.getByTestId("zip-submit").click();
+    await page.getByTestId("chat-cta").click({ timeout: 10000 });
+    const chatWindow = page.getByTestId("chat-window");
+    await expect(chatWindow).toBeVisible({ timeout: 5000 });
+  });
+
+  test("chat window shows privacy notice before first message", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    await page.getByTestId("zip-input").fill("73301");
+    await page.getByTestId("zip-submit").click();
+    await page.getByTestId("chat-cta").click({ timeout: 10000 });
+    const privacyNotice = page.getByTestId("chat-privacy-notice");
+    await expect(privacyNotice).toBeVisible({ timeout: 5000 });
+  });
+
+  test("chat window has message input and send button", async ({ page }) => {
+    await page.goto("/");
+    await page.getByTestId("zip-input").fill("73301");
+    await page.getByTestId("zip-submit").click();
+    await page.getByTestId("chat-cta").click({ timeout: 10000 });
+    await expect(page.getByTestId("chat-input")).toBeVisible({ timeout: 5000 });
+    await expect(page.getByTestId("chat-send")).toBeVisible({ timeout: 5000 });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Phase 5: Chat with mocked API
+// ---------------------------------------------------------------------------
+
+test.describe("Phase 5: Chat with mocked API", () => {
+  test("sends message and shows assistant response", async ({ page }) => {
+    // Mock the /api/chat endpoint
+    await page.route("/api/chat", async (route) => {
+      const sseBody = [
+        'data: {"type":"delta","content":"Hello! I can help you research your ballot."}\n\n',
+        'data: {"type":"done","inputTokens":100,"outputTokens":20}\n\n',
+      ].join("");
+      await route.fulfill({
+        status: 200,
+        headers: {
+          "Content-Type": "text/event-stream",
+          "Cache-Control": "no-cache",
+          "X-Budget-Percent": "10",
+          "X-Budget-Status": "normal",
+        },
+        body: sseBody,
+      });
+    });
+
+    await page.route("/api/budget", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ percentUsed: 10, status: "normal" }),
+      });
+    });
+
+    await page.goto("/");
+    await page.getByTestId("zip-input").fill("73301");
+    await page.getByTestId("zip-submit").click();
+    await page.getByTestId("chat-cta").click({ timeout: 10000 });
+    await page.getByTestId("chat-input").fill("What are the main races on my ballot?");
+    await page.getByTestId("chat-send").click();
+
+    // Should show user message
+    await expect(page.getByTestId("chat-message-user").first()).toBeVisible({
+      timeout: 5000,
+    });
+
+    // Should show assistant response
+    await expect(
+      page.getByTestId("chat-message-assistant").first(),
+    ).toBeVisible({ timeout: 10000 });
+  });
+
+  test("shows budget warning notice at 75%", async ({ page }) => {
+    await page.route("/api/budget", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ percentUsed: 75, status: "warning" }),
+      });
+    });
+
+    await page.goto("/");
+    await page.getByTestId("zip-input").fill("73301");
+    await page.getByTestId("zip-submit").click();
+    await page.getByTestId("chat-cta").click({ timeout: 10000 });
+
+    const budgetNotice = page.getByTestId("chat-budget-notice");
+    await expect(budgetNotice).toBeVisible({ timeout: 5000 });
+  });
+
+  test("shows critical budget notice at 95%", async ({ page }) => {
+    await page.route("/api/budget", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ percentUsed: 95, status: "critical" }),
+      });
+    });
+
+    await page.goto("/");
+    await page.getByTestId("zip-input").fill("73301");
+    await page.getByTestId("zip-submit").click();
+    await page.getByTestId("chat-cta").click({ timeout: 10000 });
+
+    const budgetNotice = page.getByTestId("chat-budget-notice");
+    await expect(budgetNotice).toBeVisible({ timeout: 5000 });
+  });
+
+  test("shows disabled message when budget exhausted", async ({ page }) => {
+    await page.route("/api/budget", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ percentUsed: 100, status: "exhausted" }),
+      });
+    });
+
+    await page.goto("/");
+    await page.getByTestId("zip-input").fill("73301");
+    await page.getByTestId("zip-submit").click();
+    await page.getByTestId("chat-cta").click({ timeout: 10000 });
+
+    const disabledMsg = page.getByTestId("chat-disabled-message");
+    await expect(disabledMsg).toBeVisible({ timeout: 5000 });
+  });
+
+  test("chat produces Download My Ballot button after ballot block in response", async ({
+    page,
+  }) => {
+    const ballotResponse = `
+Here are your ballot choices:
+
+MY BALLOT — Travis County — Texas General Election — November 3, 2026
+
+U.S. Senate: Jane Doe
+Governor: John Smith
+
+REMINDER: Texas law prohibits wireless devices in the voting room.`;
+
+    await page.route("/api/chat", async (route) => {
+      const sseBody =
+        `data: ${JSON.stringify({ type: "delta", content: ballotResponse })}\n\n` +
+        `data: ${JSON.stringify({ type: "done", inputTokens: 200, outputTokens: 100 })}\n\n`;
+      await route.fulfill({
+        status: 200,
+        headers: {
+          "Content-Type": "text/event-stream",
+          "X-Budget-Percent": "15",
+          "X-Budget-Status": "normal",
+        },
+        body: sseBody,
+      });
+    });
+
+    await page.route("/api/budget", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ percentUsed: 15, status: "normal" }),
+      });
+    });
+
+    await page.goto("/");
+    await page.getByTestId("zip-input").fill("73301");
+    await page.getByTestId("zip-submit").click();
+    await page.getByTestId("chat-cta").click({ timeout: 10000 });
+    await page.getByTestId("chat-input").fill("Generate my ballot summary");
+    await page.getByTestId("chat-send").click();
+
+    const downloadBtn = page.getByTestId("download-ballot-btn");
+    await expect(downloadBtn).toBeVisible({ timeout: 10000 });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Phase 5: Ballot Builder (Path B)
+// ---------------------------------------------------------------------------
+
+test.describe("Phase 5: Ballot Builder (Path B)", () => {
+  const sampleBallotText = `MY BALLOT — Travis County — Texas General Election — November 3, 2026
+
+U.S. Senate: Jane Doe
+Governor: John Smith
+
+Propositions:
+Prop 1: YES
+
+REMINDER: Texas law prohibits wireless devices in the voting room.`;
+
+  test("paste area is visible after data loads", async ({ page }) => {
+    await page.goto("/");
+    await page.getByTestId("zip-input").fill("73301");
+    await page.getByTestId("zip-submit").click();
+    await expect(page.getByTestId("ballot-paste-input")).toBeVisible({
+      timeout: 10000,
+    });
+  });
+
+  test("pasting valid ballot output shows preview and download button", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    await page.getByTestId("zip-input").fill("73301");
+    await page.getByTestId("zip-submit").click();
+    await page.getByTestId("ballot-paste-input").fill(sampleBallotText, {
+      timeout: 10000,
+    });
+
+    await expect(page.getByTestId("ballot-preview")).toBeVisible({
+      timeout: 5000,
+    });
+    await expect(page.getByTestId("download-ballot-btn")).toBeVisible({
+      timeout: 5000,
+    });
+  });
+
+  test("pasting invalid text shows parse error and manual entry fallback", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    await page.getByTestId("zip-input").fill("73301");
+    await page.getByTestId("zip-submit").click();
+    await page.getByTestId("ballot-paste-input").fill("This is not ballot text at all.", {
+      timeout: 10000,
+    });
+
+    // Should show parse error with manual entry option
+    await expect(page.locator("text=Enter choices manually instead")).toBeVisible({
+      timeout: 5000,
+    });
+
+    // Click to open manual entry
+    await page.locator("text=Enter choices manually instead").click();
+    await expect(page.getByTestId("ballot-manual-entry")).toBeVisible({
+      timeout: 5000,
+    });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Phase 5: Voter Profile Upload
+// ---------------------------------------------------------------------------
+
+test.describe("Phase 5: Voter Profile Upload", () => {
+  test("profile upload input is visible on page load", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.getByTestId("upload-profile-input")).toBeVisible();
+  });
+
+  test("uploading a valid .txt profile shows confirmation", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    const profileContent = `=== MY VOTER PROFILE — May 2026 ===
+
+LOCATION: 73301, Texas
+
+WHAT I CARE ABOUT:
+- Climate action
+- Healthcare
+
+=== END VOTER PROFILE ===`;
+
+    // Create a mock file
+    await page.getByTestId("upload-profile-input").setInputFiles({
+      name: "voter-profile.txt",
+      mimeType: "text/plain",
+      buffer: Buffer.from(profileContent),
+    });
+
+    const confirmation = page.getByTestId("profile-confirmation");
+    await expect(confirmation).toBeVisible({ timeout: 5000 });
+  });
+
+  test("uploading oversized file shows error", async ({ page }) => {
+    await page.goto("/");
+    // Create a file just over 10KB
+    const oversizedContent = "x".repeat(11 * 1024);
+    await page.getByTestId("upload-profile-input").setInputFiles({
+      name: "too-big.txt",
+      mimeType: "text/plain",
+      buffer: Buffer.from(oversizedContent),
+    });
+
+    await expect(
+      page.locator('[role="alert"]').filter({ hasText: /too large/i }),
+    ).toBeVisible({ timeout: 5000 });
+  });
+});

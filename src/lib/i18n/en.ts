@@ -124,4 +124,58 @@ export const en: Translations = {
         "We're having trouble loading live election data. Here's what we know about voting in your state.",
     },
   },
+  phase5: {
+    chat: {
+      ctaButton: "Research My Ballot with AI",
+      privacyNotice:
+        "Your conversation stays in your browser only — we don't store it. If you close or refresh this page, your conversation will be lost. Download your ballot and voter profile before leaving.",
+      inputPlaceholder: "Type your message...",
+      sendButton: "Send",
+      budgetNotice70:
+        "Free AI chat may be limited later this month. You can always use the copy-paste option.",
+      budgetNotice90:
+        "Free AI chat is running low this month. Consider using the copy-paste option for an uninterrupted experience.",
+      chatDisabledMessage:
+        "Our free AI chat has reached its monthly limit. You can still research your ballot — copy the prompt below and paste it into any free AI chatbot (Claude, ChatGPT, Gemini, Grok).",
+      sessionLimitMessage:
+        "To keep this tool free for everyone, we limit sessions per day. You can continue your research by copying the prompt below.",
+      loadingMessage: "Thinking...",
+    },
+    ballot: {
+      sectionHeading: "Build My Ballot",
+      pasteAreaLabel: "Paste your AI ballot output here",
+      pasteInstructions:
+        "After your AI conversation, copy the 'MY BALLOT' section and paste it here to generate your downloadable ballot.",
+      parseErrorMessage:
+        "We couldn't read that format. Try copying just the 'MY BALLOT' section from your AI conversation, or enter your choices manually below.",
+      manualEntryHeading: "Enter Ballot Choices Manually",
+      manualAddRaceButton: "Add Race",
+      downloadButton: "Download / Print My Ballot",
+      previewHeading: "Ballot Preview",
+      disclaimer:
+        "This is your personal reference, not an official ballot. Verify all information at your state election office.",
+    },
+    profile: {
+      uploadLabel: "Returning voter? Upload your voter profile",
+      uploadPrivacyNotice:
+        "Your profile is used for this session only and is not stored on our servers.",
+      confirmationMessage:
+        "Voter profile loaded. This will be included in your AI conversation.",
+      downloadButton: "Download My Voter Profile",
+      downloadNote:
+        "Save this file somewhere you'll find it before the next election. When you come back, upload it so you don't have to start from scratch.",
+      sizeError: "File is too large. Voter profiles must be under 10KB.",
+      typeError: "Please upload a .txt file.",
+    },
+    alignment: {
+      strongLabel: "Strong alignment",
+      mixedLabel: "Mixed alignment",
+      weakLabel: "Weak alignment",
+      expandButton: "Expand breakdown",
+      collapseButton: "Collapse breakdown",
+      parseError:
+        "Alignment scores couldn't be generated for this response — try asking the AI to score the candidates again.",
+      overallLabel: "Alignment",
+    },
+  },
 };

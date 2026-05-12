@@ -107,6 +107,48 @@ export interface Translations {
       apiFull?: string;
     };
   };
+  phase5?: {
+    chat?: {
+      ctaButton?: string;
+      privacyNotice?: string;
+      inputPlaceholder?: string;
+      sendButton?: string;
+      budgetNotice70?: string;
+      budgetNotice90?: string;
+      chatDisabledMessage?: string;
+      sessionLimitMessage?: string;
+      loadingMessage?: string;
+    };
+    ballot?: {
+      sectionHeading?: string;
+      pasteAreaLabel?: string;
+      pasteInstructions?: string;
+      parseErrorMessage?: string;
+      manualEntryHeading?: string;
+      manualAddRaceButton?: string;
+      downloadButton?: string;
+      previewHeading?: string;
+      disclaimer?: string;
+    };
+    profile?: {
+      uploadLabel?: string;
+      uploadPrivacyNotice?: string;
+      confirmationMessage?: string;
+      downloadButton?: string;
+      downloadNote?: string;
+      sizeError?: string;
+      typeError?: string;
+    };
+    alignment?: {
+      strongLabel?: string;
+      mixedLabel?: string;
+      weakLabel?: string;
+      expandButton?: string;
+      collapseButton?: string;
+      parseError?: string;
+      overallLabel?: string;
+    };
+  };
 }
 
 export type Locale = "en" | "es" | "vi" | "zh" | "ar";

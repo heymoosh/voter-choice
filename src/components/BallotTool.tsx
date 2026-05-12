@@ -5,9 +5,16 @@ import { ZipForm } from "./ZipForm";
 import { StateSelector } from "./StateSelector";
 import { StateInfoCard } from "./StateInfoCard";
 import { PromptOutput } from "./PromptOutput";
+import ChatWindow from "./ChatWindow";
+import BallotBuilder from "./BallotBuilder";
+import VoterProfilePanel from "./VoterProfilePanel";
 import { isValidZip } from "@/lib/zipLookup";
 import { fetchLiveData } from "@/lib/dataAccess";
-import { buildPrompt } from "@/lib/promptBuilder";
+import {
+  buildPrompt,
+  buildSystemPrompt,
+  buildPromptWithProfile,
+} from "@/lib/promptBuilder";
 import { useTranslation } from "@/lib/i18n/I18nContext";
 import type { LiveElectionData } from "@/types/liveElection";
 import type { Locale } from "@/lib/i18n/types";
@@ -29,6 +36,10 @@ function BallotToolInner() {
   const { t, locale } = useTranslation();
   const [appState, setAppState] = useState<AppState>({ stage: "idle" });
   const [zipError, setZipError] = useState<string | null>(null);
+  const [chatOpen, setChatOpen] = useState(false);
+  const [voterProfile, setVoterProfile] = useState<string | undefined>(
+    undefined,
+  );
 
   const handleZipSubmit = useCallback(
     async (zip: string) => {
@@ -41,6 +52,7 @@ function BallotToolInner() {
         return;
       }
       setZipError(null);
+      setChatOpen(false);
       setAppState({ stage: "loading" });
 
       await loadLiveData(zip, locale, setAppState, t.errors.loadFailed);
@@ -66,8 +78,34 @@ function BallotToolInner() {
 
   const isLoading = appState.stage === "loading";
 
+  const systemPrompt =
+    appState.stage === "result"
+      ? buildSystemPrompt(
+          appState.stateData,
+          appState.zip,
+          locale,
+          voterProfile,
+        )
+      : "";
+
+  const promptTextWithProfile =
+    appState.stage === "result"
+      ? buildPromptWithProfile(
+          appState.stateData,
+          appState.zip,
+          locale,
+          voterProfile,
+        )
+      : "";
+
   return (
     <div className="space-y-6">
+      {/* Voter Profile Upload (top of page) */}
+      <VoterProfilePanel
+        onProfileLoaded={setVoterProfile}
+        labels={t.phase5?.profile}
+      />
+
       {/* Zip Form */}
       <div>
         <ZipForm onSubmit={handleZipSubmit} isLoading={isLoading} />
@@ -144,7 +182,38 @@ function BallotToolInner() {
       {appState.stage === "result" && (
         <div className="space-y-8">
           <StateInfoCard stateData={appState.stateData} />
-          <PromptOutput promptText={appState.promptText} />
+
+          {/* Chat CTA */}
+          {!chatOpen && (
+            <button
+              data-testid="chat-cta"
+              onClick={() => setChatOpen(true)}
+              className="w-full py-3 px-6 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-colors text-sm shadow-sm"
+            >
+              {t.phase5?.chat?.ctaButton ?? "Research My Ballot with AI"}
+            </button>
+          )}
+
+          {/* Chat Window */}
+          {chatOpen && (
+            <ChatWindow
+              systemPrompt={systemPrompt}
+              locale={locale}
+              labels={{
+                ...t.phase5?.chat,
+                alignment: t.phase5?.alignment,
+                ballot: t.phase5?.ballot,
+                profile: t.phase5?.profile,
+              }}
+              onClose={() => setChatOpen(false)}
+            />
+          )}
+
+          {/* Path B: Copy-paste prompt (enhanced with profile) */}
+          <PromptOutput promptText={promptTextWithProfile} />
+
+          {/* Path B: Ballot builder */}
+          <BallotBuilder locale={locale} labels={t.phase5?.ballot} />
         </div>
       )}
     </div>

@@ -118,4 +118,54 @@ export const zh: Translations = {
         "我们在加载实时选举数据时遇到问题。以下是我们所知道的关于在你所在州投票的信息。",
     },
   },
+  phase5: {
+    chat: {
+      ctaButton: "用AI研究我的选票",
+      privacyNotice:
+        "您的对话仅保存在您的浏览器中——我们不存储它。如果您关闭或刷新此页面，您的对话将丢失。请在离开前下载您的选票和选民档案。",
+      inputPlaceholder: "输入您的消息...",
+      sendButton: "发送",
+      budgetNotice70:
+        "本月晚些时候免费AI聊天可能受到限制。您可以使用复制粘贴选项。",
+      budgetNotice90:
+        "本月免费AI聊天即将用尽。请考虑使用复制粘贴选项以获得不间断的体验。",
+      chatDisabledMessage:
+        "我们的免费AI聊天已达到本月限额。您仍然可以研究选票——复制下面的提示并粘贴到任何免费AI聊天机器人。",
+      sessionLimitMessage:
+        "为保持此工具对所有人免费，我们限制每天的会话数。您可以通过复制下面的提示继续研究。",
+      loadingMessage: "思考中...",
+    },
+    ballot: {
+      sectionHeading: "创建我的选票",
+      pasteAreaLabel: "将AI选票输出粘贴到此处",
+      pasteInstructions:
+        "在AI对话后，复制[我的选票]部分并粘贴到此处以生成可下载的选票。",
+      parseErrorMessage:
+        "我们无法读取该格式。请尝试仅复制AI对话中的[我的选票]部分，或在下面手动输入您的选择。",
+      manualEntryHeading: "手动输入选票选择",
+      manualAddRaceButton: "添加选举项目",
+      downloadButton: "下载/打印我的选票",
+      previewHeading: "选票预览",
+      disclaimer:
+        "这是您的个人参考，而非官方选票。请在您所在州的选举办公室核实所有信息。",
+    },
+    profile: {
+      uploadLabel: "回头选民？上传您的选民档案",
+      uploadPrivacyNotice: "您的档案仅用于本次会话，不存储在我们的服务器上。",
+      confirmationMessage: "选民档案已加载。这将包含在您的AI对话中。",
+      downloadButton: "下载我的选民档案",
+      downloadNote: "将此文件保存在您在下次选举前能找到的地方。",
+      sizeError: "文件太大。选民档案必须小于10KB。",
+      typeError: "请上传.txt文件。",
+    },
+    alignment: {
+      strongLabel: "高度匹配",
+      mixedLabel: "部分匹配",
+      weakLabel: "匹配较低",
+      expandButton: "展开详情",
+      collapseButton: "收起详情",
+      parseError: "无法为此回复生成匹配分数——请尝试再次要求AI为候选人评分。",
+      overallLabel: "匹配度",
+    },
+  },
 };

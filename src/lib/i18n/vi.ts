@@ -124,4 +124,58 @@ export const vi: Translations = {
         "Chúng tôi đang gặp khó khăn khi tải dữ liệu bầu cử trực tiếp. Đây là những gì chúng tôi biết về việc bỏ phiếu ở tiểu bang của bạn.",
     },
   },
+  phase5: {
+    chat: {
+      ctaButton: "Nghiên cứu phiếu bầu của tôi với AI",
+      privacyNotice:
+        "Cuộc trò chuyện của bạn chỉ ở trong trình duyệt — chúng tôi không lưu trữ. Nếu bạn đóng hoặc làm mới trang này, cuộc trò chuyện sẽ mất. Tải xuống phiếu bầu và hồ sơ cử tri trước khi rời.",
+      inputPlaceholder: "Nhập tin nhắn của bạn...",
+      sendButton: "Gửi",
+      budgetNotice70:
+        "Chat AI miễn phí có thể bị giới hạn vào cuối tháng này. Bạn luôn có thể dùng tùy chọn sao chép và dán.",
+      budgetNotice90:
+        "Chat AI miễn phí sắp hết trong tháng này. Hãy cân nhắc dùng tùy chọn sao chép và dán.",
+      chatDisabledMessage:
+        "Chat AI miễn phí của chúng tôi đã đạt giới hạn tháng. Bạn vẫn có thể nghiên cứu phiếu bầu — sao chép prompt bên dưới và dán vào bất kỳ chatbot AI miễn phí nào.",
+      sessionLimitMessage:
+        "Để giữ công cụ này miễn phí cho mọi người, chúng tôi giới hạn số phiên mỗi ngày. Bạn có thể tiếp tục nghiên cứu bằng cách sao chép prompt bên dưới.",
+      loadingMessage: "Đang suy nghĩ...",
+    },
+    ballot: {
+      sectionHeading: "Tạo phiếu bầu của tôi",
+      pasteAreaLabel: "Dán kết quả AI về phiếu bầu vào đây",
+      pasteInstructions:
+        "Sau cuộc trò chuyện AI, sao chép phần 'PHIẾU BẦU CỦA TÔI' và dán vào đây.",
+      parseErrorMessage:
+        "Chúng tôi không thể đọc định dạng đó. Hãy thử sao chép chỉ phần 'PHIẾU BẦU CỦA TÔI' hoặc nhập thủ công bên dưới.",
+      manualEntryHeading: "Nhập lựa chọn phiếu bầu thủ công",
+      manualAddRaceButton: "Thêm cuộc đua",
+      downloadButton: "Tải xuống / In phiếu bầu của tôi",
+      previewHeading: "Xem trước phiếu bầu",
+      disclaimer:
+        "Đây là tài liệu tham khảo cá nhân, không phải phiếu bầu chính thức.",
+    },
+    profile: {
+      uploadLabel: "Cử tri trở lại? Tải lên hồ sơ cử tri của bạn",
+      uploadPrivacyNotice:
+        "Hồ sơ của bạn chỉ được dùng cho phiên này và không được lưu trên máy chủ của chúng tôi.",
+      confirmationMessage:
+        "Hồ sơ cử tri đã được tải. Điều này sẽ được đưa vào cuộc trò chuyện AI của bạn.",
+      downloadButton: "Tải xuống hồ sơ cử tri của tôi",
+      downloadNote:
+        "Lưu tệp này ở nơi bạn có thể tìm thấy trước cuộc bầu cử tiếp theo.",
+      sizeError: "Tệp quá lớn. Hồ sơ cử tri phải nhỏ hơn 10KB.",
+      typeError: "Vui lòng tải lên tệp .txt.",
+    },
+    alignment: {
+      strongLabel: "Sự liên kết mạnh",
+      mixedLabel: "Sự liên kết hỗn hợp",
+      weakLabel: "Sự liên kết yếu",
+      expandButton: "Mở rộng chi tiết",
+      collapseButton: "Thu gọn chi tiết",
+      parseError:
+        "Không thể tạo điểm liên kết cho phản hồi này — thử yêu cầu AI chấm điểm các ứng cử viên lại.",
+      overallLabel: "Sự liên kết",
+    },
+  },
 };
