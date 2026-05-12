@@ -72,6 +72,16 @@ Note: **Scoring is executed by Hermes from the host side, not inside the build c
 
 
 
+
+### Phase 4 forward — vanilla (auto)
+
+- **Date:** 2026-05-12T07:50:06.427Z
+- **Branch:** `experiment/vanilla-r1`
+- **Tag:** `vanilla-phase4-complete`
+- **Status:** ✓
+- **Summary:** e2e 106/106, coverage 34.2%, LOC 4160, complexity avg 4.93, scope adherence ?
+
+
 ### Phase 3 forward — compound-engineering (auto)
 
 - **Date:** 2026-05-12T07:26:52.926Z
