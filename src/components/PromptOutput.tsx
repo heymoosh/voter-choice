@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import { useLanguage } from "@/lib/i18n";
 
 interface PromptOutputProps {
   promptText: string;
@@ -10,6 +11,7 @@ export default function PromptOutput({ promptText }: PromptOutputProps) {
   const [copied, setCopied] = useState(false);
   const [showFallback, setShowFallback] = useState(false);
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
+  const { t } = useLanguage();
 
   async function handleCopy() {
     if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -32,14 +34,14 @@ export default function PromptOutput({ promptText }: PromptOutputProps) {
   return (
     <section
       className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden"
-      aria-label="Customized ballot research prompt"
+      aria-label={t("promptOutputSectionLabel")}
     >
       <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
         <h2 className="text-lg font-bold text-gray-900">
-          Your Customized Ballot Research Prompt
+          {t("promptOutputHeading")}
         </h2>
         <p className="text-sm text-gray-600 mt-1">
-          Copy this prompt and paste it as your first message in any AI chatbot
+          {t("promptOutputInstructions")}
         </p>
       </div>
 
@@ -47,8 +49,7 @@ export default function PromptOutput({ promptText }: PromptOutputProps) {
         {/* Instructions */}
         <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
           <div className="text-sm text-gray-600">
-            <strong>How to use:</strong> Copy below → open any free AI chatbot →
-            paste as your first message
+            <strong>{t("promptOutputHowTo")}</strong>
           </div>
           <div className="flex items-center gap-2">
             <button
@@ -73,7 +74,7 @@ export default function PromptOutput({ promptText }: PromptOutputProps) {
                       d="M5 13l4 4L19 7"
                     />
                   </svg>
-                  Copied!
+                  {t("copyButtonCopied")}
                 </>
               ) : (
                 <>
@@ -91,7 +92,7 @@ export default function PromptOutput({ promptText }: PromptOutputProps) {
                       d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
                     />
                   </svg>
-                  Copy to Clipboard
+                  {t("copyButton")}
                 </>
               )}
             </button>
@@ -102,7 +103,7 @@ export default function PromptOutput({ promptText }: PromptOutputProps) {
                 aria-live="polite"
                 className="text-sm text-green-700 font-medium"
               >
-                ✓ Copied to clipboard!
+                {t("copyConfirmation")}
               </span>
             )}
           </div>
@@ -114,15 +115,7 @@ export default function PromptOutput({ promptText }: PromptOutputProps) {
             aria-live="polite"
             className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-3"
           >
-            Clipboard not available. The text is selected — press{" "}
-            <kbd className="px-1.5 py-0.5 bg-amber-100 rounded text-xs font-mono">
-              Ctrl+C
-            </kbd>{" "}
-            /{" "}
-            <kbd className="px-1.5 py-0.5 bg-amber-100 rounded text-xs font-mono">
-              Cmd+C
-            </kbd>{" "}
-            to copy.
+            {t("copyFallback")}
           </div>
         )}
 
@@ -131,7 +124,7 @@ export default function PromptOutput({ promptText }: PromptOutputProps) {
           data-testid="prompt-output"
           className="relative"
           role="region"
-          aria-label="Full ballot research prompt text"
+          aria-label={t("promptTextAreaLabel")}
         >
           <textarea
             ref={textAreaRef}
@@ -139,7 +132,7 @@ export default function PromptOutput({ promptText }: PromptOutputProps) {
             value={promptText}
             rows={20}
             className="w-full p-4 text-sm font-mono bg-gray-50 border border-gray-200 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800 leading-relaxed"
-            aria-label="Ballot research prompt — read only, use copy button above"
+            aria-label={t("promptTextAreaLabel")}
             aria-readonly="true"
           />
         </div>

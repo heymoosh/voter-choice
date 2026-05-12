@@ -1,4 +1,5 @@
 import { DeadlineStatus } from "./types";
+import type { Language } from "./translations";
 
 /**
  * Calculate the number of days remaining until a deadline.
@@ -36,23 +37,39 @@ export function getDeadlineStatus(
 
 /**
  * Format a relative deadline label for display.
+ * Supports English and Spanish locale.
  */
-export function getDeadlineLabel(isoDate: string | null, today: Date): string {
-  if (!isoDate) return "Not available";
+export function getDeadlineLabel(
+  isoDate: string | null,
+  today: Date,
+  lang: Language = "en",
+): string {
+  if (!isoDate) {
+    return lang === "es" ? "No disponible" : "Not available";
+  }
   const days = getDaysRemaining(isoDate, today);
-  if (days < 0) return "Passed";
-  if (days === 0) return "Today — Last Day";
-  if (days === 1) return "1 day left";
-  return `${days} days left`;
+  if (days < 0) {
+    return lang === "es" ? "Vencido" : "Passed";
+  }
+  if (days === 0) {
+    return lang === "es" ? "Hoy — Último día" : "Today — Last Day";
+  }
+  if (days === 1) {
+    return lang === "es" ? "Queda 1 día" : "1 day left";
+  }
+  return lang === "es" ? `Quedan ${days} días` : `${days} days left`;
 }
 
 /**
- * Format an ISO date for display (e.g. "March 3, 2026").
+ * Format an ISO date for display.
+ * English: "March 3, 2026" (en-US locale)
+ * Spanish: "3 de marzo de 2026" (es-ES locale)
  */
-export function formatDate(isoDate: string): string {
+export function formatDate(isoDate: string, lang: Language = "en"): string {
   const [year, month, day] = isoDate.split("-").map(Number);
   const date = new Date(year, month - 1, day);
-  return date.toLocaleDateString("en-US", {
+  const locale = lang === "es" ? "es-ES" : "en-US";
+  return date.toLocaleDateString(locale, {
     year: "numeric",
     month: "long",
     day: "numeric",

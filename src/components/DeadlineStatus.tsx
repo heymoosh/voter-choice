@@ -6,6 +6,7 @@ import {
   getDeadlineLabel,
   formatDate,
 } from "@/lib/deadlineUtils";
+import { useLanguage } from "@/lib/i18n";
 
 interface DeadlineStatusProps {
   label: string;
@@ -14,44 +15,46 @@ interface DeadlineStatusProps {
   additionalInfo?: string;
 }
 
-const statusConfig: Record<
-  StatusEnum,
-  { textColor: string; bgColor: string; borderColor: string; label: string }
-> = {
-  [StatusEnum.GREEN]: {
-    textColor: "text-green-800",
-    bgColor: "bg-green-50",
-    borderColor: "border-green-200",
-    label: "Open",
-  },
-  [StatusEnum.YELLOW]: {
-    textColor: "text-yellow-800",
-    bgColor: "bg-yellow-50",
-    borderColor: "border-yellow-200",
-    label: "Closing Soon",
-  },
-  [StatusEnum.RED]: {
-    textColor: "text-red-800",
-    bgColor: "bg-red-50",
-    borderColor: "border-red-200",
-    label: "Urgent",
-  },
-  [StatusEnum.PASSED]: {
-    textColor: "text-gray-600",
-    bgColor: "bg-gray-50",
-    borderColor: "border-gray-200",
-    label: "Passed",
-  },
-};
-
 export default function DeadlineStatus({
   label,
   isoDate,
   today,
   additionalInfo,
 }: DeadlineStatusProps) {
+  const { lang, t } = useLanguage();
   const status = getDeadlineStatus(isoDate, today);
-  const relativeLabel = getDeadlineLabel(isoDate, today);
+  const relativeLabel = getDeadlineLabel(isoDate, today, lang);
+
+  const statusConfig: Record<
+    StatusEnum,
+    { textColor: string; bgColor: string; borderColor: string; label: string }
+  > = {
+    [StatusEnum.GREEN]: {
+      textColor: "text-green-800",
+      bgColor: "bg-green-50",
+      borderColor: "border-green-200",
+      label: t("deadlineStatusOpen"),
+    },
+    [StatusEnum.YELLOW]: {
+      textColor: "text-yellow-800",
+      bgColor: "bg-yellow-50",
+      borderColor: "border-yellow-200",
+      label: t("deadlineStatusClosingSoon"),
+    },
+    [StatusEnum.RED]: {
+      textColor: "text-red-800",
+      bgColor: "bg-red-50",
+      borderColor: "border-red-200",
+      label: t("deadlineStatusUrgent"),
+    },
+    [StatusEnum.PASSED]: {
+      textColor: "text-gray-600",
+      bgColor: "bg-gray-50",
+      borderColor: "border-gray-200",
+      label: t("deadlineStatusPassed"),
+    },
+  };
+
   const config = statusConfig[status];
 
   return (
@@ -71,11 +74,13 @@ export default function DeadlineStatus({
         </div>
         {isoDate && (
           <p className={`text-sm mt-0.5 ${config.textColor}`}>
-            {formatDate(isoDate)}
+            {formatDate(isoDate, lang)}
           </p>
         )}
         {!isoDate && (
-          <p className={`text-sm mt-0.5 ${config.textColor}`}>Not available</p>
+          <p className={`text-sm mt-0.5 ${config.textColor}`}>
+            {t("deadlineNotAvailable")}
+          </p>
         )}
         {additionalInfo && (
           <p className="text-xs text-gray-500 mt-0.5">{additionalInfo}</p>

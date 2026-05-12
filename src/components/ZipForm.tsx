@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, FormEvent, ChangeEvent } from "react";
+import { useLanguage } from "@/lib/i18n";
+import type { Translations } from "@/lib/translations";
 
 interface ZipFormProps {
   onSubmit: (zipCode: string) => void;
@@ -9,39 +11,38 @@ interface ZipFormProps {
 
 export default function ZipForm({ onSubmit, isLoading = false }: ZipFormProps) {
   const [rawValue, setRawValue] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const [errorKey, setErrorKey] = useState<keyof Translations | null>(null);
+  const { t } = useLanguage();
 
   // Derive display value: only digits, max 5 chars
   const zipCode = rawValue.replace(/\D/g, "").slice(0, 5);
 
-  function validate(raw: string): string | null {
+  function validate(raw: string): keyof Translations | null {
     const trimmed = raw.trim();
     if (!trimmed) {
-      return "Please enter a zip code";
+      return "zipErrorEmpty";
     }
-    // If the raw input contained non-digit characters or is wrong length
     if (!/^\d{5}$/.test(trimmed)) {
-      return "Please enter a valid 5-digit zip code";
+      return "zipErrorInvalid";
     }
     return null;
   }
 
   function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    // Validate against the raw value so non-numeric attempts are caught
-    const validationError = validate(rawValue);
-    if (validationError) {
-      setError(validationError);
+    const validationErrorKey = validate(rawValue);
+    if (validationErrorKey) {
+      setErrorKey(validationErrorKey);
       return;
     }
-    setError(null);
+    setErrorKey(null);
     onSubmit(zipCode);
   }
 
   function handleChange(e: ChangeEvent<HTMLInputElement>) {
     setRawValue(e.target.value);
-    if (error) {
-      setError(null);
+    if (errorKey) {
+      setErrorKey(null);
     }
   }
 
@@ -49,6 +50,8 @@ export default function ZipForm({ onSubmit, isLoading = false }: ZipFormProps) {
   function handleKeyDown(_e: React.KeyboardEvent<HTMLInputElement>) {
     // Enter handled by form submit
   }
+
+  const errorMessage = errorKey ? t(errorKey) : null;
 
   return (
     <form onSubmit={handleSubmit} noValidate className="w-full">
@@ -58,7 +61,7 @@ export default function ZipForm({ onSubmit, isLoading = false }: ZipFormProps) {
             htmlFor="zip-code-input"
             className="block text-sm font-medium text-gray-700 mb-1.5"
           >
-            Your zip code
+            {t("zipInputLabel")}
           </label>
           <input
             id="zip-code-input"
@@ -70,19 +73,19 @@ export default function ZipForm({ onSubmit, isLoading = false }: ZipFormProps) {
             value={rawValue}
             onChange={handleChange}
             onKeyDown={handleKeyDown}
-            placeholder="e.g. 73301"
+            placeholder={t("zipInputPlaceholder")}
             aria-label="5-digit US zip code"
-            aria-describedby={error ? "zip-error-msg" : undefined}
-            aria-invalid={error ? "true" : "false"}
+            aria-describedby={errorMessage ? "zip-error-msg" : undefined}
+            aria-invalid={errorMessage ? "true" : "false"}
             className={`w-full px-4 py-3 text-lg border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors min-h-[48px]
               ${
-                error
+                errorMessage
                   ? "border-red-400 focus:border-red-400 focus:ring-red-300"
                   : "border-gray-300 focus:border-blue-500"
               }`}
             disabled={isLoading}
           />
-          {error && (
+          {errorMessage && (
             <p
               id="zip-error-msg"
               data-testid="zip-error"
@@ -102,7 +105,7 @@ export default function ZipForm({ onSubmit, isLoading = false }: ZipFormProps) {
                   clipRule="evenodd"
                 />
               </svg>
-              {error}
+              {errorMessage}
             </p>
           )}
         </div>
@@ -135,10 +138,10 @@ export default function ZipForm({ onSubmit, isLoading = false }: ZipFormProps) {
                     d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
                   />
                 </svg>
-                Looking up...
+                {t("zipSubmitLoading")}
               </span>
             ) : (
-              "Look up my ballot"
+              t("zipSubmitButton")
             )}
           </button>
         </div>

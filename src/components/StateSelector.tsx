@@ -1,6 +1,7 @@
 "use client";
 
 import { ChangeEvent } from "react";
+import { useLanguage } from "@/lib/i18n";
 
 interface StateSelectorProps {
   stateCodes: string[];
@@ -66,6 +67,8 @@ export default function StateSelector({
   selectedState,
   onSelect,
 }: StateSelectorProps) {
+  const { t, lang } = useLanguage();
+
   function handleChange(e: ChangeEvent<HTMLSelectElement>) {
     onSelect(e.target.value);
   }
@@ -77,13 +80,13 @@ export default function StateSelector({
       aria-label="Multi-state zip code selector"
     >
       <p className="text-sm font-medium text-amber-800 mb-3">
-        This zip code spans multiple states. Which state are you voting in?
+        {t("stateSelectorPrompt")}
       </p>
       <label
         htmlFor="state-select"
         className="block text-sm font-medium text-gray-700 mb-1.5"
       >
-        Select your state
+        {lang === "es" ? "Selecciona tu estado" : "Select your state"}
       </label>
       <select
         id="state-select"
@@ -94,7 +97,7 @@ export default function StateSelector({
         aria-label="Select your state"
       >
         <option value="" disabled>
-          — Select a state —
+          {lang === "es" ? "— Selecciona un estado —" : "— Select a state —"}
         </option>
         {stateCodes.map((code) => (
           <option key={code} value={code}>

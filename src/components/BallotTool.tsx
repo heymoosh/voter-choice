@@ -8,6 +8,7 @@ import {
   findNextElection,
 } from "@/lib/stateData";
 import { buildPrompt } from "@/lib/promptBuilder";
+import { useLanguage } from "@/lib/i18n";
 import ZipForm from "./ZipForm";
 import StateInfo from "./StateInfo";
 import StateSelector from "./StateSelector";
@@ -22,13 +23,24 @@ type AppState =
       zipCode: string;
       stateData: StateData;
       election: Election | null;
-      promptText: string;
     }
   | { status: "not-found"; zipCode: string };
 
 export default function BallotTool() {
   const [appState, setAppState] = useState<AppState>({ status: "idle" });
   const today = useMemo(() => new Date(), []);
+  const { lang, t } = useLanguage();
+
+  // Build the prompt on-the-fly based on current language so it updates when lang changes
+  const promptText = useMemo(() => {
+    if (appState.status !== "result") return "";
+    return buildPrompt(
+      appState.stateData,
+      appState.zipCode,
+      appState.election,
+      lang,
+    );
+  }, [appState, lang]);
 
   const handleZipSubmit = useCallback(
     (zipCode: string) => {
@@ -57,14 +69,12 @@ export default function BallotTool() {
         }
 
         const election = findNextElection(data.elections, today);
-        const promptText = buildPrompt(data, zipCode, election);
 
         setAppState({
           status: "result",
           zipCode,
           stateData: data,
           election,
-          promptText,
         });
       }, 150);
     },
@@ -83,14 +93,12 @@ export default function BallotTool() {
       }
 
       const election = findNextElection(data.elections, today);
-      const promptText = buildPrompt(data, zipCode, election);
 
       setAppState({
         status: "result",
         zipCode,
         stateData: data,
         election,
-        promptText,
       });
     },
     [appState, today],
@@ -134,7 +142,11 @@ export default function BallotTool() {
               d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
             />
           </svg>
-          <span>Looking up your zip code...</span>
+          <span>
+            {lang === "es"
+              ? "Buscando tu código postal..."
+              : "Looking up your zip code..."}
+          </span>
         </div>
       )}
 
@@ -146,18 +158,16 @@ export default function BallotTool() {
           aria-live="polite"
           className="bg-amber-50 border border-amber-200 rounded-xl p-5 text-amber-800"
         >
-          <h3 className="font-semibold text-base mb-1">Zip code not found</h3>
+          <h3 className="font-semibold text-base mb-1">{t("notFoundTitle")}</h3>
           <p className="text-sm">
-            We don&apos;t have data for zip code{" "}
-            <strong>{appState.zipCode}</strong> yet. We&apos;re working on
-            adding all U.S. zip codes.{" "}
+            {t("notFoundBody", { zip: appState.zipCode })}{" "}
             <a
               href="https://www.usa.gov/state-election-office"
               target="_blank"
               rel="noopener noreferrer"
               className="underline hover:text-amber-900"
             >
-              Find your state election website
+              {t("notFoundLink")}
             </a>
             .
           </p>
@@ -184,7 +194,7 @@ export default function BallotTool() {
               appState.stateData.registration.registrationCheckUrl
             }
           />
-          <PromptOutput promptText={appState.promptText} />
+          <PromptOutput promptText={promptText} />
         </>
       )}
     </div>
