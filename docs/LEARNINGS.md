@@ -557,3 +557,29 @@ This is not a local bug. It is an architecture conflict between isolation and me
 ### Decision
 
 Host-side scoring after container exit is the v2 pattern. Container-side workflows should never invoke `measure.mjs`, `compute-deltas.mjs`, or `diff-hygiene.mjs`.
+
+## Learning 011: Dry-run Success Can Hide Live Docker Entry Gaps
+
+**Date discovered:** 2026-05-12
+**Affects:** Hermes isolation validation and Phase B smoke-run readiness
+**Severity:** High — dry-run passed while live Docker could not execute the intended entry path
+
+### What happened
+
+The dry-run simulation in `docker/run-claude.sh` correctly honored `--shell`, but the live Docker path ignored `--shell` and always launched `claude -p ...` instead. The live path also mounted `~/.claude/` but not `~/.claude.json`, so even the fallback Claude entrypoint failed before the build started.
+
+### Why this matters
+
+- The Phase A dry-run check proved the masking model, but not the real container entry behavior.
+- Phase B's B1 gate caught the divergence immediately: the operator could not run a real in-container assertion/build command, and the live Claude path lacked required configuration.
+- Without this fix, Hermes isolation looked correct on paper while the production path was not runnable.
+
+### Correct v2 pattern
+
+- `docker/run-claude.sh --shell '...'` must execute the provided command in both dry-run and live Docker modes.
+- Live Docker runs that invoke Claude must mount both `~/.claude/` and `~/.claude.json` read-only for the `runner` user.
+- Isolation verification should use the real per-run scratch dir mount pattern `metrics/run-outputs/<run-id>/ -> /workspace/metrics`, not just the dry-run sandbox.
+
+### Decision
+
+Treat any live-vs-dry-run mismatch in `docker/run-claude.sh` as a Phase A infrastructure bug. Fix it before continuing the smoke run or the full rerun.

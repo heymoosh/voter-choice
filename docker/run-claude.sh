@@ -24,6 +24,7 @@ set -euo pipefail
 
 REPO_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 CLAUDE_DIR="$HOME/.claude"
+CLAUDE_CONFIG_FILE="$HOME/.claude.json"
 TIMESTAMP="$(date -u +%Y%m%dT%H%M%SZ)"
 CURRENT_BRANCH="$(git -C "$REPO_DIR" branch --show-current 2>/dev/null | tr '/ ' '--')"
 RUN_ID="${CURRENT_BRANCH:-run}-${TIMESTAMP}"
@@ -37,6 +38,11 @@ DOC_FILE_MOUNTS=(
   -v "$REPO_DIR/docs/PHASE6_SPEC.md:/workspace/docs/PHASE6_SPEC.md:ro"
   -v "$REPO_DIR/docs/BALLOT_PROMPT.md:/workspace/docs/BALLOT_PROMPT.md:ro"
 )
+CLAUDE_FILE_MOUNTS=()
+
+if [[ -f "$CLAUDE_CONFIG_FILE" ]]; then
+  CLAUDE_FILE_MOUNTS+=(-v "$CLAUDE_CONFIG_FILE:/home/runner/.claude.json:ro")
+fi
 
 DRY_RUN=0
 NO_ISOLATION=0
@@ -112,9 +118,10 @@ echo ""
 
 ASSERTIONS='[ -z "$(ls -A /workspace/scoring 2>/dev/null)" ] || { echo "isolation breach: scoring/ visible" >&2; exit 1; }; [ -z "$(ls -A /workspace/metrics 2>/dev/null)" ] || { echo "isolation breach: metrics/ visible" >&2; exit 1; }; [ ! -e /workspace/docs/RUN_LOG.md ] || { echo "isolation breach: RUN_LOG.md visible" >&2; exit 1; }; [ ! -e /workspace/docs/LEARNINGS.md ] || { echo "isolation breach: LEARNINGS.md visible" >&2; exit 1; }; [ ! -e /workspace/docs/EXPERIMENT_HISTORY.md ] || { echo "isolation breach: EXPERIMENT_HISTORY.md visible" >&2; exit 1; }; [ ! -e /workspace/docs/EXPERIMENT_V2_PLAN.md ] || { echo "isolation breach: EXPERIMENT_V2_PLAN.md visible" >&2; exit 1; }; [ ! -e /workspace/docs/FINAL_RANKING.md ] || { echo "isolation breach: FINAL_RANKING.md visible" >&2; exit 1; }'
 
-CONTAINER_CMD="claude --dangerously-skip-permissions -p \"$PROMPT\""
-if [[ "$DRY_RUN" -eq 1 ]]; then
-  CONTAINER_CMD="${SHELL_CMD:-true}"
+if [[ -n "$SHELL_CMD" ]]; then
+  CONTAINER_CMD="$SHELL_CMD"
+else
+  CONTAINER_CMD="claude --dangerously-skip-permissions -p \"$PROMPT\""
 fi
 
 TMPFS_FLAGS=(
@@ -132,6 +139,7 @@ docker run -it --rm \
   -v "$REPO_DIR:/workspace" \
   -v "$RUN_OUTPUT_DIR:/workspace/metrics" \
   -v "$CLAUDE_DIR:/home/runner/.claude" \
+  "${CLAUDE_FILE_MOUNTS[@]}" \
   "${TMPFS_FLAGS[@]}" \
   "${DOC_FILE_MOUNTS[@]}" \
   --network host \
