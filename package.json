@@ -19,6 +19,7 @@
     "clean-start": "rm -rf node_modules .next coverage .jscpd-report .lighthouseci .vitest-report.json .eslint-report.json playwright-report.json && npm install"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "0.52.0",
     "next": "15.5.12",
     "react": "19.1.0",
     "react-dom": "19.1.0"

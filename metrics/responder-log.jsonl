@@ -15,3 +15,6 @@
 {"phase":3,"framework":"compound-engineering","question":"What caching strategy?","answer":"Server-side in-memory Map, keyed by zip code, 1-hour TTL. Second hit returns cached data instantly without loading state.","timestamp":"2026-05-12T02:21:00-05:00"}
 {"phase":3,"framework":"compound-engineering","question":"What fallback behavior on API failure?","answer":"Partial failure: show available data + api-partial-error banner. Full failure: show static voter-ID JSON + api-full-error banner. Never crash or show blank page.","timestamp":"2026-05-12T02:22:00-05:00"}
 {"event":"responder_log","step":"ce:plan","question":"What is the feature to plan?","answer":"Phase 4: Extended Language Support (Vietnamese, Chinese, Arabic) per docs/PHASE4_SPEC.md","timestamp":"2026-05-12T04:19:44-05:00"}
+{"timestamp":"2026-05-12T00:00:01Z","step":"ce:plan","question":"What would you like to plan?","answer":"Phase 5: LLM Chat Window, Downloadable Ballot, and Voter Profile — per docs/PHASE5_SPEC.md"}
+{"timestamp":"2026-05-12T00:00:02Z","step":"ce:plan","question":"What research level?","answer":"standard — external research on Anthropic SDK streaming patterns warranted given it's a new external API dep"}
+{"timestamp":"2026-05-12T00:00:03Z","step":"ce:plan","question":"Which branch to work on?","answer":"stay on current branch: experiment/compound-engineering-r1"}

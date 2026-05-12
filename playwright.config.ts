@@ -31,5 +31,9 @@ export default defineConfig({
     url: "http://127.0.0.1:3000",
     reuseExistingServer: !process.env.CI,
     timeout: 30000,
+    env: {
+      // Use mock mode for e2e tests — no real API calls
+      ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY ?? "test",
+    },
   },
 });

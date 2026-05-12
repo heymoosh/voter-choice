@@ -10,8 +10,12 @@ import { ApiErrorBanner } from "@/components/ApiErrorBanner";
 import { PollingLocation } from "@/components/PollingLocation";
 import { BallotContests } from "@/components/BallotContests";
 import { DataAttribution } from "@/components/DataAttribution";
+import { ChatWindow } from "@/components/ChatWindow";
+import { BallotDownload } from "@/components/BallotDownload";
+import { VoterProfile } from "@/components/VoterProfile";
 import type { StateData } from "@/types/state";
 import type { ElectionDataResult } from "@/lib/dataLayer";
+import type { ParsedBallot } from "@/lib/ballotParser";
 
 type LoadState = {
   code: string;
@@ -254,6 +258,11 @@ export default function Home() {
   );
   const [notFound, setNotFound] = useState<string | null>(null);
 
+  // Phase 5: Chat, ballot, profile state
+  const [chatBallot, setChatBallot] = useState<ParsedBallot | null>(null);
+  const [generatedProfile, setGeneratedProfile] = useState<string | null>(null);
+  const [uploadedProfile, setUploadedProfile] = useState<string | null>(null);
+
   const selectedCode = result?.code ?? null;
   const selectedState = useMemo(() => {
     if (!selectedCode) {
@@ -448,6 +457,17 @@ export default function Home() {
             </div>
           </div>
 
+          {/* Phase 5: Profile upload for returning voters (shown at top, before zip) */}
+          {!result && (
+            <section className="panel">
+              <VoterProfile
+                onProfileLoaded={(content) => setUploadedProfile(content)}
+                uploadedProfile={uploadedProfile}
+                generatedProfile={null}
+              />
+            </section>
+          )}
+
           <section className="panel">
             <form
               className="form-row"
@@ -544,6 +564,36 @@ export default function Home() {
               {t.copyConfirmation}
             </p>
           ) : null}
+
+          {/* Phase 5: Chat window (shown after election data loads) */}
+          {selectedState && result && (
+            <section className="panel phase5-section">
+              <ChatWindow
+                electionContext={result.prompt}
+                voterProfile={uploadedProfile}
+                onBallotGenerated={(ballot) => setChatBallot(ballot)}
+                onProfileGenerated={(profile) => setGeneratedProfile(profile)}
+              />
+            </section>
+          )}
+
+          {/* Phase 5: Ballot download section */}
+          {selectedState && result && (
+            <section className="panel phase5-section">
+              <BallotDownload chatBallot={chatBallot} />
+            </section>
+          )}
+
+          {/* Phase 5: Voter profile section */}
+          {selectedState && result && (
+            <section className="panel phase5-section">
+              <VoterProfile
+                onProfileLoaded={(content) => setUploadedProfile(content)}
+                uploadedProfile={uploadedProfile}
+                generatedProfile={generatedProfile}
+              />
+            </section>
+          )}
 
           <TipsSection />
 
