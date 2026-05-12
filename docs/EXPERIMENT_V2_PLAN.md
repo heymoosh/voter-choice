@@ -452,7 +452,7 @@ Merged into per-phase JSON.
 
 **File:** `docker/run-claude.sh`. Read it first — Learning 009 already established part of the isolation (`/workspace/scoring` is masked).
 
-**Auth pattern (canonical — see Learning 015):** In-container Claude Code authenticates via the bind-mounted `~/.claude/` subscription session. `ANTHROPIC_API_KEY` from `.env.local` is stripped from the `claude` subprocess env via `env -u ANTHROPIC_API_KEY claude ...`. App processes (vitest/playwright) still inherit `ANTHROPIC_API_KEY`. This prevents workflow builds from charging the experiment workspace API budget.
+**Auth pattern (see Learning 015):** Subscription auth via `~/.claude/` bind-mount was attempted but does NOT work on macOS Docker hosts — OAuth tokens live in macOS Keychain, not on disk. In-container Claude Code uses `ANTHROPIC_API_KEY` from `.env.local`. Mitigation: operator must set a $20/month cap on the experiment Anthropic workspace in console.anthropic.com.
 
 **Changes:**
 1. **Extend tmpfs mounts** to additionally mask:

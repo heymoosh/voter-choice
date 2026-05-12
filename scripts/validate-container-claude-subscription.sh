@@ -1,8 +1,15 @@
 #!/usr/bin/env bash
-# Regression test: in-container Claude Code must authenticate via the
+# SCAFFOLD — NOT ACTIVE (see docs/LEARNINGS.md Learning 015)
+#
+# Intended purpose: validate that in-container Claude Code authenticates via the
 # bind-mounted ~/.claude/ subscription session, NOT via ANTHROPIC_API_KEY.
 #
-# Three-layer proof:
+# Current status: subscription auth via ~/.claude/ bind-mount does NOT work on
+# macOS Docker hosts because OAuth tokens are stored in the macOS Keychain, which
+# is not accessible inside Linux Docker containers. This script is kept as a
+# scaffold in case the operator chooses option (b) or (c) from Learning 015.
+#
+# Original three-layer proof design:
 #   1. Structural: docker/run-claude.sh contains the env -u ANTHROPIC_API_KEY strip
 #   2. Runtime:    .env.local is sourced (so ANTHROPIC_API_KEY is meaningful in shell),
 #                  but the env var is absent from the subprocess that would inherit it

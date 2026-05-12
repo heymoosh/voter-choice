@@ -705,48 +705,43 @@ Add `scripts/api-budget-check.sh` that gates action dispatch. Wire it into Phase
 
 ---
 
-## Learning 015: Claude Code in Docker Must Authenticate via Subscription, Not API Key
+## Learning 015: Subscription Auth via ~/.claude/ Bind-Mount Does Not Work on macOS Docker Hosts
 
 **Date discovered:** 2026-05-12
-**Affects:** All in-container Claude Code workflow execution (Phase B onward)
-**Severity:** High — without this pattern, workflow builds silently charge the experiment Anthropic workspace
+**Affects:** All in-container Claude Code workflow execution — auth architecture decision
+**Severity:** High — attempted subscription switch failed; in-container auth is API-key only until a viable alternative is implemented
 
-### What happened
+### What was attempted
 
-In-container Claude Code was authenticating via `ANTHROPIC_API_KEY` sourced from `.env.local`. That key belongs to the experiment's Anthropic workspace (own spend cap), not to the operator's Claude Max subscription. Phase B used API-key auth for Phases 1-3 and hit the workspace budget cap before Phase 4, halting progress until the next billing window.
+Phase B hit the experiment Anthropic workspace API budget cap after Phases 1-3, halting the smoke run. The operator wanted to switch in-container Claude Code auth to use the Claude Max subscription (~$200/month, independent capacity) instead of the experiment API key. The plan was:
 
-The operator's Claude Max subscription ($200/month) has independent capacity and should be the auth source for Claude Code workflow execution. The `~/.claude/` bind-mount was already present in `docker/run-claude.sh`, but Claude Code reads `ANTHROPIC_API_KEY` from the environment if present and falls back to it even when `~/.claude/` contains valid subscription session credentials.
+1. Bind-mount `~/.claude/` into the container (already present in `docker/run-claude.sh`)
+2. Strip `ANTHROPIC_API_KEY` from the claude subprocess env: `env -u ANTHROPIC_API_KEY claude ...`
 
-### The fix
+### Why it failed
 
-Strip `ANTHROPIC_API_KEY` explicitly from the claude subprocess env:
+On macOS, Claude Code stores OAuth tokens (access_token, refresh_token) in the **macOS Keychain**, not on disk. `~/.claude.json` contains only account metadata (`accountUuid`, `emailAddress`, `billingType: stripe_subscription`, etc.) — the actual session credentials are not in any file. `~/.claude/sessions/` is empty. No credential files exist anywhere in `~/.claude/`.
 
-```bash
-env -u ANTHROPIC_API_KEY claude --bare --dangerously-skip-permissions -p "$CLAUDE_PROMPT"
-```
+Inside a **Linux Docker container**, the macOS Keychain is not accessible. With `ANTHROPIC_API_KEY` stripped and no token files on disk, Claude Code inside the container has no auth path and produces "Not logged in · Please run /login".
 
-This leaves `ANTHROPIC_API_KEY` in the broader shell environment so app processes spawned by vitest/playwright still find it from `.env.local`. Only the `claude` process itself is stripped.
+### What was reverted
 
-### Two distinct auth scopes (canonical pattern from v2 onward)
+The `env -u ANTHROPIC_API_KEY claude` change was backed out. `docker/run-claude.sh` uses API-key auth from `.env.local` as before. The validator script `scripts/validate-container-claude-subscription.sh` was kept as a scaffold for whichever solution the operator chooses.
 
-| Scope | Auth source | Why |
+### Three options for the operator to choose from
+
+| Option | What it requires | Tradeoffs |
 |---|---|---|
-| Claude Code workflow execution (in-container) | `~/.claude/` subscription session | Subscription capacity; no per-token cost |
-| Next.js app processes (Phase 3 enrichment, Phase 5 chat, Phase 6 disambiguation, e2e tests) | `ANTHROPIC_API_KEY` from `.env.local` | App features must use the API key; subscription is not an API credential |
+| **(a) API-key + $20 workspace cap** | Operator sets $20/month cap in console.anthropic.com | Cap blocks runaway spend; Phase B can resume immediately after API quota resets (2026-06-01). Simple, works today. |
+| **(b) Keychain export to file** | `security find-generic-password` on host to extract token, write to a file, mount into container | Token on disk is a security/rotation concern; requires re-export on every token rotation |
+| **(c) Separate API key with lower spend cap** | Operator creates a second API key in a separate Anthropic workspace with a $20 cap | Cleanest isolation; spend is separate from experiment workspace; easy to cap |
 
-### Regression test
-
-`scripts/validate-container-claude-subscription.sh` asserts three things:
-1. **Structural:** `docker/run-claude.sh` contains the `env -u ANTHROPIC_API_KEY claude` strip
-2. **Runtime:** `.env.local` sourced (key present in shell) but absent from the subprocess env
-3. **End-to-end:** a trivial prompt completes (subscription auth actually works, not just configured)
-
-Run this before any smoke or full experiment build. `validate-container-claude.sh` passing also means subscription auth works — it no longer tests API-key auth.
+**Recommendation (a):** The $20 cap on the existing experiment workspace is sufficient protection. If a build accidentally hits the cap, it fails loudly instead of silently. Phase B Phases 4-6 resume after 2026-06-01 quota reset.
 
 ### Methodology footnote (vanilla smoke run)
 
-Phases 1-3 of the vanilla smoke run (`experiment/vanilla-r1-v2c`) were built with API-key auth. Subscription Sonnet and API-key Sonnet are the same model. Phases 4-6 used subscription auth. This is documented here as a methodology footnote, not a contamination — the independent variable (workflow methodology) is unaffected.
+Phases 1-3 of the vanilla smoke run (`experiment/vanilla-r1-v2c`) used API-key auth. Phases 4-6 will also use API-key auth after the quota resets. Subscription Sonnet and API-key Sonnet are the same model — this is not a methodology contamination, just a cost accounting difference.
 
-### Operator action required
+### Operator action required (whichever option chosen)
 
-Set the experiment Anthropic workspace's monthly cap to ~$20 in [console.anthropic.com](https://console.anthropic.com). Without this cap, any accidental future fallback to API-key auth continues to cost money silently. With a $20 cap, fallback fails loudly at the cap and the regression is caught immediately.
+For option (a): Set the experiment Anthropic workspace's monthly cap to ~$20 at [console.anthropic.com](https://console.anthropic.com). This is a one-time Console UI action. The agent cannot do this.

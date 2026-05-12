@@ -132,10 +132,12 @@ ASSERTIONS="${ASSERTIONS//__WORKTREE__/$WORKTREE_PATH}"
 if [[ -n "$SHELL_CMD" ]]; then
   CONTAINER_CMD="$SHELL_CMD"
 else
-  # Strip ANTHROPIC_API_KEY from the claude subprocess so it cannot fall back to API-key auth.
-  # .env.local sets ANTHROPIC_API_KEY for the app processes (vitest/playwright) — intentional.
-  # Claude Code auth comes exclusively from the bind-mounted ~/.claude/ subscription session.
-  CONTAINER_CMD='if [[ -f "$WORKTREE_PATH/.env.local" ]]; then set -a; source "$WORKTREE_PATH/.env.local"; set +a; fi; env -u ANTHROPIC_API_KEY claude --bare --dangerously-skip-permissions -p "$CLAUDE_PROMPT"'
+  # Auth: Claude Code reads ANTHROPIC_API_KEY from .env.local (experiment workspace key).
+  # NOTE: Subscription auth via bind-mounted ~/.claude/ was attempted but cannot work on macOS
+  # hosts because OAuth tokens are stored in macOS Keychain, not on disk. The Keychain is not
+  # accessible inside a Linux Docker container. See docs/LEARNINGS.md Learning 015.
+  # Mitigation: set a $20/month cap on the experiment Anthropic workspace in console.anthropic.com.
+  CONTAINER_CMD='if [[ -f "$WORKTREE_PATH/.env.local" ]]; then set -a; source "$WORKTREE_PATH/.env.local"; set +a; fi; claude --bare --dangerously-skip-permissions -p "$CLAUDE_PROMPT"'
 fi
 
 TMPFS_FLAGS=(
