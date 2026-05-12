@@ -15,7 +15,7 @@ set -euo pipefail
 status_line="$(git status --short --branch | sed -n "1p")"
 printf "__STATUS__ %s\n" "$status_line"
 printf "__LOG_START__\n"
-git log --oneline -5
+git log --no-color --oneline -5
 printf "__LOG_END__\n"
 file_count="$(git ls-files | wc -l | tr -d " ")"
 printf "__FILES__ %s\n" "$file_count"
@@ -24,11 +24,12 @@ printf "__HEAD__ %s\n" "$head_sha"
 '
 
 output="$(bash "$WORKTREE_PATH/docker/run-claude.sh" --run-id "$RUN_ID" --shell "$SHELL_CMD" 2>&1)"
-printf '%s\n' "$output"
+clean_output="$(printf '%s\n' "$output" | tr -d '\r')"
+printf '%s\n' "$clean_output"
 
-status_line="$(printf '%s\n' "$output" | sed -n 's/^__STATUS__ //p' | tail -n 1)"
-file_count="$(printf '%s\n' "$output" | sed -n 's/^__FILES__ //p' | tail -n 1)"
-head_sha="$(printf '%s\n' "$output" | sed -n 's/^__HEAD__ //p' | tail -n 1)"
+status_line="$(printf '%s\n' "$clean_output" | sed -n 's/^__STATUS__ //p' | tail -n 1)"
+file_count="$(printf '%s\n' "$clean_output" | sed -n 's/^__FILES__ //p' | tail -n 1)"
+head_sha="$(printf '%s\n' "$clean_output" | sed -n 's/^__HEAD__ //p' | tail -n 1)"
 
 if [[ -z "$status_line" ]]; then
   echo "validate-container-git: missing git status output" >&2
