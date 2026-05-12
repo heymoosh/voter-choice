@@ -60,6 +60,16 @@ Note: **Scoring is executed by Hermes from the host side, not inside the build c
 
 
 
+
+### Phase 1 forward — bmad (auto)
+
+- **Date:** 2026-05-12T02:57:01.795Z
+- **Branch:** `main`
+- **Tag:** `select-representative-bmad`
+- **Status:** ✓
+- **Summary:** chose r2 — median LOC (1861); replicates span 1564..1861, RSD 7.95%
+
+
 ### Phase 1 forward — vanilla (auto)
 
 - **Date:** 2026-05-12T02:50:56.368Z
