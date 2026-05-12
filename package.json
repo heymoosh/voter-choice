@@ -7,15 +7,15 @@
     "npm": ">=10.0.0"
   },
   "scripts": {
-    "dev": "next dev --turbopack",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint",
+    "dev": "./node_modules/.bin/next dev --turbopack",
+    "build": "./node_modules/.bin/next build --turbo",
+    "start": "./node_modules/.bin/next start",
+    "lint": "./node_modules/.bin/next lint",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test": "vitest run",
-    "test:coverage": "vitest run --coverage",
-    "e2e": "playwright test",
+    "test": "./node_modules/.bin/vitest run",
+    "test:coverage": "./node_modules/.bin/vitest run --coverage",
+    "e2e": "./node_modules/.bin/playwright test",
     "clean-start": "rm -rf node_modules .next coverage .jscpd-report .lighthouseci .vitest-report.json .eslint-report.json playwright-report.json && npm install"
   },
   "dependencies": {
