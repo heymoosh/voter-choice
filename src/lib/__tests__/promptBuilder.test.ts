@@ -67,7 +67,7 @@ describe("buildContextBlock", () => {
 });
 
 describe("buildPrompt", () => {
-  it("starts with the main prompt text", () => {
+  it("starts with the main prompt text (en)", () => {
     const stateData = getStateData("TX")!;
     const election = findNextElection(stateData.elections, TODAY);
     const prompt = buildPrompt(stateData, "73301", election);
@@ -92,5 +92,41 @@ describe("buildPrompt", () => {
     const prompt = buildPrompt(stateData, "90210", election);
     expect(prompt).toContain("California");
     expect(prompt).toContain("90210");
+  });
+
+  it("builds Vietnamese prompt with correct register", () => {
+    const stateData = getStateData("TX")!;
+    const election = findNextElection(stateData.elections, TODAY);
+    const prompt = buildPrompt(stateData, "73301", election, "vi");
+    // Vietnamese context block greeting
+    expect(prompt).toContain("Xin chào");
+    // Vietnamese date format: day tháng month
+    expect(prompt).toMatch(/tháng/);
+    // State name still present
+    expect(prompt).toContain("Texas");
+  });
+
+  it("builds Chinese prompt with Simplified characters", () => {
+    const stateData = getStateData("TX")!;
+    const election = findNextElection(stateData.elections, TODAY);
+    const prompt = buildPrompt(stateData, "73301", election, "zh");
+    // Chinese context block greeting
+    expect(prompt).toContain("你好");
+    // Chinese date format: Year年Month月Day日
+    expect(prompt).toMatch(/年.*月.*日/);
+    // State name still present
+    expect(prompt).toContain("Texas");
+  });
+
+  it("builds Arabic prompt (MSA)", () => {
+    const stateData = getStateData("TX")!;
+    const election = findNextElection(stateData.elections, TODAY);
+    const prompt = buildPrompt(stateData, "73301", election, "ar");
+    // Arabic context block greeting
+    expect(prompt).toContain("مرحباً");
+    // Arabic month name should appear
+    expect(prompt).toMatch(/يناير|فبراير|مارس|أبريل|مايو|يونيو|يوليو|أغسطس|سبتمبر|أكتوبر|نوفمبر|ديسمبر/);
+    // State name still present
+    expect(prompt).toContain("Texas");
   });
 });

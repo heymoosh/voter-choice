@@ -77,12 +77,32 @@ describe("getDeadlineLabel", () => {
 });
 
 describe("formatDate", () => {
-  it("formats ISO date to readable string", () => {
+  it("formats ISO date to readable string (en)", () => {
     expect(formatDate("2026-03-03")).toBe("March 3, 2026");
   });
 
-  it("formats November date", () => {
+  it("formats November date (en)", () => {
     expect(formatDate("2026-11-03")).toBe("November 3, 2026");
+  });
+
+  it("formats date in Vietnamese", () => {
+    expect(formatDate("2026-03-03", "vi")).toBe("3 tháng 3, 2026");
+  });
+
+  it("formats date in Chinese", () => {
+    expect(formatDate("2026-03-03", "zh")).toBe("2026年3月3日");
+  });
+
+  it("formats date in Arabic", () => {
+    expect(formatDate("2026-03-03", "ar")).toBe("3 مارس 2026");
+  });
+
+  it("formats Chinese date with correct year/month/day order", () => {
+    expect(formatDate("2026-11-03", "zh")).toBe("2026年11月3日");
+  });
+
+  it("formats Vietnamese date with correct tháng month name", () => {
+    expect(formatDate("2026-11-03", "vi")).toBe("3 tháng 11, 2026");
   });
 });
 
