@@ -1,0 +1,13 @@
+{
+  "state": "CA",
+  "voterIdRequired": false,
+  "idType": null,
+  "acceptedIds": [],
+  "exceptions": "California does not require voters to present identification at the polls. First-time voters who registered by mail and did not provide identifying info may be asked for ID.",
+  "provisionalBallot": true,
+  "provisionalBallotRules": "Voters who do not provide ID when required may cast a provisional ballot. Their eligibility is verified within 30 days.",
+  "phonesAtPolls": true,
+  "phonesAtPollsDetail": "California allows cell phones in polling places. You may refer to notes or a marked sample ballot.",
+  "sourceUrl": "https://www.sos.ca.gov/elections/voter-registration/id-requirements",
+  "lastVerified": "2026-04-03"
+}

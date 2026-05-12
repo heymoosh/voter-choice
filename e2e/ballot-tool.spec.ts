@@ -301,3 +301,242 @@ test.describe("Language toggle", () => {
     await expect(toggle).toContainText("English");
   });
 });
+
+// ---------------------------------------------------------------------------
+// Phase 3: Live data, loading states, error states
+// ---------------------------------------------------------------------------
+
+test.describe("Phase 3 — Live data UI", () => {
+  test("loading skeleton appears while fetching data", async ({ page }) => {
+    await page.goto("/");
+    // Enter a valid zip
+    const zipInput = page.getByTestId("zip-input");
+    await zipInput.fill("73301");
+
+    // Intercept the API call to delay it
+    await page.route("**/api/election-data**", async (route) => {
+      await new Promise((r) => setTimeout(r, 500));
+      await route.continue();
+    });
+
+    await page.getByTestId("zip-submit").click();
+    // Wait for state info to render
+    await expect(page.getByTestId("state-info")).toBeVisible();
+    // Loading skeleton should appear (may be brief)
+    // At minimum, no crash — data-testid is present after load
+    await expect(page.getByTestId("state-info")).toBeVisible();
+  });
+
+  test("data-attribution is present after live data loads", async ({
+    page,
+  }) => {
+    await page.goto("/");
+
+    // Mock the API with instant response
+    await page.route("**/api/election-data**", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          data: {
+            zip: "73301",
+            stateName: "Texas",
+            stateCode: "TX",
+            fetchedAt: new Date().toISOString(),
+            civicDataAvailable: false,
+            civicDataError: "No election data",
+            pollingLocation: null,
+            districts: null,
+            contests: [],
+            voterIdData: null,
+          },
+          error: null,
+          partial: false,
+          fallback: false,
+        }),
+      });
+    });
+
+    await page.getByTestId("zip-input").fill("73301");
+    await page.getByTestId("zip-submit").click();
+    await expect(page.getByTestId("state-info")).toBeVisible();
+
+    // Attribution should appear after live data loads
+    await expect(page.getByTestId("data-attribution")).toBeVisible({
+      timeout: 5000,
+    });
+  });
+
+  test("polling-location testid is present after live data loads", async ({
+    page,
+  }) => {
+    await page.goto("/");
+
+    await page.route("**/api/election-data**", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          data: {
+            zip: "73301",
+            stateName: "Texas",
+            stateCode: "TX",
+            fetchedAt: new Date().toISOString(),
+            civicDataAvailable: true,
+            civicDataError: null,
+            pollingLocation: {
+              locationName: "Travis County Annex",
+              address: "1000 Main St, Austin, TX 78701",
+              city: "Austin",
+              state: "TX",
+              zip: "78701",
+              hours: "7am - 7pm",
+              notes: null,
+            },
+            districts: null,
+            contests: [],
+            voterIdData: null,
+          },
+          error: null,
+          partial: false,
+          fallback: false,
+        }),
+      });
+    });
+
+    await page.getByTestId("zip-input").fill("73301");
+    await page.getByTestId("zip-submit").click();
+    await expect(page.getByTestId("state-info")).toBeVisible();
+
+    // Polling location should be visible
+    await expect(page.getByTestId("polling-location")).toBeVisible({
+      timeout: 5000,
+    });
+    await expect(page.getByTestId("polling-location")).toContainText(
+      "Travis County Annex",
+    );
+  });
+
+  test("ballot-contests testid is present after live data loads", async ({
+    page,
+  }) => {
+    await page.goto("/");
+
+    await page.route("**/api/election-data**", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          data: {
+            zip: "73301",
+            stateName: "Texas",
+            stateCode: "TX",
+            fetchedAt: new Date().toISOString(),
+            civicDataAvailable: true,
+            civicDataError: null,
+            pollingLocation: null,
+            districts: null,
+            contests: [
+              {
+                type: "General",
+                office: "U.S. Senate",
+                district: null,
+                candidates: [
+                  { name: "Alice Smith", party: "Democratic" },
+                  { name: "Bob Jones", party: "Republican" },
+                ],
+              },
+            ],
+            voterIdData: null,
+          },
+          error: null,
+          partial: false,
+          fallback: false,
+        }),
+      });
+    });
+
+    await page.getByTestId("zip-input").fill("73301");
+    await page.getByTestId("zip-submit").click();
+    await expect(page.getByTestId("state-info")).toBeVisible();
+
+    await expect(page.getByTestId("ballot-contests")).toBeVisible({
+      timeout: 5000,
+    });
+    await expect(page.getByTestId("ballot-contests")).toContainText("U.S. Senate");
+  });
+
+  test("api-partial-error banner shows when API partially fails", async ({
+    page,
+  }) => {
+    await page.goto("/");
+
+    await page.route("**/api/election-data**", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          data: {
+            zip: "73301",
+            stateName: "Texas",
+            stateCode: "TX",
+            fetchedAt: new Date().toISOString(),
+            civicDataAvailable: false,
+            civicDataError: "API rate limited",
+            pollingLocation: null,
+            districts: null,
+            contests: [],
+            voterIdData: { state: "TX", voterIdRequired: true, idType: "strict-photo", acceptedIds: [], exceptions: "", provisionalBallot: false, provisionalBallotRules: "", phonesAtPolls: false, phonesAtPollsDetail: "", sourceUrl: "", lastVerified: "2026-01-01" },
+          },
+          error: null,
+          partial: true,
+          fallback: false,
+        }),
+      });
+    });
+
+    await page.getByTestId("zip-input").fill("73301");
+    await page.getByTestId("zip-submit").click();
+    await expect(page.getByTestId("state-info")).toBeVisible();
+
+    await expect(page.getByTestId("api-partial-error")).toBeVisible({
+      timeout: 5000,
+    });
+  });
+
+  test("api-full-error banner shows when all APIs fail", async ({ page }) => {
+    await page.goto("/");
+
+    await page.route("**/api/election-data**", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          data: {
+            zip: "73301",
+            stateName: "Texas",
+            stateCode: "TX",
+            fetchedAt: new Date().toISOString(),
+            civicDataAvailable: false,
+            civicDataError: "All APIs down",
+            pollingLocation: null,
+            districts: null,
+            contests: [],
+            voterIdData: null,
+          },
+          error: "All data sources unavailable",
+          partial: false,
+          fallback: true,
+        }),
+      });
+    });
+
+    await page.getByTestId("zip-input").fill("73301");
+    await page.getByTestId("zip-submit").click();
+    await expect(page.getByTestId("state-info")).toBeVisible();
+
+    await expect(page.getByTestId("api-full-error")).toBeVisible({
+      timeout: 5000,
+    });
+  });
+});

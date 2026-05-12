@@ -1,0 +1,13 @@
+{
+  "state": "NM",
+  "voterIdRequired": false,
+  "idType": null,
+  "acceptedIds": [],
+  "exceptions": "New Mexico does not require voters to show ID at the polls. Voters state their name and address, and sign the poll book.",
+  "provisionalBallot": true,
+  "provisionalBallotRules": "Voters whose names are not on the rolls may cast provisional ballots that are counted after verification.",
+  "phonesAtPolls": true,
+  "phonesAtPollsDetail": "New Mexico allows personal notes and sample ballots at the polls. Photography of ballots is prohibited.",
+  "sourceUrl": "https://www.sos.nm.gov/voter-information/",
+  "lastVerified": "2026-04-03"
+}

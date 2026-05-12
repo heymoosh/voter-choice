@@ -15,6 +15,11 @@ import {
 } from "@/lib/ballot-data";
 import { useLanguage } from "@/lib/i18n";
 import { BALLOT_PROMPT_ES } from "@/lib/translations";
+import { useElectionData } from "@/lib/use-election-data";
+import {
+  LiveElectionPanel,
+  LoadingSkeleton,
+} from "@/components/LiveElectionPanel";
 
 // ---- Types -----------------------------------------------------------------
 
@@ -86,6 +91,7 @@ export default function Home() {
   const [copied, setCopied] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
   const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { state: liveState, fetchData: fetchLiveData } = useElectionData();
 
   // Clean up copy timer on unmount
   useEffect(() => {
@@ -104,28 +110,33 @@ export default function Home() {
 
   // ---- State loading -------------------------------------------------------
 
-  const loadState = useCallback(async (stateCode: string, zip: string) => {
-    setAppState((prev) => ({ ...prev, step: "loading" }));
-    const stateData = await loadStateData(stateCode);
-    if (!stateData) {
+  const loadState = useCallback(
+    async (stateCode: string, zip: string) => {
+      setAppState((prev) => ({ ...prev, step: "loading" }));
+      const stateData = await loadStateData(stateCode);
+      if (!stateData) {
+        setAppState((prev) => ({
+          ...prev,
+          step: "error",
+          errorType: "no-data",
+        }));
+        return;
+      }
+      const election = getNextElection(stateData.elections);
       setAppState((prev) => ({
         ...prev,
-        step: "error",
-        errorType: "no-data",
+        step: "result",
+        zip,
+        selectedStateCode: stateCode,
+        stateData,
+        election,
+        errorType: null,
       }));
-      return;
-    }
-    const election = getNextElection(stateData.elections);
-    setAppState((prev) => ({
-      ...prev,
-      step: "result",
-      zip,
-      selectedStateCode: stateCode,
-      stateData,
-      election,
-      errorType: null,
-    }));
-  }, []);
+      // Kick off live data fetch in parallel (non-blocking)
+      fetchLiveData(zip);
+    },
+    [fetchLiveData],
+  );
 
   // ---- Submit handler ------------------------------------------------------
 
@@ -231,9 +242,30 @@ export default function Home() {
     byMailDeadline?.status === "passed" &&
     inPersonDeadline?.status === "passed";
 
+  // Build live context data for enriched prompt
+  const liveContextData = liveState.data
+    ? {
+        districts: liveState.data.districts,
+        pollingLocation: liveState.data.pollingLocation,
+        contests: liveState.data.contests.map((c) => ({
+          office: c.office,
+          candidates: c.candidates.map((cd) => ({
+            name: cd.name,
+            party: cd.party,
+          })),
+        })),
+      }
+    : undefined;
+
   const contextBlock =
     stateData && appState.zip
-      ? generateContextBlock(stateData, appState.zip, election, t)
+      ? generateContextBlock(
+          stateData,
+          appState.zip,
+          election,
+          t,
+          liveContextData,
+        )
       : "";
   const ballotPromptText = lang === "es" ? BALLOT_PROMPT_ES : undefined;
   const fullPrompt = contextBlock
@@ -631,6 +663,21 @@ export default function Home() {
                   </li>
                 </ul>
               </div>
+
+              {/* ---- Live election data (Phase 3) ---- */}
+              {liveState.status === "loading" && (
+                <div className="mt-4 pb-2 border-t border-gray-100 pt-4">
+                  <LoadingSkeleton />
+                </div>
+              )}
+              {liveState.status === "done" && liveState.data && (
+                <LiveElectionPanel
+                  data={liveState.data}
+                  partial={liveState.partial}
+                  fallback={liveState.fallback}
+                  stateElectionUrl={stateData.resources.stateElectionWebsite}
+                />
+              )}
             </section>
 
             {/* ---- Prompt output ---- */}

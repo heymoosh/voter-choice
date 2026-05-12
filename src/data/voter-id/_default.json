@@ -1,0 +1,13 @@
+{
+  "state": "_default",
+  "voterIdRequired": false,
+  "idType": null,
+  "acceptedIds": [],
+  "exceptions": "ID requirements vary by state. Check your state election office for the most current requirements.",
+  "provisionalBallot": true,
+  "provisionalBallotRules": "Most states allow provisional ballots when there is a question about voter eligibility.",
+  "phonesAtPolls": false,
+  "phonesAtPollsDetail": "Phone policies vary by state. Check your state election office for current rules.",
+  "sourceUrl": "https://www.usa.gov/absentee-voting",
+  "lastVerified": "2026-04-03"
+}

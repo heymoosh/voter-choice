@@ -1,0 +1,19 @@
+{
+  "state": "NH",
+  "voterIdRequired": true,
+  "idType": "photo",
+  "acceptedIds": [
+    "New Hampshire driver's license",
+    "New Hampshire ID card",
+    "US passport",
+    "Military ID",
+    "Student photo ID from an accredited NH school"
+  ],
+  "exceptions": "Voters without photo ID may complete a challenged voter affidavit and have their photo taken at the polls. The photo is used to verify identity and is kept on file.",
+  "provisionalBallot": false,
+  "provisionalBallotRules": "New Hampshire uses the challenged voter affidavit process instead of provisional ballots for ID issues.",
+  "phonesAtPolls": true,
+  "phonesAtPollsDetail": "New Hampshire allows cell phones in polling places. You may take notes and refer to materials.",
+  "sourceUrl": "https://www.sos.nh.gov/elections/voters/voter-id-law",
+  "lastVerified": "2026-04-03"
+}

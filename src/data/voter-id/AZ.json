@@ -1,0 +1,18 @@
+{
+  "state": "AZ",
+  "voterIdRequired": true,
+  "idType": "photo-or-non-photo",
+  "acceptedIds": [
+    "Arizona driver's license or non-operating ID",
+    "US passport",
+    "US military ID",
+    "Tribal enrollment card with photo"
+  ],
+  "exceptions": "Voters without photo ID may present two forms of non-photo ID (utility bill, bank statement, government document, paycheck, or vehicle registration with name and address). A signature is required as a fallback.",
+  "provisionalBallot": true,
+  "provisionalBallotRules": "Voters who cannot provide ID may cast a provisional ballot. They have 5 business days to present ID to the county recorder.",
+  "phonesAtPolls": true,
+  "phonesAtPollsDetail": "Arizona allows cell phones in polling places but prohibits photography or video of the ballot.",
+  "sourceUrl": "https://azsos.gov/elections/voting-election/voter-id-requirements",
+  "lastVerified": "2026-04-03"
+}

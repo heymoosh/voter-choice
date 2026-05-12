@@ -127,6 +127,43 @@ export interface T {
   ctxCountyOffice: string; // "My county election office:"
   ctxHelp: string; // "Help me with my ballot."
   ctxNoElection: string; // "No upcoming elections found"
+
+  // Phase 3: Live data UI
+  pollingLocationLabel: string; // "Polling Location"
+  pollingLocationNotFound: string; // "No polling location found"
+  pollingLocationHours: string; // "Hours:"
+  pollingLocationNotes: string; // "Notes:"
+  ballotContestsLabel: string; // "Your Ballot Contests"
+  ballotContestsNone: string; // "No contests found"
+  candidateLabel: string; // "Candidate" (singular)
+  candidatesLabel: string; // "Candidates"
+  viewVotingRecord: string; // "View voting record"
+  closeVotingRecord: string; // "Close"
+  candidateResearching: string; // "Researching…"
+  candidateSummaryLabel: string; // "Background"
+  candidateVotingRecordLabel: string; // "Voting Record"
+  candidateDonorsLabel: string; // "Top Donors"
+  candidateEndorsementsLabel: string; // "Endorsements"
+  candidateSourcesLabel: string; // "Sources"
+  candidateResearchError: string; // "Could not load research. Try again."
+  dataAttributionLabel: string; // "Election data from Google Civic…"
+  dataLastUpdated: string; // "Updated {timestamp}"
+  dataLoadingLabel: string; // "Loading election data…"
+  dataPartialError: string; // "Some election data is temporarily unavailable."
+  dataFullError: string; // "We're having trouble loading live election data."
+  dataVerifyLink: string; // "for complete details"
+  districtLabel: string; // "Your Districts"
+  districtCounty: string; // "County:"
+  districtCongress: string; // "Congressional District:"
+  districtStateSenate: string; // "State Senate:"
+  districtStateHouse: string; // "State House:"
+  referendumLabel: string; // "Referendum"
+  voterIdVerifyNote: string; // "Verify current requirements at"
+
+  // Phase 3: Context block additions
+  ctxDistricts: string; // "My districts:"
+  ctxPollingPlace: string; // "My polling place:"
+  ctxBallotContests: string; // "My ballot includes:"
 }
 
 // ---- English translations --------------------------------------------------
@@ -242,6 +279,45 @@ const en: T = {
   ctxCountyOffice: "My county election office:",
   ctxHelp: "Help me with my ballot.",
   ctxNoElection: "No upcoming elections found",
+
+  // Phase 3
+  pollingLocationLabel: "Polling Location",
+  pollingLocationNotFound: "No polling location found for your address",
+  pollingLocationHours: "Hours:",
+  pollingLocationNotes: "Notes:",
+  ballotContestsLabel: "Your Ballot Contests",
+  ballotContestsNone: "No contest information found",
+  candidateLabel: "Candidate",
+  candidatesLabel: "Candidates",
+  viewVotingRecord: "View voting record",
+  closeVotingRecord: "Close",
+  candidateResearching: "Researching…",
+  candidateSummaryLabel: "Background",
+  candidateVotingRecordLabel: "Voting Record",
+  candidateDonorsLabel: "Top Donors",
+  candidateEndorsementsLabel: "Endorsements",
+  candidateSourcesLabel: "Sources",
+  candidateResearchError: "Could not load research. Try again.",
+  dataAttributionLabel:
+    "Election data from Google Civic Information and live web search via Anthropic.",
+  dataLastUpdated: "Updated {timestamp}",
+  dataLoadingLabel: "Loading election data…",
+  dataPartialError:
+    "Some election data is temporarily unavailable. The information shown is current.",
+  dataFullError:
+    "We're having trouble loading live election data. Here's what we know about voting in {stateName}.",
+  dataVerifyLink: "for complete details",
+  districtLabel: "Your Districts",
+  districtCounty: "County:",
+  districtCongress: "Congressional District:",
+  districtStateSenate: "State Senate:",
+  districtStateHouse: "State House:",
+  referendumLabel: "Referendum",
+  voterIdVerifyNote: "Verify current requirements at",
+
+  ctxDistricts: "My districts:",
+  ctxPollingPlace: "My polling place:",
+  ctxBallotContests: "My ballot includes:",
 };
 
 // ---- Spanish translations --------------------------------------------------
@@ -359,6 +435,46 @@ const es: T = {
   ctxCountyOffice: "Mi oficina electoral del condado:",
   ctxHelp: "Ayúdame con mi boleta.",
   ctxNoElection: "No se encontraron elecciones próximas",
+
+  // Phase 3
+  pollingLocationLabel: "Lugar de Votación",
+  pollingLocationNotFound: "No se encontró lugar de votación para tu dirección",
+  pollingLocationHours: "Horario:",
+  pollingLocationNotes: "Notas:",
+  ballotContestsLabel: "Tus Candidaturas en la Boleta",
+  ballotContestsNone: "No se encontró información de candidaturas",
+  candidateLabel: "Candidato",
+  candidatesLabel: "Candidatos",
+  viewVotingRecord: "Ver historial de votación",
+  closeVotingRecord: "Cerrar",
+  candidateResearching: "Investigando…",
+  candidateSummaryLabel: "Trayectoria",
+  candidateVotingRecordLabel: "Historial de Votación",
+  candidateDonorsLabel: "Principales Donantes",
+  candidateEndorsementsLabel: "Respaldos",
+  candidateSourcesLabel: "Fuentes",
+  candidateResearchError:
+    "No se pudo cargar la investigación. Inténtalo de nuevo.",
+  dataAttributionLabel:
+    "Datos electorales de Google Civic Information y búsqueda web en vivo vía Anthropic.",
+  dataLastUpdated: "Actualizado {timestamp}",
+  dataLoadingLabel: "Cargando datos electorales…",
+  dataPartialError:
+    "Algunos datos electorales no están disponibles temporalmente. La información mostrada es actual.",
+  dataFullError:
+    "Tenemos problemas para cargar los datos electorales en vivo. Esto es lo que sabemos sobre votar en {stateName}.",
+  dataVerifyLink: "para detalles completos",
+  districtLabel: "Tus Distritos",
+  districtCounty: "Condado:",
+  districtCongress: "Distrito Congresional:",
+  districtStateSenate: "Senado Estatal:",
+  districtStateHouse: "Cámara Estatal:",
+  referendumLabel: "Referéndum",
+  voterIdVerifyNote: "Verifica los requisitos actuales en",
+
+  ctxDistricts: "Mis distritos:",
+  ctxPollingPlace: "Mi lugar de votación:",
+  ctxBallotContests: "Mi boleta incluye:",
 };
 
 // ---- Spanish BALLOT_PROMPT -------------------------------------------------

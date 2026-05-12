@@ -326,19 +326,53 @@ function voterIdLine(rules: StateData["votingRules"], t: T): string {
   return `- **${t.ctxVoterId}** ${t.ctxVoterIdNotRequired}`;
 }
 
+export interface LiveContextData {
+  districts?: {
+    county?: string | null;
+    congressionalDistrict?: string | null;
+    stateLegislativeUpper?: string | null;
+    stateLegislativeLower?: string | null;
+  } | null;
+  pollingLocation?: {
+    locationName: string;
+    address: string;
+    hours?: string | null;
+  } | null;
+  contests?: Array<{
+    office: string;
+    candidates: Array<{ name: string; party?: string | null }>;
+  }>;
+}
+
 /** Generates the pre-filled context block appended to the ballot prompt. */
 export function generateContextBlock(
   stateData: StateData,
   zip: string,
   election: Election | null,
   t?: T,
+  live?: LiveContextData,
 ): string {
   // Default to English if no translations provided (backward compatible)
   const tr = t ?? getTranslations("en");
   const lang = tr.lang;
 
+  const districtParts = live?.districts
+    ? [
+        live.districts.county,
+        live.districts.congressionalDistrict,
+        live.districts.stateLegislativeUpper,
+        live.districts.stateLegislativeLower,
+      ]
+        .filter(Boolean)
+        .join(", ")
+    : null;
+
+  const zipLine = districtParts
+    ? `${tr.ctxHello} **${stateData.stateName}**. ${tr.ctxZip} **${zip}** (${districtParts}).`
+    : `${tr.ctxHello} **${stateData.stateName}**. ${tr.ctxZip} **${zip}**.`;
+
   const lines: string[] = [
-    `${tr.ctxHello} **${stateData.stateName}**. ${tr.ctxZip} **${zip}**.`,
+    zipLine,
     "",
     tr.ctxKnow,
     ...electionLines(election, tr, lang),
@@ -348,9 +382,26 @@ export function generateContextBlock(
     `- **${tr.ctxPhones}** ${stateData.votingRules.phonesAtPollsDetail}`,
     `- **${tr.ctxSampleBallot}** ${stateData.resources.sampleBallotLookup}`,
     `- **${tr.ctxCountyOffice}** ${stateData.resources.countyElectionLookup}`,
-    "",
-    tr.ctxHelp,
   ];
+
+  // Phase 3 additions
+  if (live?.pollingLocation) {
+    lines.push(
+      `- **${tr.ctxPollingPlace}** ${live.pollingLocation.locationName}, ${live.pollingLocation.address}`,
+    );
+  }
+
+  if (live?.contests && live.contests.length > 0) {
+    lines.push(`- **${tr.ctxBallotContests}**`);
+    for (const contest of live.contests.slice(0, 5)) {
+      const candidateNames = contest.candidates
+        .map((c) => (c.party ? `${c.name} (${c.party})` : c.name))
+        .join(", ");
+      lines.push(`  - ${contest.office}: ${candidateNames}`);
+    }
+  }
+
+  lines.push("", tr.ctxHelp);
   return lines.join("\n");
 }
 
