@@ -29,7 +29,17 @@
 
 **BLOCKED on API budget. Do NOT proceed to Phase C.** Phase B requires Phases 4-6 to validate the highest-risk architectural surfaces (RTL layout, LLM-at-runtime, external service integration). Skipping to Phase C would repeat the same anti-pattern that was avoided during B1 diagnostics.
 
-**Resume sequence (after 2026-06-01 API reset):**
+**Auth architecture decision REQUIRED (Learning 015, 2026-05-12):**
+The planned subscription auth switch (Phase A re-open) was investigated and cannot be implemented as specified. macOS Keychain stores OAuth tokens outside the filesystem — they are not accessible inside Linux Docker containers. Subscription auth via `~/.claude/` bind-mount silently fails; in-container Claude Code produces "Not logged in" when `ANTHROPIC_API_KEY` is stripped.
+
+**Three options for operator to choose:**
+1. **(a) API-key + $20 workspace cap** — set cap at console.anthropic.com; Phase B resumes after 2026-06-01 API reset. No code change needed.
+2. **(b) Keychain token export** — extract OAuth token via macOS `security` CLI, mount into container. Requires operator authorization for token-on-disk tradeoff.
+3. **(c) Dedicated second API key** — new Anthropic workspace with $20 cap; cleanest isolation.
+
+Recommendation: option (a). See LEARNINGS.md Learning 015 for full analysis.
+
+**Resume sequence (after operator chooses auth option AND 2026-06-01 API reset):**
 1. Resume vanilla smoke on `experiment/vanilla-r1-v2c`: run Phases 4, 5, 6 with same gates (clean commits, non-null JSON, all 7 axes).
 2. After B6: run `aggregate-experiment.mjs` on full 6-phase vanilla data; verify composite computes end-to-end.
 3. Verify AC-N pickup by workflow in each phase (see AC-N check in Phase C runbook).
