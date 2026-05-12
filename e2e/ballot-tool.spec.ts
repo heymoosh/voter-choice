@@ -240,3 +240,247 @@ test.describe("Keyboard accessibility", () => {
     await expect(zipInput).toBeFocused();
   });
 });
+
+// ---------------------------------------------------------------------------
+// Phase 3 — Live Data Integration Tests
+// These tests use route interception to avoid hitting real APIs.
+// ---------------------------------------------------------------------------
+
+const MOCK_CIVIC_RESPONSE = {
+  pollingLocation: {
+    name: "City Hall Annex",
+    address: "123 Main St, Austin, TX 78701",
+    hours: "7am–7pm",
+  },
+  ballotContests: [
+    {
+      contestId: "1",
+      name: "U.S. Senate",
+      type: "office",
+      candidates: [
+        { candidateId: "c1", name: "Alice Smith", party: "Party A" },
+        { candidateId: "c2", name: "Bob Jones", party: "Party B" },
+      ],
+    },
+    {
+      contestId: "2",
+      name: "Governor",
+      type: "office",
+      candidates: [
+        { candidateId: "c3", name: "Carol White", party: "Party C" },
+      ],
+    },
+  ],
+  districts: {
+    county: "Travis County",
+    congressional: "TX-10",
+    stateSenate: "TX SD-14",
+    stateHouse: "TX HD-49",
+  },
+  fetchedAt: Date.now(),
+};
+
+const MOCK_CANDIDATE_RESPONSE = {
+  votingRecord: "Voted in favor of environmental protections 8/10 times.",
+  topDonors: "Top donors include local business associations.",
+  endorsements: "Endorsed by the State Teachers Association.",
+  sources: ["https://ballotpedia.org", "https://fec.gov"],
+};
+
+test.describe("Phase 3 — Polling Location", () => {
+  test("displays polling location section after valid zip (mocked API)", async ({
+    page,
+  }) => {
+    await page.route("**/api/civic**", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(MOCK_CIVIC_RESPONSE),
+      });
+    });
+
+    await page.goto("/");
+    await page.getByTestId("zip-input").fill("73301");
+    await page.getByTestId("zip-submit").click();
+
+    const pollingLocation = page.getByTestId("polling-location");
+    await expect(pollingLocation).toBeVisible({ timeout: 10000 });
+    await expect(pollingLocation).toContainText(/City Hall Annex/i);
+  });
+});
+
+test.describe("Phase 3 — Ballot Contests", () => {
+  test("displays ballot contests section after valid zip (mocked API)", async ({
+    page,
+  }) => {
+    await page.route("**/api/civic**", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(MOCK_CIVIC_RESPONSE),
+      });
+    });
+
+    await page.goto("/");
+    await page.getByTestId("zip-input").fill("73301");
+    await page.getByTestId("zip-submit").click();
+
+    const ballotContests = page.getByTestId("ballot-contests");
+    await expect(ballotContests).toBeVisible({ timeout: 10000 });
+    await expect(ballotContests).toContainText(/U.S. Senate/i);
+  });
+});
+
+test.describe("Phase 3 — Data Attribution", () => {
+  test("data attribution footer is visible after valid zip", async ({
+    page,
+  }) => {
+    await page.route("**/api/civic**", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(MOCK_CIVIC_RESPONSE),
+      });
+    });
+
+    await page.goto("/");
+    await page.getByTestId("zip-input").fill("73301");
+    await page.getByTestId("zip-submit").click();
+
+    const attribution = page.getByTestId("data-attribution");
+    await expect(attribution).toBeVisible({ timeout: 10000 });
+  });
+});
+
+test.describe("Phase 3 — Partial API Failure", () => {
+  test("shows partial error banner when civic API fails", async ({ page }) => {
+    await page.route("**/api/civic**", async (route) => {
+      await route.fulfill({
+        status: 503,
+        contentType: "application/json",
+        body: JSON.stringify({
+          error: "civic_unavailable",
+          message: "Service temporarily unavailable",
+        }),
+      });
+    });
+
+    await page.goto("/");
+    await page.getByTestId("zip-input").fill("73301");
+    await page.getByTestId("zip-submit").click();
+
+    // State info card should still appear (with static data)
+    const stateInfo = page.getByTestId("state-info");
+    await expect(stateInfo).toBeVisible({ timeout: 10000 });
+
+    // Partial error banner should appear
+    const partialError = page.getByTestId("api-partial-error");
+    await expect(partialError).toBeVisible({ timeout: 10000 });
+  });
+});
+
+test.describe("Phase 3 — Candidate Detail Panel", () => {
+  test("can expand candidate detail panel", async ({ page }) => {
+    await page.route("**/api/civic**", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(MOCK_CIVIC_RESPONSE),
+      });
+    });
+
+    await page.route("**/api/candidate**", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(MOCK_CANDIDATE_RESPONSE),
+      });
+    });
+
+    await page.goto("/");
+    await page.getByTestId("zip-input").fill("73301");
+    await page.getByTestId("zip-submit").click();
+
+    // Wait for ballot contests to load
+    const ballotContests = page.getByTestId("ballot-contests");
+    await expect(ballotContests).toBeVisible({ timeout: 10000 });
+
+    // Click "View voting record" for the first candidate
+    const viewRecordBtn = page.getByText(/View voting record/i).first();
+    await expect(viewRecordBtn).toBeVisible({ timeout: 5000 });
+    await viewRecordBtn.click();
+
+    // Candidate detail should expand and show enrichment data
+    const candidateDetail = page.getByTestId("candidate-detail").first();
+    await expect(candidateDetail).toBeVisible({ timeout: 5000 });
+    await expect(candidateDetail).toContainText(/Voting Record/i);
+  });
+});
+
+test.describe("Phase 3 — Loading State", () => {
+  test("shows loading indicator while data loads", async ({ page }) => {
+    // Use a slow route to catch the loading state
+    let resolveRoute!: () => void;
+    const routePromise = new Promise<void>((resolve) => {
+      resolveRoute = resolve;
+    });
+
+    await page.route("**/api/civic**", async (route) => {
+      await routePromise;
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(MOCK_CIVIC_RESPONSE),
+      });
+    });
+
+    await page.goto("/");
+    await page.getByTestId("zip-input").fill("73301");
+    await page.getByTestId("zip-submit").click();
+
+    // Loading indicator should be visible immediately
+    const loadingEl = page.getByTestId("data-loading").first();
+    await expect(loadingEl).toBeVisible({ timeout: 5000 });
+
+    // Now let the route resolve
+    resolveRoute();
+
+    // State info should eventually appear
+    const stateInfo = page.getByTestId("state-info");
+    await expect(stateInfo).toBeVisible({ timeout: 10000 });
+  });
+});
+
+test.describe("Phase 3 — Session Cache", () => {
+  test("second lookup for same zip does not show loading state", async ({
+    page,
+  }) => {
+    let callCount = 0;
+    await page.route("**/api/civic**", async (route) => {
+      callCount++;
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ ...MOCK_CIVIC_RESPONSE, fetchedAt: Date.now() }),
+      });
+    });
+
+    await page.goto("/");
+
+    // First lookup
+    await page.getByTestId("zip-input").fill("73301");
+    await page.getByTestId("zip-submit").click();
+    await expect(page.getByTestId("state-info")).toBeVisible({ timeout: 10000 });
+    const firstCount = callCount;
+
+    // Clear the form and look up the same zip again
+    await page.getByTestId("zip-input").fill("");
+    await page.getByTestId("zip-input").fill("73301");
+    await page.getByTestId("zip-submit").click();
+
+    // Result should appear (cached)
+    await expect(page.getByTestId("state-info")).toBeVisible({ timeout: 5000 });
+    // API should not have been called again
+    expect(callCount).toBe(firstCount);
+  });
+});

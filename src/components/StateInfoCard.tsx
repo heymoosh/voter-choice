@@ -10,13 +10,18 @@ import type {
   VotingRules,
   Resources,
 } from "@/types/election";
+import type { LiveElectionData } from "@/types/liveElection";
 import { findNextElection, getDeadlineStatus } from "@/lib/electionUtils";
 import { useTranslation } from "@/lib/i18n/I18nContext";
 import { formatDateLocale } from "@/lib/i18n/formatDate";
 import type { Locale } from "@/lib/i18n/types";
+import { PollingLocation } from "./PollingLocation";
+import { BallotContests } from "./BallotContests";
+import { ApiErrorBanner } from "./ApiErrorBanner";
+import { DataAttribution } from "./DataAttribution";
 
 interface StateInfoCardProps {
-  stateData: StateData;
+  stateData: StateData | LiveElectionData;
 }
 
 const STATUS_COLORS: Record<DeadlineStatus, string> = {
@@ -331,10 +336,30 @@ function ResourcesSection({ resources }: { resources: Resources }) {
   );
 }
 
+function isLiveElectionData(
+  data: StateData | LiveElectionData,
+): data is LiveElectionData {
+  return (
+    "pollingLocation" in data ||
+    "ballotContests" in data ||
+    "apiErrors" in data ||
+    "fetchedAt" in data
+  );
+}
+
 export function StateInfoCard({ stateData }: StateInfoCardProps) {
   const { locale, t } = useTranslation();
   const nextElection = findNextElection(stateData.elections);
   const { registration, earlyVoting, votingRules, resources } = stateData;
+
+  const live = isLiveElectionData(stateData) ? stateData : null;
+  const hasApiErrors = live?.apiErrors && live.apiErrors.length > 0;
+  // Full failure: all APIs failed AND we only have minimal static fallback data (no elections data)
+  const isFullFailure =
+    hasApiErrors &&
+    !live?.pollingLocation &&
+    !live?.ballotContests &&
+    stateData.elections.length === 0;
 
   return (
     <div
@@ -348,6 +373,16 @@ export function StateInfoCard({ stateData }: StateInfoCardProps) {
       </div>
 
       <div className="p-6 space-y-5">
+        {/* API Error Banners */}
+        {hasApiErrors && (
+          <ApiErrorBanner
+            errors={live!.apiErrors!}
+            isFullFailure={isFullFailure}
+            stateElectionWebsite={resources.stateElectionWebsite || undefined}
+            stateName={stateData.stateName}
+          />
+        )}
+
         <RegistrationSection registration={registration} locale={locale} />
         {nextElection ? (
           <ElectionSection election={nextElection} locale={locale} />
@@ -358,8 +393,30 @@ export function StateInfoCard({ stateData }: StateInfoCardProps) {
           />
         )}
         <EarlyVotingSection earlyVoting={earlyVoting} locale={locale} />
+
+        {/* Polling Location — Phase 3 */}
+        {live?.pollingLocation && (
+          <PollingLocation location={live.pollingLocation} />
+        )}
+
+        {/* Ballot Contests — Phase 3 */}
+        {live?.ballotContests && (
+          <BallotContests
+            contests={live.ballotContests}
+            stateCode={stateData.stateCode}
+          />
+        )}
+
         <VotingRulesSection votingRules={votingRules} />
         <ResourcesSection resources={resources} />
+
+        {/* Data Attribution — Phase 3 */}
+        {live && (
+          <DataAttribution
+            fetchedAt={live.fetchedAt}
+            stateElectionWebsite={resources.stateElectionWebsite || undefined}
+          />
+        )}
       </div>
     </div>
   );

@@ -87,6 +87,23 @@ export interface Translations {
     switchToEnglish: string;
     switchToSpanish: string;
   };
+  liveData?: {
+    pollingLocation?: string;
+    ballotContests?: string;
+    candidateDetail?: {
+      viewRecord?: string;
+      votingRecord?: string;
+      topDonors?: string;
+      endorsements?: string;
+    };
+    loading?: string;
+    attribution?: string;
+    lastUpdated?: string;
+    errors?: {
+      apiPartial?: string;
+      apiFull?: string;
+    };
+  };
 }
 
 export type Locale = "en" | "es";

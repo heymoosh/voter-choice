@@ -1,4 +1,5 @@
 import type { StateData, Election } from "@/types/election";
+import type { LiveElectionData } from "@/types/liveElection";
 import { BALLOT_PROMPT_TEXT } from "./ballotPrompt";
 import { BALLOT_PROMPT_TEXT_ES } from "./ballotPrompt.es";
 import { findNextElection, getDeadlineStatus } from "./electionUtils";
@@ -8,9 +9,10 @@ import type { Locale } from "./i18n/types";
 /**
  * Build the full customized prompt for a voter.
  * Combines the locale-appropriate ballot prompt with a locale-aware context block.
+ * Accepts both static StateData and enriched LiveElectionData.
  */
 export function buildPrompt(
-  stateData: StateData,
+  stateData: StateData | LiveElectionData,
   zip: string,
   locale: Locale = "en",
 ): string {
@@ -22,10 +24,11 @@ export function buildPrompt(
 
 /**
  * Build the state-specific pre-filled context block.
+ * Supports both static StateData and enriched LiveElectionData.
  * Labels are in the specified locale; injected data values remain in English.
  */
 export function buildContextBlock(
-  stateData: StateData,
+  stateData: StateData | LiveElectionData,
   zip: string,
   locale: Locale = "en",
 ): string {
@@ -60,7 +63,7 @@ export function buildContextBlock(
 // ---------------------------------------------------------------------------
 
 function buildContextBlockEn(
-  stateData: StateData,
+  stateData: StateData | LiveElectionData,
   zip: string,
   nextElection: Election | null,
   registration: StateData["registration"],
@@ -98,14 +101,29 @@ function buildContextBlockEn(
     ? `Required. Accepted IDs: ${votingRules.acceptedIds.join(", ")}`
     : "Not required";
 
-  return `Hi! I'm voting in **${stateData.stateName}**. My zip code is **${zip}**.
+  // Phase 3: enrich with live data if available
+  const liveData = stateData as LiveElectionData;
+  const districtsLine = liveData.districts
+    ? ` (${[liveData.districts.county, liveData.districts.congressional, liveData.districts.stateSenate, liveData.districts.stateHouse].filter(Boolean).join(", ")})`
+    : "";
+
+  const pollingLine = liveData.pollingLocation
+    ? `\n- **My polling place:** ${liveData.pollingLocation.name}, ${liveData.pollingLocation.address}${liveData.pollingLocation.hours ? ` — Hours: ${liveData.pollingLocation.hours}` : ""}`
+    : "";
+
+  const contestsLine =
+    liveData.ballotContests && liveData.ballotContests.length > 0
+      ? `\n- **My ballot contests:** ${liveData.ballotContests.map((c) => `${c.name} (${c.candidates.map((cand) => cand.name).join(", ")})`).join("; ")}`
+      : "";
+
+  return `Hi! I'm voting in **${stateData.stateName}**. My zip code is **${zip}**${districtsLine}.
 
 Here's what I know about my upcoming election:
 - **Election:** ${electionInfo}
 - **Registration deadlines:** Online by ${onlineReg}, by mail by ${byMailReg}, in person by ${inPersonReg}
 - **Early voting:** ${earlyVotingInfo}
 - **Voter ID:** ${voterIdInfo}
-- **Phones at polls:** ${votingRules.phonesAtPollsDetail}
+- **Phones at polls:** ${votingRules.phonesAtPollsDetail}${pollingLine}${contestsLine}
 - **My sample ballot:** ${resources.sampleBallotLookup}
 - **My county election office:** ${resources.countyElectionLookup}
 
@@ -117,7 +135,7 @@ Help me with my ballot.`;
 // ---------------------------------------------------------------------------
 
 function buildContextBlockEs(
-  stateData: StateData,
+  stateData: StateData | LiveElectionData,
   zip: string,
   nextElection: Election | null,
   registration: StateData["registration"],
@@ -155,14 +173,29 @@ function buildContextBlockEs(
     ? `Requerida. [accepted IDs in English: ${votingRules.acceptedIds.join(", ")}]`
     : "No requerida";
 
-  return `¡Hola! Voy a votar en **${stateData.stateName}**. Mi código postal es **${zip}**.
+  // Phase 3: enrich with live data if available
+  const liveDataEs = stateData as LiveElectionData;
+  const districtsLineEs = liveDataEs.districts
+    ? ` (${[liveDataEs.districts.county, liveDataEs.districts.congressional, liveDataEs.districts.stateSenate, liveDataEs.districts.stateHouse].filter(Boolean).join(", ")})`
+    : "";
+
+  const pollingLineEs = liveDataEs.pollingLocation
+    ? `\n- **Mi lugar de votación:** ${liveDataEs.pollingLocation.name}, ${liveDataEs.pollingLocation.address}`
+    : "";
+
+  const contestsLineEs =
+    liveDataEs.ballotContests && liveDataEs.ballotContests.length > 0
+      ? `\n- **Mis contiendas en la boleta:** ${liveDataEs.ballotContests.map((c) => `${c.name} (${c.candidates.map((cand) => cand.name).join(", ")})`).join("; ")}`
+      : "";
+
+  return `¡Hola! Voy a votar en **${stateData.stateName}**. Mi código postal es **${zip}**${districtsLineEs}.
 
 Esto es lo que sé sobre mi próxima elección:
 - **Elección:** ${electionInfo}
 - **Fechas límite de registro:** En línea antes del ${onlineReg}, por correo antes del ${byMailReg}, en persona antes del ${inPersonReg}
 - **Votación anticipada:** ${earlyVotingInfo}
 - **Identificación para votar:** ${voterIdInfo}
-- **Teléfonos en las casillas:** ${votingRules.phonesAtPollsDetail}
+- **Teléfonos en las casillas:** ${votingRules.phonesAtPollsDetail}${pollingLineEs}${contestsLineEs}
 - **Mi boleta de muestra:** ${resources.sampleBallotLookup}
 - **Mi oficina electoral del condado:** ${resources.countyElectionLookup}
 

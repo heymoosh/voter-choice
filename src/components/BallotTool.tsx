@@ -5,50 +5,12 @@ import { ZipForm } from "./ZipForm";
 import { StateSelector } from "./StateSelector";
 import { StateInfoCard } from "./StateInfoCard";
 import { PromptOutput } from "./PromptOutput";
-import { lookupState, isValidZip } from "@/lib/zipLookup";
+import { isValidZip } from "@/lib/zipLookup";
+import { fetchLiveData } from "@/lib/dataAccess";
 import { buildPrompt } from "@/lib/promptBuilder";
 import { useTranslation } from "@/lib/i18n/I18nContext";
-import type { StateData } from "@/types/election";
+import type { LiveElectionData } from "@/types/liveElection";
 import type { Locale } from "@/lib/i18n/types";
-
-// Dynamic imports of state data — loaded on demand
-const STATE_DATA_LOADERS: Record<string, () => Promise<StateData>> = {
-  TX: () =>
-    import("@/data/states/TX.json").then(
-      (m) => m.default as unknown as StateData,
-    ),
-  CA: () =>
-    import("@/data/states/CA.json").then(
-      (m) => m.default as unknown as StateData,
-    ),
-  NH: () =>
-    import("@/data/states/NH.json").then(
-      (m) => m.default as unknown as StateData,
-    ),
-};
-
-async function loadState(
-  stateCode: string,
-  zip: string,
-  currentLocale: Locale,
-  onResult: (s: StateData, p: string) => void,
-  onNotFound: () => void,
-  onError: (msg: string) => void,
-  errorMsg: string,
-) {
-  const loader = STATE_DATA_LOADERS[stateCode];
-  if (!loader) {
-    onNotFound();
-    return;
-  }
-  try {
-    const stateData = await loader();
-    const promptText = buildPrompt(stateData, zip, currentLocale);
-    onResult(stateData, promptText);
-  } catch {
-    onError(errorMsg);
-  }
-}
 
 type AppState =
   | { stage: "idle" }
@@ -58,7 +20,7 @@ type AppState =
   | { stage: "select-state"; states: string[]; zip: string }
   | {
       stage: "result";
-      stateData: StateData;
+      stateData: LiveElectionData;
       zip: string;
       promptText: string;
     };
@@ -81,27 +43,7 @@ function BallotToolInner() {
       setZipError(null);
       setAppState({ stage: "loading" });
 
-      const states = lookupState(zip);
-      if (!states) {
-        setAppState({ stage: "not-found" });
-        return;
-      }
-
-      if (states.length > 1) {
-        setAppState({ stage: "select-state", states, zip });
-        return;
-      }
-
-      await loadState(
-        states[0],
-        zip,
-        locale,
-        (stateData, promptText) =>
-          setAppState({ stage: "result", stateData, zip, promptText }),
-        () => setAppState({ stage: "not-found" }),
-        (msg) => setAppState({ stage: "error", message: msg }),
-        t.errors.loadFailed,
-      );
+      await loadLiveData(zip, locale, setAppState, t.errors.loadFailed);
     },
     [t, locale],
   );
@@ -111,15 +53,12 @@ function BallotToolInner() {
       if (appState.stage !== "select-state") return;
       const { zip } = appState;
       setAppState({ stage: "loading" });
-      await loadState(
-        stateCode,
+      await loadLiveData(
         zip,
         locale,
-        (stateData, promptText) =>
-          setAppState({ stage: "result", stateData, zip, promptText }),
-        () => setAppState({ stage: "not-found" }),
-        (msg) => setAppState({ stage: "error", message: msg }),
+        setAppState,
         t.errors.loadFailed,
+        stateCode,
       );
     },
     [appState, locale, t.errors.loadFailed],
@@ -149,6 +88,7 @@ function BallotToolInner() {
       {/* Loading state */}
       {isLoading && (
         <div
+          data-testid="data-loading"
           role="status"
           aria-label={t.accessibility.loadingElectionInfo}
           className="flex items-center gap-2 text-gray-500 text-sm py-2"
@@ -157,7 +97,7 @@ function BallotToolInner() {
             className="inline-block w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"
             aria-hidden="true"
           />
-          {t.loading}
+          {t.liveData?.loading ?? t.loading}
         </div>
       )}
 
@@ -213,4 +153,41 @@ function BallotToolInner() {
 
 export function BallotTool() {
   return <BallotToolInner />;
+}
+
+// ---------------------------------------------------------------------------
+// Data loading helper
+// ---------------------------------------------------------------------------
+
+async function loadLiveData(
+  zip: string,
+  locale: Locale,
+  setAppState: (s: AppState) => void,
+  errorMsg: string,
+  _forcedState?: string,
+): Promise<void> {
+  try {
+    // Handle multi-state zip codes — check static zip lookup first
+    const { lookupState } = await import("@/lib/zipLookup");
+    const states = lookupState(zip);
+    if (!states || states.length === 0) {
+      setAppState({ stage: "not-found" });
+      return;
+    }
+    if (states.length > 1 && !_forcedState) {
+      setAppState({ stage: "select-state", states, zip });
+      return;
+    }
+
+    const liveData = await fetchLiveData(zip);
+    const promptText = buildPrompt(liveData, zip, locale);
+    setAppState({ stage: "result", stateData: liveData, zip, promptText });
+  } catch (error) {
+    if ((error as Error).message === "ZIP_NOT_FOUND") {
+      setAppState({ stage: "not-found" });
+      return;
+    }
+    console.error("[BallotTool] loadLiveData error:", error);
+    setAppState({ stage: "error", message: errorMsg });
+  }
 }

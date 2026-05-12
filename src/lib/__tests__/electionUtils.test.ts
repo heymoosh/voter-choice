@@ -77,15 +77,22 @@ describe("getDeadlineStatus", () => {
   });
 
   it("returns red status for deadline within 3 days", () => {
-    // Mock today as 2026-05-11, deadline 3 days out
-    const futureDate = "2026-05-14";
+    // Use a dynamic date: 2 days from now (always within red threshold of 7 days)
+    const today = getTodayIso();
+    const d = new Date(today + "T12:00:00Z");
+    d.setUTCDate(d.getUTCDate() + 2);
+    const futureDate = d.toISOString().split("T")[0];
     const result = getDeadlineStatus(futureDate);
     expect(result.status).toBe("red");
-    expect(result.daysLeft).toBe(3);
+    expect(result.daysLeft).toBe(2);
   });
 
   it("returns yellow status for deadline within 14 days", () => {
-    const futureDate = "2026-05-21"; // 10 days from 2026-05-11
+    // Use a dynamic date: 10 days from now (within yellow threshold of 14 days)
+    const today = getTodayIso();
+    const d = new Date(today + "T12:00:00Z");
+    d.setUTCDate(d.getUTCDate() + 10);
+    const futureDate = d.toISOString().split("T")[0];
     const result = getDeadlineStatus(futureDate);
     expect(result.status).toBe("yellow");
   });

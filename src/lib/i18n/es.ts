@@ -101,4 +101,24 @@ export const es: Translations = {
     switchToEnglish: "Cambiar a inglés",
     switchToSpanish: "Cambiar a español",
   },
+  liveData: {
+    pollingLocation: "Lugar de Votación",
+    ballotContests: "Contiendas en la Boleta",
+    candidateDetail: {
+      viewRecord: "Ver historial de votación",
+      votingRecord: "Historial de Votación",
+      topDonors: "Principales Donantes",
+      endorsements: "Respaldos",
+    },
+    loading: "Cargando datos electorales...",
+    attribution:
+      "Datos electorales de Google Civic Information y búsqueda web en vivo vía Anthropic.",
+    lastUpdated: "Actualizado",
+    errors: {
+      apiPartial:
+        "Algunos datos electorales no están disponibles temporalmente. La información mostrada está actualizada.",
+      apiFull:
+        "Tenemos problemas para cargar datos electorales en vivo. Aquí está lo que sabemos sobre votar en tu estado.",
+    },
+  },
 };
