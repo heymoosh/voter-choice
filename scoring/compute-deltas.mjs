@@ -66,6 +66,18 @@ const frameworkSlug = branchName
   .replace(/^archive\//, "")
   .replace(/\//g, "-");
 
+// Tag conventions in this repo (observed via `git tag -l`):
+//   Phase 1 replicates:        <framework>-r<N>-phase1-complete   (e.g. bmad-r2-phase1-complete)
+//   Forward phases (legacy):   <framework>-phase<N>-complete       (e.g. bmad-phase3-complete)
+//   Forward phases (v2):       <framework>-r<N>-phase<N>-complete  (uniform convention)
+// To compute a Phase-N delta on a representative branch like
+// experiment/bmad/r2, the prev-tag lookup must try BOTH the
+// replicate-suffixed slug (works for Phase 2 → 1 and v2 forward phases) AND
+// the bare slug (works for legacy forward phases Phase 3+ where the
+// representative-run tag drops the -r<N>).
+const bareSlug = frameworkSlug.replace(/-r\d+$/, "");
+const slugCandidates = bareSlug !== frameworkSlug ? [frameworkSlug, bareSlug] : [frameworkSlug];
+
 const branchMetricsDir = join(ROOT, "metrics", branchName);
 const currentPath = join(branchMetricsDir, `phase${phase}.json`);
 if (!existsSync(currentPath)) {
@@ -100,9 +112,16 @@ if (prevRefOverride) {
   const path = prevPathOverride || `metrics/${branchName}/phase${phase - 1}.json`;
   candidates.push({ ref: prevRefOverride, path });
 }
-const autoTag = prevTagOverride || `${frameworkSlug}-phase${phase - 1}-complete`;
-candidates.push({ ref: autoTag, path: `metrics/${branchName}/phase${phase - 1}.json` });
-candidates.push({ ref: autoTag, path: `metrics/${branchName}/baseline.json` });
+
+// Try every slug candidate × every legacy path. The first hit wins.
+const autoTags = prevTagOverride
+  ? [prevTagOverride]
+  : slugCandidates.map((s) => `${s}-phase${phase - 1}-complete`);
+const autoTag = autoTags[0]; // for error reporting below
+for (const tag of autoTags) {
+  candidates.push({ ref: tag, path: `metrics/${branchName}/phase${phase - 1}.json` });
+  candidates.push({ ref: tag, path: `metrics/${branchName}/baseline.json` });
+}
 
 let priorContent = null;
 let priorSource = null;
@@ -127,7 +146,7 @@ if (!priorContent) {
 
 if (!priorContent) {
   console.error(
-    `Could not find prior phase metrics. Tried tag '${autoTag}' (phase${phase - 1}.json and baseline.json) and on-disk phase${phase - 1}.json.`,
+    `Could not find prior phase metrics. Tried tag(s) ${autoTags.map((t) => `'${t}'`).join(", ")} (phase${phase - 1}.json and baseline.json) and on-disk phase${phase - 1}.json.`,
   );
   process.exit(1);
 }

@@ -66,7 +66,39 @@ const frameworkSlug = branchName
   .replace(/^archive\//, "")
   .replace(/\//g, "-");
 
-const prevTag = prevTagOverride || `${frameworkSlug}-phase${phase - 1}-complete`;
+// Tag conventions in this repo (observed via `git tag -l`):
+//   Phase 1 replicates:        <framework>-r<N>-phase1-complete
+//   Forward phases (legacy):   <framework>-phase<N>-complete       (no -r<N>)
+//   Forward phases (v2):       <framework>-r<N>-phase<N>-complete  (uniform)
+// On a representative branch like experiment/bmad/r2 we therefore need to
+// try BOTH the replicate-suffixed slug AND the bare slug when looking up
+// the prior-phase tag, picking whichever actually resolves.
+const bareSlug = frameworkSlug.replace(/-r\d+$/, "");
+const slugCandidates = bareSlug !== frameworkSlug ? [frameworkSlug, bareSlug] : [frameworkSlug];
+
+function tagExists(tag) {
+  try {
+    execSync(`git rev-parse --verify ${tag}`, {
+      cwd: ROOT,
+      stdio: ["pipe", "pipe", "pipe"],
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+let prevTag = prevTagOverride;
+if (!prevTag) {
+  const tagCandidates = slugCandidates.map((s) => `${s}-phase${phase - 1}-complete`);
+  prevTag = tagCandidates.find(tagExists);
+  if (!prevTag) {
+    console.error(
+      `No prior-phase tag found. Tried: ${tagCandidates.map((t) => `'${t}'`).join(", ")}`,
+    );
+    process.exit(1);
+  }
+}
 
 const scopePath =
   scopeFileOverride || join(__dirname, "phase-scopes", `phase${phase}.json`);
