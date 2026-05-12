@@ -40,17 +40,31 @@ repo="$(cd "$repo" && pwd)"
 timing_file="$run_dir/timing.jsonl"
 workflow_file="$run_dir/workflow-log.jsonl"
 
+# Try to infer branch/phase from timing.jsonl (build_start OR build_end events).
+# Explicit --branch/--phase flags take priority; timing.jsonl is a fallback.
 if [[ -z "$branch" && -f "$timing_file" ]]; then
-  branch="$(jq -r 'select(.event=="build_start") | .branch // empty' "$timing_file" | head -n 1)"
+  branch="$(jq -r '(.event=="build_start" or .event=="build_end") and (.branch != null) | if . then input.branch else "" end' "$timing_file" 2>/dev/null | head -n 1 || true)"
+  if [[ -z "$branch" ]]; then
+    branch="$(jq -r 'select(.branch != null) | .branch' "$timing_file" 2>/dev/null | head -n 1 || true)"
+  fi
 fi
+if [[ -z "$branch" ]]; then
+  # Last-resort: use git HEAD of the repo worktree
+  branch="$(git -C "$repo" branch --show-current 2>/dev/null || true)"
+fi
+
 if [[ -z "$phase" && -f "$timing_file" ]]; then
-  phase="$(jq -r 'select(.event=="build_start") | .phase // empty' "$timing_file" | head -n 1)"
+  phase="$(jq -r 'select(.phase != null) | .phase' "$timing_file" 2>/dev/null | head -n 1 || true)"
 fi
 
-[[ -n "$branch" ]] || { echo "Could not determine branch from $timing_file" >&2; exit 1; }
-[[ -n "$phase" ]] || { echo "Could not determine phase from $timing_file" >&2; exit 1; }
+[[ -n "$branch" ]] || { echo "Could not determine branch (pass --branch explicitly or ensure timing.jsonl has a .branch field)" >&2; exit 1; }
+[[ -n "$phase" ]] || { echo "Could not determine phase (pass --phase explicitly or ensure timing.jsonl has a .phase field)" >&2; exit 1; }
 
-git -C "$repo" checkout "$branch" >/dev/null 2>&1
+# Attempt checkout only if not already on the target branch (no-op for worktrees)
+current_branch="$(git -C "$repo" branch --show-current 2>/dev/null || true)"
+if [[ "$current_branch" != "$branch" ]]; then
+  git -C "$repo" checkout "$branch" >/dev/null 2>&1 || true
+fi
 
 branch_metrics_dir="$repo/metrics/$branch"
 mkdir -p "$branch_metrics_dir"

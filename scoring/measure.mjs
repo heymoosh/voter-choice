@@ -965,6 +965,70 @@ function measureCoupling() {
 }
 
 // ------------------------------------------------------------------
+// 8c. Acceptance coverage (acceptance-coverage.mjs)
+// ------------------------------------------------------------------
+function measureAcceptanceCoverage(branch, phase) {
+  log("Acceptance coverage");
+  const __filename = fileURLToPath(import.meta.url);
+  const scriptPath = join(dirname(__filename), "acceptance-coverage.mjs");
+  if (!existsSync(scriptPath)) {
+    console.log("  acceptance-coverage.mjs not found at", scriptPath);
+    return null;
+  }
+  if (phase == null) {
+    console.log("  Skipping (no --phase provided)");
+    return null;
+  }
+  const b = branch || "unknown";
+  const result = run(`node "${scriptPath}" --repo "${ROOT}" --phase ${phase} --branch "${b}"`);
+  if (!result.success) {
+    console.log("  acceptance-coverage.mjs failed:", result.stderr || result.stdout);
+    return null;
+  }
+  try {
+    const parsed = JSON.parse(result.stdout);
+    console.log(
+      `  acRequired=${parsed.acRequired}, acCovered=${parsed.acCovered}, coverage=${parsed.coverage}`,
+    );
+    return parsed;
+  } catch {
+    console.log("  Could not parse acceptance-coverage output");
+    return null;
+  }
+}
+
+// ------------------------------------------------------------------
+// 8d. NFR compliance (nfr-compliance.mjs)
+// ------------------------------------------------------------------
+function measureNfrCompliance(branch, phase) {
+  log("NFR compliance");
+  const __filename = fileURLToPath(import.meta.url);
+  const scriptPath = join(dirname(__filename), "nfr-compliance.mjs");
+  if (!existsSync(scriptPath)) {
+    console.log("  nfr-compliance.mjs not found at", scriptPath);
+    return null;
+  }
+  if (phase == null) {
+    console.log("  Skipping (no --phase provided)");
+    return null;
+  }
+  const b = branch || "unknown";
+  const result = run(`node "${scriptPath}" --repo "${ROOT}" --phase ${phase} --branch "${b}"`);
+  if (!result.success) {
+    console.log("  nfr-compliance.mjs failed:", result.stderr || result.stdout);
+    return null;
+  }
+  try {
+    const parsed = JSON.parse(result.stdout);
+    console.log(`  nfrs=${parsed.nfrs?.length ?? 0}, passRate=${parsed.passRate}`);
+    return parsed;
+  } catch {
+    console.log("  Could not parse nfr-compliance output");
+    return null;
+  }
+}
+
+// ------------------------------------------------------------------
 // 8b. Diff hygiene (only when --phase >= 2)
 // ------------------------------------------------------------------
 // Delegates to scoring/diff-hygiene.mjs which lives next to this file.
@@ -1128,6 +1192,8 @@ async function main() {
     workflowLog: measureWorkflowLogSummary(),
     coupling: measureCoupling(),
     typeSafety: measureTypeSafety(),
+    acceptance: measureAcceptanceCoverage(branch, phaseNumber),
+    nfrCompliance: measureNfrCompliance(branch, phaseNumber),
     workflowTiming: measureWorkflowTiming(),
     diffHygiene: measureDiffHygiene(branch, phaseNumber),
   };

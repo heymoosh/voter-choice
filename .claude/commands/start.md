@@ -128,6 +128,7 @@ Repo path: /Users/Muxin/Documents/GitHub/voter-choice
 6. mkdir -p metrics metrics/experiment
 7. bash scripts/emit-timing.sh --event build_start --phase 1 --branch "experiment/<FW>-<R>" --file metrics/timing.jsonl
 8. Read .claude/commands/workflow.md on this branch. Execute every step under its `## Workflow Steps` section using `docs/PROJECT_SPEC.md` as the Phase 1 source of truth.
+   **AC-N tagging is mandatory:** `docs/PROJECT_SPEC.md` has an `## Acceptance Criteria` section with `AC-1.N` items. Every e2e test and Vitest test that covers an acceptance criterion MUST reference the AC-N ID in its `describe()` or `test()` / `it()` name — e.g., `test("AC-1.2: single-state zip renders state card", ...)`. Without this tagging, the Feature Completeness axis cannot be computed.
 9. **Responder logging is mandatory.** Every time the framework asks a clarifying question, menu choice, or decision, BEFORE answering append to metrics/responder-log.jsonl:
    {"timestamp":"<ISO-8601>","phase":1,"framework":"<FW>","question":"<verbatim>","decisionRule":"<spec section>","answer":"<your response>","autoChosen":true}
    `decisionRule` must cite the actual spec section (e.g. "PROJECT_SPEC.md FR-003"). If no spec section grounds it, write "reasonable default — no spec coverage".
@@ -213,6 +214,7 @@ Repo path: /Users/Muxin/Documents/GitHub/voter-choice
 8. mkdir -p metrics metrics/experiment
 9. bash scripts/emit-timing.sh --event build_start --phase <PHASE> --branch "$BRANCH" --file metrics/timing.jsonl
 10. Read .claude/commands/workflow.md on this branch. Execute every step under its `## Workflow Steps` section using `docs/PHASE<PHASE>_SPEC.md` as the source of truth.
+    **AC-N tagging is mandatory:** `docs/PHASE<PHASE>_SPEC.md` has an `## Acceptance Criteria` section with `AC-<PHASE>.N` items. Every e2e test and Vitest test that covers an acceptance criterion MUST reference the AC-N ID in its `describe()` or `test()` / `it()` name — e.g., `test("AC-2.3: language toggle persists on reload", ...)`. Without this tagging, the Feature Completeness axis cannot be computed.
 11. **Responder logging is mandatory** — same protocol as Phase 1: append to metrics/responder-log.jsonl before answering every framework question.
 12. Run: npm run lint
 13. Run: npx vitest run

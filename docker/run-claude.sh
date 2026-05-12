@@ -173,6 +173,9 @@ docker run "${DOCKER_TTY_FLAGS[@]+"${DOCKER_TTY_FLAGS[@]}"}" --rm \
 
 if [[ "$DRY_RUN" -eq 0 ]]; then
   if [[ -f "$RUN_OUTPUT_DIR/timing.jsonl" ]]; then
-    bash "$WORKTREE_PATH/scripts/post-build-score.sh" --repo "$WORKTREE_PATH" --run-dir "$RUN_OUTPUT_DIR"
+    bash "$WORKTREE_PATH/scripts/post-build-score.sh" \
+      --repo "$WORKTREE_PATH" \
+      --run-dir "$RUN_OUTPUT_DIR" \
+      --branch "$(git -C "$WORKTREE_PATH" branch --show-current 2>/dev/null || echo "")"
   fi
 fi
