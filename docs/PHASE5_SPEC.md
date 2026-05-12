@@ -570,3 +570,29 @@ If Phase 5 is too large for a single workflow session, it can be split:
 - **Phase 5b:** Downloadable ballot (both paths), voter profile (download, upload, and prompt integration), and all the structured output parsing.
 
 The decision to split should be made based on how Phase 3 and Phase 4 go. If workflows are handling the complexity well, keep Phase 5 unified. If sessions are hitting context limits, split it.
+
+## Acceptance Criteria
+
+Each criterion is a single testable assertion. Every e2e and integration test should reference the `AC-5.x` ID it covers in its `describe()` or `test()` name.
+
+- **AC-5.1** — The user can start an on-site chat session, send messages, and receive streamed ballot guidance without leaving the app.
+- **AC-5.2** — Before the first chat message, the user sees the required warning that conversations remain in-browser only and will be lost on refresh/close.
+- **AC-5.3** — The app can generate and download the ballot artifact in the documented format for the selected language.
+- **AC-5.4** — The app can create, upload, and evolve a voter profile without storing it server-side.
+- **AC-5.5** — The alignment score banner and drill-down render the structured `[ALIGNMENT_SCORES]` data returned by the assistant.
+- **AC-5.6** — The existing copy-paste flow remains available as Path B and includes the specified Phase 5 prompt enhancements.
+- **AC-5.7** — All required Phase 5 test ids are present for chat, download, voter profile, and alignment-score surfaces.
+
+## Required UX Flows
+
+- **UX-5.1** — A voter starts the in-app chat path, sees the privacy warning, asks a question, and receives a streamed response.
+- **UX-5.2** — A voter downloads a ballot summary and voter profile before leaving the page.
+- **UX-5.3** — A voter declines the chat path, uses the copy-paste path instead, and still gets the enhanced prompt output.
+
+## Non-Functional Requirements
+
+- **NFR-5.1** *(Performance)* — First Load JS must remain at or below 130 kB despite the added chat/download/profile UI.
+- **NFR-5.2** *(Accessibility)* — Lighthouse accessibility score must remain at or above 90 after adding chat and download interactions.
+- **NFR-5.3** *(Performance)* — Lighthouse performance score must remain at or above 85 with the Phase 5 feature set.
+- **NFR-5.4** *(Security)* — `npm audit --json` must report 0 HIGH or CRITICAL vulnerabilities.
+- **NFR-5.5** *(Privacy)* — Chat transcripts and voter-profile contents must remain browser-local unless the user explicitly downloads or uploads them.

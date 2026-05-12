@@ -284,3 +284,29 @@ Phase 3 metrics should capture the Phase 2 → Phase 3 delta, same as Phase 1 �
 - **Test coverage** — does the workflow generate tests for the data layer, or only for UI components?
 - **Code duplication** — with 5 API integrations, does the workflow abstract shared patterns or copy-paste per API?
 - **Bundle size** — API client code should be server-side only. If bundle size increases significantly, client-side API code is leaking.
+
+## Acceptance Criteria
+
+Each criterion is a single testable assertion. Every e2e and integration test should reference the `AC-3.x` ID it covers in its `describe()` or `test()` name.
+
+- **AC-3.1** — Entering a supported zip code loads current election information from live sources instead of the Phase 1 stub dataset.
+- **AC-3.2** — The app renders polling location, ballot-contest data, and candidate-enrichment UI for locations where the upstream sources provide those fields.
+- **AC-3.3** — API keys are consumed server-side only and never exposed to the client bundle.
+- **AC-3.4** — If one upstream API fails or times out, the remaining data still renders alongside the documented partial-failure message.
+- **AC-3.5** — If all upstream APIs fail, the app falls back to static voting-rule data and shows the documented full-failure message.
+- **AC-3.6** — The pre-filled prompt context includes the enriched location, ballot, and voting-rule details available for the selected voter location.
+- **AC-3.7** — `.env.example` documents the required environment variables for the supported integrations.
+
+## Required UX Flows
+
+- **UX-3.1** — A voter enters a real zip code, sees progressive loading, and then reviews live polling-place and ballot-contest data.
+- **UX-3.2** — A voter opens a candidate-enrichment panel and sees structured detail without the main page crashing or blanking.
+- **UX-3.3** — A voter hits an upstream outage and still receives a graceful fallback path with official election links.
+
+## Non-Functional Requirements
+
+- **NFR-3.1** *(Performance)* — First Load JS must remain at or below 130 kB after adding live-data integration.
+- **NFR-3.2** *(Accessibility)* — Lighthouse accessibility score must remain at or above 90.
+- **NFR-3.3** *(Performance)* — Lighthouse performance score must remain at or above 90.
+- **NFR-3.4** *(Security)* — `npm audit --json` must report 0 HIGH or CRITICAL vulnerabilities.
+- **NFR-3.5** *(Security)* — API calls must time out within 10 seconds per source rather than hanging indefinitely.

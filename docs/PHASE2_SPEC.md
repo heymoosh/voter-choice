@@ -212,3 +212,29 @@ These are explicitly NOT part of Phase 2:
 - More than two languages (the architecture should support it; the implementation does not need to)
 - Translating the chatbot names (Claude, ChatGPT, etc. — proper nouns)
 - Any changes to the data model or JSON schema
+
+## Acceptance Criteria
+
+Each criterion is a single testable assertion. Every e2e and integration test should reference the `AC-2.x` ID it covers in its `describe()` or `test()` name.
+
+- **AC-2.1** — A visible keyboard-accessible language toggle switches the page between English and Spanish.
+- **AC-2.2** — Switching language updates all user-facing labels, instructions, static content, and error text without resetting the current zip-code results.
+- **AC-2.3** — The selected language persists across refreshes.
+- **AC-2.4** — The full ballot-research prompt is available in fluent Spanish, and the pre-filled context block renders correctly in the selected language.
+- **AC-2.5** — Date formatting and deadline-status messaging follow the selected language conventions.
+- **AC-2.6** — The Phase 2 `language-toggle` test id is present and all Phase 1 test ids remain intact.
+- **AC-2.7** — The translation architecture isolates content from component logic so a third language can be added without duplicating the UI structure.
+
+## Required UX Flows
+
+- **UX-2.1** — A voter enters a zip code in English, switches to Spanish after results load, and sees the same election data and prompt content preserved in Spanish.
+- **UX-2.2** — A voter chooses Spanish, refreshes the page, and returns to the same language preference.
+- **UX-2.3** — A keyboard-only user toggles languages and receives the updated `lang`/screen-reader context without losing focus control.
+
+## Non-Functional Requirements
+
+- **NFR-2.1** *(Performance)* — First Load JS must remain at or below 130 kB after adding Spanish translations.
+- **NFR-2.2** *(Accessibility)* — Lighthouse accessibility score must be at least 90 with translated content enabled.
+- **NFR-2.3** *(Performance)* — Lighthouse performance score must remain at or above 90.
+- **NFR-2.4** *(Security)* — `npm audit --json` must report 0 HIGH or CRITICAL vulnerabilities.
+- **NFR-2.5** *(UX)* — Longer Spanish strings must not cause layout breakage at mobile, tablet, or desktop breakpoints.

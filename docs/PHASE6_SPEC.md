@@ -322,3 +322,28 @@ The Phase 5 `ANTHROPIC_API_KEY` is reused for concern disambiguation (no new key
 - Public dashboard for aggregate data (the data is internal to the user's experience only)
 
 These are post-experiment v3 features.
+
+## Acceptance Criteria
+
+Each criterion is a single testable assertion. Every e2e and integration test should reference the `AC-6.x` ID it covers in its `describe()` or `test()` name.
+
+- **AC-6.1** — The user can drag and rank the canonical issue list, and the ordered result feeds downstream alignment scoring.
+- **AC-6.2** — Free-text concerns are mapped to canonical issues with an explicit user confirmation step before they affect scoring or aggregates.
+- **AC-6.3** — Anonymous aggregate counters are stored without personal identity and can be rendered back as issue-distribution data for the same ballot.
+- **AC-6.4** — The Polis-style overlay displays the aggregate concern distribution in the documented UI.
+- **AC-6.5** — Translation and accessibility coverage extend to the new issue-ranking, disambiguation, and aggregate-display surfaces.
+- **AC-6.6** — All required Phase 6 test ids are present for ranking, disambiguation, and aggregate-counter interactions.
+
+## Required UX Flows
+
+- **UX-6.1** — A voter ranks issues via drag-and-drop, reviews the updated order, and proceeds without losing their previous ballot context.
+- **UX-6.2** — A voter enters a free-text concern, confirms the canonical mapping, and sees the confirmed issue reflected in the UI.
+- **UX-6.3** — A voter opens the aggregate overlay and understands how similar voters prioritized issues without revealing any individual identity.
+
+## Non-Functional Requirements
+
+- **NFR-6.1** *(Performance)* — First Load JS must remain at or below 130 kB after adding ranking and aggregate-counter UI.
+- **NFR-6.2** *(Accessibility)* — Lighthouse accessibility score must remain at or above 90 with drag/rank and overlay interactions enabled.
+- **NFR-6.3** *(Performance)* — Lighthouse performance score must remain at or above 85.
+- **NFR-6.4** *(Security)* — `npm audit --json` must report 0 HIGH or CRITICAL vulnerabilities.
+- **NFR-6.5** *(Privacy)* — Aggregate counters must remain anonymous and must not store personal identifiers, raw chat transcripts, or zip-code history.

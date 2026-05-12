@@ -212,3 +212,28 @@ Phase 4 metrics should capture the Phase 3 → Phase 4 delta. Key signals:
 - **Cyclomatic complexity** — RTL support adds conditional logic. Is it cleanly isolated or scattered through components?
 - **Test coverage** — Does the workflow test each language, or only test the i18n infrastructure generically?
 - **LOC delta** — How much code does each language add? Ideally the marginal cost of language N+1 is small once the i18n infrastructure exists.
+
+## Acceptance Criteria
+
+Each criterion is a single testable assertion. Every e2e and integration test should reference the `AC-4.x` ID it covers in its `describe()` or `test()` name.
+
+- **AC-4.1** — The language control supports English, Spanish, Vietnamese, Chinese, and Arabic, and switching languages updates all supported UI copy.
+- **AC-4.2** — Arabic mode applies right-to-left directionality to the page and preserves readable, correctly aligned layouts.
+- **AC-4.3** — The ballot-research prompt and pre-filled context block render in all supported languages with the expected structure.
+- **AC-4.4** — Existing Phase 2 language behaviors continue to work without resetting application state.
+- **AC-4.5** — Text expansion, CJK characters, and RTL content do not break the documented layouts across supported breakpoints.
+- **AC-4.6** — All new Phase 4 test ids are present and all prior phase test ids remain intact.
+
+## Required UX Flows
+
+- **UX-4.1** — A voter changes from English to Arabic after loading results and sees the page re-render in RTL mode while preserving election data.
+- **UX-4.2** — A voter cycles through all five languages from the same session and always receives localized prompt content and controls.
+- **UX-4.3** — A mobile user views longer translated text and still reaches the copy action without clipped or overlapping UI.
+
+## Non-Functional Requirements
+
+- **NFR-4.1** *(Performance)* — First Load JS must remain at or below 130 kB after adding the additional language bundles.
+- **NFR-4.2** *(Accessibility)* — Lighthouse accessibility score must remain at or above 90 in multilingual mode.
+- **NFR-4.3** *(Performance)* — Lighthouse performance score must remain at or above 90.
+- **NFR-4.4** *(Security)* — `npm audit --json` must report 0 HIGH or CRITICAL vulnerabilities.
+- **NFR-4.5** *(UX)* — RTL and expanded-text layouts must remain keyboard- and screen-reader-friendly.

@@ -348,3 +348,29 @@ These are explicitly NOT part of the build:
 - Analytics or tracking
 - The AI chatbot conversation itself (that happens in the user's own chatbot)
 - Multiple language support (that's Phase 2)
+
+## Acceptance Criteria
+
+Each criterion is a single testable assertion. Every e2e and integration test should reference the `AC-1.x` ID it covers in its `describe()` or `test()` name.
+
+- **AC-1.1** — Submitting an empty, non-numeric, or non-5-digit zip code shows the correct inline validation error and does not render state results.
+- **AC-1.2** — Submitting a valid single-state zip code renders the state summary card with election name/date, registration deadlines, early-voting information, official resource links, and voting-rule summary.
+- **AC-1.3** — A multi-state zip code presents a state selector, and selecting a state updates the displayed election information for that state.
+- **AC-1.4** — A valid lookup renders the full prompt output by combining the base ballot-research prompt with a pre-filled context block that includes the selected state, zip code, key election dates, and official links.
+- **AC-1.5** — Activating the copy control copies the full prompt plus context block as plain text and shows a visible copied-state confirmation.
+- **AC-1.6** — The UI shows the documented fallback states for zip-not-found, no-upcoming-election, and registration-deadline-passed scenarios.
+- **AC-1.7** — All required Phase 1 `data-testid` attributes are present on the elements listed in this spec.
+
+## Required UX Flows
+
+- **UX-1.1** — A first-time voter lands on the page, enters a valid zip code, reviews the election summary, and copies the customized prompt without leaving the page.
+- **UX-1.2** — A voter with a multi-state zip code chooses the correct state from the selector and sees the prompt update for that state.
+- **UX-1.3** — A voter enters an invalid zip code, sees a clear inline error, corrects it, and then successfully reaches the prompt output flow.
+
+## Non-Functional Requirements
+
+- **NFR-1.1** *(Performance)* — First Load JS must remain at or below 130 kB.
+- **NFR-1.2** *(Performance)* — Lighthouse performance score must be at least 90.
+- **NFR-1.3** *(Accessibility)* — Lighthouse accessibility score must be at least 90.
+- **NFR-1.4** *(Security)* — `npm audit --json` must report 0 HIGH or CRITICAL vulnerabilities in the app dependency graph.
+- **NFR-1.5** *(Privacy)* — The rendered app must not persist zip codes, copied prompt content, or chat content in `localStorage`, `sessionStorage`, or cookies.
