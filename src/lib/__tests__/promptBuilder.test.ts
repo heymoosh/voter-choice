@@ -117,3 +117,36 @@ describe("buildPrompt", () => {
     expect(result).toContain("---");
   });
 });
+
+describe("buildPrompt — Spanish locale", () => {
+  it("uses Spanish prompt text in es mode", () => {
+    const result = buildPrompt(txStateData, "73301", "es");
+    expect(result).toContain("asistente cívico imparcial");
+  });
+
+  it("context block is in Spanish in es mode", () => {
+    const result = buildContextBlock(txStateData, "73301", "es");
+    expect(result).toContain("¡Hola!");
+    expect(result).toContain("Voy a votar en");
+    expect(result).toContain("Texas");
+    expect(result).toContain("73301");
+  });
+
+  it("Spanish context block uses Spanish labels", () => {
+    const result = buildContextBlock(txStateData, "73301", "es");
+    expect(result).toContain("Fechas límite de registro");
+    expect(result).toContain("Votación anticipada");
+    expect(result).toContain("Identificación para votar");
+  });
+
+  it("English context block still works correctly with explicit en locale", () => {
+    const result = buildContextBlock(txStateData, "73301", "en");
+    expect(result).toContain("Hi! I'm voting in");
+    expect(result).toContain("Registration deadlines");
+  });
+
+  it("Spanish context block separates prompt and context with a divider", () => {
+    const result = buildPrompt(txStateData, "73301", "es");
+    expect(result).toContain("---");
+  });
+});

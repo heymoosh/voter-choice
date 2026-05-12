@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslation } from "@/lib/i18n/I18nContext";
+
 interface StateSelectorProps {
   states: string[];
   onSelect: (stateCode: string) => void;
@@ -60,6 +62,8 @@ const STATE_NAMES: Record<string, string> = {
 };
 
 export function StateSelector({ states, onSelect }: StateSelectorProps) {
+  const { t } = useTranslation();
+
   return (
     <div
       data-testid="state-selector"
@@ -68,7 +72,7 @@ export function StateSelector({ states, onSelect }: StateSelectorProps) {
       className="bg-amber-50 border border-amber-200 rounded-lg p-4"
     >
       <p id="state-selector-label" className="text-gray-700 font-medium mb-3">
-        This zip code spans multiple states. Which state are you voting in?
+        {t.stateSelector.prompt}
       </p>
       <div className="flex flex-col sm:flex-row gap-2">
         {states.map((code) => (

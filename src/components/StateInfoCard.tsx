@@ -10,11 +10,10 @@ import type {
   VotingRules,
   Resources,
 } from "@/types/election";
-import {
-  findNextElection,
-  getDeadlineStatus,
-  formatDate,
-} from "@/lib/electionUtils";
+import { findNextElection, getDeadlineStatus } from "@/lib/electionUtils";
+import { useTranslation } from "@/lib/i18n/I18nContext";
+import { formatDateLocale } from "@/lib/i18n/formatDate";
+import type { Locale } from "@/lib/i18n/types";
 
 interface StateInfoCardProps {
   stateData: StateData;
@@ -28,30 +27,53 @@ const STATUS_COLORS: Record<DeadlineStatus, string> = {
 };
 
 function DeadlineBadge({ info }: { info: DeadlineInfo }) {
+  const { t } = useTranslation();
+
+  let label: string;
+  if (info.status === "passed") {
+    label = t.deadline.passed;
+  } else if (info.daysLeft !== null && info.daysLeft !== undefined) {
+    if (info.daysLeft === 0) {
+      label = t.deadline.today;
+    } else {
+      label = t.deadline.daysLeft(info.daysLeft);
+    }
+  } else {
+    label = info.label;
+  }
+
   return (
     <span
       className={`inline-flex items-center px-2 py-0.5 rounded border text-xs font-medium ${STATUS_COLORS[info.status]}`}
     >
-      {info.label}
+      {label}
     </span>
   );
 }
 
-function ElectionSection({ election }: { election: Election }) {
+function ElectionSection({
+  election,
+  locale,
+}: {
+  election: Election;
+  locale: Locale;
+}) {
+  const { t } = useTranslation();
+
   return (
     <section aria-labelledby="election-heading">
       <h3
         id="election-heading"
         className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2"
       >
-        Upcoming Election
+        {t.stateInfo.election}
       </h3>
       <div className="text-gray-900">
         <p data-testid="election-name" className="font-semibold text-lg">
           {election.name}
         </p>
         <p data-testid="election-date" className="text-gray-600 mt-0.5">
-          {formatDate(election.date)}
+          {formatDateLocale(election.date, locale)}
           {election.isPrimary && election.primaryType && (
             <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-medium capitalize">
               {election.primaryType} primary
@@ -70,27 +92,35 @@ function NoElectionMessage({
   stateName: string;
   websiteUrl: string;
 }) {
+  const { t } = useTranslation();
+
   return (
     <div
       data-testid="no-election-message"
       role="alert"
       className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-gray-600 text-sm"
     >
-      No upcoming elections found for {stateName}.{" "}
+      {t.errors.noElections(stateName)}{" "}
       <a
         href={websiteUrl}
         target="_blank"
         rel="noopener noreferrer"
         className="text-blue-600 underline hover:text-blue-800 focus:outline-2 focus:outline-blue-500 rounded"
       >
-        Check {stateName} election website
-      </a>{" "}
-      for updates.
+        {t.errors.zipNotFound.linkText}
+      </a>
     </div>
   );
 }
 
-function RegistrationSection({ registration }: { registration: Registration }) {
+function RegistrationSection({
+  registration,
+  locale,
+}: {
+  registration: Registration;
+  locale: Locale;
+}) {
+  const { t } = useTranslation();
   const onlineStatus = getDeadlineStatus(registration.online.deadline);
   const byMailStatus = getDeadlineStatus(registration.byMail.deadline);
   const inPersonStatus = getDeadlineStatus(registration.inPerson.deadline);
@@ -107,7 +137,7 @@ function RegistrationSection({ registration }: { registration: Registration }) {
           role="alert"
           className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-amber-800 text-sm"
         >
-          <strong>Registration deadlines for this election have passed.</strong>{" "}
+          <strong>{t.errors.deadlinesPassed}</strong>{" "}
           <a
             href={registration.registrationCheckUrl}
             target="_blank"
@@ -115,8 +145,7 @@ function RegistrationSection({ registration }: { registration: Registration }) {
             className="underline hover:text-amber-900 focus:text-amber-900 focus:outline-2 focus:outline-amber-500 rounded"
           >
             Check your registration status
-          </a>{" "}
-          to confirm you&apos;re registered.
+          </a>
         </div>
       )}
       <section
@@ -127,18 +156,18 @@ function RegistrationSection({ registration }: { registration: Registration }) {
           id="registration-heading"
           className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3"
         >
-          Voter Registration Deadlines
+          {t.stateInfo.registrationDeadlines}
         </h3>
         <div className="space-y-2.5">
           {registration.online.available && (
             <div className="flex items-center justify-between gap-3">
               <div>
                 <span className="font-medium text-gray-800 text-sm">
-                  Online registration
+                  {t.stateInfo.online}
                 </span>
                 {registration.online.deadline && (
                   <span className="text-gray-500 text-xs ml-2">
-                    by {formatDate(registration.online.deadline)}
+                    {formatDateLocale(registration.online.deadline, locale)}
                   </span>
                 )}
               </div>
@@ -147,12 +176,15 @@ function RegistrationSection({ registration }: { registration: Registration }) {
           )}
           <div className="flex items-center justify-between gap-3">
             <div>
-              <span className="font-medium text-gray-800 text-sm">By mail</span>
+              <span className="font-medium text-gray-800 text-sm">
+                {t.stateInfo.byMail}
+              </span>
               <span className="text-gray-500 text-xs ml-2">
-                by {formatDate(registration.byMail.deadline)}
+                {formatDateLocale(registration.byMail.deadline, locale)} (
                 {registration.byMail.sincePostmarked
-                  ? " (postmark)"
-                  : " (received)"}
+                  ? t.stateInfo.postmark
+                  : t.stateInfo.received}
+                )
               </span>
             </div>
             <DeadlineBadge info={byMailStatus} />
@@ -160,10 +192,10 @@ function RegistrationSection({ registration }: { registration: Registration }) {
           <div className="flex items-center justify-between gap-3">
             <div>
               <span className="font-medium text-gray-800 text-sm">
-                In person
+                {t.stateInfo.inPerson}
               </span>
               <span className="text-gray-500 text-xs ml-2">
-                by {formatDate(registration.inPerson.deadline)}
+                {formatDateLocale(registration.inPerson.deadline, locale)}
               </span>
             </div>
             <DeadlineBadge info={inPersonStatus} />
@@ -179,7 +211,15 @@ function RegistrationSection({ registration }: { registration: Registration }) {
   );
 }
 
-function EarlyVotingSection({ earlyVoting }: { earlyVoting: EarlyVoting }) {
+function EarlyVotingSection({
+  earlyVoting,
+  locale,
+}: {
+  earlyVoting: EarlyVoting;
+  locale: Locale;
+}) {
+  const { t } = useTranslation();
+
   if (!earlyVoting.available || !earlyVoting.startDate || !earlyVoting.endDate)
     return null;
   return (
@@ -188,10 +228,13 @@ function EarlyVotingSection({ earlyVoting }: { earlyVoting: EarlyVoting }) {
         id="early-voting-heading"
         className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-1"
       >
-        Early Voting
+        {t.stateInfo.earlyVoting}
       </h3>
       <p className="text-gray-800 text-sm">
-        {formatDate(earlyVoting.startDate)} – {formatDate(earlyVoting.endDate)}
+        {t.stateInfo.earlyVotingFrom}{" "}
+        {formatDateLocale(earlyVoting.startDate, locale)} –{" "}
+        {t.stateInfo.earlyVotingThrough}{" "}
+        {formatDateLocale(earlyVoting.endDate, locale)}
       </p>
       {earlyVoting.notes && (
         <p className="text-gray-500 text-xs mt-0.5">{earlyVoting.notes}</p>
@@ -201,24 +244,32 @@ function EarlyVotingSection({ earlyVoting }: { earlyVoting: EarlyVoting }) {
 }
 
 function VotingRulesSection({ votingRules }: { votingRules: VotingRules }) {
+  const { t } = useTranslation();
+
   return (
     <section aria-labelledby="voting-rules-heading">
       <h3
         id="voting-rules-heading"
         className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2"
       >
-        Voting Rules
+        {t.stateInfo.phonesAtPolls}
       </h3>
       <div className="space-y-2 text-sm">
         <div>
-          <span className="font-medium text-gray-800">Voter ID:</span>{" "}
+          <span className="font-medium text-gray-800">
+            {t.stateInfo.voterId}:
+          </span>{" "}
           <span className="text-gray-600">
-            {votingRules.idRequired ? "Required" : "Not required"}
+            {votingRules.idRequired
+              ? t.stateInfo.voterIdRequired
+              : t.stateInfo.voterIdNotRequired}
           </span>
         </div>
         {votingRules.idRequired && votingRules.acceptedIds.length > 0 && (
           <div>
-            <span className="font-medium text-gray-800">Accepted IDs:</span>
+            <span className="font-medium text-gray-800">
+              {t.stateInfo.acceptedIds}:
+            </span>
             <ul className="mt-1 ml-4 space-y-0.5 list-disc text-gray-600 text-xs">
               {votingRules.acceptedIds.map((id) => (
                 <li key={id}>{id}</li>
@@ -227,7 +278,9 @@ function VotingRulesSection({ votingRules }: { votingRules: VotingRules }) {
           </div>
         )}
         <div>
-          <span className="font-medium text-gray-800">Phones at polls:</span>{" "}
+          <span className="font-medium text-gray-800">
+            {t.stateInfo.phonesAtPolls}:
+          </span>{" "}
           <span className="text-gray-600">
             {votingRules.phonesAtPollsDetail}
           </span>
@@ -238,6 +291,8 @@ function VotingRulesSection({ votingRules }: { votingRules: VotingRules }) {
 }
 
 function ResourcesSection({ resources }: { resources: Resources }) {
+  const { t } = useTranslation();
+
   return (
     <section aria-labelledby="resources-heading">
       <h3
@@ -252,10 +307,13 @@ function ResourcesSection({ resources }: { resources: Resources }) {
             href: resources.stateElectionWebsite,
             label: "State election website",
           },
-          { href: resources.sampleBallotLookup, label: "Sample ballot lookup" },
+          {
+            href: resources.sampleBallotLookup,
+            label: t.stateInfo.sampleBallot,
+          },
           {
             href: resources.countyElectionLookup,
-            label: "County election office",
+            label: t.stateInfo.countyOffice,
           },
         ].map(({ href, label }) => (
           <a
@@ -274,6 +332,7 @@ function ResourcesSection({ resources }: { resources: Resources }) {
 }
 
 export function StateInfoCard({ stateData }: StateInfoCardProps) {
+  const { locale, t } = useTranslation();
   const nextElection = findNextElection(stateData.elections);
   const { registration, earlyVoting, votingRules, resources } = stateData;
 
@@ -281,24 +340,24 @@ export function StateInfoCard({ stateData }: StateInfoCardProps) {
     <div
       data-testid="state-info"
       className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden"
-      aria-label={`Election information for ${stateData.stateName}`}
+      aria-label={`${t.stateInfo.title} — ${stateData.stateName}`}
     >
       <div className="bg-blue-600 px-6 py-4">
         <h2 className="text-xl font-bold text-white">{stateData.stateName}</h2>
-        <p className="text-blue-100 text-sm mt-0.5">Election Information</p>
+        <p className="text-blue-100 text-sm mt-0.5">{t.stateInfo.title}</p>
       </div>
 
       <div className="p-6 space-y-5">
-        <RegistrationSection registration={registration} />
+        <RegistrationSection registration={registration} locale={locale} />
         {nextElection ? (
-          <ElectionSection election={nextElection} />
+          <ElectionSection election={nextElection} locale={locale} />
         ) : (
           <NoElectionMessage
             stateName={stateData.stateName}
             websiteUrl={resources.stateElectionWebsite}
           />
         )}
-        <EarlyVotingSection earlyVoting={earlyVoting} />
+        <EarlyVotingSection earlyVoting={earlyVoting} locale={locale} />
         <VotingRulesSection votingRules={votingRules} />
         <ResourcesSection resources={resources} />
       </div>

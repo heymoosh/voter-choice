@@ -7,7 +7,9 @@ import { StateInfoCard } from "./StateInfoCard";
 import { PromptOutput } from "./PromptOutput";
 import { lookupState, isValidZip } from "@/lib/zipLookup";
 import { buildPrompt } from "@/lib/promptBuilder";
+import { useTranslation } from "@/lib/i18n/I18nContext";
 import type { StateData } from "@/types/election";
+import type { Locale } from "@/lib/i18n/types";
 
 // Dynamic imports of state data — loaded on demand
 const STATE_DATA_LOADERS: Record<string, () => Promise<StateData>> = {
@@ -25,6 +27,29 @@ const STATE_DATA_LOADERS: Record<string, () => Promise<StateData>> = {
     ),
 };
 
+async function loadState(
+  stateCode: string,
+  zip: string,
+  currentLocale: Locale,
+  onResult: (s: StateData, p: string) => void,
+  onNotFound: () => void,
+  onError: (msg: string) => void,
+  errorMsg: string,
+) {
+  const loader = STATE_DATA_LOADERS[stateCode];
+  if (!loader) {
+    onNotFound();
+    return;
+  }
+  try {
+    const stateData = await loader();
+    const promptText = buildPrompt(stateData, zip, currentLocale);
+    onResult(stateData, promptText);
+  } catch {
+    onError(errorMsg);
+  }
+}
+
 type AppState =
   | { stage: "idle" }
   | { stage: "loading" }
@@ -38,67 +63,67 @@ type AppState =
       promptText: string;
     };
 
-export function BallotTool() {
+function BallotToolInner() {
+  const { t, locale } = useTranslation();
   const [appState, setAppState] = useState<AppState>({ stage: "idle" });
   const [zipError, setZipError] = useState<string | null>(null);
 
-  const handleZipSubmit = useCallback(async (zip: string) => {
-    // Validate
-    if (!zip) {
-      setZipError("Please enter a zip code");
-      return;
-    }
-    if (!isValidZip(zip)) {
-      setZipError("Please enter a valid 5-digit zip code");
-      return;
-    }
-    setZipError(null);
-    setAppState({ stage: "loading" });
+  const handleZipSubmit = useCallback(
+    async (zip: string) => {
+      if (!zip) {
+        setZipError(t.errors.emptyZip);
+        return;
+      }
+      if (!isValidZip(zip)) {
+        setZipError(t.errors.invalidZip);
+        return;
+      }
+      setZipError(null);
+      setAppState({ stage: "loading" });
 
-    // Lookup state(s)
-    const states = lookupState(zip);
-    if (!states) {
-      setAppState({ stage: "not-found" });
-      return;
-    }
+      const states = lookupState(zip);
+      if (!states) {
+        setAppState({ stage: "not-found" });
+        return;
+      }
 
-    if (states.length > 1) {
-      setAppState({ stage: "select-state", states, zip });
-      return;
-    }
+      if (states.length > 1) {
+        setAppState({ stage: "select-state", states, zip });
+        return;
+      }
 
-    await loadStateData(states[0], zip);
-  }, []);
+      await loadState(
+        states[0],
+        zip,
+        locale,
+        (stateData, promptText) =>
+          setAppState({ stage: "result", stateData, zip, promptText }),
+        () => setAppState({ stage: "not-found" }),
+        (msg) => setAppState({ stage: "error", message: msg }),
+        t.errors.loadFailed,
+      );
+    },
+    [t, locale],
+  );
 
   const handleStateSelect = useCallback(
     async (stateCode: string) => {
       if (appState.stage !== "select-state") return;
       const { zip } = appState;
       setAppState({ stage: "loading" });
-      await loadStateData(stateCode, zip);
+      await loadState(
+        stateCode,
+        zip,
+        locale,
+        (stateData, promptText) =>
+          setAppState({ stage: "result", stateData, zip, promptText }),
+        () => setAppState({ stage: "not-found" }),
+        (msg) => setAppState({ stage: "error", message: msg }),
+        t.errors.loadFailed,
+      );
     },
-    [appState],
+    [appState, locale, t.errors.loadFailed],
   );
-
-  async function loadStateData(stateCode: string, zip: string) {
-    const loader = STATE_DATA_LOADERS[stateCode];
-    if (!loader) {
-      // State code exists in zip data but no data file — show not found
-      setAppState({ stage: "not-found" });
-      return;
-    }
-
-    try {
-      const stateData = await loader();
-      const promptText = buildPrompt(stateData, zip);
-      setAppState({ stage: "result", stateData, zip, promptText });
-    } catch {
-      setAppState({
-        stage: "error",
-        message: "Failed to load state data. Please try again.",
-      });
-    }
-  }
 
   const isLoading = appState.stage === "loading";
 
@@ -125,14 +150,14 @@ export function BallotTool() {
       {isLoading && (
         <div
           role="status"
-          aria-label="Loading election information"
+          aria-label={t.accessibility.loadingElectionInfo}
           className="flex items-center gap-2 text-gray-500 text-sm py-2"
         >
           <span
             className="inline-block w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"
             aria-hidden="true"
           />
-          Looking up your election info…
+          {t.loading}
         </div>
       )}
 
@@ -144,18 +169,17 @@ export function BallotTool() {
           className="bg-amber-50 border border-amber-200 rounded-xl p-5"
         >
           <p className="font-semibold text-amber-900 mb-1">
-            Zip code not found
+            {t.errors.zipNotFound.heading}
           </p>
           <p className="text-amber-800 text-sm">
-            We don&apos;t have data for this zip code yet. We&apos;re working on
-            adding all U.S. zip codes.{" "}
+            {t.errors.zipNotFound.message}{" "}
             <a
               href="https://www.usa.gov/state-election-office"
               target="_blank"
               rel="noopener noreferrer"
               className="underline hover:text-amber-900 focus:text-amber-900 focus:outline-2 focus:outline-blue-500 rounded"
             >
-              Find your state election website
+              {t.errors.zipNotFound.linkText}
             </a>
           </p>
         </div>
@@ -185,4 +209,8 @@ export function BallotTool() {
       )}
     </div>
   );
+}
+
+export function BallotTool() {
+  return <BallotToolInner />;
 }

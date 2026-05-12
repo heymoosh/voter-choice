@@ -1,15 +1,19 @@
+"use client";
+
+import { useTranslation } from "@/lib/i18n/I18nContext";
+
 export function Footer() {
+  const { t } = useTranslation();
+
   return (
     <footer className="border-t border-gray-200 mt-12 py-8 px-4">
       <div className="max-w-2xl mx-auto space-y-4 text-center text-sm text-gray-500">
         <div>
-          <p className="font-medium text-gray-700 mb-1">Share this tool</p>
+          <p className="font-medium text-gray-700 mb-1">
+            {t.footer.shareHeading}
+          </p>
           <p>
-            Know someone who wants to vote informed?{" "}
-            <span className="text-gray-600">
-              Share this page with friends, family, or your community. It works
-              for any state and any election.
-            </span>
+            <span className="text-gray-600">{t.footer.shareText}</span>
           </p>
         </div>
         <div className="flex flex-wrap justify-center gap-4 text-xs">
@@ -46,10 +50,7 @@ export function Footer() {
             Try Grok
           </a>
         </div>
-        <p className="text-xs text-gray-400">
-          Created by a human using AI tools, because everyone deserves to know
-          what they&apos;re actually voting for.
-        </p>
+        <p className="text-xs text-gray-400">{t.footer.attribution}</p>
       </div>
     </footer>
   );

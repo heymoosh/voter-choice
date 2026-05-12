@@ -1,31 +1,41 @@
+"use client";
+
 import { BallotTool } from "@/components/BallotTool";
 import { TipsSection } from "@/components/TipsSection";
 import { Footer } from "@/components/Footer";
+import { LanguageToggle } from "@/components/LanguageToggle";
+import { HtmlLangUpdater } from "@/components/HtmlLangUpdater";
+import { I18nProvider, useTranslation } from "@/lib/i18n/I18nContext";
 
-export default function Home() {
+const CHATBOTS = [
+  { name: "Claude", href: "https://claude.ai" },
+  { name: "ChatGPT", href: "https://chatgpt.com" },
+  { name: "Gemini", href: "https://gemini.google.com" },
+  { name: "Grok", href: "https://grok.com" },
+];
+
+function PageContent() {
+  const { t } = useTranslation();
+
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Fixed language toggle — always visible */}
+      <LanguageToggle />
+      <HtmlLangUpdater />
+
       <main id="main-content" className="max-w-2xl mx-auto px-4 py-8 sm:py-12">
         {/* Hero Section */}
         <header className="text-center mb-10">
           <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3">
-            Know What You&apos;re Voting For
+            {t.hero.headline}
           </h1>
           <p className="text-gray-600 text-lg leading-relaxed max-w-xl mx-auto">
-            Enter your zip code to get a customized AI ballot research prompt.
-            Paste it into any free AI chatbot — Claude, ChatGPT, Gemini, or Grok
-            — and get a personalized walkthrough of every race and issue on your
-            ballot.
+            {t.hero.subtitle}
           </p>
 
           {/* Supported chatbots */}
           <div className="mt-5 flex flex-wrap justify-center gap-3">
-            {[
-              { name: "Claude", href: "https://claude.ai" },
-              { name: "ChatGPT", href: "https://chatgpt.com" },
-              { name: "Gemini", href: "https://gemini.google.com" },
-              { name: "Grok", href: "https://grok.com" },
-            ].map(({ name, href }) => (
+            {CHATBOTS.map(({ name, href }) => (
               <a
                 key={name}
                 href={href}
@@ -39,7 +49,7 @@ export default function Home() {
           </div>
         </header>
 
-        {/* Main App */}
+        {/* Main App — BallotTool provides its own I18nProvider */}
         <BallotTool />
 
         {/* Tips Section */}
@@ -50,5 +60,13 @@ export default function Home() {
 
       <Footer />
     </div>
+  );
+}
+
+export default function Home() {
+  return (
+    <I18nProvider>
+      <PageContent />
+    </I18nProvider>
   );
 }

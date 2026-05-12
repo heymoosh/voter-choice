@@ -1,12 +1,14 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import { useTranslation } from "@/lib/i18n/I18nContext";
 
 interface PromptOutputProps {
   promptText: string;
 }
 
 export function PromptOutput({ promptText }: PromptOutputProps) {
+  const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
   const [copyFallback, setCopyFallback] = useState(false);
 
@@ -17,11 +19,9 @@ export function PromptOutput({ promptText }: PromptOutputProps) {
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
       } else {
-        // Fallback for browsers without clipboard API
         setCopyFallback(true);
       }
     } catch {
-      // Clipboard write failed (e.g. permissions denied)
       setCopyFallback(true);
     }
   }, [promptText]);
@@ -37,8 +37,7 @@ export function PromptOutput({ promptText }: PromptOutputProps) {
             Your Customized Prompt
           </h2>
           <p className="text-gray-500 text-sm mt-0.5">
-            Copy this prompt and paste it as your first message in any AI
-            chatbot
+            {t.prompt.instructions}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -48,18 +47,18 @@ export function PromptOutput({ promptText }: PromptOutputProps) {
             className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 focus:bg-blue-700 focus:ring-2 focus:ring-blue-400 focus:outline-none active:bg-blue-800 transition-colors min-h-[44px] text-sm"
             aria-live="polite"
             aria-label={
-              copied ? "Copied to clipboard!" : "Copy prompt to clipboard"
+              copied ? t.prompt.copiedButton : "Copy prompt to clipboard"
             }
           >
             {copied ? (
               <>
                 <span aria-hidden="true">✓</span>
-                Copied!
+                {t.prompt.copiedButton}
               </>
             ) : (
               <>
                 <span aria-hidden="true">📋</span>
-                Copy to Clipboard
+                {t.prompt.copyButton}
               </>
             )}
           </button>
@@ -70,7 +69,7 @@ export function PromptOutput({ promptText }: PromptOutputProps) {
               aria-live="polite"
               className="text-green-600 text-sm font-medium"
             >
-              Copied!
+              {t.prompt.copiedButton}
             </span>
           )}
         </div>
@@ -81,15 +80,7 @@ export function PromptOutput({ promptText }: PromptOutputProps) {
           role="alert"
           className="mb-3 p-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-800 text-sm"
         >
-          Clipboard access unavailable. Select all the text below and press{" "}
-          <kbd className="bg-white border border-gray-300 rounded px-1 font-mono text-xs">
-            Ctrl+C
-          </kbd>{" "}
-          /{" "}
-          <kbd className="bg-white border border-gray-300 rounded px-1 font-mono text-xs">
-            Cmd+C
-          </kbd>{" "}
-          to copy.
+          {t.prompt.fallbackInstructions}
         </div>
       )}
 
