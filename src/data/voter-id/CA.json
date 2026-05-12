@@ -1,0 +1,13 @@
+{
+  "state": "CA",
+  "voterIdRequired": false,
+  "idType": "none",
+  "acceptedIds": [],
+  "exceptions": "California does not require voters to show ID at the polls. First-time voters who registered by mail and did not provide ID when registering may need to show ID.",
+  "provisionalBallot": true,
+  "provisionalBallotRules": "Any voter may cast a provisional ballot if their eligibility is questioned. The ballot is counted after eligibility is confirmed.",
+  "phonesAtPolls": true,
+  "phonesAtPollsDetail": "Voters may use phones to access their marked sample ballot or polling place information inside the voting booth.",
+  "sourceUrl": "https://www.sos.ca.gov/elections/voter-registration/id-requirements",
+  "lastVerified": "2026-04-03"
+}

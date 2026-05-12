@@ -1,4 +1,4 @@
-import type { StateData, Election } from "./types";
+import type { StateData, Election, BallotData } from "./types";
 import { BALLOT_PROMPT_TEXT } from "./ballotPromptText";
 import { BALLOT_PROMPT_TEXT_ES } from "./ballotPromptTextEs";
 import type { Language } from "./i18n";
@@ -59,6 +59,7 @@ export function generatePrompt(
   zip: string,
   today: Date = new Date(),
   language: Language = "en",
+  ballotData?: BallotData,
 ): string {
   const nextElection = findNextElection(stateData.elections, today);
   const { registration, earlyVoting, votingRules, resources, stateName } =
@@ -155,9 +156,21 @@ export function generatePrompt(
       : "Not required";
 
   // Label getters
+  // Phase 3: enrich with districts if available
+  let districtSuffix = "";
+  if (ballotData?.districts) {
+    const parts: string[] = [];
+    if (ballotData.districts.county) parts.push(ballotData.districts.county);
+    if (ballotData.districts.congressionalDistrict)
+      parts.push(`CD-${ballotData.districts.congressionalDistrict}`);
+    if (ballotData.districts.stateSenateDistrict)
+      parts.push(`SD-${ballotData.districts.stateSenateDistrict}`);
+    if (parts.length > 0) districtSuffix = ` (${parts.join(", ")})`;
+  }
+
   const greeting =
     typeof tr.contextGreeting === "function"
-      ? tr.contextGreeting(stateName, zip)
+      ? tr.contextGreeting(stateName, zip + districtSuffix)
       : `Hi! I'm voting in **${stateName}**. My zip code is **${zip}**.`;
   const intro =
     typeof tr.contextIntro === "string"
@@ -188,6 +201,35 @@ export function generatePrompt(
       ? tr.contextClosing
       : "Help me with my ballot.";
 
+  // Phase 3: polling place + ballot contests blocks
+  let pollingPlaceBlock = "";
+  if (ballotData?.pollingLocation) {
+    const pollingPlaceLabel =
+      typeof tr.contextPollingPlace === "string"
+        ? tr.contextPollingPlace
+        : "My polling place";
+    pollingPlaceBlock = `- **${pollingPlaceLabel}:** ${ballotData.pollingLocation.name}, ${ballotData.pollingLocation.address}`;
+    if (ballotData.pollingLocation.hours) {
+      pollingPlaceBlock += ` (${ballotData.pollingLocation.hours})`;
+    }
+    pollingPlaceBlock += "\n";
+  }
+
+  let ballotContestsBlock = "";
+  if (ballotData?.ballotContests && ballotData.ballotContests.length > 0) {
+    const ballotContestsLabel =
+      typeof tr.contextBallotContests === "string"
+        ? tr.contextBallotContests
+        : "Races on my ballot";
+    const contestList = ballotData.ballotContests
+      .map((c) => {
+        const candidateNames = c.candidates.map((cand) => cand.name).join(", ");
+        return `${c.office}: ${candidateNames}`;
+      })
+      .join("; ");
+    ballotContestsBlock = `- **${ballotContestsLabel}:** ${contestList}\n`;
+  }
+
   const contextBlock =
     `${greeting}\n\n` +
     `${intro}\n` +
@@ -196,6 +238,8 @@ export function generatePrompt(
     `- **${evLabel}:** ${earlyVotingBlock}\n` +
     `- **${voterIdLabel}:** ${voterIdBlock}\n` +
     `- **${phonesLabel}:** ${votingRules.phonesAtPollsDetail}\n` +
+    pollingPlaceBlock +
+    ballotContestsBlock +
     `- **${sampleBallotLabel}:** ${resources.sampleBallotLookup}\n` +
     `- **${countyLabel}:** ${resources.countyElectionLookup}\n\n` +
     `${closing}`;

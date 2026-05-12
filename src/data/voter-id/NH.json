@@ -1,0 +1,20 @@
+{
+  "state": "NH",
+  "voterIdRequired": true,
+  "idType": "non-strict-photo",
+  "acceptedIds": [
+    "New Hampshire driver's license",
+    "New Hampshire non-driver ID",
+    "US passport or passport card",
+    "USID card (military or government photo ID)",
+    "NH student ID with photo",
+    "NH voter ID card (issued free by town/city clerk)"
+  ],
+  "exceptions": "Voters without qualifying ID may sign an affidavit of identity and vote. They will be photographed unless they object for religious reasons.",
+  "provisionalBallot": false,
+  "provisionalBallotRules": "New Hampshire does not use provisional ballots in the federal sense; challengers may challenge voters at the polls.",
+  "phonesAtPolls": false,
+  "phonesAtPollsDetail": "Cell phone use is prohibited inside polling places.",
+  "sourceUrl": "https://www.sos.nh.gov/elections/voters/voter-id-law",
+  "lastVerified": "2026-04-03"
+}

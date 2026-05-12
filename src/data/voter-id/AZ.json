@@ -1,0 +1,20 @@
+{
+  "state": "AZ",
+  "voterIdRequired": true,
+  "idType": "strict-photo",
+  "acceptedIds": [
+    "Arizona driver's license or non-operating ID",
+    "US passport or passport card",
+    "US military ID",
+    "Tribal enrollment card or other tribal ID",
+    "Valid federal, state, or local government photo ID",
+    "Arizona Voter Registration Card with photo"
+  ],
+  "exceptions": "Voters without photo ID may show two non-photo documents with name and address (utility bill, bank statement, government check, paycheck). Without any ID, voters cast a provisional ballot.",
+  "provisionalBallot": true,
+  "provisionalBallotRules": "Voters without ID can cast a provisional ballot and provide ID by the 5th business day after the election.",
+  "phonesAtPolls": false,
+  "phonesAtPollsDetail": "Arizona prohibits use of devices capable of recording audio/video within 75 feet of a polling place entrance.",
+  "sourceUrl": "https://azsos.gov/elections/voting-election/voters-frequently-asked-questions",
+  "lastVerified": "2026-04-03"
+}

@@ -1,0 +1,17 @@
+{
+  "state": "NY",
+  "voterIdRequired": false,
+  "idType": "non-strict-non-photo",
+  "acceptedIds": [
+    "NY driver's license or non-driver ID",
+    "US passport",
+    "Utility bill, bank statement, government check, paycheck, or other government document showing name and address"
+  ],
+  "exceptions": "First-time voters who registered by mail and did not provide ID verification may need to show ID. All others may state their name and address.",
+  "provisionalBallot": true,
+  "provisionalBallotRules": "Affidavit ballots are available for voters whose registration cannot be confirmed; counted after eligibility verification.",
+  "phonesAtPolls": false,
+  "phonesAtPollsDetail": "Photographing ballots or using phones to influence how others vote is prohibited.",
+  "sourceUrl": "https://elections.ny.gov/voter-id-requirements",
+  "lastVerified": "2026-04-03"
+}

@@ -1,0 +1,17 @@
+{
+  "state": "NM",
+  "voterIdRequired": false,
+  "idType": "non-strict-non-photo",
+  "acceptedIds": [
+    "Any document showing name and address",
+    "Voter registration card",
+    "Utility bill, bank statement, government check, paycheck"
+  ],
+  "exceptions": "Voters who cannot produce ID may state their name and address and sign the poll book.",
+  "provisionalBallot": true,
+  "provisionalBallotRules": "Voters whose eligibility cannot be confirmed cast a provisional ballot, counted after eligibility is confirmed.",
+  "phonesAtPolls": false,
+  "phonesAtPollsDetail": "Photography inside voting booths is prohibited. Phone use is generally discouraged.",
+  "sourceUrl": "https://www.sos.nm.gov/voters/voter-id-requirements/",
+  "lastVerified": "2026-04-03"
+}

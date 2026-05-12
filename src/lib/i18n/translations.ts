@@ -112,6 +112,36 @@ export const translations = {
     contextVoterIdRequired: (ids: string) => `Required. Accepted IDs: ${ids}`,
     contextVoterIdNA: "Not required",
     contextElectionTypePrimary: (type: string) => `${type} primary`,
+    // Phase 3: Real ballot data
+    loadingElectionData: "Loading election data...",
+    pollingLocation: "Polling Location",
+    pollingLocationNotAvailable: "Polling location not available",
+    ballotContests: "Ballot Contests",
+    ballotContestsEmpty: "No ballot contests available",
+    candidateDetail: "Candidate Details",
+    viewVotingRecord: "View voting record",
+    loadingCandidateInfo: "Loading candidate info...",
+    votingRecord: "Voting Record",
+    topDonors: "Top Donors",
+    endorsements: "Endorsements",
+    apiPartialError:
+      "Some election data is temporarily unavailable. The information shown is current.",
+    apiFullError:
+      "We're having trouble loading live election data. Here's what we know about voting in your state. Visit your state election office for current dates and deadlines.",
+    dataAttribution:
+      "Election data from Google Civic Information and live web search via Anthropic.",
+    verifyAt: "Verify at",
+    lastUpdated: "Updated",
+    districts: "Your Districts",
+    county: "County",
+    congressionalDistrict: "Congressional District",
+    stateSenateDistrict: "State Senate District",
+    stateHouseDistrict: "State House District",
+    // Context block (Phase 3 additions)
+    contextDistricts: (county: string, cd: string) => `(${county}, ${cd})`,
+    contextPollingPlace: "My polling place",
+    contextBallotContests: "Races on my ballot",
+    contextVoterIdVerify: "Verify current requirements at",
   },
   es: {
     // Hero
@@ -224,6 +254,36 @@ export const translations = {
     contextVoterIdRequired: (ids: string) => `Requerida. [${ids}]`,
     contextVoterIdNA: "No requerida",
     contextElectionTypePrimary: (type: string) => `primaria (${type})`,
+    // Phase 3: Real ballot data
+    loadingElectionData: "Cargando datos electorales...",
+    pollingLocation: "Lugar de Votación",
+    pollingLocationNotAvailable: "Lugar de votación no disponible",
+    ballotContests: "Contiendas en la Boleta",
+    ballotContestsEmpty: "No hay contiendas disponibles",
+    candidateDetail: "Detalles del Candidato",
+    viewVotingRecord: "Ver historial de votación",
+    loadingCandidateInfo: "Cargando información del candidato...",
+    votingRecord: "Historial de Votación",
+    topDonors: "Principales Donantes",
+    endorsements: "Endorsos",
+    apiPartialError:
+      "Algunos datos electorales no están disponibles temporalmente. La información mostrada está actualizada.",
+    apiFullError:
+      "Tenemos problemas para cargar los datos electorales en vivo. Aquí está lo que sabemos sobre votar en tu estado. Visita la oficina electoral de tu estado para fechas y plazos actuales.",
+    dataAttribution:
+      "Datos electorales de Google Civic Information y búsqueda web en vivo via Anthropic.",
+    verifyAt: "Verifica en",
+    lastUpdated: "Actualizado",
+    districts: "Tus Distritos",
+    county: "Condado",
+    congressionalDistrict: "Distrito Congresional",
+    stateSenateDistrict: "Distrito del Senado Estatal",
+    stateHouseDistrict: "Distrito de la Cámara Estatal",
+    // Context block (Phase 3 additions)
+    contextDistricts: (county: string, cd: string) => `(${county}, ${cd})`,
+    contextPollingPlace: "Mi lugar de votación",
+    contextBallotContests: "Contiendas en mi boleta",
+    contextVoterIdVerify: "Verifica los requisitos actuales en",
   },
 } as const;
 

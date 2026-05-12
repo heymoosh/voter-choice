@@ -1,0 +1,20 @@
+{
+  "state": "GA",
+  "voterIdRequired": true,
+  "idType": "strict-photo",
+  "acceptedIds": [
+    "Georgia driver's license (even if expired)",
+    "ID card from Georgia Department of Driver Services",
+    "US passport",
+    "Georgia voter ID card (free from registrar's office)",
+    "US military ID with photo",
+    "Tribal photo ID"
+  ],
+  "exceptions": "Voters without acceptable ID can cast a provisional ballot. They have up to 3 days after the election to provide ID or sign an affidavit.",
+  "provisionalBallot": true,
+  "provisionalBallotRules": "Voters must provide acceptable ID or sign an affidavit within 3 business days after the election.",
+  "phonesAtPolls": false,
+  "phonesAtPollsDetail": "Georgia prohibits use of mobile devices to photograph or record ballots or voters inside polling places.",
+  "sourceUrl": "https://sos.ga.gov/page/georgia-photo-id-requirements",
+  "lastVerified": "2026-04-03"
+}

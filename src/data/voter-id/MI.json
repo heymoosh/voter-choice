@@ -1,0 +1,20 @@
+{
+  "state": "MI",
+  "voterIdRequired": false,
+  "idType": "non-strict-photo",
+  "acceptedIds": [
+    "Michigan driver's license",
+    "Michigan state ID",
+    "US passport",
+    "Military ID",
+    "Student ID with photo",
+    "Tribal ID"
+  ],
+  "exceptions": "Voters without photo ID can sign an affidavit affirming their identity. Since 2023, all registered Michigan voters may vote without showing ID by signing the affidavit.",
+  "provisionalBallot": true,
+  "provisionalBallotRules": "Provisional ballots are available for voters whose registration cannot be confirmed.",
+  "phonesAtPolls": false,
+  "phonesAtPollsDetail": "Michigan prohibits photographing or recording ballots. General phone use is discouraged inside polling areas.",
+  "sourceUrl": "https://mvic.sos.state.mi.us/Voter/Index",
+  "lastVerified": "2026-04-03"
+}

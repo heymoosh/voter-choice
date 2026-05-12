@@ -1,0 +1,20 @@
+{
+  "state": "PA",
+  "voterIdRequired": false,
+  "idType": "non-strict-non-photo",
+  "acceptedIds": [
+    "Pennsylvania driver's license",
+    "Non-driver photo ID",
+    "US passport",
+    "Military ID",
+    "Employee ID with photo",
+    "Student ID with photo"
+  ],
+  "exceptions": "ID is only required for first-time voters in a jurisdiction who registered by mail. Returning voters simply sign next to their name in the poll book.",
+  "provisionalBallot": true,
+  "provisionalBallotRules": "Voters who cannot present required ID cast a provisional ballot; they may present ID or sign a declaration within 6 days.",
+  "phonesAtPolls": false,
+  "phonesAtPollsDetail": "Pennsylvania prohibits use of mobile devices to photograph or record ballots.",
+  "sourceUrl": "https://www.vote.pa.gov/Register-to-Vote/Pages/Voter-ID-for-First-Time-Voters.aspx",
+  "lastVerified": "2026-04-03"
+}

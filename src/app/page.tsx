@@ -8,59 +8,94 @@ import { PromptOutput } from "@/components/PromptOutput";
 import { TipsSection } from "@/components/TipsSection";
 import { Footer } from "@/components/Footer";
 import { LanguageToggle } from "@/components/LanguageToggle";
-import { lookupState } from "@/lib/lookupState";
-import { getStateData } from "@/lib/getStateData";
 import { generatePrompt } from "@/lib/generatePrompt";
 import { useLanguage, tStr } from "@/lib/i18n";
-import type { StateData } from "@/lib/types";
-
-type PageState =
-  | { status: "idle" }
-  | { status: "multi-state"; stateCodes: string[]; zip: string }
-  | { status: "result"; stateData: StateData; zip: string }
-  | { status: "not-found"; zip: string };
+import type { BallotData, DataStatus } from "@/lib/types";
 
 export default function Home() {
-  const [pageState, setPageState] = useState<PageState>({ status: "idle" });
+  const [pageState, setPageState] = useState<DataStatus>({ status: "idle" });
   const { language } = useLanguage();
 
-  function handleZipSubmit(zip: string) {
-    const stateCodes = lookupState(zip);
+  async function handleZipSubmit(zip: string) {
+    setPageState({ status: "loading", zip });
 
-    if (!stateCodes) {
+    try {
+      const res = await fetch(
+        `/api/ballot-data?zip=${encodeURIComponent(zip)}`,
+      );
+      if (!res.ok) {
+        if (res.status === 404) {
+          setPageState({ status: "not-found", zip });
+          return;
+        }
+        throw new Error(`HTTP ${res.status}`);
+      }
+      const data = (await res.json()) as BallotData & {
+        multiState?: boolean;
+        stateCodes?: string[];
+        error?: string;
+      };
+
+      if (data.error === "ZIP code not found") {
+        setPageState({ status: "not-found", zip });
+        return;
+      }
+
+      if (data.multiState && data.stateCodes) {
+        setPageState({
+          status: "multi-state",
+          stateCodes: data.stateCodes,
+          zip,
+        });
+        return;
+      }
+
+      setPageState({ status: "result", ballotData: data as BallotData, zip });
+    } catch {
       setPageState({ status: "not-found", zip });
-      return;
-    }
-
-    if (stateCodes.length > 1) {
-      setPageState({ status: "multi-state", stateCodes, zip });
-      return;
-    }
-
-    resolveState(zip, stateCodes[0]);
-  }
-
-  function handleStateSelect(stateCode: string) {
-    if (pageState.status === "multi-state") {
-      resolveState(pageState.zip, stateCode);
     }
   }
 
-  function resolveState(zip: string, stateCode: string) {
-    const stateData = getStateData(stateCode);
+  async function handleStateSelect(stateCode: string) {
+    if (pageState.status !== "multi-state") return;
+    const { zip } = pageState;
+    setPageState({ status: "loading", zip });
 
-    if (!stateData) {
+    try {
+      const res = await fetch(
+        `/api/ballot-data?zip=${encodeURIComponent(zip)}&state=${encodeURIComponent(stateCode)}`,
+      );
+      if (!res.ok) {
+        setPageState({ status: "not-found", zip });
+        return;
+      }
+      const data = (await res.json()) as BallotData;
+      setPageState({ status: "result", ballotData: data, zip });
+    } catch {
       setPageState({ status: "not-found", zip });
-      return;
     }
-
-    setPageState({ status: "result", stateData, zip });
   }
 
-  // Regenerate prompt reactively when language changes (no stored prompt in state)
+  // Regenerate prompt reactively when language changes
   const promptText =
     pageState.status === "result"
-      ? generatePrompt(pageState.stateData, pageState.zip, new Date(), language)
+      ? generatePrompt(
+          // Provide a StateData-compatible view for backward compat
+          {
+            stateCode: pageState.ballotData.stateCode,
+            stateName: pageState.ballotData.stateName,
+            lastUpdated: pageState.ballotData.fetchedAt,
+            elections: pageState.ballotData.elections,
+            registration: pageState.ballotData.registration,
+            earlyVoting: pageState.ballotData.earlyVoting,
+            votingRules: pageState.ballotData.votingRules,
+            resources: pageState.ballotData.resources,
+          },
+          pageState.zip,
+          new Date(),
+          language,
+          pageState.ballotData,
+        )
       : "";
 
   const chatbots = [
@@ -69,6 +104,8 @@ export default function Home() {
     { name: "Gemini", url: "https://gemini.google.com" },
     { name: "Grok", url: "https://grok.com" },
   ];
+
+  const isLoading = pageState.status === "loading";
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -113,8 +150,28 @@ export default function Home() {
           <h2 id="zip-section-heading" className="sr-only">
             {tStr(language, "zipLabel")}
           </h2>
-          <ZipForm onSubmit={handleZipSubmit} language={language} />
+          <ZipForm
+            onSubmit={handleZipSubmit}
+            language={language}
+            isLoading={isLoading}
+          />
         </section>
+
+        {/* Loading State */}
+        {pageState.status === "loading" && (
+          <div
+            data-testid="data-loading"
+            role="status"
+            aria-live="polite"
+            className="flex items-center gap-3 text-gray-600"
+          >
+            <div
+              className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"
+              aria-hidden="true"
+            />
+            <span>{tStr(language, "loadingElectionData")}</span>
+          </div>
+        )}
 
         {/* Not Found Message */}
         {pageState.status === "not-found" && (
@@ -156,8 +213,54 @@ export default function Home() {
         {/* Results: State Info + Prompt */}
         {pageState.status === "result" && (
           <>
+            {/* Partial API error banner */}
+            {pageState.ballotData.errors.length > 0 &&
+              !pageState.ballotData.apiFullError && (
+                <div
+                  data-testid="api-partial-error"
+                  role="alert"
+                  className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-yellow-800 text-sm"
+                >
+                  <p>
+                    {tStr(language, "apiPartialError")}{" "}
+                    <a
+                      href={pageState.ballotData.resources.stateElectionWebsite}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="underline"
+                    >
+                      {tStr(language, "stateElectionWebsite")}
+                    </a>
+                    {language === "es"
+                      ? " para más detalles."
+                      : " for complete details."}
+                  </p>
+                </div>
+              )}
+
+            {/* Full API error banner */}
+            {pageState.ballotData.apiFullError && (
+              <div
+                data-testid="api-full-error"
+                role="alert"
+                className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-800 text-sm"
+              >
+                <p>
+                  {tStr(language, "apiFullError")}{" "}
+                  <a
+                    href={pageState.ballotData.resources.stateElectionWebsite}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline"
+                  >
+                    {tStr(language, "stateElectionWebsite")}
+                  </a>
+                </p>
+              </div>
+            )}
+
             <StateInfoCard
-              stateData={pageState.stateData}
+              ballotData={pageState.ballotData}
               language={language}
             />
             <PromptOutput promptText={promptText} language={language} />

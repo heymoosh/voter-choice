@@ -7,9 +7,14 @@ import { tStr } from "@/lib/i18n";
 type ZipFormProps = {
   onSubmit: (zip: string) => void;
   language?: Language;
+  isLoading?: boolean;
 };
 
-export function ZipForm({ onSubmit, language = "en" }: ZipFormProps) {
+export function ZipForm({
+  onSubmit,
+  language = "en",
+  isLoading = false,
+}: ZipFormProps) {
   const [zip, setZip] = useState("");
   const [error, setError] = useState<string | null>(null);
 
@@ -68,14 +73,28 @@ export function ZipForm({ onSubmit, language = "en" }: ZipFormProps) {
             aria-label={tStr(language, "zipInputLabel")}
             aria-describedby={error ? "zip-error" : undefined}
             aria-invalid={error ? "true" : "false"}
-            className="border border-gray-300 rounded-lg px-4 py-3 text-base w-36 focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[44px]"
+            disabled={isLoading}
+            className="border border-gray-300 rounded-lg px-4 py-3 text-base w-36 focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[44px] disabled:opacity-60"
           />
           <button
             data-testid="zip-submit"
             type="submit"
-            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg px-6 py-3 text-base min-h-[44px] min-w-[44px] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+            disabled={isLoading}
+            className="bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-semibold rounded-lg px-6 py-3 text-base min-h-[44px] min-w-[44px] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors flex items-center gap-2"
           >
-            {tStr(language, "zipSubmit")}
+            {isLoading ? (
+              <>
+                <span
+                  className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"
+                  aria-hidden="true"
+                />
+                <span className="sr-only">
+                  {tStr(language, "loadingElectionData")}
+                </span>
+              </>
+            ) : (
+              tStr(language, "zipSubmit")
+            )}
           </button>
         </div>
       </div>

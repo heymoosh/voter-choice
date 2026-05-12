@@ -1,0 +1,23 @@
+{
+  "state": "FL",
+  "voterIdRequired": true,
+  "idType": "strict-photo",
+  "acceptedIds": [
+    "Florida driver's license",
+    "Florida identification card",
+    "US passport",
+    "Debit or credit card with photo",
+    "Military ID",
+    "Student ID",
+    "Retirement center ID",
+    "Neighborhood association ID",
+    "Public assistance ID"
+  ],
+  "exceptions": "If a voter cannot provide photo ID, they may cast a provisional ballot and provide ID to the Supervisor of Elections before the end of the canvassing period.",
+  "provisionalBallot": true,
+  "provisionalBallotRules": "Voter must present qualifying photo ID to the Supervisor of Elections before results are certified.",
+  "phonesAtPolls": false,
+  "phonesAtPollsDetail": "Use of mobile devices for photographing ballots or using them as a guide is prohibited.",
+  "sourceUrl": "https://dos.myflorida.com/elections/for-voters/voting/voter-id-requirements/",
+  "lastVerified": "2026-04-03"
+}
