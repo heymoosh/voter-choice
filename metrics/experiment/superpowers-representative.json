@@ -1,0 +1,175 @@
+{
+  "metadata": {
+    "framework": "superpowers",
+    "selectedAt": "2026-05-12T03:20:42.307Z",
+    "replicatesFound": 3,
+    "replicateIds": [
+      "r1",
+      "r2",
+      "r3"
+    ]
+  },
+  "chosen": "r1",
+  "rationale": "median LOC (1328); replicates span 1075..1470, RSD 12.65%",
+  "noisyMetrics": [
+    {
+      "metric": "duplication.percentage",
+      "rsd": 141.42,
+      "note": "very high variance — flag in FRAMING.md"
+    }
+  ],
+  "varianceByMetric": {
+    "linesOfCode.application.code": {
+      "name": "linesOfCode.application.code",
+      "perReplicate": {
+        "r1": 1328,
+        "r2": 1470,
+        "r3": 1075
+      },
+      "mean": 1291,
+      "stdDev": 163.37,
+      "rsd": 12.65,
+      "minId": "r3",
+      "medianId": "r1",
+      "maxId": "r2"
+    },
+    "linesOfCode.application.files": {
+      "name": "linesOfCode.application.files",
+      "perReplicate": {
+        "r1": 23,
+        "r2": 23,
+        "r3": 20
+      },
+      "mean": 22,
+      "stdDev": 1.41,
+      "rsd": 6.43,
+      "minId": "r3",
+      "medianId": "r1",
+      "maxId": "r2"
+    },
+    "vitest.tests.total": {
+      "name": "vitest.tests.total",
+      "perReplicate": {
+        "r1": 20,
+        "r2": 18,
+        "r3": 24
+      },
+      "mean": 20.67,
+      "stdDev": 2.49,
+      "rsd": 12.07,
+      "minId": "r2",
+      "medianId": "r1",
+      "maxId": "r3"
+    },
+    "vitest.coverage.lines": {
+      "name": "vitest.coverage.lines",
+      "perReplicate": {
+        "r1": 17.34,
+        "r2": 16.06
+      },
+      "mean": 16.7,
+      "stdDev": 0.64,
+      "rsd": 3.83,
+      "minId": "r2",
+      "medianId": "r1",
+      "maxId": "r1"
+    },
+    "playwright.passRate": {
+      "name": "playwright.passRate",
+      "perReplicate": {
+        "r1": 100,
+        "r2": 100,
+        "r3": 100
+      },
+      "mean": 100,
+      "stdDev": 0,
+      "rsd": 0,
+      "minId": "r1",
+      "medianId": "r2",
+      "maxId": "r3"
+    },
+    "eslint.errors": {
+      "name": "eslint.errors",
+      "perReplicate": {
+        "r1": 0,
+        "r2": 0,
+        "r3": 0
+      },
+      "mean": 0,
+      "stdDev": 0,
+      "rsd": null,
+      "minId": "r1",
+      "medianId": "r2",
+      "maxId": "r3"
+    },
+    "eslint.warnings": {
+      "name": "eslint.warnings",
+      "perReplicate": {
+        "r1": 0,
+        "r2": 0,
+        "r3": 0
+      },
+      "mean": 0,
+      "stdDev": 0,
+      "rsd": null,
+      "minId": "r1",
+      "medianId": "r2",
+      "maxId": "r3"
+    },
+    "complexity.average": {
+      "name": "complexity.average",
+      "perReplicate": {
+        "r1": 3.17,
+        "r2": 3.69,
+        "r3": 3.57
+      },
+      "mean": 3.48,
+      "stdDev": 0.22,
+      "rsd": 6.39,
+      "minId": "r1",
+      "medianId": "r3",
+      "maxId": "r2"
+    },
+    "complexity.max": {
+      "name": "complexity.max",
+      "perReplicate": {
+        "r1": 8,
+        "r2": 9,
+        "r3": 9
+      },
+      "mean": 8.67,
+      "stdDev": 0.47,
+      "rsd": 5.44,
+      "minId": "r1",
+      "medianId": "r2",
+      "maxId": "r3"
+    },
+    "duplication.percentage": {
+      "name": "duplication.percentage",
+      "perReplicate": {
+        "r1": 0,
+        "r2": 0,
+        "r3": 1.94
+      },
+      "mean": 0.65,
+      "stdDev": 0.91,
+      "rsd": 141.42,
+      "minId": "r1",
+      "medianId": "r2",
+      "maxId": "r3"
+    },
+    "bundleSize.firstLoadJsShared.size": {
+      "name": "bundleSize.firstLoadJsShared.size",
+      "perReplicate": {
+        "r1": 127,
+        "r2": 127
+      },
+      "mean": 127,
+      "stdDev": 0,
+      "rsd": 0,
+      "minId": "r1",
+      "medianId": "r2",
+      "maxId": "r2"
+    }
+  }
+}
