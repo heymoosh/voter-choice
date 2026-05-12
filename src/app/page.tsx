@@ -13,9 +13,12 @@ import { DataAttribution } from "@/components/DataAttribution";
 import { ChatWindow } from "@/components/ChatWindow";
 import { BallotDownload } from "@/components/BallotDownload";
 import { VoterProfile } from "@/components/VoterProfile";
+import { IssueRanking } from "@/components/IssueRanking";
+import { ConcernDisambiguation } from "@/components/ConcernDisambiguation";
 import type { StateData } from "@/types/state";
 import type { ElectionDataResult } from "@/lib/dataLayer";
 import type { ParsedBallot } from "@/lib/ballotParser";
+import type { RankedIssues, ConfirmedConcerns } from "@/lib/canonicalIssues";
 
 type LoadState = {
   code: string;
@@ -263,6 +266,11 @@ export default function Home() {
   const [generatedProfile, setGeneratedProfile] = useState<string | null>(null);
   const [uploadedProfile, setUploadedProfile] = useState<string | null>(null);
 
+  // Phase 6: Issue ranking + concern disambiguation
+  const [rankedIssues, setRankedIssues] = useState<RankedIssues | null>(null);
+  const [confirmedConcerns, setConfirmedConcerns] =
+    useState<ConfirmedConcerns | null>(null);
+
   const selectedCode = result?.code ?? null;
   const selectedState = useMemo(() => {
     if (!selectedCode) {
@@ -272,7 +280,7 @@ export default function Home() {
     return getStateData(selectedCode);
   }, [selectedCode]);
 
-  // Rebuild prompt when language changes or civic data arrives
+  // Rebuild prompt when language changes, civic data arrives, or phase6 inputs change
   useEffect(() => {
     if (result) {
       const stateData = getStateData(result.code);
@@ -284,12 +292,14 @@ export default function Home() {
           language,
           electionData?.civicData ?? null,
           electionData?.voterIdInfo ?? null,
+          rankedIssues,
+          confirmedConcerns,
         );
         setResult((prev) => (prev ? { ...prev, prompt: newPrompt } : null));
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [language, electionData]);
+  }, [language, electionData, rankedIssues, confirmedConcerns]);
 
   useEffect(() => {
     if (!copyConfirmation) {
@@ -333,6 +343,8 @@ export default function Home() {
             language,
             data.civicData,
             data.voterIdInfo,
+            rankedIssues,
+            confirmedConcerns,
           );
           setResult((prev) =>
             prev ? { ...prev, prompt: enrichedPrompt } : null,
@@ -345,7 +357,7 @@ export default function Home() {
         setCivicLoading(false);
       }
     },
-    [language],
+    [language, rankedIssues, confirmedConcerns],
   );
 
   function loadState(code: string, zip: string) {
@@ -565,6 +577,45 @@ export default function Home() {
             </p>
           ) : null}
 
+          {/* Phase 6: Issue Ranking (shown after election data loads) */}
+          {selectedState && result && (
+            <section
+              className="panel phase6-section"
+              data-testid="issue-ranking-section"
+            >
+              <IssueRanking
+                onRankingComplete={(ranking) => setRankedIssues(ranking)}
+                countyFips={
+                  electionData?.civicData?.county ? undefined : undefined
+                }
+              />
+            </section>
+          )}
+
+          {/* Phase 6: Concern Disambiguation (shown after ranking is done or skipped) */}
+          {selectedState && result && rankedIssues !== null && (
+            <section
+              className="panel phase6-section"
+              data-testid="concern-disambiguation-section"
+            >
+              <ConcernDisambiguation
+                onConcernsConfirmed={(concerns) =>
+                  setConfirmedConcerns(concerns)
+                }
+              />
+            </section>
+          )}
+
+          {/* Phase 6: Privacy disclosure */}
+          {selectedState && result && (
+            <section
+              className="panel phase6-section"
+              data-testid="polis-privacy-section"
+            >
+              <p className="muted small">{t.polisPrivacyDisclosure}</p>
+            </section>
+          )}
+
           {/* Phase 5: Chat window (shown after election data loads) */}
           {selectedState && result && (
             <section className="panel phase5-section">
@@ -573,6 +624,8 @@ export default function Home() {
                 voterProfile={uploadedProfile}
                 onBallotGenerated={(ballot) => setChatBallot(ballot)}
                 onProfileGenerated={(profile) => setGeneratedProfile(profile)}
+                rankedIssues={rankedIssues}
+                confirmedConcerns={confirmedConcerns}
               />
             </section>
           )}

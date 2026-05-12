@@ -4,6 +4,12 @@ import type { CivicElectionInfo } from "@/lib/civic/types";
 import type { VoterIdInfo } from "@/data/voter-id/index";
 import { getBallotPrompt } from "@/lib/i18n/prompts";
 import type { Language } from "@/lib/i18n/translations";
+import {
+  type RankedIssues,
+  type ConfirmedConcerns,
+  getTopIssues,
+  getIssueLabel,
+} from "@/lib/canonicalIssues";
 
 const LOCALE_MAP: Record<Language, string> = {
   en: "en-US",
@@ -460,6 +466,84 @@ function buildCivicContextBlock(
   return lines.join("\n");
 }
 
+/**
+ * Builds the [VOTER VALUES] and [CONCERN_INTERPRETATION] structured blocks
+ * for the copy-paste prompt (Path B) or chat system prompt (Path A).
+ *
+ * @param rankedIssues - from Phase 6 IssueRanking component
+ * @param confirmedConcerns - from Phase 6 ConcernDisambiguation component
+ * @param structured - if true, wraps in block delimiters for copy-paste; if false, plain text for system prompt
+ */
+export function buildVoterValuesBlock(
+  rankedIssues: RankedIssues | null,
+  confirmedConcerns: ConfirmedConcerns | null,
+  structured = false,
+): string {
+  const parts: string[] = [];
+
+  if (
+    rankedIssues &&
+    !rankedIssues.skipped &&
+    rankedIssues.ordered.length > 0
+  ) {
+    const top3 = getTopIssues(rankedIssues);
+    const valuesData = JSON.stringify(
+      {
+        rankedIssues: rankedIssues.ordered.map(getIssueLabel),
+        topPriorities: top3.map(getIssueLabel),
+      },
+      null,
+      2,
+    );
+
+    if (structured) {
+      parts.push(`[VOTER VALUES]\n${valuesData}\n[/VOTER VALUES]`);
+    } else {
+      parts.push(
+        `Voter's ranked issues (top priority first): ${rankedIssues.ordered.map(getIssueLabel).join(", ")}.\nTop 3 priorities: ${top3.map(getIssueLabel).join(", ")}.`,
+      );
+    }
+  }
+
+  if (
+    confirmedConcerns &&
+    !confirmedConcerns.skipped &&
+    (confirmedConcerns.freeText || confirmedConcerns.confirmedIssues.length > 0)
+  ) {
+    const concernData = JSON.stringify(
+      {
+        freeText: confirmedConcerns.freeText,
+        confirmedIssues: confirmedConcerns.confirmedIssues.map(getIssueLabel),
+      },
+      null,
+      2,
+    );
+    const primaryData = JSON.stringify(
+      {
+        primaryIssues: confirmedConcerns.confirmedIssues.map(getIssueLabel),
+        rationale: "User confirmed AI mapping",
+      },
+      null,
+      2,
+    );
+
+    if (structured) {
+      parts.push(
+        `[CONCERN_INTERPRETATION]\n${concernData}\n[/CONCERN_INTERPRETATION]`,
+      );
+      parts.push(
+        `[VOTER CONFIRMED CONCERNS]\n${primaryData}\n[/VOTER CONFIRMED CONCERNS]`,
+      );
+    } else {
+      parts.push(
+        `Voter's specific concerns: ${confirmedConcerns.freeText ?? "(none specified)"}. Confirmed issues: ${confirmedConcerns.confirmedIssues.map(getIssueLabel).join(", ") || "(none)"}`,
+      );
+    }
+  }
+
+  return parts.join("\n\n");
+}
+
 export function buildFullPrompt(
   stateData: StateData,
   zip: string,
@@ -467,9 +551,16 @@ export function buildFullPrompt(
   language: Language = "en",
   civicData?: CivicElectionInfo | null,
   voterIdInfo?: VoterIdInfo | null,
+  rankedIssues?: RankedIssues | null,
+  confirmedConcerns?: ConfirmedConcerns | null,
 ): string {
   const basePrompt = getBallotPrompt(language);
   const openStatesBlock = buildOpenStatesContext(candidateContext);
+  const voterValuesBlock = buildVoterValuesBlock(
+    rankedIssues ?? null,
+    confirmedConcerns ?? null,
+    false, // inline text for chat/system prompt
+  );
 
   // If civic data is available, use it for a richer prompt
   if (civicData) {
@@ -479,7 +570,7 @@ export function buildFullPrompt(
       zip,
       language,
     );
-    return [basePrompt, civicBlock, openStatesBlock]
+    return [basePrompt, civicBlock, openStatesBlock, voterValuesBlock]
       .filter(Boolean)
       .join("\n\n");
   }
@@ -488,6 +579,7 @@ export function buildFullPrompt(
     basePrompt,
     buildContextBlock(stateData, zip, language),
     openStatesBlock,
+    voterValuesBlock,
   ]
     .filter(Boolean)
     .join("\n\n");

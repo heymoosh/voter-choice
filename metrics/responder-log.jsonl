@@ -18,3 +18,9 @@
 {"timestamp":"2026-05-12T00:00:01Z","step":"ce:plan","question":"What would you like to plan?","answer":"Phase 5: LLM Chat Window, Downloadable Ballot, and Voter Profile — per docs/PHASE5_SPEC.md"}
 {"timestamp":"2026-05-12T00:00:02Z","step":"ce:plan","question":"What research level?","answer":"standard — external research on Anthropic SDK streaming patterns warranted given it's a new external API dep"}
 {"timestamp":"2026-05-12T00:00:03Z","step":"ce:plan","question":"Which branch to work on?","answer":"stay on current branch: experiment/compound-engineering-r1"}
+{"timestamp":"2026-05-12T00:00:00","question":"research_level","answer":"standard","rationale":"Phase 6 spec is clear; existing codebase patterns are well-documented in phases 1-5"}
+{"timestamp":"2026-05-12T00:00:00","question":"branch_choice","answer":"stay_on_current","rationale":"Building on experiment/compound-engineering-r1 as instructed"}
+{"timestamp":"2026-05-12T00:00:00","question":"dnd_kit_substitution","answer":"substitute_with_keyboard_arrow_keys","rationale":"Spec allows substitution with justification. Keyboard-first sortable with arrow keys + ARIA satisfies all accessibility requirements without adding @dnd-kit dependency. Avoids complex e2e drag automation. Mouse drag implemented with custom handlers."}
+{"timestamp":"2026-05-12T00:00:00","question":"plan_detail_level","answer":"MORE_standard","rationale":"Phase 6 has 3 distinct features; standard detail level sufficient for clear acceptance criteria"}
+{"timestamp":"2026-05-12T00:00:00","question":"upstash_mock_mode","answer":"graceful_degradation_when_missing_creds","rationale":"Spec requires overlay not to render but ranking to work when Upstash env vars absent"}
+{"timestamp":"2026-05-12T00:00:00","question":"disambiguate_api_mock","answer":"mock_mode_when_api_key_test","rationale":"e2e tests use ANTHROPIC_API_KEY=test; disambiguate-concerns endpoint needs same mock pattern as chat"}

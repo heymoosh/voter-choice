@@ -10,6 +10,8 @@ import {
 } from "@/lib/ballotParser";
 import { AlignmentBanner } from "./AlignmentBanner";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
+import { buildVoterValuesBlock } from "@/lib/promptBuilder";
+import type { RankedIssues, ConfirmedConcerns } from "@/lib/canonicalIssues";
 
 const MAX_MESSAGES = 60;
 
@@ -24,6 +26,8 @@ interface ChatWindowProps {
   voterProfile: string | null;
   onBallotGenerated: (ballot: ParsedBallot) => void;
   onProfileGenerated: (profile: string) => void;
+  rankedIssues?: RankedIssues | null;
+  confirmedConcerns?: ConfirmedConcerns | null;
 }
 
 type BudgetThreshold = "normal" | "warning" | "critical" | "exhausted";
@@ -33,6 +37,8 @@ export function ChatWindow({
   voterProfile,
   onBallotGenerated,
   onProfileGenerated,
+  rankedIssues,
+  confirmedConcerns,
 }: ChatWindowProps) {
   const { t, language } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
@@ -84,6 +90,13 @@ export function ChatWindow({
     let accumulatedText = "";
 
     try {
+      // Build voter values block for system prompt injection
+      const voterValues = buildVoterValuesBlock(
+        rankedIssues ?? null,
+        confirmedConcerns ?? null,
+        false,
+      );
+
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -95,6 +108,7 @@ export function ChatWindow({
           language,
           electionContext,
           voterProfile: voterProfile ?? undefined,
+          voterValues: voterValues || undefined,
         }),
         signal: abortRef.current.signal,
       });
@@ -221,6 +235,8 @@ export function ChatWindow({
     language,
     electionContext,
     voterProfile,
+    rankedIssues,
+    confirmedConcerns,
     onBallotGenerated,
     onProfileGenerated,
   ]);

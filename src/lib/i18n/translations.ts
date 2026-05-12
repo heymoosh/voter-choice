@@ -138,6 +138,28 @@ export interface Translations {
   alignmentWeak: string;
   alignmentExpand: string;
   alignmentCollapse: string;
+
+  // Phase 6: Issue Ranking
+  issueRankingTitle: string;
+  issueRankingSubtitle: string;
+  issueRankSkipButton: string;
+  issueRankConfirmButton: string;
+  issueRankInstructions: string;
+  issueRankTopPriorities: string;
+
+  // Phase 6: Concern Disambiguation
+  concernDisambiguationTitle: string;
+  concernDisambiguationPlaceholder: string;
+  concernDisambiguationSubmit: string;
+  concernMappingTitle: string;
+  concernConfirmButton: string;
+  concernSkipButton: string;
+  concernPrivacyNote: string;
+
+  // Phase 6: Polis Overlay
+  polisOverlayCountyLabel: string;
+  polisOverlayDescription: string;
+  polisPrivacyDisclosure: string;
 }
 
 export const en: Translations = {
@@ -306,6 +328,33 @@ export const en: Translations = {
   alignmentWeak: "Weak alignment",
   alignmentExpand: "Expand breakdown",
   alignmentCollapse: "Collapse",
+
+  // Phase 6: Issue Ranking
+  issueRankingTitle: "What issues matter most to you?",
+  issueRankingSubtitle:
+    "Drag or use arrow keys to rank in order of priority (top = most important).",
+  issueRankSkipButton: "Skip ranking",
+  issueRankConfirmButton: "Confirm my priorities",
+  issueRankInstructions:
+    "Use arrow keys and Space to reorder. Your top 3 will be highlighted.",
+  issueRankTopPriorities: "Your top priorities",
+
+  // Phase 6: Concern Disambiguation
+  concernDisambiguationTitle: "Anything specific you want the AI to know?",
+  concernDisambiguationPlaceholder:
+    "e.g., 'I rent and can't afford housing in my city,' or 'my kid has Type 1 diabetes'",
+  concernDisambiguationSubmit: "Map to issues",
+  concernMappingTitle: "We heard — here's how we mapped your concerns:",
+  concernConfirmButton: "Confirm and continue",
+  concernSkipButton: "Skip this step",
+  concernPrivacyNote:
+    "Your text is sent to our AI to map issues. It is never logged or stored.",
+
+  // Phase 6: Polis Overlay
+  polisOverlayCountyLabel: "Of voters in your county who ranked their issues",
+  polisOverlayDescription: "Anonymous county-level count",
+  polisPrivacyDisclosure:
+    "When you rank an issue, we anonymously add to a county-level count that other voters can see. We never store your zip code, your ranking sequence, or anything else — just '+1 in [county] for [issue].'",
 };
 
 export const es: Translations = {
@@ -476,6 +525,34 @@ export const es: Translations = {
   alignmentWeak: "Alineación débil",
   alignmentExpand: "Ver desglose",
   alignmentCollapse: "Colapsar",
+
+  // Phase 6: Issue Ranking
+  issueRankingTitle: "¿Qué temas te importan más?",
+  issueRankingSubtitle:
+    "Arrastra o usa las teclas de flecha para ordenar por prioridad (arriba = más importante).",
+  issueRankSkipButton: "Omitir clasificación",
+  issueRankConfirmButton: "Confirmar mis prioridades",
+  issueRankInstructions:
+    "Usa las teclas de flecha y Espacio para reordenar. Tus 3 principales se destacarán.",
+  issueRankTopPriorities: "Tus principales prioridades",
+
+  // Phase 6: Concern Disambiguation
+  concernDisambiguationTitle: "¿Algo específico que quieras que sepa la IA?",
+  concernDisambiguationPlaceholder:
+    "por ejemplo, 'Rento y no puedo pagar la vivienda en mi ciudad,' o 'mi hijo tiene diabetes tipo 1'",
+  concernDisambiguationSubmit: "Mapear a temas",
+  concernMappingTitle: "Te escuchamos — así mapeamos tus preocupaciones:",
+  concernConfirmButton: "Confirmar y continuar",
+  concernSkipButton: "Omitir este paso",
+  concernPrivacyNote:
+    "Tu texto se envía a nuestra IA para mapear temas. Nunca se registra ni almacena.",
+
+  // Phase 6: Polis Overlay
+  polisOverlayCountyLabel:
+    "De votantes en tu condado que clasificaron sus temas",
+  polisOverlayDescription: "Conteo anónimo a nivel de condado",
+  polisPrivacyDisclosure:
+    "Cuando clasificas un tema, añadimos anónimamente a un conteo a nivel de condado que otros votantes pueden ver. Nunca almacenamos tu código postal, tu secuencia de clasificación, ni nada más — solo '+1 en [condado] para [tema].'",
 };
 
 export const vi: Translations = {
@@ -643,6 +720,34 @@ export const vi: Translations = {
   alignmentWeak: "Phù hợp yếu",
   alignmentExpand: "Xem chi tiết",
   alignmentCollapse: "Thu gọn",
+
+  // Phase 6: Issue Ranking
+  issueRankingTitle: "Những vấn đề nào quan trọng nhất với bạn?",
+  issueRankingSubtitle:
+    "Kéo hoặc dùng phím mũi tên để sắp xếp theo thứ tự ưu tiên (trên cùng = quan trọng nhất).",
+  issueRankSkipButton: "Bỏ qua xếp hạng",
+  issueRankConfirmButton: "Xác nhận ưu tiên của tôi",
+  issueRankInstructions:
+    "Dùng phím mũi tên và Cách để sắp xếp lại. 3 ưu tiên hàng đầu sẽ được làm nổi bật.",
+  issueRankTopPriorities: "Ưu tiên hàng đầu của bạn",
+
+  // Phase 6: Concern Disambiguation
+  concernDisambiguationTitle: "Có điều gì cụ thể bạn muốn AI biết không?",
+  concernDisambiguationPlaceholder:
+    "ví dụ: 'Tôi thuê nhà và không đủ tiền mua nhà ở thành phố,' hoặc 'con tôi bị tiểu đường tuýp 1'",
+  concernDisambiguationSubmit: "Ánh xạ thành vấn đề",
+  concernMappingTitle:
+    "Chúng tôi đã nghe — đây là cách chúng tôi ánh xạ mối quan tâm của bạn:",
+  concernConfirmButton: "Xác nhận và tiếp tục",
+  concernSkipButton: "Bỏ qua bước này",
+  concernPrivacyNote:
+    "Văn bản của bạn được gửi đến AI để ánh xạ vấn đề. Nó không bao giờ được ghi lại hay lưu trữ.",
+
+  // Phase 6: Polis Overlay
+  polisOverlayCountyLabel: "Trong số cử tri ở quận của bạn đã xếp hạng vấn đề",
+  polisOverlayDescription: "Đếm ẩn danh cấp quận",
+  polisPrivacyDisclosure:
+    "Khi bạn xếp hạng một vấn đề, chúng tôi ẩn danh thêm vào số đếm cấp quận mà các cử tri khác có thể thấy. Chúng tôi không bao giờ lưu trữ mã zip, thứ tự xếp hạng, hoặc bất cứ thứ gì khác — chỉ '+1 ở [quận] cho [vấn đề].'",
 };
 
 export const zh: Translations = {
@@ -799,6 +904,31 @@ export const zh: Translations = {
   alignmentWeak: "契合度低",
   alignmentExpand: "查看详情",
   alignmentCollapse: "收起",
+
+  // Phase 6: Issue Ranking
+  issueRankingTitle: "哪些议题对您最重要？",
+  issueRankingSubtitle: "拖动或使用方向键按优先顺序排列（顶部 = 最重要）。",
+  issueRankSkipButton: "跳过排名",
+  issueRankConfirmButton: "确认我的优先事项",
+  issueRankInstructions: "使用方向键和空格键重新排序。您的前3项将被突出显示。",
+  issueRankTopPriorities: "您的主要优先事项",
+
+  // Phase 6: Concern Disambiguation
+  concernDisambiguationTitle: "有什么具体的事情想让AI知道吗？",
+  concernDisambiguationPlaceholder:
+    '例如："我在租房，在城里买不起房"，或"我的孩子患有1型糖尿病"',
+  concernDisambiguationSubmit: "映射到议题",
+  concernMappingTitle: "我们听到了 — 以下是我们映射您关切的方式：",
+  concernConfirmButton: "确认并继续",
+  concernSkipButton: "跳过此步骤",
+  concernPrivacyNote:
+    "您的文字被发送给我们的AI以映射议题。它永远不会被记录或存储。",
+
+  // Phase 6: Polis Overlay
+  polisOverlayCountyLabel: "在您所在县对议题进行排名的选民中",
+  polisOverlayDescription: "县级匿名计数",
+  polisPrivacyDisclosure:
+    '当您对议题进行排名时，我们会匿名将其添加到其他选民可以看到的县级计数中。我们从不存储您的邮政编码、排名顺序或其他任何内容——只是"[县]中+1个[议题]"。',
 };
 
 export const ar: Translations = {
@@ -963,6 +1093,34 @@ export const ar: Translations = {
   alignmentWeak: "توافق ضعيف",
   alignmentExpand: "عرض التفاصيل",
   alignmentCollapse: "طي",
+
+  // Phase 6: Issue Ranking
+  issueRankingTitle: "ما هي القضايا الأكثر أهمية بالنسبة لك؟",
+  issueRankingSubtitle:
+    "اسحب أو استخدم مفاتيح الأسهم للترتيب حسب الأولوية (الأعلى = الأكثر أهمية).",
+  issueRankSkipButton: "تخطي الترتيب",
+  issueRankConfirmButton: "تأكيد أولوياتي",
+  issueRankInstructions:
+    "استخدم مفاتيح الأسهم والمسافة لإعادة الترتيب. سيتم تمييز أهم 3 أولويات.",
+  issueRankTopPriorities: "أولوياتك الرئيسية",
+
+  // Phase 6: Concern Disambiguation
+  concernDisambiguationTitle:
+    "هل هناك شيء محدد تريد أن يعرفه الذكاء الاصطناعي؟",
+  concernDisambiguationPlaceholder:
+    "مثال: 'أنا أستأجر ولا أستطيع تحمل تكاليف السكن في مدينتي'، أو 'طفلي مصاب بداء السكري من النوع الأول'",
+  concernDisambiguationSubmit: "تعيين إلى قضايا",
+  concernMappingTitle: "سمعنا — إليك كيف رسمنا مخاوفك:",
+  concernConfirmButton: "تأكيد والمتابعة",
+  concernSkipButton: "تخطي هذه الخطوة",
+  concernPrivacyNote:
+    "يُرسل نصك إلى الذكاء الاصطناعي لدينا لتعيين القضايا. لا يُسجَّل أو يُخزَّن أبدًا.",
+
+  // Phase 6: Polis Overlay
+  polisOverlayCountyLabel: "من الناخبين في مقاطعتك ممن رتّبوا قضاياهم",
+  polisOverlayDescription: "عدد مجهول على مستوى المقاطعة",
+  polisPrivacyDisclosure:
+    "عندما تُرتّب قضية، نضيف بشكل مجهول إلى عدد على مستوى المقاطعة يمكن للناخبين الآخرين رؤيته. لا نخزن رمزك البريدي أو تسلسل ترتيبك أو أي شيء آخر — فقط '+1 في [المقاطعة] لـ [القضية].'",
 };
 
 export const translations: Record<Language, Translations> = {
