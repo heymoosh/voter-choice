@@ -100,6 +100,9 @@ export const en: Translations = {
     label: "Language",
     switchToEnglish: "Switch to English",
     switchToSpanish: "Switch to Spanish",
+    switchToVietnamese: "Switch to Vietnamese",
+    switchToChinese: "Switch to Chinese",
+    switchToArabic: "Switch to Arabic",
   },
   liveData: {
     pollingLocation: "Polling Location",

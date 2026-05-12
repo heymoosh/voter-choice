@@ -86,6 +86,9 @@ export interface Translations {
     label: string;
     switchToEnglish: string;
     switchToSpanish: string;
+    switchToVietnamese: string;
+    switchToChinese: string;
+    switchToArabic: string;
   };
   liveData?: {
     pollingLocation?: string;
@@ -106,4 +109,4 @@ export interface Translations {
   };
 }
 
-export type Locale = "en" | "es";
+export type Locale = "en" | "es" | "vi" | "zh" | "ar";

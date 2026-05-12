@@ -484,3 +484,172 @@ test.describe("Phase 3 — Session Cache", () => {
     expect(callCount).toBe(firstCount);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Phase 4 — Language Selector Tests
+// ---------------------------------------------------------------------------
+
+test.describe("Phase 4 — Language Selector Present", () => {
+  test("language selector is present on page load", async ({ page }) => {
+    await page.goto("/");
+    const toggle = page.getByTestId("language-toggle");
+    await expect(toggle).toBeVisible();
+  });
+
+  test("language option testids are present for all 5 languages", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    for (const code of ["en", "es", "vi", "zh", "ar"]) {
+      const opt = page.getByTestId(`language-option-${code}`);
+      await expect(opt).toBeAttached();
+    }
+  });
+});
+
+test.describe("Phase 4 — Language Switching", () => {
+  test("selecting Vietnamese updates html lang attribute", async ({ page }) => {
+    await page.goto("/");
+    // Select Vietnamese via the native select inside the toggle
+    await page.getByTestId("language-toggle").locator("select").selectOption("vi");
+    const lang = await page.evaluate(
+      () => document.documentElement.lang,
+    );
+    expect(lang).toBe("vi");
+  });
+
+  test("selecting Chinese updates html lang attribute", async ({ page }) => {
+    await page.goto("/");
+    await page.getByTestId("language-toggle").locator("select").selectOption("zh");
+    const lang = await page.evaluate(
+      () => document.documentElement.lang,
+    );
+    expect(lang).toBe("zh");
+  });
+
+  test("selecting Arabic sets dir=rtl on html element", async ({ page }) => {
+    await page.goto("/");
+    await page.getByTestId("language-toggle").locator("select").selectOption("ar");
+    const dir = await page.evaluate(
+      () => document.documentElement.dir,
+    );
+    expect(dir).toBe("rtl");
+  });
+
+  test("switching from Arabic back to English reverts dir to ltr", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    await page.getByTestId("language-toggle").locator("select").selectOption("ar");
+    await page.getByTestId("language-toggle").locator("select").selectOption("en");
+    const dir = await page.evaluate(
+      () => document.documentElement.dir,
+    );
+    expect(dir).toBe("ltr");
+  });
+
+  test("switching from Arabic to Spanish reverts dir to ltr", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    await page.getByTestId("language-toggle").locator("select").selectOption("ar");
+    await page.getByTestId("language-toggle").locator("select").selectOption("es");
+    const dir = await page.evaluate(
+      () => document.documentElement.dir,
+    );
+    expect(dir).toBe("ltr");
+  });
+});
+
+test.describe("Phase 4 — Language Persistence", () => {
+  test("language preference persists across page reload", async ({
+    page,
+    context,
+  }) => {
+    await page.goto("/");
+    await page.getByTestId("language-toggle").locator("select").selectOption("vi");
+
+    // Verify lang attribute set
+    const langBefore = await page.evaluate(
+      () => document.documentElement.lang,
+    );
+    expect(langBefore).toBe("vi");
+
+    // Reload page
+    await page.reload();
+
+    // Language should still be Vietnamese
+    const langAfter = await page.evaluate(
+      () => document.documentElement.lang,
+    );
+    // Note: lang updates after React hydration; wait briefly
+    await page.waitForFunction(
+      () => document.documentElement.lang === "vi",
+      { timeout: 5000 },
+    );
+    void context; // suppress unused variable warning
+    void langAfter;
+  });
+});
+
+test.describe("Phase 4 — State Preservation on Language Switch", () => {
+  test("switching language does not clear zip code results", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    await page.getByTestId("zip-input").fill("73301");
+    await page.getByTestId("zip-submit").click();
+
+    // Wait for state info to appear
+    const stateInfo = page.getByTestId("state-info");
+    await expect(stateInfo).toBeVisible({ timeout: 10000 });
+
+    // Switch to Spanish
+    await page.getByTestId("language-toggle").locator("select").selectOption("es");
+
+    // State info should still be visible
+    await expect(stateInfo).toBeVisible();
+    await expect(stateInfo).toContainText(/Texas/i);
+  });
+});
+
+test.describe("Phase 4 — Prompt in Selected Language", () => {
+  test("prompt output contains Vietnamese content when Vietnamese selected", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    await page.getByTestId("language-toggle").locator("select").selectOption("vi");
+    await page.getByTestId("zip-input").fill("73301");
+    await page.getByTestId("zip-submit").click();
+    const promptOutput = page.getByTestId("prompt-output");
+    await expect(promptOutput).toBeVisible({ timeout: 10000 });
+    const text = (await promptOutput.textContent()) ?? "";
+    expect(text).toMatch(/bỏ phiếu|Việt|tháng/i);
+  });
+
+  test("prompt output contains Chinese content when Chinese selected", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    await page.getByTestId("language-toggle").locator("select").selectOption("zh");
+    await page.getByTestId("zip-input").fill("73301");
+    await page.getByTestId("zip-submit").click();
+    const promptOutput = page.getByTestId("prompt-output");
+    await expect(promptOutput).toBeVisible({ timeout: 10000 });
+    const text = (await promptOutput.textContent()) ?? "";
+    expect(text).toMatch(/投票|选票|年/);
+  });
+
+  test("prompt output contains Arabic content when Arabic selected", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    await page.getByTestId("language-toggle").locator("select").selectOption("ar");
+    await page.getByTestId("zip-input").fill("73301");
+    await page.getByTestId("zip-submit").click();
+    const promptOutput = page.getByTestId("prompt-output");
+    await expect(promptOutput).toBeVisible({ timeout: 10000 });
+    const text = (await promptOutput.textContent()) ?? "";
+    expect(text).toMatch(/اقتراع|الانتخابات|ناخب/);
+  });
+});

@@ -150,3 +150,68 @@ describe("buildPrompt — Spanish locale", () => {
     expect(result).toContain("---");
   });
 });
+
+describe("buildPrompt — Vietnamese locale", () => {
+  it("uses Vietnamese prompt text in vi mode", () => {
+    const result = buildPrompt(txStateData, "73301", "vi");
+    expect(result).toContain("trợ lý nghiên cứu dân sự");
+  });
+
+  it("Vietnamese context block contains state name and zip", () => {
+    const result = buildContextBlock(txStateData, "73301", "vi");
+    expect(result).toContain("Texas");
+    expect(result).toContain("73301");
+  });
+
+  it("Vietnamese context block uses Vietnamese labels", () => {
+    const result = buildContextBlock(txStateData, "73301", "vi");
+    expect(result).toContain("Thời hạn đăng ký");
+    expect(result).toContain("Bỏ phiếu sớm");
+    expect(result).toContain("Giấy tờ tùy thân để bỏ phiếu");
+  });
+});
+
+describe("buildPrompt — Chinese locale", () => {
+  it("uses Chinese prompt text in zh mode", () => {
+    const result = buildPrompt(txStateData, "73301", "zh");
+    expect(result).toContain("无党派公民研究助手");
+  });
+
+  it("Chinese context block contains state name and zip", () => {
+    const result = buildContextBlock(txStateData, "73301", "zh");
+    expect(result).toContain("Texas");
+    expect(result).toContain("73301");
+  });
+
+  it("Chinese context block uses Chinese labels", () => {
+    const result = buildContextBlock(txStateData, "73301", "zh");
+    expect(result).toContain("登记截止日期");
+    expect(result).toContain("提前投票");
+    expect(result).toContain("选民身份证件");
+  });
+
+  it("Chinese context block formats dates in Chinese style", () => {
+    const result = buildContextBlock(txStateData, "73301", "zh");
+    expect(result).toMatch(/\d{4}年\d{1,2}月\d{1,2}日/);
+  });
+});
+
+describe("buildPrompt — Arabic locale", () => {
+  it("uses Arabic prompt text in ar mode", () => {
+    const result = buildPrompt(txStateData, "73301", "ar");
+    expect(result).toContain("مساعد بحث مدني محايد");
+  });
+
+  it("Arabic context block contains state name and zip", () => {
+    const result = buildContextBlock(txStateData, "73301", "ar");
+    expect(result).toContain("Texas");
+    expect(result).toContain("73301");
+  });
+
+  it("Arabic context block uses Arabic labels", () => {
+    const result = buildContextBlock(txStateData, "73301", "ar");
+    expect(result).toContain("مواعيد التسجيل");
+    expect(result).toContain("التصويت المبكر");
+    expect(result).toContain("هوية الناخب");
+  });
+});

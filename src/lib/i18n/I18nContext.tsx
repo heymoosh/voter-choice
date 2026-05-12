@@ -11,10 +11,15 @@ import React, {
 import type { Locale, Translations } from "./types";
 import { en } from "./en";
 import { es } from "./es";
+import { vi } from "./vi";
+import { zh } from "./zh";
+import { ar } from "./ar";
 
 const STORAGE_KEY = "voter-choice-language";
 
-const DICTIONARIES: Record<Locale, Translations> = { en, es };
+const DICTIONARIES: Record<Locale, Translations> = { en, es, vi, zh, ar };
+
+const VALID_LOCALES: Locale[] = ["en", "es", "vi", "zh", "ar"];
 
 interface I18nContextValue {
   locale: Locale;
@@ -39,8 +44,8 @@ export function I18nProvider({ children }: I18nProviderProps) {
   useEffect(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored === "en" || stored === "es") {
-        setLocaleState(stored);
+      if (stored && VALID_LOCALES.includes(stored as Locale)) {
+        setLocaleState(stored as Locale);
       }
     } catch {
       // localStorage unavailable — stay with default "en"
