@@ -116,13 +116,15 @@ Expected: a clear "we don't have data for this race" message. If a generic error
 
 | Step                                               | Result | Notes |
 | -------------------------------------------------- | ------ | ----- |
-| 1. DB tables non-empty                             | ✅ PASS | bills:65,696 votes:5,416,530 candidates:7,382 issue_tags:growing (batch tagging in progress) donor_aggregates:1,146 (federal FEC bulk, 2024+2026 cycles) |
+| 1. DB tables non-empty                             | ✅ PASS | bills:65,696 votes:5,416,530 candidates:7,382 issue_tags:39,688 (54% bill coverage, all 7 batches done) donor_aggregates:1,146 (federal FEC bulk, 2024+2026 cycles, 94% of federal candidates) |
 | 2. Alignment API returns found/not-found correctly | ✅ PASS | found:true for Aicha Davis TX-house property_taxes (1 contributing vote returned); found:false for fictional candidate |
 | 3. Chat uses `lookup_alignment`, not `web_search`  | ✅ PASS | Browser session confirmed: Arrington TX-19 healthcare query triggered lookup_alignment (12/28 votes returned, 34/47 key votes shown). No 400 error. tool_use input fix verified live on 2026-05-12. |
 | 4. 50 tag samples reviewed, no systematic errors   | ✅ PASS | 50 samples audited via `_audit-tags.ts`; canonical_issue accurate, stance_lens correct, no systematic errors. Coverage growing as tag-bills runs. |
 | 5. Wyoming empty state renders correctly           | ✅ PASS | /api/alignment returns found:false with clear unavailable.reason for unknown candidates |
 
 **Notes:**
-- `donor_aggregates=1,146`: populated from FEC bulk weball files (2024+2026 cycles) matching candidates by name. Industry breakdown not yet populated (requires FEC API key for `/schedule_e` data). State donor data (FollowTheMoney) still 0 — FTM API key not configured. Not a launch blocker — donor patterns display gracefully with available data.
-- `issue_tags` growing: tag-bills running continuously; alignment scoring already functional with partial tag coverage. Full tag coverage expected within hours.
-- `candidate_count=7,382`: state candidates from OpenStates dump. Federal candidates (629) from GovTrack ingest.
+- `issue_tags=39,688` (54% bill coverage): All 7 Anthropic Batch API collections complete (64,802 bills submitted, ~54% resulted in at least one canonical issue tag). Remaining 46% returned empty arrays (no relevant issue) or malformed JSON — both handled gracefully (bills simply don't contribute to alignment scores).
+- `donor_aggregates=1,146`: 94% of federal candidates covered via FEC bulk weball files (2024+2026 cycles). State donor data = 0 — FTM API key not configured. Requires manual step: register at followthemoney.org, set `FOLLOWTHEMONEY_API_KEY` in Vercel secrets, then run `state-donors.ts`. Not a launch blocker.
+- `candidate_count=7,382`: 6,753 state candidates from OpenStates pgdump + 629 federal from GovTrack ingest.
+- `ingest-states.yml` cron failing: OpenStates API hit 250/day free limit during initial pgdump load (today). Will reset by Sunday. If using free tier key, may hit limit again on heavy run weeks. Consider upgrading to OpenStates paid plan for production.
+- FEC donor industry breakdown not populated: requires FEC API calls per-candidate (`/schedule_e`). Current data is aggregate totals only. Alignment scoring works without this.
