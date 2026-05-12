@@ -41,9 +41,16 @@ if [[ ! -d "$CLAUDE_DIR" ]]; then
   exit 2
 fi
 
-if [[ ! -d "$CLAUDE_DIR/sessions" || -z "$(ls -A "$CLAUDE_DIR/sessions" 2>/dev/null)" ]]; then
-  echo "validate-container-claude-subscription: ~/.claude/sessions/ is empty or absent" >&2
+# Auth is stored in ~/.claude.json (oauthAccount.access_token), not in ~/.claude/sessions/.
+CLAUDE_JSON="$HOME/.claude.json"
+if [[ ! -f "$CLAUDE_JSON" ]]; then
+  echo "validate-container-claude-subscription: ~/.claude.json not found" >&2
   echo "  Log in to Claude Code on the host first." >&2
+  exit 2
+fi
+if ! python3 -c "import json,sys; d=json.load(open('$CLAUDE_JSON')); oa=d.get('oauthAccount',{}); sys.exit(0 if oa.get('access_token') else 1)" 2>/dev/null; then
+  echo "validate-container-claude-subscription: ~/.claude.json has no oauthAccount.access_token" >&2
+  echo "  Subscription session may have expired. Re-authenticate with Claude Code on the host." >&2
   exit 2
 fi
 
