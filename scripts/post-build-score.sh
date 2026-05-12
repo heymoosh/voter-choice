@@ -76,7 +76,13 @@ if [[ -f "$workflow_file" ]]; then
   cp "$workflow_file" "$branch_metrics_dir/workflow-log.jsonl"
 fi
 
-node "$repo/scoring/measure.mjs" \
+# Use the scoring scripts from THIS script's own repo (the orchestration/main
+# worktree), NOT from the workflow branch. The workflow branch inherits scoring/
+# from main but may be behind the latest integration changes; the orchestration
+# worktree always has the current versions.
+SCORING_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+
+node "$SCORING_ROOT/scoring/measure.mjs" \
   --repo "$repo" \
   --phase "$phase" \
   --branch "$branch" \
@@ -84,6 +90,6 @@ node "$repo/scoring/measure.mjs" \
   --workflow-log "$workflow_file"
 
 if [[ "$phase" -ge 2 ]]; then
-  node "$repo/scoring/diff-hygiene.mjs" --repo "$repo" --branch "$branch" --phase "$phase" >/dev/null
-  node "$repo/scoring/compute-deltas.mjs" --repo "$repo" --branch "$branch" --phase "$phase" >/dev/null
+  node "$SCORING_ROOT/scoring/diff-hygiene.mjs" --repo "$repo" --branch "$branch" --phase "$phase" >/dev/null
+  node "$SCORING_ROOT/scoring/compute-deltas.mjs" --repo "$repo" --branch "$branch" --phase "$phase" >/dev/null
 fi

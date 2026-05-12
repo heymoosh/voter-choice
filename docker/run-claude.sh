@@ -173,7 +173,11 @@ docker run "${DOCKER_TTY_FLAGS[@]+"${DOCKER_TTY_FLAGS[@]}"}" --rm \
 
 if [[ "$DRY_RUN" -eq 0 ]]; then
   if [[ -f "$RUN_OUTPUT_DIR/timing.jsonl" ]]; then
-    bash "$WORKTREE_PATH/scripts/post-build-score.sh" \
+    # Always use the scoring scripts from this script's own repo (the orchestration
+    # worktree), not from the workflow branch. This ensures the latest measure.mjs
+    # integrations (acceptance, nfr, etc.) are applied even when the workflow branch
+    # is behind the orchestration branch.
+    bash "$REPO_DIR/scripts/post-build-score.sh" \
       --repo "$WORKTREE_PATH" \
       --run-dir "$RUN_OUTPUT_DIR" \
       --branch "$(git -C "$WORKTREE_PATH" branch --show-current 2>/dev/null || echo "")"
