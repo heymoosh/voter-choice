@@ -30,10 +30,7 @@ import { pathToFileURL } from "node:url";
 import { sql } from "drizzle-orm";
 import { requireDb, type DbClient } from "../../db/client";
 import { candidates, donorAggregates } from "../../db/schema";
-import {
-  mapEmployerToBucket,
-  type DonorBucketLabel,
-} from "./_bucket-mapping";
+import { mapEmployerToBucket, type DonorBucketLabel } from "./_bucket-mapping";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -51,34 +48,34 @@ const INTER_CHUNK_DELAY_MS = 1000;
 const FTM_INDUSTRY_BUCKET_MAP: Record<string, DonorBucketLabel> = {
   // Real estate
   "Real Estate": "Real estate & development",
-  "Construction": "Real estate & development",
+  Construction: "Real estate & development",
   // Energy
   "Oil & Gas": "Oil, gas & energy",
   "Energy & Natural Resources": "Oil, gas & energy",
-  "Mining": "Oil, gas & energy",
-  "Utilities": "Telecom & utilities",
-  "Telecommunications": "Telecom & utilities",
+  Mining: "Oil, gas & energy",
+  Utilities: "Telecom & utilities",
+  Telecommunications: "Telecom & utilities",
   // Healthcare
-  "Health": "Healthcare industry",
+  Health: "Healthcare industry",
   "Health Professionals": "Healthcare industry",
   "Hospitals & Nursing Homes": "Healthcare industry",
   "Pharmaceuticals/Health Products": "Pharmaceutical & medical device",
   // Finance
   "Finance, Insurance & Real Estate": "Finance, banking & insurance",
-  "Finance": "Finance, banking & insurance",
-  "Insurance": "Finance, banking & insurance",
+  Finance: "Finance, banking & insurance",
+  Insurance: "Finance, banking & insurance",
   "Securities & Investment": "Finance, banking & insurance",
   "Commercial Banks": "Finance, banking & insurance",
   // Technology
   "Electronics, Technology & Communications": "Technology",
   "Computer Equipment & Services": "Technology",
-  "Internet": "Technology",
+  Internet: "Technology",
   // Legal
   "Lawyers & Lobbyists": "Legal industry",
   "Lawyers/Law Firms": "Legal industry",
   // Agriculture
-  "Agriculture": "Agriculture",
-  "Livestock": "Agriculture",
+  Agriculture: "Agriculture",
+  Livestock: "Agriculture",
   "Crop Production & Basic Processing": "Agriculture",
   // Retail & Hospitality
   "Food & Beverage": "Retail & hospitality",
@@ -86,7 +83,7 @@ const FTM_INDUSTRY_BUCKET_MAP: Record<string, DonorBucketLabel> = {
   "Lodging & Tourism": "Retail & hospitality",
   "Restaurants & Drinking Establishments": "Retail & hospitality",
   // Labor unions — FTM groups labor broadly
-  "Labor": "Trade unions (non-public-safety)",
+  Labor: "Trade unions (non-public-safety)",
   "Public Sector Unions": "Education employees",
   "Building Trade Unions": "Trade unions (non-public-safety)",
   "Industrial Unions": "Trade unions (non-public-safety)",
@@ -147,7 +144,9 @@ export function resolveConfig(
   return {
     ftmApiKey: env.FOLLOWTHEMONEY_API_KEY || undefined,
     electionCycles: [String(currentCycle), String(priorCycle)],
-    limit: parseLimitFlag(argv) ?? parsePositiveInteger(env.DONOR_LIMIT, DEFAULT_LIMIT),
+    limit:
+      parseLimitFlag(argv) ??
+      parsePositiveInteger(env.DONOR_LIMIT, DEFAULT_LIMIT),
     ftmBaseUrl: trimTrailingSlash(env.FTM_BASE_URL ?? FTM_BASE_URL),
   };
 }
@@ -181,9 +180,7 @@ async function fetchFtmJson(
  * Extract the FTM candidate ID from our candidates row.
  * FTM IDs may be stored in raw_metadata.followthemoney.candidate_id.
  */
-export function extractFtmCandidateId(
-  candidate: UnknownRecord,
-): string | null {
+export function extractFtmCandidateId(candidate: UnknownRecord): string | null {
   const raw = asRecord(candidate.rawMetadata ?? candidate.raw_metadata);
   const ftm = asRecord(raw?.followthemoney);
   const fromMeta = getString(ftm, "candidate_id");
@@ -199,7 +196,9 @@ export function extractFtmCandidateId(
 /**
  * Extract a two-letter state code from a jurisdiction string like "state-TX-house".
  */
-export function extractStateFromJurisdiction(jurisdiction: string): string | null {
+export function extractStateFromJurisdiction(
+  jurisdiction: string,
+): string | null {
   const match = /^state-([A-Z]{2})-/u.exec(jurisdiction);
   return match ? match[1] : null;
 }
@@ -220,7 +219,7 @@ export async function fetchFtmIndustryBuckets(
   fetcher: Fetcher,
   ftmCandidateId?: string,
 ): Promise<Map<DonorBucketLabel, number>> {
-  const url = new URL(`${config.ftmBaseUrl}/api/`);
+  const url = new URL(`${config.ftmBaseUrl}/`);
   url.searchParams.set("mode", "summary");
   url.searchParams.set("gro", "d-industry");
   url.searchParams.set("t", "industry");
@@ -305,7 +304,8 @@ export async function buildDonorRows(
   fetcher: Fetcher,
 ): Promise<DonorAggregateRow[]> {
   const candidateId = getString(candidate, "id");
-  const candidateName = getString(candidate, "fullName") ?? getString(candidate, "full_name") ?? "";
+  const candidateName =
+    getString(candidate, "fullName") ?? getString(candidate, "full_name") ?? "";
   const jurisdiction = getString(candidate, "jurisdiction") ?? "";
   if (!candidateId || !candidateName) return [];
 
@@ -328,7 +328,7 @@ export async function buildDonorRows(
 
       if (buckets.size === 0) continue;
 
-      const sourceUrl = `${config.ftmBaseUrl}/api/?mode=summary&gro=d-industry&t=industry&y=${cycle}&s=${state}`;
+      const sourceUrl = `${config.ftmBaseUrl}/?mode=summary&gro=d-industry&t=industry&y=${cycle}&s=${state}`;
 
       for (const [label, amount] of buckets) {
         if (amount <= 0) continue;
@@ -436,7 +436,9 @@ export async function ingestStateDonors({
     .limit(config.limit);
 
   counts.candidatesQueried = stateCandidates.length;
-  console.log(`[state-donors] found ${stateCandidates.length} state candidates`);
+  console.log(
+    `[state-donors] found ${stateCandidates.length} state candidates`,
+  );
 
   const chunks = chunkArray(stateCandidates as UnknownRecord[], CHUNK_SIZE);
 
