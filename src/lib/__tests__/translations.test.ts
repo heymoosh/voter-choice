@@ -1,5 +1,13 @@
 import { describe, it, expect } from "vitest";
-import { en, es, vi, zh, ar, getTranslation, interpolate } from "../translations";
+import {
+  en,
+  es,
+  vi,
+  zh,
+  ar,
+  getTranslation,
+  interpolate,
+} from "../translations";
 import type { Language, Translations } from "../translations";
 
 const allLanguages: [Language, Translations][] = [
@@ -28,7 +36,10 @@ describe("translations — all values are non-empty strings", () => {
         expect(typeof value, `${lang}.${key} should be a string`).toBe(
           "string",
         );
-        expect(value.length, `${lang}.${key} should not be empty`).toBeGreaterThan(0);
+        expect(
+          value.length,
+          `${lang}.${key} should not be empty`,
+        ).toBeGreaterThan(0);
       }
     });
   }
@@ -54,7 +65,9 @@ describe("getTranslation", () => {
   });
 
   it("returns Arabic for lang=ar", () => {
-    expect(getTranslation("ar", "zipSubmitButton")).toBe("ابحث عن ورقة اقتراعي");
+    expect(getTranslation("ar", "zipSubmitButton")).toBe(
+      "ابحث عن ورقة اقتراعي",
+    );
   });
 
   it("returns English error messages", () => {

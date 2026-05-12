@@ -125,7 +125,9 @@ describe("buildPrompt", () => {
     // Arabic context block greeting
     expect(prompt).toContain("مرحباً");
     // Arabic month name should appear
-    expect(prompt).toMatch(/يناير|فبراير|مارس|أبريل|مايو|يونيو|يوليو|أغسطس|سبتمبر|أكتوبر|نوفمبر|ديسمبر/);
+    expect(prompt).toMatch(
+      /يناير|فبراير|مارس|أبريل|مايو|يونيو|يوليو|أغسطس|سبتمبر|أكتوبر|نوفمبر|ديسمبر/,
+    );
     // State name still present
     expect(prompt).toContain("Texas");
   });

@@ -504,7 +504,7 @@ export const vi: Translations = {
 
   // Tips section
   tipsSectionHeading: "Mẹo sử dụng câu lệnh của bạn hiệu quả",
-  tip1Heading: "Nói \"Tôi không biết\" bất cứ lúc nào",
+  tip1Heading: 'Nói "Tôi không biết" bất cứ lúc nào',
   tip1Body:
     "AI sẽ giải thích thêm và giúp bạn tìm ra lập trường của mình — bạn không bị kiểm tra.",
   tip2Heading: "Yêu cầu nghiên cứu",
@@ -541,7 +541,8 @@ export const vi: Translations = {
   dataAttribution:
     "Dữ liệu bầu cử từ Google Civic Information và tìm kiếm web trực tiếp qua Anthropic.",
   dataUpdated: "Cập nhật",
-  voterIdVerifyNote: "Xác minh yêu cầu hiện tại tại văn phòng bầu cử tiểu bang của bạn.",
+  voterIdVerifyNote:
+    "Xác minh yêu cầu hiện tại tại văn phòng bầu cử tiểu bang của bạn.",
 };
 
 export const zh: Translations = {
@@ -556,8 +557,7 @@ export const zh: Translations = {
   heroHeadlineHighlight: "几分钟搞定。",
   heroSubtitle:
     "输入你的邮政编码，获取个性化的 AI 选票研究提示词。粘贴到任意免费 AI 聊天机器人，获取对你选票上每个选举和议题的无党派解读。",
-  heroSubtitleNote:
-    "无需账户。不存储数据。适用于任何 AI 聊天机器人。",
+  heroSubtitleNote: "无需账户。不存储数据。适用于任何 AI 聊天机器人。",
   heroChatbotsLabel: "支持的 AI 聊天机器人",
 
   // Chatbot descriptions
@@ -599,8 +599,7 @@ export const zh: Translations = {
   receivedNote: "必须在此日期前收到",
   earlyVotingHeading: "提前投票",
   earlyVotingNotAvailable: "不可用",
-  earlyVotingFallback:
-    "提前投票不可用。缺席投票可能可用。",
+  earlyVotingFallback: "提前投票不可用。缺席投票可能可用。",
   votingRulesHeading: "投票规则",
   photoIdLabel: "照片身份证件：",
   photoIdRequired: "必须出示",
@@ -621,8 +620,7 @@ export const zh: Translations = {
   deadlineLabel1Day: "还剩 1 天",
 
   // State selector
-  stateSelectorPrompt:
-    "此邮政编码跨越多个州。你在哪个州投票？",
+  stateSelectorPrompt: "此邮政编码跨越多个州。你在哪个州投票？",
   stateSelectorButton: "我在 {state} 投票",
 
   // Prompt output
@@ -635,28 +633,22 @@ export const zh: Translations = {
   copyButton: "复制到剪贴板",
   copyButtonCopied: "已复制！",
   copyConfirmation: "✓ 已复制到剪贴板！",
-  copyFallback:
-    "剪贴板不可用。文本已选中 — 按 Ctrl+C / Cmd+C 复制。",
-  promptTextAreaLabel:
-    "选票研究提示词 — 只读，请使用上方复制按钮",
+  copyFallback: "剪贴板不可用。文本已选中 — 按 Ctrl+C / Cmd+C 复制。",
+  promptTextAreaLabel: "选票研究提示词 — 只读，请使用上方复制按钮",
 
   // Tips section
   tipsSectionHeading: "有效使用提示词的技巧",
-  tip1Heading: "随时说"我不知道"",
-  tip1Body:
-    "AI 会进一步解释并帮助你找到立场 — 这不是测试。",
+  tip1Heading: '随时说"我不知道"',
+  tip1Body: "AI 会进一步解释并帮助你找到立场 — 这不是测试。",
   tip2Heading: "让它研究问题",
   tip2Body:
     '"能查一下这位候选人的投票记录吗？" 或 "谁在资助这项投票提案？" — 它会深入研究。',
   tip3Heading: "提问",
-  tip3Body:
-    '"这个职位实际上做什么？" 或 "为什么这很重要？" — 没有问题太基础。',
+  tip3Body: '"这个职位实际上做什么？" 或 "为什么这很重要？" — 没有问题太基础。',
   tip4Heading: "打印你的摘要",
-  tip4Body:
-    "许多州禁止在投票站使用手机。去之前打印或写下你的选择。",
+  tip4Body: "许多州禁止在投票站使用手机。去之前打印或写下你的选择。",
   tip5Heading: "AI 可能出错",
-  tip5Body:
-    "这是研究的起点。AI 会链接官方来源，方便你核实重要信息。",
+  tip5Body: "这是研究的起点。AI 会链接官方来源，方便你核实重要信息。",
 
   // Footer
   footerCredit:
@@ -672,8 +664,7 @@ export const zh: Translations = {
   viewVotingRecord: "查看投票记录",
   candidateLoading: "正在加载候选人信息...",
   electionDataLoading: "正在加载选举数据...",
-  apiPartialError:
-    "部分选举数据暂时不可用。显示的信息是最新的。请访问你的",
+  apiPartialError: "部分选举数据暂时不可用。显示的信息是最新的。请访问你的",
   apiFullError:
     "加载实时选举数据时遇到问题。以下是我们了解到的关于在你所在州投票的信息。请访问你的州选举办公室获取当前日期和截止日期。",
   dataAttribution:
@@ -694,8 +685,7 @@ export const ar: Translations = {
   heroHeadlineHighlight: "في دقائق.",
   heroSubtitle:
     "أدخل رمزك البريدي للحصول على موجّه بحث انتخابي مخصص بالذكاء الاصطناعي. الصقه في أي روبوت دردشة ذكاء اصطناعي مجاني واحصل على شرح غير حزبي لكل سباق وقضية في ورقة اقتراعك.",
-  heroSubtitleNote:
-    "لا حاجة لحساب. لا تخزين للبيانات. يعمل مع أي روبوت دردشة.",
+  heroSubtitleNote: "لا حاجة لحساب. لا تخزين للبيانات. يعمل مع أي روبوت دردشة.",
   heroChatbotsLabel: "روبوتات الدردشة المدعومة",
 
   // Chatbot descriptions
@@ -773,14 +763,13 @@ export const ar: Translations = {
   copyButton: "نسخ إلى الحافظة",
   copyButtonCopied: "تم النسخ!",
   copyConfirmation: "✓ تم النسخ إلى الحافظة!",
-  copyFallback:
-    "الحافظة غير متاحة. النص محدد — اضغط Ctrl+C / Cmd+C للنسخ.",
+  copyFallback: "الحافظة غير متاحة. النص محدد — اضغط Ctrl+C / Cmd+C للنسخ.",
   promptTextAreaLabel:
     "موجّه البحث الانتخابي — للقراءة فقط، استخدم زر النسخ أعلاه",
 
   // Tips section
   tipsSectionHeading: "نصائح لاستخدام موجّهك بفعالية",
-  tip1Heading: "قل \"لا أعرف\" في أي وقت",
+  tip1Heading: 'قل "لا أعرف" في أي وقت',
   tip1Body:
     "سيشرح الذكاء الاصطناعي أكثر ويساعدك في تحديد موقفك — لا أحد يختبرك.",
   tip2Heading: "اطلب منه البحث",
