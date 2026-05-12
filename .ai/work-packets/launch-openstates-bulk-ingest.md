@@ -1,6 +1,6 @@
 # Work Packet: launch-openstates-bulk-ingest
 
-Status: ready
+Status: Phase A-C complete — 50 states ingested (6,649 candidates / 65,059 bills / 5,161,356 votes in Neon). Phase D (tag-bills) blocked on ANTHROPIC_VOTER_API. Phase E (smoke checklist) pending Phase D.
 Owner: orchestrator
 Source: User — bypass OpenStates API 429 limits using the May 2026 postgres dump
 Branch: launch/production
