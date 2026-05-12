@@ -164,6 +164,57 @@ export interface T {
   ctxDistricts: string; // "My districts:"
   ctxPollingPlace: string; // "My polling place:"
   ctxBallotContests: string; // "My ballot includes:"
+
+  // Phase 5: Chat window
+  chatCtaLabel: string; // "Research My Ballot with AI"
+  chatCtaSubtitle: string; // "Chat on-site with Claude Sonnet"
+  chatWindowTitle: string; // "AI Ballot Research"
+  chatPrivacyNotice: string; // Pre-session privacy warning
+  chatInputPlaceholder: string; // "Type your message…"
+  chatSendLabel: string; // "Send"
+  chatBudgetWarning: string; // 70-90% budget notice
+  chatBudgetCritical: string; // 90-100% budget notice
+  chatBudgetExhausted: string; // 100% budget message
+  chatSessionLimitMsg: string; // 60-message limit message
+  chatRateLimitMsg: string; // Rate limit message
+  chatErrorMsg: string; // Generic error
+
+  // Phase 5: Downloadable ballot
+  downloadBallotBtn: string; // "Download My Ballot"
+  ballotPreviewTitle: string; // "Your Ballot"
+  ballotPasteLabel: string; // "Paste AI ballot output"
+  ballotPastePlaceholder: string; // "Paste the MY BALLOT section…"
+  ballotPasteBtn: string; // "Build Ballot"
+  ballotParseError: string; // parse failure message
+  ballotManualEntryLabel: string; // "Enter choices manually"
+  ballotManualRaceLabel: string; // "Race name"
+  ballotManualPickLabel: string; // "Your choice"
+  ballotManualAddRow: string; // "Add race"
+  ballotManualBuildBtn: string; // "Build My Ballot"
+  ballotPrivacyNote: string; // Disclaimer
+  ballotSectionTitle: string; // "Build My Ballot"
+  ballotPathBTitle: string; // "Paste from External Chatbot"
+
+  // Phase 5: Voter profile
+  downloadProfileBtn: string; // "Download My Voter Profile"
+  uploadProfileLabel: string; // "Returning voter? Upload your voter profile"
+  uploadProfileBtn: string; // "Upload Profile"
+  profileConfirmTitle: string; // "Profile loaded"
+  profileConfirmNote: string; // "Your profile is used for this session only"
+  profileSaveNote: string; // "Save this file before the next election"
+  profileTooLarge: string; // "File too large (max 10KB)"
+  profileWrongType: string; // "Only .txt files are accepted"
+
+  // Phase 5: Alignment banner
+  alignmentLabel: string; // "Alignment:"
+  alignmentStrong: string; // "Strong alignment"
+  alignmentMixed: string; // "Mixed alignment"
+  alignmentWeak: string; // "Weak alignment"
+  alignmentExpandBtn: string; // "Expand breakdown"
+  alignmentCollapseBtn: string; // "Collapse"
+  alignmentParseError: string; // graceful degradation message
+  alignmentOverallLabel: string; // "Overall:"
+  alignmentIssueLabel: string; // "Issues breakdown"
 }
 
 // ---- English translations --------------------------------------------------
@@ -318,6 +369,70 @@ const en: T = {
   ctxDistricts: "My districts:",
   ctxPollingPlace: "My polling place:",
   ctxBallotContests: "My ballot includes:",
+
+  // Phase 5: Chat
+  chatCtaLabel: "Research My Ballot with AI",
+  chatCtaSubtitle: "Chat on-site with Claude Sonnet — free",
+  chatWindowTitle: "AI Ballot Research",
+  chatPrivacyNotice:
+    "Your conversation stays in your browser only — we don't store it. If you close or refresh this page, your conversation will be lost. Download your ballot and voter profile before leaving.",
+  chatInputPlaceholder: "Type your message…",
+  chatSendLabel: "Send",
+  chatBudgetWarning:
+    "Free AI chat may be limited later this month. You can always use the copy-paste option.",
+  chatBudgetCritical:
+    "Free AI chat is running low this month. Consider using the copy-paste option for an uninterrupted experience.",
+  chatBudgetExhausted:
+    "Our free AI chat has reached its monthly limit. You can still research your ballot — copy the prompt below and paste it into any free AI chatbot (Claude, ChatGPT, Gemini, Grok).",
+  chatSessionLimitMsg:
+    "You've reached the 60-message session limit. To keep this tool free for everyone, we limit sessions per day. You can continue by copying the prompt below.",
+  chatRateLimitMsg:
+    "To keep this tool free for everyone, we limit sessions per day. You can continue your research by copying the prompt below.",
+  chatErrorMsg:
+    "Something went wrong. Please try again or use the copy-paste option.",
+
+  // Phase 5: Ballot
+  downloadBallotBtn: "Download My Ballot",
+  ballotPreviewTitle: "Your Ballot",
+  ballotPasteLabel: "Paste AI ballot output (Path B)",
+  ballotPastePlaceholder:
+    "Paste the MY BALLOT section from your AI conversation…",
+  ballotPasteBtn: "Build Ballot from Paste",
+  ballotParseError:
+    "We couldn't read that format. Try copying just the 'MY BALLOT' section from your AI conversation, or enter your choices manually below.",
+  ballotManualEntryLabel: "Enter choices manually",
+  ballotManualRaceLabel: "Race / office name",
+  ballotManualPickLabel: "Your choice",
+  ballotManualAddRow: "Add another race",
+  ballotManualBuildBtn: "Build My Ballot",
+  ballotPrivacyNote:
+    "This is your personal reference, not an official ballot. Verify all information at your state election office.",
+  ballotSectionTitle: "Build My Ballot",
+  ballotPathBTitle: "Paste from External Chatbot",
+
+  // Phase 5: Voter profile
+  downloadProfileBtn: "Download My Voter Profile",
+  uploadProfileLabel: "Returning voter? Upload your voter profile",
+  uploadProfileBtn: "Upload Profile",
+  profileConfirmTitle: "Profile loaded from previous session",
+  profileConfirmNote:
+    "Your profile is used for this session only and is not stored on our servers.",
+  profileSaveNote:
+    "Save this file somewhere you'll find it before the next election. When you come back, upload it so you don't have to start from scratch.",
+  profileTooLarge: "File too large. Maximum size is 10KB.",
+  profileWrongType: "Only .txt files are accepted.",
+
+  // Phase 5: Alignment
+  alignmentLabel: "Alignment:",
+  alignmentStrong: "Strong alignment",
+  alignmentMixed: "Mixed alignment",
+  alignmentWeak: "Weak alignment",
+  alignmentExpandBtn: "Expand breakdown",
+  alignmentCollapseBtn: "Collapse",
+  alignmentParseError:
+    "Alignment scores couldn't be generated for this response — try asking the AI to score the candidates again.",
+  alignmentOverallLabel: "Overall:",
+  alignmentIssueLabel: "Issues breakdown",
 };
 
 // ---- Spanish translations --------------------------------------------------
@@ -475,6 +590,70 @@ const es: T = {
   ctxDistricts: "Mis distritos:",
   ctxPollingPlace: "Mi lugar de votación:",
   ctxBallotContests: "Mi boleta incluye:",
+
+  // Phase 5: Chat
+  chatCtaLabel: "Investiga mi boleta con IA",
+  chatCtaSubtitle: "Chatea en el sitio con Claude Sonnet — gratis",
+  chatWindowTitle: "Investigación de Boleta con IA",
+  chatPrivacyNotice:
+    "Tu conversación permanece solo en tu navegador — no la almacenamos. Si cierras o recargas esta página, tu conversación se perderá. Descarga tu boleta y perfil de votante antes de salir.",
+  chatInputPlaceholder: "Escribe tu mensaje…",
+  chatSendLabel: "Enviar",
+  chatBudgetWarning:
+    "El chat de IA gratuito puede limitarse más adelante este mes. Siempre puedes usar la opción de copiar y pegar.",
+  chatBudgetCritical:
+    "El chat de IA gratuito se está agotando este mes. Considera usar la opción de copiar y pegar para una experiencia ininterrumpida.",
+  chatBudgetExhausted:
+    "Nuestro chat de IA gratuito ha alcanzado su límite mensual. Aún puedes investigar tu boleta — copia el prompt a continuación y pégalo en cualquier chatbot de IA gratuito.",
+  chatSessionLimitMsg:
+    "Has alcanzado el límite de 60 mensajes por sesión. Puedes continuar copiando el prompt a continuación.",
+  chatRateLimitMsg:
+    "Para mantener esta herramienta gratuita para todos, limitamos las sesiones por día. Puedes continuar tu investigación copiando el prompt a continuación.",
+  chatErrorMsg:
+    "Algo salió mal. Por favor intenta de nuevo o usa la opción de copiar y pegar.",
+
+  // Phase 5: Ballot
+  downloadBallotBtn: "Descargar mi boleta",
+  ballotPreviewTitle: "Tu Boleta",
+  ballotPasteLabel: "Pega el resultado de IA (Ruta B)",
+  ballotPastePlaceholder:
+    "Pega la sección MI BOLETA de tu conversación con IA…",
+  ballotPasteBtn: "Construir boleta desde pegado",
+  ballotParseError:
+    "No pudimos leer ese formato. Intenta copiar solo la sección 'MI BOLETA' de tu conversación con IA, o ingresa tus opciones manualmente.",
+  ballotManualEntryLabel: "Ingresar opciones manualmente",
+  ballotManualRaceLabel: "Nombre del cargo / candidatura",
+  ballotManualPickLabel: "Tu elección",
+  ballotManualAddRow: "Agregar otro cargo",
+  ballotManualBuildBtn: "Construir mi boleta",
+  ballotPrivacyNote:
+    "Esta es tu referencia personal, no una boleta oficial. Verifica toda la información en la oficina electoral de tu estado.",
+  ballotSectionTitle: "Construir mi boleta",
+  ballotPathBTitle: "Pegar desde chatbot externo",
+
+  // Phase 5: Voter profile
+  downloadProfileBtn: "Descargar mi perfil de votante",
+  uploadProfileLabel: "¿Votante que regresa? Sube tu perfil de votante",
+  uploadProfileBtn: "Subir perfil",
+  profileConfirmTitle: "Perfil cargado de sesión anterior",
+  profileConfirmNote:
+    "Tu perfil se usa solo para esta sesión y no se almacena en nuestros servidores.",
+  profileSaveNote:
+    "Guarda este archivo donde puedas encontrarlo antes de las próximas elecciones.",
+  profileTooLarge: "Archivo demasiado grande. El tamaño máximo es 10KB.",
+  profileWrongType: "Solo se aceptan archivos .txt.",
+
+  // Phase 5: Alignment
+  alignmentLabel: "Alineación:",
+  alignmentStrong: "Alineación fuerte",
+  alignmentMixed: "Alineación mixta",
+  alignmentWeak: "Alineación débil",
+  alignmentExpandBtn: "Ver desglose",
+  alignmentCollapseBtn: "Colapsar",
+  alignmentParseError:
+    "No se pudieron generar puntuaciones de alineación — intenta pedirle a la IA que evalúe a los candidatos nuevamente.",
+  alignmentOverallLabel: "Total:",
+  alignmentIssueLabel: "Desglose por temas",
 };
 
 // ---- Vietnamese translations ------------------------------------------------
@@ -631,6 +810,69 @@ const vi: T = {
   ctxDistricts: "Các khu vực của tôi:",
   ctxPollingPlace: "Địa điểm bỏ phiếu của tôi:",
   ctxBallotContests: "Lá phiếu của tôi bao gồm:",
+
+  // Phase 5: Chat
+  chatCtaLabel: "Nghiên cứu lá phiếu của tôi với AI",
+  chatCtaSubtitle: "Chat trực tiếp với Claude Sonnet — miễn phí",
+  chatWindowTitle: "Nghiên cứu lá phiếu bằng AI",
+  chatPrivacyNotice:
+    "Cuộc trò chuyện của bạn chỉ lưu trên trình duyệt — chúng tôi không lưu trữ. Nếu đóng hoặc tải lại trang, cuộc trò chuyện sẽ mất. Hãy tải xuống phiếu bầu và hồ sơ cử tri trước khi rời trang.",
+  chatInputPlaceholder: "Nhập tin nhắn…",
+  chatSendLabel: "Gửi",
+  chatBudgetWarning:
+    "Chat AI miễn phí có thể bị hạn chế sau này trong tháng. Bạn luôn có thể sử dụng tùy chọn sao chép-dán.",
+  chatBudgetCritical:
+    "Chat AI miễn phí đang cạn dần trong tháng này. Hãy xem xét sử dụng tùy chọn sao chép-dán.",
+  chatBudgetExhausted:
+    "Chat AI miễn phí đã đạt giới hạn tháng. Bạn vẫn có thể nghiên cứu phiếu bầu — sao chép prompt bên dưới và dán vào bất kỳ chatbot AI nào.",
+  chatSessionLimitMsg:
+    "Bạn đã đạt giới hạn 60 tin nhắn mỗi phiên. Bạn có thể tiếp tục bằng cách sao chép prompt bên dưới.",
+  chatRateLimitMsg:
+    "Để giữ công cụ này miễn phí cho mọi người, chúng tôi giới hạn số phiên mỗi ngày. Bạn có thể tiếp tục bằng cách sao chép prompt bên dưới.",
+  chatErrorMsg:
+    "Đã xảy ra lỗi. Vui lòng thử lại hoặc sử dụng tùy chọn sao chép-dán.",
+
+  // Phase 5: Ballot
+  downloadBallotBtn: "Tải xuống phiếu bầu của tôi",
+  ballotPreviewTitle: "Phiếu Bầu Của Bạn",
+  ballotPasteLabel: "Dán kết quả AI (Đường dẫn B)",
+  ballotPastePlaceholder: "Dán phần MY BALLOT từ cuộc trò chuyện AI của bạn…",
+  ballotPasteBtn: "Xây dựng phiếu bầu từ dán",
+  ballotParseError:
+    "Chúng tôi không thể đọc định dạng đó. Hãy thử sao chép chỉ phần 'MY BALLOT' hoặc nhập thủ công.",
+  ballotManualEntryLabel: "Nhập lựa chọn thủ công",
+  ballotManualRaceLabel: "Tên cuộc đua / chức vụ",
+  ballotManualPickLabel: "Lựa chọn của bạn",
+  ballotManualAddRow: "Thêm cuộc đua khác",
+  ballotManualBuildBtn: "Xây dựng phiếu bầu của tôi",
+  ballotPrivacyNote:
+    "Đây là tài liệu tham khảo cá nhân, không phải phiếu bầu chính thức. Hãy xác minh thông tin tại văn phòng bầu cử tiểu bang.",
+  ballotSectionTitle: "Xây dựng phiếu bầu của tôi",
+  ballotPathBTitle: "Dán từ chatbot bên ngoài",
+
+  // Phase 5: Voter profile
+  downloadProfileBtn: "Tải xuống hồ sơ cử tri của tôi",
+  uploadProfileLabel: "Cử tri quay lại? Tải lên hồ sơ cử tri của bạn",
+  uploadProfileBtn: "Tải lên hồ sơ",
+  profileConfirmTitle: "Hồ sơ được tải từ phiên trước",
+  profileConfirmNote:
+    "Hồ sơ của bạn chỉ được sử dụng cho phiên này và không được lưu trữ trên máy chủ của chúng tôi.",
+  profileSaveNote:
+    "Lưu tệp này trước cuộc bầu cử tiếp theo để không phải bắt đầu lại từ đầu.",
+  profileTooLarge: "Tệp quá lớn. Kích thước tối đa là 10KB.",
+  profileWrongType: "Chỉ chấp nhận tệp .txt.",
+
+  // Phase 5: Alignment
+  alignmentLabel: "Tương thích:",
+  alignmentStrong: "Tương thích cao",
+  alignmentMixed: "Tương thích hỗn hợp",
+  alignmentWeak: "Tương thích thấp",
+  alignmentExpandBtn: "Xem chi tiết",
+  alignmentCollapseBtn: "Thu gọn",
+  alignmentParseError:
+    "Không thể tạo điểm tương thích — hãy yêu cầu AI đánh giá lại các ứng viên.",
+  alignmentOverallLabel: "Tổng thể:",
+  alignmentIssueLabel: "Phân tích theo vấn đề",
 };
 
 // ---- Chinese (Simplified Mandarin) translations ----------------------------
@@ -782,6 +1024,66 @@ const zh: T = {
   ctxDistricts: "我的选区：",
   ctxPollingPlace: "我的投票地点：",
   ctxBallotContests: "我的选票包括：",
+
+  // Phase 5: Chat
+  chatCtaLabel: "用AI研究我的选票",
+  chatCtaSubtitle: "与Claude Sonnet在线聊天 — 免费",
+  chatWindowTitle: "AI选票研究",
+  chatPrivacyNotice:
+    "您的对话仅保存在浏览器中——我们不存储它。如果您关闭或刷新页面，对话将丢失。离开前请下载您的选票和选民档案。",
+  chatInputPlaceholder: "输入您的消息…",
+  chatSendLabel: "发送",
+  chatBudgetWarning:
+    "本月晚些时候免费AI聊天可能会受限。您随时可以使用复制粘贴选项。",
+  chatBudgetCritical:
+    "本月免费AI聊天余额不足。建议使用复制粘贴选项以获得不间断体验。",
+  chatBudgetExhausted:
+    "我们的免费AI聊天已达到本月限额。您仍然可以研究选票——复制下方的提示并粘贴到任何免费AI聊天机器人中。",
+  chatSessionLimitMsg:
+    "您已达到每次会话60条消息的限制。您可以通过复制下方提示继续。",
+  chatRateLimitMsg:
+    "为了让所有人都能免费使用此工具，我们限制每天的会话次数。您可以通过复制下方提示继续研究。",
+  chatErrorMsg: "出现问题。请重试或使用复制粘贴选项。",
+
+  // Phase 5: Ballot
+  downloadBallotBtn: "下载我的选票",
+  ballotPreviewTitle: "您的选票",
+  ballotPasteLabel: "粘贴AI选票输出（路径B）",
+  ballotPastePlaceholder: "从AI对话中粘贴MY BALLOT部分…",
+  ballotPasteBtn: "从粘贴构建选票",
+  ballotParseError:
+    "我们无法读取该格式。请尝试仅复制AI对话中的'MY BALLOT'部分，或手动输入您的选择。",
+  ballotManualEntryLabel: "手动输入选择",
+  ballotManualRaceLabel: "竞选/职位名称",
+  ballotManualPickLabel: "您的选择",
+  ballotManualAddRow: "添加另一个竞选",
+  ballotManualBuildBtn: "构建我的选票",
+  ballotPrivacyNote:
+    "这是您的个人参考，不是官方选票。请在州选举办公室核实所有信息。",
+  ballotSectionTitle: "构建我的选票",
+  ballotPathBTitle: "从外部聊天机器人粘贴",
+
+  // Phase 5: Voter profile
+  downloadProfileBtn: "下载我的选民档案",
+  uploadProfileLabel: "回访选民？上传您的选民档案",
+  uploadProfileBtn: "上传档案",
+  profileConfirmTitle: "已从上次会话加载档案",
+  profileConfirmNote: "您的档案仅用于本次会话，不会存储在我们的服务器上。",
+  profileSaveNote:
+    "请将此文件保存在下次选举前能找到的地方，这样您就不必从头开始。",
+  profileTooLarge: "文件太大。最大大小为10KB。",
+  profileWrongType: "只接受.txt文件。",
+
+  // Phase 5: Alignment
+  alignmentLabel: "契合度：",
+  alignmentStrong: "高度契合",
+  alignmentMixed: "中等契合",
+  alignmentWeak: "低度契合",
+  alignmentExpandBtn: "展开详情",
+  alignmentCollapseBtn: "收起",
+  alignmentParseError: "无法为此回复生成契合度分数——请尝试让AI重新评分候选人。",
+  alignmentOverallLabel: "总体：",
+  alignmentIssueLabel: "按议题分析",
 };
 
 // ---- Arabic translations ---------------------------------------------------
@@ -935,6 +1237,67 @@ const ar: T = {
   ctxDistricts: "مناطقي الانتخابية:",
   ctxPollingPlace: "مركز اقتراعي:",
   ctxBallotContests: "تتضمن ورقة اقتراعي:",
+
+  // Phase 5: Chat
+  chatCtaLabel: "ابحث في ورقة اقتراعي بالذكاء الاصطناعي",
+  chatCtaSubtitle: "تحدث مباشرة مع Claude Sonnet — مجاناً",
+  chatWindowTitle: "بحث ورقة الاقتراع بالذكاء الاصطناعي",
+  chatPrivacyNotice:
+    "تبقى محادثتك في متصفحك فقط — لا نخزّنها. إذا أغلقت الصفحة أو أعدت تحميلها، ستُفقد المحادثة. نزّل ورقة اقتراعك وملف الناخب قبل المغادرة.",
+  chatInputPlaceholder: "اكتب رسالتك…",
+  chatSendLabel: "إرسال",
+  chatBudgetWarning:
+    "قد يكون الدردشة بالذكاء الاصطناعي محدودة لاحقاً هذا الشهر. يمكنك دائماً استخدام خيار النسخ واللصق.",
+  chatBudgetCritical:
+    "رصيد الدردشة بالذكاء الاصطناعي المجاني ينفد هذا الشهر. فكر في استخدام خيار النسخ واللصق.",
+  chatBudgetExhausted:
+    "وصلت دردشة الذكاء الاصطناعي المجانية إلى حدها الشهري. يمكنك الاستمرار في بحث ورقة اقتراعك — انسخ الموجّه أدناه والصقه في أي روبوت دردشة ذكاء اصطناعي مجاني.",
+  chatSessionLimitMsg:
+    "لقد وصلت إلى حد 60 رسالة للجلسة. يمكنك الاستمرار بنسخ الموجّه أدناه.",
+  chatRateLimitMsg:
+    "للحفاظ على هذه الأداة مجانية للجميع، نحدد عدد الجلسات يومياً. يمكنك مواصلة بحثك بنسخ الموجّه أدناه.",
+  chatErrorMsg: "حدث خطأ. يرجى المحاولة مرة أخرى أو استخدام خيار النسخ واللصق.",
+
+  // Phase 5: Ballot
+  downloadBallotBtn: "تنزيل ورقة اقتراعي",
+  ballotPreviewTitle: "ورقة اقتراعك",
+  ballotPasteLabel: "الصق مخرجات الذكاء الاصطناعي (المسار ب)",
+  ballotPastePlaceholder: "الصق قسم MY BALLOT من محادثتك مع الذكاء الاصطناعي…",
+  ballotPasteBtn: "بناء ورقة الاقتراع من اللصق",
+  ballotParseError:
+    "لم نتمكن من قراءة ذلك التنسيق. جرّب نسخ قسم 'MY BALLOT' فقط، أو أدخل اختياراتك يدوياً.",
+  ballotManualEntryLabel: "إدخال الاختيارات يدوياً",
+  ballotManualRaceLabel: "اسم المنصب / السباق",
+  ballotManualPickLabel: "اختيارك",
+  ballotManualAddRow: "إضافة سباق آخر",
+  ballotManualBuildBtn: "بناء ورقة اقتراعي",
+  ballotPrivacyNote:
+    "هذه مرجع شخصي وليست ورقة اقتراع رسمية. تحقق من جميع المعلومات في مكتب انتخابات ولايتك.",
+  ballotSectionTitle: "بناء ورقة اقتراعي",
+  ballotPathBTitle: "لصق من روبوت دردشة خارجي",
+
+  // Phase 5: Voter profile
+  downloadProfileBtn: "تنزيل ملف الناخب الخاص بي",
+  uploadProfileLabel: "ناخب عائد؟ ارفع ملف الناخب الخاص بك",
+  uploadProfileBtn: "رفع الملف",
+  profileConfirmTitle: "تم تحميل الملف من الجلسة السابقة",
+  profileConfirmNote: "يُستخدم ملفك لهذه الجلسة فقط ولا يُخزَّن على خوادمنا.",
+  profileSaveNote:
+    "احفظ هذا الملف قبل الانتخابات القادمة حتى لا تبدأ من الصفر.",
+  profileTooLarge: "الملف كبير جداً. الحجم الأقصى هو 10KB.",
+  profileWrongType: "يُقبل ملفات .txt فقط.",
+
+  // Phase 5: Alignment
+  alignmentLabel: "التوافق:",
+  alignmentStrong: "توافق قوي",
+  alignmentMixed: "توافق مختلط",
+  alignmentWeak: "توافق ضعيف",
+  alignmentExpandBtn: "عرض التفاصيل",
+  alignmentCollapseBtn: "طي",
+  alignmentParseError:
+    "تعذر إنشاء درجات التوافق — جرّب طلب من الذكاء الاصطناعي تقييم المرشحين مرة أخرى.",
+  alignmentOverallLabel: "الإجمالي:",
+  alignmentIssueLabel: "تحليل حسب القضايا",
 };
 
 // ---- Spanish BALLOT_PROMPT -------------------------------------------------
