@@ -526,8 +526,7 @@ export const translations = {
     contextClosing: "请帮助我了解我的选票。",
     contextNoElection: (website: string) =>
       `未找到即将举行的选举。请查看 ${website} 获取更多信息。`,
-    contextOnline: (date: string, url: string) =>
-      `在线截止 ${date}（${url}）`,
+    contextOnline: (date: string, url: string) => `在线截止 ${date}（${url}）`,
     contextOnlineNA: "不提供在线注册",
     contextByMail: (date: string, postmark: string) =>
       `邮寄截止 ${date}（${postmark}）`,
@@ -537,8 +536,7 @@ export const translations = {
     contextEarlyVotingDates: (start: string, end: string) =>
       `${start} 至 ${end}`,
     contextEarlyVotingNA: "不适用——仅缺席投票",
-    contextVoterIdRequired: (ids: string) =>
-      `必需。接受的证件：[${ids}]`,
+    contextVoterIdRequired: (ids: string) => `必需。接受的证件：[${ids}]`,
     contextVoterIdNA: "不需要",
     contextElectionTypePrimary: (type: string) => `初选（${type}）`,
     // Phase 3
@@ -553,8 +551,7 @@ export const translations = {
     votingRecord: "投票记录",
     topDonors: "主要捐款人",
     endorsements: "背书",
-    apiPartialError:
-      "部分选举数据暂时不可用。显示的信息是最新的。",
+    apiPartialError: "部分选举数据暂时不可用。显示的信息是最新的。",
     apiFullError:
       "我们在加载实时选举数据时遇到问题。以下是我们关于在您的州投票的了解。请访问您的州选举办公室获取最新日期和截止日期。",
     dataAttribution:

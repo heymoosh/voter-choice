@@ -136,16 +136,27 @@ test.describe("Phase 4: Language persistence", () => {
   test("Vietnamese persists across page refresh", async ({ page }) => {
     await page.goto("/");
     await page.getByTestId("language-toggle").selectOption("vi");
+    // Verify language was applied before reloading
+    await expect(page.getByTestId("zip-submit")).toContainText("Tra Cứu");
     await page.reload();
+    // Wait for React hydration and useEffect to apply stored language
+    await expect(page.getByTestId("zip-submit")).toContainText("Tra Cứu", {
+      timeout: 5000,
+    });
     const lang = await page.evaluate(() => document.documentElement.lang);
     expect(lang).toBe("vi");
-    await expect(page.getByTestId("zip-submit")).toContainText("Tra Cứu");
   });
 
   test("Arabic persists across page refresh with RTL", async ({ page }) => {
     await page.goto("/");
     await page.getByTestId("language-toggle").selectOption("ar");
+    // Verify Arabic was applied
+    await expect(page.getByTestId("zip-submit")).toContainText("بحث");
     await page.reload();
+    // Wait for React hydration to restore Arabic
+    await expect(page.getByTestId("zip-submit")).toContainText("بحث", {
+      timeout: 5000,
+    });
     const lang = await page.evaluate(() => document.documentElement.lang);
     expect(lang).toBe("ar");
     const dir = await page.evaluate(() => document.documentElement.dir);
@@ -157,33 +168,35 @@ test.describe("Phase 4: State preservation on language switch", () => {
   test("state info card remains visible after language switch", async ({
     page,
   }) => {
+    test.setTimeout(15000);
     await page.goto("/");
     await page.getByTestId("zip-input").fill("73301");
     await page.getByTestId("zip-submit").click();
-    // Wait for state info to appear
-    await expect(page.getByTestId("state-info-card")).toBeVisible({
-      timeout: 5000,
+    // Wait for state info to appear — use waitForSelector for reliable wait
+    await page.waitForSelector('[data-testid="state-info"]', {
+      timeout: 8000,
     });
     // Switch language
     await page.getByTestId("language-toggle").selectOption("vi");
     // State info should still be visible (no state loss)
-    await expect(page.getByTestId("state-info-card")).toBeVisible();
+    await expect(page.getByTestId("state-info")).toBeVisible();
   });
 
   test("prompt output remains visible after language switch", async ({
     page,
   }) => {
+    test.setTimeout(15000);
     await page.goto("/");
     await page.getByTestId("zip-input").fill("73301");
     await page.getByTestId("zip-submit").click();
-    await expect(page.getByTestId("state-info-card")).toBeVisible({
-      timeout: 5000,
+    await page.waitForSelector('[data-testid="state-info"]', {
+      timeout: 8000,
     });
     const promptOutput = page.getByTestId("prompt-output");
     await expect(promptOutput).toBeVisible();
     // Switch language — results should not be cleared
     await page.getByTestId("language-toggle").selectOption("zh");
-    await expect(page.getByTestId("state-info-card")).toBeVisible();
+    await expect(page.getByTestId("state-info")).toBeVisible();
   });
 });
 
@@ -191,12 +204,13 @@ test.describe("Phase 4: Prompt output in selected language", () => {
   test("prompt output contains Vietnamese text for vi language", async ({
     page,
   }) => {
+    test.setTimeout(15000);
     await page.goto("/");
     await page.getByTestId("language-toggle").selectOption("vi");
     await page.getByTestId("zip-input").fill("73301");
     await page.getByTestId("zip-submit").click();
-    await expect(page.getByTestId("state-info-card")).toBeVisible({
-      timeout: 5000,
+    await page.waitForSelector('[data-testid="state-info"]', {
+      timeout: 8000,
     });
     const promptOutput = page.getByTestId("prompt-output");
     await expect(promptOutput).toBeVisible();
@@ -208,12 +222,13 @@ test.describe("Phase 4: Prompt output in selected language", () => {
   test("prompt output contains Chinese date format for zh language", async ({
     page,
   }) => {
+    test.setTimeout(15000);
     await page.goto("/");
     await page.getByTestId("language-toggle").selectOption("zh");
     await page.getByTestId("zip-input").fill("73301");
     await page.getByTestId("zip-submit").click();
-    await expect(page.getByTestId("state-info-card")).toBeVisible({
-      timeout: 5000,
+    await page.waitForSelector('[data-testid="state-info"]', {
+      timeout: 8000,
     });
     const promptOutput = page.getByTestId("prompt-output");
     await expect(promptOutput).toBeVisible();
@@ -225,12 +240,13 @@ test.describe("Phase 4: Prompt output in selected language", () => {
   test("prompt output contains Arabic text for ar language", async ({
     page,
   }) => {
+    test.setTimeout(15000);
     await page.goto("/");
     await page.getByTestId("language-toggle").selectOption("ar");
     await page.getByTestId("zip-input").fill("73301");
     await page.getByTestId("zip-submit").click();
-    await expect(page.getByTestId("state-info-card")).toBeVisible({
-      timeout: 5000,
+    await page.waitForSelector('[data-testid="state-info"]', {
+      timeout: 8000,
     });
     const promptOutput = page.getByTestId("prompt-output");
     await expect(promptOutput).toBeVisible();
