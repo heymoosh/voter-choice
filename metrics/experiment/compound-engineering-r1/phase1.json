@@ -1,0 +1,493 @@
+{
+  "metadata": {
+    "timestamp": "2026-05-12T04:56:27.825Z",
+    "branch": "experiment/compound-engineering-r1",
+    "commit": "50e32dd",
+    "phase": 1,
+    "nodeVersion": "v22.14.0"
+  },
+  "eslint": {
+    "errors": 0,
+    "warnings": 4,
+    "complexityViolations": 4
+  },
+  "complexity": {
+    "count": 59,
+    "average": 5.76,
+    "max": 63,
+    "p50": 3,
+    "p75": 4,
+    "p95": 22,
+    "distribution": {
+      "simple_1_5": 49,
+      "moderate_6_10": 6,
+      "complex_11_15": 0,
+      "highComplex_16_20": 1,
+      "critical_21plus": 3
+    },
+    "perFunction": [
+      {
+        "file": "src/lib/openstates/derive.ts",
+        "name": "deriveOpenStatesData",
+        "complexity": 63,
+        "line": 155
+      },
+      {
+        "file": "src/lib/openstates/derive.ts",
+        "name": "<arrow>",
+        "complexity": 57,
+        "line": 310
+      },
+      {
+        "file": "src/lib/promptBuilder.ts",
+        "name": "buildContextBlock",
+        "complexity": 22,
+        "line": 57
+      },
+      {
+        "file": "src/lib/openstates/derive.ts",
+        "name": "buildVoteSummary",
+        "complexity": 16,
+        "line": 69
+      },
+      {
+        "file": "src/app/page.tsx",
+        "name": "Home",
+        "complexity": 10,
+        "line": 160
+      },
+      {
+        "file": "src/lib/promptBuilder.ts",
+        "name": "buildOpenStatesContext",
+        "complexity": 10,
+        "line": 126
+      },
+      {
+        "file": "src/app/page.tsx",
+        "name": "ResultCard",
+        "complexity": 8,
+        "line": 56
+      },
+      {
+        "file": "src/lib/openstates/derive.ts",
+        "name": "<arrow>",
+        "complexity": 7,
+        "line": 119
+      },
+      {
+        "file": "src/components/ZipForm.tsx",
+        "name": "ZipForm",
+        "complexity": 6,
+        "line": 10
+      },
+      {
+        "file": "src/lib/openstates/derive.ts",
+        "name": "<arrow>",
+        "complexity": 6,
+        "line": 454
+      },
+      {
+        "file": "src/app/page.tsx",
+        "name": "submitZip",
+        "complexity": 5,
+        "line": 237
+      },
+      {
+        "file": "src/lib/openstates/derive.ts",
+        "name": "mergeSourceUrls",
+        "complexity": 5,
+        "line": 143
+      },
+      {
+        "file": "src/app/page.tsx",
+        "name": "getRegistrationStatusText",
+        "complexity": 4,
+        "line": 23
+      },
+      {
+        "file": "src/app/page.tsx",
+        "name": "getElectionSummary",
+        "complexity": 4,
+        "line": 35
+      },
+      {
+        "file": "src/lib/i18n/LanguageContext.tsx",
+        "name": "<arrow>",
+        "complexity": 4,
+        "line": 32
+      },
+      {
+        "file": "src/lib/openstates/derive.ts",
+        "name": "asString",
+        "complexity": 4,
+        "line": 14
+      },
+      {
+        "file": "src/lib/openstates/derive.ts",
+        "name": "normalizeStateCode",
+        "complexity": 4,
+        "line": 59
+      },
+      {
+        "file": "src/lib/promptBuilder.ts",
+        "name": "formatDate",
+        "complexity": 4,
+        "line": 6
+      },
+      {
+        "file": "src/lib/promptBuilder.ts",
+        "name": "getNextElection",
+        "complexity": 4,
+        "line": 21
+      },
+      {
+        "file": "src/app/page.tsx",
+        "name": "<arrow>",
+        "complexity": 3,
+        "line": 180
+      },
+      {
+        "file": "src/components/LanguageToggle.tsx",
+        "name": "<arrow>",
+        "complexity": 3,
+        "line": 12
+      },
+      {
+        "file": "src/components/ZipForm.tsx",
+        "name": "validate",
+        "complexity": 3,
+        "line": 14
+      },
+      {
+        "file": "src/components/ZipForm.tsx",
+        "name": "handleSubmit",
+        "complexity": 3,
+        "line": 21
+      },
+      {
+        "file": "src/components/ZipForm.tsx",
+        "name": "handleChange",
+        "complexity": 3,
+        "line": 39
+      },
+      {
+        "file": "src/lib/i18n/LanguageContext.tsx",
+        "name": "<arrow>",
+        "complexity": 3,
+        "line": 49
+      },
+      {
+        "file": "src/lib/openstates/derive.ts",
+        "name": "<arrow>",
+        "complexity": 3,
+        "line": 32
+      },
+      {
+        "file": "src/lib/openstates/derive.ts",
+        "name": "<arrow>",
+        "complexity": 3,
+        "line": 41
+      },
+      {
+        "file": "src/lib/openstates/derive.ts",
+        "name": "normalizeStateCodeFromDivision",
+        "complexity": 3,
+        "line": 48
+      },
+      {
+        "file": "src/lib/openstates/derive.ts",
+        "name": "<arrow>",
+        "complexity": 3,
+        "line": 99
+      },
+      {
+        "file": "src/lib/openstates/derive.ts",
+        "name": "summarizeVotes",
+        "complexity": 3,
+        "line": 113
+      },
+      {
+        "file": "src/lib/openstates/derive.ts",
+        "name": "<arrow>",
+        "complexity": 3,
+        "line": 319
+      },
+      {
+        "file": "src/lib/openstates/derive.ts",
+        "name": "<arrow>",
+        "complexity": 3,
+        "line": 323
+      },
+      {
+        "file": "src/lib/openstates/derive.ts",
+        "name": "<arrow>",
+        "complexity": 3,
+        "line": 394
+      },
+      {
+        "file": "src/lib/openstates/load.ts",
+        "name": "<anonymous>",
+        "complexity": 3,
+        "line": 14
+      },
+      {
+        "file": "src/lib/promptBuilder.ts",
+        "name": "describeDeadlineDate",
+        "complexity": 3,
+        "line": 46
+      },
+      {
+        "file": "src/lib/stateRegistry.ts",
+        "name": "getStateName",
+        "complexity": 3,
+        "line": 27
+      },
+      {
+        "file": "src/app/page.tsx",
+        "name": "<arrow>",
+        "complexity": 2,
+        "line": 171
+      },
+      {
+        "file": "src/app/page.tsx",
+        "name": "<arrow>",
+        "complexity": 2,
+        "line": 190
+      },
+      {
+        "file": "src/app/page.tsx",
+        "name": "<arrow>",
+        "complexity": 2,
+        "line": 196
+      },
+      {
+        "file": "src/app/page.tsx",
+        "name": "<anonymous>",
+        "complexity": 2,
+        "line": 205
+      },
+      {
+        "file": "src/app/page.tsx",
+        "name": "loadState",
+        "complexity": 2,
+        "line": 214
+      },
+      {
+        "file": "src/components/LanguageToggle.tsx",
+        "name": "<arrow>",
+        "complexity": 2,
+        "line": 17
+      },
+      {
+        "file": "src/components/StateSelector.tsx",
+        "name": "<arrow>",
+        "complexity": 2,
+        "line": 80
+      },
+      {
+        "file": "src/components/ZipForm.tsx",
+        "name": "handleKeyDown",
+        "complexity": 2,
+        "line": 33
+      },
+      {
+        "file": "src/lib/i18n/prompts.ts",
+        "name": "getBallotPrompt",
+        "complexity": 2,
+        "line": 193
+      },
+      {
+        "file": "src/lib/i18n/translations.ts",
+        "name": "daysLeft",
+        "complexity": 2,
+        "line": 122
+      },
+      {
+        "file": "src/lib/i18n/translations.ts",
+        "name": "daysLeft",
+        "complexity": 2,
+        "line": 205
+      },
+      {
+        "file": "src/lib/openstates/derive.ts",
+        "name": "asDate",
+        "complexity": 2,
+        "line": 26
+      },
+      {
+        "file": "src/lib/openstates/derive.ts",
+        "name": "toSourceLinks",
+        "complexity": 2,
+        "line": 30
+      },
+      {
+        "file": "src/lib/openstates/derive.ts",
+        "name": "toIdentifiers",
+        "complexity": 2,
+        "line": 39
+      }
+    ]
+  },
+  "vitest": {
+    "tests": {
+      "total": 5,
+      "passed": 5,
+      "failed": 0,
+      "skipped": "no test files",
+      "passRate": 100
+    },
+    "coverage": {
+      "lines": null,
+      "branches": null,
+      "functions": null,
+      "statements": null
+    }
+  },
+  "duplication": {
+    "duplicatedLines": 0,
+    "totalLines": 2443,
+    "percentage": 0,
+    "clones": 0
+  },
+  "bundleSize": {
+    "buildSuccess": true,
+    "pages": [
+      {
+        "route": "/",
+        "size": 13.4,
+        "unit": "kB"
+      },
+      {
+        "route": "/_not-found",
+        "size": 990,
+        "unit": "B"
+      }
+    ],
+    "firstLoadJsShared": {
+      "size": 102,
+      "unit": "kB"
+    }
+  },
+  "lighthouse": {
+    "performance": 100,
+    "accessibility": 100,
+    "bestPractices": 100,
+    "seo": 100
+  },
+  "playwright": {
+    "total": 42,
+    "passed": 42,
+    "failed": 0,
+    "timedOut": 0,
+    "skipped": 0,
+    "passRate": 100
+  },
+  "linesOfCode": {
+    "application": {
+      "code": 2385,
+      "files": 22,
+      "byExtension": {
+        ".css": {
+          "files": 1,
+          "code": 382
+        },
+        ".tsx": {
+          "files": 6,
+          "code": 667
+        },
+        ".json": {
+          "files": 5,
+          "code": 231
+        },
+        ".ts": {
+          "files": 10,
+          "code": 1105
+        }
+      }
+    },
+    "plugin": {
+      "code": 0,
+      "files": 0,
+      "byExtension": {}
+    },
+    "infrastructure": {
+      "code": 351,
+      "files": 10
+    },
+    "total": {
+      "code": 2736,
+      "files": 32
+    }
+  },
+  "workflowTests": {
+    "count": 0,
+    "files": []
+  },
+  "workflowTiming": {
+    "steps": [
+      {
+        "step": "ce:plan",
+        "started": "2026-05-11T19:49:31-05:00",
+        "completed": "2026-05-11T19:50:38-05:00",
+        "durationMs": 67000
+      },
+      {
+        "step": "ce:work",
+        "started": "2026-05-11T19:50:38-05:00",
+        "completed": "2026-05-11T20:09:21-05:00",
+        "durationMs": 1123000
+      },
+      {
+        "step": "ce:plan",
+        "started": "2026-05-11T20:07:47-05:00",
+        "completed": "2026-05-11T19:50:38-05:00",
+        "durationMs": -1029000
+      },
+      {
+        "step": "ce:work",
+        "started": "2026-05-11T20:08:23-05:00",
+        "completed": "2026-05-11T20:09:21-05:00",
+        "durationMs": 58000
+      },
+      {
+        "step": "ce:review",
+        "started": "2026-05-11T20:09:26-05:00",
+        "completed": "2026-05-11T20:10:09-05:00",
+        "durationMs": 43000
+      },
+      {
+        "step": "ce:compound",
+        "started": "2026-05-11T20:10:14-05:00",
+        "completed": "2026-05-11T20:10:42-05:00",
+        "durationMs": 28000
+      },
+      {
+        "step": "ce:plan",
+        "started": "2026-05-11T23:46:00-05:00",
+        "completed": "2026-05-11T19:50:38-05:00",
+        "durationMs": -14122000
+      },
+      {
+        "step": "ce:work",
+        "started": "2026-05-11T23:46:48-05:00",
+        "completed": "2026-05-11T20:09:21-05:00",
+        "durationMs": -13047000
+      },
+      {
+        "step": "ce:review",
+        "started": "2026-05-11T23:52:57-05:00",
+        "completed": "2026-05-11T20:10:09-05:00",
+        "durationMs": -13368000
+      },
+      {
+        "step": "ce:compound",
+        "started": "2026-05-11T23:53:41-05:00",
+        "completed": "2026-05-11T20:10:42-05:00",
+        "durationMs": -13379000
+      }
+    ],
+    "totalSteps": 10,
+    "completedSteps": 10
+  },
+  "diffHygiene": null
+}
