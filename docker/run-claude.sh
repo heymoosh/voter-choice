@@ -145,7 +145,15 @@ if [[ "$NO_ISOLATION" -eq 1 ]]; then
   DOC_FILE_MOUNTS=()
 fi
 
-docker run -it --rm \
+# Only allocate a pseudo-TTY when both stdin and stdout are real terminals.
+# `docker run -t` fails with "the input device is not a TTY" in programmatic
+# contexts (script capture, CI, subshells). Claude --bare -p doesn't need TTY.
+DOCKER_TTY_FLAGS=()
+if [[ -t 0 ]] && [[ -t 1 ]]; then
+  DOCKER_TTY_FLAGS=(-it)
+fi
+
+docker run "${DOCKER_TTY_FLAGS[@]+"${DOCKER_TTY_FLAGS[@]}"}" --rm \
   --name claude-runner \
   -v "$MAIN_GIT_DIR:$MAIN_GIT_DIR:rw" \
   -v "$WORKTREE_PATH:$WORKTREE_PATH:rw" \

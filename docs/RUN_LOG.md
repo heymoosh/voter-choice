@@ -2,7 +2,27 @@
 
 ## Next
 
-**Phase B smoke run is next.** Create a fresh `experiment/vanilla-r1-v2` worktree from `main`, run all six vanilla phases through the isolated build flow, and verify that host-side harvest/scoring produces complete non-null phase JSONs plus valid timing/workflow logs.
+**Phase B smoke run B1 gate needs a clean re-run of Phase 1.** Three bugs were found and fixed during B1 diagnostics (see Learning 012 below). The `experiment/vanilla-r1-v2` branch has a contaminated Phase 1 commit (`7e1f5c5`) that must be superseded by a clean run on a fresh branch using the fixed infrastructure:
+
+1. **Create fresh branch** `experiment/vanilla-r1-v2b` from `490c6db` (current pensive HEAD with all fixes).
+2. **Add vanilla workflow.md** (from `experiment/vanilla-r1`).
+3. **Run B1 smoke gate** (validate-container-git, validate-container-claude, Phase 1 build, verify clean commit).
+4. **Continue B2–B8** (Phases 2–6, delta scoring, aggregator smoke).
+
+After B8 passes, proceed to Phase C (clean re-run of 45 actions).
+
+**B1 diagnostic findings (2026-05-12):**
+
+| Finding | Status |
+|---------|--------|
+| In-container Claude stalls — CLAIM WRONG | In-container Claude completed Phase 1 in ~6 min. Handoff was written after first aborted run, before second succeeded. |
+| `git add .` + Hermes masking = contaminated commit (Learning 012) | FIXED — start.md templates updated to `git add src/ e2e/ ...` |
+| `docker run -it` fails in non-TTY context (Learning 013) | FIXED — TTY flags conditional on stdin/stdout being terminals |
+| Claude auth requires `.env.local` on the workflow branch | DOCUMENTED — validate-container-claude.sh must run from a branch with `.env.local` |
+| B1a validate-container-git: PASS | ✓ |
+| B1b validate-container-claude: PASS | ✓ |
+| B1c Phase 1 completes in container: PASS | ✓ (6 min, timing proven) |
+| B1d Phase 1 commit is clean: NEEDS CLEAN RE-RUN | `7e1f5c5` is contaminated; re-run on fresh branch required |
 
 Do not skip the smoke run and jump to the full rerun. Phase A is green, but Phase B is the gate that proves the new `/workspace/metrics` scratch-mount plus `scripts/post-build-score.sh` architecture works end-to-end before scaling to all 45 actions.
 

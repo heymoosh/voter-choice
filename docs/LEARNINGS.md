@@ -624,3 +624,37 @@ Never `git add .` and never `git add -A` inside the container. The Hermes-masked
 ### Decision
 
 The phase1_replicate and phase_forward templates in `.claude/commands/start.md` have been updated to use explicit path-scoped `git add`. See also `scripts/validate-container-claude.sh` (Learning 012 companion: trivial-prompt smoke test so auth/binary issues are caught in <1 minute rather than 13 minutes into a Phase 1 build).
+
+---
+
+## Learning 013: `docker run -it` Fails in Non-TTY Contexts; Claude Does Not Need TTY
+
+**Date discovered:** 2026-05-12
+**Affects:** All programmatic invocations of `docker/run-claude.sh` from subshells, script capture, or CI
+**Severity:** Moderate — blocked validate-container-claude.sh and any scripted smoke testing
+
+### What happened
+
+`docker run -it` requires both stdin and stdout to be real terminals. When called from a subshell capture (`$(...)`) or scripted context (no terminal attached), Docker refuses with `the input device is not a TTY`. This affected `scripts/validate-container-claude.sh` and any future CI invocations.
+
+`validate-container-git.sh` worked earlier because it was invoked directly from an interactive terminal (the Claude Code Bash tool), not from a subshell. Scripts that capture docker output via `$()` do not inherit the terminal TTY.
+
+### Why Claude doesn't need TTY
+
+`claude --bare --dangerously-skip-permissions -p "$PROMPT"` runs in non-interactive print mode. No spinner, no box drawing, no readline input. Allocating a pseudo-TTY is both unnecessary and harmful for scripted use.
+
+### Fix
+
+`docker/run-claude.sh` now checks whether stdin and stdout are real terminals before adding `-t`:
+```bash
+DOCKER_TTY_FLAGS=()
+if [[ -t 0 ]] && [[ -t 1 ]]; then
+  DOCKER_TTY_FLAGS=(-it)
+fi
+```
+
+The `${DOCKER_TTY_FLAGS[@]+"${DOCKER_TTY_FLAGS[@]}"}` expansion is required with `set -u` to safely expand an empty array.
+
+### Decision
+
+`docker/run-claude.sh` is patched. Any worktree used for scripted testing must pick up this version. The fix applies to both the orchestration worktree and all workflow branch worktrees.

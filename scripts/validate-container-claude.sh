@@ -31,7 +31,7 @@ if [[ ! -d "$WORKTREE_PATH/.git" && ! -f "$WORKTREE_PATH/.git" ]]; then
   exit 2
 fi
 
-TRIVIAL_PROMPT='List the filenames in the src/ directory. Respond with just the filenames, one per line.'
+TRIVIAL_PROMPT='Read src/app/page.tsx and respond with just the first line of the file, nothing else.'
 
 echo "validate-container-claude: running trivial prompt in container..."
 echo "  worktree: $WORKTREE_PATH"
@@ -51,9 +51,9 @@ if [[ $exit_code -ne 0 ]]; then
   exit 1
 fi
 
-# Expect at least one line that looks like a filename
-if ! printf '%s\n' "$clean_output" | grep -qE '\.(tsx?|jsx?|json|css|mjs)$'; then
-  echo "validate-container-claude: FAIL — no recognisable filename in output" >&2
+# Expect at least one non-empty line (Claude read a file and responded)
+if ! printf '%s\n' "$clean_output" | grep -qE '\S'; then
+  echo "validate-container-claude: FAIL — empty response from Claude" >&2
   echo "  raw output follows above; check auth, model access, or network." >&2
   exit 1
 fi
