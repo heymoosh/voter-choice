@@ -586,3 +586,41 @@ Inside the container, that absolute pointer target did not exist. Git therefore 
 ### Decision
 
 Container mounts must include the main repo's `.git/` at its host absolute path. Dry-run mode cannot validate this; live container execution is the required test.
+
+---
+
+## Learning 012: `git add .` Inside Container Corrupts Workflow Branches Derived from `main`
+
+**Date discovered:** 2026-05-12
+**Affects:** Phase B smoke run and all future v2 workflow builds
+**Severity:** Critical — silently deletes ~45k lines of experiment infrastructure from every workflow branch commit
+
+### What happened
+
+The Phase B smoke run (`experiment/vanilla-r1-v2`) was branched from `main`, which contains all experiment infrastructure: `docs/LEARNINGS.md`, `docs/RUN_LOG.md`, `scoring/*.mjs`, `metrics/experiment/**`, and similar. The container's Hermes tmpfs overlay correctly masks these paths during the build. But when the in-container build agent ran `git add .`, git saw the masked paths as deletions and recorded them in the commit.
+
+The resulting commit (`7e1f5c5`) had 120 files changed: correctly added the Phase 1 app code (`src/`, `e2e/`) and emitted timing logs, but also deleted every docs, scoring, and metrics file that main had contributed to the branch — ~45k lines of experiment data removed from the branch history.
+
+The `vanilla-r1-v2-phase1-complete` tag pointed to this contaminated commit.
+
+### Why this matters
+
+- The in-container Claude DID correctly build Phase 1 in ~6 minutes. The build itself is not broken.
+- The bug is in the commit template: `git add .` is unsafe when infrastructure paths are masked by tmpfs.
+- The contamination is silent — the container exits successfully and the tag is created, but the branch is now missing all experiment tooling needed for post-build host-side scoring and Phase 2+ runs.
+- This is the same class of bug that Learning 009 identified for legacy `scripts/` paths, but the v2 expanded masking (docs/, metrics/) reintroduced it.
+
+### Correct v2 pattern
+
+In-container builds must use explicit `git add` with only application source paths:
+
+```bash
+git add src/ e2e/ public/ package.json package-lock.json
+[ -d data/ ] && git add data/ || true
+```
+
+Never `git add .` and never `git add -A` inside the container. The Hermes-masked paths (docs/, scoring/, metrics/) appear deleted to git and must never be staged.
+
+### Decision
+
+The phase1_replicate and phase_forward templates in `.claude/commands/start.md` have been updated to use explicit path-scoped `git add`. See also `scripts/validate-container-claude.sh` (Learning 012 companion: trivial-prompt smoke test so auth/binary issues are caught in <1 minute rather than 13 minutes into a Phase 1 build).

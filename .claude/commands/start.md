@@ -136,7 +136,9 @@ Repo path: /Users/Muxin/Documents/GitHub/voter-choice
 12. Run: npx playwright test
     Iterate (fix → re-run) until all three pass or document an unrecoverable blocker. If unrecoverable, write to metrics/failures.jsonl and stop.
 13. bash scripts/emit-timing.sh --event build_end --phase 1 --branch "experiment/<FW>-<R>" --file metrics/timing.jsonl
-14. git add .
+14. Stage only application source files — do NOT use `git add .` as it captures deletions of Hermes-masked infrastructure paths (docs/, scoring/, metrics/) and corrupts the branch:
+    git add src/ e2e/ public/ package.json package-lock.json
+    [ -d data/ ] && git add data/ || true
 15. git commit -m "phase1: <FW> replicate <R>"
 16. git tag <FW>-<R>-phase1-complete
 17. git push origin experiment/<FW>-<R>
@@ -217,7 +219,9 @@ Repo path: /Users/Muxin/Documents/GitHub/voter-choice
 14. Run: npx playwright test
     Iterate until green or document an unrecoverable blocker.
 15. bash scripts/emit-timing.sh --event build_end --phase <PHASE> --branch "$BRANCH" --file metrics/timing.jsonl
-16. git add .
+16. Stage only application source files — do NOT use `git add .` as it captures deletions of Hermes-masked infrastructure paths (docs/, scoring/, metrics/) and corrupts the branch:
+    git add src/ e2e/ public/ package.json package-lock.json
+    [ -d data/ ] && git add data/ || true
 17. git commit -m "phase<PHASE>: <FW>"
 18. git tag <FW>-phase<PHASE>-complete
 19. git push origin "$BRANCH"
