@@ -14,7 +14,20 @@
 
 **B8 re-scope for single-framework smoke:** With n=1 framework, comparative Process Fidelity ranking is meaningless. B8 for smoke = "all 7 axes produce non-null numeric values; composite computes without crash."
 
-**Next: B2–B7** — Run Phases 2–6 on `experiment/vanilla-r1-v2c`, verify clean commits + non-null phase JSONs + tags. At B7 run aggregate-experiment.mjs. After B8 (re-scoped) passes → Phase C.
+**Smoke run status (2026-05-12):**
+
+| Phase | Status | Tag | Build time | Key metrics |
+|-------|--------|-----|-----------|-------------|
+| 1 | ✅ | `vanilla-r1-v2c-phase1-complete` | 17 min | productionLOC=981, acceptance=100%, nfr=80% |
+| 2 | ✅ | `vanilla-r1-v2c-phase2-complete` | 17 min | productionLOC=1466, acceptance=100%, nfr=60% |
+| 3 | ✅ | `vanilla-r1-v2c-phase3-complete` | 12 min | productionLOC=2555, acceptance=86%, nfr=20% |
+| 4 | ❌ API LIMIT | — | — | Workspace API limit exhausted (resets 2026-06-01) |
+| 5 | ❌ blocked | — | — | Blocked by Phase 4 API limit |
+| 6 | ❌ blocked | — | — | Blocked by Phase 4 API limit |
+
+**B8 (re-scoped): PASS** — all 3 completed phases have non-null values for all required axes. aggregate-experiment.mjs runs without crash.
+
+**Next: Wait for API reset (2026-06-01) then resume Phases 4-6 on `experiment/vanilla-r1-v2c`.** After B7 passes → Phase C (45-action re-run). Failures logged in `experiment/vanilla-r1-v2c/metrics/failures.jsonl`.
 
 **B1 diagnostic findings (2026-05-12):**
 
