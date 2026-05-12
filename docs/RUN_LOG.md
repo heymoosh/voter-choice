@@ -190,6 +190,15 @@ Note: **Scoring is executed by Hermes from the host side, not inside the build c
 - **Summary:** e2e 42/42, vitest 18/18, lint 0e/0w, LOC 1470
 - **Metrics:** coverage 16.1%, LOC 1470, complexity avg 3.69 max 9
 
+### Phase 3 forward — vanilla (auto)
+
+- **Date:** 2026-05-12T05:38:22.977Z
+- **Branch:** `experiment/vanilla-r1`
+- **Tag:** `vanilla-phase3-complete`
+- **Status:** ✓
+- **Summary:** e2e 66/66, coverage 21.7%, LOC 3349, complexity avg 5.10, scope adherence N/A — Phase 2 (i18n) also built in-line since vanilla-phase2-complete tag collision with old workflow/vanilla run5 branch
+- **Metrics:** coverage 21.7%, LOC 3349, complexity avg 5.10 max 46, scope adherence 0.04
+
 
 ### Phase 1 Run 5 — Vanilla (complete)
 
