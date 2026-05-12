@@ -84,6 +84,16 @@ Note: **Scoring is executed by Hermes from the host side, not inside the build c
 
 
 
+
+### Phase 6 forward — spec-kit (auto)
+
+- **Date:** 2026-05-12T13:36:15.814Z
+- **Branch:** `experiment/spec-kit-r1`
+- **Tag:** `spec-kit-phase6-complete`
+- **Status:** ✓
+- **Summary:** e2e 110/110, coverage 24.3%, LOC 9730, complexity avg 5.95, scope adherence N/A
+
+
 ### Phase 6 forward — bmad (auto)
 
 - **Date:** 2026-05-12T12:54:30.993Z
