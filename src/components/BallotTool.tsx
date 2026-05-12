@@ -8,6 +8,8 @@ import { PromptOutput } from "./PromptOutput";
 import ChatWindow from "./ChatWindow";
 import BallotBuilder from "./BallotBuilder";
 import VoterProfilePanel from "./VoterProfilePanel";
+import IssueRankingList from "./IssueRankingList";
+import ConcernDisambiguation from "./ConcernDisambiguation";
 import { isValidZip } from "@/lib/zipLookup";
 import { fetchLiveData } from "@/lib/dataAccess";
 import {
@@ -18,6 +20,9 @@ import {
 import { useTranslation } from "@/lib/i18n/I18nContext";
 import type { LiveElectionData } from "@/types/liveElection";
 import type { Locale } from "@/lib/i18n/types";
+import type { RankedIssues } from "@/lib/issueRanking";
+import type { ConfirmedConcerns } from "@/lib/confirmedConcerns";
+import type { PolisCountData } from "./PolisOverlay";
 
 type AppState =
   | { stage: "idle" }
@@ -41,6 +46,17 @@ function BallotToolInner() {
     undefined,
   );
 
+  // Phase 6: Issue ranking + concern disambiguation
+  type Phase6Step = "ranking" | "concern" | "done";
+  const [phase6Step, setPhase6Step] = useState<Phase6Step>("ranking");
+  const [rankedIssues, setRankedIssues] = useState<RankedIssues | undefined>(
+    undefined,
+  );
+  const [confirmedConcerns, setConfirmedConcerns] = useState<
+    ConfirmedConcerns | undefined
+  >(undefined);
+  const [polisData, setPolisData] = useState<PolisCountData | null>(null);
+
   const handleZipSubmit = useCallback(
     async (zip: string) => {
       if (!zip) {
@@ -53,6 +69,10 @@ function BallotToolInner() {
       }
       setZipError(null);
       setChatOpen(false);
+      setPhase6Step("ranking");
+      setRankedIssues(undefined);
+      setConfirmedConcerns(undefined);
+      setPolisData(null);
       setAppState({ stage: "loading" });
 
       await loadLiveData(zip, locale, setAppState, t.errors.loadFailed);
@@ -78,6 +98,60 @@ function BallotToolInner() {
 
   const isLoading = appState.stage === "loading";
 
+  const handleRankingConfirm = useCallback(
+    async (ranking: RankedIssues) => {
+      setRankedIssues(ranking);
+      setPhase6Step("concern");
+
+      // Fetch Polis overlay data if we have county info
+      if (appState.stage === "result") {
+        const county = appState.stateData.districts?.county;
+        if (county) {
+          const countyFips = county
+            .toLowerCase()
+            .replace(/\s+/g, "-")
+            .replace(/[^a-z0-9-]/g, "");
+          try {
+            const res = await fetch(
+              `/api/issue-counts?countyFips=${encodeURIComponent(countyFips)}`,
+            );
+            if (res.ok) {
+              const data = (await res.json()) as {
+                countyFips: string;
+                issueCounts: Record<string, number>;
+              };
+              setPolisData({
+                countyFips,
+                countyName: county,
+                issueCounts: data.issueCounts,
+              });
+
+              // Increment counts for ranked (non-skipped) issues
+              if (!ranking.skipped && ranking.ordered.length > 0) {
+                for (const slug of ranking.ordered) {
+                  void fetch("/api/issue-counts/increment", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ issueSlug: slug, countyFips }),
+                  });
+                }
+              }
+            }
+          } catch {
+            // Graceful degrade — overlay just won't show
+          }
+        }
+      }
+    },
+    [appState],
+  );
+
+  const handleConcernConfirm = useCallback((concerns: ConfirmedConcerns) => {
+    setConfirmedConcerns(concerns);
+    // Mark phase6 done — panels disappear, context is embedded in system/copy-paste prompts
+    setPhase6Step("done");
+  }, []);
+
   const systemPrompt =
     appState.stage === "result"
       ? buildSystemPrompt(
@@ -85,6 +159,8 @@ function BallotToolInner() {
           appState.zip,
           locale,
           voterProfile,
+          rankedIssues,
+          confirmedConcerns,
         )
       : "";
 
@@ -95,6 +171,8 @@ function BallotToolInner() {
           appState.zip,
           locale,
           voterProfile,
+          rankedIssues,
+          confirmedConcerns,
         )
       : "";
 
@@ -183,7 +261,48 @@ function BallotToolInner() {
         <div className="space-y-8">
           <StateInfoCard stateData={appState.stateData} />
 
-          {/* Chat CTA */}
+          {/* Phase 6: Issue Ranking (shown first, non-blocking) */}
+          {phase6Step === "ranking" && (
+            <div className="border border-blue-100 rounded-xl p-5 bg-blue-50 shadow-sm">
+              <IssueRankingList
+                onConfirm={handleRankingConfirm}
+                polisData={polisData}
+                labels={{
+                  heading: t.phase6?.issueRanking?.heading,
+                  subheading: t.phase6?.issueRanking?.subheading,
+                  skipButton: t.phase6?.issueRanking?.skipButton,
+                  confirmButton: t.phase6?.issueRanking?.confirmButton,
+                  ariaGrabbed: t.phase6?.issueRanking?.ariaGrabbed,
+                  ariaDropped: t.phase6?.issueRanking?.ariaDropped,
+                  countyLabel: t.phase6?.polisOverlay?.countyLabel,
+                  privacyNotice: t.phase6?.polisOverlay?.privacyNotice,
+                }}
+              />
+            </div>
+          )}
+
+          {/* Phase 6: Concern Disambiguation (shown after ranking, non-blocking) */}
+          {phase6Step === "concern" && (
+            <div className="border border-blue-100 rounded-xl p-5 bg-blue-50 shadow-sm">
+              <ConcernDisambiguation
+                onConfirm={handleConcernConfirm}
+                labels={{
+                  heading: t.phase6?.concernDisambiguation?.heading,
+                  placeholder: t.phase6?.concernDisambiguation?.placeholder,
+                  submitButton: t.phase6?.concernDisambiguation?.submitButton,
+                  skipButton: t.phase6?.concernDisambiguation?.skipButton,
+                  confirmButton: t.phase6?.concernDisambiguation?.confirmButton,
+                  editButton: t.phase6?.concernDisambiguation?.editButton,
+                  weHeard: t.phase6?.concernDisambiguation?.weHeard,
+                  mappingTo: t.phase6?.concernDisambiguation?.mappingTo,
+                  noMatchesFound:
+                    t.phase6?.concernDisambiguation?.noMatchesFound,
+                }}
+              />
+            </div>
+          )}
+
+          {/* Chat CTA — always visible after data loads */}
           {!chatOpen && (
             <button
               data-testid="chat-cta"
@@ -209,7 +328,7 @@ function BallotToolInner() {
             />
           )}
 
-          {/* Path B: Copy-paste prompt (enhanced with profile) */}
+          {/* Path B: Copy-paste prompt (enhanced with profile + phase 6 data) */}
           <PromptOutput promptText={promptTextWithProfile} />
 
           {/* Path B: Ballot builder */}

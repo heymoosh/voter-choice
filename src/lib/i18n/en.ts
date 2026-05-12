@@ -178,4 +178,34 @@ export const en: Translations = {
       overallLabel: "Alignment",
     },
   },
+  phase6: {
+    issueRanking: {
+      heading: "Rank Your Priorities",
+      subheading:
+        "Drag the issues below into your preferred order — most important at the top. This helps personalize your ballot research.",
+      skipButton: "Skip — research without priorities",
+      confirmButton: "These are my priorities",
+      ariaGrabbed: "Grabbed. Use arrow keys to reorder, Space to drop.",
+      ariaDropped: (position: number, total: number) =>
+        `Dropped. Now at position ${position} of ${total}.`,
+    },
+    concernDisambiguation: {
+      heading: "Anything else on your mind?",
+      placeholder:
+        "e.g. 'I rent and can’t afford housing in my city,' or 'my kid has Type 1 diabetes'",
+      submitButton: "Map to issues",
+      skipButton: "Skip — just use my rankings",
+      confirmButton: "Confirm and continue",
+      editButton: "Edit my response",
+      weHeard: "We heard:",
+      mappingTo: "Mapping to issues we track:",
+      noMatchesFound:
+        "No specific issues detected. You can add issues manually or skip.",
+    },
+    polisOverlay: {
+      countyLabel: "Of voters in your county who ranked their issues",
+      privacyNotice:
+        "When you rank an issue, we anonymously add to a county-level count that other voters can see. We never store your zip code, your ranking sequence, or anything else — just ‘+1 in [county] for [issue].’",
+    },
+  },
 };

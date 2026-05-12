@@ -215,3 +215,111 @@ describe("buildPrompt — Arabic locale", () => {
     expect(result).toContain("هوية الناخب");
   });
 });
+
+// ---------------------------------------------------------------------------
+// Phase 6: Ranked Issues + Confirmed Concerns integration
+// ---------------------------------------------------------------------------
+
+import { makeRankedIssues, makeSkippedRanking } from "../issueRanking";
+import {
+  makeConfirmedConcerns,
+  makeSkippedConcerns,
+} from "../confirmedConcerns";
+import { buildSystemPrompt, buildPromptWithProfile } from "../promptBuilder";
+
+describe("buildSystemPrompt — Phase 6 integration", () => {
+  it("includes ranked issues section in system prompt", () => {
+    const ranking = makeRankedIssues(["healthcare", "housing", "education"]);
+    const result = buildSystemPrompt(
+      txStateData,
+      "73301",
+      "en",
+      undefined,
+      ranking,
+    );
+    expect(result).toContain("VOTER'S RANKED PRIORITIES");
+    expect(result).toContain("healthcare");
+    expect(result).toContain("Top 3 key priorities");
+  });
+
+  it("includes confirmed concerns in system prompt", () => {
+    const ranking = makeRankedIssues(["healthcare"]);
+    const concerns = makeConfirmedConcerns("I care about housing", ["Housing"]);
+    const result = buildSystemPrompt(
+      txStateData,
+      "73301",
+      "en",
+      undefined,
+      ranking,
+      concerns,
+    );
+    expect(result).toContain("VOTER'S CONFIRMED CONCERNS");
+    expect(result).toContain("Housing");
+  });
+
+  it("omits ranked section when skipped", () => {
+    const ranking = makeSkippedRanking();
+    const result = buildSystemPrompt(
+      txStateData,
+      "73301",
+      "en",
+      undefined,
+      ranking,
+    );
+    expect(result).not.toContain("VOTER'S RANKED PRIORITIES");
+  });
+
+  it("omits concerns section when skipped", () => {
+    const concerns = makeSkippedConcerns();
+    const result = buildSystemPrompt(
+      txStateData,
+      "73301",
+      "en",
+      undefined,
+      undefined,
+      concerns,
+    );
+    expect(result).not.toContain("VOTER'S CONFIRMED CONCERNS");
+  });
+});
+
+describe("buildPromptWithProfile — Phase 6 structured blocks", () => {
+  it("includes [VOTER VALUES] block when ranked", () => {
+    const ranking = makeRankedIssues(["healthcare", "housing", "education"]);
+    const result = buildPromptWithProfile(
+      txStateData,
+      "73301",
+      "en",
+      undefined,
+      ranking,
+    );
+    expect(result).toContain("[VOTER VALUES]");
+    expect(result).toContain("[/VOTER VALUES]");
+  });
+
+  it("includes [VOTER CONFIRMED CONCERNS] block when concerns confirmed", () => {
+    const ranking = makeRankedIssues(["healthcare"]);
+    const concerns = makeConfirmedConcerns("housing cost", ["Housing"]);
+    const result = buildPromptWithProfile(
+      txStateData,
+      "73301",
+      "en",
+      undefined,
+      ranking,
+      concerns,
+    );
+    expect(result).toContain("[VOTER CONFIRMED CONCERNS]");
+  });
+
+  it("omits values block when ranking is skipped", () => {
+    const ranking = makeSkippedRanking();
+    const result = buildPromptWithProfile(
+      txStateData,
+      "73301",
+      "en",
+      undefined,
+      ranking,
+    );
+    expect(result).not.toContain("[VOTER VALUES]");
+  });
+});

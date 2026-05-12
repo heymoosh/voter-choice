@@ -178,4 +178,34 @@ export const vi: Translations = {
       overallLabel: "Sự liên kết",
     },
   },
+  phase6: {
+    issueRanking: {
+      heading: "Xếp hạng ưu tiên của bạn",
+      subheading:
+        "Kéo các vấn đề bên dưới theo thứ tự ưu tiên — quan trọng nhất ở trên.",
+      skipButton: "Bỏ qua — nghiên cứu không có ưu tiên",
+      confirmButton: "Đây là các ưu tiên của tôi",
+      ariaGrabbed: "Đã nắm. Dùng phím mũi tên để sắp xếp lại, Dấu cách để thả.",
+      ariaDropped: (position: number, total: number) =>
+        `Đã thả. Hiện tại ở vị trí ${position} trên ${total}.`,
+    },
+    concernDisambiguation: {
+      heading: "Còn điều gì khác trong tâm trí bạn không?",
+      placeholder:
+        "ví dụ: 'Tôi thuê nhà và không thể đủ tiền thuê nhà ở thành phố của mình'",
+      submitButton: "Ánh xạ đến các vấn đề",
+      skipButton: "Bỏ qua — chỉ dùng xếp hạng của tôi",
+      confirmButton: "Xác nhận và tiếp tục",
+      editButton: "Chỉnh sửa câu trả lời của tôi",
+      weHeard: "Chúng tôi đã nghe:",
+      mappingTo: "Ánh xạ đến các vấn đề chúng tôi theo dõi:",
+      noMatchesFound:
+        "Không phát hiện vấn đề cụ thể nào. Bạn có thể thêm thủ công hoặc bỏ qua.",
+    },
+    polisOverlay: {
+      countyLabel: "Trong số cử tri ở quận của bạn đã xếp hạng vấn đề của họ",
+      privacyNotice:
+        "Khi bạn xếp hạng một vấn đề, chúng tôi thêm ẩn danh vào số đếm cấp quận. Chúng tôi không bao giờ lưu trữ mã bưu chính hoặc thứ tự xếp hạng của bạn.",
+    },
+  },
 };

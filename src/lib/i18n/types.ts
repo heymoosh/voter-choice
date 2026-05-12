@@ -149,6 +149,31 @@ export interface Translations {
       overallLabel?: string;
     };
   };
+  phase6?: {
+    issueRanking?: {
+      heading?: string;
+      subheading?: string;
+      skipButton?: string;
+      confirmButton?: string;
+      ariaGrabbed?: string;
+      ariaDropped?: (position: number, total: number) => string;
+    };
+    concernDisambiguation?: {
+      heading?: string;
+      placeholder?: string;
+      submitButton?: string;
+      skipButton?: string;
+      confirmButton?: string;
+      editButton?: string;
+      weHeard?: string;
+      mappingTo?: string;
+      noMatchesFound?: string;
+    };
+    polisOverlay?: {
+      countyLabel?: string;
+      privacyNotice?: string;
+    };
+  };
 }
 
 export type Locale = "en" | "es" | "vi" | "zh" | "ar";

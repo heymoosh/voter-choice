@@ -168,4 +168,31 @@ export const zh: Translations = {
       overallLabel: "匹配度",
     },
   },
+  phase6: {
+    issueRanking: {
+      heading: "排列您的优先事项",
+      subheading: "将下面的议题拖动到您的优先顺序 — 最重要的放在顶部。",
+      skipButton: "跳过 — 不设优先事项继续",
+      confirmButton: "这些是我的优先事项",
+      ariaGrabbed: "已抓取。使用方向键重新排序，空格键放下。",
+      ariaDropped: (position: number, total: number) =>
+        `已放下。现在位于第 ${position} 位，共 ${total} 项。`,
+    },
+    concernDisambiguation: {
+      heading: "您还有其他想说的吗？",
+      placeholder: "例如：'我租房，负担不起城市里的住房'",
+      submitButton: "映射到议题",
+      skipButton: "跳过 — 只使用我的排名",
+      confirmButton: "确认并继续",
+      editButton: "编辑我的回答",
+      weHeard: "我们听到了：",
+      mappingTo: "映射到我们追踪的议题：",
+      noMatchesFound: "未检测到具体议题。您可以手动添加或跳过。",
+    },
+    polisOverlay: {
+      countyLabel: "在您县中排列过议题的选民中",
+      privacyNotice:
+        "当您排列议题时，我们会匿名增加县级计数。我们从不存储您的邮政编码或排列顺序。",
+    },
+  },
 };

@@ -180,4 +180,34 @@ export const ar: Translations = {
       overallLabel: "التوافق",
     },
   },
+  phase6: {
+    issueRanking: {
+      heading: "رتّب أولوياتك",
+      subheading: "اسحب القضايا أدناه بترتيب تفضيلك — الأهم في الأعلى.",
+      skipButton: "تخطي — البحث بدون أولويات",
+      confirmButton: "هذه هي أولوياتي",
+      ariaGrabbed:
+        "تم الإمساك. استخدم مفاتيح الأسهم لإعادة الترتيب، المسافة للإفلات.",
+      ariaDropped: (position: number, total: number) =>
+        `تم الإفلات. الآن في الموضع ${position} من ${total}.`,
+    },
+    concernDisambiguation: {
+      heading: "هل هناك شيء آخر في ذهنك؟",
+      placeholder:
+        "مثلاً: 'أستأجر مسكناً ولا أستطيع تحمّل تكاليف السكن في مدينتي'",
+      submitButton: "تعيين للقضايا",
+      skipButton: "تخطي — استخدام تصنيفاتي فقط",
+      confirmButton: "تأكيد والمتابعة",
+      editButton: "تعديل ردّي",
+      weHeard: "سمعنا:",
+      mappingTo: "تعيين للقضايا التي نتتبعها:",
+      noMatchesFound:
+        "لم يتم اكتشاف قضايا محددة. يمكنك إضافة قضايا يدوياً أو التخطي.",
+    },
+    polisOverlay: {
+      countyLabel: "من الناخبين في مقاطعتك الذين صنّفوا قضاياهم",
+      privacyNotice:
+        "عند تصنيف قضية، نضيف بشكل مجهول إلى عداد على مستوى المقاطعة. نحن لا نخزن رمزك البريدي أو تسلسل تصنيفك أبداً.",
+    },
+  },
 };

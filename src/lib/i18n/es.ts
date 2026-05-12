@@ -179,4 +179,34 @@ export const es: Translations = {
       overallLabel: "Alineación",
     },
   },
+  phase6: {
+    issueRanking: {
+      heading: "Clasifica tus prioridades",
+      subheading:
+        "Arrastra los temas a continuación en tu orden de preferencia — el más importante arriba.",
+      skipButton: "Omitir — investigar sin prioridades",
+      confirmButton: "Estas son mis prioridades",
+      ariaGrabbed:
+        "Agarrado. Usa las teclas de flecha para reordenar, Espacio para soltar.",
+      ariaDropped: (position: number, total: number) =>
+        `Soltado. Ahora en posición ${position} de ${total}.`,
+    },
+    concernDisambiguation: {
+      heading: "¿Algo más en tu mente?",
+      placeholder: "p.ej. 'Alquilo y no puedo pagar la vivienda en mi ciudad'",
+      submitButton: "Mapear a temas",
+      skipButton: "Omitir — solo usar mis clasificaciones",
+      confirmButton: "Confirmar y continuar",
+      editButton: "Editar mi respuesta",
+      weHeard: "Escuchamos:",
+      mappingTo: "Mapeando a temas que rastreamos:",
+      noMatchesFound:
+        "No se detectaron temas específicos. Puedes agregar temas manualmente u omitir.",
+    },
+    polisOverlay: {
+      countyLabel: "De votantes en tu condado que clasificaron sus temas",
+      privacyNotice:
+        "Cuando clasificas un tema, añadimos anónimamente a un conteo de nivel de condado. Nunca almacenamos tu código postal, tu secuencia de clasificación ni nada más.",
+    },
+  },
 };
