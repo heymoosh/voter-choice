@@ -1,3 +1,5 @@
+import type { Language } from "./i18n";
+
 export type DeadlineStatus = {
   status: "ok" | "warning" | "urgent" | "passed";
   label: string;
@@ -8,6 +10,7 @@ export type DeadlineStatus = {
 export function getDeadlineStatus(
   isoDate: string | null | undefined,
   today: Date = new Date(),
+  language: Language = "en",
 ): DeadlineStatus {
   if (!isoDate) {
     return {
@@ -30,18 +33,26 @@ export function getDeadlineStatus(
   const diffMs = deadlineMs - todayMs;
   const daysLeft = Math.round(diffMs / (1000 * 60 * 60 * 24));
 
+  const passedLabel = language === "es" ? "Pasó" : "Passed";
+
   if (daysLeft < 1) {
     return {
       status: "passed",
-      label: "Passed",
+      label: passedLabel,
       colorClass: "text-gray-500",
       daysLeft: 0,
     };
   }
+
+  const daysLeftLabel =
+    language === "es"
+      ? `Quedan ${daysLeft} día${daysLeft === 1 ? "" : "s"}`
+      : `${daysLeft} day${daysLeft === 1 ? "" : "s"} left`;
+
   if (daysLeft <= 3) {
     return {
       status: "urgent",
-      label: `${daysLeft} day${daysLeft === 1 ? "" : "s"} left`,
+      label: daysLeftLabel,
       colorClass: "text-red-600",
       daysLeft,
     };
@@ -49,14 +60,14 @@ export function getDeadlineStatus(
   if (daysLeft <= 14) {
     return {
       status: "warning",
-      label: `${daysLeft} days left`,
+      label: daysLeftLabel,
       colorClass: "text-yellow-600",
       daysLeft,
     };
   }
   return {
     status: "ok",
-    label: `${daysLeft} days left`,
+    label: daysLeftLabel,
     colorClass: "text-green-600",
     daysLeft,
   };

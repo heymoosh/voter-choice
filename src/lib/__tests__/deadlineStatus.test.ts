@@ -34,3 +34,42 @@ describe("getDeadlineStatus", () => {
     expect(result.status).toBe("passed");
   });
 });
+
+describe("getDeadlineStatus (Spanish)", () => {
+  it("returns Spanish passed label", () => {
+    const result = getDeadlineStatus(
+      "2020-01-01",
+      new Date("2026-05-11"),
+      "es",
+    );
+    expect(result.label).toBe("Pasó");
+  });
+
+  it("returns Spanish days-left label (plural)", () => {
+    const result = getDeadlineStatus(
+      "2026-06-30",
+      new Date("2026-05-11"),
+      "es",
+    );
+    expect(result.label).toMatch(/^Quedan \d+ días$/);
+  });
+
+  it("returns Spanish days-left label (singular)", () => {
+    const result = getDeadlineStatus(
+      "2026-05-12",
+      new Date("2026-05-11"),
+      "es",
+    );
+    expect(result.label).toBe("Quedan 1 día");
+  });
+
+  it("returns Spanish urgent label", () => {
+    const result = getDeadlineStatus(
+      "2026-05-13",
+      new Date("2026-05-11"),
+      "es",
+    );
+    expect(result.label).toMatch(/Quedan 2 días/);
+    expect(result.status).toBe("urgent");
+  });
+});

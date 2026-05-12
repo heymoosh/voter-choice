@@ -2,17 +2,24 @@
 
 import type { StateData, Election } from "@/lib/types";
 import { getDeadlineStatus } from "@/lib/deadlineStatus";
+import type { Language } from "@/lib/i18n";
+import { tStr } from "@/lib/i18n";
 
 type StateInfoCardProps = {
   stateData: StateData;
   today?: Date;
+  language?: Language;
 };
 
-function formatDate(isoDate: string | null | undefined): string {
+function formatDate(
+  isoDate: string | null | undefined,
+  language: Language = "en",
+): string {
   if (!isoDate) return "N/A";
   const [y, m, d] = isoDate.split("-").map(Number);
   const date = new Date(Date.UTC(y, m - 1, d));
-  return date.toLocaleDateString("en-US", {
+  const locale = language === "es" ? "es" : "en-US";
+  return date.toLocaleDateString(locale, {
     year: "numeric",
     month: "long",
     day: "numeric",
@@ -25,16 +32,25 @@ type DeadlineRowProps = {
   isoDate: string | null | undefined;
   today: Date;
   note?: string;
+  language?: Language;
 };
 
-function DeadlineRow({ label, isoDate, today, note }: DeadlineRowProps) {
-  const status = getDeadlineStatus(isoDate, today);
+function DeadlineRow({
+  label,
+  isoDate,
+  today,
+  note,
+  language = "en",
+}: DeadlineRowProps) {
+  const status = getDeadlineStatus(isoDate, today, language);
   return (
     <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 py-1">
       <span className="text-sm text-gray-600 min-w-[100px] font-medium">
         {label}
       </span>
-      <span className="text-sm text-gray-800">{formatDate(isoDate)}</span>
+      <span className="text-sm text-gray-800">
+        {formatDate(isoDate, language)}
+      </span>
       <span className={`text-sm font-semibold ${status.colorClass}`}>
         {status.label}
         {note && (
@@ -51,10 +67,12 @@ function ElectionSection({
   nextElection,
   stateName,
   stateElectionWebsite,
+  language = "en",
 }: {
   nextElection: Election | null;
   stateName: string;
   stateElectionWebsite: string;
+  language?: Language;
 }) {
   return (
     <section aria-labelledby="election-heading">
@@ -62,7 +80,7 @@ function ElectionSection({
         id="election-heading"
         className="text-base font-semibold text-gray-800 mb-2"
       >
-        Next Election
+        {tStr(language, "nextElection")}
       </h3>
       {nextElection ? (
         <div className="space-y-1">
@@ -70,12 +88,13 @@ function ElectionSection({
             {nextElection.name}
           </p>
           <p data-testid="election-date" className="text-gray-600 text-sm">
-            {formatDate(nextElection.date)}
+            {formatDate(nextElection.date, language)}
           </p>
         </div>
       ) : (
         <p data-testid="no-election-message" className="text-gray-500 text-sm">
-          No upcoming elections found for {stateName}. Check{" "}
+          {tStr(language, "noElection")} {stateName}.{" "}
+          {tStr(language, "noElectionSuffix")}{" "}
           <a
             href={stateElectionWebsite}
             className="text-blue-600 underline"
@@ -84,7 +103,7 @@ function ElectionSection({
           >
             {stateElectionWebsite}
           </a>{" "}
-          for updates.
+          {tStr(language, "noElectionSuffix2")}
         </p>
       )}
     </section>
@@ -94,9 +113,11 @@ function ElectionSection({
 function RegistrationSection({
   registration,
   today,
+  language = "en",
 }: {
   registration: StateData["registration"];
   today: Date;
+  language?: Language;
 }) {
   return (
     <section aria-labelledby="reg-heading" data-testid="registration-status">
@@ -104,37 +125,46 @@ function RegistrationSection({
         id="reg-heading"
         className="text-base font-semibold text-gray-800 mb-2"
       >
-        Registration Deadlines
+        {tStr(language, "registrationDeadlines")}
       </h3>
       <div className="space-y-1">
         {registration.online.available && (
           <DeadlineRow
-            label="Online"
+            label={tStr(language, "onlineLabel")}
             isoDate={registration.online.deadline}
             today={today}
+            language={language}
           />
         )}
         <DeadlineRow
-          label="By Mail"
+          label={tStr(language, "byMailLabel")}
           isoDate={registration.byMail.deadline}
           today={today}
           note={
-            registration.byMail.sincePostmarked ? "postmark date" : "received"
+            registration.byMail.sincePostmarked
+              ? language === "es"
+                ? "fecha de matasellos"
+                : "postmark date"
+              : language === "es"
+                ? "fecha de recepción"
+                : "received"
           }
+          language={language}
         />
         <DeadlineRow
-          label="In Person"
+          label={tStr(language, "inPersonLabel")}
           isoDate={registration.inPerson.deadline}
           today={today}
+          language={language}
         />
       </div>
       {registration.sameDayRegistration && (
         <p className="text-sm text-green-700 mt-2 font-medium">
-          ✓ Same-day registration available
+          ✓ {tStr(language, "sameDayReg")}
         </p>
       )}
       <p className="text-xs text-gray-500 mt-2">
-        Check your registration:{" "}
+        {tStr(language, "checkRegistration")}{" "}
         <a
           href={registration.registrationCheckUrl}
           className="text-blue-600 underline"
@@ -150,8 +180,10 @@ function RegistrationSection({
 
 function VotingRulesSection({
   votingRules,
+  language = "en",
 }: {
   votingRules: StateData["votingRules"];
+  language?: Language;
 }) {
   return (
     <section aria-labelledby="rules-heading">
@@ -159,12 +191,14 @@ function VotingRulesSection({
         id="rules-heading"
         className="text-base font-semibold text-gray-800 mb-2"
       >
-        Voting Rules
+        {tStr(language, "votingRules")}
       </h3>
       <div className="space-y-1 text-sm text-gray-700">
         <p>
-          <span className="font-medium">Voter ID: </span>
-          {votingRules.idRequired ? "Required" : "Not required"}
+          <span className="font-medium">{tStr(language, "voterId")} </span>
+          {votingRules.idRequired
+            ? tStr(language, "voterIdRequired")
+            : tStr(language, "voterIdNotRequired")}
         </p>
         {votingRules.idRequired && votingRules.acceptedIds.length > 0 && (
           <ul className="list-disc list-inside ml-2 space-y-1">
@@ -174,7 +208,9 @@ function VotingRulesSection({
           </ul>
         )}
         <p>
-          <span className="font-medium">Phones at polls: </span>
+          <span className="font-medium">
+            {tStr(language, "phonesAtPolls")}{" "}
+          </span>
           {votingRules.phonesAtPollsDetail}
         </p>
       </div>
@@ -184,8 +220,10 @@ function VotingRulesSection({
 
 function ResourcesSection({
   resources,
+  language = "en",
 }: {
   resources: StateData["resources"];
+  language?: Language;
 }) {
   return (
     <section aria-labelledby="resources-heading">
@@ -193,7 +231,7 @@ function ResourcesSection({
         id="resources-heading"
         className="text-base font-semibold text-gray-800 mb-2"
       >
-        Resources
+        {tStr(language, "resources")}
       </h3>
       <ul className="space-y-1 text-sm">
         <li>
@@ -203,7 +241,7 @@ function ResourcesSection({
             target="_blank"
             rel="noopener noreferrer"
           >
-            State election website
+            {tStr(language, "stateElectionWebsite")}
           </a>
         </li>
         <li>
@@ -213,7 +251,7 @@ function ResourcesSection({
             target="_blank"
             rel="noopener noreferrer"
           >
-            Find your county election office
+            {tStr(language, "countyElectionOffice")}
           </a>
         </li>
         <li>
@@ -223,7 +261,7 @@ function ResourcesSection({
             target="_blank"
             rel="noopener noreferrer"
           >
-            Look up your sample ballot
+            {tStr(language, "sampleBallot")}
           </a>
         </li>
       </ul>
@@ -234,6 +272,7 @@ function ResourcesSection({
 export function StateInfoCard({
   stateData,
   today = new Date(),
+  language = "en",
 }: StateInfoCardProps) {
   const {
     stateName,
@@ -264,7 +303,8 @@ export function StateInfoCard({
       <div>
         <h2 className="text-xl font-bold text-gray-900">{stateName}</h2>
         <p className="text-sm text-gray-500">
-          Data last updated: {formatDate(stateData.lastUpdated)}
+          {tStr(language, "dataLastUpdated")}{" "}
+          {formatDate(stateData.lastUpdated, language)}
         </p>
       </div>
 
@@ -272,9 +312,14 @@ export function StateInfoCard({
         nextElection={nextElection}
         stateName={stateName}
         stateElectionWebsite={resources.stateElectionWebsite}
+        language={language}
       />
 
-      <RegistrationSection registration={registration} today={today} />
+      <RegistrationSection
+        registration={registration}
+        today={today}
+        language={language}
+      />
 
       {earlyVoting.available && (
         <section aria-labelledby="early-voting-heading">
@@ -282,11 +327,11 @@ export function StateInfoCard({
             id="early-voting-heading"
             className="text-base font-semibold text-gray-800 mb-1"
           >
-            Early Voting
+            {tStr(language, "earlyVoting")}
           </h3>
           <p className="text-sm text-gray-700">
-            {formatDate(earlyVoting.startDate)} —{" "}
-            {formatDate(earlyVoting.endDate)}
+            {formatDate(earlyVoting.startDate, language)} —{" "}
+            {formatDate(earlyVoting.endDate, language)}
             {earlyVoting.notes && (
               <span className="text-gray-500 ml-1">({earlyVoting.notes})</span>
             )}
@@ -294,9 +339,9 @@ export function StateInfoCard({
         </section>
       )}
 
-      <VotingRulesSection votingRules={votingRules} />
+      <VotingRulesSection votingRules={votingRules} language={language} />
 
-      <ResourcesSection resources={resources} />
+      <ResourcesSection resources={resources} language={language} />
     </div>
   );
 }

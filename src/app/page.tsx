@@ -7,19 +7,22 @@ import { StateInfoCard } from "@/components/StateInfoCard";
 import { PromptOutput } from "@/components/PromptOutput";
 import { TipsSection } from "@/components/TipsSection";
 import { Footer } from "@/components/Footer";
+import { LanguageToggle } from "@/components/LanguageToggle";
 import { lookupState } from "@/lib/lookupState";
 import { getStateData } from "@/lib/getStateData";
 import { generatePrompt } from "@/lib/generatePrompt";
+import { useLanguage, tStr } from "@/lib/i18n";
 import type { StateData } from "@/lib/types";
 
 type PageState =
   | { status: "idle" }
   | { status: "multi-state"; stateCodes: string[]; zip: string }
-  | { status: "result"; stateData: StateData; zip: string; prompt: string }
+  | { status: "result"; stateData: StateData; zip: string }
   | { status: "not-found"; zip: string };
 
 export default function Home() {
   const [pageState, setPageState] = useState<PageState>({ status: "idle" });
+  const { language } = useLanguage();
 
   function handleZipSubmit(zip: string) {
     const stateCodes = lookupState(zip);
@@ -51,12 +54,29 @@ export default function Home() {
       return;
     }
 
-    const prompt = generatePrompt(stateData, zip);
-    setPageState({ status: "result", stateData, zip, prompt });
+    setPageState({ status: "result", stateData, zip });
   }
+
+  // Regenerate prompt reactively when language changes (no stored prompt in state)
+  const promptText =
+    pageState.status === "result"
+      ? generatePrompt(pageState.stateData, pageState.zip, new Date(), language)
+      : "";
+
+  const chatbots = [
+    { name: "Claude", url: "https://claude.ai" },
+    { name: "ChatGPT", url: "https://chatgpt.com" },
+    { name: "Gemini", url: "https://gemini.google.com" },
+    { name: "Grok", url: "https://grok.com" },
+  ];
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Sticky header with language toggle */}
+      <header className="sticky top-0 z-40 bg-white border-b border-gray-200 px-4 py-2 flex justify-end">
+        <LanguageToggle />
+      </header>
+
       <main
         id="main-content"
         className="max-w-2xl mx-auto px-4 py-8 sm:px-6 sm:py-12 space-y-10"
@@ -67,21 +87,14 @@ export default function Home() {
             id="hero-heading"
             className="text-3xl sm:text-4xl font-bold text-gray-900 leading-tight"
           >
-            Know What You&apos;re Voting For
+            {tStr(language, "heroHeadline")}
           </h1>
           <p className="text-gray-600 text-lg leading-relaxed">
-            Enter your zip code to get a customized AI prompt that walks you
-            through every race and issue on your ballot. Copy it into any free
-            AI chatbot — no account required.
+            {tStr(language, "heroSubtitle")}
           </p>
           <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm text-gray-500">
-            <span>Works with:</span>
-            {[
-              { name: "Claude", url: "https://claude.ai" },
-              { name: "ChatGPT", url: "https://chatgpt.com" },
-              { name: "Gemini", url: "https://gemini.google.com" },
-              { name: "Grok", url: "https://grok.com" },
-            ].map(({ name, url }) => (
+            <span>{tStr(language, "worksWith")}</span>
+            {chatbots.map(({ name, url }) => (
               <a
                 key={name}
                 href={url}
@@ -98,9 +111,9 @@ export default function Home() {
         {/* Zip Code Entry */}
         <section aria-labelledby="zip-section-heading">
           <h2 id="zip-section-heading" className="sr-only">
-            Look up your state
+            {tStr(language, "zipLabel")}
           </h2>
-          <ZipForm onSubmit={handleZipSubmit} />
+          <ZipForm onSubmit={handleZipSubmit} language={language} />
         </section>
 
         {/* Not Found Message */}
@@ -112,12 +125,12 @@ export default function Home() {
             className="bg-amber-50 border border-amber-200 rounded-xl p-5 text-amber-800"
           >
             <p className="font-medium">
-              We don&apos;t have data for zip code{" "}
-              <strong>{pageState.zip}</strong> yet.
+              {tStr(language, "notFoundPrefix")}{" "}
+              <strong>{pageState.zip}</strong>
+              {language === "es" ? " aún." : " yet."}
             </p>
             <p className="text-sm mt-1">
-              We&apos;re working on adding all U.S. zip codes. In the meantime,
-              find your state election office at{" "}
+              {tStr(language, "notFoundSuffix")}{" "}
               <a
                 href="https://www.usa.gov/state-election-office"
                 target="_blank"
@@ -136,22 +149,26 @@ export default function Home() {
           <StateSelector
             stateCodes={pageState.stateCodes}
             onSelect={handleStateSelect}
+            language={language}
           />
         )}
 
         {/* Results: State Info + Prompt */}
         {pageState.status === "result" && (
           <>
-            <StateInfoCard stateData={pageState.stateData} />
-            <PromptOutput promptText={pageState.prompt} />
+            <StateInfoCard
+              stateData={pageState.stateData}
+              language={language}
+            />
+            <PromptOutput promptText={promptText} language={language} />
           </>
         )}
 
         {/* Tips */}
-        <TipsSection />
+        <TipsSection language={language} />
 
         {/* Footer */}
-        <Footer />
+        <Footer language={language} />
       </main>
     </div>
   );

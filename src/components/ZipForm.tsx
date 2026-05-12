@@ -1,19 +1,21 @@
 "use client";
 
 import { useState, FormEvent, KeyboardEvent } from "react";
+import type { Language } from "@/lib/i18n";
+import { tStr } from "@/lib/i18n";
 
 type ZipFormProps = {
   onSubmit: (zip: string) => void;
+  language?: Language;
 };
 
-export function ZipForm({ onSubmit }: ZipFormProps) {
+export function ZipForm({ onSubmit, language = "en" }: ZipFormProps) {
   const [zip, setZip] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   function validate(value: string): string | null {
-    if (!value.trim()) return "Please enter a zip code";
-    if (!/^\d{5}$/.test(value.trim()))
-      return "Please enter a valid 5-digit zip code";
+    if (!value.trim()) return tStr(language, "zipError");
+    if (!/^\d{5}$/.test(value.trim())) return tStr(language, "zipErrorInvalid");
     return null;
   }
 
@@ -38,7 +40,7 @@ export function ZipForm({ onSubmit }: ZipFormProps) {
     <form
       onSubmit={handleSubmit}
       className="flex flex-col gap-3"
-      aria-label="Zip code lookup form"
+      aria-label={tStr(language, "lookupFormLabel")}
       noValidate
     >
       <div className="flex flex-col gap-1">
@@ -46,7 +48,7 @@ export function ZipForm({ onSubmit }: ZipFormProps) {
           htmlFor="zip-input"
           className="text-sm font-semibold text-gray-700"
         >
-          Enter your 5-digit zip code
+          {tStr(language, "zipLabel")}
         </label>
         <div className="flex gap-2 flex-wrap">
           <input
@@ -62,8 +64,8 @@ export function ZipForm({ onSubmit }: ZipFormProps) {
               if (error) setError(null);
             }}
             onKeyDown={handleKeyDown}
-            placeholder="e.g. 73301"
-            aria-label="Zip code"
+            placeholder={tStr(language, "zipPlaceholder")}
+            aria-label={tStr(language, "zipInputLabel")}
             aria-describedby={error ? "zip-error" : undefined}
             aria-invalid={error ? "true" : "false"}
             className="border border-gray-300 rounded-lg px-4 py-3 text-base w-36 focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[44px]"
@@ -73,7 +75,7 @@ export function ZipForm({ onSubmit }: ZipFormProps) {
             type="submit"
             className="bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg px-6 py-3 text-base min-h-[44px] min-w-[44px] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
           >
-            Look Up
+            {tStr(language, "zipSubmit")}
           </button>
         </div>
       </div>

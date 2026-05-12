@@ -1,12 +1,18 @@
 "use client";
 
 import { useState } from "react";
+import type { Language } from "@/lib/i18n";
+import { tStr } from "@/lib/i18n";
 
 type PromptOutputProps = {
   promptText: string;
+  language?: Language;
 };
 
-export function PromptOutput({ promptText }: PromptOutputProps) {
+export function PromptOutput({
+  promptText,
+  language = "en",
+}: PromptOutputProps) {
   const [copied, setCopied] = useState(false);
   const [showFallback, setShowFallback] = useState(false);
 
@@ -38,11 +44,10 @@ export function PromptOutput({ promptText }: PromptOutputProps) {
           id="prompt-heading"
           className="text-xl font-bold text-gray-900 mb-1"
         >
-          Your Customized Prompt
+          {tStr(language, "yourPrompt")}
         </h2>
         <p className="text-sm text-gray-600">
-          Copy this prompt and paste it as your first message in any AI chatbot
-          (Claude, ChatGPT, Gemini, Grok, etc.)
+          {tStr(language, "promptInstructions")}
         </p>
       </div>
 
@@ -50,7 +55,7 @@ export function PromptOutput({ promptText }: PromptOutputProps) {
         <div
           data-testid="prompt-output"
           id="prompt-output"
-          aria-label="Customized ballot research prompt"
+          aria-label={tStr(language, "promptOutputLabel")}
           className="bg-gray-50 border border-gray-200 rounded-xl p-5 max-h-80 overflow-y-auto font-mono text-sm text-gray-800 whitespace-pre-wrap leading-relaxed"
         >
           {promptText}
@@ -60,10 +65,12 @@ export function PromptOutput({ promptText }: PromptOutputProps) {
           <button
             data-testid="copy-button"
             onClick={handleCopy}
-            aria-label="Copy prompt to clipboard"
+            aria-label={tStr(language, "copyPromptLabel")}
             className="bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg px-6 py-3 text-base min-h-[44px] min-w-[44px] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
           >
-            {copied ? "✓ Copied!" : "Copy to Clipboard"}
+            {copied
+              ? tStr(language, "copied")
+              : tStr(language, "copyToClipboard")}
           </button>
 
           {copied && (
@@ -73,7 +80,7 @@ export function PromptOutput({ promptText }: PromptOutputProps) {
               aria-live="polite"
               className="text-green-600 font-semibold text-sm"
             >
-              Copied to clipboard!
+              {tStr(language, "copiedConfirmation")}
             </span>
           )}
         </div>
@@ -81,11 +88,11 @@ export function PromptOutput({ promptText }: PromptOutputProps) {
         {showFallback && (
           <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-800">
             <p>
-              Select all text in the box and press{" "}
+              {tStr(language, "fallbackCopy")}{" "}
               <kbd className="font-mono bg-yellow-100 px-1 rounded">Ctrl+C</kbd>{" "}
-              /{" "}
+              {tStr(language, "fallbackCopyOr")}{" "}
               <kbd className="font-mono bg-yellow-100 px-1 rounded">Cmd+C</kbd>{" "}
-              to copy.
+              {tStr(language, "fallbackCopyEnd")}
             </p>
           </div>
         )}

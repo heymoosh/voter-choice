@@ -1,8 +1,12 @@
 "use client";
 
+import type { Language } from "@/lib/i18n";
+import { tStr } from "@/lib/i18n";
+
 type StateSelectorProps = {
   stateCodes: string[];
   onSelect: (stateCode: string) => void;
+  language?: Language;
 };
 
 const STATE_NAMES: Record<string, string> = {
@@ -13,7 +17,11 @@ const STATE_NAMES: Record<string, string> = {
   NM: "New Mexico",
 };
 
-export function StateSelector({ stateCodes, onSelect }: StateSelectorProps) {
+export function StateSelector({
+  stateCodes,
+  onSelect,
+  language = "en",
+}: StateSelectorProps) {
   return (
     <div
       data-testid="state-selector"
@@ -22,7 +30,7 @@ export function StateSelector({ stateCodes, onSelect }: StateSelectorProps) {
       aria-labelledby="state-selector-heading"
     >
       <p id="state-selector-heading" className="text-gray-800 font-medium mb-3">
-        This zip code spans multiple states. Which state are you voting in?
+        {tStr(language, "stateSelectorPrompt")}
       </p>
       <div className="flex flex-wrap gap-3">
         {stateCodes.map((code) => (
