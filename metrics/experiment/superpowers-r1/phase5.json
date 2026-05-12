@@ -1,0 +1,649 @@
+{
+  "metadata": {
+    "timestamp": "2026-05-12T11:27:29.262Z",
+    "branch": "experiment/superpowers-r1",
+    "commit": "59ab862",
+    "phase": 5,
+    "nodeVersion": "v22.14.0"
+  },
+  "eslint": {
+    "errors": 0,
+    "warnings": 11,
+    "complexityViolations": 11
+  },
+  "complexity": {
+    "count": 95,
+    "average": 5.34,
+    "max": 47,
+    "p50": 3,
+    "p75": 6,
+    "p95": 16,
+    "distribution": {
+      "simple_1_5": 69,
+      "moderate_6_10": 15,
+      "complex_11_15": 6,
+      "highComplex_16_20": 3,
+      "critical_21plus": 2
+    },
+    "perFunction": [
+      {
+        "file": "src/lib/generatePrompt.ts",
+        "name": "generatePrompt",
+        "complexity": 47,
+        "line": 81
+      },
+      {
+        "file": "src/app/api/ballot-data/route.ts",
+        "name": "<anonymous>",
+        "complexity": 25,
+        "line": 13
+      },
+      {
+        "file": "src/components/ChatWindow.tsx",
+        "name": "<anonymous>",
+        "complexity": 19,
+        "line": 59
+      },
+      {
+        "file": "src/app/api/candidate-enrich/route.ts",
+        "name": "<anonymous>",
+        "complexity": 16,
+        "line": 7
+      },
+      {
+        "file": "src/components/ChatWindow.tsx",
+        "name": "ChatWindow",
+        "complexity": 16,
+        "line": 25
+      },
+      {
+        "file": "src/lib/chatSystemPrompt.ts",
+        "name": "buildChatSystemPrompt",
+        "complexity": 14,
+        "line": 29
+      },
+      {
+        "file": "src/lib/server/civicClient.ts",
+        "name": "normalizeCivicResponse",
+        "complexity": 13,
+        "line": 73
+      },
+      {
+        "file": "src/app/page.tsx",
+        "name": "Home",
+        "complexity": 12,
+        "line": 18
+      },
+      {
+        "file": "src/app/api/chat/route.ts",
+        "name": "<anonymous>",
+        "complexity": 11,
+        "line": 36
+      },
+      {
+        "file": "src/components/StateInfoCard.tsx",
+        "name": "CandidatePanel",
+        "complexity": 11,
+        "line": 157
+      },
+      {
+        "file": "src/lib/deadlineStatus.ts",
+        "name": "getDeadlineStatus",
+        "complexity": 11,
+        "line": 10
+      },
+      {
+        "file": "src/components/StateInfoCard.tsx",
+        "name": "StateInfoCard",
+        "complexity": 10,
+        "line": 508
+      },
+      {
+        "file": "src/lib/ballotParser.ts",
+        "name": "parseBallot",
+        "complexity": 10,
+        "line": 7
+      },
+      {
+        "file": "src/lib/i18n/translations.ts",
+        "name": "daysLeftLabel",
+        "complexity": 9,
+        "line": 959
+      },
+      {
+        "file": "src/components/BallotBuilder.tsx",
+        "name": "BallotBuilder",
+        "complexity": 8,
+        "line": 14
+      },
+      {
+        "file": "src/lib/rateLimiter.ts",
+        "name": "checkSessionLimit",
+        "complexity": 8,
+        "line": 34
+      },
+      {
+        "file": "src/lib/server/civicClient.ts",
+        "name": "<anonymous>",
+        "complexity": 8,
+        "line": 44
+      },
+      {
+        "file": "src/app/api/chat/route.ts",
+        "name": "<anonymous>",
+        "complexity": 7,
+        "line": 123
+      },
+      {
+        "file": "src/app/page.tsx",
+        "name": "<anonymous>",
+        "complexity": 7,
+        "line": 24
+      },
+      {
+        "file": "src/components/ChatWindow.tsx",
+        "name": "<arrow>",
+        "complexity": 7,
+        "line": 259
+      },
+      {
+        "file": "src/components/StateInfoCard.tsx",
+        "name": "RegistrationSection",
+        "complexity": 7,
+        "line": 349
+      },
+      {
+        "file": "src/components/VoterProfile.tsx",
+        "name": "<anonymous>",
+        "complexity": 7,
+        "line": 27
+      },
+      {
+        "file": "src/components/ZipForm.tsx",
+        "name": "ZipForm",
+        "complexity": 7,
+        "line": 13
+      },
+      {
+        "file": "src/components/AlignmentBanner.tsx",
+        "name": "AlignmentBanner",
+        "complexity": 6,
+        "line": 32
+      },
+      {
+        "file": "src/lib/alignmentParser.ts",
+        "name": "parseAlignmentScores",
+        "complexity": 6,
+        "line": 8
+      },
+      {
+        "file": "src/lib/generatePrompt.ts",
+        "name": "formatDate",
+        "complexity": 6,
+        "line": 32
+      },
+      {
+        "file": "src/components/PromptOutput.tsx",
+        "name": "PromptOutput",
+        "complexity": 5,
+        "line": 12
+      },
+      {
+        "file": "src/components/StateInfoCard.tsx",
+        "name": "<anonymous>",
+        "complexity": 5,
+        "line": 178
+      },
+      {
+        "file": "src/components/StateInfoCard.tsx",
+        "name": "VotingRulesSection",
+        "complexity": 5,
+        "line": 417
+      },
+      {
+        "file": "src/components/VoterProfile.tsx",
+        "name": "VoterProfile",
+        "complexity": 5,
+        "line": 18
+      },
+      {
+        "file": "src/lib/alignmentParser.ts",
+        "name": "isValidAlignmentBlock",
+        "complexity": 5,
+        "line": 38
+      },
+      {
+        "file": "src/lib/chatSystemPrompt.ts",
+        "name": "getBallotPromptForLanguage",
+        "complexity": 5,
+        "line": 10
+      },
+      {
+        "file": "src/lib/generatePrompt.ts",
+        "name": "formatElectionType",
+        "complexity": 5,
+        "line": 65
+      },
+      {
+        "file": "src/lib/server/civicClient.ts",
+        "name": "<arrow>",
+        "complexity": 5,
+        "line": 97
+      },
+      {
+        "file": "src/app/api/chat/route.ts",
+        "name": "validateOrigin",
+        "complexity": 4,
+        "line": 24
+      },
+      {
+        "file": "src/app/page.tsx",
+        "name": "<anonymous>",
+        "complexity": 4,
+        "line": 64
+      },
+      {
+        "file": "src/components/PromptOutput.tsx",
+        "name": "<anonymous>",
+        "complexity": 4,
+        "line": 19
+      },
+      {
+        "file": "src/components/StateInfoCard.tsx",
+        "name": "formatDate",
+        "complexity": 4,
+        "line": 15
+      },
+      {
+        "file": "src/components/StateInfoCard.tsx",
+        "name": "PollingLocationSection",
+        "complexity": 4,
+        "line": 114
+      },
+      {
+        "file": "src/lib/alignmentParser.ts",
+        "name": "<arrow>",
+        "complexity": 4,
+        "line": 45
+      },
+      {
+        "file": "src/lib/budgetTracker.ts",
+        "name": "getBudgetStatus",
+        "complexity": 4,
+        "line": 48
+      },
+      {
+        "file": "src/lib/i18n/LanguageContext.tsx",
+        "name": "<arrow>",
+        "complexity": 4,
+        "line": 31
+      },
+      {
+        "file": "src/lib/lookupState.ts",
+        "name": "lookupState",
+        "complexity": 4,
+        "line": 5
+      },
+      {
+        "file": "src/components/BallotBuilder.tsx",
+        "name": "handlePrint",
+        "complexity": 3,
+        "line": 73
+      },
+      {
+        "file": "src/components/ChatWindow.tsx",
+        "name": "extractOutputs",
+        "complexity": 3,
+        "line": 47
+      },
+      {
+        "file": "src/components/ChatWindow.tsx",
+        "name": "handleKeyDown",
+        "complexity": 3,
+        "line": 176
+      },
+      {
+        "file": "src/components/Footer.tsx",
+        "name": "Footer",
+        "complexity": 3,
+        "line": 8
+      },
+      {
+        "file": "src/components/LanguageToggle.tsx",
+        "name": "LanguageToggle",
+        "complexity": 3,
+        "line": 14
+      },
+      {
+        "file": "src/components/StateInfoCard.tsx",
+        "name": "DeadlineRow",
+        "complexity": 3,
+        "line": 39
+      },
+      {
+        "file": "src/components/StateInfoCard.tsx",
+        "name": "ElectionSection",
+        "complexity": 3,
+        "line": 67
+      }
+    ]
+  },
+  "vitest": {
+    "tests": {
+      "total": 92,
+      "passed": 92,
+      "failed": 0,
+      "skipped": 0,
+      "passRate": 100
+    },
+    "coverage": {
+      "lines": 33.34,
+      "branches": 72.52,
+      "functions": 75.25,
+      "statements": 33.34
+    }
+  },
+  "duplication": {
+    "duplicatedLines": 0,
+    "totalLines": 7047,
+    "percentage": 0,
+    "clones": 0
+  },
+  "bundleSize": {
+    "buildSuccess": true,
+    "pages": [
+      {
+        "route": "/",
+        "size": 42.7,
+        "unit": "kB"
+      },
+      {
+        "route": "/_not-found",
+        "size": 0,
+        "unit": "B"
+      },
+      {
+        "route": "/api/ballot-data",
+        "size": 0,
+        "unit": "B"
+      },
+      {
+        "route": "/api/candidate-enrich",
+        "size": 0,
+        "unit": "B"
+      },
+      {
+        "route": "/api/chat",
+        "size": 0,
+        "unit": "B"
+      }
+    ],
+    "firstLoadJsShared": {
+      "size": 130,
+      "unit": "kB"
+    }
+  },
+  "lighthouse": {
+    "performance": 100,
+    "accessibility": 100,
+    "bestPractices": 100,
+    "seo": 100
+  },
+  "playwright": {
+    "total": 152,
+    "passed": 152,
+    "failed": 0,
+    "timedOut": 0,
+    "skipped": 0,
+    "passRate": 100
+  },
+  "linesOfCode": {
+    "application": {
+      "code": 6327,
+      "files": 65,
+      "byExtension": {
+        ".ts": {
+          "files": 36,
+          "code": 3727
+        },
+        ".css": {
+          "files": 1,
+          "code": 31
+        },
+        ".tsx": {
+          "files": 14,
+          "code": 2160
+        },
+        ".json": {
+          "files": 14,
+          "code": 409
+        }
+      }
+    },
+    "plugin": {
+      "code": 602,
+      "files": 4,
+      "byExtension": {
+        ".js": {
+          "files": 3,
+          "code": 523
+        },
+        ".ts": {
+          "files": 1,
+          "code": 79
+        }
+      }
+    },
+    "infrastructure": {
+      "code": 1128,
+      "files": 15
+    },
+    "total": {
+      "code": 8057,
+      "files": 84
+    }
+  },
+  "workflowTests": {
+    "count": 11,
+    "files": [
+      "src/lib/server/__tests__/civicClient.test.ts",
+      "src/lib/server/__tests__/dataCache.test.ts",
+      "src/lib/__tests__/ballotParser.test.ts",
+      "src/lib/__tests__/deadlineStatus.test.ts",
+      "src/lib/__tests__/alignmentParser.test.ts",
+      "src/lib/__tests__/profileParser.test.ts",
+      "src/lib/__tests__/chatSystemPrompt.test.ts",
+      "src/lib/__tests__/generatePrompt.test.ts",
+      "src/lib/__tests__/getStateData.test.ts",
+      "src/lib/__tests__/i18n.test.ts",
+      "src/lib/__tests__/lookupState.test.ts"
+    ]
+  },
+  "workflowTiming": {
+    "steps": [
+      {
+        "step": "brainstorming",
+        "started": "2026-05-11T14:24:52-05:00",
+        "completed": "2026-05-11T14:25:47-05:00",
+        "durationMs": 55000
+      },
+      {
+        "step": "writing-plans",
+        "started": "2026-05-11T14:25:51-05:00",
+        "completed": "2026-05-11T14:26:53-05:00",
+        "durationMs": 62000
+      },
+      {
+        "step": "executing-plans",
+        "started": "2026-05-11T14:26:58-05:00",
+        "completed": "2026-05-11T14:35:36-05:00",
+        "durationMs": 518000
+      },
+      {
+        "step": "requesting-code-review",
+        "started": "2026-05-11T14:35:43-05:00",
+        "completed": "2026-05-11T14:36:03-05:00",
+        "durationMs": 20000
+      },
+      {
+        "step": "verification-before-completion",
+        "started": "2026-05-11T14:36:07-05:00",
+        "completed": "2026-05-11T14:36:31-05:00",
+        "durationMs": 24000
+      },
+      {
+        "step": "finishing-a-development-branch",
+        "started": "2026-05-11T14:36:37-05:00",
+        "completed": "2026-05-11T14:36:37-05:00",
+        "durationMs": 0
+      },
+      {
+        "step": "brainstorming",
+        "started": "2026-05-11T23:22:57-05:00",
+        "completed": "2026-05-11T14:25:47-05:00",
+        "durationMs": -32230000
+      },
+      {
+        "step": "writing-plans",
+        "started": "2026-05-11T23:23:50-05:00",
+        "completed": "2026-05-11T14:26:53-05:00",
+        "durationMs": -32217000
+      },
+      {
+        "step": "executing-plans",
+        "started": "2026-05-11T23:26:15-05:00",
+        "completed": "2026-05-11T14:35:36-05:00",
+        "durationMs": -31839000
+      },
+      {
+        "step": "requesting-code-review",
+        "started": "2026-05-11T23:36:03-05:00",
+        "completed": "2026-05-11T14:36:03-05:00",
+        "durationMs": -32400000
+      },
+      {
+        "step": "verification-before-completion",
+        "started": "2026-05-11T23:36:17-05:00",
+        "completed": "2026-05-11T14:36:31-05:00",
+        "durationMs": -32386000
+      },
+      {
+        "step": "finishing-a-development-branch",
+        "started": "2026-05-11T23:36:17-05:00",
+        "completed": "2026-05-11T14:36:37-05:00",
+        "durationMs": -32380000
+      },
+      {
+        "step": "brainstorming",
+        "started": "2026-05-12T01:46:09-05:00",
+        "completed": "2026-05-11T14:25:47-05:00",
+        "durationMs": -40822000
+      },
+      {
+        "step": "writing-plans",
+        "started": "2026-05-12T01:47:39-05:00",
+        "completed": "2026-05-11T14:26:53-05:00",
+        "durationMs": -40846000
+      },
+      {
+        "step": "executing-plans",
+        "started": "2026-05-12T01:48:18-05:00",
+        "completed": "2026-05-11T14:35:36-05:00",
+        "durationMs": -40362000
+      },
+      {
+        "step": "requesting-code-review",
+        "started": "2026-05-12T02:00:39-05:00",
+        "completed": "2026-05-11T14:36:03-05:00",
+        "durationMs": -41076000
+      },
+      {
+        "step": "verification-before-completion",
+        "started": "2026-05-12T02:00:52-05:00",
+        "completed": "2026-05-11T14:36:31-05:00",
+        "durationMs": -41061000
+      },
+      {
+        "step": "finishing-a-development-branch",
+        "started": "2026-05-12T02:01:09-05:00",
+        "completed": "2026-05-11T14:36:37-05:00",
+        "durationMs": -41072000
+      },
+      {
+        "step": "brainstorming",
+        "started": "2026-05-12T03:45:08-05:00",
+        "completed": "2026-05-11T14:25:47-05:00",
+        "durationMs": -47961000
+      },
+      {
+        "step": "writing-plans",
+        "started": "2026-05-12T03:46:07-05:00",
+        "completed": "2026-05-11T14:26:53-05:00",
+        "durationMs": -47954000
+      },
+      {
+        "step": "executing-plans",
+        "started": "2026-05-12T03:49:39-05:00",
+        "completed": "2026-05-11T14:35:36-05:00",
+        "durationMs": -47643000
+      },
+      {
+        "step": "requesting-code-review",
+        "started": "2026-05-12T03:58:01-05:00",
+        "completed": "2026-05-11T14:36:03-05:00",
+        "durationMs": -48118000
+      },
+      {
+        "step": "verification-before-completion",
+        "started": "2026-05-12T04:09:15-05:00",
+        "completed": "2026-05-11T14:36:31-05:00",
+        "durationMs": -48764000
+      },
+      {
+        "step": "finishing-a-development-branch",
+        "started": "2026-05-12T04:09:32-05:00",
+        "completed": "2026-05-11T14:36:37-05:00",
+        "durationMs": -48775000
+      },
+      {
+        "step": "brainstorming",
+        "started": "2026-05-12T06:10:34-05:00",
+        "completed": "2026-05-11T14:25:47-05:00",
+        "durationMs": -56687000
+      },
+      {
+        "step": "writing-plans",
+        "started": "2026-05-12T06:11:50-05:00",
+        "completed": "2026-05-11T14:26:53-05:00",
+        "durationMs": -56697000
+      },
+      {
+        "step": "executing-plans",
+        "started": "2026-05-12T06:12:12-05:00",
+        "completed": "2026-05-11T14:35:36-05:00",
+        "durationMs": -56196000
+      },
+      {
+        "step": "requesting-code-review",
+        "started": "2026-05-12T06:25:43-05:00",
+        "completed": "2026-05-11T14:36:03-05:00",
+        "durationMs": -56980000
+      },
+      {
+        "step": "verification-before-completion",
+        "started": "2026-05-12T06:26:02-05:00",
+        "completed": "2026-05-11T14:36:31-05:00",
+        "durationMs": -56971000
+      },
+      {
+        "step": "finishing-a-development-branch",
+        "started": "2026-05-12T06:27:06-05:00",
+        "completed": "2026-05-11T14:36:37-05:00",
+        "durationMs": -57029000
+      }
+    ],
+    "totalSteps": 30,
+    "completedSteps": 30
+  },
+  "diffHygiene": null
+}
