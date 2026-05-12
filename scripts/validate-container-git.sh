@@ -12,7 +12,7 @@ fi
 
 SHELL_CMD='
 set -euo pipefail
-status_line="$(git status --short --branch | head -n 1)"
+status_line="$(git status --short --branch | sed -n "1p")"
 printf "__STATUS__ %s\n" "$status_line"
 printf "__LOG_START__\n"
 git log --oneline -5
