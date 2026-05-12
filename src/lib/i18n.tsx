@@ -17,6 +17,7 @@ import {
 
 const STORAGE_KEY = "voter-choice-lang";
 const DEFAULT_LANG: Language = "en";
+const VALID_LANGS: Language[] = ["en", "es", "vi", "zh", "ar"];
 
 interface LanguageContextValue {
   lang: Language;
@@ -42,16 +43,17 @@ export function LanguageProvider({ children }: LanguageProviderProps) {
   // Hydrate from localStorage on mount
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY) as Language | null;
-    if (stored === "en" || stored === "es") {
+    if (stored && VALID_LANGS.includes(stored)) {
       setLangState(stored);
     }
     setMounted(true);
   }, []);
 
-  // Update html lang attribute and localStorage on language change
+  // Update html lang attribute, dir attribute (RTL for Arabic), and localStorage on language change
   useEffect(() => {
     if (mounted) {
       document.documentElement.lang = lang;
+      document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
       localStorage.setItem(STORAGE_KEY, lang);
     }
   }, [lang, mounted]);

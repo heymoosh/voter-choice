@@ -37,7 +37,7 @@ export function getDeadlineStatus(
 
 /**
  * Format a relative deadline label for display.
- * Supports English and Spanish locale.
+ * Supports all 5 app languages.
  */
 export function getDeadlineLabel(
   isoDate: string | null,
@@ -45,29 +45,95 @@ export function getDeadlineLabel(
   lang: Language = "en",
 ): string {
   if (!isoDate) {
-    return lang === "es" ? "No disponible" : "Not available";
+    if (lang === "es") return "No disponible";
+    if (lang === "vi") return "Không có sẵn";
+    if (lang === "zh") return "不可用";
+    if (lang === "ar") return "غير متاح";
+    return "Not available";
   }
   const days = getDaysRemaining(isoDate, today);
   if (days < 0) {
-    return lang === "es" ? "Vencido" : "Passed";
+    if (lang === "es") return "Vencido";
+    if (lang === "vi") return "Đã qua";
+    if (lang === "zh") return "已截止";
+    if (lang === "ar") return "انتهى";
+    return "Passed";
   }
   if (days === 0) {
-    return lang === "es" ? "Hoy — Último día" : "Today — Last Day";
+    if (lang === "es") return "Hoy — Último día";
+    if (lang === "vi") return "Hôm nay — Ngày cuối cùng";
+    if (lang === "zh") return "今天 — 最后一天";
+    if (lang === "ar") return "اليوم — آخر يوم";
+    return "Today — Last Day";
   }
   if (days === 1) {
-    return lang === "es" ? "Queda 1 día" : "1 day left";
+    if (lang === "es") return "Queda 1 día";
+    if (lang === "vi") return "Còn 1 ngày";
+    if (lang === "zh") return "还剩 1 天";
+    if (lang === "ar") return "يوم واحد متبقٍّ";
+    return "1 day left";
   }
-  return lang === "es" ? `Quedan ${days} días` : `${days} days left`;
+  if (lang === "es") return `Quedan ${days} días`;
+  if (lang === "vi") return `Còn ${days} ngày`;
+  if (lang === "zh") return `还剩 ${days} 天`;
+  if (lang === "ar") return `${days} أيام متبقية`;
+  return `${days} days left`;
 }
+
+// Vietnamese month names (tháng = month)
+const VI_MONTHS = [
+  "tháng 1",
+  "tháng 2",
+  "tháng 3",
+  "tháng 4",
+  "tháng 5",
+  "tháng 6",
+  "tháng 7",
+  "tháng 8",
+  "tháng 9",
+  "tháng 10",
+  "tháng 11",
+  "tháng 12",
+];
+
+// Arabic month names (MSA)
+const AR_MONTHS = [
+  "يناير",
+  "فبراير",
+  "مارس",
+  "أبريل",
+  "مايو",
+  "يونيو",
+  "يوليو",
+  "أغسطس",
+  "سبتمبر",
+  "أكتوبر",
+  "نوفمبر",
+  "ديسمبر",
+];
 
 /**
  * Format an ISO date for display.
- * English: "March 3, 2026" (en-US locale)
- * Spanish: "3 de marzo de 2026" (es-ES locale)
+ * English: "March 3, 2026"
+ * Spanish: "3 de marzo de 2026"
+ * Vietnamese: "3 tháng 3, 2026"
+ * Chinese: "2026年3月3日"
+ * Arabic: "3 مارس 2026"
  */
 export function formatDate(isoDate: string, lang: Language = "en"): string {
   const [year, month, day] = isoDate.split("-").map(Number);
   const date = new Date(year, month - 1, day);
+
+  if (lang === "vi") {
+    return `${day} ${VI_MONTHS[month - 1]}, ${year}`;
+  }
+  if (lang === "zh") {
+    return `${year}年${month}月${day}日`;
+  }
+  if (lang === "ar") {
+    return `${day} ${AR_MONTHS[month - 1]} ${year}`;
+  }
+
   const locale = lang === "es" ? "es-ES" : "en-US";
   return date.toLocaleDateString(locale, {
     year: "numeric",
