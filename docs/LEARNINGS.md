@@ -658,3 +658,39 @@ The `${DOCKER_TTY_FLAGS[@]+"${DOCKER_TTY_FLAGS[@]}"}` expansion is required with
 ### Decision
 
 `docker/run-claude.sh` is patched. Any worktree used for scripted testing must pick up this version. The fix applies to both the orchestration worktree and all workflow branch worktrees.
+
+---
+
+## Learning 014: Anthropic API Workspace Budget Gates Wall-Clock Progress — Plan Quota, Not Just Time
+
+**Date discovered:** 2026-05-12
+**Affects:** Phase B smoke run (halted at Phase 4), Phase C planning
+**Severity:** High — 45-action Phase C is infeasible without a quota plan
+
+### What happened
+
+The Phase B vanilla smoke run completed Phases 1-3 and failed on Phase 4 (resume attempt) with:
+
+> `API Error: 400 — You have reached your specified workspace API usage limits. You will regain access on 2026-06-01 at 00:00 UTC.`
+
+Phase B Phases 4-6 and all of Phase C (45 actions) are blocked until the budget resets.
+
+### Why this matters more than build time
+
+Build time (15-25 min per phase) is predictable and manageable. API quota is a harder constraint:
+- Each in-container Claude session consumes budget proportional to context size + tool calls
+- Later phases are heavier: Phase 3 adds API integration scaffolding, Phase 5 adds Claude-from-app, Phase 6 adds Redis
+- A typical Phase 1 run likely consumes ~2-5x more than a simple "say hello" probe
+- 45 actions × ~4 phases each × Phase 5/6 complexity = large total consumption
+- No usage metering was in place when Phase 4 was hit — the failure was silent until runtime
+
+### Correct approach for Phase C
+
+1. **Don't start Phase C at the start of a quota period.** Verify remaining budget first.
+2. **Batch actions in quota-aware waves.** If each action consumes N% of quota, plan waves of (100/N) actions.
+3. **Pre-flight the quota** before each container dispatch: refuse to start if estimated usage exceeds remaining.
+4. **Hard stop before limit.** If a container exits with a 400 quota error, log and halt immediately rather than retrying (retries consume more quota).
+
+### Decision
+
+Add `scripts/api-budget-check.sh` that gates action dispatch. Wire it into the Phase C launch sequence so no action starts without a confirmed-adequate budget. Budget estimate per action (conservative): 3% of monthly quota. Plan waves of 20-25 actions.

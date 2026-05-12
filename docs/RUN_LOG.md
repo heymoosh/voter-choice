@@ -27,7 +27,15 @@
 
 **B8 (re-scoped): PASS** — all 3 completed phases have non-null values for all required axes. aggregate-experiment.mjs runs without crash.
 
-**Next: Wait for API reset (2026-06-01) then resume Phases 4-6 on `experiment/vanilla-r1-v2c`.** After B7 passes → Phase C (45-action re-run). Failures logged in `experiment/vanilla-r1-v2c/metrics/failures.jsonl`.
+**BLOCKED on API budget. Do NOT proceed to Phase C.** Phase B requires Phases 4-6 to validate the highest-risk architectural surfaces (RTL layout, LLM-at-runtime, external service integration). Skipping to Phase C would repeat the same anti-pattern that was avoided during B1 diagnostics.
+
+**Resume sequence (after 2026-06-01 API reset):**
+1. Resume vanilla smoke on `experiment/vanilla-r1-v2c`: run Phases 4, 5, 6 with same gates (clean commits, non-null JSON, all 7 axes).
+2. After B6: run `aggregate-experiment.mjs` on full 6-phase vanilla data; verify composite computes end-to-end.
+3. Verify AC-N pickup by workflow in each phase (see AC-N check in Phase C runbook).
+4. Only then re-tag `phase-A-complete` and start Phase C.
+
+**Tag:** `phase-B-partial-1-through-3` marks the current state.
 
 **B1 diagnostic findings (2026-05-12):**
 
