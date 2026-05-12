@@ -1,0 +1,1253 @@
+{
+  "metadata": {
+    "generatedAt": "2026-05-12T14:25:17.752Z",
+    "repo": "/Users/Muxin/Documents/GitHub/voter-choice",
+    "frameworks": [
+      "vanilla",
+      "bmad",
+      "spec-kit",
+      "superpowers",
+      "compound-engineering"
+    ],
+    "rubric": "scoring/auto-findings-rubric.md (checks 1, 5, 6, 7, 11, 12, 13 programmatically applied)"
+  },
+  "frameworks": [
+    {
+      "framework": "vanilla",
+      "chosen": "r1",
+      "replicatesFound": 0,
+      "completedPhases": [],
+      "findingsByPhase": {},
+      "responderEntries": 5,
+      "composite": 13,
+      "axes": [
+        {
+          "name": "testQuality",
+          "weight": 0.25,
+          "score": null,
+          "notes": "no data"
+        },
+        {
+          "name": "complexity",
+          "weight": 0.25,
+          "score": null,
+          "notes": "no data"
+        },
+        {
+          "name": "diffHygiene",
+          "weight": 0.2,
+          "score": null,
+          "notes": "no forward phases"
+        },
+        {
+          "name": "completion",
+          "weight": 0.2,
+          "score": 0,
+          "notes": "0/6 phases produced metrics"
+        },
+        {
+          "name": "variance",
+          "weight": 0.1,
+          "score": 40,
+          "notes": "mean RSD 38.5% across 10 P1 metrics"
+        }
+      ],
+      "rationale": "median LOC (1410); replicates span 1204..1428, RSD 7.54%",
+      "noisyMetrics": [
+        {
+          "metric": "vitest.tests.total",
+          "rsd": 36.13,
+          "note": "moderate variance"
+        },
+        {
+          "metric": "eslint.warnings",
+          "rsd": 70.71,
+          "note": "very high variance — flag in FRAMING.md"
+        },
+        {
+          "metric": "complexity.max",
+          "rsd": 66.55,
+          "note": "very high variance — flag in FRAMING.md"
+        },
+        {
+          "metric": "duplication.percentage",
+          "rsd": 141.42,
+          "note": "very high variance — flag in FRAMING.md"
+        }
+      ],
+      "_raw": {
+        "phase1": null,
+        "lastPhase": null
+      }
+    },
+    {
+      "framework": "bmad",
+      "chosen": "r2",
+      "replicatesFound": 0,
+      "completedPhases": [],
+      "findingsByPhase": {},
+      "responderEntries": 36,
+      "composite": 27,
+      "axes": [
+        {
+          "name": "testQuality",
+          "weight": 0.25,
+          "score": null,
+          "notes": "no data"
+        },
+        {
+          "name": "complexity",
+          "weight": 0.25,
+          "score": null,
+          "notes": "no data"
+        },
+        {
+          "name": "diffHygiene",
+          "weight": 0.2,
+          "score": null,
+          "notes": "no forward phases"
+        },
+        {
+          "name": "completion",
+          "weight": 0.2,
+          "score": 0,
+          "notes": "0/6 phases produced metrics"
+        },
+        {
+          "name": "variance",
+          "weight": 0.1,
+          "score": 80,
+          "notes": "mean RSD 11.2% across 10 P1 metrics"
+        }
+      ],
+      "rationale": "median LOC (1861); replicates span 1564..1861, RSD 7.95%",
+      "noisyMetrics": [
+        {
+          "metric": "duplication.percentage",
+          "rsd": 45.27,
+          "note": "moderate variance"
+        }
+      ],
+      "_raw": {
+        "phase1": null,
+        "lastPhase": null
+      }
+    },
+    {
+      "framework": "spec-kit",
+      "chosen": "r1",
+      "replicatesFound": 0,
+      "completedPhases": [],
+      "findingsByPhase": {},
+      "responderEntries": 12,
+      "composite": 13,
+      "axes": [
+        {
+          "name": "testQuality",
+          "weight": 0.25,
+          "score": null,
+          "notes": "no data"
+        },
+        {
+          "name": "complexity",
+          "weight": 0.25,
+          "score": null,
+          "notes": "no data"
+        },
+        {
+          "name": "diffHygiene",
+          "weight": 0.2,
+          "score": null,
+          "notes": "no forward phases"
+        },
+        {
+          "name": "completion",
+          "weight": 0.2,
+          "score": 0,
+          "notes": "0/6 phases produced metrics"
+        },
+        {
+          "name": "variance",
+          "weight": 0.1,
+          "score": 40,
+          "notes": "mean RSD 31.6% across 10 P1 metrics"
+        }
+      ],
+      "rationale": "median LOC (1661); replicates span 1574..2089, RSD 12.68%",
+      "noisyMetrics": [
+        {
+          "metric": "eslint.warnings",
+          "rsd": 141.42,
+          "note": "very high variance — flag in FRAMING.md"
+        },
+        {
+          "metric": "complexity.max",
+          "rsd": 44.02,
+          "note": "moderate variance"
+        },
+        {
+          "metric": "duplication.percentage",
+          "rsd": 71.34,
+          "note": "very high variance — flag in FRAMING.md"
+        }
+      ],
+      "_raw": {
+        "phase1": null,
+        "lastPhase": null
+      }
+    },
+    {
+      "framework": "superpowers",
+      "chosen": "r1",
+      "replicatesFound": 0,
+      "completedPhases": [],
+      "findingsByPhase": {},
+      "responderEntries": 24,
+      "composite": 20,
+      "axes": [
+        {
+          "name": "testQuality",
+          "weight": 0.25,
+          "score": null,
+          "notes": "no data"
+        },
+        {
+          "name": "complexity",
+          "weight": 0.25,
+          "score": null,
+          "notes": "no data"
+        },
+        {
+          "name": "diffHygiene",
+          "weight": 0.2,
+          "score": null,
+          "notes": "no forward phases"
+        },
+        {
+          "name": "completion",
+          "weight": 0.2,
+          "score": 0,
+          "notes": "0/6 phases produced metrics"
+        },
+        {
+          "name": "variance",
+          "weight": 0.1,
+          "score": 60,
+          "notes": "mean RSD 20.9% across 9 P1 metrics"
+        }
+      ],
+      "rationale": "median LOC (1328); replicates span 1075..1470, RSD 12.65%",
+      "noisyMetrics": [
+        {
+          "metric": "duplication.percentage",
+          "rsd": 141.42,
+          "note": "very high variance — flag in FRAMING.md"
+        }
+      ],
+      "_raw": {
+        "phase1": null,
+        "lastPhase": null
+      }
+    },
+    {
+      "framework": "compound-engineering",
+      "chosen": "r1",
+      "replicatesFound": 3,
+      "completedPhases": [
+        1
+      ],
+      "findingsByPhase": {
+        "1": [
+          {
+            "id": 1,
+            "name": "E2e gap",
+            "detail": "? / 0 passing"
+          },
+          {
+            "id": 5,
+            "name": "Lint regression",
+            "detail": "0 errors, 4 warnings"
+          },
+          {
+            "id": 7,
+            "name": "Timing gap",
+            "detail": "start=undefined end=undefined"
+          }
+        ]
+      },
+      "responderEntries": 26,
+      "composite": 32,
+      "axes": [
+        {
+          "name": "testQuality",
+          "weight": 0.25,
+          "score": null,
+          "notes": "no data"
+        },
+        {
+          "name": "complexity",
+          "weight": 0.25,
+          "score": 40,
+          "notes": "avg=6.17, max=63, critical=2, trajectory penalty=0"
+        },
+        {
+          "name": "diffHygiene",
+          "weight": 0.2,
+          "score": null,
+          "notes": "no forward phases"
+        },
+        {
+          "name": "completion",
+          "weight": 0.2,
+          "score": 17,
+          "notes": "1/6 phases produced metrics"
+        },
+        {
+          "name": "variance",
+          "weight": 0.1,
+          "score": 40,
+          "notes": "mean RSD 28.1% across 10 P1 metrics"
+        }
+      ],
+      "rationale": "median LOC (1782); replicates span 1458..1808, RSD 9.46%",
+      "noisyMetrics": [
+        {
+          "metric": "vitest.tests.total",
+          "rsd": 62.57,
+          "note": "very high variance — flag in FRAMING.md"
+        },
+        {
+          "metric": "eslint.warnings",
+          "rsd": 27.22,
+          "note": "moderate variance"
+        },
+        {
+          "metric": "complexity.max",
+          "rsd": 55.39,
+          "note": "very high variance — flag in FRAMING.md"
+        },
+        {
+          "metric": "duplication.percentage",
+          "rsd": 87.32,
+          "note": "very high variance — flag in FRAMING.md"
+        }
+      ],
+      "_raw": {
+        "phase1": {
+          "metadata": {
+            "timestamp": "2026-05-12T03:32:13.824Z",
+            "branch": "experiment/compound-engineering-r1",
+            "commit": "16951fb",
+            "phase": null,
+            "nodeVersion": "v22.14.0"
+          },
+          "eslint": {
+            "errors": 0,
+            "warnings": 4,
+            "complexityViolations": 4
+          },
+          "complexity": {
+            "count": 48,
+            "average": 6.17,
+            "max": 63,
+            "p50": 3,
+            "p75": 4,
+            "p95": 16,
+            "distribution": {
+              "simple_1_5": 38,
+              "moderate_6_10": 6,
+              "complex_11_15": 1,
+              "highComplex_16_20": 1,
+              "critical_21plus": 2
+            },
+            "perFunction": [
+              {
+                "file": "src/lib/openstates/derive.ts",
+                "name": "deriveOpenStatesData",
+                "complexity": 63,
+                "line": 155
+              },
+              {
+                "file": "src/lib/openstates/derive.ts",
+                "name": "<arrow>",
+                "complexity": 57,
+                "line": 310
+              },
+              {
+                "file": "src/lib/openstates/derive.ts",
+                "name": "buildVoteSummary",
+                "complexity": 16,
+                "line": 69
+              },
+              {
+                "file": "src/lib/promptBuilder.ts",
+                "name": "buildContextBlock",
+                "complexity": 11,
+                "line": 47
+              },
+              {
+                "file": "src/app/page.tsx",
+                "name": "Home",
+                "complexity": 10,
+                "line": 122
+              },
+              {
+                "file": "src/lib/promptBuilder.ts",
+                "name": "buildOpenStatesContext",
+                "complexity": 10,
+                "line": 82
+              },
+              {
+                "file": "src/app/page.tsx",
+                "name": "ResultCard",
+                "complexity": 7,
+                "line": 42
+              },
+              {
+                "file": "src/lib/openstates/derive.ts",
+                "name": "<arrow>",
+                "complexity": 7,
+                "line": 119
+              },
+              {
+                "file": "src/components/ZipForm.tsx",
+                "name": "ZipForm",
+                "complexity": 6,
+                "line": 10
+              },
+              {
+                "file": "src/lib/openstates/derive.ts",
+                "name": "<arrow>",
+                "complexity": 6,
+                "line": 454
+              },
+              {
+                "file": "src/app/page.tsx",
+                "name": "submitZip",
+                "complexity": 5,
+                "line": 180
+              },
+              {
+                "file": "src/lib/openstates/derive.ts",
+                "name": "mergeSourceUrls",
+                "complexity": 5,
+                "line": 143
+              },
+              {
+                "file": "src/app/page.tsx",
+                "name": "getRegistrationStatus",
+                "complexity": 4,
+                "line": 20
+              },
+              {
+                "file": "src/lib/openstates/derive.ts",
+                "name": "asString",
+                "complexity": 4,
+                "line": 14
+              },
+              {
+                "file": "src/lib/openstates/derive.ts",
+                "name": "normalizeStateCode",
+                "complexity": 4,
+                "line": 59
+              },
+              {
+                "file": "src/lib/promptBuilder.ts",
+                "name": "getNextElection",
+                "complexity": 4,
+                "line": 22
+              },
+              {
+                "file": "src/components/ZipForm.tsx",
+                "name": "validate",
+                "complexity": 3,
+                "line": 14
+              },
+              {
+                "file": "src/components/ZipForm.tsx",
+                "name": "handleSubmit",
+                "complexity": 3,
+                "line": 21
+              },
+              {
+                "file": "src/components/ZipForm.tsx",
+                "name": "handleChange",
+                "complexity": 3,
+                "line": 39
+              },
+              {
+                "file": "src/lib/openstates/derive.ts",
+                "name": "<arrow>",
+                "complexity": 3,
+                "line": 32
+              },
+              {
+                "file": "src/lib/openstates/derive.ts",
+                "name": "<arrow>",
+                "complexity": 3,
+                "line": 41
+              },
+              {
+                "file": "src/lib/openstates/derive.ts",
+                "name": "normalizeStateCodeFromDivision",
+                "complexity": 3,
+                "line": 48
+              },
+              {
+                "file": "src/lib/openstates/derive.ts",
+                "name": "<arrow>",
+                "complexity": 3,
+                "line": 99
+              },
+              {
+                "file": "src/lib/openstates/derive.ts",
+                "name": "summarizeVotes",
+                "complexity": 3,
+                "line": 113
+              },
+              {
+                "file": "src/lib/openstates/derive.ts",
+                "name": "<arrow>",
+                "complexity": 3,
+                "line": 319
+              },
+              {
+                "file": "src/lib/openstates/derive.ts",
+                "name": "<arrow>",
+                "complexity": 3,
+                "line": 323
+              },
+              {
+                "file": "src/lib/openstates/derive.ts",
+                "name": "<arrow>",
+                "complexity": 3,
+                "line": 394
+              },
+              {
+                "file": "src/lib/openstates/load.ts",
+                "name": "<anonymous>",
+                "complexity": 3,
+                "line": 14
+              },
+              {
+                "file": "src/lib/stateRegistry.ts",
+                "name": "getStateName",
+                "complexity": 3,
+                "line": 27
+              },
+              {
+                "file": "src/app/page.tsx",
+                "name": "getElectionSummary",
+                "complexity": 2,
+                "line": 32
+              },
+              {
+                "file": "src/app/page.tsx",
+                "name": "<arrow>",
+                "complexity": 2,
+                "line": 132
+              },
+              {
+                "file": "src/app/page.tsx",
+                "name": "<arrow>",
+                "complexity": 2,
+                "line": 140
+              },
+              {
+                "file": "src/app/page.tsx",
+                "name": "<anonymous>",
+                "complexity": 2,
+                "line": 149
+              },
+              {
+                "file": "src/app/page.tsx",
+                "name": "loadState",
+                "complexity": 2,
+                "line": 158
+              },
+              {
+                "file": "src/components/StateSelector.tsx",
+                "name": "<arrow>",
+                "complexity": 2,
+                "line": 80
+              },
+              {
+                "file": "src/components/ZipForm.tsx",
+                "name": "handleKeyDown",
+                "complexity": 2,
+                "line": 33
+              },
+              {
+                "file": "src/lib/openstates/derive.ts",
+                "name": "asDate",
+                "complexity": 2,
+                "line": 26
+              },
+              {
+                "file": "src/lib/openstates/derive.ts",
+                "name": "toSourceLinks",
+                "complexity": 2,
+                "line": 30
+              },
+              {
+                "file": "src/lib/openstates/derive.ts",
+                "name": "toIdentifiers",
+                "complexity": 2,
+                "line": 39
+              },
+              {
+                "file": "src/lib/openstates/derive.ts",
+                "name": "<arrow>",
+                "complexity": 2,
+                "line": 419
+              },
+              {
+                "file": "src/lib/openstates/derive.ts",
+                "name": "lookupOpenStatesCandidate",
+                "complexity": 2,
+                "line": 444
+              },
+              {
+                "file": "src/lib/openstates/lookup.ts",
+                "name": "getCandidateEnrichment",
+                "complexity": 2,
+                "line": 8
+              },
+              {
+                "file": "src/lib/promptBuilder.ts",
+                "name": "formatDate",
+                "complexity": 2,
+                "line": 8
+              },
+              {
+                "file": "src/lib/promptBuilder.ts",
+                "name": "<arrow>",
+                "complexity": 2,
+                "line": 32
+              },
+              {
+                "file": "src/lib/promptBuilder.ts",
+                "name": "describeDeadline",
+                "complexity": 2,
+                "line": 39
+              },
+              {
+                "file": "src/lib/stateDataLoader.ts",
+                "name": "<anonymous>",
+                "complexity": 2,
+                "line": 5
+              },
+              {
+                "file": "src/lib/stateRegistry.ts",
+                "name": "getStateData",
+                "complexity": 2,
+                "line": 13
+              },
+              {
+                "file": "src/lib/stateRegistry.ts",
+                "name": "getStateCodesForZip",
+                "complexity": 2,
+                "line": 21
+              }
+            ]
+          },
+          "vitest": {
+            "tests": {
+              "total": 5,
+              "passed": 5,
+              "failed": 0,
+              "skipped": "no test files",
+              "passRate": 100
+            },
+            "coverage": {
+              "lines": null,
+              "branches": null,
+              "functions": null,
+              "statements": null
+            }
+          },
+          "duplication": {
+            "duplicatedLines": 0,
+            "totalLines": 1670,
+            "percentage": 0,
+            "clones": 0
+          },
+          "bundleSize": {
+            "buildSuccess": true,
+            "pages": [
+              {
+                "route": "/",
+                "size": 5.05,
+                "unit": "kB"
+              },
+              {
+                "route": "/_not-found",
+                "size": 986,
+                "unit": "B"
+              }
+            ],
+            "firstLoadJsShared": {
+              "size": 102,
+              "unit": "kB"
+            }
+          },
+          "lighthouse": {
+            "performance": null,
+            "accessibility": null,
+            "bestPractices": null,
+            "seo": null
+          },
+          "playwright": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "timedOut": 0,
+            "skipped": 0,
+            "passRate": null
+          },
+          "linesOfCode": {
+            "application": {
+              "code": 1782,
+              "files": 18,
+              "byExtension": {
+                ".css": {
+                  "files": 1,
+                  "code": 284
+                },
+                ".tsx": {
+                  "files": 4,
+                  "code": 486
+                },
+                ".json": {
+                  "files": 5,
+                  "code": 231
+                },
+                ".ts": {
+                  "files": 8,
+                  "code": 781
+                }
+              }
+            },
+            "plugin": {
+              "code": 0,
+              "files": 0,
+              "byExtension": {}
+            },
+            "infrastructure": {
+              "code": 351,
+              "files": 10
+            },
+            "total": {
+              "code": 2133,
+              "files": 28
+            }
+          },
+          "workflowTests": {
+            "count": 0,
+            "files": []
+          },
+          "workflowTiming": {
+            "steps": [
+              {
+                "step": "ce:plan",
+                "started": "2026-05-11T19:49:31-05:00",
+                "completed": "2026-05-11T19:50:38-05:00",
+                "durationMs": 67000
+              },
+              {
+                "step": "ce:work",
+                "started": "2026-05-11T19:50:38-05:00",
+                "completed": "2026-05-11T20:09:21-05:00",
+                "durationMs": 1123000
+              },
+              {
+                "step": "ce:plan",
+                "started": "2026-05-11T20:07:47-05:00",
+                "completed": "2026-05-11T19:50:38-05:00",
+                "durationMs": -1029000
+              },
+              {
+                "step": "ce:work",
+                "started": "2026-05-11T20:08:23-05:00",
+                "completed": "2026-05-11T20:09:21-05:00",
+                "durationMs": 58000
+              },
+              {
+                "step": "ce:review",
+                "started": "2026-05-11T20:09:26-05:00",
+                "completed": "2026-05-11T20:10:09-05:00",
+                "durationMs": 43000
+              },
+              {
+                "step": "ce:compound",
+                "started": "2026-05-11T20:10:14-05:00",
+                "completed": "2026-05-11T20:10:42-05:00",
+                "durationMs": 28000
+              }
+            ],
+            "totalSteps": 6,
+            "completedSteps": 6
+          },
+          "diffHygiene": null
+        },
+        "lastPhase": {
+          "metadata": {
+            "timestamp": "2026-05-12T03:32:13.824Z",
+            "branch": "experiment/compound-engineering-r1",
+            "commit": "16951fb",
+            "phase": null,
+            "nodeVersion": "v22.14.0"
+          },
+          "eslint": {
+            "errors": 0,
+            "warnings": 4,
+            "complexityViolations": 4
+          },
+          "complexity": {
+            "count": 48,
+            "average": 6.17,
+            "max": 63,
+            "p50": 3,
+            "p75": 4,
+            "p95": 16,
+            "distribution": {
+              "simple_1_5": 38,
+              "moderate_6_10": 6,
+              "complex_11_15": 1,
+              "highComplex_16_20": 1,
+              "critical_21plus": 2
+            },
+            "perFunction": [
+              {
+                "file": "src/lib/openstates/derive.ts",
+                "name": "deriveOpenStatesData",
+                "complexity": 63,
+                "line": 155
+              },
+              {
+                "file": "src/lib/openstates/derive.ts",
+                "name": "<arrow>",
+                "complexity": 57,
+                "line": 310
+              },
+              {
+                "file": "src/lib/openstates/derive.ts",
+                "name": "buildVoteSummary",
+                "complexity": 16,
+                "line": 69
+              },
+              {
+                "file": "src/lib/promptBuilder.ts",
+                "name": "buildContextBlock",
+                "complexity": 11,
+                "line": 47
+              },
+              {
+                "file": "src/app/page.tsx",
+                "name": "Home",
+                "complexity": 10,
+                "line": 122
+              },
+              {
+                "file": "src/lib/promptBuilder.ts",
+                "name": "buildOpenStatesContext",
+                "complexity": 10,
+                "line": 82
+              },
+              {
+                "file": "src/app/page.tsx",
+                "name": "ResultCard",
+                "complexity": 7,
+                "line": 42
+              },
+              {
+                "file": "src/lib/openstates/derive.ts",
+                "name": "<arrow>",
+                "complexity": 7,
+                "line": 119
+              },
+              {
+                "file": "src/components/ZipForm.tsx",
+                "name": "ZipForm",
+                "complexity": 6,
+                "line": 10
+              },
+              {
+                "file": "src/lib/openstates/derive.ts",
+                "name": "<arrow>",
+                "complexity": 6,
+                "line": 454
+              },
+              {
+                "file": "src/app/page.tsx",
+                "name": "submitZip",
+                "complexity": 5,
+                "line": 180
+              },
+              {
+                "file": "src/lib/openstates/derive.ts",
+                "name": "mergeSourceUrls",
+                "complexity": 5,
+                "line": 143
+              },
+              {
+                "file": "src/app/page.tsx",
+                "name": "getRegistrationStatus",
+                "complexity": 4,
+                "line": 20
+              },
+              {
+                "file": "src/lib/openstates/derive.ts",
+                "name": "asString",
+                "complexity": 4,
+                "line": 14
+              },
+              {
+                "file": "src/lib/openstates/derive.ts",
+                "name": "normalizeStateCode",
+                "complexity": 4,
+                "line": 59
+              },
+              {
+                "file": "src/lib/promptBuilder.ts",
+                "name": "getNextElection",
+                "complexity": 4,
+                "line": 22
+              },
+              {
+                "file": "src/components/ZipForm.tsx",
+                "name": "validate",
+                "complexity": 3,
+                "line": 14
+              },
+              {
+                "file": "src/components/ZipForm.tsx",
+                "name": "handleSubmit",
+                "complexity": 3,
+                "line": 21
+              },
+              {
+                "file": "src/components/ZipForm.tsx",
+                "name": "handleChange",
+                "complexity": 3,
+                "line": 39
+              },
+              {
+                "file": "src/lib/openstates/derive.ts",
+                "name": "<arrow>",
+                "complexity": 3,
+                "line": 32
+              },
+              {
+                "file": "src/lib/openstates/derive.ts",
+                "name": "<arrow>",
+                "complexity": 3,
+                "line": 41
+              },
+              {
+                "file": "src/lib/openstates/derive.ts",
+                "name": "normalizeStateCodeFromDivision",
+                "complexity": 3,
+                "line": 48
+              },
+              {
+                "file": "src/lib/openstates/derive.ts",
+                "name": "<arrow>",
+                "complexity": 3,
+                "line": 99
+              },
+              {
+                "file": "src/lib/openstates/derive.ts",
+                "name": "summarizeVotes",
+                "complexity": 3,
+                "line": 113
+              },
+              {
+                "file": "src/lib/openstates/derive.ts",
+                "name": "<arrow>",
+                "complexity": 3,
+                "line": 319
+              },
+              {
+                "file": "src/lib/openstates/derive.ts",
+                "name": "<arrow>",
+                "complexity": 3,
+                "line": 323
+              },
+              {
+                "file": "src/lib/openstates/derive.ts",
+                "name": "<arrow>",
+                "complexity": 3,
+                "line": 394
+              },
+              {
+                "file": "src/lib/openstates/load.ts",
+                "name": "<anonymous>",
+                "complexity": 3,
+                "line": 14
+              },
+              {
+                "file": "src/lib/stateRegistry.ts",
+                "name": "getStateName",
+                "complexity": 3,
+                "line": 27
+              },
+              {
+                "file": "src/app/page.tsx",
+                "name": "getElectionSummary",
+                "complexity": 2,
+                "line": 32
+              },
+              {
+                "file": "src/app/page.tsx",
+                "name": "<arrow>",
+                "complexity": 2,
+                "line": 132
+              },
+              {
+                "file": "src/app/page.tsx",
+                "name": "<arrow>",
+                "complexity": 2,
+                "line": 140
+              },
+              {
+                "file": "src/app/page.tsx",
+                "name": "<anonymous>",
+                "complexity": 2,
+                "line": 149
+              },
+              {
+                "file": "src/app/page.tsx",
+                "name": "loadState",
+                "complexity": 2,
+                "line": 158
+              },
+              {
+                "file": "src/components/StateSelector.tsx",
+                "name": "<arrow>",
+                "complexity": 2,
+                "line": 80
+              },
+              {
+                "file": "src/components/ZipForm.tsx",
+                "name": "handleKeyDown",
+                "complexity": 2,
+                "line": 33
+              },
+              {
+                "file": "src/lib/openstates/derive.ts",
+                "name": "asDate",
+                "complexity": 2,
+                "line": 26
+              },
+              {
+                "file": "src/lib/openstates/derive.ts",
+                "name": "toSourceLinks",
+                "complexity": 2,
+                "line": 30
+              },
+              {
+                "file": "src/lib/openstates/derive.ts",
+                "name": "toIdentifiers",
+                "complexity": 2,
+                "line": 39
+              },
+              {
+                "file": "src/lib/openstates/derive.ts",
+                "name": "<arrow>",
+                "complexity": 2,
+                "line": 419
+              },
+              {
+                "file": "src/lib/openstates/derive.ts",
+                "name": "lookupOpenStatesCandidate",
+                "complexity": 2,
+                "line": 444
+              },
+              {
+                "file": "src/lib/openstates/lookup.ts",
+                "name": "getCandidateEnrichment",
+                "complexity": 2,
+                "line": 8
+              },
+              {
+                "file": "src/lib/promptBuilder.ts",
+                "name": "formatDate",
+                "complexity": 2,
+                "line": 8
+              },
+              {
+                "file": "src/lib/promptBuilder.ts",
+                "name": "<arrow>",
+                "complexity": 2,
+                "line": 32
+              },
+              {
+                "file": "src/lib/promptBuilder.ts",
+                "name": "describeDeadline",
+                "complexity": 2,
+                "line": 39
+              },
+              {
+                "file": "src/lib/stateDataLoader.ts",
+                "name": "<anonymous>",
+                "complexity": 2,
+                "line": 5
+              },
+              {
+                "file": "src/lib/stateRegistry.ts",
+                "name": "getStateData",
+                "complexity": 2,
+                "line": 13
+              },
+              {
+                "file": "src/lib/stateRegistry.ts",
+                "name": "getStateCodesForZip",
+                "complexity": 2,
+                "line": 21
+              }
+            ]
+          },
+          "vitest": {
+            "tests": {
+              "total": 5,
+              "passed": 5,
+              "failed": 0,
+              "skipped": "no test files",
+              "passRate": 100
+            },
+            "coverage": {
+              "lines": null,
+              "branches": null,
+              "functions": null,
+              "statements": null
+            }
+          },
+          "duplication": {
+            "duplicatedLines": 0,
+            "totalLines": 1670,
+            "percentage": 0,
+            "clones": 0
+          },
+          "bundleSize": {
+            "buildSuccess": true,
+            "pages": [
+              {
+                "route": "/",
+                "size": 5.05,
+                "unit": "kB"
+              },
+              {
+                "route": "/_not-found",
+                "size": 986,
+                "unit": "B"
+              }
+            ],
+            "firstLoadJsShared": {
+              "size": 102,
+              "unit": "kB"
+            }
+          },
+          "lighthouse": {
+            "performance": null,
+            "accessibility": null,
+            "bestPractices": null,
+            "seo": null
+          },
+          "playwright": {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "timedOut": 0,
+            "skipped": 0,
+            "passRate": null
+          },
+          "linesOfCode": {
+            "application": {
+              "code": 1782,
+              "files": 18,
+              "byExtension": {
+                ".css": {
+                  "files": 1,
+                  "code": 284
+                },
+                ".tsx": {
+                  "files": 4,
+                  "code": 486
+                },
+                ".json": {
+                  "files": 5,
+                  "code": 231
+                },
+                ".ts": {
+                  "files": 8,
+                  "code": 781
+                }
+              }
+            },
+            "plugin": {
+              "code": 0,
+              "files": 0,
+              "byExtension": {}
+            },
+            "infrastructure": {
+              "code": 351,
+              "files": 10
+            },
+            "total": {
+              "code": 2133,
+              "files": 28
+            }
+          },
+          "workflowTests": {
+            "count": 0,
+            "files": []
+          },
+          "workflowTiming": {
+            "steps": [
+              {
+                "step": "ce:plan",
+                "started": "2026-05-11T19:49:31-05:00",
+                "completed": "2026-05-11T19:50:38-05:00",
+                "durationMs": 67000
+              },
+              {
+                "step": "ce:work",
+                "started": "2026-05-11T19:50:38-05:00",
+                "completed": "2026-05-11T20:09:21-05:00",
+                "durationMs": 1123000
+              },
+              {
+                "step": "ce:plan",
+                "started": "2026-05-11T20:07:47-05:00",
+                "completed": "2026-05-11T19:50:38-05:00",
+                "durationMs": -1029000
+              },
+              {
+                "step": "ce:work",
+                "started": "2026-05-11T20:08:23-05:00",
+                "completed": "2026-05-11T20:09:21-05:00",
+                "durationMs": 58000
+              },
+              {
+                "step": "ce:review",
+                "started": "2026-05-11T20:09:26-05:00",
+                "completed": "2026-05-11T20:10:09-05:00",
+                "durationMs": 43000
+              },
+              {
+                "step": "ce:compound",
+                "started": "2026-05-11T20:10:14-05:00",
+                "completed": "2026-05-11T20:10:42-05:00",
+                "durationMs": 28000
+              }
+            ],
+            "totalSteps": 6,
+            "completedSteps": 6
+          },
+          "diffHygiene": null
+        }
+      }
+    }
+  ]
+}
