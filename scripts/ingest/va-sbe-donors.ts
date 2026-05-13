@@ -46,7 +46,6 @@ import {
 
 const SOURCE = "va_sbe_bulk";
 const SOURCE_URL = "https://apps.elections.virginia.gov/SBE_CSV/CF/";
-const ELECTION_CYCLE = "2024";
 const BASE_URL = "https://apps.elections.virginia.gov/SBE_CSV/CF/";
 const MONTHS = [
   "01", "02", "03", "04", "05", "06",
@@ -102,6 +101,7 @@ export type VaSbeIngestCounts = {
 interface IngestConfig {
   dryRun: boolean;
   limit: number | null;
+  year: string;
 }
 
 function resolveConfig(argv: string[] = process.argv): IngestConfig {
@@ -113,7 +113,9 @@ function resolveConfig(argv: string[] = process.argv): IngestConfig {
     const parsed = Number.parseInt(raw ?? "", 10);
     if (Number.isInteger(parsed) && parsed > 0) limit = parsed;
   }
-  return { dryRun, limit };
+  const yearIdx = argv.indexOf("--year");
+  const year = yearIdx !== -1 ? (argv[yearIdx + 1] ?? "2024") : "2024";
+  return { dryRun, limit, year };
 }
 
 // ---------------------------------------------------------------------------
@@ -358,6 +360,7 @@ function isGaOfficeSought(officeSought: string): boolean {
 
 async function buildReportIdMap(
   byLastName: Map<string, DbCandidate[]>,
+  year: string = "2024",
 ): Promise<{
   reportIdToCandidate: Map<string, DbCandidate>;
   candidateNameByReportId: Map<string, string>;
@@ -409,10 +412,10 @@ async function buildReportIdMap(
   }
 
   for (const month of MONTHS) {
-    const url = `${BASE_URL}2024_${month}/Report.csv`;
-    const tmpPath = `/tmp/VA_2024_${month}_Report.csv`;
+    const url = `${BASE_URL}${year}_${month}/Report.csv`;
+    const tmpPath = `/tmp/VA_${year}_${month}_Report.csv`;
 
-    console.log(`[va-sbe-donors] downloading Report.csv month=2024_${month} ...`);
+    console.log(`[va-sbe-donors] downloading Report.csv month=${year}_${month} ...`);
     const ok = await downloadToFile(url, tmpPath);
     if (!ok) continue;
 
@@ -427,14 +430,12 @@ async function buildReportIdMap(
       if (committeeType !== "Candidate Campaign Committee") return;
 
       // Filter: OfficeSought must be a General Assembly office
-      // (IsGeneralAssembly is "False" for all 2024 rows because the GA election
-      // was November 2023 — filter by OfficeSought keywords instead)
       const officeSought = row["OfficeSought"] ?? "";
       if (!isGaOfficeSought(officeSought)) return;
 
-      // Filter: ReportYear must be 2024
+      // Filter: ReportYear must match the target year
       const reportYear = row["ReportYear"] ?? "";
-      if (reportYear !== ELECTION_CYCLE) return;
+      if (reportYear !== year) return;
 
       const reportId = row["ReportId"] ?? "";
       if (!reportId) return;
@@ -451,7 +452,7 @@ async function buildReportIdMap(
     });
 
     console.log(
-      `[va-sbe-donors] Report.csv month=2024_${month}: rows_read=${rowsRead} reports_matched=${rowsMatched}`,
+      `[va-sbe-donors] Report.csv month=${year}_${month}: rows_read=${rowsRead} reports_matched=${rowsMatched}`,
     );
 
     // Clean up temp file
@@ -475,6 +476,7 @@ async function buildReportIdMap(
 async function aggregateScheduleA(
   reportIdToCandidate: Map<string, DbCandidate>,
   candidateNameByReportId: Map<string, string>,
+  year: string = "2024",
 ): Promise<{
   agg: Map<string, AggValue>;
   candidateMatchedNames: Map<string, Set<string>>;
@@ -485,11 +487,11 @@ async function aggregateScheduleA(
   const counters = { processed: 0, filtered: 0 };
 
   for (const month of MONTHS) {
-    const url = `${BASE_URL}2024_${month}/ScheduleA.csv`;
-    const tmpPath = `/tmp/VA_2024_${month}_ScheduleA.csv`;
+    const url = `${BASE_URL}${year}_${month}/ScheduleA.csv`;
+    const tmpPath = `/tmp/VA_${year}_${month}_ScheduleA.csv`;
 
     console.log(
-      `[va-sbe-donors] downloading ScheduleA.csv month=2024_${month} ...`,
+      `[va-sbe-donors] downloading ScheduleA.csv month=${year}_${month} ...`,
     );
     const ok = await downloadToFile(url, tmpPath);
     if (!ok) continue;
@@ -533,7 +535,7 @@ async function aggregateScheduleA(
         bucket = orgBucket ?? "Other";
       }
 
-      const aggKey = `${dbCandidate.id}|${ELECTION_CYCLE}|${bucket}`;
+      const aggKey = `${dbCandidate.id}|${year}|${bucket}`;
       const existing = agg.get(aggKey);
       const rawCandName = candidateNameByReportId.get(reportId) ?? "";
       if (existing) {
@@ -557,7 +559,7 @@ async function aggregateScheduleA(
     });
 
     console.log(
-      `[va-sbe-donors] ScheduleA.csv month=2024_${month}: rows_read=${rowsInFile} matched_contributions=${matchedInFile}`,
+      `[va-sbe-donors] ScheduleA.csv month=${year}_${month}: rows_read=${rowsInFile} matched_contributions=${matchedInFile}`,
     );
 
     // Clean up temp file
@@ -697,9 +699,9 @@ export async function ingestVaSbeDonors({
   );
 
   // Step 3: Download Report.csv files and build ReportId → candidate map
-  console.log(`[va-sbe-donors] downloading Report.csv files for 2024 ...`);
+  console.log(`[va-sbe-donors] downloading Report.csv files for ${config.year} ...`);
   const { reportIdToCandidate, candidateNameByReportId } =
-    await buildReportIdMap(byLastName);
+    await buildReportIdMap(byLastName, config.year);
 
   const uniqueCandidatesFromReports = new Set(
     [...reportIdToCandidate.values()].map((c) => c.id),
@@ -709,10 +711,11 @@ export async function ingestVaSbeDonors({
   );
 
   // Step 4: Download ScheduleA.csv files and aggregate contributions
-  console.log(`[va-sbe-donors] downloading ScheduleA.csv files for 2024 ...`);
+  console.log(`[va-sbe-donors] downloading ScheduleA.csv files for ${config.year} ...`);
   const { agg, candidateMatchedNames, counters } = await aggregateScheduleA(
     reportIdToCandidate,
     candidateNameByReportId,
+    config.year,
   );
 
   console.log(
