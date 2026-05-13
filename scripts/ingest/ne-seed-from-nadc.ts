@@ -49,13 +49,23 @@ function parseCsvLine(line: string): string[] {
     const ch = line[i];
     const next = line[i + 1];
     if (inQuotes) {
-      if (ch === '"' && next === '"') { current += '"'; i++; }
-      else if (ch === '"') { inQuotes = false; }
-      else { current += ch; }
+      if (ch === '"' && next === '"') {
+        current += '"';
+        i++;
+      } else if (ch === '"') {
+        inQuotes = false;
+      } else {
+        current += ch;
+      }
     } else {
-      if (ch === '"') { inQuotes = true; }
-      else if (ch === ",") { fields.push(current); current = ""; }
-      else { current += ch; }
+      if (ch === '"') {
+        inQuotes = true;
+      } else if (ch === ",") {
+        fields.push(current);
+        current = "";
+      } else {
+        current += ch;
+      }
     }
   }
   fields.push(current);
@@ -67,16 +77,26 @@ async function streamZipCsv(
   onRow: (row: Record<string, string>) => void,
 ): Promise<void> {
   return new Promise((resolve, reject) => {
-    const proc = spawn("unzip", ["-p", zipPath], { stdio: ["ignore", "pipe", "pipe"] });
-    const rl = readline.createInterface({ input: proc.stdout, crlfDelay: Infinity });
+    const proc = spawn("unzip", ["-p", zipPath], {
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+    const rl = readline.createInterface({
+      input: proc.stdout,
+      crlfDelay: Infinity,
+    });
     let headers: string[] | null = null;
     let errOutput = "";
-    proc.stderr.on("data", (chunk: Buffer) => { errOutput += chunk.toString(); });
+    proc.stderr.on("data", (chunk: Buffer) => {
+      errOutput += chunk.toString();
+    });
     rl.on("line", (line) => {
       const trimmed = line.trim();
       if (!trimmed) return;
       const fields = parseCsvLine(trimmed);
-      if (headers === null) { headers = fields; return; }
+      if (headers === null) {
+        headers = fields;
+        return;
+      }
       const row: Record<string, string> = {};
       for (let i = 0; i < headers.length; i++) {
         row[headers[i] as string] = fields[i] ?? "";
@@ -88,7 +108,9 @@ async function streamZipCsv(
     proc.on("error", reject);
     proc.on("close", (code) => {
       if (code !== 0 && code !== null) {
-        reject(new Error(`unzip exited with code ${code}: ${errOutput.trim()}`));
+        reject(
+          new Error(`unzip exited with code ${code}: ${errOutput.trim()}`),
+        );
       }
     });
   });
@@ -103,7 +125,13 @@ function deterministicUuid(input: string): string {
   hash[6] = (hash[6] & 0x0f) | 0x50;
   hash[8] = (hash[8] & 0x3f) | 0x80;
   const hex = hash.subarray(0, 16).toString("hex");
-  return [hex.slice(0, 8), hex.slice(8, 12), hex.slice(12, 16), hex.slice(16, 20), hex.slice(20)].join("-");
+  return [
+    hex.slice(0, 8),
+    hex.slice(8, 12),
+    hex.slice(12, 16),
+    hex.slice(16, 20),
+    hex.slice(20),
+  ].join("-");
 }
 
 function buildCandidateId(normalizedName: string): string {
@@ -118,7 +146,11 @@ function buildCandidateId(normalizedName: string): string {
 const NAME_SUFFIXES = new Set(["JR", "SR", "II", "III", "IV"]);
 
 function normalizeName(name: string): string {
-  return name.toUpperCase().replace(/[^A-Z0-9\s]/g, "").replace(/\s+/g, " ").trim();
+  return name
+    .toUpperCase()
+    .replace(/[^A-Z0-9\s]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 /** Strip known suffixes from the end of a name token array */
@@ -149,14 +181,18 @@ async function main() {
   const localFileIdx = process.argv.indexOf("--local-file");
   const localFile = localFileIdx !== -1 ? process.argv[localFileIdx + 1] : null;
 
-  let csvPath = localFile ?? DEFAULT_CSV_PATH;
+  const csvPath = localFile ?? DEFAULT_CSV_PATH;
   if (!localFile && !fs.existsSync(csvPath)) {
     console.log(`[ne-seed-nadc] downloading NADC bulk data ...`);
-    const res = await fetch(NE_BULK_URL, { headers: { "User-Agent": "voter-choice-ne-seed" } });
+    const res = await fetch(NE_BULK_URL, {
+      headers: { "User-Agent": "voter-choice-ne-seed" },
+    });
     if (!res.ok) throw new Error(`HTTP ${res.status} fetching NADC bulk data`);
     const buf = await res.arrayBuffer();
     fs.writeFileSync(csvPath, Buffer.from(buf));
-    console.log(`[ne-seed-nadc] downloaded ${(buf.byteLength / 1_048_576).toFixed(1)} MB`);
+    console.log(
+      `[ne-seed-nadc] downloaded ${(buf.byteLength / 1_048_576).toFixed(1)} MB`,
+    );
   } else {
     console.log(`[ne-seed-nadc] using file at ${csvPath}`);
   }
@@ -172,15 +208,21 @@ async function main() {
     if (name) candidateNames.add(normalizeName(name));
   });
 
-  console.log(`[ne-seed-nadc] found ${candidateNames.size} unique candidate names in NADC data`);
+  console.log(
+    `[ne-seed-nadc] found ${candidateNames.size} unique candidate names in NADC data`,
+  );
 
   // Load existing NE candidates from DB
   const existingRows = await db
     .select({ fullName: candidates.fullName })
     .from(candidates)
     .where(sql`${candidates.jurisdiction} = ${JURISDICTION_DB}`);
-  const existingNormalized = new Set(existingRows.map((r) => normalizeName(r.fullName)));
-  console.log(`[ne-seed-nadc] ${existingNormalized.size} NE candidates already in DB`);
+  const existingNormalized = new Set(
+    existingRows.map((r) => normalizeName(r.fullName)),
+  );
+  console.log(
+    `[ne-seed-nadc] ${existingNormalized.size} NE candidates already in DB`,
+  );
 
   let inserted = 0;
   let skipped = 0;
@@ -212,7 +254,9 @@ async function main() {
         })
         .onConflictDoNothing();
 
-      const officeId = deterministicUuid(`${candidateId}:${JURISDICTION_DB}:2024`);
+      const officeId = deterministicUuid(
+        `${candidateId}:${JURISDICTION_DB}:2024`,
+      );
       await db
         .insert(candidateOffices)
         .values({

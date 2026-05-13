@@ -460,7 +460,11 @@ export async function ingestStateDonors({
     testUrl.searchParams.set("y", config.electionCycles[0] ?? "2024");
     testUrl.searchParams.set("s", "TX");
     testUrl.searchParams.set("can_nam", "Abbott");
-    const testJson = await fetchFtmJson(testUrl.href, fetcher, config.ftmApiKey);
+    const testJson = await fetchFtmJson(
+      testUrl.href,
+      fetcher,
+      config.ftmApiKey,
+    );
     // parseFtmIndustryResponse throws if API returns {"error": ...}
     parseFtmIndustryResponse(testJson);
     console.log("[state-donors] FTM API key verified — proceeding");

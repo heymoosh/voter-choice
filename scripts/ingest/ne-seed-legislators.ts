@@ -41,7 +41,11 @@ interface OpenStatesPersonMembership {
 interface OpenStatesPerson {
   id: string;
   name: string;
-  party: Array<{ name: string; start_date?: string | null; end_date?: string | null }>;
+  party: Array<{
+    name: string;
+    start_date?: string | null;
+    end_date?: string | null;
+  }>;
   current_memberships?: OpenStatesPersonMembership[];
 }
 
@@ -131,7 +135,9 @@ async function main() {
   console.log(`[ne-seed] fetched ${people.length} NE legislators`);
 
   if (people.length === 0) {
-    console.warn("[ne-seed] no legislators returned — check API key and jurisdiction");
+    console.warn(
+      "[ne-seed] no legislators returned — check API key and jurisdiction",
+    );
     return;
   }
 
@@ -140,8 +146,12 @@ async function main() {
     .select({ sourceId: candidates.sourceId })
     .from(candidates)
     .where(sql`${candidates.jurisdiction} = ${JURISDICTION_DB}`);
-  const existingSourceIds = new Set(existingRows.map((r) => r.sourceId).filter(Boolean));
-  console.log(`[ne-seed] ${existingSourceIds.size} NE candidates already in DB`);
+  const existingSourceIds = new Set(
+    existingRows.map((r) => r.sourceId).filter(Boolean),
+  );
+  console.log(
+    `[ne-seed] ${existingSourceIds.size} NE candidates already in DB`,
+  );
 
   let inserted = 0;
   let skipped = 0;
@@ -179,7 +189,9 @@ async function main() {
         });
 
       // Insert office record
-      const officeId = deterministicUuid(`${candidateId}:${JURISDICTION_DB}:2023-01-01:ne-unicameral`);
+      const officeId = deterministicUuid(
+        `${candidateId}:${JURISDICTION_DB}:2023-01-01:ne-unicameral`,
+      );
       await db
         .insert(candidateOffices)
         .values({
@@ -195,7 +207,9 @@ async function main() {
       inserted += 1;
       console.log(`[ne-seed] inserted: ${person.name} (${person.id})`);
     } else {
-      console.log(`[ne-seed] [dry-run] would insert: ${person.name} (${person.id})`);
+      console.log(
+        `[ne-seed] [dry-run] would insert: ${person.name} (${person.id})`,
+      );
       inserted += 1;
     }
   }
