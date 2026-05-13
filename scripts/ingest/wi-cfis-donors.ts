@@ -58,10 +58,10 @@ const SOURCE_URL = "https://campaignfinance.wi.gov/";
 const BASE_URL =
   "https://campaignfinance.wi.gov/api/trpc/publicFrontendApi.getTransactions";
 const ELECTION_CYCLE = "2024";
-const DATE_FROM = "2024-01-01";
+const DATE_FROM = "2023-01-01"; // WI 2-year cycle: candidates raise in 2023+2024
 const DATE_TO = "2024-12-31";
 const PAGE_SIZE = 50;
-const MAX_PAGES = 500; // safety cap — override with --max-pages
+const MAX_PAGES = 1000; // safety cap — override with --max-pages
 const RATE_LIMIT_MS = 100; // delay between requests
 
 // Office IDs in WI CFIS that correspond to state legislature
@@ -366,7 +366,7 @@ export async function ingestWiCfisDonors({
     return null;
   }
 
-  // Step 3: Paginate through 2024 contributions
+  // Step 3: Paginate through 2023-2024 contributions
   const agg = new Map<string, AggValue>();
   const candidateMatchedNames = new Map<string, Set<string>>();
   let pagesScanned = 0;
@@ -374,7 +374,7 @@ export async function ingestWiCfisDonors({
   let stateLegContributions = 0;
 
   console.log(
-    `[wi-cfis-donors] paginating through 2024 contributions (max ${config.maxPages} pages) ...`,
+    `[wi-cfis-donors] paginating through contributions (max ${config.maxPages} pages) ...`,
   );
 
   const effectiveMaxPages =
