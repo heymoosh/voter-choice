@@ -95,7 +95,9 @@ jobs:
         run: npx tsx scripts/ingest/federal-donors.ts
 
       - name: Run state donor ingest via FTM API (Phase E)
-        run: npx tsx scripts/ingest/state-donors.ts
+        # --skip-existing: preserves higher-quality bulk data for states that already
+        # have custom scrapers (CA, TX, WA, etc.) and only fills the remaining states.
+        run: npx tsx scripts/ingest/state-donors.ts --skip-existing
 
       - name: Run Nebraska NADC donor ingest (Phase E)
         run: npx tsx scripts/ingest/ne-nadc-donors.ts
