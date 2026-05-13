@@ -75,8 +75,12 @@ jobs:
             fi
           fi
 
-      - name: Run bill issue tagger (Phase D — LLM tagging)
-        run: npx tsx scripts/ingest/tag-bills.ts
+      - name: Submit batch tagging job (Phase D — Batch API submit)
+        run: npx tsx scripts/ingest/tag-bills-batch.ts --submit
+
+      - name: Collect batch tagging results (Phase D — Batch API collect)
+        run: npx tsx scripts/ingest/tag-bills-batch.ts --collect
+        timeout-minutes: 360
 
       - name: Notify on ingest failure
         if: failure()
