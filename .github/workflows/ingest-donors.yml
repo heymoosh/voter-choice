@@ -94,8 +94,11 @@ jobs:
       - name: Run federal donor ingest (Phase E)
         run: npx tsx scripts/ingest/federal-donors.ts
 
-      - name: Run state donor ingest (Phase E)
+      - name: Run state donor ingest via FTM API (Phase E)
         run: npx tsx scripts/ingest/state-donors.ts
+
+      - name: Run Nebraska NADC donor ingest (Phase E)
+        run: npx tsx scripts/ingest/ne-nadc-donors.ts
 
       - name: Notify on ingest failure
         if: failure()

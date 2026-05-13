@@ -3,16 +3,18 @@
  *
  * Nebraska Accountability and Disclosure Commission (NADC) donor ingest.
  *
- * Reads /tmp/NE_2024_contributions.zip, streams the enclosed CSV directly via
- * `unzip -p` (no full extraction needed), filters to Candidate Committee
- * Monetary contributions for 2024, matches Candidate Name to NE state
- * candidates in our DB by normalized last name, aggregates into donor buckets,
- * and upserts into `donor_aggregates`.
+ * Downloads the 2024 contribution bulk export from nadc-e.nebraska.gov,
+ * streams the enclosed CSV directly via `unzip -p` (no full extraction
+ * needed), filters to Candidate Committee Monetary contributions for 2024,
+ * matches Candidate Name to NE state candidates in our DB by normalized
+ * last name, aggregates into donor buckets, and upserts into
+ * `donor_aggregates`.
  *
  * Source: NE NADC bulk data download
  * https://nadc-e.nebraska.gov/PublicSite/DataDownload.aspx
+ * Direct URL: https://nadc-e.nebraska.gov/PublicSite/Docs/BulkDataDownloads/2024_ContributionLoanExtract.csv.zip
  *
- * CSV columns (pipe-delimited header row, comma-separated values, all quoted):
+ * CSV columns (comma-separated, double-quoted fields):
  *   Receipt ID, Org ID, Filer Type, Filer Name, Candidate Name,
  *   Receipt Transaction/Contribution Type, Other Funds Type, Receipt Date,
  *   Receipt Amount, Description, Contributor or Transaction Source Type,
@@ -22,10 +24,12 @@
  *
  * Usage:
  *   DATABASE_URL=<neon> npx tsx scripts/ingest/ne-nadc-donors.ts [--dry-run] [--limit 50]
+ *   DATABASE_URL=<neon> npx tsx scripts/ingest/ne-nadc-donors.ts --local-file /path/to/file.zip
  *
  * Idempotency: upserts on (candidate_id, election_cycle, bucket_label).
  */
 
+import * as fs from "node:fs";
 import * as readline from "node:readline";
 import { spawn } from "node:child_process";
 import { pathToFileURL } from "node:url";
@@ -43,7 +47,9 @@ import {
 // Constants
 // ---------------------------------------------------------------------------
 
-const CSV_PATH = "/tmp/NE_2024_contributions.zip";
+const NE_BULK_URL =
+  "https://nadc-e.nebraska.gov/PublicSite/Docs/BulkDataDownloads/2024_ContributionLoanExtract.csv.zip";
+const DEFAULT_CSV_PATH = "/tmp/NE_2024_contributions.zip";
 const ELECTION_CYCLE = "2024";
 const SOURCE = "ne_nadc_bulk";
 const SOURCE_URL = "https://nadc-e.nebraska.gov/PublicSite/DataDownload.aspx";
@@ -93,6 +99,7 @@ export type NeNadcIngestCounts = {
 interface IngestConfig {
   dryRun: boolean;
   limit: number | null;
+  localFile: string | null;
 }
 
 function resolveConfig(argv: string[] = process.argv): IngestConfig {
@@ -104,7 +111,9 @@ function resolveConfig(argv: string[] = process.argv): IngestConfig {
     const parsed = Number.parseInt(raw ?? "", 10);
     if (Number.isInteger(parsed) && parsed > 0) limit = parsed;
   }
-  return { dryRun, limit };
+  const localFileIdx = argv.indexOf("--local-file");
+  const localFile = localFileIdx !== -1 ? (argv[localFileIdx + 1] ?? null) : null;
+  return { dryRun, limit, localFile };
 }
 
 // ---------------------------------------------------------------------------
@@ -275,6 +284,22 @@ function extractFirstNameFromDbName(fullName: string): string {
 function extractFirstNameFromCsvName(candidateName: string): string {
   const tokens = normalizeStr(candidateName).split(/\s+/u).filter(Boolean);
   return tokens[0] ?? "";
+}
+
+// ---------------------------------------------------------------------------
+// Download helper
+// ---------------------------------------------------------------------------
+
+async function downloadToFile(url: string, destPath: string): Promise<void> {
+  console.log(`[ne-nadc-donors] downloading ${url} → ${destPath}`);
+  const res = await fetch(url, {
+    headers: { "User-Agent": "voter-choice-ne-nadc-donor-ingest" },
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status} fetching ${url}`);
+  const buffer = await res.arrayBuffer();
+  fs.writeFileSync(destPath, Buffer.from(buffer));
+  const mb = (buffer.byteLength / 1_048_576).toFixed(1);
+  console.log(`[ne-nadc-donors] downloaded ${mb} MB`);
 }
 
 // ---------------------------------------------------------------------------
@@ -590,6 +615,14 @@ export async function ingestNeNadcDonors({
     `[ne-nadc-donors] starting dryRun=${config.dryRun} limit=${config.limit ?? "none"}`,
   );
 
+  // Resolve local ZIP path: --local-file flag → default path → auto-download
+  let csvPath = config.localFile ?? DEFAULT_CSV_PATH;
+  if (!config.localFile && !fs.existsSync(csvPath)) {
+    await downloadToFile(NE_BULK_URL, csvPath);
+  } else if (!config.localFile) {
+    console.log(`[ne-nadc-donors] using cached file at ${csvPath}`);
+  }
+
   // Step 1: Load DB candidates (NE state only)
   console.log(`[ne-nadc-donors] querying DB for NE state candidates ...`);
   const dbCandidates = await loadDbCandidates(db, config.limit);
@@ -597,7 +630,7 @@ export async function ingestNeNadcDonors({
 
   if (dbCandidates.length === 0) {
     console.warn(
-      `[ne-nadc-donors] no NE state candidates found in DB — run state-votes.ts for STATE=NE first`,
+      `[ne-nadc-donors] no NE state candidates found in DB — run state-votes-from-dump.ts STATE=NE first`,
     );
     console.warn(
       `[ne-nadc-donors] proceeding anyway — will match 0 contributions`,
@@ -612,7 +645,7 @@ export async function ingestNeNadcDonors({
 
   // Step 3: Stream ZIP CSV and aggregate
   const { agg, candidateMatchedNames, counters } =
-    await aggregateContributions(CSV_PATH, byLastName);
+    await aggregateContributions(csvPath, byLastName);
 
   console.log(
     `[ne-nadc-donors] total_rows_processed=${counters.processed} matched_contributions=${counters.filtered}`,

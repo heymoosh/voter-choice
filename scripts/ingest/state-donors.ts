@@ -9,8 +9,11 @@
  *
  * Source: https://www.followthemoney.org/research/institutes/api
  * - Free for public use; attribution required.
- * - FOLLOWTHEMONEY_API_KEY is optional for the free tier (higher rate limits
- *   are available with a key). The free tier does not require a key.
+ * - FOLLOWTHEMONEY_API_KEY is REQUIRED. Despite FTM's documentation suggesting
+ *   a keyless free tier, the API returns {"error":"Invalid API Key"} with HTTP
+ *   200 for all unauthenticated requests. Without a key, all candidates are
+ *   silently skipped (api_errors=0, candidates_skipped=all).
+ *   Register free at https://followthemoney.org/account/sign-up/ to get a key.
  * - Endpoints used:
  *   • GET /api/?mode=summary&amp;t=industry — contribution summary by industry
  *
@@ -18,16 +21,18 @@
  * Politics. https://www.followthemoney.org/
  *
  * Usage:
- *   DATABASE_URL=<neon> npx tsx scripts/ingest/state-donors.ts
  *   DATABASE_URL=<neon> FOLLOWTHEMONEY_API_KEY=<key> npx tsx scripts/ingest/state-donors.ts
- *   DATABASE_URL=<neon> npx tsx scripts/ingest/state-donors.ts --limit 50
+ *   DATABASE_URL=<neon> FOLLOWTHEMONEY_API_KEY=<key> npx tsx scripts/ingest/state-donors.ts --limit 50
+ *
+ * Recommended first-time run (preserves existing bulk data for 18 states):
+ *   DATABASE_URL=<neon> FOLLOWTHEMONEY_API_KEY=<key> npx tsx scripts/ingest/state-donors.ts --limit 7000 --skip-existing
  *
  * Idempotency: upserts on (candidate_id, election_cycle, bucket_label).
  */
 
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
-import { sql } from "drizzle-orm";
+import { sql, eq, ne } from "drizzle-orm";
 import { requireDb, type DbClient } from "../../db/client";
 import { candidates, donorAggregates } from "../../db/schema";
 import { mapEmployerToBucket, type DonorBucketLabel } from "./_bucket-mapping";
@@ -109,6 +114,7 @@ export type StateDonorConfig = {
   electionCycles: string[];
   limit: number;
   ftmBaseUrl: string;
+  skipExisting: boolean;
 };
 
 export type DonorAggregateRow = {
@@ -148,6 +154,7 @@ export function resolveConfig(
       parseLimitFlag(argv) ??
       parsePositiveInteger(env.DONOR_LIMIT, DEFAULT_LIMIT),
     ftmBaseUrl: trimTrailingSlash(env.FTM_BASE_URL ?? FTM_BASE_URL),
+    skipExisting: argv.includes("--skip-existing"),
   };
 }
 
@@ -245,6 +252,14 @@ export function parseFtmIndustryResponse(
 ): Map<DonorBucketLabel, number> {
   const buckets = new Map<DonorBucketLabel, number>();
   const record = asRecord(json);
+
+  // FTM returns {"error":"Invalid API Key"} with HTTP 200 when the key is
+  // missing or invalid. Detect this and throw so callers log it as an error
+  // rather than silently treating it as "no data" (which increments
+  // candidates_skipped with api_errors=0 and makes the failure invisible).
+  if (record && typeof record.error === "string") {
+    throw new Error(`FTM API error: ${record.error}`);
+  }
 
   // FTM returns { records: [...] } or an array directly
   const records = Array.isArray(json)
@@ -428,6 +443,29 @@ export async function ingestStateDonors({
     apiErrors: 0,
   };
 
+  // Pre-flight: verify FTM API key before processing thousands of candidates.
+  // FTM returns {"error":"Invalid API Key"} with HTTP 200 for unauthenticated
+  // requests, which would silently skip all candidates. Detect this early.
+  if (!config.ftmApiKey) {
+    throw new Error(
+      "[state-donors] FOLLOWTHEMONEY_API_KEY is not set. " +
+        "Register free at https://followthemoney.org/account/sign-up/ to get a key.",
+    );
+  }
+  {
+    const testUrl = new URL(`${config.ftmBaseUrl}/`);
+    testUrl.searchParams.set("mode", "summary");
+    testUrl.searchParams.set("gro", "d-industry");
+    testUrl.searchParams.set("t", "industry");
+    testUrl.searchParams.set("y", config.electionCycles[0] ?? "2024");
+    testUrl.searchParams.set("s", "TX");
+    testUrl.searchParams.set("can_nam", "Abbott");
+    const testJson = await fetchFtmJson(testUrl.href, fetcher, config.ftmApiKey);
+    // parseFtmIndustryResponse throws if API returns {"error": ...}
+    parseFtmIndustryResponse(testJson);
+    console.log("[state-donors] FTM API key verified — proceeding");
+  }
+
   // Fetch state candidates from DB
   const stateCandidates = await db
     .select()
@@ -440,7 +478,39 @@ export async function ingestStateDonors({
     `[state-donors] found ${stateCandidates.length} state candidates`,
   );
 
-  const chunks = chunkArray(stateCandidates as UnknownRecord[], CHUNK_SIZE);
+  // --skip-existing: find states that already have non-FTM donor data and
+  // exclude their candidates from this run to preserve higher-quality bulk data.
+  const skipStates = new Set<string>();
+  if (config.skipExisting) {
+    const existingRows = await db
+      .selectDistinct({ jurisdiction: candidates.jurisdiction })
+      .from(donorAggregates)
+      .innerJoin(candidates, eq(donorAggregates.candidateId, candidates.id))
+      .where(ne(donorAggregates.source, "ftm_api"));
+    for (const row of existingRows) {
+      const state = extractStateFromJurisdiction(row.jurisdiction);
+      if (state) skipStates.add(state);
+    }
+    if (skipStates.size > 0) {
+      console.log(
+        `[state-donors] --skip-existing: skipping ${skipStates.size} states with existing bulk data: ${[...skipStates].sort().join(",")}`,
+      );
+    }
+  }
+
+  const candidatesToProcess = config.skipExisting
+    ? (stateCandidates as UnknownRecord[]).filter((c) => {
+        const jurisdiction = getString(c, "jurisdiction") ?? "";
+        const state = extractStateFromJurisdiction(jurisdiction);
+        return state ? !skipStates.has(state) : true;
+      })
+    : (stateCandidates as UnknownRecord[]);
+
+  console.log(
+    `[state-donors] candidates_to_process=${candidatesToProcess.length}`,
+  );
+
+  const chunks = chunkArray(candidatesToProcess, CHUNK_SIZE);
 
   for (let chunkIdx = 0; chunkIdx < chunks.length; chunkIdx++) {
     const chunk = chunks[chunkIdx];

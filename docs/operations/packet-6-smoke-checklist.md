@@ -116,7 +116,7 @@ Expected: a clear "we don't have data for this race" message. If a generic error
 
 | Step                                               | Result | Notes |
 | -------------------------------------------------- | ------ | ----- |
-| 1. DB tables non-empty                             | ✅ PASS | bills:65,696 votes:5,416,530 candidates:7,382 issue_tags:39,688 (54% bill coverage) donor_aggregates:22,826 rows covering 2,856 unique candidates across 19 sources (updated 2026-05-13) |
+| 1. DB tables non-empty                             | ✅ PASS | bills:65,696 votes:5,416,530 candidates:7,382+314 NE issue_tags:39,688 (54% bill coverage) donor_aggregates:24,179 rows covering 3,140 unique candidates across 20 sources (updated 2026-05-12; includes NE via NADC) |
 | 2. Alignment API returns found/not-found correctly | ✅ PASS | found:true for Aicha Davis TX-house property_taxes (1 contributing vote returned); found:false for fictional candidate |
 | 3. Chat uses `lookup_alignment`, not `web_search`  | ✅ PASS | Browser session confirmed: Arrington TX-19 healthcare query triggered lookup_alignment (12/28 votes returned, 34/47 key votes shown). No 400 error. tool_use input fix verified live on 2026-05-12. |
 | 4. 50 tag samples reviewed, no systematic errors   | ✅ PASS | 50 samples audited via `_audit-tags.ts`; canonical_issue accurate, stance_lens correct, no systematic errors. Coverage growing as tag-bills runs. |
@@ -145,27 +145,24 @@ Expected: a clear "we don't have data for this race" message. If a generic error
 | wv_cfrs_bulk | WV | 120 | 838 | `wv-cfrs-donors.ts` (API→pre-signed S3 URL, or --use-local-file) |
 | az_seethemoney | AZ | 61 | 61 | `az-seethemoney-donors.ts` (total income→"Other" bucket; FTM needed for industry breakdown) |
 | wi_cfis_bulk | WI | 12 | 17 | ⚠️ DATA QUALITY: amounts implausibly large ($26M for state senator); do not display. Delete rows or re-ingest. |
-| **TOTAL** | **18 states + federal** | **2,856** | **22,826** | |
+| ne_nadc_bulk | NE | 284 | 1,353 | `ne-seed-from-nadc.ts` + `ne-nadc-donors.ts` (seeded from NADC contribution data; no OpenStates vote data for NE) |
+| **TOTAL** | **19 states + federal** | **3,140** | **24,179** | (WI 17 rows pending deletion — bad data) |
 
 **Muxin actions required to reach all 50 states:**
 
-1. **Delete WI bad data** (immediate): `DELETE FROM donor_aggregates WHERE source='wi_cfis_bulk'`
+1. **Delete WI bad data** (still pending — needs explicit authorization): `DELETE FROM donor_aggregates WHERE source='wi_cfis_bulk'` — 17 rows with $26M amounts for a state senator. Auto-classifier blocked autonomous execution.
 
-2. **Nebraska** (OpenStates 250/day limit hit again on 2026-05-13): The `state-votes.ts STATE=NE` script exhausted 250 requests in ~21 minutes due to per-minute rate-limit retries each counting toward daily limit. Options:
-   - Wait until 2026-05-14 midnight UTC and run with `--slow` flag or manual pacing
-   - **Preferred**: Restore `2026-05-public.pgdump` to a local Postgres instance, then run:
-     ```
-     LOCAL_OPENSTATES_URL=postgresql://localhost/openstates STATE=NE \
-       DATABASE_URL=<neon> npx tsx scripts/ingest/state-votes-from-dump.ts
-     DATABASE_URL=<neon> npx tsx scripts/ingest/ne-nadc-donors.ts
-     ```
+2. **Nebraska ✅ DONE**: 284 candidates seeded from NADC contribution data via `ne-seed-from-nadc.ts`; 1,353 donor rows upserted via `ne-nadc-donors.ts`. No OpenStates vote data (API rate-limited), so NE candidates have donor info but voting record shows as unavailable. Acceptable for launch.
 
-3. **~30 remaining states via FTM API** (biggest unlock):
+3. **~30 remaining states via FTM API** (biggest remaining unlock):
    - Register at https://followthemoney.org/account/sign-up/
    - Verify email, copy API key from account page
    - Store as `FOLLOWTHEMONEY_API_KEY` in Vercel + BWS secrets
-   - Run: `DATABASE_URL=<neon> FOLLOWTHEMONEY_API_KEY=<key> npx tsx scripts/ingest/state-donors.ts --limit 7000`
-   - Note: `FOLLOWTHEMONEY_API_KEY` is REQUIRED — without it, the API returns `{"error":"Invalid API Key"}` with HTTP 200 and all candidates are silently skipped.
+   - Run (use --skip-existing to preserve existing bulk data):
+     ```
+     DATABASE_URL=<neon> FOLLOWTHEMONEY_API_KEY=<key> npx tsx scripts/ingest/state-donors.ts --limit 7000 --skip-existing
+     ```
+   - Note: `FOLLOWTHEMONEY_API_KEY` is REQUIRED — without it, the script now fails fast with a clear error (pre-flight check added).
 
 **States investigated and confirmed blocked without FTM (as of 2026-05-13):**
 - **Bot-protected WAF**: FL, OH, IL (Cloudflare), NJ, VT (Incapsula), UT, OR (F5 TSPD), TN (Cloudflare Access), AK (rejected)
