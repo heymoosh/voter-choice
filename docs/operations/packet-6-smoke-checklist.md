@@ -178,3 +178,38 @@ Expected: a clear "we don't have data for this race" message. If a generic error
 - **WI data quality issue**: `wi_cfis_bulk` has 17 rows but amounts are implausibly large ($26M "Party committees" for a state senate candidate). These rows should be deleted before launch (`DELETE FROM donor_aggregates WHERE source='wi_cfis_bulk'`).
 - `candidate_count=7,382`: 6,753 state candidates from OpenStates pgdump + 629 federal from GovTrack ingest.
 - FEC donor industry breakdown not populated: requires FEC API calls per-candidate (`/schedule_e`). Current data is aggregate totals only. Alignment scoring works without this.
+
+---
+
+## Outstanding Actions — Requires Muxin (2026-05-14)
+
+These cannot be completed autonomously and are the remaining blockers for full launch:
+
+### 1. Delete WI Bad Data (HIGH PRIORITY — pre-launch)
+
+```sql
+DELETE FROM donor_aggregates WHERE source='wi_cfis_bulk';
+```
+
+17 rows. The `wi_cfis_bulk` source has implausibly large amounts ($26M for a state senator). These will confuse users. Once deleted, WI drops to 0% donor coverage (not harmful — better than showing $26M).
+
+**How to run:** `! DATABASE_URL=<neon> psql -c "DELETE FROM donor_aggregates WHERE source='wi_cfis_bulk';"`
+
+### 2. FTM API Key (~30 remaining donor states)
+
+1. Register free at https://www.followthemoney.org/account/sign-up/
+2. Verify email → copy API key from account page
+3. Store as `FOLLOWTHEMONEY_API_KEY` in Vercel env + BWS secrets
+4. Run once to backfill:
+   ```
+   DATABASE_URL=<neon> FOLLOWTHEMONEY_API_KEY=<key> \
+     npx tsx scripts/ingest/state-donors.ts --skip-existing --limit 7000
+   ```
+   (`--skip-existing` protects existing bulk data in 19 states + federal)
+
+**Expected impact:** ~30 additional states with donor coverage; ~2,400 new candidates with industry-level data.
+
+### 3. Bill Tagging (ongoing, self-completing)
+
+Haiku subagent tagging via Max subscription is running. Coverage: **61%** as of 2026-05-14 and growing to ~65-68% by end of session. The Sunday `ingest-tag-bills.yml` cron will continue adding coverage via Batch API.
+
