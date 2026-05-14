@@ -43,7 +43,14 @@ async function main() {
   let upserted = 0;
   let errors = 0;
 
+  const VALID_STANCES = new Set(["in_favor", "opposed"]);
+
   for (const tag of raw) {
+    if (!VALID_STANCES.has(tag.stanceLens)) {
+      console.error(`[insert-tags] skip ${tag.billId}/${tag.canonicalIssue}: invalid stanceLens="${tag.stanceLens}" (must be in_favor|opposed)`);
+      errors++;
+      continue;
+    }
     try {
       await db.insert(issueTags).values({
         billId: tag.billId,
