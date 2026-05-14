@@ -169,8 +169,13 @@ async function main() {
   let processed = 0;
   let totalContribs = 0;
 
-  const browser = await chromium.launch({ headless: true });
+  const browser = await chromium.launch({
+    headless: false,
+    channel: "chrome",
+    args: ["--disable-blink-features=AutomationControlled"],
+  });
   const page = await browser.newPage();
+  await page.addInitScript(() => { Object.defineProperty(navigator, "webdriver", { get: () => undefined }); });
 
   try {
     for (const office of OFFICES) {
