@@ -227,8 +227,10 @@ async function streamCsv(
 
 function normalizeStr(name: string): string {
   return name
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/gu, "")
     .toUpperCase()
-    .replace(/[^A-Z0-9\s]/gu, "") // strip punctuation
+    .replace(/[^A-Z0-9\s]/gu, "")
     .replace(/\s+/gu, " ")
     .trim();
 }

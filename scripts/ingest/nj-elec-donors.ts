@@ -54,7 +54,10 @@ const NICKNAME_FIRST_LETTERS: Record<string, string[]> = {
 };
 
 function norm(s: string): string {
-  return s.toUpperCase()
+  return s
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/gu, "")
+    .toUpperCase()
     .replace(/['']/g, "")
     .replace(/[-]/g, " ")
     .replace(/\s+/g, " ")

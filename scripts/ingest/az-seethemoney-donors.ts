@@ -180,12 +180,14 @@ async function main() {
 
     const dbMatch = azCandidates.find((c) => {
       if (c.jurisdiction !== jurisdiction) return false;
-      const fullName = (c.fullName ?? "").toLowerCase();
-      // "first last" format — check last name and first initial
+      // Normalize both sides with NFD so accented chars match ASCII equivalents
+      const fullName = (c.fullName ?? "")
+        .normalize("NFD").replace(/[̀-ͯ]/gu, "").toLowerCase();
       const nameParts = fullName.split(/\s+/);
       const dbLast = nameParts[nameParts.length - 1] ?? "";
       const dbFirst = nameParts[0] ?? "";
-      return dbLast === lastLower && dbFirst.startsWith(firstInitial);
+      const normLast = lastLower.normalize("NFD").replace(/[̀-ͯ]/gu, "");
+      return dbLast === normLast && dbFirst.startsWith(firstInitial);
     });
 
     if (!dbMatch) {

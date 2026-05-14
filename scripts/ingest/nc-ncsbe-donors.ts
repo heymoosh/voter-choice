@@ -98,6 +98,8 @@ const SUFFIXES = new Set(["JR", "SR", "II", "III", "IV"]);
 
 function norm(s: string): string {
   return s
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/gu, "")
     .toUpperCase()
     .replace(/[^A-Z0-9 ]/g, "")
     .replace(/\s+/g, " ")

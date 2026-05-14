@@ -26,7 +26,14 @@ const DATA_FILE = "/tmp/nm_contributions.json";
 const DRY_RUN = process.argv.includes("--dry-run");
 
 function norm(s: string): string {
-  return s.toUpperCase().replace(/['']/g, "").replace(/[-]/g, " ").replace(/\s+/g, " ").trim();
+  return s
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/gu, "")
+    .toUpperCase()
+    .replace(/['']/g, "")
+    .replace(/[-]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 async function main() {
