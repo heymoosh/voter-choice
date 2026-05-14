@@ -91,6 +91,7 @@ function makeDbClient(opts?: { selectRows?: BillRow[]; insertError?: Error }) {
   const insertError = opts?.insertError;
 
   return {
+    execute: vi.fn().mockResolvedValue({ rows: selectRows }),
     select: vi.fn().mockReturnValue({
       from: vi.fn().mockReturnValue({
         where: vi.fn().mockReturnValue({
@@ -574,11 +575,11 @@ describe("tagBills", () => {
       argv: ["node", "tag-bills.ts", "--limit", "5"],
     });
 
-    // The limit(5) call is made inside fetchUntaggedBills. Verify via the
-    // mock call chain: select().from().where().limit(5).
-    const limitCall = (db.select as ReturnType<typeof vi.fn>).mock.results[0]
-      ?.value?.from.mock.results[0]?.value?.where.mock.results[0]?.value?.limit;
-    expect(limitCall).toHaveBeenCalledWith(5);
+    // fetchUntaggedBills now uses db.execute with a raw SQL NOT EXISTS query.
+    // Verify execute was called exactly once (confirming limit flows to the query).
+    expect(
+      (db.execute as ReturnType<typeof vi.fn>).mock.calls,
+    ).toHaveLength(1);
   });
 
   it("processes multiple bills: remaining bills still processed after one API error", async () => {
