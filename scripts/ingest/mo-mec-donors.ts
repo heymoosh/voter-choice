@@ -57,7 +57,8 @@ const DEFAULT_COMMITTEES = "/tmp/MO_committees.csv";
 const SOURCE = "mo_mec_bulk";
 const SOURCE_URL =
   "https://www.mec.mo.gov/MEC/Campaign_Finance/CF_ContrCSV.aspx";
-const ELECTION_CYCLE = "2024";
+const _moCycleIdx = process.argv.indexOf("--election-cycle");
+const ELECTION_CYCLE = _moCycleIdx !== -1 ? (process.argv[_moCycleIdx + 1] ?? "2024") : "2024";
 
 // ---------------------------------------------------------------------------
 // Types

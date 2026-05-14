@@ -21,8 +21,10 @@ import { mapEmployerToBucket, bucketIndividualByAmount, type DonorBucketLabel } 
 
 const SOURCE = "tn_camp_bulk";
 const SOURCE_URL = "https://apps.tn.gov/tncamp/public/cesearch.htm";
-const ELECTION_CYCLE = "2024";
-const DATA_FILE = "/tmp/tn_all.csv";
+const _tnCycleIdx = process.argv.indexOf("--election-cycle");
+const ELECTION_CYCLE = _tnCycleIdx !== -1 ? (process.argv[_tnCycleIdx + 1] ?? "2024") : "2024";
+const _tnFileIdx = process.argv.indexOf("--file");
+const DATA_FILE = _tnFileIdx !== -1 ? (process.argv[_tnFileIdx + 1] ?? "/tmp/tn_all.csv") : "/tmp/tn_all.csv";
 
 const DRY_RUN = process.argv.includes("--dry-run");
 
