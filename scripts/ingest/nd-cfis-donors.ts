@@ -188,7 +188,7 @@ async function main() {
       // Match committee to candidate
       let fullName = committeeMatches.get(committee.toLowerCase());
       if (fullName === undefined) {
-        fullName = match(committee) ?? null;
+        fullName = match(committee) ?? undefined;
         committeeMatches.set(committee.toLowerCase(), fullName ?? "");
       }
       if (!fullName) { rowsSkipped++; continue; }
