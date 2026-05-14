@@ -50,7 +50,8 @@ import {
 const NE_BULK_URL =
   "https://nadc-e.nebraska.gov/PublicSite/Docs/BulkDataDownloads/2024_ContributionLoanExtract.csv.zip";
 const DEFAULT_CSV_PATH = "/tmp/NE_2024_contributions.zip";
-const ELECTION_CYCLE = "2024";
+const _cycleIdx = process.argv.indexOf("--election-cycle");
+const ELECTION_CYCLE = _cycleIdx !== -1 ? (process.argv[_cycleIdx + 1] ?? "2024") : "2024";
 const SOURCE = "ne_nadc_bulk";
 const SOURCE_URL = "https://nadc-e.nebraska.gov/PublicSite/DataDownload.aspx";
 
