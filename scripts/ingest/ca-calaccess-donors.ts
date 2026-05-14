@@ -45,7 +45,7 @@ import {
 // ---------------------------------------------------------------------------
 
 const ZIP_PATH = "/tmp/CA_CF.zip";
-const ELECTION_CYCLES = new Set(["2024", "2025", "2026"]);
+const ELECTION_CYCLES = new Set(["2022", "2023", "2024", "2025", "2026"]);
 const SOURCE = "ca_calaccess_bulk";
 const SOURCE_URL =
   "https://www.sos.ca.gov/campaign-lobbying/cal-access-resources/raw-data-campaign-finance-and-lobbying-activity";

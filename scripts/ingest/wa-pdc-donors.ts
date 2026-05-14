@@ -38,6 +38,7 @@ import {
 // ---------------------------------------------------------------------------
 
 const CSV_FILES: Array<{ path: string; cycle: string }> = [
+  { path: "/tmp/WA_legislative_2022.csv", cycle: "2022" },
   { path: "/tmp/WA_legislative_2024.csv", cycle: "2024" },
   { path: "/tmp/WA_legislative_2026.csv", cycle: "2026" },
 ];
