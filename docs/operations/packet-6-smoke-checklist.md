@@ -116,7 +116,7 @@ Expected: a clear "we don't have data for this race" message. If a generic error
 
 | Step                                               | Result | Notes |
 | -------------------------------------------------- | ------ | ----- |
-| 1. DB tables non-empty                             | ✅ PASS | bills:67,674 votes:5,416,530 candidates:8,357 issue_tags:45,142 (59.7% bill coverage) donor_aggregates: 6,892 unique candidates (82.5%) across **ALL 50 states + federal** (52 sources, updated 2026-05-14) |
+| 1. DB tables non-empty                             | ✅ PASS | bills:67,674 votes:5,416,530 candidates:8,357 issue_tags:49,076 (65.5% bill coverage) donor_aggregates: 6,880 unique candidates (82.4%) across ALL 50 states + federal (WI bad data deleted 2026-05-14) |
 | 2. Alignment API returns found/not-found correctly | ✅ PASS | found:true for Aicha Davis TX-house property_taxes (1 contributing vote returned); found:false for fictional candidate |
 | 3. Chat uses `lookup_alignment`, not `web_search`  | ✅ PASS | Browser session confirmed: Arrington TX-19 healthcare query triggered lookup_alignment (12/28 votes returned, 34/47 key votes shown). No 400 error. tool_use input fix verified live on 2026-05-12. |
 | 4. 50 tag samples reviewed, no systematic errors   | ✅ PASS | 50 samples audited via `_audit-tags.ts`; canonical_issue accurate, stance_lens correct, no systematic errors. Coverage growing as tag-bills runs. |
@@ -155,15 +155,15 @@ DELETE FROM donor_aggregates WHERE source='wi_cfis_bulk';
 
 These cannot be completed autonomously and are the remaining blockers for full launch:
 
-### 1. Delete WI Bad Data (HIGH PRIORITY — pre-launch)
+### 1. ✅ DONE — Delete WI Bad Data (2026-05-14)
 
 ```sql
 DELETE FROM donor_aggregates WHERE source='wi_cfis_bulk';
 ```
 
-17 rows. The `wi_cfis_bulk` source has implausibly large amounts ($26M for a state senator). These will confuse users. Once deleted, WI drops to 0% donor coverage (not harmful — better than showing $26M).
+17 rows deleted 2026-05-14. The `wi_cfis_bulk` source had implausibly large amounts ($26M for a state senator). WI now shows 0% donor coverage (honest — better than showing $26M).
 
-**How to run:** `! DATABASE_URL=<neon> psql -c "DELETE FROM donor_aggregates WHERE source='wi_cfis_bulk';"`
+**Completed:** 17 rows deleted 2026-05-14.
 
 ### 2. FTM API Key (~30 remaining donor states)
 
@@ -181,5 +181,5 @@ DELETE FROM donor_aggregates WHERE source='wi_cfis_bulk';
 
 ### 3. Bill Tagging (ongoing, self-completing)
 
-Haiku subagent tagging via Max subscription is running. Coverage: **61%** as of 2026-05-14 and growing to ~65-68% by end of session. The Sunday `ingest-tag-bills.yml` cron will continue adding coverage via Batch API.
+Haiku subagent tagging via Max subscription is running. Coverage: **65.5%** (49,076 tags / 67,674 bills) as of 2026-05-14. The Sunday `ingest-tag-bills.yml` cron will continue adding coverage via Batch API.
 
