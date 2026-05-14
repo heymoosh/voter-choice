@@ -22,7 +22,7 @@ const DATA_FILE = resolve(import.meta.dirname ?? __dirname, "_or-data.json");
 const SUFFIXES = new Set(["JR", "SR", "II", "III", "IV"]);
 
 function norm(s: string): string {
-  return s.toUpperCase().replace(/[^A-Z0-9 ]/g, "").replace(/\s+/g, " ").trim();
+  return s.toUpperCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^A-Z0-9 ]/g, "").replace(/\s+/g, " ").trim();
 }
 
 function extractLastName(fullName: string): string {
@@ -86,8 +86,9 @@ async function main() {
 
   for (const contrib of raw) {
     const lastName = contrib.label; // already normalized (THATCHER, WEBER, BONHAM)
-    const idx = contrib.chamber === "house" ? houseIdx : senateIdx;
-    const dbMatches = idx.get(lastName);
+    const primaryIdx = contrib.chamber === "house" ? houseIdx : senateIdx;
+    const fallbackIdx = contrib.chamber === "house" ? senateIdx : houseIdx;
+    const dbMatches = primaryIdx.get(lastName) ?? fallbackIdx.get(lastName);
     if (!dbMatches || dbMatches.length === 0) { skipped++; continue; }
     const dbMatch = dbMatches[0];
 
