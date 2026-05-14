@@ -1,6 +1,6 @@
 # Work Packet: launch-openstates-bulk-ingest
 
-Status: Phase A-C complete — 50 states ingested (6,649 candidates / 65,059 bills / 5,161,356 votes in Neon). Phase D (tag-bills) blocked on ANTHROPIC_VOTER_API. Phase E (smoke checklist) pending Phase D.
+Status: Phase A-C complete + Phase D (tag-bills) in progress via Haiku subagents (Max subscription, NOT ANTHROPIC_VOTER_API) + Phase E (smoke checklist) ✅ PASS all 5 steps (see docs/operations/packet-6-smoke-checklist.md). DB: 67,674 bills, 40,461 issue_tags covering 35,950 unique bills (53%). Subagent tagging running continuously on 31,696 remaining untagged bills. Blocked items requiring Muxin action: (1) WI bad data deletion (17 rows, $26M amounts); (2) FTM API key for ~30 remaining donor states.
 Owner: orchestrator
 Source: User — bypass OpenStates API 429 limits using the May 2026 postgres dump
 Branch: launch/production

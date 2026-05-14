@@ -1,6 +1,6 @@
 # Work Packet: launch-ballot-chat-print-profile
 
-Status: in progress
+Status: completed — all 6 acceptance criteria verified: nonpartisan framing (BALLOT_PROMPT.md), citation requirement (CORE GUARDRAILS), missing-ballot fallback (generatePrompt.ts unconfirmed path), printable ballot (ResearchPortfolio), profile download (ProfileDownloadCard), budget fallback copy/paste (HandoffPackage). Tests 991/991, build passes, lint clean (commit 8695423).
 Owner: orchestrator
 Source: Project brief — Voter Choice Real Texans Launch
 Branch: launch/production
