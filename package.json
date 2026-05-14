@@ -8,7 +8,7 @@
   },
   "scripts": {
     "dev": "next dev --turbopack",
-    "prebuild": "npm run sync:ballot-prompt",
+    "prebuild": "rm -rf .next/cache && npm run sync:ballot-prompt",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
