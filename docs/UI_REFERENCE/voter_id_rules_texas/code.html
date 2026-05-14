@@ -1,261 +1,456 @@
-<!DOCTYPE html>
+<!doctype html>
 
-<html class="light" lang="en"><head>
-<meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Texas Voter ID Requirements</title>
-<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-<link href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400&amp;display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
-<script id="tailwind-config">
-        tailwind.config = {
-          darkMode: "class",
-          theme: {
-            extend: {
-              "colors": {
-                      "secondary-fixed": "#c8e9e4",
-                      "on-surface": "#1b1c1b",
-                      "surface-dim": "#dbdad8",
-                      "on-tertiary": "#ffffff",
-                      "primary-fixed": "#9cf2e8",
-                      "surface-variant": "#e4e2e0",
-                      "on-secondary": "#ffffff",
-                      "on-primary-container": "#a3faef",
-                      "inverse-primary": "#80d5cb",
-                      "outline-variant": "#bdc9c6",
-                      "surface": "#fbf9f7",
-                      "on-error-container": "#93000a",
-                      "error": "#ba1a1a",
-                      "on-secondary-fixed": "#00201d",
-                      "surface-container-lowest": "#ffffff",
-                      "inverse-on-surface": "#f2f0ee",
-                      "surface-container": "#efedec",
-                      "surface-tint": "#006a63",
-                      "primary": "#005c55",
-                      "secondary-fixed-dim": "#accdc8",
-                      "background": "#fbf9f7",
-                      "primary-fixed-dim": "#80d5cb",
-                      "on-surface-variant": "#3e4947",
-                      "on-tertiary-container": "#ffe5db",
-                      "tertiary": "#7f4025",
-                      "on-tertiary-fixed": "#370e00",
-                      "on-secondary-container": "#4a6864",
-                      "tertiary-container": "#9c573a",
-                      "secondary": "#466460",
-                      "surface-container-high": "#eae8e6",
-                      "tertiary-fixed-dim": "#ffb598",
-                      "error-container": "#ffdad6",
-                      "secondary-container": "#c5e6e1",
-                      "on-primary-fixed": "#00201d",
-                      "surface-container-highest": "#e4e2e0",
-                      "primary-container": "#0f766e",
-                      "inverse-surface": "#30302f",
-                      "outline": "#6e7977",
-                      "on-tertiary-fixed-variant": "#72361b",
-                      "tertiary-fixed": "#ffdbce",
-                      "on-secondary-fixed-variant": "#2e4c48",
-                      "surface-bright": "#fbf9f7",
-                      "on-primary": "#ffffff",
-                      "on-primary-fixed-variant": "#00504a",
-                      "on-error": "#ffffff",
-                      "on-background": "#1b1c1b",
-                      "surface-container-low": "#f5f3f1"
-              },
-              "borderRadius": {
-                      "DEFAULT": "0.125rem",
-                      "lg": "0.25rem",
-                      "xl": "0.5rem",
-                      "full": "0.75rem"
-              },
-              "fontFamily": {
-                      "headline": ["Public Sans"],
-                      "body": ["Public Sans"],
-                      "label": ["Public Sans"]
-              }
+<html class="light" lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Texas Voter ID Requirements</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400&amp;display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+      rel="stylesheet"
+    />
+    <script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "secondary-fixed": "#c8e9e4",
+              "on-surface": "#1b1c1b",
+              "surface-dim": "#dbdad8",
+              "on-tertiary": "#ffffff",
+              "primary-fixed": "#9cf2e8",
+              "surface-variant": "#e4e2e0",
+              "on-secondary": "#ffffff",
+              "on-primary-container": "#a3faef",
+              "inverse-primary": "#80d5cb",
+              "outline-variant": "#bdc9c6",
+              surface: "#fbf9f7",
+              "on-error-container": "#93000a",
+              error: "#ba1a1a",
+              "on-secondary-fixed": "#00201d",
+              "surface-container-lowest": "#ffffff",
+              "inverse-on-surface": "#f2f0ee",
+              "surface-container": "#efedec",
+              "surface-tint": "#006a63",
+              primary: "#005c55",
+              "secondary-fixed-dim": "#accdc8",
+              background: "#fbf9f7",
+              "primary-fixed-dim": "#80d5cb",
+              "on-surface-variant": "#3e4947",
+              "on-tertiary-container": "#ffe5db",
+              tertiary: "#7f4025",
+              "on-tertiary-fixed": "#370e00",
+              "on-secondary-container": "#4a6864",
+              "tertiary-container": "#9c573a",
+              secondary: "#466460",
+              "surface-container-high": "#eae8e6",
+              "tertiary-fixed-dim": "#ffb598",
+              "error-container": "#ffdad6",
+              "secondary-container": "#c5e6e1",
+              "on-primary-fixed": "#00201d",
+              "surface-container-highest": "#e4e2e0",
+              "primary-container": "#0f766e",
+              "inverse-surface": "#30302f",
+              outline: "#6e7977",
+              "on-tertiary-fixed-variant": "#72361b",
+              "tertiary-fixed": "#ffdbce",
+              "on-secondary-fixed-variant": "#2e4c48",
+              "surface-bright": "#fbf9f7",
+              "on-primary": "#ffffff",
+              "on-primary-fixed-variant": "#00504a",
+              "on-error": "#ffffff",
+              "on-background": "#1b1c1b",
+              "surface-container-low": "#f5f3f1",
+            },
+            borderRadius: {
+              DEFAULT: "0.125rem",
+              lg: "0.25rem",
+              xl: "0.5rem",
+              full: "0.75rem",
+            },
+            fontFamily: {
+              headline: ["Public Sans"],
+              body: ["Public Sans"],
+              label: ["Public Sans"],
             },
           },
-        }
-      </script>
-<style>
-        body { font-family: 'Public Sans', sans-serif; }
-        .material-symbols-outlined {
-            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-        }
-      </style>
-<style>
-    body {
-      min-height: max(884px, 100dvh);
-    }
-  </style>
+        },
+      };
+    </script>
+    <style>
+      body {
+        font-family: "Public Sans", sans-serif;
+      }
+      .material-symbols-outlined {
+        font-variation-settings:
+          "FILL" 0,
+          "wght" 400,
+          "GRAD" 0,
+          "opsz" 24;
+      }
+    </style>
+    <style>
+      body {
+        min-height: max(884px, 100dvh);
+      }
+    </style>
   </head>
-<body class="bg-surface text-on-surface min-h-screen pb-32">
-<!-- TopAppBar -->
-<header class="w-full top-0 sticky z-50 bg-[#fcfaf8] dark:bg-zinc-950">
-<div class="flex items-center justify-between px-6 py-4 w-full">
-<div class="flex items-center gap-4">
-<button class="text-[#005c55] dark:text-teal-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors p-2 rounded-full scale-95 duration-100">
-<span class="material-symbols-outlined">arrow_back</span>
-</button>
-<h1 class="text-on-surface font-public-sans tracking-tight font-bold text-lg">Voter ID Utility</h1>
-</div>
-<div class="flex items-center">
-<span class="text-lg font-bold tracking-tighter text-[#005c55] dark:text-teal-400">Voter ID Guide</span>
-<button class="text-[#005c55] dark:text-teal-400 ml-4 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors p-2 rounded-full scale-95 duration-100">
-<span class="material-symbols-outlined">info</span>
-</button>
-</div>
-</div>
-</header>
-<main class="max-w-4xl mx-auto px-6 pt-12">
-<!-- Editorial Header -->
-<section class="mb-16 border-l-8 border-primary pl-8">
-<span class="text-tertiary font-bold tracking-widest text-xs uppercase mb-2 block">State of Texas Election Laws</span>
-<h2 class="text-6xl md:text-8xl font-black text-on-surface tracking-tighter leading-none mb-6">ID Requirements</h2>
-<p class="text-xl text-on-surface-variant max-w-2xl font-medium leading-relaxed">
-                To vote in person in Texas, you must present an acceptable form of photo identification or follow specific procedures if you do not possess one.
+  <body class="bg-surface text-on-surface min-h-screen pb-32">
+    <!-- TopAppBar -->
+    <header class="w-full top-0 sticky z-50 bg-[#fcfaf8] dark:bg-zinc-950">
+      <div class="flex items-center justify-between px-6 py-4 w-full">
+        <div class="flex items-center gap-4">
+          <button
+            class="text-[#005c55] dark:text-teal-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors p-2 rounded-full scale-95 duration-100"
+          >
+            <span class="material-symbols-outlined">arrow_back</span>
+          </button>
+          <h1
+            class="text-on-surface font-public-sans tracking-tight font-bold text-lg"
+          >
+            Voter ID Utility
+          </h1>
+        </div>
+        <div class="flex items-center">
+          <span
+            class="text-lg font-bold tracking-tighter text-[#005c55] dark:text-teal-400"
+            >Voter ID Guide</span
+          >
+          <button
+            class="text-[#005c55] dark:text-teal-400 ml-4 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors p-2 rounded-full scale-95 duration-100"
+          >
+            <span class="material-symbols-outlined">info</span>
+          </button>
+        </div>
+      </div>
+    </header>
+    <main class="max-w-4xl mx-auto px-6 pt-12">
+      <!-- Editorial Header -->
+      <section class="mb-16 border-l-8 border-primary pl-8">
+        <span
+          class="text-tertiary font-bold tracking-widest text-xs uppercase mb-2 block"
+          >State of Texas Election Laws</span
+        >
+        <h2
+          class="text-6xl md:text-8xl font-black text-on-surface tracking-tighter leading-none mb-6"
+        >
+          ID Requirements
+        </h2>
+        <p
+          class="text-xl text-on-surface-variant max-w-2xl font-medium leading-relaxed"
+        >
+          To vote in person in Texas, you must present an acceptable form of
+          photo identification or follow specific procedures if you do not
+          possess one.
+        </p>
+      </section>
+      <!-- Critical Warning Banner -->
+      <div
+        class="bg-tertiary-container text-on-tertiary-container p-6 mb-16 flex items-start gap-4"
+      >
+        <span
+          class="material-symbols-outlined mt-1"
+          style="font-variation-settings: &quot;FILL&quot; 1"
+          >warning</span
+        >
+        <div>
+          <h3 class="font-black tracking-tight text-lg mb-1 uppercase">
+            Critical Expiration Rule
+          </h3>
+          <p class="body-lg">
+            IDs can be expired up to 4 years. For voters aged 70 or older, an
+            acceptable photo ID may be expired for any length of time if it is
+            otherwise valid.
+          </p>
+        </div>
+      </div>
+      <!-- Primary Section: Accepted Photo IDs -->
+      <section class="mb-24">
+        <div class="flex items-baseline justify-between mb-8">
+          <h3
+            class="text-3xl font-black text-on-surface tracking-tight uppercase"
+          >
+            Accepted Photo IDs
+          </h3>
+          <span
+            class="h-px flex-grow mx-6 bg-outline-variant opacity-20"
+          ></span>
+          <span class="text-primary font-bold text-sm">7 APPROVED FORMS</span>
+        </div>
+        <div
+          class="grid grid-cols-1 md:grid-cols-2 gap-px bg-outline-variant/20 border border-outline-variant/20 overflow-hidden"
+        >
+          <div
+            class="bg-surface-container-lowest p-8 hover:bg-surface transition-colors group"
+          >
+            <span class="material-symbols-outlined text-primary mb-4 text-3xl"
+              >badge</span
+            >
+            <h4 class="font-bold text-xl mb-2 text-on-surface">
+              TX Driver License
+            </h4>
+            <p class="text-on-surface-variant text-sm">
+              Issued by the Texas Department of Public Safety (DPS).
             </p>
-</section>
-<!-- Critical Warning Banner -->
-<div class="bg-tertiary-container text-on-tertiary-container p-6 mb-16 flex items-start gap-4">
-<span class="material-symbols-outlined mt-1" style="font-variation-settings: 'FILL' 1;">warning</span>
-<div>
-<h3 class="font-black tracking-tight text-lg mb-1 uppercase">Critical Expiration Rule</h3>
-<p class="body-lg">IDs can be expired up to 4 years. For voters aged 70 or older, an acceptable photo ID may be expired for any length of time if it is otherwise valid.</p>
-</div>
-</div>
-<!-- Primary Section: Accepted Photo IDs -->
-<section class="mb-24">
-<div class="flex items-baseline justify-between mb-8">
-<h3 class="text-3xl font-black text-on-surface tracking-tight uppercase">Accepted Photo IDs</h3>
-<span class="h-px flex-grow mx-6 bg-outline-variant opacity-20"></span>
-<span class="text-primary font-bold text-sm">7 APPROVED FORMS</span>
-</div>
-<div class="grid grid-cols-1 md:grid-cols-2 gap-px bg-outline-variant/20 border border-outline-variant/20 overflow-hidden">
-<div class="bg-surface-container-lowest p-8 hover:bg-surface transition-colors group">
-<span class="material-symbols-outlined text-primary mb-4 text-3xl">badge</span>
-<h4 class="font-bold text-xl mb-2 text-on-surface">TX Driver License</h4>
-<p class="text-on-surface-variant text-sm">Issued by the Texas Department of Public Safety (DPS).</p>
-</div>
-<div class="bg-surface-container-lowest p-8 hover:bg-surface transition-colors">
-<span class="material-symbols-outlined text-primary mb-4 text-3xl">how_to_vote</span>
-<h4 class="font-bold text-xl mb-2 text-on-surface">Election Identification Certificate</h4>
-<p class="text-on-surface-variant text-sm">Issued by DPS for voting purposes only.</p>
-</div>
-<div class="bg-surface-container-lowest p-8 hover:bg-surface transition-colors">
-<span class="material-symbols-outlined text-primary mb-4 text-3xl">contact_page</span>
-<h4 class="font-bold text-xl mb-2 text-on-surface">Personal ID card</h4>
-<h4 class="font-bold text-xl mb-2 text-on-surface"></h4> <!-- Empty for alignment -->
-<p class="text-on-surface-variant text-sm">Personal identification card issued by DPS.</p>
-</div>
-<div class="bg-surface-container-lowest p-8 hover:bg-surface transition-colors">
-<span class="material-symbols-outlined text-primary mb-4 text-3xl">military_tech</span>
-<h4 class="font-bold text-xl mb-2 text-on-surface">Handgun License</h4>
-<p class="text-on-surface-variant text-sm">Texas Handgun License issued by DPS.</p>
-</div>
-<div class="bg-surface-container-lowest p-8 hover:bg-surface transition-colors">
-<span class="material-symbols-outlined text-primary mb-4 text-3xl">account_balance</span>
-<h4 class="font-bold text-xl mb-2 text-on-surface">US Military ID</h4>
-<p class="text-on-surface-variant text-sm">United States Military Identification Card containing a photograph.</p>
-</div>
-<div class="bg-surface-container-lowest p-8 hover:bg-surface transition-colors">
-<span class="material-symbols-outlined text-primary mb-4 text-3xl">history_edu</span>
-<h4 class="font-bold text-xl mb-2 text-on-surface">Citizenship Certificate</h4>
-<p class="text-on-surface-variant text-sm">United States Citizenship Certificate containing a photograph.</p>
-</div>
-<div class="bg-surface-container-lowest p-8 md:col-span-2 hover:bg-surface transition-colors flex items-start gap-6">
-<span class="material-symbols-outlined text-primary text-4xl">flight_takeoff</span>
-<div>
-<h4 class="font-bold text-xl mb-2 text-on-surface">US Passport</h4>
-<p class="text-on-surface-variant text-sm">United States Passport book or card.</p>
-</div>
-</div>
-</div>
-</section>
-<!-- Secondary Section: No ID? No Problem -->
-<section class="mb-24 bg-surface-container-low p-10 relative overflow-hidden">
-<div class="absolute top-0 right-0 p-4 opacity-5 rotate-12">
-<span class="material-symbols-outlined text-9xl">gavel</span>
-</div>
-<div class="relative z-10">
-<h3 class="text-4xl font-black text-on-surface tracking-tighter mb-4">No ID? No Problem</h3>
-<p class="text-lg text-on-surface-variant mb-10 max-w-xl">
-                    If a voter does not possess one of the seven acceptable forms of photo ID and cannot reasonably obtain one, they may still vote by signing a <span class="font-bold text-primary">Reasonable Impediment Declaration</span> and providing a supporting document.
-                </p>
-<div class="grid grid-cols-1 sm:grid-cols-2 gap-8">
-<div>
-<h5 class="text-xs font-black uppercase tracking-widest text-primary mb-4">Supporting Documents</h5>
-<ul class="space-y-3">
-<li class="flex items-center gap-2 text-sm font-semibold">
-<span class="material-symbols-outlined text-sm">check_circle</span>
-                                Certified Birth Certificate
-                            </li>
-<li class="flex items-center gap-2 text-sm font-semibold">
-<span class="material-symbols-outlined text-sm">check_circle</span>
-                                Current Utility Bill
-                            </li>
-<li class="flex items-center gap-2 text-sm font-semibold">
-<span class="material-symbols-outlined text-sm">check_circle</span>
-                                Bank Statement
-                            </li>
-<li class="flex items-center gap-2 text-sm font-semibold">
-<span class="material-symbols-outlined text-sm">check_circle</span>
-                                Government Check
-                            </li>
-</ul>
-</div>
-<div>
-<h5 class="text-xs font-black uppercase tracking-widest text-primary mb-4"> </h5>
-<ul class="space-y-3">
-<li class="flex items-center gap-2 text-sm font-semibold">
-<span class="material-symbols-outlined text-sm">check_circle</span>
-                                Paycheck
-                            </li>
-<li class="flex items-center gap-2 text-sm font-semibold">
-<span class="material-symbols-outlined text-sm">check_circle</span>
-                                Voter Registration Certificate
-                            </li>
-<li class="flex items-center gap-2 text-sm font-semibold">
-<span class="material-symbols-outlined text-sm">check_circle</span>
-                                Other Govt. Document with Name
-                            </li>
-</ul>
-</div>
-</div>
-<div class="mt-12">
-<button class="bg-primary text-on-primary px-8 py-4 font-bold tracking-tight hover:opacity-90 transition-opacity">
-                        DOWNLOAD DECLARATION FORM (PDF)
-                    </button>
-</div>
-</div>
-</section>
-<!-- Footer Note -->
-<footer class="py-12 border-t border-outline-variant/20 flex flex-col md:flex-row justify-between items-center gap-6">
-<p class="text-on-surface-variant font-medium text-sm italic">Non-partisan educational resource.</p>
-<div class="flex gap-8">
-<span class="text-xs font-bold uppercase tracking-widest opacity-40">Privacy Policy</span>
-<span class="text-xs font-bold uppercase tracking-widest opacity-40">Contact Support</span>
-<span class="text-xs font-bold uppercase tracking-widest opacity-40">Official Portal</span>
-</div>
-</footer>
-</main>
-<!-- BottomNavBar -->
-<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-safe bg-white dark:bg-zinc-900 h-20 border-t-2 border-[#f5f3f1] dark:border-zinc-800">
-<a class="flex flex-col items-center justify-center text-[#005c55] dark:text-teal-400 border-t-4 border-[#005c55] pt-1 px-4 h-full" href="#">
-<span class="material-symbols-outlined" data-icon="fact_check">fact_check</span>
-<span class="font-public-sans text-[11px] uppercase tracking-widest font-bold mt-1">Requirements</span>
-</a>
-<a class="flex flex-col items-center justify-center text-zinc-500 dark:text-zinc-500 pt-2 px-4 h-full hover:text-[#005c55] transition-opacity opacity-80 active:opacity-100" href="#">
-<span class="material-symbols-outlined" data-icon="where_to_vote">where_to_vote</span>
-<span class="font-public-sans text-[11px] uppercase tracking-widest font-bold mt-1">Polling Place</span>
-</a>
-<a class="flex flex-col items-center justify-center text-zinc-500 dark:text-zinc-500 pt-2 px-4 h-full hover:text-[#005c55] transition-opacity opacity-80 active:opacity-100" href="#">
-<span class="material-symbols-outlined" data-icon="how_to_vote">how_to_vote</span>
-<span class="font-public-sans text-[11px] uppercase tracking-widest font-bold mt-1">Ballot</span>
-</a>
-<a class="flex flex-col items-center justify-center text-zinc-500 dark:text-zinc-500 pt-2 px-4 h-full hover:text-[#005c55] transition-opacity opacity-80 active:opacity-100" href="#">
-<span class="material-symbols-outlined" data-icon="menu_book">menu_book</span>
-<span class="font-public-sans text-[11px] uppercase tracking-widest font-bold mt-1">Resources</span>
-</a>
-</nav>
-</body></html>
+          </div>
+          <div
+            class="bg-surface-container-lowest p-8 hover:bg-surface transition-colors"
+          >
+            <span class="material-symbols-outlined text-primary mb-4 text-3xl"
+              >how_to_vote</span
+            >
+            <h4 class="font-bold text-xl mb-2 text-on-surface">
+              Election Identification Certificate
+            </h4>
+            <p class="text-on-surface-variant text-sm">
+              Issued by DPS for voting purposes only.
+            </p>
+          </div>
+          <div
+            class="bg-surface-container-lowest p-8 hover:bg-surface transition-colors"
+          >
+            <span class="material-symbols-outlined text-primary mb-4 text-3xl"
+              >contact_page</span
+            >
+            <h4 class="font-bold text-xl mb-2 text-on-surface">
+              Personal ID card
+            </h4>
+            <h4 class="font-bold text-xl mb-2 text-on-surface"></h4>
+            <!-- Empty for alignment -->
+            <p class="text-on-surface-variant text-sm">
+              Personal identification card issued by DPS.
+            </p>
+          </div>
+          <div
+            class="bg-surface-container-lowest p-8 hover:bg-surface transition-colors"
+          >
+            <span class="material-symbols-outlined text-primary mb-4 text-3xl"
+              >military_tech</span
+            >
+            <h4 class="font-bold text-xl mb-2 text-on-surface">
+              Handgun License
+            </h4>
+            <p class="text-on-surface-variant text-sm">
+              Texas Handgun License issued by DPS.
+            </p>
+          </div>
+          <div
+            class="bg-surface-container-lowest p-8 hover:bg-surface transition-colors"
+          >
+            <span class="material-symbols-outlined text-primary mb-4 text-3xl"
+              >account_balance</span
+            >
+            <h4 class="font-bold text-xl mb-2 text-on-surface">
+              US Military ID
+            </h4>
+            <p class="text-on-surface-variant text-sm">
+              United States Military Identification Card containing a
+              photograph.
+            </p>
+          </div>
+          <div
+            class="bg-surface-container-lowest p-8 hover:bg-surface transition-colors"
+          >
+            <span class="material-symbols-outlined text-primary mb-4 text-3xl"
+              >history_edu</span
+            >
+            <h4 class="font-bold text-xl mb-2 text-on-surface">
+              Citizenship Certificate
+            </h4>
+            <p class="text-on-surface-variant text-sm">
+              United States Citizenship Certificate containing a photograph.
+            </p>
+          </div>
+          <div
+            class="bg-surface-container-lowest p-8 md:col-span-2 hover:bg-surface transition-colors flex items-start gap-6"
+          >
+            <span class="material-symbols-outlined text-primary text-4xl"
+              >flight_takeoff</span
+            >
+            <div>
+              <h4 class="font-bold text-xl mb-2 text-on-surface">
+                US Passport
+              </h4>
+              <p class="text-on-surface-variant text-sm">
+                United States Passport book or card.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+      <!-- Secondary Section: No ID? No Problem -->
+      <section
+        class="mb-24 bg-surface-container-low p-10 relative overflow-hidden"
+      >
+        <div class="absolute top-0 right-0 p-4 opacity-5 rotate-12">
+          <span class="material-symbols-outlined text-9xl">gavel</span>
+        </div>
+        <div class="relative z-10">
+          <h3 class="text-4xl font-black text-on-surface tracking-tighter mb-4">
+            No ID? No Problem
+          </h3>
+          <p class="text-lg text-on-surface-variant mb-10 max-w-xl">
+            If a voter does not possess one of the seven acceptable forms of
+            photo ID and cannot reasonably obtain one, they may still vote by
+            signing a
+            <span class="font-bold text-primary"
+              >Reasonable Impediment Declaration</span
+            >
+            and providing a supporting document.
+          </p>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-8">
+            <div>
+              <h5
+                class="text-xs font-black uppercase tracking-widest text-primary mb-4"
+              >
+                Supporting Documents
+              </h5>
+              <ul class="space-y-3">
+                <li class="flex items-center gap-2 text-sm font-semibold">
+                  <span class="material-symbols-outlined text-sm"
+                    >check_circle</span
+                  >
+                  Certified Birth Certificate
+                </li>
+                <li class="flex items-center gap-2 text-sm font-semibold">
+                  <span class="material-symbols-outlined text-sm"
+                    >check_circle</span
+                  >
+                  Current Utility Bill
+                </li>
+                <li class="flex items-center gap-2 text-sm font-semibold">
+                  <span class="material-symbols-outlined text-sm"
+                    >check_circle</span
+                  >
+                  Bank Statement
+                </li>
+                <li class="flex items-center gap-2 text-sm font-semibold">
+                  <span class="material-symbols-outlined text-sm"
+                    >check_circle</span
+                  >
+                  Government Check
+                </li>
+              </ul>
+            </div>
+            <div>
+              <h5
+                class="text-xs font-black uppercase tracking-widest text-primary mb-4"
+              >
+                 
+              </h5>
+              <ul class="space-y-3">
+                <li class="flex items-center gap-2 text-sm font-semibold">
+                  <span class="material-symbols-outlined text-sm"
+                    >check_circle</span
+                  >
+                  Paycheck
+                </li>
+                <li class="flex items-center gap-2 text-sm font-semibold">
+                  <span class="material-symbols-outlined text-sm"
+                    >check_circle</span
+                  >
+                  Voter Registration Certificate
+                </li>
+                <li class="flex items-center gap-2 text-sm font-semibold">
+                  <span class="material-symbols-outlined text-sm"
+                    >check_circle</span
+                  >
+                  Other Govt. Document with Name
+                </li>
+              </ul>
+            </div>
+          </div>
+          <div class="mt-12">
+            <button
+              class="bg-primary text-on-primary px-8 py-4 font-bold tracking-tight hover:opacity-90 transition-opacity"
+            >
+              DOWNLOAD DECLARATION FORM (PDF)
+            </button>
+          </div>
+        </div>
+      </section>
+      <!-- Footer Note -->
+      <footer
+        class="py-12 border-t border-outline-variant/20 flex flex-col md:flex-row justify-between items-center gap-6"
+      >
+        <p class="text-on-surface-variant font-medium text-sm italic">
+          Non-partisan educational resource.
+        </p>
+        <div class="flex gap-8">
+          <span class="text-xs font-bold uppercase tracking-widest opacity-40"
+            >Privacy Policy</span
+          >
+          <span class="text-xs font-bold uppercase tracking-widest opacity-40"
+            >Contact Support</span
+          >
+          <span class="text-xs font-bold uppercase tracking-widest opacity-40"
+            >Official Portal</span
+          >
+        </div>
+      </footer>
+    </main>
+    <!-- BottomNavBar -->
+    <nav
+      class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-safe bg-white dark:bg-zinc-900 h-20 border-t-2 border-[#f5f3f1] dark:border-zinc-800"
+    >
+      <a
+        class="flex flex-col items-center justify-center text-[#005c55] dark:text-teal-400 border-t-4 border-[#005c55] pt-1 px-4 h-full"
+        href="#"
+      >
+        <span class="material-symbols-outlined" data-icon="fact_check"
+          >fact_check</span
+        >
+        <span
+          class="font-public-sans text-[11px] uppercase tracking-widest font-bold mt-1"
+          >Requirements</span
+        >
+      </a>
+      <a
+        class="flex flex-col items-center justify-center text-zinc-500 dark:text-zinc-500 pt-2 px-4 h-full hover:text-[#005c55] transition-opacity opacity-80 active:opacity-100"
+        href="#"
+      >
+        <span class="material-symbols-outlined" data-icon="where_to_vote"
+          >where_to_vote</span
+        >
+        <span
+          class="font-public-sans text-[11px] uppercase tracking-widest font-bold mt-1"
+          >Polling Place</span
+        >
+      </a>
+      <a
+        class="flex flex-col items-center justify-center text-zinc-500 dark:text-zinc-500 pt-2 px-4 h-full hover:text-[#005c55] transition-opacity opacity-80 active:opacity-100"
+        href="#"
+      >
+        <span class="material-symbols-outlined" data-icon="how_to_vote"
+          >how_to_vote</span
+        >
+        <span
+          class="font-public-sans text-[11px] uppercase tracking-widest font-bold mt-1"
+          >Ballot</span
+        >
+      </a>
+      <a
+        class="flex flex-col items-center justify-center text-zinc-500 dark:text-zinc-500 pt-2 px-4 h-full hover:text-[#005c55] transition-opacity opacity-80 active:opacity-100"
+        href="#"
+      >
+        <span class="material-symbols-outlined" data-icon="menu_book"
+          >menu_book</span
+        >
+        <span
+          class="font-public-sans text-[11px] uppercase tracking-widest font-bold mt-1"
+          >Resources</span
+        >
+      </a>
+    </nav>
+  </body>
+</html>

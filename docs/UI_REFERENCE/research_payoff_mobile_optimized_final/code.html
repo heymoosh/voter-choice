@@ -1,316 +1,607 @@
-<!DOCTYPE html>
+<!doctype html>
 
-<html class="light" lang="en"><head>
-<meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Civic Research | Research Payoff</title>
-<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-<link href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,100..900;1,100..900&amp;display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
-<script id="tailwind-config">
-    tailwind.config = {
+<html class="light" lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Civic Research | Research Payoff</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,100..900;1,100..900&amp;display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+      rel="stylesheet"
+    />
+    <script id="tailwind-config">
+      tailwind.config = {
         darkMode: "class",
         theme: {
-            extend: {
-                colors: {
-                    "primary": "#0f766e",
-                    "background-light": "#fcfaf8",
-                    "background-dark": "#112120",
-                    "surface": "#fcfaf8",
-                    "surface-container-low": "#f5f3f1",
-                    "surface-container-high": "#eae8e6",
-                    "surface-container-highest": "#e4e2e0",
-                    "on-primary": "#ffffff",
-                    "on-surface": "#1b1c1b",
-                    "on-surface-variant": "#3e4947",
-                    "outline": "#6e7977",
-                    "outline-variant": "#bdc9c6"
-                },
-                fontFamily: {
-                    "display": ["Public Sans"],
-                    "headline": ["Public Sans"],
-                    "body": ["Public Sans"],
-                    "label": ["Public Sans"]
-                },
-                borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+          extend: {
+            colors: {
+              primary: "#0f766e",
+              "background-light": "#fcfaf8",
+              "background-dark": "#112120",
+              surface: "#fcfaf8",
+              "surface-container-low": "#f5f3f1",
+              "surface-container-high": "#eae8e6",
+              "surface-container-highest": "#e4e2e0",
+              "on-primary": "#ffffff",
+              "on-surface": "#1b1c1b",
+              "on-surface-variant": "#3e4947",
+              outline: "#6e7977",
+              "outline-variant": "#bdc9c6",
             },
+            fontFamily: {
+              display: ["Public Sans"],
+              headline: ["Public Sans"],
+              body: ["Public Sans"],
+              label: ["Public Sans"],
+            },
+            borderRadius: {
+              DEFAULT: "0.125rem",
+              lg: "0.25rem",
+              xl: "0.5rem",
+              full: "0.75rem",
+            },
+          },
         },
-    }
+      };
     </script>
-<style>
-        .material-symbols-outlined {
-            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-        }
-        body { font-family: 'Public Sans', sans-serif; font-size: 14px; }
-        .quote-text { font-size: 14px; }
-        .meta-text { font-size: 12px; }
+    <style>
+      .material-symbols-outlined {
+        font-variation-settings:
+          "FILL" 0,
+          "wght" 400,
+          "GRAD" 0,
+          "opsz" 24;
+      }
+      body {
+        font-family: "Public Sans", sans-serif;
+        font-size: 14px;
+      }
+      .quote-text {
+        font-size: 14px;
+      }
+      .meta-text {
+        font-size: 12px;
+      }
     </style>
-</head>
-<body class="bg-surface text-on-surface">
-<!-- TopNavBar -->
-<header class="bg-surface dark:bg-slate-900 font-['Public_Sans'] tracking-tight flex justify-between items-center px-6 py-4 w-full border-b border-outline-variant/20 sticky top-0 z-50">
-<div class="flex items-center gap-8">
-<span class="text-xl font-black text-primary dark:text-teal-500 uppercase tracking-tighter">Civic Research</span>
-</div>
-<div class="flex items-center gap-4">
-<button class="material-symbols-outlined text-on-surface-variant p-2 rounded-full hover:bg-surface-container-low">help</button>
-<button class="material-symbols-outlined text-on-surface-variant">menu</button>
-</div>
-</header>
-<main class="flex flex-col min-h-screen">
-<section class="flex-1 px-4 py-8 md:px-12 lg:px-20 bg-surface">
-<div class="max-w-xl mx-auto space-y-12">
-<!-- Page Header -->
-<header class="space-y-4">
-<div class="flex flex-wrap items-center gap-2">
-<span class="bg-primary/10 text-primary px-3 py-1 rounded-full meta-text font-bold tracking-widest uppercase">Verified Research</span>
-<span class="text-outline meta-text uppercase tracking-widest font-bold">November 2024 Election</span>
-</div>
-<h1 class="text-5xl font-headline font-black text-on-surface tracking-tighter leading-none">Your Research Portfolio</h1>
-<p class="text-lg text-on-surface-variant font-body leading-relaxed">Review your curated selections. These materials are prepared for your personal reference when you head to the polls.</p>
-</header>
-<!-- Actions / Payoff Buttons -->
-<div class="flex flex-col gap-4">
-<button class="w-full bg-primary text-white flex items-center justify-between p-6 group active:scale-[0.98] transition-all rounded-sm shadow-sm">
-<div class="text-left">
-<span class="block meta-text uppercase tracking-[0.2em] font-bold mb-1 opacity-80">Primary Action</span>
-<span class="text-2xl font-black">Print My Ballot</span>
-</div>
-<span class="material-symbols-outlined text-3xl">print</span>
-</button>
-<div class="w-full bg-surface-container-low border border-outline-variant/30 p-6 relative overflow-hidden flex flex-col gap-6">
-<div class="absolute top-0 right-0 pt-4 pr-4">
-<span class="bg-[#7f4025] text-white px-3 py-1 text-[10px] font-black uppercase tracking-widest">Verified</span>
-</div>
-<div class="flex flex-col gap-4">
-<div class="flex items-center gap-4">
-<div class="flex-shrink-0 bg-white p-3 shadow-sm border border-outline-variant/20">
-<span class="material-symbols-outlined text-primary text-4xl">description</span>
-</div>
-<div class="flex flex-col">
-<span class="text-[10px] font-black uppercase tracking-[0.2em] text-primary mb-1">Encrypted Data Manifest</span>
-<h3 class="text-lg font-black text-on-surface mb-0.5 break-all">voter_profile_nov_5_2024.txt</h3>
-<p class="text-xs font-mono text-on-surface-variant opacity-70">12.4 KB • TXT Format</p>
-</div>
-</div>
-<p class="text-sm text-on-surface-variant leading-relaxed w-full">Download this file to your device. You can upload it next election to skip the basic research and pick up right where you left off.</p>
-</div>
-<div class="space-y-4">
-<button class="w-full py-4 bg-primary text-white font-black text-lg hover:opacity-90 active:scale-[0.98] transition-all flex items-center justify-center gap-3">
-<span class="material-symbols-outlined">download</span>
-                                Download Profile (.txt)
-                            </button>
-<div class="flex items-start gap-3 pt-2 border-t border-outline-variant/20">
-<span class="material-symbols-outlined text-primary text-lg" style="font-variation-settings: 'FILL' 1;">shield_lock</span>
-<p class="text-[11px] leading-relaxed text-on-surface-variant">
-<span class="font-black text-on-surface uppercase tracking-wider">Privacy Protocol:</span> This file is generated locally on your device. We never receive, store, or transmit your personal data to any external server.
-                                </p>
-</div>
-</div>
-</div>
-</div>
-<!-- Polling Location -->
-<div class="space-y-8">
-<div class="flex items-baseline justify-between border-b border-outline-variant/30 pb-4">
-<h3 class="text-2xl font-black tracking-tight uppercase">Your Voting Destination</h3>
-</div>
-<div class="bg-surface-container-low p-6 rounded-sm space-y-6 border border-outline-variant/20">
-<div class="space-y-4">
-<h3 class="text-2xl font-black">Central Library Community Hall</h3>
-<div class="space-y-3">
-<div class="flex items-start gap-3">
-<span class="material-symbols-outlined text-primary">location_on</span>
-<div>
-<p class="font-bold">201 W Washington St.</p>
-<p class="meta-text text-on-surface-variant">Metro District, Suite 100</p>
-</div>
-</div>
-<div class="flex items-center justify-between group cursor-pointer hover:bg-surface-container-high/50 p-2 -ml-2 rounded transition-colors">
-<div class="flex items-start gap-3">
-<span class="material-symbols-outlined text-primary">schedule</span>
-<div>
-<p class="font-bold">7:00 AM — 8:00 PM</p>
-<p class="meta-text text-on-surface-variant">Tuesday, November 5th</p>
-</div>
-</div>
-<span class="material-symbols-outlined text-primary opacity-60 group-hover:opacity-100">calendar_add_on</span>
-</div>
-</div>
-</div>
-<div class="h-48 bg-surface-container-highest relative overflow-hidden rounded-sm border border-outline-variant/30">
-<img alt="Map" class="w-full h-full object-cover grayscale opacity-80" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCPevvgsglzYXtvdLE2tCD7dIiE_vz_kd1Senk_MD0Y-tRh1xOgOSA-f-FtfL1dVOcJFyr2B1qUvzq-5kmV2ojtVdocLk9uehYKC7HiXB3AHmyVroxuzVbEoMXsM54wvdmKLT03AQmqVQcJV3CUwTCO9skVrVzur_fkqp0-l9-Tg9SgwZPBggI2LgdwhC6IpHU6AuQsYpiqD-i7MjtrlP9mgAgYaXjVMLsEGLEr0-miIcWLKrMZmIIyljBo1p8_Dm0N_Sya2xI85Y0"/>
-<div class="absolute inset-0 flex items-center justify-center">
-<div class="w-6 h-6 bg-primary rounded-full border-4 border-white shadow-lg"></div>
-</div>
-</div>
-<!-- Early Voting Schedule Table -->
-<div class="pt-6 border-t border-outline-variant/30 space-y-6">
-<div class="flex items-center justify-between">
-<div class="flex items-center gap-2">
-<span class="material-symbols-outlined text-primary text-xl">event_repeat</span>
-<h4 class="text-lg font-black uppercase tracking-tight">Early Voting Schedule</h4>
-</div>
-<button class="bg-primary text-white p-2 rounded-sm flex items-center justify-center active:scale-95 transition-transform">
-<span class="material-symbols-outlined text-sm">calendar_add_on</span>
-</button>
-</div>
-<div class="space-y-4">
-<div class="bg-white p-4 shadow-sm border border-outline-variant/10">
-<div class="text-primary font-black meta-text uppercase tracking-widest mb-3">Oct 28 – Oct 30</div>
-<div class="space-y-2">
-<div class="flex justify-between text-sm">
-<span class="text-on-surface-variant">Monday – Wednesday</span>
-<span class="font-bold">8 AM – 6 PM</span>
-</div>
-</div>
-</div>
-<div class="bg-surface-container-high p-4 border border-outline-variant/10">
-<div class="text-primary font-black meta-text uppercase tracking-widest mb-3">Oct 31 – Nov 2</div>
-<div class="space-y-2">
-<div class="flex justify-between text-sm">
-<span class="text-on-surface-variant">Thursday – Friday</span>
-<span class="font-bold">8 AM – 8 PM</span>
-</div>
-<div class="flex justify-between text-sm">
-<span class="text-on-surface-variant">Saturday</span>
-<span class="font-bold">10 AM – 4 PM</span>
-</div>
-</div>
-</div>
-</div>
-</div>
-</div>
-</div>
-<!-- Selected Candidates -->
-<div class="space-y-8">
-<div class="flex items-baseline justify-between border-b border-outline-variant/30 pb-4">
-<h3 class="text-2xl font-black tracking-tight uppercase">Selected Candidates</h3>
-<span class="text-outline meta-text font-bold">3 Selections</span>
-</div>
-<div class="flex flex-col gap-10">
-<!-- Candidate Card 1 -->
-<div class="bg-surface-container-lowest border-l-4 border-primary p-6 space-y-6">
-<div>
-<span class="meta-text uppercase font-black tracking-widest text-[#7f4025] mb-2 block">Presidential</span>
-<h4 class="text-3xl font-black leading-tight mb-1">Elena Vance</h4>
-<p class="meta-text text-outline uppercase font-bold tracking-wider">Independent Civic Party</p>
-</div>
-<div class="space-y-4">
-<p class="quote-text italic text-on-surface-variant leading-relaxed">"Infrastructure reform focused on metropolitan transit and digital privacy rights."</p>
-<div class="aspect-square bg-surface-container-highest overflow-hidden rounded-sm">
-<img alt="Elena Vance" class="w-full h-full object-cover grayscale brightness-90 contrast-110" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCFY2sDPZdccNk-Fgh9iQPqPA7Qs23XhwM2-PhmKaybtpP5_NYUlTi74fKqpU-gI53_RQYtxbYrib1aY2CpfJfM_Qr73WV0tjCTteWWOl2mANe_X-NStv70Xa_RtyP5W1r9gp8A0V8ley5dSY-LiEkOWuYsNegt_jfuXQW3V96gDB9dEs4B4kdzV5pEWgX13gPsbwmtnsQPCglI5jOgmaHxp6QROG8Qq9LpF9IOpgiztcw_5AbV13ssApVoxqxoSXdWKDi7odocFro"/>
-</div>
-</div>
-</div>
-<!-- Candidate Card 2 -->
-<div class="bg-surface-container-lowest border-l-4 border-outline-variant p-6 space-y-6">
-<div>
-<span class="meta-text uppercase font-black tracking-widest text-outline mb-2 block">State Senate</span>
-<h4 class="text-3xl font-black leading-tight mb-1">Marcus Thorne</h4>
-<p class="meta-text text-outline uppercase font-bold tracking-wider">Liberty &amp; Union</p>
-</div>
-<div class="space-y-4">
-<p class="quote-text italic text-on-surface-variant leading-relaxed">"Proponent of educational tax credits and local small business grants."</p>
-<div class="aspect-square bg-surface-container-highest overflow-hidden rounded-sm">
-<img alt="Marcus Thorne" class="w-full h-full object-cover grayscale brightness-90 contrast-110" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDSbjw8YnUMx5S7_UzWdfC5Zg8K9Fzv6hVCfCVm5gkYyUgaCZJO7k4DkcrLFfPiZjhw7gjOjWq2QT-cX8-CnB06egEXpoVd9Y61qGKhX0M31n-LabrniDD_NaRDa9c-omFuwWKmLpuBYTMUpRrHZtv4PN757EkkPHNyWASElaO-JHyu5yDxXYLOrq2RUt96qMp-bqILF7dcH9N6TaoNhkUDMvHgFoSGdlErEM3NyWMr2ijhSTeG4sGMDRqcCHPva-hRp6A_Tgc9zOU"/>
-</div>
-</div>
-</div>
-<!-- Candidate Card 3 -->
-<div class="bg-surface-container-lowest border-l-4 border-outline-variant p-6 space-y-6">
-<div>
-<span class="meta-text uppercase font-black tracking-widest text-outline mb-2 block">County Council</span>
-<h4 class="text-3xl font-black leading-tight mb-1">Sarah Jenkins</h4>
-<p class="meta-text text-outline uppercase font-bold tracking-wider">Progress Collective</p>
-</div>
-<div class="space-y-4">
-<p class="quote-text italic text-on-surface-variant leading-relaxed">"Focus on sustainable land use and expansion of green space in Ward 4."</p>
-<div class="aspect-square bg-surface-container-highest overflow-hidden rounded-sm">
-<img alt="Sarah Jenkins" class="w-full h-full object-cover grayscale brightness-90 contrast-110" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBT-Z27B17jrGwNdO0RjSKftiygUuH7Cz5MGhjwpxSI7Em0OXqg7hx3PLrtj--_6Vedq8AxSgzYYLthY2wYf5NxshfD7PApvy_WQ5GhplLd9Wxeze4lQTHay5tERbPpRJHpJVW8-9153BcUbl1l0VUX3QHS9SgSb5WX2YO9rPBnI2dIDBc1_mDiuBFijwncS99p02FQf6Dn-R6fw8CkalV1OGEHGoV2vP_awLE_Cw-jFc5fMXGz5q5MHnrJMKfH372F1-XQ_B5WZTE"/>
-</div>
-</div>
-</div>
-</div>
-</div>
-<!-- Ballot Measures -->
-<div class="space-y-8">
-<div class="flex items-baseline justify-between border-b border-outline-variant/30 pb-4">
-<h3 class="text-2xl font-black tracking-tight uppercase">Ballot Measures</h3>
-<span class="text-outline meta-text font-bold">2 Decisions</span>
-</div>
-<div class="flex flex-col gap-6">
-<!-- Measure 1 -->
-<div class="bg-surface-container-low p-6 rounded-sm">
-<div class="flex justify-between items-start mb-4">
-<div>
-<h4 class="text-xl font-black mb-1">Proposition 104</h4>
-<p class="meta-text font-bold text-outline uppercase tracking-widest">Public Safety Funding</p>
-</div>
-<span class="bg-primary text-white px-4 py-1 meta-text font-black uppercase">Yes</span>
-</div>
-<p class="text-on-surface-variant leading-relaxed">Allocates 0.5% of county sales tax to modernize emergency response infrastructure and paramedic training centers.</p>
-</div>
-<!-- Measure 2 -->
-<div class="bg-surface-container-low p-6 rounded-sm">
-<div class="flex justify-between items-start mb-4">
-<div>
-<h4 class="text-xl font-black mb-1">Measure B</h4>
-<p class="meta-text font-bold text-outline uppercase tracking-widest">Municipal Zoning Reform</p>
-</div>
-<span class="bg-on-surface-variant text-white px-4 py-1 meta-text font-black uppercase">No</span>
-</div>
-<p class="text-on-surface-variant leading-relaxed">Proposed changes to residential height limits in historic corridors. You selected 'No' based on preservation impact assessments.</p>
-</div>
-</div>
-</div>
-<!-- Footer Content -->
-<div class="pt-12 pb-24 border-t-2 border-on-surface space-y-8">
-<div class="bg-surface-container-high/50 p-6 border-l-4 border-primary">
-<h5 class="meta-text font-black uppercase mb-2">Civic Integrity Notice</h5>
-<p class="meta-text text-on-surface-variant leading-relaxed">This research profile is for personal use and is not an official ballot. Ensure your registration is active before Election Day.</p>
-</div>
-<div class="flex flex-col gap-4">
-<button class="flex items-center gap-3 font-bold text-primary active:opacity-60 py-2">
-<span class="material-symbols-outlined">share</span>
-<span>Share Research Template</span>
-</button>
-<div class="w-full bg-white border border-outline-variant/30 p-8 rounded-sm space-y-6 shadow-sm">
-<div class="flex items-center gap-6">
-<div class="bg-surface-container-low p-5 rounded-xl flex items-center justify-center border border-outline-variant/10">
-<span class="material-symbols-outlined text-primary text-4xl">ballot</span>
-</div>
-<h2 class="text-3xl font-black text-on-surface tracking-tighter uppercase">Ready to Vote?</h2>
-</div>
-<p class="text-lg text-on-surface-variant font-body leading-relaxed">
-                                Print your 1-page ballot summary now. Remember, most Texas polling locations do not allow phones.
-                            </p>
-<button class="w-full bg-primary text-white py-6 flex items-center justify-center gap-3 shadow-md hover:opacity-90 active:scale-[0.98] transition-all">
-<span class="material-symbols-outlined text-2xl">print</span>
-<span class="text-2xl font-black uppercase tracking-tight">Print My Ballot</span>
-</button>
-</div>
-</div>
-</div>
-</div>
-</section>
-</main>
-<!-- Mobile Bottom Navigation -->
-<nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-outline-variant/30 flex justify-around py-3 px-2 z-50">
-<a class="flex flex-col items-center gap-1 text-outline transition-colors" href="#">
-<span class="material-symbols-outlined">calendar_today</span>
-<span class="meta-text font-bold uppercase">Dates</span>
-</a>
-<a class="flex flex-col items-center gap-1 text-outline transition-colors" href="#">
-<span class="material-symbols-outlined">badge</span>
-<span class="meta-text font-bold uppercase">IDs</span>
-</a>
-<a class="flex flex-col items-center gap-1 text-primary transition-colors" href="#">
-<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">description</span>
-<span class="meta-text font-bold uppercase">Ballot</span>
-</a>
-<a class="flex flex-col items-center gap-1 text-outline transition-colors" href="#">
-<span class="material-symbols-outlined">person</span>
-<span class="meta-text font-bold uppercase">Profile</span>
-</a>
-</nav>
-</body></html>
+  </head>
+  <body class="bg-surface text-on-surface">
+    <!-- TopNavBar -->
+    <header
+      class="bg-surface dark:bg-slate-900 font-['Public_Sans'] tracking-tight flex justify-between items-center px-6 py-4 w-full border-b border-outline-variant/20 sticky top-0 z-50"
+    >
+      <div class="flex items-center gap-8">
+        <span
+          class="text-xl font-black text-primary dark:text-teal-500 uppercase tracking-tighter"
+          >Civic Research</span
+        >
+      </div>
+      <div class="flex items-center gap-4">
+        <button
+          class="material-symbols-outlined text-on-surface-variant p-2 rounded-full hover:bg-surface-container-low"
+        >
+          help
+        </button>
+        <button class="material-symbols-outlined text-on-surface-variant">
+          menu
+        </button>
+      </div>
+    </header>
+    <main class="flex flex-col min-h-screen">
+      <section class="flex-1 px-4 py-8 md:px-12 lg:px-20 bg-surface">
+        <div class="max-w-xl mx-auto space-y-12">
+          <!-- Page Header -->
+          <header class="space-y-4">
+            <div class="flex flex-wrap items-center gap-2">
+              <span
+                class="bg-primary/10 text-primary px-3 py-1 rounded-full meta-text font-bold tracking-widest uppercase"
+                >Verified Research</span
+              >
+              <span
+                class="text-outline meta-text uppercase tracking-widest font-bold"
+                >November 2024 Election</span
+              >
+            </div>
+            <h1
+              class="text-5xl font-headline font-black text-on-surface tracking-tighter leading-none"
+            >
+              Your Research Portfolio
+            </h1>
+            <p
+              class="text-lg text-on-surface-variant font-body leading-relaxed"
+            >
+              Review your curated selections. These materials are prepared for
+              your personal reference when you head to the polls.
+            </p>
+          </header>
+          <!-- Actions / Payoff Buttons -->
+          <div class="flex flex-col gap-4">
+            <button
+              class="w-full bg-primary text-white flex items-center justify-between p-6 group active:scale-[0.98] transition-all rounded-sm shadow-sm"
+            >
+              <div class="text-left">
+                <span
+                  class="block meta-text uppercase tracking-[0.2em] font-bold mb-1 opacity-80"
+                  >Primary Action</span
+                >
+                <span class="text-2xl font-black">Print My Ballot</span>
+              </div>
+              <span class="material-symbols-outlined text-3xl">print</span>
+            </button>
+            <div
+              class="w-full bg-surface-container-low border border-outline-variant/30 p-6 relative overflow-hidden flex flex-col gap-6"
+            >
+              <div class="absolute top-0 right-0 pt-4 pr-4">
+                <span
+                  class="bg-[#7f4025] text-white px-3 py-1 text-[10px] font-black uppercase tracking-widest"
+                  >Verified</span
+                >
+              </div>
+              <div class="flex flex-col gap-4">
+                <div class="flex items-center gap-4">
+                  <div
+                    class="flex-shrink-0 bg-white p-3 shadow-sm border border-outline-variant/20"
+                  >
+                    <span
+                      class="material-symbols-outlined text-primary text-4xl"
+                      >description</span
+                    >
+                  </div>
+                  <div class="flex flex-col">
+                    <span
+                      class="text-[10px] font-black uppercase tracking-[0.2em] text-primary mb-1"
+                      >Encrypted Data Manifest</span
+                    >
+                    <h3
+                      class="text-lg font-black text-on-surface mb-0.5 break-all"
+                    >
+                      voter_profile_nov_5_2024.txt
+                    </h3>
+                    <p
+                      class="text-xs font-mono text-on-surface-variant opacity-70"
+                    >
+                      12.4 KB • TXT Format
+                    </p>
+                  </div>
+                </div>
+                <p
+                  class="text-sm text-on-surface-variant leading-relaxed w-full"
+                >
+                  Download this file to your device. You can upload it next
+                  election to skip the basic research and pick up right where
+                  you left off.
+                </p>
+              </div>
+              <div class="space-y-4">
+                <button
+                  class="w-full py-4 bg-primary text-white font-black text-lg hover:opacity-90 active:scale-[0.98] transition-all flex items-center justify-center gap-3"
+                >
+                  <span class="material-symbols-outlined">download</span>
+                  Download Profile (.txt)
+                </button>
+                <div
+                  class="flex items-start gap-3 pt-2 border-t border-outline-variant/20"
+                >
+                  <span
+                    class="material-symbols-outlined text-primary text-lg"
+                    style="font-variation-settings: &quot;FILL&quot; 1"
+                    >shield_lock</span
+                  >
+                  <p
+                    class="text-[11px] leading-relaxed text-on-surface-variant"
+                  >
+                    <span
+                      class="font-black text-on-surface uppercase tracking-wider"
+                      >Privacy Protocol:</span
+                    >
+                    This file is generated locally on your device. We never
+                    receive, store, or transmit your personal data to any
+                    external server.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Polling Location -->
+          <div class="space-y-8">
+            <div
+              class="flex items-baseline justify-between border-b border-outline-variant/30 pb-4"
+            >
+              <h3 class="text-2xl font-black tracking-tight uppercase">
+                Your Voting Destination
+              </h3>
+            </div>
+            <div
+              class="bg-surface-container-low p-6 rounded-sm space-y-6 border border-outline-variant/20"
+            >
+              <div class="space-y-4">
+                <h3 class="text-2xl font-black">
+                  Central Library Community Hall
+                </h3>
+                <div class="space-y-3">
+                  <div class="flex items-start gap-3">
+                    <span class="material-symbols-outlined text-primary"
+                      >location_on</span
+                    >
+                    <div>
+                      <p class="font-bold">201 W Washington St.</p>
+                      <p class="meta-text text-on-surface-variant">
+                        Metro District, Suite 100
+                      </p>
+                    </div>
+                  </div>
+                  <div
+                    class="flex items-center justify-between group cursor-pointer hover:bg-surface-container-high/50 p-2 -ml-2 rounded transition-colors"
+                  >
+                    <div class="flex items-start gap-3">
+                      <span class="material-symbols-outlined text-primary"
+                        >schedule</span
+                      >
+                      <div>
+                        <p class="font-bold">7:00 AM — 8:00 PM</p>
+                        <p class="meta-text text-on-surface-variant">
+                          Tuesday, November 5th
+                        </p>
+                      </div>
+                    </div>
+                    <span
+                      class="material-symbols-outlined text-primary opacity-60 group-hover:opacity-100"
+                      >calendar_add_on</span
+                    >
+                  </div>
+                </div>
+              </div>
+              <div
+                class="h-48 bg-surface-container-highest relative overflow-hidden rounded-sm border border-outline-variant/30"
+              >
+                <img
+                  alt="Map"
+                  class="w-full h-full object-cover grayscale opacity-80"
+                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuCPevvgsglzYXtvdLE2tCD7dIiE_vz_kd1Senk_MD0Y-tRh1xOgOSA-f-FtfL1dVOcJFyr2B1qUvzq-5kmV2ojtVdocLk9uehYKC7HiXB3AHmyVroxuzVbEoMXsM54wvdmKLT03AQmqVQcJV3CUwTCO9skVrVzur_fkqp0-l9-Tg9SgwZPBggI2LgdwhC6IpHU6AuQsYpiqD-i7MjtrlP9mgAgYaXjVMLsEGLEr0-miIcWLKrMZmIIyljBo1p8_Dm0N_Sya2xI85Y0"
+                />
+                <div class="absolute inset-0 flex items-center justify-center">
+                  <div
+                    class="w-6 h-6 bg-primary rounded-full border-4 border-white shadow-lg"
+                  ></div>
+                </div>
+              </div>
+              <!-- Early Voting Schedule Table -->
+              <div class="pt-6 border-t border-outline-variant/30 space-y-6">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-primary text-xl"
+                      >event_repeat</span
+                    >
+                    <h4 class="text-lg font-black uppercase tracking-tight">
+                      Early Voting Schedule
+                    </h4>
+                  </div>
+                  <button
+                    class="bg-primary text-white p-2 rounded-sm flex items-center justify-center active:scale-95 transition-transform"
+                  >
+                    <span class="material-symbols-outlined text-sm"
+                      >calendar_add_on</span
+                    >
+                  </button>
+                </div>
+                <div class="space-y-4">
+                  <div
+                    class="bg-white p-4 shadow-sm border border-outline-variant/10"
+                  >
+                    <div
+                      class="text-primary font-black meta-text uppercase tracking-widest mb-3"
+                    >
+                      Oct 28 – Oct 30
+                    </div>
+                    <div class="space-y-2">
+                      <div class="flex justify-between text-sm">
+                        <span class="text-on-surface-variant"
+                          >Monday – Wednesday</span
+                        >
+                        <span class="font-bold">8 AM – 6 PM</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div
+                    class="bg-surface-container-high p-4 border border-outline-variant/10"
+                  >
+                    <div
+                      class="text-primary font-black meta-text uppercase tracking-widest mb-3"
+                    >
+                      Oct 31 – Nov 2
+                    </div>
+                    <div class="space-y-2">
+                      <div class="flex justify-between text-sm">
+                        <span class="text-on-surface-variant"
+                          >Thursday – Friday</span
+                        >
+                        <span class="font-bold">8 AM – 8 PM</span>
+                      </div>
+                      <div class="flex justify-between text-sm">
+                        <span class="text-on-surface-variant">Saturday</span>
+                        <span class="font-bold">10 AM – 4 PM</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Selected Candidates -->
+          <div class="space-y-8">
+            <div
+              class="flex items-baseline justify-between border-b border-outline-variant/30 pb-4"
+            >
+              <h3 class="text-2xl font-black tracking-tight uppercase">
+                Selected Candidates
+              </h3>
+              <span class="text-outline meta-text font-bold">3 Selections</span>
+            </div>
+            <div class="flex flex-col gap-10">
+              <!-- Candidate Card 1 -->
+              <div
+                class="bg-surface-container-lowest border-l-4 border-primary p-6 space-y-6"
+              >
+                <div>
+                  <span
+                    class="meta-text uppercase font-black tracking-widest text-[#7f4025] mb-2 block"
+                    >Presidential</span
+                  >
+                  <h4 class="text-3xl font-black leading-tight mb-1">
+                    Elena Vance
+                  </h4>
+                  <p
+                    class="meta-text text-outline uppercase font-bold tracking-wider"
+                  >
+                    Independent Civic Party
+                  </p>
+                </div>
+                <div class="space-y-4">
+                  <p
+                    class="quote-text italic text-on-surface-variant leading-relaxed"
+                  >
+                    "Infrastructure reform focused on metropolitan transit and
+                    digital privacy rights."
+                  </p>
+                  <div
+                    class="aspect-square bg-surface-container-highest overflow-hidden rounded-sm"
+                  >
+                    <img
+                      alt="Elena Vance"
+                      class="w-full h-full object-cover grayscale brightness-90 contrast-110"
+                      src="https://lh3.googleusercontent.com/aida-public/AB6AXuCFY2sDPZdccNk-Fgh9iQPqPA7Qs23XhwM2-PhmKaybtpP5_NYUlTi74fKqpU-gI53_RQYtxbYrib1aY2CpfJfM_Qr73WV0tjCTteWWOl2mANe_X-NStv70Xa_RtyP5W1r9gp8A0V8ley5dSY-LiEkOWuYsNegt_jfuXQW3V96gDB9dEs4B4kdzV5pEWgX13gPsbwmtnsQPCglI5jOgmaHxp6QROG8Qq9LpF9IOpgiztcw_5AbV13ssApVoxqxoSXdWKDi7odocFro"
+                    />
+                  </div>
+                </div>
+              </div>
+              <!-- Candidate Card 2 -->
+              <div
+                class="bg-surface-container-lowest border-l-4 border-outline-variant p-6 space-y-6"
+              >
+                <div>
+                  <span
+                    class="meta-text uppercase font-black tracking-widest text-outline mb-2 block"
+                    >State Senate</span
+                  >
+                  <h4 class="text-3xl font-black leading-tight mb-1">
+                    Marcus Thorne
+                  </h4>
+                  <p
+                    class="meta-text text-outline uppercase font-bold tracking-wider"
+                  >
+                    Liberty &amp; Union
+                  </p>
+                </div>
+                <div class="space-y-4">
+                  <p
+                    class="quote-text italic text-on-surface-variant leading-relaxed"
+                  >
+                    "Proponent of educational tax credits and local small
+                    business grants."
+                  </p>
+                  <div
+                    class="aspect-square bg-surface-container-highest overflow-hidden rounded-sm"
+                  >
+                    <img
+                      alt="Marcus Thorne"
+                      class="w-full h-full object-cover grayscale brightness-90 contrast-110"
+                      src="https://lh3.googleusercontent.com/aida-public/AB6AXuDSbjw8YnUMx5S7_UzWdfC5Zg8K9Fzv6hVCfCVm5gkYyUgaCZJO7k4DkcrLFfPiZjhw7gjOjWq2QT-cX8-CnB06egEXpoVd9Y61qGKhX0M31n-LabrniDD_NaRDa9c-omFuwWKmLpuBYTMUpRrHZtv4PN757EkkPHNyWASElaO-JHyu5yDxXYLOrq2RUt96qMp-bqILF7dcH9N6TaoNhkUDMvHgFoSGdlErEM3NyWMr2ijhSTeG4sGMDRqcCHPva-hRp6A_Tgc9zOU"
+                    />
+                  </div>
+                </div>
+              </div>
+              <!-- Candidate Card 3 -->
+              <div
+                class="bg-surface-container-lowest border-l-4 border-outline-variant p-6 space-y-6"
+              >
+                <div>
+                  <span
+                    class="meta-text uppercase font-black tracking-widest text-outline mb-2 block"
+                    >County Council</span
+                  >
+                  <h4 class="text-3xl font-black leading-tight mb-1">
+                    Sarah Jenkins
+                  </h4>
+                  <p
+                    class="meta-text text-outline uppercase font-bold tracking-wider"
+                  >
+                    Progress Collective
+                  </p>
+                </div>
+                <div class="space-y-4">
+                  <p
+                    class="quote-text italic text-on-surface-variant leading-relaxed"
+                  >
+                    "Focus on sustainable land use and expansion of green space
+                    in Ward 4."
+                  </p>
+                  <div
+                    class="aspect-square bg-surface-container-highest overflow-hidden rounded-sm"
+                  >
+                    <img
+                      alt="Sarah Jenkins"
+                      class="w-full h-full object-cover grayscale brightness-90 contrast-110"
+                      src="https://lh3.googleusercontent.com/aida-public/AB6AXuBT-Z27B17jrGwNdO0RjSKftiygUuH7Cz5MGhjwpxSI7Em0OXqg7hx3PLrtj--_6Vedq8AxSgzYYLthY2wYf5NxshfD7PApvy_WQ5GhplLd9Wxeze4lQTHay5tERbPpRJHpJVW8-9153BcUbl1l0VUX3QHS9SgSb5WX2YO9rPBnI2dIDBc1_mDiuBFijwncS99p02FQf6Dn-R6fw8CkalV1OGEHGoV2vP_awLE_Cw-jFc5fMXGz5q5MHnrJMKfH372F1-XQ_B5WZTE"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Ballot Measures -->
+          <div class="space-y-8">
+            <div
+              class="flex items-baseline justify-between border-b border-outline-variant/30 pb-4"
+            >
+              <h3 class="text-2xl font-black tracking-tight uppercase">
+                Ballot Measures
+              </h3>
+              <span class="text-outline meta-text font-bold">2 Decisions</span>
+            </div>
+            <div class="flex flex-col gap-6">
+              <!-- Measure 1 -->
+              <div class="bg-surface-container-low p-6 rounded-sm">
+                <div class="flex justify-between items-start mb-4">
+                  <div>
+                    <h4 class="text-xl font-black mb-1">Proposition 104</h4>
+                    <p
+                      class="meta-text font-bold text-outline uppercase tracking-widest"
+                    >
+                      Public Safety Funding
+                    </p>
+                  </div>
+                  <span
+                    class="bg-primary text-white px-4 py-1 meta-text font-black uppercase"
+                    >Yes</span
+                  >
+                </div>
+                <p class="text-on-surface-variant leading-relaxed">
+                  Allocates 0.5% of county sales tax to modernize emergency
+                  response infrastructure and paramedic training centers.
+                </p>
+              </div>
+              <!-- Measure 2 -->
+              <div class="bg-surface-container-low p-6 rounded-sm">
+                <div class="flex justify-between items-start mb-4">
+                  <div>
+                    <h4 class="text-xl font-black mb-1">Measure B</h4>
+                    <p
+                      class="meta-text font-bold text-outline uppercase tracking-widest"
+                    >
+                      Municipal Zoning Reform
+                    </p>
+                  </div>
+                  <span
+                    class="bg-on-surface-variant text-white px-4 py-1 meta-text font-black uppercase"
+                    >No</span
+                  >
+                </div>
+                <p class="text-on-surface-variant leading-relaxed">
+                  Proposed changes to residential height limits in historic
+                  corridors. You selected 'No' based on preservation impact
+                  assessments.
+                </p>
+              </div>
+            </div>
+          </div>
+          <!-- Footer Content -->
+          <div class="pt-12 pb-24 border-t-2 border-on-surface space-y-8">
+            <div
+              class="bg-surface-container-high/50 p-6 border-l-4 border-primary"
+            >
+              <h5 class="meta-text font-black uppercase mb-2">
+                Civic Integrity Notice
+              </h5>
+              <p class="meta-text text-on-surface-variant leading-relaxed">
+                This research profile is for personal use and is not an official
+                ballot. Ensure your registration is active before Election Day.
+              </p>
+            </div>
+            <div class="flex flex-col gap-4">
+              <button
+                class="flex items-center gap-3 font-bold text-primary active:opacity-60 py-2"
+              >
+                <span class="material-symbols-outlined">share</span>
+                <span>Share Research Template</span>
+              </button>
+              <div
+                class="w-full bg-white border border-outline-variant/30 p-8 rounded-sm space-y-6 shadow-sm"
+              >
+                <div class="flex items-center gap-6">
+                  <div
+                    class="bg-surface-container-low p-5 rounded-xl flex items-center justify-center border border-outline-variant/10"
+                  >
+                    <span
+                      class="material-symbols-outlined text-primary text-4xl"
+                      >ballot</span
+                    >
+                  </div>
+                  <h2
+                    class="text-3xl font-black text-on-surface tracking-tighter uppercase"
+                  >
+                    Ready to Vote?
+                  </h2>
+                </div>
+                <p
+                  class="text-lg text-on-surface-variant font-body leading-relaxed"
+                >
+                  Print your 1-page ballot summary now. Remember, most Texas
+                  polling locations do not allow phones.
+                </p>
+                <button
+                  class="w-full bg-primary text-white py-6 flex items-center justify-center gap-3 shadow-md hover:opacity-90 active:scale-[0.98] transition-all"
+                >
+                  <span class="material-symbols-outlined text-2xl">print</span>
+                  <span class="text-2xl font-black uppercase tracking-tight"
+                    >Print My Ballot</span
+                  >
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+    <!-- Mobile Bottom Navigation -->
+    <nav
+      class="fixed bottom-0 left-0 right-0 bg-white border-t border-outline-variant/30 flex justify-around py-3 px-2 z-50"
+    >
+      <a
+        class="flex flex-col items-center gap-1 text-outline transition-colors"
+        href="#"
+      >
+        <span class="material-symbols-outlined">calendar_today</span>
+        <span class="meta-text font-bold uppercase">Dates</span>
+      </a>
+      <a
+        class="flex flex-col items-center gap-1 text-outline transition-colors"
+        href="#"
+      >
+        <span class="material-symbols-outlined">badge</span>
+        <span class="meta-text font-bold uppercase">IDs</span>
+      </a>
+      <a
+        class="flex flex-col items-center gap-1 text-primary transition-colors"
+        href="#"
+      >
+        <span
+          class="material-symbols-outlined"
+          style="font-variation-settings: &quot;FILL&quot; 1"
+          >description</span
+        >
+        <span class="meta-text font-bold uppercase">Ballot</span>
+      </a>
+      <a
+        class="flex flex-col items-center gap-1 text-outline transition-colors"
+        href="#"
+      >
+        <span class="material-symbols-outlined">person</span>
+        <span class="meta-text font-bold uppercase">Profile</span>
+      </a>
+    </nav>
+  </body>
+</html>

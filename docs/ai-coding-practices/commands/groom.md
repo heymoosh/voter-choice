@@ -3,6 +3,7 @@
 Purpose: route raw captures or vague requests into the lightest useful artifact.
 
 Decision owners:
+
 - Routing: `docs/ai-coding-practices/guardrails/request-routing.md`
 - Ownership discipline: `docs/ai-coding-practices/guardrails/ownership-discipline.md`
 - Commercial app readiness: `docs/ai-coding-practices/guardrails/commercial-app-readiness.md`

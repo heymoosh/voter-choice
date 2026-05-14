@@ -27,7 +27,7 @@ Fixed ~20 categories. The model picks 2–4 per candidate from this list. Labels
 - Large individual donors ($200+)
 - Self-funded
 - Party committees
-- Issue-aligned PACs — \<issue\>  *(suffix the live issue, e.g., "Issue-aligned PACs — gun rights")*
+- Issue-aligned PACs — \<issue\> _(suffix the live issue, e.g., "Issue-aligned PACs — gun rights")_
 - Other
 
 ---

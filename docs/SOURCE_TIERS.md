@@ -5,6 +5,7 @@ Every factual claim in research output must cite its source inline. Use only Tie
 ## Tier 1 — Government and academic data (highest credibility)
 
 Federal:
+
 - Bureau of Labor Statistics (BLS) — employment, wages
 - Bureau of Justice Statistics (BJS) and FBI Uniform Crime Reports (UCR) — crime
 - Centers for Disease Control (CDC) — health
@@ -12,6 +13,7 @@ Federal:
 - US Department of Education (ED) — education data
 
 Texas-specific:
+
 - Texas Demographic Center
 - Texas Department of Public Safety (DPS) — crime
 - Texas Education Agency (TEA) — education
@@ -28,6 +30,7 @@ Texas-specific:
 ## Tier 3 — Think tanks and research orgs
 
 Use carefully and balance across leans:
+
 - Pew Research (center, methodologically strong)
 - RAND Corporation (nonpartisan, rigorous)
 - Urban Institute (center-left, methodologically solid)
@@ -42,6 +45,7 @@ Permitted only when labeled. Examples: ACLU, Heritage Foundation, Texas Public P
 ## Candidate behavior data
 
 These sources track candidate-specific actions and are nonpartisan in posture:
+
 - Vote Smart (key votes, positions, ratings)
 - Ballotpedia (race details, voting records, biographies)
 - OpenSecrets (federal campaign finance)
@@ -52,6 +56,7 @@ These sources track candidate-specific actions and are nonpartisan in posture:
 ## Citation pattern
 
 Inline. Every claim. No exceptions:
+
 - "Travis County saw a 12% drop in property crime year-over-year [Source: FBI UCR 2025]."
 - "This candidate received $48,000 from oil and gas PACs in 2024 [Source: TEC filings]."
 - "Civil rights groups have flagged this voting record as restrictive [Advocacy: ACLU Texas]."

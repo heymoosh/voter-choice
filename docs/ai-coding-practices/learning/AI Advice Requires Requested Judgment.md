@@ -93,7 +93,7 @@ Use this for business, engineering, life, productivity, strategy, and major deci
 
 ```md
 | Advice | Problem it solves | Evidence I have this problem now | Cost | Failure mode | Reversible first step | Do now/later/drop |
-|---|---|---|---|---|---|---|
+| ------ | ----------------- | -------------------------------- | ---- | ------------ | --------------------- | ----------------- |
 ```
 
 If "evidence I have this problem now" is weak, the advice is probably later, not now.

@@ -513,7 +513,9 @@ test.describe("State coverage — Arizona via multi-state selector (86515)", () 
 
 // New Mexico (86515 — multi-state AZ/NM; user selects NM)
 test.describe("State coverage — New Mexico via multi-state selector (86515)", () => {
-  test("shows state selector then renders New Mexico data", async ({ page }) => {
+  test("shows state selector then renders New Mexico data", async ({
+    page,
+  }) => {
     await page.goto("/");
     await fillZip(page, "86515");
     const stateSelector = page.getByTestId("state-selector");

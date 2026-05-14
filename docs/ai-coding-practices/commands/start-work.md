@@ -3,6 +3,7 @@
 Purpose: session-start procedure for orienting to repo state and routing the user's plain-language request.
 
 Decision owners:
+
 - Routing: `docs/ai-coding-practices/guardrails/request-routing.md`
 - Ownership discipline: `docs/ai-coding-practices/guardrails/ownership-discipline.md`
 - Commercial app readiness: `docs/ai-coding-practices/guardrails/commercial-app-readiness.md`

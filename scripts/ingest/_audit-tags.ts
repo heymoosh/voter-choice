@@ -45,9 +45,7 @@ export type AuditConfig = {
 // Config resolution
 // ---------------------------------------------------------------------------
 
-export function resolveAuditConfig(
-  argv: string[] = process.argv,
-): AuditConfig {
+export function resolveAuditConfig(argv: string[] = process.argv): AuditConfig {
   const limit = parseLimitFlag(argv) ?? 50;
   const canonicalIssueFilter = parseCanonicalIssueFlag(argv);
   return { limit, canonicalIssueFilter };
@@ -107,9 +105,7 @@ export async function fetchAuditRows(
         )
         .orderBy(sql`RANDOM()`)
         .limit(config.limit)
-    : await baseQuery
-        .orderBy(sql`RANDOM()`)
-        .limit(config.limit);
+    : await baseQuery.orderBy(sql`RANDOM()`).limit(config.limit);
 
   return rows.map((row) => ({
     billId: row.billId,
@@ -148,10 +144,7 @@ export function formatAuditRow(row: AuditRow, index: number): string {
 /**
  * Print all audit rows plus a summary footer.
  */
-export function printAuditResults(
-  rows: AuditRow[],
-  config: AuditConfig,
-): void {
+export function printAuditResults(rows: AuditRow[], config: AuditConfig): void {
   if (rows.length === 0) {
     console.log("[audit-tags] No rows found.");
     if (config.canonicalIssueFilter) {

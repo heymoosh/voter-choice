@@ -56,7 +56,6 @@ To refresh FL data, run this Playwright automation:
 
 const SOURCE = "fl_dos_bulk";
 const SOURCE_URL = FL_BASE_URL;
-const ELECTION_CYCLE = "2024";
 const BUCKET_LABEL = "Other";
 
 // ---------------------------------------------------------------------------
@@ -141,8 +140,10 @@ async function main() {
   const isDryRun = process.argv.includes("--dry-run");
   const houseFileIdx = process.argv.indexOf("--house-file");
   const senateFileIdx = process.argv.indexOf("--senate-file");
+  const cycleIdx = process.argv.indexOf("--election-cycle");
   const houseFile = houseFileIdx !== -1 ? process.argv[houseFileIdx + 1] : DEFAULT_HOUSE_FILE;
   const senateFile = senateFileIdx !== -1 ? process.argv[senateFileIdx + 1] : DEFAULT_SENATE_FILE;
+  const ELECTION_CYCLE = cycleIdx !== -1 ? (process.argv[cycleIdx + 1] ?? "2024") : "2024";
 
   if (!houseFile || !fs.existsSync(houseFile)) {
     console.error(`[fl-dos] missing house file: ${houseFile}`);

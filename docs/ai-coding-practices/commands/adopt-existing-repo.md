@@ -3,6 +3,7 @@
 Purpose: adopt the AI Coding Practices kit into an existing repo without blindly overwriting local conventions or sources of truth.
 
 Decision owners:
+
 - Source-of-truth map: `docs/ai-coding-practices/source-of-truth-map.md`
 - Ownership discipline: `docs/ai-coding-practices/guardrails/ownership-discipline.md`
 - Operational reproducibility: `docs/ai-coding-practices/guardrails/operational-reproducibility.md`

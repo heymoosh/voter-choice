@@ -57,16 +57,16 @@ import {
 // Constants
 // ---------------------------------------------------------------------------
 
-const LOCAL_CSV_PATH = "/tmp/WV_2024_contributions.csv";
 const DATA_LIST_URL =
   "https://cfrs.wvsos.gov/api/Public-Service/AccessReport/getDataDownloadDataList";
 const SIGNED_URL_API =
   "https://cfrs.wvsos.gov/api/Common-Service/AmazonCloudFront/getDownloadLinkWithoutCookies";
 const SOURCE = "wv_cfrs_bulk";
 const SOURCE_URL = "https://cfrs.wvsos.gov/";
-const ELECTION_CYCLE = "2024";
-const DOWNLOAD_YEAR = 2024;
 const DATA_TYPE = "CON";
+const { year: DOWNLOAD_YEAR } = resolveConfig();
+const LOCAL_CSV_PATH = `/tmp/WV_${DOWNLOAD_YEAR}_contributions.csv`;
+const ELECTION_CYCLE = String(DOWNLOAD_YEAR);
 
 // ---------------------------------------------------------------------------
 // Types
@@ -113,19 +113,22 @@ interface IngestConfig {
   dryRun: boolean;
   limit: number | null;
   useLocalFile: boolean;
+  year: number;
 }
 
 function resolveConfig(argv: string[] = process.argv): IngestConfig {
   const dryRun = argv.includes("--dry-run");
   const useLocalFile = argv.includes("--use-local-file");
   const limitIdx = argv.indexOf("--limit");
+  const yearIdx = argv.indexOf("--year");
   let limit: number | null = null;
   if (limitIdx !== -1) {
     const raw = argv[limitIdx + 1];
     const parsed = Number.parseInt(raw ?? "", 10);
     if (Number.isInteger(parsed) && parsed > 0) limit = parsed;
   }
-  return { dryRun, limit, useLocalFile };
+  const year = yearIdx !== -1 ? Number.parseInt(argv[yearIdx + 1] ?? "2024", 10) : 2024;
+  return { dryRun, limit, useLocalFile, year };
 }
 
 // ---------------------------------------------------------------------------
@@ -219,9 +222,7 @@ async function getSignedS3Url(): Promise<string> {
   // Use the first (most recent) item
   const item = items[0]!;
   const s3FilePath = item.s3ReportFilePath;
-  console.log(
-    `[wv-cfrs-donors] step 1 complete: s3_file_path=${s3FilePath}`,
-  );
+  console.log(`[wv-cfrs-donors] step 1 complete: s3_file_path=${s3FilePath}`);
 
   console.log("[wv-cfrs-donors] step 2: fetching signed S3 URL ...");
 
@@ -260,7 +261,9 @@ async function getSignedS3Url(): Promise<string> {
 // ---------------------------------------------------------------------------
 
 async function downloadCsvToTempFile(signedUrl: string): Promise<string> {
-  console.log("[wv-cfrs-donors] step 3: downloading CSV from signed S3 URL ...");
+  console.log(
+    "[wv-cfrs-donors] step 3: downloading CSV from signed S3 URL ...",
+  );
 
   const res = await fetch(signedUrl);
   if (!res.ok) {
@@ -405,9 +408,7 @@ export async function ingestWvCfrsDonors({
     }
   }
 
-  console.log(
-    `[wv-cfrs-donors] last_names_indexed=${byLastName.size}`,
-  );
+  console.log(`[wv-cfrs-donors] last_names_indexed=${byLastName.size}`);
 
   // Cache WV CandidateName → DB candidate
   const nameCache = new Map<string, DbCandidate | null>();
@@ -692,9 +693,7 @@ function isCliExecution(): boolean {
 if (isCliExecution()) {
   ingestWvCfrsDonors().catch((error: unknown) => {
     const msg =
-      error instanceof Error
-        ? error.message.replace(/\s+/gu, " ")
-        : "unknown";
+      error instanceof Error ? error.message.replace(/\s+/gu, " ") : "unknown";
     console.error("[wv-cfrs-donors] failed:", msg);
     process.exitCode = 1;
   });

@@ -26,15 +26,19 @@ Last updated: <YYYY-MM-DD>
 ## Domain / Business Rules
 
 Rules:
+
 - <domain/product/business rule that should remain stable across packets>
 
 Assumptions:
+
 - <current assumption and why it is acceptable>
 
 User-confirmed decisions:
+
 - <decision confirmed by user>
 
 Open business questions:
+
 - <question that would materially affect implementation, UX, data, access, or evaluation>
 
 ## Commercial Readiness
@@ -42,29 +46,37 @@ Open business questions:
 Target readiness: <demo | beta | launch | paid product | not applicable>
 
 Applicable lanes:
+
 - <readiness lane and why it matters>
 
 User decisions:
+
 - <decision needed before launch or "none">
 
 Known risks:
+
 - <risk or "none known">
 
 ## Operational Reproducibility
 
 Setup path:
+
 - <command/runbook or "not defined yet">
 
 Provider/config strategy:
+
 - <IaC/provider CLI/MCP-backed runbook/manual step boundary>
 
 Database/migration strategy:
+
 - <migration tool/path or "not applicable">
 
 CI/deploy checks:
+
 - <checks or "not defined yet">
 
 Manual steps:
+
 - <none, or irreducible step and reason>
 
 ## Decisions Made
@@ -83,15 +95,19 @@ Manual steps:
 ## System Ownership Map
 
 Domain concerns:
+
 - <concern> — owner: <path/module/doc/source>
 
 Known overlaps:
+
 - <overlap or "none known">
 
 Open gaps:
+
 - <gap or "none known">
 
 Execution packet rules:
+
 - <ownership/boundary rule that every related work packet must preserve>
 
 ## Work Packets

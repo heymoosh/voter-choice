@@ -1,293 +1,546 @@
-<!DOCTYPE html>
+<!doctype html>
 
-<html class="light" lang="en"><head>
-<meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Civic Research | Voter Session</title>
-<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-<link href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,100..900;1,100..900&amp;display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
-<script id="tailwind-config">
-        tailwind.config = {
-            darkMode: "class",
-            theme: {
-                extend: {
-                    "colors": {
-                        "on-primary-fixed-variant": "#00504a",
-                        "surface-tint": "#006a63",
-                        "surface-bright": "#fbf9f7",
-                        "outline": "#6e7977",
-                        "surface-container-highest": "#e4e2e0",
-                        "primary-fixed": "#9cf2e8",
-                        "error": "#ba1a1a",
-                        "tertiary": "#7f4025",
-                        "inverse-on-surface": "#f2f0ee",
-                        "on-tertiary-fixed-variant": "#72361b",
-                        "surface-container": "#efedec",
-                        "error-container": "#ffdad6",
-                        "on-tertiary-fixed": "#370e00",
-                        "secondary-container": "#c5e6e1",
-                        "on-secondary": "#ffffff",
-                        "tertiary-container": "#9c573a",
-                        "surface-container-low": "#f5f3f1",
-                        "surface-dim": "#dbdad8",
-                        "surface-container-high": "#eae8e6",
-                        "primary": "#005c55",
-                        "on-primary-fixed": "#00201d",
-                        "on-secondary-container": "#4a6864",
-                        "on-secondary-fixed-variant": "#2e4c48",
-                        "on-primary": "#ffffff",
-                        "secondary-fixed-dim": "#accdc8",
-                        "primary-container": "#0f766e",
-                        "tertiary-fixed": "#ffdbce",
-                        "outline-variant": "#bdc9c6",
-                        "on-primary-container": "#a3faef",
-                        "inverse-primary": "#80d5cb",
-                        "on-secondary-fixed": "#00201d",
-                        "on-surface": "#1b1c1b",
-                        "on-background": "#1b1c1b",
-                        "tertiary-fixed-dim": "#ffb598",
-                        "on-error-container": "#93000a",
-                        "secondary-fixed": "#c8e9e4",
-                        "on-tertiary-container": "#ffe5db",
-                        "background": "#fbf9f7",
-                        "on-error": "#ffffff",
-                        "primary-fixed-dim": "#80d5cb",
-                        "on-surface-variant": "#3e4947",
-                        "surface-container-lowest": "#ffffff",
-                        "surface": "#fbf9f7",
-                        "secondary": "#466460",
-                        "inverse-surface": "#30302f",
-                        "surface-variant": "#e4e2e0",
-                        "on-tertiary": "#ffffff"
-                    },
-                    "borderRadius": {
-                        "DEFAULT": "0.125rem",
-                        "lg": "0.25rem",
-                        "xl": "0.5rem",
-                        "full": "0.75rem"
-                    },
-                    "fontFamily": {
-                        "headline": ["Public Sans"],
-                        "body": ["Public Sans"],
-                        "label": ["Public Sans"]
-                    }
-                },
+<html class="light" lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Civic Research | Voter Session</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,100..900;1,100..900&amp;display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+      rel="stylesheet"
+    />
+    <script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "on-primary-fixed-variant": "#00504a",
+              "surface-tint": "#006a63",
+              "surface-bright": "#fbf9f7",
+              outline: "#6e7977",
+              "surface-container-highest": "#e4e2e0",
+              "primary-fixed": "#9cf2e8",
+              error: "#ba1a1a",
+              tertiary: "#7f4025",
+              "inverse-on-surface": "#f2f0ee",
+              "on-tertiary-fixed-variant": "#72361b",
+              "surface-container": "#efedec",
+              "error-container": "#ffdad6",
+              "on-tertiary-fixed": "#370e00",
+              "secondary-container": "#c5e6e1",
+              "on-secondary": "#ffffff",
+              "tertiary-container": "#9c573a",
+              "surface-container-low": "#f5f3f1",
+              "surface-dim": "#dbdad8",
+              "surface-container-high": "#eae8e6",
+              primary: "#005c55",
+              "on-primary-fixed": "#00201d",
+              "on-secondary-container": "#4a6864",
+              "on-secondary-fixed-variant": "#2e4c48",
+              "on-primary": "#ffffff",
+              "secondary-fixed-dim": "#accdc8",
+              "primary-container": "#0f766e",
+              "tertiary-fixed": "#ffdbce",
+              "outline-variant": "#bdc9c6",
+              "on-primary-container": "#a3faef",
+              "inverse-primary": "#80d5cb",
+              "on-secondary-fixed": "#00201d",
+              "on-surface": "#1b1c1b",
+              "on-background": "#1b1c1b",
+              "tertiary-fixed-dim": "#ffb598",
+              "on-error-container": "#93000a",
+              "secondary-fixed": "#c8e9e4",
+              "on-tertiary-container": "#ffe5db",
+              background: "#fbf9f7",
+              "on-error": "#ffffff",
+              "primary-fixed-dim": "#80d5cb",
+              "on-surface-variant": "#3e4947",
+              "surface-container-lowest": "#ffffff",
+              surface: "#fbf9f7",
+              secondary: "#466460",
+              "inverse-surface": "#30302f",
+              "surface-variant": "#e4e2e0",
+              "on-tertiary": "#ffffff",
             },
-        }
+            borderRadius: {
+              DEFAULT: "0.125rem",
+              lg: "0.25rem",
+              xl: "0.5rem",
+              full: "0.75rem",
+            },
+            fontFamily: {
+              headline: ["Public Sans"],
+              body: ["Public Sans"],
+              label: ["Public Sans"],
+            },
+          },
+        },
+      };
     </script>
-<style>
-        body { font-family: 'Public Sans', sans-serif; }
-        .material-symbols-outlined {
-            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-        }
+    <style>
+      body {
+        font-family: "Public Sans", sans-serif;
+      }
+      .material-symbols-outlined {
+        font-variation-settings:
+          "FILL" 0,
+          "wght" 400,
+          "GRAD" 0,
+          "opsz" 24;
+      }
     </style>
-</head>
-<body class="bg-surface text-on-surface flex flex-col h-screen overflow-hidden">
-<!-- TopNavBar -->
-<header class="bg-[#fcfaf8] dark:bg-slate-900 flex justify-between items-center px-6 py-4 w-full border-b border-[#bdc9c6]/20 font-['Public_Sans'] tracking-tight z-30">
-<div class="flex items-center gap-8">
-<span class="text-2xl font-black text-[#005c55] dark:text-teal-500">Civic Research</span>
-<nav class="hidden md:flex gap-6 items-center">
-<a class="text-[#005c55] font-bold border-b-2 border-[#005c55] text-sm uppercase tracking-wider" href="#">Research</a>
-<a class="text-slate-600 dark:text-slate-400 hover:bg-[#f5f3f1] dark:hover:bg-slate-800 transition-colors px-2 py-1 text-sm uppercase tracking-wider" href="#">Resources</a>
-<a class="text-slate-600 dark:text-slate-400 hover:bg-[#f5f3f1] dark:hover:bg-slate-800 transition-colors px-2 py-1 text-sm uppercase tracking-wider" href="#">Impact</a>
-</nav>
-</div>
-<div class="flex items-center gap-4">
-<div class="flex items-center bg-secondary-container px-3 py-1 rounded-full text-on-secondary-container text-xs font-bold uppercase tracking-widest animate-pulse">
-<span class="material-symbols-outlined text-[14px] mr-1" style="font-variation-settings: 'FILL' 1;">person_check</span>
-                Voter Profile Active
-            </div>
-<button class="material-symbols-outlined text-slate-600 dark:text-slate-400 hover:bg-[#f5f3f1] p-2 transition-colors">help</button>
-</div>
-</header>
-<div class="flex flex-1 overflow-hidden">
-<!-- SideNavBar -->
-<aside class="bg-[#f5f3f1] dark:bg-slate-800/50 h-screen w-64 border-r border-[#bdc9c6]/20 hidden md:flex flex-col gap-2 p-4 font-['Public_Sans'] text-sm font-medium uppercase tracking-wider">
-<div class="mb-6 px-2">
-<h2 class="text-lg font-bold text-[#005c55]">Election Guide</h2>
-<p class="text-[10px] text-slate-500 font-normal">Local Civic Utility</p>
-</div>
-<nav class="flex-1 flex flex-col gap-1">
-<a class="flex items-center gap-3 p-3 text-slate-500 dark:text-slate-400 hover:bg-[#eae8e6] dark:hover:bg-slate-700 transition-transform active:scale-95" href="#">
-<span class="material-symbols-outlined" data-icon="calendar_today">calendar_today</span>
-                    Dates
-                </a>
-<a class="flex items-center gap-3 p-3 text-slate-500 dark:text-slate-400 hover:bg-[#eae8e6] dark:hover:bg-slate-700 transition-transform active:scale-95" href="#">
-<span class="material-symbols-outlined" data-icon="badge">badge</span>
-                    ID Requirements
-                </a>
-<a class="flex items-center gap-3 p-3 text-slate-500 dark:text-slate-400 hover:bg-[#eae8e6] dark:hover:bg-slate-700 transition-transform active:scale-95" href="#">
-<span class="material-symbols-outlined" data-icon="location_on">location_on</span>
-                    Polling Places
-                </a>
-<a class="flex items-center gap-3 p-3 text-[#005c55] dark:text-teal-300 font-bold bg-[#ffffff] dark:bg-slate-900 rounded-sm shadow-sm transition-transform active:scale-95" href="#">
-<span class="material-symbols-outlined" data-icon="description">description</span>
-                    Sample Ballot
-                </a>
-</nav>
-<button class="mt-auto bg-primary text-on-primary py-3 px-4 rounded-none font-bold text-xs uppercase tracking-widest hover:opacity-90 transition-opacity">
-                Check Registration
-            </button>
-</aside>
-<!-- Main Content (Canvas) -->
-<main class="flex-1 flex flex-col bg-surface relative overflow-hidden">
-<!-- Contextual Banner -->
-<div class="bg-surface-container-low px-8 py-3 flex items-center justify-between border-b border-outline-variant/10">
-<div class="flex items-center gap-2">
-<span class="text-[10px] font-bold text-tertiary uppercase tracking-tighter">Session Context:</span>
-<span class="text-xs text-on-surface-variant font-mono bg-surface-container-highest px-2 py-0.5 rounded">voter_profile_april_12.txt</span>
-</div>
-<div class="text-[10px] text-on-surface-variant/60 italic">Loaded 2 minutes ago</div>
-</div>
-<!-- Chat/Editorial Scroll Area -->
-<div class="flex-1 overflow-y-auto p-8 space-y-12">
-<!-- User Upload Confirmation -->
-<div class="flex flex-col items-end">
-<div class="max-w-md bg-surface-container-low p-4 rounded-lg flex items-center gap-3">
-<div class="bg-primary-container/20 p-2 rounded">
-<span class="material-symbols-outlined text-primary" data-icon="upload_file">upload_file</span>
-</div>
-<div>
-<p class="text-sm font-bold text-on-surface">voter_profile_april_12.txt</p>
-<p class="text-[10px] text-on-surface-variant">File uploaded successfully</p>
-</div>
-<span class="material-symbols-outlined text-primary text-lg" data-icon="check_circle" style="font-variation-settings: 'FILL' 1;">check_circle</span>
-</div>
-</div>
-<!-- AI Editorial Response -->
-<div class="max-w-3xl space-y-6">
-<div class="flex items-center gap-2 mb-2">
-<div class="w-8 h-8 bg-primary rounded-none flex items-center justify-center text-on-primary">
-<span class="material-symbols-outlined text-sm" data-icon="auto_awesome">auto_awesome</span>
-</div>
-<span class="text-xs font-bold uppercase tracking-widest text-primary">Civic Intelligence</span>
-</div>
-<h1 class="text-5xl font-black text-on-surface leading-none tracking-tight">
-                        Welcome back! I've loaded your profile.
-                    </h1>
-<div class="bg-surface-container-lowest p-8 border-l-4 border-primary shadow-sm space-y-4">
-<p class="text-xl leading-relaxed text-on-surface-variant">
-                            Based on your interest in <span class="text-primary font-bold decoration-2 underline underline-offset-4">local infrastructure</span> and your status as a <span class="text-primary font-bold">renter</span>, I recommend looking at <span class="text-tertiary italic">Proposition B</span> first...
-                        </p>
-<div class="grid grid-cols-2 gap-4 mt-8">
-<div class="bg-surface-container-low p-4 space-y-2 group cursor-pointer hover:bg-surface-container-highest transition-colors">
-<span class="text-[10px] font-bold text-tertiary uppercase">Legislative Match</span>
-<h3 class="text-lg font-bold text-on-surface">Proposition B: Rental Stability Act</h3>
-<p class="text-sm text-on-surface-variant">Covers zoning changes and municipal bond allocation for infrastructure.</p>
-</div>
-<div class="bg-surface-container-low p-4 space-y-2 group cursor-pointer hover:bg-surface-container-highest transition-colors">
-<span class="text-[10px] font-bold text-primary uppercase">Infrastructure Focus</span>
-<h3 class="text-lg font-bold text-on-surface">Measure 4: Green Transit Link</h3>
-<p class="text-sm text-on-surface-variant">A proposal to expand light rail within your specific voting district.</p>
-</div>
-</div>
-</div>
-<div class="flex flex-wrap gap-2">
-<button class="bg-surface-container-high px-4 py-2 text-xs font-bold uppercase tracking-widest text-primary hover:bg-surface-container-highest">Explain Prop B</button>
-<button class="bg-surface-container-high px-4 py-2 text-xs font-bold uppercase tracking-widest text-primary hover:bg-surface-container-highest">Impact on my Rent</button>
-<button class="bg-surface-container-high px-4 py-2 text-xs font-bold uppercase tracking-widest text-primary hover:bg-surface-container-highest">Infrastructure Timeline</button>
-</div>
-</div>
-<!-- Asymmetric Bento-style Information Block -->
-<section class="grid grid-cols-12 gap-6 pt-12">
-<div class="col-span-8 bg-surface-container-low p-8 relative overflow-hidden">
-<h2 class="text-3xl font-black text-on-surface mb-4">Your Voting District Profile</h2>
-<div class="flex gap-12 mt-6">
-<div>
-<p class="text-4xl font-black text-primary">District 4</p>
-<p class="text-xs uppercase font-bold text-on-surface-variant mt-1">Primary Precinct</p>
-</div>
-<div>
-<p class="text-4xl font-black text-tertiary">3</p>
-<p class="text-xs uppercase font-bold text-on-surface-variant mt-1">Pending Measures</p>
-</div>
-<div>
-<p class="text-4xl font-black text-on-surface">Nov 5</p>
-<p class="text-xs uppercase font-bold text-on-surface-variant mt-1">Election Day</p>
-</div>
-</div>
-</div>
-<div class="col-span-4 bg-tertiary p-8 text-on-tertiary flex flex-col justify-end">
-<span class="material-symbols-outlined text-4xl mb-4" data-icon="policy">policy</span>
-<h3 class="text-xl font-bold leading-tight">Voter Protection Policy Update</h3>
-<p class="text-xs mt-2 opacity-80">New guidelines for mailed ballots in your region.</p>
-</div>
-</section>
-<div class="h-24"></div> <!-- Spacer for Input -->
-</div>
-<!-- Standard Input Area -->
-<div class="absolute bottom-0 left-0 w-full p-8 bg-gradient-to-t from-surface via-surface to-transparent">
-<div class="max-w-4xl mx-auto">
-<div class="relative bg-surface-container-lowest border-b-2 border-outline-variant/30 flex items-center shadow-xl">
-<div class="pl-6 text-on-surface-variant/40">
-<span class="material-symbols-outlined" data-icon="chat_bubble">chat_bubble</span>
-</div>
-<input class="w-full bg-transparent border-none focus:ring-0 py-6 px-4 text-lg font-medium placeholder:text-on-surface-variant/30" placeholder="Ask about Proposition B or your profile context..." type="text"/>
-<div class="pr-4 flex items-center gap-2">
-<button class="material-symbols-outlined text-on-surface-variant/40 hover:text-primary transition-colors" data-icon="attach_file">attach_file</button>
-<button class="bg-primary text-on-primary p-3 rounded-none flex items-center justify-center hover:opacity-90">
-<span class="material-symbols-outlined" data-icon="arrow_forward">arrow_forward</span>
-</button>
-</div>
-</div>
-<div class="mt-3 flex justify-center gap-8">
-<div class="flex items-center gap-1">
-<span class="w-1.5 h-1.5 bg-primary rounded-full"></span>
-<span class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/60">Profile Context Active</span>
-</div>
-<div class="flex items-center gap-1">
-<span class="w-1.5 h-1.5 bg-on-surface-variant/20 rounded-full"></span>
-<span class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/60">Non-Partisan Mode</span>
-</div>
-</div>
-</div>
-</div>
-</main>
-<!-- Right Side: Quick Action / Context Stats (Editorial Utility) -->
-<aside class="hidden lg:flex w-80 bg-surface-container-low/30 border-l border-outline-variant/10 flex-col p-6 space-y-8 overflow-y-auto">
-<div class="space-y-4">
-<h4 class="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant">Active Intelligence</h4>
-<div class="space-y-3">
-<div class="p-4 bg-surface-container-lowest border-l-2 border-primary">
-<p class="text-xs font-bold text-on-surface">Matched Topic</p>
-<p class="text-lg font-black text-primary leading-tight">Housing Policy</p>
-<p class="text-[10px] text-on-surface-variant mt-2">Correlation: High (0.92)</p>
-</div>
-<div class="p-4 bg-surface-container-lowest border-l-2 border-tertiary">
-<p class="text-xs font-bold text-on-surface">Matched Topic</p>
-<p class="text-lg font-black text-tertiary leading-tight">Infrastructure</p>
-<p class="text-[10px] text-on-surface-variant mt-2">Correlation: Med (0.74)</p>
-</div>
-</div>
-</div>
-<div class="space-y-4">
-<h4 class="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant">Nearby Polling</h4>
-<div class="aspect-square bg-surface-container-highest relative group cursor-crosshair">
-<div class="absolute inset-0 bg-cover bg-center grayscale contrast-125 opacity-40 mix-blend-multiply" data-alt="minimalist architectural city map of urban grid in teal and beige tones high contrast flat design" data-location="Metropolis Center" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCY2GL20nCSVGcR7if9VTYFLXidsMNOtViC4EYcBfzm0aTHJfDWujL3JHIzcY1rmyip-rz0r2KRRsPc5fYMs4AEGYZ_KvG6QXfnPPiwN5NGmg5ntGBQRAc3avEDvDOCCFjT0FMdG_Xgb6M2TZzLUO82BeNMmvE57U8kZK8dLtJlL2Ao5BxvSPR9w_8VrtMeCkGJIFeHUr62MHlFHHj0QU94SV2IG2pdXpfSlyJwQwPDDoU_lOW7LfKP3gL5L-6Tz5ZajMQEPFfVGcQ')"></div>
-<div class="absolute inset-0 flex items-center justify-center">
-<div class="bg-primary w-4 h-4 rounded-full border-4 border-white animate-bounce"></div>
-</div>
-<div class="absolute bottom-2 left-2 bg-white px-2 py-1 text-[10px] font-bold">Main Library Branch</div>
-</div>
-<p class="text-xs text-on-surface-variant leading-relaxed">
-                    Your assigned polling location is <span class="font-bold text-on-surface">0.4 miles</span> from your verified address.
+  </head>
+  <body
+    class="bg-surface text-on-surface flex flex-col h-screen overflow-hidden"
+  >
+    <!-- TopNavBar -->
+    <header
+      class="bg-[#fcfaf8] dark:bg-slate-900 flex justify-between items-center px-6 py-4 w-full border-b border-[#bdc9c6]/20 font-['Public_Sans'] tracking-tight z-30"
+    >
+      <div class="flex items-center gap-8">
+        <span class="text-2xl font-black text-[#005c55] dark:text-teal-500"
+          >Civic Research</span
+        >
+        <nav class="hidden md:flex gap-6 items-center">
+          <a
+            class="text-[#005c55] font-bold border-b-2 border-[#005c55] text-sm uppercase tracking-wider"
+            href="#"
+            >Research</a
+          >
+          <a
+            class="text-slate-600 dark:text-slate-400 hover:bg-[#f5f3f1] dark:hover:bg-slate-800 transition-colors px-2 py-1 text-sm uppercase tracking-wider"
+            href="#"
+            >Resources</a
+          >
+          <a
+            class="text-slate-600 dark:text-slate-400 hover:bg-[#f5f3f1] dark:hover:bg-slate-800 transition-colors px-2 py-1 text-sm uppercase tracking-wider"
+            href="#"
+            >Impact</a
+          >
+        </nav>
+      </div>
+      <div class="flex items-center gap-4">
+        <div
+          class="flex items-center bg-secondary-container px-3 py-1 rounded-full text-on-secondary-container text-xs font-bold uppercase tracking-widest animate-pulse"
+        >
+          <span
+            class="material-symbols-outlined text-[14px] mr-1"
+            style="font-variation-settings: &quot;FILL&quot; 1"
+            >person_check</span
+          >
+          Voter Profile Active
+        </div>
+        <button
+          class="material-symbols-outlined text-slate-600 dark:text-slate-400 hover:bg-[#f5f3f1] p-2 transition-colors"
+        >
+          help
+        </button>
+      </div>
+    </header>
+    <div class="flex flex-1 overflow-hidden">
+      <!-- SideNavBar -->
+      <aside
+        class="bg-[#f5f3f1] dark:bg-slate-800/50 h-screen w-64 border-r border-[#bdc9c6]/20 hidden md:flex flex-col gap-2 p-4 font-['Public_Sans'] text-sm font-medium uppercase tracking-wider"
+      >
+        <div class="mb-6 px-2">
+          <h2 class="text-lg font-bold text-[#005c55]">Election Guide</h2>
+          <p class="text-[10px] text-slate-500 font-normal">
+            Local Civic Utility
+          </p>
+        </div>
+        <nav class="flex-1 flex flex-col gap-1">
+          <a
+            class="flex items-center gap-3 p-3 text-slate-500 dark:text-slate-400 hover:bg-[#eae8e6] dark:hover:bg-slate-700 transition-transform active:scale-95"
+            href="#"
+          >
+            <span class="material-symbols-outlined" data-icon="calendar_today"
+              >calendar_today</span
+            >
+            Dates
+          </a>
+          <a
+            class="flex items-center gap-3 p-3 text-slate-500 dark:text-slate-400 hover:bg-[#eae8e6] dark:hover:bg-slate-700 transition-transform active:scale-95"
+            href="#"
+          >
+            <span class="material-symbols-outlined" data-icon="badge"
+              >badge</span
+            >
+            ID Requirements
+          </a>
+          <a
+            class="flex items-center gap-3 p-3 text-slate-500 dark:text-slate-400 hover:bg-[#eae8e6] dark:hover:bg-slate-700 transition-transform active:scale-95"
+            href="#"
+          >
+            <span class="material-symbols-outlined" data-icon="location_on"
+              >location_on</span
+            >
+            Polling Places
+          </a>
+          <a
+            class="flex items-center gap-3 p-3 text-[#005c55] dark:text-teal-300 font-bold bg-[#ffffff] dark:bg-slate-900 rounded-sm shadow-sm transition-transform active:scale-95"
+            href="#"
+          >
+            <span class="material-symbols-outlined" data-icon="description"
+              >description</span
+            >
+            Sample Ballot
+          </a>
+        </nav>
+        <button
+          class="mt-auto bg-primary text-on-primary py-3 px-4 rounded-none font-bold text-xs uppercase tracking-widest hover:opacity-90 transition-opacity"
+        >
+          Check Registration
+        </button>
+      </aside>
+      <!-- Main Content (Canvas) -->
+      <main class="flex-1 flex flex-col bg-surface relative overflow-hidden">
+        <!-- Contextual Banner -->
+        <div
+          class="bg-surface-container-low px-8 py-3 flex items-center justify-between border-b border-outline-variant/10"
+        >
+          <div class="flex items-center gap-2">
+            <span
+              class="text-[10px] font-bold text-tertiary uppercase tracking-tighter"
+              >Session Context:</span
+            >
+            <span
+              class="text-xs text-on-surface-variant font-mono bg-surface-container-highest px-2 py-0.5 rounded"
+              >voter_profile_april_12.txt</span
+            >
+          </div>
+          <div class="text-[10px] text-on-surface-variant/60 italic">
+            Loaded 2 minutes ago
+          </div>
+        </div>
+        <!-- Chat/Editorial Scroll Area -->
+        <div class="flex-1 overflow-y-auto p-8 space-y-12">
+          <!-- User Upload Confirmation -->
+          <div class="flex flex-col items-end">
+            <div
+              class="max-w-md bg-surface-container-low p-4 rounded-lg flex items-center gap-3"
+            >
+              <div class="bg-primary-container/20 p-2 rounded">
+                <span
+                  class="material-symbols-outlined text-primary"
+                  data-icon="upload_file"
+                  >upload_file</span
+                >
+              </div>
+              <div>
+                <p class="text-sm font-bold text-on-surface">
+                  voter_profile_april_12.txt
                 </p>
-</div>
-<div class="pt-8 mt-auto border-t border-outline-variant/20">
-<div class="flex items-center gap-2 mb-4">
-<img alt="Advisor" class="w-10 h-10 rounded-none grayscale" data-alt="professional headshot of a diverse female news editor with glasses minimalist clean background soft light" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC8a2VrUb4V1sL3_Wq9z4xy6ZOMD3DR1ml8bESsR0_TenCToKp-YOnqO7HMlF6gR-1G6epYNyYPjz3L0EmiYiZ5J-9N2tMCZgMe5R1b5myv6qmpM8BtAhHkc52tEvykGIZMycoK9R0OhghZWtQwfXhDrTHEuepOqPavtKeXNYxJel_JqZnCRl0PxJq8ZhgHeqf7B1LDSJrDmGaocfCz2nQYiytk4vHtBxVIF5igZ60UGZ9lO_Hr1Ep22r7tImn0NCNxUAck5oyN7UM"/>
-<div>
-<p class="text-[10px] font-black uppercase tracking-widest leading-none">Session Lead</p>
-<p class="text-sm font-bold text-on-surface">Advisor Elena</p>
-</div>
-</div>
-<button class="w-full py-2 text-[10px] font-bold uppercase tracking-widest border border-primary text-primary hover:bg-primary hover:text-on-primary transition-colors">
-                    End &amp; Save Session
+                <p class="text-[10px] text-on-surface-variant">
+                  File uploaded successfully
+                </p>
+              </div>
+              <span
+                class="material-symbols-outlined text-primary text-lg"
+                data-icon="check_circle"
+                style="font-variation-settings: &quot;FILL&quot; 1"
+                >check_circle</span
+              >
+            </div>
+          </div>
+          <!-- AI Editorial Response -->
+          <div class="max-w-3xl space-y-6">
+            <div class="flex items-center gap-2 mb-2">
+              <div
+                class="w-8 h-8 bg-primary rounded-none flex items-center justify-center text-on-primary"
+              >
+                <span
+                  class="material-symbols-outlined text-sm"
+                  data-icon="auto_awesome"
+                  >auto_awesome</span
+                >
+              </div>
+              <span
+                class="text-xs font-bold uppercase tracking-widest text-primary"
+                >Civic Intelligence</span
+              >
+            </div>
+            <h1
+              class="text-5xl font-black text-on-surface leading-none tracking-tight"
+            >
+              Welcome back! I've loaded your profile.
+            </h1>
+            <div
+              class="bg-surface-container-lowest p-8 border-l-4 border-primary shadow-sm space-y-4"
+            >
+              <p class="text-xl leading-relaxed text-on-surface-variant">
+                Based on your interest in
+                <span
+                  class="text-primary font-bold decoration-2 underline underline-offset-4"
+                  >local infrastructure</span
+                >
+                and your status as a
+                <span class="text-primary font-bold">renter</span>, I recommend
+                looking at
+                <span class="text-tertiary italic">Proposition B</span> first...
+              </p>
+              <div class="grid grid-cols-2 gap-4 mt-8">
+                <div
+                  class="bg-surface-container-low p-4 space-y-2 group cursor-pointer hover:bg-surface-container-highest transition-colors"
+                >
+                  <span class="text-[10px] font-bold text-tertiary uppercase"
+                    >Legislative Match</span
+                  >
+                  <h3 class="text-lg font-bold text-on-surface">
+                    Proposition B: Rental Stability Act
+                  </h3>
+                  <p class="text-sm text-on-surface-variant">
+                    Covers zoning changes and municipal bond allocation for
+                    infrastructure.
+                  </p>
+                </div>
+                <div
+                  class="bg-surface-container-low p-4 space-y-2 group cursor-pointer hover:bg-surface-container-highest transition-colors"
+                >
+                  <span class="text-[10px] font-bold text-primary uppercase"
+                    >Infrastructure Focus</span
+                  >
+                  <h3 class="text-lg font-bold text-on-surface">
+                    Measure 4: Green Transit Link
+                  </h3>
+                  <p class="text-sm text-on-surface-variant">
+                    A proposal to expand light rail within your specific voting
+                    district.
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div class="flex flex-wrap gap-2">
+              <button
+                class="bg-surface-container-high px-4 py-2 text-xs font-bold uppercase tracking-widest text-primary hover:bg-surface-container-highest"
+              >
+                Explain Prop B
+              </button>
+              <button
+                class="bg-surface-container-high px-4 py-2 text-xs font-bold uppercase tracking-widest text-primary hover:bg-surface-container-highest"
+              >
+                Impact on my Rent
+              </button>
+              <button
+                class="bg-surface-container-high px-4 py-2 text-xs font-bold uppercase tracking-widest text-primary hover:bg-surface-container-highest"
+              >
+                Infrastructure Timeline
+              </button>
+            </div>
+          </div>
+          <!-- Asymmetric Bento-style Information Block -->
+          <section class="grid grid-cols-12 gap-6 pt-12">
+            <div
+              class="col-span-8 bg-surface-container-low p-8 relative overflow-hidden"
+            >
+              <h2 class="text-3xl font-black text-on-surface mb-4">
+                Your Voting District Profile
+              </h2>
+              <div class="flex gap-12 mt-6">
+                <div>
+                  <p class="text-4xl font-black text-primary">District 4</p>
+                  <p
+                    class="text-xs uppercase font-bold text-on-surface-variant mt-1"
+                  >
+                    Primary Precinct
+                  </p>
+                </div>
+                <div>
+                  <p class="text-4xl font-black text-tertiary">3</p>
+                  <p
+                    class="text-xs uppercase font-bold text-on-surface-variant mt-1"
+                  >
+                    Pending Measures
+                  </p>
+                </div>
+                <div>
+                  <p class="text-4xl font-black text-on-surface">Nov 5</p>
+                  <p
+                    class="text-xs uppercase font-bold text-on-surface-variant mt-1"
+                  >
+                    Election Day
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div
+              class="col-span-4 bg-tertiary p-8 text-on-tertiary flex flex-col justify-end"
+            >
+              <span
+                class="material-symbols-outlined text-4xl mb-4"
+                data-icon="policy"
+                >policy</span
+              >
+              <h3 class="text-xl font-bold leading-tight">
+                Voter Protection Policy Update
+              </h3>
+              <p class="text-xs mt-2 opacity-80">
+                New guidelines for mailed ballots in your region.
+              </p>
+            </div>
+          </section>
+          <div class="h-24"></div>
+          <!-- Spacer for Input -->
+        </div>
+        <!-- Standard Input Area -->
+        <div
+          class="absolute bottom-0 left-0 w-full p-8 bg-gradient-to-t from-surface via-surface to-transparent"
+        >
+          <div class="max-w-4xl mx-auto">
+            <div
+              class="relative bg-surface-container-lowest border-b-2 border-outline-variant/30 flex items-center shadow-xl"
+            >
+              <div class="pl-6 text-on-surface-variant/40">
+                <span class="material-symbols-outlined" data-icon="chat_bubble"
+                  >chat_bubble</span
+                >
+              </div>
+              <input
+                class="w-full bg-transparent border-none focus:ring-0 py-6 px-4 text-lg font-medium placeholder:text-on-surface-variant/30"
+                placeholder="Ask about Proposition B or your profile context..."
+                type="text"
+              />
+              <div class="pr-4 flex items-center gap-2">
+                <button
+                  class="material-symbols-outlined text-on-surface-variant/40 hover:text-primary transition-colors"
+                  data-icon="attach_file"
+                >
+                  attach_file
                 </button>
-</div>
-</aside>
-</div>
-</body></html>
+                <button
+                  class="bg-primary text-on-primary p-3 rounded-none flex items-center justify-center hover:opacity-90"
+                >
+                  <span
+                    class="material-symbols-outlined"
+                    data-icon="arrow_forward"
+                    >arrow_forward</span
+                  >
+                </button>
+              </div>
+            </div>
+            <div class="mt-3 flex justify-center gap-8">
+              <div class="flex items-center gap-1">
+                <span class="w-1.5 h-1.5 bg-primary rounded-full"></span>
+                <span
+                  class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/60"
+                  >Profile Context Active</span
+                >
+              </div>
+              <div class="flex items-center gap-1">
+                <span
+                  class="w-1.5 h-1.5 bg-on-surface-variant/20 rounded-full"
+                ></span>
+                <span
+                  class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/60"
+                  >Non-Partisan Mode</span
+                >
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+      <!-- Right Side: Quick Action / Context Stats (Editorial Utility) -->
+      <aside
+        class="hidden lg:flex w-80 bg-surface-container-low/30 border-l border-outline-variant/10 flex-col p-6 space-y-8 overflow-y-auto"
+      >
+        <div class="space-y-4">
+          <h4
+            class="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant"
+          >
+            Active Intelligence
+          </h4>
+          <div class="space-y-3">
+            <div
+              class="p-4 bg-surface-container-lowest border-l-2 border-primary"
+            >
+              <p class="text-xs font-bold text-on-surface">Matched Topic</p>
+              <p class="text-lg font-black text-primary leading-tight">
+                Housing Policy
+              </p>
+              <p class="text-[10px] text-on-surface-variant mt-2">
+                Correlation: High (0.92)
+              </p>
+            </div>
+            <div
+              class="p-4 bg-surface-container-lowest border-l-2 border-tertiary"
+            >
+              <p class="text-xs font-bold text-on-surface">Matched Topic</p>
+              <p class="text-lg font-black text-tertiary leading-tight">
+                Infrastructure
+              </p>
+              <p class="text-[10px] text-on-surface-variant mt-2">
+                Correlation: Med (0.74)
+              </p>
+            </div>
+          </div>
+        </div>
+        <div class="space-y-4">
+          <h4
+            class="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant"
+          >
+            Nearby Polling
+          </h4>
+          <div
+            class="aspect-square bg-surface-container-highest relative group cursor-crosshair"
+          >
+            <div
+              class="absolute inset-0 bg-cover bg-center grayscale contrast-125 opacity-40 mix-blend-multiply"
+              data-alt="minimalist architectural city map of urban grid in teal and beige tones high contrast flat design"
+              data-location="Metropolis Center"
+              style="
+                background-image: url(&quot;https://lh3.googleusercontent.com/aida-public/AB6AXuCY2GL20nCSVGcR7if9VTYFLXidsMNOtViC4EYcBfzm0aTHJfDWujL3JHIzcY1rmyip-rz0r2KRRsPc5fYMs4AEGYZ_KvG6QXfnPPiwN5NGmg5ntGBQRAc3avEDvDOCCFjT0FMdG_Xgb6M2TZzLUO82BeNMmvE57U8kZK8dLtJlL2Ao5BxvSPR9w_8VrtMeCkGJIFeHUr62MHlFHHj0QU94SV2IG2pdXpfSlyJwQwPDDoU_lOW7LfKP3gL5L-6Tz5ZajMQEPFfVGcQ&quot;);
+              "
+            ></div>
+            <div class="absolute inset-0 flex items-center justify-center">
+              <div
+                class="bg-primary w-4 h-4 rounded-full border-4 border-white animate-bounce"
+              ></div>
+            </div>
+            <div
+              class="absolute bottom-2 left-2 bg-white px-2 py-1 text-[10px] font-bold"
+            >
+              Main Library Branch
+            </div>
+          </div>
+          <p class="text-xs text-on-surface-variant leading-relaxed">
+            Your assigned polling location is
+            <span class="font-bold text-on-surface">0.4 miles</span> from your
+            verified address.
+          </p>
+        </div>
+        <div class="pt-8 mt-auto border-t border-outline-variant/20">
+          <div class="flex items-center gap-2 mb-4">
+            <img
+              alt="Advisor"
+              class="w-10 h-10 rounded-none grayscale"
+              data-alt="professional headshot of a diverse female news editor with glasses minimalist clean background soft light"
+              src="https://lh3.googleusercontent.com/aida-public/AB6AXuC8a2VrUb4V1sL3_Wq9z4xy6ZOMD3DR1ml8bESsR0_TenCToKp-YOnqO7HMlF6gR-1G6epYNyYPjz3L0EmiYiZ5J-9N2tMCZgMe5R1b5myv6qmpM8BtAhHkc52tEvykGIZMycoK9R0OhghZWtQwfXhDrTHEuepOqPavtKeXNYxJel_JqZnCRl0PxJq8ZhgHeqf7B1LDSJrDmGaocfCz2nQYiytk4vHtBxVIF5igZ60UGZ9lO_Hr1Ep22r7tImn0NCNxUAck5oyN7UM"
+            />
+            <div>
+              <p
+                class="text-[10px] font-black uppercase tracking-widest leading-none"
+              >
+                Session Lead
+              </p>
+              <p class="text-sm font-bold text-on-surface">Advisor Elena</p>
+            </div>
+          </div>
+          <button
+            class="w-full py-2 text-[10px] font-bold uppercase tracking-widest border border-primary text-primary hover:bg-primary hover:text-on-primary transition-colors"
+          >
+            End &amp; Save Session
+          </button>
+        </div>
+      </aside>
+    </div>
+  </body>
+</html>

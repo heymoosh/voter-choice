@@ -3,6 +3,7 @@
 Purpose: execute a focused retry loop from evaluator findings.
 
 Decision owners:
+
 - Work packet semantics: `docs/ai-coding-practices/guardrails/work-packet-rules.md`
 - Ownership discipline: `docs/ai-coding-practices/guardrails/ownership-discipline.md`
 - Model routing: `docs/ai-coding-practices/guardrails/model-routing.md`

@@ -66,12 +66,12 @@ The system prompt sent to the API includes:
 
 ### API Configuration
 
-| Parameter | Value | Rationale |
-|-----------|-------|-----------|
-| Model | `claude-sonnet-4-6` (or latest cost-effective Sonnet) | Cost-effective, high quality for civic research |
-| Max tokens (per response) | 4096 | Long enough for detailed race analysis, not wasteful |
-| Temperature | 1 | Balanced — informative but not robotic |
-| Streaming | Enabled | Required for good UX |
+| Parameter                 | Value                                                 | Rationale                                            |
+| ------------------------- | ----------------------------------------------------- | ---------------------------------------------------- |
+| Model                     | `claude-sonnet-4-6` (or latest cost-effective Sonnet) | Cost-effective, high quality for civic research      |
+| Max tokens (per response) | 4096                                                  | Long enough for detailed race analysis, not wasteful |
+| Temperature               | 1                                                     | Balanced — informative but not robotic               |
+| Streaming                 | Enabled                                               | Required for good UX                                 |
 
 ### Budget Management
 
@@ -145,12 +145,14 @@ This document is your personal notes, not an official ballot.
 ### How It's Generated
 
 **From the LLM chat (Path A):**
+
 - The AI generates Output A during the conversation (per the ballot prompt's instructions)
 - The site parses the AI's structured output and renders it as a downloadable document
 - The AI should output the ballot in a parseable format (the structured block shown above). The site looks for the `MY BALLOT` marker to extract and format it.
 - A "Download My Ballot" button appears in the chat when the ballot output is generated
 
 **From the copy-paste flow (Path B):**
+
 - After the user has their conversation in an external chatbot, they return to the site
 - A "Build My Ballot" section (new UI) provides a text area where the user can paste the AI's ballot output
 - The site parses the pasted text, formats it, and offers the same downloadable document
@@ -168,12 +170,12 @@ The downloadable ballot should be in the user's selected language. Labels ("MY B
 
 ### Required `data-testid`
 
-| `data-testid` | Element | Purpose |
-|----------------|---------|---------|
-| `download-ballot-btn` | Download/print ballot button | E2e tests verify ballot generation |
-| `ballot-preview` | Ballot preview display | E2e tests verify ballot content |
-| `ballot-paste-input` | Text area for pasting AI output (Path B) | E2e tests verify paste flow |
-| `ballot-manual-entry` | Manual ballot entry form | E2e tests verify fallback |
+| `data-testid`         | Element                                  | Purpose                            |
+| --------------------- | ---------------------------------------- | ---------------------------------- |
+| `download-ballot-btn` | Download/print ballot button             | E2e tests verify ballot generation |
+| `ballot-preview`      | Ballot preview display                   | E2e tests verify ballot content    |
+| `ballot-paste-input`  | Text area for pasting AI output (Path B) | E2e tests verify paste flow        |
+| `ballot-manual-entry` | Manual ballot entry form                 | E2e tests verify fallback          |
 
 ---
 
@@ -214,12 +216,14 @@ NOTES:
 ### How It's Generated
 
 **From the LLM chat (Path A):**
+
 - The AI generates Output B during the conversation (per the ballot prompt's instructions)
 - The site parses the AI's structured output and offers it as a downloadable `.txt` file
 - A "Download My Voter Profile" button appears alongside the ballot download
 - The AI should present the profile for user review before finalizing: "Here's your voter profile. Review it — does this capture you accurately?"
 
 **From the copy-paste flow (Path B):**
+
 - Same as ballot: user pastes the AI's voter profile output into a text area on the site
 - The site formats it and offers it as a downloadable `.txt` file
 - If parsing fails, offer the raw text as-is in a downloadable file
@@ -289,13 +293,13 @@ The copy-paste prompt must now explicitly ask the external chatbot to produce Ou
 
 The following messages must be visible to users at appropriate points:
 
-| When | Message |
-|------|---------|
+| When                           | Message                                                                                                                                                                                       |
+| ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Before starting a chat session | "Your conversation stays in your browser only — we don't store it. If you close or refresh this page, your conversation will be lost. Download your ballot and voter profile before leaving." |
-| On the voter profile upload | "Your profile is used for this session only and is not stored on our servers." |
-| On the downloadable ballot | "This is your personal reference, not an official ballot. Verify all information at [state election office link]." |
-| On the voter profile download | "Save this file somewhere you'll find it before the next election. When you come back, upload it so you don't have to start from scratch." |
-| When chat budget is exhausted | "Our free AI chat has reached its monthly limit. Copy the prompt below and paste it into any free AI chatbot to continue your research." |
+| On the voter profile upload    | "Your profile is used for this session only and is not stored on our servers."                                                                                                                |
+| On the downloadable ballot     | "This is your personal reference, not an official ballot. Verify all information at [state election office link]."                                                                            |
+| On the voter profile download  | "Save this file somewhere you'll find it before the next election. When you come back, upload it so you don't have to start from scratch."                                                    |
+| When chat budget is exhausted  | "Our free AI chat has reached its monthly limit. Copy the prompt below and paste it into any free AI chatbot to continue your research."                                                      |
 
 ### What Is NOT Stored
 
@@ -361,24 +365,24 @@ To be explicit, the site does not store, log, or transmit:
 
 ## Required `data-testid` Attributes (complete list for Phase 5)
 
-| `data-testid` | Element |
-|----------------|---------|
-| `chat-cta` | Button to open chat window |
-| `chat-window` | The chat panel container |
-| `chat-input` | Message input field |
-| `chat-send` | Send message button |
-| `chat-message-user` | User message bubble |
-| `chat-message-assistant` | Assistant message bubble |
-| `chat-privacy-notice` | Pre-session privacy warning |
-| `chat-budget-notice` | Budget threshold messaging |
-| `chat-disabled-message` | Message shown when budget exhausted |
-| `download-ballot-btn` | Download/print ballot button |
-| `ballot-preview` | Ballot preview display |
-| `ballot-paste-input` | Text area for pasting AI output |
-| `ballot-manual-entry` | Manual ballot entry form |
-| `download-profile-btn` | Download voter profile button |
-| `upload-profile-input` | File input for voter profile upload |
-| `profile-confirmation` | Uploaded profile confirmation display |
+| `data-testid`            | Element                               |
+| ------------------------ | ------------------------------------- |
+| `chat-cta`               | Button to open chat window            |
+| `chat-window`            | The chat panel container              |
+| `chat-input`             | Message input field                   |
+| `chat-send`              | Send message button                   |
+| `chat-message-user`      | User message bubble                   |
+| `chat-message-assistant` | Assistant message bubble              |
+| `chat-privacy-notice`    | Pre-session privacy warning           |
+| `chat-budget-notice`     | Budget threshold messaging            |
+| `chat-disabled-message`  | Message shown when budget exhausted   |
+| `download-ballot-btn`    | Download/print ballot button          |
+| `ballot-preview`         | Ballot preview display                |
+| `ballot-paste-input`     | Text area for pasting AI output       |
+| `ballot-manual-entry`    | Manual ballot entry form              |
+| `download-profile-btn`   | Download voter profile button         |
+| `upload-profile-input`   | File input for voter profile upload   |
+| `profile-confirmation`   | Uploaded profile confirmation display |
 
 ---
 
@@ -418,30 +422,36 @@ These design screens are preserved as the v2 north star. The v1 voter profile up
 New Playwright e2e tests for Phase 5:
 
 **Chat flow:**
+
 - Open chat → verify privacy notice → send first message → verify streaming response
 - Chat 3 messages → verify conversation history displays correctly
 - Verify chat API route rejects requests from different origin
 
 **Ballot generation (Path A):**
+
 - Complete a mock chat flow → verify "Download My Ballot" button appears → verify ballot content
 
 **Ballot generation (Path B):**
+
 - Paste a mock ballot output into text area → verify ballot preview renders → verify download works
 - Paste invalid text → verify error message and manual entry fallback appear
 - Use manual entry form → verify ballot generates correctly
 
 **Voter profile:**
+
 - Upload a valid `.txt` profile → verify confirmation display → verify profile included in chat context
 - Upload a file > 10KB → verify rejection message
 - Upload a non-`.txt` file → verify rejection message
 - Complete a chat → verify "Download Voter Profile" button appears
 
 **Budget degradation:**
+
 - Mock API at 75% budget → verify subtle notice appears
 - Mock API at 95% budget → verify stronger notice appears
 - Mock API rejection (budget exhausted) → verify chat is disabled and copy-paste flow is shown
 
 **Rate limiting:**
+
 - Send 61 messages → verify session limit message and handoff suggestion
 
 **Test environment note:** Chat e2e tests should mock the Anthropic API response (not make real API calls). Use deterministic mock responses that include properly formatted Output A and Output B blocks.

@@ -46,8 +46,7 @@ describe("db/client", () => {
     it("returns a client object (not the sentinel) when DATABASE_URL is set", () => {
       // Use a syntactically-valid placeholder — no real connection is made
       // because we never execute a query in this test.
-      process.env.DATABASE_URL =
-        "postgresql://user:pass@localhost:5432/testdb";
+      process.env.DATABASE_URL = "postgresql://user:pass@localhost:5432/testdb";
       const result = getDb();
       expect(result).not.toBe(DB_NOT_CONFIGURED);
       expect(typeof result).toBe("object");
@@ -72,8 +71,7 @@ describe("db/client", () => {
     });
 
     it("returns a client object when DATABASE_URL is set", () => {
-      process.env.DATABASE_URL =
-        "postgresql://user:pass@localhost:5432/testdb";
+      process.env.DATABASE_URL = "postgresql://user:pass@localhost:5432/testdb";
       const result = requireDb();
       expect(result).toBeDefined();
       expect(typeof result).toBe("object");

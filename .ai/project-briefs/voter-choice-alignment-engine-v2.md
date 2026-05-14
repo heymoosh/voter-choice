@@ -12,11 +12,11 @@ Add an **alignment score** as the new headline metric on every candidate card �
 
 ## Original User Intent
 
-User pasted "Voter Choice — Alignment Engine Direction" doc plus a Polis-style overlap viz spec, and corrected the AI co-author's mistakes about contradiction with the existing codebase. v2 is **additive** on top of the v1 legible-patterns dashboard, not a rewrite. Verbatim driving principle: *"did this person vote for or against your side on this issue? That's it."* The score is a fact match; the disclaimer ("AI can make errors, double-check") goes near the score because that's the only honest framing of LLM-driven alignment scoring.
+User pasted "Voter Choice — Alignment Engine Direction" doc plus a Polis-style overlap viz spec, and corrected the AI co-author's mistakes about contradiction with the existing codebase. v2 is **additive** on top of the v1 legible-patterns dashboard, not a rewrite. Verbatim driving principle: _"did this person vote for or against your side on this issue? That's it."_ The score is a fact match; the disclaimer ("AI can make errors, double-check") goes near the score because that's the only honest framing of LLM-driven alignment scoring.
 
 ## Intent Interpretation
 
-The v1 dashboard's principle ("the pattern is the answer; let the voter interpret") is preserved as the *evidence layer.* The new alignment score is one extra metric on top, framed as a factual count against the user's stance, not an editorial recommendation. The four patterns remain — they become the drill-down that proves the score.
+The v1 dashboard's principle ("the pattern is the answer; let the voter interpret") is preserved as the _evidence layer._ The new alignment score is one extra metric on top, framed as a factual count against the user's stance, not an editorial recommendation. The four patterns remain — they become the drill-down that proves the score.
 
 National scope expansion is mechanical (state fixtures, generalize the TX runoff gate). The polis endgame is the depolarization payoff. The privacy posture evolves from "we save nothing" to "we save anonymous aggregate counters only — no individual record exists, even under subpoena."
 
@@ -35,6 +35,7 @@ National scope expansion is mechanical (state fixtures, generalize the TX runoff
 ## Domain / Business Rules
 
 Rules:
+
 - Alignment score is a **factual count**, framed as: "voted with your side N of M times on [issue]." Not an editorial verdict.
 - A disclaimer ("AI can make errors, double-check what matters") renders once at the top of the dashboard and once at the bottom of every drill-down panel. Not on every card.
 - The four-pattern dashboard (donor coalition, endorsements, platform alignment, retrospective) stays as the evidence layer under the score. Nothing is removed from v1.
@@ -49,11 +50,13 @@ Rules:
 - Vote Smart "Key Votes" is the spine for issue tagging. Advocacy scorecards (NARAL, SBA Pro-Life, NRA, Sierra Club, ACLU, etc.) are an opt-in layer with explicit source attribution. When two scorecards conflict on the same vote, both render side-by-side.
 
 Assumptions:
+
 - Vote Smart, FEC, OpenSecrets, and FollowTheMoney all have public-data ingestion paths (free API or scrapeable). Subject to a licensing audit before scorecard data is republished.
 - Current LLM-in-the-loop architecture handles per-candidate work fine at current traffic. Backend pipeline ships in a later phase to take cost/latency pressure off; not blocking v2 launch.
 - Drag-and-drop ranking on `@dnd-kit/sortable` is acceptable for mobile (the deleted `IssueRanker.tsx` already used this pattern; the dependency is still in `package.json`).
 
 User-confirmed decisions:
+
 - Alignment score on top of dashboard, not in place of it.
 - Backend pipeline is worth the infra investment.
 - National scope; local stays a known gap.
@@ -67,6 +70,7 @@ User-confirmed decisions:
 - Privacy posture rewrites: "we save anonymous aggregate stats only" replaces "we save nothing."
 
 Open business questions:
+
 - Vote Smart API access terms — public free API or scrape-only? Affects backend pipeline budget.
 - Advocacy scorecard licensing — which orgs allow republishing of their tags? Some explicitly forbid it. Audit before designing UX that displays them.
 - Thin-record threshold — at what number of votes does a score become statistically meaningless? Show "based on N votes" labeling without hiding, but pick a floor (e.g., 5 votes minimum to compute at all).
@@ -76,6 +80,7 @@ Open business questions:
 
 Target readiness: launch (ships to production same as v1)
 Applicable lanes:
+
 - Product UX (alignment score visual hierarchy, drag-rank ranking, drill-down navigation)
 - Privacy / data (anonymous counter store, polis viz architecture, privacy copy rewrite)
 - API/contracts (Vote Smart + FEC + OpenSecrets ingestion contracts, advocacy scorecard licensing)
@@ -83,10 +88,12 @@ Applicable lanes:
 - Observability/support (counter-write metrics, polis-threshold telemetry)
 
 User decisions:
+
 - Vote Smart paid tier vs scrape vs partner deal — needs decision before backend pipeline phase.
 - Advocacy scorecards: which to integrate v1, scorecard licensing review.
 
 Known risks:
+
 - Privacy posture change — "we save aggregate stats" reads worse than "we save nothing" if not framed carefully. Subpoena callout is the trust anchor; copy must lead with it.
 - Backend pipeline scope creep — full ingestion of 50 states' legislators is a real engineering project.
 - Score interpretation drift — voters may treat the score as authoritative even with disclaimers. Drill-down legitimacy is the only defense.
@@ -94,21 +101,26 @@ Known risks:
 ## Operational Reproducibility
 
 Setup path:
+
 - v1 setup carries forward (`npm install`, `.env.local` with Anthropic key + Civic API key)
 - Phase 4 backend pipeline adds a separate ingestion service with its own setup (TBD)
 
 Provider/config strategy:
+
 - Anonymous counter store: Vercel KV / Upstash Redis (the durable budget store deferred earlier becomes part of v2 scope)
 - Vote/donor ingestion: separate service with its own provider; not in the Next.js app
 
 Database/migration strategy:
+
 - Counters are append-only with idempotent merge; no schema migration needed beyond key-namespace versioning
 - Vote-tag store: Postgres or Cloudflare D1 — deferred to phase 4 packet
 
 CI/deploy checks:
+
 - Existing `.github/workflows/deploy.yml` continues to apply; new ingestion service gets its own pipeline if it lives in a separate repo
 
 Manual steps:
+
 - Provisioning the durable counter store on Vercel KV (~10 minutes, one-time)
 - Vote Smart account / API key setup if we go API route
 - Advocacy scorecard licensing review before each scorecard integration
@@ -148,6 +160,7 @@ Anonymous aggregate counter store does not exist. Backend vote/donor ingestion d
 ## System Ownership Map
 
 Domain concerns (existing, owners stable):
+
 - Ballot prompt (Acts 1, 1.5, 2, 3, propositions, voice rules) — `docs/BALLOT_PROMPT.md`
 - Pattern taxonomies — `docs/PATTERN_TAXONOMIES.md`
 - Source tier list — `docs/SOURCE_TIERS.md`
@@ -160,6 +173,7 @@ Domain concerns (existing, owners stable):
 - Budget tier model + handoff token reservation — `src/lib/server/budget.ts`
 
 NEW concerns that need owners (to be established by upcoming work packets):
+
 - **Topic mapping (concerns → canonical issues)** — owner: a dedicated server route + LLM call, cached at session level. Not invented yet.
 - **Anonymous aggregate counter store** — owner: Vercel KV (durable Redis) keyed by `voter-choice:counters:{county}:{primary}:{issue}:{candidate-pick}`. Not invented yet.
 - **Polis-style aggregation + visualization** — owner: new component `PolisOverlay.tsx` plus a server route that returns synthetic dot data from aggregate counters.
@@ -168,14 +182,17 @@ NEW concerns that need owners (to be established by upcoming work packets):
 - **Drill-down evidence panel** — owner: extension of `RacePatterns` or a sibling component `AlignmentDrilldown.tsx`.
 
 Known overlaps:
+
 - The four-pattern `platformAlignment` ratio in `RacePatterns.tsx` and the new alignment score are conceptually adjacent: both compare actions (votes) to something (a platform vs a user-stated stance). Visual treatment must distinguish them clearly to avoid double-display confusion.
 
 Open gaps:
+
 - National scope: 49 states' worth of registration deadlines, voter ID rules, county lookup links, runoff rules. Some live on Vote.org.
 - Cost/licensing of advocacy scorecard data.
 - Threshold for "thin record" alignment scoring.
 
 Execution packet rules every related work packet must preserve:
+
 - Never present the alignment score as a recommendation. Only ever as "voted with your side N of M times."
 - Never store any individual user record. Counters only.
 - Never drop or hide a scorecard conflict. If two sources tag the same vote oppositely, render both.
@@ -205,6 +222,7 @@ Provision Vercel KV for durable storage. Counter-write at session end. Threshold
 Vote Smart + FEC + OpenSecrets + FollowTheMoney ingest jobs. Pre-tagged vote storage with canonical issue tags. Deterministic lookup endpoint. Migrate alignment score from LLM web_search → backend lookup. Optional advocacy scorecard layer with explicit source labeling. Reduces cost and latency at scale.
 
 **Order rationale:**
+
 - Packets 1, 2, 3 ship the user-visible v2 feature without backend dependency.
 - Packet 4 is small; can ride alongside 2 or 3 if convenient.
 - Packet 5 is the depolarization payoff and the privacy-posture evolution; not blocking the score launch.

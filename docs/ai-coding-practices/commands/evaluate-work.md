@@ -3,6 +3,7 @@
 Purpose: evaluate whether completed execution achieved the intended outcome.
 
 Decision owners:
+
 - Work packet semantics: `docs/ai-coding-practices/guardrails/work-packet-rules.md`
 - Ownership discipline: `docs/ai-coding-practices/guardrails/ownership-discipline.md`
 - QE tooling: `docs/ai-coding-practices/guardrails/qe-tooling.md`

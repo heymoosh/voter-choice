@@ -88,7 +88,10 @@ export const votes = pgTable(
       .defaultNow(),
   },
   (table) => [
-    uniqueIndex("votes_bill_candidate_uidx").on(table.billId, table.candidateId),
+    uniqueIndex("votes_bill_candidate_uidx").on(
+      table.billId,
+      table.candidateId,
+    ),
     index("votes_candidate_date_idx").on(table.candidateId, table.voteDate),
     index("votes_bill_idx").on(table.billId),
   ],

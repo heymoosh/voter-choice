@@ -24,9 +24,11 @@ Change mapping: <files/commits/changes that should address this finding>
 ## Scope
 
 Touch:
+
 - <files/modules/surfaces likely in scope>
 
 Do not touch:
+
 - <unrelated files/modules/features>
 - <working behavior that already passed evaluation>
 
@@ -42,6 +44,7 @@ Do not touch:
 ## Escalation Trigger
 
 Stop and return to the orchestrator if:
+
 - the finding is not reproducible
 - the required correction conflicts with the original work packet
 - the fix requires new product/business/security decisions

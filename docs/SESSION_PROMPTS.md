@@ -120,6 +120,7 @@ Commit when done: "launch: add chat UI with streaming and editorial design syste
 ```
 
 **Before moving on, check:**
+
 - [ ] Shared UI components exist in `src/components/ui/` (Button, Card, Notice, TextInput, Badge)
 - [ ] Tailwind config has design system tokens (colors, font, border radius)
 - [ ] "Research My Ballot" button appears after zip lookup (uses Button component)
@@ -140,6 +141,7 @@ Commit when done: "launch: add chat UI with streaming and editorial design syste
 **What this session builds:** A new `/api/civic` route, optional address input after zip entry, polling location and early vote site display with Google Maps directions links.
 
 **Pre-check — these should already work from Session 3A:**
+
 - [ ] Chat panel opens after zip lookup and streams responses
 - [ ] Design system is applied (teal palette, Public Sans, tonal layering)
 
@@ -217,6 +219,7 @@ Commit when done: "launch: add Google Civic API polling locations with direction
 ```
 
 **Before moving on, check:**
+
 - [ ] Address input appears after zip entry, skip works
 - [ ] Google Civic API returns polling location for a TX address
 - [ ] Polling location displays with name, address, hours
@@ -239,6 +242,7 @@ Commit when done: "launch: add Google Civic API polling locations with direction
 **What this session builds:** The copy/paste fallback path, budget-aware UI switching between chat and copy/paste, the handoff package UI, and rate limit handling. This is the most state-heavy session — it's all about conditional rendering based on budget/rate status.
 
 **Pre-check — these should already work from Sessions 3A + 3B:**
+
 - [ ] Chat panel streams responses with the editorial design system
 - [ ] Polling locations display (or graceful fallback)
 - [ ] Existing copy/paste prompt flow still works from the original codebase
@@ -306,6 +310,7 @@ Commit when done: "launch: add two-path UX, budget degradation UI, handoff packa
 ```
 
 **Before moving on, check:**
+
 - [ ] Copy/paste flow works alongside chat as secondary option
 - [ ] Budget notice renders at 70%+ threshold
 - [ ] At 80%+, new visitors see copy/paste as primary, active chatters unaffected
@@ -323,6 +328,7 @@ Commit when done: "launch: add two-path UX, budget degradation UI, handoff packa
 **Estimated time:** 30-45 min
 
 **Pre-check — these should already work from Sessions 3A-3C:**
+
 - [ ] Chat streams responses with editorial design system
 - [ ] Polling locations display (or graceful fallback)
 - [ ] Two-path UX: chat primary, copy/paste secondary
@@ -362,6 +368,7 @@ Commit when done: "launch: add downloadable ballot and voter profile with upload
 ```
 
 **Before moving on, check:**
+
 - [ ] Ballot download button appears when AI generates ballot output
 - [ ] Printable ballot looks clean and fits one page
 - [ ] Voter profile downloads as .txt
@@ -377,6 +384,7 @@ Commit when done: "launch: add downloadable ballot and voter profile with upload
 **Estimated time:** 30-45 min
 
 **Pre-check — these should already work from Sessions 1-4:**
+
 - [ ] Full flow: zip → election info → chat → streaming → ballot download → profile download
 - [ ] Polling locations with directions links
 - [ ] Budget degradation, handoff package, copy/paste fallback
@@ -447,6 +455,7 @@ Commit any final fixes: "launch: add legal pages, metadata, deploy"
 ```
 
 **After this session — go-live checklist:**
+
 - [ ] Site is live on a public URL
 - [ ] TX zip code → state info works
 - [ ] Chat opens, streams responses, follows ballot research methodology

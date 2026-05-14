@@ -8,7 +8,14 @@
  *   - Test the integration path via processBill / tagBills
  */
 
-import { describe, expect, it, vi, beforeEach, type MockInstance } from "vitest";
+import {
+  describe,
+  expect,
+  it,
+  vi,
+  beforeEach,
+  type MockInstance,
+} from "vitest";
 import {
   TAGGER_VERSION,
   buildSystemPrompt,
@@ -51,11 +58,14 @@ const BILL_NO_TITLE: BillRow = {
 };
 
 // Minimal Anthropic-shaped response factory.
-function makeAnthropicResponse(text: string, opts?: {
-  inputTokens?: number;
-  cachedTokens?: number;
-  outputTokens?: number;
-}) {
+function makeAnthropicResponse(
+  text: string,
+  opts?: {
+    inputTokens?: number;
+    cachedTokens?: number;
+    outputTokens?: number;
+  },
+) {
   return {
     content: [{ type: "text" as const, text }],
     usage: {
@@ -76,10 +86,7 @@ function makeAnthropicClient(createFn: () => unknown) {
 }
 
 // Minimal mock DB client.
-function makeDbClient(opts?: {
-  selectRows?: BillRow[];
-  insertError?: Error;
-}) {
+function makeDbClient(opts?: { selectRows?: BillRow[]; insertError?: Error }) {
   const selectRows = opts?.selectRows ?? [];
   const insertError = opts?.insertError;
 
@@ -160,13 +167,29 @@ describe("buildBillPrompt", () => {
 describe("parseAndValidateTags", () => {
   it("returns valid tags from well-formed JSON", () => {
     const json = JSON.stringify([
-      { canonical_issue: "healthcare_affordability", stance_lens: "in_favor", confidence: 0.92 },
-      { canonical_issue: "economy_jobs", stance_lens: "opposed", confidence: 0.71 },
+      {
+        canonical_issue: "healthcare_affordability",
+        stance_lens: "in_favor",
+        confidence: 0.92,
+      },
+      {
+        canonical_issue: "economy_jobs",
+        stance_lens: "opposed",
+        confidence: 0.71,
+      },
     ]);
     const tags = parseAndValidateTags(json, "bill-1");
     expect(tags).toHaveLength(2);
-    expect(tags[0]).toEqual({ canonicalIssue: "healthcare_affordability", stanceLens: "in_favor", confidence: 0.92 });
-    expect(tags[1]).toEqual({ canonicalIssue: "economy_jobs", stanceLens: "opposed", confidence: 0.71 });
+    expect(tags[0]).toEqual({
+      canonicalIssue: "healthcare_affordability",
+      stanceLens: "in_favor",
+      confidence: 0.92,
+    });
+    expect(tags[1]).toEqual({
+      canonicalIssue: "economy_jobs",
+      stanceLens: "opposed",
+      confidence: 0.71,
+    });
   });
 
   it("returns empty array for malformed JSON — no crash", () => {
@@ -175,14 +198,25 @@ describe("parseAndValidateTags", () => {
   });
 
   it("returns empty array when response is not an array", () => {
-    const tags = parseAndValidateTags('{"canonical_issue":"healthcare_affordability"}', "bill-1");
+    const tags = parseAndValidateTags(
+      '{"canonical_issue":"healthcare_affordability"}',
+      "bill-1",
+    );
     expect(tags).toHaveLength(0);
   });
 
   it("drops entries with unknown canonical_issue, keeps valid ones", () => {
     const json = JSON.stringify([
-      { canonical_issue: "healthcare_affordability", stance_lens: "in_favor", confidence: 0.85 },
-      { canonical_issue: "unicorn_policy", stance_lens: "in_favor", confidence: 0.9 },
+      {
+        canonical_issue: "healthcare_affordability",
+        stance_lens: "in_favor",
+        confidence: 0.85,
+      },
+      {
+        canonical_issue: "unicorn_policy",
+        stance_lens: "in_favor",
+        confidence: 0.9,
+      },
     ]);
     const tags = parseAndValidateTags(json, "bill-1");
     expect(tags).toHaveLength(1);
@@ -191,8 +225,16 @@ describe("parseAndValidateTags", () => {
 
   it("drops entries with invalid stance_lens", () => {
     const json = JSON.stringify([
-      { canonical_issue: "healthcare_affordability", stance_lens: "neutral", confidence: 0.85 },
-      { canonical_issue: "border_security", stance_lens: "in_favor", confidence: 0.9 },
+      {
+        canonical_issue: "healthcare_affordability",
+        stance_lens: "neutral",
+        confidence: 0.85,
+      },
+      {
+        canonical_issue: "border_security",
+        stance_lens: "in_favor",
+        confidence: 0.9,
+      },
     ]);
     const tags = parseAndValidateTags(json, "bill-1");
     expect(tags).toHaveLength(1);
@@ -201,7 +243,11 @@ describe("parseAndValidateTags", () => {
 
   it("clamps confidence > 1.0 instead of dropping", () => {
     const json = JSON.stringify([
-      { canonical_issue: "healthcare_affordability", stance_lens: "in_favor", confidence: 1.0001 },
+      {
+        canonical_issue: "healthcare_affordability",
+        stance_lens: "in_favor",
+        confidence: 1.0001,
+      },
     ]);
     const tags = parseAndValidateTags(json, "bill-1");
     expect(tags).toHaveLength(1);
@@ -210,7 +256,11 @@ describe("parseAndValidateTags", () => {
 
   it("drops entries with non-numeric confidence", () => {
     const json = JSON.stringify([
-      { canonical_issue: "healthcare_affordability", stance_lens: "in_favor", confidence: "high" },
+      {
+        canonical_issue: "healthcare_affordability",
+        stance_lens: "in_favor",
+        confidence: "high",
+      },
     ]);
     const tags = parseAndValidateTags(json, "bill-1");
     expect(tags).toHaveLength(0);
@@ -246,32 +296,56 @@ describe("estimateCost", () => {
 
 describe("resolveTagBillsConfig", () => {
   it("defaults to 1000 bill limit", () => {
-    const config = resolveTagBillsConfig({ ANTHROPIC_VOTER_API: "key" } as NodeJS.ProcessEnv, []);
+    const config = resolveTagBillsConfig(
+      { ANTHROPIC_VOTER_API: "key" } as NodeJS.ProcessEnv,
+      [],
+    );
     expect(config.limit).toBe(1000);
   });
 
   it("reads --limit from argv", () => {
-    const config = resolveTagBillsConfig({ ANTHROPIC_VOTER_API: "key" } as NodeJS.ProcessEnv, ["node", "script.ts", "--limit", "5"]);
+    const config = resolveTagBillsConfig(
+      { ANTHROPIC_VOTER_API: "key" } as NodeJS.ProcessEnv,
+      ["node", "script.ts", "--limit", "5"],
+    );
     expect(config.limit).toBe(5);
   });
 
   it("reads TAGGER_BILL_LIMIT from env", () => {
-    const config = resolveTagBillsConfig({ ANTHROPIC_VOTER_API: "key", TAGGER_BILL_LIMIT: "42" } as NodeJS.ProcessEnv, []);
+    const config = resolveTagBillsConfig(
+      {
+        ANTHROPIC_VOTER_API: "key",
+        TAGGER_BILL_LIMIT: "42",
+      } as NodeJS.ProcessEnv,
+      [],
+    );
     expect(config.limit).toBe(42);
   });
 
   it("prefers --limit argv over env var", () => {
-    const config = resolveTagBillsConfig({ ANTHROPIC_VOTER_API: "key", TAGGER_BILL_LIMIT: "200" } as NodeJS.ProcessEnv, ["node", "script.ts", "--limit", "7"]);
+    const config = resolveTagBillsConfig(
+      {
+        ANTHROPIC_VOTER_API: "key",
+        TAGGER_BILL_LIMIT: "200",
+      } as NodeJS.ProcessEnv,
+      ["node", "script.ts", "--limit", "7"],
+    );
     expect(config.limit).toBe(7);
   });
 
   it("detects --dry-run flag", () => {
-    const config = resolveTagBillsConfig({ ANTHROPIC_VOTER_API: "key" } as NodeJS.ProcessEnv, ["node", "script.ts", "--dry-run"]);
+    const config = resolveTagBillsConfig(
+      { ANTHROPIC_VOTER_API: "key" } as NodeJS.ProcessEnv,
+      ["node", "script.ts", "--dry-run"],
+    );
     expect(config.dryRun).toBe(true);
   });
 
   it("detects TAGGER_DRY_RUN=1 env var", () => {
-    const config = resolveTagBillsConfig({ ANTHROPIC_VOTER_API: "key", TAGGER_DRY_RUN: "1" } as NodeJS.ProcessEnv, []);
+    const config = resolveTagBillsConfig(
+      { ANTHROPIC_VOTER_API: "key", TAGGER_DRY_RUN: "1" } as NodeJS.ProcessEnv,
+      [],
+    );
     expect(config.dryRun).toBe(true);
   });
 });
@@ -283,9 +357,19 @@ describe("resolveTagBillsConfig", () => {
 describe("tagBill", () => {
   it("returns valid tags from a good response", async () => {
     const responseJson = JSON.stringify([
-      { canonical_issue: "healthcare_affordability", stance_lens: "in_favor", confidence: 0.92 },
+      {
+        canonical_issue: "healthcare_affordability",
+        stance_lens: "in_favor",
+        confidence: 0.92,
+      },
     ]);
-    const client = makeAnthropicClient(() => makeAnthropicResponse(responseJson, { inputTokens: 200, cachedTokens: 150, outputTokens: 40 }));
+    const client = makeAnthropicClient(() =>
+      makeAnthropicResponse(responseJson, {
+        inputTokens: 200,
+        cachedTokens: 150,
+        outputTokens: 40,
+      }),
+    );
     const systemPrompt = buildSystemPrompt();
 
     const result = await tagBill(BILL_A, client, systemPrompt);
@@ -303,7 +387,8 @@ describe("tagBill", () => {
 
     await tagBill(BILL_A, client, systemPrompt);
 
-    const createCall = (client.messages.create as ReturnType<typeof vi.fn>).mock.calls[0][0];
+    const createCall = (client.messages.create as ReturnType<typeof vi.fn>).mock
+      .calls[0][0];
     expect(createCall.system).toBeDefined();
     expect(createCall.system[0].cache_control).toEqual({ type: "ephemeral" });
   });
@@ -330,10 +415,20 @@ describe("processBill", () => {
 
   it("happy path: tags two tags and upserts both", async () => {
     const responseJson = JSON.stringify([
-      { canonical_issue: "healthcare_affordability", stance_lens: "in_favor", confidence: 0.9 },
-      { canonical_issue: "economy_jobs", stance_lens: "opposed", confidence: 0.7 },
+      {
+        canonical_issue: "healthcare_affordability",
+        stance_lens: "in_favor",
+        confidence: 0.9,
+      },
+      {
+        canonical_issue: "economy_jobs",
+        stance_lens: "opposed",
+        confidence: 0.7,
+      },
     ]);
-    const client = makeAnthropicClient(() => makeAnthropicResponse(responseJson));
+    const client = makeAnthropicClient(() =>
+      makeAnthropicResponse(responseJson),
+    );
     const db = makeDbClient();
     const counts = makeCounts();
 
@@ -350,11 +445,20 @@ describe("processBill", () => {
     const db = makeDbClient();
     const counts = makeCounts();
 
-    await processBill(BILL_NO_TITLE, db, client, buildSystemPrompt(), counts, false);
+    await processBill(
+      BILL_NO_TITLE,
+      db,
+      client,
+      buildSystemPrompt(),
+      counts,
+      false,
+    );
 
     expect(counts.billsSkipped).toBe(1);
     expect(counts.billsTagged).toBe(0);
-    expect((client.messages.create as ReturnType<typeof vi.fn>).mock.calls).toHaveLength(0);
+    expect(
+      (client.messages.create as ReturnType<typeof vi.fn>).mock.calls,
+    ).toHaveLength(0);
   });
 
   it("API error on one bill: that bill is skipped, no crash", async () => {
@@ -375,9 +479,15 @@ describe("processBill", () => {
 
   it("DB upsert error: that bill is skipped, no crash", async () => {
     const responseJson = JSON.stringify([
-      { canonical_issue: "healthcare_affordability", stance_lens: "in_favor", confidence: 0.9 },
+      {
+        canonical_issue: "healthcare_affordability",
+        stance_lens: "in_favor",
+        confidence: 0.9,
+      },
     ]);
-    const client = makeAnthropicClient(() => makeAnthropicResponse(responseJson));
+    const client = makeAnthropicClient(() =>
+      makeAnthropicResponse(responseJson),
+    );
     const db = makeDbClient({ insertError: new Error("DB connection lost") });
     const counts = makeCounts();
 
@@ -393,7 +503,14 @@ describe("processBill", () => {
     const db = makeDbClient();
     const counts = makeCounts();
 
-    await processBill(BILL_PROCEDURAL, db, client, buildSystemPrompt(), counts, false);
+    await processBill(
+      BILL_PROCEDURAL,
+      db,
+      client,
+      buildSystemPrompt(),
+      counts,
+      false,
+    );
 
     expect(counts.billsTagged).toBe(1);
     expect(counts.tagsUpserted).toBe(0);
@@ -401,9 +518,15 @@ describe("processBill", () => {
 
   it("dry run: does not call DB insert", async () => {
     const responseJson = JSON.stringify([
-      { canonical_issue: "healthcare_affordability", stance_lens: "in_favor", confidence: 0.9 },
+      {
+        canonical_issue: "healthcare_affordability",
+        stance_lens: "in_favor",
+        confidence: 0.9,
+      },
     ]);
-    const client = makeAnthropicClient(() => makeAnthropicResponse(responseJson));
+    const client = makeAnthropicClient(() =>
+      makeAnthropicResponse(responseJson),
+    );
     const db = makeDbClient();
     const counts = makeCounts();
 
@@ -435,7 +558,9 @@ describe("tagBills", () => {
 
     expect(counts.billsQueried).toBe(0);
     expect(counts.billsTagged).toBe(0);
-    expect((client.messages.create as ReturnType<typeof vi.fn>).mock.calls).toHaveLength(0);
+    expect(
+      (client.messages.create as ReturnType<typeof vi.fn>).mock.calls,
+    ).toHaveLength(0);
   });
 
   it("limit flag: passes --limit 5 and DB SELECT uses limit=5", async () => {
@@ -451,16 +576,18 @@ describe("tagBills", () => {
 
     // The limit(5) call is made inside fetchUntaggedBills. Verify via the
     // mock call chain: select().from().where().limit(5).
-    const limitCall = (db.select as ReturnType<typeof vi.fn>).mock.results[0]?.value
-      ?.from.mock.results[0]?.value
-      ?.where.mock.results[0]?.value
-      ?.limit;
+    const limitCall = (db.select as ReturnType<typeof vi.fn>).mock.results[0]
+      ?.value?.from.mock.results[0]?.value?.where.mock.results[0]?.value?.limit;
     expect(limitCall).toHaveBeenCalledWith(5);
   });
 
   it("processes multiple bills: remaining bills still processed after one API error", async () => {
     const goodResponse = JSON.stringify([
-      { canonical_issue: "border_security", stance_lens: "in_favor", confidence: 0.8 },
+      {
+        canonical_issue: "border_security",
+        stance_lens: "in_favor",
+        confidence: 0.8,
+      },
     ]);
 
     let callCount = 0;
@@ -477,8 +604,18 @@ describe("tagBills", () => {
     } as unknown as import("@anthropic-ai/sdk").default;
 
     const twoBills: BillRow[] = [
-      { id: "bill-fail", title: "Bill That Will Fail", summary: null, jurisdiction: "federal-house" },
-      { id: "bill-ok", title: "Border Security Enhancement Act", summary: "Adds more agents.", jurisdiction: "federal-senate" },
+      {
+        id: "bill-fail",
+        title: "Bill That Will Fail",
+        summary: null,
+        jurisdiction: "federal-house",
+      },
+      {
+        id: "bill-ok",
+        title: "Border Security Enhancement Act",
+        summary: "Adds more agents.",
+        jurisdiction: "federal-senate",
+      },
     ];
 
     const db = makeDbClient({ selectRows: twoBills });

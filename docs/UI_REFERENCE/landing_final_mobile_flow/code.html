@@ -1,352 +1,600 @@
-<!DOCTYPE html>
+<!doctype html>
 
-<html lang="en"><head>
-<meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Voter Choice | Civic Research</title>
-<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-<link href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,100..900;1,100..900&amp;display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
-<script id="tailwind-config">
-        tailwind.config = {
-            darkMode: "class",
-            theme: {
-                extend: {
-                    "colors": {
-                        "on-secondary-fixed-variant": "#2e4c48",
-                        "on-surface-variant": "#3e4947",
-                        "surface-container": "#efedec",
-                        "on-tertiary-fixed": "#370e00",
-                        "surface-container-low": "#f5f3f1",
-                        "tertiary-fixed": "#ffdbce",
-                        "tertiary-fixed-dim": "#ffb598",
-                        "outline-variant": "#bdc9c6",
-                        "inverse-surface": "#30302f",
-                        "outline": "#6e7977",
-                        "error": "#ba1a1a",
-                        "surface": "#fbf9f7",
-                        "primary-fixed-dim": "#80d5cb",
-                        "inverse-on-surface": "#f2f0ee",
-                        "on-tertiary-container": "#ffe5db",
-                        "on-tertiary": "#ffffff",
-                        "on-primary-fixed-variant": "#00504a",
-                        "surface-container-high": "#eae8e6",
-                        "on-secondary-container": "#4a6864",
-                        "secondary-container": "#c5e6e1",
-                        "on-primary": "#ffffff",
-                        "on-background": "#1b1c1b",
-                        "on-tertiary-fixed-variant": "#72361b",
-                        "surface-dim": "#dbdad8",
-                        "error-container": "#ffdad6",
-                        "on-surface": "#1b1c1b",
-                        "surface-container-highest": "#e4e2e0",
-                        "surface-container-lowest": "#ffffff",
-                        "on-secondary-fixed": "#00201d",
-                        "tertiary-container": "#9c573a",
-                        "primary-fixed": "#9cf2e8",
-                        "secondary": "#466460",
-                        "primary": "#005c55",
-                        "background": "#fbf9f7",
-                        "on-primary-container": "#a3faef",
-                        "on-primary-fixed": "#00201d",
-                        "on-secondary": "#ffffff",
-                        "on-error": "#ffffff",
-                        "primary-container": "#0f766e",
-                        "on-error-container": "#93000a",
-                        "secondary-fixed": "#c8e9e4",
-                        "surface-bright": "#fbf9f7",
-                        "secondary-fixed-dim": "#accdc8",
-                        "inverse-primary": "#80d5cb",
-                        "tertiary": "#7f4025",
-                        "surface-variant": "#e4e2e0",
-                        "surface-tint": "#006a63"
-                    },
-                    "borderRadius": {
-                        "DEFAULT": "0.125rem",
-                        "lg": "0.25rem",
-                        "xl": "0.5rem",
-                        "full": "9999px"
-                    },
-                    "fontFamily": {
-                        "headline": ["Public Sans", "sans-serif"],
-                        "body": ["Public Sans", "sans-serif"],
-                        "label": ["Public Sans", "sans-serif"]
-                    }
-                },
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Voter Choice | Civic Research</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,100..900;1,100..900&amp;display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+      rel="stylesheet"
+    />
+    <script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "on-secondary-fixed-variant": "#2e4c48",
+              "on-surface-variant": "#3e4947",
+              "surface-container": "#efedec",
+              "on-tertiary-fixed": "#370e00",
+              "surface-container-low": "#f5f3f1",
+              "tertiary-fixed": "#ffdbce",
+              "tertiary-fixed-dim": "#ffb598",
+              "outline-variant": "#bdc9c6",
+              "inverse-surface": "#30302f",
+              outline: "#6e7977",
+              error: "#ba1a1a",
+              surface: "#fbf9f7",
+              "primary-fixed-dim": "#80d5cb",
+              "inverse-on-surface": "#f2f0ee",
+              "on-tertiary-container": "#ffe5db",
+              "on-tertiary": "#ffffff",
+              "on-primary-fixed-variant": "#00504a",
+              "surface-container-high": "#eae8e6",
+              "on-secondary-container": "#4a6864",
+              "secondary-container": "#c5e6e1",
+              "on-primary": "#ffffff",
+              "on-background": "#1b1c1b",
+              "on-tertiary-fixed-variant": "#72361b",
+              "surface-dim": "#dbdad8",
+              "error-container": "#ffdad6",
+              "on-surface": "#1b1c1b",
+              "surface-container-highest": "#e4e2e0",
+              "surface-container-lowest": "#ffffff",
+              "on-secondary-fixed": "#00201d",
+              "tertiary-container": "#9c573a",
+              "primary-fixed": "#9cf2e8",
+              secondary: "#466460",
+              primary: "#005c55",
+              background: "#fbf9f7",
+              "on-primary-container": "#a3faef",
+              "on-primary-fixed": "#00201d",
+              "on-secondary": "#ffffff",
+              "on-error": "#ffffff",
+              "primary-container": "#0f766e",
+              "on-error-container": "#93000a",
+              "secondary-fixed": "#c8e9e4",
+              "surface-bright": "#fbf9f7",
+              "secondary-fixed-dim": "#accdc8",
+              "inverse-primary": "#80d5cb",
+              tertiary: "#7f4025",
+              "surface-variant": "#e4e2e0",
+              "surface-tint": "#006a63",
             },
-        }
+            borderRadius: {
+              DEFAULT: "0.125rem",
+              lg: "0.25rem",
+              xl: "0.5rem",
+              full: "9999px",
+            },
+            fontFamily: {
+              headline: ["Public Sans", "sans-serif"],
+              body: ["Public Sans", "sans-serif"],
+              label: ["Public Sans", "sans-serif"],
+            },
+          },
+        },
+      };
     </script>
-<style>
-        body { font-family: 'Public Sans', sans-serif; background-color: #fbf9f7; color: #1b1c1b; }
-        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+    <style>
+      body {
+        font-family: "Public Sans", sans-serif;
+        background-color: #fbf9f7;
+        color: #1b1c1b;
+      }
+      .material-symbols-outlined {
+        font-variation-settings:
+          "FILL" 0,
+          "wght" 400,
+          "GRAD" 0,
+          "opsz" 24;
+      }
     </style>
-</head>
-<body class="bg-surface text-on-surface antialiased">
-<!-- 1. Header & Hero (Zip Entry) -->
-<header class="flex justify-between items-center px-6 py-4 w-full border-b border-[#bdc9c6]/20 bg-[#fcfaf8] font-['Public_Sans'] tracking-tight">
-<div class="text-2xl font-black text-[#005c55]">Civic Research</div>
-<div class="flex items-center gap-4">
-<button class="p-2 text-slate-600 hover:bg-[#f5f3f1] transition-colors rounded-sm">
-<span class="material-symbols-outlined" data-icon="help">help</span>
-</button>
-</div>
-</header>
-<main>
-<!-- Hero Section -->
-<section class="relative px-6 pt-16 pb-20">
-<h1 class="text-5xl font-extrabold leading-[1.1] tracking-tighter text-on-surface mb-6">
-                Your Ballot, Your Research, Your Privacy.
-            </h1>
-<p class="text-xl text-on-surface-variant mb-10 leading-relaxed">
-                The Modern Archivist's approach to democracy. Unbiased data, locally curated, and strictly anonymous. No accounts, no cookies, just the facts.
+  </head>
+  <body class="bg-surface text-on-surface antialiased">
+    <!-- 1. Header & Hero (Zip Entry) -->
+    <header
+      class="flex justify-between items-center px-6 py-4 w-full border-b border-[#bdc9c6]/20 bg-[#fcfaf8] font-['Public_Sans'] tracking-tight"
+    >
+      <div class="text-2xl font-black text-[#005c55]">Civic Research</div>
+      <div class="flex items-center gap-4">
+        <button
+          class="p-2 text-slate-600 hover:bg-[#f5f3f1] transition-colors rounded-sm"
+        >
+          <span class="material-symbols-outlined" data-icon="help">help</span>
+        </button>
+      </div>
+    </header>
+    <main>
+      <!-- Hero Section -->
+      <section class="relative px-6 pt-16 pb-20">
+        <h1
+          class="text-5xl font-extrabold leading-[1.1] tracking-tighter text-on-surface mb-6"
+        >
+          Your Ballot, Your Research, Your Privacy.
+        </h1>
+        <p class="text-xl text-on-surface-variant mb-10 leading-relaxed">
+          The Modern Archivist's approach to democracy. Unbiased data, locally
+          curated, and strictly anonymous. No accounts, no cookies, just the
+          facts.
+        </p>
+        <!-- ZIP Code Input -->
+        <div
+          class="bg-surface-container-lowest p-2 border-b-2 border-primary flex items-end gap-2 shadow-sm mb-8"
+        >
+          <div class="flex-grow">
+            <label
+              class="block text-xs font-bold uppercase tracking-widest text-primary mb-1 px-1"
+              >Enter Zip Code</label
+            >
+            <input
+              class="w-full bg-transparent border-none focus:ring-0 text-2xl font-bold p-1 placeholder:text-surface-container-highest"
+              placeholder="10001"
+              type="text"
+            />
+          </div>
+          <button
+            class="bg-primary text-on-primary px-6 py-4 font-bold text-base hover:opacity-90 transition-opacity"
+          >
+            View Ballot
+          </button>
+        </div>
+        <!-- Trust Signals -->
+        <div
+          class="flex flex-wrap gap-4 text-[13px] font-medium text-on-surface-variant"
+        >
+          <div class="flex items-center gap-1">
+            <span
+              class="material-symbols-outlined text-primary text-base"
+              data-icon="shield"
+              >shield</span
+            >
+            No data stored.
+          </div>
+          <div class="flex items-center gap-1">
+            <span
+              class="material-symbols-outlined text-primary text-base"
+              data-icon="person_off"
+              >person_off</span
+            >
+            No accounts.
+          </div>
+          <div class="flex items-center gap-1">
+            <span
+              class="material-symbols-outlined text-primary text-base"
+              data-icon="lock"
+              >lock</span
+            >
+            100% private.
+          </div>
+        </div>
+      </section>
+      <!-- 2. Returning User (Profile Upload) -->
+      <section class="bg-surface-container-low py-16 px-6">
+        <div class="space-y-6">
+          <span
+            class="inline-block px-4 py-1 bg-secondary-container text-on-secondary-container rounded-full text-[10px] font-bold uppercase tracking-widest"
+            >Efficiency</span
+          >
+          <h2 class="text-3xl font-bold text-on-surface leading-tight">
+            Returning User? Jumpstart your Personalized Ballot.
+          </h2>
+          <p class="text-base text-on-surface-variant">
+            If you have a Voter Profile from a previous session, upload below to
+            get a quick start on your ballot.
+          </p>
+          <p class="text-sm text-on-surface-variant leading-relaxed opacity-80">
+            Note: We do NOT store any data. Our unique encryption protocol
+            allows you to save progress locally. When you return, simply reload
+            your file.
+          </p>
+          <div
+            class="bg-surface-container-lowest p-8 border-l-4 border-tertiary mt-8"
+          >
+            <h3 class="text-xl font-bold text-on-surface mb-4">
+              Upload Your Voter Profile
+            </h3>
+            <p class="text-on-surface-variant mb-6 text-sm leading-relaxed">
+              Drag and drop your encrypted
+              <span class="font-mono font-bold text-primary">.CIVIC</span> file
+              here.
             </p>
-<!-- ZIP Code Input -->
-<div class="bg-surface-container-lowest p-2 border-b-2 border-primary flex items-end gap-2 shadow-sm mb-8">
-<div class="flex-grow">
-<label class="block text-xs font-bold uppercase tracking-widest text-primary mb-1 px-1">Enter Zip Code</label>
-<input class="w-full bg-transparent border-none focus:ring-0 text-2xl font-bold p-1 placeholder:text-surface-container-highest" placeholder="10001" type="text"/>
-</div>
-<button class="bg-primary text-on-primary px-6 py-4 font-bold text-base hover:opacity-90 transition-opacity">
-                    View Ballot
+            <div
+              class="border-2 border-dashed border-outline-variant p-8 flex flex-col items-center justify-center gap-4 hover:border-primary hover:bg-primary/5 transition-all cursor-pointer group rounded-lg"
+            >
+              <span
+                class="material-symbols-outlined text-4xl text-outline group-hover:text-primary transition-colors"
+                data-icon="upload_file"
+                >upload_file</span
+              >
+              <div class="text-center">
+                <span
+                  class="block text-xs font-bold uppercase tracking-widest text-on-surface group-hover:text-primary transition-colors"
+                  >Select File</span
+                >
+                <span class="text-[10px] text-outline"
+                  >or drag and drop here</span
+                >
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+      <!-- 3. Resource Links -->
+      <section class="px-6 py-12 space-y-4">
+        <!-- Card 1: Polling Places -->
+        <div
+          class="bg-surface-container-high p-8 flex flex-col justify-between min-h-[200px]"
+        >
+          <div>
+            <h3 class="text-xl font-bold mb-3">Polling Places</h3>
+            <p class="text-sm text-on-surface-variant leading-relaxed">
+              Real-time data on wait times and locations for the 2024 Election
+              cycle. Find your nearest precinct with zero tracking.
+            </p>
+          </div>
+          <div class="mt-6">
+            <button
+              class="text-primary text-sm font-bold flex items-center gap-2 group"
+            >
+              Locate Now
+              <span
+                class="material-symbols-outlined group-hover:translate-x-1 transition-transform text-base"
+                data-icon="arrow_forward"
+                >arrow_forward</span
+              >
+            </button>
+          </div>
+        </div>
+        <!-- Card 2: Election Dates -->
+        <div
+          class="bg-primary p-8 text-on-primary min-h-[160px] flex flex-col justify-between"
+        >
+          <span
+            class="material-symbols-outlined text-3xl mb-4"
+            data-icon="calendar_today"
+            >calendar_today</span
+          >
+          <div>
+            <h3 class="text-xl font-bold mb-2">Election Dates</h3>
+            <p class="opacity-80 text-xs leading-relaxed">
+              Check registration deadlines, early voting schedules, and key
+              dates for the May 2nd election.
+            </p>
+          </div>
+        </div>
+        <!-- Card 3: ID Rules -->
+        <div
+          class="bg-surface-container-lowest p-8 border-b border-outline-variant/30"
+        >
+          <h3
+            class="text-sm font-bold mb-3 uppercase tracking-widest text-primary"
+          >
+            ID Rules
+          </h3>
+          <p class="text-sm text-on-surface-variant leading-relaxed">
+            Detailed breakdown of state-specific requirements. Don't be
+            surprised at the door.
+          </p>
+        </div>
+      </section>
+      <!-- 4. Integrated "How it Works" Visual Guide (from SCREEN_24) -->
+      <section class="bg-surface border-t border-outline-variant/20 pt-16">
+        <div class="px-6 mb-12">
+          <h2
+            class="font-headline font-extrabold text-5xl tracking-tight text-on-surface leading-[1.1] mb-4"
+          >
+            How it Works
+          </h2>
+          <p class="font-body text-lg text-on-surface-variant leading-relaxed">
+            Empowering your vote through neutral, data-driven insights. Our
+            platform transforms complex legislative data into clear,
+            non-partisan research.
+          </p>
+        </div>
+        <!-- Steps Container -->
+        <div class="space-y-0">
+          <!-- Step 1 -->
+          <section
+            class="bg-surface-container-low px-6 py-12 border-y border-outline-variant/10"
+          >
+            <div class="flex items-center gap-4 mb-6">
+              <span
+                class="font-headline font-black text-6xl text-primary leading-none"
+                >01</span
+              >
+              <div class="bg-primary/10 p-3 rounded-full">
+                <span
+                  class="material-symbols-outlined text-primary text-3xl"
+                  data-icon="pin_drop"
+                  >pin_drop</span
+                >
+              </div>
+            </div>
+            <div class="mb-8">
+              <h3 class="font-headline font-bold text-2xl text-on-surface mb-2">
+                Locate Your District
+              </h3>
+              <p
+                class="font-body text-base text-on-surface-variant leading-snug"
+              >
+                Instantly map your residential zip code to your specific
+                electoral district and candidates.
+              </p>
+            </div>
+            <div
+              class="bg-surface-container-lowest p-6 shadow-sm border border-outline-variant/20"
+            >
+              <div class="flex gap-2">
+                <input
+                  class="w-full bg-surface-container-low border-0 border-b-2 border-primary p-3 font-headline font-bold text-xl focus:ring-0"
+                  placeholder="10001"
+                  type="text"
+                  value="10001"
+                />
+                <button
+                  class="bg-primary text-on-primary px-5 py-2 font-bold flex items-center justify-center"
+                >
+                  <span class="material-symbols-outlined" data-icon="search"
+                    >search</span
+                  >
                 </button>
-</div>
-<!-- Trust Signals -->
-<div class="flex flex-wrap gap-4 text-[13px] font-medium text-on-surface-variant">
-<div class="flex items-center gap-1">
-<span class="material-symbols-outlined text-primary text-base" data-icon="shield">shield</span>
-                    No data stored.
+              </div>
+              <div class="mt-4 flex items-center gap-2">
+                <span
+                  class="material-symbols-outlined text-primary text-sm"
+                  data-icon="location_on"
+                  >location_on</span
+                >
+                <span
+                  class="text-xs font-bold text-primary uppercase tracking-wider"
+                  >District 12 · New York, NY</span
+                >
+              </div>
+            </div>
+          </section>
+          <!-- Step 2 -->
+          <section class="bg-surface px-6 py-12">
+            <div class="flex items-center gap-4 mb-6">
+              <span
+                class="font-headline font-black text-6xl text-primary leading-none"
+                >02</span
+              >
+              <div class="bg-primary/10 p-3 rounded-full">
+                <span
+                  class="material-symbols-outlined text-primary text-3xl"
+                  data-icon="forum"
+                  >forum</span
+                >
+              </div>
+            </div>
+            <div class="mb-8">
+              <h3 class="font-headline font-bold text-2xl text-on-surface mb-2">
+                Engage the Archivist
+              </h3>
+              <p
+                class="font-body text-base text-on-surface-variant leading-snug"
+              >
+                Ask anything about candidate voting records, donor history, or
+                legislative impacts.
+              </p>
+            </div>
+            <!-- Visual Chat Bubble Snippet -->
+            <div class="space-y-4 max-w-sm mx-auto">
+              <div class="flex justify-end">
+                <div
+                  class="bg-surface-container-highest px-4 py-3 rounded-2xl rounded-tr-none shadow-sm border border-outline-variant/20"
+                >
+                  <p class="text-sm font-medium text-on-surface">
+                    "Compare Candidate Smith and Jones on healthcare."
+                  </p>
                 </div>
-<div class="flex items-center gap-1">
-<span class="material-symbols-outlined text-primary text-base" data-icon="person_off">person_off</span>
-                    No accounts.
+              </div>
+              <div class="flex justify-start">
+                <div
+                  class="bg-primary px-4 py-4 rounded-2xl rounded-tl-none shadow-md border-l-4 border-primary"
+                >
+                  <div class="flex items-center gap-2 mb-2">
+                    <span
+                      class="material-symbols-outlined text-on-primary text-xs"
+                      data-icon="auto_awesome"
+                      >auto_awesome</span
+                    >
+                    <span
+                      class="font-label text-[10px] font-bold uppercase tracking-widest text-on-primary/80"
+                      >Archivist Assistant</span
+                    >
+                  </div>
+                  <p class="text-sm text-on-primary leading-relaxed">
+                    Smith supports public option expansion (HB-12), while Jones
+                    prioritizes private sector subsidies. Smith's funding is 60%
+                    grassroots...
+                  </p>
                 </div>
-<div class="flex items-center gap-1">
-<span class="material-symbols-outlined text-primary text-base" data-icon="lock">lock</span>
-                    100% private.
+              </div>
+            </div>
+          </section>
+          <!-- Step 3 -->
+          <section
+            class="bg-surface-container-low px-6 py-12 border-t border-outline-variant/10"
+          >
+            <div class="flex items-center gap-4 mb-6">
+              <span
+                class="font-headline font-black text-6xl text-primary leading-none"
+                >03</span
+              >
+              <div class="bg-primary/10 p-3 rounded-full">
+                <span
+                  class="material-symbols-outlined text-primary text-3xl"
+                  data-icon="task_alt"
+                  >task_alt</span
+                >
+              </div>
+            </div>
+            <div class="mb-8">
+              <h3 class="font-headline font-bold text-2xl text-on-surface mb-2">
+                Take Action
+              </h3>
+              <p
+                class="font-body text-base text-on-surface-variant leading-snug"
+              >
+                Download your personalized voter guide to carry into the polling
+                booth.
+              </p>
+            </div>
+            <div class="relative max-w-xs mx-auto pb-8">
+              <!-- Mini Ballot Representation -->
+              <div
+                class="bg-white p-5 shadow-lg border border-outline-variant/20 -rotate-2"
+              >
+                <div class="border-b-2 border-primary/20 pb-3 mb-3">
+                  <div class="flex justify-between items-start">
+                    <span
+                      class="font-black text-lg tracking-tighter text-primary"
+                      >VOTER CHOICE</span
+                    >
+                    <span class="text-[10px] font-bold text-on-surface-variant"
+                      >2024</span
+                    >
+                  </div>
                 </div>
-</div>
-</section>
-<!-- 2. Returning User (Profile Upload) -->
-<section class="bg-surface-container-low py-16 px-6">
-<div class="space-y-6">
-<span class="inline-block px-4 py-1 bg-secondary-container text-on-secondary-container rounded-full text-[10px] font-bold uppercase tracking-widest">Efficiency</span>
-<h2 class="text-3xl font-bold text-on-surface leading-tight">Returning User? Jumpstart your Personalized Ballot.</h2>
-<p class="text-base text-on-surface-variant">
-                    If you have a Voter Profile from a previous session, upload below to get a quick start on your ballot.
-                </p>
-<p class="text-sm text-on-surface-variant leading-relaxed opacity-80">
-                    Note: We do NOT store any data. Our unique encryption protocol allows you to save progress locally. When you return, simply reload your file.
-                </p>
-<div class="bg-surface-container-lowest p-8 border-l-4 border-tertiary mt-8">
-<h3 class="text-xl font-bold text-on-surface mb-4">Upload Your Voter Profile</h3>
-<p class="text-on-surface-variant mb-6 text-sm leading-relaxed">
-                        Drag and drop your encrypted <span class="font-mono font-bold text-primary">.CIVIC</span> file here.
-                    </p>
-<div class="border-2 border-dashed border-outline-variant p-8 flex flex-col items-center justify-center gap-4 hover:border-primary hover:bg-primary/5 transition-all cursor-pointer group rounded-lg">
-<span class="material-symbols-outlined text-4xl text-outline group-hover:text-primary transition-colors" data-icon="upload_file">upload_file</span>
-<div class="text-center">
-<span class="block text-xs font-bold uppercase tracking-widest text-on-surface group-hover:text-primary transition-colors">Select File</span>
-<span class="text-[10px] text-outline">or drag and drop here</span>
-</div>
-</div>
-</div>
-</div>
-</section>
-<!-- 3. Resource Links -->
-<section class="px-6 py-12 space-y-4">
-<!-- Card 1: Polling Places -->
-<div class="bg-surface-container-high p-8 flex flex-col justify-between min-h-[200px]">
-<div>
-<h3 class="text-xl font-bold mb-3">Polling Places</h3>
-<p class="text-sm text-on-surface-variant leading-relaxed">Real-time data on wait times and locations for the 2024 Election cycle. Find your nearest precinct with zero tracking.</p>
-</div>
-<div class="mt-6">
-<button class="text-primary text-sm font-bold flex items-center gap-2 group">
-                        Locate Now <span class="material-symbols-outlined group-hover:translate-x-1 transition-transform text-base" data-icon="arrow_forward">arrow_forward</span>
-</button>
-</div>
-</div>
-<!-- Card 2: Election Dates -->
-<div class="bg-primary p-8 text-on-primary min-h-[160px] flex flex-col justify-between">
-<span class="material-symbols-outlined text-3xl mb-4" data-icon="calendar_today">calendar_today</span>
-<div>
-<h3 class="text-xl font-bold mb-2">Election Dates</h3>
-<p class="opacity-80 text-xs leading-relaxed">Check registration deadlines, early voting schedules, and key dates for the May 2nd election.</p>
-</div>
-</div>
-<!-- Card 3: ID Rules -->
-<div class="bg-surface-container-lowest p-8 border-b border-outline-variant/30">
-<h3 class="text-sm font-bold mb-3 uppercase tracking-widest text-primary">ID Rules</h3>
-<p class="text-sm text-on-surface-variant leading-relaxed">Detailed breakdown of state-specific requirements. Don't be surprised at the door.</p>
-</div>
-</section>
-<!-- 4. Integrated "How it Works" Visual Guide (from SCREEN_24) -->
-<section class="bg-surface border-t border-outline-variant/20 pt-16">
-<div class="px-6 mb-12">
-<h2 class="font-headline font-extrabold text-5xl tracking-tight text-on-surface leading-[1.1] mb-4">
-                    How it Works
-                </h2>
-<p class="font-body text-lg text-on-surface-variant leading-relaxed">
-                    Empowering your vote through neutral, data-driven insights. Our platform transforms complex legislative data into clear, non-partisan research.
-                </p>
-</div>
-<!-- Steps Container -->
-<div class="space-y-0">
-<!-- Step 1 -->
-<section class="bg-surface-container-low px-6 py-12 border-y border-outline-variant/10">
-<div class="flex items-center gap-4 mb-6">
-<span class="font-headline font-black text-6xl text-primary leading-none">01</span>
-<div class="bg-primary/10 p-3 rounded-full">
-<span class="material-symbols-outlined text-primary text-3xl" data-icon="pin_drop">pin_drop</span>
-</div>
-</div>
-<div class="mb-8">
-<h3 class="font-headline font-bold text-2xl text-on-surface mb-2">Locate Your District</h3>
-<p class="font-body text-base text-on-surface-variant leading-snug">
-                            Instantly map your residential zip code to your specific electoral district and candidates.
-                        </p>
-</div>
-<div class="bg-surface-container-lowest p-6 shadow-sm border border-outline-variant/20">
-<div class="flex gap-2">
-<input class="w-full bg-surface-container-low border-0 border-b-2 border-primary p-3 font-headline font-bold text-xl focus:ring-0" placeholder="10001" type="text" value="10001"/>
-<button class="bg-primary text-on-primary px-5 py-2 font-bold flex items-center justify-center">
-<span class="material-symbols-outlined" data-icon="search">search</span>
-</button>
-</div>
-<div class="mt-4 flex items-center gap-2">
-<span class="material-symbols-outlined text-primary text-sm" data-icon="location_on">location_on</span>
-<span class="text-xs font-bold text-primary uppercase tracking-wider">District 12 · New York, NY</span>
-</div>
-</div>
-</section>
-<!-- Step 2 -->
-<section class="bg-surface px-6 py-12">
-<div class="flex items-center gap-4 mb-6">
-<span class="font-headline font-black text-6xl text-primary leading-none">02</span>
-<div class="bg-primary/10 p-3 rounded-full">
-<span class="material-symbols-outlined text-primary text-3xl" data-icon="forum">forum</span>
-</div>
-</div>
-<div class="mb-8">
-<h3 class="font-headline font-bold text-2xl text-on-surface mb-2">Engage the Archivist</h3>
-<p class="font-body text-base text-on-surface-variant leading-snug">
-                            Ask anything about candidate voting records, donor history, or legislative impacts.
-                        </p>
-</div>
-<!-- Visual Chat Bubble Snippet -->
-<div class="space-y-4 max-w-sm mx-auto">
-<div class="flex justify-end">
-<div class="bg-surface-container-highest px-4 py-3 rounded-2xl rounded-tr-none shadow-sm border border-outline-variant/20">
-<p class="text-sm font-medium text-on-surface">"Compare Candidate Smith and Jones on healthcare."</p>
-</div>
-</div>
-<div class="flex justify-start">
-<div class="bg-primary px-4 py-4 rounded-2xl rounded-tl-none shadow-md border-l-4 border-primary">
-<div class="flex items-center gap-2 mb-2">
-<span class="material-symbols-outlined text-on-primary text-xs" data-icon="auto_awesome">auto_awesome</span>
-<span class="font-label text-[10px] font-bold uppercase tracking-widest text-on-primary/80">Archivist Assistant</span>
-</div>
-<p class="text-sm text-on-primary leading-relaxed">Smith supports public option expansion (HB-12), while Jones prioritizes private sector subsidies. Smith's funding is 60% grassroots...</p>
-</div>
-</div>
-</div>
-</section>
-<!-- Step 3 -->
-<section class="bg-surface-container-low px-6 py-12 border-t border-outline-variant/10">
-<div class="flex items-center gap-4 mb-6">
-<span class="font-headline font-black text-6xl text-primary leading-none">03</span>
-<div class="bg-primary/10 p-3 rounded-full">
-<span class="material-symbols-outlined text-primary text-3xl" data-icon="task_alt">task_alt</span>
-</div>
-</div>
-<div class="mb-8">
-<h3 class="font-headline font-bold text-2xl text-on-surface mb-2">Take Action</h3>
-<p class="font-body text-base text-on-surface-variant leading-snug">
-                            Download your personalized voter guide to carry into the polling booth.
-                        </p>
-</div>
-<div class="relative max-w-xs mx-auto pb-8">
-<!-- Mini Ballot Representation -->
-<div class="bg-white p-5 shadow-lg border border-outline-variant/20 -rotate-2">
-<div class="border-b-2 border-primary/20 pb-3 mb-3">
-<div class="flex justify-between items-start">
-<span class="font-black text-lg tracking-tighter text-primary">VOTER CHOICE</span>
-<span class="text-[10px] font-bold text-on-surface-variant">2024</span>
-</div>
-</div>
-<div class="space-y-2">
-<div class="flex justify-between items-center border-b border-surface-container-highest pb-2">
-<span class="text-xs font-bold">Governor</span>
-<span class="material-symbols-outlined text-primary text-sm" data-icon="check_circle">check_circle</span>
-</div>
-<div class="flex justify-between items-center">
-<span class="text-xs font-bold">State Senate</span>
-<span class="material-symbols-outlined text-primary text-sm" data-icon="check_circle">check_circle</span>
-</div>
-</div>
-</div>
-<!-- Profile Download Button -->
-<button class="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-primary text-on-primary px-6 py-3 rounded-full flex items-center gap-2 shadow-xl z-10 whitespace-nowrap">
-<span class="material-symbols-outlined text-sm" data-icon="download">download</span>
-<span class="font-label text-xs font-bold uppercase tracking-widest">Download Voter Profile</span>
-</button>
-</div>
-</section>
-</div>
-<!-- Integrated CTA Section -->
-<section class="px-6 py-16 text-center bg-primary text-on-primary mt-12">
-<h2 class="font-headline font-bold text-3xl mb-4 tracking-tight">Ready to choose?</h2>
-<p class="text-on-primary/90 mb-8 max-w-xs mx-auto text-base">Join thousands of informed citizens using Civic Research for non-partisan guidance.</p>
-<button class="w-full bg-white text-primary py-4 font-black text-lg tracking-tighter uppercase shadow-xl">
-                    Get Started Now
-                </button>
-</section>
-</section>
-<!-- 5. Mission Statement (at the very bottom) -->
-<section class="py-24 px-6 border-t border-outline-variant/10">
-<div class="max-w-4xl mx-auto text-center">
-<span class="material-symbols-outlined text-primary text-5xl mb-8" data-icon="account_balance">account_balance</span>
-<h2 class="text-4xl font-extrabold text-on-surface mb-8 tracking-tight">Mission Statement</h2>
-<p class="text-xl leading-relaxed text-on-surface font-light">
-                    "We believe democracy thrives when barriers to information are removed. <span class="text-primary font-bold">Voter Choice</span> was built to provide a high-fidelity, archival interface for civic data, ensuring that every citizen has access to their local ballot without the cost of their personal privacy."
-                </p>
-<div class="mt-12 h-1 w-24 bg-tertiary mx-auto"></div>
-</div>
-</section>
-</main>
-<!-- 6. Original Footer -->
-<footer class="bg-surface-container-high py-16 px-6 border-t border-outline-variant/20">
-<div class="max-w-7xl mx-auto flex flex-col gap-10">
-<div class="max-w-xs">
-<div class="text-xl font-black text-[#005c55] mb-4">Voter Choice</div>
-<p class="text-sm text-on-surface-variant leading-relaxed">
-                    A non-partisan digital archive dedicated to civic clarity. Produced by Civic Research. © 2024.
-                </p>
-</div>
-<div class="grid grid-cols-2 gap-8">
-<div>
-<h4 class="text-xs font-bold uppercase tracking-widest text-primary mb-4">Resources</h4>
-<ul class="space-y-2 text-sm text-on-surface-variant">
-<li><a class="hover:text-primary" href="#">Ballot Data</a></li>
-<li><a class="hover:text-primary" href="#">API Access</a></li>
-<li><a class="hover:text-primary" href="#">Source Code</a></li>
-</ul>
-</div>
-<div>
-<h4 class="text-xs font-bold uppercase tracking-widest text-primary mb-4">Legal</h4>
-<ul class="space-y-2 text-sm text-on-surface-variant">
-<li><a class="hover:text-primary" href="#">Privacy Policy</a></li>
-<li><a class="hover:text-primary" href="#">Terms of Use</a></li>
-</ul>
-</div>
-<div>
-<h4 class="text-xs font-bold uppercase tracking-widest text-primary mb-4">Connect</h4>
-<ul class="space-y-2 text-sm text-on-surface-variant">
-<li><a class="hover:text-primary" href="#">Support</a></li>
-<li><a class="hover:text-primary" href="#">GitHub</a></li>
-</ul>
-</div>
-</div>
-</div>
-</footer>
-</body></html>
+                <div class="space-y-2">
+                  <div
+                    class="flex justify-between items-center border-b border-surface-container-highest pb-2"
+                  >
+                    <span class="text-xs font-bold">Governor</span>
+                    <span
+                      class="material-symbols-outlined text-primary text-sm"
+                      data-icon="check_circle"
+                      >check_circle</span
+                    >
+                  </div>
+                  <div class="flex justify-between items-center">
+                    <span class="text-xs font-bold">State Senate</span>
+                    <span
+                      class="material-symbols-outlined text-primary text-sm"
+                      data-icon="check_circle"
+                      >check_circle</span
+                    >
+                  </div>
+                </div>
+              </div>
+              <!-- Profile Download Button -->
+              <button
+                class="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-primary text-on-primary px-6 py-3 rounded-full flex items-center gap-2 shadow-xl z-10 whitespace-nowrap"
+              >
+                <span
+                  class="material-symbols-outlined text-sm"
+                  data-icon="download"
+                  >download</span
+                >
+                <span
+                  class="font-label text-xs font-bold uppercase tracking-widest"
+                  >Download Voter Profile</span
+                >
+              </button>
+            </div>
+          </section>
+        </div>
+        <!-- Integrated CTA Section -->
+        <section
+          class="px-6 py-16 text-center bg-primary text-on-primary mt-12"
+        >
+          <h2 class="font-headline font-bold text-3xl mb-4 tracking-tight">
+            Ready to choose?
+          </h2>
+          <p class="text-on-primary/90 mb-8 max-w-xs mx-auto text-base">
+            Join thousands of informed citizens using Civic Research for
+            non-partisan guidance.
+          </p>
+          <button
+            class="w-full bg-white text-primary py-4 font-black text-lg tracking-tighter uppercase shadow-xl"
+          >
+            Get Started Now
+          </button>
+        </section>
+      </section>
+      <!-- 5. Mission Statement (at the very bottom) -->
+      <section class="py-24 px-6 border-t border-outline-variant/10">
+        <div class="max-w-4xl mx-auto text-center">
+          <span
+            class="material-symbols-outlined text-primary text-5xl mb-8"
+            data-icon="account_balance"
+            >account_balance</span
+          >
+          <h2
+            class="text-4xl font-extrabold text-on-surface mb-8 tracking-tight"
+          >
+            Mission Statement
+          </h2>
+          <p class="text-xl leading-relaxed text-on-surface font-light">
+            "We believe democracy thrives when barriers to information are
+            removed.
+            <span class="text-primary font-bold">Voter Choice</span> was built
+            to provide a high-fidelity, archival interface for civic data,
+            ensuring that every citizen has access to their local ballot without
+            the cost of their personal privacy."
+          </p>
+          <div class="mt-12 h-1 w-24 bg-tertiary mx-auto"></div>
+        </div>
+      </section>
+    </main>
+    <!-- 6. Original Footer -->
+    <footer
+      class="bg-surface-container-high py-16 px-6 border-t border-outline-variant/20"
+    >
+      <div class="max-w-7xl mx-auto flex flex-col gap-10">
+        <div class="max-w-xs">
+          <div class="text-xl font-black text-[#005c55] mb-4">Voter Choice</div>
+          <p class="text-sm text-on-surface-variant leading-relaxed">
+            A non-partisan digital archive dedicated to civic clarity. Produced
+            by Civic Research. © 2024.
+          </p>
+        </div>
+        <div class="grid grid-cols-2 gap-8">
+          <div>
+            <h4
+              class="text-xs font-bold uppercase tracking-widest text-primary mb-4"
+            >
+              Resources
+            </h4>
+            <ul class="space-y-2 text-sm text-on-surface-variant">
+              <li><a class="hover:text-primary" href="#">Ballot Data</a></li>
+              <li><a class="hover:text-primary" href="#">API Access</a></li>
+              <li><a class="hover:text-primary" href="#">Source Code</a></li>
+            </ul>
+          </div>
+          <div>
+            <h4
+              class="text-xs font-bold uppercase tracking-widest text-primary mb-4"
+            >
+              Legal
+            </h4>
+            <ul class="space-y-2 text-sm text-on-surface-variant">
+              <li><a class="hover:text-primary" href="#">Privacy Policy</a></li>
+              <li><a class="hover:text-primary" href="#">Terms of Use</a></li>
+            </ul>
+          </div>
+          <div>
+            <h4
+              class="text-xs font-bold uppercase tracking-widest text-primary mb-4"
+            >
+              Connect
+            </h4>
+            <ul class="space-y-2 text-sm text-on-surface-variant">
+              <li><a class="hover:text-primary" href="#">Support</a></li>
+              <li><a class="hover:text-primary" href="#">GitHub</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

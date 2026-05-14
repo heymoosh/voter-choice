@@ -17,6 +17,7 @@ Last updated: 2026-05-10
 - `deploy.yml` deliberately NOT extended with `DATABASE_URL` / `OPENSTATES_API_KEY` pulls yet — those land in Phase F when `/api/alignment` exists
 
 User actions before Phase B:
+
 1. `DATABASE_URL=<neon-pooled-url> npm run db:migrate` — apply initial migration
 2. `DATABASE_URL=<neon-pooled-url> npm run db:smoke` — confirm connection
 3. Replace `<DATABASE_URL_BWS_SECRET_ID>` and `<OPENSTATES_API_KEY_BWS_SECRET_ID>` placeholders in the three ingest workflow files with the actual BWS UUIDs (before next Sunday's first cron)
@@ -77,21 +78,22 @@ The Next.js app reads from the database via lightweight API routes at request ti
 
 Seven phases. Each lands green and gives a checkpoint before continuing.
 
-| Phase | Scope | Deliverable | Approx. time | Status |
-|-------|-------|-------------|--------------|--------|
-| A | Foundation | Drizzle setup; schema for bills, votes, candidates, candidate_offices, donors, issue_tags, scorecard_meta. Neon provisioning. GitHub Actions skeleton (no real ingest yet). | 1 day | ✅ shipped (`f3bcde5`) |
-| B | Federal votes | GovTrack bulk ingest of House + Senate roll-call votes for the current Congress. Backfill prior session for incumbents. | 2 days | queued |
-| C | State votes | OpenStates ingest for all 50 state legislatures, paginated. Matrix workflow: one job per state for parallelism. | 3–4 days | queued |
-| D | Issue tagging | LLM batch-tag pipeline: per bill, generate `(canonical_issue, stance_lens)` tags using `canonicalIssues.ts` vocabulary. Cache forever. Backfill all ingested bills. | 2 days | queued |
-| E | Donors | FEC bulk for federal; FollowTheMoney API for state; bucket categorization using existing `PATTERN_TAXONOMIES.md` vocabulary. | 2 days | queued |
-| F | App cutover | New `/api/alignment` endpoint. Replace LLM web_search emit path in `BALLOT_PROMPT.md` Act 3 with: model calls `/api/alignment` via a custom tool, gets back deterministic data, emits `[ALIGNMENT_SCORES]` populated from the response. Empty-state when no data for a (candidate, canonical issue). | 2 days | queued |
-| G | Verification | E2E test on three real candidates per scope (federal House, federal Senate, state legislature). Lint, test, build. Confirm cost savings via budget telemetry. | 1 day | queued |
+| Phase | Scope         | Deliverable                                                                                                                                                                                                                                                                                          | Approx. time | Status                 |
+| ----- | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------------------- |
+| A     | Foundation    | Drizzle setup; schema for bills, votes, candidates, candidate_offices, donors, issue_tags, scorecard_meta. Neon provisioning. GitHub Actions skeleton (no real ingest yet).                                                                                                                          | 1 day        | ✅ shipped (`f3bcde5`) |
+| B     | Federal votes | GovTrack bulk ingest of House + Senate roll-call votes for the current Congress. Backfill prior session for incumbents.                                                                                                                                                                              | 2 days       | queued                 |
+| C     | State votes   | OpenStates ingest for all 50 state legislatures, paginated. Matrix workflow: one job per state for parallelism.                                                                                                                                                                                      | 3–4 days     | queued                 |
+| D     | Issue tagging | LLM batch-tag pipeline: per bill, generate `(canonical_issue, stance_lens)` tags using `canonicalIssues.ts` vocabulary. Cache forever. Backfill all ingested bills.                                                                                                                                  | 2 days       | queued                 |
+| E     | Donors        | FEC bulk for federal; FollowTheMoney API for state; bucket categorization using existing `PATTERN_TAXONOMIES.md` vocabulary.                                                                                                                                                                         | 2 days       | queued                 |
+| F     | App cutover   | New `/api/alignment` endpoint. Replace LLM web_search emit path in `BALLOT_PROMPT.md` Act 3 with: model calls `/api/alignment` via a custom tool, gets back deterministic data, emits `[ALIGNMENT_SCORES]` populated from the response. Empty-state when no data for a (candidate, canonical issue). | 2 days       | queued                 |
+| G     | Verification  | E2E test on three real candidates per scope (federal House, federal Senate, state legislature). Lint, test, build. Confirm cost savings via budget telemetry.                                                                                                                                        | 1 day        | queued                 |
 
 **Total estimate:** ~13 working days. Likely longer in practice given OpenStates rate limits and per-state schema variations.
 
 ## Critical files / paths
 
 **Already created in Phase A:**
+
 - `db/schema.ts` — Drizzle schema for the 7 tables.
 - `db/client.ts` — Neon serverless client wrapper with defensive sentinel.
 - `db/migrations/0000_first_crystal.sql` — initial migration.
@@ -101,6 +103,7 @@ Seven phases. Each lands green and gives a checkpoint before continuing.
 - `.github/workflows/ingest-federal.yml`, `.github/workflows/ingest-states.yml`, `.github/workflows/ingest-tag-bills.yml` — workflow skeletons.
 
 **To be added in Phases B–G:**
+
 - `scripts/ingest/federal-donors.ts` — FEC bulk ingest (Phase E).
 - `scripts/ingest/state-donors.ts` — FollowTheMoney ingest (Phase E).
 - `src/app/api/alignment/route.ts` — GET endpoint: `(candidateId, canonicalIssue, resolvedStance)` → `{ kept, total, contributingVotes }` (Phase F).
@@ -109,6 +112,7 @@ Seven phases. Each lands green and gives a checkpoint before continuing.
 - `src/app/api/alignment/route.test.ts` (Phase F).
 
 **To be modified in Phases B–G:**
+
 - `docs/BALLOT_PROMPT.md` — Act 3 alignment-emit rules: replace `web_search`-based instructions with: "call the `lookup_alignment` tool with `(candidateId, canonicalIssue, resolvedStance)`; emit `[ALIGNMENT_SCORES]` populated from the response, OR `unavailable: { reason: '...' }` when no record." (Phase F)
 - `src/app/api/chat/route.ts` — register a new `lookup_alignment` Anthropic tool, route tool calls to `/api/alignment` (Phase F).
 - `.github/workflows/deploy.yml` — extend BWS secret pulls for `DATABASE_URL`, `OPENSTATES_API_KEY`, `FEC_API_KEY` (optional), `CONGRESS_GOV_API_KEY` (optional) — deferred from Phase A to Phase F.
@@ -130,7 +134,7 @@ Seven phases. Each lands green and gives a checkpoint before continuing.
 - `npm run lint` clean across new files.
 - `npm run test` green; full suite grows by the alignment-route + alignment-query + ingest-script tests.
 - `npm run build` succeeds.
-- After Phase A: schema migration applies cleanly to a fresh Neon branch. *(✅ ready to apply)*
+- After Phase A: schema migration applies cleanly to a fresh Neon branch. _(✅ ready to apply)_
 - After Phase B: a federal House member's roll-call votes are queryable in Postgres via a manual SQL probe.
 - After Phase D: bills carry canonical-issue tags; sample query returns plausible counts.
 - After Phase F: end-to-end smoke — Texas voter, two confirmed concerns, two candidate races, alignment banner renders with backend-derived scores; LLM no longer issues web_search calls for the alignment path (verified via budget telemetry showing zero web_search cost on the alignment turn).

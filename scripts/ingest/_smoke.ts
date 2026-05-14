@@ -53,17 +53,12 @@ async function main() {
     console.log(`[smoke] Inserted test bill: ${smokeId}`);
 
     // Query
-    const rows = await db
-      .select()
-      .from(bills)
-      .where(eq(bills.id, smokeId));
+    const rows = await db.select().from(bills).where(eq(bills.id, smokeId));
 
     if (rows.length !== 1) {
       throw new Error(`Expected 1 row, got ${rows.length}`);
     }
-    console.log(
-      `[smoke] Queried back: ${rows[0].id} — "${rows[0].title}"`,
-    );
+    console.log(`[smoke] Queried back: ${rows[0].id} — "${rows[0].title}"`);
 
     // Delete
     await db.delete(bills).where(eq(bills.id, smokeId));

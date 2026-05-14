@@ -236,10 +236,15 @@ describe("fetchAuditRows", () => {
     ];
     const limitFn = vi.fn().mockResolvedValue(longRows);
     const orderByFn = vi.fn().mockReturnValue({ limit: limitFn });
-    const innerJoinFn = vi.fn().mockReturnValue({ orderBy: orderByFn, where: vi.fn().mockReturnValue({ orderBy: orderByFn }) });
+    const innerJoinFn = vi.fn().mockReturnValue({
+      orderBy: orderByFn,
+      where: vi.fn().mockReturnValue({ orderBy: orderByFn }),
+    });
     const fromFn = vi.fn().mockReturnValue({ innerJoin: innerJoinFn });
     const selectFn = vi.fn().mockReturnValue({ from: fromFn });
-    const mockDb = { select: selectFn } as unknown as import("../../db/client").DbClient;
+    const mockDb = {
+      select: selectFn,
+    } as unknown as import("../../db/client").DbClient;
 
     const config: AuditConfig = { limit: 50, canonicalIssueFilter: null };
     const rows = await fetchAuditRows(mockDb, config);
@@ -260,7 +265,10 @@ describe("auditTags", () => {
 
   it("passes --limit flag through to the DB query", async () => {
     const db = makeDbClient([]);
-    const rows = await auditTags({ db, argv: ["node", "script.ts", "--limit", "5"] });
+    const rows = await auditTags({
+      db,
+      argv: ["node", "script.ts", "--limit", "5"],
+    });
     // Empty result from mock; verifying it doesn't crash with limit flag.
     expect(rows).toHaveLength(0);
   });

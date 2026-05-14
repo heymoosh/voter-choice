@@ -92,7 +92,9 @@ export function resolveConfig(
   return {
     fecApiKey: env.FEC_API_KEY || undefined,
     electionCycles: [String(currentCycle), String(priorCycle)],
-    limit: parseLimitFlag(argv) ?? parsePositiveInteger(env.DONOR_LIMIT, DEFAULT_LIMIT),
+    limit:
+      parseLimitFlag(argv) ??
+      parsePositiveInteger(env.DONOR_LIMIT, DEFAULT_LIMIT),
     fecBaseUrl: trimTrailingSlash(env.FEC_BASE_URL ?? FEC_BASE_URL),
   };
 }
@@ -167,15 +169,12 @@ async function fetchFecAllPages(
  * Accepts both camelCase (Drizzle ORM default) and snake_case (raw DB rows).
  * It may be stored as source_id / sourceId or inside raw_metadata.fec.candidate_id.
  */
-export function extractFecCandidateId(
-  candidate: UnknownRecord,
-): string | null {
+export function extractFecCandidateId(candidate: UnknownRecord): string | null {
   // Prefer sourceId / source_id which is typically set to the FEC candidate_id
   // for federal candidates ingested via federal-votes.ts.
   // FEC IDs follow the pattern: letter + 8 digits (e.g. H1234567, S0001234).
   const sourceId =
-    getString(candidate, "sourceId") ??
-    getString(candidate, "source_id");
+    getString(candidate, "sourceId") ?? getString(candidate, "source_id");
   if (sourceId && /^[A-Z]\d{7,8}$/u.test(sourceId)) return sourceId;
 
   // Fall back to raw_metadata / rawMetadata → fec.candidate_id
@@ -216,13 +215,22 @@ export async function fetchFecTotals(
 
   for (const row of results) {
     // Individual contributions (unitemized < $200 and itemized >= $200)
-    const smallIndividual = getNumber(row, "individual_unitemized_contributions") ?? 0;
-    const largeIndividual = getNumber(row, "individual_itemized_contributions") ?? 0;
-    const pacContributions = getNumber(row, "other_political_committee_contributions") ?? 0;
-    const partyContributions = getNumber(row, "political_party_committee_contributions") ?? 0;
-    const candidateContributions = getNumber(row, "candidate_contribution") ?? 0;
+    const smallIndividual =
+      getNumber(row, "individual_unitemized_contributions") ?? 0;
+    const largeIndividual =
+      getNumber(row, "individual_itemized_contributions") ?? 0;
+    const pacContributions =
+      getNumber(row, "other_political_committee_contributions") ?? 0;
+    const partyContributions =
+      getNumber(row, "political_party_committee_contributions") ?? 0;
+    const candidateContributions =
+      getNumber(row, "candidate_contribution") ?? 0;
 
-    accumulate(buckets, "Small individual donors (under $200)", smallIndividual);
+    accumulate(
+      buckets,
+      "Small individual donors (under $200)",
+      smallIndividual,
+    );
     accumulate(buckets, "Large individual donors ($200+)", largeIndividual);
     accumulate(buckets, "Party committees", partyContributions);
     if (candidateContributions > 0) {
@@ -316,7 +324,9 @@ export async function buildDonorRows(
 
   const fecId = extractFecCandidateId(candidate);
   if (!fecId) {
-    console.warn(`[federal-donors] no_fec_id candidate=${candidateId} — skipping`);
+    console.warn(
+      `[federal-donors] no_fec_id candidate=${candidateId} — skipping`,
+    );
     return [];
   }
 
@@ -464,7 +474,9 @@ export async function ingestFederalDonors({
     .limit(config.limit);
 
   counts.candidatesQueried = federalCandidates.length;
-  console.log(`[federal-donors] found ${federalCandidates.length} federal candidates`);
+  console.log(
+    `[federal-donors] found ${federalCandidates.length} federal candidates`,
+  );
 
   // Process in chunks of 25 with 1-second delay between chunks
   const chunks = chunkArray(federalCandidates as UnknownRecord[], CHUNK_SIZE);
