@@ -70,6 +70,8 @@ const NAME_SUFFIXES = new Set(["JR", "SR", "II", "III", "IV"]);
 
 function normalizeStr(s: string): string {
   return s
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/gu, "")
     .toUpperCase()
     .replace(/[^A-Z0-9 ]/g, "")
     .replace(/\s+/g, " ")
@@ -166,8 +168,11 @@ async function processFile(
     const candLast = row["CANDIDATE_LAST_NAME"]?.trim() ?? "";
     if (!candLast) continue;
 
-    const idx = office === "HOUSE" ? houseIdx : senateIdx;
-    const dbMatch = findCandidate(candFirst, candLast, idx);
+    // Try primary index first; fall back to the other chamber if not found.
+    // Some OH senators' committees still report office="HOUSE" from prior service.
+    const primaryIdx = office === "HOUSE" ? houseIdx : senateIdx;
+    const fallbackIdx = office === "HOUSE" ? senateIdx : houseIdx;
+    const dbMatch = findCandidate(candFirst, candLast, primaryIdx) ?? findCandidate(candFirst, candLast, fallbackIdx);
 
     if (!dbMatch) {
       skipped += 1;

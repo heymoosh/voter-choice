@@ -243,8 +243,10 @@ async function streamZipCsv(
 // ---------------------------------------------------------------------------
 
 function normalizeName(name: string): string {
-  // Strip everything except letters, digits, spaces, and hyphens
+  // NFD-normalize to decompose accented chars (é→e+combining), then strip combining marks
   return name
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/gu, "")
     .toUpperCase()
     .replace(/[^A-Z0-9\s-]/gu, "")
     .replace(/\s+/gu, " ")
@@ -253,6 +255,8 @@ function normalizeName(name: string): string {
 
 function normalizeForLookup(name: string): string {
   return name
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/gu, "")
     .toLowerCase()
     .replace(/[^a-z0-9\s-]/gu, "")
     .replace(/\s+/gu, " ")

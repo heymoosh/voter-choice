@@ -223,8 +223,10 @@ async function streamCsv(
 
 function normalizeName(name: string): string {
   return name
+    .normalize("NFD") // decompose accented chars (é → e + combining accent)
+    .replace(/[̀-ͯ]/gu, "") // strip combining marks so é→e, ñ→n
     .toLowerCase()
-    .replace(/[^a-z0-9\s]/gu, "") // strip punctuation
+    .replace(/[^a-z0-9\s]/gu, "") // strip remaining non-ASCII punctuation
     .replace(/\s+/gu, " ")
     .trim();
 }
@@ -259,7 +261,12 @@ async function loadTecFilers(): Promise<{
 
   await streamCsv(filersPath, (row) => {
     if (row["filerTypeCd"] !== "COH") return;
-    const officeCd = row["ctaSeekOfficeCd"] ?? "";
+    // Accept candidates who are seeking OR currently holding a state legislative office.
+    // Some senators (e.g., Huffman, Eckhardt) ran for other offices (AG, Comptroller)
+    // so their ctaSeekOfficeCd is not STATESEN, but filerHoldOfficeCd is.
+    const seekCd = row["ctaSeekOfficeCd"] ?? "";
+    const holdCd = row["filerHoldOfficeCd"] ?? "";
+    const officeCd = TEC_STATE_OFFICE_CODES.has(seekCd) ? seekCd : holdCd;
     if (!TEC_STATE_OFFICE_CODES.has(officeCd)) return;
 
     const filerIdent = row["filerIdent"] ?? "";
@@ -267,13 +274,15 @@ async function loadTecFilers(): Promise<{
 
     const filerNameLast = row["filerNameLast"] ?? "";
     const filerName = row["filerName"] ?? "";
+    // Use hold-office district when seek-office district is missing
+    const district = row["ctaSeekOfficeDistrict"] || row["filerHoldOfficeDistrict"] || "";
 
     const info: TecFilerInfo = {
       filerIdent,
       filerName,
       filerNameLast,
       officeCode: officeCd,
-      district: row["ctaSeekOfficeDistrict"] ?? "",
+      district,
     };
 
     byId.set(filerIdent, info);

@@ -4,9 +4,12 @@
  * Hawaii Campaign Finance Board (CFB) donor ingest.
  *
  * Reads /tmp/HI_contributions.csv (unzipped, ~4.5 MB), filters to state
- * House/Senate rows for 2024 or 2026 cycles, matches candidate names to HI
+ * House/Senate rows for 2022+ cycles, matches candidate names to HI
  * state candidates in our DB by normalized last name, aggregates into donor
  * buckets, and upserts into `donor_aggregates`.
+ *
+ * Note: HI Senate has staggered 4-year terms; half last ran in 2022.
+ * Contributions with election_period "2022-2024" map to cycle "2024".
  *
  * Source: Hawaii Campaign Spending Commission bulk data
  * https://ags.hawaii.gov/campaign/
@@ -372,18 +375,18 @@ async function aggregateContributions(
     const office = (row["office"] ?? "").trim();
     if (!STATE_LEGISLATURE_OFFICES.has(office)) return;
 
-    // Filter by date year >= 2024 OR election_period starts with "2024"
-    const dateRaw = (row["date"] ?? "").trim();
-    const year = dateRaw.substring(0, 4);
+    // Accept election_period "2022-2024" (cycle="2024") and "2024-2026" (cycle="2026")
+    // Both map to a cycle via end year; HI Senate has staggered terms so
+    // some senators last ran in 2022, contributing during "2022-2024" period.
     const electionPeriod = (row["election_period"] ?? "").trim();
-    const yearNum = Number.parseInt(year, 10);
-    const epStartsWith2024 = electionPeriod.startsWith("2024");
 
-    if (!epStartsWith2024 && (Number.isNaN(yearNum) || yearNum < 2024)) return;
-
-    // Determine cycle from election_period
+    // Determine cycle from election_period — must be a valid YYYY-YYYY range
     const cycle = electionPeriodToCycle(electionPeriod);
     if (!cycle) return;
+
+    // Only include cycles 2022 and newer (exclude old 2020 and earlier data)
+    const cycleYear = Number.parseInt(cycle, 10);
+    if (cycleYear < 2022) return;
 
     const candidateName = (row["candidate_name"] ?? "").trim();
     if (!candidateName) return;
