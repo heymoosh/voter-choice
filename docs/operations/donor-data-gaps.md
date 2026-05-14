@@ -11,17 +11,15 @@ This document records states where donor data is incomplete at launch, what's bl
 
 These states have genuine structural barriers. No amount of additional scripting will move them significantly.
 
-### Kansas — 0% (0/151 candidates)
+### Kansas — ~46% (70/151 candidates) ← UPDATED
 
-**Why blocked:**  
-The Kansas Ethics Commission portal (`ethics.ks.gov`) has a broken SSL certificate that causes a `net::ERR_CERT_COMMON_NAME_INVALID` error in all browsers. The HTTP fallback returns 403 Forbidden to all non-browser clients. The HTTPS redirect chain is malformed (redirects to `http://ethics.ks.govCFAOnline/...` with a missing slash). The portal is on the kansas.gov shared hosting infrastructure with no alternative bulk export URL.
+**Status (2026-05-14):** `ks-cfr-donors.ts` written and successfully run. The old `ethics.ks.gov` portal is still broken (SSL cert invalid + 403), but `sos.ks.gov/elections/cfr_viewer/` is a separate, accessible KS SOS CFR viewer with structured HTML electronic filings for state legislators. 70 of 151 KS legislative candidates filed electronically in 2024 with non-zero contributions; the remaining 81 are paper filers.
 
-**What it would take:**  
-- KS Ethics Commission fixes the SSL certificate (requires their IT team)  
-- OR KS publishes a bulk CSV export at a different URL  
-- OR someone manually downloads the data (requires navigating the portal interactively in a real browser and hand-extracting CSV exports per candidate — 151 candidates)
+**What it would take to improve further:**  
+- Paper filers require manual extraction of individual PDF filings — not automatable.
+- The 81 missing candidates have either no filing or filed on paper (Kansas has no electronic filing mandate for state legislative candidates below the statewide threshold).
 
-**Workaround estimate:** ~4 hours of manual work if the portal is accessible in a browser; ~0 hours of automated work currently possible.
+**Workaround for remaining 81:** Not currently possible without manual PDF extraction.
 
 ---
 
