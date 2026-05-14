@@ -56,7 +56,6 @@ const DEFAULT_INKIND_FILE = "/tmp/AL_2024_inkind.csv";
 const SOURCE = "al_fcpa_bulk";
 const SOURCE_URL =
   "https://fcpa.alabamavotes.gov/page.request.do?page=page.acfPublicDownloadData";
-const ELECTION_CYCLE = "2024";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -126,6 +125,7 @@ async function processFile(
   lastNameIdx: Map<string, DbCandidate[]>,
   agg: Map<string, number>,
   candidateNames: Map<string, string>,
+  electionCycle: string,
 ): Promise<{ processed: number; skipped: number }> {
   let processed = 0;
   let skipped = 0;
@@ -214,7 +214,7 @@ async function processFile(
       bucket = bucketIndividualByAmount(amount);
     }
 
-    const aggKey = `${dbMatch.id}|${ELECTION_CYCLE}|${bucket}`;
+    const aggKey = `${dbMatch.id}|${electionCycle}|${bucket}`;
     agg.set(aggKey, (agg.get(aggKey) ?? 0) + amount);
     candidateNames.set(dbMatch.id, candidateName);
     processed++;
@@ -231,8 +231,10 @@ async function main() {
   const isDryRun = process.argv.includes("--dry-run");
   const cashIdx = process.argv.indexOf("--cash-file");
   const inkindIdx = process.argv.indexOf("--inkind-file");
+  const cycleIdx = process.argv.indexOf("--election-cycle");
   const cashFile = cashIdx !== -1 ? (process.argv[cashIdx + 1] ?? DEFAULT_CASH_FILE) : DEFAULT_CASH_FILE;
   const inkindFile = inkindIdx !== -1 ? (process.argv[inkindIdx + 1] ?? DEFAULT_INKIND_FILE) : DEFAULT_INKIND_FILE;
+  const ELECTION_CYCLE = cycleIdx !== -1 ? (process.argv[cycleIdx + 1] ?? "2024") : "2024";
 
   const db = requireDb();
 
@@ -271,7 +273,7 @@ async function main() {
       console.log(`[al-fcpa] skipping ${label} (file not found: ${filePath})`);
       continue;
     }
-    const result = await processFile(filePath, lastNameIdx, agg, candidateNames);
+    const result = await processFile(filePath, lastNameIdx, agg, candidateNames, ELECTION_CYCLE);
     console.log(`[al-fcpa] ${label}: processed=${result.processed} skipped=${result.skipped}`);
   }
 

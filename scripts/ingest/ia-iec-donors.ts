@@ -50,16 +50,14 @@ import {
 
 const SOURCE = "ia_iec_bulk";
 const SOURCE_URL = "https://mydata.iowa.gov/resource/smfg-ds7h.json";
-const ELECTION_CYCLE = "2024";
-const DATE_FROM = "2024-01-01";
-const DATE_TO = "2024-12-31";
 const PAGE_SIZE = 1000;
 const RATE_LIMIT_MS = 100;
 
-// Socrata $where clause for state legislature contributions in 2024
-const WHERE_CLAUSE = encodeURIComponent(
-  `date>='${DATE_FROM}' AND date<='${DATE_TO}' AND (committee_type='State House' OR committee_type='State Senate') AND transaction_type='CON'`,
-);
+function buildWhereClause(year: string): string {
+  return encodeURIComponent(
+    `date>='${year}-01-01' AND date<='${year}-12-31' AND (committee_type='State House' OR committee_type='State Senate') AND transaction_type='CON'`,
+  );
+}
 
 // ---------------------------------------------------------------------------
 // Types
@@ -106,18 +104,21 @@ export type IaIecIngestCounts = {
 interface IngestConfig {
   dryRun: boolean;
   limit: number | null;
+  year: string;
 }
 
 function resolveConfig(argv: string[] = process.argv): IngestConfig {
   const dryRun = argv.includes("--dry-run");
   const limitIdx = argv.indexOf("--limit");
+  const yearIdx = argv.indexOf("--year");
   let limit: number | null = null;
   if (limitIdx !== -1) {
     const raw = argv[limitIdx + 1];
     const parsed = Number.parseInt(raw ?? "", 10);
     if (Number.isInteger(parsed) && parsed > 0) limit = parsed;
   }
-  return { dryRun, limit };
+  const year = yearIdx !== -1 ? (argv[yearIdx + 1] ?? "2024") : "2024";
+  return { dryRun, limit, year };
 }
 
 // ---------------------------------------------------------------------------
@@ -167,8 +168,8 @@ function extractCandidateTokens(committeeName: string): string[] {
 // API fetching (Socrata)
 // ---------------------------------------------------------------------------
 
-async function fetchPage(offset: number, pageSize: number): Promise<IaRow[]> {
-  const url = `${SOURCE_URL}?$where=${WHERE_CLAUSE}&$limit=${pageSize}&$offset=${offset}&$order=date+DESC`;
+async function fetchPage(offset: number, pageSize: number, whereClause: string): Promise<IaRow[]> {
+  const url = `${SOURCE_URL}?$where=${whereClause}&$limit=${pageSize}&$offset=${offset}&$order=date+DESC`;
 
   const res = await fetch(url, {
     headers: {
@@ -199,9 +200,11 @@ export async function ingestIaIecDonors({
   argv?: string[];
 } = {}): Promise<IaIecIngestCounts> {
   const config = resolveConfig(argv);
+  const ELECTION_CYCLE = config.year;
+  const WHERE_CLAUSE = buildWhereClause(config.year);
 
   console.log(
-    `[ia-iec-donors] starting dryRun=${config.dryRun} limit=${config.limit ?? "none"}`,
+    `[ia-iec-donors] starting dryRun=${config.dryRun} limit=${config.limit ?? "none"} year=${config.year}`,
   );
 
   // Step 1: Load IA state candidates from DB
@@ -286,12 +289,13 @@ export async function ingestIaIecDonors({
 
   const effectiveLimit = config.limit ?? Infinity;
 
-  console.log(`[ia-iec-donors] fetching 2024 IA state legislature contributions ...`);
+  console.log(`[ia-iec-donors] fetching ${config.year} IA state legislature contributions ...`);
 
   while (contributionsFetched < effectiveLimit) {
     const rows = await fetchPage(
       offset,
       Math.min(PAGE_SIZE, effectiveLimit - contributionsFetched),
+      WHERE_CLAUSE,
     );
 
     if (rows.length === 0) {

@@ -35,10 +35,11 @@ import {
 // Constants
 // ---------------------------------------------------------------------------
 
-const ZIP_PATH = "/tmp/PA_2024.zip";
-const FILER_ENTRY = "2024/filer_2024.txt";
-const CONTRIB_ENTRY = "2024/contrib_2024.txt";
-const ELECTION_CYCLE = "2024";
+const { year: YEAR } = resolveConfig();
+const ZIP_PATH = `/tmp/PA_${YEAR}.zip`;
+const FILER_ENTRY = `${YEAR}/filer_${YEAR}.txt`;
+const CONTRIB_ENTRY = `${YEAR}/contrib_${YEAR}.txt`;
+const ELECTION_CYCLE = YEAR;
 const SOURCE = "pa_dos_bulk";
 const SOURCE_URL =
   "https://www.pa.gov/agencies/dos/resources/voting-and-elections-resources/campaign-finance-data";
@@ -103,18 +104,21 @@ export type PaIngestCounts = {
 interface IngestConfig {
   dryRun: boolean;
   limit: number | null;
+  year: string;
 }
 
 function resolveConfig(argv: string[] = process.argv): IngestConfig {
   const dryRun = argv.includes("--dry-run");
   const limitIdx = argv.indexOf("--limit");
+  const yearIdx = argv.indexOf("--year");
   let limit: number | null = null;
   if (limitIdx !== -1) {
     const raw = argv[limitIdx + 1];
     const parsed = Number.parseInt(raw ?? "", 10);
     if (Number.isInteger(parsed) && parsed > 0) limit = parsed;
   }
-  return { dryRun, limit };
+  const year = yearIdx !== -1 ? (argv[yearIdx + 1] ?? "2024") : "2024";
+  return { dryRun, limit, year };
 }
 
 // ---------------------------------------------------------------------------

@@ -48,7 +48,6 @@ import {
 const DEFAULT_FILE = "/tmp/MD_contributions_2024.csv";
 const SOURCE = "md_cris_bulk";
 const SOURCE_URL = "https://campaignfinance.maryland.gov/public/cf/downloads";
-const ELECTION_CYCLE = "2024";
 const DOWNLOAD_CMD = `curl -s -X POST \\
   "https://api-campaignfinance.maryland.gov/api/ExportPublicData/GetExportPublicDownloadData" \\
   -H "Content-Type: application/json" \\
@@ -157,7 +156,9 @@ function parseCsvLine(line: string): string[] {
 async function main() {
   const isDryRun = process.argv.includes("--dry-run");
   const fileIdx = process.argv.indexOf("--file");
+  const cycleIdx = process.argv.indexOf("--election-cycle");
   const filePath = fileIdx !== -1 ? (process.argv[fileIdx + 1] ?? DEFAULT_FILE) : DEFAULT_FILE;
+  const ELECTION_CYCLE = cycleIdx !== -1 ? (process.argv[cycleIdx + 1] ?? "2024") : "2024";
 
   if (!fs.existsSync(filePath)) {
     console.error(`[md-cris] file not found: ${filePath}`);

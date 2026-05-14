@@ -50,7 +50,6 @@ const DEFAULT_HOUSE_FILE = "/tmp/KY_house_2024.csv";
 const DEFAULT_SENATE_FILE = "/tmp/KY_senate_2024.csv";
 const SOURCE = "ky_kref_bulk";
 const SOURCE_URL = "https://secure.kentucky.gov/kref/publicsearch/ToCandidateSearch";
-const ELECTION_CYCLE = "2024";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -124,6 +123,7 @@ async function processFile(
   lastNameIdx: Map<string, DbCandidate[]>,
   agg: Map<string, number>,
   candidateNames: Map<string, string>,
+  electionCycle: string,
 ): Promise<{ processed: number; skipped: number }> {
   let processed = 0;
   let skipped = 0;
@@ -239,7 +239,7 @@ async function processFile(
         bucket = bucketIndividualByAmount(amount);
     }
 
-    const aggKey = `${dbMatch.id}|${ELECTION_CYCLE}|${bucket}`;
+    const aggKey = `${dbMatch.id}|${electionCycle}|${bucket}`;
     agg.set(aggKey, (agg.get(aggKey) ?? 0) + amount);
     candidateNames.set(dbMatch.id, `${recipFirst} ${recipLast}`);
     processed++;
@@ -256,6 +256,8 @@ async function main() {
   const isDryRun = process.argv.includes("--dry-run");
   const houseFileIdx = process.argv.indexOf("--house-file");
   const senateFileIdx = process.argv.indexOf("--senate-file");
+  const cycleIdx = process.argv.indexOf("--election-cycle");
+  const ELECTION_CYCLE = cycleIdx !== -1 ? (process.argv[cycleIdx + 1] ?? "2024") : "2024";
   const houseFile =
     houseFileIdx !== -1
       ? (process.argv[houseFileIdx + 1] ?? DEFAULT_HOUSE_FILE)
@@ -299,12 +301,12 @@ async function main() {
   const agg = new Map<string, number>();
   const candidateNames = new Map<string, string>();
 
-  const houseResult = await processFile(houseFile, lastNameIdx, agg, candidateNames);
+  const houseResult = await processFile(houseFile, lastNameIdx, agg, candidateNames, ELECTION_CYCLE);
   console.log(
     `[ky-kref] house: processed=${houseResult.processed} skipped=${houseResult.skipped}`,
   );
 
-  const senateResult = await processFile(senateFile, lastNameIdx, agg, candidateNames);
+  const senateResult = await processFile(senateFile, lastNameIdx, agg, candidateNames, ELECTION_CYCLE);
   console.log(
     `[ky-kref] senate: processed=${senateResult.processed} skipped=${senateResult.skipped}`,
   );

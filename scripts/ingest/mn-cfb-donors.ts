@@ -48,7 +48,7 @@ import {
 // ---------------------------------------------------------------------------
 
 const CSV_PATH = "/tmp/MN_contributions.csv";
-const ELECTION_CYCLES = new Set(["2024", "2026"]);
+const ELECTION_CYCLES = new Set(["2022", "2024", "2026"]);
 const SOURCE = "mn_cfb_bulk";
 const SOURCE_URL =
   "https://cfb.mn.gov/reports-and-data/self-help/data-downloads/campaign-finance/";
