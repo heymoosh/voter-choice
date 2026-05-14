@@ -362,24 +362,19 @@ export async function fetchUntaggedBills(
   db: DbClient,
   limit: number,
 ): Promise<BillRow[]> {
-  // Subquery: bill_ids that already have a tag for this tagger_version.
-  const taggedBillIds = db
-    .select({ billId: issueTags.billId })
-    .from(issueTags)
-    .where(sql`${issueTags.taggerVersion} = ${TAGGER_VERSION}`);
+  // Raw SQL to avoid Drizzle notInArray subquery issues with large result sets.
+  const rows = await db.execute(sql`
+    SELECT b.id, b.title, b.summary, b.jurisdiction
+    FROM bills b
+    WHERE NOT EXISTS (
+      SELECT 1 FROM issue_tags it
+      WHERE it.bill_id = b.id
+        AND it.tagger_version = ${TAGGER_VERSION}
+    )
+    LIMIT ${limit}
+  `);
 
-  const rows = await db
-    .select({
-      id: bills.id,
-      title: bills.title,
-      summary: bills.summary,
-      jurisdiction: bills.jurisdiction,
-    })
-    .from(bills)
-    .where(notInArray(bills.id, taggedBillIds))
-    .limit(limit);
-
-  return rows;
+  return rows.rows as BillRow[];
 }
 
 /**
@@ -528,7 +523,7 @@ export function resolveTagBillsConfig(
     parseLimitFlag(argv) ??
     parsePositiveInteger(env.TAGGER_BILL_LIMIT, DEFAULT_LIMIT);
   const dryRun = argv.includes("--dry-run") || env.TAGGER_DRY_RUN === "1";
-  const anthropicApiKey = env.ANTHROPIC_VOTER_API ?? "";
+  const anthropicApiKey = env.ANTHROPIC_VOTER_API ?? env.ANTHROPIC_API_KEY ?? "";
 
   return {
     limit,
