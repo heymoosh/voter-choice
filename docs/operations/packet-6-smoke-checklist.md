@@ -124,7 +124,7 @@ Expected: a clear "we don't have data for this race" message. If a generic error
 
 **Donor coverage (as of 2026-05-14) — ALL 50 STATES COVERED:**
 
-**6,892 unique candidates (82.5% of 8,357 total)** across 52 sources.
+**6,880 unique candidates (82.4% of 8,357 total)** across 51 sources (WI source deleted 2026-05-14).
 
 All states have at least some coverage. Low-coverage states are structural (paper filers, below-threshold campaigns):
 
@@ -132,13 +132,11 @@ All states have at least some coverage. Low-coverage states are structural (pape
 |---|---|
 | ≥100 candidates | NE(302), MN(208), MA(197), SC(185), NY(183), PA(182), MD(179), CT(179), VT(177), ME(175), MO(174), WA(166), TX(161), GA(157), IL(152), IA(151), OH(151), IN(147), FL(147), MT(146), MI(146), OK(146), NC(142), AL(138), ND(136), LA(131), KY(122), WV(121), TN(118), NH(117), CA(114), NJ(108), VA(102), UT(100), CO(98), ID(98), RI(97), NM(96) |
 | 50–99 candidates | AR(84), OR(83), SD(72), KS(70), AZ(65), DE(64), HI(61), NV(59) |
-| <50 candidates (structural ceiling) | AK(47), WY(23), ND-backup(14), WI(12⚠️), MS(10) |
+| <50 candidates (structural ceiling) | AK(47), WY(23), ND-backup(14), MS(10) — WI source deleted (was bad data) |
 
-**⚠️ WI bad data**: `wi_cfis_bulk` 17 rows with $26M amounts. Delete before launch:
-```sql
-DELETE FROM donor_aggregates WHERE source='wi_cfis_bulk';
-```
-(Requires Muxin to authorize — removes 17 rows, WI drops to 0% but that's honest.)
+**✅ WI bad data deleted 2026-05-14**: `wi_cfis_bulk` 17 rows with $26M amounts were deleted.
+
+WI now shows 0% donor coverage (honest — correct for a state with no electronic filing mandate).
 
 **Structural ceilings (cannot improve without paper-filing access):**
 - MS: 10 candidates — SOS portal disabled since 2023
@@ -147,7 +145,7 @@ DELETE FROM donor_aggregates WHERE source='wi_cfis_bulk';
 
 **Note on FTM API (followthemoney.org):** The `ingest-donors.yml` workflow requires `FOLLOWTHEMONEY_API_KEY` to be provisioned in BWS secrets. Without it, the Sunday cron job will fail. All 50 states already have data from dedicated scripts, so FTM would provide industry-level enrichment for the low-coverage states. Not required for launch but recommended for ongoing data quality.
 
-**issue_tags (2026-05-14):** 45,142 tags covering 40,412/67,674 bills (59.7%). Subagent tagging via Max subscription running. Sunday `ingest-tag-bills.yml` cron continues coverage. stanceLens must be "in_favor"|"opposed" — cleanup SQL: `DELETE FROM issue_tags WHERE stance_lens NOT IN ('in_favor', 'opposed');`
+**issue_tags (2026-05-14):** 49,076 tags covering 44,311/67,674 bills (65.5%). Subagent tagging via Max subscription complete for this session. Sunday `ingest-tag-bills.yml` cron will continue growing coverage. stanceLens must be "in_favor"|"opposed" — cleanup SQL: `DELETE FROM issue_tags WHERE stance_lens NOT IN ('in_favor', 'opposed');`
 
 ---
 
@@ -165,7 +163,7 @@ DELETE FROM donor_aggregates WHERE source='wi_cfis_bulk';
 
 **Completed:** 17 rows deleted 2026-05-14.
 
-### 2. FTM API Key (~30 remaining donor states)
+### 2. FTM API Key (optional enrichment — all 50 states already have data)
 
 1. Register free at https://www.followthemoney.org/account/sign-up/
 2. Verify email → copy API key from account page
