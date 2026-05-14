@@ -1108,7 +1108,7 @@ describe("ingestStateDonors", () => {
     const counts = await ingestStateDonors({
       db,
       fetcher,
-      env: {},
+      env: { FOLLOWTHEMONEY_API_KEY: "test-key" },
       argv: [],
     });
 
@@ -1137,7 +1137,7 @@ describe("ingestStateDonors", () => {
     const counts = await ingestStateDonors({
       db,
       fetcher,
-      env: {},
+      env: { FOLLOWTHEMONEY_API_KEY: "test-key" },
       argv: [],
     });
 
@@ -1184,7 +1184,7 @@ describe("ingestStateDonors", () => {
     const counts = await ingestStateDonors({
       db,
       fetcher,
-      env: {},
+      env: { FOLLOWTHEMONEY_API_KEY: "test-key" },
       argv: [],
     });
 
@@ -1199,7 +1199,7 @@ describe("ingestStateDonors", () => {
     await ingestStateDonors({
       db,
       fetcher,
-      env: {},
+      env: { FOLLOWTHEMONEY_API_KEY: "test-key" },
       argv: ["node", "script.ts", "--limit", "20"],
     });
 
