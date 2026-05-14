@@ -62,6 +62,7 @@ async function main() {
     amount: number;
     label: string;
     chamber: string;
+    cycle?: string;
   }>;
   console.log(`[or-process] loaded ${raw.length} contributions from ${DATA_FILE}`);
 
@@ -91,7 +92,8 @@ async function main() {
     const dbMatch = dbMatches[0];
 
     const bucket = classifyOrestarContributor(contrib.contributor, contrib.amount, contrib.subType);
-    const aggKey = `${dbMatch.id}|${ELECTION_CYCLE}|${bucket}`;
+    const cycle = contrib.cycle ?? ELECTION_CYCLE;
+    const aggKey = `${dbMatch.id}|${cycle}|${bucket}`;
     agg.set(aggKey, (agg.get(aggKey) ?? 0) + contrib.amount);
     matched++;
   }
