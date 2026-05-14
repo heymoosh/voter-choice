@@ -21,8 +21,9 @@ import type { DonorBucketLabel } from "./_bucket-mapping";
 
 const SOURCE = "nd_cfis_playwright";
 const SOURCE_URL = "https://cf.sos.nd.gov/search/cfsearch.aspx";
-const ELECTION_CYCLE = "2024";
-const DATA_FILE = "/tmp/nd_contributions.json";
+const _yearIdx = process.argv.indexOf("--year");
+const ELECTION_CYCLE = _yearIdx !== -1 ? (process.argv[_yearIdx + 1] ?? "2024") : "2024";
+const DATA_FILE = ELECTION_CYCLE !== "2024" ? `/tmp/nd_contributions_${ELECTION_CYCLE}.json` : "/tmp/nd_contributions.json";
 
 const DRY_RUN = process.argv.includes("--dry-run");
 

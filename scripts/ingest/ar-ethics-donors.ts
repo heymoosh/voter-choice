@@ -50,7 +50,6 @@ const DEFAULT_FILE = "/tmp/AR_2024_contributions.csv";
 const SOURCE = "ar_ethics_bulk";
 const SOURCE_URL =
   "https://ethics-disclosures.sos.arkansas.gov/public/cf/downloads";
-const ELECTION_CYCLE = "2024";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -142,8 +141,10 @@ function parseCsvLine(line: string): string[] {
 async function main() {
   const isDryRun = process.argv.includes("--dry-run");
   const fileIdx = process.argv.indexOf("--file");
+  const cycleIdx = process.argv.indexOf("--election-cycle");
   const filePath =
     fileIdx !== -1 ? (process.argv[fileIdx + 1] ?? DEFAULT_FILE) : DEFAULT_FILE;
+  const ELECTION_CYCLE = cycleIdx !== -1 ? (process.argv[cycleIdx + 1] ?? "2024") : "2024";
 
   if (!fs.existsSync(filePath)) {
     console.error(`[ar-ethics] file not found: ${filePath}`);
@@ -210,9 +211,9 @@ async function main() {
     const txType = (row["Transaction Type"] ?? "").trim();
     if (txType !== "Contribution") { rowsSkipped++; continue; }
 
-    // Only 2024 election year
+    // Only the target election year
     const electionYear = (row["Election Year"] ?? "").trim();
-    if (electionYear !== "2024") { rowsSkipped++; continue; }
+    if (electionYear !== ELECTION_CYCLE) { rowsSkipped++; continue; }
 
     // Parse amount
     const amountStr = (row["Transaction Amount"] ?? "").replace(/[$,]/g, "");

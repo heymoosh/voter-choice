@@ -38,7 +38,7 @@ import {
 
 const ZIP_PATH = "/tmp/TEC_CF_CSV.zip";
 const EXTRACT_DIR = "/tmp/TEC_CF_extracted";
-const ELECTION_CYCLES = ["2024", "2026"];
+const ELECTION_CYCLES = ["2022", "2024", "2026"];
 const SOURCE = "tec_bulk";
 const SOURCE_URL = "https://www.ethics.state.tx.us/data/search/cf/";
 const TEC_STATE_OFFICE_CODES = new Set(["STATEREP", "STATESENATE", "STATESEN"]);
