@@ -332,7 +332,20 @@ function matchCandidatesToFilers(
   for (const candidate of dbCandidates) {
     const lastName = extractLastName(candidate.fullName);
     const filers = byLastName.get(lastName);
-    if (filers && filers.length > 0) {
+    if (!filers || filers.length === 0) continue;
+
+    // When multiple DB candidates share a last name, filter filers by first-name initial.
+    // "Jessica González" (J) should not steal "Mary Edna Gonzalez" (M) filer entries.
+    const dbFirstInitial = normalizeName(candidate.fullName.split(/\s+/u)[0] ?? "")[0] ?? "";
+    const filtered = filers.filter((f) => {
+      const filerFirstInitial = normalizeName(f.filerName.split(",")[1]?.trim().split(/\s+/u)[0] ?? "")[0] ?? "";
+      return !filerFirstInitial || !dbFirstInitial || filerFirstInitial === dbFirstInitial;
+    });
+
+    if (filtered.length > 0) {
+      candidateToFilers.set(candidate.id, filtered);
+    } else {
+      // Fallback: use all filers if first-initial filter eliminates everything
       candidateToFilers.set(candidate.id, filers);
     }
   }

@@ -73,7 +73,7 @@ interface DbCandidate {
 const SUFFIXES = new Set(["JR", "SR", "II", "III", "IV"]);
 
 function norm(s: string): string {
-  return s.toUpperCase().replace(/[^A-Z0-9 ]/g, "").replace(/\s+/g, " ").trim();
+  return s.normalize("NFD").replace(/[̀-ͯ]/gu, "").toUpperCase().replace(/[^A-Z0-9 ]/g, "").replace(/\s+/g, " ").trim();
 }
 
 function extractLastFromDbName(fullName: string): string {

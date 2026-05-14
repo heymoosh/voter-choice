@@ -84,6 +84,8 @@ const NAME_SUFFIXES = new Set(["JR", "SR", "II", "III", "IV"]);
 
 function normalizeStr(s: string): string {
   return s
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/gu, "")
     .toUpperCase()
     .replace(/[^A-Z0-9 ]/g, "")
     .replace(/\s+/g, " ")

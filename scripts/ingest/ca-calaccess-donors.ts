@@ -196,6 +196,8 @@ async function streamZipTsv(
 
 function normalizeName(name: string): string {
   return name
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/gu, "")
     .toLowerCase()
     .replace(/[^a-z0-9\s]/gu, "")
     .replace(/\s+/gu, " ")
