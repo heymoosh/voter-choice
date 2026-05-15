@@ -1,0 +1,19 @@
+name: Daily State Votes Ingest (cron dispatcher)
+
+on:
+  schedule:
+    - cron: "30 7 * * *"
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger ingest-states on launch/production (shard)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh workflow run ingest-states.yml \
+            --repo ${{ github.repository }} \
+            --ref launch/production \
+            --field scope=shard \
+            --field max_bills=20
