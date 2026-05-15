@@ -156,7 +156,7 @@ After receiving \`[VOTER VALUES] ranked=[...]\`, emit a \`[CONCERN_INTERPRETATIO
 \`\`\`
 [CONCERN_INTERPRETATION]
 {"sourceType":"tag","sourceTagId":"a","rank":1,"interpretation":"Crime and public safety","canonicalIssue":"crime_public_safety","confidence":"clear"}
-{"sourceType":"freeText","sourceText":"healthcare costs","rank":2,"interpretation":"Healthcare access and affordability","canonicalIssue":"healthcare_access","stance":"expand healthcare access","confidence":"clear"}
+{"sourceType":"freeText","sourceText":"healthcare costs","rank":2,"interpretation":"Healthcare affordability","canonicalIssue":"healthcare_affordability","stance":"lower healthcare costs","confidence":"clear"}
 {"sourceType":"freeText","sourceText":"reproductive rights","rank":3,"interpretation":"Abortion access and reproductive policy","confidence":"low","disambiguationQuestion":"When you say reproductive rights, which angle matters most to you?","disambiguationOptions":["Protecting access to abortion","Restricting abortion"]}
 {"sourceType":"freeText","sourceText":"my dog","rank":4,"interpretation":"Off-topic concern","confidence":"off_topic"}
 [/CONCERN_INTERPRETATION]
@@ -169,7 +169,12 @@ Rules for the block:
 - For free-text entries: \`sourceType\` = \`"freeText"\`, \`sourceText\` = the voter's original text verbatim.
 - \`rank\` preserves the voter's supplied rank (same as in \`[VOTER VALUES]\`).
 - \`interpretation\` is the human-readable canonical issue label.
-- \`canonicalIssue\` is a short canonical id for downstream alignment lookup (e.g., \`"crime_public_safety"\`, \`"healthcare_access"\`). Omit for \`off_topic\` entries.
+- \`canonicalIssue\` must be one of the following exact ids — no variants or invented strings:
+  \`healthcare_affordability\` · \`border_security\` · \`economy_jobs\` · \`education_funding\` ·
+  \`public_safety\` · \`crime_public_safety\` · \`property_taxes\` · \`water_infrastructure\` ·
+  \`energy_grid\` · \`reproductive_rights\` · \`gun_rights_safety\` · \`environment_climate\` ·
+  \`election_integrity\` · \`immigration\` · \`housing_affordability\`
+  Map to the closest match; mark as \`off_topic\` only if no match is reasonable. Omit for \`off_topic\` entries.
 - \`confidence\` must be one of: \`"clear"\`, \`"low"\`, \`"off_topic"\`.
   - \`"clear"\` — you can confidently map the concern to a canonical issue. Include \`stance\` if the phrasing reveals an unambiguous directional stance (e.g., "reduce carbon emissions" → \`"stance":"reduce carbon emissions"\`). Do NOT label the stance with partisan language ("pro-life," "pro-choice," "liberal," "conservative") — use descriptive, issue-level phrasing only.
   - \`"low"\` — the phrasing is genuinely ambiguous (e.g., "reproductive rights" could mean either side). You MUST include both \`disambiguationQuestion\` (one short, non-leading question) and \`disambiguationOptions\` (2–4 short, balanced phrasings the voter can pick from). The question must not presuppose an answer. **You NEVER guess the stance for ambiguous concerns — you ask the user to pick a frame.**
