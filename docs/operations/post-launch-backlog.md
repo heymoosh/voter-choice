@@ -97,6 +97,30 @@ Harris County 77002 returns "0 races, Not confirmed" from Google Civic. The PDF 
 
 ---
 
+### [P1] No alignment data for non-legislative candidates (executive, judicial, local)
+**Status:** Open (flagged 2026-05-15)
+
+The `candidates` table and `votes` table only contain state house/senate members and federal House/Senate members. Statewide executive candidates (Governor, Lt. Governor, Attorney General), judicial candidates (judges), county officials, city council, school board, and ballot measure races have no entries in the DB.
+
+**Impact:** For ballots that are entirely or mostly non-legislative (primaries, runoffs, off-cycle local elections), `lookup_alignment` returns `found: false` for every candidate. The entire chat session falls back to web search. Our proprietary voting record data plays no role. The May 26, 2026 Texas DEM runoff ballot is an example: Lt. Governor, AG, Court of Appeals, County Judge, District Clerk — none covered.
+
+**Partial mitigation:** Web-search-based alignment scoring (see idea below). Full fix requires new data sources (executive campaign finance, AG actions, bill signing records) — significant scope.
+
+---
+
+### [P1] `reproductive_rights` and `immigration` canonical issues have very thin tag coverage
+**Status:** Open (flagged 2026-05-15)
+
+`reproductive_rights`: 619 tags (1.5% of corpus). `immigration`: 407 tags (1%). `border_security`: 155 tags (0.4%). These are the three thinnest canonical issues.
+
+**Impact:** Voters who care about reproductive rights or immigration will often see 0–2 contributing votes even for active state legislators, which reads as "this candidate doesn't address this issue" when the reality is "we don't have enough tagged bills." This is the most politically significant taxonomy gap given that reproductive rights is a top-tier voter concern in 2026.
+
+**Why thin:** State legislatures rarely have explicit "reproductive rights" bill language — bills are titled by their regulatory mechanism (gestational limits, clinic licensing, etc.). The tagger is less confident matching these to the canonical issue without explicit text, leading to low-confidence drops. Federal bills are better labeled but we have fewer of them.
+
+**Fix:** Write targeted tagger instructions specifically for reproductive rights and immigration bills (examples of what to look for), and run a focused re-tagging pass on states with relevant legislative histories (TX, FL, OH, GA, NC, AZ, WI for reproductive rights; TX, AZ, FL for immigration). Also see "Expand canonical vocabulary" P1 above.
+
+---
+
 ## Operations / Infrastructure
 
 ### [P1] `ingest-states.yml` cron has never fired from main
@@ -125,6 +149,42 @@ Several state donor download URLs were added as best-effort guesses without veri
 ---
 
 ## Product Ideas (not yet scoped)
+
+### [idea] Web-search-based alignment scoring as fallback when DB has no data
+**Status:** Flagged 2026-05-15 — requires design
+
+**What:** When `lookup_alignment` returns `found: false` (non-legislative candidate) or `total < threshold` (thin data), instruct the model to run a targeted web search for the candidate's public statements, endorsements, and actions on the issue — then emit a structured alignment assessment in the same `[ALIGNMENT_SCORES]` format, labeled with a different source type so the UI can render it differently.
+
+**Why it's viable:** The model already does this analysis in prose for non-legislative candidates. The change is making it structured and consistent rather than narrative. The model reads web search results and synthesizes "does this candidate support or oppose this concern?" It already knows how to do that reasoning — we'd just be capturing the output formally.
+
+**What it would look like in the scores block:**
+```json
+{
+  "canonicalIssue": "reproductive_rights",
+  "issueLabel": "Reproductive Rights",
+  "resolvedStance": "in_favor",
+  "kept": null,
+  "total": null,
+  "sourceType": "web_search",
+  "confidence": "medium",
+  "evidence": [
+    {"summary": "Endorsed by Planned Parenthood TX, May 2026", "url": "..."},
+    {"summary": "Stated opposition to HB 1280 in campaign interview", "url": "..."}
+  ]
+}
+```
+
+**Key design constraints:**
+- Must be clearly labeled as "Based on public statements" — not "voting record." Different epistemics: voting records are facts, web search summaries are interpretations of available media.
+- Confidence degradation: `high` only for explicit on-record statements; `medium` for endorsements; `low` for inferred from affiliations.
+- Hallucination risk: model must cite sources for each evidence item. Any claim without a real URL should be dropped.
+- Source quality: partisan endorsement sites can be misleading. The model should weight official campaign statements, credentialed news coverage, and official government records over advocacy org summaries.
+
+**Implementation path:** Primarily a system prompt change + a UI change to render `sourceType: "web_search"` scores differently from `sourceType: "voting_record"` scores. No new backend required. Moderate prompt engineering effort. Low infrastructure cost.
+
+**Related:** Addresses "No alignment data for non-legislative candidates" [P1] above and "thin tag coverage" [P1] above.
+
+---
 
 ### [idea] Store voter issue preferences for analysis
 **Status:** Flagged 2026-05-15 — requires design
