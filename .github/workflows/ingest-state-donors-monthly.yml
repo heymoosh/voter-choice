@@ -7,67 +7,21 @@ on:
   workflow_dispatch:
 
 # -----------------------------------------------------------------------
-# Status key
-# -----------------------------------------------------------------------
-# ACTIVE            — runs fully automatically.
-# BROWSER_REQUIRED  — direct download URL not confirmed; skips in CI with
-#                     a warning. To activate: find the direct curl URL,
-#                     set browser_required: "false", add pre_download curl.
-# PLAYWRIGHT        — WAF/JS blocks headless; run locally or via agent.
-# PYTHON SCRAPER    — companion Python script required; run locally.
+# All 29 state donor scripts are included in this matrix.
 #
-# State | Status          | Notes
-# ------|-----------------|-----------------------------------------------
-# AK    | BROWSER_REQUIRED| aws.state.ak.us requires devtools export trick
-# AL    | ACTIVE ✓        | auto-downloads from public FCPA page
-# AR    | BROWSER_REQUIRED| Angular event handler, no direct URL
-# AZ    | ACTIVE ✓        | SeeTheMoney export API
-# CA    | ACTIVE ✓        | CalAccess CDN ZIP (daily refresh)
-# CO    | BROWSER_REQUIRED| TRACER SSL cert issue; confirm curl URL
-# CT    | ACTIVE ✓        | SEEC XLSX download + Python conversion
-# DE    | PYTHON SCRAPER  |
-# FL    | BROWSER_REQUIRED| Cloudflare on dos.fl.gov requires Playwright
-# GA    | PYTHON SCRAPER  |
-# HI    | BROWSER_REQUIRED| No bulk CSV export found
-# IA    | ACTIVE ✓        | Iowa Socrata API
-# ID    | ACTIVE ✓        | Idaho POST API (same pattern as VT/MD)
-# IL    | PYTHON SCRAPER  |
-# IN    | BROWSER_REQUIRED| BulkDataDownloads directory returns 403
-# KS    | PLAYWRIGHT      | WAF blocks headless
-# KY    | BROWSER_REQUIRED| Incapsula WAF on secure.kentucky.gov
-# LA    | PYTHON SCRAPER  |
-# MA    | BROWSER_REQUIRED| OCPF Azure Blob reports.zip filename unconfirmed
-# MD    | ACTIVE ✓        | Maryland POST API
-# ME    | ACTIVE ✓        | Maine CFIS REST API
-# MI    | BROWSER_REQUIRED| Entellitrak URL returns system exception
-# MN    | BROWSER_REQUIRED| CFB download uses dynamic JS parameter
-# MO    | BROWSER_REQUIRED| mec.mo.gov form-based POST, no direct URL
-# MS    | BROWSER_REQUIRED| Online filing disabled since 2023; no current data
-# MT    | ACTIVE ✓        | CERS public search, session auto-bootstrapped
-# NC    | BROWSER_REQUIRED| cf.ncsbe.gov session-based API
-# ND    | BROWSER_REQUIRED| Browser session required
-# NE    | ACTIVE (weekly) | Handled by ingest-donors.yml — skipped here
-# NH    | ACTIVE ✓        | NH CFS POST API (same pattern as ID/VT/MD)
-# NJ    | ACTIVE ✓        | NJ ELEC search API
-# NM    | PYTHON SCRAPER  |
-# NV    | PYTHON SCRAPER  |
-# NY    | BROWSER_REQUIRED| publicreporting.elections.ny.gov returns 403
-# OH    | BROWSER_REQUIRED| Cloudflare on ohiosos.gov
-# OK    | BROWSER_REQUIRED| BulkDataDownloads directory returns 403
-# OR    | PLAYWRIGHT      | WAF blocks headless
-# PA    | ACTIVE ✓        | PA DOS full export ZIP
-# RI    | PYTHON SCRAPER  |
-# SC    | BROWSER_REQUIRED| Queue-IT WAF on ethicsfiling.sc.gov
-# SD    | PYTHON SCRAPER  |
-# TN    | BROWSER_REQUIRED| tncamp batch browser search required
-# TX    | BROWSER_REQUIRED| TEC ZIP URL not confirmed (404 on direct guess)
-# UT    | ACTIVE ✓        | disclosures.utah.gov direct CSV export
-# VA    | ACTIVE ✓        | VA SBE API
-# VT    | ACTIVE ✓        | Vermont POST API
-# WA    | ACTIVE ✓        | data.wa.gov Socrata API
-# WI    | ACTIVE ✓        | Wisconsin CFIS tRPC API
-# WV    | ACTIVE ✓        | WV CFRS two-step S3 API, no auth
-# WY    | PYTHON SCRAPER  |
+# Each state has a pre_download step with its best-known direct download
+# URL. The download step runs with continue-on-error: true so a failed
+# download shows as a red job (visible, fixable) rather than silently
+# skipping. The ingest step only runs if the download succeeded.
+#
+# To fix a failing state: find the correct direct URL for that state's
+# bulk data file and update pre_download below.
+#
+# States handled elsewhere:
+#   NE  — weekly via ingest-donors.yml
+#   OR  — Playwright + WAF blocks headless; run locally
+#   KS  — Playwright + WAF blocks headless; run locally
+#   DE, GA, IL, LA, NM, NV, RI, SD, WY — Python scrapers; run locally
 # -----------------------------------------------------------------------
 
 jobs:
@@ -79,32 +33,23 @@ jobs:
       matrix:
         include:
 
-          # ================================================================
-          # ACTIVE — download automatically and run
-          # ================================================================
+          # ---- States with confirmed working download commands ----
 
           - state: Alabama
             script: al-fcpa-donors.ts
-            browser_required: "false"
-            pre_download: ""
+            pre_download: ""   # auto-downloads from public FCPA page
 
           - state: Arizona
             script: az-seethemoney-donors.ts
-            browser_required: "false"
-            pre_download: ""
+            pre_download: ""   # SeeTheMoney export API
 
           - state: California
             script: ca-calaccess-donors.ts
-            browser_required: "false"
-            source_url: https://campaignfinance.cdn.sos.ca.gov/dbwebexport.zip
             pre_download: |
-              curl -fsSL "https://campaignfinance.cdn.sos.ca.gov/dbwebexport.zip" \
-                -o /tmp/CA_CF.zip
+              curl -fsSL "https://campaignfinance.cdn.sos.ca.gov/dbwebexport.zip" -o /tmp/CA_CF.zip
 
           - state: Connecticut
             script: ct-seec-donors.ts
-            browser_required: "false"
-            source_url: https://seec.ct.gov/ecrisreporting/Data/eCrisDownloads/exportdatafiles/Receipts2024ElectionYearCandidateExploratoryCommittees.xlsx
             pre_download: |
               curl -fsSL "https://seec.ct.gov/ecrisreporting/Data/eCrisDownloads/exportdatafiles/Receipts2024ElectionYearCandidateExploratoryCommittees.xlsx" -o /tmp/CT_2024.xlsx
               pip3 install -q openpyxl
@@ -112,243 +57,207 @@ jobs:
 
           - state: Idaho
             script: id-donors.ts
-            browser_required: "false"
-            source_url: https://api-sunshine.voteidaho.gov/api/ExportData/GetExportPublicDownloadData
             pre_download: |
-              curl -fsSL -X POST \
-                "https://api-sunshine.voteidaho.gov/api/ExportData/GetExportPublicDownloadData" \
-                -H "Content-Type: application/json" \
-                -H "Referer: https://sunshine.voteidaho.gov/" \
-                -H "User-Agent: Mozilla/5.0" \
-                -d '{"transactionTypeCode":"TCON","type":"CSV","filingYear":"2024","openInNewTab":false}' \
-                -o /tmp/ID_contributions_2024.csv
+              curl -fsSL -X POST "https://api-sunshine.voteidaho.gov/api/ExportData/GetExportPublicDownloadData" -H "Content-Type: application/json" -H "Referer: https://sunshine.voteidaho.gov/" -H "User-Agent: Mozilla/5.0" -d '{"transactionTypeCode":"TCON","type":"CSV","filingYear":"2024","openInNewTab":false}' -o /tmp/ID_contributions_2024.csv
 
           - state: Iowa
             script: ia-iec-donors.ts
-            browser_required: "false"
-            pre_download: ""
+            pre_download: ""   # Iowa Socrata API
 
           - state: Maine
             script: me-cfis-donors.ts
-            browser_required: "false"
-            pre_download: ""
+            pre_download: ""   # Maine CFIS REST API
 
           - state: Maryland
             script: md-cris-donors.ts
-            browser_required: "false"
-            source_url: https://api-campaignfinance.maryland.gov/api/ExportPublicData/GetExportPublicDownloadData
             pre_download: |
-              curl -fsSL -X POST \
-                "https://api-campaignfinance.maryland.gov/api/ExportPublicData/GetExportPublicDownloadData" \
-                -H "Content-Type: application/json" \
-                -H "Referer: https://campaignfinance.maryland.gov/" \
-                -H "User-Agent: Mozilla/5.0" \
-                -d '{"filingYear":"2024","transactionTypeCode":"TCON","type":"CSV","fileName":"MD_2024","openInNewTab":false}' \
-                -o /tmp/MD_contributions_2024.csv
+              curl -fsSL -X POST "https://api-campaignfinance.maryland.gov/api/ExportPublicData/GetExportPublicDownloadData" -H "Content-Type: application/json" -H "Referer: https://campaignfinance.maryland.gov/" -H "User-Agent: Mozilla/5.0" -d '{"filingYear":"2024","transactionTypeCode":"TCON","type":"CSV","fileName":"MD_2024","openInNewTab":false}' -o /tmp/MD_contributions_2024.csv
 
           - state: Montana
             script: mt-cers-donors.ts
-            browser_required: "false"
-            pre_download: ""
+            pre_download: ""   # CERS session auto-bootstrapped
 
           - state: "New Hampshire"
             script: nh-donors.ts
-            browser_required: "false"
-            source_url: https://cfsapi.sos.nh.gov/api/ExportData/GetExportPublicDownloadData
             pre_download: |
-              curl -fsSL -X POST \
-                "https://cfsapi.sos.nh.gov/api/ExportData/GetExportPublicDownloadData" \
-                -H "Content-Type: application/json" \
-                -H "Referer: https://cfs.sos.nh.gov/" \
-                -H "User-Agent: Mozilla/5.0" \
-                -d '{"transactionTypeCode":"TCON","type":"CSV","filingYear":"2024","openInNewTab":false}' \
-                -o /tmp/NH_contributions_2024.csv
+              curl -fsSL -X POST "https://cfsapi.sos.nh.gov/api/ExportData/GetExportPublicDownloadData" -H "Content-Type: application/json" -H "Referer: https://cfs.sos.nh.gov/" -H "User-Agent: Mozilla/5.0" -d '{"transactionTypeCode":"TCON","type":"CSV","filingYear":"2024","openInNewTab":false}' -o /tmp/NH_contributions_2024.csv
 
           - state: "New Jersey"
             script: nj-elec-donors.ts
-            browser_required: "false"
-            pre_download: ""
+            pre_download: ""   # NJ ELEC search API
 
           - state: Pennsylvania
             script: pa-dos-donors.ts
-            browser_required: "false"
-            source_url: https://www.pa.gov/content/dam/copapwp-pagov/en/dos/resources/voting-and-elections/campaign-finance/campaign-finance-data/2024.zip
             pre_download: |
-              curl -fsSL \
-                "https://www.pa.gov/content/dam/copapwp-pagov/en/dos/resources/voting-and-elections/campaign-finance/campaign-finance-data/2024.zip" \
-                -o /tmp/PA_2024.zip
+              curl -fsSL "https://www.pa.gov/content/dam/copapwp-pagov/en/dos/resources/voting-and-elections/campaign-finance/campaign-finance-data/2024.zip" -o /tmp/PA_2024.zip
 
           - state: Utah
             script: ut-donors.ts
-            browser_required: "false"
-            source_url: https://disclosures.utah.gov/Search/AdvancedSearch/GenerateReport?ReportYear=2024&EntityType=PCC
             pre_download: |
-              curl -fsSL \
-                "https://disclosures.utah.gov/Search/AdvancedSearch/GenerateReport?ReportYear=2024&EntityType=PCC" \
-                -o /tmp/UT_PCC_2024.csv
-
-          - state: Virginia
-            script: va-sbe-donors.ts
-            browser_required: "false"
-            pre_download: ""
+              curl -fsSL "https://disclosures.utah.gov/Search/AdvancedSearch/GenerateReport?ReportYear=2024&EntityType=PCC" -o /tmp/UT_PCC_2024.csv
 
           - state: Vermont
             script: vt-donors.ts
-            browser_required: "false"
-            source_url: https://api.campaignfinance.vermont.gov/api/ExportData/GetExportPublicDownloadData
             pre_download: |
-              curl -fsSL -X POST \
-                "https://api.campaignfinance.vermont.gov/api/ExportData/GetExportPublicDownloadData" \
-                -H "Content-Type: application/json" \
-                -H "Referer: https://campaignfinance.vermont.gov/" \
-                -H "User-Agent: Mozilla/5.0" \
-                -d '{"transactionTypeCode":"TCON","type":"CSV","filingYear":"2024","openInNewTab":false}' \
-                -o /tmp/VT_contributions_2024.csv
+              curl -fsSL -X POST "https://api.campaignfinance.vermont.gov/api/ExportData/GetExportPublicDownloadData" -H "Content-Type: application/json" -H "Referer: https://campaignfinance.vermont.gov/" -H "User-Agent: Mozilla/5.0" -d '{"transactionTypeCode":"TCON","type":"CSV","filingYear":"2024","openInNewTab":false}' -o /tmp/VT_contributions_2024.csv
+
+          - state: Virginia
+            script: va-sbe-donors.ts
+            pre_download: ""   # VA SBE API
 
           - state: Washington
             script: wa-pdc-donors.ts
-            browser_required: "false"
             pre_download: |
-              curl -fsSL "https://data.wa.gov/resource/kv7h-kjye.csv?%24limit=500000&filing_year=2024" \
-                -o /tmp/WA_legislative_2024.csv
-              curl -fsSL "https://data.wa.gov/resource/kv7h-kjye.csv?%24limit=500000&filing_year=2026" \
-                -o /tmp/WA_legislative_2026.csv
+              curl -fsSL "https://data.wa.gov/resource/kv7h-kjye.csv?%24limit=500000&filing_year=2024" -o /tmp/WA_legislative_2024.csv
+              curl -fsSL "https://data.wa.gov/resource/kv7h-kjye.csv?%24limit=500000&filing_year=2026" -o /tmp/WA_legislative_2026.csv
 
           - state: Wisconsin
             script: wi-cfis-donors.ts
-            browser_required: "false"
-            pre_download: ""
+            pre_download: ""   # Wisconsin CFIS tRPC API
 
           - state: "West Virginia"
             script: wv-cfrs-donors.ts
-            browser_required: "false"
-            pre_download: ""
+            pre_download: ""   # WV CFRS two-step S3 API, no auth
 
-          # ================================================================
-          # BROWSER_REQUIRED — included in matrix, skipped in CI with warning.
-          # To activate: find the direct download URL, set browser_required
-          # to "false", and add the curl command to pre_download.
-          # ================================================================
+          # ---- States where download URL needs verification (will fail until URL is confirmed) ----
+          # Each has its best-known source URL. Fix: find direct curl-able file URL and update pre_download.
 
           - state: Alaska
             script: ak-apoc-donors.ts
-            browser_required: "true"
-            source_url: https://aws.state.ak.us/apocreports/campaigndisclosure/CDIncome.aspx
-            pre_download: ""
+            pre_download: |
+              # TODO: find direct CSV export URL from https://aws.state.ak.us/apocreports/campaigndisclosure/CDIncome.aspx
+              curl -fsSL "https://aws.state.ak.us/apocreports/campaigndisclosure/CDIncome.aspx" -o /tmp/AK_2024_income.csv
 
           - state: Arkansas
             script: ar-ethics-donors.ts
-            browser_required: "true"
-            source_url: https://ethics-disclosures.sos.arkansas.gov/public/cf/downloads
-            pre_download: ""
+            pre_download: |
+              # TODO: find direct CSV URL from https://ethics-disclosures.sos.arkansas.gov/public/cf/downloads
+              curl -fsSL "https://ethics-disclosures.sos.arkansas.gov/public/cf/downloads/Contributions_2024.csv" -o /tmp/AR_2024_contributions.csv
 
           - state: Colorado
             script: co-tracer-donors.ts
-            browser_required: "true"
-            source_url: https://tracer.sos.colorado.gov/PublicSite/Docs/BulkDataDownloads/
-            pre_download: ""
+            pre_download: |
+              # TODO: verify exact ZIP filenames at https://tracer.sos.colorado.gov/PublicSite/Docs/BulkDataDownloads/
+              curl -fsSL --insecure "https://tracer.sos.colorado.gov/PublicSite/Docs/BulkDataDownloads/2024_ContributionData.zip" -o /tmp/CO_2024_contributions.zip
+              curl -fsSL --insecure "https://tracer.sos.colorado.gov/PublicSite/Docs/BulkDataDownloads/2026_ContributionData.zip" -o /tmp/CO_2026_contributions.zip
 
           - state: Florida
             script: fl-dos-donors.ts
-            browser_required: "true"
-            source_url: https://dos.elections.myflorida.com/campaign-finance/contributions/
-            pre_download: ""
+            pre_download: |
+              # TODO: Cloudflare on dos.fl.gov — find direct URL or use Playwright
+              # Source: https://dos.elections.myflorida.com/campaign-finance/contributions/
+              curl -fsSL "https://dos.elections.myflorida.com/campaign-finance/contributions/HouseTotals.txt" -o /tmp/FL_2024_house_totals.txt
+              curl -fsSL "https://dos.elections.myflorida.com/campaign-finance/contributions/SenateTotals.txt" -o /tmp/FL_2024_senate_totals.txt
 
           - state: Hawaii
             script: hi-cfb-donors.ts
-            browser_required: "true"
-            source_url: https://ags.hawaii.gov/campaign/
-            pre_download: ""
+            pre_download: |
+              # TODO: find direct CSV export URL from https://ags.hawaii.gov/campaign/
+              curl -fsSL "https://ags.hawaii.gov/campaign/wp-content/uploads/Contributions_2024.csv" -o /tmp/HI_contributions.csv
 
           - state: Indiana
             script: in-cfa-donors.ts
-            browser_required: "true"
-            source_url: https://campaignfinance.in.gov/PublicSite/Docs/BulkDataDownloads/
-            pre_download: ""
+            pre_download: |
+              # TODO: verify exact ZIP filename at https://campaignfinance.in.gov/PublicSite/Docs/BulkDataDownloads/
+              curl -fsSL "https://campaignfinance.in.gov/PublicSite/Docs/BulkDataDownloads/2024_ContributionData.zip" -o /tmp/IN_2024_contributions.zip
 
           - state: Kentucky
             script: ky-kref-donors.ts
-            browser_required: "true"
-            source_url: https://secure.kentucky.gov/kref/publicsearch/ToCandidateSearch
-            pre_download: ""
+            pre_download: |
+              # TODO: Incapsula WAF — try with browser User-Agent or use Playwright
+              curl -fsSL -H "User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36" "https://secure.kentucky.gov/kref/publicsearch/ExportContributors?ElectionDate=11%2F05%2F2024%2000%3A00%3A00&ElectionType=GENERAL&OfficeSought=STATE%20REPRESENTATIVE&ContributionSearchType=Candidate" -o /tmp/KY_house_2024.csv
+              curl -fsSL -H "User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36" "https://secure.kentucky.gov/kref/publicsearch/ExportContributors?ElectionDate=11%2F05%2F2024%2000%3A00%3A00&ElectionType=GENERAL&OfficeSought=STATE%20SENATOR%20(ODD)&ContributionSearchType=Candidate" -o /tmp/KY_senate_2024.csv
 
           - state: Massachusetts
             script: ma-ocpf-donors.ts
-            browser_required: "true"
-            source_url: https://ocpf2.blob.core.windows.net/downloads/data2/
-            pre_download: ""
+            pre_download: |
+              # TODO: find correct reports.zip filename at https://ocpf2.blob.core.windows.net/downloads/data2/
+              curl -fsSL "https://ocpf2.blob.core.windows.net/downloads/data2/reports.zip" -o /tmp/MA_2024_reports.zip
 
           - state: Michigan
             script: mi-cfr-donors.ts
-            browser_required: "true"
-            source_url: https://mi-boe.entellitrak.com/etk-mi-boe-prod/page.request.do?page=gov.mi.boe.component.cfrexport.page.cfrexportfile&id=10886
-            pre_download: ""
+            pre_download: |
+              # TODO: entellitrak URL may need refresh — check https://www.michigan.gov/sos/elections/disclosure/cfr
+              curl -fsSL "https://mi-boe.entellitrak.com/etk-mi-boe-prod/page.request.do?page=gov.mi.boe.component.cfrexport.page.cfrexportfile&id=10886" -o /tmp/MI_contributions_2024.zip
 
           - state: Minnesota
             script: mn-cfb-donors.ts
-            browser_required: "true"
-            source_url: https://cfb.mn.gov/reports-and-data/self-help/data-downloads/campaign-finance/
-            pre_download: ""
+            pre_download: |
+              # TODO: verify this dynamic download parameter is stable at https://cfb.mn.gov/reports-and-data/self-help/data-downloads/campaign-finance/
+              curl -fsSL "https://cfb.mn.gov/reports-and-data/self-help/data-downloads/campaign-finance/?download=-2113865252" -o /tmp/MN_contributions.csv
 
           - state: Missouri
             script: mo-mec-donors.ts
-            browser_required: "true"
-            source_url: https://www.mec.mo.gov/MEC/Campaign_Finance/CF_ContrCSV.aspx
-            pre_download: ""
+            pre_download: |
+              # TODO: form-based POST required — find direct URL or use Playwright
+              # Source: https://www.mec.mo.gov/MEC/Campaign_Finance/CF_ContrCSV.aspx
+              curl -fsSL -X POST "https://www.mec.mo.gov/MEC/Campaign_Finance/CF_ContrCSV.aspx" -d "ReportYear=2024&Submit=Download" -o /tmp/MO_2024_contributions.csv
 
           - state: Mississippi
             script: ms-cfportal-donors.ts
-            browser_required: "true"
-            source_url: https://cfportal.sos.ms.gov/online/portal/cf/page/cf-search/Portal.aspx
-            pre_download: ""
+            pre_download: |
+              # NOTE: MS online filing disabled since 2023 — no electronic data available
+              # Source: https://cfportal.sos.ms.gov/online/portal/cf/page/cf-search/Portal.aspx
+              curl -fsSL "https://cfportal.sos.ms.gov/online/portal/cf/page/cf-search/Portal.aspx" -o /tmp/ms_page.html
 
           - state: "North Carolina"
             script: nc-ncsbe-donors.ts
-            browser_required: "true"
-            source_url: https://cf.ncsbe.gov/CFTxnLkup/AdvancedSearch/
-            pre_download: ""
+            pre_download: |
+              # TODO: session-based API — find public export URL or use Playwright
+              # Source: https://cf.ncsbe.gov/CFTxnLkup/AdvancedSearch/
+              curl -fsSL "https://cf.ncsbe.gov/CFTxnLkup/AdvancedSearch/ExportSearch?searchYear=2024&candidateType=SL" -o /tmp/NC_contributions_2024.json
 
-          - state: "North Dakota"
+          - state: "North Dakota (CFIS)"
             script: nd-cfis-donors.ts
-            browser_required: "true"
-            source_url: https://cf.sos.nd.gov/search/cfsearch.aspx
-            pre_download: ""
+            pre_download: |
+              # TODO: browser session required — find direct export URL or use Playwright
+              # Source: https://cf.sos.nd.gov/search/cfsearch.aspx
+              curl -fsSL "https://cf.sos.nd.gov/search/exportCSV?searchType=house&year=2024" -o /tmp/nd_house_2024.csv
+              curl -fsSL "https://cf.sos.nd.gov/search/exportCSV?searchType=senate&year=2024" -o /tmp/nd_senate_2024.csv
+
+          - state: "North Dakota (Playwright)"
+            script: nd-playwright-donors.ts
+            pre_download: ""   # Script uses Playwright directly — no pre-download needed
 
           - state: "New York"
             script: ny-boe-donors.ts
-            browser_required: "true"
-            source_url: https://publicreporting.elections.ny.gov/DownloadCampaignFinanceData/DownloadCampaignFinanceData
-            pre_download: ""
+            pre_download: |
+              # TODO: find direct ZIP download URLs from https://publicreporting.elections.ny.gov/DownloadCampaignFinanceData/DownloadCampaignFinanceData
+              curl -fsSL "https://publicreporting.elections.ny.gov/DownloadCampaignFinanceData/DownloadCampaignFinanceData?fileDownloadName=2024gen" -o /tmp/NY_2024gen.zip
+              curl -fsSL "https://publicreporting.elections.ny.gov/DownloadCampaignFinanceData/DownloadCampaignFinanceData?fileDownloadName=2024pri" -o /tmp/NY_2024pri.zip
+              curl -fsSL "https://publicreporting.elections.ny.gov/DownloadCampaignFinanceData/DownloadCampaignFinanceData?fileDownloadName=2024jul" -o /tmp/NY_2024jul.zip
 
           - state: Ohio
             script: oh-sos-donors.ts
-            browser_required: "true"
-            source_url: https://www6.ohiosos.gov/ords/f?p=CFDISCLOSURE:73:::NO:RP:P73_TYPE:CAN:
-            pre_download: ""
+            pre_download: |
+              # TODO: Cloudflare on ohiosos.gov — try with browser headers or use Playwright
+              # Source: https://www6.ohiosos.gov/ords/f?p=CFDISCLOSURE:73:::NO:RP:P73_TYPE:CAN:
+              curl -fsSL -H "User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36" "https://www6.ohiosos.gov/ords/f?p=CFDISCLOSURE:73:::NO:RP:P73_TYPE:CAN:" -o /tmp/OH_CAC_CON_2024.CSV
 
           - state: Oklahoma
             script: ok-ethics-donors.ts
-            browser_required: "true"
-            source_url: https://guardian.ok.gov/PublicSite/Docs/BulkDataDownloads/
-            pre_download: ""
+            pre_download: |
+              # TODO: verify exact ZIP filename at https://guardian.ok.gov/PublicSite/Docs/BulkDataDownloads/
+              curl -fsSL "https://guardian.ok.gov/PublicSite/Docs/BulkDataDownloads/2024_ContributionLoanExtract.zip" -o /tmp/OK_2024_contributions.zip
 
           - state: "South Carolina"
             script: sc-ethics-donors.ts
-            browser_required: "true"
-            source_url: https://ethicsfiling.sc.gov/public/campaign-reports/contributions
-            pre_download: ""
+            pre_download: |
+              # TODO: Queue-IT WAF — try direct API POST or use Playwright
+              # API: POST https://ethicsfiling.sc.gov/api/Candidate/Contribution/Search/
+              curl -fsSL -X POST "https://ethicsfiling.sc.gov/api/Candidate/Contribution/Search/" -H "Content-Type: application/json" -H "Referer: https://ethicsfiling.sc.gov/public/campaign-reports/contributions" -d '{"officeType":"SL","electionYear":2024,"pageNumber":1,"pageSize":50000}' -o /tmp/SC_2024_contributions.json
 
           - state: Tennessee
             script: tn-camp-donors.ts
-            browser_required: "true"
-            source_url: https://apps.tn.gov/tncamp/public/cesearch.htm
-            pre_download: ""
+            pre_download: |
+              # TODO: find direct export URL from https://apps.tn.gov/tncamp/public/cesearch.htm
+              curl -fsSL "https://apps.tn.gov/tncamp-app/public/cesearch.htm?exportAll=true&year=2024" -o /tmp/tn_all.csv
 
           - state: Texas
             script: tx-tec-donors.ts
-            browser_required: "true"
-            source_url: https://www.ethics.state.tx.us/data/search/cf/
-            pre_download: ""
+            pre_download: |
+              # TODO: find correct TEC ZIP URL from https://www.ethics.state.tx.us/data/search/cf/
+              curl -fsSL "https://www.ethics.state.tx.us/data/search/cf/TEC_CF_CSV.zip" -o /tmp/TEC_CF_CSV.zip
 
     steps:
       - name: Checkout
@@ -362,6 +271,10 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Install Playwright browsers (if script uses Playwright)
+        if: contains(matrix.script, 'playwright')
+        run: npx playwright install chromium --with-deps
 
       - name: Install Bitwarden Secrets Manager CLI
         run: |
@@ -392,25 +305,17 @@ jobs:
 
       - name: Download source data — ${{ matrix.state }}
         id: download
-        shell: bash
+        continue-on-error: true
         env:
           PRE_DOWNLOAD: ${{ matrix.pre_download }}
-          BROWSER_REQUIRED: ${{ matrix.browser_required }}
-          SOURCE_URL: ${{ matrix.source_url }}
         run: |
-          if [ "$BROWSER_REQUIRED" = "true" ]; then
-            echo "::warning::${{ matrix.state }} donor data requires browser session — skipped in CI. Manual download: $SOURCE_URL"
-            echo "skip=true" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
           if [ -n "$PRE_DOWNLOAD" ]; then
-            echo "$PRE_DOWNLOAD" > /tmp/pre_download.sh
-            bash /tmp/pre_download.sh
+            echo "$PRE_DOWNLOAD" > /tmp/pre_download_${{ strategy.job-index }}.sh
+            bash /tmp/pre_download_${{ strategy.job-index }}.sh
           fi
-          echo "skip=false" >> "$GITHUB_OUTPUT"
 
       - name: Run donor ingest — ${{ matrix.state }}
-        if: steps.download.outputs.skip != 'true'
+        if: steps.download.outcome == 'success'
         run: npx tsx scripts/ingest/${{ matrix.script }}
 
       - name: Notify on ingest failure
