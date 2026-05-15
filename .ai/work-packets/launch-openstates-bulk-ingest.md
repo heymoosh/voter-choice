@@ -1,6 +1,6 @@
 # Work Packet: launch-openstates-bulk-ingest
 
-Status: Phase A-C complete + Phase D (tag-bills) in progress via Haiku subagents (Max subscription, NOT ANTHROPIC_VOTER_API) + Phase E (smoke checklist) ✅ PASS all 5 steps (see docs/operations/packet-6-smoke-checklist.md). DB: 67,674 bills, 40,461 issue_tags covering 35,950 unique bills (53%). Subagent tagging running continuously on 31,696 remaining untagged bills. Blocked items requiring Muxin action: (1) WI bad data deletion (17 rows, $26M amounts); (2) FTM API key for ~30 remaining donor states.
+Status: Phases A-E complete ✅. DB: 67,674 bills, 42,506 issue_tags covering 38,020 unique bills (56.2%) — clean reasoning-based tags only (claude-haiku-4-5-20251001-v1). WI bad data deleted 2026-05-14. FTM API key optional enrichment (not required for launch). See docs/operations/packet-6-smoke-checklist.md for smoke checklist sign-off.
 Owner: orchestrator
 Source: User — bypass OpenStates API 429 limits using the May 2026 postgres dump
 Branch: launch/production

@@ -2,13 +2,13 @@
  * Montana CERS campaign finance data ingest.
  *
  * Fetches contribution CSVs from MT CERS public search for all MT DB candidates.
- * Requires an active CERS session cookie obtained from a browser session.
+ * No login required — CERS public search is unauthenticated. The script
+ * bootstraps its own session by GETting the public search page first.
  *
  * Usage:
- *   DATABASE_URL=<neon> CERS_SESSION_COOKIE="<cookie>" npx tsx scripts/ingest/mt-cers-donors.ts
+ *   DATABASE_URL=<neon> npx tsx scripts/ingest/mt-cers-donors.ts
  *
- * The CERS_SESSION_COOKIE should be the raw cookie string from document.cookie
- * in an active CERS browser session (e.g., "TS019606d9=...; TS01d6b3be=...").
+ * Optional: CERS_SESSION_COOKIE="<cookie>" overrides the auto-bootstrapped session.
  */
 
 import { requireDb } from "../../db/client";
@@ -21,8 +21,8 @@ const SOURCE = "mt_cers_bulk";
 const SOURCE_URL = "https://cers-ext.mt.gov/CampaignTracker/public/search";
 const ELECTION_CYCLE = "2024";
 
-const initialCookie = process.env.CERS_SESSION_COOKIE!;
-if (!initialCookie) { console.error("CERS_SESSION_COOKIE is required"); process.exit(1); }
+// Session cookie — auto-bootstrapped from the public search page if not supplied.
+let initialCookie = process.env.CERS_SESSION_COOKIE ?? "";
 
 const UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
 
@@ -42,6 +42,17 @@ function captureSetCookies(resp: Response) {
       cookieJar = cookieJar + "; JSESSIONID=" + match[1];
     }
   }
+}
+
+async function bootstrapSession(): Promise<string> {
+  const resp = await fetch(CERS_BASE + "/public/search", {
+    headers: { "User-Agent": UA, "Accept": "text/html,*/*" },
+  });
+  // Node 22: getSetCookie() returns all Set-Cookie headers as an array.
+  const all: string[] = (resp.headers as any).getSetCookie?.() ??
+    (resp.headers.get("set-cookie") ? [resp.headers.get("set-cookie")!] : []);
+  if (all.length === 0) throw new Error("[mt-cers] No session cookies from public search page");
+  return all.map((c: string) => c.split(";")[0]).filter(Boolean).join("; ");
 }
 
 async function ceresPost(path: string, body: string): Promise<Response> {
@@ -114,6 +125,14 @@ function ceresFirstName(n: string): string {
 async function main() {
   const isDryRun = process.argv.includes("--dry-run");
   const db = requireDb();
+
+  // 0. Bootstrap session if no cookie supplied via env
+  if (!initialCookie) {
+    console.log("[mt-cers] No CERS_SESSION_COOKIE — bootstrapping from public search page");
+    initialCookie = await bootstrapSession();
+    cookieJar = initialCookie;
+    console.log("[mt-cers] Session bootstrapped");
+  }
 
   // 1. Load MT DB candidates
   const dbCands = await db.select({

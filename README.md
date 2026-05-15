@@ -1,6 +1,6 @@
 # Voter Choice
 
-Voter Choice is a free AI-powered ballot research tool for Texas voters. Users enter a zip code to get election information, then research their ballot with Claude-powered assistance or a copy/paste fallback.
+Voter Choice is a free AI-powered ballot research tool for U.S. voters across all 50 states and D.C. Users enter their address to get election information, then research their ballot with Claude-powered assistance or a copy/paste fallback.
 
 Stack: Next.js 15 App Router, TypeScript, Tailwind CSS, Vercel.
 

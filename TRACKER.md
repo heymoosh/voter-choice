@@ -3,7 +3,7 @@
 ## Status
 
 - Production branch: `launch/production`.
-- Product: Voter Choice, a Texas ballot research tool built with Next.js, TypeScript, Tailwind CSS, Claude, and Vercel.
+- Product: Voter Choice, a U.S. ballot research tool for all 50 states and D.C., built with Next.js, TypeScript, Tailwind CSS, Claude, and Vercel.
 - AI Coding Practices adopted as the operating model; current source-of-truth map lives in `docs/ai-coding-practices/source-of-truth-map.md`.
 - Deployment CI remains owned by `.github/workflows/deploy.yml`.
 

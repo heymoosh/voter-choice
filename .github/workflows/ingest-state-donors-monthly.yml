@@ -1,0 +1,336 @@
+name: Ingest State Donor Data (Monthly)
+
+on:
+  # 2nd of each month at 10:00 UTC.
+  schedule:
+    - cron: "0 10 2 * *"
+  workflow_dispatch:
+
+# -----------------------------------------------------------------------
+# Status key
+# -----------------------------------------------------------------------
+# ACTIVE  — script auto-fetches its own data; runs in CI with no prep.
+# NEEDS DOWNLOAD STEP — script reads from /tmp/; curl step required before
+#   the script will succeed. Add the curl download URL to the job below,
+#   uncomment the matrix entry, and it will be activated automatically.
+# PLAYWRIGHT — requires a headed browser; run locally or via a Claude Code
+#   scheduled agent (OR has WAF that blocks headless).
+# PYTHON SCRAPER — requires a companion Python script; run locally.
+#
+# State         | Status
+# --------------|-------------------
+# AK            | NEEDS DOWNLOAD STEP  (https://aws.state.ak.us/ApocReports/...)
+# AL            | ACTIVE ✓ (auto-downloads from public FCPA page)
+# AR            | NEEDS DOWNLOAD STEP
+# AZ            | ACTIVE ✓ (SeeTheMoney export API)
+# CA            | NEEDS DOWNLOAD STEP  (https://www.sos.ca.gov — ~1 GB ZIP)
+# CO            | NEEDS DOWNLOAD STEP  (TRACER bulk export)
+# CT            | NEEDS DOWNLOAD STEP  (https://seec.ct.gov)
+# DE            | PYTHON SCRAPER
+# FL            | NEEDS DOWNLOAD STEP  (https://dos.elections.myflorida.com)
+# GA            | PYTHON SCRAPER
+# HI            | NEEDS DOWNLOAD STEP  (https://ags.hawaii.gov/campaign)
+# IA            | ACTIVE ✓ (Iowa Socrata API)
+# ID            | NEEDS DOWNLOAD STEP  (https://sos.idaho.gov)
+# IL            | PYTHON SCRAPER
+# IN            | NEEDS DOWNLOAD STEP  (https://campaignfinance.in.gov)
+# KS            | PLAYWRIGHT
+# KY            | NEEDS DOWNLOAD STEP  (https://kref.ky.gov)
+# LA            | PYTHON SCRAPER
+# MA            | NEEDS DOWNLOAD STEP  (https://www.ocpf.us/Data/ExportData)
+# MD            | NEEDS DOWNLOAD STEP  (https://campaignfinance.maryland.gov)
+# ME            | ACTIVE ✓ (Maine CFIS REST API)
+# MI            | NEEDS DOWNLOAD STEP  (https://cfr.michigan.gov)
+# MN            | NEEDS DOWNLOAD STEP  (https://cfb.mn.gov/reports-and-data)
+# MO            | NEEDS DOWNLOAD STEP  (https://mec.mo.gov)
+# MS            | NEEDS DOWNLOAD STEP  (https://cfportal.sos.ms.gov)
+# MT            | ACTIVE ✓ (CERS public search, session auto-bootstrapped)
+# NC            | NEEDS DOWNLOAD STEP  (https://cf.ncsbe.gov)
+# ND            | NEEDS DOWNLOAD STEP  (https://cfis.nd.gov)
+# NE            | ACTIVE (weekly via ingest-donors.yml — skipped here)
+# NH            | NEEDS DOWNLOAD STEP  (https://sos.nh.gov)
+# NJ            | ACTIVE ✓ (NJ ELEC search API)
+# NM            | PYTHON SCRAPER
+# NV            | PYTHON SCRAPER
+# NY            | NEEDS DOWNLOAD STEP  (https://publicreporting.elections.ny.gov)
+# OH            | NEEDS DOWNLOAD STEP  (https://www.ohiosos.gov)
+# OK            | NEEDS DOWNLOAD STEP  (https://guardian.ok.gov)
+# OR            | PLAYWRIGHT (WAF blocks headless)
+# PA            | NEEDS DOWNLOAD STEP  (https://www.pa.gov/agencies/dos)
+# RI            | PYTHON SCRAPER
+# SC            | NEEDS DOWNLOAD STEP  (https://ethicsfiling.sc.gov)
+# SD            | PYTHON SCRAPER
+# TN            | NEEDS DOWNLOAD STEP  (https://apps.tn.gov/tncamp-app)
+# TX            | NEEDS DOWNLOAD STEP  (https://www.ethics.state.tx.us/data/search/cf/)
+# UT            | NEEDS DOWNLOAD STEP  (https://disclosures.utah.gov)
+# VA            | ACTIVE ✓ (VA SBE API)
+# VT            | NEEDS DOWNLOAD STEP  (https://sos.vermont.gov)
+# WA            | ACTIVE ✓ (data.wa.gov Socrata API — downloaded in CI)
+# WI            | ACTIVE ✓ (Wisconsin CFIS tRPC API)
+# WV            | ACTIVE ✓ (WV CFRS two-step S3 API, no auth required)
+# WY            | PYTHON SCRAPER
+# -----------------------------------------------------------------------
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        include:
+          # ------------------------------------------------------------------
+          # ACTIVE — auto-fetch, no pre-download needed
+          # ------------------------------------------------------------------
+          - state: Alabama
+            script: al-fcpa-donors.ts
+            pre_download: ""
+
+          - state: Arizona
+            script: az-seethemoney-donors.ts
+            pre_download: ""
+
+          - state: Iowa
+            script: ia-iec-donors.ts
+            pre_download: ""
+
+          - state: Maine
+            script: me-cfis-donors.ts
+            pre_download: ""
+
+          - state: Montana
+            script: mt-cers-donors.ts
+            pre_download: ""
+
+          - state: "New Jersey"
+            script: nj-elec-donors.ts
+            pre_download: ""
+
+          - state: Virginia
+            script: va-sbe-donors.ts
+            pre_download: ""
+
+          - state: Washington
+            script: wa-pdc-donors.ts
+            pre_download: |
+              curl -fsSL "https://data.wa.gov/resource/kv7h-kjye.csv?%24limit=500000&filing_year=2024" \
+                -o /tmp/WA_legislative_2024.csv
+              curl -fsSL "https://data.wa.gov/resource/kv7h-kjye.csv?%24limit=500000&filing_year=2026" \
+                -o /tmp/WA_legislative_2026.csv
+
+          - state: Wisconsin
+            script: wi-cfis-donors.ts
+            pre_download: ""
+
+          - state: "West Virginia"
+            script: wv-cfrs-donors.ts
+            pre_download: ""
+
+          # ------------------------------------------------------------------
+          # NEEDS DOWNLOAD STEP — uncomment and add pre_download curl once
+          # the direct download URL is confirmed for each state.
+          # ------------------------------------------------------------------
+          # - state: Alaska
+          #   script: ak-apoc-donors.ts
+          #   pre_download: |
+          #     curl -fsSL "https://aws.state.ak.us/ApocReports/..." -o /tmp/AK_2024.csv
+
+          # - state: Arkansas
+          #   script: ar-ethics-donors.ts
+          #   pre_download: |
+          #     curl -fsSL "https://ethics.arkansas.gov/..." -o /tmp/AR_2024.csv
+
+          # - state: California
+          #   script: ca-calaccess-donors.ts
+          #   pre_download: |
+          #     curl -fsSL "https://campaignfinance.cdn.sos.ca.gov/public/..." -o /tmp/CA_CF.zip
+
+          # - state: Colorado
+          #   script: co-tracer-donors.ts
+          #   pre_download: |
+          #     curl -fsSL "https://tracer.sos.colorado.gov/..." -o /tmp/CO_2024_contributions.zip
+          #     curl -fsSL "https://tracer.sos.colorado.gov/..." -o /tmp/CO_2026_contributions.zip
+
+          # - state: Connecticut
+          #   script: ct-seec-donors.ts
+          #   pre_download: |
+          #     curl -fsSL "https://seec.ct.gov/..." -o /tmp/CT_2024_contributions.csv
+
+          # - state: Florida
+          #   script: fl-dos-donors.ts
+          #   pre_download: |
+          #     curl -fsSL "https://dos.elections.myflorida.com/..." -o /tmp/FL_2024_house_totals.txt
+          #     curl -fsSL "https://dos.elections.myflorida.com/..." -o /tmp/FL_2024_senate_totals.txt
+
+          # - state: Hawaii
+          #   script: hi-cfb-donors.ts
+          #   pre_download: |
+          #     curl -fsSL "https://ags.hawaii.gov/..." -o /tmp/HI_2024_contributions.csv
+
+          # - state: Idaho
+          #   script: id-donors.ts
+          #   pre_download: |
+          #     curl -fsSL "https://sos.idaho.gov/..." -o /tmp/ID_2024.csv
+
+          # - state: Indiana
+          #   script: in-cfa-donors.ts
+          #   pre_download: |
+          #     curl -fsSL "https://campaignfinance.in.gov/..." -o /tmp/IN_2024.csv
+
+          # - state: Kentucky
+          #   script: ky-kref-donors.ts
+          #   pre_download: |
+          #     curl -fsSL "https://kref.ky.gov/..." -o /tmp/KY_2024_cash.csv
+          #     curl -fsSL "https://kref.ky.gov/..." -o /tmp/KY_2024_inkind.csv
+
+          # - state: Massachusetts
+          #   script: ma-ocpf-donors.ts
+          #   pre_download: |
+          #     curl -fsSL "https://www.ocpf.us/Data/..." -o /tmp/MA_reports.zip
+
+          # - state: Maryland
+          #   script: md-cris-donors.ts
+          #   pre_download: |
+          #     curl -fsSL "https://campaignfinance.maryland.gov/..." -o /tmp/MD_2024.csv
+
+          # - state: Michigan
+          #   script: mi-cfr-donors.ts
+          #   pre_download: |
+          #     curl -fsSL "https://cfr.michigan.gov/..." -o /tmp/MI_2024.csv
+
+          # - state: Minnesota
+          #   script: mn-cfb-donors.ts
+          #   pre_download: |
+          #     curl -fsSL "https://cfb.mn.gov/..." -o /tmp/MN_contributions.csv
+
+          # - state: Missouri
+          #   script: mo-mec-donors.ts
+          #   pre_download: |
+          #     curl -fsSL "https://mec.mo.gov/..." -o /tmp/MO_2024.csv
+
+          # - state: Mississippi
+          #   script: ms-cfportal-donors.ts
+          #   pre_download: |
+          #     curl -fsSL "https://cfportal.sos.ms.gov/..." -o /tmp/ms_contributions.json
+
+          # - state: "North Carolina"
+          #   script: nc-ncsbe-donors.ts
+          #   pre_download: |
+          #     curl -fsSL "https://cf.ncsbe.gov/..." -o /tmp/NC_contributions_2024.json
+
+          # - state: "North Dakota"
+          #   script: nd-cfis-donors.ts
+          #   pre_download: |
+          #     curl -fsSL "https://cfis.nd.gov/..." -o /tmp/ND_2024.csv
+
+          # - state: "New Hampshire"
+          #   script: nh-donors.ts
+          #   pre_download: |
+          #     curl -fsSL "https://sos.nh.gov/..." -o /tmp/NH_2024.csv
+
+          # - state: "New York"
+          #   script: ny-boe-donors.ts
+          #   pre_download: |
+          #     curl -fsSL "https://publicreporting.elections.ny.gov/..." -o /tmp/NY_2024gen.zip
+
+          # - state: Ohio
+          #   script: oh-sos-donors.ts
+          #   pre_download: |
+          #     curl -fsSL "https://www.ohiosos.gov/..." -o /tmp/OH_2024.csv
+
+          # - state: Oklahoma
+          #   script: ok-ethics-donors.ts
+          #   pre_download: |
+          #     curl -fsSL "https://guardian.ok.gov/..." -o /tmp/OK_2024.csv
+
+          # - state: Pennsylvania
+          #   script: pa-dos-donors.ts
+          #   pre_download: |
+          #     curl -fsSL "https://www.pa.gov/..." -o /tmp/PA_2024.zip
+
+          # - state: "South Carolina"
+          #   script: sc-ethics-donors.ts
+          #   pre_download: |
+          #     curl -fsSL "https://ethicsfiling.sc.gov/..." -o /tmp/SC_2024_contributions.json
+
+          # - state: Tennessee
+          #   script: tn-camp-donors.ts
+          #   pre_download: |
+          #     curl -fsSL "https://apps.tn.gov/..." -o /tmp/TN_2024.csv
+
+          # - state: Texas
+          #   script: tx-tec-donors.ts
+          #   pre_download: |
+          #     curl -fsSL "https://www.ethics.state.tx.us/data/search/cf/TEC_CF_CSV.zip" \
+          #       -o /tmp/TEC_CF_CSV.zip
+
+          # - state: Utah
+          #   script: ut-donors.ts
+          #   pre_download: |
+          #     curl -fsSL "https://disclosures.utah.gov/..." -o /tmp/UT_2024.csv
+
+          # - state: Vermont
+          #   script: vt-donors.ts
+          #   pre_download: |
+          #     curl -fsSL "https://sos.vermont.gov/..." -o /tmp/VT_2024.csv
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Bitwarden Secrets Manager CLI
+        run: |
+          curl -sSLo bws.zip "https://github.com/bitwarden/sdk-sm/releases/download/bws-v2.0.0/bws-x86_64-unknown-linux-musl-2.0.0.zip"
+          unzip -o bws.zip bws
+          sudo install -m 755 bws /usr/local/bin/bws
+          bws --version
+
+      - name: Pull secrets from Bitwarden SM
+        env:
+          BWS_ACCESS_TOKEN: ${{ secrets.BW_ACCESS_TOKEN }}
+        run: |
+          DATABASE_URL=$(bws secret get 90abeeed-130e-4707-86ff-b446003770c2 --access-token "$BWS_ACCESS_TOKEN" --output json | jq -r '.value')
+          echo "DATABASE_URL=$DATABASE_URL" >> "$GITHUB_ENV"
+          echo "::add-mask::$DATABASE_URL"
+
+          set +e
+          WEBHOOK_SECRET=$(bws secret get <INGEST_FAILURE_WEBHOOK_BWS_SECRET_ID> --access-token "$BWS_ACCESS_TOKEN" --output json 2>/dev/null)
+          WEBHOOK_STATUS=$?
+          set -e
+          if [ "$WEBHOOK_STATUS" -eq 0 ]; then
+            INGEST_FAILURE_WEBHOOK_URL=$(echo "$WEBHOOK_SECRET" | jq -r '.value // empty')
+            if [ -n "$INGEST_FAILURE_WEBHOOK_URL" ]; then
+              echo "INGEST_FAILURE_WEBHOOK_URL=$INGEST_FAILURE_WEBHOOK_URL" >> "$GITHUB_ENV"
+              echo "::add-mask::$INGEST_FAILURE_WEBHOOK_URL"
+            fi
+          fi
+
+      - name: Download source data — ${{ matrix.state }}
+        if: matrix.pre_download != ''
+        run: ${{ matrix.pre_download }}
+
+      - name: Run donor ingest — ${{ matrix.state }}
+        run: npx tsx scripts/ingest/${{ matrix.state.script }}
+
+      - name: Notify on ingest failure
+        if: failure()
+        env:
+          WEBHOOK: ${{ env.INGEST_FAILURE_WEBHOOK_URL }}
+        run: |
+          if [ -z "$WEBHOOK" ]; then
+            echo "INGEST_FAILURE_WEBHOOK_URL not set — skipping alert"
+            exit 0
+          fi
+          curl -fsS -X POST "$WEBHOOK" \
+            -H "Content-Type: application/json" \
+            -d "$(jq -n --arg state "${{ matrix.state }}" --arg run "${{ github.run_id }}" --arg repo "${{ github.repository }}" \
+              '{text: "[voter-choice donor ingest failure] state=\($state) repo=\($repo) run_id=\($run)"}')"

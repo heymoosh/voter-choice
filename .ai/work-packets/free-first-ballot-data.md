@@ -1,5 +1,7 @@
 # Work Packet: free-first-ballot-data
 
+Status: COMPLETED. All acceptance criteria verified in code (2026-05-14). See /src/app/api/civic/route.ts (election-ID retry logic, BallotSourceSummary type), /src/components/ResearchLayout.tsx ("Exact ballot not confirmed yet." copy), /src/lib/generatePrompt.ts (unconfirmed-ballot prompt variant), and /src/app/api/civic/route.test.ts (exact_official / source_links_only coverage).
+
 ## Intent
 
 Make ballot data truthfulness launch-ready by using free official sources first, clearly labeling source confidence, and preventing the app from implying exact contests/candidates were found when they were not.

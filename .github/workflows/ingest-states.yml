@@ -1,9 +1,10 @@
 name: Ingest State Votes
 
 on:
-  # Sunday 07:30 UTC — after federal ingest starts
+  # Daily 07:30 UTC — processes 10 states per day (shard by day-of-month % 5).
+  # All 50 states cycle every 5 days, staying within the 250 req/day OpenStates limit.
   schedule:
-    - cron: "30 7 * * 0"
+    - cron: "30 7 * * *"
   # Manual controls:
   # - scope=canary runs TX, CA, NY, FL, GA, NC
   # - scope=all runs all 50 states
@@ -97,7 +98,20 @@ jobs:
           SHOULD_RUN=false
           SELECTED_STATE=$(echo "${{ inputs.state }}" | tr '[:lower:]' '[:upper:]')
           if [[ "${{ github.event_name }}" == "schedule" ]]; then
-            SHOULD_RUN=true
+            # Shard by day-of-month % 5 — 10 states/day, full cycle every 5 days.
+            # At ~20 API calls/state this stays under the 250 req/day OpenStates limit.
+            DAY=$(date -u +%-d)
+            SHARD=$((DAY % 5))
+            case $SHARD in
+              0) SHARD_STATES="AL AK AZ AR CA CO CT DE FL GA" ;;
+              1) SHARD_STATES="HI ID IL IN IA KS KY LA ME MD" ;;
+              2) SHARD_STATES="MA MI MN MS MO MT NE NV NH NJ" ;;
+              3) SHARD_STATES="NM NY NC ND OH OK OR PA RI SC" ;;
+              4) SHARD_STATES="SD TN TX UT VT VA WA WV WI WY" ;;
+            esac
+            case " $SHARD_STATES " in
+              *" ${{ matrix.state }} "*) SHOULD_RUN=true ;;
+            esac
           elif [[ "${{ inputs.scope }}" == "all" ]]; then
             SHOULD_RUN=true
           elif [[ "${{ inputs.scope }}" == "canary" ]]; then
@@ -172,7 +186,9 @@ jobs:
         if: steps.scope.outputs.run == 'true'
         env:
           STATE: ${{ matrix.state }}
-          OPENSTATES_MAX_BILLS: ${{ inputs.max_bills }}
+          # For scheduled runs, cap at 20 bills/state to stay within 250 req/day limit.
+          # For manual runs, use the workflow_dispatch input (empty = no limit).
+          OPENSTATES_MAX_BILLS: ${{ github.event_name == 'schedule' && '20' || inputs.max_bills }}
         run: npx tsx scripts/ingest/state-votes.ts
 
       - name: Notify on ingest failure

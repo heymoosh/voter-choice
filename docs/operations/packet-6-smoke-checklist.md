@@ -143,9 +143,26 @@ WI now shows 0% donor coverage (honest — correct for a state with no electroni
 - WY: 23 candidates — no electronic filing mandate
 - AK: 47 candidates — electronic ceiling reached
 
-**Note on FTM API (followthemoney.org):** The `ingest-donors.yml` workflow requires `FOLLOWTHEMONEY_API_KEY` to be provisioned in BWS secrets. Without it, the Sunday cron job will fail. All 50 states already have data from dedicated scripts, so FTM would provide industry-level enrichment for the low-coverage states. Not required for launch but recommended for ongoing data quality.
+**Note on FTM API:** FollowTheMoney.org API is now a commercial API under Open Secrets — the free registration path no longer exists. All 50 states already have donor data from dedicated scraper scripts. The `ingest-donors.yml` workflow gracefully skips FTM if the key is absent; state donor data will not degrade without it.
 
-**issue_tags (2026-05-14):** 49,076 tags covering 44,311/67,674 bills (65.5%). Subagent tagging via Max subscription complete for this session. Sunday `ingest-tag-bills.yml` cron will continue growing coverage. stanceLens must be "in_favor"|"opposed" — cleanup SQL: `DELETE FROM issue_tags WHERE stance_lens NOT IN ('in_favor', 'opposed');`
+**issue_tags (2026-05-14, updated):** 42,506 tags covering 38,020/67,674 bills (56.2%). Bad claude-sonnet-4-6-agent-v1 tags (10-14% error rate, keyword-heuristic) deleted 2026-05-14; 32,401 bills re-tagged with claude-haiku-4-5-20251001-v1 via Claude reasoning. Zero invalid canonical issues or stance_lens values. Sunday `ingest-tag-bills.yml` cron will continue growing coverage.
+
+---
+
+## Known Operational Gaps (2026-05-14)
+
+### `ingest-states.yml` cron is non-functional
+
+Every run of `ingest-states.yml` fails with `"exceeded limit of 250/day"` — the OpenStates API key was exhausted during initial development. The initial DB load used the May 2026 Postgres dump to bypass the API; the weekly cron was written to use the API directly, which is incompatible with the free-tier 250 req/day limit.
+
+**Impact:** State vote and bill data will not refresh after the initial load. Federal data (`ingest-federal.yml`) and bill tagging (`ingest-tag-bills.yml`) continue to work.
+
+**Options to fix:**
+1. Upgrade to a paid OpenStates plan (higher API rate limits)
+2. Replace the cron with a monthly Postgres dump re-import job (matches the original approach)
+3. Accept stale state data at launch — existing data from May 2026 dump is complete
+
+The cron has also **never fired on schedule** — all runs to date were manual `workflow_dispatch` triggers.
 
 ---
 

@@ -53,14 +53,11 @@ jobs:
           echo "::add-mask::$FEC_API_KEY"
 
           # ---------------------------------------------------------------
-          # FOLLOWTHEMONEY_API_KEY — REQUIRED for state donor data.
-          # FTM API requires a free account key (register at followthemoney.org).
-          # Without it, state_donors.ts will skip all candidates with no FTM ID.
-          # Steps: 1) Register at https://www.followthemoney.org/account/register/
-          #        2) Copy the API key from your account page
-          #        3) bws secret create FOLLOWTHEMONEY_API_KEY <key>
-          #        4) Replace <FOLLOWTHEMONEY_API_KEY_BWS_SECRET_ID> below with UUID
-          # Until key is provisioned, state donor data will not be populated.
+          # FOLLOWTHEMONEY_API_KEY — optional enrichment for state donor data.
+          # NOTE: FollowTheMoney.org API is now commercial (Open Secrets).
+          # All 50 states already have donor data from dedicated scraper scripts.
+          # FTM would provide additional industry-level enrichment only.
+          # Skip if not provisioned — state_donors.ts handles missing key gracefully.
           set +e
           FTM_SECRET=$(bws secret get <FOLLOWTHEMONEY_API_KEY_BWS_SECRET_ID> --access-token "$BWS_ACCESS_TOKEN" --output json 2>/dev/null)
           FTM_STATUS=$?

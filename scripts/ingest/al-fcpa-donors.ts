@@ -4,9 +4,10 @@
  * Alabama donor ingest from Alabama FCPA Campaign Finance System.
  * Source: https://fcpa.alabamavotes.gov/page.request.do?page=page.acfPublicDownloadData
  *
- * Download URLs (session cookie required — download from browser then curl with cookie):
+ * Download URLs (public — session cookie auto-obtained by visiting the download page):
  *   Cash Contributions 2024: /page.request.do?page=getTransactionData&id=8
  *   In-Kind Contributions 2024: /page.request.do?page=getTransactionData&id=9
+ *   The script fetches these automatically if the /tmp/ files are absent.
  *
  * CSV fields: CommitteeId, ContributionAmount, ContributionDate,
  *   LastName, FirstName, MI, Suffix, Address1, City, State, Zip,
@@ -51,8 +52,10 @@ import {
 // Constants
 // ---------------------------------------------------------------------------
 
+const AL_BASE = "https://fcpa.alabamavotes.gov";
 const DEFAULT_CASH_FILE = "/tmp/AL_2024_cash.csv";
 const DEFAULT_INKIND_FILE = "/tmp/AL_2024_inkind.csv";
+const AL_UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
 const SOURCE = "al_fcpa_bulk";
 const SOURCE_URL =
   "https://fcpa.alabamavotes.gov/page.request.do?page=page.acfPublicDownloadData";
@@ -114,6 +117,42 @@ function parseCsvLine(line: string): string[] {
   }
   fields.push(cur.trim());
   return fields;
+}
+
+// ---------------------------------------------------------------------------
+// Auto-download: visit public download page to get session cookie, then fetch CSVs
+// ---------------------------------------------------------------------------
+
+async function downloadAlFiles(cashFile: string, inkindFile: string): Promise<void> {
+  console.log("[al-fcpa] Fetching session cookie from public download page...");
+  const pageResp = await fetch(SOURCE_URL, {
+    headers: { "User-Agent": AL_UA, "Accept": "text/html,*/*" },
+  });
+  const all: string[] = (pageResp.headers as any).getSetCookie?.() ??
+    (pageResp.headers.get("set-cookie") ? [pageResp.headers.get("set-cookie")!] : []);
+  const cookieStr = all.map((c: string) => c.split(";")[0]).filter(Boolean).join("; ");
+
+  const headers = {
+    "User-Agent": AL_UA,
+    "Cookie": cookieStr,
+    "Referer": SOURCE_URL,
+    "Accept": "text/csv,text/plain,*/*",
+  };
+
+  for (const [id, outPath, label] of [
+    ["8", cashFile, "cash"],
+    ["9", inkindFile, "inkind"],
+  ] as const) {
+    const url = `${AL_BASE}/page.request.do?page=getTransactionData&id=${id}`;
+    const resp = await fetch(url, { headers });
+    if (!resp.ok) {
+      console.warn(`[al-fcpa] download ${label} failed: HTTP ${resp.status}`);
+      continue;
+    }
+    const text = await resp.text();
+    fs.writeFileSync(outPath, text, "utf-8");
+    console.log(`[al-fcpa] Downloaded ${label} → ${outPath} (${text.length} bytes)`);
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -237,6 +276,11 @@ async function main() {
   const ELECTION_CYCLE = cycleIdx !== -1 ? (process.argv[cycleIdx + 1] ?? "2024") : "2024";
 
   const db = requireDb();
+
+  // Auto-download files if not already present
+  if (!fs.existsSync(cashFile) || !fs.existsSync(inkindFile)) {
+    await downloadAlFiles(cashFile, inkindFile);
+  }
 
   const alHouse = (await db
     .select()
