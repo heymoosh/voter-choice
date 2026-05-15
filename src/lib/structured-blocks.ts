@@ -238,8 +238,8 @@ function sanitizeEndorsements(
     const e = entry as Record<string, unknown>;
     if (isNonEmptyString(e.name) && isNonEmptyString(e.category)) {
       const endorsed: EndorsementEntry = { name: e.name, category: e.category };
-      // orgUrl: accept only non-empty strings
-      if (isNonEmptyString(e.orgUrl)) {
+      // orgUrl: require https?:// scheme to block javascript: URIs
+      if (isNonEmptyString(e.orgUrl) && /^https?:\/\//i.test(e.orgUrl)) {
         endorsed.orgUrl = e.orgUrl;
       }
       // partisanLean: accept only the three literal values
@@ -286,7 +286,7 @@ function sanitizeSourceRef(value: unknown): SourceRef | undefined {
   const v = value as Record<string, unknown>;
   if (!isNonEmptyString(v.name)) return undefined;
   const ref: SourceRef = { name: v.name };
-  if (isNonEmptyString(v.url)) ref.url = v.url;
+  if (isNonEmptyString(v.url) && /^https?:\/\//i.test(v.url)) ref.url = v.url;
   return ref;
 }
 

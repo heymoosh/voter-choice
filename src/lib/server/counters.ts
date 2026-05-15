@@ -84,12 +84,18 @@ export function _resetMemoryForTesting(): void {
 // Key builders
 // ---------------------------------------------------------------------------
 
+// Strip Redis glob metacharacters and colons (which would break key structure)
+// from any value used in key construction.
+function sanitizeKeySegment(s: string): string {
+  return s.replace(/[*?[\]\\:]/g, "");
+}
+
 function statePrefix(stateCode: string): string {
-  return `${NS}:state:${stateCode}`;
+  return `${NS}:state:${sanitizeKeySegment(stateCode)}`;
 }
 
 function countyPrefix(stateCode: string, county: string): string {
-  return `${NS}:county:${stateCode}:${county}`;
+  return `${NS}:county:${sanitizeKeySegment(stateCode)}:${sanitizeKeySegment(county)}`;
 }
 
 function dedupeKey(sessionId: string): string {
