@@ -9,6 +9,7 @@ on:
   # - scope=canary runs TX, CA, NY, FL, GA, NC
   # - scope=all runs all 50 states
   # - scope=single runs only the state input
+  # - scope=shard uses day-of-month % 5 shard (same as schedule — used by cron dispatcher)
   workflow_dispatch:
     inputs:
       scope:
@@ -20,6 +21,7 @@ on:
           - canary
           - all
           - single
+          - shard
       state:
         description: "Two-letter state abbreviation when scope=single"
         required: false
@@ -100,6 +102,20 @@ jobs:
           if [[ "${{ github.event_name }}" == "schedule" ]]; then
             # Shard by day-of-month % 5 — 10 states/day, full cycle every 5 days.
             # At ~20 API calls/state this stays under the 250 req/day OpenStates limit.
+            DAY=$(date -u +%-d)
+            SHARD=$((DAY % 5))
+            case $SHARD in
+              0) SHARD_STATES="AL AK AZ AR CA CO CT DE FL GA" ;;
+              1) SHARD_STATES="HI ID IL IN IA KS KY LA ME MD" ;;
+              2) SHARD_STATES="MA MI MN MS MO MT NE NV NH NJ" ;;
+              3) SHARD_STATES="NM NY NC ND OH OK OR PA RI SC" ;;
+              4) SHARD_STATES="SD TN TX UT VT VA WA WV WI WY" ;;
+            esac
+            case " $SHARD_STATES " in
+              *" ${{ matrix.state }} "*) SHOULD_RUN=true ;;
+            esac
+          elif [[ "${{ inputs.scope }}" == "shard" ]]; then
+            # Same day-of-month shard logic as schedule — used by external cron dispatcher.
             DAY=$(date -u +%-d)
             SHARD=$((DAY % 5))
             case $SHARD in
