@@ -294,6 +294,8 @@ export interface Translations {
     alignmentScoreDrillDownClose: string;
     alignmentScoreVotedWith: string;
     alignmentScoreVotedAgainst: string;
+    alignmentScoreWebSearchSource: string;
+    alignmentScoreConfidence: (level: "high" | "medium" | "low") => string;
     alignmentDrilldownHeading: (
       kept: number,
       total: number,
@@ -764,6 +766,13 @@ const en: Translations = {
     alignmentScoreDrillDownClose: "Close",
     alignmentScoreVotedWith: "Voted with",
     alignmentScoreVotedAgainst: "Voted against",
+    alignmentScoreWebSearchSource: "Based on public statements",
+    alignmentScoreConfidence: (level: "high" | "medium" | "low") =>
+      level === "high"
+        ? "High confidence"
+        : level === "medium"
+          ? "Moderate confidence"
+          : "Low confidence",
     alignmentDrilldownHeading: (
       kept: number,
       total: number,
@@ -1268,6 +1277,13 @@ const es: Translations = {
     alignmentScoreDrillDownClose: "Close",
     alignmentScoreVotedWith: "Voted with",
     alignmentScoreVotedAgainst: "Voted against",
+    alignmentScoreWebSearchSource: "Based on public statements",
+    alignmentScoreConfidence: (level: "high" | "medium" | "low") =>
+      level === "high"
+        ? "High confidence"
+        : level === "medium"
+          ? "Moderate confidence"
+          : "Low confidence",
     alignmentDrilldownHeading: (
       kept: number,
       total: number,

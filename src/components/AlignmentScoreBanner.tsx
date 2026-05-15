@@ -28,6 +28,12 @@ import type {
 
 const THIN_RECORD_THRESHOLD = 5;
 
+const CONFIDENCE_COLOR: Record<"high" | "medium" | "low", string> = {
+  high: "text-emerald-600",
+  medium: "text-amber-600",
+  low: "text-on-surface-muted",
+};
+
 export interface AlignmentScoreBannerProps {
   entry: AlignmentScoresEntry;
   candidateLabel: string; // "Candidate A" / "Candidate B" pre-reveal; real name post-reveal
@@ -48,7 +54,11 @@ function ScoreCard({
   onDrillDown: () => void;
   t: (typeof translations)["en"]["research"];
 }) {
-  const isThin = score.total < THIN_RECORD_THRESHOLD;
+  const isWebSearch = score.sourceType === "web_search";
+  const isThin =
+    !isWebSearch &&
+    typeof score.total === "number" &&
+    score.total < THIN_RECORD_THRESHOLD;
 
   return (
     <button
@@ -77,31 +87,68 @@ function ScoreCard({
         {score.resolvedStance}
       </p>
 
-      {/* Ratio row */}
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          {/* Mini dot bar: filled = voted with, unfilled = voted against */}
-          <VoteDots kept={score.kept} total={score.total} />
-          <span
-            data-testid={`alignment-score-ratio-${score.canonicalIssue}`}
-            className="text-xs font-bold text-on-surface tabular-nums"
-          >
-            {t.alignmentScoreOfVotes(score.kept, score.total)}
+      {isWebSearch ? (
+        /* Web-search path: source label + confidence + evidence snippets */
+        <div>
+          <div className="flex items-center justify-between gap-2 mb-1">
+            <span className="text-[10px] italic text-on-surface-muted">
+              {t.alignmentScoreWebSearchSource}
+            </span>
+            {score.confidence && (
+              <span
+                className={
+                  "text-[10px] font-semibold " +
+                  CONFIDENCE_COLOR[score.confidence]
+                }
+              >
+                {t.alignmentScoreConfidence(score.confidence)}
+              </span>
+            )}
+          </div>
+          {score.evidence && score.evidence.length > 0 && (
+            <ul className="space-y-0.5">
+              {score.evidence.slice(0, 3).map((ev, i) => (
+                <li
+                  key={i}
+                  className="text-[10px] text-on-surface-muted leading-snug"
+                >
+                  <span className="mr-1">•</span>
+                  {ev.summary}
+                </li>
+              ))}
+            </ul>
+          )}
+          <span className="text-[10px] font-bold uppercase tracking-widest text-primary shrink-0 mt-1 block">
+            {t.alignmentScoreDrillDownLabel}
           </span>
         </div>
-        <span className="text-[10px] font-bold uppercase tracking-widest text-primary shrink-0">
-          {t.alignmentScoreDrillDownLabel}
-        </span>
-      </div>
+      ) : (
+        /* Voting-record path: dot bar + ratio */
+        <>
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <VoteDots kept={score.kept ?? 0} total={score.total ?? 0} />
+              <span
+                data-testid={`alignment-score-ratio-${score.canonicalIssue}`}
+                className="text-xs font-bold text-on-surface tabular-nums"
+              >
+                {t.alignmentScoreOfVotes(score.kept ?? 0, score.total ?? 0)}
+              </span>
+            </div>
+            <span className="text-[10px] font-bold uppercase tracking-widest text-primary shrink-0">
+              {t.alignmentScoreDrillDownLabel}
+            </span>
+          </div>
 
-      {/* Thin-record indicator */}
-      {isThin && (
-        <p
-          data-testid={`alignment-score-thin-record-${score.canonicalIssue}`}
-          className="mt-1 text-[9px] italic text-on-surface-muted"
-        >
-          {t.alignmentScoreThinRecord(score.total)}
-        </p>
+          {isThin && (
+            <p
+              data-testid={`alignment-score-thin-record-${score.canonicalIssue}`}
+              className="mt-1 text-[9px] italic text-on-surface-muted"
+            >
+              {t.alignmentScoreThinRecord(score.total ?? 0)}
+            </p>
+          )}
+        </>
       )}
     </button>
   );

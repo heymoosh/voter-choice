@@ -486,13 +486,26 @@ export interface ContributingVote {
   source: SourceRef;
 }
 
+export type AlignmentSourceType = "voting_record" | "web_search";
+export type AlignmentConfidence = "high" | "medium" | "low";
+
+export interface WebSearchEvidence {
+  summary: string;
+  url: string;
+}
+
 export interface AlignmentScore {
   canonicalIssue: string;
   issueLabel: string;
   resolvedStance: string;
-  kept: number;
-  total: number;
-  contributingVotes: ContributingVote[];
+  sourceType: AlignmentSourceType;
+  // voting_record fields
+  kept?: number;
+  total?: number;
+  contributingVotes?: ContributingVote[];
+  // web_search fields
+  confidence?: AlignmentConfidence;
+  evidence?: WebSearchEvidence[];
 }
 
 export interface AlignmentScoresEntry {
@@ -527,6 +540,16 @@ function sanitizeContributingVote(value: unknown): ContributingVote | null {
   };
 }
 
+const URL_RE = /^https?:\/\//;
+
+function sanitizeWebSearchEvidence(value: unknown): WebSearchEvidence | null {
+  if (!value || typeof value !== "object") return null;
+  const v = value as Record<string, unknown>;
+  if (!isNonEmptyString(v.summary)) return null;
+  if (!isNonEmptyString(v.url) || !URL_RE.test(v.url)) return null;
+  return { summary: v.summary, url: v.url };
+}
+
 function sanitizeAlignmentScore(value: unknown): AlignmentScore | null {
   if (!value || typeof value !== "object") return null;
   const v = value as Record<string, unknown>;
@@ -535,6 +558,38 @@ function sanitizeAlignmentScore(value: unknown): AlignmentScore | null {
   if (!isNonEmptyString(v.issueLabel)) return null;
   if (!isNonEmptyString(v.resolvedStance)) return null;
 
+  const sourceType =
+    v.sourceType === "web_search" ? "web_search" : "voting_record";
+
+  if (sourceType === "web_search") {
+    const confidence =
+      v.confidence === "high" ||
+      v.confidence === "medium" ||
+      v.confidence === "low"
+        ? v.confidence
+        : "low";
+
+    const evidence: WebSearchEvidence[] = [];
+    if (Array.isArray(v.evidence)) {
+      for (const item of v.evidence) {
+        const sanitized = sanitizeWebSearchEvidence(item);
+        if (sanitized) evidence.push(sanitized);
+        if (evidence.length >= 5) break;
+      }
+    }
+    if (evidence.length === 0) return null; // no real citations → drop
+
+    return {
+      canonicalIssue: v.canonicalIssue,
+      issueLabel: v.issueLabel,
+      resolvedStance: v.resolvedStance,
+      sourceType,
+      confidence,
+      evidence,
+    };
+  }
+
+  // voting_record path
   if (
     typeof v.kept !== "number" ||
     typeof v.total !== "number" ||
@@ -560,6 +615,7 @@ function sanitizeAlignmentScore(value: unknown): AlignmentScore | null {
     canonicalIssue: v.canonicalIssue,
     issueLabel: v.issueLabel,
     resolvedStance: v.resolvedStance,
+    sourceType,
     kept: v.kept,
     total: v.total,
     contributingVotes,

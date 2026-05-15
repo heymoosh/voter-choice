@@ -266,8 +266,9 @@ This is the heart of the tool. One race at a time. For each race, you compress t
 
 ```
 [ALIGNMENT_SCORES race="<must match the race attribute from the sibling [RACE_PATTERNS] block>"]
-{"candidateId":"<matches the id field from [RACE_PATTERNS]>","scores":[{"canonicalIssue":"<canonicalIssue id from [VOTER CONFIRMED CONCERNS]>","issueLabel":"<readable label for that concern>","resolvedStance":"<the voter's resolvedStance from [VOTER CONFIRMED CONCERNS]>","kept":<int>,"total":<int>,"contributingVotes":[{"billTitle":"<bill title>","voteCast":"<with|against>","date":"<YYYY-MM-DD>","source":{"name":"<source name>","url":"<URL>"}},...]},...]
+{"candidateId":"<matches the id field from [RACE_PATTERNS]>","scores":[{"canonicalIssue":"<canonicalIssue id>","issueLabel":"<readable label>","resolvedStance":"<voter's resolvedStance>","sourceType":"voting_record","kept":<int>,"total":<int>,"contributingVotes":[{"billTitle":"<bill title>","voteCast":"<with|against>","date":"<YYYY-MM-DD>","source":{"name":"<source name>","url":"<URL>"}},...]},{"canonicalIssue":"<id>","issueLabel":"<label>","resolvedStance":"<stance>","sourceType":"web_search","confidence":"<high|medium|low>","evidence":[{"summary":"<≤15 word factual description>","url":"<https://real-url>"},...]},...]
 {"candidateId":"<next candidate id>","scores":[...]}
+{"candidateId":"<candidate with no data>","scores":null,"unavailable":{"reason":"<reason>"}}
 [/ALIGNMENT_SCORES]
 ```
 
@@ -276,13 +277,19 @@ This is the heart of the tool. One race at a time. For each race, you compress t
 - **One `scores` entry per item in `[VOTER CONFIRMED CONCERNS]`.** Use the `canonicalIssue` ids and `resolvedStance` values from the confirmed concern list as the input set. Do not add or remove issues.
 - **Emit AFTER `[RACE_PATTERNS]` for the same race, using the identical `race="..."` attribute.**
 - **Per (candidate, canonicalIssue) pair:** call the `lookup_alignment` tool with `{ candidate_name, state_code, jurisdiction, canonical_issue, resolved_stance }` to get deterministic alignment counts from our backend database. Use the returned `kept`, `total`, and `contributing_votes` to populate the scores entry for that pair. The tool's `jurisdiction` field must be one of: `federal-house`, `federal-senate`, `state-XX-house`, or `state-XX-senate` (where XX is the 2-letter state code).
-- **If the tool returns `found: false` OR `unavailable`:** emit `{"candidateId":"<id>","scores":null,"unavailable":{"reason":"<reason from tool>"}}` for that candidate — do NOT fall back to `web_search` for alignment scoring. Voting records the tool can't find ARE genuine coverage gaps; surface them honestly.
-- **Do NOT use `web_search` for alignment scoring under any circumstances.** The `lookup_alignment` tool is the sole source of truth for alignment ratios. `web_search` remains available for _other_ uses (donor pattern enrichment, news context, biographical detail) but the alignment ratio — `kept`, `total`, and `contributingVotes` — comes from `lookup_alignment` only.
+- **If the tool returns `found: false`:** attempt a web-search fallback (see below). If the tool returns `unavailable` (tool internal error, not a coverage gap), emit `{"candidateId":"<id>","scores":null,"unavailable":{"reason":"<reason from tool>"}}` for that candidate.
+- **Web-search fallback (only when `found: false`):** For each confirmed concern, run a targeted `web_search` for the candidate's public record on that issue — campaign statements, endorsements, official actions, credentialed news coverage. If you find credible evidence, emit a score with `"sourceType":"web_search"`. If you find nothing credible, emit `null` for that score and include it in the candidate-level `unavailable` block instead.
+  - **`confidence`** (required): `"high"` for explicit on-record statements or official government actions; `"medium"` for endorsements from relevant organizations; `"low"` for inferred from affiliations alone.
+  - **`evidence`** (required): array of 1–5 items, each with `"summary"` (concise factual description ≤ 15 words) and `"url"` (must be a real https:// URL from your search results — never fabricate). If you cannot produce at least one real URL, drop the entire score.
+  - **`resolvedStance`** must still reflect the voter's side, not a neutral description.
+  - **No `kept`, `total`, or `contributingVotes`** on web-search scores — these are qualitative, not counted.
+  - **Label constraint:** The UI renders web-search scores with "Based on public statements" — distinct from the voting-record dot bar. Never call it a voting record.
+- **`lookup_alignment` is the sole source for voting-record scores.** `kept`, `total`, and `contributingVotes` come only from the tool. Do NOT supplement voting-record scores with web_search.
 - **`kept`** is the count of votes cast `"with"` the voter's side. **`total`** is the total relevant votes found. `kept <= total`. Both are non-negative integers.
 - **Contributing votes:** the tool returns 2–6 of the most diagnostic votes per score. Use the tool's `contributingVotes` array directly — do not supplement or override with web_search results.
 - **Factual count only.** This is "voted with your side N of M times on [issue]" — not a verdict, not a recommendation, not an aggregate overall %. Never editorialize. Never call out a "best match."
 - **Prior-role records:** For challengers with prior political experience, the backend database will already contain their prior-role voting record if available. Pass the candidate's name and their prior jurisdiction to `lookup_alignment`; the tool handles the rest.
-- **No voting record (first-time challengers or local races):** the tool will return `found: false` or `unavailable` — emit the corresponding `unavailable` entry as described above.
+- **No voting record (first-time challengers or local races):** the tool will return `found: false` → trigger web-search fallback as above.
 - **One JSON object per line. No pretty-printing. No trailing commas.**
 - **Do NOT emit `[ALIGNMENT_SCORES]` if the voter skipped Act 2** (sent `[VOTER VALUES] skipped`). The dashboard renders without alignment data in that case.
 - **Do NOT emit `[ALIGNMENT_SCORES]` for propositions.** Propositions don't have candidate voting records.
