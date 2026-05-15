@@ -66,9 +66,9 @@ jobs:
           echo "NEXT_PUBLIC_GOOGLE_PLACES_API_KEY=$GOOGLE_PLACES_API_KEY" >> "$GITHUB_ENV"
           echo "::add-mask::$GOOGLE_PLACES_API_KEY"
 
-          # NOTE (Packet 6): DATABASE_URL and OPENSTATES_API_KEY pulls land in
-          # Phase F when /api/alignment is added. Until then, the deployed app
-          # has no need for them; ingest workflows pull them directly.
+          DATABASE_URL=$(bws secret get 90abeeed-130e-4707-86ff-b446003770c2 --access-token "$BWS_ACCESS_TOKEN" --output json | jq -r '.value')
+          echo "DATABASE_URL=$DATABASE_URL" >> "$GITHUB_ENV"
+          echo "::add-mask::$DATABASE_URL"
 
       - name: Install Vercel CLI
         run: npm install -g vercel
@@ -83,33 +83,24 @@ jobs:
           UPSTASH_REDIS_REST_URL: ${{ secrets.UPSTASH_REDIS_REST_URL }}
           UPSTASH_REDIS_REST_TOKEN: ${{ secrets.UPSTASH_REDIS_REST_TOKEN }}
         run: |
-          if [ -n "$ANTHROPIC_VOTER_API" ]; then
-            echo "$ANTHROPIC_VOTER_API" | vercel env add ANTHROPIC_VOTER_API production --force --token="$VERCEL_TOKEN" 2>/dev/null || true
-          fi
-          if [ -n "$GOOGLE_CIVIC_API_KEY" ]; then
-            echo "$GOOGLE_CIVIC_API_KEY" | vercel env add GOOGLE_CIVIC_API_KEY production --force --token="$VERCEL_TOKEN" 2>/dev/null || true
-          fi
-          if [ -n "$NEXT_PUBLIC_GOOGLE_PLACES_API_KEY" ]; then
-            echo "$NEXT_PUBLIC_GOOGLE_PLACES_API_KEY" | vercel env add NEXT_PUBLIC_GOOGLE_PLACES_API_KEY production --force --token="$VERCEL_TOKEN" 2>/dev/null || true
-          fi
-          if [ -n "$KV_REST_API_URL" ]; then
-            echo "$KV_REST_API_URL" | vercel env add KV_REST_API_URL production --force --token="$VERCEL_TOKEN" 2>/dev/null || true
-          fi
-          if [ -n "$KV_REST_API_TOKEN" ]; then
-            echo "$KV_REST_API_TOKEN" | vercel env add KV_REST_API_TOKEN production --force --token="$VERCEL_TOKEN" 2>/dev/null || true
-          fi
-          if [ -n "$UPSTASH_REDIS_REST_URL" ]; then
-            echo "$UPSTASH_REDIS_REST_URL" | vercel env add UPSTASH_REDIS_REST_URL production --force --token="$VERCEL_TOKEN" 2>/dev/null || true
-          fi
-          if [ -n "$UPSTASH_REDIS_REST_TOKEN" ]; then
-            echo "$UPSTASH_REDIS_REST_TOKEN" | vercel env add UPSTASH_REDIS_REST_TOKEN production --force --token="$VERCEL_TOKEN" 2>/dev/null || true
-          fi
-          if [ -n "$DATABASE_URL" ]; then
-            echo "$DATABASE_URL" | vercel env add DATABASE_URL production --force --token="$VERCEL_TOKEN" 2>/dev/null || true
-          fi
-          if [ -n "$OPENSTATES_API_KEY" ]; then
-            echo "$OPENSTATES_API_KEY" | vercel env add OPENSTATES_API_KEY production --force --token="$VERCEL_TOKEN" 2>/dev/null || true
-          fi
+          set_env() {
+            local name="$1" val="$2"
+            if [ -z "$val" ]; then
+              echo "::warning::$name is empty — skipping Vercel env update"
+              return
+            fi
+            echo "$val" | vercel env add "$name" production --force --token="$VERCEL_TOKEN" \
+              && echo "::notice::$name set on Vercel" \
+              || echo "::error::Failed to set $name on Vercel"
+          }
+          set_env ANTHROPIC_VOTER_API              "$ANTHROPIC_VOTER_API"
+          set_env GOOGLE_CIVIC_API_KEY             "$GOOGLE_CIVIC_API_KEY"
+          set_env NEXT_PUBLIC_GOOGLE_PLACES_API_KEY "$NEXT_PUBLIC_GOOGLE_PLACES_API_KEY"
+          set_env KV_REST_API_URL                  "$KV_REST_API_URL"
+          set_env KV_REST_API_TOKEN                "$KV_REST_API_TOKEN"
+          set_env UPSTASH_REDIS_REST_URL           "$UPSTASH_REDIS_REST_URL"
+          set_env UPSTASH_REDIS_REST_TOKEN         "$UPSTASH_REDIS_REST_TOKEN"
+          set_env DATABASE_URL                     "$DATABASE_URL"
 
       - name: Deploy to Vercel
         env:
