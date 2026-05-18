@@ -32,19 +32,20 @@ describe("budget", () => {
     });
 
     it("tracks token costs correctly", () => {
-      // 1M input tokens at $3/M = $3, 1M output tokens at $15/M = $15 => $18 total
-      // $18 / $50 cap = 36%
+      // Haiku 4.5 pricing: 1M input tokens at $1/M = $1, 1M output tokens at
+      // $5/M = $5 => $6 total. $6 / $50 cap = 12%.
       recordUsage(1_000_000, 1_000_000);
       const status = getBudgetStatus();
-      expect(status.estimatedSpendUSD).toBe(18);
-      expect(status.percent).toBe(36);
+      expect(status.estimatedSpendUSD).toBe(6);
+      expect(status.percent).toBe(12);
     });
 
     it("accumulates across multiple calls", () => {
-      recordUsage(500_000, 0); // $1.50
-      recordUsage(500_000, 0); // $1.50
+      // Haiku 4.5 input pricing: $1/M tokens.
+      recordUsage(500_000, 0); // $0.50
+      recordUsage(500_000, 0); // $0.50
       const status = getBudgetStatus();
-      expect(status.estimatedSpendUSD).toBe(3);
+      expect(status.estimatedSpendUSD).toBe(1);
     });
   });
 

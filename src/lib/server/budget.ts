@@ -1,13 +1,23 @@
 import { isDurableStoreConfigured, redisCommand } from "./durable-store";
 
-// Anthropic pricing for Claude Sonnet (per 1M tokens)
-const INPUT_COST_PER_MILLION = 3.0;
-const OUTPUT_COST_PER_MILLION = 15.0;
+// Anthropic pricing for Claude Haiku 4.5 (per 1M tokens). Must stay in sync
+// with the model used in src/app/api/chat/route.ts (DEFAULT_ANTHROPIC_CHAT_MODEL).
+//
+// 2026-05-18: corrected from Sonnet 4.5 pricing ($3 input / $15 output / $3.75
+// cache-write / $0.30 cached-read). The chat route was switched to Haiku 4.5
+// in commit 67d76f5 (2026-05-08) but these constants were not updated, causing
+// the budget tracker to overestimate spend by ~3x. That overestimate is what
+// tripped the "monthly chat budget reached" gate during launch testing even
+// though the real Anthropic spend was much lower. If the chat model is ever
+// changed back to Sonnet (or to Opus), update these constants AND
+// MONTHLY_BUDGET_USD in the same commit.
+const INPUT_COST_PER_MILLION = 1.0;
+const OUTPUT_COST_PER_MILLION = 5.0;
 // Cached input tokens are billed at 10% of normal input rate.
-const CACHED_INPUT_COST_PER_MILLION = 0.3;
-// Cache-creation tokens are billed at 1.25x normal input rate.
-const CACHE_WRITE_COST_PER_MILLION = 3.75;
-// Anthropic's web_search server tool is billed per 1000 searches.
+const CACHED_INPUT_COST_PER_MILLION = 0.1;
+// Cache-creation tokens are billed at 1.25x normal input rate (5-minute tier).
+const CACHE_WRITE_COST_PER_MILLION = 1.25;
+// Anthropic's web_search server tool is billed per 1000 searches (model-agnostic).
 const SEARCH_COST_PER_THOUSAND = 10.0;
 
 const MONTHLY_BUDGET_USD = 50.0;

@@ -230,6 +230,8 @@ export interface Translations {
     runoffGateContinue: string;
     finishLater: string;
     finishLaterPrompt: string;
+    generateProfileButton: string;
+    generateProfilePrompt: string;
     // ValuesTagSelector keys
     valuesTagSelectorTitle: string;
     valuesTagSelectorInstruction: string;
@@ -565,9 +567,9 @@ const en: Translations = {
     clientFallbackBody:
       "We\u2019ve packaged your conversation so you can continue in any AI chatbot.",
     usageAlert: "Usage Alert",
-    budgetReached: "Monthly Chat Budget Reached",
+    budgetReached: "Our free AI chat reached its monthly limit",
     budgetExplanation:
-      "Your local compute allocation has been exhausted for this period. Research continues via our external protocols.",
+      "Our free AI chat reached its monthly limit — your personal Anthropic API key is unaffected. Copy the prompt below and paste it into any free AI chatbot (or use your own API key) to continue your research.",
     resetIn: (days: number) => `Reset in ${days} days`,
     continueSession: "Continue Your Session",
     continueBody:
@@ -704,6 +706,9 @@ const en: Translations = {
     finishLater: "Finish this later",
     finishLaterPrompt:
       "I need to leave. Please generate my full SESSION HANDOFF block right now so I can save it and resume from this exact point later. Include every decision I've logged, every race we've covered, every race remaining, my issue priorities, my voter profile so far, and the next question you would have asked. Be exhaustive — I will literally paste this back into a new session to continue.",
+    generateProfileButton: "Generate my voter profile and printable ballot",
+    generateProfilePrompt:
+      "Please generate my voter profile and printable ballot now — emit the MY BALLOT, MY VOTER PROFILE, and VOTER SESSION HANDOFF blocks.",
     // ValuesTagSelector
     valuesTagSelectorTitle: "What issues matter most to you?",
     valuesTagSelectorInstruction:
@@ -831,7 +836,8 @@ const en: Translations = {
       "One quick question so we can show you the right ballot context.",
     closedPrimaryGateOptionDem: "I'm registered as a Democrat",
     closedPrimaryGateOptionRep: "I'm registered as a Republican",
-    closedPrimaryGateOptionOther: "I'm registered with another recognized party",
+    closedPrimaryGateOptionOther:
+      "I'm registered with another recognized party",
     closedPrimaryGateOptionUnaffiliated:
       "I'm not registered with a party (independent / unaffiliated)",
     closedPrimaryGateContinue: "Continue to research",
@@ -1080,9 +1086,10 @@ const es: Translations = {
     clientFallbackBody:
       "Hemos empaquetado tu conversaci\u00f3n para que puedas continuar en cualquier chatbot de IA.",
     usageAlert: "Alerta de Uso",
-    budgetReached: "Presupuesto Mensual de Chat Alcanzado",
+    budgetReached:
+      "Nuestro chat gratuito con IA alcanz\u00f3 su l\u00edmite mensual",
     budgetExplanation:
-      "Tu asignaci\u00f3n de c\u00f3mputo local se ha agotado para este per\u00edodo. La investigaci\u00f3n contin\u00faa a trav\u00e9s de nuestros protocolos externos.",
+      "Nuestro chat gratuito con IA alcanz\u00f3 su l\u00edmite mensual \u2014 tu clave personal de la API de Anthropic no se ve afectada. Copia el mensaje a continuaci\u00f3n y p\u00e9galo en cualquier chatbot de IA gratuito (o usa tu propia clave de API) para continuar tu investigaci\u00f3n.",
     resetIn: (days: number) => `Se reinicia en ${days} d\u00edas`,
     continueSession: "Contin\u00faa Tu Sesi\u00f3n",
     continueBody:
@@ -1227,6 +1234,9 @@ const es: Translations = {
     finishLater: "Continuar despu\u00e9s",
     finishLaterPrompt:
       "Tengo que irme. Por favor genera ahora mismo mi bloque completo de TRANSFERENCIA DE SESI\u00d3N DE VOTANTE para que pueda guardarlo y retomar exactamente desde este punto m\u00e1s tarde. Incluye cada decisi\u00f3n que he registrado, cada contienda que hemos cubierto, cada contienda que queda, mis prioridades de temas, mi perfil de votante hasta ahora y la siguiente pregunta que me ibas a hacer. S\u00e9 exhaustivo \u2014 literalmente voy a pegar esto en una nueva sesi\u00f3n para continuar.",
+    generateProfileButton: "Generar mi perfil de votante y boleta imprimible",
+    generateProfilePrompt:
+      "Por favor genera ahora mi perfil de votante y boleta imprimible \u2014 emite los bloques MY BALLOT, MY VOTER PROFILE y VOTER SESSION HANDOFF.",
     // ValuesTagSelector — EN stubs (ES UI out of scope for this packet)
     valuesTagSelectorTitle: "What issues matter most to you?",
     valuesTagSelectorInstruction:

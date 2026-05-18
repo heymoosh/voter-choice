@@ -362,15 +362,29 @@ function useHandoffState(
 
 function ValuesTagSelectorLoadingPlaceholder() {
   const { lang } = useLanguage();
-  const t = translations[lang];
+  const label =
+    lang === "es"
+      ? "Construyendo selector de temas…"
+      : "Building issue picker…";
   return (
     <div
       data-testid="values-tag-selector-loading"
-      className="my-4 bg-surface-low border-l-4 border-primary/40 p-4 flex items-center gap-3"
+      className="my-4 bg-surface-low border-l-4 border-primary/40 p-4 flex items-center gap-3 animate-pulse"
     >
-      <span className="inline-block w-2 h-2 rounded-full bg-primary animate-pulse" />
+      <svg
+        className="w-4 h-4 text-primary shrink-0"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+      >
+        <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+      </svg>
       <span className="text-xs font-bold uppercase tracking-widest text-on-surface-muted">
-        {t.research.valuesTagSelectorSubmitting}
+        {label}
       </span>
     </div>
   );
@@ -439,17 +453,39 @@ function renderValuesTagSelector(
 
 /* ── Race patterns rendering ────────────────────────────────── */
 
-function RacePatternsLoadingPlaceholder() {
+function RacePatternsLoadingPlaceholder({
+  variant = "race",
+}: {
+  variant?: "race" | "alignment";
+}) {
   const { lang } = useLanguage();
-  const t = translations[lang];
+  const label =
+    variant === "alignment"
+      ? lang === "es"
+        ? "Calculando puntajes de alineación…"
+        : "Computing alignment scores…"
+      : lang === "es"
+        ? "Cargando tarjetas de candidatos…"
+        : "Loading candidate cards…";
   return (
     <div
       data-testid="race-patterns-loading"
-      className="my-4 bg-surface-low border-l-4 border-primary/40 p-4 flex items-center gap-3"
+      className="my-4 bg-surface-low border-l-4 border-primary/40 p-4 flex items-center gap-3 animate-pulse"
     >
-      <span className="inline-block w-2 h-2 rounded-full bg-primary animate-pulse" />
+      <svg
+        className="w-4 h-4 text-primary shrink-0"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+      >
+        <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+      </svg>
       <span className="text-xs font-bold uppercase tracking-widest text-on-surface-muted">
-        {t.research.racePatternsSubmitting}
+        {label}
       </span>
     </div>
   );
@@ -481,6 +517,10 @@ function renderRacePatterns(
       const leadIn = stripPartialAlignmentScoresBlock(
         stripPartialRacePatternsBlock(msg.content),
       );
+      // When race block already parsed and only alignment is still open,
+      // show the alignment-scores variant of the skeleton.
+      const variant: "race" | "alignment" =
+        !isOpenRaceBlock && isOpenAlignmentBlock ? "alignment" : "race";
       return (
         <article
           key={idx}
@@ -492,7 +532,7 @@ function renderRacePatterns(
               <MarkdownText text={leadIn} />
             </div>
           )}
-          <RacePatternsLoadingPlaceholder />
+          <RacePatternsLoadingPlaceholder variant={variant} />
         </article>
       );
     }
@@ -546,15 +586,29 @@ function renderRacePatterns(
 
 function ConcernInterpretationLoadingPlaceholder() {
   const { lang } = useLanguage();
-  const t = translations[lang];
+  const label =
+    lang === "es"
+      ? "Confirmando tus prioridades…"
+      : "Confirming your priorities…";
   return (
     <div
       data-testid="concern-interpretation-loading"
-      className="my-4 bg-surface-low border-l-4 border-primary/40 p-4 flex items-center gap-3"
+      className="my-4 bg-surface-low border-l-4 border-primary/40 p-4 flex items-center gap-3 animate-pulse"
     >
-      <span className="inline-block w-2 h-2 rounded-full bg-primary animate-pulse" />
+      <svg
+        className="w-4 h-4 text-primary shrink-0"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+      >
+        <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+      </svg>
       <span className="text-xs font-bold uppercase tracking-widest text-on-surface-muted">
-        {t.research.concernInterpretationSubmitting}
+        {label}
       </span>
     </div>
   );
@@ -1201,6 +1255,14 @@ export function ChatPanel({
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, [messages.length, handoff.parsedHandoff]);
 
+  // Budget is exhausted once the tier leaves the safe "normal"/"notice" set.
+  // Server flips chatDisabled only after a request actually fails with
+  // BUDGET_EXHAUSTED/BUDGET_SOFT_CLOSE — but the SSE `done` event updates
+  // budgetStatus.tier earlier, so this gates the bottom buttons during that
+  // window too.
+  const budgetExhausted =
+    budgetStatus.tier !== "normal" && budgetStatus.tier !== "notice";
+
   const fullContent = messages
     .filter((m) => m.role === "assistant")
     .map((m) => m.content)
@@ -1300,7 +1362,23 @@ export function ChatPanel({
 
           {!chatDisabled && (
             <div className="sticky bottom-0 z-30 bg-surface-lowest pt-0">
-              {messages.length > 1 && (
+              <ChatInput
+                onSubmit={(msg) => sendMessage(msg, messages)}
+                isStreaming={isStreaming}
+              />
+              {!budgetExhausted && !isStreaming && (
+                <button
+                  type="button"
+                  data-testid="generate-profile-btn"
+                  onClick={() =>
+                    sendMessage(t.research.generateProfilePrompt, messages)
+                  }
+                  className="mt-3 w-full bg-surface-low border border-outline-variant/40 text-on-surface py-2.5 text-xs font-bold uppercase tracking-widest hover:bg-surface hover:border-primary/60 transition-colors"
+                >
+                  {t.research.generateProfileButton}
+                </button>
+              )}
+              {messages.length > 1 && !budgetExhausted && (
                 <button
                   type="button"
                   data-testid="finish-later-btn"
@@ -1308,15 +1386,11 @@ export function ChatPanel({
                   onClick={() =>
                     sendMessage(t.research.finishLaterPrompt, messages)
                   }
-                  className="mb-2 text-xs font-bold uppercase tracking-widest text-on-surface-muted hover:text-primary disabled:opacity-50"
+                  className="mt-2 text-xs font-bold uppercase tracking-widest text-on-surface-muted hover:text-primary disabled:opacity-50"
                 >
                   {t.research.finishLater}
                 </button>
               )}
-              <ChatInput
-                onSubmit={(msg) => sendMessage(msg, messages)}
-                isStreaming={isStreaming}
-              />
               <p className="text-xs text-on-surface-muted text-right mt-1">
                 {t.rateLimit.messageCount(
                   messageCountRef.current,
