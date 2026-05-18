@@ -121,6 +121,72 @@ The `candidates` table and `votes` table only contain state house/senate members
 
 ---
 
+### [P1 — FIXED 2026-05-18] Ranked priorities reorder showed letter ids instead of issue labels
+**Status:** Fixed in `fix/launch-prod-feedback` (commit 1054bcb)
+
+The `SortableItem` in `src/components/ValuesTagSelector.tsx` rendered `item.id` (e.g., `"a"`, `"b"`, `"d"`) instead of `item.label` in the drag-rank list. The single-letter ids worked correctly as click handles for the chip picker but bled through to the reorder UI, leaving voters staring at "a / b / d" with no idea what they were prioritizing.
+
+**Fix applied:** Pass `block.items` into `SortableItem` and look up the human label by id. Regression test added.
+
+**Monitoring:** Visual smoke — confirm the drag-rank surface in step 2 shows issue labels like "Crime / public safety" rather than letters.
+
+---
+
+### [P1 — FIXED 2026-05-18] Reveal Candidates was required before picking and was one-way
+**Status:** Fixed in `fix/launch-prod-feedback` (commit 1054bcb)
+
+Anonymous-first ranking is the whole point of the candidate cards — voters should pick on alignment, not on name recognition. The original flow inverted that: the Reveal Candidates button was a precondition for picking, and once clicked, names couldn't be hidden again.
+
+**Fix applied in `src/components/RacePatterns.tsx`:** Pick is now decoupled from reveal; voters can choose "Candidate A" while names stay hidden. The button toggles between **Reveal Candidates** and **Hide Names**. New `racePatternsHideButton` translation key (en + es).
+
+**Monitoring:** Confirm a voter can pick a candidate without revealing names, and the button text correctly flips between reveal/hide.
+
+---
+
+### [P1 — FIXED 2026-05-18] No proactive ballot / voter-profile CTA — voter had to text-prompt the AI
+**Status:** Fixed in `fix/launch-prod-feedback` (commits 1054bcb + 3f72b26)
+
+After finishing a ballot, voters had no obvious way to get the printable ballot and voter-profile deliverable — they had to type a request into the chat and hope the model interpreted it. Muxin's E2E run had to text-prompt explicitly.
+
+**Two-part fix:**
+1. `docs/BALLOT_PROMPT.md` (en + es) now instructs the model to emit `[MY BALLOT]` / `[MY VOTER PROFILE]` / `[SESSION HANDOFF]` blocks **automatically** when the voter finishes a ballot or signals "done" — no "would you like a profile?" gate. Regenerated `ballotPromptEn.generated.ts` / `ballotPromptEs.generated.ts` via `npm run sync:ballot-prompt`.
+2. New safety-net button in `ChatPanel.tsx` ("Generate my voter profile and printable ballot", sticky bottom) that dispatches the canned request to the model — guarantees voters can always reach the deliverable even when the model misses the proactive cue.
+
+**Monitoring:** Post-deploy, observe a few full sessions to see whether the proactive emission lands without the button being clicked. If the safety net is being clicked frequently, the prompt cue isn't reliable enough.
+
+---
+
+### [P2 — FIXED 2026-05-18] Streaming structured blocks rendered as raw JSON / text mess
+**Status:** Fixed in `fix/launch-prod-feedback` (commit 3f72b26)
+
+While the model streamed a structured block (race-patterns, alignment-scores, values-tag-request, concern-interpretation), the in-flight JSON/markdown leaked into the chat surface and looked broken. Loading placeholders for each block type now render an `animate-pulse` container + inline Loader SVG + contextual copy until the block is parseable.
+
+**Monitoring:** Throttle the network in devtools and watch a chat response — placeholders should appear in place of raw text for each of the four block types.
+
+---
+
+### [P1] Second candidate missing alignment block when first has one
+**Status:** Open — flagged in Muxin's 2026-05-18 E2E run, needs verification
+
+In one observed session, the first candidate in a race had a complete alignment block, but the second candidate did not. The structural fallthrough for non-legislative candidates is already covered by the "No alignment data for non-legislative candidates" P1 above, but the web-search alignment fallback added in commit 5bc3585 was specifically intended to backfill these cases — and it didn't fire here.
+
+**Suspected cause:** The prompt path that routes to `web_search` for non-legislative candidates isn't being taken reliably. The model may be short-circuiting after the first candidate's lookup succeeds, or the per-candidate iteration may be silently skipping the fallback branch.
+
+**Verification needed:** Spot-check a session with a Texas non-legislative race (Lt. Governor, AG, Court of Appeals are all good test cases). Capture the AI's tool calls and confirm whether `lookup_alignment` falls through to web-search emission for each candidate that returns `found: false`. If it doesn't, file as a separate P1 with the tool-call transcript.
+
+---
+
+### [P2] "Voted in line with platform" semantics unclear
+**Status:** Open — flagged in Muxin's 2026-05-18 E2E run
+
+Voters were unsure whether "voted in line with platform" referred to the candidate's stated platform or the voter's own selected priorities. The phrasing reads ambiguously and undercuts the trust we're trying to build with the alignment number.
+
+**Proposed reword:** "X of Y tagged votes aligned with your stance on [Issue]" with a tooltip link to the contributing-votes drilldown so voters can audit the underlying evidence.
+
+**Where to change:** The alignment-scores rendering in the candidate cards (likely `src/components/AlignmentScores.tsx` or equivalent) and any system-prompt boilerplate that uses the phrase.
+
+---
+
 ## Operations / Infrastructure
 
 ### [P1] `ingest-states.yml` cron has never fired from main
@@ -145,6 +211,35 @@ All `vercel env add` calls previously used `2>/dev/null || true`. ANTHROPIC_VOTE
 Several state donor download URLs were added as best-effort guesses without verification (AK, AR, CO, FL, HI, IN, KY, MA, MI, MN, MO, MS, NC, ND-cfis, NY, OH, OK, SC, TN, TX). These have `continue-on-error: true` and may silently fail on the monthly run. The existing donor data for these states is from the initial ingest and is correct; only future refreshes are at risk.
 
 **Fix:** Verify each URL manually before the first monthly run. Expected: June 2026.
+
+---
+
+### [P1 — FIXED 2026-05-18] Budget meter overestimated spend by ~3x (Sonnet pricing constants on a Haiku-priced model)
+**Status:** Fixed in `fix/launch-prod-feedback` (commit 3f72b26). Full audit: `docs/operations/budget-cap-investigation-2026-05-18.md`
+
+The chat route switched to `claude-haiku-4-5-20251001` on 2026-05-08 but the cost constants in `src/lib/budget.ts` were never updated from Sonnet pricing. Real Anthropic spend was tracked correctly on the Anthropic Console, but the app's internal meter was running ~3x high — which tripped the $50/mo soft cap when actual spend was closer to $17. This is the root cause of what voters experienced as a "monthly limit reached" message during Muxin's launch-week testing.
+
+**Fix applied:** Constants updated to Haiku 4.5 pricing: $1 input / $5 output / $0.10 cached read / $1.25 cache write. The $50 cap is unchanged — the math correction effectively gives ~3x headroom, which matches the actual budget we wanted.
+
+**Monitoring:** Cross-check `budget.ts`-reported spend against the Anthropic Console weekly for the next month to confirm the meter and reality stay in sync. If the model is ever swapped again, this is the file to update.
+
+---
+
+### [P2 — FIXED 2026-05-18] "Finish this later" visible after budget exhaustion (re-triggered the gate)
+**Status:** Fixed in `fix/launch-prod-feedback` (commit 3f72b26)
+
+After the budget cap was hit, the "Finish this later" button remained visible — clicking it just re-triggered the exhaustion gate, which was confusing. Now hidden when `budgetStatus.tier` is `soft_close`, `handoff`, or `exhausted`.
+
+**Monitoring:** Force a `soft_close` tier locally and confirm the button is gone.
+
+---
+
+### [P2 — FIXED 2026-05-18] Budget-exhausted copy confused voters as a personal API limit
+**Status:** Fixed in `fix/launch-prod-feedback` (commit 3f72b26)
+
+The exhaustion message read as if the voter's personal Anthropic API key had hit a limit. Updated `src/lib/translations.ts` to clarify: "Our free AI chat reached its monthly limit. Your personal Anthropic API key is unaffected..." — explicitly distinguishes the free-tier app cap from the bring-your-own-key path.
+
+**Monitoring:** Trigger exhaustion in en + es and confirm copy reads cleanly in both.
 
 ---
 
@@ -200,3 +295,59 @@ Several state donor download URLs were added as best-effort guesses without veri
 - A simple analytics query interface (even just SQL in the repo) to inspect the data.
 
 **Constraint:** Do not collect the voter's free-text verbatim — only the resolved canonical issue id and stance. Free text could be identifying.
+
+---
+
+### [idea — IMPLEMENTED 2026-05-18] Tesseract.js OCR fallback for scanned PDFs
+**Status:** Shipped in `fix/launch-prod-feedback` (commit 1054bcb)
+
+`ResearchLayout` PDF upload now OCR-fallbacks via `tesseract.js` when pdfjs returns fewer than 50 characters (i.e., the PDF is a scan, not a text-layer document). Lazy-imported on the scanned-PDF code path only — zero initial-bundle cost for the common text-layer case. Pinned `tesseract.js@5.1.1`. Also updated `pdfScannedError` copy with explicit Cmd/Ctrl+A copy-paste fallback steps, and opened the upload `<details>` by default so the textarea surface is discoverable.
+
+**Monitoring:** Validate on actual scanned ballot PDFs post-deploy — a few real county-provided scans are the only meaningful test. If OCR quality is poor for specific counties' scan formats, that's a tuning conversation (preprocess image, try alternate language packs).
+
+---
+
+### [P2] Donor coalition surface: no total raised, no small-vs-large breakdown
+**Status:** Open — flagged in Muxin's 2026-05-18 E2E run
+
+`FunderBars` (`src/components/FunderBars.tsx`) renders only percentages. The `DonorBucketSlice` data type carries `{label, percent}` and nothing else — so absolute dollar amounts aren't even available client-side. Voters lose meaningful signal: 45% from large individuals on a $20K race reads very differently than 45% on a $2M race.
+
+**What it would take:**
+- Extend `DonorBucketSlice` to include absolute totals (cents or dollars).
+- Surface a headline "Total raised: $X" above the bars.
+- Render inline absolute amounts on each bar (e.g., "Large individual: 45% ($240K)").
+
+**Open design question:** Headline number above, or inline amounts on each bar, or both? Mobile rendering constraints argue for one or the other, not both.
+
+---
+
+### [idea] Polis viz dev/preview mode for low-participation areas
+**Status:** Flagged 2026-05-18 — design + QA tooling
+
+When `thresholdMet === false` (jurisdictions with too few participants to show the visualization), QA + demos currently have no way to preview what the viz will look like once data fills in. Proposal: gate a mock dataset behind a `?devPolis=1` query param (or `NEXT_PUBLIC_DEV_POLIS` env flag) that renders the viz with a clearly-labeled "preview data" banner.
+
+**Useful for:** Pre-launch demos in low-participation states, QA regression-checking the viz layout without waiting for real participation, screenshot/marketing material.
+
+**Constraint:** Must be visually distinguishable from real data — banner is non-negotiable, and the env-flag form should be production-disabled by default.
+
+---
+
+### [idea] Polis viz: usage tracker + social share
+**Status:** Flagged 2026-05-18 — growth / social-proof
+
+Two small additions to the Polis viz surface:
+1. Social-proof banner near the viz: "N voters in [county] have used this tool" — needs a counts query against the existing session/participation data.
+2. "Share this tool" CTA next to the viz, with prefilled copy and OG image.
+
+**Why:** Both are low-cost trust-builders and growth nudges. The counts banner especially helps in counties where the viz is still warming up — even a modest "47 voters in Travis County" reads as legitimacy.
+
+---
+
+### [idea] Reconsider chip-pick vs full ranking for issue priorities
+**Status:** Deferred — revisit after Polis data + voter-feedback signals accumulate
+
+What we shipped — "drag-rank top 3" — works for launch and the data is clean. Longer-term, a conversation-driven priority discovery flow ("First, tell us what matters most to you") with examples + stances could produce much richer concern data: stance polarity, intensity, specific sub-issues. The final ranking would then render as a confirmation step rather than a pre-flight task.
+
+**Why deferred:** We need real-world signal first. Specifically: (a) how often are voters' chip-picked priorities a poor match for what they actually ask about in chat (gap between selection and discovery), (b) do Polis clusters suggest meaningful sub-issue structure that the current taxonomy hides. Both are answerable from launch data once we have a few thousand sessions.
+
+**Related:** "Expand canonical vocabulary" [P1] above and "Store voter issue preferences for analysis" [idea] above — these three together form the longer-arc taxonomy + UX redesign.
