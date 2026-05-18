@@ -21,8 +21,9 @@ import { AlignmentDrilldown } from "./AlignmentDrilldown";
  * RacePatterns — four-pattern candidate/proposition dashboard.
  *
  * Candidate variant:
- *   - Anonymized (Candidate A / B / C) by default.
- *   - Single "Reveal candidates" tap → names visible + Pick enabled.
+ *   - Anonymized (Candidate A / B / C) by default; Pick enabled from the start.
+ *   - "Reveal candidates" / "Hide names" button toggles real names on/off
+ *     so voters can pick anonymously and then optionally reveal.
  *
  * Proposition variant (detected automatically):
  *   - EVERY candidate has incumbent === false AND name starts with
@@ -347,8 +348,7 @@ function CandidateSection({
   const displayLabel = showName
     ? candidate.name
     : `Candidate ${anonLabel(idx)}`;
-  const pickDisabled =
-    submitting || submitted || (!isProposition && !revealed) || isStreaming;
+  const pickDisabled = submitting || submitted || isStreaming;
 
   // Find the expanded score object (if any) for this candidate's drilldown
   const expandedScore =
@@ -757,16 +757,16 @@ export function RacePatterns({
         })}
       </div>
 
-      {/* Reveal button — candidate variant only, before reveal */}
-      {!isProp && !revealed && !isSubmitted && (
+      {/* Reveal/Hide toggle — candidate variant only, until submitted */}
+      {!isProp && !isSubmitted && (
         <button
           type="button"
           data-testid="race-patterns-reveal"
-          onClick={() => !isStreaming && setRevealed(true)}
+          onClick={() => !isStreaming && setRevealed((prev) => !prev)}
           disabled={isStreaming}
           className="w-full border-2 border-primary text-primary px-4 py-3 text-sm font-black uppercase tracking-wide hover:bg-primary/10 active:scale-95 transition disabled:opacity-40 disabled:cursor-not-allowed"
         >
-          {t.racePatternsRevealButton}
+          {revealed ? t.racePatternsHideButton : t.racePatternsRevealButton}
         </button>
       )}
 

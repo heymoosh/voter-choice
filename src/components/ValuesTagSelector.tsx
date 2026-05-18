@@ -20,7 +20,10 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { useLanguage } from "../lib/i18n";
 import { translations } from "../lib/translations";
-import type { ValuesTagRequestBlock } from "../lib/structured-blocks";
+import type {
+  ValuesTagItem,
+  ValuesTagRequestBlock,
+} from "../lib/structured-blocks";
 
 /* ──────────────────────────────────────────────────────────────
  * ValuesTagSelector v2
@@ -72,6 +75,7 @@ type RankedListItem = TagItem | FreeTextItem;
 /* ── Sortable item subcomponent ─────────────────────────────── */
 interface SortableItemProps {
   item: RankedListItem;
+  items: ValuesTagItem[];
   rank: number;
   removeLabel: string;
   onRemove: (key: string) => void;
@@ -80,6 +84,7 @@ interface SortableItemProps {
 
 function SortableItem({
   item,
+  items,
   rank,
   removeLabel,
   onRemove,
@@ -100,7 +105,10 @@ function SortableItem({
     opacity: isDragging ? 0.5 : 1,
   };
 
-  const label = item.type === "tag" ? item.id : item.text;
+  const label =
+    item.type === "tag"
+      ? (items.find((i) => i.id === item.id)?.label ?? item.id)
+      : item.text;
 
   return (
     <li
@@ -452,6 +460,7 @@ export function ValuesTagSelector({
                   <SortableItem
                     key={item.key}
                     item={item}
+                    items={block.items}
                     rank={idx + 1}
                     removeLabel={t.valuesTagSelectorRemoveLabel}
                     onRemove={handleRemove}

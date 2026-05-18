@@ -427,7 +427,34 @@ function isTextFile(file: File): boolean {
 
 const PDF_SCANNED_MIN_CHARS = 50;
 
-async function extractPdfText(file: File): Promise<string> {
+type PdfDocument = Awaited<
+  ReturnType<typeof import("pdfjs-dist").getDocument>["promise"]
+>;
+
+// OCR fallback for scanned PDFs. Lazy-imports tesseract.js so it is
+// excluded from the initial JS bundle and only downloaded when needed.
+async function ocrPdfPages(pdf: PdfDocument): Promise<string> {
+  const Tesseract = await import("tesseract.js");
+  const textParts: string[] = [];
+  for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+    const page = await pdf.getPage(pageNum);
+    const viewport = page.getViewport({ scale: 2 });
+    const canvas = document.createElement("canvas");
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) continue;
+    await page.render({ canvasContext: ctx, viewport, canvas }).promise;
+    const result = await Tesseract.recognize(canvas, "eng");
+    textParts.push(result.data.text);
+  }
+  return textParts.join("\n").trim();
+}
+
+async function extractPdfText(
+  file: File,
+  options?: { onOcrStart?: () => void },
+): Promise<string> {
   // Lazy-load pdfjs-dist only on client-side to avoid SSR issues.
   // Wrap the import + worker setup in its own try/catch so CDN/load failures
   // surface a distinct "PDF_LOAD_ERROR" rather than the misleading "scanned" message.
@@ -453,7 +480,14 @@ async function extractPdfText(file: File): Promise<string> {
       .join(" ");
     textParts.push(pageText);
   }
-  return textParts.join("\n").trim();
+  const extracted = textParts.join("\n").trim();
+  if (extracted.length >= PDF_SCANNED_MIN_CHARS) {
+    return extracted;
+  }
+  // pdfjs returned almost nothing — likely a scanned/image-only PDF.
+  // Fall back to OCR; notify the caller so it can surface a progress notice.
+  options?.onOcrStart?.();
+  return ocrPdfPages(pdf);
 }
 
 function UserSampleBallotInput({
@@ -486,7 +520,9 @@ function UserSampleBallotInput({
       setIsPdfLoading(true);
       setNotice(null);
       try {
-        const text = await extractPdfText(file);
+        const text = await extractPdfText(file, {
+          onOcrStart: () => setNotice(t.research.pdfOcrInProgress),
+        });
         if (text.length < PDF_SCANNED_MIN_CHARS) {
           setNotice(t.research.pdfScannedError);
         } else {
@@ -1455,7 +1491,10 @@ function ResearchView({
           {!researchReady && preResearchGate}
 
           {onUserSampleBallotTextChange && (
-            <details className="bg-surface-lowest border border-outline-variant/30 p-4">
+            <details
+              open
+              className="bg-surface-lowest border border-outline-variant/30 p-4"
+            >
               <summary className="cursor-pointer text-sm font-black uppercase tracking-widest text-primary">
                 {lang === "es"
                   ? "Pegar mi boleta en su lugar"

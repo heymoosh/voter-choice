@@ -247,6 +247,7 @@ export interface Translations {
     valuesTagSelectorRankBadge: (rank: number) => string;
     // RacePatterns keys
     racePatternsRevealButton: string;
+    racePatternsHideButton: string;
     racePatternsPickPrefix: string;
     racePatternsSkip: string;
     racePatternsSubmitting: string;
@@ -273,6 +274,7 @@ export interface Translations {
     tabCloseWarningBanner: string;
     pdfScannedError: string;
     pdfLoadError: string;
+    pdfOcrInProgress: string;
     // ConcernInterpretation keys
     concernInterpretationHeading: string;
     concernInterpretationSubhead: string;
@@ -721,6 +723,7 @@ const en: Translations = {
     valuesTagSelectorRankBadge: (rank: number) => `#${rank}`,
     // RacePatterns
     racePatternsRevealButton: "Reveal candidates",
+    racePatternsHideButton: "Hide Names",
     racePatternsPickPrefix: "Pick",
     racePatternsSkip: "Skip this race",
     racePatternsSubmitting: "Sending…",
@@ -747,8 +750,9 @@ const en: Translations = {
     racePatternsDisclaimer:
       "AI can make mistakes. Tap any score to see the contributing votes and verify the sources.",
     tabCloseWarningBanner: `We save anonymous counts only — never who said what. Get your summary before closing the tab; without it, your in-progress research is gone.`,
-    pdfScannedError: `This PDF appears to be scanned and can’t be auto-extracted. Open it, copy the text, and paste it here instead.`,
+    pdfScannedError: `We couldn’t read this PDF (looks like a scanned image with no text we can extract). To work around it: (1) Open the PDF in your viewer, (2) Select all the text (Cmd/Ctrl+A), (3) Copy (Cmd/Ctrl+C), (4) Paste below.`,
     pdfLoadError: `We couldn’t load the PDF reader right now. Please try again in a moment, or open the PDF, copy the text, and paste it here.`,
+    pdfOcrInProgress: `Extracting scanned PDF text — this may take 30 seconds…`,
     // ConcernInterpretation
     concernInterpretationHeading: "Did we get this right?",
     concernInterpretationSubhead:
@@ -1242,6 +1246,7 @@ const es: Translations = {
     valuesTagSelectorRankBadge: (rank: number) => `#${rank}`,
     // RacePatterns — EN stubs (ES UI out of scope for this packet)
     racePatternsRevealButton: "Reveal candidates",
+    racePatternsHideButton: "Ocultar Nombres",
     racePatternsPickPrefix: "Pick",
     racePatternsSkip: "Skip this race",
     racePatternsSubmitting: "Sending…",
@@ -1269,9 +1274,11 @@ const es: Translations = {
       "AI can make mistakes. Tap any score to see the contributing votes and verify the sources.",
     tabCloseWarningBanner: `We save anonymous counts only — never who said what. Get your summary before closing the tab; without it, your in-progress research is gone.`,
     pdfScannedError:
-      "This PDF appears to be scanned and can’t be auto-extracted. Open it, copy the text, and paste it here instead.",
+      "No pudimos leer este PDF (parece una imagen escaneada sin texto que podamos extraer). Para solucionarlo: (1) Abre el PDF en tu visor, (2) Selecciona todo el texto (Cmd/Ctrl+A), (3) Copia (Cmd/Ctrl+C), (4) Pega abajo.",
     pdfLoadError:
       "We couldn't load the PDF reader right now. Please try again in a moment, or open the PDF, copy the text, and paste it here.",
+    pdfOcrInProgress:
+      "Extrayendo texto del PDF escaneado — esto puede tardar 30 segundos…",
     // ConcernInterpretation — EN stubs (ES UI out of scope for this packet)
     concernInterpretationHeading: "Did we get this right?",
     concernInterpretationSubhead:

@@ -168,10 +168,56 @@ describe("RacePatterns — candidate variant", () => {
     expect(screen.queryByText("Bob Nguyen")).not.toBeInTheDocument();
   });
 
-  it("Pick buttons are disabled until reveal", () => {
+  it("allows picking a candidate before revealing names", () => {
+    const { onPick } = renderPatterns(candidateBlock);
+    // Pick buttons should NOT be disabled in the hidden/anonymous state
+    expect(screen.getByTestId("race-patterns-pick-cand-a")).not.toBeDisabled();
+    expect(screen.getByTestId("race-patterns-pick-cand-b")).not.toBeDisabled();
+
+    // Click "Candidate A" pick without revealing
+    fireEvent.click(screen.getByTestId("race-patterns-pick-cand-a"));
+    expect(onPick).toHaveBeenCalledTimes(1);
+    // onPick still receives the real candidate ID + name (the data is just hidden from the user)
+    expect(onPick).toHaveBeenCalledWith("cand-a", "Alice Morales");
+
+    // The displayed name should still be the anonymous label
+    expect(
+      screen.getByTestId("race-patterns-candidate-name-cand-a"),
+    ).toHaveTextContent("Candidate A");
+    expect(screen.queryByText("Alice Morales")).not.toBeInTheDocument();
+  });
+
+  it("reveal button toggles between Reveal Candidates and Hide Names", () => {
     renderPatterns(candidateBlock);
-    expect(screen.getByTestId("race-patterns-pick-cand-a")).toBeDisabled();
-    expect(screen.getByTestId("race-patterns-pick-cand-b")).toBeDisabled();
+    const button = screen.getByTestId("race-patterns-reveal");
+
+    // Initial state: anonymous, button reads "Reveal candidates"
+    expect(button).toHaveTextContent(/reveal candidates/i);
+    expect(
+      screen.getByTestId("race-patterns-candidate-name-cand-a"),
+    ).toHaveTextContent("Candidate A");
+    expect(screen.queryByText("Alice Morales")).not.toBeInTheDocument();
+
+    // Click → revealed, names visible, button reads "Hide Names"
+    fireEvent.click(button);
+    expect(button).toHaveTextContent(/hide names/i);
+    expect(
+      screen.getByTestId("race-patterns-candidate-name-cand-a"),
+    ).toHaveTextContent("Alice Morales");
+    expect(
+      screen.getByTestId("race-patterns-candidate-name-cand-b"),
+    ).toHaveTextContent("Bob Nguyen");
+
+    // Click again → back to hidden, anon labels shown, button reads "Reveal candidates"
+    fireEvent.click(button);
+    expect(button).toHaveTextContent(/reveal candidates/i);
+    expect(
+      screen.getByTestId("race-patterns-candidate-name-cand-a"),
+    ).toHaveTextContent("Candidate A");
+    expect(
+      screen.getByTestId("race-patterns-candidate-name-cand-b"),
+    ).toHaveTextContent("Candidate B");
+    expect(screen.queryByText("Alice Morales")).not.toBeInTheDocument();
   });
 
   it("reveals candidates and enables Pick when reveal button is tapped", () => {
@@ -185,14 +231,6 @@ describe("RacePatterns — candidate variant", () => {
     ).toHaveTextContent("Bob Nguyen");
     expect(screen.getByTestId("race-patterns-pick-cand-a")).not.toBeDisabled();
     expect(screen.getByTestId("race-patterns-pick-cand-b")).not.toBeDisabled();
-  });
-
-  it("reveal button disappears after tapping", () => {
-    renderPatterns(candidateBlock);
-    fireEvent.click(screen.getByTestId("race-patterns-reveal"));
-    expect(
-      screen.queryByTestId("race-patterns-reveal"),
-    ).not.toBeInTheDocument();
   });
 
   it("renders the race title", () => {
