@@ -29,13 +29,13 @@ store reads were possible from the worktree (no Redis credentials present).
 **The pricing constants encoded Claude Sonnet 4.5 rates, but the chat route
 calls Claude Haiku 4.5.** Concretely:
 
-| Cost component        | Before (in code)      | Sonnet 4.5 actual | Haiku 4.5 actual |
-| --------------------- | --------------------- | ----------------- | ---------------- |
-| Input tokens          | $3.00 / MTok          | $3.00 / MTok      | $1.00 / MTok     |
-| Output tokens         | $15.00 / MTok         | $15.00 / MTok     | $5.00 / MTok     |
-| Cached input          | $0.30 / MTok (= 0.1x) | $0.30 / MTok      | $0.10 / MTok     |
-| Cache write (5-min)   | $3.75 / MTok (= 1.25x)| $3.75 / MTok      | $1.25 / MTok     |
-| Web search            | $10 / 1000 searches   | $10 / 1000        | $10 / 1000       |
+| Cost component      | Before (in code)       | Sonnet 4.5 actual | Haiku 4.5 actual |
+| ------------------- | ---------------------- | ----------------- | ---------------- |
+| Input tokens        | $3.00 / MTok           | $3.00 / MTok      | $1.00 / MTok     |
+| Output tokens       | $15.00 / MTok          | $15.00 / MTok     | $5.00 / MTok     |
+| Cached input        | $0.30 / MTok (= 0.1x)  | $0.30 / MTok      | $0.10 / MTok     |
+| Cache write (5-min) | $3.75 / MTok (= 1.25x) | $3.75 / MTok      | $1.25 / MTok     |
+| Web search          | $10 / 1000 searches    | $10 / 1000        | $10 / 1000       |
 
 `SEARCH_COST_PER_THOUSAND` was already correct (web search is model-agnostic).
 
@@ -47,7 +47,7 @@ calls Claude Haiku 4.5.** Concretely:
   `// Anthropic pricing for Claude Sonnet (per 1M tokens)`.
 - Commit `67d76f5` (2026-05-08) — handoff improvements: swapped chat-route model
   from `"claude-sonnet-4-6"` to `DEFAULT_ANTHROPIC_CHAT_MODEL =
-  "claude-haiku-4-5-20251001"`. Did NOT touch `budget.ts`.
+"claude-haiku-4-5-20251001"`. Did NOT touch `budget.ts`.
 
 Since the model switch on May 8, the budget tracker has been overestimating
 input/output/cache-write costs by approximately 3x. That overestimation is what
@@ -69,6 +69,7 @@ correct dimensional arithmetic; only the per-unit constants were wrong.
 ## What I changed (Scenario B + Scenario A copy fix)
 
 1. **`src/lib/server/budget.ts`** — corrected constants to Haiku 4.5:
+
    - `INPUT_COST_PER_MILLION`: 3.0 → 1.0
    - `OUTPUT_COST_PER_MILLION`: 15.0 → 5.0
    - `CACHED_INPUT_COST_PER_MILLION`: 0.3 → 0.1
@@ -83,6 +84,7 @@ correct dimensional arithmetic; only the per-unit constants were wrong.
 
 2. **`src/lib/server/budget.test.ts`** — recalibrated two fixtures to Haiku
    numbers:
+
    - "1M input + 1M output" assertion: $18 (36%) → $6 (12%).
    - "accumulates across multiple calls" with 500k input twice: $3 → $1.
    - All other tests use direct USD spend setters
