@@ -9,7 +9,6 @@
   "stateName": "South Carolina",
   "lastUpdated": "2026-05-10",
   "coverageStatus": "confirmed",
-
   "elections": [
     {
       "id": "sc-2026-primary",
@@ -105,7 +104,6 @@
       }
     }
   ],
-
   "registration": {
     "online": {
       "available": true,
@@ -123,14 +121,12 @@
     "sameDayRegistration": false,
     "registrationCheckUrl": "https://www.scvotes.net/check-your-registration"
   },
-
   "earlyVoting": {
     "available": true,
     "startDate": "2026-10-19",
     "endDate": "2026-10-31",
     "notes": "In-person absentee (early voting) is available at county election offices beginning about two weeks before Election Day."
   },
-
   "votingRules": {
     "idRequired": true,
     "acceptedIds": [
@@ -151,7 +147,6 @@
       "Runoff rule: if no candidate receives a majority in the primary, the top two advance to a runoff. A voter who voted in one party's primary may only vote in that party's runoff."
     ]
   },
-
   "voteByMail": {
     "universal": false,
     "eligibility": [
@@ -168,13 +163,11 @@
     "applicationUrl": "https://www.scvotes.net/absentee-voting",
     "officialRulesUrl": "https://www.scvotes.net/absentee-voting"
   },
-
   "runoffRules": {
     "hasRunoff": true,
     "partyLockedToFirstRoundPrimary": true,
     "ruleExplanation": "South Carolina rule: if you voted in one party's primary, you can only vote in that same party's runoff. If you did not vote in the primary, you may choose either party's runoff."
   },
-
   "resources": {
     "stateElectionWebsite": "https://www.scvotes.net/",
     "countyElectionLookup": "https://www.scvotes.net/county-election-commissions",
@@ -183,5 +176,11 @@
     "importantDates": "https://www.scvotes.net/election-dates",
     "voterIdInfo": "https://www.scvotes.net/voter-id",
     "earlyVotingInfo": "https://www.scvotes.net/absentee-voting"
+  },
+  "primaryParticipation": {
+    "type": "open",
+    "ruleExplanationEn": "South Carolina has an open primary with no party registration (S.C. Code Ann. §7-11-10). Any qualified voter may participate in any party's primary by signing a pledge to support the nominees. If a runoff occurs, you must vote in the same party's runoff as the primary you participated in.",
+    "ruleExplanationEs": "Carolina del Sur tiene una primaria abierta sin registro de partido (S.C. Code Ann. §7-11-10). Cualquier votante calificado puede participar en la primaria de cualquier partido firmando un compromiso de apoyar a los nominados. Si hay una segunda vuelta, debe votar en la segunda vuelta del mismo partido en cuya primaria participó.",
+    "behavior": "advisory"
   }
 }

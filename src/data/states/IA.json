@@ -5,12 +5,10 @@
     "checked": "2026-05-10",
     "discrepancies": "Iowa's voter ID law: photo ID is requested but not strictly required — voters without ID may use the poll book affidavit as an alternative. NCSL categorizes Iowa as 'photo ID requested'. Iowa enacted same-day registration; voters may register through Election Day. Iowa 2026 primary date set by statute as the first Tuesday after the first Monday in June."
   },
-
   "stateCode": "IA",
   "stateName": "Iowa",
   "lastUpdated": "2026-05-10",
   "coverageStatus": "confirmed",
-
   "elections": [
     {
       "id": "ia-2026-primary",
@@ -75,7 +73,6 @@
       }
     }
   ],
-
   "registration": {
     "online": {
       "available": true,
@@ -93,14 +90,12 @@
     "sameDayRegistration": true,
     "registrationCheckUrl": "https://sos.iowa.gov/elections/voterreg/regtovote/search.aspx"
   },
-
   "earlyVoting": {
     "available": true,
     "startDate": "2026-10-05",
     "endDate": "2026-11-02",
     "notes": "Early voting (in-person absentee) begins 29 days before the general election at county auditor offices. Satellite early voting locations may be available. TODO verify for 2026 cycle."
   },
-
   "votingRules": {
     "idRequired": true,
     "acceptedIds": [
@@ -121,7 +116,6 @@
       "Same-day registration available on Election Day with proof of Iowa residence."
     ]
   },
-
   "voteByMail": {
     "universal": false,
     "eligibility": [
@@ -133,12 +127,10 @@
     "applicationUrl": "https://sos.iowa.gov/elections/absenteeinfo/absenteeoverview.html",
     "officialRulesUrl": "https://sos.iowa.gov/elections/absenteeinfo/absenteeoverview.html"
   },
-
   "runoffRules": {
     "hasRunoff": false,
     "partyLockedToFirstRoundPrimary": false
   },
-
   "resources": {
     "stateElectionWebsite": "https://sos.iowa.gov/elections/",
     "countyElectionLookup": "https://sos.iowa.gov/elections/auditors/auditorslist.html",
@@ -147,5 +139,11 @@
     "importantDates": "https://sos.iowa.gov/elections/electioninfo/electioncalendar.html",
     "voterIdInfo": "https://sos.iowa.gov/elections/voterreg/voterid.html",
     "earlyVotingInfo": "https://sos.iowa.gov/elections/absenteeinfo/absenteeoverview.html"
+  },
+  "primaryParticipation": {
+    "type": "semi-closed",
+    "ruleExplanationEn": "Iowa has a semi-closed primary (Iowa Code §43.2). Voters registered with a party vote in their party's primary. Voters registered as no-party (independent) or who change registration on the day of the primary may participate by declaring a party at the polls on election day.",
+    "ruleExplanationEs": "Iowa tiene una primaria semi-cerrada (Iowa Code §43.2). Los votantes registrados en un partido votan en la primaria de su partido. Los votantes registrados sin partido (independientes) o que cambian su registro el día de la primaria pueden participar declarando un partido en el lugar de votación el día de las elecciones.",
+    "behavior": "advisory"
   }
 }

@@ -9,7 +9,6 @@
   "stateName": "Arkansas",
   "lastUpdated": "2026-05-10",
   "coverageStatus": "confirmed",
-
   "elections": [
     {
       "id": "ar-2026-primary",
@@ -105,7 +104,6 @@
       }
     }
   ],
-
   "registration": {
     "online": {
       "available": true,
@@ -123,14 +121,12 @@
     "sameDayRegistration": false,
     "registrationCheckUrl": "https://www.voterview.ar-nova.org/voterview"
   },
-
   "earlyVoting": {
     "available": true,
     "startDate": "2026-10-19",
     "endDate": "2026-10-31",
     "notes": "Early voting runs for 15 days before the election and ends the Saturday before Election Day. Hours vary by county."
   },
-
   "votingRules": {
     "idRequired": true,
     "acceptedIds": [
@@ -150,7 +146,6 @@
       "Runoff rule: a voter who participated in one party's primary may only vote in that party's runoff."
     ]
   },
-
   "voteByMail": {
     "universal": false,
     "eligibility": [
@@ -166,13 +161,11 @@
     "applicationUrl": "https://www.sos.arkansas.gov/elections/voter-information/absentee-voting/",
     "officialRulesUrl": "https://www.sos.arkansas.gov/elections/voter-information/absentee-voting/"
   },
-
   "runoffRules": {
     "hasRunoff": true,
     "partyLockedToFirstRoundPrimary": true,
     "ruleExplanation": "Arkansas rule: if you voted in one party's primary, you can only vote in that same party's runoff. If you did not vote in the primary, you may choose either party's runoff."
   },
-
   "resources": {
     "stateElectionWebsite": "https://www.sos.arkansas.gov/elections/",
     "countyElectionLookup": "https://www.sos.arkansas.gov/elections/county-clerks/",
@@ -181,5 +174,11 @@
     "importantDates": "https://www.sos.arkansas.gov/elections/voter-information/election-calendar/",
     "voterIdInfo": "https://www.sos.arkansas.gov/elections/voter-information/voter-id/",
     "earlyVotingInfo": "https://www.sos.arkansas.gov/elections/voter-information/early-voting/"
+  },
+  "primaryParticipation": {
+    "type": "open",
+    "ruleExplanationEn": "Arkansas has an open primary (Ark. Code §7-7-301). Any registered voter may participate in either party's primary. If a runoff occurs and you voted in a party's primary, party-lock rules apply.",
+    "ruleExplanationEs": "Arkansas tiene una primaria abierta (Ark. Code §7-7-301). Cualquier votante registrado puede participar en la primaria de cualquier partido. Si hay una segunda vuelta y votó en la primaria de un partido, se aplican las reglas de bloqueo de partido.",
+    "behavior": "advisory"
   }
 }

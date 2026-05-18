@@ -8,7 +8,6 @@
   "stateCode": "MA",
   "stateName": "Massachusetts",
   "lastUpdated": "2026-05-10",
-
   "elections": [
     {
       "id": "ma-2026-primary",
@@ -73,7 +72,6 @@
       }
     }
   ],
-
   "registration": {
     "online": {
       "available": true,
@@ -91,14 +89,12 @@
     "sameDayRegistration": false,
     "registrationCheckUrl": "https://www.sec.state.ma.us/voterregistrationsearch/myvoterregstatus.aspx"
   },
-
   "earlyVoting": {
     "available": true,
     "startDate": "2026-10-17",
     "endDate": "2026-10-30",
     "notes": "Massachusetts offers in-person early voting at local election offices. Dates and hours vary by city/town. TODO verify exact 2026 dates."
   },
-
   "votingRules": {
     "idRequired": false,
     "acceptedIds": [],
@@ -110,7 +106,6 @@
       "No-excuse absentee voting is available for all registered voters."
     ]
   },
-
   "voteByMail": {
     "universal": false,
     "eligibility": [
@@ -122,16 +117,20 @@
     "applicationUrl": "https://www.sec.state.ma.us/ele/eleabsentee/absenteeapl.htm",
     "officialRulesUrl": "https://www.sec.state.ma.us/ele/eleabsentee/absenteeindx.htm"
   },
-
   "runoffRules": {
     "hasRunoff": false,
     "partyLockedToFirstRoundPrimary": false
   },
-
   "resources": {
     "stateElectionWebsite": "https://www.sec.state.ma.us/ele/eleidx.htm",
     "countyElectionLookup": "https://www.sec.state.ma.us/ele/eleclk/clkidx.htm",
     "sampleBallotLookup": "https://www.sec.state.ma.us/ele/eleidx.htm",
     "pollingPlaceLookup": "https://www.sec.state.ma.us/voterregistrationsearch/myvoterregstatus.aspx"
+  },
+  "primaryParticipation": {
+    "type": "semi-closed",
+    "ruleExplanationEn": "Massachusetts has a semi-closed primary (Mass. Gen. Laws c. 53, §37). Registered party members vote in their party's primary. Voters enrolled as 'unenrolled' (independent) may request any party's primary ballot and vote in that primary. After voting, unenrolled voters return to unenrolled status.",
+    "ruleExplanationEs": "Massachusetts tiene una primaria semi-cerrada (Mass. Gen. Laws c. 53, §37). Los miembros registrados en un partido votan en la primaria de su partido. Los votantes inscritos como 'sin inscripción' (independientes) pueden solicitar la boleta de primaria de cualquier partido y votar en esa primaria. Después de votar, los votantes sin inscripción vuelven a ese estatus.",
+    "behavior": "advisory"
   }
 }

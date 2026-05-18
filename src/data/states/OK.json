@@ -9,7 +9,6 @@
   "stateName": "Oklahoma",
   "lastUpdated": "2026-05-10",
   "coverageStatus": "confirmed",
-
   "elections": [
     {
       "id": "ok-2026-primary",
@@ -105,7 +104,6 @@
       }
     }
   ],
-
   "registration": {
     "online": {
       "available": true,
@@ -123,14 +121,12 @@
     "sameDayRegistration": false,
     "registrationCheckUrl": "https://okvoterportal.okelections.us/"
   },
-
   "earlyVoting": {
     "available": true,
     "startDate": "2026-10-29",
     "endDate": "2026-10-31",
     "notes": "Early voting is available Thursday through Saturday before Election Day at county election board offices."
   },
-
   "votingRules": {
     "idRequired": true,
     "acceptedIds": [
@@ -149,7 +145,6 @@
       "Runoff rule: if no candidate receives a majority in the primary, the top two advance to a runoff. A voter who voted in one party's primary may only vote in that party's runoff."
     ]
   },
-
   "voteByMail": {
     "universal": false,
     "eligibility": [
@@ -165,13 +160,11 @@
     "applicationUrl": "https://www.elections.ok.gov/absentee-voting/",
     "officialRulesUrl": "https://www.elections.ok.gov/absentee-voting/"
   },
-
   "runoffRules": {
     "hasRunoff": true,
     "partyLockedToFirstRoundPrimary": true,
     "ruleExplanation": "Oklahoma rule: if you voted in one party's primary, you can only vote in that same party's runoff. If you did not vote in the primary, you may choose either party's runoff."
   },
-
   "resources": {
     "stateElectionWebsite": "https://www.elections.ok.gov/",
     "countyElectionLookup": "https://www.elections.ok.gov/county-election-board-information/",
@@ -180,5 +173,11 @@
     "importantDates": "https://www.elections.ok.gov/important-election-dates/",
     "voterIdInfo": "https://www.elections.ok.gov/voter-id/",
     "earlyVotingInfo": "https://www.elections.ok.gov/early-voting/"
+  },
+  "primaryParticipation": {
+    "type": "closed",
+    "ruleExplanationEn": "Oklahoma has a closed primary effective for 2026 (Okla. Stat. Title 26, §26-1-104). Only voters registered with a political party may vote in that party's primary. Both the Republican and Democratic parties are running closed primaries for the 2026 cycle. If a runoff occurs, party-lock rules apply.",
+    "ruleExplanationEs": "Oklahoma tiene una primaria cerrada vigente para 2026 (Okla. Stat. Title 26, §26-1-104). Solo los votantes registrados en un partido político pueden votar en la primaria de ese partido. Tanto el Partido Republicano como el Demócrata están realizando primarias cerradas para el ciclo 2026. Si hay una segunda vuelta, se aplican las reglas de bloqueo de partido.",
+    "behavior": "advisory"
   }
 }

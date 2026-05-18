@@ -9,7 +9,6 @@
   "stateName": "Alaska",
   "lastUpdated": "2026-05-10",
   "coverageStatus": "confirmed",
-
   "elections": [
     {
       "id": "ak-2026-primary",
@@ -74,7 +73,6 @@
       }
     }
   ],
-
   "registration": {
     "online": {
       "available": true,
@@ -92,14 +90,12 @@
     "sameDayRegistration": false,
     "registrationCheckUrl": "https://myvoterinformation.alaska.gov/"
   },
-
   "earlyVoting": {
     "available": true,
     "startDate": "2026-10-05",
     "endDate": "2026-10-30",
     "notes": "Alaska mails ballots to all active registered voters. Absentee in-person voting available at Division of Elections regional offices statewide. Alaska uses ranked-choice voting (RCV) for general elections — voters rank up to 4 candidates."
   },
-
   "votingRules": {
     "idRequired": false,
     "acceptedIds": [
@@ -117,7 +113,6 @@
       "Non-photo ID is requested but a voter personally known to the poll worker may vote without presenting ID."
     ]
   },
-
   "voteByMail": {
     "universal": false,
     "eligibility": [
@@ -130,18 +125,22 @@
     "applicationUrl": "https://www.elections.alaska.gov/AbsenteeVoting.php",
     "officialRulesUrl": "https://www.elections.alaska.gov/"
   },
-
   "runoffRules": {
     "hasRunoff": false,
     "partyLockedToFirstRoundPrimary": false,
     "ruleExplanation": "Alaska uses ranked-choice voting (RCV) in general elections, which functions as an instant-runoff system. There is no separate runoff election."
   },
-
   "resources": {
     "stateElectionWebsite": "https://www.elections.alaska.gov/",
     "countyElectionLookup": "https://www.elections.alaska.gov/RegionalOffices.php",
     "sampleBallotLookup": "https://myvoterinformation.alaska.gov/",
     "pollingPlaceLookup": "https://myvoterinformation.alaska.gov/",
     "voterIdInfo": "https://www.elections.alaska.gov/Voters.php"
+  },
+  "primaryParticipation": {
+    "type": "top-two",
+    "ruleExplanationEn": "Alaska uses a top-four nonpartisan primary (Ballot Measure 2, 2020). All registered voters may vote for any candidate regardless of party. The top four advance to the general election, which uses ranked-choice voting.",
+    "ruleExplanationEs": "Alaska utiliza una primaria no partidista de los cuatro primeros (Medida 2, 2020). Todos los votantes registrados pueden votar por cualquier candidato sin importar el partido. Los cuatro candidatos con más votos avanzan a las elecciones generales, que utilizan votación por orden de preferencia.",
+    "behavior": "advisory"
   }
 }

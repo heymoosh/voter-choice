@@ -5,12 +5,10 @@
     "checked": "2026-05-10",
     "discrepancies": "Illinois has no voter ID requirement — voters affirm identity by signing the poll book. NCSL confirms 'no document required'. Voter registration deadline is 28 days before election by mail/online; same-day registration available during early voting and on Election Day."
   },
-
   "stateCode": "IL",
   "stateName": "Illinois",
   "lastUpdated": "2026-05-10",
   "coverageStatus": "confirmed",
-
   "elections": [
     {
       "id": "il-2026-primary",
@@ -75,7 +73,6 @@
       }
     }
   ],
-
   "registration": {
     "online": {
       "available": true,
@@ -93,14 +90,12 @@
     "sameDayRegistration": true,
     "registrationCheckUrl": "https://www.elections.il.gov/votinginformation/registrationstatus.aspx"
   },
-
   "earlyVoting": {
     "available": true,
     "startDate": "2026-10-15",
     "endDate": "2026-11-02",
     "notes": "Early voting begins 40 days before the general election. Permanent early voting sites and hours set by county clerks. TODO verify for 2026 cycle."
   },
-
   "votingRules": {
     "idRequired": false,
     "acceptedIds": [],
@@ -113,7 +108,6 @@
       "No runoffs in Illinois — the candidate with the most votes wins."
     ]
   },
-
   "voteByMail": {
     "universal": false,
     "eligibility": [
@@ -125,12 +119,10 @@
     "applicationUrl": "https://www.elections.il.gov/votinginformation/VoteByMail.aspx",
     "officialRulesUrl": "https://www.elections.il.gov/votinginformation/VoteByMail.aspx"
   },
-
   "runoffRules": {
     "hasRunoff": false,
     "partyLockedToFirstRoundPrimary": false
   },
-
   "resources": {
     "stateElectionWebsite": "https://www.elections.il.gov/",
     "countyElectionLookup": "https://www.elections.il.gov/ElectionOperations/ElectionAuthorities.aspx",
@@ -139,5 +131,11 @@
     "importantDates": "https://www.elections.il.gov/ElectionOperations/ElectionCalendar.aspx",
     "voterIdInfo": "https://www.elections.il.gov/votinginformation/idreq.aspx",
     "earlyVotingInfo": "https://www.elections.il.gov/votinginformation/EarlyVoting.aspx"
+  },
+  "primaryParticipation": {
+    "type": "open",
+    "ruleExplanationEn": "Illinois has an open primary (10 ILCS 5/7-43). Voters declare their party choice at the polls on primary day and may change their declared affiliation. No advance party registration is required.",
+    "ruleExplanationEs": "Illinois tiene una primaria abierta (10 ILCS 5/7-43). Los votantes declaran su elección de partido en el lugar de votación el día de la primaria y pueden cambiar su afiliación declarada. No se requiere registro de partido previo.",
+    "behavior": "advisory"
   }
 }

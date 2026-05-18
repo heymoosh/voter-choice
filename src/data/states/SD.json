@@ -5,12 +5,10 @@
     "checked": "2026-05-10",
     "discrepancies": "South Dakota requests photo ID — NCSL categorizes SD as 'photo ID requested'. Voters without photo ID may provide last four digits of SSN, sign a poll book affidavit, or be vouched for by an election judge. SD has a party-locked primary runoff: if no candidate receives 35% of the vote in the primary, the top two advance to a runoff. A voter who participated in one party's primary may only vote in that party's runoff (similar to TX and GA). Primary is set by statute as the first Tuesday after the first Monday in June."
   },
-
   "stateCode": "SD",
   "stateName": "South Dakota",
   "lastUpdated": "2026-05-10",
   "coverageStatus": "confirmed",
-
   "elections": [
     {
       "id": "sd-2026-primary",
@@ -106,7 +104,6 @@
       }
     }
   ],
-
   "registration": {
     "online": {
       "available": true,
@@ -124,14 +121,12 @@
     "sameDayRegistration": false,
     "registrationCheckUrl": "https://vip.sdsos.gov/VIPLogin.aspx"
   },
-
   "earlyVoting": {
     "available": true,
     "startDate": "2026-09-18",
     "endDate": "2026-11-02",
     "notes": "Absentee in-person voting available at county auditor offices starting 46 days before the general election. TODO verify for 2026 cycle."
   },
-
   "votingRules": {
     "idRequired": true,
     "acceptedIds": [
@@ -152,7 +147,6 @@
       "No runoffs in South Dakota general elections — the candidate with the most votes wins."
     ]
   },
-
   "voteByMail": {
     "universal": false,
     "eligibility": [
@@ -164,13 +158,11 @@
     "applicationUrl": "https://sdsos.gov/elections-voting/voting/absentee-voting/default.aspx",
     "officialRulesUrl": "https://sdsos.gov/elections-voting/voting/absentee-voting/default.aspx"
   },
-
   "runoffRules": {
     "hasRunoff": true,
-    "partyLockedToFirstRoundPrimary": true,
-    "ruleExplanation": "South Dakota rule: if no candidate receives 35% of the primary vote, the top two candidates advance to a runoff. If you voted in one party's primary, you may only vote in that same party's runoff. If you did not vote in the primary, you may choose either party's runoff."
+    "partyLockedToFirstRoundPrimary": false,
+    "ruleExplanation": "South Dakota rule (SDCL §12-6-4): if no candidate receives 35% of the primary vote, the top two candidates advance to a runoff. South Dakota runoffs are open — any registered voter may choose which party's runoff to vote in, regardless of how they voted in the primary."
   },
-
   "resources": {
     "stateElectionWebsite": "https://sdsos.gov/elections-voting/",
     "countyElectionLookup": "https://sdsos.gov/elections-voting/election-resources/county-auditors-and-election-contacts.aspx",
@@ -179,5 +171,11 @@
     "importantDates": "https://sdsos.gov/elections-voting/election-resources/election-calendar.aspx",
     "voterIdInfo": "https://sdsos.gov/elections-voting/voting/voter-id.aspx",
     "earlyVotingInfo": "https://sdsos.gov/elections-voting/voting/absentee-voting/default.aspx"
+  },
+  "primaryParticipation": {
+    "type": "open",
+    "ruleExplanationEn": "South Dakota has an open primary where any registered voter may request either party's primary ballot (SDCL §12-6-4). If no candidate receives 35% of the vote, the top two advance to a runoff. South Dakota runoffs do not enforce party-lock — any voter may choose which party's runoff to vote in.",
+    "ruleExplanationEs": "Dakota del Sur tiene una primaria abierta donde cualquier votante registrado puede solicitar la boleta de primaria de cualquier partido (SDCL §12-6-4). Si ningún candidato obtiene el 35% de los votos, los dos primeros avanzan a una segunda vuelta. Las segundas vueltas de Dakota del Sur no aplican bloqueo de partido: cualquier votante puede elegir en qué segunda vuelta de partido votar.",
+    "behavior": "advisory"
   }
 }

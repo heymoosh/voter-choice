@@ -9,7 +9,6 @@
   "stateName": "Idaho",
   "lastUpdated": "2026-05-10",
   "coverageStatus": "confirmed",
-
   "elections": [
     {
       "id": "id-2026-primary",
@@ -74,7 +73,6 @@
       }
     }
   ],
-
   "registration": {
     "online": {
       "available": true,
@@ -92,14 +90,12 @@
     "sameDayRegistration": true,
     "registrationCheckUrl": "https://elections.sos.idaho.gov/ElectionLink/RMV/VoterInformation.aspx"
   },
-
   "earlyVoting": {
     "available": true,
     "startDate": "2026-10-05",
     "endDate": "2026-11-02",
     "notes": "Idaho does not have a uniform statewide early voting law. Absentee in-person voting is available at county clerk offices before Election Day. Hours and start dates vary by county. Contact your county clerk for details."
   },
-
   "votingRules": {
     "idRequired": true,
     "acceptedIds": [
@@ -119,7 +115,6 @@
       "Absentee voting is available to any voter without a required reason."
     ]
   },
-
   "voteByMail": {
     "universal": false,
     "eligibility": [
@@ -131,17 +126,21 @@
     "applicationUrl": "https://sos.idaho.gov/elections-division/absentee-voting/",
     "officialRulesUrl": "https://sos.idaho.gov/elections-division/"
   },
-
   "runoffRules": {
     "hasRunoff": false,
     "partyLockedToFirstRoundPrimary": false
   },
-
   "resources": {
     "stateElectionWebsite": "https://sos.idaho.gov/elections-division/",
     "countyElectionLookup": "https://sos.idaho.gov/elections-division/county-clerks/",
     "sampleBallotLookup": "https://elections.sos.idaho.gov/ElectionLink/RMV/VoterInformation.aspx",
     "pollingPlaceLookup": "https://elections.sos.idaho.gov/ElectionLink/RMV/VoterInformation.aspx",
     "voterIdInfo": "https://sos.idaho.gov/elections-division/voter-information/"
+  },
+  "primaryParticipation": {
+    "type": "semi-closed",
+    "ruleExplanationEn": "Idaho has a semi-closed primary (Idaho Code §34-905). The Republican Party holds a closed primary — only registered Republicans may participate. The Democratic Party holds an open primary — any registered voter may participate. Unaffiliated voters may register as Republican at the polls on primary day to vote in the Republican primary.",
+    "ruleExplanationEs": "Idaho tiene una primaria semi-cerrada (Idaho Code §34-905). El Partido Republicano celebra una primaria cerrada: solo pueden participar los republicanos registrados. El Partido Demócrata celebra una primaria abierta: cualquier votante registrado puede participar. Los votantes sin afiliación pueden registrarse como republicanos en el lugar de votación el día de la primaria para votar en la primaria republicana.",
+    "behavior": "advisory"
   }
 }

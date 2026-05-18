@@ -9,7 +9,6 @@
   "stateName": "Alabama",
   "lastUpdated": "2026-05-10",
   "coverageStatus": "confirmed",
-
   "elections": [
     {
       "id": "al-2026-primary",
@@ -105,7 +104,6 @@
       }
     }
   ],
-
   "registration": {
     "online": {
       "available": true,
@@ -123,14 +121,12 @@
     "sameDayRegistration": false,
     "registrationCheckUrl": "https://myinfo.alabamavotes.gov/voterview"
   },
-
   "earlyVoting": {
     "available": false,
     "startDate": null,
     "endDate": null,
     "notes": "Alabama does not have a general early voting period. Absentee voting is available for voters who are 65 or older, have a physical illness or infirmity, or will be absent from the county on Election Day."
   },
-
   "votingRules": {
     "idRequired": true,
     "acceptedIds": [
@@ -150,7 +146,6 @@
       "Runoff rule: if you voted in one party's primary, you may only vote in that party's runoff."
     ]
   },
-
   "voteByMail": {
     "universal": false,
     "eligibility": [
@@ -168,13 +163,11 @@
     "applicationUrl": "https://www.sos.alabama.gov/alabama-votes/voter/absentee-voting",
     "officialRulesUrl": "https://www.sos.alabama.gov/alabama-votes/voter/absentee-voting"
   },
-
   "runoffRules": {
     "hasRunoff": true,
     "partyLockedToFirstRoundPrimary": true,
     "ruleExplanation": "Alabama rule: if you voted in one party's primary, you can only vote in that same party's runoff. If you did not vote in the primary, you may choose either party's runoff."
   },
-
   "resources": {
     "stateElectionWebsite": "https://www.sos.alabama.gov/alabama-votes",
     "countyElectionLookup": "https://www.sos.alabama.gov/alabama-votes/county-election-offices",
@@ -183,5 +176,11 @@
     "importantDates": "https://www.sos.alabama.gov/alabama-votes/voter/election-information",
     "voterIdInfo": "https://www.sos.alabama.gov/alabama-votes/voter/photo-id",
     "earlyVotingInfo": "https://www.sos.alabama.gov/alabama-votes/voter/absentee-voting"
+  },
+  "primaryParticipation": {
+    "type": "open",
+    "ruleExplanationEn": "Alabama has an open primary (Ala. Code §17-8-30). Any registered voter may participate in either party's primary without declaring party affiliation. If a runoff occurs and you voted in a party's primary, you must vote in that same party's runoff.",
+    "ruleExplanationEs": "Alabama tiene una primaria abierta (Ala. Code §17-8-30). Cualquier votante registrado puede participar en la primaria de cualquier partido sin declarar afiliación partidista. Si hay una segunda vuelta y votó en la primaria de un partido, debe votar en la segunda vuelta de ese mismo partido.",
+    "behavior": "advisory"
   }
 }

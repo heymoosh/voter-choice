@@ -59,10 +59,11 @@ describe("getStateData", () => {
     expect(data?.runoffRules.ruleExplanation).toContain("Georgia");
   });
 
-  it("NC has hasRunoff=true but partyLockedToFirstRoundPrimary=false", async () => {
+  it("NC has hasRunoff=true and partyLockedToFirstRoundPrimary=true (second primary is party-locked)", async () => {
     const data = await getStateData("NC");
     expect(data?.runoffRules.hasRunoff).toBe(true);
-    expect(data?.runoffRules.partyLockedToFirstRoundPrimary).toBe(false);
+    expect(data?.runoffRules.partyLockedToFirstRoundPrimary).toBe(true);
+    expect(data?.runoffRules.ruleExplanation).toContain("North Carolina");
   });
 
   it("CA has hasRunoff=false and partyLockedToFirstRoundPrimary=false", async () => {
@@ -496,13 +497,13 @@ describe("getStateData", () => {
     expect(data?.runoffRules.partyLockedToFirstRoundPrimary).toBe(false);
   });
 
-  it("SD has party-locked runoff with ruleExplanation containing 'South Dakota'", async () => {
+  it("SD has hasRunoff=true but partyLockedToFirstRoundPrimary=false (35% threshold, open runoffs)", async () => {
     const data = await getStateData("SD");
     expect(data?.stateCode).toBe("SD");
     expect(data?.stateName).toBe("South Dakota");
     expect(data?.coverageStatus).not.toBe("unconfirmed");
     expect(data?.runoffRules.hasRunoff).toBe(true);
-    expect(data?.runoffRules.partyLockedToFirstRoundPrimary).toBe(true);
+    expect(data?.runoffRules.partyLockedToFirstRoundPrimary).toBe(false);
     expect(data?.runoffRules.ruleExplanation).toContain("South Dakota");
   });
 

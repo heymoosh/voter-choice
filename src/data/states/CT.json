@@ -8,7 +8,6 @@
   "stateCode": "CT",
   "stateName": "Connecticut",
   "lastUpdated": "2026-05-10",
-
   "elections": [
     {
       "id": "ct-2026-primary",
@@ -73,7 +72,6 @@
       }
     }
   ],
-
   "registration": {
     "online": {
       "available": true,
@@ -91,14 +89,12 @@
     "sameDayRegistration": true,
     "registrationCheckUrl": "https://portaldir.ct.gov/sots/LookUp.aspx"
   },
-
   "earlyVoting": {
     "available": true,
     "startDate": "2026-10-19",
     "endDate": "2026-11-01",
     "notes": "Connecticut added early in-person voting beginning 2024. No-excuse absentee (mail) voting also available. TODO verify exact 2026 dates."
   },
-
   "votingRules": {
     "idRequired": false,
     "acceptedIds": [
@@ -113,7 +109,6 @@
       "Same-day voter registration available at polls with proof of identity and Connecticut residency."
     ]
   },
-
   "voteByMail": {
     "universal": false,
     "eligibility": [
@@ -125,16 +120,20 @@
     "applicationUrl": "https://portal.ct.gov/SOTS/Election-Services/Voter-Information/Absentee-Voting",
     "officialRulesUrl": "https://portal.ct.gov/SOTS/Election-Services/Voter-Information/Absentee-Voting"
   },
-
   "runoffRules": {
     "hasRunoff": false,
     "partyLockedToFirstRoundPrimary": false
   },
-
   "resources": {
     "stateElectionWebsite": "https://portal.ct.gov/SOTS/Election-Services/Election-Information/Election-Information",
     "countyElectionLookup": "https://portal.ct.gov/SOTS/Election-Services/Voter-Information/Town-Clerks",
     "sampleBallotLookup": "https://portal.ct.gov/SOTS/Election-Services/Election-Information/Election-Information",
     "pollingPlaceLookup": "https://portaldir.ct.gov/sots/LookUp.aspx"
+  },
+  "primaryParticipation": {
+    "type": "closed",
+    "ruleExplanationEn": "Connecticut has a closed primary (Conn. Gen. Stat. §9-395). Only voters registered with a political party may vote in that party's primary. Unaffiliated voters may not participate in a partisan primary unless they register with a party before the enrollment deadline (typically 7 days before the primary).",
+    "ruleExplanationEs": "Connecticut tiene una primaria cerrada (Conn. Gen. Stat. §9-395). Solo los votantes registrados en un partido político pueden votar en la primaria de ese partido. Los votantes sin afiliación no pueden participar en una primaria partidista a menos que se registren con un partido antes de la fecha límite de inscripción (generalmente 7 días antes de la primaria).",
+    "behavior": "advisory"
   }
 }

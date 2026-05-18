@@ -8,7 +8,6 @@
   "stateCode": "VT",
   "stateName": "Vermont",
   "lastUpdated": "2026-05-10",
-
   "elections": [
     {
       "id": "vt-2026-primary",
@@ -73,7 +72,6 @@
       }
     }
   ],
-
   "registration": {
     "online": {
       "available": true,
@@ -91,14 +89,12 @@
     "sameDayRegistration": true,
     "registrationCheckUrl": "https://mvp.vermont.gov/"
   },
-
   "earlyVoting": {
     "available": true,
     "startDate": "2026-10-06",
     "endDate": "2026-11-02",
     "notes": "Vermont is a universal vote-by-mail state. All active registered voters automatically receive a mail ballot. Early in-person voting is available at town clerk offices. TODO verify exact 2026 dates."
   },
-
   "votingRules": {
     "idRequired": false,
     "acceptedIds": [],
@@ -110,7 +106,6 @@
       "Open primary: any registered voter may vote in any party's primary."
     ]
   },
-
   "voteByMail": {
     "universal": true,
     "eligibility": [
@@ -122,16 +117,20 @@
     "applicationUrl": "https://sos.vermont.gov/elections/voters/absentee-early-voting/",
     "officialRulesUrl": "https://sos.vermont.gov/elections/voters/absentee-early-voting/"
   },
-
   "runoffRules": {
     "hasRunoff": false,
     "partyLockedToFirstRoundPrimary": false
   },
-
   "resources": {
     "stateElectionWebsite": "https://sos.vermont.gov/elections/",
     "countyElectionLookup": "https://mvp.vermont.gov/",
     "sampleBallotLookup": "https://mvp.vermont.gov/",
     "pollingPlaceLookup": "https://mvp.vermont.gov/"
+  },
+  "primaryParticipation": {
+    "type": "open",
+    "ruleExplanationEn": "Vermont has an open primary (17 V.S.A. §2361). Any registered voter may vote in any party's primary. There is no party registration requirement in Vermont.",
+    "ruleExplanationEs": "Vermont tiene una primaria abierta (17 V.S.A. §2361). Cualquier votante registrado puede votar en la primaria de cualquier partido. Vermont no tiene requisito de registro de partido.",
+    "behavior": "advisory"
   }
 }

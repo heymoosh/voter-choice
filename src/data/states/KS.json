@@ -5,12 +5,10 @@
     "checked": "2026-05-10",
     "discrepancies": "Kansas has a strict photo ID requirement per NCSL. Voters without ID may cast a provisional ballot and return by the close of polls on the Monday following Election Day. Kansas primary is the first Tuesday in August per statute. Advanced (early in-person) voting available at county election offices."
   },
-
   "stateCode": "KS",
   "stateName": "Kansas",
   "lastUpdated": "2026-05-10",
   "coverageStatus": "confirmed",
-
   "elections": [
     {
       "id": "ks-2026-primary",
@@ -75,7 +73,6 @@
       }
     }
   ],
-
   "registration": {
     "online": {
       "available": true,
@@ -93,14 +90,12 @@
     "sameDayRegistration": false,
     "registrationCheckUrl": "https://www.kssos.org/elections/elections_voterquery.aspx"
   },
-
   "earlyVoting": {
     "available": true,
     "startDate": "2026-10-14",
     "endDate": "2026-11-02",
     "notes": "Advance in-person voting at county election offices beginning 20 days before the general election. Mail ballot automatically sent to advance voters who have requested it. TODO verify for 2026 cycle."
   },
-
   "votingRules": {
     "idRequired": true,
     "acceptedIds": [
@@ -122,7 +117,6 @@
       "Voters may vote by advance mail ballot without providing a reason."
     ]
   },
-
   "voteByMail": {
     "universal": false,
     "eligibility": [
@@ -134,12 +128,10 @@
     "applicationUrl": "https://www.kssos.org/elections/elections_registration.html",
     "officialRulesUrl": "https://sos.ks.gov/elections/elections-home.html"
   },
-
   "runoffRules": {
     "hasRunoff": false,
     "partyLockedToFirstRoundPrimary": false
   },
-
   "resources": {
     "stateElectionWebsite": "https://sos.ks.gov/elections/elections-home.html",
     "countyElectionLookup": "https://www.kssos.org/elections/elections_county.html",
@@ -148,5 +140,11 @@
     "importantDates": "https://www.kssos.org/elections/elections_dates.html",
     "voterIdInfo": "https://www.kssos.org/elections/elections_voterID.html",
     "earlyVotingInfo": "https://www.kssos.org/elections/elections_advancevoting.html"
+  },
+  "primaryParticipation": {
+    "type": "closed",
+    "ruleExplanationEn": "Kansas has a closed primary (Kan. Stat. §25-3301). Only voters registered with a political party may vote in that party's primary. Approximately 30% of Kansas voters registered as unaffiliated are not permitted to vote in a partisan primary.",
+    "ruleExplanationEs": "Kansas tiene una primaria cerrada (Kan. Stat. §25-3301). Solo los votantes registrados en un partido político pueden votar en la primaria de ese partido. Aproximadamente el 30% de los votantes de Kansas registrados como sin afiliación no pueden votar en una primaria partidista.",
+    "behavior": "advisory"
   }
 }

@@ -9,7 +9,6 @@
   "stateName": "Kentucky",
   "lastUpdated": "2026-05-10",
   "coverageStatus": "confirmed",
-
   "elections": [
     {
       "id": "ky-2026-primary",
@@ -74,7 +73,6 @@
       }
     }
   ],
-
   "registration": {
     "online": {
       "available": true,
@@ -92,14 +90,12 @@
     "sameDayRegistration": false,
     "registrationCheckUrl": "https://vrsws.sos.ky.gov/VICweb/"
   },
-
   "earlyVoting": {
     "available": true,
     "startDate": "2026-10-27",
     "endDate": "2026-10-31",
     "notes": "In-person absentee (early voting) available at the county clerk's office the week before Election Day. Contact your county clerk for hours and locations."
   },
-
   "votingRules": {
     "idRequired": true,
     "acceptedIds": [
@@ -118,7 +114,6 @@
       "No legislative primary runoffs in Kentucky."
     ]
   },
-
   "voteByMail": {
     "universal": false,
     "eligibility": [
@@ -133,12 +128,10 @@
     "applicationUrl": "https://elect.ky.gov/voters/Pages/Absentee-Voting.aspx",
     "officialRulesUrl": "https://elect.ky.gov/voters/Pages/Absentee-Voting.aspx"
   },
-
   "runoffRules": {
     "hasRunoff": false,
     "partyLockedToFirstRoundPrimary": false
   },
-
   "resources": {
     "stateElectionWebsite": "https://elect.ky.gov/",
     "countyElectionLookup": "https://elect.ky.gov/About-Us/Pages/County-Clerks.aspx",
@@ -147,5 +140,11 @@
     "importantDates": "https://elect.ky.gov/voters/Pages/Election-Schedule.aspx",
     "voterIdInfo": "https://elect.ky.gov/voters/Pages/Voter-ID.aspx",
     "earlyVotingInfo": "https://elect.ky.gov/voters/Pages/Absentee-Voting.aspx"
+  },
+  "primaryParticipation": {
+    "type": "closed",
+    "ruleExplanationEn": "Kentucky has a closed primary (Ky. Rev. Stat. §118.245). Only voters registered with a political party may vote in that party's primary. Party affiliation must be set by December 31 of the year before the primary. Voters registered as independent or unaffiliated may not vote in a partisan primary.",
+    "ruleExplanationEs": "Kentucky tiene una primaria cerrada (Ky. Rev. Stat. §118.245). Solo los votantes registrados en un partido político pueden votar en la primaria de ese partido. La afiliación de partido debe establecerse antes del 31 de diciembre del año anterior a la primaria. Los votantes registrados como independientes o sin afiliación no pueden votar en una primaria partidista.",
+    "behavior": "advisory"
   }
 }

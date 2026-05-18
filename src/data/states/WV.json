@@ -9,7 +9,6 @@
   "stateName": "West Virginia",
   "lastUpdated": "2026-05-10",
   "coverageStatus": "confirmed",
-
   "elections": [
     {
       "id": "wv-2026-primary",
@@ -74,7 +73,6 @@
       }
     }
   ],
-
   "registration": {
     "online": {
       "available": true,
@@ -92,14 +90,12 @@
     "sameDayRegistration": false,
     "registrationCheckUrl": "https://apps.sos.wv.gov/elections/voter/find.aspx"
   },
-
   "earlyVoting": {
     "available": true,
     "startDate": "2026-10-21",
     "endDate": "2026-10-31",
     "notes": "Early voting is available at the county clerk's office for approximately two weeks before Election Day. Contact your county clerk for specific hours and locations."
   },
-
   "votingRules": {
     "idRequired": true,
     "acceptedIds": [
@@ -119,7 +115,6 @@
       "No legislative primary runoffs in West Virginia."
     ]
   },
-
   "voteByMail": {
     "universal": false,
     "eligibility": [
@@ -135,12 +130,10 @@
     "applicationUrl": "https://sos.wv.gov/elections/Pages/AbsenteeVoting.aspx",
     "officialRulesUrl": "https://sos.wv.gov/elections/Pages/AbsenteeVoting.aspx"
   },
-
   "runoffRules": {
     "hasRunoff": false,
     "partyLockedToFirstRoundPrimary": false
   },
-
   "resources": {
     "stateElectionWebsite": "https://sos.wv.gov/elections/Pages/default.aspx",
     "countyElectionLookup": "https://sos.wv.gov/elections/Pages/CountyClerks.aspx",
@@ -149,5 +142,11 @@
     "importantDates": "https://sos.wv.gov/elections/Pages/ElectionCalendar.aspx",
     "voterIdInfo": "https://sos.wv.gov/elections/Pages/VoterID.aspx",
     "earlyVotingInfo": "https://sos.wv.gov/elections/Pages/EarlyVoting.aspx"
+  },
+  "primaryParticipation": {
+    "type": "semi-closed",
+    "ruleExplanationEn": "West Virginia has a semi-closed primary (W. Va. Code §3-4A-24). Registered party members vote in their party's primary. The Democratic Party allows unaffiliated voters to participate in their primary. The Republican Party holds a closed primary for 2026 — only registered Republicans may participate.",
+    "ruleExplanationEs": "Virginia Occidental tiene una primaria semi-cerrada (W. Va. Code §3-4A-24). Los miembros registrados en un partido votan en la primaria de su partido. El Partido Demócrata permite a los votantes sin afiliación participar en su primaria. El Partido Republicano celebra una primaria cerrada para 2026: solo pueden participar los republicanos registrados.",
+    "behavior": "advisory"
   }
 }

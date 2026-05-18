@@ -9,7 +9,6 @@
   "stateName": "Hawaii",
   "lastUpdated": "2026-05-10",
   "coverageStatus": "confirmed",
-
   "elections": [
     {
       "id": "hi-2026-primary",
@@ -74,7 +73,6 @@
       }
     }
   ],
-
   "registration": {
     "online": {
       "available": true,
@@ -92,14 +90,12 @@
     "sameDayRegistration": false,
     "registrationCheckUrl": "https://olvr.hawaii.gov/"
   },
-
   "earlyVoting": {
     "available": true,
     "startDate": "2026-10-20",
     "endDate": "2026-11-02",
     "notes": "Hawaii is a universal vote-by-mail state. All registered voters automatically receive a mail ballot. Voter service centers open for in-person voting and ballot drop-off. No traditional polling places — vote from home or at a voter service center."
   },
-
   "votingRules": {
     "idRequired": false,
     "acceptedIds": [
@@ -119,7 +115,6 @@
       "Photo ID may be requested but is not strictly required — signature on ballot envelope is the primary verification mechanism."
     ]
   },
-
   "voteByMail": {
     "universal": true,
     "eligibility": [
@@ -131,17 +126,21 @@
     "applicationUrl": "https://elections.hawaii.gov/voters/voting/vote-by-mail/",
     "officialRulesUrl": "https://elections.hawaii.gov/"
   },
-
   "runoffRules": {
     "hasRunoff": false,
     "partyLockedToFirstRoundPrimary": false
   },
-
   "resources": {
     "stateElectionWebsite": "https://elections.hawaii.gov/",
     "countyElectionLookup": "https://elections.hawaii.gov/voters/voter-service-centers-and-drop-boxes/",
     "sampleBallotLookup": "https://elections.hawaii.gov/voters/sample-ballots/",
     "pollingPlaceLookup": "https://elections.hawaii.gov/voters/voter-service-centers-and-drop-boxes/",
     "voterIdInfo": "https://elections.hawaii.gov/voters/voter-id/"
+  },
+  "primaryParticipation": {
+    "type": "open",
+    "ruleExplanationEn": "Hawaii has an open primary (HRS §11-601). Any registered voter may participate in any party's primary. There is no requirement to pre-register with a party.",
+    "ruleExplanationEs": "Hawái tiene una primaria abierta (HRS §11-601). Cualquier votante registrado puede participar en la primaria de cualquier partido. No se requiere registro previo con un partido.",
+    "behavior": "advisory"
   }
 }

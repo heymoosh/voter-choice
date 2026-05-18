@@ -8,7 +8,6 @@
   "stateCode": "NJ",
   "stateName": "New Jersey",
   "lastUpdated": "2026-05-10",
-
   "elections": [
     {
       "id": "nj-2026-primary",
@@ -73,7 +72,6 @@
       }
     }
   ],
-
   "registration": {
     "online": {
       "available": true,
@@ -91,14 +89,12 @@
     "sameDayRegistration": false,
     "registrationCheckUrl": "https://voter.svrs.nj.gov/registration-check"
   },
-
   "earlyVoting": {
     "available": true,
     "startDate": "2026-10-24",
     "endDate": "2026-11-01",
     "notes": "New Jersey mandates at least 6 days of early in-person voting before each election. Locations vary by county. No-excuse vote-by-mail is also available. TODO verify exact 2026 dates."
   },
-
   "votingRules": {
     "idRequired": false,
     "acceptedIds": [],
@@ -110,7 +106,6 @@
       "New Jersey automatically mails a vote-by-mail application to all registered voters."
     ]
   },
-
   "voteByMail": {
     "universal": false,
     "eligibility": [
@@ -122,16 +117,20 @@
     "applicationUrl": "https://www.nj.gov/state/elections/vote-by-mail.shtml",
     "officialRulesUrl": "https://www.nj.gov/state/elections/vote-by-mail.shtml"
   },
-
   "runoffRules": {
     "hasRunoff": false,
     "partyLockedToFirstRoundPrimary": false
   },
-
   "resources": {
     "stateElectionWebsite": "https://www.state.nj.us/state/elections/index.shtml",
     "countyElectionLookup": "https://www.nj.gov/state/elections/county-boards.shtml",
     "sampleBallotLookup": "https://voter.svrs.nj.gov/",
     "pollingPlaceLookup": "https://voter.svrs.nj.gov/polling-place"
+  },
+  "primaryParticipation": {
+    "type": "semi-closed",
+    "ruleExplanationEn": "New Jersey has a semi-closed primary (N.J. Stat. Ann. §19:5-1). Registered party members vote in their party's primary. Voters registered as unaffiliated may affiliate with a party at the polls on primary day to cast a partisan ballot.",
+    "ruleExplanationEs": "Nueva Jersey tiene una primaria semi-cerrada (N.J. Stat. Ann. §19:5-1). Los miembros registrados en un partido votan en la primaria de su partido. Los votantes registrados como sin afiliación pueden afiliarse a un partido en el lugar de votación el día de la primaria para emitir una boleta partidista.",
+    "behavior": "advisory"
   }
 }

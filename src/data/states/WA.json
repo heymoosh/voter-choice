@@ -9,7 +9,6 @@
   "stateName": "Washington",
   "lastUpdated": "2026-05-10",
   "coverageStatus": "confirmed",
-
   "elections": [
     {
       "id": "wa-2026-primary",
@@ -74,7 +73,6 @@
       }
     }
   ],
-
   "registration": {
     "online": {
       "available": true,
@@ -92,14 +90,12 @@
     "sameDayRegistration": false,
     "registrationCheckUrl": "https://voter.votewa.gov/WhereToVote.aspx"
   },
-
   "earlyVoting": {
     "available": true,
     "startDate": "2026-10-16",
     "endDate": "2026-11-02",
     "notes": "Washington is a universal vote-by-mail state. All active registered voters automatically receive a mail ballot approximately 18 days before Election Day. Return by mail (postmarked by Election Day) or at any official drop box by 8 p.m. on Election Day. No traditional polling places — county auditor offices provide in-person assistance."
   },
-
   "votingRules": {
     "idRequired": false,
     "acceptedIds": [
@@ -117,7 +113,6 @@
       "Voters may register or update their registration online up to 8 days before the election."
     ]
   },
-
   "voteByMail": {
     "universal": true,
     "eligibility": [
@@ -129,17 +124,21 @@
     "applicationUrl": "https://www.sos.wa.gov/elections/voters/vote-by-mail/",
     "officialRulesUrl": "https://www.sos.wa.gov/elections/"
   },
-
   "runoffRules": {
     "hasRunoff": false,
     "partyLockedToFirstRoundPrimary": false
   },
-
   "resources": {
     "stateElectionWebsite": "https://www.sos.wa.gov/elections/",
     "countyElectionLookup": "https://www.sos.wa.gov/elections/auditors/",
     "sampleBallotLookup": "https://voter.votewa.gov/WhereToVote.aspx",
     "pollingPlaceLookup": "https://www.sos.wa.gov/elections/voters/drop-box-locator/",
     "voterIdInfo": "https://www.sos.wa.gov/elections/voters/voting-by-mail/"
+  },
+  "primaryParticipation": {
+    "type": "top-two",
+    "ruleExplanationEn": "Washington uses a top-two nonpartisan primary (I-872, 2004). All registered voters may vote for any candidate regardless of party. The top two vote-getters advance to the general election (RCW 29A.36.170).",
+    "ruleExplanationEs": "Washington utiliza una primaria no partidista de los dos primeros (I-872, 2004). Todos los votantes registrados pueden votar por cualquier candidato sin importar el partido. Los dos candidatos con más votos avanzan a las elecciones generales (RCW 29A.36.170).",
+    "behavior": "advisory"
   }
 }

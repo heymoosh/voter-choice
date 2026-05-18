@@ -5,12 +5,10 @@
     "checked": "2026-05-10",
     "discrepancies": "Michigan enacted Proposal 2 (2022) which added same-day registration, 9 days of early voting, and other provisions. NCSL categorizes Michigan as 'photo ID requested' — voters without ID sign an affidavit. The Michigan SoS confirms photo ID is requested but not strictly required: voters may sign a statement of identity instead. Michigan's 2026 primary date is set by statute as the first Tuesday after the second Monday in August."
   },
-
   "stateCode": "MI",
   "stateName": "Michigan",
   "lastUpdated": "2026-05-10",
   "coverageStatus": "confirmed",
-
   "elections": [
     {
       "id": "mi-2026-primary",
@@ -75,7 +73,6 @@
       }
     }
   ],
-
   "registration": {
     "online": {
       "available": true,
@@ -93,14 +90,12 @@
     "sameDayRegistration": true,
     "registrationCheckUrl": "https://mvic.sos.state.mi.us/Voter/Index"
   },
-
   "earlyVoting": {
     "available": true,
     "startDate": "2026-10-24",
     "endDate": "2026-11-01",
     "notes": "Michigan requires at least 9 days of early in-person voting, ending the Sunday before Election Day. Locations set by local clerks. Same-day registration available through Election Day at your local clerk's office. TODO verify for 2026 cycle."
   },
-
   "votingRules": {
     "idRequired": true,
     "acceptedIds": [
@@ -122,7 +117,6 @@
       "Same-day voter registration available through Election Day at your local clerk's office."
     ]
   },
-
   "voteByMail": {
     "universal": false,
     "eligibility": [
@@ -134,12 +128,10 @@
     "applicationUrl": "https://mvic.sos.state.mi.us/",
     "officialRulesUrl": "https://www.michigan.gov/sos/elections/absentee"
   },
-
   "runoffRules": {
     "hasRunoff": false,
     "partyLockedToFirstRoundPrimary": false
   },
-
   "resources": {
     "stateElectionWebsite": "https://mvic.sos.state.mi.us/",
     "countyElectionLookup": "https://mvic.sos.state.mi.us/Clerk",
@@ -148,5 +140,11 @@
     "importantDates": "https://www.michigan.gov/sos/elections/voters",
     "voterIdInfo": "https://www.michigan.gov/sos/elections/voters/photo-id",
     "earlyVotingInfo": "https://www.michigan.gov/sos/elections/voters/early-voting"
+  },
+  "primaryParticipation": {
+    "type": "open",
+    "ruleExplanationEn": "Michigan has an open primary (Mich. Comp. Laws §168.613a). Any registered voter may vote in either party's primary. Voters may only vote in one party's primary per election.",
+    "ruleExplanationEs": "Michigan tiene una primaria abierta (Mich. Comp. Laws §168.613a). Cualquier votante registrado puede votar en la primaria de cualquier partido. Los votantes solo pueden votar en la primaria de un partido por elección.",
+    "behavior": "advisory"
   }
 }

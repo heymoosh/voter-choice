@@ -5,12 +5,10 @@
     "checked": "2026-05-10",
     "discrepancies": "Ohio enacted HB 458 (2023) which changed the ID requirement from 'non-photo' to 'photo ID' effective 2024. NCSL categorizes Ohio as 'strict non-photo ID' in some versions — as of 2026 the correct characterization is photo ID required per the 2023 law change. Voters without acceptable photo ID may use the last four digits of their SSN plus address verification as an alternative (unique Ohio provision). TODO verify for 2026 cycle whether the HB 458 photo ID rules remain unchanged. Ohio primary is the first Tuesday after the first Monday in May. Ohio does offer early in-person voting starting 28 days before the election."
   },
-
   "stateCode": "OH",
   "stateName": "Ohio",
   "lastUpdated": "2026-05-10",
   "coverageStatus": "confirmed",
-
   "elections": [
     {
       "id": "oh-2026-primary",
@@ -75,7 +73,6 @@
       }
     }
   ],
-
   "registration": {
     "online": {
       "available": true,
@@ -93,14 +90,12 @@
     "sameDayRegistration": false,
     "registrationCheckUrl": "https://voterlookup.ohiosos.gov/"
   },
-
   "earlyVoting": {
     "available": true,
     "startDate": "2026-10-06",
     "endDate": "2026-11-02",
     "notes": "Early voting at county board of elections offices starts 28 days before the general election. Hours expand in the final week. TODO verify for 2026 cycle."
   },
-
   "votingRules": {
     "idRequired": true,
     "acceptedIds": [
@@ -121,7 +116,6 @@
       "NOTE: Ohio photo ID law changed in 2023 (HB 458); previously non-photo ID was accepted. TODO verify current rules for 2026 cycle."
     ]
   },
-
   "voteByMail": {
     "universal": false,
     "eligibility": [
@@ -133,12 +127,10 @@
     "applicationUrl": "https://www.ohiosos.gov/elections/voters/absentee-voting/",
     "officialRulesUrl": "https://www.ohiosos.gov/elections/voters/absentee-voting/"
   },
-
   "runoffRules": {
     "hasRunoff": false,
     "partyLockedToFirstRoundPrimary": false
   },
-
   "resources": {
     "stateElectionWebsite": "https://www.ohiosos.gov/elections/voters/",
     "countyElectionLookup": "https://www.ohiosos.gov/elections/election-officials/county-boards-of-elections/",
@@ -147,5 +139,11 @@
     "importantDates": "https://www.ohiosos.gov/elections/voters/",
     "voterIdInfo": "https://www.ohiosos.gov/elections/voters/id-requirements/",
     "earlyVotingInfo": "https://www.ohiosos.gov/elections/voters/early-and-absentee-voting/"
+  },
+  "primaryParticipation": {
+    "type": "open",
+    "ruleExplanationEn": "Ohio has an open primary (Ohio Rev. Code §3513.19). Voters request a party ballot at the polls without advance registration. Your choice at the primary sets your party affiliation on record for the next primary election.",
+    "ruleExplanationEs": "Ohio tiene una primaria abierta (Ohio Rev. Code §3513.19). Los votantes solicitan una boleta de partido en el lugar de votación sin registro previo. Su elección en la primaria establece su afiliación de partido registrada para la próxima elección primaria.",
+    "behavior": "advisory"
   }
 }

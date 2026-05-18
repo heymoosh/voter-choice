@@ -9,7 +9,6 @@
   "stateName": "Oregon",
   "lastUpdated": "2026-05-10",
   "coverageStatus": "confirmed",
-
   "elections": [
     {
       "id": "or-2026-primary",
@@ -74,7 +73,6 @@
       }
     }
   ],
-
   "registration": {
     "online": {
       "available": true,
@@ -92,14 +90,12 @@
     "sameDayRegistration": true,
     "registrationCheckUrl": "https://sos.oregon.gov/voting/Pages/myvote.aspx"
   },
-
   "earlyVoting": {
     "available": true,
     "startDate": "2026-10-14",
     "endDate": "2026-11-02",
     "notes": "Oregon is a universal vote-by-mail state. All registered voters automatically receive a mail ballot approximately 14-18 days before Election Day. Return by mail (postmarked by Election Day) or drop off at any official drop box or county election office by 8 p.m. on Election Day. Same-day registration available at county election offices."
   },
-
   "votingRules": {
     "idRequired": false,
     "acceptedIds": [
@@ -116,7 +112,6 @@
       "Automatic voter registration occurs when eligible Oregon residents interact with the DMV (Oregon Motor Voter Act)."
     ]
   },
-
   "voteByMail": {
     "universal": true,
     "eligibility": [
@@ -128,17 +123,21 @@
     "applicationUrl": "https://sos.oregon.gov/voting/Pages/vote-by-mail.aspx",
     "officialRulesUrl": "https://sos.oregon.gov/voting/"
   },
-
   "runoffRules": {
     "hasRunoff": false,
     "partyLockedToFirstRoundPrimary": false
   },
-
   "resources": {
     "stateElectionWebsite": "https://sos.oregon.gov/voting/",
     "countyElectionLookup": "https://sos.oregon.gov/voting/Pages/countyofficials.aspx",
     "sampleBallotLookup": "https://sos.oregon.gov/voting/Pages/myvote.aspx",
     "pollingPlaceLookup": "https://sos.oregon.gov/voting/Pages/drop-box-locator.aspx",
     "voterIdInfo": "https://sos.oregon.gov/voting/Pages/vote-by-mail.aspx"
+  },
+  "primaryParticipation": {
+    "type": "closed",
+    "ruleExplanationEn": "Oregon has a closed primary (ORS §249.025). Only voters registered with a political party may vote in that party's primary. Oregon conducts elections entirely by mail. Voters must register with a party by the voter registration deadline to participate in a partisan primary.",
+    "ruleExplanationEs": "Oregón tiene una primaria cerrada (ORS §249.025). Solo los votantes registrados en un partido político pueden votar en la primaria de ese partido. Oregón celebra las elecciones completamente por correo. Los votantes deben registrarse con un partido antes de la fecha límite de registro de votantes para participar en una primaria partidista.",
+    "behavior": "advisory"
   }
 }

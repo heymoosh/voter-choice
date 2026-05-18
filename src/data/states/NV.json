@@ -9,7 +9,6 @@
   "stateName": "Nevada",
   "lastUpdated": "2026-05-10",
   "coverageStatus": "confirmed",
-
   "elections": [
     {
       "id": "nv-2026-primary",
@@ -74,7 +73,6 @@
       }
     }
   ],
-
   "registration": {
     "online": {
       "available": true,
@@ -92,14 +90,12 @@
     "sameDayRegistration": true,
     "registrationCheckUrl": "https://www.nvsos.gov/sos/elections/voters/view-your-voter-information"
   },
-
   "earlyVoting": {
     "available": true,
     "startDate": "2026-10-17",
     "endDate": "2026-10-30",
     "notes": "Nevada automatically sends mail ballots to all active registered voters. In-person early voting is also available at multiple locations in each county for approximately 14 days before Election Day. Same-day voter registration is available through Election Day at in-person voting locations."
   },
-
   "votingRules": {
     "idRequired": false,
     "acceptedIds": [
@@ -116,7 +112,6 @@
       "No ID required in person — simply state your name and address."
     ]
   },
-
   "voteByMail": {
     "universal": false,
     "eligibility": [
@@ -128,17 +123,21 @@
     "applicationUrl": "https://www.nvsos.gov/sos/elections/voters/voting-by-mail",
     "officialRulesUrl": "https://www.nvsos.gov/sos/elections"
   },
-
   "runoffRules": {
     "hasRunoff": false,
     "partyLockedToFirstRoundPrimary": false
   },
-
   "resources": {
     "stateElectionWebsite": "https://www.nvsos.gov/sos/elections",
     "countyElectionLookup": "https://www.nvsos.gov/sos/elections/voters/find-your-election-officials",
     "sampleBallotLookup": "https://www.nvsos.gov/sos/elections/voters/view-your-voter-information",
     "pollingPlaceLookup": "https://www.nvsos.gov/sos/elections/voters/find-your-polling-place",
     "voterIdInfo": "https://www.nvsos.gov/sos/elections/voters/voter-id"
+  },
+  "primaryParticipation": {
+    "type": "closed",
+    "ruleExplanationEn": "Nevada has a closed primary (Nev. Rev. Stat. §293.175). Only voters registered with a political party may vote in that party's primary. Voters registered as nonpartisan or with a minor party that is not holding a primary may not vote in the major party primaries.",
+    "ruleExplanationEs": "Nevada tiene una primaria cerrada (Nev. Rev. Stat. §293.175). Solo los votantes registrados en un partido político pueden votar en la primaria de ese partido. Los votantes registrados como no partidistas o con un partido menor que no celebra primaria no pueden votar en las primarias de los partidos principales.",
+    "behavior": "advisory"
   }
 }

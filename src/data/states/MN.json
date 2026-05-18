@@ -5,12 +5,10 @@
     "checked": "2026-05-10",
     "discrepancies": "Minnesota has no photo ID requirement — voters sign the poll book (vouching system also available). NCSL categorizes MN as 'no document required'. First-time voters who register on Election Day must present proof of residence; this is not a photo ID requirement per se. Minnesota's same-day registration is a long-standing feature. Primary is set by statute as the second Tuesday in August."
   },
-
   "stateCode": "MN",
   "stateName": "Minnesota",
   "lastUpdated": "2026-05-10",
   "coverageStatus": "confirmed",
-
   "elections": [
     {
       "id": "mn-2026-primary",
@@ -75,7 +73,6 @@
       }
     }
   ],
-
   "registration": {
     "online": {
       "available": true,
@@ -93,14 +90,12 @@
     "sameDayRegistration": true,
     "registrationCheckUrl": "https://mnvotes.sos.state.mn.us/"
   },
-
   "earlyVoting": {
     "available": true,
     "startDate": "2026-09-18",
     "endDate": "2026-11-02",
     "notes": "Early in-person absentee voting begins 46 days before the general election and is available at county auditor and city/township clerk offices. Same-day registration available through Election Day. TODO verify for 2026 cycle."
   },
-
   "votingRules": {
     "idRequired": false,
     "acceptedIds": [],
@@ -114,7 +109,6 @@
       "No runoffs in Minnesota — the candidate with the most votes wins."
     ]
   },
-
   "voteByMail": {
     "universal": false,
     "eligibility": [
@@ -126,12 +120,10 @@
     "applicationUrl": "https://www.sos.state.mn.us/elections-voting/other-ways-to-vote/vote-early-by-absentee-ballot/",
     "officialRulesUrl": "https://www.sos.state.mn.us/elections-voting/other-ways-to-vote/vote-early-by-absentee-ballot/"
   },
-
   "runoffRules": {
     "hasRunoff": false,
     "partyLockedToFirstRoundPrimary": false
   },
-
   "resources": {
     "stateElectionWebsite": "https://www.sos.state.mn.us/elections-voting/",
     "countyElectionLookup": "https://www.sos.state.mn.us/elections-voting/find-county-auditor-election-office/",
@@ -140,5 +132,11 @@
     "importantDates": "https://www.sos.state.mn.us/elections-voting/election-dates-and-deadlines/",
     "voterIdInfo": "https://www.sos.state.mn.us/elections-voting/register-to-vote/",
     "earlyVotingInfo": "https://www.sos.state.mn.us/elections-voting/other-ways-to-vote/vote-early-by-absentee-ballot/"
+  },
+  "primaryParticipation": {
+    "type": "open",
+    "ruleExplanationEn": "Minnesota has an open primary (Minn. Stat. §204D.08). There is no party registration requirement in Minnesota. Voters choose which party's primary to participate in at the polls.",
+    "ruleExplanationEs": "Minnesota tiene una primaria abierta (Minn. Stat. §204D.08). Minnesota no tiene registro de partido. Los votantes eligen en qué primaria de partido participar en el lugar de votación.",
+    "behavior": "advisory"
   }
 }

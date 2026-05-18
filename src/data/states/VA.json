@@ -9,7 +9,6 @@
   "stateName": "Virginia",
   "lastUpdated": "2026-05-10",
   "coverageStatus": "confirmed",
-
   "elections": [
     {
       "id": "va-2026-primary",
@@ -74,7 +73,6 @@
       }
     }
   ],
-
   "registration": {
     "online": {
       "available": true,
@@ -92,14 +90,12 @@
     "sameDayRegistration": false,
     "registrationCheckUrl": "https://vote.elections.virginia.gov/VoterInformation"
   },
-
   "earlyVoting": {
     "available": true,
     "startDate": "2026-09-18",
     "endDate": "2026-10-31",
     "notes": "No-excuse in-person absentee voting available beginning 45 days before Election Day through the Saturday before. Contact your local registrar for locations and hours."
   },
-
   "votingRules": {
     "idRequired": true,
     "acceptedIds": [
@@ -119,7 +115,6 @@
       "No legislative primary runoffs in Virginia."
     ]
   },
-
   "voteByMail": {
     "universal": true,
     "eligibility": [
@@ -131,12 +126,10 @@
     "applicationUrl": "https://www.elections.virginia.gov/casting-a-ballot/absentee-voting/",
     "officialRulesUrl": "https://www.elections.virginia.gov/casting-a-ballot/absentee-voting/"
   },
-
   "runoffRules": {
     "hasRunoff": false,
     "partyLockedToFirstRoundPrimary": false
   },
-
   "resources": {
     "stateElectionWebsite": "https://www.elections.virginia.gov/",
     "countyElectionLookup": "https://www.elections.virginia.gov/registration/view-your-info/",
@@ -145,5 +138,11 @@
     "importantDates": "https://www.elections.virginia.gov/elections/important-dates/",
     "voterIdInfo": "https://www.elections.virginia.gov/casting-a-ballot/voter-id/",
     "earlyVotingInfo": "https://www.elections.virginia.gov/casting-a-ballot/absentee-voting/"
+  },
+  "primaryParticipation": {
+    "type": "open",
+    "ruleExplanationEn": "Virginia has an open primary with no party registration (Va. Code Ann. §24.2-530). Virginia does not register voters by party. Any registered voter may participate in any party's primary by requesting that party's ballot.",
+    "ruleExplanationEs": "Virginia tiene una primaria abierta sin registro de partido (Va. Code Ann. §24.2-530). Virginia no registra a los votantes por partido. Cualquier votante registrado puede participar en la primaria de cualquier partido solicitando la boleta de ese partido.",
+    "behavior": "advisory"
   }
 }

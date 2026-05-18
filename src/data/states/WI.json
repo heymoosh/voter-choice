@@ -5,12 +5,10 @@
     "checked": "2026-05-10",
     "discrepancies": "Wisconsin has a strict photo ID requirement per NCSL. The Wisconsin Elections Commission (WEC) confirms a wide range of acceptable photo IDs including Wisconsin ID cards, driver licenses, military IDs, tribal IDs, and student IDs from Wisconsin accredited schools. Voters without ID may receive a free Wisconsin voter ID from the DMV. Wisconsin primary is the second Tuesday in August per statute. Same-day registration is available in Wisconsin through Election Day."
   },
-
   "stateCode": "WI",
   "stateName": "Wisconsin",
   "lastUpdated": "2026-05-10",
   "coverageStatus": "confirmed",
-
   "elections": [
     {
       "id": "wi-2026-primary",
@@ -75,7 +73,6 @@
       }
     }
   ],
-
   "registration": {
     "online": {
       "available": true,
@@ -93,14 +90,12 @@
     "sameDayRegistration": true,
     "registrationCheckUrl": "https://myvote.wi.gov/en-us/FindMyPollingPlace"
   },
-
   "earlyVoting": {
     "available": true,
     "startDate": "2026-10-13",
     "endDate": "2026-11-01",
     "notes": "In-person absentee voting at municipal clerk offices begins 14 business days before Election Day. Weekend hours required in the two weeks before the election. Same-day registration available through Election Day. TODO verify for 2026 cycle."
   },
-
   "votingRules": {
     "idRequired": true,
     "acceptedIds": [
@@ -124,7 +119,6 @@
       "Free photo ID is available from any Wisconsin DMV service center."
     ]
   },
-
   "voteByMail": {
     "universal": false,
     "eligibility": [
@@ -136,12 +130,10 @@
     "applicationUrl": "https://myvote.wi.gov/en-us/Vote-Absentee",
     "officialRulesUrl": "https://elections.wi.gov/voters/absentee"
   },
-
   "runoffRules": {
     "hasRunoff": false,
     "partyLockedToFirstRoundPrimary": false
   },
-
   "resources": {
     "stateElectionWebsite": "https://myvote.wi.gov/en-us/",
     "countyElectionLookup": "https://elections.wi.gov/about/county-municipal-clerks",
@@ -150,5 +142,11 @@
     "importantDates": "https://elections.wi.gov/elections-voting/important-dates",
     "voterIdInfo": "https://elections.wi.gov/voters/photo-id-law",
     "earlyVotingInfo": "https://myvote.wi.gov/en-us/Vote-Absentee"
+  },
+  "primaryParticipation": {
+    "type": "open",
+    "ruleExplanationEn": "Wisconsin has an open primary (Wis. Stat. §5.60). Any registered voter may vote in either party's primary. Voters may not split their vote between parties — they must vote on a single party's ballot.",
+    "ruleExplanationEs": "Wisconsin tiene una primaria abierta (Wis. Stat. §5.60). Cualquier votante registrado puede votar en la primaria de cualquier partido. Los votantes no pueden dividir su voto entre partidos: deben votar en la boleta de un solo partido.",
+    "behavior": "advisory"
   }
 }

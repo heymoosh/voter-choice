@@ -8,7 +8,6 @@
   "stateCode": "ME",
   "stateName": "Maine",
   "lastUpdated": "2026-05-10",
-
   "elections": [
     {
       "id": "me-2026-primary",
@@ -73,7 +72,6 @@
       }
     }
   ],
-
   "registration": {
     "online": {
       "available": true,
@@ -91,14 +89,12 @@
     "sameDayRegistration": true,
     "registrationCheckUrl": "https://www.maine.gov/sos/cec/elec/voter-info/votereguide.html"
   },
-
   "earlyVoting": {
     "available": true,
     "startDate": "2026-10-05",
     "endDate": "2026-11-02",
     "notes": "Maine offers in-person absentee voting at town/city clerks' offices beginning approximately 30 days before the election. TODO verify exact 2026 dates."
   },
-
   "votingRules": {
     "idRequired": false,
     "acceptedIds": [],
@@ -110,7 +106,6 @@
       "Undeclared (unenrolled) voters may request a party primary ballot on Election Day."
     ]
   },
-
   "voteByMail": {
     "universal": false,
     "eligibility": [
@@ -122,16 +117,20 @@
     "applicationUrl": "https://www.maine.gov/sos/cec/elec/voter-info/absenteeguide.html",
     "officialRulesUrl": "https://www.maine.gov/sos/cec/elec/voter-info/absenteeguide.html"
   },
-
   "runoffRules": {
     "hasRunoff": false,
     "partyLockedToFirstRoundPrimary": false
   },
-
   "resources": {
     "stateElectionWebsite": "https://www.maine.gov/sos/cec/elec/index.html",
     "countyElectionLookup": "https://www.maine.gov/sos/cec/elec/voter-info/votereguide.html",
     "sampleBallotLookup": "https://www.maine.gov/sos/cec/elec/voter-info/votereguide.html",
     "pollingPlaceLookup": "https://www.maine.gov/sos/cec/elec/voter-info/votereguide.html"
+  },
+  "primaryParticipation": {
+    "type": "semi-closed",
+    "ruleExplanationEn": "Maine has a semi-closed primary (Me. Rev. Stat. Title 21-A, §341). Registered party members vote in their party's primary. Voters enrolled as 'unenrolled' may participate in either party's primary without formally joining that party.",
+    "ruleExplanationEs": "Maine tiene una primaria semi-cerrada (Me. Rev. Stat. Title 21-A, §341). Los miembros registrados en un partido votan en la primaria de su partido. Los votantes inscritos como 'sin inscripción' pueden participar en la primaria de cualquier partido sin afiliarse formalmente.",
+    "behavior": "advisory"
   }
 }

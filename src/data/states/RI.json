@@ -8,7 +8,6 @@
   "stateCode": "RI",
   "stateName": "Rhode Island",
   "lastUpdated": "2026-05-10",
-
   "elections": [
     {
       "id": "ri-2026-primary",
@@ -73,7 +72,6 @@
       }
     }
   ],
-
   "registration": {
     "online": {
       "available": true,
@@ -91,14 +89,12 @@
     "sameDayRegistration": false,
     "registrationCheckUrl": "https://vote.sos.ri.gov/"
   },
-
   "earlyVoting": {
     "available": true,
     "startDate": "2026-10-19",
     "endDate": "2026-11-01",
     "notes": "Rhode Island offers in-person early voting at local boards of canvassers. No-excuse absentee mail voting is also available. TODO verify exact 2026 dates."
   },
-
   "votingRules": {
     "idRequired": false,
     "acceptedIds": [
@@ -116,7 +112,6 @@
       "No-excuse absentee voting is available for all registered voters."
     ]
   },
-
   "voteByMail": {
     "universal": false,
     "eligibility": [
@@ -128,16 +123,20 @@
     "applicationUrl": "https://vote.sos.ri.gov/Voter/AbsenteeApplication",
     "officialRulesUrl": "https://vote.sos.ri.gov/Voter/Absentee"
   },
-
   "runoffRules": {
     "hasRunoff": false,
     "partyLockedToFirstRoundPrimary": false
   },
-
   "resources": {
     "stateElectionWebsite": "https://vote.sos.ri.gov/",
     "countyElectionLookup": "https://vote.sos.ri.gov/Voter/LocalBoardsOfCanvassers",
     "sampleBallotLookup": "https://vote.sos.ri.gov/",
     "pollingPlaceLookup": "https://vote.sos.ri.gov/Voter/PollingPlace"
+  },
+  "primaryParticipation": {
+    "type": "semi-closed",
+    "ruleExplanationEn": "Rhode Island has a semi-closed primary (R.I. Gen. Laws §17-15-24). Registered party members vote in their party's primary. Unaffiliated voters may also request a party ballot and vote in a primary. After voting, they may return to unaffiliated status.",
+    "ruleExplanationEs": "Rhode Island tiene una primaria semi-cerrada (R.I. Gen. Laws §17-15-24). Los miembros registrados en un partido votan en la primaria de su partido. Los votantes sin afiliación también pueden solicitar una boleta de partido y votar en una primaria. Después de votar, pueden volver al estatus sin afiliación.",
+    "behavior": "advisory"
   }
 }

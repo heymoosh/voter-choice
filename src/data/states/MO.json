@@ -5,12 +5,10 @@
     "checked": "2026-05-10",
     "discrepancies": "Missouri enacted a strict photo ID law (Amendment 6, 2016; implemented 2017). NCSL confirms Missouri as 'photo ID required'. Voters without ID may cast a provisional ballot and sign an affidavit — the provisional ballot counts unless the election authority has evidence of fraud. Missouri primary is the first Tuesday after the first Monday in August per statute. No early voting in Missouri — absentee is the alternative."
   },
-
   "stateCode": "MO",
   "stateName": "Missouri",
   "lastUpdated": "2026-05-10",
   "coverageStatus": "confirmed",
-
   "elections": [
     {
       "id": "mo-2026-primary",
@@ -75,7 +73,6 @@
       }
     }
   ],
-
   "registration": {
     "online": {
       "available": true,
@@ -93,14 +90,12 @@
     "sameDayRegistration": false,
     "registrationCheckUrl": "https://voteroutreach.sos.mo.gov/VoterSearch.aspx"
   },
-
   "earlyVoting": {
     "available": false,
     "startDate": null,
     "endDate": null,
     "notes": "Missouri does not offer early in-person voting. Any registered voter may vote by absentee ballot without a stated reason beginning 6 weeks before an election."
   },
-
   "votingRules": {
     "idRequired": true,
     "acceptedIds": [
@@ -120,7 +115,6 @@
       "Any registered voter may vote by absentee ballot without providing a reason."
     ]
   },
-
   "voteByMail": {
     "universal": false,
     "eligibility": [
@@ -132,12 +126,10 @@
     "applicationUrl": "https://www.sos.mo.gov/elections/goVoteMissouri/howtovoteabsentee.asp",
     "officialRulesUrl": "https://www.sos.mo.gov/elections/goVoteMissouri/howtovoteabsentee.asp"
   },
-
   "runoffRules": {
     "hasRunoff": false,
     "partyLockedToFirstRoundPrimary": false
   },
-
   "resources": {
     "stateElectionWebsite": "https://www.sos.mo.gov/elections",
     "countyElectionLookup": "https://www.sos.mo.gov/elections/cantlose/localelectionauthorities.asp",
@@ -146,5 +138,11 @@
     "importantDates": "https://www.sos.mo.gov/elections/calendar/importantdates.asp",
     "voterIdInfo": "https://www.sos.mo.gov/elections/goVoteMissouri/photoid.asp",
     "earlyVotingInfo": "https://www.sos.mo.gov/elections/goVoteMissouri/howtovoteabsentee.asp"
+  },
+  "primaryParticipation": {
+    "type": "open",
+    "ruleExplanationEn": "Missouri has an open primary (Mo. Rev. Stat. §115.339). Any registered voter may participate in either party's primary without changing registration. Voters receive only one party's ballot.",
+    "ruleExplanationEs": "Missouri tiene una primaria abierta (Mo. Rev. Stat. §115.339). Cualquier votante registrado puede participar en la primaria de cualquier partido sin cambiar su registro. Los votantes reciben la boleta de un solo partido.",
+    "behavior": "advisory"
   }
 }

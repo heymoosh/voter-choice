@@ -9,7 +9,6 @@
   "stateName": "Tennessee",
   "lastUpdated": "2026-05-10",
   "coverageStatus": "confirmed",
-
   "elections": [
     {
       "id": "tn-2026-primary",
@@ -74,7 +73,6 @@
       }
     }
   ],
-
   "registration": {
     "online": {
       "available": true,
@@ -92,14 +90,12 @@
     "sameDayRegistration": false,
     "registrationCheckUrl": "https://ovr.govote.tn.gov/"
   },
-
   "earlyVoting": {
     "available": true,
     "startDate": "2026-10-14",
     "endDate": "2026-10-29",
     "notes": "Early voting runs from 20 days to 5 days before Election Day. Hours and locations vary by county."
   },
-
   "votingRules": {
     "idRequired": true,
     "acceptedIds": [
@@ -119,7 +115,6 @@
       "No legislative primary runoffs in Tennessee."
     ]
   },
-
   "voteByMail": {
     "universal": false,
     "eligibility": [
@@ -136,12 +131,10 @@
     "applicationUrl": "https://sos.tn.gov/elections/absentee-voting",
     "officialRulesUrl": "https://sos.tn.gov/elections/absentee-voting"
   },
-
   "runoffRules": {
     "hasRunoff": false,
     "partyLockedToFirstRoundPrimary": false
   },
-
   "resources": {
     "stateElectionWebsite": "https://sos.tn.gov/elections",
     "countyElectionLookup": "https://sos.tn.gov/elections/county-election-commissions",
@@ -150,5 +143,11 @@
     "importantDates": "https://sos.tn.gov/elections/election-dates",
     "voterIdInfo": "https://sos.tn.gov/elections/photo-id",
     "earlyVotingInfo": "https://sos.tn.gov/elections/early-voting"
+  },
+  "primaryParticipation": {
+    "type": "open",
+    "ruleExplanationEn": "Tennessee has an open primary in practice (Tenn. Code Ann. §2-7-115). There is no party registration in Tennessee. Voters may request either party's primary ballot at the polls without any restriction.",
+    "ruleExplanationEs": "Tennessee tiene una primaria abierta en la práctica (Tenn. Code Ann. §2-7-115). Tennessee no tiene registro de partido. Los votantes pueden solicitar la boleta de primaria de cualquier partido en el lugar de votación sin ninguna restricción.",
+    "behavior": "advisory"
   }
 }

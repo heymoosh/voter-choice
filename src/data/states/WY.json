@@ -9,7 +9,6 @@
   "stateName": "Wyoming",
   "lastUpdated": "2026-05-10",
   "coverageStatus": "confirmed",
-
   "elections": [
     {
       "id": "wy-2026-primary",
@@ -74,7 +73,6 @@
       }
     }
   ],
-
   "registration": {
     "online": {
       "available": false,
@@ -92,14 +90,12 @@
     "sameDayRegistration": true,
     "registrationCheckUrl": "https://sos.wyo.gov/elections/register.aspx"
   },
-
   "earlyVoting": {
     "available": true,
     "startDate": "2026-10-05",
     "endDate": "2026-11-02",
     "notes": "Wyoming offers absentee voting for any registered voter without requiring a reason. Absentee in-person voting is available at county clerk offices. No online voter registration — register by mail or in person at the county clerk's office."
   },
-
   "votingRules": {
     "idRequired": true,
     "acceptedIds": [
@@ -120,7 +116,6 @@
       "Photo ID required at polls as of 2022 (HB 238)."
     ]
   },
-
   "voteByMail": {
     "universal": false,
     "eligibility": [
@@ -132,17 +127,21 @@
     "applicationUrl": "https://sos.wyo.gov/elections/absenteevoting.aspx",
     "officialRulesUrl": "https://sos.wyo.gov/elections/"
   },
-
   "runoffRules": {
     "hasRunoff": false,
     "partyLockedToFirstRoundPrimary": false
   },
-
   "resources": {
     "stateElectionWebsite": "https://sos.wyo.gov/elections/",
     "countyElectionLookup": "https://sos.wyo.gov/elections/countycontacts.aspx",
     "sampleBallotLookup": "https://sos.wyo.gov/elections/",
     "pollingPlaceLookup": "https://sos.wyo.gov/elections/",
     "voterIdInfo": "https://sos.wyo.gov/elections/voterinfo.aspx"
+  },
+  "primaryParticipation": {
+    "type": "closed",
+    "ruleExplanationEn": "Wyoming has a closed primary (Wyo. Stat. Ann. §22-5-101). Only voters registered with a political party may vote in that party's primary. Voters must declare or change their party affiliation at least 96 days before the primary. Voters registered as independent or unaffiliated may not participate.",
+    "ruleExplanationEs": "Wyoming tiene una primaria cerrada (Wyo. Stat. Ann. §22-5-101). Solo los votantes registrados en un partido político pueden votar en la primaria de ese partido. Los votantes deben declarar o cambiar su afiliación de partido al menos 96 días antes de la primaria. Los votantes registrados como independientes o sin afiliación no pueden participar.",
+    "behavior": "advisory"
   }
 }

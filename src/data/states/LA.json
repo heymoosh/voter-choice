@@ -9,7 +9,6 @@
   "stateName": "Louisiana",
   "lastUpdated": "2026-05-10",
   "coverageStatus": "confirmed",
-
   "elections": [
     {
       "id": "la-2026-primary",
@@ -74,7 +73,6 @@
       }
     }
   ],
-
   "registration": {
     "online": {
       "available": true,
@@ -92,14 +90,12 @@
     "sameDayRegistration": false,
     "registrationCheckUrl": "https://voterportal.sos.la.gov/"
   },
-
   "earlyVoting": {
     "available": true,
     "startDate": "2026-11-07",
     "endDate": "2026-11-14",
     "notes": "Early voting runs from 14 to 7 days before the election (Sundays excluded). Hours set by parish. TODO verify for 2026 cycle."
   },
-
   "votingRules": {
     "idRequired": true,
     "acceptedIds": [
@@ -120,7 +116,6 @@
       "Party-locked runoff rules do not apply — Louisiana's runoff is between the top-two finishers regardless of party."
     ]
   },
-
   "voteByMail": {
     "universal": false,
     "eligibility": [
@@ -137,12 +132,10 @@
     "applicationUrl": "https://www.sos.la.gov/ElectionsAndVoting/Vote/VoteByAbsenteeBallot/Pages/default.aspx",
     "officialRulesUrl": "https://www.sos.la.gov/ElectionsAndVoting/Vote/VoteByAbsenteeBallot/Pages/default.aspx"
   },
-
   "runoffRules": {
     "hasRunoff": false,
     "partyLockedToFirstRoundPrimary": false
   },
-
   "resources": {
     "stateElectionWebsite": "https://www.sos.la.gov/ElectionsAndVoting/Pages/default.aspx",
     "countyElectionLookup": "https://www.sos.la.gov/ElectionsAndVoting/RegisterToVote/Pages/default.aspx",
@@ -151,5 +144,11 @@
     "importantDates": "https://www.sos.la.gov/ElectionsAndVoting/Pages/default.aspx",
     "voterIdInfo": "https://www.sos.la.gov/ElectionsAndVoting/Vote/GoVotePhotoIDRequirements/Pages/default.aspx",
     "earlyVotingInfo": "https://www.sos.la.gov/ElectionsAndVoting/Vote/EarlyVoting/Pages/default.aspx"
+  },
+  "primaryParticipation": {
+    "type": "top-two",
+    "ruleExplanationEn": "Louisiana uses a jungle primary (non-partisan blanket primary). All candidates appear on a single ballot regardless of party. A candidate who wins more than 50% wins outright; otherwise the top two advance to a general election runoff.",
+    "ruleExplanationEs": "Luisiana utiliza una primaria abierta (primaria de boleta única no partidista). Todos los candidatos aparecen en una sola boleta sin importar el partido. Un candidato que obtenga más del 50% gana directamente; de lo contrario, los dos primeros avanzan a una segunda vuelta en las elecciones generales.",
+    "behavior": "advisory"
   }
 }

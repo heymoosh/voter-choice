@@ -2,7 +2,6 @@
   "stateCode": "NC",
   "stateName": "North Carolina",
   "lastUpdated": "2026-05-09",
-
   "elections": [
     {
       "id": "nc-2026-primary",
@@ -98,7 +97,6 @@
       }
     }
   ],
-
   "registration": {
     "online": {
       "available": true,
@@ -116,14 +114,12 @@
     "sameDayRegistration": true,
     "registrationCheckUrl": "https://vt.ncsbe.gov/RegLkup/"
   },
-
   "earlyVoting": {
     "available": true,
     "startDate": "2026-10-15",
     "endDate": "2026-10-31",
     "notes": "One-stop early voting includes same-day registration. Exact locations and hours set by each county board of elections. TODO verify for 2026 cycle."
   },
-
   "votingRules": {
     "idRequired": true,
     "acceptedIds": [
@@ -143,7 +139,6 @@
       "North Carolina has runoffs for statewide and federal offices when no candidate receives 30% of the vote in the primary. Runoffs are not party-locked — any eligible registered voter may vote in the runoff regardless of which primary they voted in."
     ]
   },
-
   "voteByMail": {
     "universal": false,
     "eligibility": [
@@ -155,12 +150,11 @@
     "applicationUrl": "https://www.ncsbe.gov/voting/vote-absentee/absentee-mail-ballot",
     "officialRulesUrl": "https://www.ncsbe.gov/voting/vote-absentee"
   },
-
   "runoffRules": {
     "hasRunoff": true,
-    "partyLockedToFirstRoundPrimary": false
+    "partyLockedToFirstRoundPrimary": true,
+    "ruleExplanation": "North Carolina rule (N.C. Gen. Stat. §163-110): if no candidate receives 30% of the vote in the primary, a second primary (runoff) is held between the top two candidates. If you voted in one party's primary, you may only vote in that same party's second primary. Unaffiliated voters who did not vote in any first primary may choose which party's second primary to vote in."
   },
-
   "resources": {
     "stateElectionWebsite": "https://www.ncsbe.gov/",
     "countyElectionLookup": "https://www.ncsbe.gov/about-elections/county-board-elections/county-boards-elections",
@@ -169,5 +163,11 @@
     "importantDates": "https://www.ncsbe.gov/elections-voting/voter-registration/voter-registration-deadlines",
     "voterIdInfo": "https://www.ncsbe.gov/voting/voter-id",
     "earlyVotingInfo": "https://www.ncsbe.gov/voting/vote-early/one-stop-early-voting"
+  },
+  "primaryParticipation": {
+    "type": "open",
+    "ruleExplanationEn": "North Carolina has an open primary (N.C. Gen. Stat. §163-119). Registered voters of a party vote in their party's primary. Unaffiliated voters may choose which party's primary to participate in. If a runoff (second primary) occurs and you voted in a party's first primary, you must vote in that same party's runoff.",
+    "ruleExplanationEs": "Carolina del Norte tiene una primaria abierta (N.C. Gen. Stat. §163-119). Los votantes registrados en un partido votan en la primaria de su partido. Los votantes sin afiliación pueden elegir en qué primaria de partido participar. Si hay una segunda vuelta y votó en la primera primaria de un partido, debe votar en la segunda vuelta de ese mismo partido.",
+    "behavior": "advisory"
   }
 }

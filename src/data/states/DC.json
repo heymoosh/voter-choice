@@ -8,7 +8,6 @@
   "stateCode": "DC",
   "stateName": "Washington, D.C.",
   "lastUpdated": "2026-05-10",
-
   "elections": [
     {
       "id": "dc-2026-primary",
@@ -73,7 +72,6 @@
       }
     }
   ],
-
   "registration": {
     "online": {
       "available": true,
@@ -91,14 +89,12 @@
     "sameDayRegistration": true,
     "registrationCheckUrl": "https://dcboe.org/Voters/Register-To-Vote/Voter-Registration-Status"
   },
-
   "earlyVoting": {
     "available": true,
     "startDate": "2026-10-24",
     "endDate": "2026-11-01",
     "notes": "DC is a universal vote-by-mail jurisdiction. All active registered voters automatically receive a mail ballot. Early in-person voting also available at vote centers. TODO verify exact 2026 dates."
   },
-
   "votingRules": {
     "idRequired": false,
     "acceptedIds": [],
@@ -112,7 +108,6 @@
       "No senators or voting representatives in Congress — DC residents have limited federal representation."
     ]
   },
-
   "voteByMail": {
     "universal": true,
     "eligibility": [
@@ -124,16 +119,20 @@
     "applicationUrl": "https://dcboe.org/Voters/Voting-Options/Vote-By-Mail",
     "officialRulesUrl": "https://dcboe.org/Voters/Voting-Options/Vote-By-Mail"
   },
-
   "runoffRules": {
     "hasRunoff": false,
     "partyLockedToFirstRoundPrimary": false
   },
-
   "resources": {
     "stateElectionWebsite": "https://dcboe.org/",
     "countyElectionLookup": "https://dcboe.org/",
     "sampleBallotLookup": "https://dcboe.org/Elections/Sample-Ballots",
     "pollingPlaceLookup": "https://dcboe.org/Voters/Voting-Options/Vote-In-Person/Polling-Place-Locator"
+  },
+  "primaryParticipation": {
+    "type": "closed",
+    "ruleExplanationEn": "Washington D.C. has a closed primary (D.C. Code §1-1001.14). Only voters registered with a political party may vote in that party's primary. Unaffiliated and independent voters may not participate in the Democratic or Republican primary.",
+    "ruleExplanationEs": "Washington D.C. tiene una primaria cerrada (D.C. Code §1-1001.14). Solo los votantes registrados en un partido político pueden votar en la primaria de ese partido. Los votantes sin afiliación e independientes no pueden participar en la primaria Demócrata o Republicana.",
+    "behavior": "advisory"
   }
 }

@@ -2,7 +2,6 @@
   "stateCode": "TX",
   "stateName": "Texas",
   "lastUpdated": "2026-04-12",
-
   "elections": [
     {
       "id": "tx-2026-primary",
@@ -129,7 +128,6 @@
       }
     }
   ],
-
   "votingRules": {
     "idRequired": true,
     "acceptedIds": [
@@ -156,7 +154,6 @@
     "phonesAtPollsDetail": "Texas law prohibits wireless communication devices in the voting room. You may bring written notes.",
     "additionalRules": []
   },
-
   "voteByMail": {
     "universal": false,
     "eligibility": [
@@ -171,13 +168,11 @@
     "applicationUrl": "https://www.sos.texas.gov/elections/voter/reqabbm.shtml",
     "officialRulesUrl": "https://www.votetexas.gov/voting-by-mail/"
   },
-
   "runoffRules": {
     "hasRunoff": true,
     "partyLockedToFirstRoundPrimary": true,
     "ruleExplanation": "Texas rule (Texas Election Code §172.087): if you voted in one party's March primary this year, you can only vote in that same party's runoff. If you did not vote in March, you may choose either party's runoff."
   },
-
   "resources": {
     "stateElectionWebsite": "https://www.votetexas.gov/",
     "countyElectionLookup": "https://www.votetexas.gov/voting/where.html",
@@ -187,7 +182,6 @@
     "voterIdInfo": "https://www.votetexas.gov/voting/need-id.html",
     "earlyVotingInfo": "https://www.votetexas.gov/voting/early-voting.html"
   },
-
   "countyResources": {
     "Harris": {
       "name": "Harris County",
@@ -260,5 +254,11 @@
       "earlyVotingLocations": "https://www.mctx.org/departments/departments_a_-_c/county_clerk/elections/early_voting.php",
       "electionsWebsite": "https://www.mctx.org/departments/departments_a_-_c/county_clerk/elections/"
     }
+  },
+  "primaryParticipation": {
+    "type": "open",
+    "ruleExplanationEn": "Texas has an open primary (Texas Election Code §172.001). Any registered voter may participate in either party's primary. If a runoff occurs, Texas Election Code §172.087 requires that you vote in the same party's runoff as the primary you voted in.",
+    "ruleExplanationEs": "Texas tiene una primaria abierta (Texas Election Code §172.001). Cualquier votante registrado puede participar en la primaria de cualquier partido. Si hay una segunda vuelta, el Código Electoral de Texas §172.087 exige que vote en la segunda vuelta del mismo partido en cuya primaria votó.",
+    "behavior": "advisory"
   }
 }

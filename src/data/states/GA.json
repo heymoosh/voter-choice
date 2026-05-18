@@ -2,7 +2,6 @@
   "stateCode": "GA",
   "stateName": "Georgia",
   "lastUpdated": "2026-05-09",
-
   "elections": [
     {
       "id": "ga-2026-primary",
@@ -98,7 +97,6 @@
       }
     }
   ],
-
   "registration": {
     "online": {
       "available": true,
@@ -116,14 +114,12 @@
     "sameDayRegistration": false,
     "registrationCheckUrl": "https://mvp.sos.ga.gov/"
   },
-
   "earlyVoting": {
     "available": true,
     "startDate": "2026-10-17",
     "endDate": "2026-10-30",
     "notes": "Early voting begins the 4th Monday before the election. Saturday early voting is required. TODO verify for 2026 cycle."
   },
-
   "votingRules": {
     "idRequired": true,
     "acceptedIds": [
@@ -143,7 +139,6 @@
       "Runoff rule: if no candidate receives a majority in the primary, the top two advance to a runoff. A voter who participated in one party's primary may only vote in that party's runoff."
     ]
   },
-
   "voteByMail": {
     "universal": false,
     "eligibility": [
@@ -155,13 +150,11 @@
     "applicationUrl": "https://mvp.sos.ga.gov/",
     "officialRulesUrl": "https://sos.ga.gov/page/absentee-voting"
   },
-
   "runoffRules": {
     "hasRunoff": true,
     "partyLockedToFirstRoundPrimary": true,
     "ruleExplanation": "Georgia rule: if you voted in one party's primary, you may only vote in that same party's runoff. If you did not vote in the primary, you may choose either party's runoff."
   },
-
   "resources": {
     "stateElectionWebsite": "https://sos.ga.gov/elections-division",
     "countyElectionLookup": "https://elections.sos.ga.gov/Elections/countyregistrars.do",
@@ -170,5 +163,11 @@
     "importantDates": "https://sos.ga.gov/page/elections-calendar",
     "voterIdInfo": "https://sos.ga.gov/page/photo-id-requirements",
     "earlyVotingInfo": "https://sos.ga.gov/page/advance-voting-information"
+  },
+  "primaryParticipation": {
+    "type": "open",
+    "ruleExplanationEn": "Georgia has an open primary (O.C.G.A. §21-2-501). Any registered voter may vote in either party's primary without prior party registration. If a runoff occurs, you must vote in the same party's runoff as the primary you voted in.",
+    "ruleExplanationEs": "Georgia tiene una primaria abierta (O.C.G.A. §21-2-501). Cualquier votante registrado puede votar en la primaria de cualquier partido sin registro previo de partido. Si hay una segunda vuelta, debe votar en la segunda vuelta del mismo partido en que votó en la primaria.",
+    "behavior": "advisory"
   }
 }

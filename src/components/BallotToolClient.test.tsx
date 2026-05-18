@@ -264,20 +264,19 @@ describe("BallotToolClient — runoff gate per-state behavior", () => {
     expect(screen.getByTestId("runoff-gate").textContent).toContain("Georgia");
   });
 
-  // NC (has runoffs but NOT party-locked — gate must NOT render)
-  it("does NOT show runoff gate for NC", async () => {
+  // NC (open primary + party-locked second primary — gate MUST render)
+  it("shows runoff gate for NC with North Carolina-flavored copy", async () => {
     renderWithProviders(<BallotToolClient />);
     fireEvent.change(screen.getByTestId("zip-input"), {
       target: { value: "27601" },
     });
     fireEvent.click(screen.getByTestId("zip-submit"));
     await waitFor(() => {
-      // chat-window or prompt-output should be visible without a gate selection
-      expect(
-        screen.queryByTestId("runoff-gate") === null ||
-          screen.queryByTestId("chat-window") !== null,
-      ).toBe(true);
+      expect(screen.getByTestId("runoff-gate")).toBeInTheDocument();
     });
+    expect(screen.getByTestId("runoff-gate").textContent).toContain(
+      "North Carolina",
+    );
   });
 
   // CA (top-two open, no runoff — gate must NOT render)

@@ -5,12 +5,10 @@
     "checked": "2026-05-10",
     "discrepancies": "Nebraska enacted photo ID requirement (LB 514, 2023; effective 2024 general). NCSL confirms Nebraska as requiring photo ID. Voters without ID may cast provisional ballot and return with ID by the second Friday after the election. IMPORTANT: Nebraska's unicameral state legislature (the Legislature) is officially nonpartisan — legislative primaries do not have party lanes. Candidates file without party affiliation; top-two advance to the general. Consequently runoffRules.partyLockedToFirstRoundPrimary is false, not because Nebraska lacks a runoff structure, but because the Legislature's nonpartisan nature means party-lock is inapplicable for those races. Statewide and federal races are partisan with a standard plurality result (no runoffs). Primary date is set by statute as the second Tuesday in May."
   },
-
   "stateCode": "NE",
   "stateName": "Nebraska",
   "lastUpdated": "2026-05-10",
   "coverageStatus": "confirmed",
-
   "elections": [
     {
       "id": "ne-2026-primary",
@@ -75,7 +73,6 @@
       }
     }
   ],
-
   "registration": {
     "online": {
       "available": true,
@@ -93,14 +90,12 @@
     "sameDayRegistration": false,
     "registrationCheckUrl": "https://www.votercheck.necvr.ne.gov/"
   },
-
   "earlyVoting": {
     "available": true,
     "startDate": "2026-10-05",
     "endDate": "2026-11-02",
     "notes": "Early in-person voting available starting 30 days before the general election at county election commissioner or clerk offices. Mail ballots also available on request. TODO verify for 2026 cycle."
   },
-
   "votingRules": {
     "idRequired": true,
     "acceptedIds": [
@@ -122,7 +117,6 @@
       "Nebraska allocates presidential electoral votes by congressional district (one of only two states to do so, along with Maine)."
     ]
   },
-
   "voteByMail": {
     "universal": false,
     "eligibility": [
@@ -134,12 +128,10 @@
     "applicationUrl": "https://sos.nebraska.gov/elections/absentee-voting",
     "officialRulesUrl": "https://sos.nebraska.gov/elections/absentee-voting"
   },
-
   "runoffRules": {
     "hasRunoff": false,
     "partyLockedToFirstRoundPrimary": false
   },
-
   "resources": {
     "stateElectionWebsite": "https://sos.nebraska.gov/elections/elections-division",
     "countyElectionLookup": "https://sos.nebraska.gov/elections/county-election-officials",
@@ -148,5 +140,11 @@
     "importantDates": "https://sos.nebraska.gov/elections/election-calendar",
     "voterIdInfo": "https://sos.nebraska.gov/elections/voter-id",
     "earlyVotingInfo": "https://sos.nebraska.gov/elections/absentee-voting"
+  },
+  "primaryParticipation": {
+    "type": "open",
+    "ruleExplanationEn": "Nebraska's unicameral legislature uses a nonpartisan top-two primary. For federal and statewide offices, Nebraska uses an open partisan primary (Neb. Rev. Stat. §32-312) where unaffiliated voters may request a partisan primary ballot.",
+    "ruleExplanationEs": "La legislatura unicameral de Nebraska utiliza una primaria no partidista de dos candidatos. Para cargos federales y estatales, Nebraska utiliza una primaria partidista abierta (Neb. Rev. Stat. §32-312) donde los votantes sin afiliación pueden solicitar una boleta primaria partidista.",
+    "behavior": "advisory"
   }
 }

@@ -9,7 +9,6 @@
   "stateName": "Montana",
   "lastUpdated": "2026-05-10",
   "coverageStatus": "confirmed",
-
   "elections": [
     {
       "id": "mt-2026-primary",
@@ -74,7 +73,6 @@
       }
     }
   ],
-
   "registration": {
     "online": {
       "available": true,
@@ -92,14 +90,12 @@
     "sameDayRegistration": false,
     "registrationCheckUrl": "https://app.mt.gov/voterinfo/"
   },
-
   "earlyVoting": {
     "available": true,
     "startDate": "2026-10-02",
     "endDate": "2026-11-02",
     "notes": "Montana does not have traditional early voting polling places. Absentee in-person voting is available at county election offices starting approximately 30 days before the election. Any voter may request an absentee ballot without providing a reason."
   },
-
   "votingRules": {
     "idRequired": true,
     "acceptedIds": [
@@ -119,7 +115,6 @@
       "Photo ID is now required at the polls as of 2023 (HB 176). Previous rules requiring non-photo ID were changed."
     ]
   },
-
   "voteByMail": {
     "universal": false,
     "eligibility": [
@@ -131,17 +126,21 @@
     "applicationUrl": "https://sosmt.gov/elections/absentee/",
     "officialRulesUrl": "https://sosmt.gov/elections/"
   },
-
   "runoffRules": {
     "hasRunoff": false,
     "partyLockedToFirstRoundPrimary": false
   },
-
   "resources": {
     "stateElectionWebsite": "https://sosmt.gov/elections/",
     "countyElectionLookup": "https://sosmt.gov/elections/county-election-administrators/",
     "sampleBallotLookup": "https://app.mt.gov/voterinfo/",
     "pollingPlaceLookup": "https://app.mt.gov/voterinfo/",
     "voterIdInfo": "https://sosmt.gov/elections/voter-id/"
+  },
+  "primaryParticipation": {
+    "type": "open",
+    "ruleExplanationEn": "Montana has an open primary (MCA §13-10-301). Any registered voter may choose which party's primary ballot to request at the polls. No advance party registration is required.",
+    "ruleExplanationEs": "Montana tiene una primaria abierta (MCA §13-10-301). Cualquier votante registrado puede elegir la boleta de primaria de cualquier partido en el lugar de votación. No se requiere registro previo de partido.",
+    "behavior": "advisory"
   }
 }

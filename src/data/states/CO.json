@@ -9,7 +9,6 @@
   "stateName": "Colorado",
   "lastUpdated": "2026-05-10",
   "coverageStatus": "confirmed",
-
   "elections": [
     {
       "id": "co-2026-primary",
@@ -74,7 +73,6 @@
       }
     }
   ],
-
   "registration": {
     "online": {
       "available": true,
@@ -92,14 +90,12 @@
     "sameDayRegistration": true,
     "registrationCheckUrl": "https://www.coloradosos.gov/voter/pages/pub/olvr/verifyNewVoter.xhtml"
   },
-
   "earlyVoting": {
     "available": true,
     "startDate": "2026-10-19",
     "endDate": "2026-11-02",
     "notes": "Colorado is a vote-by-mail state. All registered voters automatically receive a mail ballot. Voter service and polling centers (VSPCs) open for in-person voting and ballot drop-off. Same-day registration available at VSPCs through Election Day."
   },
-
   "votingRules": {
     "idRequired": false,
     "acceptedIds": [
@@ -121,7 +117,6 @@
       "Ballots may be dropped off at any VSPC or official drop box in your county."
     ]
   },
-
   "voteByMail": {
     "universal": true,
     "eligibility": [
@@ -133,17 +128,21 @@
     "applicationUrl": "https://www.coloradosos.gov/voter/pages/pub/home.xhtml",
     "officialRulesUrl": "https://www.coloradosos.gov/voter/pages/pub/home.xhtml"
   },
-
   "runoffRules": {
     "hasRunoff": false,
     "partyLockedToFirstRoundPrimary": false
   },
-
   "resources": {
     "stateElectionWebsite": "https://www.coloradosos.gov/voter/pages/pub/home.xhtml",
     "countyElectionLookup": "https://www.coloradosos.gov/voter/pages/pub/home.xhtml",
     "sampleBallotLookup": "https://www.coloradosos.gov/voter/pages/pub/olvr/verifyNewVoter.xhtml",
     "pollingPlaceLookup": "https://www.coloradosos.gov/voter/pages/pub/home.xhtml",
     "voterIdInfo": "https://www.coloradosos.gov/voter/pages/pub/home.xhtml"
+  },
+  "primaryParticipation": {
+    "type": "semi-closed",
+    "ruleExplanationEn": "Colorado has a semi-closed primary (Colo. Rev. Stat. §1-4-101). Registered party members may only vote in their party's primary. Voters registered as unaffiliated may choose to vote in either party's primary. Colorado primaries are conducted by mail.",
+    "ruleExplanationEs": "Colorado tiene una primaria semi-cerrada (Colo. Rev. Stat. §1-4-101). Los miembros registrados en un partido solo pueden votar en la primaria de su partido. Los votantes registrados como sin afiliación pueden elegir votar en la primaria de cualquier partido. Las primarias de Colorado se realizan por correo.",
+    "behavior": "advisory"
   }
 }

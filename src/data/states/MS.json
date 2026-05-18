@@ -9,7 +9,6 @@
   "stateName": "Mississippi",
   "lastUpdated": "2026-05-10",
   "coverageStatus": "confirmed",
-
   "elections": [
     {
       "id": "ms-2026-primary",
@@ -105,7 +104,6 @@
       }
     }
   ],
-
   "registration": {
     "online": {
       "available": false,
@@ -123,14 +121,12 @@
     "sameDayRegistration": false,
     "registrationCheckUrl": "https://www.msegov.com/sos/voter_registration/AmIRegistered"
   },
-
   "earlyVoting": {
     "available": false,
     "startDate": null,
     "endDate": null,
     "notes": "Mississippi does not have a general early voting period. Absentee voting is available for voters who qualify (illness, disability, absence, etc.)."
   },
-
   "votingRules": {
     "idRequired": true,
     "acceptedIds": [
@@ -151,7 +147,6 @@
       "Runoff rule: if no candidate receives a majority in the primary, the top two advance to a runoff. A voter who voted in one party's primary may only vote in that party's runoff."
     ]
   },
-
   "voteByMail": {
     "universal": false,
     "eligibility": [
@@ -167,13 +162,11 @@
     "applicationUrl": "https://www.sos.ms.gov/elections-voting/absentee-voting",
     "officialRulesUrl": "https://www.sos.ms.gov/elections-voting/absentee-voting"
   },
-
   "runoffRules": {
     "hasRunoff": true,
     "partyLockedToFirstRoundPrimary": true,
     "ruleExplanation": "Mississippi rule: if you voted in one party's primary, you can only vote in that same party's runoff. If you did not vote in the primary, you may choose either party's runoff."
   },
-
   "resources": {
     "stateElectionWebsite": "https://www.sos.ms.gov/elections-voting",
     "countyElectionLookup": "https://www.sos.ms.gov/elections-voting/circuit-clerks",
@@ -182,5 +175,11 @@
     "importantDates": "https://www.sos.ms.gov/elections-voting/election-dates",
     "voterIdInfo": "https://www.sos.ms.gov/elections-voting/voter-id",
     "earlyVotingInfo": "https://www.sos.ms.gov/elections-voting/absentee-voting"
+  },
+  "primaryParticipation": {
+    "type": "open",
+    "ruleExplanationEn": "Mississippi has an open primary (Miss. Code §23-15-211). Any registered voter may participate in either party's primary. If a runoff occurs and you voted in a party's primary, party-lock rules apply to the runoff.",
+    "ruleExplanationEs": "Mississippi tiene una primaria abierta (Miss. Code §23-15-211). Cualquier votante registrado puede participar en la primaria de cualquier partido. Si hay una segunda vuelta y votó en la primaria de un partido, se aplican las reglas de bloqueo de partido.",
+    "behavior": "advisory"
   }
 }

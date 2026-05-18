@@ -53,9 +53,9 @@
     "partyLockedToFirstRoundPrimary": false
   },
   "primaryParticipation": {
-    "type": "closed",
-    "ruleExplanationEn": "Arizona has a closed primary (A.R.S. §16-467). Only voters registered with a recognized political party may vote in that party's primary election. Voters registered as independent or with no party affiliation may not vote in a partisan primary.",
-    "ruleExplanationEs": "Arizona tiene una elección primaria cerrada (A.R.S. §16-467). Solo los votantes registrados con un partido político reconocido pueden votar en la primaria de ese partido. Los votantes registrados como independientes o sin afiliación partidista no pueden votar en una primaria partidista.",
+    "type": "semi-closed",
+    "ruleExplanationEn": "Arizona has a semi-closed primary (A.R.S. §16-467). Voters registered with a party may only vote in that party's primary. Voters registered as independent or with no party preference (NPP) may vote in the Republican or Democratic primary if that party chooses to allow independent participation. Both major parties currently allow independent participation in their 2026 Arizona primaries.",
+    "ruleExplanationEs": "Arizona tiene una primaria semi-cerrada (A.R.S. §16-467). Los votantes registrados en un partido solo pueden votar en la primaria de ese partido. Los votantes registrados como independientes o sin preferencia de partido (NPP) pueden votar en la primaria Republicana o Demócrata si ese partido elige permitir la participación independiente. Ambos partidos principales actualmente permiten la participación independiente en las primarias de Arizona 2026.",
     "behavior": "advisory"
   },
   "resources": {

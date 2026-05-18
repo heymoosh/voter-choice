@@ -5,12 +5,10 @@
     "checked": "2026-05-10",
     "discrepancies": "North Dakota is the only U.S. state with NO voter registration — voters simply appear at the polls with qualifying ID. Because there is no registration system, registration fields in this fixture are intentionally null/false — this is correct data, not missing data. NCSL categorizes ND as 'strict non-photo ID' (residential address ID required; updated to note ND's unique no-registration system). Ohio changed to stricter photo ID in 2023; ND's requirement predates that. ND primary is set by statute as the second Tuesday in June."
   },
-
   "stateCode": "ND",
   "stateName": "North Dakota",
   "lastUpdated": "2026-05-10",
   "coverageStatus": "confirmed",
-
   "elections": [
     {
       "id": "nd-2026-primary",
@@ -75,7 +73,6 @@
       }
     }
   ],
-
   "registration": {
     "online": {
       "available": false,
@@ -93,14 +90,12 @@
     "sameDayRegistration": false,
     "registrationCheckUrl": "https://vip.sos.nd.gov/"
   },
-
   "earlyVoting": {
     "available": true,
     "startDate": "2026-10-05",
     "endDate": "2026-11-02",
     "notes": "Early in-person (absentee) voting available at county auditor offices beginning 30 days before the election. Mail absentee ballots are also available on request. No voter registration required. TODO verify for 2026 cycle."
   },
-
   "votingRules": {
     "idRequired": true,
     "acceptedIds": [
@@ -120,7 +115,6 @@
       "Mail absentee ballots available on request; application must be received by the county auditor at least 7 days before the election."
     ]
   },
-
   "voteByMail": {
     "universal": false,
     "eligibility": [
@@ -132,12 +126,10 @@
     "applicationUrl": "https://vip.sos.nd.gov/",
     "officialRulesUrl": "https://sos.nd.gov/elections/voter/absentee-voting"
   },
-
   "runoffRules": {
     "hasRunoff": false,
     "partyLockedToFirstRoundPrimary": false
   },
-
   "resources": {
     "stateElectionWebsite": "https://vip.sos.nd.gov/",
     "countyElectionLookup": "https://sos.nd.gov/elections/election-resources/county-auditors",
@@ -146,5 +138,11 @@
     "importantDates": "https://sos.nd.gov/elections/election-dates",
     "voterIdInfo": "https://sos.nd.gov/elections/voter/voter-id-requirements",
     "earlyVotingInfo": "https://sos.nd.gov/elections/voter/absentee-voting"
+  },
+  "primaryParticipation": {
+    "type": "open",
+    "ruleExplanationEn": "North Dakota has an open primary with no voter registration requirement (N.D. Cent. Code §16.1-04). Any resident who is qualified to vote may participate in any party's primary without prior registration.",
+    "ruleExplanationEs": "Dakota del Norte tiene una primaria abierta sin requisito de registro de votantes (N.D. Cent. Code §16.1-04). Cualquier residente calificado para votar puede participar en la primaria de cualquier partido sin registro previo.",
+    "behavior": "advisory"
   }
 }

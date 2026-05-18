@@ -8,7 +8,6 @@
   "stateCode": "MD",
   "stateName": "Maryland",
   "lastUpdated": "2026-05-10",
-
   "elections": [
     {
       "id": "md-2026-primary",
@@ -73,7 +72,6 @@
       }
     }
   ],
-
   "registration": {
     "online": {
       "available": true,
@@ -91,14 +89,12 @@
     "sameDayRegistration": true,
     "registrationCheckUrl": "https://voterservices.elections.maryland.gov/votersearch"
   },
-
   "earlyVoting": {
     "available": true,
     "startDate": "2026-10-22",
     "endDate": "2026-10-29",
     "notes": "Maryland offers 8 days of early in-person voting at designated vote centers. No-excuse absentee (mail) voting also available. TODO verify exact 2026 dates."
   },
-
   "votingRules": {
     "idRequired": false,
     "acceptedIds": [],
@@ -111,7 +107,6 @@
       "No-excuse absentee voting available for all registered voters."
     ]
   },
-
   "voteByMail": {
     "universal": false,
     "eligibility": [
@@ -123,16 +118,20 @@
     "applicationUrl": "https://voterservices.elections.maryland.gov/AbsenteeBallotRequest",
     "officialRulesUrl": "https://elections.maryland.gov/voting/absentee.html"
   },
-
   "runoffRules": {
     "hasRunoff": false,
     "partyLockedToFirstRoundPrimary": false
   },
-
   "resources": {
     "stateElectionWebsite": "https://elections.maryland.gov/",
     "countyElectionLookup": "https://elections.maryland.gov/about/county_boards.html",
     "sampleBallotLookup": "https://voterservices.elections.maryland.gov/votersearch",
     "pollingPlaceLookup": "https://voterservices.elections.maryland.gov/PollingPlaceSearch"
+  },
+  "primaryParticipation": {
+    "type": "closed",
+    "ruleExplanationEn": "Maryland has a closed primary (Md. Election Law §10-201). Only voters registered with a political party may vote in that party's primary. Approximately 1 in 4 Maryland voters is registered unaffiliated and cannot vote in a partisan primary.",
+    "ruleExplanationEs": "Maryland tiene una primaria cerrada (Md. Election Law §10-201). Solo los votantes registrados en un partido político pueden votar en la primaria de ese partido. Aproximadamente 1 de cada 4 votantes de Maryland está registrado sin afiliación y no puede votar en una primaria partidista.",
+    "behavior": "advisory"
   }
 }

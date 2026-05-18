@@ -5,12 +5,10 @@
     "checked": "2026-05-10",
     "discrepancies": "Indiana has strict photo ID requirement per NCSL. SoS confirms: must present government-issued photo ID with name and expiration date. Voters without ID may cast provisional ballot and return with ID by noon on the Monday after Election Day. No early voting in Indiana — the state calls it 'in-person absentee voting' available at county clerk offices."
   },
-
   "stateCode": "IN",
   "stateName": "Indiana",
   "lastUpdated": "2026-05-10",
   "coverageStatus": "confirmed",
-
   "elections": [
     {
       "id": "in-2026-primary",
@@ -75,7 +73,6 @@
       }
     }
   ],
-
   "registration": {
     "online": {
       "available": true,
@@ -93,14 +90,12 @@
     "sameDayRegistration": false,
     "registrationCheckUrl": "https://indianavoters.in.gov/"
   },
-
   "earlyVoting": {
     "available": true,
     "startDate": "2026-10-06",
     "endDate": "2026-11-02",
     "notes": "Indiana offers in-person absentee voting at county clerk offices from 28 days before Election Day. Hours and satellite locations vary by county. TODO verify for 2026 cycle."
   },
-
   "votingRules": {
     "idRequired": true,
     "acceptedIds": [
@@ -119,7 +114,6 @@
       "Absentee (mail) ballot available without excuse. Application must be received by the county 12 days before the election."
     ]
   },
-
   "voteByMail": {
     "universal": false,
     "eligibility": [
@@ -131,12 +125,10 @@
     "applicationUrl": "https://www.in.gov/sos/elections/voter-information/absentee-voting/",
     "officialRulesUrl": "https://www.in.gov/sos/elections/voter-information/absentee-voting/"
   },
-
   "runoffRules": {
     "hasRunoff": false,
     "partyLockedToFirstRoundPrimary": false
   },
-
   "resources": {
     "stateElectionWebsite": "https://www.in.gov/sos/elections/",
     "countyElectionLookup": "https://www.in.gov/sos/elections/voter-information/county-election-offices/",
@@ -145,5 +137,11 @@
     "importantDates": "https://www.in.gov/sos/elections/election-administration/election-calendar/",
     "voterIdInfo": "https://www.in.gov/sos/elections/voter-information/photo-id/",
     "earlyVotingInfo": "https://www.in.gov/sos/elections/voter-information/absentee-voting/"
+  },
+  "primaryParticipation": {
+    "type": "open",
+    "ruleExplanationEn": "Indiana has an open primary (Ind. Code §3-8-1). Voters request a party ballot at the polls without needing prior registration with that party. Your voting history in previous primaries determines your affiliation on record.",
+    "ruleExplanationEs": "Indiana tiene una primaria abierta (Ind. Code §3-8-1). Los votantes solicitan una boleta de partido en el lugar de votación sin necesidad de registro previo con ese partido. Su historial de votación en primarias anteriores determina su afiliación registrada.",
+    "behavior": "advisory"
   }
 }

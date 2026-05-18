@@ -9,7 +9,6 @@
   "stateName": "Utah",
   "lastUpdated": "2026-05-10",
   "coverageStatus": "confirmed",
-
   "elections": [
     {
       "id": "ut-2026-primary",
@@ -74,7 +73,6 @@
       }
     }
   ],
-
   "registration": {
     "online": {
       "available": true,
@@ -92,14 +90,12 @@
     "sameDayRegistration": false,
     "registrationCheckUrl": "https://vote.utah.gov/vote/menu/index.html"
   },
-
   "earlyVoting": {
     "available": true,
     "startDate": "2026-10-13",
     "endDate": "2026-11-02",
     "notes": "Most Utah counties are vote-by-mail — all active registered voters automatically receive a mail ballot. Some counties may have vote centers for in-person voting. No traditional polling places in most counties. Non-photo ID is requested but signature and address matching are primary verification methods."
   },
-
   "votingRules": {
     "idRequired": false,
     "acceptedIds": [
@@ -119,7 +115,6 @@
       "Automatic voter registration is available via Utah DMV and online state services."
     ]
   },
-
   "voteByMail": {
     "universal": true,
     "eligibility": [
@@ -131,17 +126,21 @@
     "applicationUrl": "https://vote.utah.gov/vote/menu/index.html",
     "officialRulesUrl": "https://vote.utah.gov/"
   },
-
   "runoffRules": {
     "hasRunoff": false,
     "partyLockedToFirstRoundPrimary": false
   },
-
   "resources": {
     "stateElectionWebsite": "https://vote.utah.gov/",
     "countyElectionLookup": "https://vote.utah.gov/vote/menu/index.html",
     "sampleBallotLookup": "https://vote.utah.gov/vote/menu/index.html",
     "pollingPlaceLookup": "https://vote.utah.gov/vote/menu/index.html",
     "voterIdInfo": "https://vote.utah.gov/vote/menu/index.html"
+  },
+  "primaryParticipation": {
+    "type": "open",
+    "ruleExplanationEn": "Utah uses a hybrid primary system (Utah Code Ann. §20A-9-408, SB54 2014). Candidates may qualify via caucus-convention or signature gathering. Primary elections are generally open to registered voters of the qualifying party and unaffiliated voters.",
+    "ruleExplanationEs": "Utah utiliza un sistema primario híbrido (Utah Code Ann. §20A-9-408, SB54 2014). Los candidatos pueden calificar mediante el sistema de caucus-convención o mediante la recolección de firmas. Las elecciones primarias generalmente están abiertas a los votantes registrados del partido calificado y a los votantes sin afiliación.",
+    "behavior": "advisory"
   }
 }

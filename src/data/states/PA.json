@@ -8,7 +8,6 @@
   "stateCode": "PA",
   "stateName": "Pennsylvania",
   "lastUpdated": "2026-05-10",
-
   "elections": [
     {
       "id": "pa-2026-primary",
@@ -73,7 +72,6 @@
       }
     }
   ],
-
   "registration": {
     "online": {
       "available": true,
@@ -91,14 +89,12 @@
     "sameDayRegistration": false,
     "registrationCheckUrl": "https://www.vote.pa.gov/Register-to-Vote/Pages/Voter-Registration-Search.aspx"
   },
-
   "earlyVoting": {
     "available": false,
     "startDate": null,
     "endDate": null,
     "notes": "Pennsylvania does not offer traditional early in-person voting. No-excuse vote-by-mail (absentee) is available for all registered voters. Mail ballot applications must be received by the county board of elections 7 days before the election."
   },
-
   "votingRules": {
     "idRequired": false,
     "acceptedIds": [
@@ -113,7 +109,6 @@
       "Mail ballots must be enclosed in the secrecy envelope and outer envelope to be counted."
     ]
   },
-
   "voteByMail": {
     "universal": false,
     "eligibility": [
@@ -125,16 +120,20 @@
     "applicationUrl": "https://www.vote.pa.gov/Voting-in-PA/Pages/Mail-and-Absentee-Ballot.aspx",
     "officialRulesUrl": "https://www.vote.pa.gov/Voting-in-PA/Pages/Mail-and-Absentee-Ballot.aspx"
   },
-
   "runoffRules": {
     "hasRunoff": false,
     "partyLockedToFirstRoundPrimary": false
   },
-
   "resources": {
     "stateElectionWebsite": "https://www.vote.pa.gov/",
     "countyElectionLookup": "https://www.vote.pa.gov/Resources/Pages/Contact-Your-Election-Officials.aspx",
     "sampleBallotLookup": "https://www.vote.pa.gov/Voting-in-PA/Pages/Sample-Ballots.aspx",
     "pollingPlaceLookup": "https://www.vote.pa.gov/Voting-in-PA/Pages/Poll-Worker-Information.aspx"
+  },
+  "primaryParticipation": {
+    "type": "closed",
+    "ruleExplanationEn": "Pennsylvania has a closed primary (25 Pa. Stat. Ann. §2862). Only voters registered with a political party may vote in that party's primary. Voters registered as independent or with a third party cannot vote in the Democratic or Republican primary.",
+    "ruleExplanationEs": "Pensilvania tiene una primaria cerrada (25 Pa. Stat. Ann. §2862). Solo los votantes registrados en un partido político pueden votar en la primaria de ese partido. Los votantes registrados como independientes o con un tercer partido no pueden votar en la primaria Demócrata o Republicana.",
+    "behavior": "advisory"
   }
 }
