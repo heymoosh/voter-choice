@@ -625,9 +625,9 @@ describe("generatePrompt — Spanish mode", () => {
     const result = generatePrompt(txData, "73301", "2026-03-30");
     // Must mention the lookup_alignment tool
     expect(result.basePrompt).toContain("lookup_alignment");
-    // Must explicitly prohibit web_search for alignment scoring
+    // Must explicitly prohibit supplementing voting-record scores with web_search
     expect(result.basePrompt).toContain(
-      "Do NOT use `web_search` for alignment scoring under any circumstances",
+      "Do NOT supplement voting-record scores with web_search",
     );
     // Old Vote Smart Key Votes web_search copy must be gone
     expect(result.basePrompt).not.toContain(
@@ -657,10 +657,12 @@ describe("generatePrompt — Spanish mode", () => {
     expect(result.basePrompt).toContain("resolved_stance");
   });
 
-  it("basePrompt instructs model to surface unavailable as genuine coverage gap (not fall back to web_search)", () => {
+  it("basePrompt distinguishes tool unavailable (error) from found:false (coverage gap)", () => {
     const result = generatePrompt(txData, "73301", "2026-03-30");
-    expect(result.basePrompt).toContain("genuine coverage gaps");
-    expect(result.basePrompt).toContain("do NOT fall back to");
+    // unavailable = tool internal error, not a data gap
+    expect(result.basePrompt).toContain("not a coverage gap");
+    // found:false = legitimate gap; web-search fallback applies
+    expect(result.basePrompt).toContain("found: false");
   });
 
   /* ── Act 1.5 privacy posture assertions ─────────────────── */

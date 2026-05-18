@@ -28,7 +28,7 @@ describe("PageContent — English mode", () => {
   it("renders English hero title", () => {
     renderWithProvider();
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
-      "Know what’s on your ballot before you walk in.",
+      "Elect a Congress that does its job.",
     );
   });
 
@@ -56,7 +56,7 @@ describe("PageContent — English mode", () => {
     renderWithProvider();
     expect(screen.getByText("How it works")).toBeInTheDocument();
     expect(screen.getByText("Enter your address")).toBeInTheDocument();
-    expect(screen.getByText("Ask anything")).toBeInTheDocument();
+    expect(screen.getByText("See what they actually did")).toBeInTheDocument();
     expect(screen.getByText("Take it with you")).toBeInTheDocument();
   });
 });
