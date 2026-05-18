@@ -74,6 +74,15 @@ export interface CountyResource {
   electionsWebsite: string;
 }
 
+export interface PrimaryParticipationRules {
+  /** How the primary works for party affiliation. "open" and "top-two" skip the gate. */
+  type: "open" | "closed" | "semi-closed" | "top-two";
+  ruleExplanationEn: string;
+  ruleExplanationEs: string;
+  /** advisory = gate has a skip/proceed option; blocking = must select one option */
+  behavior: "advisory" | "blocking";
+}
+
 export interface RunoffRules {
   hasRunoff: boolean;
   /**
@@ -105,6 +114,7 @@ export interface StateElectionData {
   voteByMail?: VoteByMail;
   resources: Resources;
   runoffRules: RunoffRules;
+  primaryParticipation?: PrimaryParticipationRules;
   countyResources?: Record<string, CountyResource>;
 }
 

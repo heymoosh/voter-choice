@@ -425,7 +425,11 @@ describe("BallotToolClient — Spanish mode", () => {
 
 describe("IdView — state-specific ID label and accepted IDs", () => {
   // Navigate to the ID Requirements tab for a given zip and state
-  async function navigateToIdTab(zip: string, selectRunoff = false) {
+  async function navigateToIdTab(
+    zip: string,
+    selectRunoff = false,
+    selectClosedPrimary = false,
+  ) {
     renderWithProviders(<BallotToolClient />);
     fireEvent.change(screen.getByTestId("zip-input"), {
       target: { value: zip },
@@ -437,6 +441,17 @@ describe("IdView — state-specific ID label and accepted IDs", () => {
         expect(screen.getByTestId("runoff-gate")).toBeInTheDocument();
       });
       fireEvent.click(screen.getByTestId("runoff-option-unsure"));
+    }
+
+    if (selectClosedPrimary) {
+      await waitFor(() => {
+        expect(
+          screen.getByTestId("primary-participation-gate"),
+        ).toBeInTheDocument();
+      });
+      fireEvent.click(
+        screen.getByTestId("closed-primary-option-registered_dem"),
+      );
     }
 
     await waitFor(() => {
@@ -455,7 +470,7 @@ describe("IdView — state-specific ID label and accepted IDs", () => {
   }
 
   it("renders Florida state label (not Texas) for FL zip 32201", async () => {
-    await navigateToIdTab("32201");
+    await navigateToIdTab("32201", false, true);
     const idView = screen.getByTestId("id-view");
     // State-specific label must say Florida
     expect(idView.textContent).toContain("Florida");
@@ -464,7 +479,7 @@ describe("IdView — state-specific ID label and accepted IDs", () => {
   });
 
   it("renders FL accepted IDs from state data for FL zip 32201", async () => {
-    await navigateToIdTab("32201");
+    await navigateToIdTab("32201", false, true);
     const idView = screen.getByTestId("id-view");
     // Florida fixture has "Florida driver's license" in acceptedIds
     expect(idView.textContent).toContain("Florida driver");
@@ -490,5 +505,69 @@ describe("IdView — state-specific ID label and accepted IDs", () => {
     expect(idView.textContent).toContain("Texas");
     // TX accepted IDs should include Texas driver license
     expect(idView.textContent).toContain("Texas driver");
+  });
+});
+
+describe("BallotToolClient — closed-primary participation gate", () => {
+  // NY (closed primary, June 2026 — gate must render)
+  it("shows closed-primary gate for NY", async () => {
+    renderWithProviders(<BallotToolClient />);
+    fireEvent.change(screen.getByTestId("zip-input"), {
+      target: { value: "10001" },
+    });
+    fireEvent.click(screen.getByTestId("zip-submit"));
+    await waitFor(() => {
+      expect(screen.getByTestId("primary-participation-gate")).toBeInTheDocument();
+    });
+    expect(
+      screen.getByTestId("primary-participation-gate").textContent,
+    ).toContain("New York");
+  });
+
+  it("proceeds to research after selecting closed-primary option for NY", async () => {
+    renderWithProviders(<BallotToolClient />);
+    fireEvent.change(screen.getByTestId("zip-input"), {
+      target: { value: "10001" },
+    });
+    fireEvent.click(screen.getByTestId("zip-submit"));
+    await waitFor(() => {
+      expect(screen.getByTestId("primary-participation-gate")).toBeInTheDocument();
+    });
+    fireEvent.click(
+      screen.getByTestId("closed-primary-option-registered_dem"),
+    );
+    await waitFor(() => {
+      expect(screen.getByTestId("chat-window")).toBeInTheDocument();
+    });
+  });
+
+  // CA (top-two — gate must NOT render)
+  it("does NOT show closed-primary gate for CA", async () => {
+    renderWithProviders(<BallotToolClient />);
+    fireEvent.change(screen.getByTestId("zip-input"), {
+      target: { value: "90001" },
+    });
+    fireEvent.click(screen.getByTestId("zip-submit"));
+    await waitFor(() => {
+      expect(
+        screen.queryByTestId("primary-participation-gate") === null ||
+          screen.queryByTestId("chat-window") !== null,
+      ).toBe(true);
+    });
+  });
+
+  // FL (closed primary — gate must render)
+  it("shows closed-primary gate for FL", async () => {
+    renderWithProviders(<BallotToolClient />);
+    fireEvent.change(screen.getByTestId("zip-input"), {
+      target: { value: "32201" },
+    });
+    fireEvent.click(screen.getByTestId("zip-submit"));
+    await waitFor(() => {
+      expect(screen.getByTestId("primary-participation-gate")).toBeInTheDocument();
+    });
+    expect(
+      screen.getByTestId("primary-participation-gate").textContent,
+    ).toContain("Florida");
   });
 });

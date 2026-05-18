@@ -44,6 +44,12 @@ type TexasRunoffChoice =
   | "did_not_vote_rep_runoff"
   | "unsure";
 
+type ClosedPrimaryChoice =
+  | "registered_dem"
+  | "registered_rep"
+  | "registered_other"
+  | "unaffiliated";
+
 type AddressStep = "input" | "loading" | "done" | "skipped" | "error";
 
 type BudgetTier = "normal" | "notice" | "soft_close" | "handoff" | "exhausted";
@@ -194,6 +200,101 @@ function RunoffGate({
   );
 }
 
+function requiresClosedPrimaryGate(state: StateElectionData): boolean {
+  const upcoming = getUpcomingElection(state);
+  return (
+    !!state.primaryParticipation &&
+    (state.primaryParticipation.type === "closed" ||
+      state.primaryParticipation.type === "semi-closed") &&
+    !!upcoming &&
+    upcoming.type === "primary"
+  );
+}
+
+function closedPrimaryContextNote(
+  state: StateElectionData,
+  choice: ClosedPrimaryChoice | null,
+  lang: Language,
+): string | undefined {
+  if (!choice) return undefined;
+  const stateName = state.stateName;
+
+  const noteEn: Record<ClosedPrimaryChoice, string> = {
+    registered_dem: `The voter is registered as a Democrat in ${stateName}. They may only vote in the Democratic primary.`,
+    registered_rep: `The voter is registered as a Republican in ${stateName}. They may only vote in the Republican primary.`,
+    registered_other: `The voter is registered with a third party in ${stateName}. They may only vote in their party's primary if one is available.`,
+    unaffiliated: `The voter is unaffiliated/independent in ${stateName}. ${state.primaryParticipation?.type === "semi-closed" ? "As an undeclared voter, they may choose which party primary to participate in." : "They may not be eligible to vote in a partisan primary. Mention this gently and help them verify eligibility with their state election office."}`,
+  };
+
+  const noteEs: Record<ClosedPrimaryChoice, string> = {
+    registered_dem: `La persona votante está registrada como demócrata en ${stateName}. Solo puede votar en la primaria demócrata.`,
+    registered_rep: `La persona votante está registrada como republicana en ${stateName}. Solo puede votar en la primaria republicana.`,
+    registered_other: `La persona votante está registrada con un tercer partido en ${stateName}. Solo puede votar en la primaria de su partido si hay una disponible.`,
+    unaffiliated: `La persona votante no está afiliada a ningún partido en ${stateName}. ${state.primaryParticipation?.type === "semi-closed" ? "Como votante sin partido declarado, puede elegir en qué primaria participar." : "Es posible que no sea elegible para votar en una primaria partidista. Mencionarlo con tacto y ayudar a verificar elegibilidad con la oficina electoral estatal."}`,
+  };
+
+  return lang === "es" ? noteEs[choice] : noteEn[choice];
+}
+
+function ClosedPrimaryGate({
+  state,
+  lang,
+  value,
+  onChange,
+}: {
+  state: StateElectionData;
+  lang: Language;
+  value: ClosedPrimaryChoice | null;
+  onChange: (value: ClosedPrimaryChoice) => void;
+}) {
+  const t = translations[lang].research;
+  const stateName = state.stateName;
+  const rules = state.primaryParticipation!;
+  const ruleExplanation =
+    lang === "es" ? rules.ruleExplanationEs : rules.ruleExplanationEn;
+
+  const options: { value: ClosedPrimaryChoice; label: string }[] = [
+    { value: "registered_dem", label: t.closedPrimaryGateOptionDem },
+    { value: "registered_rep", label: t.closedPrimaryGateOptionRep },
+    { value: "registered_other", label: t.closedPrimaryGateOptionOther },
+    { value: "unaffiliated", label: t.closedPrimaryGateOptionUnaffiliated },
+  ];
+
+  return (
+    <section
+      data-testid="primary-participation-gate"
+      className="bg-surface-lowest border-l-4 border-accent p-5 md:p-6"
+    >
+      <h3 className="font-black text-lg tracking-tight text-on-surface">
+        {t.closedPrimaryGateTitle(stateName)}
+      </h3>
+      <p className="mt-2 text-sm text-on-surface-muted">
+        {t.closedPrimaryGateBody}
+      </p>
+      <p className="mt-3 text-sm text-on-surface">{ruleExplanation}</p>
+      <div className="mt-4 space-y-3">
+        {options.map((option) => (
+          <label
+            key={option.value}
+            className="flex items-start gap-3 bg-surface px-4 py-3 cursor-pointer"
+          >
+            <input
+              type="radio"
+              name="closed-primary-choice"
+              value={option.value}
+              checked={value === option.value}
+              onChange={() => onChange(option.value)}
+              data-testid={`closed-primary-option-${option.value}`}
+              className="mt-1 h-4 w-4 accent-[var(--color-primary)]"
+            />
+            <span className="text-sm text-on-surface">{option.label}</span>
+          </label>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 /** Fetch civic data (polling locations + contests) from Google Civic API. */
 async function fetchCivicData(address: string): Promise<PollingData | null> {
   try {
@@ -238,6 +339,8 @@ function ElectionResult({
   const [runoffChoice, setRunoffChoice] = useState<TexasRunoffChoice | null>(
     null,
   );
+  const [closedPrimaryChoice, setClosedPrimaryChoice] =
+    useState<ClosedPrimaryChoice | null>(null);
   const [addressStep, setAddressStep] = useState<AddressStep>(
     initialPollingData ? "done" : "skipped",
   );
@@ -247,8 +350,13 @@ function ElectionResult({
   const { budgetStatus, budgetChecked, handleBudgetUpdate } = useBudgetCheck();
   const { setResearch } = useResearchMode();
   const needsRunoffGate = requiresRunoffGate(state);
-  const preResearchContext = runoffContextNote(state, runoffChoice, lang);
-  const researchReady = !needsRunoffGate || runoffChoice !== null;
+  const needsClosedPrimaryGate = requiresClosedPrimaryGate(state);
+  const preResearchContext =
+    runoffContextNote(state, runoffChoice, lang) ??
+    closedPrimaryContextNote(state, closedPrimaryChoice, lang);
+  const researchReady =
+    (!needsRunoffGate || runoffChoice !== null) &&
+    (!needsClosedPrimaryGate || closedPrimaryChoice !== null);
 
   // Derive primary lane for polis counters from runoff gate choice
   const primaryLane: "DEM" | "REP" | "OPEN" | "GENERAL" = (() => {
@@ -363,6 +471,13 @@ function ElectionResult({
               lang={lang}
               value={runoffChoice}
               onChange={setRunoffChoice}
+            />
+          ) : needsClosedPrimaryGate ? (
+            <ClosedPrimaryGate
+              state={state}
+              lang={lang}
+              value={closedPrimaryChoice}
+              onChange={setClosedPrimaryChoice}
             />
           ) : null
         }

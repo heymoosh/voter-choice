@@ -48,6 +48,16 @@
     "phonesAtPollsDetail": "Phones are permitted at Arizona polling places, but photographing ballots or other voters is prohibited.",
     "additionalRules": []
   },
+  "runoffRules": {
+    "hasRunoff": false,
+    "partyLockedToFirstRoundPrimary": false
+  },
+  "primaryParticipation": {
+    "type": "closed",
+    "ruleExplanationEn": "Arizona has a closed primary (A.R.S. §16-467). Only voters registered with a recognized political party may vote in that party's primary election. Voters registered as independent or with no party affiliation may not vote in a partisan primary.",
+    "ruleExplanationEs": "Arizona tiene una elección primaria cerrada (A.R.S. §16-467). Solo los votantes registrados con un partido político reconocido pueden votar en la primaria de ese partido. Los votantes registrados como independientes o sin afiliación partidista no pueden votar en una primaria partidista.",
+    "behavior": "advisory"
+  },
   "resources": {
     "stateElectionWebsite": "https://azsos.gov/elections",
     "countyElectionLookup": "https://my.arizona.vote/PortalList.aspx",

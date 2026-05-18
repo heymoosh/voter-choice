@@ -323,6 +323,15 @@ export interface Translations {
     polisOverlayLegendDemocratic: string;
     polisOverlayLegendRepublican: string;
     polisOverlayLegendOpen: string;
+    // ClosedPrimaryGate
+    closedPrimaryGateTitle: (stateName: string) => string;
+    closedPrimaryGateBody: string;
+    closedPrimaryGateOptionDem: string;
+    closedPrimaryGateOptionRep: string;
+    closedPrimaryGateOptionOther: string;
+    closedPrimaryGateOptionUnaffiliated: string;
+    closedPrimaryGateContinue: string;
+    closedPrimaryGateSkip: string;
   };
   portfolio: {
     badge: string;
@@ -426,7 +435,7 @@ const en: Translations = {
   zipForm: {
     label: "Enter your address",
     placeholder: "e.g. 123 Main St, Houston, TX 77057",
-    submit: "Find My Ballot Info",
+    submit: "Find My Ballot",
     privacy:
       "Privacy: your address may be sent to Google Places/Civic to find your ballot and polling places. We do not store it or send it to the AI chat, so we do not have a combined record of where you live and what you say.",
   },
@@ -610,9 +619,9 @@ const en: Translations = {
   },
   landing: {
     brandName: "Voter Choice",
-    heroHeadline: "Know what\u2019s on your ballot before you walk in.",
+    heroHeadline: "Elect a Congress that does its job.",
     heroSubtext:
-      "Most of the policy that affects your daily life is decided in elections most people skip. Enter your address to see every race and ask questions in plain English. Nothing saved, no account.",
+      "Congress members spend up to 6 hours a day fundraising.* This November, all 435 House seats and 34 Senate seats are on the ballot. We decide who keeps their job. Wouldn\u2019t you want to know who\u2019s actually been working on your behalf?",
     trustNoData: "Nothing saved.",
     trustNoAccounts: "No account.",
     trustPrivate: "No tracking.",
@@ -639,20 +648,20 @@ const en: Translations = {
     howItWorksSubtext: "Three steps. A few minutes. No account.",
     step1Title: "Enter your address",
     step1Desc: "We\u2019ll pull the exact races on your ballot.",
-    step2Title: "Ask anything",
+    step2Title: "See what they actually did",
     step2Desc:
-      "Candidates, propositions, voting records, donors. Plain questions, plain answers.",
+      "Voting record on the issues you care about. Donor list. How much they raised and from whom. No news articles. No ads. Just the record.",
     step3Title: "Take it with you",
     step3Desc:
       "Download a one-page summary for the polling booth. Most polls don\u2019t allow phones.",
-    ctaHeadline: "Ready?",
+    ctaHeadline: "Vote for a Congress that earns it.",
     ctaSubtext:
-      "Enter your address. See your ballot. That\u2019s the whole thing.",
-    ctaButton: "See my ballot",
-    missionTitle: "Why this exists",
+      "Enter your address. See what your candidates have done. The rest is up to you.",
+    ctaButton: "Get started",
+    missionTitle: "Why we built this",
     missionQuote:
-      "Voting shouldn\u2019t require a subscription, an account, or a research degree. Voter Choice is free, runs locally, and asks nothing of you. Walk in knowing what you\u2019re looking at.",
-    footerTagline: "Free and non-partisan. Built for voters.",
+      "Choose your candidate based on what they\u2019ve done, not what they say. Tell us what you care about. We\u2019ll show you how your candidates actually voted on those issues \u2014 and who\u2019s been funding their campaigns. The final choice is up to you.",
+    footerTagline: "Free, non-partisan, and built for 2026.",
     footerResources: "Resources",
     footerLegal: "Legal",
     footerConnect: "Contact",
@@ -811,6 +820,18 @@ const en: Translations = {
     polisOverlayLegendDemocratic: "Democratic",
     polisOverlayLegendRepublican: "Republican",
     polisOverlayLegendOpen: "Open / General",
+    // ClosedPrimaryGate
+    closedPrimaryGateTitle: (stateName: string) =>
+      `Before we start: ${stateName} primary ballot check`,
+    closedPrimaryGateBody:
+      "One quick question so we can show you the right ballot context.",
+    closedPrimaryGateOptionDem: "I'm registered as a Democrat",
+    closedPrimaryGateOptionRep: "I'm registered as a Republican",
+    closedPrimaryGateOptionOther: "I'm registered with another recognized party",
+    closedPrimaryGateOptionUnaffiliated:
+      "I'm not registered with a party (independent / unaffiliated)",
+    closedPrimaryGateContinue: "Continue to research",
+    closedPrimaryGateSkip: "Skip — I'll figure it out",
   },
   portfolio: {
     badge: "Verified Research",
@@ -1322,6 +1343,19 @@ const es: Translations = {
     polisOverlayLegendDemocratic: "Democratic",
     polisOverlayLegendRepublican: "Republican",
     polisOverlayLegendOpen: "Open / General",
+    // ClosedPrimaryGate
+    closedPrimaryGateTitle: (stateName: string) =>
+      `Antes de empezar: verificaci\u00f3n de boleta primaria en ${stateName}`,
+    closedPrimaryGateBody:
+      "Una pregunta r\u00e1pida para mostrarte el contexto de boleta correcto.",
+    closedPrimaryGateOptionDem: "Estoy registrado/a como dem\u00f3crata",
+    closedPrimaryGateOptionRep: "Estoy registrado/a como republicano/a",
+    closedPrimaryGateOptionOther:
+      "Estoy registrado/a con otro partido reconocido",
+    closedPrimaryGateOptionUnaffiliated:
+      "No estoy registrado/a con ning\u00fan partido (independiente / sin afiliaci\u00f3n)",
+    closedPrimaryGateContinue: "Continuar a la investigaci\u00f3n",
+    closedPrimaryGateSkip: "Omitir \u2014 yo lo determinar\u00e9",
   },
   portfolio: {
     badge: "Investigaci\u00f3n Verificada",

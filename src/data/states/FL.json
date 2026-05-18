@@ -134,6 +134,13 @@
     "partyLockedToFirstRoundPrimary": false
   },
 
+  "primaryParticipation": {
+    "type": "closed",
+    "ruleExplanationEn": "Florida has a closed primary (F.S. §101.021). Only voters registered with a political party may vote in that party's primary. Voters registered with no party affiliation (NPA) or a minor party may not vote in the Republican or Democratic primary unless no other candidates qualify for the general election in that race.",
+    "ruleExplanationEs": "Florida tiene una primaria cerrada (F.S. §101.021). Solo los votantes registrados en un partido político pueden votar en la primaria de ese partido. Los votantes registrados sin afiliación de partido (NPA) o con un partido minoritario no pueden votar en la primaria Republicana o Demócrata, a menos que ningún otro candidato califique para las elecciones generales en esa contienda.",
+    "behavior": "advisory"
+  },
+
   "resources": {
     "stateElectionWebsite": "https://dos.myflorida.com/elections/",
     "countyElectionLookup": "https://dos.myflorida.com/elections/for-voters/election-offices/",

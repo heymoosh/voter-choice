@@ -66,6 +66,16 @@
     ]
   },
 
+  "runoffRules": {
+    "hasRunoff": false,
+    "partyLockedToFirstRoundPrimary": false
+  },
+  "primaryParticipation": {
+    "type": "semi-closed",
+    "ruleExplanationEn": "New Hampshire has a semi-open primary (RSA 659:14). Voters registered with a party vote in their party's primary. Voters registered as 'undeclared' may request either party's primary ballot on Election Day and then re-register as undeclared after voting.",
+    "ruleExplanationEs": "New Hampshire tiene una primaria semi-abierta (RSA 659:14). Los votantes registrados en un partido votan en la primaria de su partido. Los votantes registrados como 'sin declarar' pueden solicitar la boleta de cualquier partido el día de la elección y luego volver a registrarse como sin declarar después de votar.",
+    "behavior": "advisory"
+  },
   "resources": {
     "stateElectionWebsite": "https://www.sos.nh.gov/elections",
     "countyElectionLookup": "https://app.sos.nh.gov/viphome",

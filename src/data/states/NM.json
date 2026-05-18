@@ -42,6 +42,16 @@
     "phonesAtPollsDetail": "Phones are permitted at New Mexico polling places.",
     "additionalRules": ["Voters without ID may vote by affidavit"]
   },
+  "runoffRules": {
+    "hasRunoff": false,
+    "partyLockedToFirstRoundPrimary": false
+  },
+  "primaryParticipation": {
+    "type": "closed",
+    "ruleExplanationEn": "New Mexico has a closed primary (NMSA §1-8-16). Only voters registered with a political party may vote in that party's primary. Independent and unaffiliated voters are not permitted to vote in partisan primary elections.",
+    "ruleExplanationEs": "Nuevo México tiene una primaria cerrada (NMSA §1-8-16). Solo los votantes registrados en un partido político pueden votar en la primaria de ese partido. Los votantes independientes y sin afiliación no pueden votar en primarias partidistas.",
+    "behavior": "advisory"
+  },
   "resources": {
     "stateElectionWebsite": "https://www.sos.nm.gov/voting-and-elections/",
     "countyElectionLookup": "https://voterportal.servis.sos.nm.gov/WhereToVote.aspx",

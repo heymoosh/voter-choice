@@ -175,7 +175,7 @@
   "runoffRules": {
     "hasRunoff": true,
     "partyLockedToFirstRoundPrimary": true,
-    "ruleExplanation": "Texas rule: if you voted in one party's March primary this year, you can only vote in that same party's runoff. If you did not vote in March, you may choose either party's runoff."
+    "ruleExplanation": "Texas rule (Texas Election Code §172.087): if you voted in one party's March primary this year, you can only vote in that same party's runoff. If you did not vote in March, you may choose either party's runoff."
   },
 
   "resources": {

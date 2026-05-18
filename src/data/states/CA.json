@@ -63,6 +63,13 @@
     "partyLockedToFirstRoundPrimary": false
   },
 
+  "primaryParticipation": {
+    "type": "top-two",
+    "ruleExplanationEn": "California uses a top-two nonpartisan primary (Proposition 14, 2010). All registered voters may vote for any candidate regardless of party. The top two vote-getters advance to the general election.",
+    "ruleExplanationEs": "California utiliza una primaria no partidista de los dos primeros (Proposición 14, 2010). Todos los votantes registrados pueden votar por cualquier candidato sin importar el partido. Los dos candidatos con más votos avanzan a las elecciones generales.",
+    "behavior": "advisory"
+  },
+
   "resources": {
     "stateElectionWebsite": "https://www.sos.ca.gov/elections",
     "countyElectionLookup": "https://www.sos.ca.gov/elections/voting-resources/county-elections-offices",

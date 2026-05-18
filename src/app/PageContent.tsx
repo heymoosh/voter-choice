@@ -266,6 +266,11 @@ export function PageContent({ children }: PageContentProps) {
                 {t.landing.trustPrivate}
               </div>
             </div>
+            <p className="text-[11px] text-on-surface-muted mt-3 leading-relaxed">
+              * Bipartisan Policy Center / OpenSecrets research. Members of
+              Congress report spending 30–70% of their time in DC on
+              fundraising-related activities.
+            </p>
           </section>
         )}
       </div>
