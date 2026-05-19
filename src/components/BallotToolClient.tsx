@@ -335,6 +335,11 @@ function ElectionResult({
   initialPollingData: PollingData | null;
 }) {
   const [voterProfile, setVoterProfile] = useState<string | null>(null);
+  // Once the chat session begins (first message exchanged), hide the
+  // "Returning voter? Upload" banner — it's a pre-session affordance and
+  // reads as confusing copy mid-session.
+  const [hasChatStarted, setHasChatStarted] = useState(false);
+  const handleChatStarted = useCallback(() => setHasChatStarted(true), []);
   const [userSampleBallotText, setUserSampleBallotText] = useState("");
   const [runoffChoice, setRunoffChoice] = useState<TexasRunoffChoice | null>(
     null,
@@ -436,8 +441,10 @@ function ElectionResult({
 
   return (
     <>
-      {/* Profile upload banner (shown before research starts if no profile) */}
-      {!voterProfile && (
+      {/* Profile upload banner — pre-session only.
+          Hidden once the chat picks up its first message (mid-session the
+          "Returning voter? Upload your voter profile" copy was confusing). */}
+      {!voterProfile && !hasChatStarted && (
         <div className="px-6 py-3 bg-surface-low border-b border-outline-variant/20">
           <div className="max-w-3xl mx-auto">
             <ProfileUpload onProfileLoaded={setVoterProfile} />
@@ -464,6 +471,7 @@ function ElectionResult({
         preResearchContext={preResearchContext}
         researchReady={researchReady}
         primary={primaryLane}
+        onChatStarted={handleChatStarted}
         preResearchGate={
           needsRunoffGate ? (
             <RunoffGate

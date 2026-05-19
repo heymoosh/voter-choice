@@ -37,6 +37,24 @@ beforeEach(() => {
   });
 });
 
+/**
+ * Override the global fetch mock to report an exhausted budget on /api/chat.
+ * Call this in tests that need the copy/paste "Prefer to use your own AI"
+ * section to render — that section is now gated on chat being unavailable.
+ */
+function mockBudgetExhausted() {
+  vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+    const url = typeof input === "string" ? input : input.toString();
+    if (url === "/api/chat") {
+      return new Response(
+        JSON.stringify({ budget: { tier: "exhausted", percent: 100 } }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      );
+    }
+    return new Response("Not found", { status: 404 });
+  });
+}
+
 afterEach(() => {
   vi.restoreAllMocks();
 });
@@ -89,6 +107,8 @@ describe("BallotToolClient", () => {
   });
 
   it("shows prompt-output in research view after selecting a valid TX runoff path", async () => {
+    // Copy/paste prompt is the fallback path when chat is unavailable.
+    mockBudgetExhausted();
     renderWithProviders(<BallotToolClient />);
     fireEvent.change(screen.getByTestId("zip-input"), {
       target: { value: "73301" },
@@ -128,6 +148,8 @@ describe("BallotToolClient", () => {
   });
 
   it("lets voters add sample ballot text to the research prompt", async () => {
+    // Copy/paste prompt is the fallback path when chat is unavailable.
+    mockBudgetExhausted();
     renderWithProviders(<BallotToolClient />);
     fireEvent.change(screen.getByTestId("zip-input"), {
       target: { value: "73301" },
@@ -326,6 +348,8 @@ describe("BallotToolClient — runoff gate per-state behavior", () => {
 
   // TX context note — still says "Texas" in the AI context note
   it("TX runoff context note includes Texas in the AI context string", async () => {
+    // Copy/paste prompt is the fallback path when chat is unavailable.
+    mockBudgetExhausted();
     renderWithProviders(<BallotToolClient />);
     fireEvent.change(screen.getByTestId("zip-input"), {
       target: { value: "73301" },
@@ -387,6 +411,8 @@ describe("BallotToolClient — Spanish mode", () => {
   });
 
   it("shows Spanish prompt text when state found in Spanish mode", async () => {
+    // Copy/paste prompt is the fallback path when chat is unavailable.
+    mockBudgetExhausted();
     renderEs();
     await act(async () => {});
     fireEvent.change(screen.getByTestId("zip-input"), {

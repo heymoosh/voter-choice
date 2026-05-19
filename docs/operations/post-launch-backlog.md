@@ -307,15 +307,18 @@ The exhaustion message read as if the voter's personal Anthropic API key had hit
 
 ---
 
-### [P2] Donor coalition surface: no total raised, no small-vs-large breakdown
-**Status:** Open — flagged in Muxin's 2026-05-18 E2E run
+### [P1] Donor coalition surface: no total raised, no small-vs-large breakdown
+**Status:** Open — flagged in Muxin's 2026-05-18 E2E run · escalated to P1 2026-05-19 on Muxin's feedback
 
 `FunderBars` (`src/components/FunderBars.tsx`) renders only percentages. The `DonorBucketSlice` data type carries `{label, percent}` and nothing else — so absolute dollar amounts aren't even available client-side. Voters lose meaningful signal: 45% from large individuals on a $20K race reads very differently than 45% on a $2M race.
+
+**Why P1 (escalated):** Total raised is core to the product thesis. Muxin: "if people cannot see the total amount their politicians have raised, they don't have a good sense of how much of their time is spent on fundraising — one of the biggest arguments I'm making on this app: you should know which Congresspeople are doing their job vs. spending time fundraising." Without absolute amounts, the donor coalition view fails its primary value proposition.
 
 **What it would take:**
 - Extend `DonorBucketSlice` to include absolute totals (cents or dollars).
 - Surface a headline "Total raised: $X" above the bars.
 - Render inline absolute amounts on each bar (e.g., "Large individual: 45% ($240K)").
+- Probably also: surface "Time spent fundraising" or "Hours per dollar" derived metric if/when that data is available.
 
 **Open design question:** Headline number above, or inline amounts on each bar, or both? Mobile rendering constraints argue for one or the other, not both.
 
@@ -351,3 +354,77 @@ What we shipped — "drag-rank top 3" — works for launch and the data is clean
 **Why deferred:** We need real-world signal first. Specifically: (a) how often are voters' chip-picked priorities a poor match for what they actually ask about in chat (gap between selection and discovery), (b) do Polis clusters suggest meaningful sub-issue structure that the current taxonomy hides. Both are answerable from launch data once we have a few thousand sessions.
 
 **Related:** "Expand canonical vocabulary" [P1] above and "Store voter issue preferences for analysis" [idea] above — these three together form the longer-arc taxonomy + UX redesign.
+
+---
+
+## 2026-05-19 round 2 — Muxin's second-pass feedback
+
+### [P1 — FIXED 2026-05-19] Generate-profile + Finish-later buttons visible after profile already generated
+**Status:** FIXED in `fix/launch-prod-feedback`
+
+User had already generated her voter profile and printable ballot but the safety-net "Generate my voter profile and printable ballot" + "Finish this later" buttons were still showing at the bottom of the chat, which was confusing — those deliverables already exist. Buttons now gated on `!ballotReady`: once the AI has emitted `[MY BALLOT]`, they disappear.
+
+### [P1 — FIXED 2026-05-19] Duplicate "Your research portfolio" cue at top of chat
+**Status:** FIXED in `fix/launch-prod-feedback`
+
+After the auto-switch to `ResearchPortfolio` view fires (on `ballotReady`), if the user clicks "Back to chat," a large green "Your research portfolio" button was re-injected at the top of the chat. Muxin: "what the heck is the Research Portfolio? It's just repeating the section that already exists higher up." Button removed entirely. The auto-switch still fires once; portfolio remains reachable by re-asking the AI or via the existing scroll.
+
+### [P2 — FIXED 2026-05-19] "Prefer to use your own AI?" section visible alongside active chat
+**Status:** FIXED in `fix/launch-prod-feedback`
+
+The promptOutput section was rendered alongside ChatPanel for the entire session — confusing because it offered a competing path while the user was already in the AI chat. Gate changed to `canStartResearch && budgetChecked && !chatAvailable` — section now only appears as the fallback when chat is unavailable.
+
+### [P2 — FIXED 2026-05-19] "Returning voter? Upload your voter profile" visible mid-session
+**Status:** FIXED in `fix/launch-prod-feedback`
+
+`ProfileUpload` was visible at the top of the page even after the user had started a chat session. Now hidden once any chat messages exist (`hasChatStarted === true`), via a new `onChatStarted` callback wired from ChatPanel → ResearchLayout → BallotToolClient.
+
+### [idea — IMPLEMENTED 2026-05-19] Dev-mode URL overrides for QA preview
+**Status:** Implemented in `fix/launch-prod-feedback`
+
+`?devBudget=normal|notice|soft_close|handoff|exhausted` overrides the displayed budget tier in `NODE_ENV=development` so we can screenshot/preview the budget-exhausted banner without polluting real state.
+
+`?devPolis=mock` injects a hardcoded ~20-voter mock dataset into `PolisOverlay` so we can preview the visualization in low-participation areas. Useful for QA, demos, marketing.
+
+Both no-op in production. Both `console.warn` on activation.
+
+**Caveat:** `devBudget` is display-only. Backend `/api/chat` still enforces the real budget. To actually USE the chat against a real backend in an exhausted-state environment, clear the durable-store key `voter-choice:budget:YYYY-MM` (Upstash console or `redis-cli del voter-choice:budget:2026-05`).
+
+### [P1] PDF OCR fallback fires but still surfaces "scanned" message in some cases
+**Status:** Open — instrumented 2026-05-19, awaiting Muxin retry with browser console
+
+Muxin retried a real PDF upload and still saw the "scanned image, paste text" error after the Tesseract.js OCR fallback was added. The OCR path is wired correctly (`extractPdfText` → `ocrPdfPages` on <50 chars) but either Tesseract threw on import, or all pages returned <50 chars of text, or the canvas rendering failed silently.
+
+**Instrumentation added (2026-05-19):**
+- `console.log("[pdf-extract] ...")` at OCR start, per-page (with canvas dimensions + text length), at OCR done.
+- Per-page try/catch — single bad page no longer aborts the whole doc.
+- Canvas dimensions logged + zero-size guard added.
+- `canvas.toDataURL("image/png")` passed to Tesseract instead of the raw canvas (Tesseract v5 picky-input mitigation).
+- Distinct error message `pdfOcrFailed` for "OCR threw" vs. `pdfScannedError` for "OCR ran but returned nothing."
+
+**Next step:** voter retries upload, reports browser-console logs. Based on what fails, either tune the OCR parameters (PSM mode, character whitelist, scale), preprocess the image (binarize/contrast), or accept OCR as best-effort and prioritize the paste-fallback path.
+
+### [P2] Conversational priority discovery (re-flagged with sharper framing)
+**Status:** Open — re-flagged 2026-05-19 with sharper framing than the earlier "idea" entry
+
+Muxin reiterated her preference for conversation-first priority discovery: "I would have preferred the AI ask me about the issues I care about in a conversation. Once it gets a good sense of what my issues are and how I feel about them, it then shows me the ranked list of issues from the conversation. I can have a chance to review it and reorganize or re-rank things, and once I submit it, it should just move on to the next step."
+
+This is a sharper specification than the earlier "reconsider chip-pick vs full ranking" idea: she wants the model to drive an open-ended issue-elicitation conversation, then render the structured rank as a CONFIRMATION (which is editable), and proceed only on confirmation.
+
+**Why this matters for alignment quality:** Stance ambiguity for issues like "reproductive rights" is the symptom; the cause is asking voters to pick from chips before they've said in their own words what they actually care about. Conversation surfaces stance directly, which then resolves the existing `CONCERN_INTERPRETATION` ambiguity gate without needing the disambiguation question.
+
+**What we shipped is good enough for launch.** The launch-week data will tell us whether the gap between chip-picked priorities and chat-discovered concerns is meaningful — that data justifies the redesign or doesn't.
+
+**Related:** "Expand canonical vocabulary" [P1] above (taxonomy-side fix for the same root cause).
+
+### [P2] After candidate selection, race-patterns viz disappears and is replaced by raw text in chat thread
+**Status:** Open — flagged 2026-05-19
+
+Muxin: "after I've made my candidate selection, it is showing me the text instead of the visualization in the chat thread." When the user picks a candidate, the existing `RacePatterns` viz collapses and the chat surface shows the model's textual confirmation prose instead. The structured viz should remain in the scrollback (read-only post-pick state).
+
+**Likely cause:** The submitted-race-final state isn't preserving the rendered RacePatterns component — the streaming text replaces it. Verify in `ChatPanel.tsx` (renderRacePatterns and submittedRaceFinals plumbing).
+
+### [P2] Polis interface preceded by raw streaming text before final render
+**Status:** Open — flagged 2026-05-19
+
+Same root cause as the existing streaming-skeleton fix, but for a code path that wasn't covered. The Polis viz section streams its setup content (or a sibling structured block) before the final viz renders. Verify which block opens immediately before the viz and ensure `hasOpen*Block` is checked at that surface too.

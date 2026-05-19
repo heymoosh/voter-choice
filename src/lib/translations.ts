@@ -277,6 +277,7 @@ export interface Translations {
     pdfScannedError: string;
     pdfLoadError: string;
     pdfOcrInProgress: string;
+    pdfOcrFailed: string;
     // ConcernInterpretation keys
     concernInterpretationHeading: string;
     concernInterpretationSubhead: string;
@@ -758,6 +759,7 @@ const en: Translations = {
     pdfScannedError: `We couldn’t read this PDF (looks like a scanned image with no text we can extract). To work around it: (1) Open the PDF in your viewer, (2) Select all the text (Cmd/Ctrl+A), (3) Copy (Cmd/Ctrl+C), (4) Paste below.`,
     pdfLoadError: `We couldn’t load the PDF reader right now. Please try again in a moment, or open the PDF, copy the text, and paste it here.`,
     pdfOcrInProgress: `Extracting scanned PDF text — this may take 30 seconds…`,
+    pdfOcrFailed: `OCR didn’t work on this PDF. Try opening it in your viewer and pasting the text below (Cmd/Ctrl+A then Cmd/Ctrl+C then paste).`,
     // ConcernInterpretation
     concernInterpretationHeading: "Did we get this right?",
     concernInterpretationSubhead:
@@ -1289,6 +1291,8 @@ const es: Translations = {
       "We couldn't load the PDF reader right now. Please try again in a moment, or open the PDF, copy the text, and paste it here.",
     pdfOcrInProgress:
       "Extrayendo texto del PDF escaneado — esto puede tardar 30 segundos…",
+    pdfOcrFailed:
+      "El OCR no funcionó en este PDF. Intenta abrirlo en tu visor y pegar el texto abajo (Cmd/Ctrl+A, luego Cmd/Ctrl+C y pega).",
     // ConcernInterpretation — EN stubs (ES UI out of scope for this packet)
     concernInterpretationHeading: "Did we get this right?",
     concernInterpretationSubhead:

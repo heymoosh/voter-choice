@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   HandoffPackage,
   parseHandoffMarkers,
@@ -69,6 +70,14 @@ const RATE_ERROR_CODES = new Set([
   "DAILY_LIMIT",
 ]);
 
+const VALID_DEV_BUDGET_TIERS: ReadonlySet<BudgetTier> = new Set([
+  "normal",
+  "notice",
+  "soft_close",
+  "handoff",
+  "exhausted",
+]);
+
 interface ChatPanelProps {
   state: StateElectionData;
   zipCode: string;
@@ -80,6 +89,12 @@ interface ChatPanelProps {
   preResearchContext?: string;
   /** Primary lane for polis counter (derived from runoff gate). */
   primary?: "DEM" | "REP" | "OPEN" | "GENERAL";
+  /**
+   * Fired exactly once when the chat transitions from empty to having any
+   * message. Used by parents to hide pre-session UI (e.g. ProfileUpload)
+   * once the user is actively in a session.
+   */
+  onChatStarted?: () => void;
 }
 
 function generateSessionId(): string {
@@ -935,6 +950,7 @@ export function ChatPanel({
   userSampleBallotText,
   preResearchContext,
   primary,
+  onChatStarted,
 }: ChatPanelProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
@@ -978,6 +994,17 @@ export function ChatPanel({
       });
     }
   }, [isStreaming]);
+
+  // Fire onChatStarted exactly once when the chat transitions from empty to
+  // having any message. Parents use this to hide pre-session UI like
+  // ProfileUpload once the user is mid-session.
+  const chatStartedFiredRef = useRef(false);
+  useEffect(() => {
+    if (messages.length > 0 && !chatStartedFiredRef.current) {
+      chatStartedFiredRef.current = true;
+      onChatStarted?.();
+    }
+  }, [messages.length, onChatStarted]);
 
   const handleBudgetUpdate = useCallback(
     (budget: BudgetStatus) => {
@@ -1255,13 +1282,46 @@ export function ChatPanel({
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, [messages.length, handoff.parsedHandoff]);
 
+  // Dev-only URL param override for budget tier — lets QA preview the
+  // exhausted/handoff/soft_close banners without polluting real budget state.
+  // No-op outside development. See task fix E.
+  const searchParams = useSearchParams();
+  const devBudgetTier: BudgetTier | null = (() => {
+    if (process.env.NODE_ENV !== "development") return null;
+    const raw = searchParams?.get("devBudget");
+    if (!raw) return null;
+    return VALID_DEV_BUDGET_TIERS.has(raw as BudgetTier)
+      ? (raw as BudgetTier)
+      : null;
+  })();
+  useEffect(() => {
+    if (devBudgetTier) {
+      console.warn("[dev] budget tier overridden to:", devBudgetTier);
+    }
+  }, [devBudgetTier]);
+
+  const effectiveTier: BudgetTier = devBudgetTier ?? budgetStatus.tier;
+
+  // When the dev tier override is in an exhausted-class state, also flip the
+  // disabled flag so the exhausted banner actually renders (it gates on
+  // chatDisabled, not the tier directly).
+  const effectiveChatDisabled =
+    chatDisabled ||
+    (devBudgetTier !== null &&
+      (devBudgetTier === "exhausted" ||
+        devBudgetTier === "handoff" ||
+        devBudgetTier === "soft_close"));
+  const effectiveDisabledReason: DisabledReason | null =
+    disabledReason ??
+    (devBudgetTier !== null && devBudgetTier !== "normal" ? "budget" : null);
+
   // Budget is exhausted once the tier leaves the safe "normal"/"notice" set.
   // Server flips chatDisabled only after a request actually fails with
   // BUDGET_EXHAUSTED/BUDGET_SOFT_CLOSE — but the SSE `done` event updates
   // budgetStatus.tier earlier, so this gates the bottom buttons during that
   // window too.
   const budgetExhausted =
-    budgetStatus.tier !== "normal" && budgetStatus.tier !== "notice";
+    effectiveTier !== "normal" && effectiveTier !== "notice";
 
   const fullContent = messages
     .filter((m) => m.role === "assistant")
@@ -1335,38 +1395,26 @@ export function ChatPanel({
           )}
 
           <ChatStatusBar
-            budgetTier={budgetStatus.tier}
-            chatDisabled={chatDisabled}
-            disabledReason={disabledReason}
+            budgetTier={effectiveTier}
+            chatDisabled={effectiveChatDisabled}
+            disabledReason={effectiveDisabledReason}
             error={error}
           />
 
-          {/* Show portfolio button if ballot is ready but user went back to chat */}
-          {ballotReady && !showPortfolio && (
-            <button
-              onClick={() => setShowPortfolio(true)}
-              className="mb-4 w-full bg-primary text-white py-4 font-black text-lg flex items-center justify-center gap-3 hover:opacity-90 active:scale-[0.98] transition-all"
-            >
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-                aria-hidden="true"
-              >
-                <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm-1 7V3.5L18.5 9H13zM8 17h8v-2H8v2zm0-4h8v-2H8v2z" />
-              </svg>
-              {translations[lang].portfolio.title}
-            </button>
-          )}
+          {/*
+           * Note: previously rendered a "Your research portfolio" cue button
+           * here when ballot is ready but user returned to chat. Removed —
+           * portfolio auto-opens on ballotReady, and an extra navigation cue
+           * duplicated the content the user just left.
+           */}
 
-          {!chatDisabled && (
+          {!effectiveChatDisabled && (
             <div className="sticky bottom-0 z-30 bg-surface-lowest pt-0">
               <ChatInput
                 onSubmit={(msg) => sendMessage(msg, messages)}
                 isStreaming={isStreaming}
               />
-              {!budgetExhausted && !isStreaming && (
+              {!budgetExhausted && !isStreaming && !ballotReady && (
                 <button
                   type="button"
                   data-testid="generate-profile-btn"
@@ -1378,7 +1426,7 @@ export function ChatPanel({
                   {t.research.generateProfileButton}
                 </button>
               )}
-              {messages.length > 1 && !budgetExhausted && (
+              {messages.length > 1 && !budgetExhausted && !ballotReady && (
                 <button
                   type="button"
                   data-testid="finish-later-btn"
