@@ -605,6 +605,118 @@ describe("RacePatterns — proposition variant", () => {
   });
 });
 
+/* ── Tests — FunderBars rich/percent-only modes ───────────── */
+
+const blockWithRichDonorData: RacePatternsBlock = {
+  race: "US House District 7",
+  candidates: [
+    {
+      id: "cand-rich",
+      name: "Rich Data",
+      incumbent: true,
+      donorCoalition: [
+        { label: "Large individual donors", percent: 45, amount: 240_000 },
+        { label: "Small individual donors", percent: 30, amount: 160_000 },
+        { label: "PACs", percent: 25, amount: 133_333 },
+      ],
+      donorSource: { name: "FEC filings", url: "https://www.fec.gov/" },
+      totalRaised: 533_333,
+      donorDataSource: "voting_record",
+      endorsements: null,
+      platformAlignment: null,
+      retrospective: null,
+      valuesHighlight: null,
+    },
+    {
+      id: "cand-percent-only",
+      name: "Percent Only",
+      incumbent: false,
+      donorCoalition: [
+        { label: "Education advocacy", percent: 60 },
+        { label: "Small individual donors", percent: 40 },
+      ],
+      donorSource: { name: "Campaign site", url: "https://example.com/" },
+      donorDataSource: "web_search",
+      endorsements: null,
+      platformAlignment: null,
+      retrospective: null,
+      valuesHighlight: null,
+    },
+  ],
+};
+
+describe("RacePatterns — FunderBars rich mode (DB-sourced amounts)", () => {
+  it("renders Total raised headline when totalRaised is provided", () => {
+    renderPatterns(blockWithRichDonorData);
+    const total = screen.getByTestId("funder-bars-total-raised");
+    expect(total).toBeInTheDocument();
+    // 533,333 → "$533K" via formatCurrencyShort
+    expect(total).toHaveTextContent("$533K");
+    expect(total).toHaveTextContent(/Total raised/i);
+  });
+
+  it("renders per-bar absolute amounts alongside percentages", () => {
+    renderPatterns(blockWithRichDonorData);
+    const bar0 = screen.getByTestId("funder-bar-amount-0");
+    expect(bar0).toHaveTextContent("$240K");
+    expect(bar0).toHaveTextContent("(45%)");
+    const bar1 = screen.getByTestId("funder-bar-amount-1");
+    expect(bar1).toHaveTextContent("$160K");
+    expect(bar1).toHaveTextContent("(30%)");
+  });
+
+  it("does not render web-search footnote when donorDataSource is voting_record", () => {
+    renderPatterns(blockWithRichDonorData);
+    // cand-rich uses voting_record — should NOT show footnote within its section
+    const candSection = screen.getByTestId(
+      "race-patterns-candidate-cand-rich",
+    );
+    expect(
+      candSection.querySelector(
+        '[data-testid="funder-bars-web-search-footnote"]',
+      ),
+    ).toBeNull();
+  });
+});
+
+describe("RacePatterns — FunderBars percent-only mode (web-search fallback)", () => {
+  it("does not render Total raised headline when no amounts present", () => {
+    renderPatterns(blockWithRichDonorData);
+    // cand-percent-only's FunderBars instance should NOT have a total
+    const candSection = screen.getByTestId(
+      "race-patterns-candidate-cand-percent-only",
+    );
+    expect(
+      candSection.querySelector('[data-testid="funder-bars-total-raised"]'),
+    ).toBeNull();
+  });
+
+  it("does not render per-bar dollar amounts when buckets have no amount field", () => {
+    renderPatterns(blockWithRichDonorData);
+    const candSection = screen.getByTestId(
+      "race-patterns-candidate-cand-percent-only",
+    );
+    // No per-bar amount testids should appear in this candidate's subtree
+    expect(
+      candSection.querySelector('[data-testid^="funder-bar-amount-"]'),
+    ).toBeNull();
+  });
+
+  it("renders the web-search footnote when donorDataSource is web_search", () => {
+    renderPatterns(blockWithRichDonorData);
+    const candSection = screen.getByTestId(
+      "race-patterns-candidate-cand-percent-only",
+    );
+    const footnote = candSection.querySelector(
+      '[data-testid="funder-bars-web-search-footnote"]',
+    );
+    expect(footnote).not.toBeNull();
+    expect(footnote?.textContent).toMatch(
+      /Source: web search — totals not available in our database for this race\./,
+    );
+  });
+});
+
 /* ── Alignment score fixtures ─────────────────────────────── */
 
 const alignmentEntryA: AlignmentScoresEntry = {

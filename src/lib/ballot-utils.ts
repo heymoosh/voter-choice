@@ -151,6 +151,27 @@ export function openPrintableBallot(ballotText: string): void {
   win.document.close();
 }
 
+/**
+ * Compact USD formatter for donor-coalition totals and per-bucket amounts.
+ *
+ * Buckets (gated by raw amount, not rounded display):
+ *   - amount <= 0           → "$0"
+ *   - 1–999                 → "$N"        (e.g. "$840")
+ *   - 1,000–999,999         → "$NK"       (e.g. "$15K", "$240K") — rounded
+ *   - >= 1,000,000          → "$N.XM"     (e.g. "$1.0M", "$25.4M") — 1 decimal
+ *
+ * Non-finite inputs (NaN, ±Infinity) fall through to "$0" so a bad value never
+ * leaks raw NaN into the UI.
+ */
+export function formatCurrencyShort(amount: number): string {
+  if (!Number.isFinite(amount) || amount <= 0) return "$0";
+  if (amount < 1_000) return `$${Math.round(amount)}`;
+  if (amount < 1_000_000) return `$${Math.round(amount / 1_000)}K`;
+  // 1M+: one decimal place, kept even when the fractional part rounds to 0
+  // so "$1.0M" stays consistent with "$1.2M".
+  return `$${(amount / 1_000_000).toFixed(1)}M`;
+}
+
 /** Download voter profile as a .txt file */
 export function downloadProfileAsText(profileText: string): void {
   const blob = new Blob([profileText], { type: "text/plain" });

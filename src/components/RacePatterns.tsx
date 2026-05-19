@@ -454,7 +454,11 @@ function CandidateSection({
           )}
         </div>
         {candidate.donorCoalition ? (
-          <FunderBars funders={candidate.donorCoalition} />
+          <FunderBars
+            funders={candidate.donorCoalition}
+            totalRaised={candidate.totalRaised}
+            donorDataSource={candidate.donorDataSource}
+          />
         ) : (
           <p
             data-testid={`race-patterns-coalition-unavailable-${candidate.id}`}

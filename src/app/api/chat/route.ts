@@ -13,6 +13,7 @@ import {
   resolveCandidateId,
   lookupAlignment,
 } from "../../../lib/server/alignment";
+import { lookupDonorCoalition } from "../../../lib/server/donors";
 
 // Server-side tools: Anthropic's hosted web_search runs on their infra; we
 // just declare the tool and Claude orchestrates the calls server-side. Billed
@@ -69,6 +70,48 @@ const LOOKUP_ALIGNMENT_TOOL: Anthropic.Tool = {
       "canonical_issue",
       "resolved_stance",
     ],
+  },
+};
+
+// lookup_donor_coalition: deterministic backend lookup for donor coalition data.
+// The model calls this for every candidate when emitting [RACE_PATTERNS]
+// donorCoalition data. Results come from the campaign finance filings database
+// (FEC for federal, state ethics commissions for state legislatures) — not from
+// web_search. Falls back to web_search when the tool returns { found: false }.
+const LOOKUP_DONOR_TOOL: Anthropic.Tool = {
+  name: "lookup_donor_coalition",
+  description:
+    "Look up a candidate's donor coalition with absolute dollar amounts and bucket-level breakdown. " +
+    "Use this for every candidate when emitting [RACE_PATTERNS] donorCoalition data. " +
+    "Returns deterministic per-bucket amounts + totalRaised from a backend database of campaign " +
+    "finance filings (FEC for federal House/Senate, state ethics commissions for state House/Senate). " +
+    "If the candidate is non-legislative (governor, judge, county, local) or otherwise not found, " +
+    "the tool returns { found: false } — fall back to web_search for donor coalition in that case " +
+    "and emit donorDataSource=\"web_search\" (without amount/totalRaised fields).",
+  input_schema: {
+    type: "object" as const,
+    properties: {
+      candidate_name: {
+        type: "string",
+        description: "Full candidate name as it appears on the ballot",
+      },
+      state_code: {
+        type: "string",
+        description: "2-letter state code, e.g., TX",
+      },
+      jurisdiction: {
+        type: "string",
+        description:
+          "federal-house, federal-senate, state-XX-house, or state-XX-senate. " +
+          "For non-legislative candidates (governor, judge, county, local), still pass the " +
+          "best guess — the tool will return { found: false } and you should fall back to web_search.",
+      },
+      election_cycle: {
+        type: "string",
+        description: "Optional. 4-digit year, e.g., \"2026\". Defaults to current cycle.",
+      },
+    },
+    required: ["candidate_name", "state_code", "jurisdiction"],
   },
 };
 
@@ -346,10 +389,11 @@ function handleContentBlockStart(
     searchBlocks.set(event.index, { active: true, queryFragments: [] });
     controller.enqueue(encoder.encode(ssePayload({ type: "searching" })));
   }
-  // Track client-side lookup_alignment tool calls
+  // Track client-side lookup_alignment and lookup_donor_coalition tool calls
   if (
     block.type === "tool_use" &&
-    block.name === "lookup_alignment" &&
+    (block.name === "lookup_alignment" ||
+      block.name === "lookup_donor_coalition") &&
     block.id
   ) {
     lookupBlocks.set(event.index, { id: block.id, inputFragments: [] });
@@ -502,6 +546,34 @@ async function resolveLookupAlignmentTool(
   return result as unknown as { found: boolean; [key: string]: unknown };
 }
 
+interface LookupDonorInput {
+  candidate_name?: string;
+  state_code?: string;
+  jurisdiction?: string;
+  election_cycle?: string;
+}
+
+async function resolveLookupDonorTool(
+  input: LookupDonorInput,
+): Promise<{ found: boolean; [key: string]: unknown }> {
+  const { candidate_name, state_code, jurisdiction, election_cycle } = input;
+
+  if (!candidate_name || !state_code || !jurisdiction) {
+    return {
+      found: false,
+      unavailable: { reason: "Invalid tool input — required fields missing" },
+    };
+  }
+
+  const result = await lookupDonorCoalition(
+    candidate_name,
+    state_code,
+    jurisdiction,
+    election_cycle,
+  );
+  return result as unknown as { found: boolean; [key: string]: unknown };
+}
+
 // ---------------------------------------------------------------------------
 // SSE stream factory with tool-call loop support
 // ---------------------------------------------------------------------------
@@ -591,27 +663,39 @@ function createSSEStream(
 
           const toolUseBlocks = assistantContent.filter(
             (b): b is Anthropic.ToolUseBlock =>
-              b.type === "tool_use" && b.name === "lookup_alignment",
+              b.type === "tool_use" &&
+              (b.name === "lookup_alignment" ||
+                b.name === "lookup_donor_coalition"),
           );
 
           if (toolUseBlocks.length === 0) break;
 
-          // Resolve all tool calls in parallel
+          // Resolve all tool calls in parallel. Both lookup_alignment and
+          // lookup_donor_coalition share the round-trip cap (MAX_TOOL_ROUNDS)
+          // because they accumulate in the same lookupBlocks map and run in
+          // the same continuation loop — each round can dispatch many of either.
           const toolResults: Anthropic.ToolResultBlockParam[] =
             await Promise.all(
               toolUseBlocks.map(async (block) => {
                 // Parse accumulated input string into object
-                let parsedInput: LookupAlignmentInput = {};
+                let parsedInput: Record<string, unknown> = {};
                 try {
                   const raw = block.input;
                   parsedInput =
                     typeof raw === "string"
-                      ? (JSON.parse(raw) as LookupAlignmentInput)
-                      : (raw as LookupAlignmentInput);
+                      ? (JSON.parse(raw) as Record<string, unknown>)
+                      : (raw as Record<string, unknown>);
                 } catch {
                   // malformed input — return error result
                 }
-                const result = await resolveLookupAlignmentTool(parsedInput);
+                const result =
+                  block.name === "lookup_donor_coalition"
+                    ? await resolveLookupDonorTool(
+                        parsedInput as LookupDonorInput,
+                      )
+                    : await resolveLookupAlignmentTool(
+                        parsedInput as LookupAlignmentInput,
+                      );
                 return {
                   type: "tool_result" as const,
                   tool_use_id: block.id,
@@ -826,6 +910,7 @@ export async function POST(request: NextRequest) {
       tools: [
         WEB_SEARCH_TOOL,
         LOOKUP_ALIGNMENT_TOOL,
+        LOOKUP_DONOR_TOOL,
       ] as unknown as Anthropic.Tool[],
     };
 

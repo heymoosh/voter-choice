@@ -109,6 +109,12 @@ export function stripPartialValuesTagRequestBlock(content: string): string {
 export interface DonorBucketSlice {
   label: string;
   percent: number;
+  /**
+   * Absolute dollar amount for this bucket. Present only when the donor data
+   * was sourced from our DB (`lookup_donor_coalition` tool); omitted when the
+   * model fell back to web search and only knows percentages.
+   */
+  amount?: number;
 }
 
 /**
@@ -116,6 +122,14 @@ export interface DonorBucketSlice {
  * (e.g. FunderBars.tsx) continue to compile without modification.
  */
 export type RaceFinalFunder = DonorBucketSlice;
+
+/**
+ * Provenance for the donorCoalition data on a RacePatternsCandidate.
+ *  - `"voting_record"`: sourced from our DB via `lookup_donor_coalition`;
+ *    absolute amounts present.
+ *  - `"web_search"`: model fell back to web search; only percentages known.
+ */
+export type DonorDataSource = "voting_record" | "web_search";
 
 export interface SourceRef {
   name: string;
@@ -159,6 +173,16 @@ export interface RacePatternsCandidate {
   retrospective: RetrospectiveEntry[] | null;
   retrospectiveUnavailable?: { reason: string };
   valuesHighlight: ValuesHighlight | null;
+  /**
+   * Sum of bucket `amount`s in dollars. Present only when donorCoalition was
+   * sourced from our DB (`lookup_donor_coalition` tool).
+   */
+  totalRaised?: number;
+  /**
+   * Provenance label for `donorCoalition`. Present only when donorCoalition
+   * is non-null.
+   */
+  donorDataSource?: DonorDataSource;
 }
 
 export interface RacePatternsBlock {
@@ -211,13 +235,42 @@ function sanitizeDonorCoalition(
       typeof e.percent === "number" &&
       Number.isFinite(e.percent)
     ) {
-      out.push({
+      const slice: DonorBucketSlice = {
         label: e.label,
         percent: Math.max(0, Math.min(100, e.percent)),
-      });
+      };
+      // Optional absolute amount. Accept only finite, non-negative numbers;
+      // silently drop anything else so a bad value never poisons the slice.
+      if (
+        typeof e.amount === "number" &&
+        Number.isFinite(e.amount) &&
+        e.amount >= 0
+      ) {
+        slice.amount = e.amount;
+      }
+      out.push(slice);
     }
   }
   return out.length > 0 ? out : null;
+}
+
+function sanitizeTotalRaised(value: unknown): number | undefined {
+  if (typeof value !== "number") return undefined;
+  if (!Number.isFinite(value)) return undefined;
+  if (value < 0) return undefined;
+  return value;
+}
+
+const DONOR_DATA_SOURCE_VALUES: readonly DonorDataSource[] = [
+  "voting_record",
+  "web_search",
+];
+
+function sanitizeDonorDataSource(value: unknown): DonorDataSource | undefined {
+  if (typeof value !== "string") return undefined;
+  return (DONOR_DATA_SOURCE_VALUES as readonly string[]).includes(value)
+    ? (value as DonorDataSource)
+    : undefined;
 }
 
 const PARTISAN_LEAN_VALUES = ["partisan", "nonpartisan", "mixed"] as const;
@@ -347,6 +400,12 @@ function buildRacePatternsCandidate(
     if (out.donorCoalition !== null) {
       const ds = sanitizeSourceRef(parsed.donorSource);
       if (ds) out.donorSource = ds;
+      // Only attach absolute total + provenance when we actually have a
+      // coalition to label; otherwise the metadata would describe nothing.
+      const total = sanitizeTotalRaised(parsed.totalRaised);
+      if (total !== undefined) out.totalRaised = total;
+      const provenance = sanitizeDonorDataSource(parsed.donorDataSource);
+      if (provenance !== undefined) out.donorDataSource = provenance;
     }
   }
   const donorUnavailable = sanitizeUnavailable(parsed.donorUnavailable);
