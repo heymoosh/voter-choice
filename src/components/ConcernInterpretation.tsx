@@ -74,13 +74,6 @@ function RankBadge({ rank }: { rank: number }) {
 /* ── Source chip ────────────────────────────────────────── */
 
 function SourceChip({ entry }: { entry: ConcernInterpretationEntry }) {
-  if (entry.sourceType === "tag" && entry.sourceTagId) {
-    return (
-      <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest border border-primary/40 text-primary bg-primary/5">
-        {entry.sourceTagId}
-      </span>
-    );
-  }
   if (entry.sourceType === "freeText" && entry.sourceText) {
     return (
       <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-medium italic border border-outline-variant/40 text-on-surface-muted bg-surface-lowest">
@@ -88,6 +81,9 @@ function SourceChip({ entry }: { entry: ConcernInterpretationEntry }) {
       </span>
     );
   }
+  // For tag entries: sourceTagId is the model's internal letter id ("a","b","d"),
+  // which is meaningless to voters. The interpretation rendered next to this
+  // already shows the human-readable concern, so omit the source chip entirely.
   return null;
 }
 
@@ -270,7 +266,7 @@ function EntryCard({
                 data-testid={`concern-entry-edit-input-${entry.rank}`}
                 value={state.editText}
                 onChange={(e) => onEditTextChange(e.target.value)}
-                placeholder={entry.sourceText ?? entry.sourceTagId ?? ""}
+                placeholder={entry.sourceText ?? entry.interpretation ?? ""}
                 className="flex-1 px-3 py-1.5 text-sm border border-outline-variant/40 bg-surface-lowest text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/60 placeholder:text-on-surface-muted/60"
                 onKeyDown={(e) => {
                   if (e.key === "Enter") onCommitEdit();
@@ -481,7 +477,7 @@ export function ConcernInterpretation({
               onStartEdit={() => {
                 updateState(entry.rank, {
                   editing: true,
-                  editText: entry.sourceText ?? entry.sourceTagId ?? "",
+                  editText: entry.sourceText ?? entry.interpretation ?? "",
                 });
               }}
               onCancelEdit={() => {

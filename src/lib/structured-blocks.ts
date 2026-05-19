@@ -9,8 +9,11 @@ export interface ValuesTagRequestBlock {
   items: ValuesTagItem[];
 }
 
+// Also consumes ``` code fences immediately surrounding the block — the model
+// sometimes wraps structured blocks in markdown code fences; without this, the
+// fences are left behind after stripping and render as empty ``` paragraphs.
 const VALUES_TAG_REQUEST_BLOCK_RE =
-  /\[VALUES_TAG_REQUEST\]([\s\S]*?)\[\/VALUES_TAG_REQUEST\]/g;
+  /(?:```[a-z]*\s*\n)?\[VALUES_TAG_REQUEST\]([\s\S]*?)\[\/VALUES_TAG_REQUEST\](?:\s*\n```)?/g;
 
 function isNonEmptyString(v: unknown): v is string {
   return typeof v === "string" && v.trim().length > 0;
@@ -164,7 +167,7 @@ export interface RacePatternsBlock {
 }
 
 const RACE_PATTERNS_BLOCK_RE =
-  /\[RACE_PATTERNS\s+race="([^"]+)"\]([\s\S]*?)\[\/RACE_PATTERNS\]/g;
+  /(?:```[a-z]*\s*\n)?\[RACE_PATTERNS\s+race="([^"]+)"\]([\s\S]*?)\[\/RACE_PATTERNS\](?:\s*\n```)?/g;
 
 function sanitizeUnavailable(value: unknown): { reason: string } | undefined {
   if (!value || typeof value !== "object") return undefined;
@@ -520,7 +523,7 @@ export interface AlignmentScoresBlock {
 }
 
 const ALIGNMENT_SCORES_BLOCK_RE =
-  /\[ALIGNMENT_SCORES\s+race="([^"]+)"\]([\s\S]*?)\[\/ALIGNMENT_SCORES\]/g;
+  /(?:```[a-z]*\s*\n)?\[ALIGNMENT_SCORES\s+race="([^"]+)"\]([\s\S]*?)\[\/ALIGNMENT_SCORES\](?:\s*\n```)?/g;
 
 function sanitizeContributingVote(value: unknown): ContributingVote | null {
   if (!value || typeof value !== "object") return null;
@@ -745,7 +748,7 @@ export interface ConcernInterpretationBlock {
 }
 
 const CONCERN_INTERPRETATION_BLOCK_RE =
-  /\[CONCERN_INTERPRETATION\]([\s\S]*?)\[\/CONCERN_INTERPRETATION\]/g;
+  /(?:```[a-z]*\s*\n)?\[CONCERN_INTERPRETATION\]([\s\S]*?)\[\/CONCERN_INTERPRETATION\](?:\s*\n```)?/g;
 
 const CONCERN_INTERPRETATION_CONFIDENCE_VALUES: readonly ConcernInterpretationConfidence[] =
   ["clear", "low", "off_topic"];
