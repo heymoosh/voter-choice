@@ -2,12 +2,12 @@
 
 Status: ready
 Owner: orchestrator
-Source: `.ai/project-briefs/tdd-rollout.md` — Phase 2a (end-to-end validation, prerequisite to closing out the rollout)
-Branch: launch/production (with sub-branches for the test PRs)
+Source: `.ai/project-briefs/tdd-rollout.md` — Phase 2a (validate the testing discipline catches what it claims to catch)
+Branch: launch/production
 
 ## Intent
 
-Prove end-to-end that the TDD + Stryker gates actually block what they should and allow what they should, via **real PRs against `launch/production`** — not admin-bypassed pushes. Up to this point everything in the rollout has been configured and verified in isolation, but never battle-tested against an actual merge attempt. This packet stresses each gate with deliberately broken changes, observes whether the gates fire, then merges one clean change to validate the green path. Outcome: either confirms the system works or surfaces real gaps to fix before any feature work proceeds.
+Prove the TDD discipline + Stryker mutation testing **actually catch what they claim to catch** — specifically: (1) when known-tested code is broken, the existing tests detect it; (2) when a hollow test is written for new code, Stryker flags it as insufficient. These are the two failure modes the rollout was designed to prevent. Until we observe them firing on real (controlled) examples, we have configuration but no confidence the discipline works in practice.
 
 ## Original User Intent
 
@@ -17,63 +17,77 @@ From the planning session (2026-05-20):
 
 > "Now you mentioned that there are some actual known gaps, so I don't think that we're actually done with this phase until it's completely closed out."
 
+Clarifying refocus a few exchanges later:
+
+> "It is true that we also need to test the GitHub PR/CI integration; however, I'm more concerned about whether or not the testing automation that we have built actually works as intended (the 'red/green TDD' from willison to ensure we don't break new features that have been built, and tests are automated whenever we try to develop something to ensure that we are building what we want to build.)"
+
 ## Intent Interpretation
 
-We've shipped a lot of *configuration* across TDD Phase 1, the template/backfill mini-task, and Phase 2 (Stryker) — and validated the pieces work in *isolation*. But:
+There are two distinct "does it work" questions, and they need different validations:
 
-- Every push to `launch/production` so far has been admin-bypassed (`Bypassed rule violations` in remote messages). The gates have never actually blocked anything.
-- `mutation.yml` has never run on GitHub Actions infrastructure (only on the subagent's local machine for the baseline).
-- We don't know that a deliberately broken PR would be caught.
-- We don't know that a clean PR can actually merge through the gates as designed.
+**Q1 — Does the testing discipline + tools actually catch what they claim to catch?** This is the substantive question. Two specific concerns:
+- **Q1a (regression detection):** When existing tested code is broken, do the relevant tests fail with clear signals?
+- **Q1b (weak-test detection):** When a hollow test is written for new code, does Stryker flag the test as insufficient?
 
-**The validation principle:** a gate that has never been observed firing against a real attempt is an unverified gate. Until it fires (in either direction — blocking bad work, allowing good work), we have configuration but not protection.
+**Q2 — Does the GitHub PR/CI/branch-protection chain enforce the discipline at merge time?** This is plumbing on top of Q1. If Q1 fails, Q2 is theatre. If Q1 works but Q2 has glitches, we still have a working development discipline locally.
 
-This packet executes four small PR cycles against `launch/production`, each targeting one gate behavior. The "should block" PRs are observed and closed without merging (the point is to see the block, not bypass it). The "should pass" PR is a real test-strengthening improvement: the worker picks one survived mutant from the Stryker baseline report, writes a test that would kill it (Willison ritual), and merges. That last PR is both the green-path validation AND an organic demonstration that the system is usable as intended.
+This packet targets Q1 with **two local experiments** that directly demonstrate the failure modes the rollout was built to prevent. Each experiment makes a controlled change to existing code, observes the tooling's response, then reverts the change. No PRs, no CI runs needed — the experiments validate the primitives, and CI is just the automation layer that runs those primitives continuously.
 
-**Why this is "Phase 2a, not Phase 3":** The numbering reflects that this is the validation step for Phases 1 + 2 — it's a prerequisite for closing the rollout, not new functionality. TDD Phase 3 (visual regression + coverage thresholds + pre-push hook) is genuinely later work and remains queued.
+**On Q2:** PR #1 (already open, contains this packet) is the side-channel Q2 validation. It exercises the PR mechanics for the cleanest possible case (docs-only change, no scoped-path touch). Observation of PR #1's gate behavior happens incidentally. If Q1 experiments succeed, PR #1's outcome is a useful additional data point but not the primary evidence.
+
+**What we already have evidence for (don't re-validate):**
+- Willison ritual works for NEW code — validated twice already:
+  - Subagent A's meta-TDD on `ai-tdd-red.sh` itself (RED → GREEN both captured)
+  - Subagent D's alignment notice validation in Phase 1 (5 new tests went RED, then GREEN after implementation)
+- The full vitest suite runs to completion (1051 tests pass)
+- Stryker installs, runs, produces structured reports (26.90% overall baseline; per-file scores documented)
+
+**The two gaps Phase 2a closes:**
+1. We've never observed an existing test catching a deliberate regression
+2. We've never observed Stryker catching a deliberately hollow test
 
 ## Business Logic
 
 Rules:
 
-- **No admin bypass on any PR in this packet.** The whole point is to validate the gates work against non-admin merge attempts. The PRs must be merged through the GitHub UI's normal flow, not via `git push` to `launch/production`. If a "should pass" PR can be merged via the UI with a green button, the gate works. If it can't, the gate is misconfigured.
-- **"Should block" PRs must be CLOSED, never merged.** Their purpose is to observe the block. Merging a deliberately broken PR — even with override — defeats the validation and pollutes `launch/production`.
-- **Each test PR must be on its own feature branch off `launch/production`** with a descriptive name (e.g., `validate/test-gate-lint-failure`, `validate/mutation-gate-hollow-test`, `validate/clean-merge-strengthen-rate-limit-tests`).
-- **The "should pass" PR must make a REAL improvement**, not a no-op. Specifically: strengthen one test for a previously-survived mutant from the Stryker baseline. This validates the entire intended ritual — Stryker report → identify gap → write killing test → confirm mutant is killed → merge.
-- **Document every observation in this packet's Evidence Plan section** after execution. Each PR's CI status, the merge-button state, what the gate caught (or missed) — written down as ground truth.
-- **If a gate doesn't fire as expected, STOP and surface to the user.** Don't bypass to "make it work" — that defeats the validation. Fix the gate, re-run the affected test PR.
+- **Experiments are LOCAL.** No PRs, no CI runs needed. Changes are made in the working tree of `launch-production-federal`, observed, and reverted.
+- **Experiments revert cleanly.** After each experiment, `git diff` on the affected files must show no changes. Working tree clean.
+- **Captured outputs are verbatim.** No paraphrasing of tool output. The exact stderr/stdout from `npx vitest run` and `npx stryker run` go in the Evidence Plan.
+- **A failing experiment is a real finding.** If Experiment 1's test doesn't fail when we break the code, that test is hollow — a real Phase 1 follow-up. If Experiment 2's Stryker doesn't flag a hollow test, the tool config is wrong — a real Phase 2 follow-up. Don't paper over failures.
+- **The experiments target the files we have confidence in.** Experiment 1 targets `alignment.ts` (which Phase 1 hardened with the Willison ritual). Experiment 2 targets `rate-limit.ts` (which has middling mutation score per the baseline — adding a hollow test there is a fair stress test).
+- **No commits to source.** No experimental code is committed. The Evidence Plan captures outputs; the packet documents the result.
 
 Assumptions:
 
-- TDD Phase 1 + Phase 2 are shipped (commits `5967ced`, `6dfcf38`, `b40f626`, `176e150`, `d0f38ac` — confirmed in `git log`).
-- Branch protection on `launch/production` requires `test` and `mutation` jobs.
-- `mutation.yml` has NOT yet run on GitHub infrastructure — first run will be triggered by the first test PR (which touches a scoped path).
-- The Stryker baseline mutation report is in `reports/mutation/mutation.html` locally (gitignored); the per-file scores and per-mutation survivors are documented in commit `d0f38ac`'s message and the TDD guardrail.
-- GitHub admin bypass is available but must NOT be used in this packet's PRs.
+- TDD Phase 1 (commits `5967ced`, `6dfcf38`) and Phase 2 (commit `d0f38ac`) are shipped.
+- `scripts/ai-tdd-red.sh`, `scripts/ai-mutation-check.sh`, `stryker.config.json`, `tsconfig.stryker.json` all in place and functional locally.
+- The 9 new test cases Subagent D added to `src/lib/server/alignment.test.ts` are present.
+- `npx vitest run` and `npx stryker run` work locally without configuration changes.
 
 User-confirmed decisions:
 
-- Run all four test PR cycles before declaring Phase 1/2 closed.
-- The "should pass" PR strengthens a test for one survived mutant — exact choice is worker's judgment, must be from the scoped files (`alignment.ts`, `budget.ts`, `rate-limit.ts`, `getStateData.ts`, or a generatePrompt internal — though generatePrompt is being retired by redesign Phase 1; pick one of the others).
-- Validation findings update both the project brief and the TDD guardrail.
+- Drop the four-PR-cycle plan from the prior packet revision. The PR/CI integration validation is Q2 (secondary); the substance is Q1 (primary).
+- Two local experiments are the validation: regression detection + hollow-test detection.
+- PR #1 remains open as the side-channel Q2 validation (no extra cost; useful data point).
+- Phase 2a closes when both experiments produce expected results AND PR #1's gate behavior is observed.
 
 Edge cases:
 
-- **A "should block" PR isn't actually blocked.** Indicates a real misconfiguration. Surface to user; do not proceed until fixed.
-- **A "should pass" PR can't be merged due to unrelated CI flakiness.** Re-run jobs first; if still failing, investigate as a separate concern (might be a Phase 1a issue surfacing).
-- **The mutation workflow takes 5+ minutes per run** (we saw ~5m37s locally). PR cycles will be slow. Patience.
-- **`mutation` job has `app_id: None` in branch protection currently.** Once mutation.yml runs once, GitHub will populate the app_id and the gate becomes active. The first PR's job IS the registration moment.
-- **A "should block" PR turns out to ALSO trigger a different gate.** E.g., a deliberately failing test that also fails lint. Document both, but design the PRs so each isolates one gate where possible.
-- **A clean PR's mutation score regresses unexpectedly.** Worker should re-examine — did the strengthening actually kill the mutant? If the score drops below threshold, the gate correctly blocks.
+- **Experiment 1 fails to fail (tests pass despite broken code).** Worst-case finding. The test we wrote in Phase 1 doesn't actually assert what it claims to. Document, surface, schedule a Phase 1 test-strengthening follow-up.
+- **Experiment 2 doesn't flag the hollow test (high mutation score despite weak assertion).** Suggests Stryker config is wrong (perhaps the test file is excluded, or the new function isn't in the mutate scope). Document, investigate config, may need Phase 2 follow-up.
+- **An experiment surfaces an unrelated bug.** Document but don't fix in this packet — separate concern.
+- **Stryker run is slow (5+ minutes).** Expected; one Stryker run per experiment is acceptable.
+- **Subagent forgets to revert.** Orchestrator must verify `git status` is clean before declaring packet done.
 
 Out of scope:
 
-- E2E gate validation (separate concern; Phase 1a covers e2e CI compat).
-- Modifying any source code OTHER than the test-strengthening for the "should pass" PR.
-- Adding new test infrastructure or tools.
-- Changing the mutation threshold or the scoped paths in this packet.
-- Redesign work, Phase 1a investigation, or Phase 3 setup.
-- Marketing claims about Willison's pattern (those need more data than one validation; this packet doesn't try to settle that).
+- E2E gate validation (Phase 1a, separate)
+- The four-PR-cycle plan from the prior revision (dropped in favor of local experiments)
+- Strengthening existing tests proactively (let the experiments tell us what's weak)
+- Adding new scoped paths to Stryker config
+- Changing the mutation threshold
+- Modifying any guardrail or AGENTS.md content
+- Redesign work
 
 ## Commercial Readiness
 
@@ -81,22 +95,22 @@ Applicability: not applicable (meta-validation work — protects future commerci
 
 Lanes in scope:
 
-- operational/reliability — proves the safety harness works
+- operational/reliability — proves the safety harness primitives work
 
 User decisions needed:
 
-- none before execution; surface only if a gate misbehaves
+- none before execution; surface immediately if either experiment produces unexpected results
 
 Assumptions:
 
-- The user can review PRs as the non-admin reviewer (alternative: a second account or just observation; if Muxin is the only collaborator with admin, the validation still works because non-admin merge attempts produce the same gate signals — branch protection rules don't depend on who's clicking)
+- Local execution is sufficient evidence; we don't need CI to re-prove what's already provable locally
 
 ## Operational Reproducibility
 
 Setup:
 
 - No new dependencies
-- `git checkout launch/production && git pull` before creating sub-branches
+- Confirm `git status` is clean on `launch/production` before starting
 
 Configuration:
 
@@ -104,12 +118,11 @@ Configuration:
 
 Provider setup:
 
-- GitHub (already configured)
+- None — fully local
 
 Infrastructure/deployment:
 
-- Test PRs use the existing `test.yml` and `mutation.yml` workflows
-- Branch protection rules already in place
+- None — no CI runs, no deploys, no infrastructure changes
 
 Database migrations:
 
@@ -117,65 +130,65 @@ Database migrations:
 
 Manual steps:
 
-- Open 4 PRs via `gh pr create` or GitHub UI
-- Observe each PR's status (CI tabs, merge button, branch-protection messages)
-- Close PRs 1-3 without merging
-- Merge PR 4 via the GitHub UI's normal merge button (not via `git merge` + push, since admin push bypasses protection)
-- Document each PR's outcome in this packet's Evidence Plan
+- Subagent edits files, runs commands, reverts files. Orchestrator confirms working tree clean after.
 
 Verification:
 
-- Each test PR's GitHub Actions runs visible
-- Each PR's merge-button state observable
-- Final state: project brief + TDD guardrail updated with validation outcomes
+- Each experiment's expected output observed and captured verbatim
+- `git diff` on affected files shows no changes after revert
+- `git status --short` shows clean working tree (other than the packet edits themselves)
 
 Test quality:
 
-- Validation is observational; no new test code in this packet's infrastructure (the test PRs' content IS the test of the gates)
+- This packet is itself a test-of-tests. Quality is observable from the experiment outputs.
 
 Critical logic trigger:
 
-- This packet validates the critical logic gates (test + mutation) themselves
+- This packet validates the critical logic gates (test + mutation) actually catch their target failure modes
 
 ## Scope
 
-Touch:
+Touch (temporarily, reverted after observation):
 
-- Four feature branches off `launch/production` (created during execution)
-- The "should pass" PR touches one test file in `src/lib/` (the survived-mutant target)
-- After-action: `.ai/project-briefs/tdd-rollout.md` (validation outcomes recorded)
-- After-action: `docs/ai-coding-practices/guardrails/test-driven-development.md` (note that the gates were validated; date + commit references)
+- `src/lib/server/alignment.ts` — Experiment 1 breaks one condition; reverted
+- `src/lib/server/rate-limit.ts` — Experiment 2 adds a small new function; reverted
+- `src/lib/server/rate-limit.test.ts` — Experiment 2 adds a hollow test; reverted
+
+Touch (committed via this packet):
+
+- `.ai/work-packets/tdd-phase-2a-end-to-end-validation.md` — this file (Evidence Plan filled in after execution)
 
 Do not touch:
 
-- Any source code outside the "should pass" PR's chosen test file
-- `mutation.yml`, `test.yml`, `stryker.config.json`, or other Phase 1/2 infrastructure (validating, not modifying)
-- Branch protection rules (already configured)
+- Any other file
+- Branch protection (already configured)
+- Any workflow file
 - Other work packets
+- Any code under `src/` not listed above
+- Stryker config (`stryker.config.json`, `tsconfig.stryker.json`)
 - `main` branch
-- Any redesign packet's scope
 
 ## Ownership Audit
 
-Concern: validation of the TDD + Stryker gate system end-to-end
-Existing owner: none for validation specifically (Phase 1/2 packets own the gates; this packet owns proving they work)
+Concern: validation that TDD + Stryker primitives catch what they claim
+Existing owner: none for validation specifically
 Neighboring owners:
 
 - TDD discipline: `docs/ai-coding-practices/guardrails/test-driven-development.md`
-- CI workflows: `.github/workflows/test.yml`, `.github/workflows/mutation.yml`
-- Branch protection: GitHub repo settings (configured via `gh api`)
+- Mutation testing config: `stryker.config.json`
+- Phase 1 + Phase 2 packets (the configuration this packet validates)
 
 Files/modules/docs inspected:
 
-- This packet
-- Phase 1 + 2 packets for context on what was shipped
-- The Stryker baseline report (the survived-mutant catalog for the "should pass" PR choice)
-- `.github/workflows/test.yml` + `mutation.yml` for trigger conditions
+- The packet itself
+- Phase 1 + 2 commits (`5967ced`, `d0f38ac`)
+- `src/lib/server/alignment.ts` + `.test.ts` (Experiment 1 target)
+- `src/lib/server/rate-limit.ts` + `.test.ts` (Experiment 2 target)
+- The Stryker baseline report data
 
 Reuse/edit targets:
 
-- Update the project brief's Phase 1 + 2 status from "SHIPPED" to "SHIPPED + VALIDATED end-to-end (Phase 2a, commit <ref>)"
-- Add a "Validation history" sub-section to the TDD guardrail noting when each gate was confirmed firing
+- After both experiments succeed: update `.ai/project-briefs/tdd-rollout.md` Phase 1 + Phase 2 status to "SHIPPED + VALIDATED end-to-end (Phase 2a)"
 
 New owner needed:
 
@@ -183,184 +196,143 @@ New owner needed:
 
 Overlap/bloat risks:
 
-- Test PRs could be confused with real feature work. Mitigation: branch naming convention `validate/...`; PR titles prefixed `[validate]`; close non-merging PRs immediately after observation.
-- Polluting `launch/production` with the closed PRs' branches. Mitigation: delete branches after closing/merging.
+- Experimental changes accidentally committed. Mitigation: subagent reverts after each experiment; orchestrator verifies clean working tree.
+- Experiment findings contradicting prior claims. Mitigation: document honestly; weak tests get follow-up packets.
 
 Recommendation:
 
-- Execute the four PR cycles in sequence (not parallel — observing one at a time makes findings cleaner). Document each before moving to the next. If any gate misbehaves, stop and fix before continuing.
+- Execute experiments in sequence (Experiment 1, then Experiment 2). Document each fully before moving to the next. If either fails, stop and surface — don't proceed to a marketing-claim "Phase 2a complete" while a gap exists.
 
 Execution constraints:
 
-- Worker MUST NOT use admin bypass on any PR in this packet
-- Worker MUST close "should block" PRs without merging
-- Worker MUST document each PR's outcome before moving to the next
-- Worker MUST delete the feature branches after closing/merging
-- Worker MUST surface to the user immediately if a gate fails to fire as expected
+- Subagent MUST revert experimental file changes after each observation
+- Subagent MUST capture full verbatim output of `npx vitest run ...` and `npx stryker run`
+- Subagent MUST NOT commit experimental code
+- Subagent MUST NOT push to any branch
+- Orchestrator MUST verify `git status` is clean before declaring packet complete
 
 ## Acceptance Criteria
 
-### Gate-level proofs
+### Experiment 1 — Regression detection (Q1a)
 
-- **PR #1 (lint failure):** opens a feature branch with one deliberate lint violation (e.g., unused variable that triggers `next lint`). PR is opened, CI runs, `test` job fails on lint. GitHub UI shows merge button disabled with "Required statuses must pass before merging." PR is closed without merging. Branch deleted.
-- **PR #2 (failing test):** opens a feature branch that modifies an existing test to assert something false (e.g., changes `expect(x).toBe(true)` to `expect(x).toBe(false)`) on a passing test. PR opened, CI runs, `test` job fails on vitest. Merge button disabled. PR closed. Branch deleted. (Pick a test where flipping doesn't accidentally also fail lint — keeps the gate isolated.)
-- **PR #3 (mutation gate):** opens a feature branch adding a small NEW function to a scoped file (e.g., a helper in `src/lib/server/budget.ts`) with a deliberately hollow test (`expect(result).toBeDefined()`). PR opened, CI runs, `test` job PASSES (the hollow test is valid), `mutation` job FAILS (the new code's mutations survive). Merge button disabled showing both required-status checks; the failing one is `mutation`. PR closed. Branch deleted.
-- **PR #4 (clean merge):** opens a feature branch that picks one survived mutant from the baseline report and writes a test that would kill it. Uses the Willison ritual: write test, run `bash scripts/ai-tdd-red.sh <test-file>`, confirm RED, then the "implementation" (the test itself becomes the killing assertion); confirm GREEN; run npm test full suite; run `bash scripts/ai-mutation-check.sh` and confirm mutation score is the same OR better than baseline. PR opened, CI runs, BOTH jobs green. Merge button enabled. **PR merged via the GitHub UI** (no admin bypass). After-merge: mutation re-run confirms the previously-survived mutant is now killed.
+- Deliberately break `attachLimitedDataNotice()` in `src/lib/server/alignment.ts` (specifically: flip `total < LIMITED_DATA_THRESHOLD` to `total > LIMITED_DATA_THRESHOLD`, or remove the function's threshold check entirely, or any change that semantically breaks the limited-data-notice behavior).
+- Run `npx vitest run src/lib/server/alignment.test.ts`.
+- **Expected:** at least one of the 5 limited-data-notice tests fails with a clear message identifying the broken behavior.
+- Capture the failure output verbatim.
+- Revert the change. Confirm `git diff src/lib/server/alignment.ts` shows no changes.
+- **If tests still pass despite the break:** the test is hollow. Document as a finding; schedule a Phase 1 follow-up to strengthen the test.
+
+### Experiment 2 — Hollow-test detection via Stryker (Q1b)
+
+- Add a small new function to `src/lib/server/rate-limit.ts` (e.g., `function isThrottled(count: number, max: number): boolean { return count >= max; }` — something simple that Stryker can mutate meaningfully).
+- Add a deliberately hollow test in `src/lib/server/rate-limit.test.ts` (e.g., `expect(isThrottled(5, 10)).toBeDefined()`).
+- Run `npx stryker run`.
+- **Expected:** Stryker reports the new function's mutants as Survived (the hollow test doesn't kill them). The file's mutation score drops, and/or the overall score drops below the configured `break` threshold (22%). `npx stryker run` exits non-zero if the gate fires.
+- Capture the per-mutant verdict for the new function + the overall score change verbatim.
+- Revert both files. Confirm `git diff` on both shows no changes.
+- **If Stryker scores the hollow test as fine:** Stryker config is wrong, or the mutate scope doesn't cover the new function. Document; investigate config; may need Phase 2 follow-up.
 
 ### System-level proofs
 
-- All four PR runs captured in GitHub Actions (visible URLs documented in Evidence Plan)
-- Branch protection's "required status checks" UI shown firing correctly (screenshot or `gh pr view` output captured)
-- After PR #4 merges, GitHub Actions shows that subsequent pushes to `launch/production` are gated by both `test` and `mutation` jobs (i.e., `mutation` is no longer `app_id: None` — it's populated with the real app_id from the workflow run)
-- Project brief updated with validation outcomes (Phase 1 + 2 status changed to "SHIPPED + VALIDATED end-to-end")
-- TDD guardrail gains a "Validation history" sub-section documenting which commits validated which gates
-
-### Negative-case discoveries
-
-- Any gate that DIDN'T fire as expected is documented as a real Phase 2a finding requiring a follow-up packet (don't paper over)
-- Any unexpected behavior (e.g., merge worked when it shouldn't have, or didn't when it should have) is captured verbatim in the Evidence Plan
+- After both experiments: `git status --short` shows clean working tree (no leftover experimental code).
+- Phase 2a packet's Evidence Plan section is filled in with both experiments' captured outputs.
+- Project brief updated to mark Phase 1 + Phase 2 as "SHIPPED + VALIDATED end-to-end (Phase 2a, commit `<ref>`)".
+- If both experiments produced expected results: TDD rollout discipline is *empirically* validated, not just configured.
 
 ## Test Plan
 
-This packet's "tests" are observations of the gates firing. There are no traditional unit tests being added.
+This packet's "tests" are the experiments themselves. Each experiment is a controlled stress test of the discipline.
 
-| AC | Observation artifact | Test shape |
+| AC | Test artifact | Test shape |
 |---|---|---|
-| PR #1 — lint gate blocks | GitHub Actions run + PR UI screenshot | `test` job exits non-zero on lint step; PR merge button shows "Required statuses must pass" |
-| PR #2 — test gate blocks | GitHub Actions run + PR UI screenshot | `test` job exits non-zero on vitest step; PR merge button shows "Required statuses must pass" |
-| PR #3 — mutation gate blocks | GitHub Actions run + PR UI screenshot | `test` green, `mutation` red; PR merge button shows "Required statuses must pass" |
-| PR #4 — clean PR merges | GitHub Actions run + PR UI screenshot + post-merge mutation rerun | both jobs green; PR merge button enabled; merge succeeds via UI; post-merge mutation report shows the previously-survived mutant is killed |
-| mutation app_id populated | `gh api .../branches/launch%2Fproduction/protection` | `required_status_checks.checks[].app_id` for `mutation` is non-null after PR #4 |
-| project brief updated | git diff on `.ai/project-briefs/tdd-rollout.md` | Phase 1 + 2 entries show "VALIDATED" + Phase 2a packet reference |
-| guardrail validation history | git diff on `docs/ai-coding-practices/guardrails/test-driven-development.md` | new sub-section listing each gate's first-fire commit/date |
+| Q1a — regression detection works | Experiment 1: `src/lib/server/alignment.ts` (broken) + `npx vitest run src/lib/server/alignment.test.ts` | semantically broken impl → test suite reports >= 1 failure with clear message identifying the regression |
+| Q1b — hollow-test detection works | Experiment 2: `src/lib/server/rate-limit.ts` (new function + hollow test) + `npx stryker run` | hollow test on new code → Stryker flags survived mutants; overall score drops below threshold; stryker exits non-zero |
+| Reverts are clean | `git diff` after each experiment | no diff on the affected source/test files |
+| Working tree clean at end | `git status --short` | only this packet's Evidence Plan edits show as modified |
 
-### Validation ritual for this packet
+### Execution ritual for this packet
 
-Execute PRs in sequence (not parallel). For each:
+The validation IS the test. Each experiment is a self-contained mini-cycle:
 
-1. Create feature branch off `launch/production`: `git checkout -b validate/<name>`
-2. Make the deliberate change (or, for PR #4, run the Willison ritual)
-3. Push the branch: `git push -u origin validate/<name>`
-4. Open the PR: `gh pr create --base launch/production --head validate/<name> --title "[validate] <description>" --body "Phase 2a validation: <which gate>"`
-5. Wait for CI: `gh pr checks <PR-number>` or visit Actions tab
-6. Observe + screenshot the gate behavior
-7. Document the observation in this packet's Evidence Plan
-8. Close (or merge, for PR #4): `gh pr close <PR-number> --delete-branch` (for PRs 1-3) or merge via UI (for PR #4)
+1. Read current state of the target file
+2. Make the deliberate change (break code OR add hollow test)
+3. Run the relevant tool (`npx vitest run <file>` OR `npx stryker run`)
+4. Capture full verbatim output
+5. Revert the file(s) via `git checkout <file>` (or restore from a saved-content snapshot if needed)
+6. Confirm `git diff <file>` shows no changes
+7. Move to next experiment
 
-For PR #4 specifically, the test-strengthening Willison cycle:
-
-1. Read `reports/mutation/mutation.html` locally (or re-generate via `npx stryker run`)
-2. Pick a survived mutant from a scoped file (suggested target: `rate-limit.ts` L5 `isProduction` boundary, or one of `budget.ts`'s string-literal survivors)
-3. Write a new test case in the corresponding `.test.ts` file that exercises the boundary the mutant violates
-4. Run `bash scripts/ai-tdd-red.sh <test-file>` — confirm exit 0 + the failure output. (The test should currently fail because the assertion is too strong for the existing test pattern, OR because it covers a code path not yet hit. Note: this red phase is subtle — the test exists to kill a mutation, not because new product code is being added. Worker should aim for: "the test asserts on behavior X; that behavior is currently satisfied by the implementation; before the test existed, the assertion wasn't being made anywhere; the test goes RED if I temporarily revert the implementation to the mutated form.")
-5. If step 4's red-phase doesn't cleanly fire, the worker may need to use a slightly different strengthening pattern — document the choice
-6. Implement (or in this case, the implementation already exists; this is purely a test addition that strengthens the existing tests)
-7. Run `bash scripts/ai-mutation-check.sh` locally — confirm the targeted mutant is now killed and overall score is unchanged or improved
-8. Open the PR
+Subagent runs the experiments in sequence, orchestrator verifies clean working tree after, then updates this packet's Evidence Plan with captured outputs.
 
 ## Evidence Plan
 
-Visual evidence (captured during execution):
+> Filled in after execution. Below is the placeholder structure.
 
-- Screenshot of each PR's "Files changed" tab showing the deliberate change
-- Screenshot of each PR's "Checks" tab showing CI job results
-- Screenshot of each PR's "Conversation" tab showing the merge-button state + branch-protection message
-- Screenshot of GitHub Actions runs for `test.yml` and `mutation.yml` for each PR
-- Screenshot of branch protection settings AFTER PR #4 showing `mutation` with non-null app_id
+### Experiment 1 — Regression detection
 
-Behavior evidence:
+- **Change applied:** `<diff snippet showing the deliberate break>`
+- **Command run:** `npx vitest run src/lib/server/alignment.test.ts`
+- **Captured output:** `<verbatim, including test names and failure messages>`
+- **Tests that failed:** `<list>`
+- **Tests that passed despite the break (if any):** `<list>` — these are weak tests worth strengthening
+- **Revert verified:** `git diff src/lib/server/alignment.ts` returned no output
+- **Verdict:** PASS / FAIL — regression detection works as claimed: yes/no
+- **Follow-ups (if any):** `<reference any tests that passed despite the break — schedule strengthening>`
 
-- For each PR: captured `gh pr checks <PR>` output showing which checks passed/failed
-- For PR #4: captured `git log` showing the merge commit on `launch/production` resulted from the PR merge (not a direct push)
+### Experiment 2 — Hollow-test detection
 
-Business logic evidence:
+- **Change applied:** `<diff snippets for both rate-limit.ts and rate-limit.test.ts>`
+- **Command run:** `npx stryker run`
+- **Captured output (summary section):** `<verbatim>`
+- **Per-mutant verdict for new function:** `<list of mutants on isThrottled (or chosen name), each marked Killed/Survived/NoCoverage>`
+- **Overall score change:** baseline 26.90% → with hollow test: `<X>%`
+- **Stryker exit code:** `<0 or non-zero>`
+- **Threshold gate fired:** yes/no
+- **Reverts verified:** both files show no diff
+- **Verdict:** PASS / FAIL — hollow-test detection works as claimed: yes/no
+- **Follow-ups (if any):** `<config investigation if Stryker missed the hollow test>`
 
-- Rule "deliberate lint failure blocks merge" → observed: PR #1's `test` job failed on lint; merge button disabled; PR closed without merging
-- Rule "deliberate test failure blocks merge" → observed: PR #2's `test` job failed on vitest; merge button disabled; PR closed
-- Rule "hollow test allows code but mutation gate blocks" → observed: PR #3's `test` green, `mutation` red; merge button disabled; PR closed
-- Rule "clean PR with proper tests merges" → observed: PR #4's both jobs green; merge button enabled; merge succeeded; mutation score improved
+### Q2 side-channel observation — PR #1 mechanics
 
-Persistence evidence:
+- **PR #1 URL:** https://github.com/heymoosh/voter-choice/pull/1
+- **`test` job triggered:** yes/no
+- **`mutation` job triggered (should be SKIPPED due to path filter):** yes/no
+- **`test` job result:** pass/fail
+- **Merge button enabled when expected:** yes/no
+- **PR merged via UI (no admin override):** yes/no
+- **Notes:** `<anything unexpected>`
 
-- After-merge `git log` shows PR #4's merge commit on `launch/production`
-- `mutation.html` regenerated after PR #4 shows the killed mutant marked as Killed (not Survived)
+### Synthesis
 
-Auth/security evidence:
-
-- not applicable
-
-Commercial readiness evidence:
-
-- operational/reliability lane: the safety harness is now battle-tested
-
-Operational evidence:
-
-- All four PR runs visible in https://github.com/heymoosh/voter-choice/actions
-- Branch protection rules reflected in `gh api .../branches/launch%2Fproduction/protection` output
-
-Integration evidence:
-
-- The whole pipeline (commit → push → CI runs → branch protection enforces → merge decision) ran end-to-end for each PR
-
-Regression evidence:
-
-- `launch/production` has not been polluted with deliberately broken code (PRs 1-3 closed without merging)
-- PR #4's merge improves mutation score (or maintains it)
-
-Proof standard:
-
-- A reviewer can: (a) read each PR's URL; (b) observe the gate behavior matches the AC; (c) check that no deliberately-broken code was merged; (d) confirm the project brief and guardrail were updated; (e) see that mutation gate is now fully active (`app_id` populated)
-
-Non-proof:
-
-- "I confirmed the gates work" without GitHub Action URLs and PR references
-- "PR #X was blocked" without screenshot/output capturing the blocker
-- "Mutation score improved" without before/after numbers from the actual Stryker reports
+- Q1a (regression detection): PASS / FAIL
+- Q1b (hollow-test detection): PASS / FAIL
+- Q2 (PR mechanics): PASS / FAIL / Not yet observed
+- Overall verdict: TDD rollout discipline is empirically validated: yes/partial/no
+- Outstanding gaps: `<list>`
+- Next steps: `<typically: proceed to Phase 1a, or schedule remediation packets>`
 
 ## Anti-Solutions
 
-- Do NOT use admin bypass on any PR — defeats the entire validation
-- Do NOT merge PRs 1, 2, or 3 — they're deliberately broken; merging pollutes `launch/production` and the deploy workflow would then ship broken code to production
-- Do NOT make the "should pass" PR a no-op or a comment-only change — must demonstrate a real Willison ritual cycle with a test-strengthening payoff
-- Do NOT skip documenting unexpected behaviors — every "I think this is fine" without observation is a future bug
-- Do NOT change `stryker.config.json` to lower the threshold so PR #3 doesn't fail — the gate must fire on its current configuration
-- Do NOT change `test.yml` to ignore the lint step — same reason
-- Do NOT batch PRs (e.g., one PR that tests all three blocks simultaneously) — observations should be isolated
-- Do NOT delete the screenshots or evidence after capture; they go in the Evidence Plan
-- Do NOT consider this packet complete until ALL four PR outcomes are documented in the Evidence Plan, even if one doesn't behave as expected — the failures ARE the most valuable findings
+- Do NOT skip reverting the experimental changes — leaving broken code in the working tree pollutes future work
+- Do NOT capture only the "happy" output — if an experiment produces an unexpected result, that IS the finding and must be documented as-is
+- Do NOT add `.skip()` to the tests in Experiment 1 to make them pass — the test must fail if the code is broken; that's the whole point
+- Do NOT modify the Stryker config to exclude the new file in Experiment 2 — same reason
+- Do NOT commit experimental code on any branch
+- Do NOT push experimental code to any remote
+- Do NOT declare Phase 2a complete unless both experiments PASSED with their expected outcomes, OR the failure modes are documented as follow-up packets
 
 ## Notes
 
-**Why this matters:** A safety harness that's never been pulled is theatre. Phases 1 + 2 produced infrastructure; this packet produces evidence the infrastructure works. The redesign work that follows depends on these gates catching mistakes — if the gates are silently broken, every redesign packet is at risk.
+**Why local experiments instead of the four-PR plan from the prior packet revision:** the user clarified that the substantive concern is whether the testing discipline catches what it claims (Q1), not whether the GitHub PR/CI plumbing enforces it at merge time (Q2). Q1 is the substance; Q2 is plumbing. Q1 can be validated in 10-15 minutes locally; the prior four-PR plan would have taken hours of CI time and PR-mechanics observation while only weakly addressing Q1. PR #1 (already open) covers the Q2 happy-path incidentally.
 
-**Sequencing relative to other queued work:** Phase 2a should land BEFORE Phase 1a (e2e CI compat) and BEFORE redesign Phase 1 (prompt refactor). Reasons:
-- Phase 1a's success is itself a gate-validation exercise (does fixing e2e make the e2e job actually pass in CI?); having Phase 2a validate the core gates first means we're isolating "is this CI environment-stable" from "do the gates fire correctly"
-- Redesign Phase 1 will ship under the gates — we want to know they work before we trust them with the highest-stakes redesign code
+**Sequencing relative to other queued work:** Phase 2a must land before Phase 1a (e2e CI compat) and before redesign Phase 1. Reasons:
+- Redesign work depends on the gates catching mistakes. If the gates don't catch what they claim, every redesign packet is at risk
+- Phase 1a's success is itself a gate-validation exercise (does fixing e2e make the e2e job pass in CI?); having Phase 2a validate the core gates first means we're isolating "is this CI environment-stable" from "do the gates fire correctly"
 
-**What the four PRs cost:** ~30-45 minutes of CI time across the four, mostly mutation runs (~5 min each). Each PR's manual observation + documentation is ~5-10 min. Total: roughly 1-2 hours of clock time but mostly waiting for CI, ~30 min of active orchestrator work.
+**The "should pass" PR from the prior revision** (test-strengthening for a survived mutant via Willison ritual) is dropped from this packet's scope but remains a worthy follow-up. After Phase 2a confirms the gates work, a small follow-up packet can strengthen one or more tests for survived mutants — that's a real test-quality improvement that's orthogonal to the validation.
 
-**The "should pass" PR's target choice:** the Stryker baseline highlighted three illustrative survived mutants:
-- `rate-limit.ts` L5 `isProduction` boundary (`ConditionalExpression` flipped) — clean to test by adding NODE_ENV variation
-- `budget.ts` L53 `StringLiteral` empty-string survivor — tests assert structure but not exact literals
-- `getStateData.ts` L64-65 `StringLiteral` empty-string survivors — 99 total in this file; pick one specific assertion
+**Findings from Experiment 1 are the most important.** If `alignment.test.ts` doesn't catch a deliberate regression in `alignment.ts`, then Phase 1's validation work wrote weak tests AND the Willison ritual didn't prevent it. That'd be a serious finding — the ritual would need refinement. Worth taking seriously.
 
-`rate-limit.ts` is probably the cleanest target because the test addition is unambiguous (assert behavior under both NODE_ENV values).
+**Findings from Experiment 2 are config-confirming.** Stryker's purpose is exactly to catch hollow tests, so this should pass. If it doesn't, the config is wrong.
 
-**The mutation workflow's first real run will happen during PR #1** (since PR #1's files won't match the scoped paths, mutation may NOT trigger on PR #1; it WILL trigger on PR #3 which adds code to `budget.ts`). Worker should expect:
-- PR #1, #2: only `test` runs (mutation paths-filter doesn't match)
-- PR #3, #4: both `test` and `mutation` run
-
-This is actually intentional — the paths-filter on `mutation.yml` saves CI minutes by only running Stryker when the scoped paths change.
-
-**If `mutation` job's `app_id` stays `None` after PR #3:** GitHub may need explicit re-recognition. Try `gh api -X PUT repos/heymoosh/voter-choice/branches/launch%2Fproduction/protection --input <(echo '{"required_status_checks": {"strict": true, "contexts": ["test", "mutation"]}, ...}')` to re-PUT the same config — GitHub re-resolves contexts at PUT time. Document if this happens.
-
-**Post-validation, update the brief:**
-
-```
-- `.ai/work-packets/tdd-phase-1-core-discipline.md` — TDD Phase 1: ...  
-  Status: SHIPPED + VALIDATED end-to-end 2026-MM-DD via Phase 2a (commit <ref>).
-- `.ai/work-packets/tdd-phase-2-mutation-testing.md` — TDD Phase 2: ...
-  Status: SHIPPED + VALIDATED end-to-end 2026-MM-DD via Phase 2a (commit <ref>).
-- `.ai/work-packets/tdd-phase-2a-end-to-end-validation.md` — TDD Phase 2a: ...
-  Status: <ready | in-progress | shipped>
-```
+**After Phase 2a passes:** brief gets updated, Phase 1a is groomed, redesign work can start with empirical confidence in the discipline.
