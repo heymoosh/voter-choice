@@ -379,6 +379,106 @@ describe("parseRacePatternsBlock", () => {
     expect(result?.candidates[0].donorCoalition?.[1].percent).toBe(0);
   });
 
+  it("parses donor amounts, totalRaised, and donorDataSource (voting_record)", () => {
+    const block = [
+      '[RACE_PATTERNS race="US House District 7"]',
+      '{"id":"A","name":"Alice","incumbent":true,"donorCoalition":[{"label":"Large individual donors","percent":45,"amount":240000},{"label":"Small individual donors","percent":30,"amount":160000},{"label":"PACs","percent":25,"amount":133333}],"donorSource":{"name":"FEC filings","url":"https://www.fec.gov/"},"totalRaised":533333,"donorDataSource":"voting_record","endorsements":null,"platformAlignment":null,"retrospective":null,"valuesHighlight":null}',
+      '{"id":"B","name":"Bob","incumbent":false,"donorCoalition":null,"endorsements":null,"platformAlignment":null,"retrospective":null,"valuesHighlight":null}',
+      "[/RACE_PATTERNS]",
+    ].join("\n");
+    const result = parseRacePatternsBlock(block);
+    const alice = result?.candidates[0];
+    expect(alice?.donorCoalition).toHaveLength(3);
+    expect(alice?.donorCoalition?.[0]).toEqual({
+      label: "Large individual donors",
+      percent: 45,
+      amount: 240000,
+    });
+    expect(alice?.donorCoalition?.[1].amount).toBe(160000);
+    expect(alice?.totalRaised).toBe(533333);
+    expect(alice?.donorDataSource).toBe("voting_record");
+  });
+
+  it("parses donorDataSource=web_search with percentages only (no amounts)", () => {
+    const block = [
+      '[RACE_PATTERNS race="School Board District 4"]',
+      '{"id":"A","name":"Alice","incumbent":true,"donorCoalition":[{"label":"Education advocacy groups","percent":60},{"label":"Small individual donors","percent":40}],"donorSource":{"name":"Campaign website","url":"https://example.com/"},"donorDataSource":"web_search","endorsements":null,"platformAlignment":null,"retrospective":null,"valuesHighlight":null}',
+      '{"id":"B","name":"Bob","incumbent":false,"donorCoalition":null,"endorsements":null,"platformAlignment":null,"retrospective":null,"valuesHighlight":null}',
+      "[/RACE_PATTERNS]",
+    ].join("\n");
+    const result = parseRacePatternsBlock(block);
+    const alice = result?.candidates[0];
+    expect(alice?.donorCoalition?.[0].amount).toBeUndefined();
+    expect(alice?.donorCoalition?.[1].amount).toBeUndefined();
+    expect(alice?.totalRaised).toBeUndefined();
+    expect(alice?.donorDataSource).toBe("web_search");
+  });
+
+  it("accepts amount=0 as a valid bucket value", () => {
+    const block = [
+      '[RACE_PATTERNS race="State Senate District 3"]',
+      '{"id":"A","name":"Alice","incumbent":true,"donorCoalition":[{"label":"PACs","percent":10,"amount":0},{"label":"Large individual donors","percent":90,"amount":90000}],"donorSource":{"name":"FEC","url":"https://www.fec.gov/"},"totalRaised":90000,"donorDataSource":"voting_record","endorsements":null,"platformAlignment":null,"retrospective":null,"valuesHighlight":null}',
+      '{"id":"B","name":"Bob","incumbent":false,"donorCoalition":null,"endorsements":null,"platformAlignment":null,"retrospective":null,"valuesHighlight":null}',
+      "[/RACE_PATTERNS]",
+    ].join("\n");
+    const result = parseRacePatternsBlock(block);
+    expect(result?.candidates[0].donorCoalition?.[0].amount).toBe(0);
+    expect(result?.candidates[0].totalRaised).toBe(90000);
+  });
+
+  it("ignores invalid amount values (negative, non-finite, non-number)", () => {
+    const block = [
+      '[RACE_PATTERNS race="City Council Position 5"]',
+      '{"id":"A","name":"Alice","incumbent":true,"donorCoalition":[{"label":"Bucket 1","percent":50,"amount":-100},{"label":"Bucket 2","percent":50,"amount":"50000"}],"donorSource":{"name":"src","url":"https://example.com/"},"endorsements":null,"platformAlignment":null,"retrospective":null,"valuesHighlight":null}',
+      '{"id":"B","name":"Bob","incumbent":false,"donorCoalition":null,"endorsements":null,"platformAlignment":null,"retrospective":null,"valuesHighlight":null}',
+      "[/RACE_PATTERNS]",
+    ].join("\n");
+    const result = parseRacePatternsBlock(block);
+    // Slices still kept, but amount fields dropped because both inputs were invalid
+    expect(result?.candidates[0].donorCoalition).toHaveLength(2);
+    expect(result?.candidates[0].donorCoalition?.[0].amount).toBeUndefined();
+    expect(result?.candidates[0].donorCoalition?.[1].amount).toBeUndefined();
+  });
+
+  it("rejects invalid totalRaised (negative or non-number) silently", () => {
+    const negativeBlock = [
+      '[RACE_PATTERNS race="Mayor"]',
+      '{"id":"A","name":"Alice","incumbent":true,"donorCoalition":[{"label":"X","percent":100,"amount":1000}],"donorSource":{"name":"src","url":"https://example.com/"},"totalRaised":-50,"donorDataSource":"voting_record","endorsements":null,"platformAlignment":null,"retrospective":null,"valuesHighlight":null}',
+      '{"id":"B","name":"Bob","incumbent":false,"donorCoalition":null,"endorsements":null,"platformAlignment":null,"retrospective":null,"valuesHighlight":null}',
+      "[/RACE_PATTERNS]",
+    ].join("\n");
+    const result = parseRacePatternsBlock(negativeBlock);
+    expect(result?.candidates[0].totalRaised).toBeUndefined();
+    // donorDataSource still survives because it's independently validated
+    expect(result?.candidates[0].donorDataSource).toBe("voting_record");
+  });
+
+  it("rejects donorDataSource values outside the allowed enum", () => {
+    const block = [
+      '[RACE_PATTERNS race="County Clerk"]',
+      '{"id":"A","name":"Alice","incumbent":true,"donorCoalition":[{"label":"X","percent":100,"amount":1000}],"donorSource":{"name":"src","url":"https://example.com/"},"donorDataSource":"hearsay","endorsements":null,"platformAlignment":null,"retrospective":null,"valuesHighlight":null}',
+      '{"id":"B","name":"Bob","incumbent":false,"donorCoalition":null,"endorsements":null,"platformAlignment":null,"retrospective":null,"valuesHighlight":null}',
+      "[/RACE_PATTERNS]",
+    ].join("\n");
+    const result = parseRacePatternsBlock(block);
+    expect(result?.candidates[0].donorDataSource).toBeUndefined();
+  });
+
+  it("drops totalRaised and donorDataSource when donorCoalition is null", () => {
+    // The model should never emit this combination, but if it does we silently
+    // discard the provenance metadata rather than attach it to nothing.
+    const block = [
+      '[RACE_PATTERNS race="Sheriff"]',
+      '{"id":"A","name":"Alice","incumbent":true,"donorCoalition":null,"totalRaised":12345,"donorDataSource":"voting_record","donorUnavailable":{"reason":"not in DB"},"endorsements":null,"platformAlignment":null,"retrospective":null,"valuesHighlight":null}',
+      '{"id":"B","name":"Bob","incumbent":false,"donorCoalition":null,"endorsements":null,"platformAlignment":null,"retrospective":null,"valuesHighlight":null}',
+      "[/RACE_PATTERNS]",
+    ].join("\n");
+    const result = parseRacePatternsBlock(block);
+    expect(result?.candidates[0].donorCoalition).toBeNull();
+    expect(result?.candidates[0].totalRaised).toBeUndefined();
+    expect(result?.candidates[0].donorDataSource).toBeUndefined();
+  });
+
   it("handles retrospective with multiple metrics", () => {
     const block = [
       '[RACE_PATTERNS race="State Senator District 15"]',

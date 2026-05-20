@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { extractBallot, extractVoterProfile } from "./ballot-utils";
+import {
+  extractBallot,
+  extractVoterProfile,
+  formatCurrencyShort,
+} from "./ballot-utils";
 
 describe("ballot-utils", () => {
   it("extracts English ballot blocks with dash headers", () => {
@@ -54,6 +58,40 @@ describe("ballot-utils", () => {
       "=== MY BALLOT ===\nMayor: Final Choice",
     );
     expect(extractVoterProfile(content)).toContain("Final profile");
+  });
+
+  describe("formatCurrencyShort", () => {
+    it("returns $0 for zero and negative inputs", () => {
+      expect(formatCurrencyShort(0)).toBe("$0");
+      expect(formatCurrencyShort(-50)).toBe("$0");
+      expect(formatCurrencyShort(-1_000_000)).toBe("$0");
+    });
+
+    it("returns $0 for non-finite inputs (defensive)", () => {
+      expect(formatCurrencyShort(Number.NaN)).toBe("$0");
+      expect(formatCurrencyShort(Number.POSITIVE_INFINITY)).toBe("$0");
+      expect(formatCurrencyShort(Number.NEGATIVE_INFINITY)).toBe("$0");
+    });
+
+    it("formats sub-$1K values as plain dollars (no K suffix)", () => {
+      expect(formatCurrencyShort(840)).toBe("$840");
+      expect(formatCurrencyShort(1)).toBe("$1");
+      expect(formatCurrencyShort(999)).toBe("$999");
+    });
+
+    it("formats $1K–$999K values with a K suffix, rounded", () => {
+      expect(formatCurrencyShort(1_000)).toBe("$1K");
+      expect(formatCurrencyShort(15_000)).toBe("$15K");
+      expect(formatCurrencyShort(240_000)).toBe("$240K");
+      expect(formatCurrencyShort(369_000)).toBe("$369K");
+      expect(formatCurrencyShort(999_499)).toBe("$999K");
+    });
+
+    it("formats $1M+ values to one decimal place with M suffix", () => {
+      expect(formatCurrencyShort(1_000_000)).toBe("$1.0M");
+      expect(formatCurrencyShort(1_200_000)).toBe("$1.2M");
+      expect(formatCurrencyShort(25_400_000)).toBe("$25.4M");
+    });
   });
 
   it("extracts Spanish ballot and profile blocks", () => {

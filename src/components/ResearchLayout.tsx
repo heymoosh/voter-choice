@@ -59,6 +59,8 @@ interface ResearchLayoutProps {
   preResearchGate?: ReactNode;
   /** Primary lane for polis counter (derived from runoff gate). */
   primary?: "DEM" | "REP" | "OPEN" | "GENERAL";
+  /** Forwarded to ChatPanel; fires once when the chat picks up a message. */
+  onChatStarted?: () => void;
 }
 
 /* ── Icons ──────────────────────────────────────────────────── */
@@ -427,7 +429,96 @@ function isTextFile(file: File): boolean {
 
 const PDF_SCANNED_MIN_CHARS = 50;
 
-async function extractPdfText(file: File): Promise<string> {
+type PdfDocument = Awaited<
+  ReturnType<typeof import("pdfjs-dist").getDocument>["promise"]
+>;
+
+// OCR fallback for scanned PDFs. Lazy-imports tesseract.js so it is
+// excluded from the initial JS bundle and only downloaded when needed.
+// Throws `OCR_FAILED` only if EVERY page failed; otherwise returns whatever
+// successful page text we collected. Per-page errors are caught so a single
+// bad page doesn't abort the whole document.
+async function ocrPdfPages(pdf: PdfDocument): Promise<string> {
+  // eslint-disable-next-line no-console
+  console.log("[pdf-extract] OCR start", { numPages: pdf.numPages });
+  let Tesseract: typeof import("tesseract.js");
+  try {
+    Tesseract = await import("tesseract.js");
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error("[pdf-extract] tesseract.js failed to load", err);
+    throw new Error("OCR_FAILED");
+  }
+  const textParts: string[] = [];
+  let successfulPages = 0;
+  for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+    try {
+      const page = await pdf.getPage(pageNum);
+      const viewport = page.getViewport({ scale: 2 });
+      const canvas = document.createElement("canvas");
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        // eslint-disable-next-line no-console
+        console.warn("[pdf-extract] page skipped: no 2d context", { pageNum });
+        continue;
+      }
+      if (canvas.width === 0 || canvas.height === 0) {
+        // eslint-disable-next-line no-console
+        console.warn("[pdf-extract] page skipped: zero canvas dimensions", {
+          pageNum,
+          width: canvas.width,
+          height: canvas.height,
+        });
+        continue;
+      }
+      await page.render({ canvasContext: ctx, viewport, canvas }).promise;
+      // Tesseract v5 is picky about input — image data URL is the most
+      // reliable format across browsers/build targets.
+      const dataUrl = canvas.toDataURL("image/png");
+      const result = await Tesseract.recognize(dataUrl, "eng");
+      const pageText = result.data.text ?? "";
+      // eslint-disable-next-line no-console
+      console.log("[pdf-extract] OCR page", {
+        pageNum,
+        canvasWidth: canvas.width,
+        canvasHeight: canvas.height,
+        textLength: pageText.length,
+      });
+      textParts.push(pageText);
+      successfulPages += 1;
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error("[pdf-extract] OCR page failed", { pageNum, err });
+      // Keep going — partial output beats nothing.
+    }
+  }
+  if (successfulPages === 0) {
+    // eslint-disable-next-line no-console
+    console.error("[pdf-extract] OCR failed on all pages");
+    throw new Error("OCR_FAILED");
+  }
+  const combined = textParts.join("\n").trim();
+  // eslint-disable-next-line no-console
+  console.log("[pdf-extract] OCR done", {
+    successfulPages,
+    totalPages: pdf.numPages,
+    combinedLength: combined.length,
+  });
+  return combined;
+}
+
+async function extractPdfText(
+  file: File,
+  options?: { onOcrStart?: () => void },
+): Promise<string> {
+  // eslint-disable-next-line no-console
+  console.log("[pdf-extract] start", {
+    fileName: file.name,
+    fileSize: file.size,
+    fileType: file.type,
+  });
   // Lazy-load pdfjs-dist only on client-side to avoid SSR issues.
   // Wrap the import + worker setup in its own try/catch so CDN/load failures
   // surface a distinct "PDF_LOAD_ERROR" rather than the misleading "scanned" message.
@@ -436,13 +527,17 @@ async function extractPdfText(file: File): Promise<string> {
     pdfjsLib = await import("pdfjs-dist");
     // Use CDN worker to keep bundle size small.
     pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.mjs`;
-  } catch {
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error("[pdf-extract] pdfjs-dist failed to load", err);
     throw new Error("PDF_LOAD_ERROR");
   }
 
   const arrayBuffer = await file.arrayBuffer();
   const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
   const pdf = await loadingTask.promise;
+  // eslint-disable-next-line no-console
+  console.log("[pdf-extract] pdf loaded", { numPages: pdf.numPages });
 
   const textParts: string[] = [];
   for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
@@ -453,7 +548,19 @@ async function extractPdfText(file: File): Promise<string> {
       .join(" ");
     textParts.push(pageText);
   }
-  return textParts.join("\n").trim();
+  const extracted = textParts.join("\n").trim();
+  // eslint-disable-next-line no-console
+  console.log("[pdf-extract] pdfjs text", {
+    extractedLength: extracted.length,
+    threshold: PDF_SCANNED_MIN_CHARS,
+  });
+  if (extracted.length >= PDF_SCANNED_MIN_CHARS) {
+    return extracted;
+  }
+  // pdfjs returned almost nothing — likely a scanned/image-only PDF.
+  // Fall back to OCR; notify the caller so it can surface a progress notice.
+  options?.onOcrStart?.();
+  return ocrPdfPages(pdf);
 }
 
 function UserSampleBallotInput({
@@ -486,7 +593,9 @@ function UserSampleBallotInput({
       setIsPdfLoading(true);
       setNotice(null);
       try {
-        const text = await extractPdfText(file);
+        const text = await extractPdfText(file, {
+          onOcrStart: () => setNotice(t.research.pdfOcrInProgress),
+        });
         if (text.length < PDF_SCANNED_MIN_CHARS) {
           setNotice(t.research.pdfScannedError);
         } else {
@@ -494,8 +603,12 @@ function UserSampleBallotInput({
           setNotice(copy.loadedNotice);
         }
       } catch (err) {
+        // eslint-disable-next-line no-console
+        console.error("[pdf-extract] handleFile caught", err);
         if (err instanceof Error && err.message === "PDF_LOAD_ERROR") {
           setNotice(t.research.pdfLoadError);
+        } else if (err instanceof Error && err.message === "OCR_FAILED") {
+          setNotice(t.research.pdfOcrFailed);
         } else {
           setNotice(t.research.pdfScannedError);
         }
@@ -1362,6 +1475,7 @@ function ResearchView({
   researchReady = true,
   preResearchGate,
   primary,
+  onChatStarted,
 }: {
   state: StateElectionData;
   zipCode: string;
@@ -1380,6 +1494,7 @@ function ResearchView({
   researchReady?: boolean;
   preResearchGate?: ReactNode;
   primary?: "DEM" | "REP" | "OPEN" | "GENERAL";
+  onChatStarted?: () => void;
 }) {
   const { lang } = useLanguage();
   const t = translations[lang];
@@ -1455,7 +1570,10 @@ function ResearchView({
           {!researchReady && preResearchGate}
 
           {onUserSampleBallotTextChange && (
-            <details className="bg-surface-lowest border border-outline-variant/30 p-4">
+            <details
+              open
+              className="bg-surface-lowest border border-outline-variant/30 p-4"
+            >
               <summary className="cursor-pointer text-sm font-black uppercase tracking-widest text-primary">
                 {lang === "es"
                   ? "Pegar mi boleta en su lugar"
@@ -1485,11 +1603,19 @@ function ResearchView({
               userSampleBallotText={userSampleBallotText}
               preResearchContext={preResearchContext}
               primary={primary}
+              onChatStarted={onChatStarted}
             />
           )}
 
-          {/* Copy/paste prompt — first-class editorial section */}
-          {canStartResearch && (
+          {/*
+           * Copy/paste prompt — fallback path only.
+           * Previously shown alongside the chat for the whole session, which
+           * read as a parallel offer. Now only shown when the chat surface
+           * is NOT available (budget check complete AND chat unavailable),
+           * so it functions as the documented fallback rather than a
+           * confusing duplicate option.
+           */}
+          {canStartResearch && budgetChecked && !chatAvailable && (
             <section className={copyPasteIsPrimary ? "" : "mt-4"}>
               <div className="flex items-center gap-3 mb-4">
                 <svg
@@ -1542,6 +1668,7 @@ export function ResearchLayout({
   researchReady,
   preResearchGate,
   primary,
+  onChatStarted,
 }: ResearchLayoutProps) {
   const [activeTab, setActiveTab] = useState<ResearchTab>("research");
   const { lang } = useLanguage();
@@ -1580,6 +1707,7 @@ export function ResearchLayout({
             researchReady={researchReady}
             preResearchGate={preResearchGate}
             primary={primary}
+            onChatStarted={onChatStarted}
           />
         </div>
 

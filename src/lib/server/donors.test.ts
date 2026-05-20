@@ -1,0 +1,376 @@
+/**
+ * src/lib/server/donors.test.ts
+ *
+ * Tests for the Drizzle donor-coalition query layer.
+ * All DB interactions and the upstream resolveCandidateId helper are mocked —
+ * no live Neon connection required.
+ */
+
+import { describe, it, expect, vi, beforeEach } from "vitest";
+
+// ---------------------------------------------------------------------------
+// Mock db/client so no real DB connection is attempted
+// ---------------------------------------------------------------------------
+vi.mock("../../../db/client", () => {
+  const DB_NOT_CONFIGURED = "DB_NOT_CONFIGURED" as const;
+  return { getDb: vi.fn(), DB_NOT_CONFIGURED };
+});
+
+// Mock alignment's resolveCandidateId — donors.ts only consumes that one
+// export, so we don't need to set up a second DB round-trip just for resolution.
+vi.mock("./alignment", () => ({
+  resolveCandidateId: vi.fn(),
+}));
+
+import { getDb, DB_NOT_CONFIGURED } from "../../../db/client";
+import { resolveCandidateId } from "./alignment";
+import { lookupDonorCoalition } from "./donors";
+
+// ---------------------------------------------------------------------------
+// Helper: build a minimal chainable Drizzle mock
+// ---------------------------------------------------------------------------
+
+function makeSelectMock(rows: Record<string, unknown>[]) {
+  const chain = {
+    from: vi.fn().mockReturnThis(),
+    // donors query has no joins, but keep innerJoin in the shape so any
+    // future schema change that introduces one doesn't break the harness.
+    innerJoin: vi.fn().mockReturnThis(),
+    where: vi.fn().mockResolvedValue(rows),
+  };
+  return { select: vi.fn().mockReturnValue(chain), _chain: chain };
+}
+
+const mockedGetDb = vi.mocked(getDb);
+const mockedResolve = vi.mocked(resolveCandidateId);
+
+beforeEach(() => {
+  vi.clearAllMocks();
+});
+
+// ---------------------------------------------------------------------------
+// candidate_not_resolved
+// ---------------------------------------------------------------------------
+
+describe("lookupDonorCoalition — candidate not resolved", () => {
+  it("returns candidate_not_resolved for unknown name", async () => {
+    mockedResolve.mockResolvedValue(null);
+
+    const result = await lookupDonorCoalition(
+      "Unknown Person",
+      "TX",
+      "state-TX-house",
+    );
+
+    expect(result).toEqual({
+      found: false,
+      reason: "candidate_not_resolved",
+    });
+  });
+
+  it("returns candidate_not_resolved for non-legislative jurisdiction (resolution falls through)", async () => {
+    // The function-level test: caller passes a malformed/non-legislative
+    // jurisdiction directly. resolveCandidateId will not find a row, so the
+    // function returns candidate_not_resolved. (The HTTP route would 400
+    // before reaching here — that's tested separately in route.test.ts.)
+    mockedResolve.mockResolvedValue(null);
+
+    const result = await lookupDonorCoalition(
+      "Greg Abbott",
+      "TX",
+      "state-TX-executive",
+    );
+
+    expect(result.found).toBe(false);
+    if (result.found === false) {
+      expect(result.reason).toBe("candidate_not_resolved");
+    }
+    // Ensure we still asked the resolver — donors.ts must not short-circuit
+    // jurisdictions; the resolver is the single source of truth for "exists".
+    expect(mockedResolve).toHaveBeenCalledWith(
+      "Greg Abbott",
+      "state-TX-executive",
+    );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// no_donor_data
+// ---------------------------------------------------------------------------
+
+describe("lookupDonorCoalition — no donor data", () => {
+  it("returns no_donor_data when candidate exists but donor_aggregates is empty", async () => {
+    mockedResolve.mockResolvedValue("openstates-tx-123");
+    const { select, _chain } = makeSelectMock([]);
+    mockedGetDb.mockReturnValue({ select } as never);
+    _chain.where.mockResolvedValue([]);
+
+    const result = await lookupDonorCoalition(
+      "Annise Parker",
+      "TX",
+      "state-TX-house",
+    );
+
+    expect(result).toEqual({ found: false, reason: "no_donor_data" });
+  });
+
+  it("returns no_donor_data when DB sentinel is hit after resolution", async () => {
+    mockedResolve.mockResolvedValue("openstates-tx-123");
+    mockedGetDb.mockReturnValue(DB_NOT_CONFIGURED as never);
+
+    const result = await lookupDonorCoalition(
+      "Annise Parker",
+      "TX",
+      "state-TX-house",
+    );
+
+    expect(result.found).toBe(false);
+    if (result.found === false) {
+      expect(result.reason).toBe("no_donor_data");
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Happy path
+// ---------------------------------------------------------------------------
+
+describe("lookupDonorCoalition — happy path", () => {
+  it("aggregates buckets with correct totals, percents, and ordering", async () => {
+    mockedResolve.mockResolvedValue("openstates-tx-123");
+    const { select, _chain } = makeSelectMock([]);
+    mockedGetDb.mockReturnValue({ select } as never);
+
+    // 3 buckets summing to $100,000.
+    //   labor=50000 (50%), tech=30000 (30%), real_estate=20000 (20%)
+    // amount_total is numeric(15,2) → drizzle/neon returns strings.
+    _chain.where.mockResolvedValue([
+      {
+        bucketLabel: "real_estate",
+        amountTotal: "20000.00",
+        source: "fec",
+        sourceUrl: "https://fec.gov/candidate/H1234",
+      },
+      {
+        bucketLabel: "labor",
+        amountTotal: "50000.00",
+        source: "fec",
+        sourceUrl: "https://fec.gov/candidate/H1234",
+      },
+      {
+        bucketLabel: "tech",
+        amountTotal: "30000.00",
+        source: "fec",
+        sourceUrl: "https://fec.gov/candidate/H1234",
+      },
+    ]);
+
+    const result = await lookupDonorCoalition(
+      "Annise Parker",
+      "TX",
+      "state-TX-house",
+    );
+
+    expect(result.found).toBe(true);
+    if (result.found !== true) return; // type narrow for the rest
+
+    // totalRaised must be numeric (not the "20000.0050000.00..." string we'd
+    // get from accidentally summing without Number() coercion).
+    expect(typeof result.totalRaised).toBe("number");
+    expect(result.totalRaised).toBe(100000);
+
+    // Sorted by amount descending
+    expect(result.buckets.map((b) => b.label)).toEqual([
+      "labor",
+      "tech",
+      "real_estate",
+    ]);
+    expect(result.buckets.map((b) => b.amount)).toEqual([50000, 30000, 20000]);
+    expect(result.buckets.map((b) => b.percent)).toEqual([50, 30, 20]);
+
+    // Percents sum to ~100 (allow ±1 for integer rounding).
+    const totalPercent = result.buckets.reduce((s, b) => s + b.percent, 0);
+    expect(Math.abs(totalPercent - 100)).toBeLessThanOrEqual(1);
+
+    expect(result.candidateId).toBe("openstates-tx-123");
+    expect(result.source).toBe("fec");
+    expect(result.sourceUrl).toBe("https://fec.gov/candidate/H1234");
+    expect(result.electionCycle).toBe("2026");
+  });
+
+  it("handles known-good fixture: candidate + 3 buckets", async () => {
+    mockedResolve.mockResolvedValue("federal-A123");
+    const { select, _chain } = makeSelectMock([]);
+    mockedGetDb.mockReturnValue({ select } as never);
+
+    _chain.where.mockResolvedValue([
+      {
+        bucketLabel: "small_dollar",
+        amountTotal: "125000.50",
+        source: "fec",
+        sourceUrl: "https://fec.gov/data/candidate/H8TX12345",
+      },
+      {
+        bucketLabel: "labor",
+        amountTotal: "75000.25",
+        source: "fec",
+        sourceUrl: "https://fec.gov/data/candidate/H8TX12345",
+      },
+      {
+        bucketLabel: "finance_insurance_real_estate",
+        amountTotal: "50000.00",
+        source: "fec",
+        sourceUrl: "https://fec.gov/data/candidate/H8TX12345",
+      },
+    ]);
+
+    const result = await lookupDonorCoalition(
+      "Jane Senator",
+      "TX",
+      "federal-house",
+    );
+
+    expect(result.found).toBe(true);
+    if (result.found !== true) return;
+
+    expect(result.totalRaised).toBeCloseTo(250000.75, 2);
+
+    // Ordering by amount descending
+    expect(result.buckets[0]!.label).toBe("small_dollar");
+    expect(result.buckets[1]!.label).toBe("labor");
+    expect(result.buckets[2]!.label).toBe("finance_insurance_real_estate");
+
+    // Each bucket amount is a real number, not a concatenated string
+    for (const b of result.buckets) {
+      expect(typeof b.amount).toBe("number");
+      expect(Number.isFinite(b.amount)).toBe(true);
+    }
+
+    // Percents are integers in 0..100 and sum to roughly 100
+    for (const b of result.buckets) {
+      expect(Number.isInteger(b.percent)).toBe(true);
+      expect(b.percent).toBeGreaterThanOrEqual(0);
+      expect(b.percent).toBeLessThanOrEqual(100);
+    }
+    const totalPercent = result.buckets.reduce((s, b) => s + b.percent, 0);
+    expect(Math.abs(totalPercent - 100)).toBeLessThanOrEqual(1);
+  });
+
+  it("defaults electionCycle to '2026' when omitted", async () => {
+    mockedResolve.mockResolvedValue("openstates-tx-123");
+    const { select, _chain } = makeSelectMock([]);
+    mockedGetDb.mockReturnValue({ select } as never);
+
+    _chain.where.mockResolvedValue([
+      {
+        bucketLabel: "small_dollar",
+        amountTotal: "100.00",
+        source: "fec",
+        sourceUrl: "https://fec.gov/x",
+      },
+    ]);
+
+    const result = await lookupDonorCoalition(
+      "Annise Parker",
+      "TX",
+      "state-TX-house",
+      // electionCycle omitted
+    );
+
+    expect(result.found).toBe(true);
+    if (result.found !== true) return;
+    expect(result.electionCycle).toBe("2026");
+  });
+
+  it("respects an explicit electionCycle", async () => {
+    mockedResolve.mockResolvedValue("openstates-tx-123");
+    const { select, _chain } = makeSelectMock([]);
+    mockedGetDb.mockReturnValue({ select } as never);
+
+    _chain.where.mockResolvedValue([
+      {
+        bucketLabel: "small_dollar",
+        amountTotal: "100.00",
+        source: "fec",
+        sourceUrl: "https://fec.gov/x",
+      },
+    ]);
+
+    const result = await lookupDonorCoalition(
+      "Annise Parker",
+      "TX",
+      "state-TX-house",
+      "2024",
+    );
+
+    expect(result.found).toBe(true);
+    if (result.found !== true) return;
+    expect(result.electionCycle).toBe("2024");
+  });
+
+  it("picks the most-common source/sourceUrl when rows disagree", async () => {
+    mockedResolve.mockResolvedValue("openstates-tx-123");
+    const { select, _chain } = makeSelectMock([]);
+    mockedGetDb.mockReturnValue({ select } as never);
+
+    // 2 rows say "fec", 1 row says "followthemoney" → most-common wins.
+    _chain.where.mockResolvedValue([
+      {
+        bucketLabel: "a",
+        amountTotal: "100.00",
+        source: "fec",
+        sourceUrl: "https://fec.gov/x",
+      },
+      {
+        bucketLabel: "b",
+        amountTotal: "100.00",
+        source: "fec",
+        sourceUrl: "https://fec.gov/x",
+      },
+      {
+        bucketLabel: "c",
+        amountTotal: "100.00",
+        source: "followthemoney",
+        sourceUrl: "https://ftm.org/y",
+      },
+    ]);
+
+    const result = await lookupDonorCoalition(
+      "Annise Parker",
+      "TX",
+      "state-TX-house",
+    );
+
+    expect(result.found).toBe(true);
+    if (result.found !== true) return;
+    expect(result.source).toBe("fec");
+    expect(result.sourceUrl).toBe("https://fec.gov/x");
+  });
+
+  it("handles a single-bucket coalition (percent = 100)", async () => {
+    mockedResolve.mockResolvedValue("federal-A123");
+    const { select, _chain } = makeSelectMock([]);
+    mockedGetDb.mockReturnValue({ select } as never);
+
+    _chain.where.mockResolvedValue([
+      {
+        bucketLabel: "small_dollar",
+        amountTotal: "12345.67",
+        source: "fec",
+        sourceUrl: "https://fec.gov/x",
+      },
+    ]);
+
+    const result = await lookupDonorCoalition(
+      "Solo Candidate",
+      "TX",
+      "federal-house",
+    );
+
+    expect(result.found).toBe(true);
+    if (result.found !== true) return;
+    expect(result.buckets).toHaveLength(1);
+    expect(result.buckets[0]!.percent).toBe(100);
+    expect(result.totalRaised).toBeCloseTo(12345.67, 2);
+  });
+});

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import React from "react";
 import { describe, it, expect, vi } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, within } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import { ValuesTagSelector } from "./ValuesTagSelector";
 import { LanguageProvider } from "../lib/i18n";
@@ -413,5 +413,44 @@ describe("ValuesTagSelector v2", () => {
     expect(
       screen.getByTestId("values-tag-selector-submitted"),
     ).toBeInTheDocument();
+  });
+
+  /* ── Short-letter id regression (interactive ranked list) ── */
+
+  it("renders human-readable labels in the ranked list when chip ids are short letters", () => {
+    const shortLetterBlock: ValuesTagRequestBlock = {
+      items: [
+        { id: "a", label: "Crime" },
+        { id: "b", label: "Healthcare" },
+      ],
+    };
+    render(
+      <LanguageProvider>
+        <ValuesTagSelector block={shortLetterBlock} onSubmit={vi.fn()} />
+      </LanguageProvider>,
+    );
+
+    // Click chips by their letter id to add them to the ranked list.
+    fireEvent.click(screen.getByTestId("values-tag-chip-a"));
+    fireEvent.click(screen.getByTestId("values-tag-chip-b"));
+
+    // The ranked-list items should display the human-readable labels,
+    // not the short letter ids. We scope the queries to the ranked list
+    // because the original chip buttons remain rendered with the same
+    // labels (aria-pressed=true) after selection — an unscoped
+    // screen.getByText("Crime") would match both the chip and the
+    // ranked-list label.
+    const rankedList = screen.getByTestId("ranked-list");
+    expect(rankedList).toHaveTextContent("Crime");
+    expect(rankedList).toHaveTextContent("Healthcare");
+
+    expect(within(rankedList).getByText("Crime")).toBeInTheDocument();
+    expect(within(rankedList).getByText("Healthcare")).toBeInTheDocument();
+
+    // The ranked items themselves should contain the labels, not bare ids.
+    const itemA = screen.getByTestId("ranked-item-tag-a");
+    const itemB = screen.getByTestId("ranked-item-tag-b");
+    expect(itemA.textContent).toContain("Crime");
+    expect(itemB.textContent).toContain("Healthcare");
   });
 });

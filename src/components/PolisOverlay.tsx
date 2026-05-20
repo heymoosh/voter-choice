@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo } from "react";
+import { useSearchParams } from "next/navigation";
 import { useLanguage } from "../lib/i18n";
 import { translations } from "../lib/translations";
 import { PrivacyCallout } from "./PrivacyCallout";
@@ -51,6 +52,64 @@ const YOU_DOT_R = 6;
 const MAX_STAGGER_MS = 900;
 const YOU_EXTRA_DELAY_MS = 100;
 const CONSENSUS_MAX_ITEMS = 5;
+
+/* ── Dev mock data (only used via ?devPolis=mock in development) ── */
+
+const DEV_MOCK_POLIS_DATA: PolisData = {
+  scope: "county",
+  sampleSize: 312,
+  thresholdMet: true,
+  dots: [
+    { x: 0.12, y: 0.18, primary: "DEM" },
+    { x: 0.22, y: 0.34, primary: "DEM" },
+    { x: 0.18, y: 0.51, primary: "DEM" },
+    { x: 0.27, y: 0.69, primary: "DEM" },
+    { x: 0.34, y: 0.42, primary: "DEM" },
+    { x: 0.41, y: 0.27, primary: "DEM" },
+    { x: 0.45, y: 0.58, primary: "DEM" },
+    { x: 0.78, y: 0.21, primary: "REP" },
+    { x: 0.72, y: 0.38, primary: "REP" },
+    { x: 0.85, y: 0.45, primary: "REP" },
+    { x: 0.69, y: 0.55, primary: "REP" },
+    { x: 0.81, y: 0.68, primary: "REP" },
+    { x: 0.76, y: 0.74, primary: "REP" },
+    { x: 0.63, y: 0.32, primary: "REP" },
+    { x: 0.5, y: 0.5, primary: "OPEN" },
+    { x: 0.55, y: 0.39, primary: "OPEN" },
+    { x: 0.48, y: 0.62, primary: "OPEN" },
+    { x: 0.58, y: 0.71, primary: "OPEN" },
+    { x: 0.43, y: 0.83, primary: "OPEN" },
+    { x: 0.62, y: 0.18, primary: "OPEN" },
+  ],
+  you: { x: 0.4, y: 0.45 },
+  consensus: [
+    {
+      canonicalIssue: "healthcare",
+      issueLabel: "Healthcare access",
+      percent: 78,
+    },
+    {
+      canonicalIssue: "education",
+      issueLabel: "Public education funding",
+      percent: 71,
+    },
+    {
+      canonicalIssue: "housing",
+      issueLabel: "Affordable housing",
+      percent: 64,
+    },
+    {
+      canonicalIssue: "infrastructure",
+      issueLabel: "Roads & infrastructure",
+      percent: 57,
+    },
+    {
+      canonicalIssue: "publicsafety",
+      issueLabel: "Public safety",
+      percent: 49,
+    },
+  ],
+};
 
 /* ── Primary color mapping ───────────────────────────────────── */
 
@@ -543,6 +602,26 @@ function UnlockedState({
   );
 }
 
+/* ── Dev override hook ───────────────────────────────────────── */
+
+/**
+ * Returns true when `?devPolis=mock` is in the URL AND we're running in
+ * development mode. Logs a one-time console warning when active. Used so
+ * QA can preview the unlocked viz without real consensus state.
+ */
+function useDevPolisMock(): boolean {
+  const searchParams = useSearchParams();
+  const active =
+    process.env.NODE_ENV === "development" &&
+    searchParams?.get("devPolis") === "mock";
+  useEffect(() => {
+    if (active) {
+      console.warn("[dev] PolisOverlay rendering with mock dataset");
+    }
+  }, [active]);
+  return Boolean(active);
+}
+
 /* ── Main export ─────────────────────────────────────────────── */
 
 export function PolisOverlay({
@@ -554,12 +633,18 @@ export function PolisOverlay({
   const { lang } = useLanguage();
   const t = translations[lang].research;
 
+  const devPolisMock = useDevPolisMock();
+  const effectiveData: PolisData = devPolisMock ? DEV_MOCK_POLIS_DATA : data;
+  const effectiveLoading = devPolisMock ? false : loading;
+
   // Build scope label for headings/copy
   const scopeName =
-    data.scope === "county" ? (countyName ?? "county") : (stateName ?? "state");
+    effectiveData.scope === "county"
+      ? (countyName ?? "county")
+      : (stateName ?? "state");
 
   // Loading
-  if (loading) {
+  if (effectiveLoading) {
     return (
       <section
         aria-label="Voter overlap visualization"
@@ -575,14 +660,14 @@ export function PolisOverlay({
       aria-label="Voter overlap visualization"
       className="p-4 border border-outline-variant/30 bg-surface-lowest rounded-sm space-y-4"
     >
-      {data.thresholdMet ? (
-        <UnlockedState t={t} data={data} scopeName={scopeName} />
+      {effectiveData.thresholdMet ? (
+        <UnlockedState t={t} data={effectiveData} scopeName={scopeName} />
       ) : (
         <LockedState
           t={t}
           scopeName={scopeName}
-          countToUnlock={data.countToUnlock}
-          sampleSize={data.sampleSize}
+          countToUnlock={effectiveData.countToUnlock}
+          sampleSize={effectiveData.sampleSize}
         />
       )}
     </section>
