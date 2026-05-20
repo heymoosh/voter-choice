@@ -542,7 +542,9 @@ describe("BallotToolClient — closed-primary participation gate", () => {
     });
     fireEvent.click(screen.getByTestId("zip-submit"));
     await waitFor(() => {
-      expect(screen.getByTestId("primary-participation-gate")).toBeInTheDocument();
+      expect(
+        screen.getByTestId("primary-participation-gate"),
+      ).toBeInTheDocument();
     });
     expect(
       screen.getByTestId("primary-participation-gate").textContent,
@@ -556,11 +558,11 @@ describe("BallotToolClient — closed-primary participation gate", () => {
     });
     fireEvent.click(screen.getByTestId("zip-submit"));
     await waitFor(() => {
-      expect(screen.getByTestId("primary-participation-gate")).toBeInTheDocument();
+      expect(
+        screen.getByTestId("primary-participation-gate"),
+      ).toBeInTheDocument();
     });
-    fireEvent.click(
-      screen.getByTestId("closed-primary-option-registered_dem"),
-    );
+    fireEvent.click(screen.getByTestId("closed-primary-option-registered_dem"));
     await waitFor(() => {
       expect(screen.getByTestId("chat-window")).toBeInTheDocument();
     });
@@ -589,7 +591,9 @@ describe("BallotToolClient — closed-primary participation gate", () => {
     });
     fireEvent.click(screen.getByTestId("zip-submit"));
     await waitFor(() => {
-      expect(screen.getByTestId("primary-participation-gate")).toBeInTheDocument();
+      expect(
+        screen.getByTestId("primary-participation-gate"),
+      ).toBeInTheDocument();
     });
     expect(
       screen.getByTestId("primary-participation-gate").textContent,
