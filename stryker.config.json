@@ -1,0 +1,71 @@
+{
+  "$schema": "./node_modules/@stryker-mutator/core/schema/stryker-schema.json",
+  "scope_comment": "Scoped to high-stakes paths only — see .ai/work-packets/tdd-phase-2-mutation-testing.md. Globs include not-yet-existing paths (prompts, state-rules, anthropic-client-byok) so this config activates when redesign Phases 1/5/9 land. The Stryker validator will warn 'Unknown stryker config option' for the *_comment keys — this is intentional documentation; see Stryker's own hint in that warning ('Did you only write this property as a comment?').",
+  "thresholds_comment": "thresholds.break is set ~5 points below the observed baseline (26.90% on 2026-05-20) to give CI headroom for noise. Ratchet plan: raise by 5 points once the suite stays above current break + 5 across several PRs and nightly runs. See docs/ai-coding-practices/guardrails/test-driven-development.md for the per-file breakdown.",
+  "tsconfig_comment": "tsconfigFile points at tsconfig.stryker.json (not the project tsconfig.json) so Stryker's TS checker only compiles the files we mutate plus their dependencies — avoids pre-existing type errors in unrelated UI files blocking the dry-run compile.",
+  "packageManager": "npm",
+  "testRunner": "vitest",
+  "plugins": [
+    "@stryker-mutator/vitest-runner",
+    "@stryker-mutator/typescript-checker"
+  ],
+  "vitest": {
+    "configFile": "vitest.config.ts"
+  },
+  "checkers": ["typescript"],
+  "tsconfigFile": "tsconfig.stryker.json",
+  "typescriptChecker": {
+    "prioritizePerformanceOverAccuracy": true
+  },
+  "coverageAnalysis": "perTest",
+  "concurrency": 2,
+  "timeoutMS": 60000,
+  "mutate": [
+    "src/lib/server/budget.ts",
+    "src/lib/server/rate-limit.ts",
+    "src/lib/generatePrompt.ts",
+    "src/lib/getStateData.ts",
+    "src/lib/server/alignment.ts",
+    "src/lib/prompts/**/*.ts",
+    "src/lib/state-rules/**/*.ts",
+    "src/lib/anthropic-client-byok.ts",
+    "!src/**/*.test.{ts,tsx}",
+    "!src/**/*.spec.{ts,tsx}",
+    "!src/lib/generated/**"
+  ],
+  "ignorePatterns": [
+    "src/lib/generated/**",
+    ".next/**",
+    "coverage/**",
+    "playwright-report/**",
+    "test-results/**",
+    ".specify/**",
+    ".ai/**",
+    "docs/**",
+    "metrics/**",
+    "experiments/**",
+    ".claude/**",
+    "scripts/ingest/**",
+    "playwright.config.ts",
+    "playwright-tests/**",
+    "drizzle/**",
+    "db/migrations/**",
+    ".github/**",
+    ".stryker-tmp/**",
+    "reports/**"
+  ],
+  "thresholds": {
+    "high": 80,
+    "low": 60,
+    "break": 22
+  },
+  "reporters": ["html", "clear-text", "progress", "json"],
+  "htmlReporter": {
+    "fileName": "reports/mutation/mutation.html"
+  },
+  "jsonReporter": {
+    "fileName": "reports/mutation/mutation.json"
+  },
+  "tempDirName": ".stryker-tmp",
+  "cleanTempDir": true
+}

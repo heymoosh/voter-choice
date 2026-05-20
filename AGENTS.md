@@ -54,7 +54,7 @@ Use focused checks first: `npm run lint`, `npm run test`, `npm run build`, `npm 
 
 ## Test-Driven Development
 
-Before implementing against acceptance criteria, write tests first, run `bash scripts/ai-tdd-red.sh <test-file>` to confirm the test fails, capture the failure output, then implement. The script is mandatory for the red phase; CI gates merges into `launch/production` via `.github/workflows/test.yml`. Details: `docs/ai-coding-practices/guardrails/test-driven-development.md`.
+Before implementing against acceptance criteria, write tests first, run `bash scripts/ai-tdd-red.sh <test-file>` to confirm the test fails, capture the failure output, then implement. The script is mandatory for the red phase; CI gates merges into `launch/production` via `.github/workflows/test.yml`. High-stakes paths additionally pass mutation testing via `scripts/ai-mutation-check.sh` (CI: `mutation` job). Details: `docs/ai-coding-practices/guardrails/test-driven-development.md`.
 
 ## Done
 
