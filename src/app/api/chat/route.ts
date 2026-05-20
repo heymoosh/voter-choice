@@ -87,7 +87,7 @@ const LOOKUP_DONOR_TOOL: Anthropic.Tool = {
     "finance filings (FEC for federal House/Senate, state ethics commissions for state House/Senate). " +
     "If the candidate is non-legislative (governor, judge, county, local) or otherwise not found, " +
     "the tool returns { found: false } — fall back to web_search for donor coalition in that case " +
-    "and emit donorDataSource=\"web_search\" (without amount/totalRaised fields).",
+    'and emit donorDataSource="web_search" (without amount/totalRaised fields).',
   input_schema: {
     type: "object" as const,
     properties: {
@@ -108,7 +108,8 @@ const LOOKUP_DONOR_TOOL: Anthropic.Tool = {
       },
       election_cycle: {
         type: "string",
-        description: "Optional. 4-digit year, e.g., \"2026\". Defaults to current cycle.",
+        description:
+          'Optional. 4-digit year, e.g., "2026". Defaults to current cycle.',
       },
     },
     required: ["candidate_name", "state_code", "jurisdiction"],

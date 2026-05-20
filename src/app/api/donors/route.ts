@@ -63,9 +63,7 @@ function parseAndValidateParams(
   searchParams: URLSearchParams,
 ): DonorParams | Response {
   const candidateName = (searchParams.get("candidate_name") ?? "").trim();
-  const stateCode = (searchParams.get("state_code") ?? "")
-    .trim()
-    .toUpperCase();
+  const stateCode = (searchParams.get("state_code") ?? "").trim().toUpperCase();
   const jurisdiction = (searchParams.get("jurisdiction") ?? "").trim();
   const electionCycleRaw = searchParams.get("election_cycle");
   const electionCycle =
