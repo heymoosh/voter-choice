@@ -83,6 +83,23 @@ Branch protection update (one-time, manual GitHub UI step, performed by repo adm
 
 Full detail and scope-expansion plan: `.ai/work-packets/tdd-phase-2-mutation-testing.md`.
 
+## Verification Rigor
+
+When a subagent reports "lint clean / tests pass / build green," the orchestrator MUST independently verify the **exit code**, not just scan output. Pipes (`grep`, `head`, `tail`) mask exit codes and can hide real failures past the visible tail.
+
+Standard verification pattern:
+
+```bash
+<cmd> > /tmp/<name>.txt 2>&1
+echo $?
+```
+
+Never trust a "clean" claim made through a pipeline filter. Confirm exit 0 explicitly.
+
+**Why this rule exists:** TDD Phase 2a surfaced that 8 prettier errors had been silently failing `npm run lint` on `launch/production` across multiple commits. Three subagents (Phase 1 Subagent A, Phase 1 Subagent D, Phase 2 Stryker setup) all reported "lint clean" because they were scanning for "Error:" lines past `| grep` / `| head` filters that masked the errors not in the visible tail. The CI gate caught the failure (and was doing its job), but admin-bypass pushes shipped past it because nobody re-verified the subagent claims. This rule closes that gap.
+
+The same rule applies to test claims (`npm run test`), build claims (`npm run build`), and mutation claims (`bash scripts/ai-mutation-check.sh`). The exit code is the load-bearing signal.
+
 ## Boundaries
 
 TDD as defined here does NOT cover:
