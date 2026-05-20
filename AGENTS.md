@@ -52,6 +52,10 @@ Do not execute from acceptance criteria alone. Work packets must carry intent, s
 
 Use focused checks first: `npm run lint`, `npm run test`, `npm run build`, `npm run e2e` when browser behavior changes, and `bash scripts/ai-verify.sh` for kit-aware routing.
 
+## Test-Driven Development
+
+Before implementing against acceptance criteria, write tests first, run `bash scripts/ai-tdd-red.sh <test-file>` to confirm the test fails, capture the failure output, then implement. The script is mandatory for the red phase; CI gates merges into `launch/production` via `.github/workflows/test.yml`. Details: `docs/ai-coding-practices/guardrails/test-driven-development.md`.
+
 ## Done
 
 Done means evidence reviewed, checks run or skipped with reason, acceptance criteria verified when present, anti-solutions avoided, ownership constraints preserved, changed files summarized, and risks named.

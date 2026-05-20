@@ -7,6 +7,7 @@ Decision owners:
 - Routing: `docs/ai-coding-practices/guardrails/request-routing.md`
 - Work packet rules: `docs/ai-coding-practices/guardrails/work-packet-rules.md`
 - Ownership discipline: `docs/ai-coding-practices/guardrails/ownership-discipline.md`
+- Test-driven development: `docs/ai-coding-practices/guardrails/test-driven-development.md`
 
 The user does not need to invoke this command. Use it internally when a ready work packet/correction packet already exists or after the agent has just created one.
 
@@ -18,10 +19,11 @@ The user does not need to invoke this command. Use it internally when a ready wo
 4. Do a lightweight boundary check: edit the stated owner/target, avoid parallel sources of truth, and stop if the audit is wrong or incomplete.
 5. Confirm only if ambiguity remains.
 6. Create/use a branch or worktree as appropriate.
-7. Implement within scope.
-8. Verify acceptance criteria, anti-solutions, ownership constraints, and evidence plan.
-9. Return changed files, named verification output, evidence artifacts, unverified risks, and finding-to-change mapping for correction work.
-10. Open a PR or provide a final summary with changed files and evidence when no separate PR flow exists.
+7. For each acceptance criterion: write the test first, run `bash scripts/ai-tdd-red.sh <test-file>` to confirm the red phase, capture the failure output as evidence, then implement. Skipping the red phase is not allowed. See `docs/ai-coding-practices/guardrails/test-driven-development.md`.
+8. Implement within scope.
+9. Verify acceptance criteria, anti-solutions, ownership constraints, and evidence plan.
+10. Return changed files, named verification output, evidence artifacts, unverified risks, and finding-to-change mapping for correction work.
+11. Open a PR or provide a final summary with changed files and evidence when no separate PR flow exists.
 
 ## Do Not
 

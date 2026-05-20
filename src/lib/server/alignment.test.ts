@@ -20,6 +20,7 @@ import {
   resolveCandidateId,
   lookupAlignment,
   computeVoteAlignment,
+  attachLimitedDataNotice,
 } from "./alignment";
 
 // ---------------------------------------------------------------------------
@@ -456,5 +457,207 @@ describe("lookupAlignment", () => {
     expect(result.contributingVotes[0]!.source.url).toBe(
       "https://openstates.org/bill/123",
     );
+  });
+
+  // -------------------------------------------------------------------------
+  // Limited-data notice — surfaces when total < 5 (thin tag corpus).
+  // Spec: docs/operations/post-launch-backlog.md "[P1] Alignment returns
+  // kept: 0 silently for unmapped concerns" + work packet
+  // .ai/work-packets/tdd-phase-1-core-discipline.md.
+  // -------------------------------------------------------------------------
+
+  it("surfaces a limited-data notice when total < 5 (thin tag corpus)", async () => {
+    const { select, _chain } = makeSelectMock([]);
+    mockedGetDb.mockReturnValue({ select } as never);
+
+    // 3 contributing votes — under the threshold of 5.
+    _chain.where.mockResolvedValue([
+      {
+        billTitle: "Border Security Act",
+        billSourceUrl: "https://govtrack.us/bill/b1",
+        billSource: "govtrack",
+        voteCast: "yea",
+        voteDate: "2024-05-01",
+        stanceLens: "in_favor",
+        taggerConfidence: "0.92",
+      },
+      {
+        billTitle: "Immigration Reform",
+        billSourceUrl: "https://govtrack.us/bill/b2",
+        billSource: "govtrack",
+        voteCast: "nay",
+        voteDate: "2024-04-01",
+        stanceLens: "in_favor",
+        taggerConfidence: "0.85",
+      },
+      {
+        billTitle: "Wall Funding Bill",
+        billSourceUrl: "https://govtrack.us/bill/b3",
+        billSource: "govtrack",
+        voteCast: "yea",
+        voteDate: "2024-03-01",
+        stanceLens: "in_favor",
+        taggerConfidence: "0.78",
+      },
+    ]);
+
+    const result = await lookupAlignment(
+      "federal-A123",
+      "border_security",
+      "in_favor",
+    );
+
+    expect(result.total).toBe(3);
+    expect(result.notice).toBeDefined();
+    expect(result.notice).toMatch(/limited data/i);
+    // The notice should reference the actual total so a reader knows the basis.
+    expect(result.notice).toContain("3");
+  });
+
+  it("does not surface a limited-data notice when total >= 5", async () => {
+    const { select, _chain } = makeSelectMock([]);
+    mockedGetDb.mockReturnValue({ select } as never);
+
+    // 6 contributing votes — over the threshold.
+    const rows = Array.from({ length: 6 }, (_, i) => ({
+      billTitle: `Healthcare Bill ${i}`,
+      billSourceUrl: `https://govtrack.us/bill/h${i}`,
+      billSource: "govtrack",
+      voteCast: "yea",
+      voteDate: `2024-0${(i % 9) + 1}-01`,
+      stanceLens: "in_favor",
+      taggerConfidence: String(0.9 - i * 0.02),
+    }));
+    _chain.where.mockResolvedValue(rows);
+
+    const result = await lookupAlignment(
+      "federal-A123",
+      "healthcare_affordability",
+      "in_favor",
+    );
+
+    expect(result.total).toBe(6);
+    // Either absent or empty — the contract is "no notice surfaces".
+    expect(result.notice ?? "").toBe("");
+  });
+
+  it("does not surface a limited-data notice exactly at total === 5 (boundary)", async () => {
+    const { select, _chain } = makeSelectMock([]);
+    mockedGetDb.mockReturnValue({ select } as never);
+
+    // 5 contributing votes — boundary; threshold is strict <.
+    const rows = Array.from({ length: 5 }, (_, i) => ({
+      billTitle: `Bill ${i}`,
+      billSourceUrl: `https://govtrack.us/bill/${i}`,
+      billSource: "govtrack",
+      voteCast: "yea",
+      voteDate: `2024-0${(i % 9) + 1}-01`,
+      stanceLens: "in_favor",
+      taggerConfidence: String(0.9 - i * 0.02),
+    }));
+    _chain.where.mockResolvedValue(rows);
+
+    const result = await lookupAlignment(
+      "federal-A123",
+      "healthcare_affordability",
+      "in_favor",
+    );
+
+    expect(result.total).toBe(5);
+    expect(result.notice ?? "").toBe("");
+  });
+
+  it("does not surface a limited-data notice when DB is not configured (unavailable already conveys it)", async () => {
+    mockedGetDb.mockReturnValue(DB_NOT_CONFIGURED as never);
+    const result = await lookupAlignment(
+      "federal-A123",
+      "healthcare_affordability",
+      "in_favor",
+    );
+    // unavailable.reason is set; piling a "Limited data: 0 votes" notice on top
+    // would read broken. Notice is absent for infra-level not-available.
+    expect(result.unavailable).toBeDefined();
+    expect(result.notice ?? "").toBe("");
+  });
+
+  it("does not surface a limited-data notice when zero tagged rows match (existing unavailable.reason conveys it)", async () => {
+    const { select, _chain } = makeSelectMock([]);
+    mockedGetDb.mockReturnValue({ select } as never);
+    _chain.where.mockResolvedValue([]);
+
+    const result = await lookupAlignment(
+      "federal-A123",
+      "border_security",
+      "in_favor",
+    );
+
+    expect(result.total).toBe(0);
+    expect(result.unavailable).toBeDefined();
+    expect(result.notice ?? "").toBe("");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// attachLimitedDataNotice — the pure helper, tested in isolation so the
+// found: false branch (which lookupAlignment never returns directly) is
+// covered without relying on the DB query path.
+// ---------------------------------------------------------------------------
+
+describe("attachLimitedDataNotice", () => {
+  it("attaches a notice mentioning 'limited data' when found: true and total < 5 (and > 0)", () => {
+    const result = attachLimitedDataNotice({
+      found: true,
+      candidateId: "federal-A123",
+      kept: 1,
+      total: 3,
+      contributingVotes: [],
+    });
+    expect(result.found).toBe(true);
+    if (result.found) {
+      expect(result.notice).toBeDefined();
+      expect(result.notice).toMatch(/limited data/i);
+      expect(result.notice).toContain("3");
+    }
+  });
+
+  it("does not attach a notice when found: true and total >= 5", () => {
+    const result = attachLimitedDataNotice({
+      found: true,
+      candidateId: "federal-A123",
+      kept: 4,
+      total: 10,
+      contributingVotes: [],
+    });
+    if (result.found) {
+      expect(result.notice ?? "").toBe("");
+    }
+  });
+
+  it("does not attach a notice when found: false (passthrough — existing not-found behavior unchanged)", () => {
+    const input = {
+      found: false as const,
+      unavailable: { reason: "Candidate not in database" },
+    };
+    const result = attachLimitedDataNotice(input);
+    expect(result.found).toBe(false);
+    // No notice field on AlignmentNotFound; verify the shape is untouched.
+    expect((result as unknown as { notice?: string }).notice ?? "").toBe("");
+    if (!result.found) {
+      expect(result.unavailable.reason).toBe("Candidate not in database");
+    }
+  });
+
+  it("does not attach a notice when found: true but result already has unavailable set (DB-not-configured / no rows)", () => {
+    const result = attachLimitedDataNotice({
+      found: true,
+      candidateId: "federal-A123",
+      kept: 0,
+      total: 0,
+      contributingVotes: [],
+      unavailable: { reason: "No tagged votes for this issue in our records yet" },
+    });
+    if (result.found) {
+      expect(result.notice ?? "").toBe("");
+    }
   });
 });

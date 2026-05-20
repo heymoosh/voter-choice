@@ -22,8 +22,9 @@ Decision owners:
 9. If operational reproducibility applies, identify setup, config, deployment, migrations, manual-step boundaries, and verification strategy.
 10. If the ownership audit gate applies, perform or delegate research/evaluation before execution.
 11. Create the lightest needed artifact before implementation, including business logic, commercial readiness, operational reproducibility, and ownership recommendations when required.
-12. Declare worktree intent if using a task branch or parallel worktree.
-13. Proceed only when intent, business logic, readiness, operations, scope, ownership, and verification are clear enough for the chosen route.
+12. If implementing against acceptance criteria: write tests first, run `bash scripts/ai-tdd-red.sh <test-file>`, capture failure output, then implement. Details: `docs/ai-coding-practices/guardrails/test-driven-development.md`.
+13. Declare worktree intent if using a task branch or parallel worktree.
+14. Proceed only when intent, business logic, readiness, operations, scope, ownership, and verification are clear enough for the chosen route.
 
 ## Do Not
 

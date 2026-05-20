@@ -30,6 +30,17 @@ export interface AlignmentResult {
   total: number;
   contributingVotes: ContributingVote[];
   unavailable?: { reason: string };
+  /**
+   * Optional structured notice surfaced to the chat layer when the underlying
+   * tag corpus is thin (e.g., `total < 5`). The chat layer / UI should render
+   * this verbatim so the user understands the score is based on limited data.
+   * Absent (undefined) when there is no notice to surface.
+   *
+   * See: `attachLimitedDataNotice` for the gating rules and
+   * `docs/operations/post-launch-backlog.md` "[P1] Alignment returns kept: 0
+   * silently for unmapped concerns" for the user-impact context.
+   */
+  notice?: string;
 }
 
 export interface AlignmentNotFound {
@@ -38,6 +49,40 @@ export interface AlignmentNotFound {
 }
 
 export type AlignmentLookupResult = AlignmentResult | AlignmentNotFound;
+
+/** Threshold below which the alignment lookup is considered "thin data". */
+const LIMITED_DATA_THRESHOLD = 5;
+
+/**
+ * Attach a "limited data" notice to an alignment result when the underlying
+ * tag corpus is too thin to be statistically meaningful.
+ *
+ * Gating rules:
+ *  - Only attaches when `result.found === true`. AlignmentNotFound is a
+ *    passthrough; the existing `unavailable.reason` already conveys the issue.
+ *  - Only attaches when `0 < total < LIMITED_DATA_THRESHOLD`. A `total` of 0
+ *    typically co-occurs with `unavailable.reason` (no rows / DB not
+ *    configured); stacking "Limited data: 0 votes" on top of that reads
+ *    broken, so we suppress the notice in those cases.
+ *  - Only attaches when `result.unavailable` is absent. If the caller has
+ *    already flagged the lookup as unavailable, that signal takes precedence.
+ *
+ * Pure function. Tested directly in `alignment.test.ts`.
+ */
+export function attachLimitedDataNotice(
+  result: AlignmentLookupResult,
+): AlignmentLookupResult {
+  if (!result.found) return result;
+  if (result.unavailable) return result;
+  if (result.total <= 0) return result;
+  if (result.total >= LIMITED_DATA_THRESHOLD) return result;
+
+  const noun = result.total === 1 ? "vote" : "votes";
+  return {
+    ...result,
+    notice: `Limited data: only ${result.total} relevant ${noun} found for this issue (${result.kept} aligned with your stance). Score may not reflect the candidate's overall record.`,
+  };
+}
 
 // ---------------------------------------------------------------------------
 // Candidate resolution
@@ -238,11 +283,18 @@ export async function lookupAlignment(
       },
     }));
 
-  return {
+  const base: AlignmentResult = {
     found: true,
     candidateId,
     kept,
     total,
     contributingVotes,
   };
+
+  // Surface a "limited data" notice when the tag corpus is too thin for the
+  // score to be meaningful. Gated by `attachLimitedDataNotice` — see helper.
+  const withNotice = attachLimitedDataNotice(base);
+  // attachLimitedDataNotice preserves discriminated union; we know it's
+  // AlignmentResult here because we passed an AlignmentResult in.
+  return withNotice as AlignmentResult;
 }
