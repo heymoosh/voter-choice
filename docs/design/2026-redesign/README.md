@@ -1,0 +1,284 @@
+# Voter Choice — 2026 Redesign Handoff
+
+This folder is a complete design brief for a multi-phase rebuild of the Voter Choice flow, intended to be groomed into work packets per `AGENTS.md` and executed under the existing Next.js / TypeScript / Tailwind app.
+
+Read this README first, then the linked artifacts in the order given.
+
+---
+
+## 1 · TL;DR — what changes
+
+The redesign reframes Voter Choice from "AI chatbot with side outputs" to **"wizard that fills in a printable ballot."** The five concrete shifts:
+
+1. **Free-form cold open.** No pre-built issue picker. The user describes what they care about in their own words; the AI mirrors back inferred themes with verbatim quotes; the user reorders, renames, or removes before locking in. This is the input the rest of the app weights every candidate against.
+2. **Three-pane workspace.** Left rail (progress + priorities + race list) · center chat · **right ballot pane that fills in live as the user decides.** The printable ballot is no longer hidden behind a button — it's the persistent artifact the user can see growing.
+3. **State party gates as data, not code.** Texas runoff overlay, PA closed primary, CA top-two — each is a row in a rules table keyed by `[state, electionType]`. Adding a state means a new row, never new logic. Gate appears between address entry and cold open **only when state rules require it**.
+4. **Prompt refactor.** Replace the 12K `BALLOT_PROMPT.md` with six task-specific prompts (theme extraction, race deep-dive, proposition explainer, theme amendment, handoff generation, plus a shared safety header). Each under 1,200 chars. The app picks which prompt to use based on the current view. The old big prompt becomes the **out-of-budget handoff target** only.
+5. **Polis view that says something.** Replace the random scatter with three readings: a "you're not alone" priority-overlap bar chart, bridge statements (where 80%+ of every cluster agrees), and a named-cluster compass where the cluster names describe shared priorities, not party labels.
+
+Plus secondary improvements: mid-session theme amendment with silent re-scoring, candidate cards that read cleanly even when charts fail, polling logistics surfaced *after* the ballot is mostly built, and a graceful out-of-budget handoff that reads as continuity, not a paywall.
+
+Full rationale and screen-by-screen mocks: `Voter Choice Redesign.html`.
+
+---
+
+## 2 · How to read this folder
+
+In order:
+
+1. **`Voter Choice Redesign.html`** — Open in a browser. Read end to end. 15 sections; every annotation explains the *why* behind a decision. Don't skim. This is the spec.
+2. **`prototype/Voter Choice Prototype.html`** — Open in a browser (no server needed; uses inline Babel). Click through the happy path: home → loading → cold open → workspace → print. This is what "done" looks like for visual fidelity and interaction model. State persists in `localStorage`, so refresh and you keep your place.
+3. **`prompts.md`** — Six task prompts plus a routing table mapping view → prompt. Read this before touching `src/lib/generatePrompt.ts` or the chat route.
+
+The prototype is React 18 + inline Babel, intentionally separate from the real Next.js stack so it loads offline. Don't port it directly; it's a reference, not source code.
+
+---
+
+## 3 · Two non-negotiables
+
+Spell these out at the start of any work session. They are not preferences:
+
+1. **No pre-built issue picker.** The cold open is free-form text. `ValuesTagSelector.tsx` gets deleted, not feature-flagged or kept as fallback. The whole pitch of the tool — non-partisan, voter's own language — collapses the moment we hand someone a list of "approved" issues.
+2. **State rules live as data, not code.** Adding a new state to the party-gate logic means adding a row to `getStateData.ts` (or wherever the rules table lands), not adding `if (state === 'TX')` branches in components. The component renders from data every time.
+
+---
+
+## 4 · Existing-repo mapping
+
+Most prototype concerns map to a real file already in `src/`. The redesign is **evolution**, not greenfield.
+
+| Prototype concern | Existing file(s) in repo | Notes |
+|---|---|---|
+| HomeView address card | `src/components/AddressInput.tsx` + `src/lib/useGooglePlacesAutocomplete.ts` | Keep; restyle |
+| LoadingView (Civic API flash) | _(new)_ | Small new component |
+| Cold open · free-form prompt | `src/components/ConcernInterpretation.tsx`, `src/components/ValuesTagSelector.tsx`, `src/components/ChatPanel.tsx` | **Biggest design change.** `ConcernInterpretation` evolves into the inference flow. `ValuesTagSelector` gets deleted. |
+| WorkspaceView (3 panes) | `src/components/BallotToolClient.tsx`, `src/components/ResearchLayout.tsx`, `src/components/ChatPanel.tsx`, `src/components/ResearchPortfolio.tsx` | Restructure into rail / chat / ballot-pane |
+| Candidate card alignment | `src/components/AlignmentScoreBanner.tsx`, `src/components/AlignmentDrilldown.tsx`, `src/components/PlatformAlignmentRatio.tsx` | Make text-first so failure modes degrade cleanly |
+| Donor bars | `src/components/FunderBars.tsx` | Keep; ensure label readability without color |
+| Race patterns / proposition cards | `src/components/RacePatterns.tsx` | Add if-yes/if-no two-column layout |
+| Live ballot pane (right) | _(new)_ | Build from `BallotToolClient` state |
+| Print/handoff outputs | `src/components/HandoffPackage.tsx`, `src/components/BallotActions.tsx`, `src/components/PromptOutput.tsx` | Split — printable ballot is its own page-shaped artifact |
+| Polis view | `src/components/PolisOverlay.tsx`, `src/app/api/polis/route.ts` | Rebuild visualization; backend bridge logic likely new |
+| Polling logistics | `src/components/PollingLocationCard.tsx` | Move surface point to ballot pane footer |
+| State party gate | `src/components/StateInfoCard.tsx`, `src/components/StateSelectorModal.tsx`, `src/lib/getStateData.ts` | Build new `PartyGate.tsx`; extend `getStateData` rules table |
+| Budget / out-of-budget | `src/lib/server/budget.ts`, `src/lib/server/rate-limit.ts` | UI state when budget exhausts; keep server logic |
+| Old all-in-one prompt | `src/lib/generatePrompt.ts`, `src/lib/generated/ballotPromptEn.generated.ts`, `src/lib/generated/ballotPromptEs.generated.ts`, `scripts/generate-ballot-prompt-module.mjs` | Old prompt stays as the **out-of-budget handoff target** only. In-app calls use the new six-prompt fleet. |
+| Civic-API miss / paste fallback | `src/lib/parseBallotContent.ts`, `pdfjs-dist`, `tesseract.js` (already in deps) | Add PII warning UI alongside the existing paste flow |
+| Chat API | `src/app/api/chat/route.ts` (32KB — likely needs surgery) | Route by view → prompt; pass `<context>` blocks as system, user message in `messages` array |
+| State info per region | `src/lib/getStateData.ts`, `src/lib/lookupZip.ts`, `src/lib/lookupCounty.ts` | Extend with party-rule schema |
+
+There is **no greenfield** here. Don't rebuild — extend.
+
+---
+
+## 5 · Build sequence
+
+Run `/groom` on this section per `AGENTS.md`. Each entry below is a work-packet intent. **Do not jump ahead.** Phases land cleanly when sequenced; out of order, they collide with each other.
+
+### Phase 1 — Prompt refactor (data layer)
+
+**Intent.** Replace the in-app use of `BALLOT_PROMPT.md` with the six-prompt fleet in `prompts.md`. Keep the old big prompt only as the out-of-budget handoff target. Route which prompt to send based on current view (cold-open / workspace-race / workspace-prop / amend / handoff).
+
+**Touches.** `src/lib/generatePrompt.ts`, `src/lib/generated/ballotPromptEn.generated.ts`, `src/lib/generated/ballotPromptEs.generated.ts`, `src/app/api/chat/route.ts`, `scripts/generate-ballot-prompt-module.mjs`.
+
+**Notes.**
+- Ship behind a feature flag (`PROMPT_FLEET_V2`) so the old behavior remains the default until the new flow is validated.
+- New prompts inject dynamic state via `<tag>` blocks server-side. Strip PII (full address, name, DOB) before injection — only city + state ever reach the model.
+- Multi-turn conversation: system prompt is rebuilt every turn from current app state; user/assistant messages accumulate in the `messages` array.
+- Scope is **per-race**. Switching active race in the rail clears chat history. Per-race history persistence is a v2 concern, not v1.
+
+### Phase 2 — Free-form cold open
+
+**Intent.** Replace `ValuesTagSelector` with a free-form textarea + AI theme inference. AI returns themes as JSON; user reranks via drag-and-drop (use `@dnd-kit/sortable` — already in deps), renames inline, removes themes, or rewrites the original message and re-extracts.
+
+**Touches.** `src/components/ConcernInterpretation.tsx` (becomes the inference flow), `src/components/ValuesTagSelector.tsx` (**delete**), `src/components/ChatPanel.tsx`, possibly `src/app/PageContent.tsx`.
+
+**Notes.**
+- Use `@dnd-kit/sortable` for theme reranking. The repo already has it (`6.3.1` / `10.0.0`).
+- No artificial slot count. User describes two things → two themes. Five things → five themes. Don't pad.
+- Two starter chips: "Show me an example" (fills sample text) and "Use a starter profile" (loads saved `.txt`).
+- Quotes shown under each theme name are **verbatim phrases from the user's message**. The AI can't paraphrase.
+- "Let me rewrite my message" footer button: scraps the inference and reopens the textarea with the original draft.
+
+### Phase 3 — Workspace split
+
+**Intent.** Restructure `BallotToolClient` + `ResearchLayout` into the three-pane layout. Left rail with progress, priorities (with edit link), and grouped race list. Center: chat panel scoped to active race. Right: live ballot pane filling in as decisions land.
+
+**Touches.** `src/components/BallotToolClient.tsx`, `src/components/ResearchLayout.tsx`, `src/components/ChatPanel.tsx`, new `src/components/BallotPane.tsx`.
+
+**Notes.**
+- Race auto-advance: after a pick, advance to the next undecided race (unless user has manually clicked into a finished one to review).
+- "Why I picked this" note prompted inline after pick; persisted on the decision; shown in italics on the printable.
+- Active race highlight on the ballot pane (left border in civic-soft) makes the user's place obvious.
+- Print, save profile, and handoff buttons live at the **bottom of the ballot pane**, not in the chat input row.
+
+### Phase 4 — Text-first candidate cards
+
+**Intent.** Make `AlignmentScoreBanner` + `FunderBars` render usefully even when chart data fails or is partial. Labels and percentages are the load-bearing element; bars are decoration.
+
+**Touches.** `src/components/AlignmentScoreBanner.tsx`, `src/components/FunderBars.tsx`, `src/components/AlignmentDrilldown.tsx`, `src/components/RacePatterns.tsx`.
+
+**Notes.**
+- Layout reads as a clean labeled list even with zero bars rendered.
+- First-time candidates with no record: explicit "No legislative record to compare against" message inside the alignment section — not a broken empty chart.
+- Donor stacked bar plus top-3 donor list as text; never just the bar alone.
+
+### Phase 5 — State party gates
+
+**Intent.** Build the gate screen that appears between address entry and cold open **only when state rules require it**. Driven by a rules table keyed by `[state, electionType]`. Ship TX (runoff overlay, §172.087), PA (closed primary), and CA (top-two) first; rules table is extensible by adding rows.
+
+**Touches.** `src/lib/getStateData.ts`, new `src/components/PartyGate.tsx`, `src/app/PageContent.tsx` (routing), possibly `src/lib/server/...` if the rule resolution needs to be server-side for security.
+
+**Notes.**
+- **Rules as data, not code.** Each rule entry: `{state, electionType, category ('open'/'semi'/'closed'/'top2'), citation, statuteText, options: [...]}`.
+- Closed states (PA, NY) need a graceful "you cannot vote this primary — here's how to switch for next time" path for unaffiliated voters. Don't hide it.
+- Selection becomes part of every downstream chat call's system prompt. Inject as `<ballot_context>` tag. Chat never asks "which party are you voting?" mid-conversation.
+- General elections: no gate. The route skips `PartyGate` entirely when there's no rule for that `[state, electionType]`.
+- The "I'm not sure" option leads to an AI-assisted clarification — the chat helps figure out the user's status. Don't lock people out of ambiguity.
+
+### Phase 6 — Mid-session theme amendment
+
+**Intent.** Both entry paths (rail "Edit themes" link + chat-detected new concern) land on the same inline amend editor in the chat thread. After lock, AI silently re-scores prior decisions; only races with meaningful score shifts surface a REVISIT tag. Everything else gets a quiet HOLD.
+
+**Touches.** `src/components/ChatPanel.tsx`, `src/components/AlignmentDrilldown.tsx`, new component for the amend editor (or as a state inside ChatPanel).
+
+**Notes.**
+- The amend editor opens **inline in the chat**, not in a modal. The chat is the audit trail.
+- Use the theme-amendment prompt from `prompts.md`. Returns JSON: new theme + re-score for each decided race + verdict.
+- REVISIT logic: score drops 5+ points AND another candidate in the race scores higher under the new ranking.
+- Auto-advancing after amendment is wrong — the user just made a deliberate change; let them sit with the deltas before moving on.
+
+### Phase 7 — Printable PDF
+
+**Intent.** One-page US-Letter printable ballot. Heavy ink, scannable across a polling booth in dim light. Polling logistics header at top. Picks grouped by section. User's own notes in italic next to each pick. Themes listed at the bottom for context.
+
+**Touches.** `src/components/HandoffPackage.tsx` or new `src/components/PrintBallot.tsx`, new `print.css` (or `@media print` block in the existing stylesheet).
+
+**Notes.**
+- Use `window.print()`. Don't ship a PDF library — the browser handles it.
+- One page hard cap. If picks overflow, the wizard prompts to trim "why" notes.
+- No color required. Prints cleanly in monochrome.
+- Polling place address, hours, what to bring, early voting window all surface in the header — so if the user only walks in with this one sheet, they have everything.
+
+### Phase 8 — Polis view: bridges and "you're not alone" first
+
+**Intent.** Update `PolisOverlay` to show three readings: (a) priority-overlap bars — "of voters in your county, X% also ranked [theme] in their top four"; (b) bridge statements — items where 80%+ of every cluster agreed; (c) named-cluster compass with cluster names describing shared priorities, not party labels.
+
+**Touches.** `src/components/PolisOverlay.tsx`, `src/app/api/polis/route.ts`, possibly new aggregation logic in `src/lib/server/`.
+
+**Notes.**
+- Bars and bridge statements ship first. They need no ML — they're SQL aggregates.
+- Named-cluster compass needs ~150 finished in-county sessions to cluster meaningfully. Hide it until thresholds are met; "not enough data yet" is honest.
+- Use PCA over priority ranks + agree/disagree statements for the two axes; post-hoc-label the clusters by their shared top priorities, never by party registration.
+- "Unaligned" (12-15% typically) is a real cluster — don't force every dot into a named group.
+
+### Phase 9 — Out-of-budget handoff reframe
+
+**Intent.** When the monthly community budget is exhausted, the user lands on a continuity screen, not an apology. Their ballot is saved, the handoff prompt is ready to copy, four alphabetical chatbot links (Claude, ChatGPT, Gemini, Grok) offer the next chat. Power users can drop in their own Anthropic API key to keep going inside Voter Choice.
+
+**Touches.** `src/lib/server/budget.ts` (already exists — surface a structured state, not a 500), new `src/components/BudgetExhausted.tsx`, possibly a new `src/lib/anthropic-client-byok.ts` for bring-your-own-key path.
+
+**Notes.**
+- The headline is "Your ballot is saved. Keep going on any chatbot." Not "We've hit our limit, sorry."
+- Four chatbots in alphabetical order. Voter Choice is non-partisan; the AI-provider choice is too.
+- BYOK path stores the key in `localStorage` only. Never sent to the Voter Choice server. Make this explicit in the UI copy.
+- The handoff target prompt is the **original `BALLOT_PROMPT.md`** — paste-able into any chat. Keep the generated module in `src/lib/generated/` for this path even after Phase 1 retires it from in-app use.
+
+---
+
+## 6 · Things to ask before deviating
+
+The design has been iterated several times in the source thread. Some apparent "edge cases" already have deliberate answers in `Voter Choice Redesign.html`. Before changing any of the following, ask:
+
+- **Visual hierarchy / typography** — type system (Newsreader serif + IBM Plex Sans + IBM Plex Mono) and palette (cream paper, deep ink, civic teal) are intentional. The Tweaks panel exposes alternates (Civic / Manifesto moods, Constitutional / Newsprint palettes, Daylight / Inkwell treatments). If the production app needs a different default, that's a discussion, not a unilateral change.
+- **Copy tone.** "Hold Congress to its record" / "Pull my ballot" / "Decide at the polls" — the voice is plain, direct, non-marketing. Reads like a tool, not a campaign. Don't soften.
+- **Interaction model on the cold open.** The free-form prompt + AI mirror + user reorder is the whole differentiation. Don't add a "skip and choose from a list" path.
+- **Per-race chat scope.** Switching the active race clears chat history. This is deliberate (clean context for Haiku, matches user mental model). If you want session-wide history, ask first.
+
+Implementation-level decisions (state management library, routing patterns, API client shape, file organization within a phase) — your call. Match the existing codebase conventions.
+
+---
+
+## 7 · Verification expectations
+
+Per `AGENTS.md`:
+
+- `npm run lint` — clean
+- `npm run test` — passing
+- `npm run build` — successful
+- `npm run e2e` — when browser behavior changes
+- `bash scripts/ai-verify.sh` — for kit-aware routing
+
+For Phase 1 specifically: add unit tests for prompt routing logic (which prompt gets selected for each view) and golden-file tests for the rendered prompt output (input state → exact text sent to Anthropic). The current prompt module has heavy test coverage in `generatePrompt.test.ts`; mirror that posture.
+
+For Phase 5 (state party gates): the rules-as-data approach should be testable as `(state, electionType) → expected gate component output` table-driven tests. No mocking required.
+
+---
+
+## 8 · What's mocked in the prototype (and shouldn't be in production)
+
+The prototype uses fake data to demonstrate interaction. Production wires these to real sources:
+
+| Prototype mock | Real source |
+|---|---|
+| 5 mock races (Senate, House, Governor, 2 Props) | Google Civic API + your `src/data/` ballot data |
+| Candidate alignment scores | `src/lib/server/alignment.ts` over real voting records |
+| Donor industries and amounts | `src/lib/server/donors.ts` over FEC / OpenSecrets |
+| Theme inference (1.2s timeout, hardcoded themes) | The new theme-extraction Haiku call from `prompts.md` |
+| Polling place card data | `PollingLocationCard.tsx` over Civic API + Google Maps |
+| Loading screen progress steps | Real API call states |
+| The "why" note auto-fills on pick | In production: prompt the user inline; persist their actual text |
+
+---
+
+## 9 · Files in this folder
+
+```
+docs/design/2026-redesign/
+├── README.md                           ← this file
+├── Voter Choice Redesign.html          ← the design brief (15 sections)
+├── prompts.md                          ← refactored chat prompts + routing table
+└── prototype/
+    ├── Voter Choice Prototype.html     ← entry point — open in browser
+    ├── prototype.css                   ← reference styles
+    ├── prototype-data.jsx              ← mock data shape (the data contract)
+    ├── prototype-components.jsx        ← shared components
+    ├── prototype-views.jsx             ← Home / Loading / ColdOpen / Workspace / Print
+    └── prototype-app.jsx               ← state machine + persistence
+```
+
+The prototype is React 18 + inline Babel + ~1.5KB CSS variables. It is **not** a port target — it's a visual and interaction reference. The real app stays Next.js 15 / React 19 / Tailwind.
+
+---
+
+## 10 · First message to paste into Claude Code
+
+```
+Read docs/design/2026-redesign/README.md, then the design brief at
+docs/design/2026-redesign/Voter Choice Redesign.html (15 sections,
+end to end).
+
+Then open docs/design/2026-redesign/prototype/Voter Choice Prototype.html
+in a browser and click through the happy path: address → loading →
+cold open → workspace → print. This is what "done" looks like for
+visual fidelity and interaction model.
+
+Then read docs/design/2026-redesign/prompts.md — the new in-app
+prompt fleet that replaces BALLOT_PROMPT.md.
+
+Do not write any code yet. Run /groom on the Build Sequence in the
+README (section 5) and draft work packets for each of the nine
+phases under .ai/work-packets/. Order matters — do not flatten or
+reorder.
+
+Two non-negotiables I won't accept changes to without discussion:
+  1. No pre-built issue picker. The cold open is free-form text
+     with AI theme inference. ValuesTagSelector gets deleted.
+  2. State rules live as data, not code. Adding a state is a row
+     in getStateData.ts, not new if-branches.
+
+When the packets are drafted, surface them for review before
+executing /work-next.
+```
+
+That's the entire handoff. Paste it once Claude Code is open in this repo, and the rest follows your existing AGENTS.md workflow.
