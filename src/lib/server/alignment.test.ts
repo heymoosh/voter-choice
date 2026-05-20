@@ -654,7 +654,9 @@ describe("attachLimitedDataNotice", () => {
       kept: 0,
       total: 0,
       contributingVotes: [],
-      unavailable: { reason: "No tagged votes for this issue in our records yet" },
+      unavailable: {
+        reason: "No tagged votes for this issue in our records yet",
+      },
     });
     if (result.found) {
       expect(result.notice ?? "").toBe("");
