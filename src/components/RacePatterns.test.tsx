@@ -668,9 +668,7 @@ describe("RacePatterns — FunderBars rich mode (DB-sourced amounts)", () => {
   it("does not render web-search footnote when donorDataSource is voting_record", () => {
     renderPatterns(blockWithRichDonorData);
     // cand-rich uses voting_record — should NOT show footnote within its section
-    const candSection = screen.getByTestId(
-      "race-patterns-candidate-cand-rich",
-    );
+    const candSection = screen.getByTestId("race-patterns-candidate-cand-rich");
     expect(
       candSection.querySelector(
         '[data-testid="funder-bars-web-search-footnote"]',
