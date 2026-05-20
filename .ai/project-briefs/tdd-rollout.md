@@ -197,7 +197,8 @@ Execution packet rules:
 
 ## Work Packets
 
-- `.ai/work-packets/tdd-phase-1-core-discipline.md` — TDD Phase 1: Willison ritual + CI workflow + branch protection + red-phase script + guardrail doc + AGENTS.md update + validation on the "limited data notice" task. Status: ready.
+- `.ai/work-packets/tdd-phase-1-core-discipline.md` — TDD Phase 1: Willison ritual + CI workflow + branch protection + red-phase script + guardrail doc + AGENTS.md update + validation on the "limited data notice" task. Status: SHIPPED 2026-05-20 (commits `5967ced` + `6dfcf38`). Branch protection currently relaxed to require `test` only; `e2e` to be re-added when Phase 1a lands.
+- `.ai/work-packets/tdd-phase-1a-e2e-ci-compatibility.md` — TDD Phase 1a (follow-up to Phase 1): make `npm run e2e` pass reliably in CI so `e2e` can be re-added to branch-protection required-status. Status: ready. Discovered by Phase 1's first CI run (46/94 e2e tests timed out on `prompt-output` waitFor — pre-existing CI-readiness gap exposed by the new gate, not a regression).
 - `.ai/work-packets/tdd-phase-2-mutation-testing.md` — TDD Phase 2: Stryker setup, scoped mutation testing on high-stakes paths, mutation-score threshold, CI integration. Status: ready (blocked-on Phase 1).
 - `.ai/work-packets/tdd-phase-3-visual-regression-and-thresholds.md` — TDD Phase 3: Playwright visual regression baselines (post-redesign), coverage thresholds, pre-push hook, polish. Status: ready (blocked-on Phase 1 + redesign Phase 4 baseline).
 - `.ai/work-packets/tdd-phase-4-aqe-advisory.md` — TDD Phase 4: Agentic QE advisory enablement. Status: DEFERRED — no packet drafted until a trigger fires. The brief carries this as a placeholder.

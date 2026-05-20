@@ -23,6 +23,8 @@ The dynamic state (themes, decisions, active race, ballot context from the party
 
 Phase 1 is the data-layer foundation everything else builds on. Phase 2 will consume the new theme-extraction prompt and JSON parser to drive the free-form cold open. Phase 5's party gate emits the `<ballot_context>` tag that Phase 1's prompt fleet must already know how to consume. Phase 6 uses the theme-amendment prompt. Phase 9 uses the handoff prompt and keeps the original `BALLOT_PROMPT.md` alive specifically as the handoff target.
 
+**Subsumes a TDD Phase 1 follow-up.** TDD Phase 1's validation task added a `notice` field to the server-side `AlignmentResult` (when `0 < total < 5`, surfaces a "Limited data: only N relevant votes…" message). The chat layer doesn't yet surface that notice to the user. This packet is the natural home for the surface work — the new "race deep-dive" prompt should include an explicit rule to relay any `notice` from `lookup_alignment`, and the chat-route refactor must include the field in the tool-result payload Claude sees.
+
 ## Business Logic
 
 Rules:
@@ -208,6 +210,9 @@ Execution constraints:
 - Per-race scope: switching the active race in a request body sent to `/api/chat` results in a fresh `messages` array (no carry-over). Asserted in unit tests.
 - Each task prompt body is under 1,500 characters (the prompts.md target is ~1,200 — leaving headroom). Asserted via a length test.
 - The original `BALLOT_PROMPT.md` and its generated module remain in the repo and are reachable from the handoff prompt path; deletion is explicitly out of scope.
+- The race-deep-dive prompt in the new fleet includes an explicit rule: "If `lookup_alignment` returns a `notice` field, relay it to the voter in plain language before continuing." Verbatim or paraphrased acceptable.
+- The chat-route refactor passes the full alignment result (including `notice` when present) to the model, NOT a subset that strips it.
+- An integration test runs the chat with a thin-data scenario (fixture: `lookup_alignment` returns `{found:true, kept:1, total:3, notice:"Limited data: only 3..."}`) and asserts Claude's response includes language matching `/limited data/i` or equivalent.
 - Build, lint, test pass green on `launch/production`.
 
 ## Verification
@@ -290,3 +295,4 @@ Non-proof:
 - Race deep-dive runs many times per session — it's the most-used. Optimize its assembly path for low overhead; the others run once or twice.
 - Consider a tiny snapshot util that emits the rendered system prompt to a debug log when `process.env.PROMPT_DEBUG=1` is set, server-side only. Useful for triage in preview.
 - The Phase 5 (state party gates) `<ballot_context>` schema needs to be agreed on alongside Phase 1's prompt fleet. Sketch the schema in `src/lib/prompts/types.ts` so Phase 5 has a target.
+- The limited-data notice ships server-side as part of TDD Phase 1 (commit `5967ced`). This packet surfaces it via the new prompt fleet — closes the [P1] from `docs/operations/post-launch-backlog.md` ("Alignment returns kept: 0 silently for unmapped concerns").
