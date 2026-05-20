@@ -266,50 +266,122 @@ Subagent runs the experiments in sequence, orchestrator verifies clean working t
 
 ## Evidence Plan
 
-> Filled in after execution. Below is the placeholder structure.
+> Executed 2026-05-20. All findings captured verbatim from subagent reports and GitHub Actions runs.
 
 ### Experiment 1 — Regression detection
 
-- **Change applied:** `<diff snippet showing the deliberate break>`
+- **Change applied:** flipped `>=` to `<=` on line 78 of `src/lib/server/alignment.ts` (the threshold gate `if (result.total >= LIMITED_DATA_THRESHOLD) return result;` → `if (result.total <= LIMITED_DATA_THRESHOLD) return result;`). 1-character flip, semantically inverts the notice-suppression logic.
 - **Command run:** `npx vitest run src/lib/server/alignment.test.ts`
-- **Captured output:** `<verbatim, including test names and failure messages>`
-- **Tests that failed:** `<list>`
-- **Tests that passed despite the break (if any):** `<list>` — these are weak tests worth strengthening
-- **Revert verified:** `git diff src/lib/server/alignment.ts` returned no output
-- **Verdict:** PASS / FAIL — regression detection works as claimed: yes/no
-- **Follow-ups (if any):** `<reference any tests that passed despite the break — schedule strengthening>`
+- **Captured output (summary):** `Test Files 1 failed (1) | Tests 4 failed | 31 passed (35)`
+- **Tests that failed (4):**
+  1. `lookupAlignment > surfaces a limited-data notice when total < 5` — `AssertionError: expected undefined to be defined` (line 511)
+  2. `lookupAlignment > does not surface a limited-data notice when total >= 5` — `expected 'Limited data: only 6 relevant votes f…' to be ''` (line 541)
+  3. `attachLimitedDataNotice > attaches a notice mentioning 'limited data' when found: true and total < 5 (and > 0)` — `expected undefined to be defined` (line 617)
+  4. `attachLimitedDataNotice > does not attach a notice when found: true and total >= 5` — `expected 'Limited data: only 10 relevant votes …' to be ''` (line 632)
+- **Tests that passed despite the break (correctly invariant, not weak):**
+  - Boundary case at exactly `total === 5`: original `>= 5` returns early; flipped `<= 5` also returns early. Same outcome.
+  - DB-not-configured (`total === 0`, `unavailable` set): caught by earlier guards before reaching the threshold check.
+  - Zero-rows case: caught by earlier guards.
+  - `found: false` passthrough: caught by `!result.found` guard.
+- **Revert verified:** `git diff src/lib/server/alignment.ts` returned no output. Re-run after revert: 35/35 pass.
+- **Verdict:** ✅ **PASS** — regression detection works as claimed. 4 tests fired with clear, distinct assertions covering both directions of the gate (notice should appear when thin / notice should NOT appear when sufficient). No follow-ups required.
 
 ### Experiment 2 — Hollow-test detection
 
-- **Change applied:** `<diff snippets for both rate-limit.ts and rate-limit.test.ts>`
-- **Command run:** `npx stryker run`
-- **Captured output (summary section):** `<verbatim>`
-- **Per-mutant verdict for new function:** `<list of mutants on isThrottled (or chosen name), each marked Killed/Survived/NoCoverage>`
-- **Overall score change:** baseline 26.90% → with hollow test: `<X>%`
-- **Stryker exit code:** `<0 or non-zero>`
-- **Threshold gate fired:** yes/no
-- **Reverts verified:** both files show no diff
-- **Verdict:** PASS / FAIL — hollow-test detection works as claimed: yes/no
-- **Follow-ups (if any):** `<config investigation if Stryker missed the hollow test>`
+- **Change applied:**
+  - Appended to `src/lib/server/rate-limit.ts`:
+    ```typescript
+    export function isThrottled(count: number, max: number): boolean {
+      return count >= max;
+    }
+    ```
+  - Appended to `src/lib/server/rate-limit.test.ts`:
+    ```typescript
+    describe("isThrottled (Phase 2a hollow test)", () => {
+      it("returns a value", () => {
+        expect(isThrottled(5, 10)).toBeDefined();
+      });
+    });
+    ```
+- **Pre-Stryker vitest:** 13/13 passed (12 baseline + 1 hollow).
+- **Command run:** `npx stryker run` (~5 min 49 sec)
+- **Captured output (summary table):**
+  ```
+  -------------------|------------------|----------|-----------|------------|----------|----------|
+                     | % Mutation score |          |           |            |          |          |
+  File               |  total | covered | # killed | # timeout | # survived | # no cov | # errors |
+  -------------------|--------|---------|----------|-----------|------------|----------|----------|
+  All files          |  26.77 |   44.42 |      219 |         0 |        274 |      325 |      299 |
+   server            |  49.06 |   54.31 |      208 |         0 |        175 |       41 |      149 |
+    alignment.ts     |  73.63 |   74.44 |       67 |         0 |         23 |        1 |       51 |
+    budget.ts        |  48.26 |   54.97 |       83 |         0 |         68 |       21 |       58 |
+    rate-limit.ts    |  36.02 |   40.85 |       58 |         0 |         84 |       19 |       40 |
+   generatePrompt.ts |   0.00 |    0.00 |        0 |         0 |          0 |      277 |       72 |
+   getStateData.ts   |   9.40 |   10.00 |       11 |         0 |         99 |        7 |       78 |
+  -------------------|--------|---------|----------|-----------|------------|----------|----------|
+  ```
+- **Per-mutant verdict for `isThrottled` (rate-limit.ts:280 — `return count >= max`), from `reports/mutation/mutation.json`:**
+  - ConditionalExpression → `return true` — **Survived**
+  - ConditionalExpression → `return false` — **Survived**
+  - EqualityOperator → `return count > max` — **Survived**
+  - EqualityOperator → `return count < max` — **Survived**
+  - All 4 mutants ran the hollow test (covered, not NoCoverage) — and all 4 survived because `toBeDefined()` cannot distinguish any of `true`/`false`/`>=`/`>`/`<`.
+- **Overall score change:** baseline 26.90% → with hollow test: **26.77%** (0.13-point drop)
+- **rate-limit.ts file score change:** 35.45% baseline → 36.02% (actually went up fractionally because the new function's 4 survived mutants dilute into a larger pool)
+- **Stryker exit code:** **0** (final score 26.77% ≥ 22% break threshold; the hollow test's contribution wasn't large enough to breach `break` on its own)
+- **Threshold gate fired:** ❌ **NO** — global `break: 22` is too coarse to flag a single hollow test on a small new function
+- **Reverts verified:** `git diff` on both files produced no output.
+- **Verdict:** ✅ **PASS (tool) with ⚠️ NUANCE (gate)** — Stryker correctly identified the hollow test as insufficient at the per-mutant level; all 4 `isThrottled` mutants flagged Survived in the JSON output. The mutation testing TOOL adds real signal beyond plain unit testing. However, a single hollow test on a 1-line function is too small to move the global score below the `break` threshold on its own — the break gate is a coarse safety net, not a per-test verdict.
+- **Follow-up (Phase 2b candidate):** consider a per-file mutation-score regression check (file-level break thresholds OR "no new survived mutants on changed lines") rather than relying solely on the global break to catch hollow tests on small additions.
 
-### Q2 side-channel observation — PR #1 mechanics
+### Q2 side-channel observation — PR mechanics
 
-- **PR #1 URL:** https://github.com/heymoosh/voter-choice/pull/1
-- **`test` job triggered:** yes/no
-- **`mutation` job triggered (should be SKIPPED due to path filter):** yes/no
-- **`test` job result:** pass/fail
-- **Merge button enabled when expected:** yes/no
-- **PR merged via UI (no admin override):** yes/no
-- **Notes:** `<anything unexpected>`
+#### PR #1 (this PR — Phase 2a packet, validate/phase-2a-packet-draft branch)
+
+- **URL:** https://github.com/heymoosh/voter-choice/pull/1
+- **`test` job initially: FAILED** in 35s on 8 pre-existing prettier errors across 4 files (`src/app/api/chat/route.ts`, `src/app/api/donors/route.ts`, `src/components/BallotToolClient.test.tsx`, `src/components/RacePatterns.test.tsx`). These errors pre-dated the TDD rollout but had been masked by subagent verification reports that scanned for "new errors" rather than checking exit code.
+- **`mutation` job: did NOT trigger** — path filter correctly excluded the docs-only changes in PR #1.
+- **`e2e` job: FAILED** as expected (pre-existing Phase 1a territory; not required for merge).
+- **Net Q2 finding:** CI gate works correctly. It caught real errors the discipline missed. The failing gate prevented merge, exactly as designed. **The CI was doing its job; we were the unreliable part.**
+
+#### PR #2 (fix/prettier-drift, the clean-path validation that resolved PR #1's lint blocker)
+
+- **URL:** https://github.com/heymoosh/voter-choice/pull/2
+- **Trigger:** opened after `npx prettier --write` on the 4 affected files
+- **`test` job:** ✅ **PASSED** in 1m 15s
+- **`mutation` job: did NOT trigger** — path filter correctly excluded non-scoped formatting fixes (4 affected files are not in Stryker's scoped paths)
+- **`e2e` job: FAILED** in 7m 23s — expected (Phase 1a backlog)
+- **Merge button: enabled** once `test` was green (branch protection requires only `test`)
+- **Merge: completed via GitHub UI** by user, **no admin override** — commit `e5d358a` on `launch/production`
+- **Post-merge state:** `launch/production` lint exits 0; 0 errors
+
+### Discipline gap surfaced (real finding)
+
+**Subagent verification reports of "lint clean / tests pass" were unreliable.** Across Phase 1 (Subagent A, Subagent D), Phase 2 (Stryker setup subagent), all reported "lint clean" while 8 prettier errors persisted. The pattern: subagents (and the orchestrator) were scanning output for "Error:" lines past a pipeline filter (grep/head/tail), which sometimes masked errors not in the visible tail. The exit code was the load-bearing signal but was lost through pipelines.
+
+**Mitigation rule (added to TDD guardrail in commit `<next>`):** orchestrator MUST independently verify subagent claims of "lint clean / tests pass / build green" with the unfiltered exit-code pattern: `<cmd> > /tmp/<name>.txt 2>&1; echo $?`. Pipes mask exit codes; never trust a "clean" claim made through `| grep` or `| tail`.
 
 ### Synthesis
 
-- Q1a (regression detection): PASS / FAIL
-- Q1b (hollow-test detection): PASS / FAIL
-- Q2 (PR mechanics): PASS / FAIL / Not yet observed
-- Overall verdict: TDD rollout discipline is empirically validated: yes/partial/no
-- Outstanding gaps: `<list>`
-- Next steps: `<typically: proceed to Phase 1a, or schedule remediation packets>`
+- **Q1a (regression detection):** ✅ PASS
+- **Q1b (hollow-test detection — tool):** ✅ PASS
+- **Q1b (hollow-test detection — gate):** ⚠️ Nuanced — tool catches it; global gate too coarse for small additions; Phase 2b follow-up to refine
+- **Q2 (CI gate blocks failing PRs):** ✅ PASS — PR #1's CI correctly caught real lint errors
+- **Q2 (CI gate allows clean PRs):** ✅ PASS — PR #2 merged through the gate via UI without admin override
+- **Discipline gap surfaced:** Subagent verification reports unreliable; orchestrator re-verification rule added to TDD guardrail
+
+**Overall verdict:** TDD rollout discipline is **empirically validated** with two documented follow-ups (Phase 2b: mutation gate refinement; verification rigor: added as a guardrail rule).
+
+**Outstanding gaps to address:**
+1. Phase 2b — refine mutation gate granularity (per-file thresholds or per-PR "no new survived mutants")
+2. Phase 1a — make e2e CI-compatible (already drafted, ready for execution)
+
+**Next steps:**
+1. Merge PR #1 via UI (Evidence Plan documented; discipline closure)
+2. Phase 1a (e2e CI compat) — already drafted at `.ai/work-packets/tdd-phase-1a-e2e-ci-compatibility.md`
+3. Then redesign Phase 1 (prompt refactor) under full TDD discipline
+4. Phase 2b (mutation gate refinement) — can run in parallel with redesign work
+5. Phase 3 (visual regression + coverage thresholds + pre-push hook) — incremental as redesign lands
 
 ## Anti-Solutions
 
