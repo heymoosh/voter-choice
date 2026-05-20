@@ -222,6 +222,30 @@ Execution constraints:
 - Chat audit trail preserves the amendment as scrollable history.
 - `npm run lint`, `npm run test`, `npm run build` pass.
 
+## Test Plan
+
+Maps each acceptance criterion to a test file path and the shape of the assertion. Per `docs/ai-coding-practices/guardrails/test-driven-development.md`, tests are written BEFORE implementation and the red phase is verified via `scripts/ai-tdd-red.sh`.
+
+| AC | Test file | Test shape |
+|---|---|---|
+| Rail "Edit themes" link opens `ThemeAmendEditor` inline in chat | `src/components/WorkspaceRail.test.tsx` (extend) + `src/components/ChatPanel.test.tsx` | click rail link; expected: chat thread renders `<ThemeAmendEditor>` (not modal — assert `getByTestId('theme-amend-editor')` is descendant of chat thread, not portal); observed: match |
+| Chat catch: mocked AI suggestion renders soft proposal chip + same editor | `src/components/ChatPanel.test.tsx` | mock AI message containing `new_theme_suggestion`; expected: chip with `/want to add this as a theme/i` visible; click; expected: same `ThemeAmendEditor` mounts inline; observed: match |
+| Inline amend editor reuses lifted ranker + shows new theme with verbatim quotes | `src/components/ThemeAmendEditor.test.tsx` | render with current themes + candidate new-theme + verbatim quotes; expected: ranker primitive visible, candidate-theme slot shows verbatim quote substring of triggering message; observed: match |
+| Save: re-score runs, `AmendDeltaMessage` renders per-race deltas | `src/components/ThemeAmendEditor.integration.test.tsx` | mock theme-amendment chat response with `{new_theme, suggested_rank, rescored:[...]}`; expected: `AmendDeltaMessage` renders one row per decided race with `old → new` numbers and verdict tags; observed: match |
+| Verdict logic: REVISIT vs HOLD vs N/A (pure function) | `src/lib/server/alignment.test.ts` (extend) | parameterized fixtures: `(oldScore, newScore, otherCandidateScores, isProposition) → expected verdict`; cases: drop 6 + other candidate higher → REVISIT; drop 6 + no candidate higher → HOLD; drop 3 → HOLD; proposition → N/A; observed: per-case match |
+| Most races render HOLD silently; only REVISIT gets prominence | `src/components/AmendDeltaMessage.test.tsx` | render 10 deltas (1 REVISIT, 9 HOLD); expected: REVISIT row has visual-prominence class (e.g., `bg-yellow-`), HOLD rows have muted class; observed: match |
+| No auto-advance after amendment lock | `src/components/BallotToolClient.integration.test.tsx` (extend) | with active race set, trigger amendment lock; expected: active race unchanged after the ~600ms threshold previously used by Phase 3 auto-advance; observed: unchanged |
+| Discard amendment restores pre-amend themes, skips re-score | `src/components/ThemeAmendEditor.test.tsx` | open editor, edit ranking, click "Discard"; expected: themes reset to pre-edit state, no chat call fired; observed: match |
+| Chat audit trail preserves amendment as scrollable history | `src/components/ChatPanel.test.tsx` | lock amendment; expected: chat message log contains an `amendment` entry (scrollable, not in a modal); observed: present |
+| Theme-amendment prompt integration (Phase 1 contract) | `src/app/api/chat/route.amendment.test.ts` | input: chat request with `view: "amend"`; expected: outgoing system prompt is the theme-amendment builder output AND request payload includes the amendment shape; observed: match |
+| Chat catch is conservative (no false-positive trigger) | `src/lib/chat-catch-heuristic.test.ts` | parameterized neutral messages ("ok", "tell me more"); expected: heuristic returns no-catch; on strong concern messages, returns catch; observed: per-case match |
+| E2E amend happy path (both entries) | `e2e/theme-amend.spec.ts` | flow A: pick races → click rail link → add theme → lock → see deltas; flow B: pick races → type concern in chat → click proposal chip → lock → see deltas; expected: per-flow checkpoints pass; observed: pass |
+| `npm run lint`, `npm run test`, `npm run build` green | n/a — covered by `bash scripts/ai-verify.sh` | not test-shape applicable; reviewer-enforced |
+
+### Red-phase ritual for this packet
+
+The verdict-decision function is the pure-logic anchor — write the parameterized cases in `src/lib/server/alignment.test.ts` first and red-verify against the missing `decideVerdict()` function. Next write `ThemeAmendEditor.test.tsx` (red-fails because the component doesn't exist), then `AmendDeltaMessage.test.tsx`. The chat-catch heuristic test (`chat-catch-heuristic.test.ts`) red-fails because the heuristic isn't wired. Implement in the order: extract `decideVerdict()` pure function → build `ThemeAmendEditor` reusing Phase 2's ranker primitive → build `AmendDeltaMessage` → wire chat-route amendment view (consumes Phase 1's theme-amendment prompt) → wire rail link + conservative chat-catch heuristic last. Capture every red-phase output.
+
 ## Verification
 
 - `npm run lint` clean.

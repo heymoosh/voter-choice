@@ -221,6 +221,32 @@ Execution constraints:
 - Adding a new state row to `rules.ts` and a corresponding test case is the **only** code change required to support a new state (asserted by a meta-test or documented as a manual verification step).
 - `npm run lint`, `npm run test`, `npm run build` pass.
 
+## Test Plan
+
+Maps each acceptance criterion to a test file path and the shape of the assertion. Per `docs/ai-coding-practices/guardrails/test-driven-development.md`, tests are written BEFORE implementation and the red phase is verified via `scripts/ai-tdd-red.sh`. The rules-as-data discipline means the bulk of behavior is exercised via a single parameterized table-driven test.
+
+| AC | Test file | Test shape |
+|---|---|---|
+| `getStateRule(state, electionType)` returns expected `StateRule | null` | `src/lib/state-rules/state-rules.test.ts` | parameterized fixtures keyed on `(state, electionType)`: see sub-bullets below — one row per shipped (state, electionType) pair |
+| └ TX runoff: 5-option semi-closed overlay | `src/lib/state-rules/state-rules.test.ts` | input: `("TX","runoff")`; expected: rule has 5 options + `statute.code === "Tex. Elec. Code §172.087"`; observed: match |
+| └ TX general: no gate | `src/lib/state-rules/state-rules.test.ts` | input: `("TX","general")`; expected: `null` (or skip sentinel); observed: match |
+| └ PA closed primary (registration-based) | `src/lib/state-rules/state-rules.test.ts` | input: `("PA","primary")`; expected: rule has `category === "closed"` + `statute.code === "25 Pa. Code §2812"`; observed: match |
+| └ CA top-two (no gate) | `src/lib/state-rules/state-rules.test.ts` | input: `("CA","primary")` and `("CA","general")`; expected: both `null` (skip sentinel); observed: match |
+| └ Generic general election in any state: no gate | `src/lib/state-rules/state-rules.test.ts` | input: `("WA","general")`; expected: `null`; observed: match |
+| `PartyGate.tsx` renders from `StateRule`, no `if (state === …)` | `src/components/PartyGate.test.tsx` | input: stub rule with 3 options; expected: 3 radio elements + statute citation visible; component source contains zero string-literal state comparisons (lint or grep test); observed: match |
+| Routing: with rule → render gate; without → skip to cold open | `src/app/PageContent.test.tsx` | mock `getStateRule` to return rule; expected: `PartyGate` mounted; mock to return `null`; expected: cold-open mounted; observed: match |
+| TX runoff → `<ballot_context>` `{state:"TX", ballot:"DEM-runoff"}` propagates downstream | `src/lib/server/ballot-context.test.ts` | input: gate selection `{state:"TX", ballotTag:"DEM-runoff"}`; expected: serialized tag string matches `/<ballot_context>.*TX.*DEM-runoff.*<\/ballot_context>/`; observed: match |
+| PA unaffiliated graceful path renders re-registration link | `src/components/PartyGate.test.tsx` | input: PA rule + `registration="unaffiliated"`; expected: text matches `/you cannot vote this primary/i` AND link to SOS visible; observed: match |
+| "I'm not sure" routes to clarification flow (TX) | `src/components/PartyGate.test.tsx` | input: TX rule; click "I'm not sure"; expected: `onClarificationStart` callback fired with `{state:"TX"}`; observed: match |
+| Adding a new state requires only a row + fixture (meta) | `src/lib/state-rules/state-rules.test.ts` | meta-test: extend fixture array with a hypothetical `("GA","runoff")` row; expected: existing component tests still pass without any component edits; observed: pass |
+| `<ballot_context>` carries no PII | `src/lib/server/ballot-context.test.ts` | serialize with `{state,county,ballot,electionDate}` + adversarial PII fields; expected: output contains state/county/ballot/electionDate ONLY, no name/street/DOB; observed: pass |
+| E2E happy paths: TX runoff / PA unaffiliated / CA skip / general skip | `e2e/state-gates.spec.ts` | navigate with each test ZIP; expected: TX shows 5 options, PA shows graceful path, CA + general go straight to cold open; observed: per-state pass |
+| `npm run lint`, `npm run test`, `npm run build` green | n/a — covered by `bash scripts/ai-verify.sh` | not test-shape applicable; reviewer-enforced |
+
+### Red-phase ritual for this packet
+
+Data shape first: write `src/lib/state-rules/state-rules.test.ts` with the parameterized table of `(state, electionType) → expected rule shape` and red-verify against the missing `state-rules/` module. Then write `src/components/PartyGate.test.tsx` covering data-driven rendering with stubs — fails because the component doesn't exist. The ballot-context serializer test (`ballot-context.test.ts`) is third; verify it red-fails (PII leaks through because the strip doesn't yet exist). Implement in the order: types → rules table → lookup function → `<ballot_context>` serializer → `PartyGate.tsx` → routing wire-up in `PageContent.tsx`. Run the meta-test that asserts a hypothetical new state row triggers no component edits, to lock the rules-as-data discipline. Capture every red-phase output.
+
 ## Verification
 
 - `npm run lint` clean.

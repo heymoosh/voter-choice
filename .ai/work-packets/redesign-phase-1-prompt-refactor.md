@@ -215,6 +215,32 @@ Execution constraints:
 - An integration test runs the chat with a thin-data scenario (fixture: `lookup_alignment` returns `{found:true, kept:1, total:3, notice:"Limited data: only 3..."}`) and asserts Claude's response includes language matching `/limited data/i` or equivalent.
 - Build, lint, test pass green on `launch/production`.
 
+## Test Plan
+
+Maps each acceptance criterion to a test file path and the shape of the assertion. Per `docs/ai-coding-practices/guardrails/test-driven-development.md`, tests are written BEFORE implementation and the red phase is verified via `scripts/ai-tdd-red.sh`.
+
+| AC | Test file | Test shape |
+|---|---|---|
+| Legacy path unchanged when flag off | `src/lib/generatePrompt.test.ts` (existing) | with `PROMPT_FLEET_V2=""`, expected: existing snapshot output matches byte-for-byte; observed: match |
+| Routing function picks correct prompt per view | `src/lib/prompts/router.test.ts` | input: `{view, raceType, trigger}` tuples (cold-open / workspace-choice / workspace-prop / amend / handoff); expected: builder symbol matches table; observed: match |
+| Every prompt begins with the shared safety header | `src/lib/prompts/__tests__/safety-header.golden.test.ts` | render each builder with a fixture state; expected: rendered output starts with verbatim safety-header text from `prompts.md`; observed: starts-with match |
+| Theme-extraction prompt content (golden) | `src/lib/prompts/__tests__/theme-extraction.golden.test.ts` | render builder with stub input; expected: matches `theme-extraction.golden.md`; observed: diff = 0 |
+| Race-deep-dive prompt content (golden), includes notice-relay rule | `src/lib/prompts/__tests__/race-deep-dive.golden.test.ts` | render builder; expected: output contains the verbatim notice-relay clause (e.g., `/relay.*notice|notice.*plain language/i`) AND matches golden file; observed: both match |
+| Proposition prompt content (golden) | `src/lib/prompts/__tests__/proposition.golden.test.ts` | render builder; expected: matches `proposition.golden.md`; observed: diff = 0 |
+| Theme-amendment prompt content (golden) | `src/lib/prompts/__tests__/theme-amendment.golden.test.ts` | render builder; expected: matches `theme-amendment.golden.md`; observed: diff = 0 |
+| Handoff prompt content (golden) | `src/lib/prompts/__tests__/handoff.golden.test.ts` | render builder; expected: matches `handoff.golden.md`; observed: diff = 0 |
+| PII strip redacts 10+ shapes | `src/lib/prompts/pii-strip.test.ts` | input: fixtures with street address, full name, DOB, phone, email, SSN-shaped, driver's license, voter-reg ID, PO box, full address line; expected: only `city, state` survives; observed: per-fixture match |
+| Per-race scope: switching active race resets messages | `src/app/api/chat/route.test.ts` | input: request with `activeRaceId` change from prior turn; expected: outgoing `messages` array empty (no carry-over); observed: empty |
+| Each task prompt body under 1,500 characters | `src/lib/prompts/__tests__/length.test.ts` | for each builder, render with stub input; expected: `output.length <= 1500`; observed: pass |
+| Chat route passes full alignment result (including `notice`) to model | `src/app/api/chat/route.test.ts` | input: tool result `{found:true, kept:1, total:3, notice:"Limited data..."}`; expected: tool-result block forwarded to Claude contains `notice` field verbatim; observed: present |
+| Thin-data integration: Claude relays notice in response | `src/app/api/chat/route.integration.test.ts` (mocked Anthropic) | input: chat turn with `lookup_alignment` returning the thin-data fixture; expected: Claude's response text matches `/limited data/i` (or equivalent); observed: match |
+| `BALLOT_PROMPT.md` and generated module remain present | n/a — reviewer-enforced via Scope/Anti-Solutions; not test-shape applicable | grep check `find . -name 'BALLOT_PROMPT.md'` returns the file (regression-lock script optional) |
+| `npm run lint`, `npm run test`, `npm run build` green | n/a — covered by `bash scripts/ai-verify.sh` in CI | not test-shape applicable; reviewer-enforced |
+
+### Red-phase ritual for this packet
+
+Build the data layer before the wire-up. Write golden-file tests for each new prompt builder first (one builder = one test); run `bash scripts/ai-tdd-red.sh src/lib/prompts/__tests__/theme-extraction.golden.test.ts` and confirm the red exit before the file at `src/lib/prompts/theme-extraction.ts` exists. Then the router and PII strip (`router.test.ts`, `pii-strip.test.ts`), each red-verified before its implementation lands. The chat-route integration tests come last — once the router and builders are green, write `src/app/api/chat/route.test.ts` for the per-race reset and the notice-forwarding shape, red-verify each, then wire the route to consume the router. Capture every `ai-tdd-red.sh` output into the Evidence Plan.
+
 ## Verification
 
 - `npm run lint` clean.

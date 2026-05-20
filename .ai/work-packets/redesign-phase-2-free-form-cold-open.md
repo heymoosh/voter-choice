@@ -215,6 +215,30 @@ Execution constraints:
 - `npm run lint`, `npm run test`, `npm run build` pass.
 - `npm run e2e` cold-open happy path passes.
 
+## Test Plan
+
+Maps each acceptance criterion to a test file path and the shape of the assertion. Per `docs/ai-coding-practices/guardrails/test-driven-development.md`, tests are written BEFORE implementation and the red phase is verified via `scripts/ai-tdd-red.sh`.
+
+| AC | Test file | Test shape |
+|---|---|---|
+| Free-form textarea renders; no chip picker on `en`+flag-on | `src/components/ColdOpen.test.tsx` | render the cold-open view with `PROMPT_FLEET_V2=1`; expected: `getByRole('textbox')` exists AND `queryAllByTestId('issue-chip')` is empty; observed: match |
+| Theme-extraction JSON parses + renders verbatim quotes | `src/components/ConcernInterpretation.test.tsx` (extend) | input: known user message + mocked theme-extraction JSON; expected: each rendered theme contains a `quote` substring that exists as a substring inside the original user message; observed: per-theme substring match |
+| Drag-to-rank (mouse + keyboard) updates locked order | `src/components/ThemeRanker.test.tsx` | input: 3 themes; simulate keyboard reorder (Space + ArrowDown + Space); expected: `onOrderChange` called with new index order AND rank badges reflect new order; observed: match |
+| Rename theme: blur commits, Escape reverts | `src/components/ThemeRanker.test.tsx` | input: rendered theme with editable name; fire input change + blur; expected: theme name updated; then fire Escape; expected: name reverts; observed: match |
+| Remove theme: remaining themes resort | `src/components/ThemeRanker.test.tsx` | input: 3 themes ranked 1/2/3; remove rank-2; expected: 2 themes remain with rank badges 1/2; observed: match |
+| "Let me rewrite my message" restores original draft | `src/components/ColdOpen.test.tsx` | submit message, render themes, click rewrite; expected: textarea visible with original draft preloaded; observed: match |
+| N themes returned = N theme cards (no padding) | `src/components/ConcernInterpretation.test.tsx` | parameterized for N ∈ {1, 2, 5}; mock AI response with N themes; expected: rendered count == N; observed: match |
+| Lock-in disabled when 0 themes | `src/components/ConcernInterpretation.test.tsx` | render with empty theme array; expected: `getByRole('button', { name: /lock/i })` has `aria-disabled="true"` or `disabled`; observed: match |
+| `[VALUES_TAG_REQUEST]` retired from structured-blocks | `src/lib/structured-blocks.test.ts` | expected: `structured-blocks.ts` exports no `VALUES_TAG_REQUEST` symbol; grep test scans `src/` for references and asserts zero callers; observed: zero |
+| Theme-extraction inference flow (integration) | `src/components/ColdOpen.integration.test.tsx` | mock `/api/chat` to return canned theme JSON; user types, submits; expected: themes render with verbatim quotes within ~2s; observed: pass |
+| E2E cold-open happy path | `e2e/cold-open.spec.ts` | navigate → fill ZIP → fill free-form → submit → see themes → rerank → lock → workspace renders; expected: each step's `data-testid` visible in order; observed: pass |
+| AI returns >5 themes: truncate + warn | `src/components/ConcernInterpretation.test.tsx` | mock response with 7 themes; expected: 5 rendered AND warning surface visible; observed: match |
+| `npm run lint`, `npm run test`, `npm run build` green | n/a — covered by `bash scripts/ai-verify.sh` | not test-shape applicable; reviewer-enforced |
+
+### Red-phase ritual for this packet
+
+The pre-built chip set is the load-bearing removal; write the chip-absence component test first and red-verify it (the test fails because the chips still render). Then write the verbatim-quote test against `ConcernInterpretation.tsx` extended for the new JSON shape — that test fails because the component doesn't yet read the new shape. The lifted dnd-kit `ThemeRanker.test.tsx` is next — written before the lift completes, fails because the new component doesn't exist. Finally, the structured-blocks retirement test (`grep`-style assertion for zero `VALUES_TAG_REQUEST` references) fails because the symbol still exists. Implement in reverse order — strip the structured block last so the chat path remains compilable through earlier commits. Capture each `ai-tdd-red.sh` output.
+
 ## Verification
 
 - `npm run lint` clean.

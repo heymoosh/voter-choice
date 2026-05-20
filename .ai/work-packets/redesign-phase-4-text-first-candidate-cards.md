@@ -203,6 +203,30 @@ Execution constraints:
 - Long theme names truncate with ellipsis; title attribute or tooltip surfaces full name.
 - `npm run lint`, `npm run test`, `npm run build` pass.
 
+## Test Plan
+
+Maps each acceptance criterion to a test file path and the shape of the assertion. Per `docs/ai-coding-practices/guardrails/test-driven-development.md`, tests are written BEFORE implementation and the red phase is verified via `scripts/ai-tdd-red.sh`.
+
+| AC | Test file | Test shape |
+|---|---|---|
+| Full-data card renders all sections in text-first order | `src/components/AlignmentScoreBanner.test.tsx` | input: full-fixture candidate; expected: DOM contains name, party, incumbent flag, N theme rows with `label + percentage`, donor section with top-3 list; observed: per-section presence |
+| Empty-record candidate: explicit no-record message, no chart frame | `src/components/AlignmentScoreBanner.test.tsx` | input: candidate with `defaultAlignment: null`; expected: alignment slot contains `/no legislative record to compare against/i` AND no `<svg>` or chart-frame element; observed: text present, frame absent |
+| Partial alignment: known rows render scores, unknown rows show "—" | `src/components/AlignmentScoreBanner.test.tsx` | input: candidate with 2 of 4 themes scored; expected: scored rows show `\d+%`, unscored rows show literal `"—"` with no bar element; observed: per-row match |
+| Donor section: stacked bar + top-3 list always render together | `src/components/FunderBars.test.tsx` | input: donor fixture; expected: bar element AND list with 3 `<li>` each containing name + `$` amount; observed: both present |
+| Donor section with bars hidden via CSS still reads | `src/components/FunderBars.test.tsx` | render with className that hides bars; expected: donor names + dollar amounts still present in DOM (queryable as text); observed: present |
+| Donor data missing: "unavailable" message, no bar | `src/components/FunderBars.test.tsx` | input: empty donor data; expected: `getByText(/donor data unavailable/i)`, no bar element; observed: match |
+| Proposition card: if-yes / if-no two-column layout, missing side fallback | `src/components/RacePatterns.test.tsx` | input: prop fixture with if-yes only; expected: if-yes column has text, if-no column has `/impact not yet summarized/i`; observed: match |
+| Chart-render failure does not blank the card | `src/components/AlignmentScoreBanner.errorBoundary.test.tsx` | wrap card in `ErrorBoundary`, mock chart child to `throw`; expected: card text content (name, theme labels, percentages) still in DOM; observed: present |
+| Greyscale rendering preserves comprehension | `src/components/AlignmentScoreBanner.test.tsx` | apply `filter: grayscale(1)` via inline style; expected: getByText(label/percentage) succeeds for every theme row; observed: match |
+| Long theme name truncates with title tooltip | `src/components/AlignmentScoreBanner.test.tsx` | input: theme name > 18 chars; expected: visible text contains `…` AND `title` attribute carries full name; observed: match |
+| Per-vote drilldown survives chart failure | `src/components/AlignmentDrilldown.test.tsx` | mock chart child to `throw`; expected: per-vote rows still readable as text list; observed: present |
+| Visual fidelity: full-data + empty-record + greyscale screenshots | `e2e/visual/candidate-cards.spec.ts` | `toHaveScreenshot()` for each render state; deferred — visual regression baselines wait for TDD Phase 3 (see `tdd-phase-3-visual-regression-and-thresholds.md`) | mark baselines as `deferred` |
+| `npm run lint`, `npm run test`, `npm run build` green | n/a — covered by `bash scripts/ai-verify.sh` | not test-shape applicable; reviewer-enforced |
+
+### Red-phase ritual for this packet
+
+The empty-record explicit message is the keystone behavior — write `src/components/AlignmentScoreBanner.test.tsx`'s no-record case first and red-verify; the current component renders an empty chart frame, so the assertion that the frame is absent fails. Next write the chart-failure error-boundary test (`AlignmentScoreBanner.errorBoundary.test.tsx`); it fails because no error boundary exists. The donor list + bar-hidden tests against `FunderBars.test.tsx` come third — they fail because the donor list-as-text isn't rendered. Implement in the order: extract shared row primitives, add error boundary + no-record fallback in `AlignmentScoreBanner`, then `FunderBars` text rows + `RacePatterns` two-column. Visual screenshot baselines are explicitly deferred to TDD Phase 3 per `docs/ai-coding-practices/guardrails/test-driven-development.md` boundaries — record the e2e spec path now, generate baselines later.
+
 ## Verification
 
 - `npm run lint` clean.

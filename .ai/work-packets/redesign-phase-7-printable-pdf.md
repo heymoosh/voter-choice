@@ -219,6 +219,31 @@ Execution constraints:
 - Print view passes greyscale rendering test (no color-only information).
 - `npm run lint`, `npm run test`, `npm run build` pass.
 
+## Test Plan
+
+Maps each acceptance criterion to a test file path and the shape of the assertion. Per `docs/ai-coding-practices/guardrails/test-driven-development.md`, tests are written BEFORE implementation and the red phase is verified via `scripts/ai-tdd-red.sh`.
+
+| AC | Test file | Test shape |
+|---|---|---|
+| Print view structure: polling header / sectioned picks / themes / footer | `src/components/PrintBallot.test.tsx` | render with full-fixture ballot; expected: `getByTestId('print-sheet')`, header has precinct + hours + what-to-bring, picks grouped by section in workspace order, themes ordered list 1–N, footer text matches `/Built with Voter Choice/`; observed: per-block presence |
+| Print view's screen rendering matches `.print-sheet` print rules | `src/components/PrintBallot.test.tsx` | render `<PrintBallot>`; expected: rendered element has class `print-sheet` and computed style at `@media print` is identical to screen (same selectors govern both); observed: match |
+| One-page hard cap: overflow detected → inline trim prompt; print blocked | `src/components/PrintBallot.overflow.test.tsx` | mock `ref.scrollHeight` > page bounds; click Print; expected: trim-notes prompt visible AND `window.print` spy NOT called; observed: prompt visible, spy not called |
+| Polling data missing → "polling place not available" fallback | `src/components/PrintBallot.test.tsx` | render with `pollingData=null`; expected: fallback text + SOS link present, no silently-empty header; observed: match |
+| Pick row: race label + candidate + party tag + verbatim italic why-note | `src/components/PrintBallot.test.tsx` | input: decision with why-note "Trust her labor record"; expected: row contains label, name, party-tag span, italic element with verbatim note; observed: match |
+| Undecided races group under "Decide at the polls" at bottom of picks | `src/components/PrintBallot.test.tsx` | input: mix of decided + undecided; expected: undecided rendered in a separate group placed after the decided picks list; observed: match |
+| Themes section: numbered 1–N, names only (no quotes) | `src/components/PrintBallot.test.tsx` | input: 4 themes; expected: ordered list `<ol>` with 4 `<li>` containing theme names only, no quote text; observed: match |
+| Pick with no why-note: no empty italic placeholder | `src/components/PrintBallot.test.tsx` | input: decision without why-note; expected: row renders without an italic line; observed: match |
+| Proposition pick: no party tag rendered | `src/components/PrintBallot.test.tsx` | input: prop decision; expected: no `data-testid="party-tag"` in that row; observed: absent |
+| `window.print()` invoked on Print click (happy path) | `src/components/PrintBallot.test.tsx` | spy on `window.print`; click Print with fitting content; expected: `window.print` called once; observed: match |
+| Visual fidelity: print view in monochrome reads cleanly | `e2e/visual/print-ballot.spec.ts` | `toHaveScreenshot()` on full-data + missing-polling + greyscale render; deferred — visual regression baselines wait for TDD Phase 3 | mark baselines as `deferred` |
+| Monochrome / greyscale structural check (text-level) | `src/components/PrintBallot.test.tsx` | render with simulated `filter: grayscale(1)`; expected: every pick row's candidate name + theme number still findable via `getByText`; observed: match |
+| E2E happy path: decide ballot → print view → save-as-PDF | `e2e/print-ballot.spec.ts` | navigate workspace → decide all races → click Print → assert print view rendered + `window.print` triggered (e2e stubbed); observed: pass |
+| `npm run lint`, `npm run test`, `npm run build` green | n/a — covered by `bash scripts/ai-verify.sh` | not test-shape applicable; reviewer-enforced |
+
+### Red-phase ritual for this packet
+
+The one-page hard cap is the load-bearing physical constraint — write `src/components/PrintBallot.overflow.test.tsx` first, mocking `scrollHeight`; it red-fails because no overflow detection exists. Next the structural test (`PrintBallot.test.tsx`) covering header / sectioned picks / themes / footer; red-fails because `PrintBallot.tsx` doesn't exist. The verbatim why-note test and polling-fallback test follow, both red-failing for the same reason. Implement in the order: build `PrintBallot.tsx` with the static layout → wire decision/theme data shape → add overflow detection + trim prompt → polling-fallback path → `window.print()` button. Visual regression baselines (`e2e/visual/print-ballot.spec.ts`) are explicitly deferred to TDD Phase 3 per `docs/ai-coding-practices/guardrails/test-driven-development.md` boundaries — name the spec file now, generate baselines later. Capture every red-phase output.
+
 ## Verification
 
 - `npm run lint` clean.

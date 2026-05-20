@@ -222,6 +222,33 @@ Execution constraints:
 - `npm run lint`, `npm run test`, `npm run build` pass.
 - `npm run e2e` budget-exhausted happy path passes.
 
+## Test Plan
+
+Maps each acceptance criterion to a test file path and the shape of the assertion. Per `docs/ai-coding-practices/guardrails/test-driven-development.md`, tests are written BEFORE implementation and the red phase is verified via `scripts/ai-tdd-red.sh`.
+
+| AC | Test file | Test shape |
+|---|---|---|
+| Chat route returns structured budget-exhausted state, NOT 500 | `src/app/api/chat/route.test.ts` (extend) | mock `budget.getStatus()` to return exhausted; POST `/api/chat`; expected: response status 200 AND body matches `{status:"budget_exhausted", resetAt:ISO, handoffPrompt:string}`; NOT a 500; observed: structured shape |
+| `BudgetExhausted.tsx` headline is continuity, not apology | `src/components/BudgetExhausted.test.tsx` | render; expected: text matches `/Your ballot is saved\. Keep going on any chatbot/`; expected: no `getByText(/sorry|limit/i)` apology copy; observed: match + absence |
+| Handoff prompt generated from current state (uses `BALLOT_PROMPT.md` template) | `src/components/BudgetExhausted.test.tsx` | render with fixture themes + decisions; expected: handoff prompt text contains each theme name AND each decision verbatim; observed: per-fixture substring |
+| Four chatbot links in strict alphabetical order: Claude, ChatGPT, Gemini, Grok | `src/components/BudgetExhausted.test.tsx` | render; expected: links queried in document order match `["Claude","ChatGPT","Gemini","Grok"]` (snapshot test); observed: exact-order match |
+| BYOK affordance present + explicit "stays in your browser, never sent to our server" copy | `src/components/BudgetExhausted.test.tsx` | render; expected: `getByText(/Have an Anthropic API key/)` AND `getByText(/stays in your browser.*never sent/i)`; observed: both present |
+| BYOK key persists in localStorage only, never sent to Voter Choice server | `src/lib/anthropic-client-byok.test.ts` | call `setByokKey("sk-ant-test")`; expected: `localStorage.getItem("byok_key") === "sk-ant-test"` AND `fetch` spy records zero requests to any voter-choice route; observed: localStorage set, no fetch |
+| BYOK chat path bypasses community budget; key never reaches our server | `e2e/byok.spec.ts` (with network-trace assertion) | set BYOK key in localStorage; trigger a chat call; expected: NO network request matches `**/api/chat` (assert via `page.route` capture set); IF using passthrough proxy, expected: proxy request body does not log key; observed: per-path pass |
+| Invalid BYOK key surfaces error without leaking value to server logs | `src/lib/anthropic-client-byok.test.ts` | set invalid key; trigger chat; mock Anthropic returns 401; expected: error surface contains generic "key didn't authenticate" message AND no server-bound request includes the key value; observed: match |
+| BYOK key cleared on explicit "remove" action | `src/lib/anthropic-client-byok.test.ts` | set then call `removeByokKey()`; expected: `localStorage.getItem("byok_key") === null`; observed: cleared |
+| Budget reset time surfaced with absolute timestamp | `src/components/BudgetExhausted.test.tsx` | render with `resetAt="2026-06-01T00:00:00Z"`; expected: text includes `/June 1, 12:00 AM UTC/` or equivalent absolute format; observed: present |
+| Tip-jar link present, marked "not required" | `src/components/BudgetExhausted.test.tsx` | render; expected: tip-jar link visible AND adjacent text matches `/not required/i`; observed: match |
+| Budget integration: continuity-screen routes from exhausted chat response | `src/components/BallotToolClient.integration.test.tsx` | mock chat route to return structured `budget_exhausted`; expected: `BudgetExhausted` screen mounts in place of chat panel; observed: match |
+| BYOK precedence: when key set AND community budget has room, user's key is used | `src/lib/anthropic-client-byok.test.ts` | set BYOK key + mock budget status "normal"; trigger chat; expected: client uses BYOK path (no community-budget fetch); observed: match |
+| E2E budget-exhausted happy path | `e2e/budget-exhausted.spec.ts` | force exhausted state → screen renders → copy handoff → click BYOK → set test key → chat continues; observed: pass |
+| Server log scan: BYOK key pattern never appears | covered by `e2e/byok.spec.ts` network-trace + manual grep | not unit-test shape; reviewer-enforced via Evidence Plan grep |
+| `npm run lint`, `npm run test`, `npm run build` green | n/a — covered by `bash scripts/ai-verify.sh` | not test-shape applicable; reviewer-enforced |
+
+### Red-phase ritual for this packet
+
+Security shape first: write `src/lib/anthropic-client-byok.test.ts` with the localStorage-only + no-fetch-to-our-server assertions and red-verify against the missing module. Next write `src/app/api/chat/route.test.ts` extending for the structured budget-exhausted response — red-fails because the route still throws 500. Then `src/components/BudgetExhausted.test.tsx` covering headline + alphabetical-link order + reset-time + BYOK copy — red-fails because the component doesn't exist. The e2e network-trace assertion (`e2e/byok.spec.ts`) is the keystone — it uses Playwright's `page.route` capture set to prove zero requests hit `**/api/chat` once BYOK is configured. Implement in the order: extract structured budget state from `budget.ts` → restructure chat route to return the shape → build `BudgetExhausted` component → build `anthropic-client-byok.ts` → wire the BYOK chat path (direct or passthrough proxy without logging) → wire continuity routing. Capture every red-phase output and include the network-trace screenshot in Evidence.
+
 ## Verification
 
 - `npm run lint` clean.

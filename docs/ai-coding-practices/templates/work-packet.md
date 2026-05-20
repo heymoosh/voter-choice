@@ -127,6 +127,30 @@ Neighboring owners:
 - <observable pass/fail condition>
 - <observable pass/fail condition>
 
+## Test Plan
+
+Maps each acceptance criterion to a test file path and the shape of the assertion. Per `docs/ai-coding-practices/guardrails/test-driven-development.md`, tests are written BEFORE implementation and the red phase is verified via `scripts/ai-tdd-red.sh` before any code lands.
+
+| AC | Test file | Test shape |
+|---|---|---|
+| <AC label or summary> | <path to test file> | <input → expected, one line> |
+| <AC label or summary> | <path to test file> | <input → expected, one line> |
+
+### Red-phase ritual for this packet
+
+For each AC that introduces new behavior:
+
+1. Write the test case(s) at the named test file
+2. Run `bash scripts/ai-tdd-red.sh <test-file>` — confirm exit 0 + captured failure output (paste into Evidence Plan)
+3. Implement the behavior
+4. Run `npx vitest run <test-file>` (or the runner the test uses) — confirm green
+5. Run `npm run test` (full suite) — confirm no regressions
+6. Capture all command outputs as evidence
+
+If step 2 exits 1 ("test passed without implementation"), the test is too weak — strengthen the assertion and retry. Do NOT proceed to implementation while the red phase has not been demonstrated.
+
+If an AC describes purely visual or e2e behavior (no unit-testable shape), name the e2e spec or Playwright `toHaveScreenshot()` reference instead. Per redesign Phase 3, visual regression baselines are captured incrementally; reference the baseline file in the test-shape column.
+
 ## Verification
 
 - <test/lint/build/browser/manual check required>

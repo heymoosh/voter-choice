@@ -219,6 +219,31 @@ Execution constraints:
 - `npm run lint`, `npm run test`, `npm run build` pass.
 - `npm run e2e` Polis-view path passes.
 
+## Test Plan
+
+Maps each acceptance criterion to a test file path and the shape of the assertion. Per `docs/ai-coding-practices/guardrails/test-driven-development.md`, tests are written BEFORE implementation and the red phase is verified via `scripts/ai-tdd-red.sh`.
+
+| AC | Test file | Test shape |
+|---|---|---|
+| `/api/polis/bars?county=X` returns per-theme overlap percentages from SQL aggregate | `src/app/api/polis/bars/route.test.ts` | seed test DB with known sessions fixture for county "Travis"; GET `/api/polis/bars?county=Travis`; expected: response `[{theme, percent}, ...]` where `percent` matches hand-computed value for fixture; observed: exact percentages |
+| `/api/polis/bridges?county=X` returns statements with 80%+ agreement across ALL clusters | `src/app/api/polis/bridges/route.test.ts` | fixture with statement A at 93/89/94, statement B at 93/75/94; expected: response contains statement A only; observed: A present, B absent |
+| Bridge threshold logic: strict 80% across every cluster | `src/lib/server/polis/aggregates.test.ts` | parameterized: `[93,89,94] → bridge; [93,75,94] → not bridge; [80,80,80] → bridge (inclusive); [79,99,99] → not bridge` | per-case pass |
+| `/api/polis/compass` returns cluster shape when ≥ threshold; otherwise structured below-threshold | `src/app/api/polis/compass/route.test.ts` | with N=150 sessions; expected: `{clusters:[…], dots:[…]}`; with N=50; expected: `{status:"below_threshold", count:50, threshold:150}`; observed: match |
+| `PolisOverlay` renders bars with user themes + percentages | `src/components/PolisOverlay.test.tsx` | mock bars endpoint; expected: each theme label visible AND percentage text matches mocked value; observed: match |
+| `PolisOverlay` renders bridge statements with cluster percentages | `src/components/PolisOverlay.test.tsx` | mock bridges endpoint; expected: list of statements each annotated with per-cluster `%`; observed: match |
+| Compass hidden below threshold, honest "needs N more" message shown | `src/components/PolisOverlay.test.tsx` | mock compass endpoint with `below_threshold`; expected: compass element absent, message matches `/needs \d+ more sessions/i`; observed: match |
+| Cluster labels never contain partisan strings | `src/lib/server/polis/clusters.test.ts` | iterate over all cluster labels in `clusters.ts`; expected: each label fails regex `/democrat|republican|independent|\bdem\b|\brep\b/i`; observed: zero matches |
+| "Unaligned" cluster appears when emerging from data, not forced | `src/lib/server/polis/clusters.test.ts` | input: fixture session distribution producing ~13% unaligned; expected: cluster array contains `{label:"Unaligned", percent:~13}`; for fixture with 0 unaligned, no Unaligned cluster; observed: per-case match |
+| Aggregate queries return counts only, no identity fields | `src/lib/server/polis/aggregates.test.ts` | run each aggregate against a seeded fixture; expected: response shape contains no `user_id`, `session_id`, `name`, `address`, etc. (assert via key allowlist); observed: pass |
+| User's county zero sessions: explicit empty state | `src/components/PolisOverlay.test.tsx` | mock all three endpoints with empty fixtures; expected: copy matches `/no data yet|your session will be the first/i`; observed: present |
+| County change mid-session re-queries | `src/components/PolisOverlay.integration.test.tsx` | render with county A → switch to county B; expected: 3 endpoints re-called with county=B; observed: match |
+| E2E Polis-view path | `e2e/polis-view.spec.ts` | navigate to polis route; verify bars + bridges render and compass shows honest empty state; observed: pass |
+| `npm run lint`, `npm run test`, `npm run build` green | n/a — covered by `bash scripts/ai-verify.sh` | not test-shape applicable; reviewer-enforced |
+
+### Red-phase ritual for this packet
+
+SQL aggregate functions first: write `src/lib/server/polis/aggregates.test.ts` with known-fixture inputs and expected percentages — red-verify against the missing module. Next the bridge threshold parameterized cases (same file) — red-fails because the threshold function doesn't exist. The cluster-label hygiene test (`clusters.test.ts`) and the no-identity-in-aggregates assertion come third, both red-failing for the same reason. Then route tests (`bars/route.test.ts`, `bridges/route.test.ts`, `compass/route.test.ts`) — red-fail because the endpoint handlers haven't been split yet. UI tests (`PolisOverlay.test.tsx`) red-fail last. Implement in the order: aggregates module → clusters module → split endpoints → restructure `PolisOverlay` into the three readings → wire honest empty states + threshold gating. If session persistence schema isn't ready, narrow scope per the User-confirmed decision and surface the gap. Capture every red-phase output.
+
 ## Verification
 
 - `npm run lint` clean.

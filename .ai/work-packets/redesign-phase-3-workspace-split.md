@@ -221,6 +221,28 @@ Execution constraints:
 - `npm run lint`, `npm run test`, `npm run build` pass.
 - `npm run e2e` workspace happy path passes (lock themes → first race → pick → why → auto-advance → second race → … → print button enables).
 
+## Test Plan
+
+Maps each acceptance criterion to a test file path and the shape of the assertion. Per `docs/ai-coding-practices/guardrails/test-driven-development.md`, tests are written BEFORE implementation and the red phase is verified via `scripts/ai-tdd-red.sh`.
+
+| AC | Test file | Test shape |
+|---|---|---|
+| Three-pane layout renders side by side | `src/components/BallotToolClient.test.tsx` | render workspace shell; expected: `getByRole('navigation')` (rail), `getByRole('log')` (chat), `getByRole('complementary')` (ballot pane) all in document; observed: match |
+| Left rail content: progress, priorities, race list, footer | `src/components/WorkspaceRail.test.tsx` | render rail with `decisions=3, total=14, themes=[...]`; expected: `getByText("3 / 14")`, locked-priorities list shows themes in rank order, race-list sections render (`Federal`/`State`/`Propositions`); observed: match |
+| Right ballot pane: header, sectioned picks, polling slot, exports footer | `src/components/BallotPane.test.tsx` | render with fixture decisions; expected: header line `/Your ballot · \d+\/\d+ · Draft/`, picks grouped by section with party + why-note, exports footer buttons present; observed: match |
+| Chat header shows `Race N of M`; per-race scope clears history on race switch | `src/components/ChatPanel.test.tsx` | render with `activeRaceIndex=1, totalRaces=14`; expected: header text matches `/Race 2 of 14/`; switch active race; expected: chat message list empty; observed: match |
+| Pick triggers "why" prompt; commit lands in `BallotPane` + verbatim why-note | `src/components/BallotToolClient.integration.test.tsx` | simulate pick action; expected: why-prompt visible; commit "I trust her labor record"; expected: `BallotPane` row contains italic "I trust her labor record" verbatim; observed: match |
+| Auto-advance ~600ms after commit; skipped on manual review | `src/components/BallotToolClient.integration.test.tsx` | with `vi.useFakeTimers`; commit pick; expected: active race advances after 600ms; for review-mode case, manually select a finished race, commit re-pick; expected: no auto-advance; observed: match |
+| Unpick removes from `BallotPane`, no auto-advance | `src/components/BallotToolClient.integration.test.tsx` | commit pick → unpick; expected: pane row gone, active race unchanged; observed: match |
+| Active-race indicator propagates to rail + pane + chat | `src/components/BallotToolClient.integration.test.tsx` | set active race; expected: rail row has `.active` class, pane row has civic-soft left-border class, chat header reflects label; observed: match |
+| Print button disabled at 0 decisions, enabled at ≥1 | `src/components/BallotPane.test.tsx` | render with 0 decisions; expected: print button `disabled`; render with 1; expected: enabled; observed: match |
+| Workspace state persists across refresh (localStorage) | `src/components/BallotToolClient.persistence.test.tsx` | commit picks, simulate reload by re-rendering with persistence hydration; expected: decisions and active race restored; observed: match |
+| E2E workspace happy path | `e2e/workspace.spec.ts` | lock themes → first race → pick → why → auto-advance → second race → … → print enables; expected: all `data-testid` checkpoints pass; observed: pass |
+
+### Red-phase ritual for this packet
+
+Build the rail and pane components from their tests outward. Write `WorkspaceRail.test.tsx` and `BallotPane.test.tsx` first — both fail because the components don't exist; run `bash scripts/ai-tdd-red.sh` on each. Then the auto-advance + active-race integration tests against `BallotToolClient.integration.test.tsx`, which fail until the shell coordinates state across panes. Persistence test goes last (asserts localStorage hydration). Implement in the order: extract `WorkspaceRail` → extract `BallotPane` → restructure `BallotToolClient` shell → wire auto-advance → wire persistence. Capture every red-phase output.
+
 ## Verification
 
 - `npm run lint` clean.
