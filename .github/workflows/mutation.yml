@@ -1,35 +1,23 @@
 name: Mutation
 
-# Stryker mutation testing on the high-stakes paths only. Runs on PRs that
-# touch scoped files, nightly to surface drift between PRs, and on manual
-# dispatch for ad-hoc investigation. The `mutation` job name is referenced
-# by branch protection — renaming requires updating the rule in sync.
+# Stryker mutation testing on the high-stakes paths only. Workflow ALWAYS
+# fires on PRs to launch/production so the `mutation` job can be a required
+# status check without deadlocking docs-only PRs. The actual Stryker run is
+# gated by a paths-filter step inside the job — Stryker runs when scoped
+# paths change, otherwise the job exits 0 with a "skipped" notice.
 #
-# Scoped paths (v1) mirror stryker.config.json's `mutate` array. Update both
+# Cron (nightly) and workflow_dispatch always run full Stryker — both are
+# explicit signals to do the heavy work.
+#
+# Scoped paths mirror stryker.config.json's `mutate` array. Update both
 # files together as redesign Phases 1/5/9 land their new prompt/state-rules/
-# BYOK files. See .ai/work-packets/tdd-phase-2-mutation-testing.md.
+# BYOK files. See .ai/work-packets/tdd-phase-2-mutation-testing.md and
+# .ai/work-packets/tdd-phase-2b-mutation-gate-deadlock-fix.md.
 
 on:
   pull_request:
     branches:
       - launch/production
-    paths:
-      - "src/lib/server/budget.ts"
-      - "src/lib/server/rate-limit.ts"
-      - "src/lib/generatePrompt.ts"
-      - "src/lib/getStateData.ts"
-      - "src/lib/server/alignment.ts"
-      - "src/lib/prompts/**"
-      - "src/lib/state-rules/**"
-      - "src/lib/anthropic-client-byok.ts"
-      - "src/lib/server/budget.test.ts"
-      - "src/lib/server/rate-limit.test.ts"
-      - "src/lib/generatePrompt.test.ts"
-      - "src/lib/getStateData.test.ts"
-      - "src/lib/server/alignment.test.ts"
-      - "stryker.config.json"
-      - "tsconfig.stryker.json"
-      - ".github/workflows/mutation.yml"
   schedule:
     # Nightly at 04:00 UTC — low-traffic window; surfaces drift even when
     # no scoped-path PRs are open.
@@ -48,13 +36,45 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
+      - name: Detect scoped path changes (PR only)
+        id: filter
+        if: github.event_name == 'pull_request'
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            scoped:
+              - 'src/lib/server/budget.ts'
+              - 'src/lib/server/rate-limit.ts'
+              - 'src/lib/generatePrompt.ts'
+              - 'src/lib/getStateData.ts'
+              - 'src/lib/server/alignment.ts'
+              - 'src/lib/prompts/**'
+              - 'src/lib/state-rules/**'
+              - 'src/lib/anthropic-client-byok.ts'
+              - 'src/lib/server/budget.test.ts'
+              - 'src/lib/server/rate-limit.test.ts'
+              - 'src/lib/generatePrompt.test.ts'
+              - 'src/lib/getStateData.test.ts'
+              - 'src/lib/server/alignment.test.ts'
+              - 'stryker.config.json'
+              - 'tsconfig.stryker.json'
+              - '.github/workflows/mutation.yml'
+
+      - name: Note skip when no scoped changes
+        if: github.event_name == 'pull_request' && steps.filter.outputs.scoped == 'false'
+        run: |
+          echo "::notice::No scoped paths changed in this PR; Stryker skipped. Mutation gate reports passed."
+          echo "Scoped paths are defined in this workflow file and in stryker.config.json. Update both if expanding scope."
+
       - name: Setup Node
+        if: github.event_name != 'pull_request' || steps.filter.outputs.scoped == 'true'
         uses: actions/setup-node@v6
         with:
           node-version: "22"
           cache: "npm"
 
       - name: Install dependencies
+        if: github.event_name != 'pull_request' || steps.filter.outputs.scoped == 'true'
         run: npm ci
 
       - name: Sync generated ballot prompt module
@@ -62,15 +82,18 @@ jobs:
         # hooks, so the `pretest` hook (which generates the ballot prompt
         # module imported by scoped tests) does not fire automatically.
         # Run it explicitly to avoid spurious import failures.
+        if: github.event_name != 'pull_request' || steps.filter.outputs.scoped == 'true'
         run: npm run sync:ballot-prompt
 
       - name: Run Stryker mutation testing
+        if: github.event_name != 'pull_request' || steps.filter.outputs.scoped == 'true'
         run: npx stryker run
 
       - name: Upload mutation report
         # Always upload — even on failure — so reviewers can inspect the
-        # HTML report when the threshold gate trips.
-        if: always()
+        # HTML report when the threshold gate trips. Only upload when
+        # Stryker actually ran (i.e., not on a skipped PR).
+        if: always() && (github.event_name != 'pull_request' || steps.filter.outputs.scoped == 'true')
         uses: actions/upload-artifact@v4
         with:
           name: mutation-report
