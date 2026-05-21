@@ -289,6 +289,21 @@ export interface Translations {
     concernInterpretationOffTopic: string;
     concernInterpretationDisambiguatePrompt: string;
     concernInterpretationConfirmPerEntry: string;
+    // ConcernInterpretation themes-mode (Phase 2 cold-open)
+    concernInterpretationThemesHeading: string;
+    concernInterpretationThemesSubhead: string;
+    concernInterpretationThemesTruncationWarning: (
+      returned: number,
+      shown: number,
+    ) => string;
+    // ThemeRanker keys (Phase 2 cold-open)
+    themeRankerListLabel: string;
+    themeRankerReorderLabel: string;
+    themeRankerRemoveLabel: string;
+    themeRankerRenameLabel: string;
+    themeRankerLockIn: string;
+    themeRankerRewrite: string;
+    themeRankerEmpty: string;
     // AlignmentScoreBanner + AlignmentDrilldown
     alignmentScoreBannerHeading: string;
     alignmentScoreOfVotes: (kept: number, total: number) => string;
@@ -774,6 +789,23 @@ const en: Translations = {
     concernInterpretationDisambiguatePrompt:
       "Which of these best matches your view?",
     concernInterpretationConfirmPerEntry: "Looks right",
+    // ConcernInterpretation themes-mode (Phase 2 cold-open)
+    concernInterpretationThemesHeading: "Here's what I heard you say",
+    concernInterpretationThemesSubhead:
+      "Each card is grounded in your own words. Rename, remove, or rerank — then lock these in.",
+    concernInterpretationThemesTruncationWarning: (
+      returned: number,
+      shown: number,
+    ) =>
+      `AI returned ${returned} themes; showing top ${shown}. Lock in or rewrite to refine.`,
+    // ThemeRanker (Phase 2 cold-open)
+    themeRankerListLabel: "Your themes, ranked by importance",
+    themeRankerReorderLabel: "Reorder theme",
+    themeRankerRemoveLabel: "Remove theme",
+    themeRankerRenameLabel: "Rename theme",
+    themeRankerLockIn: "Lock these in",
+    themeRankerRewrite: "Let me rewrite my message",
+    themeRankerEmpty: "No themes left. Rewrite your message to start over.",
     // AlignmentScoreBanner + AlignmentDrilldown
     alignmentScoreBannerHeading: "Voted with you on...",
     alignmentScoreOfVotes: (kept: number, total: number) =>
@@ -1307,6 +1339,23 @@ const es: Translations = {
     concernInterpretationDisambiguatePrompt:
       "Which of these best matches your view?",
     concernInterpretationConfirmPerEntry: "Looks right",
+    // ConcernInterpretation themes-mode \u2014 EN stubs (ES UI out of scope for this packet)
+    concernInterpretationThemesHeading: "Here's what I heard you say",
+    concernInterpretationThemesSubhead:
+      "Each card is grounded in your own words. Rename, remove, or rerank \u2014 then lock these in.",
+    concernInterpretationThemesTruncationWarning: (
+      returned: number,
+      shown: number,
+    ) =>
+      `AI returned ${returned} themes; showing top ${shown}. Lock in or rewrite to refine.`,
+    // ThemeRanker \u2014 EN stubs (ES UI out of scope for this packet)
+    themeRankerListLabel: "Your themes, ranked by importance",
+    themeRankerReorderLabel: "Reorder theme",
+    themeRankerRemoveLabel: "Remove theme",
+    themeRankerRenameLabel: "Rename theme",
+    themeRankerLockIn: "Lock these in",
+    themeRankerRewrite: "Let me rewrite my message",
+    themeRankerEmpty: "No themes left. Rewrite your message to start over.",
     // AlignmentScoreBanner + AlignmentDrilldown \u2014 EN stubs (ES UI out of scope for this packet)
     alignmentScoreBannerHeading: "Voted with you on...",
     alignmentScoreOfVotes: (kept: number, total: number) =>
