@@ -14,27 +14,80 @@ async function fillZip(page: Page, zip: string) {
   await page.getByTestId("zip-submit").click();
 }
 
-/** Wait for the research workspace to be present in the DOM (chat + prompt). */
-async function waitForResearchWorkspace(page: Page) {
+/**
+ * Wait for the research workspace to be ready by waiting for the chat-window
+ * to be attached. The chat-window is the default workspace path (rendered
+ * when `chatAvailable` — budget tier is `normal` or `notice`). The
+ * `prompt-output` testId is the fallback path (rendered when chat is
+ * unavailable) and is NOT required for "workspace ready" — tests that
+ * specifically need the fallback path should call `mockBudgetExhausted`
+ * first, then assert `prompt-output` directly.
+ *
+ * See `.ai/work-packets/e2e-prompt-output-rendering-drift.md`.
+ */
+async function waitForChatWorkspace(page: Page) {
   await page.getByTestId("chat-window").waitFor({
-    state: "attached",
-    timeout: WORKSPACE_TIMEOUT,
-  });
-  await page.getByTestId("prompt-output").waitFor({
     state: "attached",
     timeout: WORKSPACE_TIMEOUT,
   });
 }
 
-async function resolveTexasRunoffGate(page: import("@playwright/test").Page) {
+/**
+ * Wait for the fallback (prompt-output) workspace path. Requires the budget
+ * to have been forced to a non-chat-available tier (e.g. via
+ * `mockBudgetExhausted`). The fallback path renders the copy/paste
+ * `<PromptOutput>` instead of the chat window.
+ */
+async function waitForFallbackWorkspace(page: Page) {
+  await page.getByTestId("prompt-output").waitFor({
+    state: "visible",
+    timeout: WORKSPACE_TIMEOUT,
+  });
+}
+
+/**
+ * Force the chat-availability budget check (`GET /api/chat`) to return an
+ * exhausted tier so the research workspace renders the fallback
+ * `prompt-output` path instead of the chat window.
+ *
+ * Must be called BEFORE `page.goto("/")` so the route is registered before
+ * the budget probe fires on mount. See `useBudgetCheck` in
+ * `src/components/BallotToolClient.tsx`.
+ *
+ * Documented in `.ai/work-packets/e2e-prompt-output-rendering-drift.md`.
+ */
+async function mockBudgetExhausted(page: Page) {
+  await page.route("**/api/chat", (route) => {
+    if (route.request().method() === "GET") {
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          budget: {
+            tier: "exhausted",
+            percent: 100,
+            messagesUsed: 10,
+            messagesMax: 10,
+          },
+        }),
+      });
+    }
+    return route.continue();
+  });
+}
+
+async function resolveRunoffGate(page: import("@playwright/test").Page) {
   const gate = page.getByTestId("runoff-gate");
   await gate.waitFor({ state: "visible", timeout: 2500 }).catch(() => null);
   if (await gate.isVisible().catch(() => false)) {
     await expect(gate).toBeVisible();
     await page.getByTestId("runoff-option-unsure").click();
+    // Wait for the research workspace to render. We wait for EITHER
+    // chat-window OR prompt-output because the rendering mode depends on
+    // budget tier (see ResearchLayout.tsx lines ~1594, 1618).
     await page.waitForFunction(
       () =>
-        !!document.querySelector('[data-testid="chat-window"]') &&
+        !!document.querySelector('[data-testid="chat-window"]') ||
         !!document.querySelector('[data-testid="prompt-output"]'),
       { timeout: WORKSPACE_TIMEOUT },
     );
@@ -165,32 +218,51 @@ test.describe("Input validation", () => {
 // Valid zip code → state info + prompt (Texas: 73301)
 // ---------------------------------------------------------------------------
 
-// SKIPPED: `prompt-output` rendering precondition changed — it only renders
-// as a fallback when chat is unavailable. The beforeEach waits for BOTH
-// `chat-window` AND `prompt-output`, which cannot be simultaneously present
-// in the current product state machine. Reproduces locally with CI=1.
+// Valid zip code — Texas (73301).
 //
-// Follow-up packet: .ai/work-packets/e2e-prompt-output-rendering-drift.md
-test.describe.skip("Valid zip code — Texas (73301) [skipped: prompt-output rendering drift, see e2e-prompt-output-rendering-drift packet]", () => {
+// Tests split into two groups by which workspace path they exercise:
+//   - Chat path (default): chat-window renders, prompt-output does not.
+//     Tests that just need "workspace is ready" or ballot-data-status live
+//     here.
+//   - Fallback path (forced via mockBudgetExhausted): prompt-output renders
+//     instead of chat-window. Tests that assert on prompt-output content
+//     live here (the test names indicate "fallback prompt" or "customized
+//     prompt output").
+//
+// State machine: ResearchLayout.tsx lines ~1594, 1618 — chat-window when
+// `canStartResearch && (chatAvailable || !budgetChecked)`; PromptOutput
+// when `canStartResearch && budgetChecked && !chatAvailable`. `chatAvailable`
+// is `budgetStatus.tier === "normal" || "notice"`. Mocking the budget to
+// `exhausted` forces the fallback.
+test.describe("Valid zip code — Texas (73301) — chat path", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/");
     await page.getByTestId("zip-input").fill("73301");
     await page.getByTestId("zip-submit").click();
-    await resolveTexasRunoffGate(page);
-    await page.getByTestId("chat-window").waitFor({
-      state: "attached",
-      timeout: WORKSPACE_TIMEOUT,
-    });
-    await page.getByTestId("prompt-output").waitFor({
-      state: "attached",
-      timeout: WORKSPACE_TIMEOUT,
-    });
+    await resolveRunoffGate(page);
+    await waitForChatWorkspace(page);
   });
 
   test("displays research workspace", async ({ page }) => {
     await expect(page.getByTestId("chat-window")).toBeAttached();
-    await expect(page.getByTestId("prompt-output")).toBeVisible();
     await expect(page.getByTestId("ballot-data-status")).toBeVisible();
+  });
+
+  test("shows ballot data completeness status", async ({ page }) => {
+    const ballotStatus = page.getByTestId("ballot-data-status");
+    await expect(ballotStatus).toBeVisible();
+    await expect(ballotStatus).toContainText(/Exact ballot|Official contests/i);
+  });
+});
+
+test.describe("Valid zip code — Texas (73301) — fallback path", () => {
+  test.beforeEach(async ({ page }) => {
+    await mockBudgetExhausted(page);
+    await page.goto("/");
+    await page.getByTestId("zip-input").fill("73301");
+    await page.getByTestId("zip-submit").click();
+    await resolveRunoffGate(page);
+    await waitForFallbackWorkspace(page);
   });
 
   test("shows Texas context in fallback prompt", async ({ page }) => {
@@ -198,12 +270,6 @@ test.describe.skip("Valid zip code — Texas (73301) [skipped: prompt-output ren
     await expect(promptOutput).toBeVisible();
     await expect(promptOutput).toContainText(/Texas/i);
     await expect(promptOutput).toContainText(/73301/);
-  });
-
-  test("shows ballot data completeness status", async ({ page }) => {
-    const ballotStatus = page.getByTestId("ballot-data-status");
-    await expect(ballotStatus).toBeVisible();
-    await expect(ballotStatus).toContainText(/Exact ballot|Official contests/i);
   });
 
   test("displays customized prompt output", async ({ page }) => {
@@ -228,24 +294,26 @@ test.describe.skip("Valid zip code — Texas (73301) [skipped: prompt-output ren
 // Valid zip code — California (90210)
 // ---------------------------------------------------------------------------
 
-// SKIPPED: `prompt-output` rendering precondition changed — only renders when
-// chat is unavailable. Tests assume it always renders.
-// Follow-up packet: .ai/work-packets/e2e-prompt-output-rendering-drift.md
-test.describe.skip("Valid zip code — California (90210) [skipped: prompt-output rendering drift, see e2e-prompt-output-rendering-drift packet]", () => {
-  test("displays California state info", async ({ page }) => {
+// Valid zip code — California (90210). CA has no runoff gate and no
+// closed-primary gate (CA is a top-two primary state per state data). Both
+// tests assert on prompt-output content, so they force the fallback path
+// via mockBudgetExhausted.
+test.describe("Valid zip code — California (90210) — fallback path", () => {
+  test.beforeEach(async ({ page }) => {
+    await mockBudgetExhausted(page);
     await page.goto("/");
     await page.getByTestId("zip-input").fill("90210");
     await page.getByTestId("zip-submit").click();
-    await expect(page.getByTestId("chat-window")).toBeAttached();
+    await waitForFallbackWorkspace(page);
+  });
+
+  test("displays California state info", async ({ page }) => {
     await expect(page.getByTestId("prompt-output")).toContainText(
       /California/i,
     );
   });
 
   test("displays customized prompt for California", async ({ page }) => {
-    await page.goto("/");
-    await page.getByTestId("zip-input").fill("90210");
-    await page.getByTestId("zip-submit").click();
     const promptOutput = page.getByTestId("prompt-output");
     await expect(promptOutput).toBeVisible();
     await expect(promptOutput).toContainText(/California/i);
@@ -271,17 +339,19 @@ test.describe("Multi-state zip code (86515)", () => {
 // Copy to clipboard
 // ---------------------------------------------------------------------------
 
-// SKIPPED: copy-button is rendered alongside `prompt-output` (the fallback
-// path). Same precondition issue as the Valid-zip-Texas/CA describes.
-// Follow-up packet: .ai/work-packets/e2e-prompt-output-rendering-drift.md
-test.describe.skip("Copy to clipboard [skipped: prompt-output rendering drift, see e2e-prompt-output-rendering-drift packet]", () => {
+// Copy to clipboard — the copy-button testId is rendered by <PromptOutput>
+// (the fallback path). Tests force the fallback via mockBudgetExhausted so
+// the button is present.
+test.describe("Copy to clipboard — fallback path", () => {
   test("copy button is visible after valid zip submission", async ({
     page,
   }) => {
+    await mockBudgetExhausted(page);
     await page.goto("/");
     await page.getByTestId("zip-input").fill("73301");
     await page.getByTestId("zip-submit").click();
-    await resolveTexasRunoffGate(page);
+    await resolveRunoffGate(page);
+    await waitForFallbackWorkspace(page);
     const copyBtn = page.getByTestId("copy-button");
     await expect(copyBtn).toBeVisible();
   });
@@ -292,10 +362,12 @@ test.describe.skip("Copy to clipboard [skipped: prompt-output rendering drift, s
   }) => {
     // Grant clipboard permissions
     await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+    await mockBudgetExhausted(page);
     await page.goto("/");
     await page.getByTestId("zip-input").fill("73301");
     await page.getByTestId("zip-submit").click();
-    await resolveTexasRunoffGate(page);
+    await resolveRunoffGate(page);
+    await waitForFallbackWorkspace(page);
     await page.getByTestId("copy-button").click();
     const confirmation = page.getByTestId("copy-confirmation");
     await expect(confirmation).toBeVisible();
@@ -331,19 +403,14 @@ test.describe("Responsive layout", () => {
 // ---------------------------------------------------------------------------
 
 test.describe("Keyboard accessibility", () => {
-  // SKIPPED: depends on `resolveTexasRunoffGate` which expects both
-  // `chat-window` AND `prompt-output` (the latter no longer renders when
-  // chat is available). Same family as the prompt-output rendering drift.
-  // Follow-up packet: .ai/work-packets/e2e-prompt-output-rendering-drift.md
-  test.skip("can submit zip code via Enter key [skipped: prompt-output rendering drift, see e2e-prompt-output-rendering-drift packet]", async ({
-    page,
-  }) => {
+  test("can submit zip code via Enter key", async ({ page }) => {
     await page.goto("/");
     const zipInput = page.getByTestId("zip-input");
     await zipInput.fill("73301");
     await zipInput.press("Enter");
-    await resolveTexasRunoffGate(page);
-    // Should show research workspace (form submitted via Enter)
+    await resolveRunoffGate(page);
+    // Should show research workspace (form submitted via Enter). Default
+    // budget → chat path → chat-window attached.
     await expect(page.getByTestId("chat-window")).toBeAttached();
   });
 
