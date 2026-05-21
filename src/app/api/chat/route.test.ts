@@ -285,6 +285,9 @@ beforeEach(() => {
   vi.stubEnv("ANTHROPIC_VOTER_API", "sk-test-key");
   // Default flag off; individual tests stub on as needed.
   vi.stubEnv("PROMPT_FLEET_V2", "");
+  // Suppress prompt_used JSON log lines during flag-on tests so they don't
+  // clutter the runner stdout. Tests that assert on the log re-spy locally.
+  vi.spyOn(console, "log").mockImplementation(() => {});
   // Reset default lookupAlignment behavior between tests.
   vi.mocked(resolveCandidateId).mockResolvedValue("openstates-tx-123");
   vi.mocked(lookupAlignment).mockResolvedValue({
