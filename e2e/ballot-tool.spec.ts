@@ -95,6 +95,52 @@ async function resolveRunoffGate(page: import("@playwright/test").Page) {
 }
 
 /**
+ * Closed/semi-closed primary participation gate options, mapping to the
+ * `ClosedPrimaryChoice` union in src/components/BallotToolClient.tsx. The
+ * gate renders for states with `primaryParticipation.type` in `closed` or
+ * `semi-closed` when the upcoming election is a primary.
+ *
+ * `unaffiliated` is the safest default for state-coverage tests:
+ *   - in semi-closed states (AZ, NH), unaffiliated voters CAN participate
+ *   - in closed states (NY, FL, NM, WY), unaffiliated voters cannot vote in
+ *     a partisan primary but the gate still resolves and the workspace
+ *     renders (the gate is advisory, not blocking)
+ */
+type ClosedPrimaryChoice =
+  | "registered_dem"
+  | "registered_rep"
+  | "registered_other"
+  | "unaffiliated";
+
+/**
+ * Traverse the closed-primary participation gate (`primary-participation-gate`
+ * testId) by selecting a party option. Waits for the gate to appear, picks
+ * the supplied choice, and waits for the chat-window (research workspace) to
+ * be attached.
+ *
+ * Defaults to `unaffiliated` because it is universally available across all
+ * gated states (closed AND semi-closed). Tests that need a specific party
+ * lane (e.g. for ballot-content assertions) can pass a different choice.
+ */
+async function resolveClosedPrimaryGate(
+  page: Page,
+  choice: ClosedPrimaryChoice = "unaffiliated",
+) {
+  const gate = page.getByTestId("primary-participation-gate");
+  await gate.waitFor({ state: "visible", timeout: WORKSPACE_TIMEOUT });
+  await expect(gate).toBeVisible();
+  await page.getByTestId(`closed-primary-option-${choice}`).click();
+  // After the gate is resolved, the research workspace renders. We wait for
+  // chat-window to be attached because chat is available by default. We do
+  // NOT wait for prompt-output here — that's the fallback path covered by
+  // the separate e2e-prompt-output-rendering-drift packet.
+  await page.getByTestId("chat-window").waitFor({
+    state: "attached",
+    timeout: WORKSPACE_TIMEOUT,
+  });
+}
+
+/**
  * Shared e2e test suite for the ballot research tool.
  * These tests are measurement infrastructure — they run on ALL workflow branches
  * and are NOT modified by individual workflows.
@@ -505,38 +551,41 @@ test.describe("State coverage — Texas runoff gate (73301)", () => {
   });
 });
 
-// New York (10007) — no runoff gate; prompt contains state name and registration deadline
-// SKIPPED: closed-primary participation gate now intercepts before workspace renders.
-// Follow-up packet: .ai/work-packets/e2e-closed-primary-gate-drift.md
-test.describe.skip("State coverage — New York (10007) [skipped: closed-primary gate drift, see e2e-closed-primary-gate-drift packet]", () => {
+// New York (10007) — closed primary (NY Election Law §6-100); participation
+// gate renders before the research workspace. After gate traversal, the
+// research workspace renders (chat-window attached) and the
+// research-context-strip shows the state name.
+test.describe("State coverage — New York (10007)", () => {
   test("renders New York-specific data for a NY address", async ({ page }) => {
     await page.goto("/");
     await fillZip(page, "10007");
     await expect(page.getByTestId("not-found-message")).toHaveCount(0);
-    // No runoff gate for NY
+    // No runoff gate for NY (NY has no party-locked runoff)
     await expect(page.getByTestId("runoff-gate")).toHaveCount(0);
-    await waitForResearchWorkspace(page);
-    const promptOutput = page.getByTestId("prompt-output");
-    await expect(promptOutput).toContainText(/New York/i);
-    // Registration deadline from NY top-level registration (general: 2026-10-09)
-    await expect(promptOutput).toContainText(/2026-10-09/);
+    // Closed-primary gate must be resolved before workspace renders
+    await resolveClosedPrimaryGate(page);
+    // After gate, research workspace is present and state name appears in
+    // the context strip. Prompt-output text assertions are deferred to the
+    // separate prompt-output-rendering-drift packet (only renders when
+    // chat is unavailable).
+    const strip = page.getByTestId("research-context-strip");
+    await expect(strip).toBeVisible();
+    await expect(strip).toContainText(/New York/i);
   });
 });
 
-// Florida (32399) — no runoff gate; state name in prompt
-// SKIPPED: closed-primary participation gate now intercepts before workspace renders.
-// Follow-up packet: .ai/work-packets/e2e-closed-primary-gate-drift.md
-test.describe.skip("State coverage — Florida (32399) [skipped: closed-primary gate drift, see e2e-closed-primary-gate-drift packet]", () => {
+// Florida (32399) — closed primary (F.S. §101.021); participation gate
+// renders before the research workspace.
+test.describe("State coverage — Florida (32399)", () => {
   test("renders Florida-specific data for a FL address", async ({ page }) => {
     await page.goto("/");
     await fillZip(page, "32399");
     await expect(page.getByTestId("not-found-message")).toHaveCount(0);
     await expect(page.getByTestId("runoff-gate")).toHaveCount(0);
-    await waitForResearchWorkspace(page);
-    const promptOutput = page.getByTestId("prompt-output");
-    await expect(promptOutput).toContainText(/Florida/i);
-    // Registration deadline from FL top-level registration: 2026-10-05
-    await expect(promptOutput).toContainText(/2026-10-05/);
+    await resolveClosedPrimaryGate(page);
+    const strip = page.getByTestId("research-context-strip");
+    await expect(strip).toBeVisible();
+    await expect(strip).toContainText(/Florida/i);
   });
 });
 
@@ -553,42 +602,30 @@ test.describe("State coverage — Georgia runoff gate (30303)", () => {
   });
 });
 
-// North Carolina (27601) — TEMPORARILY SKIPPED.
+// North Carolina (27601) — runoff gate IS visible (runoff upcoming 2026-07-07,
+// partyLockedToFirstRoundPrimary=true per N.C. Gen. Stat. §163-110).
 //
-// When this test was authored, NC's `runoffRules.partyLockedToFirstRoundPrimary`
-// was `false`, so the runoff gate would NOT render. Current data
-// (src/data/states/NC.json) has flipped to `true`, so the gate IS rendered.
-// This is product/data drift, NOT a CI/timing issue — the test reproduces the
-// same failure locally with `npm run e2e` (Phase 1a baseline) AND on CI.
-//
-// Per the Phase 1a work packet's Business Logic rule:
-//   "Diagnosis reveals a latent product bug: fix belongs in a separate packet
-//    — skip the test, document the bug, do NOT fix product code in this packet."
-//
-// Follow-up work packet: .ai/work-packets/e2e-nc-runoff-gate-data-drift.md
-// Will (a) check git blame on NC data, (b) either rewrite the test to traverse
-// the runoff gate (like Texas) or revert the data flip, and (c) unskip.
-test.describe.skip("State coverage — North Carolina (27601) [skipped: data drift, see e2e-nc-runoff-gate-data-drift packet]", () => {
-  test("renders North Carolina-specific data for a NC address", async ({
-    page,
-  }) => {
+// Data correction landed in commit bf5c099 (data: complete primaryParticipation
+// for all 50 states + DC; fix NC/SD runoffRules) — flipped NC's
+// `runoffRules.partyLockedToFirstRoundPrimary` from `false` to `true`, citing
+// N.C. Gen. Stat. §163-110. The runoff gate is correctly rendered for NC zips
+// now; the test had to be updated to reflect this. Mirrors the GA/TX pattern.
+test.describe("State coverage — North Carolina runoff gate (27601)", () => {
+  test("shows runoff gate for North Carolina address", async ({ page }) => {
     await page.goto("/");
     await fillZip(page, "27601");
-    await expect(page.getByTestId("not-found-message")).toHaveCount(0);
-    // NC has runoff but partyLockedToFirstRoundPrimary=false → no runoff gate
-    await expect(page.getByTestId("runoff-gate")).toHaveCount(0);
-    await waitForResearchWorkspace(page);
-    const promptOutput = page.getByTestId("prompt-output");
-    await expect(promptOutput).toContainText(/North Carolina/i);
-    // Registration deadline from NC top-level registration: 2026-10-09
-    await expect(promptOutput).toContainText(/2026-10-09/);
+    const gate = page.getByTestId("runoff-gate");
+    await gate.waitFor({ state: "visible", timeout: 8000 });
+    await expect(gate).toBeVisible();
+    // Gate title references North Carolina
+    await expect(gate).toContainText(/North Carolina/i);
   });
 });
 
-// New Hampshire (03301) — no online reg deadline (SDR state); no runoff gate
-// SKIPPED: closed-primary participation gate now intercepts before workspace renders.
-// Follow-up packet: .ai/work-packets/e2e-closed-primary-gate-drift.md
-test.describe.skip("State coverage — New Hampshire (03301) [skipped: closed-primary gate drift, see e2e-closed-primary-gate-drift packet]", () => {
+// New Hampshire (03301) — semi-closed primary (RSA 659:14); participation
+// gate renders before the research workspace. NH has no online registration
+// deadline (same-day registration state).
+test.describe("State coverage — New Hampshire (03301)", () => {
   test("renders New Hampshire-specific data for a NH address", async ({
     page,
   }) => {
@@ -596,18 +633,16 @@ test.describe.skip("State coverage — New Hampshire (03301) [skipped: closed-pr
     await fillZip(page, "03301");
     await expect(page.getByTestId("not-found-message")).toHaveCount(0);
     await expect(page.getByTestId("runoff-gate")).toHaveCount(0);
-    await waitForResearchWorkspace(page);
-    const promptOutput = page.getByTestId("prompt-output");
-    await expect(promptOutput).toContainText(/New Hampshire/i);
-    // NH has no online registration deadline (same-day registration state)
-    // Confirm state name appears without asserting an online deadline date
+    await resolveClosedPrimaryGate(page);
+    const strip = page.getByTestId("research-context-strip");
+    await expect(strip).toBeVisible();
+    await expect(strip).toContainText(/New Hampshire/i);
   });
 });
 
-// Arizona (86515 — multi-state AZ/NM; user must select state)
-// SKIPPED: closed-primary participation gate now intercepts before workspace renders.
-// Follow-up packet: .ai/work-packets/e2e-closed-primary-gate-drift.md
-test.describe.skip("State coverage — Arizona via multi-state selector (86515) [skipped: closed-primary gate drift, see e2e-closed-primary-gate-drift packet]", () => {
+// Arizona (86515 — multi-state AZ/NM; user must select state). Semi-closed
+// primary (A.R.S. §16-467) — participation gate renders after state selection.
+test.describe("State coverage — Arizona via multi-state selector (86515)", () => {
   test("shows state selector then renders Arizona data", async ({ page }) => {
     await page.goto("/");
     await fillZip(page, "86515");
@@ -618,18 +653,17 @@ test.describe.skip("State coverage — Arizona via multi-state selector (86515) 
     await stateSelector.getByRole("button", { name: "AZ" }).click();
     await expect(page.getByTestId("not-found-message")).toHaveCount(0);
     await expect(page.getByTestId("runoff-gate")).toHaveCount(0);
-    await waitForResearchWorkspace(page);
-    const promptOutput = page.getByTestId("prompt-output");
-    await expect(promptOutput).toContainText(/Arizona/i);
-    // Registration deadline from AZ top-level registration: 2026-07-06
-    await expect(promptOutput).toContainText(/2026-07-06/);
+    // AZ has semi-closed primary — gate renders before workspace
+    await resolveClosedPrimaryGate(page);
+    const strip = page.getByTestId("research-context-strip");
+    await expect(strip).toBeVisible();
+    await expect(strip).toContainText(/Arizona/i);
   });
 });
 
-// New Mexico (86515 — multi-state AZ/NM; user selects NM)
-// SKIPPED: closed-primary participation gate now intercepts before workspace renders.
-// Follow-up packet: .ai/work-packets/e2e-closed-primary-gate-drift.md
-test.describe.skip("State coverage — New Mexico via multi-state selector (86515) [skipped: closed-primary gate drift, see e2e-closed-primary-gate-drift packet]", () => {
+// New Mexico (86515 — multi-state AZ/NM; user selects NM). Closed primary
+// (NMSA §1-8-16) — participation gate renders after state selection.
+test.describe("State coverage — New Mexico via multi-state selector (86515)", () => {
   test("shows state selector then renders New Mexico data", async ({
     page,
   }) => {
@@ -641,26 +675,28 @@ test.describe.skip("State coverage — New Mexico via multi-state selector (8651
     await stateSelector.getByRole("button", { name: "NM" }).click();
     await expect(page.getByTestId("not-found-message")).toHaveCount(0);
     await expect(page.getByTestId("runoff-gate")).toHaveCount(0);
-    await waitForResearchWorkspace(page);
-    const promptOutput = page.getByTestId("prompt-output");
-    await expect(promptOutput).toContainText(/New Mexico/i);
+    // NM has closed primary — gate renders before workspace
+    await resolveClosedPrimaryGate(page);
+    const strip = page.getByTestId("research-context-strip");
+    await expect(strip).toBeVisible();
+    await expect(strip).toContainText(/New Mexico/i);
   });
 });
 
 // Wyoming (82001) — populated as part of the 50-state expansion. Zip lands
-// on the Wyoming research view; runoff gate does not render (WY has no
-// party-locked legislative-primary runoff).
-// SKIPPED: closed-primary participation gate now intercepts before workspace renders.
-// Follow-up packet: .ai/work-packets/e2e-closed-primary-gate-drift.md
-test.describe.skip("State coverage — Wyoming (82001) [skipped: closed-primary gate drift, see e2e-closed-primary-gate-drift packet]", () => {
+// on the Wyoming research view; closed primary (Wyo. Stat. Ann. §22-5-101).
+// Runoff gate does not render (WY has no party-locked legislative-primary
+// runoff). Closed-primary participation gate renders before workspace.
+test.describe("State coverage — Wyoming (82001)", () => {
   test("renders Wyoming-specific data for a Wyoming zip", async ({ page }) => {
     await page.goto("/");
     await fillZip(page, "82001");
     await expect(page.getByTestId("not-found-message")).toHaveCount(0);
-    await waitForResearchWorkspace(page);
-    const promptOutput = page.getByTestId("prompt-output");
-    await expect(promptOutput).toContainText(/Wyoming/i);
-    // Runoff gate should not appear
+    // Runoff gate should not appear (WY runoffs are not party-locked)
     await expect(page.getByTestId("runoff-gate")).toHaveCount(0);
+    await resolveClosedPrimaryGate(page);
+    const strip = page.getByTestId("research-context-strip");
+    await expect(strip).toBeVisible();
+    await expect(strip).toContainText(/Wyoming/i);
   });
 });
