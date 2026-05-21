@@ -144,6 +144,7 @@ Manual steps:
 - **Stryker timing — before redesign Phase 1** — TDD Phase 1 lands → TDD Phase 2 (Stryker) lands → THEN redesign Phase 1 (prompt refactor) starts. Rationale: prompt routing + PII strip are the highest-stakes redesign code; mutation testing should be in place when those tests are first written, not bolted on after.
 - **Visual regression baselines AFTER redesign lands** — current design is being discarded; baselining now wastes effort.
 - **AQE is genuinely deferred** — trigger is "a concrete gap that AQE solves better than manual work." Not a scheduled phase.
+- **2026-05-21: TDD rollout three-phase harness SHIPPED + VALIDATED end-to-end.** Phase 1 + 1a + 2 + 2a + 2b all merged via the gate stack without admin bypass (7 PRs total). `test` + `e2e` + `mutation` all required on `launch/production`; all gates have populated app_ids. Verification rigor rule baked into TDD guardrail after Phase 2a discipline-gap finding. Phase 3 (visual regression + coverage thresholds + pre-push hook) remains queued but blocked-on-redesign for visual baselines. Phase 4 (AQE) remains trigger-based. Redesign Phase 1 (prompt refactor) is unblocked and ready.
 
 ## Rejected Options
 
