@@ -14,6 +14,22 @@ import {
   lookupAlignment,
 } from "../../../lib/server/alignment";
 import { lookupDonorCoalition } from "../../../lib/server/donors";
+import {
+  routePrompt,
+  type RouterBuilderKey,
+} from "../../../lib/prompts/router";
+import type {
+  RouterView,
+  RaceType,
+  RouterTrigger,
+} from "../../../lib/prompts/types";
+import { prependSafetyHeader } from "../../../lib/prompts/safety-header";
+import { stripPII } from "../../../lib/prompts/pii-strip";
+import { buildThemeExtractionPrompt } from "../../../lib/prompts/theme-extraction";
+import { buildRaceDeepDivePrompt } from "../../../lib/prompts/race-deep-dive";
+import { buildPropositionPrompt } from "../../../lib/prompts/proposition";
+import { buildThemeAmendmentPrompt } from "../../../lib/prompts/theme-amendment";
+import { buildHandoffPrompt } from "../../../lib/prompts/handoff";
 
 // Server-side tools: Anthropic's hosted web_search runs on their infra; we
 // just declare the tool and Claude orchestrates the calls server-side. Billed
@@ -134,6 +150,63 @@ interface ChatMessage {
   content: string;
 }
 
+/**
+ * RaceContextPayload — the per-view dynamic slice the client injects so each
+ * builder can render its `<tag>` blocks from app state (NOT prompt body).
+ * All fields are optional because the relevant subset varies by view; the
+ * `renderBuilder` switch validates that the slice required for a given
+ * builder key is present and throws otherwise. Keep this minimal — add a
+ * field only when a builder actually needs it.
+ *
+ * PII rule (safety header §3): only city + state may reach the model. The
+ * server-side `stripPII` pass redacts everything else; clients must NOT pre-
+ * strip then re-introduce PII via this payload.
+ */
+interface RaceContextPayload {
+  /** theme-extraction: the voter's free-form cold-open text. */
+  userInput?: string;
+  /** race-deep-dive: human-readable race label, e.g. "US House — TX-07". */
+  raceLabel?: string;
+  /** race-deep-dive, handoff: 2-letter state code (uppercase). */
+  state?: string;
+  /** race-deep-dive: county name. */
+  county?: string;
+  /** race-deep-dive, proposition, amendment: ranked themes as a single string. */
+  themesList?: string;
+  /** race-deep-dive: JSON-serialized candidate ground truth. */
+  candidatesJson?: string;
+  /** race-deep-dive: summary of races already decided. */
+  decidedSummary?: string;
+  /** proposition: proposition label, e.g. "Prop A". */
+  propLabel?: string;
+  /** proposition: short summary text. */
+  propSummary?: string;
+  /** proposition: "if yes" outcome description. */
+  propIfYes?: string;
+  /** proposition: "if no" outcome description. */
+  propIfNo?: string;
+  /** proposition: yes-side funders summary. */
+  yesFunders?: string;
+  /** proposition: no-side funders summary. */
+  noFunders?: string;
+  /** amendment: existing themes (string form). */
+  decidedJson?: string;
+  /** handoff: "City, ST" location string (only city + state allowed). */
+  addressCityState?: string;
+  /** handoff: human-readable election label. */
+  electionLabel?: string;
+  /** handoff: ISO date YYYY-MM-DD. */
+  electionDate?: string;
+  /** handoff: ballot variant label, e.g. "DEM-runoff". */
+  ballotType?: string;
+  /** handoff: ranked themes as a single string. */
+  themesRanked?: string;
+  /** handoff: list of remaining (undecided) races. */
+  remainingList?: string;
+  /** handoff: notable quotes from the voter (already PII-stripped client-side). */
+  notableQuotes?: string;
+}
+
 interface ChatRequest {
   messages: ChatMessage[];
   systemPrompt: string;
@@ -141,6 +214,13 @@ interface ChatRequest {
   messageCount: number;
   isNewSession?: boolean;
   voterProfile?: string;
+  // New (Phase 1 prompt-fleet refactor — used only when PROMPT_FLEET_V2 is on):
+  view?: RouterView;
+  activeRaceType?: RaceType;
+  trigger?: RouterTrigger;
+  activeRaceId?: string;
+  prevActiveRaceId?: string;
+  raceContext?: RaceContextPayload;
 }
 
 function getClientIP(request: NextRequest): string {
@@ -162,7 +242,22 @@ function validateOrigin(request: NextRequest): boolean {
   }
 }
 
-function buildSystemPrompt(base: string, voterProfile?: string): string {
+/**
+ * Truthy when PROMPT_FLEET_V2 is set to any non-empty string. Absent or "" =
+ * legacy behavior. Read on every call so test stubs (`vi.stubEnv`) take effect
+ * without needing to re-import the module.
+ */
+function isPromptFleetV2Enabled(): boolean {
+  const v = process.env.PROMPT_FLEET_V2;
+  return typeof v === "string" && v.length > 0;
+}
+
+/**
+ * Append the voter profile to a base system prompt. This is the legacy
+ * suffix behavior; extracted so both the flag-off path and the flag-on
+ * composed-fleet path can share it without re-implementing the boilerplate.
+ */
+function appendVoterProfile(base: string, voterProfile?: string): string {
   if (!voterProfile) return base;
   return (
     base +
@@ -177,11 +272,197 @@ function buildSystemPrompt(base: string, voterProfile?: string): string {
   );
 }
 
+/**
+ * Render the builder body for a routed key from the request's raceContext.
+ * Required-field validation lives here (per the brief): throw a stable,
+ * greppable error when the slice for a given key is incomplete so we never
+ * silently send a half-built prompt.
+ */
+function renderBuilder(
+  key: RouterBuilderKey,
+  ctx: RaceContextPayload | undefined,
+): string {
+  const c = ctx ?? {};
+  switch (key) {
+    case "theme-extraction":
+      if (c.userInput === undefined) {
+        throw new Error(
+          "buildSystemPrompt: missing raceContext for builder theme-extraction (userInput)",
+        );
+      }
+      return buildThemeExtractionPrompt({ userInput: c.userInput });
+    case "race-deep-dive":
+      if (
+        c.raceLabel === undefined ||
+        c.state === undefined ||
+        c.county === undefined ||
+        c.themesList === undefined ||
+        c.candidatesJson === undefined ||
+        c.decidedSummary === undefined
+      ) {
+        throw new Error(
+          "buildSystemPrompt: missing raceContext for builder race-deep-dive",
+        );
+      }
+      return buildRaceDeepDivePrompt({
+        raceLabel: c.raceLabel,
+        state: c.state,
+        county: c.county,
+        themesList: c.themesList,
+        candidatesJson: c.candidatesJson,
+        decidedSummary: c.decidedSummary,
+      });
+    case "proposition":
+      if (
+        c.propLabel === undefined ||
+        c.propSummary === undefined ||
+        c.propIfYes === undefined ||
+        c.propIfNo === undefined ||
+        c.themesList === undefined ||
+        c.yesFunders === undefined ||
+        c.noFunders === undefined
+      ) {
+        throw new Error(
+          "buildSystemPrompt: missing raceContext for builder proposition",
+        );
+      }
+      return buildPropositionPrompt({
+        propLabel: c.propLabel,
+        propSummary: c.propSummary,
+        propIfYes: c.propIfYes,
+        propIfNo: c.propIfNo,
+        themesList: c.themesList,
+        yesFunders: c.yesFunders,
+        noFunders: c.noFunders,
+      });
+    case "theme-amendment":
+      if (
+        c.userInput === undefined ||
+        c.themesList === undefined ||
+        c.decidedJson === undefined
+      ) {
+        throw new Error(
+          "buildSystemPrompt: missing raceContext for builder theme-amendment",
+        );
+      }
+      return buildThemeAmendmentPrompt({
+        userInput: c.userInput,
+        themesList: c.themesList,
+        decidedJson: c.decidedJson,
+      });
+    case "handoff":
+      if (
+        c.addressCityState === undefined ||
+        c.electionLabel === undefined ||
+        c.electionDate === undefined ||
+        c.ballotType === undefined ||
+        c.themesRanked === undefined ||
+        c.decidedJson === undefined ||
+        c.remainingList === undefined ||
+        c.notableQuotes === undefined
+      ) {
+        throw new Error(
+          "buildSystemPrompt: missing raceContext for builder handoff",
+        );
+      }
+      return buildHandoffPrompt({
+        addressCityState: c.addressCityState,
+        electionLabel: c.electionLabel,
+        electionDate: c.electionDate,
+        ballotType: c.ballotType,
+        themesRanked: c.themesRanked,
+        decidedJson: c.decidedJson,
+        remainingList: c.remainingList,
+        notableQuotes: c.notableQuotes,
+      });
+    default: {
+      const _exhaustive: never = key;
+      throw new Error(
+        `buildSystemPrompt: unknown builder key ${JSON.stringify(_exhaustive)}`,
+      );
+    }
+  }
+}
+
+/**
+ * Compose the outgoing system prompt.
+ *
+ * Flag-OFF path: bit-identical to the historical behavior — body's
+ * `systemPrompt` field is passed through, with an optional voter-profile
+ * suffix. This preserves every legacy assertion until the rollout completes.
+ *
+ * Flag-ON path: route on (view, raceType, trigger) → builder key, render the
+ * task-specific body from `raceContext`, prepend the shared safety header,
+ * then append the voter-profile suffix.
+ *
+ * The `prompt_used` log line is emitted only on the flag-on path so we have
+ * observability into routing decisions without leaking the rendered body
+ * (which can contain `<tag>` blocks the safety header expects to stay
+ * server-side).
+ */
+function buildSystemPrompt(body: ChatRequest): string {
+  if (!isPromptFleetV2Enabled() || !body.view) {
+    return appendVoterProfile(body.systemPrompt, body.voterProfile);
+  }
+  const builderKey = routePrompt({
+    view: body.view,
+    raceType: body.activeRaceType,
+    trigger: body.trigger,
+  });
+  console.log(
+    JSON.stringify({
+      event: "chat.prompt_used",
+      sessionId: body.sessionId,
+      builder: builderKey,
+      view: body.view,
+      raceType: body.activeRaceType,
+      trigger: body.trigger,
+    }),
+  );
+  const builderBody = renderBuilder(builderKey, body.raceContext);
+  const composed = prependSafetyHeader(builderBody);
+  return appendVoterProfile(composed, body.voterProfile);
+}
+
 function truncateUserMessages(messages: ChatMessage[]): ChatMessage[] {
   return messages.map((m) =>
     m.role === "user" && m.content.length > MAX_USER_MESSAGE_CHARS
       ? { ...m, content: m.content.slice(0, MAX_USER_MESSAGE_CHARS) }
       : m,
+  );
+}
+
+/**
+ * Per-race reset: when the active race changes mid-session under the new
+ * prompt fleet, the carry-over conversation no longer applies. Drop
+ * everything except the most-recent user message so Claude starts fresh on
+ * the new race instead of conflating the two.
+ *
+ * No-op when the flag is off or when either race id is missing — callers
+ * who haven't adopted the per-race scope contract get legacy behavior.
+ */
+function applyPerRaceReset(
+  body: ChatRequest,
+  messages: ChatMessage[],
+): ChatMessage[] {
+  if (!isPromptFleetV2Enabled()) return messages;
+  if (!body.activeRaceId || !body.prevActiveRaceId) return messages;
+  if (body.activeRaceId === body.prevActiveRaceId) return messages;
+  const lastUser = [...messages].reverse().find((m) => m.role === "user");
+  return lastUser ? [lastUser] : [];
+}
+
+/**
+ * Strip PII from user messages before they leave the server. City + state
+ * are explicitly preserved (rule 3 of the safety header); see
+ * src/lib/prompts/pii-strip.ts for the redaction shapes. Assistant content
+ * is untouched because Claude never produces PII the user hasn't already
+ * sent, and rewriting prior assistant turns would break grounding.
+ */
+function applyPiiStrip(messages: ChatMessage[]): ChatMessage[] {
+  if (!isPromptFleetV2Enabled()) return messages;
+  return messages.map((m) =>
+    m.role === "user" ? { ...m, content: stripPII(m.content) } : m,
   );
 }
 
@@ -256,10 +537,87 @@ function validateVoterProfileField(voterProfile?: string): Response | null {
   return null;
 }
 
-async function prepareMessages(
-  messages: ChatMessage[],
-): Promise<ChatMessage[]> {
-  const prepared = truncateUserMessages(messages);
+// New (Phase 1 prompt-fleet refactor) — validate the optional routing fields.
+// These all become load-bearing under PROMPT_FLEET_V2; keep the validators
+// permissive but bounded so a misformed request still 400s before reaching
+// `routePrompt` (which throws on structural mismatch).
+
+const VALID_VIEWS: ReadonlyArray<RouterView> = [
+  "cold-open",
+  "workspace-race",
+  "workspace-prop",
+  "amend",
+  "handoff",
+];
+
+const VALID_RACE_TYPES: ReadonlyArray<RaceType> = ["choice", "proposition"];
+
+const VALID_TRIGGERS: ReadonlyArray<RouterTrigger> = [
+  "amend-from-rail",
+  "amend-from-chat",
+  "handoff-button",
+  "budget-exhausted",
+  "user-message",
+];
+
+function validateViewField(view: unknown): Response | null {
+  if (view === undefined) return null;
+  if (typeof view !== "string" || !VALID_VIEWS.includes(view as RouterView)) {
+    return validationError("Invalid view");
+  }
+  return null;
+}
+
+function validateActiveRaceTypeField(activeRaceType: unknown): Response | null {
+  if (activeRaceType === undefined) return null;
+  if (
+    typeof activeRaceType !== "string" ||
+    !VALID_RACE_TYPES.includes(activeRaceType as RaceType)
+  ) {
+    return validationError("Invalid activeRaceType");
+  }
+  return null;
+}
+
+function validateTriggerField(trigger: unknown): Response | null {
+  if (trigger === undefined) return null;
+  if (
+    typeof trigger !== "string" ||
+    !VALID_TRIGGERS.includes(trigger as RouterTrigger)
+  ) {
+    return validationError("Invalid trigger");
+  }
+  return null;
+}
+
+function validateRaceIdField(id: unknown, label: string): Response | null {
+  if (id === undefined) return null;
+  if (typeof id !== "string" || id.length === 0 || id.length > 128) {
+    return validationError(`Invalid ${label}`);
+  }
+  return null;
+}
+
+function validateRaceContextField(raceContext: unknown): Response | null {
+  if (raceContext === undefined) return null;
+  if (
+    typeof raceContext !== "object" ||
+    raceContext === null ||
+    Array.isArray(raceContext)
+  ) {
+    return validationError("Invalid raceContext");
+  }
+  return null;
+}
+
+async function prepareMessages(body: ChatRequest): Promise<ChatMessage[]> {
+  // Order: per-race reset → PII strip → length truncation → handoff inject.
+  // Reset first so we don't waste work stripping messages we drop. Strip
+  // before truncation so we don't truncate a partially redacted string
+  // mid-token. Handoff injection is last so it doesn't get truncated.
+  const reset = applyPerRaceReset(body, body.messages);
+  const stripped = applyPiiStrip(reset);
+  const prepared = truncateUserMessages(stripped);
   if (!(await shouldTriggerHandoffAsync()) || prepared.length === 0) {
     return prepared;
   }
@@ -772,8 +1130,19 @@ async function parseBody(
 }
 
 function validateBody(body: ChatRequest): Response | null {
-  const { messages, systemPrompt, sessionId, messageCount, voterProfile } =
-    body;
+  const {
+    messages,
+    systemPrompt,
+    sessionId,
+    messageCount,
+    voterProfile,
+    view,
+    activeRaceType,
+    trigger,
+    activeRaceId,
+    prevActiveRaceId,
+    raceContext,
+  } = body;
   if (!messages || !Array.isArray(messages) || !systemPrompt || !sessionId) {
     return Response.json(
       { error: "Missing required fields: messages, systemPrompt, sessionId" },
@@ -785,7 +1154,13 @@ function validateBody(body: ChatRequest): Response | null {
     validateSystemPromptField(systemPrompt) ??
     validateSessionIdField(sessionId) ??
     validateMessageCountField(messageCount) ??
-    validateVoterProfileField(voterProfile)
+    validateVoterProfileField(voterProfile) ??
+    validateViewField(view) ??
+    validateActiveRaceTypeField(activeRaceType) ??
+    validateTriggerField(trigger) ??
+    validateRaceIdField(activeRaceId, "activeRaceId") ??
+    validateRaceIdField(prevActiveRaceId, "prevActiveRaceId") ??
+    validateRaceContextField(raceContext)
   );
 }
 
@@ -888,8 +1263,8 @@ export async function POST(request: NextRequest) {
   // bounded even if the model tries to emit a very long response.
   const maxTokens = budget.tier === "handoff" ? 4096 : 4096;
   try {
-    const systemText = buildSystemPrompt(body.systemPrompt, body.voterProfile);
-    const messages = await prepareMessages(body.messages);
+    const systemText = buildSystemPrompt(body);
+    const messages = await prepareMessages(body);
     const anthropic = new Anthropic({ apiKey });
 
     const baseParams = {

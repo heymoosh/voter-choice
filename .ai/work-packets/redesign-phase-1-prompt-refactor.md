@@ -335,6 +335,34 @@ AC coverage in PR 1:
 
 AC #1 (legacy bit-for-bit unchanged with flag off), #5 (per-race reset), #8 (chat route forwards full alignment result including notice), #9 (thin-data integration test), and #10 (`PROMPT_FLEET_V2` flag wiring) are deferred to PR 2 (chat-route refactor).
 
+### Captured evidence — PR 2 (chat-route refactor, 2026-05-21)
+
+Branch: `feat/redesign-phase-1-chat-route-pr2` ([#10](https://github.com/heymoosh/voter-choice/pull/10)).
+
+Red-phase artifacts:
+
+- `/tmp/tdd-red-chat-route.txt` — 8 of 13 unit tests failed on the unchanged route; `ai-tdd-red.sh` confirmed RED with rc=0. The 5 passers were AC #1 / AC #8 cases the existing code already satisfied incidentally (flag-off legacy parity is the current behavior; `JSON.stringify(result)` already forwards `notice`).
+- `/tmp/tdd-red-chat-route-integration.txt` — initially passed because the integration scenario relied on already-correct alignment forwarding; added a routing-lock assertion (system prompt must contain race-deep-dive body when `view: workspace-race + activeRaceType: choice`) to drive the integration test red.
+
+Orchestrator re-verification (independent of subagent claims):
+
+- `npm run lint`: rc=0 (`/tmp/pr2-lint.txt`)
+- `npm run test`: rc=0 — 55 files / 1134 tests pass (14 new) (`/tmp/pr2-test.txt`)
+- `npm run build`: rc=0 (`/tmp/pr2-build.txt`)
+- `bash scripts/ai-mutation-check.sh`: rc=0 — mutation score 35.58% (unchanged from PR 1; `chat/route.ts` not in stryker scope; `prompts/` directory unchanged) (`/tmp/pr2-mutation.txt`)
+
+AC coverage closed in PR 2:
+
+- AC #1 (legacy unchanged when flag off) — `src/app/api/chat/route.test.ts` "flag off (legacy parity)" describe (3 tests: systemPrompt passthrough, no PII strip, no per-race reset)
+- AC #5 (per-race reset) — `route.test.ts` "per-race reset" describe (3 tests: reset on change, no reset when unchanged, no reset when flag off)
+- AC #8, #11, #12 (full alignment result including notice forwarded to model) — `route.test.ts` "alignment notice forwarded to model" describe + `route.integration.test.ts` (asserts on the continuation `messages.create` mock call args, not on the response stream)
+- AC #9 (thin-data integration) — `route.integration.test.ts` drives a `tool_use` event, asserts `tool_result.content` contains `"notice":"Limited data: only 3..."` verbatim, drains the SSE stream to confirm continuation text forwards unchanged
+- AC #10 (`PROMPT_FLEET_V2` flag wiring) — every flag-on/flag-off test manipulates `process.env.PROMPT_FLEET_V2`
+
+Architectural note (Spanish locale):
+
+- The packet's edge-case bullet "when `PROMPT_FLEET_V2` is on and the user's locale is `es`, fall through to the legacy ES prompt for now and log it" assumed server-side locale detection. The actual architecture has locale lives client-side: `generatePrompt(lang)` is called from `ChatPanel.tsx` / `BallotToolClient.tsx` and the client ships the fully-rendered `systemPrompt`. Under PR 2's design, Spanish clients simply omit the `view` field — the route falls through to the legacy path naturally, no server-side detection needed. The follow-up ES fleet packet will need to introduce client-side gating (decide whether to set `view` based on locale).
+
 ## Anti-Solutions
 
 - Do not embed a hard-coded list of approved issues anywhere in the theme-extraction prompt body (this re-introduces non-negotiable #1 by the back door).
