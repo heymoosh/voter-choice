@@ -1,9 +1,4 @@
-// Local Theme declaration — Subagent 1a will publish the canonical type in
-// ./types; orchestrator resolves the import at merge.
-export interface Theme {
-  name: string;
-  quotes: string[];
-}
+import type { Theme } from "./types";
 
 /**
  * Parse Claude's raw text response (which should be a JSON array of themes)
