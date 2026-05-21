@@ -304,6 +304,37 @@ Non-proof:
 - A unit test that asserts the prompt builder is *called* but does not snapshot the resulting prompt text.
 - Lint/build passing alone — the PII and routing behavior must be asserted by tests.
 
+### Captured evidence — PR 1 (data layer, 2026-05-21)
+
+Branch: `feat/redesign-phase-1-prompts-pr1` (Waves 1a foundation + 1b builders + 1c router).
+
+Red-phase artifacts (each captured via `scripts/ai-tdd-red.sh`, all exited 0 with "confirmed RED — proceed to implementation"):
+
+- `/tmp/tdd-red-safety-header.txt` — 6/7 tests failing on real assertions
+- `/tmp/tdd-red-pii-strip.txt` — 18/22 tests failing on real assertions
+- `/tmp/tdd-red-theme-extraction.txt`, `/tmp/tdd-red-race-deep-dive.txt`, `/tmp/tdd-red-proposition.txt`, `/tmp/tdd-red-theme-amendment.txt`, `/tmp/tdd-red-handoff.txt` — golden tests confirmed red
+- `/tmp/tdd-red-length.txt` — length test red-verified at LIMIT=100 stub, committed at LIMIT=1500
+- `/tmp/tdd-red-parse-theme-extraction.txt` — 11 parser tests failing on stub
+- `/tmp/tdd-red-router.txt` — 18 router tests failing on stub
+
+Orchestrator re-verification (independent of subagent claims, per Verification Rigor rule):
+
+- `npm run lint`: rc=0 (`/tmp/pr1-final-lint.txt`)
+- `npm run test`: rc=0 — 53 files / 1120 tests pass (`/tmp/pr1-final-test.txt`)
+- `npm run build`: rc=0 (`/tmp/pr1-final-build.txt`)
+- `bash scripts/ai-mutation-check.sh`: rc=0 — **mutation score 35.58%** (up from 26.90% baseline), `prompts/` directory at 69.38% / 70.05% covered. `handoff.ts` 100%, `pii-strip.ts` 68.22% (88 killed, 41 survived), `parse-theme-extraction.ts` 57.14% (24 killed, 17 survived). Survived mutants are eligible for a Phase 2b follow-up but pass the global 22% break threshold. (`/tmp/pr1-mutation-final.txt`)
+
+AC coverage in PR 1:
+
+- AC #2 — `src/lib/prompts/router.test.ts` (18 tuple-table cases including trigger overrides + invalid combos)
+- AC #3 — `src/lib/prompts/__tests__/safety-header.golden.test.ts` (verbatim §0 from prompts.md)
+- AC #4 — `src/lib/prompts/pii-strip.test.ts` (22 cases: 10 PII shapes + 2 negative `Austin, TX` / `Senate Bill 1` preservation cases — ordering documented in `pii-strip.ts:8-20`)
+- AC #6 — `src/lib/prompts/__tests__/length.test.ts`. Builder lengths at typical fixture: theme-extraction 783, race-deep-dive 1348, proposition 1019, theme-amendment 949, handoff 824 (all ≤1500).
+- AC #7 — `src/lib/prompts/race-deep-dive.ts` includes the notice-relay rule verbatim in its Rules block; covered by the golden test.
+- AC #14 — legacy `src/lib/generated/ballotPromptEn.generated.ts` and `BALLOT_PROMPT.md` untouched; chat route not yet wired (deferred to PR 2).
+
+AC #1 (legacy bit-for-bit unchanged with flag off), #5 (per-race reset), #8 (chat route forwards full alignment result including notice), #9 (thin-data integration test), and #10 (`PROMPT_FLEET_V2` flag wiring) are deferred to PR 2 (chat-route refactor).
+
 ## Anti-Solutions
 
 - Do not embed a hard-coded list of approved issues anywhere in the theme-extraction prompt body (this re-introduces non-negotiable #1 by the back door).
