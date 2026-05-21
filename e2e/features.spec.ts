@@ -23,10 +23,18 @@ async function goToTexasWorkspace(page: Page) {
     await page.getByTestId("runoff-option-unsure").click();
   }
 
-  // prompt-output is always rendered once the research workspace loads,
-  // regardless of whether the chat-window or portfolio view is active.
+  // Wait for the research workspace to be ready by waiting for the
+  // persistent `research-context-strip` element. The chat-window and
+  // prompt-output elements come and go depending on chat state (e.g. when
+  // an SSE "MY BALLOT" response auto-switches into ResearchPortfolio,
+  // chat-window unmounts) — but research-context-strip is rendered as long
+  // as the user is in the research workspace. This is the most stable
+  // signal for "workspace ready".
+  //
+  // See `.ai/work-packets/e2e-prompt-output-rendering-drift.md` for the
+  // chat/fallback state machine.
   await page
-    .getByTestId("prompt-output")
+    .getByTestId("research-context-strip")
     .waitFor({ state: "visible", timeout: WORKSPACE_TIMEOUT });
 }
 
@@ -49,23 +57,29 @@ function mockChatResponse(page: Page, text: string) {
   );
 }
 
-/** Expand the "Paste your ballot instead" <details> section. */
+/**
+ * Ensure the "Paste your ballot instead" <details> section is open.
+ *
+ * The element was changed to `<details open>` (default-expanded) in commit
+ * `1054bcb` ("post-E2E batch 1 — labels, reveal, OCR, proactive profile"),
+ * so the previous behaviour of clicking the summary to expand now CLOSES
+ * the section instead. We check the current state and only toggle if
+ * needed.
+ */
 async function openSampleBallotDetails(page: Page) {
-  await page.getByText("Paste your ballot instead").click();
-  await page
-    .getByTestId("user-sample-ballot-input")
-    .waitFor({ state: "visible", timeout: 5000 });
+  const input = page.getByTestId("user-sample-ballot-input");
+  // If already visible, no action needed (details is open by default).
+  if (!(await input.isVisible().catch(() => false))) {
+    await page.getByText("Paste your ballot instead").click();
+  }
+  await input.waitFor({ state: "visible", timeout: 5000 });
 }
 
 // ---------------------------------------------------------------------------
 // Sample ballot upload
 // ---------------------------------------------------------------------------
 
-// SKIPPED: `goToTexasWorkspace` waits for `prompt-output`, which only renders
-// in the chat-unavailable fallback path. With chat available (or with the
-// current product flow), prompt-output never appears alongside chat-window.
-// Follow-up packet: .ai/work-packets/e2e-prompt-output-rendering-drift.md
-test.describe.skip("Sample ballot upload [skipped: prompt-output rendering drift, see e2e-prompt-output-rendering-drift packet]", () => {
+test.describe("Sample ballot upload", () => {
   test.slow(); // Navigation + gate handling can exceed 10 s on mobile
 
   test.beforeEach(async ({ page }) => {
@@ -146,9 +160,7 @@ const BALLOT_SSE_TEXT = [
   "2. Senate: Favorite Senator",
 ].join("\n");
 
-// SKIPPED: depends on `goToTexasWorkspace` (prompt-output rendering drift).
-// Follow-up packet: .ai/work-packets/e2e-prompt-output-rendering-drift.md
-test.describe.skip("Ballot printout popup [skipped: prompt-output rendering drift, see e2e-prompt-output-rendering-drift packet]", () => {
+test.describe("Ballot printout popup", () => {
   test.slow();
 
   test.beforeEach(async ({ page }) => {
@@ -193,9 +205,7 @@ const PROFILE_SSE_TEXT = [
   "=== END VOTER PROFILE ===",
 ].join("\n");
 
-// SKIPPED: depends on `goToTexasWorkspace` (prompt-output rendering drift).
-// Follow-up packet: .ai/work-packets/e2e-prompt-output-rendering-drift.md
-test.describe.skip("Voter profile download [skipped: prompt-output rendering drift, see e2e-prompt-output-rendering-drift packet]", () => {
+test.describe("Voter profile download", () => {
   test.slow();
 
   test.beforeEach(async ({ page }) => {
