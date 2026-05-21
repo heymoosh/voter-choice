@@ -54,12 +54,6 @@ export interface ThemeRankerProps {
   onRewrite: () => void;
   /** Optional warning rendered above the list (e.g. truncation notice). */
   warning?: string;
-  /**
-   * Test-only: skip mount-time autofocus on the first theme name input.
-   * Currently unused (no autofocus is wired in this component) but reserved
-   * so callers and tests can flip it without a future refactor.
-   */
-  disableAutofocus?: boolean;
 }
 
 /**
@@ -226,7 +220,6 @@ export function ThemeRanker({
   onLockIn,
   onRewrite,
   warning,
-  disableAutofocus: _disableAutofocus = false,
 }: ThemeRankerProps) {
   const { lang } = useLanguage();
   const t = translations[lang].research;

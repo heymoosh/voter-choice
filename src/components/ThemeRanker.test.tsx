@@ -268,14 +268,14 @@ describe("ThemeRanker", () => {
         themes: fiveThemes,
         warning: "AI returned 7 themes; showing top 5.",
       });
-      expect(
-        screen.getByText(/showing top 5/i),
-      ).toBeInTheDocument();
+      expect(screen.getByText(/showing top 5/i)).toBeInTheDocument();
     });
 
     it("does not render the warning region when no warning is provided", () => {
       renderRanker({ themes: oneTheme });
-      expect(screen.queryByTestId("theme-ranker-warning")).not.toBeInTheDocument();
+      expect(
+        screen.queryByTestId("theme-ranker-warning"),
+      ).not.toBeInTheDocument();
     });
   });
 });
