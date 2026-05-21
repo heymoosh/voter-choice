@@ -289,6 +289,33 @@ export interface Translations {
     concernInterpretationOffTopic: string;
     concernInterpretationDisambiguatePrompt: string;
     concernInterpretationConfirmPerEntry: string;
+    // ConcernInterpretation themes-mode (Phase 2 cold-open)
+    concernInterpretationThemesHeading: string;
+    concernInterpretationThemesSubhead: string;
+    concernInterpretationThemesTruncationWarning: (
+      returned: number,
+      shown: number,
+    ) => string;
+    // ThemeRanker keys (Phase 2 cold-open)
+    themeRankerListLabel: string;
+    themeRankerReorderLabel: string;
+    themeRankerRemoveLabel: string;
+    themeRankerRenameLabel: string;
+    themeRankerLockIn: string;
+    themeRankerRewrite: string;
+    themeRankerEmpty: string;
+    // ColdOpenInput keys (Phase 2 cold-open) — free-form textarea entry
+    coldOpenInputLabel: string;
+    coldOpenInputPlaceholder: string;
+    coldOpenInputSend: string;
+    coldOpenInputShowExample: string;
+    coldOpenInputUseStarterProfile: string;
+    coldOpenInputUseStarterProfileTooltip: string;
+    coldOpenInputSampleLongform: string;
+    coldOpenThinking: string;
+    coldOpenParseError: string;
+    coldOpenLockedHeading: string;
+    coldOpenLockedSubhead: string;
     // AlignmentScoreBanner + AlignmentDrilldown
     alignmentScoreBannerHeading: string;
     alignmentScoreOfVotes: (kept: number, total: number) => string;
@@ -774,6 +801,40 @@ const en: Translations = {
     concernInterpretationDisambiguatePrompt:
       "Which of these best matches your view?",
     concernInterpretationConfirmPerEntry: "Looks right",
+    // ConcernInterpretation themes-mode (Phase 2 cold-open)
+    concernInterpretationThemesHeading: "Here's what I heard you say",
+    concernInterpretationThemesSubhead:
+      "Each card is grounded in your own words. Rename, remove, or rerank — then lock these in.",
+    concernInterpretationThemesTruncationWarning: (
+      returned: number,
+      shown: number,
+    ) =>
+      `AI returned ${returned} themes; showing top ${shown}. Lock in or rewrite to refine.`,
+    // ThemeRanker (Phase 2 cold-open)
+    themeRankerListLabel: "Your themes, ranked by importance",
+    themeRankerReorderLabel: "Reorder theme",
+    themeRankerRemoveLabel: "Remove theme",
+    themeRankerRenameLabel: "Rename theme",
+    themeRankerLockIn: "Lock these in",
+    themeRankerRewrite: "Let me rewrite my message",
+    themeRankerEmpty: "No themes left. Rewrite your message to start over.",
+    // ColdOpenInput (Phase 2 cold-open) — free-form textarea entry
+    coldOpenInputLabel: "What's on your mind this election?",
+    coldOpenInputPlaceholder:
+      "Describe what you care about in your own words. The more specific, the better.",
+    coldOpenInputSend: "Send",
+    coldOpenInputShowExample: "Show me an example",
+    coldOpenInputUseStarterProfile: "Use a starter profile",
+    coldOpenInputUseStarterProfileTooltip:
+      "Coming soon — load a saved voter profile to seed your themes.",
+    coldOpenInputSampleLongform:
+      "My mom's insulin keeps going up — copays are insane and she's rationing doses. Rent on our place went up 30% in two years and I don't know how long we can stay. I keep reading about climate stuff and wondering if anyone running actually plans to do anything.",
+    coldOpenThinking: "Reading your message...",
+    coldOpenParseError:
+      "I couldn't quite parse your message into themes. Try rewriting it with a bit more detail about what matters to you.",
+    coldOpenLockedHeading: "Themes locked",
+    coldOpenLockedSubhead:
+      "These are the priorities I'll carry forward as we research your ballot.",
     // AlignmentScoreBanner + AlignmentDrilldown
     alignmentScoreBannerHeading: "Voted with you on...",
     alignmentScoreOfVotes: (kept: number, total: number) =>
@@ -1307,6 +1368,40 @@ const es: Translations = {
     concernInterpretationDisambiguatePrompt:
       "Which of these best matches your view?",
     concernInterpretationConfirmPerEntry: "Looks right",
+    // ConcernInterpretation themes-mode \u2014 EN stubs (ES UI out of scope for this packet)
+    concernInterpretationThemesHeading: "Here's what I heard you say",
+    concernInterpretationThemesSubhead:
+      "Each card is grounded in your own words. Rename, remove, or rerank \u2014 then lock these in.",
+    concernInterpretationThemesTruncationWarning: (
+      returned: number,
+      shown: number,
+    ) =>
+      `AI returned ${returned} themes; showing top ${shown}. Lock in or rewrite to refine.`,
+    // ThemeRanker \u2014 EN stubs (ES UI out of scope for this packet)
+    themeRankerListLabel: "Your themes, ranked by importance",
+    themeRankerReorderLabel: "Reorder theme",
+    themeRankerRemoveLabel: "Remove theme",
+    themeRankerRenameLabel: "Rename theme",
+    themeRankerLockIn: "Lock these in",
+    themeRankerRewrite: "Let me rewrite my message",
+    themeRankerEmpty: "No themes left. Rewrite your message to start over.",
+    // ColdOpenInput \u2014 EN stubs (ES UI out of scope for this packet)
+    coldOpenInputLabel: "What's on your mind this election?",
+    coldOpenInputPlaceholder:
+      "Describe what you care about in your own words. The more specific, the better.",
+    coldOpenInputSend: "Send",
+    coldOpenInputShowExample: "Show me an example",
+    coldOpenInputUseStarterProfile: "Use a starter profile",
+    coldOpenInputUseStarterProfileTooltip:
+      "Coming soon \u2014 load a saved voter profile to seed your themes.",
+    coldOpenInputSampleLongform:
+      "My mom's insulin keeps going up \u2014 copays are insane and she's rationing doses. Rent on our place went up 30% in two years and I don't know how long we can stay. I keep reading about climate stuff and wondering if anyone running actually plans to do anything.",
+    coldOpenThinking: "Reading your message...",
+    coldOpenParseError:
+      "I couldn't quite parse your message into themes. Try rewriting it with a bit more detail about what matters to you.",
+    coldOpenLockedHeading: "Themes locked",
+    coldOpenLockedSubhead:
+      "These are the priorities I'll carry forward as we research your ballot.",
     // AlignmentScoreBanner + AlignmentDrilldown \u2014 EN stubs (ES UI out of scope for this packet)
     alignmentScoreBannerHeading: "Voted with you on...",
     alignmentScoreOfVotes: (kept: number, total: number) =>

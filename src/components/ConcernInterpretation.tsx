@@ -7,6 +7,8 @@ import type {
   ConcernInterpretationBlock,
   ConcernInterpretationEntry,
 } from "../lib/structured-blocks";
+import type { Theme } from "../lib/prompts/types";
+import { ThemeRanker } from "./ThemeRanker";
 
 /* ──────────────────────────────────────────────────────────────
  * ConcernInterpretation
@@ -19,6 +21,11 @@ import type {
  *   - "off_topic" → explanatory message + Remove.
  *
  * Bottom: Confirm button fires onConfirm([...]) with resolved confirmations.
+ *
+ * Phase 2 (cold-open redesign) adds a NEW themes-mode branch: when the
+ * `themes` prop is provided, the component renders the new ThemeRanker
+ * child instead of the legacy block-driven view. The legacy code path
+ * is unchanged so the ES locale and the flag-off path keep working.
  * ────────────────────────────────────────────────────────────── */
 
 export interface ConcernConfirmation {
@@ -34,13 +41,32 @@ export interface ConcernConfirmation {
   removed?: boolean;
 }
 
+/**
+ * Max themes the cold-open UI will render. AI prompt is constrained to
+ * 1–5 but defensive truncation lives in the UI: if the model returns
+ * more than this we slice and surface a warning instead of silently
+ * dropping.
+ */
+const MAX_THEMES = 5;
+
 export interface ConcernInterpretationProps {
-  block: ConcernInterpretationBlock;
-  onConfirm: (confirmations: ConcernConfirmation[]) => void;
+  // Legacy props — required when themes are NOT provided (block-driven view).
+  block?: ConcernInterpretationBlock;
+  onConfirm?: (confirmations: ConcernConfirmation[]) => void;
   onReinterpret?: (rank: number, newText: string) => void;
   onRemove?: (rank: number) => void;
   isSubmitting?: boolean;
   isSubmitted?: boolean;
+
+  // Phase 2 themes-mode props — when `themes` is defined, the themes
+  // branch renders and the legacy block-driven view is skipped.
+  themes?: Theme[];
+  /** Optional: source message used for downstream verbatim-quote checks. */
+  originalUserMessage?: string;
+  /** Called with the user's locked theme order on submit. */
+  onLockIn?: (themes: Theme[]) => void;
+  /** Called when the user clicks "Let me rewrite my message". */
+  onRewrite?: () => void;
 }
 
 /* ── Per-entry local state ───────────────────────────────── */
@@ -319,9 +345,80 @@ function EntryCard({
   );
 }
 
+/* ── Themes-mode view (Phase 2 cold-open) ────────────────────── */
+
+function ThemesView({
+  themes: initialThemes,
+  onLockIn,
+  onRewrite,
+}: {
+  themes: Theme[];
+  onLockIn?: (themes: Theme[]) => void;
+  onRewrite?: () => void;
+}) {
+  const { lang } = useLanguage();
+  const t = translations[lang].research;
+
+  // Defensive truncation: prompt is capped at 1–5 themes; if the model
+  // returns more, slice and warn rather than silently drop. See packet
+  // anti-solution "Do not block on AI returning >5 themes."
+  const truncated = initialThemes.length > MAX_THEMES;
+  const sliced = truncated ? initialThemes.slice(0, MAX_THEMES) : initialThemes;
+
+  // Local state so rename / remove / rerank are interactive until lock-in.
+  const [themes, setThemes] = useState<Theme[]>(sliced);
+
+  const warning = truncated
+    ? t.concernInterpretationThemesTruncationWarning(
+        initialThemes.length,
+        MAX_THEMES,
+      )
+    : undefined;
+
+  return (
+    <section
+      data-testid="concern-interpretation-themes"
+      className="bg-surface-low border-l-4 border-primary p-4 md:p-5 space-y-4"
+    >
+      <header>
+        <h3 className="text-base md:text-lg font-black uppercase tracking-wide text-on-surface leading-tight">
+          {t.concernInterpretationThemesHeading}
+        </h3>
+        <p className="mt-1 text-xs text-on-surface-muted">
+          {t.concernInterpretationThemesSubhead}
+        </p>
+      </header>
+      <ThemeRanker
+        themes={themes}
+        onChange={setThemes}
+        onLockIn={() => onLockIn?.(themes)}
+        onRewrite={() => onRewrite?.()}
+        warning={warning}
+      />
+    </section>
+  );
+}
+
 /* ── Main component ─────────────────────────────────────────────*/
 
-export function ConcernInterpretation({
+export function ConcernInterpretation(props: ConcernInterpretationProps) {
+  // Phase 2 themes-mode discriminator: when the new `themes` prop is
+  // present, render the new ThemeRanker-driven view. Otherwise the
+  // legacy block-driven view (ES locale, flag-off path) renders
+  // unchanged.
+  if (props.themes !== undefined) {
+    return (
+      <ThemesView
+        themes={props.themes}
+        onLockIn={props.onLockIn}
+        onRewrite={props.onRewrite}
+      />
+    );
+  }
+  return <LegacyConcernInterpretation {...props} />;
+}
+
+function LegacyConcernInterpretation({
   block,
   onConfirm,
   onReinterpret,
@@ -332,15 +429,27 @@ export function ConcernInterpretation({
   const { lang } = useLanguage();
   const t = translations[lang].research;
 
+  // Hooks must run unconditionally before any early return.
   const [entryStates, setEntryStates] = useState<Record<number, EntryState>>(
     () => {
       const initial: Record<number, EntryState> = {};
-      for (const entry of block.entries) {
-        initial[entry.rank] = initialEntryState();
+      if (block) {
+        for (const entry of block.entries) {
+          initial[entry.rank] = initialEntryState();
+        }
       }
       return initial;
     },
   );
+
+  // Legacy callers always pass block + onConfirm; the optional types on
+  // the combined props interface exist solely to let the discriminator
+  // branch above skip them. Bail defensively if the legacy contract is
+  // missing (should not happen — the discriminator branch above handles
+  // the themes-only call path).
+  if (!block || !onConfirm) {
+    return null;
+  }
 
   function updateState(rank: number, patch: Partial<EntryState>) {
     setEntryStates((prev) => ({

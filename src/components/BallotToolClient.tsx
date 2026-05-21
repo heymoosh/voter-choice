@@ -328,11 +328,14 @@ function ElectionResult({
   zipCode,
   lang,
   initialPollingData,
+  promptFleetV2Enabled = false,
 }: {
   state: StateElectionData;
   zipCode: string;
   lang: Language;
   initialPollingData: PollingData | null;
+  /** Forwarded from page.tsx server-side env read; gates the cold-open UI. */
+  promptFleetV2Enabled?: boolean;
 }) {
   const [voterProfile, setVoterProfile] = useState<string | null>(null);
   // Once the chat session begins (first message exchanged), hide the
@@ -472,6 +475,7 @@ function ElectionResult({
         researchReady={researchReady}
         primary={primaryLane}
         onChatStarted={handleChatStarted}
+        promptFleetV2Enabled={promptFleetV2Enabled}
         preResearchGate={
           needsRunoffGate ? (
             <RunoffGate
@@ -494,7 +498,18 @@ function ElectionResult({
   );
 }
 
-export function BallotToolClient() {
+export interface BallotToolClientProps {
+  /**
+   * Forwarded from the Server Component (src/app/page.tsx) — gates the new
+   * Phase 2 cold-open free-form textarea UI in ChatPanel. Defaults to false
+   * so callers that haven't adopted the flag keep the legacy behavior.
+   */
+  promptFleetV2Enabled?: boolean;
+}
+
+export function BallotToolClient({
+  promptFleetV2Enabled = false,
+}: BallotToolClientProps = {}) {
   const [result, setResult] = useState<LookupResult>({ status: "idle" });
   const [currentZip, setCurrentZip] = useState("");
   const [pollingData, setPollingData] = useState<PollingData | null>(null);
@@ -579,6 +594,7 @@ export function BallotToolClient() {
         zipCode={currentZip}
         lang={lang}
         initialPollingData={pollingData}
+        promptFleetV2Enabled={promptFleetV2Enabled}
       />
     );
   }

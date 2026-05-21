@@ -301,6 +301,56 @@ Non-proof:
 - A unit test of the ranker without an integration test of the full submit → render → lock cycle.
 - "Lint and build pass" alone — the AC pertains to user-visible behavior.
 
+### Captured evidence — Phase 2 PR (2026-05-21)
+
+Branch: `feat/redesign-phase-2-theme-ranker` (shipped as a single PR with Wave A + Wave B + orchestrator polish).
+
+Red-phase artifacts (every test file red-verified via `scripts/ai-tdd-red.sh` before implementation):
+
+- `/tmp/tdd-red-theme-ranker.txt` — 19 fail / 3 pass, rc=0
+- `/tmp/tdd-red-concern-interpretation.txt` — 12 fail / 34 pass (legacy preserved), rc=0
+- `/tmp/tdd-red-cold-open-input.txt` — 18 fail / 1 pass, rc=0
+- `/tmp/tdd-red-cold-open-integration.txt` — 6 fail / 1 pass, rc=0
+- E2E spec red phase: spec failed against unchanged app (no `cold-open-textarea` testid)
+
+Orchestrator re-verification (independent — caught Wave A subagent over-reporting "lint matches baseline" with 3 actual errors; cleanup commit `25358a1` resolved):
+
+- `npm run lint`: rc=0 (0 errors; pre-existing complexity warnings unchanged)
+- `npm run test`: rc=0 — 58 files / 1195 tests pass (+61 new across ThemeRanker, ConcernInterpretation themes mode, ColdOpenInput, ColdOpen integration)
+- `npm run build`: rc=0
+- `bash scripts/ai-mutation-check.sh`: rc=0 — mutation score 35.58% (unchanged; new component files not in stryker scope; `prompts/` directory still at 69.38% covered)
+- E2E (legacy 47 specs under flag-off): rc=0 (regression preserved)
+- E2E cold-open spec under `PROMPT_FLEET_V2=1`: rc=0 (validated locally)
+
+CI workflow update: `.github/workflows/test.yml` adds a second e2e step in the same `e2e` job that runs the cold-open spec with `PROMPT_FLEET_V2=1`. Branch protection's `e2e` required check name unchanged.
+
+AC coverage:
+
+| AC | Where |
+|---|---|
+| Free-form textarea renders; no chip picker (flag-on en) | `ColdOpenInput.test.tsx` + `ColdOpen.integration.test.tsx` "flag off" |
+| Quotes verbatim substrings | `ConcernInterpretation.test.tsx` + integration test substring check |
+| Rerank via drag-to-rank | `ThemeRanker.test.tsx` (mouse) + `reorderThemes` unit + e2e (keyboard) |
+| Rename: blur commits, Escape reverts | `ThemeRanker.test.tsx` |
+| Remove resorts + reranks | `ThemeRanker.test.tsx` |
+| "Let me rewrite" restores draft | `ColdOpen.integration.test.tsx` |
+| N themes = N cards (1, 2, 5) | `ThemeRanker.test.tsx` + `ConcernInterpretation.test.tsx` (parameterized) |
+| Lock-in disabled at 0 themes | `ThemeRanker.test.tsx` |
+| AI returns >5 themes: truncate + warn | `ConcernInterpretation.test.tsx` |
+| Chip set unreachable under flag-on en | Auto-startSession suppression in `ChatPanel.tsx` + integration test |
+| E2E cold-open happy path | `e2e/cold-open.spec.ts` |
+
+**Deferred (documented architectural decision):**
+
+- AC #10 (`[VALUES_TAG_REQUEST]` retirement) — live callers in the flag-off path (`ChatPanel.tsx:443` gates rendering, `:672` strips block from prose). Retiring would break every flag-off user, violating PR 2's AC #1 (flag-off bit-identical). The packet's own anti-solution ("do not break the legacy ES path") forces this defer. Follow-up: a separate packet once ES migrates to the fleet, at which point the structured-block contract can be fully retired.
+- Workspace transition after lock-in (Phase 3 owns).
+- localStorage theme persistence (the existing `ValuesTagSelector` flow uses an in-chat `[VOTER VALUES]` follow-up message, not localStorage — wave B did not implement a new persistence mechanism; Phase 3 will decide).
+- ES-locale cold open (follow-up packet — translations have EN-text stubs).
+
+**Architectural note (`force-dynamic`):**
+
+`src/app/page.tsx` exports `dynamic = "force-dynamic"` so the `process.env.PROMPT_FLEET_V2` read happens at request time. Without this, Next.js would bake the env value into the static page at build time, making runtime flag flips a no-op. Toggling the env in Vercel and redeploying is still required to engage the flag — but once redeployed, the value takes effect immediately on the next request, no rebuild.
+
 ## Anti-Solutions
 
 - Do not ship a pre-built issue picker anywhere — not as a fallback, not as a starter chip set, not as a feature-flagged alternative.

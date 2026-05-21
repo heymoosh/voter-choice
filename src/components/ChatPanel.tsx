@@ -22,6 +22,9 @@ import type { SubmitPayload, RankedEntry } from "./ValuesTagSelector";
 import { RacePatterns } from "./RacePatterns";
 import { ConcernInterpretation } from "./ConcernInterpretation";
 import type { ConcernConfirmation } from "./ConcernInterpretation";
+import { ColdOpenInput } from "./ColdOpenInput";
+import { parseThemeExtraction } from "../lib/prompts/parse-theme-extraction";
+import type { Theme, RouterView } from "../lib/prompts/types";
 import {
   parseValuesTagRequestBlock,
   stripValuesTagRequestBlocks,
@@ -46,6 +49,27 @@ interface ChatMessage {
   role: "user" | "assistant";
   content: string;
 }
+
+/**
+ * Cold-open turn state machine (Phase 2 redesign — gated on
+ * `promptFleetV2Enabled && lang === "en" && !themesLockedIn`).
+ *
+ *  - input:    free-form textarea visible; user may type and submit.
+ *  - thinking: request in flight; we accumulate the model's text deltas
+ *              into a local buffer and parse on done.
+ *  - themes:   inferred themes rendered for review (ConcernInterpretation
+ *              themes-mode → ThemeRanker).
+ *  - error:    JSON parse failure; allow rewrite with the draft preserved.
+ *
+ * Locked-in state is tracked separately (`themesLockedIn`) because once
+ * the user locks themes the cold open exits entirely; the workspace
+ * (Phase 3) takes over. For Phase 2 we show a small confirmation panel.
+ */
+type ColdOpenPhase =
+  | { kind: "input"; draft: string }
+  | { kind: "thinking"; userText: string }
+  | { kind: "themes"; themes: Theme[]; originalUserMessage: string }
+  | { kind: "error"; message: string; draft: string };
 
 type BudgetTier = "normal" | "notice" | "soft_close" | "handoff" | "exhausted";
 
@@ -95,6 +119,17 @@ interface ChatPanelProps {
    * once the user is actively in a session.
    */
   onChatStarted?: () => void;
+  /**
+   * Phase 2 redesign — forwarded from page.tsx via the prop chain. Gates
+   * the new free-form cold-open UI. The cold-open UI only renders when
+   * this is true AND locale is `en` AND the chat is still on its first
+   * turn. Otherwise the legacy auto-session + chip-picker flow runs.
+   * Defaults to false so callers that haven't adopted the flag keep
+   * legacy behavior.
+   *
+   * See .ai/work-packets/redesign-phase-2-free-form-cold-open.md.
+   */
+  promptFleetV2Enabled?: boolean;
 }
 
 function generateSessionId(): string {
@@ -320,6 +355,136 @@ function ChatInput({
         {t.research.nonPartisanNotice}
       </p>
     </form>
+  );
+}
+
+/* ── Cold-open surface (Phase 2) ───────────────────────────── */
+
+/**
+ * ColdOpenSurface — render the appropriate cold-open phase. Owns no
+ * state beyond what the parent passes in; each phase delegates back to
+ * the parent for transitions.
+ *
+ * The phase machine is in ChatPanel; this component is purely
+ * presentational so the parent can compose it inside the existing
+ * `chat-window` shell.
+ */
+function ColdOpenSurface({
+  phase,
+  onSubmit,
+  onLockIn,
+  onRewrite,
+  onPhaseChange,
+  chatDisabled,
+  t,
+}: {
+  phase: ColdOpenPhase;
+  onSubmit: (text: string) => void;
+  onLockIn: (themes: Theme[]) => void;
+  onRewrite: () => void;
+  onPhaseChange: (next: ColdOpenPhase) => void;
+  chatDisabled: boolean;
+  t: (typeof translations)["en"];
+}) {
+  if (phase.kind === "thinking") {
+    return (
+      <div
+        data-testid="cold-open-thinking"
+        className="my-4 bg-surface-low border-l-4 border-primary/40 p-4 flex items-center gap-3 animate-pulse"
+      >
+        <svg
+          className="w-4 h-4 text-primary shrink-0"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+        </svg>
+        <span className="text-xs font-bold uppercase tracking-widest text-on-surface-muted">
+          {t.research.coldOpenThinking}
+        </span>
+      </div>
+    );
+  }
+
+  if (phase.kind === "themes") {
+    return (
+      <ConcernInterpretation
+        themes={phase.themes}
+        originalUserMessage={phase.originalUserMessage}
+        onLockIn={onLockIn}
+        onRewrite={onRewrite}
+      />
+    );
+  }
+
+  // input or error
+  const draft = phase.kind === "error" ? phase.draft : phase.draft;
+  return (
+    <div className="space-y-3">
+      {phase.kind === "error" && (
+        <div
+          data-testid="cold-open-error"
+          role="status"
+          className="bg-amber-50 border-l-4 border-amber-400 p-3 text-xs text-amber-900"
+        >
+          {phase.message}
+        </div>
+      )}
+      <ColdOpenInput
+        initialDraft={draft}
+        onSubmit={(text) => {
+          onPhaseChange({ kind: "input", draft: text });
+          onSubmit(text);
+        }}
+        disabled={chatDisabled}
+      />
+    </div>
+  );
+}
+
+/**
+ * ColdOpenLockedPanel — confirmation surface shown after lock-in. The
+ * workspace transition (Phase 3) takes over here in a follow-up packet;
+ * for Phase 2 we render a simple read-only view so the e2e and
+ * integration tests have a concrete post-lock target.
+ */
+function ColdOpenLockedPanel({
+  themes,
+  t,
+}: {
+  themes: Theme[];
+  t: (typeof translations)["en"];
+}) {
+  return (
+    <section
+      data-testid="cold-open-locked"
+      className="bg-surface-low border-l-4 border-primary p-4 md:p-5 space-y-3"
+    >
+      <header>
+        <h3 className="text-base md:text-lg font-black uppercase tracking-wide text-on-surface leading-tight">
+          {t.research.coldOpenLockedHeading}
+        </h3>
+        <p className="mt-1 text-xs text-on-surface-muted">
+          {t.research.coldOpenLockedSubhead}
+        </p>
+      </header>
+      <ol className="list-decimal pl-6 space-y-1">
+        {themes.map((theme, i) => (
+          <li
+            key={`${i}-${theme.name}`}
+            data-testid={`cold-open-locked-theme-${i}`}
+            className="text-sm font-medium text-on-surface"
+          >
+            {theme.name}
+          </li>
+        ))}
+      </ol>
+    </section>
   );
 }
 
@@ -951,6 +1116,7 @@ export function ChatPanel({
   preResearchContext,
   primary,
   onChatStarted,
+  promptFleetV2Enabled = false,
 }: ChatPanelProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
@@ -984,6 +1150,21 @@ export function ChatPanel({
   const messageCountRef = useRef(0);
   const { lang } = useLanguage();
   const t = translations[lang];
+
+  // Cold-open (Phase 2) state. Only consulted when
+  // `promptFleetV2Enabled && lang === "en"`. Initial phase is the
+  // empty textarea.
+  const [coldOpenPhase, setColdOpenPhase] = useState<ColdOpenPhase>({
+    kind: "input",
+    draft: "",
+  });
+  const [themesLockedIn, setThemesLockedIn] = useState<Theme[] | null>(null);
+  // Cold-open is the active path while the flag is on, locale is `en`,
+  // and we haven't locked themes yet. The legacy auto-session is
+  // suppressed in this state so the cold-open textarea is the only
+  // way to start the conversation.
+  const coldOpenActive =
+    promptFleetV2Enabled && lang === "en" && themesLockedIn === null;
 
   // Pin the user's last message at the top when streaming starts
   useEffect(() => {
@@ -1152,6 +1333,137 @@ export function ChatPanel({
     ],
   );
 
+  /* ── Cold-open: free-form submit (Phase 2) ─────────────────── */
+
+  /**
+   * Submit the free-form cold-open text. Issues a routed request to
+   * /api/chat with `view: "cold-open"` and `raceContext.userInput`.
+   * Accumulates the model's text-delta SSE events into a local buffer
+   * (instead of pushing them into the visible message list) and parses
+   * the buffer as JSON when the stream finishes. Successful parse →
+   * themes phase. Parse failure → error phase with the draft preserved.
+   *
+   * No conversation message is pushed for the cold-open turn — the
+   * user's raw JSON should NEVER appear as assistant prose, and the
+   * user message lives in the cold-open UI (not the chat bubble list).
+   */
+  const submitColdOpen = useCallback(
+    async (userText: string) => {
+      if (chatDisabled) return;
+      setColdOpenPhase({ kind: "thinking", userText });
+      setIsStreaming(true);
+      setError(null);
+      messageCountRef.current += 1;
+
+      const { basePrompt } = getBasePrompt();
+      const buffer: string[] = [];
+
+      try {
+        const response = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            messages: [{ role: "user" as const, content: userText }],
+            systemPrompt: basePrompt,
+            sessionId: sessionIdRef.current,
+            messageCount: messageCountRef.current,
+            isNewSession: true,
+            view: "cold-open" as RouterView,
+            raceContext: { userInput: userText },
+            ...(voterProfile ? { voterProfile } : {}),
+          }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          handleApiError(errorData);
+          messageCountRef.current -= 1;
+          setColdOpenPhase({
+            kind: "error",
+            message:
+              (errorData?.error as string | undefined) ??
+              t.research.coldOpenParseError,
+            draft: userText,
+          });
+          setIsStreaming(false);
+          return;
+        }
+
+        await streamResponse(response, {
+          onText: (text) => {
+            buffer.push(text);
+          },
+          onDone: (budget) => {
+            handleBudgetUpdate(budget);
+            const raw = buffer.join("");
+            try {
+              const themes = parseThemeExtraction(raw);
+              if (themes.length === 0) {
+                setColdOpenPhase({
+                  kind: "error",
+                  message: t.research.coldOpenParseError,
+                  draft: userText,
+                });
+                return;
+              }
+              setColdOpenPhase({
+                kind: "themes",
+                themes,
+                originalUserMessage: userText,
+              });
+            } catch {
+              setColdOpenPhase({
+                kind: "error",
+                message: t.research.coldOpenParseError,
+                draft: userText,
+              });
+            }
+          },
+          onError: (err) => {
+            setError(err);
+            setColdOpenPhase({
+              kind: "error",
+              message: err,
+              draft: userText,
+            });
+          },
+        });
+      } catch {
+        setColdOpenPhase({
+          kind: "error",
+          message: t.research.coldOpenParseError,
+          draft: userText,
+        });
+      } finally {
+        setIsStreaming(false);
+      }
+    },
+    [
+      chatDisabled,
+      getBasePrompt,
+      voterProfile,
+      handleApiError,
+      handleBudgetUpdate,
+      t.research.coldOpenParseError,
+    ],
+  );
+
+  const handleColdOpenLockIn = useCallback((themes: Theme[]) => {
+    setThemesLockedIn(themes);
+  }, []);
+
+  const handleColdOpenRewrite = useCallback(() => {
+    setColdOpenPhase((prev) => {
+      if (prev.kind === "themes") {
+        return { kind: "input", draft: prev.originalUserMessage };
+      }
+      if (prev.kind === "error") {
+        return { kind: "input", draft: prev.draft };
+      }
+      return prev;
+    });
+  }, []);
+
   const handleValuesSubmit = useCallback(
     (messageIdx: number, selection: SubmitPayload) => {
       if (submittedValuesSelectors.has(messageIdx) || isStreaming) return;
@@ -1255,8 +1567,12 @@ export function ChatPanel({
     sendMessage(contextBlock, []);
   }, [getBasePrompt, sendMessage]);
 
-  // Auto-start session on mount
+  // Auto-start session on mount — suppressed under the Phase 2 cold-open
+  // path. The cold-open textarea is the only way to start the session
+  // when `coldOpenActive`; the legacy context-block dispatch happens
+  // (if at all) downstream of theme lock-in via Phase 3.
   useEffect(() => {
+    if (coldOpenActive) return;
     startSession();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -1363,6 +1679,25 @@ export function ChatPanel({
 
   return (
     <div data-testid="chat-window" className="flex flex-col">
+      {/* Phase 2 cold-open branch (flag-on + en, pre-lock-in). */}
+      {coldOpenActive && (
+        <ColdOpenSurface
+          phase={coldOpenPhase}
+          onSubmit={submitColdOpen}
+          onLockIn={handleColdOpenLockIn}
+          onRewrite={handleColdOpenRewrite}
+          onPhaseChange={setColdOpenPhase}
+          chatDisabled={effectiveChatDisabled}
+          t={t}
+        />
+      )}
+
+      {/* Locked-themes confirmation panel (Phase 3 owns workspace
+          transition; Phase 2 simply confirms the lock-in landed). */}
+      {themesLockedIn !== null && (
+        <ColdOpenLockedPanel themes={themesLockedIn} t={t} />
+      )}
+
       {messages.length > 0 && (
         <>
           <ChatMessageList

@@ -104,9 +104,7 @@ test.describe("Sample ballot upload", () => {
     await expect(applyBtn).toBeEnabled();
     await applyBtn.click();
 
-    await expect(
-      page.getByTestId("user-sample-ballot-applied"),
-    ).toBeVisible();
+    await expect(page.getByTestId("user-sample-ballot-applied")).toBeVisible();
   });
 
   test("PDF file triggers extraction or error notice — UI stays functional", async ({
@@ -140,9 +138,9 @@ test.describe("Sample ballot upload", () => {
     // Outcome A: text extracted into textarea
     // Outcome B: status notice shown (scanned PDF or CDN error)
     // Either way the input section must remain visible (no crash)
-    await expect(
-      page.getByTestId("user-sample-ballot-input"),
-    ).toBeVisible({ timeout: 8000 });
+    await expect(page.getByTestId("user-sample-ballot-input")).toBeVisible({
+      timeout: 8000,
+    });
   });
 });
 
@@ -181,7 +179,9 @@ test.describe("Ballot printout popup", () => {
     page,
     context,
   }) => {
-    const printBtn = page.getByRole("button", { name: /Print.*Ballot/i }).first();
+    const printBtn = page
+      .getByRole("button", { name: /Print.*Ballot/i })
+      .first();
     await printBtn.waitFor({ timeout: 8000 });
 
     const [popup] = await Promise.all([
@@ -224,9 +224,7 @@ test.describe("Voter profile download", () => {
   test("clicking download-profile-btn downloads voter-profile.txt", async ({
     page,
   }) => {
-    await page
-      .getByTestId("download-profile-btn")
-      .waitFor({ timeout: 8000 });
+    await page.getByTestId("download-profile-btn").waitFor({ timeout: 8000 });
 
     const [download] = await Promise.all([
       page.waitForEvent("download"),

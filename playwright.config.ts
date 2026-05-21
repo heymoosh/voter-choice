@@ -43,5 +43,16 @@ export default defineConfig({
     url: "http://127.0.0.1:3000",
     reuseExistingServer: !isCI,
     timeout: isCI ? 120000 : 30000,
+    // Forward PROMPT_FLEET_V2 from the runner env to the webServer
+    // subprocess when set. Phase 2 cold-open e2e
+    // (e2e/cold-open.spec.ts) reads this server-side; the spec
+    // self-skips when the env is missing so the legacy e2e specs run
+    // unaffected by default. Without this, setting the env on the
+    // runner doesn't reach the `next start` subprocess.
+    //
+    // See .ai/work-packets/redesign-phase-2-free-form-cold-open.md.
+    ...(process.env.PROMPT_FLEET_V2
+      ? { env: { PROMPT_FLEET_V2: process.env.PROMPT_FLEET_V2 } }
+      : {}),
   },
 });

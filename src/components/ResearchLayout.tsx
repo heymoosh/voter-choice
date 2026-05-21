@@ -61,6 +61,12 @@ interface ResearchLayoutProps {
   primary?: "DEM" | "REP" | "OPEN" | "GENERAL";
   /** Forwarded to ChatPanel; fires once when the chat picks up a message. */
   onChatStarted?: () => void;
+  /**
+   * Phase 2 redesign — forwarded from page.tsx. Gates the new free-form
+   * cold-open UI in ChatPanel when true and locale is `en`. Default false
+   * preserves legacy behavior.
+   */
+  promptFleetV2Enabled?: boolean;
 }
 
 /* ── Icons ──────────────────────────────────────────────────── */
@@ -1476,6 +1482,7 @@ function ResearchView({
   preResearchGate,
   primary,
   onChatStarted,
+  promptFleetV2Enabled,
 }: {
   state: StateElectionData;
   zipCode: string;
@@ -1495,6 +1502,7 @@ function ResearchView({
   preResearchGate?: ReactNode;
   primary?: "DEM" | "REP" | "OPEN" | "GENERAL";
   onChatStarted?: () => void;
+  promptFleetV2Enabled?: boolean;
 }) {
   const { lang } = useLanguage();
   const t = translations[lang];
@@ -1604,6 +1612,7 @@ function ResearchView({
               preResearchContext={preResearchContext}
               primary={primary}
               onChatStarted={onChatStarted}
+              promptFleetV2Enabled={promptFleetV2Enabled}
             />
           )}
 
@@ -1669,6 +1678,7 @@ export function ResearchLayout({
   preResearchGate,
   primary,
   onChatStarted,
+  promptFleetV2Enabled,
 }: ResearchLayoutProps) {
   const [activeTab, setActiveTab] = useState<ResearchTab>("research");
   const { lang } = useLanguage();
@@ -1708,6 +1718,7 @@ export function ResearchLayout({
             preResearchGate={preResearchGate}
             primary={primary}
             onChatStarted={onChatStarted}
+            promptFleetV2Enabled={promptFleetV2Enabled}
           />
         </div>
 

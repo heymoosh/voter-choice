@@ -445,3 +445,157 @@ describe("ConcernInterpretation", () => {
     });
   });
 });
+
+/* ════════════════════════════════════════════════════════════════
+ * ConcernInterpretation — themes mode (Phase 2 cold-open)
+ *
+ * Additive branch: when the new `themes` prop is provided, the
+ * component renders the ThemeRanker child instead of the legacy
+ * block-driven view. The legacy code path is unchanged.
+ * ════════════════════════════════════════════════════════════════ */
+
+import type { Theme } from "../lib/prompts/types";
+
+function renderThemesMode(
+  props: Partial<React.ComponentProps<typeof ConcernInterpretation>> &
+    Pick<React.ComponentProps<typeof ConcernInterpretation>, "themes">,
+) {
+  const onLockIn = vi.fn();
+  const onRewrite = vi.fn();
+  const utils = render(
+    <LanguageProvider>
+      <ConcernInterpretation
+        onLockIn={onLockIn}
+        onRewrite={onRewrite}
+        {...props}
+      />
+    </LanguageProvider>,
+  );
+  return { ...utils, onLockIn, onRewrite };
+}
+
+describe("ConcernInterpretation — themes mode", () => {
+  const oneTheme: Theme[] = [
+    { name: "Healthcare costs", quotes: ["my mom's insulin keeps going up"] },
+  ];
+  const twoThemes: Theme[] = [
+    { name: "Healthcare costs", quotes: ["my mom's insulin keeps going up"] },
+    { name: "Housing", quotes: ["rent went up 30% in two years"] },
+  ];
+  const fiveThemes: Theme[] = [
+    { name: "Healthcare costs", quotes: ["insulin is too expensive"] },
+    { name: "Housing affordability", quotes: ["rent is crushing me"] },
+    { name: "Public safety", quotes: ["walk home at night"] },
+    { name: "Climate", quotes: ["the fires near my house"] },
+    { name: "Education funding", quotes: ["school is falling apart"] },
+  ];
+  const sevenThemes: Theme[] = [
+    ...fiveThemes,
+    { name: "Transit", quotes: ["bus never comes"] },
+    { name: "Jobs", quotes: ["wages are stagnant"] },
+  ];
+
+  describe("discriminator: themes vs legacy", () => {
+    it("renders the ThemeRanker subcomponent when themes prop is present", () => {
+      renderThemesMode({ themes: oneTheme });
+      expect(screen.getByTestId("theme-ranker")).toBeInTheDocument();
+    });
+
+    it("does NOT render the ThemeRanker when themes prop is undefined", () => {
+      renderComponent(clearOnlyBlock);
+      expect(screen.queryByTestId("theme-ranker")).not.toBeInTheDocument();
+    });
+
+    it("does NOT render the legacy concern-interpretation section when themes are passed", () => {
+      renderThemesMode({ themes: oneTheme });
+      expect(
+        screen.queryByTestId("concern-interpretation"),
+      ).not.toBeInTheDocument();
+    });
+  });
+
+  describe("rendering N themes (parameterized)", () => {
+    it.each([
+      [1, oneTheme],
+      [2, twoThemes],
+      [5, fiveThemes],
+    ])("renders %i theme cards when given %i themes", (n, themes) => {
+      renderThemesMode({ themes });
+      const items = screen.getAllByTestId(/^theme-card-/);
+      expect(items).toHaveLength(n);
+    });
+  });
+
+  describe("verbatim quote rule (load-bearing per packet AC)", () => {
+    it("renders the verbatim quote substring exactly as the source text contains it", () => {
+      const originalUserMessage =
+        "my mom's insulin keeps going up and copays are insane";
+      const themes: Theme[] = [
+        {
+          name: "Healthcare",
+          quotes: ["my mom's insulin keeps going up"],
+        },
+      ];
+      const { container } = renderThemesMode({
+        themes,
+        originalUserMessage,
+      });
+      // Case-sensitive exact substring in the DOM.
+      expect(container.textContent).toContain(
+        "my mom's insulin keeps going up",
+      );
+      // And the quote is a substring of the user's message.
+      expect(originalUserMessage).toContain(themes[0].quotes[0]);
+    });
+  });
+
+  describe("truncation: >5 themes are truncated with a warning", () => {
+    it("renders exactly 5 theme cards when 7 themes are passed", () => {
+      renderThemesMode({ themes: sevenThemes });
+      const items = screen.getAllByTestId(/^theme-card-/);
+      expect(items).toHaveLength(5);
+    });
+
+    it("renders a visible truncation warning when >5 themes are passed", () => {
+      renderThemesMode({ themes: sevenThemes });
+      expect(screen.getByTestId("theme-ranker-warning")).toBeInTheDocument();
+      expect(screen.getByText(/showing top 5/i)).toBeInTheDocument();
+    });
+
+    it("does NOT render the warning when 5 or fewer themes are passed", () => {
+      renderThemesMode({ themes: fiveThemes });
+      expect(
+        screen.queryByTestId("theme-ranker-warning"),
+      ).not.toBeInTheDocument();
+    });
+  });
+
+  describe("lock-in callback", () => {
+    it("fires onLockIn with the current themes array when the lock button is clicked", () => {
+      const { onLockIn } = renderThemesMode({ themes: twoThemes });
+      const btn = screen.getByTestId("theme-ranker-lock-in");
+      fireEvent.click(btn);
+      expect(onLockIn).toHaveBeenCalledOnce();
+      const passed = onLockIn.mock.calls[0][0];
+      expect(passed).toHaveLength(2);
+      expect(passed[0]).toEqual(twoThemes[0]);
+      expect(passed[1]).toEqual(twoThemes[1]);
+    });
+
+    it("disables lock-in when all themes have been removed", () => {
+      renderThemesMode({ themes: oneTheme });
+      // Remove the sole theme.
+      fireEvent.click(screen.getByTestId("theme-remove-0"));
+      const btn = screen.getByTestId("theme-ranker-lock-in");
+      expect(btn).toBeDisabled();
+    });
+  });
+
+  describe("rewrite callback", () => {
+    it("fires onRewrite when the rewrite button is clicked", () => {
+      const { onRewrite } = renderThemesMode({ themes: oneTheme });
+      fireEvent.click(screen.getByTestId("theme-ranker-rewrite"));
+      expect(onRewrite).toHaveBeenCalledOnce();
+    });
+  });
+});
