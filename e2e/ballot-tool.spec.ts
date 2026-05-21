@@ -486,35 +486,23 @@ test.describe("State coverage — Georgia runoff gate (30303)", () => {
   });
 });
 
-// North Carolina (27601) — TEMPORARILY SKIPPED.
+// North Carolina (27601) — runoff gate IS visible (runoff upcoming 2026-07-07,
+// partyLockedToFirstRoundPrimary=true per N.C. Gen. Stat. §163-110).
 //
-// When this test was authored, NC's `runoffRules.partyLockedToFirstRoundPrimary`
-// was `false`, so the runoff gate would NOT render. Current data
-// (src/data/states/NC.json) has flipped to `true`, so the gate IS rendered.
-// This is product/data drift, NOT a CI/timing issue — the test reproduces the
-// same failure locally with `npm run e2e` (Phase 1a baseline) AND on CI.
-//
-// Per the Phase 1a work packet's Business Logic rule:
-//   "Diagnosis reveals a latent product bug: fix belongs in a separate packet
-//    — skip the test, document the bug, do NOT fix product code in this packet."
-//
-// Follow-up work packet: .ai/work-packets/e2e-nc-runoff-gate-data-drift.md
-// Will (a) check git blame on NC data, (b) either rewrite the test to traverse
-// the runoff gate (like Texas) or revert the data flip, and (c) unskip.
-test.describe.skip("State coverage — North Carolina (27601) [skipped: data drift, see e2e-nc-runoff-gate-data-drift packet]", () => {
-  test("renders North Carolina-specific data for a NC address", async ({
-    page,
-  }) => {
+// Data correction landed in commit bf5c099 (data: complete primaryParticipation
+// for all 50 states + DC; fix NC/SD runoffRules) — flipped NC's
+// `runoffRules.partyLockedToFirstRoundPrimary` from `false` to `true`, citing
+// N.C. Gen. Stat. §163-110. The runoff gate is correctly rendered for NC zips
+// now; the test had to be updated to reflect this. Mirrors the GA/TX pattern.
+test.describe("State coverage — North Carolina runoff gate (27601)", () => {
+  test("shows runoff gate for North Carolina address", async ({ page }) => {
     await page.goto("/");
     await fillZip(page, "27601");
-    await expect(page.getByTestId("not-found-message")).toHaveCount(0);
-    // NC has runoff but partyLockedToFirstRoundPrimary=false → no runoff gate
-    await expect(page.getByTestId("runoff-gate")).toHaveCount(0);
-    await waitForResearchWorkspace(page);
-    const promptOutput = page.getByTestId("prompt-output");
-    await expect(promptOutput).toContainText(/North Carolina/i);
-    // Registration deadline from NC top-level registration: 2026-10-09
-    await expect(promptOutput).toContainText(/2026-10-09/);
+    const gate = page.getByTestId("runoff-gate");
+    await gate.waitFor({ state: "visible", timeout: 8000 });
+    await expect(gate).toBeVisible();
+    // Gate title references North Carolina
+    await expect(gate).toContainText(/North Carolina/i);
   });
 });
 
