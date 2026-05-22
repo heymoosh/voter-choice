@@ -12,6 +12,7 @@ import {
 } from "./PollingLocationCard";
 import type { StateElectionData } from "../types/election";
 import type { Language } from "../lib/translations";
+import type { Theme } from "../lib/prompts/types";
 import type { BallotSourceSummary } from "../types/ballotSource";
 import type { PollingLocation } from "./PollingLocationCard";
 
@@ -67,6 +68,11 @@ interface ResearchLayoutProps {
    * preserves legacy behavior.
    */
   promptFleetV2Enabled?: boolean;
+  /**
+   * Phase 3 — fired when the user locks themes inside ChatPanel's cold-open.
+   * BallotToolClient catches this to flip into the workspace 3-pane shell.
+   */
+  onLockInThemes?: (themes: Theme[]) => void;
 }
 
 /* ── Icons ──────────────────────────────────────────────────── */
@@ -1483,6 +1489,7 @@ function ResearchView({
   primary,
   onChatStarted,
   promptFleetV2Enabled,
+  onLockInThemes,
 }: {
   state: StateElectionData;
   zipCode: string;
@@ -1503,6 +1510,7 @@ function ResearchView({
   primary?: "DEM" | "REP" | "OPEN" | "GENERAL";
   onChatStarted?: () => void;
   promptFleetV2Enabled?: boolean;
+  onLockInThemes?: (themes: Theme[]) => void;
 }) {
   const { lang } = useLanguage();
   const t = translations[lang];
@@ -1613,6 +1621,7 @@ function ResearchView({
               primary={primary}
               onChatStarted={onChatStarted}
               promptFleetV2Enabled={promptFleetV2Enabled}
+              onLockInThemes={onLockInThemes}
             />
           )}
 
@@ -1679,6 +1688,7 @@ export function ResearchLayout({
   primary,
   onChatStarted,
   promptFleetV2Enabled,
+  onLockInThemes,
 }: ResearchLayoutProps) {
   const [activeTab, setActiveTab] = useState<ResearchTab>("research");
   const { lang } = useLanguage();
@@ -1719,6 +1729,7 @@ export function ResearchLayout({
             primary={primary}
             onChatStarted={onChatStarted}
             promptFleetV2Enabled={promptFleetV2Enabled}
+            onLockInThemes={onLockInThemes}
           />
         </div>
 

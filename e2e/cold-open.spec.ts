@@ -142,9 +142,10 @@ test.describe("cold open (PROMPT_FLEET_V2 + en)", () => {
     // Lock in.
     await page.getByTestId("theme-ranker-lock-in").click();
 
-    // Confirmation panel renders; cold-open UI is gone.
+    // Phase 3 — lock-in transitions to the workspace 3-pane shell. The
+    // cold-open UI is gone.
     await page
-      .getByTestId("cold-open-locked")
+      .getByTestId("workspace-shell")
       .waitFor({ state: "visible", timeout: WORKSPACE_TIMEOUT });
     await expect(page.getByTestId("cold-open-textarea")).toHaveCount(0);
     await expect(page.getByTestId("concern-interpretation-themes")).toHaveCount(

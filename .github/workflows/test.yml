@@ -61,7 +61,7 @@ jobs:
       - name: Run Playwright e2e tests (flag off — legacy specs)
         run: npm run e2e
 
-      - name: Run cold-open e2e (flag on — validates the Phase 2 path)
+      - name: Run cold-open + workspace e2e (flag on — Phase 2 + Phase 3 paths)
         env:
           PROMPT_FLEET_V2: "1"
-        run: npx playwright test e2e/cold-open.spec.ts --project=chromium-desktop
+        run: npx playwright test e2e/cold-open.spec.ts e2e/workspace.spec.ts --project=chromium-desktop
