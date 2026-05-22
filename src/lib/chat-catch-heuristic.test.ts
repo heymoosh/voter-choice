@@ -1,126 +1,187 @@
-import { describe, it, expect } from "vitest";
+// @vitest-environment jsdom
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { shouldSuggestAmend } from "./chat-catch-heuristic";
 
 /**
- * The chat-catch heuristic is the conservative new-concern detector that
- * decides whether to surface a soft "want to add this as a theme?" proposal
- * in the workspace chat. Per the packet:
+ * After fix J, `shouldSuggestAmend` is a thin client-side wrapper around
+ * `POST /api/chat-catch`. The actual judgment runs server-side in a small
+ * Haiku sub-call (see src/lib/server/chat-catch-sub-agent.ts).
  *
- *   "Workers must NOT trigger chat catches aggressively — false positives
- *   are worse than misses."
- *
- * The v1 rules:
- *   · message must be >= 50 chars
- *   · message must contain at least one domain-flagged keyword
- *   · NONE of the user's currently-locked themes already covers the keyword
- *     (case-insensitive substring match against theme name OR theme quote)
+ * The contract this file guards is the fail-closed neutrality property:
+ * ANY failure mode (network error, non-2xx, malformed JSON, missing fields,
+ * timeout) → `{ suggest: false }`. A missing chat-catch chip is the right
+ * neutral default — never surface a half-baked theme proposal.
  */
 
-const NO_THEMES = [] as { name: string; quotes: string[] }[];
+describe("shouldSuggestAmend — client-side fetch wrapper", () => {
+  let fetchSpy: ReturnType<typeof vi.spyOn>;
 
-describe("shouldSuggestAmend", () => {
-  it("does NOT trigger on very short acknowledgements", () => {
-    const out = shouldSuggestAmend({
-      message: "ok",
-      currentThemes: NO_THEMES,
-    });
-    expect(out.suggest).toBe(false);
+  beforeEach(() => {
+    fetchSpy = vi.spyOn(globalThis, "fetch");
   });
 
-  it("does NOT trigger on a short follow-up question with no domain term", () => {
-    const out = shouldSuggestAmend({
-      message: "tell me more",
-      currentThemes: NO_THEMES,
-    });
-    expect(out.suggest).toBe(false);
+  afterEach(() => {
+    fetchSpy.mockRestore();
   });
 
-  it("does NOT trigger on a long message without any domain keyword", () => {
-    const out = shouldSuggestAmend({
-      message:
-        "Can you give me a longer explanation about how this race works and what's at stake here for someone living in my area?",
-      currentThemes: NO_THEMES,
+  it("POSTs to /api/chat-catch with the message + currentThemes payload", async () => {
+    fetchSpy.mockResolvedValue(
+      new Response(JSON.stringify({ suggest: false }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+
+    await shouldSuggestAmend({
+      message: "I'm worried about transit.",
+      currentThemes: [{ name: "Healthcare", quotes: ["insulin"] }],
     });
-    expect(out.suggest).toBe(false);
+
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+    const [url, init] = fetchSpy.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe("/api/chat-catch");
+    expect(init.method).toBe("POST");
+    const body = JSON.parse(init.body as string);
+    expect(body.message).toBe("I'm worried about transit.");
+    expect(body.currentThemes).toEqual([
+      { name: "Healthcare", quotes: ["insulin"] },
+    ]);
   });
 
-  it("triggers on a long message mentioning a domain keyword absent from themes", () => {
-    const out = shouldSuggestAmend({
-      message:
-        "I am genuinely worried about climate change and air quality in Houston this year because of the refineries.",
-      currentThemes: [
-        { name: "Healthcare costs", quotes: ["insulin keeps going up"] },
-      ],
-    });
-    expect(out.suggest).toBe(true);
-    expect(out.suggestedKeywords).toContain("climate");
-  });
-
-  it("does NOT trigger when a domain keyword is already covered by a locked theme name", () => {
-    const out = shouldSuggestAmend({
-      message:
-        "I'm really worried about climate change and what's happening to my city.",
-      currentThemes: [
-        { name: "Climate change & air quality", quotes: ["smog every summer"] },
-      ],
-    });
-    expect(out.suggest).toBe(false);
-  });
-
-  it("does NOT trigger when a domain keyword is covered by a locked theme quote", () => {
-    const out = shouldSuggestAmend({
-      message:
-        "I am genuinely worried about climate change and air quality in Houston this year because of the refineries.",
-      currentThemes: [
+  it("returns the suggest:true judgment with theme name + summary", async () => {
+    fetchSpy.mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          suggest: true,
+          suggestedThemeName: "Public transit",
+          summary: "User wants better transit options.",
+        }),
         {
-          name: "Environment",
-          quotes: ["climate is changing and I can feel it"],
+          status: 200,
+          headers: { "Content-Type": "application/json" },
         },
-      ],
+      ),
+    );
+
+    const result = await shouldSuggestAmend({
+      message: "I'm worried about transit.",
+      currentThemes: [],
     });
-    expect(out.suggest).toBe(false);
+    expect(result.suggest).toBe(true);
+    expect(result.suggestedThemeName).toBe("Public transit");
+    expect(result.summary).toBe("User wants better transit options.");
   });
 
-  it("triggers when the message mentions school funding and themes lack it", () => {
-    const out = shouldSuggestAmend({
-      message:
-        "What I really care about is school funding here in Houston because my kids' school is falling apart.",
-      currentThemes: [{ name: "Tax burden", quotes: ["taxes too high"] }],
+  it("returns suggest:false cleanly when the API responds with suggest:false", async () => {
+    fetchSpy.mockResolvedValue(
+      new Response(JSON.stringify({ suggest: false }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+
+    const result = await shouldSuggestAmend({
+      message: "thanks",
+      currentThemes: [],
     });
-    expect(out.suggest).toBe(true);
-    expect(out.suggestedKeywords?.some((k) => k.includes("school"))).toBe(true);
+    expect(result.suggest).toBe(false);
+    expect(result.suggestedThemeName).toBeUndefined();
   });
 
-  it("is case-insensitive when matching keywords AND existing themes", () => {
-    const out = shouldSuggestAmend({
-      message:
-        "What I really care about is SCHOOL FUNDING here in Houston because my kids' school is falling apart.",
-      currentThemes: [
-        { name: "Public schools and teachers", quotes: ["teachers underpaid"] },
-      ],
+  it("fails closed (suggest:false) when the API returns a 5xx", async () => {
+    fetchSpy.mockResolvedValue(new Response("server error", { status: 500 }));
+
+    const result = await shouldSuggestAmend({
+      message: "x",
+      currentThemes: [],
     });
-    expect(out.suggest).toBe(false);
+    expect(result.suggest).toBe(false);
   });
 
-  it("does NOT trigger when message is below the 50-char boundary even with a keyword", () => {
-    // 48 chars — below the threshold.
-    const msg = "I'm worried about ICE and police in my city now";
-    expect(msg.length).toBeLessThan(50);
-    const out = shouldSuggestAmend({
-      message: msg,
-      currentThemes: NO_THEMES,
+  it("fails closed (suggest:false) when fetch throws (network error)", async () => {
+    fetchSpy.mockRejectedValue(new TypeError("network error"));
+
+    const result = await shouldSuggestAmend({
+      message: "x",
+      currentThemes: [],
     });
-    expect(out.suggest).toBe(false);
+    expect(result.suggest).toBe(false);
   });
 
-  it("triggers at the 50-char threshold when a domain keyword is present", () => {
-    const msg =
-      "I'm really worried about ICE in my neighborhood now ahead of the runoffs.";
-    expect(msg.length).toBeGreaterThanOrEqual(50);
-    const out = shouldSuggestAmend({
-      message: msg,
-      currentThemes: NO_THEMES,
+  it("fails closed (suggest:false) when the response body is invalid JSON", async () => {
+    fetchSpy.mockResolvedValue(
+      new Response("<html>not json</html>", {
+        status: 200,
+        headers: { "Content-Type": "text/html" },
+      }),
+    );
+
+    const result = await shouldSuggestAmend({
+      message: "x",
+      currentThemes: [],
     });
-    expect(out.suggest).toBe(true);
+    expect(result.suggest).toBe(false);
+  });
+
+  it("fails closed (suggest:false) when the response JSON has no suggest field", async () => {
+    fetchSpy.mockResolvedValue(
+      new Response(JSON.stringify({ unexpected: "shape" }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+
+    const result = await shouldSuggestAmend({
+      message: "x",
+      currentThemes: [],
+    });
+    expect(result.suggest).toBe(false);
+  });
+
+  it("fails closed (suggest:false) when the response suggest field is not a boolean", async () => {
+    fetchSpy.mockResolvedValue(
+      new Response(JSON.stringify({ suggest: "yes" }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+
+    const result = await shouldSuggestAmend({
+      message: "x",
+      currentThemes: [],
+    });
+    expect(result.suggest).toBe(false);
+  });
+
+  it("fails closed (suggest:false) when the fetch is aborted by the timeout", async () => {
+    // Simulate AbortSignal.timeout firing — fetch rejects with an AbortError.
+    const abortError = new DOMException("aborted", "AbortError");
+    fetchSpy.mockRejectedValue(abortError);
+
+    const result = await shouldSuggestAmend({
+      message: "x",
+      currentThemes: [],
+    });
+    expect(result.suggest).toBe(false);
+  });
+
+  it("sends an AbortSignal so the request can be timed out", async () => {
+    fetchSpy.mockResolvedValue(
+      new Response(JSON.stringify({ suggest: false }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+
+    await shouldSuggestAmend({
+      message: "x",
+      currentThemes: [],
+    });
+
+    // Load-bearing: chat-catch is best-effort. Without a timeout the chip
+    // appearance could lag forever and frustrate users.
+    const [, init] = fetchSpy.mock.calls[0] as [string, RequestInit];
+    expect(init.signal).toBeDefined();
+    expect(init.signal).toBeInstanceOf(AbortSignal);
   });
 });

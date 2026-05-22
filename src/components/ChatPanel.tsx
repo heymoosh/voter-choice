@@ -196,14 +196,17 @@ export interface WorkspaceModeProps {
    */
   raceLabelLookup?: Record<string, string>;
   /**
-   * Fired when the chat-catch heuristic decides the user's just-submitted
-   * message names a new concern. ChatPanel runs the heuristic client-side;
-   * BallotToolClient decides whether to surface the chip and what the
-   * candidate-new-theme should look like.
+   * Fired when the AI chat-catch judge decides the user's just-submitted
+   * message names a NEW civic concern not covered by the locked themes.
+   * After fix J this is driven by POST /api/chat-catch (a small Haiku
+   * judgment) rather than a client-side keyword list, so the suggested
+   * theme name comes from the model and is neutral by construction
+   * (no advocacy verbs, no party labels).
    */
   onChatCatch?: (input: {
     message: string;
-    suggestedKeywords: string[];
+    suggestedThemeName: string;
+    summary?: string;
   }) => void;
   /**
    * Currently-surfaced chat-catch chip suggestion (when any). When set,
@@ -2590,29 +2593,43 @@ export function ChatPanel({
         budgetExhausted={budgetExhausted}
         messages={messages}
         isStreaming={isStreaming}
-        onSendMessage={(msg) => {
-          // Phase 6 — conservative chat-catch heuristic. Fires CLIENT-SIDE on
-          // user-message submit (no server roundtrip). When it suggests a new
-          // theme, we surface a soft proposal chip via the parent; otherwise
-          // we fall straight through to sendMessage.
-          if (
+        onSendMessage={async (msg) => {
+          // Phase 6 — AI-judged chat-catch (post fix J). Fires server-side
+          // via POST /api/chat-catch; runs in PARALLEL with the main /api/chat
+          // call so it never blocks the assistant's response. The judgment
+          // promise is awaited AFTER sendMessage completes — that way, if the
+          // chip should render, it shows up below the assistant's reply
+          // rather than racing in above it.
+          //
+          // Per user feedback that motivated fix J: the previous 19-keyword
+          // heuristic pre-determined what users "care about" (and several
+          // keywords leaned politically). The AI judge is neutral by
+          // construction; we fail closed (no chip) on any failure.
+          const chatCatchPromise =
             workspace.onChatCatch &&
             workspace.lockedThemes &&
             !workspace.pendingAmendment &&
             !workspace.chatCatchSuggestion
-          ) {
-            const verdict = shouldSuggestAmend({
-              message: msg,
-              currentThemes: workspace.lockedThemes,
-            });
-            if (verdict.suggest && verdict.suggestedKeywords) {
+              ? shouldSuggestAmend({
+                  message: msg,
+                  currentThemes: workspace.lockedThemes,
+                })
+              : null;
+          await sendMessage(msg, messages);
+          if (chatCatchPromise) {
+            const verdict = await chatCatchPromise;
+            if (
+              verdict.suggest &&
+              verdict.suggestedThemeName &&
+              workspace.onChatCatch
+            ) {
               workspace.onChatCatch({
                 message: msg,
-                suggestedKeywords: verdict.suggestedKeywords,
+                suggestedThemeName: verdict.suggestedThemeName,
+                ...(verdict.summary ? { summary: verdict.summary } : {}),
               });
             }
           }
-          sendMessage(msg, messages);
         }}
         chatDisabled={effectiveChatDisabled}
         amendmentJournal={amendmentJournal}

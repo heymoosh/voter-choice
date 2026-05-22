@@ -1,136 +1,96 @@
 /**
- * Phase 6 — conservative chat-catch detector.
+ * Phase 6 — chat-catch client helper (AI-judged, post fix J).
  *
  * Decides whether a user message in the workspace chat should trigger a soft
- * "I noticed you mentioned X — want to add it as a theme?" proposal chip. The
- * packet calls this out as load-bearing:
+ * "I noticed you mentioned X — want to add it as a theme?" proposal chip.
+ * Before fix J this was a curated 19-keyword list (jobs, ICE, guns, abortion,
+ * police, …); per user post-redesign feedback those keywords pre-determined
+ * what users "care about" and several of them leaned politically (e.g. "guns"
+ * could mean gun safety OR gun rights — the curation itself was a posture).
  *
- *   "Workers must NOT trigger chat catches aggressively — false positives
- *   are worse than misses. Conservative threshold; soft proposal UI."
+ * Now it's a thin fetch wrapper around `POST /api/chat-catch`. The judgment
+ * happens server-side in a small Haiku sub-call (see
+ * src/lib/server/chat-catch-sub-agent.ts) so neutrality is enforced by the
+ * judgment prompt's output contract instead of by a hardcoded word list.
  *
- * Rules (v1):
- *   · message must be at least 50 chars (filters acknowledgements + small talk)
- *   · message must contain at least one DOMAIN_KEYWORDS entry (case-insensitive
- *     whole-token match, lightly tolerant — matches "school funding" against
- *     "school")
- *   · NONE of the currently-locked themes should already cover those keywords
- *     (case-insensitive substring match against theme name OR theme quote)
+ * Failure semantics (load-bearing for neutrality):
+ *   ANY failure mode — network error, non-2xx, malformed JSON, missing
+ *   `suggest` field, timeout — returns `{ suggest: false }`. A missing chat-
+ *   catch chip is the right neutral default. We never surface a half-baked
+ *   theme proposal nor fall back to a keyword heuristic.
  *
- * The keyword list is intentionally short and curated for v1 — concrete civic
- * issue language. We err on the side of recall over precision (a missed catch
- * is fine because the user can click the rail's "Edit themes" link). The list
- * is meant to be tuned over time as real chat traffic surfaces gaps.
- *
- * Fires CLIENT-SIDE ONLY on user-message submit. No server roundtrip; no
- * dependency on the assistant response. The proposal chip is rendered inline
- * in the chat thread and dismissed by clicking through to the editor or by
- * the user continuing to send another message.
+ * Timing:
+ *   Bounded by a 3s AbortSignal.timeout so a slow judgment can't block the
+ *   user experience. The caller (ChatPanel) fires this in parallel with the
+ *   main /api/chat call; either the judgment beats the main response and
+ *   surfaces a chip when streaming ends, or it doesn't and chat continues
+ *   normally.
  */
+
+import type { Theme } from "./prompts/types";
+
+export interface ShouldSuggestAmendInput {
+  message: string;
+  currentThemes: Theme[];
+}
+
+export interface ShouldSuggestAmendResult {
+  suggest: boolean;
+  /** Neutral 3-7 word noun phrase from the AI judge when suggest=true. */
+  suggestedThemeName?: string;
+  /** One-sentence rationale from the AI judge when suggest=true. */
+  summary?: string;
+}
+
+/** 3 seconds — best-effort. Longer than this and the chip is too laggy to
+ * feel like a response to the user's message. */
+const CHAT_CATCH_TIMEOUT_MS = 3000;
 
 /**
- * v1 curated keyword list — concrete civic issue language.
- *
- * Keep this short. Each keyword is matched as a case-insensitive substring
- * against (a) the user's message, and (b) the currently-locked theme names +
- * quotes. Tune over time as real chat traffic surfaces gaps; do not expand
- * aggressively (false positives are worse than misses).
+ * AI-judged chat-catch. Returns suggest:false on any failure (network,
+ * 5xx, timeout, parse error) — fail closed for neutrality.
  */
-const DOMAIN_KEYWORDS: readonly string[] = [
-  "jobs",
-  "school",
-  "school funding",
-  "ice",
-  "tax",
-  "rent",
-  "housing",
-  "healthcare",
-  "insurance",
-  "border",
-  "abortion",
-  "guns",
-  "police",
-  "climate",
-  "environment",
-  "education",
-  "homeless",
-  "drugs",
-  "transit",
-];
-
-const MIN_MESSAGE_LENGTH = 50;
-
-export interface ChatCatchHeuristicInput {
-  message: string;
-  currentThemes: { name: string; quotes: string[] }[];
-}
-
-export interface ChatCatchHeuristicResult {
-  suggest: boolean;
-  /** Short human-readable explanation for logging / dev-tools. */
-  reason: string;
-  /** Keywords from DOMAIN_KEYWORDS that hit; empty when suggest=false. */
-  suggestedKeywords?: string[];
-}
-
-export function shouldSuggestAmend(
-  input: ChatCatchHeuristicInput,
-): ChatCatchHeuristicResult {
-  const message = input.message ?? "";
-
-  if (message.length < MIN_MESSAGE_LENGTH) {
-    return {
-      suggest: false,
-      reason: `message length ${message.length} below threshold ${MIN_MESSAGE_LENGTH}`,
+export async function shouldSuggestAmend(
+  input: ShouldSuggestAmendInput,
+): Promise<ShouldSuggestAmendResult> {
+  try {
+    const res = await fetch("/api/chat-catch", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+      signal: AbortSignal.timeout(CHAT_CATCH_TIMEOUT_MS),
+    });
+    if (!res.ok) return { suggest: false };
+    let data: unknown;
+    try {
+      data = await res.json();
+    } catch {
+      return { suggest: false };
+    }
+    if (typeof data !== "object" || data === null) return { suggest: false };
+    const obj = data as {
+      suggest?: unknown;
+      suggestedThemeName?: unknown;
+      summary?: unknown;
     };
-  }
-
-  const messageLower = message.toLowerCase();
-  const hitKeywords = DOMAIN_KEYWORDS.filter((kw) =>
-    messageLower.includes(kw.toLowerCase()),
-  );
-
-  if (hitKeywords.length === 0) {
+    if (typeof obj.suggest !== "boolean") return { suggest: false };
+    if (!obj.suggest) return { suggest: false };
+    // suggest:true → require a usable theme name. Without one the chip
+    // can't render — fail closed.
+    if (
+      typeof obj.suggestedThemeName !== "string" ||
+      obj.suggestedThemeName.length === 0
+    ) {
+      return { suggest: false };
+    }
     return {
-      suggest: false,
-      reason: "no domain-flagged keywords in message",
+      suggest: true,
+      suggestedThemeName: obj.suggestedThemeName,
+      ...(typeof obj.summary === "string" && obj.summary.length > 0
+        ? { summary: obj.summary }
+        : {}),
     };
+  } catch {
+    return { suggest: false };
   }
-
-  // Check whether the hit keywords are already represented in locked themes.
-  // Coverage uses the FULL hit list (not the deduped one) — if the broader
-  // term "school" already appears in a locked theme, treat the more specific
-  // "school funding" mention as covered too. This is intentionally
-  // conservative: prefer skipping the proposal over false-positive chips.
-  const themeHaystack = input.currentThemes
-    .flatMap((t) => [t.name, ...t.quotes])
-    .map((s) => s.toLowerCase())
-    .join(" ⏷ ");
-
-  const isCovered = hitKeywords.some((kw) =>
-    themeHaystack.includes(kw.toLowerCase()),
-  );
-  if (isCovered) {
-    return {
-      suggest: false,
-      reason: "at least one hit keyword already covered by locked themes",
-    };
-  }
-
-  // De-dupe surfaced keywords: prefer the more specific match.
-  const uncoveredKeywords = hitKeywords.filter(
-    (kw) =>
-      !hitKeywords.some(
-        (other) =>
-          other !== kw && other.length > kw.length && other.includes(kw),
-      ),
-  );
-
-  return {
-    suggest: true,
-    reason: `uncovered domain keyword(s): ${uncoveredKeywords.join(", ")}`,
-    suggestedKeywords: uncoveredKeywords,
-  };
 }
-
-/** Exported for tests / future tuning. */
-export const _DOMAIN_KEYWORDS = DOMAIN_KEYWORDS;
