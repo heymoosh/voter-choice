@@ -14,6 +14,7 @@ import {
   lookupAlignment,
 } from "../../../lib/server/alignment";
 import { lookupDonorCoalition } from "../../../lib/server/donors";
+import { runResearchSubAgent } from "../../../lib/server/research-sub-agent";
 import {
   routePrompt,
   type RouterBuilderKey,
@@ -130,6 +131,42 @@ const LOOKUP_DONOR_TOOL: Anthropic.Tool = {
       },
     },
     required: ["candidate_name", "state_code", "jurisdiction"],
+  },
+};
+
+// research_candidate: spawns a separate Haiku sub-call with `web_search` as the
+// only tool and a focused 3-bullet output contract (see research-candidate.ts
+// + research-sub-agent.ts). The sub-call's raw web pages stay in its own
+// context; only the distilled summary is fed back to the main conversation as
+// a tool_result. This is the context-hygiene win — main race-deep-dive Haiku
+// never sees the unbounded web_search payloads when researching candidates
+// outside our alignment DB (governors, judges, county positions, etc.).
+const RESEARCH_CANDIDATE_TOOL: Anthropic.Tool = {
+  name: "research_candidate",
+  description:
+    "Look up factual information about a candidate by spawning a focused research sub-agent that uses web_search internally and returns a distilled 3-bullet summary. " +
+    "Use this for candidates NOT covered by lookup_alignment (governors, attorneys general, judges, county officials, local non-legislative offices) OR when lookup_alignment returns found:false. " +
+    "Use a specific `topic` to focus the research (e.g. 'voting record on healthcare', 'donor coalition', 'endorsements', 'background and prior positions'). " +
+    "DO NOT call web_search directly for candidate research — use this tool instead to keep the conversation context clean.",
+  input_schema: {
+    type: "object" as const,
+    properties: {
+      candidate_name: {
+        type: "string",
+        description: "Full candidate name as it appears on the ballot",
+      },
+      jurisdiction: {
+        type: "string",
+        description:
+          "Race jurisdiction (e.g. 'TX-governor', 'Harris-County-Judge', 'Texas-14th-Court-of-Appeals')",
+      },
+      topic: {
+        type: "string",
+        description:
+          "Focused research topic — e.g. 'voting record on healthcare', 'donor coalition', 'endorsements', 'professional background'",
+      },
+    },
+    required: ["candidate_name", "jurisdiction", "topic"],
   },
 };
 
@@ -833,11 +870,15 @@ function handleContentBlockStart(
     searchBlocks.set(event.index, { active: true, queryFragments: [] });
     controller.enqueue(encoder.encode(ssePayload({ type: "searching" })));
   }
-  // Track client-side lookup_alignment and lookup_donor_coalition tool calls
+  // Track client-side lookup_alignment, lookup_donor_coalition, and
+  // research_candidate tool calls. They all flow through the same continuation
+  // loop below; tracking research_candidate here keeps the input-fragment
+  // bookkeeping symmetric even though the fragments aren't consumed downstream.
   if (
     block.type === "tool_use" &&
     (block.name === "lookup_alignment" ||
-      block.name === "lookup_donor_coalition") &&
+      block.name === "lookup_donor_coalition" ||
+      block.name === "research_candidate") &&
     block.id
   ) {
     lookupBlocks.set(event.index, { id: block.id, inputFragments: [] });
@@ -1018,6 +1059,73 @@ async function resolveLookupDonorTool(
   return result as unknown as { found: boolean; [key: string]: unknown };
 }
 
+interface ResearchCandidateToolInput {
+  candidate_name?: string;
+  jurisdiction?: string;
+  topic?: string;
+}
+
+/**
+ * Spawn the focused-research sub-agent. The dispatcher in
+ * src/lib/server/research-sub-agent.ts handles the actual Anthropic call;
+ * we just validate inputs, wire in the shared client, and shape the
+ * tool_result so the main conversation receives only the distilled
+ * summary (NOT the raw web_search content from the sub-call).
+ *
+ * Failure modes:
+ *   - missing required fields → { found: false, unavailable: { reason } }
+ *   - sub-agent returns essentially empty text → { found: false, unavailable: true }
+ *   - sub-agent throws → { found: false, unavailable: { reason: <message> } }
+ *
+ * The route's tool-dispatch loop json-stringifies whatever we return
+ * here, so keeping the shape symmetric with the alignment/donor tools
+ * lets the main model handle "no useful data" uniformly.
+ */
+async function resolveResearchCandidateTool(
+  input: ResearchCandidateToolInput,
+  client: Anthropic,
+): Promise<{ found: boolean; [key: string]: unknown }> {
+  const { candidate_name, jurisdiction, topic } = input;
+
+  if (!candidate_name || !jurisdiction || !topic) {
+    return {
+      found: false,
+      unavailable: { reason: "Invalid tool input — required fields missing" },
+    };
+  }
+
+  try {
+    const result = await runResearchSubAgent(
+      {
+        candidateName: candidate_name,
+        jurisdiction,
+        topic,
+      },
+      client,
+    );
+    if (result.unavailable) {
+      return {
+        found: false,
+        unavailable: {
+          reason:
+            "Research sub-agent could not find reliable public information on this candidate/topic",
+        },
+        summary: result.summary,
+      };
+    }
+    return {
+      found: true,
+      summary: result.summary,
+    };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "unknown error";
+    return {
+      found: false,
+      unavailable: { reason: `Research sub-agent failed: ${message}` },
+    };
+  }
+}
+
 // ---------------------------------------------------------------------------
 // SSE stream factory with tool-call loop support
 // ---------------------------------------------------------------------------
@@ -1035,7 +1143,8 @@ interface CreateSSEStreamOptions {
 function createSSEStream(
   options: CreateSSEStreamOptions,
 ): ReadableStream<Uint8Array> {
-  const { initialStream, requestTier, createContinuationStream } = options;
+  const { initialStream, requestTier, createContinuationStream, client } =
+    options;
   const encoder = new TextEncoder();
   const usage: StreamUsage = {
     input: 0,
@@ -1109,15 +1218,17 @@ function createSSEStream(
             (b): b is Anthropic.ToolUseBlock =>
               b.type === "tool_use" &&
               (b.name === "lookup_alignment" ||
-                b.name === "lookup_donor_coalition"),
+                b.name === "lookup_donor_coalition" ||
+                b.name === "research_candidate"),
           );
 
           if (toolUseBlocks.length === 0) break;
 
-          // Resolve all tool calls in parallel. Both lookup_alignment and
-          // lookup_donor_coalition share the round-trip cap (MAX_TOOL_ROUNDS)
-          // because they accumulate in the same lookupBlocks map and run in
-          // the same continuation loop — each round can dispatch many of either.
+          // Resolve all tool calls in parallel. lookup_alignment,
+          // lookup_donor_coalition, and research_candidate all share the
+          // round-trip cap (MAX_TOOL_ROUNDS) because they accumulate in
+          // the same lookupBlocks map and run in the same continuation
+          // loop — each round can dispatch many of any of them.
           const toolResults: Anthropic.ToolResultBlockParam[] =
             await Promise.all(
               toolUseBlocks.map(async (block) => {
@@ -1132,14 +1243,21 @@ function createSSEStream(
                 } catch {
                   // malformed input — return error result
                 }
-                const result =
-                  block.name === "lookup_donor_coalition"
-                    ? await resolveLookupDonorTool(
-                        parsedInput as LookupDonorInput,
-                      )
-                    : await resolveLookupAlignmentTool(
-                        parsedInput as LookupAlignmentInput,
-                      );
+                let result: { found: boolean; [key: string]: unknown };
+                if (block.name === "lookup_donor_coalition") {
+                  result = await resolveLookupDonorTool(
+                    parsedInput as LookupDonorInput,
+                  );
+                } else if (block.name === "research_candidate") {
+                  result = await resolveResearchCandidateTool(
+                    parsedInput as ResearchCandidateToolInput,
+                    client,
+                  );
+                } else {
+                  result = await resolveLookupAlignmentTool(
+                    parsedInput as LookupAlignmentInput,
+                  );
+                }
                 return {
                   type: "tool_result" as const,
                   tool_use_id: block.id,
@@ -1376,6 +1494,7 @@ export async function POST(request: NextRequest) {
         WEB_SEARCH_TOOL,
         LOOKUP_ALIGNMENT_TOOL,
         LOOKUP_DONOR_TOOL,
+        RESEARCH_CANDIDATE_TOOL,
       ] as unknown as Anthropic.Tool[],
     };
 

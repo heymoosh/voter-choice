@@ -57,6 +57,15 @@ vi.mock("../../../lib/server/donors", () => ({
   lookupDonorCoalition: vi.fn().mockResolvedValue({ found: false }),
 }));
 
+// Mock the research sub-agent so the route's tool-dispatch test can assert
+// on the distilled summary it returns WITHOUT making a real Anthropic call
+// for the sub-agent. The whole point of the tool is that the main
+// conversation never sees raw web_search content — the mock simulates the
+// distilled output the sub-agent would produce.
+vi.mock("../../../lib/server/research-sub-agent", () => ({
+  runResearchSubAgent: vi.fn(),
+}));
+
 // Anthropic SDK mock. We preserve the real APIError class (via importActual)
 // so the route's `instanceof Anthropic.APIError` branch remains functional.
 // `messages.create` returns whatever the per-test setup queued via
@@ -93,6 +102,7 @@ import {
   resolveCandidateId,
   lookupAlignment,
 } from "../../../lib/server/alignment";
+import { runResearchSubAgent } from "../../../lib/server/research-sub-agent";
 
 // ---------------------------------------------------------------------------
 // Test helpers
@@ -171,10 +181,14 @@ function simpleTextStream(
   ]);
 }
 
-/** A stream that emits a single `lookup_alignment` tool_use, then stops with
- * stop_reason="tool_use" so the route's continuation loop fires. */
+/** A stream that emits a single `lookup_alignment`, `lookup_donor_coalition`,
+ * or `research_candidate` tool_use, then stops with stop_reason="tool_use"
+ * so the route's continuation loop fires. */
 function toolUseStream(
-  toolName: "lookup_alignment" | "lookup_donor_coalition",
+  toolName:
+    | "lookup_alignment"
+    | "lookup_donor_coalition"
+    | "research_candidate",
   toolUseId: string,
   input: Record<string, unknown>,
 ): AsyncIterable<Anthropic.MessageStreamEvent> {
@@ -305,6 +319,13 @@ beforeEach(() => {
     tier: "normal",
     percent: 12,
     estimatedSpendUSD: 6,
+  });
+  // Default the research sub-agent to a canned distilled response so any
+  // accidental dispatch in unrelated tests resolves without a real Anthropic
+  // call. Tests that exercise research_candidate override per-call.
+  vi.mocked(runResearchSubAgent).mockResolvedValue({
+    summary: "default mock summary",
+    usage: { input: 0, output: 0, searchCount: 0 },
   });
   messagesCreateMock.mockReset();
 });
@@ -852,5 +873,197 @@ describe("POST /api/chat — Phase 9 budget exhaustion returns structured 200", 
     // recognizable "# BALLOT RESEARCH TOOL" marker. Phase 1 explicitly
     // retained this as the canonical handoff target.
     expect(body.handoffPrompt ?? "").toContain("BALLOT RESEARCH TOOL");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// research_candidate tool — context hygiene assertion (PR 2)
+// ---------------------------------------------------------------------------
+//
+// The whole reason research_candidate exists: the main race-deep-dive Haiku
+// conversation must NEVER see raw web_search content when researching a
+// candidate that's not in our alignment DB. The tool's resolver spawns a
+// sub-agent that returns a distilled summary; the main conversation's
+// continuation-stream tool_result content must be the DISTILLED text, not
+// raw page dumps.
+
+describe("POST /api/chat — research_candidate tool dispatch (context hygiene)", () => {
+  it("routes research_candidate tool calls through runResearchSubAgent and feeds back ONLY the distilled summary", async () => {
+    vi.stubEnv("PROMPT_FLEET_V2", "1");
+
+    // The sub-agent is mocked to return a canned distilled summary. The raw
+    // web pages that the real sub-agent would consume internally NEVER
+    // appear in this mock — that's the property we're guarding.
+    const distilledSummary =
+      "· Voted yes on HB 4 expanding Medicaid in 2024. · Cosponsored SB 12 on rural clinics in 2023. · Public statement supporting ACA preservation.\nsources: https://ballotpedia.org/jane; https://opensecrets.org/jane";
+    vi.mocked(runResearchSubAgent).mockResolvedValue({
+      summary: distilledSummary,
+      usage: { input: 120, output: 65, searchCount: 2 },
+    });
+
+    queueStreams(
+      toolUseStream("research_candidate", "toolu_research_1", {
+        candidate_name: "Jane Doe",
+        jurisdiction: "TX-governor",
+        topic: "voting record on healthcare",
+      }),
+      simpleTextStream(
+        "Jane Doe voted yes on HB 4 (Medicaid expansion) in 2024.",
+      ),
+    );
+
+    const req = makeChatRequest({
+      view: "workspace-race",
+      activeRaceType: "choice",
+      raceContext: {
+        raceLabel: "TX Governor",
+        state: "TX",
+        county: "Travis",
+        themesList: "healthcare",
+        candidatesJson: "[]",
+        decidedSummary: "",
+      },
+    });
+    const res = await POST(req as never);
+    await drainResponseBody(res);
+
+    // The sub-agent was invoked exactly once with the parsed tool inputs.
+    expect(runResearchSubAgent).toHaveBeenCalledTimes(1);
+    const subAgentArgs = vi.mocked(runResearchSubAgent).mock.calls[0];
+    expect(subAgentArgs[0]).toEqual({
+      candidateName: "Jane Doe",
+      jurisdiction: "TX-governor",
+      topic: "voting record on healthcare",
+    });
+
+    // Two model calls — initial tool_use stream + continuation with the
+    // tool_result. (The sub-agent is a SEPARATE invocation through its own
+    // mock; it does NOT contribute to messagesCreateMock.)
+    expect(messagesCreateMock).toHaveBeenCalledTimes(2);
+
+    // Inspect the continuation call's tool_result. It must contain the
+    // distilled summary — and crucially, must NOT contain any raw page
+    // content the real sub-agent would have processed.
+    const continuationParams = messagesCreateMock.mock.calls[1][0];
+    const continuationMessages = continuationParams.messages;
+    const lastMessage = continuationMessages[continuationMessages.length - 1];
+    expect(lastMessage.role).toBe("user");
+    const toolResultBlock = lastMessage.content[0];
+    expect(toolResultBlock.type).toBe("tool_result");
+    expect(toolResultBlock.tool_use_id).toBe("toolu_research_1");
+    expect(typeof toolResultBlock.content).toBe("string");
+    // Load-bearing context-hygiene assertion: distilled summary present.
+    expect(toolResultBlock.content).toContain(
+      "Voted yes on HB 4 expanding Medicaid",
+    );
+    expect(toolResultBlock.content).toContain('"found":true');
+  });
+
+  it("registers research_candidate in the tools array passed to messages.create", async () => {
+    vi.stubEnv("PROMPT_FLEET_V2", "1");
+    queueStreams(simpleTextStream());
+
+    const req = makeChatRequest({
+      view: "workspace-race",
+      activeRaceType: "choice",
+      raceContext: {
+        raceLabel: "TX Governor",
+        state: "TX",
+        county: "Travis",
+        themesList: "healthcare",
+        candidatesJson: "[]",
+        decidedSummary: "",
+      },
+    });
+    const res = await POST(req as never);
+    await drainResponseBody(res);
+
+    const params = messagesCreateMock.mock.calls[0][0];
+    const toolNames: string[] = (params.tools ?? []).map(
+      (t: { name?: string }) => t.name ?? "",
+    );
+    expect(toolNames).toContain("research_candidate");
+    expect(toolNames).toContain("web_search");
+    expect(toolNames).toContain("lookup_alignment");
+    expect(toolNames).toContain("lookup_donor_coalition");
+  });
+
+  it("returns found:false with an unavailable reason when the sub-agent reports unavailable", async () => {
+    vi.stubEnv("PROMPT_FLEET_V2", "1");
+    vi.mocked(runResearchSubAgent).mockResolvedValue({
+      summary: "",
+      usage: { input: 0, output: 0, searchCount: 0 },
+      unavailable: true,
+    });
+
+    queueStreams(
+      toolUseStream("research_candidate", "toolu_research_unavail", {
+        candidate_name: "Obscure Candidate",
+        jurisdiction: "Local-Race",
+        topic: "background",
+      }),
+      simpleTextStream("No public record found."),
+    );
+
+    const req = makeChatRequest({
+      view: "workspace-race",
+      activeRaceType: "choice",
+      raceContext: {
+        raceLabel: "Local Race",
+        state: "TX",
+        county: "Travis",
+        themesList: "anything",
+        candidatesJson: "[]",
+        decidedSummary: "",
+      },
+    });
+    const res = await POST(req as never);
+    await drainResponseBody(res);
+
+    const continuationParams = messagesCreateMock.mock.calls[1][0];
+    const lastMessage =
+      continuationParams.messages[continuationParams.messages.length - 1];
+    const toolResultBlock = lastMessage.content[0];
+    expect(toolResultBlock.content).toContain('"found":false');
+    expect(toolResultBlock.content).toContain("unavailable");
+  });
+
+  it("returns found:false with a validation reason when required inputs are missing", async () => {
+    vi.stubEnv("PROMPT_FLEET_V2", "1");
+
+    queueStreams(
+      // Missing `topic` — should never reach the sub-agent at all.
+      toolUseStream("research_candidate", "toolu_research_bad", {
+        candidate_name: "Jane Doe",
+        jurisdiction: "TX-governor",
+      }),
+      simpleTextStream("ok"),
+    );
+
+    const req = makeChatRequest({
+      view: "workspace-race",
+      activeRaceType: "choice",
+      raceContext: {
+        raceLabel: "TX Governor",
+        state: "TX",
+        county: "Travis",
+        themesList: "healthcare",
+        candidatesJson: "[]",
+        decidedSummary: "",
+      },
+    });
+    const res = await POST(req as never);
+    await drainResponseBody(res);
+
+    // The sub-agent must NOT have been invoked when validation fails — the
+    // resolver short-circuits.
+    expect(runResearchSubAgent).not.toHaveBeenCalled();
+
+    const continuationParams = messagesCreateMock.mock.calls[1][0];
+    const lastMessage =
+      continuationParams.messages[continuationParams.messages.length - 1];
+    const toolResultBlock = lastMessage.content[0];
+    expect(toolResultBlock.content).toContain('"found":false');
+    expect(toolResultBlock.content).toContain("required fields missing");
   });
 });
