@@ -166,24 +166,47 @@ describe("HandoffPackage — polis overlay + counter write", () => {
     fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
 
-    // Default: polis fetch returns a locked state
+    // Default: Phase 8 polis sub-routes return shape-correct empty defaults;
+    // counters endpoint returns ok.
     fetchMock.mockImplementation((url: string) => {
-      if (typeof url === "string" && url.includes("/api/polis")) {
+      if (typeof url === "string" && url.includes("/api/polis/bars")) {
         return Promise.resolve({
           ok: true,
           json: () =>
             Promise.resolve({
-              scope: "county",
-              sampleSize: 5,
-              thresholdMet: false,
-              countToUnlock: 195,
-              dots: [],
-              you: null,
-              consensus: [],
+              county: "Harris",
+              threshold: 50,
+              count: 0,
+              bars: [],
             }),
         });
       }
-      // counters endpoint
+      if (typeof url === "string" && url.includes("/api/polis/bridges")) {
+        return Promise.resolve({
+          ok: true,
+          json: () =>
+            Promise.resolve({
+              county: "Harris",
+              threshold: 50,
+              count: 0,
+              bridges: [],
+            }),
+        });
+      }
+      if (typeof url === "string" && url.includes("/api/polis/compass")) {
+        return Promise.resolve({
+          ok: true,
+          json: () =>
+            Promise.resolve({
+              county: "Harris",
+              threshold: 150,
+              count: 0,
+              status: "below_threshold",
+              clusters: [],
+              dots: [],
+            }),
+        });
+      }
       if (typeof url === "string" && url.includes("/api/counters")) {
         return Promise.resolve({
           ok: true,
@@ -254,7 +277,7 @@ describe("HandoffPackage — polis overlay + counter write", () => {
     });
   });
 
-  it("sends correct query params to /api/polis", async () => {
+  it("PolisOverlay fires /api/polis/bars + /bridges + /compass with stateCode, county, userConcerns", async () => {
     const confirmations = JSON.stringify([
       { canonicalIssue: "crime_public_safety", rank: 1 },
     ]);
@@ -281,11 +304,15 @@ describe("HandoffPackage — polis overlay + counter write", () => {
       const polisCalls = fetchMock.mock.calls.filter(
         (call) => typeof call[0] === "string" && call[0].includes("/api/polis"),
       );
-      expect(polisCalls).toHaveLength(1);
-      const url = polisCalls[0][0] as string;
-      expect(url).toContain("stateCode=TX");
-      expect(url).toContain("county=Harris");
-      expect(url).toContain("userConcerns=crime_public_safety");
+      // bars + bridges + compass
+      expect(polisCalls.length).toBeGreaterThanOrEqual(3);
+      const urls = polisCalls.map((c) => c[0] as string).join("\n");
+      expect(urls).toMatch(/\/api\/polis\/bars/);
+      expect(urls).toMatch(/\/api\/polis\/bridges/);
+      expect(urls).toMatch(/\/api\/polis\/compass/);
+      expect(urls).toContain("stateCode=TX");
+      expect(urls).toContain("county=Harris");
+      expect(urls).toContain("userConcerns=crime_public_safety");
     });
   });
 
@@ -332,11 +359,10 @@ describe("HandoffPackage — polis overlay + counter write", () => {
     });
   });
 
-  it("does not fire /api/polis before parsed handoff is provided", async () => {
-    // Render without parsed (null) — polis fetch must not fire yet
+  it("PolisOverlay re-fetches when the county prop changes", async () => {
     const { rerender } = render(
       <HandoffPackage
-        parsed={null}
+        parsed={MINIMAL_PARSED!}
         continuationPrompt="Continue here"
         stateCode="TX"
         county="Harris"
@@ -346,31 +372,31 @@ describe("HandoffPackage — polis overlay + counter write", () => {
       { wrapper },
     );
 
-    // Give effects a tick to run
-    await new Promise((r) => setTimeout(r, 50));
+    await waitFor(() => {
+      const polisCalls = fetchMock.mock.calls.filter(
+        (call) => typeof call[0] === "string" && call[0].includes("/api/polis"),
+      );
+      expect(polisCalls.length).toBeGreaterThanOrEqual(3);
+    });
+    const callsBeforeRerender = fetchMock.mock.calls.length;
 
-    const polisCallsBefore = fetchMock.mock.calls.filter(
-      (call) => typeof call[0] === "string" && call[0].includes("/api/polis"),
-    );
-    expect(polisCallsBefore).toHaveLength(0);
-
-    // Now supply a parsed handoff — polis fetch should fire once
     rerender(
       <HandoffPackage
-        parsed={MINIMAL_PARSED}
+        parsed={MINIMAL_PARSED!}
         continuationPrompt="Continue here"
         stateCode="TX"
-        county="Harris"
+        county="Travis"
         primary="DEM"
         messages={[]}
       />,
     );
 
     await waitFor(() => {
-      const polisCallsAfter = fetchMock.mock.calls.filter(
-        (call) => typeof call[0] === "string" && call[0].includes("/api/polis"),
-      );
-      expect(polisCallsAfter).toHaveLength(1);
+      expect(fetchMock.mock.calls.length).toBeGreaterThan(callsBeforeRerender);
+      const allUrls = fetchMock.mock.calls
+        .map((c) => (typeof c[0] === "string" ? c[0] : ""))
+        .join("\n");
+      expect(allUrls).toContain("county=Travis");
     });
   });
 
@@ -414,7 +440,9 @@ describe("HandoffPackage — polis overlay + counter write", () => {
       if (typeof url === "string" && url.includes("/api/counters")) {
         return Promise.reject(new Error("Network error"));
       }
-      if (typeof url === "string" && url.includes("/api/polis")) {
+      // Phase 8 polis sub-routes — return non-ok so the overlay shows error
+      // states rather than crashing.
+      if (typeof url === "string" && url.includes("/api/polis/")) {
         return Promise.resolve({
           ok: false,
           json: () => Promise.resolve({}),

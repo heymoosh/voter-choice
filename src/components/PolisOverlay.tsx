@@ -1,675 +1,422 @@
 "use client";
 
-import React, { useEffect, useMemo } from "react";
-import { useSearchParams } from "next/navigation";
+/* ──────────────────────────────────────────────────────────────
+ * PolisOverlay — Phase 8 restructure.
+ *
+ * Renders three readings of the user's county, each owned by its own
+ * GET endpoint and rendered independently with explicit empty states:
+ *
+ *   1. Overlap bars  — "you're not alone in {county}" (data from
+ *      /api/polis/bars). Percent text is load-bearing.
+ *   2. Bridge statements — "where people in {county} agree" (data from
+ *      /api/polis/bridges; v1 returns no_bridges_yet sentinel).
+ *   3. Cluster compass — "how we cluster" (data from /api/polis/compass;
+ *      v1 always returns below_threshold, count + threshold visible).
+ *
+ * NO partisan strings appear in cluster labels (label hygiene asserted
+ * in src/lib/server/polis/clusters.test.ts). NO identity fields surface
+ * in the rendered DOM (asserted here).
+ *
+ * Re-fetches all three endpoints whenever stateCode/county change.
+ * ────────────────────────────────────────────────────────────── */
+
+import React, { useEffect, useState } from "react";
 import { useLanguage } from "../lib/i18n";
 import { translations } from "../lib/translations";
 import { PrivacyCallout } from "./PrivacyCallout";
 
-/* ──────────────────────────────────────────────────────────────
- * PolisOverlay — polis-style scatter visualization.
- *
- * Renders one of three states:
- *   1. Loading — spinner/skeleton.
- *   2. Threshold not met — placeholder with unlock counter.
- *   3. Threshold met — SVG scatter + consensus panel + privacy callout.
- *
- * NO network calls. Data is passed via props; the parent fetches
- * from /api/polis and passes the result here.
- * ────────────────────────────────────────────────────────────── */
+/* ── Public props ────────────────────────────────────────────── */
 
-/* ── Types ───────────────────────────────────────────────────── */
-
-export interface PolisData {
-  scope: "county" | "state";
-  sampleSize: number;
-  thresholdMet: boolean;
-  countToUnlock?: number;
-  dots: Array<{ x: number; y: number; primary: string }>;
-  you: { x: number; y: number } | null;
-  consensus: Array<{
-    canonicalIssue: string;
-    issueLabel: string;
-    percent: number;
-  }>;
+export interface UserTheme {
+  id: string;
+  label: string;
 }
 
 export interface PolisOverlayProps {
-  data: PolisData;
-  loading?: boolean;
+  stateCode: string;
+  county: string;
   countyName?: string;
-  stateName?: string;
+  userThemes: UserTheme[];
+  /** Opt-in / post-decision; HandoffPackage already gates on stateCode + county. */
+  visible?: boolean;
 }
 
-/* ── Constants ───────────────────────────────────────────────── */
+/* ── Response shapes (mirrors API contracts) ─────────────────── */
 
-const VIEWBOX_W = 400;
-const VIEWBOX_H = 300;
-const PADDING = 24;
-const DOT_R = 2.5; // 5px diameter
-const YOU_HALO_R = 12;
-const YOU_DOT_R = 6;
-const MAX_STAGGER_MS = 900;
-const YOU_EXTRA_DELAY_MS = 100;
-const CONSENSUS_MAX_ITEMS = 5;
-
-/* ── Dev mock data (only used via ?devPolis=mock in development) ── */
-
-const DEV_MOCK_POLIS_DATA: PolisData = {
-  scope: "county",
-  sampleSize: 312,
-  thresholdMet: true,
-  dots: [
-    { x: 0.12, y: 0.18, primary: "DEM" },
-    { x: 0.22, y: 0.34, primary: "DEM" },
-    { x: 0.18, y: 0.51, primary: "DEM" },
-    { x: 0.27, y: 0.69, primary: "DEM" },
-    { x: 0.34, y: 0.42, primary: "DEM" },
-    { x: 0.41, y: 0.27, primary: "DEM" },
-    { x: 0.45, y: 0.58, primary: "DEM" },
-    { x: 0.78, y: 0.21, primary: "REP" },
-    { x: 0.72, y: 0.38, primary: "REP" },
-    { x: 0.85, y: 0.45, primary: "REP" },
-    { x: 0.69, y: 0.55, primary: "REP" },
-    { x: 0.81, y: 0.68, primary: "REP" },
-    { x: 0.76, y: 0.74, primary: "REP" },
-    { x: 0.63, y: 0.32, primary: "REP" },
-    { x: 0.5, y: 0.5, primary: "OPEN" },
-    { x: 0.55, y: 0.39, primary: "OPEN" },
-    { x: 0.48, y: 0.62, primary: "OPEN" },
-    { x: 0.58, y: 0.71, primary: "OPEN" },
-    { x: 0.43, y: 0.83, primary: "OPEN" },
-    { x: 0.62, y: 0.18, primary: "OPEN" },
-  ],
-  you: { x: 0.4, y: 0.45 },
-  consensus: [
-    {
-      canonicalIssue: "healthcare",
-      issueLabel: "Healthcare access",
-      percent: 78,
-    },
-    {
-      canonicalIssue: "education",
-      issueLabel: "Public education funding",
-      percent: 71,
-    },
-    {
-      canonicalIssue: "housing",
-      issueLabel: "Affordable housing",
-      percent: 64,
-    },
-    {
-      canonicalIssue: "infrastructure",
-      issueLabel: "Roads & infrastructure",
-      percent: 57,
-    },
-    {
-      canonicalIssue: "publicsafety",
-      issueLabel: "Public safety",
-      percent: 49,
-    },
-  ],
-};
-
-/* ── Primary color mapping ───────────────────────────────────── */
-
-function primaryColor(primary: string): string {
-  const p = primary.toUpperCase();
-  if (p === "DEM" || p === "DEMOCRATIC") return "#3B82F6"; // blue-500
-  if (p === "REP" || p === "REPUBLICAN") return "#EF4444"; // red-500
-  return "#9CA3AF"; // gray-400 — OPEN / GENERAL / unknown
+interface BarsResponse {
+  county: string;
+  threshold: number;
+  count: number;
+  status?: "below_threshold";
+  bars: Array<{ themeId: string; theme: string; percent: number }>;
 }
 
-/* ── Scale helper: maps data values into SVG viewBox coords ─── */
-
-function buildScale(
-  dots: Array<{ x: number; y: number }>,
-  youDot: { x: number; y: number } | null,
-) {
-  const allX = dots.map((d) => d.x);
-  const allY = dots.map((d) => d.y);
-  if (youDot) {
-    allX.push(youDot.x);
-    allY.push(youDot.y);
-  }
-
-  if (allX.length === 0) {
-    return {
-      scaleX: (v: number) => VIEWBOX_W / 2 + v,
-      scaleY: (v: number) => VIEWBOX_H / 2 + v,
-    };
-  }
-
-  const minX = Math.min(...allX);
-  const maxX = Math.max(...allX);
-  const minY = Math.min(...allY);
-  const maxY = Math.max(...allY);
-
-  const rangeX = maxX - minX || 1;
-  const rangeY = maxY - minY || 1;
-
-  const plotW = VIEWBOX_W - PADDING * 2;
-  const plotH = VIEWBOX_H - PADDING * 2;
-
-  return {
-    scaleX: (v: number) => PADDING + ((v - minX) / rangeX) * plotW,
-    scaleY: (v: number) => PADDING + ((v - minY) / rangeY) * plotH,
-  };
-}
-
-/* ── CSS keyframes injected once ────────────────────────────── */
-
-const KEYFRAMES_ID = "polis-overlay-keyframes";
-
-function ensureKeyframes() {
-  if (typeof document === "undefined") return;
-  if (document.getElementById(KEYFRAMES_ID)) return;
-  const style = document.createElement("style");
-  style.id = KEYFRAMES_ID;
-  style.textContent = `
-    @keyframes polis-dot-fadein {
-      from { opacity: 0; }
-      to   { opacity: 1; }
-    }
-    @keyframes polis-you-pulse {
-      0%, 100% { opacity: 0.3; r: ${YOU_HALO_R}; }
-      50%       { opacity: 0.5; r: ${YOU_HALO_R + 3}; }
-    }
-  `;
-  document.head.appendChild(style);
-}
-
-/* ── Loading state ───────────────────────────────────────────── */
-
-function LoadingState({ t }: { t: (typeof translations)["en"]["research"] }) {
-  return (
-    <div
-      data-testid="polis-overlay-loading"
-      className="flex flex-col items-center justify-center gap-3 py-12 text-on-surface-muted"
-    >
-      {/* Spinner */}
-      <svg
-        className="animate-spin"
-        width="28"
-        height="28"
-        viewBox="0 0 24 24"
-        fill="none"
-        aria-hidden="true"
-      >
-        <circle
-          cx="12"
-          cy="12"
-          r="10"
-          stroke="currentColor"
-          strokeWidth="3"
-          strokeLinecap="round"
-          strokeDasharray="31.4"
-          strokeDashoffset="10"
-        />
-      </svg>
-      <p className="text-sm">{t.polisOverlayLoading}</p>
-    </div>
-  );
-}
-
-/* ── Threshold-not-met placeholder ──────────────────────────── */
-
-function LockedState({
-  t,
-  scopeName,
-  countToUnlock,
-  sampleSize,
-}: {
-  t: (typeof translations)["en"]["research"];
-  scopeName: string;
-  countToUnlock?: number;
-  sampleSize: number;
-}) {
-  return (
-    <div data-testid="polis-overlay-locked" className="space-y-4">
-      {/* Heading */}
-      <div className="space-y-1">
-        <h3
-          data-testid="polis-overlay-locked-heading"
-          className="text-base font-bold text-on-surface leading-snug"
-        >
-          {t.polisOverlayLockedHeading(scopeName)}
-        </h3>
-        {countToUnlock != null && (
-          <p
-            data-testid="polis-overlay-unlock-counter"
-            className="text-sm text-on-surface-muted"
-          >
-            {t.polisOverlayUnlockCounter(countToUnlock)}
-          </p>
-        )}
-      </div>
-
-      {/* Privacy callout */}
-      <PrivacyCallout variant="inline" />
-
-      {/* Sample footer */}
-      <p className="text-[11px] text-on-surface-muted">
-        {t.polisOverlaySampleFooter(sampleSize, scopeName)}
-      </p>
-    </div>
-  );
-}
-
-/* ── Primary shape mapping (colorblind-safe parallel cue) ───── */
-
-/**
- * Returns the SVG shape type for a primary lane.
- * DEM = circle, REP = diamond (square rotated 45°), OPEN/GENERAL = triangle.
- * "You" is always a circle regardless of primary.
- */
-function primaryShape(primary: string): "circle" | "diamond" | "triangle" {
-  const p = primary.toUpperCase();
-  if (p === "DEM" || p === "DEMOCRATIC") return "circle";
-  if (p === "REP" || p === "REPUBLICAN") return "diamond";
-  return "triangle";
-}
-
-/**
- * Render one aggregate dot using the shape for its primary lane.
- * r is the effective radius (used as half-size for polygon shapes).
- */
-function DotShape({
-  cx,
-  cy,
-  r,
-  color,
-  primary,
-  delay,
-  primaryLabel,
-}: {
-  cx: number;
-  cy: number;
-  r: number;
-  color: string;
-  primary: string;
-  delay: string;
-  primaryLabel: string;
-}) {
-  const shape = primaryShape(primary);
-  const animStyle = {
-    animation: `polis-dot-fadein 400ms ease-out ${delay} both`,
-  };
-  const title = <title>{`Aggregate voter dot, ${primaryLabel} primary`}</title>;
-
-  if (shape === "diamond") {
-    // Diamond: square rotated 45° — polygon with 4 points at cardinal positions
-    const pts = `${cx},${cy - r} ${cx + r},${cy} ${cx},${cy + r} ${cx - r},${cy}`;
-    return (
-      <polygon
-        data-testid="polis-dot"
-        points={pts}
-        fill={color}
-        fillOpacity={0.7}
-        style={animStyle}
-      >
-        {title}
-      </polygon>
-    );
-  }
-
-  if (shape === "triangle") {
-    // Equilateral-ish triangle pointing up
-    const pts = `${cx},${cy - r} ${cx + r},${cy + r} ${cx - r},${cy + r}`;
-    return (
-      <polygon
-        data-testid="polis-dot"
-        points={pts}
-        fill={color}
-        fillOpacity={0.7}
-        style={animStyle}
-      >
-        {title}
-      </polygon>
-    );
-  }
-
-  // Default: circle (DEM)
-  return (
-    <circle
-      data-testid="polis-dot"
-      cx={cx}
-      cy={cy}
-      r={r}
-      fill={color}
-      fillOpacity={0.7}
-      style={animStyle}
-    >
-      {title}
-    </circle>
-  );
-}
-
-/* ── Scatter SVG ─────────────────────────────────────────────── */
-
-function ScatterPlot({
-  dots,
-  you,
-  t,
-}: {
-  dots: Array<{ x: number; y: number; primary: string }>;
-  you: { x: number; y: number } | null;
-  t: (typeof translations)["en"]["research"];
-}) {
-  // Ensure keyframes are injected client-side
-  React.useEffect(() => {
-    ensureKeyframes();
-  }, []);
-
-  const { scaleX, scaleY } = useMemo(() => buildScale(dots, you), [dots, you]);
-
-  // Compute a stable random delay for each dot index
-  const dotDelays = useMemo(
-    () =>
-      dots.map((_, i) => {
-        // Deterministic-ish: spread evenly then add a small jitter
-        const base = (i / Math.max(dots.length - 1, 1)) * MAX_STAGGER_MS;
-        // Clamp to [0, MAX_STAGGER_MS - YOU_EXTRA_DELAY_MS] so "you" is always last
-        return Math.min(base, MAX_STAGGER_MS - YOU_EXTRA_DELAY_MS - 1);
-      }),
-    [dots],
-  );
-
-  const youDelay = MAX_STAGGER_MS;
-
-  // Determine which primaries appear in the data (for legend visibility)
-  const presentPrimaries = useMemo(() => {
-    const set = new Set(dots.map((d) => d.primary.toUpperCase()));
-    return {
-      hasDem: set.has("DEM") || set.has("DEMOCRATIC"),
-      hasRep: set.has("REP") || set.has("REPUBLICAN"),
-      hasOpen: set.has("OPEN") || set.has("GENERAL"),
-    };
-  }, [dots]);
-
-  return (
-    <>
-      <svg
-        data-testid="polis-scatter-svg"
-        viewBox={`0 0 ${VIEWBOX_W} ${VIEWBOX_H}`}
-        className="w-full h-auto"
-        role="img"
-        aria-label="Scatter plot showing how county voters are distributed by issue priorities"
-      >
-        {/* Aggregate dots */}
-        {dots.map((dot, i) => {
-          const cx = scaleX(dot.x);
-          const cy = scaleY(dot.y);
-          const color = primaryColor(dot.primary);
-          const delay = `${dotDelays[i]}ms`;
-          const primaryLabel =
-            dot.primary.charAt(0).toUpperCase() +
-            dot.primary.slice(1).toLowerCase();
-
-          return (
-            <DotShape
-              key={i}
-              cx={cx}
-              cy={cy}
-              r={DOT_R}
-              color={color}
-              primary={dot.primary}
-              delay={delay}
-              primaryLabel={primaryLabel}
-            />
-          );
-        })}
-
-        {/* "You" dot — always circle with halo, regardless of primary */}
-        {you && (
-          <g
-            data-testid="polis-you-dot"
-            style={{
-              animation: `polis-dot-fadein 400ms ease-out ${youDelay}ms both`,
-            }}
-          >
-            {/* Halo */}
-            <circle
-              cx={scaleX(you.x)}
-              cy={scaleY(you.y)}
-              r={YOU_HALO_R}
-              fill="currentColor"
-              fillOpacity={0.3}
-              className="text-primary"
-              style={{
-                animation: `polis-you-pulse 2.5s ease-in-out ${youDelay + 400}ms infinite`,
-              }}
-              aria-hidden="true"
-            />
-            {/* Solid dot */}
-            <circle
-              cx={scaleX(you.x)}
-              cy={scaleY(you.y)}
-              r={YOU_DOT_R}
-              fill="currentColor"
-              className="text-primary"
-            >
-              <title>You</title>
-            </circle>
-            {/* Label */}
-            <text
-              x={scaleX(you.x) + YOU_DOT_R + 4}
-              y={scaleY(you.y) - YOU_DOT_R - 2}
-              fontSize="11"
-              fontWeight="600"
-              fill="currentColor"
-              className="text-primary"
-              aria-hidden="true"
-            >
-              {t.polisOverlayYouLabel}
-            </text>
-          </g>
-        )}
-      </svg>
-
-      {/* Shape legend — colorblind-safe parallel cue */}
-      {dots.length > 0 && (
-        <div
-          data-testid="polis-shape-legend"
-          className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-on-surface-muted"
-          aria-label="Primary lane shape key"
-        >
-          {presentPrimaries.hasDem && (
-            <span data-testid="polis-legend-dem">
-              ● {t.polisOverlayLegendDemocratic}
-            </span>
-          )}
-          {presentPrimaries.hasRep && (
-            <span data-testid="polis-legend-rep">
-              ◆ {t.polisOverlayLegendRepublican}
-            </span>
-          )}
-          {presentPrimaries.hasOpen && (
-            <span data-testid="polis-legend-open">
-              ▲ {t.polisOverlayLegendOpen}
-            </span>
-          )}
-        </div>
-      )}
-    </>
-  );
-}
-
-/* ── Consensus panel ─────────────────────────────────────────── */
-
-function ConsensusPanel({
-  consensus,
-  t,
-}: {
-  consensus: Array<{
-    canonicalIssue: string;
-    issueLabel: string;
-    percent: number;
+interface BridgesResponse {
+  county: string;
+  threshold: number;
+  count: number;
+  status?: "below_threshold" | "no_bridges_yet";
+  bridges: Array<{
+    statement: string;
+    clusters: Array<{ name: string; agreementPercent: number }>;
   }>;
-  t: (typeof translations)["en"]["research"];
-}) {
-  const topItems = consensus.slice(0, CONSENSUS_MAX_ITEMS);
-
-  return (
-    <div data-testid="polis-consensus-panel" className="space-y-3">
-      <div>
-        <h4 className="text-sm font-bold text-on-surface">
-          {t.polisOverlayConsensusHeading}
-        </h4>
-        <p className="text-[11px] text-on-surface-muted mt-0.5">
-          {t.polisOverlayConsensusSubtitle}
-        </p>
-      </div>
-
-      <ul className="space-y-2" aria-label="Top shared priorities">
-        {topItems.map((item) => (
-          <li key={item.canonicalIssue} className="space-y-0.5">
-            <div className="flex items-center justify-between text-xs">
-              <span className="font-medium text-on-surface">
-                {item.issueLabel}
-              </span>
-              <span
-                data-testid={`consensus-percent-${item.canonicalIssue}`}
-                className="tabular-nums text-on-surface-muted"
-              >
-                {item.percent}%
-              </span>
-            </div>
-            {/* Bar */}
-            <div className="h-1.5 rounded-full bg-outline-variant/20 overflow-hidden">
-              <div
-                className="h-full rounded-full bg-primary/60"
-                style={{ width: `${Math.min(item.percent, 100)}%` }}
-                aria-hidden="true"
-              />
-            </div>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
 }
 
-/* ── Threshold-met viz ───────────────────────────────────────── */
+interface CompassResponse {
+  county: string;
+  threshold: number;
+  count: number;
+  status?: "below_threshold";
+  clusters: Array<{
+    name: string;
+    percent: number;
+    axisX: number;
+    axisY: number;
+  }>;
+  dots: Array<{ x: number; y: number; cluster: string }>;
+}
 
-function UnlockedState({
+/* ── Fetch helpers ───────────────────────────────────────────── */
+
+function buildQuery(opts: {
+  stateCode: string;
+  county: string;
+  userThemeIds?: string[];
+}): string {
+  const params = new URLSearchParams({
+    stateCode: opts.stateCode,
+    county: opts.county,
+  });
+  if (opts.userThemeIds && opts.userThemeIds.length > 0) {
+    params.set("userConcerns", opts.userThemeIds.join(","));
+  }
+  return params.toString();
+}
+
+/* ── Sections ────────────────────────────────────────────────── */
+
+function BarsSection({
+  state,
+  countyName,
   t,
-  data,
-  scopeName,
 }: {
+  state: SectionState<BarsResponse>;
+  countyName: string;
   t: (typeof translations)["en"]["research"];
-  data: PolisData;
-  scopeName: string;
 }) {
   return (
-    <div data-testid="polis-overlay-unlocked" className="space-y-5">
-      {/* Heading */}
-      <h3 className="text-base font-bold text-on-surface leading-snug">
-        {t.polisOverlayHeading(scopeName)}
+    <section
+      data-testid="polis-bars-section"
+      aria-labelledby="polis-bars-heading"
+      className="space-y-3"
+    >
+      <h3
+        id="polis-bars-heading"
+        className="text-base font-bold text-on-surface leading-snug"
+      >
+        {t.polisBarsHeading(countyName)}
       </h3>
 
-      {/* Scatter */}
-      <ScatterPlot dots={data.dots} you={data.you} t={t} />
-
-      {/* Honest framing */}
-      <p className="text-[11px] italic text-on-surface-muted">
-        {t.polisOverlayShapeFraming}
-      </p>
-
-      {/* "You" absent caption */}
-      {data.you === null && (
+      {state.kind === "loading" && (
         <p
-          data-testid="polis-no-you-caption"
-          className="text-xs text-on-surface-muted border-l-2 border-outline-variant/40 pl-3"
+          data-testid="polis-bars-loading"
+          className="text-sm text-on-surface-muted"
         >
-          {t.polisOverlayNoYouCaption}
+          {t.polisBarsLoading}
         </p>
       )}
 
-      {/* Consensus panel */}
-      {data.consensus.length > 0 && (
-        <ConsensusPanel consensus={data.consensus} t={t} />
+      {state.kind === "error" && (
+        <p
+          data-testid="polis-bars-error"
+          className="text-sm text-on-surface-muted"
+        >
+          {t.polisSectionError}
+        </p>
       )}
 
-      {/* Privacy callout */}
-      <PrivacyCallout variant="inline" />
-
-      {/* Sample footer */}
-      <p className="text-[11px] text-on-surface-muted">
-        {t.polisOverlaySampleFooter(data.sampleSize, scopeName)}
-      </p>
-    </div>
+      {state.kind === "data" &&
+        (state.data.count === 0 ? (
+          <p
+            data-testid="polis-bars-empty"
+            className="text-sm text-on-surface-muted"
+          >
+            {t.polisBarsEmpty}
+          </p>
+        ) : state.data.status === "below_threshold" ? (
+          <p
+            data-testid="polis-bars-below-threshold"
+            className="text-sm text-on-surface-muted"
+          >
+            {t.polisBarsBelowThreshold(state.data.count, state.data.threshold)}
+          </p>
+        ) : (
+          <ul className="space-y-2" aria-label="County overlap bars">
+            {state.data.bars.map((bar) => (
+              <li
+                key={bar.themeId}
+                data-testid={`overlap-bar-${bar.themeId}`}
+                className="space-y-0.5"
+              >
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-medium text-on-surface">
+                    {bar.theme}
+                  </span>
+                  <span className="tabular-nums text-on-surface-muted">
+                    {bar.percent}%
+                  </span>
+                </div>
+                <div
+                  className="h-1.5 rounded-full bg-outline-variant/20 overflow-hidden"
+                  aria-hidden="true"
+                >
+                  <div
+                    className="h-full rounded-full bg-primary/60"
+                    style={{ width: `${Math.min(bar.percent, 100)}%` }}
+                  />
+                </div>
+              </li>
+            ))}
+          </ul>
+        ))}
+    </section>
   );
 }
 
-/* ── Dev override hook ───────────────────────────────────────── */
+function BridgesSection({
+  state,
+  countyName,
+  t,
+}: {
+  state: SectionState<BridgesResponse>;
+  countyName: string;
+  t: (typeof translations)["en"]["research"];
+}) {
+  return (
+    <section
+      data-testid="polis-bridges-section"
+      aria-labelledby="polis-bridges-heading"
+      className="space-y-3"
+    >
+      <h3
+        id="polis-bridges-heading"
+        className="text-base font-bold text-on-surface leading-snug"
+      >
+        {t.polisBridgesHeading(countyName)}
+      </h3>
 
-/**
- * Returns true when `?devPolis=mock` is in the URL AND we're running in
- * development mode. Logs a one-time console warning when active. Used so
- * QA can preview the unlocked viz without real consensus state.
- */
-function useDevPolisMock(): boolean {
-  const searchParams = useSearchParams();
-  const active =
-    process.env.NODE_ENV === "development" &&
-    searchParams?.get("devPolis") === "mock";
+      {state.kind === "loading" && (
+        <p
+          data-testid="polis-bridges-loading"
+          className="text-sm text-on-surface-muted"
+        >
+          {t.polisBridgesLoading}
+        </p>
+      )}
+
+      {state.kind === "error" && (
+        <p
+          data-testid="polis-bridges-error"
+          className="text-sm text-on-surface-muted"
+        >
+          {t.polisSectionError}
+        </p>
+      )}
+
+      {state.kind === "data" &&
+        (state.data.status === "below_threshold" ? (
+          <p
+            data-testid="polis-bridges-below-threshold"
+            className="text-sm text-on-surface-muted"
+          >
+            {t.polisBridgesBelowThreshold(
+              state.data.count,
+              state.data.threshold,
+            )}
+          </p>
+        ) : state.data.bridges.length === 0 ? (
+          <p
+            data-testid="polis-bridges-empty"
+            className="text-sm text-on-surface-muted"
+          >
+            {t.polisBridgesEmpty}
+          </p>
+        ) : (
+          <ul className="space-y-3" aria-label="Bridge statements">
+            {state.data.bridges.map((b, i) => (
+              <li
+                key={i}
+                data-testid={`bridge-statement-${i}`}
+                className="space-y-1.5 border-l-2 border-primary/40 pl-3"
+              >
+                <p className="text-sm text-on-surface">{b.statement}</p>
+                <ul className="flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-on-surface-muted">
+                  {b.clusters.map((c, j) => (
+                    <li key={j} className="tabular-nums">
+                      {c.name}: {c.agreementPercent}%
+                    </li>
+                  ))}
+                </ul>
+              </li>
+            ))}
+          </ul>
+        ))}
+    </section>
+  );
+}
+
+function CompassSection({
+  state,
+  t,
+}: {
+  state: SectionState<CompassResponse>;
+  t: (typeof translations)["en"]["research"];
+}) {
+  return (
+    <section
+      data-testid="polis-compass-section"
+      aria-labelledby="polis-compass-heading"
+      className="space-y-3"
+    >
+      <h3
+        id="polis-compass-heading"
+        className="text-base font-bold text-on-surface leading-snug"
+      >
+        {t.polisCompassHeading}
+      </h3>
+
+      {state.kind === "loading" && (
+        <p
+          data-testid="polis-compass-loading"
+          className="text-sm text-on-surface-muted"
+        >
+          {t.polisCompassLoading}
+        </p>
+      )}
+
+      {state.kind === "error" && (
+        <p
+          data-testid="polis-compass-error"
+          className="text-sm text-on-surface-muted"
+        >
+          {t.polisSectionError}
+        </p>
+      )}
+
+      {state.kind === "data" &&
+        (state.data.status === "below_threshold" ? (
+          <p
+            data-testid="compass-empty"
+            className="text-sm text-on-surface-muted"
+          >
+            {t.polisCompassBelowThreshold(
+              state.data.count,
+              state.data.threshold,
+            )}
+          </p>
+        ) : (
+          // v2 placeholder — when PCA + cluster labels ship, render the
+          // compass chart here. The test harness already covers the v1
+          // below_threshold path; this branch is wiring for the next phase.
+          <p data-testid="compass-chart" className="text-sm text-on-surface">
+            Compass visualization (Phase 8b).
+          </p>
+        ))}
+    </section>
+  );
+}
+
+/* ── Fetch state machine ─────────────────────────────────────── */
+
+type SectionState<T> =
+  | { kind: "loading" }
+  | { kind: "data"; data: T }
+  | { kind: "error" };
+
+function useSectionFetch<T>(url: string | null): SectionState<T> {
+  const [state, setState] = useState<SectionState<T>>({ kind: "loading" });
+
   useEffect(() => {
-    if (active) {
-      console.warn("[dev] PolisOverlay rendering with mock dataset");
+    let cancelled = false;
+    if (!url) {
+      setState({ kind: "loading" });
+      return;
     }
-  }, [active]);
-  return Boolean(active);
+    setState({ kind: "loading" });
+    void fetch(url)
+      .then(async (res) => {
+        if (!res.ok) {
+          if (!cancelled) setState({ kind: "error" });
+          return;
+        }
+        const json = (await res.json()) as T;
+        if (!cancelled) setState({ kind: "data", data: json });
+      })
+      .catch(() => {
+        if (!cancelled) setState({ kind: "error" });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [url]);
+
+  return state;
 }
 
 /* ── Main export ─────────────────────────────────────────────── */
 
 export function PolisOverlay({
-  data,
-  loading = false,
+  stateCode,
+  county,
   countyName,
-  stateName,
+  userThemes,
+  visible = true,
 }: PolisOverlayProps) {
   const { lang } = useLanguage();
   const t = translations[lang].research;
 
-  const devPolisMock = useDevPolisMock();
-  const effectiveData: PolisData = devPolisMock ? DEV_MOCK_POLIS_DATA : data;
-  const effectiveLoading = devPolisMock ? false : loading;
+  const userThemeIds = userThemes.map((t) => t.id);
+  const qs = buildQuery({ stateCode, county, userThemeIds });
+  const barsUrl = visible ? `/api/polis/bars?${qs}` : null;
+  const bridgesUrl = visible ? `/api/polis/bridges?${qs}` : null;
+  const compassUrl = visible ? `/api/polis/compass?${qs}` : null;
 
-  // Build scope label for headings/copy
-  const scopeName =
-    effectiveData.scope === "county"
-      ? (countyName ?? "county")
-      : (stateName ?? "state");
+  const barsState = useSectionFetch<BarsResponse>(barsUrl);
+  const bridgesState = useSectionFetch<BridgesResponse>(bridgesUrl);
+  const compassState = useSectionFetch<CompassResponse>(compassUrl);
 
-  // Loading
-  if (effectiveLoading) {
-    return (
-      <section
-        aria-label="Voter overlap visualization"
-        className="p-4 border border-outline-variant/30 bg-surface-lowest rounded-sm"
-      >
-        <LoadingState t={t} />
-      </section>
-    );
-  }
+  const displayCounty = countyName ?? county;
 
   return (
     <section
       aria-label="Voter overlap visualization"
-      className="p-4 border border-outline-variant/30 bg-surface-lowest rounded-sm space-y-4"
+      className="p-4 border border-outline-variant/30 bg-surface-lowest rounded-sm space-y-6"
     >
-      {effectiveData.thresholdMet ? (
-        <UnlockedState t={t} data={effectiveData} scopeName={scopeName} />
-      ) : (
-        <LockedState
-          t={t}
-          scopeName={scopeName}
-          countToUnlock={effectiveData.countToUnlock}
-          sampleSize={effectiveData.sampleSize}
-        />
-      )}
+      <BarsSection state={barsState} countyName={displayCounty} t={t} />
+      <BridgesSection state={bridgesState} countyName={displayCounty} t={t} />
+      <CompassSection state={compassState} t={t} />
+      <PrivacyCallout variant="inline" />
     </section>
   );
+}
+
+/* ── Legacy named export for downstream consumers ───────────── */
+
+/**
+ * Kept for backward compatibility with HandoffPackage's import of `PolisData`.
+ * The legacy shape is no longer rendered; HandoffPackage passes the Phase 8
+ * props directly. This re-export will be removed in a follow-up cleanup.
+ */
+export interface PolisData {
+  scope?: "county" | "state";
+  sampleSize?: number;
+  thresholdMet?: boolean;
+  countToUnlock?: number;
+  dots?: Array<{ x: number; y: number; primary: string }>;
+  you?: { x: number; y: number } | null;
+  consensus?: Array<{
+    canonicalIssue: string;
+    issueLabel: string;
+    percent: number;
+  }>;
 }

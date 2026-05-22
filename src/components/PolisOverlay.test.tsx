@@ -1,356 +1,414 @@
 // @vitest-environment jsdom
+/**
+ * PolisOverlay — Phase 8 restructure.
+ *
+ * Renders three readings (bars, bridges, compass) each independently
+ * fetching from its own endpoint. Tests cover:
+ *   - All three sections are rendered (heading + content / empty state)
+ *   - Honest empty states for zero-session, below-threshold, no-bridges-yet
+ *   - Re-fetch on county change
+ *   - Cluster labels never contain partisan strings (rendered surface)
+ *   - No identity fields surface in rendered DOM
+ */
+
 import React from "react";
-import { describe, it, expect } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { render, screen, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import { PolisOverlay } from "./PolisOverlay";
 import { LanguageProvider } from "../lib/i18n";
-import type { PolisData } from "./PolisOverlay";
 
-/* ── Fixtures ─────────────────────────────────────────────────── */
+/* ── Fetch stub helpers ──────────────────────────────────────── */
 
-const baseDots: PolisData["dots"] = [
-  { x: 0.1, y: 0.2, primary: "DEM" },
-  { x: 0.5, y: 0.6, primary: "REP" },
-  { x: 0.9, y: 0.4, primary: "DEM" },
-  { x: 0.3, y: 0.8, primary: "REP" },
-  { x: 0.7, y: 0.1, primary: "OPEN" },
-];
+interface MockResponses {
+  bars?: Record<string, unknown>;
+  bridges?: Record<string, unknown>;
+  compass?: Record<string, unknown>;
+}
 
-const consensus: PolisData["consensus"] = [
-  { canonicalIssue: "healthcare", issueLabel: "Healthcare", percent: 72 },
-  { canonicalIssue: "education", issueLabel: "Education", percent: 65 },
-  { canonicalIssue: "economy", issueLabel: "Economy", percent: 58 },
-  { canonicalIssue: "environment", issueLabel: "Environment", percent: 51 },
-  { canonicalIssue: "housing", issueLabel: "Housing", percent: 44 },
-  { canonicalIssue: "immigration", issueLabel: "Immigration", percent: 38 }, // 6th — should be excluded
-];
+function installFetchMock(responses: MockResponses) {
+  // Sensible shape-correct defaults so a test that only overrides one
+  // endpoint doesn't crash the other two on missing array fields.
+  const DEFAULT_BARS = {
+    county: "Travis",
+    threshold: 50,
+    count: 0,
+    bars: [],
+  };
+  const DEFAULT_BRIDGES = {
+    county: "Travis",
+    threshold: 50,
+    count: 0,
+    bridges: [],
+  };
+  const DEFAULT_COMPASS = {
+    county: "Travis",
+    threshold: 150,
+    count: 0,
+    status: "below_threshold",
+    clusters: [],
+    dots: [],
+  };
 
-const youDot: PolisData["you"] = { x: 0.45, y: 0.55 };
+  const fetchSpy = vi
+    .spyOn(globalThis, "fetch")
+    .mockImplementation(async (input: RequestInfo | URL) => {
+      const url = typeof input === "string" ? input : input.toString();
+      let body: Record<string, unknown>;
+      if (url.includes("/api/polis/bars")) {
+        body = responses.bars ?? DEFAULT_BARS;
+      } else if (url.includes("/api/polis/bridges")) {
+        body = responses.bridges ?? DEFAULT_BRIDGES;
+      } else if (url.includes("/api/polis/compass")) {
+        body = responses.compass ?? DEFAULT_COMPASS;
+      } else {
+        body = {};
+      }
+      return new Response(JSON.stringify(body), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    });
+  return fetchSpy;
+}
 
-const lockedData: PolisData = {
-  scope: "county",
-  sampleSize: 87,
-  thresholdMet: false,
-  countToUnlock: 113,
-  dots: [],
-  you: null,
-  consensus: [],
-};
-
-const unlockedDataWithYou: PolisData = {
-  scope: "county",
-  sampleSize: 312,
-  thresholdMet: true,
-  dots: baseDots,
-  you: youDot,
-  consensus,
-};
-
-const unlockedDataWithoutYou: PolisData = {
-  scope: "county",
-  sampleSize: 312,
-  thresholdMet: true,
-  dots: baseDots,
-  you: null,
-  consensus,
-};
-
-const unlockedStateData: PolisData = {
-  scope: "state",
-  sampleSize: 1200,
-  thresholdMet: true,
-  dots: baseDots,
-  you: youDot,
-  consensus,
-};
-
-/* ── Helper ──────────────────────────────────────────────────── */
-
-function renderOverlay(
-  data: PolisData,
-  opts: Partial<Omit<React.ComponentProps<typeof PolisOverlay>, "data">> = {},
-) {
+function renderOverlay(opts: {
+  county?: string;
+  stateCode?: string;
+  userThemes?: Array<{ id: string; label: string }>;
+  countyName?: string;
+}) {
   return render(
     <LanguageProvider>
       <PolisOverlay
-        data={data}
-        countyName="Harris County"
-        stateName="Texas"
-        {...opts}
+        stateCode={opts.stateCode ?? "TX"}
+        county={opts.county ?? "Travis"}
+        countyName={opts.countyName ?? opts.county ?? "Travis County"}
+        userThemes={
+          opts.userThemes ?? [
+            { id: "healthcare", label: "Healthcare access" },
+            { id: "housing", label: "Housing affordability" },
+          ]
+        }
       />
     </LanguageProvider>,
   );
 }
 
-/* ── Tests ─────────────────────────────────────────────────────── */
+/* ── Setup ───────────────────────────────────────────────────── */
 
-describe("PolisOverlay — loading state", () => {
-  it("renders loading state without crash", () => {
-    renderOverlay(lockedData, { loading: true });
-    expect(screen.getByTestId("polis-overlay-loading")).toBeInTheDocument();
+describe("PolisOverlay (Phase 8 — bars + bridges + compass)", () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+  });
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
-  it("loading state shows loading text", () => {
-    renderOverlay(lockedData, { loading: true });
-    expect(screen.getByText(/loading/i)).toBeInTheDocument();
-  });
+  /* ── Section rendering ──────────────────────────────────── */
 
-  it("loading state does not render locked or unlocked sections", () => {
-    renderOverlay(lockedData, { loading: true });
-    expect(
-      screen.queryByTestId("polis-overlay-locked"),
-    ).not.toBeInTheDocument();
-    expect(
-      screen.queryByTestId("polis-overlay-unlocked"),
-    ).not.toBeInTheDocument();
-  });
-});
-
-describe("PolisOverlay — threshold-not-met (locked)", () => {
-  it("renders locked placeholder", () => {
-    renderOverlay(lockedData);
-    expect(screen.getByTestId("polis-overlay-locked")).toBeInTheDocument();
-  });
-
-  it("renders locked heading with scope name", () => {
-    renderOverlay(lockedData);
-    const heading = screen.getByTestId("polis-overlay-locked-heading");
-    expect(heading).toHaveTextContent("Harris County");
-  });
-
-  it("renders unlock counter with correct count", () => {
-    renderOverlay(lockedData);
-    const counter = screen.getByTestId("polis-overlay-unlock-counter");
-    expect(counter).toHaveTextContent("113");
-  });
-
-  it("renders privacy callout in locked state", () => {
-    renderOverlay(lockedData);
-    // Privacy callout renders p1 text
-    expect(screen.getByTestId("privacy-callout-p1")).toBeInTheDocument();
-  });
-
-  it("does NOT render the scatter SVG", () => {
-    renderOverlay(lockedData);
-    expect(screen.queryByTestId("polis-scatter-svg")).not.toBeInTheDocument();
-  });
-});
-
-describe("PolisOverlay — threshold-met, with 'you' dot", () => {
-  it("renders unlocked section", () => {
-    renderOverlay(unlockedDataWithYou);
-    expect(screen.getByTestId("polis-overlay-unlocked")).toBeInTheDocument();
-  });
-
-  it("renders the scatter SVG", () => {
-    renderOverlay(unlockedDataWithYou);
-    expect(screen.getByTestId("polis-scatter-svg")).toBeInTheDocument();
-  });
-
-  it("renders one dot per data point", () => {
-    renderOverlay(unlockedDataWithYou);
-    const dots = screen.getAllByTestId("polis-dot");
-    expect(dots).toHaveLength(baseDots.length);
-  });
-
-  it("renders the 'you' dot when you is present", () => {
-    renderOverlay(unlockedDataWithYou);
-    expect(screen.getByTestId("polis-you-dot")).toBeInTheDocument();
-  });
-
-  it("does NOT render the no-you caption when you is present", () => {
-    renderOverlay(unlockedDataWithYou);
-    expect(
-      screen.queryByTestId("polis-no-you-caption"),
-    ).not.toBeInTheDocument();
-  });
-
-  it("renders the consensus panel", () => {
-    renderOverlay(unlockedDataWithYou);
-    expect(screen.getByTestId("polis-consensus-panel")).toBeInTheDocument();
-  });
-
-  it("renders top 5 consensus items and excludes the 6th", () => {
-    renderOverlay(unlockedDataWithYou);
-    // Top 5 should be present
-    expect(
-      screen.getByTestId("consensus-percent-healthcare"),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByTestId("consensus-percent-education"),
-    ).toBeInTheDocument();
-    expect(screen.getByTestId("consensus-percent-economy")).toBeInTheDocument();
-    expect(
-      screen.getByTestId("consensus-percent-environment"),
-    ).toBeInTheDocument();
-    expect(screen.getByTestId("consensus-percent-housing")).toBeInTheDocument();
-    // 6th item excluded
-    expect(
-      screen.queryByTestId("consensus-percent-immigration"),
-    ).not.toBeInTheDocument();
-  });
-
-  it("consensus percentages are shown correctly", () => {
-    renderOverlay(unlockedDataWithYou);
-    expect(
-      screen.getByTestId("consensus-percent-healthcare"),
-    ).toHaveTextContent("72%");
-  });
-
-  it("renders privacy callout in unlocked state", () => {
-    renderOverlay(unlockedDataWithYou);
-    expect(screen.getByTestId("privacy-callout-p1")).toBeInTheDocument();
-  });
-
-  it("dots have animation inline styles applied", () => {
-    renderOverlay(unlockedDataWithYou);
-    const dots = screen.getAllByTestId("polis-dot");
-    // At least one dot should have an animation style
-    const hasDotWithAnimation = dots.some((dot) =>
-      (dot.getAttribute("style") ?? "").includes("animation"),
-    );
-    expect(hasDotWithAnimation).toBe(true);
-  });
-
-  it("scope 'county' uses countyName in heading", () => {
-    renderOverlay(unlockedDataWithYou);
-    const heading = screen.getByRole("heading", { level: 3 });
-    expect(heading).toHaveTextContent("Harris County");
-  });
-
-  it("scope 'state' uses stateName in heading", () => {
-    renderOverlay(unlockedStateData);
-    const heading = screen.getByRole("heading", { level: 3 });
-    expect(heading).toHaveTextContent("Texas");
-  });
-});
-
-describe("PolisOverlay — threshold-met, without 'you' dot", () => {
-  it("renders unlocked section", () => {
-    renderOverlay(unlockedDataWithoutYou);
-    expect(screen.getByTestId("polis-overlay-unlocked")).toBeInTheDocument();
-  });
-
-  it("does NOT render the 'you' dot when you is null", () => {
-    renderOverlay(unlockedDataWithoutYou);
-    expect(screen.queryByTestId("polis-you-dot")).not.toBeInTheDocument();
-  });
-
-  it("renders the no-you explanatory caption", () => {
-    renderOverlay(unlockedDataWithoutYou);
-    const caption = screen.getByTestId("polis-no-you-caption");
-    expect(caption).toBeInTheDocument();
-    expect(caption).toHaveTextContent("priorities");
-  });
-
-  it("still renders the consensus panel without 'you'", () => {
-    renderOverlay(unlockedDataWithoutYou);
-    expect(screen.getByTestId("polis-consensus-panel")).toBeInTheDocument();
-  });
-});
-
-describe("PolisOverlay — colorblind-safe shape encoding", () => {
-  it("renders different SVG element types for DEM (circle) vs REP (polygon) dots", () => {
-    const { container } = renderOverlay(unlockedDataWithYou);
-    // baseDots contains both DEM and REP primaries
-    const circles = container.querySelectorAll("[data-testid='polis-dot'][cx]");
-    const polygons = container.querySelectorAll(
-      "[data-testid='polis-dot'][points]",
-    );
-    // DEM dots render as circles, REP and OPEN as polygons
-    expect(circles.length).toBeGreaterThan(0);
-    expect(polygons.length).toBeGreaterThan(0);
-  });
-
-  it("renders the shape legend when there is at least one dot", () => {
-    renderOverlay(unlockedDataWithYou);
-    expect(screen.getByTestId("polis-shape-legend")).toBeInTheDocument();
-  });
-
-  it("legend shows Democratic label when DEM dots are present", () => {
-    renderOverlay(unlockedDataWithYou);
-    expect(screen.getByTestId("polis-legend-dem")).toBeInTheDocument();
-    expect(screen.getByTestId("polis-legend-dem")).toHaveTextContent(
-      "Democratic",
-    );
-  });
-
-  it("legend shows Republican label when REP dots are present", () => {
-    renderOverlay(unlockedDataWithYou);
-    expect(screen.getByTestId("polis-legend-rep")).toBeInTheDocument();
-    expect(screen.getByTestId("polis-legend-rep")).toHaveTextContent(
-      "Republican",
-    );
-  });
-
-  it("legend shows Open/General label when OPEN dots are present", () => {
-    renderOverlay(unlockedDataWithYou);
-    expect(screen.getByTestId("polis-legend-open")).toBeInTheDocument();
-    expect(screen.getByTestId("polis-legend-open")).toHaveTextContent(
-      "Open / General",
-    );
-  });
-
-  it("does not render the legend when there are no dots", () => {
-    const noDotsData: PolisData = {
-      ...unlockedDataWithYou,
-      dots: [],
-    };
-    renderOverlay(noDotsData);
-    expect(screen.queryByTestId("polis-shape-legend")).not.toBeInTheDocument();
-  });
-
-  it("DEM-only data does not render REP or OPEN legend items", () => {
-    const demOnlyData: PolisData = {
-      ...unlockedDataWithYou,
-      dots: [
-        { x: 0.2, y: 0.3, primary: "DEM" },
-        { x: 0.6, y: 0.7, primary: "DEM" },
-      ],
-    };
-    renderOverlay(demOnlyData);
-    expect(screen.getByTestId("polis-legend-dem")).toBeInTheDocument();
-    expect(screen.queryByTestId("polis-legend-rep")).not.toBeInTheDocument();
-    expect(screen.queryByTestId("polis-legend-open")).not.toBeInTheDocument();
-  });
-});
-
-describe("PolisOverlay — animation & accessibility", () => {
-  it("each aggregate dot has a <title> for screen readers", () => {
-    const { container } = renderOverlay(unlockedDataWithYou);
-    const circles = container.querySelectorAll("[data-testid='polis-dot']");
-    circles.forEach((circle) => {
-      const title = circle.querySelector("title");
-      expect(title).not.toBeNull();
-      expect(title?.textContent).toMatch(/voter dot/i);
+  it("renders the bars, bridges, and compass sections", async () => {
+    installFetchMock({
+      bars: {
+        county: "Travis",
+        threshold: 50,
+        count: 73,
+        bars: [
+          { themeId: "healthcare", theme: "Healthcare access", percent: 78 },
+          { themeId: "housing", theme: "Housing affordability", percent: 64 },
+        ],
+      },
+      bridges: {
+        county: "Travis",
+        threshold: 50,
+        count: 73,
+        status: "no_bridges_yet",
+        bridges: [],
+      },
+      compass: {
+        county: "Travis",
+        threshold: 150,
+        count: 73,
+        status: "below_threshold",
+        clusters: [],
+        dots: [],
+      },
     });
+
+    renderOverlay({});
+
+    await waitFor(() => {
+      expect(screen.getByTestId("polis-bars-section")).toBeInTheDocument();
+    });
+    expect(screen.getByTestId("polis-bridges-section")).toBeInTheDocument();
+    expect(screen.getByTestId("polis-compass-section")).toBeInTheDocument();
   });
 
-  it("'you' dot SVG group exists and has inner title 'You'", () => {
-    const { container } = renderOverlay(unlockedDataWithYou);
-    const youGroup = container.querySelector("[data-testid='polis-you-dot']");
-    expect(youGroup).not.toBeNull();
-    const titles = youGroup?.querySelectorAll("title");
-    const youTitle = Array.from(titles ?? []).find(
-      (t) => t.textContent === "You",
+  /* ── Bars rendering ─────────────────────────────────────── */
+
+  it("renders one overlap bar per user theme with the percent text", async () => {
+    installFetchMock({
+      bars: {
+        county: "Travis",
+        threshold: 50,
+        count: 73,
+        bars: [
+          { themeId: "healthcare", theme: "Healthcare access", percent: 78 },
+          { themeId: "housing", theme: "Housing affordability", percent: 64 },
+        ],
+      },
+    });
+
+    renderOverlay({});
+
+    await waitFor(() => {
+      expect(screen.getByTestId("overlap-bar-healthcare")).toBeInTheDocument();
+    });
+    expect(screen.getByTestId("overlap-bar-housing")).toBeInTheDocument();
+    // Percent text is load-bearing (not just decoration).
+    expect(screen.getByTestId("overlap-bar-healthcare")).toHaveTextContent(
+      "78%",
     );
-    expect(youTitle).not.toBeNull();
+    expect(screen.getByTestId("overlap-bar-housing")).toHaveTextContent("64%");
   });
 
-  it("scatter SVG has role=img and aria-label", () => {
-    renderOverlay(unlockedDataWithYou);
-    const svg = screen.getByTestId("polis-scatter-svg");
-    expect(svg).toHaveAttribute("role", "img");
-    expect(svg).toHaveAttribute("aria-label");
-  });
-
-  it("section has aria-label 'Voter overlap visualization'", () => {
-    const { container } = renderOverlay(unlockedDataWithYou);
-    const section = container.querySelector("section");
-    expect(section).toHaveAttribute(
-      "aria-label",
-      "Voter overlap visualization",
+  it("bars empty state (count=0): honest 'just getting started' message", async () => {
+    installFetchMock({
+      bars: { county: "Travis", threshold: 50, count: 0, bars: [] },
+    });
+    renderOverlay({});
+    await waitFor(() => {
+      expect(screen.getByTestId("polis-bars-empty")).toBeInTheDocument();
+    });
+    expect(screen.getByTestId("polis-bars-empty")).toHaveTextContent(
+      /just getting started|haven't been seen/i,
     );
+  });
+
+  it("bars below_threshold: shows count and threshold in honest copy", async () => {
+    installFetchMock({
+      bars: {
+        county: "Travis",
+        threshold: 50,
+        count: 12,
+        status: "below_threshold",
+        bars: [],
+      },
+    });
+    renderOverlay({});
+    await waitFor(() => {
+      expect(
+        screen.getByTestId("polis-bars-below-threshold"),
+      ).toBeInTheDocument();
+    });
+    expect(screen.getByTestId("polis-bars-below-threshold")).toHaveTextContent(
+      /12/,
+    );
+  });
+
+  /* ── Bridges rendering ───────────────────────────────────── */
+
+  it("bridges empty state (no_bridges_yet): honest 'needs more data' message", async () => {
+    installFetchMock({
+      bridges: {
+        county: "Travis",
+        threshold: 50,
+        count: 80,
+        status: "no_bridges_yet",
+        bridges: [],
+      },
+    });
+    renderOverlay({});
+    await waitFor(() => {
+      expect(screen.getByTestId("polis-bridges-empty")).toBeInTheDocument();
+    });
+    expect(screen.getByTestId("polis-bridges-empty")).toHaveTextContent(
+      /no bridge statements yet|needs more data/i,
+    );
+  });
+
+  it("bridges below_threshold: shows count and threshold", async () => {
+    installFetchMock({
+      bridges: {
+        county: "Travis",
+        threshold: 50,
+        count: 12,
+        status: "below_threshold",
+        bridges: [],
+      },
+    });
+    renderOverlay({});
+    await waitFor(() => {
+      expect(
+        screen.getByTestId("polis-bridges-below-threshold"),
+      ).toBeInTheDocument();
+    });
+    expect(
+      screen.getByTestId("polis-bridges-below-threshold"),
+    ).toHaveTextContent(/12/);
+  });
+
+  it("bridges with statements (future v2): renders bridge cards with cluster names + percents", async () => {
+    installFetchMock({
+      bridges: {
+        county: "Travis",
+        threshold: 50,
+        count: 200,
+        bridges: [
+          {
+            statement:
+              "Members of Congress should not trade individual stocks while in office.",
+            clusters: [
+              {
+                name: "Service-first progressives",
+                agreementPercent: 93,
+              },
+              { name: "Pocketbook moderates", agreementPercent: 89 },
+              { name: "Civic libertarians", agreementPercent: 94 },
+            ],
+          },
+        ],
+      },
+    });
+    renderOverlay({});
+    await waitFor(() => {
+      expect(screen.getByTestId("bridge-statement-0")).toBeInTheDocument();
+    });
+    expect(screen.getByTestId("bridge-statement-0")).toHaveTextContent(
+      /trade individual stocks/,
+    );
+    expect(screen.getByTestId("bridge-statement-0")).toHaveTextContent(/93/);
+    expect(screen.getByTestId("bridge-statement-0")).toHaveTextContent(/89/);
+    expect(screen.getByTestId("bridge-statement-0")).toHaveTextContent(/94/);
+    expect(screen.getByTestId("bridge-statement-0")).toHaveTextContent(
+      /Service-first progressives/,
+    );
+  });
+
+  /* ── Compass rendering ───────────────────────────────────── */
+
+  it("compass below_threshold: shows the count vs threshold honest message", async () => {
+    installFetchMock({
+      compass: {
+        county: "Travis",
+        threshold: 150,
+        count: 73,
+        status: "below_threshold",
+        clusters: [],
+        dots: [],
+      },
+    });
+    renderOverlay({});
+    await waitFor(() => {
+      expect(screen.getByTestId("compass-empty")).toBeInTheDocument();
+    });
+    // Both numbers visible.
+    expect(screen.getByTestId("compass-empty")).toHaveTextContent(/73/);
+    expect(screen.getByTestId("compass-empty")).toHaveTextContent(/150/);
+  });
+
+  /* ── Privacy + label hygiene of the rendered DOM ─────────── */
+
+  it("rendered DOM does not include identity-shaped strings (user_id, session_id, email, address)", async () => {
+    installFetchMock({
+      bars: {
+        county: "Travis",
+        threshold: 50,
+        count: 73,
+        bars: [
+          { themeId: "healthcare", theme: "Healthcare access", percent: 78 },
+        ],
+      },
+      bridges: {
+        county: "Travis",
+        threshold: 50,
+        count: 73,
+        status: "no_bridges_yet",
+        bridges: [],
+      },
+      compass: {
+        county: "Travis",
+        threshold: 150,
+        count: 73,
+        status: "below_threshold",
+        clusters: [],
+        dots: [],
+      },
+    });
+    const { container } = renderOverlay({});
+    await waitFor(() => {
+      expect(screen.getByTestId("polis-bars-section")).toBeInTheDocument();
+    });
+    const text = container.textContent ?? "";
+    expect(text).not.toMatch(/user_id|session_id|@.*\.|address/i);
+  });
+
+  it("rendered DOM does not contain partisan strings in bridge cluster labels", async () => {
+    installFetchMock({
+      bridges: {
+        county: "Travis",
+        threshold: 50,
+        count: 200,
+        bridges: [
+          {
+            statement: "Something everyone agrees on.",
+            clusters: [
+              { name: "Service-first progressives", agreementPercent: 92 },
+              { name: "Pocketbook moderates", agreementPercent: 88 },
+              { name: "Civic libertarians", agreementPercent: 91 },
+            ],
+          },
+        ],
+      },
+    });
+    renderOverlay({});
+    await waitFor(() => {
+      expect(screen.getByTestId("bridge-statement-0")).toBeInTheDocument();
+    });
+    const cardText = screen.getByTestId("bridge-statement-0").textContent ?? "";
+    expect(cardText).not.toMatch(
+      /democrat|republican|independent|\bdem\b|\brep\b/i,
+    );
+  });
+
+  /* ── County re-fetch ─────────────────────────────────────── */
+
+  it("re-fetches all three endpoints when the county prop changes", async () => {
+    const spy = installFetchMock({});
+    const { rerender } = render(
+      <LanguageProvider>
+        <PolisOverlay
+          stateCode="TX"
+          county="Travis"
+          countyName="Travis County"
+          userThemes={[{ id: "healthcare", label: "Healthcare access" }]}
+        />
+      </LanguageProvider>,
+    );
+    await waitFor(() => {
+      expect(spy).toHaveBeenCalled();
+    });
+    const callsBefore = spy.mock.calls.length;
+
+    // Change county.
+    rerender(
+      <LanguageProvider>
+        <PolisOverlay
+          stateCode="TX"
+          county="Harris"
+          countyName="Harris County"
+          userThemes={[{ id: "healthcare", label: "Healthcare access" }]}
+        />
+      </LanguageProvider>,
+    );
+
+    await waitFor(() => {
+      // Each endpoint re-fetched once more (3 additional calls minimum).
+      expect(spy.mock.calls.length).toBeGreaterThanOrEqual(callsBefore + 3);
+    });
+    const calledUrls = spy.mock.calls
+      .map((c) => (typeof c[0] === "string" ? c[0] : (c[0] as URL).toString()))
+      .join("\n");
+    expect(calledUrls).toMatch(/county=Harris/);
   });
 });
