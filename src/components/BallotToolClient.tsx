@@ -11,6 +11,7 @@ import { ProfileUpload } from "./ProfileUpload";
 import { ResearchLayout } from "./ResearchLayout";
 import { WorkspaceRail } from "./WorkspaceRail";
 import { BallotPane, type Decision } from "./BallotPane";
+import { PrintBallot, type PollingDataShape } from "./PrintBallot";
 import { ChatPanel } from "./ChatPanel";
 import { deriveRaces, type Race } from "../lib/raceDeriver";
 import { downloadProfileAsText } from "../lib/ballot-utils";
@@ -586,7 +587,11 @@ export function ElectionResult({
   }, [races]);
 
   const handlePrint = useCallback(() => {
-    if (typeof window !== "undefined") window.print();
+    // Phase 7 — the WorkspaceShell intercepts onPrint to switch its inner
+    // view to PrintBallot. The parent prop stays (so future analytics or
+    // route-based variants can hook here) but no longer dispatches
+    // `window.print()` directly; the dialog is owned by the PrintBallot
+    // component itself, gated on the one-page overflow check.
   }, []);
 
   const handleSaveProfile = useCallback(() => {
@@ -890,6 +895,51 @@ function WorkspaceShell({
       ? `${countyName}, ${state.stateName}`
       : state.stateName;
 
+  // Phase 7 — printable artifact. State-lift approach: the shell owns
+  // `printViewActive` and swaps its inner render between the 3-pane
+  // workspace and the full-page PrintBallot. The BallotPane's onPrint
+  // prop is rewired here to flip the flag (the parent's `onPrint` still
+  // fires for any future analytics hook, but doesn't move UI).
+  const [printViewActive, setPrintViewActive] = useState(false);
+  const handlePrintFromBallotPane = useCallback(() => {
+    onPrint();
+    setPrintViewActive(true);
+  }, [onPrint]);
+  const handlePrintBack = useCallback(() => {
+    setPrintViewActive(false);
+  }, []);
+
+  // Adapt the upstream PollingLocation[] shape into the single-record
+  // PrintBallot header contract. `precinct` has no upstream source —
+  // header omits it cleanly. `whatToBring` is a sensible default until
+  // the civic data carries a "what to bring" string of its own; voters
+  // can read the polling-place's specifics from the polling card during
+  // the workspace flow.
+  const printPollingData: PollingDataShape | null = useMemo(() => {
+    if (!pollingData) return null;
+    const primary = pollingData.pollingLocations?.[0];
+    const earlyPrimary = pollingData.earlyVoteSites?.[0];
+    if (!primary && !earlyPrimary) return null;
+    const place = primary ?? earlyPrimary;
+    return {
+      pollingPlaceName: place?.name,
+      pollingPlaceAddress: place?.address,
+      pollingHours: place?.hours,
+      // Civic API doesn't expose precinct or what-to-bring per location;
+      // default to the universal photo-ID line that applies in most states.
+      whatToBring: "Government-issued photo ID",
+      earlyVotingWindow: earlyPrimary?.hours,
+    };
+  }, [pollingData]);
+
+  // Election label + date for the printable header. Lives at the shell
+  // (it already has `state`) so the parent doesn't have to thread two
+  // more props through.
+  const upcomingElection = getUpcomingElection(state);
+  const printElectionLabel =
+    upcomingElection?.name ?? state.stateName ?? "Upcoming Election";
+  const printElectionDate = upcomingElection?.date ?? "";
+
   // Race derivation already marks decided=false; overlay decisions here so
   // the rail/pane both reflect what's committed.
   const decidedIds = new Set(decisions.map((d) => d.raceId));
@@ -939,6 +989,21 @@ function WorkspaceShell({
   // Polling card: surface once >50% decided (per design brief §9 / Phase 3
   // packet §22).
   const hasPolling = races.length > 0 && decisions.length / races.length > 0.5;
+
+  if (printViewActive) {
+    return (
+      <PrintBallot
+        decisions={decisions}
+        themes={themes}
+        races={racesWithDecided}
+        pollingData={printPollingData}
+        cityState={cityState}
+        electionLabel={printElectionLabel}
+        electionDate={printElectionDate}
+        onBack={handlePrintBack}
+      />
+    );
+  }
 
   return (
     <div
@@ -1003,7 +1068,7 @@ function WorkspaceShell({
         cityState={cityState}
         hasPolling={hasPolling}
         activeRaceId={activeRaceId}
-        onPrint={onPrint}
+        onPrint={handlePrintFromBallotPane}
         onSaveProfile={onSaveProfile}
         onHandoff={onHandoff}
       />

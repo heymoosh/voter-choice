@@ -1,6 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import { Public_Sans } from "next/font/google";
 import "./globals.css";
+// Phase 7 — printable ballot stylesheet. Scoped to `.print-sheet` /
+// `.print-shell` / `.no-print`, loaded here so the rules are available
+// across every route the print view might mount under.
+import "../styles/print.css";
 
 const publicSans = Public_Sans({
   variable: "--font-public-sans",

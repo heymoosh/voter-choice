@@ -1,0 +1,258 @@
+/*
+ * Phase 7 — printable ballot stylesheet.
+ *
+ * Scoped to `.print-sheet` (and `.print-shell` / `.no-print` chrome) so
+ * nothing here leaks into the screen workspace. Both the screen "preview"
+ * and the actual printed page render the same DOM; the only difference is
+ * that `@media print` hides the action buttons + the screen-only padding.
+ *
+ * Physical target: US Letter, 0.5in margins, 7.5in x 10in content area.
+ * Newsreader serif with Times New Roman fallback (Newsreader isn't
+ * currently loaded — the system serif lands at the right reading weight
+ * without adding a font fetch on the print path).
+ */
+
+@page {
+  size: letter;
+  margin: 0.5in;
+}
+
+.print-shell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25in;
+  padding: 0.5in 0;
+  background: #f5f3f1;
+  min-height: 100vh;
+}
+
+.print-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  width: 7.5in;
+  max-width: calc(100vw - 1rem);
+}
+
+.print-actions button {
+  appearance: none;
+  border: 1px solid #1b1c1b;
+  background: white;
+  color: #1b1c1b;
+  font:
+    700 11pt "Public Sans",
+    system-ui,
+    sans-serif;
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+}
+
+.print-actions button[data-testid="print-button"] {
+  background: #1b1c1b;
+  color: white;
+}
+
+.print-actions button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.trim-prompt {
+  margin-top: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border: 2px solid #7f4025;
+  background: #fff8f3;
+  color: #1b1c1b;
+  font:
+    400 10pt "Public Sans",
+    system-ui,
+    sans-serif;
+  width: 100%;
+}
+
+.trim-prompt ul {
+  margin: 0.5rem 0 0 1.25rem;
+  list-style: disc;
+}
+
+.print-sheet {
+  width: 7.5in;
+  min-height: 10in;
+  max-width: calc(100vw - 1rem);
+  padding: 0;
+  background: white;
+  color: black;
+  font-family: "Newsreader", "Times New Roman", Times, serif;
+  font-size: 11pt;
+  line-height: 1.4;
+}
+
+.print-sheet .ph-head {
+  border-bottom: 2px solid black;
+  padding-bottom: 0.2in;
+  margin-bottom: 0.2in;
+}
+
+.print-sheet .ph-head [data-testid="polling-fallback"] {
+  font-style: italic;
+}
+
+.print-sheet .ph-head .precinct {
+  font-weight: 700;
+  font-size: 12pt;
+}
+
+.print-sheet .ph-head .place-name {
+  font-weight: 700;
+}
+
+.print-sheet .voter-meta {
+  display: flex;
+  gap: 0.25in;
+  font-size: 10pt;
+  margin-bottom: 0.2in;
+  padding-bottom: 0.1in;
+  border-bottom: 1px solid black;
+}
+
+.print-sheet .voter-meta > div {
+  flex: 1;
+}
+
+.print-sheet .ballot-list .ballot-group {
+  margin-bottom: 0.15in;
+  page-break-inside: avoid;
+}
+
+.print-sheet .ballot-list .ballot-group h3 {
+  font-size: 12pt;
+  font-weight: 700;
+  margin: 0 0 0.05in 0;
+  border-bottom: 1px solid black;
+  padding-bottom: 0.02in;
+}
+
+.print-sheet .ballot-list .pick-row {
+  margin-bottom: 0.05in;
+}
+
+.print-sheet .ballot-list .pick-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.05in;
+  align-items: baseline;
+}
+
+.print-sheet .ballot-list .race-label {
+  font-weight: 700;
+}
+
+.print-sheet .ballot-list .pick-name {
+  font-weight: 700;
+}
+
+.print-sheet .ballot-list .party-tag {
+  font-size: 9pt;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border: 1px solid black;
+  padding: 0 0.04in;
+}
+
+.print-sheet .ballot-list .sep {
+  color: black;
+}
+
+.print-sheet .ballot-list .why-note {
+  font-style: italic;
+  font-size: 10pt;
+  padding-left: 0.2in;
+  margin-top: 0.02in;
+}
+
+.print-sheet .ballot-list .undecided-row {
+  padding-left: 0.1in;
+}
+
+.print-sheet .themes-section {
+  margin-top: 0.2in;
+}
+
+.print-sheet .themes-section h3 {
+  font-size: 12pt;
+  font-weight: 700;
+  margin: 0 0 0.05in 0;
+  border-bottom: 1px solid black;
+  padding-bottom: 0.02in;
+}
+
+.print-sheet .themes-list {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 0 0.3in;
+}
+
+.print-sheet .themes-list li {
+  font-size: 10pt;
+  margin-bottom: 0.03in;
+}
+
+.print-sheet .print-foot {
+  border-top: 1px solid black;
+  padding-top: 0.1in;
+  margin-top: 0.2in;
+  font-size: 9pt;
+}
+
+.print-sheet .print-foot .brand {
+  font-weight: 700;
+}
+
+.print-sheet .print-foot .signature-line {
+  margin-top: 0.15in;
+  font-size: 9pt;
+}
+
+/* ── Screen preview ──────────────────────────────────────────── */
+@media screen {
+  .print-sheet {
+    box-shadow: 0 0.2in 0.5in rgba(0, 0, 0, 0.1);
+    padding: 0.5in;
+  }
+}
+
+/* ── Print rules ─────────────────────────────────────────────── */
+@media print {
+  .no-print,
+  .no-print * {
+    display: none !important;
+  }
+
+  body,
+  html {
+    background: white !important;
+  }
+
+  /* Hide app chrome that lives outside the print sheet. */
+  header,
+  nav,
+  footer.app-footer {
+    display: none !important;
+  }
+
+  .print-shell {
+    padding: 0 !important;
+    background: white !important;
+    gap: 0 !important;
+  }
+
+  .print-sheet {
+    box-shadow: none !important;
+    width: 100% !important;
+    min-height: 0 !important;
+    max-width: none !important;
+    padding: 0 !important;
+  }
+}
