@@ -758,3 +758,99 @@ describe("POST /api/chat — alignment notice forwarded to model", () => {
     expect(toolResultBlock.content).toContain('"notice":"Limited data: only 3');
   });
 });
+
+// ---------------------------------------------------------------------------
+// Phase 9 — budget exhaustion returns structured 200 (not 503).
+// ---------------------------------------------------------------------------
+//
+// Existing behavior (pre-Phase 9): when the community budget is exhausted AND
+// the handoff has been served, `/api/chat` returns 503 with `code:
+// "BUDGET_EXHAUSTED"`. The Phase 9 continuity reframe replaces this with a
+// structured `{ status: "budget_exhausted", resetAt, handoffPrompt }` payload
+// on a 200 response so the client can render the continuity screen instead of
+// surfacing an error. The handoff prompt is rendered server-side from the
+// legacy `BALLOT_PROMPT_EN` template (see anti-solutions in the packet —
+// "Do not return a 500/503 on budget exhaustion").
+
+import { wasHandoffServed } from "../../../lib/server/budget";
+
+describe("POST /api/chat — Phase 9 budget exhaustion returns structured 200", () => {
+  it("returns 200 with status:'budget_exhausted' instead of a 503 once handoff is served", async () => {
+    vi.mocked(getBudgetStatusAsync).mockResolvedValue({
+      tier: "exhausted",
+      percent: 100,
+      estimatedSpendUSD: 50.5,
+    });
+    vi.mocked(wasHandoffServed).mockReturnValue(true);
+
+    const req = makeChatRequest();
+    const res = await POST(req as never);
+
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as {
+      status?: string;
+      resetAt?: string;
+      handoffPrompt?: string;
+    };
+    expect(body.status).toBe("budget_exhausted");
+    expect(typeof body.resetAt).toBe("string");
+    // resetAt must parse as a valid ISO timestamp.
+    expect(Number.isNaN(new Date(body.resetAt!).getTime())).toBe(false);
+    expect(typeof body.handoffPrompt).toBe("string");
+    expect((body.handoffPrompt ?? "").length).toBeGreaterThan(0);
+  });
+
+  it("does NOT include a x-byok-key value anywhere in the body or headers", async () => {
+    vi.mocked(getBudgetStatusAsync).mockResolvedValue({
+      tier: "exhausted",
+      percent: 100,
+      estimatedSpendUSD: 50.5,
+    });
+    vi.mocked(wasHandoffServed).mockReturnValue(true);
+
+    const req = new Request("http://localhost/api/chat", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        origin: "http://localhost",
+        host: "localhost",
+        // Even if a BYOK key leaks into the request (it must not — but
+        // defense-in-depth), the server response must never echo it back.
+        "x-byok-key": "sk-ant-leaked-secret-9999",
+      },
+      body: JSON.stringify({
+        messages: [{ role: "user", content: "hi" }],
+        systemPrompt: "LEGACY",
+        sessionId: "sess-1",
+        messageCount: 1,
+      }),
+    });
+    const res = await POST(req as never);
+    const bodyText = await res.text();
+    expect(bodyText).not.toContain("sk-ant-leaked-secret-9999");
+
+    // Response headers must also be free of the BYOK header echo.
+    const headerString = JSON.stringify(
+      Object.fromEntries(res.headers.entries()),
+    );
+    expect(headerString).not.toContain("sk-ant-leaked-secret-9999");
+  });
+
+  it("handoffPrompt contains the legacy BALLOT_PROMPT_EN canonical marker text", async () => {
+    vi.mocked(getBudgetStatusAsync).mockResolvedValue({
+      tier: "exhausted",
+      percent: 100,
+      estimatedSpendUSD: 50.5,
+    });
+    vi.mocked(wasHandoffServed).mockReturnValue(true);
+
+    const req = makeChatRequest();
+    const res = await POST(req as never);
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { handoffPrompt?: string };
+    // The legacy BALLOT_PROMPT.md prompt template opens with the
+    // recognizable "# BALLOT RESEARCH TOOL" marker. Phase 1 explicitly
+    // retained this as the canonical handoff target.
+    expect(body.handoffPrompt ?? "").toContain("BALLOT RESEARCH TOOL");
+  });
+});

@@ -35,6 +35,8 @@ import {
 } from "../lib/server/decide-verdict";
 import { shouldSuggestAmend } from "../lib/chat-catch-heuristic";
 import type { SerializableBallotContext } from "../lib/state-rules/ballot-context";
+import { hasByokKey, streamWithByok } from "../lib/anthropic-client-byok";
+import { prependSafetyHeader } from "../lib/prompts/safety-header";
 import {
   parseValuesTagRequestBlock,
   stripValuesTagRequestBlocks,
@@ -260,6 +262,17 @@ interface ChatPanelProps {
    * See .ai/work-packets/redesign-phase-2-free-form-cold-open.md.
    */
   promptFleetV2Enabled?: boolean;
+  /**
+   * Phase 9 — fired when the chat route returns the structured
+   * `{ status: "budget_exhausted", resetAt, handoffPrompt }` response. The
+   * parent should mount the BudgetExhausted continuity screen instead of
+   * surfacing this as an error. Without this prop ChatPanel falls back to
+   * its legacy error surface (so flag-off callers stay unchanged).
+   */
+  onBudgetExhausted?: (input: {
+    handoffPromptText: string;
+    resetAt: string;
+  }) => void;
 }
 
 function generateSessionId(): string {
@@ -1666,6 +1679,7 @@ export function ChatPanel({
   workspace,
   onLockInThemes,
   ballotContext,
+  onBudgetExhausted,
 }: ChatPanelProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
@@ -1835,6 +1849,61 @@ export function ChatPanel({
         };
       })();
 
+      // Phase 9 — BYOK precedence: if the user has stored an Anthropic key
+      // in localStorage, route the chat directly to api.anthropic.com via
+      // the BYOK client. This BYPASSES our /api/chat route entirely so the
+      // user's key never reaches the Voter Choice server (asserted by both
+      // unit tests + the budget-exhausted e2e network-trace).
+      //
+      // Per packet: "BYOK precedence: when key set AND community budget
+      // has room, user's key is used." — we bias toward respecting the
+      // user's choice.
+      if (hasByokKey()) {
+        // Apply the same nonpartisan safety header the server-side route
+        // prepends (Phase 1 — `prependSafetyHeader` in src/lib/prompts).
+        // Per packet Notes: "The BYOK chat path should respect the same
+        // shared safety header from Phase 1 — even on the user's own key,
+        // we don't suddenly become a partisan recommender."
+        const byokSystem = prependSafetyHeader(basePrompt);
+        setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
+        try {
+          await streamWithByok(
+            {
+              systemPrompt: byokSystem,
+              messages: newMessages,
+            },
+            {
+              onText: (text) => {
+                setMessages((prev) => {
+                  const updated = [...prev];
+                  const last = updated[updated.length - 1];
+                  if (last?.role === "assistant") {
+                    updated[updated.length - 1] = {
+                      ...last,
+                      content: last.content + text,
+                    };
+                  }
+                  return updated;
+                });
+              },
+              onError: (err) => {
+                setSearchActivity(null);
+                setError(err);
+              },
+              onDone: () => {
+                setSearchActivity(null);
+              },
+            },
+          );
+        } catch (err) {
+          setError(err instanceof Error ? err.message : "BYOK stream error");
+        } finally {
+          setSearchActivity(null);
+          setIsStreaming(false);
+        }
+        return;
+      }
+
       try {
         const response = await fetch("/api/chat", {
           method: "POST",
@@ -1863,6 +1932,30 @@ export function ChatPanel({
           }
           setIsStreaming(false);
           return;
+        }
+
+        // Phase 9 — intercept the structured `budget_exhausted` shape. The
+        // route now returns 200 with a JSON body (NOT an SSE stream) when
+        // the community budget is gone. Reading content-type avoids
+        // accidentally trying to parse a stream as JSON or vice versa.
+        const ct = response.headers.get("content-type") ?? "";
+        if (ct.includes("application/json")) {
+          const data = (await response.json()) as {
+            status?: string;
+            resetAt?: string;
+            handoffPrompt?: string;
+          };
+          if (data?.status === "budget_exhausted") {
+            onBudgetExhausted?.({
+              handoffPromptText: data.handoffPrompt ?? "",
+              resetAt: data.resetAt ?? new Date().toISOString(),
+            });
+            // Remove the optimistic user message — we're routing to the
+            // continuity screen, not surfacing a chat reply.
+            setMessages(currentMessages);
+            setIsStreaming(false);
+            return;
+          }
         }
 
         setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
@@ -1916,6 +2009,7 @@ export function ChatPanel({
       state.stateCode,
       countyName,
       ballotContext,
+      onBudgetExhausted,
     ],
   );
 
