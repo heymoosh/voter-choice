@@ -121,6 +121,12 @@ export interface WorkspaceModeProps {
   activeRaceIndex: number;
   /** Whether the active race already has a committed decision. */
   decided: boolean;
+  /**
+   * The race id that was active immediately before activeRace.id. Used to
+   * inform the chat route's per-race history-reset contract (Phase 1 PR 2).
+   * Parent tracks this across remounts via a ref.
+   */
+  prevActiveRaceId: string | null;
   onCommitDecision: (input: {
     raceId: string;
     raceLabel: string;
@@ -1636,6 +1642,37 @@ export function ChatPanel({
 
       const { basePrompt } = getBasePrompt();
 
+      // Phase 3 — when in workspace mode, send the request shape Phase 1's
+      // router expects: view + activeRace{Type,Id} + prevActiveRaceId, plus
+      // a minimal raceContext slice the race-deep-dive / proposition
+      // builders need. Without this the chat route falls back to the
+      // legacy prompt, even with PROMPT_FLEET_V2 on. See
+      // .ai/work-packets/redesign-phase-3-workspace-split.md step 4.
+      const workspaceContextBody = (() => {
+        const ws = workspace;
+        if (!ws?.activeRace) return undefined;
+        const isProposition =
+          !ws.activeRace.candidates || ws.activeRace.candidates.length === 0;
+        const view: RouterView = isProposition
+          ? "workspace-prop"
+          : "workspace-race";
+        const raceType: RaceType = isProposition ? "proposition" : "choice";
+        return {
+          view,
+          activeRaceType: raceType,
+          activeRaceId: ws.activeRace.id,
+          prevActiveRaceId: ws.prevActiveRaceId ?? undefined,
+          raceContext: {
+            raceLabel: ws.activeRace.label,
+            state: state.stateCode,
+            county: countyName,
+            candidatesJson: ws.activeRace.candidates
+              ? JSON.stringify(ws.activeRace.candidates)
+              : undefined,
+          },
+        };
+      })();
+
       try {
         const response = await fetch("/api/chat", {
           method: "POST",
@@ -1647,6 +1684,7 @@ export function ChatPanel({
             messageCount: messageCountRef.current,
             isNewSession: messageCountRef.current === 1,
             ...(voterProfile ? { voterProfile } : {}),
+            ...(workspaceContextBody ?? {}),
           }),
         });
 
@@ -1711,6 +1749,9 @@ export function ChatPanel({
       disableChat,
       handleApiError,
       voterProfile,
+      workspace,
+      state.stateCode,
+      countyName,
     ],
   );
 

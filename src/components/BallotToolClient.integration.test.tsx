@@ -388,4 +388,116 @@ describe("ElectionResult — workspace 3-pane shell (Phase 3)", () => {
     // chat-message-user testid count should be zero.
     expect(screen.queryAllByTestId("chat-message-user").length).toBe(0);
   });
+
+  it("workspace chat sends view='workspace-race' + activeRaceId + raceContext", async () => {
+    const postBodies: unknown[] = [];
+    global.fetch = vi.fn(async (input: unknown, init?: { body?: unknown }) => {
+      if (init?.body) {
+        try {
+          postBodies.push(JSON.parse(String(init.body)));
+        } catch {
+          // not JSON; ignore
+        }
+      }
+      const encoder = new TextEncoder();
+      const stream = new ReadableStream({
+        start(controller) {
+          controller.enqueue(
+            encoder.encode(
+              `data: ${JSON.stringify({ type: "done", budget: { tier: "normal", percent: 0 } })}\n\n`,
+            ),
+          );
+          controller.close();
+        },
+      });
+      return new Response(stream, {
+        status: 200,
+        headers: { "Content-Type": "text/event-stream" },
+      });
+    }) as unknown as typeof fetch;
+
+    renderElectionResult();
+    const input = screen.getByTestId("workspace-chat-input");
+    act(() => {
+      fireEvent.change(input, { target: { value: "tell me her record" } });
+    });
+    const form = input.closest("form")!;
+    act(() => {
+      fireEvent.submit(form);
+    });
+    await new Promise((r) => setTimeout(r, 0));
+
+    const body = postBodies.find(
+      (b) => typeof b === "object" && b !== null && "view" in b,
+    ) as
+      | {
+          view: string;
+          activeRaceId?: string;
+          activeRaceType?: string;
+          raceContext?: { raceLabel?: string; state?: string };
+        }
+      | undefined;
+    expect(
+      body,
+      "expected a /api/chat POST that carries the workspace route shape",
+    ).toBeDefined();
+    expect(body!.view).toBe("workspace-race");
+    expect(body!.activeRaceType).toBe("choice");
+    expect(body!.activeRaceId).toBeTruthy();
+    expect(body!.raceContext).toBeDefined();
+    expect(body!.raceContext!.state).toBe("TX");
+    expect(body!.raceContext!.raceLabel).toMatch(/President|Senator|Governor/);
+  });
+
+  it("workspace chat sends view='workspace-prop' for a proposition", async () => {
+    const postBodies: unknown[] = [];
+    global.fetch = vi.fn(async (input: unknown, init?: { body?: unknown }) => {
+      if (init?.body) {
+        try {
+          postBodies.push(JSON.parse(String(init.body)));
+        } catch {
+          // ignore
+        }
+      }
+      const encoder = new TextEncoder();
+      const stream = new ReadableStream({
+        start(controller) {
+          controller.enqueue(
+            encoder.encode(
+              `data: ${JSON.stringify({ type: "done", budget: { tier: "normal", percent: 0 } })}\n\n`,
+            ),
+          );
+          controller.close();
+        },
+      });
+      return new Response(stream, {
+        status: 200,
+        headers: { "Content-Type": "text/event-stream" },
+      });
+    }) as unknown as typeof fetch;
+
+    renderElectionResult();
+    // Switch active race to the proposition (no candidates).
+    act(() => {
+      fireEvent.click(screen.getByTestId("workspace-rail-race-proposition-1"));
+    });
+    const input = screen.getByTestId("workspace-chat-input");
+    act(() => {
+      fireEvent.change(input, { target: { value: "what does yes mean?" } });
+    });
+    const form = input.closest("form")!;
+    act(() => {
+      fireEvent.submit(form);
+    });
+    await new Promise((r) => setTimeout(r, 0));
+
+    const body = postBodies.find(
+      (b) =>
+        typeof b === "object" &&
+        b !== null &&
+        "view" in b &&
+        (b as { view: string }).view === "workspace-prop",
+    );
+    expect(body).toBeDefined();
+  });
 });

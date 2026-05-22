@@ -843,6 +843,19 @@ function WorkspaceShell({
     ? (decisions.find((d) => d.raceId === activeRaceId) ?? null)
     : null;
 
+  // Track prevActiveRaceId across ChatPanel remounts. The shell stays
+  // mounted even as the chat re-keys by race id; we record the *previous*
+  // active id here so the next request body can carry it. Phase 1's chat
+  // route uses this signal to validate the per-race history reset.
+  const prevActiveRaceIdRef = useRef<string | null>(null);
+  const lastSeenActiveRaceIdRef = useRef<string | null>(activeRaceId);
+  useEffect(() => {
+    if (lastSeenActiveRaceIdRef.current !== activeRaceId) {
+      prevActiveRaceIdRef.current = lastSeenActiveRaceIdRef.current;
+      lastSeenActiveRaceIdRef.current = activeRaceId;
+    }
+  }, [activeRaceId]);
+
   // Lift candidates from the polling data for the active race so the Phase-3
   // pick stub has a name to display. The civic data is keyed by office +
   // district; rebuild that key here.
@@ -910,6 +923,7 @@ function WorkspaceShell({
             totalRaces: racesWithDecided.length,
             activeRaceIndex: activeRaceIndex,
             decided: !!activeDecision,
+            prevActiveRaceId: prevActiveRaceIdRef.current,
             onCommitDecision,
             onUnpickDecision,
           }}
