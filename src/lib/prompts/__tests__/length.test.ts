@@ -4,6 +4,7 @@ import { buildRaceDeepDivePrompt } from "../race-deep-dive";
 import { buildPropositionPrompt } from "../proposition";
 import { buildThemeAmendmentPrompt } from "../theme-amendment";
 import { buildHandoffPrompt } from "../handoff";
+import { buildResearchCandidatePrompt } from "../research-candidate";
 
 const LIMIT = 1500;
 
@@ -59,6 +60,15 @@ describe("task-prompt length budget", () => {
       decidedJson: "[]",
       remainingList: "Senate",
       notableQuotes: "(none)",
+    });
+    expect(rendered.length).toBeLessThanOrEqual(LIMIT);
+  });
+
+  it("research-candidate body stays under the 1500-char limit", () => {
+    const rendered = buildResearchCandidatePrompt({
+      candidateName: "X",
+      jurisdiction: "Y",
+      topic: "Z",
     });
     expect(rendered.length).toBeLessThanOrEqual(LIMIT);
   });

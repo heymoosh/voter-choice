@@ -1,0 +1,290 @@
+/**
+ * src/lib/server/research-sub-agent.test.ts
+ *
+ * Tests the focused-research sub-agent dispatcher. Asserts the
+ * context-hygiene contract: the sub-call receives the focused research
+ * prompt with the safety header, runs with only web_search (max_uses=3),
+ * and returns ONLY the distilled text — never raw page content.
+ *
+ * Anthropic client is passed in (constructor injection); the test mocks
+ * `messages.create` to a vi.fn() and asserts on its arguments.
+ *
+ * Budget accounting is verified by spying on `recordUsageAsync` from
+ * budget.ts so the sub-call's tokens count against the community budget.
+ */
+
+import { describe, it, expect, vi, beforeEach } from "vitest";
+
+vi.mock("./budget", () => ({
+  recordUsageAsync: vi.fn().mockResolvedValue(undefined),
+}));
+
+import { runResearchSubAgent } from "./research-sub-agent";
+import { recordUsageAsync } from "./budget";
+
+interface MockClient {
+  messages: {
+    create: ReturnType<typeof vi.fn>;
+  };
+}
+
+function makeMockClient(): MockClient {
+  return {
+    messages: {
+      create: vi.fn(),
+    },
+  };
+}
+
+/** Build a minimal non-streaming Message shape with a single text block. */
+function fakeMessage(
+  text: string,
+  opts: {
+    inputTokens?: number;
+    outputTokens?: number;
+    cachedInputTokens?: number;
+    cacheWriteTokens?: number;
+    searchCount?: number;
+    extraBlocks?: unknown[];
+  } = {},
+) {
+  return {
+    id: "msg_research_1",
+    type: "message" as const,
+    role: "assistant" as const,
+    model: "claude-haiku-4-5-20251001",
+    stop_reason: "end_turn",
+    stop_sequence: null,
+    content: [{ type: "text", text }, ...(opts.extraBlocks ?? [])],
+    usage: {
+      input_tokens: opts.inputTokens ?? 30,
+      output_tokens: opts.outputTokens ?? 80,
+      cache_read_input_tokens: opts.cachedInputTokens ?? 0,
+      cache_creation_input_tokens: opts.cacheWriteTokens ?? 0,
+      server_tool_use: {
+        web_search_requests: opts.searchCount ?? 2,
+      },
+    },
+  };
+}
+
+beforeEach(() => {
+  vi.clearAllMocks();
+});
+
+describe("runResearchSubAgent", () => {
+  it("builds a system prompt that prepends the safety header and includes the topic", async () => {
+    const client = makeMockClient();
+    client.messages.create.mockResolvedValue(
+      fakeMessage(
+        "· Fact 1 about Jane.\n· Fact 2 about Jane.\n· Fact 3 about Jane.\nsources: https://ballotpedia.org/jane",
+      ),
+    );
+
+    await runResearchSubAgent(
+      {
+        candidateName: "Jane Doe",
+        jurisdiction: "TX-governor",
+        topic: "voting record on healthcare",
+      },
+      client as never,
+    );
+
+    expect(client.messages.create).toHaveBeenCalledTimes(1);
+    const params = client.messages.create.mock.calls[0][0];
+    // The system field must be a string (or single-element array) that contains
+    // BOTH the safety header marker AND the focused research body.
+    const systemText: string = Array.isArray(params.system)
+      ? params.system.map((s: { text?: string }) => s.text ?? "").join("")
+      : (params.system as string);
+    expect(systemText).toContain("You are nonpartisan civic research.");
+    expect(systemText).toContain("focused research sub-agent");
+    expect(systemText).toContain("voting record on healthcare");
+    expect(systemText).toContain("Jane Doe");
+    expect(systemText).toContain("TX-governor");
+  });
+
+  it("exposes ONLY web_search to the sub-agent (no lookup_alignment / lookup_donor_coalition)", async () => {
+    const client = makeMockClient();
+    client.messages.create.mockResolvedValue(
+      fakeMessage("· One.\n· Two.\n· Three.\nsources: https://x"),
+    );
+
+    await runResearchSubAgent(
+      { candidateName: "X", jurisdiction: "Y", topic: "Z" },
+      client as never,
+    );
+
+    const params = client.messages.create.mock.calls[0][0];
+    expect(Array.isArray(params.tools)).toBe(true);
+    const toolNames: string[] = params.tools.map(
+      (t: { name?: string }) => t.name ?? "",
+    );
+    expect(toolNames).toContain("web_search");
+    expect(toolNames).not.toContain("lookup_alignment");
+    expect(toolNames).not.toContain("lookup_donor_coalition");
+    expect(toolNames).not.toContain("research_candidate");
+    // web_search must be capped at 3 to keep the sub-call bounded.
+    const webSearch = params.tools.find(
+      (t: { name?: string }) => t.name === "web_search",
+    ) as { max_uses?: number };
+    expect(webSearch.max_uses).toBe(3);
+  });
+
+  it("calls the API with stream:false (non-streaming sub-call)", async () => {
+    const client = makeMockClient();
+    client.messages.create.mockResolvedValue(
+      fakeMessage("· One.\n· Two.\n· Three.\nsources: https://x"),
+    );
+
+    await runResearchSubAgent(
+      { candidateName: "X", jurisdiction: "Y", topic: "Z" },
+      client as never,
+    );
+
+    const params = client.messages.create.mock.calls[0][0];
+    // Either explicitly false or absent — must NOT be true.
+    expect(params.stream).not.toBe(true);
+  });
+
+  it("returns the distilled summary text verbatim (no raw page content)", async () => {
+    const client = makeMockClient();
+    const distilled =
+      "· Voted yes on HB 4 expanding Medicaid. · Cosponsored SB 12 on rural clinics. · Public statement supporting ACA preservation.\nsources: https://ballotpedia.org/jane; https://opensecrets.org/jane";
+    client.messages.create.mockResolvedValue(fakeMessage(distilled));
+
+    const result = await runResearchSubAgent(
+      {
+        candidateName: "Jane Doe",
+        jurisdiction: "TX-governor",
+        topic: "voting record on healthcare",
+      },
+      client as never,
+    );
+    expect(result.summary).toBe(distilled);
+    expect(result.unavailable).toBeFalsy();
+  });
+
+  it("filters non-text content blocks when extracting the summary", async () => {
+    const client = makeMockClient();
+    // Anthropic may return server_tool_use + web_search_tool_result blocks
+    // alongside text. The dispatcher must concatenate ONLY text-type blocks
+    // so the main conversation never sees raw page content.
+    client.messages.create.mockResolvedValue(
+      fakeMessage("· Final fact 1.\n· Final fact 2.\n· Final fact 3.", {
+        extraBlocks: [
+          {
+            type: "server_tool_use",
+            id: "stu_1",
+            name: "web_search",
+            input: { query: "Jane Doe healthcare" },
+          },
+          {
+            type: "web_search_tool_result",
+            tool_use_id: "stu_1",
+            content: [{ type: "web_search_result", text: "RAW PAGE DUMP" }],
+          },
+        ],
+      }),
+    );
+
+    const result = await runResearchSubAgent(
+      { candidateName: "Jane", jurisdiction: "TX", topic: "healthcare" },
+      client as never,
+    );
+    // Load-bearing: raw web content must NEVER leak into the returned summary.
+    expect(result.summary).not.toContain("RAW PAGE DUMP");
+    expect(result.summary).toContain("Final fact 1");
+  });
+
+  it("records usage from the sub-call so it counts against the community budget", async () => {
+    const client = makeMockClient();
+    client.messages.create.mockResolvedValue(
+      fakeMessage("· One.\n· Two.\n· Three.\nsources: https://x", {
+        inputTokens: 120,
+        outputTokens: 65,
+        cachedInputTokens: 800,
+        cacheWriteTokens: 0,
+        searchCount: 2,
+      }),
+    );
+
+    await runResearchSubAgent(
+      { candidateName: "X", jurisdiction: "Y", topic: "Z" },
+      client as never,
+    );
+
+    expect(recordUsageAsync).toHaveBeenCalledTimes(1);
+    const recorded = vi.mocked(recordUsageAsync).mock.calls[0][0] as {
+      inputTokens?: number;
+      outputTokens?: number;
+      cachedInputTokens?: number;
+      cacheWriteTokens?: number;
+      searchCount?: number;
+    };
+    expect(recorded.inputTokens).toBe(120);
+    expect(recorded.outputTokens).toBe(65);
+    expect(recorded.cachedInputTokens).toBe(800);
+    expect(recorded.searchCount).toBe(2);
+  });
+
+  it("returns the searchCount from the sub-call in the result", async () => {
+    const client = makeMockClient();
+    client.messages.create.mockResolvedValue(
+      fakeMessage("· One.\n· Two.\n· Three.\nsources: https://x", {
+        searchCount: 3,
+      }),
+    );
+
+    const result = await runResearchSubAgent(
+      { candidateName: "X", jurisdiction: "Y", topic: "Z" },
+      client as never,
+    );
+    expect(result.usage.searchCount).toBe(3);
+  });
+
+  it("flags unavailable:true when the sub-call returns essentially empty text", async () => {
+    const client = makeMockClient();
+    client.messages.create.mockResolvedValue(fakeMessage(""));
+
+    const result = await runResearchSubAgent(
+      { candidateName: "X", jurisdiction: "Y", topic: "Z" },
+      client as never,
+    );
+    expect(result.unavailable).toBe(true);
+  });
+
+  it("caps max_tokens so the sub-call's response stays small (≤ 600)", async () => {
+    const client = makeMockClient();
+    client.messages.create.mockResolvedValue(
+      fakeMessage("· One.\n· Two.\n· Three.\nsources: https://x"),
+    );
+
+    await runResearchSubAgent(
+      { candidateName: "X", jurisdiction: "Y", topic: "Z" },
+      client as never,
+    );
+
+    const params = client.messages.create.mock.calls[0][0];
+    expect(typeof params.max_tokens).toBe("number");
+    // The whole point — distilled, not raw page dumps.
+    expect(params.max_tokens).toBeLessThanOrEqual(600);
+  });
+
+  it("sends a user message ('begin research') so the sub-agent has a turn to respond to", async () => {
+    const client = makeMockClient();
+    client.messages.create.mockResolvedValue(
+      fakeMessage("· One.\n· Two.\n· Three.\nsources: https://x"),
+    );
+
+    await runResearchSubAgent(
+      { candidateName: "X", jurisdiction: "Y", topic: "Z" },
+      client as never,
+    );
+
+    const params = client.messages.create.mock.calls[0][0];
+    expect(Array.isArray(params.messages)).toBe(true);
+    expect(params.messages.length).toBeGreaterThanOrEqual(1);
+    expect(params.messages[0].role).toBe("user");
+  });
+});
