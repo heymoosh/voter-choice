@@ -30,6 +30,7 @@ import { buildRaceDeepDivePrompt } from "../../../lib/prompts/race-deep-dive";
 import { buildPropositionPrompt } from "../../../lib/prompts/proposition";
 import { buildThemeAmendmentPrompt } from "../../../lib/prompts/theme-amendment";
 import { buildHandoffPrompt } from "../../../lib/prompts/handoff";
+import { BALLOT_PROMPT_EN } from "../../../lib/generated/ballotPromptEn.generated";
 
 // Server-side tools: Anthropic's hosted web_search runs on their infra; we
 // just declare the tool and Claude orchestrates the calls server-side. Billed
@@ -691,6 +692,23 @@ async function prepareMessages(body: ChatRequest): Promise<ChatMessage[]> {
   return prepared;
 }
 
+/**
+ * Compute the next budget-reset ISO timestamp. Defaults to the 1st of the
+ * next UTC month at midnight — this matches the in-memory reset cadence
+ * baked into `createFreshState()` in src/lib/server/budget.ts and is
+ * conservative for the durable (Redis) path, which expires the budget
+ * hash with the same cadence via `EXPIRE`.
+ *
+ * Phase 9 — surfaced in the budget-exhausted continuity response so the
+ * UI can show "Resets in {N} days · {June 1, 12:00 AM UTC}".
+ */
+function defaultBudgetResetAtISO(): string {
+  const now = new Date();
+  return new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1, 0, 0, 0),
+  ).toISOString();
+}
+
 function budgetGateResponse(
   tier: BudgetTier,
   isNewSession: boolean | undefined,
@@ -698,17 +716,24 @@ function budgetGateResponse(
 ): Response | null {
   // The tier logic in budget.ts already withholds "exhausted" until the handoff
   // has been served (returning "handoff" instead). This belt-and-suspenders check
-  // ensures we never 503 on exhausted unless the handoff is confirmed served —
-  // guarding against any future path that could bypass the tier coercion.
+  // ensures we never surface the budget-exhausted continuity state unless the
+  // handoff is confirmed served — guarding against any future path that could
+  // bypass the tier coercion.
   if (tier === "exhausted" && wasHandoffServed()) {
+    // Phase 9 — structured 200 instead of 503. The client renders the
+    // continuity screen (BudgetExhausted) from this payload. The
+    // handoffPrompt body is the canonical legacy BALLOT_PROMPT_EN — Phase
+    // 1 explicitly retained it as the handoff template; we forward the
+    // full text so the screen can pre-populate a copyable textarea
+    // without an extra round-trip.
     return Response.json(
       {
-        error:
-          "Our free AI chat has reached its monthly limit. Copy the prompt below and paste it into any free AI chatbot to continue your research.",
-        code: "BUDGET_EXHAUSTED",
+        status: "budget_exhausted",
+        resetAt: defaultBudgetResetAtISO(),
+        handoffPrompt: BALLOT_PROMPT_EN,
         budget,
       },
-      { status: 503 },
+      { status: 200 },
     );
   }
   if ((tier === "soft_close" || tier === "handoff") && isNewSession) {
@@ -1251,14 +1276,18 @@ async function handleAnthropicError(err: unknown): Promise<Response> {
       // Check if the actual budget is exhausted before claiming so.
       const budget = await getBudgetStatusAsync();
       if (budget.tier === "exhausted") {
+        // Phase 9 — surface the same structured continuity payload the
+        // gate path produces. A 429 from Anthropic that coincides with
+        // exhausted community budget must NOT surface as a 503 error;
+        // the client renders the BudgetExhausted screen from this body.
         return Response.json(
           {
-            error:
-              "Our free AI chat has reached its monthly limit. Copy the prompt below and paste it into any free AI chatbot.",
-            code: "BUDGET_EXHAUSTED",
+            status: "budget_exhausted",
+            resetAt: defaultBudgetResetAtISO(),
+            handoffPrompt: BALLOT_PROMPT_EN,
             budget,
           },
-          { status: 503 },
+          { status: 200 },
         );
       }
       return Response.json(

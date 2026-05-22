@@ -26,6 +26,14 @@ import type { PollingLocation } from "./PollingLocationCard";
 import { PartyGate } from "./PartyGate";
 import { getStateRule } from "../lib/state-rules/lookup";
 import type { SerializableBallotContext } from "../lib/state-rules/ballot-context";
+import { BudgetExhausted } from "./BudgetExhausted";
+import { BALLOT_PROMPT_EN } from "../lib/generated/ballotPromptEn.generated";
+import {
+  getByokKey,
+  setByokKey,
+  removeByokKey,
+} from "../lib/anthropic-client-byok";
+import { buildHandoffPrompt } from "../lib/prompts/handoff";
 
 interface CivicCandidate {
   name: string;
@@ -1044,6 +1052,51 @@ function WorkspaceShell({
     setPrintViewActive(false);
   }, []);
 
+  // Phase 9 — budget-exhausted continuity screen state. When set, the
+  // entire 3-pane workspace is replaced by the BudgetExhausted screen
+  // (similar pattern to printViewActive above). Triggered either by the
+  // chat route returning structured `budget_exhausted` OR by the user
+  // clicking the BallotPane "Continue in another chatbot" button (which
+  // surfaces the same handoff surface pre-emptively).
+  const [budgetExhausted, setBudgetExhausted] = useState<{
+    handoffPromptText: string;
+    resetAt: string;
+  } | null>(null);
+  // Stored BYOK key — read from localStorage on mount, kept in state so
+  // the BudgetExhausted screen's "Using your key" affordance refreshes
+  // immediately on save/remove.
+  const [byokKey, setByokKeyState] = useState<string | null>(null);
+  useEffect(() => {
+    setByokKeyState(getByokKey());
+  }, []);
+  const handleByokContinue = useCallback((key: string) => {
+    setByokKey(key);
+    setByokKeyState(key);
+    // After saving the key, dismiss the continuity screen — chat
+    // resumes via the BYOK path (direct browser-to-Anthropic).
+    setBudgetExhausted(null);
+  }, []);
+  const handleByokRemove = useCallback(() => {
+    removeByokKey();
+    setByokKeyState(null);
+  }, []);
+  const handleResume = useCallback(() => {
+    setBudgetExhausted(null);
+  }, []);
+
+  // Default reset = first of next month UTC. Matches the route's
+  // `defaultBudgetResetAtISO()` so the BallotPane "Continue elsewhere"
+  // path shows the same wording as the genuine exhaustion path. Both
+  // must drift together: when one changes, update both. The shared
+  // cadence (1st of next month) tracks `createFreshState()` in
+  // src/lib/server/budget.ts.
+  const defaultResetAtISO = useMemo(() => {
+    const now = new Date();
+    return new Date(
+      Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1, 0, 0, 0),
+    ).toISOString();
+  }, []);
+
   // Adapt the upstream PollingLocation[] shape into the single-record
   // PrintBallot header contract. `precinct` has no upstream source —
   // header omits it cleanly. `whatToBring` is a sensible default until
@@ -1083,6 +1136,80 @@ function WorkspaceShell({
     decided: decidedIds.has(r.id),
   }));
 
+  // Phase 9 — populated handoff prompt. Builds from current workspace
+  // state via Phase 1's `buildHandoffPrompt` so the pasted text into
+  // Claude/ChatGPT/etc. carries the voter's actual themes, decisions,
+  // and remaining races. Per packet AC: "Handoff prompt is generated
+  // from the legacy BALLOT_PROMPT.md template populated with current
+  // themes / decisions / remaining races." Falls back to the bare
+  // BALLOT_PROMPT_EN template when state is too sparse to build a
+  // meaningful per-session block (e.g. zero themes locked).
+  const populatedHandoffPrompt = useMemo(() => {
+    if (themes.length === 0) return BALLOT_PROMPT_EN;
+    const themesRanked = themes.map((t, i) => `${i + 1}. ${t.name}`).join("; ");
+    const decidedJson = JSON.stringify(
+      decisions.map((d) => ({
+        race: d.raceLabel,
+        pick: d.pick,
+        party: d.party ?? null,
+        why: d.whyNote,
+      })),
+    );
+    const remainingList = racesWithDecided
+      .filter((r) => !decidedIds.has(r.id))
+      .map((r) => `· ${r.label}`)
+      .join("\n");
+    const notableQuotes = themes
+      .flatMap((t) => t.quotes ?? [])
+      .slice(0, 4)
+      .join(" | ");
+    return buildHandoffPrompt({
+      addressCityState: cityState,
+      electionLabel: printElectionLabel,
+      electionDate: printElectionDate,
+      ballotType: primaryLane,
+      themesRanked,
+      decidedJson,
+      remainingList: remainingList || "(none)",
+      notableQuotes: notableQuotes || "(none)",
+    });
+  }, [
+    themes,
+    decisions,
+    racesWithDecided,
+    decidedIds,
+    cityState,
+    printElectionLabel,
+    printElectionDate,
+    primaryLane,
+  ]);
+
+  // Replace the parent's onHandoff with one that surfaces the continuity
+  // screen pre-emptively. The legacy implementation just opened claude.ai
+  // in a new tab — Phase 9 owns this surface now (per BallotPane comment
+  // referencing "Phase 9 owns the full out-of-budget handoff UX").
+  const handleHandoffFromBallotPane = useCallback(() => {
+    onHandoff();
+    setBudgetExhausted({
+      handoffPromptText: populatedHandoffPrompt,
+      resetAt: defaultResetAtISO,
+    });
+  }, [onHandoff, populatedHandoffPrompt, defaultResetAtISO]);
+
+  // When the chat route signals budget_exhausted, the server returns the
+  // bare BALLOT_PROMPT_EN as a fallback. Override it with the client-
+  // side populated handoff (workspace state lives here, not on the
+  // server). The server-supplied `resetAt` is canonical though — drives
+  // the "I'm back" affordance — so we keep that as-is.
+  const handleBudgetExhausted = useCallback(
+    (input: { handoffPromptText: string; resetAt: string }) => {
+      setBudgetExhausted({
+        handoffPromptText: populatedHandoffPrompt,
+        resetAt: input.resetAt,
+      });
+    },
+    [populatedHandoffPrompt],
+  );
   const activeRace = activeRaceId
     ? (racesWithDecided.find((r) => r.id === activeRaceId) ?? null)
     : null;
@@ -1140,6 +1267,19 @@ function WorkspaceShell({
     );
   }
 
+  if (budgetExhausted) {
+    return (
+      <BudgetExhausted
+        resetAt={budgetExhausted.resetAt}
+        handoffPromptText={budgetExhausted.handoffPromptText}
+        onByokContinue={handleByokContinue}
+        onByokRemove={handleByokRemove}
+        storedByokKey={byokKey}
+        onResume={handleResume}
+      />
+    );
+  }
+
   return (
     <div
       data-testid="workspace-shell"
@@ -1177,6 +1317,7 @@ function WorkspaceShell({
           promptFleetV2Enabled={promptFleetV2Enabled}
           onLockInThemes={onLockInThemes}
           ballotContext={ballotContext}
+          onBudgetExhausted={handleBudgetExhausted}
           workspace={{
             activeRace: activeRace
               ? {
@@ -1222,7 +1363,7 @@ function WorkspaceShell({
         activeRaceId={activeRaceId}
         onPrint={handlePrintFromBallotPane}
         onSaveProfile={onSaveProfile}
-        onHandoff={onHandoff}
+        onHandoff={handleHandoffFromBallotPane}
       />
     </div>
   );
