@@ -1002,3 +1002,103 @@ describe("ElectionResult — Polis section visible in workspace (fix E)", () => 
     expect(screen.queryByTestId("workspace-polis-section")).toBeNull();
   });
 });
+
+/* ── PR 6 fix D — ballot-before-themes (Civic-empty routing) ─── */
+
+describe("ElectionResult — ballot-before-themes funnel (fix D)", () => {
+  function renderForBallotStep(args: {
+    initialPollingData: typeof civicData | null;
+    promptFleetV2Enabled?: boolean;
+    lang?: "en" | "es";
+  }) {
+    return render(
+      <LanguageProvider>
+        <ElectionResult
+          state={txState}
+          zipCode="73301"
+          lang={args.lang ?? "en"}
+          initialPollingData={args.initialPollingData}
+          promptFleetV2Enabled={args.promptFleetV2Enabled ?? true}
+          initialLockedThemes={null}
+        />
+      </LanguageProvider>,
+    );
+  }
+
+  it("Civic returns races + flag-on → cold-open textarea renders immediately, NO BallotLookupNeeded", () => {
+    renderForBallotStep({ initialPollingData: civicData });
+    expect(screen.getByTestId("cold-open-textarea")).toBeInTheDocument();
+    expect(screen.queryByTestId("ballot-lookup-needed")).toBeNull();
+  });
+
+  it("Civic returns 0 contests + flag-on + en → BallotLookupNeeded renders and cold-open is suppressed", () => {
+    const emptyCivic = {
+      pollingLocations: [],
+      earlyVoteSites: [],
+      county: "Travis County",
+      contests: [],
+    };
+    renderForBallotStep({ initialPollingData: emptyCivic });
+    expect(screen.getByTestId("ballot-lookup-needed")).toBeInTheDocument();
+    // Cold-open textarea is NOT in the DOM — we don't want to waste tokens.
+    expect(screen.queryByTestId("cold-open-textarea")).toBeNull();
+  });
+
+  it("Civic is entirely null + flag-on + en → BallotLookupNeeded renders", () => {
+    renderForBallotStep({ initialPollingData: null });
+    expect(screen.getByTestId("ballot-lookup-needed")).toBeInTheDocument();
+    expect(screen.queryByTestId("cold-open-textarea")).toBeNull();
+  });
+
+  it("user confirms a pasted ballot via BallotLookupNeeded → cold-open textarea appears", () => {
+    renderForBallotStep({ initialPollingData: null });
+    expect(screen.getByTestId("ballot-lookup-needed")).toBeInTheDocument();
+
+    fireEvent.change(screen.getByTestId("ballot-lookup-textarea"), {
+      target: {
+        value: "U.S. Senate: John Doe (D)\nGovernor: Jane Smith (R)",
+      },
+    });
+    fireEvent.click(screen.getByTestId("ballot-lookup-confirm"));
+
+    // After confirmation the cold-open surface unlocks.
+    expect(screen.getByTestId("cold-open-textarea")).toBeInTheDocument();
+    expect(screen.queryByTestId("ballot-lookup-needed")).toBeNull();
+  });
+
+  it("flag-off + Civic empty → renders legacy ResearchLayout (NOT BallotLookupNeeded)", () => {
+    // ChatPanel's auto-session triggers scrollIntoView under the legacy
+    // path; jsdom lacks it. Stub before render so the legacy path mounts.
+    Element.prototype.scrollIntoView = vi.fn();
+    const emptyCivic = {
+      pollingLocations: [],
+      earlyVoteSites: [],
+      county: "Travis County",
+      contests: [],
+    };
+    renderForBallotStep({
+      initialPollingData: emptyCivic,
+      promptFleetV2Enabled: false,
+    });
+    // The new pre-workspace surface does NOT render on the legacy path.
+    expect(screen.queryByTestId("ballot-lookup-needed")).toBeNull();
+    // Legacy ResearchLayout's own paste widget is the fallback.
+    expect(screen.getByTestId("user-sample-ballot-input")).toBeInTheDocument();
+  });
+
+  it("ES locale + Civic empty → renders legacy path (NOT BallotLookupNeeded — en-only)", () => {
+    Element.prototype.scrollIntoView = vi.fn();
+    const emptyCivic = {
+      pollingLocations: [],
+      earlyVoteSites: [],
+      county: "Travis County",
+      contests: [],
+    };
+    renderForBallotStep({
+      initialPollingData: emptyCivic,
+      lang: "es",
+    });
+    expect(screen.queryByTestId("ballot-lookup-needed")).toBeNull();
+    expect(screen.getByTestId("user-sample-ballot-input")).toBeInTheDocument();
+  });
+});

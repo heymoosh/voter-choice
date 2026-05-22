@@ -24,6 +24,7 @@ import type { Theme } from "../lib/prompts/types";
 import type { BallotSourceSummary } from "../types/ballotSource";
 import type { PollingLocation } from "./PollingLocationCard";
 import { PartyGate } from "./PartyGate";
+import { BallotLookupNeeded } from "./BallotLookupNeeded";
 import { getStateRule } from "../lib/state-rules/lookup";
 import type { SerializableBallotContext } from "../lib/state-rules/ballot-context";
 import { BudgetExhausted } from "./BudgetExhausted";
@@ -69,6 +70,29 @@ type ClosedPrimaryChoice =
   | "unaffiliated";
 
 type AddressStep = "input" | "loading" | "done" | "skipped" | "error";
+
+/**
+ * Fix D — ballot-before-themes. Tracks whether we have a confirmed ballot
+ * (either Civic returned contests OR the user pasted/uploaded one). The
+ * cold-open theme extraction is GATED on `ready` so we don't waste Haiku
+ * tokens on sessions with no anchored ballot.
+ *
+ * Only consulted under `promptFleetV2Enabled && lang === "en"`. Legacy
+ * flag-off / ES paths keep the in-workspace paste widget pattern unchanged.
+ *
+ *   civic-checking → ready          (Civic returned ≥1 contest)
+ *   civic-checking → needs-ballot   (Civic returned 0 contests, no paste yet)
+ *   needs-ballot   → ready          (user confirmed paste/upload)
+ *
+ * "address-pending" is the pre-address state; not reached inside
+ * ElectionResult (BallotToolClient has already run Civic by the time we
+ * mount here). It exists in the type for symmetry with the funnel doc.
+ */
+type BallotStep =
+  | "address-pending"
+  | "civic-checking"
+  | "needs-ballot"
+  | "ready";
 
 type BudgetTier = "normal" | "notice" | "soft_close" | "handoff" | "exhausted";
 
@@ -845,6 +869,31 @@ export function ElectionResult({
     setPollingData(civic);
     setAddressStep(civic ? "done" : "error");
   }, []);
+
+  // Fix D — ballot-before-themes. Derive `ballotStep` from Civic + paste
+  // state. Only consulted under flag-on + en; legacy paths skip the
+  // BallotLookupNeeded surface entirely.
+  //
+  // The derivation is intentionally a pure function of (pollingData,
+  // userSampleBallotText). When the user confirms a paste (via
+  // BallotLookupNeeded) the `setUserSampleBallotText` call below flips
+  // `ballotStep` to "ready" implicitly — no separate setter needed.
+  const hasCivicContests = useMemo(() => {
+    const contests = pollingData?.contests;
+    return Array.isArray(contests) && contests.length > 0;
+  }, [pollingData]);
+  const ballotStep: BallotStep = useMemo(() => {
+    if (hasCivicContests) return "ready";
+    if (userSampleBallotText.trim().length > 0) return "ready";
+    return "needs-ballot";
+  }, [hasCivicContests, userSampleBallotText]);
+  // Handler fired by BallotLookupNeeded when the user clicks "Use this
+  // ballot". Stores the pasted text on the same `userSampleBallotText`
+  // slot the legacy in-workspace widget uses — this keeps the downstream
+  // prompt generation single-pathed.
+  const handleBallotLookupConfirm = useCallback((ballotText: string) => {
+    setUserSampleBallotText(ballotText);
+  }, []);
   const handleAddressSkip = useCallback(() => {
     setPollingData(null);
     setAddressStep("skipped");
@@ -934,6 +983,23 @@ export function ElectionResult({
         onAmendmentDiscard={handleAmendmentDiscard}
         pendingRescoreOffer={pendingRescoreOffer}
         onRescoreOfferClear={handleRescoreOfferClear}
+      />
+    );
+  }
+
+  // Fix D — ballot-before-themes. When flag-on + en AND Civic returned no
+  // ballot AND the user hasn't pasted one yet, surface the
+  // BallotLookupNeeded step BEFORE the cold-open theme extraction. The
+  // cold-open is downstream of confirming a ballot — otherwise we burn
+  // Haiku tokens extracting themes for a session with no race anchor.
+  const showBallotLookupNeeded =
+    promptFleetV2Enabled && lang === "en" && ballotStep === "needs-ballot";
+  if (showBallotLookupNeeded) {
+    return (
+      <BallotLookupNeeded
+        state={state}
+        county={countyForPrompt}
+        onBallotConfirmed={handleBallotLookupConfirm}
       />
     );
   }

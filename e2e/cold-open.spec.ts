@@ -67,6 +67,68 @@ async function resolveRunoffGate(page: Page) {
 }
 
 /**
+ * Mock /api/civic with a small canned slate so the cold-open spec exercises
+ * Path A (Civic returns races → cold-open is reachable directly). Without
+ * this mock the live Civic API returns 0 contests for arbitrary ZIPs and the
+ * new ballot-before-themes gate (PR 6 fix D) would route us through
+ * BallotLookupNeeded instead.
+ */
+async function mockCivicWithContests(page: Page) {
+  const payload = {
+    pollingLocations: [],
+    earlyVoteSites: [],
+    county: "Travis County",
+    contests: [
+      {
+        office: "U.S. President",
+        district: "",
+        type: "General",
+        candidates: [
+          { name: "Alice Anderson", party: "Democratic" },
+          { name: "Bob Brown", party: "Republican" },
+        ],
+      },
+      {
+        office: "Governor",
+        district: "Texas",
+        type: "General",
+        candidates: [
+          { name: "Carol Cain", party: "Democratic" },
+          { name: "Dan Davis", party: "Republican" },
+        ],
+      },
+    ],
+  };
+  await page.route("**/api/civic", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify(payload),
+    }),
+  );
+}
+
+/**
+ * Mock /api/civic to return ZERO contests — the "Civic-empty" path that
+ * routes through BallotLookupNeeded (PR 6 fix D, Path B).
+ */
+async function mockCivicEmpty(page: Page) {
+  const payload = {
+    pollingLocations: [],
+    earlyVoteSites: [],
+    county: "Travis County",
+    contests: [],
+  };
+  await page.route("**/api/civic", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify(payload),
+    }),
+  );
+}
+
+/**
  * Mock /api/chat to return a canned theme-extraction response. The
  * cold-open flow's POST body is `view: "cold-open"` with
  * `raceContext.userInput`. We deliberately do NOT assert on the body
@@ -118,7 +180,11 @@ test.describe("cold open (PROMPT_FLEET_V2 + en)", () => {
       "or add `webServer.env.PROMPT_FLEET_V2 = '1'` to playwright.config.ts.",
   );
 
-  test("free-form input → themes → lock in → workspace", async ({ page }) => {
+  // Path A — Civic returns races. Cold-open reachable immediately.
+  test("Civic returns races → free-form input → themes → lock in → workspace", async ({
+    page,
+  }) => {
+    await mockCivicWithContests(page);
     await mockColdOpenChatResponse(page);
     await page.goto("/");
 
@@ -133,6 +199,9 @@ test.describe("cold open (PROMPT_FLEET_V2 + en)", () => {
     const textarea = page.getByTestId("cold-open-textarea");
     await textarea.waitFor({ state: "visible", timeout: WORKSPACE_TIMEOUT });
     await expect(page.getByTestId("chat-input")).toHaveCount(0);
+
+    // BallotLookupNeeded surface must NOT render — Civic confirmed the ballot.
+    await expect(page.getByTestId("ballot-lookup-needed")).toHaveCount(0);
 
     // Submit.
     await textarea.fill(userText);
@@ -165,5 +234,51 @@ test.describe("cold open (PROMPT_FLEET_V2 + en)", () => {
     await expect(page.getByTestId("concern-interpretation-themes")).toHaveCount(
       0,
     );
+  });
+
+  // Path B — Civic returns 0 contests → BallotLookupNeeded gate → user
+  // pastes a ballot → cold-open unlocks → workspace.
+  test("Civic empty → BallotLookupNeeded → paste → cold-open → workspace", async ({
+    page,
+  }) => {
+    await mockCivicEmpty(page);
+    await mockColdOpenChatResponse(page);
+    await page.goto("/");
+
+    await fillZip(page, "73301");
+    await resolveRunoffGate(page);
+
+    // BallotLookupNeeded surface appears; cold-open textarea is NOT in the DOM.
+    const lookup = page.getByTestId("ballot-lookup-needed");
+    await lookup.waitFor({ state: "visible", timeout: WORKSPACE_TIMEOUT });
+    await expect(page.getByTestId("cold-open-textarea")).toHaveCount(0);
+
+    // Per-state link surfaces.
+    await expect(page.getByTestId("ballot-lookup-link-state")).toBeVisible();
+
+    // Paste a minimal ballot and confirm.
+    const pasted =
+      "MY SAMPLE BALLOT\n\nU.S. Senate: John Doe (D)\nGovernor: Jane Smith (R)";
+    await page.getByTestId("ballot-lookup-textarea").fill(pasted);
+    await page.getByTestId("ballot-lookup-confirm").click();
+
+    // Cold-open textarea now appears; the lookup surface is gone.
+    const textarea = page.getByTestId("cold-open-textarea");
+    await textarea.waitFor({ state: "visible", timeout: WORKSPACE_TIMEOUT });
+    await expect(page.getByTestId("ballot-lookup-needed")).toHaveCount(0);
+
+    // Submit cold-open and verify lock-in still works downstream.
+    const userText =
+      "my mom's insulin keeps going up and rent went up 30% in two years";
+    await textarea.fill(userText);
+    await page.getByTestId("cold-open-send").click();
+
+    await page
+      .getByTestId("concern-interpretation-themes")
+      .waitFor({ state: "visible", timeout: WORKSPACE_TIMEOUT });
+    await page.getByTestId("theme-ranker-lock-in").click();
+    await page
+      .getByTestId("workspace-shell")
+      .waitFor({ state: "visible", timeout: WORKSPACE_TIMEOUT });
   });
 });
