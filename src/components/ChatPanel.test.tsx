@@ -760,11 +760,32 @@ describe("ChatPanel — workspace amend editor + chat catch (Phase 6)", () => {
     expect(screen.queryByTestId("theme-amend-editor")).toBeNull();
   });
 
-  it("submitting a workspace-chat message containing a domain keyword fires onChatCatch", () => {
+  it("submitting a workspace-chat message fires onChatCatch when /api/chat-catch judges suggest:true (AI-judged, post fix J)", async () => {
     const onChatCatch = vi.fn();
+    // Route-discriminating fetch mock: /api/chat-catch returns the AI
+    // judgment; /api/chat returns a minimal SSE-shaped stream so the main
+    // sendMessage call can complete (chat-catch fires AFTER it).
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (url) => {
+      const href = typeof url === "string" ? url : (url as URL).toString();
+      if (href.includes("/api/chat-catch")) {
+        return new Response(
+          JSON.stringify({
+            suggest: true,
+            suggestedThemeName: "Climate and air quality",
+            summary: "User worries about pollution in Houston.",
+          }),
+          {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          },
+        );
+      }
+      // Default /api/chat: minimal SSE done message so sendMessage resolves.
+      return streamResponse("ok");
+    });
+
     renderWorkspaceChat({
       onChatCatch,
-      // No locked theme covers 'climate' — heuristic should fire.
       lockedThemes,
     });
     const input = screen.getByTestId("workspace-chat-input");
@@ -776,8 +797,84 @@ describe("ChatPanel — workspace amend editor + chat catch (Phase 6)", () => {
     });
     const form = input.closest("form")!;
     fireEvent.submit(form);
-    expect(onChatCatch).toHaveBeenCalledTimes(1);
-    expect(onChatCatch.mock.calls[0][0].suggestedKeywords).toContain("climate");
+    // onChatCatch fires AFTER the main /api/chat call completes — wait for it.
+    await waitFor(() => {
+      expect(onChatCatch).toHaveBeenCalledTimes(1);
+    });
+    expect(onChatCatch.mock.calls[0][0].suggestedThemeName).toBe(
+      "Climate and air quality",
+    );
+  });
+
+  it("submitting a workspace-chat message does NOT fire onChatCatch when /api/chat-catch judges suggest:false", async () => {
+    const onChatCatch = vi.fn();
+    let chatCatchCalled = false;
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (url) => {
+      const href = typeof url === "string" ? url : (url as URL).toString();
+      if (href.includes("/api/chat-catch")) {
+        chatCatchCalled = true;
+        return new Response(JSON.stringify({ suggest: false }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+      return streamResponse("ok");
+    });
+
+    renderWorkspaceChat({
+      onChatCatch,
+      lockedThemes,
+    });
+    const input = screen.getByTestId("workspace-chat-input");
+    fireEvent.change(input, {
+      target: {
+        value:
+          "Thanks for that answer. Can you tell me more about how the runoff works?",
+      },
+    });
+    const form = input.closest("form")!;
+    fireEvent.submit(form);
+    // Wait for the /api/chat-catch call itself to land before asserting
+    // that onChatCatch was NOT fired.
+    await waitFor(() => {
+      expect(chatCatchCalled).toBe(true);
+    });
+    // Give one microtask flush for the (suppressed) callback.
+    await Promise.resolve();
+    expect(onChatCatch).not.toHaveBeenCalled();
+  });
+
+  it("submitting a workspace-chat message does NOT fire onChatCatch when /api/chat-catch fails (fail-closed neutrality)", async () => {
+    const onChatCatch = vi.fn();
+    let chatCatchCalled = false;
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (url) => {
+      const href = typeof url === "string" ? url : (url as URL).toString();
+      if (href.includes("/api/chat-catch")) {
+        chatCatchCalled = true;
+        // Endpoint 5xx — fail-closed neutrality means no chip.
+        return new Response("server error", { status: 500 });
+      }
+      return streamResponse("ok");
+    });
+
+    renderWorkspaceChat({
+      onChatCatch,
+      lockedThemes,
+    });
+    const input = screen.getByTestId("workspace-chat-input");
+    fireEvent.change(input, {
+      target: {
+        value:
+          "I am really worried about climate change and air quality in Houston this year.",
+      },
+    });
+    const form = input.closest("form")!;
+    fireEvent.submit(form);
+    await waitFor(() => {
+      expect(chatCatchCalled).toBe(true);
+    });
+    await Promise.resolve();
+    expect(onChatCatch).not.toHaveBeenCalled();
   });
 
   it("Discard inside the editor fires onAmendmentDiscard and does NOT call /api/chat", () => {

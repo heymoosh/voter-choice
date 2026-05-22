@@ -625,18 +625,20 @@ export function ElectionResult({
   }, []);
 
   /**
-   * Phase 6 chat-catch handler. ChatPanel runs the conservative
-   * shouldSuggestAmend() heuristic on every workspace user-message submit;
-   * when it surfaces an uncovered keyword we build a placeholder candidate
-   * (verbatim quote = the triggering message excerpt) and surface the soft
-   * proposal chip.
+   * Phase 6 chat-catch handler (post fix J — AI-judged).
+   *
+   * ChatPanel fires this when POST /api/chat-catch decides the user's
+   * latest message expresses a new concern. The endpoint already returns
+   * a neutral theme name (no advocacy verbs, no party labels — that's
+   * the whole point of replacing the keyword heuristic), so we use it
+   * verbatim instead of synthesizing one client-side.
    */
   const handleChatCatch = useCallback(
-    (input: { message: string; suggestedKeywords: string[] }) => {
-      const keyword = input.suggestedKeywords[0];
-      const themeName = keyword
-        ? keyword.charAt(0).toUpperCase() + keyword.slice(1)
-        : "New concern";
+    (input: {
+      message: string;
+      suggestedThemeName: string;
+      summary?: string;
+    }) => {
       // Use the FIRST sentence (or the full message, capped) as the verbatim
       // quote so the editor can show context without bloating the chip.
       const firstSentence =
@@ -644,7 +646,7 @@ export function ElectionResult({
       setChatCatchSuggestion({
         triggeringMessage: input.message,
         candidateNewTheme: {
-          name: themeName,
+          name: input.suggestedThemeName,
           quotes: [firstSentence],
         },
       });
@@ -1043,7 +1045,8 @@ interface WorkspaceShellProps {
   } | null;
   onChatCatch: (input: {
     message: string;
-    suggestedKeywords: string[];
+    suggestedThemeName: string;
+    summary?: string;
   }) => void;
   onChatCatchAccept: () => void;
   onChatCatchDismiss: () => void;

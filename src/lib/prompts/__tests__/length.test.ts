@@ -5,6 +5,7 @@ import { buildPropositionPrompt } from "../proposition";
 import { buildThemeAmendmentPrompt } from "../theme-amendment";
 import { buildHandoffPrompt } from "../handoff";
 import { buildResearchCandidatePrompt } from "../research-candidate";
+import { buildChatCatchJudgePrompt } from "../chat-catch-judge";
 
 const LIMIT = 1500;
 
@@ -69,6 +70,18 @@ describe("task-prompt length budget", () => {
       candidateName: "X",
       jurisdiction: "Y",
       topic: "Z",
+    });
+    expect(rendered.length).toBeLessThanOrEqual(LIMIT);
+  });
+
+  it("chat-catch-judge body stays under the 1500-char limit", () => {
+    const rendered = buildChatCatchJudgePrompt({
+      userMessage:
+        "I'm really worried about climate change and air quality in Houston this year ahead of the runoff.",
+      currentThemes: [
+        { name: "Healthcare costs", quotes: ["insulin"] },
+        { name: "Housing affordability", quotes: ["rent up 30%"] },
+      ],
     });
     expect(rendered.length).toBeLessThanOrEqual(LIMIT);
   });
