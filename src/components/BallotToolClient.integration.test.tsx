@@ -649,6 +649,176 @@ describe("ElectionResult — mid-session theme amendment (Phase 6)", () => {
     );
   });
 
+  /* ── PR3 opt-in re-score offer ───────────────────────────── */
+
+  it("locking an amendment with 0 prior decisions does NOT render the re-score offer (themes still commit)", async () => {
+    // No decisions yet — the offer is meaningless. Skip it entirely.
+    renderElectionResult();
+    fireEvent.click(screen.getByTestId("workspace-rail-edit-themes"));
+    fireEvent.change(screen.getByTestId("theme-amend-new-name-input"), {
+      target: { value: "School funding" },
+    });
+    fireEvent.click(screen.getByTestId("theme-amend-lock"));
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    // No offer.
+    expect(screen.queryByTestId("amend-rescore-offer")).toBeNull();
+    // Themes still committed in the rail.
+    expect(screen.getByTestId("workspace-rail-theme-0")).toHaveTextContent(
+      "School funding",
+    );
+    // No delta message either (no re-score fired).
+    expect(screen.queryByTestId("amend-delta-message")).toBeNull();
+  });
+
+  it("locking an amendment with decisions > 0 renders the re-score offer (NOT the delta directly)", async () => {
+    renderElectionResult();
+    // First commit a decision so decisions.length > 0.
+    fireEvent.click(screen.getByTestId("workspace-pick-trigger"));
+    fireEvent.change(screen.getByTestId("workspace-why-textarea"), {
+      target: { value: "strong record" },
+    });
+    fireEvent.click(screen.getByTestId("workspace-why-commit"));
+
+    // Open the amend editor.
+    fireEvent.click(screen.getByTestId("workspace-rail-edit-themes"));
+    fireEvent.change(screen.getByTestId("theme-amend-new-name-input"), {
+      target: { value: "School funding" },
+    });
+    fireEvent.click(screen.getByTestId("theme-amend-lock"));
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    // The offer renders inline.
+    expect(screen.getByTestId("amend-rescore-offer")).toBeInTheDocument();
+    // The delta message has NOT rendered yet.
+    expect(screen.queryByTestId("amend-delta-message")).toBeNull();
+    // Themes are committed regardless.
+    expect(screen.getByTestId("workspace-rail-theme-0")).toHaveTextContent(
+      "School funding",
+    );
+  });
+
+  it("declining the re-score offer dismisses it WITHOUT calling /api/chat amend", async () => {
+    const fetchCalls: { url: string; body?: unknown }[] = [];
+    global.fetch = vi.fn(async (input: unknown, init?: { body?: unknown }) => {
+      if (init?.body) {
+        fetchCalls.push({ url: String(input), body: init.body });
+        const body = JSON.parse(String(init.body));
+        if (body.view === "amend") {
+          return mockAmendChat([]);
+        }
+      }
+      return new Response(
+        JSON.stringify({ budget: { tier: "normal", percent: 0 } }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      );
+    }) as unknown as typeof fetch;
+
+    renderElectionResult();
+    fireEvent.click(screen.getByTestId("workspace-pick-trigger"));
+    fireEvent.change(screen.getByTestId("workspace-why-textarea"), {
+      target: { value: "strong record" },
+    });
+    fireEvent.click(screen.getByTestId("workspace-why-commit"));
+
+    fireEvent.click(screen.getByTestId("workspace-rail-edit-themes"));
+    fireEvent.change(screen.getByTestId("theme-amend-new-name-input"), {
+      target: { value: "School funding" },
+    });
+    fireEvent.click(screen.getByTestId("theme-amend-lock"));
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(screen.getByTestId("amend-rescore-offer")).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId("amend-rescore-decline"));
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    // Offer dismissed; no delta message rendered.
+    expect(screen.queryByTestId("amend-rescore-offer")).toBeNull();
+    expect(screen.queryByTestId("amend-delta-message")).toBeNull();
+
+    // No amend /api/chat call.
+    const amendCalls = fetchCalls.filter((c) => {
+      try {
+        const b = JSON.parse(String(c.body));
+        return b.view === "amend";
+      } catch {
+        return false;
+      }
+    });
+    expect(amendCalls).toHaveLength(0);
+  });
+
+  it("accepting the re-score offer fires /api/chat amend AND renders the delta", async () => {
+    const fetchCalls: { url: string; body?: unknown }[] = [];
+    global.fetch = vi.fn(async (input: unknown, init?: { body?: unknown }) => {
+      if (init?.body) {
+        fetchCalls.push({ url: String(input), body: init.body });
+        const body = JSON.parse(String(init.body));
+        if (body.view === "amend") {
+          return mockAmendChat([{ race_id: "us-president", verdict: "HOLD" }]);
+        }
+      }
+      return new Response(
+        JSON.stringify({ budget: { tier: "normal", percent: 0 } }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      );
+    }) as unknown as typeof fetch;
+
+    renderElectionResult();
+    fireEvent.click(screen.getByTestId("workspace-pick-trigger"));
+    fireEvent.change(screen.getByTestId("workspace-why-textarea"), {
+      target: { value: "strong record" },
+    });
+    fireEvent.click(screen.getByTestId("workspace-why-commit"));
+
+    fireEvent.click(screen.getByTestId("workspace-rail-edit-themes"));
+    fireEvent.change(screen.getByTestId("theme-amend-new-name-input"), {
+      target: { value: "School funding" },
+    });
+    fireEvent.click(screen.getByTestId("theme-amend-lock"));
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(screen.getByTestId("amend-rescore-offer")).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId("amend-rescore-accept"));
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    // Delta message rendered.
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(screen.getByTestId("amend-delta-message")).toBeInTheDocument();
+
+    // Amend chat call MUST have fired exactly once.
+    const amendCalls = fetchCalls.filter((c) => {
+      try {
+        const b = JSON.parse(String(c.body));
+        return b.view === "amend";
+      } catch {
+        return false;
+      }
+    });
+    expect(amendCalls.length).toBeGreaterThanOrEqual(1);
+  });
+
   /* ── Phase 9 — budget exhausted continuity + BYOK ─────────── */
 
   it("BallotPane 'Continue elsewhere' surfaces BudgetExhausted with a populated handoff (themes + cityState in the prompt)", async () => {

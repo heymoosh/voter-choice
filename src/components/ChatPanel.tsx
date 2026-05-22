@@ -28,6 +28,7 @@ import { parseThemeAmendment } from "../lib/prompts/parse-theme-amendment";
 import type { Theme, RouterView, RouterTrigger } from "../lib/prompts/types";
 import { ThemeAmendEditor } from "./ThemeAmendEditor";
 import { AmendDeltaMessage } from "./AmendDeltaMessage";
+import { AmendRescoreOffer } from "./AmendRescoreOffer";
 import {
   decideVerdict,
   type VerdictDecision,
@@ -164,7 +165,12 @@ export interface WorkspaceModeProps {
   amendmentInFlight?: boolean;
   /** Currently-locked themes — read by both the editor and the chat-catch heuristic. */
   lockedThemes?: Theme[];
-  /** Fired when the user clicks "Lock these changes" in the editor. */
+  /**
+   * Fired when the user clicks "Lock these changes" in the editor. After PR3
+   * this commits themes ONLY — the re-score (if any) happens later via the
+   * `AmendRescoreOffer` Accept path. The parent uses this callback to set
+   * `pendingRescoreOffer` if there are prior decisions worth re-scoring.
+   */
   onAmendmentSave?: (payload: {
     updatedThemes: Theme[];
     newTheme?: Theme;
@@ -211,6 +217,27 @@ export interface WorkspaceModeProps {
   onChatCatchAccept?: () => void;
   /** Fired when the user dismisses the chat-catch chip. */
   onChatCatchDismiss?: () => void;
+  /* ── PR3 opt-in re-score offer ──────────────────────────── */
+  /**
+   * When set, ChatPanel renders an `AmendRescoreOffer` inline asking the
+   * user whether to re-evaluate already-decided races against the updated
+   * themes. Set by the parent in its `onAmendmentSave` handler IFF there
+   * are prior decisions to re-score; cleared by `onRescoreOfferClear`.
+   */
+  pendingRescoreOffer?: {
+    newThemeName: string;
+    decidedCount: number;
+    updatedThemes: Theme[];
+    newTheme?: Theme;
+    suggestedRank?: number;
+    triggeringMessage?: string;
+  } | null;
+  /**
+   * Fired when the user accepts OR declines the re-score offer (in both
+   * cases the offer state should clear; on accept ChatPanel ALSO fires the
+   * amend chat call internally before this is called).
+   */
+  onRescoreOfferClear?: () => void;
 }
 
 interface ChatPanelProps {
@@ -1266,6 +1293,7 @@ function WorkspaceChat({
   chatDisabled,
   amendmentJournal = [],
   onAmendmentSave,
+  onAcceptRescoreOffer,
 }: {
   workspace: WorkspaceModeProps;
   budgetExhausted: boolean;
@@ -1275,12 +1303,21 @@ function WorkspaceChat({
   chatDisabled: boolean;
   /** Phase 6 — inline amend delta entries rendered below the message list. */
   amendmentJournal?: { newThemeName: string; verdicts: VerdictDecision[] }[];
-  /** Phase 6 — proxy to ChatPanel.submitAmendment + the parent's onAmendmentSave. */
+  /**
+   * Phase 6 — commit-only proxy to the parent's onAmendmentSave. After PR3
+   * this NO LONGER triggers submitAmendment; lock just commits themes and
+   * the parent surfaces the re-score offer.
+   */
   onAmendmentSave?: (payload: {
     updatedThemes: Theme[];
     newTheme?: Theme;
     suggestedRank?: number;
   }) => Promise<void> | void;
+  /**
+   * PR3 — fired when the user clicks "Yes, show me the deltas" on the
+   * rescore offer. Runs submitAmendment and clears the offer when done.
+   */
+  onAcceptRescoreOffer?: () => Promise<void> | void;
 }) {
   const {
     activeRace,
@@ -1349,6 +1386,7 @@ function WorkspaceChat({
         {messages.length === 0 &&
         amendmentJournal.length === 0 &&
         !workspace.pendingAmendment &&
+        !workspace.pendingRescoreOffer &&
         !workspace.chatCatchSuggestion ? (
           <p className="text-sm text-on-surface-muted">
             Ask anything about {activeRace.label}.
@@ -1426,6 +1464,21 @@ function WorkspaceChat({
                   }
                 }}
                 onDiscard={() => workspace.onAmendmentDiscard?.()}
+              />
+            )}
+
+            {/* PR3 — opt-in re-score offer (rendered between lock + delta). */}
+            {workspace.pendingRescoreOffer && (
+              <AmendRescoreOffer
+                newThemeName={workspace.pendingRescoreOffer.newThemeName}
+                decidedCount={workspace.pendingRescoreOffer.decidedCount}
+                inFlight={workspace.amendmentInFlight}
+                onAccept={() => {
+                  if (onAcceptRescoreOffer) {
+                    void onAcceptRescoreOffer();
+                  }
+                }}
+                onDecline={() => workspace.onRescoreOfferClear?.()}
               />
             )}
 
@@ -2563,27 +2616,37 @@ export function ChatPanel({
         }}
         chatDisabled={effectiveChatDisabled}
         amendmentJournal={amendmentJournal}
-        onAmendmentSave={async (payload) => {
-          // Bridge: ChatPanel runs the actual /api/chat call and journals the
-          // result; the parent persists the updated themes via its own
-          // onAmendmentSave handler so localStorage / state survives.
+        onAmendmentSave={(payload) => {
+          // PR3 bridge: lock commits themes ONLY. The re-score (if any)
+          // happens through the AmendRescoreOffer Accept path below — per
+          // UX feedback "Re-scoring should be an option, not a default."
           if (workspace.onAmendmentSave) {
-            // Flip inFlight BEFORE awaiting so the editor's spinner actually
-            // surfaces during the 1-3s rescore window. Parent clears inFlight
-            // inside its onAmendmentSave handler after the editor unmounts.
-            workspace.onAmendmentInFlightChange?.(true);
-            await submitAmendment({
-              updatedThemes: payload.updatedThemes,
-              newTheme: payload.newTheme,
-              suggestedRank: payload.suggestedRank,
-              triggeringMessage: workspace.pendingAmendment?.triggeringMessage,
-            });
             workspace.onAmendmentSave({
               updatedThemes: payload.updatedThemes,
               newTheme: payload.newTheme,
               suggestedRank: payload.suggestedRank,
               triggeringMessage: workspace.pendingAmendment?.triggeringMessage,
             });
+          }
+        }}
+        onAcceptRescoreOffer={async () => {
+          // PR3 — fires when the user clicks "Yes, show me the deltas" on
+          // the rescore offer. Runs submitAmendment with the offer's stored
+          // payload, then clears the offer. The inFlight flag surfaces the
+          // spinner on AmendRescoreOffer during the 1-3s rescore window.
+          const offer = workspace.pendingRescoreOffer;
+          if (!offer) return;
+          workspace.onAmendmentInFlightChange?.(true);
+          try {
+            await submitAmendment({
+              updatedThemes: offer.updatedThemes,
+              newTheme: offer.newTheme,
+              suggestedRank: offer.suggestedRank,
+              triggeringMessage: offer.triggeringMessage,
+            });
+          } finally {
+            workspace.onAmendmentInFlightChange?.(false);
+            workspace.onRescoreOfferClear?.();
           }
         }}
       />
