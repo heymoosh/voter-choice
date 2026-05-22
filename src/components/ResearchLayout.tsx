@@ -15,6 +15,7 @@ import type { Language } from "../lib/translations";
 import type { Theme } from "../lib/prompts/types";
 import type { BallotSourceSummary } from "../types/ballotSource";
 import type { PollingLocation } from "./PollingLocationCard";
+import type { SerializableBallotContext } from "../lib/state-rules/ballot-context";
 
 type ResearchTab = "research" | "dates" | "id" | "polling";
 
@@ -73,6 +74,11 @@ interface ResearchLayoutProps {
    * BallotToolClient catches this to flip into the workspace 3-pane shell.
    */
   onLockInThemes?: (themes: Theme[]) => void;
+  /**
+   * Phase 5 — ballot context emitted by the PartyGate, forwarded to ChatPanel
+   * so every chat call carries it. Null on flag-off / ES paths.
+   */
+  ballotContext?: SerializableBallotContext | null;
 }
 
 /* ── Icons ──────────────────────────────────────────────────── */
@@ -1490,6 +1496,7 @@ function ResearchView({
   onChatStarted,
   promptFleetV2Enabled,
   onLockInThemes,
+  ballotContext,
 }: {
   state: StateElectionData;
   zipCode: string;
@@ -1511,6 +1518,8 @@ function ResearchView({
   onChatStarted?: () => void;
   promptFleetV2Enabled?: boolean;
   onLockInThemes?: (themes: Theme[]) => void;
+  /** Phase 5 — forwarded to ChatPanel so chat calls carry the gate selection. */
+  ballotContext?: SerializableBallotContext | null;
 }) {
   const { lang } = useLanguage();
   const t = translations[lang];
@@ -1622,6 +1631,7 @@ function ResearchView({
               onChatStarted={onChatStarted}
               promptFleetV2Enabled={promptFleetV2Enabled}
               onLockInThemes={onLockInThemes}
+              ballotContext={ballotContext}
             />
           )}
 
@@ -1689,6 +1699,7 @@ export function ResearchLayout({
   onChatStarted,
   promptFleetV2Enabled,
   onLockInThemes,
+  ballotContext,
 }: ResearchLayoutProps) {
   const [activeTab, setActiveTab] = useState<ResearchTab>("research");
   const { lang } = useLanguage();
@@ -1730,6 +1741,7 @@ export function ResearchLayout({
             onChatStarted={onChatStarted}
             promptFleetV2Enabled={promptFleetV2Enabled}
             onLockInThemes={onLockInThemes}
+            ballotContext={ballotContext}
           />
         </div>
 

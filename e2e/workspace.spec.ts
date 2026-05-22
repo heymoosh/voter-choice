@@ -29,9 +29,20 @@ async function fillZip(page: Page, zip: string) {
 }
 
 async function resolveRunoffGate(page: Page) {
-  const gate = page.getByTestId("runoff-gate");
-  await gate.waitFor({ state: "visible", timeout: 2500 }).catch(() => null);
-  if (await gate.isVisible().catch(() => false)) {
+  // Phase 5 — new PartyGate takes precedence under PROMPT_FLEET_V2=1 + en.
+  const partyGate = page.getByTestId("party-gate");
+  await partyGate
+    .waitFor({ state: "visible", timeout: 2500 })
+    .catch(() => null);
+  if (await partyGate.isVisible().catch(() => false)) {
+    await page.getByTestId("party-gate-option-voted_dem_primary").click();
+    await page.getByTestId("party-gate-continue").click();
+    return;
+  }
+  // Legacy runoff gate (flag-off or non-Phase-5-state).
+  const legacy = page.getByTestId("runoff-gate");
+  await legacy.waitFor({ state: "visible", timeout: 2500 }).catch(() => null);
+  if (await legacy.isVisible().catch(() => false)) {
     await page.getByTestId("runoff-option-unsure").click();
   }
 }

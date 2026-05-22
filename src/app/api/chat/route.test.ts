@@ -243,6 +243,7 @@ interface MakeChatRequestInput {
   activeRaceId?: string;
   prevActiveRaceId?: string;
   raceContext?: Record<string, unknown>;
+  ballotContext?: Record<string, unknown>;
 }
 
 function makeChatRequest(body: MakeChatRequestInput = {}): Request {
@@ -619,6 +620,85 @@ describe("POST /api/chat — validation of new fields", () => {
     });
     const res = await POST(req as never);
     expect(res.status).toBe(400);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Phase 5 — `<ballot_context>` tag injection on both flag paths
+// ---------------------------------------------------------------------------
+
+describe("POST /api/chat — ballotContext injection (Phase 5)", () => {
+  it("prepends <ballot_context> on the flag-OFF path when ballotContext is present", async () => {
+    vi.stubEnv("PROMPT_FLEET_V2", "");
+    queueStreams(simpleTextStream());
+
+    const req = makeChatRequest({
+      systemPrompt: "LEGACY-PROMPT-BODY",
+      ballotContext: {
+        state: "TX",
+        county: "Harris",
+        ballotTag: "DEM-runoff",
+        electionDate: "2026-05-25",
+        electionLabel: "2026 Texas Primary Runoff",
+      },
+    });
+    const res = await POST(req as never);
+    await drainResponseBody(res);
+
+    const params = messagesCreateMock.mock.calls[0][0];
+    const systemText: string = params.system[0].text;
+    expect(systemText).toContain("<ballot_context>");
+    expect(systemText).toContain("</ballot_context>");
+    expect(systemText).toContain("state: TX");
+    expect(systemText).toContain("county: Harris");
+    expect(systemText).toContain("ballot: DEM-runoff");
+    expect(systemText).toContain("electionDate: 2026-05-25");
+    expect(systemText).toContain("LEGACY-PROMPT-BODY");
+    // The tag prefixes the legacy body.
+    expect(systemText.indexOf("<ballot_context>")).toBeLessThan(
+      systemText.indexOf("LEGACY-PROMPT-BODY"),
+    );
+  });
+
+  it("prepends <ballot_context> on the flag-ON path between safety header and the routed builder body", async () => {
+    vi.stubEnv("PROMPT_FLEET_V2", "1");
+    queueStreams(simpleTextStream());
+
+    const req = makeChatRequest({
+      view: "cold-open",
+      raceContext: { userInput: "i care about housing" },
+      messages: [{ role: "user", content: "i care about housing" }],
+      ballotContext: {
+        state: "TX",
+        county: "Harris",
+        ballotTag: "DEM-runoff",
+        electionDate: "2026-05-25",
+        electionLabel: "2026 Texas Primary Runoff",
+      },
+    });
+    const res = await POST(req as never);
+    await drainResponseBody(res);
+
+    const params = messagesCreateMock.mock.calls[0][0];
+    const systemText: string = params.system[0].text;
+    // Safety header still present (Phase 1 contract).
+    expect(systemText).toContain("You are nonpartisan civic research.");
+    // Ballot context tag is present.
+    expect(systemText).toContain("<ballot_context>");
+    expect(systemText).toContain("ballot: DEM-runoff");
+  });
+
+  it("omits the <ballot_context> tag entirely when ballotContext is absent (no regression on the legacy + flag-on paths)", async () => {
+    vi.stubEnv("PROMPT_FLEET_V2", "");
+    queueStreams(simpleTextStream());
+
+    const req = makeChatRequest({ systemPrompt: "LEGACY-PROMPT-BODY" });
+    const res = await POST(req as never);
+    await drainResponseBody(res);
+    const params = messagesCreateMock.mock.calls[0][0];
+    const systemText: string = params.system[0].text;
+    expect(systemText).not.toContain("<ballot_context>");
+    expect(systemText).toBe("LEGACY-PROMPT-BODY");
   });
 });
 
