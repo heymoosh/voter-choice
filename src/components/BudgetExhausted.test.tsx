@@ -49,6 +49,10 @@ function defaultProps() {
     onByokRemove: vi.fn(),
     storedByokKey: null as string | null,
     onResume: vi.fn(),
+    // PR 7 — overlay refactor. Required so the overlay can be dismissed
+    // independent of the budget state itself (workspace stays mounted
+    // underneath; overlay is just a UI affordance).
+    onDismiss: vi.fn(),
   };
 }
 
@@ -250,5 +254,96 @@ describe("BudgetExhausted — overall smoke", () => {
     expect(within(screenEl).getAllByTestId(/^chatbot-link-/).length).toBe(4);
     expect(within(screenEl).getByTestId("byok-input")).toBeInTheDocument();
     expect(within(screenEl).getByTestId("tip-jar-link")).toBeInTheDocument();
+  });
+});
+
+/* ── PR 7 — modal overlay (portal + dismiss) ────────────────── */
+
+describe("BudgetExhausted — modal overlay (PR 7)", () => {
+  it("mounts the overlay inside document.body (React Portal — not the render container)", () => {
+    const { container } = render(<BudgetExhausted {...defaultProps()} />);
+    // The render container does NOT contain the overlay — it's portaled
+    // to document.body so it can sit above the workspace layout without
+    // z-index gymnastics.
+    expect(
+      container.querySelector('[data-testid="budget-exhausted-overlay"]'),
+    ).toBeNull();
+    // It IS in the document body.
+    const inBody = document.body.querySelector(
+      '[data-testid="budget-exhausted-overlay"]',
+    );
+    expect(inBody).not.toBeNull();
+  });
+
+  it("overlay dialog has role=dialog + aria-modal=true + accessible name", () => {
+    render(<BudgetExhausted {...defaultProps()} />);
+    const overlay = screen.getByTestId("budget-exhausted-overlay");
+    expect(overlay.getAttribute("role")).toBe("dialog");
+    expect(overlay.getAttribute("aria-modal")).toBe("true");
+    // aria-labelledby points at the headline so screen readers announce
+    // "Your ballot is saved" when the overlay opens.
+    const labelledBy = overlay.getAttribute("aria-labelledby");
+    expect(labelledBy).toBeTruthy();
+    const headline = screen.getByTestId("budget-exhausted-headline");
+    expect(headline.id).toBe(labelledBy);
+  });
+
+  it("renders a dismiss button (X) with aria-label and fires onDismiss when clicked", () => {
+    const props = defaultProps();
+    render(<BudgetExhausted {...props} />);
+    const closeBtn = screen.getByTestId("budget-exhausted-dismiss");
+    expect(closeBtn.getAttribute("aria-label")).toMatch(/dismiss|close/i);
+    fireEvent.click(closeBtn);
+    expect(props.onDismiss).toHaveBeenCalledTimes(1);
+  });
+
+  it("clicking the backdrop fires onDismiss", () => {
+    const props = defaultProps();
+    render(<BudgetExhausted {...props} />);
+    const backdrop = screen.getByTestId("budget-exhausted-backdrop");
+    fireEvent.click(backdrop);
+    expect(props.onDismiss).toHaveBeenCalledTimes(1);
+  });
+
+  it("clicking the dialog content does NOT fire onDismiss (only backdrop bubbles dismiss)", () => {
+    const props = defaultProps();
+    render(<BudgetExhausted {...props} />);
+    const headline = screen.getByTestId("budget-exhausted-headline");
+    fireEvent.click(headline);
+    expect(props.onDismiss).not.toHaveBeenCalled();
+  });
+
+  it("pressing Escape on the document fires onDismiss", () => {
+    const props = defaultProps();
+    render(<BudgetExhausted {...props} />);
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(props.onDismiss).toHaveBeenCalledTimes(1);
+  });
+
+  it("removes the Escape listener on unmount (no leaks)", () => {
+    const props = defaultProps();
+    const { unmount } = render(<BudgetExhausted {...props} />);
+    unmount();
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(props.onDismiss).not.toHaveBeenCalled();
+  });
+
+  it("inner content (headline, links, BYOK, tip jar) remains intact within the overlay", () => {
+    render(<BudgetExhausted {...defaultProps()} />);
+    const overlay = screen.getByTestId("budget-exhausted-overlay");
+    expect(
+      within(overlay).getByTestId("budget-exhausted-headline"),
+    ).toBeInTheDocument();
+    expect(within(overlay).getByTestId("byok-input")).toBeInTheDocument();
+    expect(within(overlay).getByTestId("tip-jar-link")).toBeInTheDocument();
+    expect(within(overlay).getAllByTestId(/^chatbot-link-/).length).toBe(4);
+  });
+
+  it("moves focus to the dismiss button on mount (so aria-modal is honest)", () => {
+    render(<BudgetExhausted {...defaultProps()} />);
+    const dismiss = screen.getByTestId("budget-exhausted-dismiss");
+    // The dismiss button should be the active element so screen readers
+    // and keyboard users land inside the dialog when it opens.
+    expect(document.activeElement).toBe(dismiss);
   });
 });

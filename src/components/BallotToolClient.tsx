@@ -1195,16 +1195,27 @@ function WorkspaceShell({
     setPrintViewActive(false);
   }, []);
 
-  // Phase 9 — budget-exhausted continuity screen state. When set, the
-  // entire 3-pane workspace is replaced by the BudgetExhausted screen
-  // (similar pattern to printViewActive above). Triggered either by the
-  // chat route returning structured `budget_exhausted` OR by the user
-  // clicking the BallotPane "Continue in another chatbot" button (which
-  // surfaces the same handoff surface pre-emptively).
-  const [budgetExhausted, setBudgetExhausted] = useState<{
+  // Phase 9 (PR 7) — budget-exhausted continuity. Split into two pieces:
+  //
+  //   1. `budgetOut` — persistent memory that the community budget is out.
+  //      Survives overlay dismissal so the chat input keeps its disabled
+  //      state + notice. Cleared by BYOK save (BYOK bypasses the
+  //      community budget) or by the Resume button after reset.
+  //
+  //   2. `overlayDismissed` — UI-only flag for "user closed the dialog
+  //      but the underlying budget is still out." When the user re-opens
+  //      via another exhaustion path (or re-clicks "Continue elsewhere"),
+  //      we reset this to false so the overlay re-mounts.
+  //
+  // Triggered either by the chat route returning structured
+  // `budget_exhausted` OR by the user clicking the BallotPane "Continue in
+  // another chatbot" button (which surfaces the same handoff surface
+  // pre-emptively, before the SSE tier has actually flipped).
+  const [budgetOut, setBudgetOut] = useState<{
     handoffPromptText: string;
     resetAt: string;
   } | null>(null);
+  const [overlayDismissed, setOverlayDismissed] = useState(false);
   // Stored BYOK key — read from localStorage on mount, kept in state so
   // the BudgetExhausted screen's "Using your key" affordance refreshes
   // immediately on save/remove.
@@ -1215,16 +1226,25 @@ function WorkspaceShell({
   const handleByokContinue = useCallback((key: string) => {
     setByokKey(key);
     setByokKeyState(key);
-    // After saving the key, dismiss the continuity screen — chat
-    // resumes via the BYOK path (direct browser-to-Anthropic).
-    setBudgetExhausted(null);
+    // After saving the key, chat resumes via the BYOK path (direct
+    // browser-to-Anthropic). The community-budget memory is no longer
+    // relevant for this user.
+    setBudgetOut(null);
+    setOverlayDismissed(false);
   }, []);
   const handleByokRemove = useCallback(() => {
     removeByokKey();
     setByokKeyState(null);
   }, []);
   const handleResume = useCallback(() => {
-    setBudgetExhausted(null);
+    // Reset has passed — community budget is back. Clear both pieces.
+    setBudgetOut(null);
+    setOverlayDismissed(false);
+  }, []);
+  const handleDismissOverlay = useCallback(() => {
+    // Pure UI dismissal — keep the budget-out memory intact so the chat
+    // input stays disabled-with-notice.
+    setOverlayDismissed(true);
   }, []);
 
   // Default reset = first of next month UTC. Matches the route's
@@ -1328,15 +1348,18 @@ function WorkspaceShell({
   ]);
 
   // Replace the parent's onHandoff with one that surfaces the continuity
-  // screen pre-emptively. The legacy implementation just opened claude.ai
+  // overlay pre-emptively. The legacy implementation just opened claude.ai
   // in a new tab — Phase 9 owns this surface now (per BallotPane comment
-  // referencing "Phase 9 owns the full out-of-budget handoff UX").
+  // referencing "Phase 9 owns the full out-of-budget handoff UX"). PR 7
+  // also resets `overlayDismissed` so re-clicking after a prior dismiss
+  // re-opens the dialog.
   const handleHandoffFromBallotPane = useCallback(() => {
     onHandoff();
-    setBudgetExhausted({
+    setBudgetOut({
       handoffPromptText: populatedHandoffPrompt,
       resetAt: defaultResetAtISO,
     });
+    setOverlayDismissed(false);
   }, [onHandoff, populatedHandoffPrompt, defaultResetAtISO]);
 
   // When the chat route signals budget_exhausted, the server returns the
@@ -1346,10 +1369,11 @@ function WorkspaceShell({
   // the "I'm back" affordance — so we keep that as-is.
   const handleBudgetExhausted = useCallback(
     (input: { handoffPromptText: string; resetAt: string }) => {
-      setBudgetExhausted({
+      setBudgetOut({
         handoffPromptText: populatedHandoffPrompt,
         resetAt: input.resetAt,
       });
+      setOverlayDismissed(false);
     },
     [populatedHandoffPrompt],
   );
@@ -1410,19 +1434,6 @@ function WorkspaceShell({
     );
   }
 
-  if (budgetExhausted) {
-    return (
-      <BudgetExhausted
-        resetAt={budgetExhausted.resetAt}
-        handoffPromptText={budgetExhausted.handoffPromptText}
-        onByokContinue={handleByokContinue}
-        onByokRemove={handleByokRemove}
-        storedByokKey={byokKey}
-        onResume={handleResume}
-      />
-    );
-  }
-
   return (
     <div
       data-testid="workspace-shell"
@@ -1467,6 +1478,12 @@ function WorkspaceShell({
           onLockInThemes={onLockInThemes}
           ballotContext={ballotContext}
           onBudgetExhausted={handleBudgetExhausted}
+          // PR 7 — externally controlled "budget out" flag so the chat
+          // input renders the visible-but-disabled state with a notice
+          // (instead of the entire workspace being replaced). Keyed off
+          // `budgetOut`, NOT `overlayDismissed` — dismissing the dialog
+          // is a pure UI action; the chat stays gated until BYOK / reset.
+          budgetExhausted={!!budgetOut}
           workspace={{
             activeRace: activeRace
               ? {
@@ -1517,6 +1534,28 @@ function WorkspaceShell({
         onSaveProfile={onSaveProfile}
         onHandoff={handleHandoffFromBallotPane}
       />
+      {/*
+       * PR 7 — BudgetExhausted as a modal overlay (not a workspace
+       * replacement). Rendered as a sibling of the 3-pane grid so the
+       * workspace stays mounted underneath; BudgetExhausted itself uses
+       * React Portal to escape into document.body, so the actual paint
+       * order isn't bound to the grid stacking context.
+       *
+       * Renders only when `budgetOut` is set AND the user hasn't already
+       * dismissed it. The underlying memory persists so the chat input
+       * stays disabled-with-notice until BYOK or reset.
+       */}
+      {budgetOut && !overlayDismissed && (
+        <BudgetExhausted
+          resetAt={budgetOut.resetAt}
+          handoffPromptText={budgetOut.handoffPromptText}
+          onByokContinue={handleByokContinue}
+          onByokRemove={handleByokRemove}
+          storedByokKey={byokKey}
+          onResume={handleResume}
+          onDismiss={handleDismissOverlay}
+        />
+      )}
     </div>
   );
 }

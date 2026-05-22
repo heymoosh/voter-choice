@@ -149,7 +149,7 @@ test.describe("Phase 9 — budget exhaustion continuity + BYOK", () => {
       "Run with `PROMPT_FLEET_V2=1 npx playwright test e2e/budget-exhausted.spec.ts`.",
   );
 
-  test("BallotPane 'Continue in another chatbot' surfaces the BudgetExhausted continuity screen + alphabetical links + BYOK", async ({
+  test("BallotPane 'Continue in another chatbot' surfaces the BudgetExhausted continuity overlay + alphabetical links + BYOK (PR 7: workspace stays mounted underneath)", async ({
     page,
   }) => {
     await landOnWorkspace(page);
@@ -159,8 +159,13 @@ test.describe("Phase 9 — budget exhaustion continuity + BYOK", () => {
     await page.getByTestId("ballot-pane-handoff").click();
 
     await page
-      .getByTestId("budget-exhausted-screen")
+      .getByTestId("budget-exhausted-overlay")
       .waitFor({ state: "visible", timeout: WORKSPACE_TIMEOUT });
+
+    // PR 7 — the workspace stays mounted underneath the overlay so the
+    // voter doesn't lose visual access to their themes, decisions, and
+    // races. Sanity-assert that the workspace shell remains in the DOM.
+    await expect(page.getByTestId("workspace-shell")).toBeVisible();
 
     const headline = page.getByTestId("budget-exhausted-headline");
     await expect(headline).toHaveText(/Your ballot is saved/);
@@ -183,6 +188,52 @@ test.describe("Phase 9 — budget exhaustion continuity + BYOK", () => {
     await expect(page.getByTestId("byok-input")).toBeVisible();
     await expect(page.getByTestId("byok-privacy-copy")).toContainText(
       /key stays in your browser/i,
+    );
+  });
+
+  test("PR 7: dismissing the overlay returns the user to the workspace; chat input shows the disabled budget notice", async ({
+    page,
+  }) => {
+    await landOnWorkspace(page);
+    await page.getByTestId("ballot-pane-handoff").click();
+    await page
+      .getByTestId("budget-exhausted-overlay")
+      .waitFor({ state: "visible", timeout: WORKSPACE_TIMEOUT });
+
+    // Click the X dismiss button.
+    await page.getByTestId("budget-exhausted-dismiss").click();
+
+    // Overlay gone; workspace remains.
+    await expect(page.getByTestId("budget-exhausted-overlay")).toHaveCount(0);
+    await expect(page.getByTestId("workspace-shell")).toBeVisible();
+
+    // Chat input shows the budget notice and is disabled (no BYOK set).
+    await expect(
+      page.getByTestId("workspace-chat-budget-notice"),
+    ).toBeVisible();
+    await expect(page.getByTestId("workspace-chat-input")).toBeDisabled();
+    await expect(page.getByTestId("workspace-chat-send")).toBeDisabled();
+  });
+
+  test("PR 7: after BYOK is saved + overlay dismissed, chat input is interactive again", async ({
+    page,
+  }) => {
+    await landOnWorkspace(page);
+    await page.getByTestId("ballot-pane-handoff").click();
+    await page
+      .getByTestId("budget-exhausted-overlay")
+      .waitFor({ state: "visible", timeout: WORKSPACE_TIMEOUT });
+
+    // Save a BYOK key — handler auto-dismisses the overlay.
+    await page.getByTestId("byok-input").fill("sk-ant-overlay-byok-e2e");
+    await page.getByTestId("byok-save").click();
+    await expect(page.getByTestId("budget-exhausted-overlay")).toHaveCount(0);
+
+    // Workspace still here; chat input enabled (BYOK bypass).
+    await expect(page.getByTestId("workspace-shell")).toBeVisible();
+    await expect(page.getByTestId("workspace-chat-input")).not.toBeDisabled();
+    await expect(page.getByTestId("workspace-chat-budget-notice")).toHaveCount(
+      0,
     );
   });
 
