@@ -65,6 +65,49 @@ function isPropositionBlock(block: RacePatternsBlock): boolean {
   );
 }
 
+/* ── Proposition impact columns (Phase 4 text-first) ──────── */
+
+const PROP_IMPACT_FALLBACK = "(impact not yet summarized)";
+
+function findPropSide(
+  block: RacePatternsBlock,
+  side: "yes" | "no",
+): RacePatternsCandidate | undefined {
+  const re = side === "yes" ? /^yes on /i : /^no on /i;
+  return block.candidates.find((c) => re.test(c.name.trim()));
+}
+
+function PropositionImpactColumns({ block }: { block: RacePatternsBlock }) {
+  const yesSide = findPropSide(block, "yes");
+  const noSide = findPropSide(block, "no");
+  const yesImpact = yesSide?.priorRole?.trim();
+  const noImpact = noSide?.priorRole?.trim();
+
+  return (
+    <div
+      data-testid="race-patterns-impact-columns"
+      className="grid grid-cols-1 md:grid-cols-2 gap-3 border border-outline-variant/40 p-3 bg-surface-lowest"
+    >
+      <div data-testid="race-patterns-impact-yes">
+        <p className="text-[10px] font-black uppercase tracking-[0.18em] text-primary mb-1">
+          If yes
+        </p>
+        <p className="text-xs text-on-surface leading-snug">
+          {yesImpact ?? PROP_IMPACT_FALLBACK}
+        </p>
+      </div>
+      <div data-testid="race-patterns-impact-no">
+        <p className="text-[10px] font-black uppercase tracking-[0.18em] text-rose-700 mb-1">
+          If no
+        </p>
+        <p className="text-xs text-on-surface leading-snug">
+          {noImpact ?? PROP_IMPACT_FALLBACK}
+        </p>
+      </div>
+    </div>
+  );
+}
+
 /* ── Source registry (per-render, passed by ref) ────────────
  * Collects sources in order of first appearance and returns
  * the 1-based footnote number for each.
@@ -687,6 +730,11 @@ export function RacePatterns({
         </h3>
         <div className="mt-2 h-px bg-on-surface/15" aria-hidden="true" />
       </header>
+
+      {/* Proposition impact columns — if-yes / if-no two-column layout.
+       * Renders ONLY for proposition blocks; missing sides fall back
+       * to "(impact not yet summarized)". */}
+      {isProp && <PropositionImpactColumns block={block} />}
 
       {/* Disclaimer — shown when alignment scores are present */}
       {alignmentScoresByCandidate && alignmentScoresByCandidate.size > 0 && (
