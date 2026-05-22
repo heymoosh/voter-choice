@@ -25,6 +25,7 @@ import type { ConcernConfirmation } from "./ConcernInterpretation";
 import { ColdOpenInput } from "./ColdOpenInput";
 import { parseThemeExtraction } from "../lib/prompts/parse-theme-extraction";
 import type { Theme, RouterView } from "../lib/prompts/types";
+import type { SerializableBallotContext } from "../lib/state-rules/ballot-context";
 import {
   parseValuesTagRequestBlock,
   stripValuesTagRequestBlocks,
@@ -147,6 +148,14 @@ interface ChatPanelProps {
   countyName?: string;
   userSampleBallotText?: string;
   preResearchContext?: string;
+  /**
+   * Phase 5 — the ballot context emitted by the new PartyGate. When set,
+   * every outgoing chat request carries this so the route can inject a
+   * `<ballot_context>` tag into the system prompt. Null until the gate
+   * resolves (or always-null for flag-off / ES paths that keep the legacy
+   * preResearchContext plumbing).
+   */
+  ballotContext?: SerializableBallotContext | null;
   /** Primary lane for polis counter (derived from runoff gate). */
   primary?: "DEM" | "REP" | "OPEN" | "GENERAL";
   /**
@@ -1504,6 +1513,7 @@ export function ChatPanel({
   promptFleetV2Enabled = false,
   workspace,
   onLockInThemes,
+  ballotContext,
 }: ChatPanelProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
@@ -1685,6 +1695,7 @@ export function ChatPanel({
             isNewSession: messageCountRef.current === 1,
             ...(voterProfile ? { voterProfile } : {}),
             ...(workspaceContextBody ?? {}),
+            ...(ballotContext ? { ballotContext } : {}),
           }),
         });
 
@@ -1752,6 +1763,7 @@ export function ChatPanel({
       workspace,
       state.stateCode,
       countyName,
+      ballotContext,
     ],
   );
 
@@ -1793,6 +1805,7 @@ export function ChatPanel({
             view: "cold-open" as RouterView,
             raceContext: { userInput: userText },
             ...(voterProfile ? { voterProfile } : {}),
+            ...(ballotContext ? { ballotContext } : {}),
           }),
         });
 
@@ -1867,6 +1880,7 @@ export function ChatPanel({
       handleApiError,
       handleBudgetUpdate,
       t.research.coldOpenParseError,
+      ballotContext,
     ],
   );
 

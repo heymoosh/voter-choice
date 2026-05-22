@@ -207,6 +207,23 @@ interface RaceContextPayload {
   notableQuotes?: string;
 }
 
+/**
+ * BallotContextPayload — the session-global slice emitted by Phase 5's
+ * PartyGate. Top-level (not nested inside raceContext) because it applies
+ * to every chat call once the gate resolves, regardless of view/race.
+ *
+ * PII rule: only state, county, ballotTag, electionDate, electionLabel.
+ * The serializer at src/lib/state-rules/ballot-context.ts is the chokepoint;
+ * the route trusts that contract and re-serializes here.
+ */
+interface BallotContextPayload {
+  state: string;
+  county?: string;
+  ballotTag: string;
+  electionDate: string;
+  electionLabel: string;
+}
+
 interface ChatRequest {
   messages: ChatMessage[];
   systemPrompt: string;
@@ -221,6 +238,8 @@ interface ChatRequest {
   activeRaceId?: string;
   prevActiveRaceId?: string;
   raceContext?: RaceContextPayload;
+  /** Phase 5 — session-global ballot context from the state party gate. */
+  ballotContext?: BallotContextPayload;
 }
 
 function getClientIP(request: NextRequest): string {
@@ -385,6 +404,39 @@ function renderBuilder(
 }
 
 /**
+ * Phase 5 — render the BallotContextPayload as a `<ballot_context>` tag for
+ * injection into the system prompt. Server-side serializer so the tag is
+ * always in the canonical shape even if a client misbehaves; only the five
+ * allowed fields reach the model.
+ */
+function renderBallotContextTag(ctx: BallotContextPayload): string {
+  const lines: string[] = [];
+  const stateUpper = (ctx.state || "").toUpperCase();
+  if (stateUpper) lines.push(`  state: ${stateUpper}`);
+  if (ctx.county && ctx.county.trim().length > 0) {
+    lines.push(`  county: ${ctx.county}`);
+  }
+  if (ctx.ballotTag) lines.push(`  ballot: ${ctx.ballotTag}`);
+  if (ctx.electionDate) lines.push(`  electionDate: ${ctx.electionDate}`);
+  if (ctx.electionLabel) lines.push(`  electionLabel: ${ctx.electionLabel}`);
+  return `<ballot_context>\n${lines.join("\n")}\n</ballot_context>`;
+}
+
+/**
+ * Phase 5 — prepend `<ballot_context>…</ballot_context>` to a base prompt
+ * when the request carries it. No-op when absent. Applied to both
+ * flag-off and flag-on composed bodies so the gate selection lands in
+ * every chat call once the user resolves the gate.
+ */
+function prependBallotContext(
+  base: string,
+  ballotContext?: BallotContextPayload,
+): string {
+  if (!ballotContext) return base;
+  return `${renderBallotContextTag(ballotContext)}\n\n${base}`;
+}
+
+/**
  * Compose the outgoing system prompt.
  *
  * Flag-OFF path: bit-identical to the historical behavior — body's
@@ -395,6 +447,10 @@ function renderBuilder(
  * task-specific body from `raceContext`, prepend the shared safety header,
  * then append the voter-profile suffix.
  *
+ * Phase 5: when `ballotContext` is present, prepend `<ballot_context>` to the
+ * composed result on BOTH paths so the gate selection is part of every
+ * downstream chat call's system prompt.
+ *
  * The `prompt_used` log line is emitted only on the flag-on path so we have
  * observability into routing decisions without leaking the rendered body
  * (which can contain `<tag>` blocks the safety header expects to stay
@@ -402,7 +458,10 @@ function renderBuilder(
  */
 function buildSystemPrompt(body: ChatRequest): string {
   if (!isPromptFleetV2Enabled() || !body.view) {
-    return appendVoterProfile(body.systemPrompt, body.voterProfile);
+    return appendVoterProfile(
+      prependBallotContext(body.systemPrompt, body.ballotContext),
+      body.voterProfile,
+    );
   }
   const builderKey = routePrompt({
     view: body.view,
@@ -421,7 +480,8 @@ function buildSystemPrompt(body: ChatRequest): string {
   );
   const builderBody = renderBuilder(builderKey, body.raceContext);
   const composed = prependSafetyHeader(builderBody);
-  return appendVoterProfile(composed, body.voterProfile);
+  const withBallot = prependBallotContext(composed, body.ballotContext);
+  return appendVoterProfile(withBallot, body.voterProfile);
 }
 
 function truncateUserMessages(messages: ChatMessage[]): ChatMessage[] {

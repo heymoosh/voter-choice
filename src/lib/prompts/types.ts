@@ -9,33 +9,32 @@
  */
 
 /**
- * BallotContext is the shape that Phase 5's state party-gate component will
- * emit into the chat route. Phase 1 defines the surface so the prompt fleet
- * has a typed target; the gate itself ships in Phase 5.
+ * BallotContext is the shape that Phase 5's state party-gate component
+ * emits into the chat route. The gate-table's per-option `ballotTag` field
+ * is a free-form string (e.g. "DEM-runoff", "REP-runoff-open", "GENERAL",
+ * "UNSURE") so adding a new state never has to widen an enum.
  *
- * NOTE: This is a sketch for Phase 5. Fields may grow (e.g. precinct, ballot
- * issuer) when the party gate spec lands — additions should be backward
- * compatible.
+ * PII rule: only state, county, ballotTag, electionDate, electionLabel may
+ * reach the model. The serializer at src/lib/state-rules/ballot-context.ts
+ * is the chokepoint that enforces this.
+ *
+ * This shape is re-exported as `SerializableBallotContext` from
+ * src/lib/state-rules/ballot-context.ts — the two are intentionally the
+ * same; the local copy there ensures the serializer's input contract is
+ * frozen independently of any future widening of this prompts-side type.
  */
 export interface BallotContext {
   /** Two-letter US state code (e.g. "TX", "CA"). Uppercase. */
   state: string;
 
-  /** City name as the user entered it. Only city + state are ever injected. */
-  city: string;
+  /** County name as resolved by the civic API or zip-based lookup. */
+  county?: string;
 
   /**
-   * Ballot variant for this election. "primary-dem" / "primary-rep" / "primary-open"
-   * disambiguate party-specific primaries; "primary" is the generic fallback when
-   * party hasn't yet been gated.
+   * Ballot tag emitted by the state-rules table on user gate selection.
+   * Free-form by design — keys are owned by the rules table.
    */
-  ballotType:
-    | "primary"
-    | "general"
-    | "runoff"
-    | "primary-dem"
-    | "primary-rep"
-    | "primary-open";
+  ballotTag: string;
 
   /** ISO date (YYYY-MM-DD) for the election the user is researching. */
   electionDate: string;

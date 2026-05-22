@@ -22,6 +22,9 @@ import type { Language } from "../lib/translations";
 import type { Theme } from "../lib/prompts/types";
 import type { BallotSourceSummary } from "../types/ballotSource";
 import type { PollingLocation } from "./PollingLocationCard";
+import { PartyGate } from "./PartyGate";
+import { getStateRule } from "../lib/state-rules/lookup";
+import type { SerializableBallotContext } from "../lib/state-rules/ballot-context";
 
 interface CivicCandidate {
   name: string;
@@ -395,6 +398,12 @@ export function ElectionResult({
   );
   const [closedPrimaryChoice, setClosedPrimaryChoice] =
     useState<ClosedPrimaryChoice | null>(null);
+  // Phase 5 — ballot context emitted by the new PartyGate (flag-on + en).
+  // When set, the gate has been completed and we route to the rest of the
+  // pre-research flow. Stays null on flag-off and ES paths (legacy gates
+  // own those rendering decisions instead).
+  const [ballotContext, setBallotContext] =
+    useState<SerializableBallotContext | null>(null);
   const [addressStep, setAddressStep] = useState<AddressStep>(
     initialPollingData ? "done" : "skipped",
   );
@@ -405,6 +414,17 @@ export function ElectionResult({
   const { setResearch } = useResearchMode();
   const needsRunoffGate = requiresRunoffGate(state);
   const needsClosedPrimaryGate = requiresClosedPrimaryGate(state);
+
+  // Phase 5 — resolve the data-driven state rule for the upcoming election.
+  // Only consulted when PROMPT_FLEET_V2 is on AND locale is en. Under the
+  // flag-off / ES paths the legacy runoff + closed-primary gates above
+  // remain the single source of truth.
+  const upcomingElection = useMemo(() => getUpcomingElection(state), [state]);
+  const phase5GateActive = promptFleetV2Enabled && lang === "en";
+  const partyGateRule = phase5GateActive
+    ? getStateRule(state.stateCode, upcomingElection?.type ?? "general")
+    : null;
+  const showPartyGate = !!partyGateRule && ballotContext === null;
   const preResearchContext =
     runoffContextNote(state, runoffChoice, lang) ??
     closedPrimaryContextNote(state, closedPrimaryChoice, lang);
@@ -663,6 +683,46 @@ export function ElectionResult({
     setAddressStep("skipped");
   }, []);
 
+  // Phase 5 — handler for the new data-driven PartyGate. Stores the
+  // ballotContext so downstream chat calls inject `<ballot_context>`, and
+  // back-maps onto the legacy runoffChoice / closedPrimaryChoice so the
+  // existing preResearchContext + primaryLane derivations stay consistent
+  // without forking those paths. The mapping is purely data-shape: tags
+  // like "DEM-runoff" / "REP-runoff" / "DEM-runoff-open" / "REP-runoff-open"
+  // line up 1:1 with the legacy TexasRunoffChoice enum values; DEM/REP
+  // primary tags map onto the closed-primary enum. Unknown tags fall back
+  // to no legacy mapping (the new ballotContext alone drives downstream).
+  const handlePartyGateSelect = useCallback(
+    (selection: SerializableBallotContext) => {
+      setBallotContext(selection);
+      const tag = selection.ballotTag;
+      if (tag === "DEM-runoff") setRunoffChoice("voted_dem_primary");
+      else if (tag === "REP-runoff") setRunoffChoice("voted_rep_primary");
+      else if (tag === "DEM-runoff-open")
+        setRunoffChoice("did_not_vote_dem_runoff");
+      else if (tag === "REP-runoff-open")
+        setRunoffChoice("did_not_vote_rep_runoff");
+      else if (tag === "DEM-primary") setClosedPrimaryChoice("registered_dem");
+      else if (tag === "REP-primary") setClosedPrimaryChoice("registered_rep");
+    },
+    [],
+  );
+
+  // Render the new PartyGate alone when it's active and unresolved. This
+  // short-circuits the rest of the pre-research surface so the gate is the
+  // only thing the user sees before the cold open begins.
+  if (showPartyGate && partyGateRule) {
+    return (
+      <PartyGate
+        rule={partyGateRule}
+        county={countyForPrompt}
+        electionDate={upcomingElection?.date ?? ""}
+        electionLabel={upcomingElection?.name}
+        onSelect={handlePartyGateSelect}
+      />
+    );
+  }
+
   // Phase 3 — when themes are locked in AND the flag is on, render the
   // 3-pane workspace (rail + chat + ballot pane). The legacy
   // ResearchLayout path stays unchanged for flag-off / pre-lock callers.
@@ -695,6 +755,7 @@ export function ElectionResult({
         onSaveProfile={handleSaveProfile}
         onHandoff={handleHandoff}
         onLockInThemes={handleLockInThemes}
+        ballotContext={ballotContext}
       />
     );
   }
@@ -734,6 +795,7 @@ export function ElectionResult({
         onChatStarted={handleChatStarted}
         promptFleetV2Enabled={promptFleetV2Enabled}
         onLockInThemes={handleLockInThemes}
+        ballotContext={ballotContext}
         preResearchGate={
           needsRunoffGate ? (
             <RunoffGate
@@ -790,6 +852,8 @@ interface WorkspaceShellProps {
   onSaveProfile: () => void;
   onHandoff: () => void;
   onLockInThemes: (themes: Theme[]) => void;
+  /** Phase 5 — ballot context forwarded to ChatPanel for every chat call. */
+  ballotContext: SerializableBallotContext | null;
 }
 
 function WorkspaceShell({
@@ -817,6 +881,7 @@ function WorkspaceShell({
   onSaveProfile,
   onHandoff,
   onLockInThemes,
+  ballotContext,
 }: WorkspaceShellProps) {
   // City-state surrogate for the ballot pane address line. We never have the
   // user's street address; use county + state name as the locality label.
@@ -911,6 +976,7 @@ function WorkspaceShell({
           onChatStarted={onChatStarted}
           promptFleetV2Enabled={promptFleetV2Enabled}
           onLockInThemes={onLockInThemes}
+          ballotContext={ballotContext}
           workspace={{
             activeRace: activeRace
               ? {

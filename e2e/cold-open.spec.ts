@@ -41,13 +41,27 @@ async function waitForChatWindow(page: Page) {
 }
 
 /**
- * Resolve the runoff gate (Texas — closed primary requires the gate).
- * No-op when the gate isn't visible.
+ * Resolve whichever gate is shown — the new Phase 5 PartyGate (flag-on,
+ * data-driven) or the legacy runoff gate (flag-off path or non-PartyGate
+ * states). No-op when neither is visible.
  */
 async function resolveRunoffGate(page: Page) {
-  const gate = page.getByTestId("runoff-gate");
-  await gate.waitFor({ state: "visible", timeout: 2500 }).catch(() => null);
-  if (await gate.isVisible().catch(() => false)) {
+  // Phase 5 — new PartyGate takes precedence under PROMPT_FLEET_V2=1 + en.
+  const partyGate = page.getByTestId("party-gate");
+  await partyGate
+    .waitFor({ state: "visible", timeout: 2500 })
+    .catch(() => null);
+  if (await partyGate.isVisible().catch(() => false)) {
+    // Pick a named option (cold-open + workspace specs only need the gate
+    // resolved, not exercised — DEM lane keeps the chat downstream usable).
+    await page.getByTestId("party-gate-option-voted_dem_primary").click();
+    await page.getByTestId("party-gate-continue").click();
+    return;
+  }
+  // Legacy runoff gate (flag-off or non-Phase-5-state).
+  const legacy = page.getByTestId("runoff-gate");
+  await legacy.waitFor({ state: "visible", timeout: 2500 }).catch(() => null);
+  if (await legacy.isVisible().catch(() => false)) {
     await page.getByTestId("runoff-option-unsure").click();
   }
 }
