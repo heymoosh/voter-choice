@@ -670,6 +670,28 @@ describe("ElectionResult — mid-session theme amendment (Phase 6)", () => {
     expect(ta.value).toMatch(/Travis County|Texas/);
   });
 
+  it("BallotPane 'Continue elsewhere' does NOT open a new tab — BudgetExhausted is the only effect", () => {
+    // Phase 9 owns the entire handoff UX. The Phase 3 legacy stub used to
+    // also open claude.ai in a new tab via window.open, which double-fired
+    // alongside the BudgetExhausted screen. After PR 1, only the
+    // BudgetExhausted screen mounts.
+    const openSpy = vi
+      .spyOn(window, "open")
+      .mockImplementation(() => null as unknown as Window);
+    try {
+      renderElectionResult();
+      act(() => {
+        fireEvent.click(screen.getByTestId("ballot-pane-handoff"));
+      });
+      // The continuity screen still mounts (this is the new handoff UX).
+      expect(screen.getByTestId("budget-exhausted-screen")).toBeInTheDocument();
+      // And no new tab was opened.
+      expect(openSpy).not.toHaveBeenCalled();
+    } finally {
+      openSpy.mockRestore();
+    }
+  });
+
   it("structured budget_exhausted response from /api/chat mounts the BudgetExhausted screen", async () => {
     // The workspace ChatPanel is keyed by activeRace.id; structure the
     // mock so the second POST (after first themes-bootstrap) returns the
