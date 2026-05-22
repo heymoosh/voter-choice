@@ -157,56 +157,34 @@ describe("derivePrimary", () => {
   });
 });
 
-/* ── HandoffPackage render + fetch ─────────────────────────── */
+/* ── HandoffPackage render + counter-write ──────────────────
+ *
+ * Fix E moved PolisOverlay out of HandoffPackage and into the
+ * workspace rail (`WorkspacePolisSection`). The polis-specific
+ * tests that used to live here have moved with it:
+ *   · render-when-present  → WorkspacePolisSection.test.tsx
+ *   · fetch-shape (bars/bridges/compass) → same
+ *   · re-fetch on county change → already covered by PolisOverlay.test.tsx
+ *
+ * What stays in this file is the HandoffPackage-owned behavior:
+ *   · counter-write fires once on mount (location-keyed)
+ *   · request body shape (sessionId / stateCode / etc.)
+ *   · counter-write failure doesn't crash the component
+ *   · PolisOverlay is NOT rendered here anymore (regression guard)
+ */
 
-describe("HandoffPackage — polis overlay + counter write", () => {
+describe("HandoffPackage — counter write + polis absence", () => {
   let fetchMock: Mock;
 
   beforeEach(() => {
     fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
 
-    // Default: Phase 8 polis sub-routes return shape-correct empty defaults;
-    // counters endpoint returns ok.
+    // /api/counters returns ok; polis routes shouldn't be called from
+    // HandoffPackage anymore (fix E), but stub them anyway so any
+    // accidental regression doesn't crash — the assertion below covers
+    // the contract.
     fetchMock.mockImplementation((url: string) => {
-      if (typeof url === "string" && url.includes("/api/polis/bars")) {
-        return Promise.resolve({
-          ok: true,
-          json: () =>
-            Promise.resolve({
-              county: "Harris",
-              threshold: 50,
-              count: 0,
-              bars: [],
-            }),
-        });
-      }
-      if (typeof url === "string" && url.includes("/api/polis/bridges")) {
-        return Promise.resolve({
-          ok: true,
-          json: () =>
-            Promise.resolve({
-              county: "Harris",
-              threshold: 50,
-              count: 0,
-              bridges: [],
-            }),
-        });
-      }
-      if (typeof url === "string" && url.includes("/api/polis/compass")) {
-        return Promise.resolve({
-          ok: true,
-          json: () =>
-            Promise.resolve({
-              county: "Harris",
-              threshold: 150,
-              count: 0,
-              status: "below_threshold",
-              clusters: [],
-              dots: [],
-            }),
-        });
-      }
       if (typeof url === "string" && url.includes("/api/counters")) {
         return Promise.resolve({
           ok: true,
@@ -236,7 +214,7 @@ describe("HandoffPackage — polis overlay + counter write", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("renders the polis overlay section when stateCode and county are provided", async () => {
+  it("does NOT render the polis overlay even when stateCode + county are present (fix E moved Polis to the rail)", async () => {
     render(
       <HandoffPackage
         parsed={MINIMAL_PARSED!}
@@ -251,8 +229,48 @@ describe("HandoffPackage — polis overlay + counter write", () => {
       { wrapper },
     );
 
-    // The polis overlay section wrapper should render
-    expect(screen.getByTestId("polis-overlay-section")).toBeInTheDocument();
+    // Fix E — Polis surface moved to WorkspacePolisSection (inside the
+    // rail). HandoffPackage no longer renders the overlay.
+    expect(screen.queryByTestId("polis-overlay-section")).toBeNull();
+    expect(screen.queryByTestId("polis-bars-section")).toBeNull();
+    expect(screen.queryByTestId("polis-bridges-section")).toBeNull();
+    expect(screen.queryByTestId("polis-compass-section")).toBeNull();
+  });
+
+  it("does NOT fire any /api/polis fetches from HandoffPackage (regression guard)", async () => {
+    render(
+      <HandoffPackage
+        parsed={MINIMAL_PARSED!}
+        continuationPrompt="Continue here"
+        stateCode="TX"
+        county="Harris"
+        countyName="Harris County"
+        stateName="Texas"
+        primary="DEM"
+        messages={[
+          {
+            role: "user",
+            content: `[VOTER CONFIRMED CONCERNS] confirmations=${JSON.stringify(
+              [{ canonicalIssue: "crime_public_safety", rank: 1 }],
+            )}`,
+          },
+        ]}
+      />,
+      { wrapper },
+    );
+
+    // Wait for the counter-write effect to settle, then assert no polis
+    // calls were made.
+    await waitFor(() => {
+      const counterCalls = fetchMock.mock.calls.filter(
+        (c) => typeof c[0] === "string" && c[0].includes("/api/counters"),
+      );
+      expect(counterCalls).toHaveLength(1);
+    });
+    const polisCalls = fetchMock.mock.calls.filter(
+      (c) => typeof c[0] === "string" && c[0].includes("/api/polis"),
+    );
+    expect(polisCalls).toHaveLength(0);
   });
 
   it("fires a counter-write POST once on mount when stateCode + county present", async () => {
@@ -274,45 +292,6 @@ describe("HandoffPackage — polis overlay + counter write", () => {
           typeof call[0] === "string" && call[0].includes("/api/counters"),
       );
       expect(counterCalls).toHaveLength(1);
-    });
-  });
-
-  it("PolisOverlay fires /api/polis/bars + /bridges + /compass with stateCode, county, userConcerns", async () => {
-    const confirmations = JSON.stringify([
-      { canonicalIssue: "crime_public_safety", rank: 1 },
-    ]);
-    const messages = [
-      {
-        role: "user",
-        content: `[VOTER CONFIRMED CONCERNS] confirmations=${confirmations}`,
-      },
-    ];
-
-    render(
-      <HandoffPackage
-        parsed={MINIMAL_PARSED!}
-        continuationPrompt="Continue here"
-        stateCode="TX"
-        county="Harris"
-        primary="DEM"
-        messages={messages}
-      />,
-      { wrapper },
-    );
-
-    await waitFor(() => {
-      const polisCalls = fetchMock.mock.calls.filter(
-        (call) => typeof call[0] === "string" && call[0].includes("/api/polis"),
-      );
-      // bars + bridges + compass
-      expect(polisCalls.length).toBeGreaterThanOrEqual(3);
-      const urls = polisCalls.map((c) => c[0] as string).join("\n");
-      expect(urls).toMatch(/\/api\/polis\/bars/);
-      expect(urls).toMatch(/\/api\/polis\/bridges/);
-      expect(urls).toMatch(/\/api\/polis\/compass/);
-      expect(urls).toContain("stateCode=TX");
-      expect(urls).toContain("county=Harris");
-      expect(urls).toContain("userConcerns=crime_public_safety");
     });
   });
 
@@ -359,47 +338,6 @@ describe("HandoffPackage — polis overlay + counter write", () => {
     });
   });
 
-  it("PolisOverlay re-fetches when the county prop changes", async () => {
-    const { rerender } = render(
-      <HandoffPackage
-        parsed={MINIMAL_PARSED!}
-        continuationPrompt="Continue here"
-        stateCode="TX"
-        county="Harris"
-        primary="DEM"
-        messages={[]}
-      />,
-      { wrapper },
-    );
-
-    await waitFor(() => {
-      const polisCalls = fetchMock.mock.calls.filter(
-        (call) => typeof call[0] === "string" && call[0].includes("/api/polis"),
-      );
-      expect(polisCalls.length).toBeGreaterThanOrEqual(3);
-    });
-    const callsBeforeRerender = fetchMock.mock.calls.length;
-
-    rerender(
-      <HandoffPackage
-        parsed={MINIMAL_PARSED!}
-        continuationPrompt="Continue here"
-        stateCode="TX"
-        county="Travis"
-        primary="DEM"
-        messages={[]}
-      />,
-    );
-
-    await waitFor(() => {
-      expect(fetchMock.mock.calls.length).toBeGreaterThan(callsBeforeRerender);
-      const allUrls = fetchMock.mock.calls
-        .map((c) => (typeof c[0] === "string" ? c[0] : ""))
-        .join("\n");
-      expect(allUrls).toContain("county=Travis");
-    });
-  });
-
   it("does not fire counter-write twice on re-render", async () => {
     const { rerender } = render(
       <HandoffPackage
@@ -439,14 +377,6 @@ describe("HandoffPackage — polis overlay + counter write", () => {
     fetchMock.mockImplementation((url: string) => {
       if (typeof url === "string" && url.includes("/api/counters")) {
         return Promise.reject(new Error("Network error"));
-      }
-      // Phase 8 polis sub-routes — return non-ok so the overlay shows error
-      // states rather than crashing.
-      if (typeof url === "string" && url.includes("/api/polis/")) {
-        return Promise.resolve({
-          ok: false,
-          json: () => Promise.resolve({}),
-        });
       }
       return Promise.resolve({ ok: false, json: () => Promise.resolve({}) });
     });
