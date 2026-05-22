@@ -628,3 +628,178 @@ describe("ChatPanel", () => {
     ).not.toBeInTheDocument();
   });
 });
+
+/* ── Phase 6 — workspace-mode amend integration ──────────────── */
+
+describe("ChatPanel — workspace amend editor + chat catch (Phase 6)", () => {
+  const lockedThemes = [
+    { name: "Healthcare costs", quotes: ['"insulin prices"'] },
+    { name: "Housing affordability", quotes: ['"rent went up 30%"'] },
+  ];
+
+  function renderWorkspaceChat(
+    workspaceOverrides: Record<string, unknown> = {},
+  ) {
+    const baseWorkspace = {
+      activeRace: {
+        id: "us-president",
+        label: "U.S. President",
+        section: "Federal",
+        candidates: [
+          { name: "Alice Anderson", party: "Democratic" },
+          { name: "Bob Brown", party: "Republican" },
+        ],
+      },
+      totalRaces: 3,
+      activeRaceIndex: 0,
+      decided: false,
+      prevActiveRaceId: null,
+      onCommitDecision: vi.fn(),
+      onUnpickDecision: vi.fn(),
+      pendingAmendment: null,
+      amendmentInFlight: false,
+      lockedThemes,
+      chatCatchSuggestion: null,
+      onChatCatch: vi.fn(),
+      onChatCatchAccept: vi.fn(),
+      onChatCatchDismiss: vi.fn(),
+      onAmendmentSave: vi.fn(),
+      onAmendmentDiscard: vi.fn(),
+      ...workspaceOverrides,
+    } as React.ComponentProps<typeof ChatPanel>["workspace"];
+    return render(
+      <LanguageProvider>
+        <ChatPanel state={txState} zipCode="73301" workspace={baseWorkspace} />
+      </LanguageProvider>,
+    );
+  }
+
+  beforeEach(() => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ budget: { tier: "normal", percent: 0 } }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+  });
+
+  it("renders the amend editor inline when pendingAmendment is set (rail entry)", () => {
+    renderWorkspaceChat({
+      pendingAmendment: { entry: "rail" },
+    });
+    const editor = screen.getByTestId("theme-amend-editor");
+    expect(editor).toBeInTheDocument();
+    const workspaceChat = screen.getByTestId("workspace-chat");
+    expect(workspaceChat.contains(editor)).toBe(true);
+  });
+
+  it("renders the amend editor with the candidate-new-theme when pendingAmendment carries one (chat-catch entry)", () => {
+    renderWorkspaceChat({
+      pendingAmendment: {
+        entry: "chat",
+        triggeringMessage:
+          "I really care about school funding, kids' schools are crumbling.",
+        candidateNewTheme: {
+          name: "School funding",
+          quotes: ["kids' schools are crumbling"],
+        },
+      },
+    });
+    const slot = screen.getByTestId("theme-amend-candidate-slot");
+    expect(slot).toHaveTextContent("School funding");
+    expect(slot).toHaveTextContent("kids' schools are crumbling");
+  });
+
+  it("renders the chat-catch chip when chatCatchSuggestion is set and no pending amendment", () => {
+    renderWorkspaceChat({
+      chatCatchSuggestion: {
+        triggeringMessage: "I'm worried about climate change in Houston.",
+        candidateNewTheme: {
+          name: "Climate",
+          quotes: ["I'm worried about climate change in Houston"],
+        },
+      },
+    });
+    expect(screen.getByTestId("amend-chat-catch-chip")).toBeInTheDocument();
+    expect(screen.getByTestId("amend-chat-catch-accept")).toBeInTheDocument();
+    expect(screen.getByTestId("amend-chat-catch-dismiss")).toBeInTheDocument();
+  });
+
+  it("clicking the chat-catch accept fires onChatCatchAccept", () => {
+    const onChatCatchAccept = vi.fn();
+    renderWorkspaceChat({
+      onChatCatchAccept,
+      chatCatchSuggestion: {
+        triggeringMessage:
+          "I am worried about climate change and air quality in Houston this year.",
+        candidateNewTheme: {
+          name: "Climate",
+          quotes: ["climate change and air quality"],
+        },
+      },
+    });
+    fireEvent.click(screen.getByTestId("amend-chat-catch-accept"));
+    expect(onChatCatchAccept).toHaveBeenCalledTimes(1);
+  });
+
+  it("dismiss button on chip fires onChatCatchDismiss without opening editor", () => {
+    const onChatCatchDismiss = vi.fn();
+    renderWorkspaceChat({
+      onChatCatchDismiss,
+      chatCatchSuggestion: {
+        triggeringMessage:
+          "I am worried about climate change and air quality in Houston this year.",
+        candidateNewTheme: {
+          name: "Climate",
+          quotes: ["climate change"],
+        },
+      },
+    });
+    fireEvent.click(screen.getByTestId("amend-chat-catch-dismiss"));
+    expect(onChatCatchDismiss).toHaveBeenCalledTimes(1);
+    expect(screen.queryByTestId("theme-amend-editor")).toBeNull();
+  });
+
+  it("submitting a workspace-chat message containing a domain keyword fires onChatCatch", () => {
+    const onChatCatch = vi.fn();
+    renderWorkspaceChat({
+      onChatCatch,
+      // No locked theme covers 'climate' — heuristic should fire.
+      lockedThemes,
+    });
+    const input = screen.getByTestId("workspace-chat-input");
+    fireEvent.change(input, {
+      target: {
+        value:
+          "I am really worried about climate change and air quality in Houston this year ahead of the runoff.",
+      },
+    });
+    const form = input.closest("form")!;
+    fireEvent.submit(form);
+    expect(onChatCatch).toHaveBeenCalledTimes(1);
+    expect(onChatCatch.mock.calls[0][0].suggestedKeywords).toContain("climate");
+  });
+
+  it("Discard inside the editor fires onAmendmentDiscard and does NOT call /api/chat", () => {
+    const onAmendmentDiscard = vi.fn();
+    renderWorkspaceChat({
+      pendingAmendment: { entry: "rail" },
+      onAmendmentDiscard,
+    });
+    fireEvent.click(screen.getByTestId("theme-amend-discard"));
+    expect(onAmendmentDiscard).toHaveBeenCalledTimes(1);
+    // /api/chat should NOT have been called for an amend payload.
+    const calls = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls;
+    const amendCalls = calls.filter((c) => {
+      const init = c[1] as { body?: unknown } | undefined;
+      if (!init?.body) return false;
+      try {
+        const body = JSON.parse(String(init.body));
+        return body.view === "amend";
+      } catch {
+        return false;
+      }
+    });
+    expect(amendCalls).toHaveLength(0);
+  });
+});

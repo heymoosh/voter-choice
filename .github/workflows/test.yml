@@ -61,7 +61,7 @@ jobs:
       - name: Run Playwright e2e tests (flag off — legacy specs)
         run: npm run e2e
 
-      - name: Run cold-open + workspace + state-gates + print-ballot e2e (flag on — Phase 2 + 3 + 5 + 7 paths)
+      - name: Run cold-open + workspace + state-gates + print-ballot + theme-amend e2e (flag on — Phase 2 + 3 + 5 + 6 + 7 paths)
         env:
           PROMPT_FLEET_V2: "1"
-        run: npx playwright test e2e/cold-open.spec.ts e2e/workspace.spec.ts e2e/state-gates.spec.ts e2e/print-ballot.spec.ts --project=chromium-desktop
+        run: npx playwright test e2e/cold-open.spec.ts e2e/workspace.spec.ts e2e/state-gates.spec.ts e2e/print-ballot.spec.ts e2e/theme-amend.spec.ts --project=chromium-desktop

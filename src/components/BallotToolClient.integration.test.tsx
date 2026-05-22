@@ -501,3 +501,151 @@ describe("ElectionResult — workspace 3-pane shell (Phase 3)", () => {
     expect(body).toBeDefined();
   });
 });
+
+/* ── Phase 6 — mid-session theme amendment ───────────────── */
+
+describe("ElectionResult — mid-session theme amendment (Phase 6)", () => {
+  function mockAmendChat(verdicts: { race_id: string; verdict: string }[]) {
+    const payload = {
+      new_theme: {
+        name: "School funding",
+        quotes: ["kids' schools are crumbling"],
+      },
+      suggested_rank: 1,
+      rescored: verdicts.map((v) => ({
+        race_id: v.race_id,
+        old_score: 80,
+        new_score: v.verdict === "REVISIT" ? 60 : 80,
+        verdict: v.verdict,
+      })),
+    };
+    const encoder = new TextEncoder();
+    return new Response(
+      new ReadableStream({
+        start(controller) {
+          controller.enqueue(
+            encoder.encode(
+              `data: ${JSON.stringify({ type: "text", text: JSON.stringify(payload) })}\n\n`,
+            ),
+          );
+          controller.enqueue(
+            encoder.encode(
+              `data: ${JSON.stringify({ type: "done", budget: { tier: "normal", percent: 0 } })}\n\n`,
+            ),
+          );
+          controller.close();
+        },
+      }),
+      { status: 200, headers: { "Content-Type": "text/event-stream" } },
+    );
+  }
+
+  it("clicking the rail's Edit themes opens the amend editor inline in chat (not a modal)", () => {
+    renderElectionResult();
+    fireEvent.click(screen.getByTestId("workspace-rail-edit-themes"));
+    const editor = screen.getByTestId("theme-amend-editor");
+    expect(editor).toBeInTheDocument();
+    // Inline in chat, not a modal: descendant of the workspace-chat region.
+    const workspaceChat = screen.getByTestId("workspace-chat");
+    expect(workspaceChat.contains(editor)).toBe(true);
+  });
+
+  it("clicking Edit themes does NOT drop back to cold-open (Phase 6 change)", () => {
+    renderElectionResult();
+    fireEvent.click(screen.getByTestId("workspace-rail-edit-themes"));
+    // The cold-open surface is gone (we stayed in workspace mode).
+    expect(screen.queryByTestId("cold-open-input")).toBeNull();
+    expect(screen.getByTestId("workspace-chat")).toBeInTheDocument();
+  });
+
+  it("Discard amendment closes the editor without changing themes", () => {
+    renderElectionResult();
+    fireEvent.click(screen.getByTestId("workspace-rail-edit-themes"));
+    expect(screen.getByTestId("theme-amend-editor")).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId("theme-amend-discard"));
+    expect(screen.queryByTestId("theme-amend-editor")).toBeNull();
+    // Themes unchanged in the rail.
+    expect(screen.getByTestId("workspace-rail-theme-0")).toHaveTextContent(
+      "Healthcare costs",
+    );
+    expect(screen.getByTestId("workspace-rail-theme-1")).toHaveTextContent(
+      "Housing affordability",
+    );
+  });
+
+  it("locking an amendment does NOT auto-advance the active race", async () => {
+    vi.useFakeTimers();
+    try {
+      global.fetch = vi.fn(
+        async (input: unknown, init?: { body?: unknown }) => {
+          if (init?.body) {
+            const body = JSON.parse(String(init.body));
+            if (body.view === "amend") {
+              return mockAmendChat([
+                { race_id: "us-president", verdict: "HOLD" },
+              ]);
+            }
+          }
+          return new Response(
+            JSON.stringify({ budget: { tier: "normal", percent: 0 } }),
+            { status: 200, headers: { "Content-Type": "application/json" } },
+          );
+        },
+      ) as unknown as typeof fetch;
+
+      renderElectionResult();
+      const initialActiveRaceId = screen
+        .getByTestId("workspace-pick-trigger")
+        .getAttribute("data-race-id");
+
+      fireEvent.click(screen.getByTestId("workspace-rail-edit-themes"));
+      fireEvent.change(screen.getByTestId("theme-amend-new-name-input"), {
+        target: { value: "School funding" },
+      });
+      fireEvent.click(screen.getByTestId("theme-amend-lock"));
+
+      await act(async () => {
+        await Promise.resolve();
+        vi.advanceTimersByTime(1000);
+      });
+
+      // Active race unchanged — no auto-advance after amend.
+      expect(
+        screen.getByTestId(`workspace-rail-race-${initialActiveRaceId}`),
+      ).toHaveAttribute("aria-current", "page");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("locking an amendment adds the new theme to the rail's locked themes", async () => {
+    global.fetch = vi.fn(async (input: unknown, init?: { body?: unknown }) => {
+      if (init?.body) {
+        const body = JSON.parse(String(init.body));
+        if (body.view === "amend") {
+          return mockAmendChat([]);
+        }
+      }
+      return new Response(
+        JSON.stringify({ budget: { tier: "normal", percent: 0 } }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      );
+    }) as unknown as typeof fetch;
+
+    renderElectionResult();
+    fireEvent.click(screen.getByTestId("workspace-rail-edit-themes"));
+    fireEvent.change(screen.getByTestId("theme-amend-new-name-input"), {
+      target: { value: "School funding" },
+    });
+    fireEvent.click(screen.getByTestId("theme-amend-lock"));
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    // The new theme should appear at the top of the rail.
+    expect(screen.getByTestId("workspace-rail-theme-0")).toHaveTextContent(
+      "School funding",
+    );
+  });
+});
