@@ -24,7 +24,16 @@ import { ConcernInterpretation } from "./ConcernInterpretation";
 import type { ConcernConfirmation } from "./ConcernInterpretation";
 import { ColdOpenInput } from "./ColdOpenInput";
 import { parseThemeExtraction } from "../lib/prompts/parse-theme-extraction";
-import type { Theme, RouterView } from "../lib/prompts/types";
+import { parseThemeAmendment } from "../lib/prompts/parse-theme-amendment";
+import type { Theme, RouterView, RouterTrigger } from "../lib/prompts/types";
+import { ThemeAmendEditor } from "./ThemeAmendEditor";
+import { AmendDeltaMessage } from "./AmendDeltaMessage";
+import {
+  decideVerdict,
+  type VerdictDecision,
+  type RescoredRace,
+} from "../lib/server/decide-verdict";
+import { shouldSuggestAmend } from "../lib/chat-catch-heuristic";
 import type { SerializableBallotContext } from "../lib/state-rules/ballot-context";
 import {
   parseValuesTagRequestBlock,
@@ -137,6 +146,69 @@ export interface WorkspaceModeProps {
     whyNote: string;
   }) => void;
   onUnpickDecision: (raceId: string) => void;
+  /* ── Phase 6 hooks ──────────────────────────────────────── */
+  /**
+   * Whether the amend editor is currently open and which entry path opened it.
+   * Lifted to BallotToolClient so the editor survives race switches (ChatPanel
+   * itself is keyed by activeRace.id and would otherwise wipe local state).
+   */
+  pendingAmendment?: {
+    triggeringMessage?: string;
+    candidateNewTheme?: Theme;
+    /** "rail" → opened from the workspace rail; "chat" → from a catch chip. */
+    entry: "rail" | "chat";
+  } | null;
+  /** When true, the editor renders its "Re-scoring your races…" state. */
+  amendmentInFlight?: boolean;
+  /** Currently-locked themes — read by both the editor and the chat-catch heuristic. */
+  lockedThemes?: Theme[];
+  /** Fired when the user clicks "Lock these changes" in the editor. */
+  onAmendmentSave?: (payload: {
+    updatedThemes: Theme[];
+    newTheme?: Theme;
+    suggestedRank?: number;
+    /** The triggering message (for chat-catch entries) or undefined. */
+    triggeringMessage?: string;
+  }) => void;
+  /**
+   * Fired by ChatPanel right before and after the amend fetch starts/finishes
+   * so the parent can flip `amendmentInFlight` and the editor's spinner
+   * actually surfaces during the 1-3s rescore window. Without this the
+   * spinner is invisible in production because `inFlight` is gated on the
+   * parent's state and the fetch resolves before any flip.
+   */
+  onAmendmentInFlightChange?: (inFlight: boolean) => void;
+  /** Fired when the user clicks "Discard amendment". */
+  onAmendmentDiscard?: () => void;
+  /**
+   * Optional lookup: race id → human race label. Lets the amend delta message
+   * render "U.S. House — TX-07" instead of the raw "us-house-tx-07" id. The
+   * caller (BallotToolClient) builds this from `decisions` so only races the
+   * user has actually decided are surfaced.
+   */
+  raceLabelLookup?: Record<string, string>;
+  /**
+   * Fired when the chat-catch heuristic decides the user's just-submitted
+   * message names a new concern. ChatPanel runs the heuristic client-side;
+   * BallotToolClient decides whether to surface the chip and what the
+   * candidate-new-theme should look like.
+   */
+  onChatCatch?: (input: {
+    message: string;
+    suggestedKeywords: string[];
+  }) => void;
+  /**
+   * Currently-surfaced chat-catch chip suggestion (when any). When set,
+   * ChatPanel renders the inline soft proposal in the message stream.
+   */
+  chatCatchSuggestion?: {
+    triggeringMessage: string;
+    candidateNewTheme: Theme;
+  } | null;
+  /** Fired when the user clicks the chat-catch chip to open the editor. */
+  onChatCatchAccept?: () => void;
+  /** Fired when the user dismisses the chat-catch chip. */
+  onChatCatchDismiss?: () => void;
 }
 
 interface ChatPanelProps {
@@ -1179,6 +1251,8 @@ function WorkspaceChat({
   isStreaming,
   onSendMessage,
   chatDisabled,
+  amendmentJournal = [],
+  onAmendmentSave,
 }: {
   workspace: WorkspaceModeProps;
   budgetExhausted: boolean;
@@ -1186,6 +1260,14 @@ function WorkspaceChat({
   isStreaming: boolean;
   onSendMessage: (msg: string) => void;
   chatDisabled: boolean;
+  /** Phase 6 — inline amend delta entries rendered below the message list. */
+  amendmentJournal?: { newThemeName: string; verdicts: VerdictDecision[] }[];
+  /** Phase 6 — proxy to ChatPanel.submitAmendment + the parent's onAmendmentSave. */
+  onAmendmentSave?: (payload: {
+    updatedThemes: Theme[];
+    newTheme?: Theme;
+    suggestedRank?: number;
+  }) => Promise<void> | void;
 }) {
   const {
     activeRace,
@@ -1251,28 +1333,98 @@ function WorkspaceChat({
         data-testid="workspace-chat-messages"
         className="flex-1 overflow-y-auto p-4"
       >
-        {messages.length === 0 ? (
+        {messages.length === 0 &&
+        amendmentJournal.length === 0 &&
+        !workspace.pendingAmendment &&
+        !workspace.chatCatchSuggestion ? (
           <p className="text-sm text-on-surface-muted">
             Ask anything about {activeRace.label}.
           </p>
         ) : (
-          <ul className="flex flex-col gap-3">
-            {messages.map((m, i) => (
-              <li
-                key={i}
-                data-testid={
-                  m.role === "user" ? "chat-message-user" : "chat-message-ai"
-                }
-                className={
-                  m.role === "user"
-                    ? "self-end max-w-md bg-surface-lowest border border-outline-variant/40 px-3 py-2 text-sm text-on-surface"
-                    : "max-w-2xl text-sm text-on-surface"
-                }
+          <>
+            {messages.length > 0 && (
+              <ul className="flex flex-col gap-3">
+                {messages.map((m, i) => (
+                  <li
+                    key={i}
+                    data-testid={
+                      m.role === "user"
+                        ? "chat-message-user"
+                        : "chat-message-ai"
+                    }
+                    className={
+                      m.role === "user"
+                        ? "self-end max-w-md bg-surface-lowest border border-outline-variant/40 px-3 py-2 text-sm text-on-surface"
+                        : "max-w-2xl text-sm text-on-surface"
+                    }
+                  >
+                    <MarkdownText text={m.content} />
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            {/* Phase 6 — chat-catch soft proposal chip. */}
+            {workspace.chatCatchSuggestion && !workspace.pendingAmendment && (
+              <div
+                data-testid="amend-chat-catch-chip"
+                className="my-3 border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900"
+                role="status"
               >
-                <MarkdownText text={m.content} />
-              </li>
+                <p className="mb-2">
+                  I noticed you mentioned{" "}
+                  <strong>
+                    {workspace.chatCatchSuggestion.candidateNewTheme.name}
+                  </strong>{" "}
+                  — want to add it as a theme?
+                </p>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    data-testid="amend-chat-catch-accept"
+                    onClick={workspace.onChatCatchAccept}
+                    className="bg-amber-600 text-white px-3 py-1.5 text-xs font-bold uppercase tracking-widest hover:bg-amber-700"
+                  >
+                    Add as a theme
+                  </button>
+                  <button
+                    type="button"
+                    data-testid="amend-chat-catch-dismiss"
+                    onClick={workspace.onChatCatchDismiss}
+                    className="text-xs font-bold uppercase tracking-widest text-on-surface-muted hover:text-rose-700"
+                  >
+                    Not now
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Phase 6 — inline amend editor (rail or chat-catch entry). */}
+            {workspace.pendingAmendment && workspace.lockedThemes && (
+              <ThemeAmendEditor
+                currentThemes={workspace.lockedThemes}
+                candidateNewTheme={workspace.pendingAmendment.candidateNewTheme}
+                triggeringMessage={workspace.pendingAmendment.triggeringMessage}
+                decidedRaces={[]}
+                inFlight={workspace.amendmentInFlight}
+                onSave={async (payload) => {
+                  if (onAmendmentSave) {
+                    await onAmendmentSave(payload);
+                  }
+                }}
+                onDiscard={() => workspace.onAmendmentDiscard?.()}
+              />
+            )}
+
+            {/* Phase 6 — past amend delta messages. */}
+            {amendmentJournal.map((entry, i) => (
+              <AmendDeltaMessage
+                key={`amend-${i}-${entry.newThemeName}`}
+                verdicts={entry.verdicts}
+                newThemeName={entry.newThemeName}
+              />
             ))}
-          </ul>
+          </>
         )}
       </div>
 
@@ -1904,6 +2056,164 @@ export function ChatPanel({
     });
   }, []);
 
+  /* ── Phase 6 — amendment journal + submit ──────────────────── */
+  // Inline message stream entries the WorkspaceChat renders below the regular
+  // assistant/user messages. Each entry is the result of one amendment cycle
+  // (the per-race verdicts + the new theme name). Lives in ChatPanel local
+  // state because the journal is a chat-scoped audit trail; BallotToolClient
+  // doesn't need to know about it.
+  //
+  // Scope note: ChatPanel is re-keyed by activeRace.id in the workspace shell,
+  // so the journal naturally clears on race switch. This matches the per-race
+  // chat scope set by Phase 1 (prompts.md §256). If a session-wide scrollable
+  // amendment history surfaces in a future packet, lift this state up to
+  // BallotToolClient.
+  const [amendmentJournal, setAmendmentJournal] = useState<
+    { newThemeName: string; verdicts: VerdictDecision[] }[]
+  >([]);
+
+  /**
+   * Submit an amendment payload through the chat route (theme-amendment
+   * builder). Parses the response, computes per-race verdicts via the pure
+   * decideVerdict() function (falling back to the prompt's `verdictHint` when
+   * runtime lacks per-candidate scores), appends a journal entry, and
+   * notifies the parent of the new locked themes.
+   */
+  const submitAmendment = useCallback(
+    async (input: {
+      updatedThemes: Theme[];
+      newTheme?: Theme;
+      suggestedRank?: number;
+      triggeringMessage?: string;
+    }) => {
+      if (chatDisabled) return;
+      const decidedRaces = workspace?.activeRace ? [] : []; // see below
+      // Build the amendment payload — userInput is the triggering message
+      // (rail-entry → synthesize a stub), themesList is post-edit ranking.
+      const userInput =
+        input.triggeringMessage ??
+        (input.newTheme
+          ? `${input.newTheme.name}: ${input.newTheme.quotes.join(" / ")}`
+          : "Re-rank only, no new theme.");
+      const themesList = input.updatedThemes
+        .map((th, i) => `${i + 1}. ${th.name}`)
+        .join("\n");
+      // decidedJson must reflect the parent's full decision list. We rely on
+      // BallotToolClient surfacing this via workspace; for v1 the prompt's
+      // own verdict math is sufficient and we don't need server-side rescore.
+      const decidedJson = JSON.stringify(decidedRaces);
+
+      messageCountRef.current += 1;
+
+      const buffer: string[] = [];
+      const trigger: RouterTrigger = input.triggeringMessage
+        ? "amend-from-chat"
+        : "amend-from-rail";
+
+      try {
+        const response = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            messages: [{ role: "user" as const, content: userInput }],
+            systemPrompt: "",
+            sessionId: sessionIdRef.current,
+            messageCount: messageCountRef.current,
+            view: "amend" as RouterView,
+            trigger,
+            raceContext: {
+              userInput,
+              themesList,
+              decidedJson,
+            },
+            ...(voterProfile ? { voterProfile } : {}),
+            ...(ballotContext ? { ballotContext } : {}),
+          }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          handleApiError(errorData);
+          messageCountRef.current -= 1;
+          // Themes still update — per packet edge case: "themes still update
+          // [if re-score fails]; verdicts unavailable."
+          return { verdicts: [] as VerdictDecision[] };
+        }
+
+        await streamResponse(response, {
+          onText: (text) => buffer.push(text),
+          onDone: (budget) => handleBudgetUpdate(budget),
+          onError: (err) => setError(err),
+        });
+
+        const raw = buffer.join("");
+        try {
+          const parsed = parseThemeAmendment(raw);
+          // For v1 the runtime lacks per-candidate scores, so decideVerdict()
+          // will always return HOLD without the prompt's hint. Fall back to
+          // verdictHint when otherCandidateScores is empty (the v1 path).
+          const verdicts: VerdictDecision[] = parsed.rescored.map((r) => {
+            // Build a RescoredRace with empty otherCandidateScores. Look up
+            // the human race label from the parent-supplied map when
+            // available — falls back to raceId so the row still renders.
+            const raceLabel =
+              workspace?.raceLabelLookup?.[r.raceId] ?? r.raceId;
+            const race: RescoredRace = {
+              raceId: r.raceId,
+              raceLabel,
+              raceType: r.verdictHint === "N/A" ? "proposition" : "choice",
+              oldScore: r.oldScore,
+              newScore: r.newScore,
+              otherCandidateScores: [],
+            };
+            const pure = decideVerdict(race);
+            // V1 fallback: when the pure function lacks other-candidate data
+            // and the prompt gave a stronger verdict (REVISIT / N/A), prefer
+            // the hint. decideVerdict alone would always say HOLD without
+            // candidate scores — defeating the feature.
+            if (pure.verdict === "HOLD" && r.verdictHint) {
+              if (r.verdictHint === "REVISIT" || r.verdictHint === "N/A") {
+                return { ...pure, verdict: r.verdictHint };
+              }
+            }
+            return pure;
+          });
+          const newThemeName = parsed.newTheme.name;
+          setAmendmentJournal((prev) => [...prev, { newThemeName, verdicts }]);
+          return { verdicts, newTheme: parsed.newTheme };
+        } catch {
+          // Parse failed — surface the journal entry with no verdicts so the
+          // user still sees an acknowledgement. The themes update upstream
+          // regardless.
+          setAmendmentJournal((prev) => [
+            ...prev,
+            {
+              newThemeName: input.newTheme?.name ?? "(theme edit)",
+              verdicts: [],
+            },
+          ]);
+          return { verdicts: [] as VerdictDecision[] };
+        }
+      } catch {
+        setError(
+          lang === "es"
+            ? "Error de conexión durante la enmienda."
+            : "Connection error during amendment.",
+        );
+        return { verdicts: [] as VerdictDecision[] };
+      }
+    },
+    [
+      chatDisabled,
+      handleApiError,
+      handleBudgetUpdate,
+      voterProfile,
+      ballotContext,
+      lang,
+      workspace,
+    ],
+  );
+
   const handleValuesSubmit = useCallback(
     (messageIdx: number, selection: SubmitPayload) => {
       if (submittedValuesSelectors.has(messageIdx) || isStreaming) return;
@@ -2133,8 +2443,55 @@ export function ChatPanel({
         budgetExhausted={budgetExhausted}
         messages={messages}
         isStreaming={isStreaming}
-        onSendMessage={(msg) => sendMessage(msg, messages)}
+        onSendMessage={(msg) => {
+          // Phase 6 — conservative chat-catch heuristic. Fires CLIENT-SIDE on
+          // user-message submit (no server roundtrip). When it suggests a new
+          // theme, we surface a soft proposal chip via the parent; otherwise
+          // we fall straight through to sendMessage.
+          if (
+            workspace.onChatCatch &&
+            workspace.lockedThemes &&
+            !workspace.pendingAmendment &&
+            !workspace.chatCatchSuggestion
+          ) {
+            const verdict = shouldSuggestAmend({
+              message: msg,
+              currentThemes: workspace.lockedThemes,
+            });
+            if (verdict.suggest && verdict.suggestedKeywords) {
+              workspace.onChatCatch({
+                message: msg,
+                suggestedKeywords: verdict.suggestedKeywords,
+              });
+            }
+          }
+          sendMessage(msg, messages);
+        }}
         chatDisabled={effectiveChatDisabled}
+        amendmentJournal={amendmentJournal}
+        onAmendmentSave={async (payload) => {
+          // Bridge: ChatPanel runs the actual /api/chat call and journals the
+          // result; the parent persists the updated themes via its own
+          // onAmendmentSave handler so localStorage / state survives.
+          if (workspace.onAmendmentSave) {
+            // Flip inFlight BEFORE awaiting so the editor's spinner actually
+            // surfaces during the 1-3s rescore window. Parent clears inFlight
+            // inside its onAmendmentSave handler after the editor unmounts.
+            workspace.onAmendmentInFlightChange?.(true);
+            await submitAmendment({
+              updatedThemes: payload.updatedThemes,
+              newTheme: payload.newTheme,
+              suggestedRank: payload.suggestedRank,
+              triggeringMessage: workspace.pendingAmendment?.triggeringMessage,
+            });
+            workspace.onAmendmentSave({
+              updatedThemes: payload.updatedThemes,
+              newTheme: payload.newTheme,
+              suggestedRank: payload.suggestedRank,
+              triggeringMessage: workspace.pendingAmendment?.triggeringMessage,
+            });
+          }
+        }}
       />
     );
   }

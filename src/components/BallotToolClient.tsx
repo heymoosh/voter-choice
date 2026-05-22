@@ -388,6 +388,19 @@ export function ElectionResult({
   // Tracks whether the most-recent activeRace change was a manual review
   // click on a finished race. Used to suppress auto-advance after a re-pick.
   const manualReviewRef = useRef(false);
+  // Phase 6 — amendment state. Lifted to BallotToolClient so the editor and
+  // chat-catch chip survive race switches (ChatPanel is keyed by activeRace.id
+  // and would otherwise wipe local state).
+  const [pendingAmendment, setPendingAmendment] = useState<{
+    triggeringMessage?: string;
+    candidateNewTheme?: Theme;
+    entry: "rail" | "chat";
+  } | null>(null);
+  const [amendmentInFlight, setAmendmentInFlight] = useState(false);
+  const [chatCatchSuggestion, setChatCatchSuggestion] = useState<{
+    triggeringMessage: string;
+    candidateNewTheme: Theme;
+  } | null>(null);
   // Hydration guard: persistence writes are skipped until we've read the
   // first time. Without this the empty initial mount would clobber any
   // saved state in localStorage before the user's reload-restored render
@@ -568,9 +581,89 @@ export function ElectionResult({
   }, []);
 
   const handleEditThemes = useCallback(() => {
-    // Phase 6 owns the proper amend editor. For Phase 3 we drop themes back
-    // to null so the ChatPanel falls back into cold-open mode.
-    setLockedThemes(null);
+    // Phase 6 — open the inline amend editor in the workspace chat instead of
+    // dropping back to cold-open. Themes stay locked; the editor mutates a
+    // draft copy and only commits on lock-in. Per packet anti-solution:
+    // "Workers must NOT open the amend editor in a modal — inline in chat only."
+    setPendingAmendment({ entry: "rail" });
+    setChatCatchSuggestion(null);
+  }, []);
+
+  /**
+   * Phase 6 chat-catch handler. ChatPanel runs the conservative
+   * shouldSuggestAmend() heuristic on every workspace user-message submit;
+   * when it surfaces an uncovered keyword we build a placeholder candidate
+   * (verbatim quote = the triggering message excerpt) and surface the soft
+   * proposal chip.
+   */
+  const handleChatCatch = useCallback(
+    (input: { message: string; suggestedKeywords: string[] }) => {
+      const keyword = input.suggestedKeywords[0];
+      const themeName = keyword
+        ? keyword.charAt(0).toUpperCase() + keyword.slice(1)
+        : "New concern";
+      // Use the FIRST sentence (or the full message, capped) as the verbatim
+      // quote so the editor can show context without bloating the chip.
+      const firstSentence =
+        input.message.split(/[.!?]\s/)[0]?.slice(0, 240) ?? input.message;
+      setChatCatchSuggestion({
+        triggeringMessage: input.message,
+        candidateNewTheme: {
+          name: themeName,
+          quotes: [firstSentence],
+        },
+      });
+    },
+    [],
+  );
+
+  const handleChatCatchAccept = useCallback(() => {
+    if (!chatCatchSuggestion) return;
+    setPendingAmendment({
+      entry: "chat",
+      triggeringMessage: chatCatchSuggestion.triggeringMessage,
+      candidateNewTheme: chatCatchSuggestion.candidateNewTheme,
+    });
+    setChatCatchSuggestion(null);
+  }, [chatCatchSuggestion]);
+
+  const handleChatCatchDismiss = useCallback(() => {
+    setChatCatchSuggestion(null);
+  }, []);
+
+  /**
+   * Phase 6 amendment lock-in handler. ChatPanel runs the actual /api/chat
+   * fetch and journals the per-race deltas inline; here we commit the
+   * post-edit themes into lockedThemes (the chat thread's subsequent system
+   * prompts will see the new ranking automatically). Per packet anti-
+   * solution: "Workers must NOT auto-advance after the amendment lock — the
+   * user just made a deliberate change."
+   *
+   * ChatPanel calls handleAmendmentInFlightChange(true) BEFORE the await so
+   * the editor's spinner surfaces during the 1-3s rescore window; this
+   * handler then clears pendingAmendment + inFlight after the fetch
+   * completes (which the parent learns about via this callback).
+   */
+  const handleAmendmentSave = useCallback(
+    (payload: {
+      updatedThemes: Theme[];
+      newTheme?: Theme;
+      suggestedRank?: number;
+    }) => {
+      setLockedThemes(payload.updatedThemes);
+      setPendingAmendment(null);
+      setAmendmentInFlight(false);
+    },
+    [],
+  );
+
+  const handleAmendmentInFlightChange = useCallback((inFlight: boolean) => {
+    setAmendmentInFlight(inFlight);
+  }, []);
+
+  const handleAmendmentDiscard = useCallback(() => {
+    setPendingAmendment(null);
+    setAmendmentInFlight(false);
   }, []);
 
   const handleRestart = useCallback(() => {
@@ -761,6 +854,15 @@ export function ElectionResult({
         onHandoff={handleHandoff}
         onLockInThemes={handleLockInThemes}
         ballotContext={ballotContext}
+        pendingAmendment={pendingAmendment}
+        amendmentInFlight={amendmentInFlight}
+        chatCatchSuggestion={chatCatchSuggestion}
+        onChatCatch={handleChatCatch}
+        onChatCatchAccept={handleChatCatchAccept}
+        onChatCatchDismiss={handleChatCatchDismiss}
+        onAmendmentSave={handleAmendmentSave}
+        onAmendmentInFlightChange={handleAmendmentInFlightChange}
+        onAmendmentDiscard={handleAmendmentDiscard}
       />
     );
   }
@@ -859,6 +961,30 @@ interface WorkspaceShellProps {
   onLockInThemes: (themes: Theme[]) => void;
   /** Phase 5 — ballot context forwarded to ChatPanel for every chat call. */
   ballotContext: SerializableBallotContext | null;
+  /* ── Phase 6 amendment plumbing — see ChatPanel.WorkspaceModeProps. ── */
+  pendingAmendment: {
+    triggeringMessage?: string;
+    candidateNewTheme?: Theme;
+    entry: "rail" | "chat";
+  } | null;
+  amendmentInFlight: boolean;
+  chatCatchSuggestion: {
+    triggeringMessage: string;
+    candidateNewTheme: Theme;
+  } | null;
+  onChatCatch: (input: {
+    message: string;
+    suggestedKeywords: string[];
+  }) => void;
+  onChatCatchAccept: () => void;
+  onChatCatchDismiss: () => void;
+  onAmendmentSave: (payload: {
+    updatedThemes: Theme[];
+    newTheme?: Theme;
+    suggestedRank?: number;
+  }) => void;
+  onAmendmentInFlightChange: (inFlight: boolean) => void;
+  onAmendmentDiscard: () => void;
 }
 
 function WorkspaceShell({
@@ -887,6 +1013,15 @@ function WorkspaceShell({
   onHandoff,
   onLockInThemes,
   ballotContext,
+  pendingAmendment,
+  amendmentInFlight,
+  chatCatchSuggestion,
+  onChatCatch,
+  onChatCatchAccept,
+  onChatCatchDismiss,
+  onAmendmentSave,
+  onAmendmentInFlightChange,
+  onAmendmentDiscard,
 }: WorkspaceShellProps) {
   // City-state surrogate for the ballot pane address line. We never have the
   // user's street address; use county + state name as the locality label.
@@ -1057,6 +1192,23 @@ function WorkspaceShell({
             prevActiveRaceId: prevActiveRaceIdRef.current,
             onCommitDecision,
             onUnpickDecision,
+            // Phase 6 amendment plumbing — see ChatPanel.WorkspaceModeProps.
+            pendingAmendment,
+            amendmentInFlight,
+            lockedThemes: themes,
+            chatCatchSuggestion,
+            onChatCatch,
+            onChatCatchAccept,
+            onChatCatchDismiss,
+            onAmendmentSave,
+            onAmendmentInFlightChange,
+            onAmendmentDiscard,
+            // Race-id → human label lookup so AmendDeltaMessage rows show
+            // "U.S. House — TX-07" instead of the raw race id. Built from
+            // races (not decisions) so undecided races also resolve.
+            raceLabelLookup: Object.fromEntries(
+              racesWithDecided.map((r) => [r.id, r.label]),
+            ),
           }}
         />
       </div>
