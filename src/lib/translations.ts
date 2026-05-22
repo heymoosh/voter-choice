@@ -356,6 +356,19 @@ export interface Translations {
     polisOverlayLegendDemocratic: string;
     polisOverlayLegendRepublican: string;
     polisOverlayLegendOpen: string;
+    // Phase 8 — bars + bridges + compass empty states
+    polisBarsHeading: (county: string) => string;
+    polisBarsEmpty: string;
+    polisBarsBelowThreshold: (count: number, threshold: number) => string;
+    polisBarsLoading: string;
+    polisBridgesHeading: (county: string) => string;
+    polisBridgesEmpty: string;
+    polisBridgesBelowThreshold: (count: number, threshold: number) => string;
+    polisBridgesLoading: string;
+    polisCompassHeading: string;
+    polisCompassBelowThreshold: (count: number, threshold: number) => string;
+    polisCompassLoading: string;
+    polisSectionError: string;
     // ClosedPrimaryGate
     closedPrimaryGateTitle: (stateName: string) => string;
     closedPrimaryGateBody: string;
@@ -895,6 +908,23 @@ const en: Translations = {
     polisOverlayLegendDemocratic: "Democratic",
     polisOverlayLegendRepublican: "Republican",
     polisOverlayLegendOpen: "Open / General",
+    // Phase 8 — bars + bridges + compass empty states
+    polisBarsHeading: (county: string) => `You're not alone in ${county}.`,
+    polisBarsEmpty:
+      "Your county is just getting started — your themes haven't been seen yet.",
+    polisBarsBelowThreshold: (count: number, threshold: number) =>
+      `Just getting started — ${count} of about ${threshold} sessions so far.`,
+    polisBarsLoading: "Reading the shape of your county…",
+    polisBridgesHeading: (county: string) => `Where people in ${county} agree.`,
+    polisBridgesEmpty: "No bridge statements yet — needs more data.",
+    polisBridgesBelowThreshold: (count: number, threshold: number) =>
+      `Bridges appear once we hit ${threshold} sessions — ${count} so far.`,
+    polisBridgesLoading: "Looking for points of agreement…",
+    polisCompassHeading: "How we cluster.",
+    polisCompassBelowThreshold: (count: number, threshold: number) =>
+      `Not enough data yet — ${count} of ${threshold} sessions needed.`,
+    polisCompassLoading: "Loading the cluster compass…",
+    polisSectionError: "Couldn't load this reading. Try again in a moment.",
     // ClosedPrimaryGate
     closedPrimaryGateTitle: (stateName: string) =>
       `Before we start: ${stateName} primary ballot check`,
@@ -1464,6 +1494,23 @@ const es: Translations = {
     polisOverlayLegendDemocratic: "Democratic",
     polisOverlayLegendRepublican: "Republican",
     polisOverlayLegendOpen: "Open / General",
+    // Phase 8 \u2014 bars + bridges + compass empty states (EN stubs; ES translation held back per packet)
+    polisBarsHeading: (county: string) => `You're not alone in ${county}.`,
+    polisBarsEmpty:
+      "Your county is just getting started \u2014 your themes haven't been seen yet.",
+    polisBarsBelowThreshold: (count: number, threshold: number) =>
+      `Just getting started \u2014 ${count} of about ${threshold} sessions so far.`,
+    polisBarsLoading: "Reading the shape of your county\u2026",
+    polisBridgesHeading: (county: string) => `Where people in ${county} agree.`,
+    polisBridgesEmpty: "No bridge statements yet \u2014 needs more data.",
+    polisBridgesBelowThreshold: (count: number, threshold: number) =>
+      `Bridges appear once we hit ${threshold} sessions \u2014 ${count} so far.`,
+    polisBridgesLoading: "Looking for points of agreement\u2026",
+    polisCompassHeading: "How we cluster.",
+    polisCompassBelowThreshold: (count: number, threshold: number) =>
+      `Not enough data yet \u2014 ${count} of ${threshold} sessions needed.`,
+    polisCompassLoading: "Loading the cluster compass\u2026",
+    polisSectionError: "Couldn't load this reading. Try again in a moment.",
     // ClosedPrimaryGate
     closedPrimaryGateTitle: (stateName: string) =>
       `Antes de empezar: verificaci\u00f3n de boleta primaria en ${stateName}`,

@@ -10,7 +10,7 @@ import {
   extractVoterProfile,
 } from "../lib/ballot-utils";
 import { PolisOverlay } from "./PolisOverlay";
-import type { PolisData } from "./PolisOverlay";
+import { getIssueLabel } from "../lib/canonicalIssues";
 
 export interface ParsedHandoff {
   ballot: string | null;
@@ -142,18 +142,6 @@ function generateCounterSessionId(): string {
   }
   return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
-
-/* ── Empty fallback polis data (threshold not met) ──────────── */
-
-const EMPTY_POLIS_DATA: PolisData = {
-  scope: "county",
-  sampleSize: 0,
-  thresholdMet: false,
-  countToUnlock: undefined,
-  dots: [],
-  you: null,
-  consensus: [],
-};
 
 interface HandoffPackageProps {
   parsed: ParsedHandoff | null;
@@ -414,16 +402,13 @@ export function HandoffPackage({
   county,
   primary = "GENERAL",
   countyName,
-  stateName,
+  // stateName accepted by callers but unused after the Phase 8 restructure;
+  // kept on the props type so upstream consumers don't break.
 }: HandoffPackageProps) {
   const [copied, setCopied] = useState(false);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [polisData, setPolisData] = useState<PolisData | null>(null);
-  const [polisLoading, setPolisLoading] = useState(false);
   // Track whether we've fired the one-time counter write
   const counterFiredRef = useRef(false);
-  // Track whether we've fired the one-time polis fetch
-  const polisFiredRef = useRef(false);
   // Stable session id for idempotency — generated once per HandoffPackage mount
   const counterSessionIdRef = useRef<string>(generateCounterSessionId());
 
@@ -468,33 +453,8 @@ export function HandoffPackage({
     });
   }, []);
 
-  // Fetch polis data once after parsedHandoff lands (stateCode + county also required)
-  useEffect(() => {
-    if (!stateCode || !county) return;
-    if (!parsed) return;
-    if (polisFiredRef.current) return;
-    polisFiredRef.current = true;
-
-    setPolisLoading(true);
-    const params = new URLSearchParams({ stateCode, county });
-    if (confirmedConcerns.length > 0) {
-      params.set("userConcerns", confirmedConcerns.join(","));
-    }
-
-    void fetch(`/api/polis?${params.toString()}`)
-      .then(async (res) => {
-        if (!res.ok) return;
-        const data = (await res.json()) as PolisData;
-        setPolisData(data);
-      })
-      .catch((err) => {
-        console.log("[polis] fetch failed (non-blocking):", err);
-      })
-      .finally(() => {
-        setPolisLoading(false);
-      });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stateCode, county, parsed]);
+  // Phase 8: PolisOverlay owns its own fetches for bars/bridges/compass.
+  // HandoffPackage just passes the inputs.
 
   async function handleCopy() {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
@@ -554,14 +514,18 @@ export function HandoffPackage({
         </div>
       </div>
 
-      {/* Polis overlay — renders below the handoff card when location is known */}
-      {showPolisOverlay && (
+      {/* Polis overlay — renders below the handoff card when location is known.
+          Phase 8: the component owns its own fetches for bars/bridges/compass. */}
+      {showPolisOverlay && stateCode && county && (
         <div className="mt-6" data-testid="polis-overlay-section">
           <PolisOverlay
-            data={polisData ?? EMPTY_POLIS_DATA}
-            loading={polisLoading}
+            stateCode={stateCode}
+            county={county}
             countyName={countyName ?? county}
-            stateName={stateName}
+            userThemes={confirmedConcerns.map((id) => ({
+              id,
+              label: getIssueLabel(id),
+            }))}
           />
         </div>
       )}

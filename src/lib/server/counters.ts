@@ -379,6 +379,76 @@ async function durableFetchPolisAggregate(
   };
 }
 
+// ---------------------------------------------------------------------------
+// County-only overlap counts (Phase 8 bars endpoint)
+// ---------------------------------------------------------------------------
+
+export interface CountyOverlapCounts {
+  /** Total finished sessions for the (stateCode, county) pair. */
+  count: number;
+  /**
+   * For each canonical issue, the count of distinct sessions in the county
+   * that confirmed it. (Summed across primaries — the bars endpoint does
+   * not split by primary.)
+   *
+   * Note: this is an upper bound when the same session confirmed multiple
+   * issues — but each per-issue-per-primary counter increments at most once
+   * per session-end because dedupe gates the whole increment block. So the
+   * count is exact.
+   */
+  issueCounts: Record<string, number>;
+}
+
+const EMPTY_OVERLAP: CountyOverlapCounts = { count: 0, issueCounts: {} };
+
+/**
+ * Fetch county-only finished-session count + per-issue counts.
+ *
+ * Phase 8 bars use this directly (no scope fallback — "your county" framing).
+ */
+export async function fetchCountyOverlapCounts(
+  stateCode: string,
+  county: string,
+): Promise<CountyOverlapCounts> {
+  if (isDurableStoreConfigured()) {
+    try {
+      const prefix = countyPrefix(stateCode, county);
+      const count = await durableGetTotal(prefix);
+      const issueRows = await durableGetIssueCounts(prefix);
+      const issueCounts: Record<string, number> = {};
+      for (const row of issueRows) {
+        issueCounts[row.canonicalIssue] =
+          (issueCounts[row.canonicalIssue] ?? 0) + row.count;
+      }
+      return { count, issueCounts };
+    } catch (err) {
+      console.error("[counters] Redis county overlap fetch failed:", err);
+      return { ...EMPTY_OVERLAP };
+    }
+  }
+  return memFetchCountyOverlapCounts(stateCode, county);
+}
+
+function memFetchCountyOverlapCounts(
+  stateCode: string,
+  county: string,
+): CountyOverlapCounts {
+  const prefix = countyPrefix(stateCode, county);
+  const count = memGet(`${prefix}:total`);
+
+  const issueCounts: Record<string, number> = {};
+  for (const [key, value] of memCounters) {
+    if (!key.startsWith(prefix)) continue;
+    if (value === 0) continue;
+    const m = key.match(/:primary:(DEM|REP|OPEN|GENERAL):issue:(.+)$/);
+    if (!m) continue;
+    const canonicalIssue = m[2];
+    issueCounts[canonicalIssue] = (issueCounts[canonicalIssue] ?? 0) + value;
+  }
+
+  return { count, issueCounts };
+}
+
 function memFetchPolisAggregate(
   stateCode: string,
   county: string | null,
