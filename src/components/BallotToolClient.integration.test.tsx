@@ -862,7 +862,7 @@ describe("ElectionResult — mid-session theme amendment (Phase 6)", () => {
     }
   });
 
-  it("structured budget_exhausted response from /api/chat mounts the BudgetExhausted screen", async () => {
+  it("structured budget_exhausted response from /api/chat mounts the BudgetExhausted overlay (PR 7: workspace remains visible underneath)", async () => {
     // The workspace ChatPanel is keyed by activeRace.id; structure the
     // mock so the second POST (after first themes-bootstrap) returns the
     // Phase 9 budget_exhausted shape on a 200.
@@ -898,12 +898,132 @@ describe("ElectionResult — mid-session theme amendment (Phase 6)", () => {
       await Promise.resolve();
     });
 
-    // The continuity screen replaces the workspace shell.
+    // The continuity overlay mounts.
     expect(screen.getByTestId("budget-exhausted-screen")).toBeInTheDocument();
     expect(screen.getByTestId("budget-exhausted-headline")).toHaveTextContent(
       /Your ballot is saved/,
     );
-    expect(screen.queryByTestId("workspace-shell")).toBeNull();
+    // PR 7 — the workspace stays mounted underneath the overlay. User's
+    // themes, decisions, and races are preserved + still visible.
+    expect(screen.getByTestId("workspace-shell")).toBeInTheDocument();
+    expect(
+      screen.getByRole("navigation", { name: /workspace navigation/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("complementary", { name: /your ballot/i }),
+    ).toBeInTheDocument();
+  });
+
+  /* ── PR 7 — BudgetExhausted as overlay (workspace preserved) ── */
+
+  it("PR 7: clicking 'Continue elsewhere' overlays BudgetExhausted; workspace + ballot + rail remain in DOM", () => {
+    renderElectionResult();
+    act(() => {
+      fireEvent.click(screen.getByTestId("ballot-pane-handoff"));
+    });
+    // Overlay mounted.
+    expect(screen.getByTestId("budget-exhausted-overlay")).toBeInTheDocument();
+    // Workspace still mounted: rail nav, chat region, ballot pane all in DOM.
+    expect(screen.getByTestId("workspace-shell")).toBeInTheDocument();
+    expect(
+      screen.getByRole("navigation", { name: /workspace navigation/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("complementary", { name: /your ballot/i }),
+    ).toBeInTheDocument();
+    expect(screen.getByTestId("workspace-chat")).toBeInTheDocument();
+  });
+
+  it("PR 7: dismissing the overlay returns to a fully interactive workspace", () => {
+    renderElectionResult();
+    act(() => {
+      fireEvent.click(screen.getByTestId("ballot-pane-handoff"));
+    });
+    expect(screen.getByTestId("budget-exhausted-overlay")).toBeInTheDocument();
+    // Click the X dismiss button.
+    act(() => {
+      fireEvent.click(screen.getByTestId("budget-exhausted-dismiss"));
+    });
+    // Overlay gone; workspace still here.
+    expect(screen.queryByTestId("budget-exhausted-overlay")).toBeNull();
+    expect(screen.getByTestId("workspace-shell")).toBeInTheDocument();
+  });
+
+  it("PR 7: with NO BYOK key set, chat input shows the budget-exhausted notice + Send disabled after overlay surfaces", () => {
+    renderElectionResult();
+    act(() => {
+      fireEvent.click(screen.getByTestId("ballot-pane-handoff"));
+    });
+    // Notice is visible (chat input region carries it).
+    expect(
+      screen.getByTestId("workspace-chat-budget-notice"),
+    ).toBeInTheDocument();
+    // The textarea is disabled.
+    const input = screen.getByTestId(
+      "workspace-chat-input",
+    ) as HTMLInputElement;
+    expect(input).toBeDisabled();
+    // Send button is also disabled.
+    expect(screen.getByTestId("workspace-chat-send")).toBeDisabled();
+  });
+
+  it("PR 7: with a BYOK key set in localStorage, chat input STAYS interactive when overlay surfaces", () => {
+    window.localStorage.setItem(
+      "voter-choice:byok-anthropic-key",
+      "sk-ant-overlay-test",
+    );
+    renderElectionResult();
+    act(() => {
+      fireEvent.click(screen.getByTestId("ballot-pane-handoff"));
+    });
+    // No notice — BYOK bypasses community budget.
+    expect(screen.queryByTestId("workspace-chat-budget-notice")).toBeNull();
+    // Input and Send both enabled.
+    const input = screen.getByTestId(
+      "workspace-chat-input",
+    ) as HTMLInputElement;
+    expect(input).not.toBeDisabled();
+  });
+
+  it("PR 7: dismissing the overlay (no BYOK) keeps the chat notice + disabled input", () => {
+    renderElectionResult();
+    act(() => {
+      fireEvent.click(screen.getByTestId("ballot-pane-handoff"));
+    });
+    act(() => {
+      fireEvent.click(screen.getByTestId("budget-exhausted-dismiss"));
+    });
+    // Overlay dismissed but budget state is still "exhausted" in the
+    // user's eyes — chat remains gated until they BYOK or budget resets.
+    // For now (no BYOK), the notice persists.
+    expect(screen.queryByTestId("budget-exhausted-overlay")).toBeNull();
+    // Workspace pick-area copy still acknowledges exhaustion.
+    expect(screen.getByTestId("workspace-shell")).toBeInTheDocument();
+    // Critical: the chat input still shows the budget notice and is
+    // disabled. Dismissing the dialog is a pure UI action — it does NOT
+    // undo the parent's "budget is out" memory.
+    expect(
+      screen.getByTestId("workspace-chat-budget-notice"),
+    ).toBeInTheDocument();
+    expect(screen.getByTestId("workspace-chat-input")).toBeDisabled();
+    expect(screen.getByTestId("workspace-chat-send")).toBeDisabled();
+  });
+
+  it("PR 7: after dismiss without BYOK, re-clicking 'Continue elsewhere' re-opens the overlay", () => {
+    renderElectionResult();
+    act(() => {
+      fireEvent.click(screen.getByTestId("ballot-pane-handoff"));
+    });
+    act(() => {
+      fireEvent.click(screen.getByTestId("budget-exhausted-dismiss"));
+    });
+    expect(screen.queryByTestId("budget-exhausted-overlay")).toBeNull();
+    // Re-click "Continue elsewhere" — the overlay should re-open even
+    // though the underlying "budget is out" memory was still set.
+    act(() => {
+      fireEvent.click(screen.getByTestId("ballot-pane-handoff"));
+    });
+    expect(screen.getByTestId("budget-exhausted-overlay")).toBeInTheDocument();
   });
 
   it("BYOK precedence: with a key in localStorage, chat fetches go to api.anthropic.com — NOT /api/chat", async () => {

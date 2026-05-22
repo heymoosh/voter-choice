@@ -316,6 +316,19 @@ interface ChatPanelProps {
     handoffPromptText: string;
     resetAt: string;
   }) => void;
+  /**
+   * PR 7 — externally controlled budget-exhausted signal from the parent
+   * (BallotToolClient.WorkspaceShell). True when the overlay is mounted or
+   * when the parent has otherwise concluded the community budget is out.
+   * OR'd with the SSE-tier-derived internal `budgetExhausted` so the
+   * workspace chat input shows the disabled-with-notice state even when
+   * the overlay was triggered pre-emptively via "Continue elsewhere"
+   * (where the SSE tier hasn't necessarily flipped yet).
+   *
+   * If a BYOK key is set in localStorage, the input stays interactive
+   * regardless of this prop — BYOK bypasses the community budget.
+   */
+  budgetExhausted?: boolean;
 }
 
 function generateSessionId(): string {
@@ -1518,7 +1531,11 @@ function WorkspaceChat({
         onUnpickDecision={onUnpickDecision}
       />
 
-      {!chatDisabled && (
+      {/* Suggestion chips hidden during streaming OR session-limit / rate-
+          limit states; for `budgetExhausted` we keep the input visible-but-
+          disabled (PR 7) so the user still sees they have a chat surface,
+          not just a black hole. */}
+      {!chatDisabled && !budgetExhausted && (
         <div
           data-testid="workspace-chat-suggestions"
           className="flex flex-wrap gap-2 border-t border-outline-variant/30 p-3"
@@ -1538,11 +1555,20 @@ function WorkspaceChat({
         </div>
       )}
 
+      {/*
+       * Chat input visibility (PR 7):
+       *   - `chatDisabled` (non-budget reasons: rate/session limit) → hide
+       *     entirely; the legacy banner above already explains the gate.
+       *   - `budgetExhausted` → keep the input mounted but disabled, with
+       *     an explanatory notice. This preserves the visible workspace
+       *     state while making the "no chat without BYOK" gate obvious.
+       */}
       {!chatDisabled && (
         <WorkspaceChatInput
           onSubmit={onSendMessage}
           isStreaming={isStreaming}
           activeRaceLabel={activeRace.label}
+          budgetExhausted={budgetExhausted}
         />
       )}
     </section>
@@ -1553,26 +1579,44 @@ function WorkspaceChatInput({
   onSubmit,
   isStreaming,
   activeRaceLabel,
+  budgetExhausted,
 }: {
   onSubmit: (msg: string) => void;
   isStreaming: boolean;
   activeRaceLabel: string;
+  budgetExhausted: boolean;
 }) {
   const [input, setInput] = useState("");
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const trimmed = input.trim();
-    if (!trimmed || isStreaming) return;
+    if (!trimmed || isStreaming || budgetExhausted) return;
     setInput("");
     onSubmit(trimmed);
   }
+
+  // When budgetExhausted, the input AND send are disabled but visible.
+  // The notice text spells out the two recovery paths: copy the handoff
+  // prompt and continue elsewhere, OR add a BYOK key. The BudgetExhausted
+  // overlay (which may be open, may have been dismissed) is the surface
+  // for both actions.
+  const inputDisabled = isStreaming || budgetExhausted;
 
   return (
     <form
       onSubmit={handleSubmit}
       className="border-t border-outline-variant/30 p-3"
     >
+      {budgetExhausted && (
+        <p
+          data-testid="workspace-chat-budget-notice"
+          className="mb-2 text-xs italic text-on-surface-muted"
+        >
+          Budget exhausted — paste the handoff prompt elsewhere, or add a BYOK
+          key to keep chatting here.
+        </p>
+      )}
       <div className="flex items-end gap-2">
         <textarea
           data-testid="workspace-chat-input"
@@ -1585,15 +1629,19 @@ function WorkspaceChatInput({
               handleSubmit(e);
             }
           }}
-          placeholder={`Ask anything about ${activeRaceLabel}…`}
-          disabled={isStreaming}
+          placeholder={
+            budgetExhausted
+              ? "Budget exhausted — copy the handoff prompt or add a BYOK key."
+              : `Ask anything about ${activeRaceLabel}…`
+          }
+          disabled={inputDisabled}
           rows={2}
           className="flex-1 border border-outline-variant/30 bg-surface-lowest p-2 text-sm text-on-surface disabled:opacity-50"
         />
         <button
           type="submit"
           data-testid="workspace-chat-send"
-          disabled={isStreaming || !input.trim()}
+          disabled={isStreaming || budgetExhausted || !input.trim()}
           className="bg-primary px-3 py-2 text-xs font-bold uppercase tracking-widest text-on-primary hover:bg-primary/90 disabled:opacity-50"
         >
           Send
@@ -1750,6 +1798,7 @@ export function ChatPanel({
   onLockInThemes,
   ballotContext,
   onBudgetExhausted,
+  budgetExhausted: budgetExhaustedFromParent = false,
 }: ChatPanelProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
@@ -2561,8 +2610,23 @@ export function ChatPanel({
   // BUDGET_EXHAUSTED/BUDGET_SOFT_CLOSE — but the SSE `done` event updates
   // budgetStatus.tier earlier, so this gates the bottom buttons during that
   // window too.
-  const budgetExhausted =
+  //
+  // PR 7 — OR with the parent-controlled `budgetExhausted` prop. The parent
+  // (BallotToolClient.WorkspaceShell) sets this when it surfaces the
+  // BudgetExhausted overlay — either reactively (server returned the
+  // structured shape) or pre-emptively (user clicked "Continue elsewhere").
+  // In the pre-emptive case the SSE tier hasn't necessarily flipped, so the
+  // internal derivation alone wouldn't gate the input.
+  //
+  // BYOK bypass — if the user has a key in localStorage, the chat route
+  // is irrelevant to them (they hit api.anthropic.com directly) so we
+  // never surface the "budget exhausted" disabled state. Recompute on
+  // each render so a key saved mid-session unlocks chat immediately.
+  const byokActive = hasByokKey();
+  const budgetTierExhausted =
     effectiveTier !== "normal" && effectiveTier !== "notice";
+  const budgetExhausted =
+    (budgetTierExhausted || budgetExhaustedFromParent) && !byokActive;
 
   const fullContent = messages
     .filter((m) => m.role === "assistant")

@@ -1107,3 +1107,109 @@ describe("ChatPanel — cold-open gated on ballotConfirmed (fix D)", () => {
     expect(screen.getByTestId("cold-open-textarea")).toBeInTheDocument();
   });
 });
+
+/* ── PR 7 — workspace input gated on budgetExhausted + BYOK ──── */
+
+describe("ChatPanel — workspace input gating on budgetExhausted (PR 7)", () => {
+  const lockedThemes = [
+    { name: "Healthcare costs", quotes: ['"insulin prices"'] },
+  ];
+
+  function renderWorkspaceWithBudget(opts: {
+    budgetExhausted?: boolean;
+    byokKey?: string | null;
+  }) {
+    localStorage.clear();
+    if (opts.byokKey) {
+      localStorage.setItem("voter-choice:byok-anthropic-key", opts.byokKey);
+    }
+    const baseWorkspace = {
+      activeRace: {
+        id: "us-president",
+        label: "U.S. President",
+        section: "Federal",
+        candidates: [{ name: "Alice Anderson", party: "Democratic" }],
+      },
+      totalRaces: 3,
+      activeRaceIndex: 0,
+      decided: false,
+      prevActiveRaceId: null,
+      onCommitDecision: vi.fn(),
+      onUnpickDecision: vi.fn(),
+      pendingAmendment: null,
+      amendmentInFlight: false,
+      lockedThemes,
+      chatCatchSuggestion: null,
+      onChatCatch: vi.fn(),
+      onChatCatchAccept: vi.fn(),
+      onChatCatchDismiss: vi.fn(),
+      onAmendmentSave: vi.fn(),
+      onAmendmentDiscard: vi.fn(),
+    } as React.ComponentProps<typeof ChatPanel>["workspace"];
+    return render(
+      <LanguageProvider>
+        <ChatPanel
+          state={txState}
+          zipCode="73301"
+          workspace={baseWorkspace}
+          budgetExhausted={!!opts.budgetExhausted}
+        />
+      </LanguageProvider>,
+    );
+  }
+
+  beforeEach(() => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ budget: { tier: "normal", percent: 0 } }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    localStorage.clear();
+  });
+
+  it("budgetExhausted=false → input is rendered, enabled, and no notice appears", () => {
+    renderWorkspaceWithBudget({ budgetExhausted: false });
+    const input = screen.getByTestId(
+      "workspace-chat-input",
+    ) as HTMLTextAreaElement;
+    expect(input).toBeInTheDocument();
+    expect(input).not.toBeDisabled();
+    expect(screen.queryByTestId("workspace-chat-budget-notice")).toBeNull();
+  });
+
+  it("budgetExhausted=true + no BYOK → input rendered + DISABLED + notice visible", () => {
+    renderWorkspaceWithBudget({ budgetExhausted: true, byokKey: null });
+    const input = screen.getByTestId(
+      "workspace-chat-input",
+    ) as HTMLTextAreaElement;
+    // Input is visible (not hidden) but disabled.
+    expect(input).toBeInTheDocument();
+    expect(input).toBeDisabled();
+    // Notice is visible and references budget + copy/BYOK actions.
+    const notice = screen.getByTestId("workspace-chat-budget-notice");
+    expect(notice).toBeInTheDocument();
+    expect(notice.textContent ?? "").toMatch(/budget exhausted/i);
+    expect(notice.textContent ?? "").toMatch(/paste|BYOK/i);
+    // Send button is disabled.
+    expect(screen.getByTestId("workspace-chat-send")).toBeDisabled();
+  });
+
+  it("budgetExhausted=true + BYOK key set → input rendered + ENABLED (BYOK bypasses budget)", () => {
+    renderWorkspaceWithBudget({
+      budgetExhausted: true,
+      byokKey: "sk-ant-byok-overrides-budget",
+    });
+    const input = screen.getByTestId(
+      "workspace-chat-input",
+    ) as HTMLTextAreaElement;
+    expect(input).toBeInTheDocument();
+    expect(input).not.toBeDisabled();
+    // No notice when BYOK is set.
+    expect(screen.queryByTestId("workspace-chat-budget-notice")).toBeNull();
+  });
+});
