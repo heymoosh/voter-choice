@@ -23,7 +23,7 @@
  * pivot.
  */
 
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 
 /**
@@ -167,6 +167,18 @@ export function BudgetExhausted(
     };
   }, [onDismiss]);
 
+  // Move focus into the overlay on mount so `aria-modal` actually means
+  // something for screen-reader users. We focus the dismiss (X) button as
+  // the safe initial target — it's a unanimous escape hatch and doesn't
+  // commit any irreversible action. We do NOT block tabbing out of the
+  // overlay (task: "let assistive tech users read state underneath"); the
+  // aria-modal attribute is the announcement contract.
+  const dismissButtonRef = useRef<HTMLButtonElement | null>(null);
+  useEffect(() => {
+    if (!mounted) return;
+    dismissButtonRef.current?.focus();
+  }, [mounted]);
+
   async function handleCopy() {
     try {
       await navigator.clipboard.writeText(handoffPromptText);
@@ -217,6 +229,7 @@ export function BudgetExhausted(
         className="relative z-10 mx-auto w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-surface px-6 py-8 text-on-surface shadow-xl"
       >
         <button
+          ref={dismissButtonRef}
           type="button"
           data-testid="budget-exhausted-dismiss"
           aria-label="Dismiss"

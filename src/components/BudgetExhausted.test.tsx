@@ -338,4 +338,12 @@ describe("BudgetExhausted — modal overlay (PR 7)", () => {
     expect(within(overlay).getByTestId("tip-jar-link")).toBeInTheDocument();
     expect(within(overlay).getAllByTestId(/^chatbot-link-/).length).toBe(4);
   });
+
+  it("moves focus to the dismiss button on mount (so aria-modal is honest)", () => {
+    render(<BudgetExhausted {...defaultProps()} />);
+    const dismiss = screen.getByTestId("budget-exhausted-dismiss");
+    // The dismiss button should be the active element so screen readers
+    // and keyboard users land inside the dialog when it opens.
+    expect(document.activeElement).toBe(dismiss);
+  });
 });
