@@ -1,13 +1,19 @@
 import { test, expect, type Page } from "@playwright/test";
 
 // ──────────────────────────────────────────────────────────────
-// Phase 6 — mid-session theme amendment e2e happy path.
+// Phase 6 — mid-session theme amendment e2e happy path (PR3 opt-in).
 //
 // Exercises the rail-link entry: cold-open → lock themes → workspace →
-// click "Edit" in the rail → amend editor renders inline in the chat
-// thread (not a modal) → add a new theme via the free-text inputs →
-// "Lock these changes" → AmendDeltaMessage renders with the per-race
-// deltas pulled from the mocked theme-amendment chat response.
+// pick a race first (so the offer has decisions to re-score) → click
+// "Edit" in the rail → amend editor renders inline in the chat thread
+// (not a modal) → add a new theme via the free-text inputs → "Lock
+// these changes" → AmendRescoreOffer renders inline (NOT the delta
+// directly — re-score is opt-in per UX feedback). Two follow-up paths:
+//
+//   · Accept ("Yes, show me the deltas") → /api/chat amend call fires
+//     → AmendDeltaMessage renders.
+//   · Decline ("No, keep what I have") → offer dismissed; NO delta
+//     message; themes still committed.
 //
 // Self-skips when PROMPT_FLEET_V2 is absent — same gating as
 // workspace.spec.ts. CI wires this spec into the same flag-on Playwright
@@ -141,9 +147,13 @@ test.describe("theme amendment (PROMPT_FLEET_V2 + en)", () => {
       "or add `webServer.env.PROMPT_FLEET_V2 = '1'` to playwright.config.ts.",
   );
 
-  test("rail-link → amend editor inline → add theme → lock → delta message renders", async ({
-    page,
-  }) => {
+  /**
+   * Shared bootstrap: cold-open → lock themes → workspace → commit one
+   * decision (so the offer has prior decisions to re-score) → open the amend
+   * editor → add a theme → click Lock. Returns at the point where the
+   * AmendRescoreOffer is visible.
+   */
+  async function bootstrapToOffer(page: Page) {
     await mockColdOpenAndAmendChat(page);
     await mockCivicResponse(page);
     await page.goto("/");
@@ -169,6 +179,14 @@ test.describe("theme amendment (PROMPT_FLEET_V2 + en)", () => {
       .getByTestId("workspace-shell")
       .waitFor({ state: "visible", timeout: WORKSPACE_TIMEOUT });
 
+    // Commit one decision so decisionCount > 0 — opt-in offer needs prior
+    // decisions to surface.
+    await page.getByTestId("workspace-pick-trigger").click();
+    await page
+      .getByTestId("workspace-why-textarea")
+      .fill("strong record matches my top theme");
+    await page.getByTestId("workspace-why-commit").click();
+
     // Click the rail's "Edit" link — opens the editor inline in chat.
     await page.getByTestId("workspace-rail-edit-themes").click();
     const editor = page.getByTestId("theme-amend-editor");
@@ -186,10 +204,26 @@ test.describe("theme amendment (PROMPT_FLEET_V2 + en)", () => {
       .getByTestId("theme-amend-new-context-input")
       .fill("kids' schools are crumbling");
 
-    // Lock the changes.
+    // Lock the changes — now the offer should appear (NOT the delta).
     await page.getByTestId("theme-amend-lock").click();
 
-    // The delta message renders inline.
+    // The offer renders inline.
+    const offer = page.getByTestId("amend-rescore-offer");
+    await expect(offer).toBeVisible({ timeout: WORKSPACE_TIMEOUT });
+    // The delta message has NOT rendered yet — opt-in!
+    await expect(page.getByTestId("amend-delta-message")).toHaveCount(0);
+    return offer;
+  }
+
+  test("rail-link → amend editor → lock → offer → Accept → delta renders (opt-in YES path)", async ({
+    page,
+  }) => {
+    const offer = await bootstrapToOffer(page);
+
+    // Accept the offer — fires the re-score and renders the delta.
+    await offer.getByTestId("amend-rescore-accept").click();
+
+    // The delta message now renders inline.
     const delta = page.getByTestId("amend-delta-message");
     await expect(delta).toBeVisible({ timeout: WORKSPACE_TIMEOUT });
     await expect(delta).toContainText(/School funding/);
@@ -199,5 +233,24 @@ test.describe("theme amendment (PROMPT_FLEET_V2 + en)", () => {
 
     // HOLD list is collapsed by default; the toggle is present and expandable.
     await expect(page.getByTestId("amend-delta-hold-toggle")).toBeVisible();
+  });
+
+  test("rail-link → amend editor → lock → offer → Decline → NO delta, themes still committed (opt-in NO path)", async ({
+    page,
+  }) => {
+    await bootstrapToOffer(page);
+
+    // Decline the offer — dismisses without firing the re-score.
+    await page.getByTestId("amend-rescore-decline").click();
+
+    // Offer dismissed; no delta.
+    await expect(page.getByTestId("amend-rescore-offer")).toHaveCount(0);
+    await expect(page.getByTestId("amend-delta-message")).toHaveCount(0);
+
+    // Themes still committed — verify the new theme appears at the top of the
+    // workspace rail.
+    await expect(page.getByTestId("workspace-rail-theme-0")).toContainText(
+      "School funding",
+    );
   });
 });

@@ -802,4 +802,154 @@ describe("ChatPanel — workspace amend editor + chat catch (Phase 6)", () => {
     });
     expect(amendCalls).toHaveLength(0);
   });
+
+  /* ── PR3 opt-in re-score offer ─────────────────────────────── */
+
+  it("renders AmendRescoreOffer (NOT AmendDeltaMessage) when pendingRescoreOffer is set", () => {
+    renderWorkspaceChat({
+      pendingRescoreOffer: {
+        newThemeName: "School funding",
+        decidedCount: 2,
+        updatedThemes: [
+          { name: "School funding", quotes: ["kids' schools"] },
+          ...lockedThemes,
+        ],
+        newTheme: { name: "School funding", quotes: ["kids' schools"] },
+        suggestedRank: 1,
+      },
+    });
+    expect(screen.getByTestId("amend-rescore-offer")).toBeInTheDocument();
+    // Delta message must NOT render until the user clicks Yes.
+    expect(screen.queryByTestId("amend-delta-message")).toBeNull();
+  });
+
+  it("clicking Decline on the offer fires onRescoreOfferClear and does NOT call /api/chat for amend", () => {
+    const onRescoreOfferClear = vi.fn();
+    renderWorkspaceChat({
+      onRescoreOfferClear,
+      pendingRescoreOffer: {
+        newThemeName: "School funding",
+        decidedCount: 2,
+        updatedThemes: [
+          { name: "School funding", quotes: ["kids' schools"] },
+          ...lockedThemes,
+        ],
+        newTheme: { name: "School funding", quotes: ["kids' schools"] },
+        suggestedRank: 1,
+      },
+    });
+    fireEvent.click(screen.getByTestId("amend-rescore-decline"));
+    expect(onRescoreOfferClear).toHaveBeenCalledTimes(1);
+    // No amend /api/chat call.
+    const calls = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls;
+    const amendCalls = calls.filter((c) => {
+      const init = c[1] as { body?: unknown } | undefined;
+      if (!init?.body) return false;
+      try {
+        const body = JSON.parse(String(init.body));
+        return body.view === "amend";
+      } catch {
+        return false;
+      }
+    });
+    expect(amendCalls).toHaveLength(0);
+  });
+
+  it("clicking Accept on the offer fires /api/chat with view=amend AND clears the offer", async () => {
+    const onRescoreOfferClear = vi.fn();
+    // Mock a streaming amend response — minimal valid JSON the parser accepts.
+    const amendPayload = {
+      new_theme: {
+        name: "School funding",
+        quotes: ["kids' schools are crumbling"],
+      },
+      suggested_rank: 1,
+      rescored: [],
+    };
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      (() => {
+        const encoder = new TextEncoder();
+        return new Response(
+          new ReadableStream({
+            start(controller) {
+              controller.enqueue(
+                encoder.encode(
+                  `data: ${JSON.stringify({ type: "text", text: JSON.stringify(amendPayload) })}\n\n`,
+                ),
+              );
+              controller.enqueue(
+                encoder.encode(
+                  `data: ${JSON.stringify({ type: "done", budget: { tier: "normal", percent: 0 } })}\n\n`,
+                ),
+              );
+              controller.close();
+            },
+          }),
+          { status: 200, headers: { "Content-Type": "text/event-stream" } },
+        );
+      })(),
+    );
+    renderWorkspaceChat({
+      onRescoreOfferClear,
+      pendingRescoreOffer: {
+        newThemeName: "School funding",
+        decidedCount: 1,
+        updatedThemes: [
+          { name: "School funding", quotes: ["kids' schools are crumbling"] },
+          ...lockedThemes,
+        ],
+        newTheme: {
+          name: "School funding",
+          quotes: ["kids' schools are crumbling"],
+        },
+        suggestedRank: 1,
+      },
+    });
+    fireEvent.click(screen.getByTestId("amend-rescore-accept"));
+    await waitFor(() => {
+      expect(onRescoreOfferClear).toHaveBeenCalled();
+    });
+    // /api/chat amend call MUST have fired.
+    const calls = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls;
+    const amendCalls = calls.filter((c) => {
+      const init = c[1] as { body?: unknown } | undefined;
+      if (!init?.body) return false;
+      try {
+        const body = JSON.parse(String(init.body));
+        return body.view === "amend";
+      } catch {
+        return false;
+      }
+    });
+    expect(amendCalls.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("locking the amendment with decisions > 0 does NOT call /api/chat amend on the lock click (re-score is opt-in)", () => {
+    // The lock-bridge in ChatPanel must NOT fire submitAmendment anymore;
+    // the parent is responsible for setting pendingRescoreOffer instead.
+    const onAmendmentSave = vi.fn();
+    renderWorkspaceChat({
+      pendingAmendment: { entry: "rail" },
+      onAmendmentSave,
+    });
+    fireEvent.change(screen.getByTestId("theme-amend-new-name-input"), {
+      target: { value: "School funding" },
+    });
+    fireEvent.click(screen.getByTestId("theme-amend-lock"));
+    // Parent's onAmendmentSave fires (themes commit).
+    expect(onAmendmentSave).toHaveBeenCalledTimes(1);
+    // /api/chat amend must NOT have been called.
+    const calls = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls;
+    const amendCalls = calls.filter((c) => {
+      const init = c[1] as { body?: unknown } | undefined;
+      if (!init?.body) return false;
+      try {
+        const body = JSON.parse(String(init.body));
+        return body.view === "amend";
+      } catch {
+        return false;
+      }
+    });
+    expect(amendCalls).toHaveLength(0);
+  });
 });

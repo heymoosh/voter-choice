@@ -416,6 +416,17 @@ export function ElectionResult({
     triggeringMessage: string;
     candidateNewTheme: Theme;
   } | null>(null);
+  // PR3 — opt-in re-score offer state. Set when the user locks an amendment
+  // AND has prior decisions to re-score; cleared when they Accept or Decline.
+  // Per UX feedback: "Re-scoring should be an option, not a default."
+  const [pendingRescoreOffer, setPendingRescoreOffer] = useState<{
+    newThemeName: string;
+    decidedCount: number;
+    updatedThemes: Theme[];
+    newTheme?: Theme;
+    suggestedRank?: number;
+    triggeringMessage?: string;
+  } | null>(null);
   // Hydration guard: persistence writes are skipped until we've read the
   // first time. Without this the empty initial mount would clobber any
   // saved state in localStorage before the user's reload-restored render
@@ -656,29 +667,51 @@ export function ElectionResult({
   }, []);
 
   /**
-   * Phase 6 amendment lock-in handler. ChatPanel runs the actual /api/chat
-   * fetch and journals the per-race deltas inline; here we commit the
-   * post-edit themes into lockedThemes (the chat thread's subsequent system
-   * prompts will see the new ranking automatically). Per packet anti-
-   * solution: "Workers must NOT auto-advance after the amendment lock — the
-   * user just made a deliberate change."
+   * Phase 6 amendment lock-in handler. PR3 opt-in change: themes commit
+   * IMMEDIATELY on lock, but the AI re-score is now OPTIONAL — surfaced as
+   * an `AmendRescoreOffer` chip in the chat. The user explicitly decides
+   * whether to re-evaluate already-decided races against the updated
+   * priorities. With zero prior decisions the offer is skipped entirely
+   * (nothing to re-score). Per UX feedback: "Re-scoring should be an
+   * option, not a default. Some people might not care."
    *
-   * ChatPanel calls handleAmendmentInFlightChange(true) BEFORE the await so
-   * the editor's spinner surfaces during the 1-3s rescore window; this
-   * handler then clears pendingAmendment + inFlight after the fetch
-   * completes (which the parent learns about via this callback).
+   * Per packet anti-solution: "Workers must NOT auto-advance after the
+   * amendment lock — the user just made a deliberate change."
    */
   const handleAmendmentSave = useCallback(
     (payload: {
       updatedThemes: Theme[];
       newTheme?: Theme;
       suggestedRank?: number;
+      triggeringMessage?: string;
     }) => {
+      // Themes commit unconditionally. The offer is purely UI gating.
       setLockedThemes(payload.updatedThemes);
       setPendingAmendment(null);
       setAmendmentInFlight(false);
+
+      // Compute decidedCount at lock time (not render time) — an unpick
+      // between lock and accept shouldn't change the offer text.
+      const decidedCount = decisions.length;
+      // Without prior decisions there's nothing meaningful to re-score —
+      // skip the offer entirely.
+      if (decidedCount === 0) return;
+
+      const newThemeName =
+        payload.newTheme?.name ??
+        // Edge case: rerank-only amendment (no new theme). Use a generic
+        // label so the offer text still reads naturally.
+        "your updated themes";
+      setPendingRescoreOffer({
+        newThemeName,
+        decidedCount,
+        updatedThemes: payload.updatedThemes,
+        newTheme: payload.newTheme,
+        suggestedRank: payload.suggestedRank,
+        triggeringMessage: payload.triggeringMessage,
+      });
     },
-    [],
+    [decisions],
   );
 
   const handleAmendmentInFlightChange = useCallback((inFlight: boolean) => {
@@ -688,6 +721,17 @@ export function ElectionResult({
   const handleAmendmentDiscard = useCallback(() => {
     setPendingAmendment(null);
     setAmendmentInFlight(false);
+  }, []);
+
+  /**
+   * PR3 — re-score offer dismissal. Fires when:
+   *   · The user clicks "No, keep what I have" (decline path), OR
+   *   · The re-score has completed (post-Accept). In both cases we just
+   *     clear the offer; ChatPanel's amendment journal renders the delta
+   *     message on Accept independently.
+   */
+  const handleRescoreOfferClear = useCallback(() => {
+    setPendingRescoreOffer(null);
   }, []);
 
   const handleRestart = useCallback(() => {
@@ -886,6 +930,8 @@ export function ElectionResult({
         onAmendmentSave={handleAmendmentSave}
         onAmendmentInFlightChange={handleAmendmentInFlightChange}
         onAmendmentDiscard={handleAmendmentDiscard}
+        pendingRescoreOffer={pendingRescoreOffer}
+        onRescoreOfferClear={handleRescoreOfferClear}
       />
     );
   }
@@ -1005,9 +1051,20 @@ interface WorkspaceShellProps {
     updatedThemes: Theme[];
     newTheme?: Theme;
     suggestedRank?: number;
+    triggeringMessage?: string;
   }) => void;
   onAmendmentInFlightChange: (inFlight: boolean) => void;
   onAmendmentDiscard: () => void;
+  /* ── PR3 opt-in re-score offer ──────────────────────── */
+  pendingRescoreOffer: {
+    newThemeName: string;
+    decidedCount: number;
+    updatedThemes: Theme[];
+    newTheme?: Theme;
+    suggestedRank?: number;
+    triggeringMessage?: string;
+  } | null;
+  onRescoreOfferClear: () => void;
 }
 
 function WorkspaceShell({
@@ -1045,6 +1102,8 @@ function WorkspaceShell({
   onAmendmentSave,
   onAmendmentInFlightChange,
   onAmendmentDiscard,
+  pendingRescoreOffer,
+  onRescoreOfferClear,
 }: WorkspaceShellProps) {
   // City-state surrogate for the ballot pane address line. We never have the
   // user's street address; use county + state name as the locality label.
@@ -1359,6 +1418,9 @@ function WorkspaceShell({
             onAmendmentSave,
             onAmendmentInFlightChange,
             onAmendmentDiscard,
+            // PR3 — opt-in re-score offer plumbing.
+            pendingRescoreOffer,
+            onRescoreOfferClear,
             // Race-id → human label lookup so AmendDeltaMessage rows show
             // "U.S. House — TX-07" instead of the raw race id. Built from
             // races (not decisions) so undecided races also resolve.
