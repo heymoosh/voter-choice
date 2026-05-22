@@ -321,6 +321,7 @@ export interface Translations {
     alignmentScoreOfVotes: (kept: number, total: number) => string;
     alignmentScoreThinRecord: (total: number) => string;
     alignmentScoreUnavailablePrefix: string;
+    alignmentScoreNoRecordHint: string;
     alignmentScoreYourSide: string;
     alignmentScoreDrillDownLabel: string;
     alignmentScoreDrillDownClose: string;
@@ -842,6 +843,8 @@ const en: Translations = {
     alignmentScoreThinRecord: (total: number) =>
       `Based on ${total} ${total === 1 ? "vote" : "votes"}`,
     alignmentScoreUnavailablePrefix: "Voting record not available —",
+    alignmentScoreNoRecordHint:
+      "First-time candidate — judge on policy statements and donor base instead.",
     alignmentScoreYourSide: "Your side:",
     alignmentScoreDrillDownLabel: "See contributing votes",
     alignmentScoreDrillDownClose: "Close",
@@ -1409,6 +1412,8 @@ const es: Translations = {
     alignmentScoreThinRecord: (total: number) =>
       `Based on ${total} ${total === 1 ? "vote" : "votes"}`,
     alignmentScoreUnavailablePrefix: "Voting record not available \u2014",
+    alignmentScoreNoRecordHint:
+      "First-time candidate \u2014 judge on policy statements and donor base instead.",
     alignmentScoreYourSide: "Your side:",
     alignmentScoreDrillDownLabel: "See contributing votes",
     alignmentScoreDrillDownClose: "Close",

@@ -1,9 +1,10 @@
 // @vitest-environment jsdom
 import React from "react";
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import { AlignmentDrilldown } from "./AlignmentDrilldown";
+import { CardErrorBoundary } from "./cards/CardErrorBoundary";
 import { LanguageProvider } from "../lib/i18n";
 import type { AlignmentScore } from "../lib/structured-blocks";
 
@@ -206,5 +207,47 @@ describe("AlignmentDrilldown — vote cast styling", () => {
     renderDrilldown(scoreWithVotes);
     const againstBadge = screen.getByTestId("vote-cast-badge-against");
     expect(againstBadge).toHaveTextContent("Voted against");
+  });
+});
+
+/* ──────────────────────────────────────────────────────────────
+ * Phase 4 — chart-failure survival
+ *
+ * Per AC: "Per-vote drilldown survives chart failure." When a sibling
+ * chart subtree throws, the per-vote text rows must still render.
+ * ────────────────────────────────────────────────────────────── */
+
+describe("AlignmentDrilldown — phase 4 chart-failure survival", () => {
+  function ThrowingChild(): React.JSX.Element {
+    throw new Error("simulated chart-render failure");
+  }
+
+  let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
+  beforeEach(() => {
+    consoleErrorSpy = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+  });
+  afterEach(() => {
+    consoleErrorSpy.mockRestore();
+  });
+
+  it("per-vote rows remain readable when a sibling chart subtree throws", () => {
+    render(
+      <LanguageProvider>
+        <AlignmentDrilldown score={scoreWithVotes} onClose={vi.fn()} />
+        <CardErrorBoundary>
+          <ThrowingChild />
+        </CardErrorBoundary>
+      </LanguageProvider>,
+    );
+    // Vote bill titles still queryable as text.
+    expect(
+      screen.getByText("HB 100 — Medicaid Expansion Act"),
+    ).toBeInTheDocument();
+    expect(screen.getByText("SB 44 — Healthcare Cuts")).toBeInTheDocument();
+    expect(
+      screen.getByText("HB 201 — Community Health Centers"),
+    ).toBeInTheDocument();
   });
 });

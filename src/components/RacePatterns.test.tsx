@@ -854,6 +854,56 @@ describe("RacePatterns — alignment score banner", () => {
 
 /* ── Tests — alignment drill-down ────────────────────────── */
 
+/* ──────────────────────────────────────────────────────────────
+ * Phase 4 — proposition if-yes / if-no two-column layout
+ * ────────────────────────────────────────────────────────────── */
+
+describe("RacePatterns — phase 4 proposition if-yes/if-no two-column", () => {
+  it("renders a two-column container with if-yes and if-no headings", () => {
+    renderPatterns(propBlock);
+    const container = screen.getByTestId("race-patterns-impact-columns");
+    expect(container).toBeInTheDocument();
+    expect(container).toHaveTextContent(/if yes/i);
+    expect(container).toHaveTextContent(/if no/i);
+  });
+
+  it("renders the YES side priorRole as the 'If yes' column content", () => {
+    renderPatterns(propBlock);
+    const yesCol = screen.getByTestId("race-patterns-impact-yes");
+    expect(yesCol).toHaveTextContent(/Authorizes \$900M in bonds/i);
+  });
+
+  it("renders the NO side priorRole as the 'If no' column content", () => {
+    renderPatterns(propBlock);
+    const noCol = screen.getByTestId("race-patterns-impact-no");
+    expect(noCol).toHaveTextContent(/Opposes the bond/i);
+  });
+
+  it("missing-side fallback: if no side has no impact text, column shows '(impact not yet summarized)'", () => {
+    const missingNoSideBlock: RacePatternsBlock = {
+      ...propBlock,
+      candidates: [
+        propBlock.candidates[0],
+        // NO side without priorRole — fallback should trigger
+        {
+          ...propBlock.candidates[1],
+          priorRole: undefined,
+        },
+      ],
+    };
+    renderPatterns(missingNoSideBlock);
+    const noCol = screen.getByTestId("race-patterns-impact-no");
+    expect(noCol).toHaveTextContent(/impact not yet summarized/i);
+  });
+
+  it("two-column layout does NOT render for candidate (non-proposition) races", () => {
+    renderPatterns(candidateBlock);
+    expect(
+      screen.queryByTestId("race-patterns-impact-columns"),
+    ).not.toBeInTheDocument();
+  });
+});
+
 describe("RacePatterns — alignment drill-down", () => {
   it("tapping a score card expands the drilldown inline below the banner", () => {
     renderPatterns(candidateBlock, {
