@@ -1,9 +1,10 @@
 // @vitest-environment jsdom
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import React from "react";
 import { WorkspaceRail, type WorkspaceRailProps } from "./WorkspaceRail";
+import { LanguageProvider } from "../lib/i18n";
 import type { Race } from "../lib/raceDeriver";
 import type { Theme } from "../lib/prompts/types";
 
@@ -46,7 +47,11 @@ function renderRail(overrides: Partial<WorkspaceRailProps> = {}) {
     onRestart: vi.fn(),
     ...overrides,
   };
-  const result = render(<WorkspaceRail {...props} />);
+  const result = render(
+    <LanguageProvider>
+      <WorkspaceRail {...props} />
+    </LanguageProvider>,
+  );
   return { ...result, props };
 }
 
@@ -137,5 +142,61 @@ describe("WorkspaceRail", () => {
       screen.getByTestId("workspace-rail-methodology"),
     ).toBeInTheDocument();
     expect(screen.getByTestId("workspace-rail-help")).toBeInTheDocument();
+  });
+});
+
+/* ── WorkspacePolisSection inside the rail (fix E) ─────────────── */
+
+describe("WorkspaceRail — Polis section", () => {
+  beforeEach(() => {
+    vi.spyOn(globalThis, "fetch").mockImplementation(async () => {
+      return new Response("{}", {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    });
+  });
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("renders the collapsible Polis section when county + themes are present", () => {
+    renderRail({
+      county: "Travis",
+      countyName: "Travis County",
+      stateCode: "TX",
+    });
+    expect(screen.getByTestId("workspace-polis-section")).toBeInTheDocument();
+    // Closed by default — overlay sections absent.
+    expect(screen.queryByTestId("polis-bars-section")).toBeNull();
+  });
+
+  it("does NOT render the Polis section when county is missing", () => {
+    renderRail({
+      county: undefined,
+      countyName: undefined,
+      stateCode: "TX",
+    });
+    expect(screen.queryByTestId("workspace-polis-section")).toBeNull();
+  });
+
+  it("does NOT render the Polis section when themes are empty", () => {
+    renderRail({
+      themes: [],
+      county: "Travis",
+      countyName: "Travis County",
+      stateCode: "TX",
+    });
+    expect(screen.queryByTestId("workspace-polis-section")).toBeNull();
+  });
+
+  it("clicking the section toggle expands the overlay", () => {
+    renderRail({
+      county: "Travis",
+      countyName: "Travis County",
+      stateCode: "TX",
+    });
+    fireEvent.click(screen.getByTestId("workspace-polis-toggle"));
+    expect(screen.getByTestId("polis-bars-section")).toBeInTheDocument();
   });
 });

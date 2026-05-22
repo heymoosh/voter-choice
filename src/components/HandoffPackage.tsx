@@ -9,8 +9,9 @@ import {
   extractBallot,
   extractVoterProfile,
 } from "../lib/ballot-utils";
-import { PolisOverlay } from "./PolisOverlay";
-import { getIssueLabel } from "../lib/canonicalIssues";
+// Fix E — PolisOverlay moved out of HandoffPackage and into the workspace
+// rail (see WorkspacePolisSection). The PolisOverlay + getIssueLabel imports
+// that used to live here came with it.
 
 export interface ParsedHandoff {
   ballot: string | null;
@@ -401,9 +402,9 @@ export function HandoffPackage({
   stateCode,
   county,
   primary = "GENERAL",
-  countyName,
-  // stateName accepted by callers but unused after the Phase 8 restructure;
-  // kept on the props type so upstream consumers don't break.
+  // countyName + stateName accepted by callers but unused here: the polis
+  // overlay moved to the workspace rail (fix E). Kept on the props type so
+  // upstream consumers (ChatPanel) don't break.
 }: HandoffPackageProps) {
   const [copied, setCopied] = useState(false);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -453,8 +454,9 @@ export function HandoffPackage({
     });
   }, []);
 
-  // Phase 8: PolisOverlay owns its own fetches for bars/bridges/compass.
-  // HandoffPackage just passes the inputs.
+  // Fix E — PolisOverlay no longer renders here. The "you're not alone in
+  // {county}" surface lives in the workspace rail (WorkspacePolisSection)
+  // so voters see it as soon as themes lock, not only at handoff time.
 
   async function handleCopy() {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
@@ -474,9 +476,6 @@ export function HandoffPackage({
       timeoutRef.current = setTimeout(() => setCopied(false), 2000);
     }
   }
-
-  // Show polis overlay when stateCode + county are present (loading or data)
-  const showPolisOverlay = !!(stateCode && county);
 
   return (
     <div data-testid="chat-handoff-package">
@@ -514,21 +513,9 @@ export function HandoffPackage({
         </div>
       </div>
 
-      {/* Polis overlay — renders below the handoff card when location is known.
-          Phase 8: the component owns its own fetches for bars/bridges/compass. */}
-      {showPolisOverlay && stateCode && county && (
-        <div className="mt-6" data-testid="polis-overlay-section">
-          <PolisOverlay
-            stateCode={stateCode}
-            county={county}
-            countyName={countyName ?? county}
-            userThemes={confirmedConcerns.map((id) => ({
-              id,
-              label: getIssueLabel(id),
-            }))}
-          />
-        </div>
-      )}
+      {/* Fix E — PolisOverlay used to live here. It moved into the workspace
+          rail (WorkspacePolisSection) so the "you're not alone in {county}"
+          surface is visible from theme-lock onward, not only at handoff time. */}
     </div>
   );
 }

@@ -1372,6 +1372,12 @@ function WorkspaceShell({
         onSelectRace={onSelectRace}
         onEditThemes={onEditThemes}
         onRestart={onRestart}
+        // Fix E — Polis surface lives in the rail. Thread location through
+        // so WorkspacePolisSection can fetch /api/polis/{bars,bridges,compass}
+        // once the user opts in by expanding the section.
+        stateCode={state.stateCode}
+        county={pollingData?.county ?? countyName}
+        countyName={countyName}
       />
 
       <div className="flex h-full flex-col overflow-hidden">

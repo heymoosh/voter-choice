@@ -3,6 +3,7 @@
 import React from "react";
 import type { Race, RaceSection } from "../lib/raceDeriver";
 import type { Theme } from "../lib/prompts/types";
+import { WorkspacePolisSection } from "./WorkspacePolisSection";
 
 export interface WorkspaceRailProps {
   decidedCount: number;
@@ -17,6 +18,16 @@ export interface WorkspaceRailProps {
    */
   onEditThemes: () => void;
   onRestart: () => void;
+  /**
+   * Fix E (post-Phase 8) — Polis surface is now workspace-resident
+   * (used to live inside HandoffPackage). Threaded through here so
+   * `<WorkspacePolisSection>` can render between priorities and the
+   * race list as a collapsible opt-in card. Optional: when county
+   * is falsy or themes is empty, the section hides itself.
+   */
+  stateCode?: string;
+  county?: string;
+  countyName?: string;
 }
 
 /**
@@ -40,6 +51,9 @@ export function WorkspaceRail({
   onSelectRace,
   onEditThemes,
   onRestart,
+  stateCode,
+  county,
+  countyName,
 }: WorkspaceRailProps) {
   const percent =
     totalRaces > 0 ? Math.round((decidedCount / totalRaces) * 100) : 0;
@@ -113,6 +127,24 @@ export function WorkspaceRail({
           ))}
         </ol>
       </section>
+
+      {/* Fix E — Polis section. Mounts between priorities and races; closed
+          by default; auto-hides when county or themes are missing. Themes
+          map to {id, label} using a slug of the user-named theme so the
+          PolisOverlay props are happy without coupling to canonical ids
+          (the bars query just omits userConcerns when ids don't match
+          canonical issues — empty/below-threshold copy carries the case). */}
+      {stateCode && county && themes.length > 0 && (
+        <WorkspacePolisSection
+          stateCode={stateCode}
+          county={county}
+          countyName={countyName ?? county}
+          userThemes={themes.map((t) => ({
+            id: slugifyThemeName(t.name),
+            label: t.name,
+          }))}
+        />
+      )}
 
       {/* Race list (grouped) */}
       {grouped.map(({ section, items }) => (
@@ -191,6 +223,24 @@ export function WorkspaceRail({
       </footer>
     </nav>
   );
+}
+
+/**
+ * Slugify a user-named theme into a stable id for the PolisOverlay
+ * userThemes prop. Bars overlap is keyed by canonical issue id —
+ * user-named themes rarely match those, so the bars panel typically
+ * falls back to its honest "just getting started" copy. That's
+ * acceptable: the bridges + compass surfaces don't depend on per-
+ * theme overlap and still render meaningful data. When PR 6 wires
+ * a canonical-id resolver into the workspace shell, this slug can
+ * be replaced with the real id (or dropped — empty `userThemes` ids
+ * is supported by /api/polis/bars too).
+ */
+function slugifyThemeName(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
 }
 
 function groupRacesBySection(
