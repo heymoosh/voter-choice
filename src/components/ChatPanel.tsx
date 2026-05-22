@@ -293,6 +293,19 @@ interface ChatPanelProps {
    */
   promptFleetV2Enabled?: boolean;
   /**
+   * PR 6 fix D — ballot-before-themes. Defensive gate so the cold-open
+   * theme-extraction textarea only renders when a ballot has been confirmed
+   * (either Civic returned races OR the user pasted/uploaded one via
+   * `BallotLookupNeeded`). Parent (`ElectionResult`) ALSO short-circuits
+   * the entire ResearchLayout when ballotStep === "needs-ballot", so this
+   * is belt-and-suspenders — but it keeps the cold-open render condition
+   * single-sourced inside ChatPanel for readability.
+   *
+   * Defaults to `true` so legacy flag-off / ES callers (and existing tests)
+   * stay unchanged.
+   */
+  ballotConfirmed?: boolean;
+  /**
    * Phase 9 — fired when the chat route returns the structured
    * `{ status: "budget_exhausted", resetAt, handoffPrompt }` response. The
    * parent should mount the BudgetExhausted continuity screen instead of
@@ -1732,6 +1745,7 @@ export function ChatPanel({
   primary,
   onChatStarted,
   promptFleetV2Enabled = false,
+  ballotConfirmed = true,
   workspace,
   onLockInThemes,
   ballotContext,
@@ -1782,8 +1796,17 @@ export function ChatPanel({
   // and we haven't locked themes yet. The legacy auto-session is
   // suppressed in this state so the cold-open textarea is the only
   // way to start the conversation.
+  //
+  // PR 6 fix D — ALSO require `ballotConfirmed`. The parent gates the
+  // entire ResearchLayout on the same signal, so this is defensive: if
+  // ChatPanel ever mounts before a ballot is confirmed, the cold-open
+  // textarea stays suppressed and the legacy auto-session also stays
+  // off (no Haiku tokens wasted).
   const coldOpenActive =
-    promptFleetV2Enabled && lang === "en" && themesLockedIn === null;
+    promptFleetV2Enabled &&
+    lang === "en" &&
+    ballotConfirmed &&
+    themesLockedIn === null;
 
   // Pin the user's last message at the top when streaming starts
   useEffect(() => {

@@ -1050,3 +1050,60 @@ describe("ChatPanel — workspace amend editor + chat catch (Phase 6)", () => {
     expect(amendCalls).toHaveLength(0);
   });
 });
+
+/* ── PR 6 fix D — cold-open gate on ballotConfirmed ──────────── */
+
+describe("ChatPanel — cold-open gated on ballotConfirmed (fix D)", () => {
+  beforeEach(() => {
+    localStorage.clear();
+    Element.prototype.scrollIntoView = vi.fn();
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ budget: { tier: "normal", percent: 0 } }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    localStorage.clear();
+  });
+
+  it("renders the cold-open textarea when promptFleetV2 is on AND ballotConfirmed is true", () => {
+    render(
+      <LanguageProvider>
+        <ChatPanel
+          state={txState}
+          zipCode="73301"
+          promptFleetV2Enabled
+          ballotConfirmed
+        />
+      </LanguageProvider>,
+    );
+    expect(screen.getByTestId("cold-open-textarea")).toBeInTheDocument();
+  });
+
+  it("does NOT render the cold-open textarea when ballotConfirmed is false", () => {
+    render(
+      <LanguageProvider>
+        <ChatPanel
+          state={txState}
+          zipCode="73301"
+          promptFleetV2Enabled
+          ballotConfirmed={false}
+        />
+      </LanguageProvider>,
+    );
+    expect(screen.queryByTestId("cold-open-textarea")).toBeNull();
+  });
+
+  it("defaults to ballotConfirmed=true when the prop is omitted (legacy callers unchanged)", () => {
+    render(
+      <LanguageProvider>
+        <ChatPanel state={txState} zipCode="73301" promptFleetV2Enabled />
+      </LanguageProvider>,
+    );
+    expect(screen.getByTestId("cold-open-textarea")).toBeInTheDocument();
+  });
+});
