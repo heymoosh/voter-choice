@@ -102,6 +102,42 @@ const VALID_DEV_BUDGET_TIERS: ReadonlySet<BudgetTier> = new Set([
   "exhausted",
 ]);
 
+/**
+ * Workspace mode (Phase 3). When the parent passes `activeRace` AND the
+ * cold-open lock-in has happened, ChatPanel renders a workspace-shaped chat
+ * with a header (`Race N of M` + label), a stub pick CTA, and an inline
+ * WhyPrompt that captures the user's reason. Decisions are committed via the
+ * `onCommitDecision` callback — they live in the parent's state, not in
+ * ChatPanel.
+ */
+export interface WorkspaceModeProps {
+  activeRace: {
+    id: string;
+    label: string;
+    section: string;
+    candidates?: { name: string; party: string }[];
+  } | null;
+  totalRaces: number;
+  activeRaceIndex: number;
+  /** Whether the active race already has a committed decision. */
+  decided: boolean;
+  /**
+   * The race id that was active immediately before activeRace.id. Used to
+   * inform the chat route's per-race history-reset contract (Phase 1 PR 2).
+   * Parent tracks this across remounts via a ref.
+   */
+  prevActiveRaceId: string | null;
+  onCommitDecision: (input: {
+    raceId: string;
+    raceLabel: string;
+    section: string;
+    pick: string;
+    party?: string;
+    whyNote: string;
+  }) => void;
+  onUnpickDecision: (raceId: string) => void;
+}
+
 interface ChatPanelProps {
   state: StateElectionData;
   zipCode: string;
@@ -113,6 +149,19 @@ interface ChatPanelProps {
   preResearchContext?: string;
   /** Primary lane for polis counter (derived from runoff gate). */
   primary?: "DEM" | "REP" | "OPEN" | "GENERAL";
+  /**
+   * Phase 3 — when present, ChatPanel renders the workspace-mode chat (header
+   * + pick stub + WhyPrompt). When absent, ChatPanel renders the legacy
+   * cold-open/research chat surface.
+   */
+  workspace?: WorkspaceModeProps;
+  /**
+   * Phase 3 — fired when the user locks in themes during cold-open. Parents
+   * use this to flip into workspace mode. ChatPanel still tracks the lock
+   * internally (so the cold-open UI hides correctly) but pushes the themes
+   * up so workspace state can land in ElectionResult.
+   */
+  onLockInThemes?: (themes: Theme[]) => void;
   /**
    * Fired exactly once when the chat transitions from empty to having any
    * message. Used by parents to hide pre-session UI (e.g. ProfileUpload)
@@ -1102,6 +1151,342 @@ function ChatStatusBar({
   );
 }
 
+/* ── Phase 3 workspace chat shape ─────────────────────────── */
+
+/**
+ * Workspace chat — the centre pane of the Phase 3 3-pane workspace. Renders
+ * a small race header (Race N of M + race label), a stub "Pick this
+ * candidate" trigger that opens an inline WhyPrompt, and (post-commit) an
+ * "Undo pick" affordance. Candidate cards proper land in Phase 4 — this
+ * stub exists so Phase 3 can exercise the pick → why → commit → auto-advance
+ * loop end to end without depending on the Phase 4 surface.
+ *
+ * The WhyPrompt scope resets when activeRace changes (keyed render).
+ */
+function WorkspaceChat({
+  workspace,
+  budgetExhausted,
+  messages,
+  isStreaming,
+  onSendMessage,
+  chatDisabled,
+}: {
+  workspace: WorkspaceModeProps;
+  budgetExhausted: boolean;
+  messages: ChatMessage[];
+  isStreaming: boolean;
+  onSendMessage: (msg: string) => void;
+  chatDisabled: boolean;
+}) {
+  const {
+    activeRace,
+    totalRaces,
+    activeRaceIndex,
+    decided,
+    onCommitDecision,
+    onUnpickDecision,
+  } = workspace;
+
+  if (!activeRace) {
+    return (
+      <section
+        data-testid="workspace-chat"
+        role="log"
+        aria-label="Voter Choice chat"
+        aria-live="polite"
+        className="flex h-full flex-col p-6 text-on-surface-muted"
+      >
+        <p className="text-sm">No race selected.</p>
+      </section>
+    );
+  }
+
+  // Context-aware suggestion chips. Minimal templating per packet §22 —
+  // Phase 4 will replace these with candidate-specific options when the
+  // real cards land.
+  const firstCandidate = activeRace.candidates?.[0]?.name;
+  const lastName = firstCandidate?.split(/\s+/).pop() ?? "this candidate";
+  const suggestions: { id: string; label: string }[] = [
+    {
+      id: "show-votes",
+      label: `Show me ${lastName}'s key votes`,
+    },
+    { id: "compare-donors", label: "Compare donor bases" },
+    { id: "explain-race", label: `Explain ${activeRace.label} in plain terms` },
+  ];
+
+  return (
+    <section
+      data-testid="workspace-chat"
+      role="log"
+      aria-label="Voter Choice chat"
+      aria-live="polite"
+      className="flex h-full flex-col overflow-hidden bg-surface"
+    >
+      <header
+        data-testid="workspace-chat-header"
+        className="border-b border-outline-variant/30 p-4"
+      >
+        <div className="text-xs font-bold uppercase tracking-widest text-on-surface-muted">
+          Race {activeRaceIndex + 1} of {totalRaces}
+        </div>
+        <h2 className="mt-1 font-black text-lg tracking-tight text-on-surface">
+          {activeRace.label}
+        </h2>
+      </header>
+
+      {/* Chat message body — scoped to active race. Parent re-keys
+          ChatPanel by activeRace.id, so messages naturally clear on race
+          switch (UI mirrors Phase 1's server contract). */}
+      <div
+        data-testid="workspace-chat-messages"
+        className="flex-1 overflow-y-auto p-4"
+      >
+        {messages.length === 0 ? (
+          <p className="text-sm text-on-surface-muted">
+            Ask anything about {activeRace.label}.
+          </p>
+        ) : (
+          <ul className="flex flex-col gap-3">
+            {messages.map((m, i) => (
+              <li
+                key={i}
+                data-testid={
+                  m.role === "user" ? "chat-message-user" : "chat-message-ai"
+                }
+                className={
+                  m.role === "user"
+                    ? "self-end max-w-md bg-surface-lowest border border-outline-variant/40 px-3 py-2 text-sm text-on-surface"
+                    : "max-w-2xl text-sm text-on-surface"
+                }
+              >
+                <MarkdownText text={m.content} />
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      <WorkspacePickArea
+        activeRace={activeRace}
+        decided={decided}
+        budgetExhausted={budgetExhausted}
+        onCommitDecision={onCommitDecision}
+        onUnpickDecision={onUnpickDecision}
+      />
+
+      {!chatDisabled && (
+        <div
+          data-testid="workspace-chat-suggestions"
+          className="flex flex-wrap gap-2 border-t border-outline-variant/30 p-3"
+        >
+          {suggestions.map((s) => (
+            <button
+              key={s.id}
+              type="button"
+              data-testid={`workspace-chat-suggestion-${s.id}`}
+              onClick={() => onSendMessage(s.label)}
+              disabled={isStreaming}
+              className="border border-outline-variant/40 px-3 py-1 text-xs text-on-surface hover:bg-surface-low disabled:opacity-50"
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {!chatDisabled && (
+        <WorkspaceChatInput
+          onSubmit={onSendMessage}
+          isStreaming={isStreaming}
+          activeRaceLabel={activeRace.label}
+        />
+      )}
+    </section>
+  );
+}
+
+function WorkspaceChatInput({
+  onSubmit,
+  isStreaming,
+  activeRaceLabel,
+}: {
+  onSubmit: (msg: string) => void;
+  isStreaming: boolean;
+  activeRaceLabel: string;
+}) {
+  const [input, setInput] = useState("");
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    const trimmed = input.trim();
+    if (!trimmed || isStreaming) return;
+    setInput("");
+    onSubmit(trimmed);
+  }
+
+  return (
+    <form
+      onSubmit={handleSubmit}
+      className="border-t border-outline-variant/30 p-3"
+    >
+      <div className="flex items-end gap-2">
+        <textarea
+          data-testid="workspace-chat-input"
+          aria-label="Ask anything about this race"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              handleSubmit(e);
+            }
+          }}
+          placeholder={`Ask anything about ${activeRaceLabel}…`}
+          disabled={isStreaming}
+          rows={2}
+          className="flex-1 border border-outline-variant/30 bg-surface-lowest p-2 text-sm text-on-surface disabled:opacity-50"
+        />
+        <button
+          type="submit"
+          data-testid="workspace-chat-send"
+          disabled={isStreaming || !input.trim()}
+          className="bg-primary px-3 py-2 text-xs font-bold uppercase tracking-widest text-on-primary hover:bg-primary/90 disabled:opacity-50"
+        >
+          Send
+        </button>
+      </div>
+    </form>
+  );
+}
+
+function WorkspacePickArea({
+  activeRace,
+  decided,
+  budgetExhausted,
+  onCommitDecision,
+  onUnpickDecision,
+}: {
+  activeRace: WorkspaceModeProps["activeRace"];
+  decided: boolean;
+  budgetExhausted: boolean;
+  onCommitDecision: WorkspaceModeProps["onCommitDecision"];
+  onUnpickDecision: WorkspaceModeProps["onUnpickDecision"];
+}) {
+  const [whyOpen, setWhyOpen] = useState(false);
+  const [whyDraft, setWhyDraft] = useState("");
+  const [stagedCandidate, setStagedCandidate] = useState<{
+    name: string;
+    party: string;
+  } | null>(null);
+
+  if (!activeRace) return null;
+
+  // For Phase 3, the "candidate" we pick is either the first candidate from
+  // the contest data (when present) or a placeholder. Phase 4 replaces this.
+  const defaultCandidate =
+    activeRace.candidates && activeRace.candidates[0]
+      ? activeRace.candidates[0]
+      : { name: activeRace.label, party: "" };
+
+  function openWhyFor(c: { name: string; party: string }) {
+    setStagedCandidate(c);
+    setWhyOpen(true);
+  }
+
+  function commit() {
+    if (!stagedCandidate) return;
+    onCommitDecision({
+      raceId: activeRace!.id,
+      raceLabel: activeRace!.label,
+      section: activeRace!.section,
+      pick: stagedCandidate.name,
+      party: stagedCandidate.party || undefined,
+      whyNote: whyDraft.trim(),
+    });
+    setWhyOpen(false);
+    setStagedCandidate(null);
+    setWhyDraft("");
+  }
+
+  function cancel() {
+    setWhyOpen(false);
+    setStagedCandidate(null);
+    setWhyDraft("");
+  }
+
+  return (
+    <div className="flex flex-col gap-3 text-sm">
+      {budgetExhausted ? (
+        <p className="text-on-surface-muted">
+          Budget exhausted — see the right pane footer for next steps.
+        </p>
+      ) : decided ? (
+        <button
+          type="button"
+          data-testid="workspace-unpick-trigger"
+          data-race-id={activeRace.id}
+          onClick={() => onUnpickDecision(activeRace.id)}
+          className="self-start border border-outline-variant/40 px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-on-surface hover:bg-surface-low"
+        >
+          Undo pick
+        </button>
+      ) : (
+        <button
+          type="button"
+          data-testid="workspace-pick-trigger"
+          data-race-id={activeRace.id}
+          onClick={() => openWhyFor(defaultCandidate)}
+          className="self-start bg-primary px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-on-primary hover:bg-primary/90"
+        >
+          Pick {defaultCandidate.name}
+        </button>
+      )}
+
+      {whyOpen && stagedCandidate && (
+        <div
+          data-testid="workspace-why-prompt"
+          className="border border-outline-variant/40 bg-surface-lowest p-3"
+        >
+          <label
+            htmlFor="workspace-why-textarea"
+            className="text-xs font-bold uppercase tracking-widest text-on-surface-muted"
+          >
+            Why are you picking {stagedCandidate.name}?
+          </label>
+          <textarea
+            id="workspace-why-textarea"
+            data-testid="workspace-why-textarea"
+            value={whyDraft}
+            onChange={(e) => setWhyDraft(e.target.value)}
+            rows={3}
+            className="mt-2 w-full border border-outline-variant/30 bg-surface p-2 text-sm text-on-surface"
+            placeholder="One line you'll see on your printed ballot."
+          />
+          <div className="mt-2 flex gap-2">
+            <button
+              type="button"
+              data-testid="workspace-why-commit"
+              onClick={commit}
+              className="bg-primary px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-on-primary hover:bg-primary/90"
+            >
+              Commit pick
+            </button>
+            <button
+              type="button"
+              data-testid="workspace-why-cancel"
+              onClick={cancel}
+              className="border border-outline-variant/40 px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-on-surface hover:bg-surface-low"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ── Main component ─────────────────────────────────────────── */
 
 // eslint-disable-next-line complexity
@@ -1117,6 +1502,8 @@ export function ChatPanel({
   primary,
   onChatStarted,
   promptFleetV2Enabled = false,
+  workspace,
+  onLockInThemes,
 }: ChatPanelProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
@@ -1255,6 +1642,37 @@ export function ChatPanel({
 
       const { basePrompt } = getBasePrompt();
 
+      // Phase 3 — when in workspace mode, send the request shape Phase 1's
+      // router expects: view + activeRace{Type,Id} + prevActiveRaceId, plus
+      // a minimal raceContext slice the race-deep-dive / proposition
+      // builders need. Without this the chat route falls back to the
+      // legacy prompt, even with PROMPT_FLEET_V2 on. See
+      // .ai/work-packets/redesign-phase-3-workspace-split.md step 4.
+      const workspaceContextBody = (() => {
+        const ws = workspace;
+        if (!ws?.activeRace) return undefined;
+        const isProposition =
+          !ws.activeRace.candidates || ws.activeRace.candidates.length === 0;
+        const view: RouterView = isProposition
+          ? "workspace-prop"
+          : "workspace-race";
+        const raceType: RaceType = isProposition ? "proposition" : "choice";
+        return {
+          view,
+          activeRaceType: raceType,
+          activeRaceId: ws.activeRace.id,
+          prevActiveRaceId: ws.prevActiveRaceId ?? undefined,
+          raceContext: {
+            raceLabel: ws.activeRace.label,
+            state: state.stateCode,
+            county: countyName,
+            candidatesJson: ws.activeRace.candidates
+              ? JSON.stringify(ws.activeRace.candidates)
+              : undefined,
+          },
+        };
+      })();
+
       try {
         const response = await fetch("/api/chat", {
           method: "POST",
@@ -1266,6 +1684,7 @@ export function ChatPanel({
             messageCount: messageCountRef.current,
             isNewSession: messageCountRef.current === 1,
             ...(voterProfile ? { voterProfile } : {}),
+            ...(workspaceContextBody ?? {}),
           }),
         });
 
@@ -1330,6 +1749,9 @@ export function ChatPanel({
       disableChat,
       handleApiError,
       voterProfile,
+      workspace,
+      state.stateCode,
+      countyName,
     ],
   );
 
@@ -1448,9 +1870,13 @@ export function ChatPanel({
     ],
   );
 
-  const handleColdOpenLockIn = useCallback((themes: Theme[]) => {
-    setThemesLockedIn(themes);
-  }, []);
+  const handleColdOpenLockIn = useCallback(
+    (themes: Theme[]) => {
+      setThemesLockedIn(themes);
+      onLockInThemes?.(themes);
+    },
+    [onLockInThemes],
+  );
 
   const handleColdOpenRewrite = useCallback(() => {
     setColdOpenPhase((prev) => {
@@ -1568,11 +1994,13 @@ export function ChatPanel({
   }, [getBasePrompt, sendMessage]);
 
   // Auto-start session on mount — suppressed under the Phase 2 cold-open
-  // path. The cold-open textarea is the only way to start the session
-  // when `coldOpenActive`; the legacy context-block dispatch happens
-  // (if at all) downstream of theme lock-in via Phase 3.
+  // path and under the Phase 3 workspace path. Phase 3 starts the chat
+  // from the user's first typed message (or a suggestion chip). The
+  // legacy context-block dispatch only happens for flag-off / pre-lock
+  // callers.
   useEffect(() => {
     if (coldOpenActive) return;
+    if (workspace) return;
     startSession();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -1677,8 +2105,34 @@ export function ChatPanel({
     );
   }
 
+  // Phase 3 — when a workspace prop is provided, render the workspace
+  // chat shape: a race header (`Race N of M` + label), a chat message
+  // body scoped to the active race (parent re-keys ChatPanel by race id
+  // so this list naturally resets across races — UI mirrors the server
+  // contract Phase 1 set up), context-aware suggestion chips above the
+  // input, and the pick stub + WhyPrompt. Exports (print / profile /
+  // handoff) live in the BallotPane footer per packet §3.
+  if (workspace) {
+    return (
+      <WorkspaceChat
+        workspace={workspace}
+        budgetExhausted={budgetExhausted}
+        messages={messages}
+        isStreaming={isStreaming}
+        onSendMessage={(msg) => sendMessage(msg, messages)}
+        chatDisabled={effectiveChatDisabled}
+      />
+    );
+  }
+
   return (
-    <div data-testid="chat-window" className="flex flex-col">
+    <div
+      data-testid="chat-window"
+      role="log"
+      aria-label="Voter Choice chat"
+      aria-live="polite"
+      className="flex flex-col"
+    >
       {/* Phase 2 cold-open branch (flag-on + en, pre-lock-in). */}
       {coldOpenActive && (
         <ColdOpenSurface
