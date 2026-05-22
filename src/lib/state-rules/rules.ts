@@ -64,6 +64,15 @@ const TX_RUNOFF: StateRule = {
       clarification: true,
     },
   ],
+  // URLs cite the canonical paths used elsewhere in the codebase
+  // (src/data/states/TX.json — registrationCheckUrl + countyElectionLookup)
+  // so we don't fork the URL source of truth.
+  externalResources: {
+    sosVoterLookupUrl: "https://teamrv-mvp.sos.texas.gov/MVP/mvp.do",
+    countyElectionsLocatorUrl: "https://www.votetexas.gov/voting/where.html",
+    lookupInstructions:
+      "Look up your March primary voting history through the Texas SOS Voter Lookup, or call your county elections office.",
+  },
 };
 
 /**
@@ -100,6 +109,17 @@ const PA_PRIMARY: StateRule = {
     reregistrationUrl:
       "https://www.pa.gov/en/agencies/vote/Voter-Registration.html",
     canSkipToGeneral: true,
+  },
+  // URLs cite the canonical paths used elsewhere in the codebase
+  // (src/data/states/PA.json — registrationCheckUrl + countyElectionLookup)
+  // so we don't fork the URL source of truth.
+  externalResources: {
+    sosVoterLookupUrl:
+      "https://www.vote.pa.gov/Register-to-Vote/Pages/Voter-Registration-Search.aspx",
+    countyElectionsLocatorUrl:
+      "https://www.vote.pa.gov/Resources/Pages/Contact-Your-Election-Officials.aspx",
+    lookupInstructions:
+      "Check your registered party through the Pennsylvania Voter Registration Search, or contact your county elections office.",
   },
 };
 

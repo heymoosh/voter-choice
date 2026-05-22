@@ -347,6 +347,13 @@ const AUTO_ADVANCE_MS = 600;
 interface PersistedWorkspaceState {
   decisions: Decision[];
   activeRaceId: string | null;
+  /**
+   * Locked themes from cold-open. PR 1 added this — without it, returning
+   * voters (back from BudgetExhausted, refresh, etc.) re-hydrated with
+   * `lockedThemes === null` and the workspace dropped back to cold-open,
+   * losing the session. Persisted as part of the same payload as decisions.
+   */
+  lockedThemes?: Theme[] | null;
 }
 
 export function ElectionResult({
@@ -496,6 +503,11 @@ export function ElectionResult({
         if (typeof parsed.activeRaceId === "string") {
           setActiveRaceId(parsed.activeRaceId);
         }
+        // PR 1 — restore locked themes so a remount after BudgetExhausted
+        // (or refresh) doesn't drop the user back to cold-open.
+        if (Array.isArray(parsed.lockedThemes)) {
+          setLockedThemes(parsed.lockedThemes);
+        }
       }
     } catch {
       // Corrupt persistence shouldn't crash the workspace; drop it.
@@ -509,12 +521,16 @@ export function ElectionResult({
     if (!hydrated) return;
     if (typeof window === "undefined") return;
     try {
-      const payload: PersistedWorkspaceState = { decisions, activeRaceId };
+      const payload: PersistedWorkspaceState = {
+        decisions,
+        activeRaceId,
+        lockedThemes,
+      };
       window.localStorage.setItem(WORKSPACE_STATE_KEY, JSON.stringify(payload));
     } catch {
       // Quota errors etc. — silently ignore; persistence is best-effort.
     }
-  }, [decisions, activeRaceId, hydrated]);
+  }, [decisions, activeRaceId, lockedThemes, hydrated]);
 
   const handleLockInThemes = useCallback((themes: Theme[]) => {
     setLockedThemes(themes);
@@ -732,12 +748,11 @@ export function ElectionResult({
   }, [decisions, lockedThemes]);
 
   const handleHandoff = useCallback(() => {
-    // Phase 9 owns the full out-of-budget handoff UX. For Phase 3 we route
-    // to Claude.ai as a reasonable continuation target — the alphabetical
-    // chatbot menu Phase 9 ships replaces this single-target stub.
-    if (typeof window !== "undefined") {
-      window.open("https://claude.ai", "_blank", "noopener,noreferrer");
-    }
+    // Phase 9 owns the full out-of-budget handoff UX via the
+    // BudgetExhausted screen mounted by handleHandoffFromBallotPane below.
+    // PR 1 removed the legacy Phase 3 stub that also opened claude.ai in
+    // a new tab — clicking the BallotPane handoff button used to do both,
+    // which read as a double-fire bug to voters.
   }, []);
 
   const chatAvailable = isChatAvailable(budgetStatus.tier);

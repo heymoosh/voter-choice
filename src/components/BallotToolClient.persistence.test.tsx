@@ -189,4 +189,62 @@ describe("ElectionResult — workspace persistence (Phase 3)", () => {
     expect(parsed.decisions).toHaveLength(1);
     expect(parsed.decisions[0].whyNote).toBe("preserved");
   });
+
+  it("persists lockedThemes to localStorage so they survive remount", () => {
+    // Production flow: user comes back from the BudgetExhausted screen
+    // (or refresh), the workspace remounts without initialLockedThemes,
+    // and themes MUST still surface from localStorage. Otherwise the user
+    // is dropped back to cold-open, losing their session.
+    const { unmount } = renderElectionResult();
+    // The locked themes fixture is passed via initialLockedThemes; after
+    // the first hydration-driven persistence write, they should land in
+    // localStorage.
+    const raw = window.localStorage.getItem("voter-choice:workspace:state:v1");
+    expect(raw).toBeTruthy();
+    const parsed = JSON.parse(raw!);
+    expect(parsed.lockedThemes).toBeDefined();
+    expect(parsed.lockedThemes).toHaveLength(1);
+    expect(parsed.lockedThemes[0].name).toBe("Healthcare costs");
+    unmount();
+  });
+
+  it("rehydrates lockedThemes from localStorage so a fresh mount keeps the workspace open", () => {
+    // Seed full state (decisions + activeRaceId + lockedThemes) — simulate
+    // the second render after BudgetExhausted unmounted the workspace.
+    const seed = {
+      decisions: [],
+      activeRaceId: "u-s-president",
+      lockedThemes: [
+        {
+          name: "Healthcare costs",
+          quotes: ['"insulin prices keep going up"'],
+        },
+      ],
+    };
+    window.localStorage.setItem(
+      "voter-choice:workspace:state:v1",
+      JSON.stringify(seed),
+    );
+
+    // Render WITHOUT the test-only initialLockedThemes hook — production
+    // callers never pass it. The workspace shell should still come up.
+    render(
+      <LanguageProvider>
+        <ElectionResult
+          state={txState}
+          zipCode="73301"
+          lang="en"
+          initialPollingData={civicData}
+          promptFleetV2Enabled={true}
+        />
+      </LanguageProvider>,
+    );
+
+    // The workspace shell (rail + chat + ballot pane) renders only when
+    // lockedThemes !== null. If hydration didn't restore themes, we'd see
+    // the cold-open surface instead.
+    expect(screen.getByTestId("workspace-rail-theme-0")).toHaveTextContent(
+      "Healthcare costs",
+    );
+  });
 });

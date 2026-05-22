@@ -190,6 +190,123 @@ describe("PartyGate — TX runoff", () => {
     expect(screen.getByTestId("party-gate-continue")).toBeDisabled();
     expect(onSelect).not.toHaveBeenCalled();
   });
+
+  it("re-selecting another option after 'I'm not sure' updates the selection and re-enables Continue", () => {
+    // F.4 — verify the radio state is not locked after picking the
+    // clarification ("I'm not sure") option. The orchestrator observed
+    // this behavior via Playwright; this test exercises it via JSDOM
+    // change events to determine if it's a real bug or a Playwright artifact.
+    render(
+      <PartyGate
+        rule={TX_RUNOFF_RULE}
+        electionDate="2026-05-25"
+        electionLabel="2026 Texas Primary Runoff"
+        onSelect={() => {}}
+      />,
+    );
+    // First: pick "I'm not sure" → placeholder appears, Continue disabled.
+    fireEvent.click(screen.getByTestId("party-gate-option-unsure"));
+    expect(
+      screen.getByTestId("party-gate-clarification-placeholder"),
+    ).toBeInTheDocument();
+    expect(screen.getByTestId("party-gate-continue")).toBeDisabled();
+
+    // Then: pick a real option (DEM runoff lane). Placeholder must vanish,
+    // and Continue must become enabled with the new selection.
+    fireEvent.click(
+      screen.getByTestId("party-gate-option-did_not_vote_dem_runoff"),
+    );
+    expect(
+      screen.queryByTestId("party-gate-clarification-placeholder"),
+    ).toBeNull();
+    const continueBtn = screen.getByTestId("party-gate-continue");
+    expect(continueBtn).not.toBeDisabled();
+    // And the unsure radio is no longer checked.
+    expect(screen.getByTestId("party-gate-option-unsure")).not.toBeChecked();
+    expect(
+      screen.getByTestId("party-gate-option-did_not_vote_dem_runoff"),
+    ).toBeChecked();
+  });
+});
+
+describe("PartyGate — external-resources fallback for clarification", () => {
+  // F.3 — when a `clarification:true` option is selected AND the rule
+  // ships an `externalResources` block, render the lookup instructions +
+  // SOS/county-elections links INSTEAD of the dead-end "coming soon"
+  // placeholder. Continue stays disabled (the user still has to pick a
+  // real named option after looking themselves up).
+  const TX_WITH_RESOURCES: StateRule = {
+    ...TX_RUNOFF_RULE,
+    externalResources: {
+      sosVoterLookupUrl: "https://teamrv-mvp.sos.texas.gov/MVP/mvp.do",
+      countyElectionsLocatorUrl: "https://www.votetexas.gov/voting/where.html",
+      lookupInstructions:
+        "Look up your March primary voting history through the Texas SOS Voter Lookup, or call your county elections office.",
+    },
+  };
+
+  it("renders the lookup instructions and the two SOS/county links when 'I'm not sure' is picked", () => {
+    render(
+      <PartyGate
+        rule={TX_WITH_RESOURCES}
+        electionDate="2026-05-25"
+        electionLabel="2026 Texas Primary Runoff"
+        onSelect={() => {}}
+      />,
+    );
+    fireEvent.click(screen.getByTestId("party-gate-option-unsure"));
+
+    // Instructions surface.
+    expect(
+      screen.getByTestId("party-gate-clarification-external"),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/Texas SOS Voter Lookup/i)).toBeInTheDocument();
+
+    // SOS lookup link.
+    const sosLink = screen.getByTestId("party-gate-clarification-sos-link");
+    expect(sosLink).toHaveAttribute(
+      "href",
+      "https://teamrv-mvp.sos.texas.gov/MVP/mvp.do",
+    );
+    expect(sosLink).toHaveAttribute("target", "_blank");
+
+    // County elections link.
+    const countyLink = screen.getByTestId(
+      "party-gate-clarification-county-link",
+    );
+    expect(countyLink).toHaveAttribute(
+      "href",
+      "https://www.votetexas.gov/voting/where.html",
+    );
+
+    // The dead-end "coming soon" placeholder must NOT be rendered when
+    // externalResources are present.
+    expect(
+      screen.queryByTestId("party-gate-clarification-placeholder"),
+    ).toBeNull();
+
+    // Continue stays disabled — the user still has to pick a real option.
+    expect(screen.getByTestId("party-gate-continue")).toBeDisabled();
+  });
+
+  it("falls back to the 'coming soon' placeholder when the rule has no externalResources", () => {
+    // Regression guard for unsupported states: existing behavior is preserved.
+    render(
+      <PartyGate
+        rule={TX_RUNOFF_RULE}
+        electionDate="2026-05-25"
+        electionLabel="2026 Texas Primary Runoff"
+        onSelect={() => {}}
+      />,
+    );
+    fireEvent.click(screen.getByTestId("party-gate-option-unsure"));
+    expect(
+      screen.getByTestId("party-gate-clarification-placeholder"),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByTestId("party-gate-clarification-external"),
+    ).toBeNull();
+  });
 });
 
 describe("PartyGate — PA closed primary", () => {

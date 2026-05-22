@@ -100,11 +100,22 @@ export function PartyGate({
     );
   }
 
-  // Inline notice when the user has selected a clarification option but the
-  // parent hasn't wired a handler yet (v1 placeholder behavior). Without
-  // this, clicking Continue would silently no-op and read as a bug.
-  const showClarificationPlaceholder =
+  // Clarification fallback — when the user picks a `clarification:true`
+  // option (e.g. TX "I'm not sure") AND the parent hasn't wired the
+  // AI-assisted clarification handler, give the voter a real next step.
+  // Two presentations, in priority order:
+  //   1. If the rule ships `externalResources`, render the SOS / county
+  //      links + instructions so the voter can look themselves up.
+  //   2. Otherwise, surface a polite "coming soon" placeholder so the
+  //      Continue button doesn't silently no-op (legacy v1 behavior).
+  // In both cases, Continue stays disabled — the voter still has to pick
+  // a real named option once they know.
+  const isClarificationSelected =
     !!selectedOption?.clarification && !onClarificationStart;
+  const showClarificationExternal =
+    isClarificationSelected && !!rule.externalResources;
+  const showClarificationPlaceholder =
+    isClarificationSelected && !rule.externalResources;
 
   function handleSkipToGeneral() {
     onSelect(buildSelection(rule, "GENERAL", county, electionDate, labelText));
@@ -218,9 +229,57 @@ export function PartyGate({
         </div>
       )}
 
+      {/* Clarification external-resources fallback — when the rule ships
+          an externalResources block, give the voter a real next step
+          (SOS lookup + county elections links) instead of a dead end. */}
+      {showClarificationExternal && rule.externalResources && (
+        <div
+          data-testid="party-gate-clarification-external"
+          className="mt-4 border border-outline-variant/40 bg-surface-low p-4 text-sm"
+        >
+          {rule.externalResources.lookupInstructions && (
+            <p className="text-on-surface">
+              {rule.externalResources.lookupInstructions}
+            </p>
+          )}
+          <ul className="mt-3 space-y-2">
+            {rule.externalResources.sosVoterLookupUrl && (
+              <li>
+                <a
+                  href={rule.externalResources.sosVoterLookupUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  data-testid="party-gate-clarification-sos-link"
+                  className="underline text-primary"
+                >
+                  Look up your voter history &rarr;
+                </a>
+              </li>
+            )}
+            {rule.externalResources.countyElectionsLocatorUrl && (
+              <li>
+                <a
+                  href={rule.externalResources.countyElectionsLocatorUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  data-testid="party-gate-clarification-county-link"
+                  className="underline text-primary"
+                >
+                  Find your county elections office &rarr;
+                </a>
+              </li>
+            )}
+          </ul>
+          <p className="mt-3 text-on-surface-muted">
+            Once you know, come back and pick one of the options above.
+          </p>
+        </div>
+      )}
+
       {/* Clarification placeholder — v1 doesn't ship the AI-assisted "I'm
-          not sure" flow, so when the parent hasn't wired a handler we
-          surface a polite redirect rather than silently no-op on Continue. */}
+          not sure" flow, so when the parent hasn't wired a handler AND
+          the rule doesn't ship external resources we surface a polite
+          redirect rather than silently no-op on Continue. */}
       {showClarificationPlaceholder && (
         <p
           data-testid="party-gate-clarification-placeholder"
@@ -233,13 +292,19 @@ export function PartyGate({
 
       {/* Continue — disabled until any non-unaffiliated option is picked, or
           when unaffiliated is selected (the skip-to-general button takes
-          over for that path). */}
+          over for that path). Either clarification fallback (external links
+          or placeholder) keeps Continue disabled — the voter still has to
+          pick a real named option. */}
       {!isUnaffiliatedSelected && (
         <div className="mt-5">
           <button
             type="button"
             onClick={handleContinue}
-            disabled={!selectedOption || showClarificationPlaceholder}
+            disabled={
+              !selectedOption ||
+              showClarificationPlaceholder ||
+              showClarificationExternal
+            }
             data-testid="party-gate-continue"
             className="bg-primary text-on-primary px-4 py-2 text-sm font-bold uppercase tracking-wide disabled:opacity-40 disabled:cursor-not-allowed"
           >

@@ -61,6 +61,22 @@ export interface UnaffiliatedPath {
 }
 
 /**
+ * External resources for helping voters resolve eligibility ambiguity
+ * (e.g. the "I'm not sure" path on TX runoff). The gate renders these as
+ * the clarification fallback in v1 (instead of the dead-end "coming soon"
+ * placeholder) so voters can self-serve a lookup and come back with a
+ * concrete answer.
+ */
+export interface StateExternalResources {
+  /** State SOS voter-registration / primary-history lookup URL. */
+  sosVoterLookupUrl?: string;
+  /** Generic "find my county elections office" locator URL (state-level). */
+  countyElectionsLocatorUrl?: string;
+  /** Optional one-line explanation of WHAT the lookup tells the voter. */
+  lookupInstructions?: string;
+}
+
+/**
  * One rule in the table, keyed by `(state, electionType)`. Either
  * `options` (with-choice gate) or `unaffiliatedPath` (registration-driven
  * blocking) — or both, in closed states where registered voters get a
@@ -82,4 +98,10 @@ export interface StateRule {
    * "you cannot vote this primary" branch.
    */
   unaffiliatedPath?: UnaffiliatedPath;
+  /**
+   * Optional external-resource block; used by the gate's clarification
+   * fallback to give voters a real next step ("look yourself up here")
+   * instead of a dead-end placeholder.
+   */
+  externalResources?: StateExternalResources;
 }
