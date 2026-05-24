@@ -13,7 +13,8 @@ import { WorkspaceRail } from "./WorkspaceRail";
 import { BallotPane, type Decision } from "./BallotPane";
 import { PrintBallot, type PollingDataShape } from "./PrintBallot";
 import { ChatPanel } from "./ChatPanel";
-import { deriveRaces, type Race } from "../lib/raceDeriver";
+import { deriveRaces, type ContestLike, type Race } from "../lib/raceDeriver";
+import { parseBallotContent } from "../lib/parseBallotContent";
 import { downloadProfileAsText } from "../lib/ballot-utils";
 import { useLanguage } from "../lib/i18n";
 import { useResearchMode } from "../lib/researchMode";
@@ -380,6 +381,56 @@ interface PersistedWorkspaceState {
   lockedThemes?: Theme[] | null;
 }
 
+/**
+ * PR 8 — Fix L. Convert a pasted ballot text blob into the `ContestLike[]`
+ * shape `deriveRaces` expects so the workspace race list can populate from
+ * paste (the BallotLookupNeeded → workspace transition) the same way it
+ * populates from Civic API contests.
+ *
+ * Multi-seat races (e.g. "County Commissioner" repeated for 3 slots) would
+ * otherwise collide on `raceDeriver.makeRaceId(office, district)` — the same
+ * office + empty district slug to the same id, which makes the rail key-warn
+ * AND makes "decided" on one row flip state on all of them. Mitigation:
+ * feed the parsed candidate name into the `district` slot so each row slugs
+ * to a unique id. The rail then renders as
+ * "County Commissioner — Alice Smith / Bob Jones / Carol Lee".
+ *
+ * Exported for unit-test access from BallotToolClient.integration.test.tsx.
+ * No-op (empty array) when the text has no parseable races — keeps the
+ * workspace counter at "0/0" rather than crashing during hydration.
+ *
+ * Out of scope: parsed propositions. `parseBallotContent` returns them
+ * separately and `raceDeriver` already has a `Propositions` section bucket,
+ * but threading those through pasted ballots would expand this change
+ * beyond the funnel fix; leave for a follow-up.
+ */
+export function parsedBallotToContests(text: string): ContestLike[] {
+  const trimmed = text?.trim() ?? "";
+  if (trimmed.length === 0) return [];
+  const parsed = parseBallotContent(trimmed);
+  // Pre-count offices so we only inject the candidate-as-district
+  // disambiguator when there's an actual collision (e.g. 3 County
+  // Commissioner seats). Singleton offices keep a clean label like
+  // "U.S. Senate" — appending "— Cory Booker" reads as already-endorsed.
+  const officeCounts = new Map<string, number>();
+  for (const race of parsed.races) {
+    officeCounts.set(race.office, (officeCounts.get(race.office) ?? 0) + 1);
+  }
+  return parsed.races.map((race) => {
+    const isMultiSeat = (officeCounts.get(race.office) ?? 1) > 1;
+    return {
+      office: race.office,
+      // Multi-seat: candidate name into district keeps makeRaceId unique
+      // across rows (label becomes "<office> — <candidate>"). Singleton:
+      // leave district empty so the label stays "<office>".
+      district: isMultiSeat ? race.candidate : "",
+      candidates: race.candidate
+        ? [{ name: race.candidate, party: race.party }]
+        : [],
+    };
+  });
+}
+
 export function ElectionResult({
   state,
   zipCode,
@@ -387,6 +438,7 @@ export function ElectionResult({
   initialPollingData,
   promptFleetV2Enabled = false,
   initialLockedThemes = null,
+  initialUserSampleBallotText = "",
 }: {
   state: StateElectionData;
   zipCode: string;
@@ -400,6 +452,15 @@ export function ElectionResult({
    * cold-open inside ChatPanel calls `onLockInThemes` to populate this state.
    */
   initialLockedThemes?: Theme[] | null;
+  /**
+   * Test-only hook that mirrors `initialLockedThemes` for the paste path:
+   * lets the workspace mount with `userSampleBallotText` pre-populated, so
+   * Fix L's "pasted-ballot races populate the rail" can be asserted without
+   * driving the full BallotLookupNeeded → cold-open → lock chain. Production
+   * callers leave this empty; the real path is BallotLookupNeeded's confirm
+   * handler.
+   */
+  initialUserSampleBallotText?: string;
 }) {
   const [voterProfile, setVoterProfile] = useState<string | null>(null);
   // Once the chat session begins (first message exchanged), hide the
@@ -414,16 +475,9 @@ export function ElectionResult({
   const [lockedThemes, setLockedThemes] = useState<Theme[] | null>(
     initialLockedThemes,
   );
-  // Derived list of races (Federal → State → Propositions → Local). Memoized
-  // against the polling data identity to keep stable ids across renders.
-  const races: Race[] = useMemo(
-    () => deriveRaces(initialPollingData),
-    [initialPollingData],
-  );
+  // The `races` useMemo lives below the `userSampleBallotText` state so
+  // its TDZ doesn't trip — see PR 8 Fix L comment block at the declaration.
   const [decisions, setDecisions] = useState<Decision[]>([]);
-  const [activeRaceId, setActiveRaceId] = useState<string | null>(
-    races[0]?.id ?? null,
-  );
   // Tracks whether the most-recent activeRace change was a manual review
   // click on a finished race. Used to suppress auto-advance after a re-pick.
   const manualReviewRef = useRef(false);
@@ -456,7 +510,36 @@ export function ElectionResult({
   // saved state in localStorage before the user's reload-restored render
   // gets a chance to settle.
   const [hydrated, setHydrated] = useState(false);
-  const [userSampleBallotText, setUserSampleBallotText] = useState("");
+  const [userSampleBallotText, setUserSampleBallotText] = useState(
+    initialUserSampleBallotText,
+  );
+  // Derived list of races (Federal → State → Propositions → Local). Memoized
+  // for stable ids across renders.
+  //
+  // PR 8 — Fix L. When Civic returned 0 contests but the user supplied a
+  // ballot via paste (BallotLookupNeeded confirm), parse the pasted text
+  // and use those races. Otherwise the workspace counter stays "0/0" even
+  // after the user just confirmed their ballot — the bug that motivated
+  // this fix. Civic contests take precedence: if both exist, the
+  // server-side data wins. Note: races still keys on `initialPollingData`
+  // (not live `pollingData`) — that's a separate latent address-resubmit
+  // bug out of scope for this PR. Declaration order matters: this useMemo
+  // reads `userSampleBallotText`, so it MUST live below that state hook to
+  // avoid the temporal-dead-zone error.
+  const races: Race[] = useMemo(() => {
+    const civicContests = initialPollingData?.contests ?? [];
+    if (civicContests.length > 0) {
+      return deriveRaces(initialPollingData);
+    }
+    const pastedContests = parsedBallotToContests(userSampleBallotText);
+    if (pastedContests.length > 0) {
+      return deriveRaces({ contests: pastedContests });
+    }
+    return deriveRaces(initialPollingData);
+  }, [initialPollingData, userSampleBallotText]);
+  const [activeRaceId, setActiveRaceId] = useState<string | null>(
+    races[0]?.id ?? null,
+  );
   const [runoffChoice, setRunoffChoice] = useState<TexasRunoffChoice | null>(
     null,
   );

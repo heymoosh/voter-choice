@@ -1594,26 +1594,35 @@ function ResearchView({
 
           {!researchReady && preResearchGate}
 
-          {onUserSampleBallotTextChange && (
-            <details
-              open
-              className="bg-surface-lowest border border-outline-variant/30 p-4"
-            >
-              <summary className="cursor-pointer text-sm font-black uppercase tracking-widest text-primary">
-                {lang === "es"
-                  ? "Pegar mi boleta en su lugar"
-                  : "Paste your ballot instead"}
-              </summary>
-              <div className="mt-4">
-                <UserSampleBallotInput
-                  value={userSampleBallotText ?? ""}
-                  onChange={onUserSampleBallotTextChange}
-                  lang={lang}
-                  hasOfficialContests={hasOfficialContests}
-                />
-              </div>
-            </details>
-          )}
+          {/*
+            PR 8 — Fix M. Under flag-on + en, the new BallotLookupNeeded
+            funnel owns paste; once the user has confirmed a ballot there,
+            re-surfacing the legacy widget pre-populated with the same text
+            reads as visible UX duplication. Hide it in that combination.
+            Flag-off / ES paths keep the legacy widget (the only entry on
+            those paths).
+          */}
+          {onUserSampleBallotTextChange &&
+            !(promptFleetV2Enabled && lang === "en" && hasUserSampleBallot) && (
+              <details
+                open
+                className="bg-surface-lowest border border-outline-variant/30 p-4"
+              >
+                <summary className="cursor-pointer text-sm font-black uppercase tracking-widest text-primary">
+                  {lang === "es"
+                    ? "Pegar mi boleta en su lugar"
+                    : "Paste your ballot instead"}
+                </summary>
+                <div className="mt-4">
+                  <UserSampleBallotInput
+                    value={userSampleBallotText ?? ""}
+                    onChange={onUserSampleBallotTextChange}
+                    lang={lang}
+                    hasOfficialContests={hasOfficialContests}
+                  />
+                </div>
+              </details>
+            )}
 
           {/* Chat or copy/paste fallback */}
           {canStartResearch && (chatAvailable || !budgetChecked) && (

@@ -10,7 +10,7 @@ import {
 import "@testing-library/jest-dom";
 import React from "react";
 import { LanguageProvider } from "../lib/i18n";
-import { ElectionResult } from "./BallotToolClient";
+import { ElectionResult, parsedBallotToContests } from "./BallotToolClient";
 import type { StateElectionData } from "../types/election";
 import type { Theme } from "../lib/prompts/types";
 
@@ -1218,6 +1218,207 @@ describe("ElectionResult — ballot-before-themes funnel (fix D)", () => {
       initialPollingData: emptyCivic,
       lang: "es",
     });
+    expect(screen.queryByTestId("ballot-lookup-needed")).toBeNull();
+    expect(screen.getByTestId("user-sample-ballot-input")).toBeInTheDocument();
+  });
+});
+
+/* ── PR 8 — Fix L: pasted ballot populates workspace races ─── */
+
+describe("parsedBallotToContests — helper", () => {
+  it("emits one ContestLike per parsed race", () => {
+    const text = [
+      "MY BALLOT — NJ DEM",
+      "U.S. Senate: Cory Booker (D) — incumbent",
+      "U.S. House: Donald Norcross (D) — labor record",
+      "County Commissioner: Alice Smith (D)",
+      "County Commissioner: Bob Jones (D)",
+      "County Commissioner: Carol Lee (D)",
+    ].join("\n");
+
+    const contests = parsedBallotToContests(text);
+    expect(contests.length).toBe(5);
+  });
+
+  it("assigns unique ids for repeated offices (multi-seat races)", () => {
+    // Three County Commissioner rows must NOT collide on the same id —
+    // otherwise the workspace rail key-collides and decided/unpicked
+    // state on one row flips state on all three.
+    const text = [
+      "MY BALLOT",
+      "County Commissioner: Alice Smith (D)",
+      "County Commissioner: Bob Jones (D)",
+      "County Commissioner: Carol Lee (D)",
+    ].join("\n");
+
+    const contests = parsedBallotToContests(text);
+    // raceDeriver.makeRaceId slugs from office + district. If we feed the
+    // candidate name into district, the three slugs diverge.
+    // Sanity check at the contest level: districts must be distinct.
+    const districts = contests.map((c) => c.district ?? "");
+    expect(new Set(districts).size).toBe(contests.length);
+  });
+
+  it("returns an empty array when the text has no parseable races", () => {
+    expect(parsedBallotToContests("").length).toBe(0);
+    expect(parsedBallotToContests("   \n  \n").length).toBe(0);
+    expect(parsedBallotToContests("MY BALLOT — header only\n").length).toBe(0);
+  });
+});
+
+describe("ElectionResult — Fix L: pasted ballot populates workspace races", () => {
+  // NJ DEM ballot fixture: 1 Senate + 1 House + 3 County Commissioners = 5.
+  const njBallotText = [
+    "MY BALLOT — NJ DEM",
+    "U.S. Senate: Cory Booker (D) — incumbent",
+    "U.S. House: Donald Norcross (D) — labor record",
+    "County Commissioner: Alice Smith (D)",
+    "County Commissioner: Bob Jones (D)",
+    "County Commissioner: Carol Lee (D)",
+  ].join("\n");
+
+  function renderWithPastedBallot(text: string) {
+    return render(
+      <LanguageProvider>
+        <ElectionResult
+          state={txState}
+          zipCode="73301"
+          lang="en"
+          // Civic returned nothing — the user supplied the ballot via paste.
+          initialPollingData={null}
+          promptFleetV2Enabled={true}
+          initialLockedThemes={lockedThemes}
+          // Test-only escape: mirror the legacy `initialLockedThemes` hook
+          // so the workspace can mount with a pre-populated paste text
+          // (the real flow sets this via BallotLookupNeeded.onConfirmed).
+          initialUserSampleBallotText={text}
+        />
+      </LanguageProvider>,
+    );
+  }
+
+  it("workspace shows N/5 in the rail counter when 5-race ballot is pasted", () => {
+    renderWithPastedBallot(njBallotText);
+    // ballot-pane-header shows e.g. "0/5". 5 = 1 Senate + 1 House + 3 commissioners.
+    expect(screen.getByTestId("ballot-pane-header")).toHaveTextContent("0/5");
+  });
+
+  it("workspace rail renders one row per parsed race with stable, distinct ids", () => {
+    renderWithPastedBallot(njBallotText);
+    // The rail emits data-testid="workspace-rail-race-<id>" for each row.
+    // Find them all and assert count + uniqueness.
+    const railRows = screen
+      .getAllByRole("button")
+      .filter((b) =>
+        (b.getAttribute("data-testid") ?? "").startsWith(
+          "workspace-rail-race-",
+        ),
+      );
+    expect(railRows.length).toBe(5);
+    const ids = railRows
+      .map((b) => b.getAttribute("data-testid"))
+      .filter((id): id is string => id !== null);
+    expect(new Set(ids).size).toBe(railRows.length);
+  });
+
+  it("empty paste text → workspace renders with zero races (no crash)", () => {
+    renderWithPastedBallot("");
+    // No civic + no paste → 0 races. The N/M counter should reflect that.
+    expect(screen.getByTestId("ballot-pane-header")).toHaveTextContent("0/0");
+  });
+});
+
+/* ── PR 8 — Fix M: hide legacy paste widget after new-flow confirm ── */
+
+describe("ElectionResult — Fix M: legacy paste widget hidden post-confirm", () => {
+  it("flag-on + en + pasted via new flow → legacy UserSampleBallotInput NOT in DOM", () => {
+    // ChatPanel may invoke scrollIntoView on mount; jsdom lacks it.
+    Element.prototype.scrollIntoView = vi.fn();
+    const emptyCivic = {
+      pollingLocations: [],
+      earlyVoteSites: [],
+      county: "Travis County",
+      contests: [],
+    };
+    render(
+      <LanguageProvider>
+        <ElectionResult
+          state={txState}
+          zipCode="73301"
+          lang="en"
+          initialPollingData={emptyCivic}
+          promptFleetV2Enabled={true}
+          initialLockedThemes={null}
+        />
+      </LanguageProvider>,
+    );
+
+    // Step 1: BallotLookupNeeded is the gate.
+    expect(screen.getByTestId("ballot-lookup-needed")).toBeInTheDocument();
+
+    // Step 2: paste + confirm.
+    fireEvent.change(screen.getByTestId("ballot-lookup-textarea"), {
+      target: {
+        value: "U.S. Senate: John Doe (D)\nGovernor: Jane Smith (R)",
+      },
+    });
+    fireEvent.click(screen.getByTestId("ballot-lookup-confirm"));
+
+    // Step 3: cold-open is visible — ResearchLayout has rendered.
+    expect(screen.getByTestId("cold-open-textarea")).toBeInTheDocument();
+
+    // Step 4 (the regression we're fixing): the legacy paste widget MUST
+    // NOT also render. The user already supplied their ballot via the new
+    // flow — re-surfacing the legacy widget pre-populated with the same
+    // text is the visible duplication we're killing.
+    expect(screen.queryByTestId("user-sample-ballot-input")).toBeNull();
+  });
+
+  it("flag-off + Civic empty + legacy widget path → legacy widget STAYS visible (no regression)", () => {
+    Element.prototype.scrollIntoView = vi.fn();
+    const emptyCivic = {
+      pollingLocations: [],
+      earlyVoteSites: [],
+      county: "Travis County",
+      contests: [],
+    };
+    render(
+      <LanguageProvider>
+        <ElectionResult
+          state={txState}
+          zipCode="73301"
+          lang="en"
+          initialPollingData={emptyCivic}
+          promptFleetV2Enabled={false}
+          initialLockedThemes={null}
+        />
+      </LanguageProvider>,
+    );
+    // Legacy: no BallotLookupNeeded; legacy paste widget IS the entry.
+    expect(screen.queryByTestId("ballot-lookup-needed")).toBeNull();
+    expect(screen.getByTestId("user-sample-ballot-input")).toBeInTheDocument();
+  });
+
+  it("ES locale + Civic empty → legacy widget STAYS visible (en-only fix)", () => {
+    Element.prototype.scrollIntoView = vi.fn();
+    const emptyCivic = {
+      pollingLocations: [],
+      earlyVoteSites: [],
+      county: "Travis County",
+      contests: [],
+    };
+    render(
+      <LanguageProvider>
+        <ElectionResult
+          state={txState}
+          zipCode="73301"
+          lang="es"
+          initialPollingData={emptyCivic}
+          promptFleetV2Enabled={true}
+          initialLockedThemes={null}
+        />
+      </LanguageProvider>,
+    );
     expect(screen.queryByTestId("ballot-lookup-needed")).toBeNull();
     expect(screen.getByTestId("user-sample-ballot-input")).toBeInTheDocument();
   });
