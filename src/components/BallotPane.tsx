@@ -74,21 +74,23 @@ export function BallotPane({
     <aside
       data-testid="ballot-pane"
       aria-label="Your ballot"
-      className="flex h-full flex-col overflow-y-auto border-l border-outline-variant/30 bg-surface-lowest text-on-surface"
+      className="flex h-full flex-col overflow-y-auto border-l border-rule-2 bg-paper text-ink"
     >
       <header
         data-testid="ballot-pane-header"
-        className="border-b border-outline-variant/30 p-4"
+        className="border-b border-rule px-5 pb-3.5 pt-4"
       >
         <div className="flex items-baseline justify-between">
-          <h3 className="font-black text-lg tracking-tight">Your ballot</h3>
-          <span className="text-xs font-bold uppercase tracking-widest text-on-surface-muted">
+          <h3 className="m-0 font-serif text-[19px] font-semibold tracking-tight text-ink">
+            Your ballot
+          </h3>
+          <span className="font-mono text-[10.5px] uppercase tracking-[0.12em] text-ink-3">
             {decidedCount}/{totalRaces} · Draft
           </span>
         </div>
         <address
           data-testid="ballot-pane-address"
-          className="mt-1 not-italic text-xs text-on-surface-muted"
+          className="mt-2 not-italic font-mono text-[10.5px] uppercase tracking-[0.12em] text-ink-3"
         >
           {cityState || "—"}
         </address>
@@ -96,14 +98,14 @@ export function BallotPane({
 
       <div
         data-testid="ballot-pane-list"
-        className="flex-1 overflow-y-auto p-4"
+        className="flex flex-1 flex-col overflow-y-auto px-5 pb-3 pt-1.5"
       >
         {grouped.map(({ section, items }) => (
-          <section key={section} className="mb-4">
-            <div className="mb-2 text-xs font-bold uppercase tracking-widest text-on-surface-muted">
+          <section key={section} className="flex flex-col">
+            <div className="px-0 pb-1 pt-3.5 font-mono text-[10.5px] uppercase tracking-[0.16em] text-ink-3">
               {section}
             </div>
-            <ul className="flex flex-col gap-2">
+            <ul className="flex flex-col">
               {items.map((race) => {
                 const decision = decisionByRace.get(race.id);
                 const isActive = race.id === activeRaceId;
@@ -115,45 +117,55 @@ export function BallotPane({
                     data-active={isActive ? "true" : "false"}
                     data-decided={isDone ? "true" : "false"}
                     className={[
-                      "border-l-4 pl-3 py-1",
+                      "grid cursor-default grid-cols-[18px_1fr] gap-3 border-b border-rule-2 py-3.5",
                       isActive
-                        ? "border-primary bg-primary/5"
-                        : "border-transparent",
+                        ? "-mx-3.5 rounded-md border-b-transparent border-l-[3px] border-l-civic bg-civic-soft px-3.5"
+                        : "",
                     ].join(" ")}
                   >
-                    <div className="text-xs font-bold uppercase tracking-widest text-on-surface-muted">
-                      {race.label}
-                    </div>
-                    <div className="text-sm text-on-surface">
-                      {isDone ? (
-                        <>
-                          <span className="font-bold">{decision.pick}</span>
-                          {decision.party ? (
-                            <span className="text-on-surface-muted">
-                              {" "}
-                              ({decision.party})
-                            </span>
-                          ) : null}
-                        </>
-                      ) : isActive ? (
-                        <span className="text-on-surface-muted">
-                          Deciding now…
-                        </span>
-                      ) : (
-                        <span className="text-on-surface-muted/70">
-                          Not yet decided
-                        </span>
-                      )}
-                    </div>
-                    {decision && decision.whyNote ? (
-                      <div
-                        data-testid={`ballot-pane-why-${race.id}`}
-                        style={{ fontStyle: "italic" }}
-                        className="mt-1 text-xs text-on-surface-muted"
-                      >
-                        &ldquo;{decision.whyNote}&rdquo;
+                    <span
+                      aria-hidden="true"
+                      className={[
+                        "relative mt-0.5 h-[18px] w-[18px] flex-shrink-0 rounded border-[1.5px]",
+                        isDone
+                          ? "border-civic bg-civic after:absolute after:left-[3px] after:top-[5px] after:h-1 after:w-[9px] after:-rotate-45 after:border-b-[2px] after:border-l-[2px] after:border-paper-2 after:content-['']"
+                          : "border-dashed border-rule",
+                      ].join(" ")}
+                    />
+                    <div>
+                      <div className="mb-0.5 font-mono text-[10.5px] uppercase tracking-[0.12em] text-ink-3">
+                        {race.label}
                       </div>
-                    ) : null}
+                      <div className="font-serif text-base font-semibold tracking-tight">
+                        {isDone ? (
+                          <>
+                            <span className="text-ink">{decision.pick}</span>
+                            {decision.party ? (
+                              <span className="ml-1 font-mono text-[10.5px] font-normal uppercase tracking-[0.1em] text-ink-3">
+                                ({decision.party})
+                              </span>
+                            ) : null}
+                          </>
+                        ) : isActive ? (
+                          <span className="font-serif text-base font-normal italic text-ink-3">
+                            Deciding now…
+                          </span>
+                        ) : (
+                          <span className="font-serif text-base font-normal italic text-ink-3">
+                            Not yet decided
+                          </span>
+                        )}
+                      </div>
+                      {decision && decision.whyNote ? (
+                        <div
+                          data-testid={`ballot-pane-why-${race.id}`}
+                          style={{ fontStyle: "italic" }}
+                          className="mt-1 font-serif text-[12.5px] italic leading-snug text-ink-2"
+                        >
+                          &ldquo;{decision.whyNote}&rdquo;
+                        </div>
+                      ) : null}
+                    </div>
                   </li>
                 );
               })}
@@ -165,7 +177,7 @@ export function BallotPane({
       {hasPolling ? (
         <div
           data-testid="ballot-pane-polling-slot"
-          className="border-t border-outline-variant/30 p-4 text-xs text-on-surface-muted"
+          className="border-t border-rule bg-paper-2 px-5 py-4 text-xs text-ink-2"
         >
           {/*
             Placeholder per packet §22. Phase 7 surfaces real polling content
@@ -173,41 +185,52 @@ export function BallotPane({
             simply reserves the space so the layout doesn't shift when the
             content lands.
           */}
-          <div className="text-xs font-bold uppercase tracking-widest text-on-surface-muted">
+          <div className="font-mono text-[10.5px] uppercase tracking-[0.12em] text-ink-3">
             Polling place
           </div>
-          <div className="mt-1">Polling logistics will appear here.</div>
+          <div className="mt-1 font-serif text-sm text-ink-2">
+            Polling logistics will appear here.
+          </div>
         </div>
       ) : null}
 
       <footer
         data-testid="ballot-pane-footer"
-        className="flex flex-col gap-2 border-t border-outline-variant/30 p-4"
+        className="flex flex-col gap-2 border-t border-rule bg-paper-2 px-5 pb-5 pt-4"
       >
         <button
           type="button"
           data-testid="ballot-pane-print"
           disabled={!canPrint}
           onClick={onPrint}
-          className="bg-primary py-2 text-sm font-bold uppercase tracking-widest text-on-primary hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex w-full items-center justify-between rounded-lg border border-civic bg-civic px-4 py-3 font-mono text-[11px] font-medium uppercase tracking-[0.12em] text-paper-2 hover:bg-civic-2 disabled:cursor-not-allowed disabled:border-rule disabled:bg-rule disabled:text-ink-3"
         >
-          Print my ballot (PDF)
+          <span>Print my ballot (PDF)</span>
+          <span aria-hidden="true" className="text-paper-2">
+            →
+          </span>
         </button>
         <button
           type="button"
           data-testid="ballot-pane-save-profile"
           onClick={onSaveProfile}
-          className="border border-outline-variant/40 py-2 text-sm font-bold uppercase tracking-widest text-on-surface hover:bg-surface-low"
+          className="flex w-full items-center justify-between rounded-lg border border-civic bg-paper px-4 py-3 font-mono text-[11px] font-medium uppercase tracking-[0.12em] text-civic hover:bg-civic-soft"
         >
-          Save my profile (.txt)
+          <span>Save my profile (.txt)</span>
+          <span aria-hidden="true" className="text-civic">
+            ↓
+          </span>
         </button>
         <button
           type="button"
           data-testid="ballot-pane-handoff"
           onClick={onHandoff}
-          className="border border-outline-variant/40 py-2 text-sm font-bold uppercase tracking-widest text-on-surface hover:bg-surface-low"
+          className="flex w-full items-center justify-between rounded-lg px-4 py-3 font-mono text-[11px] font-medium uppercase tracking-[0.12em] text-ink-2 hover:text-civic"
         >
-          Continue in another chatbot
+          <span>Continue in another chatbot</span>
+          <span aria-hidden="true" className="text-ink-3">
+            ↗
+          </span>
         </button>
       </footer>
     </aside>

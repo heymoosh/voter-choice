@@ -215,18 +215,18 @@ export function BudgetExhausted(
       aria-labelledby={HEADLINE_ID}
       className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6"
     >
-      {/* Backdrop — semi-transparent, click-to-dismiss. */}
+      {/* Backdrop — ink @ ~60% opacity, click-to-dismiss. */}
       <div
         data-testid="budget-exhausted-backdrop"
         aria-hidden="true"
         onClick={handleBackdropClick}
-        className="absolute inset-0 bg-black/50"
+        className="absolute inset-0 bg-ink/60"
       />
-      {/* Card — stop-propagation so backdrop click doesn't fire from inside. */}
+      {/* Card — paper bg with rule border + shadow-card; stop-propagation so backdrop click doesn't fire from inside. */}
       <div
         data-testid="budget-exhausted-screen"
         onClick={handleDialogClick}
-        className="relative z-10 mx-auto w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-surface px-6 py-8 text-on-surface shadow-xl"
+        className="relative z-10 mx-auto max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-lg border border-rule bg-paper px-7 py-9 text-ink shadow-[0_1px_0_var(--rule),0_30px_60px_-30px_oklch(0.18_0.018_240_/_0.18)]"
       >
         <button
           ref={dismissButtonRef}
@@ -234,7 +234,7 @@ export function BudgetExhausted(
           data-testid="budget-exhausted-dismiss"
           aria-label="Dismiss"
           onClick={onDismiss}
-          className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center text-xl font-bold text-on-surface-muted hover:text-on-surface"
+          className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-md font-mono text-xl text-ink-3 hover:bg-paper-2 hover:text-ink"
         >
           ×
         </button>
@@ -242,13 +242,13 @@ export function BudgetExhausted(
           <h1
             id={HEADLINE_ID}
             data-testid="budget-exhausted-headline"
-            className="font-black text-2xl md:text-3xl tracking-tight"
+            className="font-serif text-2xl font-semibold leading-tight tracking-tight text-ink md:text-3xl"
           >
             Your ballot is saved. Keep going on any chatbot.
           </h1>
           <p
             data-testid="budget-exhausted-reset"
-            className="mt-3 text-sm text-on-surface-muted"
+            className="mt-3 font-mono text-[11px] uppercase tracking-[0.12em] text-ink-3"
           >
             Community budget resets in {daysLeft} day{daysLeft === 1 ? "" : "s"}
             {" · "}
@@ -257,7 +257,7 @@ export function BudgetExhausted(
         </header>
 
         <section className="mb-8">
-          <label className="text-xs font-black uppercase tracking-widest text-on-surface-muted">
+          <label className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-ink-3">
             Paste this into any chatbot to keep going
           </label>
           <textarea
@@ -265,20 +265,20 @@ export function BudgetExhausted(
             readOnly
             value={handoffPromptText}
             rows={8}
-            className="mt-2 w-full bg-surface-low p-3 font-mono text-xs text-on-surface leading-relaxed"
+            className="mt-2 w-full rounded-md border border-rule bg-paper-2 p-3 font-mono text-xs leading-relaxed text-ink"
           />
           <button
             type="button"
             data-testid="handoff-prompt-copy"
             onClick={handleCopy}
-            className="mt-2 bg-primary px-4 py-2 text-xs font-bold uppercase tracking-widest text-on-primary hover:bg-primary/90"
+            className="mt-2 rounded-md bg-civic px-4 py-2 font-mono text-[11px] font-medium uppercase tracking-[0.12em] text-paper-2 hover:bg-civic-2"
           >
             {copied ? "Copied" : "Copy handoff prompt"}
           </button>
         </section>
 
         <section className="mb-8">
-          <h2 className="text-xs font-black uppercase tracking-widest text-on-surface-muted">
+          <h2 className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-ink-3">
             Continue on any chatbot
           </h2>
           <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -289,28 +289,32 @@ export function BudgetExhausted(
                 href={link.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-between border border-outline-variant/40 bg-surface-lowest px-4 py-3 hover:bg-surface-low"
+                className="flex items-center justify-between rounded-md border border-rule bg-paper-2 px-4 py-3 hover:border-civic hover:bg-paper"
               >
-                <span className="text-sm font-bold">{link.name}</span>
-                <span className="text-on-surface-muted">→</span>
+                <span className="font-mono text-[12px] font-medium uppercase tracking-[0.1em] text-ink">
+                  {link.name}
+                </span>
+                <span aria-hidden="true" className="text-civic">
+                  →
+                </span>
               </a>
             ))}
           </div>
         </section>
 
-        <section className="mb-8 border-t border-outline-variant/30 pt-6">
-          <h2 className="text-xs font-black uppercase tracking-widest text-on-surface-muted">
+        <section className="mb-8 border-t border-rule pt-6">
+          <h2 className="font-serif text-lg font-semibold tracking-tight text-ink">
             Have an Anthropic API key? Use it directly in Voter Choice
           </h2>
           <p
             data-testid="byok-privacy-copy"
-            className="mt-2 text-xs text-on-surface-muted"
+            className="mt-2 text-sm text-ink-2"
           >
             Your key stays in your browser. Never sent to our server.
           </p>
           {storedByokKey ? (
-            <div className="mt-3 flex items-center justify-between bg-surface-low px-4 py-3">
-              <span className="text-sm">
+            <div className="mt-3 flex items-center justify-between rounded-md border border-rule bg-paper-2 px-4 py-3">
+              <span className="text-sm text-ink">
                 Using your key &middot;{" "}
                 <span className="font-mono">{maskKey(storedByokKey)}</span>
               </span>
@@ -318,45 +322,52 @@ export function BudgetExhausted(
                 type="button"
                 data-testid="byok-remove"
                 onClick={() => onByokRemove?.()}
-                className="text-xs font-bold uppercase tracking-widest text-accent hover:underline"
+                className="font-mono text-[10.5px] uppercase tracking-[0.12em] text-vote-red hover:underline"
               >
                 Remove my key
               </button>
             </div>
           ) : (
             <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+              <label
+                htmlFor="byok-input-field"
+                className="sr-only font-mono text-[10.5px] uppercase tracking-[0.12em] text-ink-3"
+              >
+                Anthropic API key
+              </label>
               <input
+                id="byok-input-field"
                 type="password"
                 data-testid="byok-input"
                 placeholder="sk-ant-..."
                 value={keyDraft}
                 onChange={(e) => setKeyDraft(e.target.value)}
-                className="flex-1 border border-outline-variant/40 bg-surface-lowest px-3 py-2 font-mono text-sm"
+                className="flex-1 rounded-md border border-rule bg-paper-2 px-3 py-2 font-mono text-sm text-ink placeholder:text-ink-3/70"
                 aria-label="Anthropic API key"
               />
               <button
                 type="button"
                 data-testid="byok-save"
                 onClick={handleSave}
-                className="bg-primary px-4 py-2 text-xs font-bold uppercase tracking-widest text-on-primary hover:bg-primary/90"
+                className="rounded-md bg-civic px-4 py-2 font-mono text-[11px] font-medium uppercase tracking-[0.12em] text-paper-2 hover:bg-civic-2"
               >
                 Save &amp; continue
               </button>
             </div>
           )}
-          <p className="mt-2 text-[11px] text-on-surface-muted">
-            Starts with <code>sk-ant-</code>.
+          <p className="mt-2 font-mono text-[10.5px] uppercase tracking-[0.1em] text-ink-3">
+            Starts with <code className="font-mono">sk-ant-</code>.
           </p>
         </section>
 
-        <p className="mb-4 text-xs italic text-on-surface-muted">
+        <p className="mb-4 font-mono text-[10.5px] italic uppercase tracking-[0.1em] text-ink-3">
           Voter Choice is free. If it helped, a tip helps keep it free —{" "}
           <a
             data-testid="tip-jar-link"
             href="https://buymeacoffee.com/voterchoice"
             target="_blank"
             rel="noopener noreferrer"
-            className="underline"
+            className="text-civic underline hover:text-civic-2"
           >
             Tip jar
           </a>{" "}
@@ -368,7 +379,7 @@ export function BudgetExhausted(
             type="button"
             data-testid="resume-button"
             onClick={() => onResume?.()}
-            className="mt-2 bg-primary px-4 py-2 text-xs font-bold uppercase tracking-widest text-on-primary hover:bg-primary/90"
+            className="mt-2 rounded-md bg-civic px-4 py-2 font-mono text-[11px] font-medium uppercase tracking-[0.12em] text-paper-2 hover:bg-civic-2"
           >
             Resume free chat
           </button>
