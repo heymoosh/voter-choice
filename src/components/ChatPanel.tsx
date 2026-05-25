@@ -1391,16 +1391,16 @@ function WorkspaceChat({
       role="log"
       aria-label="Voter Choice chat"
       aria-live="polite"
-      className="flex h-full flex-col overflow-hidden bg-surface"
+      className="flex h-full flex-col overflow-hidden border-x border-rule bg-paper-2"
     >
       <header
         data-testid="workspace-chat-header"
-        className="border-b border-outline-variant/30 p-4"
+        className="border-b border-rule bg-paper px-7 py-4"
       >
-        <div className="text-xs font-bold uppercase tracking-widest text-on-surface-muted">
+        <div className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-ink-3">
           Race {activeRaceIndex + 1} of {totalRaces}
         </div>
-        <h2 className="mt-1 font-black text-lg tracking-tight text-on-surface">
+        <h2 className="mt-0.5 font-serif text-lg font-semibold tracking-tight text-ink">
           {activeRace.label}
         </h2>
       </header>
@@ -1538,7 +1538,7 @@ function WorkspaceChat({
       {!chatDisabled && !budgetExhausted && (
         <div
           data-testid="workspace-chat-suggestions"
-          className="flex flex-wrap gap-2 border-t border-outline-variant/30 p-3"
+          className="flex flex-wrap gap-2 border-t border-rule bg-paper px-5 py-3"
         >
           {suggestions.map((s) => (
             <button
@@ -1547,7 +1547,7 @@ function WorkspaceChat({
               data-testid={`workspace-chat-suggestion-${s.id}`}
               onClick={() => onSendMessage(s.label)}
               disabled={isStreaming}
-              className="border border-outline-variant/40 px-3 py-1 text-xs text-on-surface hover:bg-surface-low disabled:opacity-50"
+              className="rounded-full border border-rule bg-paper-2 px-3 py-1.5 font-mono text-[10.5px] uppercase tracking-[0.1em] text-ink-2 hover:border-ink-3 hover:text-ink disabled:opacity-50"
             >
               {s.label}
             </button>
