@@ -199,7 +199,7 @@ export function PageContent({ children }: PageContentProps) {
         className={
           isResearch
             ? "flex justify-between items-center px-4 md:px-6 py-3 md:py-4 w-full bg-surface-low tracking-tight sticky top-0 z-50"
-            : "flex justify-between items-center px-6 py-4 w-full bg-surface-low tracking-tight"
+            : "flex justify-between items-center px-6 py-5 w-full bg-paper border-b border-rule-2"
         }
       >
         <div className="flex items-center gap-4 md:gap-8">
@@ -207,7 +207,7 @@ export function PageContent({ children }: PageContentProps) {
             className={
               isResearch
                 ? "text-xl md:text-2xl font-black text-primary"
-                : "text-2xl font-black text-primary"
+                : "font-serif text-[19px] font-semibold tracking-[-0.01em] text-ink"
             }
           >
             {t.landing.brandName}
@@ -232,16 +232,16 @@ export function PageContent({ children }: PageContentProps) {
       >
         {!isResearch && (
           <section
-            className="relative px-4 md:px-6 pt-10 md:pt-16 pb-12 md:pb-20 max-w-3xl"
+            className="relative px-4 md:px-6 pt-10 md:pt-20 pb-12 md:pb-14 max-w-3xl"
             aria-labelledby="hero-heading"
           >
             <h1
               id="hero-heading"
-              className="text-4xl md:text-[3.5rem] font-extrabold leading-[1.1] tracking-[-0.02em] text-on-surface mb-4 md:mb-6"
+              className="font-serif text-4xl md:text-[3.5rem] font-semibold leading-[1.02] tracking-[-0.025em] text-ink mb-5 md:mb-6 text-balance"
             >
               {t.landing.heroHeadline}
             </h1>
-            <p className="text-lg md:text-xl text-on-surface-variant mb-8 md:mb-10 leading-relaxed">
+            <p className="font-serif text-lg md:text-xl text-ink-2 mb-8 md:mb-10 leading-[1.45] max-w-[520px]">
               {t.landing.heroSubtext}
             </p>
           </section>
@@ -252,21 +252,21 @@ export function PageContent({ children }: PageContentProps) {
         {!isResearch && (
           <section className="px-4 md:px-6 max-w-3xl pb-12 md:pb-20">
             {/* Trust Signals */}
-            <div className="flex flex-wrap gap-3 md:gap-4 text-[12px] md:text-[13px] font-medium text-on-surface-variant">
-              <div className="flex items-center gap-1">
-                <ShieldIcon className="text-primary" />
+            <div className="flex flex-wrap gap-4 md:gap-6 font-mono text-[11px] uppercase tracking-[0.14em] text-ink-2">
+              <div className="flex items-center gap-2">
+                <ShieldIcon className="text-civic" />
                 {t.landing.trustNoData}
               </div>
-              <div className="flex items-center gap-1">
-                <PersonOffIcon className="text-primary" />
+              <div className="flex items-center gap-2">
+                <PersonOffIcon className="text-civic" />
                 {t.landing.trustNoAccounts}
               </div>
-              <div className="flex items-center gap-1">
-                <LockIcon className="text-primary" />
+              <div className="flex items-center gap-2">
+                <LockIcon className="text-civic" />
                 {t.landing.trustPrivate}
               </div>
             </div>
-            <p className="text-[11px] text-on-surface-muted mt-3 leading-relaxed">
+            <p className="text-[11px] text-ink-3 mt-4 leading-relaxed italic">
               * Bipartisan Policy Center / OpenSecrets research. Members of
               Congress report spending 30–70% of their time in DC on
               fundraising-related activities.
@@ -279,34 +279,34 @@ export function PageContent({ children }: PageContentProps) {
         <>
           <main>
             {/* ── 2. Returning User (Profile Upload) ── */}
-            <section className="bg-surface-low py-10 md:py-16 px-4 md:px-6">
+            <section className="bg-paper-2 py-10 md:py-16 px-4 md:px-6 border-y border-rule-2">
               <div className="max-w-3xl space-y-4 md:space-y-6">
-                <span className="inline-block px-4 py-1 bg-secondary-container text-on-secondary-container rounded-full text-[10px] font-bold uppercase tracking-widest">
+                <span className="inline-block px-4 py-1 bg-civic-soft text-civic-2 rounded-full font-mono text-[10px] font-semibold uppercase tracking-[0.14em]">
                   {t.landing.returningBadge}
                 </span>
-                <h2 className="text-2xl md:text-3xl font-bold text-on-surface leading-tight">
+                <h2 className="font-serif text-2xl md:text-3xl font-semibold tracking-[-0.015em] text-ink leading-tight">
                   {t.landing.returningHeadline}
                 </h2>
-                <p className="text-base text-on-surface-variant">
+                <p className="text-base text-ink-2 leading-relaxed">
                   {t.landing.returningSubtext}
                 </p>
-                <p className="text-sm text-on-surface-variant leading-relaxed opacity-80">
+                <p className="text-sm text-ink-3 leading-relaxed italic">
                   {t.landing.returningNote}
                 </p>
-                <div className="bg-surface-lowest p-5 md:p-8 border-l-4 border-accent mt-6 md:mt-8">
-                  <h3 className="text-xl font-bold text-on-surface mb-4">
+                <div className="bg-paper p-5 md:p-8 border border-rule rounded-[10px] mt-6 md:mt-8 shadow-[0_1px_0_var(--rule-2),0_10px_30px_-20px_oklch(0.18_0.018_240/0.12)]">
+                  <h3 className="font-serif text-xl font-semibold text-ink mb-3 tracking-[-0.005em]">
                     {t.landing.returningUploadTitle}
                   </h3>
-                  <p className="text-on-surface-variant mb-6 text-sm leading-relaxed">
+                  <p className="text-ink-2 mb-6 text-sm leading-relaxed">
                     {t.landing.returningUploadHint}
                   </p>
-                  <div className="border-2 border-dashed border-outline-variant p-8 flex flex-col items-center justify-center gap-4 hover:border-primary hover:bg-primary/5 transition-all cursor-pointer group rounded-lg">
-                    <UploadFileIcon className="text-outline group-hover:text-primary transition-colors" />
+                  <div className="border-2 border-dashed border-rule p-8 flex flex-col items-center justify-center gap-4 hover:border-civic hover:bg-civic-soft/30 transition-all cursor-pointer group rounded-lg">
+                    <UploadFileIcon className="text-ink-3 group-hover:text-civic transition-colors" />
                     <div className="text-center">
-                      <span className="block text-xs font-bold uppercase tracking-widest text-on-surface group-hover:text-primary transition-colors">
+                      <span className="block font-mono text-[10.5px] font-semibold uppercase tracking-[0.14em] text-ink group-hover:text-civic transition-colors">
                         {t.landing.returningSelectFile}
                       </span>
-                      <span className="text-[10px] text-outline">
+                      <span className="text-[10px] text-ink-3 mt-1">
                         {t.landing.returningDragDrop}
                       </span>
                     </div>
@@ -318,18 +318,18 @@ export function PageContent({ children }: PageContentProps) {
             {/* ── 3. Resource Cards ── */}
             <section className="px-4 md:px-6 py-8 md:py-12 max-w-3xl space-y-4">
               {/* Polling Places */}
-              <div className="bg-surface-high p-5 md:p-8 flex flex-col justify-between min-h-[160px] md:min-h-[200px]">
+              <div className="bg-paper-2 border border-rule rounded-[10px] p-5 md:p-8 flex flex-col justify-between min-h-[160px] md:min-h-[200px] shadow-[0_1px_0_var(--rule-2),0_10px_30px_-20px_oklch(0.18_0.018_240/0.12)]">
                 <div>
-                  <h3 className="text-xl font-bold mb-3">
+                  <h3 className="font-serif text-xl font-semibold text-ink mb-3 tracking-[-0.005em]">
                     {t.landing.resourcePollingTitle}
                   </h3>
-                  <p className="text-sm text-on-surface-variant leading-relaxed">
+                  <p className="text-sm text-ink-2 leading-relaxed">
                     {t.landing.resourcePollingDesc}
                   </p>
                 </div>
                 <div className="mt-6">
                   <button
-                    className="text-primary text-sm font-bold flex items-center gap-2 group"
+                    className="text-civic font-mono text-[11px] font-semibold uppercase tracking-[0.14em] flex items-center gap-2 group hover:text-civic-2 transition-colors"
                     onClick={() =>
                       document
                         .getElementById("main-content")
@@ -343,66 +343,66 @@ export function PageContent({ children }: PageContentProps) {
               </div>
 
               {/* Election Dates */}
-              <div className="bg-primary p-5 md:p-8 text-on-primary min-h-[140px] md:min-h-[160px] flex flex-col justify-between">
-                <CalendarIcon className="text-on-primary mb-4" />
+              <div className="bg-civic p-5 md:p-8 text-paper-2 min-h-[140px] md:min-h-[160px] flex flex-col justify-between rounded-[10px]">
+                <CalendarIcon className="text-paper-2 mb-4" />
                 <div>
-                  <h3 className="text-xl font-bold mb-2">
+                  <h3 className="font-serif text-xl font-semibold mb-2 tracking-[-0.005em]">
                     {t.landing.resourceDatesTitle}
                   </h3>
-                  <p className="opacity-80 text-xs leading-relaxed">
+                  <p className="opacity-90 text-xs leading-relaxed">
                     {t.landing.resourceDatesDesc}
                   </p>
                 </div>
               </div>
 
               {/* ID Rules */}
-              <div className="bg-surface-lowest p-5 md:p-8">
-                <h3 className="text-sm font-bold mb-3 uppercase tracking-widest text-primary">
+              <div className="bg-paper-2 border border-rule rounded-[10px] p-5 md:p-8">
+                <h3 className="font-mono text-[11px] font-semibold mb-3 uppercase tracking-[0.14em] text-civic">
                   {t.landing.resourceIdTitle}
                 </h3>
-                <p className="text-sm text-on-surface-variant leading-relaxed">
+                <p className="text-sm text-ink-2 leading-relaxed">
                   {t.landing.resourceIdDesc}
                 </p>
               </div>
             </section>
 
             {/* ── 4. How it Works ── */}
-            <section className="bg-surface pt-10 md:pt-16">
+            <section className="bg-paper pt-10 md:pt-20">
               <div className="px-4 md:px-6 mb-8 md:mb-12 max-w-3xl">
-                <h2 className="font-extrabold text-3xl md:text-5xl tracking-tight text-on-surface leading-[1.1] mb-4">
+                <h2 className="font-serif text-3xl md:text-5xl font-semibold tracking-[-0.025em] text-ink leading-[1.02] mb-4 text-balance">
                   {t.landing.howItWorksTitle}
                 </h2>
-                <p className="text-lg text-on-surface-variant leading-relaxed">
+                <p className="font-serif text-lg text-ink-2 leading-[1.45]">
                   {t.landing.howItWorksSubtext}
                 </p>
               </div>
 
               {/* Step 1 */}
-              <section className="bg-surface-low px-4 md:px-6 py-8 md:py-12">
+              <section className="bg-paper-2 px-4 md:px-6 py-8 md:py-12 border-y border-rule-2">
                 <div className="max-w-3xl">
                   <div className="flex items-center gap-4 mb-6">
-                    <span className="font-black text-5xl md:text-6xl text-primary leading-none">
+                    <span className="font-serif italic text-5xl md:text-6xl font-semibold text-civic leading-none tracking-[-0.02em]">
                       01
                     </span>
-                    <div className="bg-primary/10 p-3 rounded-full">
-                      <PinDropIcon className="text-primary" />
+                    <div className="bg-civic-soft p-3 rounded-full">
+                      <PinDropIcon className="text-civic" />
                     </div>
                   </div>
                   <div className="mb-8">
-                    <h3 className="font-bold text-2xl text-on-surface mb-2">
+                    <h3 className="font-serif font-semibold text-2xl text-ink mb-2 tracking-[-0.005em]">
                       {t.landing.step1Title}
                     </h3>
-                    <p className="text-base text-on-surface-variant leading-snug">
+                    <p className="text-base text-ink-2 leading-relaxed">
                       {t.landing.step1Desc}
                     </p>
                   </div>
                   {/* Visual: mini zip input mockup */}
-                  <div className="bg-surface-lowest p-6 shadow-sm border border-outline-variant/20 max-w-sm">
+                  <div className="bg-paper p-6 border border-rule rounded-[10px] max-w-sm shadow-[0_1px_0_var(--rule-2),0_10px_30px_-20px_oklch(0.18_0.018_240/0.12)]">
                     <div className="flex gap-2">
-                      <div className="w-full bg-surface-low border-0 border-b-2 border-primary p-3 font-bold text-xl text-on-surface-variant">
+                      <div className="w-full bg-paper-2 border-0 border-b-2 border-civic p-3 font-serif font-semibold text-xl text-ink">
                         77001
                       </div>
-                      <div className="bg-primary text-on-primary px-5 py-2 font-bold flex items-center justify-center rounded-sm">
+                      <div className="bg-civic text-paper-2 px-5 py-2 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] flex items-center justify-center rounded-lg">
                         <svg
                           viewBox="0 0 24 24"
                           fill="currentColor"
@@ -420,12 +420,12 @@ export function PageContent({ children }: PageContentProps) {
                         fill="currentColor"
                         width="14"
                         height="14"
-                        className="text-primary"
+                        className="text-civic"
                         aria-hidden="true"
                       >
                         <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" />
                       </svg>
-                      <span className="text-xs font-bold text-primary uppercase tracking-wider">
+                      <span className="font-mono text-[10px] font-semibold text-civic uppercase tracking-[0.14em]">
                         Your County &middot; Your State
                       </span>
                     </div>
@@ -434,29 +434,29 @@ export function PageContent({ children }: PageContentProps) {
               </section>
 
               {/* Step 2 */}
-              <section className="bg-surface px-4 md:px-6 py-8 md:py-12">
+              <section className="bg-paper px-4 md:px-6 py-8 md:py-12">
                 <div className="max-w-3xl">
                   <div className="flex items-center gap-4 mb-6">
-                    <span className="font-black text-5xl md:text-6xl text-primary leading-none">
+                    <span className="font-serif italic text-5xl md:text-6xl font-semibold text-civic leading-none tracking-[-0.02em]">
                       02
                     </span>
-                    <div className="bg-primary/10 p-3 rounded-full">
-                      <ForumIcon className="text-primary" />
+                    <div className="bg-civic-soft p-3 rounded-full">
+                      <ForumIcon className="text-civic" />
                     </div>
                   </div>
                   <div className="mb-8">
-                    <h3 className="font-bold text-2xl text-on-surface mb-2">
+                    <h3 className="font-serif font-semibold text-2xl text-ink mb-2 tracking-[-0.005em]">
                       {t.landing.step2Title}
                     </h3>
-                    <p className="text-base text-on-surface-variant leading-snug">
+                    <p className="text-base text-ink-2 leading-relaxed">
                       {t.landing.step2Desc}
                     </p>
                   </div>
                   {/* Visual: chat bubble snippet */}
                   <div className="space-y-4 max-w-sm mx-auto">
                     <div className="flex justify-end">
-                      <div className="bg-surface-highest px-4 py-3 rounded-2xl rounded-tr-none shadow-sm border border-outline-variant/20">
-                        <p className="text-sm font-medium text-on-surface">
+                      <div className="bg-ink text-paper px-4 py-3 rounded-[14px] rounded-br-[4px]">
+                        <p className="text-sm leading-relaxed">
                           {lang === "en"
                             ? "\u201cWhat propositions are on my ballot?\u201d"
                             : "\u201c\u00bfQu\u00e9 proposiciones est\u00e1n en mi boleta?\u201d"}
@@ -464,13 +464,15 @@ export function PageContent({ children }: PageContentProps) {
                       </div>
                     </div>
                     <div className="flex justify-start">
-                      <div className="bg-primary px-4 py-4 rounded-2xl rounded-tl-none shadow-md border-l-4 border-primary-container">
+                      <div className="bg-paper-2 border border-rule px-4 py-4 rounded-[14px] rounded-tl-[4px]">
                         <div className="flex items-center gap-2 mb-2">
-                          <span className="text-[10px] font-bold uppercase tracking-widest text-on-primary/80">
-                            {lang === "en" ? "Voter Choice" : "Voter Choice"}
+                          <span className="font-mono text-[10.5px] font-semibold uppercase tracking-[0.12em] text-ink-3">
+                            {lang === "en"
+                              ? "Voter Choice \u00b7 AI"
+                              : "Voter Choice \u00b7 AI"}
                           </span>
                         </div>
-                        <p className="text-sm text-on-primary leading-relaxed">
+                        <p className="text-sm text-ink leading-relaxed">
                           {lang === "en"
                             ? "Your ballot has 14 state constitutional amendments. Want to start with Prop 1 (property tax relief), or jump to one you\u2019ve seen in the news?"
                             : "Tu boleta tiene 14 enmiendas constitucionales estatales. \u00bfQuieres empezar con la Proposici\u00f3n 1 (alivio de impuestos a la propiedad), o saltar a una que hayas visto en las noticias?"}
@@ -482,51 +484,55 @@ export function PageContent({ children }: PageContentProps) {
               </section>
 
               {/* Step 3 */}
-              <section className="bg-surface-low px-4 md:px-6 py-8 md:py-12">
+              <section className="bg-paper-2 px-4 md:px-6 py-8 md:py-12 border-y border-rule-2">
                 <div className="max-w-3xl">
                   <div className="flex items-center gap-4 mb-6">
-                    <span className="font-black text-5xl md:text-6xl text-primary leading-none">
+                    <span className="font-serif italic text-5xl md:text-6xl font-semibold text-civic leading-none tracking-[-0.02em]">
                       03
                     </span>
-                    <div className="bg-primary/10 p-3 rounded-full">
-                      <TaskAltIcon className="text-primary" />
+                    <div className="bg-civic-soft p-3 rounded-full">
+                      <TaskAltIcon className="text-civic" />
                     </div>
                   </div>
                   <div className="mb-8">
-                    <h3 className="font-bold text-2xl text-on-surface mb-2">
+                    <h3 className="font-serif font-semibold text-2xl text-ink mb-2 tracking-[-0.005em]">
                       {t.landing.step3Title}
                     </h3>
-                    <p className="text-base text-on-surface-variant leading-snug">
+                    <p className="text-base text-ink-2 leading-relaxed">
                       {t.landing.step3Desc}
                     </p>
                   </div>
                   {/* Visual: mini ballot mockup */}
                   <div className="relative max-w-xs mx-auto pb-8">
-                    <div className="bg-white p-5 shadow-lg border border-outline-variant/20 -rotate-2">
-                      <div className="border-b-2 border-primary/20 pb-3 mb-3">
+                    <div className="bg-paper p-5 border border-rule rounded-[10px] -rotate-2 shadow-[0_1px_0_var(--rule),0_30px_60px_-30px_oklch(0.18_0.018_240/0.18)]">
+                      <div className="border-b-2 border-ink pb-3 mb-3">
                         <div className="flex justify-between items-start">
-                          <span className="font-black text-lg tracking-tighter text-primary">
-                            VOTER CHOICE
+                          <span className="font-serif text-lg font-semibold tracking-[-0.01em] text-ink">
+                            Voter Choice
                           </span>
-                          <span className="text-[10px] font-bold text-on-surface-variant">
+                          <span className="font-mono text-[10px] font-semibold text-ink-3 uppercase tracking-[0.14em]">
                             2026
                           </span>
                         </div>
                       </div>
                       <div className="space-y-2">
-                        <div className="flex justify-between items-center border-b border-surface-high pb-2">
-                          <span className="text-xs font-bold">Governor</span>
-                          <CheckCircleIcon className="text-primary" />
+                        <div className="flex justify-between items-center border-b border-dotted border-rule pb-2">
+                          <span className="font-serif text-sm font-semibold text-ink">
+                            Governor
+                          </span>
+                          <CheckCircleIcon className="text-civic" />
                         </div>
-                        <div className="flex justify-between items-center border-b border-surface-high pb-2">
-                          <span className="text-xs font-bold">
+                        <div className="flex justify-between items-center border-b border-dotted border-rule pb-2">
+                          <span className="font-serif text-sm font-semibold text-ink">
                             State Senate
                           </span>
-                          <CheckCircleIcon className="text-primary" />
+                          <CheckCircleIcon className="text-civic" />
                         </div>
                         <div className="flex justify-between items-center">
-                          <span className="text-xs font-bold">Prop 1</span>
-                          <CheckCircleIcon className="text-primary" />
+                          <span className="font-serif text-sm font-semibold text-ink">
+                            Prop 1
+                          </span>
+                          <CheckCircleIcon className="text-civic" />
                         </div>
                       </div>
                     </div>
@@ -535,15 +541,15 @@ export function PageContent({ children }: PageContentProps) {
               </section>
 
               {/* Ready to choose CTA */}
-              <section className="px-4 md:px-6 py-10 md:py-16 text-center bg-primary text-on-primary mt-8 md:mt-12">
-                <h2 className="font-bold text-2xl md:text-3xl mb-4 tracking-tight">
+              <section className="px-4 md:px-6 py-12 md:py-20 text-center bg-civic text-paper-2 mt-8 md:mt-12">
+                <h2 className="font-serif text-3xl md:text-4xl font-semibold mb-4 tracking-[-0.025em] text-balance">
                   {t.landing.ctaHeadline}
                 </h2>
-                <p className="text-on-primary/90 mb-8 max-w-xs mx-auto text-base">
+                <p className="opacity-90 mb-8 max-w-md mx-auto text-base leading-relaxed">
                   {t.landing.ctaSubtext}
                 </p>
                 <button
-                  className="w-full max-w-md bg-white text-primary py-4 font-black text-lg tracking-tighter uppercase shadow-xl"
+                  className="bg-paper-2 text-civic px-12 py-4 font-mono text-[12px] font-semibold uppercase tracking-[0.14em] rounded-lg hover:bg-paper transition-colors"
                   onClick={() =>
                     document
                       .getElementById("main-content")
@@ -556,16 +562,16 @@ export function PageContent({ children }: PageContentProps) {
             </section>
 
             {/* ── 5. Mission Statement ── */}
-            <section className="py-14 md:py-24 px-4 md:px-6">
+            <section className="py-14 md:py-24 px-4 md:px-6 bg-paper">
               <div className="max-w-4xl mx-auto text-center">
-                <BalanceIcon className="text-primary mx-auto mb-6 md:mb-8" />
-                <h2 className="text-3xl md:text-4xl font-extrabold text-on-surface mb-6 md:mb-8 tracking-tight">
+                <BalanceIcon className="text-civic mx-auto mb-6 md:mb-8" />
+                <h2 className="font-serif text-3xl md:text-4xl font-semibold text-ink mb-6 md:mb-8 tracking-[-0.025em] text-balance">
                   {t.landing.missionTitle}
                 </h2>
-                <p className="text-xl leading-relaxed text-on-surface font-light">
+                <p className="font-serif text-xl leading-[1.45] text-ink-2 italic max-w-2xl mx-auto">
                   {t.landing.missionQuote}
                 </p>
-                <div className="mt-12 h-1 w-24 bg-accent mx-auto" />
+                <div className="mt-12 h-px w-24 bg-civic mx-auto" />
               </div>
             </section>
           </main>
@@ -573,32 +579,30 @@ export function PageContent({ children }: PageContentProps) {
           {/* ── 6. Footer ── */}
           <footer
             role="contentinfo"
-            className="bg-surface-high py-10 md:py-16 px-4 md:px-6"
+            className="bg-paper-2 py-10 md:py-16 px-4 md:px-6 border-t border-rule"
           >
             <div className="max-w-7xl mx-auto flex flex-col gap-10">
               <div className="max-w-xs">
-                <div className="text-xl font-black text-primary mb-4">
+                <div className="font-serif text-xl font-semibold text-ink mb-4 tracking-[-0.01em]">
                   {t.landing.brandName}
                 </div>
-                <p className="text-sm text-on-surface-variant leading-relaxed">
+                <p className="text-sm text-ink-2 leading-relaxed">
                   {t.landing.footerTagline} &copy; {new Date().getFullYear()}.
                 </p>
-                <p className="text-xs text-on-surface-muted mt-3">
-                  {t.footer.copyright}
-                </p>
-                <p className="text-xs text-on-surface-muted mt-1">
+                <p className="text-xs text-ink-3 mt-3">{t.footer.copyright}</p>
+                <p className="text-xs text-ink-3 mt-1 font-mono tracking-[0.02em]">
                   {t.footer.dataLastUpdated("2026-04-12")}
                 </p>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-8">
                 <div>
-                  <h4 className="text-xs font-bold uppercase tracking-widest text-primary mb-4">
+                  <h4 className="font-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-3 mb-4">
                     {t.landing.footerResources}
                   </h4>
-                  <ul className="space-y-2 text-sm text-on-surface-variant">
+                  <ul className="space-y-2 text-sm text-ink-2">
                     <li>
                       <button
-                        className="hover:text-primary transition-colors"
+                        className="hover:text-civic transition-colors"
                         onClick={() =>
                           document
                             .getElementById("main-content")
@@ -611,14 +615,14 @@ export function PageContent({ children }: PageContentProps) {
                   </ul>
                 </div>
                 <div>
-                  <h4 className="text-xs font-bold uppercase tracking-widest text-primary mb-4">
+                  <h4 className="font-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-3 mb-4">
                     {t.landing.footerLegal}
                   </h4>
-                  <ul className="space-y-2 text-sm text-on-surface-variant">
+                  <ul className="space-y-2 text-sm text-ink-2">
                     <li>
                       <a
                         href="/privacy"
-                        className="hover:text-primary transition-colors"
+                        className="hover:text-civic transition-colors"
                       >
                         {t.footer.privacyPolicy}
                       </a>
@@ -626,7 +630,7 @@ export function PageContent({ children }: PageContentProps) {
                     <li>
                       <a
                         href="/terms"
-                        className="hover:text-primary transition-colors"
+                        className="hover:text-civic transition-colors"
                       >
                         {t.footer.termsOfUse}
                       </a>
@@ -634,14 +638,12 @@ export function PageContent({ children }: PageContentProps) {
                   </ul>
                 </div>
                 <div>
-                  <h4 className="text-xs font-bold uppercase tracking-widest text-primary mb-4">
+                  <h4 className="font-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-3 mb-4">
                     {t.landing.footerConnect}
                   </h4>
-                  <ul className="space-y-2 text-sm text-on-surface-variant">
+                  <ul className="space-y-2 text-sm text-ink-2">
                     <li>
-                      <span className="text-on-surface-variant">
-                        {t.landing.footerSupport}
-                      </span>
+                      <span>{t.landing.footerSupport}</span>
                     </li>
                   </ul>
                 </div>
