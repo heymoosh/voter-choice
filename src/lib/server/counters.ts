@@ -449,6 +449,129 @@ function memFetchCountyOverlapCounts(
   return { count, issueCounts };
 }
 
+// ---------------------------------------------------------------------------
+// National overlap counts (PR 10 — national-default polis)
+// ---------------------------------------------------------------------------
+
+/**
+ * Fetch nation-wide finished-session count + per-issue counts.
+ *
+ * Aggregates across every state-level counter. Because
+ * `incrementSessionCounters` writes a state-level total for every session
+ * (county is optional), summing state totals = exact nation-wide session
+ * count. Per-issue counts sum across every primary and every state.
+ *
+ * Optional `stateCode` argument: when provided, restricts the aggregation
+ * to a single state (still aggregating across every county within it).
+ * This is a forward-looking sibling for future "your state" surfaces; the
+ * PR 10 polis routes do not pass it.
+ *
+ * PR 10 — "Most people share a lot of the same issues and priorities. It
+ * will shock them to see how many others are actually truly in the middle."
+ * The polis view defaults to this national reading.
+ *
+ * Privacy: counts only. Same allowlisted shape as `CountyOverlapCounts`.
+ * NO user_id, session_id, name, address, email.
+ */
+export async function fetchNationalOverlapCounts(
+  stateCode?: string,
+): Promise<CountyOverlapCounts> {
+  if (isDurableStoreConfigured()) {
+    try {
+      return await durableFetchNationalOverlapCounts(stateCode);
+    } catch (err) {
+      console.error("[counters] Redis national overlap fetch failed:", err);
+      return { ...EMPTY_OVERLAP };
+    }
+  }
+  return memFetchNationalOverlapCounts(stateCode);
+}
+
+async function durableFetchNationalOverlapCounts(
+  stateCode?: string,
+): Promise<CountyOverlapCounts> {
+  // When `stateCode` is provided, narrow the glob to one state.
+  const stateGlob = stateCode
+    ? `${NS}:state:${sanitizeKeySegment(stateCode)}`
+    : `${NS}:state:*`;
+
+  // Sum every state-level :total counter for the national session count.
+  const totalKeys = await redisCommand<string[]>([
+    "KEYS",
+    `${stateGlob}:total`,
+  ]);
+  // Filter out per-primary subtotals (which match :primary:X:total too).
+  // The exact state-level :total pattern is `${NS}:state:<code>:total`
+  // with no :primary: segment in between.
+  const stateTotalKeys = (totalKeys ?? []).filter(
+    (k) => !k.includes(":primary:"),
+  );
+
+  let count = 0;
+  if (stateTotalKeys.length > 0) {
+    const values = await Promise.all(
+      stateTotalKeys.map((k) => redisCommand<string>(["GET", k])),
+    );
+    for (const v of values) count += Number(v ?? 0);
+  }
+
+  // Sum every state-level per-issue counter across primaries.
+  const issueKeys = await redisCommand<string[]>([
+    "KEYS",
+    `${stateGlob}:primary:*:issue:*`,
+  ]);
+  const issueCounts: Record<string, number> = {};
+  if (issueKeys && issueKeys.length > 0) {
+    const values = await Promise.all(
+      issueKeys.map((k) => redisCommand<string>(["GET", k])),
+    );
+    for (let i = 0; i < issueKeys.length; i++) {
+      const v = Number(values[i] ?? 0);
+      if (v === 0) continue;
+      const m = issueKeys[i].match(
+        /:primary:(DEM|REP|OPEN|GENERAL):issue:(.+)$/,
+      );
+      if (!m) continue;
+      const issue = m[2];
+      issueCounts[issue] = (issueCounts[issue] ?? 0) + v;
+    }
+  }
+
+  return { count, issueCounts };
+}
+
+function memFetchNationalOverlapCounts(
+  stateCode?: string,
+): CountyOverlapCounts {
+  let count = 0;
+  const issueCounts: Record<string, number> = {};
+  const statePrefix = stateCode
+    ? `${NS}:state:${sanitizeKeySegment(stateCode)}:`
+    : `${NS}:state:`;
+
+  for (const [key, value] of memCounters) {
+    if (value === 0) continue;
+    if (!key.startsWith(statePrefix)) continue;
+    // State-level total keys: `${NS}:state:<code>:total`
+    // (Per-primary totals end :primary:<P>:total — exclude them.)
+    if (key.endsWith(":total") && !key.includes(":primary:")) {
+      count += value;
+      continue;
+    }
+    // State-level per-issue keys: `${NS}:state:<code>:primary:<P>:issue:<I>`
+    {
+      const m = key.match(
+        /^.*:state:[^:]+:primary:(DEM|REP|OPEN|GENERAL):issue:(.+)$/,
+      );
+      if (!m) continue;
+      const issue = m[2];
+      issueCounts[issue] = (issueCounts[issue] ?? 0) + value;
+    }
+  }
+
+  return { count, issueCounts };
+}
+
 function memFetchPolisAggregate(
   stateCode: string,
   county: string | null,

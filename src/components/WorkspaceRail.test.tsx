@@ -171,13 +171,15 @@ describe("WorkspaceRail — Polis section", () => {
     expect(screen.queryByTestId("polis-bars-section")).toBeNull();
   });
 
-  it("does NOT render the Polis section when county is missing", () => {
+  it("PR 10: STILL renders the Polis section when county is missing (national-only)", () => {
     renderRail({
       county: undefined,
       countyName: undefined,
       stateCode: "TX",
     });
-    expect(screen.queryByTestId("workspace-polis-section")).toBeNull();
+    // National data is always available — the section renders even
+    // without a county. The inner toggle is hidden in this case.
+    expect(screen.getByTestId("workspace-polis-section")).toBeInTheDocument();
   });
 
   it("does NOT render the Polis section when themes are empty", () => {

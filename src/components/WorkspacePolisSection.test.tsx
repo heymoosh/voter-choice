@@ -1,12 +1,19 @@
 // @vitest-environment jsdom
 /**
- * WorkspacePolisSection — collapsible workspace surface that hosts
- * PolisOverlay. Closed by default per the Phase 8 packet rule
- * ("Polis is opt-in or post-decision: doesn't compete with workspace
- * focus"). Mounted in the WorkspaceRail.
+ * WorkspacePolisSection — PR 10 (national-default).
+ *
+ * Collapsible workspace surface that hosts PolisOverlay. Closed by default
+ * per the Phase 8 packet rule ("Polis is opt-in or post-decision: doesn't
+ * compete with workspace focus"). Mounted in the WorkspaceRail.
+ *
+ * PR 10 changes:
+ *  - Section heading is generic: "You're not alone" — no county scoping.
+ *  - Section renders whenever user has themes (national data is always
+ *    available). Previously gated on non-empty county.
+ *  - Inside the expanded overlay, the scope toggle handles per-scope copy.
  *
  * Behavior contract:
- *  - Renders only when county + userThemes are both non-empty.
+ *  - Renders only when userThemes is non-empty.
  *  - Closed by default — overlay is NOT in the DOM at rest.
  *  - Expand toggle reveals the overlay (conditional render, not
  *    display:none — avoids firing the three polis fetches before the
@@ -28,7 +35,7 @@ function installPolisFetchStub() {
     .mockImplementation(async (input: RequestInfo | URL) => {
       const url = typeof input === "string" ? input : input.toString();
       const empty = {
-        county: "Travis",
+        scope: "national",
         threshold: 50,
         count: 0,
         bars: [],
@@ -72,7 +79,7 @@ function renderSection(opts: RenderOpts = {}) {
   );
 }
 
-describe("WorkspacePolisSection", () => {
+describe("WorkspacePolisSection — PR 10 (national-default)", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
   });
@@ -80,24 +87,24 @@ describe("WorkspacePolisSection", () => {
     vi.restoreAllMocks();
   });
 
-  it("renders the section wrapper when county + themes are present", () => {
+  it("renders the section wrapper when userThemes are present (county+countyName given)", () => {
     installPolisFetchStub();
     renderSection();
     expect(screen.getByTestId("workspace-polis-section")).toBeInTheDocument();
   });
 
-  it("renders the 'You're not alone in {countyName}' heading", () => {
+  it("renders generic 'You're not alone' heading (no county scoping in the section header)", () => {
     installPolisFetchStub();
     renderSection({ countyName: "Travis County" });
     const heading = screen.getByTestId("workspace-polis-section-heading");
-    expect(heading).toHaveTextContent(/Travis County/);
     expect(heading.textContent ?? "").toMatch(/you're not alone|not alone/i);
+    // Generic — does NOT mention the county in the section header.
+    expect(heading.textContent ?? "").not.toMatch(/Travis/);
   });
 
   it("is collapsed by default — PolisOverlay is NOT in the DOM", () => {
     installPolisFetchStub();
     renderSection();
-    // Section wrapper exists but the overlay's bars/bridges/compass don't.
     expect(screen.getByTestId("workspace-polis-section")).toBeInTheDocument();
     expect(screen.queryByTestId("polis-bars-section")).toBeNull();
     expect(screen.queryByTestId("polis-bridges-section")).toBeNull();
@@ -111,16 +118,14 @@ describe("WorkspacePolisSection", () => {
     expect(toggle).toHaveAttribute("aria-expanded", "false");
   });
 
-  it("clicking the toggle expands the section and mounts PolisOverlay", async () => {
+  it("clicking the toggle expands the section and mounts PolisOverlay", () => {
     installPolisFetchStub();
     renderSection();
     fireEvent.click(screen.getByTestId("workspace-polis-toggle"));
-    // Aria reflects new state.
     expect(screen.getByTestId("workspace-polis-toggle")).toHaveAttribute(
       "aria-expanded",
       "true",
     );
-    // Overlay sections are now in the DOM.
     expect(screen.getByTestId("polis-bars-section")).toBeInTheDocument();
     expect(screen.getByTestId("polis-bridges-section")).toBeInTheDocument();
     expect(screen.getByTestId("polis-compass-section")).toBeInTheDocument();
@@ -137,16 +142,27 @@ describe("WorkspacePolisSection", () => {
     expect(screen.queryByTestId("polis-bars-section")).toBeNull();
   });
 
-  it("does NOT render anything when county is empty/null", () => {
+  /* ── PR 10 — national-first: section renders even without a county ── */
+
+  it("renders the section even when county is empty/null (national is always available)", () => {
     installPolisFetchStub();
-    const { container } = renderSection({ county: "" });
-    expect(container).toBeEmptyDOMElement();
+    const { container } = renderSection({
+      county: "",
+      countyName: undefined,
+    });
+    // Section IS rendered — national reading needs no county.
+    expect(container).not.toBeEmptyDOMElement();
+    expect(screen.getByTestId("workspace-polis-section")).toBeInTheDocument();
   });
 
-  it("does NOT render anything when county is null", () => {
+  it("renders the section when county is null (national is always available)", () => {
     installPolisFetchStub();
-    const { container } = renderSection({ county: null });
-    expect(container).toBeEmptyDOMElement();
+    const { container } = renderSection({
+      county: null,
+      countyName: undefined,
+    });
+    expect(container).not.toBeEmptyDOMElement();
+    expect(screen.getByTestId("workspace-polis-section")).toBeInTheDocument();
   });
 
   it("does NOT render anything when userThemes is empty", () => {
@@ -158,7 +174,6 @@ describe("WorkspacePolisSection", () => {
   it("does NOT fire any /api/polis fetches while collapsed (opt-in)", async () => {
     const spy = installPolisFetchStub();
     renderSection();
-    // Let any microtasks settle.
     await Promise.resolve();
     await Promise.resolve();
     const polisCalls = spy.mock.calls.filter((c) => {
@@ -172,7 +187,6 @@ describe("WorkspacePolisSection", () => {
     const spy = installPolisFetchStub();
     renderSection();
     fireEvent.click(screen.getByTestId("workspace-polis-toggle"));
-    // Allow effects to flush.
     await Promise.resolve();
     await Promise.resolve();
     const polisCalls = spy.mock.calls.filter((c) => {
@@ -180,5 +194,22 @@ describe("WorkspacePolisSection", () => {
       return u.includes("/api/polis/");
     });
     expect(polisCalls.length).toBeGreaterThanOrEqual(3);
+  });
+
+  it("expanding with no county still mounts the overlay in national-only mode", async () => {
+    const spy = installPolisFetchStub();
+    renderSection({ county: null, countyName: undefined });
+    fireEvent.click(screen.getByTestId("workspace-polis-toggle"));
+    expect(screen.getByTestId("polis-bars-section")).toBeInTheDocument();
+    // No scope toggle (countyName missing).
+    expect(screen.queryByTestId("polis-scope-toggle")).toBeNull();
+    // Fetches all hit scope=national.
+    await Promise.resolve();
+    await Promise.resolve();
+    const polisUrls = spy.mock.calls
+      .map((c) => (typeof c[0] === "string" ? c[0] : (c[0] as URL).toString()))
+      .filter((u) => u.includes("/api/polis/"));
+    expect(polisUrls.length).toBeGreaterThanOrEqual(3);
+    expect(polisUrls.every((u) => u.includes("scope=national"))).toBe(true);
   });
 });
