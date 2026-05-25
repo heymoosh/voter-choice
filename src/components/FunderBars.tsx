@@ -58,7 +58,7 @@ export function FunderBars({
       <div data-testid="funder-bars" className="space-y-2">
         <p
           data-testid="funder-bars-unavailable"
-          className="text-xs italic text-on-surface-muted"
+          className="text-xs italic text-ink-3"
         >
           Donor data unavailable
           {unavailableReason ? ` — ${unavailableReason}` : ""}
@@ -80,12 +80,14 @@ export function FunderBars({
       {isRichMode && totalRaised !== undefined && (
         <p
           data-testid="funder-bars-total-raised"
-          className="text-xs font-bold text-on-surface"
+          className="font-mono text-xs font-semibold text-ink"
         >
-          <span className="text-on-surface-muted font-medium">
+          <span className="text-ink-3 font-medium uppercase tracking-[0.12em]">
             Total raised:{" "}
           </span>
-          {formatCurrencyShort(totalRaised)}
+          <span className="font-serif text-base font-semibold normal-case tracking-normal">
+            {formatCurrencyShort(totalRaised)}
+          </span>
         </p>
       )}
 
@@ -112,21 +114,25 @@ export function FunderBars({
             <li
               key={`${f.label}-${idx}`}
               data-testid={`funder-bars-top-list-row-${idx}`}
-              className="flex items-center justify-between gap-3 text-xs"
+              className="flex items-center justify-between gap-3"
             >
-              <span className="truncate text-on-surface font-medium">
+              <span className="truncate font-mono text-[11.5px] uppercase tracking-[0.08em] text-ink-2">
                 {f.label}
               </span>
-              <span className="font-bold text-on-surface tabular-nums whitespace-nowrap shrink-0">
+              <span className="tabular-nums whitespace-nowrap shrink-0">
                 {showAmount ? (
                   <span data-testid={`funder-bar-amount-${idx}`}>
-                    {formatCurrencyShort(f.amount as number)}{" "}
-                    <span className="text-on-surface-muted font-medium">
+                    <span className="font-serif text-base font-semibold text-ink">
+                      {formatCurrencyShort(f.amount as number)}
+                    </span>{" "}
+                    <span className="font-mono text-[10.5px] text-ink-3">
                       ({percentLabel})
                     </span>
                   </span>
                 ) : (
-                  percentLabel
+                  <span className="font-serif text-base font-semibold text-ink">
+                    {percentLabel}
+                  </span>
                 )}
               </span>
             </li>
@@ -143,7 +149,7 @@ export function FunderBars({
       {donorDataSource === "web_search" && (
         <p
           data-testid="funder-bars-web-search-footnote"
-          className="text-[10px] italic text-on-surface-muted"
+          className="text-[10px] italic text-ink-3"
         >
           Source: web search — totals not available in our database for this
           race.
@@ -159,7 +165,7 @@ function StackedFunderBar({ funders }: { funders: DonorBucketSlice[] }) {
   return (
     <div
       data-testid="funder-bars-stacked-bar"
-      className="flex h-2 overflow-hidden gap-px"
+      className="flex h-2 overflow-hidden gap-px rounded-sm border border-rule"
       aria-hidden="true"
     >
       {funders.map((f, idx) => (
@@ -169,12 +175,12 @@ function StackedFunderBar({ funders }: { funders: DonorBucketSlice[] }) {
           className={
             "block h-full " +
             (idx % 4 === 0
-              ? "bg-primary"
+              ? "bg-ink"
               : idx % 4 === 1
-                ? "bg-primary/60"
+                ? "bg-civic"
                 : idx % 4 === 2
-                  ? "bg-primary/35"
-                  : "bg-primary/15")
+                  ? "bg-gold"
+                  : "bg-vote-red")
           }
         />
       ))}

@@ -450,9 +450,13 @@ function ChatMessageBubble({
 
     return (
       <article className="max-w-3xl mx-auto">
-        <div className="flex justify-end">
+        <div className="flex flex-col items-end gap-1.5">
+          <span className="font-mono text-[10.5px] uppercase tracking-[0.12em] text-ink-3">
+            You
+          </span>
           <div
-            className="max-w-md bg-surface-lowest border border-outline-variant/40 px-4 py-3 text-sm leading-relaxed text-on-surface shadow-sm"
+            className="max-w-md bg-ink text-paper px-4 py-3 text-sm leading-relaxed shadow-sm"
+            style={{ borderRadius: "14px 14px 4px 14px" }}
             data-testid="chat-message-user"
           >
             <MarkdownText text={displayContent} />
@@ -468,11 +472,19 @@ function ChatMessageBubble({
 
   return (
     <article data-testid="chat-message-assistant" className="max-w-3xl mx-auto">
-      <div className="text-sm leading-relaxed text-on-surface">
-        <MarkdownText text={displayContent} />
-        {isCurrentlyStreaming && (
-          <span className="inline-block w-1.5 h-4 bg-primary ml-0.5 animate-pulse" />
-        )}
+      <div className="flex flex-col items-start gap-1.5">
+        <span className="font-mono text-[10.5px] uppercase tracking-[0.12em] text-ink-3">
+          Voter Choice · AI
+        </span>
+        <div
+          className="bg-paper-2 border border-rule px-4 py-3 text-sm leading-relaxed text-ink w-full"
+          style={{ borderRadius: "4px 14px 14px 14px" }}
+        >
+          <MarkdownText text={displayContent} />
+          {isCurrentlyStreaming && (
+            <span className="inline-block w-1.5 h-4 bg-civic ml-0.5 animate-pulse" />
+          )}
+        </div>
       </div>
 
       {showActions && <BallotActions content={displayContent} />}
@@ -589,10 +601,10 @@ function ColdOpenSurface({
     return (
       <div
         data-testid="cold-open-thinking"
-        className="my-4 bg-surface-low border-l-4 border-primary/40 p-4 flex items-center gap-3 animate-pulse"
+        className="my-4 bg-paper-2 border border-rule rounded-xl p-4 flex items-center gap-3 animate-pulse"
       >
         <svg
-          className="w-4 h-4 text-primary shrink-0"
+          className="w-4 h-4 text-civic shrink-0"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
@@ -603,7 +615,7 @@ function ColdOpenSurface({
         >
           <path d="M21 12a9 9 0 1 1-6.219-8.56" />
         </svg>
-        <span className="text-xs font-bold uppercase tracking-widest text-on-surface-muted">
+        <span className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-ink-3">
           {t.research.coldOpenThinking}
         </span>
       </div>
@@ -629,7 +641,7 @@ function ColdOpenSurface({
         <div
           data-testid="cold-open-error"
           role="status"
-          className="bg-amber-50 border-l-4 border-amber-400 p-3 text-xs text-amber-900"
+          className="bg-paper-2 border border-rule border-l-4 border-l-vote-red rounded p-3 text-xs text-ink-2"
         >
           {phase.message}
         </div>
@@ -662,13 +674,13 @@ function ColdOpenLockedPanel({
   return (
     <section
       data-testid="cold-open-locked"
-      className="bg-surface-low border-l-4 border-primary p-4 md:p-5 space-y-3"
+      className="bg-paper-2 border border-rule rounded-xl p-4 md:p-5 space-y-3"
     >
       <header>
-        <h3 className="text-base md:text-lg font-black uppercase tracking-wide text-on-surface leading-tight">
+        <h3 className="font-serif text-lg md:text-xl font-semibold text-ink leading-tight tracking-tight">
           {t.research.coldOpenLockedHeading}
         </h3>
-        <p className="mt-1 text-xs text-on-surface-muted">
+        <p className="mt-1 text-xs text-ink-3">
           {t.research.coldOpenLockedSubhead}
         </p>
       </header>
@@ -677,7 +689,7 @@ function ColdOpenLockedPanel({
           <li
             key={`${i}-${theme.name}`}
             data-testid={`cold-open-locked-theme-${i}`}
-            className="text-sm font-medium text-on-surface"
+            className="font-serif text-base font-semibold text-ink"
           >
             {theme.name}
           </li>
@@ -1423,24 +1435,42 @@ function WorkspaceChat({
         ) : (
           <>
             {messages.length > 0 && (
-              <ul className="flex flex-col gap-3">
-                {messages.map((m, i) => (
-                  <li
-                    key={i}
-                    data-testid={
-                      m.role === "user"
-                        ? "chat-message-user"
-                        : "chat-message-ai"
-                    }
-                    className={
-                      m.role === "user"
-                        ? "self-end max-w-md bg-surface-lowest border border-outline-variant/40 px-3 py-2 text-sm text-on-surface"
-                        : "max-w-2xl text-sm text-on-surface"
-                    }
-                  >
-                    <MarkdownText text={m.content} />
-                  </li>
-                ))}
+              <ul className="flex flex-col gap-4 list-none p-0">
+                {messages.map((m, i) =>
+                  m.role === "user" ? (
+                    <li
+                      key={i}
+                      data-testid="chat-message-user"
+                      className="self-end flex flex-col items-end gap-1.5 max-w-md"
+                    >
+                      <span className="font-mono text-[10.5px] uppercase tracking-[0.12em] text-ink-3">
+                        You
+                      </span>
+                      <div
+                        className="bg-ink text-paper px-4 py-3 text-sm leading-relaxed"
+                        style={{ borderRadius: "14px 14px 4px 14px" }}
+                      >
+                        <MarkdownText text={m.content} />
+                      </div>
+                    </li>
+                  ) : (
+                    <li
+                      key={i}
+                      data-testid="chat-message-ai"
+                      className="flex flex-col items-start gap-1.5 max-w-2xl"
+                    >
+                      <span className="font-mono text-[10.5px] uppercase tracking-[0.12em] text-ink-3">
+                        Voter Choice · AI
+                      </span>
+                      <div
+                        className="bg-paper-2 border border-rule px-4 py-3 text-sm leading-relaxed text-ink w-full"
+                        style={{ borderRadius: "4px 14px 14px 14px" }}
+                      >
+                        <MarkdownText text={m.content} />
+                      </div>
+                    </li>
+                  ),
+                )}
               </ul>
             )}
 
@@ -1707,9 +1737,9 @@ function WorkspacePickArea({
   }
 
   return (
-    <div className="flex flex-col gap-3 text-sm">
+    <div className="flex flex-col gap-3 text-sm p-3 border-t border-rule">
       {budgetExhausted ? (
-        <p className="text-on-surface-muted">
+        <p className="text-ink-3 italic">
           Budget exhausted — see the right pane footer for next steps.
         </p>
       ) : decided ? (
@@ -1718,9 +1748,9 @@ function WorkspacePickArea({
           data-testid="workspace-unpick-trigger"
           data-race-id={activeRace.id}
           onClick={() => onUnpickDecision(activeRace.id)}
-          className="self-start border border-outline-variant/40 px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-on-surface hover:bg-surface-low"
+          className="self-start bg-ink border border-ink px-4 py-2 font-mono text-[11px] uppercase tracking-[0.12em] text-paper hover:opacity-90 rounded"
         >
-          Undo pick
+          Picked — undo
         </button>
       ) : (
         <button
@@ -1728,7 +1758,7 @@ function WorkspacePickArea({
           data-testid="workspace-pick-trigger"
           data-race-id={activeRace.id}
           onClick={() => openWhyFor(defaultCandidate)}
-          className="self-start bg-primary px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-on-primary hover:bg-primary/90"
+          className="self-start bg-civic px-4 py-2 font-mono text-[11px] uppercase tracking-[0.12em] text-paper-2 hover:bg-civic-2 rounded"
         >
           Pick {defaultCandidate.name}
         </button>
@@ -1737,11 +1767,11 @@ function WorkspacePickArea({
       {whyOpen && stagedCandidate && (
         <div
           data-testid="workspace-why-prompt"
-          className="border border-outline-variant/40 bg-surface-lowest p-3"
+          className="border border-civic bg-paper rounded-xl p-3 flex flex-col gap-2"
         >
           <label
             htmlFor="workspace-why-textarea"
-            className="text-xs font-bold uppercase tracking-widest text-on-surface-muted"
+            className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-ink-3"
           >
             Why are you picking {stagedCandidate.name}?
           </label>
@@ -1751,15 +1781,15 @@ function WorkspacePickArea({
             value={whyDraft}
             onChange={(e) => setWhyDraft(e.target.value)}
             rows={3}
-            className="mt-2 w-full border border-outline-variant/30 bg-surface p-2 text-sm text-on-surface"
+            className="w-full border border-rule bg-paper-2 p-2 font-serif text-sm text-ink rounded resize-y focus:outline-none focus:border-civic"
             placeholder="One line you'll see on your printed ballot."
           />
-          <div className="mt-2 flex gap-2">
+          <div className="flex gap-2">
             <button
               type="button"
               data-testid="workspace-why-commit"
               onClick={commit}
-              className="bg-primary px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-on-primary hover:bg-primary/90"
+              className="bg-civic px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.12em] text-paper-2 hover:bg-civic-2 rounded"
             >
               Commit pick
             </button>
@@ -1767,7 +1797,7 @@ function WorkspacePickArea({
               type="button"
               data-testid="workspace-why-cancel"
               onClick={cancel}
-              className="border border-outline-variant/40 px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-on-surface hover:bg-surface-low"
+              className="border border-rule px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.12em] text-ink-2 hover:bg-paper-2 rounded"
             >
               Cancel
             </button>

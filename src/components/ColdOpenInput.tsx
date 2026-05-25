@@ -70,11 +70,11 @@ export function ColdOpenInput({
   return (
     <section
       data-testid="cold-open-input"
-      className="bg-surface-lowest border-2 border-primary/20 focus-within:border-primary transition-colors shadow-xl"
+      className="bg-paper-2 border border-rule rounded-xl focus-within:border-civic transition-colors"
     >
-      <div className="p-3 md:p-4 flex flex-col gap-3">
+      <div className="p-4 flex flex-col gap-3">
         <label
-          className="text-[10px] font-black uppercase tracking-[0.2em] text-primary"
+          className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-civic"
           htmlFor="cold-open-textarea"
         >
           {t.coldOpenInputLabel}
@@ -91,7 +91,7 @@ export function ColdOpenInput({
               data-testid="cold-open-show-example"
               onClick={showExample}
               disabled={disabled || loading}
-              className="px-3 py-1.5 text-xs font-bold uppercase tracking-widest border border-outline-variant/40 text-on-surface-muted hover:border-primary/60 hover:text-primary transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              className="px-3 py-1.5 font-mono text-[10.5px] uppercase tracking-[0.14em] bg-paper-2 border border-rule rounded-full text-ink-2 hover:border-civic hover:text-civic transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {t.coldOpenInputShowExample}
             </button>
@@ -106,7 +106,7 @@ export function ColdOpenInput({
                 /* no-op (deferred) */
               }}
               disabled={disabled || loading}
-              className="px-3 py-1.5 text-xs font-bold uppercase tracking-widest border border-outline-variant/40 text-on-surface-muted/60 hover:border-primary/40 hover:text-primary/70 transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-help"
+              className="px-3 py-1.5 font-mono text-[10.5px] uppercase tracking-[0.14em] bg-paper-2 border border-rule rounded-full text-ink-3 hover:border-civic hover:text-civic transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-help"
             >
               {t.coldOpenInputUseStarterProfile}
             </button>
@@ -123,7 +123,7 @@ export function ColdOpenInput({
             placeholder={t.coldOpenInputPlaceholder}
             disabled={disabled}
             rows={5}
-            className="flex-1 bg-transparent border-none focus:ring-0 p-0 text-on-surface placeholder:text-on-surface-muted/60 text-sm font-medium resize-none leading-relaxed disabled:opacity-50"
+            className="flex-1 bg-paper border border-rule rounded-lg p-3 font-serif text-base text-ink placeholder:text-ink-3 focus:outline-none focus:border-civic transition-colors resize-y leading-relaxed disabled:opacity-50"
           />
           <button
             type="button"
@@ -131,7 +131,7 @@ export function ColdOpenInput({
             onClick={handleSubmit}
             disabled={!canSubmit}
             aria-label={t.coldOpenInputSend}
-            className="bg-primary text-on-primary p-3 flex items-center justify-center min-h-[44px] min-w-[44px] hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none transition-colors shrink-0 active:scale-95"
+            className="bg-civic text-paper-2 font-mono text-[11px] uppercase tracking-[0.12em] px-4 py-3 rounded-lg flex items-center justify-center min-h-[44px] min-w-[44px] hover:bg-civic-2 focus:outline-none focus:ring-2 focus:ring-civic focus:ring-offset-2 disabled:bg-rule disabled:text-ink-3 disabled:pointer-events-none transition-colors shrink-0 active:scale-95"
           >
             <svg
               width="20"

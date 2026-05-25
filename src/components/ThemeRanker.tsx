@@ -139,7 +139,7 @@ function SortableThemeCard({
       ref={setNodeRef}
       style={style}
       data-testid={`theme-card-${index}`}
-      className="flex items-start gap-3 bg-surface-lowest border border-outline-variant/40 px-4 py-3"
+      className="flex items-start gap-3 bg-paper-2 border border-rule rounded-xl px-4 py-4"
     >
       {/* Drag handle */}
       <button
@@ -148,16 +148,16 @@ function SortableThemeCard({
         {...listeners}
         data-testid={`theme-drag-handle-${index}`}
         aria-label={`${reorderLabel}: ${theme.name}`}
-        className="cursor-grab text-on-surface-muted hover:text-primary select-none touch-none text-lg leading-none mt-1"
+        className="cursor-grab text-ink-3 hover:text-civic select-none touch-none text-lg leading-none mt-1.5"
       >
         ⠿
       </button>
 
-      {/* Rank badge */}
+      {/* Rank badge — serif italic civic numeral */}
       <span
         data-testid={`theme-rank-${index}`}
         aria-label={`Rank ${index + 1}`}
-        className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-primary/10 text-primary text-xs font-black shrink-0 mt-0.5"
+        className="font-serif italic text-civic text-3xl font-semibold shrink-0 leading-none w-7 text-center mt-0.5"
       >
         {index + 1}
       </span>
@@ -183,19 +183,26 @@ function SortableThemeCard({
             }
           }}
           aria-label={`${renameLabel}: ${theme.name}`}
-          className="w-full text-sm font-bold text-on-surface bg-transparent border-b border-transparent hover:border-outline-variant/40 focus:border-primary focus:outline-none px-0 py-1"
+          className="w-full font-serif text-base md:text-[16.5px] font-semibold text-ink bg-transparent border-b border-transparent hover:border-rule focus:border-civic focus:outline-none px-0 py-1 tracking-tight"
         />
-        <ul className="list-none p-0 space-y-1">
-          {theme.quotes.map((quote, qi) => (
-            <li
-              key={qi}
-              data-testid={`theme-quote-${index}-${qi}`}
-              className="text-xs italic text-on-surface-muted pl-3 border-l-2 border-outline-variant/40"
-            >
-              <blockquote className="m-0">&ldquo;{quote}&rdquo;</blockquote>
-            </li>
-          ))}
-        </ul>
+        {theme.quotes.length > 0 && (
+          <div className="bg-paper border-l-2 border-civic-soft pl-3 py-2 space-y-1.5">
+            <p className="font-mono text-[9px] uppercase tracking-[0.16em] text-ink-3">
+              From your input
+            </p>
+            <ul className="list-none p-0 space-y-1">
+              {theme.quotes.map((quote, qi) => (
+                <li
+                  key={qi}
+                  data-testid={`theme-quote-${index}-${qi}`}
+                  className="font-serif italic text-sm text-ink-2 leading-snug"
+                >
+                  <blockquote className="m-0">&ldquo;{quote}&rdquo;</blockquote>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
 
       {/* Remove button */}
@@ -204,9 +211,9 @@ function SortableThemeCard({
         data-testid={`theme-remove-${index}`}
         onClick={() => onRemove(index)}
         aria-label={`${removeLabel}: ${theme.name}`}
-        className="shrink-0 text-on-surface-muted hover:text-rose-600 text-sm leading-none px-2 py-1"
+        className="shrink-0 font-mono text-[10.5px] uppercase tracking-[0.14em] text-ink-3 hover:text-vote-red px-2 py-1"
       >
-        ✕
+        Remove
       </button>
     </li>
   );
@@ -259,13 +266,13 @@ export function ThemeRanker({
   return (
     <section
       data-testid="theme-ranker"
-      className="bg-surface-low border-l-4 border-primary p-4 md:p-5 space-y-4"
+      className="bg-paper-2 border border-rule rounded-xl p-4 md:p-5 space-y-4"
     >
       {warning && (
         <p
           data-testid="theme-ranker-warning"
           role="status"
-          className="text-xs font-bold uppercase tracking-widest text-amber-700 bg-amber-50 border border-amber-200 px-3 py-2"
+          className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-vote-red bg-paper border-l-2 border-vote-red px-3 py-2"
         >
           {warning}
         </p>
@@ -305,19 +312,19 @@ export function ThemeRanker({
       ) : (
         <p
           data-testid="theme-ranker-empty"
-          className="text-xs italic text-on-surface-muted"
+          className="text-xs italic text-ink-3"
         >
           {t.themeRankerEmpty}
         </p>
       )}
 
       {/* Footer actions */}
-      <div className="flex items-center justify-between gap-3 pt-1">
+      <div className="flex items-center justify-between gap-3 pt-3 border-t border-rule-2">
         <button
           type="button"
           data-testid="theme-ranker-rewrite"
           onClick={onRewrite}
-          className="text-xs font-bold uppercase tracking-widest text-on-surface-muted hover:text-primary underline-offset-4 hover:underline"
+          className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-ink-3 hover:text-civic underline-offset-4 hover:underline"
         >
           {t.themeRankerRewrite}
         </button>
@@ -326,7 +333,7 @@ export function ThemeRanker({
           data-testid="theme-ranker-lock-in"
           onClick={onLockIn}
           disabled={lockDisabled}
-          className="bg-primary text-on-primary px-5 py-3 text-sm font-black uppercase tracking-wide hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed active:scale-95 transition"
+          className="bg-civic text-paper-2 px-5 py-3 font-mono text-[11px] uppercase tracking-[0.12em] rounded-lg hover:bg-civic-2 disabled:bg-rule disabled:text-ink-3 disabled:cursor-not-allowed active:scale-95 transition"
         >
           {t.themeRankerLockIn}
         </button>

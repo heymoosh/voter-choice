@@ -86,21 +86,27 @@ function PropositionImpactColumns({ block }: { block: RacePatternsBlock }) {
   return (
     <div
       data-testid="race-patterns-impact-columns"
-      className="grid grid-cols-1 md:grid-cols-2 gap-3 border border-outline-variant/40 p-3 bg-surface-lowest"
+      className="grid grid-cols-1 md:grid-cols-2 gap-4 border border-rule rounded-xl p-4 bg-paper-2"
     >
-      <div data-testid="race-patterns-impact-yes">
-        <p className="text-[10px] font-black uppercase tracking-[0.18em] text-primary mb-1">
+      <div
+        data-testid="race-patterns-impact-yes"
+        className="md:pt-3 md:border-t-2 md:border-civic"
+      >
+        <p className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-civic mb-1.5">
           If yes
         </p>
-        <p className="text-xs text-on-surface leading-snug">
+        <p className="font-serif text-sm text-ink-2 leading-snug">
           {yesImpact ?? PROP_IMPACT_FALLBACK}
         </p>
       </div>
-      <div data-testid="race-patterns-impact-no">
-        <p className="text-[10px] font-black uppercase tracking-[0.18em] text-rose-700 mb-1">
+      <div
+        data-testid="race-patterns-impact-no"
+        className="md:pt-3 md:border-t-2 md:border-vote-red"
+      >
+        <p className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-vote-red mb-1.5">
           If no
         </p>
-        <p className="text-xs text-on-surface leading-snug">
+        <p className="font-serif text-sm text-ink-2 leading-snug">
           {noImpact ?? PROP_IMPACT_FALLBACK}
         </p>
       </div>
@@ -404,7 +410,11 @@ function CandidateSection({
   return (
     <section
       data-testid={`race-patterns-candidate-${candidate.id}`}
-      className="bg-surface-lowest border-l-4 border-primary border border-outline-variant/40 px-4 py-4 space-y-4"
+      className="bg-paper-2 border border-rule rounded-xl px-5 py-5 space-y-4"
+      style={{
+        boxShadow:
+          "0 1px 0 var(--rule), 0 10px 30px -20px oklch(0.18 0.018 240 / 0.12)",
+      }}
     >
       {/* Alignment score banner — above the four-pattern content */}
       {alignmentEntry && (
@@ -428,14 +438,14 @@ function CandidateSection({
             {!isProposition && !revealed && (
               <span
                 aria-hidden="true"
-                className="inline-flex items-center justify-center w-7 h-7 bg-primary/10 text-primary text-sm font-black"
+                className="inline-flex items-center justify-center w-8 h-8 bg-paper border border-rule rounded-full font-serif text-base font-semibold text-civic"
               >
                 {anonLabel(idx)}
               </span>
             )}
             <h4
               data-testid={`race-patterns-candidate-name-${candidate.id}`}
-              className="text-sm md:text-base font-black uppercase tracking-wide text-on-surface"
+              className="font-serif text-lg md:text-[19px] font-semibold tracking-tight text-ink"
             >
               {displayLabel}
             </h4>
@@ -443,7 +453,7 @@ function CandidateSection({
           {candidate.priorRole && (
             <p
               data-testid={`race-patterns-prior-role-${candidate.id}`}
-              className="mt-0.5 text-xs font-medium text-on-surface-muted"
+              className="mt-1 text-sm text-ink-2"
             >
               {candidate.priorRole}
             </p>
@@ -453,12 +463,14 @@ function CandidateSection({
         {candidate.valuesHighlight && (
           <div
             data-testid={`race-patterns-values-highlight-${candidate.id}`}
-            className="shrink-0 max-w-[11rem] bg-primary/8 border border-primary/30 px-2 py-1.5 text-[10px] leading-snug text-primary"
+            className="shrink-0 max-w-[11rem] bg-civic-soft border border-civic rounded-md px-2.5 py-1.5 text-[11px] leading-snug text-civic-2"
           >
-            <span className="font-black block">
+            <span className="font-mono text-[9.5px] uppercase tracking-[0.12em] block mb-0.5">
               {t.racePatternsValuesHighlightLabel}
             </span>
-            <span>{candidate.valuesHighlight.element}</span>
+            <span className="font-serif italic">
+              {candidate.valuesHighlight.element}
+            </span>
           </div>
         )}
       </header>
@@ -467,7 +479,7 @@ function CandidateSection({
       <div className="space-y-2">
         <div className="flex items-center justify-between gap-2">
           <div>
-            <h5 className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-muted">
+            <h5 className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-ink-3">
               {t.racePatternsCoalitionHeading}
             </h5>
             <p
@@ -515,7 +527,7 @@ function CandidateSection({
 
       {/* Endorsements */}
       <div className="space-y-2">
-        <h5 className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-muted">
+        <h5 className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-ink-3">
           {t.racePatternsEndorsementsHeading}
         </h5>
         {candidate.endorsements ? (
@@ -542,7 +554,7 @@ function CandidateSection({
       {/* Platform alignment */}
       <div className="space-y-2">
         <div className="flex items-center justify-between gap-2">
-          <h5 className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-muted">
+          <h5 className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-ink-3">
             {t.racePatternsAlignmentHeading}
           </h5>
           {candidate.platformAlignment && candidate.alignmentSource && (
@@ -574,7 +586,7 @@ function CandidateSection({
 
       {/* Retrospective */}
       <div className="space-y-2">
-        <h5 className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-muted">
+        <h5 className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-ink-3">
           {t.racePatternsRetrospectiveHeading}
         </h5>
         {candidate.retrospective ? (
@@ -601,7 +613,7 @@ function CandidateSection({
           data-testid={`race-patterns-pick-${candidate.id}`}
           onClick={() => !pickDisabled && onPick()}
           disabled={pickDisabled}
-          className="w-full bg-primary text-on-primary px-4 py-3 text-xs md:text-sm font-black uppercase tracking-wide hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed active:scale-95 transition"
+          className="w-full bg-civic text-paper-2 px-4 py-3 font-mono text-[11px] uppercase tracking-[0.12em] rounded-lg hover:bg-civic-2 disabled:bg-rule disabled:text-ink-3 disabled:cursor-not-allowed active:scale-95 transition"
         >
           {submitting
             ? t.racePatternsSubmitting
@@ -627,7 +639,7 @@ function SourceFooter({
       data-testid="race-patterns-sources-footer"
       className="border-t border-outline-variant/30 pt-3 space-y-1.5"
     >
-      <h5 className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-muted">
+      <h5 className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-ink-3">
         {heading}
       </h5>
       <ol className="list-none p-0 space-y-1">
@@ -721,14 +733,14 @@ export function RacePatterns({
   return (
     <section
       data-testid="race-patterns"
-      className="bg-surface-low border-l-4 border-primary p-4 md:p-5 space-y-4"
+      className="bg-paper border border-rule rounded-xl p-4 md:p-5 space-y-4"
     >
       {/* Race header */}
       <header>
-        <h3 className="text-base md:text-lg font-black uppercase tracking-wide text-on-surface leading-tight">
+        <h3 className="font-serif text-lg md:text-xl font-semibold text-ink leading-tight tracking-tight">
           {block.race}
         </h3>
-        <div className="mt-2 h-px bg-on-surface/15" aria-hidden="true" />
+        <div className="mt-2 h-px bg-rule" aria-hidden="true" />
       </header>
 
       {/* Proposition impact columns — if-yes / if-no two-column layout.
@@ -816,7 +828,7 @@ export function RacePatterns({
           data-testid="race-patterns-reveal"
           onClick={() => !isStreaming && setRevealed((prev) => !prev)}
           disabled={isStreaming}
-          className="w-full border-2 border-primary text-primary px-4 py-3 text-sm font-black uppercase tracking-wide hover:bg-primary/10 active:scale-95 transition disabled:opacity-40 disabled:cursor-not-allowed"
+          className="w-full border border-civic text-civic px-4 py-3 font-mono text-[11px] uppercase tracking-[0.12em] rounded-lg hover:bg-civic-soft active:scale-95 transition disabled:opacity-40 disabled:cursor-not-allowed"
         >
           {revealed ? t.racePatternsHideButton : t.racePatternsRevealButton}
         </button>
@@ -830,7 +842,7 @@ export function RacePatterns({
             data-testid="race-patterns-skip"
             onClick={() => !disabled && onSkip()}
             disabled={disabled}
-            className="text-xs font-bold uppercase tracking-widest text-on-surface-muted hover:text-primary disabled:opacity-50 disabled:cursor-not-allowed underline-offset-4 hover:underline"
+            className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-ink-3 hover:text-civic disabled:opacity-50 disabled:cursor-not-allowed underline-offset-4 hover:underline"
           >
             {t.racePatternsSkip}
           </button>
@@ -841,9 +853,9 @@ export function RacePatterns({
       {isSubmitted && (
         <div
           data-testid="race-patterns-locked-banner"
-          className="bg-primary/10 border-l-4 border-primary px-4 py-3"
+          className="bg-civic-soft border border-civic rounded-lg px-4 py-3"
         >
-          <p className="text-xs font-black uppercase tracking-widest text-primary">
+          <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-civic-2">
             {pickedCandidate
               ? `${t.racePatternsLockedIn} ${pickedCandidate.name}`
               : t.racePatternsSkipped}

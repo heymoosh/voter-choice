@@ -63,7 +63,7 @@ function SourceChip({ name, url }: { name: string; url?: string }) {
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className="inline-flex items-baseline gap-1 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-primary/10 text-primary hover:bg-primary/20 transition-colors no-underline"
+      className="inline-flex items-baseline gap-1 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.12em] bg-civic-soft text-civic-2 hover:bg-civic hover:text-paper-2 rounded-sm transition-colors no-underline"
     >
       <span className="opacity-60" aria-hidden="true">
         §
@@ -88,27 +88,27 @@ function VoteRow({
       href={vote.source.url}
       target="_blank"
       rel="noopener noreferrer"
-      className="font-medium text-on-surface underline underline-offset-2 hover:text-primary"
+      className="font-serif text-sm text-ink underline underline-offset-2 hover:text-civic"
     >
       {vote.billTitle}
     </a>
   ) : (
     <span
       data-testid="alignment-vote-bill-title"
-      className="font-medium text-on-surface"
+      className="font-serif text-sm text-ink"
     >
       {vote.billTitle}
     </span>
   );
 
   return (
-    <li className="py-2 border-b border-outline-variant/20 last:border-0 space-y-1.5">
+    <li className="py-2 border-b border-rule-2 last:border-0 space-y-1.5">
       {/* Bill title + date row */}
       <div className="flex items-start justify-between gap-2">
-        <div className="text-xs leading-snug">{titleEl}</div>
+        <div className="leading-snug">{titleEl}</div>
         <span
           data-testid="alignment-vote-date"
-          className="text-[10px] text-on-surface-muted shrink-0 tabular-nums"
+          className="font-mono text-[10px] text-ink-3 shrink-0 tabular-nums"
         >
           {vote.date}
         </span>
@@ -134,11 +134,11 @@ export function AlignmentDrilldown({
   return (
     <div
       data-testid={`alignment-drilldown-${score.canonicalIssue}`}
-      className="border border-primary/30 bg-surface-lowest px-4 py-3 space-y-3"
+      className="border border-civic bg-paper rounded-lg px-4 py-3 space-y-3"
     >
       {/* Header row */}
       <div className="flex items-start justify-between gap-3">
-        <h5 className="text-xs font-black uppercase tracking-wide text-on-surface leading-tight">
+        <h5 className="font-serif text-sm font-semibold text-ink leading-tight tracking-tight">
           {t.alignmentDrilldownHeading(
             score.kept,
             score.total,
@@ -150,7 +150,7 @@ export function AlignmentDrilldown({
           data-testid="alignment-drilldown-close"
           onClick={onClose}
           aria-label={t.alignmentScoreDrillDownClose}
-          className="shrink-0 text-[10px] font-black uppercase tracking-widest text-on-surface-muted hover:text-primary transition-colors px-1.5 py-0.5 border border-outline-variant/40 hover:border-primary/40"
+          className="shrink-0 font-mono text-[10.5px] uppercase tracking-[0.14em] text-ink-3 hover:text-civic transition-colors px-2 py-0.5 border border-rule rounded-sm hover:border-civic"
         >
           {t.alignmentScoreDrillDownClose}
         </button>
@@ -160,14 +160,14 @@ export function AlignmentDrilldown({
       {score.contributingVotes.length > 0 ? (
         <ul
           data-testid="alignment-drilldown-vote-list"
-          className="list-none p-0 space-y-0 divide-y divide-outline-variant/20"
+          className="list-none p-0 space-y-0 divide-y divide-rule-2"
         >
           {score.contributingVotes.map((vote, idx) => (
             <VoteRow key={idx} vote={vote} t={t} />
           ))}
         </ul>
       ) : (
-        <p className="text-xs italic text-on-surface-muted">
+        <p className="text-xs italic text-ink-3">
           No individual votes on record.
         </p>
       )}
@@ -175,9 +175,9 @@ export function AlignmentDrilldown({
       {/* Footer disclaimer */}
       <footer
         data-testid="alignment-drilldown-disclaimer"
-        className="border-t border-outline-variant/20 pt-2"
+        className="border-t border-rule-2 pt-2"
       >
-        <p className="text-[10px] text-on-surface-muted italic">
+        <p className="text-[10px] text-ink-3 italic">
           {t.alignmentDrilldownDisclaimer}
         </p>
       </footer>
