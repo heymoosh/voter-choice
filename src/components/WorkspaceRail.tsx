@@ -128,17 +128,17 @@ export function WorkspaceRail({
         </ol>
       </section>
 
-      {/* Fix E — Polis section. Mounts between priorities and races; closed
-          by default; auto-hides when county or themes are missing. Themes
-          map to {id, label} using a slug of the user-named theme so the
-          PolisOverlay props are happy without coupling to canonical ids
-          (the bars query just omits userConcerns when ids don't match
-          canonical issues — empty/below-threshold copy carries the case). */}
-      {stateCode && county && themes.length > 0 && (
+      {/* Fix E + PR 10 — Polis section. Mounts between priorities and races;
+          closed by default. PR 10 changes the gate: section now renders
+          whenever stateCode + themes are present — national data is always
+          available, so a missing county no longer suppresses the section.
+          The inner overlay carries the scope toggle (national / county)
+          and hides the toggle when countyName is absent. */}
+      {stateCode && themes.length > 0 && (
         <WorkspacePolisSection
           stateCode={stateCode}
-          county={county}
-          countyName={countyName ?? county}
+          county={county ?? null}
+          countyName={countyName ?? county ?? undefined}
           userThemes={themes.map((t) => ({
             id: slugifyThemeName(t.name),
             label: t.name,

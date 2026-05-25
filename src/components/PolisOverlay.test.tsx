@@ -1,19 +1,24 @@
 // @vitest-environment jsdom
 /**
- * PolisOverlay — Phase 8 restructure.
+ * PolisOverlay — PR 10 (national-default).
  *
  * Renders three readings (bars, bridges, compass) each independently
- * fetching from its own endpoint. Tests cover:
- *   - All three sections are rendered (heading + content / empty state)
+ * fetching from its own endpoint. Defaults to scope=national;
+ * a toggle lets users switch to scope=county when county is known.
+ *
+ * Tests cover:
+ *   - National default: heading "across the country", fetches scope=national
+ *   - County toggle: switches scope, fetches with scope=county
+ *   - Hidden toggle when countyName is null/empty (national-only)
+ *   - All three sections render with correct copy per scope
  *   - Honest empty states for zero-session, below-threshold, no-bridges-yet
- *   - Re-fetch on county change
- *   - Cluster labels never contain partisan strings (rendered surface)
+ *   - Cluster labels never contain partisan strings
  *   - No identity fields surface in rendered DOM
  */
 
 import React from "react";
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import { PolisOverlay } from "./PolisOverlay";
 import { LanguageProvider } from "../lib/i18n";
@@ -27,22 +32,20 @@ interface MockResponses {
 }
 
 function installFetchMock(responses: MockResponses) {
-  // Sensible shape-correct defaults so a test that only overrides one
-  // endpoint doesn't crash the other two on missing array fields.
   const DEFAULT_BARS = {
-    county: "Travis",
+    scope: "national",
     threshold: 50,
     count: 0,
     bars: [],
   };
   const DEFAULT_BRIDGES = {
-    county: "Travis",
+    scope: "national",
     threshold: 50,
     count: 0,
     bridges: [],
   };
   const DEFAULT_COMPASS = {
-    county: "Travis",
+    scope: "national",
     threshold: 150,
     count: 0,
     status: "below_threshold",
@@ -76,14 +79,18 @@ function renderOverlay(opts: {
   county?: string;
   stateCode?: string;
   userThemes?: Array<{ id: string; label: string }>;
-  countyName?: string;
+  countyName?: string | null;
 }) {
   return render(
     <LanguageProvider>
       <PolisOverlay
         stateCode={opts.stateCode ?? "TX"}
         county={opts.county ?? "Travis"}
-        countyName={opts.countyName ?? opts.county ?? "Travis County"}
+        countyName={
+          opts.countyName === null
+            ? undefined
+            : (opts.countyName ?? opts.county ?? "Travis County")
+        }
         userThemes={
           opts.userThemes ?? [
             { id: "healthcare", label: "Healthcare access" },
@@ -97,7 +104,7 @@ function renderOverlay(opts: {
 
 /* ── Setup ───────────────────────────────────────────────────── */
 
-describe("PolisOverlay (Phase 8 — bars + bridges + compass)", () => {
+describe("PolisOverlay — PR 10 (national-default)", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
   });
@@ -105,38 +112,147 @@ describe("PolisOverlay (Phase 8 — bars + bridges + compass)", () => {
     vi.restoreAllMocks();
   });
 
+  /* ── Default scope: national ─────────────────────────────── */
+
+  it("defaults to scope=national: fetches without scope=county, heading reflects national", async () => {
+    const spy = installFetchMock({
+      bars: {
+        scope: "national",
+        threshold: 50,
+        count: 5000,
+        bars: [
+          { themeId: "healthcare", theme: "Healthcare access", percent: 78 },
+        ],
+      },
+    });
+    renderOverlay({});
+    await waitFor(() => {
+      expect(screen.getByTestId("polis-bars-section")).toBeInTheDocument();
+    });
+    // Heading reflects national framing.
+    expect(screen.getByTestId("polis-bars-section")).toHaveTextContent(
+      /across the country|nationwide/i,
+    );
+    // Fetch URLs include scope=national.
+    const urls = spy.mock.calls
+      .map((c) => (typeof c[0] === "string" ? c[0] : (c[0] as URL).toString()))
+      .filter((u) => u.includes("/api/polis/"));
+    expect(urls.length).toBeGreaterThanOrEqual(3);
+    expect(urls.some((u) => u.includes("scope=national"))).toBe(true);
+    // No URLs include scope=county initially.
+    expect(urls.some((u) => u.includes("scope=county"))).toBe(false);
+  });
+
+  /* ── Scope toggle ─────────────────────────────────────────── */
+
+  it("when countyName is present, renders a toggle to switch to county scope", async () => {
+    installFetchMock({});
+    renderOverlay({ countyName: "Travis County" });
+    await waitFor(() => {
+      expect(screen.getByTestId("polis-scope-toggle")).toBeInTheDocument();
+    });
+    // The toggle exposes both options.
+    const toggle = screen.getByTestId("polis-scope-toggle");
+    expect(toggle.textContent ?? "").toMatch(/nationwide/i);
+    expect(toggle.textContent ?? "").toMatch(/your county|travis/i);
+  });
+
+  it("when countyName is null/empty, hides the toggle (national-only)", async () => {
+    installFetchMock({});
+    renderOverlay({ countyName: null, county: "" });
+    await waitFor(() => {
+      expect(screen.getByTestId("polis-bars-section")).toBeInTheDocument();
+    });
+    expect(screen.queryByTestId("polis-scope-toggle")).toBeNull();
+  });
+
+  it("clicking 'Your county' switches scope and re-fetches with scope=county", async () => {
+    const spy = installFetchMock({
+      bars: {
+        scope: "county",
+        county: "Travis",
+        threshold: 50,
+        count: 73,
+        bars: [
+          { themeId: "healthcare", theme: "Healthcare access", percent: 78 },
+        ],
+      },
+    });
+    renderOverlay({ countyName: "Travis County" });
+    await waitFor(() => {
+      expect(
+        screen.getByTestId("polis-scope-toggle-county"),
+      ).toBeInTheDocument();
+    });
+    const callsBefore = spy.mock.calls.length;
+    fireEvent.click(screen.getByTestId("polis-scope-toggle-county"));
+    await waitFor(() => {
+      const newCalls = spy.mock.calls
+        .slice(callsBefore)
+        .map((c) =>
+          typeof c[0] === "string" ? c[0] : (c[0] as URL).toString(),
+        );
+      expect(newCalls.some((u) => u.includes("scope=county"))).toBe(true);
+    });
+    // Heading now reflects county framing.
+    await waitFor(() => {
+      expect(screen.getByTestId("polis-bars-section")).toHaveTextContent(
+        /Travis County|in Travis/,
+      );
+    });
+  });
+
+  it("clicking 'Nationwide' after switching to county returns to national", async () => {
+    const spy = installFetchMock({});
+    renderOverlay({ countyName: "Travis County" });
+    await waitFor(() => {
+      expect(
+        screen.getByTestId("polis-scope-toggle-county"),
+      ).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByTestId("polis-scope-toggle-county"));
+    const callsAfterCounty = spy.mock.calls.length;
+    fireEvent.click(screen.getByTestId("polis-scope-toggle-national"));
+    await waitFor(() => {
+      const newCalls = spy.mock.calls
+        .slice(callsAfterCounty)
+        .map((c) =>
+          typeof c[0] === "string" ? c[0] : (c[0] as URL).toString(),
+        );
+      expect(newCalls.some((u) => u.includes("scope=national"))).toBe(true);
+    });
+  });
+
   /* ── Section rendering ──────────────────────────────────── */
 
   it("renders the bars, bridges, and compass sections", async () => {
     installFetchMock({
       bars: {
-        county: "Travis",
+        scope: "national",
         threshold: 50,
-        count: 73,
+        count: 5000,
         bars: [
           { themeId: "healthcare", theme: "Healthcare access", percent: 78 },
           { themeId: "housing", theme: "Housing affordability", percent: 64 },
         ],
       },
       bridges: {
-        county: "Travis",
+        scope: "national",
         threshold: 50,
-        count: 73,
+        count: 5000,
         status: "no_bridges_yet",
         bridges: [],
       },
       compass: {
-        county: "Travis",
+        scope: "national",
         threshold: 150,
-        count: 73,
+        count: 5000,
         status: "below_threshold",
         clusters: [],
         dots: [],
       },
     });
-
     renderOverlay({});
-
     await waitFor(() => {
       expect(screen.getByTestId("polis-bars-section")).toBeInTheDocument();
     });
@@ -144,28 +260,23 @@ describe("PolisOverlay (Phase 8 — bars + bridges + compass)", () => {
     expect(screen.getByTestId("polis-compass-section")).toBeInTheDocument();
   });
 
-  /* ── Bars rendering ─────────────────────────────────────── */
-
   it("renders one overlap bar per user theme with the percent text", async () => {
     installFetchMock({
       bars: {
-        county: "Travis",
+        scope: "national",
         threshold: 50,
-        count: 73,
+        count: 5000,
         bars: [
           { themeId: "healthcare", theme: "Healthcare access", percent: 78 },
           { themeId: "housing", theme: "Housing affordability", percent: 64 },
         ],
       },
     });
-
     renderOverlay({});
-
     await waitFor(() => {
       expect(screen.getByTestId("overlap-bar-healthcare")).toBeInTheDocument();
     });
     expect(screen.getByTestId("overlap-bar-housing")).toBeInTheDocument();
-    // Percent text is load-bearing (not just decoration).
     expect(screen.getByTestId("overlap-bar-healthcare")).toHaveTextContent(
       "78%",
     );
@@ -174,7 +285,7 @@ describe("PolisOverlay (Phase 8 — bars + bridges + compass)", () => {
 
   it("bars empty state (count=0): honest 'just getting started' message", async () => {
     installFetchMock({
-      bars: { county: "Travis", threshold: 50, count: 0, bars: [] },
+      bars: { scope: "national", threshold: 50, count: 0, bars: [] },
     });
     renderOverlay({});
     await waitFor(() => {
@@ -188,7 +299,7 @@ describe("PolisOverlay (Phase 8 — bars + bridges + compass)", () => {
   it("bars below_threshold: shows count and threshold in honest copy", async () => {
     installFetchMock({
       bars: {
-        county: "Travis",
+        scope: "national",
         threshold: 50,
         count: 12,
         status: "below_threshold",
@@ -211,7 +322,7 @@ describe("PolisOverlay (Phase 8 — bars + bridges + compass)", () => {
   it("bridges empty state (no_bridges_yet): honest 'needs more data' message", async () => {
     installFetchMock({
       bridges: {
-        county: "Travis",
+        scope: "national",
         threshold: 50,
         count: 80,
         status: "no_bridges_yet",
@@ -230,7 +341,7 @@ describe("PolisOverlay (Phase 8 — bars + bridges + compass)", () => {
   it("bridges below_threshold: shows count and threshold", async () => {
     installFetchMock({
       bridges: {
-        county: "Travis",
+        scope: "national",
         threshold: 50,
         count: 12,
         status: "below_threshold",
@@ -248,10 +359,10 @@ describe("PolisOverlay (Phase 8 — bars + bridges + compass)", () => {
     ).toHaveTextContent(/12/);
   });
 
-  it("bridges with statements (future v2): renders bridge cards with cluster names + percents", async () => {
+  it("bridges with statements: renders bridge cards with cluster names + percents", async () => {
     installFetchMock({
       bridges: {
-        county: "Travis",
+        scope: "national",
         threshold: 50,
         count: 200,
         bridges: [
@@ -287,10 +398,10 @@ describe("PolisOverlay (Phase 8 — bars + bridges + compass)", () => {
 
   /* ── Compass rendering ───────────────────────────────────── */
 
-  it("compass below_threshold: shows the count vs threshold honest message", async () => {
+  it("compass below_threshold: shows count vs threshold honest message", async () => {
     installFetchMock({
       compass: {
-        county: "Travis",
+        scope: "national",
         threshold: 150,
         count: 73,
         status: "below_threshold",
@@ -302,34 +413,33 @@ describe("PolisOverlay (Phase 8 — bars + bridges + compass)", () => {
     await waitFor(() => {
       expect(screen.getByTestId("compass-empty")).toBeInTheDocument();
     });
-    // Both numbers visible.
     expect(screen.getByTestId("compass-empty")).toHaveTextContent(/73/);
     expect(screen.getByTestId("compass-empty")).toHaveTextContent(/150/);
   });
 
-  /* ── Privacy + label hygiene of the rendered DOM ─────────── */
+  /* ── Privacy + label hygiene ─────────────────────────────── */
 
-  it("rendered DOM does not include identity-shaped strings (user_id, session_id, email, address)", async () => {
+  it("rendered DOM does not include identity-shaped strings", async () => {
     installFetchMock({
       bars: {
-        county: "Travis",
+        scope: "national",
         threshold: 50,
-        count: 73,
+        count: 5000,
         bars: [
           { themeId: "healthcare", theme: "Healthcare access", percent: 78 },
         ],
       },
       bridges: {
-        county: "Travis",
+        scope: "national",
         threshold: 50,
-        count: 73,
+        count: 5000,
         status: "no_bridges_yet",
         bridges: [],
       },
       compass: {
-        county: "Travis",
+        scope: "national",
         threshold: 150,
-        count: 73,
+        count: 5000,
         status: "below_threshold",
         clusters: [],
         dots: [],
@@ -346,9 +456,9 @@ describe("PolisOverlay (Phase 8 — bars + bridges + compass)", () => {
   it("rendered DOM does not contain partisan strings in bridge cluster labels", async () => {
     installFetchMock({
       bridges: {
-        county: "Travis",
+        scope: "national",
         threshold: 50,
-        count: 200,
+        count: 5000,
         bridges: [
           {
             statement: "Something everyone agrees on.",
@@ -371,11 +481,11 @@ describe("PolisOverlay (Phase 8 — bars + bridges + compass)", () => {
     );
   });
 
-  /* ── County re-fetch ─────────────────────────────────────── */
+  /* ── County mode re-fetch ────────────────────────────────── */
 
-  it("re-fetches all three endpoints when the county prop changes", async () => {
+  it("re-fetches all three endpoints when scope toggles to county", async () => {
     const spy = installFetchMock({});
-    const { rerender } = render(
+    render(
       <LanguageProvider>
         <PolisOverlay
           stateCode="TX"
@@ -390,25 +500,15 @@ describe("PolisOverlay (Phase 8 — bars + bridges + compass)", () => {
     });
     const callsBefore = spy.mock.calls.length;
 
-    // Change county.
-    rerender(
-      <LanguageProvider>
-        <PolisOverlay
-          stateCode="TX"
-          county="Harris"
-          countyName="Harris County"
-          userThemes={[{ id: "healthcare", label: "Healthcare access" }]}
-        />
-      </LanguageProvider>,
-    );
+    fireEvent.click(screen.getByTestId("polis-scope-toggle-county"));
 
     await waitFor(() => {
-      // Each endpoint re-fetched once more (3 additional calls minimum).
       expect(spy.mock.calls.length).toBeGreaterThanOrEqual(callsBefore + 3);
     });
     const calledUrls = spy.mock.calls
       .map((c) => (typeof c[0] === "string" ? c[0] : (c[0] as URL).toString()))
       .join("\n");
-    expect(calledUrls).toMatch(/county=Harris/);
+    expect(calledUrls).toMatch(/scope=county/);
+    expect(calledUrls).toMatch(/county=Travis/);
   });
 });

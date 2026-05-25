@@ -397,3 +397,149 @@ describe("counters — durable Redis path", () => {
     expect(agg.sampleSize).toBe(30);
   });
 });
+
+// ---------------------------------------------------------------------------
+// fetchNationalOverlapCounts (PR 10 — national-default polis)
+// ---------------------------------------------------------------------------
+
+describe("fetchNationalOverlapCounts (in-memory)", () => {
+  beforeEach(() => {
+    _resetMemoryForTesting();
+    vi.unstubAllEnvs();
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.restoreAllMocks();
+  });
+
+  it("aggregates totals across every state + county (no scope filter)", async () => {
+    const { fetchNationalOverlapCounts } = await import("./counters");
+
+    // 3 in TX/Travis (DEM, healthcare)
+    for (let i = 0; i < 3; i++) {
+      await incrementSessionCounters({
+        sessionId: `nat-tx-tr-${i}`,
+        stateCode: "TX",
+        county: "Travis",
+        primary: "DEM",
+        confirmedConcerns: [{ canonicalIssue: "healthcare" }],
+        picks: [],
+      });
+    }
+    // 2 in TX/Harris (REP, housing)
+    for (let i = 0; i < 2; i++) {
+      await incrementSessionCounters({
+        sessionId: `nat-tx-ha-${i}`,
+        stateCode: "TX",
+        county: "Harris",
+        primary: "REP",
+        confirmedConcerns: [{ canonicalIssue: "housing" }],
+        picks: [],
+      });
+    }
+    // 4 in CA/LA (OPEN, healthcare + climate)
+    for (let i = 0; i < 4; i++) {
+      await incrementSessionCounters({
+        sessionId: `nat-ca-la-${i}`,
+        stateCode: "CA",
+        county: "Los Angeles",
+        primary: "OPEN",
+        confirmedConcerns: [
+          { canonicalIssue: "healthcare" },
+          { canonicalIssue: "climate" },
+        ],
+        picks: [],
+      });
+    }
+
+    const nat = await fetchNationalOverlapCounts();
+    expect(nat.count).toBe(9); // 3 + 2 + 4
+    expect(nat.issueCounts.healthcare).toBe(7); // 3 + 4
+    expect(nat.issueCounts.housing).toBe(2);
+    expect(nat.issueCounts.climate).toBe(4);
+  });
+
+  it("includes sessions where county was null (state-level counters)", async () => {
+    const { fetchNationalOverlapCounts } = await import("./counters");
+
+    // 2 sessions with county=null in NV
+    for (let i = 0; i < 2; i++) {
+      await incrementSessionCounters({
+        sessionId: `nat-null-${i}`,
+        stateCode: "NV",
+        county: null,
+        primary: "GENERAL",
+        confirmedConcerns: [{ canonicalIssue: "economy" }],
+        picks: [],
+      });
+    }
+
+    const nat = await fetchNationalOverlapCounts();
+    expect(nat.count).toBe(2);
+    expect(nat.issueCounts.economy).toBe(2);
+  });
+
+  it("returns count=0 and empty issueCounts when nothing seeded", async () => {
+    const { fetchNationalOverlapCounts } = await import("./counters");
+    const nat = await fetchNationalOverlapCounts();
+    expect(nat.count).toBe(0);
+    expect(nat.issueCounts).toEqual({});
+  });
+
+  it("does not include identity-shaped keys on the result", async () => {
+    const { fetchNationalOverlapCounts } = await import("./counters");
+    await incrementSessionCounters({
+      sessionId: "id-shape-1",
+      stateCode: "TX",
+      county: "Travis",
+      primary: "DEM",
+      confirmedConcerns: [{ canonicalIssue: "healthcare" }],
+      picks: [],
+    });
+    const nat = await fetchNationalOverlapCounts();
+    const keys = Object.keys(nat).sort();
+    expect(keys).toEqual(["count", "issueCounts"]);
+    const forbidden = ["user_id", "session_id", "name", "address", "email"];
+    for (const k of forbidden) {
+      expect(keys).not.toContain(k);
+    }
+  });
+
+  it("optional stateCode arg: restricts aggregation to a single state", async () => {
+    const { fetchNationalOverlapCounts } = await import("./counters");
+    // 3 in TX, 5 in CA
+    for (let i = 0; i < 3; i++) {
+      await incrementSessionCounters({
+        sessionId: `state-tx-${i}`,
+        stateCode: "TX",
+        county: "Travis",
+        primary: "DEM",
+        confirmedConcerns: [{ canonicalIssue: "healthcare" }],
+        picks: [],
+      });
+    }
+    for (let i = 0; i < 5; i++) {
+      await incrementSessionCounters({
+        sessionId: `state-ca-${i}`,
+        stateCode: "CA",
+        county: "Los Angeles",
+        primary: "OPEN",
+        confirmedConcerns: [{ canonicalIssue: "housing" }],
+        picks: [],
+      });
+    }
+    const nat = await fetchNationalOverlapCounts();
+    expect(nat.count).toBe(8); // 3 + 5
+
+    const txOnly = await fetchNationalOverlapCounts("TX");
+    expect(txOnly.count).toBe(3);
+    expect(txOnly.issueCounts.healthcare).toBe(3);
+    expect(txOnly.issueCounts.housing).toBeUndefined();
+
+    const caOnly = await fetchNationalOverlapCounts("CA");
+    expect(caOnly.count).toBe(5);
+    expect(caOnly.issueCounts.housing).toBe(5);
+    expect(caOnly.issueCounts.healthcare).toBeUndefined();
+  });
+});

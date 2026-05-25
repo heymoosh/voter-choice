@@ -1,15 +1,22 @@
 /**
- * GET /api/polis/bars?stateCode=TX&county=Travis&userConcerns=a,b,c
+ * GET /api/polis/bars
  *
- * Phase 8 — "you're not alone in {county}" reading.
+ * PR 10 — national-default. Per user feedback: "Most people share a lot of
+ * the same issues and priorities. It will shock them to see how many others
+ * are actually truly in the middle and clustered around their shared views
+ * on the world, as opposed to the incredibly polarized version of society
+ * that we normally see online."
  *
- * Returns per-theme percentage of finished sessions in the county whose
- * confirmed concerns include each of the user's themes. NO state-scope
- * fallback (county-only by design — "your county" is the framing).
+ * Query params:
+ *   ?scope=national                     → nationwide aggregation (DEFAULT)
+ *   ?scope=county&stateCode=X&county=Y  → county-only ("your county" reading)
+ *   ?stateCode=X&county=Y               → backward compat: treated as scope=county
+ *   ?userConcerns=a,b,c                 → user theme ids to compute % for
  *
  * Response contract:
- *   { county, threshold, count, bars[] }
- *   { county, threshold, count, status: "below_threshold", bars: [] }
+ *   { scope, threshold, count, bars[] }              (success)
+ *   { scope, threshold, count, status: "below_threshold", bars: [] }
+ *   County variant also includes `county: string` in the response body.
  *
  * Privacy: counts and percentages only. NO user_id, session_id, name,
  * address, email, etc.
@@ -18,16 +25,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
   fetchCountyOverlapCounts,
+  fetchNationalOverlapCounts,
   type CountyOverlapCounts,
 } from "../../../../lib/server/counters";
 import { getIssueLabel } from "../../../../lib/canonicalIssues";
 import { computeOverlapBars } from "../../../../lib/server/polis/aggregates";
 
-/** Minimum county session count before bars are surfaced. */
+/** Minimum session count before bars are surfaced (applies to both scopes). */
 const BARS_PER_READING_MIN = 50;
 
 interface BarsResponseBody {
-  county: string;
+  scope: "national" | "county";
+  county?: string;
   threshold: number;
   count: number;
   status?: "below_threshold";
@@ -46,25 +55,20 @@ function expandUserConcerns(raw: string): Array<{ id: string; label: string }> {
 /**
  * Build per-session concern arrays from the aggregate issue counts.
  *
- * We don't have per-row session detail (the counters layer is aggregate-only),
- * but `computeOverlapBars` only needs the *number* of county sessions
- * containing each theme. We mimic that by emitting one "session" record per
- * unique issue-count entry weighted by its count. The percent math is the
- * same as `(issueCount / totalCount) * 100`, so we can short-circuit.
+ * The counters layer is aggregate-only — we don't have per-row session
+ * detail. `computeOverlapBars` only needs the *number* of sessions
+ * containing each theme. We synthesize a fixture of `count` placeholder
+ * sessions; for each user theme, the first `hits` placeholders carry that
+ * theme id. The percent math is `(hits / count) * 100`, equivalent in
+ * both scopes.
  *
- * (Kept compact — the path through `computeOverlapBars` is preserved so the
- * unit-test contract stays the single source of truth for the percent
- * formula.)
+ * Kept compact so the path through `computeOverlapBars` stays the single
+ * source of truth for the percent formula.
  */
 function barsFromCounts(
   overlap: CountyOverlapCounts,
   userThemes: Array<{ id: string; label: string }>,
 ): Array<{ themeId: string; theme: string; percent: number }> {
-  // For each user theme, hits = sum of per-primary counts for that issue.
-  // Build a fake "sessions" array: one entry per hit per theme. To keep the
-  // computeOverlapBars path the source of truth, we synthesize the simplest
-  // fixture: `count` total sessions, each containing the issues that hit
-  // that index. Equivalent to direct percent math.
   if (overlap.count === 0) {
     return userThemes.map((t) => ({
       themeId: t.id,
@@ -73,9 +77,6 @@ function barsFromCounts(
     }));
   }
 
-  // Build N "session" placeholders. For each user theme, the first `hits`
-  // placeholders carry that theme id; the remainder do not. This matches the
-  // pure-function contract while leveraging it for the rounding rule.
   const fakeSessions: { concerns: string[] }[] = [];
   for (let i = 0; i < overlap.count; i++) fakeSessions.push({ concerns: [] });
   for (const theme of userThemes) {
@@ -87,30 +88,88 @@ function barsFromCounts(
   return computeOverlapBars(fakeSessions, userThemes);
 }
 
+/**
+ * Resolve the scope from query params. `scope=national` is the default;
+ * `scope=county` (or legacy `?stateCode=X&county=Y` without `scope`)
+ * requires both stateCode and county.
+ */
+function resolveScope(searchParams: URLSearchParams): "national" | "county" {
+  const raw = (searchParams.get("scope") ?? "").toLowerCase();
+  if (raw === "county") return "county";
+  if (raw === "national") return "national";
+  // Legacy callers: stateCode + county with no scope param → county.
+  if (searchParams.get("stateCode") && searchParams.get("county")) {
+    return "county";
+  }
+  return "national";
+}
+
 export async function GET(request: NextRequest): Promise<NextResponse> {
   const { searchParams } = new URL(request.url);
-  const stateCode =
-    searchParams.get("stateCode")?.toUpperCase().slice(0, 4) ?? "";
-  const county = searchParams.get("county")?.slice(0, 64) ?? "";
+  const scope = resolveScope(searchParams);
   const userConcernsParam = searchParams.get("userConcerns") ?? "";
-
-  if (!stateCode) {
-    return NextResponse.json(
-      { error: "stateCode is required." },
-      { status: 400 },
-    );
-  }
-  if (!county) {
-    return NextResponse.json({ error: "county is required." }, { status: 400 });
-  }
-
   const userThemes = expandUserConcerns(userConcernsParam);
-  const overlap = await fetchCountyOverlapCounts(stateCode, county);
 
-  // Below per-reading minimum: surface the explicit empty state.
+  if (scope === "county") {
+    const stateCode =
+      searchParams.get("stateCode")?.toUpperCase().slice(0, 4) ?? "";
+    const county = searchParams.get("county")?.slice(0, 64) ?? "";
+
+    if (!stateCode) {
+      return NextResponse.json(
+        { error: "stateCode is required for scope=county." },
+        { status: 400 },
+      );
+    }
+    if (!county) {
+      return NextResponse.json(
+        { error: "county is required for scope=county." },
+        { status: 400 },
+      );
+    }
+
+    const overlap = await fetchCountyOverlapCounts(stateCode, county);
+
+    if (overlap.count > 0 && overlap.count < BARS_PER_READING_MIN) {
+      const body: BarsResponseBody = {
+        scope: "county",
+        county,
+        threshold: BARS_PER_READING_MIN,
+        count: overlap.count,
+        status: "below_threshold",
+        bars: [],
+      };
+      return NextResponse.json(body, { status: 200 });
+    }
+
+    if (overlap.count === 0) {
+      const body: BarsResponseBody = {
+        scope: "county",
+        county,
+        threshold: BARS_PER_READING_MIN,
+        count: 0,
+        bars: [],
+      };
+      return NextResponse.json(body, { status: 200 });
+    }
+
+    const bars = barsFromCounts(overlap, userThemes);
+    const body: BarsResponseBody = {
+      scope: "county",
+      county,
+      threshold: BARS_PER_READING_MIN,
+      count: overlap.count,
+      bars,
+    };
+    return NextResponse.json(body, { status: 200 });
+  }
+
+  // scope === "national"
+  const overlap = await fetchNationalOverlapCounts();
+
   if (overlap.count > 0 && overlap.count < BARS_PER_READING_MIN) {
     const body: BarsResponseBody = {
-      county,
+      scope: "national",
       threshold: BARS_PER_READING_MIN,
       count: overlap.count,
       status: "below_threshold",
@@ -119,11 +178,9 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json(body, { status: 200 });
   }
 
-  // Zero sessions: empty bars (the UI surfaces a "your county is just
-  // getting started — your themes haven't been seen yet" message).
   if (overlap.count === 0) {
     const body: BarsResponseBody = {
-      county,
+      scope: "national",
       threshold: BARS_PER_READING_MIN,
       count: 0,
       bars: [],
@@ -132,9 +189,8 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   }
 
   const bars = barsFromCounts(overlap, userThemes);
-
   const body: BarsResponseBody = {
-    county,
+    scope: "national",
     threshold: BARS_PER_READING_MIN,
     count: overlap.count,
     bars,
