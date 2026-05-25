@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useState, useMemo, type ReactNode } from "react";
 import { useLanguage } from "../lib/i18n";
+import { parseBallotContent } from "../lib/parseBallotContent";
 import { translations } from "../lib/translations";
 import { ChatPanel } from "./ChatPanel";
 import { PromptOutput } from "./PromptOutput";
@@ -302,34 +303,57 @@ function BallotDataStatus({
   );
 }
 
+const BALLOT_STATUS_I18N = {
+  en: {
+    civic: "Civic confirmed",
+    pasted: "Pasted by you",
+    none: "Not confirmed",
+    raceLabel: (n: number) => `${n} race${n === 1 ? "" : "s"}`,
+  },
+  es: {
+    civic: "Civic confirmado",
+    pasted: "Lo pegaste tú",
+    none: "No confirmado",
+    raceLabel: (n: number) => `${n} contienda${n === 1 ? "" : "s"}`,
+  },
+} as const;
+
 function compactBallotStatus({
   state,
   countyName,
   pollingData,
+  pastedBallotRaceCount,
   lang,
 }: {
   state: StateElectionData;
   countyName?: string;
   pollingData: PollingData | null;
+  /**
+   * Fix O — race count derived from `userSampleBallotText` when Civic
+   * returned no contests. Lets the strip count paste-derived races and
+   * mark them as user-confirmed instead of falling through to "0 races ·
+   * Not confirmed" — which read as "your paste was lost" to live users.
+   */
+  pastedBallotRaceCount?: number;
   lang: Language;
 }): string {
-  const contestCount = getContestCount(pollingData);
+  const civicCount = getContestCount(pollingData);
+  const pastedCount = pastedBallotRaceCount ?? 0;
   const county = pollingData?.county ?? countyName;
   const location = [state.stateName, county].filter(Boolean).join(" · ");
-  const countLabel =
-    lang === "es"
-      ? `${contestCount} contienda${contestCount === 1 ? "" : "s"}`
-      : `${contestCount} race${contestCount === 1 ? "" : "s"}`;
-  const confidence =
-    contestCount > 0
-      ? lang === "es"
-        ? "Civic confirmado"
-        : "Civic confirmed"
-      : lang === "es"
-        ? "No confirmado"
-        : "Not confirmed";
+  const t = BALLOT_STATUS_I18N[lang];
 
-  return `${location || state.stateName} · ${countLabel} · ${confidence}`;
+  // Civic data outranks paste; paste outranks "nothing yet". The single
+  // ternary keeps cyclomatic complexity bounded so the linter stays
+  // happy while adding the paste branch.
+  const { count, confidence } =
+    civicCount > 0
+      ? { count: civicCount, confidence: t.civic }
+      : pastedCount > 0
+        ? { count: pastedCount, confidence: t.pasted }
+        : { count: 0, confidence: t.none };
+
+  return `${location || state.stateName} · ${t.raceLabel(count)} · ${confidence}`;
 }
 
 function ResearchContextStrip({
@@ -337,12 +361,15 @@ function ResearchContextStrip({
   state,
   countyName,
   pollingData,
+  pastedBallotRaceCount,
   lang,
 }: {
   daysLeft: number | null;
   state: StateElectionData;
   countyName?: string;
   pollingData: PollingData | null;
+  /** Fix O — see `compactBallotStatus` docstring. */
+  pastedBallotRaceCount?: number;
   lang: Language;
 }) {
   const privacyText =
@@ -372,7 +399,13 @@ function ResearchContextStrip({
           {lang === "es" ? "Boleta" : "Ballot"}
         </p>
         <p className="mt-2 text-sm font-bold text-on-surface">
-          {compactBallotStatus({ state, countyName, pollingData, lang })}
+          {compactBallotStatus({
+            state,
+            countyName,
+            pollingData,
+            pastedBallotRaceCount,
+            lang,
+          })}
         </p>
       </div>
 
@@ -1529,6 +1562,15 @@ function ResearchView({
     budgetStatus.tier === "normal" || budgetStatus.tier === "notice";
   const hasOfficialContests = getContestCount(pollingData) > 0;
   const hasUserSampleBallot = (userSampleBallotText ?? "").trim().length > 0;
+  // Fix O — count paste-derived races so the context strip and the
+  // "ballot not confirmed" warning panel can drop the misleading
+  // "0 races · Not confirmed" copy when the user has supplied a ballot.
+  // Memoized against the raw text so re-renders during cold-open typing
+  // don't re-parse on every keystroke. Empty-paste short-circuits.
+  const pastedBallotRaceCount = useMemo(() => {
+    if (!hasUserSampleBallot) return 0;
+    return parseBallotContent(userSampleBallotText ?? "").races.length;
+  }, [hasUserSampleBallot, userSampleBallotText]);
   const ballotLookupFinished =
     addressStep === "done" ||
     addressStep === "error" ||
@@ -1556,6 +1598,7 @@ function ResearchView({
             state={state}
             countyName={countyName}
             pollingData={pollingData}
+            pastedBallotRaceCount={pastedBallotRaceCount}
             lang={lang}
           />
 
@@ -1583,7 +1626,15 @@ function ResearchView({
             </div>
           )}
 
-          {!hasOfficialContests && (
+          {/*
+           * Fix O — also hide the "Exact ballot not confirmed yet" panel
+           * when the user has supplied a ballot via paste/upload. The
+           * warning copy ("Google Civic did not return a contest list")
+           * stays accurate post-paste, but reads as "your paste was lost"
+           * to users — they bail before locking themes. Civic still
+           * trumps paste when both exist; that path is unchanged.
+           */}
+          {!hasOfficialContests && !hasUserSampleBallot && (
             <BallotDataStatus
               pollingData={pollingData}
               lang={lang}

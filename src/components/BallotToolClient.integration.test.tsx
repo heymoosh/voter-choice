@@ -1423,3 +1423,96 @@ describe("ElectionResult — Fix M: legacy paste widget hidden post-confirm", ()
     expect(screen.getByTestId("user-sample-ballot-input")).toBeInTheDocument();
   });
 });
+
+/* ── Fix O: cold-open reflects pasted ballot as confirmed ────── */
+/**
+ * After PR 8 (Fix L) wired pasted ballots into the workspace race list,
+ * the live cold-open surface still rendered as if no ballot existed:
+ * - `compactBallotStatus` read pollingData.contests only, showing
+ *   "0 races · Not confirmed" while userSampleBallotText was already set.
+ * - The "Exact ballot not confirmed yet" panel surfaced under the same
+ *   `!hasOfficialContests` gate, ignoring the paste.
+ *
+ * Live repro: user pastes via BallotLookupNeeded → lands in cold-open →
+ * sees "Not confirmed" + warning panel → thinks paste was lost → bails
+ * before locking themes. The workspace itself was fine (themes lock
+ * mounts the 3-pane with paste-derived races), but the user never got
+ * that far. This fix makes the cold-open mirror state truthfully so the
+ * user can push through.
+ */
+describe("ElectionResult — Fix O: cold-open paste affordance", () => {
+  const njBallotText = [
+    "MY BALLOT — NJ DEM",
+    "U.S. Senate: Cory Booker (D)",
+    "U.S. House: Donald Norcross (D)",
+  ].join("\n");
+
+  function renderColdOpenWithPaste(text: string) {
+    Element.prototype.scrollIntoView = vi.fn();
+    return render(
+      <LanguageProvider>
+        <ElectionResult
+          state={txState}
+          zipCode="73301"
+          lang="en"
+          // Civic returned nothing — user pasted to fill the gap.
+          initialPollingData={null}
+          promptFleetV2Enabled={true}
+          // CRITICAL: lockedThemes is null. The cold-open surface is the
+          // active render path. This is what live users see between
+          // BallotLookupNeeded confirm and theme lock-in.
+          initialLockedThemes={null}
+          initialUserSampleBallotText={text}
+        />
+      </LanguageProvider>,
+    );
+  }
+
+  it("compactBallotStatus no longer says 'Not confirmed' when paste is present", () => {
+    renderColdOpenWithPaste(njBallotText);
+    const strip = screen.getByTestId("research-context-strip");
+    // The misleading "Not confirmed" copy must be gone — the user just
+    // pasted a ballot. Either the strip says "Pasted by you" or it counts
+    // the parsed races; either way the literal "Not confirmed" string is
+    // wrong here.
+    expect(strip.textContent ?? "").not.toContain("Not confirmed");
+    // Same for the count — "0 races" is wrong when paste parsed to N races.
+    expect(strip.textContent ?? "").not.toMatch(/\b0 races?\b/);
+  });
+
+  it("'Exact ballot not confirmed yet' warning panel is absent when paste is present", () => {
+    renderColdOpenWithPaste(njBallotText);
+    // The ballot-data-status panel surfaces the warning; it shouldn't
+    // render at all when the user has supplied a ballot via paste.
+    expect(screen.queryByTestId("ballot-data-status")).toBeNull();
+  });
+
+  it("flag-off + Civic empty + no paste → warning panel still renders (regression guard)", () => {
+    // Flag-off path skips BallotLookupNeeded, so ResearchLayout IS the
+    // active surface even with no paste. The fix must be gated on
+    // `hasUserSampleBallot`, not always-off — without paste, the warning
+    // panel and "Not confirmed" copy are still correct.
+    Element.prototype.scrollIntoView = vi.fn();
+    const emptyCivic = {
+      pollingLocations: [],
+      earlyVoteSites: [],
+      county: "Travis County",
+      contests: [],
+    };
+    render(
+      <LanguageProvider>
+        <ElectionResult
+          state={txState}
+          zipCode="73301"
+          lang="en"
+          initialPollingData={emptyCivic}
+          promptFleetV2Enabled={false}
+          initialLockedThemes={null}
+        />
+      </LanguageProvider>,
+    );
+    const strip = screen.getByTestId("research-context-strip");
+    expect(strip.textContent ?? "").toContain("Not confirmed");
+    expect(screen.getByTestId("ballot-data-status")).toBeInTheDocument();
+  });
+});
