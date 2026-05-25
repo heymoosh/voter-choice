@@ -72,7 +72,7 @@ export function WorkspacePolisSection({
         aria-expanded={expanded}
         aria-controls="workspace-polis-content"
         onClick={() => setExpanded((prev) => !prev)}
-        className="flex w-full items-center justify-between gap-2 border-l-2 border-primary/40 bg-surface-low px-2 py-2 text-left text-xs font-bold uppercase tracking-widest text-on-surface hover:bg-surface hover:text-primary"
+        className="flex w-full items-center justify-between gap-2 rounded-md border border-rule bg-paper px-3 py-2.5 text-left font-mono text-[10.5px] uppercase tracking-[0.14em] text-ink-2 hover:border-civic hover:text-ink"
       >
         <span
           id="workspace-polis-heading"
@@ -80,7 +80,7 @@ export function WorkspacePolisSection({
         >
           {t.polisWorkspaceSectionHeading}
         </span>
-        <span aria-hidden="true" className="text-on-surface-muted">
+        <span aria-hidden="true" className="font-mono text-civic">
           {expanded ? "−" : "+"}
         </span>
       </button>

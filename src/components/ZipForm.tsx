@@ -79,59 +79,66 @@ export function ZipForm({ onSubmit }: ZipFormProps) {
 
   return (
     <form onSubmit={handleSubmit} noValidate>
-      <div className="bg-surface-lowest p-2 border-b-2 border-primary flex items-end gap-2 shadow-sm">
-        <div className="flex-grow">
-          <label className="block text-xs font-bold uppercase tracking-widest text-primary mb-1 px-1">
-            {t.zipForm.label}
-          </label>
-          {hasPlacesKey && (
-            <div className="space-y-2">
-              <div ref={placesContainerRef} className="w-full" />
-              <p className="text-[10px] text-on-surface-muted px-1">
-                {lang === "es"
-                  ? "Empieza a escribir y elige tu dirección del menú."
-                  : "Start typing and choose your address from the dropdown."}
-              </p>
-            </div>
-          )}
-          <input
-            id="zip-input"
-            data-testid="zip-input"
-            type="text"
-            value={value}
-            onChange={(e) => handleManualChange(e.target.value)}
-            className={
-              hasPlacesKey
-                ? "sr-only"
-                : "w-full bg-transparent border-none focus:ring-0 focus:outline-none text-xl md:text-2xl font-bold p-1 placeholder:text-surface-high text-on-surface"
-            }
-            placeholder={t.zipForm.placeholder}
-            autoComplete="street-address"
-            aria-describedby={errorMessage ? "zip-error" : "address-privacy"}
-            aria-label={t.zipForm.label}
-          />
+      <div className="bg-paper-2 border border-rule rounded-[10px] p-[18px] pb-4 shadow-[0_1px_0_var(--rule-2),0_10px_30px_-20px_oklch(0.18_0.018_240/0.12)] focus-within:border-civic transition-colors">
+        <label className="flex items-center justify-between font-mono text-[10.5px] uppercase tracking-[0.14em] text-ink-3 mb-[10px]">
+          <span>{t.zipForm.label}</span>
+          <span className="text-civic">
+            {lang === "es"
+              ? "Permanece en este dispositivo"
+              : "Stays on this device"}
+          </span>
+        </label>
+        <div className="flex gap-2">
+          <div className="flex-grow">
+            {hasPlacesKey && (
+              <div className="space-y-2">
+                <div ref={placesContainerRef} className="w-full" />
+                <p className="text-[10px] text-ink-3 px-1">
+                  {lang === "es"
+                    ? "Empieza a escribir y elige tu dirección del menú."
+                    : "Start typing and choose your address from the dropdown."}
+                </p>
+              </div>
+            )}
+            <input
+              id="zip-input"
+              data-testid="zip-input"
+              type="text"
+              value={value}
+              onChange={(e) => handleManualChange(e.target.value)}
+              className={
+                hasPlacesKey
+                  ? "sr-only"
+                  : "w-full bg-paper border border-rule rounded-lg px-4 py-[14px] text-[15px] text-ink placeholder:text-ink-3 outline-none focus:border-civic transition-colors"
+              }
+              placeholder={t.zipForm.placeholder}
+              autoComplete="street-address"
+              aria-describedby={errorMessage ? "zip-error" : "address-privacy"}
+              aria-label={t.zipForm.label}
+            />
+          </div>
+          <button
+            data-testid="zip-submit"
+            type="submit"
+            className="bg-civic text-paper-2 border-0 rounded-lg px-6 py-[14px] font-mono text-[11px] font-semibold uppercase tracking-[0.14em] whitespace-nowrap hover:bg-civic-2 transition-colors min-h-[44px]"
+          >
+            {lang === "en" ? "View Ballot" : "Ver Boleta"}
+          </button>
         </div>
-        <button
-          data-testid="zip-submit"
-          type="submit"
-          className="bg-primary text-on-primary px-6 py-4 font-bold text-base hover:opacity-90 transition-opacity min-h-[44px] min-w-[44px]"
-        >
-          {lang === "en" ? "View Ballot" : "Ver Boleta"}
-        </button>
       </div>
       {errorMessage && (
         <p
           id="zip-error"
           data-testid="zip-error"
           role="alert"
-          className="text-red-600 text-sm mt-2"
+          className="text-vote-red text-sm mt-2"
         >
           {errorMessage}
         </p>
       )}
       <p
         id="address-privacy"
-        className="text-[10px] text-on-surface-muted mt-2 px-1"
+        className="text-[12.5px] text-ink-3 mt-3 leading-relaxed"
       >
         {t.zipForm.privacy}
       </p>

@@ -65,20 +65,20 @@ export function WorkspaceRail({
     <nav
       data-testid="workspace-rail"
       aria-label="Workspace navigation"
-      className="flex h-full flex-col gap-6 overflow-y-auto border-r border-outline-variant/30 bg-surface-lowest p-4 text-on-surface"
+      className="flex h-full flex-col gap-4 overflow-y-auto border-r border-rule-2 bg-paper-2 p-4 text-ink"
     >
-      {/* Progress block */}
+      {/* Progress block — paper card with rule border, serif headline number */}
       <section
         data-testid="workspace-rail-progress"
-        className="flex flex-col gap-2"
+        className="flex flex-col gap-2 rounded-lg border border-rule bg-paper p-3.5"
       >
-        <div className="flex items-center justify-between text-xs font-bold uppercase tracking-widest text-on-surface-muted">
+        <div className="flex items-baseline justify-between font-mono text-[10.5px] uppercase tracking-[0.12em] text-ink-3">
           <span>Progress</span>
           <span>
             {decidedCount} / {totalRaces}
           </span>
         </div>
-        <div className="text-2xl font-black text-on-surface">
+        <div className="font-serif text-2xl font-semibold tracking-tight text-ink">
           {percent}% decided
         </div>
         <div
@@ -87,42 +87,41 @@ export function WorkspaceRail({
           aria-valuemin={0}
           aria-valuemax={totalRaces}
           aria-label="Ballot progress"
-          className="h-1.5 w-full overflow-hidden bg-surface-low"
+          className="h-1.5 w-full overflow-hidden rounded-sm bg-rule-2"
         >
           <div
-            className="h-full bg-primary transition-[width] duration-300"
+            className="h-full bg-ink transition-[width] duration-300"
             style={{ width: `${percent}%` }}
           />
         </div>
       </section>
 
-      {/* Priorities */}
+      {/* Priorities — paper card with mono label + serif numbered list */}
       <section
         data-testid="workspace-rail-priorities"
-        className="flex flex-col gap-2"
+        className="flex flex-col gap-1.5 rounded-lg border border-rule bg-paper px-3.5 py-3"
       >
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-bold uppercase tracking-widest text-on-surface-muted">
+        <div className="flex items-baseline justify-between">
+          <span className="font-mono text-[10.5px] uppercase tracking-[0.12em] text-ink-3">
             Your priorities
           </span>
           <button
             type="button"
             data-testid="workspace-rail-edit-themes"
             onClick={onEditThemes}
-            className="text-xs font-bold uppercase tracking-widest text-primary hover:underline"
+            className="font-mono text-[10px] uppercase tracking-[0.12em] text-civic hover:text-civic-2"
           >
             Edit
           </button>
         </div>
-        <ol className="flex flex-col gap-1 text-sm">
+        <ol className="ml-4 list-decimal font-serif text-[14px] leading-relaxed text-ink marker:font-semibold marker:text-civic">
           {themes.map((t, i) => (
             <li
               key={`${i}-${t.name}`}
               data-testid={`workspace-rail-theme-${i}`}
-              className="flex items-baseline gap-2"
+              className="pl-1"
             >
-              <span className="text-on-surface-muted">{i + 1}.</span>
-              <span>{t.name}</span>
+              {t.name}
             </li>
           ))}
         </ol>
@@ -146,17 +145,18 @@ export function WorkspaceRail({
         />
       )}
 
-      {/* Race list (grouped) */}
+      {/* Race list (grouped) — mono section label, circle indicators with
+          rule (undecided) / civic (active or decided) tinting */}
       {grouped.map(({ section, items }) => (
         <section
           key={section}
           data-testid={`workspace-rail-section-${section}`}
-          className="flex flex-col gap-1"
+          className="flex flex-col gap-0.5"
         >
-          <div className="text-xs font-bold uppercase tracking-widest text-on-surface-muted">
+          <div className="mx-2 mb-1 mt-2 font-mono text-[10.5px] uppercase tracking-[0.14em] text-ink-3">
             {section}
           </div>
-          <ul className="flex flex-col gap-0.5">
+          <ul className="flex flex-col gap-px">
             {items.map((race) => {
               const isActive = race.id === activeRaceId;
               return (
@@ -168,23 +168,24 @@ export function WorkspaceRail({
                     data-decided={race.decided ? "true" : "false"}
                     onClick={() => onSelectRace(race.id)}
                     className={[
-                      "flex w-full items-center gap-2 px-2 py-1.5 text-left text-sm",
+                      "grid w-full grid-cols-[18px_1fr] items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-[13.5px]",
                       isActive
-                        ? "bg-primary/10 font-bold text-on-surface"
-                        : "text-on-surface hover:bg-surface-low",
+                        ? "border-l-2 border-l-civic bg-civic-soft font-medium text-ink"
+                        : "text-ink-2 hover:bg-paper",
                     ].join(" ")}
                   >
                     <span
                       aria-hidden="true"
-                      className={
+                      className={[
+                        "relative inline-block h-3.5 w-3.5 rounded-full border-[1.5px]",
                         race.decided
-                          ? "text-primary"
-                          : "text-on-surface-muted/40"
-                      }
-                    >
-                      {race.decided ? "✓" : "○"}
-                    </span>
-                    <span className="flex-1 truncate">{race.label}</span>
+                          ? "border-civic bg-civic after:absolute after:left-[3px] after:top-[5px] after:h-[3px] after:w-[6px] after:-rotate-45 after:border-b-[1.6px] after:border-l-[1.6px] after:border-paper-2 after:content-['']"
+                          : isActive
+                            ? "border-civic bg-civic shadow-[inset_0_0_0_3px_var(--paper)]"
+                            : "border-rule",
+                      ].join(" ")}
+                    />
+                    <span className="truncate">{race.label}</span>
                   </button>
                 </li>
               );
@@ -193,30 +194,30 @@ export function WorkspaceRail({
         </section>
       ))}
 
-      {/* Footer */}
+      {/* Footer — mono uppercase ink-3 links, civic on hover, dashed top rule */}
       <footer
         data-testid="workspace-rail-footer"
-        className="mt-auto flex flex-col gap-1 border-t border-outline-variant/30 pt-3 text-xs"
+        className="mt-auto flex flex-col gap-1.5 border-t border-dashed border-rule pt-4 font-mono text-[10.5px] uppercase tracking-[0.12em]"
       >
         <button
           type="button"
           data-testid="workspace-rail-restart"
           onClick={onRestart}
-          className="text-left font-bold uppercase tracking-widest text-on-surface-muted hover:text-primary"
+          className="text-left text-ink-3 hover:text-civic"
         >
           Restart session
         </button>
         <a
           data-testid="workspace-rail-methodology"
           href="/methodology"
-          className="font-bold uppercase tracking-widest text-on-surface-muted hover:text-primary"
+          className="text-ink-3 hover:text-civic"
         >
           Methodology
         </a>
         <a
           data-testid="workspace-rail-help"
           href="mailto:help@voterchoice.org"
-          className="font-bold uppercase tracking-widest text-on-surface-muted hover:text-primary"
+          className="text-ink-3 hover:text-civic"
         >
           Get help
         </a>
