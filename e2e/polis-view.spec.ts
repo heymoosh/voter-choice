@@ -55,17 +55,26 @@ test.describe("Phase 8 — Polis view (bars + bridges + compass empty state)", (
     expect(Array.isArray(json.bars)).toBe(true);
 
     // Privacy: response keys are allowlisted.
-    const allowed = new Set(["county", "threshold", "count", "status", "bars"]);
+    const allowed = new Set([
+      "scope",
+      "county",
+      "threshold",
+      "count",
+      "status",
+      "bars",
+    ]);
     for (const key of Object.keys(json)) {
       expect(allowed.has(key)).toBe(true);
     }
   });
 
-  test("GET /api/polis/bars — returns 400 when stateCode is missing", async ({
+  test("GET /api/polis/bars — returns 400 when scope=county lacks stateCode", async ({
     request,
   }) => {
+    // Post PR 10: no params defaults to scope=national (no stateCode required).
+    // Explicit scope=county still requires stateCode + county.
     const res = await request.get(
-      "/api/polis/bars?county=Travis&userConcerns=healthcare",
+      "/api/polis/bars?scope=county&county=Travis&userConcerns=healthcare",
     );
     expect(res.status()).toBe(400);
   });
@@ -85,6 +94,7 @@ test.describe("Phase 8 — Polis view (bars + bridges + compass empty state)", (
     expect((json.bridges as unknown[]).length).toBe(0);
 
     const allowed = new Set([
+      "scope",
       "county",
       "threshold",
       "count",
@@ -111,6 +121,7 @@ test.describe("Phase 8 — Polis view (bars + bridges + compass empty state)", (
     expect(json.dots).toEqual([]);
 
     const allowed = new Set([
+      "scope",
       "county",
       "threshold",
       "count",

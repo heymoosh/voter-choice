@@ -1,23 +1,30 @@
 "use client";
 
 /* ──────────────────────────────────────────────────────────────
- * PolisOverlay — Phase 8 restructure.
+ * PolisOverlay — PR 10 (national-default).
  *
- * Renders three readings of the user's county, each owned by its own
- * GET endpoint and rendered independently with explicit empty states:
+ * Per user feedback: "Most people share a lot of the same issues and
+ * priorities. It will shock them to see how many others are actually
+ * truly in the middle and clustered around their shared views on the
+ * world, as opposed to the incredibly polarized version of society
+ * that we normally see online."
  *
- *   1. Overlap bars  — "you're not alone in {county}" (data from
- *      /api/polis/bars). Percent text is load-bearing.
- *   2. Bridge statements — "where people in {county} agree" (data from
- *      /api/polis/bridges; v1 returns no_bridges_yet sentinel).
- *   3. Cluster compass — "how we cluster" (data from /api/polis/compass;
- *      v1 always returns below_threshold, count + threshold visible).
+ * The polis view DEFAULTS to scope=national so voters first see the
+ * shared baseline across the country. A toggle lets them switch to
+ * scope=county when they want the local reading. When countyName is
+ * unknown the toggle is hidden — national is the only view available.
+ *
+ * Renders three readings, each owned by its own GET endpoint:
+ *   1. Overlap bars  — "you're not alone across the country" / "in {county}"
+ *      (data from /api/polis/bars?scope=...). Percent text is load-bearing.
+ *   2. Bridge statements — "where people agree" (data from
+ *      /api/polis/bridges?scope=...; v1 returns no_bridges_yet sentinel).
+ *   3. Cluster compass — "how we cluster" (data from
+ *      /api/polis/compass?scope=...; v1 always returns below_threshold).
  *
  * NO partisan strings appear in cluster labels (label hygiene asserted
  * in src/lib/server/polis/clusters.test.ts). NO identity fields surface
  * in the rendered DOM (asserted here).
- *
- * Re-fetches all three endpoints whenever stateCode/county change.
  * ────────────────────────────────────────────────────────────── */
 
 import React, { useEffect, useState } from "react";
@@ -35,16 +42,20 @@ export interface UserTheme {
 export interface PolisOverlayProps {
   stateCode: string;
   county: string;
+  /** Display name for the county; when undefined, the county toggle is hidden. */
   countyName?: string;
   userThemes: UserTheme[];
-  /** Opt-in / post-decision; HandoffPackage already gates on stateCode + county. */
+  /** Opt-in / post-decision; WorkspacePolisSection gates expansion. */
   visible?: boolean;
 }
+
+type Scope = "national" | "county";
 
 /* ── Response shapes (mirrors API contracts) ─────────────────── */
 
 interface BarsResponse {
-  county: string;
+  scope: Scope;
+  county?: string;
   threshold: number;
   count: number;
   status?: "below_threshold";
@@ -52,7 +63,8 @@ interface BarsResponse {
 }
 
 interface BridgesResponse {
-  county: string;
+  scope: Scope;
+  county?: string;
   threshold: number;
   count: number;
   status?: "below_threshold" | "no_bridges_yet";
@@ -63,7 +75,8 @@ interface BridgesResponse {
 }
 
 interface CompassResponse {
-  county: string;
+  scope: Scope;
+  county?: string;
   threshold: number;
   count: number;
   status?: "below_threshold";
@@ -79,14 +92,16 @@ interface CompassResponse {
 /* ── Fetch helpers ───────────────────────────────────────────── */
 
 function buildQuery(opts: {
+  scope: Scope;
   stateCode: string;
   county: string;
   userThemeIds?: string[];
 }): string {
-  const params = new URLSearchParams({
-    stateCode: opts.stateCode,
-    county: opts.county,
-  });
+  const params = new URLSearchParams({ scope: opts.scope });
+  if (opts.scope === "county") {
+    params.set("stateCode", opts.stateCode);
+    params.set("county", opts.county);
+  }
   if (opts.userThemeIds && opts.userThemeIds.length > 0) {
     params.set("userConcerns", opts.userThemeIds.join(","));
   }
@@ -97,16 +112,30 @@ function buildQuery(opts: {
 
 function BarsSection({
   state,
+  scope,
   countyName,
   t,
 }: {
   state: SectionState<BarsResponse>;
+  scope: Scope;
   countyName: string;
   t: (typeof translations)["en"]["research"];
 }) {
+  const heading =
+    scope === "national"
+      ? t.polisBarsHeadingNational
+      : t.polisBarsHeading(countyName);
+  const emptyCopy =
+    scope === "national" ? t.polisBarsEmptyNational : t.polisBarsEmpty;
+  const belowThresholdCopy = (count: number, threshold: number) =>
+    scope === "national"
+      ? t.polisBarsBelowThresholdNational(count, threshold)
+      : t.polisBarsBelowThreshold(count, threshold);
+
   return (
     <section
       data-testid="polis-bars-section"
+      data-scope={scope}
       aria-labelledby="polis-bars-heading"
       className="space-y-3"
     >
@@ -114,7 +143,7 @@ function BarsSection({
         id="polis-bars-heading"
         className="text-base font-bold text-on-surface leading-snug"
       >
-        {t.polisBarsHeading(countyName)}
+        {heading}
       </h3>
 
       {state.kind === "loading" && (
@@ -141,17 +170,24 @@ function BarsSection({
             data-testid="polis-bars-empty"
             className="text-sm text-on-surface-muted"
           >
-            {t.polisBarsEmpty}
+            {emptyCopy}
           </p>
         ) : state.data.status === "below_threshold" ? (
           <p
             data-testid="polis-bars-below-threshold"
             className="text-sm text-on-surface-muted"
           >
-            {t.polisBarsBelowThreshold(state.data.count, state.data.threshold)}
+            {belowThresholdCopy(state.data.count, state.data.threshold)}
           </p>
         ) : (
-          <ul className="space-y-2" aria-label="County overlap bars">
+          <ul
+            className="space-y-2"
+            aria-label={
+              scope === "national"
+                ? "National overlap bars"
+                : "County overlap bars"
+            }
+          >
             {state.data.bars.map((bar) => (
               <li
                 key={bar.themeId}
@@ -185,16 +221,28 @@ function BarsSection({
 
 function BridgesSection({
   state,
+  scope,
   countyName,
   t,
 }: {
   state: SectionState<BridgesResponse>;
+  scope: Scope;
   countyName: string;
   t: (typeof translations)["en"]["research"];
 }) {
+  const heading =
+    scope === "national"
+      ? t.polisBridgesHeadingNational
+      : t.polisBridgesHeading(countyName);
+  const belowThresholdCopy = (count: number, threshold: number) =>
+    scope === "national"
+      ? t.polisBridgesBelowThresholdNational(count, threshold)
+      : t.polisBridgesBelowThreshold(count, threshold);
+
   return (
     <section
       data-testid="polis-bridges-section"
+      data-scope={scope}
       aria-labelledby="polis-bridges-heading"
       className="space-y-3"
     >
@@ -202,7 +250,7 @@ function BridgesSection({
         id="polis-bridges-heading"
         className="text-base font-bold text-on-surface leading-snug"
       >
-        {t.polisBridgesHeading(countyName)}
+        {heading}
       </h3>
 
       {state.kind === "loading" && (
@@ -229,10 +277,7 @@ function BridgesSection({
             data-testid="polis-bridges-below-threshold"
             className="text-sm text-on-surface-muted"
           >
-            {t.polisBridgesBelowThreshold(
-              state.data.count,
-              state.data.threshold,
-            )}
+            {belowThresholdCopy(state.data.count, state.data.threshold)}
           </p>
         ) : state.data.bridges.length === 0 ? (
           <p
@@ -267,14 +312,22 @@ function BridgesSection({
 
 function CompassSection({
   state,
+  scope,
   t,
 }: {
   state: SectionState<CompassResponse>;
+  scope: Scope;
   t: (typeof translations)["en"]["research"];
 }) {
+  const belowThresholdCopy = (count: number, threshold: number) =>
+    scope === "national"
+      ? t.polisCompassBelowThresholdNational(count, threshold)
+      : t.polisCompassBelowThreshold(count, threshold);
+
   return (
     <section
       data-testid="polis-compass-section"
+      data-scope={scope}
       aria-labelledby="polis-compass-heading"
       className="space-y-3"
     >
@@ -309,10 +362,7 @@ function CompassSection({
             data-testid="compass-empty"
             className="text-sm text-on-surface-muted"
           >
-            {t.polisCompassBelowThreshold(
-              state.data.count,
-              state.data.threshold,
-            )}
+            {belowThresholdCopy(state.data.count, state.data.threshold)}
           </p>
         ) : (
           // v2 placeholder — when PCA + cluster labels ship, render the
@@ -323,6 +373,58 @@ function CompassSection({
           </p>
         ))}
     </section>
+  );
+}
+
+/* ── Scope toggle ────────────────────────────────────────────── */
+
+function ScopeToggle({
+  scope,
+  countyName,
+  onChange,
+  t,
+}: {
+  scope: Scope;
+  countyName: string;
+  onChange: (next: Scope) => void;
+  t: (typeof translations)["en"]["research"];
+}) {
+  return (
+    <div
+      data-testid="polis-scope-toggle"
+      role="radiogroup"
+      aria-label="Scope: nationwide or your county"
+      className="inline-flex items-center gap-1 rounded-full border border-outline-variant/40 bg-surface-low p-0.5 text-xs"
+    >
+      <button
+        type="button"
+        role="radio"
+        aria-checked={scope === "national"}
+        data-testid="polis-scope-toggle-national"
+        onClick={() => onChange("national")}
+        className={`rounded-full px-3 py-1 transition ${
+          scope === "national"
+            ? "bg-primary/15 font-bold text-on-surface"
+            : "text-on-surface-muted hover:text-on-surface"
+        }`}
+      >
+        {t.polisScopeToggleNational}
+      </button>
+      <button
+        type="button"
+        role="radio"
+        aria-checked={scope === "county"}
+        data-testid="polis-scope-toggle-county"
+        onClick={() => onChange("county")}
+        className={`rounded-full px-3 py-1 transition ${
+          scope === "county"
+            ? "bg-primary/15 font-bold text-on-surface"
+            : "text-on-surface-muted hover:text-on-surface"
+        }`}
+      >
+        {t.polisScopeToggleCounty} ({countyName})
+      </button>
+    </div>
   );
 }
 
@@ -375,8 +477,20 @@ export function PolisOverlay({
   const { lang } = useLanguage();
   const t = translations[lang].research;
 
+  // PR 10 — national is the default. The county toggle is only available
+  // when we have a county name to show in the label.
+  const hasCounty = Boolean(countyName && countyName.length > 0 && county);
+  const [scope, setScope] = useState<Scope>("national");
+
+  // If county becomes unavailable while scope=county, fall back to national.
+  useEffect(() => {
+    if (!hasCounty && scope === "county") {
+      setScope("national");
+    }
+  }, [hasCounty, scope]);
+
   const userThemeIds = userThemes.map((t) => t.id);
-  const qs = buildQuery({ stateCode, county, userThemeIds });
+  const qs = buildQuery({ scope, stateCode, county, userThemeIds });
   const barsUrl = visible ? `/api/polis/bars?${qs}` : null;
   const bridgesUrl = visible ? `/api/polis/bridges?${qs}` : null;
   const compassUrl = visible ? `/api/polis/compass?${qs}` : null;
@@ -392,9 +506,27 @@ export function PolisOverlay({
       aria-label="Voter overlap visualization"
       className="p-4 border border-outline-variant/30 bg-surface-lowest rounded-sm space-y-6"
     >
-      <BarsSection state={barsState} countyName={displayCounty} t={t} />
-      <BridgesSection state={bridgesState} countyName={displayCounty} t={t} />
-      <CompassSection state={compassState} t={t} />
+      {hasCounty && (
+        <ScopeToggle
+          scope={scope}
+          countyName={displayCounty}
+          onChange={setScope}
+          t={t}
+        />
+      )}
+      <BarsSection
+        state={barsState}
+        scope={scope}
+        countyName={displayCounty}
+        t={t}
+      />
+      <BridgesSection
+        state={bridgesState}
+        scope={scope}
+        countyName={displayCounty}
+        t={t}
+      />
+      <CompassSection state={compassState} scope={scope} t={t} />
       <PrivacyCallout variant="inline" />
     </section>
   );

@@ -1,9 +1,13 @@
 /**
- * Tests for GET /api/polis/bars?stateCode=X&county=Y&userConcerns=a,b,c
+ * Tests for GET /api/polis/bars
  *
- * Bars endpoint: per-theme percentage of finished sessions in the county
- * that also confirmed each of the user's themes. No state-scope fallback —
- * "your county" is the framing.
+ * PR 10 — national-default polis. The bars endpoint now accepts
+ * `?scope=national` (default) and `?scope=county&county=X&stateCode=X`.
+ * National aggregates across every state/county; county is the existing
+ * "you're not alone in {county}" reading.
+ *
+ * Backward compat: `?stateCode=X&county=Y` (no `scope`) is treated as
+ * scope=county to keep existing callers green.
  */
 
 import { describe, it, expect, beforeEach } from "vitest";
@@ -42,24 +46,142 @@ async function seedSessions(opts: {
   }
 }
 
-describe("GET /api/polis/bars", () => {
+describe("GET /api/polis/bars — national (default)", () => {
   beforeEach(() => {
     _resetMemoryForTesting();
   });
 
-  it("returns 400 when stateCode is missing", async () => {
-    const res = await GET(makeRequest({ county: "Travis" }));
+  it("no params → scope=national, returns nationwide aggregation", async () => {
+    await seedSessions({
+      stateCode: "TX",
+      county: "Travis",
+      primary: "DEM",
+      concerns: ["healthcare"],
+      n: 30,
+      idPrefix: "nat-tx",
+    });
+    await seedSessions({
+      stateCode: "CA",
+      county: "Los Angeles",
+      primary: "OPEN",
+      concerns: ["healthcare"],
+      n: 25,
+      idPrefix: "nat-ca",
+    });
+
+    const res = await GET(makeRequest({ userConcerns: "healthcare" }));
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.scope).toBe("national");
+    expect(json.count).toBe(55); // 30 + 25
+    expect(json.bars[0].percent).toBe(100); // 55/55
+    // No county field on national.
+    expect(json.county).toBeUndefined();
+  });
+
+  it("?scope=national explicit → same as no params", async () => {
+    await seedSessions({
+      stateCode: "TX",
+      county: "Travis",
+      primary: "DEM",
+      concerns: ["healthcare"],
+      n: 50,
+      idPrefix: "nat-explicit",
+    });
+    const res = await GET(
+      makeRequest({ scope: "national", userConcerns: "healthcare" }),
+    );
+    const json = await res.json();
+    expect(json.scope).toBe("national");
+    expect(json.count).toBe(50);
+  });
+
+  it("scope=national → below_threshold when nation count > 0 but < min", async () => {
+    await seedSessions({
+      stateCode: "TX",
+      county: "Travis",
+      primary: "DEM",
+      concerns: ["healthcare"],
+      n: 12,
+      idPrefix: "nat-low",
+    });
+    const res = await GET(makeRequest({ scope: "national" }));
+    const json = await res.json();
+    expect(json.scope).toBe("national");
+    expect(json.count).toBe(12);
+    expect(json.status).toBe("below_threshold");
+    expect(json.bars).toEqual([]);
+  });
+
+  it("scope=national → count=0 + bars=[] when nothing seeded", async () => {
+    const res = await GET(makeRequest({}));
+    const json = await res.json();
+    expect(json.scope).toBe("national");
+    expect(json.count).toBe(0);
+    expect(json.bars).toEqual([]);
+    expect(json.threshold).toBe(BARS_PER_READING_MIN);
+  });
+
+  it("national response shape: only allowlisted top-level keys", async () => {
+    const res = await GET(makeRequest({ userConcerns: "healthcare" }));
+    const json = await res.json();
+    const allowed = new Set([
+      "scope",
+      "county",
+      "threshold",
+      "count",
+      "status",
+      "bars",
+    ]);
+    for (const key of Object.keys(json)) {
+      expect(allowed.has(key)).toBe(true);
+    }
+  });
+});
+
+describe("GET /api/polis/bars — county scope", () => {
+  beforeEach(() => {
+    _resetMemoryForTesting();
+  });
+
+  it("?scope=county requires county param (returns 400 if missing)", async () => {
+    const res = await GET(makeRequest({ scope: "county", stateCode: "TX" }));
     expect(res.status).toBe(400);
   });
 
-  it("returns 400 when county is missing", async () => {
-    const res = await GET(makeRequest({ stateCode: "TX" }));
+  it("?scope=county requires stateCode param", async () => {
+    const res = await GET(makeRequest({ scope: "county", county: "Travis" }));
     expect(res.status).toBe(400);
   });
 
-  it("returns count=0 and bars=[] for a county with zero sessions", async () => {
+  it("backward compat: ?stateCode=X&county=Y (no scope) → scope=county", async () => {
+    await seedSessions({
+      stateCode: "TX",
+      county: "Travis",
+      primary: "DEM",
+      concerns: ["healthcare"],
+      n: 50,
+      idPrefix: "compat",
+    });
     const res = await GET(
       makeRequest({
+        stateCode: "TX",
+        county: "Travis",
+        userConcerns: "healthcare",
+      }),
+    );
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.scope).toBe("county");
+    expect(json.county).toBe("Travis");
+    expect(json.count).toBe(50);
+    expect(json.bars[0].percent).toBe(100);
+  });
+
+  it("scope=county returns count=0 and bars=[] for zero-session county", async () => {
+    const res = await GET(
+      makeRequest({
+        scope: "county",
         stateCode: "TX",
         county: "Travis",
         userConcerns: "healthcare,housing",
@@ -67,13 +189,14 @@ describe("GET /api/polis/bars", () => {
     );
     expect(res.status).toBe(200);
     const json = await res.json();
+    expect(json.scope).toBe("county");
     expect(json.county).toBe("Travis");
     expect(json.count).toBe(0);
     expect(json.bars).toEqual([]);
     expect(json.threshold).toBe(BARS_PER_READING_MIN);
   });
 
-  it("returns below_threshold status when count > 0 but < per-reading min", async () => {
+  it("scope=county returns below_threshold when count > 0 but < per-reading min", async () => {
     await seedSessions({
       stateCode: "TX",
       county: "Travis",
@@ -84,19 +207,20 @@ describe("GET /api/polis/bars", () => {
     });
     const res = await GET(
       makeRequest({
+        scope: "county",
         stateCode: "TX",
         county: "Travis",
         userConcerns: "healthcare",
       }),
     );
     const json = await res.json();
+    expect(json.scope).toBe("county");
     expect(json.count).toBe(12);
     expect(json.status).toBe("below_threshold");
     expect(json.bars).toEqual([]);
   });
 
-  it("returns per-theme percentages when count >= per-reading min", async () => {
-    // 50 sessions in county: 30 with healthcare, 20 with housing.
+  it("scope=county returns per-theme percentages when count >= per-reading min", async () => {
     await seedSessions({
       stateCode: "TX",
       county: "Travis",
@@ -116,6 +240,7 @@ describe("GET /api/polis/bars", () => {
 
     const res = await GET(
       makeRequest({
+        scope: "county",
         stateCode: "TX",
         county: "Travis",
         userConcerns: "healthcare,housing,climate",
@@ -123,6 +248,7 @@ describe("GET /api/polis/bars", () => {
     );
     const json = await res.json();
 
+    expect(json.scope).toBe("county");
     expect(json.county).toBe("Travis");
     expect(json.count).toBe(50);
     expect(json.status).toBeUndefined();
@@ -138,9 +264,7 @@ describe("GET /api/polis/bars", () => {
     expect(byTheme.climate).toBe(0); // 0/50
   });
 
-  it("does NOT fall back to state scope — county-only", async () => {
-    // 50 sessions in Travis County alone (>= per-reading min)
-    // and other sessions in different counties in the same state.
+  it("scope=county does NOT fall back to state — county-only", async () => {
     await seedSessions({
       stateCode: "TX",
       county: "Travis",
@@ -160,6 +284,7 @@ describe("GET /api/polis/bars", () => {
 
     const res = await GET(
       makeRequest({
+        scope: "county",
         stateCode: "TX",
         county: "Travis",
         userConcerns: "healthcare",
@@ -167,21 +292,30 @@ describe("GET /api/polis/bars", () => {
     );
     const json = await res.json();
 
+    expect(json.scope).toBe("county");
     expect(json.county).toBe("Travis");
     expect(json.count).toBe(50); // NOT 250 — Travis only.
     expect(json.bars[0].percent).toBe(100); // 50/50 from Travis alone
   });
 
-  it("response shape contains only allowlisted top-level keys", async () => {
+  it("county response shape: only allowlisted top-level keys", async () => {
     const res = await GET(
       makeRequest({
+        scope: "county",
         stateCode: "TX",
         county: "Travis",
         userConcerns: "healthcare",
       }),
     );
     const json = await res.json();
-    const allowed = new Set(["county", "threshold", "count", "status", "bars"]);
+    const allowed = new Set([
+      "scope",
+      "county",
+      "threshold",
+      "count",
+      "status",
+      "bars",
+    ]);
     for (const key of Object.keys(json)) {
       expect(allowed.has(key)).toBe(true);
     }
@@ -198,6 +332,7 @@ describe("GET /api/polis/bars", () => {
     });
     const res = await GET(
       makeRequest({
+        scope: "county",
         stateCode: "TX",
         county: "Travis",
         userConcerns: "healthcare",

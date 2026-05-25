@@ -2,29 +2,35 @@
 
 /* ──────────────────────────────────────────────────────────────
  * WorkspacePolisSection — collapsible host for PolisOverlay inside
- * the workspace rail. Per the Phase 8 packet rule (§41):
+ * the workspace rail.
  *
+ * PR 10 (national-default):
+ *  - Heading is generic: "You're not alone" — no county scoping.
+ *    The inner PolisOverlay carries the scope toggle (national / county)
+ *    and per-scope copy.
+ *  - Section renders whenever the user has named themes — national
+ *    data is always available, so the section is no longer gated on
+ *    county presence. Voters in counties with sparse sessions still
+ *    get a useful reading.
+ *  - When countyName is absent, the toggle inside the overlay is
+ *    hidden — national becomes the only view.
+ *
+ * Mount contract (PR 10):
+ *  - Renders the closed shell ONLY when userThemes is non-empty.
+ *  - Closed by default. Overlay mounts on expand (conditional
+ *    render, not display:none) so the three polis fetches don't
+ *    fire until the user signals interest.
+ *  - Collapsing unmounts the overlay again.
+ *
+ * Phase 8 packet rule (§41):
  *   "The Polis view is opt-in or post-decision: it surfaces after the
  *    user has decided enough to have meaningful priorities/agreements.
  *    Doesn't compete with workspace focus."
- *
- * Mount contract:
- *   - Renders the closed shell ONLY when county + userThemes are
- *     both non-empty.
- *   - Closed by default. Overlay mounts on expand (conditional
- *     render, not display:none) so the three polis fetches don't
- *     fire until the user signals interest.
- *   - Collapsing unmounts the overlay again. Re-expand triggers
- *     fresh fetches — acceptable; the data shape is small.
- *
- * This lives in WorkspaceRail (below priorities, above the race
- * list). Previously PolisOverlay was nested inside HandoffPackage,
- * so voters never saw the county overlap until they ran out of
- * budget. Per UX feedback: "Polis should always display as long
- * as we have enough information."
  * ────────────────────────────────────────────────────────────── */
 
 import React, { useState } from "react";
+import { useLanguage } from "../lib/i18n";
+import { translations } from "../lib/translations";
 import { PolisOverlay, type UserTheme } from "./PolisOverlay";
 
 export interface WorkspacePolisSectionProps {
@@ -46,14 +52,13 @@ export function WorkspacePolisSection({
   countyName,
   userThemes,
 }: WorkspacePolisSectionProps) {
+  const { lang } = useLanguage();
+  const t = translations[lang].research;
   const [expanded, setExpanded] = useState(false);
 
-  // Gate: render NOTHING if we lack the inputs to honor
-  // "you're not alone in {county}". A surface saying "you're not
-  // alone in (nothing)" reads as a bug.
-  if (!county || userThemes.length === 0) return null;
-
-  const displayCounty = countyName ?? county;
+  // PR 10 — gate ONLY on userThemes. National data is always available,
+  // so a missing county no longer suppresses the section.
+  if (userThemes.length === 0) return null;
 
   return (
     <section
@@ -73,7 +78,7 @@ export function WorkspacePolisSection({
           id="workspace-polis-heading"
           data-testid="workspace-polis-section-heading"
         >
-          You&apos;re not alone in {displayCounty}
+          {t.polisWorkspaceSectionHeading}
         </span>
         <span aria-hidden="true" className="text-on-surface-muted">
           {expanded ? "−" : "+"}
@@ -84,8 +89,8 @@ export function WorkspacePolisSection({
         <div id="workspace-polis-content" className="mt-1">
           <PolisOverlay
             stateCode={stateCode}
-            county={county}
-            countyName={displayCounty}
+            county={county ?? ""}
+            countyName={countyName}
             userThemes={userThemes}
           />
         </div>

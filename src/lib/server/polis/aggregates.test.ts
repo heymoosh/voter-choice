@@ -77,6 +77,47 @@ describe("computeOverlapBars", () => {
       expect(keys).toEqual(["percent", "theme", "themeId"]);
     }
   });
+
+  // PR 10 — national-default. The bars compute layer is scope-agnostic:
+  // it takes a session list and returns per-theme percentages. The
+  // "national vs county" distinction lives at the data-fetch layer
+  // (`fetchNationalOverlapCounts` vs `fetchCountyOverlapCounts`), not
+  // the compute layer. This test asserts the compute layer doesn't
+  // filter by county — sessions from any county all contribute to the
+  // percent denominator.
+  it("PR 10 — aggregates across mixed counties without filtering (national semantics)", () => {
+    // 10 "sessions" intentionally drawn from different counties — the
+    // compute layer has no county field. All 10 contribute to the
+    // denominator; the 4 with "healthcare" raise its percent to 40%.
+    const sessionsFromMixedCounties = [
+      { concerns: ["healthcare"] }, // TX/Travis
+      { concerns: ["housing"] }, // TX/Harris
+      { concerns: ["healthcare"] }, // CA/LA
+      { concerns: ["climate"] }, // CA/SF
+      { concerns: ["education"] }, // NY/Kings
+      { concerns: ["healthcare"] }, // NY/Queens
+      { concerns: ["housing"] }, // FL/Miami
+      { concerns: ["climate"] }, // WA/King
+      { concerns: ["healthcare"] }, // OR/Multnomah
+      { concerns: ["economy"] }, // NV/Clark
+    ];
+    const bars = computeOverlapBars(sessionsFromMixedCounties, [
+      { id: "healthcare", label: "Healthcare access" },
+      { id: "housing", label: "Housing affordability" },
+    ]);
+    // 4 of 10 sessions include healthcare → 40%
+    expect(bars[0]).toEqual({
+      themeId: "healthcare",
+      theme: "Healthcare access",
+      percent: 40,
+    });
+    // 2 of 10 sessions include housing → 20%
+    expect(bars[1]).toEqual({
+      themeId: "housing",
+      theme: "Housing affordability",
+      percent: 20,
+    });
+  });
 });
 
 /* ── isBridgeStatement (parameterized 80% threshold) ─────────── */
