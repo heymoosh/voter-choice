@@ -115,7 +115,7 @@ function ScoreLabel({ score }: { score: AlignmentScore }) {
     <p
       data-testid={`alignment-score-label-${score.canonicalIssue}`}
       title={score.issueLabel}
-      className="text-[10px] font-black uppercase tracking-[0.18em] text-on-surface-muted mb-0.5"
+      className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-ink-3 mb-0.5"
     >
       {truncated ? visible : score.issueLabel}
     </p>
@@ -152,18 +152,18 @@ export function ScoreCard({
       aria-pressed={isExpanded}
       aria-expanded={isExpanded}
       className={
-        "w-full text-left px-3 py-2.5 border transition " +
+        "w-full text-left px-3 py-2.5 border rounded-lg transition " +
         (isExpanded
-          ? "bg-primary/10 border-primary/50 outline-none ring-1 ring-primary/30"
-          : "bg-surface-lowest border-outline-variant/40 hover:bg-primary/5 hover:border-primary/30")
+          ? "bg-civic-soft border-civic outline-none ring-1 ring-civic"
+          : "bg-paper border-rule hover:bg-paper-2 hover:border-civic")
       }
     >
       {/* Issue label — truncated visible text, full label via title= */}
       <ScoreLabel score={score} />
 
       {/* Resolved stance */}
-      <p className="text-[11px] text-on-surface mb-1.5 leading-snug">
-        <span className="font-bold text-on-surface-muted">
+      <p className="text-[13px] text-ink mb-1.5 leading-snug">
+        <span className="font-semibold text-ink-3">
           {t.alignmentScoreYourSide}{" "}
         </span>
         {score.resolvedStance}
@@ -173,7 +173,7 @@ export function ScoreCard({
         /* Web-search path: source label + confidence + evidence snippets */
         <div>
           <div className="flex items-center justify-between gap-2 mb-1">
-            <span className="text-[10px] italic text-on-surface-muted">
+            <span className="text-[10px] italic text-ink-3">
               {t.alignmentScoreWebSearchSource}
             </span>
             {score.confidence && (
@@ -190,17 +190,14 @@ export function ScoreCard({
           {score.evidence && score.evidence.length > 0 && (
             <ul className="space-y-0.5">
               {score.evidence.slice(0, 3).map((ev, i) => (
-                <li
-                  key={i}
-                  className="text-[10px] text-on-surface-muted leading-snug"
-                >
+                <li key={i} className="text-[10px] text-ink-3 leading-snug">
                   <span className="mr-1">•</span>
                   {ev.summary}
                 </li>
               ))}
             </ul>
           )}
-          <span className="text-[10px] font-bold uppercase tracking-widest text-primary shrink-0 mt-1 block">
+          <span className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-civic shrink-0 mt-1 block">
             {t.alignmentScoreDrillDownLabel}
           </span>
         </div>
@@ -220,13 +217,13 @@ export function ScoreCard({
                   </CardErrorBoundary>
                   <span
                     data-testid={`alignment-score-ratio-${score.canonicalIssue}`}
-                    className="text-xs font-bold text-on-surface tabular-nums"
+                    className="text-xs font-semibold text-ink tabular-nums"
                   >
                     {t.alignmentScoreOfVotes(score.kept ?? 0, score.total ?? 0)}
                   </span>
                   <span
                     data-testid={`alignment-score-percentage-${score.canonicalIssue}`}
-                    className="text-xs font-bold text-primary tabular-nums"
+                    className="font-serif text-base font-semibold text-ink tabular-nums"
                   >
                     {percentage}%
                   </span>
@@ -234,12 +231,12 @@ export function ScoreCard({
                     <span
                       data-testid={`alignment-score-delta-${score.canonicalIssue}`}
                       className={
-                        "text-[10px] font-bold tabular-nums " +
+                        "font-mono text-[10px] font-semibold tabular-nums " +
                         (scoreDelta > 0
-                          ? "text-emerald-700"
+                          ? "text-civic"
                           : scoreDelta < 0
-                            ? "text-rose-700"
-                            : "text-on-surface-muted")
+                            ? "text-vote-red"
+                            : "text-ink-3")
                       }
                     >
                       {formatDelta(scoreDelta)}
@@ -249,14 +246,14 @@ export function ScoreCard({
               ) : (
                 <span
                   data-testid={`alignment-score-no-data-${score.canonicalIssue}`}
-                  className="text-xs font-bold text-on-surface-muted tabular-nums"
+                  className="font-mono text-xs font-semibold text-ink-3 tabular-nums"
                   aria-label="No data for this issue"
                 >
                   —
                 </span>
               )}
             </div>
-            <span className="text-[10px] font-bold uppercase tracking-widest text-primary shrink-0">
+            <span className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-civic shrink-0">
               {t.alignmentScoreDrillDownLabel}
             </span>
           </div>
@@ -264,7 +261,7 @@ export function ScoreCard({
           {isThin && hasNumericRecord && (
             <p
               data-testid={`alignment-score-thin-record-${score.canonicalIssue}`}
-              className="mt-1 text-[9px] italic text-on-surface-muted"
+              className="mt-1 text-[9px] italic text-ink-3"
             >
               {t.alignmentScoreThinRecord(score.total ?? 0)}
             </p>
@@ -328,17 +325,17 @@ export function AlignmentScoreBanner({
       <div
         data-testid={`alignment-score-unavailable-${entry.candidateId}`}
         aria-label={`Alignment scores for ${candidateLabel}`}
-        className="px-3 py-2.5 border border-outline-variant/40 bg-surface-lowest"
+        className="px-3 py-2.5 border border-rule rounded-lg bg-paper"
       >
-        <p className="text-[10px] font-black uppercase tracking-[0.18em] text-on-surface-muted mb-0.5">
+        <p className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-ink-3 mb-0.5">
           {t.alignmentScoreBannerHeading}
         </p>
-        <p className="text-xs italic text-on-surface-muted">
+        <p className="text-xs italic text-ink-3">
           {t.alignmentScoreUnavailablePrefix} {entry.unavailable.reason}
         </p>
         <p
           data-testid={`alignment-score-no-record-hint-${entry.candidateId}`}
-          className="mt-1 text-[11px] italic text-on-surface-muted leading-snug"
+          className="mt-1 text-[13px] italic text-ink-2 leading-snug"
         >
           {t.alignmentScoreNoRecordHint}
         </p>
@@ -355,7 +352,7 @@ export function AlignmentScoreBanner({
       className="space-y-1"
     >
       {/* Section heading */}
-      <h5 className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-muted">
+      <h5 className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-ink-3">
         {t.alignmentScoreBannerHeading}
       </h5>
 

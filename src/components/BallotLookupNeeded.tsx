@@ -80,13 +80,13 @@ export function BallotLookupNeeded({
   return (
     <section
       data-testid="ballot-lookup-needed"
-      className="mx-auto my-6 max-w-3xl bg-surface-lowest border-l-4 border-primary p-4 md:p-6"
+      className="mx-auto my-6 max-w-3xl bg-paper-2 border border-rule rounded-xl p-4 md:p-6"
     >
       <header className="mb-4">
-        <h2 className="font-black text-xl tracking-tight text-on-surface">
+        <h2 className="font-serif text-2xl font-semibold tracking-tight text-ink">
           We couldn&rsquo;t auto-confirm your ballot
         </h2>
-        <p className="mt-2 text-sm text-on-surface-muted">
+        <p className="mt-2 text-sm text-ink-2">
           Google Civic doesn&rsquo;t have complete data for your address. Look
           up your sample ballot using the links below, then paste or upload it
           so we know which races to research.
@@ -100,7 +100,7 @@ export function BallotLookupNeeded({
             href={state.resources.sampleBallotLookup}
             target="_blank"
             rel="noopener noreferrer"
-            className="underline text-primary font-semibold"
+            className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-civic underline decoration-civic-soft underline-offset-4 hover:decoration-civic"
           >
             Find your sample ballot ({state.stateName}) &rarr;
           </a>
@@ -111,20 +111,18 @@ export function BallotLookupNeeded({
             href={countyLink}
             target="_blank"
             rel="noopener noreferrer"
-            className="underline text-primary font-semibold"
+            className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-civic underline decoration-civic-soft underline-offset-4 hover:decoration-civic"
           >
             {countyLabel} &rarr;
           </a>
           {countyInstructions && (
-            <p className="mt-1 text-xs text-on-surface-muted">
-              {countyInstructions}
-            </p>
+            <p className="mt-1 text-xs text-ink-3">{countyInstructions}</p>
           )}
         </li>
       </ul>
 
       <label className="block">
-        <span className="block text-xs font-bold uppercase tracking-widest text-on-surface-muted mb-2">
+        <span className="block font-mono text-[10.5px] uppercase tracking-[0.14em] text-ink-3 mb-2">
           Paste your sample ballot text
         </span>
         <textarea
@@ -134,7 +132,7 @@ export function BallotLookupNeeded({
           rows={10}
           maxLength={12000}
           placeholder="Paste text copied from your official sample ballot here..."
-          className="w-full bg-surface-high px-4 py-3 text-sm text-on-surface border-b-2 border-outline-variant/30 focus:border-primary focus:outline-none transition-colors placeholder:text-on-surface-muted/50 resize-y"
+          className="w-full bg-paper border border-rule rounded-lg px-4 py-3 font-serif text-sm text-ink focus:border-civic focus:outline-none transition-colors placeholder:text-ink-3 resize-y"
         />
       </label>
 
@@ -144,11 +142,11 @@ export function BallotLookupNeeded({
           type="button"
           disabled={!canSubmit}
           onClick={handleSubmit}
-          className="bg-primary text-on-primary px-4 py-3 text-xs font-black uppercase tracking-widest disabled:opacity-40 disabled:cursor-not-allowed"
+          className="bg-civic text-paper-2 px-4 py-3 font-mono text-[11px] uppercase tracking-[0.12em] rounded-lg hover:bg-civic-2 disabled:bg-rule disabled:text-ink-3 disabled:cursor-not-allowed transition-colors"
         >
           Use this ballot
         </button>
-        <label className="text-xs font-bold uppercase tracking-wider text-primary hover:underline cursor-pointer">
+        <label className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-civic hover:underline cursor-pointer">
           Upload .txt
           <input
             data-testid="ballot-lookup-upload"
@@ -158,7 +156,7 @@ export function BallotLookupNeeded({
             onChange={(e) => handleFile(e.target.files?.[0])}
           />
         </label>
-        <p className="text-xs text-on-surface-muted">
+        <p className="text-xs italic text-ink-3">
           Privacy: don&rsquo;t paste your name, address, phone, or email.
         </p>
       </div>

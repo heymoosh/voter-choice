@@ -7,9 +7,9 @@
  * that `@media print` hides the action buttons + the screen-only padding.
  *
  * Physical target: US Letter, 0.5in margins, 7.5in x 10in content area.
- * Newsreader serif with Times New Roman fallback (Newsreader isn't
- * currently loaded — the system serif lands at the right reading weight
- * without adding a font fetch on the print path).
+ * Typography pulls from the 2026-redesign tokens (var(--serif) chains to
+ * the Newsreader next/font CSS variable; var(--mono) chains to IBM Plex
+ * Mono; var(--vote-red) is the race-label accent).
  */
 
 @page {
@@ -42,9 +42,12 @@
   background: white;
   color: #1b1c1b;
   font:
-    700 11pt "Public Sans",
-    system-ui,
-    sans-serif;
+    600 11pt var(--mono),
+    "IBM Plex Mono",
+    ui-monospace,
+    monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
   padding: 0.5rem 0.75rem;
   cursor: pointer;
 }
@@ -66,9 +69,10 @@
   background: #fff8f3;
   color: #1b1c1b;
   font:
-    400 10pt "Public Sans",
-    system-ui,
-    sans-serif;
+    400 10pt var(--serif),
+    Newsreader,
+    Georgia,
+    serif;
   width: 100%;
 }
 
@@ -84,13 +88,13 @@
   padding: 0;
   background: white;
   color: black;
-  font-family: "Newsreader", "Times New Roman", Times, serif;
+  font-family: var(--serif), Newsreader, "Times New Roman", Times, serif;
   font-size: 11pt;
   line-height: 1.4;
 }
 
 .print-sheet .ph-head {
-  border-bottom: 2px solid black;
+  border-bottom: 2px solid var(--ink, black);
   padding-bottom: 0.2in;
   margin-bottom: 0.2in;
 }
@@ -100,12 +104,15 @@
 }
 
 .print-sheet .ph-head .precinct {
-  font-weight: 700;
-  font-size: 12pt;
+  font-family: var(--serif), Newsreader, Georgia, serif;
+  font-weight: 600;
+  font-size: 28pt;
+  letter-spacing: -0.015em;
 }
 
 .print-sheet .ph-head .place-name {
-  font-weight: 700;
+  font-family: var(--serif), Newsreader, Georgia, serif;
+  font-weight: 600;
 }
 
 .print-sheet .voter-meta {
@@ -114,7 +121,7 @@
   font-size: 10pt;
   margin-bottom: 0.2in;
   padding-bottom: 0.1in;
-  border-bottom: 1px solid black;
+  border-bottom: 1px solid var(--rule, black);
 }
 
 .print-sheet .voter-meta > div {
@@ -127,11 +134,15 @@
 }
 
 .print-sheet .ballot-list .ballot-group h3 {
-  font-size: 12pt;
-  font-weight: 700;
-  margin: 0 0 0.05in 0;
-  border-bottom: 1px solid black;
-  padding-bottom: 0.02in;
+  font-family: var(--mono), "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 11pt;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--vote-red);
+  margin: 0 0 0.08in 0;
+  border-bottom: 1px solid var(--rule, black);
+  padding-bottom: 0.04in;
 }
 
 .print-sheet .ballot-list .pick-row {
@@ -146,30 +157,42 @@
 }
 
 .print-sheet .ballot-list .race-label {
-  font-weight: 700;
+  font-family: var(--mono), "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 10pt;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--ink-3, black);
+  font-weight: 500;
 }
 
 .print-sheet .ballot-list .pick-name {
-  font-weight: 700;
+  font-family: var(--serif), Newsreader, Georgia, serif;
+  font-size: 18pt;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  color: var(--ink, black);
 }
 
 .print-sheet .ballot-list .party-tag {
+  font-family: var(--mono), "IBM Plex Mono", ui-monospace, monospace;
   font-size: 9pt;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  border: 1px solid black;
+  letter-spacing: 0.08em;
+  border: 1px solid var(--ink, black);
   padding: 0 0.04in;
 }
 
 .print-sheet .ballot-list .sep {
-  color: black;
+  color: var(--ink-3, black);
 }
 
 .print-sheet .ballot-list .why-note {
+  font-family: var(--serif), Newsreader, Georgia, serif;
   font-style: italic;
-  font-size: 10pt;
+  font-size: 13pt;
+  color: var(--ink-2, black);
   padding-left: 0.2in;
-  margin-top: 0.02in;
+  margin-top: 0.03in;
 }
 
 .print-sheet .ballot-list .undecided-row {
@@ -181,11 +204,15 @@
 }
 
 .print-sheet .themes-section h3 {
-  font-size: 12pt;
-  font-weight: 700;
-  margin: 0 0 0.05in 0;
-  border-bottom: 1px solid black;
-  padding-bottom: 0.02in;
+  font-family: var(--mono), "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 11pt;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--vote-red);
+  margin: 0 0 0.08in 0;
+  border-bottom: 1px solid var(--rule, black);
+  padding-bottom: 0.04in;
 }
 
 .print-sheet .themes-list {
@@ -195,19 +222,29 @@
 }
 
 .print-sheet .themes-list li {
-  font-size: 10pt;
+  font-family: var(--serif), Newsreader, Georgia, serif;
+  font-size: 11pt;
   margin-bottom: 0.03in;
 }
 
 .print-sheet .print-foot {
-  border-top: 1px solid black;
+  border-top: 1px solid var(--rule, black);
   padding-top: 0.1in;
   margin-top: 0.2in;
+  font-family: var(--mono), "IBM Plex Mono", ui-monospace, monospace;
   font-size: 9pt;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--ink-3, black);
 }
 
 .print-sheet .print-foot .brand {
-  font-weight: 700;
+  font-family: var(--serif), Newsreader, Georgia, serif;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: -0.005em;
+  font-size: 13pt;
+  color: var(--ink, black);
 }
 
 .print-sheet .print-foot .signature-line {

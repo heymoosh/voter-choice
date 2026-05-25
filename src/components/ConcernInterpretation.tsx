@@ -90,7 +90,7 @@ function RankBadge({ rank }: { rank: number }) {
   return (
     <span
       aria-label={`Priority ${rank}`}
-      className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-black shrink-0"
+      className="font-serif italic text-civic text-2xl font-semibold shrink-0 leading-none w-7 text-center"
     >
       {rank}
     </span>
@@ -180,10 +180,10 @@ function EntryCard({
     return (
       <div
         data-testid={`concern-entry-removed-${entry.rank}`}
-        className="opacity-40 bg-surface-lowest border border-outline-variant/20 px-4 py-3 flex items-center gap-3"
+        className="opacity-40 bg-paper border border-rule rounded-lg px-4 py-3 flex items-center gap-3"
       >
         <RankBadge rank={entry.rank} />
-        <span className="text-xs italic text-on-surface-muted line-through flex-1">
+        <span className="text-xs italic text-ink-3 line-through flex-1">
           {entry.interpretation}
         </span>
         {!disabled && (
@@ -191,7 +191,7 @@ function EntryCard({
             type="button"
             data-testid={`concern-entry-undo-${entry.rank}`}
             onClick={onToggleRemove}
-            className="text-xs font-bold uppercase tracking-widest text-on-surface-muted hover:text-primary underline-offset-4 hover:underline"
+            className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-ink-3 hover:text-civic underline-offset-4 hover:underline"
           >
             Undo
           </button>
@@ -203,7 +203,7 @@ function EntryCard({
   return (
     <div
       data-testid={`concern-entry-${entry.rank}`}
-      className="bg-surface-lowest border border-outline-variant/40 px-4 py-4 space-y-3"
+      className="bg-paper border border-rule rounded-lg px-4 py-4 space-y-3"
     >
       {/* Header row */}
       <div className="flex items-start gap-3">
@@ -225,7 +225,7 @@ function EntryCard({
             data-testid={`concern-entry-remove-${entry.rank}`}
             onClick={onToggleRemove}
             aria-label={`${t.concernInterpretationRemove} entry ${entry.rank}`}
-            className="shrink-0 text-xs font-bold uppercase tracking-widest text-on-surface-muted hover:text-rose-600 underline-offset-4 hover:underline"
+            className="shrink-0 font-mono text-[10.5px] uppercase tracking-[0.14em] text-ink-3 hover:text-vote-red underline-offset-4 hover:underline"
           >
             {t.concernInterpretationRemove}
           </button>
@@ -323,7 +323,7 @@ function EntryCard({
               type="button"
               data-testid={`concern-entry-edit-${entry.rank}`}
               onClick={onStartEdit}
-              className="text-xs font-bold uppercase tracking-widest text-on-surface-muted hover:text-primary underline-offset-4 hover:underline"
+              className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-ink-3 hover:text-civic underline-offset-4 hover:underline"
             >
               {t.concernInterpretationEdit}
             </button>
@@ -378,13 +378,13 @@ function ThemesView({
   return (
     <section
       data-testid="concern-interpretation-themes"
-      className="bg-surface-low border-l-4 border-primary p-4 md:p-5 space-y-4"
+      className="bg-paper-2 border border-rule rounded-xl p-4 md:p-5 space-y-4"
     >
       <header>
-        <h3 className="text-base md:text-lg font-black uppercase tracking-wide text-on-surface leading-tight">
+        <h3 className="font-serif text-lg md:text-xl font-semibold text-ink leading-tight tracking-tight">
           {t.concernInterpretationThemesHeading}
         </h3>
-        <p className="mt-1 text-xs text-on-surface-muted">
+        <p className="mt-1 text-xs italic text-ink-3">
           {t.concernInterpretationThemesSubhead}
         </p>
       </header>
@@ -507,16 +507,16 @@ function LegacyConcernInterpretation({
     return (
       <section
         data-testid="concern-interpretation"
-        className="bg-surface-low border-l-4 border-primary p-4 md:p-5 space-y-3"
+        className="bg-paper-2 border border-rule rounded-xl p-4 md:p-5 space-y-3"
       >
         <header>
-          <h3 className="text-base md:text-lg font-black uppercase tracking-wide text-on-surface leading-tight">
+          <h3 className="font-serif text-lg md:text-xl font-semibold text-ink leading-tight tracking-tight">
             {t.concernInterpretationHeading}
           </h3>
         </header>
         <p
           data-testid="concern-interpretation-submitted"
-          className="text-xs font-bold uppercase tracking-widest text-primary"
+          className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-civic"
         >
           {t.concernInterpretationSubmitted}
         </p>
@@ -533,7 +533,7 @@ function LegacyConcernInterpretation({
                 }
               >
                 <RankBadge rank={entry.rank} />
-                <span className="text-on-surface">
+                <span className="text-ink">
                   {entry.confidence === "low" && s?.pickedOption
                     ? s.pickedOption
                     : entry.interpretation}
@@ -551,13 +551,13 @@ function LegacyConcernInterpretation({
   return (
     <section
       data-testid="concern-interpretation"
-      className="bg-surface-low border-l-4 border-primary p-4 md:p-5 space-y-4"
+      className="bg-paper-2 border border-rule rounded-xl p-4 md:p-5 space-y-4"
     >
       <header>
-        <h3 className="text-base md:text-lg font-black uppercase tracking-wide text-on-surface leading-tight">
+        <h3 className="font-serif text-lg md:text-xl font-semibold text-ink leading-tight tracking-tight">
           {t.concernInterpretationHeading}
         </h3>
-        <p className="mt-1 text-xs text-on-surface-muted">
+        <p className="mt-1 text-xs italic text-ink-3">
           {t.concernInterpretationSubhead}
         </p>
       </header>
@@ -613,7 +613,7 @@ function LegacyConcernInterpretation({
           data-testid="concern-interpretation-confirm"
           onClick={handleConfirm}
           disabled={confirmDisabled}
-          className="bg-primary text-on-primary px-5 py-3 text-sm font-black uppercase tracking-wide hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed active:scale-95 transition"
+          className="bg-civic text-paper-2 px-5 py-3 font-mono text-[11px] uppercase tracking-[0.12em] rounded-lg hover:bg-civic-2 disabled:bg-rule disabled:text-ink-3 disabled:cursor-not-allowed active:scale-95 transition"
         >
           {isSubmitting
             ? t.concernInterpretationSubmitting

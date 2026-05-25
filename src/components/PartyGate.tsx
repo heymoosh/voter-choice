@@ -124,21 +124,21 @@ export function PartyGate({
   return (
     <section
       data-testid="party-gate"
-      className="bg-surface-lowest border-l-4 border-accent p-5 md:p-6"
+      className="bg-paper-2 border border-rule rounded-xl p-5 md:p-6"
     >
-      <h2 className="font-black text-lg tracking-tight text-on-surface">
+      <h2 className="font-serif text-2xl font-semibold tracking-tight text-ink">
         Before we start: {rule.state} ballot check
       </h2>
-      <p className="mt-2 text-sm text-on-surface-muted">
+      <p className="mt-2 text-sm text-ink-2">
         Your eligibility depends on the rule below. We&rsquo;ll tailor the rest
         of the conversation to the ballot you&rsquo;re allowed to research.
       </p>
 
       {/* Statute box — citation + factual restatement + canonical link. */}
-      <div className="mt-4 border border-outline-variant/40 bg-surface p-4 text-sm">
+      <div className="mt-4 border border-rule border-l-[3px] border-l-gold bg-paper rounded-md p-4 text-sm">
         <p
           data-testid="party-gate-statute-code"
-          className="font-mono text-xs uppercase tracking-widest text-primary"
+          className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-civic"
         >
           {rule.statute.url ? (
             <a
@@ -153,35 +153,54 @@ export function PartyGate({
             rule.statute.code
           )}
         </p>
-        <p
-          data-testid="party-gate-statute-text"
-          className="mt-2 text-on-surface"
-        >
+        <p data-testid="party-gate-statute-text" className="mt-2 text-ink">
           {rule.statute.text}
         </p>
       </div>
 
       {/* Options + (optional) unaffiliated row. */}
-      <div className="mt-4 space-y-3" role="radiogroup">
-        {baseOptions.map((option) => (
-          <label
-            key={option.id}
-            className="flex items-start gap-3 bg-surface px-4 py-3 cursor-pointer"
-          >
-            <input
-              type="radio"
-              name="party-gate-choice"
-              value={option.id}
-              checked={selectedId === option.id}
-              onChange={() => setSelectedId(option.id)}
-              data-testid={`party-gate-option-${option.id}`}
-              className="mt-1 h-4 w-4 accent-[var(--color-primary)]"
-            />
-            <span className="text-sm text-on-surface">{option.label}</span>
-          </label>
-        ))}
+      <div className="mt-4 space-y-2" role="radiogroup">
+        {baseOptions.map((option) => {
+          const isSel = selectedId === option.id;
+          return (
+            <label
+              key={option.id}
+              className={
+                "flex items-start gap-3 px-4 py-3 cursor-pointer rounded-lg border transition-colors " +
+                (isSel
+                  ? "bg-civic-soft border-civic"
+                  : "bg-paper-2 border-rule hover:border-ink-3")
+              }
+            >
+              <input
+                type="radio"
+                name="party-gate-choice"
+                value={option.id}
+                checked={isSel}
+                onChange={() => setSelectedId(option.id)}
+                data-testid={`party-gate-option-${option.id}`}
+                className="mt-1 h-4 w-4 accent-[var(--civic)]"
+              />
+              <span
+                className={
+                  "font-mono text-[11px] uppercase tracking-[0.12em] " +
+                  (isSel ? "text-civic-2" : "text-ink-2")
+                }
+              >
+                {option.label}
+              </span>
+            </label>
+          );
+        })}
         {showsUnaffiliatedRow && (
-          <label className="flex items-start gap-3 bg-surface px-4 py-3 cursor-pointer">
+          <label
+            className={
+              "flex items-start gap-3 px-4 py-3 cursor-pointer rounded-lg border transition-colors " +
+              (isUnaffiliatedSelected
+                ? "bg-civic-soft border-civic"
+                : "bg-paper-2 border-rule hover:border-ink-3")
+            }
+          >
             <input
               type="radio"
               name="party-gate-choice"
@@ -189,9 +208,14 @@ export function PartyGate({
               checked={isUnaffiliatedSelected}
               onChange={() => setSelectedId(UNAFFILIATED_OPTION_ID)}
               data-testid={`party-gate-option-${UNAFFILIATED_OPTION_ID}`}
-              className="mt-1 h-4 w-4 accent-[var(--color-primary)]"
+              className="mt-1 h-4 w-4 accent-[var(--civic)]"
             />
-            <span className="text-sm text-on-surface">
+            <span
+              className={
+                "font-mono text-[11px] uppercase tracking-[0.12em] " +
+                (isUnaffiliatedSelected ? "text-civic-2" : "text-ink-2")
+              }
+            >
               I&rsquo;m not registered with a party.
             </span>
           </label>
@@ -202,15 +226,15 @@ export function PartyGate({
       {isUnaffiliatedSelected && rule.unaffiliatedPath && (
         <div
           data-testid="party-gate-unaffiliated-panel"
-          className="mt-4 border border-outline-variant/40 bg-surface-low p-4 text-sm"
+          className="mt-4 border border-rule rounded-md bg-paper p-4 text-sm"
         >
-          <p className="text-on-surface">{rule.unaffiliatedPath.message}</p>
+          <p className="text-ink">{rule.unaffiliatedPath.message}</p>
           <a
             href={rule.unaffiliatedPath.reregistrationUrl}
             target="_blank"
             rel="noopener noreferrer"
             data-testid="party-gate-reregistration-link"
-            className="mt-3 inline-block underline text-primary"
+            className="mt-3 inline-block underline text-civic"
           >
             Register or update your party affiliation
           </a>
@@ -220,7 +244,7 @@ export function PartyGate({
                 type="button"
                 onClick={handleSkipToGeneral}
                 data-testid="party-gate-skip-to-general"
-                className="bg-primary text-on-primary px-4 py-2 text-sm font-bold uppercase tracking-wide"
+                className="bg-civic text-paper-2 px-4 py-2 font-mono text-[11px] uppercase tracking-[0.12em] rounded-lg hover:bg-civic-2 transition-colors"
               >
                 Skip the primary, show general-election context
               </button>
@@ -235,10 +259,10 @@ export function PartyGate({
       {showClarificationExternal && rule.externalResources && (
         <div
           data-testid="party-gate-clarification-external"
-          className="mt-4 border border-outline-variant/40 bg-surface-low p-4 text-sm"
+          className="mt-4 border border-rule rounded-md bg-paper p-4 text-sm"
         >
           {rule.externalResources.lookupInstructions && (
-            <p className="text-on-surface">
+            <p className="text-ink">
               {rule.externalResources.lookupInstructions}
             </p>
           )}
@@ -250,7 +274,7 @@ export function PartyGate({
                   target="_blank"
                   rel="noopener noreferrer"
                   data-testid="party-gate-clarification-sos-link"
-                  className="underline text-primary"
+                  className="underline text-civic"
                 >
                   Look up your voter history &rarr;
                 </a>
@@ -263,14 +287,14 @@ export function PartyGate({
                   target="_blank"
                   rel="noopener noreferrer"
                   data-testid="party-gate-clarification-county-link"
-                  className="underline text-primary"
+                  className="underline text-civic"
                 >
                   Find your county elections office &rarr;
                 </a>
               </li>
             )}
           </ul>
-          <p className="mt-3 text-on-surface-muted">
+          <p className="mt-3 text-ink-3">
             Once you know, come back and pick one of the options above.
           </p>
         </div>
@@ -283,7 +307,7 @@ export function PartyGate({
       {showClarificationPlaceholder && (
         <p
           data-testid="party-gate-clarification-placeholder"
-          className="mt-4 text-sm text-on-surface-muted"
+          className="mt-4 text-sm text-ink-3 italic"
         >
           Clarification flow coming soon &mdash; for now, please pick one of the
           named options above.
@@ -306,7 +330,7 @@ export function PartyGate({
               showClarificationExternal
             }
             data-testid="party-gate-continue"
-            className="bg-primary text-on-primary px-4 py-2 text-sm font-bold uppercase tracking-wide disabled:opacity-40 disabled:cursor-not-allowed"
+            className="bg-civic text-paper-2 px-5 py-2.5 font-mono text-[11px] uppercase tracking-[0.12em] rounded-lg hover:bg-civic-2 disabled:bg-rule disabled:text-ink-3 disabled:cursor-not-allowed transition-colors"
           >
             Continue
           </button>
