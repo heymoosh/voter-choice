@@ -1328,6 +1328,57 @@ describe("ElectionResult — Fix L: pasted ballot populates workspace races", ()
   });
 });
 
+describe("ElectionResult — multi-seat 'Vote for N' parser (one-line comma fixture)", () => {
+  // Real-world NJ sample ballots paste each office as ONE line with a
+  // comma-separated candidate list. The parser must expand that into N
+  // race rows so the workspace rail shows distinct entries — otherwise
+  // four commissioners collapse into a single mangled row.
+  const njOneLineBallotText = [
+    "June 2, 2026 NJ Democratic Primary - Camden County",
+    "US Senate (Vote for 1): Cory Booker (Democratic)",
+    "US House CD-1 (Vote for 1): Donald Norcross (Democratic)",
+    "County Commissioners (Vote for 2): Louis Cappelli Jr (Democratic), Jonathan Young (Democratic), Vanetta Hawkins (Democratic), Constance Mercedes (Democratic)",
+  ].join("\n");
+
+  function renderWithPastedBallot(text: string) {
+    return render(
+      <LanguageProvider>
+        <ElectionResult
+          state={txState}
+          zipCode="73301"
+          lang="en"
+          initialPollingData={null}
+          promptFleetV2Enabled={true}
+          initialLockedThemes={lockedThemes}
+          initialUserSampleBallotText={text}
+        />
+      </LanguageProvider>,
+    );
+  }
+
+  it("workspace shows 0/6 in the rail counter for the NJ one-line fixture", () => {
+    renderWithPastedBallot(njOneLineBallotText);
+    // 6 = 1 Senate + 1 House + 4 commissioners (one per candidate, not per seat).
+    expect(screen.getByTestId("ballot-pane-header")).toHaveTextContent("0/6");
+  });
+
+  it("workspace rail renders one row per candidate with distinct ids", () => {
+    renderWithPastedBallot(njOneLineBallotText);
+    const railRows = screen
+      .getAllByRole("button")
+      .filter((b) =>
+        (b.getAttribute("data-testid") ?? "").startsWith(
+          "workspace-rail-race-",
+        ),
+      );
+    expect(railRows.length).toBe(6);
+    const ids = railRows
+      .map((b) => b.getAttribute("data-testid"))
+      .filter((id): id is string => id !== null);
+    expect(new Set(ids).size).toBe(railRows.length);
+  });
+});
+
 /* ── PR 8 — Fix M: hide legacy paste widget after new-flow confirm ── */
 
 describe("ElectionResult — Fix M: legacy paste widget hidden post-confirm", () => {

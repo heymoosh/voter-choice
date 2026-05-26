@@ -54,6 +54,50 @@ function parseCandidateLine(raw: string): {
   return { candidate: name, party, reason };
 }
 
+/**
+ * Strip a trailing "(Vote for N)" affordance from an office name.
+ *
+ * Real sample ballots label every race uniformly — e.g.
+ * "U.S. Senate (Vote for 1)" or "County Commissioners (Vote for 2)" —
+ * but the workspace label and the office-collision map in
+ * `parsedBallotToContests` both want a clean office string ("U.S. Senate",
+ * "County Commissioners"). Apply this to every race, single- or multi-seat,
+ * so the visible label never carries the meta-suffix.
+ */
+function stripVoteForSuffix(office: string): string {
+  return office.replace(/\s*\(\s*Vote\s+for\s+\d+\s*\)\s*$/i, "").trim();
+}
+
+/**
+ * Split a candidate list on commas — but ONLY between completed
+ * candidate entries. We detect that by anchoring the split to a comma
+ * that's immediately preceded by a closing paren (the end of a party
+ * label like "(D)" or "(Democratic)"). That naturally rejects internal
+ * commas inside a single name like "Louis Cappelli Jr, Sr" because the
+ * "Jr" has no party paren after it.
+ *
+ * Examples that DO split:
+ *   "Alice Smith (D), Bob Jones (R)" → ["Alice Smith (D)", "Bob Jones (R)"]
+ *   "A (D), B (R), C (I)"            → ["A (D)", "B (R)", "C (I)"]
+ *
+ * Examples that do NOT split:
+ *   "Louis Cappelli Jr, Sr (D)"      → ["Louis Cappelli Jr, Sr (D)"]
+ *   "Alice Smith (D)" (no comma)     → ["Alice Smith (D)"]
+ *
+ * Trade-off: a list where party labels are omitted entirely (e.g.
+ * "Alice Smith, Bob Jones, Carol Lee") will NOT split into three rows
+ * — we'd treat it as a single "Alice Smith, Bob Jones, Carol Lee"
+ * candidate name. That's acceptable for v1; every multi-candidate
+ * ballot we've observed in the wild includes party labels.
+ */
+function splitCandidateList(raw: string): string[] {
+  // Lookbehind for `)`: the comma that ends a candidate entry always
+  // follows the party-label closing paren. JS supports lookbehind in
+  // node ≥ 10 / modern browsers — already required by the rest of the
+  // codebase, so safe to use here.
+  return raw.split(/(?<=\)),\s*/).map((s) => s.trim());
+}
+
 const PROP_LINE_RE =
   /^(?:Prop(?:osition|\.)?[\s-]*)([\w.]+)[:\s]+\b(YES|NO|SÍ)\b\s*(?:[—–-]\s*(.*))?$/i;
 
@@ -123,16 +167,35 @@ function tryParseProposition(
   return null;
 }
 
-function tryParseRace(line: string): BallotRace | null {
+function tryParseRace(line: string): BallotRace[] {
   const raceMatch = line.match(RACE_LINE_RE);
-  if (!raceMatch) return null;
+  if (!raceMatch) return [];
 
-  const office = raceMatch[1].trim();
-  if (SKIP_LABELS.has(office.toLowerCase())) return null;
-  if (/^(?:MY BALLOT|MI BOLETA)/i.test(office)) return null;
+  const rawOffice = raceMatch[1].trim();
+  if (SKIP_LABELS.has(rawOffice.toLowerCase())) return [];
+  if (/^(?:MY BALLOT|MI BOLETA)/i.test(rawOffice)) return [];
 
-  const { candidate, party, reason } = parseCandidateLine(raceMatch[2]);
-  return { office, candidate, party, reason };
+  // Strip "(Vote for N)" from every race; the suffix is meta-data about
+  // seat count, not part of the displayed office name.
+  const office = stripVoteForSuffix(rawOffice);
+  const candidateBlock = raceMatch[2];
+
+  // Comma-separated multi-candidate list (e.g. "A (D), B (R), C (I)").
+  // Detect by looking for a comma followed by a fresh capitalized name —
+  // the same heuristic the splitter uses. Single-candidate lines fall
+  // through to the em-dash-aware path so reason capture is preserved.
+  const candidateChunks = splitCandidateList(candidateBlock);
+  if (candidateChunks.length > 1) {
+    return candidateChunks
+      .filter((chunk) => chunk.length > 0)
+      .map((chunk) => {
+        const { name, party } = extractParty(chunk);
+        return { office, candidate: name, party, reason: "" };
+      });
+  }
+
+  const { candidate, party, reason } = parseCandidateLine(candidateBlock);
+  return [{ office, candidate, party, reason }];
 }
 
 export function parseBallotContent(ballotText: string): ParsedBallot {
@@ -158,8 +221,8 @@ export function parseBallotContent(ballotText: string): ParsedBallot {
       continue;
     }
 
-    const race = tryParseRace(line);
-    if (race) races.push(race);
+    const parsedRaces = tryParseRace(line);
+    if (parsedRaces.length > 0) races.push(...parsedRaces);
   }
 
   return { header, races, propositions };
