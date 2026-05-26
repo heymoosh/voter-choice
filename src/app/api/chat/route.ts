@@ -475,6 +475,17 @@ function prependBallotContext(
 }
 
 /**
+ * Build the legacy (flag-off) system-prompt path. Extracted so the
+ * flag-on path can fall back to it cleanly when v2 routing fails.
+ */
+function buildLegacySystemPrompt(body: ChatRequest): string {
+  return appendVoterProfile(
+    prependBallotContext(body.systemPrompt, body.ballotContext),
+    body.voterProfile,
+  );
+}
+
+/**
  * Compose the outgoing system prompt.
  *
  * Flag-OFF path: bit-identical to the historical behavior — body's
@@ -489,6 +500,15 @@ function prependBallotContext(
  * composed result on BOTH paths so the gate selection is part of every
  * downstream chat call's system prompt.
  *
+ * Defensive fallback: if `routePrompt` or `renderBuilder` throws (e.g. the
+ * client emitted a structurally invalid v2 payload — wrong view/raceType,
+ * incomplete raceContext for the routed builder), log a
+ * `chat.prompt_routed_fallback` event and serve the legacy `body.systemPrompt`
+ * instead of letting the throw bubble to the 500 catch path. The legacy
+ * prompt is less race-specific but still a coherent civic-research surface;
+ * 500 with "Chat service error" is strictly worse for the voter. The log line
+ * keeps the underlying client bug visible.
+ *
  * The `prompt_used` log line is emitted only on the flag-on path so we have
  * observability into routing decisions without leaking the rendered body
  * (which can contain `<tag>` blocks the safety header expects to stay
@@ -496,30 +516,42 @@ function prependBallotContext(
  */
 function buildSystemPrompt(body: ChatRequest): string {
   if (!isPromptFleetV2Enabled() || !body.view) {
-    return appendVoterProfile(
-      prependBallotContext(body.systemPrompt, body.ballotContext),
-      body.voterProfile,
-    );
+    return buildLegacySystemPrompt(body);
   }
-  const builderKey = routePrompt({
-    view: body.view,
-    raceType: body.activeRaceType,
-    trigger: body.trigger,
-  });
-  console.log(
-    JSON.stringify({
-      event: "chat.prompt_used",
-      sessionId: body.sessionId,
-      builder: builderKey,
+  try {
+    const builderKey = routePrompt({
       view: body.view,
       raceType: body.activeRaceType,
       trigger: body.trigger,
-    }),
-  );
-  const builderBody = renderBuilder(builderKey, body.raceContext);
-  const composed = prependSafetyHeader(builderBody);
-  const withBallot = prependBallotContext(composed, body.ballotContext);
-  return appendVoterProfile(withBallot, body.voterProfile);
+    });
+    const builderBody = renderBuilder(builderKey, body.raceContext);
+    console.log(
+      JSON.stringify({
+        event: "chat.prompt_used",
+        sessionId: body.sessionId,
+        builder: builderKey,
+        view: body.view,
+        raceType: body.activeRaceType,
+        trigger: body.trigger,
+      }),
+    );
+    const composed = prependSafetyHeader(builderBody);
+    const withBallot = prependBallotContext(composed, body.ballotContext);
+    return appendVoterProfile(withBallot, body.voterProfile);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.log(
+      JSON.stringify({
+        event: "chat.prompt_routed_fallback",
+        sessionId: body.sessionId,
+        view: body.view,
+        raceType: body.activeRaceType,
+        trigger: body.trigger,
+        error: message,
+      }),
+    );
+    return buildLegacySystemPrompt(body);
+  }
 }
 
 function truncateUserMessages(messages: ChatMessage[]): ChatMessage[] {

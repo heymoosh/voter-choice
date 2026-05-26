@@ -1067,3 +1067,123 @@ describe("POST /api/chat — research_candidate tool dispatch (context hygiene)"
     expect(toolResultBlock.content).toContain("required fields missing");
   });
 });
+
+// ---------------------------------------------------------------------------
+// Defensive fallback — server must not 500 on a malformed v2 raceContext.
+//
+// Live production captured a request where the client emitted view:
+// "workspace-prop" + activeRaceType: "proposition" for a candidate race, with
+// raceContext: { raceLabel, state } only. Under PROMPT_FLEET_V2=1 this routes
+// to the `proposition` builder, which throws "missing raceContext for builder
+// proposition" inside the route's try block. The catch path then doesn't
+// recognize it as Anthropic.APIError and emits 500 "Chat service error".
+//
+// Fix contract: when v2 prompt assembly throws (router or builder), fall back
+// to the legacy `body.systemPrompt` instead of bubbling 500 to the client.
+// Log a structured `chat.prompt_routed_fallback` event so the underlying
+// client bug stays visible in logs.
+// ---------------------------------------------------------------------------
+
+describe("POST /api/chat — v2 misroute defensive fallback", () => {
+  it("falls back to legacy systemPrompt when raceContext is missing required fields for the routed builder", async () => {
+    vi.stubEnv("PROMPT_FLEET_V2", "1");
+    queueStreams(simpleTextStream());
+
+    // This payload mirrors the captured production 500: a candidate race
+    // (U.S. Senate) misclassified by the client as a proposition. The
+    // routed builder is `proposition`, which requires fields the client
+    // didn't send. Before the fix, this returns 500. After the fix, the
+    // server falls back to the legacy systemPrompt and returns 200.
+    const req = makeChatRequest({
+      systemPrompt: "LEGACY-FALLBACK-PROMPT",
+      view: "workspace-prop",
+      activeRaceType: "proposition",
+      activeRaceId: "u-s-senate-jane-smith",
+      raceContext: {
+        raceLabel: "U.S. Senate — Jane Smith",
+        state: "DC",
+        // intentionally missing propLabel, propSummary, propIfYes, propIfNo,
+        // themesList, yesFunders, noFunders — this triggers the throw
+      },
+      ballotContext: {
+        state: "DC",
+        ballotTag: "DEM-primary",
+        electionDate: "2026-06-16",
+        electionLabel: "2026 DC Democratic Primary",
+      },
+    });
+    const res = await POST(req as never);
+
+    // Must be a streaming success, not a 500.
+    expect(res.status).toBe(200);
+    expect(res.headers.get("content-type")).toContain("text/event-stream");
+
+    await drainResponseBody(res);
+
+    // Anthropic must have been called with the legacy systemPrompt (the
+    // fallback path), with ballotContext prepended.
+    expect(messagesCreateMock).toHaveBeenCalled();
+    const firstCallParams = messagesCreateMock.mock.calls[0][0];
+    const systemText: string = firstCallParams.system[0].text;
+    expect(systemText).toContain("LEGACY-FALLBACK-PROMPT");
+    // The ballot_context tag from prependBallotContext must survive the
+    // fallback so the gate selection still reaches the model.
+    expect(systemText).toContain("<ballot_context>");
+    expect(systemText).toContain("ballot: DEM-primary");
+  });
+
+  it("emits chat.prompt_routed_fallback log line when fallback fires", async () => {
+    vi.stubEnv("PROMPT_FLEET_V2", "1");
+    queueStreams(simpleTextStream());
+    const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+
+    const req = makeChatRequest({
+      systemPrompt: "LEGACY",
+      view: "workspace-prop",
+      activeRaceType: "proposition",
+      raceContext: {
+        raceLabel: "U.S. Senate — Jane Smith",
+        state: "DC",
+      },
+    });
+    const res = await POST(req as never);
+    await drainResponseBody(res);
+
+    expect(res.status).toBe(200);
+
+    const fallbackCalls = logSpy.mock.calls
+      .map((args) => String(args[0]))
+      .filter((line) => line.includes("chat.prompt_routed_fallback"));
+    expect(fallbackCalls.length).toBeGreaterThan(0);
+    const parsed = JSON.parse(fallbackCalls[0]);
+    expect(parsed.event).toBe("chat.prompt_routed_fallback");
+    expect(parsed.view).toBe("workspace-prop");
+    expect(parsed.error).toContain("missing raceContext");
+
+    logSpy.mockRestore();
+  });
+
+  it("falls back when raceType is missing for view workspace-race", async () => {
+    // routePrompt throws when view: "workspace-race" has no raceType — the
+    // fallback path must catch this and serve the legacy prompt as well.
+    vi.stubEnv("PROMPT_FLEET_V2", "1");
+    queueStreams(simpleTextStream());
+
+    const req = makeChatRequest({
+      systemPrompt: "LEGACY-ROUTER-THROW",
+      view: "workspace-race",
+      // activeRaceType deliberately omitted
+      raceContext: {
+        raceLabel: "U.S. Senate",
+        state: "DC",
+      },
+    });
+    const res = await POST(req as never);
+    expect(res.status).toBe(200);
+    await drainResponseBody(res);
+
+    const firstCallParams = messagesCreateMock.mock.calls[0][0];
+    const systemText: string = firstCallParams.system[0].text;
+    expect(systemText).toContain("LEGACY-ROUTER-THROW");
+  });
+});
