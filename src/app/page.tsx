@@ -33,7 +33,7 @@ export default function Home() {
     <LanguageProvider>
       <ResearchModeProvider>
         <div className="min-h-screen bg-surface font-sans flex flex-col">
-          <PageContent>
+          <PageContent promptFleetV2Enabled={promptFleetV2Enabled}>
             <BallotToolClient promptFleetV2Enabled={promptFleetV2Enabled} />
           </PageContent>
         </div>

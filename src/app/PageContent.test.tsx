@@ -7,7 +7,19 @@ import { PageContent } from "./PageContent";
 import { LanguageProvider } from "../lib/i18n";
 import { ResearchModeProvider } from "../lib/researchMode";
 
-function renderWithProvider(initialLang?: "es") {
+interface RenderOptions {
+  initialLang?: "es";
+  /**
+   * PR A2 fix — production-equivalent run-time flag. Defaults to `true` so
+   * existing EN tests run against the new prototype landing. Flag-off tests
+   * pass `false` explicitly to exercise the legacy chrome that the CI
+   * "flag off — legacy specs" matrix depends on.
+   */
+  promptFleetV2Enabled?: boolean;
+}
+
+function renderWithProvider(options: RenderOptions = {}) {
+  const { initialLang, promptFleetV2Enabled = true } = options;
   if (initialLang === "es") {
     localStorage.setItem("ballot-tool-lang", "es");
   } else {
@@ -16,13 +28,13 @@ function renderWithProvider(initialLang?: "es") {
   return render(
     <ResearchModeProvider>
       <LanguageProvider>
-        <PageContent />
+        <PageContent promptFleetV2Enabled={promptFleetV2Enabled} />
       </LanguageProvider>
     </ResearchModeProvider>,
   );
 }
 
-describe("PageContent — English landing (prototype-spec)", () => {
+describe("PageContent — English landing (prototype-spec, flag-on)", () => {
   beforeEach(() => localStorage.clear());
 
   it("renders the prototype hero headline with an italic 'record' em", () => {
@@ -119,7 +131,7 @@ describe("PageContent — Spanish mode (legacy landing unchanged)", () => {
   beforeEach(() => localStorage.clear());
 
   it("renders Spanish hero title", async () => {
-    renderWithProvider("es");
+    renderWithProvider({ initialLang: "es" });
     await act(async () => {});
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
       "Tu Boleta",
@@ -127,7 +139,7 @@ describe("PageContent — Spanish mode (legacy landing unchanged)", () => {
   });
 
   it("renders Spanish trust signals", async () => {
-    renderWithProvider("es");
+    renderWithProvider({ initialLang: "es" });
     await act(async () => {});
     expect(screen.getByText("Sin datos almacenados.")).toBeInTheDocument();
     expect(screen.getByText("Sin cuentas.")).toBeInTheDocument();
@@ -135,7 +147,7 @@ describe("PageContent — Spanish mode (legacy landing unchanged)", () => {
   });
 
   it("renders Spanish footer with legal links", async () => {
-    renderWithProvider("es");
+    renderWithProvider({ initialLang: "es" });
     await act(async () => {});
     expect(
       screen.getByRole("link", { name: "Política de Privacidad" }),
@@ -146,9 +158,75 @@ describe("PageContent — Spanish mode (legacy landing unchanged)", () => {
   });
 
   it("renders How it Works in Spanish", async () => {
-    renderWithProvider("es");
+    renderWithProvider({ initialLang: "es" });
     await act(async () => {});
     expect(screen.getByText("Cómo Funciona")).toBeInTheDocument();
     expect(screen.getByText("Localiza tu Distrito")).toBeInTheDocument();
+  });
+});
+
+/* ── PR A2 fix: flag-gating the EN landing ──────────────────────────
+   The CI "flag off — legacy specs" job runs `npm run e2e` WITHOUT
+   PROMPT_FLEET_V2 set. Production Vercel env has the flag on, so the
+   prototype landing IS the user-visible surface. But the legacy
+   specs assume the legacy chrome (returning-voter upload, 3-col footer
+   with Privacy + Terms, How-it-works 01/02/03, mission statement, etc.)
+   is reachable on EN. Restore it under the flag-off branch.
+
+   The Spanish-mode block above already exercises the legacy landing via
+   the locale switch (the legacy translations carry both EN and ES copy).
+   These tests cover the parallel flag-off EN path so we don't regress
+   the legacy CI matrix while production stays on the new landing. */
+describe("PageContent — English landing (flag-off, legacy preserved)", () => {
+  beforeEach(() => localStorage.clear());
+
+  it("renders the legacy hero copy when promptFleetV2Enabled is false", () => {
+    renderWithProvider({ promptFleetV2Enabled: false });
+    // Legacy EN heroHeadline from translations.ts.
+    const h1 = screen.getByRole("heading", { level: 1 });
+    expect(h1).toHaveTextContent("Elect a Congress that does its job.");
+    // The new prototype headline must NOT be present on the flag-off path.
+    expect(h1).not.toHaveTextContent("Hold Congress to its record.");
+  });
+
+  it("renders the 'returning voter' upload block when flag-off", () => {
+    renderWithProvider({ promptFleetV2Enabled: false });
+    // "Pick up where you left off" is the legacy returning-voter section
+    // headline. The prototype landing drops this section entirely.
+    expect(screen.getByText(/Pick up where you left off/i)).toBeInTheDocument();
+  });
+
+  it("renders the legacy 3-col footer with Privacy + Terms links when flag-off", () => {
+    renderWithProvider({ promptFleetV2Enabled: false });
+    const footer = screen.getByRole("contentinfo");
+    // The legacy footer carries both Privacy and Terms (the new prototype
+    // hp-foot has Privacy only). The CI "footer contains privacy and terms
+    // links" e2e spec asserts both — flag-off must satisfy that contract.
+    expect(
+      within(footer).getByRole("link", { name: /Privacy/i }),
+    ).toBeInTheDocument();
+    expect(
+      within(footer).getByRole("link", { name: /Terms/i }),
+    ).toBeInTheDocument();
+  });
+
+  it("renders the legacy 'How it works' 01/02/03 step labels when flag-off", () => {
+    renderWithProvider({ promptFleetV2Enabled: false });
+    // Step numerals from the legacy "How it Works" section. The new
+    // prototype landing drops this entire block.
+    expect(screen.getByText("01")).toBeInTheDocument();
+    expect(screen.getByText("02")).toBeInTheDocument();
+    expect(screen.getByText("03")).toBeInTheDocument();
+  });
+
+  it("does NOT render the new prototype eyebrow or stat-stack when flag-off", () => {
+    renderWithProvider({ promptFleetV2Enabled: false });
+    // New prototype eyebrow + stats are absent on the flag-off path.
+    expect(
+      screen.queryByText(/America's 250th election/i),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(/Source · OpenSecrets · FEC filings/i),
+    ).not.toBeInTheDocument();
   });
 });
