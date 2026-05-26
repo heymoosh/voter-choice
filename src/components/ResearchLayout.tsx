@@ -1595,11 +1595,23 @@ function ResearchView({
   const canStartResearch =
     researchReady &&
     (ballotLookupFinished || hasOfficialContests || hasUserSampleBallot);
+  // PR C — cold-open re-quiet. Under the flag-on + en cold-open surface,
+  // the legacy alarm strip and the "We save anonymous counts only…" warning
+  // banner overlap with — and contradict — the prototype's quieter
+  // `.co-context` breadcrumb above the chat. Suppress both so the cold-
+  // open reads as a single muted header instead of the over-engineered
+  // three-cell red-treatment strip. Flag-off ES + EN paths keep the
+  // legacy chrome unchanged.
+  const suppressLegacyChrome = !!promptFleetV2Enabled && lang === "en";
 
   return (
     <div className="flex flex-col h-full">
-      {/* Sticky tab-close warning banner */}
-      {canStartResearch && (
+      {/* Sticky tab-close warning banner — legacy paths only.
+          The prototype cold-open routes privacy framing through the
+          single `.co-context` breadcrumb + the inline auto-saving hint
+          in the cold-open card; the always-on amber banner reads as
+          alarming. Kept for flag-off paths so legacy e2e is unaffected. */}
+      {canStartResearch && !suppressLegacyChrome && (
         <div
           data-testid="tab-close-warning-banner"
           className="sticky top-0 z-20 bg-amber-50 border-b border-amber-200 px-4 py-2 text-xs text-amber-900 font-medium text-center"
@@ -1610,14 +1622,19 @@ function ResearchView({
       {/* Scrollable content */}
       <div className="flex-1 overflow-y-auto px-4 py-6 md:px-16 md:py-8 pb-20 md:pb-8">
         <div className="max-w-3xl mx-auto space-y-5">
-          <ResearchContextStrip
-            daysLeft={daysLeft}
-            state={state}
-            countyName={countyName}
-            pollingData={pollingData}
-            pastedBallotRaceCount={pastedBallotRaceCount}
-            lang={lang}
-          />
+          {/* PR C — ResearchContextStrip is the same legacy alarm strip;
+              under the flag-on cold-open the prototype owns its own
+              anchored-location breadcrumb in ChatPanel. */}
+          {!suppressLegacyChrome && (
+            <ResearchContextStrip
+              daysLeft={daysLeft}
+              state={state}
+              countyName={countyName}
+              pollingData={pollingData}
+              pastedBallotRaceCount={pastedBallotRaceCount}
+              lang={lang}
+            />
+          )}
 
           {/* Budget warning — warm editorial treatment */}
           {copyPasteIsPrimary && (

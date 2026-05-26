@@ -267,21 +267,28 @@ export function BudgetExhausted(
             rows={8}
             className="mt-2 w-full rounded-md border border-rule bg-paper-2 p-3 font-mono text-xs leading-relaxed text-ink"
           />
+          {/* PR C — sentence-case sans primary CTA per prototype primary
+              treatment. Mono uppercase is reserved for micro-labels. */}
           <button
             type="button"
             data-testid="handoff-prompt-copy"
             onClick={handleCopy}
-            className="mt-2 rounded-md bg-civic px-4 py-2 font-mono text-[11px] font-medium uppercase tracking-[0.12em] text-paper-2 hover:bg-civic-2"
+            className="mt-2 rounded-lg bg-civic px-4 py-2.5 text-[13.5px] font-semibold text-paper-2 hover:bg-civic-2"
           >
             {copied ? "Copied" : "Copy handoff prompt"}
           </button>
         </section>
 
         <section className="mb-8">
+          {/* `Continue on any chatbot` reads as a section divider — keep
+              mono uppercase per the audit's eyebrow-label reservation. */}
           <h2 className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-ink-3">
             Continue on any chatbot
           </h2>
           <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+            {/* PR C — sentence-case sans labels on the chatbot link cards
+                (CTAs, not dividers). Card chrome is unchanged; only the
+                inner text label drops mono uppercase tracking. */}
             {CHATBOT_LINKS.map((link) => (
               <a
                 key={link.id}
@@ -291,7 +298,7 @@ export function BudgetExhausted(
                 rel="noopener noreferrer"
                 className="flex items-center justify-between rounded-md border border-rule bg-paper-2 px-4 py-3 hover:border-civic hover:bg-paper"
               >
-                <span className="font-mono text-[12px] font-medium uppercase tracking-[0.1em] text-ink">
+                <span className="text-[13.5px] font-semibold text-ink">
                   {link.name}
                 </span>
                 <span aria-hidden="true" className="text-civic">
@@ -318,11 +325,12 @@ export function BudgetExhausted(
                 Using your key &middot;{" "}
                 <span className="font-mono">{maskKey(storedByokKey)}</span>
               </span>
+              {/* PR C — sentence-case sans destructive secondary. */}
               <button
                 type="button"
                 data-testid="byok-remove"
                 onClick={() => onByokRemove?.()}
-                className="font-mono text-[10.5px] uppercase tracking-[0.12em] text-vote-red hover:underline"
+                className="text-[12.5px] font-semibold text-vote-red hover:underline"
               >
                 Remove my key
               </button>
@@ -345,11 +353,12 @@ export function BudgetExhausted(
                 className="flex-1 rounded-md border border-rule bg-paper-2 px-3 py-2 font-mono text-sm text-ink placeholder:text-ink-3/70"
                 aria-label="Anthropic API key"
               />
+              {/* PR C — sentence-case sans primary CTA. */}
               <button
                 type="button"
                 data-testid="byok-save"
                 onClick={handleSave}
-                className="rounded-md bg-civic px-4 py-2 font-mono text-[11px] font-medium uppercase tracking-[0.12em] text-paper-2 hover:bg-civic-2"
+                className="rounded-lg bg-civic px-4 py-2.5 text-[13.5px] font-semibold text-paper-2 hover:bg-civic-2"
               >
                 Save &amp; continue
               </button>
@@ -374,12 +383,13 @@ export function BudgetExhausted(
           &middot; not required.
         </p>
 
+        {/* PR C — sentence-case sans primary CTA. */}
         {resetPassed ? (
           <button
             type="button"
             data-testid="resume-button"
             onClick={() => onResume?.()}
-            className="mt-2 rounded-md bg-civic px-4 py-2 font-mono text-[11px] font-medium uppercase tracking-[0.12em] text-paper-2 hover:bg-civic-2"
+            className="mt-2 rounded-lg bg-civic px-4 py-2.5 text-[13.5px] font-semibold text-paper-2 hover:bg-civic-2"
           >
             Resume free chat
           </button>

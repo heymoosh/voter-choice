@@ -186,16 +186,21 @@ function SortableThemeCard({
           className="w-full font-serif text-base md:text-[16.5px] font-semibold text-ink bg-transparent border-b border-transparent hover:border-rule focus:border-civic focus:outline-none px-0 py-1 tracking-tight"
         />
         {theme.quotes.length > 0 && (
-          <div className="bg-paper border-l-2 border-civic-soft pl-3 py-2 space-y-1.5">
+          <div className="bg-paper pl-3 py-2 space-y-1.5">
             <p className="font-mono text-[9px] uppercase tracking-[0.16em] text-ink-3">
               From your input
             </p>
+            {/* PR C — per-quote civic-soft left border. Mirrors
+                prototype.css `.theme-row .quote { border-left: 2px
+                solid var(--civic-soft); padding-left: 10px; }` (lines
+                567-573). PR B carried the border on the wrapper; the
+                prototype wants it on each individual quote. */}
             <ul className="list-none p-0 space-y-1">
               {theme.quotes.map((quote, qi) => (
                 <li
                   key={qi}
                   data-testid={`theme-quote-${index}-${qi}`}
-                  className="font-serif italic text-sm text-ink-2 leading-snug"
+                  className="font-serif italic text-sm text-ink-2 leading-snug border-l-2 border-civic-soft pl-2.5"
                 >
                   <blockquote className="m-0">&ldquo;{quote}&rdquo;</blockquote>
                 </li>
@@ -318,13 +323,16 @@ export function ThemeRanker({
         </p>
       )}
 
-      {/* Footer actions */}
+      {/* Footer actions — PR C — sentence-case sans per prototype.css
+          `.themes-card .th-foot .secondary` (lines 615-623) and
+          `.themes-card .th-foot .lock` (lines 624-633). Mono uppercase
+          is reserved for eyebrow / micro-meta labels, not primary CTAs. */}
       <div className="flex items-center justify-between gap-3 pt-3 border-t border-rule-2">
         <button
           type="button"
           data-testid="theme-ranker-rewrite"
           onClick={onRewrite}
-          className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-ink-3 hover:text-civic underline-offset-4 hover:underline"
+          className="text-[12.5px] text-ink-2 border border-rule rounded-lg px-3.5 py-2 hover:text-ink hover:border-ink-3 transition-colors"
         >
           {t.themeRankerRewrite}
         </button>
@@ -333,7 +341,7 @@ export function ThemeRanker({
           data-testid="theme-ranker-lock-in"
           onClick={onLockIn}
           disabled={lockDisabled}
-          className="bg-civic text-paper-2 px-5 py-3 font-mono text-[11px] uppercase tracking-[0.12em] rounded-lg hover:bg-civic-2 disabled:bg-rule disabled:text-ink-3 disabled:cursor-not-allowed active:scale-95 transition"
+          className="bg-civic text-paper-2 px-5 py-3 text-[13.5px] font-semibold rounded-lg hover:bg-civic-2 disabled:bg-rule disabled:text-ink-3 disabled:cursor-not-allowed active:scale-95 transition"
         >
           {t.themeRankerLockIn}
         </button>

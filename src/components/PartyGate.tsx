@@ -321,6 +321,10 @@ export function PartyGate({
           pick a real named option. */}
       {!isUnaffiliatedSelected && (
         <div className="mt-5">
+          {/* PR C — sentence-case sans primary CTA per prototype's primary
+              treatment (civic bg + paper text, no mono / uppercase /
+              wide tracking). Mono uppercase is reserved for eyebrow /
+              section-divider micro-labels. */}
           <button
             type="button"
             onClick={handleContinue}
@@ -330,7 +334,7 @@ export function PartyGate({
               showClarificationExternal
             }
             data-testid="party-gate-continue"
-            className="bg-civic text-paper-2 px-5 py-2.5 font-mono text-[11px] uppercase tracking-[0.12em] rounded-lg hover:bg-civic-2 disabled:bg-rule disabled:text-ink-3 disabled:cursor-not-allowed transition-colors"
+            className="bg-civic text-paper-2 px-5 py-3 text-[13.5px] font-semibold rounded-lg hover:bg-civic-2 disabled:bg-rule disabled:text-ink-3 disabled:cursor-not-allowed transition-colors"
           >
             Continue
           </button>

@@ -7,7 +7,6 @@ import { getStateData } from "../lib/getStateData";
 import { generatePrompt } from "../lib/generatePrompt";
 import { ZipForm, extractZip, extractState } from "./ZipForm";
 import { StateSelectorModal } from "./StateSelectorModal";
-import { ProfileUpload } from "./ProfileUpload";
 import { ResearchLayout } from "./ResearchLayout";
 import { WorkspaceRail } from "./WorkspaceRail";
 import { BallotPane, type Decision } from "./BallotPane";
@@ -462,12 +461,18 @@ export function ElectionResult({
    */
   initialUserSampleBallotText?: string;
 }) {
-  const [voterProfile, setVoterProfile] = useState<string | null>(null);
-  // Once the chat session begins (first message exchanged), hide the
-  // "Returning voter? Upload" banner — it's a pre-session affordance and
-  // reads as confusing copy mid-session.
-  const [hasChatStarted, setHasChatStarted] = useState(false);
-  const handleChatStarted = useCallback(() => setHasChatStarted(true), []);
+  // PR C — voter profile state is preserved (downstream prompt
+  // generation still reads it) but the pre-session upload banner that
+  // would `setVoterProfile` has been removed. Returning voters now
+  // restore their saved profile through the cold-open `Use a starter
+  // profile` chip, which writes themes directly via ColdOpenInput's
+  // `onStarterProfileLoaded` rather than mutating this slot.
+  const [voterProfile] = useState<string | null>(null);
+  // Chat-started handler preserved as a no-op so downstream telemetry
+  // hooks still fire on the first message exchange.
+  const handleChatStarted = useCallback(() => {
+    /* PR C: banner removed; reserved for future telemetry. */
+  }, []);
 
   // ─── Phase 3: workspace state ──────────────────────────────────────
   // Themes lift out of ChatPanel so the workspace shell (rail + chat +
@@ -1116,16 +1121,13 @@ export function ElectionResult({
 
   return (
     <>
-      {/* Profile upload banner — pre-session only.
-          Hidden once the chat picks up its first message (mid-session the
-          "Returning voter? Upload your voter profile" copy was confusing). */}
-      {!voterProfile && !hasChatStarted && (
-        <div className="px-6 py-3 bg-surface-low border-b border-outline-variant/20">
-          <div className="max-w-3xl mx-auto">
-            <ProfileUpload onProfileLoaded={setVoterProfile} />
-          </div>
-        </div>
-      )}
+      {/* PR C — the "Returning voter? Upload your voter profile" banner
+          was removed. The cold-open's `Use a starter profile` chip
+          (ColdOpenInput) already covers the returning-voter affordance
+          in-context, and the legacy banner duplicated framing the
+          starter-profile chip handles more cleanly. Flag-off paths
+          inherit the same removal — returning voters use the chip on
+          their next cold-open visit. */}
 
       <ResearchLayout
         state={state}
@@ -1394,6 +1396,19 @@ function WorkspaceShell({
     };
   }, [pollingData]);
 
+  // PR C — district label for the PrintBallot voter-meta 4-cell grid.
+  // Mirrors the breadcrumb derivation in ElectionResult's coldOpenContext
+  // (same regex, same race-list source). Falls back to undefined when no
+  // House race is on the ballot — PrintBallot renders an em-dash in that
+  // case for layout stability.
+  const printDistrict = useMemo(() => {
+    const houseRace = races.find((r) =>
+      /^u\.?s\.? house/i.test(r.label.split("—")[0].trim()),
+    );
+    if (!houseRace?.label.includes("—")) return undefined;
+    return houseRace.label.split("—")[1].trim();
+  }, [races]);
+
   // Election label + date for the printable header. Lives at the shell
   // (it already has `state`) so the parent doesn't have to thread two
   // more props through.
@@ -1541,6 +1556,7 @@ function WorkspaceShell({
         electionLabel={printElectionLabel}
         electionDate={printElectionDate}
         onBack={handlePrintBack}
+        district={printDistrict}
       />
     );
   }

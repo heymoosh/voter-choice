@@ -349,10 +349,12 @@ function EntryCard({
 
 function ThemesView({
   themes: initialThemes,
+  originalUserMessage,
   onLockIn,
   onRewrite,
 }: {
   themes: Theme[];
+  originalUserMessage?: string;
   onLockIn?: (themes: Theme[]) => void;
   onRewrite?: () => void;
 }) {
@@ -375,27 +377,63 @@ function ThemesView({
       )
     : undefined;
 
+  // PR C — user-message echo bubble. Mirrors prototype-views.jsx
+  // ColdOpenView lines 206-209 (`.msg.user .bubble`). The echo sits
+  // BEFORE the themes card so the conversational flow reads:
+  //   AI opener → user submission → AI "got it" → themes card.
+  // Falsy `originalUserMessage` short-circuits — the starter-profile
+  // load path passes empty text and has nothing to echo.
+  const userEcho = (originalUserMessage ?? "").trim();
+
   return (
-    <section
-      data-testid="concern-interpretation-themes"
-      className="bg-paper-2 border border-rule rounded-xl p-4 md:p-5 space-y-4"
-    >
-      <header>
-        <h3 className="font-serif text-lg md:text-xl font-semibold text-ink leading-tight tracking-tight">
-          {t.concernInterpretationThemesHeading}
-        </h3>
-        <p className="mt-1 text-xs italic text-ink-3">
-          {t.concernInterpretationThemesSubhead}
-        </p>
-      </header>
-      <ThemeRanker
-        themes={themes}
-        onChange={setThemes}
-        onLockIn={() => onLockIn?.(themes)}
-        onRewrite={() => onRewrite?.()}
-        warning={warning}
-      />
-    </section>
+    <>
+      {userEcho && (
+        <article className="flex flex-col items-end gap-1.5 mb-3">
+          <span className="font-mono text-[10.5px] uppercase tracking-[0.12em] text-ink-3">
+            You
+          </span>
+          <div
+            data-testid="cold-open-user-echo"
+            className="bg-ink text-paper px-4 py-3 text-[14.5px] leading-relaxed max-w-[540px] whitespace-pre-wrap"
+            style={{ borderRadius: "14px 14px 4px 14px" }}
+          >
+            {userEcho}
+          </div>
+        </article>
+      )}
+      <section
+        data-testid="concern-interpretation-themes"
+        className="bg-paper-2 border border-rule rounded-xl p-4 md:p-5 space-y-4"
+      >
+        <header>
+          {/* PR C — prototype's `.themes-card .th-head` is a baseline-aligned
+              flex row: serif heading on the left, mono "N themes · inferred"
+              count on the right (prototype.css lines 462-481). */}
+          <div className="flex items-baseline justify-between gap-3">
+            <h3 className="font-serif text-lg md:text-xl font-semibold text-ink leading-tight tracking-tight">
+              {t.concernInterpretationThemesHeading}
+            </h3>
+            <span
+              data-testid="theme-count-indicator"
+              className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-ink-3 shrink-0"
+            >
+              {themes.length} {themes.length === 1 ? "theme" : "themes"} ·
+              inferred
+            </span>
+          </div>
+          <p className="mt-1 text-xs italic text-ink-3">
+            {t.concernInterpretationThemesSubhead}
+          </p>
+        </header>
+        <ThemeRanker
+          themes={themes}
+          onChange={setThemes}
+          onLockIn={() => onLockIn?.(themes)}
+          onRewrite={() => onRewrite?.()}
+          warning={warning}
+        />
+      </section>
+    </>
   );
 }
 
@@ -410,6 +448,7 @@ export function ConcernInterpretation(props: ConcernInterpretationProps) {
     return (
       <ThemesView
         themes={props.themes}
+        originalUserMessage={props.originalUserMessage}
         onLockIn={props.onLockIn}
         onRewrite={props.onRewrite}
       />
@@ -606,14 +645,14 @@ function LegacyConcernInterpretation({
         })}
       </div>
 
-      {/* Confirm button */}
+      {/* Confirm button — PR C — sentence-case sans primary CTA. */}
       <div className="flex justify-end pt-1">
         <button
           type="button"
           data-testid="concern-interpretation-confirm"
           onClick={handleConfirm}
           disabled={confirmDisabled}
-          className="bg-civic text-paper-2 px-5 py-3 font-mono text-[11px] uppercase tracking-[0.12em] rounded-lg hover:bg-civic-2 disabled:bg-rule disabled:text-ink-3 disabled:cursor-not-allowed active:scale-95 transition"
+          className="bg-civic text-paper-2 px-5 py-3 text-[13.5px] font-semibold rounded-lg hover:bg-civic-2 disabled:bg-rule disabled:text-ink-3 disabled:cursor-not-allowed active:scale-95 transition"
         >
           {isSubmitting
             ? t.concernInterpretationSubmitting

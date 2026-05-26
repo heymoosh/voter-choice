@@ -717,7 +717,11 @@ function ColdOpenSurface({
           data-testid="co-context-breadcrumb"
           className="flex items-center gap-2.5 font-mono text-[11px] uppercase tracking-[0.14em] text-ink-3"
         >
+          {/* PR C — civic-green dot from prototype.css `.co-context::before`
+              (rule line 348). Tagged with a stable data-testid so the
+              cross-PR contract checks can assert presence and color. */}
           <span
+            data-testid="co-context-dot"
             aria-hidden="true"
             className="inline-block h-1.5 w-1.5 rounded-full bg-civic"
           />
@@ -1698,6 +1702,9 @@ function WorkspaceChat({
           data-testid="workspace-chat-suggestions"
           className="flex flex-wrap gap-2 border-t border-rule bg-paper px-5 py-3"
         >
+          {/* PR C — sentence-case sans chips per prototype's `.starter-chips
+              .sc` styling (sans 12.5px, pill-shaped, paper bg). Mono
+              uppercase was reading as a category divider, not an action. */}
           {suggestions.map((s) => (
             <button
               key={s.id}
@@ -1705,7 +1712,7 @@ function WorkspaceChat({
               data-testid={`workspace-chat-suggestion-${s.id}`}
               onClick={() => onSendMessage(s.label)}
               disabled={isStreaming}
-              className="rounded-full border border-rule bg-paper-2 px-3 py-1.5 font-mono text-[10.5px] uppercase tracking-[0.1em] text-ink-2 hover:border-ink-3 hover:text-ink disabled:opacity-50"
+              className="rounded-full border border-rule bg-paper-2 px-3 py-1.5 text-[12.5px] text-ink-2 hover:border-ink-3 hover:text-ink disabled:opacity-50 transition-colors"
             >
               {s.label}
             </button>
@@ -1727,6 +1734,8 @@ function WorkspaceChat({
           isStreaming={isStreaming}
           activeRaceLabel={activeRace.label}
           budgetExhausted={budgetExhausted}
+          activeRaceIndex={activeRaceIndex}
+          totalRaces={totalRaces}
         />
       )}
     </section>
@@ -1738,11 +1747,15 @@ function WorkspaceChatInput({
   isStreaming,
   activeRaceLabel,
   budgetExhausted,
+  activeRaceIndex,
+  totalRaces,
 }: {
   onSubmit: (msg: string) => void;
   isStreaming: boolean;
   activeRaceLabel: string;
   budgetExhausted: boolean;
+  activeRaceIndex: number;
+  totalRaces: number;
 }) {
   const [input, setInput] = useState("");
 
@@ -1796,14 +1809,30 @@ function WorkspaceChatInput({
           rows={2}
           className="flex-1 border border-outline-variant/30 bg-surface-lowest p-2 text-sm text-on-surface disabled:opacity-50"
         />
+        {/* PR C — sentence-case sans Send per prototype.css `.ws-input
+            .send` (sans 13.5px font-weight 600). Mono uppercase tracking-
+            widest reserved for eyebrow / micro-meta labels. */}
         <button
           type="submit"
           data-testid="workspace-chat-send"
           disabled={isStreaming || budgetExhausted || !input.trim()}
-          className="bg-primary px-3 py-2 text-xs font-bold uppercase tracking-widest text-on-primary hover:bg-primary/90 disabled:opacity-50"
+          className="bg-civic px-4 py-2.5 text-[13.5px] font-semibold text-paper-2 hover:bg-civic-2 disabled:opacity-50 rounded-lg"
         >
           Send
         </button>
+      </div>
+      {/* PR C — auto-saving + race-counter meta row. Mirrors the prototype's
+          `.ws-input .meta` (prototype-views.jsx WorkspaceView lines
+          466-469). Mono uppercase 10.5px reads as a privacy/orientation
+          micro-label, not a CTA. */}
+      <div
+        data-testid="workspace-chat-input-meta"
+        className="mt-2 flex items-center justify-between gap-3 font-mono text-[10.5px] uppercase tracking-[0.12em] text-ink-3"
+      >
+        <span>Auto-saving to your device · nothing leaves your browser</span>
+        <span>
+          Race {activeRaceIndex + 1} / {totalRaces}
+        </span>
       </div>
     </form>
   );
@@ -1871,22 +1900,30 @@ function WorkspacePickArea({
           Budget exhausted — see the right pane footer for next steps.
         </p>
       ) : decided ? (
+        // PR C — sentence-case sans for the "picked — undo" affordance.
+        // Ink bg signals "final" (this race is decided); a return to the
+        // mono uppercase treatment here would visually conflate the
+        // decision marker with mono micro-labels elsewhere.
         <button
           type="button"
           data-testid="workspace-unpick-trigger"
           data-race-id={activeRace.id}
           onClick={() => onUnpickDecision(activeRace.id)}
-          className="self-start bg-ink border border-ink px-4 py-2 font-mono text-[11px] uppercase tracking-[0.12em] text-paper hover:opacity-90 rounded"
+          className="self-start bg-ink border border-ink px-4 py-2.5 text-[13px] font-semibold text-paper hover:opacity-90 rounded-lg"
         >
           Picked — undo
         </button>
       ) : (
+        // PR C — sentence-case sans for the race-level fallback CTA.
+        // Per prototype.css `.cand-actions button.add` (lines 1057-1062)
+        // the candidate-add primary uses civic-green sans 13px, not
+        // mono uppercase.
         <button
           type="button"
           data-testid="workspace-pick-trigger"
           data-race-id={activeRace.id}
           onClick={() => openWhyFor(defaultCandidate)}
-          className="self-start bg-civic px-4 py-2 font-mono text-[11px] uppercase tracking-[0.12em] text-paper-2 hover:bg-civic-2 rounded"
+          className="self-start bg-civic px-4 py-2.5 text-[13px] font-semibold text-paper-2 hover:bg-civic-2 rounded-lg"
         >
           Pick {defaultCandidate.name}
         </button>

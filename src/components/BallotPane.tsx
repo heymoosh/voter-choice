@@ -203,13 +203,15 @@ export function BallotPane({
           data-testid="ballot-pane-print"
           disabled={!canPrint}
           onClick={onPrint}
-          // PR B — sentence-case sans CTA. Prototype reserves mono-uppercase
-          // for eyebrow / section dividers; primary buttons are sans 14.5px
-          // font-weight 600.
-          className="flex w-full items-center justify-between rounded-lg border border-civic bg-civic px-4 py-3 text-[14.5px] font-semibold text-paper-2 hover:bg-civic-2 disabled:cursor-not-allowed disabled:border-rule disabled:bg-rule disabled:text-ink-3"
+          // PR C — Print is the "final artifact" CTA, not a "go fetch" CTA.
+          // Per prototype.css `.ws-ballot .b-foot button.primary`
+          // (lines 1232-1237) the print primary uses INK background +
+          // paper text — the artifact treatment, distinct from civic-green
+          // which is reserved for fetch / forward-motion CTAs.
+          className="flex w-full items-center justify-between rounded-lg border border-ink bg-ink px-4 py-3 text-[14.5px] font-semibold text-paper hover:opacity-90 disabled:cursor-not-allowed disabled:border-rule disabled:bg-rule disabled:text-ink-3"
         >
           <span>Print my ballot</span>
-          <span aria-hidden="true" className="text-paper-2">
+          <span aria-hidden="true" className="text-paper">
             →
           </span>
         </button>

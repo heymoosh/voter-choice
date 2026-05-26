@@ -310,7 +310,15 @@ function EnglishShell({ children }: { children?: React.ReactNode }) {
                 className="font-serif font-semibold text-[44px] md:text-[76px] leading-[0.96] tracking-[-0.025em] text-ink mb-[22px] text-balance"
               >
                 Hold Congress to its{" "}
-                <em className="italic text-civic">record.</em>
+                {/* PR C — Civic-mood highlighter-strike on `record.` per
+                    prototype.css line 1508 `body[data-mood="civic"] .hp-hero
+                    h1 em { color: var(--ink); background: linear-gradient(
+                    transparent 62%, var(--civic-soft) 62%); padding: 0 2px; }`
+                    The highlight bg provides the chromatic contrast — text
+                    stays ink so the strike reads as marker-pen emphasis. */}
+                <em className="italic text-ink bg-[linear-gradient(transparent_62%,var(--civic-soft)_62%)] px-0.5">
+                  record.
+                </em>
               </h1>
               <p className="font-serif text-[18px] md:text-[20px] leading-[1.45] text-ink-2 mb-8 md:mb-8 max-w-[520px] text-pretty">
                 All 435 House seats and 34 Senate seats are on the ballot.

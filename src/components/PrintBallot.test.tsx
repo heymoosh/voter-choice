@@ -168,14 +168,21 @@ describe("PrintBallot — structure", () => {
 
   it("renders the polling header with all fields when pollingData is present", () => {
     renderBallot({ pollingData: fullPolling });
-    expect(screen.getByText(/Precinct 0207/)).toBeInTheDocument();
-    expect(screen.getByText(/Bayland Community Center/)).toBeInTheDocument();
+    // PR C — the voter-meta 4-cell grid now duplicates whatToBring +
+    // earlyVotingWindow into a structured layout (Address / District /
+    // Bring / Early voting). Scope these assertions to the polling-
+    // header region so the duplication doesn't trip getByText's
+    // single-match contract.
+    const pollingHeader = screen.getByTestId("polling-header");
+    const region = within(pollingHeader);
+    expect(region.getByText(/Precinct 0207/)).toBeInTheDocument();
+    expect(region.getByText(/Bayland Community Center/)).toBeInTheDocument();
     expect(
-      screen.getByText(/6400 Bissonnet St, Houston TX 77074/),
+      region.getByText(/6400 Bissonnet St, Houston TX 77074/),
     ).toBeInTheDocument();
-    expect(screen.getByText(/7am – 7pm/)).toBeInTheDocument();
-    expect(screen.getByText(/Government-issued photo ID/)).toBeInTheDocument();
-    expect(screen.getByText(/Oct 20 – Oct 31/)).toBeInTheDocument();
+    expect(region.getByText(/7am – 7pm/)).toBeInTheDocument();
+    expect(region.getByText(/Government-issued photo ID/)).toBeInTheDocument();
+    expect(region.getByText(/Oct 20 – Oct 31/)).toBeInTheDocument();
   });
 
   it("renders polling fallback (text + USA.gov link) when pollingData is null", () => {
