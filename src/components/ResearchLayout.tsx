@@ -17,6 +17,12 @@ import type { Theme } from "../lib/prompts/types";
 import type { BallotSourceSummary } from "../types/ballotSource";
 import type { PollingLocation } from "./PollingLocationCard";
 import type { SerializableBallotContext } from "../lib/state-rules/ballot-context";
+import {
+  extractPdfText,
+  isPdfFile,
+  isTextFile,
+  PDF_SCANNED_MIN_CHARS,
+} from "../lib/pdf-extract";
 
 type ResearchTab = "research" | "dates" | "id" | "polling";
 
@@ -90,6 +96,22 @@ interface ResearchLayoutProps {
     district?: string;
     raceCount: number;
   };
+  /**
+   * Fix for live bug 3 — forwarded to ChatPanel so a 429 / budget response
+   * during cold-open opens the BudgetExhausted overlay instead of falling
+   * through to the inline-text stub. Owned by ElectionResult (the parent).
+   */
+  onBudgetExhausted?: (input: {
+    handoffPromptText: string;
+    resetAt: string;
+  }) => void;
+  /**
+   * Set by the parent when the BudgetExhausted overlay has been opened.
+   * Forwarded to ChatPanel so the chat surface gracefully reflects the
+   * budget-out state (input disabled etc) even after the overlay is
+   * dismissed.
+   */
+  budgetExhausted?: boolean;
 }
 
 /* ── Icons ──────────────────────────────────────────────────── */
@@ -480,149 +502,11 @@ function sampleBallotCopy(lang: Language) {
   return SAMPLE_BALLOT_COPY[lang];
 }
 
-function isPdfFile(file: File): boolean {
-  return file.type === "application/pdf" || file.name.endsWith(".pdf");
-}
-
-function isTextFile(file: File): boolean {
-  return file.name.endsWith(".txt") || file.type === "text/plain";
-}
-
-const PDF_SCANNED_MIN_CHARS = 50;
-
-type PdfDocument = Awaited<
-  ReturnType<typeof import("pdfjs-dist").getDocument>["promise"]
->;
-
-// OCR fallback for scanned PDFs. Lazy-imports tesseract.js so it is
-// excluded from the initial JS bundle and only downloaded when needed.
-// Throws `OCR_FAILED` only if EVERY page failed; otherwise returns whatever
-// successful page text we collected. Per-page errors are caught so a single
-// bad page doesn't abort the whole document.
-async function ocrPdfPages(pdf: PdfDocument): Promise<string> {
-  // eslint-disable-next-line no-console
-  console.log("[pdf-extract] OCR start", { numPages: pdf.numPages });
-  let Tesseract: typeof import("tesseract.js");
-  try {
-    Tesseract = await import("tesseract.js");
-  } catch (err) {
-    // eslint-disable-next-line no-console
-    console.error("[pdf-extract] tesseract.js failed to load", err);
-    throw new Error("OCR_FAILED");
-  }
-  const textParts: string[] = [];
-  let successfulPages = 0;
-  for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-    try {
-      const page = await pdf.getPage(pageNum);
-      const viewport = page.getViewport({ scale: 2 });
-      const canvas = document.createElement("canvas");
-      canvas.width = viewport.width;
-      canvas.height = viewport.height;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) {
-        // eslint-disable-next-line no-console
-        console.warn("[pdf-extract] page skipped: no 2d context", { pageNum });
-        continue;
-      }
-      if (canvas.width === 0 || canvas.height === 0) {
-        // eslint-disable-next-line no-console
-        console.warn("[pdf-extract] page skipped: zero canvas dimensions", {
-          pageNum,
-          width: canvas.width,
-          height: canvas.height,
-        });
-        continue;
-      }
-      await page.render({ canvasContext: ctx, viewport, canvas }).promise;
-      // Tesseract v5 is picky about input — image data URL is the most
-      // reliable format across browsers/build targets.
-      const dataUrl = canvas.toDataURL("image/png");
-      const result = await Tesseract.recognize(dataUrl, "eng");
-      const pageText = result.data.text ?? "";
-      // eslint-disable-next-line no-console
-      console.log("[pdf-extract] OCR page", {
-        pageNum,
-        canvasWidth: canvas.width,
-        canvasHeight: canvas.height,
-        textLength: pageText.length,
-      });
-      textParts.push(pageText);
-      successfulPages += 1;
-    } catch (err) {
-      // eslint-disable-next-line no-console
-      console.error("[pdf-extract] OCR page failed", { pageNum, err });
-      // Keep going — partial output beats nothing.
-    }
-  }
-  if (successfulPages === 0) {
-    // eslint-disable-next-line no-console
-    console.error("[pdf-extract] OCR failed on all pages");
-    throw new Error("OCR_FAILED");
-  }
-  const combined = textParts.join("\n").trim();
-  // eslint-disable-next-line no-console
-  console.log("[pdf-extract] OCR done", {
-    successfulPages,
-    totalPages: pdf.numPages,
-    combinedLength: combined.length,
-  });
-  return combined;
-}
-
-async function extractPdfText(
-  file: File,
-  options?: { onOcrStart?: () => void },
-): Promise<string> {
-  // eslint-disable-next-line no-console
-  console.log("[pdf-extract] start", {
-    fileName: file.name,
-    fileSize: file.size,
-    fileType: file.type,
-  });
-  // Lazy-load pdfjs-dist only on client-side to avoid SSR issues.
-  // Wrap the import + worker setup in its own try/catch so CDN/load failures
-  // surface a distinct "PDF_LOAD_ERROR" rather than the misleading "scanned" message.
-  let pdfjsLib: typeof import("pdfjs-dist");
-  try {
-    pdfjsLib = await import("pdfjs-dist");
-    // Use CDN worker to keep bundle size small.
-    pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.mjs`;
-  } catch (err) {
-    // eslint-disable-next-line no-console
-    console.error("[pdf-extract] pdfjs-dist failed to load", err);
-    throw new Error("PDF_LOAD_ERROR");
-  }
-
-  const arrayBuffer = await file.arrayBuffer();
-  const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
-  const pdf = await loadingTask.promise;
-  // eslint-disable-next-line no-console
-  console.log("[pdf-extract] pdf loaded", { numPages: pdf.numPages });
-
-  const textParts: string[] = [];
-  for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-    const page = await pdf.getPage(pageNum);
-    const textContent = await page.getTextContent();
-    const pageText = textContent.items
-      .map((item) => ("str" in item ? item.str : ""))
-      .join(" ");
-    textParts.push(pageText);
-  }
-  const extracted = textParts.join("\n").trim();
-  // eslint-disable-next-line no-console
-  console.log("[pdf-extract] pdfjs text", {
-    extractedLength: extracted.length,
-    threshold: PDF_SCANNED_MIN_CHARS,
-  });
-  if (extracted.length >= PDF_SCANNED_MIN_CHARS) {
-    return extracted;
-  }
-  // pdfjs returned almost nothing — likely a scanned/image-only PDF.
-  // Fall back to OCR; notify the caller so it can surface a progress notice.
-  options?.onOcrStart?.();
-  return ocrPdfPages(pdf);
-}
+// PDF / OCR extraction moved to src/lib/pdf-extract.ts so the new
+// redesign's BallotLookupNeeded surface can share the same flow without
+// duplicating the OCR fallback machinery (live bug 2 — PDF upload
+// regression). The legacy `UserSampleBallotInput` below continues to
+// import from the shared module.
 
 function UserSampleBallotInput({
   value,
@@ -664,7 +548,6 @@ function UserSampleBallotInput({
           setNotice(copy.loadedNotice);
         }
       } catch (err) {
-        // eslint-disable-next-line no-console
         console.error("[pdf-extract] handleFile caught", err);
         if (err instanceof Error && err.message === "PDF_LOAD_ERROR") {
           setNotice(t.research.pdfLoadError);
@@ -1541,6 +1424,8 @@ function ResearchView({
   onLockInThemes,
   ballotContext,
   coldOpenContext,
+  onBudgetExhausted,
+  budgetExhausted,
 }: {
   state: StateElectionData;
   zipCode: string;
@@ -1570,6 +1455,12 @@ function ResearchView({
     district?: string;
     raceCount: number;
   };
+  /** Fix bug 3 — forwarded to ChatPanel so cold-open 429/budget responses open the overlay. */
+  onBudgetExhausted?: (input: {
+    handoffPromptText: string;
+    resetAt: string;
+  }) => void;
+  budgetExhausted?: boolean;
 }) {
   const { lang } = useLanguage();
   const t = translations[lang];
@@ -1727,6 +1618,8 @@ function ResearchView({
               onLockInThemes={onLockInThemes}
               ballotContext={ballotContext}
               coldOpenContext={coldOpenContext}
+              onBudgetExhausted={onBudgetExhausted}
+              budgetExhausted={budgetExhausted}
             />
           )}
 
@@ -1796,6 +1689,8 @@ export function ResearchLayout({
   onLockInThemes,
   ballotContext,
   coldOpenContext,
+  onBudgetExhausted,
+  budgetExhausted,
 }: ResearchLayoutProps) {
   const [activeTab, setActiveTab] = useState<ResearchTab>("research");
   const { lang } = useLanguage();
@@ -1851,6 +1746,8 @@ export function ResearchLayout({
             onLockInThemes={onLockInThemes}
             ballotContext={ballotContext}
             coldOpenContext={coldOpenContext}
+            onBudgetExhausted={onBudgetExhausted}
+            budgetExhausted={budgetExhausted}
           />
         </div>
 

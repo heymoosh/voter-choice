@@ -366,8 +366,40 @@ interface ChatPanelProps {
   };
 }
 
+const SESSION_ID_STORAGE_KEY = "voter-choice:sessionId";
+
 function generateSessionId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+}
+
+/**
+ * Initialize the per-browser-session ID. Persists in `sessionStorage` (not
+ * localStorage) so the ID survives page reloads / SPA navigations within the
+ * tab but resets when the tab/window closes — matching the user's intuition
+ * of "one ballot research session". Without this, every reload generated a
+ * fresh sessionId and consumed a new slot in the server-side daily quota
+ * (CHAT_DAILY_SESSION_LIMIT, default 10), causing the user-reported
+ * "daily session limit reached" with monthly budget still remaining. SSR
+ * safe: returns a fresh id when `sessionStorage` is unavailable.
+ */
+function initSessionId(): string {
+  if (typeof window === "undefined") return generateSessionId();
+  try {
+    const existing = window.sessionStorage.getItem(SESSION_ID_STORAGE_KEY);
+    if (existing && typeof existing === "string" && existing.length > 0) {
+      return existing;
+    }
+  } catch {
+    // sessionStorage unavailable (Safari private mode, etc.) — fall through
+    // to fresh id; the user just won't get cross-reload session continuity.
+  }
+  const fresh = generateSessionId();
+  try {
+    window.sessionStorage.setItem(SESSION_ID_STORAGE_KEY, fresh);
+  } catch {
+    // Same fall-through as above.
+  }
+  return fresh;
 }
 
 interface StreamCallbacks {
@@ -420,6 +452,39 @@ function getDisabledReason(code: string): DisabledReason | null {
   if (BUDGET_ERROR_CODES.has(code)) return "budget";
   if (RATE_ERROR_CODES.has(code)) return "rate_limit";
   return null;
+}
+
+/**
+ * Error codes the API can return that warrant surfacing the full
+ * BudgetExhausted overlay (handoff prompt + BYOK + chatbot links) rather
+ * than the lesser inline "chat-disabled" text stub. Fix for live bug 3:
+ * `DAILY_LIMIT` was rendering as inline text only, leaving the user
+ * staring at the message without a way to continue their research.
+ */
+const OVERLAY_HANDOFF_CODES: ReadonlySet<string> = new Set([
+  "BUDGET_EXHAUSTED",
+  "BUDGET_SOFT_CLOSE",
+  "DAILY_LIMIT",
+  "CONCURRENT_LIMIT",
+  "SESSION_LIMIT",
+]);
+
+function shouldRouteToOverlay(code: string | undefined): boolean {
+  return !!code && OVERLAY_HANDOFF_CODES.has(code);
+}
+
+/**
+ * Default `resetAt` ISO for the BudgetExhausted overlay when the server
+ * didn't supply one (e.g. rate-limit 429 paths). DAILY_LIMIT resets at
+ * next UTC midnight; the monthly budget resets on the 1st. We use the
+ * sooner of "tomorrow UTC midnight" or "next UTC month start", which
+ * for daily limits ends up being tomorrow midnight — the more useful
+ * value to show in the overlay's countdown.
+ */
+function defaultRateLimitResetAtISO(): string {
+  const next = new Date();
+  next.setUTCHours(24, 0, 0, 0);
+  return next.toISOString();
 }
 
 function getDisabledMessage(
@@ -2024,7 +2089,7 @@ export function ChatPanel({
     useState<Map<number, true>>(() => new Map());
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const lastUserMsgRef = useRef<HTMLDivElement>(null);
-  const sessionIdRef = useRef(generateSessionId());
+  const sessionIdRef = useRef(initSessionId());
   const messageCountRef = useRef(0);
   const { lang } = useLanguage();
   const t = translations[lang];
@@ -2394,6 +2459,22 @@ export function ChatPanel({
 
         if (!response.ok) {
           const errorData = await response.json();
+          // Fix for live bug 3 — route rate-limit / budget errors to the
+          // BudgetExhausted overlay so the cold-open user gets the full
+          // handoff continuity surface, not the inline-text stub from
+          // `chatDisabled`. Before this fix, hitting DAILY_LIMIT during
+          // cold-open showed only the small "daily session limit" text
+          // with no prompt / BYOK / chatbot links surfaced.
+          if (shouldRouteToOverlay(errorData.code)) {
+            onBudgetExhausted?.({
+              handoffPromptText: errorData.handoffPrompt ?? "",
+              resetAt: errorData.resetAt ?? defaultRateLimitResetAtISO(),
+            });
+            messageCountRef.current -= 1;
+            setColdOpenPhase({ kind: "input", draft: userText });
+            setIsStreaming(false);
+            return;
+          }
           handleApiError(errorData);
           messageCountRef.current -= 1;
           setColdOpenPhase({
@@ -2405,6 +2486,30 @@ export function ChatPanel({
           });
           setIsStreaming(false);
           return;
+        }
+
+        // Phase 9 — intercept the structured `budget_exhausted` shape on
+        // the cold-open path too (sendMessage already does this; this
+        // mirrors the same intercept so the overlay opens when the
+        // community-budget gate trips during cold-open). Reading
+        // content-type avoids parsing a stream as JSON or vice versa.
+        const ct = response.headers.get("content-type") ?? "";
+        if (ct.includes("application/json")) {
+          const data = (await response.json()) as {
+            status?: string;
+            resetAt?: string;
+            handoffPrompt?: string;
+          };
+          if (data?.status === "budget_exhausted") {
+            onBudgetExhausted?.({
+              handoffPromptText: data.handoffPrompt ?? "",
+              resetAt: data.resetAt ?? defaultRateLimitResetAtISO(),
+            });
+            messageCountRef.current -= 1;
+            setColdOpenPhase({ kind: "input", draft: userText });
+            setIsStreaming(false);
+            return;
+          }
         }
 
         await streamResponse(response, {
@@ -2464,6 +2569,7 @@ export function ChatPanel({
       handleBudgetUpdate,
       t.research.coldOpenParseError,
       ballotContext,
+      onBudgetExhausted,
     ],
   );
 

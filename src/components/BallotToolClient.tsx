@@ -1014,6 +1014,108 @@ export function ElectionResult({
     setAddressStep("skipped");
   }, []);
 
+  // Fix for live bug 3 — BudgetExhausted overlay needs to be reachable from
+  // BOTH the pre-workspace (cold-open) and workspace paths. Previously the
+  // overlay state was scoped to WorkspaceShell, so a rate-limit / budget
+  // response during cold-open had nowhere to land and the user saw only an
+  // inline-text stub. Lifting this state into ElectionResult makes the
+  // overlay a sibling of every conditional branch below.
+  const [budgetOut, setBudgetOut] = useState<{
+    handoffPromptText: string;
+    resetAt: string;
+  } | null>(null);
+  const [overlayDismissed, setOverlayDismissed] = useState(false);
+  const [byokKey, setByokKeyState] = useState<string | null>(null);
+  useEffect(() => {
+    setByokKeyState(getByokKey());
+  }, []);
+  const handleByokContinue = useCallback((key: string) => {
+    setByokKey(key);
+    setByokKeyState(key);
+    setBudgetOut(null);
+    setOverlayDismissed(false);
+  }, []);
+  const handleByokRemove = useCallback(() => {
+    removeByokKey();
+    setByokKeyState(null);
+  }, []);
+  const handleResume = useCallback(() => {
+    setBudgetOut(null);
+    setOverlayDismissed(false);
+  }, []);
+  const handleDismissOverlay = useCallback(() => {
+    setOverlayDismissed(true);
+  }, []);
+  // Default reset = first of next month UTC. Mirrors `defaultBudgetResetAtISO`
+  // in the chat route so the BallotPane "Continue elsewhere" path and the
+  // genuine exhaustion path show the same countdown wording.
+  const defaultResetAtISO = useMemo(() => {
+    const now = new Date();
+    return new Date(
+      Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1, 0, 0, 0),
+    ).toISOString();
+  }, []);
+  // Best-effort populated handoff. During cold-open we lack locked themes
+  // / decisions, so fall back to the bare BALLOT_PROMPT_EN template. Once
+  // the user is in the workspace, the WorkspaceShell can supply a richer
+  // populated handoff via its own `handleBudgetExhausted` (which overrides
+  // the one passed down to it via `onBudgetExhausted`).
+  const baseHandoffPrompt = useMemo(() => {
+    if (!lockedThemes || lockedThemes.length === 0) return BALLOT_PROMPT_EN;
+    const themesRanked = lockedThemes
+      .map((t, i) => `${i + 1}. ${t.name}`)
+      .join("; ");
+    const decidedJson = JSON.stringify(
+      decisions.map((d) => ({
+        race: d.raceLabel,
+        pick: d.pick,
+        party: d.party ?? null,
+        why: d.whyNote,
+      })),
+    );
+    const decidedIds = new Set(decisions.map((d) => d.raceId));
+    const remainingList = races
+      .filter((r) => !decidedIds.has(r.id))
+      .map((r) => `· ${r.label}`)
+      .join("\n");
+    const notableQuotes = lockedThemes
+      .flatMap((t) => t.quotes ?? [])
+      .slice(0, 4)
+      .join(" | ");
+    const cityState =
+      countyForPrompt && state.stateName
+        ? `${countyForPrompt}, ${state.stateName}`
+        : state.stateName;
+    return buildHandoffPrompt({
+      addressCityState: cityState,
+      electionLabel: upcomingElection?.name ?? state.stateName,
+      electionDate: upcomingElection?.date ?? "",
+      ballotType: primaryLane,
+      themesRanked,
+      decidedJson,
+      remainingList: remainingList || "(none)",
+      notableQuotes: notableQuotes || "(none)",
+    });
+  }, [
+    lockedThemes,
+    decisions,
+    races,
+    countyForPrompt,
+    state.stateName,
+    upcomingElection,
+    primaryLane,
+  ]);
+  const handleBudgetExhausted = useCallback(
+    (input: { handoffPromptText: string; resetAt: string }) => {
+      setBudgetOut({
+        handoffPromptText: baseHandoffPrompt,
+        resetAt: input.resetAt || defaultResetAtISO,
+      });
+      setOverlayDismissed(false);
+    },
+    [baseHandoffPrompt, defaultResetAtISO],
+  );
+
   // Phase 5 — handler for the new data-driven PartyGate. Stores the
   // ballotContext so downstream chat calls inject `<ballot_context>`, and
   // back-maps onto the legacy runoffChoice / closedPrimaryChoice so the
@@ -1153,6 +1255,8 @@ export function ElectionResult({
         onLockInThemes={handleLockInThemes}
         ballotContext={ballotContext}
         coldOpenContext={coldOpenContext}
+        onBudgetExhausted={handleBudgetExhausted}
+        budgetExhausted={!!budgetOut}
         preResearchGate={
           needsRunoffGate ? (
             <RunoffGate
@@ -1171,6 +1275,23 @@ export function ElectionResult({
           ) : null
         }
       />
+      {/*
+       * Fix for live bug 3 — BudgetExhausted overlay rendered at the
+       * pre-workspace level so it can appear during cold-open. Mirrors the
+       * mount in WorkspaceShell. Portals over the workspace via the
+       * component's own portal logic so the underlying tree stays mounted.
+       */}
+      {budgetOut && !overlayDismissed && (
+        <BudgetExhausted
+          resetAt={budgetOut.resetAt}
+          handoffPromptText={budgetOut.handoffPromptText}
+          onByokContinue={handleByokContinue}
+          onByokRemove={handleByokRemove}
+          storedByokKey={byokKey}
+          onResume={handleResume}
+          onDismiss={handleDismissOverlay}
+        />
+      )}
     </>
   );
 }
