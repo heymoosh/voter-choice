@@ -203,9 +203,12 @@ export function BallotPane({
           data-testid="ballot-pane-print"
           disabled={!canPrint}
           onClick={onPrint}
-          className="flex w-full items-center justify-between rounded-lg border border-civic bg-civic px-4 py-3 font-mono text-[11px] font-medium uppercase tracking-[0.12em] text-paper-2 hover:bg-civic-2 disabled:cursor-not-allowed disabled:border-rule disabled:bg-rule disabled:text-ink-3"
+          // PR B — sentence-case sans CTA. Prototype reserves mono-uppercase
+          // for eyebrow / section dividers; primary buttons are sans 14.5px
+          // font-weight 600.
+          className="flex w-full items-center justify-between rounded-lg border border-civic bg-civic px-4 py-3 text-[14.5px] font-semibold text-paper-2 hover:bg-civic-2 disabled:cursor-not-allowed disabled:border-rule disabled:bg-rule disabled:text-ink-3"
         >
-          <span>Print my ballot (PDF)</span>
+          <span>Print my ballot</span>
           <span aria-hidden="true" className="text-paper-2">
             →
           </span>
@@ -214,9 +217,9 @@ export function BallotPane({
           type="button"
           data-testid="ballot-pane-save-profile"
           onClick={onSaveProfile}
-          className="flex w-full items-center justify-between rounded-lg border border-civic bg-paper px-4 py-3 font-mono text-[11px] font-medium uppercase tracking-[0.12em] text-civic hover:bg-civic-soft"
+          className="flex w-full items-center justify-between rounded-lg border border-civic bg-paper px-4 py-3 text-[14.5px] font-semibold text-civic hover:bg-civic-soft"
         >
-          <span>Save my profile (.txt)</span>
+          <span>Save my profile</span>
           <span aria-hidden="true" className="text-civic">
             ↓
           </span>
@@ -225,7 +228,7 @@ export function BallotPane({
           type="button"
           data-testid="ballot-pane-handoff"
           onClick={onHandoff}
-          className="flex w-full items-center justify-between rounded-lg px-4 py-3 font-mono text-[11px] font-medium uppercase tracking-[0.12em] text-ink-2 hover:text-civic"
+          className="flex w-full items-center justify-between rounded-lg px-4 py-3 text-[14.5px] font-semibold text-ink-2 hover:text-civic"
         >
           <span>Continue in another chatbot</span>
           <span aria-hidden="true" className="text-ink-3">

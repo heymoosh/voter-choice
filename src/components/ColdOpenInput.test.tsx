@@ -86,11 +86,17 @@ describe("ColdOpenInput", () => {
   describe("rendering", () => {
     it("renders the textarea with the accessible label", () => {
       renderInput();
-      const textarea = screen.getByTestId("cold-open-textarea");
+      const textarea = screen.getByTestId(
+        "cold-open-textarea",
+      ) as HTMLTextAreaElement;
       expect(textarea).toBeInTheDocument();
-      // Label is associated by htmlFor → id
-      const label = screen.getByText("What's on your mind this election?");
-      expect(label).toBeInTheDocument();
+      // PR B — the prototype `.co-input` card has no visible label
+      // (the prompting is owned by the AI-opener bubble above the card).
+      // The textarea keeps an accessible name via aria-label so screen
+      // readers still announce it.
+      expect(textarea).toHaveAccessibleName(
+        "What's on your mind this election?",
+      );
     });
 
     it("renders the Send button", () => {

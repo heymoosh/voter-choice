@@ -80,6 +80,16 @@ interface ResearchLayoutProps {
    * so every chat call carries it. Null on flag-off / ES paths.
    */
   ballotContext?: SerializableBallotContext | null;
+  /**
+   * PR B — anchored-location breadcrumb for the cold-open chat. Pre-computed
+   * by BallotToolClient from countyName + state.stateName + race count.
+   * When omitted the breadcrumb simply doesn't render.
+   */
+  coldOpenContext?: {
+    cityState: string;
+    district?: string;
+    raceCount: number;
+  };
 }
 
 /* ── Icons ──────────────────────────────────────────────────── */
@@ -1530,6 +1540,7 @@ function ResearchView({
   promptFleetV2Enabled,
   onLockInThemes,
   ballotContext,
+  coldOpenContext,
 }: {
   state: StateElectionData;
   zipCode: string;
@@ -1553,6 +1564,12 @@ function ResearchView({
   onLockInThemes?: (themes: Theme[]) => void;
   /** Phase 5 — forwarded to ChatPanel so chat calls carry the gate selection. */
   ballotContext?: SerializableBallotContext | null;
+  /** PR B — anchored-location breadcrumb for the cold-open chat. */
+  coldOpenContext?: {
+    cityState: string;
+    district?: string;
+    raceCount: number;
+  };
 }) {
   const { lang } = useLanguage();
   const t = translations[lang];
@@ -1692,6 +1709,7 @@ function ResearchView({
               promptFleetV2Enabled={promptFleetV2Enabled}
               onLockInThemes={onLockInThemes}
               ballotContext={ballotContext}
+              coldOpenContext={coldOpenContext}
             />
           )}
 
@@ -1760,6 +1778,7 @@ export function ResearchLayout({
   promptFleetV2Enabled,
   onLockInThemes,
   ballotContext,
+  coldOpenContext,
 }: ResearchLayoutProps) {
   const [activeTab, setActiveTab] = useState<ResearchTab>("research");
   const { lang } = useLanguage();
@@ -1814,6 +1833,7 @@ export function ResearchLayout({
             promptFleetV2Enabled={promptFleetV2Enabled}
             onLockInThemes={onLockInThemes}
             ballotContext={ballotContext}
+            coldOpenContext={coldOpenContext}
           />
         </div>
 
