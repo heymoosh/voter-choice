@@ -115,17 +115,43 @@
   font-weight: 600;
 }
 
+/* PR C — 4-cell voter-meta grid mirrors prototype.css `.voter-meta`
+   (lines 1384-1405): grid-template-columns repeat(4, 1fr), 18px gap,
+   border-bottom rule. The `.k` cell carries the mono micro-label;
+   the `.v` cell carries the serif value. */
 .print-sheet .voter-meta {
-  display: flex;
-  gap: 0.25in;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.2in;
   font-size: 10pt;
   margin-bottom: 0.2in;
   padding-bottom: 0.1in;
   border-bottom: 1px solid var(--rule, black);
 }
 
-.print-sheet .voter-meta > div {
-  flex: 1;
+.print-sheet .voter-meta .cell .k {
+  font-family: var(--mono), "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 8pt;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--ink-3, #666);
+  margin-bottom: 0.03in;
+}
+
+.print-sheet .voter-meta .cell .v {
+  font-family: var(--serif), "IBM Plex Serif", "Newsreader", Georgia, serif;
+  font-size: 10pt;
+  color: var(--ink, black);
+  font-weight: 500;
+}
+
+.print-sheet .election-meta {
+  font-family: var(--mono), "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 9pt;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--ink-3, #666);
+  margin-bottom: 0.15in;
 }
 
 .print-sheet .ballot-list .ballot-group {

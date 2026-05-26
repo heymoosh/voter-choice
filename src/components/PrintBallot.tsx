@@ -49,6 +49,13 @@ export interface PrintBallotProps {
   electionLabel: string;
   electionDate: string;
   onBack: () => void;
+  /**
+   * PR C — district label for the voter-meta 4-cell grid (e.g. "NJ-1",
+   * "TX-7"). Pre-computed by BallotToolClient from races. Falls back to
+   * an em-dash when omitted so the cell still renders for layout
+   * stability.
+   */
+  district?: string;
 }
 
 /**
@@ -71,6 +78,7 @@ export function PrintBallot({
   electionLabel,
   electionDate,
   onBack,
+  district,
 }: PrintBallotProps) {
   const sheetRef = useRef<HTMLDivElement>(null);
   const [overflowing, setOverflowing] = useState(false);
@@ -207,10 +215,36 @@ export function PrintBallot({
           )}
         </header>
 
+        {/* PR C — 4-cell voter-meta grid per prototype-views.jsx PrintView
+            lines 527-532 (`<div className="voter-meta">` with four
+            `.cell.k/.v` pairs). The previous 3-line layout dropped
+            district + bring + early-voting info onto the page header
+            instead, which conflated polling-place chrome with voter
+            context. The four cells are queryable by their k labels:
+            Address / District / Bring / Early voting. */}
         <div className="voter-meta">
-          <div>{electionLabel}</div>
-          <div>{electionDate}</div>
-          <div>{cityState}</div>
+          <div className="cell">
+            <div className="k">Address</div>
+            <div className="v">{cityState}</div>
+          </div>
+          <div className="cell">
+            <div className="k">District</div>
+            <div className="v">{district ?? "—"}</div>
+          </div>
+          <div className="cell">
+            <div className="k">Bring</div>
+            <div className="v">{pollingData?.whatToBring ?? "ID"}</div>
+          </div>
+          <div className="cell">
+            <div className="k">Early voting</div>
+            <div className="v">{pollingData?.earlyVotingWindow ?? "—"}</div>
+          </div>
+        </div>
+        {/* Election context line — preserved beneath the meta grid so
+            the page still shows label + date. Mono micro-label, not
+            another cell. */}
+        <div className="election-meta">
+          {electionLabel} · {electionDate}
         </div>
 
         <div className="ballot-list">

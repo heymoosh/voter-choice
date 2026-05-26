@@ -1519,16 +1519,20 @@ describe("ElectionResult — Fix O: cold-open paste affordance", () => {
     );
   }
 
-  it("compactBallotStatus no longer says 'Not confirmed' when paste is present", () => {
-    renderColdOpenWithPaste(njBallotText);
-    const strip = screen.getByTestId("research-context-strip");
-    // The misleading "Not confirmed" copy must be gone — the user just
-    // pasted a ballot. Either the strip says "Pasted by you" or it counts
-    // the parsed races; either way the literal "Not confirmed" string is
-    // wrong here.
-    expect(strip.textContent ?? "").not.toContain("Not confirmed");
-    // Same for the count — "0 races" is wrong when paste parsed to N races.
-    expect(strip.textContent ?? "").not.toMatch(/\b0 races?\b/);
+  it("post-paste ballot status: no 'Not confirmed' / '0 races' copy reaches the cold-open", () => {
+    // PR C — under flag-on + en the cold-open suppresses the legacy
+    // research-context-strip (alarming three-cell red-treatment strip);
+    // the prototype's `.co-context` breadcrumb carries the same anchor
+    // information instead. The original assertion guarded against
+    // misleading post-paste copy ("Not confirmed", "0 races") leaking
+    // into the UI — assert the same negative-space contract on the
+    // visible cold-open surface (the breadcrumb + the cold-open card),
+    // not on the now-hidden strip.
+    const { container } = renderColdOpenWithPaste(njBallotText);
+    expect(screen.queryByTestId("research-context-strip")).toBeNull();
+    const visibleText = container.textContent ?? "";
+    expect(visibleText).not.toContain("Not confirmed");
+    expect(visibleText).not.toMatch(/\b0 races?\b/);
   });
 
   it("'Exact ballot not confirmed yet' warning panel is absent when paste is present", () => {

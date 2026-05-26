@@ -840,7 +840,7 @@ const en: Translations = {
       "Which of these best matches your view?",
     concernInterpretationConfirmPerEntry: "Looks right",
     // ConcernInterpretation themes-mode (Phase 2 cold-open)
-    concernInterpretationThemesHeading: "Here's what I heard you say",
+    concernInterpretationThemesHeading: "What you actually said.",
     concernInterpretationThemesSubhead:
       "Each card is grounded in your own words. Rename, remove, or rerank — then lock these in.",
     concernInterpretationThemesTruncationWarning: (
@@ -853,13 +853,13 @@ const en: Translations = {
     themeRankerReorderLabel: "Reorder theme",
     themeRankerRemoveLabel: "Remove theme",
     themeRankerRenameLabel: "Rename theme",
-    themeRankerLockIn: "Lock these in",
+    themeRankerLockIn: "Lock these in & start the ballot →",
     themeRankerRewrite: "Let me rewrite my message",
     themeRankerEmpty: "No themes left. Rewrite your message to start over.",
     // ColdOpenInput (Phase 2 cold-open) — free-form textarea entry
     coldOpenInputLabel: "What's on your mind this election?",
     coldOpenInputPlaceholder:
-      "Describe what you care about in your own words. The more specific, the better.",
+      "Things that have been on your mind. Frustrations, hopes, fights you've watched in your community…",
     coldOpenInputSend: "Send",
     coldOpenInputShowExample: "Show me an example",
     coldOpenInputUseStarterProfile: "Use a starter profile",
@@ -1448,7 +1448,7 @@ const es: Translations = {
       "Which of these best matches your view?",
     concernInterpretationConfirmPerEntry: "Looks right",
     // ConcernInterpretation themes-mode \u2014 EN stubs (ES UI out of scope for this packet)
-    concernInterpretationThemesHeading: "Here's what I heard you say",
+    concernInterpretationThemesHeading: "What you actually said.",
     concernInterpretationThemesSubhead:
       "Each card is grounded in your own words. Rename, remove, or rerank \u2014 then lock these in.",
     concernInterpretationThemesTruncationWarning: (
@@ -1461,13 +1461,13 @@ const es: Translations = {
     themeRankerReorderLabel: "Reorder theme",
     themeRankerRemoveLabel: "Remove theme",
     themeRankerRenameLabel: "Rename theme",
-    themeRankerLockIn: "Lock these in",
+    themeRankerLockIn: "Lock these in & start the ballot →",
     themeRankerRewrite: "Let me rewrite my message",
     themeRankerEmpty: "No themes left. Rewrite your message to start over.",
     // ColdOpenInput \u2014 EN stubs (ES UI out of scope for this packet)
     coldOpenInputLabel: "What's on your mind this election?",
     coldOpenInputPlaceholder:
-      "Describe what you care about in your own words. The more specific, the better.",
+      "Things that have been on your mind. Frustrations, hopes, fights you've watched in your community…",
     coldOpenInputSend: "Send",
     coldOpenInputShowExample: "Show me an example",
     coldOpenInputUseStarterProfile: "Use a starter profile",

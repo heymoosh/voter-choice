@@ -137,12 +137,14 @@ export function BallotLookupNeeded({
       </label>
 
       <div className="mt-4 flex flex-col sm:flex-row gap-3 sm:items-center">
+        {/* PR C — sentence-case sans primary CTA per prototype primary
+            treatment. Mono uppercase is reserved for micro-labels. */}
         <button
           data-testid="ballot-lookup-confirm"
           type="button"
           disabled={!canSubmit}
           onClick={handleSubmit}
-          className="bg-civic text-paper-2 px-4 py-3 font-mono text-[11px] uppercase tracking-[0.12em] rounded-lg hover:bg-civic-2 disabled:bg-rule disabled:text-ink-3 disabled:cursor-not-allowed transition-colors"
+          className="bg-civic text-paper-2 px-4 py-3 text-[13.5px] font-semibold rounded-lg hover:bg-civic-2 disabled:bg-rule disabled:text-ink-3 disabled:cursor-not-allowed transition-colors"
         >
           Use this ballot
         </button>
