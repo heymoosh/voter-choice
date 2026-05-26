@@ -1,6 +1,6 @@
 # Work Packet: redesign-phase-6-mid-session-theme-amendment
 
-Status: ready
+Status: **shipped** — mid-session theme amendment delivered as part of the 2026 redesign rollout (PRs #34–43 + `8be27ff` `PROMPT_FLEET_V2` flag flip), deployed to production at `688f718`. Rail "Edit themes" entry + chat-detected new-concern catch both land on the same inline editor; silent re-score uses the theme-amendment prompt from the Phase 1 fleet. See `docs/REDESIGN_2026_SHIPPED.md`.
 Owner: orchestrator
 Source: docs/design/2026-redesign/README.md §5 — Phase 6 (Mid-session theme amendment)
 Branch: launch/production

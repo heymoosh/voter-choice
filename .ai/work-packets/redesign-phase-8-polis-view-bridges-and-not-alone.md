@@ -1,6 +1,6 @@
 # Work Packet: redesign-phase-8-polis-view-bridges-and-not-alone
 
-Status: ready
+Status: **UI shipped; data pipeline (8b) deferred** — `PolisOverlay` UI was rebuilt as part of the 2026 redesign rollout (PRs #34–43 + `8be27ff` `PROMPT_FLEET_V2` flag flip), deployed to production at `688f718`. The view surfaces an honest empty state until the Phase 8b SQL aggregate pipeline (priority-overlap bars + bridge statements) lands and the ~150 in-county finished-sessions threshold is met for the named-cluster compass. Phase 8b remains open. See `docs/REDESIGN_2026_SHIPPED.md`.
 Owner: orchestrator
 Source: docs/design/2026-redesign/README.md §5 — Phase 8 (Polis view: bridges and "you're not alone" first)
 Branch: launch/production

@@ -1,6 +1,6 @@
 # Work Packet: redesign-phase-7-printable-pdf
 
-Status: ready
+Status: **shipped** — one-page US-Letter printable ballot delivered as part of the 2026 redesign rollout (PRs #34–43 + `8be27ff` `PROMPT_FLEET_V2` flag flip), deployed to production at `688f718`. `window.print()`-only path, no PDF library; user "why" notes ride next to each pick. See `docs/REDESIGN_2026_SHIPPED.md`.
 Owner: orchestrator
 Source: docs/design/2026-redesign/README.md §5 — Phase 7 (Printable PDF)
 Branch: launch/production

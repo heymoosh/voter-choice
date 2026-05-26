@@ -1,5 +1,7 @@
 # LAUNCH_PLAN.md — Ship Voter Choice Today (MVP)
 
+> **Historical (2026-04-12).** Superseded by the 2026 redesign. The MVP described here shipped; the product has since been rebuilt around the free-form cold open + three-pane workspace + prompt-fleet architecture. See `docs/REDESIGN_2026_SHIPPED.md` for the current state and `docs/design/2026-redesign/README.md` for the canonical design brief.
+
 **Date:** 2026-04-12
 **Goal:** Launch a working ballot research tool with an on-site AI chat experience for Texas voters.
 **Scope:** MVP of all phases, scoped to Texas only. Chat is the default. Copy/paste is the budget-exhaustion fallback.

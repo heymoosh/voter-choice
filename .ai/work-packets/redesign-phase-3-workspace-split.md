@@ -1,6 +1,6 @@
 # Work Packet: redesign-phase-3-workspace-split
 
-Status: ready
+Status: **shipped** — three-pane workspace (rail · chat · ballot pane) live in production. Legacy shell stripped and prototype landing + AppNav + cold-open chrome introduced in PR #39; de-mono CTAs + cold-open card + breadcrumb polish in PR #40; remaining P1/P2 design-parity polish in PR #43. Civic mood hardcoded as production default (IBM Plex Serif + daylight palette) via PR #38. See `docs/REDESIGN_2026_SHIPPED.md`.
 Owner: orchestrator
 Source: docs/design/2026-redesign/README.md §5 — Phase 3 (Workspace split)
 Branch: launch/production

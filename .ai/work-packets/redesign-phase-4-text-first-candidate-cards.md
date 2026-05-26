@@ -1,6 +1,6 @@
 # Work Packet: redesign-phase-4-text-first-candidate-cards
 
-Status: ready
+Status: **shipped** — text-first candidate cards delivered as part of the 2026 redesign rollout (PRs #34–43 + `8be27ff` `PROMPT_FLEET_V2` flag flip), deployed to production at `688f718`. Card content reads top-to-bottom as a labeled list; bars are decoration that may or may not render without breaking layout. See `docs/REDESIGN_2026_SHIPPED.md`.
 Owner: orchestrator
 Source: docs/design/2026-redesign/README.md §5 — Phase 4 (Text-first candidate cards)
 Branch: launch/production
