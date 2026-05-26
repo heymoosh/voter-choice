@@ -1,12 +1,27 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
+import { LanguageToggle } from "../components/LanguageToggle";
 import { useLanguage } from "../lib/i18n";
 import { useResearchMode } from "../lib/researchMode";
 import { translations } from "../lib/translations";
 
 interface PageContentProps {
   children?: React.ReactNode;
+  /**
+   * PR A2 fix — server-derived `PROMPT_FLEET_V2` boolean threaded from
+   * page.tsx. Production has the flag on, so the prototype-spec landing
+   * is the user-visible surface. The CI "flag off — legacy specs" job
+   * runs without the env var, expecting the legacy chrome (3-col footer
+   * with Privacy + Terms, returning-voter upload, How-it-works 01/02/03,
+   * etc.). Default `false` keeps the legacy path the safe choice for any
+   * caller that hasn't been updated yet.
+   *
+   * The Spanish locale ALWAYS renders the legacy landing — the prototype
+   * landing is EN-only (Spanish copy work for the prototype is deferred).
+   */
+  promptFleetV2Enabled?: boolean;
 }
 
 /* ── Inline SVG icons (no icon library needed) ── */
@@ -176,8 +191,251 @@ function CheckCircleIcon({ className = "" }: { className?: string }) {
   );
 }
 
+/* ── Prototype AppNav — used on every flag-on EN surface ──
+   Mirrors prototype-components.jsx AppNav: V mark + Voter Choice wordmark
+   on the left, center links (How it works · The record · About), EN/ES
+   pill on the right. Per PR A2 the center anchors are placeholders — no
+   target routes yet (deferred to PR B). */
+function AppNav() {
+  return (
+    <header
+      role="banner"
+      className="flex items-center justify-between px-4 md:px-14 py-5 w-full bg-paper border-b border-rule-2"
+    >
+      <Link
+        href="/"
+        className="flex items-center gap-[10px] font-serif font-semibold text-[19px] tracking-[-0.01em] text-ink cursor-pointer no-underline"
+        aria-label="Voter Choice — home"
+      >
+        <span
+          aria-hidden="true"
+          className="inline-grid place-items-center w-[22px] h-[22px] bg-civic text-paper-2 rounded-[4px] font-serif font-semibold text-[14px]"
+        >
+          V
+        </span>
+        <span>Voter Choice</span>
+      </Link>
+      <nav
+        aria-label="Primary"
+        className="hidden md:flex items-center gap-7 text-[14px] text-ink-2"
+      >
+        <a href="#how-it-works" className="hover:text-ink transition-colors">
+          How it works
+        </a>
+        <a href="#the-record" className="hover:text-ink transition-colors">
+          The record
+        </a>
+        <a href="#about" className="hover:text-ink transition-colors">
+          About
+        </a>
+      </nav>
+      <LanguageToggle variant="inline" />
+    </header>
+  );
+}
+
+/* ── EN prototype-spec shell (PR A2, flag-on EN only) ──
+   Mirrors LandingView in docs/design-source-of-truth/2026-redesign/
+   prototype/prototype-views.jsx for the cold-open (isResearch=false)
+   landing surface. Once `isResearch` flips (BallotToolClient enters the
+   research path), this same component drops the hero / stat-stack /
+   hp-foot chrome and renders the children fullscreen for the workspace.
+
+   The 5 legacy sections (returning-user upload, resource cards, How-it-
+   works steps, green CTA banner, mission statement) are intentionally
+   removed under PR A2.
+
+   CRITICAL invariant — children stay at a fixed JSX position. We render
+   one `<div id="main-content">` wrapping the children regardless of
+   `isResearch`; only siblings (eyebrow, h1, lede, stat-stack, hp-foot)
+   come and go. This preserves BallotToolClient's React state across the
+   landing→research transition. Pre-PR-A2 PageContent kept this invariant
+   via a single function; PR A2's original split into `EnglishLanding` +
+   `ResearchSurface` broke it — the children-prop moved tree position on
+   the flip, BallotToolClient unmounted, `setResearch(false)` fired in
+   cleanup, and the funnel deadlocked back on the landing. See
+   `cold-open.spec.ts:184` / `workspace.spec.ts:141` for the e2e signal. */
+function EnglishShell({ children }: { children?: React.ReactNode }) {
+  const { isResearch } = useResearchMode();
+
+  return (
+    <>
+      {!isResearch && (
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:absolute focus:top-14 focus:left-2 focus:z-50 focus:px-4 focus:py-2 focus:bg-primary focus:text-on-primary focus:rounded-sm"
+        >
+          Skip to main content
+        </a>
+      )}
+      <AppNav />
+
+      {/* Outer section — stable React node across landing↔research flip.
+          The CRITICAL invariant: the inner left-column div (which wraps
+          {children}) sits at a fixed JSX position regardless of
+          `isResearch`. Hero chrome (eyebrow, h1, lede) and the right-
+          column stat-stack are conditional *siblings* of {children},
+          not parents. Pre-PR-A2 PageContent guarded this same invariant
+          via a single function; PR A2's original split into separate
+          EnglishLanding / ResearchSurface components broke it — the
+          children prop moved tree position on the flip, BallotToolClient
+          unmounted, `setResearch(false)` fired in cleanup, and the
+          funnel deadlocked back on the landing. See cold-open.spec.ts:
+          184 / workspace.spec.ts:141 for the e2e signal. */}
+      <section
+        className={
+          isResearch
+            ? "flex-1 flex flex-col overflow-hidden"
+            : "px-4 md:px-14 pt-12 md:pt-20 pb-10 md:pb-14 max-w-[1280px] mx-auto grid gap-10 md:gap-16 md:grid-cols-[1.05fr_0.95fr] items-center"
+        }
+        aria-labelledby={isResearch ? undefined : "hero-heading"}
+      >
+        {/* Left column on the landing surface; takes the full width in
+            research mode. The {children} slot lives INSIDE this div so
+            its parent React node never changes across the flip. */}
+        <div
+          id="main-content"
+          className={isResearch ? "flex-1 flex flex-col overflow-hidden" : ""}
+        >
+          {!isResearch && (
+            <>
+              <div className="inline-flex items-center gap-[10px] font-mono text-[11px] uppercase tracking-[0.14em] text-civic mb-[22px]">
+                <span aria-hidden="true" className="text-vote-red">
+                  ★
+                </span>
+                <span>November 3, 2026 · America&apos;s 250th election</span>
+              </div>
+              <h1
+                id="hero-heading"
+                className="font-serif font-semibold text-[44px] md:text-[76px] leading-[0.96] tracking-[-0.025em] text-ink mb-[22px] text-balance"
+              >
+                Hold Congress to its{" "}
+                <em className="italic text-civic">record.</em>
+              </h1>
+              <p className="font-serif text-[18px] md:text-[20px] leading-[1.45] text-ink-2 mb-8 md:mb-8 max-w-[520px] text-pretty">
+                All 435 House seats and 34 Senate seats are on the ballot.
+                Before you vote, see how your incumbents actually voted — and
+                who paid for the campaign.
+              </p>
+            </>
+          )}
+          {/* {children} — STABLE position. The wrapper above keeps the same
+              React node across the isResearch flip; the className above
+              toggles for the two layouts. Conditional siblings (hero block
+              just above, stat-stack just below) can move freely without
+              touching this. */}
+          <div
+            className={isResearch ? "flex-1 flex flex-col" : "max-w-[560px]"}
+          >
+            {children}
+          </div>
+        </div>
+
+        {/* Right column — 2-row stat-stack. Sibling of the left column,
+            conditionally rendered. */}
+        {!isResearch && (
+          <aside
+            aria-label="Why this matters"
+            className="md:border-l md:border-rule md:pl-9 flex flex-col gap-[18px]"
+          >
+            <div className="flex flex-col">
+              <div className="font-serif font-semibold text-[58px] leading-none tracking-[-0.02em] text-ink">
+                6
+                <small className="font-serif text-[28px] text-ink-2 ml-1 font-semibold">
+                  hrs / day
+                </small>
+              </div>
+              <div className="mt-2 text-[13.5px] leading-[1.4] text-ink-2 max-w-[340px]">
+                average time a member of Congress spends fundraising, per
+                training materials shown to incoming freshmen.
+              </div>
+              <div className="mt-1.5 font-mono text-[10.5px] uppercase tracking-[0.1em] text-ink-3">
+                Source · Issue One, 2024 · CBS 60 Minutes
+              </div>
+            </div>
+            <div className="flex flex-col">
+              <div className="font-serif font-semibold text-[58px] leading-none tracking-[-0.02em] text-vote-red">
+                94
+                <small className="font-serif text-[28px] text-ink-2 ml-1 font-semibold">
+                  %
+                </small>
+              </div>
+              <div className="mt-2 text-[13.5px] leading-[1.4] text-ink-2 max-w-[340px]">
+                of House incumbents who ran for re-election in 2024 won. Without
+                a record check, every November is a coin flip.
+              </div>
+              <div className="mt-1.5 font-mono text-[10.5px] uppercase tracking-[0.1em] text-ink-3">
+                Source · OpenSecrets · FEC filings
+              </div>
+            </div>
+          </aside>
+        )}
+      </section>
+
+      {!isResearch && (
+        <footer
+          role="contentinfo"
+          className="px-4 md:px-14 py-9 border-t border-rule grid gap-9 md:grid-cols-[1fr_auto_auto] items-center text-[13px] text-ink-3 max-w-[1280px] mx-auto mt-16"
+        >
+          <div className="font-serif font-semibold text-[15px] text-ink">
+            Voter Choice
+          </div>
+          <ul className="list-none m-0 p-0 flex gap-5">
+            <li>
+              <a
+                href="#ballot-data"
+                className="hover:text-ink transition-colors"
+              >
+                Ballot data
+              </a>
+            </li>
+            <li>
+              <a
+                href="#methodology"
+                className="hover:text-ink transition-colors"
+              >
+                Methodology
+              </a>
+            </li>
+            <li>
+              <a href="/privacy" className="hover:text-ink transition-colors">
+                Privacy
+              </a>
+            </li>
+            <li>
+              <a href="#support" className="hover:text-ink transition-colors">
+                Support
+              </a>
+            </li>
+          </ul>
+          <div>© 2026 · Gray Bird LLC</div>
+        </footer>
+      )}
+    </>
+  );
+}
+
+/* ── Legacy landing (flag-off OR Spanish) ──
+   PR A2 fix — restored verbatim from the pre-PR-A2 PageContent. The
+   prototype landing IS the production EN surface (Vercel has
+   PROMPT_FLEET_V2 on), but the legacy CI matrix runs `npm run e2e`
+   without the env var and asserts on the legacy chrome (returning-voter
+   upload, 3-col footer with Privacy + Terms, How-it-works 01/02/03,
+   mission statement, etc.). The same component also covers the ES
+   locale path — the legacy translations carry both EN and ES copy via
+   `translations[lang]`, so this single function preserves the shape
+   for every non-prototype surface.
+
+   `isResearch` keeps the in-research header treatment exactly as it
+   was pre-PR-A2: a "RESEARCH | RESOURCES" tabs bar (under flag-off /
+   ES) instead of the prototype AppNav. The flag-on EN research path
+   short-circuits to AppNav above via `ResearchSurface`.
+
+   Complexity intentionally high — the legacy markup hand-built six
+   distinct sections and the single-function shape is the lowest-risk
+   restore. Refactoring into smaller sub-components is deferred. */
 // eslint-disable-next-line complexity
-export function PageContent({ children }: PageContentProps) {
+function LegacyLanding({ children }: { children?: React.ReactNode }) {
   const { lang } = useLanguage();
   const { isResearch } = useResearchMode();
   const t = translations[lang];
@@ -458,8 +716,8 @@ export function PageContent({ children }: PageContentProps) {
                       <div className="bg-ink text-paper px-4 py-3 rounded-[14px] rounded-br-[4px]">
                         <p className="text-sm leading-relaxed">
                           {lang === "en"
-                            ? "\u201cWhat propositions are on my ballot?\u201d"
-                            : "\u201c\u00bfQu\u00e9 proposiciones est\u00e1n en mi boleta?\u201d"}
+                            ? "“What propositions are on my ballot?”"
+                            : "“¿Qué proposiciones están en mi boleta?”"}
                         </p>
                       </div>
                     </div>
@@ -467,15 +725,13 @@ export function PageContent({ children }: PageContentProps) {
                       <div className="bg-paper-2 border border-rule px-4 py-4 rounded-[14px] rounded-tl-[4px]">
                         <div className="flex items-center gap-2 mb-2">
                           <span className="font-mono text-[10.5px] font-semibold uppercase tracking-[0.12em] text-ink-3">
-                            {lang === "en"
-                              ? "Voter Choice \u00b7 AI"
-                              : "Voter Choice \u00b7 AI"}
+                            Voter Choice &middot; AI
                           </span>
                         </div>
                         <p className="text-sm text-ink leading-relaxed">
                           {lang === "en"
-                            ? "Your ballot has 14 state constitutional amendments. Want to start with Prop 1 (property tax relief), or jump to one you\u2019ve seen in the news?"
-                            : "Tu boleta tiene 14 enmiendas constitucionales estatales. \u00bfQuieres empezar con la Proposici\u00f3n 1 (alivio de impuestos a la propiedad), o saltar a una que hayas visto en las noticias?"}
+                            ? "Your ballot has 14 state constitutional amendments. Want to start with Prop 1 (property tax relief), or jump to one you’ve seen in the news?"
+                            : "Tu boleta tiene 14 enmiendas constitucionales estatales. ¿Quieres empezar con la Proposición 1 (alivio de impuestos a la propiedad), o saltar a una que hayas visto en las noticias?"}
                         </p>
                       </div>
                     </div>
@@ -654,4 +910,31 @@ export function PageContent({ children }: PageContentProps) {
       )}
     </>
   );
+}
+
+export function PageContent({
+  children,
+  promptFleetV2Enabled = false,
+}: PageContentProps) {
+  const { lang } = useLanguage();
+
+  // PR A2 fix — the prototype landing + AppNav ship ONLY when the new
+  // flag is on AND the locale is English. Every other surface (flag-off
+  // EN — CI legacy specs — and any ES locale) routes through LegacyLanding
+  // to preserve the pre-PR-A2 chrome.
+  //
+  // Critical: do NOT branch on `isResearch` here at the PageContent
+  // boundary. The flag-on EN path's landing→research transition lives
+  // inside `EnglishShell`, which keeps `{children}` at a fixed JSX
+  // position across the flip. Branching here would unmount/remount
+  // BallotToolClient (its `result` state resets to "idle", the cleanup
+  // effect fires `setResearch(false)`, and the funnel deadlocks back on
+  // the landing — see cold-open.spec.ts:184 / workspace.spec.ts:141).
+  const prototypeShellActive = promptFleetV2Enabled && lang === "en";
+
+  if (prototypeShellActive) {
+    return <EnglishShell>{children}</EnglishShell>;
+  }
+
+  return <LegacyLanding>{children}</LegacyLanding>;
 }

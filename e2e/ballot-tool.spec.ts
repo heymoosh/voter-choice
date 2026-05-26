@@ -450,7 +450,9 @@ test.describe("Privacy Policy page", () => {
     await expect(
       page.getByRole("heading", { name: /Chat Conversations/i }),
     ).toBeVisible();
-    await expect(page.getByText(/Grey Bird LLC/i).first()).toBeVisible();
+    // PR A2 normalized the legal entity to "Gray Bird LLC" across user-facing
+    // copy (privacy, terms, footer, translations).
+    await expect(page.getByText(/Gray Bird LLC/i).first()).toBeVisible();
   });
 
   test("back link navigates to home", async ({ page }) => {
@@ -524,7 +526,8 @@ test.describe("Footer links", () => {
   test("footer shows copyright", async ({ page }) => {
     await page.goto("/");
     const footer = page.getByRole("contentinfo");
-    await expect(footer).toContainText(/Grey Bird LLC/);
+    // PR A2 normalized the legal entity to "Gray Bird LLC".
+    await expect(footer).toContainText(/Gray Bird LLC/);
   });
 
   test("footer shows data last updated", async ({ page }) => {

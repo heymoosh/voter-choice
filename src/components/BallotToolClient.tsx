@@ -1520,8 +1520,10 @@ function WorkspaceShell({
   return (
     <div
       data-testid="workspace-shell"
-      className="grid h-[calc(100vh-49px)] md:h-[calc(100vh-57px)]"
-      style={{ gridTemplateColumns: "280px 1fr 360px" }}
+      // PR A2 — viewport math accounts for the prototype AppNav (~63px,
+      // uniform). Column widths match the prototype's 240/1fr/380 grid.
+      className="grid h-[calc(100vh-63px)]"
+      style={{ gridTemplateColumns: "240px 1fr 380px" }}
     >
       <WorkspaceRail
         decidedCount={decisions.length}

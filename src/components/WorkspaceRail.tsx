@@ -90,7 +90,8 @@ export function WorkspaceRail({
           className="h-1.5 w-full overflow-hidden rounded-sm bg-rule-2"
         >
           <div
-            className="h-full bg-ink transition-[width] duration-300"
+            // PR A2 — civic-green fill matches the prototype's progress bar.
+            className="h-full bg-civic transition-[width] duration-300"
             style={{ width: `${percent}%` }}
           />
         </div>
