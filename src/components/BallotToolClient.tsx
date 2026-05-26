@@ -600,6 +600,33 @@ export function ElectionResult({
   const zipCounty = lookupCounty(state.stateCode, zipCode);
   const countyForPrompt = civicCounty ?? zipCounty ?? undefined;
 
+  // PR B — cold-open `.co-context` breadcrumb data. Mirrors the prototype's
+  // anchored-location line above the chat (`Camden County, NJ-1 · 6 races
+  // on your ballot`). Computed at the top level so it's stable across
+  // re-renders and so the cold-open phase machine in ChatPanel can rely on
+  // a single deterministic source.
+  const coldOpenContext = useMemo(() => {
+    const cityStateLabel =
+      countyForPrompt && state.stateName
+        ? `${countyForPrompt}, ${state.stateName}`
+        : state.stateName;
+    // Best-effort district extraction: look for any U.S. House race in the
+    // derived races list and pull its district. Falls back to undefined if
+    // the ballot doesn't include a House race (still shows state + race
+    // count, just without "·  XX-NN").
+    const houseRace = races.find((r) =>
+      /^u\.?s\.? house/i.test(r.label.split("—")[0].trim()),
+    );
+    const district = houseRace?.label.includes("—")
+      ? houseRace.label.split("—")[1].trim()
+      : undefined;
+    return {
+      cityState: cityStateLabel,
+      district,
+      raceCount: races.length,
+    };
+  }, [countyForPrompt, state.stateName, races]);
+
   // Enter research mode on mount
   useEffect(() => {
     setResearch(true);
@@ -1123,6 +1150,7 @@ export function ElectionResult({
         promptFleetV2Enabled={promptFleetV2Enabled}
         onLockInThemes={handleLockInThemes}
         ballotContext={ballotContext}
+        coldOpenContext={coldOpenContext}
         preResearchGate={
           needsRunoffGate ? (
             <RunoffGate

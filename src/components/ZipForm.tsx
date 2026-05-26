@@ -120,9 +120,12 @@ export function ZipForm({ onSubmit }: ZipFormProps) {
           <button
             data-testid="zip-submit"
             type="submit"
-            className="bg-civic text-paper-2 border-0 rounded-lg px-6 py-[14px] font-mono text-[11px] font-semibold uppercase tracking-[0.14em] whitespace-nowrap hover:bg-civic-2 transition-colors min-h-[44px]"
+            // PR B — sentence-case sans CTA per prototype `.addr-card .go`
+            // (font-weight 600, 14.5px). Mono-uppercase is reserved for
+            // meta/eyebrow labels in the prototype, not primary buttons.
+            className="bg-civic text-paper-2 border-0 rounded-lg px-6 py-[14px] text-[14.5px] font-semibold whitespace-nowrap hover:bg-civic-2 transition-colors min-h-[44px]"
           >
-            {lang === "en" ? "View Ballot" : "Ver Boleta"}
+            {lang === "en" ? "Pull my ballot →" : "Ver Boleta"}
           </button>
         </div>
       </div>

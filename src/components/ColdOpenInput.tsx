@@ -186,100 +186,100 @@ export function ColdOpenInput({
   const isEmpty = draft.length === 0;
 
   return (
-    <section
-      data-testid="cold-open-input"
-      className="bg-paper-2 border border-rule rounded-xl focus-within:border-civic transition-colors"
-    >
-      <div className="p-4 flex flex-col gap-3">
-        <label
-          className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-civic"
-          htmlFor="cold-open-textarea"
-        >
-          {t.coldOpenInputLabel}
-        </label>
-
-        {isEmpty && (
-          <div
-            className="flex flex-wrap gap-2"
-            role="group"
-            aria-label={t.coldOpenInputLabel}
+    <>
+      {/*
+       * PR B — prototype `.co-input` shape:
+       *   • textarea on top, full-width inside the card
+       *   • dashed-top-rule meta row below: mono auto-saving hint (left) +
+       *     sentence-case "Send →" text button (right)
+       *   • chips ("Show me an example", "Use a starter profile") sit
+       *     OUTSIDE the card in a separate row beneath it
+       * See docs/design-source-of-truth/2026-redesign/prototype/prototype.css
+       * lines 407-452 + prototype-views.jsx ColdOpenView lines 186-201.
+       */}
+      <section
+        data-testid="cold-open-input"
+        className="bg-paper-2 border border-rule rounded-xl p-3.5 focus-within:border-civic transition-colors"
+      >
+        <textarea
+          id="cold-open-textarea"
+          data-testid="cold-open-textarea"
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder={t.coldOpenInputPlaceholder}
+          aria-label={t.coldOpenInputLabel}
+          disabled={disabled}
+          rows={5}
+          className="block w-full bg-transparent border-0 p-0 font-serif text-[15px] text-ink placeholder:text-ink-3 focus:outline-none resize-y leading-relaxed disabled:opacity-50 min-h-[140px]"
+        />
+        <div className="mt-2 flex items-center justify-between gap-3 border-t border-dashed border-rule pt-2.5">
+          <span
+            data-testid="cold-open-auto-saving-hint"
+            className="font-mono text-[10.5px] uppercase tracking-[0.12em] text-ink-3"
           >
-            <button
-              type="button"
-              data-testid="cold-open-show-example"
-              onClick={showExample}
-              disabled={disabled || loading}
-              className="px-3 py-1.5 font-mono text-[10.5px] uppercase tracking-[0.14em] bg-paper-2 border border-rule rounded-full text-ink-2 hover:border-civic hover:text-civic transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              {t.coldOpenInputShowExample}
-            </button>
-            <button
-              type="button"
-              data-testid="cold-open-use-starter-profile"
-              aria-label={t.coldOpenInputUseStarterProfile}
-              onClick={handleStarterProfileClick}
-              disabled={disabled || loading}
-              className="px-3 py-1.5 font-mono text-[10.5px] uppercase tracking-[0.14em] bg-paper-2 border border-rule rounded-full text-ink-2 hover:border-civic hover:text-civic transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              {t.coldOpenInputUseStarterProfile}
-            </button>
-            <input
-              ref={fileInputRef}
-              data-testid="cold-open-starter-profile-input"
-              type="file"
-              accept=".txt,text/plain"
-              onChange={handleStarterProfileFile}
-              className="hidden"
-            />
-          </div>
-        )}
-
-        {starterError && (
-          <p
-            data-testid="cold-open-starter-profile-error"
-            role="alert"
-            className="text-xs text-vote-red"
-          >
-            {starterError}
-          </p>
-        )}
-
-        <div className="flex items-end gap-2 md:gap-4">
-          <textarea
-            id="cold-open-textarea"
-            data-testid="cold-open-textarea"
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder={t.coldOpenInputPlaceholder}
-            disabled={disabled}
-            rows={5}
-            className="flex-1 bg-paper border border-rule rounded-lg p-3 font-serif text-base text-ink placeholder:text-ink-3 focus:outline-none focus:border-civic transition-colors resize-y leading-relaxed disabled:opacity-50"
-          />
+            {t.coldOpenAutoSavingHint}
+          </span>
           <button
             type="button"
             data-testid="cold-open-send"
             onClick={handleSubmit}
             disabled={!canSubmit}
             aria-label={t.coldOpenInputSend}
-            className="bg-civic text-paper-2 font-mono text-[11px] uppercase tracking-[0.12em] px-4 py-3 rounded-lg flex items-center justify-center min-h-[44px] min-w-[44px] hover:bg-civic-2 focus:outline-none focus:ring-2 focus:ring-civic focus:ring-offset-2 disabled:bg-rule disabled:text-ink-3 disabled:pointer-events-none transition-colors shrink-0 active:scale-95"
+            className="bg-civic text-paper-2 rounded-lg px-[18px] py-2.5 text-[13.5px] font-semibold hover:bg-civic-2 focus:outline-none focus:ring-2 focus:ring-civic focus:ring-offset-2 disabled:bg-rule disabled:text-ink-3 disabled:pointer-events-none transition-colors shrink-0 active:scale-95"
           >
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 20 20"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              aria-hidden="true"
-            >
-              <path
-                d="M3.5 10L16.5 3.5L10 16.5L8.5 11.5L3.5 10Z"
-                fill="currentColor"
-              />
-            </svg>
+            {t.coldOpenInputSend} →
           </button>
         </div>
-      </div>
-    </section>
+      </section>
+
+      {starterError && (
+        <p
+          data-testid="cold-open-starter-profile-error"
+          role="alert"
+          className="mt-2 text-xs text-vote-red"
+        >
+          {starterError}
+        </p>
+      )}
+
+      {isEmpty && (
+        <div
+          className="mt-3 ml-1 flex flex-wrap gap-1.5"
+          role="group"
+          aria-label={t.coldOpenInputLabel}
+        >
+          <button
+            type="button"
+            data-testid="cold-open-show-example"
+            onClick={showExample}
+            disabled={disabled || loading}
+            // PR B — prototype `.starter-chips .sc` is sentence-case sans
+            // (font-size 12.5px), pill-shaped, not mono uppercase.
+            className="bg-paper border border-rule text-ink-2 text-[12.5px] rounded-full px-3 py-[7px] hover:text-ink hover:border-ink-3 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            {t.coldOpenInputShowExample}
+          </button>
+          <button
+            type="button"
+            data-testid="cold-open-use-starter-profile"
+            aria-label={t.coldOpenInputUseStarterProfile}
+            onClick={handleStarterProfileClick}
+            disabled={disabled || loading}
+            className="bg-paper border border-rule text-ink-2 text-[12.5px] rounded-full px-3 py-[7px] hover:text-ink hover:border-ink-3 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            {t.coldOpenInputUseStarterProfile}
+          </button>
+          <input
+            ref={fileInputRef}
+            data-testid="cold-open-starter-profile-input"
+            type="file"
+            accept=".txt,text/plain"
+            onChange={handleStarterProfileFile}
+            className="hidden"
+          />
+        </div>
+      )}
+    </>
   );
 }

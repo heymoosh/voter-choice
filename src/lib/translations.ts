@@ -316,6 +316,11 @@ export interface Translations {
     coldOpenParseError: string;
     coldOpenLockedHeading: string;
     coldOpenLockedSubhead: string;
+    // PR B — cold-open card meta row + breadcrumb above the chat
+    coldOpenAutoSavingHint: string;
+    coldOpenAiOpenerLead: string;
+    coldOpenAiOpenerPrompt: string;
+    coldOpenContextRaceCount: (n: number) => string;
     // AlignmentScoreBanner + AlignmentDrilldown
     alignmentScoreBannerHeading: string;
     alignmentScoreOfVotes: (kept: number, total: number) => string;
@@ -868,6 +873,14 @@ const en: Translations = {
     coldOpenLockedHeading: "Themes locked",
     coldOpenLockedSubhead:
       "These are the priorities I'll carry forward as we research your ballot.",
+    coldOpenAutoSavingHint:
+      "Auto-saving to your device · nothing leaves your browser yet",
+    coldOpenAiOpenerLead:
+      "I've pulled your sample ballot. Before I walk you through races, I want to know what you're judging candidates on — in your words, not from a pre-built list.",
+    coldOpenAiOpenerPrompt:
+      "What's been on your mind this year? Things you wish Congress would actually do something about. Frustrations, hopes, fights you've watched in your community. Type as much or as little as you want.",
+    coldOpenContextRaceCount: (n: number) =>
+      `${n} ${n === 1 ? "race" : "races"} on your ballot`,
     // AlignmentScoreBanner + AlignmentDrilldown
     alignmentScoreBannerHeading: "Voted with you on...",
     alignmentScoreOfVotes: (kept: number, total: number) =>
@@ -1468,6 +1481,14 @@ const es: Translations = {
     coldOpenLockedHeading: "Themes locked",
     coldOpenLockedSubhead:
       "These are the priorities I'll carry forward as we research your ballot.",
+    coldOpenAutoSavingHint:
+      "Auto-saving to your device \u00b7 nothing leaves your browser yet",
+    coldOpenAiOpenerLead:
+      "I've pulled your sample ballot. Before I walk you through races, I want to know what you're judging candidates on \u2014 in your words, not from a pre-built list.",
+    coldOpenAiOpenerPrompt:
+      "What's been on your mind this year? Things you wish Congress would actually do something about. Frustrations, hopes, fights you've watched in your community. Type as much or as little as you want.",
+    coldOpenContextRaceCount: (n: number) =>
+      `${n} ${n === 1 ? "race" : "races"} on your ballot`,
     // AlignmentScoreBanner + AlignmentDrilldown \u2014 EN stubs (ES UI out of scope for this packet)
     alignmentScoreBannerHeading: "Voted with you on...",
     alignmentScoreOfVotes: (kept: number, total: number) =>

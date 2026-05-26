@@ -329,6 +329,22 @@ interface ChatPanelProps {
    * regardless of this prop — BYOK bypasses the community budget.
    */
   budgetExhausted?: boolean;
+  /**
+   * PR B — anchored-location context surfaced as a mono breadcrumb above
+   * the cold-open chat. Mirrors the prototype's `.co-context` row
+   * (e.g. "Camden County, NJ-1 · 6 races on your ballot"). Only rendered
+   * during the cold-open phase (`promptFleetV2 && en && !themesLockedIn`).
+   * Defaults to undefined for legacy callers; when omitted the breadcrumb
+   * simply doesn't render.
+   */
+  coldOpenContext?: {
+    /** City + state OR county + state (PII rule: no street address). */
+    cityState: string;
+    /** Optional congressional district label, e.g. "NJ-1". */
+    district?: string;
+    /** Number of races derived for the ballot, used in the breadcrumb. */
+    raceCount: number;
+  };
 }
 
 function generateSessionId(): string {
@@ -588,6 +604,7 @@ function ColdOpenSurface({
   onPhaseChange,
   chatDisabled,
   t,
+  coldOpenContext,
 }: {
   phase: ColdOpenPhase;
   onSubmit: (text: string) => void;
@@ -596,6 +613,7 @@ function ColdOpenSurface({
   onPhaseChange: (next: ColdOpenPhase) => void;
   chatDisabled: boolean;
   t: (typeof translations)["en"];
+  coldOpenContext?: ChatPanelProps["coldOpenContext"];
 }) {
   if (phase.kind === "thinking") {
     return (
@@ -637,6 +655,50 @@ function ColdOpenSurface({
   const draft = phase.kind === "error" ? phase.draft : phase.draft;
   return (
     <div className="space-y-3">
+      {/* PR B — anchored-location breadcrumb above the chat. Mono
+          micro-label with a civic-green dot. Renders only when the
+          parent supplies coldOpenContext (the prototype's `.co-context`
+          row from prototype-views.jsx ColdOpenView line 174). */}
+      {coldOpenContext && (
+        <div
+          data-testid="co-context-breadcrumb"
+          className="flex items-center gap-2.5 font-mono text-[11px] uppercase tracking-[0.14em] text-ink-3"
+        >
+          <span
+            aria-hidden="true"
+            className="inline-block h-1.5 w-1.5 rounded-full bg-civic"
+          />
+          <span>
+            <b className="font-sans font-semibold text-[13.5px] normal-case tracking-normal text-ink">
+              {coldOpenContext.cityState}
+            </b>
+            {coldOpenContext.district ? (
+              <> · {coldOpenContext.district}</>
+            ) : null}
+            {" · "}
+            {t.research.coldOpenContextRaceCount(coldOpenContext.raceCount)}
+          </span>
+        </div>
+      )}
+      {/* PR B — static AI opener bubble. Mirrors prototype-views.jsx
+          ColdOpenView lines 176-182. Deterministic copy, no LLM call. */}
+      <article
+        data-testid="cold-open-ai-opener"
+        className="flex max-w-3xl mx-auto flex-col items-start gap-1.5"
+      >
+        <span className="font-mono text-[10.5px] uppercase tracking-[0.12em] text-ink-3">
+          Voter Choice · AI
+        </span>
+        <div
+          className="bg-paper-2 border border-rule px-4 py-3.5 text-[14.5px] leading-relaxed text-ink w-full"
+          style={{ borderRadius: "4px 14px 14px 14px" }}
+        >
+          <p className="m-0">{t.research.coldOpenAiOpenerLead}</p>
+          <p className="mt-2.5 m-0 font-semibold">
+            {t.research.coldOpenAiOpenerPrompt}
+          </p>
+        </div>
+      </article>
       {phase.kind === "error" && (
         <div
           data-testid="cold-open-error"
@@ -1842,6 +1904,7 @@ export function ChatPanel({
   ballotContext,
   onBudgetExhausted,
   budgetExhausted: budgetExhaustedFromParent = false,
+  coldOpenContext,
 }: ChatPanelProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
@@ -2818,6 +2881,7 @@ export function ChatPanel({
           onPhaseChange={setColdOpenPhase}
           chatDisabled={effectiveChatDisabled}
           t={t}
+          coldOpenContext={coldOpenContext}
         />
       )}
 
