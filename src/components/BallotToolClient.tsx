@@ -1603,7 +1603,16 @@ function WorkspaceShell({
                   id: activeRace.id,
                   label: activeRace.label,
                   section: activeRace.section,
-                  candidates: candidatesForActive,
+                  // Prefer the Race's own candidates (the deriver now
+                  // propagates them through ContestLike → Race) and fall
+                  // back to the polling-data lookup for any Civic-API
+                  // shape where the deriver wasn't fed candidates. The
+                  // chat path's race-deep-dive builder needs this to
+                  // render its <ground_truth> tag.
+                  candidates:
+                    activeRace.candidates.length > 0
+                      ? activeRace.candidates
+                      : candidatesForActive,
                 }
               : null,
             totalRaces: racesWithDecided.length,
@@ -1612,6 +1621,9 @@ function WorkspaceShell({
             prevActiveRaceId: prevActiveRaceIdRef.current,
             onCommitDecision,
             onUnpickDecision,
+            // Real-fix: surface prior decisions so ChatPanel can render
+            // `decidedSummary` for the race-deep-dive builder.
+            decisions,
             // Phase 6 amendment plumbing — see ChatPanel.WorkspaceModeProps.
             pendingAmendment,
             amendmentInFlight,

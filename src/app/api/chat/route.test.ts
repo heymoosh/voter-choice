@@ -625,6 +625,55 @@ describe("POST /api/chat — observability", () => {
 
     logSpy.mockRestore();
   });
+
+  // Real-fix discriminator: under the canonical workspace-race payload, the
+  // race-deep-dive builder MUST be selected (not the defensive fallback that
+  // landed in PR #41 for malformed v2 payloads). The frontend ChatPanel
+  // assembly is the layer that previously misrouted; this log assertion is a
+  // belt-and-suspenders check that the route's flag-on path still honors a
+  // well-formed payload after the fix.
+  it("emits chat.prompt_used with builder=race-deep-dive for a canonical workspace-race payload (NOT the routed-fallback log)", async () => {
+    vi.stubEnv("PROMPT_FLEET_V2", "1");
+    queueStreams(simpleTextStream());
+    const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+
+    const req = makeChatRequest({
+      view: "workspace-race",
+      activeRaceType: "choice",
+      raceContext: {
+        raceLabel: "U.S. Senate",
+        state: "NJ",
+        county: "Mercer",
+        themesList: "1. Healthcare access; 2. Climate action",
+        candidatesJson: JSON.stringify([
+          { name: "Cory Booker", party: "Democratic" },
+        ]),
+        decidedSummary: "(none)",
+      },
+    });
+    const res = await POST(req as never);
+    await drainResponseBody(res);
+
+    const lines = logSpy.mock.calls.map((args) => String(args[0]));
+
+    const promptUsedCalls = lines.filter((line) =>
+      line.includes("chat.prompt_used"),
+    );
+    expect(promptUsedCalls.length).toBeGreaterThan(0);
+    const parsed = JSON.parse(promptUsedCalls[0]);
+    expect(parsed.event).toBe("chat.prompt_used");
+    expect(parsed.builder).toBe("race-deep-dive");
+    expect(parsed.view).toBe("workspace-race");
+    expect(parsed.raceType).toBe("choice");
+
+    // Must NOT have hit the defensive fallback (that's the bug we're fixing).
+    const fallbackCalls = lines.filter((line) =>
+      line.includes("chat.prompt_routed_fallback"),
+    );
+    expect(fallbackCalls).toHaveLength(0);
+
+    logSpy.mockRestore();
+  });
 });
 
 // ---------------------------------------------------------------------------

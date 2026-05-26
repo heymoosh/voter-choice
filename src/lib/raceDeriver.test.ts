@@ -178,5 +178,46 @@ describe("raceDeriver", () => {
       });
       expect(races[0].label).toContain("U.S. House");
     });
+
+    // Real-fix coverage: the chat path's race-deep-dive builder needs the
+    // candidate roster to render its <ground_truth> tag. Pre-fix the deriver
+    // dropped candidates, so workspace-race chat requests carried an empty
+    // candidatesJson and (worse) ChatPanel misclassified every race as a
+    // proposition because it checked candidates.length === 0. Propagate the
+    // input contest's candidates verbatim through the emitted Race.
+    it("propagates candidates from ContestLike to the emitted Race", () => {
+      const races = deriveRaces({
+        contests: [
+          {
+            office: "U.S. Senate",
+            district: "",
+            type: "General",
+            candidates: [
+              { name: "Cory Booker", party: "Democratic" },
+              { name: "Curtis Bashaw", party: "Republican" },
+            ],
+          },
+        ],
+      });
+      expect(races).toHaveLength(1);
+      expect(races[0].candidates).toEqual([
+        { name: "Cory Booker", party: "Democratic" },
+        { name: "Curtis Bashaw", party: "Republican" },
+      ]);
+    });
+
+    it("emits an empty candidates array for a contest with no candidates (propositions)", () => {
+      const races = deriveRaces({
+        contests: [
+          {
+            office: "Proposition 1",
+            district: "",
+            type: "Referendum",
+            candidates: [],
+          },
+        ],
+      });
+      expect(races[0].candidates).toEqual([]);
+    });
   });
 });
