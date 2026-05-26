@@ -8,8 +8,8 @@
  *
  * Physical target: US Letter, 0.5in margins, 7.5in x 10in content area.
  * Typography pulls from the 2026-redesign tokens (var(--serif) chains to
- * the Newsreader next/font CSS variable; var(--mono) chains to IBM Plex
- * Mono; var(--vote-red) is the race-label accent).
+ * IBM Plex Serif via the next/font CSS variable in Civic mood; var(--mono)
+ * chains to IBM Plex Mono; var(--vote-red) is the race-label accent).
  */
 
 @page {
@@ -70,7 +70,7 @@
   color: #1b1c1b;
   font:
     400 10pt var(--serif),
-    Newsreader,
+    "IBM Plex Serif",
     Georgia,
     serif;
   width: 100%;
@@ -88,7 +88,7 @@
   padding: 0;
   background: white;
   color: black;
-  font-family: var(--serif), Newsreader, "Times New Roman", Times, serif;
+  font-family: var(--serif), "IBM Plex Serif", "Times New Roman", Times, serif;
   font-size: 11pt;
   line-height: 1.4;
 }
@@ -104,14 +104,14 @@
 }
 
 .print-sheet .ph-head .precinct {
-  font-family: var(--serif), Newsreader, Georgia, serif;
+  font-family: var(--serif), "IBM Plex Serif", Georgia, serif;
   font-weight: 600;
   font-size: 28pt;
   letter-spacing: -0.015em;
 }
 
 .print-sheet .ph-head .place-name {
-  font-family: var(--serif), Newsreader, Georgia, serif;
+  font-family: var(--serif), "IBM Plex Serif", Georgia, serif;
   font-weight: 600;
 }
 
@@ -166,7 +166,7 @@
 }
 
 .print-sheet .ballot-list .pick-name {
-  font-family: var(--serif), Newsreader, Georgia, serif;
+  font-family: var(--serif), "IBM Plex Serif", Georgia, serif;
   font-size: 18pt;
   font-weight: 600;
   letter-spacing: -0.005em;
@@ -187,7 +187,7 @@
 }
 
 .print-sheet .ballot-list .why-note {
-  font-family: var(--serif), Newsreader, Georgia, serif;
+  font-family: var(--serif), "IBM Plex Serif", Georgia, serif;
   font-style: italic;
   font-size: 13pt;
   color: var(--ink-2, black);
@@ -222,7 +222,7 @@
 }
 
 .print-sheet .themes-list li {
-  font-family: var(--serif), Newsreader, Georgia, serif;
+  font-family: var(--serif), "IBM Plex Serif", Georgia, serif;
   font-size: 11pt;
   margin-bottom: 0.03in;
 }
@@ -239,7 +239,7 @@
 }
 
 .print-sheet .print-foot .brand {
-  font-family: var(--serif), Newsreader, Georgia, serif;
+  font-family: var(--serif), "IBM Plex Serif", Georgia, serif;
   font-weight: 600;
   text-transform: none;
   letter-spacing: -0.005em;

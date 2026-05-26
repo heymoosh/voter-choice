@@ -40,15 +40,18 @@ describe("design tokens — color", () => {
 });
 
 describe("design tokens — typography", () => {
-  it("globals.css references the next/font CSS variables", () => {
-    expect(globalsCss).toContain("--font-newsreader");
+  it("globals.css references the IBM Plex next/font CSS variables", () => {
+    // PR A1: Civic mood is the production default → IBM Plex Serif
+    // replaces Newsreader as the headline family. The Newsreader
+    // webfont is no longer loaded.
+    expect(globalsCss).toContain("--font-ibm-plex-serif");
     expect(globalsCss).toContain("--font-ibm-plex-sans");
     expect(globalsCss).toContain("--font-ibm-plex-mono");
   });
 
-  it("layout.tsx imports Newsreader + IBM Plex fonts via next/font", () => {
-    expect(layoutTsx).toMatch(/Newsreader/);
+  it("layout.tsx imports the IBM Plex trio via next/font", () => {
     expect(layoutTsx).toMatch(/IBM_Plex_Sans/);
+    expect(layoutTsx).toMatch(/IBM_Plex_Serif/);
     expect(layoutTsx).toMatch(/IBM_Plex_Mono/);
   });
 
@@ -57,8 +60,8 @@ describe("design tokens — typography", () => {
     // injects its --font-* custom property at the element it's
     // attached to. The body must carry all three so the tokens
     // cascade down to every component.
-    expect(layoutTsx).toMatch(/newsreader\.variable/);
     expect(layoutTsx).toMatch(/ibmPlexSans\.variable/);
+    expect(layoutTsx).toMatch(/ibmPlexSerif\.variable/);
     expect(layoutTsx).toMatch(/ibmPlexMono\.variable/);
   });
 });
