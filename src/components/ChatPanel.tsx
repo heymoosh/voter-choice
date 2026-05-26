@@ -652,6 +652,19 @@ function ColdOpenSurface({
           onPhaseChange({ kind: "input", draft: text });
           onSubmit(text);
         }}
+        onStarterProfileLoaded={(themes, originalText) => {
+          // The starter-profile chip bypasses Haiku extraction entirely
+          // — the user has already named their priorities on a prior
+          // visit, so we jump straight to the themes-confirm step.
+          // The lock-in / rewrite flow downstream reads the same shape
+          // as a Haiku-extracted themes payload, so no other code path
+          // needs to change.
+          onPhaseChange({
+            kind: "themes",
+            themes,
+            originalUserMessage: originalText,
+          });
+        }}
         disabled={chatDisabled}
       />
     </div>
