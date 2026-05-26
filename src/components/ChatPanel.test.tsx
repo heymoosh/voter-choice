@@ -1213,3 +1213,233 @@ describe("ChatPanel — workspace input gating on budgetExhausted (PR 7)", () =>
     expect(screen.queryByTestId("workspace-chat-budget-notice")).toBeNull();
   });
 });
+
+/* ── Real-fix: chat-payload assembly for the race-deep-dive builder ─── */
+
+/**
+ * Pre-fix the workspace path emitted view: "workspace-prop" + activeRaceType:
+ * "proposition" + an incomplete raceContext for every workspace race, because
+ * the proposition discriminant was `!candidates || candidates.length === 0`
+ * AND the Race deriver dropped candidates anyway. The real fix:
+ *   1) Race carries candidates (raceDeriver propagates them) so the
+ *      `candidates.length === 0` check is real for true propositions only.
+ *   2) The discriminant uses Race.section === "Propositions" so the paste
+ *      path (no candidates surfaced) still routes the right way.
+ *   3) raceContext for candidate races carries themesList + decidedSummary +
+ *      candidatesJson so the race-deep-dive builder validates and renders.
+ *
+ * These tests assert the OUTGOING request body — that's the layer where the
+ * bug actually lives (PR #41's server-side fallback is belt-and-suspenders
+ * for malformed payloads; we want the canonical path to never need it).
+ */
+describe("ChatPanel — workspace-race chat payload (real fix)", () => {
+  const txStateLocal = txState;
+
+  function renderChatForRaceDeepDive(
+    workspaceOverrides: Record<string, unknown> = {},
+  ) {
+    const baseWorkspace = {
+      activeRace: {
+        id: "u-s-senate",
+        label: "U.S. Senate",
+        section: "Federal",
+        candidates: [
+          { name: "Cory Booker", party: "Democratic" },
+          { name: "Curtis Bashaw", party: "Republican" },
+        ],
+      },
+      totalRaces: 2,
+      activeRaceIndex: 0,
+      decided: false,
+      prevActiveRaceId: null,
+      onCommitDecision: vi.fn(),
+      onUnpickDecision: vi.fn(),
+      pendingAmendment: null,
+      amendmentInFlight: false,
+      lockedThemes: [
+        { name: "Healthcare access", quotes: ['"insulin prices"'] },
+        { name: "Climate action", quotes: ['"flood risk"'] },
+      ],
+      // Decisions on prior races — used to render decidedSummary.
+      decisions: [
+        {
+          raceId: "u-s-house-nj-12",
+          raceLabel: "U.S. House — NJ-12",
+          section: "Federal",
+          pick: "Bonnie Watson Coleman",
+          party: "Democratic",
+          whyNote: "Strong record on healthcare access.",
+        },
+      ],
+      chatCatchSuggestion: null,
+      onChatCatch: vi.fn(),
+      onChatCatchAccept: vi.fn(),
+      onChatCatchDismiss: vi.fn(),
+      onAmendmentSave: vi.fn(),
+      onAmendmentDiscard: vi.fn(),
+      ...workspaceOverrides,
+    } as React.ComponentProps<typeof ChatPanel>["workspace"];
+    return render(
+      <LanguageProvider>
+        <ChatPanel
+          state={txStateLocal}
+          zipCode="73301"
+          countyName="Mercer"
+          workspace={baseWorkspace}
+        />
+      </LanguageProvider>,
+    );
+  }
+
+  function captureChatRequestBody(): Record<string, unknown> | null {
+    const calls = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls;
+    const chatCalls = calls.filter((c) => {
+      const url = typeof c[0] === "string" ? c[0] : String(c[0]);
+      return url.endsWith("/api/chat");
+    });
+    if (chatCalls.length === 0) return null;
+    const init = chatCalls[chatCalls.length - 1][1] as
+      | { body?: unknown }
+      | undefined;
+    if (!init?.body) return null;
+    try {
+      return JSON.parse(String(init.body)) as Record<string, unknown>;
+    } catch {
+      return null;
+    }
+  }
+
+  beforeEach(() => {
+    // Discriminating fetch mock: chat-catch returns suggest:false (noise),
+    // /api/chat returns a minimal SSE stream so sendMessage resolves.
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (url) => {
+      const href = typeof url === "string" ? url : (url as URL).toString();
+      if (href.includes("/api/chat-catch")) {
+        return new Response(JSON.stringify({ suggest: false }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+      return streamResponse("ok");
+    });
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("sends view=workspace-race + activeRaceType=choice for a Federal candidate race", async () => {
+    renderChatForRaceDeepDive();
+    const input = screen.getByTestId("workspace-chat-input");
+    fireEvent.change(input, {
+      target: { value: "Tell me about Cory Booker's healthcare record." },
+    });
+    fireEvent.submit(input.closest("form")!);
+
+    await waitFor(() => {
+      const body = captureChatRequestBody();
+      expect(body).not.toBeNull();
+      expect(body!.view).toBe("workspace-race");
+      expect(body!.activeRaceType).toBe("choice");
+    });
+  });
+
+  it("does NOT misclassify a non-proposition race as a proposition when candidates are missing", async () => {
+    // Force the candidates field undefined on the workspace's activeRace.
+    // Pre-fix this triggered view: workspace-prop. The fix uses
+    // Race.section === "Propositions" as the discriminant, so a Federal
+    // race with no candidates surfaced still routes to workspace-race.
+    renderChatForRaceDeepDive({
+      activeRace: {
+        id: "u-s-senate",
+        label: "U.S. Senate",
+        section: "Federal",
+        // Intentionally no candidates field.
+      },
+    });
+    const input = screen.getByTestId("workspace-chat-input");
+    fireEvent.change(input, {
+      target: { value: "What does this race decide?" },
+    });
+    fireEvent.submit(input.closest("form")!);
+
+    await waitFor(() => {
+      const body = captureChatRequestBody();
+      expect(body).not.toBeNull();
+      expect(body!.view).toBe("workspace-race");
+      expect(body!.activeRaceType).toBe("choice");
+    });
+  });
+
+  it("routes a true proposition (section=Propositions) to view=workspace-prop", async () => {
+    renderChatForRaceDeepDive({
+      activeRace: {
+        id: "proposition-1",
+        label: "Proposition 1",
+        section: "Propositions",
+        candidates: [],
+      },
+    });
+    const input = screen.getByTestId("workspace-chat-input");
+    fireEvent.change(input, {
+      target: { value: "What does Prop 1 do?" },
+    });
+    fireEvent.submit(input.closest("form")!);
+
+    await waitFor(() => {
+      const body = captureChatRequestBody();
+      expect(body).not.toBeNull();
+      expect(body!.view).toBe("workspace-prop");
+      expect(body!.activeRaceType).toBe("proposition");
+    });
+  });
+
+  it("populates raceContext with themesList, decidedSummary, candidatesJson for race-deep-dive", async () => {
+    renderChatForRaceDeepDive();
+    const input = screen.getByTestId("workspace-chat-input");
+    fireEvent.change(input, {
+      target: { value: "Tell me about the Senate race." },
+    });
+    fireEvent.submit(input.closest("form")!);
+
+    await waitFor(() => {
+      const body = captureChatRequestBody();
+      expect(body).not.toBeNull();
+      const ctx = body!.raceContext as Record<string, unknown>;
+      expect(ctx).toBeDefined();
+      // raceLabel + state + county were already in the pre-fix payload.
+      expect(ctx.raceLabel).toBe("U.S. Senate");
+      expect(ctx.state).toBe("TX");
+      expect(ctx.county).toBe("Mercer");
+      // candidatesJson is the JSON-stringified roster.
+      expect(typeof ctx.candidatesJson).toBe("string");
+      const parsed = JSON.parse(String(ctx.candidatesJson));
+      expect(parsed).toHaveLength(2);
+      expect(parsed[0].name).toBe("Cory Booker");
+      // themesList: ranked themes, one string, with numbering.
+      expect(typeof ctx.themesList).toBe("string");
+      expect(String(ctx.themesList)).toContain("Healthcare access");
+      expect(String(ctx.themesList)).toContain("Climate action");
+      // decidedSummary: prior decisions or "(none)" — present in either case.
+      expect(typeof ctx.decidedSummary).toBe("string");
+      expect(String(ctx.decidedSummary)).toContain("U.S. House — NJ-12");
+      expect(String(ctx.decidedSummary)).toContain("Bonnie Watson Coleman");
+    });
+  });
+
+  it("emits decidedSummary='(none)' when there are no prior decisions", async () => {
+    renderChatForRaceDeepDive({ decisions: [] });
+    const input = screen.getByTestId("workspace-chat-input");
+    fireEvent.change(input, {
+      target: { value: "Tell me about this race." },
+    });
+    fireEvent.submit(input.closest("form")!);
+
+    await waitFor(() => {
+      const body = captureChatRequestBody();
+      expect(body).not.toBeNull();
+      const ctx = body!.raceContext as Record<string, unknown>;
+      expect(String(ctx.decidedSummary)).toBe("(none)");
+    });
+  });
+});

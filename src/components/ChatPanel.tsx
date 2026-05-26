@@ -241,6 +241,25 @@ export interface WorkspaceModeProps {
    * amend chat call internally before this is called).
    */
   onRescoreOfferClear?: () => void;
+  /**
+   * Previously-committed decisions on OTHER races in the same session.
+   * Used to render the `decidedSummary` slice of `raceContext` for the
+   * race-deep-dive builder so the model knows which races are already
+   * settled. Optional — when empty/absent the chat payload emits
+   * `decidedSummary: "(none)"`.
+   *
+   * Shape matches `BallotPane.Decision` deliberately (string-typed
+   * structural fields only) so the parent can pass its `decisions` state
+   * through without any reshape.
+   */
+  decisions?: ReadonlyArray<{
+    raceId: string;
+    raceLabel: string;
+    section: string;
+    pick: string;
+    party?: string;
+    whyNote: string;
+  }>;
 }
 
 interface ChatPanelProps {
@@ -410,6 +429,40 @@ function getDisabledMessage(
   if (reason === "session_limit") return t.rateLimit.sessionLimit;
   if (reason === "rate_limit") return t.rateLimit.ipLimit;
   return t.budget.exhausted;
+}
+
+/**
+ * Format the workspace's locked themes as the `themesList` string expected
+ * by the race-deep-dive / proposition / amendment prompt builders. Empty
+ * themes → empty string; consumers treat empty as "no themes" without any
+ * special-casing on the builder side.
+ *
+ * Module-scoped (not nested in ChatPanel) so the call sites in the
+ * workspace chat payload stay at a low cyclomatic complexity.
+ */
+function formatThemesList(themes: ReadonlyArray<Theme> | undefined): string {
+  return (themes ?? []).map((t, i) => `${i + 1}. ${t.name}`).join("; ");
+}
+
+/**
+ * Format the workspace's prior decisions as the `decidedSummary` string
+ * expected by the race-deep-dive prompt builder. Returns "(none)" when
+ * there are no decisions yet so the model knows the slate is empty
+ * (vs. "data missing"). Each decision renders as
+ * `<raceLabel>: <pick> (<party>) — <whyNote>` with party + whyNote
+ * suffixes only when present.
+ */
+function formatDecidedSummary(
+  decisions: WorkspaceModeProps["decisions"] | undefined,
+): string {
+  if (!decisions || decisions.length === 0) return "(none)";
+  return decisions
+    .map((d) => {
+      const partySuffix = d.party ? ` (${d.party})` : "";
+      const why = d.whyNote ? ` — ${d.whyNote}` : "";
+      return `${d.raceLabel}: ${d.pick}${partySuffix}${why}`;
+    })
+    .join("\n");
 }
 
 /* ── Sub-components ─────────────────────────────────────────── */
@@ -2058,11 +2111,24 @@ export function ChatPanel({
       // builders need. Without this the chat route falls back to the
       // legacy prompt, even with PROMPT_FLEET_V2 on. See
       // .ai/work-packets/redesign-phase-3-workspace-split.md step 4.
+      //
+      // Real-fix correction (post PR #41):
+      //   - Discriminate proposition vs candidate race on
+      //     `Race.section === "Propositions"`, NOT on candidates being empty.
+      //     The deriver now propagates candidates; an empty candidates array
+      //     on a non-proposition just means the contest data didn't ship a
+      //     roster (rare, e.g. paste path with no party labels), and the
+      //     race-deep-dive builder can still run with `candidatesJson: "[]"`.
+      //   - Always populate `themesList` and `decidedSummary` for candidate
+      //     races so the race-deep-dive builder's required-field validation
+      //     passes. Pre-fix these were missing, which made the route's
+      //     defensive-fallback path serve the legacy v3 prompt instead of
+      //     the race-specific builder (UX degradation, not a 500). PR #41
+      //     keeps that fallback in place as belt-and-suspenders.
       const workspaceContextBody = (() => {
         const ws = workspace;
         if (!ws?.activeRace) return undefined;
-        const isProposition =
-          !ws.activeRace.candidates || ws.activeRace.candidates.length === 0;
+        const isProposition = ws.activeRace.section === "Propositions";
         const view: RouterView = isProposition
           ? "workspace-prop"
           : "workspace-race";
@@ -2076,9 +2142,9 @@ export function ChatPanel({
             raceLabel: ws.activeRace.label,
             state: state.stateCode,
             county: countyName,
-            candidatesJson: ws.activeRace.candidates
-              ? JSON.stringify(ws.activeRace.candidates)
-              : undefined,
+            candidatesJson: JSON.stringify(ws.activeRace.candidates ?? []),
+            themesList: formatThemesList(ws.lockedThemes),
+            decidedSummary: formatDecidedSummary(ws.decisions),
           },
         };
       })();

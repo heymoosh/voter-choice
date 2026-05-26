@@ -35,6 +35,14 @@ export interface Race {
   label: string;
   /** Whether the voter has committed a pick for this race. Always false from the deriver. */
   decided: boolean;
+  /**
+   * Candidate roster, propagated verbatim from the input ContestLike. The
+   * chat path's race-deep-dive builder uses this to render its
+   * `<ground_truth>` tag; the workspace pick CTA also uses it to surface
+   * the default candidate. Empty for propositions (no candidates) and for
+   * inputs that didn't supply a roster.
+   */
+  candidates: { name: string; party: string }[];
 }
 
 const SECTION_ORDER: RaceSection[] = [
@@ -105,11 +113,16 @@ export function deriveRaces(input: RaceDeriverInput | null): Race[] {
     const district = (c.district ?? "").trim();
     const label = district ? `${office} — ${district}` : office;
     const id = makeRaceId(office, district);
+    // Propagate the candidate roster verbatim. Empty array for propositions
+    // and any input that didn't supply candidates — downstream consumers
+    // can treat the field as load-bearing without optional-chaining.
+    const candidates = Array.isArray(c.candidates) ? c.candidates : [];
     return {
       id,
       section: classifyRaceSection(office),
       label,
       decided: false,
+      candidates,
     };
   });
 
