@@ -1,6 +1,6 @@
 # Work Packet: redesign-phase-5-state-party-gates
 
-Status: ready
+Status: **shipped** — state party gate infrastructure delivered as part of the 2026 redesign rollout (PRs #34–43 + `8be27ff` `PROMPT_FLEET_V2` flag flip), deployed to production at `688f718`. Rules table is data-driven; gate appears only when `[state, electionType]` requires it; selection injects as `<ballot_context>` in every downstream chat call. See `docs/REDESIGN_2026_SHIPPED.md`.
 Owner: orchestrator
 Source: docs/design/2026-redesign/README.md §5 — Phase 5 (State party gates)
 Branch: launch/production

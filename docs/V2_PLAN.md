@@ -1,5 +1,7 @@
 # V2 Plan — Closing the Gap to the UI Reference
 
+> **Historical (2026-04-12).** Superseded by the 2026 redesign. The information-architecture gap diagnosed here was closed by the redesign rather than by the V2 plan as written. See `docs/REDESIGN_2026_SHIPPED.md` for the current state and `docs/design/2026-redesign/README.md` for the canonical design brief.
+
 **Date:** 2026-04-12
 **Author:** Muxin + Claude (planning session)
 **Goal:** Bring Voter Choice from "functional MVP" to the experience described in `docs/UI_REFERENCE/`.

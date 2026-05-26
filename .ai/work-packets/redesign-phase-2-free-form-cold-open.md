@@ -1,6 +1,6 @@
 # Work Packet: redesign-phase-2-free-form-cold-open
 
-Status: ready
+Status: **shipped** — free-form cold open live in production. Fix O ("cold-open reflects pasted ballot as confirmed") landed in PR #34; "Use a starter profile" chip shipped in PR #37; "Vote for N" comma-separated race parsing in PR #35; prototype landing + cold-open chrome in PR #39; cold-open card + breadcrumb polish in PR #40; remaining P1/P2 polish in PR #43. `ValuesTagSelector` chip-picker is gone — free-form textarea + AI theme inference is the only entry route. See `docs/REDESIGN_2026_SHIPPED.md`.
 Owner: orchestrator
 Source: docs/design/2026-redesign/README.md §5 — Phase 2 (Free-form cold open)
 Branch: launch/production

@@ -1,6 +1,6 @@
 # Work Packet: redesign-phase-9-out-of-budget-handoff
 
-Status: ready
+Status: **shipped** — out-of-budget continuity screen delivered as part of the 2026 redesign rollout (PRs #34–43 + `8be27ff` `PROMPT_FLEET_V2` flag flip), deployed to production at `688f718`. The original `BALLOT_PROMPT.md` (EN + ES) is retained as the canonical handoff target; the four alphabetical chatbot deeplinks (Claude, ChatGPT, Gemini, Grok) and BYOK Anthropic-key option preserve continuity, not paywall framing. See `docs/REDESIGN_2026_SHIPPED.md`.
 Owner: orchestrator
 Source: docs/design/2026-redesign/README.md §5 — Phase 9 (Out-of-budget handoff reframe)
 Branch: launch/production

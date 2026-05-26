@@ -1,6 +1,6 @@
 # Work Packet: redesign-phase-1-prompt-refactor
 
-Status: ready
+Status: **shipped** — prompt fleet live in production behind `PROMPT_FLEET_V2=true`. Defensive fallback for malformed v2 raceContext landed in PR #41; race-deep-dive builder wired correctly in PR #42; Haiku theme-output parser hardened in PR #36; flag flipped on Vercel Production via empty deploy commit `8be27ff`. The old `BALLOT_PROMPT.md` (EN + ES) is retained as the out-of-budget handoff target only. See `docs/REDESIGN_2026_SHIPPED.md`.
 Owner: orchestrator
 Source: docs/design/2026-redesign/README.md §5 — Phase 1 (Prompt refactor — data layer)
 Branch: launch/production
