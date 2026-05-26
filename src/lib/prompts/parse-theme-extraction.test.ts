@@ -93,4 +93,69 @@ describe("parseThemeExtraction", () => {
       /Invalid theme JSON/,
     );
   });
+
+  // --- Defensive cleanup against common Haiku output deviations ---
+  //
+  // The prompt asks for "JSON only", but in practice the model occasionally
+  // emits a preamble line or wraps the array in an outer object. The parser
+  // should tolerate both shapes so the cold-open doesn't surface
+  // `coldOpenParseError` for harmless surface variation.
+
+  it("extracts the outermost array when Haiku prepends a preamble line", () => {
+    const raw =
+      'Here are the themes:\n[{"name":"Healthcare","quotes":["insulin"]}]';
+    const result = parseThemeExtraction(raw);
+    expect(result).toEqual([{ name: "Healthcare", quotes: ["insulin"] }]);
+  });
+
+  it("extracts the array from a preamble + ```json fence combo", () => {
+    const raw =
+      'Sure — here you go:\n```json\n[{"name":"X","quotes":["y"]}]\n```';
+    const result = parseThemeExtraction(raw);
+    expect(result).toEqual([{ name: "X", quotes: ["y"] }]);
+  });
+
+  it("extracts the array from a preamble + bare fence combo", () => {
+    const raw = 'Here:\n```\n[{"name":"X","quotes":["y"]}]\n```';
+    const result = parseThemeExtraction(raw);
+    expect(result).toEqual([{ name: "X", quotes: ["y"] }]);
+  });
+
+  it("unwraps an outer object that contains a single themes array", () => {
+    const raw = '{"themes":[{"name":"Healthcare","quotes":["insulin"]}]}';
+    const result = parseThemeExtraction(raw);
+    expect(result).toEqual([{ name: "Healthcare", quotes: ["insulin"] }]);
+  });
+
+  it("unwraps when the outer object's array key is something other than 'themes'", () => {
+    const raw = '{"result":[{"name":"Schools","quotes":["my kid"]}]}';
+    const result = parseThemeExtraction(raw);
+    expect(result).toEqual([{ name: "Schools", quotes: ["my kid"] }]);
+  });
+
+  it("preserves em-dashes verbatim inside theme names and quotes", () => {
+    // "EXACT words" is a hard contract from the prompt. Don't normalize.
+    const raw = JSON.stringify([
+      {
+        name: "Healthcare costs — Mom's insulin",
+        quotes: ["insulin keeps going up — last month $400"],
+      },
+    ]);
+    const result = parseThemeExtraction(raw);
+    expect(result[0].name).toContain("—");
+    expect(result[0].quotes[0]).toContain("—");
+  });
+
+  it("preserves smart quotes verbatim inside JSON string values", () => {
+    const raw =
+      '[{"name":"Housing","quotes":["rent went up \\u201Cagain\\u201D"]}]';
+    const result = parseThemeExtraction(raw);
+    expect(result[0].quotes[0]).toBe("rent went up “again”");
+  });
+
+  it("strips a UTF-8 BOM at the start of the payload", () => {
+    const raw = '﻿[{"name":"X","quotes":["y"]}]';
+    const result = parseThemeExtraction(raw);
+    expect(result).toEqual([{ name: "X", quotes: ["y"] }]);
+  });
 });
