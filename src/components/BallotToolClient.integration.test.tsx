@@ -1567,3 +1567,72 @@ describe("ElectionResult — Fix O: cold-open paste affordance", () => {
     expect(screen.getByTestId("ballot-data-status")).toBeInTheDocument();
   });
 });
+
+/* ── PR A2 — strip legacy "ELECTION GUIDE" sidebar on the cold-open ─ */
+
+describe("ElectionResult — cold-open chrome (PR A2)", () => {
+  it("does NOT render the legacy 'Election Guide' sidebar under flag-on + en (cold-open)", () => {
+    render(
+      <LanguageProvider>
+        <ElectionResult
+          state={txState}
+          zipCode="73301"
+          lang="en"
+          initialPollingData={civicData}
+          promptFleetV2Enabled={true}
+          // Cold-open path: themes NOT yet locked, but a ballot is ready
+          // (Civic returned contests). With flag-on + en this should render
+          // without the legacy sidebar chrome.
+          initialLockedThemes={null}
+        />
+      </LanguageProvider>,
+    );
+    // The legacy sidebar renders an "Election Guide" headline (translations
+    // key `research.sidebarTitle`). It must NOT be in the DOM on the cold-
+    // open path under the new flag-on + en flow.
+    expect(screen.queryByText(/Election Guide/i)).not.toBeInTheDocument();
+    // The legacy "CHECK REGISTRATION" sidebar CTA must also be gone.
+    expect(screen.queryByText(/CHECK REGISTRATION/i)).not.toBeInTheDocument();
+  });
+
+  it("KEEPS the legacy 'Election Guide' sidebar on the ES path (flag-on + es) — no regression", async () => {
+    // Prime localStorage so the LanguageProvider hydrates to "es" (and the
+    // ResearchLayout's `useLanguage()` reads `lang === "es"`). The
+    // `lang` prop on ElectionResult only feeds the props it drills down;
+    // the sidebar branch lives in ResearchLayout which uses context.
+    window.localStorage.setItem("ballot-tool-lang", "es");
+    render(
+      <LanguageProvider>
+        <ElectionResult
+          state={txState}
+          zipCode="73301"
+          lang="es"
+          initialPollingData={civicData}
+          promptFleetV2Enabled={true}
+          initialLockedThemes={null}
+        />
+      </LanguageProvider>,
+    );
+    // Flush the post-hydration effect that flips LanguageProvider into "es".
+    await act(async () => {});
+    // Sidebar copy in ES — "Guía Electoral".
+    expect(screen.getByText(/Guía Electoral/i)).toBeInTheDocument();
+  });
+
+  it("KEEPS the legacy 'Election Guide' sidebar on the flag-off path — no regression", () => {
+    render(
+      <LanguageProvider>
+        <ElectionResult
+          state={txState}
+          zipCode="73301"
+          lang="en"
+          initialPollingData={civicData}
+          promptFleetV2Enabled={false}
+          initialLockedThemes={null}
+        />
+      </LanguageProvider>,
+    );
+    // Sidebar renders for the legacy flag-off path even in English.
+    expect(screen.getByText(/Election Guide/i)).toBeInTheDocument();
+  });
+});

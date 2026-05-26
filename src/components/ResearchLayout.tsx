@@ -1764,15 +1764,27 @@ export function ResearchLayout({
   const [activeTab, setActiveTab] = useState<ResearchTab>("research");
   const { lang } = useLanguage();
 
+  // PR A2 — strip the legacy "ELECTION GUIDE" sidebar (and its Dates / ID /
+  // Polling / Sample Ballot tabs + CHECK REGISTRATION button) when the new
+  // PromptFleetV2 cold-open flow is live in English. The prototype has no
+  // sidebar at the cold-open / pre-workspace surfaces; the chrome is the
+  // single prototype AppNav rendered upstream by PageContent. ES locale and
+  // the flag-off legacy path keep the sidebar so we don't regress them.
+  const suppressLegacySidebar = !!promptFleetV2Enabled && lang === "en";
+
   return (
-    <div className="flex flex-1 overflow-hidden h-[calc(100vh-49px)] md:h-[calc(100vh-57px)]">
-      {/* Desktop Sidebar */}
-      <Sidebar
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
-        state={state}
-        lang={lang}
-      />
+    /* PR A2 — viewport math accounts for the new prototype AppNav (py-5 +
+       22px brand mark + 1px border ≈ 63px), uniform across breakpoints. */
+    <div className="flex flex-1 overflow-hidden h-[calc(100vh-63px)]">
+      {/* Desktop Sidebar (legacy chrome — suppressed under flag-on + en) */}
+      {!suppressLegacySidebar && (
+        <Sidebar
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          state={state}
+          lang={lang}
+        />
+      )}
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col bg-surface overflow-hidden">
@@ -1831,12 +1843,14 @@ export function ResearchLayout({
         )}
       </main>
 
-      {/* Mobile Bottom Nav */}
-      <MobileBottomNav
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
-        lang={lang}
-      />
+      {/* Mobile Bottom Nav (legacy chrome — suppressed under flag-on + en). */}
+      {!suppressLegacySidebar && (
+        <MobileBottomNav
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          lang={lang}
+        />
+      )}
     </div>
   );
 }

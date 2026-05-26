@@ -23,7 +23,7 @@ export default function PrivacyPolicy() {
         </p>
 
         <p className="text-on-surface">
-          Voter Choice is operated by Grey Bird LLC. We built this tool to
+          Voter Choice is operated by Gray Bird LLC. We built this tool to
           minimize data collection and to keep your ballot research under your
           control.
         </p>
@@ -147,13 +147,13 @@ export default function PrivacyPolicy() {
           <h2 className="text-xl font-semibold text-on-surface">Contact</h2>
           <p className="text-on-surface">
             Questions about this policy? Reach out at{" "}
-            <strong>Grey Bird LLC</strong>.
+            <strong>Gray Bird LLC</strong>.
           </p>
         </section>
       </article>
 
       <footer className="text-sm text-on-surface-muted pt-6 mt-2">
-        <p>&copy; 2026 Grey Bird LLC. All Rights Reserved.</p>
+        <p>&copy; 2026 Gray Bird LLC. All Rights Reserved.</p>
       </footer>
     </main>
   );

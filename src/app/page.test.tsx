@@ -14,6 +14,10 @@ vi.mock("../components/LanguageToggle", () => ({
 vi.mock("./PageContent", () => ({
   PageContent: ({ children }: { children?: React.ReactNode }) => (
     <div data-testid="page-content" data-tips="true">
+      {/* PR A2: AppNav (rendered inside the real PageContent) owns the
+          LanguageToggle. The mock simulates that placement so page.test.tsx
+          asserts on the same DOM contract as production. */}
+      <button data-testid="language-toggle">Español</button>
       <h1>Free AI Ballot Research Tool</h1>
       <section data-testid="tips-section">
         <p>AI can make mistakes</p>
