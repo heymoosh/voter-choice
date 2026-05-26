@@ -120,10 +120,13 @@ export function ZipForm({ onSubmit }: ZipFormProps) {
           <button
             data-testid="zip-submit"
             type="submit"
-            // PR B — sentence-case sans CTA per prototype `.addr-card .go`
-            // (font-weight 600, 14.5px). Mono-uppercase is reserved for
-            // meta/eyebrow labels in the prototype, not primary buttons.
-            className="bg-civic text-paper-2 border-0 rounded-lg px-6 py-[14px] text-[14.5px] font-semibold whitespace-nowrap hover:bg-civic-2 transition-colors min-h-[44px]"
+            // PR B / fix 4-live-bugs — sentence-case sans CTA per prototype
+            // `.addr-card .go`: padding 0 24px, no fixed height. Flex `row`
+            // defaults to align-items: stretch so the button height matches
+            // the input (14px y-padding × 2 + 15px line ≈ 48px, satisfying
+            // the 44px a11y minimum without an explicit min-h that would
+            // over-pad and dwarf the input — the bug user saw on live).
+            className="bg-civic text-paper-2 border-0 rounded-lg px-6 text-[14.5px] font-semibold whitespace-nowrap hover:bg-civic-2 transition-colors"
           >
             {lang === "en" ? "Pull my ballot →" : "Ver Boleta"}
           </button>

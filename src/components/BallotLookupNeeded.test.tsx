@@ -233,6 +233,39 @@ describe("BallotLookupNeeded — Civic-empty routing surface (fix D)", () => {
   });
 });
 
+describe("BallotLookupNeeded — PDF upload (live bug 2)", () => {
+  it("file input accept attribute includes .pdf and application/pdf", () => {
+    render(<BallotLookupNeeded state={txState} onBallotConfirmed={vi.fn()} />);
+    const input = screen.getByTestId(
+      "ballot-lookup-upload",
+    ) as HTMLInputElement;
+    const accept = input.getAttribute("accept") ?? "";
+    expect(accept).toMatch(/\.pdf/);
+    expect(accept).toMatch(/application\/pdf/);
+    // .txt support is still there.
+    expect(accept).toMatch(/\.txt/);
+  });
+
+  it("upload button label reflects both .txt and .pdf support", () => {
+    render(<BallotLookupNeeded state={txState} onBallotConfirmed={vi.fn()} />);
+    expect(screen.getByText(/\.txt or \.pdf/i)).toBeInTheDocument();
+  });
+
+  it("rejects unsupported file types with a friendly error", () => {
+    render(<BallotLookupNeeded state={txState} onBallotConfirmed={vi.fn()} />);
+    const input = screen.getByTestId(
+      "ballot-lookup-upload",
+    ) as HTMLInputElement;
+    const bogus = new File(["not a ballot"], "image.png", {
+      type: "image/png",
+    });
+    fireEvent.change(input, { target: { files: [bogus] } });
+    expect(
+      screen.getByTestId("ballot-lookup-upload-error"),
+    ).toBeInTheDocument();
+  });
+});
+
 describe("BallotLookupNeeded — accessibility / copy", () => {
   it("includes copy explaining that Civic data was incomplete and instructing what to do", () => {
     render(
