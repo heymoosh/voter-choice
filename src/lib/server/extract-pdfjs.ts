@@ -36,8 +36,7 @@ function pdfjsStandardFontsDir(): string {
   // append explicitly after resolution. Without this the request 500s in
   // production with "Invalid factory url: must include trailing slash."
   return (
-    resolve(process.cwd(), "node_modules", "pdfjs-dist", "standard_fonts") +
-    "/"
+    resolve(process.cwd(), "node_modules", "pdfjs-dist", "standard_fonts") + "/"
   );
 }
 
