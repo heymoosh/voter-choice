@@ -1640,3 +1640,145 @@ describe("ElectionResult — cold-open chrome (PR A2)", () => {
     expect(screen.getByText(/Election Guide/i)).toBeInTheDocument();
   });
 });
+
+describe("ElectionResult — structured ballot extraction populates all eligible races", () => {
+  // The live NJ Camden bug. /api/extract-ballot returns 8 races split DEM/REP,
+  // but the prior path (ballotJsonToText → parseBallotContent) couldn't parse
+  // the markdown shape, so only Civic contests reached the workspace.
+  //
+  // After the fix, ElectionResult receives the structured extraction via
+  // `initialExtractedBallot` and `initialBallotContext.ballotTag` drives
+  // the party filter so DEM voters see all DEM-eligible races (Federal +
+  // County + Municipal), not just whatever Civic returned.
+
+  const njDemRepExtraction = {
+    election_metadata: {
+      election_date: "2026-06-02",
+      election_type: "primary" as const,
+      jurisdiction: "Camden County, NJ",
+    },
+    sections: [
+      {
+        section_name: "Federal",
+        races: [
+          {
+            office: "U.S. Senator",
+            vote_for_n: 1,
+            party_context: "Democratic Primary" as const,
+            candidates: [
+              {
+                name: "Cory Booker",
+                party: "Democratic",
+                placeholder_reason: null,
+              },
+            ],
+          },
+          {
+            office: "U.S. Senator",
+            vote_for_n: 1,
+            party_context: "Republican Primary" as const,
+            candidates: [
+              {
+                name: "John Bramnick",
+                party: "Republican",
+                placeholder_reason: null,
+              },
+            ],
+          },
+          {
+            office: "U.S. House",
+            district: "1",
+            vote_for_n: 1,
+            party_context: "Democratic Primary" as const,
+            candidates: [
+              {
+                name: "Donald Norcross",
+                party: "Democratic",
+                placeholder_reason: null,
+              },
+            ],
+          },
+        ],
+      },
+      {
+        section_name: "County",
+        races: [
+          {
+            office: "County Commissioner",
+            vote_for_n: 2,
+            party_context: "Democratic Primary" as const,
+            candidates: [
+              {
+                name: "Louis Cappelli",
+                party: "Democratic",
+                placeholder_reason: null,
+              },
+            ],
+          },
+          {
+            office: "County Commissioner",
+            vote_for_n: 2,
+            party_context: "Republican Primary" as const,
+            candidates: [
+              { name: "Alice", party: "Republican", placeholder_reason: null },
+            ],
+          },
+        ],
+      },
+    ],
+    _meta: {
+      extraction_path: "vision" as const,
+      pages: 1,
+      latency_ms: 30000,
+      cost_usd: 0.1,
+    },
+  };
+
+  it("DEM voter sees Federal + County rows from extraction, not just Civic", () => {
+    render(
+      <LanguageProvider>
+        <ElectionResult
+          state={txState}
+          zipCode="73301"
+          lang="en"
+          initialPollingData={null}
+          promptFleetV2Enabled={true}
+          initialLockedThemes={lockedThemes}
+          initialExtractedBallot={njDemRepExtraction}
+          initialBallotContext={{
+            state: "NJ",
+            ballotTag: "DEM-primary",
+            electionDate: "2026-06-02",
+            electionLabel: "2026 New Jersey Primary",
+          }}
+        />
+      </LanguageProvider>,
+    );
+    // 1 Senator DEM + 1 House DEM + 1 Commissioner DEM = 3.
+    expect(screen.getByTestId("ballot-pane-header")).toHaveTextContent("0/3");
+  });
+
+  it("REP voter sees Republican Primary races only", () => {
+    render(
+      <LanguageProvider>
+        <ElectionResult
+          state={txState}
+          zipCode="73301"
+          lang="en"
+          initialPollingData={null}
+          promptFleetV2Enabled={true}
+          initialLockedThemes={lockedThemes}
+          initialExtractedBallot={njDemRepExtraction}
+          initialBallotContext={{
+            state: "NJ",
+            ballotTag: "REP-primary",
+            electionDate: "2026-06-02",
+            electionLabel: "2026 New Jersey Primary",
+          }}
+        />
+      </LanguageProvider>,
+    );
+    // 1 Senator REP + 1 Commissioner REP = 2.
+    expect(screen.getByTestId("ballot-pane-header")).toHaveTextContent("0/2");
+  });
+});

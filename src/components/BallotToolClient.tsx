@@ -13,6 +13,8 @@ import { BallotPane, type Decision } from "./BallotPane";
 import { PrintBallot, type PollingDataShape } from "./PrintBallot";
 import { ChatPanel } from "./ChatPanel";
 import { deriveRaces, type ContestLike, type Race } from "../lib/raceDeriver";
+import { extractionToRaces } from "../lib/extractionToRaces";
+import type { BallotExtraction } from "../lib/server/extract-types";
 import { parseBallotContent } from "../lib/parseBallotContent";
 import { downloadProfileAsText } from "../lib/ballot-utils";
 import { useLanguage } from "../lib/i18n";
@@ -442,6 +444,8 @@ export function ElectionResult({
   promptFleetV2Enabled = false,
   initialLockedThemes = null,
   initialUserSampleBallotText = "",
+  initialExtractedBallot = null,
+  initialBallotContext = null,
 }: {
   state: StateElectionData;
   zipCode: string;
@@ -464,6 +468,22 @@ export function ElectionResult({
    * handler.
    */
   initialUserSampleBallotText?: string;
+  /**
+   * Test-only hook that lets specs mount the workspace with a structured
+   * BallotExtraction pre-populated, mirroring what BallotLookupNeeded's
+   * `/api/extract-ballot` success handler does in production. Combined
+   * with `initialBallotContext.ballotTag` this exercises the
+   * structured-extraction → workspace race derivation path that replaces
+   * the lossy `ballotJsonToText → parseBallotContent` round-trip.
+   */
+  initialExtractedBallot?: BallotExtraction | null;
+  /**
+   * Test-only hook that lets specs mount the workspace with a pre-resolved
+   * PartyGate selection. Production callers leave this null; the gate runs
+   * inline. Used in tandem with `initialExtractedBallot` to assert that
+   * DEM vs REP voters see different race sets.
+   */
+  initialBallotContext?: SerializableBallotContext | null;
 }) {
   // PR C — voter profile state is preserved (downstream prompt
   // generation still reads it) but the pre-session upload banner that
@@ -522,30 +542,68 @@ export function ElectionResult({
   const [userSampleBallotText, setUserSampleBallotText] = useState(
     initialUserSampleBallotText,
   );
-  // Derived list of races (Federal → State → Propositions → Local). Memoized
+  // Live production bug fix — when a voter uploads a sample-ballot PDF and
+  // `/api/extract-ballot` returns structured JSON, that structured payload
+  // is the source of truth for the workspace race list. The legacy text
+  // round-trip (`ballotJsonToText` → `parseBallotContent`) silently dropped
+  // every PDF-extracted race because the markdown shape didn't match the
+  // single-line `OFFICE: candidate` regex. We now keep the structured
+  // payload on a dedicated slot and derive `races` from it directly via
+  // `extractionToRaces`, filtered by the voter's PartyGate selection.
+  // The legacy text path stays as the fallback for hand-pasted ballots
+  // (which still arrive as single-line shapes the parser handles).
+  const [extractedBallot, setExtractedBallot] =
+    useState<BallotExtraction | null>(initialExtractedBallot);
+  // Phase 5 — ballot context emitted by the new PartyGate (flag-on + en).
+  // When set, the gate has been completed and we route to the rest of the
+  // pre-research flow. Stays null on flag-off and ES paths (legacy gates
+  // own those rendering decisions instead). Test-only `initialBallotContext`
+  // hook lets specs mount the workspace with a pre-resolved selection so
+  // the structured-extraction → party-filtered races path can be asserted
+  // without driving the full gate UI.
+  const [ballotContext, setBallotContext] =
+    useState<SerializableBallotContext | null>(initialBallotContext);
+  // Derived list of races (Federal → State → County → … → Local). Memoized
   // for stable ids across renders.
   //
-  // PR 8 — Fix L. When Civic returned 0 contests but the user supplied a
-  // ballot via paste (BallotLookupNeeded confirm), parse the pasted text
-  // and use those races. Otherwise the workspace counter stays "0/0" even
-  // after the user just confirmed their ballot — the bug that motivated
-  // this fix. Civic contests take precedence: if both exist, the
-  // server-side data wins. Note: races still keys on `initialPollingData`
-  // (not live `pollingData`) — that's a separate latent address-resubmit
-  // bug out of scope for this PR. Declaration order matters: this useMemo
-  // reads `userSampleBallotText`, so it MUST live below that state hook to
+  // Priority order:
+  //   1. Civic contests — if Google Civic returned a contest list, that's
+  //      the most trusted source (validated upstream).
+  //   2. Structured extraction — if a PDF upload landed and produced a
+  //      `BallotExtraction`, route THAT through `extractionToRaces` with
+  //      the voter's `ballotTag` driving the party filter. This is the
+  //      live-bug fix path.
+  //   3. Pasted text — hand-pasted single-line ballots fall through here.
+  //      Preserved so the legacy paste UX still populates the rail.
+  //   4. Final fallback to `deriveRaces(initialPollingData)` (which yields
+  //      an empty array when no contests are present).
+  //
+  // Declaration order matters: this useMemo reads `userSampleBallotText`
+  // and `extractedBallot`, so it MUST live below those state hooks to
   // avoid the temporal-dead-zone error.
   const races: Race[] = useMemo(() => {
     const civicContests = initialPollingData?.contests ?? [];
     if (civicContests.length > 0) {
       return deriveRaces(initialPollingData);
     }
+    if (extractedBallot) {
+      const extracted = extractionToRaces(
+        extractedBallot,
+        ballotContext?.ballotTag ?? null,
+      );
+      if (extracted.length > 0) return extracted;
+    }
     const pastedContests = parsedBallotToContests(userSampleBallotText);
     if (pastedContests.length > 0) {
       return deriveRaces({ contests: pastedContests });
     }
     return deriveRaces(initialPollingData);
-  }, [initialPollingData, userSampleBallotText]);
+  }, [
+    initialPollingData,
+    extractedBallot,
+    ballotContext?.ballotTag,
+    userSampleBallotText,
+  ]);
   const [activeRaceId, setActiveRaceId] = useState<string | null>(
     races[0]?.id ?? null,
   );
@@ -554,12 +612,6 @@ export function ElectionResult({
   );
   const [closedPrimaryChoice, setClosedPrimaryChoice] =
     useState<ClosedPrimaryChoice | null>(null);
-  // Phase 5 — ballot context emitted by the new PartyGate (flag-on + en).
-  // When set, the gate has been completed and we route to the rest of the
-  // pre-research flow. Stays null on flag-off and ES paths (legacy gates
-  // own those rendering decisions instead).
-  const [ballotContext, setBallotContext] =
-    useState<SerializableBallotContext | null>(null);
   const [addressStep, setAddressStep] = useState<AddressStep>(
     initialPollingData ? "done" : "skipped",
   );
@@ -1009,10 +1061,24 @@ export function ElectionResult({
   // Handler fired by BallotLookupNeeded when the user clicks "Use this
   // ballot". Stores the pasted text on the same `userSampleBallotText`
   // slot the legacy in-workspace widget uses — this keeps the downstream
-  // prompt generation single-pathed.
-  const handleBallotLookupConfirm = useCallback((ballotText: string) => {
-    setUserSampleBallotText(ballotText);
-  }, []);
+  // prompt generation single-pathed (every chat prompt that quotes
+  // "USER-PROVIDED SAMPLE BALLOT TEXT" reads from this slot).
+  //
+  // When the upload was a PDF, BallotLookupNeeded ALSO hands back the
+  // structured `BallotExtraction` it received from `/api/extract-ballot`.
+  // We park it on the dedicated `extractedBallot` slot so the workspace
+  // race list derives from the structured payload (filtered by ballotTag)
+  // rather than the text round-trip — see the `races` useMemo above.
+  // Hand-pasted ballots (no PDF) pass `undefined` for the extraction
+  // and continue to flow through the legacy paste path.
+  const handleBallotLookupConfirm = useCallback(
+    (ballotText: string, extraction?: BallotExtraction | null) => {
+      setUserSampleBallotText(ballotText);
+      // Always assign so a fresh upload supersedes a stale prior extraction.
+      setExtractedBallot(extraction ?? null);
+    },
+    [],
+  );
   const handleAddressSkip = useCallback(() => {
     setPollingData(null);
     setAddressStep("skipped");

@@ -21,8 +21,13 @@
  */
 
 import Anthropic from "@anthropic-ai/sdk";
+import { createHash } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { checkRateLimitAsync } from "../../../lib/server/rate-limit";
+import {
+  isDurableStoreConfigured,
+  redisCommand,
+} from "../../../lib/server/durable-store";
 import {
   decideExtractionPath,
   scoreExtractedText,
@@ -67,6 +72,76 @@ const MAX_SESSION_ID_CHARS = 128;
 // truncation (matches vision module).
 const SONNET_POST_PROCESSOR_MAX_TOKENS = 16384;
 
+// Hash-based extraction cache (Fix 2). Content-addressed by SHA-256 of the
+// uploaded PDF bytes: two voters in the same county uploading the same
+// official sample ballot reuse one Sonnet vision extraction. The 30-day
+// TTL is the upper bound — sample ballots can be reissued (typo fixes,
+// late candidates) but rarely within a month, and 30 days easily spans
+// the early-voting window where the same PDF gets uploaded most.
+const EXTRACTION_CACHE_TTL_SECONDS = 60 * 60 * 24 * 30;
+
+function pdfBytesHash(buffer: Buffer): string {
+  return createHash("sha256").update(buffer).digest("hex");
+}
+
+function extractionCacheKey(hash: string): string {
+  return `voter-choice:extraction:${hash}`;
+}
+
+/**
+ * Cache lookup. Returns the parsed `BallotExtraction` on hit, `null` on
+ * miss / unconfigured backend / any Redis error. NEVER throws — extraction
+ * MUST proceed even when caching is unavailable.
+ */
+async function readExtractionCache(
+  hash: string,
+): Promise<BallotExtraction | null> {
+  if (!isDurableStoreConfigured()) return null;
+  try {
+    const raw = await redisCommand<string>(["GET", extractionCacheKey(hash)]);
+    if (!raw) return null;
+    return JSON.parse(raw) as BallotExtraction;
+  } catch (err) {
+    // Backend hiccup — log and degrade.
+    logJson({
+      event: "extract.cache_error",
+      op: "read",
+      hash_prefix: hash.slice(0, 8),
+      message: (err as Error).message,
+    });
+    return null;
+  }
+}
+
+/**
+ * Fire-and-forget cache write. Telemetry-only — failures must not delay
+ * the response. We `void` the promise rather than `await` so the user's
+ * extracted ballot returns immediately.
+ */
+function writeExtractionCache(hash: string, payload: BallotExtraction): void {
+  if (!isDurableStoreConfigured()) return;
+  // The redisCommand wrapper returns null when Upstash is unconfigured —
+  // but we already checked isDurableStoreConfigured() above. Wrap the
+  // promise so a transport error doesn't crash the request.
+  void (async () => {
+    try {
+      await redisCommand([
+        "SETEX",
+        extractionCacheKey(hash),
+        EXTRACTION_CACHE_TTL_SECONDS,
+        JSON.stringify(payload),
+      ]);
+    } catch (err) {
+      logJson({
+        event: "extract.cache_error",
+        op: "write",
+        hash_prefix: hash.slice(0, 8),
+        message: (err as Error).message,
+      });
+    }
+  })();
+}
+
 function getClientIP(request: NextRequest): string {
   return (
     request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
@@ -110,6 +185,12 @@ interface TelemetryCompletedLog {
     | "vision_failed"
     | "pdfjs_failed_then_vision_succeeded"
     | "all_failed";
+}
+
+interface TelemetryCacheLog {
+  event: "extract.cache_hit" | "extract.cache_miss";
+  hash_prefix: string;
+  pdf_size_bytes: number;
 }
 
 function logJson<T>(payload: T): void {
@@ -456,6 +537,39 @@ export async function POST(request: NextRequest) {
   const { buffer, sizeBytes, client } = pre;
 
   const t0 = Date.now();
+
+  // Hash-based extraction cache (Fix 2). Two voters in the same county
+  // uploading the same official sample-ballot PDF reuse one Sonnet vision
+  // extraction. The hash is computed from PDF bytes only — no PII reaches
+  // the cache key. We log the first 8 chars for debugging cardinality.
+  const hash = pdfBytesHash(buffer);
+  const cached = await readExtractionCache(hash);
+  if (cached) {
+    const hitLatencyMs = Date.now() - t0;
+    logJson({
+      event: "extract.cache_hit",
+      hash_prefix: hash.slice(0, 8),
+      pdf_size_bytes: sizeBytes,
+    } satisfies TelemetryCacheLog);
+    const cachedMeta: ExtractMeta = {
+      ...cached._meta,
+      extraction_path: "cached",
+      latency_ms: hitLatencyMs,
+      cache_hit: true,
+    };
+    const cachedResponse: BallotExtraction = {
+      election_metadata: cached.election_metadata,
+      sections: cached.sections,
+      _meta: cachedMeta,
+    };
+    return NextResponse.json(cachedResponse, { status: 200 });
+  }
+  logJson({
+    event: "extract.cache_miss",
+    hash_prefix: hash.slice(0, 8),
+    pdf_size_bytes: sizeBytes,
+  } satisfies TelemetryCacheLog);
+
   let pdfjsText: { text: string; numPages: number };
   try {
     pdfjsText = await extractTextFromPdf(new Uint8Array(buffer));
@@ -503,7 +617,7 @@ export async function POST(request: NextRequest) {
     return jsonError(502, dispatch.errorBody);
   }
 
-  return buildResponse(
+  const response = buildResponse(
     dispatch,
     decision,
     pdfjsText.numPages,
@@ -511,4 +625,26 @@ export async function POST(request: NextRequest) {
     latencyMs,
     costUsd,
   );
+
+  // Persist on the way out — fire-and-forget so cache writes never delay
+  // the user response, and Redis hiccups never surface to the user.
+  // Only cache when the dispatch actually produced sections; an empty
+  // sections payload would poison the cache for that hash for 30 days.
+  const stitched = stitchPages(dispatch.pages);
+  if (stitched.sections.length > 0) {
+    writeExtractionCache(hash, {
+      election_metadata:
+        stitched.election_metadata as BallotExtraction["election_metadata"],
+      sections: stitched.sections,
+      _meta: {
+        extraction_path: dispatch.finalPath,
+        pages: pdfjsText.numPages,
+        latency_ms: latencyMs,
+        cost_usd: Number(costUsd.toFixed(6)),
+        detector_score: decision.score,
+      },
+    });
+  }
+
+  return response;
 }

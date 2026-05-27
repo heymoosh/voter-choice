@@ -81,7 +81,15 @@ export interface DetectorScore {
   decision_reason: string;
 }
 
-export type ExtractionPath = "pdfjs" | "vision";
+/**
+ * `extraction_path` distinguishes which extraction stage produced the
+ * response:
+ *   - `"pdfjs"`: the cheap text-layer + Sonnet post-processor path.
+ *   - `"vision"`: the per-page Sonnet vision fan-out.
+ *   - `"cached"`: a previously computed extraction served from the
+ *     content-addressed cache (SHA-256 of the PDF bytes).
+ */
+export type ExtractionPath = "pdfjs" | "vision" | "cached";
 
 export interface ExtractMeta {
   extraction_path: ExtractionPath;
@@ -89,6 +97,13 @@ export interface ExtractMeta {
   latency_ms: number;
   cost_usd: number;
   detector_score?: DetectorScore;
+  /**
+   * Set to `true` when this response was served from the extraction cache
+   * (sha-256 of the uploaded PDF). Absent or false on real-extraction
+   * responses. Lets the client surface "instant — we read this ballot
+   * earlier" UI and lets us tail-scrape cache hit rate post-launch.
+   */
+  cache_hit?: boolean;
 }
 
 export interface BallotExtraction {

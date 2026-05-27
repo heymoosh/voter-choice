@@ -137,7 +137,8 @@ describe("BallotLookupNeeded — Civic-empty routing surface (fix D)", () => {
     fireEvent.change(textarea, { target: { value: text } });
     fireEvent.click(screen.getByTestId("ballot-lookup-confirm"));
     expect(onBallotConfirmed).toHaveBeenCalledTimes(1);
-    expect(onBallotConfirmed).toHaveBeenCalledWith(text);
+    // Hand-typed paste has no structured BallotExtraction; second arg is null.
+    expect(onBallotConfirmed).toHaveBeenCalledWith(text, null);
   });
 
   it("trims whitespace before submitting", () => {
@@ -153,7 +154,10 @@ describe("BallotLookupNeeded — Civic-empty routing surface (fix D)", () => {
       target: { value: "   U.S. Senate: John Doe (D)   \n\n" },
     });
     fireEvent.click(screen.getByTestId("ballot-lookup-confirm"));
-    expect(onBallotConfirmed).toHaveBeenCalledWith("U.S. Senate: John Doe (D)");
+    expect(onBallotConfirmed).toHaveBeenCalledWith(
+      "U.S. Senate: John Doe (D)",
+      null,
+    );
   });
 
   it("submit button is disabled when textarea contains only whitespace", () => {
@@ -326,6 +330,74 @@ describe("BallotLookupNeeded — /api/extract-ballot wiring (Phase 6)", () => {
     ) as HTMLTextAreaElement;
     expect(textarea.value).toContain("Cory Booker");
     expect(textarea.value).toContain("US Senate");
+  });
+
+  it("forwards the structured BallotExtraction to onBallotConfirmed when the upload was a PDF", async () => {
+    // The bug-fix path: the parent uses the structured payload to populate
+    // workspace races (filtered by ballotTag) and bypass the lossy text
+    // round-trip. Hand-pasted ballots still pass null as the 2nd arg —
+    // exercised in the earlier test in this file.
+    const extraction = {
+      election_metadata: {
+        election_date: "2026-06-02",
+        election_type: "primary",
+        jurisdiction: "Camden County, NJ",
+      },
+      sections: [
+        {
+          section_name: "Federal",
+          races: [
+            {
+              office: "US Senate",
+              vote_for_n: 1,
+              party_context: "Democratic Primary",
+              candidates: [
+                {
+                  name: "Cory Booker",
+                  party: "Democratic",
+                  placeholder_reason: null,
+                },
+              ],
+            },
+          ],
+        },
+      ],
+      _meta: {
+        extraction_path: "vision",
+        pages: 1,
+        latency_ms: 1000,
+        cost_usd: 0.04,
+      },
+    };
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify(extraction), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+    const onBallotConfirmed = vi.fn();
+    render(
+      <BallotLookupNeeded
+        state={txState}
+        onBallotConfirmed={onBallotConfirmed}
+      />,
+    );
+    const input = screen.getByTestId(
+      "ballot-lookup-upload",
+    ) as HTMLInputElement;
+    const file = new File([Buffer.from("fake-pdf")], "ballot.pdf", {
+      type: "application/pdf",
+    });
+    fireEvent.change(input, { target: { files: [file] } });
+    await new Promise((r) => setTimeout(r, 50));
+    fireEvent.click(screen.getByTestId("ballot-lookup-confirm"));
+    expect(onBallotConfirmed).toHaveBeenCalledTimes(1);
+    const [textArg, extractionArg] = onBallotConfirmed.mock.calls[0];
+    expect(typeof textArg).toBe("string");
+    expect(textArg.length).toBeGreaterThan(0);
+    expect(extractionArg).toBeTruthy();
+    expect(extractionArg.sections[0].section_name).toBe("Federal");
+    expect(extractionArg.sections[0].races[0].office).toBe("US Senate");
   });
 
   it("shows a loading state while extraction is in flight", async () => {

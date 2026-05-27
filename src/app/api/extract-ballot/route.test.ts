@@ -85,6 +85,35 @@ vi.mock("../../../lib/server/rate-limit", () => ({
   })),
 }));
 
+const redisStub = vi.hoisted(() => {
+  return {
+    // hash -> serialized BallotExtraction JSON
+    store: new Map<string, string>(),
+    // Throw mode: simulates Upstash unavailable.
+    shouldThrow: false,
+    // Optional: when set, the stub treats GET/SETEX as no-op (mimics
+    // unconfigured Upstash where redisCommand returns null).
+    configured: true,
+  };
+});
+
+vi.mock("../../../lib/server/durable-store", () => ({
+  isDurableStoreConfigured: vi.fn(() => redisStub.configured),
+  redisCommand: vi.fn(async (cmd: (string | number)[]) => {
+    if (!redisStub.configured) return null;
+    if (redisStub.shouldThrow) throw new Error("Upstash unavailable");
+    const [verb, key, , value] = cmd;
+    if (verb === "GET") {
+      return redisStub.store.get(String(key)) ?? null;
+    }
+    if (verb === "SET" || verb === "SETEX") {
+      redisStub.store.set(String(key), String(value));
+      return "OK";
+    }
+    return null;
+  }),
+}));
+
 import { POST } from "./route";
 
 function makeRequest(buffer: Buffer, fileName = "test.pdf") {
@@ -111,6 +140,12 @@ describe("/api/extract-ballot", () => {
       overallOutcome: "success",
     };
     mocks.rateLimitAllowed = true;
+    // Per-case isolation for the hash-based extraction cache. Without this,
+    // tests that share buffer bytes ("fake-pdf") would see a stale cache hit
+    // from a previous test's write.
+    redisStub.store.clear();
+    redisStub.shouldThrow = false;
+    redisStub.configured = true;
   });
 
   afterEach(() => {
@@ -355,5 +390,208 @@ describe("/api/extract-ballot", () => {
     vi.unstubAllEnvs();
     const res = await POST(makeRequest(Buffer.from("pdf")));
     expect([500, 502]).toContain(res.status);
+  });
+
+  describe("hash-based extraction cache", () => {
+    beforeEach(() => {
+      // Reset cache state per case.
+      redisStub.store.clear();
+      redisStub.shouldThrow = false;
+      redisStub.configured = true;
+    });
+
+    it("second upload of the same PDF returns the cached extraction", async () => {
+      // Prime the first extraction via the vision path.
+      mocks.pdfText = { text: "", numPages: 1 };
+      mocks.pdfRenderedPages = [
+        {
+          pageIndex: 1,
+          width: 100,
+          height: 200,
+          pngBuffer: Buffer.from("png"),
+        },
+      ];
+      mocks.visionResult = {
+        pageResults: [
+          {
+            page: {
+              election_metadata: {
+                election_date: "2026-06-02",
+                election_type: "primary" as const,
+                jurisdiction: "Camden County, NJ",
+              },
+              sections: [{ section_name: "Federal", races: [] }],
+            },
+            inputTokens: 1000,
+            outputTokens: 100,
+            attempts: 1,
+            outcome: "success" as const,
+          },
+        ],
+        totalInputTokens: 1000,
+        totalOutputTokens: 100,
+        totalRetries: 0,
+        overallOutcome: "success",
+      };
+
+      // Same buffer bytes for both calls so the hash key matches.
+      const pdfBytes = Buffer.from("identical-pdf-bytes-fixture");
+      const firstRes = await POST(makeRequest(pdfBytes));
+      expect(firstRes.status).toBe(200);
+      const firstBody = await firstRes.json();
+      // First call is a miss: cache_hit either undefined or false; path is real.
+      expect(firstBody._meta.cache_hit).toBeFalsy();
+      expect(firstBody._meta.extraction_path).toBe("vision");
+
+      // Allow any fire-and-forget SETEX scheduled in the route to settle.
+      await new Promise((r) => setImmediate(r));
+
+      const secondRes = await POST(makeRequest(pdfBytes));
+      expect(secondRes.status).toBe(200);
+      const secondBody = await secondRes.json();
+      // Second call is a hit.
+      expect(secondBody._meta.cache_hit).toBe(true);
+      expect(secondBody._meta.extraction_path).toBe("cached");
+      // The cached body preserves the original sections.
+      expect(secondBody.sections).toEqual(firstBody.sections);
+    });
+
+    it("different PDF bytes do NOT collide on the cache key", async () => {
+      mocks.pdfText = { text: "", numPages: 1 };
+      mocks.pdfRenderedPages = [
+        {
+          pageIndex: 1,
+          width: 100,
+          height: 200,
+          pngBuffer: Buffer.from("png"),
+        },
+      ];
+      mocks.visionResult = {
+        pageResults: [
+          {
+            page: {
+              election_metadata: {
+                election_date: "2026-06-02",
+                election_type: "primary" as const,
+                jurisdiction: "Camden County, NJ",
+              },
+              sections: [{ section_name: "Federal", races: [] }],
+            },
+            inputTokens: 1000,
+            outputTokens: 100,
+            attempts: 1,
+            outcome: "success" as const,
+          },
+        ],
+        totalInputTokens: 1000,
+        totalOutputTokens: 100,
+        totalRetries: 0,
+        overallOutcome: "success",
+      };
+
+      const firstRes = await POST(makeRequest(Buffer.from("pdf-bytes-A")));
+      expect(firstRes.status).toBe(200);
+      const firstBody = await firstRes.json();
+      expect(firstBody._meta.cache_hit).toBeFalsy();
+
+      await new Promise((r) => setImmediate(r));
+
+      // Different bytes → different hash → miss again.
+      const secondRes = await POST(makeRequest(Buffer.from("pdf-bytes-B")));
+      expect(secondRes.status).toBe(200);
+      const secondBody = await secondRes.json();
+      expect(secondBody._meta.cache_hit).toBeFalsy();
+      expect(secondBody._meta.extraction_path).not.toBe("cached");
+    });
+
+    it("gracefully degrades when Redis throws — extraction still works", async () => {
+      // Stub Upstash to error on every call (simulates outage).
+      redisStub.shouldThrow = true;
+
+      mocks.pdfText = { text: "", numPages: 1 };
+      mocks.pdfRenderedPages = [
+        {
+          pageIndex: 1,
+          width: 100,
+          height: 200,
+          pngBuffer: Buffer.from("png"),
+        },
+      ];
+      mocks.visionResult = {
+        pageResults: [
+          {
+            page: {
+              election_metadata: {
+                election_date: "2026-06-02",
+                election_type: "primary" as const,
+                jurisdiction: "Camden County, NJ",
+              },
+              sections: [{ section_name: "Federal", races: [] }],
+            },
+            inputTokens: 1000,
+            outputTokens: 100,
+            attempts: 1,
+            outcome: "success" as const,
+          },
+        ],
+        totalInputTokens: 1000,
+        totalOutputTokens: 100,
+        totalRetries: 0,
+        overallOutcome: "success",
+      };
+
+      // Should not throw — the route must catch and fall through.
+      const res = await POST(makeRequest(Buffer.from("any-bytes")));
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      // Real extraction ran (not cached).
+      expect(body._meta.cache_hit).toBeFalsy();
+      expect(body._meta.extraction_path).toBe("vision");
+    });
+
+    it("gracefully degrades when Redis is unconfigured (no env vars)", async () => {
+      // Simulate dev / preview env where Upstash isn't wired at all.
+      redisStub.configured = false;
+
+      mocks.pdfText = { text: "", numPages: 1 };
+      mocks.pdfRenderedPages = [
+        {
+          pageIndex: 1,
+          width: 100,
+          height: 200,
+          pngBuffer: Buffer.from("png"),
+        },
+      ];
+      mocks.visionResult = {
+        pageResults: [
+          {
+            page: {
+              election_metadata: {
+                election_date: "2026-06-02",
+                election_type: "primary" as const,
+                jurisdiction: "Camden County, NJ",
+              },
+              sections: [{ section_name: "Federal", races: [] }],
+            },
+            inputTokens: 1000,
+            outputTokens: 100,
+            attempts: 1,
+            outcome: "success" as const,
+          },
+        ],
+        totalInputTokens: 1000,
+        totalOutputTokens: 100,
+        totalRetries: 0,
+        overallOutcome: "success",
+      };
+
+      const res = await POST(
+        makeRequest(Buffer.from("any-bytes-unconfigured")),
+      );
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body._meta.cache_hit).toBeFalsy();
+      expect(body._meta.extraction_path).toBe("vision");
+    });
   });
 });

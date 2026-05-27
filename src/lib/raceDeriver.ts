@@ -21,10 +21,33 @@ export interface RaceDeriverInput {
 }
 
 /**
- * Sections used to group races on the rail and in the ballot pane. Stable
- * order: Federal → State → Propositions → Local.
+ * Sections used to group races on the rail and in the ballot pane.
+ *
+ * Stable order:
+ *   Federal → State → County → Municipal → Judicial → Propositions →
+ *   Constitutional Amendments → County Questions → Ballot Measures →
+ *   Judicial Retention → Bond Measures → Local (catch-all)
+ *
+ * The first four (Federal/State/Propositions/Local) are the legacy buckets
+ * that the Google Civic API path uses. The remaining names mirror the
+ * extraction schema's `SectionName` so the structured-extraction path
+ * (`extractionToRaces`) can preserve the source bucket without lossy
+ * normalization. Renderers iterate by string, so widening this union does
+ * not require WorkspaceRail / BallotPane changes.
  */
-export type RaceSection = "Federal" | "State" | "Propositions" | "Local";
+export type RaceSection =
+  | "Federal"
+  | "State"
+  | "County"
+  | "Municipal"
+  | "Judicial"
+  | "Propositions"
+  | "Constitutional Amendments"
+  | "County Questions"
+  | "Ballot Measures"
+  | "Judicial Retention"
+  | "Bond Measures"
+  | "Local";
 
 export interface Race {
   /** Stable id derived from `office + district` so re-renders stay stable. */
@@ -48,7 +71,15 @@ export interface Race {
 const SECTION_ORDER: RaceSection[] = [
   "Federal",
   "State",
+  "County",
+  "Municipal",
+  "Judicial",
   "Propositions",
+  "Constitutional Amendments",
+  "County Questions",
+  "Ballot Measures",
+  "Judicial Retention",
+  "Bond Measures",
   "Local",
 ];
 
@@ -140,8 +171,12 @@ export function deriveRaces(input: RaceDeriverInput | null): Race[] {
  * Build a stable id from office + district. Lowercased, whitespace-collapsed,
  * non-alphanumerics dropped. Intentionally not a hash so debugging shows what
  * the id refers to.
+ *
+ * Exported so `extractionToRaces` (the structured-extraction bridge) can
+ * derive ids consistent with this module — same office + district produces
+ * the same id whether the contest came from Civic or from `/api/extract-ballot`.
  */
-function makeRaceId(office: string, district: string): string {
+export function makeRaceId(office: string, district: string): string {
   const raw = `${office} ${district}`.toLowerCase().trim();
   const slug = raw.replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
   return slug.length > 0 ? slug : "race";
