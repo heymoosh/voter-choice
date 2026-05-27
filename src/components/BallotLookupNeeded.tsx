@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useRef } from "react";
 import type { StateElectionData } from "../types/election";
 import { isPdfFile, isTextFile } from "../lib/pdf-extract";
 import { ballotJsonToText } from "../lib/ballot-json-to-text";
+import type { BallotExtraction } from "../lib/server/extract-types";
 
 /**
  * BallotLookupNeeded — Phase-6 fix-D ("ballot-before-themes").
@@ -38,8 +39,18 @@ export interface BallotLookupNeededProps {
    * Fires when the user has pasted or uploaded a ballot and clicked
    * "Use this ballot". The parent should set userSampleBallotText and
    * transition out of the needs-ballot state.
+   *
+   * `extraction` is the structured BallotExtraction returned by
+   * `/api/extract-ballot` when the source was a PDF upload — the parent
+   * persists this on a dedicated slot so the workspace race list can
+   * derive from it without round-tripping through the lossy text parser.
+   * Hand-pasted ballots and .txt uploads pass `undefined` for this arg;
+   * the legacy text path still handles them.
    */
-  onBallotConfirmed: (ballotText: string) => void;
+  onBallotConfirmed: (
+    ballotText: string,
+    extraction?: BallotExtraction | null,
+  ) => void;
 }
 
 interface ExtractMeta {
@@ -196,6 +207,12 @@ export function BallotLookupNeeded({
   const [isPdfLoading, setIsPdfLoading] = useState(false);
   const [uploadNotice, setUploadNotice] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  // Hold the structured BallotExtraction from `/api/extract-ballot` so we
+  // can hand it back to the parent on Confirm alongside the serialized
+  // text. Cleared when the user manually edits the textarea (the structured
+  // payload no longer reflects what's about to be submitted) and when a
+  // .txt file is loaded (no extraction available for plaintext uploads).
+  const extractionRef = useRef<BallotExtraction | null>(null);
 
   const countyDisplay = deriveCountyDisplay(state, county);
 
@@ -204,8 +221,18 @@ export function BallotLookupNeeded({
 
   const handleSubmit = useCallback(() => {
     if (!canSubmit) return;
-    onBallotConfirmed(trimmed);
+    onBallotConfirmed(trimmed, extractionRef.current);
   }, [canSubmit, onBallotConfirmed, trimmed]);
+
+  const handleTextChange = useCallback(
+    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+      // Any manual edit invalidates the prior structured extraction —
+      // the workspace should fall back to the text path the user just typed.
+      extractionRef.current = null;
+      setText(e.target.value);
+    },
+    [],
+  );
 
   const handlePdfFile = useCallback(async (file: File) => {
     setUploadError(null);
@@ -223,6 +250,9 @@ export function BallotLookupNeeded({
         setUploadNotice(null);
         return;
       }
+      // Park the structured extraction so the parent can derive workspace
+      // races directly from it (bypassing the lossy text round-trip).
+      extractionRef.current = result;
       setText(ballotText);
       setUploadNotice(
         "Ballot extracted — review the text below, then click Use this ballot.",
@@ -240,6 +270,9 @@ export function BallotLookupNeeded({
 
   const handleTextFile = useCallback((file: File) => {
     setUploadError(null);
+    // .txt uploads don't carry a structured extraction — clear any prior
+    // payload so the parent falls back to the text-paste path.
+    extractionRef.current = null;
     const reader = new FileReader();
     reader.onload = (ev) => {
       const result =
@@ -325,7 +358,7 @@ export function BallotLookupNeeded({
         <textarea
           data-testid="ballot-lookup-textarea"
           value={text}
-          onChange={(e) => setText(e.target.value)}
+          onChange={handleTextChange}
           rows={10}
           maxLength={12000}
           placeholder="Paste text copied from your official sample ballot here..."
