@@ -266,6 +266,165 @@ describe("BallotLookupNeeded — PDF upload (live bug 2)", () => {
   });
 });
 
+describe("BallotLookupNeeded — /api/extract-ballot wiring (Phase 6)", () => {
+  it("posts uploaded PDF to /api/extract-ballot and populates textarea on success", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          election_metadata: {
+            election_date: "2026-06-02",
+            election_type: "primary",
+            jurisdiction: "Camden County, NJ",
+          },
+          sections: [
+            {
+              section_name: "Federal",
+              races: [
+                {
+                  office: "US Senate",
+                  vote_for_n: 1,
+                  party_context: "Democratic Primary",
+                  candidates: [
+                    {
+                      name: "Cory Booker",
+                      party: "Democratic",
+                      placeholder_reason: null,
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+          _meta: {
+            extraction_path: "vision",
+            pages: 1,
+            latency_ms: 1000,
+            cost_usd: 0.04,
+          },
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      ),
+    );
+    render(<BallotLookupNeeded state={txState} onBallotConfirmed={vi.fn()} />);
+    const input = screen.getByTestId(
+      "ballot-lookup-upload",
+    ) as HTMLInputElement;
+    const file = new File([Buffer.from("fake-pdf")], "ballot.pdf", {
+      type: "application/pdf",
+    });
+    fireEvent.change(input, { target: { files: [file] } });
+
+    // Wait for the loading state + fetch to resolve.
+    await new Promise((r) => setTimeout(r, 50));
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/extract-ballot",
+      expect.objectContaining({ method: "POST" }),
+    );
+    const textarea = screen.getByTestId(
+      "ballot-lookup-textarea",
+    ) as HTMLTextAreaElement;
+    expect(textarea.value).toContain("Cory Booker");
+    expect(textarea.value).toContain("US Senate");
+  });
+
+  it("shows a loading state while extraction is in flight", async () => {
+    let resolveFetch: (value: Response) => void = () => {};
+    vi.spyOn(globalThis, "fetch").mockImplementation(
+      () =>
+        new Promise<Response>((res) => {
+          resolveFetch = res;
+        }),
+    );
+    render(<BallotLookupNeeded state={txState} onBallotConfirmed={vi.fn()} />);
+    const input = screen.getByTestId(
+      "ballot-lookup-upload",
+    ) as HTMLInputElement;
+    const file = new File([Buffer.from("pdf")], "b.pdf", {
+      type: "application/pdf",
+    });
+    fireEvent.change(input, { target: { files: [file] } });
+    // Loading indicator should be visible.
+    expect(screen.getByTestId("ballot-lookup-loading")).toBeInTheDocument();
+    expect(
+      screen.getByTestId("ballot-lookup-loading").textContent ?? "",
+    ).toMatch(/reading your ballot/i);
+    // Resolve so the test cleans up.
+    resolveFetch(
+      new Response(
+        JSON.stringify({
+          election_metadata: {
+            election_date: "",
+            election_type: "primary",
+            jurisdiction: "",
+          },
+          sections: [],
+          _meta: {
+            extraction_path: "vision",
+            pages: 1,
+            latency_ms: 100,
+            cost_usd: 0.01,
+          },
+        }),
+        { status: 200 },
+      ),
+    );
+    await new Promise((r) => setTimeout(r, 30));
+  });
+
+  it("falls back to manual paste error when extraction fails", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ error: "server boom" }), { status: 500 }),
+    );
+    render(<BallotLookupNeeded state={txState} onBallotConfirmed={vi.fn()} />);
+    const input = screen.getByTestId(
+      "ballot-lookup-upload",
+    ) as HTMLInputElement;
+    const file = new File([Buffer.from("pdf")], "b.pdf", {
+      type: "application/pdf",
+    });
+    fireEvent.change(input, { target: { files: [file] } });
+    await new Promise((r) => setTimeout(r, 50));
+    const errText =
+      screen.getByTestId("ballot-lookup-upload-error").textContent ?? "";
+    expect(errText.toLowerCase()).toContain("pasting");
+  });
+
+  it("falls back to manual paste when extraction returns no sections", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          election_metadata: {
+            election_date: "",
+            election_type: "primary",
+            jurisdiction: "",
+          },
+          sections: [],
+          _meta: {
+            extraction_path: "vision",
+            pages: 0,
+            latency_ms: 50,
+            cost_usd: 0,
+          },
+        }),
+        { status: 200 },
+      ),
+    );
+    render(<BallotLookupNeeded state={txState} onBallotConfirmed={vi.fn()} />);
+    const input = screen.getByTestId(
+      "ballot-lookup-upload",
+    ) as HTMLInputElement;
+    const file = new File([Buffer.from("pdf")], "b.pdf", {
+      type: "application/pdf",
+    });
+    fireEvent.change(input, { target: { files: [file] } });
+    await new Promise((r) => setTimeout(r, 50));
+    const errText =
+      screen.getByTestId("ballot-lookup-upload-error").textContent ?? "";
+    expect(errText.toLowerCase()).toContain("pasting");
+  });
+});
+
 describe("BallotLookupNeeded — accessibility / copy", () => {
   it("includes copy explaining that Civic data was incomplete and instructing what to do", () => {
     render(

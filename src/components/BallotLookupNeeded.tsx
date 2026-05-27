@@ -2,12 +2,8 @@
 
 import React, { useState, useCallback } from "react";
 import type { StateElectionData } from "../types/election";
-import {
-  extractPdfText,
-  isPdfFile,
-  isTextFile,
-  PDF_SCANNED_MIN_CHARS,
-} from "../lib/pdf-extract";
+import { isPdfFile, isTextFile } from "../lib/pdf-extract";
+import { ballotJsonToText } from "../lib/ballot-json-to-text";
 
 /**
  * BallotLookupNeeded — Phase-6 fix-D ("ballot-before-themes").
@@ -19,14 +15,16 @@ import {
  * (paste or .txt/.pdf upload) we fire `onBallotConfirmed(text)` and the parent
  * transitions to the cold-open theme-extraction step.
  *
- * Rationale: without this gate the cold open extracts themes from text that
- * have no ballot to anchor to — wasting Haiku tokens and confusing the
- * voter. See README for the funnel: address → party gate → Civic check →
- * (this surface if Civic empty) → cold open → workspace.
+ * Phase 6 (extract-ballot) — PDF uploads route through `/api/extract-ballot`
+ * (server-side: pdfjs cheap path + Sonnet-vision escalation). The server
+ * returns structured JSON; we adapt that to the plaintext shape the existing
+ * prompt-fleet expects (via `ballotJsonToText`). On extraction failure we
+ * surface the inline error and the manual paste textarea remains the floor
+ * for everything that can't be auto-read.
  *
- * Fix for live bug 2 — accept .pdf in addition to .txt. The legacy
- * `UserSampleBallotInput` widget already supports PDF + OCR; we share that
- * machinery via `src/lib/pdf-extract.ts` so both surfaces stay in sync.
+ * The legacy client-side tesseract.js path is gone for the English locale;
+ * Spanish locale stays on `UserSampleBallotInput` (legacy widget) until UX
+ * post-translation work — see the TODO in `UserSampleBallotInput.tsx`.
  */
 export interface BallotLookupNeededProps {
   /** State data — source for `resources.sampleBallotLookup` and `countyResources`. */
@@ -44,6 +42,151 @@ export interface BallotLookupNeededProps {
   onBallotConfirmed: (ballotText: string) => void;
 }
 
+interface ExtractMeta {
+  extraction_path: "pdfjs" | "vision";
+  pages: number;
+  latency_ms: number;
+  cost_usd: number;
+}
+
+interface ExtractResponse {
+  election_metadata: {
+    election_date: string;
+    election_type: "primary" | "primary_runoff" | "general" | "special";
+    jurisdiction: string;
+    ballot_style?: string;
+  };
+  sections: Array<{
+    section_name: string;
+    races: Array<{
+      office: string;
+      district?: string;
+      position?: string;
+      vote_for_n: number;
+      party_context: "Democratic Primary" | "Republican Primary" | null;
+      candidates: Array<{
+        name: string | null;
+        party: string | null;
+        ballot_position?: string;
+        placeholder_reason: "no_petition_filed" | "write_in" | null;
+      }>;
+    }>;
+  }>;
+  _meta: ExtractMeta;
+}
+
+const SESSION_ID_STORAGE_KEY = "voter-choice:sessionId";
+
+function getStoredSessionId(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return window.sessionStorage.getItem(SESSION_ID_STORAGE_KEY);
+  } catch {
+    return null;
+  }
+}
+
+async function extractBallotPdf(file: File): Promise<ExtractResponse> {
+  const formData = new FormData();
+  formData.append("file", file);
+  const sessionId = getStoredSessionId();
+  const headers: HeadersInit = {};
+  if (sessionId) headers["x-session-id"] = sessionId;
+  const res = await fetch("/api/extract-ballot", {
+    method: "POST",
+    headers,
+    body: formData,
+  });
+  if (!res.ok) {
+    let detail = "";
+    try {
+      const body = await res.json();
+      detail = typeof body?.error === "string" ? body.error : "";
+    } catch {
+      // ignore
+    }
+    const err = new Error(detail || `Extraction failed (HTTP ${res.status})`);
+    (err as Error & { status?: number }).status = res.status;
+    throw err;
+  }
+  return res.json() as Promise<ExtractResponse>;
+}
+
+interface StatusMessagesProps {
+  isPdfLoading: boolean;
+  uploadNotice: string | null;
+  uploadError: string | null;
+}
+
+function StatusMessages({
+  isPdfLoading,
+  uploadNotice,
+  uploadError,
+}: StatusMessagesProps) {
+  if (isPdfLoading) {
+    return (
+      <p
+        data-testid="ballot-lookup-loading"
+        className="mt-3 text-xs text-ink-3"
+        role="status"
+      >
+        {uploadNotice ??
+          "Reading your ballot — this can take 10–30 seconds for a typical ballot, longer for long ballots."}
+      </p>
+    );
+  }
+  if (uploadError) {
+    return (
+      <p
+        data-testid="ballot-lookup-upload-error"
+        className="mt-3 text-xs text-vote-red"
+        role="alert"
+      >
+        {uploadError}
+      </p>
+    );
+  }
+  if (uploadNotice) {
+    return (
+      <p
+        data-testid="ballot-lookup-upload-notice"
+        className="mt-3 text-xs text-ink-3"
+        role="status"
+      >
+        {uploadNotice}
+      </p>
+    );
+  }
+  return null;
+}
+
+interface CountyDisplay {
+  link: string;
+  label: string;
+  instructions?: string;
+}
+
+function deriveCountyDisplay(
+  state: StateElectionData,
+  county: string | undefined,
+): CountyDisplay {
+  const resource = county ? state.countyResources?.[county] : undefined;
+  const link = resource?.ballotLookup ?? state.resources.countyElectionLookup;
+  let label: string;
+  if (resource?.name) {
+    label = `${resource.name} elections office`;
+  } else if (county) {
+    label = `${county} elections office`;
+  } else {
+    label = `${state.stateName} county elections office`;
+  }
+  return {
+    link,
+    label,
+    instructions: resource?.ballotLookupInstructions,
+  };
+}
+
 export function BallotLookupNeeded({
   state,
   county,
@@ -51,22 +194,10 @@ export function BallotLookupNeeded({
 }: BallotLookupNeededProps) {
   const [text, setText] = useState("");
   const [isPdfLoading, setIsPdfLoading] = useState(false);
-  // Inline status notice for the upload widget — surfaces "OCR in
-  // progress…", "PDF loaded", or a friendly error message. Keep this
-  // separate from validation errors so the textarea/submit button never
-  // gets blocked by an upload status.
   const [uploadNotice, setUploadNotice] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
-  const countyResource = county ? state.countyResources?.[county] : undefined;
-  const countyLink =
-    countyResource?.ballotLookup ?? state.resources.countyElectionLookup;
-  const countyLabel = countyResource?.name
-    ? `${countyResource.name} elections office`
-    : county
-      ? `${county} elections office`
-      : `${state.stateName} county elections office`;
-  const countyInstructions = countyResource?.ballotLookupInstructions;
+  const countyDisplay = deriveCountyDisplay(state, county);
 
   const trimmed = text.trim();
   const canSubmit = trimmed.length > 0;
@@ -76,60 +207,39 @@ export function BallotLookupNeeded({
     onBallotConfirmed(trimmed);
   }, [canSubmit, onBallotConfirmed, trimmed]);
 
-  const handleFile = useCallback(async (file: File | undefined) => {
-    if (!file) return;
+  const handlePdfFile = useCallback(async (file: File) => {
     setUploadError(null);
-    if (isPdfFile(file)) {
-      setIsPdfLoading(true);
-      setUploadNotice("Extracting text from PDF…");
-      try {
-        const extracted = await extractPdfText(file, {
-          onOcrStart: () =>
-            setUploadNotice(
-              "Scanned PDF — running OCR. This may take a moment…",
-            ),
-        });
-        if (extracted.length < PDF_SCANNED_MIN_CHARS) {
-          // OCR succeeded but the text is too short to be a real ballot
-          // — surface a friendly error rather than feeding junk to the
-          // theme extractor.
-          setUploadError(
-            "We couldn't read enough text from that PDF. Try saving the page as text, or paste the ballot text into the box below.",
-          );
-          setUploadNotice(null);
-        } else {
-          setText(extracted);
-          setUploadNotice(
-            "PDF text loaded — review and click Use this ballot.",
-          );
-        }
-      } catch (err) {
-        console.error("[ballot-lookup-needed] PDF extract failed", err);
-        if (err instanceof Error && err.message === "PDF_LOAD_ERROR") {
-          setUploadError(
-            "We couldn't load the PDF reader. Refresh and try again, or paste the ballot text directly.",
-          );
-        } else if (err instanceof Error && err.message === "OCR_FAILED") {
-          setUploadError(
-            "Couldn't read the scanned PDF. Try a different file or paste the ballot text directly.",
-          );
-        } else {
-          setUploadError(
-            "Something went wrong reading that PDF. Try again or paste the ballot text directly.",
-          );
-        }
+    setIsPdfLoading(true);
+    setUploadNotice(
+      "Reading your ballot — this can take 10–30 seconds for a typical ballot, longer for long ballots.",
+    );
+    try {
+      const result = await extractBallotPdf(file);
+      const ballotText = ballotJsonToText(result);
+      if (!ballotText) {
+        setUploadError(
+          "We couldn't read this PDF automatically. Try pasting your ballot text below.",
+        );
         setUploadNotice(null);
-      } finally {
-        setIsPdfLoading(false);
+        return;
       }
-      return;
-    }
-    if (!isTextFile(file)) {
-      setUploadError(
-        "Upload a .txt or .pdf file, or paste the ballot text into the box below.",
+      setText(ballotText);
+      setUploadNotice(
+        "Ballot extracted — review the text below, then click Use this ballot.",
       );
-      return;
+    } catch (err) {
+      console.error("[ballot-lookup-needed] extract failed", err);
+      setUploadError(
+        "We couldn't read this PDF automatically. Try pasting your ballot text below.",
+      );
+      setUploadNotice(null);
+    } finally {
+      setIsPdfLoading(false);
     }
+  }, []);
+
+  const handleTextFile = useCallback((file: File) => {
+    setUploadError(null);
     const reader = new FileReader();
     reader.onload = (ev) => {
       const result =
@@ -142,6 +252,25 @@ export function BallotLookupNeeded({
     };
     reader.readAsText(file);
   }, []);
+
+  const handleFile = useCallback(
+    async (file: File | undefined) => {
+      if (!file) return;
+      setUploadError(null);
+      if (isPdfFile(file)) {
+        await handlePdfFile(file);
+        return;
+      }
+      if (!isTextFile(file)) {
+        setUploadError(
+          "Upload a .txt or .pdf file, or paste the ballot text into the box below.",
+        );
+        return;
+      }
+      handleTextFile(file);
+    },
+    [handlePdfFile, handleTextFile],
+  );
 
   return (
     <section
@@ -174,15 +303,17 @@ export function BallotLookupNeeded({
         <li>
           <a
             data-testid="ballot-lookup-link-county"
-            href={countyLink}
+            href={countyDisplay.link}
             target="_blank"
             rel="noopener noreferrer"
             className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-civic underline decoration-civic-soft underline-offset-4 hover:decoration-civic"
           >
-            {countyLabel} &rarr;
+            {countyDisplay.label} &rarr;
           </a>
-          {countyInstructions && (
-            <p className="mt-1 text-xs text-ink-3">{countyInstructions}</p>
+          {countyDisplay.instructions && (
+            <p className="mt-1 text-xs text-ink-3">
+              {countyDisplay.instructions}
+            </p>
           )}
         </li>
       </ul>
@@ -203,8 +334,6 @@ export function BallotLookupNeeded({
       </label>
 
       <div className="mt-4 flex flex-col sm:flex-row gap-3 sm:items-center">
-        {/* PR C — sentence-case sans primary CTA per prototype primary
-            treatment. Mono uppercase is reserved for micro-labels. */}
         <button
           data-testid="ballot-lookup-confirm"
           type="button"
@@ -219,7 +348,7 @@ export function BallotLookupNeeded({
             isPdfLoading ? "opacity-50 pointer-events-none" : "cursor-pointer"
           }`}
         >
-          {isPdfLoading ? "Extracting PDF…" : "Upload .txt or .pdf"}
+          {isPdfLoading ? "Reading your ballot…" : "Upload .txt or .pdf"}
           <input
             data-testid="ballot-lookup-upload"
             type="file"
@@ -233,24 +362,11 @@ export function BallotLookupNeeded({
           Privacy: don&rsquo;t paste your name, address, phone, or email.
         </p>
       </div>
-      {uploadNotice && !uploadError && (
-        <p
-          data-testid="ballot-lookup-upload-notice"
-          className="mt-3 text-xs text-ink-3"
-          role="status"
-        >
-          {uploadNotice}
-        </p>
-      )}
-      {uploadError && (
-        <p
-          data-testid="ballot-lookup-upload-error"
-          className="mt-3 text-xs text-vote-red"
-          role="alert"
-        >
-          {uploadError}
-        </p>
-      )}
+      <StatusMessages
+        isPdfLoading={isPdfLoading}
+        uploadNotice={uploadNotice}
+        uploadError={uploadError}
+      />
     </section>
   );
 }

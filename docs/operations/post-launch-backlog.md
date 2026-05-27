@@ -454,3 +454,51 @@ Muxin: "after I've made my candidate selection, it is showing me the text instea
 **Status:** Open — flagged 2026-05-19
 
 Same root cause as the existing streaming-skeleton fix, but for a code path that wasn't covered. The Polis viz section streams its setup content (or a sibling structured block) before the final viz renders. Verify which block opens immediately before the viz and ensure `hasOpen*Block` is checked at that surface too.
+
+---
+
+## Phase 6 — `/api/extract-ballot` follow-ups (filed 2026-05-27)
+
+### [P0 pre-launch / post-Phase-6] Run Contender 1 (Textract + Sonnet) bakeoff
+**Status:** Open — promoted from PDF bakeoff `decision.md`
+
+The bake-off declared C2 (Sonnet vision) the v1 winner but **skipped C1 entirely** because no AWS credentials were available locally. C1 (Textract Forms + Sonnet post-processor) is the spec's named escape hatch and may handle BOTH the NJ broken-text fixture (form-native extraction) AND the FL Orange multi-district perception errors (Textract is purpose-built for tabular layouts). If C1 outperforms C2 on the same 4 fixtures, the v2 architecture may be Textract-first with C2 as the fallback.
+
+**Action:** Get AWS Textract credentials → run the existing `01-textract-sonnet.ts` runner in `experiments/pdf-extraction-bakeoff/` (the worktree at `.claude/worktrees/pdf-bakeoff/`) → re-score against the 4 fixtures.
+
+**Doesn't block v1 ship of C2.** Filed as P0 because the spec marked it as a structural completeness gap.
+
+### [P1] C2 prompt engineering — multi-district disambiguation
+**Status:** Open — promoted from PDF bakeoff `decision.md`
+
+The bake-off documented 3 perception errors on the FL Orange composite ballot (not schema/enum issues, NOT non-ballot hallucination):
+- Senator district extracted as 21 instead of the actual 25.
+- Hallucinated State Representative district 44 (does not exist on the ballot).
+- Circuit Judge with position/district fields transposed.
+
+These are likely fixable via prompt constraints (e.g., "if you see multiple district numbers like '21 vs 25' on the same row, use the first one encountered after the office label"). Iterate against real FL ballots once telemetry shows the route in active use.
+
+### [P2] Detector threshold tuning from production telemetry
+**Status:** Open — by-design
+
+`extract.detector_decision` telemetry is logged for every routing decision. Once we have ~100 real ballots through the route, pull the logs and tune `EXTRACTION_DETECTOR_DICT_FLOOR` / `_VOCAB_FLOOR` / `_PROPER_NOUN_FLOOR` in Vercel env without redeploying. Defaults are 0.6 / 5 / 5; the right floor depends on what real ballots look like in pdfjs's output.
+
+### [P2] Progressive UX during multi-page extraction
+**Status:** Open — out-of-scope follow-up from PDF bakeoff decision.md
+
+Worst-case 14-page Hidalgo bilingual ballots take ~90s wall-clock even with per-page parallelism. A single spinner reads as broken. Stream race results into the UI as each page's Sonnet call returns — the route returns once all pages stitch, but the client can show "found 5 races so far…" instead of waiting silently.
+
+### [P2] Hash-based caching for repeat PDF uploads
+**Status:** Open — out-of-scope follow-up from PDF bakeoff decision.md
+
+If a voter uploads the same PDF twice (page reload, tab close), the route currently re-spends $0.04–$0.55 of Sonnet vision. Hash the PDF on upload, cache by hash → JSON result (Redis with 7d TTL). Saves cost + latency on repeat uploads. Out of scope for v1 ship.
+
+### [P2] ES locale migration to `/api/extract-ballot`
+**Status:** Open — TODO in `src/components/ResearchLayout.tsx`
+
+Spanish locale (`UserSampleBallotInput.tsx` legacy widget in `ResearchLayout.tsx`) still routes PDF extraction through the client-side pdfjs + tesseract.js path. Migrate to the new route once ES UI translation work is done (current instruction: no translations until UX fully iron-out).
+
+### [idea] C3 (docling) as opt-in second path for amendment-heavy ballots
+**Status:** Idea — promoted from PDF bakeoff `decision.md`
+
+Bake-off data: docling outperforms C2 on FL Orange composite (15/15 vs 10.5/15) on amendment-heavy multi-district ballots. November 2026 general-election ballots (CA, FL, TX) will surface more proposition-heavy content. Worth re-evaluating then. v2 architecture might branch on ballot-type detection.
