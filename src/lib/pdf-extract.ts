@@ -125,26 +125,42 @@ export async function extractPdfText(
 
   console.log("[pdf-extract] pdf loaded", { numPages: pdf.numPages });
 
-  const textParts: string[] = [];
-  for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-    const page = await pdf.getPage(pageNum);
-    const textContent = await page.getTextContent();
-    const pageText = textContent.items
-      .map((item) => ("str" in item ? item.str : ""))
-      .join(" ");
-    textParts.push(pageText);
+  // fix-2-live-bugs (Bug 2) — wrap the text-extraction pass in a try
+  // block. Image-only PDFs (e.g. NJ sample ballots) can throw mid-loop
+  // from `getTextContent()` or even `getPage()` because there's no
+  // embedded text layer. Before this guard the throw escaped past the
+  // OCR fallback and surfaced to the user as the generic
+  // "Something went wrong reading that PDF" error.
+  let extracted = "";
+  try {
+    const textParts: string[] = [];
+    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+      const page = await pdf.getPage(pageNum);
+      const textContent = await page.getTextContent();
+      const pageText = textContent.items
+        .map((item) => ("str" in item ? item.str : ""))
+        .join(" ");
+      textParts.push(pageText);
+    }
+    extracted = textParts.join("\n").trim();
+    console.log("[pdf-extract] pdfjs text", {
+      extractedLength: extracted.length,
+      threshold: PDF_SCANNED_MIN_CHARS,
+    });
+  } catch (err) {
+    console.warn(
+      "[pdf-extract] pdfjs text extraction threw — falling back to OCR",
+      err,
+    );
+    // Leave `extracted` empty so the length check below routes to OCR.
   }
-  const extracted = textParts.join("\n").trim();
 
-  console.log("[pdf-extract] pdfjs text", {
-    extractedLength: extracted.length,
-    threshold: PDF_SCANNED_MIN_CHARS,
-  });
   if (extracted.length >= PDF_SCANNED_MIN_CHARS) {
     return extracted;
   }
-  // pdfjs returned almost nothing — likely a scanned/image-only PDF.
-  // Fall back to OCR; notify the caller so it can surface a progress notice.
+  // pdfjs returned almost nothing (or threw) — likely a scanned /
+  // image-only PDF. Fall back to OCR; notify the caller so it can
+  // surface a progress notice (tesseract loads a ~10MB WASM blob).
   options?.onOcrStart?.();
   return ocrPdfPages(pdf);
 }
