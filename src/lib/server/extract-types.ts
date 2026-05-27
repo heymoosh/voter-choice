@@ -1,0 +1,98 @@
+/**
+ * Shared types for the `/api/extract-ballot` route. The target schema is
+ * documented in the PDF bake-off `decision-design.md` (under §"Target
+ * output schema") and the route's response shape is described inline in
+ * the route file.
+ *
+ * Keep this file pure-types so it can be imported from both client and
+ * server modules without dragging Node-only deps.
+ */
+
+/**
+ * `placeholder_reason` distinguishes blank-line entries from real candidates.
+ *
+ * - `"no_petition_filed"`: ballots that print "NO PETITION FILED" beneath an
+ *   office name (NJ-shape primaries). The race exists but the party has no
+ *   candidate; we surface it so downstream UX can show that fact rather
+ *   than silently dropping it.
+ * - `"write_in"`: write-in slots. For multi-seat races (vote_for_n > 1) we
+ *   emit one write-in placeholder PER SEAT.
+ * - `null`: a real candidate.
+ */
+export type PlaceholderReason = "no_petition_filed" | "write_in" | null;
+
+/**
+ * Section names — kept open to a fixed list per the bake-off's section_name
+ * enum (decision-design.md §"Target output schema", expanded 2026-05-27 to
+ * cover FL-style "Constitutional Amendments", "County Questions", etc.).
+ *
+ * We keep this as a TypeScript string union (not a runtime enum) so callers
+ * can validate at the JSON boundary without paying for an enum object.
+ */
+export type SectionName =
+  | "Federal"
+  | "State"
+  | "County"
+  | "Municipal"
+  | "Judicial"
+  | "Propositions"
+  | "Constitutional Amendments"
+  | "County Questions"
+  | "Ballot Measures"
+  | "Judicial Retention"
+  | "Bond Measures";
+
+export interface ExtractCandidate {
+  name: string | null;
+  party: string | null;
+  ballot_position?: string;
+  placeholder_reason: PlaceholderReason;
+}
+
+export interface ExtractRace {
+  office: string;
+  district?: string;
+  position?: string;
+  vote_for_n: number;
+  party_context: "Democratic Primary" | "Republican Primary" | null;
+  candidates: ExtractCandidate[];
+}
+
+export interface ExtractSection {
+  section_name: SectionName | string; // allow string fallback for safety
+  races: ExtractRace[];
+}
+
+export interface ExtractElectionMetadata {
+  election_date: string;
+  election_type: "primary" | "primary_runoff" | "general" | "special";
+  jurisdiction: string;
+  ballot_style?: string;
+}
+
+export interface DetectorScore {
+  /** Dictionary-recognized token ratio (English + Spanish). 0..1. */
+  dictionary_ratio: number;
+  /** Count of ballot-vocab hits (Vote for, Senator, etc.). */
+  ballot_vocab_hits: number;
+  /** Count of capitalized 2+ word sequences (candidate-name shape). */
+  proper_noun_count: number;
+  /** Plaintext reason the detector picked the path it picked. */
+  decision_reason: string;
+}
+
+export type ExtractionPath = "pdfjs" | "vision";
+
+export interface ExtractMeta {
+  extraction_path: ExtractionPath;
+  pages: number;
+  latency_ms: number;
+  cost_usd: number;
+  detector_score?: DetectorScore;
+}
+
+export interface BallotExtraction {
+  election_metadata: ExtractElectionMetadata;
+  sections: ExtractSection[];
+  _meta: ExtractMeta;
+}
