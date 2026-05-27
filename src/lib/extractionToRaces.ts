@@ -30,6 +30,7 @@
 
 import type { Race, RaceSection } from "./raceDeriver";
 import { makeRaceId } from "./raceDeriver";
+import { normalizeRaceLabel } from "./normalizeRaceLabel";
 import type {
   BallotExtraction,
   ExtractRace,
@@ -90,13 +91,15 @@ function passesPartyFilter(
 
 /**
  * Build a label for the workspace rail/pane from an extracted race.
- * Mirrors the legacy `raceDeriver` convention: `office — district` when
- * a district is set, else just the office.
+ *
+ * Delegates to `normalizeRaceLabel` for the canonical short form. The raw
+ * office + district stay on the ExtractRace for prompt construction and
+ * the printed ballot artifact — only the user-visible label is normalized.
  */
 function buildLabel(race: ExtractRace): string {
   const office = (race.office ?? "").trim();
   const district = (race.district ?? "").trim();
-  return district ? `${office} — District ${district}` : office;
+  return normalizeRaceLabel(office, district);
 }
 
 /**

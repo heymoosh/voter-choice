@@ -171,7 +171,12 @@ describe("extractionToRaces", () => {
       // 1 Senate DEM + 1 House DEM + 1 Commissioner DEM + 2 County Committee DEM = 5
       expect(races).toHaveLength(5);
       const labels = races.map((r) => r.label);
-      expect(labels).toContain("U.S. Senator");
+      // Post-fix labels are normalized: "U.S. Senator" → "U.S. Senate",
+      // verbose House → "U.S. House — CD-N", and "County Commissioner"
+      // shortens to "County Commissioners" only for the "Members of the Board…"
+      // variant. The DEM fixture uses the bare "County Commissioner" string,
+      // which is already concise and passes through.
+      expect(labels).toContain("U.S. Senate");
       expect(labels.some((l) => l.startsWith("U.S. House"))).toBe(true);
       expect(labels.some((l) => l.startsWith("County Commissioner"))).toBe(
         true,
@@ -328,7 +333,8 @@ describe("extractionToRaces", () => {
       // didn't disambiguate them, makeRaceId would collide. We're not exercising
       // that filter path here (the GENERAL tag keeps both) but the ids must differ.
       const races = extractionToRaces(njCamdenDemRepFixture(), "GENERAL");
-      const senators = races.filter((r) => r.label.startsWith("U.S. Senator"));
+      // Label normalization collapses "U.S. Senator" → "U.S. Senate".
+      const senators = races.filter((r) => r.label === "U.S. Senate");
       expect(senators).toHaveLength(2);
       expect(senators[0].id).not.toBe(senators[1].id);
     });
@@ -363,6 +369,54 @@ describe("extractionToRaces", () => {
       };
       const races = extractionToRaces(ballot, null);
       expect(races[0].candidates).toEqual([{ name: "Alice", party: "D" }]);
+    });
+  });
+
+  describe("label normalization", () => {
+    it("collapses verbose extracted offices into concise canonical labels", () => {
+      // Real-bug fixture: PDF extraction often returns the verbose multi-clause
+      // titles printed on the sample ballot. The rail should render the
+      // canonical short form regardless.
+      const ballot: BallotExtraction = {
+        election_metadata: META,
+        sections: [
+          {
+            section_name: "Federal",
+            races: [
+              {
+                office: "Member of the House of Representatives",
+                district: "1st Congressional District",
+                vote_for_n: 1,
+                party_context: null,
+                candidates: [],
+              },
+              {
+                office: "United States Senator",
+                vote_for_n: 1,
+                party_context: null,
+                candidates: [],
+              },
+            ],
+          },
+          {
+            section_name: "County",
+            races: [
+              {
+                office: "Members of the Board of County Commissioners",
+                vote_for_n: 2,
+                party_context: null,
+                candidates: [],
+              },
+            ],
+          },
+        ],
+        _meta: njCamdenDemRepFixture()._meta,
+      };
+      const races = extractionToRaces(ballot, "GENERAL");
+      const labels = races.map((r) => r.label);
+      expect(labels).toContain("U.S. House — CD-1");
+      expect(labels).toContain("U.S. Senate");
+      expect(labels).toContain("County Commissioners");
     });
   });
 

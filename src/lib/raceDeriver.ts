@@ -7,6 +7,8 @@
  * dependency-free so consumers can use it in any environment.
  */
 
+import { normalizeRaceLabel } from "./normalizeRaceLabel";
+
 /** A single contest row from the Civic API or any equivalent source. */
 export interface ContestLike {
   office: string;
@@ -102,28 +104,108 @@ const STATE_PATTERNS: RegExp[] = [
   /\bsuperintendent\s+of\s+public\s+instruction\b/i,
 ];
 
+// Specific ballot-measure types — check BEFORE the generic Proposition regex.
+// "Constitutional Amendment 5" contains \bamendment\b which would otherwise
+// pull it into Propositions; ditto "County Question 1" / \bquestion\b and
+// "Bond Measure 4" / \bmeasure\b.
+const CONSTITUTIONAL_AMENDMENT_PATTERNS: RegExp[] = [
+  /\bconstitutional\s+amendment\b/i,
+];
+
+const COUNTY_QUESTION_PATTERNS: RegExp[] = [
+  /^county\s+question\b/i,
+  /^county\s+charter\s+amendment\b/i,
+];
+
+const BOND_MEASURE_PATTERNS: RegExp[] = [
+  /^bond\s+measure\b/i,
+  /^bond\s+issue\b/i,
+];
+
+// Judicial retention patterns — must check BEFORE Judicial so
+// "Justice Smith retention" lands in the retention bucket.
+const JUDICIAL_RETENTION_PATTERNS: RegExp[] = [
+  /\bretention\b/i,
+  /\bmerit\s+retention\b/i,
+  /\bretain\s+(?:judge|justice)\b/i,
+];
+
+// Generic propositions and measures — checked AFTER the specific measure
+// types above so "Constitutional Amendment", "County Question", "Bond
+// Measure", and "Ballot Measure" land in their own buckets.
 const PROPOSITION_PATTERNS: RegExp[] = [
   /\bproposition\b/i,
-  /\bmeasure\b/i,
+  /^prop\.?\s+\w+/i,
+  /\b(?:ballot\s+)?measure\b/i,
   /\bamendment\b/i,
   /\bquestion\b/i,
   /\breferendum\b/i,
 ];
 
+const JUDICIAL_PATTERNS: RegExp[] = [
+  /\bjudge\b/i,
+  /\bjustice\b/i,
+  /\bcourt\b/i,
+  /\bmagistrate\b/i,
+];
+
+const COUNTY_PATTERNS: RegExp[] = [
+  /\bcounty\s+commissioner/i,
+  /\bcounty\s+judge\b/i,
+  /\bsheriff\b/i,
+  /\bdistrict\s+attorney\b/i,
+];
+
+const MUNICIPAL_PATTERNS: RegExp[] = [
+  /\bmayor\b/i,
+  /\bcity\s+council\b/i,
+  /\balderman\b/i,
+  /\btownship\b/i,
+  /\bcommittee\b/i,
+  /\bschool\s+board\b/i,
+  /\bboard\s+of\s+education\b/i,
+];
+
 /**
- * Classify a race office string into a section bucket. The order is:
- *   1. Federal (President / US Senate / US House)
- *   2. State (Governor / state legislature / statewide constitutional offices)
- *   3. Propositions (anything that looks like a ballot measure)
- *   4. Local (everything else)
+ * Classify a race office string into a section bucket.
+ *
+ * Order is load-bearing — specific buckets check BEFORE generic ones:
+ *   1. Constitutional Amendments / County Questions / Bond Measures /
+ *      Judicial Retention — these contain words (amendment, question,
+ *      measure, retention) that the broader Proposition / Judicial patterns
+ *      would otherwise catch.
+ *   2. Federal (President / US Senate / US House)
+ *   3. State (Governor / state legislature / statewide constitutional offices)
+ *   4. Propositions (anything that still looks like a ballot measure)
+ *   5. Judicial (courts, judges, justices — after retention check)
+ *   6. County (commissioners, sheriff, DA — after county-judge check above)
+ *   7. Municipal (mayor, council, school board)
+ *   8. Local (catch-all)
  *
  * Pure / synchronous / no allocations beyond the regex.
  */
 export function classifyRaceSection(office: string): RaceSection {
   const text = office ?? "";
+
+  // Specific measure buckets first.
+  if (CONSTITUTIONAL_AMENDMENT_PATTERNS.some((re) => re.test(text))) {
+    return "Constitutional Amendments";
+  }
+  if (COUNTY_QUESTION_PATTERNS.some((re) => re.test(text))) {
+    return "County Questions";
+  }
+  if (BOND_MEASURE_PATTERNS.some((re) => re.test(text))) return "Bond Measures";
+  if (JUDICIAL_RETENTION_PATTERNS.some((re) => re.test(text))) {
+    return "Judicial Retention";
+  }
+
   if (FEDERAL_PATTERNS.some((re) => re.test(text))) return "Federal";
   if (STATE_PATTERNS.some((re) => re.test(text))) return "State";
+
   if (PROPOSITION_PATTERNS.some((re) => re.test(text))) return "Propositions";
+  if (JUDICIAL_PATTERNS.some((re) => re.test(text))) return "Judicial";
+  if (COUNTY_PATTERNS.some((re) => re.test(text))) return "County";
+  if (MUNICIPAL_PATTERNS.some((re) => re.test(text))) return "Municipal";
   return "Local";
 }
 
@@ -142,7 +224,11 @@ export function deriveRaces(input: RaceDeriverInput | null): Race[] {
   const raw: Race[] = contests.map((c) => {
     const office = (c.office ?? "").trim();
     const district = (c.district ?? "").trim();
-    const label = district ? `${office} — ${district}` : office;
+    // Canonical short labels for the rail + ballot pane. Raw office and
+    // district are NOT mutated here — they're still owned by the input
+    // contest and propagate into downstream prompt construction via the
+    // unchanged ChatPanel codepath.
+    const label = normalizeRaceLabel(office, district);
     const id = makeRaceId(office, district);
     // Propagate the candidate roster verbatim. Empty array for propositions
     // and any input that didn't supply candidates — downstream consumers
