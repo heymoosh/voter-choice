@@ -149,8 +149,8 @@ Cost impact: per-page is N× the API calls. For a typical 2-page ballot at Sonne
 | Fixture | State | County | Notes |
 |---|---|---|---|
 | `nj-camden-2026-primary.pdf` | NJ | Camden | Broken text layer, multi-column party-grouped layout, "NO PETITION FILED" placeholders, write-in slots, bilingual, multiple party ballots on same page. |
-| `tx-current-2026-primary.pdf` | TX | (TBD) | Clean text-layer baseline. Any contender that fails this is disqualified. |
-| `tx-hidalgo-2026-bilingual.pdf` | TX | Hidalgo | Bilingual / style-specific layout — exercises bilingual extraction explicitly. |
+| `tx-harris-2026-dem-runoff.pdf` | TX | Harris | Clean text-layer baseline (May 26 DEM Primary Runoff). Any contender that fails this is disqualified. |
+| `tx-hidalgo-2026-bilingual.pdf` | TX | Hidalgo | Bilingual / style-specific layout (14 pages). Exercises bilingual extraction explicitly. |
 | `fl-orange-2026-composite.pdf` | FL | Orange | Composite ballot format. Distinct visual style from TX/NJ. |
 
 ### Ground-truth authoring
