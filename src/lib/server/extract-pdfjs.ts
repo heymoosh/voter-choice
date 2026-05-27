@@ -31,11 +31,12 @@ import { resolve } from "node:path";
  * font-resolution warnings in production.
  */
 function pdfjsStandardFontsDir(): string {
-  return resolve(
-    process.cwd(),
-    "node_modules",
-    "pdfjs-dist",
-    "standard_fonts/",
+  // pdfjs `standardFontDataUrl` REQUIRES a trailing slash (validated as a
+  // factory URL). `path.resolve()` normalizes the trailing slash away, so
+  // append explicitly after resolution. Without this the request 500s in
+  // production with "Invalid factory url: must include trailing slash."
+  return (
+    resolve(process.cwd(), "node_modules", "pdfjs-dist", "standard_fonts") + "/"
   );
 }
 
