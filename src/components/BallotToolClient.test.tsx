@@ -16,8 +16,30 @@ import {
 import { LanguageProvider } from "../lib/i18n";
 import { ResearchModeProvider } from "../lib/researchMode";
 
-// Mock scrollIntoView (not available in jsdom)
+// Freeze the system date so the tests are deterministic across calendar
+// time. `getUpcomingElection` in BallotToolClient/ResearchLayout compares
+// election dates against `new Date().toISOString().split("T")[0]` (a UTC
+// date string), which means election dates that fall on or before "today"
+// in UTC get skipped. On the day of the TX runoff (2026-05-26) at any
+// time after 19:00 CDT (= 00:00 UTC next day) the test environment's
+// "today" rolls to 2026-05-27 and the runoff is no longer "upcoming" — so
+// the runoff gate stops rendering and the suite breaks.
+//
+// We pin to 2026-05-04 (UTC) because:
+//   - TX upcoming = runoff 2026-05-26 (after passing local 2026-05-02)
+//   - GA upcoming = primary 2026-05-19
+//   - NC upcoming = primary 2026-05-05
+//   - NY upcoming = primary 2026-06-23
+//   - FL upcoming = primary 2026-08-18
+//   - CA upcoming = primary 2026-06-02 (top-two open — no gate)
+//
+// `toFake: ["Date"]` faked only Date so React Testing Library's
+// `waitFor`/`act` keep their real setTimeout/setImmediate behavior.
 beforeEach(() => {
+  vi.useFakeTimers({
+    toFake: ["Date"],
+    now: new Date("2026-05-04T12:00:00Z"),
+  });
   Element.prototype.scrollIntoView = vi.fn();
   Object.defineProperty(navigator, "clipboard", {
     value: { writeText: vi.fn().mockResolvedValue(undefined) },
@@ -57,6 +79,7 @@ function mockBudgetExhausted() {
 
 afterEach(() => {
   vi.restoreAllMocks();
+  vi.useRealTimers();
 });
 
 function renderWithProviders(ui: React.ReactElement) {

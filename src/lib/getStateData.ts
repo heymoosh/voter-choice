@@ -1,4 +1,5 @@
 import type { StateElectionData, Election } from "../types/election";
+import { getTodayInLatestUsZone } from "./electionToday";
 
 type JsonImport = () => Promise<{ default: unknown }>;
 
@@ -106,7 +107,7 @@ const STATE_NAMES: Record<string, string> = {
 };
 
 function findUpcomingElection(elections: Election[]): Election | null {
-  const today = new Date().toISOString().split("T")[0];
+  const today = getTodayInLatestUsZone();
   const upcoming = elections.filter((e) => e.date >= today);
   if (upcoming.length > 0) {
     return upcoming.reduce((min, e) => (e.date < min.date ? e : min));
@@ -143,7 +144,7 @@ function resolveStateData(raw: Record<string, unknown>): StateElectionData {
 export function getFallbackStateData(stateCode: string): StateElectionData {
   const code = stateCode.toUpperCase();
   const stateName = STATE_NAMES[code] ?? stateCode;
-  const today = new Date().toISOString().split("T")[0];
+  const today = getTodayInLatestUsZone();
   // Place the general election in the future so the app doesn't treat this as "no election"
   const generalDate = today < "2026-11-03" ? "2026-11-03" : "2027-11-02";
 

@@ -23,6 +23,7 @@ import {
   isTextFile,
   PDF_SCANNED_MIN_CHARS,
 } from "../lib/pdf-extract";
+import { getTodayInLatestUsZone } from "../lib/electionToday";
 
 type ResearchTab = "research" | "dates" | "id" | "polling";
 
@@ -202,7 +203,10 @@ function getDaysUntilElection(electionDate: string): number {
 }
 
 function getUpcomingElection(state: StateElectionData) {
-  const today = new Date().toISOString().split("T")[0];
+  // Use Hawaii-zone "today" so an election doesn't drop out of "upcoming"
+  // until 00:00 HST — after every US polling location has closed. See
+  // src/lib/electionToday.ts for rationale.
+  const today = getTodayInLatestUsZone();
   return state.elections.find((e) => e.date >= today) ?? state.elections[0];
 }
 
@@ -882,7 +886,7 @@ function DatesView({
   const { lang } = useLanguage();
   const t = translations[lang];
   const tl = t.timeline;
-  const today = new Date().toISOString().split("T")[0];
+  const today = getTodayInLatestUsZone();
   const upcoming = getUpcomingElection(state);
 
   if (!upcoming) return null;

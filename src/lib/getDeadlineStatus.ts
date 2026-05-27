@@ -1,5 +1,6 @@
 import type { DeadlineStatus } from "../types/election";
 import type { Language } from "./translations";
+import { getTodayInLatestUsZone } from "./electionToday";
 
 type StatusColor = DeadlineStatus["color"];
 
@@ -26,7 +27,7 @@ export function getDeadlineStatus(
   todayISO?: string,
   lang: Language = "en",
 ): DeadlineStatus {
-  const today = todayISO ?? new Date().toISOString().split("T")[0];
+  const today = todayISO ?? getTodayInLatestUsZone();
   const deadlineMs = new Date(dateISO).getTime();
   const todayMs = new Date(today).getTime();
   const daysLeft = Math.round((deadlineMs - todayMs) / 86400000);

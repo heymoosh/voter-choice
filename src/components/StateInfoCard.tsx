@@ -6,6 +6,7 @@ import { translations } from "../lib/translations";
 import { Badge } from "./ui/Badge";
 import type { StateElectionData, DeadlineStatus } from "../types/election";
 import type { Language } from "../lib/translations";
+import { getTodayInLatestUsZone } from "../lib/electionToday";
 
 interface StateInfoCardProps {
   state: StateElectionData;
@@ -166,7 +167,7 @@ function AllPassedAlert({
 export function StateInfoCard({ state }: StateInfoCardProps) {
   const { lang } = useLanguage();
   const t = translations[lang];
-  const today = new Date().toISOString().split("T")[0];
+  const today = getTodayInLatestUsZone();
 
   const upcoming =
     state.elections.find((e) => e.date >= today) ?? state.elections[0];

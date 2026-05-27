@@ -57,6 +57,7 @@ import {
   stripPartialConcernInterpretationBlock,
 } from "../lib/structured-blocks";
 import type { AlignmentScoresEntry } from "../lib/structured-blocks";
+import { getTodayInLatestUsZone } from "../lib/electionToday";
 
 interface ChatMessage {
   role: "user" | "assistant";
@@ -2964,7 +2965,7 @@ export function ChatPanel({
 
   // Get election name for portfolio header
   const upcoming = state.elections.find(
-    (e) => e.date >= new Date().toISOString().split("T")[0],
+    (e) => e.date >= getTodayInLatestUsZone(),
   );
   const electionName = upcoming?.name;
 
