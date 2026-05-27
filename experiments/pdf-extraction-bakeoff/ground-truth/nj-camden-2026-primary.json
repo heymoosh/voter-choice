@@ -1,0 +1,333 @@
+{
+  "election_metadata": {
+    "election_date": "2026-06-02",
+    "election_type": "primary",
+    "jurisdiction": "Audubon Borough, Camden County, New Jersey",
+    "ballot_style": "1st Congressional District"
+  },
+  "sections": [
+    {
+      "section_name": "Federal",
+      "races": [
+        {
+          "office": "United States Senator",
+          "district": null,
+          "position": null,
+          "vote_for_n": 1,
+          "party_context": "Democratic Primary",
+          "candidates": [
+            {
+              "name": "Cory BOOKER",
+              "party": "Camden County Democrat Committee, Inc.",
+              "ballot_position": "A1",
+              "placeholder_reason": null
+            },
+            {
+              "name": null,
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": "write_in"
+            }
+          ]
+        },
+        {
+          "office": "Member of the House of Representatives",
+          "district": "1st Congressional District",
+          "position": null,
+          "vote_for_n": 1,
+          "party_context": "Democratic Primary",
+          "candidates": [
+            {
+              "name": "Donald NORCROSS",
+              "party": "Camden County Democrat Committee, Inc.",
+              "ballot_position": "B1",
+              "placeholder_reason": null
+            },
+            {
+              "name": null,
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": "write_in"
+            }
+          ]
+        },
+        {
+          "office": "United States Senator",
+          "district": null,
+          "position": null,
+          "vote_for_n": 1,
+          "party_context": "Republican Primary",
+          "candidates": [
+            {
+              "name": "Robert E. LEBOVICS",
+              "party": "America First Always",
+              "ballot_position": "A1",
+              "placeholder_reason": null
+            },
+            {
+              "name": "Justin MURPHY",
+              "party": "Camden County Regular Republican Party",
+              "ballot_position": "A2",
+              "placeholder_reason": null
+            },
+            {
+              "name": "Eric ZOAN",
+              "party": "America First Republicans",
+              "ballot_position": "A3",
+              "placeholder_reason": null
+            },
+            {
+              "name": "Richard TABOR",
+              "party": "By The People, For The People",
+              "ballot_position": "A4",
+              "placeholder_reason": null
+            },
+            {
+              "name": null,
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": "write_in"
+            }
+          ]
+        },
+        {
+          "office": "Member of the House of Representatives",
+          "district": "1st Congressional District",
+          "position": null,
+          "vote_for_n": 1,
+          "party_context": "Republican Primary",
+          "candidates": [
+            {
+              "name": "Damon GALDO",
+              "party": "Camden County Regular Republican Party",
+              "ballot_position": "B1",
+              "placeholder_reason": null
+            },
+            {
+              "name": null,
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": "write_in"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "section_name": "County",
+      "races": [
+        {
+          "office": "Members of the Board of County Commissioners",
+          "district": "Camden County",
+          "position": null,
+          "vote_for_n": 2,
+          "party_context": "Democratic Primary",
+          "candidates": [
+            {
+              "name": "Louis CAPPELLI, JR.",
+              "party": "Camden County Democrat Committee, Inc.",
+              "ballot_position": "C1",
+              "placeholder_reason": null
+            },
+            {
+              "name": "Jonathan YOUNG",
+              "party": "Camden County Democrat Committee, Inc.",
+              "ballot_position": "C2",
+              "placeholder_reason": null
+            },
+            {
+              "name": "Vanetta HAWKINS",
+              "party": "South Jersey Progressive Democrats",
+              "ballot_position": "C3",
+              "placeholder_reason": null
+            },
+            {
+              "name": "Constance MERCEDES",
+              "party": "South Jersey Progressive Democrats",
+              "ballot_position": "C4",
+              "placeholder_reason": null
+            },
+            {
+              "name": null,
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": "write_in"
+            },
+            {
+              "name": null,
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": "write_in"
+            }
+          ]
+        },
+        {
+          "office": "Members of the Board of County Commissioners",
+          "district": "Camden County",
+          "position": null,
+          "vote_for_n": 2,
+          "party_context": "Republican Primary",
+          "candidates": [
+            {
+              "name": "Robert STONE",
+              "party": "Camden County Regular Republican Party",
+              "ballot_position": "C1",
+              "placeholder_reason": null
+            },
+            {
+              "name": null,
+              "party": null,
+              "ballot_position": "C2",
+              "placeholder_reason": "no_petition_filed"
+            },
+            {
+              "name": null,
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": "write_in"
+            },
+            {
+              "name": null,
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": "write_in"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "section_name": "Municipal",
+      "races": [
+        {
+          "office": "Female Members of County Committee",
+          "district": "Audubon Borough",
+          "position": null,
+          "vote_for_n": 4,
+          "party_context": "Republican Primary",
+          "candidates": [
+            {
+              "name": null,
+              "party": null,
+              "ballot_position": "D1",
+              "placeholder_reason": "no_petition_filed"
+            },
+            {
+              "name": null,
+              "party": null,
+              "ballot_position": "D2",
+              "placeholder_reason": "no_petition_filed"
+            },
+            {
+              "name": null,
+              "party": null,
+              "ballot_position": "D3",
+              "placeholder_reason": "no_petition_filed"
+            },
+            {
+              "name": null,
+              "party": null,
+              "ballot_position": "D4",
+              "placeholder_reason": "no_petition_filed"
+            },
+            {
+              "name": null,
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": "write_in"
+            },
+            {
+              "name": null,
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": "write_in"
+            },
+            {
+              "name": null,
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": "write_in"
+            },
+            {
+              "name": null,
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": "write_in"
+            }
+          ]
+        },
+        {
+          "office": "Male Members of County Committee",
+          "district": "Audubon Borough",
+          "position": null,
+          "vote_for_n": 4,
+          "party_context": "Republican Primary",
+          "candidates": [
+            {
+              "name": "Joseph MILLER, JR.",
+              "party": "Camden County Regular Republican Party",
+              "ballot_position": "E1",
+              "placeholder_reason": null
+            },
+            {
+              "name": "Ian M. GILL",
+              "party": "Camden County Regular Republican Party",
+              "ballot_position": "E2",
+              "placeholder_reason": null
+            },
+            {
+              "name": null,
+              "party": null,
+              "ballot_position": "E3",
+              "placeholder_reason": "no_petition_filed"
+            },
+            {
+              "name": null,
+              "party": null,
+              "ballot_position": "E4",
+              "placeholder_reason": "no_petition_filed"
+            },
+            {
+              "name": null,
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": "write_in"
+            },
+            {
+              "name": null,
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": "write_in"
+            },
+            {
+              "name": null,
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": "write_in"
+            },
+            {
+              "name": null,
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": "write_in"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "uncertainty_notes": [
+    "PDF text layer is broken (returns garbage like ')+&'%' for headers and ')1 ) ) 2 . .4 #2' for slate labels) — all extraction done from the rendered visual image.",
+    "Multi-party ballot: BOTH Democratic Primary and Republican Primary ballots appear on the same page (front), with REP also continuing onto the back for County Committee races. Each race is tagged with party_context to distinguish. Federal and County races appear twice (once per party) in the sections array.",
+    "Ballot positions captured exactly as printed (A1, A2, A3, A4, B1, C1, C2, C3, C4, D1-D4, E1-E4). NJ county-line ballots use column letters per office (A=Senate, B=House, C=County Commissioners, D=Female County Committee, E=Male County Committee) and row numbers within each column. Note that A1/B1/C1 appear in BOTH the DEM and REP race objects (same column letter used on each party's separate ballot).",
+    "Slate labels captured as printed under each candidate via the 'party' field per advisor guidance (e.g., 'Camden County Democrat Committee, Inc.', 'South Jersey Progressive Democrats', 'America First Always', 'Camden County Regular Republican Party', 'America First Republicans', 'By The People, For The People'). The schema's 'party_context' carries the macro Dem/Rep distinction.",
+    "Write-in slots: NJ ballots show a write-in line under EVERY candidate column. To avoid combinatorial explosion, ONE write-in placeholder per race is recorded rather than per-column slot. Strict scoring may differ — flag as authoring choice.",
+    "Members of the Board of County Commissioners 'Vote for Two (2)' captured as vote_for_n=2.",
+    "Female Members and Male Members of County Committee are 'Vote for Four (4)' captured as vote_for_n=4. They are local party committee positions (Audubon Borough), classified as Municipal section since they're borough-level offices.",
+    "All 4 Female County Committee slots on the REP ballot are NO PETITION FILED. On the Male side, 2 of 4 are NO PETITION FILED (positions E3, E4). Ballot positions D1-D4 / E1-E4 inferred from columnar layout (4 columns per row).",
+    "DEM ballot back side not visible in this scan; only REP ballot back side (with County Committee races) is shown. 'VOTE BOTH SIDES OF THE BALLOT' instruction appears under the REP ballot. If DEM also has County Committee races, they are MISSING from this ground-truth — known unknown.",
+    "CAPITALIZATION CONVENTION: NJ ballot prints candidate names as 'First MiddleInitial. SURNAME' (e.g., 'Cory BOOKER', 'Robert E. LEBOVICS', 'Louis CAPPELLI, JR.'). Captured names follow this exact ballot convention. Differs from Hidalgo TX (title case throughout) and Harris TX (all-caps throughout) which match their respective ballot printing conventions.",
+    "On the DEM County Commissioners race, slate labels: I am highly confident C1 and C2 are 'Camden County Democrat Committee, Inc.' (slate label visible above both), and C3 and C4 are 'South Jersey Progressive Democrats' (the rendering shows 'South Jersey Progressive Democrats' label above the C3/C4 pair).",
+    "Federal District: ballot header says '1st Congressional District' — applied as district to House race; left null for Senate (statewide office)."
+  ]
+}

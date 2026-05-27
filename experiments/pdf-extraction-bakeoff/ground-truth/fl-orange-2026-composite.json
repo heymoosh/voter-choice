@@ -1,0 +1,601 @@
+{
+  "election_metadata": {
+    "election_date": "2024-11-05",
+    "election_type": "general",
+    "jurisdiction": "Orange County, Florida",
+    "ballot_style": "Composite Sample Ballot"
+  },
+  "sections": [
+    {
+      "section_name": "Federal",
+      "races": [
+        {
+          "office": "President and Vice President",
+          "district": null,
+          "position": null,
+          "vote_for_n": 1,
+          "party_context": null,
+          "candidates": [
+            { "name": "Donald J. Trump / JD Vance", "party": "REP", "ballot_position": null, "placeholder_reason": null },
+            { "name": "Kamala D. Harris / Tim Walz", "party": "DEM", "ballot_position": null, "placeholder_reason": null },
+            { "name": "Chase Oliver / Mike ter Maat", "party": "LPF", "ballot_position": null, "placeholder_reason": null },
+            { "name": "Claudia De la Cruz / Karina Garcia", "party": "PSL", "ballot_position": null, "placeholder_reason": null },
+            { "name": "Randall Terry / Stephen Broden", "party": "CPF", "ballot_position": null, "placeholder_reason": null },
+            { "name": "Peter Sonski / Lauren Onak", "party": "ASP", "ballot_position": null, "placeholder_reason": null },
+            { "name": "Jill Stein / Rudolph Ware", "party": "GRE", "ballot_position": null, "placeholder_reason": null },
+            { "name": null, "party": null, "ballot_position": null, "placeholder_reason": "write_in" }
+          ]
+        },
+        {
+          "office": "United States Senator",
+          "district": null,
+          "position": null,
+          "vote_for_n": 1,
+          "party_context": null,
+          "candidates": [
+            { "name": "Rick Scott", "party": "REP", "ballot_position": null, "placeholder_reason": null },
+            { "name": "Debbie Mucarsel-Powell", "party": "DEM", "ballot_position": null, "placeholder_reason": null },
+            { "name": "Feena Bonoan", "party": "LPF", "ballot_position": null, "placeholder_reason": null },
+            { "name": "Tuan TQ Nguyen", "party": "NPA", "ballot_position": null, "placeholder_reason": null },
+            { "name": "Ben Everidge", "party": "NPA", "ballot_position": null, "placeholder_reason": null },
+            { "name": null, "party": null, "ballot_position": null, "placeholder_reason": "write_in" }
+          ]
+        },
+        {
+          "office": "Representative in Congress",
+          "district": "District 8",
+          "position": null,
+          "vote_for_n": 1,
+          "party_context": null,
+          "candidates": [
+            { "name": "Mike Haridopolos", "party": "REP", "ballot_position": null, "placeholder_reason": null },
+            { "name": "Sandy Kennedy", "party": "DEM", "ballot_position": null, "placeholder_reason": null }
+          ]
+        },
+        {
+          "office": "Representative in Congress",
+          "district": "District 9",
+          "position": null,
+          "vote_for_n": 1,
+          "party_context": null,
+          "candidates": [
+            { "name": "Thomas Chalifoux", "party": "REP", "ballot_position": null, "placeholder_reason": null },
+            { "name": "Darren Soto", "party": "DEM", "ballot_position": null, "placeholder_reason": null },
+            { "name": "Marcus Carter", "party": "NPA", "ballot_position": null, "placeholder_reason": null }
+          ]
+        },
+        {
+          "office": "Representative in Congress",
+          "district": "District 10",
+          "position": null,
+          "vote_for_n": 1,
+          "party_context": null,
+          "candidates": [
+            { "name": "Willie J. Montague", "party": "REP", "ballot_position": null, "placeholder_reason": null },
+            { "name": "Maxwell Alejandro Frost", "party": "DEM", "ballot_position": null, "placeholder_reason": null }
+          ]
+        },
+        {
+          "office": "Representative in Congress",
+          "district": "District 11",
+          "position": null,
+          "vote_for_n": 1,
+          "party_context": null,
+          "candidates": [
+            { "name": "Daniel Webster", "party": "REP", "ballot_position": null, "placeholder_reason": null },
+            { "name": "Barbie Harden Hall", "party": "DEM", "ballot_position": null, "placeholder_reason": null }
+          ]
+        }
+      ]
+    },
+    {
+      "section_name": "State",
+      "races": [
+        {
+          "office": "State Attorney, 9th Judicial Circuit",
+          "district": "9th Judicial Circuit",
+          "position": null,
+          "vote_for_n": 1,
+          "party_context": null,
+          "candidates": [
+            { "name": "Monique Worrell", "party": "DEM", "ballot_position": null, "placeholder_reason": null },
+            { "name": "Andrew Bain", "party": "NPA", "ballot_position": null, "placeholder_reason": null }
+          ]
+        },
+        {
+          "office": "State Senator",
+          "district": "District 13",
+          "position": null,
+          "vote_for_n": 1,
+          "party_context": null,
+          "candidates": [
+            { "name": "Keith Truenow", "party": "REP", "ballot_position": null, "placeholder_reason": null },
+            { "name": "Stephanie L. Dukes", "party": "DEM", "ballot_position": null, "placeholder_reason": null }
+          ]
+        },
+        {
+          "office": "State Senator",
+          "district": "District 25",
+          "position": null,
+          "vote_for_n": 1,
+          "party_context": null,
+          "candidates": [
+            { "name": "Jose Martinez", "party": "REP", "ballot_position": null, "placeholder_reason": null },
+            { "name": "Kristen Arrington", "party": "DEM", "ballot_position": null, "placeholder_reason": null }
+          ]
+        },
+        {
+          "office": "State Representative",
+          "district": "District 35",
+          "position": null,
+          "vote_for_n": 1,
+          "party_context": null,
+          "candidates": [
+            { "name": "Erika Booth", "party": "REP", "ballot_position": null, "placeholder_reason": null },
+            { "name": "Tom Keen", "party": "DEM", "ballot_position": null, "placeholder_reason": null }
+          ]
+        },
+        {
+          "office": "State Representative",
+          "district": "District 37",
+          "position": null,
+          "vote_for_n": 1,
+          "party_context": null,
+          "candidates": [
+            { "name": "Susan Plasencia", "party": "REP", "ballot_position": null, "placeholder_reason": null },
+            { "name": "Nate Douglas", "party": "DEM", "ballot_position": null, "placeholder_reason": null }
+          ]
+        },
+        {
+          "office": "State Representative",
+          "district": "District 39",
+          "position": null,
+          "vote_for_n": 1,
+          "party_context": null,
+          "candidates": [
+            { "name": "Doug Bankson", "party": "REP", "ballot_position": null, "placeholder_reason": null },
+            { "name": "Marsha Summersill", "party": "DEM", "ballot_position": null, "placeholder_reason": null }
+          ]
+        },
+        {
+          "office": "State Representative",
+          "district": "District 40",
+          "position": null,
+          "vote_for_n": 1,
+          "party_context": null,
+          "candidates": [
+            { "name": "Belinda Ford", "party": "REP", "ballot_position": null, "placeholder_reason": null },
+            { "name": "LaVon Bracy Davis", "party": "DEM", "ballot_position": null, "placeholder_reason": null }
+          ]
+        },
+        {
+          "office": "State Representative",
+          "district": "District 42",
+          "position": null,
+          "vote_for_n": 1,
+          "party_context": null,
+          "candidates": [
+            { "name": "Gregory Pull", "party": "REP", "ballot_position": null, "placeholder_reason": null },
+            { "name": "Anna V. Eskamani", "party": "DEM", "ballot_position": null, "placeholder_reason": null }
+          ]
+        },
+        {
+          "office": "State Representative",
+          "district": "District 43",
+          "position": null,
+          "vote_for_n": 1,
+          "party_context": null,
+          "candidates": [
+            { "name": "Joseph \"Joe\" Melendez", "party": "REP", "ballot_position": null, "placeholder_reason": null },
+            { "name": "Johanna Lopez", "party": "DEM", "ballot_position": null, "placeholder_reason": null }
+          ]
+        },
+        {
+          "office": "State Representative",
+          "district": "District 45",
+          "position": null,
+          "vote_for_n": 1,
+          "party_context": null,
+          "candidates": [
+            { "name": "Carolina Amesty", "party": "REP", "ballot_position": null, "placeholder_reason": null },
+            { "name": "Leonard Spencer", "party": "DEM", "ballot_position": null, "placeholder_reason": null }
+          ]
+        },
+        {
+          "office": "State Representative",
+          "district": "District 47",
+          "position": null,
+          "vote_for_n": 1,
+          "party_context": null,
+          "candidates": [
+            { "name": "Paula A. Stark", "party": "REP", "ballot_position": null, "placeholder_reason": null },
+            { "name": "Maria Revelles", "party": "DEM", "ballot_position": null, "placeholder_reason": null }
+          ]
+        }
+      ]
+    },
+    {
+      "section_name": "County",
+      "races": [
+        {
+          "office": "Supervisor of Elections (Special Election)",
+          "district": null,
+          "position": null,
+          "vote_for_n": 1,
+          "party_context": null,
+          "candidates": [
+            { "name": "Karen Castor Dentel", "party": "DEM", "ballot_position": null, "placeholder_reason": null },
+            { "name": "Sunshine Linda-Marie Grund", "party": "DEM", "ballot_position": null, "placeholder_reason": null },
+            { "name": "Dan Helm", "party": "DEM", "ballot_position": null, "placeholder_reason": null },
+            { "name": "Wes Hodge", "party": "DEM", "ballot_position": null, "placeholder_reason": null }
+          ]
+        },
+        {
+          "office": "County Commissioner",
+          "district": "District 1",
+          "position": null,
+          "vote_for_n": 1,
+          "party_context": null,
+          "candidates": [
+            { "name": "Austin Arthur", "party": null, "ballot_position": null, "placeholder_reason": null },
+            { "name": "Nicole H. Wilson", "party": null, "ballot_position": null, "placeholder_reason": null }
+          ]
+        },
+        {
+          "office": "County Commissioner",
+          "district": "District 3",
+          "position": null,
+          "vote_for_n": 1,
+          "party_context": null,
+          "candidates": [
+            { "name": "Linda Stewart", "party": null, "ballot_position": null, "placeholder_reason": null },
+            { "name": "Mayra Uribe", "party": null, "ballot_position": null, "placeholder_reason": null }
+          ]
+        },
+        {
+          "office": "County Commissioner",
+          "district": "District 5",
+          "position": null,
+          "vote_for_n": 1,
+          "party_context": null,
+          "candidates": [
+            { "name": "Steve Leary", "party": null, "ballot_position": null, "placeholder_reason": null },
+            { "name": "Kelly Semrad", "party": null, "ballot_position": null, "placeholder_reason": null }
+          ]
+        },
+        {
+          "office": "School Board Member",
+          "district": "District 4",
+          "position": null,
+          "vote_for_n": 1,
+          "party_context": null,
+          "candidates": [
+            { "name": "Anne Douglas", "party": null, "ballot_position": null, "placeholder_reason": null },
+            { "name": "Kyle Roger Goudy", "party": null, "ballot_position": null, "placeholder_reason": null }
+          ]
+        },
+        {
+          "office": "Soil and Water Conservation District Supervisor",
+          "district": null,
+          "position": "Seat 2",
+          "vote_for_n": 1,
+          "party_context": null,
+          "candidates": [
+            { "name": "Jimm Middleton", "party": null, "ballot_position": null, "placeholder_reason": null },
+            { "name": "Jim Moyer", "party": null, "ballot_position": null, "placeholder_reason": null },
+            { "name": "Vicki Vargo", "party": null, "ballot_position": null, "placeholder_reason": null }
+          ]
+        },
+        {
+          "office": "Soil and Water Conservation District Supervisor",
+          "district": null,
+          "position": "Seat 4",
+          "vote_for_n": 1,
+          "party_context": null,
+          "candidates": [
+            { "name": "Karolyn C. Campbell", "party": null, "ballot_position": null, "placeholder_reason": null },
+            { "name": "Dena Krueger", "party": null, "ballot_position": null, "placeholder_reason": null }
+          ]
+        }
+      ]
+    },
+    {
+      "section_name": "Judicial",
+      "races": [
+        {
+          "office": "Florida Supreme Court Retention - Justice Renatha Francis",
+          "district": null,
+          "position": null,
+          "vote_for_n": 1,
+          "party_context": null,
+          "candidates": [
+            { "name": "Yes", "party": null, "ballot_position": null, "placeholder_reason": null },
+            { "name": "No", "party": null, "ballot_position": null, "placeholder_reason": null }
+          ]
+        },
+        {
+          "office": "Florida Supreme Court Retention - Justice Meredith Sasso",
+          "district": null,
+          "position": null,
+          "vote_for_n": 1,
+          "party_context": null,
+          "candidates": [
+            { "name": "Yes", "party": null, "ballot_position": null, "placeholder_reason": null },
+            { "name": "No", "party": null, "ballot_position": null, "placeholder_reason": null }
+          ]
+        },
+        {
+          "office": "Sixth District Court of Appeal Retention - Judge Paetra Brownlee",
+          "district": "Sixth District Court of Appeal",
+          "position": null,
+          "vote_for_n": 1,
+          "party_context": null,
+          "candidates": [
+            { "name": "Yes", "party": null, "ballot_position": null, "placeholder_reason": null },
+            { "name": "No", "party": null, "ballot_position": null, "placeholder_reason": null }
+          ]
+        },
+        {
+          "office": "Sixth District Court of Appeal Retention - Judge Roger Gannam",
+          "district": "Sixth District Court of Appeal",
+          "position": null,
+          "vote_for_n": 1,
+          "party_context": null,
+          "candidates": [
+            { "name": "Yes", "party": null, "ballot_position": null, "placeholder_reason": null },
+            { "name": "No", "party": null, "ballot_position": null, "placeholder_reason": null }
+          ]
+        },
+        {
+          "office": "Sixth District Court of Appeal Retention - Judge Joshua Mize",
+          "district": "Sixth District Court of Appeal",
+          "position": null,
+          "vote_for_n": 1,
+          "party_context": null,
+          "candidates": [
+            { "name": "Yes", "party": null, "ballot_position": null, "placeholder_reason": null },
+            { "name": "No", "party": null, "ballot_position": null, "placeholder_reason": null }
+          ]
+        },
+        {
+          "office": "Sixth District Court of Appeal Retention - Judge Jared Smith",
+          "district": "Sixth District Court of Appeal",
+          "position": null,
+          "vote_for_n": 1,
+          "party_context": null,
+          "candidates": [
+            { "name": "Yes", "party": null, "ballot_position": null, "placeholder_reason": null },
+            { "name": "No", "party": null, "ballot_position": null, "placeholder_reason": null }
+          ]
+        },
+        {
+          "office": "Sixth District Court of Appeal Retention - Judge Keith White",
+          "district": "Sixth District Court of Appeal",
+          "position": null,
+          "vote_for_n": 1,
+          "party_context": null,
+          "candidates": [
+            { "name": "Yes", "party": null, "ballot_position": null, "placeholder_reason": null },
+            { "name": "No", "party": null, "ballot_position": null, "placeholder_reason": null }
+          ]
+        },
+        {
+          "office": "Circuit Judge, 9th Judicial Circuit",
+          "district": "9th Judicial Circuit",
+          "position": "Group 15",
+          "vote_for_n": 1,
+          "party_context": null,
+          "candidates": [
+            { "name": "Jeffrey Ashton", "party": null, "ballot_position": null, "placeholder_reason": null },
+            { "name": "Alicia L. Peyton", "party": null, "ballot_position": null, "placeholder_reason": null }
+          ]
+        }
+      ]
+    },
+    {
+      "section_name": "Propositions",
+      "races": [
+        {
+          "office": "No. 1 Constitutional Amendment - Partisan Election of Members of District School Boards (Article IX, Section 4 and Article XII)",
+          "district": null,
+          "position": null,
+          "vote_for_n": 1,
+          "party_context": null,
+          "candidates": [
+            { "name": "Yes", "party": null, "ballot_position": null, "placeholder_reason": null },
+            { "name": "No", "party": null, "ballot_position": null, "placeholder_reason": null }
+          ]
+        },
+        {
+          "office": "No. 2 Constitutional Amendment - Right to Fish and Hunt (Article I, Section 28)",
+          "district": null,
+          "position": null,
+          "vote_for_n": 1,
+          "party_context": null,
+          "candidates": [
+            { "name": "Yes", "party": null, "ballot_position": null, "placeholder_reason": null },
+            { "name": "No", "party": null, "ballot_position": null, "placeholder_reason": null }
+          ]
+        },
+        {
+          "office": "No. 3 Constitutional Amendment - Adult Personal Use of Marijuana (Article X, Section 29)",
+          "district": null,
+          "position": null,
+          "vote_for_n": 1,
+          "party_context": null,
+          "candidates": [
+            { "name": "Yes", "party": null, "ballot_position": null, "placeholder_reason": null },
+            { "name": "No", "party": null, "ballot_position": null, "placeholder_reason": null }
+          ]
+        },
+        {
+          "office": "No. 4 Constitutional Amendment - Amendment to Limit Government Interference with Abortion (Article 1, New Section)",
+          "district": null,
+          "position": null,
+          "vote_for_n": 1,
+          "party_context": null,
+          "candidates": [
+            { "name": "Yes", "party": null, "ballot_position": null, "placeholder_reason": null },
+            { "name": "No", "party": null, "ballot_position": null, "placeholder_reason": null }
+          ]
+        },
+        {
+          "office": "No. 5 Constitutional Amendment - Annual Adjustments to the Value of Certain Homestead Exemptions (Article VII, Section 6 and Article XII)",
+          "district": null,
+          "position": null,
+          "vote_for_n": 1,
+          "party_context": null,
+          "candidates": [
+            { "name": "Yes", "party": null, "ballot_position": null, "placeholder_reason": null },
+            { "name": "No", "party": null, "ballot_position": null, "placeholder_reason": null }
+          ]
+        },
+        {
+          "office": "No. 6 Constitutional Amendment - Repeal of Public Campaign Financing Requirement (Article VI, Section 7)",
+          "district": null,
+          "position": null,
+          "vote_for_n": 1,
+          "party_context": null,
+          "candidates": [
+            { "name": "Yes", "party": null, "ballot_position": null, "placeholder_reason": null },
+            { "name": "No", "party": null, "ballot_position": null, "placeholder_reason": null }
+          ]
+        },
+        {
+          "office": "County Charter Amendment #1 - Amendment Revising Orange County Charter Initiative Petition Process",
+          "district": null,
+          "position": null,
+          "vote_for_n": 1,
+          "party_context": null,
+          "candidates": [
+            { "name": "Yes", "party": null, "ballot_position": null, "placeholder_reason": null },
+            { "name": "No", "party": null, "ballot_position": null, "placeholder_reason": null }
+          ]
+        },
+        {
+          "office": "County Charter Amendment #2 - Orange County Charter Amendment Requiring Continued Existence of Affordable Housing Trust Fund",
+          "district": null,
+          "position": null,
+          "vote_for_n": 1,
+          "party_context": null,
+          "candidates": [
+            { "name": "Yes", "party": null, "ballot_position": null, "placeholder_reason": null },
+            { "name": "No", "party": null, "ballot_position": null, "placeholder_reason": null }
+          ]
+        },
+        {
+          "office": "County Charter Amendment #3 - Write-In Candidate Effect on Timing of Charter Officer Elections",
+          "district": null,
+          "position": null,
+          "vote_for_n": 1,
+          "party_context": null,
+          "candidates": [
+            { "name": "Yes", "party": null, "ballot_position": null, "placeholder_reason": null },
+            { "name": "No", "party": null, "ballot_position": null, "placeholder_reason": null }
+          ]
+        },
+        {
+          "office": "County Charter Amendment #4 - Orange County Charter Amendment Requiring Adoption of a Fiscal Sustainability Analysis Tool",
+          "district": null,
+          "position": null,
+          "vote_for_n": 1,
+          "party_context": null,
+          "candidates": [
+            { "name": "Yes", "party": null, "ballot_position": null, "placeholder_reason": null },
+            { "name": "No", "party": null, "ballot_position": null, "placeholder_reason": null }
+          ]
+        },
+        {
+          "office": "County Charter Amendment #5 - Orange County Charter Amendment Establishing Charter Office of County Attorney",
+          "district": null,
+          "position": null,
+          "vote_for_n": 1,
+          "party_context": null,
+          "candidates": [
+            { "name": "Yes", "party": null, "ballot_position": null, "placeholder_reason": null },
+            { "name": "No", "party": null, "ballot_position": null, "placeholder_reason": null }
+          ]
+        },
+        {
+          "office": "County Charter Amendment #6 - Orange County Charter Amendment Increasing Number of County Commission Districts",
+          "district": null,
+          "position": null,
+          "vote_for_n": 1,
+          "party_context": null,
+          "candidates": [
+            { "name": "Yes", "party": null, "ballot_position": null, "placeholder_reason": null },
+            { "name": "No", "party": null, "ballot_position": null, "placeholder_reason": null }
+          ]
+        },
+        {
+          "office": "County Charter Amendment #7 - Charter Amendment Creating Transportation Mobility Advisory Commission",
+          "district": null,
+          "position": null,
+          "vote_for_n": 1,
+          "party_context": null,
+          "candidates": [
+            { "name": "Yes", "party": null, "ballot_position": null, "placeholder_reason": null },
+            { "name": "No", "party": null, "ballot_position": null, "placeholder_reason": null }
+          ]
+        },
+        {
+          "office": "County Charter Amendment #8 - Supermajority County Commission Vote to Dispose of or Change Use of \"County Protected Lands\"",
+          "district": null,
+          "position": null,
+          "vote_for_n": 1,
+          "party_context": null,
+          "candidates": [
+            { "name": "Yes", "party": null, "ballot_position": null, "placeholder_reason": null },
+            { "name": "No", "party": null, "ballot_position": null, "placeholder_reason": null }
+          ]
+        },
+        {
+          "office": "County Charter Amendment #9 - Orange County Charter Amendment Establishing Rural Boundary and Rural Area (\"Area\")",
+          "district": null,
+          "position": null,
+          "vote_for_n": 1,
+          "party_context": null,
+          "candidates": [
+            { "name": "Yes", "party": null, "ballot_position": null, "placeholder_reason": null },
+            { "name": "No", "party": null, "ballot_position": null, "placeholder_reason": null }
+          ]
+        },
+        {
+          "office": "County Charter Amendment #10 - Charter Amendment Establishing a Process For Voluntary Municipal Annexations And Land Use in Rural Areas",
+          "district": null,
+          "position": null,
+          "vote_for_n": 1,
+          "party_context": null,
+          "candidates": [
+            { "name": "Yes", "party": null, "ballot_position": null, "placeholder_reason": null },
+            { "name": "No", "party": null, "ballot_position": null, "placeholder_reason": null }
+          ]
+        },
+        {
+          "office": "School Sales Surtax Referendum - One-Half Cent Sales Surtax for School Facilities Construction, Improvement, Land Acquisition, and Technology Implementation",
+          "district": null,
+          "position": null,
+          "vote_for_n": 1,
+          "party_context": null,
+          "candidates": [
+            { "name": "For the one-half cent tax", "party": null, "ballot_position": null, "placeholder_reason": null },
+            { "name": "Against the one-half cent tax", "party": null, "ballot_position": null, "placeholder_reason": null }
+          ]
+        }
+      ]
+    }
+  ],
+  "uncertainty_notes": [
+    "Fixture filename says '2026' but the ballot itself is dated November 5, 2024 (General Election). Used the actual ballot date and election_type='general'.",
+    "This is a 'composite' sample ballot covering ALL contests that could appear in Orange County FL — actual precinct ballots would be a subset. All 8 State Rep districts (35/37/39/40/42/43/45/47), 4 US Rep districts (8/9/10/11), and 2 State Senate districts (13/25) are captured even though a single voter would only see their own district's race.",
+    "AUTHORING CHOICE - Presidential ticket: combined Pres/VP into a single candidate name with ' / ' separator (e.g., 'Donald J. Trump / JD Vance'). Each ticket's party affiliation captured (REP, DEM, LPF=Libertarian, PSL, CPF, ASP, GRE). One write-in slot included as the 8th candidate. Extraction tools may produce two separate candidate entries per ticket (one for President, one for Vice President). Scoring should accept either canonical form.",
+    "Party abbreviations (REP/DEM/LPF/NPA/PSL/CPF/ASP/GRE) preserved as they appear on the ballot rather than expanded (e.g., 'REP' not 'Republican').",
+    "Section assignments: 'Supervisor of Elections (Special Election)' placed under County section since it's a county-level office (the ballot labels it 'Partisan County Office' / 'Special Election'). Nonpartisan County offices (Commissioner, School Board, Soil & Water) also placed under County. State Attorney placed under State.",
+    "Retention races (FL Supreme Court, Sixth District Court of Appeal): formatted as one race per justice/judge with Yes/No candidates. Office name includes the justice/judge name (e.g., 'Florida Supreme Court Retention - Justice Renatha Francis').",
+    "Constitutional Amendments (1-6) and County Charter Amendments (1-10) and School Sales Surtax all grouped under Propositions section. Long official ballot question text NOT included as 'office' — kept the short label (e.g., 'No. 3 Constitutional Amendment - Adult Personal Use of Marijuana (Article X, Section 29)') for readability.",
+    "School Sales Surtax has unusual ballot labels — 'For the one-half cent tax' / 'Against the one-half cent tax' rather than Yes/No. Captured literal labels.",
+    "Nonpartisan County offices (County Commissioner, School Board, Soil & Water) have party set to null since the ballot identifies them as 'Nonpartisan County Offices'.",
+    "Nonpartisan Judicial offices (Retention, Circuit Judge) have party set to null since the ballot identifies them as 'Nonpartisan Judicial Offices'.",
+    "Supervisor of Elections special election shows 4 DEM candidates (no REP/other party) — captured DEM party label."
+  ]
+}
