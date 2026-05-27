@@ -1,0 +1,17 @@
+{
+  "runner": "03-docling-sonnet",
+  "fixture": "fl-orange-2026-composite.pdf",
+  "started_at": "2026-05-27T17:17:06.396Z",
+  "completed_at": "2026-05-27T17:18:32.510Z",
+  "latency_ms": 86114,
+  "cost_usd": 0.136686,
+  "cost_breakdown": {
+    "docling_latency_ms": 4503,
+    "docling_cost_usd": 0,
+    "sonnet_input_tokens": 4812,
+    "sonnet_output_tokens": 8150,
+    "sonnet_cost_usd": 0.136686
+  },
+  "retries": 0,
+  "outcome": "success"
+}

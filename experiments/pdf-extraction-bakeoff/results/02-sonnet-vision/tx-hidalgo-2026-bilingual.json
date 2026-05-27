@@ -1,0 +1,743 @@
+{
+  "election_metadata": {
+    "election_date": "2022-03-01",
+    "election_type": "primary",
+    "jurisdiction": "Hidalgo County",
+    "ballot_style": "#1"
+  },
+  "sections": [
+    {
+      "section_name": "Federal",
+      "races": [
+        {
+          "office": "United States Representative",
+          "district": "34",
+          "position": null,
+          "vote_for_n": 1,
+          "party_context": "Democratic Primary",
+          "candidates": [
+            {
+              "name": "William Thompson",
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": null
+            },
+            {
+              "name": "Filemon Meza",
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": null
+            },
+            {
+              "name": "Osbert Rodriguez Hafo",
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": null
+            },
+            {
+              "name": "Beatriz Reynoso",
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": null
+            },
+            {
+              "name": "Laura Cisneros",
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": null
+            },
+            {
+              "name": "Diego Zavala",
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": null
+            },
+            {
+              "name": "Vicente Gonzalez",
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "section_name": "State",
+      "races": [
+        {
+          "office": "Governor",
+          "district": null,
+          "position": null,
+          "vote_for_n": 1,
+          "party_context": "Democratic Primary",
+          "candidates": [
+            {
+              "name": "Rich Wakeland",
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": null
+            },
+            {
+              "name": "Inocencio 'Inno' Barrientez",
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": null
+            },
+            {
+              "name": "Joy Diaz",
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": null
+            },
+            {
+              "name": "Michael Cooper",
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": null
+            },
+            {
+              "name": "Beto O'Rourke",
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": null
+            }
+          ]
+        },
+        {
+          "office": "Lieutenant Governor",
+          "district": null,
+          "position": null,
+          "vote_for_n": 1,
+          "party_context": "Democratic Primary",
+          "candidates": [
+            {
+              "name": "Mike Collier",
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": null
+            },
+            {
+              "name": "Michelle Beckley",
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": null
+            },
+            {
+              "name": "Carla Brailey",
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": null
+            }
+          ]
+        },
+        {
+          "office": "Attorney General",
+          "district": null,
+          "position": null,
+          "vote_for_n": 1,
+          "party_context": "Democratic Primary",
+          "candidates": [
+            {
+              "name": "Rochelle Mercedes Garza",
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": null
+            },
+            {
+              "name": "Joe Jaworski",
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": null
+            },
+            {
+              "name": "S. 'Tbone' Raynor",
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": null
+            },
+            {
+              "name": "Mike Fields",
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": null
+            },
+            {
+              "name": "Lee Merritt",
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": null
+            }
+          ]
+        },
+        {
+          "office": "Comptroller of Public Accounts",
+          "district": null,
+          "position": null,
+          "vote_for_n": 1,
+          "party_context": "Democratic Primary",
+          "candidates": [
+            {
+              "name": "Janet T. Dudding",
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": null
+            },
+            {
+              "name": "Tim Mahoney",
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": null
+            },
+            {
+              "name": "Angel Luis Vega",
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": null
+            }
+          ]
+        },
+        {
+          "office": "Commissioner of the General Land Office",
+          "district": null,
+          "position": null,
+          "vote_for_n": 1,
+          "party_context": "Democratic Primary",
+          "candidates": [
+            {
+              "name": "Sandragrace Martinez",
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": null
+            },
+            {
+              "name": "Jay Kleberg",
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": null
+            },
+            {
+              "name": "Jinny Suh",
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": null
+            },
+            {
+              "name": "Michael Lange",
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": null
+            }
+          ]
+        },
+        {
+          "office": "Commissioner of Agriculture",
+          "district": null,
+          "position": null,
+          "vote_for_n": 1,
+          "party_context": "Democratic Primary",
+          "candidates": [
+            {
+              "name": "Ed Ireson",
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": null
+            },
+            {
+              "name": "Susan Hays",
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": null
+            }
+          ]
+        },
+        {
+          "office": "Railroad Commissioner",
+          "district": null,
+          "position": null,
+          "vote_for_n": 1,
+          "party_context": "Democratic Primary",
+          "candidates": [
+            {
+              "name": "Luke Warford",
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": null
+            }
+          ]
+        },
+        {
+          "office": "Member, State Board of Education",
+          "district": "2",
+          "position": null,
+          "vote_for_n": 1,
+          "party_context": "Democratic Primary",
+          "candidates": [
+            {
+              "name": "Wayne Raasch",
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": null
+            },
+            {
+              "name": "Pete Garcia",
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": null
+            },
+            {
+              "name": "Victor Perez",
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": null
+            },
+            {
+              "name": "Thomas Garcia",
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": null
+            },
+            {
+              "name": "Michael Vargas",
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": null
+            }
+          ]
+        },
+        {
+          "office": "State Senator",
+          "district": "27",
+          "position": null,
+          "vote_for_n": 1,
+          "party_context": "Democratic Primary",
+          "candidates": [
+            {
+              "name": "Sara Stapleton-Barrera",
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": null
+            },
+            {
+              "name": "Alex Dominguez",
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": null
+            },
+            {
+              "name": "Morgan LaMantia",
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": null
+            },
+            {
+              "name": "Salomon Torres",
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": null
+            }
+          ]
+        },
+        {
+          "office": "State Representative",
+          "district": "39",
+          "position": null,
+          "vote_for_n": 1,
+          "party_context": "Democratic Primary",
+          "candidates": [
+            {
+              "name": "Armando 'Mando' Martinez",
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "section_name": "Judicial",
+      "races": [
+        {
+          "office": "Justice, Supreme Court",
+          "district": null,
+          "position": "Place 3",
+          "vote_for_n": 1,
+          "party_context": "Democratic Primary",
+          "candidates": [
+            {
+              "name": "Erin A. Nowell",
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": null
+            }
+          ]
+        },
+        {
+          "office": "Justice, Supreme Court",
+          "district": null,
+          "position": "Place 5",
+          "vote_for_n": 1,
+          "party_context": "Democratic Primary",
+          "candidates": [
+            {
+              "name": "Amanda Reichek",
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": null
+            }
+          ]
+        },
+        {
+          "office": "Justice, Supreme Court",
+          "district": null,
+          "position": "Place 9",
+          "vote_for_n": 1,
+          "party_context": "Democratic Primary",
+          "candidates": [
+            {
+              "name": "Julia Maldonado",
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": null
+            }
+          ]
+        },
+        {
+          "office": "Judge, Court of Criminal Appeals",
+          "district": null,
+          "position": "Place 5",
+          "vote_for_n": 1,
+          "party_context": "Democratic Primary",
+          "candidates": [
+            {
+              "name": "Dana Huffman",
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": null
+            }
+          ]
+        },
+        {
+          "office": "Judge, Court of Criminal Appeals",
+          "district": null,
+          "position": "Place 6",
+          "vote_for_n": 1,
+          "party_context": "Democratic Primary",
+          "candidates": [
+            {
+              "name": "Robert Johnson",
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": null
+            }
+          ]
+        },
+        {
+          "office": "Justice, 13th Court of Appeals District",
+          "district": null,
+          "position": "Place 3",
+          "vote_for_n": 1,
+          "party_context": "Democratic Primary",
+          "candidates": [
+            {
+              "name": "Leticia Hinojosa",
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": null
+            }
+          ]
+        },
+        {
+          "office": "District Judge, 206th Judicial District",
+          "district": null,
+          "position": null,
+          "vote_for_n": 1,
+          "party_context": "Democratic Primary",
+          "candidates": [
+            {
+              "name": "Rose Guerra Reyna",
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": null
+            }
+          ]
+        },
+        {
+          "office": "District Judge, 275th Judicial District",
+          "district": null,
+          "position": null,
+          "vote_for_n": 1,
+          "party_context": "Democratic Primary",
+          "candidates": [
+            {
+              "name": "Maria Cuellar",
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": null
+            }
+          ]
+        },
+        {
+          "office": "District Judge, 370th Judicial District",
+          "district": null,
+          "position": null,
+          "vote_for_n": 1,
+          "party_context": "Democratic Primary",
+          "candidates": [
+            {
+              "name": "Noe Gonzalez",
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "section_name": "County",
+      "races": [
+        {
+          "office": "Criminal District Attorney",
+          "district": null,
+          "position": null,
+          "vote_for_n": 1,
+          "party_context": "Democratic Primary",
+          "candidates": [
+            {
+              "name": "Terry Palacios",
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": null
+            },
+            {
+              "name": "Nereida Lopez-Singleterry",
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": null
+            }
+          ]
+        },
+        {
+          "office": "County Treasurer",
+          "district": null,
+          "position": null,
+          "vote_for_n": 1,
+          "party_context": "Democratic Primary",
+          "candidates": [
+            {
+              "name": "Lita L. Leo",
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": null
+            }
+          ]
+        },
+        {
+          "office": "County Judge",
+          "district": null,
+          "position": null,
+          "vote_for_n": 1,
+          "party_context": "Democratic Primary",
+          "candidates": [
+            {
+              "name": "Norma Ramirez",
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": null
+            },
+            {
+              "name": "Ricardo 'Richard' F. Cortez",
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": null
+            },
+            {
+              "name": "Tania Ramirez",
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": null
+            }
+          ]
+        },
+        {
+          "office": "Justice of the Peace Precinct 1, Place No. 2",
+          "district": null,
+          "position": null,
+          "vote_for_n": 1,
+          "party_context": "Democratic Primary",
+          "candidates": [
+            {
+              "name": "Jesse Morales",
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": null
+            }
+          ]
+        },
+        {
+          "office": "County Chairman",
+          "district": null,
+          "position": null,
+          "vote_for_n": 1,
+          "party_context": "Democratic Primary",
+          "candidates": [
+            {
+              "name": "Samuel Reyes",
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": null
+            },
+            {
+              "name": "Richard Gonzales",
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "section_name": "Judicial",
+      "races": [
+        {
+          "office": "Judge, County Court at Law, No. 1",
+          "district": null,
+          "position": null,
+          "vote_for_n": 1,
+          "party_context": "Democratic Primary",
+          "candidates": [
+            {
+              "name": "Rodolfo 'Rudy' Gonzalez",
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": null
+            }
+          ]
+        },
+        {
+          "office": "Judge, County Court at Law, No. 2",
+          "district": null,
+          "position": null,
+          "vote_for_n": 1,
+          "party_context": "Democratic Primary",
+          "candidates": [
+            {
+              "name": "Jaime 'Jay' Palacios",
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": null
+            }
+          ]
+        },
+        {
+          "office": "Judge, County Court at Law, No. 4",
+          "district": null,
+          "position": null,
+          "vote_for_n": 1,
+          "party_context": "Democratic Primary",
+          "candidates": [
+            {
+              "name": "Federico 'Fred' Garza, Jr.",
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": null
+            }
+          ]
+        },
+        {
+          "office": "Judge, County Court at Law, No. 5",
+          "district": null,
+          "position": null,
+          "vote_for_n": 1,
+          "party_context": "Democratic Primary",
+          "candidates": [
+            {
+              "name": "Arnoldo Cantu, Jr.",
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": null
+            }
+          ]
+        },
+        {
+          "office": "Judge, County Court at Law, No. 6",
+          "district": null,
+          "position": null,
+          "vote_for_n": 1,
+          "party_context": "Democratic Primary",
+          "candidates": [
+            {
+              "name": "Albert Garcia",
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": null
+            }
+          ]
+        },
+        {
+          "office": "Judge, County Court at Law, No. 8",
+          "district": null,
+          "position": null,
+          "vote_for_n": 1,
+          "party_context": "Democratic Primary",
+          "candidates": [
+            {
+              "name": "Omar Maldonado",
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": null
+            }
+          ]
+        },
+        {
+          "office": "Judge, County Probate Court",
+          "district": null,
+          "position": null,
+          "vote_for_n": 1,
+          "party_context": "Democratic Primary",
+          "candidates": [
+            {
+              "name": "JoAnne Garcia",
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": null
+            }
+          ]
+        },
+        {
+          "office": "District Clerk",
+          "district": null,
+          "position": null,
+          "vote_for_n": 1,
+          "party_context": "Democratic Primary",
+          "candidates": [
+            {
+              "name": "Laura Hinojosa",
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": null
+            }
+          ]
+        },
+        {
+          "office": "County Clerk",
+          "district": null,
+          "position": null,
+          "vote_for_n": 1,
+          "party_context": "Democratic Primary",
+          "candidates": [
+            {
+              "name": "Arturo Guajardo, Jr.",
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": null
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

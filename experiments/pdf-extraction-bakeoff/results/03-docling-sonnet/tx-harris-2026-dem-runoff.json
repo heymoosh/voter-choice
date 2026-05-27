@@ -1,0 +1,151 @@
+{
+  "election_metadata": {
+    "election_date": "2026-05-26",
+    "election_type": "primary_runoff",
+    "jurisdiction": "Harris County, Texas",
+    "ballot_style": "Precinct 0865-DEM"
+  },
+  "sections": [
+    {
+      "section_name": "State",
+      "races": [
+        {
+          "office": "Lieutenant Governor",
+          "district": null,
+          "position": null,
+          "vote_for_n": 1,
+          "party_context": "Democratic Primary",
+          "candidates": [
+            {
+              "name": "MARCOS ISAIAS VELEZ",
+              "party": "Democratic Party",
+              "ballot_position": null,
+              "placeholder_reason": null
+            },
+            {
+              "name": "VIKKI GOODWIN",
+              "party": "Democratic Party",
+              "ballot_position": null,
+              "placeholder_reason": null
+            }
+          ]
+        },
+        {
+          "office": "Attorney General",
+          "district": null,
+          "position": null,
+          "vote_for_n": 1,
+          "party_context": "Democratic Primary",
+          "candidates": [
+            {
+              "name": "NATHAN JOHNSON",
+              "party": "Democratic Party",
+              "ballot_position": null,
+              "placeholder_reason": null
+            },
+            {
+              "name": "JOE JAWORSKI",
+              "party": "Democratic Party",
+              "ballot_position": null,
+              "placeholder_reason": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "section_name": "Judicial",
+      "races": [
+        {
+          "office": "Justice, 14th Court of Appeals District",
+          "district": "14th Court of Appeals District",
+          "position": "Place 7",
+          "vote_for_n": 1,
+          "party_context": "Democratic Primary",
+          "candidates": [
+            {
+              "name": "MICHAEL ADAMS-HURTA",
+              "party": "Democratic Party",
+              "ballot_position": null,
+              "placeholder_reason": null
+            },
+            {
+              "name": "WILLIAM DEMOND",
+              "party": "Democratic Party",
+              "ballot_position": null,
+              "placeholder_reason": null
+            }
+          ]
+        },
+        {
+          "office": "Criminal District Judge",
+          "district": "209th Judicial District",
+          "position": null,
+          "vote_for_n": 1,
+          "party_context": "Democratic Primary",
+          "candidates": [
+            {
+              "name": "BRIAN EDWARD WARREN",
+              "party": "Democratic Party",
+              "ballot_position": null,
+              "placeholder_reason": null
+            },
+            {
+              "name": "YSIDRA \"SISSY\" KYLES",
+              "party": "Democratic Party",
+              "ballot_position": null,
+              "placeholder_reason": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "section_name": "County",
+      "races": [
+        {
+          "office": "County Judge",
+          "district": null,
+          "position": null,
+          "vote_for_n": 1,
+          "party_context": "Democratic Primary",
+          "candidates": [
+            {
+              "name": "LETITIA PLUMMER",
+              "party": "Democratic Party",
+              "ballot_position": null,
+              "placeholder_reason": null
+            },
+            {
+              "name": "ANNISE PARKER",
+              "party": "Democratic Party",
+              "ballot_position": null,
+              "placeholder_reason": null
+            }
+          ]
+        },
+        {
+          "office": "District Clerk",
+          "district": null,
+          "position": null,
+          "vote_for_n": 1,
+          "party_context": "Democratic Primary",
+          "candidates": [
+            {
+              "name": "JOSE \"ALEX\" MALDONADO",
+              "party": "Democratic Party",
+              "ballot_position": null,
+              "placeholder_reason": null
+            },
+            {
+              "name": "DARRELL JORDAN, JR",
+              "party": "Democratic Party",
+              "ballot_position": null,
+              "placeholder_reason": null
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

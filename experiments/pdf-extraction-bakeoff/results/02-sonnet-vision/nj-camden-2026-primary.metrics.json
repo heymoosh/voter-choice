@@ -1,0 +1,16 @@
+{
+  "runner": "02-sonnet-vision",
+  "fixture": "nj-camden-2026-primary.pdf",
+  "started_at": "2026-05-27T17:08:49.288Z",
+  "completed_at": "2026-05-27T17:09:17.612Z",
+  "latency_ms": 28324,
+  "cost_usd": 0.048657,
+  "cost_breakdown": {
+    "sonnet_input_tokens": 4244,
+    "sonnet_output_tokens": 2395,
+    "sonnet_cost_usd": 0.048657,
+    "pages": 2
+  },
+  "retries": 0,
+  "outcome": "success"
+}

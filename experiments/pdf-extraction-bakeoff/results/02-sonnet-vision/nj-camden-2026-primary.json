@@ -1,0 +1,314 @@
+{
+  "election_metadata": {
+    "election_date": "2026-06-02",
+    "election_type": "primary",
+    "jurisdiction": "Camden County, Audrain Borough",
+    "ballot_style": "1st Congressional District"
+  },
+  "sections": [
+    {
+      "section_name": "Federal",
+      "races": [
+        {
+          "office": "United States Senator",
+          "district": null,
+          "position": null,
+          "vote_for_n": 1,
+          "party_context": "Democratic Primary",
+          "candidates": [
+            {
+              "name": "BOOKER",
+              "party": "Democratic Party",
+              "ballot_position": "A1",
+              "placeholder_reason": null
+            },
+            {
+              "name": null,
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": "write_in"
+            }
+          ]
+        },
+        {
+          "office": "United States Senator",
+          "district": null,
+          "position": null,
+          "vote_for_n": 1,
+          "party_context": "Republican Primary",
+          "candidates": [
+            {
+              "name": "LEBOVICS",
+              "party": "Republican Party",
+              "ballot_position": "A1",
+              "placeholder_reason": null
+            },
+            {
+              "name": "MURPHY",
+              "party": "Republican Party",
+              "ballot_position": "A2",
+              "placeholder_reason": null
+            },
+            {
+              "name": "ZEHAR",
+              "party": "Republican Party",
+              "ballot_position": "A3",
+              "placeholder_reason": null
+            },
+            {
+              "name": "FAZZIO",
+              "party": "Republican Party",
+              "ballot_position": "A5",
+              "placeholder_reason": null
+            },
+            {
+              "name": null,
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": "write_in"
+            }
+          ]
+        },
+        {
+          "office": "Member of the House of Representatives",
+          "district": "1st Congressional District",
+          "position": null,
+          "vote_for_n": 1,
+          "party_context": "Democratic Primary",
+          "candidates": [
+            {
+              "name": "NORCROSS",
+              "party": "Democratic Party",
+              "ballot_position": "B1",
+              "placeholder_reason": null
+            },
+            {
+              "name": null,
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": "write_in"
+            }
+          ]
+        },
+        {
+          "office": "Member of the House of Representatives",
+          "district": "1st Congressional District",
+          "position": null,
+          "vote_for_n": 1,
+          "party_context": "Republican Primary",
+          "candidates": [
+            {
+              "name": "GAZZO",
+              "party": "Republican Party",
+              "ballot_position": "B1",
+              "placeholder_reason": null
+            },
+            {
+              "name": null,
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": "write_in"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "section_name": "County",
+      "races": [
+        {
+          "office": "Members of the Board of County Commissioners",
+          "district": null,
+          "position": null,
+          "vote_for_n": 2,
+          "party_context": "Democratic Primary",
+          "candidates": [
+            {
+              "name": "CAPPELLI, JR.",
+              "party": "Democratic Party",
+              "ballot_position": "C1",
+              "placeholder_reason": null
+            },
+            {
+              "name": "YOUNG",
+              "party": "Democratic Party",
+              "ballot_position": "C2",
+              "placeholder_reason": null
+            },
+            {
+              "name": "HANKINS",
+              "party": "Democratic Party",
+              "ballot_position": "C3",
+              "placeholder_reason": null
+            },
+            {
+              "name": "MERCEDES",
+              "party": "Democratic Party",
+              "ballot_position": "C4",
+              "placeholder_reason": null
+            },
+            {
+              "name": null,
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": "write_in"
+            },
+            {
+              "name": null,
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": "write_in"
+            }
+          ]
+        },
+        {
+          "office": "Members of the Board of County Commissioners",
+          "district": null,
+          "position": null,
+          "vote_for_n": 2,
+          "party_context": "Republican Primary",
+          "candidates": [
+            {
+              "name": "STONE",
+              "party": "Republican Party",
+              "ballot_position": "C1",
+              "placeholder_reason": null
+            },
+            {
+              "name": null,
+              "party": null,
+              "ballot_position": "C2",
+              "placeholder_reason": "no_petition_filed"
+            },
+            {
+              "name": null,
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": "write_in"
+            },
+            {
+              "name": null,
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": "write_in"
+            }
+          ]
+        },
+        {
+          "office": "Female Members of County Committee",
+          "district": null,
+          "position": null,
+          "vote_for_n": 4,
+          "party_context": "Republican Primary",
+          "candidates": [
+            {
+              "name": null,
+              "party": null,
+              "ballot_position": "D1",
+              "placeholder_reason": "no_petition_filed"
+            },
+            {
+              "name": null,
+              "party": null,
+              "ballot_position": "D2",
+              "placeholder_reason": "no_petition_filed"
+            },
+            {
+              "name": null,
+              "party": null,
+              "ballot_position": "D3",
+              "placeholder_reason": "no_petition_filed"
+            },
+            {
+              "name": null,
+              "party": null,
+              "ballot_position": "D4",
+              "placeholder_reason": "no_petition_filed"
+            },
+            {
+              "name": null,
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": "write_in"
+            },
+            {
+              "name": null,
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": "write_in"
+            },
+            {
+              "name": null,
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": "write_in"
+            },
+            {
+              "name": null,
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": "write_in"
+            }
+          ]
+        },
+        {
+          "office": "Male Members of County Committee",
+          "district": null,
+          "position": null,
+          "vote_for_n": 4,
+          "party_context": "Republican Primary",
+          "candidates": [
+            {
+              "name": "MILLER, JR.",
+              "party": "Republican Party",
+              "ballot_position": "E1",
+              "placeholder_reason": null
+            },
+            {
+              "name": "GILL",
+              "party": "Republican Party",
+              "ballot_position": "E2",
+              "placeholder_reason": null
+            },
+            {
+              "name": null,
+              "party": null,
+              "ballot_position": "E3",
+              "placeholder_reason": "no_petition_filed"
+            },
+            {
+              "name": null,
+              "party": null,
+              "ballot_position": "E4",
+              "placeholder_reason": "no_petition_filed"
+            },
+            {
+              "name": null,
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": "write_in"
+            },
+            {
+              "name": null,
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": "write_in"
+            },
+            {
+              "name": null,
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": "write_in"
+            },
+            {
+              "name": null,
+              "party": null,
+              "ballot_position": null,
+              "placeholder_reason": "write_in"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

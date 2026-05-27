@@ -1,0 +1,16 @@
+{
+  "runner": "02-sonnet-vision",
+  "fixture": "fl-orange-2026-composite.pdf",
+  "started_at": "2026-05-27T17:07:16.493Z",
+  "completed_at": "2026-05-27T17:08:43.300Z",
+  "latency_ms": 86807,
+  "cost_usd": 0.14502,
+  "cost_breakdown": {
+    "sonnet_input_tokens": 6480,
+    "sonnet_output_tokens": 8372,
+    "sonnet_cost_usd": 0.14502,
+    "pages": 3
+  },
+  "retries": 0,
+  "outcome": "success"
+}

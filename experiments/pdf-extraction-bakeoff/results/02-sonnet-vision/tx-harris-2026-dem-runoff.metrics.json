@@ -1,0 +1,16 @@
+{
+  "runner": "02-sonnet-vision",
+  "fixture": "tx-harris-2026-dem-runoff.pdf",
+  "started_at": "2026-05-27T17:05:19.840Z",
+  "completed_at": "2026-05-27T17:05:34.690Z",
+  "latency_ms": 14850,
+  "cost_usd": 0.022794,
+  "cost_breakdown": {
+    "sonnet_input_tokens": 2088,
+    "sonnet_output_tokens": 1102,
+    "sonnet_cost_usd": 0.022794,
+    "pages": 1
+  },
+  "retries": 0,
+  "outcome": "success"
+}
