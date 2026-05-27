@@ -88,17 +88,18 @@ export function ZipForm({ onSubmit }: ZipFormProps) {
               : "Stays on this device"}
           </span>
         </label>
+        {/*
+          fix-2-live-bugs (Bug 1) — the flex .row MUST contain only the
+          input + button, matching the prototype `.addr-card .row` rule
+          (docs/design/2026-redesign/prototype/prototype.css:155). Having
+          the autocomplete hint inside the row stretched the button to
+          ~71px because of default `align-items: stretch`. Hint copy now
+          lives BELOW the row as a sibling within the card.
+        */}
         <div className="flex gap-2">
           <div className="flex-grow">
             {hasPlacesKey && (
-              <div className="space-y-2">
-                <div ref={placesContainerRef} className="w-full" />
-                <p className="text-[10px] text-ink-3 px-1">
-                  {lang === "es"
-                    ? "Empieza a escribir y elige tu dirección del menú."
-                    : "Start typing and choose your address from the dropdown."}
-                </p>
-              </div>
+              <div ref={placesContainerRef} className="w-full" />
             )}
             <input
               id="zip-input"
@@ -120,17 +121,22 @@ export function ZipForm({ onSubmit }: ZipFormProps) {
           <button
             data-testid="zip-submit"
             type="submit"
-            // PR B / fix 4-live-bugs — sentence-case sans CTA per prototype
-            // `.addr-card .go`: padding 0 24px, no fixed height. Flex `row`
-            // defaults to align-items: stretch so the button height matches
-            // the input (14px y-padding × 2 + 15px line ≈ 48px, satisfying
-            // the 44px a11y minimum without an explicit min-h that would
-            // over-pad and dwarf the input — the bug user saw on live).
+            // Prototype `.addr-card .go`: padding 0 24px, font 14.5px, no
+            // fixed height. Flex row defaults to align-items: stretch so
+            // the button matches the input height (~48px = 14px y-pad × 2
+            // + 15px line).
             className="bg-civic text-paper-2 border-0 rounded-lg px-6 text-[14.5px] font-semibold whitespace-nowrap hover:bg-civic-2 transition-colors"
           >
             {lang === "en" ? "Pull my ballot →" : "Ver Boleta"}
           </button>
         </div>
+        {hasPlacesKey && (
+          <p className="text-[10px] text-ink-3 px-1 mt-2">
+            {lang === "es"
+              ? "Empieza a escribir y elige tu dirección del menú."
+              : "Start typing and choose your address from the dropdown."}
+          </p>
+        )}
       </div>
       {errorMessage && (
         <p

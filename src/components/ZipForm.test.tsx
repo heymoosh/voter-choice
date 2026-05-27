@@ -221,3 +221,64 @@ describe("ZipForm — FR-018: active error updates on language switch", () => {
     );
   });
 });
+
+// Mock the Google Places hook so the autocomplete hint paragraph renders
+// in jsdom (without this, hasPlacesKey is false in the test env and the
+// regression branch is never exercised).
+vi.mock("../lib/useGooglePlacesAutocomplete", async () => {
+  const actual = await vi.importActual<
+    typeof import("../lib/useGooglePlacesAutocomplete")
+  >("../lib/useGooglePlacesAutocomplete");
+  return {
+    ...actual,
+    getPlacesApiKey: () => "test-key",
+    useGooglePlacesAutocomplete: () => {},
+  };
+});
+
+describe("ZipForm — fix-2-live-bugs button height regression", () => {
+  // Live bug: "Pull my ballot →" button renders ~71px tall because the
+  // "Start typing and choose your address..." hint paragraph sits inside
+  // the same flex row as the button. With `align-items: stretch` (the
+  // flexbox default), the button gets stretched to match the input
+  // column's content height, dwarfing the input itself.
+  //
+  // The prototype (docs/design/2026-redesign/prototype/prototype-views.jsx
+  // .addr-card .row) contains ONLY the input + button. Hint copy lives
+  // outside `.row` as a sibling within the card.
+  //
+  // jsdom can't measure layout, so we test the DOM contract instead: the
+  // button's immediate flex-row parent must contain only the input column
+  // (or input + button siblings), and the hint paragraph must NOT be a
+  // descendant of that flex row.
+  it("autocomplete hint paragraph is not a descendant of the button's flex row", () => {
+    render(<ZipForm onSubmit={vi.fn()} />);
+    const button = screen.getByTestId("zip-submit");
+    const flexRow = button.parentElement;
+    expect(flexRow).not.toBeNull();
+    // The hint paragraph contains the literal phrase. It must live OUTSIDE
+    // the flex row so it doesn't stretch the row's height.
+    const hintInsideRow = Array.from(flexRow?.querySelectorAll("p") ?? []).find(
+      (p) =>
+        (p.textContent ?? "").match(
+          /start typing and choose|empieza a escribir/i,
+        ),
+    );
+    expect(hintInsideRow).toBeUndefined();
+  });
+
+  it("the autocomplete hint still renders, but as a sibling of the flex row inside the card", () => {
+    render(<ZipForm onSubmit={vi.fn()} />);
+    const button = screen.getByTestId("zip-submit");
+    const flexRow = button.parentElement!;
+    // The hint copy must still be on the page — we're moving it, not
+    // deleting it. So look for it outside the row but inside the card.
+    const card = flexRow.parentElement!;
+    const allHints = Array.from(card.querySelectorAll("p")).filter((p) =>
+      (p.textContent ?? "").match(
+        /start typing and choose|empieza a escribir/i,
+      ),
+    );
+    expect(allHints.length).toBeGreaterThan(0);
+  });
+});
