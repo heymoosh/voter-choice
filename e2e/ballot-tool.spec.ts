@@ -541,9 +541,29 @@ test.describe("Footer links", () => {
 // Per-state coverage — all 9 populated states + Wyoming fallback
 // ---------------------------------------------------------------------------
 
-// Texas (73301) — runoff gate should be visible (runoff upcoming, partyLocked=true)
+// Texas (73301) — runoff gate should be visible (runoff upcoming, partyLocked=true).
+//
+// `requiresRunoffGate` only fires when the next upcoming election in
+// src/data/states/TX.json is of type "primary" or "runoff". After the
+// 2026-05-26 TX runoff date passes, getUpcomingElection rolls forward to
+// the General (type "general"), the gate stops rendering, and this test
+// would fail purely due to the calendar. Self-skip in that window so the
+// test only runs while the assertion is still meaningful.
+//
+// See: src/components/BallotToolClient.tsx :: requiresRunoffGate /
+//      getUpcomingElection (uses getTodayInLatestUsZone — Hawaii midnight).
+const TX_RUNOFF_DATE = "2026-05-26";
 test.describe("State coverage — Texas runoff gate (73301)", () => {
   test("shows runoff gate for Texas address", async ({ page }) => {
+    // Compare YYYY-MM-DD strings against the runoff date so the skip
+    // tracks the same Hawaii-zone "today" the app uses.
+    const todayHi = new Date().toLocaleDateString("en-CA", {
+      timeZone: "Pacific/Honolulu",
+    });
+    test.skip(
+      todayHi > TX_RUNOFF_DATE,
+      `Texas runoff (${TX_RUNOFF_DATE}) is past — gate no longer renders.`,
+    );
     await page.goto("/");
     await fillZip(page, "73301");
     const gate = page.getByTestId("runoff-gate");
