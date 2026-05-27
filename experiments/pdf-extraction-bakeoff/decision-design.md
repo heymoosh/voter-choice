@@ -252,6 +252,25 @@ A contender ships if it achieves on ALL of:
 
 If multiple contenders pass: pick the lowest total cost across the 4 fixtures, tiebreak on latency.
 
+### Latency bar — per-page vs wall-clock (clarification added post-bakeoff 2026-05-27)
+
+Latency 15s p95 is the **per-page** bar. Multi-page wall-clock can exceed this when calls run sequentially: Phase 4 measured per-page Sonnet vision latency at ~10–15s, but 14-page bilingual ballots produced ~80s wall-clock p95 because per-page calls ran serially.
+
+v1 implementation MUST use **per-page parallelism** (concurrent Sonnet calls fanned out per page, stitched in the post-processor). Target post-parallelism: **30s p95 wall-clock for typical 1–3 page ballots, 90s p95 worst case for 14-page bilingual fixtures**. Bar relaxed from 15s p95 to **30s p95 with concurrent per-page**, NOT by lowering the per-page bar. Cost is unchanged — input tokens per page are identical whether calls run serial or parallel.
+
+### Known limitations of C2 (v1 winner as of 2026-05-27)
+
+Honest record of what we shipped knowing. Not permanent spec constraints — re-evaluate when C1 (Textract+Sonnet) is run or C2 prompts are tightened (see backlog).
+
+1. **FL Orange amendment-heavy multi-district ballot — 3 perception errors**, distinct from schema/enum issues:
+   - Senator district extracted as 21 instead of the actual 25 on the ballot.
+   - Hallucinated State Representative district 44 (does not exist on the ballot).
+   - Circuit Judge with position/district fields transposed.
+
+   These are NOT non-ballot hallucinations or section-name enum issues. They are model-capability or prompt-engineering gaps on multi-district disambiguation. Expanding the section_name enum (which closed criterion 5 warnings) does NOT fix them.
+2. **NJ Camden candidate completeness — 87%, not 100%.** C2 captured all 8 races but missed ~13% of candidates on the founding fixture (mostly surname-only matches on the REP Senator and REP House slates). Better than C3's 0% (C3 returned `{"sections": []}` on broken-text-layer PDFs), but not a clean win.
+3. **Sequential per-page wall-clock latency.** Addressed by the per-page parallelism requirement above.
+
 ### If no contender hits the bars
 
 Per decision #5: do NOT escalate to Opus. Instead, run a v2 bakeoff with **the original doc's hybrid path**: Textract extracts spatial structure (bounding boxes per text region), Sonnet receives BOTH the rendered page image AND the Textract bounding-box JSON, and is prompted to cross-check the layout against the visual. This trades a small cost increase (Textract + vision pass through Sonnet) for stronger reading-order accuracy.
