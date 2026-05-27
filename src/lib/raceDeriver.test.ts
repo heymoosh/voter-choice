@@ -39,18 +39,80 @@ describe("raceDeriver", () => {
       expect(classifyRaceSection("State Comptroller")).toBe("State");
     });
 
-    it("classifies propositions and measures", () => {
+    it("classifies plain propositions and measures", () => {
       expect(classifyRaceSection("Proposition 1")).toBe("Propositions");
-      expect(classifyRaceSection("Measure A")).toBe("Propositions");
-      expect(classifyRaceSection("Constitutional Amendment 5")).toBe(
-        "Propositions",
-      );
-      expect(classifyRaceSection("Ballot Question 3")).toBe("Propositions");
+      expect(classifyRaceSection("Prop. 5")).toBe("Propositions");
+      expect(classifyRaceSection("Ballot Measure A")).toBe("Propositions");
     });
 
-    it("falls back to Local for unknown offices", () => {
-      expect(classifyRaceSection("City Council District 1")).toBe("Local");
-      expect(classifyRaceSection("School Board")).toBe("Local");
+    it("classifies constitutional amendments into the dedicated bucket", () => {
+      // Pre-fix (legacy enum) these landed in "Propositions" via \bamendment\b.
+      // Post-fix the wider enum surfaces them in their own section so the
+      // workspace rail can header them under "Constitutional Amendments".
+      expect(classifyRaceSection("Constitutional Amendment 5")).toBe(
+        "Constitutional Amendments",
+      );
+      expect(classifyRaceSection("Constitutional Amendment No. 3")).toBe(
+        "Constitutional Amendments",
+      );
+    });
+
+    it("classifies county questions into the dedicated bucket", () => {
+      expect(classifyRaceSection("County Question 1")).toBe("County Questions");
+      expect(classifyRaceSection("County Charter Amendment 2")).toBe(
+        "County Questions",
+      );
+    });
+
+    it("classifies bond measures into the dedicated bucket", () => {
+      expect(classifyRaceSection("Bond Measure 4")).toBe("Bond Measures");
+      expect(classifyRaceSection("Bond Issue: School Renovation")).toBe(
+        "Bond Measures",
+      );
+    });
+
+    it("classifies judicial retention into the dedicated bucket", () => {
+      // Retention is checked BEFORE Judicial — a "Justice Smith retention"
+      // string matches both /justice/ and /retention/ regexes; specificity wins.
+      expect(classifyRaceSection("Justice Smith — Retention")).toBe(
+        "Judicial Retention",
+      );
+      expect(classifyRaceSection("Retain Judge Doe?")).toBe(
+        "Judicial Retention",
+      );
+      expect(classifyRaceSection("Merit Retention: Judge Lee")).toBe(
+        "Judicial Retention",
+      );
+    });
+
+    it("classifies judicial races", () => {
+      expect(classifyRaceSection("Circuit Court Judge")).toBe("Judicial");
+      expect(classifyRaceSection("Justice of the Supreme Court")).toBe(
+        "Judicial",
+      );
+      expect(classifyRaceSection("County Judge")).toBe("Judicial");
+      expect(classifyRaceSection("Magistrate")).toBe("Judicial");
+    });
+
+    it("classifies county-level offices", () => {
+      expect(classifyRaceSection("County Commissioner")).toBe("County");
+      expect(classifyRaceSection("Sheriff")).toBe("County");
+      expect(classifyRaceSection("District Attorney")).toBe("County");
+    });
+
+    it("classifies municipal offices", () => {
+      expect(classifyRaceSection("Mayor")).toBe("Municipal");
+      expect(classifyRaceSection("City Council District 1")).toBe("Municipal");
+      expect(classifyRaceSection("Alderman")).toBe("Municipal");
+      expect(classifyRaceSection("Township Committee")).toBe("Municipal");
+      expect(classifyRaceSection("School Board")).toBe("Municipal");
+      expect(classifyRaceSection("Board of Education")).toBe("Municipal");
+    });
+
+    it("falls back to Local for offices we still can't classify", () => {
+      expect(classifyRaceSection("Soil & Water Conservation Board")).toBe(
+        "Local",
+      );
     });
   });
 
@@ -131,7 +193,7 @@ describe("raceDeriver", () => {
       expect(races[0].decided).toBe(false);
     });
 
-    it("groups races by section in stable order (Federal → State → Propositions → Local)", () => {
+    it("groups races by section in canonical order (Federal → State → … → Municipal → Propositions)", () => {
       const races: Race[] = deriveRaces({
         contests: [
           {
@@ -162,21 +224,42 @@ describe("raceDeriver", () => {
       });
 
       const sections = races.map((r) => r.section);
-      expect(sections).toEqual(["Federal", "State", "Propositions", "Local"]);
+      // City Council → Municipal, Proposition 1 → Propositions. Section
+      // ordering follows SECTION_ORDER: Federal, State, …, Municipal, …,
+      // Propositions, ….
+      expect(sections).toEqual([
+        "Federal",
+        "State",
+        "Municipal",
+        "Propositions",
+      ]);
     });
 
-    it("preserves the contest label as the race label", () => {
+    it("normalizes the race label via normalizeRaceLabel", () => {
+      // Pre-fix the deriver concat'd "${office} — ${district}" verbatim, so
+      // verbose Civic labels ("U.S. Representative", "United States Senator")
+      // landed in the workspace rail unchanged. Post-fix the normalizer
+      // canonicalizes them: "U.S. House — CD-7" for federal, "U.S. Senate"
+      // for the senate.
       const races = deriveRaces({
         contests: [
           {
-            office: "U.S. House",
-            district: "TX-07",
+            office: "U.S. Representative",
+            district: "7",
+            type: "General",
+            candidates: [],
+          },
+          {
+            office: "United States Senator",
+            district: "",
             type: "General",
             candidates: [],
           },
         ],
       });
-      expect(races[0].label).toContain("U.S. House");
+      const labels = races.map((r) => r.label);
+      expect(labels).toContain("U.S. House — CD-7");
+      expect(labels).toContain("U.S. Senate");
     });
 
     // Real-fix coverage: the chat path's race-deep-dive builder needs the
