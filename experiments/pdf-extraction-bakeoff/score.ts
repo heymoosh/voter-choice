@@ -418,6 +418,15 @@ const SECTION_NAMES = new Set([
   "Municipal",
   "Judicial",
   "Propositions",
+  // Expanded post-bakeoff (2026-05-27) — see decision.md / decision-design.md.
+  // FL Orange and similar amendment-heavy ballots use these as natural section
+  // headers. Extractors emitting them are structurally correct; the original
+  // narrow enum was the schema bug.
+  "Constitutional Amendments",
+  "County Questions",
+  "Ballot Measures",
+  "Judicial Retention",
+  "Bond Measures",
 ]);
 
 const ELECTION_TYPES = new Set(["primary", "primary_runoff", "general", "special"]);

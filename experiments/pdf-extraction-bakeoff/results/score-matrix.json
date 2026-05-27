@@ -1,5 +1,5 @@
 {
-  "scored_at": "2026-05-27T17:47:30.975Z",
+  "scored_at": "2026-05-27T19:19:17.366Z",
   "rubric_version": "v1",
   "judgment_calls": [
     "Race-match key: (normalized_office, normalized_district, normalized_position, party_context). District/position are part of the key with nullable wildcard semantics so 'State Representative district 35' does not collide with district 37 while still allowing GT-with-district vs EX-with-null cases to match.",
@@ -809,19 +809,16 @@
           ]
         },
         "5_schema_compliance": {
-          "score": 1,
+          "score": 2,
           "valid": true,
-          "warnings": [
-            "sections[4].section_name not in enum: Constitutional Amendments",
-            "sections[5].section_name not in enum: County Questions"
-          ],
+          "warnings": [],
           "errors": []
         },
         "6_cost_usd": 0.14502,
         "7_latency_ms": 86807,
         "8_bilingual_handling": null
       },
-      "weighted_total": 9,
+      "weighted_total": 10.5,
       "max_possible_for_cell": 15
     },
     {
@@ -2680,9 +2677,9 @@
     },
     "02-sonnet-vision": {
       "fixtures_scored": 4,
-      "total_weighted_score": 56,
+      "total_weighted_score": 57.5,
       "max_possible_weighted_score": 69,
-      "score_pct": 81.16,
+      "score_pct": 83.33,
       "total_cost_usd": 0.310086,
       "mean_latency_ms": 46871,
       "p95_latency_ms": 82412

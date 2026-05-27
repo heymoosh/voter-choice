@@ -67,7 +67,7 @@ Both paths must produce the same JSON shape:
   },
   "sections": [
     {
-      "section_name": "Federal" | "State" | "County" | "Municipal" | "Judicial" | "Propositions",
+      "section_name": "Federal" | "State" | "County" | "Municipal" | "Judicial" | "Propositions" | "Constitutional Amendments" | "County Questions" | "Ballot Measures" | "Judicial Retention" | "Bond Measures",
       "races": [
         {
           "office": "string",
