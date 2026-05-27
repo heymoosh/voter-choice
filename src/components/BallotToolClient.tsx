@@ -35,6 +35,7 @@ import {
   removeByokKey,
 } from "../lib/anthropic-client-byok";
 import { buildHandoffPrompt } from "../lib/prompts/handoff";
+import { getTodayInLatestUsZone } from "../lib/electionToday";
 
 interface CivicCandidate {
   name: string;
@@ -141,7 +142,10 @@ function useBudgetCheck() {
 }
 
 function getUpcomingElection(state: StateElectionData) {
-  const today = new Date().toISOString().split("T")[0];
+  // Use Hawaii-zone "today" so an election doesn't drop out of "upcoming"
+  // until 00:00 HST — after every US polling location has closed. See
+  // src/lib/electionToday.ts for rationale.
+  const today = getTodayInLatestUsZone();
   return state.elections.find((e) => e.date >= today) ?? state.elections[0];
 }
 
@@ -1881,7 +1885,7 @@ export function BallotToolClient({
       return;
     }
 
-    const today = new Date().toISOString().split("T")[0];
+    const today = getTodayInLatestUsZone();
     const hasUpcoming = state.elections.some((e) => e.date >= today);
     if (!hasUpcoming) {
       setResult({ status: "no-election", state });
@@ -1900,7 +1904,7 @@ export function BallotToolClient({
       return;
     }
 
-    const today = new Date().toISOString().split("T")[0];
+    const today = getTodayInLatestUsZone();
     const hasUpcoming = state.elections.some((e) => e.date >= today);
     if (!hasUpcoming) {
       setResult({ status: "no-election", state });

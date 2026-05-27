@@ -6,6 +6,32 @@ Issues, monitoring gaps, data quality concerns, and enhancement ideas identified
 
 ---
 
+## Pre-Launch Must-Fix (lower before opening to real users)
+
+### [P0] Lower `CHAT_DAILY_SESSION_LIMIT` from 30 back to 10 before public launch
+**Status:** Open (flagged 2026-05-26) · **Owner:** TBD
+
+During pre-launch dogfooding the per-IP daily session cap was raised from 10 → 30 on Vercel Production env (`CHAT_DAILY_SESSION_LIMIT=30`) so power users and testers don't trip the limit while iterating. Before opening the app to real users this MUST be reduced back to 10 — leaving it at 30 in production:
+- Costs more per abuser (a malicious IP can burn 3× the API quota)
+- Surfaces a less-defensive default for the Phase 9 budget continuity flow
+- Was never the intended steady-state cap
+
+**Action when ready to launch:**
+```bash
+cd <worktree>
+# Remove the override (falls back to DEFAULT_DAILY_SESSION_LIMIT=10 in production)
+vercel env rm CHAT_DAILY_SESSION_LIMIT production
+# Trigger redeploy with an empty commit on launch/production
+git commit --allow-empty -m "chore(deploy): drop CHAT_DAILY_SESSION_LIMIT override → default 10"
+git push origin launch/production
+```
+
+**Verification:** after redeploy, `vercel env ls` should NOT list `CHAT_DAILY_SESSION_LIMIT` for Production. The default `process.env.NODE_ENV === "production" ? 10 : 20` in `src/lib/server/rate-limit.ts:4-5` then applies.
+
+**Why we raised it temporarily:** PR #45 fixed a sessionId regeneration bug (each page reload was consuming a fresh session slot). With that fix landed, a single user's session correctly counts as 1. But during the launch ramp it was practical to give dogfooders headroom rather than tune the cap precisely.
+
+---
+
 ## Data Quality
 
 ### [P1] Issue taxonomy is too broad for precise alignment matching
