@@ -32,6 +32,70 @@ git push origin launch/production
 
 ---
 
+### [P0] Run Contender 1 (Textract + Sonnet) on the bakeoff fixtures before locking C2 as the long-term extraction architecture
+**Status:** Open (flagged 2026-05-27 from `experiment/pdf-extraction-bakeoff` decision)
+
+The PDF extraction bakeoff (Phases 0–6 on `experiment/pdf-extraction-bakeoff`) named three contenders. **Contender 1 (AWS Textract Forms + Claude Sonnet post-processor) was skipped in Phase 4 due to absent AWS credentials** (no `~/.aws/credentials`, no `AWS_*` env vars, no SSO cache). The bakeoff selected **Contender 2 (Sonnet vision direct)** as v1 winner with documented caveats:
+- C2 missed ~13% of NJ Camden candidates (87%, not a clean win).
+- C2 has 3 perception errors on FL Orange multi-district content (wrong Senator district 21 vs 25, hallucinated State Rep district 44, Circuit Judge with position/district transposed).
+
+Textract is purpose-built for forms — it may handle BOTH the NJ broken-text layer (form-native extraction) AND the FL multi-district perception errors (designed for structured tabular content). If C1 results justify, the v2 architecture may be **Textract-first with C2 as fallback**, not the other way around.
+
+**Action when AWS credentials are available:**
+1. Provision an AWS account / IAM user with Textract permissions (Forms + Tables API).
+2. Set `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` / `AWS_REGION` in the `pdf-bakeoff` worktree env.
+3. Run the existing C1 runner against the 4 fixtures (`nj-camden-2026-primary.pdf`, `tx-harris-2026-dem-runoff.pdf`, `tx-hidalgo-2026-bilingual.pdf`, `fl-orange-2026-composite.pdf`).
+4. Re-run `npx tsx experiments/pdf-extraction-bakeoff/score.ts` to score the C1 cells.
+5. If C1 outperforms C2 on FL Orange AND ties/wins on NJ Camden, file a v2 architecture PR. Otherwise, C2 stays.
+
+**Does NOT block v1 ship of C2.** This is a "lock the long-term architecture" gate, not a "ship the extraction path" gate.
+
+**References:**
+- Bakeoff branch: `experiment/pdf-extraction-bakeoff`
+- Decision doc: `experiments/pdf-extraction-bakeoff/decision.md` (winner: C2 with caveats)
+- Design spec: `experiments/pdf-extraction-bakeoff/decision-design.md`
+- Skipped C1 runner: `experiments/pdf-extraction-bakeoff/results/01-textract-sonnet/SKIPPED.md` on the bakeoff branch
+
+---
+
+### [P1] C2 prompt engineering for multi-district disambiguation (post-launch)
+**Status:** Open (flagged 2026-05-27 from `experiment/pdf-extraction-bakeoff` decision)
+
+On the FL Orange fixture, Contender 2 (Sonnet vision direct) produced three perception errors on multi-district content:
+- Senator district extracted as 21 instead of the actual 25 on the ballot.
+- Hallucinated State Representative district 44 (does not exist on the ballot).
+- Circuit Judge with position and district fields transposed.
+
+These are NOT non-ballot hallucinations and NOT schema/enum issues. They are model-capability or prompt-engineering gaps on disambiguating multi-district ballot content. The 2026-05-27 section_name enum expansion did NOT fix them.
+
+**Likely fixes to try once C2 is wired into production and we can iterate against real ballots:**
+- Add explicit prompt constraints for multi-district handling. Example: "If you see multiple district numbers near the same office label (e.g., '21 vs 25'), use the first one encountered after the office label."
+- Add a per-race confidence signal to the schema and surface a "low-confidence extraction" warning to the voter when an office has a district/position combination that the model wasn't sure about.
+- Test ablations: smaller crop windows per page, explicit page-region prompts, post-extraction district validation against a per-jurisdiction allowlist.
+
+**References:**
+- Bakeoff decision: `experiments/pdf-extraction-bakeoff/decision.md` § "Honest caveats" caveat 1
+- Bakeoff design: `experiments/pdf-extraction-bakeoff/decision-design.md` § "Known limitations of C2 (v1 winner as of 2026-05-27)"
+
+---
+
+### [idea / P2] Add Contender 3 (docling) as opt-in second path for amendment-heavy ballots
+**Status:** Open (flagged 2026-05-27 from `experiment/pdf-extraction-bakeoff` decision)
+
+Bakeoff data shows docling + Sonnet post-processor (Contender 3) outperformed C2 on the FL Orange composite fixture (15/15 weighted vs 10.5/15). FL Orange is dominated by long-form prose office names (judicial retentions, constitutional amendments) and multi-district races — exactly the content where C3 captured 100% race coverage at 100% candidate completeness vs C2's 96%/94% with 3 perception errors.
+
+C3 was disqualified as v1 winner because it returned `{"sections": []}` on the NJ Camden broken-text-layer fixture (the bakeoff's motivating case). It cannot OCR; the spec dropped Tesseract preprocessing. So C3 is not a primary path candidate.
+
+**Why this matters in late 2026:** November 2026 general-election ballots in CA, FL, TX, and other states will surface a much higher fraction of proposition-heavy / amendment-heavy ballots than the spring primaries. If real-world telemetry shows C2's FL-Orange-shape failure mode recurring, C3 becomes a strong opt-in second path: route amendment-heavy ballots to C3, broken-text-layer ballots to C2.
+
+**Trigger to revisit:** when the production extraction telemetry surfaces ≥5% of ballots with the FL-Orange failure pattern (perception errors on multi-district content), or before the November 2026 general-election rollout, whichever comes first.
+
+**References:**
+- Bakeoff decision: `experiments/pdf-extraction-bakeoff/decision.md` § "Future levers"
+- C3 runner + results: `experiments/pdf-extraction-bakeoff/runners/03-docling-sonnet/` and `experiments/pdf-extraction-bakeoff/results/03-docling-sonnet/` on the bakeoff branch.
+
+---
+
 ## Data Quality
 
 ### [P1] Issue taxonomy is too broad for precise alignment matching
