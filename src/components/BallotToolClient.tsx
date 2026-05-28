@@ -581,11 +581,18 @@ export function ElectionResult({
   //   1. Civic contests — if Google Civic returned a contest list, that's
   //      the most trusted source (validated upstream).
   //   2. Structured extraction — if a PDF upload landed and produced a
-  //      `BallotExtraction`, route THAT through `extractionToRaces` with
-  //      the voter's `ballotTag` driving the party filter. This is the
-  //      live-bug fix path.
-  //   3. Pasted text — hand-pasted single-line ballots fall through here.
-  //      Preserved so the legacy paste UX still populates the rail.
+  //      `BallotExtraction` WITH populated sections, route THAT through
+  //      `extractionToRaces`. AUTHORITATIVE — never falls through to
+  //      the text parser. The text in `userSampleBallotText` for this
+  //      path was derived from the same JSON (via `ballotJsonToText`),
+  //      so re-parsing it would only re-introduce metadata-leakage
+  //      bugs (P0 Harris County TX fix: pre-fix the fall-through
+  //      caused the `Election:` and `Ballot style:` header lines in
+  //      the generated text to be parsed as races, surfacing as the
+  //      only two "races" on the rail).
+  //   3. Pasted text — hand-pasted single-line ballots WITHOUT a
+  //      structured extraction fall through here. Preserved so the
+  //      legacy paste UX still populates the rail.
   //   4. Final fallback to `deriveRaces(initialPollingData)` (which yields
   //      an empty array when no contests are present).
   //
@@ -597,12 +604,16 @@ export function ElectionResult({
     if (civicContests.length > 0) {
       return deriveRaces(initialPollingData);
     }
-    if (extractedBallot) {
-      const extracted = extractionToRaces(
+    // Structured extraction with at least one section is authoritative.
+    // Even if the party filter wipes everything (voter picked the wrong
+    // lane), return the empty result — DO NOT fall through to the text
+    // parser. The text was derived from the same JSON and falling
+    // through caused the P0 Harris County TX metadata-leakage bug.
+    if (extractedBallot && (extractedBallot.sections?.length ?? 0) > 0) {
+      return extractionToRaces(
         extractedBallot,
         ballotContext?.ballotTag ?? null,
       );
-      if (extracted.length > 0) return extracted;
     }
     const pastedContests = parsedBallotToContests(userSampleBallotText);
     if (pastedContests.length > 0) {

@@ -1803,6 +1803,145 @@ describe("ElectionResult — structured ballot extraction populates all eligible
     // 1 Senator REP + 1 Commissioner REP = 2.
     expect(screen.getByTestId("ballot-pane-header")).toHaveTextContent("0/2");
   });
+
+  /**
+   * P0 Harris County TX bug — the workspace was showing "Election" and
+   * "Ballot style" as the ONLY two races. Reproduction:
+   *
+   *   1. User uploads a DEM runoff PDF; /api/extract-ballot returns
+   *      structured JSON with `party_context: "Democratic Primary"`
+   *      on every race AND populated election_metadata.
+   *   2. BallotLookupNeeded.handlePdfFile feeds the JSON to
+   *      `ballotJsonToText` which produces a textarea blob that LEADS
+   *      with `Election: <jurisdiction> — <date> — <type>` and
+   *      `Ballot style: <style>` (two lines that look like
+   *      `OFFICE: <value>` to parseBallotContent's race regex).
+   *   3. User clicks "Use this ballot". Parent stores both
+   *      `userSampleBallotText` AND `extractedBallot`.
+   *   4. Pre-fix, `extractionToRaces` filtered EVERY race because
+   *      ballotTag "DEM-runoff" wasn't in its (DEM-primary/REP-primary
+   *      /GENERAL) recognized set, returning [].
+   *   5. The races useMemo fell through to
+   *      `parsedBallotToContests(userSampleBallotText)` — which parsed
+   *      "Election:" and "Ballot style:" as race rows. The rail
+   *      rendered those as the only two races, the deep-dive AI got
+   *      `activeRace.label === "Election"` and asked "what specific
+   *      race are you deciding on?".
+   *
+   * Post-fix, ballotTag "DEM-runoff" recognizes "Democratic Primary"
+   * races and the rail shows 6 real races. (Defensive: even if a
+   * future regression breaks the filter AND falls through, the
+   * metadata-leakage blocklist in extractionToRaces would still drop
+   * the "Election"/"Ballot style" rows — but the primary fix is the
+   * filter mapping itself.)
+   */
+  it("Harris TX DEM-runoff: party_context 'Democratic Primary' + ballotTag 'DEM-runoff' shows real races, NOT 'Election'/'Ballot style'", () => {
+    const harrisExtraction = {
+      election_metadata: {
+        election_date: "2026-05-26",
+        election_type: "primary_runoff" as const,
+        jurisdiction: "Harris County, Texas",
+        ballot_style: "Precinct 0865-DEM",
+      },
+      sections: [
+        {
+          section_name: "State",
+          races: [
+            {
+              office: "Lieutenant Governor",
+              vote_for_n: 1,
+              party_context: "Democratic Primary" as const,
+              candidates: [
+                {
+                  name: "Vikki Goodwin",
+                  party: "Democratic",
+                  placeholder_reason: null,
+                },
+              ],
+            },
+            {
+              office: "Attorney General",
+              vote_for_n: 1,
+              party_context: "Democratic Primary" as const,
+              candidates: [
+                {
+                  name: "Nathan Johnson",
+                  party: "Democratic",
+                  placeholder_reason: null,
+                },
+              ],
+            },
+          ],
+        },
+        {
+          section_name: "County",
+          races: [
+            {
+              office: "County Judge",
+              vote_for_n: 1,
+              party_context: "Democratic Primary" as const,
+              candidates: [
+                {
+                  name: "Letitia Plummer",
+                  party: "Democratic",
+                  placeholder_reason: null,
+                },
+              ],
+            },
+          ],
+        },
+      ],
+      _meta: {
+        extraction_path: "vision" as const,
+        pages: 1,
+        latency_ms: 30000,
+        cost_usd: 0.1,
+      },
+    };
+    // The exact text the BallotLookupNeeded → ballotJsonToText pipeline
+    // would feed into userSampleBallotText for this extraction. Pre-fix,
+    // this is what got parsed as "Election:" + "Ballot style:" races.
+    const leakyText = [
+      "Election: Harris County, Texas — 2026-05-26 — primary_runoff",
+      "",
+      "Ballot style: Precinct 0865-DEM",
+      "",
+      "## State",
+      "- Lieutenant Governor — [Democratic Primary]",
+      "  - Vikki Goodwin (Democratic)",
+      "- Attorney General — [Democratic Primary]",
+      "  - Nathan Johnson (Democratic)",
+      "",
+      "## County",
+      "- County Judge — [Democratic Primary]",
+      "  - Letitia Plummer (Democratic)",
+    ].join("\n");
+    render(
+      <LanguageProvider>
+        <ElectionResult
+          state={txState}
+          zipCode="77002"
+          lang="en"
+          initialPollingData={null}
+          promptFleetV2Enabled={true}
+          initialLockedThemes={lockedThemes}
+          initialExtractedBallot={harrisExtraction}
+          initialUserSampleBallotText={leakyText}
+          initialBallotContext={{
+            state: "TX",
+            ballotTag: "DEM-runoff",
+            electionDate: "2026-05-26",
+            electionLabel: "2026 Texas Primary Runoff",
+          }}
+        />
+      </LanguageProvider>,
+    );
+    // 3 real DEM races — Lt Gov, AG, County Judge.
+    expect(screen.getByTestId("ballot-pane-header")).toHaveTextContent("0/3");
+    // The two metadata-shaped pseudo-races must NOT appear in the rail.
+    expect(screen.queryByText("Election")).not.toBeInTheDocument();
+    expect(screen.queryByText("Ballot style")).not.toBeInTheDocument();
+  });
 });
 
 /* ── P0 #3 (live audit): localStorage cross-address purge + restart wipe ─ */

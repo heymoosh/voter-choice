@@ -434,4 +434,193 @@ describe("extractionToRaces", () => {
       expect(extractionToRaces(ballot, "DEM-primary")).toEqual([]);
     });
   });
+
+  /**
+   * P0 live-prod bug — Harris County TX. The workspace was showing
+   * "Election" and "Ballot style" as the only two races, because
+   * (a) the model returned `party_context: "Democratic Primary"` for a
+   * DEM runoff ballot (a defensible interpretation), (b) the party
+   * filter only mapped DEM-primary / REP-primary / GENERAL, NOT
+   * DEM-runoff / REP-runoff / UNSURE — so every real race got dropped
+   * and the BallotToolClient races useMemo fell through to the text
+   * parser which parsed `Election:` and `Ballot style:` lines emitted
+   * by `ballotJsonToText` as races.
+   */
+  describe("runoff ballotTag variants (P0 Harris County TX bug)", () => {
+    /**
+     * Harris-shaped fixture mirroring the production extraction. Each
+     * race carries party_context: "Democratic Primary" because the
+     * extractor reasonably labeled a DEM primary runoff ballot that
+     * way (vs. the bake-off ground truth which uses null).
+     */
+    function harrisDemRunoffFixture(): BallotExtraction {
+      return {
+        election_metadata: {
+          election_date: "2026-05-26",
+          election_type: "primary_runoff",
+          jurisdiction: "Harris County, Texas",
+          ballot_style: "Precinct 0865-DEM",
+        },
+        sections: [
+          {
+            section_name: "State",
+            races: [
+              {
+                office: "Lieutenant Governor",
+                vote_for_n: 1,
+                party_context: "Democratic Primary",
+                candidates: [
+                  {
+                    name: "Vikki Goodwin",
+                    party: "Democratic",
+                    placeholder_reason: null,
+                  },
+                ],
+              },
+              {
+                office: "Attorney General",
+                vote_for_n: 1,
+                party_context: "Democratic Primary",
+                candidates: [
+                  {
+                    name: "Nathan Johnson",
+                    party: "Democratic",
+                    placeholder_reason: null,
+                  },
+                ],
+              },
+            ],
+          },
+          {
+            section_name: "County",
+            races: [
+              {
+                office: "County Judge",
+                vote_for_n: 1,
+                party_context: "Democratic Primary",
+                candidates: [
+                  {
+                    name: "Letitia Plummer",
+                    party: "Democratic",
+                    placeholder_reason: null,
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+        _meta: {
+          extraction_path: "vision",
+          pages: 1,
+          latency_ms: 30000,
+          cost_usd: 0.1,
+        },
+      };
+    }
+
+    it("ballotTag 'DEM-runoff' includes Democratic Primary races", () => {
+      const races = extractionToRaces(harrisDemRunoffFixture(), "DEM-runoff");
+      expect(races).toHaveLength(3);
+      const labels = races.map((r) => r.label);
+      // Label normalization collapses "Lieutenant Governor" → "Lt. Governor".
+      expect(
+        labels.some((l) => /Lt\.?\s*Governor|Lieutenant Governor/i.test(l)),
+      ).toBe(true);
+      expect(labels).toContain("Attorney General");
+      expect(labels).toContain("County Judge");
+    });
+
+    it("ballotTag 'DEM-runoff-open' (skipped primary, picking DEM lane) includes Democratic Primary races", () => {
+      const races = extractionToRaces(
+        harrisDemRunoffFixture(),
+        "DEM-runoff-open",
+      );
+      expect(races).toHaveLength(3);
+    });
+
+    it("ballotTag 'REP-runoff' filters out Democratic Primary races (no REP lane on this ballot)", () => {
+      const races = extractionToRaces(harrisDemRunoffFixture(), "REP-runoff");
+      // All races are DEM-only on this DEM runoff ballot; REP filter drops them.
+      expect(races).toHaveLength(0);
+    });
+
+    it("ballotTag 'UNSURE' (user can't determine lane) shows BOTH DEM and REP races", () => {
+      // Mixed-party fixture so we can prove the UNSURE pass-through.
+      const mixed = njCamdenDemRepFixture();
+      const races = extractionToRaces(mixed, "UNSURE");
+      // 8 total races (4 DEM + 3 REP + 2 universal in the fixture? Actually:
+      // 2 DEM Senator/House + 2 REP Senator/House + 1 DEM + 1 REP commish + 2 DEM committee = 8)
+      // UNSURE should not filter, so all 8 are visible.
+      expect(races).toHaveLength(8);
+    });
+  });
+
+  /**
+   * Defensive guard — the model output COULD include literal "Election"
+   * / "Ballot style" / "Date" / "Jurisdiction" office strings (extracted
+   * metadata leakage at the prompt layer). The task spec explicitly
+   * asks for a metadata-blocklist guard so these never reach the
+   * workspace rail even when the model produces them.
+   */
+  describe("metadata-leakage blocklist (P0 defensive guard)", () => {
+    it("filters out races whose office is a generic metadata field (case-insensitive)", () => {
+      const ballot: BallotExtraction = {
+        election_metadata: META,
+        sections: [
+          {
+            section_name: "State",
+            races: [
+              {
+                office: "Election",
+                vote_for_n: 1,
+                party_context: null,
+                candidates: [],
+              },
+              {
+                office: "Ballot style",
+                vote_for_n: 1,
+                party_context: null,
+                candidates: [],
+              },
+              {
+                office: "ELECTION",
+                vote_for_n: 1,
+                party_context: null,
+                candidates: [],
+              },
+              {
+                office: " Date ",
+                vote_for_n: 1,
+                party_context: null,
+                candidates: [],
+              },
+              {
+                office: "Jurisdiction",
+                vote_for_n: 1,
+                party_context: null,
+                candidates: [],
+              },
+              {
+                office: "Precinct",
+                vote_for_n: 1,
+                party_context: null,
+                candidates: [],
+              },
+              // A real race that must survive.
+              {
+                office: "U.S. Senator",
+                vote_for_n: 1,
+                party_context: null,
+                candidates: [],
+              },
+            ],
+          },
+        ],
+        _meta: njCamdenDemRepFixture()._meta,
+      };
+      const races = extractionToRaces(ballot, "GENERAL");
+      expect(races).toHaveLength(1);
+      expect(races[0].label).toBe("U.S. Senate");
+    });
+  });
 });

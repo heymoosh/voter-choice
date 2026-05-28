@@ -85,8 +85,16 @@ function pdfBytesHash(buffer: Buffer): string {
   return createHash("sha256").update(buffer).digest("hex");
 }
 
+// Cache key version. Bumped to v2 (2026-05-28) to invalidate every
+// pre-fix cache entry after the P0 Harris County TX metadata-leakage
+// fix. Reusable: any future incident where the extraction shape could
+// be quietly malformed (model regression, schema migration, etc.)
+// should bump this counter to evict stale entries rather than patch
+// validation onto reads.
+const EXTRACTION_CACHE_VERSION = "v2";
+
 function extractionCacheKey(hash: string): string {
-  return `voter-choice:extraction:${hash}`;
+  return `voter-choice:extraction:${EXTRACTION_CACHE_VERSION}:${hash}`;
 }
 
 /**
