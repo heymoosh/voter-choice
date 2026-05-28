@@ -23,6 +23,78 @@ const META: BallotExtraction["election_metadata"] = {
 };
 
 /**
+ * Harris-shaped fixture mirroring the production extraction. Each race
+ * carries party_context: "Democratic Primary" because the extractor
+ * reasonably labels a DEM primary runoff ballot that way (vs. the
+ * bake-off ground truth which uses null). Hoisted to module scope so
+ * both the runoff-tag block and the Option-B inference block can use it.
+ */
+function harrisDemRunoffFixture(): BallotExtraction {
+  return {
+    election_metadata: {
+      election_date: "2026-05-26",
+      election_type: "primary_runoff",
+      jurisdiction: "Harris County, Texas",
+      ballot_style: "Precinct 0865-DEM",
+    },
+    sections: [
+      {
+        section_name: "State",
+        races: [
+          {
+            office: "Lieutenant Governor",
+            vote_for_n: 1,
+            party_context: "Democratic Primary",
+            candidates: [
+              {
+                name: "Vikki Goodwin",
+                party: "Democratic",
+                placeholder_reason: null,
+              },
+            ],
+          },
+          {
+            office: "Attorney General",
+            vote_for_n: 1,
+            party_context: "Democratic Primary",
+            candidates: [
+              {
+                name: "Nathan Johnson",
+                party: "Democratic",
+                placeholder_reason: null,
+              },
+            ],
+          },
+        ],
+      },
+      {
+        section_name: "County",
+        races: [
+          {
+            office: "County Judge",
+            vote_for_n: 1,
+            party_context: "Democratic Primary",
+            candidates: [
+              {
+                name: "Letitia Plummer",
+                party: "Democratic",
+                placeholder_reason: null,
+              },
+            ],
+          },
+        ],
+      },
+    ],
+    _meta: {
+      extraction_path: "vision",
+      pages: 1,
+      latency_ms: 30000,
+      cost_usd: 0.1,
+    },
+  };
+}
+
+/**
  * NJ Camden 2026 primary fixture — the live bug fixture. 8 races split
  * across Federal / County / Municipal sections, with both DEM and REP
  * primary variants for every partisan race.
@@ -209,8 +281,10 @@ describe("extractionToRaces", () => {
   });
 
   describe("unaffiliated / registered_other voter (ballotTag: GENERAL or unaffiliated/null)", () => {
-    it("for ballotTag null: only includes universal (null party_context) races", () => {
-      // Build a ballot with a non-partisan race so we can prove filtering works.
+    it("for ballotTag null on a multi-party ballot: shows everything (ambiguous lane → fail open)", () => {
+      // P0 just-passed-election fix (Option B): when ballotTag is null
+      // and the extracted ballot carries MULTIPLE party_contexts, we
+      // can't infer a lane — pass all races through rather than show 0.
       const ballot: BallotExtraction = {
         election_metadata: META,
         sections: [
@@ -230,9 +304,12 @@ describe("extractionToRaces", () => {
         _meta: njCamdenDemRepFixture()._meta,
       };
       const races = extractionToRaces(ballot, null);
-      // Only the non-partisan judicial retention race should appear.
-      expect(races).toHaveLength(1);
-      expect(races[0].label).toContain("Justice Smith");
+      // 1 judicial retention + 8 NJ Camden = 9. Better to show too much
+      // than 0 races (the pre-fix behavior dropped the user into a
+      // broken workspace with no contests).
+      expect(races).toHaveLength(9);
+      const labels = races.map((r) => r.label);
+      expect(labels).toContain("Justice Smith retention");
     });
 
     it("for ballotTag 'GENERAL': returns ALL races regardless of party_context", () => {
@@ -447,77 +524,6 @@ describe("extractionToRaces", () => {
    * by `ballotJsonToText` as races.
    */
   describe("runoff ballotTag variants (P0 Harris County TX bug)", () => {
-    /**
-     * Harris-shaped fixture mirroring the production extraction. Each
-     * race carries party_context: "Democratic Primary" because the
-     * extractor reasonably labeled a DEM primary runoff ballot that
-     * way (vs. the bake-off ground truth which uses null).
-     */
-    function harrisDemRunoffFixture(): BallotExtraction {
-      return {
-        election_metadata: {
-          election_date: "2026-05-26",
-          election_type: "primary_runoff",
-          jurisdiction: "Harris County, Texas",
-          ballot_style: "Precinct 0865-DEM",
-        },
-        sections: [
-          {
-            section_name: "State",
-            races: [
-              {
-                office: "Lieutenant Governor",
-                vote_for_n: 1,
-                party_context: "Democratic Primary",
-                candidates: [
-                  {
-                    name: "Vikki Goodwin",
-                    party: "Democratic",
-                    placeholder_reason: null,
-                  },
-                ],
-              },
-              {
-                office: "Attorney General",
-                vote_for_n: 1,
-                party_context: "Democratic Primary",
-                candidates: [
-                  {
-                    name: "Nathan Johnson",
-                    party: "Democratic",
-                    placeholder_reason: null,
-                  },
-                ],
-              },
-            ],
-          },
-          {
-            section_name: "County",
-            races: [
-              {
-                office: "County Judge",
-                vote_for_n: 1,
-                party_context: "Democratic Primary",
-                candidates: [
-                  {
-                    name: "Letitia Plummer",
-                    party: "Democratic",
-                    placeholder_reason: null,
-                  },
-                ],
-              },
-            ],
-          },
-        ],
-        _meta: {
-          extraction_path: "vision",
-          pages: 1,
-          latency_ms: 30000,
-          cost_usd: 0.1,
-        },
-      };
-    }
-
     it("ballotTag 'DEM-runoff' includes Democratic Primary races", () => {
       const races = extractionToRaces(harrisDemRunoffFixture(), "DEM-runoff");
       expect(races).toHaveLength(3);
@@ -552,6 +558,158 @@ describe("extractionToRaces", () => {
       // 2 DEM Senator/House + 2 REP Senator/House + 1 DEM + 1 REP commish + 2 DEM committee = 8)
       // UNSURE should not filter, so all 8 are visible.
       expect(races).toHaveLength(8);
+    });
+  });
+
+  /**
+   * P0 just-passed-election bug — TX Harris DEM runoff uploaded 2 days
+   * AFTER the May 26 runoff. The just-passed runoff is no longer the
+   * "upcoming election" (now November general), so PartyGate doesn't
+   * fire and `ballotContext` stays null. Pre-fix the party filter
+   * dropped every race because ballotTag was null on a partisan ballot.
+   *
+   * Option B: when ballotContext is null, infer the lane from the
+   * extracted ballot's `party_context` values.
+   *   - All races share one party_context → single-party ballot → infer
+   *     that lane and filter on it.
+   *   - All races have null party_context → general election content →
+   *     pass everything through.
+   *   - Mixed party_contexts → ambiguous (NJ-shape sample) → fail open
+   *     (pass all races). Better too much than too little.
+   */
+  describe("ballotContext null — Option B lane inference from extraction", () => {
+    it("TX Harris DEM runoff (2 days past, ballotContext null): infers DEM lane → 3 races visible", () => {
+      // The canary test for the live-prod bug. Same Harris fixture as
+      // the runoff-tag tests above, but ballotTag is null (because the
+      // upcoming election is now the November general and PartyGate
+      // didn't fire). Inference should kick in and surface all 3
+      // Democratic Primary races.
+      const races = extractionToRaces(harrisDemRunoffFixture(), null);
+      expect(races).toHaveLength(3);
+      const labels = races.map((r) => r.label);
+      expect(
+        labels.some((l) => /Lt\.?\s*Governor|Lieutenant Governor/i.test(l)),
+      ).toBe(true);
+      expect(labels).toContain("Attorney General");
+      expect(labels).toContain("County Judge");
+    });
+
+    it("NJ-shape multi-party ballot (ballotContext null): infers ALL lane → all races visible", () => {
+      const races = extractionToRaces(njCamdenDemRepFixture(), null);
+      // 4 DEM + 2 REP + 2 DEM county committee = 8.
+      expect(races).toHaveLength(8);
+      const names = races.flatMap((r) => r.candidates.map((c) => c.name));
+      // Both parties appear — fail-open semantics.
+      expect(names).toContain("Cory Booker");
+      expect(names).toContain("John Bramnick");
+    });
+
+    it("general-election ballot (all party_context null, ballotContext null): infers ALL lane → all races visible", () => {
+      const generalBallot: BallotExtraction = {
+        election_metadata: {
+          election_date: "2026-11-03",
+          election_type: "general",
+          jurisdiction: "Harris County, Texas",
+        },
+        sections: [
+          {
+            section_name: "Federal",
+            races: [
+              {
+                office: "U.S. Senator",
+                vote_for_n: 1,
+                party_context: null,
+                candidates: [
+                  { name: "Alice", party: "D", placeholder_reason: null },
+                  { name: "Bob", party: "R", placeholder_reason: null },
+                ],
+              },
+            ],
+          },
+          {
+            section_name: "State",
+            races: [
+              {
+                office: "Governor",
+                vote_for_n: 1,
+                party_context: null,
+                candidates: [
+                  { name: "Carol", party: "D", placeholder_reason: null },
+                ],
+              },
+            ],
+          },
+        ],
+        _meta: {
+          extraction_path: "vision" as const,
+          pages: 1,
+          latency_ms: 0,
+          cost_usd: 0,
+        },
+      };
+      const races = extractionToRaces(generalBallot, null);
+      expect(races).toHaveLength(2);
+    });
+
+    it("single-REP-party ballot (ballotContext null): infers REP lane, no DEM leakage", () => {
+      const repOnlyBallot: BallotExtraction = {
+        election_metadata: {
+          election_date: "2026-05-26",
+          election_type: "primary_runoff",
+          jurisdiction: "Synthetic County, TX",
+        },
+        sections: [
+          {
+            section_name: "State",
+            races: [
+              {
+                office: "Lieutenant Governor",
+                vote_for_n: 1,
+                party_context: "Republican Primary",
+                candidates: [
+                  {
+                    name: "Greg",
+                    party: "Republican",
+                    placeholder_reason: null,
+                  },
+                ],
+              },
+              {
+                office: "Attorney General",
+                vote_for_n: 1,
+                party_context: "Republican Primary",
+                candidates: [
+                  {
+                    name: "Henry",
+                    party: "Republican",
+                    placeholder_reason: null,
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+        _meta: {
+          extraction_path: "vision" as const,
+          pages: 1,
+          latency_ms: 0,
+          cost_usd: 0,
+        },
+      };
+      const races = extractionToRaces(repOnlyBallot, null);
+      expect(races).toHaveLength(2);
+      const names = races.flatMap((r) => r.candidates.map((c) => c.name));
+      expect(names).toContain("Greg");
+      expect(names).toContain("Henry");
+    });
+
+    it("TX Harris DEM runoff with ballotContext set (DEM-runoff): existing PR #62 filter still works (regression guard)", () => {
+      // Regression guard: when ballotContext IS set (PartyGate fired
+      // during the runoff window), the existing tag-mapping path
+      // (PR #62) must still produce the same 3 races. Option B
+      // inference only kicks in when ballotContext is null.
+      const races = extractionToRaces(harrisDemRunoffFixture(), "DEM-runoff");
+      expect(races).toHaveLength(3);
     });
   });
 
