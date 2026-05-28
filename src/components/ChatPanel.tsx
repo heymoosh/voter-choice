@@ -38,6 +38,7 @@ import { shouldSuggestAmend } from "../lib/chat-catch-heuristic";
 import type { SerializableBallotContext } from "../lib/state-rules/ballot-context";
 import { hasByokKey, streamWithByok } from "../lib/anthropic-client-byok";
 import { prependSafetyHeader } from "../lib/prompts/safety-header";
+import { normalizeCandidateName } from "../lib/normalizeCandidateName";
 import {
   parseValuesTagRequestBlock,
   stripValuesTagRequestBlocks,
@@ -62,6 +63,15 @@ import { getTodayInLatestUsZone } from "../lib/electionToday";
 interface ChatMessage {
   role: "user" | "assistant";
   content: string;
+  /**
+   * P0 #1 (live audit) — when true, the message is part of the conversation
+   * payload sent to /api/chat (so the model sees it as context) but is NOT
+   * rendered in the visible message list. Used by the workspace auto-fire
+   * effect to push a synthetic kickoff user message ("Introduce this race
+   * and what's at stake for me.") without showing it to the voter. The
+   * model's response streams in as the first VISIBLE bubble.
+   */
+  hidden?: boolean;
 }
 
 /**
@@ -221,6 +231,17 @@ export interface WorkspaceModeProps {
   onChatCatchAccept?: () => void;
   /** Fired when the user dismisses the chat-catch chip. */
   onChatCatchDismiss?: () => void;
+  /**
+   * P0 #1 (live audit) — when true, ChatPanel auto-fires a synthetic
+   * "Introduce this race…" message on mount so the model streams a
+   * context-aware greeting before the voter speaks. The synthetic user
+   * message is `hidden`, so only the AI bubble renders.
+   *
+   * Defaults to false — existing tests and any future caller that wants the
+   * legacy "wait for user to type" behavior stays opt-out. Production
+   * callers (BallotToolClient workspace) pass true.
+   */
+  autoFireRaceIntro?: boolean;
   /* ── PR3 opt-in re-score offer ──────────────────────────── */
   /**
    * When set, ChatPanel renders an `AmendRescoreOffer` inline asking the
@@ -1583,9 +1604,15 @@ function WorkspaceChat({
 
   // Context-aware suggestion chips. Minimal templating per packet §22 —
   // Phase 4 will replace these with candidate-specific options when the
-  // real cards land.
-  const firstCandidate = activeRace.candidates?.[0]?.name;
-  const lastName = firstCandidate?.split(/\s+/).pop() ?? "this candidate";
+  // real cards land. Fix 1 — display-layer title-case the candidate
+  // name so "BOOKER" appears as "Booker" in suggestion chips.
+  const firstCandidate = normalizeCandidateName(
+    activeRace.candidates?.[0]?.name ?? "",
+  );
+  // Fall back through the empty case via `||` so the conditional stays
+  // a single expression (keeps the parent `WorkspaceChat` complexity at
+  // its baseline rather than bumping past the linter's threshold).
+  const lastName = firstCandidate.split(/\s+/).pop() || "this candidate";
   const suggestions: { id: string; label: string }[] = [
     {
       id: "show-votes",
@@ -1622,133 +1649,151 @@ function WorkspaceChat({
         data-testid="workspace-chat-messages"
         className="flex-1 overflow-y-auto p-4"
       >
-        {messages.length === 0 &&
-        amendmentJournal.length === 0 &&
-        !workspace.pendingAmendment &&
-        !workspace.pendingRescoreOffer &&
-        !workspace.chatCatchSuggestion ? (
-          <p className="text-sm text-on-surface-muted">
-            Ask anything about {activeRace.label}.
-          </p>
-        ) : (
-          <>
-            {messages.length > 0 && (
-              <ul className="flex flex-col gap-4 list-none p-0">
-                {messages.map((m, i) =>
-                  m.role === "user" ? (
-                    <li
-                      key={i}
-                      data-testid="chat-message-user"
-                      className="self-end flex flex-col items-end gap-1.5 max-w-md"
-                    >
-                      <span className="font-mono text-[10.5px] uppercase tracking-[0.12em] text-ink-3">
-                        You
-                      </span>
-                      <div
-                        className="bg-ink text-paper px-4 py-3 text-sm leading-relaxed"
-                        style={{ borderRadius: "14px 14px 4px 14px" }}
+        {/* P0 #1 — render hidden messages (synthetic kickoff user message)
+            transparently to the conversation payload but skip them in the
+            visible list. The placeholder text below the chat input renders
+            iff there are zero VISIBLE messages, so the auto-fire kickoff
+            doesn't strand the placeholder onscreen during the first stream. */}
+        {(() => {
+          const visibleMessages = messages.filter((m) => !m.hidden);
+          if (
+            visibleMessages.length === 0 &&
+            amendmentJournal.length === 0 &&
+            !workspace.pendingAmendment &&
+            !workspace.pendingRescoreOffer &&
+            !workspace.chatCatchSuggestion &&
+            !isStreaming
+          ) {
+            return (
+              <p className="text-sm text-on-surface-muted">
+                Ask anything about {activeRace.label}.
+              </p>
+            );
+          }
+          return (
+            <>
+              {visibleMessages.length > 0 && (
+                <ul className="flex flex-col gap-4 list-none p-0">
+                  {visibleMessages.map((m, i) =>
+                    m.role === "user" ? (
+                      <li
+                        key={i}
+                        data-testid="chat-message-user"
+                        className="self-end flex flex-col items-end gap-1.5 max-w-md"
                       >
-                        <MarkdownText text={m.content} />
-                      </div>
-                    </li>
-                  ) : (
-                    <li
-                      key={i}
-                      data-testid="chat-message-ai"
-                      className="flex flex-col items-start gap-1.5 max-w-2xl"
-                    >
-                      <span className="font-mono text-[10.5px] uppercase tracking-[0.12em] text-ink-3">
-                        Voter Choice · AI
-                      </span>
-                      <div
-                        className="bg-paper-2 border border-rule px-4 py-3 text-sm leading-relaxed text-ink w-full"
-                        style={{ borderRadius: "4px 14px 14px 14px" }}
+                        <span className="font-mono text-[10.5px] uppercase tracking-[0.12em] text-ink-3">
+                          You
+                        </span>
+                        <div
+                          className="bg-ink text-paper px-4 py-3 text-sm leading-relaxed"
+                          style={{ borderRadius: "14px 14px 4px 14px" }}
+                        >
+                          <MarkdownText text={m.content} />
+                        </div>
+                      </li>
+                    ) : (
+                      <li
+                        key={i}
+                        data-testid="chat-message-ai"
+                        className="flex flex-col items-start gap-1.5 max-w-2xl"
                       >
-                        <MarkdownText text={m.content} />
-                      </div>
-                    </li>
-                  ),
-                )}
-              </ul>
-            )}
+                        <span className="font-mono text-[10.5px] uppercase tracking-[0.12em] text-ink-3">
+                          Voter Choice · AI
+                        </span>
+                        <div
+                          className="bg-paper-2 border border-rule px-4 py-3 text-sm leading-relaxed text-ink w-full"
+                          style={{ borderRadius: "4px 14px 14px 14px" }}
+                        >
+                          <MarkdownText text={m.content} />
+                        </div>
+                      </li>
+                    ),
+                  )}
+                </ul>
+              )}
 
-            {/* Phase 6 — chat-catch soft proposal chip. */}
-            {workspace.chatCatchSuggestion && !workspace.pendingAmendment && (
-              <div
-                data-testid="amend-chat-catch-chip"
-                className="my-3 border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900"
-                role="status"
-              >
-                <p className="mb-2">
-                  I noticed you mentioned{" "}
-                  <strong>
-                    {workspace.chatCatchSuggestion.candidateNewTheme.name}
-                  </strong>{" "}
-                  — want to add it as a theme?
-                </p>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    data-testid="amend-chat-catch-accept"
-                    onClick={workspace.onChatCatchAccept}
-                    className="bg-amber-600 text-white px-3 py-1.5 text-xs font-bold uppercase tracking-widest hover:bg-amber-700"
-                  >
-                    Add as a theme
-                  </button>
-                  <button
-                    type="button"
-                    data-testid="amend-chat-catch-dismiss"
-                    onClick={workspace.onChatCatchDismiss}
-                    className="text-xs font-bold uppercase tracking-widest text-on-surface-muted hover:text-rose-700"
-                  >
-                    Not now
-                  </button>
+              {/* Phase 6 — chat-catch soft proposal chip. */}
+              {workspace.chatCatchSuggestion && !workspace.pendingAmendment && (
+                <div
+                  data-testid="amend-chat-catch-chip"
+                  className="my-3 border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900"
+                  role="status"
+                >
+                  <p className="mb-2">
+                    I noticed you mentioned{" "}
+                    <strong>
+                      {workspace.chatCatchSuggestion.candidateNewTheme.name}
+                    </strong>{" "}
+                    — want to add it as a theme?
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      data-testid="amend-chat-catch-accept"
+                      onClick={workspace.onChatCatchAccept}
+                      className="bg-amber-600 text-white px-3 py-1.5 text-xs font-bold uppercase tracking-widest hover:bg-amber-700"
+                    >
+                      Add as a theme
+                    </button>
+                    <button
+                      type="button"
+                      data-testid="amend-chat-catch-dismiss"
+                      onClick={workspace.onChatCatchDismiss}
+                      className="text-xs font-bold uppercase tracking-widest text-on-surface-muted hover:text-rose-700"
+                    >
+                      Not now
+                    </button>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {/* Phase 6 — inline amend editor (rail or chat-catch entry). */}
-            {workspace.pendingAmendment && workspace.lockedThemes && (
-              <ThemeAmendEditor
-                currentThemes={workspace.lockedThemes}
-                candidateNewTheme={workspace.pendingAmendment.candidateNewTheme}
-                triggeringMessage={workspace.pendingAmendment.triggeringMessage}
-                decidedRaces={[]}
-                inFlight={workspace.amendmentInFlight}
-                onSave={async (payload) => {
-                  if (onAmendmentSave) {
-                    await onAmendmentSave(payload);
+              {/* Phase 6 — inline amend editor (rail or chat-catch entry). */}
+              {workspace.pendingAmendment && workspace.lockedThemes && (
+                <ThemeAmendEditor
+                  currentThemes={workspace.lockedThemes}
+                  candidateNewTheme={
+                    workspace.pendingAmendment.candidateNewTheme
                   }
-                }}
-                onDiscard={() => workspace.onAmendmentDiscard?.()}
-              />
-            )}
-
-            {/* PR3 — opt-in re-score offer (rendered between lock + delta). */}
-            {workspace.pendingRescoreOffer && (
-              <AmendRescoreOffer
-                newThemeName={workspace.pendingRescoreOffer.newThemeName}
-                decidedCount={workspace.pendingRescoreOffer.decidedCount}
-                inFlight={workspace.amendmentInFlight}
-                onAccept={() => {
-                  if (onAcceptRescoreOffer) {
-                    void onAcceptRescoreOffer();
+                  triggeringMessage={
+                    workspace.pendingAmendment.triggeringMessage
                   }
-                }}
-                onDecline={() => workspace.onRescoreOfferClear?.()}
-              />
-            )}
+                  decidedRaces={[]}
+                  inFlight={workspace.amendmentInFlight}
+                  onSave={async (payload) => {
+                    if (onAmendmentSave) {
+                      await onAmendmentSave(payload);
+                    }
+                  }}
+                  onDiscard={() => workspace.onAmendmentDiscard?.()}
+                />
+              )}
 
-            {/* Phase 6 — past amend delta messages. */}
-            {amendmentJournal.map((entry, i) => (
-              <AmendDeltaMessage
-                key={`amend-${i}-${entry.newThemeName}`}
-                verdicts={entry.verdicts}
-                newThemeName={entry.newThemeName}
-              />
-            ))}
-          </>
-        )}
+              {/* PR3 — opt-in re-score offer (rendered between lock + delta). */}
+              {workspace.pendingRescoreOffer && (
+                <AmendRescoreOffer
+                  newThemeName={workspace.pendingRescoreOffer.newThemeName}
+                  decidedCount={workspace.pendingRescoreOffer.decidedCount}
+                  inFlight={workspace.amendmentInFlight}
+                  onAccept={() => {
+                    if (onAcceptRescoreOffer) {
+                      void onAcceptRescoreOffer();
+                    }
+                  }}
+                  onDecline={() => workspace.onRescoreOfferClear?.()}
+                />
+              )}
+
+              {/* Phase 6 — past amend delta messages. */}
+              {amendmentJournal.map((entry, i) => (
+                <AmendDeltaMessage
+                  key={`amend-${i}-${entry.newThemeName}`}
+                  verdicts={entry.verdicts}
+                  newThemeName={entry.newThemeName}
+                />
+              ))}
+            </>
+          );
+        })()}
       </div>
 
       <WorkspacePickArea
@@ -1991,7 +2036,11 @@ function WorkspacePickArea({
           onClick={() => openWhyFor(defaultCandidate)}
           className="self-start bg-civic px-4 py-2.5 text-[13px] font-semibold text-paper-2 hover:bg-civic-2 rounded-lg"
         >
-          Pick {defaultCandidate.name}
+          {/* Fix 1 — title-case the upstream all-caps candidate name
+              at the display layer. The raw value stays on the
+              extraction shape so prompts + print artifact preserve
+              the canonical source. */}
+          Pick {normalizeCandidateName(defaultCandidate.name)}
         </button>
       )}
 
@@ -2004,7 +2053,8 @@ function WorkspacePickArea({
             htmlFor="workspace-why-textarea"
             className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-ink-3"
           >
-            Why are you picking {stagedCandidate.name}?
+            {/* Fix 1 — display-layer title-casing for candidate name. */}
+            Why are you picking {normalizeCandidateName(stagedCandidate.name)}?
           </label>
           <textarea
             id="workspace-why-textarea"
@@ -2187,7 +2237,11 @@ export function ChatPanel({
   );
 
   const sendMessage = useCallback(
-    async (userMessage: string, currentMessages: ChatMessage[]) => {
+    async (
+      userMessage: string,
+      currentMessages: ChatMessage[],
+      options?: { hidden?: boolean },
+    ) => {
       if (chatDisabled) return;
 
       setIsStreaming(true);
@@ -2202,7 +2256,13 @@ export function ChatPanel({
 
       const newMessages: ChatMessage[] = [
         ...currentMessages,
-        { role: "user", content: userMessage },
+        // P0 #1 — `hidden: true` keeps the kickoff user message out of the
+        // visible list while still feeding the model the conversation turn.
+        {
+          role: "user",
+          content: userMessage,
+          ...(options?.hidden ? { hidden: true } : {}),
+        },
       ];
       setMessages(newMessages);
 
@@ -2270,10 +2330,15 @@ export function ChatPanel({
         const byokSystem = prependSafetyHeader(basePrompt);
         setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
         try {
+          // P0 #1 — strip the client-only `hidden` flag (kickoff message).
+          const byokMessages = newMessages.map(({ role, content }) => ({
+            role,
+            content,
+          }));
           await streamWithByok(
             {
               systemPrompt: byokSystem,
-              messages: newMessages,
+              messages: byokMessages,
             },
             {
               onText: (text) => {
@@ -2308,11 +2373,17 @@ export function ChatPanel({
       }
 
       try {
+        // P0 #1 — strip the client-only `hidden` flag from the outgoing
+        // payload. The server's ChatMessage shape only carries role/content.
+        const outgoingMessages = newMessages.map(({ role, content }) => ({
+          role,
+          content,
+        }));
         const response = await fetch("/api/chat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            messages: newMessages,
+            messages: outgoingMessages,
             systemPrompt: basePrompt,
             sessionId: sessionIdRef.current,
             messageCount: messageCountRef.current,
@@ -2415,6 +2486,51 @@ export function ChatPanel({
       onBudgetExhausted,
     ],
   );
+
+  /* ── P0 #1: auto-fire race-deep-dive on workspace mount ─────── */
+
+  /**
+   * Live audit P0 #1 — pre-fix the workspace race chat opened EMPTY: the
+   * placeholder "Ask anything about U.S. Senate." was the only thing in the
+   * panel, so the voter had to type something blind. Fix: when ChatPanel
+   * mounts in workspace mode with a populated `activeRace` and the chat is
+   * empty, fire ONE synthetic user message ("Introduce this race…") so the
+   * model streams a context-aware greeting before the voter speaks.
+   *
+   * `kickoffFiredRef` prevents StrictMode's double-mount from firing twice.
+   * Because the parent (BallotToolClient) re-keys ChatPanel by activeRace.id,
+   * this ref naturally resets across race switches — every distinct race
+   * gets its own kickoff.
+   *
+   * The kickoff message is marked `hidden: true` so it never renders in the
+   * visible message list. The model still sees it as the conversation's
+   * first user turn (so it knows what to respond to); the voter only sees
+   * the streamed AI bubble.
+   *
+   * Guards:
+   *   · `workspace?.activeRace` must be set (no race → no kickoff).
+   *   · `messages.length === 0` (don't double-fire if rehydration races).
+   *   · `!chatDisabled` (respect session-limit / rate-limit / budget gates).
+   *   · `!isStreaming` (don't pile onto an in-flight request).
+   */
+  const kickoffFiredRef = useRef(false);
+  useEffect(() => {
+    if (kickoffFiredRef.current) return;
+    if (!workspace?.autoFireRaceIntro) return;
+    if (!workspace?.activeRace) return;
+    if (messages.length !== 0) return;
+    if (chatDisabled) return;
+    if (isStreaming) return;
+    kickoffFiredRef.current = true;
+    void sendMessage(
+      "Introduce this race and what's at stake for me given my priorities.",
+      [],
+      { hidden: true },
+    );
+    // We intentionally only depend on activeRace.id, autoFireRaceIntro, and
+    // chatDisabled — messages/isStreaming would re-fire during streaming.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [workspace?.activeRace?.id, workspace?.autoFireRaceIntro, chatDisabled]);
 
   /* ── Cold-open: free-form submit (Phase 2) ─────────────────── */
 

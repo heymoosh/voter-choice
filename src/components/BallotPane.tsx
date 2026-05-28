@@ -2,6 +2,7 @@
 
 import React from "react";
 import type { Race, RaceSection } from "../lib/raceDeriver";
+import { normalizeCandidateName } from "../lib/normalizeCandidateName";
 
 /**
  * A single committed decision. Owned upstream by `ElectionResult`. The shape
@@ -133,13 +134,24 @@ export function BallotPane({
                       ].join(" ")}
                     />
                     <div>
-                      <div className="mb-0.5 font-mono text-[10.5px] uppercase tracking-[0.12em] text-ink-3">
+                      {/* Audit override of prototype `.b-row .race`
+                          (which used mono uppercase). Per the live-audit
+                          polish sweep the race label here renders in
+                          sentence-case sans so it visually matches the
+                          rail label and reads as body text not a micro
+                          eyebrow. */}
+                      <div
+                        data-testid={`ballot-pane-race-label-${race.id}`}
+                        className="mb-0.5 font-sans text-[13px] font-medium tracking-tight text-ink-2"
+                      >
                         {race.label}
                       </div>
                       <div className="font-serif text-base font-semibold tracking-tight">
                         {isDone ? (
                           <>
-                            <span className="text-ink">{decision.pick}</span>
+                            <span className="text-ink">
+                              {normalizeCandidateName(decision.pick)}
+                            </span>
                             {decision.party ? (
                               <span className="ml-1 font-mono text-[10.5px] font-normal uppercase tracking-[0.1em] text-ink-3">
                                 ({decision.party})
