@@ -33,6 +33,22 @@ import { useLanguage } from "../lib/i18n";
 import { translations } from "../lib/translations";
 import { PolisOverlay, type UserTheme } from "./PolisOverlay";
 
+/**
+ * PR D Fix 3 — Polis v1 visibility flag.
+ *
+ * `/api/polis/bars`, `/api/polis/bridges`, `/api/polis/compass` all
+ * return `status: "below_threshold"` in v1 by design (no real session
+ * data yet). When the user expanded the workspace rail's polis shell,
+ * they saw a panel of "1 of 50 sessions" placeholders — noisy with no
+ * payoff. Hide the workspace-rail entry point entirely in v1.
+ *
+ * The inner `<PolisOverlay>` is left untouched: it remains independently
+ * mountable for tests / dev surfaces / a future "preview" page, and
+ * flipping this constant to `true` re-enables the rail entry point
+ * once the data lands.
+ */
+export const POLIS_V1_VISIBLE = false;
+
 export interface WorkspacePolisSectionProps {
   stateCode: string;
   county: string | null | undefined;
@@ -55,6 +71,11 @@ export function WorkspacePolisSection({
   const { lang } = useLanguage();
   const t = translations[lang].research;
   const [expanded, setExpanded] = useState(false);
+
+  // PR D Fix 3 — v1 hides the entire shell because all polis endpoints
+  // always return below_threshold; flip POLIS_V1_VISIBLE when the data
+  // lands. Earlier guards (userThemes presence) still apply below.
+  if (!POLIS_V1_VISIBLE) return null;
 
   // PR 10 — gate ONLY on userThemes. National data is always available,
   // so a missing county no longer suppresses the section.

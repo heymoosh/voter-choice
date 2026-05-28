@@ -186,7 +186,17 @@ export function WorkspaceRail({
                             : "border-rule",
                       ].join(" ")}
                     />
-                    <span className="truncate">{race.label}</span>
+                    {/* Long Texas / Florida state-office labels
+                        ("Comptroller of Public Accounts", "Commissioner
+                        of the General Land Office") used to truncate
+                        with ellipsis here. Wrap them across multiple
+                        lines instead — the grid parent's `items-center`
+                        keeps the indicator dot vertically aligned with
+                        the wrapped text, and the resulting rail density
+                        still scans well. (PR D Fix 2.) */}
+                    <span className="whitespace-normal break-words">
+                      {race.label}
+                    </span>
                   </button>
                 </li>
               );

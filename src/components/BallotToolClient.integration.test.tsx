@@ -12,6 +12,7 @@ import "@testing-library/jest-dom";
 import React from "react";
 import { LanguageProvider } from "../lib/i18n";
 import { ElectionResult, parsedBallotToContests } from "./BallotToolClient";
+import { POLIS_V1_VISIBLE } from "./WorkspacePolisSection";
 import type { StateElectionData } from "../types/election";
 import type { Theme } from "../lib/prompts/types";
 
@@ -1099,32 +1100,45 @@ describe("ElectionResult — mid-session theme amendment (Phase 6)", () => {
 
 /* ── Fix E — Polis section in the workspace rail ───────────── */
 
-describe("ElectionResult — Polis section visible in workspace (fix E)", () => {
-  it("renders the collapsible Polis section in the rail when themes are locked + county is known", () => {
-    renderElectionResult();
-    // Section header is present (closed by default).
-    expect(screen.getByTestId("workspace-polis-section")).toBeInTheDocument();
-    expect(screen.getByTestId("workspace-polis-toggle")).toHaveAttribute(
-      "aria-expanded",
-      "false",
-    );
-    // Overlay is NOT yet in the DOM — opt-in expand.
-    expect(screen.queryByTestId("polis-bars-section")).toBeNull();
-  });
-
-  it("expanding the Polis section mounts PolisOverlay inside the rail", () => {
-    renderElectionResult();
-    act(() => {
-      fireEvent.click(screen.getByTestId("workspace-polis-toggle"));
+// PR D Fix 3 — workspace polis hidden in v1 (POLIS_V1_VISIBLE=false).
+// These two assertions describe the future-enabled contract; they
+// re-activate when the flag flips. The "no themes ⇒ no section" guard
+// is preserved as an always-on regression below.
+describe.skipIf(!POLIS_V1_VISIBLE)(
+  "ElectionResult — Polis section visible in workspace (fix E)",
+  () => {
+    it("renders the collapsible Polis section in the rail when themes are locked + county is known", () => {
+      renderElectionResult();
+      // Section header is present (closed by default).
+      expect(screen.getByTestId("workspace-polis-section")).toBeInTheDocument();
+      expect(screen.getByTestId("workspace-polis-toggle")).toHaveAttribute(
+        "aria-expanded",
+        "false",
+      );
+      // Overlay is NOT yet in the DOM — opt-in expand.
+      expect(screen.queryByTestId("polis-bars-section")).toBeNull();
     });
-    expect(screen.getByTestId("polis-bars-section")).toBeInTheDocument();
-    // The section sits inside the workspace-rail nav, not the chat or ballot pane.
-    const rail = screen.getByRole("navigation", {
-      name: /workspace navigation/i,
-    });
-    expect(rail.contains(screen.getByTestId("polis-bars-section"))).toBe(true);
-  });
 
+    it("expanding the Polis section mounts PolisOverlay inside the rail", () => {
+      renderElectionResult();
+      act(() => {
+        fireEvent.click(screen.getByTestId("workspace-polis-toggle"));
+      });
+      expect(screen.getByTestId("polis-bars-section")).toBeInTheDocument();
+      // The section sits inside the workspace-rail nav, not the chat or ballot pane.
+      const rail = screen.getByRole("navigation", {
+        name: /workspace navigation/i,
+      });
+      expect(rail.contains(screen.getByTestId("polis-bars-section"))).toBe(
+        true,
+      );
+    });
+  },
+);
+
+// Always-on regression: even when polis becomes visible, no themes
+// must still hide the section.
+describe("ElectionResult — Polis section visible in workspace (fix E, regression)", () => {
   it("does NOT render the Polis section when no themes are locked", () => {
     renderElectionResult({ initialLockedThemes: [] });
     expect(screen.queryByTestId("workspace-polis-section")).toBeNull();

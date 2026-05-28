@@ -106,6 +106,45 @@ export interface ExtractMeta {
   cache_hit?: boolean;
 }
 
+/**
+ * Client-visible meta shape (PR D Fix 4). The `/api/extract-ballot` route
+ * returns this in `_meta` rather than the full `ExtractMeta` — `cost_usd`
+ * and the granular `detector_score` are internal observability fields
+ * that don't need to leave the server. They stay in the function logs
+ * (the `extract.completed` JSON shape) and in the durable extraction
+ * cache (so future debugging can still read them) but never reach the
+ * browser.
+ *
+ * The fields kept here are the ones the client legitimately needs:
+ *   - `extraction_path` — informs the "Cached!" UI affordance later
+ *   - `cache_hit` — same; also useful for client-side telemetry hooks
+ *   - `pages` — generic ballot-size hint, not sensitive
+ *   - `latency_ms` — generic timing hint, not sensitive
+ */
+export interface PublicExtractMeta {
+  extraction_path: ExtractionPath;
+  pages: number;
+  latency_ms: number;
+  cache_hit?: boolean;
+}
+
+/**
+ * Strip server-only telemetry from `ExtractMeta` before shipping the
+ * extraction response to the browser. Keep `cache_hit` only when it was
+ * present on the source (the fresh-extraction path doesn't set it).
+ */
+export function toPublicExtractMeta(meta: ExtractMeta): PublicExtractMeta {
+  const out: PublicExtractMeta = {
+    extraction_path: meta.extraction_path,
+    pages: meta.pages,
+    latency_ms: meta.latency_ms,
+  };
+  if (meta.cache_hit !== undefined) {
+    out.cache_hit = meta.cache_hit;
+  }
+  return out;
+}
+
 export interface BallotExtraction {
   election_metadata: ExtractElectionMetadata;
   sections: ExtractSection[];
