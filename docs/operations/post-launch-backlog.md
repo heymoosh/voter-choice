@@ -8,6 +8,22 @@ Issues, monitoring gaps, data quality concerns, and enhancement ideas identified
 
 ## Pre-Launch Must-Fix (lower before opening to real users)
 
+### [P1] "Pull my ballot →" submit button overflows the address card at desktop widths
+**Status:** Open (flagged 2026-05-26 — defer to mobile/responsiveness session)
+
+After PR #48 fixed the button height (71px → 48px matching prototype `.addr-card .go`), the button now sticks OUT of the right edge of the address card instead of wrapping inside it. The card has a fixed max-width via `.addr-card` but the flex row containing input + button isn't clamping the button into the card's content area.
+
+**User screenshot:** address `260 West Atlantic Avenue, Audubon, NJ 0…` (truncated by the input's clear-X) and the green "Pull my ballot →" button visibly extending ~30-40px past the card's right border.
+
+**Likely fix paths to evaluate during the responsive pass:**
+- Constrain the input column with `flex: 1` / `min-width: 0` so it shrinks to make room for the button
+- Wrap the button below the input on narrower viewports via flex-wrap
+- Reduce the card's internal padding so the row fits cleanly
+
+**Scope:** part of the broader mobile responsiveness pass — verify against the prototype's responsive breakpoints in `prototype.css` (look for `@media` queries on `.addr-card`).
+
+---
+
 ### [P0] Lower `CHAT_DAILY_SESSION_LIMIT` from 30 back to 10 before public launch
 **Status:** Open (flagged 2026-05-26) · **Owner:** TBD
 
