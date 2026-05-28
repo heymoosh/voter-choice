@@ -72,6 +72,21 @@ function partyContextTag(
 /**
  * Predicate: does this race pass the party-context filter for the given
  * voter ballotTag? Universal races (party_context === null) always pass.
+ *
+ * BallotTag coverage (P0 Harris County TX fix — pre-fix only handled
+ * DEM-primary / REP-primary / GENERAL, which meant a TX runoff voter
+ * with ballotTag "DEM-runoff" or "REP-runoff" got every race filtered
+ * out when the extractor labeled them `party_context: "Democratic
+ * Primary"` — a defensible interpretation for a DEM primary runoff).
+ *
+ * Recognized tags (from src/lib/state-rules/rules.ts options[].ballotTag):
+ *   - DEM-primary, DEM-runoff, DEM-runoff-open → tag === "DEM"
+ *   - REP-primary, REP-runoff, REP-runoff-open → tag === "REP"
+ *   - GENERAL → all
+ *   - UNSURE → all (the voter hasn't picked a lane; show both rosters
+ *     so chat can help them disambiguate)
+ *   - null / anything else (unaffiliated, registered_other, flag-off) →
+ *     only universal races (no partisan crossover)
  */
 function passesPartyFilter(
   race: ExtractRace,
@@ -80,13 +95,65 @@ function passesPartyFilter(
   const tag = partyContextTag(race.party_context);
   // Universal races (no party_context) always pass.
   if (tag === "ALL") return true;
-  // General election: show everything.
+  // General election + UNSURE both pass everything.
   if (ballotTag === "GENERAL") return true;
-  if (ballotTag === "DEM-primary") return tag === "DEM";
-  if (ballotTag === "REP-primary") return tag === "REP";
+  if (ballotTag === "UNSURE") return true;
+  // DEM lane covers primary + both runoff variants.
+  if (
+    ballotTag === "DEM-primary" ||
+    ballotTag === "DEM-runoff" ||
+    ballotTag === "DEM-runoff-open"
+  ) {
+    return tag === "DEM";
+  }
+  // REP lane covers primary + both runoff variants.
+  if (
+    ballotTag === "REP-primary" ||
+    ballotTag === "REP-runoff" ||
+    ballotTag === "REP-runoff-open"
+  ) {
+    return tag === "REP";
+  }
   // null / unknown ballotTag (unaffiliated, registered_other,
   // flag-off paths): partisan races are not eligible.
   return false;
+}
+
+/**
+ * Defensive metadata-leakage blocklist (P0 Harris County TX fix).
+ *
+ * Even when the extractor performs correctly, prompt drift CAN emit a
+ * race whose `office` is a metadata field — "Election", "Ballot style",
+ * "Date", "Jurisdiction", "Precinct" — pulled from the ballot header
+ * rather than the contest list. Those have all surfaced in real
+ * extractions. Filter them at the adapter boundary so the workspace
+ * rail never shows metadata-shaped "races" regardless of upstream
+ * extraction quality. Case-insensitive, whitespace-tolerant.
+ *
+ * Real race offices ("U.S. Senate", "President of the United States",
+ * "Lieutenant Governor", "County Judge") all contain multiple words
+ * AND/OR civic-vocabulary nouns; the blocklist only catches the bare
+ * single-word metadata tokens. A genuine "Election" race name would
+ * also be rejected — that's an acceptable trade-off for a single-word
+ * generic noun (no real ballot has just "Election" as a contest name).
+ */
+const METADATA_OFFICE_BLOCKLIST = new Set([
+  "election",
+  "election day",
+  "election type",
+  "ballot style",
+  "ballot",
+  "date",
+  "election date",
+  "vote",
+  "jurisdiction",
+  "precinct",
+]);
+
+function isMetadataLeakage(office: string | null | undefined): boolean {
+  if (!office) return true;
+  const normalized = office.trim().toLowerCase();
+  return METADATA_OFFICE_BLOCKLIST.has(normalized);
 }
 
 /**
@@ -143,6 +210,10 @@ function buildSectionRaces(
   const canonical = normalizeSection(section.section_name);
   const out: Race[] = [];
   for (const race of section.races ?? []) {
+    // P0 defensive guard: drop metadata-shaped offices BEFORE the party
+    // filter so a "race" with office "Election" never reaches the rail
+    // regardless of party_context.
+    if (isMetadataLeakage(race.office)) continue;
     if (!passesPartyFilter(race, ballotTag)) continue;
     out.push({
       id: buildId(race),
