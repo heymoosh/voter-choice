@@ -21,6 +21,38 @@ describe("raceDeriver", () => {
       expect(classifyRaceSection("U.S. House — TX-07")).toBe("Federal");
     });
 
+    // Live bug — PR #55 added a label normalizer that maps "Member of the
+    // House of Representatives" → "U.S. House" for display, but the section
+    // classifier kept treating the bare-prefixless office string as Local
+    // (FEDERAL_PATTERNS required a U.S./United States prefix). The Civic
+    // API and several state ballot PDFs emit the bare "House of
+    // Representatives" form for the federal lower chamber — we want those
+    // to land in the Federal section, not Local.
+    it("classifies bare House of Representatives as Federal", () => {
+      expect(classifyRaceSection("House of Representatives")).toBe("Federal");
+      expect(
+        classifyRaceSection("Member of the House of Representatives"),
+      ).toBe("Federal");
+    });
+
+    // Regression guard — state-name-prefixed forms (e.g. "Texas House of
+    // Representatives", "California House of Representatives") must NOT
+    // get pulled into Federal by the bare pattern above. STATE_PATTERNS
+    // doesn't currently lift "<state> House of Representatives" into State
+    // (that's a latent gap — out of scope here), so the current classifier
+    // returns "Local" for those. The key invariant: NOT "Federal". The
+    // existing `\bstate\s+representative\b` pattern still classifies
+    // "State Representative" as State.
+    it("does NOT classify state-prefixed House of Representatives as Federal", () => {
+      expect(classifyRaceSection("Texas House of Representatives")).not.toBe(
+        "Federal",
+      );
+      expect(
+        classifyRaceSection("California House of Representatives"),
+      ).not.toBe("Federal");
+      expect(classifyRaceSection("State Representative")).toBe("State");
+    });
+
     it("classifies Governor as State", () => {
       expect(classifyRaceSection("Governor")).toBe("State");
       expect(classifyRaceSection("Lieutenant Governor")).toBe("State");
