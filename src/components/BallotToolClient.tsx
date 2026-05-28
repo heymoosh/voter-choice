@@ -393,6 +393,13 @@ interface PersistedWorkspaceState {
    */
   lockedThemes?: Theme[] | null;
   /**
+   * Total race count for this ballot. Persisted so the landing-surface
+   * ResumeNudge (a sibling across the page seam, with no access to this
+   * component's `races` memo) can render an accurate "X of Y decided"
+   * denominator without re-deriving the ballot.
+   */
+  raceCount?: number;
+  /**
    * P0 #3 (live audit): persisted zip so we can drop the cache when a
    * different address loads the workspace. Pre-fix the workspace state key
    * was global and persisted across address resubmits — the live audit found
@@ -780,6 +787,9 @@ export function ElectionResult({
         decisions,
         activeRaceId,
         lockedThemes,
+        // Persist the race count so the landing ResumeNudge can show an
+        // accurate "X of Y decided" denominator across the page seam.
+        raceCount: races.length,
         // P0 #3: record the active zip so a future visit at a different
         // address can detect the cross-address case and discard this cache.
         zipCode,
@@ -788,7 +798,7 @@ export function ElectionResult({
     } catch {
       // Quota errors etc. — silently ignore; persistence is best-effort.
     }
-  }, [decisions, activeRaceId, lockedThemes, hydrated, zipCode]);
+  }, [decisions, activeRaceId, lockedThemes, hydrated, zipCode, races.length]);
 
   // Fix 9 — auto-select the first race when `races` transitions from
   // empty to populated (e.g. extraction completes after mount, or the

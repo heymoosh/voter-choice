@@ -8,6 +8,7 @@ import { Navigation } from "../components/Navigation";
 import { ResumeNudge } from "../components/ResumeNudge";
 import { HowItWorksWalkthrough } from "../components/HowItWorksWalkthrough";
 import { ProfileResumeModal } from "../components/ProfileResumeModal";
+import { SettingsPanel } from "../components/SettingsPanel";
 
 interface PageContentProps {
   children?: React.ReactNode;
@@ -217,18 +218,23 @@ function CheckCircleIcon({ className = "" }: { className?: string }) {
 const WORKSPACE_STATE_KEY = "voter-choice:workspace:state:v1";
 
 function EnglishShell({ children }: { children?: React.ReactNode }) {
-  const { isResearch } = useResearchMode();
+  const { isResearch, setResearch } = useResearchMode();
 
   // Read the persisted workspace draft from localStorage for ResumeNudge.
-  // The PersistedWorkspaceState shape is { decisions: Decision[], lockedThemes?: Theme[] }.
-  // ResumeNudge.SavedSession expects { decisions?: Record<string, unknown>, issues?: unknown[] }.
-  // We bridge by converting the decisions array to a keyed object (raceId → decision).
+  // The PersistedWorkspaceState shape is { decisions: Decision[], lockedThemes?:
+  // Theme[], raceCount?: number }. ResumeNudge.SavedSession expects { decisions?:
+  // Record<string, unknown>, issues?: unknown[] }. We bridge by converting the
+  // decisions array to a keyed object (raceId -> decision) and forwarding
+  // raceCount as the "of Y" denominator (BallotToolClient writes it alongside
+  // decisions; it's a sibling across the page seam so we can't read its `races`).
   const [savedSession, setSavedSession] = useState<{
     decisions?: Record<string, unknown>;
     issues?: unknown[];
     address?: string;
+    raceCount?: number;
   } | null>(null);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -238,6 +244,7 @@ function EnglishShell({ children }: { children?: React.ReactNode }) {
       const parsed = JSON.parse(raw) as {
         decisions?: { raceId: string; [k: string]: unknown }[];
         lockedThemes?: unknown[];
+        raceCount?: number;
       };
       const decisionsRecord: Record<string, unknown> = {};
       for (const d of parsed.decisions ?? []) {
@@ -246,13 +253,13 @@ function EnglishShell({ children }: { children?: React.ReactNode }) {
       setSavedSession({
         decisions: decisionsRecord,
         issues: parsed.lockedThemes ?? [],
+        raceCount:
+          typeof parsed.raceCount === "number" ? parsed.raceCount : undefined,
       });
     } catch {
       // Corrupt persistence — ResumeNudge returns null when hasDraft is false.
     }
   }, []);
-
-  const totalRacesPlaceholder = 0; // actual count lives inside BallotToolClient
 
   return (
     <>
@@ -264,7 +271,7 @@ function EnglishShell({ children }: { children?: React.ReactNode }) {
           Skip to main content
         </a>
       )}
-      <Navigation current="home" onOpenSettings={() => {}} />
+      <Navigation current="home" onOpenSettings={() => setSettingsOpen(true)} />
 
       {/* Outer section — stable React node across landing↔research flip.
           The CRITICAL invariant: the inner left-column div (which wraps
@@ -345,13 +352,15 @@ function EnglishShell({ children }: { children?: React.ReactNode }) {
 
           {/* ResumeNudge — shown below the address card when localStorage has a
               prior draft. Returns null automatically when there's nothing to resume.
-              totalRaces is 0 here (we don't have race data at page level); the nudge
-              shows the decided count which is meaningful even without total. */}
+              totalRaces reads the raceCount BallotToolClient persists alongside its
+              decisions (sibling across the page seam, so we read it from localStorage
+              rather than props). onResume flips ResearchMode on, which re-renders the
+              workspace surface where BallotToolClient rehydrates from the same key. */}
           {!isResearch && savedSession && (
             <ResumeNudge
               saved={savedSession}
-              totalRaces={totalRacesPlaceholder}
-              onResume={() => {}}
+              totalRaces={savedSession.raceCount ?? 0}
+              onResume={() => setResearch(true)}
               onStartOver={() => {
                 if (typeof window !== "undefined") {
                   window.localStorage.removeItem(WORKSPACE_STATE_KEY);
@@ -450,11 +459,34 @@ function EnglishShell({ children }: { children?: React.ReactNode }) {
         </footer>
       )}
 
+      {/* SettingsPanel — opened from the Navigation gear on the landing surface.
+          Self-contained: language toggle and BYOK live inside the panel; the Data
+          section's Reset clears the persisted workspace draft and Resume hands off
+          to ProfileResumeModal. onExportProfile is omitted (no live ballot session
+          exists on the landing surface — export is wired inside the workspace). */}
+      <SettingsPanel
+        open={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        onResetAll={() => {
+          if (typeof window !== "undefined") {
+            window.localStorage.removeItem(WORKSPACE_STATE_KEY);
+          }
+          setSavedSession(null);
+        }}
+        onResumeProfile={() => {
+          setSettingsOpen(false);
+          setProfileModalOpen(true);
+        }}
+        onNavigatePrivacy={() => window.open("/privacy", "_blank")}
+        onNavigateMethodology={() => window.open("/methodology", "_blank")}
+        onNavigateAbout={() => window.open("/about", "_blank")}
+      />
+
       {/* ProfileResumeModal — wired at EnglishShell level per prototype HomeView.
-          The trigger link ("Drop your saved .txt profile →") lives inside
-          BallotToolClient (children) which manages its own profileResumeOpen state.
-          This instance is kept structurally wired; activation requires a shared
-          state lift in a future PR. */}
+          Opened from SettingsPanel's Resume action (and from the trigger link
+          inside BallotToolClient, which manages its own instance). onResume here
+          closes the modal; the actual profile rehydration happens inside the
+          workspace where the parsed profile reaches BallotToolClient state. */}
       <ProfileResumeModal
         open={profileModalOpen}
         onClose={() => setProfileModalOpen(false)}
