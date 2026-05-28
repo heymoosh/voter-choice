@@ -87,6 +87,12 @@ function partyContextTag(
  *     so chat can help them disambiguate)
  *   - null / anything else (unaffiliated, registered_other, flag-off) →
  *     only universal races (no partisan crossover)
+ *
+ * Note: `extractionToRaces` collapses null ballotTag into a derived
+ * effective tag via `inferBallotTagFromExtraction` BEFORE this predicate
+ * runs — so in practice this null branch is reachable only when the
+ * caller passes a non-null but unrecognized string. The branch is kept
+ * as a defensive belt-and-suspenders default.
  */
 function passesPartyFilter(
   race: ExtractRace,
@@ -117,6 +123,56 @@ function passesPartyFilter(
   // null / unknown ballotTag (unaffiliated, registered_other,
   // flag-off paths): partisan races are not eligible.
   return false;
+}
+
+/**
+ * P0 just-passed-election fix (Option B).
+ *
+ * When the voter uploads a PDF for an election that has already passed
+ * (e.g. they look up a TX DEM runoff 2 days after the May 26 runoff),
+ * `getUpcomingElection()` returns the NEXT election — likely a general
+ * — so `requiresClosedPrimaryGate()` / `requiresRunoffGate()` return
+ * false and PartyGate never fires. `ballotContext` stays null. The
+ * existing `passesPartyFilter` then drops every partisan race because
+ * null ballotTag falls through to the "no partisan crossover" branch,
+ * leaving the workspace with 0 races.
+ *
+ * Rather than touching the election-date logic or PartyGate behavior,
+ * we infer the voter's lane from the PDF itself when ballotContext is
+ * null. The PDF self-identifies as a party-specific ballot via its
+ * race-level `party_context` values:
+ *   - Empty set (all party_context null) → general-election content →
+ *     "GENERAL" (every race passes).
+ *   - Singleton set {"Democratic Primary"} → infer "DEM-primary".
+ *   - Singleton set {"Republican Primary"} → infer "REP-primary".
+ *   - Multi-element set (NJ-shape sample ballot carrying BOTH parties)
+ *     → ambiguous; fall back to "GENERAL" so the user sees too much
+ *     rather than 0 races. They can still narrow via chat.
+ *
+ * We deliberately map all DEM-* tags to "DEM-primary" (and similarly
+ * for REP) — `passesPartyFilter` collapses primary/runoff/runoff-open
+ * back into the same DEM/REP lane, so picking the canonical "primary"
+ * variant is enough.
+ */
+function inferBallotTagFromExtraction(
+  extraction: BallotExtraction,
+): "DEM-primary" | "REP-primary" | "GENERAL" {
+  const partyContexts = new Set<string>();
+  for (const section of extraction.sections ?? []) {
+    for (const race of section.races ?? []) {
+      if (race.party_context) partyContexts.add(race.party_context);
+    }
+  }
+  // No party-tagged races → general-election content; show everything.
+  if (partyContexts.size === 0) return "GENERAL";
+  // Multi-party ballot (NJ-shape sample) → ambiguous; fail open.
+  if (partyContexts.size > 1) return "GENERAL";
+  // Singleton set — infer the lane.
+  const only = partyContexts.values().next().value as string;
+  if (/democratic/i.test(only)) return "DEM-primary";
+  if (/republican/i.test(only)) return "REP-primary";
+  // Unrecognized single party label — fail open.
+  return "GENERAL";
 }
 
 /**
@@ -232,11 +288,20 @@ export function extractionToRaces(
 ): Race[] {
   if (!extraction?.sections?.length) return [];
 
+  // P0 just-passed-election fix (Option B): when ballotContext is null
+  // (PartyGate didn't fire — e.g. the voter uploaded a PDF for an
+  // election that has already passed, so getUpcomingElection() returns
+  // a downstream general that doesn't gate), infer the lane from the
+  // extracted ballot itself. See `inferBallotTagFromExtraction` for the
+  // full inference semantics.
+  const effectiveBallotTag =
+    ballotTag ?? inferBallotTagFromExtraction(extraction);
+
   // Group eligible races by canonical section name so we can emit them
   // in the canonical SECTION_ORDER regardless of the input order.
   const bySection = new Map<RaceSection, Race[]>();
   for (const section of extraction.sections as ExtractSection[]) {
-    const races = buildSectionRaces(section, ballotTag);
+    const races = buildSectionRaces(section, effectiveBallotTag);
     for (const race of races) {
       const bucket = bySection.get(race.section);
       if (bucket) bucket.push(race);
