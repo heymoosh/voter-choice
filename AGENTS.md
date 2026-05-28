@@ -36,6 +36,27 @@ Before non-trivial edits, identify the owning concern and avoid parallel sources
 
 Do not execute from acceptance criteria alone. Work packets must carry intent, scope, acceptance criteria, verification, and anti-solutions. Template: `docs/ai-coding-practices/templates/work-packet.md`; rules: `docs/ai-coding-practices/guardrails/work-packet-rules.md`.
 
+## Working Trees
+
+The repo uses multiple git worktrees under `.claude/worktrees/`. Pick the right one for the task:
+
+- **Default — production work** (95% of tasks): `cd .claude/worktrees/launch-production-federal/` on branch `launch/production`. Auto-deploys to Vercel on push. All bug fixes, redesign work, feature PRs, and backlog items belong here unless explicitly stated otherwise.
+- **PDF extraction bakeoff** (research-only): `cd .claude/worktrees/pdf-bakeoff/` on branch `experiment/pdf-extraction-bakeoff`. Holds the bakeoff fixtures, runners, scoring scripts, decision docs, and AWS infrastructure scripts. **Never merges to `launch/production`.** Only relevant when resuming C1 Textract work (see `docs/operations/post-launch-backlog.md`).
+
+When a backlog item specifies a worktree (e.g., the C1 Textract entry), use that one. Otherwise, default to `launch-production-federal`.
+
+## Design Surface Map
+
+For UI/design review or component reuse — including by external AI assistants reading the GitHub URL — these are the key paths (current as of `launch/production` HEAD):
+
+- **Components**: `src/components/` — `PartyGate`, `BallotLookupNeeded`, `ColdOpenInput`, `WorkspaceRail`, `BallotPane`, `PrintBallot`, `ChatPanel`, `ThemeRanker`, `BudgetExhausted`, etc.
+- **Page-level**: `src/app/PageContent.tsx` (landing), `src/app/page.tsx` (root server component).
+- **Copy / labels (EN + ES)**: `src/lib/translations.ts`.
+- **Design tokens / Civic mood**: `src/styles/globals.css` (color tokens, typography, mood/palette/treatment attributes) + `src/styles/print.css`.
+- **Type definitions**: `src/lib/server/extract-types.ts` (ballot schema), `src/lib/raceDeriver.ts` (Race + RaceSection types).
+- **Display normalizers**: `src/lib/normalizeRaceLabel.ts`, `src/lib/normalizeCandidateName.ts`.
+- **Design source of truth**: `docs/design/2026-redesign/` (prototype HTML/CSS/JSX + README).
+
 ## Production Safety
 
 - Repo only. Never read/write/delete anything outside this repo unless the user explicitly approves.

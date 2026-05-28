@@ -57,12 +57,13 @@ The PDF extraction bakeoff (Phases 0–6 on `experiment/pdf-extraction-bakeoff`)
 
 Textract is purpose-built for forms — it may handle BOTH the NJ broken-text layer (form-native extraction) AND the FL multi-district perception errors (designed for structured tabular content). If C1 results justify, the v2 architecture may be **Textract-first with C2 as fallback**, not the other way around.
 
+**Worktree:** all C1 bakeoff work happens in `.claude/worktrees/pdf-bakeoff/` on branch `experiment/pdf-extraction-bakeoff` — NOT in the production worktree. This branch never merges to `launch/production`; only the eventual v2 architecture PR (if results justify) would be a fresh branch off `launch/production` that ports the chosen production code.
+
 **Action when AWS credentials are available:**
-1. Provision an AWS account / IAM user with Textract permissions (Forms + Tables API).
-2. Set `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` / `AWS_REGION` in the `pdf-bakeoff` worktree env.
-3. Run the existing C1 runner against the 4 fixtures (`nj-camden-2026-primary.pdf`, `tx-harris-2026-dem-runoff.pdf`, `tx-hidalgo-2026-bilingual.pdf`, `fl-orange-2026-composite.pdf`).
-4. Re-run `npx tsx experiments/pdf-extraction-bakeoff/score.ts` to score the C1 cells.
-5. If C1 outperforms C2 on FL Orange AND ties/wins on NJ Camden, file a v2 architecture PR. Otherwise, C2 stays.
+1. AWS account + IAM scoped user already provisioned via `experiments/pdf-extraction-bakeoff/infra/provision-scoped-user.mjs`. Scoped credentials should already be in `.claude/worktrees/pdf-bakeoff/.env.local`. Verify with `node experiments/pdf-extraction-bakeoff/infra/verify-aws-creds.mjs`.
+2. Run the C1 runner against the 4 fixtures (`nj-camden-2026-primary.pdf`, `tx-harris-2026-dem-runoff.pdf`, `tx-hidalgo-2026-bilingual.pdf`, `fl-orange-2026-composite.pdf`). Runner exists at `experiments/pdf-extraction-bakeoff/runners/01-textract-sonnet.ts` (committed `da7d915`).
+3. Re-run `npx tsx experiments/pdf-extraction-bakeoff/score.ts` to score the C1 cells.
+4. If C1 outperforms C2 on FL Orange AND ties/wins on NJ Camden, file a v2 architecture PR off `launch/production`. Otherwise, C2 stays as production extraction path.
 
 **Does NOT block v1 ship of C2.** This is a "lock the long-term architecture" gate, not a "ship the extraction path" gate.
 
