@@ -38,6 +38,7 @@ import { shouldSuggestAmend } from "../lib/chat-catch-heuristic";
 import type { SerializableBallotContext } from "../lib/state-rules/ballot-context";
 import { hasByokKey, streamWithByok } from "../lib/anthropic-client-byok";
 import { prependSafetyHeader } from "../lib/prompts/safety-header";
+import { normalizeCandidateName } from "../lib/normalizeCandidateName";
 import {
   parseValuesTagRequestBlock,
   stripValuesTagRequestBlocks,
@@ -1603,9 +1604,15 @@ function WorkspaceChat({
 
   // Context-aware suggestion chips. Minimal templating per packet §22 —
   // Phase 4 will replace these with candidate-specific options when the
-  // real cards land.
-  const firstCandidate = activeRace.candidates?.[0]?.name;
-  const lastName = firstCandidate?.split(/\s+/).pop() ?? "this candidate";
+  // real cards land. Fix 1 — display-layer title-case the candidate
+  // name so "BOOKER" appears as "Booker" in suggestion chips.
+  const firstCandidate = normalizeCandidateName(
+    activeRace.candidates?.[0]?.name ?? "",
+  );
+  // Fall back through the empty case via `||` so the conditional stays
+  // a single expression (keeps the parent `WorkspaceChat` complexity at
+  // its baseline rather than bumping past the linter's threshold).
+  const lastName = firstCandidate.split(/\s+/).pop() || "this candidate";
   const suggestions: { id: string; label: string }[] = [
     {
       id: "show-votes",
@@ -2029,7 +2036,11 @@ function WorkspacePickArea({
           onClick={() => openWhyFor(defaultCandidate)}
           className="self-start bg-civic px-4 py-2.5 text-[13px] font-semibold text-paper-2 hover:bg-civic-2 rounded-lg"
         >
-          Pick {defaultCandidate.name}
+          {/* Fix 1 — title-case the upstream all-caps candidate name
+              at the display layer. The raw value stays on the
+              extraction shape so prompts + print artifact preserve
+              the canonical source. */}
+          Pick {normalizeCandidateName(defaultCandidate.name)}
         </button>
       )}
 
@@ -2042,7 +2053,8 @@ function WorkspacePickArea({
             htmlFor="workspace-why-textarea"
             className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-ink-3"
           >
-            Why are you picking {stagedCandidate.name}?
+            {/* Fix 1 — display-layer title-casing for candidate name. */}
+            Why are you picking {normalizeCandidateName(stagedCandidate.name)}?
           </label>
           <textarea
             id="workspace-why-textarea"

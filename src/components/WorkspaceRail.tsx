@@ -195,10 +195,13 @@ export function WorkspaceRail({
         </section>
       ))}
 
-      {/* Footer — mono uppercase ink-3 links, civic on hover, dashed top rule */}
+      {/* Footer — sentence-case sans links, civic on hover, dashed top
+          rule. Audit polish sweep: mono uppercase is reserved for
+          eyebrow / section-divider micro-labels, not navigational
+          chrome that reads as body content. */}
       <footer
         data-testid="workspace-rail-footer"
-        className="mt-auto flex flex-col gap-1.5 border-t border-dashed border-rule pt-4 font-mono text-[10.5px] uppercase tracking-[0.12em]"
+        className="mt-auto flex flex-col gap-1.5 border-t border-dashed border-rule pt-4 font-sans text-[13px]"
       >
         <button
           type="button"

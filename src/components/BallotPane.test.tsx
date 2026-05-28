@@ -92,6 +92,39 @@ describe("BallotPane", () => {
     expect(styles.fontStyle).toBe("italic");
   });
 
+  it("Fix 1 — title-cases an all-uppercase decision.pick before rendering", () => {
+    renderPane({
+      decisions: [
+        {
+          raceId: "us-president",
+          raceLabel: "U.S. President",
+          section: "Federal",
+          pick: "CORY BOOKER",
+          party: "Democratic",
+          whyNote: "shipping",
+        },
+      ],
+    });
+    const row = screen.getByTestId("ballot-pane-row-us-president");
+    expect(row).toHaveTextContent("Cory Booker");
+    // And NOT the raw all-caps form.
+    expect(row.textContent ?? "").not.toContain("CORY BOOKER");
+  });
+
+  it("Fix 3 — race-label row renders in sentence-case sans, not mono uppercase", () => {
+    renderPane();
+    // The race-label div is now wired with a dedicated data-testid so
+    // we can assert directly on its class signature.
+    const raceLabelEl = screen.getByTestId(
+      "ballot-pane-race-label-us-president",
+    );
+    // Sentence-case sans = `font-sans` is present, `font-mono` is NOT.
+    // Lowercase tracking-tight, not uppercase tracking-wide.
+    expect(raceLabelEl.className).toContain("font-sans");
+    expect(raceLabelEl.className).not.toContain("font-mono");
+    expect(raceLabelEl.className).not.toContain("uppercase");
+  });
+
   it("renders 'Deciding now…' for the active undecided race", () => {
     renderPane({ activeRaceId: "us-senate" });
     const row = screen.getByTestId("ballot-pane-row-us-senate");

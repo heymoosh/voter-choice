@@ -181,10 +181,14 @@ export function PartyGate({
                 data-testid={`party-gate-option-${option.id}`}
                 className="mt-1 h-4 w-4 accent-[var(--civic)]"
               />
+              {/* Fix 2 — sentence-case sans body text per audit polish
+                  sweep. Mono uppercase is reserved for eyebrow /
+                  section-divider micro-labels (statute code stays mono);
+                  radio option labels are sentence-case sans. */}
               <span
                 className={
-                  "font-mono text-[11px] uppercase tracking-[0.12em] " +
-                  (isSel ? "text-civic-2" : "text-ink-2")
+                  "font-sans text-[13.5px] leading-snug " +
+                  (isSel ? "text-civic-2" : "text-ink")
                 }
               >
                 {option.label}
@@ -210,10 +214,12 @@ export function PartyGate({
               data-testid={`party-gate-option-${UNAFFILIATED_OPTION_ID}`}
               className="mt-1 h-4 w-4 accent-[var(--civic)]"
             />
+            {/* Fix 2 — same sentence-case sans treatment as the
+                base option labels above. */}
             <span
               className={
-                "font-mono text-[11px] uppercase tracking-[0.12em] " +
-                (isUnaffiliatedSelected ? "text-civic-2" : "text-ink-2")
+                "font-sans text-[13.5px] leading-snug " +
+                (isUnaffiliatedSelected ? "text-civic-2" : "text-ink")
               }
             >
               I&rsquo;m not registered with a party.
