@@ -1443,3 +1443,162 @@ describe("ChatPanel — workspace-race chat payload (real fix)", () => {
     });
   });
 });
+
+/* ── P0 #1 (live audit): auto-fire race-deep-dive on workspace mount ─── */
+
+/**
+ * Pre-fix the workspace race chat opened EMPTY — the placeholder "Ask
+ * anything about U.S. Senate." with no AI bubble, no candidate intro, no
+ * starting context. The voter would then have to type something blind.
+ *
+ * Fix: when ChatPanel mounts in workspace mode with an `activeRace` and the
+ * chat is empty, kick off a one-shot race-deep-dive request to /api/chat so
+ * the model streams a context-aware greeting before the voter speaks.
+ *
+ * These tests assert the OUTGOING request fires from mount without any user
+ * input — they're the contract the live audit P0 #1 was missing.
+ */
+describe("ChatPanel — workspace auto-fire race-deep-dive on mount (P0 #1)", () => {
+  const txStateLocal = txState;
+
+  function renderWorkspaceAutoFire(
+    workspaceOverrides: Record<string, unknown> = {},
+  ) {
+    const baseWorkspace = {
+      activeRace: {
+        id: "u-s-senate",
+        label: "U.S. Senate",
+        section: "Federal",
+        candidates: [
+          { name: "Cory Booker", party: "Democratic" },
+          { name: "Curtis Bashaw", party: "Republican" },
+        ],
+      },
+      totalRaces: 2,
+      activeRaceIndex: 0,
+      decided: false,
+      prevActiveRaceId: null,
+      onCommitDecision: vi.fn(),
+      onUnpickDecision: vi.fn(),
+      pendingAmendment: null,
+      amendmentInFlight: false,
+      lockedThemes: [
+        { name: "Healthcare access", quotes: ['"insulin prices"'] },
+        { name: "Climate action", quotes: ['"flood risk"'] },
+      ],
+      decisions: [],
+      chatCatchSuggestion: null,
+      onChatCatch: vi.fn(),
+      onChatCatchAccept: vi.fn(),
+      onChatCatchDismiss: vi.fn(),
+      onAmendmentSave: vi.fn(),
+      onAmendmentDiscard: vi.fn(),
+      // P0 #1 — explicit opt-in for the auto-fire behavior.
+      autoFireRaceIntro: true,
+      ...workspaceOverrides,
+    } as React.ComponentProps<typeof ChatPanel>["workspace"];
+    return render(
+      <LanguageProvider>
+        <ChatPanel
+          state={txStateLocal}
+          zipCode="08106"
+          countyName="Camden"
+          workspace={baseWorkspace}
+        />
+      </LanguageProvider>,
+    );
+  }
+
+  function captureChatRequestBody(): Record<string, unknown> | null {
+    const calls = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls;
+    const chatCalls = calls.filter((c) => {
+      const url = typeof c[0] === "string" ? c[0] : String(c[0]);
+      return url.endsWith("/api/chat");
+    });
+    if (chatCalls.length === 0) return null;
+    const init = chatCalls[chatCalls.length - 1][1] as
+      | { body?: unknown }
+      | undefined;
+    if (!init?.body) return null;
+    try {
+      return JSON.parse(String(init.body)) as Record<string, unknown>;
+    } catch {
+      return null;
+    }
+  }
+
+  beforeEach(() => {
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (url) => {
+      const href = typeof url === "string" ? url : (url as URL).toString();
+      if (href.includes("/api/chat-catch")) {
+        return new Response(JSON.stringify({ suggest: false }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+      return streamResponse("Cory Booker is the Democratic incumbent.");
+    });
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("auto-fires a POST to /api/chat on mount when activeRace is set and chat is empty", async () => {
+    renderWorkspaceAutoFire();
+    await waitFor(() => {
+      const body = captureChatRequestBody();
+      expect(body).not.toBeNull();
+      expect(body!.view).toBe("workspace-race");
+      expect(body!.activeRaceType).toBe("choice");
+    });
+  });
+
+  it("auto-fire request carries candidatesJson with the full roster (so the model can resolve surnames)", async () => {
+    renderWorkspaceAutoFire();
+    await waitFor(() => {
+      const body = captureChatRequestBody();
+      expect(body).not.toBeNull();
+      const ctx = body!.raceContext as Record<string, unknown>;
+      const parsed = JSON.parse(String(ctx.candidatesJson));
+      expect(parsed).toHaveLength(2);
+      expect(parsed[0].name).toBe("Cory Booker");
+      expect(parsed[1].name).toBe("Curtis Bashaw");
+    });
+  });
+
+  it("auto-fire request carries themesList with the voter's locked themes", async () => {
+    renderWorkspaceAutoFire();
+    await waitFor(() => {
+      const body = captureChatRequestBody();
+      expect(body).not.toBeNull();
+      const ctx = body!.raceContext as Record<string, unknown>;
+      expect(String(ctx.themesList)).toContain("Healthcare access");
+      expect(String(ctx.themesList)).toContain("Climate action");
+    });
+  });
+
+  it("does NOT fire twice on a single mount (StrictMode double-mount guard)", async () => {
+    renderWorkspaceAutoFire();
+    // Settle.
+    await waitFor(() => {
+      const body = captureChatRequestBody();
+      expect(body).not.toBeNull();
+    });
+    const chatCalls = (
+      globalThis.fetch as ReturnType<typeof vi.fn>
+    ).mock.calls.filter((c) => {
+      const url = typeof c[0] === "string" ? c[0] : String(c[0]);
+      return url.endsWith("/api/chat");
+    });
+    expect(chatCalls.length).toBe(1);
+  });
+
+  it("does NOT auto-fire when there's no activeRace", async () => {
+    renderWorkspaceAutoFire({ activeRace: null });
+    // Let any effects flush.
+    await new Promise((r) => setTimeout(r, 20));
+    const body = captureChatRequestBody();
+    expect(body).toBeNull();
+  });
+});

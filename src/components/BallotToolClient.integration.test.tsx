@@ -6,6 +6,7 @@ import {
   fireEvent,
   act,
   cleanup,
+  waitFor,
 } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import React from "react";
@@ -340,9 +341,15 @@ describe("ElectionResult — workspace 3-pane shell (Phase 3)", () => {
     expect(chatHeader).toHaveTextContent(/race \d+ of 3/i);
   });
 
-  it("renders a chat input the user can type into and send", () => {
+  it("renders a chat input the user can type into and send", async () => {
     renderElectionResult();
-    const input = screen.getByTestId("workspace-chat-input");
+    // P0 #1 — workspace now auto-fires a race-deep-dive kickoff on mount,
+    // which sets isStreaming=true briefly. Wait for the kickoff fetch to
+    // settle so the input is enabled before we type and submit.
+    const input = (await screen.findByTestId(
+      "workspace-chat-input",
+    )) as HTMLTextAreaElement;
+    await waitFor(() => expect(input).not.toBeDisabled());
     expect(input).toBeInTheDocument();
     act(() => {
       fireEvent.change(input, {
@@ -967,7 +974,7 @@ describe("ElectionResult — mid-session theme amendment (Phase 6)", () => {
     expect(screen.getByTestId("workspace-chat-send")).toBeDisabled();
   });
 
-  it("PR 7: with a BYOK key set in localStorage, chat input STAYS interactive when overlay surfaces", () => {
+  it("PR 7: with a BYOK key set in localStorage, chat input STAYS interactive when overlay surfaces", async () => {
     window.localStorage.setItem(
       "voter-choice:byok-anthropic-key",
       "sk-ant-overlay-test",
@@ -978,11 +985,12 @@ describe("ElectionResult — mid-session theme amendment (Phase 6)", () => {
     });
     // No notice — BYOK bypasses community budget.
     expect(screen.queryByTestId("workspace-chat-budget-notice")).toBeNull();
-    // Input and Send both enabled.
+    // P0 #1 — workspace auto-fires a kickoff on mount; wait for streaming
+    // to settle before asserting the input isn't disabled.
     const input = screen.getByTestId(
       "workspace-chat-input",
     ) as HTMLInputElement;
-    expect(input).not.toBeDisabled();
+    await waitFor(() => expect(input).not.toBeDisabled());
   });
 
   it("PR 7: dismissing the overlay (no BYOK) keeps the chat notice + disabled input", () => {
@@ -1780,5 +1788,107 @@ describe("ElectionResult — structured ballot extraction populates all eligible
     );
     // 1 Senator REP + 1 Commissioner REP = 2.
     expect(screen.getByTestId("ballot-pane-header")).toHaveTextContent("0/2");
+  });
+});
+
+/* ── P0 #3 (live audit): localStorage cross-address purge + restart wipe ─ */
+
+/**
+ * The live audit found a fresh-looking NJ session that had pre-filled
+ * themes "Healthcare costs" + "Housing affordability" in
+ * `voter-choice:workspace:state:v1` — the audit subagent had to clear
+ * localStorage manually. Root cause: the workspace-state key is global
+ * and persisted across address resubmits (different zip).
+ *
+ * Fix: persist the zip in the same payload and drop the cached state on
+ * hydration if it doesn't match the current zip — so themes don't bleed
+ * across visits.
+ *
+ * Separately, handleRestart already clears the key; this re-asserts it so
+ * a future refactor can't silently regress that path.
+ */
+describe("ElectionResult — P0 #3: workspace localStorage zip-scoping + restart", () => {
+  const WORKSPACE_KEY = "voter-choice:workspace:state:v1";
+
+  it("does NOT restore persisted themes when the persisted zip differs from the mounted zip", () => {
+    // Seed localStorage with a payload from a DIFFERENT zip (the prior visit).
+    window.localStorage.setItem(
+      WORKSPACE_KEY,
+      JSON.stringify({
+        decisions: [],
+        activeRaceId: null,
+        lockedThemes: [
+          { name: "Healthcare costs", quotes: ['"insulin"'] },
+          { name: "Housing affordability", quotes: ['"rent"'] },
+        ],
+        // Persisted zip belongs to a prior NJ visit.
+        zipCode: "07030",
+      }),
+    );
+
+    // Now mount with a different zip (current visit).
+    render(
+      <LanguageProvider>
+        <ElectionResult
+          state={txState}
+          zipCode="73301"
+          lang="en"
+          initialPollingData={civicData}
+          promptFleetV2Enabled={true}
+          // Real cold-open path: themes start null.
+          initialLockedThemes={null}
+        />
+      </LanguageProvider>,
+    );
+
+    // The stale themes must NOT appear in the workspace surface.
+    // Cold-open should render (themes are null) — not the workspace rail.
+    expect(screen.queryByText(/Healthcare costs/i)).toBeNull();
+    expect(screen.queryByText(/Housing affordability/i)).toBeNull();
+  });
+
+  it("clicking Restart session purges stale themes from React state and localStorage", async () => {
+    // Mount in workspace mode with themes locked AND prior persisted state
+    // (simulates a real session in flight).
+    render(
+      <LanguageProvider>
+        <ElectionResult
+          state={txState}
+          zipCode="73301"
+          lang="en"
+          initialPollingData={civicData}
+          promptFleetV2Enabled={true}
+          initialLockedThemes={lockedThemes}
+        />
+      </LanguageProvider>,
+    );
+
+    // After hydration the workspace persists. Flush effects.
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    // Themes are visible in the rail before restart.
+    expect(screen.queryByText(/Healthcare costs/i)).toBeInTheDocument();
+
+    // Click Restart from the rail.
+    const restartBtn = screen.getByTestId("workspace-rail-restart");
+    fireEvent.click(restartBtn);
+
+    // The persistence effect may re-write the key (with a fresh, empty
+    // payload). What MUST be true: no stale themes, no decisions linger in
+    // either the React state OR whatever sits in localStorage.
+    expect(screen.queryByText(/Healthcare costs/i)).toBeNull();
+    expect(screen.queryByText(/Housing affordability/i)).toBeNull();
+
+    const persisted = window.localStorage.getItem(WORKSPACE_KEY);
+    if (persisted) {
+      const parsed = JSON.parse(persisted) as {
+        decisions: unknown[];
+        lockedThemes: unknown[] | null;
+      };
+      expect(parsed.decisions).toEqual([]);
+      expect(parsed.lockedThemes ?? []).toEqual([]);
+    }
   });
 });
