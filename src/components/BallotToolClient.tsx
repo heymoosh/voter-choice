@@ -12,6 +12,10 @@ import { WorkspaceRail } from "./WorkspaceRail";
 import { BallotPane, type Decision } from "./BallotPane";
 import { PrintBallot, type PollingDataShape } from "./PrintBallot";
 import { ChatPanel } from "./ChatPanel";
+import { LoadingView } from "./LoadingView";
+import { GeocodeFailNotice } from "./GeocodeFailNotice";
+import { SettingsPanel } from "./SettingsPanel";
+import { ProfileResumeModal } from "./ProfileResumeModal";
 import { deriveRaces, type ContestLike, type Race } from "../lib/raceDeriver";
 import { extractionToRaces } from "../lib/extractionToRaces";
 import type { BallotExtraction } from "../lib/server/extract-types";
@@ -38,6 +42,10 @@ import {
 } from "../lib/anthropic-client-byok";
 import { buildHandoffPrompt } from "../lib/prompts/handoff";
 import { getTodayInLatestUsZone } from "../lib/electionToday";
+import type { ConcernInterpretationEntry } from "../lib/structured-blocks";
+import { PollingStatusBar } from "./PollingStatusBar";
+import { getDeadlineStatus } from "../lib/getDeadlineStatus";
+import type { DeadlineMeterRow } from "./DeadlineMeter";
 
 interface CivicCandidate {
   name: string;
@@ -1558,6 +1566,81 @@ function WorkspaceShell({
     setPrintViewActive(false);
   }, []);
 
+  // Blind mode — hides candidate names until the user explicitly reveals them.
+  // Prototype WorkspaceView ~492–510.
+  // Task 1: default TRUE (privacy-first) per prototype `saved?.blindMode !== false`.
+  const [blindMode, setBlindMode] = useState(true);
+  const [revealedCandidates, setRevealedCandidates] = useState<Set<string>>(
+    new Set(),
+  );
+  // Task 2: clear reveals ONLY when turning blind back ON (prototype-app.jsx:221-232).
+  const onToggleBlindMode = useCallback(() => {
+    setBlindMode((prev) => {
+      const next = !prev;
+      if (next) setRevealedCandidates(new Set());
+      return next;
+    });
+  }, []);
+  const onRevealCandidate = useCallback((id: string) => {
+    setRevealedCandidates((prev) => new Set([...prev, id]));
+  }, []);
+  // Task 3: re-anonymize a single revealed card without flipping global blind mode
+  // (prototype-app.jsx:212-219).
+  const onHideCandidate = useCallback((id: string) => {
+    setRevealedCandidates((prev) => {
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
+  }, []);
+
+  // Task 5: post-decision toast — one-time, when every race is decided.
+  // Persisted in localStorage so it never re-nags on return.
+  // Initialized lazily from localStorage to avoid a flash on mount.
+  const [toastDismissed, setToastDismissed] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem("vc-decided-toast") === "1";
+    } catch {
+      return false;
+    }
+  });
+  const handleDismissDecidedToast = useCallback(() => {
+    setToastDismissed(true);
+    try {
+      localStorage.setItem("vc-decided-toast", "1");
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  // Settings panel — slide-in drawer opened from cog button.
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const handleOpenSettings = useCallback(() => setSettingsOpen(true), []);
+  const handleCloseSettings = useCallback(() => setSettingsOpen(false), []);
+
+  // Profile resume modal — opened from Settings → "Resume from saved profile".
+  const [profileResumeOpen, setProfileResumeOpen] = useState(false);
+  const handleOpenProfileResume = useCallback(() => {
+    setProfileResumeOpen(true);
+  }, []);
+  const handleCloseProfileResume = useCallback(() => {
+    setProfileResumeOpen(false);
+  }, []);
+  // onResume receives the raw voter-profile block text. voterProfile in
+  // ElectionResult is currently readonly null (setter removed in PR C —
+  // returning voters use the cold-open chip instead). We close the modal
+  // here; a future PR can thread a setter prop if needed.
+  /* NEEDS-KEY: none — ambiguity note: the raw profile text received here
+     cannot currently be fed back into ElectionResult's `voterProfile` state
+     (the setter was removed). Modal is wired and functional for file parsing
+     and error display; the restore path is blocked by the missing setter. */
+  const handleProfileResumed = useCallback(
+    (_profileText: string) => {
+      setProfileResumeOpen(false);
+    },
+    [],
+  );
+
   // Phase 9 (PR 7) — budget-exhausted continuity. Split into two pieces:
   //
   //   1. `budgetOut` — persistent memory that the community budget is out.
@@ -1801,6 +1884,56 @@ function WorkspaceShell({
   // packet §22).
   const hasPolling = races.length > 0 && decisions.length / races.length > 0.5;
 
+  // Task 4: map lockedThemes → ConcernInterpretationEntry[] for CompareModal
+  // via ChatPanel's `issues` prop. Theme only carries `name` and `quotes`;
+  // `canonicalIssue` is absent, so CompareModal's per-issue alignment-score
+  // lookup will find no match and render "—" rows — known-lossy mapping.
+  // `interpretation` (the rendered label) is faithfully set to theme.name.
+  const issueItems: ConcernInterpretationEntry[] = useMemo(
+    () =>
+      (themes ?? []).map((t, i) => ({
+        sourceType: "tag" as const,
+        rank: i + 1,
+        interpretation: t.name,
+        confidence: "clear" as const,
+        quotes: t.quotes.map((q) => ({ label: "your words", text: q })),
+      })),
+    [themes],
+  );
+
+  // Task 6: build DeadlineMeterRow[] for PollingStatusBar.
+  // Builds one row per relevant election deadline. Only the election-day row
+  // is always present; registration rows are added when deadlines are future.
+  // labelKey === 'deadline.electionDay' drives the countdown in PollingStatusBar.
+  const deadlineRows = useMemo<DeadlineMeterRow[]>(() => {
+    const todayISO = getTodayInLatestUsZone();
+    const rows: DeadlineMeterRow[] = [];
+    const el = state.elections.find((e) => e.date >= todayISO) ?? state.elections[0];
+    if (el?.date) {
+      rows.push({
+        ...getDeadlineStatus(el.date, todayISO),
+        labelKey: "deadline.electionDay",
+      });
+    }
+    const regOnline = state.registration.online;
+    if (regOnline.available && regOnline.deadline && regOnline.deadline >= todayISO) {
+      rows.push({
+        ...getDeadlineStatus(regOnline.deadline, todayISO),
+        labelKey: "deadline.registrationOnline",
+      });
+    }
+    if (state.registration.byMail.deadline >= todayISO) {
+      rows.push({
+        ...getDeadlineStatus(state.registration.byMail.deadline, todayISO),
+        labelKey: "deadline.registrationByMail",
+      });
+    }
+    return rows;
+  }, [state]);
+
+  // Task 6: first polling location for PollingStatusBar (gateway guard below).
+  const primaryPollingLocation = pollingData?.pollingLocations?.[0] ?? null;
+
   if (printViewActive) {
     return (
       <PrintBallot
@@ -1818,13 +1951,33 @@ function WorkspaceShell({
   }
 
   return (
-    <div
-      data-testid="workspace-shell"
-      // PR A2 — viewport math accounts for the prototype AppNav (~63px,
-      // uniform). Column widths match the prototype's 240/1fr/380 grid.
-      className="grid h-[calc(100vh-63px)]"
-      style={{ gridTemplateColumns: "240px 1fr 380px" }}
-    >
+    <div data-testid="workspace-shell" className="flex flex-col h-[calc(100vh-63px)]">
+      {/* Task 6: PollingStatusBar — between AppNav and the 3-pane shell.
+          Prototype WorkspaceView ~line 401: <PollingStatusBar> sits between
+          <AppNav /> and the .ws-wrap grid. Gate on a real polling location
+          being available (pollingData from /api/civic may be null for some zips).
+          PollingInfoCard (left-rail placement) is deferred: WorkspaceRail does
+          not yet accept pollingInfo/stateData props; wiring it requires a
+          WorkspaceRail prop extension owned by a separate agent. Reported below. */}
+      {primaryPollingLocation && deadlineRows.length > 0 && (
+        <PollingStatusBar
+          pollingInfo={{
+            name: primaryPollingLocation.name,
+            address: primaryPollingLocation.address,
+            hours: primaryPollingLocation.hours ?? "",
+            notes: primaryPollingLocation.notes,
+          }}
+          stateData={state}
+          rows={deadlineRows}
+        />
+      )}
+      <div
+        // PR A2 — viewport math accounts for the prototype AppNav (~63px,
+        // uniform). Column widths match the prototype's 240/1fr/380 grid.
+        // Outer div is now flex-col; this inner div fills remaining height.
+        className="grid flex-1 min-h-0"
+        style={{ gridTemplateColumns: "240px 1fr 380px" }}
+      >
       <WorkspaceRail
         decidedCount={decisions.length}
         totalRaces={races.length}
@@ -1870,6 +2023,16 @@ function WorkspaceShell({
           // is a pure UI action; the chat stays gated until BYOK / reset.
           budgetExhausted={!!budgetOut}
           gateVariant={budgetOut?.variant}
+          // Blind mode — cross-file contract with ChatPanel (tasks 1-3).
+          blindMode={blindMode}
+          revealedCandidates={revealedCandidates}
+          onRevealCandidate={onRevealCandidate}
+          onToggleBlindMode={onToggleBlindMode}
+          onHideCandidate={onHideCandidate}
+          // Task 4: locked value themes mapped to ConcernInterpretationEntry[]
+          // for CompareModal's per-issue rows. canonicalIssue is absent
+          // (Theme has no canonicalIssue) — alignment-score rows will render "—".
+          issues={issueItems}
           workspace={{
             activeRace: activeRace
               ? {
@@ -1939,6 +2102,7 @@ function WorkspaceShell({
         onSaveProfile={onSaveProfile}
         onHandoff={handleHandoffFromBallotPane}
       />
+      </div>{/* closes inner 3-pane grid */}
       {/*
        * PR 7 — BudgetExhausted as a modal overlay (not a workspace
        * replacement). Rendered as a sibling of the 3-pane grid so the
@@ -1962,6 +2126,118 @@ function WorkspaceShell({
           onDismiss={handleDismissOverlay}
         />
       )}
+
+      {/* Task 5: post-decision toast (prototype-app.jsx:543-565).
+          Fires once when every derived race is decided. One-time: dismissed
+          state is persisted to localStorage 'vc-decided-toast' = '1' so it
+          never re-nags. Tip jar button omitted — no /tip route in the repo.
+          NEEDS-KEY: toast.allDecidedTitle — function, EN "You decided all {n} races."
+          NEEDS-KEY: toast.allDecidedSub   — EN "Take your ballot to the booth — many polls don't allow phones."
+          NEEDS-KEY: toast.print           — EN "Print"
+          NEEDS-KEY: toast.saveTxt         — EN "Save .txt"
+      */}
+      {racesWithDecided.length > 0
+        && decisions.length >= racesWithDecided.length
+        && !toastDismissed
+        && (
+          <div
+            role="status"
+            className={[
+              "fixed bottom-5 left-1/2 -translate-x-1/2 z-50",
+              "w-[min(420px,90vw)]",
+              "bg-paper-2 border border-rule rounded-lg shadow-[var(--shadow-card)]",
+              "flex flex-col gap-0",
+            ].join(" ")}
+          >
+            <div className="flex items-start justify-between gap-3 px-5 pt-4 pb-3">
+              <div className="flex flex-col gap-0.5">
+                <div className="font-sans text-[15px] font-semibold text-ink leading-snug">
+                  {/* NEEDS-KEY: toast.allDecidedTitle — EN "You decided all {n} races." */}
+                  {`You decided all ${racesWithDecided.length} races.`}
+                </div>
+                <div className="font-sans text-[13px] text-ink-2 leading-snug">
+                  {/* NEEDS-KEY: toast.allDecidedSub — EN "Take your ballot to the booth — many polls don't allow phones." */}
+                  Take your ballot to the booth &mdash; many polls don&apos;t allow phones.
+                </div>
+              </div>
+              <button
+                aria-label="Dismiss"
+                onClick={handleDismissDecidedToast}
+                className="mt-0.5 shrink-0 text-ink-3 hover:text-ink transition-colors text-[18px] leading-none cursor-pointer"
+              >
+                &times;
+              </button>
+            </div>
+            <div className="flex gap-2 px-5 pb-4">
+              <button
+                onClick={() => { handleDismissDecidedToast(); handlePrintFromBallotPane(); }}
+                className="flex-1 font-sans text-[13px] font-medium text-ink bg-paper border border-rule rounded px-3 py-1.5 hover:border-ink-2 transition-colors cursor-pointer"
+              >
+                {/* NEEDS-KEY: toast.print — EN "Print" */}
+                Print &#8599;
+              </button>
+              <button
+                onClick={() => { handleDismissDecidedToast(); onSaveProfile(); }}
+                className="flex-1 font-sans text-[13px] font-medium text-ink bg-paper border border-rule rounded px-3 py-1.5 hover:border-ink-2 transition-colors cursor-pointer"
+              >
+                {/* NEEDS-KEY: toast.saveTxt — EN "Save .txt" */}
+                Save .txt &#8595;
+              </button>
+            </div>
+          </div>
+        )}
+
+      {/* Settings cog — fixed bottom-right, outside the grid stacking context.
+          Prototype WorkspaceView puts the cog in AppNav; BallotToolClient cannot
+          reach AppNav, so we float it here instead. Report deviation: placed
+          fixed bottom-right of workspace rather than in the top nav bar. */}
+      <button
+        onClick={handleOpenSettings}
+        aria-label={/* NEEDS-KEY: nav.settings — EN "Settings" / ES "Configuración" */ "Settings"}
+        className={[
+          "fixed bottom-5 right-5 z-50",
+          "w-10 h-10 rounded-full",
+          "bg-paper border border-rule shadow-[var(--shadow-card)]",
+          "flex items-center justify-center",
+          "text-ink-2 hover:text-ink hover:border-ink-2 transition-colors",
+          "cursor-pointer",
+        ].join(" ")}
+      >
+        {/* Gear icon — inline SVG, no dependency */}
+        <svg
+          viewBox="0 0 20 20"
+          width="16"
+          height="16"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.6"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
+          <circle cx="10" cy="10" r="2.5" />
+          <path d="M10 2v2M10 16v2M2 10h2M16 10h2M4.22 4.22l1.42 1.42M14.36 14.36l1.42 1.42M4.22 15.78l1.42-1.42M14.36 5.64l1.42-1.42" />
+        </svg>
+      </button>
+
+      {/* Settings panel — slide-in drawer */}
+      <SettingsPanel
+        open={settingsOpen}
+        onClose={handleCloseSettings}
+        onResetAll={onRestart}
+        onExportProfile={onSaveProfile}
+        onResumeProfile={handleOpenProfileResume}
+        onNavigatePrivacy={() => window.open("/privacy", "_blank")}
+        onNavigateMethodology={() => window.open("/methodology", "_blank")}
+        onNavigateAbout={() => window.open("/about", "_blank")}
+      />
+
+      {/* Profile resume modal — opened from Settings → "Resume from saved profile" */}
+      <ProfileResumeModal
+        open={profileResumeOpen}
+        onClose={handleCloseProfileResume}
+        onResume={handleProfileResumed}
+      />
     </div>
   );
 }
@@ -1980,11 +2256,15 @@ export function BallotToolClient({
 }: BallotToolClientProps = {}) {
   const [result, setResult] = useState<LookupResult>({ status: "idle" });
   const [currentZip, setCurrentZip] = useState("");
+  // Track the submitted address string so LoadingView and GeocodeFailNotice
+  // can display it. Previously only the ZIP was stored.
+  const [submittedAddress, setSubmittedAddress] = useState("");
   const [pollingData, setPollingData] = useState<PollingData | null>(null);
   const { lang } = useLanguage();
   const t = translations[lang];
 
   async function handleAddressSubmit(address: string) {
+    setSubmittedAddress(address);
     setPollingData(null);
     const zip = extractZip(address);
     let stateCode: string | null = null;
@@ -2067,39 +2347,38 @@ export function BallotToolClient({
     );
   }
 
-  // Pre-research: show address form and status messages
+  // LoadingView — full-page takeover while geocoding + race fetch is in-flight.
+  // selfAdvance=false: the parent (handleAddressSubmit) drives the transition
+  // when the real fetch resolves via setResult({ status: "found" | "not-found" … }).
+  // The onDone no-op satisfies the required prop; handleAddressSubmit controls
+  // the actual state transition.
+  if (result.status === "loading") {
+    return (
+      <LoadingView
+        address={submittedAddress}
+        onDone={() => {
+          /* parent drives — handleAddressSubmit calls setResult */
+        }}
+        selfAdvance={false}
+      />
+    );
+  }
+
+  // GeocodeFailNotice — full-page card when the address cannot be resolved.
+  if (result.status === "not-found") {
+    return (
+      <GeocodeFailNotice
+        address={submittedAddress}
+        onEditAddress={() => setResult({ status: "idle" })}
+        onContinueWithZip={() => setResult({ status: "idle" })}
+      />
+    );
+  }
+
+  // Pre-research: show address form and remaining status messages
   return (
     <div>
       <ZipForm onSubmit={handleAddressSubmit} />
-
-      {result.status === "loading" && (
-        <p
-          className="mt-4 text-on-surface-muted"
-          role="status"
-          aria-live="polite"
-        >
-          {t.loading}
-        </p>
-      )}
-
-      {result.status === "not-found" && (
-        <div
-          data-testid="not-found-message"
-          role="alert"
-          className="mt-4 p-4 bg-surface-low rounded-sm text-sm"
-        >
-          {t.errors.notFound}{" "}
-          <a
-            href="https://www.usa.gov/states-and-territories"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline text-primary"
-          >
-            Find your state election website
-          </a>
-          .
-        </div>
-      )}
 
       {result.status === "multi-state" && (
         <StateSelectorModal

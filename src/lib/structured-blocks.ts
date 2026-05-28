@@ -115,6 +115,10 @@ export interface DonorBucketSlice {
    * model fell back to web search and only knows percentages.
    */
   amount?: number;
+  /** Design-delta: true when this bucket is an issue-oriented PAC. */
+  isIssuePAC?: boolean;
+  /** Design-delta: canonical issue id this PAC aligns with (e.g. "healthcare_affordability"). */
+  alignsWith?: string;
 }
 
 /**
@@ -183,6 +187,12 @@ export interface RacePatternsCandidate {
    * is non-null.
    */
   donorDataSource?: DonorDataSource;
+  /**
+   * Design-delta: funding-mix breakdown (small/large/PAC percentages + total
+   * raised + cycle label). Independent of donorCoalition — present whenever
+   * funding-mix data is available.
+   */
+  fundingMix?: { small: number; large: number; pac: number; total: number; cycle: string };
 }
 
 export interface RacePatternsBlock {
@@ -248,6 +258,13 @@ function sanitizeDonorCoalition(
       ) {
         slice.amount = e.amount;
       }
+      // Design-delta: issue-PAC flag and alignment target.
+      if (typeof e.isIssuePAC === "boolean") {
+        slice.isIssuePAC = e.isIssuePAC;
+      }
+      if (isNonEmptyString(e.alignsWith)) {
+        slice.alignsWith = e.alignsWith;
+      }
       out.push(slice);
     }
   }
@@ -259,6 +276,36 @@ function sanitizeTotalRaised(value: unknown): number | undefined {
   if (!Number.isFinite(value)) return undefined;
   if (value < 0) return undefined;
   return value;
+}
+
+function sanitizeFundingMix(
+  value: unknown,
+): { small: number; large: number; pac: number; total: number; cycle: string } | undefined {
+  if (!value || typeof value !== "object") return undefined;
+  const v = value as Record<string, unknown>;
+
+  // small/large/pac must be finite integers, clamped to 0–100
+  if (
+    typeof v.small !== "number" || !Number.isFinite(v.small) || !Number.isInteger(v.small) ||
+    typeof v.large !== "number" || !Number.isFinite(v.large) || !Number.isInteger(v.large) ||
+    typeof v.pac !== "number" || !Number.isFinite(v.pac) || !Number.isInteger(v.pac)
+  ) return undefined;
+
+  // total must be finite and non-negative
+  if (
+    typeof v.total !== "number" || !Number.isFinite(v.total) || v.total < 0
+  ) return undefined;
+
+  // cycle must be a non-empty string
+  if (!isNonEmptyString(v.cycle)) return undefined;
+
+  return {
+    small: Math.max(0, Math.min(100, v.small)),
+    large: Math.max(0, Math.min(100, v.large)),
+    pac: Math.max(0, Math.min(100, v.pac)),
+    total: v.total,
+    cycle: v.cycle,
+  };
 }
 
 const DONOR_DATA_SOURCE_VALUES: readonly DonorDataSource[] = [
@@ -463,6 +510,12 @@ function buildRacePatternsCandidate(
     out.valuesHighlight = vh ?? null;
   }
 
+  // Design-delta: funding mix (independent of donorCoalition)
+  if (Object.prototype.hasOwnProperty.call(parsed, "fundingMix")) {
+    const fm = sanitizeFundingMix(parsed.fundingMix);
+    if (fm !== undefined) out.fundingMix = fm;
+  }
+
   return out;
 }
 
@@ -546,6 +599,8 @@ export interface ContributingVote {
   voteCast: AlignmentVoteCast;
   date: string;
   source: SourceRef;
+  /** Design-delta: CAN2026-sourced explanatory paragraph for this vote. */
+  narrative?: string;
 }
 
 export type AlignmentSourceType = "voting_record" | "web_search";
@@ -594,12 +649,19 @@ function sanitizeContributingVote(value: unknown): ContributingVote | null {
   const src = sanitizeSourceRef(v.source);
   if (!src) return null;
 
-  return {
+  const out: ContributingVote = {
     billTitle: v.billTitle,
     voteCast: v.voteCast,
     date: v.date,
     source: src,
   };
+
+  // Design-delta: optional explanatory paragraph.
+  if (isNonEmptyString(v.narrative)) {
+    out.narrative = v.narrative;
+  }
+
+  return out;
 }
 
 const URL_RE = /^https?:\/\//;
@@ -800,6 +862,11 @@ export interface ConcernInterpretationEntry {
   confidence: ConcernInterpretationConfidence;
   disambiguationQuestion?: string; // present when confidence === "low"
   disambiguationOptions?: string[]; // present when confidence === "low"; 2-4 entries
+  /**
+   * Design-delta: anchors the interpretation back to the user's original words.
+   * Each entry is a { label, text } pair (e.g. label="your words", text="…").
+   */
+  quotes?: { label: string; text: string }[];
 }
 
 export interface ConcernInterpretationBlock {
@@ -905,6 +972,22 @@ function sanitizeConcernInterpretationEntry(
           typeof o === "string" && (o as string).trim().length > 0,
       )
       .map((o) => o.trim());
+  }
+
+  // Design-delta: quotes anchoring interpretation back to user's original words.
+  if (Array.isArray(v.quotes)) {
+    const quotes = (v.quotes as unknown[]).reduce<{ label: string; text: string }[]>(
+      (acc, q) => {
+        if (!q || typeof q !== "object") return acc;
+        const qObj = q as Record<string, unknown>;
+        if (isNonEmptyString(qObj.label) && isNonEmptyString(qObj.text)) {
+          acc.push({ label: qObj.label, text: qObj.text });
+        }
+        return acc;
+      },
+      [],
+    );
+    if (quotes.length > 0) entry.quotes = quotes;
   }
 
   return entry;

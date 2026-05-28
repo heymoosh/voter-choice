@@ -1517,3 +1517,104 @@ describe("stripPartialAlignmentScoresBlock", () => {
     expect(stripPartialAlignmentScoresBlock("")).toBe("");
   });
 });
+
+/* ── Design-delta passthrough fields ────────────────────────────── */
+
+describe("design-delta: DonorBucketSlice.isIssuePAC + alignsWith", () => {
+  it("passes through isIssuePAC and alignsWith when present on a coalition slice", () => {
+    const block = [
+      '[RACE_PATTERNS race="US Senate TX"]',
+      '{"id":"A","name":"Alice","incumbent":true,"donorCoalition":[{"label":"PhRMA","percent":4,"amount":340000,"isIssuePAC":true,"alignsWith":"healthcare_affordability"},{"label":"Oil & Gas","percent":14,"amount":1200000}],"donorSource":{"name":"FEC","url":"https://www.fec.gov/"},"donorDataSource":"voting_record","totalRaised":1540000,"endorsements":null,"platformAlignment":null,"retrospective":null,"valuesHighlight":null}',
+      '{"id":"B","name":"Bob","incumbent":false,"donorCoalition":null,"endorsements":null,"platformAlignment":null,"retrospective":null,"valuesHighlight":null}',
+      "[/RACE_PATTERNS]",
+    ].join("\n");
+    const result = parseRacePatternsBlock(block);
+    const sliceA0 = result?.candidates[0].donorCoalition?.[0];
+    expect(sliceA0?.isIssuePAC).toBe(true);
+    expect(sliceA0?.alignsWith).toBe("healthcare_affordability");
+    // Slice without the fields should not have them defined
+    const sliceA1 = result?.candidates[0].donorCoalition?.[1];
+    expect(sliceA1?.isIssuePAC).toBeUndefined();
+    expect(sliceA1?.alignsWith).toBeUndefined();
+  });
+});
+
+describe("design-delta: RacePatternsCandidate.fundingMix", () => {
+  it("passes through a valid fundingMix and omits it when absent", () => {
+    const block = [
+      '[RACE_PATTERNS race="US Senate TX"]',
+      '{"id":"A","name":"Alice","incumbent":true,"donorCoalition":null,"endorsements":null,"platformAlignment":null,"retrospective":null,"valuesHighlight":null,"fundingMix":{"small":38,"large":41,"pac":21,"total":4200000,"cycle":"2024 cycle"}}',
+      '{"id":"B","name":"Bob","incumbent":false,"donorCoalition":null,"endorsements":null,"platformAlignment":null,"retrospective":null,"valuesHighlight":null}',
+      "[/RACE_PATTERNS]",
+    ].join("\n");
+    const result = parseRacePatternsBlock(block);
+    const fmA = result?.candidates[0].fundingMix;
+    expect(fmA).toEqual({ small: 38, large: 41, pac: 21, total: 4200000, cycle: "2024 cycle" });
+    // Candidate without fundingMix should not have the field
+    expect(result?.candidates[1].fundingMix).toBeUndefined();
+  });
+});
+
+describe("design-delta: ContributingVote.narrative", () => {
+  it("passes through narrative when present; omits it when absent", () => {
+    const voteWithNarrative = JSON.stringify({
+      billTitle: "HR-2 · Lower Drug Costs Act",
+      voteCast: "against",
+      date: "2023-07-14",
+      source: { name: "CAN2026 case file", url: "https://can2026.org/cases/hr2-2023" },
+      narrative: "One of 49 GOP senators against. Cornyn gave a 12-minute floor speech opposing price controls.",
+    });
+    const voteWithoutNarrative = JSON.stringify({
+      billTitle: "IRA · Inflation Reduction Act",
+      voteCast: "against",
+      date: "2022-08-07",
+      source: { name: "Congress.gov roll call", url: "https://www.congress.gov" },
+    });
+    const entryLine = JSON.stringify({
+      candidateId: "cornyn",
+      scores: [
+        {
+          canonicalIssue: "healthcare_affordability",
+          issueLabel: "Healthcare Affordability",
+          resolvedStance: "voter favors lower drug prices",
+          sourceType: "voting_record",
+          kept: 1,
+          total: 2,
+          contributingVotes: [JSON.parse(voteWithNarrative), JSON.parse(voteWithoutNarrative)],
+        },
+      ],
+    });
+    const block = [
+      '[ALIGNMENT_SCORES race="US Senate TX"]',
+      entryLine,
+      candidateBLine,
+      "[/ALIGNMENT_SCORES]",
+    ].join("\n");
+    const result = parseAlignmentScoresBlock(block);
+    const votes = result?.entries[0].scores?.[0].contributingVotes;
+    expect(votes?.[0].narrative).toBe(
+      "One of 49 GOP senators against. Cornyn gave a 12-minute floor speech opposing price controls.",
+    );
+    expect(votes?.[1].narrative).toBeUndefined();
+  });
+});
+
+describe("design-delta: ConcernInterpretationEntry.quotes", () => {
+  it("passes through quotes array when present; omits it when absent", () => {
+    const block = [
+      "[CONCERN_INTERPRETATION]",
+      '{"sourceType":"freeText","sourceText":"my mom’s insulin keeps going up","rank":1,"interpretation":"Lower insulin & drug prices","canonicalIssue":"healthcare_affordability","stance":"voter favors lower drug prices","confidence":"clear","quotes":[{"label":"your words","text":"my mom’s insulin keeps going up"},{"label":"and","text":"copays are insane"}]}',
+      '{"sourceType":"freeText","sourceText":"rent went up","rank":2,"interpretation":"Stronger rent protections","confidence":"clear"}',
+      "[/CONCERN_INTERPRETATION]",
+    ].join("\n");
+    const result = parseConcernInterpretationBlock(block);
+    const e0 = result?.entries[0];
+    expect(e0?.quotes).toEqual([
+      { label: "your words", text: "my mom’s insulin keeps going up" },
+      { label: "and", text: "copays are insane" },
+    ]);
+    // Entry without quotes should not have the field
+    const e1 = result?.entries[1];
+    expect(e1?.quotes).toBeUndefined();
+  });
+});

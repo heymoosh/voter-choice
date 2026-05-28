@@ -11,6 +11,7 @@ import {
   PollingLocationCard,
   PollingLocationFallback,
 } from "./PollingLocationCard";
+import { GeocodeFailNotice } from "./GeocodeFailNotice";
 import type { StateElectionData } from "../types/election";
 import type { Language } from "../lib/translations";
 import type { Theme } from "../lib/prompts/types";
@@ -1363,9 +1364,20 @@ function PollingView({
         />
       )}
 
-      {/* Error / Skipped fallback */}
-      {(addressStep === "error" ||
-        (addressStep === "done" && !hasPollingResults(pollingData))) && (
+      {/* Geocode error — address could not be resolved */}
+      {addressStep === "error" && (
+        <GeocodeFailNotice
+          /* address not in PollingView scope; falls back to "(empty)" in component */
+          address={undefined}
+          /* TODO: thread a reset-address-field handler here when workspace wires it */
+          onEditAddress={() => {}}
+          /* "Enter ZIP instead" maps to the skip path which bypasses address lookup */
+          onContinueWithZip={onAddressSkip}
+        />
+      )}
+
+      {/* API returned no results (geocoded fine, but no polling data) */}
+      {addressStep === "done" && !hasPollingResults(pollingData) && (
         <PollingLocationFallback
           fallbackUrl={state.resources.pollingPlaceLookup}
         />

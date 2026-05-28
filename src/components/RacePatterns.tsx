@@ -16,6 +16,8 @@ import { FunderBars } from "./FunderBars";
 import { PlatformAlignmentRatio } from "./PlatformAlignmentRatio";
 import { AlignmentScoreBanner } from "./AlignmentScoreBanner";
 import { AlignmentDrilldown } from "./AlignmentDrilldown";
+import { getCandidateIdentity } from "../lib/candidateIdentity";
+import { anonymizeText } from "../lib/anonymizeText";
 
 /* ──────────────────────────────────────────────────────────────
  * RacePatterns — four-pattern candidate/proposition dashboard.
@@ -46,6 +48,23 @@ export interface RacePatternsProps {
   pickedCandidateId?: string;
   isStreaming?: boolean;
   alignmentScoresByCandidate?: Map<string, AlignmentScoresEntry>;
+  /** Blind-mode: when true, candidate names are hidden as Candidate A/B/C. */
+  blindMode?: boolean;
+  /** Set of candidateIds that have been individually revealed in blind mode. */
+  revealedCandidates?: Set<string>;
+  /** Called when the voter taps "Reveal" on a single candidate card. */
+  onRevealCandidate?: (id: string) => void;
+  /** Called when the voter clicks "Compare" (candidate races only). */
+  onCompare?: () => void;
+  /** Called when the voter clicks "See all votes →" on a candidate card. */
+  onSeeAllVotes?: (payload: {
+    candidate: RacePatternsCandidate;
+    alignmentEntry: AlignmentScoresEntry | undefined;
+    blindMode: boolean;
+    alias: string;
+  }) => void;
+  /** Called when voter re-anonymizes a previously revealed candidate card. */
+  onHideCandidate?: (id: string) => void;
 }
 
 /* ── Anonymous label helpers ──────────────────────────────── */
@@ -366,37 +385,55 @@ function CandidateSection({
   candidate,
   idx,
   isProposition,
-  revealed,
   submitted,
   submitting,
   isStreaming,
   registry,
   onPick,
+  onRevealCandidate,
+  onSeeAllVotes,
   t,
   alignmentEntry,
   expandedDrilldownIssue,
   onDrillDown,
   onDrillDownClose,
+  peerTotals,
+  blindMode,
+  revealedCandidates,
+  onHideCandidate,
 }: {
   candidate: RacePatternsCandidate;
   idx: number;
   isProposition: boolean;
-  revealed: boolean;
   submitted: boolean;
   submitting: boolean;
   isStreaming: boolean;
   registry: SourceRegistry;
   onPick: () => void;
+  onRevealCandidate?: (id: string) => void;
+  onSeeAllVotes?: (payload: {
+    candidate: RacePatternsCandidate;
+    alignmentEntry: AlignmentScoresEntry | undefined;
+    blindMode: boolean;
+    alias: string;
+  }) => void;
   t: (typeof translations)["en"]["research"];
   alignmentEntry?: AlignmentScoresEntry;
   expandedDrilldownIssue?: string | null;
   onDrillDown: (canonicalIssue: string) => void;
   onDrillDownClose: () => void;
+  peerTotals?: import("../lib/peerComparison").PeerEntry[];
+  blindMode?: boolean;
+  revealedCandidates?: Set<string>;
+  onHideCandidate?: (id: string) => void;
 }) {
-  const showName = isProposition || revealed;
-  const displayLabel = showName
-    ? candidate.name
-    : `Candidate ${anonLabel(idx)}`;
+  const identity = getCandidateIdentity(candidate, {
+    blindMode,
+    revealed: revealedCandidates,
+    index: idx,
+  });
+  const showName = isProposition || !identity.isBlind;
+  const displayLabel = showName ? candidate.name : identity.aliasLabel;
   const pickDisabled = submitting || submitted || isStreaming;
 
   // Find the expanded score object (if any) for this candidate's drilldown
@@ -435,7 +472,7 @@ function CandidateSection({
       <header className="flex items-start justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">
-            {!isProposition && !revealed && (
+            {!isProposition && identity.isBlind && (
               <span
                 aria-hidden="true"
                 className="inline-flex items-center justify-center w-8 h-8 bg-paper border border-rule rounded-full font-serif text-base font-semibold text-civic"
@@ -455,8 +492,69 @@ function CandidateSection({
               data-testid={`race-patterns-prior-role-${candidate.id}`}
               className="mt-1 text-sm text-ink-2"
             >
-              {candidate.priorRole}
+              {!isProposition && identity.isBlind
+                ? anonymizeText(candidate.priorRole, {
+                    blindMode: true,
+                    realLastName: candidate.name.split(" ").pop(),
+                    alias: identity.aliasLabel,
+                  })
+                : candidate.priorRole}
             </p>
+          )}
+          {/* Per-card reveal affordance (blind mode only, non-proposition) */}
+          {!isProposition && identity.isBlind && onRevealCandidate && (
+            <button
+              type="button"
+              data-testid={`race-patterns-reveal-candidate-${candidate.id}`}
+              onClick={() => onRevealCandidate(candidate.id)}
+              className="mt-1 inline-flex items-center gap-[5px] text-[12px] text-civic font-medium hover:text-civic-2 transition-colors"
+            >
+              {/* Eye icon — prototype WorkspaceView ~492 */}
+              <svg
+                viewBox="0 0 24 24"
+                width="13"
+                height="13"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+              {/* NEEDS-KEY: research.revealCandidateButton — EN "Reveal" / ES "Revelar" */}
+              <span>Reveal</span>
+            </button>
+          )}
+          {/* Per-card hide affordance — re-anonymizes a revealed card while global blind mode is on */}
+          {!isProposition && blindMode && !identity.isBlind && onHideCandidate && (
+            <button
+              type="button"
+              data-testid={`race-patterns-hide-candidate-${candidate.id}`}
+              onClick={() => onHideCandidate(candidate.id)}
+              className="mt-1 inline-flex items-center gap-[5px] text-[12px] text-ink-3 font-medium hover:text-ink-2 transition-colors"
+            >
+              {/* Eye-off icon */}
+              <svg
+                viewBox="0 0 24 24"
+                width="13"
+                height="13"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
+                <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
+                <line x1="1" y1="1" x2="23" y2="23" />
+              </svg>
+              {/* NEEDS-KEY: research.hideCandidateButton — EN "Hide" */}
+              <span>Hide</span>
+            </button>
           )}
         </div>
         {/* Values highlight callout */}
@@ -513,6 +611,8 @@ function CandidateSection({
             funders={candidate.donorCoalition}
             totalRaised={candidate.totalRaised}
             donorDataSource={candidate.donorDataSource}
+            fundingMix={candidate.fundingMix}
+            peerTotals={peerTotals}
           />
         ) : (
           <p
@@ -606,6 +706,28 @@ function CandidateSection({
         )}
       </div>
 
+      {/* See all votes — prototype WorkspaceView ~562 */}
+      {alignmentEntry && onSeeAllVotes && (
+        <div className="flex justify-end">
+          <button
+            type="button"
+            data-testid={`race-patterns-see-all-votes-${candidate.id}`}
+            onClick={() =>
+              onSeeAllVotes({
+                candidate,
+                alignmentEntry,
+                blindMode: !!identity.isBlind,
+                alias: identity.aliasLabel,
+              })
+            }
+            className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-civic hover:text-civic-2 underline-offset-4 hover:underline transition-colors"
+          >
+            {/* NEEDS-KEY: research.seeAllVotes — EN "See all votes →" / ES "Ver todos los votos →" */}
+            See all votes →
+          </button>
+        </div>
+      )}
+
       {/* Pick button (per candidate) */}
       {!submitted && (
         <button
@@ -676,11 +798,20 @@ export function RacePatterns({
   pickedCandidateId,
   isStreaming = false,
   alignmentScoresByCandidate,
+  blindMode = false,
+  revealedCandidates = new Set<string>(),
+  onRevealCandidate,
+  onCompare,
+  onSeeAllVotes,
+  onHideCandidate,
 }: RacePatternsProps) {
   const { lang } = useLanguage();
   const t = translations[lang].research;
 
   const isProp = isPropositionBlock(block);
+  // The internal `revealed` toggle is kept for the "Reveal all / Hide names"
+  // button (non-blind-mode path). In blind-mode, identity is controlled by
+  // the parent via blindMode + revealedCandidates + onRevealCandidate.
   const [revealed, setRevealed] = useState(isProp);
 
   // Drilldown state: which (candidateId, canonicalIssue) is expanded
@@ -730,6 +861,29 @@ export function RacePatterns({
       block.candidates.find((c) => c.id === pickedCandidateId)) ||
     null;
 
+  // Build peer-totals array for the money-map comparison rails.
+  // aliasOrName respects anonymity: real names only when revealed or in
+  // proposition mode (where names are always shown). In blindMode, also
+  // respect per-candidate reveal state via getCandidateIdentity.
+  const allPeerTotals = block.candidates
+    .filter((c) => typeof c.totalRaised === "number" && c.totalRaised > 0)
+    .map((c, idx) => {
+      let aliasOrName: string;
+      if (isProp) {
+        aliasOrName = c.name;
+      } else if (blindMode) {
+        const id = getCandidateIdentity(c, {
+          blindMode,
+          revealed: revealedCandidates,
+          index: idx,
+        });
+        aliasOrName = id.isBlind ? id.aliasLabel : c.name;
+      } else {
+        aliasOrName = revealed ? c.name : `Candidate ${anonLabel(idx)}`;
+      }
+      return { total: c.totalRaised as number, aliasOrName };
+    });
+
   return (
     <section
       data-testid="race-patterns"
@@ -766,8 +920,20 @@ export function RacePatterns({
           aria-label="Donor coalition overview"
         >
           {block.candidates.map((c, idx) => {
-            const label =
-              isProp || revealed ? c.name : `Candidate ${anonLabel(idx)}`;
+            // When blindMode is active, use per-candidate identity for label
+            let label: string;
+            if (isProp) {
+              label = c.name;
+            } else if (blindMode) {
+              const id = getCandidateIdentity(c, {
+                blindMode,
+                revealed: revealedCandidates,
+                index: idx,
+              });
+              label = id.isBlind ? id.aliasLabel : c.name;
+            } else {
+              label = revealed ? c.name : `Candidate ${anonLabel(idx)}`;
+            }
             return (
               <CompactDonorStrip
                 key={c.id}
@@ -799,12 +965,13 @@ export function RacePatterns({
               candidate={c}
               idx={idx}
               isProposition={isProp}
-              revealed={revealed}
               submitted={isSubmitted}
               submitting={isSubmitting}
               isStreaming={isStreaming}
               registry={registry}
               onPick={() => onPick(c.id, c.name)}
+              onRevealCandidate={onRevealCandidate}
+              onSeeAllVotes={onSeeAllVotes}
               t={t}
               alignmentEntry={alignmentEntry}
               expandedDrilldownIssue={
@@ -816,13 +983,33 @@ export function RacePatterns({
                 handleDrillDown(c.id, canonicalIssue)
               }
               onDrillDownClose={handleDrillDownClose}
+              peerTotals={allPeerTotals}
+              blindMode={blindMode}
+              revealedCandidates={revealedCandidates}
+              onHideCandidate={onHideCandidate}
             />
           );
         })}
       </div>
 
-      {/* Reveal/Hide toggle — candidate variant only, until submitted */}
-      {!isProp && !isSubmitted && (
+      {/* Compare button — candidate races only, per prototype WorkspaceView ~514 */}
+      {!isProp && onCompare && (
+        <button
+          type="button"
+          data-testid="race-patterns-compare"
+          onClick={onCompare}
+          disabled={isStreaming}
+          className="w-full border border-rule text-ink-2 px-4 py-3 font-mono text-[11px] uppercase tracking-[0.12em] rounded-lg hover:bg-paper-2 active:scale-95 transition disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          {/* NEEDS-KEY: research.compareCandidates — EN "Compare candidates" / ES "Comparar candidatos" */}
+          Compare candidates
+        </button>
+      )}
+
+      {/* Reveal/Hide toggle — candidate variant only, until submitted.
+          Only rendered when NOT in parent-controlled blindMode (in that mode
+          the per-card reveal affordances are used instead). */}
+      {!isProp && !isSubmitted && !blindMode && (
         <button
           type="button"
           data-testid="race-patterns-reveal"

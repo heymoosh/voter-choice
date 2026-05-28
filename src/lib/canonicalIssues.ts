@@ -24,6 +24,7 @@ export const CANONICAL_ISSUE_LABELS: Record<string, string> = {
   election_integrity: "Election Integrity",
   immigration: "Immigration",
   housing_affordability: "Housing Affordability",
+  congressional_accountability: "Congressional Accountability",
 };
 
 /**

@@ -20,12 +20,15 @@ import { MarkdownText } from "./MarkdownText";
 import { ValuesTagSelector } from "./ValuesTagSelector";
 import type { SubmitPayload, RankedEntry } from "./ValuesTagSelector";
 import { RacePatterns } from "./RacePatterns";
+import { CompareModal } from "./CompareModal";
+import { AllVotesPanel } from "./AllVotesPanel";
+import { AITimeoutBanner } from "./AITimeoutBanner";
 import { ConcernInterpretation } from "./ConcernInterpretation";
 import type { ConcernConfirmation } from "./ConcernInterpretation";
 import { ColdOpenInput } from "./ColdOpenInput";
 import { parseThemeExtraction } from "../lib/prompts/parse-theme-extraction";
 import { parseThemeAmendment } from "../lib/prompts/parse-theme-amendment";
-import type { Theme, RouterView, RouterTrigger } from "../lib/prompts/types";
+import type { Theme, RouterView, RouterTrigger, RaceType } from "../lib/prompts/types";
 import { ThemeAmendEditor } from "./ThemeAmendEditor";
 import { AmendDeltaMessage } from "./AmendDeltaMessage";
 import { AmendRescoreOffer } from "./AmendRescoreOffer";
@@ -57,9 +60,10 @@ import {
   hasOpenConcernInterpretationBlock,
   stripPartialConcernInterpretationBlock,
 } from "../lib/structured-blocks";
-import type { AlignmentScoresEntry } from "../lib/structured-blocks";
+import type { AlignmentScoresEntry, RacePatternsBlock, RacePatternsCandidate, ConcernInterpretationEntry } from "../lib/structured-blocks";
 import { getTodayInLatestUsZone } from "../lib/electionToday";
 import type { GateVariant } from "./BudgetExhausted";
+import type { Race } from "../lib/raceDeriver";
 
 interface ChatMessage {
   role: "user" | "assistant";
@@ -294,6 +298,23 @@ interface ChatPanelProps {
   countyName?: string;
   userSampleBallotText?: string;
   preResearchContext?: string;
+  /**
+   * Cross-file contract (BallotToolClient.tsx parallel agent).
+   * All props below are optional so ResearchLayout callers that omit them
+   * keep working without changes.
+   */
+  /** When true, candidate names are hidden until individually revealed. Default false. */
+  blindMode?: boolean;
+  /** Set of candidateIds the voter has individually revealed. Default new Set(). */
+  revealedCandidates?: Set<string>;
+  /** Called when a voter taps "Reveal" on a single candidate card. */
+  onRevealCandidate?: (id: string) => void;
+  /** Called to toggle blind mode on/off globally. */
+  onToggleBlindMode?: () => void;
+  /** Issue-level concern interpretations for CompareModal per-issue rows. Default []. */
+  issues?: ConcernInterpretationEntry[];
+  /** Called when voter re-anonymizes a previously revealed candidate card. */
+  onHideCandidate?: (id: string) => void;
   /**
    * Phase 5 — the ballot context emitted by the new PartyGate. When set,
    * every outgoing chat request carries this so the route can inject a
@@ -1139,6 +1160,17 @@ function renderRacePatterns(
   onPick: (candidateId: string, candidateName: string) => void,
   onSkip: () => void,
   parentIsStreaming: boolean,
+  blindMode?: boolean,
+  revealedCandidates?: Set<string>,
+  onRevealCandidate?: (id: string) => void,
+  onCompare?: () => void,
+  onSeeAllVotes?: (payload: {
+    candidate: RacePatternsCandidate;
+    alignmentEntry: AlignmentScoresEntry | undefined;
+    blindMode: boolean;
+    alias: string;
+  }) => void,
+  onHideCandidate?: (id: string) => void,
 ): React.ReactElement | null {
   if (msg.role !== "assistant" || !isLastAssistant) return null;
 
@@ -1216,6 +1248,12 @@ function renderRacePatterns(
         onSkip={onSkip}
         isStreaming={parentIsStreaming}
         alignmentScoresByCandidate={alignmentScoresByCandidate}
+        blindMode={blindMode}
+        revealedCandidates={revealedCandidates}
+        onRevealCandidate={onRevealCandidate}
+        onCompare={onCompare}
+        onSeeAllVotes={onSeeAllVotes}
+        onHideCandidate={onHideCandidate}
       />
     </article>
   );
@@ -1344,6 +1382,12 @@ function ChatMessageList({
   countyName,
   stateName,
   primary,
+  blindMode,
+  revealedCandidates,
+  onRevealCandidate,
+  onCompare,
+  onSeeAllVotes,
+  onHideCandidate,
 }: {
   messages: ChatMessage[];
   isStreaming: boolean;
@@ -1379,6 +1423,17 @@ function ChatMessageList({
   countyName?: string;
   stateName?: string;
   primary?: "DEM" | "REP" | "OPEN" | "GENERAL";
+  blindMode?: boolean;
+  revealedCandidates?: Set<string>;
+  onRevealCandidate?: (id: string) => void;
+  onCompare?: () => void;
+  onSeeAllVotes?: (payload: {
+    candidate: RacePatternsCandidate;
+    alignmentEntry: AlignmentScoresEntry | undefined;
+    blindMode: boolean;
+    alias: string;
+  }) => void;
+  onHideCandidate?: (id: string) => void;
 }) {
   const { lang } = useLanguage();
   const t = translations[lang];
@@ -1438,6 +1493,12 @@ function ChatMessageList({
             if (block) onSkipRaceFinal(i, block.race);
           },
           isStreaming,
+          blindMode,
+          revealedCandidates,
+          onRevealCandidate,
+          onCompare,
+          onSeeAllVotes,
+          onHideCandidate,
         );
         if (racePatterns) return racePatterns;
 
@@ -1552,11 +1613,11 @@ function ChatStatusBar({
         </div>
       )}
 
-      {error && !chatDisabled && (
-        <div className="mb-3 bg-surface-low border-l-4 border-accent p-4 text-sm text-on-surface">
-          {error}
-        </div>
-      )}
+      {/* Non-timeout inline error stub — kept for non-AI-transient errors.
+          AITimeoutBanner for transient AI errors is rendered in ChatPanel
+          directly (below the ChatMessageList) where retry/handoff state
+          is accessible. */}
+      {error && !chatDisabled && null /* replaced by AITimeoutBanner below */}
     </>
   );
 }
@@ -1584,6 +1645,8 @@ function WorkspaceChat({
   amendmentJournal = [],
   onAmendmentSave,
   onAcceptRescoreOffer,
+  blindMode = false,
+  onToggleBlindMode,
 }: {
   workspace: WorkspaceModeProps;
   budgetExhausted: boolean;
@@ -1610,6 +1673,10 @@ function WorkspaceChat({
    * rescore offer. Runs submitAmendment and clears the offer when done.
    */
   onAcceptRescoreOffer?: () => Promise<void> | void;
+  /** Blind mode state — when true, candidate names are hidden. */
+  blindMode?: boolean;
+  /** Called to toggle blind mode on/off globally. */
+  onToggleBlindMode?: () => void;
 }) {
   const {
     activeRace,
@@ -1638,6 +1705,8 @@ function WorkspaceChat({
   // Phase 4 will replace these with candidate-specific options when the
   // real cards land. Fix 1 — display-layer title-case the candidate
   // name so "BOOKER" appears as "Booker" in suggestion chips.
+  const isPropositionRace = activeRace.section === "Propositions";
+
   const firstCandidate = normalizeCandidateName(
     activeRace.candidates?.[0]?.name ?? "",
   );
@@ -1666,12 +1735,34 @@ function WorkspaceChat({
         data-testid="workspace-chat-header"
         className="border-b border-rule bg-paper px-7 py-4"
       >
-        <div className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-ink-3">
-          Race {activeRaceIndex + 1} of {totalRaces}
+        <div className="flex items-start justify-between gap-2">
+          <div>
+            <div className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-ink-3">
+              Race {activeRaceIndex + 1} of {totalRaces}
+            </div>
+            <h2 className="mt-0.5 font-serif text-lg font-semibold tracking-tight text-ink">
+              {activeRace.label}
+            </h2>
+          </div>
+          {/* Blind-mode toggle — candidate races only, when handler is provided */}
+          {!isPropositionRace && onToggleBlindMode && (
+            <button
+              type="button"
+              data-testid="workspace-chat-blind-toggle"
+              onClick={onToggleBlindMode}
+              title={
+                blindMode
+                  ? "Show candidate names" /* NEEDS-KEY: research.blindToggleNamesTitle — EN "Show candidate names" */
+                  : "Hide candidate names" /* NEEDS-KEY: research.blindToggleBlindTitle — EN "Hide candidate names" */
+              }
+              className="mt-0.5 shrink-0 inline-flex items-center gap-1.5 border border-rule rounded-md px-2.5 py-1 font-mono text-[10.5px] uppercase tracking-[0.1em] text-ink-2 hover:bg-paper-2 active:scale-95 transition"
+            >
+              {blindMode
+                ? "Names" /* NEEDS-KEY: research.blindToggleNames — EN "Names" */
+                : "Blind" /* NEEDS-KEY: research.blindToggleBlind — EN "Blind" */}
+            </button>
+          )}
         </div>
-        <h2 className="mt-0.5 font-serif text-lg font-semibold tracking-tight text-ink">
-          {activeRace.label}
-        </h2>
       </header>
 
       {/* Chat message body — scoped to active race. Parent re-keys
@@ -2155,11 +2246,31 @@ export function ChatPanel({
   budgetExhausted: budgetExhaustedFromParent = false,
   gateVariant: gateVariantFromParent,
   coldOpenContext,
+  blindMode = false,
+  revealedCandidates = new Set<string>(),
+  onRevealCandidate,
+  onToggleBlindMode,
+  issues = [],
+  onHideCandidate,
 }: ChatPanelProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const sessionStartedRef = useRef(false);
+
+  // ── CompareModal state (one instance, shared across all cards) ──
+  const [compareModalOpen, setCompareModalOpen] = useState(false);
+  const [compareRaceBlock, setCompareRaceBlock] = useState<RacePatternsBlock | null>(null);
+  const [compareAlignmentMap, setCompareAlignmentMap] = useState<Map<string, AlignmentScoresEntry> | undefined>(undefined);
+
+  // ── AllVotesPanel state (one instance) ──
+  const [allVotesPanelOpen, setAllVotesPanelOpen] = useState(false);
+  const [allVotesPayload, setAllVotesPayload] = useState<{
+    candidate: RacePatternsCandidate;
+    alignmentEntry: AlignmentScoresEntry;
+    blindMode: boolean;
+    alias: string;
+  } | null>(null);
   const [budgetStatus, setBudgetStatus] = useState<BudgetStatus>({
     tier: "normal",
     percent: 0,
@@ -3024,6 +3135,55 @@ export function ChatPanel({
     sendMessage(contextBlock, []);
   }, [getBasePrompt, sendMessage]);
 
+  // ── Modal open callbacks (passed down through ChatMessageList) ──
+
+  /**
+   * Called when the voter clicks "Compare" on any candidate card. Finds the
+   * most recent RACE_PATTERNS + ALIGNMENT_SCORES blocks to supply modal data.
+   */
+  const handleOpenCompare = useCallback(() => {
+    // Find the last assistant message that has a RACE_PATTERNS block
+    const lastRaceMsg = [...messages]
+      .reverse()
+      .find((m) => m.role === "assistant" && m.content.includes("[/RACE_PATTERNS]"));
+    if (!lastRaceMsg) return;
+    const block = parseRacePatternsBlock(lastRaceMsg.content);
+    if (!block) return;
+    let alignMap: Map<string, AlignmentScoresEntry> | undefined;
+    if (lastRaceMsg.content.includes("[/ALIGNMENT_SCORES]")) {
+      const alignBlock = parseAlignmentScoresBlock(lastRaceMsg.content);
+      if (alignBlock && alignBlock.race === block.race) {
+        alignMap = new Map(alignBlock.entries.map((e) => [e.candidateId, e]));
+      }
+    }
+    setCompareRaceBlock(block);
+    setCompareAlignmentMap(alignMap);
+    setCompareModalOpen(true);
+  }, [messages]);
+
+  /**
+   * Called when the voter clicks "See all votes →" on a candidate card.
+   * Only opens if the candidate has an alignment entry with contributing votes.
+   */
+  const handleOpenSeeAllVotes = useCallback(
+    (payload: {
+      candidate: RacePatternsCandidate;
+      alignmentEntry: AlignmentScoresEntry | undefined;
+      blindMode: boolean;
+      alias: string;
+    }) => {
+      if (!payload.alignmentEntry) return;
+      setAllVotesPayload({
+        candidate: payload.candidate,
+        alignmentEntry: payload.alignmentEntry,
+        blindMode: payload.blindMode,
+        alias: payload.alias,
+      });
+      setAllVotesPanelOpen(true);
+    },
+    [],
+  );
+
   // Auto-start session on mount — suppressed under the Phase 2 cold-open
   // path and under the Phase 3 workspace path. Phase 3 starts the chat
   // from the user's first typed message (or a suggestion chip). The
@@ -3243,9 +3403,33 @@ export function ChatPanel({
             workspace.onRescoreOfferClear?.();
           }
         }}
+        blindMode={blindMode}
+        onToggleBlindMode={onToggleBlindMode}
       />
     );
   }
+
+  // Build a synthetic Race from the active compareRaceBlock so CompareModal
+  // gets its required `race: Race` prop. The Race type only needs id/label/
+  // section/decided/candidates — all derivable from the parsed block.
+  const compareRace: Race | null = compareRaceBlock
+    ? {
+        id: compareRaceBlock.race.toLowerCase().replace(/\s+/g, "-"),
+        label: compareRaceBlock.race,
+        section: "Federal", // safe fallback — CompareModal only uses label
+        decided: false,
+        candidates: compareRaceBlock.candidates.map((c) => ({
+          name: c.name,
+          party: "",
+        })),
+      }
+    : null;
+
+  // Determine if the current error is an AI timeout/transient error (not a
+  // budget or rate-limit error). Those are shown via ChatStatusBar already.
+  // The inline error div (error && !chatDisabled) maps to AI service failures.
+  // Show AITimeoutBanner for all non-null errors that didn't disable chat.
+  const isAiTransientError = !!error && !effectiveChatDisabled;
 
   return (
     <div
@@ -3300,6 +3484,12 @@ export function ChatPanel({
             countyName={countyName}
             stateName={state.stateName}
             primary={primary}
+            blindMode={blindMode}
+            revealedCandidates={revealedCandidates}
+            onRevealCandidate={onRevealCandidate}
+            onCompare={handleOpenCompare}
+            onSeeAllVotes={handleOpenSeeAllVotes}
+            onHideCandidate={onHideCandidate}
           />
 
           {isStreaming && searchActivity && (
@@ -3312,6 +3502,38 @@ export function ChatPanel({
             disabledReason={effectiveDisabledReason}
             error={error}
           />
+
+          {/* AITimeoutBanner — rendered for transient AI errors (not budget/
+              rate-limit errors, which are gated by chatDisabled). onRetry
+              re-sends the last user message; onHandoff scrolls the chat to
+              the HandoffPackage (which auto-mounts via clientFallback logic
+              when chatDisabled+needsClientFallback). */}
+          {isAiTransientError && (
+            <div className="mb-3">
+              <AITimeoutBanner
+                onRetry={() => {
+                  // Find the last user message and re-send from before it
+                  const lastUserIdx = messages.reduce(
+                    (acc, m, i) => (m.role === "user" ? i : acc),
+                    -1,
+                  );
+                  if (lastUserIdx === -1) return;
+                  const lastUserMsg = messages[lastUserIdx];
+                  if (!lastUserMsg) return;
+                  setError(null);
+                  void sendMessage(lastUserMsg.content, messages.slice(0, lastUserIdx));
+                }}
+                onHandoff={() => {
+                  // Force-show the client fallback handoff by disabling chat
+                  // with a session_limit reason — the HandoffPackage renders
+                  // automatically when chatDisabled && messages.length > 0.
+                  setError(null);
+                  setChatDisabled(true);
+                  setDisabledReason("session_limit");
+                }}
+              />
+            </div>
+          )}
 
           {/*
            * Note: previously rendered a "Your research portfolio" cue button
@@ -3360,6 +3582,36 @@ export function ChatPanel({
             </div>
           )}
         </>
+      )}
+
+      {/* CompareModal — ONE instance, data set when voter clicks "Compare".
+          issues: ConcernInterpretationEntry[] — required by CompareModal.
+          The concern interpretation block may or may not be in the session;
+          pass empty array as safe fallback (modal renders "—" rows). */}
+      {compareModalOpen && compareRace && compareRaceBlock && (
+        <CompareModal
+          open={compareModalOpen}
+          race={compareRace}
+          issues={issues}
+          blindMode={blindMode}
+          revealedCandidates={revealedCandidates}
+          onRevealCandidate={onRevealCandidate ?? (() => {})}
+          onClose={() => setCompareModalOpen(false)}
+          racePatterns={compareRaceBlock}
+          alignmentScoresByCandidate={compareAlignmentMap}
+        />
+      )}
+
+      {/* AllVotesPanel — ONE instance, data set when voter clicks "See all votes →". */}
+      {allVotesPanelOpen && allVotesPayload && (
+        <AllVotesPanel
+          open={allVotesPanelOpen}
+          candidate={allVotesPayload.candidate}
+          alignmentEntry={allVotesPayload.alignmentEntry}
+          blindMode={allVotesPayload.blindMode}
+          alias={allVotesPayload.alias}
+          onClose={() => setAllVotesPanelOpen(false)}
+        />
       )}
     </div>
   );

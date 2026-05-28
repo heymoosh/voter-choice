@@ -1,6 +1,13 @@
 export type Language = "en" | "es";
 
 export interface Translations {
+  nav: {
+    howItWorks: string;
+    about: string;
+    methodology: string;
+    privacy: string;
+    settings: string;
+  };
   hero: {
     title: string;
     subtitle1: string;
@@ -20,6 +27,21 @@ export interface Translations {
     notFound: string;
     noElection: (stateName: string) => string;
     multiState: string;
+    geocodeFailTitle: string;
+    geocodeFailBody: string;
+    geocodeFailRetry: string;
+    geocodeFailSkip: string;
+    noContestedTitle: string;
+    noContestedBody: string;
+    noContestedFindBallot: (state: string) => string;
+    noContestedCountyOffice: (county: string) => string;
+    noContestedPaste: string;
+    noContestedConfirm: string;
+    noContestedUpload: string;
+    aiTimeoutTitle: string;
+    aiTimeoutBody: string;
+    aiTimeoutRetry: string;
+    aiTimeoutHandoff: string;
   };
   stateInfo: {
     election: string;
@@ -98,6 +120,13 @@ export interface Translations {
     countyFallbackBody: string;
     countyFallbackLink: string;
     noAddressYet: string;
+    cardTitle: string;
+    addedToCalendar: string;
+    bring: string;
+    sampleBallot: string;
+    precinct: string;
+    earlyVotingWindow: string;
+    cardSource: string;
   };
   budget: {
     notice: string;
@@ -172,7 +201,9 @@ export interface Translations {
     trustPrivate: string;
     returningBadge: string;
     returningHeadline: string;
-    returningSubtext: string;
+    returningSubtext: (decided: number, total: number) => string;
+    returningResume: string;
+    returningStartOver: string;
     returningNote: string;
     returningUploadTitle: string;
     returningUploadHint: string;
@@ -193,6 +224,7 @@ export interface Translations {
     step2Desc: string;
     step3Title: string;
     step3Desc: string;
+    howItWorksWalkSubtitle: string;
     ctaHeadline: string;
     ctaSubtext: string;
     ctaButton: string;
@@ -304,7 +336,7 @@ export interface Translations {
     themeRankerLockIn: string;
     themeRankerRewrite: string;
     themeRankerEmpty: string;
-    // ColdOpenInput keys (Phase 2 cold-open) — free-form textarea entry
+    // ColdOpenInput keys (Phase 2 cold-open) \u2014 free-form textarea entry
     coldOpenInputLabel: string;
     coldOpenInputPlaceholder: string;
     coldOpenInputSend: string;
@@ -316,7 +348,7 @@ export interface Translations {
     coldOpenParseError: string;
     coldOpenLockedHeading: string;
     coldOpenLockedSubhead: string;
-    // PR B — cold-open card meta row + breadcrumb above the chat
+    // PR B \u2014 cold-open card meta row + breadcrumb above the chat
     coldOpenAutoSavingHint: string;
     coldOpenAiOpenerLead: string;
     coldOpenAiOpenerPrompt: string;
@@ -361,7 +393,7 @@ export interface Translations {
     polisOverlayLegendDemocratic: string;
     polisOverlayLegendRepublican: string;
     polisOverlayLegendOpen: string;
-    // Phase 8 — bars + bridges + compass empty states
+    // Phase 8 \u2014 bars + bridges + compass empty states
     polisBarsHeading: (county: string) => string;
     polisBarsEmpty: string;
     polisBarsBelowThreshold: (count: number, threshold: number) => string;
@@ -374,7 +406,7 @@ export interface Translations {
     polisCompassBelowThreshold: (count: number, threshold: number) => string;
     polisCompassLoading: string;
     polisSectionError: string;
-    // PR 10 — national-default scope copy
+    // PR 10 \u2014 national-default scope copy
     polisBarsHeadingNational: string;
     polisBarsEmptyNational: string;
     polisBarsBelowThresholdNational: (
@@ -402,6 +434,14 @@ export interface Translations {
     closedPrimaryGateOptionUnaffiliated: string;
     closedPrimaryGateContinue: string;
     closedPrimaryGateSkip: string;
+    // Amendment editor keys
+    amendmentEditorEyebrow: string;
+    amendmentEditorTitle: (count: number) => string;
+    amendmentEditorHelp: string;
+    amendmentEditorRemove: string;
+    amendmentEditorAddBtn: string;
+    amendmentEditorCancel: string;
+    amendmentEditorApply: string;
   };
   portfolio: {
     badge: string;
@@ -491,9 +531,56 @@ export interface Translations {
     copyFallback: string;
     electionDayEvent: string;
   };
+  deadline: {
+    registerOnline: string;
+    registerByMail: string;
+    registerInPerson: string;
+    earlyVotingStarts: string;
+    earlyVotingEnds: string;
+    electionDay: string;
+    passed: string;
+    today: string;
+    daysLeft: (n: number) => string;
+    sameDayAvailable: string;
+    checkRegistration: string;
+  };
+  settings: {
+    title: string;
+    langSection: string;
+    langEn: string;
+    langEs: string;
+    byokSection: string;
+    byokHelp: string;
+    byokPlaceholder: string;
+    byokSave: string;
+    byokClear: string;
+    byokSaved: string;
+    byokRemoved: string;
+    dataSection: string;
+    dataResume: string;
+    dataExport: string;
+    dataReset: string;
+    privacyLink: string;
+    methodologyLink: string;
+    aboutLink: string;
+  };
+  loadingSteps: {
+    pullBallotHeading: string;
+    stepGeocode: string;
+    stepPrecinct: string;
+    stepRaces: string;
+    stepDonors: string;
+  };
 }
 
 const en: Translations = {
+  nav: {
+    howItWorks: "How it works",
+    about: "About",
+    methodology: "Methodology",
+    privacy: "Privacy",
+    settings: "Settings",
+  },
   hero: {
     title: "Free AI Ballot Research Tool",
     subtitle1:
@@ -520,6 +607,26 @@ const en: Translations = {
       `No upcoming elections found for ${stateName}. Check the ${stateName} election website for updates.`,
     multiState:
       "This zip code spans multiple states. Which state are you voting in?",
+    geocodeFailTitle: "We couldn\u2019t find that address",
+    geocodeFailBody:
+      "Google Civic couldn\u2019t match the address you entered. Try adding a city + state + ZIP, or just enter your ZIP and we\u2019ll look up state-level info.",
+    geocodeFailRetry: "Edit address",
+    geocodeFailSkip: "Continue with ZIP only",
+    noContestedTitle: "We couldn\u2019t auto-confirm your ballot",
+    noContestedBody:
+      "Civic returned no contested races for your address. Look up your sample ballot below, then paste or upload it so we know which races to research.",
+    noContestedFindBallot: (state: string) =>
+      `Find your sample ballot (${state}) \u2192`,
+    noContestedCountyOffice: (county: string) =>
+      `${county} elections office \u2192`,
+    noContestedPaste: "Paste your sample ballot text",
+    noContestedConfirm: "Use this ballot",
+    noContestedUpload: "Upload .txt or .pdf",
+    aiTimeoutTitle: "AI is taking longer than usual",
+    aiTimeoutBody:
+      "Anthropic responded slowly or the request hit our timeout. Your draft picks are safe \u2014 no data was lost.",
+    aiTimeoutRetry: "Try again",
+    aiTimeoutHandoff: "Hand off to another chatbot \u2192",
   },
   stateInfo: {
     election: "Election",
@@ -610,6 +717,13 @@ const en: Translations = {
     countyFallbackLink: "Visit County Election Website",
     noAddressYet:
       "Enter your address above to find your assigned polling location and early vote sites.",
+    cardTitle: "Your polling info",
+    addedToCalendar: "Add to calendar",
+    bring: "Bring",
+    sampleBallot: "Sample ballot",
+    precinct: "Precinct",
+    earlyVotingWindow: "Early voting window",
+    cardSource: "Source \u00b7 Harris County Elections",
   },
   budget: {
     notice:
@@ -635,7 +749,7 @@ const en: Translations = {
     usageAlert: "Usage Alert",
     budgetReached: "Our free AI chat reached its monthly limit",
     budgetExplanation:
-      "Our free AI chat reached its monthly limit — your personal Anthropic API key is unaffected. Copy the prompt below and paste it into any free AI chatbot (or use your own API key) to continue your research.",
+      "Our free AI chat reached its monthly limit \u2014 your personal Anthropic API key is unaffected. Copy the prompt below and paste it into any free AI chatbot (or use your own API key) to continue your research.",
     resetIn: (days: number) => `Reset in ${days} days`,
     continueSession: "Continue Your Session",
     continueBody:
@@ -697,8 +811,10 @@ const en: Translations = {
     trustPrivate: "No tracking.",
     returningBadge: "Been here before?",
     returningHeadline: "Pick up where you left off.",
-    returningSubtext:
-      "If you saved a profile last time, drop it in. We\u2019ll reload your research so you\u2019re not starting over.",
+    returningSubtext: (decided: number, total: number) =>
+      `You have a draft ballot saved on this device \u2014 ${decided} of ${total} races decided. Resume now, or start fresh.`,
+    returningResume: "Resume my session \u2192",
+    returningStartOver: "Start over",
     returningNote:
       "We don\u2019t store anything on our servers. Your file lives on your device. That\u2019s the whole system.",
     returningUploadTitle: "Upload your profile",
@@ -724,6 +840,7 @@ const en: Translations = {
     step3Title: "Take it with you",
     step3Desc:
       "Download a one-page summary for the polling booth. Most polls don\u2019t allow phones.",
+    howItWorksWalkSubtitle: "From address to printed ballot in three steps.",
     ctaHeadline: "Vote for a Congress that earns it.",
     ctaSubtext:
       "Enter your address. See what your candidates have done. The rest is up to you.",
@@ -771,17 +888,17 @@ const en: Translations = {
     runoffGateContinue: "Continue to research",
     finishLater: "Finish this later",
     finishLaterPrompt:
-      "I need to leave. Please generate my full SESSION HANDOFF block right now so I can save it and resume from this exact point later. Include every decision I've logged, every race we've covered, every race remaining, my issue priorities, my voter profile so far, and the next question you would have asked. Be exhaustive — I will literally paste this back into a new session to continue.",
+      "I need to leave. Please generate my full SESSION HANDOFF block right now so I can save it and resume from this exact point later. Include every decision I've logged, every race we've covered, every race remaining, my issue priorities, my voter profile so far, and the next question you would have asked. Be exhaustive \u2014 I will literally paste this back into a new session to continue.",
     generateProfileButton: "Generate my voter profile and printable ballot",
     generateProfilePrompt:
-      "Please generate my voter profile and printable ballot now — emit the MY BALLOT, MY VOTER PROFILE, and VOTER SESSION HANDOFF blocks.",
+      "Please generate my voter profile and printable ballot now \u2014 emit the MY BALLOT, MY VOTER PROFILE, and VOTER SESSION HANDOFF blocks.",
     // ValuesTagSelector
     valuesTagSelectorTitle: "What issues matter most to you?",
     valuesTagSelectorInstruction:
-      "Pick up to 3 priorities — chips, your own words, or both.",
+      "Pick up to 3 priorities \u2014 chips, your own words, or both.",
     valuesTagSelectorSubmit: "Apply my priorities",
-    valuesTagSelectorSkip: "Skip — no preference",
-    valuesTagSelectorSubmitting: "Sending…",
+    valuesTagSelectorSkip: "Skip \u2014 no preference",
+    valuesTagSelectorSubmitting: "Sending\u2026",
     valuesTagSelectorSubmitted: "Priorities applied",
     valuesTagSelectorRankedHeading: "Your ranked priorities",
     valuesTagSelectorFreeTextPlaceholder:
@@ -797,7 +914,7 @@ const en: Translations = {
     racePatternsHideButton: "Hide Names",
     racePatternsPickPrefix: "Pick",
     racePatternsSkip: "Skip this race",
-    racePatternsSubmitting: "Sending…",
+    racePatternsSubmitting: "Sending\u2026",
     racePatternsLockedIn: "Locked in:",
     racePatternsSkipped: "Skipped",
     racePatternsValuesHighlightLabel: "Highlighted for your values:",
@@ -806,25 +923,25 @@ const en: Translations = {
     racePatternsSourcesHeading: "Sources",
     racePatternsKeyVotesUnit: "key votes",
     racePatternsAlignmentHeading: "Voted in line with platform",
-    racePatternsAlignmentChallenger: "Challenger — no voting record yet",
-    racePatternsAlignmentUnavailablePrefix: "Record unavailable —",
-    racePatternsEndorsementsUnavailablePrefix: "Endorsement data unavailable —",
-    racePatternsRetrospectiveUnavailablePrefix: "Track record unavailable —",
+    racePatternsAlignmentChallenger: "Challenger \u2014 no voting record yet",
+    racePatternsAlignmentUnavailablePrefix: "Record unavailable \u2014",
+    racePatternsEndorsementsUnavailablePrefix: "Endorsement data unavailable \u2014",
+    racePatternsRetrospectiveUnavailablePrefix: "Track record unavailable \u2014",
     racePatternsCoalitionHeading: "Donor coalition",
-    racePatternsCoalitionUnavailablePrefix: "Donor data unavailable —",
+    racePatternsCoalitionUnavailablePrefix: "Donor data unavailable \u2014",
     racePatternsSeeDonors: "See individual donors",
     racePatternsDonorMethodologyNote:
-      "% by total contribution amount · Small donor = under $200 per donation",
+      "% by total contribution amount \u00b7 Small donor = under $200 per donation",
     racePatternsEndorsementPartisan: "Partisan",
     racePatternsEndorsementNonpartisan: "Nonpartisan",
     racePatternsEndorsementMixed: "Mixed",
     racePatternsDisclaimer:
       "AI can make mistakes. Tap any score to see the contributing votes and verify the sources.",
-    tabCloseWarningBanner: `We save anonymous counts only — never who said what. Get your summary before closing the tab; without it, your in-progress research is gone.`,
-    pdfScannedError: `We couldn’t read this PDF (looks like a scanned image with no text we can extract). To work around it: (1) Open the PDF in your viewer, (2) Select all the text (Cmd/Ctrl+A), (3) Copy (Cmd/Ctrl+C), (4) Paste below.`,
-    pdfLoadError: `We couldn’t load the PDF reader right now. Please try again in a moment, or open the PDF, copy the text, and paste it here.`,
-    pdfOcrInProgress: `Extracting scanned PDF text — this may take 30 seconds…`,
-    pdfOcrFailed: `OCR didn’t work on this PDF. Try opening it in your viewer and pasting the text below (Cmd/Ctrl+A then Cmd/Ctrl+C then paste).`,
+    tabCloseWarningBanner: `We save anonymous counts only \u2014 never who said what. Get your summary before closing the tab; without it, your in-progress research is gone.`,
+    pdfScannedError: `We couldn\u2019t read this PDF (looks like a scanned image with no text we can extract). To work around it: (1) Open the PDF in your viewer, (2) Select all the text (Cmd/Ctrl+A), (3) Copy (Cmd/Ctrl+C), (4) Paste below.`,
+    pdfLoadError: `We couldn\u2019t load the PDF reader right now. Please try again in a moment, or open the PDF, copy the text, and paste it here.`,
+    pdfOcrInProgress: `Extracting scanned PDF text \u2014 this may take 30 seconds\u2026`,
+    pdfOcrFailed: `OCR didn\u2019t work on this PDF. Try opening it in your viewer and pasting the text below (Cmd/Ctrl+A then Cmd/Ctrl+C then paste).`,
     // ConcernInterpretation
     concernInterpretationHeading: "Did we get this right?",
     concernInterpretationSubhead:
@@ -842,7 +959,7 @@ const en: Translations = {
     // ConcernInterpretation themes-mode (Phase 2 cold-open)
     concernInterpretationThemesHeading: "What you actually said.",
     concernInterpretationThemesSubhead:
-      "Each card is grounded in your own words. Rename, remove, or rerank — then lock these in.",
+      "Each card is grounded in your own words. Rename, remove, or rerank \u2014 then lock these in.",
     concernInterpretationThemesTruncationWarning: (
       returned: number,
       shown: number,
@@ -853,20 +970,20 @@ const en: Translations = {
     themeRankerReorderLabel: "Reorder theme",
     themeRankerRemoveLabel: "Remove theme",
     themeRankerRenameLabel: "Rename theme",
-    themeRankerLockIn: "Lock these in & start the ballot →",
+    themeRankerLockIn: "Lock these in & start the ballot \u2192",
     themeRankerRewrite: "Let me rewrite my message",
     themeRankerEmpty: "No themes left. Rewrite your message to start over.",
-    // ColdOpenInput (Phase 2 cold-open) — free-form textarea entry
+    // ColdOpenInput (Phase 2 cold-open) \u2014 free-form textarea entry
     coldOpenInputLabel: "What's on your mind this election?",
     coldOpenInputPlaceholder:
-      "Things that have been on your mind. Frustrations, hopes, fights you've watched in your community…",
+      "Things that have been on your mind. Frustrations, hopes, fights you've watched in your community\u2026",
     coldOpenInputSend: "Send",
     coldOpenInputShowExample: "Show me an example",
     coldOpenInputUseStarterProfile: "Use a starter profile",
     coldOpenInputUseStarterProfileTooltip:
-      "Coming soon — load a saved voter profile to seed your themes.",
+      "Coming soon \u2014 load a saved voter profile to seed your themes.",
     coldOpenInputSampleLongform:
-      "My mom's insulin keeps going up — copays are insane and she's rationing doses. Rent on our place went up 30% in two years and I don't know how long we can stay. I keep reading about climate stuff and wondering if anyone running actually plans to do anything.",
+      "My mom's insulin keeps going up \u2014 copays are insane and she's rationing doses. Rent on our place went up 30% in two years and I don't know how long we can stay. I keep reading about climate stuff and wondering if anyone running actually plans to do anything.",
     coldOpenThinking: "Reading your message...",
     coldOpenParseError:
       "I couldn't quite parse your message into themes. Try rewriting it with a bit more detail about what matters to you.",
@@ -874,9 +991,9 @@ const en: Translations = {
     coldOpenLockedSubhead:
       "These are the priorities I'll carry forward as we research your ballot.",
     coldOpenAutoSavingHint:
-      "Auto-saving to your device · nothing leaves your browser yet",
+      "Auto-saving to your device \u00b7 nothing leaves your browser yet",
     coldOpenAiOpenerLead:
-      "I've pulled your sample ballot. Before I walk you through races, I want to know what you're judging candidates on — in your words, not from a pre-built list.",
+      "I've pulled your sample ballot. Before I walk you through races, I want to know what you're judging candidates on \u2014 in your words, not from a pre-built list.",
     coldOpenAiOpenerPrompt:
       "What's been on your mind this year? Things you wish Congress would actually do something about. Frustrations, hopes, fights you've watched in your community. Type as much or as little as you want.",
     coldOpenContextRaceCount: (n: number) =>
@@ -887,9 +1004,9 @@ const en: Translations = {
       `${kept} of ${total} votes`,
     alignmentScoreThinRecord: (total: number) =>
       `Based on ${total} ${total === 1 ? "vote" : "votes"}`,
-    alignmentScoreUnavailablePrefix: "Voting record not available —",
+    alignmentScoreUnavailablePrefix: "Voting record not available \u2014",
     alignmentScoreNoRecordHint:
-      "First-time candidate — judge on policy statements and donor base instead.",
+      "First-time candidate \u2014 judge on policy statements and donor base instead.",
     alignmentScoreYourSide: "Your side:",
     alignmentScoreDrillDownLabel: "See contributing votes",
     alignmentScoreDrillDownClose: "Close",
@@ -911,17 +1028,17 @@ const en: Translations = {
       "AI can make mistakes. Click any source to verify.",
     // PrivacyCallout
     privacyCalloutP1:
-      "No accounts. No tracking. No persistent storage on your device. We count what people care about — never who said what.",
+      "No accounts. No tracking. No persistent storage on your device. We count what people care about \u2014 never who said what.",
     privacyCalloutP2:
-      "When you finish your session, we add to running totals for your county and primary. There is no record anywhere that says “this voter answered X.” There are only counts.",
+      "When you finish your session, we add to running totals for your county and primary. There is no record anywhere that says \u201cthis voter answered X.\u201d There are only counts.",
     privacyCalloutP3:
-      "Even with a subpoena, we couldn’t tell anyone your answers. The records don’t exist to compel.",
+      "Even with a subpoena, we couldn\u2019t tell anyone your answers. The records don\u2019t exist to compel.",
     privacyCalloutCompactHeadline:
-      "We save anonymous counts only — never who said what.",
+      "We save anonymous counts only \u2014 never who said what.",
     privacyCalloutCompactExpand: "Read more",
     privacyCalloutCompactCollapse: "Show less",
     // PolisOverlay
-    polisOverlayLoading: "Loading the shape of your county…",
+    polisOverlayLoading: "Loading the shape of your county\u2026",
     polisOverlayLockedHeading: (scopeName: string) =>
       `This view unlocks once enough ${scopeName} voters have used the tool.`,
     polisOverlayUnlockCounter: (n: number) => `About ${n} more to go.`,
@@ -931,7 +1048,7 @@ const en: Translations = {
       "This is the shape of your county, not a record of who voted.",
     polisOverlayYouLabel: "you",
     polisOverlayNoYouCaption:
-      "You didn’t state priorities, so we don’t have a position for you on this map. Here’s the broader pattern.",
+      "You didn\u2019t state priorities, so we don\u2019t have a position for you on this map. Here\u2019s the broader pattern.",
     polisOverlayConsensusHeading: "Top shared priorities across primaries",
     polisOverlayConsensusSubtitle:
       "Shared priority means voters across primaries flagged this issue. They may still disagree on the policy answer.",
@@ -940,34 +1057,34 @@ const en: Translations = {
     polisOverlayLegendDemocratic: "Democratic",
     polisOverlayLegendRepublican: "Republican",
     polisOverlayLegendOpen: "Open / General",
-    // Phase 8 — bars + bridges + compass empty states
+    // Phase 8 \u2014 bars + bridges + compass empty states
     polisBarsHeading: (county: string) => `You're not alone in ${county}.`,
     polisBarsEmpty:
-      "Your county is just getting started — your themes haven't been seen yet.",
+      "Your county is just getting started \u2014 your themes haven't been seen yet.",
     polisBarsBelowThreshold: (count: number, threshold: number) =>
-      `Just getting started — ${count} of about ${threshold} sessions so far.`,
-    polisBarsLoading: "Reading the shape of your county…",
+      `Just getting started \u2014 ${count} of about ${threshold} sessions so far.`,
+    polisBarsLoading: "Reading the shape of your county\u2026",
     polisBridgesHeading: (county: string) => `Where people in ${county} agree.`,
-    polisBridgesEmpty: "No bridge statements yet — needs more data.",
+    polisBridgesEmpty: "No bridge statements yet \u2014 needs more data.",
     polisBridgesBelowThreshold: (count: number, threshold: number) =>
-      `Bridges appear once we hit ${threshold} sessions — ${count} so far.`,
-    polisBridgesLoading: "Looking for points of agreement…",
+      `Bridges appear once we hit ${threshold} sessions \u2014 ${count} so far.`,
+    polisBridgesLoading: "Looking for points of agreement\u2026",
     polisCompassHeading: "How we cluster.",
     polisCompassBelowThreshold: (count: number, threshold: number) =>
-      `Not enough data yet — ${count} of ${threshold} sessions needed.`,
-    polisCompassLoading: "Loading the cluster compass…",
+      `Not enough data yet \u2014 ${count} of ${threshold} sessions needed.`,
+    polisCompassLoading: "Loading the cluster compass\u2026",
     polisSectionError: "Couldn't load this reading. Try again in a moment.",
-    // PR 10 — national-default scope copy
+    // PR 10 \u2014 national-default scope copy
     polisBarsHeadingNational: "You're not alone across the country.",
     polisBarsEmptyNational:
-      "Just getting started — your themes haven't been seen yet.",
+      "Just getting started \u2014 your themes haven't been seen yet.",
     polisBarsBelowThresholdNational: (count: number, threshold: number) =>
-      `Just getting started — ${count} of about ${threshold} sessions so far.`,
+      `Just getting started \u2014 ${count} of about ${threshold} sessions so far.`,
     polisBridgesHeadingNational: "Where people across the country agree.",
     polisBridgesBelowThresholdNational: (count: number, threshold: number) =>
-      `Bridges appear once we hit ${threshold} sessions — ${count} so far.`,
+      `Bridges appear once we hit ${threshold} sessions \u2014 ${count} so far.`,
     polisCompassBelowThresholdNational: (count: number, threshold: number) =>
-      `Not enough data yet — ${count} of ${threshold} sessions needed.`,
+      `Not enough data yet \u2014 ${count} of ${threshold} sessions needed.`,
     polisScopeToggleNational: "Nationwide",
     polisScopeToggleCounty: "Your county",
     polisWorkspaceSectionHeading: "You're not alone",
@@ -983,7 +1100,17 @@ const en: Translations = {
     closedPrimaryGateOptionUnaffiliated:
       "I'm not registered with a party (independent / unaffiliated)",
     closedPrimaryGateContinue: "Continue to research",
-    closedPrimaryGateSkip: "Skip — I'll figure it out",
+    closedPrimaryGateSkip: "Skip \u2014 I'll figure it out",
+    // Amendment editor keys
+    amendmentEditorEyebrow: "Amend your issues",
+    amendmentEditorTitle: (count: number) =>
+      `Re-evaluate ${count} ${count === 1 ? "pick" : "picks"} against new priorities`,
+    amendmentEditorHelp:
+      "Re-rank, rename, remove, or add issues. When you save, I'll re-score your picks against the new priorities.",
+    amendmentEditorRemove: "REMOVE",
+    amendmentEditorAddBtn: "+ Add",
+    amendmentEditorCancel: "Cancel",
+    amendmentEditorApply: "Apply & re-score \u2192",
   },
   portfolio: {
     badge: "Verified Research",
@@ -1033,7 +1160,7 @@ const en: Translations = {
       "Photo ID is not required to vote in person in this state.",
     idFallbackTitle: "Voter ID Rules",
     idFallbackBody:
-      "Your state’s voter ID rules — check with your state election office for the current accepted ID list.",
+      "Your state\u2019s voter ID rules \u2014 check with your state election office for the current accepted ID list.",
     noIdTitle: "No ID? No Problem",
     noIdText:
       "If a voter does not possess one of the acceptable forms of photo ID and cannot reasonably obtain one, they may still vote by signing a",
@@ -1085,9 +1212,57 @@ const en: Translations = {
     copyFallback: "Press Ctrl+C / Cmd+C to copy",
     electionDayEvent: "Election Day",
   },
+  deadline: {
+    registerOnline: "Register online",
+    registerByMail: "Register by mail",
+    registerInPerson: "Register in person",
+    earlyVotingStarts: "Early voting starts",
+    earlyVotingEnds: "Early voting ends",
+    electionDay: "Election Day",
+    passed: "Passed",
+    today: "Today (last day)",
+    daysLeft: (n: number) => `${n} days left`,
+    sameDayAvailable: "Same-day registration available",
+    checkRegistration: "Check your registration \u2192",
+  },
+  settings: {
+    title: "Settings",
+    langSection: "Language",
+    langEn: "English",
+    langEs: "Espa\u00f1ol",
+    byokSection: "Bring your own Anthropic key",
+    byokHelp:
+      "Stored only on this device. Sent directly to api.anthropic.com from your browser \u2014 never to Voter Choice's server.",
+    byokPlaceholder: "sk-ant-...",
+    byokSave: "Save key",
+    byokClear: "Remove key",
+    byokSaved: "Key saved \u2014 chat now uses your account.",
+    byokRemoved: "Key removed \u2014 back to the community budget.",
+    dataSection: "Your data on this device",
+    dataResume: "Resume from saved profile (.txt)",
+    dataExport: "Export draft ballot (.txt)",
+    dataReset: "Clear everything on this device",
+    privacyLink: "Privacy policy \u2192",
+    methodologyLink: "Methodology \u2192",
+    aboutLink: "About Voter Choice \u2192",
+  },
+  loadingSteps: {
+    pullBallotHeading: "Pulling your ballot.",
+    stepGeocode: "Geocoding address",
+    stepPrecinct: "Looking up your precinct",
+    stepRaces: "Pulling federal & state races",
+    stepDonors: "Loading donor history",
+  },
 };
 
 const es: Translations = {
+  nav: {
+    howItWorks: "C\u00f3mo funciona",
+    about: "Acerca de",
+    methodology: "Metodolog\u00eda",
+    privacy: "Privacidad",
+    settings: "Ajustes",
+  },
   hero: {
     title: "Herramienta Gratuita de Investigaci\u00f3n Electoral con IA",
     subtitle1:
@@ -1114,6 +1289,26 @@ const es: Translations = {
       `No se encontraron elecciones pr\u00f3ximas para ${stateName}. Consulta el sitio web electoral de ${stateName} para m\u00e1s informaci\u00f3n.`,
     multiState:
       "Este c\u00f3digo postal abarca varios estados. \u00bfEn qu\u00e9 estado vas a votar?",
+    geocodeFailTitle: "No encontramos esa direcci\u00f3n",
+    geocodeFailBody:
+      "Google Civic no pudo identificar la direcci\u00f3n que ingresaste. Intenta a\u00f1adir ciudad + estado + c\u00f3digo postal, o ingresa solo tu c\u00f3digo postal y mostramos informaci\u00f3n estatal.",
+    geocodeFailRetry: "Editar direcci\u00f3n",
+    geocodeFailSkip: "Continuar solo con c\u00f3digo postal",
+    noContestedTitle: "No pudimos confirmar tu boleta",
+    noContestedBody:
+      "Civic no devolvi\u00f3 carreras para tu direcci\u00f3n. Busca tu boleta de muestra abajo y p\u00e9gala o s\u00fabela para saber qu\u00e9 carreras investigar.",
+    noContestedFindBallot: (state: string) =>
+      `Encuentra tu boleta de muestra (${state}) \u2192`,
+    noContestedCountyOffice: (county: string) =>
+      `Oficina electoral del condado ${county} \u2192`,
+    noContestedPaste: "Pega el texto de tu boleta de muestra",
+    noContestedConfirm: "Usar esta boleta",
+    noContestedUpload: "Subir .txt o .pdf",
+    aiTimeoutTitle: "La IA est\u00e1 tardando m\u00e1s de lo normal",
+    aiTimeoutBody:
+      "Anthropic respondi\u00f3 lento o la solicitud alcanz\u00f3 nuestro tiempo de espera. Tus selecciones est\u00e1n seguras \u2014 no se perdieron datos.",
+    aiTimeoutRetry: "Intentar de nuevo",
+    aiTimeoutHandoff: "Continuar en otro chatbot \u2192",
   },
   stateInfo: {
     election: "Elecci\u00f3n",
@@ -1151,8 +1346,8 @@ const es: Translations = {
   tips: {
     title: "Consejos para usar el mensaje",
     tip1: 'Puedes decir "No s\u00e9" o "No estoy seguro/a de d\u00f3nde estoy parado/a" \u2014 la IA explicar\u00e1 m\u00e1s y te ayudar\u00e1 a entender.',
-    tip2: 'Puedes pedirle que investigue algo por ti ("¿Puedes buscar el historial de votaci\u00f3n de este candidato?").',
-    tip3: 'Puedes hacer preguntas en cualquier momento ("¿Qu\u00e9 hace exactamente este cargo?" o "¿Por qu\u00e9 importa esto?").',
+    tip2: 'Puedes pedirle que investigue algo por ti ("\u00bfPuedes buscar el historial de votaci\u00f3n de este candidato?").',
+    tip3: 'Puedes hacer preguntas en cualquier momento ("\u00bfQu\u00e9 hace exactamente este cargo?" o "\u00bfPor qu\u00e9 importa esto?").',
     tip4: "No est\u00e1s tomando un examen. Est\u00e1s teniendo una conversaci\u00f3n. La IA trabaja contigo.",
     disclaimer:
       "Importante: La IA puede cometer errores. Este es un punto de partida para tu investigaci\u00f3n. Verifica la informaci\u00f3n importante con fuentes oficiales.",
@@ -1205,6 +1400,13 @@ const es: Translations = {
     countyFallbackLink: "Visitar Sitio Web Electoral del Condado",
     noAddressYet:
       "Ingresa tu direcci\u00f3n arriba para encontrar tu casilla electoral asignada y sitios de votaci\u00f3n anticipada.",
+    cardTitle: "Tu informaci\u00f3n electoral",
+    addedToCalendar: "A\u00f1adir al calendario",
+    bring: "Llevar",
+    sampleBallot: "Boleta de muestra",
+    precinct: "Precinto",
+    earlyVotingWindow: "Ventana de votaci\u00f3n anticipada",
+    cardSource: "Fuente \u00b7 Elecciones del Condado de Harris",
   },
   budget: {
     notice:
@@ -1296,8 +1498,10 @@ const es: Translations = {
     returningBadge: "Eficiencia",
     returningHeadline:
       "\u00bfUsuario que regresa? Impulsa tu Boleta Personalizada.",
-    returningSubtext:
-      "Si tienes un Perfil de Votante de una sesi\u00f3n anterior, s\u00fabelo a continuaci\u00f3n para comenzar r\u00e1pidamente con tu boleta.",
+    returningSubtext: (decided: number, total: number) =>
+      `Tienes una boleta en borrador guardada en este dispositivo \u2014 ${decided} de ${total} carreras decididas. Contin\u00faa ahora o empieza de nuevo.`,
+    returningResume: "Continuar mi sesi\u00f3n \u2192",
+    returningStartOver: "Empezar de nuevo",
     returningNote:
       "Nota: NO almacenamos ning\u00fan dato. Nuestro protocolo \u00fanico de encriptaci\u00f3n te permite guardar tu progreso localmente. Cuando regreses, simplemente recarga tu archivo.",
     returningUploadTitle: "Sube tu Perfil de Votante",
@@ -1327,6 +1531,7 @@ const es: Translations = {
     step3Title: "Toma Acci\u00f3n",
     step3Desc:
       "Descarga tu gu\u00eda personalizada de votante para llevar a la casilla electoral.",
+    howItWorksWalkSubtitle: "De tu direcci\u00f3n a la boleta impresa en tres pasos.",
     ctaHeadline: "\u00bfListo para elegir?",
     ctaSubtext:
       "\u00danete a miles de ciudadanos informados que usan Civic Research para orientaci\u00f3n no partidista.",
@@ -1379,13 +1584,13 @@ const es: Translations = {
     generateProfileButton: "Generar mi perfil de votante y boleta imprimible",
     generateProfilePrompt:
       "Por favor genera ahora mi perfil de votante y boleta imprimible \u2014 emite los bloques MY BALLOT, MY VOTER PROFILE y VOTER SESSION HANDOFF.",
-    // ValuesTagSelector — EN stubs (ES UI out of scope for this packet)
+    // ValuesTagSelector \u2014 EN stubs (ES UI out of scope for this packet)
     valuesTagSelectorTitle: "What issues matter most to you?",
     valuesTagSelectorInstruction:
-      "Pick up to 3 priorities — chips, your own words, or both.",
+      "Pick up to 3 priorities \u2014 chips, your own words, or both.",
     valuesTagSelectorSubmit: "Apply my priorities",
-    valuesTagSelectorSkip: "Skip — no preference",
-    valuesTagSelectorSubmitting: "Sending…",
+    valuesTagSelectorSkip: "Skip \u2014 no preference",
+    valuesTagSelectorSubmitting: "Sending\u2026",
     valuesTagSelectorSubmitted: "Priorities applied",
     valuesTagSelectorRankedHeading: "Your ranked priorities",
     valuesTagSelectorFreeTextPlaceholder:
@@ -1396,12 +1601,12 @@ const es: Translations = {
     valuesTagSelectorAtCap: "Up to 3 priorities. Remove one to add another.",
     valuesTagSelectorRemoveLabel: "Remove",
     valuesTagSelectorRankBadge: (rank: number) => `#${rank}`,
-    // RacePatterns — EN stubs (ES UI out of scope for this packet)
+    // RacePatterns \u2014 EN stubs (ES UI out of scope for this packet)
     racePatternsRevealButton: "Reveal candidates",
     racePatternsHideButton: "Ocultar Nombres",
     racePatternsPickPrefix: "Pick",
     racePatternsSkip: "Skip this race",
-    racePatternsSubmitting: "Sending…",
+    racePatternsSubmitting: "Sending\u2026",
     racePatternsLockedIn: "Locked in:",
     racePatternsSkipped: "Skipped",
     racePatternsValuesHighlightLabel: "Highlighted for your values:",
@@ -1410,40 +1615,40 @@ const es: Translations = {
     racePatternsSourcesHeading: "Sources",
     racePatternsKeyVotesUnit: "key votes",
     racePatternsAlignmentHeading: "Voted in line with platform",
-    racePatternsAlignmentChallenger: "Challenger — no voting record yet",
-    racePatternsAlignmentUnavailablePrefix: "Record unavailable —",
-    racePatternsEndorsementsUnavailablePrefix: "Endorsement data unavailable —",
-    racePatternsRetrospectiveUnavailablePrefix: "Track record unavailable —",
+    racePatternsAlignmentChallenger: "Challenger \u2014 no voting record yet",
+    racePatternsAlignmentUnavailablePrefix: "Record unavailable \u2014",
+    racePatternsEndorsementsUnavailablePrefix: "Endorsement data unavailable \u2014",
+    racePatternsRetrospectiveUnavailablePrefix: "Track record unavailable \u2014",
     racePatternsCoalitionHeading: "Donor coalition",
-    racePatternsCoalitionUnavailablePrefix: "Donor data unavailable —",
+    racePatternsCoalitionUnavailablePrefix: "Donor data unavailable \u2014",
     racePatternsSeeDonors: "See individual donors",
     racePatternsDonorMethodologyNote:
-      "% by total contribution amount · Small donor = under $200 per donation",
+      "% by total contribution amount \u00b7 Small donor = under $200 per donation",
     racePatternsEndorsementPartisan: "Partisan",
     racePatternsEndorsementNonpartisan: "Nonpartisan",
     racePatternsEndorsementMixed: "Mixed",
     racePatternsDisclaimer:
       "AI can make mistakes. Tap any score to see the contributing votes and verify the sources.",
-    tabCloseWarningBanner: `We save anonymous counts only — never who said what. Get your summary before closing the tab; without it, your in-progress research is gone.`,
+    tabCloseWarningBanner: `We save anonymous counts only \u2014 never who said what. Get your summary before closing the tab; without it, your in-progress research is gone.`,
     pdfScannedError:
       "No pudimos leer este PDF (parece una imagen escaneada sin texto que podamos extraer). Para solucionarlo: (1) Abre el PDF en tu visor, (2) Selecciona todo el texto (Cmd/Ctrl+A), (3) Copia (Cmd/Ctrl+C), (4) Pega abajo.",
     pdfLoadError:
       "We couldn't load the PDF reader right now. Please try again in a moment, or open the PDF, copy the text, and paste it here.",
     pdfOcrInProgress:
-      "Extrayendo texto del PDF escaneado — esto puede tardar 30 segundos…",
+      "Extrayendo texto del PDF escaneado \u2014 esto puede tardar 30 segundos\u2026",
     pdfOcrFailed:
-      "El OCR no funcionó en este PDF. Intenta abrirlo en tu visor y pegar el texto abajo (Cmd/Ctrl+A, luego Cmd/Ctrl+C y pega).",
-    // ConcernInterpretation — EN stubs (ES UI out of scope for this packet)
+      "El OCR no funcion\u00f3 en este PDF. Intenta abrirlo en tu visor y pegar el texto abajo (Cmd/Ctrl+A, luego Cmd/Ctrl+C y pega).",
+    // ConcernInterpretation \u2014 EN stubs (ES UI out of scope for this packet)
     concernInterpretationHeading: "Did we get this right?",
     concernInterpretationSubhead:
-      "We interpreted your concerns. Confirm, edit, or remove anything that doesn’t match.",
+      "We interpreted your concerns. Confirm, edit, or remove anything that doesn\u2019t match.",
     concernInterpretationConfirm: "Confirm and continue",
     concernInterpretationSubmitting: "Confirming...",
     concernInterpretationSubmitted: "Concerns confirmed",
     concernInterpretationEdit: "Edit",
     concernInterpretationRemove: "Remove",
     concernInterpretationOffTopic:
-      "This doesn’t look like a ballot-relevant concern. Remove or rephrase.",
+      "This doesn\u2019t look like a ballot-relevant concern. Remove or rephrase.",
     concernInterpretationDisambiguatePrompt:
       "Which of these best matches your view?",
     concernInterpretationConfirmPerEntry: "Looks right",
@@ -1461,13 +1666,13 @@ const es: Translations = {
     themeRankerReorderLabel: "Reorder theme",
     themeRankerRemoveLabel: "Remove theme",
     themeRankerRenameLabel: "Rename theme",
-    themeRankerLockIn: "Lock these in & start the ballot →",
+    themeRankerLockIn: "Lock these in & start the ballot \u2192",
     themeRankerRewrite: "Let me rewrite my message",
     themeRankerEmpty: "No themes left. Rewrite your message to start over.",
     // ColdOpenInput \u2014 EN stubs (ES UI out of scope for this packet)
     coldOpenInputLabel: "What's on your mind this election?",
     coldOpenInputPlaceholder:
-      "Things that have been on your mind. Frustrations, hopes, fights you've watched in your community…",
+      "Things that have been on your mind. Frustrations, hopes, fights you've watched in your community\u2026",
     coldOpenInputSend: "Send",
     coldOpenInputShowExample: "Show me an example",
     coldOpenInputUseStarterProfile: "Use a starter profile",
@@ -1592,6 +1797,16 @@ const es: Translations = {
       "No estoy registrado/a con ning\u00fan partido (independiente / sin afiliaci\u00f3n)",
     closedPrimaryGateContinue: "Continuar a la investigaci\u00f3n",
     closedPrimaryGateSkip: "Omitir \u2014 yo lo determinar\u00e9",
+    // Amendment editor keys
+    amendmentEditorEyebrow: "Modifica tus temas",
+    amendmentEditorTitle: (count: number) =>
+      `Re-eval\u00faa ${count} ${count === 1 ? "selecci\u00f3n" : "selecciones"} con nuevas prioridades`,
+    amendmentEditorHelp:
+      "Re-ordena, renombra, elimina o a\u00f1ade temas. Al guardar, re-puntuar\u00e9 tus selecciones con las nuevas prioridades.",
+    amendmentEditorRemove: "QUITAR",
+    amendmentEditorAddBtn: "+ Agregar",
+    amendmentEditorCancel: "Cancelar",
+    amendmentEditorApply: "Aplicar y re-puntuar \u2192",
   },
   portfolio: {
     badge: "Investigaci\u00f3n Verificada",
@@ -1695,6 +1910,47 @@ const es: Translations = {
     showFullPrompt: "Mostrar todo",
     copyFallback: "Presiona Ctrl+C / Cmd+C para copiar",
     electionDayEvent: "D\u00eda de Elecci\u00f3n",
+  },
+  deadline: {
+    registerOnline: "Registrarse en l\u00ednea",
+    registerByMail: "Registrarse por correo",
+    registerInPerson: "Registrarse en persona",
+    earlyVotingStarts: "Empieza la votaci\u00f3n anticipada",
+    earlyVotingEnds: "Termina la votaci\u00f3n anticipada",
+    electionDay: "D\u00eda de las elecciones",
+    passed: "Pasado",
+    today: "Hoy (\u00faltimo d\u00eda)",
+    daysLeft: (n: number) => `Quedan ${n} d\u00edas`,
+    sameDayAvailable: "Registro el mismo d\u00eda disponible",
+    checkRegistration: "Verifica tu registro \u2192",
+  },
+  settings: {
+    title: "Ajustes",
+    langSection: "Idioma",
+    langEn: "English",
+    langEs: "Espa\u00f1ol",
+    byokSection: "Usa tu propia llave de Anthropic",
+    byokHelp:
+      "Se almacena solo en este dispositivo. Se env\u00eda directo a api.anthropic.com desde tu navegador \u2014 nunca al servidor de Voter Choice.",
+    byokPlaceholder: "sk-ant-...",
+    byokSave: "Guardar llave",
+    byokClear: "Quitar llave",
+    byokSaved: "Llave guardada \u2014 el chat ahora usa tu cuenta.",
+    byokRemoved: "Llave quitada \u2014 volvemos al presupuesto comunitario.",
+    dataSection: "Tus datos en este dispositivo",
+    dataResume: "Continuar desde perfil guardado (.txt)",
+    dataExport: "Exportar boleta en borrador (.txt)",
+    dataReset: "Borrar todo en este dispositivo",
+    privacyLink: "Pol\u00edtica de privacidad \u2192",
+    methodologyLink: "Metodolog\u00eda \u2192",
+    aboutLink: "Acerca de Voter Choice \u2192",
+  },
+  loadingSteps: {
+    pullBallotHeading: "Buscando tu boleta.",
+    stepGeocode: "Geocodificando direcci\u00f3n",
+    stepPrecinct: "Buscando tu precinto",
+    stepRaces: "Cargando contiendas federales y estatales",
+    stepDonors: "Cargando historial de donantes",
   },
 };
 

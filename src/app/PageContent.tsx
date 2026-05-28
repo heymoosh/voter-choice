@@ -1,11 +1,13 @@
 "use client";
 
-import React from "react";
-import Link from "next/link";
-import { LanguageToggle } from "../components/LanguageToggle";
+import React, { useState, useEffect } from "react";
 import { useLanguage } from "../lib/i18n";
 import { useResearchMode } from "../lib/researchMode";
 import { translations } from "../lib/translations";
+import { Navigation } from "../components/Navigation";
+import { ResumeNudge } from "../components/ResumeNudge";
+import { HowItWorksWalkthrough } from "../components/HowItWorksWalkthrough";
+import { ProfileResumeModal } from "../components/ProfileResumeModal";
 
 interface PageContentProps {
   children?: React.ReactNode;
@@ -191,49 +193,6 @@ function CheckCircleIcon({ className = "" }: { className?: string }) {
   );
 }
 
-/* ── Prototype AppNav — used on every flag-on EN surface ──
-   Mirrors prototype-components.jsx AppNav: V mark + Voter Choice wordmark
-   on the left, center links (How it works · The record · About), EN/ES
-   pill on the right. Per PR A2 the center anchors are placeholders — no
-   target routes yet (deferred to PR B). */
-function AppNav() {
-  return (
-    <header
-      role="banner"
-      className="flex items-center justify-between px-4 md:px-14 py-5 w-full bg-paper border-b border-rule-2"
-    >
-      <Link
-        href="/"
-        className="flex items-center gap-[10px] font-serif font-semibold text-[19px] tracking-[-0.01em] text-ink cursor-pointer no-underline"
-        aria-label="Voter Choice — home"
-      >
-        <span
-          aria-hidden="true"
-          className="inline-grid place-items-center w-[22px] h-[22px] bg-civic text-paper-2 rounded-[4px] font-serif font-semibold text-[14px]"
-        >
-          V
-        </span>
-        <span>Voter Choice</span>
-      </Link>
-      <nav
-        aria-label="Primary"
-        className="hidden md:flex items-center gap-7 text-[14px] text-ink-2"
-      >
-        <a href="#how-it-works" className="hover:text-ink transition-colors">
-          How it works
-        </a>
-        <a href="#the-record" className="hover:text-ink transition-colors">
-          The record
-        </a>
-        <a href="#about" className="hover:text-ink transition-colors">
-          About
-        </a>
-      </nav>
-      <LanguageToggle variant="inline" />
-    </header>
-  );
-}
-
 /* ── EN prototype-spec shell (PR A2, flag-on EN only) ──
    Mirrors LandingView in docs/design-source-of-truth/2026-redesign/
    prototype/prototype-views.jsx for the cold-open (isResearch=false)
@@ -255,8 +214,45 @@ function AppNav() {
    the flip, BallotToolClient unmounted, `setResearch(false)` fired in
    cleanup, and the funnel deadlocked back on the landing. See
    `cold-open.spec.ts:184` / `workspace.spec.ts:141` for the e2e signal. */
+const WORKSPACE_STATE_KEY = "voter-choice:workspace:state:v1";
+
 function EnglishShell({ children }: { children?: React.ReactNode }) {
   const { isResearch } = useResearchMode();
+
+  // Read the persisted workspace draft from localStorage for ResumeNudge.
+  // The PersistedWorkspaceState shape is { decisions: Decision[], lockedThemes?: Theme[] }.
+  // ResumeNudge.SavedSession expects { decisions?: Record<string, unknown>, issues?: unknown[] }.
+  // We bridge by converting the decisions array to a keyed object (raceId → decision).
+  const [savedSession, setSavedSession] = useState<{
+    decisions?: Record<string, unknown>;
+    issues?: unknown[];
+    address?: string;
+  } | null>(null);
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const raw = window.localStorage.getItem(WORKSPACE_STATE_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as {
+        decisions?: { raceId: string; [k: string]: unknown }[];
+        lockedThemes?: unknown[];
+      };
+      const decisionsRecord: Record<string, unknown> = {};
+      for (const d of parsed.decisions ?? []) {
+        if (d.raceId) decisionsRecord[d.raceId] = d;
+      }
+      setSavedSession({
+        decisions: decisionsRecord,
+        issues: parsed.lockedThemes ?? [],
+      });
+    } catch {
+      // Corrupt persistence — ResumeNudge returns null when hasDraft is false.
+    }
+  }, []);
+
+  const totalRacesPlaceholder = 0; // actual count lives inside BallotToolClient
 
   return (
     <>
@@ -268,7 +264,7 @@ function EnglishShell({ children }: { children?: React.ReactNode }) {
           Skip to main content
         </a>
       )}
-      <AppNav />
+      <Navigation current="home" onOpenSettings={() => {}} />
 
       {/* Outer section — stable React node across landing↔research flip.
           The CRITICAL invariant: the inner left-column div (which wraps
@@ -346,6 +342,24 @@ function EnglishShell({ children }: { children?: React.ReactNode }) {
           >
             {children}
           </div>
+
+          {/* ResumeNudge — shown below the address card when localStorage has a
+              prior draft. Returns null automatically when there's nothing to resume.
+              totalRaces is 0 here (we don't have race data at page level); the nudge
+              shows the decided count which is meaningful even without total. */}
+          {!isResearch && savedSession && (
+            <ResumeNudge
+              saved={savedSession}
+              totalRaces={totalRacesPlaceholder}
+              onResume={() => {}}
+              onStartOver={() => {
+                if (typeof window !== "undefined") {
+                  window.localStorage.removeItem(WORKSPACE_STATE_KEY);
+                }
+                setSavedSession(null);
+              }}
+            />
+          )}
         </div>
 
         {/* Right column — 2-row stat-stack. Sibling of the left column,
@@ -393,6 +407,9 @@ function EnglishShell({ children }: { children?: React.ReactNode }) {
         )}
       </section>
 
+      {/* HowItWorksWalkthrough — three-step explainer per prototype HomeView line 94 */}
+      {!isResearch && <HowItWorksWalkthrough />}
+
       {!isResearch && (
         <footer
           role="contentinfo"
@@ -432,6 +449,17 @@ function EnglishShell({ children }: { children?: React.ReactNode }) {
           <div>© 2026 · Gray Bird LLC</div>
         </footer>
       )}
+
+      {/* ProfileResumeModal — wired at EnglishShell level per prototype HomeView.
+          The trigger link ("Drop your saved .txt profile →") lives inside
+          BallotToolClient (children) which manages its own profileResumeOpen state.
+          This instance is kept structurally wired; activation requires a shared
+          state lift in a future PR. */}
+      <ProfileResumeModal
+        open={profileModalOpen}
+        onClose={() => setProfileModalOpen(false)}
+        onResume={() => setProfileModalOpen(false)}
+      />
     </>
   );
 }
@@ -567,7 +595,10 @@ function LegacyLanding({ children }: { children?: React.ReactNode }) {
                   {t.landing.returningHeadline}
                 </h2>
                 <p className="text-base text-ink-2 leading-relaxed">
-                  {t.landing.returningSubtext}
+                  {/* NEEDS-KEY: landing.returningSubtext is now (decided, total) => string.
+                      LegacyLanding has no session data, so call with 0, 0 to yield
+                      a valid string from the function-valued key. */}
+                  {t.landing.returningSubtext(0, 0)}
                 </p>
                 <p className="text-sm text-ink-3 leading-relaxed italic">
                   {t.landing.returningNote}

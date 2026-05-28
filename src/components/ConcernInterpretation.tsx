@@ -511,10 +511,16 @@ function LegacyConcernInterpretation({
   const allReady = block.entries.every(isEntryReady);
   const confirmDisabled = isSubmitting || !allReady;
 
+  // Narrowed local consts so closures below see non-optional types.
+  // (The outer guard at line ~489 already proves these are defined, but
+  // TypeScript does not propagate that narrowing into nested functions.)
+  const blockNarrowed = block;
+  const onConfirmNarrowed = onConfirm;
+
   function handleConfirm() {
     if (confirmDisabled) return;
 
-    const confirmations: ConcernConfirmation[] = block.entries.map((entry) => {
+    const confirmations: ConcernConfirmation[] = blockNarrowed.entries.map((entry) => {
       const s = entryStates[entry.rank];
       if (s.removed) {
         return {
@@ -537,7 +543,7 @@ function LegacyConcernInterpretation({
       };
     });
 
-    onConfirm(confirmations);
+    onConfirmNarrowed(confirmations);
   }
 
   /* ── Submitted read-only view ── */
