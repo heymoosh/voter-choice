@@ -511,6 +511,11 @@ function sampleBallotCopy(lang: Language) {
 // duplicating the OCR fallback machinery (live bug 2 — PDF upload
 // regression). The legacy `UserSampleBallotInput` below continues to
 // import from the shared module.
+//
+// TODO (Phase 6): when ES UI is migrated post-translation, also route this
+// through /api/extract-ballot. Currently only the EN BallotLookupNeeded
+// surface uses the new route; ES locale still relies on the client-side
+// pdfjs + tesseract.js fallback in `pdf-extract.ts`.
 
 function UserSampleBallotInput({
   value,

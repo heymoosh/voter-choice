@@ -143,6 +143,10 @@ describe("ElectionResult — workspace persistence (Phase 3)", () => {
         },
       ],
       activeRaceId: "governor-texas",
+      // P0 #3 — zipCode must match the mounted ElectionResult's zipCode.
+      // Cross-address persisted state is dropped on hydration so a prior
+      // visit's themes don't bleed into a fresh address.
+      zipCode: "73301",
     };
     window.localStorage.setItem(
       "voter-choice:workspace:state:v1",
@@ -175,6 +179,8 @@ describe("ElectionResult — workspace persistence (Phase 3)", () => {
         },
       ],
       activeRaceId: "governor-texas",
+      // P0 #3 — same-zip seed so hydration keeps the cache.
+      zipCode: "73301",
     };
     window.localStorage.setItem(
       "voter-choice:workspace:state:v1",
@@ -220,6 +226,8 @@ describe("ElectionResult — workspace persistence (Phase 3)", () => {
           quotes: ['"insulin prices keep going up"'],
         },
       ],
+      // P0 #3 — same-zip seed so the workspace rehydrates.
+      zipCode: "73301",
     };
     window.localStorage.setItem(
       "voter-choice:workspace:state:v1",

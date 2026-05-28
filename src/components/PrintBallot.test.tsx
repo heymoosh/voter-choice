@@ -197,8 +197,33 @@ describe("PrintBallot — structure", () => {
   it("renders the voter meta: election label, date, and city + state", () => {
     renderBallot();
     expect(screen.getByText(/2026 General Election/)).toBeInTheDocument();
-    expect(screen.getByText(/2026-11-03/)).toBeInTheDocument();
+    // Fix 6 — date renders in human-readable form ("Nov 3, 2026") rather
+    // than raw ISO ("2026-11-03"). The formatted date appears in both the
+    // ph-head title ("My Ballot · Nov 3, 2026") and the election-meta
+    // line beneath the meta grid, so we use getAllByText.
+    expect(screen.getAllByText(/Nov 3, 2026/).length).toBeGreaterThan(0);
     expect(screen.getByText(/Harris County, Texas/)).toBeInTheDocument();
+  });
+
+  it("Fix 5 — renders the ph-head 'My Ballot' title in the left column", () => {
+    renderBallot();
+    const phHeadTitle = screen.getByTestId("ph-head-title");
+    // The title composes "My Ballot · <formatted date>" — verify both
+    // the literal "My Ballot" and the human-readable date appear.
+    expect(phHeadTitle).toHaveTextContent(/My Ballot/);
+    expect(phHeadTitle).toHaveTextContent(/Nov 3, 2026/);
+  });
+
+  it("Fix 6 — election-meta line uses human-readable date, not raw ISO", () => {
+    renderBallot();
+    // The election-meta line should compose label + formatted date.
+    const electionMeta = document.querySelector(
+      ".print-sheet .election-meta",
+    ) as HTMLElement | null;
+    expect(electionMeta).not.toBeNull();
+    expect(electionMeta).toHaveTextContent(/Nov 3, 2026/);
+    // And NOT the raw ISO form.
+    expect(electionMeta?.textContent ?? "").not.toContain("2026-11-03");
   });
 
   it("groups picks by section in workspace order: Federal → State → Propositions", () => {

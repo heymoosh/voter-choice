@@ -6,11 +6,13 @@ import {
   fireEvent,
   act,
   cleanup,
+  waitFor,
 } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import React from "react";
 import { LanguageProvider } from "../lib/i18n";
 import { ElectionResult, parsedBallotToContests } from "./BallotToolClient";
+import { POLIS_V1_VISIBLE } from "./WorkspacePolisSection";
 import type { StateElectionData } from "../types/election";
 import type { Theme } from "../lib/prompts/types";
 
@@ -340,9 +342,15 @@ describe("ElectionResult — workspace 3-pane shell (Phase 3)", () => {
     expect(chatHeader).toHaveTextContent(/race \d+ of 3/i);
   });
 
-  it("renders a chat input the user can type into and send", () => {
+  it("renders a chat input the user can type into and send", async () => {
     renderElectionResult();
-    const input = screen.getByTestId("workspace-chat-input");
+    // P0 #1 — workspace now auto-fires a race-deep-dive kickoff on mount,
+    // which sets isStreaming=true briefly. Wait for the kickoff fetch to
+    // settle so the input is enabled before we type and submit.
+    const input = (await screen.findByTestId(
+      "workspace-chat-input",
+    )) as HTMLTextAreaElement;
+    await waitFor(() => expect(input).not.toBeDisabled());
     expect(input).toBeInTheDocument();
     act(() => {
       fireEvent.change(input, {
@@ -967,7 +975,7 @@ describe("ElectionResult — mid-session theme amendment (Phase 6)", () => {
     expect(screen.getByTestId("workspace-chat-send")).toBeDisabled();
   });
 
-  it("PR 7: with a BYOK key set in localStorage, chat input STAYS interactive when overlay surfaces", () => {
+  it("PR 7: with a BYOK key set in localStorage, chat input STAYS interactive when overlay surfaces", async () => {
     window.localStorage.setItem(
       "voter-choice:byok-anthropic-key",
       "sk-ant-overlay-test",
@@ -978,11 +986,12 @@ describe("ElectionResult — mid-session theme amendment (Phase 6)", () => {
     });
     // No notice — BYOK bypasses community budget.
     expect(screen.queryByTestId("workspace-chat-budget-notice")).toBeNull();
-    // Input and Send both enabled.
+    // P0 #1 — workspace auto-fires a kickoff on mount; wait for streaming
+    // to settle before asserting the input isn't disabled.
     const input = screen.getByTestId(
       "workspace-chat-input",
     ) as HTMLInputElement;
-    expect(input).not.toBeDisabled();
+    await waitFor(() => expect(input).not.toBeDisabled());
   });
 
   it("PR 7: dismissing the overlay (no BYOK) keeps the chat notice + disabled input", () => {
@@ -1091,32 +1100,45 @@ describe("ElectionResult — mid-session theme amendment (Phase 6)", () => {
 
 /* ── Fix E — Polis section in the workspace rail ───────────── */
 
-describe("ElectionResult — Polis section visible in workspace (fix E)", () => {
-  it("renders the collapsible Polis section in the rail when themes are locked + county is known", () => {
-    renderElectionResult();
-    // Section header is present (closed by default).
-    expect(screen.getByTestId("workspace-polis-section")).toBeInTheDocument();
-    expect(screen.getByTestId("workspace-polis-toggle")).toHaveAttribute(
-      "aria-expanded",
-      "false",
-    );
-    // Overlay is NOT yet in the DOM — opt-in expand.
-    expect(screen.queryByTestId("polis-bars-section")).toBeNull();
-  });
-
-  it("expanding the Polis section mounts PolisOverlay inside the rail", () => {
-    renderElectionResult();
-    act(() => {
-      fireEvent.click(screen.getByTestId("workspace-polis-toggle"));
+// PR D Fix 3 — workspace polis hidden in v1 (POLIS_V1_VISIBLE=false).
+// These two assertions describe the future-enabled contract; they
+// re-activate when the flag flips. The "no themes ⇒ no section" guard
+// is preserved as an always-on regression below.
+describe.skipIf(!POLIS_V1_VISIBLE)(
+  "ElectionResult — Polis section visible in workspace (fix E)",
+  () => {
+    it("renders the collapsible Polis section in the rail when themes are locked + county is known", () => {
+      renderElectionResult();
+      // Section header is present (closed by default).
+      expect(screen.getByTestId("workspace-polis-section")).toBeInTheDocument();
+      expect(screen.getByTestId("workspace-polis-toggle")).toHaveAttribute(
+        "aria-expanded",
+        "false",
+      );
+      // Overlay is NOT yet in the DOM — opt-in expand.
+      expect(screen.queryByTestId("polis-bars-section")).toBeNull();
     });
-    expect(screen.getByTestId("polis-bars-section")).toBeInTheDocument();
-    // The section sits inside the workspace-rail nav, not the chat or ballot pane.
-    const rail = screen.getByRole("navigation", {
-      name: /workspace navigation/i,
-    });
-    expect(rail.contains(screen.getByTestId("polis-bars-section"))).toBe(true);
-  });
 
+    it("expanding the Polis section mounts PolisOverlay inside the rail", () => {
+      renderElectionResult();
+      act(() => {
+        fireEvent.click(screen.getByTestId("workspace-polis-toggle"));
+      });
+      expect(screen.getByTestId("polis-bars-section")).toBeInTheDocument();
+      // The section sits inside the workspace-rail nav, not the chat or ballot pane.
+      const rail = screen.getByRole("navigation", {
+        name: /workspace navigation/i,
+      });
+      expect(rail.contains(screen.getByTestId("polis-bars-section"))).toBe(
+        true,
+      );
+    });
+  },
+);
+
+// Always-on regression: even when polis becomes visible, no themes
+// must still hide the section.
+describe("ElectionResult — Polis section visible in workspace (fix E, regression)", () => {
   it("does NOT render the Polis section when no themes are locked", () => {
     renderElectionResult({ initialLockedThemes: [] });
     expect(screen.queryByTestId("workspace-polis-section")).toBeNull();
@@ -1638,5 +1660,337 @@ describe("ElectionResult — cold-open chrome (PR A2)", () => {
     );
     // Sidebar renders for the legacy flag-off path even in English.
     expect(screen.getByText(/Election Guide/i)).toBeInTheDocument();
+  });
+});
+
+describe("ElectionResult — structured ballot extraction populates all eligible races", () => {
+  // The live NJ Camden bug. /api/extract-ballot returns 8 races split DEM/REP,
+  // but the prior path (ballotJsonToText → parseBallotContent) couldn't parse
+  // the markdown shape, so only Civic contests reached the workspace.
+  //
+  // After the fix, ElectionResult receives the structured extraction via
+  // `initialExtractedBallot` and `initialBallotContext.ballotTag` drives
+  // the party filter so DEM voters see all DEM-eligible races (Federal +
+  // County + Municipal), not just whatever Civic returned.
+
+  const njDemRepExtraction = {
+    election_metadata: {
+      election_date: "2026-06-02",
+      election_type: "primary" as const,
+      jurisdiction: "Camden County, NJ",
+    },
+    sections: [
+      {
+        section_name: "Federal",
+        races: [
+          {
+            office: "U.S. Senator",
+            vote_for_n: 1,
+            party_context: "Democratic Primary" as const,
+            candidates: [
+              {
+                name: "Cory Booker",
+                party: "Democratic",
+                placeholder_reason: null,
+              },
+            ],
+          },
+          {
+            office: "U.S. Senator",
+            vote_for_n: 1,
+            party_context: "Republican Primary" as const,
+            candidates: [
+              {
+                name: "John Bramnick",
+                party: "Republican",
+                placeholder_reason: null,
+              },
+            ],
+          },
+          {
+            office: "U.S. House",
+            district: "1",
+            vote_for_n: 1,
+            party_context: "Democratic Primary" as const,
+            candidates: [
+              {
+                name: "Donald Norcross",
+                party: "Democratic",
+                placeholder_reason: null,
+              },
+            ],
+          },
+        ],
+      },
+      {
+        section_name: "County",
+        races: [
+          {
+            office: "County Commissioner",
+            vote_for_n: 2,
+            party_context: "Democratic Primary" as const,
+            candidates: [
+              {
+                name: "Louis Cappelli",
+                party: "Democratic",
+                placeholder_reason: null,
+              },
+            ],
+          },
+          {
+            office: "County Commissioner",
+            vote_for_n: 2,
+            party_context: "Republican Primary" as const,
+            candidates: [
+              { name: "Alice", party: "Republican", placeholder_reason: null },
+            ],
+          },
+        ],
+      },
+    ],
+    _meta: {
+      extraction_path: "vision" as const,
+      pages: 1,
+      latency_ms: 30000,
+      cost_usd: 0.1,
+    },
+  };
+
+  it("DEM voter sees Federal + County rows from extraction, not just Civic", () => {
+    render(
+      <LanguageProvider>
+        <ElectionResult
+          state={txState}
+          zipCode="73301"
+          lang="en"
+          initialPollingData={null}
+          promptFleetV2Enabled={true}
+          initialLockedThemes={lockedThemes}
+          initialExtractedBallot={njDemRepExtraction}
+          initialBallotContext={{
+            state: "NJ",
+            ballotTag: "DEM-primary",
+            electionDate: "2026-06-02",
+            electionLabel: "2026 New Jersey Primary",
+          }}
+        />
+      </LanguageProvider>,
+    );
+    // 1 Senator DEM + 1 House DEM + 1 Commissioner DEM = 3.
+    expect(screen.getByTestId("ballot-pane-header")).toHaveTextContent("0/3");
+  });
+
+  it("REP voter sees Republican Primary races only", () => {
+    render(
+      <LanguageProvider>
+        <ElectionResult
+          state={txState}
+          zipCode="73301"
+          lang="en"
+          initialPollingData={null}
+          promptFleetV2Enabled={true}
+          initialLockedThemes={lockedThemes}
+          initialExtractedBallot={njDemRepExtraction}
+          initialBallotContext={{
+            state: "NJ",
+            ballotTag: "REP-primary",
+            electionDate: "2026-06-02",
+            electionLabel: "2026 New Jersey Primary",
+          }}
+        />
+      </LanguageProvider>,
+    );
+    // 1 Senator REP + 1 Commissioner REP = 2.
+    expect(screen.getByTestId("ballot-pane-header")).toHaveTextContent("0/2");
+  });
+});
+
+/* ── P0 #3 (live audit): localStorage cross-address purge + restart wipe ─ */
+
+/**
+ * The live audit found a fresh-looking NJ session that had pre-filled
+ * themes "Healthcare costs" + "Housing affordability" in
+ * `voter-choice:workspace:state:v1` — the audit subagent had to clear
+ * localStorage manually. Root cause: the workspace-state key is global
+ * and persisted across address resubmits (different zip).
+ *
+ * Fix: persist the zip in the same payload and drop the cached state on
+ * hydration if it doesn't match the current zip — so themes don't bleed
+ * across visits.
+ *
+ * Separately, handleRestart already clears the key; this re-asserts it so
+ * a future refactor can't silently regress that path.
+ */
+describe("ElectionResult — P0 #3: workspace localStorage zip-scoping + restart", () => {
+  const WORKSPACE_KEY = "voter-choice:workspace:state:v1";
+
+  it("does NOT restore persisted themes when the persisted zip differs from the mounted zip", () => {
+    // Seed localStorage with a payload from a DIFFERENT zip (the prior visit).
+    window.localStorage.setItem(
+      WORKSPACE_KEY,
+      JSON.stringify({
+        decisions: [],
+        activeRaceId: null,
+        lockedThemes: [
+          { name: "Healthcare costs", quotes: ['"insulin"'] },
+          { name: "Housing affordability", quotes: ['"rent"'] },
+        ],
+        // Persisted zip belongs to a prior NJ visit.
+        zipCode: "07030",
+      }),
+    );
+
+    // Now mount with a different zip (current visit).
+    render(
+      <LanguageProvider>
+        <ElectionResult
+          state={txState}
+          zipCode="73301"
+          lang="en"
+          initialPollingData={civicData}
+          promptFleetV2Enabled={true}
+          // Real cold-open path: themes start null.
+          initialLockedThemes={null}
+        />
+      </LanguageProvider>,
+    );
+
+    // The stale themes must NOT appear in the workspace surface.
+    // Cold-open should render (themes are null) — not the workspace rail.
+    expect(screen.queryByText(/Healthcare costs/i)).toBeNull();
+    expect(screen.queryByText(/Housing affordability/i)).toBeNull();
+  });
+
+  it("clicking Restart session purges stale themes from React state and localStorage", async () => {
+    // Mount in workspace mode with themes locked AND prior persisted state
+    // (simulates a real session in flight).
+    render(
+      <LanguageProvider>
+        <ElectionResult
+          state={txState}
+          zipCode="73301"
+          lang="en"
+          initialPollingData={civicData}
+          promptFleetV2Enabled={true}
+          initialLockedThemes={lockedThemes}
+        />
+      </LanguageProvider>,
+    );
+
+    // After hydration the workspace persists. Flush effects.
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    // Themes are visible in the rail before restart.
+    expect(screen.queryByText(/Healthcare costs/i)).toBeInTheDocument();
+
+    // Click Restart from the rail.
+    const restartBtn = screen.getByTestId("workspace-rail-restart");
+    fireEvent.click(restartBtn);
+
+    // The persistence effect may re-write the key (with a fresh, empty
+    // payload). What MUST be true: no stale themes, no decisions linger in
+    // either the React state OR whatever sits in localStorage.
+    expect(screen.queryByText(/Healthcare costs/i)).toBeNull();
+    expect(screen.queryByText(/Housing affordability/i)).toBeNull();
+
+    const persisted = window.localStorage.getItem(WORKSPACE_KEY);
+    if (persisted) {
+      const parsed = JSON.parse(persisted) as {
+        decisions: unknown[];
+        lockedThemes: unknown[] | null;
+      };
+      expect(parsed.decisions).toEqual([]);
+      expect(parsed.lockedThemes ?? []).toEqual([]);
+    }
+  });
+});
+
+/* ── PR #57 Fix 9 — auto-select first race regression guard ─────── */
+
+/**
+ * Regression guard for PR #57's `useEffect` in `BallotToolClient.tsx`:
+ *
+ *   useEffect(() => {
+ *     if (activeRaceId !== null) return;
+ *     if (races.length === 0) return;
+ *     setActiveRaceId(races[0].id);
+ *   }, [races, activeRaceId]);
+ *
+ * The fix has two mechanisms covering the same user-visible invariant:
+ *   1. `useState(races[0]?.id ?? null)` initializer — handles the
+ *      common case of workspace mounting with `races` already populated
+ *      (Civic returned contests, or paste/extraction landed before
+ *      themes locked).
+ *   2. The Fix 9 useEffect above — catches `races` transitioning from
+ *      empty to populated AFTER workspace mounts (e.g. PartyGate filter
+ *      promoting a new ordered list).
+ *
+ * This test asserts the visible invariant — "the first race carries
+ * aria-current=page when the workspace mounts with populated races" —
+ * which is what users actually experience. The Fix 9 useEffect is the
+ * safety net mechanism; the test wouldn't fail if only the initializer
+ * existed, but it WOULD fail if both were ripped out.
+ *
+ * NOTE on the empty→populated transition: that scenario cannot be
+ * exercised from inside workspace mode in a unit test. All race-deriving
+ * inputs (`initialPollingData`, `extractedBallot`, `userSampleBallotText`,
+ * `ballotContext.ballotTag`) are either initial-only props or are set
+ * by surfaces (BallotLookupNeeded, PartyGate, cold-open ChatPanel) that
+ * don't render once `lockedThemes !== null` — so we can't drive the
+ * transition without also driving cold-open's mocked theme-lock flow,
+ * which is broader orchestration than this chip. Out of scope here;
+ * worth revisiting if Fix 9 gets extracted as a custom hook.
+ */
+describe("ElectionResult — PR #57 Fix 9: auto-select first race", () => {
+  it("initial mount with populated races sets aria-current on the first rail row", () => {
+    renderElectionResult();
+    // Civic returned 3 contests (President, Governor, Proposition 1) sorted
+    // into Federal → State → Propositions. The first race in the rail must
+    // be the one carrying aria-current="page" without any user click.
+    const railRows = screen
+      .getAllByRole("button")
+      .filter((b) =>
+        (b.getAttribute("data-testid") ?? "").startsWith(
+          "workspace-rail-race-",
+        ),
+      );
+    expect(railRows.length).toBeGreaterThan(0);
+    expect(railRows[0]).toHaveAttribute("aria-current", "page");
+  });
+
+  it("initial mount with pasted-ballot races sets aria-current on the first rail row", () => {
+    // Mirrors the Fix L paste path: Civic empty, paste pre-seeded via the
+    // test-only hook. Workspace mounts with races derived from paste —
+    // the first one must be active without manual click. Pre-Fix 9 some
+    // production paths landed in workspace with `activeRaceId = null`
+    // and required a click before chat fired.
+    render(
+      <LanguageProvider>
+        <ElectionResult
+          state={txState}
+          zipCode="73301"
+          lang="en"
+          initialPollingData={null}
+          promptFleetV2Enabled={true}
+          initialLockedThemes={lockedThemes}
+          initialUserSampleBallotText={[
+            "U.S. Senate: Cory Booker (D)",
+            "Governor: Jane Doe (D)",
+            "Proposition 1: County school bond",
+          ].join("\n")}
+        />
+      </LanguageProvider>,
+    );
+    const railRows = screen
+      .getAllByRole("button")
+      .filter((b) =>
+        (b.getAttribute("data-testid") ?? "").startsWith(
+          "workspace-rail-race-",
+        ),
+      );
+    expect(railRows.length).toBeGreaterThan(0);
+    expect(railRows[0]).toHaveAttribute("aria-current", "page");
   });
 });
