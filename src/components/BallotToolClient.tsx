@@ -384,6 +384,17 @@ interface PersistedWorkspaceState {
    * losing the session. Persisted as part of the same payload as decisions.
    */
   lockedThemes?: Theme[] | null;
+  /**
+   * P0 #3 (live audit): persisted zip so we can drop the cache when a
+   * different address loads the workspace. Pre-fix the workspace state key
+   * was global and persisted across address resubmits — the live audit found
+   * a fresh-looking NJ session that had stale "Healthcare costs" + "Housing
+   * affordability" themes from some prior visit. By recording the zip in the
+   * payload and comparing on hydration, we keep returning voters at the same
+   * address (the legitimate continuity case) while wiping cross-address
+   * carryover.
+   */
+  zipCode?: string;
 }
 
 /**
@@ -697,28 +708,47 @@ export function ElectionResult({
   // Hydrate workspace state from localStorage exactly once. Done in an effect
   // so SSR and the first client render agree on the empty state — otherwise
   // hydration would mismatch.
+  //
+  // P0 #3 (live audit): if the persisted payload's zipCode differs from the
+  // current `zipCode` prop, drop the cache — it belongs to a prior address.
+  // Pre-fix this carryover let stale themes from one visit pre-seed the next
+  // visit's workspace (the audit subagent caught "Healthcare costs" +
+  // "Housing affordability" pre-filled on a fresh NJ session).
   useEffect(() => {
     if (typeof window === "undefined") return;
     try {
       const raw = window.localStorage.getItem(WORKSPACE_STATE_KEY);
       if (raw) {
         const parsed = JSON.parse(raw) as PersistedWorkspaceState;
-        if (Array.isArray(parsed.decisions)) {
-          setDecisions(parsed.decisions);
-        }
-        if (typeof parsed.activeRaceId === "string") {
-          setActiveRaceId(parsed.activeRaceId);
-        }
-        // PR 1 — restore locked themes so a remount after BudgetExhausted
-        // (or refresh) doesn't drop the user back to cold-open.
-        if (Array.isArray(parsed.lockedThemes)) {
-          setLockedThemes(parsed.lockedThemes);
+        const persistedZip =
+          typeof parsed.zipCode === "string" ? parsed.zipCode : null;
+        // Treat a missing persisted zip as "unknown origin" → discard.
+        // Returning voters at the same address see persistedZip === zipCode
+        // and rehydrate normally.
+        if (persistedZip !== zipCode) {
+          window.localStorage.removeItem(WORKSPACE_STATE_KEY);
+        } else {
+          if (Array.isArray(parsed.decisions)) {
+            setDecisions(parsed.decisions);
+          }
+          if (typeof parsed.activeRaceId === "string") {
+            setActiveRaceId(parsed.activeRaceId);
+          }
+          // PR 1 — restore locked themes so a remount after BudgetExhausted
+          // (or refresh) doesn't drop the user back to cold-open.
+          if (Array.isArray(parsed.lockedThemes)) {
+            setLockedThemes(parsed.lockedThemes);
+          }
         }
       }
     } catch {
       // Corrupt persistence shouldn't crash the workspace; drop it.
     }
     setHydrated(true);
+    // Intentionally not re-running on zipCode change: hydration is a
+    // one-shot operation on mount. If a future flow swaps zipCode while
+    // mounted, the parent should remount the workspace.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Persist on every change AFTER hydration. The guard prevents the empty
@@ -731,12 +761,15 @@ export function ElectionResult({
         decisions,
         activeRaceId,
         lockedThemes,
+        // P0 #3: record the active zip so a future visit at a different
+        // address can detect the cross-address case and discard this cache.
+        zipCode,
       };
       window.localStorage.setItem(WORKSPACE_STATE_KEY, JSON.stringify(payload));
     } catch {
       // Quota errors etc. — silently ignore; persistence is best-effort.
     }
-  }, [decisions, activeRaceId, lockedThemes, hydrated]);
+  }, [decisions, activeRaceId, lockedThemes, hydrated, zipCode]);
 
   const handleLockInThemes = useCallback((themes: Theme[]) => {
     setLockedThemes(themes);
@@ -1851,6 +1884,13 @@ function WorkspaceShell({
             raceLabelLookup: Object.fromEntries(
               racesWithDecided.map((r) => [r.id, r.label]),
             ),
+            // P0 #1 (live audit) — auto-fire a "Introduce this race…"
+            // synthetic user message on mount so the model streams a
+            // context-aware AI greeting before the voter speaks. Pre-fix
+            // the chat opened EMPTY (only the placeholder "Ask anything
+            // about U.S. Senate." with no AI bubble). The synthetic user
+            // message is `hidden`, so only the AI bubble renders.
+            autoFireRaceIntro: true,
           }}
         />
       </div>

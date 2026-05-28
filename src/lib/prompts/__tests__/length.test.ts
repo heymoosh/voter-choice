@@ -8,6 +8,13 @@ import { buildResearchCandidatePrompt } from "../research-candidate";
 import { buildChatCatchJudgePrompt } from "../chat-catch-judge";
 
 const LIMIT = 1500;
+// P0 #2 (live audit): the race-deep-dive prompt now carries an explicit
+// candidate-resolution rule so the model resolves surnames against
+// <candidates> instead of bouncing the disambiguation back to the voter.
+// The new bullet adds ~200 chars and pushes the prompt over the prior
+// 1500 budget — bump the race-deep-dive ceiling rather than drop a load-
+// bearing safety/UX rule. Other builders stay at 1500.
+const RACE_DEEP_DIVE_LIMIT = 1800;
 
 describe("task-prompt length budget", () => {
   it("theme-extraction body stays under the 1500-char limit", () => {
@@ -17,7 +24,7 @@ describe("task-prompt length budget", () => {
     expect(rendered.length).toBeLessThanOrEqual(LIMIT);
   });
 
-  it("race-deep-dive body stays under the 1500-char limit", () => {
+  it("race-deep-dive body stays under the 1800-char limit", () => {
     const rendered = buildRaceDeepDivePrompt({
       raceLabel: "Senate",
       state: "TX",
@@ -26,7 +33,7 @@ describe("task-prompt length budget", () => {
       candidatesJson: "[]",
       decidedSummary: "(none)",
     });
-    expect(rendered.length).toBeLessThanOrEqual(LIMIT);
+    expect(rendered.length).toBeLessThanOrEqual(RACE_DEEP_DIVE_LIMIT);
   });
 
   it("proposition body stays under the 1500-char limit", () => {
