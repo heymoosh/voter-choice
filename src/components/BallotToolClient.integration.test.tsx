@@ -1906,3 +1906,91 @@ describe("ElectionResult — P0 #3: workspace localStorage zip-scoping + restart
     }
   });
 });
+
+/* ── PR #57 Fix 9 — auto-select first race regression guard ─────── */
+
+/**
+ * Regression guard for PR #57's `useEffect` in `BallotToolClient.tsx`:
+ *
+ *   useEffect(() => {
+ *     if (activeRaceId !== null) return;
+ *     if (races.length === 0) return;
+ *     setActiveRaceId(races[0].id);
+ *   }, [races, activeRaceId]);
+ *
+ * The fix has two mechanisms covering the same user-visible invariant:
+ *   1. `useState(races[0]?.id ?? null)` initializer — handles the
+ *      common case of workspace mounting with `races` already populated
+ *      (Civic returned contests, or paste/extraction landed before
+ *      themes locked).
+ *   2. The Fix 9 useEffect above — catches `races` transitioning from
+ *      empty to populated AFTER workspace mounts (e.g. PartyGate filter
+ *      promoting a new ordered list).
+ *
+ * This test asserts the visible invariant — "the first race carries
+ * aria-current=page when the workspace mounts with populated races" —
+ * which is what users actually experience. The Fix 9 useEffect is the
+ * safety net mechanism; the test wouldn't fail if only the initializer
+ * existed, but it WOULD fail if both were ripped out.
+ *
+ * NOTE on the empty→populated transition: that scenario cannot be
+ * exercised from inside workspace mode in a unit test. All race-deriving
+ * inputs (`initialPollingData`, `extractedBallot`, `userSampleBallotText`,
+ * `ballotContext.ballotTag`) are either initial-only props or are set
+ * by surfaces (BallotLookupNeeded, PartyGate, cold-open ChatPanel) that
+ * don't render once `lockedThemes !== null` — so we can't drive the
+ * transition without also driving cold-open's mocked theme-lock flow,
+ * which is broader orchestration than this chip. Out of scope here;
+ * worth revisiting if Fix 9 gets extracted as a custom hook.
+ */
+describe("ElectionResult — PR #57 Fix 9: auto-select first race", () => {
+  it("initial mount with populated races sets aria-current on the first rail row", () => {
+    renderElectionResult();
+    // Civic returned 3 contests (President, Governor, Proposition 1) sorted
+    // into Federal → State → Propositions. The first race in the rail must
+    // be the one carrying aria-current="page" without any user click.
+    const railRows = screen
+      .getAllByRole("button")
+      .filter((b) =>
+        (b.getAttribute("data-testid") ?? "").startsWith(
+          "workspace-rail-race-",
+        ),
+      );
+    expect(railRows.length).toBeGreaterThan(0);
+    expect(railRows[0]).toHaveAttribute("aria-current", "page");
+  });
+
+  it("initial mount with pasted-ballot races sets aria-current on the first rail row", () => {
+    // Mirrors the Fix L paste path: Civic empty, paste pre-seeded via the
+    // test-only hook. Workspace mounts with races derived from paste —
+    // the first one must be active without manual click. Pre-Fix 9 some
+    // production paths landed in workspace with `activeRaceId = null`
+    // and required a click before chat fired.
+    render(
+      <LanguageProvider>
+        <ElectionResult
+          state={txState}
+          zipCode="73301"
+          lang="en"
+          initialPollingData={null}
+          promptFleetV2Enabled={true}
+          initialLockedThemes={lockedThemes}
+          initialUserSampleBallotText={[
+            "U.S. Senate: Cory Booker (D)",
+            "Governor: Jane Doe (D)",
+            "Proposition 1: County school bond",
+          ].join("\n")}
+        />
+      </LanguageProvider>,
+    );
+    const railRows = screen
+      .getAllByRole("button")
+      .filter((b) =>
+        (b.getAttribute("data-testid") ?? "").startsWith(
+          "workspace-rail-race-",
+        ),
+      );
+    expect(railRows.length).toBeGreaterThan(0);
+    expect(railRows[0]).toHaveAttribute("aria-current", "page");
+  });
+});

@@ -86,10 +86,18 @@ const SECTION_ORDER: RaceSection[] = [
 ];
 
 // Patterns are case-insensitive and ordered by specificity.
+//
+// The bare "House of Representatives" pattern is anchored at start-of-string
+// (after optional "Member of the ") so state-prefixed forms like
+// "Texas House of Representatives" don't match. PR #55 added a label
+// normalizer that maps the bare form to "U.S. House" for display, but
+// Civic API + several state PDF extractions emit the bare phrasing for the
+// federal lower chamber — we want those classified Federal, not Local.
 const FEDERAL_PATTERNS: RegExp[] = [
   /\bpresident\b/i,
   /\bu\.?\s?s\.?\s*(?:senate|senator|house|representative|congress)/i,
   /\bunited\s+states\s+(?:senate|senator|house|representative|congress)/i,
+  /^(?:member of the )?house of representatives\b/i,
 ];
 
 const STATE_PATTERNS: RegExp[] = [

@@ -53,38 +53,14 @@ export interface BallotLookupNeededProps {
   ) => void;
 }
 
-interface ExtractMeta {
-  extraction_path: "pdfjs" | "vision";
-  pages: number;
-  latency_ms: number;
-  cost_usd: number;
-}
-
-interface ExtractResponse {
-  election_metadata: {
-    election_date: string;
-    election_type: "primary" | "primary_runoff" | "general" | "special";
-    jurisdiction: string;
-    ballot_style?: string;
-  };
-  sections: Array<{
-    section_name: string;
-    races: Array<{
-      office: string;
-      district?: string;
-      position?: string;
-      vote_for_n: number;
-      party_context: "Democratic Primary" | "Republican Primary" | null;
-      candidates: Array<{
-        name: string | null;
-        party: string | null;
-        ballot_position?: string;
-        placeholder_reason: "no_petition_filed" | "write_in" | null;
-      }>;
-    }>;
-  }>;
-  _meta: ExtractMeta;
-}
+// Note: the local `ExtractMeta` / `ExtractResponse` interfaces that used to
+// live here were stale after PR #58 — they declared `cost_usd: number` as
+// required on `_meta`, but the server's `/api/extract-ballot` response only
+// ships `PublicExtractMeta` (extraction_path / pages / latency_ms / optional
+// cache_hit). Dropped both: `extractBallotPdf` now returns `BallotExtraction`
+// directly (the canonical type from `src/lib/server/extract-types.ts`), and
+// the local consumers (`ballotJsonToText`, `extractionRef`) only ever read
+// `election_metadata` + `sections` — never `_meta`.
 
 const SESSION_ID_STORAGE_KEY = "voter-choice:sessionId";
 
@@ -97,7 +73,7 @@ function getStoredSessionId(): string | null {
   }
 }
 
-async function extractBallotPdf(file: File): Promise<ExtractResponse> {
+async function extractBallotPdf(file: File): Promise<BallotExtraction> {
   const formData = new FormData();
   formData.append("file", file);
   const sessionId = getStoredSessionId();
@@ -120,7 +96,7 @@ async function extractBallotPdf(file: File): Promise<ExtractResponse> {
     (err as Error & { status?: number }).status = res.status;
     throw err;
   }
-  return res.json() as Promise<ExtractResponse>;
+  return res.json() as Promise<BallotExtraction>;
 }
 
 interface StatusMessagesProps {
