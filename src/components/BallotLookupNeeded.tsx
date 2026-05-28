@@ -322,13 +322,17 @@ export function BallotLookupNeeded({
       </header>
 
       <ul className="mb-5 space-y-2 text-sm">
+        {/* Fix 2 — lookup links render sentence-case sans body text
+            per the audit polish sweep. Mono uppercase is reserved for
+            eyebrow / section-divider micro-labels, not navigational
+            anchors that read as body content. */}
         <li>
           <a
             data-testid="ballot-lookup-link-state"
             href={state.resources.sampleBallotLookup}
             target="_blank"
             rel="noopener noreferrer"
-            className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-civic underline decoration-civic-soft underline-offset-4 hover:decoration-civic"
+            className="font-sans text-[14px] font-medium text-civic underline decoration-civic-soft underline-offset-4 hover:decoration-civic"
           >
             Find your sample ballot ({state.stateName}) &rarr;
           </a>
@@ -339,7 +343,7 @@ export function BallotLookupNeeded({
             href={countyDisplay.link}
             target="_blank"
             rel="noopener noreferrer"
-            className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-civic underline decoration-civic-soft underline-offset-4 hover:decoration-civic"
+            className="font-sans text-[14px] font-medium text-civic underline decoration-civic-soft underline-offset-4 hover:decoration-civic"
           >
             {countyDisplay.label} &rarr;
           </a>
@@ -376,8 +380,10 @@ export function BallotLookupNeeded({
         >
           Use this ballot
         </button>
+        {/* Fix 2 — upload affordance renders sentence-case sans per
+            audit polish sweep. */}
         <label
-          className={`font-mono text-[10.5px] uppercase tracking-[0.14em] text-civic hover:underline ${
+          className={`font-sans text-[14px] font-medium text-civic hover:underline ${
             isPdfLoading ? "opacity-50 pointer-events-none" : "cursor-pointer"
           }`}
         >

@@ -771,6 +771,17 @@ export function ElectionResult({
     }
   }, [decisions, activeRaceId, lockedThemes, hydrated, zipCode]);
 
+  // Fix 9 — auto-select the first race when `races` transitions from
+  // empty to populated (e.g. extraction completes after mount, or the
+  // PartyGate filter promotes a new ordered list). Without this, the
+  // workspace mounts on "No race selected." and the voter has to
+  // manually click the first row before chat can fire.
+  useEffect(() => {
+    if (activeRaceId !== null) return;
+    if (races.length === 0) return;
+    setActiveRaceId(races[0].id);
+  }, [races, activeRaceId]);
+
   const handleLockInThemes = useCallback((themes: Theme[]) => {
     setLockedThemes(themes);
   }, []);

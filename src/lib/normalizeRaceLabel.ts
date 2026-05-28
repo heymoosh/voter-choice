@@ -43,7 +43,10 @@ export function normalizeRaceLabel(office: string, district?: string): string {
       raw,
     ) ||
     /^(member of\s+)?(the\s+)?house\s+of\s+representatives$/i.test(raw) ||
-    /^(u\.?\s?s\.?|united\s+states)\s+representative$/i.test(raw)
+    /^(u\.?\s?s\.?|united\s+states)\s+representative$/i.test(raw) ||
+    // FL-style phrasing surfaced by extraction: "Representative in Congress"
+    // (also accepts "Representative in the Congress").
+    /^representative\s+in\s+(the\s+)?congress$/i.test(raw)
   ) {
     const suffix = federalDistrictSuffix(districtRaw);
     return suffix ? `U.S. House — ${suffix}` : "U.S. House";

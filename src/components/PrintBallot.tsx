@@ -4,6 +4,27 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import type { Decision } from "./BallotPane";
 import type { Race, RaceSection } from "../lib/raceDeriver";
 import type { Theme } from "../lib/prompts/types";
+import { normalizeCandidateName } from "../lib/normalizeCandidateName";
+
+/**
+ * Format an ISO date string ("2026-06-02") in a human-readable short
+ * form ("Jun 2, 2026"). Anchored to local midnight so the timezone
+ * offset doesn't kick us back a day on the west coast.
+ */
+function formatBallotDate(iso: string): string {
+  if (typeof iso !== "string" || iso.length === 0) return "";
+  // Cheap ISO heuristic: strict YYYY-MM-DD passes through `new Date(iso
+  // + "T00:00:00")`; anything else falls back to whatever Date can
+  // parse so we don't crash on legacy / API-side surprises.
+  const isoLike = /^\d{4}-\d{2}-\d{2}$/.test(iso) ? `${iso}T00:00:00` : iso;
+  const d = new Date(isoLike);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
 
 /**
  * PrintBallot — Phase 7 printable artifact.
@@ -170,49 +191,63 @@ export function PrintBallot({
       {/* The actual printable. Both screen preview AND printed page render
           this same DOM; only `.no-print` chrome is suppressed at print time. */}
       <div ref={sheetRef} data-testid="print-sheet" className="print-sheet">
+        {/* Fix 5 — two-column ph-head per prototype-views.jsx lines 514-525
+            (`.l` / `.r` split). Left side carries the "My Ballot · <date>"
+            serif title with brand subline; right side carries the
+            polling-place block (or fallback when polling data is absent). */}
         <header className="ph-head">
-          {pollingData ? (
-            <div data-testid="polling-header">
-              {pollingData.precinct ? (
-                <div className="precinct">
-                  <strong>{pollingData.precinct}</strong>
-                </div>
-              ) : null}
-              {pollingData.pollingPlaceName ? (
-                <div className="place-name">{pollingData.pollingPlaceName}</div>
-              ) : null}
-              {pollingData.pollingPlaceAddress ? (
-                <div className="place-addr">
-                  {pollingData.pollingPlaceAddress}
-                </div>
-              ) : null}
-              {pollingData.pollingHours ? (
-                <div className="hours">
-                  Election Day hours: {pollingData.pollingHours}
-                </div>
-              ) : null}
-              {pollingData.whatToBring ? (
-                <div className="bring">Bring: {pollingData.whatToBring}</div>
-              ) : null}
-              {pollingData.earlyVotingWindow ? (
-                <div className="early">
-                  Early voting: {pollingData.earlyVotingWindow}
-                </div>
-              ) : null}
+          <div className="l">
+            <div data-testid="ph-head-title">
+              My Ballot &middot; {formatBallotDate(electionDate)}
             </div>
-          ) : (
-            <div data-testid="polling-fallback">
-              Polling place not available — bring your ID and check sosgov.{" "}
-              <a
-                href="https://www.usa.gov/election-office"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Find your local election office
-              </a>
-              .
-            </div>
-          )}
+            <small>Voter Choice &middot; voterchoice.app</small>
+          </div>
+          <div className="r">
+            {pollingData ? (
+              <div data-testid="polling-header">
+                {pollingData.precinct ? (
+                  <div className="precinct">
+                    <strong>{pollingData.precinct}</strong>
+                  </div>
+                ) : null}
+                {pollingData.pollingPlaceName ? (
+                  <div className="place-name">
+                    {pollingData.pollingPlaceName}
+                  </div>
+                ) : null}
+                {pollingData.pollingPlaceAddress ? (
+                  <div className="place-addr">
+                    {pollingData.pollingPlaceAddress}
+                  </div>
+                ) : null}
+                {pollingData.pollingHours ? (
+                  <div className="hours">
+                    Election Day hours: {pollingData.pollingHours}
+                  </div>
+                ) : null}
+                {pollingData.whatToBring ? (
+                  <div className="bring">Bring: {pollingData.whatToBring}</div>
+                ) : null}
+                {pollingData.earlyVotingWindow ? (
+                  <div className="early">
+                    Early voting: {pollingData.earlyVotingWindow}
+                  </div>
+                ) : null}
+              </div>
+            ) : (
+              <div data-testid="polling-fallback">
+                Polling place not available — bring your ID and check sosgov.{" "}
+                <a
+                  href="https://www.usa.gov/election-office"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Find your local election office
+                </a>
+                .
+              </div>
+            )}
+          </div>
         </header>
 
         {/* PR C — 4-cell voter-meta grid per prototype-views.jsx PrintView
@@ -242,9 +277,9 @@ export function PrintBallot({
         </div>
         {/* Election context line — preserved beneath the meta grid so
             the page still shows label + date. Mono micro-label, not
-            another cell. */}
+            another cell. Date formatted human-readable per Fix 6. */}
         <div className="election-meta">
-          {electionLabel} · {electionDate}
+          {electionLabel} · {formatBallotDate(electionDate)}
         </div>
 
         <div className="ballot-list">
@@ -266,7 +301,9 @@ export function PrintBallot({
                     <div className="pick-line">
                       <span className="race-label">{decision.raceLabel}</span>
                       <span className="sep">·</span>
-                      <span className="pick-name">{decision.pick}</span>
+                      <span className="pick-name">
+                        {normalizeCandidateName(decision.pick)}
+                      </span>
                       {!isProposition && decision.party ? (
                         <>
                           <span className="sep">·</span>

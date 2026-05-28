@@ -41,6 +41,30 @@ describe("normalizeRaceLabel", () => {
         "U.S. House — CD-3",
       );
     });
+
+    it("normalizes 'Representative in Congress' (FL phrasing) with numeric district", () => {
+      expect(normalizeRaceLabel("Representative in Congress", "8")).toBe(
+        "U.S. House — CD-8",
+      );
+    });
+
+    it("normalizes 'Representative in the Congress' (variant phrasing) with district", () => {
+      expect(normalizeRaceLabel("Representative in the Congress", "10")).toBe(
+        "U.S. House — CD-10",
+      );
+    });
+
+    it("normalizes 'Representative in Congress' with a 'District 9' suffix", () => {
+      expect(
+        normalizeRaceLabel("Representative in Congress", "District 9"),
+      ).toBe("U.S. House — CD-9");
+    });
+
+    it("normalizes 'Representative in Congress' with no district", () => {
+      expect(normalizeRaceLabel("Representative in Congress", "")).toBe(
+        "U.S. House",
+      );
+    });
   });
 
   describe("U.S. Senate", () => {
