@@ -59,6 +59,7 @@ import {
 } from "../lib/structured-blocks";
 import type { AlignmentScoresEntry } from "../lib/structured-blocks";
 import { getTodayInLatestUsZone } from "../lib/electionToday";
+import type { GateVariant } from "./BudgetExhausted";
 
 interface ChatMessage {
   role: "user" | "assistant";
@@ -356,6 +357,7 @@ interface ChatPanelProps {
   onBudgetExhausted?: (input: {
     handoffPromptText: string;
     resetAt: string;
+    variant: GateVariant;
   }) => void;
   /**
    * PR 7 — externally controlled budget-exhausted signal from the parent
@@ -370,6 +372,13 @@ interface ChatPanelProps {
    * regardless of this prop — BYOK bypasses the community budget.
    */
   budgetExhausted?: boolean;
+  /**
+   * The gate variant that triggered the budget-exhausted state, passed
+   * from the parent's `budgetOut` state. Controls inline gated-input copy.
+   * When `budgetExhausted` is true but this is not supplied (e.g. the SSE
+   * tier path), defaults to `"community_budget"`.
+   */
+  gateVariant?: GateVariant;
   /**
    * PR B — anchored-location context surfaced as a mono breadcrumb above
    * the cold-open chat. Mirrors the prototype's `.co-context` row
@@ -477,6 +486,21 @@ function getDisabledReason(code: string): DisabledReason | null {
 }
 
 /**
+ * Map an error code to the GateVariant that controls which copy the
+ * BudgetExhausted overlay renders. Consistent with the existing
+ * BUDGET_ERROR_CODES / RATE_ERROR_CODES sets.
+ */
+function getGateVariant(code: string): GateVariant {
+  if (BUDGET_ERROR_CODES.has(code)) return "community_budget";
+  if (code === "DAILY_LIMIT") return "daily_limit";
+  if (code === "CONCURRENT_LIMIT") return "concurrent_limit";
+  if (code === "SESSION_LIMIT") return "session_limit";
+  if (code === "RATE_LIMIT_UNAVAILABLE") return "service_unavailable";
+  // Unknown codes fall back to community_budget (safe default).
+  return "community_budget";
+}
+
+/**
  * Error codes the API can return that warrant surfacing the full
  * BudgetExhausted overlay (handoff prompt + BYOK + chatbot links) rather
  * than the lesser inline "chat-disabled" text stub. Fix for live bug 3:
@@ -489,6 +513,11 @@ const OVERLAY_HANDOFF_CODES: ReadonlySet<string> = new Set([
   "DAILY_LIMIT",
   "CONCURRENT_LIMIT",
   "SESSION_LIMIT",
+  // Transient backing-store outage: still surface the continuity overlay so
+  // the user can hand off to another chatbot, but it's deliberately NOT in
+  // RATE_ERROR_CODES — the main path treats it as a retryable error rather
+  // than hard-disabling chat.
+  "RATE_LIMIT_UNAVAILABLE",
 ]);
 
 function shouldRouteToOverlay(code: string | undefined): boolean {
@@ -1547,6 +1576,7 @@ function ChatStatusBar({
 function WorkspaceChat({
   workspace,
   budgetExhausted,
+  gateVariant = "community_budget",
   messages,
   isStreaming,
   onSendMessage,
@@ -1557,6 +1587,8 @@ function WorkspaceChat({
 }: {
   workspace: WorkspaceModeProps;
   budgetExhausted: boolean;
+  /** Controls inline gated-input copy when budgetExhausted is true. */
+  gateVariant?: GateVariant;
   messages: ChatMessage[];
   isStreaming: boolean;
   onSendMessage: (msg: string) => void;
@@ -1800,6 +1832,7 @@ function WorkspaceChat({
         activeRace={activeRace}
         decided={decided}
         budgetExhausted={budgetExhausted}
+        gateVariant={gateVariant}
         onCommitDecision={onCommitDecision}
         onUnpickDecision={onUnpickDecision}
       />
@@ -1845,6 +1878,7 @@ function WorkspaceChat({
           isStreaming={isStreaming}
           activeRaceLabel={activeRace.label}
           budgetExhausted={budgetExhausted}
+          gateVariant={gateVariant}
           activeRaceIndex={activeRaceIndex}
           totalRaces={totalRaces}
         />
@@ -1858,6 +1892,7 @@ function WorkspaceChatInput({
   isStreaming,
   activeRaceLabel,
   budgetExhausted,
+  gateVariant = "community_budget",
   activeRaceIndex,
   totalRaces,
 }: {
@@ -1865,6 +1900,7 @@ function WorkspaceChatInput({
   isStreaming: boolean;
   activeRaceLabel: string;
   budgetExhausted: boolean;
+  gateVariant?: GateVariant;
   activeRaceIndex: number;
   totalRaces: number;
 }) {
@@ -1895,8 +1931,9 @@ function WorkspaceChatInput({
           data-testid="workspace-chat-budget-notice"
           className="mb-2 text-xs italic text-on-surface-muted"
         >
-          Budget exhausted — paste the handoff prompt elsewhere, or add a BYOK
-          key to keep chatting here.
+          {gateVariant === "community_budget"
+            ? "Budget exhausted — paste the handoff prompt elsewhere, or add a BYOK key to keep chatting here."
+            : "Free-chat limit reached — paste the handoff prompt elsewhere, or add a BYOK key to keep chatting here."}
         </p>
       )}
       <div className="flex items-end gap-2">
@@ -1913,7 +1950,9 @@ function WorkspaceChatInput({
           }}
           placeholder={
             budgetExhausted
-              ? "Budget exhausted — copy the handoff prompt or add a BYOK key."
+              ? gateVariant === "community_budget"
+                ? "Budget exhausted — copy the handoff prompt or add a BYOK key."
+                : "Free-chat limit reached — copy the handoff prompt or add a BYOK key."
               : `Ask anything about ${activeRaceLabel}…`
           }
           disabled={inputDisabled}
@@ -1953,12 +1992,14 @@ function WorkspacePickArea({
   activeRace,
   decided,
   budgetExhausted,
+  gateVariant = "community_budget",
   onCommitDecision,
   onUnpickDecision,
 }: {
   activeRace: WorkspaceModeProps["activeRace"];
   decided: boolean;
   budgetExhausted: boolean;
+  gateVariant?: GateVariant;
   onCommitDecision: WorkspaceModeProps["onCommitDecision"];
   onUnpickDecision: WorkspaceModeProps["onUnpickDecision"];
 }) {
@@ -2008,7 +2049,9 @@ function WorkspacePickArea({
     <div className="flex flex-col gap-3 text-sm p-3 border-t border-rule">
       {budgetExhausted ? (
         <p className="text-ink-3 italic">
-          Budget exhausted — see the right pane footer for next steps.
+          {gateVariant === "community_budget"
+            ? "Budget exhausted — see the right pane footer for next steps."
+            : "Free-chat limit reached — see the right pane footer for next steps."}
         </p>
       ) : decided ? (
         // PR C — sentence-case sans for the "picked — undo" affordance.
@@ -2110,6 +2153,7 @@ export function ChatPanel({
   ballotContext,
   onBudgetExhausted,
   budgetExhausted: budgetExhaustedFromParent = false,
+  gateVariant: gateVariantFromParent,
   coldOpenContext,
 }: ChatPanelProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -2423,6 +2467,9 @@ export function ChatPanel({
             onBudgetExhausted?.({
               handoffPromptText: data.handoffPrompt ?? "",
               resetAt: data.resetAt ?? new Date().toISOString(),
+              // JSON `budget_exhausted` shape only returns when the community
+              // pool is exhausted — hardcode community_budget.
+              variant: "community_budget",
             });
             // Remove the optimistic user message — we're routing to the
             // continuity screen, not surfacing a chat reply.
@@ -2586,6 +2633,9 @@ export function ChatPanel({
             onBudgetExhausted?.({
               handoffPromptText: errorData.handoffPrompt ?? "",
               resetAt: errorData.resetAt ?? defaultRateLimitResetAtISO(),
+              // Derive the variant from the actual error code so the correct
+              // copy renders for rate-limit vs community-budget gates.
+              variant: getGateVariant(errorData.code ?? ""),
             });
             messageCountRef.current -= 1;
             setColdOpenPhase({ kind: "input", draft: userText });
@@ -2621,6 +2671,9 @@ export function ChatPanel({
             onBudgetExhausted?.({
               handoffPromptText: data.handoffPrompt ?? "",
               resetAt: data.resetAt ?? defaultRateLimitResetAtISO(),
+              // JSON `budget_exhausted` shape only returns when the community
+              // pool is exhausted — hardcode community_budget.
+              variant: "community_budget",
             });
             messageCountRef.current -= 1;
             setColdOpenPhase({ kind: "input", draft: userText });
@@ -3059,6 +3112,10 @@ export function ChatPanel({
     effectiveTier !== "normal" && effectiveTier !== "notice";
   const budgetExhausted =
     (budgetTierExhausted || budgetExhaustedFromParent) && !byokActive;
+  // When the parent's `gateVariant` is provided, use it. Otherwise default
+  // to `community_budget` (SSE-tier path has no variant signal).
+  const effectiveGateVariant: GateVariant =
+    gateVariantFromParent ?? "community_budget";
 
   const fullContent = messages
     .filter((m) => m.role === "assistant")
@@ -3110,6 +3167,7 @@ export function ChatPanel({
       <WorkspaceChat
         workspace={workspace}
         budgetExhausted={budgetExhausted}
+        gateVariant={effectiveGateVariant}
         messages={messages}
         isStreaming={isStreaming}
         onSendMessage={async (msg) => {

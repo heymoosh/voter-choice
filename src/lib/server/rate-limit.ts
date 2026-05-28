@@ -119,7 +119,11 @@ function getDailyEntry(ip: string): DailyEntry {
 export interface RateLimitResult {
   allowed: boolean;
   error?: string;
-  code?: "SESSION_LIMIT" | "CONCURRENT_LIMIT" | "DAILY_LIMIT";
+  code?:
+    | "SESSION_LIMIT"
+    | "CONCURRENT_LIMIT"
+    | "DAILY_LIMIT"
+    | "RATE_LIMIT_UNAVAILABLE";
 }
 
 export function checkRateLimit(
@@ -251,10 +255,16 @@ export async function checkRateLimitAsync(
     return await checkDurableRateLimit(ip, sessionId);
   } catch (err) {
     console.error("Durable rate limit failed:", err);
+    // Fail closed (deny), but with a code that says *why*. This is a
+    // transient backing-store outage, NOT the per-IP daily cap. Returning
+    // DAILY_LIMIT here made a momentary Redis blip read as "daily limit
+    // reached" in the continuity overlay. RATE_LIMIT_UNAVAILABLE lets the
+    // client show "temporarily unavailable, try again" instead — and the
+    // client treats it as retryable rather than a hard gate.
     return {
       allowed: false,
       error: "Rate limit service is temporarily unavailable.",
-      code: "DAILY_LIMIT",
+      code: "RATE_LIMIT_UNAVAILABLE",
     };
   }
 }

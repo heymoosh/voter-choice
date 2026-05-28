@@ -27,6 +27,30 @@ import React, { useState, useMemo, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 
 /**
+ * Taxonomy of gate variants that can surface the BudgetExhausted overlay.
+ *
+ * - `community_budget`: shared pool is spent or near-limit (BUDGET_EXHAUSTED,
+ *   BUDGET_SOFT_CLOSE). Shows "Community budget resets in N days" + timestamp
+ *   + Resume button.
+ * - `daily_limit`: per-IP cap on new sessions today (DAILY_LIMIT). Resets at
+ *   next UTC midnight. Shows reset time + Resume button.
+ * - `concurrent_limit`: too many simultaneous sessions from one IP
+ *   (CONCURRENT_LIMIT). Frees when other tabs go idle — not time-based.
+ * - `session_limit`: 60 messages reached in this conversation (SESSION_LIMIT).
+ *   Start a new conversation to continue — not time-based.
+ * - `service_unavailable`: the rate-limit backing store (Redis) failed, so
+ *   the gate failed closed (RATE_LIMIT_UNAVAILABLE). Transient — the user can
+ *   retry shortly. Shows "temporarily unavailable" copy with no reset
+ *   timestamp and no Resume button (there's no fixed reset to wait for).
+ */
+export type GateVariant =
+  | "community_budget"
+  | "daily_limit"
+  | "concurrent_limit"
+  | "session_limit"
+  | "service_unavailable";
+
+/**
  * Four chatbot links — strict alphabetical order. Voter Choice is
  * nonpartisan and so is the AI-provider choice. Reordering this array
  * fails the snapshot test for a reason: alphabetical is part of the brand.
@@ -58,6 +82,13 @@ export interface BudgetExhaustedProps {
    * the budget state itself.
    */
   onDismiss: () => void;
+  /**
+   * Which gate condition triggered this overlay. Controls the secondary
+   * reason/reset line and whether the Resume button is shown.
+   * Defaults to `"community_budget"` so callers that predate the variant
+   * taxonomy stay unchanged.
+   */
+  variant?: GateVariant;
 }
 
 /**
@@ -123,6 +154,7 @@ export function BudgetExhausted(
     storedByokKey,
     onResume,
     onDismiss,
+    variant = "community_budget",
   } = props;
 
   const [keyDraft, setKeyDraft] = useState("");
@@ -246,14 +278,52 @@ export function BudgetExhausted(
           >
             Your ballot is saved. Keep going on any chatbot.
           </h1>
-          <p
-            data-testid="budget-exhausted-reset"
-            className="mt-3 font-mono text-[11px] uppercase tracking-[0.12em] text-ink-3"
-          >
-            Community budget resets in {daysLeft} day{daysLeft === 1 ? "" : "s"}
-            {" · "}
-            {resetText}
-          </p>
+          {variant === "community_budget" && (
+            <p
+              data-testid="budget-exhausted-reset"
+              className="mt-3 font-mono text-[11px] uppercase tracking-[0.12em] text-ink-3"
+            >
+              Community budget resets in {daysLeft} day
+              {daysLeft === 1 ? "" : "s"}
+              {" · "}
+              {resetText}
+            </p>
+          )}
+          {variant === "daily_limit" && (
+            <p
+              data-testid="budget-exhausted-reset"
+              className="mt-3 font-mono text-[11px] uppercase tracking-[0.12em] text-ink-3"
+            >
+              Daily free-chat limit reached · resets {resetText}
+            </p>
+          )}
+          {variant === "concurrent_limit" && (
+            <p
+              data-testid="budget-exhausted-reset"
+              className="mt-3 font-mono text-[11px] uppercase tracking-[0.12em] text-ink-3"
+            >
+              Too many active sessions — close other tabs, or continue on any
+              chatbot below.
+            </p>
+          )}
+          {variant === "session_limit" && (
+            <p
+              data-testid="budget-exhausted-reset"
+              className="mt-3 font-mono text-[11px] uppercase tracking-[0.12em] text-ink-3"
+            >
+              This conversation reached its message limit — continue on any
+              chatbot below.
+            </p>
+          )}
+          {variant === "service_unavailable" && (
+            <p
+              data-testid="budget-exhausted-reset"
+              className="mt-3 font-mono text-[11px] uppercase tracking-[0.12em] text-ink-3"
+            >
+              Free chat is temporarily unavailable — try again in a moment, or
+              continue on any chatbot below.
+            </p>
+          )}
         </header>
 
         <section className="mb-8">
@@ -383,8 +453,14 @@ export function BudgetExhausted(
           &middot; not required.
         </p>
 
-        {/* PR C — sentence-case sans primary CTA. */}
-        {resetPassed ? (
+        {/* PR C — sentence-case sans primary CTA. Resume only makes sense
+            for time-based gates (community_budget + daily_limit). The
+            concurrent_limit and session_limit variants free themselves via
+            user action (closing tabs / starting a new conversation), and
+            service_unavailable frees itself when the backing store recovers
+            (no fixed reset to wait for) — so for those we omit the button. */}
+        {(variant === "community_budget" || variant === "daily_limit") &&
+        resetPassed ? (
           <button
             type="button"
             data-testid="resume-button"

@@ -84,7 +84,8 @@ describe("BudgetExhausted — headline + framing", () => {
   it("does NOT show apology framing", () => {
     render(<BudgetExhausted {...defaultProps()} />);
     expect(screen.queryByText(/sorry/i)).toBeNull();
-    // "limit" appears NOWHERE in the budget-exhausted copy.
+    // For the default community_budget variant, "limit" appears nowhere.
+    // (Rate-limit variants do use "limit" in their reason line — see variant tests.)
     expect(screen.queryByText(/limit/i)).toBeNull();
   });
 
@@ -345,5 +346,214 @@ describe("BudgetExhausted — modal overlay (PR 7)", () => {
     // The dismiss button should be the active element so screen readers
     // and keyboard users land inside the dialog when it opens.
     expect(document.activeElement).toBe(dismiss);
+  });
+});
+
+/* ── Variant taxonomy ───────────────────────────────────────── */
+
+describe("BudgetExhausted — variant: community_budget (default)", () => {
+  it("shows Community budget resets copy with day count + timestamp", () => {
+    render(
+      <BudgetExhausted
+        {...defaultProps()}
+        variant="community_budget"
+        resetAt="2030-06-01T00:00:00Z"
+      />,
+    );
+    const reset = screen.getByTestId("budget-exhausted-reset").textContent ?? "";
+    expect(reset).toMatch(/Community budget resets in/);
+    expect(reset).toMatch(/day/i);
+    expect(reset).toMatch(/UTC/i);
+  });
+
+  it("shows Resume button after reset passes", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2031-01-01T00:00:00Z"));
+    render(
+      <BudgetExhausted
+        {...defaultProps()}
+        variant="community_budget"
+        resetAt={FUTURE_RESET}
+      />,
+    );
+    expect(screen.getByTestId("resume-button")).toBeInTheDocument();
+  });
+});
+
+describe("BudgetExhausted — variant: daily_limit", () => {
+  it("shows 'Daily free-chat limit reached' with a reset timestamp", () => {
+    render(
+      <BudgetExhausted
+        {...defaultProps()}
+        variant="daily_limit"
+        resetAt="2030-06-01T00:00:00Z"
+      />,
+    );
+    const reset = screen.getByTestId("budget-exhausted-reset").textContent ?? "";
+    expect(reset).toMatch(/Daily free-chat limit reached/i);
+    expect(reset).toMatch(/resets/i);
+    expect(reset).toMatch(/UTC/i);
+  });
+
+  it("shows Resume button after reset passes for daily_limit", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2031-01-01T00:00:00Z"));
+    render(
+      <BudgetExhausted
+        {...defaultProps()}
+        variant="daily_limit"
+        resetAt={FUTURE_RESET}
+      />,
+    );
+    expect(screen.getByTestId("resume-button")).toBeInTheDocument();
+  });
+
+  it("does NOT show Resume before reset passes for daily_limit", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-05-21T00:00:00Z"));
+    render(
+      <BudgetExhausted
+        {...defaultProps()}
+        variant="daily_limit"
+        resetAt={FUTURE_RESET}
+      />,
+    );
+    expect(screen.queryByTestId("resume-button")).toBeNull();
+  });
+});
+
+describe("BudgetExhausted — variant: concurrent_limit", () => {
+  it("shows 'Too many active sessions' reason copy", () => {
+    render(
+      <BudgetExhausted
+        {...defaultProps()}
+        variant="concurrent_limit"
+        resetAt={FUTURE_RESET}
+      />,
+    );
+    const reset = screen.getByTestId("budget-exhausted-reset").textContent ?? "";
+    expect(reset).toMatch(/Too many active sessions/i);
+    expect(reset).toMatch(/close other tabs/i);
+  });
+
+  it("does NOT show a timestamp for concurrent_limit", () => {
+    render(
+      <BudgetExhausted
+        {...defaultProps()}
+        variant="concurrent_limit"
+        resetAt="2030-06-01T00:00:00Z"
+      />,
+    );
+    const reset = screen.getByTestId("budget-exhausted-reset").textContent ?? "";
+    // No UTC marker — not a time-based gate.
+    expect(reset).not.toMatch(/UTC/i);
+  });
+
+  it("does NOT show the Resume button for concurrent_limit even after resetAt passes", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2031-01-01T00:00:00Z"));
+    render(
+      <BudgetExhausted
+        {...defaultProps()}
+        variant="concurrent_limit"
+        resetAt={PAST_RESET}
+      />,
+    );
+    expect(screen.queryByTestId("resume-button")).toBeNull();
+  });
+});
+
+describe("BudgetExhausted — variant: session_limit", () => {
+  it("shows 'message limit' reason copy", () => {
+    render(
+      <BudgetExhausted
+        {...defaultProps()}
+        variant="session_limit"
+        resetAt={FUTURE_RESET}
+      />,
+    );
+    const reset = screen.getByTestId("budget-exhausted-reset").textContent ?? "";
+    expect(reset).toMatch(/message limit/i);
+    expect(reset).toMatch(/continue on any chatbot/i);
+  });
+
+  it("does NOT show a timestamp for session_limit", () => {
+    render(
+      <BudgetExhausted
+        {...defaultProps()}
+        variant="session_limit"
+        resetAt="2030-06-01T00:00:00Z"
+      />,
+    );
+    const reset = screen.getByTestId("budget-exhausted-reset").textContent ?? "";
+    // No UTC marker — not a time-based gate.
+    expect(reset).not.toMatch(/UTC/i);
+  });
+
+  it("does NOT show the Resume button for session_limit even after resetAt passes", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2031-01-01T00:00:00Z"));
+    render(
+      <BudgetExhausted
+        {...defaultProps()}
+        variant="session_limit"
+        resetAt={PAST_RESET}
+      />,
+    );
+    expect(screen.queryByTestId("resume-button")).toBeNull();
+  });
+});
+
+describe("BudgetExhausted — variant: service_unavailable", () => {
+  it("shows 'temporarily unavailable' reason copy", () => {
+    render(
+      <BudgetExhausted
+        {...defaultProps()}
+        variant="service_unavailable"
+        resetAt={FUTURE_RESET}
+      />,
+    );
+    const reset = screen.getByTestId("budget-exhausted-reset").textContent ?? "";
+    expect(reset).toMatch(/temporarily unavailable/i);
+    expect(reset).toMatch(/try again/i);
+  });
+
+  it("does NOT show a timestamp for service_unavailable", () => {
+    render(
+      <BudgetExhausted
+        {...defaultProps()}
+        variant="service_unavailable"
+        resetAt="2030-06-01T00:00:00Z"
+      />,
+    );
+    const reset = screen.getByTestId("budget-exhausted-reset").textContent ?? "";
+    // No UTC marker — a transient outage has no fixed reset to wait for.
+    expect(reset).not.toMatch(/UTC/i);
+  });
+
+  it("does NOT show the Resume button for service_unavailable even after resetAt passes", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2031-01-01T00:00:00Z"));
+    render(
+      <BudgetExhausted
+        {...defaultProps()}
+        variant="service_unavailable"
+        resetAt={PAST_RESET}
+      />,
+    );
+    expect(screen.queryByTestId("resume-button")).toBeNull();
+  });
+});
+
+describe("BudgetExhausted — variant defaults to community_budget", () => {
+  it("renders Community budget copy when no variant prop is passed", () => {
+    render(
+      <BudgetExhausted
+        {...defaultProps()}
+        resetAt="2030-06-01T00:00:00Z"
+      />,
+    );
+    const reset = screen.getByTestId("budget-exhausted-reset").textContent ?? "";
+    expect(reset).toMatch(/Community budget resets in/);
   });
 });

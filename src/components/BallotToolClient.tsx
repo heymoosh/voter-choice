@@ -29,7 +29,7 @@ import { PartyGate } from "./PartyGate";
 import { BallotLookupNeeded } from "./BallotLookupNeeded";
 import { getStateRule } from "../lib/state-rules/lookup";
 import type { SerializableBallotContext } from "../lib/state-rules/ballot-context";
-import { BudgetExhausted } from "./BudgetExhausted";
+import { BudgetExhausted, type GateVariant } from "./BudgetExhausted";
 import { BALLOT_PROMPT_EN } from "../lib/generated/ballotPromptEn.generated";
 import {
   getByokKey,
@@ -1148,6 +1148,7 @@ export function ElectionResult({
   const [budgetOut, setBudgetOut] = useState<{
     handoffPromptText: string;
     resetAt: string;
+    variant: GateVariant;
   } | null>(null);
   const [overlayDismissed, setOverlayDismissed] = useState(false);
   const [byokKey, setByokKeyState] = useState<string | null>(null);
@@ -1231,10 +1232,11 @@ export function ElectionResult({
     primaryLane,
   ]);
   const handleBudgetExhausted = useCallback(
-    (input: { handoffPromptText: string; resetAt: string }) => {
+    (input: { handoffPromptText: string; resetAt: string; variant: GateVariant }) => {
       setBudgetOut({
         handoffPromptText: baseHandoffPrompt,
         resetAt: input.resetAt || defaultResetAtISO,
+        variant: input.variant,
       });
       setOverlayDismissed(false);
     },
@@ -1382,6 +1384,7 @@ export function ElectionResult({
         coldOpenContext={coldOpenContext}
         onBudgetExhausted={handleBudgetExhausted}
         budgetExhausted={!!budgetOut}
+        gateVariant={budgetOut?.variant}
         preResearchGate={
           needsRunoffGate ? (
             <RunoffGate
@@ -1410,6 +1413,7 @@ export function ElectionResult({
         <BudgetExhausted
           resetAt={budgetOut.resetAt}
           handoffPromptText={budgetOut.handoffPromptText}
+          variant={budgetOut.variant}
           onByokContinue={handleByokContinue}
           onByokRemove={handleByokRemove}
           storedByokKey={byokKey}
@@ -1573,6 +1577,7 @@ function WorkspaceShell({
   const [budgetOut, setBudgetOut] = useState<{
     handoffPromptText: string;
     resetAt: string;
+    variant: GateVariant;
   } | null>(null);
   const [overlayDismissed, setOverlayDismissed] = useState(false);
   // Stored BYOK key — read from localStorage on mount, kept in state so
@@ -1727,9 +1732,13 @@ function WorkspaceShell({
   // re-opens the dialog.
   const handleHandoffFromBallotPane = useCallback(() => {
     onHandoff();
+    // Pre-emptive handoff — user clicked "Continue elsewhere" before any
+    // gate tripped. Hardcode community_budget: the reset wording is the
+    // only continuity framing that makes sense here.
     setBudgetOut({
       handoffPromptText: populatedHandoffPrompt,
       resetAt: defaultResetAtISO,
+      variant: "community_budget",
     });
     setOverlayDismissed(false);
   }, [onHandoff, populatedHandoffPrompt, defaultResetAtISO]);
@@ -1740,10 +1749,11 @@ function WorkspaceShell({
   // server). The server-supplied `resetAt` is canonical though — drives
   // the "I'm back" affordance — so we keep that as-is.
   const handleBudgetExhausted = useCallback(
-    (input: { handoffPromptText: string; resetAt: string }) => {
+    (input: { handoffPromptText: string; resetAt: string; variant: GateVariant }) => {
       setBudgetOut({
         handoffPromptText: populatedHandoffPrompt,
         resetAt: input.resetAt,
+        variant: input.variant,
       });
       setOverlayDismissed(false);
     },
@@ -1859,6 +1869,7 @@ function WorkspaceShell({
           // `budgetOut`, NOT `overlayDismissed` — dismissing the dialog
           // is a pure UI action; the chat stays gated until BYOK / reset.
           budgetExhausted={!!budgetOut}
+          gateVariant={budgetOut?.variant}
           workspace={{
             activeRace: activeRace
               ? {
@@ -1943,6 +1954,7 @@ function WorkspaceShell({
         <BudgetExhausted
           resetAt={budgetOut.resetAt}
           handoffPromptText={budgetOut.handoffPromptText}
+          variant={budgetOut.variant}
           onByokContinue={handleByokContinue}
           onByokRemove={handleByokRemove}
           storedByokKey={byokKey}

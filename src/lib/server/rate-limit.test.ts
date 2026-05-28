@@ -154,5 +154,16 @@ describe("rate-limit", () => {
         ),
       ).toBe(true);
     });
+
+    it("fails closed with RATE_LIMIT_UNAVAILABLE when the durable store errors", async () => {
+      // A transient Redis outage must deny (fail closed) but report a code
+      // distinct from the per-IP daily cap, so the client can show
+      // "temporarily unavailable / retry" instead of "daily limit reached".
+      vi.spyOn(console, "error").mockImplementation(() => {});
+      vi.spyOn(globalThis, "fetch").mockRejectedValue(new Error("redis down"));
+      const result = await checkRateLimitAsync("1.2.3.4", "sess-err", 1);
+      expect(result.allowed).toBe(false);
+      expect(result.code).toBe("RATE_LIMIT_UNAVAILABLE");
+    });
   });
 });

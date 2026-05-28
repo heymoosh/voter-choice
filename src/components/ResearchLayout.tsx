@@ -17,6 +17,7 @@ import type { Theme } from "../lib/prompts/types";
 import type { BallotSourceSummary } from "../types/ballotSource";
 import type { PollingLocation } from "./PollingLocationCard";
 import type { SerializableBallotContext } from "../lib/state-rules/ballot-context";
+import type { GateVariant } from "./BudgetExhausted";
 import {
   extractPdfText,
   isPdfFile,
@@ -105,6 +106,7 @@ interface ResearchLayoutProps {
   onBudgetExhausted?: (input: {
     handoffPromptText: string;
     resetAt: string;
+    variant: GateVariant;
   }) => void;
   /**
    * Set by the parent when the BudgetExhausted overlay has been opened.
@@ -113,6 +115,11 @@ interface ResearchLayoutProps {
    * dismissed.
    */
   budgetExhausted?: boolean;
+  /**
+   * The gate variant from the parent's `budgetOut` state. Forwarded to
+   * ChatPanel to control inline gated-input copy.
+   */
+  gateVariant?: GateVariant;
 }
 
 /* ── Icons ──────────────────────────────────────────────────── */
@@ -1435,6 +1442,7 @@ function ResearchView({
   coldOpenContext,
   onBudgetExhausted,
   budgetExhausted,
+  gateVariant,
 }: {
   state: StateElectionData;
   zipCode: string;
@@ -1468,8 +1476,10 @@ function ResearchView({
   onBudgetExhausted?: (input: {
     handoffPromptText: string;
     resetAt: string;
+    variant: GateVariant;
   }) => void;
   budgetExhausted?: boolean;
+  gateVariant?: GateVariant;
 }) {
   const { lang } = useLanguage();
   const t = translations[lang];
@@ -1629,6 +1639,7 @@ function ResearchView({
               coldOpenContext={coldOpenContext}
               onBudgetExhausted={onBudgetExhausted}
               budgetExhausted={budgetExhausted}
+              gateVariant={gateVariant}
             />
           )}
 
@@ -1700,6 +1711,7 @@ export function ResearchLayout({
   coldOpenContext,
   onBudgetExhausted,
   budgetExhausted,
+  gateVariant,
 }: ResearchLayoutProps) {
   const [activeTab, setActiveTab] = useState<ResearchTab>("research");
   const { lang } = useLanguage();
@@ -1757,6 +1769,7 @@ export function ResearchLayout({
             coldOpenContext={coldOpenContext}
             onBudgetExhausted={onBudgetExhausted}
             budgetExhausted={budgetExhausted}
+            gateVariant={gateVariant}
           />
         </div>
 
