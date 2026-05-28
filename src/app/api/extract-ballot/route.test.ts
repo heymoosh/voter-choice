@@ -213,10 +213,14 @@ describe("/api/extract-ballot", () => {
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body._meta.extraction_path).toBe("pdfjs");
-    expect(body._meta.detector_score).toBeDefined();
-    expect(body._meta.detector_score.decision_reason).toMatch(
-      /all floors met/i,
-    );
+    // PR D Fix 4 — `detector_score` is server-only telemetry now; it
+    // must NOT ship to the client. The pdfjs path is independently
+    // proven by `extraction_path: "pdfjs"` above plus the sections
+    // shape below. Detector telemetry is still emitted via the
+    // `extract.detector_decision` and `extract.completed` console.log
+    // events (function logs, not client).
+    expect(body._meta).not.toHaveProperty("detector_score");
+    expect(body._meta).not.toHaveProperty("cost_usd");
     expect(body.sections).toBeDefined();
     expect(body.sections.length).toBeGreaterThan(0);
   });
@@ -279,7 +283,12 @@ describe("/api/extract-ballot", () => {
     const body = await res.json();
     expect(body._meta.extraction_path).toBe("vision");
     expect(body._meta.pages).toBe(1);
-    expect(body._meta.cost_usd).toBeGreaterThan(0);
+    // PR D Fix 4 — `cost_usd` is server-only now (kept in the
+    // `extract.completed` console.log event for tail-scraping). The
+    // vision path's completion is independently proven by the sections
+    // shape below.
+    expect(body._meta).not.toHaveProperty("cost_usd");
+    expect(body._meta).not.toHaveProperty("detector_score");
     expect(body.sections).toHaveLength(1);
     expect(body.sections[0].races[0].office).toBe("US Senate");
   });

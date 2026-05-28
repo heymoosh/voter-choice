@@ -4,6 +4,7 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import React from "react";
 import { WorkspaceRail, type WorkspaceRailProps } from "./WorkspaceRail";
+import { POLIS_V1_VISIBLE } from "./WorkspacePolisSection";
 import { LanguageProvider } from "../lib/i18n";
 import type { Race } from "../lib/raceDeriver";
 import type { Theme } from "../lib/prompts/types";
@@ -147,7 +148,11 @@ describe("WorkspaceRail", () => {
 
 /* ── WorkspacePolisSection inside the rail (fix E) ─────────────── */
 
-describe("WorkspaceRail — Polis section", () => {
+// PR D Fix 3 — polis is hidden in v1 (POLIS_V1_VISIBLE=false). These
+// tests describe the future-enabled contract; they re-activate the
+// moment the flag flips. The "themes empty hides the section" guard
+// remains covered by the always-on test below.
+describe.skipIf(!POLIS_V1_VISIBLE)("WorkspaceRail — Polis section", () => {
   beforeEach(() => {
     vi.spyOn(globalThis, "fetch").mockImplementation(async () => {
       return new Response("{}", {

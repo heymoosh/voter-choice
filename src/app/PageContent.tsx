@@ -292,10 +292,19 @@ function EnglishShell({ children }: { children?: React.ReactNode }) {
       >
         {/* Left column on the landing surface; takes the full width in
             research mode. The {children} slot lives INSIDE this div so
-            its parent React node never changes across the flip. */}
+            its parent React node never changes across the flip.
+
+            PR D Fix 1 — `min-w-0` on the grid item. Without it the
+            grid's default `min-width: auto = min-content` lets the
+            H1's max-content (≈563px) force the auto column wider than
+            a 375px viewport, creating horizontal scroll. With
+            `min-w-0` the column collapses to the grid container's
+            width and the H1 wraps. */}
         <div
           id="main-content"
-          className={isResearch ? "flex-1 flex flex-col overflow-hidden" : ""}
+          className={
+            isResearch ? "flex-1 flex flex-col overflow-hidden" : "min-w-0"
+          }
         >
           {!isResearch && (
             <>
@@ -340,11 +349,15 @@ function EnglishShell({ children }: { children?: React.ReactNode }) {
         </div>
 
         {/* Right column — 2-row stat-stack. Sibling of the left column,
-            conditionally rendered. */}
+            conditionally rendered. PR D Fix 1 — `min-w-0` mirrors the
+            left column. The 58px serif stat numbers ("6") have a tiny
+            min-content but a wider max-content; the explicit `min-w-0`
+            guarantees the column never asks for more than the grid
+            container offers on mobile. */}
         {!isResearch && (
           <aside
             aria-label="Why this matters"
-            className="md:border-l md:border-rule md:pl-9 flex flex-col gap-[18px]"
+            className="md:border-l md:border-rule md:pl-9 flex flex-col gap-[18px] min-w-0"
           >
             <div className="flex flex-col">
               <div className="font-serif font-semibold text-[58px] leading-none tracking-[-0.02em] text-ink">

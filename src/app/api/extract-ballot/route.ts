@@ -48,10 +48,11 @@ import {
   stitchPages,
   type PageExtraction,
 } from "../../../lib/server/extract-stitcher";
-import type {
-  BallotExtraction,
-  ExtractMeta,
-  ExtractionPath,
+import {
+  toPublicExtractMeta,
+  type BallotExtraction,
+  type ExtractMeta,
+  type ExtractionPath,
 } from "../../../lib/server/extract-types";
 
 export const runtime = "nodejs";
@@ -495,14 +496,22 @@ function buildResponse(
   costUsd: number,
 ): NextResponse {
   const stitched = stitchPages(dispatch.pages);
-  const meta: ExtractMeta = {
+  // Full meta — kept for the telemetry log and (downstream) the durable
+  // cache write. Never shipped to the client (PR D Fix 4).
+  const fullMeta: ExtractMeta = {
     extraction_path: dispatch.finalPath,
     pages: numPages,
     latency_ms: latencyMs,
     cost_usd: Number(costUsd.toFixed(6)),
     detector_score: decision.score,
   };
-  const response: BallotExtraction = {
+  // Public meta — strip cost_usd + detector_score from what reaches the
+  // browser. Keep extraction_path / pages / latency_ms / (optional)
+  // cache_hit. See `PublicExtractMeta` in extract-types.ts.
+  // Cast: BallotExtraction._meta is typed as the full ExtractMeta for the
+  // route's internal call paths (cache write) but the wire JSON is the
+  // public subset. Two voters in a row see the public shape only.
+  const responseBody = {
     election_metadata: {
       election_date: stitched.election_metadata.election_date,
       election_type: stitched.election_metadata.election_type,
@@ -512,10 +521,10 @@ function buildResponse(
         : {}),
     },
     sections: stitched.sections,
-    _meta: meta,
+    _meta: toPublicExtractMeta(fullMeta),
   };
   const finalOutcome: TelemetryCompletedLog["outcome"] =
-    response.sections.length === 0 && dispatch.finalPath === "vision"
+    responseBody.sections.length === 0 && dispatch.finalPath === "vision"
       ? "all_failed"
       : dispatch.outcome;
   logJson({
@@ -528,7 +537,7 @@ function buildResponse(
     retries: dispatch.retries,
     outcome: finalOutcome,
   } satisfies TelemetryCompletedLog);
-  return NextResponse.json(response, { status: 200 });
+  return NextResponse.json(responseBody, { status: 200 });
 }
 
 export async function POST(request: NextRequest) {
@@ -551,18 +560,22 @@ export async function POST(request: NextRequest) {
       hash_prefix: hash.slice(0, 8),
       pdf_size_bytes: sizeBytes,
     } satisfies TelemetryCacheLog);
-    const cachedMeta: ExtractMeta = {
+    // Full meta — the cache stores the original detector_score / cost_usd
+    // so future debugging from the durable store still has them.
+    const cachedFullMeta: ExtractMeta = {
       ...cached._meta,
       extraction_path: "cached",
       latency_ms: hitLatencyMs,
       cache_hit: true,
     };
-    const cachedResponse: BallotExtraction = {
+    // Strip telemetry-only fields before shipping to the client
+    // (PR D Fix 4). The original storage payload is unchanged.
+    const cachedResponseBody = {
       election_metadata: cached.election_metadata,
       sections: cached.sections,
-      _meta: cachedMeta,
+      _meta: toPublicExtractMeta(cachedFullMeta),
     };
-    return NextResponse.json(cachedResponse, { status: 200 });
+    return NextResponse.json(cachedResponseBody, { status: 200 });
   }
   logJson({
     event: "extract.cache_miss",
