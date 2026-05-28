@@ -46,6 +46,7 @@
   "devDependencies": {
     "@aws-sdk/client-iam": "^3.1055.0",
     "@aws-sdk/client-sts": "^3.1055.0",
+    "@aws-sdk/client-textract": "^3.1055.0",
     "@eslint/eslintrc": "3.3.5",
     "@lhci/cli": "0.15.0",
     "@playwright/test": "1.52.0",
