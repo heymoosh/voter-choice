@@ -95,8 +95,16 @@ export function ZipForm({ onSubmit }: ZipFormProps) {
           the autocomplete hint inside the row stretched the button to
           ~71px because of default `align-items: stretch`. Hint copy now
           lives BELOW the row as a sibling within the card.
+
+          PR D Fix 1 (mobile overflow) — stack input + button vertically
+          on narrow viewports. With `whitespace-nowrap` on the 158px
+          submit button + a flex-grow input wrapper, the row's content
+          width was ≈443px even when its rendered width was 290px;
+          the button overflowed past the address-card on a 375px
+          viewport. The `sm:flex-row` keeps the side-by-side layout
+          everywhere ≥640px (the existing prototype shape).
         */}
-        <div className="flex gap-2">
+        <div className="flex flex-col gap-2 sm:flex-row">
           <div className="flex-grow">
             {hasPlacesKey && (
               <div ref={placesContainerRef} className="w-full" />

@@ -46,6 +46,7 @@ import {
   type WorkspacePolisSectionProps,
 } from "./WorkspacePolisSection";
 import { PageContent } from "../app/PageContent";
+import { ZipForm } from "./ZipForm";
 import { LanguageProvider } from "../lib/i18n";
 import { ResearchModeProvider } from "../lib/researchMode";
 import type { Race } from "../lib/raceDeriver";
@@ -124,6 +125,23 @@ describe("PR D / Fix 1 — landing EnglishShell hero grid is mobile-safe", () =>
     children.forEach((child) => {
       expect(child.className).toMatch(/\bmin-w-0\b/);
     });
+  });
+
+  it("ZipForm's input+button row stacks vertically on mobile, side-by-side ≥sm", () => {
+    // The address-card "Pull my ballot" submit button has
+    // `whitespace-nowrap` and is ~158px wide — combined with the
+    // flex-grow input wrapper, content width was ≈443px on a 375px
+    // viewport and the button overflowed. The fix stacks them on
+    // mobile (flex-col), keeping the prototype side-by-side from `sm` up.
+    render(
+      <LanguageProvider>
+        <ZipForm onSubmit={vi.fn()} />
+      </LanguageProvider>,
+    );
+    const submit = screen.getByTestId("zip-submit");
+    const row = submit.parentElement as HTMLElement;
+    expect(row.className).toMatch(/\bflex-col\b/);
+    expect(row.className).toMatch(/\bsm:flex-row\b/);
   });
 });
 
