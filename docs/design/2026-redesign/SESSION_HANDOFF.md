@@ -2,6 +2,21 @@
 
 **New session: start here, then read `CARDS_FIRST_BUILD_PLAN.md` (same folder) — it is the full build spec.**
 
+## ⚠️ WHERE TO WORK (read first)
+- **Worktree:** `/Users/Muxin/Documents/GitHub/voter-choice/.claude/worktrees/design-integration`
+- **Branch:** `feat/design-integration` (already checked out IN that worktree; HEAD `a388719`).
+- Do **all** work via **absolute paths into that worktree.** A fresh Claude session usually spawns
+  its *own* worktree on a different `claude/…` branch — your shell cwd may be elsewhere. That's
+  fine; just read/write files under the `design-integration` path above (this is how the prior
+  session worked the whole time).
+- **Do NOT `git checkout feat/design-integration` in another worktree** — git will refuse ("already
+  checked out at …/design-integration"). Operate inside the existing worktree instead.
+- **Deploy** = from that worktree, `git push origin feat/design-integration:launch/production`
+  (live-on-push → Vercel). Origin prod is currently `14aeeff`; the branch is 1 docs commit ahead
+  (`a388719`, no app change). Commit app work on the branch; gate; then push to deploy.
+- `git -C /Users/Muxin/Documents/GitHub/voter-choice/.claude/worktrees/design-integration status`
+  to orient.
+
 ## One-line state
 Redesign is **live on prod** (landing + ballot-read animation + honest civic copy + mobile
 workspace). The **core "alignment-first" experience (candidate cards as the primary surface) was
