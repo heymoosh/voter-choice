@@ -13,7 +13,6 @@ import { BallotPane, type Decision } from "./BallotPane";
 import { PrintBallot, type PollingDataShape } from "./PrintBallot";
 import { ChatPanel } from "./ChatPanel";
 import { LoadingView } from "./LoadingView";
-import { GeocodeFailNotice } from "./GeocodeFailNotice";
 import { SettingsPanel } from "./SettingsPanel";
 import { ProfileResumeModal } from "./ProfileResumeModal";
 import { deriveRaces, type ContestLike, type Race } from "../lib/raceDeriver";
@@ -2266,8 +2265,8 @@ export function BallotToolClient({
 }: BallotToolClientProps = {}) {
   const [result, setResult] = useState<LookupResult>({ status: "idle" });
   const [currentZip, setCurrentZip] = useState("");
-  // Track the submitted address string so LoadingView and GeocodeFailNotice
-  // can display it. Previously only the ZIP was stored.
+  // Track the submitted address string so LoadingView can display it.
+  // Previously only the ZIP was stored.
   const [submittedAddress, setSubmittedAddress] = useState("");
   const [pollingData, setPollingData] = useState<PollingData | null>(null);
   const { lang } = useLanguage();
@@ -2374,21 +2373,29 @@ export function BallotToolClient({
     );
   }
 
-  // GeocodeFailNotice — full-page card when the address cannot be resolved.
-  if (result.status === "not-found") {
-    return (
-      <GeocodeFailNotice
-        address={submittedAddress}
-        onEditAddress={() => setResult({ status: "idle" })}
-        onContinueWithZip={() => setResult({ status: "idle" })}
-      />
-    );
-  }
-
   // Pre-research: show address form and remaining status messages
   return (
     <div>
       <ZipForm onSubmit={handleAddressSubmit} />
+
+      {result.status === "not-found" && (
+        <div
+          data-testid="not-found-message"
+          role="alert"
+          className="mt-4 p-4 bg-surface-low rounded-sm text-sm"
+        >
+          {t.errors.notFound}{" "}
+          <a
+            href="https://www.usa.gov/states-and-territories"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline text-primary"
+          >
+            Find your state election website
+          </a>
+          .
+        </div>
+      )}
 
       {result.status === "multi-state" && (
         <StateSelectorModal

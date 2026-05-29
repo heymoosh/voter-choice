@@ -401,6 +401,7 @@ function CandidateSection({
   blindMode,
   revealedCandidates,
   onHideCandidate,
+  locallyRevealed,
 }: {
   candidate: RacePatternsCandidate;
   idx: number;
@@ -426,13 +427,17 @@ function CandidateSection({
   blindMode?: boolean;
   revealedCandidates?: Set<string>;
   onHideCandidate?: (id: string) => void;
+  /** In non-blindMode path: whether the user has tapped "Reveal candidates". */
+  locallyRevealed?: boolean;
 }) {
   const identity = getCandidateIdentity(candidate, {
     blindMode,
     revealed: revealedCandidates,
     index: idx,
   });
-  const showName = isProposition || !identity.isBlind;
+  // In parent-controlled blindMode, use identity.isBlind.
+  // In local-toggle mode (default, blindMode=false), use locallyRevealed.
+  const showName = isProposition || (blindMode ? !identity.isBlind : !!locallyRevealed);
   const displayLabel = showName ? candidate.name : identity.aliasLabel;
   const pickDisabled = submitting || submitted || isStreaming;
 
@@ -987,6 +992,7 @@ export function RacePatterns({
               blindMode={blindMode}
               revealedCandidates={revealedCandidates}
               onHideCandidate={onHideCandidate}
+              locallyRevealed={revealed}
             />
           );
         })}

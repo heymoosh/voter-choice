@@ -6,7 +6,6 @@ import { useResearchMode } from "../lib/researchMode";
 import { translations } from "../lib/translations";
 import { Navigation } from "../components/Navigation";
 import { ResumeNudge } from "../components/ResumeNudge";
-import { HowItWorksWalkthrough } from "../components/HowItWorksWalkthrough";
 import { ProfileResumeModal } from "../components/ProfileResumeModal";
 import { SettingsPanel } from "../components/SettingsPanel";
 
@@ -271,7 +270,18 @@ function EnglishShell({ children }: { children?: React.ReactNode }) {
           Skip to main content
         </a>
       )}
-      <Navigation current="home" onOpenSettings={() => setSettingsOpen(true)} />
+      {/* Wrapped in <header> so the prototype AppNav strip exposes
+          role="banner" (PageContent.test.tsx:119). Navigation renders the
+          brand mark + center links (How it works, The record, About,
+          Methodology, Privacy) + language toggle + settings cog; "The
+          record" lives inside Navigation per COMPONENT_MAP.md §8:188 and
+          prototype-i18n.jsx:25 (nav.theRecord). */}
+      <header>
+        <Navigation
+          current="home"
+          onOpenSettings={() => setSettingsOpen(true)}
+        />
+      </header>
 
       {/* Outer section — stable React node across landing↔research flip.
           The CRITICAL invariant: the inner left-column div (which wraps
@@ -415,9 +425,6 @@ function EnglishShell({ children }: { children?: React.ReactNode }) {
           </aside>
         )}
       </section>
-
-      {/* HowItWorksWalkthrough — three-step explainer per prototype HomeView line 94 */}
-      {!isResearch && <HowItWorksWalkthrough />}
 
       {!isResearch && (
         <footer

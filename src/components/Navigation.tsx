@@ -13,6 +13,7 @@
  *
  * NEEDS-KEY (nav.* section is absent from src/lib/translations.ts):
  *   nav.howItWorks  — EN "How it works"      / ES "Cómo funciona"
+ *   nav.theRecord   — EN "The record"         / ES "El registro"
  *   nav.about       — EN "About"              / ES "Acerca de"
  *   nav.methodology — EN "Methodology"        / ES "Metodología"
  *   nav.privacy     — EN "Privacy"            / ES "Privacidad"
@@ -27,6 +28,7 @@ import { LanguageToggle } from "@/components/LanguageToggle";
 export type NavPage =
   | "home"
   | "howitworks"
+  | "therecord"
   | "about"
   | "methodology"
   | "privacy"
@@ -117,6 +119,18 @@ export function Navigation({
         >
           {/* NEEDS-KEY: nav.howItWorks — EN "How it works" / ES "Cómo funciona" */}
           How it works
+        </a>
+        <a
+          className="hover:text-ink cursor-pointer"
+          onClick={() => handleNavLink("therecord")}
+          role="link"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") handleNavLink("therecord");
+          }}
+        >
+          {/* NEEDS-KEY: nav.theRecord — EN "The record" / ES "El registro" */}
+          The record
         </a>
         <a
           className="hover:text-ink cursor-pointer"
