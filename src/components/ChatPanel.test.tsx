@@ -1602,3 +1602,121 @@ describe("ChatPanel — workspace auto-fire race-deep-dive on mount (P0 #1)", ()
     expect(body).toBeNull();
   });
 });
+
+/* ── Cards-first workspace: multi-turn rendering regression guard ─── */
+
+/**
+ * Pre-fix, `renderRacePatterns` returned null unless `isLastAssistant`. So the
+ * moment the voter asked a follow-up, the first assistant message (carrying
+ * [RACE_PATTERNS]) was no longer last → the text fallback rendered its raw
+ * markdown content, which contained the JSON block as-is. This guards against
+ * a regression: when a follow-up turn lands, the cards must still render and
+ * the JSON must not leak into the transcript.
+ *
+ * See `docs/design/2026-redesign/CARDS_FIRST_BUILD_PLAN.md` for the full
+ * design intent (cards as primary surface, chat as bottom Q&A).
+ */
+describe("ChatPanel — workspace cards-first multi-turn rendering", () => {
+  function renderCardsFirstWorkspace() {
+    const baseWorkspace = {
+      activeRace: {
+        id: "u-s-senate",
+        label: "U.S. Senate",
+        section: "Federal",
+        candidates: [
+          { name: "Alice", party: "Democratic" },
+          { name: "Bob", party: "Republican" },
+        ],
+      },
+      totalRaces: 2,
+      activeRaceIndex: 0,
+      decided: false,
+      prevActiveRaceId: null,
+      onCommitDecision: vi.fn(),
+      onUnpickDecision: vi.fn(),
+      pendingAmendment: null,
+      amendmentInFlight: false,
+      lockedThemes: [
+        { name: "Healthcare access", quotes: ['"insulin prices"'] },
+      ],
+      decisions: [],
+      chatCatchSuggestion: null,
+      onChatCatch: vi.fn(),
+      onChatCatchAccept: vi.fn(),
+      onChatCatchDismiss: vi.fn(),
+      onAmendmentSave: vi.fn(),
+      onAmendmentDiscard: vi.fn(),
+      autoFireRaceIntro: true,
+    } as React.ComponentProps<typeof ChatPanel>["workspace"];
+    return render(
+      <LanguageProvider>
+        <ChatPanel state={txState} zipCode="73301" workspace={baseWorkspace} />
+      </LanguageProvider>,
+    );
+  }
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("keeps cards rendering after a follow-up turn lands (no raw JSON leak)", async () => {
+    // Stateful fetch mock: auto-fire (turn 1) returns [RACE_PATTERNS]; the
+    // user follow-up (turn 2) returns plain prose. /api/chat-catch always
+    // returns suggest:false so it doesn't interfere with the assertions.
+    let chatCallCount = 0;
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (url) => {
+      const href = typeof url === "string" ? url : (url as URL).toString();
+      if (href.includes("/api/chat-catch")) {
+        return new Response(JSON.stringify({ suggest: false }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+      if (href.endsWith("/api/chat")) {
+        chatCallCount += 1;
+        if (chatCallCount === 1) {
+          return streamResponse(
+            `Quick overview before the cards.\n\n${racePatternsBlock}`,
+          );
+        }
+        return streamResponse(
+          "Alice has a stronger record on healthcare access this term.",
+        );
+      }
+      return streamResponse("ok");
+    });
+
+    renderCardsFirstWorkspace();
+
+    // Turn 1 — auto-fire kickoff streams the [RACE_PATTERNS] block.
+    await waitFor(() => {
+      expect(screen.getByTestId("race-patterns")).toBeInTheDocument();
+    });
+
+    // Turn 2 — user asks a follow-up. The workspace-chat-input is the
+    // demoted Q&A box at the bottom of the workspace center column.
+    const input = screen.getByTestId("workspace-chat-input");
+    fireEvent.change(input, {
+      target: { value: "How does Alice score on healthcare access?" },
+    });
+    fireEvent.submit(input.closest("form")!);
+
+    // The follow-up prose appears.
+    await waitFor(() => {
+      expect(
+        screen.getByText(
+          /Alice has a stronger record on healthcare access this term/i,
+        ),
+      ).toBeInTheDocument();
+    });
+
+    // Cards STILL render — this is the regression guard. Pre-fix, the
+    // first assistant message lost `isLastAssistant`, returned null from
+    // `renderRacePatterns`, and fell back to raw markdown.
+    expect(screen.getByTestId("race-patterns")).toBeInTheDocument();
+
+    // The [RACE_PATTERNS] JSON must NEVER leak as visible text.
+    expect(screen.queryByText(/\[RACE_PATTERNS race=/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/\[\/RACE_PATTERNS\]/)).not.toBeInTheDocument();
+  });
+});

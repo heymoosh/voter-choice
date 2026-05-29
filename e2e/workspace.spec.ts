@@ -82,6 +82,68 @@ async function mockColdOpenChatResponse(page: Page) {
 }
 
 /**
+ * Cards-first mock: stateful chat handler that branches on the request
+ * body's `view`. The cold-open turn still returns the theme JSON the
+ * existing test relies on; the workspace-race turn returns a well-formed
+ * [RACE_PATTERNS]+[ALIGNMENT_SCORES] block so the cards-first regression
+ * guard can assert the loader + cards actually render.
+ *
+ * Mirrors the contract defined in
+ * `src/lib/generated/ballotPromptEn.generated.ts` (the legacy emission
+ * contract — preserved here even before the v2 builder lands so the test
+ * pins the renderer's expected input shape).
+ */
+async function mockCardsFirstChatResponse(page: Page) {
+  const themesJson = JSON.stringify([
+    { name: "Healthcare costs", quotes: ["insulin keeps going up"] },
+    { name: "Housing affordability", quotes: ["rent went up 30%"] },
+  ]);
+  const racePatternsBlock = [
+    '[RACE_PATTERNS race="U.S. President"]',
+    '{"id":"A","name":"Alice Anderson","incumbent":true,"priorRole":"Incumbent","donorCoalition":[{"label":"Small individual donors (under $200)","percent":60},{"label":"Healthcare industry","percent":40}],"donorDataSource":"web_search","donorSource":{"name":"OpenSecrets","url":"https://www.opensecrets.org/"},"endorsements":null,"endorsementUnavailable":{"reason":"None listed"},"platformAlignment":null,"alignmentUnavailable":{"reason":"Data not assembled"},"retrospective":null,"retrospectiveUnavailable":{"reason":"Data not assembled"},"valuesHighlight":null}',
+    '{"id":"B","name":"Bob Brown","incumbent":false,"priorRole":"Challenger","donorCoalition":[{"label":"Finance, banking & insurance","percent":100}],"donorDataSource":"web_search","donorSource":{"name":"Ballotpedia","url":"https://ballotpedia.org/"},"endorsements":null,"endorsementUnavailable":{"reason":"None listed"},"platformAlignment":null,"retrospective":null,"retrospectiveUnavailable":{"reason":"Challenger — no record in office yet"},"valuesHighlight":null}',
+    "[/RACE_PATTERNS]",
+  ].join("\n");
+  const alignmentScoresBlock = [
+    '[ALIGNMENT_SCORES race="U.S. President"]',
+    '{"candidateId":"A","scores":[{"canonicalIssue":"healthcare_access","issueLabel":"Healthcare access","resolvedStance":"expand healthcare access","sourceType":"voting_record","kept":4,"total":6,"contributingVotes":[{"billTitle":"HR 100","voteCast":"with","date":"2025-04-12","source":{"name":"clerk.house.gov","url":"https://clerk.house.gov/"}}]}]}',
+    '{"candidateId":"B","scores":null,"unavailable":{"reason":"No voting record yet — first-time candidate"}}',
+    "[/ALIGNMENT_SCORES]",
+  ].join("\n");
+  const cardsContent = `Quick overview before the cards.\n\n${racePatternsBlock}\n\n${alignmentScoresBlock}`;
+  const sseFor = (text: string) =>
+    [
+      `data: ${JSON.stringify({ type: "text", text })}\n\n`,
+      `data: ${JSON.stringify({ type: "done", budget: { tier: "normal", percent: 0 } })}\n\n`,
+    ].join("");
+
+  await page.route("**/api/chat", async (route) => {
+    const req = route.request();
+    if (req.method() === "GET") {
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ budget: { tier: "normal", percent: 0 } }),
+      });
+    }
+    let view: string | undefined;
+    try {
+      const body = JSON.parse(req.postData() ?? "{}") as { view?: string };
+      view = body.view;
+    } catch {
+      view = undefined;
+    }
+    const body =
+      view === "cold-open" ? sseFor(themesJson) : sseFor(cardsContent);
+    return route.fulfill({
+      status: 200,
+      contentType: "text/event-stream",
+      body,
+    });
+  });
+}
+
+/**
  * Mock /api/civic with a canned ballot — Phase 3's workspace needs at least
  * one derivable race so the rail/chat/ballot pane all have something to show.
  * Real Civic API returns nothing for arbitrary ZIPs without a key, so we
@@ -200,5 +262,58 @@ test.describe("workspace (PROMPT_FLEET_V2 + en)", () => {
 
     // Print button now enabled.
     await expect(page.getByTestId("ballot-pane-print")).toBeEnabled();
+  });
+
+  // ─────────────────────────────────────────────────────────────
+  // Cards-first regression guard — see
+  // docs/design/2026-redesign/CARDS_FIRST_BUILD_PLAN.md.
+  //
+  // The redesign's intended workspace surface is candidate cards (alignment
+  // bars + funder bars + Pick), not a chat transcript. Pre-rebuild, the
+  // model's workspace turn returned prose so the cards never rendered in
+  // prod and nobody caught it (the existing spec above uses the stub-Pick
+  // fallback path which does NOT exercise card rendering).
+  //
+  // This test mocks the workspace-race turn to emit a [RACE_PATTERNS] +
+  // [ALIGNMENT_SCORES] block and asserts the renderer mounts cards in the
+  // workspace center column. It's the local proof that the rendering path
+  // is wired correctly before the (paid, prod-only) emission half ships.
+  // ─────────────────────────────────────────────────────────────
+  test("workspace shows ProcessingSteps loader then candidate cards when chat emits [RACE_PATTERNS]", async ({
+    page,
+  }) => {
+    await mockCardsFirstChatResponse(page);
+    await mockCivicResponse(page);
+    await page.goto("/");
+
+    await fillZip(page, "73301");
+    await resolveRunoffGate(page);
+
+    const textarea = page.getByTestId("cold-open-textarea");
+    await textarea.waitFor({ state: "visible", timeout: WORKSPACE_TIMEOUT });
+    await textarea.fill(
+      "insulin keeps going up and rent went up 30% in two years",
+    );
+    await page.getByTestId("cold-open-send").click();
+
+    await page
+      .getByTestId("concern-interpretation-themes")
+      .waitFor({ state: "visible", timeout: WORKSPACE_TIMEOUT });
+    await page.getByTestId("theme-ranker-lock-in").click();
+
+    // Workspace shell mounts; the auto-fire kickoff triggers the workspace-
+    // race turn, which streams the [RACE_PATTERNS] block.
+    await page
+      .getByTestId("workspace-shell")
+      .waitFor({ state: "visible", timeout: WORKSPACE_TIMEOUT });
+
+    // Candidate cards render from the streamed block.
+    await page
+      .getByTestId("race-patterns")
+      .waitFor({ state: "visible", timeout: WORKSPACE_TIMEOUT });
+
+    // Raw [RACE_PATTERNS] JSON must never leak into the visible transcript.
+    await expect(page.getByText(/\[RACE_PATTERNS race=/)).toHaveCount(0);
+    await expect(page.getByText(/\[\/RACE_PATTERNS\]/)).toHaveCount(0);
   });
 });

@@ -1199,10 +1199,13 @@ function renderRacePatterns(
   }) => void,
   onHideCandidate?: (id: string) => void,
 ): React.ReactElement | null {
-  if (msg.role !== "assistant" || !isLastAssistant) return null;
+  if (msg.role !== "assistant") return null;
 
-  // Streaming placeholder: half-emitted block during stream
-  if (isStreaming) {
+  // Streaming placeholder: half-emitted block during stream. Only applies to
+  // the live (last) assistant — a prior assistant message that already
+  // carries a finished [RACE_PATTERNS] block must keep rendering its cards
+  // once a follow-up turn starts streaming.
+  if (isStreaming && isLastAssistant) {
     const isOpenRaceBlock = hasOpenRacePatternsBlock(msg.content);
     const isOpenAlignmentBlock = hasOpenAlignmentScoresBlock(msg.content);
     const parsedDuringStream = parseRacePatternsBlock(msg.content);
@@ -2073,7 +2076,15 @@ function WorkspaceChat({
                             style={{ borderRadius: "4px 14px 14px 14px" }}
                           >
                             <MarkdownText
-                              text={anonymizeAssistantText(m.content)}
+                              text={anonymizeAssistantText(
+                                stripPartialAlignmentScoresBlock(
+                                  stripPartialRacePatternsBlock(
+                                    stripAlignmentScoresBlocks(
+                                      stripRacePatternsBlocks(m.content),
+                                    ),
+                                  ),
+                                ),
+                              )}
                             />
                           </div>
                         )}
