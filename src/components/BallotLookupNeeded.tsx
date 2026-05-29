@@ -303,14 +303,21 @@ export function BallotLookupNeeded({
         <h2 className="font-serif text-[28px] md:text-[32px] font-semibold leading-[1.1] tracking-[-0.02em] text-ink">
           We couldn&rsquo;t auto-confirm your ballot
         </h2>
-        {/* errors.noContestedBody — verbatim from prototype-i18n.jsx:70-71 /
-            ES "Civic no devolvió contiendas para tu dirección. Busca tu boleta
-            de muestra abajo, luego pégala o súbela para saber qué contiendas
-            investigar." */}
+        {/* errors.noContestedBody — DELIBERATE deviation from the prototype's
+            "Civic returned no contested races for your address." Prod evidence
+            (POST /api/civic, TX address → contestsFound:0 via the retired
+            Google Civic voterinfo endpoint) shows that copy asserts an
+            emptiness the data source can't actually verify: Google retired the
+            Civic Information API election data, so it returns 0 contests for
+            ~every address — that's a data-source gap, not a confirmed "no
+            races." Honest framing instead. NEEDS-KEY: errors.noContestedBody —
+            ES "No pudimos obtener tu lista de contiendas desde Google Civic
+            (sus datos electorales son limitados). Busca tu boleta de muestra
+            abajo, luego pégala o súbela para saber qué contiendas investigar." */}
         <p className="mt-3.5 text-[15px] leading-[1.55] text-ink-2">
-          Civic returned no contested races for your address. Look up your
-          sample ballot below, then paste or upload it so we know which races to
-          research.
+          We couldn&rsquo;t pull a contest list for your address from Google
+          Civic &mdash; its election data is limited. Look up your sample ballot
+          below, then paste or upload it so we know which races to research.
         </p>
       </header>
 
@@ -368,20 +375,26 @@ export function BallotLookupNeeded({
             className="inline-grid place-items-center w-11 h-11 shrink-0 rounded-full bg-civic text-paper-2"
             aria-hidden="true"
           >
-            <svg
-              width="22"
-              height="22"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.8"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-              <polyline points="17 8 12 3 7 8" />
-              <line x1="12" y1="3" x2="12" y2="15" />
-            </svg>
+            {isPdfLoading ? (
+              // Animated spinner while the ballot is being read — the read can
+              // take 10–30s+, so a static icon read as "nothing happening".
+              <span className="w-5 h-5 rounded-full border-2 border-paper-2/40 border-t-paper-2 animate-spin" />
+            ) : (
+              <svg
+                width="22"
+                height="22"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="17 8 12 3 7 8" />
+                <line x1="12" y1="3" x2="12" y2="15" />
+              </svg>
+            )}
           </span>
           <span className="flex flex-col gap-[3px] min-w-0">
             {/* NEEDS-KEY: errors.noContestedUploadMain — EN "Choose a .txt or .pdf file" */}
@@ -396,6 +409,16 @@ export function BallotLookupNeeded({
             </span>
           </span>
         </button>
+        {isPdfLoading && (
+          <div
+            data-testid="ballot-lookup-progress"
+            role="progressbar"
+            aria-label="Reading your ballot"
+            className="mt-3 h-1 w-full overflow-hidden rounded-full bg-rule-2"
+          >
+            <div className="h-full w-2/5 rounded-full bg-civic animate-[indeterminate-bar_1.3s_ease-in-out_infinite]" />
+          </div>
+        )}
         <input
           ref={fileInputRef}
           data-testid="ballot-lookup-upload"

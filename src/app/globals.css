@@ -266,3 +266,15 @@ h6 {
     padding: 0 !important;
   }
 }
+
+/* Indeterminate progress bar (ballot-read loading). Used via the arbitrary
+   utility animate-[indeterminate-bar_1.3s_ease-in-out_infinite]. We don't know
+   real extraction %, so an indeterminate sweep is the honest indicator. */
+@keyframes indeterminate-bar {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(320%);
+  }
+}
