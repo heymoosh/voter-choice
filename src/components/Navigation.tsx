@@ -11,9 +11,13 @@
  * that wraps all routes) as a global header strip above the workspace.
  * Per COMPONENT_MAP.md §2: "No behavior delta."
  *
+ * Link row matches AppNavWithChrome (prototype-components-c.jsx:306-311)
+ * exactly: How it works → About → Methodology → Privacy. The base AppNav's
+ * "The record" link is NOT part of the production nav and is intentionally
+ * absent here.
+ *
  * NEEDS-KEY (nav.* section is absent from src/lib/translations.ts):
  *   nav.howItWorks  — EN "How it works"      / ES "Cómo funciona"
- *   nav.theRecord   — EN "The record"         / ES "El registro"
  *   nav.about       — EN "About"              / ES "Acerca de"
  *   nav.methodology — EN "Methodology"        / ES "Metodología"
  *   nav.privacy     — EN "Privacy"            / ES "Privacidad"
@@ -119,18 +123,6 @@ export function Navigation({
         >
           {/* NEEDS-KEY: nav.howItWorks — EN "How it works" / ES "Cómo funciona" */}
           How it works
-        </a>
-        <a
-          className="hover:text-ink cursor-pointer"
-          onClick={() => handleNavLink("therecord")}
-          role="link"
-          tabIndex={0}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") handleNavLink("therecord");
-          }}
-        >
-          {/* NEEDS-KEY: nav.theRecord — EN "The record" / ES "El registro" */}
-          The record
         </a>
         <a
           className="hover:text-ink cursor-pointer"

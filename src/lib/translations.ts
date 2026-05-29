@@ -328,11 +328,16 @@ export interface Translations {
       returned: number,
       shown: number,
     ) => string;
+    // PR D — post-extraction "Got it…" AI bubble (issue count + scoring note)
+    coldOpenGotIt: (issueCount: number) => string;
     // ThemeRanker keys (Phase 2 cold-open)
     themeRankerListLabel: string;
     themeRankerReorderLabel: string;
     themeRankerRemoveLabel: string;
     themeRankerRenameLabel: string;
+    themeRankerRenameButton: string;
+    themeRankerMoveUpLabel: string;
+    themeRankerMoveDownLabel: string;
     themeRankerLockIn: string;
     themeRankerRewrite: string;
     themeRankerEmpty: string;
@@ -961,17 +966,22 @@ const en: Translations = {
     // ConcernInterpretation themes-mode (Phase 2 cold-open)
     concernInterpretationThemesHeading: "What you actually said.",
     concernInterpretationThemesSubhead:
-      "Each card is grounded in your own words. Rename, remove, or rerank \u2014 then lock these in.",
+      "Use the arrows to re-rank \u00b7 click a name to rename \u00b7 I show my work so you can correct me.",
     concernInterpretationThemesTruncationWarning: (
       returned: number,
       shown: number,
     ) =>
       `AI returned ${returned} themes; showing top ${shown}. Lock in or rewrite to refine.`,
+    coldOpenGotIt: (issueCount: number) =>
+      `Got it. Here's what I heard \u2014 ${issueCount} issue${issueCount !== 1 ? "s" : ""}, each anchored in the words you actually used. Re-rank, rename, or remove. Once you lock these in, every candidate's record gets scored against this list, vote by vote.`,
     // ThemeRanker (Phase 2 cold-open)
     themeRankerListLabel: "Your themes, ranked by importance",
     themeRankerReorderLabel: "Reorder theme",
     themeRankerRemoveLabel: "Remove theme",
     themeRankerRenameLabel: "Rename theme",
+    themeRankerRenameButton: "rename",
+    themeRankerMoveUpLabel: "Move up",
+    themeRankerMoveDownLabel: "Move down",
     themeRankerLockIn: "Lock these in & start the ballot \u2192",
     themeRankerRewrite: "Let me rewrite my message",
     themeRankerEmpty: "No themes left. Rewrite your message to start over.",
@@ -1660,17 +1670,23 @@ const es: Translations = {
     // ConcernInterpretation themes-mode \u2014 EN stubs (ES UI out of scope for this packet)
     concernInterpretationThemesHeading: "What you actually said.",
     concernInterpretationThemesSubhead:
-      "Each card is grounded in your own words. Rename, remove, or rerank \u2014 then lock these in.",
+      "Use the arrows to re-rank \u00b7 click a name to rename \u00b7 I show my work so you can correct me.",
     concernInterpretationThemesTruncationWarning: (
       returned: number,
       shown: number,
     ) =>
       `AI returned ${returned} themes; showing top ${shown}. Lock in or rewrite to refine.`,
+    // PR D \u2014 post-extraction "Got it\u2026" AI bubble (EN stub; ES UI out of scope)
+    coldOpenGotIt: (issueCount: number) =>
+      `Got it. Here's what I heard \u2014 ${issueCount} issue${issueCount !== 1 ? "s" : ""}, each anchored in the words you actually used. Re-rank, rename, or remove. Once you lock these in, every candidate's record gets scored against this list, vote by vote.`,
     // ThemeRanker \u2014 EN stubs (ES UI out of scope for this packet)
     themeRankerListLabel: "Your themes, ranked by importance",
     themeRankerReorderLabel: "Reorder theme",
     themeRankerRemoveLabel: "Remove theme",
     themeRankerRenameLabel: "Rename theme",
+    themeRankerRenameButton: "rename",
+    themeRankerMoveUpLabel: "Move up",
+    themeRankerMoveDownLabel: "Move down",
     themeRankerLockIn: "Lock these in & start the ballot \u2192",
     themeRankerRewrite: "Let me rewrite my message",
     themeRankerEmpty: "No themes left. Rewrite your message to start over.",

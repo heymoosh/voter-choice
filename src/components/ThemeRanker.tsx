@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   DndContext,
   closestCenter,
@@ -79,19 +79,30 @@ interface SortableThemeCardProps {
   total: number;
   onRename: (index: number, newName: string) => void;
   onRemove: (index: number) => void;
+  onMoveUp: (index: number) => void;
+  onMoveDown: (index: number) => void;
   reorderLabel: string;
   removeLabel: string;
   renameLabel: string;
+  renameButtonLabel: string;
+  moveUpLabel: string;
+  moveDownLabel: string;
 }
 
 function SortableThemeCard({
   theme,
   index,
+  total,
   onRename,
   onRemove,
+  onMoveUp,
+  onMoveDown,
   reorderLabel,
   removeLabel,
   renameLabel,
+  renameButtonLabel,
+  moveUpLabel,
+  moveDownLabel,
 }: SortableThemeCardProps) {
   const id = `theme-${index}`;
   const {
@@ -109,29 +120,36 @@ function SortableThemeCard({
     opacity: isDragging ? 0.5 : 1,
   };
 
+  // PR D — rename affordance per prototype IssueRow (prototype-components.jsx
+  // 168-184): the name is STATIC serif text accompanied by a small mono
+  // "rename" pill button; clicking it swaps in the edit input. Read state
+  // and edit state are distinct — the input only mounts while `editing`.
+  const [editing, setEditing] = useState(false);
   const [draftName, setDraftName] = useState(theme.name);
-  const lastCommittedRef = useRef(theme.name);
 
   // Keep the local draft in sync if the parent updates the theme name
   // for reasons unrelated to this input (e.g. an outer reset).
   useEffect(() => {
     setDraftName(theme.name);
-    lastCommittedRef.current = theme.name;
   }, [theme.name]);
 
   function commit() {
+    // Mirror IssueRow.commit (prototype-components.jsx 87-90): commit a
+    // non-empty trimmed draft, then leave edit mode regardless.
     const next = draftName.trim();
-    if (next.length === 0 || next === lastCommittedRef.current) {
+    if (next.length > 0 && next !== theme.name) {
+      onRename(index, next);
+    } else {
       // Empty or unchanged — snap back to the committed value.
-      setDraftName(lastCommittedRef.current);
-      return;
+      setDraftName(theme.name);
     }
-    lastCommittedRef.current = next;
-    onRename(index, next);
+    setEditing(false);
   }
 
   function revert() {
-    setDraftName(lastCommittedRef.current);
+    // Prototype Escape handler restores issue.interpretation + closes.
+    setDraftName(theme.name);
+    setEditing(false);
   }
 
   return (
@@ -141,17 +159,45 @@ function SortableThemeCard({
       data-testid={`theme-card-${index}`}
       className="flex items-start gap-3 bg-paper-2 border border-rule rounded-xl px-4 py-4"
     >
-      {/* Drag handle */}
-      <button
-        type="button"
-        {...attributes}
-        {...listeners}
-        data-testid={`theme-drag-handle-${index}`}
-        aria-label={`${reorderLabel}: ${theme.name}`}
-        className="cursor-grab text-ink-3 hover:text-civic select-none touch-none text-lg leading-none mt-1.5"
-      >
-        ⠿
-      </button>
+      {/* PR D — reorder column. Prototype `.ord` (prototype-components.jsx
+          149-165 / prototype.css 498-516) stacks the drag handle ABOVE an
+          ▲/▼ button pair, both disabled at the ends. */}
+      <div className="flex flex-col items-center gap-0.5 mt-1">
+        {/* Drag handle */}
+        <button
+          type="button"
+          {...attributes}
+          {...listeners}
+          data-testid={`theme-drag-handle-${index}`}
+          aria-label={`${reorderLabel}: ${theme.name}`}
+          className="cursor-grab text-ink-3 hover:text-civic select-none touch-none text-lg leading-none"
+        >
+          ⠿
+        </button>
+        {/* Up / down rank arrows */}
+        <div className="flex flex-col items-center leading-none">
+          <button
+            type="button"
+            data-testid={`theme-move-up-${index}`}
+            onClick={() => onMoveUp(index)}
+            disabled={index === 0}
+            aria-label={`${moveUpLabel}: ${theme.name}`}
+            className="text-ink-3 text-[11px] leading-none hover:text-ink disabled:opacity-25 disabled:cursor-not-allowed"
+          >
+            ▲
+          </button>
+          <button
+            type="button"
+            data-testid={`theme-move-down-${index}`}
+            onClick={() => onMoveDown(index)}
+            disabled={index === total - 1}
+            aria-label={`${moveDownLabel}: ${theme.name}`}
+            className="text-ink-3 text-[11px] leading-none hover:text-ink disabled:opacity-25 disabled:cursor-not-allowed"
+          >
+            ▼
+          </button>
+        </div>
+      </div>
 
       {/* Rank badge — serif italic civic numeral */}
       <span
@@ -162,29 +208,51 @@ function SortableThemeCard({
         {index + 1}
       </span>
 
-      {/* Body: editable name + verbatim quotes */}
+      {/* Body: name (static text + rename button, or edit input) + verbatim quotes */}
       <div className="flex-1 min-w-0 space-y-2">
-        <input
-          type="text"
-          data-testid={`theme-name-input-${index}`}
-          value={draftName}
-          onChange={(e) => setDraftName(e.target.value)}
-          onBlur={commit}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              e.preventDefault();
-              commit();
-              (e.currentTarget as HTMLInputElement).blur();
-            }
-            if (e.key === "Escape") {
-              e.preventDefault();
-              revert();
-              (e.currentTarget as HTMLInputElement).blur();
-            }
-          }}
-          aria-label={`${renameLabel}: ${theme.name}`}
-          className="w-full font-serif text-base md:text-[16.5px] font-semibold text-ink bg-transparent border-b border-transparent hover:border-rule focus:border-civic focus:outline-none px-0 py-1 tracking-tight"
-        />
+        {/* PR D — prototype `.nm` (prototype-components.jsx 168-184): two
+            visual states. Read = static serif name + mono "rename" pill;
+            edit = dashed-border serif input. */}
+        {editing ? (
+          <input
+            type="text"
+            data-testid={`theme-name-input-${index}`}
+            value={draftName}
+            autoFocus
+            onChange={(e) => setDraftName(e.target.value)}
+            onBlur={commit}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                commit();
+              }
+              if (e.key === "Escape") {
+                e.preventDefault();
+                revert();
+              }
+            }}
+            aria-label={`${renameLabel}: ${theme.name}`}
+            className="w-full font-serif text-base md:text-[16.5px] font-semibold text-ink bg-paper border border-dashed border-civic rounded px-1.5 py-0.5 focus:outline-none tracking-tight"
+          />
+        ) : (
+          <div className="flex items-center gap-2 flex-wrap">
+            <span
+              data-testid={`theme-name-${index}`}
+              className="font-serif text-base md:text-[16.5px] font-semibold text-ink tracking-tight"
+            >
+              {theme.name}
+            </span>
+            <button
+              type="button"
+              data-testid={`theme-rename-${index}`}
+              onClick={() => setEditing(true)}
+              aria-label={`${renameLabel}: ${theme.name}`}
+              className="font-mono text-[9.5px] uppercase tracking-[0.12em] text-ink-3 border border-rule rounded px-1.5 py-0.5 hover:text-ink hover:border-ink-3 transition-colors"
+            >
+              {renameButtonLabel}
+            </button>
+          </div>
+        )}
         {theme.quotes.length > 0 && (
           <div className="bg-paper pl-3 py-2 space-y-1.5">
             <p className="font-mono text-[9px] uppercase tracking-[0.16em] text-ink-3">
@@ -265,6 +333,19 @@ export function ThemeRanker({
     onChange(next);
   }
 
+  // PR D — explicit ▲/▼ reorder, wired to an array-move identical to the
+  // prototype's moveIssue(i, -1/+1) (prototype-views.jsx 179-187). Guards
+  // mirror the disabled-at-ends affordance, so out-of-range is a no-op.
+  function handleMoveUp(index: number) {
+    if (index <= 0) return;
+    onChange(reorderThemes(themes, index, index - 1));
+  }
+
+  function handleMoveDown(index: number) {
+    if (index >= themes.length - 1) return;
+    onChange(reorderThemes(themes, index, index + 1));
+  }
+
   const sortableIds = themes.map((_, i) => `theme-${i}`);
   const lockDisabled = themes.length === 0;
 
@@ -306,9 +387,14 @@ export function ThemeRanker({
                   total={themes.length}
                   onRename={handleRename}
                   onRemove={handleRemove}
+                  onMoveUp={handleMoveUp}
+                  onMoveDown={handleMoveDown}
                   reorderLabel={t.themeRankerReorderLabel}
                   removeLabel={t.themeRankerRemoveLabel}
                   renameLabel={t.themeRankerRenameLabel}
+                  renameButtonLabel={t.themeRankerRenameButton}
+                  moveUpLabel={t.themeRankerMoveUpLabel}
+                  moveDownLabel={t.themeRankerMoveDownLabel}
                 />
               ))}
             </ul>

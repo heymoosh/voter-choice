@@ -222,7 +222,8 @@ export function BallotPane({
           // which is reserved for fetch / forward-motion CTAs.
           className="flex w-full items-center justify-between rounded-lg border border-ink bg-ink px-4 py-3 text-[14.5px] font-semibold text-paper hover:opacity-90 disabled:cursor-not-allowed disabled:border-rule disabled:bg-rule disabled:text-ink-3"
         >
-          <span>Print my ballot</span>
+          {/* NEEDS-KEY: ballotPane.printBallot — EN "Print my ballot (PDF)" / ES "Imprimir mi boleta (PDF)" */}
+          <span>Print my ballot (PDF)</span>
           <span aria-hidden="true" className="text-paper">
             →
           </span>
@@ -233,11 +234,21 @@ export function BallotPane({
           onClick={onSaveProfile}
           className="flex w-full items-center justify-between rounded-lg border border-civic bg-paper px-4 py-3 text-[14.5px] font-semibold text-civic hover:bg-civic-soft"
         >
-          <span>Save my profile</span>
+          {/* NEEDS-KEY: ballotPane.saveVotingPlan — EN "Save my voting plan (.txt)" / ES "Guardar mi plan de voto (.txt)" */}
+          <span>Save my voting plan (.txt)</span>
           <span aria-hidden="true" className="text-civic">
             ↓
           </span>
         </button>
+        {/* Privacy footnote — prototype prototype-views.jsx `.b-foot-note`
+            (line 791), sits between the save button and the handoff CTA. */}
+        <small
+          data-testid="ballot-pane-foot-note"
+          className="font-mono text-[10.5px] uppercase tracking-[0.12em] text-ink-3"
+        >
+          {/* NEEDS-KEY: ballotPane.privacyFootnote — EN "Your issues and picks — no personal info collected." / ES "Tus temas y selecciones — no se recopila información personal." */}
+          Your issues and picks — no personal info collected.
+        </small>
         <button
           type="button"
           data-testid="ballot-pane-handoff"

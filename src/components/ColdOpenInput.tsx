@@ -183,8 +183,6 @@ export function ColdOpenInput({
     reader.readAsText(file);
   }
 
-  const isEmpty = draft.length === 0;
-
   return (
     <>
       {/*
@@ -243,43 +241,45 @@ export function ColdOpenInput({
         </p>
       )}
 
-      {isEmpty && (
-        <div
-          className="mt-3 ml-1 flex flex-wrap gap-1.5"
-          role="group"
-          aria-label={t.coldOpenInputLabel}
+      {/* PR D — prototype shows BOTH starter chips for the ENTIRE `prompt`
+          phase regardless of textarea content (prototype-views.jsx 252-255;
+          chip visibility does not depend on draft length). The prior
+          `isEmpty` gate hid them as soon as the user typed — dropped. */}
+      <div
+        className="mt-3 ml-1 flex flex-wrap gap-1.5"
+        role="group"
+        aria-label={t.coldOpenInputLabel}
+      >
+        <button
+          type="button"
+          data-testid="cold-open-show-example"
+          onClick={showExample}
+          disabled={disabled || loading}
+          // PR B — prototype `.starter-chips .sc` is sentence-case sans
+          // (font-size 12.5px), pill-shaped, not mono uppercase.
+          className="bg-paper border border-rule text-ink-2 text-[12.5px] rounded-full px-3 py-[7px] hover:text-ink hover:border-ink-3 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         >
-          <button
-            type="button"
-            data-testid="cold-open-show-example"
-            onClick={showExample}
-            disabled={disabled || loading}
-            // PR B — prototype `.starter-chips .sc` is sentence-case sans
-            // (font-size 12.5px), pill-shaped, not mono uppercase.
-            className="bg-paper border border-rule text-ink-2 text-[12.5px] rounded-full px-3 py-[7px] hover:text-ink hover:border-ink-3 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            {t.coldOpenInputShowExample}
-          </button>
-          <button
-            type="button"
-            data-testid="cold-open-use-starter-profile"
-            aria-label={t.coldOpenInputUseStarterProfile}
-            onClick={handleStarterProfileClick}
-            disabled={disabled || loading}
-            className="bg-paper border border-rule text-ink-2 text-[12.5px] rounded-full px-3 py-[7px] hover:text-ink hover:border-ink-3 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            {t.coldOpenInputUseStarterProfile}
-          </button>
-          <input
-            ref={fileInputRef}
-            data-testid="cold-open-starter-profile-input"
-            type="file"
-            accept=".txt,text/plain"
-            onChange={handleStarterProfileFile}
-            className="hidden"
-          />
-        </div>
-      )}
+          {t.coldOpenInputShowExample}
+        </button>
+        <button
+          type="button"
+          data-testid="cold-open-use-starter-profile"
+          aria-label={t.coldOpenInputUseStarterProfile}
+          onClick={handleStarterProfileClick}
+          disabled={disabled || loading}
+          className="bg-paper border border-rule text-ink-2 text-[12.5px] rounded-full px-3 py-[7px] hover:text-ink hover:border-ink-3 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          {t.coldOpenInputUseStarterProfile}
+        </button>
+        <input
+          ref={fileInputRef}
+          data-testid="cold-open-starter-profile-input"
+          type="file"
+          accept=".txt,text/plain"
+          onChange={handleStarterProfileFile}
+          className="hidden"
+        />
+      </div>
     </>
   );
 }

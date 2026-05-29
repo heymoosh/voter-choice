@@ -54,8 +54,8 @@ export interface LoadingViewProps {
 
 // ---------------------------------------------------------------------------
 // Loading steps
-// These mirror the prototype exactly. The strings have no translation keys
-// in the current translations.ts — see NEEDS-KEY notes below.
+// These mirror the prototype exactly and are sourced from the `loadingSteps`
+// keys in translations.ts (consumed via useLanguage() inside the component).
 // ---------------------------------------------------------------------------
 
 const STEP_INTERVAL_MS = 600;
@@ -117,16 +117,12 @@ export function LoadingView({
   const t = translations[lang];
   const [step, setStep] = useState(0);
 
-  // Step labels — no keys exist in translations.ts yet.
-  // NEEDS-KEY: loading.stepGeocode — EN "Geocoding address" / ES "Geocodificando dirección"
-  // NEEDS-KEY: loading.stepPrecinct — EN "Looking up your precinct" / ES "Buscando tu precinto"
-  // NEEDS-KEY: loading.stepRaces — EN "Pulling federal & state races" / ES "Cargando contiendas federales y estatales"
-  // NEEDS-KEY: loading.stepDonors — EN "Loading donor history" / ES "Cargando historial de donantes"
+  // Step labels — consume the existing `loadingSteps` keys in translations.ts.
   const steps = [
-    "Geocoding address",
-    "Looking up your precinct",
-    "Pulling federal & state races",
-    "Loading donor history",
+    t.loadingSteps.stepGeocode,
+    t.loadingSteps.stepPrecinct,
+    t.loadingSteps.stepRaces,
+    t.loadingSteps.stepDonors,
   ];
 
   useEffect(() => {
@@ -178,8 +174,7 @@ export function LoadingView({
 
           {/* Heading */}
           <h2 className="font-serif font-semibold text-[32px] tracking-[-0.015em] text-ink m-0 mb-3">
-            {/* NEEDS-KEY: loading.pullBallotHeading — EN "Pulling your ballot." / ES "Buscando tu boleta." */}
-            Pulling your ballot.
+            {t.loadingSteps.pullBallotHeading}
           </h2>
 
           {/* Address display — monospace pill */}

@@ -78,7 +78,7 @@ describe("PageContent — English landing (prototype-spec, flag-on)", () => {
     renderWithProvider();
     const footer = screen.getByRole("contentinfo");
     expect(footer).toHaveTextContent("Voter Choice");
-    expect(footer).toHaveTextContent("Ballot data");
+    expect(footer).toHaveTextContent("About");
     expect(footer).toHaveTextContent("Methodology");
     expect(footer).toHaveTextContent("Privacy");
     expect(footer).toHaveTextContent("Support");
@@ -94,16 +94,13 @@ describe("PageContent — English landing (prototype-spec, flag-on)", () => {
     ).not.toBeInTheDocument();
     // "Why we built this" / mission statement block.
     expect(screen.queryByText(/Why we built this/i)).not.toBeInTheDocument();
-    // "How it works" 01/02/03 step blocks — assert via the legacy section's
-    // unique subtext + step1 title, since "How it works" itself is still in
-    // the prototype AppNav as a placeholder anchor link.
-    expect(
-      screen.queryByText(/Three steps\. A few minutes\. No account\./),
-    ).not.toBeInTheDocument();
-    expect(screen.queryByText(/Enter your address/)).not.toBeInTheDocument();
-    expect(
-      screen.queryByText(/See what they actually did/),
-    ).not.toBeInTheDocument();
+    // NOTE: the "How it works" 01/02/03 section is *replaced*, not removed.
+    // The prototype's HowItWorksWalkthrough (prototype-components-c.jsx:238)
+    // renders the very same landing.* keys the legacy section used —
+    // step{1,2,3}Title ("Enter your address" / "See what they actually did" /
+    // "Take it with you"), howItWorksSubtext ("Three steps. A few minutes. No
+    // account."), and 01/02/03 numerals. So none of those strings is a valid
+    // "legacy-only" marker; the genuinely-removed sections below are.
     // Green CTA banner copy.
     expect(
       screen.queryByText(/Vote for a Congress that earns it/i),
@@ -116,14 +113,21 @@ describe("PageContent — English landing (prototype-spec, flag-on)", () => {
 
   it("renders the prototype AppNav with center anchor links and the brand mark", () => {
     renderWithProvider();
-    const banner = screen.getByRole("banner");
+    // Query the navigation landmark by its accessible name. (We avoid
+    // getByRole("banner") here: the page has a top-level <header> banner AND
+    // HowItWorksWalkthrough's <header> nested in a <section>. Per the ARIA
+    // spec the nested one maps to `generic`, but the installed
+    // dom-accessibility-api doesn't apply the sectioning-descendant exception,
+    // so it over-reports two banners. The nav landmark is unambiguous.)
+    const nav = screen.getByRole("navigation", { name: "Main" });
     // V mark + Voter Choice wordmark.
-    expect(within(banner).getByText("V")).toBeInTheDocument();
-    expect(within(banner).getByText("Voter Choice")).toBeInTheDocument();
-    // Center nav anchors — verbatim text from prototype-components.jsx AppNav.
-    expect(within(banner).getByText("How it works")).toBeInTheDocument();
-    expect(within(banner).getByText("The record")).toBeInTheDocument();
-    expect(within(banner).getByText("About")).toBeInTheDocument();
+    expect(within(nav).getByText("V")).toBeInTheDocument();
+    expect(within(nav).getByText("Voter Choice")).toBeInTheDocument();
+    // Center nav anchors — verbatim text from prototype-components.jsx AppNav
+    // (How it works / Methodology / About; repo adds Privacy).
+    expect(within(nav).getByText("How it works")).toBeInTheDocument();
+    expect(within(nav).getByText("Methodology")).toBeInTheDocument();
+    expect(within(nav).getByText("About")).toBeInTheDocument();
   });
 });
 

@@ -41,11 +41,14 @@ describe("ThemeAmendEditor", () => {
   it("renders the ThemeRanker with the current themes", () => {
     renderEditor();
     expect(screen.getByTestId("theme-ranker")).toBeInTheDocument();
-    // ThemeRanker shows the theme name in an editable input (value, not text).
-    expect(screen.getByTestId("theme-name-input-0")).toHaveValue(
+    // ThemeRanker shows each name as static serif text in read mode; the
+    // editable input mounts only after the "rename" pill is clicked (the
+    // two-state pattern faithful to the prototype IssueRow,
+    // prototype-components.jsx 168-184).
+    expect(screen.getByTestId("theme-name-0")).toHaveTextContent(
       "Healthcare costs",
     );
-    expect(screen.getByTestId("theme-name-input-1")).toHaveValue(
+    expect(screen.getByTestId("theme-name-1")).toHaveTextContent(
       "Housing affordability",
     );
   });

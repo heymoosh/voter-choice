@@ -396,7 +396,7 @@ describe("PR C / P2 — ConcernInterpretation header polish", () => {
     expect(screen.queryByText(/Here's what I heard you say/i)).toBeNull();
   });
 
-  it("renders a theme-count indicator next to the header (e.g. '2 themes · inferred')", () => {
+  it("renders a theme-count indicator next to the header (e.g. '2 issues · inferred')", () => {
     render(
       <LanguageProvider>
         <ConcernInterpretation
@@ -411,7 +411,9 @@ describe("PR C / P2 — ConcernInterpretation header polish", () => {
       </LanguageProvider>,
     );
     const count = screen.getByTestId("theme-count-indicator");
-    expect(count.textContent ?? "").toMatch(/2 themes/);
+    // Prototype copy is "{n} issues · inferred" (prototype-views.jsx:281) —
+    // user-facing label is "issues", not "themes".
+    expect(count.textContent ?? "").toMatch(/2 issues/);
     expect(count.textContent ?? "").toMatch(/inferred/);
     expect(count.className).toMatch(/font-mono/);
   });

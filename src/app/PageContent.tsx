@@ -6,6 +6,7 @@ import { useResearchMode } from "../lib/researchMode";
 import { translations } from "../lib/translations";
 import { Navigation } from "../components/Navigation";
 import { ResumeNudge } from "../components/ResumeNudge";
+import { HowItWorksWalkthrough } from "../components/HowItWorksWalkthrough";
 import { ProfileResumeModal } from "../components/ProfileResumeModal";
 import { SettingsPanel } from "../components/SettingsPanel";
 
@@ -426,6 +427,13 @@ function EnglishShell({ children }: { children?: React.ReactNode }) {
         )}
       </section>
 
+      {/* HowItWorksWalkthrough — the three-step "From address to printed
+          ballot in three steps." explainer the prototype renders inside
+          <main>, after the hero <section> and before the footer
+          (prototype-views.jsx:94). Landing-only chrome, so it drops in
+          research mode alongside the hero/stat-stack/footer. */}
+      {!isResearch && <HowItWorksWalkthrough />}
+
       {!isResearch && (
         <footer
           role="contentinfo"
@@ -434,21 +442,23 @@ function EnglishShell({ children }: { children?: React.ReactNode }) {
           <div className="font-serif font-semibold text-[15px] text-ink">
             Voter Choice
           </div>
+          {/* Footer link row — matches AppNavWithChrome's footer
+              (prototype-views.jsx:99-105): Methodology, About, Privacy,
+              Tip jar, Support. Support is a mailto per the prototype; Tip jar
+              points at the repo's canonical buymeacoffee target (no /tip route
+              exists — see BallotToolClient.tsx:2156). */}
           <ul className="list-none m-0 p-0 flex gap-5">
             <li>
               <a
-                href="#ballot-data"
-                className="hover:text-ink transition-colors"
-              >
-                Ballot data
-              </a>
-            </li>
-            <li>
-              <a
-                href="#methodology"
+                href="/methodology"
                 className="hover:text-ink transition-colors"
               >
                 Methodology
+              </a>
+            </li>
+            <li>
+              <a href="/about" className="hover:text-ink transition-colors">
+                About
               </a>
             </li>
             <li>
@@ -457,7 +467,20 @@ function EnglishShell({ children }: { children?: React.ReactNode }) {
               </a>
             </li>
             <li>
-              <a href="#support" className="hover:text-ink transition-colors">
+              <a
+                href="https://buymeacoffee.com/voterchoice"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-ink transition-colors"
+              >
+                Tip jar
+              </a>
+            </li>
+            <li>
+              <a
+                href="mailto:muxin.li.pro@gmail.com"
+                className="hover:text-ink transition-colors"
+              >
                 Support
               </a>
             </li>

@@ -48,6 +48,7 @@ import { hasByokKey, streamWithByok } from "../lib/anthropic-client-byok";
 import { prependSafetyHeader } from "../lib/prompts/safety-header";
 import { normalizeCandidateName } from "../lib/normalizeCandidateName";
 import { getCandidateIdentity } from "../lib/candidateIdentity";
+import { anonymizeText } from "../lib/anonymizeText";
 import {
   parseValuesTagRequestBlock,
   stripValuesTagRequestBlocks,
@@ -1770,6 +1771,39 @@ function WorkspaceChat({
     },
   ];
 
+  // ANON (defense-in-depth) — free-text assistant answers render as raw
+  // markdown (no card), and the chat server prompt is blind-unaware, so a
+  // plain answer can name a real candidate even while blind (the default).
+  // Scrub every active-race candidate's name → their alias ("Candidate A/B/…")
+  // before render. Alias index matches the chips + card (position in
+  // activeRace.candidates). We replace the longest forms first (full name)
+  // so a full mention collapses as a unit before the bare surname is touched,
+  // and only capitalized forms are targeted so common-word surnames ("Long")
+  // don't scrub ordinary prose. We anonymize regardless of per-candidate
+  // reveal: reveal is a card affordance, and erring toward MORE anonymization
+  // never leaks.
+  const anonymizeAssistantText = (text: string): string => {
+    if (!blindMode) return text;
+    return (activeRace.candidates ?? []).reduce((acc, c, idx) => {
+      const alias = `Candidate ${String.fromCharCode(65 + idx)}`;
+      const raw = (c.name || "").trim();
+      const norm = normalizeCandidateName(c.name).trim();
+      const targets: string[] = [];
+      const pushUnique = (s?: string) => {
+        if (s && !targets.includes(s)) targets.push(s);
+      };
+      pushUnique(norm); // "Cory Booker"
+      pushUnique(raw); // "CORY BOOKER"
+      pushUnique(norm.split(/\s+/).pop()); // "Booker"
+      pushUnique(raw.split(/\s+/).pop()); // "BOOKER"
+      return targets.reduce(
+        (s, target) =>
+          anonymizeText(s, { blindMode: true, realLastName: target, alias }),
+        acc,
+      );
+    }, text);
+  };
+
   // ── Faithful candidate-card wiring (Phase 4 port) ──────────────
   // The workspace center column renders the real <RacePatterns> cards
   // (funding + alignment, anonymized by default) via the shared
@@ -1802,6 +1836,20 @@ function WorkspaceChat({
   // First interpreted issue, mirroring the prototype's commitPick: the
   // why-note anchors on the user's top priority when known.
   const topIssue = issues[0]?.interpretation || "my priorities";
+
+  // Post-pick confirmation ("Logged: …") display name. Anonymize while blind
+  // so the confirmation bubble never leaks a name the voter chose to keep
+  // hidden — consistent with onCardPick's whyNote (alias when blind) and the
+  // chip labels. The alias index is the pick's position in activeRace.candidates.
+  const loggedPickDisplay = (() => {
+    if (!activeDecision) return "";
+    const real = normalizeCandidateName(activeDecision.pick);
+    if (!blindMode) return real;
+    const idx = (activeRace.candidates ?? []).findIndex(
+      (c) => normalizeCandidateName(c.name) === real,
+    );
+    return `Candidate ${String.fromCharCode(65 + (idx < 0 ? 0 : idx))}`;
+  })();
 
   // Card "Pick" → auto-commit a generated why-note (prototype parity: the
   // card pick has NO separate why prompt; that lives only on the stub).
@@ -1874,11 +1922,37 @@ function WorkspaceChat({
               }
               className="mt-0.5 shrink-0 inline-flex items-center gap-1.5 border border-rule rounded-md px-2.5 py-1 font-mono text-[10.5px] uppercase tracking-[0.1em] text-ink-2 hover:bg-paper-2 active:scale-95 transition"
             >
-              {
-                blindMode
-                  ? "Names" /* NEEDS-KEY: research.blindToggleNames — EN "Names" */
-                  : "Blind" /* NEEDS-KEY: research.blindToggleBlind — EN "Blind" */
-              }
+              <svg
+                viewBox="0 0 24 24"
+                width="14"
+                height="14"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                {blindMode ? (
+                  <>
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-10-8-10-8a18.45 18.45 0 0 1 5.06-5.94" />
+                    <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 10 8 10 8a18.5 18.5 0 0 1-2.16 3.19" />
+                    <path d="M1 1l22 22" />
+                  </>
+                ) : (
+                  <>
+                    <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" />
+                    <circle cx="12" cy="12" r="3" />
+                  </>
+                )}
+              </svg>
+              <span>
+                {
+                  blindMode
+                    ? "Blind" /* NEEDS-KEY: research.blindToggleBlind — EN "Blind" */
+                    : "Names" /* NEEDS-KEY: research.blindToggleNames — EN "Names" */
+                }
+              </span>
             </button>
           )}
         </div>
@@ -1901,6 +1975,7 @@ function WorkspaceChat({
           if (
             visibleMessages.length === 0 &&
             amendmentJournal.length === 0 &&
+            !(decided && activeDecision) &&
             !workspace.pendingAmendment &&
             !workspace.pendingRescoreOffer &&
             !workspace.chatCatchSuggestion &&
@@ -1982,7 +2057,9 @@ function WorkspaceChat({
                             className="bg-paper-2 border border-rule px-4 py-3 text-sm leading-relaxed text-ink w-full"
                             style={{ borderRadius: "4px 14px 14px 14px" }}
                           >
-                            <MarkdownText text={m.content} />
+                            <MarkdownText
+                              text={anonymizeAssistantText(m.content)}
+                            />
                           </div>
                         )}
                       </li>
@@ -2070,6 +2147,51 @@ function WorkspaceChat({
                   newThemeName={entry.newThemeName}
                 />
               ))}
+
+              {/* Post-pick confirmation bubble (prototype-views.jsx:626-635).
+                  Renders once the active race has a committed decision. The
+                  pick name + party are anonymized while blind (see
+                  loggedPickDisplay) so the confirmation never leaks a name the
+                  voter chose to keep hidden; the why-note is run through the
+                  same anonymizer the free-text answers use. */}
+              {decided && activeDecision && (
+                <div
+                  data-testid="workspace-chat-logged"
+                  className="mt-4 flex flex-col items-start gap-1.5 max-w-2xl"
+                >
+                  <span className="font-mono text-[10.5px] uppercase tracking-[0.12em] text-ink-3">
+                    Voter Choice · AI
+                  </span>
+                  <div
+                    className="bg-paper-2 border border-rule px-4 py-3 text-sm leading-relaxed text-ink w-full"
+                    style={{ borderRadius: "4px 14px 14px 14px" }}
+                  >
+                    <p>
+                      {/* NEEDS-KEY: research.loggedPrefix — EN "Logged:" */}
+                      Logged:{" "}
+                      <b>
+                        {loggedPickDisplay}
+                        {!blindMode && activeDecision.party
+                          ? ` (${activeDecision.party})`
+                          : ""}
+                      </b>{" "}
+                      {/* NEEDS-KEY: research.loggedFor — EN "for" */}
+                      for {activeRace.label}.
+                    </p>
+                    {activeDecision.whyNote && (
+                      <p className="mt-1 italic text-ink-2">
+                        &ldquo;{anonymizeAssistantText(activeDecision.whyNote)}
+                        &rdquo;
+                      </p>
+                    )}
+                    <p className="mt-2 text-[13.5px] text-ink-2">
+                      {/* NEEDS-KEY: research.loggedEditHint — EN "You can edit the note in the ballot pane any time. Or jump to a different race." */}
+                      You can edit the note in the ballot pane any time. Or jump
+                      to a different race.
+                    </p>
+                  </div>
+                </div>
+              )}
             </>
           );
         })()}
@@ -2088,6 +2210,8 @@ function WorkspaceChat({
           gateVariant={gateVariant}
           onCommitDecision={onCommitDecision}
           onUnpickDecision={onUnpickDecision}
+          blindMode={blindMode}
+          revealedCandidates={revealedCandidates}
         />
       )}
 
@@ -2249,6 +2373,8 @@ function WorkspacePickArea({
   gateVariant = "community_budget",
   onCommitDecision,
   onUnpickDecision,
+  blindMode = false,
+  revealedCandidates,
 }: {
   activeRace: WorkspaceModeProps["activeRace"];
   decided: boolean;
@@ -2256,6 +2382,10 @@ function WorkspacePickArea({
   gateVariant?: GateVariant;
   onCommitDecision: WorkspaceModeProps["onCommitDecision"];
   onUnpickDecision: WorkspaceModeProps["onUnpickDecision"];
+  /** Blind mode state — when true the stub label is aliased ("Candidate A"). */
+  blindMode?: boolean;
+  /** Candidate ids the voter has individually revealed. */
+  revealedCandidates?: Set<string>;
 }) {
   const [whyOpen, setWhyOpen] = useState(false);
   const [whyDraft, setWhyDraft] = useState("");
@@ -2268,10 +2398,34 @@ function WorkspacePickArea({
 
   // For Phase 3, the "candidate" we pick is either the first candidate from
   // the contest data (when present) or a placeholder. Phase 4 replaces this.
-  const defaultCandidate =
+  const firstCandidate =
     activeRace.candidates && activeRace.candidates[0]
       ? activeRace.candidates[0]
-      : { name: activeRace.label, party: "" };
+      : null;
+  const hasRealCandidate = !!firstCandidate;
+  const defaultCandidate = firstCandidate ?? {
+    name: activeRace.label,
+    party: "",
+  };
+
+  // ANON — the stub pick area shows whenever no RacePatterns card is on
+  // screen (plain-text answer, or the block is still streaming). In blind
+  // mode (the default) it must NOT print the real candidate name. Route the
+  // visible label through getCandidateIdentity — the single naming source of
+  // truth — so it reads "Candidate A" while blind. The real name still rides
+  // the committed decision payload below (`pick: stagedCandidate.name`) as
+  // transport. With no candidate data we fall back to the race label, which
+  // is not a person's name and is shown as-is.
+  const displayLabelFor = (c: { name: string }): string => {
+    if (!hasRealCandidate) return normalizeCandidateName(c.name);
+    const identity = getCandidateIdentity(
+      { id: c.name, name: c.name },
+      { blindMode, revealed: revealedCandidates, index: 0 },
+    );
+    return identity.isBlind
+      ? identity.aliasLabel
+      : normalizeCandidateName(c.name);
+  };
 
   function openWhyFor(c: { name: string; party: string }) {
     setStagedCandidate(c);
@@ -2333,11 +2487,10 @@ function WorkspacePickArea({
           onClick={() => openWhyFor(defaultCandidate)}
           className="self-start bg-civic px-4 py-2.5 text-[13px] font-semibold text-paper-2 hover:bg-civic-2 rounded-lg"
         >
-          {/* Fix 1 — title-case the upstream all-caps candidate name
-              at the display layer. The raw value stays on the
-              extraction shape so prompts + print artifact preserve
-              the canonical source. */}
-          Pick {normalizeCandidateName(defaultCandidate.name)}
+          {/* ANON + Fix 1 — alias-gated, title-cased display label. While
+              blind this reads "Pick Candidate A"; the raw all-caps name is
+              preserved on the extraction shape for prompts + print artifact. */}
+          Pick {displayLabelFor(defaultCandidate)}
         </button>
       )}
 
@@ -2350,8 +2503,9 @@ function WorkspacePickArea({
             htmlFor="workspace-why-textarea"
             className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-ink-3"
           >
-            {/* Fix 1 — display-layer title-casing for candidate name. */}
-            Why are you picking {normalizeCandidateName(stagedCandidate.name)}?
+            {/* ANON — alias-gated display label (the real name stays in the
+                committed decision payload as transport). */}
+            Why are you picking {displayLabelFor(stagedCandidate)}?
           </label>
           <textarea
             id="workspace-why-textarea"
@@ -3058,10 +3212,10 @@ export function ChatPanel({
 
   /**
    * Submit an amendment payload through the chat route (theme-amendment
-   * builder). Parses the response, computes per-race verdicts via the pure
-   * decideVerdict() function (falling back to the prompt's `verdictHint` when
-   * runtime lacks per-candidate scores), appends a journal entry, and
-   * notifies the parent of the new locked themes.
+   * builder). Parses the response, maps each per-race relevance verdict
+   * through the pure decideVerdict() function (D-1: relevance only — no
+   * alignment scores, no cross-candidate ranking), appends a journal entry,
+   * and notifies the parent of the new locked themes.
    */
   const submitAmendment = useCallback(
     async (input: {
@@ -3133,34 +3287,22 @@ export function ChatPanel({
         const raw = buffer.join("");
         try {
           const parsed = parseThemeAmendment(raw);
-          // For v1 the runtime lacks per-candidate scores, so decideVerdict()
-          // will always return HOLD without the prompt's hint. Fall back to
-          // verdictHint when otherCandidateScores is empty (the v1 path).
+          // D-1: the amendment prompt returns a per-issue relevance verdict
+          // per race — no alignment scores, no cross-candidate ranking. Map
+          // each row through decideVerdict (propositions -> N/A; a relevant
+          // theme -> REVISIT; otherwise HOLD).
           const verdicts: VerdictDecision[] = parsed.rescored.map((r) => {
-            // Build a RescoredRace with empty otherCandidateScores. Look up
-            // the human race label from the parent-supplied map when
+            // Look up the human race label from the parent-supplied map when
             // available — falls back to raceId so the row still renders.
             const raceLabel =
               workspace?.raceLabelLookup?.[r.raceId] ?? r.raceId;
             const race: RescoredRace = {
               raceId: r.raceId,
               raceLabel,
-              raceType: r.verdictHint === "N/A" ? "proposition" : "choice",
-              oldScore: r.oldScore,
-              newScore: r.newScore,
-              otherCandidateScores: [],
+              raceType: r.verdict === "N/A" ? "proposition" : "choice",
+              relevantToNewTheme: r.verdict === "REVISIT",
             };
-            const pure = decideVerdict(race);
-            // V1 fallback: when the pure function lacks other-candidate data
-            // and the prompt gave a stronger verdict (REVISIT / N/A), prefer
-            // the hint. decideVerdict alone would always say HOLD without
-            // candidate scores — defeating the feature.
-            if (pure.verdict === "HOLD" && r.verdictHint) {
-              if (r.verdictHint === "REVISIT" || r.verdictHint === "N/A") {
-                return { ...pure, verdict: r.verdictHint };
-              }
-            }
-            return pure;
+            return decideVerdict(race);
           });
           const newThemeName = parsed.newTheme.name;
           setAmendmentJournal((prev) => [...prev, { newThemeName, verdicts }]);

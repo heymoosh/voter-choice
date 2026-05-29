@@ -22,7 +22,8 @@ import type {
  *   - Sample-size caption ("Aligned on N of M votes")
  *   - Thin-record caption when total < 5
  *   - Em-dash for rows missing kept/total — never a fake 0%
- *   - Overall avg % in block header when any scored issues exist
+ *   - D-1: NO aggregate "X% avg" headline and NO cross-candidate ranking
+ *     (deliberate nonpartisan stance) — per-issue rows only
  *   - Web-search path: source label + confidence + evidence (unchanged)
  *
  * Unavailable state: renders a "Voting record not available —
@@ -423,17 +424,10 @@ export function AlignmentScoreBanner({
 
   const scores = entry.scores!;
 
-  // Compute overall avg % across scoring issues (voting_record only)
-  const scored = scores.filter(
-    (s) => s.sourceType !== "web_search" && scorePercentage(s) !== null,
-  );
-  const overallPct =
-    scored.length > 0
-      ? Math.round(
-          scored.reduce((sum, s) => sum + (scorePercentage(s) as number), 0) /
-            scored.length,
-        )
-      : null;
+  // D-1 (acceptance contract, highest priority) — NO aggregate "X% avg"
+  // alignment headline. The app deliberately shows no overall alignment score
+  // and does not rank candidates (deliberate nonpartisan stance). Only the
+  // per-issue rows below are shown; each issue's kept/total + bar is allowed.
 
   return (
     <div
@@ -441,18 +435,12 @@ export function AlignmentScoreBanner({
       aria-label={`Alignment scores for ${candidateLabel}`}
       className="px-5 py-[18px] pb-5 bg-paper-2 border-b border-rule-2"
     >
-      {/* Block header: label left, overall avg right */}
-      <div className="flex items-baseline justify-between gap-3 mb-3.5 flex-wrap gap-y-1">
+      {/* Block header: section label only. D-1 — no aggregate avg score and
+          no cross-candidate ranking; the per-issue rows carry all detail. */}
+      <div className="flex items-baseline gap-3 mb-3.5 flex-wrap gap-y-1">
         <span className="font-mono text-[13px] uppercase tracking-[0.10em] text-ink font-bold whitespace-nowrap">
           {t.alignmentScoreBannerHeading}
         </span>
-        {overallPct !== null && (
-          <span className="font-serif text-[14px] text-ink-2">
-            <b className="text-ink text-[18px] font-semibold">{overallPct}%</b>{" "}
-            {/* NEEDS-KEY: research.alignmentScoreOverallAvgSuffix — EN "avg" / ES "prom" */}
-            avg
-          </span>
-        )}
       </div>
 
       {/* Issue rows */}

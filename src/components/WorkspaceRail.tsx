@@ -104,7 +104,8 @@ export function WorkspaceRail({
       >
         <div className="flex items-baseline justify-between">
           <span className="font-mono text-[10.5px] uppercase tracking-[0.12em] text-ink-3">
-            Your priorities
+            {/* NEEDS-KEY: workspaceRail.yourIssues — EN "Your issues" / ES "Tus temas" */}
+            Your issues
           </span>
           <button
             type="button"
@@ -112,7 +113,8 @@ export function WorkspaceRail({
             onClick={onEditThemes}
             className="font-mono text-[10px] uppercase tracking-[0.12em] text-civic hover:text-civic-2"
           >
-            Edit
+            {/* NEEDS-KEY: workspaceRail.editIssues — EN "EDIT" / ES "EDITAR" */}
+            EDIT
           </button>
         </div>
         <ol className="ml-4 list-decimal font-serif text-[14px] leading-relaxed text-ink marker:font-semibold marker:text-civic">

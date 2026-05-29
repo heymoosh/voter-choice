@@ -18,6 +18,8 @@ import { AlignmentScoreBanner } from "./AlignmentScoreBanner";
 import { AlignmentDrilldown } from "./AlignmentDrilldown";
 import { getCandidateIdentity } from "../lib/candidateIdentity";
 import { anonymizeText } from "../lib/anonymizeText";
+import { formatCurrencyShort } from "../lib/ballot-utils";
+import { getPeerComparison, type PeerEntry } from "../lib/peerComparison";
 
 /* ──────────────────────────────────────────────────────────────
  * RacePatterns — four-pattern candidate/proposition dashboard.
@@ -73,6 +75,35 @@ const ANON_LABELS = ["A", "B", "C", "D", "E", "F"];
 
 function anonLabel(idx: number): string {
   return ANON_LABELS[idx] ?? String(idx + 1);
+}
+
+/* ── Money-trail teaser helpers (ported from prototype) ─────── */
+
+/* fundingMixSummary — "62% small donors · 30% large donors · 8% PACs".
+   Drops any bucket that's null. Used in the Money-trail disclosure teaser. */
+function fundingMixSummary(
+  mix: { small: number; large: number; pac: number } | undefined,
+): string | null {
+  if (!mix) return null;
+  const parts: string[] = [];
+  /* NEEDS-KEY: research.fundingMixSmallDonors — EN "{n}% small donors" / ES "{n}% donantes pequeños" */
+  if (mix.small != null) parts.push(`${mix.small}% small donors`);
+  /* NEEDS-KEY: research.fundingMixLargeDonors — EN "{n}% large donors" / ES "{n}% donantes grandes" */
+  if (mix.large != null) parts.push(`${mix.large}% large donors`);
+  /* NEEDS-KEY: research.fundingMixPacs — EN "{n}% PACs" / ES "{n}% PACs" */
+  if (mix.pac != null) parts.push(`${mix.pac}% PACs`);
+  return parts.length > 0 ? parts.join(" · ") : null;
+}
+
+/* computePeerLabel — thin wrapper over getPeerComparison returning just the
+   teaser label string ("2.0× more than Candidate B") or null when too close. */
+function computePeerLabel(
+  totalRaised: number,
+  peerTotals: PeerEntry[] | undefined,
+): string | null {
+  if (typeof totalRaised !== "number" || !peerTotals) return null;
+  const cmp = getPeerComparison(totalRaised, peerTotals);
+  return cmp ? cmp.label : null;
 }
 
 /* ── Proposition detection ────────────────────────────────── */
@@ -435,6 +466,16 @@ function CandidateSection({
     revealed: revealedCandidates,
     index: idx,
   });
+  /* Progressive disclosure: the Money-trail block (funding mix + named PACs +
+     industry breakdown) is collapsed by default on mobile and expanded on
+     desktop (>=901px). Keeps the decision UI tight on phones while leaving the
+     funding evidence one tap away. Mirrors prototype CandidateCard. */
+  const [moneyOpen, setMoneyOpen] = useState(
+    () =>
+      typeof window !== "undefined" &&
+      typeof window.matchMedia === "function" &&
+      window.matchMedia("(min-width: 901px)").matches,
+  );
   // In parent-controlled blindMode, use identity.isBlind.
   // In local-toggle mode (default, blindMode=false), use locallyRevealed.
   const showName =
@@ -449,6 +490,28 @@ function CandidateSection({
           (s) => s.canonicalIssue === expandedDrilldownIssue,
         ) ?? null)
       : null;
+
+  // Total contributing votes across all of this candidate's alignment scores —
+  // surfaced in the "See all N votes →" CTA. Mirrors prototype CandidateCard
+  // (sum of contributingVotes.length over the alignment entry).
+  const totalVotes =
+    alignmentEntry?.scores?.reduce(
+      (n, s) => n + (s.contributingVotes?.length ?? 0),
+      0,
+    ) ?? 0;
+
+  // Header parity (prototype CandidateCardHeader): derive incumbency status
+  // tag + tenure ("N yrs in office" / "No record yet") from priorRole + the
+  // incumbent flag. ANON: identifying status/tenure is shown ONLY when not
+  // blind (and never for propositions) so blind mode never leaks tenure/role.
+  const yearsMatch = (candidate.priorRole ?? "").match(/since (\d{4})/i);
+  const yearsInOffice = yearsMatch
+    ? new Date().getFullYear() - parseInt(yearsMatch[1], 10)
+    : 0;
+  const isFirstTime =
+    /first-time/i.test(candidate.priorRole ?? "") ||
+    (!yearsMatch && !candidate.incumbent);
+  const showHeaderDetails = !isProposition && !identity.isBlind;
 
   return (
     <section
@@ -469,9 +532,15 @@ function CandidateSection({
         />
       )}
 
-      {/* Inline drilldown — below the banner, above pattern sections */}
+      {/* Inline drilldown — below the banner, above pattern sections.
+          Pass the owning candidate so the "Issue PACs funding {name} on
+          this" callout can resolve from candidate.donorCoalition. */}
       {expandedScore && (
-        <AlignmentDrilldown score={expandedScore} onClose={onDrillDownClose} />
+        <AlignmentDrilldown
+          score={expandedScore}
+          onClose={onDrillDownClose}
+          candidate={candidate}
+        />
       )}
 
       {/* Header */}
@@ -493,6 +562,28 @@ function CandidateSection({
               {displayLabel}
             </h4>
           </div>
+          {/* Status tag (Incumbent / First-time / Challenger) — prototype
+              CandidateCardHeader cv2-sub. Hidden in blind mode + propositions
+              so the card never leaks an identifying status. */}
+          {showHeaderDetails && (
+            <div className="mt-1 flex items-center gap-2">
+              <span
+                data-testid={`race-patterns-status-tag-${candidate.id}`}
+                className="inline-flex items-center px-2 py-0.5 font-mono text-[9.5px] uppercase tracking-[0.12em] bg-paper border border-rule rounded-sm text-ink-2"
+              >
+                {candidate.incumbent ? (
+                  /* NEEDS-KEY: research.candidateStatusIncumbent — EN "Incumbent" / ES "En ejercicio" */
+                  <>Incumbent</>
+                ) : isFirstTime ? (
+                  /* NEEDS-KEY: research.candidateStatusFirstTime — EN "First-time" / ES "Primera vez" */
+                  <>First-time</>
+                ) : (
+                  /* NEEDS-KEY: research.candidateStatusChallenger — EN "Challenger" / ES "Aspirante" */
+                  <>Challenger</>
+                )}
+              </span>
+            </div>
+          )}
           {candidate.priorRole && (
             <p
               data-testid={`race-patterns-prior-role-${candidate.id}`}
@@ -566,20 +657,50 @@ function CandidateSection({
               </button>
             )}
         </div>
-        {/* Values highlight callout */}
-        {candidate.valuesHighlight && (
-          <div
-            data-testid={`race-patterns-values-highlight-${candidate.id}`}
-            className="shrink-0 max-w-[11rem] bg-civic-soft border border-civic rounded-md px-2.5 py-1.5 text-[11px] leading-snug text-civic-2"
-          >
-            <span className="font-mono text-[9.5px] uppercase tracking-[0.12em] block mb-0.5">
-              {t.racePatternsValuesHighlightLabel}
-            </span>
-            <span className="font-serif italic">
-              {candidate.valuesHighlight.element}
-            </span>
-          </div>
-        )}
+        {/* Right rail: tenure block + values highlight. Tenure ("N yrs in
+            office" / "No record yet") ports prototype CandidateCardHeader
+            cv2-tenure. Hidden in blind mode + propositions (identifying). */}
+        <div className="shrink-0 flex flex-col items-end gap-2">
+          {showHeaderDetails &&
+            (yearsInOffice > 0 ? (
+              <div
+                data-testid={`race-patterns-tenure-${candidate.id}`}
+                className="text-right"
+              >
+                <div className="font-serif text-xl font-semibold leading-none text-ink">
+                  {yearsInOffice}
+                </div>
+                <div className="font-mono text-[9px] uppercase tracking-[0.12em] text-ink-3 mt-0.5">
+                  {/* NEEDS-KEY: research.candidateTenureYrsInOffice — EN "yrs in office" / ES "años en el cargo" */}
+                  yrs in office
+                </div>
+              </div>
+            ) : isFirstTime ? (
+              <div
+                data-testid={`race-patterns-tenure-${candidate.id}`}
+                className="text-right"
+              >
+                <div className="font-mono text-[10px] uppercase tracking-[0.12em] text-ink-3">
+                  {/* NEEDS-KEY: research.candidateTenureNoRecord — EN "No record yet" / ES "Sin historial aún" */}
+                  No record yet
+                </div>
+              </div>
+            ) : null)}
+          {/* Values highlight callout */}
+          {candidate.valuesHighlight && (
+            <div
+              data-testid={`race-patterns-values-highlight-${candidate.id}`}
+              className="max-w-[11rem] bg-civic-soft border border-civic rounded-md px-2.5 py-1.5 text-[11px] leading-snug text-civic-2"
+            >
+              <span className="font-mono text-[9.5px] uppercase tracking-[0.12em] block mb-0.5">
+                {t.racePatternsValuesHighlightLabel}
+              </span>
+              <span className="font-serif italic">
+                {candidate.valuesHighlight.element}
+              </span>
+            </div>
+          )}
+        </div>
       </header>
 
       {/* Donor coalition */}
@@ -616,13 +737,86 @@ function CandidateSection({
           )}
         </div>
         {candidate.donorCoalition ? (
-          <FunderBars
-            funders={candidate.donorCoalition}
-            totalRaised={candidate.totalRaised}
-            donorDataSource={candidate.donorDataSource}
-            fundingMix={candidate.fundingMix}
-            peerTotals={peerTotals}
-          />
+          /* Progressive-disclosure: Money trail block (collapsible). Eyebrow
+             + title + teaser summary (total raised · peer comparison ·
+             funding-mix) with a Show details / Hide toggle that defaults open
+             at >=901px. Ported from prototype CandidateCard funding section. */
+          <div
+            data-testid={`race-patterns-money-trail-${candidate.id}`}
+            className="border border-rule rounded-xl overflow-hidden bg-paper"
+          >
+            <button
+              type="button"
+              data-testid={`race-patterns-money-trail-toggle-${candidate.id}`}
+              aria-expanded={moneyOpen}
+              aria-controls={`mt-${candidate.id}`}
+              onClick={() => setMoneyOpen((v) => !v)}
+              className="w-full flex items-start justify-between gap-3 text-left px-4 py-3 hover:bg-paper-2 transition-colors"
+            >
+              <span className="flex flex-col gap-0.5 min-w-0">
+                <span className="font-mono text-[9.5px] uppercase tracking-[0.14em] text-ink-3">
+                  {/* NEEDS-KEY: research.moneyTrailEyebrow — EN "Funding & influence" / ES "Financiamiento e influencia" */}
+                  Funding &amp; influence
+                </span>
+                <span className="font-serif text-base font-semibold tracking-tight text-ink">
+                  {/* NEEDS-KEY: research.moneyTrailTitle — EN "Money trail" / ES "Rastro del dinero" */}
+                  Money trail
+                </span>
+                {/* Teaser: bottom-line (total + peer) then funding-mix breakdown */}
+                <span className="text-[11.5px] text-ink-2 leading-snug mt-0.5">
+                  {typeof candidate.totalRaised === "number" && (
+                    <span className="block">
+                      <b className="font-serif text-ink">
+                        {formatCurrencyShort(candidate.totalRaised)}
+                      </b>{" "}
+                      {/* NEEDS-KEY: research.moneyTrailRaised — EN "raised" / ES "recaudado" */}
+                      raised
+                      {(() => {
+                        const peer = computePeerLabel(
+                          candidate.totalRaised as number,
+                          peerTotals,
+                        );
+                        return peer ? (
+                          <span className="text-ink-3"> · {peer}</span>
+                        ) : null;
+                      })()}
+                    </span>
+                  )}
+                  {candidate.fundingMix &&
+                    fundingMixSummary(candidate.fundingMix) && (
+                      <span className="block text-ink-3">
+                        {fundingMixSummary(candidate.fundingMix)}
+                      </span>
+                    )}
+                </span>
+              </span>
+              <span
+                aria-hidden="true"
+                className="shrink-0 font-mono text-[10px] uppercase tracking-[0.12em] text-civic whitespace-nowrap"
+              >
+                {moneyOpen ? (
+                  <>
+                    {/* NEEDS-KEY: research.moneyTrailHide — EN "Hide" / ES "Ocultar" */}
+                    Hide <span aria-hidden="true">▴</span>
+                  </>
+                ) : (
+                  <>
+                    {/* NEEDS-KEY: research.moneyTrailShowDetails — EN "Show details" / ES "Ver detalles" */}
+                    Show details <span aria-hidden="true">▾</span>
+                  </>
+                )}
+              </span>
+            </button>
+            <div id={`mt-${candidate.id}`} hidden={!moneyOpen}>
+              <FunderBars
+                funders={candidate.donorCoalition}
+                totalRaised={candidate.totalRaised}
+                donorDataSource={candidate.donorDataSource}
+                fundingMix={candidate.fundingMix}
+                peerTotals={peerTotals}
+              />
+            </div>
+          </div>
         ) : (
           <p
             data-testid={`race-patterns-coalition-unavailable-${candidate.id}`}
@@ -715,7 +909,10 @@ function CandidateSection({
         )}
       </div>
 
-      {/* See all votes — prototype WorkspaceView ~562 */}
+      {/* See all votes — prototype CandidateCard ~270-277. Shows the real
+          count (sum of contributingVotes across this candidate's scores);
+          falls back to "See all votes →" when the count is 0, matching the
+          prototype's `{totalVotes || ''}` rendering. */}
       {alignmentEntry && onSeeAllVotes && (
         <div className="flex justify-end">
           <button
@@ -731,8 +928,8 @@ function CandidateSection({
             }
             className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-civic hover:text-civic-2 underline-offset-4 hover:underline transition-colors"
           >
-            {/* NEEDS-KEY: research.seeAllVotes — EN "See all votes →" / ES "Ver todos los votos →" */}
-            See all votes →
+            {/* NEEDS-KEY: research.seeAllVotesCount — EN "See all {count} votes →" / ES "Ver los {count} votos →" */}
+            See all {totalVotes > 0 ? `${totalVotes} ` : ""}votes →
           </button>
         </div>
       )}
@@ -869,6 +1066,22 @@ export function RacePatterns({
     (pickedCandidateId &&
       block.candidates.find((c) => c.id === pickedCandidateId)) ||
     null;
+  // ANON — the locked-in confirmation banner must use the alias while blind,
+  // mirroring every other surface on the card. Resolve the picked candidate's
+  // display name through getCandidateIdentity (respecting per-candidate
+  // reveal); proposition mode always shows the real name.
+  const pickedCandidateIndex = pickedCandidate
+    ? block.candidates.findIndex((c) => c.id === pickedCandidate.id)
+    : -1;
+  const pickedDisplayName = pickedCandidate
+    ? isProp
+      ? pickedCandidate.name
+      : getCandidateIdentity(pickedCandidate, {
+          blindMode,
+          revealed: revealedCandidates,
+          index: pickedCandidateIndex < 0 ? 0 : pickedCandidateIndex,
+        }).displayName
+    : null;
 
   // Build peer-totals array for the money-map comparison rails.
   // aliasOrName respects anonymity: real names only when revealed or in
@@ -1053,8 +1266,8 @@ export function RacePatterns({
           className="bg-civic-soft border border-civic rounded-lg px-4 py-3"
         >
           <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-civic-2">
-            {pickedCandidate
-              ? `${t.racePatternsLockedIn} ${pickedCandidate.name}`
+            {pickedDisplayName
+              ? `${t.racePatternsLockedIn} ${pickedDisplayName}`
               : t.racePatternsSkipped}
           </p>
         </div>

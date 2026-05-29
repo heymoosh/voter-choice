@@ -13,6 +13,14 @@ type ErrorKey = "empty" | "invalid" | null;
 
 interface ZipFormProps {
   onSubmit: (address: string) => void;
+  /**
+   * Returning-user affordance. The prototype `.addr-card` renders a
+   * "Been here before? Drop your saved .txt profile →" line whose anchor
+   * calls `onResumeFromProfile` (prototype-views.jsx:62-67), which opens the
+   * ProfileResumeModal. When omitted the line is hidden — the parent
+   * (BallotToolClient) should pass its `handleOpenProfileResume` to surface it.
+   */
+  onResumeFromProfile?: () => void;
 }
 
 /** Extract a 5-digit zip code from an address string. */
@@ -31,7 +39,7 @@ export function extractState(address: string): string | null {
   return match ? match[1].toUpperCase() : null;
 }
 
-export function ZipForm({ onSubmit }: ZipFormProps) {
+export function ZipForm({ onSubmit, onResumeFromProfile }: ZipFormProps) {
   const [value, setValue] = useState("");
   const [errorKey, setErrorKey] = useState<ErrorKey>(null);
   const { lang } = useLanguage();
@@ -57,6 +65,17 @@ export function ZipForm({ onSubmit }: ZipFormProps) {
 
   const errorMessage = errorKey ? t.errors[errorKey] : null;
 
+  // Prototype `.addr-card` copy (prototype-views.jsx:46,50). ZipForm renders
+  // in both EN (prototype surface) and ES (legacy surface), so EN matches the
+  // prototype literal while ES keeps the localized translation key — the same
+  // pattern this card already uses for the "Stays on this device" privacy span
+  // and the "Pull my ballot →" submit button.
+  const labelText = lang === "en" ? "Your registered address" : t.zipForm.label;
+  const placeholderText =
+    lang === "en"
+      ? "1600 Pennsylvania Ave NW, Washington DC 20500"
+      : t.zipForm.placeholder;
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     let trimmed = value.trim();
@@ -81,7 +100,7 @@ export function ZipForm({ onSubmit }: ZipFormProps) {
     <form onSubmit={handleSubmit} noValidate>
       <div className="bg-paper-2 border border-rule rounded-[10px] p-[18px] pb-4 shadow-[0_1px_0_var(--rule-2),0_10px_30px_-20px_oklch(0.18_0.018_240/0.12)] focus-within:border-civic transition-colors">
         <label className="flex items-center justify-between font-mono text-[10.5px] uppercase tracking-[0.14em] text-ink-3 mb-[10px]">
-          <span>{t.zipForm.label}</span>
+          <span>{labelText}</span>
           <span className="text-civic">
             {lang === "es"
               ? "Permanece en este dispositivo"
@@ -113,10 +132,10 @@ export function ZipForm({ onSubmit }: ZipFormProps) {
                   ? "sr-only"
                   : "w-full bg-paper border border-rule rounded-lg px-4 py-[14px] text-[15px] text-ink placeholder:text-ink-3 outline-none focus:border-civic transition-colors"
               }
-              placeholder={t.zipForm.placeholder}
+              placeholder={placeholderText}
               autoComplete="street-address"
               aria-describedby={errorMessage ? "zip-error" : "address-privacy"}
-              aria-label={t.zipForm.label}
+              aria-label={labelText}
             />
           </div>
           <button
@@ -140,6 +159,58 @@ export function ZipForm({ onSubmit }: ZipFormProps) {
               : "Start typing and choose your address from the dropdown."}
           </p>
         )}
+        {/* Trust-hint row — prototype `.addr-card .hint` (prototype-views.jsx:
+            57-61): three dotted items rendered as a flex row of civic dots +
+            text directly under the input. */}
+        <div
+          id="address-privacy"
+          className="flex flex-wrap gap-4 text-[12.5px] text-ink-3 mt-3"
+        >
+          <span className="inline-flex items-center gap-1.5">
+            <span
+              aria-hidden="true"
+              className="w-[5px] h-[5px] rounded-full bg-civic"
+            />
+            {lang === "es" ? "Sin cuenta" : "No account"}
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <span
+              aria-hidden="true"
+              className="w-[5px] h-[5px] rounded-full bg-civic"
+            />
+            {lang === "es" ? "Sin rastreo" : "No tracking"}
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <span
+              aria-hidden="true"
+              className="w-[5px] h-[5px] rounded-full bg-civic"
+            />
+            {lang === "es"
+              ? "Civic API · la dirección nunca se almacena"
+              : "Civic API · address never stored"}
+          </span>
+        </div>
+        {/* Returning-user resume line — prototype `.addr-card .resume`
+            (prototype-views.jsx:62-67). Only rendered when the parent supplies
+            an onResumeFromProfile handler that opens the ProfileResumeModal. */}
+        {onResumeFromProfile && (
+          <div className="text-[12.5px] text-ink-3 mt-2.5">
+            {lang === "es" ? "¿Has estado aquí antes? " : "Been here before? "}
+            <a
+              onClick={onResumeFromProfile}
+              className="text-civic underline cursor-pointer"
+              role="link"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") onResumeFromProfile();
+              }}
+            >
+              {lang === "es"
+                ? "Carga tu perfil .txt guardado →"
+                : "Drop your saved .txt profile →"}
+            </a>
+          </div>
+        )}
       </div>
       {errorMessage && (
         <p
@@ -151,12 +222,6 @@ export function ZipForm({ onSubmit }: ZipFormProps) {
           {errorMessage}
         </p>
       )}
-      <p
-        id="address-privacy"
-        className="text-[12.5px] text-ink-3 mt-3 leading-relaxed"
-      >
-        {t.zipForm.privacy}
-      </p>
     </form>
   );
 }

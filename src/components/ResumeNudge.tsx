@@ -27,13 +27,11 @@ interface ResumeNudgeProps {
  * Intended mount point: src/app/page.tsx — inline section below the address
  * card, above HowItWorksWalkthrough.  No new file required per COMPONENT_MAP §2.
  *
- * NEEDS-KEY: landing.returningResume — EN "Resume" / ES "Continuar"
- * NEEDS-KEY: landing.returningStartOver — EN "Start over" / ES "Empezar de nuevo"
- * NEEDS-KEY: landing.returningSubtext (function-valued form) —
- *   EN (decided: number, total: number) => `${decided} of ${total} races decided`
- *   ES (decided: number, total: number) => `${decided} de ${total} carreras decididas`
- *   (Current key exists but is a plain string describing the upload flow, not
- *   the counted-races summary the prototype uses.)
+ * Copy is fully wired to translations: landing.returningSubtext is the
+ * function-valued form `(decided, total) => string` matching the prototype's
+ * "You have a draft ballot saved on this device — {decided} of {total} races
+ * decided. Resume now, or start fresh." sentence; returningResume renders
+ * "Resume my session →" and returningStartOver "Start over".
  */
 export function ResumeNudge({
   saved,
@@ -47,14 +45,6 @@ export function ResumeNudge({
   const decided = Object.keys(saved.decisions ?? {}).length;
   const hasDraft = decided > 0 || (saved.issues ?? []).length > 0;
   if (!hasDraft) return null;
-
-  // NEEDS-KEY: landing.returningSubtext as interpolated function.
-  // Until the key ships as `(decided, total) => string`, we render a
-  // plain fallback that conveys the count without a translation gap.
-  const subtextFallback =
-    lang === "es"
-      ? `${decided} de ${totalRaces} carreras decididas`
-      : `${decided} of ${totalRaces} races decided`;
 
   return (
     <aside
@@ -82,9 +72,9 @@ export function ResumeNudge({
         {t.landing.returningHeadline}
       </h3>
 
-      {/* Subtext — uses counted fallback since key is not yet function-valued */}
+      {/* Subtext — full prototype sentence via the interpolated key. */}
       <p className="m-0 mb-3.5 text-[14px] leading-[1.55] text-ink-2">
-        {subtextFallback}
+        {t.landing.returningSubtext(decided, totalRaces)}
       </p>
 
       {/* Actions */}
@@ -94,16 +84,14 @@ export function ResumeNudge({
           className="bg-civic text-paper-2 border-0 rounded-lg px-[18px] py-[11px] font-semibold text-[14px] cursor-pointer hover:bg-civic-2 transition-colors min-h-[44px]"
           onClick={onResume}
         >
-          {/* NEEDS-KEY: landing.returningResume */}
-          {lang === "es" ? "Continuar" : "Resume"}
+          {t.landing.returningResume}
         </button>
         <button
           type="button"
           className="bg-transparent border border-rule rounded-lg px-4 py-[11px] text-[13.5px] text-ink-2 cursor-pointer hover:border-ink-2 hover:text-ink transition-colors min-h-[44px]"
           onClick={onStartOver}
         >
-          {/* NEEDS-KEY: landing.returningStartOver */}
-          {lang === "es" ? "Empezar de nuevo" : "Start over"}
+          {t.landing.returningStartOver}
         </button>
       </div>
     </aside>

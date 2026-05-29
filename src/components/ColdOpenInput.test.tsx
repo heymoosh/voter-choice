@@ -116,11 +116,13 @@ describe("ColdOpenInput", () => {
       ).toBeInTheDocument();
     });
 
-    it("hides the 'Show me an example' affordance when textarea has content", () => {
+    it("keeps the 'Show me an example' affordance visible when textarea has content", () => {
+      // PR D — faithful to prototype-views.jsx 252-255: both starter chips show
+      // for the ENTIRE prompt phase, independent of draft length. The earlier
+      // `isEmpty` gate (which hid them as soon as the user typed) was
+      // deliberately dropped to match the prototype.
       renderInput({ initialDraft: "I care about healthcare" });
-      expect(
-        screen.queryByTestId("cold-open-show-example"),
-      ).not.toBeInTheDocument();
+      expect(screen.getByTestId("cold-open-show-example")).toBeInTheDocument();
     });
 
     it("preloads the textarea from initialDraft", () => {

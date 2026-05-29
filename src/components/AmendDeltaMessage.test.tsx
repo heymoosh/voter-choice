@@ -7,36 +7,15 @@ import { AmendDeltaMessage } from "./AmendDeltaMessage";
 import type { VerdictDecision } from "../lib/server/decide-verdict";
 
 function holdRace(id: string, label = `Race ${id}`): VerdictDecision {
-  return {
-    raceId: id,
-    raceLabel: label,
-    oldScore: 70,
-    newScore: 70,
-    delta: 0,
-    verdict: "HOLD",
-  };
+  return { raceId: id, raceLabel: label, verdict: "HOLD" };
 }
 
 function revisitRace(id: string, label = `Race ${id}`): VerdictDecision {
-  return {
-    raceId: id,
-    raceLabel: label,
-    oldScore: 80,
-    newScore: 60,
-    delta: -20,
-    verdict: "REVISIT",
-  };
+  return { raceId: id, raceLabel: label, verdict: "REVISIT" };
 }
 
 function naRace(id: string, label = `Race ${id}`): VerdictDecision {
-  return {
-    raceId: id,
-    raceLabel: label,
-    oldScore: 0,
-    newScore: 0,
-    delta: 0,
-    verdict: "N/A",
-  };
+  return { raceId: id, raceLabel: label, verdict: "N/A" };
 }
 
 describe("AmendDeltaMessage", () => {

@@ -8,10 +8,14 @@ import type { Theme } from "./types";
  *     "new_theme":      { "name": "...", "quotes": ["..."] },
  *     "suggested_rank": <integer>,
  *     "rescored": [
- *       { "race_id": "...", "old_score": 82, "new_score": 76,
- *         "verdict": "REVISIT" | "HOLD" | "N/A" }
+ *       { "race_id": "...", "verdict": "REVISIT" | "HOLD" | "N/A" }
  *     ]
  *   }
+ *
+ * D-1: the prompt no longer emits alignment scores (old_score/new_score) and
+ * no longer ranks candidates against one another. Each `rescored` row carries
+ * only a per-issue relevance `verdict`. Any legacy score fields in the payload
+ * are simply ignored.
  *
  * Tolerates:
  *   · surrounding whitespace
@@ -25,25 +29,17 @@ import type { Theme } from "./types";
  * Drops malformed individual `rescored` items with `console.warn` and keeps
  * the valid ones — same defensive pattern as `parse-theme-extraction.ts`.
  * Returns `rescored: []` (with warn) when the whole field is missing.
- *
- * The prompt also writes its own `verdict` per row, but the runtime uses
- * `decideVerdict()` to compute the verdict locally when per-candidate score
- * data is available. We surface the prompt's verdict as `verdictHint` so the
- * runtime can fall back to it in the v1 path where the runtime lacks
- * other-candidate scores.
  */
 
 export interface ParsedRescoredRace {
   raceId: string;
-  oldScore: number;
-  newScore: number;
   /**
-   * The verdict string from the prompt's JSON, if present. Used as a fallback
-   * by the runtime when `otherCandidateScores` aren't available for the
-   * `decideVerdict()` pure function. Treat as unverified — `decideVerdict()`
-   * is the source of truth when its inputs are available.
+   * The per-race verdict string from the prompt: "REVISIT" (the new priority
+   * is relevant to this race), "HOLD" (not relevant / no change), or "N/A"
+   * (proposition). D-1: a relevance signal only — never a score comparison or
+   * a cross-candidate ranking. `undefined` when the prompt omitted it.
    */
-  verdictHint?: string;
+  verdict?: string;
 }
 
 export interface ParsedThemeAmendment {
@@ -85,10 +81,7 @@ function parseRescoredArray(value: unknown): ParsedRescoredRace[] {
     if (isValidRescoredItem(item)) {
       out.push({
         raceId: item.race_id,
-        oldScore: item.old_score,
-        newScore: item.new_score,
-        verdictHint:
-          typeof item.verdict === "string" ? item.verdict : undefined,
+        verdict: typeof item.verdict === "string" ? item.verdict : undefined,
       });
     } else {
       console.warn(
@@ -146,14 +139,9 @@ function isValidTheme(
 
 function isValidRescoredItem(item: unknown): item is {
   race_id: string;
-  old_score: number;
-  new_score: number;
   verdict?: unknown;
 } {
   if (typeof item !== "object" || item === null) return false;
   const record = item as Record<string, unknown>;
-  if (typeof record.race_id !== "string") return false;
-  if (typeof record.old_score !== "number") return false;
-  if (typeof record.new_score !== "number") return false;
-  return true;
+  return typeof record.race_id === "string";
 }

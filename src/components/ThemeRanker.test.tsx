@@ -131,9 +131,14 @@ describe("ThemeRanker", () => {
   });
 
   describe("inline rename", () => {
+    // Two-state rename, faithful to the prototype's IssueRow
+    // (prototype-components.jsx 168-184): the name is static serif text with a
+    // mono "rename" pill in read mode; the <input> only mounts after the pill
+    // is clicked. Each test enters edit mode first via theme-rename-0.
     it("blur commits the new name via onChange", () => {
       const onChange = vi.fn();
       renderRanker({ themes: twoThemes, onChange });
+      fireEvent.click(screen.getByTestId("theme-rename-0"));
       const input = screen.getByTestId("theme-name-input-0");
       fireEvent.change(input, { target: { value: "Insulin prices" } });
       fireEvent.blur(input);
@@ -147,6 +152,7 @@ describe("ThemeRanker", () => {
     it("Escape reverts and does not commit the typed text", () => {
       const onChange = vi.fn();
       renderRanker({ themes: twoThemes, onChange });
+      fireEvent.click(screen.getByTestId("theme-rename-0"));
       const input = screen.getByTestId(
         "theme-name-input-0",
       ) as HTMLInputElement;
@@ -157,13 +163,21 @@ describe("ThemeRanker", () => {
         (call) => call[0][0]?.name === "something else",
       );
       expect(sawTypedText).toBe(false);
-      // Displayed value reverts to the original name.
-      expect(input.value).toBe(twoThemes[0].name);
+      // Escape closes edit mode (the input unmounts) and the static name
+      // display reverts to the original committed value. (Faithful to the
+      // prototype IssueRow Escape handler, prototype-components.jsx:176.)
+      expect(
+        screen.queryByTestId("theme-name-input-0"),
+      ).not.toBeInTheDocument();
+      expect(screen.getByTestId("theme-name-0")).toHaveTextContent(
+        twoThemes[0].name,
+      );
     });
 
     it("Enter commits the new name", () => {
       const onChange = vi.fn();
       renderRanker({ themes: twoThemes, onChange });
+      fireEvent.click(screen.getByTestId("theme-rename-0"));
       const input = screen.getByTestId("theme-name-input-0");
       fireEvent.change(input, { target: { value: "Insulin prices" } });
       fireEvent.keyDown(input, { key: "Enter" });

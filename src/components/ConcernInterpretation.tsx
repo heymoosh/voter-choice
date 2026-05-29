@@ -401,6 +401,26 @@ function ThemesView({
           </div>
         </article>
       )}
+      {/* PR D — post-extraction AI "Got it…" bubble. Mirrors the prototype's
+          second `.msg.ai` after the thinking phase (prototype-views.jsx
+          266-274): it states the issue count and is the only place the UI
+          explains that locked issues drive per-vote candidate scoring.
+          Matches the AI-opener bubble shape rendered in ChatPanel
+          (`.msg.ai .bubble`, asymmetric radius 4/14/14/14). */}
+      <article
+        data-testid="cold-open-got-it"
+        className="flex flex-col items-start gap-1.5 mb-3"
+      >
+        <span className="font-mono text-[10.5px] uppercase tracking-[0.12em] text-ink-3">
+          Voter Choice · AI
+        </span>
+        <div
+          className="bg-paper-2 border border-rule px-4 py-3.5 text-[14.5px] leading-relaxed text-ink max-w-[540px]"
+          style={{ borderRadius: "4px 14px 14px 14px" }}
+        >
+          <p className="m-0">{t.coldOpenGotIt(themes.length)}</p>
+        </div>
+      </article>
       <section
         data-testid="concern-interpretation-themes"
         className="bg-paper-2 border border-rule rounded-xl p-4 md:p-5 space-y-4"
@@ -413,11 +433,14 @@ function ThemesView({
             <h3 className="font-serif text-lg md:text-xl font-semibold text-ink leading-tight tracking-tight">
               {t.concernInterpretationThemesHeading}
             </h3>
+            {/* PR D — prototype `.of` chip vocabulary is "issue(s)", not
+                "theme(s)" (prototype-views.jsx 281). Internal type names stay
+                `Theme`; only the user-facing noun matches the prototype. */}
             <span
               data-testid="theme-count-indicator"
               className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-ink-3 shrink-0"
             >
-              {themes.length} {themes.length === 1 ? "theme" : "themes"} ·
+              {themes.length} {themes.length === 1 ? "issue" : "issues"} ·
               inferred
             </span>
           </div>

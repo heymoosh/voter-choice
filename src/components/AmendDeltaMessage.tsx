@@ -8,7 +8,7 @@ import type { VerdictDecision } from "../lib/server/decide-verdict";
  * user locks a theme amendment.
  *
  * Renders verbatim from the verdict decisions:
- *   · Heading: "Re-scored N races after adding '<new theme>'"
+ *   · Heading: "Re-checked N races after adding '<new theme>'"
  *   · Summary line: counts of REVISIT / HOLD / N/A
  *   · REVISIT block (prominent): top 3 by raceLabel order; "+M more to review"
  *     overflow affordance when >3
@@ -32,11 +32,6 @@ export interface AmendDeltaMessageProps {
 }
 
 const REVISIT_PREVIEW_LIMIT = 3;
-
-function formatDelta(d: number): string {
-  if (d === 0) return "±0";
-  return d > 0 ? `+${d}` : String(d);
-}
 
 function VerdictRow({
   verdict,
@@ -65,28 +60,13 @@ function VerdictRow({
       data-testid={`amend-delta-row-${verdict.raceId}`}
       data-revisit={prominent ? "true" : "false"}
       className={
-        "flex items-baseline justify-between gap-3 px-3 py-2 text-sm " +
+        "flex items-baseline gap-3 px-3 py-2 text-sm " +
         (prominent
           ? "bg-amber-50 border-l-2 border-amber-500 text-on-surface"
           : "text-on-surface-muted")
       }
     >
       <div className="min-w-0 flex-1 truncate">{labelButton}</div>
-      <div className="shrink-0 tabular-nums text-xs">
-        {verdict.oldScore} → {verdict.newScore}{" "}
-        <span
-          className={
-            "ml-1 " +
-            (verdict.delta < 0
-              ? "text-rose-700 font-bold"
-              : verdict.delta > 0
-                ? "text-emerald-700 font-bold"
-                : "text-on-surface-muted")
-          }
-        >
-          ({formatDelta(verdict.delta)})
-        </span>
-      </div>
     </li>
   );
 }
@@ -116,8 +96,8 @@ export function AmendDeltaMessage({
     >
       <header className="mb-2">
         <h3 className="text-sm font-black text-on-surface">
-          Re-scored {verdicts.length} {verdicts.length === 1 ? "race" : "races"}{" "}
-          after adding &ldquo;
+          Re-checked {verdicts.length}{" "}
+          {verdicts.length === 1 ? "race" : "races"} after adding &ldquo;
           {newThemeName}&rdquo;
         </h3>
         {verdicts.length > 0 ? (

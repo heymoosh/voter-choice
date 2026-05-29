@@ -2,28 +2,25 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { parseThemeAmendment } from "./parse-theme-amendment";
 
 /**
- * Parser for the Phase 4 theme-amendment prompt response.
+ * Parser for the Phase 6 theme-amendment prompt response (D-1 reframe).
  *
  * Expected JSON shape (from docs/design/2026-redesign/prompts.md §4):
  *   {
  *     "new_theme": { "name": "...", "quotes": [...] },
  *     "suggested_rank": 1,
  *     "rescored": [
- *       { "race_id": "...", "old_score": 82, "new_score": 76,
- *         "verdict": "REVISIT" | "HOLD" | "N/A" }
+ *       { "race_id": "...", "verdict": "REVISIT" | "HOLD" | "N/A" }
  *     ]
  *   }
+ *
+ * D-1: rows no longer carry alignment scores. Each row is just a per-issue
+ * relevance verdict. Any legacy score fields are ignored.
  *
  * Mirrors parse-theme-extraction's tolerance contract:
  *   · trim whitespace
  *   · strip ```json / ``` fences
  *   · throw on top-level JSON failure or missing top-level shape
- *   · drop individual malformed `rescored` items with console.warn
- *
- * `verdict` is preserved as `verdictHint` because runtime ultimately overrides
- * with the pure-function `decideVerdict()` (when candidate-score data is
- * available) — the hint is a fallback for v1 where the runtime lacks
- * per-candidate score data.
+ *   · drop individual `rescored` items with a non-string race_id (console.warn)
  */
 describe("parseThemeAmendment", () => {
   let warnSpy: ReturnType<typeof vi.spyOn>;
@@ -44,24 +41,9 @@ describe("parseThemeAmendment", () => {
       },
       suggested_rank: 1,
       rescored: [
-        {
-          race_id: "us-house-tx-07",
-          old_score: 82,
-          new_score: 76,
-          verdict: "REVISIT",
-        },
-        {
-          race_id: "us-senate",
-          old_score: 70,
-          new_score: 70,
-          verdict: "HOLD",
-        },
-        {
-          race_id: "prop-1",
-          old_score: 0,
-          new_score: 0,
-          verdict: "N/A",
-        },
+        { race_id: "us-house-tx-07", verdict: "REVISIT" },
+        { race_id: "us-senate", verdict: "HOLD" },
+        { race_id: "prop-1", verdict: "N/A" },
       ],
     };
   }
@@ -75,25 +57,27 @@ describe("parseThemeAmendment", () => {
     });
     expect(out.suggestedRank).toBe(1);
     expect(out.rescored).toEqual([
-      {
-        raceId: "us-house-tx-07",
-        oldScore: 82,
-        newScore: 76,
-        verdictHint: "REVISIT",
-      },
-      {
-        raceId: "us-senate",
-        oldScore: 70,
-        newScore: 70,
-        verdictHint: "HOLD",
-      },
-      {
-        raceId: "prop-1",
-        oldScore: 0,
-        newScore: 0,
-        verdictHint: "N/A",
-      },
+      { raceId: "us-house-tx-07", verdict: "REVISIT" },
+      { raceId: "us-senate", verdict: "HOLD" },
+      { raceId: "prop-1", verdict: "N/A" },
     ]);
+  });
+
+  it("ignores legacy score fields if a model still emits them", () => {
+    const legacy = {
+      new_theme: { name: "X", quotes: ["y"] },
+      suggested_rank: 1,
+      rescored: [
+        {
+          race_id: "us-senate",
+          old_score: 82,
+          new_score: 76,
+          verdict: "REVISIT",
+        },
+      ],
+    };
+    const out = parseThemeAmendment(JSON.stringify(legacy));
+    expect(out.rescored).toEqual([{ raceId: "us-senate", verdict: "REVISIT" }]);
   });
 
   it("strips ```json ... ``` fences before parsing", () => {
@@ -154,24 +138,14 @@ describe("parseThemeAmendment", () => {
     expect(warnSpy).toHaveBeenCalled();
   });
 
-  it("drops malformed rescored items but keeps valid ones (with console.warn)", () => {
+  it("drops items with a non-string race_id but keeps valid ones (with console.warn)", () => {
     const mixed = {
       ...fullPayload(),
       rescored: [
-        {
-          race_id: "good-1",
-          old_score: 80,
-          new_score: 70,
-          verdict: "HOLD",
-        },
-        { race_id: "bad-no-scores", verdict: "HOLD" }, // missing scores
-        { race_id: 123, old_score: 1, new_score: 2, verdict: "HOLD" }, // wrong type
-        {
-          race_id: "good-2",
-          old_score: 50,
-          new_score: 55,
-          verdict: "HOLD",
-        },
+        { race_id: "good-1", verdict: "HOLD" },
+        { verdict: "HOLD" }, // missing race_id
+        { race_id: 123, verdict: "HOLD" }, // wrong type
+        { race_id: "good-2", verdict: "REVISIT" },
       ],
     };
     const out = parseThemeAmendment(JSON.stringify(mixed));
@@ -206,24 +180,16 @@ describe("parseThemeAmendment", () => {
     expect(out.rescored).toEqual([]);
   });
 
-  it("preserves unknown verdict strings as verdictHint passthrough (undefined when missing)", () => {
+  it("sets verdict to undefined when the prompt omitted it", () => {
     const payload = {
       new_theme: { name: "X", quotes: ["y"] },
       suggested_rank: 1,
-      rescored: [
-        {
-          race_id: "no-verdict",
-          old_score: 10,
-          new_score: 5,
-        },
-      ],
+      rescored: [{ race_id: "no-verdict" }],
     };
     const out = parseThemeAmendment(JSON.stringify(payload));
     expect(out.rescored[0]).toEqual({
       raceId: "no-verdict",
-      oldScore: 10,
-      newScore: 5,
-      verdictHint: undefined,
+      verdict: undefined,
     });
   });
 });
