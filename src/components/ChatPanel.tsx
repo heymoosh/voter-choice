@@ -20,6 +20,7 @@ import { MarkdownText } from "./MarkdownText";
 import { ValuesTagSelector } from "./ValuesTagSelector";
 import type { SubmitPayload, RankedEntry } from "./ValuesTagSelector";
 import { RacePatterns } from "./RacePatterns";
+import { ProcessingSteps } from "./ProcessingSteps";
 import { CompareModal } from "./CompareModal";
 import { AllVotesPanel } from "./AllVotesPanel";
 import { AITimeoutBanner } from "./AITimeoutBanner";
@@ -1131,34 +1132,48 @@ function RacePatternsLoadingPlaceholder({
   variant?: "race" | "alignment";
 }) {
   const { lang } = useLanguage();
-  const label =
-    variant === "alignment"
-      ? lang === "es"
-        ? "Calculando puntajes de alineación…"
-        : "Computing alignment scores…"
-      : lang === "es"
-        ? "Cargando tarjetas de candidatos…"
-        : "Loading candidate cards…";
+  const es = lang === "es";
+  // This is the slow step the user flagged (2026-05): after issues are locked,
+  // the workspace auto-opens the first race and the /api/chat deep-dive streams
+  // the candidate cards + alignment scores — a real 10–30s wait. Per product
+  // direction we surface the prototype's multi-step processing UI here (the
+  // same UI prototype uses for ballot extraction), tuned to the candidate-
+  // assessment work. NOT used on the fast ballot upload. `variant` is retained
+  // for call-site compatibility; both narrate the same assessment arc.
+  // NEEDS-KEY: workspace.assessing* — EN below / ES inline (this component
+  // already localized its loader strings inline pre-redesign).
+  void variant;
+  const content = es
+    ? {
+        eyebrow: "Evaluando candidatos",
+        heading: "Comparando cada candidato con tus prioridades.",
+        steps: [
+          "Leyendo tus prioridades",
+          "Revisando el historial de cada candidato",
+          "Calculando la alineación con tus prioridades",
+          "Preparando tu comparación de candidatos",
+        ],
+        hint: "Anthropic está leyendo el historial de cada candidato, comparándolo con las prioridades que clasificaste y midiendo qué tan bien se alinean. Esto suele tardar de 10 a 30 segundos — no actualices; tu progreso se guarda en este dispositivo.",
+      }
+    : {
+        eyebrow: "Assessing candidates",
+        heading: "Matching each candidate to your issues.",
+        steps: [
+          "Reading your issues",
+          "Pulling each candidate's record",
+          "Scoring alignment with your issues",
+          "Building your candidate comparison",
+        ],
+        hint: "Anthropic is reading each candidate's record, matching it to the issues you ranked, and scoring how well they align. This usually takes 10–30 seconds — don't refresh; your progress is saved on this device.",
+      };
   return (
-    <div
-      data-testid="race-patterns-loading"
-      className="my-4 bg-surface-low border-l-4 border-primary/40 p-4 flex items-center gap-3 animate-pulse"
-    >
-      <svg
-        className="w-4 h-4 text-primary shrink-0"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-      >
-        <path d="M21 12a9 9 0 1 1-6.219-8.56" />
-      </svg>
-      <span className="text-xs font-bold uppercase tracking-widest text-on-surface-muted">
-        {label}
-      </span>
+    <div data-testid="race-patterns-loading" className="my-4">
+      <ProcessingSteps
+        eyebrow={content.eyebrow}
+        heading={content.heading}
+        steps={content.steps}
+        hint={content.hint}
+      />
     </div>
   );
 }

@@ -123,7 +123,7 @@
   },
   "resources": {
     "stateElectionWebsite": "https://www.state.nj.us/state/elections/index.shtml",
-    "countyElectionLookup": "https://www.nj.gov/state/elections/county-boards.shtml",
+    "countyElectionLookup": "https://www.vote.nj.gov/vote-county-election-officials.shtml",
     "sampleBallotLookup": "https://voter.svrs.nj.gov/",
     "pollingPlaceLookup": "https://voter.svrs.nj.gov/polling-place"
   },
