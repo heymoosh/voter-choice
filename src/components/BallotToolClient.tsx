@@ -1579,6 +1579,36 @@ function WorkspaceShell({
     setPrintViewActive(false);
   }, []);
 
+  // ── Mobile workspace (Pattern B — ballot-first) ──────────────────────
+  // ≤767px the 3-pane grid collapses: the rail hides, the ballot becomes the
+  // full-width primary surface, and the center chat opens as a fixed
+  // full-screen sheet. We AUTO-OPEN the sheet on workspace ENTRY so the user
+  // lands on race-1's streaming assessment (the 4-step ProcessingSteps loader)
+  // — the assessment auto-fires on ChatPanel mount regardless of sheet
+  // visibility, so a closed sheet would hide the loader entirely (the reported
+  // "didn't see the progress bars"). On every SUBSEQUENT race change we reset
+  // to the ballot. Desktop ignores this state (sheet classes only apply
+  // ≤767px). Faithful to prototype-views.jsx:327-340.
+  const [mobileChatOpen, setMobileChatOpen] = useState(true);
+  const mobileChatDidMount = useRef(false);
+  useEffect(() => {
+    if (!mobileChatDidMount.current) {
+      mobileChatDidMount.current = true;
+      return; // keep the entry auto-open; only reset on real race switches
+    }
+    setMobileChatOpen(false);
+  }, [activeRaceId]);
+  // Selecting a race from the ballot opens the chat sheet. Defer the open to
+  // the next tick so it lands AFTER the activeRaceId-change effect above (which
+  // sets it false). Mirrors the prototype's selectAndOpenChat.
+  const selectAndOpenChat = useCallback(
+    (raceId: string) => {
+      onSelectRace(raceId);
+      setTimeout(() => setMobileChatOpen(true), 0);
+    },
+    [onSelectRace],
+  );
+
   // Blind mode — hides candidate names until the user explicitly reveals them.
   // Prototype WorkspaceView ~492–510.
   // Task 1: default TRUE (privacy-first) per prototype `saved?.blindMode !== false`.
@@ -1997,120 +2027,150 @@ function WorkspaceShell({
         // PR A2 — viewport math accounts for the prototype AppNav (~63px,
         // uniform). Column widths match the prototype's 240/1fr/380 grid.
         // Outer div is now flex-col; this inner div fills remaining height.
-        className="grid flex-1 min-h-0"
-        style={{ gridTemplateColumns: "240px 1fr 380px" }}
+        // Responsive 3-pane → tablet 2-pane → mobile 1-pane (Pattern B).
+        // ≥1024: rail | chat | ballot (240/1fr/380). 768-1023: chat | ballot
+        // (rail hidden). ≤767: single column — ballot is primary; chat opens
+        // as a fixed full-screen sheet. The old inline grid `style` is removed
+        // so these breakpoint variants can take effect. Prototype prototype.css
+        // :636, 2391-2432.
+        className="grid flex-1 min-h-0 grid-cols-1 min-[768px]:grid-cols-[1fr_380px] min-[1024px]:grid-cols-[240px_1fr_380px]"
       >
-        <WorkspaceRail
-          decidedCount={decisions.length}
-          totalRaces={races.length}
-          themes={themes}
-          races={racesWithDecided}
-          activeRaceId={activeRaceId}
-          onSelectRace={onSelectRace}
-          onEditThemes={onEditThemes}
-          onRestart={onRestart}
-          // Fix E — Polis surface lives in the rail. Thread location through
-          // so WorkspacePolisSection can fetch /api/polis/{bars,bridges,compass}
-          // once the user opts in by expanding the section.
-          stateCode={state.stateCode}
-          county={pollingData?.county ?? countyName}
-          countyName={countyName}
-        />
-
-        <div className="flex h-full flex-col overflow-hidden">
-          <ChatPanel
-            // Re-key by activeRace.id so the entire ChatPanel (and its
-            // `messages` state) resets across race switches. This is the
-            // per-race scope contract — UI mirrors what the chat route
-            // already enforces server-side from Phase 1.
-            key={`workspace-chat-${activeRace?.id ?? "none"}`}
-            state={state}
-            zipCode={zipCode}
-            pollingData={pollingData ?? undefined}
-            onBudgetUpdate={onBudgetUpdate}
-            voterProfile={voterProfile}
+        {/* Left rail — hidden below 1024px (tablet/mobile). Its issues-edit
+            affordance relocates into the ballot (BallotPane) below. */}
+        <div className="hidden min-h-0 min-[1024px]:flex min-[1024px]:flex-col">
+          <WorkspaceRail
+            decidedCount={decisions.length}
+            totalRaces={races.length}
+            themes={themes}
+            races={racesWithDecided}
+            activeRaceId={activeRaceId}
+            onSelectRace={onSelectRace}
+            onEditThemes={onEditThemes}
+            onRestart={onRestart}
+            // Fix E — Polis surface lives in the rail. Thread location through
+            // so WorkspacePolisSection can fetch /api/polis/{bars,bridges,compass}
+            // once the user opts in by expanding the section.
+            stateCode={state.stateCode}
+            county={pollingData?.county ?? countyName}
             countyName={countyName}
-            userSampleBallotText={userSampleBallotText}
-            preResearchContext={preResearchContext}
-            primary={primaryLane}
-            onChatStarted={onChatStarted}
-            promptFleetV2Enabled={promptFleetV2Enabled}
-            onLockInThemes={onLockInThemes}
-            ballotContext={ballotContext}
-            onBudgetExhausted={handleBudgetExhausted}
-            // PR 7 — externally controlled "budget out" flag so the chat
-            // input renders the visible-but-disabled state with a notice
-            // (instead of the entire workspace being replaced). Keyed off
-            // `budgetOut`, NOT `overlayDismissed` — dismissing the dialog
-            // is a pure UI action; the chat stays gated until BYOK / reset.
-            budgetExhausted={!!budgetOut}
-            gateVariant={budgetOut?.variant}
-            // Blind mode — cross-file contract with ChatPanel (tasks 1-3).
-            blindMode={blindMode}
-            revealedCandidates={revealedCandidates}
-            onRevealCandidate={onRevealCandidate}
-            onToggleBlindMode={onToggleBlindMode}
-            onHideCandidate={onHideCandidate}
-            // Task 4: locked value themes mapped to ConcernInterpretationEntry[]
-            // for CompareModal's per-issue rows. canonicalIssue is absent
-            // (Theme has no canonicalIssue) — alignment-score rows will render "—".
-            issues={issueItems}
-            workspace={{
-              activeRace: activeRace
-                ? {
-                    id: activeRace.id,
-                    label: activeRace.label,
-                    section: activeRace.section,
-                    // Prefer the Race's own candidates (the deriver now
-                    // propagates them through ContestLike → Race) and fall
-                    // back to the polling-data lookup for any Civic-API
-                    // shape where the deriver wasn't fed candidates. The
-                    // chat path's race-deep-dive builder needs this to
-                    // render its <ground_truth> tag.
-                    candidates:
-                      activeRace.candidates.length > 0
-                        ? activeRace.candidates
-                        : candidatesForActive,
-                  }
-                : null,
-              totalRaces: racesWithDecided.length,
-              activeRaceIndex: activeRaceIndex,
-              decided: !!activeDecision,
-              prevActiveRaceId: prevActiveRaceIdRef.current,
-              onCommitDecision,
-              onUnpickDecision,
-              // Real-fix: surface prior decisions so ChatPanel can render
-              // `decidedSummary` for the race-deep-dive builder.
-              decisions,
-              // Phase 6 amendment plumbing — see ChatPanel.WorkspaceModeProps.
-              pendingAmendment,
-              amendmentInFlight,
-              lockedThemes: themes,
-              chatCatchSuggestion,
-              onChatCatch,
-              onChatCatchAccept,
-              onChatCatchDismiss,
-              onAmendmentSave,
-              onAmendmentInFlightChange,
-              onAmendmentDiscard,
-              // PR3 — opt-in re-score offer plumbing.
-              pendingRescoreOffer,
-              onRescoreOfferClear,
-              // Race-id → human label lookup so AmendDeltaMessage rows show
-              // "U.S. House — TX-07" instead of the raw race id. Built from
-              // races (not decisions) so undecided races also resolve.
-              raceLabelLookup: Object.fromEntries(
-                racesWithDecided.map((r) => [r.id, r.label]),
-              ),
-              // P0 #1 (live audit) — auto-fire a "Introduce this race…"
-              // synthetic user message on mount so the model streams a
-              // context-aware AI greeting before the voter speaks. Pre-fix
-              // the chat opened EMPTY (only the placeholder "Ask anything
-              // about U.S. Senate." with no AI bubble). The synthetic user
-              // message is `hidden`, so only the AI bubble renders.
-              autoFireRaceIntro: true,
-            }}
           />
+        </div>
+
+        <div
+          className={`flex flex-col overflow-hidden min-[768px]:h-full ${
+            mobileChatOpen
+              ? "max-[767px]:fixed max-[767px]:inset-0 max-[767px]:z-50 max-[767px]:bg-paper-2"
+              : "max-[767px]:hidden"
+          }`}
+        >
+          {/* Mobile-only "← Back to ballot" — dismisses the chat sheet.
+              Hidden ≥768px. */}
+          <button
+            type="button"
+            onClick={() => setMobileChatOpen(false)}
+            aria-label="Back to ballot"
+            className="hidden max-[767px]:flex shrink-0 items-center gap-2 border-b border-rule px-4 py-3 font-mono text-[11px] uppercase tracking-[0.14em] text-ink-2"
+          >
+            <span aria-hidden="true" className="text-base">
+              ←
+            </span>
+            Back to ballot
+          </button>
+          <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+            <ChatPanel
+              // Re-key by activeRace.id so the entire ChatPanel (and its
+              // `messages` state) resets across race switches. This is the
+              // per-race scope contract — UI mirrors what the chat route
+              // already enforces server-side from Phase 1.
+              key={`workspace-chat-${activeRace?.id ?? "none"}`}
+              state={state}
+              zipCode={zipCode}
+              pollingData={pollingData ?? undefined}
+              onBudgetUpdate={onBudgetUpdate}
+              voterProfile={voterProfile}
+              countyName={countyName}
+              userSampleBallotText={userSampleBallotText}
+              preResearchContext={preResearchContext}
+              primary={primaryLane}
+              onChatStarted={onChatStarted}
+              promptFleetV2Enabled={promptFleetV2Enabled}
+              onLockInThemes={onLockInThemes}
+              ballotContext={ballotContext}
+              onBudgetExhausted={handleBudgetExhausted}
+              // PR 7 — externally controlled "budget out" flag so the chat
+              // input renders the visible-but-disabled state with a notice
+              // (instead of the entire workspace being replaced). Keyed off
+              // `budgetOut`, NOT `overlayDismissed` — dismissing the dialog
+              // is a pure UI action; the chat stays gated until BYOK / reset.
+              budgetExhausted={!!budgetOut}
+              gateVariant={budgetOut?.variant}
+              // Blind mode — cross-file contract with ChatPanel (tasks 1-3).
+              blindMode={blindMode}
+              revealedCandidates={revealedCandidates}
+              onRevealCandidate={onRevealCandidate}
+              onToggleBlindMode={onToggleBlindMode}
+              onHideCandidate={onHideCandidate}
+              // Task 4: locked value themes mapped to ConcernInterpretationEntry[]
+              // for CompareModal's per-issue rows. canonicalIssue is absent
+              // (Theme has no canonicalIssue) — alignment-score rows will render "—".
+              issues={issueItems}
+              workspace={{
+                activeRace: activeRace
+                  ? {
+                      id: activeRace.id,
+                      label: activeRace.label,
+                      section: activeRace.section,
+                      // Prefer the Race's own candidates (the deriver now
+                      // propagates them through ContestLike → Race) and fall
+                      // back to the polling-data lookup for any Civic-API
+                      // shape where the deriver wasn't fed candidates. The
+                      // chat path's race-deep-dive builder needs this to
+                      // render its <ground_truth> tag.
+                      candidates:
+                        activeRace.candidates.length > 0
+                          ? activeRace.candidates
+                          : candidatesForActive,
+                    }
+                  : null,
+                totalRaces: racesWithDecided.length,
+                activeRaceIndex: activeRaceIndex,
+                decided: !!activeDecision,
+                prevActiveRaceId: prevActiveRaceIdRef.current,
+                onCommitDecision,
+                onUnpickDecision,
+                // Real-fix: surface prior decisions so ChatPanel can render
+                // `decidedSummary` for the race-deep-dive builder.
+                decisions,
+                // Phase 6 amendment plumbing — see ChatPanel.WorkspaceModeProps.
+                pendingAmendment,
+                amendmentInFlight,
+                lockedThemes: themes,
+                chatCatchSuggestion,
+                onChatCatch,
+                onChatCatchAccept,
+                onChatCatchDismiss,
+                onAmendmentSave,
+                onAmendmentInFlightChange,
+                onAmendmentDiscard,
+                // PR3 — opt-in re-score offer plumbing.
+                pendingRescoreOffer,
+                onRescoreOfferClear,
+                // Race-id → human label lookup so AmendDeltaMessage rows show
+                // "U.S. House — TX-07" instead of the raw race id. Built from
+                // races (not decisions) so undecided races also resolve.
+                raceLabelLookup: Object.fromEntries(
+                  racesWithDecided.map((r) => [r.id, r.label]),
+                ),
+                // P0 #1 (live audit) — auto-fire a "Introduce this race…"
+                // synthetic user message on mount so the model streams a
+                // context-aware AI greeting before the voter speaks. Pre-fix
+                // the chat opened EMPTY (only the placeholder "Ask anything
+                // about U.S. Senate." with no AI bubble). The synthetic user
+                // message is `hidden`, so only the AI bubble renders.
+                autoFireRaceIntro: true,
+              }}
+            />
+          </div>
         </div>
 
         <BallotPane
@@ -2120,6 +2180,13 @@ function WorkspaceShell({
           cityState={cityState}
           hasPolling={hasPolling}
           activeRaceId={activeRaceId}
+          // Pattern B (mobile): the ballot is the race navigator — tapping a
+          // race opens the chat sheet. On desktop it simply selects the race.
+          onSelectRace={selectAndOpenChat}
+          // Issues-edit relocation: the rail (which owns "Your issues · Edit")
+          // is hidden ≤1023px, so surface issues + an edit action in the ballot.
+          issues={themes}
+          onEditThemes={onEditThemes}
           onPrint={handlePrintFromBallotPane}
           onSaveProfile={onSaveProfile}
           onHandoff={handleHandoffFromBallotPane}

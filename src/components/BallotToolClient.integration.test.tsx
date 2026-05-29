@@ -7,6 +7,7 @@ import {
   act,
   cleanup,
   waitFor,
+  within,
 } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import React from "react";
@@ -2021,8 +2022,15 @@ describe("ElectionResult — P0 #3: workspace localStorage zip-scoping + restart
       await Promise.resolve();
     });
 
-    // Themes are visible in the rail before restart.
-    expect(screen.queryByText(/Healthcare costs/i)).toBeInTheDocument();
+    // Themes are visible in the rail before restart. Scoped to the rail:
+    // the issues now ALSO render in BallotPane's mobile issues-edit block
+    // (relocated there because the rail hides ≤1023px). That block carries
+    // `min-[1024px]:hidden`, so only one is visible in a real browser — but
+    // jsdom doesn't apply CSS, so an unscoped query would match both.
+    const railBeforeRestart = screen.getByTestId("workspace-rail");
+    expect(
+      within(railBeforeRestart).getByText(/Healthcare costs/i),
+    ).toBeInTheDocument();
 
     // Click Restart from the rail.
     const restartBtn = screen.getByTestId("workspace-rail-restart");

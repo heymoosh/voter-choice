@@ -34,6 +34,20 @@ export interface BallotPaneProps {
   onPrint: () => void;
   onSaveProfile: () => void;
   onHandoff: () => void;
+  /**
+   * Selecting a race from the ballot. On mobile (Pattern B) this opens the
+   * chat sheet for that race; on desktop it just changes the active race.
+   * When omitted, the rows render non-interactive (legacy behavior).
+   */
+  onSelectRace?: (raceId: string) => void;
+  /**
+   * Ranked issues, surfaced with an edit action INSIDE the ballot on
+   * tablet/mobile (≤1023px) where the left rail — the normal home of
+   * "Your issues · Edit" — is hidden. Omitted on the desktop rail path.
+   */
+  issues?: { name: string }[];
+  /** Opens the issue-amend editor (paired with `issues`). */
+  onEditThemes?: () => void;
 }
 
 /**
@@ -60,6 +74,9 @@ export function BallotPane({
   onPrint,
   onSaveProfile,
   onHandoff,
+  onSelectRace,
+  issues,
+  onEditThemes,
 }: BallotPaneProps) {
   const decidedCount = decisions.length;
   const canPrint = decidedCount > 0;
@@ -97,6 +114,45 @@ export function BallotPane({
         </address>
       </header>
 
+      {/* Issues-edit relocation — only ≤1023px, where the left rail (the
+          normal home of "Your issues · Edit") is hidden. Keeps the edit path
+          reachable on tablet/mobile. */}
+      {onEditThemes && (
+        <div
+          data-testid="ballot-pane-issues-edit"
+          className="min-[1024px]:hidden border-b border-rule-2 bg-paper-2 px-5 py-3.5"
+        >
+          <div className="flex items-center justify-between gap-3">
+            <span className="font-mono text-[10.5px] uppercase tracking-[0.16em] text-ink-3">
+              Your issues
+            </span>
+            <button
+              type="button"
+              data-testid="ballot-pane-edit-issues"
+              onClick={onEditThemes}
+              className="font-mono text-[10.5px] uppercase tracking-[0.12em] text-civic hover:underline"
+            >
+              Edit ranking →
+            </button>
+          </div>
+          {issues && issues.length > 0 && (
+            <ol className="mt-2 flex flex-col gap-1">
+              {issues.map((it, i) => (
+                <li
+                  key={`${i}-${it.name}`}
+                  className="flex gap-2 font-serif text-[13.5px] leading-snug text-ink-2"
+                >
+                  <span className="font-mono text-[11px] text-civic">
+                    {i + 1}.
+                  </span>
+                  <span>{it.name}</span>
+                </li>
+              ))}
+            </ol>
+          )}
+        </div>
+      )}
+
       <div
         data-testid="ballot-pane-list"
         className="flex flex-1 flex-col overflow-y-auto px-5 pb-3 pt-1.5"
@@ -117,8 +173,25 @@ export function BallotPane({
                     data-testid={`ballot-pane-row-${race.id}`}
                     data-active={isActive ? "true" : "false"}
                     data-decided={isDone ? "true" : "false"}
+                    {...(onSelectRace
+                      ? {
+                          role: "button",
+                          tabIndex: 0,
+                          "aria-label": `Open ${race.label}`,
+                          onClick: () => onSelectRace(race.id),
+                          onKeyDown: (e: React.KeyboardEvent) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              onSelectRace(race.id);
+                            }
+                          },
+                        }
+                      : {})}
                     className={[
-                      "grid cursor-default grid-cols-[18px_1fr] gap-3 border-b border-rule-2 py-3.5",
+                      "grid grid-cols-[18px_1fr] gap-3 border-b border-rule-2 py-3.5",
+                      onSelectRace
+                        ? "cursor-pointer transition-colors hover:bg-paper-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-civic"
+                        : "cursor-default",
                       isActive
                         ? "-mx-3.5 rounded-md border-b-transparent border-l-[3px] border-l-civic bg-civic-soft px-3.5"
                         : "",
