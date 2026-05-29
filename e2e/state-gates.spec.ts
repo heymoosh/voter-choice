@@ -23,7 +23,14 @@ const PROMPT_FLEET_V2_ENABLED =
   typeof process.env.PROMPT_FLEET_V2 === "string" &&
   process.env.PROMPT_FLEET_V2.length > 0;
 
-const WORKSPACE_TIMEOUT = process.env.CI ? 20000 : 10000;
+// Probe budget for the graceful-skip gate check in the TX-runoff test below.
+// MUST stay strictly under the per-test timeout (playwright.config.ts: 10s
+// local / 30s CI) so the .catch()/test.skip() path can run instead of the
+// test-level timeout firing first and surfacing a hard failure. Locally an
+// equal 10s budget consumed the whole per-test allowance, so the intended
+// "no upcoming runoff → skip" turned into a spurious fail; 7s leaves 3s of
+// headroom. CI already had headroom (20s probe vs 30s test).
+const WORKSPACE_TIMEOUT = process.env.CI ? 20000 : 7000;
 
 /* ── Helpers ──────────────────────────────────────────────── */
 
