@@ -2741,7 +2741,7 @@ export function ChatPanel({
     async (
       userMessage: string,
       currentMessages: ChatMessage[],
-      options?: { hidden?: boolean },
+      options?: { hidden?: boolean; trigger?: RouterTrigger },
     ) => {
       if (chatDisabled) return;
 
@@ -2802,6 +2802,12 @@ export function ChatPanel({
           activeRaceType: raceType,
           activeRaceId: ws.activeRace.id,
           prevActiveRaceId: ws.prevActiveRaceId ?? undefined,
+          // The kickoff path passes `trigger: "race-open"` so the router
+          // resolves race-deep-dive-open (cards) instead of race-deep-dive
+          // (prose Q&A). User follow-ups omit `trigger`, falling through to
+          // the default (race-deep-dive) — structurally distinguishing the
+          // auto-fire emission turn from prose follow-ups.
+          ...(options?.trigger ? { trigger: options.trigger } : {}),
           raceContext: {
             raceLabel: ws.activeRace.label,
             state: state.stateCode,
@@ -3029,7 +3035,11 @@ export function ChatPanel({
     void sendMessage(
       "Introduce this race and what's at stake for me given my priorities.",
       [],
-      { hidden: true },
+      // Structural trigger — the route picks the card-emitting builder
+      // (race-deep-dive-open) so the workspace center renders cards on
+      // mount instead of relying on the model to infer "is this turn one?"
+      // from conversation history.
+      { hidden: true, trigger: "race-open" },
     );
     // We intentionally only depend on activeRace.id, autoFireRaceIntro, and
     // chatDisabled — messages/isStreaming would re-fire during streaming.

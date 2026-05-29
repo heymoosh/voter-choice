@@ -28,6 +28,7 @@ import { prependSafetyHeader } from "../../../lib/prompts/safety-header";
 import { stripPII } from "../../../lib/prompts/pii-strip";
 import { buildThemeExtractionPrompt } from "../../../lib/prompts/theme-extraction";
 import { buildRaceDeepDivePrompt } from "../../../lib/prompts/race-deep-dive";
+import { buildRaceDeepDiveOpenPrompt } from "../../../lib/prompts/race-deep-dive-open";
 import { buildPropositionPrompt } from "../../../lib/prompts/proposition";
 import { buildThemeAmendmentPrompt } from "../../../lib/prompts/theme-amendment";
 import { buildHandoffPrompt } from "../../../lib/prompts/handoff";
@@ -352,7 +353,6 @@ function renderBuilder(
       if (
         c.raceLabel === undefined ||
         c.state === undefined ||
-        c.county === undefined ||
         c.themesList === undefined ||
         c.candidatesJson === undefined ||
         c.decidedSummary === undefined
@@ -364,7 +364,34 @@ function renderBuilder(
       return buildRaceDeepDivePrompt({
         raceLabel: c.raceLabel,
         state: c.state,
-        county: c.county,
+        // County is optional from the route's perspective: the jurisdiction-
+        // blind paste path (Bexar in <ballot_context>, but countyForPrompt
+        // undefined upstream) used to throw here and the catch served the
+        // legacy cinematic prompt jurisdiction-blind → model hallucinated a
+        // NJ Democratic-primary message. Default to "" so the builder still
+        // renders a race-specific prompt; the <ballot_context> tag prepended
+        // upstream carries the real jurisdiction when known.
+        county: c.county ?? "",
+        themesList: c.themesList,
+        candidatesJson: c.candidatesJson,
+        decidedSummary: c.decidedSummary,
+      });
+    case "race-deep-dive-open":
+      if (
+        c.raceLabel === undefined ||
+        c.state === undefined ||
+        c.themesList === undefined ||
+        c.candidatesJson === undefined ||
+        c.decidedSummary === undefined
+      ) {
+        throw new Error(
+          "buildSystemPrompt: missing raceContext for builder race-deep-dive-open",
+        );
+      }
+      return buildRaceDeepDiveOpenPrompt({
+        raceLabel: c.raceLabel,
+        state: c.state,
+        county: c.county ?? "",
         themesList: c.themesList,
         candidatesJson: c.candidatesJson,
         decidedSummary: c.decidedSummary,
@@ -540,7 +567,14 @@ function buildSystemPrompt(body: ChatRequest): string {
     return appendVoterProfile(withBallot, body.voterProfile);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    console.log(
+    // Loud telemetry — the silent fallback that previously shipped here
+    // masked a NJ-hallucination bug in prod for weeks (Bexar paste →
+    // race-deep-dive throws on missing county → legacy cinematic prompt
+    // served jurisdiction-blind → model invented "New Jersey Democratic
+    // Primary / paste your ballot"). console.error so the line lights up in
+    // Vercel logs instead of disappearing into the routine info-level
+    // stream.
+    console.error(
       JSON.stringify({
         event: "chat.prompt_routed_fallback",
         sessionId: body.sessionId,
@@ -550,6 +584,22 @@ function buildSystemPrompt(body: ChatRequest): string {
         error: message,
       }),
     );
+    // For workspace views, serving the legacy cinematic prompt blind is
+    // strictly worse than a thin neutral fallback — the cinematic prompt
+    // assumes a fresh cold-open conversation and free-form invention. Use
+    // the body's `systemPrompt` (a short neutral header) plus the
+    // jurisdiction-bearing <ballot_context> tag the client already sent,
+    // so any error response is at least race-aware.
+    if (
+      body.view === "workspace-race" ||
+      body.view === "workspace-prop" ||
+      body.view === "amend" ||
+      body.view === "handoff"
+    ) {
+      const composed = prependSafetyHeader(body.systemPrompt);
+      const withBallot = prependBallotContext(composed, body.ballotContext);
+      return appendVoterProfile(withBallot, body.voterProfile);
+    }
     return buildLegacySystemPrompt(body);
   }
 }
@@ -687,6 +737,7 @@ const VALID_TRIGGERS: ReadonlyArray<RouterTrigger> = [
   "amend-from-chat",
   "handoff-button",
   "budget-exhausted",
+  "race-open",
   "user-message",
 ];
 

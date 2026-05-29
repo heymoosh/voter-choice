@@ -21,6 +21,7 @@ import type { RouterView, RaceType, RouterTrigger } from "./types";
 export type RouterBuilderKey =
   | "theme-extraction"
   | "race-deep-dive"
+  | "race-deep-dive-open"
   | "proposition"
   | "theme-amendment"
   | "handoff";
@@ -58,13 +59,20 @@ export function routePrompt(input: RouteInput): RouterBuilderKey {
     return "handoff";
   }
 
-  // View-based default. The "user-message" trigger lands here as a pass-through.
+  // View-based default. The "user-message" trigger lands here as a pass-through;
+  // the auto-fire "race-open" trigger picks the card-emitting variant for
+  // workspace-race+choice (no override for propositions — proposition flow
+  // has its own emission contract via the proposition builder).
   switch (view) {
     case "cold-open":
       return "theme-extraction";
 
     case "workspace-race":
-      if (raceType === "choice") return "race-deep-dive";
+      if (raceType === "choice") {
+        return trigger === "race-open"
+          ? "race-deep-dive-open"
+          : "race-deep-dive";
+      }
       if (raceType === "proposition") return "proposition";
       throw new Error(
         `routePrompt: view "workspace-race" requires raceType ("choice" | "proposition"); got ${

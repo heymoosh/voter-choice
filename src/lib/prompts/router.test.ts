@@ -45,6 +45,24 @@ describe("routePrompt — happy-path mappings", () => {
       expected: "race-deep-dive",
     },
     {
+      name: "workspace-race + choice + race-open → race-deep-dive-open (auto-fire emits cards)",
+      input: {
+        view: "workspace-race",
+        raceType: "choice",
+        trigger: "race-open",
+      },
+      expected: "race-deep-dive-open",
+    },
+    {
+      name: "workspace-race + proposition + race-open → proposition (no card variant for props)",
+      input: {
+        view: "workspace-race",
+        raceType: "proposition",
+        trigger: "race-open",
+      },
+      expected: "proposition",
+    },
+    {
       name: "workspace-prop → proposition",
       input: { view: "workspace-prop" },
       expected: "proposition",

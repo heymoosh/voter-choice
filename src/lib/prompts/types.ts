@@ -73,10 +73,18 @@ export type RaceType = "choice" | "proposition";
  * What kicked off the current router call. Some triggers (amend-from-rail,
  * handoff-button, budget-exhausted) override the view-based default; others
  * (user-message) flow through normally.
+ *
+ * `race-open` is the auto-fire kickoff that runs once on workspace race entry.
+ * It routes to a card-emitting builder (race-deep-dive-open) so the model
+ * structurally emits [RACE_PATTERNS]+[ALIGNMENT_SCORES] on the first turn —
+ * avoiding the model-inferred "is this turn one?" guess that previously
+ * shipped broken to prod. User Q&A follow-ups keep using `user-message` →
+ * the prose race-deep-dive builder.
  */
 export type RouterTrigger =
   | "amend-from-rail"
   | "amend-from-chat"
   | "handoff-button"
   | "budget-exhausted"
+  | "race-open"
   | "user-message";

@@ -1554,6 +1554,21 @@ describe("ChatPanel — workspace auto-fire race-deep-dive on mount (P0 #1)", ()
     });
   });
 
+  it("auto-fire carries trigger:'race-open' so the route picks the card-emitting builder", async () => {
+    // Structural guard against the cards-first regression class: if a future
+    // refactor drops the trigger from the kickoff path, the router would
+    // resolve `race-deep-dive` (prose) instead of `race-deep-dive-open`
+    // (cards), and cards would silently stop rendering on prod — same
+    // failure mode that motivated the rebuild. Pin the contract here so
+    // the regression caught locally, not on the paid prod path.
+    renderWorkspaceAutoFire();
+    await waitFor(() => {
+      const body = captureChatRequestBody();
+      expect(body).not.toBeNull();
+      expect(body!.trigger).toBe("race-open");
+    });
+  });
+
   it("auto-fire request carries candidatesJson with the full roster (so the model can resolve surnames)", async () => {
     renderWorkspaceAutoFire();
     await waitFor(() => {

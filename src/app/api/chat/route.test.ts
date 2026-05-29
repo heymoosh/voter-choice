@@ -1184,7 +1184,10 @@ describe("POST /api/chat — v2 misroute defensive fallback", () => {
   it("emits chat.prompt_routed_fallback log line when fallback fires", async () => {
     vi.stubEnv("PROMPT_FLEET_V2", "1");
     queueStreams(simpleTextStream());
-    const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+    // The fallback path was promoted from console.log to console.error so
+    // the NJ-hallucination class of misroutes lights up in Vercel logs
+    // instead of disappearing into the routine info-level stream.
+    const errSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
     const req = makeChatRequest({
       systemPrompt: "LEGACY",
@@ -1200,7 +1203,7 @@ describe("POST /api/chat — v2 misroute defensive fallback", () => {
 
     expect(res.status).toBe(200);
 
-    const fallbackCalls = logSpy.mock.calls
+    const fallbackCalls = errSpy.mock.calls
       .map((args) => String(args[0]))
       .filter((line) => line.includes("chat.prompt_routed_fallback"));
     expect(fallbackCalls.length).toBeGreaterThan(0);
@@ -1209,7 +1212,7 @@ describe("POST /api/chat — v2 misroute defensive fallback", () => {
     expect(parsed.view).toBe("workspace-prop");
     expect(parsed.error).toContain("missing raceContext");
 
-    logSpy.mockRestore();
+    errSpy.mockRestore();
   });
 
   it("falls back when raceType is missing for view workspace-race", async () => {

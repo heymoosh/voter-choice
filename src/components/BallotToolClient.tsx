@@ -692,10 +692,33 @@ export function ElectionResult({
     return "OPEN";
   })();
 
-  // Resolve county: prefer civic API county, fall back to zip-based lookup
+  // Resolve county: prefer civic API county, fall back to zip-based lookup,
+  // then to an UPLOADED ballot's own jurisdiction (e.g. "Bexar County, TX"
+  // from a PDF upload). This is upload-only: hand-pasted sample ballots
+  // arrive via `userSampleBallotText` and don't populate `extractedBallot`,
+  // so the paste path keeps relying on the civic/zip fallbacks plus the
+  // route's `county ?? ""` default for race-deep-dive.
   const civicCounty = pollingData?.county ?? null;
   const zipCounty = lookupCounty(state.stateCode, zipCode);
-  const countyForPrompt = civicCounty ?? zipCounty ?? undefined;
+  const extractedJurisdiction =
+    extractedBallot?.election_metadata?.jurisdiction?.trim() || null;
+  // Extraction jurisdictions arrive as "<County> County, <ST>" (e.g.
+  // "Camden County, NJ", "Bexar County, TX"). Strip the trailing ", ST"
+  // and the " County" suffix to mirror the bare-name form the chat prompt
+  // builders consume (e.g. "Harris" in the existing race-deep-dive golden).
+  // NOTE this is NOT identical to `pollingData.county` ("Travis County"),
+  // which keeps the suffix — the chat prompt's <race> tag does its own
+  // composition (`${state}-${county}`), so a bare county is acceptable
+  // there, and downstream consumers that need the formal name should
+  // re-add the suffix or read from the extraction directly.
+  const extractedCounty = extractedJurisdiction
+    ? extractedJurisdiction
+        .replace(/,\s*[A-Z]{2}\s*$/, "")
+        .replace(/\s+County\s*$/i, "")
+        .trim() || null
+    : null;
+  const countyForPrompt =
+    civicCounty ?? zipCounty ?? extractedCounty ?? undefined;
 
   // PR B — cold-open `.co-context` breadcrumb data. Mirrors the prototype's
   // anchored-location line above the chat (`Camden County, NJ-1 · 6 races
