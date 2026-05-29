@@ -47,6 +47,7 @@ import type { SerializableBallotContext } from "../lib/state-rules/ballot-contex
 import { hasByokKey, streamWithByok } from "../lib/anthropic-client-byok";
 import { prependSafetyHeader } from "../lib/prompts/safety-header";
 import { normalizeCandidateName } from "../lib/normalizeCandidateName";
+import { getCandidateIdentity } from "../lib/candidateIdentity";
 import {
   parseValuesTagRequestBlock,
   stripValuesTagRequestBlocks,
@@ -1657,6 +1658,12 @@ function WorkspaceChat({
   onAcceptRescoreOffer,
   blindMode = false,
   onToggleBlindMode,
+  revealedCandidates,
+  onRevealCandidate,
+  onHideCandidate,
+  onCompare,
+  onSeeAllVotes,
+  issues = [],
 }: {
   workspace: WorkspaceModeProps;
   budgetExhausted: boolean;
@@ -1687,6 +1694,23 @@ function WorkspaceChat({
   blindMode?: boolean;
   /** Called to toggle blind mode on/off globally. */
   onToggleBlindMode?: () => void;
+  /** Set of candidateIds the voter has individually revealed. */
+  revealedCandidates?: Set<string>;
+  /** Called when a voter taps "Reveal" on a single candidate card. */
+  onRevealCandidate?: (id: string) => void;
+  /** Called when voter re-anonymizes a previously revealed candidate card. */
+  onHideCandidate?: (id: string) => void;
+  /** Opens the CompareModal for the active race (card "Compare" action). */
+  onCompare?: () => void;
+  /** Opens the AllVotesPanel for a candidate (card "See all votes" action). */
+  onSeeAllVotes?: (payload: {
+    candidate: RacePatternsCandidate;
+    alignmentEntry: AlignmentScoresEntry | undefined;
+    blindMode: boolean;
+    alias: string;
+  }) => void;
+  /** Issue-level concern interpretations — used to auto-generate why-notes. */
+  issues?: ConcernInterpretationEntry[];
 }) {
   const {
     activeRace,
@@ -1723,15 +1747,98 @@ function WorkspaceChat({
   // Fall back through the empty case via `||` so the conditional stays
   // a single expression (keeps the parent `WorkspaceChat` complexity at
   // its baseline rather than bumping past the linter's threshold).
-  const lastName = firstCandidate.split(/\s+/).pop() || "this candidate";
-  const suggestions: { id: string; label: string }[] = [
+  const realLast = firstCandidate.split(/\s+/).pop() || "this candidate";
+  // Anonymize the chip LABEL when blind mode is on so the candidate's real
+  // name never appears in the workspace UI (blind is the default). The SENT
+  // message always uses the real reference so the model still understands.
+  const displayLast = blindMode ? "Candidate A" : realLast;
+  const suggestions: { id: string; label: string; message: string }[] = [
     {
       id: "show-votes",
-      label: `Show me ${lastName}'s key votes`,
+      label: `Show me ${displayLast}'s key votes`,
+      message: `Show me ${realLast}'s key votes`,
     },
-    { id: "compare-donors", label: "Compare donor bases" },
-    { id: "explain-race", label: `Explain ${activeRace.label} in plain terms` },
+    {
+      id: "compare-donors",
+      label: "Compare donor bases",
+      message: "Compare the candidates' donor bases",
+    },
+    {
+      id: "explain-race",
+      label: `Explain ${activeRace.label} in plain terms`,
+      message: `Explain ${activeRace.label} in plain terms`,
+    },
   ];
+
+  // ── Faithful candidate-card wiring (Phase 4 port) ──────────────
+  // The workspace center column renders the real <RacePatterns> cards
+  // (funding + alignment, anonymized by default) via the shared
+  // renderRacePatterns helper — same renderer the cold-open uses. The
+  // legacy plain-text fallback only shows when the last assistant message
+  // has no [RACE_PATTERNS] block (e.g. generic chat answers).
+  const visibleMessages = messages.filter((m) => !m.hidden);
+  const lastAssistantIdx = visibleMessages.reduce(
+    (acc, m, i) => (m.role === "assistant" ? i : acc),
+    -1,
+  );
+  const lastAssistant =
+    lastAssistantIdx >= 0 ? visibleMessages[lastAssistantIdx] : undefined;
+  // True when a finished RACE_PATTERNS card is being shown for the active
+  // race. While true, the card's own Pick button replaces the stub; while
+  // false (generic answer, or block still streaming) the stub is the
+  // fallback commit affordance (and the tests that mock chat without a
+  // block keep exercising workspace-pick-trigger).
+  const hasRacePatternsCard =
+    !isStreaming &&
+    !!lastAssistant &&
+    lastAssistant.content.includes("[/RACE_PATTERNS]") &&
+    !!parseRacePatternsBlock(lastAssistant.content);
+
+  // The committed decision for THIS race (if any) — used to mark the
+  // matching card as picked and to auto-generate the why-note's issue.
+  const activeDecision = workspace.decisions?.find(
+    (d) => d.raceId === activeRace.id,
+  );
+  // First interpreted issue, mirroring the prototype's commitPick: the
+  // why-note anchors on the user's top priority when known.
+  const topIssue = issues[0]?.interpretation || "my priorities";
+
+  // Card "Pick" → auto-commit a generated why-note (prototype parity: the
+  // card pick has NO separate why prompt; that lives only on the stub).
+  const onCardPick = (
+    msgContent: string,
+    candidateId: string,
+    candidateName: string,
+  ) => {
+    const block = parseRacePatternsBlock(msgContent);
+    const picked = block?.candidates.find((c) => c.id === candidateId);
+    // RacePatternsCandidate carries no party; resolve it from the contest's
+    // {name, party} list by name (same lookup the stub uses).
+    const pickedName = normalizeCandidateName(picked?.name ?? candidateName);
+    const partyCode = activeRace.candidates?.find(
+      (c) => normalizeCandidateName(c.name) === pickedName,
+    )?.party;
+    const idx = block?.candidates.findIndex((c) => c.id === candidateId) ?? 0;
+    const alias = getCandidateIdentity(
+      { id: candidateId, name: candidateName },
+      { blindMode, revealed: revealedCandidates, index: idx < 0 ? 0 : idx },
+    ).alias;
+    const lastName =
+      normalizeCandidateName(candidateName).split(/\s+/).pop() || candidateName;
+    const whyNote = blindMode
+      ? `Candidate ${alias} — strongest record on ${topIssue}.`
+      : `${lastName} — strongest record on ${topIssue}.`;
+    onCommitDecision({
+      raceId: activeRace.id,
+      raceLabel: activeRace.label,
+      section: activeRace.section,
+      pick: candidateName,
+      party: partyCode || undefined,
+      whyNote,
+    });
+  };
+  // Card "Skip" has no workspace equivalent (navigation lives elsewhere).
+  const onCardSkip = () => {};
 
   return (
     <section
@@ -1809,24 +1916,57 @@ function WorkspaceChat({
             <>
               {visibleMessages.length > 0 && (
                 <ul className="flex flex-col gap-4 list-none p-0">
-                  {visibleMessages.map((m, i) =>
-                    m.role === "user" ? (
-                      <li
-                        key={i}
-                        data-testid="chat-message-user"
-                        className="self-end flex flex-col items-end gap-1.5 max-w-md"
-                      >
-                        <span className="font-mono text-[10.5px] uppercase tracking-[0.12em] text-ink-3">
-                          You
-                        </span>
-                        <div
-                          className="bg-ink text-paper px-4 py-3 text-sm leading-relaxed"
-                          style={{ borderRadius: "14px 14px 4px 14px" }}
+                  {visibleMessages.map((m, i) => {
+                    if (m.role === "user") {
+                      return (
+                        <li
+                          key={i}
+                          data-testid="chat-message-user"
+                          className="self-end flex flex-col items-end gap-1.5 max-w-md"
                         >
-                          <MarkdownText text={m.content} />
-                        </div>
-                      </li>
-                    ) : (
+                          <span className="font-mono text-[10.5px] uppercase tracking-[0.12em] text-ink-3">
+                            You
+                          </span>
+                          <div
+                            className="bg-ink text-paper px-4 py-3 text-sm leading-relaxed"
+                            style={{ borderRadius: "14px 14px 4px 14px" }}
+                          >
+                            <MarkdownText text={m.content} />
+                          </div>
+                        </li>
+                      );
+                    }
+                    // Faithful candidate cards: when this is the last
+                    // assistant message and it carries a RACE_PATTERNS block,
+                    // reuse the shared <RacePatterns> renderer (funding +
+                    // alignment, anonymized by default) instead of plain text.
+                    const isLastAssistant = i === lastAssistantIdx;
+                    const pickedId =
+                      decided && activeDecision
+                        ? (parseRacePatternsBlock(m.content)?.candidates.find(
+                            (c) =>
+                              normalizeCandidateName(c.name) ===
+                              normalizeCandidateName(activeDecision.pick),
+                          )?.id ?? null)
+                        : null;
+                    const card = renderRacePatterns(
+                      m,
+                      i,
+                      isLastAssistant,
+                      isStreaming,
+                      { submitted: decided, pickedId },
+                      (candidateId, candidateName) =>
+                        onCardPick(m.content, candidateId, candidateName),
+                      onCardSkip,
+                      isStreaming,
+                      blindMode,
+                      revealedCandidates,
+                      onRevealCandidate,
+                      onCompare,
+                      onSeeAllVotes,
+                      onHideCandidate,
+                    );
+                    return (
                       <li
                         key={i}
                         data-testid="chat-message-ai"
@@ -1835,15 +1975,19 @@ function WorkspaceChat({
                         <span className="font-mono text-[10.5px] uppercase tracking-[0.12em] text-ink-3">
                           Voter Choice · AI
                         </span>
-                        <div
-                          className="bg-paper-2 border border-rule px-4 py-3 text-sm leading-relaxed text-ink w-full"
-                          style={{ borderRadius: "4px 14px 14px 14px" }}
-                        >
-                          <MarkdownText text={m.content} />
-                        </div>
+                        {card ? (
+                          card
+                        ) : (
+                          <div
+                            className="bg-paper-2 border border-rule px-4 py-3 text-sm leading-relaxed text-ink w-full"
+                            style={{ borderRadius: "4px 14px 14px 14px" }}
+                          >
+                            <MarkdownText text={m.content} />
+                          </div>
+                        )}
                       </li>
-                    ),
-                  )}
+                    );
+                  })}
                 </ul>
               )}
 
@@ -1931,14 +2075,21 @@ function WorkspaceChat({
         })()}
       </div>
 
-      <WorkspacePickArea
-        activeRace={activeRace}
-        decided={decided}
-        budgetExhausted={budgetExhausted}
-        gateVariant={gateVariant}
-        onCommitDecision={onCommitDecision}
-        onUnpickDecision={onUnpickDecision}
-      />
+      {/* Stub pick area is the FALLBACK commit affordance — only shown when
+          no faithful candidate card is on screen for the active race. When a
+          card IS shown, its own Pick / Picked-undo button replaces the stub
+          (prototype parity). Tests whose mocked chat emits no RACE_PATTERNS
+          block still render the stub and keep exercising its testids. */}
+      {!hasRacePatternsCard && (
+        <WorkspacePickArea
+          activeRace={activeRace}
+          decided={decided}
+          budgetExhausted={budgetExhausted}
+          gateVariant={gateVariant}
+          onCommitDecision={onCommitDecision}
+          onUnpickDecision={onUnpickDecision}
+        />
+      )}
 
       {/* Suggestion chips hidden during streaming OR session-limit / rate-
           limit states; for `budgetExhausted` we keep the input visible-but-
@@ -1957,7 +2108,7 @@ function WorkspaceChat({
               key={s.id}
               type="button"
               data-testid={`workspace-chat-suggestion-${s.id}`}
-              onClick={() => onSendMessage(s.label)}
+              onClick={() => onSendMessage(s.message)}
               disabled={isStreaming}
               className="rounded-full border border-rule bg-paper-2 px-3 py-1.5 text-[12.5px] text-ink-2 hover:border-ink-3 hover:text-ink disabled:opacity-50 transition-colors"
             >
@@ -3422,6 +3573,12 @@ export function ChatPanel({
         }}
         blindMode={blindMode}
         onToggleBlindMode={onToggleBlindMode}
+        revealedCandidates={revealedCandidates}
+        onRevealCandidate={onRevealCandidate}
+        onHideCandidate={onHideCandidate}
+        onCompare={handleOpenCompare}
+        onSeeAllVotes={handleOpenSeeAllVotes}
+        issues={issues}
       />
     );
   }

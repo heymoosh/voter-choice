@@ -127,12 +127,13 @@ describe("PR D / Fix 1 — landing EnglishShell hero grid is mobile-safe", () =>
     });
   });
 
-  it("ZipForm's input+button row stacks vertically on mobile, side-by-side ≥sm", () => {
-    // The address-card "Pull my ballot" submit button has
-    // `whitespace-nowrap` and is ~158px wide — combined with the
-    // flex-grow input wrapper, content width was ≈443px on a 375px
-    // viewport and the button overflowed. The fix stacks them on
-    // mobile (flex-col), keeping the prototype side-by-side from `sm` up.
+  it("ZipForm stacks the submit button below the address at every viewport (full-width, inside the card)", () => {
+    // Live-review feedback (2026-05): the green "Pull my ballot" submit
+    // button overflowed the address card and read as detached. Per the
+    // user, the button now sits BELOW the address field at EVERY viewport
+    // (the old `sm:flex-row` side-by-side is gone) and spans the full card
+    // width, so both the address field and the button stay inside the gray
+    // card outline with no horizontal overflow.
     render(
       <LanguageProvider>
         <ZipForm onSubmit={vi.fn()} />
@@ -140,8 +141,11 @@ describe("PR D / Fix 1 — landing EnglishShell hero grid is mobile-safe", () =>
     );
     const submit = screen.getByTestId("zip-submit");
     const row = submit.parentElement as HTMLElement;
+    // Always vertical — button below the input at all breakpoints.
     expect(row.className).toMatch(/\bflex-col\b/);
-    expect(row.className).toMatch(/\bsm:flex-row\b/);
+    expect(row.className).not.toMatch(/\bsm:flex-row\b/);
+    // Button spans the full card width directly below the address field.
+    expect(submit.className).toMatch(/\bw-full\b/);
   });
 });
 

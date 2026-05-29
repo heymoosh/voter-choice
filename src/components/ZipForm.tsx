@@ -89,22 +89,15 @@ export function ZipForm({ onSubmit }: ZipFormProps) {
           </span>
         </label>
         {/*
-          fix-2-live-bugs (Bug 1) — the flex .row MUST contain only the
-          input + button, matching the prototype `.addr-card .row` rule
-          (docs/design/2026-redesign/prototype/prototype.css:155). Having
-          the autocomplete hint inside the row stretched the button to
-          ~71px because of default `align-items: stretch`. Hint copy now
-          lives BELOW the row as a sibling within the card.
-
-          PR D Fix 1 (mobile overflow) — stack input + button vertically
-          on narrow viewports. With `whitespace-nowrap` on the 158px
-          submit button + a flex-grow input wrapper, the row's content
-          width was ≈443px even when its rendered width was 290px;
-          the button overflowed past the address-card on a 375px
-          viewport. The `sm:flex-row` keeps the side-by-side layout
-          everywhere ≥640px (the existing prototype shape).
+          Live-review fix (2026-05) — per user feedback the green submit
+          button overflowed the address card and the address field had to
+          fit cleanly inside the card outline. Stack input + button
+          VERTICALLY at every viewport (drop the old `sm:flex-row`) and let
+          the button span the full card width. Both the address field and
+          the full-width button now sit inside the gray card outline with
+          no horizontal overflow.
         */}
-        <div className="flex flex-col gap-2 sm:flex-row">
+        <div className="flex flex-col gap-2">
           <div className="flex-grow">
             {hasPlacesKey && (
               <div ref={placesContainerRef} className="w-full" />
@@ -129,11 +122,13 @@ export function ZipForm({ onSubmit }: ZipFormProps) {
           <button
             data-testid="zip-submit"
             type="submit"
-            // Prototype `.addr-card .go`: padding 0 24px, font 14.5px, no
-            // fixed height. Flex row defaults to align-items: stretch so
-            // the button matches the input height (~48px = 14px y-pad × 2
-            // + 15px line).
-            className="bg-civic text-paper-2 border-0 rounded-lg px-6 text-[14.5px] font-semibold whitespace-nowrap hover:bg-civic-2 transition-colors"
+            // Prototype `.addr-card .go`: font 14.5px, 24px x-pad. Now that
+            // the column is always vertical (no flex-row stretch to borrow
+            // the input's height), give the button explicit y-pad matching
+            // the input (~48px = 14px × 2 + 15px line) and `w-full` so it
+            // spans the card width directly below the address field, fully
+            // inside the gray card outline.
+            className="w-full bg-civic text-paper-2 border-0 rounded-lg px-6 py-[14px] text-[14.5px] font-semibold whitespace-nowrap hover:bg-civic-2 transition-colors"
           >
             {lang === "en" ? "Pull my ballot →" : "Ver Boleta"}
           </button>

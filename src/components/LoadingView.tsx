@@ -130,8 +130,19 @@ export function LoadingView({
   ];
 
   useEffect(() => {
-    if (!selfAdvance) return;
+    // Always animate the step checklist forward so the card reads as
+    // actively "processing your ballot" — even in production where the
+    // PARENT (not this internal timer) decides when the real civic/ballot
+    // fetch resolves and unmounts us. Only the `onDone` CALL is gated on
+    // `selfAdvance`; the visual step progression runs regardless. Without
+    // this, `selfAdvance=false` froze all four steps at "pending" and the
+    // screen flashed by as a lifeless static card (live-review fix 2026-05).
     if (step >= steps.length) {
+      // All four steps revealed. The self-advancing demo/test path hands
+      // control back via onDone; the parent-driven production path holds
+      // this "all done" frame (spinner still turning) until the awaited
+      // fetch resolves and the parent swaps to the next view.
+      if (!selfAdvance) return;
       const t = setTimeout(onDone, DONE_DELAY_MS);
       return () => clearTimeout(t);
     }
