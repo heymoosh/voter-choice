@@ -1549,7 +1549,13 @@ describe("design-delta: RacePatternsCandidate.fundingMix", () => {
     ].join("\n");
     const result = parseRacePatternsBlock(block);
     const fmA = result?.candidates[0].fundingMix;
-    expect(fmA).toEqual({ small: 38, large: 41, pac: 21, total: 4200000, cycle: "2024 cycle" });
+    expect(fmA).toEqual({
+      small: 38,
+      large: 41,
+      pac: 21,
+      total: 4200000,
+      cycle: "2024 cycle",
+    });
     // Candidate without fundingMix should not have the field
     expect(result?.candidates[1].fundingMix).toBeUndefined();
   });
@@ -1561,14 +1567,21 @@ describe("design-delta: ContributingVote.narrative", () => {
       billTitle: "HR-2 · Lower Drug Costs Act",
       voteCast: "against",
       date: "2023-07-14",
-      source: { name: "CAN2026 case file", url: "https://can2026.org/cases/hr2-2023" },
-      narrative: "One of 49 GOP senators against. Cornyn gave a 12-minute floor speech opposing price controls.",
+      source: {
+        name: "CAN2026 case file",
+        url: "https://can2026.org/cases/hr2-2023",
+      },
+      narrative:
+        "One of 49 GOP senators against. Cornyn gave a 12-minute floor speech opposing price controls.",
     });
     const voteWithoutNarrative = JSON.stringify({
       billTitle: "IRA · Inflation Reduction Act",
       voteCast: "against",
       date: "2022-08-07",
-      source: { name: "Congress.gov roll call", url: "https://www.congress.gov" },
+      source: {
+        name: "Congress.gov roll call",
+        url: "https://www.congress.gov",
+      },
     });
     const entryLine = JSON.stringify({
       candidateId: "cornyn",
@@ -1580,7 +1593,10 @@ describe("design-delta: ContributingVote.narrative", () => {
           sourceType: "voting_record",
           kept: 1,
           total: 2,
-          contributingVotes: [JSON.parse(voteWithNarrative), JSON.parse(voteWithoutNarrative)],
+          contributingVotes: [
+            JSON.parse(voteWithNarrative),
+            JSON.parse(voteWithoutNarrative),
+          ],
         },
       ],
     });

@@ -925,8 +925,10 @@ const en: Translations = {
     racePatternsAlignmentHeading: "Voted in line with platform",
     racePatternsAlignmentChallenger: "Challenger \u2014 no voting record yet",
     racePatternsAlignmentUnavailablePrefix: "Record unavailable \u2014",
-    racePatternsEndorsementsUnavailablePrefix: "Endorsement data unavailable \u2014",
-    racePatternsRetrospectiveUnavailablePrefix: "Track record unavailable \u2014",
+    racePatternsEndorsementsUnavailablePrefix:
+      "Endorsement data unavailable \u2014",
+    racePatternsRetrospectiveUnavailablePrefix:
+      "Track record unavailable \u2014",
     racePatternsCoalitionHeading: "Donor coalition",
     racePatternsCoalitionUnavailablePrefix: "Donor data unavailable \u2014",
     racePatternsSeeDonors: "See individual donors",
@@ -1531,7 +1533,8 @@ const es: Translations = {
     step3Title: "Toma Acci\u00f3n",
     step3Desc:
       "Descarga tu gu\u00eda personalizada de votante para llevar a la casilla electoral.",
-    howItWorksWalkSubtitle: "De tu direcci\u00f3n a la boleta impresa en tres pasos.",
+    howItWorksWalkSubtitle:
+      "De tu direcci\u00f3n a la boleta impresa en tres pasos.",
     ctaHeadline: "\u00bfListo para elegir?",
     ctaSubtext:
       "\u00danete a miles de ciudadanos informados que usan Civic Research para orientaci\u00f3n no partidista.",
@@ -1617,8 +1620,10 @@ const es: Translations = {
     racePatternsAlignmentHeading: "Voted in line with platform",
     racePatternsAlignmentChallenger: "Challenger \u2014 no voting record yet",
     racePatternsAlignmentUnavailablePrefix: "Record unavailable \u2014",
-    racePatternsEndorsementsUnavailablePrefix: "Endorsement data unavailable \u2014",
-    racePatternsRetrospectiveUnavailablePrefix: "Track record unavailable \u2014",
+    racePatternsEndorsementsUnavailablePrefix:
+      "Endorsement data unavailable \u2014",
+    racePatternsRetrospectiveUnavailablePrefix:
+      "Track record unavailable \u2014",
     racePatternsCoalitionHeading: "Donor coalition",
     racePatternsCoalitionUnavailablePrefix: "Donor data unavailable \u2014",
     racePatternsSeeDonors: "See individual donors",

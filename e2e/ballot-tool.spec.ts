@@ -781,7 +781,7 @@ test.describe("Privacy Policy page", () => {
     await page.goto("/privacy");
     await expect(page).toHaveTitle(/Privacy Policy/i);
     await expect(
-      page.getByRole("heading", { name: /Privacy Policy/i, level: 1 }),
+      page.getByRole("heading", { name: /What stays here/i, level: 1 }),
     ).toBeVisible();
   });
 
@@ -803,7 +803,7 @@ test.describe("Privacy Policy page", () => {
 
   test("back link navigates to home", async ({ page }) => {
     await page.goto("/privacy");
-    await page.getByRole("link", { name: /Back to Voter Choice/i }).click();
+    await page.getByRole("link", { name: /Back/i }).click();
     await expect(page).toHaveURL("/");
   });
 });
@@ -859,7 +859,7 @@ test.describe("Footer links", () => {
     await footer.getByRole("link", { name: /Privacy/i }).click();
     await expect(page).toHaveURL("/privacy");
     await expect(
-      page.getByRole("heading", { name: /Privacy Policy/i }),
+      page.getByRole("heading", { name: /What stays here/i }),
     ).toBeVisible();
   });
 

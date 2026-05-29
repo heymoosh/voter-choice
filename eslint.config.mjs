@@ -19,6 +19,18 @@ const eslintConfig = [
     plugins: {},
     rules: {
       complexity: ["warn", { max: 10 }],
+      // Honor the underscore-prefix "intentionally unused" convention that the
+      // ported design components rely on (e.g. NEEDS-KEY scaffolding params
+      // like navLabel(en, _es), _lang, _profileText). next/typescript enables
+      // no-unused-vars without ignore patterns, so add the standard ones here.
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+          caughtErrorsIgnorePattern: "^_",
+        },
+      ],
     },
   },
 ];

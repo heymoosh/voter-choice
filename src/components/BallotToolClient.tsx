@@ -1249,7 +1249,11 @@ export function ElectionResult({
     primaryLane,
   ]);
   const handleBudgetExhausted = useCallback(
-    (input: { handoffPromptText: string; resetAt: string; variant: GateVariant }) => {
+    (input: {
+      handoffPromptText: string;
+      resetAt: string;
+      variant: GateVariant;
+    }) => {
       setBudgetOut({
         handoffPromptText: baseHandoffPrompt,
         resetAt: input.resetAt || defaultResetAtISO,
@@ -1643,12 +1647,9 @@ function WorkspaceShell({
      cannot currently be fed back into ElectionResult's `voterProfile` state
      (the setter was removed). Modal is wired and functional for file parsing
      and error display; the restore path is blocked by the missing setter. */
-  const handleProfileResumed = useCallback(
-    (_profileText: string) => {
-      setProfileResumeOpen(false);
-    },
-    [],
-  );
+  const handleProfileResumed = useCallback((_profileText: string) => {
+    setProfileResumeOpen(false);
+  }, []);
 
   // Phase 9 (PR 7) — budget-exhausted continuity. Split into two pieces:
   //
@@ -1841,7 +1842,11 @@ function WorkspaceShell({
   // server). The server-supplied `resetAt` is canonical though — drives
   // the "I'm back" affordance — so we keep that as-is.
   const handleBudgetExhausted = useCallback(
-    (input: { handoffPromptText: string; resetAt: string; variant: GateVariant }) => {
+    (input: {
+      handoffPromptText: string;
+      resetAt: string;
+      variant: GateVariant;
+    }) => {
       setBudgetOut({
         handoffPromptText: populatedHandoffPrompt,
         resetAt: input.resetAt,
@@ -1917,7 +1922,8 @@ function WorkspaceShell({
   const deadlineRows = useMemo<DeadlineMeterRow[]>(() => {
     const todayISO = getTodayInLatestUsZone();
     const rows: DeadlineMeterRow[] = [];
-    const el = state.elections.find((e) => e.date >= todayISO) ?? state.elections[0];
+    const el =
+      state.elections.find((e) => e.date >= todayISO) ?? state.elections[0];
     if (el?.date) {
       rows.push({
         ...getDeadlineStatus(el.date, todayISO),
@@ -1925,7 +1931,11 @@ function WorkspaceShell({
       });
     }
     const regOnline = state.registration.online;
-    if (regOnline.available && regOnline.deadline && regOnline.deadline >= todayISO) {
+    if (
+      regOnline.available &&
+      regOnline.deadline &&
+      regOnline.deadline >= todayISO
+    ) {
       rows.push({
         ...getDeadlineStatus(regOnline.deadline, todayISO),
         labelKey: "deadline.registrationOnline",
@@ -1960,7 +1970,10 @@ function WorkspaceShell({
   }
 
   return (
-    <div data-testid="workspace-shell" className="flex flex-col h-[calc(100vh-63px)]">
+    <div
+      data-testid="workspace-shell"
+      className="flex flex-col h-[calc(100vh-63px)]"
+    >
       {/* Task 6: PollingStatusBar — between AppNav and the 3-pane shell.
           Prototype WorkspaceView ~line 401: <PollingStatusBar> sits between
           <AppNav /> and the .ws-wrap grid. Gate on a real polling location
@@ -1987,131 +2000,132 @@ function WorkspaceShell({
         className="grid flex-1 min-h-0"
         style={{ gridTemplateColumns: "240px 1fr 380px" }}
       >
-      <WorkspaceRail
-        decidedCount={decisions.length}
-        totalRaces={races.length}
-        themes={themes}
-        races={racesWithDecided}
-        activeRaceId={activeRaceId}
-        onSelectRace={onSelectRace}
-        onEditThemes={onEditThemes}
-        onRestart={onRestart}
-        // Fix E — Polis surface lives in the rail. Thread location through
-        // so WorkspacePolisSection can fetch /api/polis/{bars,bridges,compass}
-        // once the user opts in by expanding the section.
-        stateCode={state.stateCode}
-        county={pollingData?.county ?? countyName}
-        countyName={countyName}
-      />
-
-      <div className="flex h-full flex-col overflow-hidden">
-        <ChatPanel
-          // Re-key by activeRace.id so the entire ChatPanel (and its
-          // `messages` state) resets across race switches. This is the
-          // per-race scope contract — UI mirrors what the chat route
-          // already enforces server-side from Phase 1.
-          key={`workspace-chat-${activeRace?.id ?? "none"}`}
-          state={state}
-          zipCode={zipCode}
-          pollingData={pollingData ?? undefined}
-          onBudgetUpdate={onBudgetUpdate}
-          voterProfile={voterProfile}
+        <WorkspaceRail
+          decidedCount={decisions.length}
+          totalRaces={races.length}
+          themes={themes}
+          races={racesWithDecided}
+          activeRaceId={activeRaceId}
+          onSelectRace={onSelectRace}
+          onEditThemes={onEditThemes}
+          onRestart={onRestart}
+          // Fix E — Polis surface lives in the rail. Thread location through
+          // so WorkspacePolisSection can fetch /api/polis/{bars,bridges,compass}
+          // once the user opts in by expanding the section.
+          stateCode={state.stateCode}
+          county={pollingData?.county ?? countyName}
           countyName={countyName}
-          userSampleBallotText={userSampleBallotText}
-          preResearchContext={preResearchContext}
-          primary={primaryLane}
-          onChatStarted={onChatStarted}
-          promptFleetV2Enabled={promptFleetV2Enabled}
-          onLockInThemes={onLockInThemes}
-          ballotContext={ballotContext}
-          onBudgetExhausted={handleBudgetExhausted}
-          // PR 7 — externally controlled "budget out" flag so the chat
-          // input renders the visible-but-disabled state with a notice
-          // (instead of the entire workspace being replaced). Keyed off
-          // `budgetOut`, NOT `overlayDismissed` — dismissing the dialog
-          // is a pure UI action; the chat stays gated until BYOK / reset.
-          budgetExhausted={!!budgetOut}
-          gateVariant={budgetOut?.variant}
-          // Blind mode — cross-file contract with ChatPanel (tasks 1-3).
-          blindMode={blindMode}
-          revealedCandidates={revealedCandidates}
-          onRevealCandidate={onRevealCandidate}
-          onToggleBlindMode={onToggleBlindMode}
-          onHideCandidate={onHideCandidate}
-          // Task 4: locked value themes mapped to ConcernInterpretationEntry[]
-          // for CompareModal's per-issue rows. canonicalIssue is absent
-          // (Theme has no canonicalIssue) — alignment-score rows will render "—".
-          issues={issueItems}
-          workspace={{
-            activeRace: activeRace
-              ? {
-                  id: activeRace.id,
-                  label: activeRace.label,
-                  section: activeRace.section,
-                  // Prefer the Race's own candidates (the deriver now
-                  // propagates them through ContestLike → Race) and fall
-                  // back to the polling-data lookup for any Civic-API
-                  // shape where the deriver wasn't fed candidates. The
-                  // chat path's race-deep-dive builder needs this to
-                  // render its <ground_truth> tag.
-                  candidates:
-                    activeRace.candidates.length > 0
-                      ? activeRace.candidates
-                      : candidatesForActive,
-                }
-              : null,
-            totalRaces: racesWithDecided.length,
-            activeRaceIndex: activeRaceIndex,
-            decided: !!activeDecision,
-            prevActiveRaceId: prevActiveRaceIdRef.current,
-            onCommitDecision,
-            onUnpickDecision,
-            // Real-fix: surface prior decisions so ChatPanel can render
-            // `decidedSummary` for the race-deep-dive builder.
-            decisions,
-            // Phase 6 amendment plumbing — see ChatPanel.WorkspaceModeProps.
-            pendingAmendment,
-            amendmentInFlight,
-            lockedThemes: themes,
-            chatCatchSuggestion,
-            onChatCatch,
-            onChatCatchAccept,
-            onChatCatchDismiss,
-            onAmendmentSave,
-            onAmendmentInFlightChange,
-            onAmendmentDiscard,
-            // PR3 — opt-in re-score offer plumbing.
-            pendingRescoreOffer,
-            onRescoreOfferClear,
-            // Race-id → human label lookup so AmendDeltaMessage rows show
-            // "U.S. House — TX-07" instead of the raw race id. Built from
-            // races (not decisions) so undecided races also resolve.
-            raceLabelLookup: Object.fromEntries(
-              racesWithDecided.map((r) => [r.id, r.label]),
-            ),
-            // P0 #1 (live audit) — auto-fire a "Introduce this race…"
-            // synthetic user message on mount so the model streams a
-            // context-aware AI greeting before the voter speaks. Pre-fix
-            // the chat opened EMPTY (only the placeholder "Ask anything
-            // about U.S. Senate." with no AI bubble). The synthetic user
-            // message is `hidden`, so only the AI bubble renders.
-            autoFireRaceIntro: true,
-          }}
+        />
+
+        <div className="flex h-full flex-col overflow-hidden">
+          <ChatPanel
+            // Re-key by activeRace.id so the entire ChatPanel (and its
+            // `messages` state) resets across race switches. This is the
+            // per-race scope contract — UI mirrors what the chat route
+            // already enforces server-side from Phase 1.
+            key={`workspace-chat-${activeRace?.id ?? "none"}`}
+            state={state}
+            zipCode={zipCode}
+            pollingData={pollingData ?? undefined}
+            onBudgetUpdate={onBudgetUpdate}
+            voterProfile={voterProfile}
+            countyName={countyName}
+            userSampleBallotText={userSampleBallotText}
+            preResearchContext={preResearchContext}
+            primary={primaryLane}
+            onChatStarted={onChatStarted}
+            promptFleetV2Enabled={promptFleetV2Enabled}
+            onLockInThemes={onLockInThemes}
+            ballotContext={ballotContext}
+            onBudgetExhausted={handleBudgetExhausted}
+            // PR 7 — externally controlled "budget out" flag so the chat
+            // input renders the visible-but-disabled state with a notice
+            // (instead of the entire workspace being replaced). Keyed off
+            // `budgetOut`, NOT `overlayDismissed` — dismissing the dialog
+            // is a pure UI action; the chat stays gated until BYOK / reset.
+            budgetExhausted={!!budgetOut}
+            gateVariant={budgetOut?.variant}
+            // Blind mode — cross-file contract with ChatPanel (tasks 1-3).
+            blindMode={blindMode}
+            revealedCandidates={revealedCandidates}
+            onRevealCandidate={onRevealCandidate}
+            onToggleBlindMode={onToggleBlindMode}
+            onHideCandidate={onHideCandidate}
+            // Task 4: locked value themes mapped to ConcernInterpretationEntry[]
+            // for CompareModal's per-issue rows. canonicalIssue is absent
+            // (Theme has no canonicalIssue) — alignment-score rows will render "—".
+            issues={issueItems}
+            workspace={{
+              activeRace: activeRace
+                ? {
+                    id: activeRace.id,
+                    label: activeRace.label,
+                    section: activeRace.section,
+                    // Prefer the Race's own candidates (the deriver now
+                    // propagates them through ContestLike → Race) and fall
+                    // back to the polling-data lookup for any Civic-API
+                    // shape where the deriver wasn't fed candidates. The
+                    // chat path's race-deep-dive builder needs this to
+                    // render its <ground_truth> tag.
+                    candidates:
+                      activeRace.candidates.length > 0
+                        ? activeRace.candidates
+                        : candidatesForActive,
+                  }
+                : null,
+              totalRaces: racesWithDecided.length,
+              activeRaceIndex: activeRaceIndex,
+              decided: !!activeDecision,
+              prevActiveRaceId: prevActiveRaceIdRef.current,
+              onCommitDecision,
+              onUnpickDecision,
+              // Real-fix: surface prior decisions so ChatPanel can render
+              // `decidedSummary` for the race-deep-dive builder.
+              decisions,
+              // Phase 6 amendment plumbing — see ChatPanel.WorkspaceModeProps.
+              pendingAmendment,
+              amendmentInFlight,
+              lockedThemes: themes,
+              chatCatchSuggestion,
+              onChatCatch,
+              onChatCatchAccept,
+              onChatCatchDismiss,
+              onAmendmentSave,
+              onAmendmentInFlightChange,
+              onAmendmentDiscard,
+              // PR3 — opt-in re-score offer plumbing.
+              pendingRescoreOffer,
+              onRescoreOfferClear,
+              // Race-id → human label lookup so AmendDeltaMessage rows show
+              // "U.S. House — TX-07" instead of the raw race id. Built from
+              // races (not decisions) so undecided races also resolve.
+              raceLabelLookup: Object.fromEntries(
+                racesWithDecided.map((r) => [r.id, r.label]),
+              ),
+              // P0 #1 (live audit) — auto-fire a "Introduce this race…"
+              // synthetic user message on mount so the model streams a
+              // context-aware AI greeting before the voter speaks. Pre-fix
+              // the chat opened EMPTY (only the placeholder "Ask anything
+              // about U.S. Senate." with no AI bubble). The synthetic user
+              // message is `hidden`, so only the AI bubble renders.
+              autoFireRaceIntro: true,
+            }}
+          />
+        </div>
+
+        <BallotPane
+          decisions={decisions}
+          totalRaces={racesWithDecided.length}
+          races={racesWithDecided}
+          cityState={cityState}
+          hasPolling={hasPolling}
+          activeRaceId={activeRaceId}
+          onPrint={handlePrintFromBallotPane}
+          onSaveProfile={onSaveProfile}
+          onHandoff={handleHandoffFromBallotPane}
         />
       </div>
-
-      <BallotPane
-        decisions={decisions}
-        totalRaces={racesWithDecided.length}
-        races={racesWithDecided}
-        cityState={cityState}
-        hasPolling={hasPolling}
-        activeRaceId={activeRaceId}
-        onPrint={handlePrintFromBallotPane}
-        onSaveProfile={onSaveProfile}
-        onHandoff={handleHandoffFromBallotPane}
-      />
-      </div>{/* closes inner 3-pane grid */}
+      {/* closes inner 3-pane grid */}
       {/*
        * PR 7 — BudgetExhausted as a modal overlay (not a workspace
        * replacement). Rendered as a sibling of the 3-pane grid so the
@@ -2145,10 +2159,9 @@ function WorkspaceShell({
           NEEDS-KEY: toast.print           — EN "Print"
           NEEDS-KEY: toast.saveTxt         — EN "Save .txt"
       */}
-      {racesWithDecided.length > 0
-        && decisions.length >= racesWithDecided.length
-        && !toastDismissed
-        && (
+      {racesWithDecided.length > 0 &&
+        decisions.length >= racesWithDecided.length &&
+        !toastDismissed && (
           <div
             role="status"
             className={[
@@ -2166,7 +2179,8 @@ function WorkspaceShell({
                 </div>
                 <div className="font-sans text-[13px] text-ink-2 leading-snug">
                   {/* NEEDS-KEY: toast.allDecidedSub — EN "Take your ballot to the booth — many polls don't allow phones." */}
-                  Take your ballot to the booth &mdash; many polls don&apos;t allow phones.
+                  Take your ballot to the booth &mdash; many polls don&apos;t
+                  allow phones.
                 </div>
               </div>
               <button
@@ -2179,14 +2193,20 @@ function WorkspaceShell({
             </div>
             <div className="flex gap-2 px-5 pb-4">
               <button
-                onClick={() => { handleDismissDecidedToast(); handlePrintFromBallotPane(); }}
+                onClick={() => {
+                  handleDismissDecidedToast();
+                  handlePrintFromBallotPane();
+                }}
                 className="flex-1 font-sans text-[13px] font-medium text-ink bg-paper border border-rule rounded px-3 py-1.5 hover:border-ink-2 transition-colors cursor-pointer"
               >
                 {/* NEEDS-KEY: toast.print — EN "Print" */}
                 Print &#8599;
               </button>
               <button
-                onClick={() => { handleDismissDecidedToast(); onSaveProfile(); }}
+                onClick={() => {
+                  handleDismissDecidedToast();
+                  onSaveProfile();
+                }}
                 className="flex-1 font-sans text-[13px] font-medium text-ink bg-paper border border-rule rounded px-3 py-1.5 hover:border-ink-2 transition-colors cursor-pointer"
               >
                 {/* NEEDS-KEY: toast.saveTxt — EN "Save .txt" */}
@@ -2202,7 +2222,9 @@ function WorkspaceShell({
           fixed bottom-right of workspace rather than in the top nav bar. */}
       <button
         onClick={handleOpenSettings}
-        aria-label={/* NEEDS-KEY: nav.settings — EN "Settings" / ES "Configuración" */ "Settings"}
+        aria-label={
+          /* NEEDS-KEY: nav.settings — EN "Settings" / ES "Configuración" */ "Settings"
+        }
         className={[
           "fixed bottom-5 right-5 z-50",
           "w-10 h-10 rounded-full",

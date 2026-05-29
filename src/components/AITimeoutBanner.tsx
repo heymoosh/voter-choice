@@ -53,12 +53,9 @@ export function AITimeoutBanner({ onRetry, onHandoff }: AITimeoutBannerProps) {
   const tr = translations[lang] as unknown as Record<string, unknown>;
   const errors = (tr.errors ?? {}) as Record<string, string>;
 
-  const title =
-    errors.aiTimeoutTitle ?? PLACEHOLDERS[lang].aiTimeoutTitle;
-  const body =
-    errors.aiTimeoutBody ?? PLACEHOLDERS[lang].aiTimeoutBody;
-  const retryLabel =
-    errors.aiTimeoutRetry ?? PLACEHOLDERS[lang].aiTimeoutRetry;
+  const title = errors.aiTimeoutTitle ?? PLACEHOLDERS[lang].aiTimeoutTitle;
+  const body = errors.aiTimeoutBody ?? PLACEHOLDERS[lang].aiTimeoutBody;
+  const retryLabel = errors.aiTimeoutRetry ?? PLACEHOLDERS[lang].aiTimeoutRetry;
   const handoffLabel =
     errors.aiTimeoutHandoff ?? PLACEHOLDERS[lang].aiTimeoutHandoff;
 

@@ -36,8 +36,8 @@ export default function MethodologyPage() {
             Every score in this app traces back to <b>your own words</b>. When
             you type your concerns in the cold open, we extract canonical issues
             + a directional stance (&ldquo;favors lower drug prices&rdquo;). You
-            confirm, rename, or remove before any scoring happens. We don&rsquo;t
-            pre-bake an issue list and check boxes against it.
+            confirm, rename, or remove before any scoring happens. We
+            don&rsquo;t pre-bake an issue list and check boxes against it.
           </p>
 
           <h2>Step 2 &middot; Votes come from official roll-call data</h2>
@@ -70,8 +70,8 @@ export default function MethodologyPage() {
             file&rdquo; votes — the bills that most directly test the issue.
             Every score on a candidate card is computed from these case file
             votes only. If we don&rsquo;t have a curated case file for an issue
-            &times; jurisdiction, the score reads <i>&ldquo;thin record&rdquo;</i>{" "}
-            instead of guessing.
+            &times; jurisdiction, the score reads{" "}
+            <i>&ldquo;thin record&rdquo;</i> instead of guessing.
           </p>
 
           <h2>Step 3 &middot; Donor data comes from FEC + state filings</h2>
@@ -118,9 +118,9 @@ export default function MethodologyPage() {
 
           <h2>AI&rsquo;s role</h2>
           <p>
-            The AI&rsquo;s job is to <b>route + summarize</b>, not to invent.
-            It pulls from our structured database (votes, donors, narratives)
-            and presents them. It does not generate vote claims. If a vote
+            The AI&rsquo;s job is to <b>route + summarize</b>, not to invent. It
+            pulls from our structured database (votes, donors, narratives) and
+            presents them. It does not generate vote claims. If a vote
             isn&rsquo;t in our database, we don&rsquo;t show it.
           </p>
 

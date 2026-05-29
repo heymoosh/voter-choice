@@ -171,8 +171,10 @@ export function CompareModal({
       onClick={handleOverlayClick}
       aria-modal="true"
       role="dialog"
-      aria-label={/* NEEDS-KEY: compare.modalLabel — EN "Side-by-side comparison" / ES "Comparación lado a lado" */
-        "Side-by-side comparison"}
+      aria-label={
+        /* NEEDS-KEY: compare.modalLabel — EN "Side-by-side comparison" / ES "Comparación lado a lado" */
+        "Side-by-side comparison"
+      }
     >
       {/* Modal inner — stop propagation so clicks inside don't close */}
       <div
@@ -201,9 +203,13 @@ export function CompareModal({
             ref={closeButtonRef}
             className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full text-ink-3 hover:bg-paper-2 hover:text-ink transition-colors focus-visible:outline-2 focus-visible:outline-civic focus-visible:outline-offset-1"
             onClick={onClose}
-            aria-label={/* NEEDS-KEY: compare.closeAriaLabel — EN "Close" / ES "Cerrar" */ "Close"}
+            aria-label={
+              /* NEEDS-KEY: compare.closeAriaLabel — EN "Close" / ES "Cerrar" */ "Close"
+            }
           >
-            <span aria-hidden="true" className="text-[22px] leading-none">&times;</span>
+            <span aria-hidden="true" className="text-[22px] leading-none">
+              &times;
+            </span>
           </button>
         </header>
 
@@ -312,7 +318,7 @@ export function CompareModal({
                       ? Math.round((score.kept / score.total) * 100)
                       : null;
 
-                  const hasVotes = !!(score.contributingVotes?.length);
+                  const hasVotes = !!score.contributingVotes?.length;
                   const voteCount = score.contributingVotes?.length ?? 0;
 
                   bodyEl = (
@@ -337,15 +343,18 @@ export function CompareModal({
                             <small className="text-[11px] font-normal">%</small>
                           </div>
                         ) : (
-                          <div className="font-serif text-[18px] text-ink-3 w-[44px] text-right">&mdash;</div>
-                        )}
-                        {/* N of M */}
-                        {typeof score.kept === "number" && typeof score.total === "number" && (
-                          <div className="text-[11px] text-ink-3 whitespace-nowrap">
-                            {/* NEEDS-KEY: compare.voteMeta — EN "{kept} of {total} votes" / ES "{kept} de {total} votos" */}
-                            {score.kept} of {score.total} votes
+                          <div className="font-serif text-[18px] text-ink-3 w-[44px] text-right">
+                            &mdash;
                           </div>
                         )}
+                        {/* N of M */}
+                        {typeof score.kept === "number" &&
+                          typeof score.total === "number" && (
+                            <div className="text-[11px] text-ink-3 whitespace-nowrap">
+                              {/* NEEDS-KEY: compare.voteMeta — EN "{kept} of {total} votes" / ES "{kept} de {total} votos" */}
+                              {score.kept} of {score.total} votes
+                            </div>
+                          )}
                       </div>
 
                       {/* Expand toggle */}
@@ -392,18 +401,18 @@ export function CompareModal({
                                       v.voteCast === "with"
                                         ? "bg-civic text-paper"
                                         : v.voteCast === "against"
-                                        ? "bg-vote-red text-paper"
-                                        : "bg-paper-2 text-ink-3 border border-rule"
+                                          ? "bg-vote-red text-paper"
+                                          : "bg-paper-2 text-ink-3 border border-rule"
                                     }`}
                                   >
                                     {v.voteCast === "with"
                                       ? /* NEEDS-KEY: compare.withYou — EN "WITH YOU" / ES "CON USTED" */
                                         "WITH YOU"
                                       : v.voteCast === "against"
-                                      ? /* NEEDS-KEY: compare.againstYou — EN "AGAINST YOU" / ES "EN CONTRA" */
-                                        "AGAINST YOU"
-                                      : /* NEEDS-KEY: compare.voteOther — EN "—" / ES "—" */
-                                        "—"}
+                                        ? /* NEEDS-KEY: compare.againstYou — EN "AGAINST YOU" / ES "EN CONTRA" */
+                                          "AGAINST YOU"
+                                        : /* NEEDS-KEY: compare.voteOther — EN "—" / ES "—" */
+                                          "—"}
                                   </span>
                                 </div>
                                 {/* Bill title */}
@@ -533,7 +542,10 @@ export function CompareModal({
         {/* ── Footer: blind-mode reminder ── */}
         {anyBlind && (
           <footer className="flex items-start gap-2.5 px-5 py-3 bg-civic-soft border-t border-rule flex-shrink-0">
-            <span className="text-[14px] leading-none mt-0.5" aria-hidden="true">
+            <span
+              className="text-[14px] leading-none mt-0.5"
+              aria-hidden="true"
+            >
               &#9888;
             </span>
             <p className="text-[12px] text-ink-2 leading-relaxed">

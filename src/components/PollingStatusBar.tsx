@@ -141,10 +141,7 @@ export function PollingStatusBar({
       locale,
       opts,
     );
-    const end = new Date(endISO + "T00:00:00").toLocaleDateString(
-      locale,
-      opts,
-    );
+    const end = new Date(endISO + "T00:00:00").toLocaleDateString(locale, opts);
     return `${start} – ${end}`;
   }
 
@@ -152,10 +149,7 @@ export function PollingStatusBar({
     stateData.earlyVoting.available &&
     stateData.earlyVoting.startDate &&
     stateData.earlyVoting.endDate
-      ? fmtRange(
-          stateData.earlyVoting.startDate,
-          stateData.earlyVoting.endDate,
-        )
+      ? fmtRange(stateData.earlyVoting.startDate, stateData.earlyVoting.endDate)
       : lang === "es"
         ? "No disponible"
         : "Not available";
@@ -179,11 +173,6 @@ export function PollingStatusBar({
           : lang === "es"
             ? `${days} días para el día de elecciones`
             : `${days} days until Election Day`;
-
-  // Tailwind: sticky strip background uses oklch(0.97 0.018 170) = civic-tinted paper
-  const barBg = open
-    ? "bg-paper-2"
-    : "bg-[oklch(0.97_0.018_170)] hover:bg-[oklch(0.94_0.025_170)]";
 
   return (
     <div
@@ -241,7 +230,10 @@ export function PollingStatusBar({
             />
             {countdownText}
           </span>
-          <span aria-hidden="true" className="text-[12px] text-civic whitespace-nowrap">
+          <span
+            aria-hidden="true"
+            className="text-[12px] text-civic whitespace-nowrap"
+          >
             {open
               ? lang === "es"
                 ? "Ocultar ▴"
@@ -318,7 +310,10 @@ export function PollingStatusBar({
           </div>
 
           {/* 4-column grid: Address / Hours / Bring / Deadlines */}
-          <div className="grid gap-7" style={{ gridTemplateColumns: "1.4fr 0.9fr 1fr 1.6fr" }}>
+          <div
+            className="grid gap-7"
+            style={{ gridTemplateColumns: "1.4fr 0.9fr 1fr 1.6fr" }}
+          >
             {/* Address */}
             <div className="min-w-0">
               <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-3 mb-1">

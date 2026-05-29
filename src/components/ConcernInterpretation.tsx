@@ -520,28 +520,30 @@ function LegacyConcernInterpretation({
   function handleConfirm() {
     if (confirmDisabled) return;
 
-    const confirmations: ConcernConfirmation[] = blockNarrowed.entries.map((entry) => {
-      const s = entryStates[entry.rank];
-      if (s.removed) {
+    const confirmations: ConcernConfirmation[] = blockNarrowed.entries.map(
+      (entry) => {
+        const s = entryStates[entry.rank];
+        if (s.removed) {
+          return {
+            rank: entry.rank,
+            resolvedInterpretation: entry.interpretation,
+            removed: true,
+          };
+        }
+        if (entry.confidence === "low" && s.pickedOption) {
+          return {
+            rank: entry.rank,
+            resolvedInterpretation: s.pickedOption,
+            resolvedStance: s.pickedOption,
+          };
+        }
         return {
           rank: entry.rank,
           resolvedInterpretation: entry.interpretation,
-          removed: true,
+          ...(entry.stance ? { resolvedStance: entry.stance } : {}),
         };
-      }
-      if (entry.confidence === "low" && s.pickedOption) {
-        return {
-          rank: entry.rank,
-          resolvedInterpretation: s.pickedOption,
-          resolvedStance: s.pickedOption,
-        };
-      }
-      return {
-        rank: entry.rank,
-        resolvedInterpretation: entry.interpretation,
-        ...(entry.stance ? { resolvedStance: entry.stance } : {}),
-      };
-    });
+      },
+    );
 
     onConfirmNarrowed(confirmations);
   }

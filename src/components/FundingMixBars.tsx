@@ -58,9 +58,7 @@ export function FundingMixBars({ mix, labelMin = 12 }: FundingMixBarsProps) {
           className="grid place-items-center min-w-0 bg-civic text-paper-2 font-serif font-semibold text-[14px] tracking-[-0.01em]"
           style={{ flexBasis: mix.small + "%" }}
         >
-          {mix.small >= labelMin && (
-            <span>{mix.small}%</span>
-          )}
+          {mix.small >= labelMin && <span>{mix.small}%</span>}
         </div>
 
         {/* Large donors segment — gold */}
@@ -68,9 +66,7 @@ export function FundingMixBars({ mix, labelMin = 12 }: FundingMixBarsProps) {
           className="grid place-items-center min-w-0 bg-gold text-ink font-serif font-semibold text-[14px] tracking-[-0.01em]"
           style={{ flexBasis: mix.large + "%" }}
         >
-          {mix.large >= labelMin && (
-            <span>{mix.large}%</span>
-          )}
+          {mix.large >= labelMin && <span>{mix.large}%</span>}
         </div>
 
         {/* PAC segment — vote-red */}
@@ -78,9 +74,7 @@ export function FundingMixBars({ mix, labelMin = 12 }: FundingMixBarsProps) {
           className="grid place-items-center min-w-0 bg-vote-red text-paper-2 font-serif font-semibold text-[14px] tracking-[-0.01em]"
           style={{ flexBasis: mix.pac + "%" }}
         >
-          {mix.pac >= labelMin && (
-            <span>{mix.pac}%</span>
-          )}
+          {mix.pac >= labelMin && <span>{mix.pac}%</span>}
         </div>
       </div>
 

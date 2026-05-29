@@ -153,7 +153,9 @@ export function ProfileResumeModal({
               className="font-serif text-[1.35rem] font-semibold leading-tight text-ink"
             >
               {/* NEEDS-KEY: profileResume.title */}
-              {lang === "es" ? "Sube tu perfil .txt." : "Drop your .txt profile."}
+              {lang === "es"
+                ? "Sube tu perfil .txt."
+                : "Drop your .txt profile."}
             </h3>
           </div>
           <button

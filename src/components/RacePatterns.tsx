@@ -437,7 +437,8 @@ function CandidateSection({
   });
   // In parent-controlled blindMode, use identity.isBlind.
   // In local-toggle mode (default, blindMode=false), use locallyRevealed.
-  const showName = isProposition || (blindMode ? !identity.isBlind : !!locallyRevealed);
+  const showName =
+    isProposition || (blindMode ? !identity.isBlind : !!locallyRevealed);
   const displayLabel = showName ? candidate.name : identity.aliasLabel;
   const pickDisabled = submitting || submitted || isStreaming;
 
@@ -534,33 +535,36 @@ function CandidateSection({
             </button>
           )}
           {/* Per-card hide affordance — re-anonymizes a revealed card while global blind mode is on */}
-          {!isProposition && blindMode && !identity.isBlind && onHideCandidate && (
-            <button
-              type="button"
-              data-testid={`race-patterns-hide-candidate-${candidate.id}`}
-              onClick={() => onHideCandidate(candidate.id)}
-              className="mt-1 inline-flex items-center gap-[5px] text-[12px] text-ink-3 font-medium hover:text-ink-2 transition-colors"
-            >
-              {/* Eye-off icon */}
-              <svg
-                viewBox="0 0 24 24"
-                width="13"
-                height="13"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
+          {!isProposition &&
+            blindMode &&
+            !identity.isBlind &&
+            onHideCandidate && (
+              <button
+                type="button"
+                data-testid={`race-patterns-hide-candidate-${candidate.id}`}
+                onClick={() => onHideCandidate(candidate.id)}
+                className="mt-1 inline-flex items-center gap-[5px] text-[12px] text-ink-3 font-medium hover:text-ink-2 transition-colors"
               >
-                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
-                <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
-                <line x1="1" y1="1" x2="23" y2="23" />
-              </svg>
-              {/* NEEDS-KEY: research.hideCandidateButton — EN "Hide" */}
-              <span>Hide</span>
-            </button>
-          )}
+                {/* Eye-off icon */}
+                <svg
+                  viewBox="0 0 24 24"
+                  width="13"
+                  height="13"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
+                  <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
+                  <line x1="1" y1="1" x2="23" y2="23" />
+                </svg>
+                {/* NEEDS-KEY: research.hideCandidateButton — EN "Hide" */}
+                <span>Hide</span>
+              </button>
+            )}
         </div>
         {/* Values highlight callout */}
         {candidate.valuesHighlight && (

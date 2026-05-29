@@ -44,10 +44,9 @@ export default function AboutPage() {
             For every race on your ballot, we pull the{" "}
             <b>actual voting record</b> of incumbents (Congress.gov, state
             legislatures), the <b>funding picture</b> (FEC, OpenSecrets, state
-            ethics commissions), and the{" "}
-            <b>editorially-curated context</b> behind each vote (CAN2026 case
-            files). We score how each candidate aligns with the issues YOU told
-            us matter, vote by vote.
+            ethics commissions), and the <b>editorially-curated context</b>{" "}
+            behind each vote (CAN2026 case files). We score how each candidate
+            aligns with the issues YOU told us matter, vote by vote.
           </p>
 
           <h2>What we don&rsquo;t do</h2>
@@ -59,14 +58,13 @@ export default function AboutPage() {
               <b>No tracking.</b> No analytics, no telemetry, no pixels.
             </li>
             <li>
-              <b>No endorsement.</b> We don&rsquo;t tell you who to vote for.
-              We show you what the candidates have done. The final choice is
-              yours.
+              <b>No endorsement.</b> We don&rsquo;t tell you who to vote for. We
+              show you what the candidates have done. The final choice is yours.
             </li>
             <li>
               <b>No data hoarding.</b> Your address, draft picks, and chat
-              history live in your browser. If you close the tab and didn&rsquo;t
-              save a profile, it&rsquo;s gone.
+              history live in your browser. If you close the tab and
+              didn&rsquo;t save a profile, it&rsquo;s gone.
             </li>
           </ul>
 

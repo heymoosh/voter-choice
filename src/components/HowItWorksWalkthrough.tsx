@@ -62,10 +62,7 @@ export function HowItWorksWalkthrough() {
           role="list"
         >
           {steps.map(({ num, title, desc }) => (
-            <li
-              key={num}
-              className="border-t border-ink pt-[18px]"
-            >
+            <li key={num} className="border-t border-ink pt-[18px]">
               {/* Step number: zero-padded mono */}
               <div className="font-mono text-[11px] tracking-[0.18em] text-civic mb-3.5 uppercase">
                 {String(num).padStart(2, "0")}

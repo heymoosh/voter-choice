@@ -131,11 +131,7 @@ function ScoreLabel({ score }: { score: AlignmentScore }) {
 
 /* ── Horizontal bar (8px tall, rounded 4px) ────────────────── */
 
-function AlignmentBar({
-  pct,
-}: {
-  pct: number | null;
-}) {
+function AlignmentBar({ pct }: { pct: number | null }) {
   return (
     <div
       aria-hidden="true"
@@ -206,7 +202,7 @@ function IssueRow({
 
   const pct = isWebSearch ? null : scorePercentage(score);
   const hasNumericRecord = pct !== null;
-  const hasVotes = !!(score.contributingVotes?.length);
+  const hasVotes = !!score.contributingVotes?.length;
 
   // Open row: bg-paper, left civic inset shadow
   const openClass = isOpen
@@ -267,8 +263,7 @@ function IssueRow({
                     {score.total === 1 ? "vote" : "votes"}
                     {!hasVotes && (
                       <span className="text-ink-3">
-                        {/* NEEDS-KEY: research.alignmentScoreDetailNotCurated — EN "· detail not yet curated" / ES "· detalle pendiente de edición" */}
-                        {" "}
+                        {/* NEEDS-KEY: research.alignmentScoreDetailNotCurated — EN "· detail not yet curated" / ES "· detalle pendiente de edición" */}{" "}
                         · detail not yet curated
                       </span>
                     )}
@@ -365,7 +360,9 @@ function IssueRow({
               <span
                 data-testid={`alignment-score-no-data-${score.canonicalIssue}`}
                 className="font-mono text-xs font-semibold text-ink-3 tabular-nums"
-                aria-label={/* NEEDS-KEY: research.alignmentScoreNoDataAriaLabel — EN "No data for this issue" / ES "Sin datos para este tema" */ "No data for this issue"}
+                aria-label={
+                  /* NEEDS-KEY: research.alignmentScoreNoDataAriaLabel — EN "No data for this issue" / ES "Sin datos para este tema" */ "No data for this issue"
+                }
               >
                 —
               </span>

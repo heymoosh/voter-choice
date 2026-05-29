@@ -201,8 +201,7 @@ export function AlignmentDrilldown({
   const issuePacs: DonorBucketSlice[] = candidate
     ? (candidate.donorCoalition ?? []).filter(
         (slice) =>
-          slice.isIssuePAC &&
-          slice.alignsWith === score.canonicalIssue,
+          slice.isIssuePAC && slice.alignsWith === score.canonicalIssue,
       )
     : [];
 

@@ -45,7 +45,10 @@ import React, { useState } from "react";
 import type { StateElectionData } from "@/types/election";
 import { useLanguage } from "@/lib/i18n";
 import { translations } from "@/lib/translations";
-import { DeadlineMeter, type DeadlineMeterRow } from "@/components/DeadlineMeter";
+import {
+  DeadlineMeter,
+  type DeadlineMeterRow,
+} from "@/components/DeadlineMeter";
 
 export interface PollingInfoCardLocation {
   /** Polling place display name */
@@ -157,9 +160,18 @@ export function PollingInfoCard({
     const ev = stateData.earlyVoting;
     if (ev.available && ev.startDate && ev.endDate) {
       const locale = lang === "es" ? "es-US" : "en-US";
-      const opts: Intl.DateTimeFormatOptions = { month: "short", day: "numeric" };
-      const start = new Date(ev.startDate + "T00:00:00").toLocaleDateString(locale, opts);
-      const end = new Date(ev.endDate + "T00:00:00").toLocaleDateString(locale, opts);
+      const opts: Intl.DateTimeFormatOptions = {
+        month: "short",
+        day: "numeric",
+      };
+      const start = new Date(ev.startDate + "T00:00:00").toLocaleDateString(
+        locale,
+        opts,
+      );
+      const end = new Date(ev.endDate + "T00:00:00").toLocaleDateString(
+        locale,
+        opts,
+      );
       earlyWindowText = `${start} – ${end}`;
     } else {
       earlyWindowText = lang === "es" ? "No disponible" : "Not available";
@@ -219,7 +231,8 @@ export function PollingInfoCard({
                 {lang === "es" ? "Precinto" : "Precinct"}
               </div>
               <div className="text-[13.5px] leading-snug text-ink">
-                {pollingInfo.precinct ?? (lang === "es" ? "Ver registro" : "See registration")}
+                {pollingInfo.precinct ??
+                  (lang === "es" ? "Ver registro" : "See registration")}
               </div>
             </div>
 

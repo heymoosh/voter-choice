@@ -28,7 +28,12 @@ import type { ConcernConfirmation } from "./ConcernInterpretation";
 import { ColdOpenInput } from "./ColdOpenInput";
 import { parseThemeExtraction } from "../lib/prompts/parse-theme-extraction";
 import { parseThemeAmendment } from "../lib/prompts/parse-theme-amendment";
-import type { Theme, RouterView, RouterTrigger, RaceType } from "../lib/prompts/types";
+import type {
+  Theme,
+  RouterView,
+  RouterTrigger,
+  RaceType,
+} from "../lib/prompts/types";
 import { ThemeAmendEditor } from "./ThemeAmendEditor";
 import { AmendDeltaMessage } from "./AmendDeltaMessage";
 import { AmendRescoreOffer } from "./AmendRescoreOffer";
@@ -60,7 +65,12 @@ import {
   hasOpenConcernInterpretationBlock,
   stripPartialConcernInterpretationBlock,
 } from "../lib/structured-blocks";
-import type { AlignmentScoresEntry, RacePatternsBlock, RacePatternsCandidate, ConcernInterpretationEntry } from "../lib/structured-blocks";
+import type {
+  AlignmentScoresEntry,
+  RacePatternsBlock,
+  RacePatternsCandidate,
+  ConcernInterpretationEntry,
+} from "../lib/structured-blocks";
 import { getTodayInLatestUsZone } from "../lib/electionToday";
 import type { GateVariant } from "./BudgetExhausted";
 import type { Race } from "../lib/raceDeriver";
@@ -1757,9 +1767,11 @@ function WorkspaceChat({
               }
               className="mt-0.5 shrink-0 inline-flex items-center gap-1.5 border border-rule rounded-md px-2.5 py-1 font-mono text-[10.5px] uppercase tracking-[0.1em] text-ink-2 hover:bg-paper-2 active:scale-95 transition"
             >
-              {blindMode
-                ? "Names" /* NEEDS-KEY: research.blindToggleNames — EN "Names" */
-                : "Blind" /* NEEDS-KEY: research.blindToggleBlind — EN "Blind" */}
+              {
+                blindMode
+                  ? "Names" /* NEEDS-KEY: research.blindToggleNames — EN "Names" */
+                  : "Blind" /* NEEDS-KEY: research.blindToggleBlind — EN "Blind" */
+              }
             </button>
           )}
         </div>
@@ -2260,8 +2272,11 @@ export function ChatPanel({
 
   // ── CompareModal state (one instance, shared across all cards) ──
   const [compareModalOpen, setCompareModalOpen] = useState(false);
-  const [compareRaceBlock, setCompareRaceBlock] = useState<RacePatternsBlock | null>(null);
-  const [compareAlignmentMap, setCompareAlignmentMap] = useState<Map<string, AlignmentScoresEntry> | undefined>(undefined);
+  const [compareRaceBlock, setCompareRaceBlock] =
+    useState<RacePatternsBlock | null>(null);
+  const [compareAlignmentMap, setCompareAlignmentMap] = useState<
+    Map<string, AlignmentScoresEntry> | undefined
+  >(undefined);
 
   // ── AllVotesPanel state (one instance) ──
   const [allVotesPanelOpen, setAllVotesPanelOpen] = useState(false);
@@ -3145,7 +3160,9 @@ export function ChatPanel({
     // Find the last assistant message that has a RACE_PATTERNS block
     const lastRaceMsg = [...messages]
       .reverse()
-      .find((m) => m.role === "assistant" && m.content.includes("[/RACE_PATTERNS]"));
+      .find(
+        (m) => m.role === "assistant" && m.content.includes("[/RACE_PATTERNS]"),
+      );
     if (!lastRaceMsg) return;
     const block = parseRacePatternsBlock(lastRaceMsg.content);
     if (!block) return;
@@ -3521,7 +3538,10 @@ export function ChatPanel({
                   const lastUserMsg = messages[lastUserIdx];
                   if (!lastUserMsg) return;
                   setError(null);
-                  void sendMessage(lastUserMsg.content, messages.slice(0, lastUserIdx));
+                  void sendMessage(
+                    lastUserMsg.content,
+                    messages.slice(0, lastUserIdx),
+                  );
                 }}
                 onHandoff={() => {
                   // Force-show the client fallback handoff by disabling chat

@@ -3,8 +3,11 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useLanguage } from "@/lib/i18n";
 import { translations } from "@/lib/translations";
-import { getByokKey, setByokKey, removeByokKey } from "@/lib/anthropic-client-byok";
-import { LanguageToggle } from "./LanguageToggle";
+import {
+  getByokKey,
+  setByokKey,
+  removeByokKey,
+} from "@/lib/anthropic-client-byok";
 
 // NEEDS-KEY: settings.title          — EN "Settings" / ES "Configuración"
 // NEEDS-KEY: settings.langSection    — EN "Language" / ES "Idioma"
@@ -125,7 +128,10 @@ export function SettingsPanel({
   const { lang, setLang } = useLanguage();
   const [keyDraft, setKeyDraft] = useState("");
   const [savedKey, setSavedKey] = useState<string | null>(null);
-  const [status, setStatus] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
+  const [status, setStatus] = useState<{
+    tone: "ok" | "error";
+    text: string;
+  } | null>(null);
   // `mounted` trails `open` by one rAF so CSS transitions can fire on enter.
   const [mounted, setMounted] = useState(false);
   const drawerRef = useRef<HTMLElement>(null);
@@ -148,9 +154,8 @@ export function SettingsPanel({
     setStatus(null);
     // Focus first interactive element
     const timer = setTimeout(() => {
-      const el = drawerRef.current?.querySelector<HTMLElement>(
-        "button, input, a"
-      );
+      const el =
+        drawerRef.current?.querySelector<HTMLElement>("button, input, a");
       el?.focus();
     }, 50);
     return () => clearTimeout(timer);

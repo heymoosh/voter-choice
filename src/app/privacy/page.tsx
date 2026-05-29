@@ -52,11 +52,10 @@ export default function PrivacyPolicy() {
             or sign-ups. The app stores your{" "}
             <strong>language preference</strong> in your browser&apos;s
             localStorage so the interface can stay in English or Spanish across
-            visits. It also stores your{" "}
-            <strong>draft ballot picks</strong> and (optionally) a{" "}
-            <strong>bring-your-own Anthropic key</strong> in localStorage. None
-            of this leaves your device unless you take an action that explicitly
-            sends it.
+            visits. It also stores your <strong>draft ballot picks</strong> and
+            (optionally) a <strong>bring-your-own Anthropic key</strong> in
+            localStorage. None of this leaves your device unless you take an
+            action that explicitly sends it.
           </p>
 
           {/* Zip Code Processing */}
@@ -81,12 +80,11 @@ export default function PrivacyPolicy() {
             gone from the app.
           </p>
           <p className="mb-4">
-            Chat messages are sent to the{" "}
-            <strong>Anthropic API</strong> for processing. We do not send your
-            exact address to Anthropic unless you type it into the chat
-            yourself. Please do not type your name, exact address, phone, email,
-            or other identifying details into chat. For information about how
-            Anthropic handles API data, see{" "}
+            Chat messages are sent to the <strong>Anthropic API</strong> for
+            processing. We do not send your exact address to Anthropic unless
+            you type it into the chat yourself. Please do not type your name,
+            exact address, phone, email, or other identifying details into chat.
+            For information about how Anthropic handles API data, see{" "}
             <a
               href="https://www.anthropic.com/policies/privacy"
               target="_blank"
@@ -132,9 +130,8 @@ export default function PrivacyPolicy() {
           </h2>
           <p className="mb-4">
             If you choose to enter your street address to find your polling
-            place, the app may use{" "}
-            <strong>Google Places</strong> in your browser for address
-            autocomplete and sends the address to the{" "}
+            place, the app may use <strong>Google Places</strong> in your
+            browser for address autocomplete and sends the address to the{" "}
             <strong>Google Civic Information API</strong> through our server for
             polling-place and contest lookup. We do not intentionally log or
             store your address, and we do not include it in the AI chat prompt.

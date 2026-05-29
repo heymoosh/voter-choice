@@ -58,7 +58,11 @@ export interface AllVotesPanelProps {
 
 /* ─── VoteCastBadge ──────────────────────────────────────── */
 
-function VoteCastBadge({ voteCast }: { voteCast: ContributingVote["voteCast"] }) {
+function VoteCastBadge({
+  voteCast,
+}: {
+  voteCast: ContributingVote["voteCast"];
+}) {
   const isWith = voteCast === "with";
   const isAgainst = voteCast === "against";
   return (
@@ -82,7 +86,8 @@ function VoteCastBadge({ voteCast }: { voteCast: ContributingVote["voteCast"] })
 /* ─── SourceChip ─────────────────────────────────────────── */
 
 function SourceChip({ name, url }: { name: string; url?: string }) {
-  const href = url ?? `https://www.google.com/search?q=${encodeURIComponent(name)}`;
+  const href =
+    url ?? `https://www.google.com/search?q=${encodeURIComponent(name)}`;
   return (
     <a
       href={href}
@@ -90,7 +95,9 @@ function SourceChip({ name, url }: { name: string; url?: string }) {
       rel="noopener noreferrer"
       className="inline-flex items-baseline gap-1 px-2 py-1 font-mono text-[10.5px] font-medium uppercase tracking-[0.12em] bg-civic-soft text-civic-2 hover:bg-civic hover:text-paper-2 rounded transition-colors no-underline"
     >
-      <span className="opacity-60" aria-hidden="true">§</span>
+      <span className="opacity-60" aria-hidden="true">
+        §
+      </span>
       <span>{name}</span>
     </a>
   );
@@ -218,7 +225,9 @@ export function AllVotesPanel({
     if (!open) return;
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    return () => { document.body.style.overflow = prev; };
+    return () => {
+      document.body.style.overflow = prev;
+    };
   }, [open]);
 
   if (!open || !candidate) return null;
@@ -255,7 +264,9 @@ export function AllVotesPanel({
       : allVotes.filter((v) => v.canonicalIssue === filter);
 
   // Display name in header
-  const headerName = blindMode ? (alias ?? identity.aliasLabel) : candidate.name;
+  const headerName = blindMode
+    ? (alias ?? identity.aliasLabel)
+    : candidate.name;
 
   return (
     /* Backdrop — fixed overlay */
@@ -329,8 +340,12 @@ export function AllVotesPanel({
 
           {/* Per-issue tabs */}
           {issueIds.map((ci) => {
-            const count = allVotes.filter((v) => v.canonicalIssue === ci).length;
-            const label = allVotes.find((v) => v.canonicalIssue === ci)!.issueLabel;
+            const count = allVotes.filter(
+              (v) => v.canonicalIssue === ci,
+            ).length;
+            const label = allVotes.find(
+              (v) => v.canonicalIssue === ci,
+            )!.issueLabel;
             return (
               <button
                 key={ci}
@@ -372,8 +387,9 @@ export function AllVotesPanel({
           </div>
           <p className="text-[13px] text-ink-2 leading-[1.5] mb-2 mt-0">
             {/* NEEDS-KEY: research.allVotesMethodBody — EN ""With you" / "against you" is computed by comparing each roll-call vote to your stated stance on the issue this bill touches." / ES "" */}
-            <b>"With you" / "against you"</b> is computed by comparing each
-            roll-call vote to your stated stance on the issue this bill touches.
+            <b>&quot;With you&quot; / &quot;against you&quot;</b> is computed by
+            comparing each roll-call vote to your stated stance on the issue
+            this bill touches.
           </p>
           <ul className="list-none p-0 m-0 flex flex-col gap-1 text-[12px] text-ink-3 leading-[1.5]">
             <li>

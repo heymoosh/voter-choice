@@ -108,7 +108,11 @@ function AppNav() {
 // LoadingView
 // ---------------------------------------------------------------------------
 
-export function LoadingView({ address, onDone, selfAdvance = true }: LoadingViewProps) {
+export function LoadingView({
+  address,
+  onDone,
+  selfAdvance = true,
+}: LoadingViewProps) {
   const { lang } = useLanguage();
   const t = translations[lang];
   const [step, setStep] = useState(0);
@@ -155,7 +159,10 @@ export function LoadingView({ address, onDone, selfAdvance = true }: LoadingView
               "border-2 border-civic-soft border-t-civic",
               "animate-spin",
             ].join(" ")}
-            style={{ animationDuration: "1.1s", animationTimingFunction: "linear" }}
+            style={{
+              animationDuration: "1.1s",
+              animationTimingFunction: "linear",
+            }}
           />
 
           {/* Heading */}
@@ -221,7 +228,10 @@ export function LoadingView({ address, onDone, selfAdvance = true }: LoadingView
                           // ::after pseudo-element via inline SVG icon instead
                           {}
                         : isActive
-                          ? { animationDuration: "0.9s", animationTimingFunction: "linear" }
+                          ? {
+                              animationDuration: "0.9s",
+                              animationTimingFunction: "linear",
+                            }
                           : {}
                     }
                     aria-hidden="true"

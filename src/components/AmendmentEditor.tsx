@@ -50,7 +50,9 @@ export interface AmendmentEditorProps {
 // ---------------------------------------------------------------------------
 
 /** Shallow re-rank: mutates ranks to be 1-based after a splice/reorder. */
-function rerank(items: ConcernInterpretationEntry[]): ConcernInterpretationEntry[] {
+function rerank(
+  items: ConcernInterpretationEntry[],
+): ConcernInterpretationEntry[] {
   return items.map((it, i) => ({ ...it, rank: i + 1 }));
 }
 
@@ -67,7 +69,8 @@ function guessCanonicalIssue(text: string): string {
     return "housing_affordability";
   if (/stock|disclosure|congress|trading|term limits/.test(t))
     return "congressional_accountability";
-  if (/climate|environment|carbon|emissions/.test(t)) return "environment_climate";
+  if (/climate|environment|carbon|emissions/.test(t))
+    return "environment_climate";
   if (/abortion|reproductive|roe/.test(t)) return "reproductive_rights";
   if (/gun|firearm|second amendment/.test(t)) return "gun_rights_safety";
   if (/immigration|border|asylum/.test(t)) return "immigration";
@@ -155,7 +158,8 @@ function IssueRow({
     (e: React.PointerEvent<HTMLDivElement>) => {
       if (!drag.current.active) return;
       const dy = e.clientY - drag.current.startY;
-      if (rowRef.current) rowRef.current.style.transform = `translateY(${dy}px)`;
+      if (rowRef.current)
+        rowRef.current.style.transform = `translateY(${dy}px)`;
       const slots = Math.round(dy / drag.current.rowH);
       const target = Math.max(0, Math.min(total - 1, index + slots));
       if (target !== drag.current.currentIdx) {
@@ -305,8 +309,8 @@ export function AmendmentEditor({
   onApply,
   onCancel,
 }: AmendmentEditorProps) {
-  const [draft, setDraft] = useState<ConcernInterpretationEntry[]>(
-    () => issues.map((i) => ({ ...i })),
+  const [draft, setDraft] = useState<ConcernInterpretationEntry[]>(() =>
+    issues.map((i) => ({ ...i })),
   );
   const [newIssueText, setNewIssueText] = useState("");
 

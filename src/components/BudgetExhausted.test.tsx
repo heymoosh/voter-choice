@@ -360,7 +360,8 @@ describe("BudgetExhausted — variant: community_budget (default)", () => {
         resetAt="2030-06-01T00:00:00Z"
       />,
     );
-    const reset = screen.getByTestId("budget-exhausted-reset").textContent ?? "";
+    const reset =
+      screen.getByTestId("budget-exhausted-reset").textContent ?? "";
     expect(reset).toMatch(/Community budget resets in/);
     expect(reset).toMatch(/day/i);
     expect(reset).toMatch(/UTC/i);
@@ -389,7 +390,8 @@ describe("BudgetExhausted — variant: daily_limit", () => {
         resetAt="2030-06-01T00:00:00Z"
       />,
     );
-    const reset = screen.getByTestId("budget-exhausted-reset").textContent ?? "";
+    const reset =
+      screen.getByTestId("budget-exhausted-reset").textContent ?? "";
     expect(reset).toMatch(/Daily free-chat limit reached/i);
     expect(reset).toMatch(/resets/i);
     expect(reset).toMatch(/UTC/i);
@@ -431,7 +433,8 @@ describe("BudgetExhausted — variant: concurrent_limit", () => {
         resetAt={FUTURE_RESET}
       />,
     );
-    const reset = screen.getByTestId("budget-exhausted-reset").textContent ?? "";
+    const reset =
+      screen.getByTestId("budget-exhausted-reset").textContent ?? "";
     expect(reset).toMatch(/Too many active sessions/i);
     expect(reset).toMatch(/close other tabs/i);
   });
@@ -444,7 +447,8 @@ describe("BudgetExhausted — variant: concurrent_limit", () => {
         resetAt="2030-06-01T00:00:00Z"
       />,
     );
-    const reset = screen.getByTestId("budget-exhausted-reset").textContent ?? "";
+    const reset =
+      screen.getByTestId("budget-exhausted-reset").textContent ?? "";
     // No UTC marker — not a time-based gate.
     expect(reset).not.toMatch(/UTC/i);
   });
@@ -472,7 +476,8 @@ describe("BudgetExhausted — variant: session_limit", () => {
         resetAt={FUTURE_RESET}
       />,
     );
-    const reset = screen.getByTestId("budget-exhausted-reset").textContent ?? "";
+    const reset =
+      screen.getByTestId("budget-exhausted-reset").textContent ?? "";
     expect(reset).toMatch(/message limit/i);
     expect(reset).toMatch(/continue on any chatbot/i);
   });
@@ -485,7 +490,8 @@ describe("BudgetExhausted — variant: session_limit", () => {
         resetAt="2030-06-01T00:00:00Z"
       />,
     );
-    const reset = screen.getByTestId("budget-exhausted-reset").textContent ?? "";
+    const reset =
+      screen.getByTestId("budget-exhausted-reset").textContent ?? "";
     // No UTC marker — not a time-based gate.
     expect(reset).not.toMatch(/UTC/i);
   });
@@ -513,7 +519,8 @@ describe("BudgetExhausted — variant: service_unavailable", () => {
         resetAt={FUTURE_RESET}
       />,
     );
-    const reset = screen.getByTestId("budget-exhausted-reset").textContent ?? "";
+    const reset =
+      screen.getByTestId("budget-exhausted-reset").textContent ?? "";
     expect(reset).toMatch(/temporarily unavailable/i);
     expect(reset).toMatch(/try again/i);
   });
@@ -526,7 +533,8 @@ describe("BudgetExhausted — variant: service_unavailable", () => {
         resetAt="2030-06-01T00:00:00Z"
       />,
     );
-    const reset = screen.getByTestId("budget-exhausted-reset").textContent ?? "";
+    const reset =
+      screen.getByTestId("budget-exhausted-reset").textContent ?? "";
     // No UTC marker — a transient outage has no fixed reset to wait for.
     expect(reset).not.toMatch(/UTC/i);
   });
@@ -548,12 +556,10 @@ describe("BudgetExhausted — variant: service_unavailable", () => {
 describe("BudgetExhausted — variant defaults to community_budget", () => {
   it("renders Community budget copy when no variant prop is passed", () => {
     render(
-      <BudgetExhausted
-        {...defaultProps()}
-        resetAt="2030-06-01T00:00:00Z"
-      />,
+      <BudgetExhausted {...defaultProps()} resetAt="2030-06-01T00:00:00Z" />,
     );
-    const reset = screen.getByTestId("budget-exhausted-reset").textContent ?? "";
+    const reset =
+      screen.getByTestId("budget-exhausted-reset").textContent ?? "";
     expect(reset).toMatch(/Community budget resets in/);
   });
 });

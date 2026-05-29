@@ -8,10 +8,7 @@ import type {
 import { formatCurrencyShort } from "../lib/ballot-utils";
 import { CardErrorBoundary } from "./cards/CardErrorBoundary";
 import { FundingMixBars } from "./FundingMixBars";
-import {
-  getPeerComparison,
-  type PeerEntry,
-} from "../lib/peerComparison";
+import { getPeerComparison, type PeerEntry } from "../lib/peerComparison";
 
 /* ──────────────────────────────────────────────────────────────
  * FunderBars — donor-coalition stacked bar + text list
@@ -129,8 +126,7 @@ function industrySwatch(label: string | undefined): string {
   const key = String(label).trim().toLowerCase();
   if (INDUSTRY_COLORS[key]) return INDUSTRY_COLORS[key];
   let h = 0;
-  for (let i = 0; i < key.length; i++)
-    h = ((h * 31 + key.charCodeAt(i)) >>> 0);
+  for (let i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) >>> 0;
   return INDUSTRY_FALLBACK[h % INDUSTRY_FALLBACK.length];
 }
 
@@ -193,14 +189,8 @@ export function FunderBars({
   const peerCandidate = peerCmp ? peerCmp.peer : null;
 
   // "Outside named sectors" tail — fill the bar to 100%.
-  const namedIndustryPct = industries.reduce(
-    (s, d) => s + (d.percent || 0),
-    0,
-  );
-  const namedIndustryAmt = industries.reduce(
-    (s, d) => s + (d.amount || 0),
-    0,
-  );
+  const namedIndustryPct = industries.reduce((s, d) => s + (d.percent || 0), 0);
+  const namedIndustryAmt = industries.reduce((s, d) => s + (d.amount || 0), 0);
   const otherPct = Math.max(0, 100 - namedIndustryPct);
   const otherAmt =
     typeof totalRaised === "number"
@@ -309,86 +299,100 @@ export function FunderBars({
           className="mt-[22px] pt-[20px] border-t border-rule"
         >
           {/* ── A. Comparison rails ────────────────────────────── */}
-          {peerCmp && peerCandidate && typeof totalRaised === "number" ? (() => {
-            const isMore = peerCmp.kind === "more";
-            const maxTotal = Math.max(totalRaised, peerCandidate.total);
-            const thisPct = (totalRaised / maxTotal) * 100;
-            const peerPct = (peerCandidate.total / maxTotal) * 100;
+          {peerCmp && peerCandidate && typeof totalRaised === "number" ? (
+            (() => {
+              const isMore = peerCmp.kind === "more";
+              const maxTotal = Math.max(totalRaised, peerCandidate.total);
+              const thisPct = (totalRaised / maxTotal) * 100;
+              const peerPct = (peerCandidate.total / maxTotal) * 100;
 
-            return (
-              <div>
-                {/* Headline */}
-                <div className="flex items-baseline gap-[8px] mb-[14px]">
-                  <span className="font-serif text-[26px] font-semibold tracking-[-0.02em] text-ink leading-none">
-                    {peerCmp.multiplier}×
-                  </span>
-                  <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink font-bold">
-                    {/* NEEDS-KEY: research.peerComparisonMore = EN:'MORE' ES:'MÁS' */}
-                    {/* NEEDS-KEY: research.peerComparisonLess = EN:'LESS' ES:'MENOS' */}
-                    {isMore ? "MORE" : "LESS"}
-                  </span>
-                  <span className="font-sans text-[13px] text-ink-2">
-                    {/* NEEDS-KEY: research.peerComparisonRaisedThan = EN:'raised than {peer}' ES:'recaudado que {peer}' */}
-                    raised than{" "}
-                    <span className="font-semibold text-ink">
-                      {peerCandidate.aliasOrName}
+              return (
+                <div>
+                  {/* Headline */}
+                  <div className="flex items-baseline gap-[8px] mb-[14px]">
+                    <span className="font-serif text-[26px] font-semibold tracking-[-0.02em] text-ink leading-none">
+                      {peerCmp.multiplier}×
                     </span>
-                  </span>
-                </div>
+                    <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink font-bold">
+                      {/* NEEDS-KEY: research.peerComparisonMore = EN:'MORE' ES:'MÁS' */}
+                      {/* NEEDS-KEY: research.peerComparisonLess = EN:'LESS' ES:'MENOS' */}
+                      {isMore ? "MORE" : "LESS"}
+                    </span>
+                    <span className="font-sans text-[13px] text-ink-2">
+                      {/* NEEDS-KEY: research.peerComparisonRaisedThan = EN:'raised than {peer}' ES:'recaudado que {peer}' */}
+                      raised than{" "}
+                      <span className="font-semibold text-ink">
+                        {peerCandidate.aliasOrName}
+                      </span>
+                    </span>
+                  </div>
 
-                {/* This candidate rail — proportional width */}
-                <div className="mb-[6px]">
-                  <div className="flex items-center gap-[10px]">
-                    <span className="font-serif text-[13px] font-semibold text-ink min-w-[52px] text-right tabular-nums">
-                      {formatCurrencyShort(totalRaised)}
-                    </span>
-                    <div className="flex-1 h-[30px] bg-paper-2 rounded-[6px] overflow-hidden border border-rule">
-                      <div
-                        className="h-full"
-                        style={{ width: thisPct + "%" }}
-                      >
-                        <FundingMixBars
-                          mix={{ small: fundingMix.small, large: fundingMix.large, pac: fundingMix.pac }}
-                          labelMin={12}
-                        />
+                  {/* This candidate rail — proportional width */}
+                  <div className="mb-[6px]">
+                    <div className="flex items-center gap-[10px]">
+                      <span className="font-serif text-[13px] font-semibold text-ink min-w-[52px] text-right tabular-nums">
+                        {formatCurrencyShort(totalRaised)}
+                      </span>
+                      <div className="flex-1 h-[30px] bg-paper-2 rounded-[6px] overflow-hidden border border-rule">
+                        <div
+                          className="h-full"
+                          style={{ width: thisPct + "%" }}
+                        >
+                          <FundingMixBars
+                            mix={{
+                              small: fundingMix.small,
+                              large: fundingMix.large,
+                              pac: fundingMix.pac,
+                            }}
+                            labelMin={12}
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Peer ghost rail */}
-                <div className="mb-[14px]">
-                  <div className="flex items-center gap-[10px]">
-                    <span className="font-serif text-[13px] font-semibold text-ink-3 min-w-[52px] text-right tabular-nums">
-                      {formatCurrencyShort(peerCandidate.total)}
-                    </span>
-                    <div className="flex-1 h-[12px] bg-paper-2 rounded-[4px] overflow-hidden border border-rule">
-                      <div
-                        className="h-full bg-rule rounded-[4px]"
-                        style={{ width: peerPct + "%" }}
-                        aria-label={`${peerCandidate.aliasOrName} total raised`}
-                        role="img"
-                      />
+                  {/* Peer ghost rail */}
+                  <div className="mb-[14px]">
+                    <div className="flex items-center gap-[10px]">
+                      <span className="font-serif text-[13px] font-semibold text-ink-3 min-w-[52px] text-right tabular-nums">
+                        {formatCurrencyShort(peerCandidate.total)}
+                      </span>
+                      <div className="flex-1 h-[12px] bg-paper-2 rounded-[4px] overflow-hidden border border-rule">
+                        <div
+                          className="h-full bg-rule rounded-[4px]"
+                          style={{ width: peerPct + "%" }}
+                          aria-label={`${peerCandidate.aliasOrName} total raised`}
+                          role="img"
+                        />
+                      </div>
+                    </div>
+                    <div className="font-mono text-[10px] text-ink-3 ml-[62px] mt-[2px] uppercase tracking-[0.10em]">
+                      {peerCandidate.aliasOrName}
                     </div>
                   </div>
-                  <div className="font-mono text-[10px] text-ink-3 ml-[62px] mt-[2px] uppercase tracking-[0.10em]">
-                    {peerCandidate.aliasOrName}
+
+                  {/* Legend — reuse FundingMixBars legend section */}
+                  <div className="mt-[10px]">
+                    <FundingMixBars
+                      mix={{
+                        small: fundingMix.small,
+                        large: fundingMix.large,
+                        pac: fundingMix.pac,
+                      }}
+                      labelMin={100}
+                    />
                   </div>
                 </div>
-
-                {/* Legend — reuse FundingMixBars legend section */}
-                <div className="mt-[10px]">
-                  <FundingMixBars
-                    mix={{ small: fundingMix.small, large: fundingMix.large, pac: fundingMix.pac }}
-                    labelMin={100}
-                  />
-                </div>
-              </div>
-            );
-          })() : (
+              );
+            })()
+          ) : (
             /* ── B. Simple money map (no peer) ──────────────── */
             <FundingMixBars
-              mix={{ small: fundingMix.small, large: fundingMix.large, pac: fundingMix.pac }}
+              mix={{
+                small: fundingMix.small,
+                large: fundingMix.large,
+                pac: fundingMix.pac,
+              }}
             />
           )}
 
@@ -410,7 +414,8 @@ export function FunderBars({
             {/* NEEDS-KEY: research.pacGloss = EN:'PAC = Political Action Committee — companies, unions, or advocacy groups that pool donations to back candidates. High PAC share signals reliance on organized interests over individual voters.' ES:'PAC = Comité de Acción Política — empresas, sindicatos o grupos de defensa que agrupan donaciones para respaldar candidatos. Un alto porcentaje de PAC señala dependencia de intereses organizados en lugar de votantes individuales.' */}
             <b>PAC</b> = Political Action Committee — companies, unions, or
             advocacy groups that pool donations to back candidates. High PAC
-            share signals reliance on organized interests over individual voters.
+            share signals reliance on organized interests over individual
+            voters.
           </p>
         </div>
       )}

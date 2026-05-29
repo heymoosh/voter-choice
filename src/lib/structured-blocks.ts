@@ -192,7 +192,13 @@ export interface RacePatternsCandidate {
    * raised + cycle label). Independent of donorCoalition — present whenever
    * funding-mix data is available.
    */
-  fundingMix?: { small: number; large: number; pac: number; total: number; cycle: string };
+  fundingMix?: {
+    small: number;
+    large: number;
+    pac: number;
+    total: number;
+    cycle: string;
+  };
 }
 
 export interface RacePatternsBlock {
@@ -280,21 +286,29 @@ function sanitizeTotalRaised(value: unknown): number | undefined {
 
 function sanitizeFundingMix(
   value: unknown,
-): { small: number; large: number; pac: number; total: number; cycle: string } | undefined {
+):
+  | { small: number; large: number; pac: number; total: number; cycle: string }
+  | undefined {
   if (!value || typeof value !== "object") return undefined;
   const v = value as Record<string, unknown>;
 
   // small/large/pac must be finite integers, clamped to 0–100
   if (
-    typeof v.small !== "number" || !Number.isFinite(v.small) || !Number.isInteger(v.small) ||
-    typeof v.large !== "number" || !Number.isFinite(v.large) || !Number.isInteger(v.large) ||
-    typeof v.pac !== "number" || !Number.isFinite(v.pac) || !Number.isInteger(v.pac)
-  ) return undefined;
+    typeof v.small !== "number" ||
+    !Number.isFinite(v.small) ||
+    !Number.isInteger(v.small) ||
+    typeof v.large !== "number" ||
+    !Number.isFinite(v.large) ||
+    !Number.isInteger(v.large) ||
+    typeof v.pac !== "number" ||
+    !Number.isFinite(v.pac) ||
+    !Number.isInteger(v.pac)
+  )
+    return undefined;
 
   // total must be finite and non-negative
-  if (
-    typeof v.total !== "number" || !Number.isFinite(v.total) || v.total < 0
-  ) return undefined;
+  if (typeof v.total !== "number" || !Number.isFinite(v.total) || v.total < 0)
+    return undefined;
 
   // cycle must be a non-empty string
   if (!isNonEmptyString(v.cycle)) return undefined;
@@ -976,17 +990,16 @@ function sanitizeConcernInterpretationEntry(
 
   // Design-delta: quotes anchoring interpretation back to user's original words.
   if (Array.isArray(v.quotes)) {
-    const quotes = (v.quotes as unknown[]).reduce<{ label: string; text: string }[]>(
-      (acc, q) => {
-        if (!q || typeof q !== "object") return acc;
-        const qObj = q as Record<string, unknown>;
-        if (isNonEmptyString(qObj.label) && isNonEmptyString(qObj.text)) {
-          acc.push({ label: qObj.label, text: qObj.text });
-        }
-        return acc;
-      },
-      [],
-    );
+    const quotes = (v.quotes as unknown[]).reduce<
+      { label: string; text: string }[]
+    >((acc, q) => {
+      if (!q || typeof q !== "object") return acc;
+      const qObj = q as Record<string, unknown>;
+      if (isNonEmptyString(qObj.label) && isNonEmptyString(qObj.text)) {
+        acc.push({ label: qObj.label, text: qObj.text });
+      }
+      return acc;
+    }, []);
     if (quotes.length > 0) entry.quotes = quotes;
   }
 
