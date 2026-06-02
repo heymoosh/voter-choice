@@ -89,47 +89,150 @@ export function attachLimitedDataNotice(
 // ---------------------------------------------------------------------------
 
 /**
- * Fuzzy-match a candidate by full name + jurisdiction.
+ * Strip GovTrack-style decorations from a stored candidate name so it can be
+ * matched against a clean ballot name.
  *
- * Strategy:
- * 1. Exact case-insensitive match on full_name + jurisdiction.
- * 2. If that misses, try prefix match (name starts with the queried string).
- * 3. If still missing, return null.
+ * The federal-votes ingest stores GovTrack's `person.name`, which is decorated:
+ *   "Sen. Andrew Kim [D-NJ]"  ·  "Rep. Marc Veasey [D-TX]"
+ * and occasionally the sortname form "Collins, Susan (Sen.) [R-ME]". Ballot
+ * rosters (Google Civic / uploaded ballots) use the plain "Firstname Lastname"
+ * form. This reduces the stored name to "Andrew Kim" / "Susan Collins".
+ *
+ * Exported for unit testing.
+ */
+export function cleanCandidateName(raw: string): string {
+  let s = (raw ?? "").trim();
+  // Trailing "[D-NJ]" / "[ID-VT]" party-state tag.
+  s = s.replace(/\s*\[[A-Za-z]+-[A-Za-z]{2}\]\s*$/u, "");
+  // Sortname "Collins, Susan (Sen.) [R-ME]" → "Susan Collins".
+  const sortname = s.match(
+    /^([^,]+),\s*(.+?)(?:\s*\((?:Sen|Rep|Del|Res|Com)\.?\))?$/u,
+  );
+  if (s.includes(",") && sortname) {
+    s = `${sortname[2].trim()} ${sortname[1].trim()}`;
+  }
+  // Leading honorific title.
+  s = s.replace(
+    /^(?:sen|rep|del|com|res|gov|senator|representative)\.?\s+/iu,
+    "",
+  );
+  // Stray "(Sen.)" left mid-string.
+  s = s.replace(/\s*\((?:sen|rep|del|res|com)\.?\)\s*/iu, " ");
+  return s.replace(/\s+/g, " ").trim();
+}
+
+/** Extract the 2-letter state from a "[D-NJ]" decoration, or null. */
+export function stateFromCandidateName(raw: string): string | null {
+  const m = (raw ?? "").match(/\[[A-Za-z]+-([A-Za-z]{2})\]/u);
+  return m ? m[1].toUpperCase() : null;
+}
+
+/** First / last name tokens of a cleaned "Firstname … Lastname" string. */
+export function candidateNameParts(clean: string): {
+  first: string;
+  last: string;
+} {
+  const toks = (clean ?? "").trim().split(/\s+/).filter(Boolean);
+  if (toks.length === 0) return { first: "", last: "" };
+  return { first: toks[0], last: toks[toks.length - 1] };
+}
+
+interface ParsedCandidateRow {
+  id: string;
+  rawLower: string;
+  clean: string;
+  cleanLower: string;
+  state: string | null;
+  first: string;
+  last: string;
+}
+
+/**
+ * Resolve a candidate id from a ballot name + jurisdiction (+ optional state).
+ *
+ * Match tiers, most-precise first:
+ *   1. Exact match on the raw stored name (back-compat for clean stored data).
+ *   2. Exact match on the decoration-stripped stored name — handles
+ *      "Sen. John Cornyn [R-TX]" ↔ "John Cornyn".
+ *   3. Lastname + state — handles ballot nicknames vs GovTrack formal names
+ *      ("Andy Kim" ↔ "Andrew Kim [D-NJ]"). State is taken from the stored
+ *      decoration; the caller passes the ballot's state to disambiguate. When
+ *      one lastname+state row exists it wins; multiple are broken by first
+ *      initial, and a still-ambiguous set is left to the prefix tiers rather
+ *      than guessed.
+ *   4. Prefix / reverse-prefix on the cleaned name (middle initials, suffixes).
+ *
+ * `stateCode` is optional for back-compat (the chat tools pass it; older
+ * callers may not). Without it, tier 3 is skipped.
  *
  * The jurisdiction narrows the search to the right chamber so same-name
- * candidates across chambers (e.g., a state rep who later ran for Senate)
- * don't collide.
+ * candidates across chambers don't collide.
  */
 export async function resolveCandidateId(
   candidateName: string,
   jurisdiction: string,
+  stateCode?: string,
 ): Promise<string | null> {
   const db = getDb();
   if (db === DB_NOT_CONFIGURED) return null;
 
-  const normalized = candidateName.trim().toLowerCase();
-  if (!normalized) return null;
+  const rawQuery = candidateName.trim();
+  if (!rawQuery) return null;
+  const queryLower = rawQuery.toLowerCase();
+  const cleanQuery = cleanCandidateName(rawQuery);
+  const cleanQueryLower = cleanQuery.toLowerCase();
+  const queryParts = candidateNameParts(cleanQuery);
 
-  // 1. Exact case-insensitive match
   const rows = await db
     .select({ id: schema.candidates.id, fullName: schema.candidates.fullName })
     .from(schema.candidates)
     .where(eq(schema.candidates.jurisdiction, jurisdiction));
 
-  const exact = rows.find(
-    (r) => r.fullName.trim().toLowerCase() === normalized,
-  );
+  const parsed: ParsedCandidateRow[] = rows.map((r) => {
+    const clean = cleanCandidateName(r.fullName);
+    const parts = candidateNameParts(clean);
+    return {
+      id: r.id,
+      rawLower: r.fullName.trim().toLowerCase(),
+      clean,
+      cleanLower: clean.toLowerCase(),
+      state: stateFromCandidateName(r.fullName),
+      first: parts.first,
+      last: parts.last,
+    };
+  });
+
+  // 1 + 2. Exact on raw, then on cleaned.
+  const exact =
+    parsed.find((p) => p.rawLower === queryLower) ??
+    parsed.find((p) => p.cleanLower === cleanQueryLower);
   if (exact) return exact.id;
 
-  // 2. Prefix match — handles "Bob Smith" matching "Bob Smith Jr."
-  const prefix = rows.find((r) =>
-    r.fullName.trim().toLowerCase().startsWith(normalized),
+  // 3. Lastname + state (nickname-tolerant).
+  if (stateCode && queryParts.last) {
+    const st = stateCode.toUpperCase();
+    const qLast = queryParts.last.toLowerCase();
+    const byLastState = parsed.filter(
+      (p) => p.last.toLowerCase() === qLast && p.state === st,
+    );
+    if (byLastState.length === 1) return byLastState[0].id;
+    if (byLastState.length > 1) {
+      const qInitial = queryParts.first[0]?.toLowerCase();
+      const byInitial = byLastState.filter(
+        (p) => p.first[0]?.toLowerCase() === qInitial,
+      );
+      if (byInitial.length === 1) return byInitial[0].id;
+      // Still ambiguous → don't guess; fall through to prefix tiers.
+    }
+  }
+
+  // 4. Prefix / reverse-prefix on the cleaned name.
+  const prefix = parsed.find(
+    (p) => cleanQueryLower && p.cleanLower.startsWith(cleanQueryLower),
   );
   if (prefix) return prefix.id;
-
-  // 3. Reverse prefix — queried name is longer (typo / middle-initial included)
-  const reversePrefix = rows.find((r) =>
-    normalized.startsWith(r.fullName.trim().toLowerCase()),
+  const reversePrefix = parsed.find(
+    (p) => p.cleanLower && cleanQueryLower.startsWith(p.cleanLower),
   );
   if (reversePrefix) return reversePrefix.id;
 

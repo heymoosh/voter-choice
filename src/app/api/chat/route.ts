@@ -1057,8 +1057,13 @@ interface LookupAlignmentInput {
 async function resolveLookupAlignmentTool(
   input: LookupAlignmentInput,
 ): Promise<{ found: boolean; [key: string]: unknown }> {
-  const { candidate_name, jurisdiction, canonical_issue, resolved_stance } =
-    input;
+  const {
+    candidate_name,
+    state_code,
+    jurisdiction,
+    canonical_issue,
+    resolved_stance,
+  } = input;
 
   if (
     !candidate_name ||
@@ -1073,7 +1078,11 @@ async function resolveLookupAlignmentTool(
     };
   }
 
-  const candidateId = await resolveCandidateId(candidate_name, jurisdiction);
+  const candidateId = await resolveCandidateId(
+    candidate_name,
+    jurisdiction,
+    state_code,
+  );
   if (!candidateId) {
     return {
       found: false,

@@ -292,7 +292,11 @@ export async function assembleRaceData(
     // Alignment scores (only when we have issues + a legislative jurisdiction).
     if (hasIssues) {
       if (jurisdiction) {
-        const candidateId = await resolveCandidateId(cand.name, jurisdiction);
+        const candidateId = await resolveCandidateId(
+          cand.name,
+          jurisdiction,
+          input.stateCode,
+        );
         if (candidateId) {
           const perIssue = [];
           for (const issue of input.issues) {

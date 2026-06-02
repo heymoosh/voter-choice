@@ -21,6 +21,9 @@ import {
   lookupAlignment,
   computeVoteAlignment,
   attachLimitedDataNotice,
+  cleanCandidateName,
+  stateFromCandidateName,
+  candidateNameParts,
 } from "./alignment";
 
 // ---------------------------------------------------------------------------
@@ -163,6 +166,105 @@ describe("resolveCandidateId", () => {
 
     const result = await resolveCandidateId("Jane Doe", "federal-house");
     expect(result).toBeNull();
+  });
+
+  // --- GovTrack decorated-name + ballot-nickname resolution ---
+  //
+  // The federal-votes ingest stores GovTrack's decorated `person.name`
+  // ("Sen. Andrew Kim [D-NJ]"); ballot rosters pass clean names, often with
+  // nicknames ("Andy Kim"). These fixtures are the real prod failure cases.
+
+  it("resolves a decorated stored name against a clean ballot name (Cornyn)", async () => {
+    const { select } = makeSelectMock([
+      { id: "fed-cornyn", fullName: "Sen. John Cornyn [R-TX]" },
+    ]);
+    mockedGetDb.mockReturnValue({ select } as never);
+    const result = await resolveCandidateId(
+      "John Cornyn",
+      "federal-senate",
+      "TX",
+    );
+    expect(result).toBe("fed-cornyn");
+  });
+
+  it("resolves a ballot NICKNAME via lastname + state (Andy ↔ Andrew Kim)", async () => {
+    const { select } = makeSelectMock([
+      { id: "fed-kim", fullName: "Sen. Andrew Kim [D-NJ]" },
+      { id: "fed-booker", fullName: "Sen. Cory Booker [D-NJ]" },
+    ]);
+    mockedGetDb.mockReturnValue({ select } as never);
+    const result = await resolveCandidateId("Andy Kim", "federal-senate", "NJ");
+    expect(result).toBe("fed-kim");
+  });
+
+  it("does NOT cross states (Andy Kim in CA must not match NJ's Kim)", async () => {
+    const { select } = makeSelectMock([
+      { id: "fed-kim", fullName: "Sen. Andrew Kim [D-NJ]" },
+    ]);
+    mockedGetDb.mockReturnValue({ select } as never);
+    const result = await resolveCandidateId("Andy Kim", "federal-senate", "CA");
+    expect(result).toBeNull();
+  });
+
+  it("breaks same-lastname+state ambiguity by first initial", async () => {
+    const { select } = makeSelectMock([
+      { id: "fed-john-kelly", fullName: "Rep. John Kelly [R-PA]" },
+      { id: "fed-mike-kelly", fullName: "Rep. Mike Kelly [R-PA]" },
+    ]);
+    mockedGetDb.mockReturnValue({ select } as never);
+    const result = await resolveCandidateId(
+      "Mike Kelly",
+      "federal-house",
+      "PA",
+    );
+    expect(result).toBe("fed-mike-kelly");
+  });
+
+  it("nickname without a stateCode does not resolve (state is required for tier 3)", async () => {
+    const { select } = makeSelectMock([
+      { id: "fed-kim", fullName: "Sen. Andrew Kim [D-NJ]" },
+    ]);
+    mockedGetDb.mockReturnValue({ select } as never);
+    // No stateCode → lastname+state tier is skipped; Andy≠Andrew on prefix.
+    const result = await resolveCandidateId("Andy Kim", "federal-senate");
+    expect(result).toBeNull();
+  });
+});
+
+describe("candidate-name helpers", () => {
+  it("cleanCandidateName strips title + party-state tag", () => {
+    expect(cleanCandidateName("Sen. Andrew Kim [D-NJ]")).toBe("Andrew Kim");
+    expect(cleanCandidateName("Rep. Marc Veasey [D-TX]")).toBe("Marc Veasey");
+    expect(cleanCandidateName("Sen. Bernie Sanders [I-VT]")).toBe(
+      "Bernie Sanders",
+    );
+  });
+
+  it("cleanCandidateName handles the sortname form", () => {
+    expect(cleanCandidateName("Collins, Susan (Sen.) [R-ME]")).toBe(
+      "Susan Collins",
+    );
+  });
+
+  it("cleanCandidateName leaves an already-clean name unchanged", () => {
+    expect(cleanCandidateName("John Cornyn")).toBe("John Cornyn");
+  });
+
+  it("stateFromCandidateName extracts the 2-letter state", () => {
+    expect(stateFromCandidateName("Sen. Andrew Kim [D-NJ]")).toBe("NJ");
+    expect(stateFromCandidateName("Sen. Bernie Sanders [I-VT]")).toBe("VT");
+    expect(stateFromCandidateName("John Cornyn")).toBeNull();
+  });
+
+  it("candidateNameParts splits first/last", () => {
+    expect(candidateNameParts("Andrew Kim")).toEqual({
+      first: "Andrew",
+      last: "Kim",
+    });
+    expect(candidateNameParts("Alexandria Ocasio-Cortez")).toEqual({
+      first: "Alexandria",
+      last: "Ocasio-Cortez",
+    });
   });
 });
 

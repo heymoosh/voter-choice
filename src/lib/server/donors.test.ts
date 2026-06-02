@@ -87,9 +87,12 @@ describe("lookupDonorCoalition — candidate not resolved", () => {
     }
     // Ensure we still asked the resolver — donors.ts must not short-circuit
     // jurisdictions; the resolver is the single source of truth for "exists".
+    // stateCode is now forwarded so the resolver can disambiguate ballot
+    // nicknames vs GovTrack formal names by lastname + state.
     expect(mockedResolve).toHaveBeenCalledWith(
       "Greg Abbott",
       "state-TX-executive",
+      "TX",
     );
   });
 });

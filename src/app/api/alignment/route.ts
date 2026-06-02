@@ -148,7 +148,11 @@ export async function GET(request: NextRequest) {
   }
 
   // Resolve candidate
-  const candidateId = await resolveCandidateId(candidateName, jurisdiction);
+  const candidateId = await resolveCandidateId(
+    candidateName,
+    jurisdiction,
+    stateCode,
+  );
   if (!candidateId) {
     return Response.json(
       {

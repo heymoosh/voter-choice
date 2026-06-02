@@ -104,8 +104,14 @@ export async function lookupDonorCoalition(
 
   const cycle = electionCycle?.trim() || DEFAULT_ELECTION_CYCLE;
 
-  // 1. Resolve candidate via the shared alignment matcher.
-  const candidateId = await resolveCandidateId(candidateName, jurisdiction);
+  // 1. Resolve candidate via the shared alignment matcher. Pass stateCode so
+  // the matcher can disambiguate ballot nicknames vs GovTrack formal names
+  // (e.g. "Andy Kim" ↔ "Andrew Kim [D-NJ]") by lastname + state.
+  const candidateId = await resolveCandidateId(
+    candidateName,
+    jurisdiction,
+    stateCode,
+  );
   if (!candidateId) {
     return { found: false, reason: "candidate_not_resolved" };
   }
