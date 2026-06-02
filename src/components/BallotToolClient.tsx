@@ -1983,7 +1983,12 @@ function WorkspaceShell({
       activeRace.candidates.length > 0
         ? activeRace.candidates
         : (candidatesForActive ?? []);
-    if (cands.length < 2) return null; // need a real contest to render cards
+    // Render cards for ANY race with ≥1 candidate. Primary specimen ballots
+    // (and uncontested races) frequently list a single candidate per office —
+    // the voter still wants that candidate's record + donors, even without a
+    // head-to-head. Requiring ≥2 here silently dropped those races to the
+    // legacy chat stub (the "Pick Candidate A" fallback) with no card.
+    if (cands.length < 1) return null;
     const issues = (themes ?? [])
       .filter((t): t is typeof t & { canonicalIssue: string } =>
         Boolean(t.canonicalIssue),

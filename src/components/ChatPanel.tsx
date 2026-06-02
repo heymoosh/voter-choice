@@ -1896,9 +1896,12 @@ function WorkspaceChat({
   // the parent fetched (workspace.raceData), NOT from a parsed chat message.
   // The chat below is a pure Q&A box. Propositions (empty roster) don't get
   // data cards — they fall through to the Q&A surface.
+  // ≥1 candidate (not ≥2): single-candidate races — uncontested or primary
+  // specimen ballots — still render a card with that candidate's record +
+  // donors. Requiring a head-to-head dropped them silently to the chat stub.
   const raceCardsBlock: RacePatternsBlock | null =
     workspace.raceData?.racePatterns &&
-    workspace.raceData.racePatterns.candidates.length >= 2
+    workspace.raceData.racePatterns.candidates.length >= 1
       ? workspace.raceData.racePatterns
       : null;
   // When cards are on screen, their own Pick replaces the fallback stub.

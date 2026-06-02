@@ -693,6 +693,49 @@ describe("ChatPanel — workspace amend editor + chat catch (Phase 6)", () => {
     expect(workspaceChat.contains(editor)).toBe(true);
   });
 
+  // Regression guard for the prod bug: a single-candidate race (uncontested /
+  // primary specimen ballot) must still render a card from raceData. The card
+  // path previously required ≥2 candidates, so these races silently dropped to
+  // the chat stub with no card at all.
+  it("renders a card for a single-candidate race (≥1, not ≥2)", () => {
+    renderWorkspaceChat({
+      raceData: {
+        racePatterns: {
+          race: "U.S. Senate",
+          candidates: [
+            {
+              id: "A",
+              name: "Andy Kim",
+              incumbent: false,
+              priorRole: "Record shown from U.S. House service",
+              donorCoalition: [
+                {
+                  label: "Small individual donors (under $200)",
+                  percent: 100,
+                  amount: 1355762,
+                },
+              ],
+              donorDataSource: "voting_record",
+              donorSource: { name: "FEC", url: "https://www.fec.gov/" },
+              totalRaised: 1355762,
+              endorsements: null,
+              endorsementUnavailable: { reason: "n/a" },
+              platformAlignment: null,
+              retrospective: null,
+              retrospectiveUnavailable: { reason: "n/a" },
+              valuesHighlight: null,
+            },
+          ],
+        },
+        alignmentScores: null,
+        legislativeCoverage: true,
+      },
+    });
+    // The card renders (blind mode anonymizes the name to "Candidate A" by
+    // default, so we assert the card surface, not the literal name).
+    expect(screen.getByTestId("race-patterns")).toBeInTheDocument();
+  });
+
   it("renders the amend editor with the candidate-new-theme when pendingAmendment carries one (chat-catch entry)", () => {
     renderWorkspaceChat({
       pendingAmendment: {
