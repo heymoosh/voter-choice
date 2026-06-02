@@ -1569,6 +1569,41 @@ describe("ChatPanel — workspace auto-fire race-deep-dive on mount (P0 #1)", ()
     });
   });
 
+  it("workspace.extractedStateCode overrides state.stateCode in the chat payload", async () => {
+    // Prod conflict story: NJ ballot upload paired with a session whose
+    // ZIP-derived state.stateCode is "TX" (ambiguous address, stale session,
+    // or a ZIP-table gap) made the chat prompt assemble
+    // `<race> U.S. Senate, TX-Camden </race>` while the candidates roster
+    // carried NJ-shaped names. The model halted to clarify instead of
+    // emitting cards. This guard pins that the workspace's extracted state
+    // code (from the ballot's election_metadata.jurisdiction) wins.
+    renderWorkspaceAutoFire({
+      extractedStateCode: "NJ",
+    });
+    await waitFor(() => {
+      const body = captureChatRequestBody();
+      expect(body).not.toBeNull();
+      const ctx = body!.raceContext as Record<string, unknown>;
+      // txState's stateCode is "TX"; the override should beat it.
+      expect(ctx.state).toBe("NJ");
+    });
+  });
+
+  it("falls back to state.stateCode when no extractedStateCode is provided", async () => {
+    // Negative guard: when no ballot has been uploaded yet (or the upload
+    // failed to parse a state), the ZIP-derived state is still the right
+    // input. This pins the fallback so a future refactor doesn't make the
+    // override absent === undefined-state.
+    renderWorkspaceAutoFire();
+    await waitFor(() => {
+      const body = captureChatRequestBody();
+      expect(body).not.toBeNull();
+      const ctx = body!.raceContext as Record<string, unknown>;
+      // txState fixture has stateCode "TX".
+      expect(ctx.state).toBe("TX");
+    });
+  });
+
   it("auto-fire request carries candidatesJson with the full roster (so the model can resolve surnames)", async () => {
     renderWorkspaceAutoFire();
     await waitFor(() => {

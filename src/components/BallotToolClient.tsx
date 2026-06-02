@@ -719,6 +719,18 @@ export function ElectionResult({
     : null;
   const countyForPrompt =
     civicCounty ?? zipCounty ?? extractedCounty ?? undefined;
+  // Same source string also yields a 2-letter state code (e.g. "Camden
+  // County, NJ" → "NJ"). Piped through the workspace prop so ChatPanel's
+  // chat payload can prefer it over the ZIP-derived `state.stateCode` —
+  // see WorkspaceModeProps.extractedStateCode for the prod conflict this
+  // guards against. Match is case-insensitive on the input but the
+  // extracted code is uppercased before downstream use.
+  const extractedStateMatch = extractedJurisdiction?.match(
+    /,\s*([A-Za-z]{2})\s*$/,
+  );
+  const extractedStateCode = extractedStateMatch
+    ? extractedStateMatch[1].toUpperCase()
+    : null;
 
   // PR B — cold-open `.co-context` breadcrumb data. Mirrors the prototype's
   // anchored-location line above the chat (`Camden County, NJ-1 · 6 races
@@ -1371,6 +1383,7 @@ export function ElectionResult({
         onAmendmentDiscard={handleAmendmentDiscard}
         pendingRescoreOffer={pendingRescoreOffer}
         onRescoreOfferClear={handleRescoreOfferClear}
+        extractedStateCode={extractedStateCode}
       />
     );
   }
@@ -1541,6 +1554,14 @@ interface WorkspaceShellProps {
     triggeringMessage?: string;
   } | null;
   onRescoreOfferClear: () => void;
+  /**
+   * 2-letter state code parsed from the uploaded ballot's
+   * `election_metadata.jurisdiction`. Forwarded to ChatPanel so the chat
+   * prompt's `<race>` context can use the ballot-authoritative state
+   * when the ZIP-derived state.stateCode disagrees with the candidates
+   * roster (see ChatPanel.WorkspaceModeProps.extractedStateCode).
+   */
+  extractedStateCode: string | null;
 }
 
 function WorkspaceShell({
@@ -1580,6 +1601,7 @@ function WorkspaceShell({
   onAmendmentDiscard,
   pendingRescoreOffer,
   onRescoreOfferClear,
+  extractedStateCode,
 }: WorkspaceShellProps) {
   // City-state surrogate for the ballot pane address line. We never have the
   // user's street address; use county + state name as the locality label.
@@ -2191,6 +2213,11 @@ function WorkspaceShell({
                 // about U.S. Senate." with no AI bubble). The synthetic user
                 // message is `hidden`, so only the AI bubble renders.
                 autoFireRaceIntro: true,
+                // Authoritative state code from the uploaded ballot's
+                // jurisdiction (when available), so the chat prompt's
+                // `<race>` context agrees with the candidates roster
+                // instead of conflicting with a ZIP-resolved state.
+                extractedStateCode,
               }}
             />
           </div>

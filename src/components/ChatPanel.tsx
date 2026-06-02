@@ -300,6 +300,23 @@ export interface WorkspaceModeProps {
     party?: string;
     whyNote: string;
   }>;
+  /**
+   * Two-letter state code parsed from the uploaded ballot's
+   * `election_metadata.jurisdiction` (e.g. "Camden County, NJ" → "NJ"). When
+   * present, takes precedence over the ZIP-derived `state.stateCode` for
+   * the chat prompt's `<race>` context — the model needs the state field
+   * to agree with the candidates roster, and the ballot is closer to
+   * ground truth than the home-screen address picker.
+   *
+   * Prod prompt-conflict story: a NJ ballot upload paired with an
+   * ambiguous address (or a session whose state was first set from
+   * a different geography) made the prompt assemble
+   * `<race> U.S. Senate, TX-Camden </race>` while the candidates roster
+   * carried NJ-shaped names (Audubon Borough, county-committee races).
+   * The model reasonably halted to clarify instead of emitting cards.
+   * This override removes that conflict at the source.
+   */
+  extractedStateCode?: string | null;
 }
 
 interface ChatPanelProps {
@@ -2797,6 +2814,11 @@ export function ChatPanel({
           ? "workspace-prop"
           : "workspace-race";
         const raceType: RaceType = isProposition ? "proposition" : "choice";
+        // Prefer the state code parsed from the uploaded ballot when
+        // present — see WorkspaceModeProps.extractedStateCode for the prod
+        // failure mode this guards against (NJ ballot + TX-resolved state →
+        // model halts to clarify instead of emitting cards).
+        const effectiveStateCode = ws.extractedStateCode || state.stateCode;
         return {
           view,
           activeRaceType: raceType,
@@ -2810,7 +2832,7 @@ export function ChatPanel({
           ...(options?.trigger ? { trigger: options.trigger } : {}),
           raceContext: {
             raceLabel: ws.activeRace.label,
-            state: state.stateCode,
+            state: effectiveStateCode,
             county: countyName,
             candidatesJson: JSON.stringify(ws.activeRace.candidates ?? []),
             themesList: formatThemesList(ws.lockedThemes),
