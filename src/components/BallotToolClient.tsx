@@ -2018,9 +2018,9 @@ function WorkspaceShell({
   const hasPolling = races.length > 0 && decisions.length / races.length > 0.5;
 
   // Task 4: map lockedThemes → ConcernInterpretationEntry[] for CompareModal
-  // via ChatPanel's `issues` prop. Theme only carries `name` and `quotes`;
-  // `canonicalIssue` is absent, so CompareModal's per-issue alignment-score
-  // lookup will find no match and render "—" rows — known-lossy mapping.
+  // via ChatPanel's `issues` prop. Since P1, Theme carries canonicalIssue +
+  // stance (mapped at cold-open), so we forward them — CompareModal's
+  // per-issue alignment lookup now resolves instead of rendering "—" rows.
   // `interpretation` (the rendered label) is faithfully set to theme.name.
   const issueItems: ConcernInterpretationEntry[] = useMemo(
     () =>
@@ -2029,6 +2029,8 @@ function WorkspaceShell({
         rank: i + 1,
         interpretation: t.name,
         confidence: "clear" as const,
+        ...(t.canonicalIssue ? { canonicalIssue: t.canonicalIssue } : {}),
+        ...(t.stance ? { stance: t.stance } : {}),
         quotes: t.quotes.map((q) => ({ label: "your words", text: q })),
       })),
     [themes],

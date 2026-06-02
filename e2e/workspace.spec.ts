@@ -53,9 +53,24 @@ async function resolveRunoffGate(page: Page) {
  * demoted Q&A box). Cards come from /api/race-data (mocked separately).
  */
 async function mockChatColdOpenAndQA(page: Page) {
+  // Themes carry canonicalIssue + stance, exactly as the real
+  // theme-extraction call now emits them (P1). This lets the e2e prove the
+  // full thread: cold-open → ThemeRanker → lockedThemes → /api/race-data
+  // POST body. The race-data mock (mockRaceData) captures that body so a
+  // test can assert the canonical ids survived every hop.
   const themesJson = JSON.stringify([
-    { name: "Healthcare costs", quotes: ["insulin keeps going up"] },
-    { name: "Housing affordability", quotes: ["rent went up 30%"] },
+    {
+      name: "Healthcare costs",
+      quotes: ["insulin keeps going up"],
+      canonicalIssue: "healthcare_affordability",
+      stance: "in_favor",
+    },
+    {
+      name: "Housing affordability",
+      quotes: ["rent went up 30%"],
+      canonicalIssue: "housing_affordability",
+      stance: "in_favor",
+    },
   ]);
   const sseFor = (text: string) =>
     [
@@ -97,7 +112,18 @@ async function mockChatColdOpenAndQA(page: Page) {
  * workspace renders real cards. `delayMs` lets a test observe the
  * ProcessingSteps loader before the data resolves.
  */
-async function mockRaceData(page: Page, opts: { delayMs?: number } = {}) {
+/**
+ * Captures the most recent POST body sent to /api/race-data so a test can
+ * assert the canonical-issue thread (cold-open → lockedThemes → request body)
+ * survived. Returned by mockRaceData.
+ */
+type RaceDataBodyCapture = { last: Record<string, unknown> | null };
+
+async function mockRaceData(
+  page: Page,
+  opts: { delayMs?: number } = {},
+): Promise<RaceDataBodyCapture> {
+  const capture: RaceDataBodyCapture = { last: null };
   const payload = {
     racePatterns: {
       race: "U.S. President",
@@ -166,6 +192,11 @@ async function mockRaceData(page: Page, opts: { delayMs?: number } = {}) {
     legislativeCoverage: true,
   };
   await page.route("**/api/race-data", async (route) => {
+    try {
+      capture.last = JSON.parse(route.request().postData() ?? "{}");
+    } catch {
+      capture.last = null;
+    }
     if (opts.delayMs) {
       await new Promise((r) => setTimeout(r, opts.delayMs));
     }
@@ -175,6 +206,7 @@ async function mockRaceData(page: Page, opts: { delayMs?: number } = {}) {
       body: JSON.stringify(payload),
     });
   });
+  return capture;
 }
 
 /**
@@ -346,5 +378,57 @@ test.describe("workspace (PROMPT_FLEET_V2 + en)", () => {
     // (3) Raw [RACE_PATTERNS] JSON must never leak into the transcript.
     await expect(page.getByText(/\[RACE_PATTERNS race=/)).toHaveCount(0);
     await expect(page.getByText(/\[\/RACE_PATTERNS\]/)).toHaveCount(0);
+  });
+
+  // ─────────────────────────────────────────────────────────────
+  // Canonical-issue thread guard (PIVOT P1). The whole point of P1 is that
+  // the voter's words get mapped to a canonical issue id at cold-open and
+  // that id reaches lookupAlignment. This test proves the END-TO-END thread:
+  //   cold-open themes (with canonicalIssue) → ThemeRanker → lockedThemes →
+  //   the /api/race-data POST body's `issues`.
+  // Without this, an empty alignment section post-DB-seed would be ambiguous
+  // (data gap vs. wiring gap) — this disambiguates it.
+  // ─────────────────────────────────────────────────────────────
+  test("threads canonicalIssue from cold-open themes into the /api/race-data request", async ({
+    page,
+  }) => {
+    await mockChatColdOpenAndQA(page);
+    const capture = await mockRaceData(page);
+    await mockCivicResponse(page);
+    await page.goto("/");
+
+    await fillZip(page, "73301");
+    await resolveRunoffGate(page);
+
+    const textarea = page.getByTestId("cold-open-textarea");
+    await textarea.waitFor({ state: "visible", timeout: WORKSPACE_TIMEOUT });
+    await textarea.fill(
+      "insulin keeps going up and rent went up 30% in two years",
+    );
+    await page.getByTestId("cold-open-send").click();
+
+    await page
+      .getByTestId("concern-interpretation-themes")
+      .waitFor({ state: "visible", timeout: WORKSPACE_TIMEOUT });
+    await page.getByTestId("theme-ranker-lock-in").click();
+
+    // Cards render → the race-data fetch fired with a body we captured.
+    await page
+      .getByTestId("race-patterns")
+      .waitFor({ state: "visible", timeout: WORKSPACE_TIMEOUT });
+
+    await expect
+      .poll(() => capture.last?.issues, { timeout: WORKSPACE_TIMEOUT })
+      .toBeTruthy();
+    const issues = (capture.last?.issues ?? []) as Array<{
+      canonicalIssue: string;
+      stance: string;
+    }>;
+    const ids = issues.map((i) => i.canonicalIssue);
+    // Both threaded canonical ids must reach the endpoint — proving the
+    // parser → ThemeRanker → lockedThemes → raceDataInput hops preserved them.
+    expect(ids).toContain("healthcare_affordability");
+    expect(ids).toContain("housing_affordability");
+    expect(issues.every((i) => i.stance === "in_favor")).toBe(true);
   });
 });
