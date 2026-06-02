@@ -1903,6 +1903,13 @@ function WorkspaceChat({
       : null;
   // When cards are on screen, their own Pick replaces the fallback stub.
   const hasRacePatternsCard = !!raceCardsBlock;
+  // Cards are the PRIMARY middle surface for a candidate race (loading or
+  // loaded). When true, the cards take the flex-1 space and the chat (Q&A
+  // transcript + input) docks at the BOTTOM with bounded height — the chat is
+  // a research box, never the middle. When false (proposition / uncovered /
+  // no data), the chat area falls back to filling the space.
+  const cardsArePrimary =
+    !isPropositionRace && (!!workspace.raceDataLoading || !!raceCardsBlock);
   const raceAlignmentMap: Map<string, AlignmentScoresEntry> | undefined =
     workspace.raceData?.alignmentScores
       ? new Map(
@@ -1963,9 +1970,7 @@ function WorkspaceChat({
   return (
     <section
       data-testid="workspace-chat"
-      role="log"
-      aria-label="Voter Choice chat"
-      aria-live="polite"
+      aria-label="Candidate comparison"
       className="flex h-full flex-col overflow-hidden border-x border-rule bg-paper-2"
     >
       <header
@@ -2037,10 +2042,10 @@ function WorkspaceChat({
           surface — the workspace never opens onto an empty/transcript
           state. Propositions + uncovered offices (no ≥2-candidate block)
           fall through to the Q&A surface below. */}
-      {!isPropositionRace && (workspace.raceDataLoading || raceCardsBlock) && (
+      {cardsArePrimary && (
         <div
           data-testid="workspace-cards"
-          className="overflow-y-auto px-5 pt-5"
+          className="flex-1 min-h-0 overflow-y-auto px-5 pt-5"
         >
           {workspace.raceDataLoading ? (
             <RacePatternsLoadingPlaceholder variant="race" />
@@ -2066,14 +2071,25 @@ function WorkspaceChat({
         </div>
       )}
 
-      {/* Q&A transcript — the chat is DEMOTED to a bottom follow-up box.
-          User questions + the model's prose answers append here, BELOW the
-          cards. No card data is rendered from messages anymore; any stray
-          structured block in an answer is stripped to prose. Parent re-keys
-          ChatPanel by activeRace.id, so this clears on race switch. */}
+      {/* Q&A transcript — the chat is DEMOTED to a bottom research box.
+          When cards are the primary surface (candidate race), this docks at
+          the BOTTOM with bounded height (border-top) so the cards own the
+          middle and the chat reads as a footer research box. When there are
+          no cards (proposition / uncovered), it falls back to filling the
+          space. User questions + prose answers append here; no card data is
+          rendered from messages. Live region is scoped here (the cards above
+          are static front-end, not a live log). Parent re-keys ChatPanel by
+          activeRace.id, so this clears on race switch. */}
       <div
         data-testid="workspace-chat-messages"
-        className="flex-1 overflow-y-auto p-4"
+        role="log"
+        aria-live="polite"
+        aria-label="Research Q&A"
+        className={
+          cardsArePrimary
+            ? "max-h-[38vh] shrink-0 overflow-y-auto border-t border-rule p-4"
+            : "flex-1 overflow-y-auto p-4"
+        }
       >
         {/* P0 #1 — render hidden messages (synthetic kickoff user message)
             transparently to the conversation payload but skip them in the
@@ -2091,7 +2107,11 @@ function WorkspaceChat({
             !workspace.chatCatchSuggestion &&
             !isStreaming
           ) {
-            return (
+            // When cards are the primary surface, the bottom input already
+            // prompts "Ask anything about {race}…" — don't duplicate it as a
+            // transcript placeholder. Render nothing so the bottom dock is
+            // just the input cluster until a real Q&A exchange exists.
+            return cardsArePrimary ? null : (
               <p className="text-sm text-on-surface-muted">
                 Ask anything about {activeRace.label}.
               </p>
