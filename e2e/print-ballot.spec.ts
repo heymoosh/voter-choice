@@ -170,18 +170,15 @@ test.describe("print ballot (PROMPT_FLEET_V2 + en)", () => {
       .getByTestId("workspace-shell")
       .waitFor({ state: "visible", timeout: WORKSPACE_TIMEOUT });
 
-    // Pick the first race + commit a why-note.
+    // Cards-first (PIVOT): cards render from /api/race-data (backstop in the
+    // test env, which has no DB — but the card still has a Pick button). Pick
+    // candidate A on the card; it auto-commits a why-note.
     await page
-      .getByTestId("workspace-pick-trigger")
+      .getByTestId("race-patterns")
       .waitFor({ state: "visible", timeout: WORKSPACE_TIMEOUT });
-    await page.getByTestId("workspace-pick-trigger").click();
-    const whyTextarea = page.getByTestId("workspace-why-textarea");
-    await whyTextarea.waitFor({
-      state: "visible",
-      timeout: WORKSPACE_TIMEOUT,
-    });
-    await whyTextarea.fill("Strongest record on my top priority");
-    await page.getByTestId("workspace-why-commit").click();
+    await page
+      .getByTestId("race-patterns-pick-A")
+      .click({ timeout: WORKSPACE_TIMEOUT });
 
     // Wait for the decision to land in the ballot pane.
     await expect(page.getByTestId("ballot-pane-header")).toContainText(/1\//);
@@ -200,8 +197,11 @@ test.describe("print ballot (PROMPT_FLEET_V2 + en)", () => {
     await expect(federalGroup).toContainText(/U\.S\. President/);
     await expect(federalGroup).toContainText(/Alice Anderson/);
 
-    // Verbatim why-note rendered italic on the print sheet.
-    await expect(sheet).toContainText("Strongest record on my top priority");
+    // Why-note rendered italic on the print sheet. Cards-first (PIVOT): the
+    // card pick auto-generates the note ("… — strongest record on <top
+    // issue>.") rather than the voter typing one, so assert the generated
+    // pattern (robust to the name/alias prefix).
+    await expect(sheet).toContainText(/strongest record on Healthcare costs/i);
 
     // Themes ordered list at the bottom.
     const themesList = page.getByTestId("themes-list");

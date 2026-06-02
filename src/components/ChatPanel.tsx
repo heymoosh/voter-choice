@@ -70,6 +70,7 @@ import {
 } from "../lib/structured-blocks";
 import type {
   AlignmentScoresEntry,
+  AlignmentScoresBlock,
   RacePatternsBlock,
   RacePatternsCandidate,
   ConcernInterpretationEntry,
@@ -249,17 +250,6 @@ export interface WorkspaceModeProps {
   onChatCatchAccept?: () => void;
   /** Fired when the user dismisses the chat-catch chip. */
   onChatCatchDismiss?: () => void;
-  /**
-   * P0 #1 (live audit) — when true, ChatPanel auto-fires a synthetic
-   * "Introduce this race…" message on mount so the model streams a
-   * context-aware greeting before the voter speaks. The synthetic user
-   * message is `hidden`, so only the AI bubble renders.
-   *
-   * Defaults to false — existing tests and any future caller that wants the
-   * legacy "wait for user to type" behavior stays opt-out. Production
-   * callers (BallotToolClient workspace) pass true.
-   */
-  autoFireRaceIntro?: boolean;
   /* ── PR3 opt-in re-score offer ──────────────────────────── */
   /**
    * When set, ChatPanel renders an `AmendRescoreOffer` inline asking the
@@ -317,6 +307,24 @@ export interface WorkspaceModeProps {
    * This override removes that conflict at the source.
    */
   extractedStateCode?: string | null;
+  /**
+   * Cards-first data source (PIVOT). The deterministic, LLM-free
+   * `/api/race-data` result for the active race, fetched by the parent
+   * (WorkspaceShell via `useRaceData`). When present, the workspace center
+   * renders candidate cards FROM THIS — not from a parsed chat message. The
+   * chat is demoted to the bottom Q&A box. Null until the first fetch
+   * resolves (the `raceDataLoading` flag drives the loader meanwhile).
+   *
+   * Shape mirrors the `RaceData` returned by `/api/race-data`:
+   * `{ racePatterns, alignmentScores, legislativeCoverage }`.
+   */
+  raceData?: {
+    racePatterns: RacePatternsBlock;
+    alignmentScores: AlignmentScoresBlock | null;
+    legislativeCoverage: boolean;
+  } | null;
+  /** True while the active race's `/api/race-data` fetch is in flight. */
+  raceDataLoading?: boolean;
 }
 
 interface ChatPanelProps {
@@ -1852,16 +1860,13 @@ function WorkspaceChat({
   );
   const lastAssistant =
     lastAssistantIdx >= 0 ? visibleMessages[lastAssistantIdx] : undefined;
-  // True when a finished RACE_PATTERNS card is being shown for the active
-  // race. While true, the card's own Pick button replaces the stub; while
-  // false (generic answer, or block still streaming) the stub is the
-  // fallback commit affordance (and the tests that mock chat without a
-  // block keep exercising workspace-pick-trigger).
-  const hasRacePatternsCard =
-    !isStreaming &&
-    !!lastAssistant &&
-    lastAssistant.content.includes("[/RACE_PATTERNS]") &&
-    !!parseRacePatternsBlock(lastAssistant.content);
+  // True when data-driven candidate cards are on screen for the active race.
+  // While true, each card's own Pick button is the commit affordance and the
+  // fallback stub (WorkspacePickArea) is suppressed. While false (race not
+  // covered, data still loading, or a proposition) the stub is the fallback
+  // commit affordance. Data-driven now — NOT parsed from a chat message.
+  // (Defined after raceCardsBlock below; see the cards-first section.)
+  void lastAssistant; // retained for the Q&A transcript helpers below
 
   // The committed decision for THIS race (if any) — used to mark the
   // matching card as picked and to auto-generate the why-note's issue.
@@ -1886,14 +1891,46 @@ function WorkspaceChat({
     return `Candidate ${String.fromCharCode(65 + (idx < 0 ? 0 : idx))}`;
   })();
 
+  // ── Cards-first data source (PIVOT) ───────────────────────────
+  // Candidate cards render from the deterministic `/api/race-data` result
+  // the parent fetched (workspace.raceData), NOT from a parsed chat message.
+  // The chat below is a pure Q&A box. Propositions (empty roster) don't get
+  // data cards — they fall through to the Q&A surface.
+  const raceCardsBlock: RacePatternsBlock | null =
+    workspace.raceData?.racePatterns &&
+    workspace.raceData.racePatterns.candidates.length >= 2
+      ? workspace.raceData.racePatterns
+      : null;
+  // When cards are on screen, their own Pick replaces the fallback stub.
+  const hasRacePatternsCard = !!raceCardsBlock;
+  const raceAlignmentMap: Map<string, AlignmentScoresEntry> | undefined =
+    workspace.raceData?.alignmentScores
+      ? new Map(
+          workspace.raceData.alignmentScores.entries.map((e) => [
+            e.candidateId,
+            e,
+          ]),
+        )
+      : undefined;
+  // The committed pick's id within the data block (to mark its card picked).
+  const raceCardsPickedId =
+    decided && activeDecision && raceCardsBlock
+      ? (raceCardsBlock.candidates.find(
+          (c) =>
+            normalizeCandidateName(c.name) ===
+            normalizeCandidateName(activeDecision.pick),
+        )?.id ?? null)
+      : null;
+
   // Card "Pick" → auto-commit a generated why-note (prototype parity: the
   // card pick has NO separate why prompt; that lives only on the stub).
+  // Takes the parsed RacePatternsBlock directly (the data block from
+  // /api/race-data) — no chat message involved.
   const onCardPick = (
-    msgContent: string,
+    block: RacePatternsBlock | null,
     candidateId: string,
     candidateName: string,
   ) => {
-    const block = parseRacePatternsBlock(msgContent);
     const picked = block?.candidates.find((c) => c.id === candidateId);
     // RacePatternsCandidate carries no party; resolve it from the contest's
     // {name, party} list by name (same lookup the stub uses).
@@ -1993,9 +2030,47 @@ function WorkspaceChat({
         </div>
       </header>
 
-      {/* Chat message body — scoped to active race. Parent re-keys
-          ChatPanel by activeRace.id, so messages naturally clear on race
-          switch (UI mirrors Phase 1's server contract). */}
+      {/* ── Cards-first PRIMARY surface (PIVOT) ──────────────────────
+          Candidate cards render from the deterministic /api/race-data
+          result (workspace.raceData), NOT from a chat message. While the
+          fetch is in flight the ProcessingSteps loader is the primary
+          surface — the workspace never opens onto an empty/transcript
+          state. Propositions + uncovered offices (no ≥2-candidate block)
+          fall through to the Q&A surface below. */}
+      {!isPropositionRace && (workspace.raceDataLoading || raceCardsBlock) && (
+        <div
+          data-testid="workspace-cards"
+          className="overflow-y-auto px-5 pt-5"
+        >
+          {workspace.raceDataLoading ? (
+            <RacePatternsLoadingPlaceholder variant="race" />
+          ) : raceCardsBlock ? (
+            <RacePatterns
+              block={raceCardsBlock}
+              isSubmitted={decided}
+              pickedCandidateId={raceCardsPickedId ?? undefined}
+              onPick={(candidateId, candidateName) =>
+                onCardPick(raceCardsBlock, candidateId, candidateName)
+              }
+              onSkip={onCardSkip}
+              isStreaming={false}
+              alignmentScoresByCandidate={raceAlignmentMap}
+              blindMode={blindMode}
+              revealedCandidates={revealedCandidates}
+              onRevealCandidate={onRevealCandidate}
+              onCompare={onCompare}
+              onSeeAllVotes={onSeeAllVotes}
+              onHideCandidate={onHideCandidate}
+            />
+          ) : null}
+        </div>
+      )}
+
+      {/* Q&A transcript — the chat is DEMOTED to a bottom follow-up box.
+          User questions + the model's prose answers append here, BELOW the
+          cards. No card data is rendered from messages anymore; any stray
+          structured block in an answer is stripped to prose. Parent re-keys
+          ChatPanel by activeRace.id, so this clears on race switch. */}
       <div
         data-testid="workspace-chat-messages"
         className="flex-1 overflow-y-auto p-4"
@@ -2046,36 +2121,12 @@ function WorkspaceChat({
                         </li>
                       );
                     }
-                    // Faithful candidate cards: when this is the last
-                    // assistant message and it carries a RACE_PATTERNS block,
-                    // reuse the shared <RacePatterns> renderer (funding +
-                    // alignment, anonymized by default) instead of plain text.
-                    const isLastAssistant = i === lastAssistantIdx;
-                    const pickedId =
-                      decided && activeDecision
-                        ? (parseRacePatternsBlock(m.content)?.candidates.find(
-                            (c) =>
-                              normalizeCandidateName(c.name) ===
-                              normalizeCandidateName(activeDecision.pick),
-                          )?.id ?? null)
-                        : null;
-                    const card = renderRacePatterns(
-                      m,
-                      i,
-                      isLastAssistant,
-                      isStreaming,
-                      { submitted: decided, pickedId },
-                      (candidateId, candidateName) =>
-                        onCardPick(m.content, candidateId, candidateName),
-                      onCardSkip,
-                      isStreaming,
-                      blindMode,
-                      revealedCandidates,
-                      onRevealCandidate,
-                      onCompare,
-                      onSeeAllVotes,
-                      onHideCandidate,
-                    );
+                    // Q&A only: the chat is the demoted follow-up box, so an
+                    // assistant turn here is a prose answer — never a card.
+                    // Cards render from workspace.raceData above. Any stray
+                    // structured block in an answer is stripped to prose as
+                    // defense in depth (the cards-first prompt shouldn't emit
+                    // one, but a follow-up answer might quote a tag).
                     return (
                       <li
                         key={i}
@@ -2085,26 +2136,22 @@ function WorkspaceChat({
                         <span className="font-mono text-[10.5px] uppercase tracking-[0.12em] text-ink-3">
                           Voter Choice · AI
                         </span>
-                        {card ? (
-                          card
-                        ) : (
-                          <div
-                            className="bg-paper-2 border border-rule px-4 py-3 text-sm leading-relaxed text-ink w-full"
-                            style={{ borderRadius: "4px 14px 14px 14px" }}
-                          >
-                            <MarkdownText
-                              text={anonymizeAssistantText(
-                                stripPartialAlignmentScoresBlock(
-                                  stripPartialRacePatternsBlock(
-                                    stripAlignmentScoresBlocks(
-                                      stripRacePatternsBlocks(m.content),
-                                    ),
+                        <div
+                          className="bg-paper-2 border border-rule px-4 py-3 text-sm leading-relaxed text-ink w-full"
+                          style={{ borderRadius: "4px 14px 14px 14px" }}
+                        >
+                          <MarkdownText
+                            text={anonymizeAssistantText(
+                              stripPartialAlignmentScoresBlock(
+                                stripPartialRacePatternsBlock(
+                                  stripAlignmentScoresBlocks(
+                                    stripRacePatternsBlocks(m.content),
                                   ),
                                 ),
-                              )}
-                            />
-                          </div>
-                        )}
+                              ),
+                            )}
+                          />
+                        </div>
                       </li>
                     );
                   })}
@@ -2758,7 +2805,7 @@ export function ChatPanel({
     async (
       userMessage: string,
       currentMessages: ChatMessage[],
-      options?: { hidden?: boolean; trigger?: RouterTrigger },
+      options?: { hidden?: boolean },
     ) => {
       if (chatDisabled) return;
 
@@ -2824,12 +2871,9 @@ export function ChatPanel({
           activeRaceType: raceType,
           activeRaceId: ws.activeRace.id,
           prevActiveRaceId: ws.prevActiveRaceId ?? undefined,
-          // The kickoff path passes `trigger: "race-open"` so the router
-          // resolves race-deep-dive-open (cards) instead of race-deep-dive
-          // (prose Q&A). User follow-ups omit `trigger`, falling through to
-          // the default (race-deep-dive) — structurally distinguishing the
-          // auto-fire emission turn from prose follow-ups.
-          ...(options?.trigger ? { trigger: options.trigger } : {}),
+          // No `trigger` on workspace chat turns: the chat is a prose Q&A box
+          // (router default → race-deep-dive). Candidate cards come from
+          // /api/race-data, not from a chat turn.
           raceContext: {
             raceLabel: ws.activeRace.label,
             state: effectiveStateCode,
@@ -3021,52 +3065,13 @@ export function ChatPanel({
 
   /* ── P0 #1: auto-fire race-deep-dive on workspace mount ─────── */
 
-  /**
-   * Live audit P0 #1 — pre-fix the workspace race chat opened EMPTY: the
-   * placeholder "Ask anything about U.S. Senate." was the only thing in the
-   * panel, so the voter had to type something blind. Fix: when ChatPanel
-   * mounts in workspace mode with a populated `activeRace` and the chat is
-   * empty, fire ONE synthetic user message ("Introduce this race…") so the
-   * model streams a context-aware greeting before the voter speaks.
-   *
-   * `kickoffFiredRef` prevents StrictMode's double-mount from firing twice.
-   * Because the parent (BallotToolClient) re-keys ChatPanel by activeRace.id,
-   * this ref naturally resets across race switches — every distinct race
-   * gets its own kickoff.
-   *
-   * The kickoff message is marked `hidden: true` so it never renders in the
-   * visible message list. The model still sees it as the conversation's
-   * first user turn (so it knows what to respond to); the voter only sees
-   * the streamed AI bubble.
-   *
-   * Guards:
-   *   · `workspace?.activeRace` must be set (no race → no kickoff).
-   *   · `messages.length === 0` (don't double-fire if rehydration races).
-   *   · `!chatDisabled` (respect session-limit / rate-limit / budget gates).
-   *   · `!isStreaming` (don't pile onto an in-flight request).
-   */
-  const kickoffFiredRef = useRef(false);
-  useEffect(() => {
-    if (kickoffFiredRef.current) return;
-    if (!workspace?.autoFireRaceIntro) return;
-    if (!workspace?.activeRace) return;
-    if (messages.length !== 0) return;
-    if (chatDisabled) return;
-    if (isStreaming) return;
-    kickoffFiredRef.current = true;
-    void sendMessage(
-      "Introduce this race and what's at stake for me given my priorities.",
-      [],
-      // Structural trigger — the route picks the card-emitting builder
-      // (race-deep-dive-open) so the workspace center renders cards on
-      // mount instead of relying on the model to infer "is this turn one?"
-      // from conversation history.
-      { hidden: true, trigger: "race-open" },
-    );
-    // We intentionally only depend on activeRace.id, autoFireRaceIntro, and
-    // chatDisabled — messages/isStreaming would re-fire during streaming.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [workspace?.activeRace?.id, workspace?.autoFireRaceIntro, chatDisabled]);
+  // PIVOT — the auto-fire kickoff is REMOVED. Pre-pivot, opening a race fired
+  // a synthetic "Introduce this race…" turn so the LLM would emit candidate
+  // cards. That coupled the cards to a chat message and shipped broken twice
+  // (the model narrated tool intent / asked to clarify instead of emitting).
+  // Cards now render from the deterministic `/api/race-data` fetch (see the
+  // cards-first surface above); the chat is a pure follow-up Q&A box that
+  // only fires on the voter's own message. No mount-time chat turn.
 
   /* ── Cold-open: free-form submit (Phase 2) ─────────────────── */
 

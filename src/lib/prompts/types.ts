@@ -53,6 +53,30 @@ export interface Theme {
 
   /** 1–2 verbatim phrases from the user's message that grounded this theme. */
   quotes: string[];
+
+  /**
+   * Canonical issue id mapped from the voter's words (e.g. "insulin keeps
+   * going up" → "healthcare_affordability"). The LLM does the language
+   * understanding here — mapping free text to a known vocabulary — it does
+   * NOT produce any card content. Consumed by the deterministic
+   * `/api/race-data` endpoint, which passes it to `lookupAlignment` to score
+   * each candidate's voting record against this issue.
+   *
+   * Optional: a theme whose words don't map cleanly to the canonical
+   * vocabulary leaves this unset, and alignment for that issue degrades to
+   * "no data" rather than scoring against a wrong issue. Must be one of the
+   * ids in `src/lib/canonicalIssues.ts` when present.
+   */
+  canonicalIssue?: string;
+
+  /**
+   * The voter's stance on this issue, used by `lookupAlignment` to decide
+   * which votes count as "with" vs "against" the voter. "in_favor" means the
+   * voter wants more of / supports the issue; "opposed" means they want less
+   * of / oppose it. Defaults to "in_favor" downstream when unset (most
+   * voter-named priorities are aspirational, not oppositional).
+   */
+  stance?: "in_favor" | "opposed";
 }
 
 /**
@@ -73,18 +97,10 @@ export type RaceType = "choice" | "proposition";
  * What kicked off the current router call. Some triggers (amend-from-rail,
  * handoff-button, budget-exhausted) override the view-based default; others
  * (user-message) flow through normally.
- *
- * `race-open` is the auto-fire kickoff that runs once on workspace race entry.
- * It routes to a card-emitting builder (race-deep-dive-open) so the model
- * structurally emits [RACE_PATTERNS]+[ALIGNMENT_SCORES] on the first turn —
- * avoiding the model-inferred "is this turn one?" guess that previously
- * shipped broken to prod. User Q&A follow-ups keep using `user-message` →
- * the prose race-deep-dive builder.
  */
 export type RouterTrigger =
   | "amend-from-rail"
   | "amend-from-chat"
   | "handoff-button"
   | "budget-exhausted"
-  | "race-open"
   | "user-message";

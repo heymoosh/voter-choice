@@ -1,4 +1,5 @@
 import type { Theme } from "./types";
+import { CANONICAL_ISSUE_LABELS } from "../canonicalIssues";
 
 // UTF-8 BOM that occasionally prepends model output when piped through tools.
 const BOM = "﻿";
@@ -55,7 +56,23 @@ export function parseThemeExtraction(rawJson: string): Theme[] {
   const valid: Theme[] = [];
   for (const item of themesArray) {
     if (isValidTheme(item)) {
-      valid.push({ name: item.name, quotes: [...item.quotes] });
+      const theme: Theme = { name: item.name, quotes: [...item.quotes] };
+      // Preserve the canonical-issue mapping + stance the model emits, but
+      // only when they're well-formed. A bad/unknown canonicalIssue or
+      // stance is dropped (the field stays unset) rather than poisoning the
+      // downstream lookupAlignment call — better to render "no data" for
+      // that issue than to score against the wrong one.
+      const record = item as unknown as Record<string, unknown>;
+      if (
+        typeof record.canonicalIssue === "string" &&
+        record.canonicalIssue in CANONICAL_ISSUE_LABELS
+      ) {
+        theme.canonicalIssue = record.canonicalIssue;
+      }
+      if (record.stance === "in_favor" || record.stance === "opposed") {
+        theme.stance = record.stance;
+      }
+      valid.push(theme);
     } else {
       console.warn(
         "[parseThemeExtraction] dropping malformed theme item:",

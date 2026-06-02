@@ -47,70 +47,16 @@ async function resolveRunoffGate(page: Page) {
   }
 }
 
-async function mockColdOpenChatResponse(page: Page) {
-  const themesJson = JSON.stringify([
-    {
-      name: "Healthcare costs",
-      quotes: ["insulin keeps going up"],
-    },
-    {
-      name: "Housing affordability",
-      quotes: ["rent went up 30%"],
-    },
-  ]);
-  const events = [
-    `data: ${JSON.stringify({ type: "text", text: themesJson })}\n\n`,
-    `data: ${JSON.stringify({ type: "done", budget: { tier: "normal", percent: 0 } })}\n\n`,
-  ];
-  await page.route("**/api/chat", (route) => {
-    const req = route.request();
-    if (req.method() === "GET") {
-      return route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({
-          budget: { tier: "normal", percent: 0 },
-        }),
-      });
-    }
-    return route.fulfill({
-      status: 200,
-      contentType: "text/event-stream",
-      body: events.join(""),
-    });
-  });
-}
-
 /**
- * Cards-first mock: stateful chat handler that branches on the request
- * body's `view`. The cold-open turn still returns the theme JSON the
- * existing test relies on; the workspace-race turn returns a well-formed
- * [RACE_PATTERNS]+[ALIGNMENT_SCORES] block so the cards-first regression
- * guard can assert the loader + cards actually render.
- *
- * Mirrors the contract defined in
- * `src/lib/generated/ballotPromptEn.generated.ts` (the legacy emission
- * contract — preserved here even before the v2 builder lands so the test
- * pins the renderer's expected input shape).
+ * Cards-first chat mock (PIVOT): chat NO LONGER emits cards. The cold-open
+ * turn returns the theme JSON; any other turn returns plain prose (the
+ * demoted Q&A box). Cards come from /api/race-data (mocked separately).
  */
-async function mockCardsFirstChatResponse(page: Page) {
+async function mockChatColdOpenAndQA(page: Page) {
   const themesJson = JSON.stringify([
     { name: "Healthcare costs", quotes: ["insulin keeps going up"] },
     { name: "Housing affordability", quotes: ["rent went up 30%"] },
   ]);
-  const racePatternsBlock = [
-    '[RACE_PATTERNS race="U.S. President"]',
-    '{"id":"A","name":"Alice Anderson","incumbent":true,"priorRole":"Incumbent","donorCoalition":[{"label":"Small individual donors (under $200)","percent":60},{"label":"Healthcare industry","percent":40}],"donorDataSource":"web_search","donorSource":{"name":"OpenSecrets","url":"https://www.opensecrets.org/"},"endorsements":null,"endorsementUnavailable":{"reason":"None listed"},"platformAlignment":null,"alignmentUnavailable":{"reason":"Data not assembled"},"retrospective":null,"retrospectiveUnavailable":{"reason":"Data not assembled"},"valuesHighlight":null}',
-    '{"id":"B","name":"Bob Brown","incumbent":false,"priorRole":"Challenger","donorCoalition":[{"label":"Finance, banking & insurance","percent":100}],"donorDataSource":"web_search","donorSource":{"name":"Ballotpedia","url":"https://ballotpedia.org/"},"endorsements":null,"endorsementUnavailable":{"reason":"None listed"},"platformAlignment":null,"retrospective":null,"retrospectiveUnavailable":{"reason":"Challenger — no record in office yet"},"valuesHighlight":null}',
-    "[/RACE_PATTERNS]",
-  ].join("\n");
-  const alignmentScoresBlock = [
-    '[ALIGNMENT_SCORES race="U.S. President"]',
-    '{"candidateId":"A","scores":[{"canonicalIssue":"healthcare_access","issueLabel":"Healthcare access","resolvedStance":"expand healthcare access","sourceType":"voting_record","kept":4,"total":6,"contributingVotes":[{"billTitle":"HR 100","voteCast":"with","date":"2025-04-12","source":{"name":"clerk.house.gov","url":"https://clerk.house.gov/"}}]}]}',
-    '{"candidateId":"B","scores":null,"unavailable":{"reason":"No voting record yet — first-time candidate"}}',
-    "[/ALIGNMENT_SCORES]",
-  ].join("\n");
-  const cardsContent = `Quick overview before the cards.\n\n${racePatternsBlock}\n\n${alignmentScoresBlock}`;
   const sseFor = (text: string) =>
     [
       `data: ${JSON.stringify({ type: "text", text })}\n\n`,
@@ -134,11 +80,99 @@ async function mockCardsFirstChatResponse(page: Page) {
       view = undefined;
     }
     const body =
-      view === "cold-open" ? sseFor(themesJson) : sseFor(cardsContent);
+      view === "cold-open"
+        ? sseFor(themesJson)
+        : sseFor("Here's a quick answer to your question.");
     return route.fulfill({
       status: 200,
       contentType: "text/event-stream",
       body,
+    });
+  });
+}
+
+/**
+ * Mock POST /api/race-data — the deterministic, LLM-free card data source.
+ * Returns a populated RacePatternsBlock + AlignmentScoresBlock so the
+ * workspace renders real cards. `delayMs` lets a test observe the
+ * ProcessingSteps loader before the data resolves.
+ */
+async function mockRaceData(page: Page, opts: { delayMs?: number } = {}) {
+  const payload = {
+    racePatterns: {
+      race: "U.S. President",
+      candidates: [
+        {
+          id: "A",
+          name: "Alice Anderson",
+          incumbent: true,
+          donorCoalition: [
+            { label: "Healthcare industry", percent: 60, amount: 60000 },
+            {
+              label: "Small individual donors (under $200)",
+              percent: 40,
+              amount: 40000,
+            },
+          ],
+          donorDataSource: "voting_record",
+          donorSource: { name: "FEC", url: "https://www.fec.gov/" },
+          totalRaised: 100000,
+          endorsements: null,
+          endorsementUnavailable: { reason: "Endorsement data not available" },
+          platformAlignment: null,
+          retrospective: null,
+          retrospectiveUnavailable: { reason: "No performance record" },
+          valuesHighlight: null,
+        },
+        {
+          id: "B",
+          name: "Bob Brown",
+          incumbent: false,
+          donorCoalition: null,
+          donorUnavailable: { reason: "Couldn't match this candidate" },
+          endorsements: null,
+          endorsementUnavailable: { reason: "Endorsement data not available" },
+          platformAlignment: null,
+          retrospective: null,
+          retrospectiveUnavailable: { reason: "Challenger — no record yet" },
+          valuesHighlight: null,
+        },
+      ],
+    },
+    alignmentScores: {
+      race: "U.S. President",
+      entries: [
+        {
+          candidateId: "A",
+          scores: [
+            {
+              canonicalIssue: "healthcare_affordability",
+              issueLabel: "Healthcare Affordability",
+              resolvedStance: "in_favor",
+              sourceType: "voting_record",
+              kept: 4,
+              total: 6,
+              contributingVotes: [],
+            },
+          ],
+        },
+        {
+          candidateId: "B",
+          scores: null,
+          unavailable: { reason: "No record" },
+        },
+      ],
+    },
+    legislativeCoverage: true,
+  };
+  await page.route("**/api/race-data", async (route) => {
+    if (opts.delayMs) {
+      await new Promise((r) => setTimeout(r, opts.delayMs));
+    }
+    return route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify(payload),
     });
   });
 }
@@ -200,10 +234,11 @@ test.describe("workspace (PROMPT_FLEET_V2 + en)", () => {
       "or add `webServer.env.PROMPT_FLEET_V2 = '1'` to playwright.config.ts.",
   );
 
-  test("cold-open → lock themes → workspace 3-pane → pick → commit why → auto-advance → print enables", async ({
+  test("cold-open → lock → workspace 3-pane → data-driven cards → card pick → ballot + print", async ({
     page,
   }) => {
-    await mockColdOpenChatResponse(page);
+    await mockChatColdOpenAndQA(page);
+    await mockRaceData(page);
     await mockCivicResponse(page);
     await page.goto("/");
 
@@ -239,50 +274,42 @@ test.describe("workspace (PROMPT_FLEET_V2 + en)", () => {
     // Print button starts disabled (zero decisions).
     await expect(page.getByTestId("ballot-pane-print")).toBeDisabled();
 
-    // Pick the active race's candidate.
-    const pickBtn = page.getByTestId("workspace-pick-trigger");
-    await pickBtn.waitFor({ state: "visible", timeout: WORKSPACE_TIMEOUT });
-    await pickBtn.click();
+    // Data-driven candidate cards render in the center (from /api/race-data,
+    // NOT from a chat message).
+    await page
+      .getByTestId("race-patterns")
+      .waitFor({ state: "visible", timeout: WORKSPACE_TIMEOUT });
 
-    // Inline why-prompt appears.
-    const whyTextarea = page.getByTestId("workspace-why-textarea");
-    await whyTextarea.waitFor({
-      state: "visible",
-      timeout: WORKSPACE_TIMEOUT,
-    });
-    await whyTextarea.fill("Their record matches my top priority");
-    await page.getByTestId("workspace-why-commit").click();
+    // Pick candidate A directly on the card. Blind mode is on by default
+    // (the card shows "Pick Candidate A"); picking auto-commits a why-note.
+    await page
+      .getByTestId("race-patterns-pick-A")
+      .click({ timeout: WORKSPACE_TIMEOUT });
 
-    // Decision lands in the ballot pane with the verbatim why.
+    // Decision lands in the ballot pane (card pick auto-commits a why-note).
     await expect(page.getByTestId("ballot-pane-header")).toContainText(/1\//);
-    const ballotPane = page.getByTestId("ballot-pane");
-    await expect(ballotPane).toContainText(
-      "Their record matches my top priority",
-    );
 
     // Print button now enabled.
     await expect(page.getByTestId("ballot-pane-print")).toBeEnabled();
   });
 
   // ─────────────────────────────────────────────────────────────
-  // Cards-first regression guard — see
+  // Cards-first regression guard (PIVOT) — see
   // docs/design/2026-redesign/CARDS_FIRST_BUILD_PLAN.md.
   //
-  // The redesign's intended workspace surface is candidate cards (alignment
-  // bars + funder bars + Pick), not a chat transcript. Pre-rebuild, the
-  // model's workspace turn returned prose so the cards never rendered in
-  // prod and nobody caught it (the existing spec above uses the stub-Pick
-  // fallback path which does NOT exercise card rendering).
-  //
-  // This test mocks the workspace-race turn to emit a [RACE_PATTERNS] +
-  // [ALIGNMENT_SCORES] block and asserts the renderer mounts cards in the
-  // workspace center column. It's the local proof that the rendering path
-  // is wired correctly before the (paid, prod-only) emission half ships.
+  // Cards render from the deterministic /api/race-data endpoint, NOT from a
+  // chat message. This mocks that endpoint with a small delay and asserts:
+  //   (1) the ProcessingSteps loader is the primary surface while fetching,
+  //   (2) candidate cards then render in the center,
+  //   (3) no raw [RACE_PATTERNS] JSON ever appears (chat is prose-only).
+  // Runs fully locally — no API key needed (the pivot removed the LLM from
+  // the card path), which is what makes this the cards-first definition-of-done.
   // ─────────────────────────────────────────────────────────────
-  test("workspace shows ProcessingSteps loader then candidate cards when chat emits [RACE_PATTERNS]", async ({
+  test("workspace shows ProcessingSteps loader then data-driven candidate cards", async ({
     page,
   }) => {
-    await mockCardsFirstChatResponse(page);
+    await mockChatColdOpenAndQA(page);
+    await mockRaceData(page, { delayMs: 1200 });
     await mockCivicResponse(page);
     await page.goto("/");
 
@@ -301,18 +328,22 @@ test.describe("workspace (PROMPT_FLEET_V2 + en)", () => {
       .waitFor({ state: "visible", timeout: WORKSPACE_TIMEOUT });
     await page.getByTestId("theme-ranker-lock-in").click();
 
-    // Workspace shell mounts; the auto-fire kickoff triggers the workspace-
-    // race turn, which streams the [RACE_PATTERNS] block.
+    // Workspace shell mounts.
     await page
       .getByTestId("workspace-shell")
       .waitFor({ state: "visible", timeout: WORKSPACE_TIMEOUT });
 
-    // Candidate cards render from the streamed block.
+    // (1) Loader is the primary surface while /api/race-data is in flight.
+    await page
+      .getByTestId("race-patterns-loading")
+      .waitFor({ state: "visible", timeout: WORKSPACE_TIMEOUT });
+
+    // (2) Cards then render from the resolved data.
     await page
       .getByTestId("race-patterns")
       .waitFor({ state: "visible", timeout: WORKSPACE_TIMEOUT });
 
-    // Raw [RACE_PATTERNS] JSON must never leak into the visible transcript.
+    // (3) Raw [RACE_PATTERNS] JSON must never leak into the transcript.
     await expect(page.getByText(/\[RACE_PATTERNS race=/)).toHaveCount(0);
     await expect(page.getByText(/\[\/RACE_PATTERNS\]/)).toHaveCount(0);
   });

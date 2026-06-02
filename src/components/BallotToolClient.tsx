@@ -20,6 +20,7 @@ import { extractionToRaces } from "../lib/extractionToRaces";
 import type { BallotExtraction } from "../lib/server/extract-types";
 import { parseBallotContent } from "../lib/parseBallotContent";
 import { downloadProfileAsText } from "../lib/ballot-utils";
+import { useRaceData } from "../lib/useRaceData";
 import { useLanguage } from "../lib/i18n";
 import { useResearchMode } from "../lib/researchMode";
 import { translations } from "../lib/translations";
@@ -1969,6 +1970,49 @@ function WorkspaceShell({
     return match?.candidates;
   })();
 
+  // ── Cards-first data source (PIVOT) ────────────────────────────
+  // Fetch the deterministic, LLM-free candidate-card data for the active
+  // race from /api/race-data. The workspace center renders cards from THIS,
+  // not from a chat message. Re-runs when the race / roster / issues change.
+  // Null for propositions (no candidate roster) → they fall through to the
+  // chat Q&A surface.
+  const raceDataInput = useMemo(() => {
+    if (!activeRace) return null;
+    if (activeRace.section === "Propositions") return null;
+    const cands =
+      activeRace.candidates.length > 0
+        ? activeRace.candidates
+        : (candidatesForActive ?? []);
+    if (cands.length < 2) return null; // need a real contest to render cards
+    const issues = (themes ?? [])
+      .filter((t): t is typeof t & { canonicalIssue: string } =>
+        Boolean(t.canonicalIssue),
+      )
+      .map((t) => ({
+        canonicalIssue: t.canonicalIssue,
+        issueLabel: t.name,
+        stance: t.stance ?? ("in_favor" as const),
+      }));
+    return {
+      raceId: activeRace.id,
+      raceLabel: activeRace.label,
+      section: activeRace.section,
+      // Ballot-authoritative state (same override as the chat prompt) so the
+      // jurisdiction derived for the DB lookups matches the candidate roster.
+      stateCode: extractedStateCode || state.stateCode,
+      candidates: cands,
+      issues,
+    };
+  }, [
+    activeRace,
+    candidatesForActive,
+    themes,
+    extractedStateCode,
+    state.stateCode,
+  ]);
+  const { data: raceData, loading: raceDataLoading } =
+    useRaceData(raceDataInput);
+
   // Polling card: surface once >50% decided (per design brief §9 / Phase 3
   // packet §22).
   const hasPolling = races.length > 0 && decisions.length / races.length > 0.5;
@@ -2206,18 +2250,17 @@ function WorkspaceShell({
                 raceLabelLookup: Object.fromEntries(
                   racesWithDecided.map((r) => [r.id, r.label]),
                 ),
-                // P0 #1 (live audit) — auto-fire a "Introduce this race…"
-                // synthetic user message on mount so the model streams a
-                // context-aware AI greeting before the voter speaks. Pre-fix
-                // the chat opened EMPTY (only the placeholder "Ask anything
-                // about U.S. Senate." with no AI bubble). The synthetic user
-                // message is `hidden`, so only the AI bubble renders.
-                autoFireRaceIntro: true,
                 // Authoritative state code from the uploaded ballot's
                 // jurisdiction (when available), so the chat prompt's
                 // `<race>` context agrees with the candidates roster
                 // instead of conflicting with a ZIP-resolved state.
                 extractedStateCode,
+                // Cards-first (PIVOT): the deterministic /api/race-data
+                // result for the active race. The workspace renders cards
+                // from this, not from a chat message; the loader shows while
+                // the fetch is in flight. No mount-time chat turn fires.
+                raceData,
+                raceDataLoading,
               }}
             />
           </div>

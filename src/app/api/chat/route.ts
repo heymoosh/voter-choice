@@ -28,7 +28,6 @@ import { prependSafetyHeader } from "../../../lib/prompts/safety-header";
 import { stripPII } from "../../../lib/prompts/pii-strip";
 import { buildThemeExtractionPrompt } from "../../../lib/prompts/theme-extraction";
 import { buildRaceDeepDivePrompt } from "../../../lib/prompts/race-deep-dive";
-import { buildRaceDeepDiveOpenPrompt } from "../../../lib/prompts/race-deep-dive-open";
 import { buildPropositionPrompt } from "../../../lib/prompts/proposition";
 import { buildThemeAmendmentPrompt } from "../../../lib/prompts/theme-amendment";
 import { buildHandoffPrompt } from "../../../lib/prompts/handoff";
@@ -376,26 +375,6 @@ function renderBuilder(
         candidatesJson: c.candidatesJson,
         decidedSummary: c.decidedSummary,
       });
-    case "race-deep-dive-open":
-      if (
-        c.raceLabel === undefined ||
-        c.state === undefined ||
-        c.themesList === undefined ||
-        c.candidatesJson === undefined ||
-        c.decidedSummary === undefined
-      ) {
-        throw new Error(
-          "buildSystemPrompt: missing raceContext for builder race-deep-dive-open",
-        );
-      }
-      return buildRaceDeepDiveOpenPrompt({
-        raceLabel: c.raceLabel,
-        state: c.state,
-        county: c.county ?? "",
-        themesList: c.themesList,
-        candidatesJson: c.candidatesJson,
-        decidedSummary: c.decidedSummary,
-      });
     case "proposition":
       if (
         c.propLabel === undefined ||
@@ -737,7 +716,6 @@ const VALID_TRIGGERS: ReadonlyArray<RouterTrigger> = [
   "amend-from-chat",
   "handoff-button",
   "budget-exhausted",
-  "race-open",
   "user-message",
 ];
 

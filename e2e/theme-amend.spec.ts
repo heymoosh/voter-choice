@@ -180,12 +180,14 @@ test.describe("theme amendment (PROMPT_FLEET_V2 + en)", () => {
       .waitFor({ state: "visible", timeout: WORKSPACE_TIMEOUT });
 
     // Commit one decision so decisionCount > 0 — opt-in offer needs prior
-    // decisions to surface.
-    await page.getByTestId("workspace-pick-trigger").click();
+    // decisions to surface. Cards-first (PIVOT): pick candidate A on the card
+    // (rendered from /api/race-data); it auto-commits a why-note.
     await page
-      .getByTestId("workspace-why-textarea")
-      .fill("strong record matches my top theme");
-    await page.getByTestId("workspace-why-commit").click();
+      .getByTestId("race-patterns")
+      .waitFor({ state: "visible", timeout: WORKSPACE_TIMEOUT });
+    await page
+      .getByTestId("race-patterns-pick-A")
+      .click({ timeout: WORKSPACE_TIMEOUT });
 
     // Click the rail's "Edit" link — opens the editor inline in chat.
     await page.getByTestId("workspace-rail-edit-themes").click();

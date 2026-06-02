@@ -1444,26 +1444,17 @@ describe("ChatPanel — workspace-race chat payload (real fix)", () => {
   });
 });
 
-/* ── P0 #1 (live audit): auto-fire race-deep-dive on workspace mount ─── */
+/* ── Workspace user-message chat payload — state override (PIVOT) ─── */
 
 /**
- * Pre-fix the workspace race chat opened EMPTY — the placeholder "Ask
- * anything about U.S. Senate." with no AI bubble, no candidate intro, no
- * starting context. The voter would then have to type something blind.
- *
- * Fix: when ChatPanel mounts in workspace mode with an `activeRace` and the
- * chat is empty, kick off a one-shot race-deep-dive request to /api/chat so
- * the model streams a context-aware greeting before the voter speaks.
- *
- * These tests assert the OUTGOING request fires from mount without any user
- * input — they're the contract the live audit P0 #1 was missing.
+ * PIVOT: the mount-time auto-fire is GONE — cards render from /api/race-data,
+ * not from a chat turn. The chat is a pure follow-up Q&A box that only fires
+ * on the voter's own message. These tests assert the OUTGOING /api/chat body
+ * for a user Q&A turn still carries the ballot-authoritative state override
+ * (the NJ-ballot-vs-TX-state conflict fix), which now applies to Q&A turns.
  */
-describe("ChatPanel — workspace auto-fire race-deep-dive on mount (P0 #1)", () => {
-  const txStateLocal = txState;
-
-  function renderWorkspaceAutoFire(
-    workspaceOverrides: Record<string, unknown> = {},
-  ) {
+describe("ChatPanel — workspace user-message chat payload (state override)", () => {
+  function renderWorkspaceQA(workspaceOverrides: Record<string, unknown> = {}) {
     const baseWorkspace = {
       activeRace: {
         id: "u-s-senate",
@@ -1484,7 +1475,6 @@ describe("ChatPanel — workspace auto-fire race-deep-dive on mount (P0 #1)", ()
       amendmentInFlight: false,
       lockedThemes: [
         { name: "Healthcare access", quotes: ['"insulin prices"'] },
-        { name: "Climate action", quotes: ['"flood risk"'] },
       ],
       decisions: [],
       chatCatchSuggestion: null,
@@ -1493,14 +1483,12 @@ describe("ChatPanel — workspace auto-fire race-deep-dive on mount (P0 #1)", ()
       onChatCatchDismiss: vi.fn(),
       onAmendmentSave: vi.fn(),
       onAmendmentDiscard: vi.fn(),
-      // P0 #1 — explicit opt-in for the auto-fire behavior.
-      autoFireRaceIntro: true,
       ...workspaceOverrides,
     } as React.ComponentProps<typeof ChatPanel>["workspace"];
     return render(
       <LanguageProvider>
         <ChatPanel
-          state={txStateLocal}
+          state={txState}
           zipCode="08106"
           countyName="Camden"
           workspace={baseWorkspace}
@@ -1536,7 +1524,7 @@ describe("ChatPanel — workspace auto-fire race-deep-dive on mount (P0 #1)", ()
           headers: { "Content-Type": "application/json" },
         });
       }
-      return streamResponse("Cory Booker is the Democratic incumbent.");
+      return streamResponse("Answer.");
     });
   });
 
@@ -1544,138 +1532,133 @@ describe("ChatPanel — workspace auto-fire race-deep-dive on mount (P0 #1)", ()
     vi.restoreAllMocks();
   });
 
-  it("auto-fires a POST to /api/chat on mount when activeRace is set and chat is empty", async () => {
-    renderWorkspaceAutoFire();
-    await waitFor(() => {
-      const body = captureChatRequestBody();
-      expect(body).not.toBeNull();
-      expect(body!.view).toBe("workspace-race");
-      expect(body!.activeRaceType).toBe("choice");
-    });
+  async function submitQuestion() {
+    const input = await screen.findByTestId("workspace-chat-input");
+    fireEvent.change(input, { target: { value: "Tell me about this race." } });
+    fireEvent.submit(input.closest("form")!);
+  }
+
+  it("does NOT fire any /api/chat turn on mount (auto-fire removed)", async () => {
+    renderWorkspaceQA();
+    await new Promise((r) => setTimeout(r, 20));
+    expect(captureChatRequestBody()).toBeNull();
   });
 
-  it("auto-fire carries trigger:'race-open' so the route picks the card-emitting builder", async () => {
-    // Structural guard against the cards-first regression class: if a future
-    // refactor drops the trigger from the kickoff path, the router would
-    // resolve `race-deep-dive` (prose) instead of `race-deep-dive-open`
-    // (cards), and cards would silently stop rendering on prod — same
-    // failure mode that motivated the rebuild. Pin the contract here so
-    // the regression caught locally, not on the paid prod path.
-    renderWorkspaceAutoFire();
-    await waitFor(() => {
-      const body = captureChatRequestBody();
-      expect(body).not.toBeNull();
-      expect(body!.trigger).toBe("race-open");
-    });
-  });
-
-  it("workspace.extractedStateCode overrides state.stateCode in the chat payload", async () => {
-    // Prod conflict story: NJ ballot upload paired with a session whose
-    // ZIP-derived state.stateCode is "TX" (ambiguous address, stale session,
-    // or a ZIP-table gap) made the chat prompt assemble
-    // `<race> U.S. Senate, TX-Camden </race>` while the candidates roster
-    // carried NJ-shaped names. The model halted to clarify instead of
-    // emitting cards. This guard pins that the workspace's extracted state
-    // code (from the ballot's election_metadata.jurisdiction) wins.
-    renderWorkspaceAutoFire({
-      extractedStateCode: "NJ",
-    });
+  it("a user Q&A turn carries extractedStateCode override (NJ beats txState's TX)", async () => {
+    renderWorkspaceQA({ extractedStateCode: "NJ" });
+    await submitQuestion();
     await waitFor(() => {
       const body = captureChatRequestBody();
       expect(body).not.toBeNull();
       const ctx = body!.raceContext as Record<string, unknown>;
-      // txState's stateCode is "TX"; the override should beat it.
       expect(ctx.state).toBe("NJ");
     });
   });
 
-  it("falls back to state.stateCode when no extractedStateCode is provided", async () => {
-    // Negative guard: when no ballot has been uploaded yet (or the upload
-    // failed to parse a state), the ZIP-derived state is still the right
-    // input. This pins the fallback so a future refactor doesn't make the
-    // override absent === undefined-state.
-    renderWorkspaceAutoFire();
+  it("a user Q&A turn falls back to state.stateCode when no extractedStateCode", async () => {
+    renderWorkspaceQA();
+    await submitQuestion();
     await waitFor(() => {
       const body = captureChatRequestBody();
       expect(body).not.toBeNull();
       const ctx = body!.raceContext as Record<string, unknown>;
-      // txState fixture has stateCode "TX".
       expect(ctx.state).toBe("TX");
     });
   });
-
-  it("auto-fire request carries candidatesJson with the full roster (so the model can resolve surnames)", async () => {
-    renderWorkspaceAutoFire();
-    await waitFor(() => {
-      const body = captureChatRequestBody();
-      expect(body).not.toBeNull();
-      const ctx = body!.raceContext as Record<string, unknown>;
-      const parsed = JSON.parse(String(ctx.candidatesJson));
-      expect(parsed).toHaveLength(2);
-      expect(parsed[0].name).toBe("Cory Booker");
-      expect(parsed[1].name).toBe("Curtis Bashaw");
-    });
-  });
-
-  it("auto-fire request carries themesList with the voter's locked themes", async () => {
-    renderWorkspaceAutoFire();
-    await waitFor(() => {
-      const body = captureChatRequestBody();
-      expect(body).not.toBeNull();
-      const ctx = body!.raceContext as Record<string, unknown>;
-      expect(String(ctx.themesList)).toContain("Healthcare access");
-      expect(String(ctx.themesList)).toContain("Climate action");
-    });
-  });
-
-  it("does NOT fire twice on a single mount (StrictMode double-mount guard)", async () => {
-    renderWorkspaceAutoFire();
-    // Settle.
-    await waitFor(() => {
-      const body = captureChatRequestBody();
-      expect(body).not.toBeNull();
-    });
-    const chatCalls = (
-      globalThis.fetch as ReturnType<typeof vi.fn>
-    ).mock.calls.filter((c) => {
-      const url = typeof c[0] === "string" ? c[0] : String(c[0]);
-      return url.endsWith("/api/chat");
-    });
-    expect(chatCalls.length).toBe(1);
-  });
-
-  it("does NOT auto-fire when there's no activeRace", async () => {
-    renderWorkspaceAutoFire({ activeRace: null });
-    // Let any effects flush.
-    await new Promise((r) => setTimeout(r, 20));
-    const body = captureChatRequestBody();
-    expect(body).toBeNull();
-  });
 });
 
-/* ── Cards-first workspace: multi-turn rendering regression guard ─── */
+/* ── Cards-first workspace: data-driven rendering (PIVOT) ─── */
 
 /**
- * Pre-fix, `renderRacePatterns` returned null unless `isLastAssistant`. So the
- * moment the voter asked a follow-up, the first assistant message (carrying
- * [RACE_PATTERNS]) was no longer last → the text fallback rendered its raw
- * markdown content, which contained the JSON block as-is. This guards against
- * a regression: when a follow-up turn lands, the cards must still render and
- * the JSON must not leak into the transcript.
- *
- * See `docs/design/2026-redesign/CARDS_FIRST_BUILD_PLAN.md` for the full
- * design intent (cards as primary surface, chat as bottom Q&A).
+ * The workspace center renders candidate cards from the deterministic
+ * `/api/race-data` result the parent passes via `workspace.raceData` — NOT
+ * from a chat message. These guard the core pivot:
+ *   - loading → the ProcessingSteps loader is the primary surface,
+ *   - data → cards render,
+ *   - a follow-up Q&A turn does NOT disturb the cards (they're prop-driven),
+ *   - raw [RACE_PATTERNS] JSON never appears (chat is prose-only).
  */
-describe("ChatPanel — workspace cards-first multi-turn rendering", () => {
-  function renderCardsFirstWorkspace() {
+describe("ChatPanel — workspace cards-first (data-driven)", () => {
+  // A minimal valid RaceData payload (2-candidate block + alignment).
+  const raceData = {
+    racePatterns: {
+      race: "U.S. Senate",
+      candidates: [
+        {
+          id: "A",
+          name: "Alice Anderson",
+          incumbent: true,
+          donorCoalition: [
+            { label: "Healthcare industry", percent: 60, amount: 60000 },
+            {
+              label: "Small individual donors (under $200)",
+              percent: 40,
+              amount: 40000,
+            },
+          ],
+          donorDataSource: "voting_record" as const,
+          donorSource: { name: "FEC", url: "https://www.fec.gov/" },
+          totalRaised: 100000,
+          endorsements: null,
+          endorsementUnavailable: { reason: "Endorsement data not available" },
+          platformAlignment: null,
+          retrospective: null,
+          retrospectiveUnavailable: { reason: "No performance record" },
+          valuesHighlight: null,
+        },
+        {
+          id: "B",
+          name: "Bob Brown",
+          incumbent: false,
+          donorCoalition: null,
+          donorUnavailable: { reason: "Couldn't match this candidate" },
+          endorsements: null,
+          endorsementUnavailable: { reason: "Endorsement data not available" },
+          platformAlignment: null,
+          retrospective: null,
+          retrospectiveUnavailable: { reason: "Challenger — no record yet" },
+          valuesHighlight: null,
+        },
+      ],
+    },
+    alignmentScores: {
+      race: "U.S. Senate",
+      entries: [
+        {
+          candidateId: "A",
+          scores: [
+            {
+              canonicalIssue: "healthcare_affordability",
+              issueLabel: "Healthcare Affordability",
+              resolvedStance: "in_favor",
+              sourceType: "voting_record" as const,
+              kept: 4,
+              total: 6,
+              contributingVotes: [],
+            },
+          ],
+        },
+        {
+          candidateId: "B",
+          scores: null,
+          unavailable: { reason: "No voting record found" },
+        },
+      ],
+    },
+    legislativeCoverage: true,
+  };
+
+  function renderDataWorkspace(
+    workspaceOverrides: Record<string, unknown> = {},
+  ) {
     const baseWorkspace = {
       activeRace: {
         id: "u-s-senate",
         label: "U.S. Senate",
         section: "Federal",
         candidates: [
-          { name: "Alice", party: "Democratic" },
-          { name: "Bob", party: "Republican" },
+          { name: "Alice Anderson", party: "Democratic" },
+          { name: "Bob Brown", party: "Republican" },
         ],
       },
       totalRaces: 2,
@@ -1696,7 +1679,9 @@ describe("ChatPanel — workspace cards-first multi-turn rendering", () => {
       onChatCatchDismiss: vi.fn(),
       onAmendmentSave: vi.fn(),
       onAmendmentDiscard: vi.fn(),
-      autoFireRaceIntro: true,
+      raceData,
+      raceDataLoading: false,
+      ...workspaceOverrides,
     } as React.ComponentProps<typeof ChatPanel>["workspace"];
     return render(
       <LanguageProvider>
@@ -1705,15 +1690,7 @@ describe("ChatPanel — workspace cards-first multi-turn rendering", () => {
     );
   }
 
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
-
-  it("keeps cards rendering after a follow-up turn lands (no raw JSON leak)", async () => {
-    // Stateful fetch mock: auto-fire (turn 1) returns [RACE_PATTERNS]; the
-    // user follow-up (turn 2) returns plain prose. /api/chat-catch always
-    // returns suggest:false so it doesn't interfere with the assertions.
-    let chatCallCount = 0;
+  beforeEach(() => {
     vi.spyOn(globalThis, "fetch").mockImplementation(async (url) => {
       const href = typeof url === "string" ? url : (url as URL).toString();
       if (href.includes("/api/chat-catch")) {
@@ -1722,50 +1699,47 @@ describe("ChatPanel — workspace cards-first multi-turn rendering", () => {
           headers: { "Content-Type": "application/json" },
         });
       }
-      if (href.endsWith("/api/chat")) {
-        chatCallCount += 1;
-        if (chatCallCount === 1) {
-          return streamResponse(
-            `Quick overview before the cards.\n\n${racePatternsBlock}`,
-          );
-        }
-        return streamResponse(
-          "Alice has a stronger record on healthcare access this term.",
-        );
-      }
-      return streamResponse("ok");
+      return streamResponse("Alice has a stronger record this term.");
     });
+  });
 
-    renderCardsFirstWorkspace();
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
 
-    // Turn 1 — auto-fire kickoff streams the [RACE_PATTERNS] block.
-    await waitFor(() => {
-      expect(screen.getByTestId("race-patterns")).toBeInTheDocument();
-    });
+  it("shows the ProcessingSteps loader (not cards) while raceDataLoading", () => {
+    renderDataWorkspace({ raceData: null, raceDataLoading: true });
+    expect(screen.getByTestId("race-patterns-loading")).toBeInTheDocument();
+    expect(screen.queryByTestId("race-patterns")).not.toBeInTheDocument();
+  });
 
-    // Turn 2 — user asks a follow-up. The workspace-chat-input is the
-    // demoted Q&A box at the bottom of the workspace center column.
+  it("renders candidate cards from workspace.raceData (no chat involved)", () => {
+    renderDataWorkspace();
+    expect(screen.getByTestId("race-patterns")).toBeInTheDocument();
+    expect(
+      screen.queryByTestId("race-patterns-loading"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("keeps cards rendering after a user Q&A follow-up + never leaks JSON", async () => {
+    renderDataWorkspace();
+    expect(screen.getByTestId("race-patterns")).toBeInTheDocument();
+
     const input = screen.getByTestId("workspace-chat-input");
     fireEvent.change(input, {
-      target: { value: "How does Alice score on healthcare access?" },
+      target: { value: "How does Alice score on healthcare?" },
     });
     fireEvent.submit(input.closest("form")!);
 
-    // The follow-up prose appears.
     await waitFor(() => {
       expect(
-        screen.getByText(
-          /Alice has a stronger record on healthcare access this term/i,
-        ),
+        screen.getByText(/Alice has a stronger record this term/i),
       ).toBeInTheDocument();
     });
 
-    // Cards STILL render — this is the regression guard. Pre-fix, the
-    // first assistant message lost `isLastAssistant`, returned null from
-    // `renderRacePatterns`, and fell back to raw markdown.
+    // Cards (from the prop) are unaffected by the chat turn.
     expect(screen.getByTestId("race-patterns")).toBeInTheDocument();
-
-    // The [RACE_PATTERNS] JSON must NEVER leak as visible text.
+    // Chat is prose-only — no structured-block JSON leaks into the transcript.
     expect(screen.queryByText(/\[RACE_PATTERNS race=/)).not.toBeInTheDocument();
     expect(screen.queryByText(/\[\/RACE_PATTERNS\]/)).not.toBeInTheDocument();
   });

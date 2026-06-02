@@ -1,7 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { buildThemeExtractionPrompt } from "../theme-extraction";
 import { buildRaceDeepDivePrompt } from "../race-deep-dive";
-import { buildRaceDeepDiveOpenPrompt } from "../race-deep-dive-open";
 import { buildPropositionPrompt } from "../proposition";
 import { buildThemeAmendmentPrompt } from "../theme-amendment";
 import { buildHandoffPrompt } from "../handoff";
@@ -9,6 +8,11 @@ import { buildResearchCandidatePrompt } from "../research-candidate";
 import { buildChatCatchJudgePrompt } from "../chat-catch-judge";
 
 const LIMIT = 1500;
+// theme-extraction now carries the canonical-issue vocabulary (16 ids + what
+// each covers) so the model can map the voter's words → a known issue id at
+// cold-open. That vocab is load-bearing for downstream alignment scoring, so
+// the prompt is intentionally longer than the 1500 baseline.
+const THEME_EXTRACTION_LIMIT = 3500;
 // P0 #2 (live audit): the race-deep-dive prompt now carries an explicit
 // candidate-resolution rule so the model resolves surnames against
 // <candidates> instead of bouncing the disambiguation back to the voter.
@@ -16,18 +20,13 @@ const LIMIT = 1500;
 // 1500 budget — bump the race-deep-dive ceiling rather than drop a load-
 // bearing safety/UX rule. Other builders stay at 1500.
 const RACE_DEEP_DIVE_LIMIT = 1800;
-// The cards-emitting auto-fire variant carries the full structured-block
-// emission contract (RACE_PATTERNS + ALIGNMENT_SCORES schemas, donor-bucket
-// vocabulary, canonical-issue vocabulary, tool-call protocol). It is
-// structurally longer than the prose Q&A builder by design.
-const RACE_DEEP_DIVE_OPEN_LIMIT = 12000;
 
 describe("task-prompt length budget", () => {
-  it("theme-extraction body stays under the 1500-char limit", () => {
+  it("theme-extraction body stays under the 3500-char limit", () => {
     const rendered = buildThemeExtractionPrompt({
       userInput: "I care about healthcare.",
     });
-    expect(rendered.length).toBeLessThanOrEqual(LIMIT);
+    expect(rendered.length).toBeLessThanOrEqual(THEME_EXTRACTION_LIMIT);
   });
 
   it("race-deep-dive body stays under the 1800-char limit", () => {
@@ -40,18 +39,6 @@ describe("task-prompt length budget", () => {
       decidedSummary: "(none)",
     });
     expect(rendered.length).toBeLessThanOrEqual(RACE_DEEP_DIVE_LIMIT);
-  });
-
-  it("race-deep-dive-open body stays under the 10000-char limit", () => {
-    const rendered = buildRaceDeepDiveOpenPrompt({
-      raceLabel: "Senate",
-      state: "TX",
-      county: "Harris",
-      themesList: "1. Healthcare",
-      candidatesJson: "[]",
-      decidedSummary: "(none)",
-    });
-    expect(rendered.length).toBeLessThanOrEqual(RACE_DEEP_DIVE_OPEN_LIMIT);
   });
 
   it("proposition body stays under the 1500-char limit", () => {

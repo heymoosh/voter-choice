@@ -70,6 +70,89 @@ describe("parseThemeExtraction", () => {
     expect(warnSpy).toHaveBeenCalled();
   });
 
+  // --- canonicalIssue + stance threading (PIVOT P1) ---
+  //
+  // These fields let the deterministic /api/race-data endpoint score
+  // candidates via lookupAlignment without an LLM. The parser must preserve
+  // them when well-formed and silently drop them when not (rather than
+  // poisoning the alignment lookup with a bad/unknown issue id).
+
+  it("preserves a valid canonicalIssue + stance on the theme", () => {
+    const raw = JSON.stringify([
+      {
+        name: "Insulin costs",
+        quotes: ["insulin keeps going up"],
+        canonicalIssue: "healthcare_affordability",
+        stance: "in_favor",
+      },
+    ]);
+    const result = parseThemeExtraction(raw);
+    expect(result).toEqual([
+      {
+        name: "Insulin costs",
+        quotes: ["insulin keeps going up"],
+        canonicalIssue: "healthcare_affordability",
+        stance: "in_favor",
+      },
+    ]);
+  });
+
+  it("drops an unknown canonicalIssue but keeps the theme", () => {
+    const raw = JSON.stringify([
+      {
+        name: "Vibes",
+        quotes: ["good vibes"],
+        canonicalIssue: "not_a_real_issue",
+        stance: "in_favor",
+      },
+    ]);
+    const result = parseThemeExtraction(raw);
+    // Theme survives; bad issue id is stripped; valid stance kept.
+    expect(result).toEqual([
+      { name: "Vibes", quotes: ["good vibes"], stance: "in_favor" },
+    ]);
+  });
+
+  it("drops an invalid stance value but keeps the theme + valid canonicalIssue", () => {
+    const raw = JSON.stringify([
+      {
+        name: "Rent",
+        quotes: ["rent up 30%"],
+        canonicalIssue: "housing_affordability",
+        stance: "maybe",
+      },
+    ]);
+    const result = parseThemeExtraction(raw);
+    expect(result).toEqual([
+      {
+        name: "Rent",
+        quotes: ["rent up 30%"],
+        canonicalIssue: "housing_affordability",
+      },
+    ]);
+  });
+
+  it("omits both fields when the model doesn't emit them (back-compat)", () => {
+    const raw = JSON.stringify([
+      { name: "Schools", quotes: ["my kid's school"] },
+    ]);
+    const result = parseThemeExtraction(raw);
+    expect(result).toEqual([{ name: "Schools", quotes: ["my kid's school"] }]);
+  });
+
+  it("preserves opposed stance", () => {
+    const raw = JSON.stringify([
+      {
+        name: "New highway",
+        quotes: ["stop the highway"],
+        canonicalIssue: "water_infrastructure",
+        stance: "opposed",
+      },
+    ]);
+    const result = parseThemeExtraction(raw);
+    expect(result[0].stance).toBe("opposed");
+  });
+
   it("returns [] for an empty array input", () => {
     const result = parseThemeExtraction("[]");
     expect(result).toEqual([]);
