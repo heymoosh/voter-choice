@@ -7,6 +7,12 @@ on:
     - cron: "30 8 * * 0"
   # Allow manual trigger for testing / backfill
   workflow_dispatch:
+    inputs:
+      federal_only:
+        description: "Run ONLY the federal (FEC) donor ingest; skip the state FollowTheMoney + Nebraska steps. Use for a fast, free-tier-safe federal backfill that avoids the known state-data issues."
+        required: false
+        default: false
+        type: boolean
 
 jobs:
   ingest:
@@ -92,11 +98,17 @@ jobs:
         run: npx tsx scripts/ingest/federal-donors.ts
 
       - name: Run state donor ingest via FTM API (Phase E)
+        # Skipped when federal_only=true (manual federal backfill). The state
+        # FollowTheMoney ingest is optional enrichment and has known data-quality
+        # issues to resolve separately; the federal (FEC) ingest above is what
+        # candidate-card donor coalitions need for federal races.
         # --skip-existing: preserves higher-quality bulk data for states that already
         # have custom scrapers (CA, TX, WA, etc.) and only fills the remaining states.
+        if: ${{ github.event.inputs.federal_only != 'true' }}
         run: npx tsx scripts/ingest/state-donors.ts --skip-existing
 
       - name: Run Nebraska NADC donor ingest (Phase E)
+        if: ${{ github.event.inputs.federal_only != 'true' }}
         run: npx tsx scripts/ingest/ne-nadc-donors.ts
 
       - name: Notify on ingest failure
