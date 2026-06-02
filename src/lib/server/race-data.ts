@@ -138,6 +138,27 @@ export function deriveLegislativeJurisdiction(
 }
 
 /**
+ * The other federal chamber, for prior-role record fallback. Returns null for
+ * non-federal jurisdictions — we only cross House↔Senate, where a candidate
+ * commonly serves in one chamber then runs for the other. State-chamber
+ * cross-matching is too collision-prone (redistricting, common names) to risk.
+ */
+export function siblingFederalChamber(jurisdiction: string): string | null {
+  if (jurisdiction === "federal-senate") return "federal-house";
+  if (jurisdiction === "federal-house") return "federal-senate";
+  return null;
+}
+
+/** Human label for a card whose record came from the candidate's prior chamber. */
+export function priorRoleLabelFor(jurisdiction: string): string {
+  if (jurisdiction === "federal-house")
+    return "Record shown from U.S. House service";
+  if (jurisdiction === "federal-senate")
+    return "Record shown from U.S. Senate service";
+  return "Record shown from prior office";
+}
+
+/**
  * Map a `lookupDonorCoalition` result onto the donor-related fields of a
  * RacePatternsCandidate. Pure — no DB access.
  */
@@ -239,13 +260,47 @@ export async function assembleRaceData(
     const cand = input.candidates[i];
     const id = rosterIdForIndex(i);
 
-    // Donor coalition (independent of issues).
-    let donorFields: ReturnType<typeof donorFieldsFromResult>;
+    // Resolve the candidate ONCE, with a prior-role fallback to the sibling
+    // federal chamber. A senator who served in the House (e.g. Andy Kim, NJ —
+    // House 2019–2024, Senate from Dec 2024) has no `federal-senate` record in
+    // our data, but their actual legislative record lives under
+    // `federal-house`. We surface that record and label the card so the voter
+    // knows it's from the prior office. Scoped to federal House↔Senate only;
+    // state-chamber cross-matching is too collision-prone to risk.
+    let effectiveJurisdiction = jurisdiction;
+    let candidateId: string | null = null;
+    let priorRoleLabel: string | undefined;
     if (jurisdiction) {
+      candidateId = await resolveCandidateId(
+        cand.name,
+        jurisdiction,
+        input.stateCode,
+      );
+      if (!candidateId) {
+        const sibling = siblingFederalChamber(jurisdiction);
+        if (sibling) {
+          const altId = await resolveCandidateId(
+            cand.name,
+            sibling,
+            input.stateCode,
+          );
+          if (altId) {
+            candidateId = altId;
+            effectiveJurisdiction = sibling;
+            priorRoleLabel = priorRoleLabelFor(sibling);
+          }
+        }
+      }
+    }
+
+    // Donor coalition (independent of issues) — keyed off the chamber the
+    // candidate actually resolved in.
+    let donorFields: ReturnType<typeof donorFieldsFromResult>;
+    if (effectiveJurisdiction) {
       const donorResult = await lookupDonorCoalition(
         cand.name,
         input.stateCode,
-        jurisdiction,
+        effectiveJurisdiction,
         input.electionCycle,
       );
       donorFields = donorFieldsFromResult(donorResult);
@@ -262,6 +317,7 @@ export async function assembleRaceData(
       id,
       name: cand.name,
       incumbent: false, // unknown from the roster; the DB doesn't flag it here
+      ...(priorRoleLabel ? { priorRole: priorRoleLabel } : {}),
       donorCoalition: donorFields.donorCoalition,
       ...(donorFields.donorSource
         ? { donorSource: donorFields.donorSource }
@@ -289,42 +345,29 @@ export async function assembleRaceData(
       valuesHighlight: null,
     });
 
-    // Alignment scores (only when we have issues + a legislative jurisdiction).
+    // Alignment scores (only when we have issues).
     if (hasIssues) {
-      if (jurisdiction) {
-        const candidateId = await resolveCandidateId(
-          cand.name,
-          jurisdiction,
-          input.stateCode,
-        );
-        if (candidateId) {
-          const perIssue = [];
-          for (const issue of input.issues) {
-            const result = attachLimitedDataNotice(
-              await lookupAlignment(
-                candidateId,
-                issue.canonicalIssue,
-                issue.stance,
-              ),
-            );
-            perIssue.push({ issue, result });
-          }
-          alignmentEntries.push(alignmentEntryFromResults(id, perIssue));
-        } else {
-          alignmentEntries.push({
-            candidateId: id,
-            scores: null,
-            unavailable: {
-              reason: "Couldn't match this candidate in our voting-record data",
-            },
-          });
+      if (candidateId) {
+        const perIssue = [];
+        for (const issue of input.issues) {
+          const result = attachLimitedDataNotice(
+            await lookupAlignment(
+              candidateId,
+              issue.canonicalIssue,
+              issue.stance,
+            ),
+          );
+          perIssue.push({ issue, result });
         }
+        alignmentEntries.push(alignmentEntryFromResults(id, perIssue));
       } else {
         alignmentEntries.push({
           candidateId: id,
           scores: null,
           unavailable: {
-            reason: "No voting record for this office in our data",
+            reason: jurisdiction
+              ? "Couldn't match this candidate in our voting-record data"
+              : "No voting record for this office in our data",
           },
         });
       }

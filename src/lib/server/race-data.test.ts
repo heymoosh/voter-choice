@@ -4,8 +4,28 @@ import {
   donorFieldsFromResult,
   alignmentEntryFromResults,
   rosterIdForIndex,
+  siblingFederalChamber,
+  priorRoleLabelFor,
   assembleRaceData,
 } from "./race-data";
+
+describe("siblingFederalChamber", () => {
+  it("crosses House ↔ Senate", () => {
+    expect(siblingFederalChamber("federal-senate")).toBe("federal-house");
+    expect(siblingFederalChamber("federal-house")).toBe("federal-senate");
+  });
+  it("returns null for state chambers (no cross-match)", () => {
+    expect(siblingFederalChamber("state-NJ-senate")).toBeNull();
+    expect(siblingFederalChamber("state-TX-house")).toBeNull();
+  });
+});
+
+describe("priorRoleLabelFor", () => {
+  it("names the chamber the record came from", () => {
+    expect(priorRoleLabelFor("federal-house")).toMatch(/U\.S\. House/);
+    expect(priorRoleLabelFor("federal-senate")).toMatch(/U\.S\. Senate/);
+  });
+});
 
 describe("rosterIdForIndex", () => {
   it("maps 0..25 to A..Z", () => {
