@@ -17,7 +17,7 @@
  */
 
 import { NextRequest } from "next/server";
-import { checkCounterRateLimit } from "../../../lib/server/counters-rate-limit";
+import { checkRaceDataRateLimit } from "../../../lib/server/race-data-rate-limit";
 import {
   assembleRaceData,
   type RaceDataInput,
@@ -115,7 +115,7 @@ function parseBody(body: unknown): ParsedBody | Response {
 
 export async function POST(request: NextRequest) {
   const ip = request.headers.get("x-forwarded-for") ?? "unknown";
-  const rateLimitOk = await checkCounterRateLimit(ip);
+  const rateLimitOk = await checkRaceDataRateLimit(ip);
   if (!rateLimitOk) {
     return Response.json({ error: "Rate limit exceeded." }, { status: 429 });
   }
