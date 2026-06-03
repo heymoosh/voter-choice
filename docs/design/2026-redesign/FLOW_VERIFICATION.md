@@ -31,9 +31,9 @@ Status key: ✅ verified-prod · 🟩 verified-local-e2e · ❌ broken · ⏳ pe
 | Rank — DRAG-DROP | 🟩 | dnd-kit PointerSensor; real pointer gesture driven in e2e (`theme-name-0` becomes former index-1 name after dragging handle-0 past card-1). |
 | Rank — rename / remove | ⚪ | controls present (`theme-rename-N`, `theme-remove-N`); not driven |
 | Lock in → workspace | ✅ | reaches `workspace-shell` with rail + 3 races (Senate/House/County) |
-| **4-step loader BETWEEN lock-in and workspace** | 🔧 | built (`a2f47b0`): full-screen `workspace-loading-gate` gates the first workspace paint on the active race's data resolving. e2e updated + green. RE-VERIFY on prod. |
+| **4-step loader BETWEEN lock-in and workspace** | 🟩 local / ⏳ prod-visual | full-screen `workspace-loading-gate` (4 ProcessingSteps) gates the first workspace paint until the active race's data resolves. **Verified in e2e** (`workspace.spec.ts` loader-gate test). On the prod drive it resolved too fast to snapshot (race-data is quick) — so it's verified-local, NOT yet visually confirmed on prod. Doesn't hang (settles on data/error/null). |
 | Workspace cards render | ✅ | confirmed live: House (Norcross, single candidate) card renders, no stub. Required BOTH the ≥2→≥1 fix (`047c1da`) AND the rate-limit fix (`c1ced7e`, race-data was 429'ing on the 20/hr counter limit). |
-| Card DATA populated (real) | ✅ | **Prod-confirmed (b210668 drive):** Booker (Senate) insulin 11/18·61%, climate 23/30·77%, $16.8M, FEC S4NJ00185; Norcross (House) insulin 16/30, climate 47/51·92%, $1.3M, FEC H4NJ01084 — both resolve real alignment + donor data when the ballot supplies full names (paste path). NOTE: bare-SURNAME PDFs (NORCROSS) still backstop — separate logged data limitation (per-congress dup rows). |
+| Card DATA populated (real) | ✅ paste / ⚠️ PDF | **Depends on whether the ballot gives full names or bare surnames.** Confirmed via prod `/api/race-data` probes tonight (deterministic, no LLM): `BOOKER`(surname)→resolves, `NORCROSS`(surname)→**backstop** "Couldn't match this candidate", `Donald Norcross`(full)→resolves. So: **paste path (full names)** → Booker + Norcross both real (drive screenshots). **PDF upload (bare SURNAMES)** → Senate (Booker) real, **House (Norcross) BACKSTOP**, County (local) backstop. ⇒ the user uploading their PDF will see a Norcross backstop the paste drive did not. Root cause = per-congress duplicate House rows breaking surname uniqueness (deferred data-model fix). |
 
 ---
 
@@ -138,8 +138,28 @@ test ballot: Senate (Booker) shows real alignment; House (Norcross) shows
 backstop. The cross-state-homonym tradeoff above still applies to the
 Senate-style unique case.
 
-## D · Open work
-- Drive + verify every Section-B interaction on prod with the real ballot. ← NEXT
+## D · Open work (for morning)
+
+**Done this session:** Compare-modal fix (b210668), auto-advance + blind-controls
+e2e (97179a9), real-NJ-ballot prod drive (cards + real data + interactions
+confirmed), 2 prod-found card bugs fixed (91c1f25), surname-vs-fullname prod
+probe. Full gate green throughout (tsc 0 · eslint 0 · vitest 2014/0 · e2e 57/0).
+
+**Top of the list:**
+- **Surname resolution on PDF upload (#data):** the user's PDF has bare surnames →
+  House (Norcross) + local races BACKSTOP on prod (Senate/Booker is fine). This is
+  the most likely "why don't I see data?" surprise tomorrow. Deferred per-congress
+  dup-row data fix (see §C). NOT a UI bug.
+- **Resume drops ballot races (#15):** persistence-layer; resume keeps themes,
+  loses the 6 races after address re-entry. Needs deliberate investigation.
+- **Copy review:** "Record unavailable — Not scored in this view" now shows on
+  every incumbent's *Voted in line with platform* row. Correct (was the false
+  "Challenger") but "this view" leaks implementation + reads odd beside a visible
+  record — reword (e.g. "Not scored here" / drop the row in the deterministic view).
+- **4-step loader:** verified-local-e2e only; capture a prod-visual confirm when
+  convenient (resolved too fast to snapshot on the drive).
+
+**Larger / previously logged:**
 - **Web-search fallback for LOCAL candidates** (user-requested, NOT built): the
   user wants candidates too local for our DB (county commissioners, etc.) to be
   filled via web search ("Webfetch is the backup"), not left as a backstop.
