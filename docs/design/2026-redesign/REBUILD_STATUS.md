@@ -189,6 +189,9 @@ flow is gone.
   bubble, and on ANY failure drop the bubble + raise `chatTimeouts[raceId]` →
   the prototype's existing `AITimeoutBanner` + retry. `mockAIReply` and its
   keyword-error sim (`/timeout|fail|error/`) are deleted.
+  `handleSendChat` also trims any dangling trailing `user` turn (left by a prior
+  failed or still-empty in-flight send) before appending the new one, so the
+  payload always alternates and never sends `[…, user, user]` (API-rejected).
 - **Legacy route path on purpose:** we send NO `view` field, so the route passes
   our `systemPrompt` through verbatim (no server-side prompt fleet / card-block
   builder). The prompt therefore carries its OWN safety framing and forbids
@@ -204,10 +207,14 @@ paste NJ ballot→cold-open→lock issues→workspace with REAL data (Booker
 - Local route 500s (blank `ANTHROPIC_VOTER_API`) → `onError` → user bubble stays,
   empty AI bubble removed, `AITimeoutBanner` shows. "Try again" re-fires without
   duplicating the user bubble; payload still ends on the `user` turn.
-- **Real streaming render is PROD-ONLY** (needs the Anthropic key — same
-  constraint as civic/extract). The local contract is request-shape + error→
-  banner→retry; the streaming path is correct by construction (lifted ChatPanel's
-  `processSSELine`/`streamResponse` SSE parsing).
+- **Streaming render + multi-turn verified locally** by injecting a synthetic SSE
+  stream at `window.fetch`: text frames concatenate into the bubble, `onDone`
+  completes cleanly, a 2nd turn POSTs `[user, assistant, user]` (`messageCount`
+  1→3→5). After a forced mid-conversation failure, the next send correctly drops
+  the dangling user turn → still valid alternation (no `[…, user, user]`).
+- **Only the REAL Anthropic-backed reply is prod-only** (needs the key — same
+  constraint as civic/extract). SSE parsing lifts ChatPanel's
+  `processSSELine`/`streamResponse`.
 
 ⚠️ **Bug found (pre-existing, flagged separately):** `stateCodeFrom` returns "MY"
 for ballots whose text starts with "MY BALLOT" (the app's own .txt export header)

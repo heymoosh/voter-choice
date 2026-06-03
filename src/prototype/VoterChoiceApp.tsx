@@ -5033,6 +5033,10 @@ function handleRevealCandidate(candidateId) {
   // Chat input: append the user message, then stream the real reply.
   function handleSendChat(raceId, text) {
     const prior = mapChatHistory(raceId);
+    // Drop any dangling trailing user turn(s) — left by a prior FAILED send (no
+    // assistant reply) or a still-empty in-flight send. Without this the payload
+    // would be [..., user, user], which the chat API rejects.
+    while (prior.length && prior[prior.length - 1].role === 'user') prior.pop();
     setChatMessages(prev => ({
       ...prev,
       [raceId]: [...(prev[raceId] || []), { who: 'user', text }],
