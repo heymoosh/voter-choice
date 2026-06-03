@@ -30,9 +30,10 @@ Status key: ✅ verified-prod · 🟩 verified-local-e2e · ❌ broken · ⏳ pe
 | Rank — move up/down buttons | ✅ | move-up reorders (insulin↔rent swap observed) |
 | Rank — DRAG-DROP | ⏳ | handles present (`theme-drag-handle-N`); pointer-drag not yet driven |
 | Rank — rename / remove | ⚪ | controls present (`theme-rename-N`, `theme-remove-N`); not driven |
-| Lock in → workspace | ✅ | reaches `workspace-shell` with rail + 3 races |
-| **4-step loader BETWEEN lock-in and workspace** | ❌ | **none renders** — goes straight to workspace. User wants the 4-step gate here. Prototype has no loader here either (it mocked data); this is a prod addition reusing the prototype's `NoContestedProcessing` 4-step component. → task #22 |
-| Workspace cards render | 🔧 | **was ❌** — `/api/race-data` returned **429** (reused 20/hr counter limit). Fixed (dedicated 60/min read limiter, `c1ced7e`). RE-VERIFY after deploy. Also note the ≥2→≥1 fix (`047c1da`) is required for Booker's single-candidate race. |
+| Lock in → workspace | ✅ | reaches `workspace-shell` with rail + 3 races (Senate/House/County) |
+| **4-step loader BETWEEN lock-in and workspace** | 🔧 | built (`a2f47b0`): full-screen `workspace-loading-gate` gates the first workspace paint on the active race's data resolving. e2e updated + green. RE-VERIFY on prod. |
+| Workspace cards render | ✅ | confirmed live: House (Norcross, single candidate) card renders, no stub. Required BOTH the ≥2→≥1 fix (`047c1da`) AND the rate-limit fix (`c1ced7e`, race-data was 429'ing on the 20/hr counter limit). |
+| Card DATA populated (real) | 🔧 | Booker (Senate) resolved 11/18; Norcross showed backstop — surname "NORCROSS" wasn't resolving (mixed DB name formats). Fixed `a2f47b0` (compatible-state matcher). RE-VERIFY on prod. |
 
 ---
 
@@ -79,6 +80,8 @@ rendering (the 429). Re-drive once cards appear.
 | 7 | Chamber-switchers (Andy Kim) no record | prior-role fallback to sibling federal chamber | 6a7dbe5 |
 | 8 | Single-candidate races (primary) → no cards (≥2 gate) | render cards for ≥1 | 047c1da |
 | 9 | race-data 429 (20/hr counter limit) → cards break | dedicated 60/min read limiter | c1ced7e |
+| 10 | Bare surname "NORCROSS" didn't resolve (mixed DB name formats: clean vs decorated → state-null excluded) | compatible-state matcher (state excludes, not requires) | 8c84c09 + a2f47b0 |
+| 11 | No loader between lock-in and workspace | full-screen `workspace-loading-gate` | a2f47b0 |
 
 ## D · Open work
 - Re-verify cards render on prod (post-429-fix) with the real ballot. ← NEXT

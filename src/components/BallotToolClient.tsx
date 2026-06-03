@@ -847,7 +847,12 @@ export function ElectionResult({
     setActiveRaceId(races[0].id);
   }, [races, activeRaceId]);
 
+  // True only when the voter locks in THIS session (vs. a pre-locked / resumed
+  // mount). Drives the full-screen loading gate: it shows on a fresh lock-in,
+  // but a resumed or test-mounted workspace renders its 3-pane immediately.
+  const [enteredViaLockIn, setEnteredViaLockIn] = useState(false);
   const handleLockInThemes = useCallback((themes: Theme[]) => {
+    setEnteredViaLockIn(true);
     setLockedThemes(themes);
   }, []);
 
@@ -1386,6 +1391,7 @@ export function ElectionResult({
         pendingRescoreOffer={pendingRescoreOffer}
         onRescoreOfferClear={handleRescoreOfferClear}
         extractedStateCode={extractedStateCode}
+        enteredViaLockIn={enteredViaLockIn}
       />
     );
   }
@@ -1564,6 +1570,12 @@ interface WorkspaceShellProps {
    * roster (see ChatPanel.WorkspaceModeProps.extractedStateCode).
    */
   extractedStateCode: string | null;
+  /**
+   * True only when the voter reached the workspace by locking in THIS session
+   * (vs. a resumed or test-mounted pre-locked workspace). Gates the
+   * full-screen loading step: shown on a fresh lock-in, skipped otherwise.
+   */
+  enteredViaLockIn: boolean;
 }
 
 function WorkspaceShell({
@@ -1604,6 +1616,7 @@ function WorkspaceShell({
   pendingRescoreOffer,
   onRescoreOfferClear,
   extractedStateCode,
+  enteredViaLockIn,
 }: WorkspaceShellProps) {
   // City-state surrogate for the ballot pane address line. We never have the
   // user's street address; use county + state name as the locality label.
@@ -2016,8 +2029,11 @@ function WorkspaceShell({
     extractedStateCode,
     state.stateCode,
   ]);
-  const { data: raceData, loading: raceDataLoading } =
-    useRaceData(raceDataInput);
+  const {
+    data: raceData,
+    loading: raceDataLoading,
+    error: raceDataError,
+  } = useRaceData(raceDataInput);
 
   // ── Full-screen loading gate between lock-in and the workspace (PIVOT) ──
   // The user expects the 4-step assessment to run to completion BEFORE the
@@ -2026,14 +2042,23 @@ function WorkspaceShell({
   // scoring takes real time, so we gate the FIRST workspace paint on the
   // active race's /api/race-data resolving. Subsequent race switches use the
   // lighter in-workspace loader, not this full-screen gate.
-  const [firstLoadDone, setFirstLoadDone] = useState(false);
+  //
+  // Only gates on a FRESH lock-in (enteredViaLockIn). A resumed or pre-locked
+  // (test) mount renders the 3-pane immediately. The gate also latches done on
+  // ANY settle — data, error, or "nothing to load" — so it can never hang the
+  // workspace if /api/race-data fails or is slow.
+  const [firstLoadDone, setFirstLoadDone] = useState(!enteredViaLockIn);
   useEffect(() => {
-    // Done when the first race's data has resolved, OR there's nothing to load
-    // for it (proposition / uncovered office → raceDataInput is null).
-    if (raceData !== null || raceDataInput === null) setFirstLoadDone(true);
-  }, [raceData, raceDataInput]);
-  const showLoadingGate =
-    !firstLoadDone && raceDataInput !== null && raceData === null;
+    if (
+      raceData !== null ||
+      raceDataInput === null ||
+      raceDataError !== null ||
+      !raceDataLoading
+    ) {
+      setFirstLoadDone(true);
+    }
+  }, [raceData, raceDataInput, raceDataError, raceDataLoading]);
+  const showLoadingGate = !firstLoadDone && raceDataInput !== null;
 
   // Polling card: surface once >50% decided (per design brief §9 / Phase 3
   // packet §22).
