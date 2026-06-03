@@ -11,8 +11,14 @@ import {
   getRacePatternsForRace, getCandidatePatterns, getAlignmentScoresForRace,
   getAlignmentEntryForCandidate, getScoreForIssue, getCandidateParty,
   computeDeadlineRow, getDeadlineRows,
+  applyRealRaces, setRealStateCode,
 } from "./data";
-import { loadAllRaceData } from "./realData";
+import {
+  loadAllRaceData,
+  fetchBallotFromAddress,
+  fetchBallotFromText,
+  fetchBallotFromFile,
+} from "./realData";
 
 /* ==================== prototype-shared.jsx ==================== */
 /* ====================================================
@@ -3236,35 +3242,44 @@ function NoContestedView({ stateData, county = 'Harris County', onBallotConfirme
     'Building your ballot…',
   ];
 
-  function beginProcessing(source) {
+  // Phase 2b: real extraction. Paste → parseBallotContent (local, no key);
+  // file → /api/extract-ballot. Either way → applyRealRaces + detected state,
+  // then confirm. The step animation just runs while the real work happens.
+  async function beginProcessing(kind, payload, source) {
     setProcessing(true);
     setProcessingStep(0);
-    // Walk the steps every ~2s to simulate the real backend. In
-    // production this is driven by /api/extract-ballot streaming
-    // status updates.
     let i = 0;
     const interval = setInterval(() => {
       i += 1;
-      if (i >= STEPS.length) {
-        clearInterval(interval);
-        setTimeout(() => {
-          setProcessing(false);
-          onBallotConfirmed(source);
-        }, 800);
-      } else {
-        setProcessingStep(i);
-      }
-    }, 2000);
+      if (i < STEPS.length) setProcessingStep(i);
+    }, 1100);
+    let result;
+    try {
+      result =
+        kind === 'file'
+          ? await fetchBallotFromFile(payload)
+          : await fetchBallotFromText(payload);
+    } catch (e) {
+      result = { races: [], stateCode: '' };
+    }
+    clearInterval(interval);
+    setProcessingStep(STEPS.length - 1);
+    if (result.races && result.races.length > 0) {
+      applyRealRaces(result.races);
+      if (result.stateCode) setRealStateCode(result.stateCode);
+    }
+    setProcessing(false);
+    onBallotConfirmed(source);
   }
 
   function onFileChange(e) {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploadedFile(file);
-    beginProcessing(`[uploaded: ${file.name}]`);
+    beginProcessing('file', file, `[uploaded: ${file.name}]`);
   }
   function onPasteConfirm() {
-    beginProcessing(trimmed);
+    beginProcessing('text', trimmed, trimmed);
   }
 
   return (
@@ -3872,7 +3887,7 @@ function ColdOpenView({ address, onLock, savedIssues }) {
     <>
       <AppNav />
       <div className="coldopen">
-        <div className="co-context"><b>{address}</b> · Harris County, TX‑7 · 5 races on your ballot</div>
+        <div className="co-context"><b>{address}</b> · {RACES.length} {RACES.length === 1 ? 'race' : 'races'} on your ballot</div>
 
         <div className="msg ai">
           <div className="who">Voter Choice · AI</div>
@@ -4741,26 +4756,34 @@ function App() {
     try { window.parent.postMessage({ type: '__edit_mode_dismissed' }, '*'); } catch (e) {}
   }
 
-  function handleSubmitAddress(addr) {
-    // Pass-C: simulate geocode failures for any address that is
-    // obviously incomplete. The real app delegates to /api/civic;
-    // here we fake it so the error views are demoable.
+  async function handleSubmitAddress(addr) {
+    // Phase 2b REAL flow: hit /api/civic. When Civic has the ballot we use it;
+    // when it doesn't (the common case — Google's contest data is sparse), we
+    // route to the upload/paste screen (NoContestedView). Either way we detect
+    // the state from the address so nothing downstream guesses ("TX" for an NJ
+    // address was the prototype's hardcoded mock).
     const trimmed = (addr || '').trim();
-    const looksLikeJustZip = /^\d{5}(-\d{4})?$/.test(trimmed);
-    const looksTooShort    = trimmed.length < 6 && !looksLikeJustZip;
-    if (looksTooShort) {
+    if (trimmed.length < 4) {
       setAddress(trimmed);
       setView('geocodefail');
       return;
     }
-    // Demo trigger: if address contains "rural" we route to no-contested.
-    if (/rural|noballot/i.test(trimmed)) {
-      setAddress(trimmed);
-      setView('nocontested');
-      return;
-    }
     setAddress(trimmed);
     setView('loading');
+    let result;
+    try {
+      result = await fetchBallotFromAddress(trimmed);
+    } catch (e) {
+      result = { races: [], stateCode: '' };
+    }
+    if (result.stateCode) setRealStateCode(result.stateCode);
+    if (result.races && result.races.length > 0) {
+      applyRealRaces(result.races);
+      setView(issues.length ? 'workspace' : 'coldopen');
+    } else {
+      // Civic couldn't pull the ballot → ask the voter to upload/paste it.
+      setView('nocontested');
+    }
   }
 
   function handleLoadingDone() {
@@ -5001,7 +5024,9 @@ function handleRevealCandidate(candidateId) {
         />
       )}
       {view === 'loading' && (
-        <LoadingView address={address} onDone={handleLoadingDone} />
+        // Navigation is driven by handleSubmitAddress after /api/civic resolves
+        // (no-op onDone) — the loader just animates while the lookup runs.
+        <LoadingView address={address} onDone={() => {}} />
       )}
       {/* Phase 2 single-load: the SAME LoadingView, shown once after lock-in
           while real race-data fetches. onDone is a no-op — navigation to the
@@ -5030,11 +5055,9 @@ function handleRevealCandidate(candidateId) {
               county="Harris County"
               onBack={() => setView('home')}
               onBallotConfirmed={() => {
-                // We fell back to county-level lookup — drop the
-                // ungeocoded address string and replace with the
-                // confirmed-county label so the workspace doesn't
-                // display the user's failed input verbatim.
-                setAddress('Harris County, TX');
+                // Phase 2b: real races + state already applied by
+                // NoContestedView's extraction; keep the user's real address
+                // (no more mock "Harris County, TX"). Cold-open next.
                 setView(issues.length ? 'workspace' : 'coldopen');
               }}
             />
