@@ -11,7 +11,7 @@ import {
   getRacePatternsForRace, getCandidatePatterns, getAlignmentScoresForRace,
   getAlignmentEntryForCandidate, getScoreForIssue, getCandidateParty,
   computeDeadlineRow, getDeadlineRows,
-  applyRealRaces, setRealStateCode,
+  applyRealRaces, setRealStateCode, getRealStateCode,
 } from "./data";
 import {
   loadAllRaceData,
@@ -19,6 +19,7 @@ import {
   fetchBallotFromText,
   fetchBallotFromFile,
 } from "./realData";
+import { getFallbackStateData } from "../lib/getStateData";
 
 /* ==================== prototype-shared.jsx ==================== */
 /* ====================================================
@@ -5051,8 +5052,12 @@ function handleRevealCandidate(candidateId) {
           <AppNav />
           <main id="main-content">
             <NoContestedView
-              stateData={STATE_ELECTION_DATA}
-              county="Harris County"
+              stateData={
+                getRealStateCode()
+                  ? getFallbackStateData(getRealStateCode())
+                  : STATE_ELECTION_DATA
+              }
+              county={getRealStateCode() ? 'your county' : 'Harris County'}
               onBack={() => setView('home')}
               onBallotConfirmed={() => {
                 // Phase 2b: real races + state already applied by
