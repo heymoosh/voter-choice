@@ -337,7 +337,7 @@ test.describe("workspace (PROMPT_FLEET_V2 + en)", () => {
   // Runs fully locally — no API key needed (the pivot removed the LLM from
   // the card path), which is what makes this the cards-first definition-of-done.
   // ─────────────────────────────────────────────────────────────
-  test("workspace shows ProcessingSteps loader then data-driven candidate cards", async ({
+  test("full-screen loader gate runs, THEN the workspace mounts with data-driven cards", async ({
     page,
   }) => {
     await mockChatColdOpenAndQA(page);
@@ -360,17 +360,17 @@ test.describe("workspace (PROMPT_FLEET_V2 + en)", () => {
       .waitFor({ state: "visible", timeout: WORKSPACE_TIMEOUT });
     await page.getByTestId("theme-ranker-lock-in").click();
 
-    // Workspace shell mounts.
+    // (1) Lock-in shows the FULL-SCREEN loader gate while /api/race-data is in
+    // flight — the 3-pane workspace must NOT be up yet.
+    await page
+      .getByTestId("workspace-loading-gate")
+      .waitFor({ state: "visible", timeout: WORKSPACE_TIMEOUT });
+
+    // (2) Once the data resolves, the workspace mounts with cards already
+    // populated (no empty/transcript intermediate state).
     await page
       .getByTestId("workspace-shell")
       .waitFor({ state: "visible", timeout: WORKSPACE_TIMEOUT });
-
-    // (1) Loader is the primary surface while /api/race-data is in flight.
-    await page
-      .getByTestId("race-patterns-loading")
-      .waitFor({ state: "visible", timeout: WORKSPACE_TIMEOUT });
-
-    // (2) Cards then render from the resolved data.
     await page
       .getByTestId("race-patterns")
       .waitFor({ state: "visible", timeout: WORKSPACE_TIMEOUT });

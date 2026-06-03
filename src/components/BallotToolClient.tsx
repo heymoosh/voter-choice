@@ -46,6 +46,7 @@ import type { ConcernInterpretationEntry } from "../lib/structured-blocks";
 import { PollingStatusBar } from "./PollingStatusBar";
 import { getDeadlineStatus } from "../lib/getDeadlineStatus";
 import type { DeadlineMeterRow } from "./DeadlineMeter";
+import { ProcessingSteps } from "./ProcessingSteps";
 
 interface CivicCandidate {
   name: string;
@@ -2018,6 +2019,22 @@ function WorkspaceShell({
   const { data: raceData, loading: raceDataLoading } =
     useRaceData(raceDataInput);
 
+  // ── Full-screen loading gate between lock-in and the workspace (PIVOT) ──
+  // The user expects the 4-step assessment to run to completion BEFORE the
+  // 3-pane workspace appears — "only then does it load the three-panel view."
+  // The prototype mocked data (instant) so it had no gate here; production
+  // scoring takes real time, so we gate the FIRST workspace paint on the
+  // active race's /api/race-data resolving. Subsequent race switches use the
+  // lighter in-workspace loader, not this full-screen gate.
+  const [firstLoadDone, setFirstLoadDone] = useState(false);
+  useEffect(() => {
+    // Done when the first race's data has resolved, OR there's nothing to load
+    // for it (proposition / uncovered office → raceDataInput is null).
+    if (raceData !== null || raceDataInput === null) setFirstLoadDone(true);
+  }, [raceData, raceDataInput]);
+  const showLoadingGate =
+    !firstLoadDone && raceDataInput !== null && raceData === null;
+
   // Polling card: surface once >50% decided (per design brief §9 / Phase 3
   // packet §22).
   const hasPolling = races.length > 0 && decisions.length / races.length > 0.5;
@@ -2092,6 +2109,30 @@ function WorkspaceShell({
         onBack={handlePrintBack}
         district={printDistrict}
       />
+    );
+  }
+
+  if (showLoadingGate) {
+    return (
+      <div
+        data-testid="workspace-loading-gate"
+        className="flex h-[calc(100vh-63px)] flex-col items-center justify-center px-6"
+      >
+        <div className="w-full max-w-xl">
+          <ProcessingSteps
+            data-testid="workspace-loading-steps"
+            eyebrow="Building your ballot"
+            heading="Matching every candidate to your issues."
+            steps={[
+              "Interpreting your ranked issues",
+              "Checking voting records & donations on file",
+              "Researching candidates not yet in our database",
+              "Building your candidate comparison",
+            ]}
+            hint="We read each candidate's record, match it to the issues you ranked, and pull their donor coalition — for legislators we have on file, straight from our database; for local races we don't cover yet, from the open web. This usually takes a few seconds; your progress is saved on this device."
+          />
+        </div>
+      </div>
     );
   }
 

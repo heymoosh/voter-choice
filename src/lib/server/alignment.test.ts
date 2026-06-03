@@ -262,6 +262,29 @@ describe("resolveCandidateId", () => {
     const result = await resolveCandidateId("NORCROSS", "federal-house", "NJ");
     expect(result).toBeNull();
   });
+
+  // The prod DB has MIXED name formats: some rows are clean with no "[D-NJ]"
+  // state on file (older dump). A surname must still resolve against those —
+  // state EXCLUDES contradicting rows but isn't a hard requirement.
+  it("resolves a surname against a clean stored name with no state decoration", async () => {
+    const { select } = makeSelectMock([
+      { id: "fed-norcross", fullName: "Donald Norcross" }, // no [D-NJ] tag
+      { id: "fed-pallone", fullName: "Frank Pallone" },
+    ]);
+    mockedGetDb.mockReturnValue({ select } as never);
+    const result = await resolveCandidateId("NORCROSS", "federal-house", "NJ");
+    expect(result).toBe("fed-norcross");
+  });
+
+  it("excludes a surname row whose decoration state CONTRADICTS the ballot state", async () => {
+    const { select } = makeSelectMock([
+      { id: "fed-ca-norcross", fullName: "Rep. Donald Norcross [D-CA]" },
+    ]);
+    mockedGetDb.mockReturnValue({ select } as never);
+    // Ballot is NJ; the only Norcross row is decorated CA → not compatible → null.
+    const result = await resolveCandidateId("NORCROSS", "federal-house", "NJ");
+    expect(result).toBeNull();
+  });
 });
 
 describe("candidate-name helpers", () => {

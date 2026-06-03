@@ -208,22 +208,27 @@ export async function resolveCandidateId(
     parsed.find((p) => p.cleanLower === cleanQueryLower);
   if (exact) return exact.id;
 
-  // 3. Lastname + state (nickname- AND surname-only-tolerant).
-  // Ballots usually list SURNAMES only ("NORCROSS", "BOOKER"), so this tier
-  // must resolve a bare lastname when it maps to a single person in the state.
+  // 3. Lastname (+ state when available). Ballots usually list SURNAMES only
+  // ("NORCROSS", "BOOKER"), so this tier must resolve a bare lastname when it
+  // maps to one person.
+  //
+  // The stored name's state is parsed from a GovTrack-style "[D-NJ]"
+  // decoration — but the prod DB has MIXED formats: some rows are decorated
+  // (re-ingest), some are clean with no state on file (older dump). So state
+  // is used to EXCLUDE contradicting rows, not as a hard requirement: a row
+  // whose state matches the ballot OR has no state on file is "compatible";
+  // a row with a different state is not.
   if (stateCode && queryParts.last) {
     const st = stateCode.toUpperCase();
     const qLast = queryParts.last.toLowerCase();
-    const byLastState = parsed.filter(
-      (p) => p.last.toLowerCase() === qLast && p.state === st,
-    );
-    // Collapse duplicate rows of the SAME person (a member appears once per
-    // congress in the votes ingest, so "Donald Norcross" can have multiple
-    // candidate rows). One distinct id ⇒ unambiguous ⇒ resolve.
-    const distinctIds = new Set(byLastState.map((p) => p.id));
-    if (distinctIds.size === 1 && byLastState.length >= 1) {
-      return byLastState[0].id;
-    }
+    const byLast = parsed.filter((p) => p.last.toLowerCase() === qLast);
+    // Prefer exact state matches; else fall back to rows that don't contradict
+    // the ballot state (state matches or is unknown on file).
+    const stateMatched = byLast.filter((p) => p.state === st);
+    const compatible = byLast.filter((p) => p.state === st || p.state === null);
+    const pool = stateMatched.length > 0 ? stateMatched : compatible;
+    const distinctIds = new Set(pool.map((p) => p.id));
+    if (distinctIds.size === 1) return pool[0].id;
     if (distinctIds.size > 1) {
       // A surname-only query ("NORCROSS") has no real first name —
       // queryParts.first is the surname itself — so the first-initial tiebreak
@@ -232,7 +237,7 @@ export async function resolveCandidateId(
       const queryIsSurnameOnly = queryParts.first.toLowerCase() === qLast;
       if (!queryIsSurnameOnly) {
         const qInitial = queryParts.first[0]?.toLowerCase();
-        const byInitial = byLastState.filter(
+        const byInitial = pool.filter(
           (p) => p.first[0]?.toLowerCase() === qInitial,
         );
         if (new Set(byInitial.map((p) => p.id)).size === 1) {
