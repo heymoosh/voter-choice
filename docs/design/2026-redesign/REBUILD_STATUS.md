@@ -40,6 +40,29 @@ concat (header + files in HTML order, strip createRoot, append `export default A
 
 ---
 
+## ✅ Phase 2a — DONE (commit `d0445e1`): race-data seam
+
+- Data layer split into `src/prototype/data.tsx` (ballot bindings now `let` +
+  real-data setters); bundle imports from it (ES live-bindings flow real data
+  into the verbatim accessors). The bundle is now the **living app code** —
+  edited directly, NOT regenerated (prototype/ stays as pristine reference).
+- `src/prototype/realData.ts` (typed): `loadAllRaceData` POSTs `/api/race-data`
+  per candidate-race, maps response → RACE_PATTERNS/ALIGNMENT_SCORES.
+- **Single-load**: `handleLockIssues` shows the prototype's LoadingView once
+  ('analyzing' view) while fetching ALL races in parallel, then workspace →
+  switching races is instant (fixes the per-race loader). Resume-refetch added.
+- Fixed a **prototype bug**: WorkspaceView rail rendered its section-list twice
+  (verbatim copy-paste dup) → every race showed twice. Removed.
+- TEMP NJ seed for RACES so race-data resolves real candidates; civic seam
+  replaces it later.
+- Verified local: 3 parallel `/api/race-data` calls on lock-in, cards render
+  from the API response (backstop locally — no DB; real data resolves on prod).
+
+**Remaining Phase 2 seams (next):** civic/flow orchestration (address→party
+gate→civic→civic-empty→ballot upload→cold-open) which replaces the NJ seed +
+carries the party-filter (#25); cold-open issues (text→theme extraction);
+chat (`mockAIReply`→`/api/chat`).
+
 ## Data seams to wire (Phase 2) — prototype-app.jsx + prototype-data.jsx
 
 `prototype-data.jsx` header says it: *"shaped to match src/lib/structured-blocks.ts"*.
