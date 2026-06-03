@@ -687,4 +687,100 @@ test.describe("workspace (PROMPT_FLEET_V2 + en)", () => {
       { timeout: 5000 },
     );
   });
+
+  test("pick → auto-advance moves the active race to the next undecided", async ({
+    page,
+  }) => {
+    await mockChatColdOpenAndQA(page);
+    await mockRaceData(page);
+    await mockCivicResponse(page);
+    await page.goto("/");
+
+    await fillZip(page, "73301");
+    await resolveRunoffGate(page);
+    const ta = page.getByTestId("cold-open-textarea");
+    await ta.waitFor({ state: "visible", timeout: WORKSPACE_TIMEOUT });
+    await ta.fill("insulin keeps going up and rent went up 30% in two years");
+    await page.getByTestId("cold-open-send").click();
+    await page
+      .getByTestId("concern-interpretation-themes")
+      .waitFor({ state: "visible", timeout: WORKSPACE_TIMEOUT });
+    await page.getByTestId("theme-ranker-lock-in").click();
+
+    await page
+      .getByTestId("race-patterns")
+      .waitFor({ state: "visible", timeout: WORKSPACE_TIMEOUT });
+
+    // The active race is the rail row with aria-current="page".
+    const activeRail = page.locator(
+      '[data-testid^="workspace-rail-race-"][aria-current="page"]',
+    );
+    await expect(activeRail).toHaveCount(1);
+    const beforeId = await activeRail.getAttribute("data-testid");
+    expect(beforeId).toBeTruthy();
+
+    // Pick candidate A in the active race; auto-advance fires ~600ms later.
+    await page
+      .getByTestId("race-patterns-pick-A")
+      .click({ timeout: WORKSPACE_TIMEOUT });
+
+    // The just-decided race is marked decided immediately…
+    await expect(page.getByTestId(beforeId as string)).toHaveAttribute(
+      "data-decided",
+      "true",
+      { timeout: 5000 },
+    );
+    // …then ~600ms later auto-advance moves the active highlight OFF that row.
+    await expect(page.getByTestId(beforeId as string)).not.toHaveAttribute(
+      "aria-current",
+      "page",
+      { timeout: 5000 },
+    );
+    // Exactly one row is active now, and it's a different (undecided) race.
+    await expect(activeRail).toHaveCount(1);
+    const afterId = await activeRail.getAttribute("data-testid");
+    expect(afterId).not.toBe(beforeId);
+  });
+
+  test("blind controls: per-card reveal↔hide round-trip + header blind toggle", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1400, height: 1000 });
+    await mockChatColdOpenAndQA(page);
+    await mockCivicResponse(page);
+    await mockRaceDataRich(page);
+    await page.goto("/");
+
+    await fillZip(page, "73301");
+    await resolveRunoffGate(page);
+    const ta = page.getByTestId("cold-open-textarea");
+    await ta.waitFor({ state: "visible", timeout: WORKSPACE_TIMEOUT });
+    await ta.fill("insulin keeps going up and rent went up 30% in two years");
+    await page.getByTestId("cold-open-send").click();
+    await page
+      .getByTestId("concern-interpretation-themes")
+      .waitFor({ state: "visible", timeout: WORKSPACE_TIMEOUT });
+    await page.getByTestId("theme-ranker-lock-in").click();
+    await page
+      .getByTestId("race-patterns")
+      .waitFor({ state: "visible", timeout: WORKSPACE_TIMEOUT });
+
+    // Blind by default → per-card Reveal affordance is present.
+    const revealA = page.getByTestId("race-patterns-reveal-candidate-A");
+    await expect(revealA).toBeVisible();
+
+    // Per-card round-trip: Reveal → Hide appears → Hide → Reveal returns.
+    await revealA.click();
+    const hideA = page.getByTestId("race-patterns-hide-candidate-A");
+    await expect(hideA).toBeVisible();
+    await hideA.click();
+    await expect(revealA).toBeVisible();
+
+    // Header toggle flips GLOBAL blind mode: OFF removes the per-card reveal
+    // affordance (names shown); ON brings it back.
+    await page.getByTestId("workspace-chat-blind-toggle").click();
+    await expect(revealA).toBeHidden();
+    await page.getByTestId("workspace-chat-blind-toggle").click();
+    await expect(revealA).toBeVisible();
+  });
 });
