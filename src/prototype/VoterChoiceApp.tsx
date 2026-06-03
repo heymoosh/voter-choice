@@ -22,6 +22,10 @@ import {
   filterRacesByParty,
 } from "./realData";
 import { getFallbackStateData } from "../lib/getStateData";
+import {
+  useGooglePlacesAutocomplete,
+  getPlacesApiKey,
+} from "../lib/useGooglePlacesAutocomplete";
 
 /* ==================== prototype-shared.jsx ==================== */
 /* ====================================================
@@ -3686,6 +3690,19 @@ function HomeView({ savedAddress, savedSession, onSubmit, onResumeFromProfile, o
   // placeholder shows a realistic example.
   const [addr, setAddr] = useStateV('');
   const { t } = useI18n();
+  // Phase 2b: restore Google Places autocomplete (the prototype's plain input
+  // had none). With the key present the hook mounts a PlaceAutocompleteElement
+  // into the container; the <input> becomes the sr-only fallback/ref. No key →
+  // plain input.
+  const placesContainerRef = useRefV(null);
+  const innerInputRef = useRefV(null);
+  const hasPlacesKey = !!getPlacesApiKey();
+  useGooglePlacesAutocomplete({
+    containerRef: placesContainerRef,
+    innerInputRef,
+    onSelect: setAddr,
+    onInputChange: setAddr,
+  });
   const hasDraft = savedSession && (
     Object.keys(savedSession.decisions || {}).length > 0 ||
     (savedSession.issues || []).length > 0
@@ -3709,12 +3726,25 @@ function HomeView({ savedAddress, savedSession, onSubmit, onResumeFromProfile, o
           <div className="addr-card">
             <label><span>Your registered address</span> <span className="privacy">Stays on this device</span></label>
             <div className="row">
+              {hasPlacesKey && (
+                <div
+                  ref={placesContainerRef}
+                  className="addr-places"
+                  style={{ flex: '1 1 auto', minWidth: 0 }}
+                />
+              )}
               <input
                 type="text"
+                ref={innerInputRef}
                 placeholder="1600 Pennsylvania Ave NW, Washington DC 20500"
                 value={addr}
                 onChange={(e) => setAddr(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter') submit(); }}
+                style={
+                  hasPlacesKey
+                    ? { position: 'absolute', width: 1, height: 1, opacity: 0, pointerEvents: 'none' }
+                    : undefined
+                }
               />
               <button className="go" onClick={submit} disabled={!addr.trim()}>Pull my ballot →</button>
             </div>
