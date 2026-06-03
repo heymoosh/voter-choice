@@ -84,8 +84,18 @@ rendering (the 429). Re-drive once cards appear.
 | 11 | No loader between lock-in and workspace | full-screen `workspace-loading-gate` | a2f47b0 |
 
 ## D · Open work
-- Re-verify cards render on prod (post-429-fix) with the real ballot. ← NEXT
-- 4-step loader gate between lock-in and workspace (task #22).
-- Drive + verify every Section-B interaction.
-- Donor industry-bucket breakdown (currently only total_receipts).
+- Drive + verify every Section-B interaction on prod with the real ballot. ← NEXT
+- **Web-search fallback for LOCAL candidates** (user-requested, NOT built): the
+  user wants candidates too local for our DB (county commissioners, etc.) to be
+  filled via web search ("Webfetch is the backup"), not left as a backstop.
+  `/api/race-data` is currently DB-only → local candidates show the backstop.
+  This is a backend data-source addition (web_search/research per unresolved
+  candidate, synthesized server-side) — the LLM stays OUT of the UI/chat, only
+  in the data layer. Adds latency + web_search spend. Larger task.
+- Donor industry-bucket breakdown (currently only `total_receipts`; the
+  by-employer FEC enrichment didn't populate).
+- Drag-drop ranking: verify the pointer-drag path (move up/down buttons
+  verified; drag handles present but pointer-drag not yet driven).
+- Edit why-note: NOT in the prototype (read-only there) — drop the promise
+  copy rather than build an editor.
 </content>
