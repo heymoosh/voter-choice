@@ -237,10 +237,11 @@ export async function fetchFecTotals(
       accumulate(buckets, "Self-funded", candidateContributions);
     }
 
-    // PAC contributions are split into issue-aligned and other in Phase F+.
-    // For now, put unclassified PAC contributions into "Other".
+    // PAC (non-party committee) contributions get their own bucket so the
+    // read-time funding-mix (small/large/PAC) can read it cleanly. Issue-aligned
+    // PAC classification is a later enhancement; this is the unclassified total.
     if (pacContributions > 0) {
-      accumulate(buckets, "Other", pacContributions);
+      accumulate(buckets, "PACs", pacContributions);
     }
   }
 
@@ -464,18 +465,34 @@ export async function ingestFederalDonors({
     apiErrors: 0,
   };
 
-  // Fetch federal candidates from DB
-  const federalCandidates = await db
+  // --dry-run: resolve + build rows but DON'T upsert (read-only verification of
+  // FEC-id resolution + would-write rows). --name a,b: scope to candidates whose
+  // name contains any of the comma-separated substrings (case-insensitive) — for
+  // a small, verifiable first write instead of the full federal sweep.
+  const dryRun = argv.includes("--dry-run");
+  const nameFilter = parseNameFilter(argv);
+
+  // Fetch federal candidates from DB. A name filter is pushed into the SQL so it
+  // matches across ALL federal candidates — there are >500, so filtering in JS
+  // after `.limit()` would silently miss anyone outside the first page.
+  const baseWhere = sql`${candidates.jurisdiction} IN ('federal-house', 'federal-senate')`;
+  const where = nameFilter
+    ? sql`${baseWhere} AND (${sql.join(
+        nameFilter.map((f) => sql`${candidates.fullName} ILIKE ${`%${f}%`}`),
+        sql` OR `,
+      )})`
+    : baseWhere;
+  const federalCandidates = (await db
     .select()
     .from(candidates)
-    .where(
-      sql`${candidates.jurisdiction} IN ('federal-house', 'federal-senate')`,
-    )
-    .limit(config.limit);
+    .where(where)
+    .limit(config.limit)) as UnknownRecord[];
 
   counts.candidatesQueried = federalCandidates.length;
   console.log(
-    `[federal-donors] found ${federalCandidates.length} federal candidates`,
+    `[federal-donors] found ${federalCandidates.length} federal candidates` +
+      (nameFilter ? ` (name filter: ${nameFilter.join(",")})` : "") +
+      (dryRun ? " [DRY RUN — no writes]" : ""),
   );
 
   // Process in chunks of 25 with 1-second delay between chunks
@@ -492,6 +509,26 @@ export async function ingestFederalDonors({
         const rows = await buildDonorRows(candidate, config, fetcher);
         if (rows.length === 0) {
           counts.candidatesSkipped += 1;
+          if (dryRun) {
+            const meta = asRecord(candidate.rawMetadata);
+            const fecMeta = asRecord(meta?.fec);
+            console.log(
+              `[federal-donors] dry-run SKIP name="${getString(candidate, "fullName")}" id=${getString(candidate, "id")} sourceId=${getString(candidate, "sourceId")} fecMetaId=${getString(fecMeta, "candidate_id") ?? "—"} (no_fec_id)`,
+            );
+          }
+          continue;
+        }
+        if (dryRun) {
+          console.log(
+            `[federal-donors] dry-run RESOLVE name=${getString(candidate, "fullName")} rows=${rows.length} → ` +
+              rows
+                .map(
+                  (r) =>
+                    `${r.electionCycle}:${r.bucketLabel}=$${Math.round(Number(r.amountTotal)).toLocaleString()}`,
+                )
+                .join(" | "),
+          );
+          counts.candidatesProcessed += 1;
           continue;
         }
         const upserted = await upsertDonorRows(db, rows);
@@ -595,6 +632,19 @@ function parseLimitFlag(argv: string[]): number | null {
   const value = argv[idx + 1];
   const parsed = Number.parseInt(value ?? "", 10);
   return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+}
+
+/** `--name booker,norcross` → ["booker","norcross"] (lowercased), else null. */
+function parseNameFilter(argv: string[]): string[] | null {
+  const idx = argv.indexOf("--name");
+  if (idx === -1) return null;
+  const value = argv[idx + 1];
+  if (!value) return null;
+  const parts = value
+    .split(",")
+    .map((s) => s.trim().toLowerCase())
+    .filter(Boolean);
+  return parts.length > 0 ? parts : null;
 }
 
 function parsePositiveInteger(

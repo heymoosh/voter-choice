@@ -201,6 +201,77 @@ describe("lookupDonorCoalition — happy path", () => {
     expect(result.electionCycle).toBe("2026");
   });
 
+  it("drops the stale total_receipts bucket once a small/large/PAC breakdown exists", async () => {
+    mockedResolve.mockResolvedValue("federal-booker");
+    const { select, _chain } = makeSelectMock([]);
+    mockedGetDb.mockReturnValue({ select } as never);
+
+    // A legacy total_receipts row coexists with the new breakdown after a
+    // re-ingest. The read-time filter drops total_receipts so it neither
+    // inflates totalRaised nor renders as a bogus 100% bar.
+    _chain.where.mockResolvedValue([
+      {
+        bucketLabel: "total_receipts",
+        amountTotal: "16808282.00",
+        source: "fec",
+        sourceUrl: "https://fec.gov/x",
+      },
+      {
+        bucketLabel: "Small individual donors (under $200)",
+        amountTotal: "8145568.00",
+        source: "fec_api",
+        sourceUrl: "https://fec.gov/x",
+      },
+      {
+        bucketLabel: "Large individual donors ($200+)",
+        amountTotal: "4984307.00",
+        source: "fec_api",
+        sourceUrl: "https://fec.gov/x",
+      },
+      {
+        bucketLabel: "PACs",
+        amountTotal: "487530.00",
+        source: "fec_api",
+        sourceUrl: "https://fec.gov/x",
+      },
+    ]);
+
+    const result = await lookupDonorCoalition(
+      "Cory Booker",
+      "NJ",
+      "federal-senate",
+    );
+    expect(result.found).toBe(true);
+    if (result.found !== true) return;
+    expect(result.buckets.map((b) => b.label)).not.toContain("total_receipts");
+    expect(result.totalRaised).toBe(8145568 + 4984307 + 487530);
+  });
+
+  it("keeps total_receipts when no breakdown exists yet (not-yet-ingested fallback)", async () => {
+    mockedResolve.mockResolvedValue("federal-someone");
+    const { select, _chain } = makeSelectMock([]);
+    mockedGetDb.mockReturnValue({ select } as never);
+
+    _chain.where.mockResolvedValue([
+      {
+        bucketLabel: "total_receipts",
+        amountTotal: "5000000.00",
+        source: "fec",
+        sourceUrl: "https://fec.gov/y",
+      },
+    ]);
+
+    const result = await lookupDonorCoalition(
+      "Some Candidate",
+      "NJ",
+      "federal-house",
+    );
+    expect(result.found).toBe(true);
+    if (result.found !== true) return;
+    expect(result.buckets.map((b) => b.label)).toEqual(["total_receipts"]);
+    expect(result.totalRaised).toBe(5000000);
+  });
+
   it("handles known-good fixture: candidate + 3 buckets", async () => {
     mockedResolve.mockResolvedValue("federal-A123");
     const { select, _chain } = makeSelectMock([]);

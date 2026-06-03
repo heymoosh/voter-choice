@@ -33,6 +33,7 @@ export const DONOR_BUCKET_LABELS = [
   "Education employees",
   "Small individual donors (under $200)",
   "Large individual donors ($200+)",
+  "PACs",
   "Self-funded",
   "Party committees",
   "Other",

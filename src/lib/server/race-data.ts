@@ -30,7 +30,7 @@ import {
   attachLimitedDataNotice,
   type AlignmentLookupResult,
 } from "./alignment";
-import { lookupDonorCoalition } from "./donors";
+import { lookupDonorCoalition, FUNDING_MIX_LABELS } from "./donors";
 import { getIssueLabel } from "../canonicalIssues";
 import type {
   RacePatternsBlock,
@@ -162,6 +162,38 @@ export function priorRoleLabelFor(jurisdiction: string): string {
  * Map a `lookupDonorCoalition` result onto the donor-related fields of a
  * RacePatternsCandidate. Pure — no DB access.
  */
+/**
+ * Compute the small/large/PAC funding mix from a found donor lookup. Reads the
+ * three totals-derived buckets by their canonical labels and expresses each as a
+ * share of their sum. `total` is deliberately `small + large + pac` (NOT the
+ * sum of ALL buckets) so the mix and its headline stay internally consistent and
+ * immune to any industry/aggregate double-count in `totalRaised`. Returns
+ * undefined when none of the three buckets are present (e.g. a candidate still
+ * on the legacy single `total_receipts` row) so the card shows its fallback.
+ */
+function computeFundingMix(
+  result: Extract<
+    Awaited<ReturnType<typeof lookupDonorCoalition>>,
+    { found: true }
+  >,
+): RacePatternsCandidate["fundingMix"] | undefined {
+  const amountFor = (label: string) =>
+    result.buckets.find((b) => b.label === label)?.amount ?? 0;
+  const small = amountFor(FUNDING_MIX_LABELS.small);
+  const large = amountFor(FUNDING_MIX_LABELS.large);
+  const pac = amountFor(FUNDING_MIX_LABELS.pac);
+  const total = small + large + pac;
+  if (total <= 0) return undefined;
+  const pct = (v: number) => Math.round((v / total) * 100);
+  return {
+    small: pct(small),
+    large: pct(large),
+    pac: pct(pac),
+    total,
+    cycle: `${result.electionCycle} cycle`,
+  };
+}
+
 export function donorFieldsFromResult(
   result: Awaited<ReturnType<typeof lookupDonorCoalition>>,
 ): Pick<
@@ -171,6 +203,7 @@ export function donorFieldsFromResult(
   | "donorUnavailable"
   | "totalRaised"
   | "donorDataSource"
+  | "fundingMix"
 > {
   if (!result.found) {
     const reason =
@@ -190,6 +223,7 @@ export function donorFieldsFromResult(
     totalRaised: result.totalRaised,
     donorDataSource: "voting_record",
     donorSource: { name: result.source, url: result.sourceUrl },
+    fundingMix: computeFundingMix(result),
   };
 }
 
