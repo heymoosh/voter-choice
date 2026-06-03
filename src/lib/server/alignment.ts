@@ -208,21 +208,39 @@ export async function resolveCandidateId(
     parsed.find((p) => p.cleanLower === cleanQueryLower);
   if (exact) return exact.id;
 
-  // 3. Lastname + state (nickname-tolerant).
+  // 3. Lastname + state (nickname- AND surname-only-tolerant).
+  // Ballots usually list SURNAMES only ("NORCROSS", "BOOKER"), so this tier
+  // must resolve a bare lastname when it maps to a single person in the state.
   if (stateCode && queryParts.last) {
     const st = stateCode.toUpperCase();
     const qLast = queryParts.last.toLowerCase();
     const byLastState = parsed.filter(
       (p) => p.last.toLowerCase() === qLast && p.state === st,
     );
-    if (byLastState.length === 1) return byLastState[0].id;
-    if (byLastState.length > 1) {
-      const qInitial = queryParts.first[0]?.toLowerCase();
-      const byInitial = byLastState.filter(
-        (p) => p.first[0]?.toLowerCase() === qInitial,
-      );
-      if (byInitial.length === 1) return byInitial[0].id;
-      // Still ambiguous → don't guess; fall through to prefix tiers.
+    // Collapse duplicate rows of the SAME person (a member appears once per
+    // congress in the votes ingest, so "Donald Norcross" can have multiple
+    // candidate rows). One distinct id ⇒ unambiguous ⇒ resolve.
+    const distinctIds = new Set(byLastState.map((p) => p.id));
+    if (distinctIds.size === 1 && byLastState.length >= 1) {
+      return byLastState[0].id;
+    }
+    if (distinctIds.size > 1) {
+      // A surname-only query ("NORCROSS") has no real first name —
+      // queryParts.first is the surname itself — so the first-initial tiebreak
+      // is meaningless and must be skipped. Only disambiguate by initial when
+      // the query actually carries a distinct first name ("Mike Kelly").
+      const queryIsSurnameOnly = queryParts.first.toLowerCase() === qLast;
+      if (!queryIsSurnameOnly) {
+        const qInitial = queryParts.first[0]?.toLowerCase();
+        const byInitial = byLastState.filter(
+          (p) => p.first[0]?.toLowerCase() === qInitial,
+        );
+        if (new Set(byInitial.map((p) => p.id)).size === 1) {
+          return byInitial[0].id;
+        }
+      }
+      // Genuinely ambiguous (multiple distinct people, can't disambiguate) →
+      // fall through to the prefix tiers rather than guess.
     }
   }
 

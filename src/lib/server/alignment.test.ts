@@ -229,6 +229,39 @@ describe("resolveCandidateId", () => {
     const result = await resolveCandidateId("Andy Kim", "federal-senate");
     expect(result).toBeNull();
   });
+
+  // Ballots list SURNAMES ("NORCROSS"). A bare surname must resolve when it
+  // maps to one person in the state.
+  it("resolves a bare surname via lastname + state (NORCROSS)", async () => {
+    const { select } = makeSelectMock([
+      { id: "fed-norcross", fullName: "Rep. Donald Norcross [D-NJ]" },
+      { id: "fed-pallone", fullName: "Rep. Frank Pallone [D-NJ]" },
+    ]);
+    mockedGetDb.mockReturnValue({ select } as never);
+    const result = await resolveCandidateId("NORCROSS", "federal-house", "NJ");
+    expect(result).toBe("fed-norcross");
+  });
+
+  it("resolves a bare surname when the SAME person has duplicate rows (multi-congress ingest)", async () => {
+    const { select } = makeSelectMock([
+      { id: "fed-norcross", fullName: "Rep. Donald Norcross [D-NJ]" },
+      { id: "fed-norcross", fullName: "Rep. Donald Norcross [D-NJ]" }, // 118th + 119th
+    ]);
+    mockedGetDb.mockReturnValue({ select } as never);
+    const result = await resolveCandidateId("NORCROSS", "federal-house", "NJ");
+    expect(result).toBe("fed-norcross");
+  });
+
+  it("does NOT guess a bare surname when two DISTINCT people share it", async () => {
+    const { select } = makeSelectMock([
+      { id: "fed-donald-norcross", fullName: "Rep. Donald Norcross [D-NJ]" },
+      { id: "fed-george-norcross", fullName: "Rep. George Norcross [D-NJ]" },
+    ]);
+    mockedGetDb.mockReturnValue({ select } as never);
+    // Surname-only + 2 distinct people → ambiguous → null (don't guess).
+    const result = await resolveCandidateId("NORCROSS", "federal-house", "NJ");
+    expect(result).toBeNull();
+  });
 });
 
 describe("candidate-name helpers", () => {
