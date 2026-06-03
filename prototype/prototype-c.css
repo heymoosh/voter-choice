@@ -1,0 +1,2475 @@
+/* ====================================================
+   VOTER CHOICE · Pass C styles
+   ====================================================
+   Loaded AFTER prototype.css so all overrides win without
+   touching the original sheet. Each block is namespaced
+   (dl-, poll-, rn-, hiw-, sx-, gf-, nc-, err-, sp-).
+   ==================================================== */
+
+/* ============ Accessibility primitives ============ */
+:focus-visible { outline: 2px solid var(--civic); outline-offset: 2px; border-radius: 4px; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0ms !important; transition-duration: 0ms !important; scroll-behavior: auto !important; }
+}
+.skip-link {
+  position: absolute; left: -9999px; top: 0; z-index: 9999;
+  background: var(--ink); color: var(--paper-2); padding: 10px 14px;
+  font-family: var(--mono); font-size: 12px;
+  text-transform: uppercase; letter-spacing: 0.12em;
+  border-radius: 0 0 6px 0;
+}
+.skip-link:focus { left: 0; }
+
+/* ============ NAV chrome ============ */
+.app-nav .nav-right { display: flex; align-items: center; gap: 10px; }
+.app-nav .lang { display: inline-flex; align-items: center; gap: 6px; }
+.app-nav .lang .lang-pip { color: var(--ink-3); transition: color 0.15s ease; }
+.app-nav .lang .lang-pip.on { color: var(--ink); font-weight: 600; }
+.app-nav .lang .lang-sep { color: var(--ink-3); }
+.app-nav .lang:hover { border-color: var(--ink-2); }
+.app-nav .nav-cog {
+  display: inline-grid; place-items: center;
+  width: 34px; height: 34px; border-radius: 999px;
+  border: 1px solid var(--rule); background: transparent;
+  color: var(--ink-2); cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+.app-nav .nav-cog:hover { color: var(--ink); border-color: var(--ink-2); }
+
+/* ============ Resume nudge ============ */
+.resume-nudge {
+  margin-top: 22px; max-width: 560px;
+  padding: 18px 20px 20px;
+  border: 1px solid var(--civic-soft);
+  background: linear-gradient(180deg, oklch(0.97 0.018 170) 0%, var(--paper-2) 60%);
+  border-radius: 10px; box-shadow: var(--shadow-soft);
+}
+.resume-nudge .rn-badge {
+  display: inline-block; font-family: var(--mono);
+  font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.14em;
+  color: var(--civic); margin-bottom: 8px;
+}
+.resume-nudge .rn-headline {
+  font-family: var(--serif); font-weight: 600; font-size: 22px;
+  margin: 0 0 8px; letter-spacing: -0.015em; color: var(--ink);
+}
+.resume-nudge .rn-sub { margin: 0 0 14px; font-size: 14px; line-height: 1.55; color: var(--ink-2); }
+.resume-nudge .rn-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.resume-nudge .rn-resume {
+  background: var(--civic); color: var(--paper-2);
+  border: 0; border-radius: 8px; padding: 11px 18px;
+  font-weight: 600; font-size: 14px; cursor: pointer;
+}
+.resume-nudge .rn-resume:hover { background: var(--civic-2); }
+.resume-nudge .rn-over {
+  background: transparent; border: 1px solid var(--rule);
+  border-radius: 8px; padding: 11px 16px;
+  font-size: 13.5px; color: var(--ink-2); cursor: pointer;
+}
+.resume-nudge .rn-over:hover { border-color: var(--ink-2); color: var(--ink); }
+
+/* ============ How it works ============ */
+.hiw {
+  border-top: 1px solid var(--rule-2); border-bottom: 1px solid var(--rule-2);
+  padding: 72px 56px; background: var(--paper-2);
+}
+.hiw-inner { max-width: 1280px; margin: 0 auto; }
+.hiw-head { margin-bottom: 44px; max-width: 720px; }
+.hiw-head h2 {
+  font-family: var(--serif); font-weight: 600; font-size: 42px;
+  line-height: 1.05; letter-spacing: -0.02em; margin: 0 0 14px;
+}
+.hiw-sub { font-family: var(--serif); font-size: 18px; color: var(--ink-2); margin: 0; }
+.hiw-steps { list-style: none; padding: 0; margin: 0;
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px; }
+.hiw-step { border-top: 1px solid var(--ink); padding-top: 18px; }
+.hiw-step .hiw-num {
+  font-family: var(--mono); font-size: 11px; letter-spacing: 0.18em;
+  color: var(--civic); margin-bottom: 14px;
+}
+.hiw-step-ttl {
+  font-family: var(--serif); font-weight: 600; font-size: 24px;
+  line-height: 1.15; letter-spacing: -0.01em; margin: 0 0 10px; color: var(--ink);
+}
+.hiw-step-desc { font-size: 14.5px; line-height: 1.6; color: var(--ink-2); margin: 0; text-wrap: pretty; }
+@media (max-width: 900px) {
+  .hiw { padding: 56px 24px; }
+  .hiw-head h2 { font-size: 32px; }
+  .hiw-steps { grid-template-columns: 1fr; gap: 28px; }
+}
+
+/* ============ DeadlineMeter ============ */
+.dl-meter {
+  list-style: none; padding: 0; margin: 0;
+  display: grid; gap: 1px;
+  background: var(--rule); border: 1px solid var(--rule);
+  border-radius: 8px; overflow: hidden;
+}
+.dl-row {
+  display: grid; grid-template-columns: 14px 1fr auto;
+  gap: 12px; padding: 12px 14px; background: var(--paper-2); align-items: center;
+}
+/* Stacked variant: badge drops below label/date so the label
+   column gets full width. PollingInfoCard opts into this because
+   the workspace rail is ~280px wide and the inline badge truncates
+   the label mid-word. */
+.dl-meter.stacked .dl-row {
+  grid-template-columns: 14px 1fr;
+  grid-template-rows: auto auto;
+  row-gap: 6px;
+}
+.dl-meter.stacked .dl-status {
+  grid-column: 2 / -1;
+  justify-self: start;
+}
+.dl-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--rule); }
+.dl-row.green  .dl-dot { background: oklch(0.62 0.13 145); }
+.dl-row.yellow .dl-dot { background: oklch(0.78 0.13 90); }
+.dl-row.red    .dl-dot { background: var(--vote-red); }
+.dl-row.passed .dl-dot { background: var(--ink-3); }
+.dl-text { min-width: 0; }
+.dl-lab { font-size: 13.5px; font-weight: 500; color: var(--ink); line-height: 1.3; }
+.dl-date {
+  font-family: var(--mono); font-size: 10.5px;
+  text-transform: uppercase; letter-spacing: 0.1em;
+  color: var(--ink-3); margin-top: 3px;
+}
+.dl-status {
+  font-family: var(--mono); font-size: 11px;
+  text-transform: uppercase; letter-spacing: 0.08em;
+  padding: 4px 8px; border-radius: 999px; white-space: nowrap;
+}
+.dl-row.green  .dl-status { background: oklch(0.94 0.04 145); color: oklch(0.34 0.10 145); }
+.dl-row.yellow .dl-status { background: oklch(0.95 0.05 90);  color: oklch(0.40 0.10 90); }
+.dl-row.red    .dl-status { background: oklch(0.94 0.04 28);  color: oklch(0.42 0.16 28); }
+.dl-row.passed .dl-status { background: var(--tag-bg); color: var(--ink-3); }
+
+/* ============ PollingInfoCard ============ */
+.poll-card {
+  background: var(--paper-2); border: 1px solid var(--rule);
+  border-radius: 10px; padding: 16px 16px 12px; box-shadow: var(--shadow-soft);
+}
+.poll-card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 14px; }
+.poll-card-eyebrow {
+  font-family: var(--mono); font-size: 10.5px;
+  text-transform: uppercase; letter-spacing: 0.14em;
+  color: var(--civic); margin-bottom: 4px;
+}
+.poll-card h3 { margin: 0; font-family: var(--serif); font-weight: 600; font-size: 19px; letter-spacing: -0.01em; }
+.poll-card-toggle { background: transparent; border: 0; color: var(--ink-2); cursor: pointer; font-size: 14px; padding: 4px 8px; }
+.poll-card-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 16px; margin-bottom: 14px; }
+.poll-cell .k {
+  font-family: var(--mono); font-size: 10px;
+  text-transform: uppercase; letter-spacing: 0.14em; color: var(--ink-3); margin-bottom: 2px;
+}
+.poll-cell .v { font-size: 13px; color: var(--ink); line-height: 1.4; }
+.poll-cell.wide { grid-column: 1 / -1; }
+.poll-card-deadlines { margin-bottom: 12px; }
+.poll-card-actions {
+  display: flex; gap: 14px; flex-wrap: wrap;
+  padding: 10px 0 6px; border-top: 1px solid var(--rule-2);
+}
+.poll-card-actions .poll-link {
+  font-size: 12.5px; color: var(--civic); background: transparent;
+  border: 0; padding: 0; cursor: pointer;
+  text-decoration: underline; text-underline-offset: 3px;
+}
+.poll-card-actions .poll-link:hover { color: var(--civic-2); }
+.poll-card-foot small {
+  font-family: var(--mono); font-size: 10px;
+  text-transform: uppercase; letter-spacing: 0.12em; color: var(--ink-3);
+}
+
+/* ============ Settings drawer ============ */
+.sx-overlay {
+  position: fixed; inset: 0;
+  background: oklch(0.18 0.018 240 / 0.32);
+  z-index: 1000; display: flex; justify-content: flex-end;
+  animation: sx-fade 0.15s ease-out;
+}
+@keyframes sx-fade { from { opacity: 0 } to { opacity: 1 } }
+.sx-drawer {
+  width: 100%; max-width: 440px;
+  background: var(--paper); border-left: 1px solid var(--rule);
+  display: flex; flex-direction: column; overflow-y: auto;
+  animation: sx-slide 0.18s ease-out;
+}
+@keyframes sx-slide { from { transform: translateX(8px); opacity: 0.4 } to { transform: none; opacity: 1 } }
+.sx-head { display: flex; justify-content: space-between; align-items: center;
+  padding: 20px 24px 12px; border-bottom: 1px solid var(--rule-2); }
+.sx-head h2 { margin: 0; font-family: var(--serif); font-weight: 600; font-size: 22px; letter-spacing: -0.015em; }
+.sx-x { background: transparent; border: 0; font-size: 24px; cursor: pointer; color: var(--ink-2); padding: 0 6px; line-height: 1; }
+.sx-x:hover { color: var(--ink); }
+.sx-section { padding: 22px 24px; border-bottom: 1px solid var(--rule-2); }
+.sx-section-ttl {
+  font-family: var(--mono); font-size: 11px;
+  text-transform: uppercase; letter-spacing: 0.14em;
+  color: var(--ink-3); margin: 0 0 12px;
+}
+.sx-help { font-size: 12.5px; color: var(--ink-3); line-height: 1.5; margin: 0 0 12px; }
+.sx-lang-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.sx-lang-opt {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 14px; background: var(--paper-2); border: 1px solid var(--rule);
+  border-radius: 8px; text-align: left; cursor: pointer; font-size: 13.5px; color: var(--ink);
+}
+.sx-lang-opt:hover { border-color: var(--ink-2); }
+.sx-lang-opt.on { border-color: var(--civic); background: linear-gradient(180deg, oklch(0.96 0.025 170), var(--paper-2)); }
+.sx-lang-opt .sx-lang-flag {
+  font-family: var(--mono); font-size: 10.5px; font-weight: 600; letter-spacing: 0.1em;
+  background: var(--ink); color: var(--paper-2); padding: 4px 7px; border-radius: 4px;
+}
+.sx-byok-input { display: flex; gap: 8px; }
+.sx-byok-input input {
+  flex: 1; border: 1px solid var(--rule); background: var(--paper-2);
+  padding: 11px 14px; font-family: var(--mono); font-size: 13px;
+  border-radius: 6px; color: var(--ink); outline: none;
+}
+.sx-byok-input input:focus { border-color: var(--civic); }
+.sx-btn { border: 0; padding: 10px 16px; border-radius: 6px; font-weight: 600; font-size: 13px; cursor: pointer; white-space: nowrap; }
+.sx-btn.primary { background: var(--civic); color: var(--paper-2); }
+.sx-btn.primary:hover { background: var(--civic-2); }
+.sx-btn.primary:disabled { background: var(--rule); color: var(--ink-3); cursor: not-allowed; }
+.sx-btn.danger { background: transparent; border: 1px solid oklch(0.85 0.08 28); color: var(--vote-red); }
+.sx-btn.danger:hover { background: oklch(0.96 0.04 28); }
+.sx-byok-saved { display: flex; flex-direction: column; gap: 12px; }
+.sx-byok-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 14px; background: var(--paper-2); border: 1px solid var(--rule); border-radius: 6px;
+}
+.sx-byok-lab { font-family: var(--mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.14em; color: var(--ink-3); }
+.sx-byok-mask { font-family: var(--mono); font-size: 13px; color: var(--ink); background: var(--tag-bg); padding: 4px 8px; border-radius: 4px; }
+.sx-status { margin-top: 10px; padding: 10px 12px; font-size: 13px; border-radius: 6px; }
+.sx-status.ok { background: oklch(0.94 0.04 145); color: oklch(0.34 0.10 145); }
+.sx-status.error { background: oklch(0.94 0.05 28); color: oklch(0.40 0.14 28); }
+.sx-data-actions { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.sx-row-btn {
+  display: flex; justify-content: space-between; align-items: center; width: 100%;
+  background: transparent; border: 1px solid var(--rule-2); border-radius: 6px;
+  padding: 11px 14px; font-size: 13.5px; color: var(--ink); cursor: pointer; text-align: left;
+}
+.sx-row-btn:hover { border-color: var(--ink-2); }
+.sx-row-btn .arr { color: var(--ink-3); font-family: var(--mono); font-size: 14px; }
+.sx-row-btn.danger { color: var(--vote-red); border-color: oklch(0.90 0.04 28); }
+.sx-row-btn.danger:hover { background: oklch(0.97 0.025 28); border-color: var(--vote-red); }
+.sx-foot { padding: 18px 24px 24px; display: flex; flex-direction: column; gap: 8px; }
+.sx-foot-link { font-size: 12.5px; color: var(--civic); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+
+/* ============ Error views (geocode + no-contested) ============ */
+.gf-wrap, .nc-wrap {
+  min-height: calc(100vh - 64px);
+  display: grid; place-items: start center;
+  padding: 56px 24px; background: var(--paper);
+}
+.gf-card, .nc-card {
+  width: 100%; max-width: 640px;
+  background: var(--paper-2); border: 1px solid var(--rule);
+  border-radius: 12px; padding: 36px 36px 32px; box-shadow: var(--shadow-card);
+}
+.gf-eyebrow, .nc-eyebrow {
+  display: inline-block; font-family: var(--mono); font-size: 10.5px;
+  text-transform: uppercase; letter-spacing: 0.14em;
+  color: var(--vote-red); padding: 4px 8px;
+  background: oklch(0.96 0.04 28); border-radius: 4px; margin-bottom: 16px;
+}
+.nc-eyebrow { color: var(--civic); background: oklch(0.94 0.04 170); }
+.gf-card h2, .nc-card h2 {
+  font-family: var(--serif); font-weight: 600; font-size: 32px;
+  line-height: 1.1; letter-spacing: -0.02em; margin: 0 0 14px;
+}
+.gf-body, .nc-body { font-size: 15px; line-height: 1.55; color: var(--ink-2); margin: 0 0 22px; }
+.gf-attempted {
+  background: var(--paper); border: 1px solid var(--rule-2);
+  border-radius: 6px; padding: 12px 14px; margin-bottom: 22px;
+  display: flex; align-items: center; gap: 12px;
+}
+.gf-attempted .lab { font-family: var(--mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.14em; color: var(--ink-3); }
+.gf-attempted code { font-family: var(--mono); font-size: 13px; color: var(--ink); }
+.gf-actions, .nc-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 18px; align-items: center; }
+.gf-primary, .nc-primary {
+  background: var(--civic); color: var(--paper-2); border: 0;
+  border-radius: 8px; padding: 12px 20px; font-weight: 600; font-size: 14px; cursor: pointer;
+  white-space: nowrap;
+}
+.gf-secondary, .nc-back, .nc-upload, .err-primary, .err-secondary { white-space: nowrap; }
+.gf-primary:hover, .nc-primary:hover { background: var(--civic-2); }
+.gf-primary:disabled, .nc-primary:disabled { background: var(--rule); color: var(--ink-3); cursor: not-allowed; }
+.gf-secondary, .nc-back {
+  background: transparent; border: 1px solid var(--rule); border-radius: 8px;
+  padding: 12px 18px; font-size: 13.5px; color: var(--ink-2); cursor: pointer;
+}
+.gf-secondary:hover, .nc-back:hover { border-color: var(--ink-2); color: var(--ink); }
+.gf-tip {
+  font-size: 13px; color: var(--ink-3); margin: 14px 0 0;
+  padding: 12px 14px; background: var(--paper);
+  border-radius: 6px; border-left: 3px solid var(--gold); line-height: 1.55;
+}
+.gf-tip code { font-family: var(--mono); font-size: 12px; background: var(--tag-bg); padding: 2px 5px; border-radius: 3px; }
+.nc-links { list-style: none; padding: 0; margin: 0 0 22px; display: grid; gap: 8px; }
+.nc-links a {
+  display: block; padding: 12px 14px; border: 1px solid var(--rule);
+  border-radius: 8px; background: var(--paper);
+  font-weight: 500; font-size: 14px; color: var(--civic);
+}
+.nc-links a:hover { border-color: var(--civic); background: oklch(0.97 0.018 170); }
+.nc-paste { display: block; margin-bottom: 18px; }
+.nc-paste span {
+  display: block; font-family: var(--mono); font-size: 10.5px;
+  text-transform: uppercase; letter-spacing: 0.14em; color: var(--ink-3); margin-bottom: 8px;
+}
+.nc-paste textarea {
+  width: 100%; background: var(--paper); border: 1px solid var(--rule);
+  border-radius: 8px; padding: 12px 14px;
+  font-family: var(--serif); font-size: 14px; resize: vertical; outline: none; min-height: 160px;
+}
+.nc-paste textarea:focus { border-color: var(--civic); }
+.nc-upload {
+  font-size: 13.5px; font-weight: 500; color: var(--civic);
+  cursor: pointer; padding: 12px 0;
+  display: inline-flex; align-items: center;
+}
+.nc-upload input { display: none; }
+.nc-upload:hover { text-decoration: underline; text-underline-offset: 3px; }
+.nc-privacy { margin: 6px 0 0; font-size: 12.5px; color: var(--ink-3); font-style: italic; }
+
+/* ============ Generic error banner ============ */
+.err-banner {
+  display: grid; grid-template-columns: 28px 1fr auto;
+  gap: 12px; padding: 14px 16px; border-radius: 8px; align-items: flex-start;
+  background: oklch(0.96 0.04 75); border: 1px solid oklch(0.86 0.08 75);
+}
+.err-banner.error { background: oklch(0.96 0.04 28); border-color: oklch(0.84 0.10 28); }
+.err-icon {
+  width: 24px; height: 24px; border-radius: 50%;
+  display: grid; place-items: center;
+  font-family: var(--mono); font-weight: 700; font-size: 14px;
+  background: var(--gold); color: var(--ink);
+}
+.err-banner.error .err-icon { background: var(--vote-red); color: var(--paper-2); }
+.err-title { font-weight: 600; font-size: 14px; color: var(--ink); margin-bottom: 4px; }
+.err-text { font-size: 13.5px; color: var(--ink-2); line-height: 1.5; margin-bottom: 10px; }
+.err-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.err-primary {
+  background: var(--ink); color: var(--paper-2); border: 0; border-radius: 6px;
+  padding: 8px 14px; font-size: 12.5px; font-weight: 600; cursor: pointer;
+}
+.err-secondary {
+  background: transparent; border: 1px solid var(--rule); border-radius: 6px;
+  padding: 8px 14px; font-size: 12.5px; color: var(--ink-2); cursor: pointer;
+}
+.err-close { background: transparent; border: 0; color: var(--ink-3); cursor: pointer; font-size: 18px; padding: 0 6px; line-height: 1; }
+.msg.ai-error .bubble { background: transparent; padding: 0; border: 0; }
+
+/* ============ Static info pages ============ */
+.sp-wrap { min-height: calc(100vh - 64px); padding: 56px 32px 96px; background: var(--paper); }
+.sp-inner { max-width: 720px; margin: 0 auto; }
+.sp-back { background: transparent; border: 0; color: var(--civic); font-size: 13.5px; padding: 0 0 16px; cursor: pointer; }
+.sp-back:hover { text-decoration: underline; text-underline-offset: 3px; }
+.sp-eyebrow {
+  font-family: var(--mono); font-size: 11px;
+  text-transform: uppercase; letter-spacing: 0.14em;
+  color: var(--civic); margin-bottom: 10px;
+}
+.sp-title {
+  font-family: var(--serif); font-weight: 600; font-size: 48px;
+  line-height: 1; letter-spacing: -0.025em; margin: 0 0 32px; text-wrap: balance;
+}
+.sp-meta {
+  font-family: var(--mono); font-size: 11px;
+  text-transform: uppercase; letter-spacing: 0.14em;
+  color: var(--ink-3); margin-bottom: 24px;
+}
+.sp-article { font-family: var(--serif); font-size: 17px; line-height: 1.65; color: var(--ink); }
+.sp-article h2 {
+  font-family: var(--serif); font-weight: 600; font-size: 24px;
+  margin: 40px 0 14px; letter-spacing: -0.015em; color: var(--ink);
+}
+.sp-article p { margin: 0 0 16px; }
+.sp-article ul { margin: 0 0 16px; padding-left: 22px; }
+.sp-article li { margin-bottom: 8px; }
+.sp-article a { color: var(--civic); text-decoration: underline; text-underline-offset: 3px; }
+.sp-article code {
+  font-family: var(--mono); font-size: 14px;
+  background: var(--tag-bg); padding: 2px 6px; border-radius: 4px;
+}
+@media (max-width: 700px) {
+  .sp-title { font-size: 36px; }
+  .sp-article { font-size: 15.5px; }
+  .gf-card, .nc-card { padding: 24px; }
+  .gf-card h2, .nc-card h2 { font-size: 26px; }
+}
+
+/* ============ PAC gloss → footnote treatment ============
+   Override prototype.css. Was rendering at body size and reading as
+   primary content; should read as a definition footnote: tiny mono
+   prefix, serif italic body, muted, set off by a hairline + left
+   indent that visually pulls it out of the chart-reading flow.
+
+   No max-width — the footnote spans the funding section's full
+   width so it doesn't leave huge dead space on wide screens. */
+.cv2-pac-gloss {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--ink-3);
+  margin: 12px 0 0;
+  padding: 10px 0 0 14px;
+  border-top: 1px solid var(--rule-2);
+  border-left: 2px solid var(--rule-2);
+  max-width: none;
+  text-wrap: pretty;
+}
+.cv2-pac-gloss b {
+  font-family: var(--mono);
+  font-style: normal;
+  font-weight: 700;
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--ink-2);
+  margin-right: 2px;
+}
+
+/* ============ PollingStatusBar (replaces rail card) ============
+   Slim strip directly under app nav. Full bleed, sticky on scroll,
+   collapses to a one-liner, expands to a four-cell panel. */
+.poll-bar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: oklch(0.97 0.018 170);
+  border-bottom: 1px solid var(--rule);
+}
+.poll-bar.open { background: var(--paper-2); }
+.poll-bar-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 16px;
+  padding: 10px 24px;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  color: var(--ink);
+}
+.poll-bar-inner:hover { background: oklch(0.94 0.025 170); }
+.poll-bar.open .poll-bar-inner:hover { background: var(--paper); }
+.pb-left, .pb-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.pb-left { flex: 1 1 auto; overflow: hidden; }
+.pb-right { flex: 0 0 auto; }
+.pb-pin {
+  display: inline-flex;
+  color: var(--civic);
+  flex: 0 0 14px;
+}
+.pb-name {
+  font-weight: 600;
+  font-size: 13.5px;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pb-sep { color: var(--ink-3); }
+.pb-precinct {
+  font-family: var(--mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+.pb-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--paper-2);
+  color: var(--ink-2);
+  white-space: nowrap;
+  border: 1px solid var(--rule);
+}
+.pb-count-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--ink-3);
+}
+.pb-count.green  .pb-count-dot { background: oklch(0.62 0.13 145); }
+.pb-count.yellow .pb-count-dot { background: oklch(0.78 0.13 90); }
+.pb-count.red    .pb-count-dot { background: var(--vote-red); }
+.pb-count.passed .pb-count-dot { background: var(--ink-3); }
+.pb-toggle {
+  font-size: 12px;
+  color: var(--civic);
+  white-space: nowrap;
+}
+
+/* ============ Expanded panel under the bar ============ */
+.poll-bar-panel {
+  border-top: 1px solid var(--rule-2);
+  background: var(--paper-2);
+  padding: 16px 24px 18px;
+}
+/* Primary actions row — promoted to the top of the panel so the
+   user sees the "act on this" controls before scanning the data.
+   Earlier version buried these at the bottom. */
+.pbp-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding-bottom: 14px;
+  margin-bottom: 18px;
+  border-bottom: 1px solid var(--rule-2);
+}
+.pbp-act {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink);
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+.pbp-act:hover {
+  border-color: var(--civic);
+  color: var(--civic);
+  background: oklch(0.97 0.018 170);
+}
+.pbp-act-ico {
+  display: inline-grid;
+  place-items: center;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: var(--civic);
+  color: var(--paper-2);
+  font-size: 10px;
+  font-weight: 700;
+  flex: 0 0 18px;
+}
+.pbp-source {
+  margin-left: auto;
+  font-family: var(--mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--ink-3);
+}
+.pbp-grid {
+  display: grid;
+  grid-template-columns: 1.4fr 0.9fr 1fr 1.6fr;
+  gap: 28px;
+  align-items: flex-start;
+}
+.pbp-cell { min-width: 0; }
+.pbp-k {
+  font-family: var(--mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--ink-3);
+  margin-bottom: 6px;
+}
+.pbp-v {
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--ink);
+}
+.pbp-sub {
+  font-size: 12px;
+  color: var(--ink-3);
+  margin-top: 6px;
+  line-height: 1.4;
+}
+.pbp-link {
+  display: inline-block;
+  margin-top: 8px;
+  font-size: 12.5px;
+  color: var(--civic);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.pbp-deadlines .dl-meter {
+  margin-top: 2px;
+}
+
+/* ============ Mobile ============ */
+@media (max-width: 900px) {
+  .poll-bar-inner { padding: 10px 16px; gap: 12px; flex-wrap: wrap; }
+  .pb-right { width: 100%; justify-content: space-between; }
+  .pbp-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+  }
+  .pbp-deadlines { grid-column: 1 / -1; }
+  .pbp-source { width: 100%; margin-left: 0; }
+}
+@media (max-width: 540px) {
+  .poll-bar-inner { padding: 10px 14px; }
+  .pb-left { flex-wrap: wrap; gap: 6px; }
+  .pb-precinct, .pb-sep { display: none; }
+  .pbp-grid { grid-template-columns: 1fr; gap: 16px; }
+  .poll-bar-panel { padding: 14px 14px 14px; }
+  .pbp-act { width: 100%; justify-content: center; }
+}
+
+/* ============ Mobile chat header restructure ============
+   The repo's mobile rule packed [back] [title] [Blind][Skip][Compare]
+   into a single 3-col grid (40px 1fr auto). The right column got
+   crushed and the title wrapped to multiple lines per word. Restack:
+     row 1 = back + title (title takes remaining width, wraps OK)
+     row 2 = action chips in a horizontal row, full bleed
+   Inherits, overrides only the parts we need. */
+@media (max-width: 767px) {
+  .ws-chat .head {
+    grid-template-columns: 40px 1fr !important;
+    grid-template-rows: auto auto !important;
+    row-gap: 10px !important;
+  }
+  .ws-chat .head .ws-mobile-back { grid-column: 1; grid-row: 1; }
+  .ws-chat .head .title {
+    grid-column: 2; grid-row: 1;
+    text-align: left !important;
+    min-width: 0;
+    line-height: 1.2;
+  }
+  .ws-chat .head .h-act {
+    grid-column: 1 / -1; grid-row: 2;
+    display: flex !important;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .ws-chat .head .h-act > button {
+    flex: 1 1 0;
+    min-width: 0;
+    min-height: 36px;
+    justify-content: center;
+  }
+}
+
+/* ============ See all votes — bridge button ============
+   Sits between the alignment scores and the funding chart so the
+   "evidence" CTA is next to its semantic neighbor (the record
+   summary), not buried at the bottom of the card. */
+.cv2-see-all-bridge {
+  padding: 14px 24px 14px;
+  margin-top: -4px;
+  margin-bottom: 14px;
+  display: flex;
+  justify-content: center;
+}
+/* Cap the pill width so it sits as a centered chip with real
+   margins on all four sides — not a full-bleed bar pretending
+   to be a button. */
+.cv2-see-all-inline {
+  max-width: 320px;
+}
+/* Was: tiny underlined text button — practically invisible. Now: a
+   subtle pill-button that reads as "the action neighboring the
+   evidence." Civic-tinted but not the primary CTA (the Pick button
+   downstream gets that). */
+.cv2-see-all-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: oklch(0.97 0.018 170);
+  border: 1px solid var(--civic-soft);
+  padding: 9px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--civic);
+  cursor: pointer;
+  text-decoration: none;
+  border-radius: 999px;
+  min-height: 36px;
+  white-space: nowrap;
+  font-family: inherit;
+}
+.cv2-see-all-inline:hover {
+  background: var(--civic);
+  color: var(--paper-2);
+  border-color: var(--civic);
+}
+.cv2-see-all-inline:disabled {
+  background: transparent;
+  color: var(--ink-3);
+  cursor: not-allowed;
+  border-color: var(--rule);
+}
+@media (max-width: 600px) {
+  .cv2-see-all-bridge { padding: 14px 18px; justify-content: center; }
+  .cv2-see-all-inline {
+    width: auto;
+    max-width: 280px;
+    min-width: 180px;
+    justify-content: center;
+    min-height: 44px;
+    font-size: 14px;
+  }
+}
+
+/* ============ Handoff modal mobile scroll ============
+   The "Take your research with you" modal is taller than the
+   viewport on phones — the footer text gets cut off below the
+   safe-area inset. Cap height at viewport - inset, scroll body,
+   pad bottom past the iOS home indicator. */
+@media (max-width: 767px) {
+  .be-modal {
+    max-height: calc(100vh - 16px) !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: calc(32px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+}
+   Bumps small touch targets to 44×44 minimum and restacks rows
+   that overflow at narrow widths. Scoped to ≤640px so the desktop
+   layout (which is dense by design) is untouched. */
+@media (max-width: 640px) {
+  /* ─── Issue ranking row ─── */
+  .theme-row {
+    /* Mobile layout: just two columns — drag handle on the left,
+       full body on the right. The body holds title + quotes;
+       Rename/Remove sit below it. The serif rank pill is dropped
+       (rank is implied by row order on a phone). */
+    grid-template-columns: 44px 1fr;
+    column-gap: 12px;
+    row-gap: 8px;
+    padding: 16px 0;
+  }
+  /* The ord wrapper now holds only the big drag handle. Hide the
+     arrow up/down buttons on mobile — drag-handle is the primary
+     reorder affordance; keyboard users still get arrows on desktop. */
+  .theme-row .ord {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    width: 44px;
+    margin: 0;
+    grid-row: 1;
+    grid-column: 1;
+  }
+  .theme-row .ord .drag-handle {
+    width: 44px !important;
+    height: 56px !important;
+    background: var(--paper) !important;
+    border: 1px solid var(--rule) !important;
+    border-radius: 6px;
+  }
+  .theme-row .ord .ord-arrows { display: none; }
+  /* Hide the giant serif rank — column gone, body takes the slot */
+  .theme-row .rank { display: none; }
+
+  .theme-row .body {
+    grid-column: 2;
+    grid-row: 1 / 3;
+  }
+
+  /* RENAME / REMOVE — promote from 9.5px stacked text to a proper
+     bottom action row with adequate hit targets. */
+  .theme-row .acts {
+    grid-column: 2;
+    grid-row: 2;
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 14px;
+    padding-top: 6px;
+    border-top: 1px dashed var(--rule-2);
+  }
+  .theme-row .acts button {
+    font-size: 11px;
+    padding: 8px 0;
+    min-height: 32px;
+    text-align: left;
+  }
+  .theme-row .nm {
+    font-size: 17px;
+    line-height: 1.25;
+  }
+  .theme-row .nm input.name-edit {
+    min-width: 0;
+    width: 100%;
+  }
+
+  /* ─── Lock-in footer ─── */
+  .themes-card .th-foot {
+    flex-direction: column-reverse; /* primary CTA visually on top */
+    align-items: stretch;
+    gap: 8px;
+  }
+  .themes-card .th-foot .lock,
+  .themes-card .th-foot .secondary {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+    padding: 14px 16px;
+    font-size: 15px;
+    min-height: 48px;
+  }
+
+  /* ─── Cold-open submit row ─── */
+  /* Make sure the "let AI read" CTA hits 44px on small screens
+     (the coldopen textarea is already full-width). */
+  .coldopen .co-actions button,
+  .coldopen .co-submit {
+    min-height: 48px;
+    width: 100%;
+  }
+
+  /* ─── General: prevent any narrow buttons from sneaking in ─── */
+  .gf-actions, .nc-actions {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+  .gf-actions button, .nc-actions button, .nc-actions .nc-upload {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+    min-height: 48px;
+  }
+}
+
+/* ─── Touch-friendly hit targets across surfaces (≤ tablet) ─── */
+@media (max-width: 900px) and (pointer: coarse) {
+  /* Apple HIG / Material both call 44×44 the minimum. */
+  .app-nav .nav-cog,
+  .app-nav .lang { min-height: 40px; min-width: 40px; }
+  .sx-x { min-width: 40px; min-height: 40px; }
+  .pbp-act { min-height: 40px; }
+}
+
+/* ============ Print sheet footer (missing in prototype.css) ============
+   .print-foot renders the "Built with Voter Choice" block; .print-serial
+   is the 3-up meta strip (Generated · Ref · Page). Without these rules
+   the spans inline-flow and read as "Generated May 28 2026 at 10:54 AMRef · VC-…Page 1 of 1". */
+.print-serial {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--rule);
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  font-family: var(--mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--ink-3);
+}
+.print-foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+/* ============ Candidate-card action stacking ============
+   The base layout in prototype.css uses `display: flex` for .cv2-actions
+   and the existing mobile rule sets `grid-template-columns: 1fr` which
+   no-ops against flex. Restate as flex-column + raise the breakpoint
+   so it triggers at narrow workspace widths too. */
+@media (max-width: 600px) {
+  .cv2-actions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+  .cv2-actions .see,
+  .cv2-actions .pick {
+    width: 100%;
+    justify-content: center;
+    min-width: 0;
+    order: initial; /* primary CTA first */
+  }
+  .cv2-actions .pick { order: 1; }
+  .cv2-actions .see  { order: 2; }
+}
+
+/* ============ Bring (accepted IDs) — list display ============ */
+.pbp-bring-lead {
+  display: block;
+  font-size: 12px;
+  color: var(--ink-3);
+  margin-bottom: 4px;
+}
+.pbp-bring-list {
+  margin: 0; padding: 0;
+  list-style: none;
+}
+.pbp-bring-list li {
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--ink);
+  padding: 2px 0;
+}
+.pbp-bring-list li::before {
+  content: "·";
+  color: var(--ink-3);
+  margin-right: 8px;
+  font-weight: 700;
+}
+.pbp-bring-toggle {
+  margin-top: 6px;
+  background: transparent;
+  border: 0;
+  padding: 4px 0;
+  font-size: 12px;
+  color: var(--civic);
+  cursor: pointer;
+  font-family: inherit;
+}
+.pbp-bring-toggle:hover { color: var(--civic-2); text-decoration: underline; text-underline-offset: 3px; }
+
+/* Print ballot ID list — same multi-ID treatment on paper. */
+.cell-bring { grid-column: span 1; }
+.print-id-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-family: var(--serif);
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--ink);
+}
+.print-id-list li { padding: 1px 0; }
+.print-id-list li::before { content: "· "; color: var(--ink-3); }
+
+/* ============ Drag handle & theme-row reorder visuals ============
+   IssueRow now has TWO ord children: a drag handle (used on touch
+   and mouse drag) and an up/down arrow group (used by keyboard
+   users on desktop). On mobile we show the handle only. */
+.theme-row .ord { align-items: center; }
+.theme-row .ord .drag-handle {
+  width: 28px;
+  height: 36px;
+  background: transparent;
+  border: 0;
+  color: var(--ink-3);
+  cursor: grab;
+  display: grid;
+  place-items: center;
+  border-radius: 4px;
+  touch-action: none; /* prevent scroll-fight during drag */
+}
+.theme-row .ord .drag-handle:hover { color: var(--ink); background: var(--tag-bg); }
+.theme-row .ord .drag-handle:active,
+.theme-row.dragging .ord .drag-handle { cursor: grabbing; color: var(--civic); }
+.theme-row .ord .ord-arrows {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.theme-row.dragging {
+  z-index: 5;
+  position: relative;
+  box-shadow: 0 8px 24px -10px oklch(0.18 0.018 240 / 0.25);
+  background: var(--paper-2);
+  border-radius: 8px;
+  cursor: grabbing;
+}
+.theme-row.drop-target {
+  outline: 2px dashed var(--civic);
+  outline-offset: -4px;
+  border-radius: 6px;
+}
+
+/* ============ Home page mobile ============ */
+@media (max-width: 900px) {
+  .hp-hero {
+    padding: 48px 24px 40px;
+    grid-template-columns: 1fr !important;
+    gap: 36px;
+  }
+  .hp-hero h1 { font-size: 56px !important; }
+  .hp-hero p.lede { font-size: 17px !important; }
+}
+@media (max-width: 540px) {
+  .hp-hero {
+    padding: 36px 18px 32px;
+    gap: 28px;
+  }
+  .hp-hero h1 { font-size: 40px !important; line-height: 1 !important; }
+  .hp-hero p.lede { font-size: 15.5px !important; line-height: 1.5 !important; }
+  .addr-card { padding: 16px 16px 18px !important; }
+  .addr-card label {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 2px;
+  }
+  .addr-card .row {
+    flex-direction: column;
+    gap: 10px;
+  }
+  .addr-card input {
+    width: 100%;
+    font-size: 16px !important; /* avoid iOS zoom */
+    min-height: 48px;
+  }
+  .addr-card .go {
+    width: 100%;
+    min-height: 48px;
+    justify-content: center;
+  }
+  .addr-card .hint {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+  .hiw { padding: 40px 18px !important; }
+  .hiw-head h2 { font-size: 28px !important; }
+}
+
+/* ============ Cold-open mobile ============ */
+@media (max-width: 640px) {
+  .coldopen { padding: 24px 18px 32px !important; }
+  .coldopen .co-context {
+    font-size: 11.5px !important;
+    line-height: 1.5;
+  }
+  /* Address pill at top — let the address wrap onto its own line so
+     "<addr> · Harris County, TX-7 · 5 races" doesn't read as one
+     ugly run-on string at narrow widths. */
+  .coldopen .co-context b { display: block; margin-bottom: 4px; }
+  .coldopen h2 { font-size: 26px !important; line-height: 1.15 !important; }
+  .coldopen .co-sub { font-size: 14.5px !important; }
+
+  .co-input textarea {
+    min-height: 160px;
+    font-size: 16px; /* avoid iOS zoom */
+  }
+  .co-input .row {
+    flex-direction: column;
+    align-items: stretch !important;
+    gap: 12px;
+  }
+  .co-input .send {
+    width: 100%;
+    justify-content: center;
+    min-height: 48px;
+    font-size: 15px;
+  }
+  .co-input .hint {
+    order: 2;
+    font-size: 10.5px;
+    line-height: 1.5;
+    text-align: center;
+  }
+}
+
+/* ============ Pick button centering ============
+   Was justify-content: flex-end which pushed the only remaining
+   action to the right edge — off-center on the candidate card. */
+.cv2-actions { justify-content: center !important; }
+.cv2-actions .pick { min-width: 280px; }
+/* But on narrow phones, min-width: 280px makes the button overflow
+   its card. Unset there and let it size to the container. */
+@media (max-width: 600px) {
+  .cv2-actions .pick { min-width: 0 !important; }
+}
+
+/* Gap between "See all votes" pill and the Money trail disclosure
+   below it. Earlier they sat flush, which made the disclosure look
+   like a continuation of the pill rather than a separate section. */
+.cv2-see-all-bridge { margin-bottom: 14px; }
+
+/* ============ Disclosure header — mobile stack ============
+   On mobile the title block (eyebrow + title + teaser) was sharing
+   the row with the SHOW DETAILS chip, which pinched both columns
+   awkwardly. Stack vertically: title block on top, action chip
+   below as a full-width pill so the affordance is unambiguous. */
+@media (max-width: 640px) {
+  .cv2-disclose-toggle {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    padding: 16px 18px;
+  }
+  .cv2-disclose-chev {
+    align-self: stretch;
+    justify-content: center;
+    padding: 10px 14px;
+    background: var(--civic-soft);
+    border-radius: 999px;
+    min-height: 44px;
+    text-align: center;
+  }
+  .cv2-disclose-summary { font-size: 14px !important; }
+}
+
+/* ============ Body text scale pass ============
+   Bump small body text up to align with accessibility guidance
+   for broad audiences (16-18px body, 14-16px secondary). We DON'T
+   touch mono caps labels (those are tags, intentionally small) or
+   the giant serif display sizes. */
+.alignment-row .desc,
+.cv2-iss-body p,
+.cv2-iss-body li,
+.cv2-funding p,
+.cv2-money-legend > div,
+.cv2-iss-narr,
+.cmp-vote-narr,
+.cv2-allocated-foot,
+.av-vote .av-vote-narr,
+.av-vote .av-vote-ttl {
+  font-size: 15px !important;
+  line-height: 1.55 !important;
+}
+.cv2-money-legend > div small { font-size: 12.5px !important; }
+.cv2-iss-head .lab { font-size: 16px !important; line-height: 1.3 !important; }
+.cv2-iss-head .pct { font-size: 30px !important; }
+.alignment-row .lab { font-size: 16px; line-height: 1.3; }
+.theme-row .quote { font-size: 14px !important; line-height: 1.55 !important; }
+.cv2-name { font-size: 22px !important; }
+.msg .bubble { font-size: 15.5px !important; line-height: 1.6 !important; }
+.msg .who { font-size: 12px !important; }
+.b-row .ttl { font-size: 16px !important; }
+.b-row .lab { font-size: 11.5px !important; }
+.pb-name { font-size: 14.5px !important; }
+.pbp-v { font-size: 15px !important; line-height: 1.5 !important; }
+.pbp-k { font-size: 11px !important; }
+
+/* ============ Whole-card drag on mobile ============
+   Tap-and-hold anywhere on the issue card to drag, not just the
+   grip handle. Desktop keeps handle-only drag so the row's text
+   remains selectable. */
+@media (max-width: 640px) {
+  .theme-row {
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    cursor: grab;
+  }
+  /* Grip becomes a visual marker only on mobile — row-level
+     pointer events drive the drag. */
+  .theme-row .ord .drag-handle { pointer-events: none; }
+  /* But buttons and inputs inside the row STILL need pointer events,
+     otherwise rename/remove become un-tappable. */
+  .theme-row .acts button,
+  .theme-row .edit-pencil,
+  .theme-row input { pointer-events: auto; touch-action: auto; }
+}
+
+/* ============ Home page footer mobile stack ============
+   The desktop grid (1fr auto auto) crushes "© 2026 · Gray Bird LLC"
+   into a vertical character column at narrow widths. Stack to a
+   single column on tablet & phone, center everything. */
+@media (max-width: 900px) {
+  .hp-foot {
+    grid-template-columns: 1fr !important;
+    gap: 20px !important;
+    padding: 36px 24px !important;
+    text-align: center;
+    margin-top: 40px;
+  }
+  .hp-foot ul {
+    justify-content: center !important;
+    flex-wrap: wrap;
+    row-gap: 12px !important;
+  }
+}
+@media (max-width: 540px) {
+  .hp-foot { padding: 28px 18px !important; gap: 16px !important; }
+  .hp-foot ul { gap: 16px !important; font-size: 13.5px; }
+}
+
+/* ============ Cold-open context pill stack ============
+   The `.co-context` is display:flex so address + "· Harris County
+   · 5 races" sat in two side-by-side flex columns. Stack on mobile. */
+@media (max-width: 640px) {
+  .coldopen .co-context {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    line-height: 1.6;
+  }
+  .coldopen .co-context::before { margin-bottom: 4px; }
+}
+
+/* ============ Themes-card lock-in footer — stronger stacking
+   The desktop rule lives in prototype.css. Force the mobile stack
+   with !important so column-reverse and full-width win cleanly. */
+@media (max-width: 767px) {
+  .themes-card .th-foot {
+    flex-direction: column-reverse !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+  }
+  .themes-card .th-foot .lock,
+  .themes-card .th-foot .secondary {
+    width: 100% !important;
+    justify-content: center !important;
+    text-align: center !important;
+    padding: 14px 16px !important;
+    font-size: 15px !important;
+    min-height: 48px !important;
+  }
+}
+
+/* ============ Theme-row body width + REMOVE on mobile ============
+   The body cell was getting squeezed. Force min-width:0 so quote
+   text can wrap, and bump REMOVE to a real touch-friendly chip. */
+@media (max-width: 640px) {
+  .theme-row .body { min-width: 0; width: 100%; }
+  .theme-row .quotes { width: 100%; }
+  .theme-row .quote {
+    padding-left: 12px;
+    padding-right: 0;
+    width: 100%;
+  }
+  .theme-row .quote em { display: inline; }
+  .theme-row .acts {
+    border-top: 1px dashed var(--rule-2);
+    margin-top: 6px;
+    padding-top: 10px;
+  }
+  .theme-row .acts button.danger {
+    font-size: 12.5px !important;
+    padding: 10px 14px !important;
+    min-height: 44px !important;
+    border: 1px solid oklch(0.88 0.05 28) !important;
+    border-radius: 999px !important;
+    color: var(--vote-red) !important;
+    background: transparent;
+    text-align: center !important;
+  }
+  .theme-row .acts button.danger:hover { background: oklch(0.97 0.025 28); }
+}
+
+/* ============ Vote drilldown mobile redesign ============
+   The default desktop layout puts bill-num + title in column 1 and
+   the WITH YOU / AGAINST YOU badge in column 2. On phones that gives
+   us a 3-line wrapped title fighting a vertical badge pill.
+   On mobile, restructure to four stacked zones:
+     1. metadata row — bill num + vote badge, both small pills inline
+     2. bill title — bigger serif, full bleed
+     3. date — small mono caps
+     4. narrative + cite — clean reading column. */
+@media (max-width: 640px) {
+  .cv2-vote {
+    padding: 14px 14px 12px !important;
+  }
+  .cv2-vote-head {
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+    margin-bottom: 8px !important;
+  }
+  /* Bill num + vote badge moved into ONE horizontal meta row */
+  .cv2-vote-head .bill { order: 2; gap: 4px; }
+  .cv2-vote-head .vote-badge {
+    order: 1;
+    align-self: flex-start;
+    margin: 0 0 0 0;
+    /* Badge becomes a leading status pill — slightly bigger so it's
+       glanceable as the verdict, not a small corner tag. */
+    font-size: 11.5px !important;
+    padding: 5px 10px !important;
+  }
+  /* Bill-num pill: mono caps in a small bordered chip up top */
+  .cv2-vote-head .bill .num {
+    display: inline-block;
+    font-size: 10.5px !important;
+    padding: 3px 7px;
+    background: var(--tag-bg);
+    border-radius: 4px;
+    color: var(--ink-2);
+    align-self: flex-start;
+    margin-bottom: 4px;
+    letter-spacing: 0.12em;
+  }
+  /* Bill title — let it own the row */
+  .cv2-vote-head .bill .ttl {
+    font-size: 17px !important;
+    line-height: 1.25 !important;
+  }
+  /* Date moves below the title cluster, smaller */
+  .cv2-vote-date {
+    font-size: 10.5px !important;
+    margin-bottom: 8px;
+  }
+  /* Narrative gets a comfortable reading size */
+  .cv2-vote-narr {
+    font-size: 14.5px !important;
+    line-height: 1.55 !important;
+  }
+  /* Citation row stacks cleanly: chip + link on separate lines for
+     thumb-friendly tapping. */
+  .cv2-vote-cite {
+    flex-wrap: wrap;
+    gap: 8px !important;
+  }
+  .cv2-vote-cite .src-link {
+    min-height: 36px;
+    display: inline-flex;
+    align-items: center;
+  }
+}
+
+/* ============ Drilldown frame — give it a card identity on mobile
+   The .cv2-iss-row.open already pulls margin: 0 -18px to bleed full
+   width. Tighten the inner padding + add a subtle inset so the user
+   reads it as "expanded context" rather than a wall of text. */
+@media (max-width: 640px) {
+  .cv2-iss-row.open {
+    background: var(--paper) !important;
+    border-top: 1px solid var(--rule-2);
+    border-bottom: 1px solid var(--rule-2);
+    padding: 14px 18px 16px !important;
+  }
+  .cv2-iss-body { padding: 0 !important; }
+  /* "Why 20%?" header inside drilldown */
+  .cv2-iss-narr-head { font-size: 16px !important; }
+  .cv2-iss-narr-hint { font-size: 10.5px !important; }
+}
+
+/* ============ Section label hierarchy pass ============
+   The user's complaint: section labels (Funding mix / Named issue
+   PACs / Industry breakdown) at 13 px mono-caps were smaller than
+   the body content under them, which inverted the visual
+   hierarchy. Promote each section label to a 19 px serif title,
+   keep the sub-caption italic & quiet underneath, and restore the
+   PAC gloss to a small footnote treatment (my earlier generic
+   .cv2-funding p rule had pulled it up to 15 px). */
+
+/* Section titles (Funding mix, Named issue PACs, Industry
+   breakdown) — promote to serif title that DOMINATES the body. */
+.cv2-block-head .lab,
+.cv2-named-pacs .lab,
+.cv2-industry .lab {
+  font-family: var(--serif) !important;
+  font-weight: 600 !important;
+  font-size: 19px !important;
+  text-transform: none !important;
+  letter-spacing: -0.005em !important;
+  color: var(--ink) !important;
+  line-height: 1.2 !important;
+}
+/* Subcaption ("by source type", "organized groups we've vetted…")
+   sits beneath the title — quiet, italic, smaller, gray. */
+.cv2-sub-lab {
+  display: block !important;
+  font-family: var(--serif) !important;
+  font-style: italic !important;
+  font-size: 12.5px !important;
+  font-weight: 400 !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+  color: var(--ink-3) !important;
+  margin-top: 4px !important;
+  line-height: 1.45 !important;
+}
+
+/* PAC gloss footnote — restore to a small italic serif footnote.
+   The earlier global `.cv2-funding p` body-bump pulled this to
+   15 px, which made it more prominent than the section title it
+   sits under. It's a definition; it should read as a caption. */
+.cv2-funding p.cv2-pac-gloss {
+  font-family: var(--serif) !important;
+  font-style: italic !important;
+  font-size: 12.5px !important;
+  line-height: 1.55 !important;
+  color: var(--ink-3) !important;
+  max-width: none;
+  text-wrap: pretty;
+}
+.cv2-funding p.cv2-pac-gloss b {
+  font-family: var(--mono) !important;
+  font-style: normal !important;
+  font-weight: 700 !important;
+  font-size: 10.5px !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.14em !important;
+  color: var(--ink-2) !important;
+  margin-right: 2px;
+}
+
+/* Issue-PAC name + dollars (the row body) — bumped earlier to 15 px;
+   keep that but tighten the relationship: the row's body text should
+   read clearly as the CONTENT, the section title above it as the
+   HEADER. Specifically, the inline-PAC names ("EMILY's List") were
+   appearing similar in weight to the section header. Make the row
+   name a step down from the section title. */
+.cv2-pac-row .name { font-size: 16px !important; font-weight: 600 !important; }
+.cv2-pac-row .pct  { font-size: 16px !important; }
+.cv2-pac-row .name small {
+  font-size: 13px !important;
+  font-style: italic !important;
+  color: var(--ink-3) !important;
+  display: block;
+  margin-top: 4px;
+  font-weight: 400 !important;
+}
+
+/* ============ Candidate card progressive disclosure ============
+   Wraps Funding mix / Named PACs / Industry breakdown in one
+   collapsible "Money trail" block. Default open on desktop
+   (≥901px), closed on phones / tablets. The header has an eyebrow
+   + title + inline summary so the user gets a teaser without
+   expanding. */
+.cv2-disclose { border-top: 1px solid var(--rule-2); }
+.cv2-disclose-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  width: 100%;
+  padding: 18px 24px;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  color: var(--ink);
+  border-radius: 0;
+}
+.cv2-disclose-toggle:hover { background: var(--paper); }
+.cv2-disclose-lab {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.cv2-disclose-eyebrow {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--ink-3);
+}
+.cv2-disclose-title {
+  font-family: var(--serif);
+  font-weight: 600;
+  font-size: 18px;
+  letter-spacing: -0.005em;
+  color: var(--ink);
+}
+.cv2-disclose-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13.5px;
+  color: var(--ink-3);
+  line-height: 1.45;
+  text-wrap: pretty;
+}
+/* Top line of the teaser — total raised + peer comparison. The
+   amount gets ink-1 weight so it reads as the headline number;
+   the peer comparison stays ink-3 as supporting context. */
+.cv2-disclose-stat {
+  font-size: 14.5px;
+  color: var(--ink);
+  line-height: 1.4;
+}
+.cv2-disclose-stat b {
+  font-family: var(--serif);
+  font-weight: 600;
+  font-size: 17px;
+  color: var(--ink);
+  margin-right: 4px;
+}
+.cv2-disclose-peer {
+  color: var(--ink-3);
+  font-size: 13px;
+  margin-left: 2px;
+}
+/* Mix line — small donors · large donors · PACs */
+.cv2-disclose-mix {
+  font-size: 13px;
+  color: var(--ink-3);
+}
+.cv2-disclose-arrow {
+  font-size: 11px;
+  display: inline-block;
+}
+.cv2-disclose.open .cv2-disclose-toggle { border-bottom: 1px dashed var(--rule-2); }
+.cv2-disclose-body > .cv2-funding { border-top: 0; }
+@media (max-width: 600px) {
+  .cv2-disclose-toggle { padding: 16px 18px; min-height: 56px; }
+}
+
+/* ============ BudgetExhausted modal — prevent flex-collapse ============
+   .be-modal is display:flex/column with max-height + overflow-y:auto.
+   The portable-prompt textarea (240px) is a flex child with default
+   flex-shrink:1, so once BYOK was added the total content exceeded
+   the modal height and the prompt box collapsed to a sliver instead
+   of the modal scrolling. Lock the key children so the modal scrolls
+   and the prompt keeps its height. */
+.be-modal > .be-prompt,
+.be-modal > .be-extras,
+.be-modal > .be-byok,
+.be-modal > .be-head,
+.be-modal > .be-lede,
+.be-modal > .be-foot {
+  flex-shrink: 0;
+}
+.be-prompt-text { min-height: 200px; white-space: pre-wrap; overflow-x: hidden; word-break: break-word; }
+
+/* ============ BudgetExhausted inline BYOK card ============
+   Sits between the portable prompt and the action buttons inside
+   the .be-modal. Styled to match the same paper-2 card pattern but
+   set apart with a hairline rule above. The structure mirrors the
+   SettingsPanel BYOK so a user who's seen one recognises the other. */
+.be-byok {
+  margin-top: 18px;
+  padding-top: 22px;
+  border-top: 1px solid var(--rule);
+}
+.be-byok-ttl {
+  font-family: var(--serif);
+  font-weight: 600;
+  font-size: 21px;
+  letter-spacing: -0.015em;
+  color: var(--ink);
+  margin: 0 0 6px;
+  line-height: 1.25;
+}
+.be-byok-sub {
+  font-size: 14px;
+  color: var(--ink-3);
+  margin: 0 0 14px;
+  line-height: 1.5;
+}
+.be-byok-row {
+  display: flex;
+  gap: 10px;
+  align-items: stretch;
+}
+.be-byok-input-wrap {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: stretch;
+}
+.be-byok-input-wrap input {
+  flex: 1;
+  background: var(--paper-2);
+  border: 1.5px solid var(--civic);
+  border-radius: 8px;
+  padding: 13px 36px 13px 14px;
+  font-family: var(--mono);
+  font-size: 14px;
+  color: var(--ink);
+  outline: none;
+}
+.be-byok-input-wrap input:focus {
+  border-color: var(--civic-2);
+  box-shadow: 0 0 0 3px oklch(0.94 0.05 170);
+}
+.be-byok-icon {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  color: var(--ink-3);
+}
+.be-byok-save {
+  background: var(--civic);
+  color: var(--paper-2);
+  border: 0;
+  border-radius: 8px;
+  padding: 12px 22px;
+  font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.be-byok-save:hover { background: var(--civic-2); }
+.be-byok-save:disabled {
+  background: var(--rule);
+  color: var(--ink-3);
+  cursor: not-allowed;
+}
+.be-byok-hint {
+  font-family: var(--mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--ink-3);
+  margin: 8px 0 0;
+}
+.be-byok-status {
+  margin: 10px 0 0;
+  padding: 10px 12px;
+  font-size: 13px;
+  border-radius: 6px;
+}
+.be-byok-status.ok    { background: oklch(0.94 0.04 145); color: oklch(0.34 0.10 145); }
+.be-byok-status.error { background: oklch(0.94 0.05 28);  color: oklch(0.40 0.14 28); }
+.be-byok-saved {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: var(--paper-2);
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+}
+.be-byok-mask {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.be-byok-lab {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--ink-3);
+}
+.be-byok-mask code {
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--ink);
+}
+.be-byok-clear {
+  background: transparent;
+  border: 1px solid oklch(0.85 0.08 28);
+  border-radius: 6px;
+  padding: 8px 14px;
+  font-size: 12.5px;
+  color: var(--vote-red);
+  cursor: pointer;
+}
+.be-byok-clear:hover { background: oklch(0.97 0.025 28); }
+
+/* Tip-jar tagline — italic mono, deliberately quiet, sits in the
+   gray gutter under BYOK. NOT REQUIRED is on purpose. */
+.be-tipjar {
+  margin: 18px 0 0;
+  font-family: var(--mono);
+  font-style: italic;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--ink-3);
+  line-height: 1.6;
+}
+.be-tipjar a {
+  color: var(--civic);
+  cursor: pointer;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* Mobile — stack the input + Save button vertically so the 16 px
+   font-size keeps iOS from zooming on focus. */
+@media (max-width: 640px) {
+  .be-byok-ttl { font-size: 18px; }
+  .be-byok-row { flex-direction: column; }
+  .be-byok-input-wrap input { font-size: 16px; min-height: 48px; }
+  .be-byok-save {
+    width: 100%;
+    justify-content: center;
+    min-height: 48px;
+  }
+}
+
+/* ============ Tip jar page ============ */
+.tip-list {
+  list-style: none !important;
+  padding: 0 !important;
+  display: grid;
+  gap: 10px;
+  margin: 6px 0 16px !important;
+}
+.tip-list .tip-link a {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-rows: auto auto;
+  column-gap: 12px;
+  row-gap: 4px;
+  align-items: center;
+  padding: 16px 18px;
+  background: var(--paper-2);
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  text-decoration: none;
+  color: var(--ink);
+  font-family: var(--sans);
+}
+.tip-list .tip-link a:hover {
+  border-color: var(--civic);
+  background: oklch(0.97 0.018 170);
+}
+.tip-list .tip-link.preferred a {
+  border-color: var(--civic);
+  background: oklch(0.97 0.018 170);
+}
+.tip-link-name {
+  font-family: var(--serif);
+  font-weight: 600;
+  font-size: 18px;
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  grid-column: 1;
+  grid-row: 1;
+}
+.tip-link-note {
+  font-size: 13.5px;
+  color: var(--ink-3);
+  grid-column: 1;
+  grid-row: 2;
+  line-height: 1.45;
+}
+.tip-link-arrow {
+  font-family: var(--mono);
+  font-size: 18px;
+  color: var(--civic);
+  grid-column: 2;
+  grid-row: 1 / 3;
+  align-self: center;
+}
+.tip-pref-tag {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  background: var(--civic);
+  color: var(--paper-2);
+  padding: 3px 7px;
+  border-radius: 4px;
+}
+
+/* ============ NoContestedView — upload-first redesign ============
+   Promotes the file upload to a big dropzone-style button at the
+   top, with the paste textarea as the secondary path below. Adds
+   a multi-step processing state with a real progress UI so users
+   know the AI is working on their ballot. */
+.nc-upload-card,
+.nc-paste-card {
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  padding: 18px 18px 18px;
+  margin-bottom: 12px;
+}
+.nc-upload-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--ink-3);
+  margin-bottom: 12px;
+}
+.nc-upload-num {
+  display: inline-grid;
+  place-items: center;
+  width: 22px; height: 22px;
+  background: var(--civic);
+  color: var(--paper-2);
+  border-radius: 50%;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+/* Big dropzone button — primary visual affordance. Civic border,
+   icon + 2-line label, hover lifts to filled civic. */
+.nc-upload-btn {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 16px 18px;
+  background: var(--paper-2);
+  border: 2px dashed var(--civic);
+  border-radius: 10px;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  color: var(--ink);
+  transition: background 0.15s ease, border-style 0.15s ease;
+}
+.nc-upload-btn:hover {
+  background: oklch(0.97 0.018 170);
+  border-style: solid;
+}
+.nc-upload-ico {
+  display: inline-grid;
+  place-items: center;
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  background: var(--civic);
+  color: var(--paper-2);
+  flex: 0 0 44px;
+}
+.nc-upload-lab {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.nc-upload-main {
+  font-family: var(--serif);
+  font-weight: 600;
+  font-size: 17px;
+  color: var(--ink);
+}
+.nc-upload-sub {
+  font-size: 13px;
+  color: var(--ink-3);
+  line-height: 1.45;
+}
+
+/* OR divider between upload + paste */
+.nc-or {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 18px 0;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--ink-3);
+}
+.nc-or::before,
+.nc-or::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--rule);
+}
+.nc-or span { padding: 0 14px; }
+
+/* Paste card (secondary path) */
+.nc-paste-area {
+  width: 100%;
+  background: var(--paper-2);
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  padding: 12px 14px;
+  font-family: var(--serif);
+  font-size: 14px;
+  resize: vertical;
+  outline: none;
+  min-height: 140px;
+  margin-bottom: 12px;
+}
+.nc-paste-area:focus { border-color: var(--civic); }
+.nc-paste-card .nc-primary {
+  width: 100%;
+  justify-content: center;
+}
+
+.nc-foot {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--rule-2);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.nc-foot .nc-back {
+  align-self: flex-start;
+  padding: 10px 16px;
+}
+
+/* ============ Processing state ============ */
+.nc-processing {
+  padding: 8px 0;
+}
+.nc-proc-head h2 {
+  font-family: var(--serif);
+  font-weight: 600;
+  font-size: 26px;
+  line-height: 1.15;
+  letter-spacing: -0.015em;
+  margin: 0 0 14px;
+  color: var(--ink);
+}
+.nc-proc-file {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 24px;
+  padding: 12px 14px;
+  background: var(--paper);
+  border: 1px solid var(--rule-2);
+  border-radius: 8px;
+  font-size: 13.5px;
+}
+.nc-proc-file-ico {
+  color: var(--civic);
+  display: inline-flex;
+}
+.nc-proc-file code {
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--ink);
+  background: transparent;
+  padding: 0;
+}
+.nc-proc-file-size {
+  color: var(--ink-3);
+  font-family: var(--mono);
+  font-size: 11.5px;
+}
+.nc-proc-steps {
+  list-style: none;
+  margin: 0 0 24px;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+}
+.nc-proc-step {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 14px;
+  background: var(--paper);
+  border: 1px solid var(--rule-2);
+  border-radius: 8px;
+  font-size: 15px;
+  line-height: 1.4;
+  color: var(--ink-3);
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+.nc-proc-step.done {
+  color: var(--ink-2);
+}
+.nc-proc-step.done .nc-proc-step-ico {
+  background: oklch(0.62 0.13 145);
+  color: var(--paper-2);
+}
+.nc-proc-step.active {
+  background: oklch(0.97 0.018 170);
+  border-color: var(--civic);
+  color: var(--ink);
+  font-weight: 600;
+}
+.nc-proc-step.active .nc-proc-step-ico {
+  background: var(--civic);
+  color: var(--paper-2);
+}
+.nc-proc-step-ico {
+  display: inline-grid;
+  place-items: center;
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: var(--tag-bg);
+  color: var(--ink-3);
+  font-family: var(--mono);
+  font-size: 14px;
+  font-weight: 700;
+  flex: 0 0 28px;
+}
+.nc-proc-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--paper-2);
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: nc-spin 0.8s linear infinite;
+}
+@keyframes nc-spin { to { transform: rotate(360deg); } }
+.nc-proc-hint {
+  margin: 0;
+  padding: 14px 16px;
+  background: var(--paper);
+  border-left: 3px solid var(--gold);
+  border-radius: 6px;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--ink-3);
+  font-style: italic;
+}
+
+@media (max-width: 600px) {
+  .nc-upload-btn {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 16px 14px;
+  }
+  .nc-upload-main { font-size: 16px; }
+  .nc-upload-sub { font-size: 12.5px; }
+  .nc-proc-head h2 { font-size: 22px; }
+  .nc-proc-step { font-size: 14px; padding: 12px 12px; }
+}
+
+/* ============ Budget-exhausted ballot-pane footer ============
+   Replaces the normal .b-foot stack when the AI budget runs out.
+   Makes BYOK + handoff the dominant actions so "what's next" is
+   obvious without opening the modal. */
+.b-foot.exhausted {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.bx-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  background: oklch(0.96 0.04 75);
+  border: 1px solid oklch(0.86 0.08 75);
+  border-radius: 8px;
+}
+.bx-banner-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--gold);
+  margin-top: 6px;
+  flex: 0 0 8px;
+}
+.bx-banner-ttl {
+  font-weight: 600;
+  font-size: 13.5px;
+  color: var(--ink);
+}
+.bx-banner-sub {
+  font-size: 12.5px;
+  color: var(--ink-2);
+  margin-top: 2px;
+}
+.bx-cta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 14px;
+  background: var(--paper-2);
+  border: 1px solid var(--rule);
+  border-radius: 9px;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  color: var(--ink);
+}
+.bx-cta:hover { border-color: var(--civic); background: oklch(0.97 0.018 170); }
+.bx-cta.primary {
+  background: var(--civic);
+  border-color: var(--civic);
+  color: var(--paper-2);
+}
+.bx-cta.primary:hover { background: var(--civic-2); }
+.bx-cta-ico {
+  display: inline-grid;
+  place-items: center;
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: oklch(1 0 0 / 0.18);
+  flex: 0 0 32px;
+  font-family: var(--mono);
+  font-size: 15px;
+}
+.bx-cta:not(.primary) .bx-cta-ico {
+  background: var(--tag-bg);
+  color: var(--civic);
+}
+.bx-cta-lab {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+.bx-cta-main { font-weight: 600; font-size: 14px; }
+.bx-cta-sub { font-size: 11.5px; opacity: 0.85; line-height: 1.35; }
+.bx-cta .arrow { font-family: var(--mono); flex: 0 0 auto; }
+.bx-secondary {
+  display: flex;
+  gap: 8px;
+}
+.bx-secondary button {
+  flex: 1;
+  padding: 10px 12px;
+  background: transparent;
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  font-size: 12.5px;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+.bx-secondary button:hover:not(:disabled) { border-color: var(--ink-2); color: var(--ink); }
+.bx-secondary button:disabled { opacity: 0.4; cursor: not-allowed; }
+.bx-tip {
+  margin: 4px 0 0;
+  font-family: var(--mono);
+  font-style: italic;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--ink-3);
+  line-height: 1.6;
+  text-align: center;
+}
+.bx-tip a {
+  color: var(--civic);
+  cursor: pointer;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* ============ Post-decision toast ============
+   One-time celebration + next-steps toast when the user decides
+   every race. Slides up from the bottom, dismissable, never repeats
+   (guarded by localStorage in the app). */
+.pd-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  z-index: 800;
+  width: calc(100% - 32px);
+  max-width: 440px;
+  background: var(--ink);
+  color: var(--paper-2);
+  border-radius: 14px;
+  box-shadow: 0 20px 50px -16px oklch(0.18 0.018 240 / 0.5);
+  padding: 18px 18px 16px;
+  animation: pd-rise 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+@keyframes pd-rise {
+  from { transform: translate(-50%, 16px); opacity: 0; }
+  to   { transform: translate(-50%, 0);    opacity: 1; }
+}
+.pd-toast-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.pd-toast-ttl {
+  font-family: var(--serif);
+  font-weight: 600;
+  font-size: 18px;
+  line-height: 1.2;
+}
+.pd-toast-sub {
+  font-size: 12.5px;
+  color: oklch(0.85 0.01 240);
+  margin-top: 3px;
+  line-height: 1.45;
+}
+.pd-toast-x {
+  background: transparent;
+  border: 0;
+  color: oklch(0.75 0.01 240);
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 4px;
+  flex: 0 0 auto;
+}
+.pd-toast-x:hover { color: var(--paper-2); }
+.pd-toast-actions {
+  display: flex;
+  gap: 8px;
+}
+.pd-toast-actions button {
+  flex: 1;
+  padding: 11px 10px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 0;
+}
+.pd-toast-actions .pd-print {
+  background: var(--paper-2);
+  color: var(--ink);
+}
+.pd-toast-actions .pd-save {
+  background: oklch(1 0 0 / 0.14);
+  color: var(--paper-2);
+}
+.pd-toast-actions .pd-tip {
+  background: transparent;
+  color: var(--paper-2);
+  border: 1px solid oklch(1 0 0 / 0.3);
+}
+.pd-toast-actions button:hover { filter: brightness(1.1); }
+
+/* ============ Sticky-sidebar workspace (desktop + tablet) ============
+   Make the workspace fill the viewport and scroll each pane
+   independently — only the center chat column scrolls the
+   long candidate content. The rails + ballot stay put instead
+   of the whole page scrolling (which left big empty gaps below
+   the short rails). Scoped ≥768px; mobile keeps its overlay flow. */
+@media (min-width: 768px) {
+  .ws-shell {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+  }
+  .ws-shell .ws-wrap {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+  }
+  .ws-shell .ws-rail { overflow-y: auto; }
+  .ws-shell .ws-ballot { overflow-y: auto; }
+  .ws-shell .ws-chat { overflow: hidden; }
+  /* The chat body is the one scroll region for the candidate content. */
+  .ws-shell .ws-chat .body { overflow-y: auto; min-height: 0; }
+  /* Visually we want ONE scrollbar (the center). The side rails stay
+     scroll-functional (wheel/trackpad/keyboard) but hide their bars
+     so the layout doesn't show three tracks. */
+  .ws-shell .ws-rail,
+  .ws-shell .ws-ballot {
+    scrollbar-width: none;          /* Firefox */
+    -ms-overflow-style: none;       /* old Edge */
+  }
+  .ws-shell .ws-rail::-webkit-scrollbar,
+  .ws-shell .ws-ballot::-webkit-scrollbar {
+    width: 0; height: 0; display: none;   /* WebKit */
+  }
+  /* Center scrollbar: slim + unobtrusive. */
+  .ws-shell .ws-chat .body { scrollbar-width: thin; scrollbar-color: var(--rule) transparent; }
+  .ws-shell .ws-chat .body::-webkit-scrollbar { width: 8px; }
+  .ws-shell .ws-chat .body::-webkit-scrollbar-thumb {
+    background: var(--rule);
+    border-radius: 999px;
+    border: 2px solid var(--paper);
+  }
+  .ws-shell .ws-chat .body::-webkit-scrollbar-track { background: transparent; }
+  /* Poll bar stays a fixed-height row at the top of the shell. */
+  .ws-shell .poll-bar { position: static; flex: 0 0 auto; }
+}
+
+/* ============ FundingMixBars (shared component) ============
+   One stacked bar + legend used in BOTH the candidate-card Money
+   trail and the Compare modal so they never drift. */
+.fmix { display: flex; flex-direction: column; gap: 10px; }
+.fmix-bar {
+  display: flex;
+  height: 30px;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid var(--rule);
+  background: var(--paper-2);
+}
+.fmix-bar .seg {
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  font-family: var(--serif);
+  font-weight: 600;
+  font-size: 14px;
+  letter-spacing: -0.01em;
+}
+.fmix-bar .seg.small { background: var(--civic); color: var(--paper-2); }
+.fmix-bar .seg.large { background: var(--gold); color: var(--ink); }
+.fmix-bar .seg.pac   { background: var(--vote-red); color: var(--paper-2); }
+.fmix-legend {
+  display: grid;
+  grid-template-columns: repeat(3, auto);
+  gap: 6px 18px;
+  justify-content: start;
+  font-size: 13px;
+  color: var(--ink-3);
+}
+.fmix-legend > div { display: flex; align-items: center; gap: 7px; line-height: 1.3; }
+.fmix-legend b { color: var(--ink); font-weight: 600; }
+.fmix-legend small { color: var(--ink-3); font-size: inherit; }
+.fmix-legend .sw {
+  width: 11px; height: 11px;
+  border-radius: 3px;
+  flex: 0 0 11px;
+}
+.fmix-legend .sw.small { background: var(--civic); }
+.fmix-legend .sw.large { background: var(--gold); }
+.fmix-legend .sw.pac   { background: var(--vote-red); }
+@media (max-width: 600px) {
+  .fmix-legend { grid-template-columns: 1fr; gap: 7px; }
+}
+
+/* ============ Compare-foot: stop the <b> from splitting columns ===
+   .cmp-foot is display:flex; the bold <Reveal> + surrounding text
+   nodes were each becoming separate flex items → 3 columns on
+   mobile. Wrap the text in one span so it flows inline. */
+.cmp-foot .cmp-foot-text { flex: 1; min-width: 0; }
+
+/* ============ SHOW DETAILS — obvious pill on every viewport ===
+   Was a bare mono-caps text link on desktop (easy to miss) and a
+   pill on mobile. Make it a clear bordered civic pill everywhere
+   so the Money trail disclosure reads as tappable. */
+.cv2-disclose-chev {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--civic);
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 15px;
+  border: 1px solid var(--civic-soft);
+  border-radius: 999px;
+  background: var(--paper);
+  flex: 0 0 auto;
+}
+.cv2-disclose-toggle:hover .cv2-disclose-chev {
+  background: var(--civic);
+  color: var(--paper-2);
+  border-color: var(--civic);
+}
+/* Mobile: full-width filled pill — placed AFTER the base rule so it
+   wins on ≤640 (equal specificity → source order decides). */
+@media (max-width: 640px) {
+  .cv2-disclose-toggle { flex-direction: column; align-items: stretch; gap: 12px; }
+  .cv2-disclose-chev {
+    align-self: stretch;
+    justify-content: center;
+    background: var(--civic-soft);
+    color: var(--civic);
+    min-height: 44px;
+    padding: 11px 14px;
+  }
+}
+
+/* ============ Issue ranking — tablet range (641–1023) ============
+   The cold-open issue list used the dense 4-column desktop grid in
+   the 641–1023 band, which squeezed the quotes into a narrow column.
+   Apply the same clean stacked layout we use on phones: drag handle
+   left, full-width body (title + quotes), REMOVE chip below. */
+@media (min-width: 641px) and (max-width: 1023px) {
+  .theme-row {
+    grid-template-columns: 44px 1fr;
+    column-gap: 14px;
+    row-gap: 8px;
+    align-items: start;
+    padding: 16px 0;
+  }
+  .theme-row .ord {
+    display: flex; flex-direction: column; align-items: stretch;
+    width: 44px; margin: 0; grid-column: 1; grid-row: 1;
+  }
+  .theme-row .ord .drag-handle {
+    width: 44px; height: 52px;
+    background: var(--paper); border: 1px solid var(--rule); border-radius: 6px;
+  }
+  .theme-row .ord .ord-arrows { display: none; }
+  .theme-row .rank { display: none; }
+  .theme-row .body { grid-column: 2; grid-row: 1; min-width: 0; width: 100%; }
+  .theme-row .quotes { width: 100%; }
+  .theme-row .quote { width: 100%; }
+  .theme-row .acts {
+    grid-column: 2; grid-row: 2;
+    flex-direction: row; justify-content: flex-start; gap: 14px;
+    padding-top: 8px; border-top: 1px dashed var(--rule-2);
+  }
+  .theme-row .acts button.danger {
+    font-size: 12.5px; padding: 10px 14px; min-height: 40px;
+    border: 1px solid oklch(0.88 0.05 28); border-radius: 999px;
+    color: var(--vote-red); background: transparent;
+  }
+}
+
+/* ============ Ballot-pane edit-issues entry (mobile/tablet) ============
+   Surfaces "Your issues · Edit ranking" inside the ballot pane when
+   the desktop left rail (which normally holds it) is hidden ≤1023px.
+   Hidden on desktop to avoid duplicating the rail's control. */
+.b-issues-edit { display: none; }
+@media (max-width: 1023px) {
+  .b-issues-edit {
+    display: block;
+    padding: 14px 20px 16px;
+    border-bottom: 1px solid var(--rule);
+    background: var(--paper-2);
+  }
+  .b-issues-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+  .b-issues-lab {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--ink-3);
+  }
+  .b-issues-btn {
+    background: var(--paper);
+    border: 1px solid var(--civic-soft);
+    color: var(--civic);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 9px 15px;
+    border-radius: 999px;
+    min-height: 40px;
+    white-space: nowrap;
+  }
+  .b-issues-btn:hover { background: var(--civic); color: var(--paper-2); border-color: var(--civic); }
+  .b-issues-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .b-issues-list li {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    font-size: 14px;
+    color: var(--ink);
+    line-height: 1.35;
+  }
+  .b-issues-list li .n {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--civic);
+    font-weight: 600;
+    flex: 0 0 auto;
+  }
+}
+
+@media print {
+  .app-nav, .skip-link, .nav-cog, .tweaks, .sx-overlay, .be-modal-overlay { display: none !important; }
+  body { background: white; }
+  .print-wrap { padding: 0; }
+  .print-sheet {
+    margin: 0; box-shadow: none; border: 0;
+    page-break-inside: avoid; max-width: 100%;
+    font-family: Georgia, "Times New Roman", serif;
+  }
+  .ballot-group { page-break-inside: avoid; break-inside: avoid; }
+  .br { page-break-inside: avoid; break-inside: avoid; }
+  .ph-head, .voter-meta { border-color: black; }
+  /* Force exact color so the ballot checkmark prints */
+  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+  .print-actions, .print-banner { display: none !important; }
+  @page { margin: 0.5in; size: letter; }
+}

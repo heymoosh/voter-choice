@@ -1,43 +1,21 @@
-import { LanguageProvider } from "../lib/i18n";
-import { ResearchModeProvider } from "../lib/researchMode";
-import { BallotToolClient } from "../components/BallotToolClient";
-import { PageContent } from "./PageContent";
+"use client";
 
-// Force dynamic rendering so the Phase 2 cold-open flag (read from
-// process.env.PROMPT_FLEET_V2 below) is evaluated at request time, not
-// at build time. Without this Next.js statically pre-renders `/` and
-// the flag value gets baked in at build, defeating the runtime gate
-// the redesign relies on.
-//
-// The page wraps a client component (BallotToolClient) so per-request
-// rendering adds negligible cost — the server boundary's only work is
-// reading two env vars and rendering the shell.
-//
-// See .ai/work-packets/redesign-phase-2-free-form-cold-open.md.
-export const dynamic = "force-dynamic";
+import dynamic from "next/dynamic";
+
+// The app IS the prototype. `prototype/VoterChoiceApp` is the verbatim
+// prototype front-end (its own state machine + views + components + CSS).
+// It reads localStorage / window at render, so it mounts client-only
+// (ssr: false) — exactly as the prototype ran in the browser. The data
+// seams inside it (RACES, getRacePatternsForRace, mockAIReply, geocode)
+// get replaced with real API calls in the backend-wiring phase.
+const VoterChoiceApp = dynamic(() => import("../prototype/VoterChoiceApp"), {
+  ssr: false,
+});
 
 export default function Home() {
-  // Server-side env read for the redesign Phase 2 cold-open flag. We read
-  // here (Server Component boundary) rather than via NEXT_PUBLIC_* so the
-  // flag never leaks into the public bundle for unauthenticated users. The
-  // boolean is threaded down through BallotToolClient → ResearchLayout →
-  // ChatPanel; downstream ES locale callers still get the legacy flow even
-  // when the flag is on (ChatPanel gates on lang === "en").
-  //
-  // See .ai/work-packets/redesign-phase-2-free-form-cold-open.md.
-  const promptFleetV2Enabled =
-    typeof process.env.PROMPT_FLEET_V2 === "string" &&
-    process.env.PROMPT_FLEET_V2.length > 0;
-
   return (
-    <LanguageProvider>
-      <ResearchModeProvider>
-        <div className="min-h-screen bg-surface font-sans flex flex-col">
-          <PageContent promptFleetV2Enabled={promptFleetV2Enabled}>
-            <BallotToolClient promptFleetV2Enabled={promptFleetV2Enabled} />
-          </PageContent>
-        </div>
-      </ResearchModeProvider>
-    </LanguageProvider>
+    <div id="root">
+      <VoterChoiceApp />
+    </div>
   );
 }
