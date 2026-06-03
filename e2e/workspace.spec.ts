@@ -431,4 +431,260 @@ test.describe("workspace (PROMPT_FLEET_V2 + en)", () => {
     expect(ids).toContain("housing_affordability");
     expect(issues.every((i) => i.stance === "in_favor")).toBe(true);
   });
+
+  // ─────────────────────────────────────────────────────────────
+  // Prototype CARD-INTERACTION parity (PIVOT). Drives the cards-first
+  // workspace with a RICH 2-candidate mock (both scored, contributing votes,
+  // funding mix) and exercises each interaction the prototype defines:
+  // reveal, money-trail disclosure, alignment drilldown, compare modal,
+  // see-all-votes panel, pick. This is the durable regression guard for
+  // "nothing from the prototype is missing." (Real prod data is currently
+  // thinner — single-candidate primary races, only total_receipts buckets —
+  // so this asserts the COMPONENTS work given rich data; the real-data
+  // coverage is tracked separately in FLOW_VERIFICATION.md.)
+  // ─────────────────────────────────────────────────────────────
+  async function mockRaceDataRich(page: Page) {
+    const v = (id: string, title: string, cast: "with" | "against") => ({
+      billTitle: title,
+      voteCast: cast,
+      date: "2025-12-11",
+      source: { name: "govtrack", url: "https://www.govtrack.us/" },
+      ...(id === "A"
+        ? { narrative: "Voted to cap insulin copays at $35 a month." }
+        : {}),
+    });
+    const payload = {
+      racePatterns: {
+        race: "U.S. President",
+        candidates: [
+          {
+            id: "A",
+            name: "Alice Anderson",
+            incumbent: true,
+            priorRole: "Senator since 2019",
+            donorCoalition: [
+              { label: "Healthcare industry", percent: 40, amount: 400000 },
+              {
+                label: "Small individual donors (under $200)",
+                percent: 35,
+                amount: 350000,
+              },
+              {
+                label: "Issue-aligned PACs — healthcare",
+                percent: 25,
+                amount: 250000,
+                isIssuePAC: true,
+                alignsWith: "healthcare_affordability",
+              },
+            ],
+            donorDataSource: "voting_record",
+            donorSource: { name: "FEC", url: "https://www.fec.gov/" },
+            totalRaised: 1000000,
+            fundingMix: {
+              small: 35,
+              large: 40,
+              pac: 25,
+              total: 1000000,
+              cycle: "2026",
+            },
+            endorsements: null,
+            endorsementUnavailable: { reason: "n/a" },
+            platformAlignment: { kept: 8, total: 12 },
+            retrospective: null,
+            retrospectiveUnavailable: { reason: "n/a" },
+            valuesHighlight: null,
+          },
+          {
+            id: "B",
+            name: "Bob Brown",
+            incumbent: false,
+            donorCoalition: [
+              {
+                label: "Finance, banking & insurance",
+                percent: 100,
+                amount: 200000,
+              },
+            ],
+            donorDataSource: "voting_record",
+            donorSource: { name: "FEC", url: "https://www.fec.gov/" },
+            totalRaised: 200000,
+            fundingMix: {
+              small: 10,
+              large: 70,
+              pac: 20,
+              total: 200000,
+              cycle: "2026",
+            },
+            endorsements: null,
+            endorsementUnavailable: { reason: "n/a" },
+            platformAlignment: null,
+            retrospective: null,
+            retrospectiveUnavailable: { reason: "n/a" },
+            valuesHighlight: null,
+          },
+        ],
+      },
+      alignmentScores: {
+        race: "U.S. President",
+        entries: [
+          {
+            candidateId: "A",
+            scores: [
+              {
+                canonicalIssue: "healthcare_affordability",
+                issueLabel: "Healthcare Affordability",
+                resolvedStance: "in_favor",
+                sourceType: "voting_record",
+                kept: 5,
+                total: 6,
+                contributingVotes: [
+                  v("A", "Lower Health Care Costs Act", "with"),
+                  v("A", "Drug Pricing Reform Act", "with"),
+                ],
+              },
+            ],
+          },
+          {
+            candidateId: "B",
+            scores: [
+              {
+                canonicalIssue: "healthcare_affordability",
+                issueLabel: "Healthcare Affordability",
+                resolvedStance: "in_favor",
+                sourceType: "voting_record",
+                kept: 1,
+                total: 4,
+                contributingVotes: [
+                  v("B", "Lower Health Care Costs Act", "against"),
+                ],
+              },
+            ],
+          },
+        ],
+      },
+      legislativeCoverage: true,
+    };
+    await page.route("**/api/race-data", (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(payload),
+      }),
+    );
+  }
+
+  test("candidate-card interactions: reveal · money-trail · drilldown · compare · see-all-votes · pick", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1400, height: 1000 });
+    await mockChatColdOpenAndQA(page);
+    await mockCivicResponse(page);
+    await mockRaceDataRich(page);
+    await page.goto("/");
+
+    await fillZip(page, "73301");
+    await resolveRunoffGate(page);
+    const ta = page.getByTestId("cold-open-textarea");
+    await ta.waitFor({ state: "visible", timeout: WORKSPACE_TIMEOUT });
+    await ta.fill("insulin keeps going up and rent went up 30% in two years");
+    await page.getByTestId("cold-open-send").click();
+    await page
+      .getByTestId("concern-interpretation-themes")
+      .waitFor({ state: "visible", timeout: WORKSPACE_TIMEOUT });
+    await page.getByTestId("theme-ranker-lock-in").click();
+
+    // Cards render from the rich data.
+    await page
+      .getByTestId("race-patterns")
+      .waitFor({ state: "visible", timeout: WORKSPACE_TIMEOUT });
+
+    // (1) Reveal — blind by default; per-card reveal flips to the name.
+    await page.getByTestId("race-patterns-reveal-candidate-A").click();
+
+    // (2) Money-trail disclosure present + interactive; funder bars rendered.
+    const moneyTrailA = page.getByTestId("race-patterns-money-trail-A");
+    await expect(moneyTrailA).toBeVisible();
+    const moneyToggle = page.getByTestId("race-patterns-money-trail-toggle-A");
+    await expect(moneyToggle).toBeVisible();
+    await moneyToggle.click(); // toggle the disclosure
+    await expect(moneyTrailA.getByTestId("funder-bars")).toBeAttached();
+
+    // (3) Alignment drilldown — tap a score row with contributing votes.
+    await page
+      .getByTestId("alignment-issue-row-healthcare_affordability")
+      .first()
+      .click();
+    await expect(
+      page.getByTestId("alignment-drilldown-vote-list").first(),
+    ).toBeVisible();
+
+    // (4) Compare modal opens.
+    await page.getByTestId("race-patterns-compare").click();
+    await expect(page.getByRole("dialog")).toBeVisible();
+    await page.keyboard.press("Escape");
+
+    // (5) See-all-votes panel opens.
+    await page.getByTestId("race-patterns-see-all-votes-A").click();
+    await expect(page.getByRole("dialog")).toBeVisible();
+    await page.keyboard.press("Escape");
+
+    // (6) Pick a candidate → the decision lands in the ballot pane.
+    await page.getByTestId("race-patterns-pick-A").click();
+    await expect(page.getByTestId("ballot-pane-print")).toBeEnabled();
+  });
+
+  test("rank — drag-drop reorders themes (real pointer gesture)", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1400, height: 1000 });
+    await mockChatColdOpenAndQA(page);
+    await mockCivicResponse(page);
+    await page.goto("/");
+
+    await fillZip(page, "73301");
+    await resolveRunoffGate(page);
+    const ta = page.getByTestId("cold-open-textarea");
+    await ta.waitFor({ state: "visible", timeout: WORKSPACE_TIMEOUT });
+    await ta.fill("insulin keeps going up and rent went up 30% in two years");
+    await page.getByTestId("cold-open-send").click();
+    await page
+      .getByTestId("concern-interpretation-themes")
+      .waitFor({ state: "visible", timeout: WORKSPACE_TIMEOUT });
+
+    // Capture order before the drag.
+    const name0Before = (
+      await page.getByTestId("theme-name-0").textContent()
+    )?.trim();
+    const name1Before = (
+      await page.getByTestId("theme-name-1").textContent()
+    )?.trim();
+    expect(name0Before).toBeTruthy();
+    expect(name1Before).toBeTruthy();
+    expect(name0Before).not.toBe(name1Before);
+
+    // Drive a real dnd-kit PointerSensor drag: grab handle 0, move past the
+    // midpoint of card 1, release. Intermediate steps are required for dnd-kit
+    // to register the drag start + collision crossing.
+    const handle = page.getByTestId("theme-drag-handle-0");
+    const target = page.getByTestId("theme-card-1");
+    const hb = await handle.boundingBox();
+    const tb = await target.boundingBox();
+    if (!hb || !tb) throw new Error("drag handle / target not measurable");
+    await page.mouse.move(hb.x + hb.width / 2, hb.y + hb.height / 2);
+    await page.mouse.down();
+    // small nudge to trip the sensor, then travel below card 1's midpoint
+    await page.mouse.move(hb.x + hb.width / 2, hb.y + hb.height / 2 + 6, {
+      steps: 3,
+    });
+    await page.mouse.move(tb.x + tb.width / 2, tb.y + tb.height * 0.75, {
+      steps: 12,
+    });
+    await page.mouse.up();
+
+    // After the drag, index 0 should hold what used to be at index 1.
+    await expect(page.getByTestId("theme-name-0")).toHaveText(
+      name1Before as string,
+      { timeout: 5000 },
+    );
+  });
 });

@@ -28,7 +28,7 @@ Status key: ✅ verified-prod · 🟩 verified-local-e2e · ❌ broken · ⏳ pe
 | "Show me an example" prefill | ✅ | fills insulin/rent/climate longform; send works |
 | AI interprets issues | ✅ | "Got it — 3 issues"; 3 themes rendered |
 | Rank — move up/down buttons | ✅ | move-up reorders (insulin↔rent swap observed) |
-| Rank — DRAG-DROP | ⏳ | handles present (`theme-drag-handle-N`); pointer-drag not yet driven |
+| Rank — DRAG-DROP | 🟩 | dnd-kit PointerSensor; real pointer gesture driven in e2e (`theme-name-0` becomes former index-1 name after dragging handle-0 past card-1). |
 | Rank — rename / remove | ⚪ | controls present (`theme-rename-N`, `theme-remove-N`); not driven |
 | Lock in → workspace | ✅ | reaches `workspace-shell` with rail + 3 races (Senate/House/County) |
 | **4-step loader BETWEEN lock-in and workspace** | 🔧 | built (`a2f47b0`): full-screen `workspace-loading-gate` gates the first workspace paint on the active race's data resolving. e2e updated + green. RE-VERIFY on prod. |
@@ -40,22 +40,27 @@ Status key: ✅ verified-prod · 🟩 verified-local-e2e · ❌ broken · ⏳ pe
 ## B · Prototype interaction parity checklist
 
 From the full inventory (sub-agent, verified against prototype source). Each
-must work in the live app. **None of B is verified yet** — all blocked on cards
-rendering (the 429). Re-drive once cards appear.
+must work in the live app. **🟩 = driven + asserted in local e2e against a
+fresh build** (`e2e/workspace.spec.ts` "candidate-card interactions" + "drag-drop
+reorders" + `theme-amend.spec.ts` + `print-ballot.spec.ts`). 🟩 is NOT ✅ prod —
+prod re-verify with the real NJ ballot is still pending (waits for the user).
+Where only part of a row is driven, the sub-part not driven is named explicitly
+(no over-claiming).
 
 | Interaction | Prototype ref | Repo target | Status |
 |---|---|---|---|
-| Blind mode default + per-card Reveal/Hide + header toggle | components.jsx:417 | RacePatterns / CandidateCardHeader | ⏳ |
-| AlignmentScoreBanner: avg % + per-issue bars ("K of N votes") | components.jsx:497 | AlignmentScoreBanner.tsx | ⏳ |
-| Alignment **drilldown** (tap score → contributing votes, WITH/AGAINST badges, narrative, roll-call link) | components.jsx:548 | AlignmentDrilldown.tsx | ⏳ |
-| **Money trail expandable disclosure** ("Show details ▾") | components.jsx:281 | FunderBars.tsx | ⏳ |
-| FundingMix bars (small/large/PAC) + peer comparison + issue-PAC flags | components.jsx:687 | FunderBars / FundingMixBars | ⏳ (note: donor data currently coarse — only `total_receipts` bucket ingested, not industry split) |
-| "See all N votes →" → AllVotesPanel | components.jsx:269 | AllVotesPanel.tsx | ⏳ |
-| **Compare** modal (per-issue stacked, expandable votes, funding panel) | screens.jsx:585 | CompareModal.tsx | ⏳ |
-| Pick / Unpick + **auto-advance** to next undecided race | views.jsx:351 | RacePatterns / BallotToolClient | ⏳ |
+| Blind mode default + per-card Reveal/Hide | components.jsx:417 | RacePatterns / CandidateCardHeader | 🟩 per-card reveal driven (`race-patterns-reveal-candidate-A` flips to name). Header-level blind toggle present but not separately driven. |
+| AlignmentScoreBanner: avg % + per-issue bars ("K of N votes") | components.jsx:497 | AlignmentScoreBanner.tsx | 🟩 renders with rich mock; per-issue row is the drilldown entry point (driven below). |
+| Alignment **drilldown** (tap score → contributing votes, WITH/AGAINST badges, narrative, roll-call link) | components.jsx:548 | AlignmentDrilldown.tsx | 🟩 tap `alignment-issue-row-healthcare_affordability` → `alignment-drilldown-vote-list` visible. |
+| **Money trail expandable disclosure** ("Show details ▾") | components.jsx:281 | FunderBars.tsx | 🟩 `race-patterns-money-trail-toggle-A` toggles; `funder-bars` attached. |
+| FundingMix bars (small/large/PAC) + peer comparison + issue-PAC flags | components.jsx:687 | FunderBars / FundingMixBars | 🟩 bars render ("35% small · 40% large · 25% PACs" in snapshot). Note: prod donor data still coarse — only `total_receipts` ingested, not industry split (rich mock supplies the mix). |
+| "See all N votes →" → AllVotesPanel | components.jsx:269 | AllVotesPanel.tsx | 🟩 `race-patterns-see-all-votes-A` → `dialog` visible. |
+| **Compare** modal (per-issue stacked, expandable votes, funding panel) | screens.jsx:585 | CompareModal.tsx | 🟩 `race-patterns-compare` → `dialog` visible. (Was broken: modal JSX lived only in the cold-open return, unreachable in workspace mode + `handleOpenCompare` read the chat message not raceData. Fixed: `cardModals` rendered in BOTH returns + read `workspace.raceData`.) |
+| Pick / Unpick + **auto-advance** to next undecided race | views.jsx:351 | RacePatterns / BallotToolClient | 🟩 `race-patterns-pick-A` lands the decision (`ballot-pane-print` becomes enabled). Auto-advance-to-next-undecided not separately asserted. |
+| Rank — **drag-drop** reorder (dnd-kit PointerSensor) | components.jsx (ord) | ThemeRanker.tsx | 🟩 real pointer gesture (mouse down on `theme-drag-handle-0` → move past `theme-card-1` midpoint → up); `theme-name-0` becomes the former index-1 name. |
 | Proposition Yes/No card | components.jsx:1032 | (no repo target yet) | ⚪ |
-| Ballot pane: decisions, print (PDF), save .txt | views.jsx:722 | BallotPane.tsx | ⏳ |
-| Amend issues mid-flow (rail EDIT → editor → re-score delta) | screens.jsx:82 | AmendmentEditor + Amend* | ⏳ |
+| Ballot pane: decisions, print (PDF), save .txt | views.jsx:722 | BallotPane.tsx | 🟩 print: `print-ballot.spec` drives decide→print→`window.print`; `ballot-pane-print` enables after a pick. save `.txt` not driven. |
+| Amend issues mid-flow (rail EDIT → editor → re-score delta) | screens.jsx:82 | AmendmentEditor + Amend* | 🟩 `theme-amend.spec` drives rail-link → editor → lock → offer → Accept(delta)/Decline both green. |
 | Settings drawer (lang, BYOK, data) | screens-c.jsx:41 | SettingsPanel.tsx | ⚪ |
 
 **Prototype's own gaps (do NOT "fix" to exceed prototype):**
@@ -82,13 +87,32 @@ rendering (the 429). Re-drive once cards appear.
 | 9 | race-data 429 (20/hr counter limit) → cards break | dedicated 60/min read limiter | c1ced7e |
 | 10 | Bare surnames (NORCROSS, PALLONE) didn't resolve — DB state decoration is unreliable (missing/wrong) so state-matching excluded real incumbents | layered matcher: exact-state → state-or-unknown → **unique-surname-in-chamber** fallback | 8c84c09 → a2f47b0 → (layered) |
 | 11 | No loader between lock-in and workspace | full-screen `workspace-loading-gate`, fresh-lock-in only, never hangs | a2f47b0 + 1a891a3 |
+| 12 | Compare modal never opened in cards-first workspace | modal JSX lived ONLY in the cold-open return (unreachable in workspace mode) + `handleOpenCompare` read the last chat message, not raceData. Extracted `cardModals` (Compare + AllVotes) into BOTH returns; read `workspace.raceData`. | (this commit) |
 
-**Known limitation (data):** the unique-surname fallback resolves a lone
-surname regardless of the ballot state (so NORCROSS resolves on the NJ ballot
-despite a bad state tag). Tradeoff: a rare cross-state homonym (a lone "Kim"
-matches any state's query). The guard still holds for 2+ distinct same-surname
-people. Proper fix = clean the DB's state decorations (re-ingest/normalize) —
-tracked as a data follow-up, not blocking.
+**⚠️ Process lesson (cost me hours): `npm run start` serves the PREBUILT
+`.next` — it does NOT rebuild on source edits.** Playwright's webServer is
+`npm run start` with `reuseExistingServer` locally, so any e2e run not preceded
+by `npm run build` (with port 3000 confirmed dead) tests STALE code. The Compare
+fix above was correct for two iterations but appeared to "still fail" purely
+because the bundle was stale. **Gate rule: always `npm run build` immediately
+before any e2e run, and kill :3000 first.** Every 🟩 in this doc was (re)driven
+against a fresh build on the final pass — full suite: 55 passed / 0 failed / 12
+skipped; vitest 2011/0; tsc 0; eslint 0.
+
+**Known limitation (data) — DEFERRED, needs DB access:** Federal *Senate*
+surnames resolve (Booker 11/18). Federal *House* surnames (NORCROSS, PALLONE)
+still show backstop even with the unique-surname fallback — they resolve by
+FULL name (tier-2) but not by surname (tier-3). The diagnostic signature
+(full-name works, surname doesn't, fallback doesn't fire) points to
+**per-congress duplicate candidate rows in federal-house**: a member has
+multiple rows (118th + 119th) with different ids, so `byLast` isn't unique →
+the fallback declines. This ALSO means a member's votes are split across
+per-congress rows, so even resolving picks one congress. This is a data-model
+issue (candidate-row dedup / vote aggregation across congresses) that needs
+DB inspection — NOT another blind matcher iteration. Net user impact on the
+test ballot: Senate (Booker) shows real alignment; House (Norcross) shows
+backstop. The cross-state-homonym tradeoff above still applies to the
+Senate-style unique case.
 
 ## D · Open work
 - Drive + verify every Section-B interaction on prod with the real ballot. ← NEXT

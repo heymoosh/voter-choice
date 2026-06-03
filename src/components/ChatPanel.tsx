@@ -3536,7 +3536,20 @@ export function ChatPanel({
    * most recent RACE_PATTERNS + ALIGNMENT_SCORES blocks to supply modal data.
    */
   const handleOpenCompare = useCallback(() => {
-    // Find the last assistant message that has a RACE_PATTERNS block
+    // Cards-first: the comparison data comes from the fetched /api/race-data
+    // result, NOT a chat message. Prefer it when present.
+    const rd = workspace?.raceData;
+    if (rd?.racePatterns && rd.racePatterns.candidates.length >= 1) {
+      setCompareRaceBlock(rd.racePatterns);
+      setCompareAlignmentMap(
+        rd.alignmentScores
+          ? new Map(rd.alignmentScores.entries.map((e) => [e.candidateId, e]))
+          : undefined,
+      );
+      setCompareModalOpen(true);
+      return;
+    }
+    // Legacy fallback: parse the last assistant message's RACE_PATTERNS block.
     const lastRaceMsg = [...messages]
       .reverse()
       .find(
@@ -3555,7 +3568,7 @@ export function ChatPanel({
     setCompareRaceBlock(block);
     setCompareAlignmentMap(alignMap);
     setCompareModalOpen(true);
-  }, [messages]);
+  }, [messages, workspace?.raceData]);
 
   /**
    * Called when the voter clicks "See all votes →" on a candidate card.
@@ -3718,102 +3731,9 @@ export function ChatPanel({
   // contract Phase 1 set up), context-aware suggestion chips above the
   // input, and the pick stub + WhyPrompt. Exports (print / profile /
   // handoff) live in the BallotPane footer per packet §3.
-  if (workspace) {
-    return (
-      <WorkspaceChat
-        workspace={workspace}
-        budgetExhausted={budgetExhausted}
-        gateVariant={effectiveGateVariant}
-        messages={messages}
-        isStreaming={isStreaming}
-        onSendMessage={async (msg) => {
-          // Phase 6 — AI-judged chat-catch (post fix J). Fires server-side
-          // via POST /api/chat-catch; runs in PARALLEL with the main /api/chat
-          // call so it never blocks the assistant's response. The judgment
-          // promise is awaited AFTER sendMessage completes — that way, if the
-          // chip should render, it shows up below the assistant's reply
-          // rather than racing in above it.
-          //
-          // Per user feedback that motivated fix J: the previous 19-keyword
-          // heuristic pre-determined what users "care about" (and several
-          // keywords leaned politically). The AI judge is neutral by
-          // construction; we fail closed (no chip) on any failure.
-          const chatCatchPromise =
-            workspace.onChatCatch &&
-            workspace.lockedThemes &&
-            !workspace.pendingAmendment &&
-            !workspace.chatCatchSuggestion
-              ? shouldSuggestAmend({
-                  message: msg,
-                  currentThemes: workspace.lockedThemes,
-                })
-              : null;
-          await sendMessage(msg, messages);
-          if (chatCatchPromise) {
-            const verdict = await chatCatchPromise;
-            if (
-              verdict.suggest &&
-              verdict.suggestedThemeName &&
-              workspace.onChatCatch
-            ) {
-              workspace.onChatCatch({
-                message: msg,
-                suggestedThemeName: verdict.suggestedThemeName,
-                ...(verdict.summary ? { summary: verdict.summary } : {}),
-              });
-            }
-          }
-        }}
-        chatDisabled={effectiveChatDisabled}
-        amendmentJournal={amendmentJournal}
-        onAmendmentSave={(payload) => {
-          // PR3 bridge: lock commits themes ONLY. The re-score (if any)
-          // happens through the AmendRescoreOffer Accept path below — per
-          // UX feedback "Re-scoring should be an option, not a default."
-          if (workspace.onAmendmentSave) {
-            workspace.onAmendmentSave({
-              updatedThemes: payload.updatedThemes,
-              newTheme: payload.newTheme,
-              suggestedRank: payload.suggestedRank,
-              triggeringMessage: workspace.pendingAmendment?.triggeringMessage,
-            });
-          }
-        }}
-        onAcceptRescoreOffer={async () => {
-          // PR3 — fires when the user clicks "Yes, show me the deltas" on
-          // the rescore offer. Runs submitAmendment with the offer's stored
-          // payload, then clears the offer. The inFlight flag surfaces the
-          // spinner on AmendRescoreOffer during the 1-3s rescore window.
-          const offer = workspace.pendingRescoreOffer;
-          if (!offer) return;
-          workspace.onAmendmentInFlightChange?.(true);
-          try {
-            await submitAmendment({
-              updatedThemes: offer.updatedThemes,
-              newTheme: offer.newTheme,
-              suggestedRank: offer.suggestedRank,
-              triggeringMessage: offer.triggeringMessage,
-            });
-          } finally {
-            workspace.onAmendmentInFlightChange?.(false);
-            workspace.onRescoreOfferClear?.();
-          }
-        }}
-        blindMode={blindMode}
-        onToggleBlindMode={onToggleBlindMode}
-        revealedCandidates={revealedCandidates}
-        onRevealCandidate={onRevealCandidate}
-        onHideCandidate={onHideCandidate}
-        onCompare={handleOpenCompare}
-        onSeeAllVotes={handleOpenSeeAllVotes}
-        issues={issues}
-      />
-    );
-  }
-
   // Build a synthetic Race from the active compareRaceBlock so CompareModal
   // gets its required `race: Race` prop. The Race type only needs id/label/
-  // section/decided/candidates — all derivable from the parsed block.
+  // section/decided/candidates — all derivable from the parsed/fetched block.
   const compareRace: Race | null = compareRaceBlock
     ? {
         id: compareRaceBlock.race.toLowerCase().replace(/\s+/g, "-"),
@@ -3826,6 +3746,136 @@ export function ChatPanel({
         })),
       }
     : null;
+
+  // Compare + AllVotes modals. Rendered in BOTH the workspace return (below,
+  // which returns early) AND the cold-open return, so the cards-first
+  // "Compare" / "See all votes" actions actually open a modal in the
+  // workspace — previously they set state but the modal JSX lived only in the
+  // unreachable cold-open return.
+  const cardModals = (
+    <>
+      {compareModalOpen && compareRace && compareRaceBlock && (
+        <CompareModal
+          open={compareModalOpen}
+          race={compareRace}
+          issues={issues}
+          blindMode={blindMode}
+          revealedCandidates={revealedCandidates}
+          onRevealCandidate={onRevealCandidate ?? (() => {})}
+          onClose={() => setCompareModalOpen(false)}
+          racePatterns={compareRaceBlock}
+          alignmentScoresByCandidate={compareAlignmentMap}
+        />
+      )}
+      {allVotesPanelOpen && allVotesPayload && (
+        <AllVotesPanel
+          open={allVotesPanelOpen}
+          candidate={allVotesPayload.candidate}
+          alignmentEntry={allVotesPayload.alignmentEntry}
+          blindMode={allVotesPayload.blindMode}
+          alias={allVotesPayload.alias}
+          onClose={() => setAllVotesPanelOpen(false)}
+        />
+      )}
+    </>
+  );
+
+  if (workspace) {
+    return (
+      <>
+        <WorkspaceChat
+          workspace={workspace}
+          budgetExhausted={budgetExhausted}
+          gateVariant={effectiveGateVariant}
+          messages={messages}
+          isStreaming={isStreaming}
+          onSendMessage={async (msg) => {
+            // Phase 6 — AI-judged chat-catch (post fix J). Fires server-side
+            // via POST /api/chat-catch; runs in PARALLEL with the main /api/chat
+            // call so it never blocks the assistant's response. The judgment
+            // promise is awaited AFTER sendMessage completes — that way, if the
+            // chip should render, it shows up below the assistant's reply
+            // rather than racing in above it.
+            //
+            // Per user feedback that motivated fix J: the previous 19-keyword
+            // heuristic pre-determined what users "care about" (and several
+            // keywords leaned politically). The AI judge is neutral by
+            // construction; we fail closed (no chip) on any failure.
+            const chatCatchPromise =
+              workspace.onChatCatch &&
+              workspace.lockedThemes &&
+              !workspace.pendingAmendment &&
+              !workspace.chatCatchSuggestion
+                ? shouldSuggestAmend({
+                    message: msg,
+                    currentThemes: workspace.lockedThemes,
+                  })
+                : null;
+            await sendMessage(msg, messages);
+            if (chatCatchPromise) {
+              const verdict = await chatCatchPromise;
+              if (
+                verdict.suggest &&
+                verdict.suggestedThemeName &&
+                workspace.onChatCatch
+              ) {
+                workspace.onChatCatch({
+                  message: msg,
+                  suggestedThemeName: verdict.suggestedThemeName,
+                  ...(verdict.summary ? { summary: verdict.summary } : {}),
+                });
+              }
+            }
+          }}
+          chatDisabled={effectiveChatDisabled}
+          amendmentJournal={amendmentJournal}
+          onAmendmentSave={(payload) => {
+            // PR3 bridge: lock commits themes ONLY. The re-score (if any)
+            // happens through the AmendRescoreOffer Accept path below — per
+            // UX feedback "Re-scoring should be an option, not a default."
+            if (workspace.onAmendmentSave) {
+              workspace.onAmendmentSave({
+                updatedThemes: payload.updatedThemes,
+                newTheme: payload.newTheme,
+                suggestedRank: payload.suggestedRank,
+                triggeringMessage:
+                  workspace.pendingAmendment?.triggeringMessage,
+              });
+            }
+          }}
+          onAcceptRescoreOffer={async () => {
+            // PR3 — fires when the user clicks "Yes, show me the deltas" on
+            // the rescore offer. Runs submitAmendment with the offer's stored
+            // payload, then clears the offer. The inFlight flag surfaces the
+            // spinner on AmendRescoreOffer during the 1-3s rescore window.
+            const offer = workspace.pendingRescoreOffer;
+            if (!offer) return;
+            workspace.onAmendmentInFlightChange?.(true);
+            try {
+              await submitAmendment({
+                updatedThemes: offer.updatedThemes,
+                newTheme: offer.newTheme,
+                suggestedRank: offer.suggestedRank,
+                triggeringMessage: offer.triggeringMessage,
+              });
+            } finally {
+              workspace.onAmendmentInFlightChange?.(false);
+              workspace.onRescoreOfferClear?.();
+            }
+          }}
+          blindMode={blindMode}
+          onToggleBlindMode={onToggleBlindMode}
+          revealedCandidates={revealedCandidates}
+          onRevealCandidate={onRevealCandidate}
+          onHideCandidate={onHideCandidate}
+          onCompare={handleOpenCompare}
+          onSeeAllVotes={handleOpenSeeAllVotes}
+          issues={issues}
+        />
+        {cardModals}
+      </>
+    );
+  }
 
   // Determine if the current error is an AI timeout/transient error (not a
   // budget or rate-limit error). Those are shown via ChatStatusBar already.
@@ -3989,35 +4039,9 @@ export function ChatPanel({
         </>
       )}
 
-      {/* CompareModal — ONE instance, data set when voter clicks "Compare".
-          issues: ConcernInterpretationEntry[] — required by CompareModal.
-          The concern interpretation block may or may not be in the session;
-          pass empty array as safe fallback (modal renders "—" rows). */}
-      {compareModalOpen && compareRace && compareRaceBlock && (
-        <CompareModal
-          open={compareModalOpen}
-          race={compareRace}
-          issues={issues}
-          blindMode={blindMode}
-          revealedCandidates={revealedCandidates}
-          onRevealCandidate={onRevealCandidate ?? (() => {})}
-          onClose={() => setCompareModalOpen(false)}
-          racePatterns={compareRaceBlock}
-          alignmentScoresByCandidate={compareAlignmentMap}
-        />
-      )}
-
-      {/* AllVotesPanel — ONE instance, data set when voter clicks "See all votes →". */}
-      {allVotesPanelOpen && allVotesPayload && (
-        <AllVotesPanel
-          open={allVotesPanelOpen}
-          candidate={allVotesPayload.candidate}
-          alignmentEntry={allVotesPayload.alignmentEntry}
-          blindMode={allVotesPayload.blindMode}
-          alias={allVotesPayload.alias}
-          onClose={() => setAllVotesPanelOpen(false)}
-        />
-      )}
+      {/* CompareModal + AllVotesPanel (shared instance — see `cardModals`
+          above; also rendered in the workspace return). */}
+      {cardModals}
     </div>
   );
 }
