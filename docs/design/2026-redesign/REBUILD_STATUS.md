@@ -11,6 +11,66 @@ ACTUAL code as the app** and wire its marked data seams to the real backend.
 
 ---
 
+## ▶ RESUMING THIS WORK — operational handoff (READ FIRST)
+
+Everything below is the durable plan. This block is the stuff that's NOT in the
+commits — machine state + gotchas a fresh session needs.
+
+**Where to work:** worktree `…/.claude/worktrees/design-integration`, branch
+`feat/prototype-rebuild`. ~18 commits, `tsc` clean. **NOT deployed**;
+`launch/production` untouched.
+
+**Machine state (NOT in git — set during the session):**
+- `.env.local` (symlinked: every worktree's `.env.local` → repo-root
+  `/Users/Muxin/Documents/GitHub/voter-choice/.env.local`) now has the real
+  **`DATABASE_URL`** (Neon, read-only lookups → real Booker/Norcross data) and
+  **`NEXT_PUBLIC_GOOGLE_PLACES_API_KEY`** (autocomplete works). `ANTHROPIC_*` and
+  `GOOGLE_CIVIC_API_KEY` are still **blank locally** (Vercel marks them sensitive
+  → `vercel env pull` returns empty; get values from the source dashboards).
+- Dev server: `npm run dev` from the worktree, serves `localhost:3000`. Restart
+  after editing `.env.local` (NEXT_PUBLIC vars are read at startup).
+
+**Architecture (the key mental model):**
+- `src/prototype/VoterChoiceApp.tsx` is the **living app code** — a one-time
+  verbatim concat of `prototype/*.jsx` (UI only), `@ts-nocheck`. Edit it directly
+  (NOT auto-regenerated). `prototype/` stays as the pristine reference.
+- `src/prototype/data.tsx` (`@ts-nocheck`) = the data seam: mock data + mutable
+  `let` ballot bindings + setters (`applyRealRaces`, `applyRaceData`,
+  `setRealStateCode`, `setRealElectionType`). ES module **live-bindings** flow
+  real data into the verbatim accessors the UI calls.
+- `src/prototype/realData.ts` (typed) = the real fetch layer (race-data, civic,
+  extract-ballot, party-filter helpers).
+- `src/app/page.tsx` mounts the App client-only (`ssr:false`). `layout.tsx` loads
+  the prototype CSS via static `<link>` from `/public` (NOT Next's CSS pipeline —
+  Lightning CSS rejects the browser-valid prototype CSS).
+
+**Verification recipe (how to drive it):**
+- Use Playwright MCP on `localhost:3000`. **Clear `localStorage` between drives**
+  (`() => localStorage.clear()` then re-navigate) — the prototype persists
+  sessions and will resume mid-flow otherwise.
+- `/api/civic` returns **503 locally** (blank key) — EXPECTED; the flow handles it
+  by routing to the upload/paste screen. So the **paste path is the
+  locally-verifiable ballot path**; PDF upload → `/api/extract-ballot` needs the
+  Anthropic key (prod only).
+- The cold-open uses the prototype's FAKE issue interpretation (no LLM locally) —
+  fine for driving to the workspace. For real alignment scores, the locked issues
+  need `canonicalIssue` (the "Use a starter profile" / PRESET_ISSUES path has it).
+- ⚠️ legacy gotcha: the OLD e2e ran `npm run start` (prebuilt `.next`) — always
+  rebuild before that. The rebuild verifies via `npm run dev` instead.
+
+**Next steps (priority order):**
+1. **Chat seam** — `mockAIReply` (in the bundle's App) → real `/api/chat`
+   (streaming, needs RAG context for the active race). Last mock in the core flow.
+2. **Phase 3** — funding enrichment (FEC small/large/PAC + industry) + curated [Δ].
+3. **Polish** (backlog/commits): full state-rule party-gate UX (statute +
+   semi-closed lanes via `getStateRule`); autocomplete green-border match;
+   general text-paste candidate grouping; state-specific SOS links + real county.
+4. **Cleanup** — delete the old drifted app (`BallotToolClient`, `RacePatterns`,
+   `ChatPanel`, `FunderBars`, `CompareModal`, …) + their `*.test.tsx`/e2e; keep
+   backend tests; full gate; **deploy only after user review**.
+
+---
+
 ## ✅ Phase 1 — DONE (commit `a3016dd`)
 
 The prototype IS the app, verbatim, on its own mock data. Verified in local dev
