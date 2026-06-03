@@ -190,6 +190,66 @@ export function extractFecCandidateId(candidate: UnknownRecord): string | null {
   return null;
 }
 
+/** FEC office letter from our federal jurisdiction, else null. */
+function fecOfficeFromJurisdiction(
+  jurisdiction: string | null,
+): "H" | "S" | null {
+  if (jurisdiction === "federal-senate") return "S";
+  if (jurisdiction === "federal-house") return "H";
+  return null;
+}
+
+/** State from a GovTrack-formatted name: "Sen. Cory Booker [D-NJ]" → "NJ",
+ *  "Rep. Donald Norcross [D-NJ1]" → "NJ". Empty when not present. */
+function stateFromGovTrackName(name: string): string {
+  const m = name.match(/\[[A-Z]+-([A-Z]{2})\d*\]/u);
+  return m?.[1] ?? "";
+}
+
+/** Last name from a GovTrack-formatted name, stripping the title prefix and the
+ *  trailing "[party-state]" tag: "Sen. Cory Booker [D-NJ]" → "Booker". */
+function lastNameFromGovTrackName(name: string): string {
+  const stripped = name
+    .replace(/^(Rep\.|Sen\.|Del\.|Com\.)\s+/iu, "")
+    .replace(/\s*\[.*\]\s*$/u, "");
+  const parts = stripped.trim().split(/\s+/u);
+  return parts[parts.length - 1] ?? name;
+}
+
+/**
+ * Resolve an FEC candidate id by name+office+state search when none is stored
+ * (mirrors fix-federal-fec-ids.ts). FEC sorts by receipts desc, so the
+ * principal/active campaign wins. NOTE: name search is inherently fuzzy — safe
+ * for verified/scoped candidates; a full federal sweep should confirm matches
+ * (common surnames, esp. without a state, can mis-resolve).
+ */
+async function resolveFecIdByName(
+  candidate: UnknownRecord,
+  config: FederalDonorConfig,
+  fetcher: Fetcher,
+): Promise<string | null> {
+  const name = getString(candidate, "fullName");
+  const office = fecOfficeFromJurisdiction(getString(candidate, "jurisdiction"));
+  if (!name || !office) return null;
+  const lastName = lastNameFromGovTrackName(name);
+  const state = stateFromGovTrackName(name);
+  const url = new URL(`${config.fecBaseUrl}/candidates/`);
+  url.searchParams.set("q", lastName);
+  url.searchParams.set("office", office);
+  if (state) url.searchParams.set("state", state);
+  url.searchParams.set("per_page", "5");
+  url.searchParams.set("sort", "-receipts");
+  try {
+    const json = await fetchFecJson(url.href, fetcher, config.fecApiKey);
+    const results = getArray(asRecord(json)?.results)
+      .map((v) => asRecord(v))
+      .filter((v): v is UnknownRecord => Boolean(v));
+    return getString(results[0] ?? null, "candidate_id");
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Fetch aggregated totals for a candidate from FEC.
  * Returns bucket → amount mappings derived from the totals endpoint.
@@ -323,7 +383,13 @@ export async function buildDonorRows(
   const candidateId = getString(candidate, "id");
   if (!candidateId) return [];
 
-  const fecId = extractFecCandidateId(candidate);
+  // Prefer a stored FEC id; fall back to an FEC name+office+state search when
+  // absent (our federal candidates carry bioguide ids + GovTrack-formatted
+  // names like "Sen. Cory Booker [D-NJ]" but no stored FEC candidate id).
+  let fecId = extractFecCandidateId(candidate);
+  if (!fecId) {
+    fecId = await resolveFecIdByName(candidate, config, fetcher);
+  }
   if (!fecId) {
     console.warn(
       `[federal-donors] no_fec_id candidate=${candidateId} — skipping`,
@@ -519,8 +585,12 @@ export async function ingestFederalDonors({
           continue;
         }
         if (dryRun) {
+          const resolvedFec = getString(
+            asRecord(rows[0]?.rawMetadata),
+            "fecCandidateId",
+          );
           console.log(
-            `[federal-donors] dry-run RESOLVE name=${getString(candidate, "fullName")} rows=${rows.length} → ` +
+            `[federal-donors] dry-run RESOLVE name=${getString(candidate, "fullName")} fec=${resolvedFec} rows=${rows.length} → ` +
               rows
                 .map(
                   (r) =>
