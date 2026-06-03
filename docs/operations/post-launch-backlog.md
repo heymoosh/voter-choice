@@ -8,6 +8,53 @@ Issues, monitoring gaps, data quality concerns, and enhancement ideas identified
 
 ## Pre-Launch Must-Fix (lower before opening to real users)
 
+### [P1] Election DATA must include the upcoming GENERAL so the (state × election) gate transitions correctly
+**Status:** Open (flagged 2026-06-03)
+
+The *architecture* is correct and already (state × election)-aware: `src/lib/state-rules/`
+is keyed by `(state, electionType)` (closed / semi-closed / open / top-two / runoff), and a
+missing `(state, electionType)` row means **no gate** — so GENERAL elections correctly skip
+the party question (in November you may vote for any candidate, so we should NOT ask "are you
+a registered Democrat/Republican?"). `getStateData.findUpcomingElection()` is date-driven
+(earliest election with `date >= today`).
+
+THE GAP is DATA completeness/freshness. Each `src/data/states/<ST>.json` `elections[]` array
+must contain the upcoming GENERAL (`2026-11-03`) + future elections with correct `type`. If a
+state lists only the past primary, `findUpcomingElection` falls back to the LAST element (the
+primary) → the app stays stuck on the primary party-gate after the primary date. **Suspected
+cause of the NJ primary gate still appearing on/after 2026-06-03.**
+
+**Action:** audit every `src/data/states/*.json` — ensure each carries the 2026 general (+ any
+runoff) with correct dates/types; add a test asserting that on a post-primary date the resolved
+election is the general and the gate is skipped.
+
+### [P1] Party-primary FILTERING of the ballot ("2 Senate races")
+**Status:** Open (flagged 2026-06-03) · rebuild task #25
+
+In a closed/semi-closed PRIMARY the ballot carries BOTH parties' primary contests. The gate
+captures the voter's party, but the displayed races are NOT yet filtered to that party → both
+the Democratic and Republican Senate primary show (the "2 Senate races" the user saw). Fix:
+thread the gate selection (registered_dem / registered_rep / unaffiliated→chosen party) into
+ballot derivation and filter partisan contests to the selected primary; keep non-partisan
+races. In a GENERAL election, show ALL candidates (no filter, no gate). Verify end-to-end with
+the real NJ June primary PDF (registered Dem → only DEM races) AND a November general scenario
+(all candidates, no gate).
+
+### [P1] Google Civic `voterinfo` rarely returns the ballot (contests) — heavy reliance on upload/paste
+**Status:** Open (flagged 2026-06-03)
+
+We DO request the ballot: `/api/civic` calls Google `civicinfo/v2/voterinfo` for `contests`
+(not just polling-location logistics). But Google's Civic election/ballot data is sparse and
+unreliable — Google deprecated much of it (the `representatives` endpoint shut down in 2025;
+`voterinfo` contest data is populated only for some elections, often only near election day,
+and is spotty by state). So for many addresses (incl. NJ) it returns 0 contests and the app
+correctly falls back to the upload/paste `BallotLookupNeeded` screen. This is a Google
+limitation, not our bug — but it means we **cannot rely on Civic for the ballot**.
+
+**Action (evaluate pre-launch):** add a more reliable ballot-contest source (e.g. BallotReady /
+Democracy Works, Ballotpedia, or per-state SOS feeds) so most users get an auto-pulled ballot
+instead of having to upload a sample ballot. Keep upload/paste as the universal fallback.
+
 ### [P1] "Pull my ballot →" submit button overflows the address card at desktop widths
 **Status:** Open (flagged 2026-05-26 — defer to mobile/responsiveness session)
 
