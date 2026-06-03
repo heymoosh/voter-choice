@@ -63,6 +63,36 @@ gate→civic→civic-empty→ballot upload→cold-open) which replaces the NJ se
 carries the party-filter (#25); cold-open issues (text→theme extraction);
 chat (`mockAIReply`→`/api/chat`).
 
+## Phase 2b — civic/flow seam (NEXT, fully scoped — no gap)
+
+**Correction:** the prototype is NOT missing the upload screen. `NoContestedView`
+(prototype-screens-c.jsx, `data-testid="ballot-lookup-needed"` — same as the old
+app) IS the civic-empty → upload/paste ballot screen: textarea (paste) + file
+input (upload) + multi-step processing that mocks `/api/extract-ballot`, then
+`onBallotConfirmed(source)`. So the whole flow wires to the prototype's own screens.
+
+**Wiring (all pieces exist + are client-safe — `deriveRaces` + `extractionToRaces`
+are pure/synchronous):**
+- `realData.ts`: add
+  - `fetchBallotFromAddress(address)` → POST `/api/civic` → if `contests` →
+    `deriveRaces({contests})` → `Race[]`; else `null` (→ upload/paste screen).
+  - `fetchBallotFromText(text)` / `fetchBallotFromFile(file)` → POST
+    `/api/extract-ballot` → `extractionToRaces(extraction)` → `Race[]`.
+- `handleSubmitAddress(addr)` (bundle): `await fetchBallotFromAddress` →
+  contests? `applyRealRaces(races)` + `setRealStateCode(state)` + 'loading'→
+  coldopen/workspace : route to `'nocontested'` (upload/paste).
+- `NoContestedView.beginProcessing(source)`: replace the fake timer with the
+  real extract call → `applyRealRaces(races)` → `onBallotConfirmed`.
+- Then **party gate + party-filter** (#25): show the `getStateRule(state,
+  electionType)` gate for primary states; filter partisan contests to the
+  selected party (general → no gate, all candidates). electionType from
+  `getStateData.findUpcomingElection()` (note backlog: state JSONs need the
+  Nov general so it transitions off primary).
+- Remove the TEMP NJ seed in data.tsx once the address/upload path populates RACES.
+
+Old-app reference for the real calls: `BallotToolClient.tsx` (civic POST ~358,
+extract-ballot success handler ~501/573, races bridge ~621–636).
+
 ## Data seams to wire (Phase 2) — prototype-app.jsx + prototype-data.jsx
 
 `prototype-data.jsx` header says it: *"shaped to match src/lib/structured-blocks.ts"*.
