@@ -63,7 +63,26 @@ gate→civic→civic-empty→ballot upload→cold-open) which replaces the NJ se
 carries the party-filter (#25); cold-open issues (text→theme extraction);
 chat (`mockAIReply`→`/api/chat`).
 
+## Phase 2a — VERIFIED with real data (2026-06-03)
+
+Local `.env.local` now has the real Neon `DATABASE_URL` (symlinked canonical at
+repo root; Vercel's sensitive vars pull empty — got it from Neon console). Local
+`/api/race-data` resolves Booker (scoreCount + `$16,808,282` raised), and the
+re-driven NJ flow renders **real** data in the rebuilt prototype cards:
+"Aligned on 11 of 18 votes · 61%" insulin, 56% avg. So Phase 2a is confirmed
+end-to-end locally, not just wiring. (DB lookups only; Anthropic/Civic keys still
+blank locally — fine, the rebuild drives via paste + example issues.)
+
 ## Phase 2b — civic/flow seam (NEXT, fully scoped — no gap)
+
+**Concrete API shapes (from the old app):**
+- civic: `POST /api/civic {address}` → `{contests, pollingLocations, …}` →
+  `deriveRaces({contests})`. (state for stateCode comes from the civic
+  jurisdiction / address.)
+- PDF upload: `FormData` field `file` → `POST /api/extract-ballot` →
+  `BallotExtraction` → `extractionToRaces(extraction)`.
+- text paste: `parseBallotContent(text)` → contests → `deriveRaces({contests})`
+  (NO API call for plaintext — see old `BallotLookupNeeded.tsx` ~636).
 
 **Correction:** the prototype is NOT missing the upload screen. `NoContestedView`
 (prototype-screens-c.jsx, `data-testid="ballot-lookup-needed"` — same as the old
