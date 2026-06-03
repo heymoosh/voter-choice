@@ -20,6 +20,9 @@ import {
   fetchBallotFromFile,
   racesSpanMultipleParties,
   filterRacesByParty,
+  streamChatReply,
+  buildRaceChatSystemPrompt,
+  getChatSessionId,
 } from "./realData";
 import { getFallbackStateData } from "../lib/getStateData";
 import {
@@ -4966,43 +4969,87 @@ function handleRevealCandidate(candidateId) {
     setView('workspace');
   }
 
-  // Chat input: add user msg + mock AI reply
-  function handleSendChat(raceId, text) {
-    const userMsg = { who: 'user', text };
-
-    // Pass-C demo: typing "timeout" or "fail" simulates an AI error.
-    if (/\b(timeout|fail|error)\b/i.test(text)) {
-      setChatMessages(prev => ({
-        ...prev,
-        [raceId]: [...(prev[raceId] || []), userMsg],
-      }));
-      setChatTimeouts(prev => ({ ...prev, [raceId]: true }));
-      return;
-    }
-
-    const aiMsg = mockAIReply(raceId, text);
-    setChatMessages(prev => ({
-      ...prev,
-      [raceId]: [...(prev[raceId] || []), userMsg, aiMsg],
-    }));
+  // Map the prototype's {who,text} chat log → the chat route's {role,content},
+  // dropping any empty in-flight AI bubble so it never leaks into history.
+  function mapChatHistory(raceId) {
+    return (chatMessages[raceId] || [])
+      .filter(m => !(m.who === 'ai' && !m.text))
+      .map(m => ({ role: m.who === 'user' ? 'user' : 'assistant', content: m.text }));
   }
 
-  function handleRetryChat(raceId) {
+  // Append a fresh AI bubble and stream a real /api/chat reply into it. The
+  // bubble is tracked by a unique `_id` (not "last") so concurrent sends to the
+  // same race never cross-contaminate. `apiMessages` ends on the user's turn.
+  function runChatStream(raceId, apiMessages) {
+    // Clear any prior error banner for this race.
     setChatTimeouts(prev => {
+      if (!prev[raceId]) return prev;
       const next = { ...prev };
       delete next[raceId];
       return next;
     });
-    // Replay the last user message
-    const msgs = chatMessages[raceId] || [];
-    const last = [...msgs].reverse().find(m => m.who === 'user');
-    if (last) {
-      const aiMsg = mockAIReply(raceId, last.text);
-      setChatMessages(prev => ({
-        ...prev,
-        [raceId]: [...(prev[raceId] || []), aiMsg],
-      }));
+
+    const aiId = 'ai-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7);
+    setChatMessages(prev => ({
+      ...prev,
+      [raceId]: [...(prev[raceId] || []), { who: 'ai', text: '', _id: aiId }],
+    }));
+
+    const race = RACES.find(r => r.id === raceId);
+    const systemPrompt = buildRaceChatSystemPrompt({
+      raceLabel: race?.label || raceId,
+      stateCode: getRealStateCode() || '',
+      racePatterns: getRacePatternsForRace(raceId) || null,
+      alignmentScores: getAlignmentScoresForRace(raceId) || null,
+      issues,
+    });
+
+    streamChatReply(
+      {
+        messages: apiMessages,
+        systemPrompt,
+        sessionId: getChatSessionId(),
+        messageCount: apiMessages.length,
+      },
+      {
+        onText: (chunk) => setChatMessages(prev => ({
+          ...prev,
+          [raceId]: (prev[raceId] || []).map(m =>
+            m._id === aiId ? { ...m, text: m.text + chunk } : m,
+          ),
+        })),
+        onError: () => {
+          // Drop the (empty/partial) AI bubble and surface the retry banner.
+          setChatMessages(prev => ({
+            ...prev,
+            [raceId]: (prev[raceId] || []).filter(m => m._id !== aiId),
+          }));
+          setChatTimeouts(prev => ({ ...prev, [raceId]: true }));
+        },
+      },
+    );
+  }
+
+  // Chat input: append the user message, then stream the real reply.
+  function handleSendChat(raceId, text) {
+    const prior = mapChatHistory(raceId);
+    setChatMessages(prev => ({
+      ...prev,
+      [raceId]: [...(prev[raceId] || []), { who: 'user', text }],
+    }));
+    runChatStream(raceId, [...prior, { role: 'user', content: text }]);
+  }
+
+  function handleRetryChat(raceId) {
+    // The failed turn's empty AI bubble was already removed; the log ends on
+    // the user's question. Trim any trailing assistant turns so the payload
+    // ends on `user` (the route's contract), then replay.
+    const history = mapChatHistory(raceId);
+    while (history.length && history[history.length - 1].role === 'assistant') {
+      history.pop();
     }
+    if (history.length === 0) return;
+    runChatStream(raceId, history);
   }
 
   /* ─── Pass-C navigation ─── */
@@ -5308,33 +5355,5 @@ function handleRevealCandidate(candidateId) {
     </I18nProvider>
   );
 }
-
-/* Tiny mock AI for the chat input. The real ChatPanel.tsx
-   streams from Anthropic with full RAG context. This stub just
-   makes the input feel alive so users can demo the loop. */
-function mockAIReply(raceId, userText) {
-  const t = (userText || '').toLowerCase();
-  const race = RACES.find(r => r.id === raceId);
-  const racePatterns = getRacePatternsForRace(raceId);
-  const incumbent = racePatterns?.candidates?.find(c => c.incumbent);
-  const challenger = racePatterns?.candidates?.find(c => !c.incumbent);
-
-  let body;
-  if (/donor|fund|money|pac|cash/.test(t)) {
-    body = `${incumbent?.name || 'The incumbent'}'s biggest 2024 donor industries were Oil & Gas ($1.2M) and Banking ($680k). ${challenger?.name || 'The challenger'} ran a more grassroots cycle. Tap "Compare" in the header for a side-by-side view, or scroll the candidate cards to see the money map.`;
-  } else if (/vote|record|bill|hr-|s-\d/.test(t)) {
-    body = `For ${race?.label || 'this race'}, the curated votes are visible on the incumbent's card — tap any alignment row to see them. The HR-2 and IRA votes are the clearest signal on healthcare; the PELOSI Act sequence is the clearest on stock-trading.`;
-  } else if (/compare|side by side|both/.test(t)) {
-    body = `Opening Compare for you. (Or hit the "Compare" button in the chat header above.)`;
-  } else if (/skip|pass|move on/.test(t)) {
-    body = `Got it — I'll keep this one in your "Decide at the polls" bucket. Hit Skip in the header to move to the next race.`;
-  } else if (/help|how|stuck|don't know|dont know/.test(t)) {
-    body = `Easiest path: start with the issue rows on the incumbent's card. Whichever has the lowest %, tap to read the actual votes. Then decide.`;
-  } else {
-    body = `(Demo response) Real AI here would pull from voting records, donor data, and the CAN2026 case files to answer "${userText}". For now: the candidate cards above carry the load-bearing facts.`;
-  }
-  return { who: 'ai', text: body };
-}
-
 
 export default App;

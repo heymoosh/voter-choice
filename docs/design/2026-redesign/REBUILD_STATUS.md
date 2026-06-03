@@ -59,8 +59,8 @@ commits — machine state + gotchas a fresh session needs.
   rebuild before that. The rebuild verifies via `npm run dev` instead.
 
 **Next steps (priority order):**
-1. **Chat seam** — `mockAIReply` (in the bundle's App) → real `/api/chat`
-   (streaming, needs RAG context for the active race). Last mock in the core flow.
+1. ✅ **Chat seam** — DONE (see "Phase 2c" below). `mockAIReply` → real streaming
+   `/api/chat`. Last mock in the core flow is gone.
 2. **Phase 3** — funding enrichment (FEC small/large/PAC + industry) + curated [Δ].
 3. **Polish** (backlog/commits): full state-rule party-gate UX (statute +
    semi-closed lanes via `getStateRule`); autocomplete green-border match;
@@ -172,6 +172,49 @@ are pure/synchronous):**
 Old-app reference for the real calls: `BallotToolClient.tsx` (civic POST ~358,
 extract-ballot success handler ~501/573, races bridge ~621–636).
 
+## ✅ Phase 2c — chat seam DONE (mockAIReply → real `/api/chat`)
+
+The per-race Q&A box now streams from the real chat route. Last mock in the core
+flow is gone.
+
+**Wiring:**
+- `realData.ts` adds: `getChatSessionId()` (stable per-tab id, reuses the old
+  app's `voter-choice:sessionId` key), `buildRaceChatSystemPrompt(...)` (grounded
+  NON-PARTISAN Q&A prompt — serializes the race's REAL racePatterns +
+  alignmentScores as JSON + the voter's ranked issues), and `streamChatReply(...)`
+  (POSTs `/api/chat`, consumes the SSE protocol `data:{type:text|done|error}`).
+- Bundle: `handleSendChat`/`handleRetryChat` are now async. They append the user
+  bubble + a fresh empty AI bubble tracked by a unique `_id` (NOT "last" — so
+  concurrent sends to one race can't cross-contaminate), stream text into that
+  bubble, and on ANY failure drop the bubble + raise `chatTimeouts[raceId]` →
+  the prototype's existing `AITimeoutBanner` + retry. `mockAIReply` and its
+  keyword-error sim (`/timeout|fail|error/`) are deleted.
+- **Legacy route path on purpose:** we send NO `view` field, so the route passes
+  our `systemPrompt` through verbatim (no server-side prompt fleet / card-block
+  builder). The prompt therefore carries its OWN safety framing and forbids
+  markdown + bracket blocks (the prototype bubble renders raw text, not Markdown).
+
+**Verified locally (Playwright, paste path):** drove home→address (civic 503)→
+paste NJ ballot→cold-open→lock issues→workspace with REAL data (Booker
+"11 of 18 votes · 61%", "$16.8M raised"). Sent a chat message:
+- POST `/api/chat` fires with the exact contract: keys
+  `{messages, systemPrompt, sessionId, messageCount}`, NO `view`, `messages`
+  `[{role:"user", content}]`, `messageCount` a number, `systemPrompt` (~4.2k
+  chars) containing the real RAG data (`16808282`).
+- Local route 500s (blank `ANTHROPIC_VOTER_API`) → `onError` → user bubble stays,
+  empty AI bubble removed, `AITimeoutBanner` shows. "Try again" re-fires without
+  duplicating the user bubble; payload still ends on the `user` turn.
+- **Real streaming render is PROD-ONLY** (needs the Anthropic key — same
+  constraint as civic/extract). The local contract is request-shape + error→
+  banner→retry; the streaming path is correct by construction (lifted ChatPanel's
+  `processSSELine`/`streamResponse` SSE parsing).
+
+⚠️ **Bug found (pre-existing, flagged separately):** `stateCodeFrom` returns "MY"
+for ballots whose text starts with "MY BALLOT" (the app's own .txt export header)
+— the 2-letter fallback grabs the first uppercase pair. Surfaced as
+`research "<race>" in "MY"` in the chat prompt; also affects the party gate +
+race-data stateCode. Fix is upstream in `stateCodeFrom`, not the chat code.
+
 ## Data seams to wire (Phase 2) — prototype-app.jsx + prototype-data.jsx
 
 `prototype-data.jsx` header says it: *"shaped to match src/lib/structured-blocks.ts"*.
@@ -182,7 +225,7 @@ It IS the contract + the test oracle. The mock globals/accessors to replace:
 | `RACES` (const) | `/api/civic` (+ `/api/extract-ballot`) → `deriveRaces()` | grouped Race[] |
 | `getRacePatternsForRace(id)` → `{race,candidates}` | `POST /api/race-data` → `data.racePatterns` | shapes already match |
 | `getAlignmentScoresForRace(id)` → `{race,entries}` | same call → `data.alignmentScores` | |
-| `mockAIReply(id,text)` | `POST /api/chat` (streaming) | |
+| `mockAIReply(id,text)` | `POST /api/chat` (streaming) | ✅ DONE (Phase 2c) |
 | `handleSubmitAddress` geocode fake | `/api/civic` | |
 
 **Single-load model (fixes per-race loader, complaint #4):** the prototype runs
