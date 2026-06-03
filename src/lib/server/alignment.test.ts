@@ -197,13 +197,21 @@ describe("resolveCandidateId", () => {
     expect(result).toBe("fed-kim");
   });
 
-  it("does NOT cross states (Andy Kim in CA must not match NJ's Kim)", async () => {
+  // KNOWN TRADEOFF (documented limitation): because the DB's state decoration
+  // is unreliable, a UNIQUE surname resolves regardless of the ballot state.
+  // This is required so real incumbents whose stored state is missing/wrong
+  // (NORCROSS, PALLONE) resolve on their own ballot — at the cost of a rare
+  // cross-state homonym: a lone "Kim" in our data matches a CA query too. The
+  // cross-state GUARD still holds when 2+ distinct people share the surname
+  // (see the "different states" test below). Clean DB state data would let us
+  // tighten this; tracked as a data-cleanup follow-up.
+  it("resolves a unique surname across states (accepted tradeoff for unreliable state data)", async () => {
     const { select } = makeSelectMock([
       { id: "fed-kim", fullName: "Sen. Andrew Kim [D-NJ]" },
     ]);
     mockedGetDb.mockReturnValue({ select } as never);
     const result = await resolveCandidateId("Andy Kim", "federal-senate", "CA");
-    expect(result).toBeNull();
+    expect(result).toBe("fed-kim");
   });
 
   it("breaks same-lastname+state ambiguity by first initial", async () => {
@@ -276,14 +284,29 @@ describe("resolveCandidateId", () => {
     expect(result).toBe("fed-norcross");
   });
 
-  it("excludes a surname row whose decoration state CONTRADICTS the ballot state", async () => {
+  it("resolves a UNIQUE surname even when its state tag is wrong/missing (unreliable decoration)", async () => {
+    // The DB's state decoration is inconsistent; a surname that maps to exactly
+    // one member in the chamber resolves regardless of the (possibly stale)
+    // state tag. This is what makes real-ballot surnames like NORCROSS/PALLONE
+    // resolve when their stored state is missing or wrong.
     const { select } = makeSelectMock([
-      { id: "fed-ca-norcross", fullName: "Rep. Donald Norcross [D-CA]" },
+      { id: "fed-norcross", fullName: "Rep. Donald Norcross [D-XX]" },
+      { id: "fed-pallone", fullName: "Frank Pallone" },
     ]);
     mockedGetDb.mockReturnValue({ select } as never);
-    // Ballot is NJ; the only Norcross row is decorated CA → not compatible → null.
     const result = await resolveCandidateId("NORCROSS", "federal-house", "NJ");
-    expect(result).toBeNull();
+    expect(result).toBe("fed-norcross");
+  });
+
+  it("uses the ballot state to pick among same-surname people in DIFFERENT states", async () => {
+    const { select } = makeSelectMock([
+      { id: "fed-nj-smith", fullName: "Rep. Adam Smith [D-NJ]" },
+      { id: "fed-wa-smith", fullName: "Rep. Adam Smith [D-WA]" },
+    ]);
+    mockedGetDb.mockReturnValue({ select } as never);
+    // Two distinct Smiths → not unique → ballot state (WA) disambiguates.
+    const result = await resolveCandidateId("SMITH", "federal-house", "WA");
+    expect(result).toBe("fed-wa-smith");
   });
 });
 

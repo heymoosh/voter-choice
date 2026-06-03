@@ -222,31 +222,41 @@ export async function resolveCandidateId(
     const st = stateCode.toUpperCase();
     const qLast = queryParts.last.toLowerCase();
     const byLast = parsed.filter((p) => p.last.toLowerCase() === qLast);
-    // Prefer exact state matches; else fall back to rows that don't contradict
-    // the ballot state (state matches or is unknown on file).
+    const queryIsSurnameOnly = queryParts.first.toLowerCase() === qLast;
+    // Resolve to the single distinct candidate in a row set, else null.
+    const onlyDistinct = (rows: ParsedCandidateRow[]): string | null => {
+      const ids = new Set(rows.map((p) => p.id));
+      return ids.size === 1 ? rows[0].id : null;
+    };
+    // Most specific → least specific. The DB's "[D-NJ]" state decoration is
+    // INCONSISTENT (some rows decorated, some clean with no state, some with a
+    // stale/wrong state), so we can't treat it as authoritative:
+    //   (a) exact state match;
+    //   (b) state matches OR is unknown on file (don't contradict the ballot);
+    //   (c) last resort — a surname that is UNIQUE in this chamber resolves
+    //       regardless of the unreliable state tag (a federal surname maps to
+    //       one member; this is what makes "NORCROSS"/"PALLONE" resolve when
+    //       their stored state is missing/wrong).
     const stateMatched = byLast.filter((p) => p.state === st);
     const compatible = byLast.filter((p) => p.state === st || p.state === null);
-    const pool = stateMatched.length > 0 ? stateMatched : compatible;
-    const distinctIds = new Set(pool.map((p) => p.id));
-    if (distinctIds.size === 1) return pool[0].id;
-    if (distinctIds.size > 1) {
-      // A surname-only query ("NORCROSS") has no real first name —
-      // queryParts.first is the surname itself — so the first-initial tiebreak
-      // is meaningless and must be skipped. Only disambiguate by initial when
-      // the query actually carries a distinct first name ("Mike Kelly").
-      const queryIsSurnameOnly = queryParts.first.toLowerCase() === qLast;
-      if (!queryIsSurnameOnly) {
-        const qInitial = queryParts.first[0]?.toLowerCase();
-        const byInitial = pool.filter(
-          (p) => p.first[0]?.toLowerCase() === qInitial,
-        );
-        if (new Set(byInitial.map((p) => p.id)).size === 1) {
-          return byInitial[0].id;
-        }
-      }
-      // Genuinely ambiguous (multiple distinct people, can't disambiguate) →
-      // fall through to the prefix tiers rather than guess.
+    const resolved =
+      onlyDistinct(stateMatched) ??
+      onlyDistinct(compatible) ??
+      onlyDistinct(byLast);
+    if (resolved) return resolved;
+    // Multiple DISTINCT people share the surname. Disambiguate by first initial
+    // (skip for a surname-only query, which has no real first name), preferring
+    // rows whose state matches the ballot.
+    if (!queryIsSurnameOnly) {
+      const qInitial = queryParts.first[0]?.toLowerCase();
+      const pool = stateMatched.length > 0 ? stateMatched : byLast;
+      const byInitial = pool.filter(
+        (p) => p.first[0]?.toLowerCase() === qInitial,
+      );
+      const initResolved = onlyDistinct(byInitial);
+      if (initResolved) return initResolved;
     }
+    // Genuinely ambiguous → fall through to the prefix tiers rather than guess.
   }
 
   // 4. Prefix / reverse-prefix on the cleaned name.

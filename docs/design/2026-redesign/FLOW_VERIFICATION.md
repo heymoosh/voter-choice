@@ -80,8 +80,15 @@ rendering (the 429). Re-drive once cards appear.
 | 7 | Chamber-switchers (Andy Kim) no record | prior-role fallback to sibling federal chamber | 6a7dbe5 |
 | 8 | Single-candidate races (primary) → no cards (≥2 gate) | render cards for ≥1 | 047c1da |
 | 9 | race-data 429 (20/hr counter limit) → cards break | dedicated 60/min read limiter | c1ced7e |
-| 10 | Bare surname "NORCROSS" didn't resolve (mixed DB name formats: clean vs decorated → state-null excluded) | compatible-state matcher (state excludes, not requires) | 8c84c09 + a2f47b0 |
-| 11 | No loader between lock-in and workspace | full-screen `workspace-loading-gate` | a2f47b0 |
+| 10 | Bare surnames (NORCROSS, PALLONE) didn't resolve — DB state decoration is unreliable (missing/wrong) so state-matching excluded real incumbents | layered matcher: exact-state → state-or-unknown → **unique-surname-in-chamber** fallback | 8c84c09 → a2f47b0 → (layered) |
+| 11 | No loader between lock-in and workspace | full-screen `workspace-loading-gate`, fresh-lock-in only, never hangs | a2f47b0 + 1a891a3 |
+
+**Known limitation (data):** the unique-surname fallback resolves a lone
+surname regardless of the ballot state (so NORCROSS resolves on the NJ ballot
+despite a bad state tag). Tradeoff: a rare cross-state homonym (a lone "Kim"
+matches any state's query). The guard still holds for 2+ distinct same-surname
+people. Proper fix = clean the DB's state decorations (re-ingest/normalize) —
+tracked as a data follow-up, not blocking.
 
 ## D · Open work
 - Drive + verify every Section-B interaction on prod with the real ballot. ← NEXT
