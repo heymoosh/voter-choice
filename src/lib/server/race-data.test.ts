@@ -268,6 +268,12 @@ describe("assembleRaceData (no DB configured — current prod state)", () => {
     for (const c of data.racePatterns.candidates) {
       expect(c.donorCoalition).toBeNull();
       expect(c.donorUnavailable).toBeDefined();
+      // Platform-vote alignment is an LLM-only metric the deterministic
+      // endpoint can't compute — emit it as explicitly unavailable so the card
+      // renders "Record unavailable — …" instead of mislabeling resolved
+      // candidates "Challenger — no voting record yet".
+      expect(c.platformAlignment).toBeNull();
+      expect(c.alignmentUnavailable).toBeDefined();
     }
     // Alignment block present (we have an issue) but every entry is a backstop.
     expect(data.alignmentScores).not.toBeNull();

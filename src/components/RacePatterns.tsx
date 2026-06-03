@@ -864,25 +864,30 @@ function CandidateSection({
             <FootnoteRef num={registry.add(candidate.alignmentSource)} />
           )}
         </div>
-        {candidate.platformAlignment === null ? (
-          <p
-            data-testid={`race-patterns-alignment-challenger-${candidate.id}`}
-            className="text-xs italic text-on-surface-muted"
-          >
-            {t.racePatternsAlignmentChallenger}
-          </p>
-        ) : candidate.platformAlignment ? (
+        {candidate.platformAlignment ? (
           <PlatformAlignmentRatio
             alignment={candidate.platformAlignment}
             unitLabel={t.racePatternsKeyVotesUnit}
           />
         ) : candidate.alignmentUnavailable ? (
+          // An explicit "unavailable" reason wins over the generic challenger
+          // fallback. The deterministic /api/race-data view can't compute the
+          // platform-vote ratio (an LLM-only metric), so it sets this reason;
+          // without this branch ordering, resolved INCUMBENTS were mislabeled
+          // "Challenger — no voting record yet" right above their real votes.
           <p
             data-testid={`race-patterns-alignment-unavailable-${candidate.id}`}
             className="text-xs italic text-on-surface-muted"
           >
             {t.racePatternsAlignmentUnavailablePrefix}{" "}
             {candidate.alignmentUnavailable.reason}
+          </p>
+        ) : candidate.platformAlignment === null ? (
+          <p
+            data-testid={`race-patterns-alignment-challenger-${candidate.id}`}
+            className="text-xs italic text-on-surface-muted"
+          >
+            {t.racePatternsAlignmentChallenger}
           </p>
         ) : null}
       </div>
@@ -1215,8 +1220,11 @@ export function RacePatterns({
         })}
       </div>
 
-      {/* Compare button — candidate races only, per prototype WorkspaceView ~514 */}
-      {!isProp && onCompare && (
+      {/* Compare button — candidate races only, and only when there are ≥2
+          candidates to compare (CompareModal returns null for <2, so on a
+          single-candidate race like an NJ primary the button would otherwise
+          render but no-op). Per prototype WorkspaceView ~514. */}
+      {!isProp && onCompare && block.candidates.length >= 2 && (
         <button
           type="button"
           data-testid="race-patterns-compare"

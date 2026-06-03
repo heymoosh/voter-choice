@@ -87,7 +87,30 @@ Where only part of a row is driven, the sub-part not driven is named explicitly
 | 9 | race-data 429 (20/hr counter limit) → cards break | dedicated 60/min read limiter | c1ced7e |
 | 10 | Bare surnames (NORCROSS, PALLONE) didn't resolve — DB state decoration is unreliable (missing/wrong) so state-matching excluded real incumbents | layered matcher: exact-state → state-or-unknown → **unique-surname-in-chamber** fallback | 8c84c09 → a2f47b0 → (layered) |
 | 11 | No loader between lock-in and workspace | full-screen `workspace-loading-gate`, fresh-lock-in only, never hangs | a2f47b0 + 1a891a3 |
-| 12 | Compare modal never opened in cards-first workspace | modal JSX lived ONLY in the cold-open return (unreachable in workspace mode) + `handleOpenCompare` read the last chat message, not raceData. Extracted `cardModals` (Compare + AllVotes) into BOTH returns; read `workspace.raceData`. | (this commit) |
+| 12 | Compare modal never opened in cards-first workspace | modal JSX lived ONLY in the cold-open return (unreachable in workspace mode) + `handleOpenCompare` read the last chat message, not raceData. Extracted `cardModals` (Compare + AllVotes) into BOTH returns; read `workspace.raceData`. | b210668 |
+| 13 | "Compare candidates" button renders on SINGLE-candidate races (no-op) | RacePatterns.tsx:1219 gates only on `!isProp && onCompare`, not candidate count. CompareModal returns null for <2 candidates, so clicking does nothing. Confirmed on prod (NJ Senate/House single-candidate). Fix: also gate on `candidates.length >= 2`. | (pending) |
+| 14 | "Voted in line with platform: Challenger — no voting record yet" on INCUMBENTS | race-data.ts:340 emits `platformAlignment: null` for every candidate; the card (RacePatterns.tsx:867) renders null as the challenger string. Platform-alignment is an LLM-only metric the deterministic endpoint can't compute, so it should render as *unavailable* (like Track record), NOT assert "Challenger." Confirmed on prod: Booker (18 drug votes) + Norcross (51 climate votes) both mislabeled. Fix: race-data emits the platform section as unavailable. | (pending) |
+
+### PROD drive-through — real NJ ballot (2026-06-03, deploy b210668, voter-choice.vercel.app)
+
+Driven with Playwright MCP. Address **Audubon NJ 08106** (paste path: real ballot
+text from the in-repo fixture — Booker/Norcross full names + 4 County
+Commissioners; the outside-repo PDF is blocked by the MCP allowed-roots, and
+bare-surname resolution is a separate logged limitation). Deploy SHA confirmed
+via the Vercel "Aliased https://voter-choice.vercel.app" log line.
+
+**✅ prod-confirmed (real data, zero console errors):**
+- Address → **NJ** state (no TX bug) → NJ semi-closed primary party gate (§19:5-1)
+- Civic empty → BallotLookupNeeded with correct NJ links (voter.svrs.nj.gov / vote.nj.gov)
+- Paste → **6 races parsed** (US Senate, US House CD-1, 4× County Commissioners)
+- Cold-open opener → "Show me an example" prefill → theme extraction (3 themes, verbatim quotes)
+- Lock-in → **3-pane workspace with data-driven cards** (rail · center card · ballot pane)
+- **Booker (Senate) REAL data:** insulin 11/18 (61%), rent 1/2 (50%), climate 23/30 (77%); $16.8M; FEC `S4NJ00185`
+- **Norcross (House) REAL data:** insulin 16/30 (53%), rent 4/10 (40%), climate 47/51 (92%); $1.3M; FEC `H4NJ01084`
+- **Alignment drilldown REAL:** "Why 11 of 18…" lists real bills (Lower Health Care Costs Act, sjres84, …) with govtrack roll-call links + Voted-with/against badges
+- **Money-trail disclosure** expands (funding mix coarse `total_receipts` — known limitation)
+- **Sparse/local card (County Commissioner) degrades gracefully:** "Donor data unavailable", "Voting record not available", "First-time candidate — judge on policy statements", no alignment scores, no crash
+- Rail nav between races works; ballot-pane "Deciding now…" follows the active race
 
 **⚠️ Process lesson (cost me hours): `npm run start` serves the PREBUILT
 `.next` — it does NOT rebuild on source edits.** Playwright's webServer is

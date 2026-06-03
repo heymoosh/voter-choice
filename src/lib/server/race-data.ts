@@ -337,7 +337,15 @@ export async function assembleRaceData(
       endorsementUnavailable: {
         reason: "Endorsement data not available",
       },
+      // platformAlignment (the "Voted in line with platform" ratio) is an
+      // LLM-derived metric the deterministic endpoint can't compute. Emit it
+      // as explicitly unavailable rather than null — null renders as
+      // "Challenger — no voting record yet", which mislabels resolved
+      // incumbents shown right above their real votes.
       platformAlignment: null,
+      alignmentUnavailable: {
+        reason: "Not scored in this view",
+      },
       retrospective: null,
       retrospectiveUnavailable: {
         reason: "No performance record available for this office",

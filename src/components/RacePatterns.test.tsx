@@ -284,6 +284,47 @@ describe("RacePatterns — candidate variant", () => {
     ).toHaveTextContent(/Challenger — no record in office yet/);
   });
 
+  it("platform alignment shows the unavailable reason (NOT challenger) when alignmentUnavailable is set", () => {
+    // Deterministic /api/race-data sets platformAlignment:null + an explicit
+    // alignmentUnavailable reason for RESOLVED incumbents (it can't compute the
+    // LLM-only platform-vote ratio). The card must render that reason, not the
+    // "Challenger — no voting record yet" fallback shown above their real votes.
+    const block: RacePatternsBlock = {
+      ...candidateBlock,
+      candidates: [
+        {
+          ...candidateBlock.candidates[0],
+          platformAlignment: null,
+          alignmentUnavailable: { reason: "Not scored in this view" },
+        },
+        candidateBlock.candidates[1],
+      ],
+    };
+    renderPatterns(block);
+    expect(
+      screen.getByTestId("race-patterns-alignment-unavailable-cand-a"),
+    ).toHaveTextContent(/Not scored in this view/);
+    expect(
+      screen.queryByTestId("race-patterns-alignment-challenger-cand-a"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("Compare button renders when there are ≥2 candidates", () => {
+    renderPatterns(candidateBlock, { onCompare: vi.fn() });
+    expect(screen.getByTestId("race-patterns-compare")).toBeInTheDocument();
+  });
+
+  it("Compare button is absent on a single-candidate race (CompareModal needs ≥2)", () => {
+    const single: RacePatternsBlock = {
+      ...candidateBlock,
+      candidates: [candidateBlock.candidates[0]],
+    };
+    renderPatterns(single, { onCompare: vi.fn() });
+    expect(
+      screen.queryByTestId("race-patterns-compare"),
+    ).not.toBeInTheDocument();
+  });
+
   it("valuesHighlight renders callout when present", () => {
     renderPatterns(candidateBlock);
     expect(
