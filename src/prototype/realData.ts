@@ -188,3 +188,43 @@ export async function fetchBallotFromFile(file: File): Promise<BallotResult> {
     return { races: [], stateCode: "" };
   }
 }
+
+/* ─── Phase 2b: party-primary filtering ("2 Senate races" fix) ───
+   A primary ballot carries both parties' contests. When races span >1 party we
+   show the party gate; the pick filters races to that party (a registered Dem
+   sees only the DEM primary). General-election ballots are single-party-neutral
+   → no gate. */
+function partyLetter(p?: string): string {
+  const t = (p || "").toLowerCase();
+  if (t.startsWith("d")) return "D";
+  if (t.startsWith("r")) return "R";
+  return "";
+}
+
+export function racesSpanMultipleParties(races: Race[]): boolean {
+  const seen = new Set<string>();
+  for (const r of races || [])
+    for (const c of r.candidates || []) {
+      const l = partyLetter(c.party);
+      if (l) seen.add(l);
+    }
+  return seen.size > 1;
+}
+
+export function filterRacesByParty(races: Race[], party: string): Race[] {
+  const want = partyLetter(party);
+  if (!want) return races || [];
+  return (races || [])
+    .filter((r) => {
+      const cands = r.candidates || [];
+      if (cands.length === 0) return true; // keep non-partisan / propositions
+      return cands.some((c) => partyLetter(c.party) === want);
+    })
+    .map((r) => ({
+      ...r,
+      candidates: (r.candidates || []).filter((c) => {
+        const l = partyLetter(c.party);
+        return l === "" || l === want;
+      }),
+    }));
+}

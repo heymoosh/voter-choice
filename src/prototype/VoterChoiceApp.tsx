@@ -18,6 +18,8 @@ import {
   fetchBallotFromAddress,
   fetchBallotFromText,
   fetchBallotFromFile,
+  racesSpanMultipleParties,
+  filterRacesByParty,
 } from "./realData";
 import { getFallbackStateData } from "../lib/getStateData";
 
@@ -2144,10 +2146,10 @@ function PartyGate({ stateName, electionDate, onPick, onSkip }) {
       <AppNav />
       <div className="pg-wrap">
         <div className="pg-card">
-          <div className="pg-eyebrow">Texas primary · March 3, 2026</div>
+          <div className="pg-eyebrow">{stateName || 'Primary'} primary{electionDate ? ' · ' + electionDate : ''}</div>
           <h2>Pick a party to research.</h2>
           <p className="pg-lede">
-            Texas runs a <b>closed primary</b>. If there's a runoff, you can only vote in the runoff for whichever party's primary you chose in March. The general election in November is unaffected.
+            Your ballot includes <b>both parties' primary contests</b>. A primary is party-specific — choose the primary you're eligible to vote in and we'll research only those races. The general election is unaffected.
           </p>
 
           <div className="pg-options">
@@ -2155,7 +2157,7 @@ function PartyGate({ stateName, electionDate, onPick, onSkip }) {
               <div className="pg-pip" />
               <div className="pg-l">
                 <div className="pg-ttl">Democratic primary</div>
-                <div className="pg-sub">Research 12 contested Dem races.</div>
+                <div className="pg-sub">Research the Democratic races on your ballot.</div>
               </div>
               <span className="pg-arrow">→</span>
             </button>
@@ -2163,21 +2165,21 @@ function PartyGate({ stateName, electionDate, onPick, onSkip }) {
               <div className="pg-pip" />
               <div className="pg-l">
                 <div className="pg-ttl">Republican primary</div>
-                <div className="pg-sub">Research 9 contested GOP races.</div>
+                <div className="pg-sub">Research the Republican races on your ballot.</div>
               </div>
               <span className="pg-arrow">→</span>
             </button>
             <button className="pg-opt nope" onClick={onSkip}>
               <div className="pg-l">
-                <div className="pg-ttl">Just the general election</div>
-                <div className="pg-sub">Skip primaries · research the Nov 3 ballot only.</div>
+                <div className="pg-ttl">Show me everything</div>
+                <div className="pg-sub">Don't filter — research all races on the ballot.</div>
               </div>
               <span className="pg-arrow">→</span>
             </button>
           </div>
 
           <p className="pg-foot">
-            Texas requires this choice now because runoffs (May 26) lock you into the party of your first round. Source: <a href="#" className="pg-src">Texas Secretary of State · Election Code §172.086</a>.
+            Eligibility rules vary by state. Check your <a href="https://vote.gov/" target="_blank" rel="noopener noreferrer" className="pg-src">state election office</a> if you're unsure which primary you can vote in.
           </p>
         </div>
       </div>
@@ -4675,6 +4677,9 @@ function App() {
   // Phase 2: bumped after real race-data lands so the verbatim accessors
   // (which read live module bindings) re-read on the next render.
   const [dataVersion, setDataVersion] = useStateA(0);
+  // Phase 2b: the full (unfiltered) multi-party ballot, held while the party
+  // gate is shown so the pick can filter from it.
+  const [pendingRaces, setPendingRaces] = useStateA(null);
 
   // Phase 2 resume-refetch: the data module re-inits to mock on every page
   // load, so a RESUMED workspace session (restored from localStorage) must
@@ -5060,10 +5065,16 @@ function handleRevealCandidate(candidateId) {
               county={getRealStateCode() ? 'your county' : 'Harris County'}
               onBack={() => setView('home')}
               onBallotConfirmed={() => {
-                // Phase 2b: real races + state already applied by
-                // NoContestedView's extraction; keep the user's real address
-                // (no more mock "Harris County, TX"). Cold-open next.
-                setView(issues.length ? 'workspace' : 'coldopen');
+                // Phase 2b: races + state already applied by NoContestedView's
+                // extraction (real address kept — no more mock "Harris County,
+                // TX"). If the ballot spans BOTH parties (a primary), show the
+                // party gate to filter; otherwise straight to cold-open.
+                if (racesSpanMultipleParties(RACES)) {
+                  setPendingRaces(RACES);
+                  setView('partygate');
+                } else {
+                  setView(issues.length ? 'workspace' : 'coldopen');
+                }
               }}
             />
           </main>
@@ -5071,10 +5082,23 @@ function handleRevealCandidate(candidateId) {
       )}
       {view === 'partygate' && (
         <PartyGate
-          stateName="Texas"
-          electionDate="March 3, 2026"
-          onPick={(party) => { setView(issues.length ? 'workspace' : 'coldopen'); }}
-          onSkip={() => { setView(issues.length ? 'workspace' : 'coldopen'); }}
+          stateName={
+            getRealStateCode()
+              ? getFallbackStateData(getRealStateCode()).stateName
+              : ''
+          }
+          electionDate=""
+          onPick={(party) => {
+            // Filter the ballot to the chosen party's primary (the "2 Senate
+            // races" fix — a registered Dem sees only the DEM races).
+            applyRealRaces(filterRacesByParty(pendingRaces || RACES, party));
+            setView(issues.length ? 'workspace' : 'coldopen');
+          }}
+          onSkip={() => {
+            // "Show me everything" — keep the full (both-party) ballot.
+            applyRealRaces(pendingRaces || RACES);
+            setView(issues.length ? 'workspace' : 'coldopen');
+          }}
         />
       )}
       {view === 'coldopen' && (
