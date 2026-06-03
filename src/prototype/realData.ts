@@ -2,7 +2,17 @@
 // backend. The prototype's data shapes were deliberately built to match
 // src/lib/structured-blocks.ts, so /api/race-data's response maps directly onto
 // RACE_PATTERNS[raceId] (racePatterns) + ALIGNMENT_SCORES[raceId] (alignmentScores).
-import { applyRaceData, getRealStateCode } from "./data";
+import { applyRaceData, getRealStateCode, setRealElectionType } from "./data";
+
+/** Best-effort election-type from ballot text/jurisdiction (primary / runoff /
+ *  general). Used to decide whether the party gate applies. */
+function detectElectionType(s: string): string {
+  const t = (s || "").toLowerCase();
+  if (/\brunoff\b/.test(t)) return "runoff";
+  if (/\bprimary\b/.test(t)) return "primary";
+  if (/\bgeneral\b/.test(t)) return "general";
+  return "";
+}
 
 interface ThinCandidate {
   name: string;
@@ -169,6 +179,7 @@ export async function fetchBallotFromAddress(
 /** Pasted ballot text → races (fully local, no API key). */
 export async function fetchBallotFromText(text: string): Promise<BallotResult> {
   const contests = parsedTextToContests(text);
+  setRealElectionType(detectElectionType(text));
   return { races: deriveRaces({ contests }), stateCode: stateCodeFrom(text) };
 }
 
@@ -180,6 +191,10 @@ export async function fetchBallotFromFile(file: File): Promise<BallotResult> {
     const res = await fetch("/api/extract-ballot", { method: "POST", body: fd });
     if (!res.ok) return { races: [], stateCode: "" };
     const extraction = await res.json();
+    setRealElectionType(
+      extraction?.election_type ||
+        detectElectionType(extraction?.jurisdiction || ""),
+    );
     return {
       races: extractionToRaces(extraction, null),
       stateCode: stateCodeFrom(extraction?.jurisdiction || ""),

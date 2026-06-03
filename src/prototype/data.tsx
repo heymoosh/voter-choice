@@ -897,3 +897,14 @@ export function setRealStateCode(code) {
 export function getRealStateCode() {
   return REAL_STATE_CODE;
 }
+
+// Election type of the active ballot (primary / runoff / general / "").
+// Set by realData.ts from the uploaded/pasted ballot; read to decide whether
+// the party gate applies (primary/runoff → yes; general → no).
+let REAL_ELECTION_TYPE = "";
+export function setRealElectionType(t) {
+  REAL_ELECTION_TYPE = t || "";
+}
+export function getRealElectionType() {
+  return REAL_ELECTION_TYPE;
+}

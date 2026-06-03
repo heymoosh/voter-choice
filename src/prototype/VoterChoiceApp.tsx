@@ -11,7 +11,7 @@ import {
   getRacePatternsForRace, getCandidatePatterns, getAlignmentScoresForRace,
   getAlignmentEntryForCandidate, getScoreForIssue, getCandidateParty,
   computeDeadlineRow, getDeadlineRows,
-  applyRealRaces, setRealStateCode, getRealStateCode,
+  applyRealRaces, setRealStateCode, getRealStateCode, getRealElectionType,
 } from "./data";
 import {
   loadAllRaceData,
@@ -5069,7 +5069,13 @@ function handleRevealCandidate(candidateId) {
                 // extraction (real address kept — no more mock "Harris County,
                 // TX"). If the ballot spans BOTH parties (a primary), show the
                 // party gate to filter; otherwise straight to cold-open.
-                if (racesSpanMultipleParties(RACES)) {
+                const et = getRealElectionType();
+                const isPrimaryLike =
+                  et === 'primary' || et === 'runoff' || et === 'primary_runoff';
+                // Only a PRIMARY/runoff ballot gets the party gate. A GENERAL
+                // ballot also has multiple parties (candidates competing for
+                // the same seat) — there you vote for anyone, so NO gate.
+                if (isPrimaryLike && racesSpanMultipleParties(RACES)) {
                   setPendingRaces(RACES);
                   setView('partygate');
                 } else {
