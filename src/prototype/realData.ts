@@ -108,19 +108,31 @@ export interface BallotResult {
   stateCode: string;
 }
 
-/** text → contests (replicates the old app's parsedBallotToContests). */
+/** text → contests. Group every candidate of an office under ONE contest.
+ *
+ * The candidate name must NEVER become the contest `district`: deriveRaces
+ * builds the race LABEL from `office + district`, and that label is shown in the
+ * header, rail, ballot panel, and chat placeholder. A name there leaks the
+ * candidate's identity everywhere and breaks blind mode (the card anonymizes to
+ * "Candidate A", but the label would still read "U.S. Senate — Cory Booker").
+ * So: one office → one race carrying its full roster; district is left to the
+ * ballot (plaintext rarely carries one). */
 function parsedTextToContests(text: string): ContestLike[] {
   const trimmed = (text || "").trim();
   if (!trimmed) return [];
   const parsed = parseBallotContent(trimmed);
-  const counts = new Map<string, number>();
-  for (const r of parsed.races)
-    counts.set(r.office, (counts.get(r.office) ?? 0) + 1);
-  return parsed.races.map((r) => ({
-    office: r.office,
-    district: (counts.get(r.office) ?? 1) > 1 ? r.candidate : "",
-    candidates: r.candidate ? [{ name: r.candidate, party: r.party }] : [],
-  }));
+  const byOffice = new Map<string, ContestLike>();
+  for (const r of parsed.races) {
+    let contest = byOffice.get(r.office);
+    if (!contest) {
+      contest = { office: r.office, district: "", candidates: [] };
+      byOffice.set(r.office, contest);
+    }
+    if (r.candidate) {
+      contest.candidates.push({ name: r.candidate, party: r.party });
+    }
+  }
+  return [...byOffice.values()];
 }
 
 // Full state-name / abbreviation → 2-letter code (for stateCode detection
@@ -317,6 +329,11 @@ export interface ChatPromptInput {
   /** /api/race-data `alignmentScores` block — { race, entries: [...] } | null. */
   alignmentScores: unknown | null;
   issues: ProtoIssue[];
+  /** Blind mode: the caller has already replaced blinded candidates' names with
+   *  their aliases ("Candidate A/B") in `racePatterns`. When true we ALSO
+   *  instruct the model never to reveal/guess a real identity — belt-and-
+   *  suspenders so a name can't slip out of the chat. */
+  blind?: boolean;
 }
 
 /**
@@ -327,7 +344,8 @@ export interface ChatPromptInput {
  * markdown and block syntax explicitly.
  */
 export function buildRaceChatSystemPrompt(input: ChatPromptInput): string {
-  const { raceLabel, stateCode, racePatterns, alignmentScores, issues } = input;
+  const { raceLabel, stateCode, racePatterns, alignmentScores, issues, blind } =
+    input;
   const priorities = (issues || [])
     .map((i, idx) => {
       const label = i.interpretation || i.name || i.canonicalIssue || "";
@@ -343,6 +361,12 @@ export function buildRaceChatSystemPrompt(input: ChatPromptInput): string {
     `You are Voter Choice, a strictly NON-PARTISAN assistant helping a voter research the race "${raceLabel}"${stateCode ? ` in ${stateCode}` : ""}.`,
     "",
     "Ground every answer ONLY in the race data provided below (candidate records, donor/funding data, endorsements, and alignment with the voter's ranked priorities). If the data doesn't cover the question, say so plainly and point to what's on the candidate cards. Never invent votes, donors, or endorsements. Describe each candidate's record neutrally — do not advocate for any candidate and never tell the voter who to vote for.",
+    ...(blind
+      ? [
+          "",
+          'BLIND MODE: the voter is judging candidates by record, not by name. Candidates appear ONLY as "Candidate A", "Candidate B", etc. — their real names are deliberately withheld from you. Never state, guess, hint at, or infer any candidate\'s real name or specific identity; refer to each only by their Candidate letter.',
+        ]
+      : []),
     "",
     "OUTPUT RULES — the UI renders your reply as PLAIN TEXT, not markdown:",
     "- Write short, conversational prose. NO markdown: no **bold**, no headings, no bullet or numbered lists, no tables.",

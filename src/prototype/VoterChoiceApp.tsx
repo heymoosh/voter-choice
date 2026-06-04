@@ -4996,12 +4996,32 @@ function handleRevealCandidate(candidateId) {
     }));
 
     const race = RACES.find(r => r.id === raceId);
+
+    // Blind mode: never send a real candidate name to the model — it could echo
+    // it back into the answer. Replace each still-blinded candidate's name with
+    // their positional alias ("Candidate A/B") so the chat context literally
+    // cannot leak an identity. Revealed candidates keep their real name.
+    let racePatterns = getRacePatternsForRace(raceId) || null;
+    let blind = false;
+    if (racePatterns && Array.isArray(racePatterns.candidates)) {
+      racePatterns = {
+        ...racePatterns,
+        candidates: racePatterns.candidates.map((c, i) => {
+          const idn = getCandidateIdentity(c, { blindMode, revealed: revealedCandidates, index: i });
+          if (!idn.isBlind) return c;
+          blind = true;
+          return { ...c, name: idn.aliasLabel };
+        }),
+      };
+    }
+
     const systemPrompt = buildRaceChatSystemPrompt({
       raceLabel: race?.label || raceId,
       stateCode: getRealStateCode() || '',
-      racePatterns: getRacePatternsForRace(raceId) || null,
+      racePatterns,
       alignmentScores: getAlignmentScoresForRace(raceId) || null,
       issues,
+      blind,
     });
 
     streamChatReply(
