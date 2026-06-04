@@ -365,6 +365,9 @@ export async function assembleRaceData(
       ...(donorFields.donorDataSource
         ? { donorDataSource: donorFields.donorDataSource }
         : {}),
+      ...(donorFields.fundingMix
+        ? { fundingMix: donorFields.fundingMix }
+        : {}),
       // Endorsements + retrospective: no canonical DB source. The prototype
       // nulls these for every candidate, so we match it.
       endorsements: null,
