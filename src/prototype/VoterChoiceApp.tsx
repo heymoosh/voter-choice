@@ -3806,15 +3806,29 @@ function HomeView({ savedAddress, savedSession, onSubmit, onResumeFromProfile, o
   );
 }
 
-/* ============ LoadingView ============ */
-function LoadingView({ address, onDone }) {
+/* ============ LoadingView ============
+   Two contexts share the same loader chrome:
+   - variant="ballot" (default): the address→ballot step ("Pulling your ballot").
+   - variant="analyzing": the post-lock-in step, where we fetch each candidate's
+     voting record + funding from the real backend and score it against the
+     voter's ranked issues. Reusing the address copy here was wrong — the steps
+     describe analysis, not geocoding. */
+function LoadingView({ address, onDone, variant = 'ballot' }) {
+  const analyzing = variant === 'analyzing';
   const [step, setStep] = useStateV(0);
-  const steps = [
-    'Geocoding address',
-    'Looking up your precinct',
-    'Pulling federal & state races',
-    'Loading donor history',
-  ];
+  const steps = analyzing
+    ? [
+        'Reading your ranked issues',
+        "Pulling each candidate's voting record",
+        'Scoring alignment with your issues',
+        'Loading donor & funding data',
+      ]
+    : [
+        'Geocoding address',
+        'Looking up your precinct',
+        'Pulling federal & state races',
+        'Loading donor history',
+      ];
 
   useEffectV(() => {
     if (step >= steps.length) {
@@ -3831,8 +3845,10 @@ function LoadingView({ address, onDone }) {
       <div className="loading-screen">
         <div className="loading-card">
           <div className="pulse"></div>
-          <h2>Pulling your ballot.</h2>
-          <div className="addr">{address}</div>
+          <h2>{analyzing ? 'Analyzing the candidates.' : 'Pulling your ballot.'}</h2>
+          <div className="addr">
+            {analyzing ? 'Matching their records to your priorities' : address}
+          </div>
           <ul>
             {steps.map((s, i) => (
               <li key={i} className={i < step ? 'done' : (i === step ? 'active' : '')}>
@@ -5135,11 +5151,12 @@ function handleRevealCandidate(candidateId) {
         // (no-op onDone) — the loader just animates while the lookup runs.
         <LoadingView address={address} onDone={() => {}} />
       )}
-      {/* Phase 2 single-load: the SAME LoadingView, shown once after lock-in
-          while real race-data fetches. onDone is a no-op — navigation to the
-          workspace is driven by the fetch completing in handleLockIssues. */}
+      {/* Phase 2 single-load: same loader chrome, ANALYZING copy, shown once
+          after lock-in while real race-data fetches. onDone is a no-op —
+          navigation to the workspace is driven by the fetch completing in
+          handleLockIssues. */}
       {view === 'analyzing' && (
-        <LoadingView address={address} onDone={() => {}} />
+        <LoadingView address={address} onDone={() => {}} variant="analyzing" />
       )}
       {view === 'geocodefail' && (
         <>
