@@ -73,7 +73,7 @@ let RACES = [
     candidates: [
       { name: 'Donald Norcross', party: 'Democratic' },
     ]},
-  { id: 'county-commissioners', section: 'County', label: 'County Commissioners', decided: false,
+  { id: 'county-commissioners', section: 'County', label: 'County Commissioners', decided: false, voteForN: 2,
     candidates: [
       { name: 'Louis Cappelli Jr', party: 'Democratic' },
       { name: 'Jonathan Young', party: 'Democratic' },
@@ -604,7 +604,7 @@ let PRESET_ISSUES = [
     confidence: 'clear',
     // [Δ] quotes — how we anchor the interpretation back to user's words
     quotes: [
-      { label: 'your words', text: 'my mom’s insulin keeps going up' },
+      { label: 'example', text: 'my mom’s insulin keeps going up' },
       { label: 'and',        text: 'copays are insane … formulary changes every year' },
     ],
   },
@@ -617,7 +617,7 @@ let PRESET_ISSUES = [
     stance: 'voter favors stronger rent protections',
     confidence: 'clear',
     quotes: [
-      { label: 'your words', text: 'rent went up 11% last year' },
+      { label: 'example', text: 'rent went up 11% last year' },
       { label: 'and',        text: 'the cost of basic stuff' },
     ],
   },
@@ -631,7 +631,7 @@ let PRESET_ISSUES = [
     stance: 'voter favors banning congressional stock trading',
     confidence: 'clear',
     quotes: [
-      { label: 'your words', text: 'the stock trading thing — how is that still legal' },
+      { label: 'example', text: 'the stock trading thing — how is that still legal' },
       { label: 'and',        text: 'sick of watching Congress do nothing' },
     ],
   },

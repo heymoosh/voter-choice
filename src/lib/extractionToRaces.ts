@@ -277,6 +277,7 @@ function buildSectionRaces(
       label: buildLabel(race),
       decided: false,
       candidates: buildCandidates(race),
+      voteForN: race.vote_for_n > 0 ? race.vote_for_n : 1,
     });
   }
   return out;

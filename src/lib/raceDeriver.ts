@@ -15,6 +15,8 @@ export interface ContestLike {
   district?: string;
   type?: string;
   candidates: { name: string; party: string }[];
+  /** Seats to fill (vote-for-N); civic supplies this as numberElected. */
+  voteForN?: number;
 }
 
 /** Input shape: anything that may have a `contests` array. */
@@ -68,6 +70,13 @@ export interface Race {
    * inputs that didn't supply a roster.
    */
   candidates: { name: string; party: string }[];
+  /**
+   * Number of seats to fill (vote-for-N). 1 for single-winner races, >1 for
+   * multi-seat offices (e.g. "Board of County Commissioners — Vote for Two").
+   * Defaults to 1 when the source doesn't specify. The workspace caps the
+   * voter's picks at this count so multi-seat ballots can be marked fully.
+   */
+  voteForN?: number;
 }
 
 const SECTION_ORDER: RaceSection[] = [
@@ -248,6 +257,8 @@ export function deriveRaces(input: RaceDeriverInput | null): Race[] {
       label,
       decided: false,
       candidates,
+      voteForN:
+        typeof c.voteForN === "number" && c.voteForN > 0 ? c.voteForN : 1,
     };
   });
 

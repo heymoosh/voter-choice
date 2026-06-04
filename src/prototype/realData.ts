@@ -276,13 +276,33 @@ export function racesSpanMultipleParties(races: Race[]): boolean {
   return seen.size > 1;
 }
 
+// Sections that are candidate-free by nature (ballot questions, measures,
+// judicial retentions). A zero-candidate race survives the party filter only
+// if it belongs to one of these — otherwise it's an empty candidate-office
+// (e.g. an all-"no petition filed" committee race) and is dropped (F3).
+const PROP_SECTIONS = new Set<string>([
+  "Propositions",
+  "Constitutional Amendments",
+  "County Questions",
+  "Ballot Measures",
+  "Judicial Retention",
+  "Bond Measures",
+]);
+
 export function filterRacesByParty(races: Race[], party: string): Race[] {
   const want = partyLetter(party);
   if (!want) return races || [];
   return (races || [])
     .filter((r) => {
       const cands = r.candidates || [];
-      if (cands.length === 0) return true; // keep non-partisan / propositions
+      if (cands.length === 0) {
+        // Keep genuine propositions/measures/questions (candidate-free by
+        // nature). DROP empty candidate-offices — e.g. a county-committee race
+        // where every slot is "no petition filed". Those carry nothing to
+        // research or pick, and a wrong-party empty office otherwise leaks
+        // across the party filter onto the voter's ballot (F3).
+        return PROP_SECTIONS.has(r.section);
+      }
       return cands.some((c) => partyLetter(c.party) === want);
     })
     .map((r) => ({

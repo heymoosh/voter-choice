@@ -1538,7 +1538,7 @@ function BallotPane({ races, decisions, activeRaceId, address, onSelectRace, onP
           <h3>Your ballot</h3>
           <span className="sub">{decidedCount}/{totalCount} · Draft</span>
         </div>
-        <address>{address || '—'} · Precinct {POLLING_INFO.precinct}</address>
+        <address>{address || '—'}</address>
       </div>
 
       <div className="b-list">
@@ -4003,7 +4003,7 @@ function ColdOpenView({ address, onLock, savedIssues }) {
                 {thinking ? (
                   <p style={{ color: 'var(--ink-2)', fontStyle: 'italic' }}>Reading what you wrote — pulling out the issues I hear…</p>
                 ) : (
-                  <p>Got it. Here's what I heard — <b>{issues.length} issue{issues.length !== 1 ? 's' : ''}</b>, each anchored in the words you actually used. Re-rank, rename, or remove. Once you lock these in, every candidate's record gets scored against this list, vote by vote.</p>
+                  <p>Here are <b>{issues.length} starter issue{issues.length !== 1 ? 's' : ''}</b> to work from. Re-rank, rename, or remove so they match what you care about. Once you lock these in, every candidate's record gets scored against this list, vote by vote.</p>
                 )}
               </div>
             </div>
@@ -4011,8 +4011,8 @@ function ColdOpenView({ address, onLock, savedIssues }) {
             {phase === 'review' && (
               <div className="themes-card">
                 <div className="th-head">
-                  <h4>What you actually said.</h4>
-                  <span className="of">{issues.length} issues · inferred</span>
+                  <h4>Starter issues — make them yours.</h4>
+                  <span className="of">{issues.length} issues · edit freely</span>
                 </div>
                 <p className="th-sub">Use the arrows to re-rank · click a name to rename · I show my work so you can correct me.</p>
 
@@ -4052,6 +4052,20 @@ function ColdOpenView({ address, onLock, savedIssues }) {
    This view orchestrates the 3-pane layout and pulls
    structured-block-shaped data from helpers in prototype-data.jsx
    to feed CandidateCard. */
+// F8: the chat route's prompt forbids markdown, but the model still emits
+// **bold** / *italic* / `code` occasionally, and the bubble renders raw text —
+// so strip the common markers at render so the voter never sees literal
+// asterisks. Plain prose only.
+function stripChatMd(s) {
+  if (!s) return s;
+  return s
+    .replace(/\*\*([^*]+)\*\*/g, '$1')
+    .replace(/(^|[^*])\*([^*\n]+)\*(?!\*)/g, '$1$2')
+    .replace(/__([^_]+)__/g, '$1')
+    .replace(/`([^`]+)`/g, '$1')
+    .replace(/^\s{0,3}#{1,6}\s+/gm, '');
+}
+
 function WorkspaceView({ address, issues, decisions, activeRaceId, onDecide, onUnpick, onSelectRace, onPrint, onEditIssues, onSaveProfile, onContinueElsewhere, budgetExhausted, onOpenByok, onNavigate, chatMessages, onSendChat, chatTimeouts, onRetryChat, onCompare, onSeeAllVotes, amendDeltas, onClearDelta, onViewPartyGate, blindMode, revealedCandidates, onRevealCandidate, onHideCandidate, onToggleBlindMode }) {
   const races = RACES;
   const activeRace = races.find(r => r.id === activeRaceId) || races[0];
@@ -4082,18 +4096,48 @@ function WorkspaceView({ address, issues, decisions, activeRaceId, onDecide, onU
     sections[r.section].push(r);
   });
 
+  // Vote-for-N aware. A race elects `voteForN` seats (1 for single-winner);
+  // the voter may pick up to that many candidates. Picking an already-picked
+  // candidate toggles it off. We only auto-advance once every seat is filled,
+  // so a "vote for two" race never strands the voter after a single pick.
   function commitPick(candidate, why) {
+    const seats = activeRace.voteForN || 1;
+    const prev = decisions[activeRace.id];
+    const prevPicks = prev?.picks
+      ? prev.picks
+      : (prev?.candidateName
+          ? [{ candidateName: prev.candidateName, party: prev.party || null, why: prev.why || '' }]
+          : []);
+    const party = getCandidateParty(activeRace.id, candidate.name)?.code || null;
+    const entry = { candidateName: candidate.name, party, why: why.trim() };
+    let picks;
+    if (prevPicks.some(p => p.candidateName === candidate.name)) {
+      picks = prevPicks.filter(p => p.candidateName !== candidate.name); // toggle off
+    } else if (seats <= 1) {
+      picks = [entry]; // single-seat: replace
+    } else if (prevPicks.length < seats) {
+      picks = [...prevPicks, entry]; // multi-seat with room: add
+    } else {
+      picks = [...prevPicks.slice(1), entry]; // full: drop oldest, add (swap)
+    }
+    if (picks.length === 0) {
+      onUnpick(activeRace.id);
+      return;
+    }
     onDecide(activeRace.id, {
-      pick: candidate.name,
-      party: getCandidateParty(activeRace.id, candidate.name)?.code || null,
-      why: why.trim(),
-      candidateName: candidate.name,
+      picks,
+      pick: picks.map(p => p.candidateName).join(' + '),
+      candidateName: picks[0].candidateName,
+      party: picks[0].party,
+      why: picks[0].why,
     });
     setMobileChatOpen(false);
-    setTimeout(() => {
-      const nextIdx = races.findIndex((r, i) => i > activeIdx && !decisions[r.id] && r.id !== activeRace.id);
-      if (nextIdx >= 0) onSelectRace(races[nextIdx].id);
-    }, 600);
+    if (picks.length >= seats) {
+      setTimeout(() => {
+        const nextIdx = races.findIndex((r, i) => i > activeIdx && !decisions[r.id] && r.id !== activeRace.id);
+        if (nextIdx >= 0) onSelectRace(races[nextIdx].id);
+      }, 600);
+    }
   }
 
   function voteProp(value) {
@@ -4133,9 +4177,9 @@ function WorkspaceView({ address, issues, decisions, activeRaceId, onDecide, onU
     <div className="ws-shell">
       <AppNav />
       <PollingStatusBar
-        pollingInfo={POLLING_INFO}
-        stateData={STATE_ELECTION_DATA}
-        rows={getDeadlineRows()}
+        pollingInfo={{ name: 'Find your polling place', precinct: '', hours: '', address: '', bring: '', earlyWindow: '' }}
+        stateData={getFallbackStateData(getRealStateCode() || '')}
+        rows={[]}
       />
       <div className="ws-wrap" data-mobile-chat={mobileChatOpen ? 'open' : 'closed'}>
 
@@ -4233,7 +4277,9 @@ function WorkspaceView({ address, issues, decisions, activeRaceId, onDecide, onU
             {!isProposition && richCandidates.map((cand, idx) => {
               const alignmentEntry = alignmentBlk?.entries?.find(e => e.candidateId === cand.id);
               const party = getCandidateParty(activeRace.id, cand.name);
-              const isPicked = decision?.candidateName === cand.name;
+              const isPicked = decision?.picks
+                ? decision.picks.some(p => p.candidateName === cand.name)
+                : decision?.candidateName === cand.name;
               const isBlind = blindMode && !revealedCandidates?.has(cand.id);
               const alias = String.fromCharCode(65 + idx); // A, B, C
 
@@ -4255,8 +4301,8 @@ function WorkspaceView({ address, issues, decisions, activeRaceId, onDecide, onU
                   <div className="bubble">
                     {idx === 0 ? (
                       isBlind
-                        ? <p>Two candidates for <b>{activeRace.label}</b>. I'm hiding their names so you decide on the record, not the brand. Here's <b>Candidate {alias}</b>:</p>
-                        : <p>This is <b>{activeRace.label}</b>. Two on your ballot. Here's the {cand.incumbent ? 'incumbent' : 'longer-tenure candidate'} — each percentage is clickable to see the votes behind it.</p>
+                        ? <p>{richCandidates.length} candidate{richCandidates.length === 1 ? '' : 's'} for <b>{activeRace.label}</b>{(activeRace.voteForN || 1) > 1 ? ` — vote for ${activeRace.voteForN}` : ''}. I'm hiding their names so you decide on the record, not the brand. Here's <b>Candidate {alias}</b>:</p>
+                        : <p>This is <b>{activeRace.label}</b>{(activeRace.voteForN || 1) > 1 ? `, vote for ${activeRace.voteForN}` : ''}. {richCandidates.length} on your ballot. Here's the {cand.incumbent ? 'incumbent' : 'longer-tenure candidate'} — each percentage is clickable to see the votes behind it.</p>
                     ) : (
                       isBlind
                         ? <p>And <b>Candidate {alias}</b>:</p>
@@ -4268,11 +4314,20 @@ function WorkspaceView({ address, issues, decisions, activeRaceId, onDecide, onU
                       userIssues={issues}
                       party={party}
                       picked={isPicked}
-                      onPick={() => commitPick(cand, isBlind
-                          ? `Candidate ${alias} — strongest record on ${issues[0]?.interpretation || 'my top issue'}.`
-                          : `${cand.name.split(' ').pop()} — ${cand.incumbent ? 'stronger record on ' + (issues[0]?.interpretation || 'my top issue') : 'first-time candidate, judging on donor base'}.`
-                      )}
-                      onUnpick={() => onUnpick(activeRace.id)}
+                      onPick={() => {
+                        // F10: only claim a record-based reason when the candidate
+                        // actually has a scored voting record. No-record candidates
+                        // (challengers, local offices) get an honest neutral note —
+                        // never a fabricated "strongest record on X".
+                        const hasRecord = !!(alignmentEntry && alignmentEntry.scores && alignmentEntry.scores.length > 0);
+                        const topIssue = issues[0]?.interpretation || 'my priorities';
+                        const label = isBlind ? `Candidate ${alias}` : cand.name.split(' ').pop();
+                        const why = hasRecord
+                          ? `${label} — strongest record on ${topIssue}.`
+                          : `${label} — my pick; no voting record on file to score.`;
+                        commitPick(cand, why);
+                      }}
+                      onUnpick={() => onUnpick(activeRace.id, cand.name)}
                       onSeeAllVotes={() => onSeeAllVotes({ candidate: cand, alignmentEntry, blindMode: isBlind, alias })}
                       blindMode={isBlind}
                       globalBlindMode={blindMode}
@@ -4307,7 +4362,7 @@ function WorkspaceView({ address, issues, decisions, activeRaceId, onDecide, onU
             {(chatMessages?.[activeRace.id] || []).map((msg, i) => (
               <div key={'cm-' + i} className={'msg ' + msg.who}>
                 <div className="who">{msg.who === 'user' ? 'You' : 'Voter Choice · AI'}</div>
-                <div className="bubble">{msg.text}</div>
+                <div className="bubble">{msg.who === 'user' ? msg.text : stripChatMd(msg.text)}</div>
               </div>
             ))}
 
@@ -4344,7 +4399,15 @@ function WorkspaceView({ address, issues, decisions, activeRaceId, onDecide, onU
                 <div className="bubble">
                   <p>Logged: <b>{decision.pick}{decision.party ? ` (${decision.party})` : ''}</b> for {activeRace.label}.</p>
                   {decision.why && <p style={{ fontStyle: 'italic', color: 'var(--ink-2)' }}>"{decision.why}"</p>}
-                  <p style={{ marginTop: '8px', fontSize: '13.5px', color: 'var(--ink-2)' }}>You can edit the note in the ballot pane any time. Or jump to a different race.</p>
+                  {(() => {
+                    const seats = activeRace.voteForN || 1;
+                    const have = decision.picks ? decision.picks.length : 1;
+                    const note = { marginTop: '8px', fontSize: '13.5px', color: 'var(--ink-2)' };
+                    if (seats > 1 && have < seats) {
+                      return <p style={note}>This race elects {seats}. You've picked {have} — choose {seats - have} more above, or move on.</p>;
+                    }
+                    return <p style={note}>You can edit the note in the ballot pane any time. Or jump to a different race.</p>;
+                  })()}
                 </div>
               </div>
             )}
@@ -4439,7 +4502,7 @@ function BallotPaneInner({ races, decisions, activeRaceId, address, issues, onEd
           <h3>Your ballot</h3>
           <span className="sub">{decidedCount}/{totalCount} · Draft</span>
         </div>
-        <address>{address || '—'} · Precinct {POLLING_INFO.precinct}</address>
+        <address>{address || '—'}</address>
       </div>
 
       {/* Mobile/tablet edit-issues entry — the left rail (which holds
@@ -4583,6 +4646,18 @@ function PrintView({ address, issues, decisions, onBack }) {
 
   const undecided = races.filter(r => !decisions[r.id]);
 
+  // F12: drive the printed logistics from the REAL state (not the TX demo
+  // constants). We have no polling-place / precinct / ID / early-voting data
+  // source yet, so show honest "look it up" guidance rather than fabricated
+  // wrong-state specifics. getFallbackStateData returns honest per-state copy
+  // (real stateName, empty acceptedIds, vote.gov links).
+  const sd = getFallbackStateData(getRealStateCode() || '');
+  const houseRace = races.find(r => /house/i.test(r.label || ''));
+  const districtLabel = houseRace ? houseRace.label.replace(/^U\.S\.\s*/i, '') : '';
+  const lookupHost = ((sd?.resources?.pollingPlaceLookup || sd?.resources?.stateElectionWebsite || 'https://vote.gov/')
+    .replace(/^https?:\/\//, '').replace(/\/$/, ''));
+  const acceptedIds = sd?.votingRules?.acceptedIds || [];
+
   return (
     <>
       <AppNav onBrandClick={onBack} />
@@ -4598,48 +4673,60 @@ function PrintView({ address, issues, decisions, onBack }) {
         <div className="print-sheet">
           <header className="ph-head">
             <div className="l">
-              My Ballot · {POLLING_INFO.electionDate}
+              My Ballot
               <small>Voter Choice · voterchoice.app</small>
             </div>
             <div className="r">
-              <b>Precinct {POLLING_INFO.precinct}</b>
-              {POLLING_INFO.name}<br />
-              {POLLING_INFO.address}<br />
-              Polls {POLLING_INFO.hours}
+              <b>{sd.stateName || getRealStateCode()}</b><br />
+              {address}<br />
+              Confirm your polling place &amp; hours below
             </div>
           </header>
 
           <div className="voter-meta">
             <div className="cell"><div className="k">Address</div><div className="v" style={{ fontSize: '12px' }}>{address}</div></div>
-            <div className="cell"><div className="k">District</div><div className="v">U.S. House TX‑7</div></div>
+            <div className="cell"><div className="k">District</div><div className="v">{districtLabel || '—'}</div></div>
             <div className="cell cell-bring">
               <div className="k">Bring (any one)</div>
-              <ul className="v print-id-list">
-                {STATE_ELECTION_DATA.votingRules.acceptedIds.map(id => (
-                  <li key={id}>{id}</li>
-                ))}
-              </ul>
+              {acceptedIds.length > 0 ? (
+                <ul className="v print-id-list">
+                  {acceptedIds.map(id => (
+                    <li key={id}>{id}</li>
+                  ))}
+                </ul>
+              ) : (
+                <div className="v">ID rules vary — check {lookupHost}</div>
+              )}
             </div>
-            <div className="cell"><div className="k">Early voting</div><div className="v">{new Date(STATE_ELECTION_DATA.earlyVoting.startDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} – {new Date(STATE_ELECTION_DATA.earlyVoting.endDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</div></div>
+            <div className="cell"><div className="k">Before you go</div><div className="v">Look up your polling place, hours &amp; early voting at {lookupHost}</div></div>
           </div>
 
           <div className="ballot-list">
             {Object.entries(sections).map(([section, items]) => (
               <div className="ballot-group" key={section}>
                 <div className="gtitle">{section}</div>
-                {items.map(({ race, decision }) => (
-                  <div className="br checked" key={race.id}>
-                    <div className="bx"></div>
-                    <div>
-                      <div className="race-name">{race.label}</div>
-                      <div className="pick-name">
-                        {decision.pick}
-                        {decision.party && <span className="party">{decision.party === 'D' ? 'DEM' : decision.party === 'R' ? 'REP' : decision.party}</span>}
+                {items.map(({ race, decision }) => {
+                  // Multi-seat races (vote-for-N) carry one entry per chosen
+                  // candidate; render each as its own checkbox so the printed
+                  // ballot has a mark per oval the voter must fill.
+                  const picks = decision.picks && decision.picks.length
+                    ? decision.picks
+                    : [{ candidateName: decision.pick, party: decision.party, why: decision.why }];
+                  const seats = race.voteForN || 1;
+                  return picks.map((p, pi) => (
+                    <div className="br checked" key={race.id + '-' + pi}>
+                      <div className="bx"></div>
+                      <div>
+                        {pi === 0 && <div className="race-name">{race.label}{seats > 1 ? ` — vote for ${seats}` : ''}</div>}
+                        <div className="pick-name">
+                          {p.candidateName}
+                          {p.party && p.party !== '?' && <span className="party">{p.party === 'D' ? 'DEM' : p.party === 'R' ? 'REP' : p.party}</span>}
+                        </div>
+                        {p.why && <div className="my-note">"{p.why}"</div>}
                       </div>
-                      {decision.why && <div className="my-note">"{decision.why}"</div>}
                     </div>
-                  </div>
-                ))}
+                  ));
+                })}
               </div>
             ))}
 
@@ -4938,10 +5025,26 @@ function App() {
     setDecisions(prev => ({ ...prev, [raceId]: decision }));
   }
 
-  function handleUnpick(raceId) {
+  function handleUnpick(raceId, candidateName) {
     setDecisions(prev => {
       const next = { ...prev };
-      delete next[raceId];
+      const d = next[raceId];
+      const picks = d?.picks
+        ? d.picks
+        : (d?.candidateName ? [{ candidateName: d.candidateName, party: d.party || null, why: d.why || '' }] : []);
+      // Multi-seat with >1 pick: drop just this candidate, keep the rest.
+      if (candidateName && picks.length > 1) {
+        const kept = picks.filter(p => p.candidateName !== candidateName);
+        next[raceId] = {
+          picks: kept,
+          pick: kept.map(p => p.candidateName).join(' + '),
+          candidateName: kept[0].candidateName,
+          party: kept[0].party,
+          why: kept[0].why,
+        };
+      } else {
+        delete next[raceId];
+      }
       return next;
     });
   }
