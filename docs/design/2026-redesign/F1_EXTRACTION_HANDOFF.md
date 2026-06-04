@@ -3,9 +3,13 @@
 **Start a fresh session here.** Self-contained. F1 is the one open item from the
 2026-06-04 NJ QA pass (`QA_NJ_BALLOT_2026-06-04.md`).
 
-**Status:** OPEN — diagnosed, not fixed. A naive tiling fix was built and **reverted
-(regressed)**. F1 is **gated to large-format ballots** and does NOT block the app: the
-Democratic NJ path is verified correct; only a *large-format Republican* ballot hits it.
+**Status:** OPEN. **Step 1 (anti-inference prompt guard) is LANDED + live-verified** —
+it helps but does NOT fix (see the Step 1 callout below). A naive tiling fix was built
+and **reverted (regressed)**. **Next = Step 2 (resolution / header-preserving band
+tiling).** F1 is **gated to large-format ballots** and does NOT block the app launch, but
+the live runs showed the misread is **broader than one column** (the cache was masking
+it) — names on a large-format ballot are nondeterministically unreliable; structure is
+solid. Federal D races (Booker/Norcross) read correctly every run.
 
 **Worktree/branch:** `…/.claude/worktrees/design-integration` @ `feat/prototype-rebuild`.
 NOT deployed. Operate via absolute paths into that worktree.
@@ -74,6 +78,26 @@ Harden the extraction prompt (`src/lib/server/extract-prompt.ts`) to forbid infe
 - **Effect:** converts "fabricated names shown as real" → "honest illegible gaps." This
   removes the voter-facing harm even if full legibility is never solved. **Shippable
   alone** as the F1 stopgap.
+
+> **✅ Step 1 LANDED + live-verified (2026-06-04).** Prompt guard + `"illegible"`
+> placeholder shipped (`extract-prompt.ts`, `extract-types.ts`; tsc + 56 extraction
+> tests green). Two live uncached re-extracts via `scripts/_verify-f1.ts` (kept — your
+> ready-made re-test harness; bypasses the cache). **Result: a real improvement but NOT
+> a fix.** Run A emitted honest `[illegible]` markers for the unreadable R-Senate slots;
+> Run B emitted ZERO and just confidently misread. So the guard is **nondeterministic** —
+> it cannot overcome the resolution problem. **STILL DO Step 2.**
+>
+> **🔴 Bigger finding the live runs exposed — the cache was MASKING pervasive misreads.**
+> The QA pass saw "only R-Senate wrong, everything else correct" — but that was one
+> frozen cache sample. Fresh uncached reads are nondeterministically wrong across
+> MULTIPLE races: run B misread **GALDO→SALVO** (R-House) and **HAWKINS→HANKINS**
+> (D-commissioner), and R-Senate differs every run (LESNIAK/ZAHAR/FABER → ZEBAR/ROGERS/
+> FASSER → LEONARD/PATEL/FASSLER). **STRUCTURE is rock-solid every run** (8 races, correct
+> offices/party_context/vote_for_n); **NAMES on this large-format ballot are unreliable,
+> not just in one column.** → Step 2 (resolution) is **necessary and the priority**, and
+> its success metric is *all* names stable across re-runs, not just R-Senate. The
+> Democratic *federal* races (Booker, Norcross) did read correctly in every run; a local
+> commissioner surname still misread once.
 
 ### Step 2 — if legible names are still needed: header-preserving HORIZONTAL-band tiling
 Office rows run **full-width horizontally**; candidates sit in columns within a row. So

@@ -35,7 +35,7 @@ const TARGET_SCHEMA = `Target schema:
               "name": "string | null",
               "party": "string | null",
               "ballot_position": "string (optional)",
-              "placeholder_reason": "no_petition_filed" | "write_in" | null
+              "placeholder_reason": "no_petition_filed" | "write_in" | "illegible" | null
             }
           ]
         }
@@ -45,6 +45,8 @@ const TARGET_SCHEMA = `Target schema:
 }`;
 
 const SHARED_INSTRUCTIONS = `Produce JSON that conforms to the target schema below. Extract every race and every candidate visible on the ballot — do NOT filter based on party affiliation or voting rules; the presentation layer handles that.
+
+Accuracy over completeness — transcribe, never infer. Read every name, office, party, and slogan EXACTLY as printed. NEVER infer, autocomplete, or "correct" a name toward a known or expected politician, and NEVER invent a plausible name to fill a slot. If a candidate's name is blurry, low-resolution, or not clearly legible, emit that candidate with name=null and placeholder_reason="illegible" — do NOT guess. A marked "illegible" gap is always better than a fabricated name: a wrong name shown to a voter is worse than a marked gap. Emit exactly the candidate slots printed (do not add or drop slots to match what you expect); mark any you cannot read clearly as "illegible".
 
 If the upstream output is incomplete or unreliable, prefer to mark a field as null rather than guess. Mark "NO PETITION FILED" rows as placeholder_reason="no_petition_filed", not as candidates. Mark write-in slots as placeholder_reason="write_in" with name=null. For multi-seat races (vote_for_n > 1), emit one write-in placeholder PER SEAT (so vote_for_n=2 → 2 write-in placeholders, vote_for_n=4 → 4 write-in placeholders).
 

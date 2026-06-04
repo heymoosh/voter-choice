@@ -17,9 +17,18 @@
  *   than silently dropping it.
  * - `"write_in"`: write-in slots. For multi-seat races (vote_for_n > 1) we
  *   emit one write-in placeholder PER SEAT.
+ * - `"illegible"`: a real candidate slot whose name could not be read reliably
+ *   (e.g. dense/low-resolution large-format ballots). We emit the slot with
+ *   `name: null` so the model never FABRICATES a plausible name — an honest gap
+ *   beats a wrong name. Filtered out of the selectable candidate list like the
+ *   other placeholders; the raw count is preserved for telemetry / future UX.
  * - `null`: a real candidate.
  */
-export type PlaceholderReason = "no_petition_filed" | "write_in" | null;
+export type PlaceholderReason =
+  | "no_petition_filed"
+  | "write_in"
+  | "illegible"
+  | null;
 
 /**
  * Section names — kept open to a fixed list per the bake-off's section_name
