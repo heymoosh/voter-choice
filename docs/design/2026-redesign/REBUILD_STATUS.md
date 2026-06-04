@@ -20,15 +20,26 @@ commits — machine state + gotchas a fresh session needs.
 `feat/prototype-rebuild`. ~18 commits, `tsc` clean. **NOT deployed**;
 `launch/production` untouched.
 
-**Machine state (NOT in git — set during the session):**
-- `.env.local` (symlinked: every worktree's `.env.local` → repo-root
-  `/Users/Muxin/Documents/GitHub/voter-choice/.env.local`) now has the real
-  **`DATABASE_URL`** (Neon, read-only lookups → real Booker/Norcross data) and
-  **`NEXT_PUBLIC_GOOGLE_PLACES_API_KEY`** (autocomplete works). `ANTHROPIC_*` and
-  `GOOGLE_CIVIC_API_KEY` are still **blank locally** (Vercel marks them sensitive
-  → `vercel env pull` returns empty; get values from the source dashboards).
-- Dev server: `npm run dev` from the worktree, serves `localhost:3000`. Restart
-  after editing `.env.local` (NEXT_PUBLIC vars are read at startup).
+**Machine state (NOT in git — current as of 2026-06-04):**
+- `.env.local` (symlinked → repo-root `.env.local`) now has REAL values for ALL
+  keys: `DATABASE_URL` (Neon), `NEXT_PUBLIC_GOOGLE_PLACES_API_KEY`,
+  `ANTHROPIC_VOTER_API`, `GOOGLE_CIVIC_API_KEY`, `FEC_API_KEY`, and
+  `UPSTASH_REDIS_REST_URL` + `_TOKEN`. (User added Anthropic + FEC + fixed a
+  malformed Upstash token mid-session.) So locally chat, ballot extraction, civic,
+  the FEC funding ingest, AND the durable rate limiter all WORK now.
+- ⚠️ The rate limiter behind chat + extract-ballot **FAILS CLOSED**
+  (`RATE_LIMIT_UNAVAILABLE`) when Upstash errors/auth-fails — a malformed token
+  silently blocked both routes (we hit exactly this; the PDF "wasn't parsing" was
+  this, not the Anthropic key). When Upstash is UNSET it falls back to in-memory.
+- Dev server: running in the BACKGROUND (`npm run dev`, :3000). Restart after any
+  `.env.local` edit — env is read at startup (the key + Upstash fixes only took
+  effect after a restart).
+- ⚠️ PROD DB write done this session: Booker + Norcross have real FEC
+  small/large/PAC funding rows (scoped `db:donors-federal --name booker,norcross`,
+  UPSERT-ONLY). Their stale `total_receipts` rows were KEPT (user chose upsert-
+  only), so the LIVE app (old code, no read-time filter) now DOUBLE-COUNTS those
+  two (~$30M) until the rebuild deploys. Cleanup = re-run with `--drop-legacy`
+  (destructive DELETE; gated on explicit approval — auto-gate blocks it otherwise).
 
 **Architecture (the key mental model):**
 - `src/prototype/VoterChoiceApp.tsx` is the **living app code** — a one-time
@@ -48,24 +59,60 @@ commits — machine state + gotchas a fresh session needs.
 - Use Playwright MCP on `localhost:3000`. **Clear `localStorage` between drives**
   (`() => localStorage.clear()` then re-navigate) — the prototype persists
   sessions and will resume mid-flow otherwise.
-- `/api/civic` returns **503 locally** (blank key) — EXPECTED; the flow handles it
-  by routing to the upload/paste screen. So the **paste path is the
-  locally-verifiable ballot path**; PDF upload → `/api/extract-ballot` needs the
-  Anthropic key (prod only).
-- The cold-open uses the prototype's FAKE issue interpretation (no LLM locally) —
-  fine for driving to the workspace. For real alignment scores, the locked issues
-  need `canonicalIssue` (the "Use a starter profile" / PRESET_ISSUES path has it).
-- ⚠️ legacy gotcha: the OLD e2e ran `npm run start` (prebuilt `.next`) — always
-  rebuild before that. The rebuild verifies via `npm run dev` instead.
+- `/api/civic` WORKS now (key present). For a June PRIMARY it returns no contests
+  → routes to the upload/paste screen (that's how to reach the upload flow).
+- PDF upload → `/api/extract-ballot` WORKS now (Anthropic key). NOTE `election_type`
+  + `jurisdiction` live under `extraction.election_metadata` (NOT top-level —
+  reading top-level silently broke the primary party gate; fixed in `9efc2ee`). A
+  primary → party gate fires → pick D/R → `filterRacesByParty` filters to that
+  party. Booker/Norcross resolve to REAL DB data; primary challengers don't (→
+  the no-record card + on-reveal web research).
+- Cold-open: "show me an example" → Send loads PRESET_ISSUES (with
+  `canonicalIssue`) → "Lock these in" → real `/api/race-data`. The fake issue
+  interpretation is fine for driving.
+- ⚠️ Playwright's file-upload tool only accepts paths under the agitated-shockley
+  worktree (or its `.playwright-mcp`); copy the test PDF there first.
+- Each PDF extraction + each candidate web-research is a real LLM call on the
+  community budget — drive deliberately (don't re-extract needlessly).
 
-**Next steps (priority order):**
-1. ✅ **Chat seam** — DONE (see "Phase 2c" below). `mockAIReply` → real streaming
-   `/api/chat`. Last mock in the core flow is gone.
-2. **Phase 3** — funding enrichment (FEC small/large/PAC + industry) + curated [Δ].
-3. **Polish** (backlog/commits): full state-rule party-gate UX (statute +
-   semi-closed lanes via `getStateRule`); autocomplete green-border match;
-   ~~general text-paste candidate grouping~~ (✅ fixed — see Blind-mode note);
-   state-specific SOS links + real county.
+**Session 2026-06-04 — shipped (all on `feat/prototype-rebuild`, NOT deployed):**
+- Chat seam (`mockAIReply` → streaming `/api/chat`): `f20cdb6`, `f0a0d45`.
+- Funding mix (FEC small/large/PAC; read-time `computeFundingMix` + propagation +
+  scoped prod ingest for Booker/Norcross): `8fe87d8` `8819838` `bdf82db` `8c4c1a8`.
+- Blind-mode name-leak fixes (office-only labels + chat-RAG anonymization):
+  `c5fae03`; `stateCodeFrom` "MY BALLOT" fix `9ca4c14`.
+- Analyzing-loader copy fix `ad023bb`; primary party-gate fix
+  (`election_metadata` path) `9efc2ee`.
+- On-reveal candidate web research (anonymity-gated PROSE card) `3801176`
+  — ⬇️ being REWORKED, see NEXT TASK.
+
+**⏭️ NEXT TASK (new direction — user, 2026-06-04): auto-populate missing candidates.**
+Build a persistent store ("our own DB") for candidates whose histories we lack:
+**webfetch → populate STRUCTURED, issue-scored data → persist → render via the
+SAME issue-based alignment UX (the % bars) as DB candidates.**
+- DO NOT change the core UX. NO "web research · not a verified record" prose blob
+  — REWORK/remove the `3801176` card path (it shows prose); the new path must feed
+  the normal alignment + funding rendering.
+- Persistence: user chose a **new prod DB table** (candidate-data / research),
+  read by race-data like DB data; key by candidate (name + jurisdiction + cycle).
+  (The KV-cache + issue-agnostic options were considered then declined — the user
+  explicitly wants issue-based scoring preserved, NOT generic prose.)
+- ⚠️ CORE DESIGN PROBLEM to solve first: our alignment % is VOTING-RECORD-based
+  (`lookupAlignment` → real votes). Most no-DB candidates are challengers with NO
+  voting record → nothing to vote-score → can't honestly say "Aligned on N of M
+  votes." Web research surfaces STATED POSITIONS, not votes. So a webfetched score
+  is position-based — same UX shape, weaker basis. Decide how to derive + LABEL it
+  honestly. `AlignmentScoresEntry.sourceType` (`voting_record` vs other) in
+  `structured-blocks.ts` is the likely hook.
+- Anonymity: structured scores (kept/total %) are name-AGNOSTIC → blind-safe like
+  Booker's (vote narratives already run through `anonymizeText`). So the on-reveal
+  gate the prose needed is likely UNNECESSARY here; the webfetch uses the real name
+  server-side but the stored RESULT is name-free.
+
+**Other backlog:** `--drop-legacy` cleanup of the Booker/Norcross `total_receipts`
+double-count; full federal funding sweep (fuzzy name→FEC resolution risk);
+industry breakdown (FEC `by_employer` 404s); full state-rule party-gate UX;
+state-specific SOS links + real county.
 
 > **⚠️ Blind-mode anonymity invariant (commit `c5fae03`).** Candidate names must
 > NEVER appear outside the candidate card's reveal control. Two wiring leaks were
