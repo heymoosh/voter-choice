@@ -234,13 +234,20 @@ export async function fetchBallotFromFile(file: File): Promise<BallotResult> {
     const res = await fetch("/api/extract-ballot", { method: "POST", body: fd });
     if (!res.ok) return { races: [], stateCode: "" };
     const extraction = await res.json();
+    // BallotExtraction nests these under `election_metadata` — the old top-level
+    // reads were always undefined, so a PRIMARY ballot silently got
+    // electionType="" and the party gate never fired. Read the nested fields
+    // (with a top-level fallback for safety).
+    const meta = extraction?.election_metadata ?? {};
+    const jurisdiction = meta.jurisdiction || extraction?.jurisdiction || "";
     setRealElectionType(
-      extraction?.election_type ||
-        detectElectionType(extraction?.jurisdiction || ""),
+      meta.election_type ||
+        extraction?.election_type ||
+        detectElectionType(jurisdiction),
     );
     return {
       races: extractionToRaces(extraction, null),
-      stateCode: stateCodeFrom(extraction?.jurisdiction || ""),
+      stateCode: stateCodeFrom(jurisdiction),
     };
   } catch {
     return { races: [], stateCode: "" };
