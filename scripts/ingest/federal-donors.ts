@@ -463,6 +463,25 @@ export async function buildDonorRows(
 // DB upsert
 // ---------------------------------------------------------------------------
 
+/**
+ * Delete the legacy single 'total_receipts' bucket for a candidate (all cycles).
+ * The new small/large/PAC breakdown supersedes it; removing it prevents the
+ * live app (old code, no read-time filter) from double-counting it against the
+ * breakdown. Scoped to one candidate; callers run this only AFTER a successful
+ * breakdown upsert so the replacement always exists first.
+ */
+export async function deleteLegacyTotalReceipts(
+  db: DbClient,
+  candidateId: string,
+): Promise<void> {
+  if (!candidateId) return;
+  await db
+    .delete(donorAggregates)
+    .where(
+      sql`${donorAggregates.candidateId} = ${candidateId} AND ${donorAggregates.bucketLabel} = 'total_receipts'`,
+    );
+}
+
 export async function upsertDonorRows(
   db: DbClient,
   rows: DonorAggregateRow[],
@@ -536,6 +555,12 @@ export async function ingestFederalDonors({
   // name contains any of the comma-separated substrings (case-insensitive) — for
   // a small, verifiable first write instead of the full federal sweep.
   const dryRun = argv.includes("--dry-run");
+  // --drop-legacy: after writing a candidate's small/large/PAC breakdown, delete
+  // their stale single 'total_receipts' bucket. The breakdown supersedes it;
+  // removing it keeps BOTH the rebuild AND the live app (which lacks the
+  // read-time total_receipts filter) from summing/double-counting. Scoped to
+  // each just-processed candidate, run strictly AFTER their upsert.
+  const dropLegacy = argv.includes("--drop-legacy");
   const nameFilter = parseNameFilter(argv);
 
   // Fetch federal candidates from DB. A name filter is pushed into the SQL so it
@@ -604,6 +629,12 @@ export async function ingestFederalDonors({
         const upserted = await upsertDonorRows(db, rows);
         counts.rowsUpserted += upserted;
         counts.candidatesProcessed += 1;
+        if (dropLegacy) {
+          await deleteLegacyTotalReceipts(db, getString(candidate, "id") ?? "");
+          console.log(
+            `[federal-donors] dropped legacy total_receipts (if any) for ${getString(candidate, "id")}`,
+          );
+        }
       } catch (error) {
         console.warn(
           `[federal-donors] candidate_error candidate=${getString(candidate, "id")} error=${safeErrorMessage(error)}`,
