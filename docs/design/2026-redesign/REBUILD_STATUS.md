@@ -113,6 +113,14 @@ SAME issue-based alignment UX (the % bars) as DB candidates.**
 double-count; full federal funding sweep (fuzzy name→FEC resolution risk);
 industry breakdown (FEC `by_employer` 404s); full state-rule party-gate UX;
 state-specific SOS links + real county.
+- **Rich per-state voter-ID lists (user request, 2026-06-04).** `voter-id-rules.ts`
+  ships NCSL-verified `idRequired` + category-level `note` for all 50+DC, but a
+  fully verified `acceptedIds` LIST only for TX + GA; the other ID-required states
+  carry category-level notes (no fabricated specifics — deliberate). Backlog: give
+  every state with a wide variety of accepted IDs its own per-state-sourced list
+  (state SoS sites), with `lastVerified`/source tracking. Not urgent.
+- **F1 — large-format extraction misread.** See `F1_EXTRACTION_HANDOFF.md` (own
+  fresh session). Diagnosed; naive tiling reverted; staged fix recommended.
 
 > **⚠️ Blind-mode anonymity invariant (commit `c5fae03`).** Candidate names must
 > NEVER appear outside the candidate card's reveal control. Two wiring leaks were
