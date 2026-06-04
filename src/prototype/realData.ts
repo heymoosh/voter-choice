@@ -141,13 +141,44 @@ const STATE_NAME_TO_CODE: Record<string, string> = {
   wisconsin: "WI", wyoming: "WY",
 };
 
+// Name entries sorted longest-first so a compound name wins over a substring
+// peer — e.g. "west virginia" must be tested before "virginia", else an
+// `includes()` on "west virginia" returns VA instead of WV.
+const STATE_NAME_ENTRIES = Object.entries(STATE_NAME_TO_CODE).sort(
+  (a, b) => b[0].length - a[0].length,
+);
+
+// The real US state / territory 2-letter codes — used to validate the
+// abbreviation fallback so non-state tokens aren't mistaken for a state. DC is
+// already a value in the name map above; the territories aren't, so add them.
+const US_TERRITORY_CODES = ["PR", "GU", "VI", "AS", "MP"];
+const US_STATE_CODES = new Set<string>([
+  ...Object.values(STATE_NAME_TO_CODE),
+  ...US_TERRITORY_CODES,
+]);
+
 export function stateCodeFrom(s: string): string {
-  const lower = (s || "").toLowerCase();
-  for (const [name, code] of Object.entries(STATE_NAME_TO_CODE)) {
+  const str = s || "";
+  const lower = str.toLowerCase();
+  for (const [name, code] of STATE_NAME_ENTRIES) {
     if (lower.includes(name)) return code;
   }
-  const m = (s || "").match(/\b([A-Z]{2})\b/);
-  return m ? m[1].toUpperCase() : "";
+  // Abbreviation fallback, validated against real codes so non-state tokens are
+  // rejected — the "MY" in "MY BALLOT", a proposition "NO", "US", etc. The
+  // pasted input is the WHOLE ballot, so first look for a code in jurisdiction-
+  // tail position (the comma in "Camden County, NJ" or a "City, ST" address):
+  // that pins the state to the header and skips stray body tokens like the "IN"
+  // in "WRITE-IN" or a leading "MI BOLETA" header (MI is itself a valid code).
+  // Fall back to any valid token (last wins) for inputs with no such comma.
+  // Fixes the save→paste round-trip (the export opens "MY BALLOT — …, NJ").
+  const lastValid = (re: RegExp): string => {
+    let code = "";
+    for (const m of str.matchAll(re)) {
+      if (US_STATE_CODES.has(m[1])) code = m[1];
+    }
+    return code;
+  };
+  return lastValid(/,\s*([A-Z]{2})\b/g) || lastValid(/\b([A-Z]{2})\b/g);
 }
 
 /** Address → /api/civic. Returns races when Civic has the ballot; else empty
