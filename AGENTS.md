@@ -36,6 +36,10 @@ Before non-trivial edits, identify the owning concern and avoid parallel sources
 
 Do not execute from acceptance criteria alone. Work packets must carry intent, scope, acceptance criteria, verification, and anti-solutions. Template: `docs/ai-coding-practices/templates/work-packet.md`; rules: `docs/ai-coding-practices/guardrails/work-packet-rules.md`.
 
+## Alignment Scoring
+
+Any change to alignment scoring — the issue "sides" / pole vocabulary, the bill-tagger prompt, or the concern-resolver — MUST run an eval on the `alignment-work` Neon branch and append the result + findings to `docs/alignment/ALIGNMENT_LEDGER.md` before merge. **Read the ledger first; don't re-learn what it already records.** Method, metrics, and honest limits: `docs/alignment/ALIGNMENT_EVAL.md`. The scoring engine silently inverts on contested issues (guns, crime, immigration) if the tagging is wrong — never ship a tagger/vocabulary change unvalidated.
+
 ## Working Trees
 
 The repo uses multiple git worktrees under `.claude/worktrees/`. Pick the right one for the task:
