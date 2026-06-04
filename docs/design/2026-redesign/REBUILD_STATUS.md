@@ -64,7 +64,18 @@ commits — machine state + gotchas a fresh session needs.
 2. **Phase 3** — funding enrichment (FEC small/large/PAC + industry) + curated [Δ].
 3. **Polish** (backlog/commits): full state-rule party-gate UX (statute +
    semi-closed lanes via `getStateRule`); autocomplete green-border match;
-   general text-paste candidate grouping; state-specific SOS links + real county.
+   ~~general text-paste candidate grouping~~ (✅ fixed — see Blind-mode note);
+   state-specific SOS links + real county.
+
+> **⚠️ Blind-mode anonymity invariant (commit `c5fae03`).** Candidate names must
+> NEVER appear outside the candidate card's reveal control. Two wiring leaks were
+> fixed + verified: (a) `parsedTextToContests` no longer puts a candidate name in
+> the contest `district` (deriveRaces builds the race LABEL from office+district,
+> so a name there leaked into header/rail/ballot/chat-placeholder) — it now groups
+> a roster under one office; (b) the chat RAG anonymizes blinded names to
+> "Candidate A/B" before sending + adds a BLIND MODE instruction, so the model
+> never receives a real name. When adding ANY new seam, re-check both: derived
+> labels (office only) and anything sent to the model.
 4. **Cleanup** — delete the old drifted app (`BallotToolClient`, `RacePatterns`,
    `ChatPanel`, `FunderBars`, `CompareModal`, …) + their `*.test.tsx`/e2e; keep
    backend tests; full gate; **deploy only after user review**.
