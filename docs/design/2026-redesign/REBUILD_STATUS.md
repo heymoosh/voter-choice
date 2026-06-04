@@ -235,33 +235,41 @@ write is deliberate.
 heavy (51%). FEC totals endpoint: `individual_unitemized` / `individual_itemized`
 / `other_political_committee_contributions`.
 
-**Code shipped (commits `8fe87d8`, `8819838`; tsc + tests green; NO prod writes):**
+**Code shipped (commits `8fe87d8`, `8819838`, `+ propagation fix`; tsc + tests green):**
 - `race-data.ts computeFundingMix` → `fundingMix {small,large,pac,total,cycle}`,
-  `total = small+large+pac` (immune to any industry double-count).
+  `total = small+large+pac` (immune to any industry double-count). Propagated onto
+  the assembled candidate (a follow-up fixed a cherry-pick that dropped it).
 - `donors.ts` non-destructive `total_receipts` filter (drops the legacy bucket
   only once a real breakdown exists; never strips a not-yet-ingested candidate).
-- `federal-donors.ts`: PAC → clean `"PACs"` bucket (was `"Other"`); `--dry-run`
-  + `--name a,b` (SQL filter); **self-resolves FEC ids** via name+office+state
+- `federal-donors.ts`: PAC → clean `"PACs"` bucket (was `"Other"`); `--dry-run`,
+  `--name a,b` (SQL filter), `--drop-legacy` (scoped post-upsert total_receipts
+  delete — NOT used, see below); **self-resolves FEC ids** via name+office+state
   search (our federal rows have bioguide ids + `[D-NJ]`-style names, no stored
   FEC id — the ingest skipped everyone without this).
-- Behavior unchanged until data lands (fundingMix omitted, legacy bar kept).
 
-**BLOCKER — the enrichment run can't happen locally:** it needs a real
-`FEC_API_KEY` (blank locally, like Anthropic/Civic; `DEMO_KEY` is rate-limited and
-unfit for a real run). So the ingest must run where the key lives. The
-`--dry-run` confirmed the resolution query is correct but 429'd on DEMO_KEY.
+**✅ VERIFIED end-to-end on REAL prod data (2026-06-04):** ran the ingest scoped
+to Booker + Norcross (`--name booker,norcross`, upsert-only, 12 rows). `/api/race-
+data` for Booker returns `fundingMix {small:60,large:37,pac:4,total:13617405,
+cycle:"2026 cycle"}`; the rebuild workspace renders the mix bars
+("60% small / 37% large / 4% PACs · $13.6M raised"), `total_receipts` filtered
+out (no double-count). User supplied the real `FEC_API_KEY` locally (blank by
+default — `DEMO_KEY` is rate-limited and 429'd).
 
-**Two open decisions (need user):**
-1. **Where/how to run it** — provide a real FEC key locally (I run scoped:
-   `--name booker,norcross` against prod, verify the bars), or run it in the
-   deployed env where the key already exists.
-2. **Scope** — start scoped to the NJ demo candidates (ids hand-verified → zero
-   disambiguation risk), THEN decide the full federal sweep separately (fuzzy
-   name resolution + a large change to the live app's funding display).
+**Decisions taken:**
+- **Upsert-only (user's call):** `total_receipts` rows were KEPT, not dropped.
+  Consequence: the LIVE app (old code, no read-time filter — confirmed it sums all
+  buckets) now DOUBLE-COUNTS Booker/Norcross (~$30M) until the rebuild deploys.
+  Accepted as temporary. To clean up: run with `--drop-legacy` (a destructive
+  DELETE — needs explicit approval; the auto-gate correctly blocked it).
 
-**Deferred (separate FEC issue):** industry breakdown — FEC's
-`schedule_a/by_employer` endpoint 404s, so industry buckets stay empty. Not
-needed for the funding-mix bars.
+**Remaining:**
+- **Full federal sweep** — only Booker + Norcross are enriched. The rest of the
+  ballot's federal candidates still show the legacy bar. A full run uses fuzzy
+  name→FEC resolution (disambiguation risk, esp. common House names) + changes the
+  live app broadly → separate decision.
+- **Deferred (separate FEC issue):** industry breakdown — FEC's
+  `schedule_a/by_employer` endpoint 404s (even with the real key), so industry
+  buckets stay empty. Not needed for the funding-mix bars.
 
 ## Data seams to wire (Phase 2) — prototype-app.jsx + prototype-data.jsx
 
