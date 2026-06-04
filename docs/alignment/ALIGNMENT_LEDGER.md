@@ -11,6 +11,8 @@ Running log of eval runs, findings, and decisions for the alignment scoring engi
 | **F3** | `border_security`'s strict relevance gate drops state **immigration-enforcement** bills (they should route to `immigration`, not vanish). | open |
 | **F4** | ~47% of state bills have no summary (ingest gap, not extraction). Filed in `post-launch-backlog.md` → Data Quality. Biggest single lever for state-race coverage. | open → backlog |
 | **M1** (meta) | The eval runner must **auto-capture model id + settings** — the 2026-06-04 run did not. | open |
+| **F5** | Internal `in_favor`/`opposed` labels do NOT need renaming — the UI never shows them (it renders "voted with your side N of M" + the bill/vote). Presentation is redesign-owned. | closed (Muxin) |
+| **F6** | Incentive-vs-mandate "safety" bills (e.g. a tax credit for a gun safe) are genuinely ambiguous in direction. Keep them **low-confidence + show the vote**; don't force a pole. | accepted (Muxin) |
 
 ## Runs
 
@@ -38,6 +40,11 @@ expect mostly no_score, the coverage tradeoff), then the other contested issues.
 **multi-tagger consensus** for the at-scale write (not single-tagger). Cutover to
 production is a later, separate, gated step (point `lookupAlignment` at the new tags
 via a migration).
+
+**Reviewed (Muxin, 2026-06-04):** batch accepted. The ~3 low-confidence judgment-call
+flips (firearm-safety-device tax credit, "Reimagine" grants tweak, voluntary
+purchase-waiver) are kept as tagged — low-confidence + visible vote is the safety net.
+Internal `in_favor`/`opposed` labels stay unchanged (see F5).
 
 ### 2026-06-04 — Real-data methodology validation (3-tagger, 49 real bills)
 **Question:** does the (issue, side) pole approach fix inversions on the *real* bill
