@@ -37,6 +37,8 @@ export interface EarlyVoting {
 export interface VotingRules {
   idRequired: boolean;
   acceptedIds: string[];
+  /** One-line, voter-facing ID-rule note surfaced on the print sheet + bar. */
+  idNote?: string;
   expirationRule?: string;
   impedimentDeclaration?: string;
   supportingDocs?: string[];

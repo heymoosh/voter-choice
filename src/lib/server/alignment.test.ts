@@ -250,6 +250,21 @@ describe("resolveCandidateId", () => {
     expect(result).toBe("fed-norcross");
   });
 
+  it("resolves a bare surname against the real House [D-NJ1] district-digit format (regression: F5)", async () => {
+    // Prod stores House members with a DISTRICT DIGIT — "[D-NJ1]" — while
+    // Senators are "[D-NJ]". Before the \d* regex fix (cleanCandidateName +
+    // stateFromCandidateName), Norcross's surname parsed as "[d-nj1]" and
+    // resolveCandidateId returned null — breaking BOTH alignment and donors.
+    // The Senate-style fixtures above never exercised the production format.
+    const { select } = makeSelectMock([
+      { id: "fed-norcross", fullName: "Rep. Donald Norcross [D-NJ1]" },
+      { id: "fed-pallone", fullName: "Rep. Frank Pallone [D-NJ6]" },
+    ]);
+    mockedGetDb.mockReturnValue({ select } as never);
+    const result = await resolveCandidateId("NORCROSS", "federal-house", "NJ");
+    expect(result).toBe("fed-norcross");
+  });
+
   it("resolves a bare surname when the SAME person has duplicate rows (multi-congress ingest)", async () => {
     const { select } = makeSelectMock([
       { id: "fed-norcross", fullName: "Rep. Donald Norcross [D-NJ]" },

@@ -2102,20 +2102,28 @@ function PollingStatusBar({ pollingInfo, stateData, rows }) {
             <div className="pbp-cell">
               <div className="pbp-k">{t('polling.bring')}</div>
               <div className="pbp-v pbp-bring">
-                <span className="pbp-bring-lead">Any one of these:</span>
-                <ul className="pbp-bring-list">
-                  {visibleIds.map(id => (
-                    <li key={id}>{id}</li>
-                  ))}
-                </ul>
-                {hiddenCount > 0 && (
-                  <button
-                    type="button"
-                    className="pbp-bring-toggle"
-                    onClick={(e) => { e.stopPropagation(); setIdsExpanded(v => !v); }}
-                  >
-                    {idsExpanded ? 'Show fewer ▴' : `Show ${hiddenCount} more accepted IDs ▾`}
-                  </button>
+                {!stateData.votingRules.idRequired ? (
+                  <span>{stateData.votingRules.idNote || 'No ID required for most voters.'}</span>
+                ) : acceptedIds.length > 0 ? (
+                  <>
+                    <span className="pbp-bring-lead">Any one of these:</span>
+                    <ul className="pbp-bring-list">
+                      {visibleIds.map(id => (
+                        <li key={id}>{id}</li>
+                      ))}
+                    </ul>
+                    {hiddenCount > 0 && (
+                      <button
+                        type="button"
+                        className="pbp-bring-toggle"
+                        onClick={(e) => { e.stopPropagation(); setIdsExpanded(v => !v); }}
+                      >
+                        {idsExpanded ? 'Show fewer ▴' : `Show ${hiddenCount} more accepted IDs ▾`}
+                      </button>
+                    )}
+                  </>
+                ) : (
+                  <span>{stateData.votingRules.idNote || 'ID required.'} Confirm the accepted-ID list at your state election office.</span>
                 )}
               </div>
               <div className="pbp-sub">Phones prohibited within 100 ft</div>
@@ -4687,15 +4695,20 @@ function PrintView({ address, issues, decisions, onBack }) {
             <div className="cell"><div className="k">Address</div><div className="v" style={{ fontSize: '12px' }}>{address}</div></div>
             <div className="cell"><div className="k">District</div><div className="v">{districtLabel || '—'}</div></div>
             <div className="cell cell-bring">
-              <div className="k">Bring (any one)</div>
-              {acceptedIds.length > 0 ? (
-                <ul className="v print-id-list">
-                  {acceptedIds.map(id => (
-                    <li key={id}>{id}</li>
-                  ))}
-                </ul>
+              <div className="k">Voter ID</div>
+              {!sd.votingRules.idRequired ? (
+                <div className="v">{sd.votingRules.idNote || 'No ID required for most voters.'}</div>
+              ) : acceptedIds.length > 0 ? (
+                <>
+                  <div className="v">Bring any one:</div>
+                  <ul className="v print-id-list">
+                    {acceptedIds.map(id => (
+                      <li key={id}>{id}</li>
+                    ))}
+                  </ul>
+                </>
               ) : (
-                <div className="v">ID rules vary — check {lookupHost}</div>
+                <div className="v">{sd.votingRules.idNote || 'ID required.'} Confirm the exact accepted-ID list at {lookupHost}.</div>
               )}
             </div>
             <div className="cell"><div className="k">Before you go</div><div className="v">Look up your polling place, hours &amp; early voting at {lookupHost}</div></div>
