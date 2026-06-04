@@ -12,6 +12,7 @@ import {
   getAlignmentEntryForCandidate, getScoreForIssue, getCandidateParty,
   computeDeadlineRow, getDeadlineRows,
   applyRealRaces, setRealStateCode, getRealStateCode, getRealElectionType,
+  getCandidateResearch, setCandidateResearch,
 } from "./data";
 import {
   loadAllRaceData,
@@ -23,6 +24,7 @@ import {
   streamChatReply,
   buildRaceChatSystemPrompt,
   getChatSessionId,
+  fetchCandidateResearch,
 } from "./realData";
 import { getFallbackStateData } from "../lib/getStateData";
 import {
@@ -635,7 +637,7 @@ function IssueRow({ issue, index, total, onMoveUp, onMoveDown, onRename, onRemov
      party:            { name, code, pipClass }
      priorRoleOverride?: string                (display polish)
      picked, onPick, onUnpick: control props */
-function CandidateCard({ candidate, alignmentEntry, userIssues, party, picked, onPick, onUnpick, onSeeAllVotes, blindMode, globalBlindMode, isRevealed, alias, onReveal, onHide, peerTotals }) {
+function CandidateCard({ candidate, alignmentEntry, userIssues, party, picked, onPick, onUnpick, onSeeAllVotes, blindMode, globalBlindMode, isRevealed, alias, onReveal, onHide, peerTotals, raceId }) {
   const [expandedIssue, setExpandedIssue] = useState(null);
   /* Progressive disclosure: money trail (funding mix + named PACs +
      industry breakdown) is collapsed by default on mobile, expanded
@@ -651,6 +653,11 @@ function CandidateCard({ candidate, alignmentEntry, userIssues, party, picked, o
   // Anonymization context — passed all the way down so narrative
   // text doesn't leak the candidate's last name in blind mode.
   const anonCtx = { blindMode, realLastName: candidate.name?.split(' ').pop(), alias };
+
+  // Web-research fallback for the alignment block. Gated on !blindMode so a
+  // revealed-then-rehidden candidate never re-exposes their name via the cached
+  // summary. Null → the card shows its honest "no record" backstop.
+  const research = !blindMode ? getCandidateResearch(raceId + '::' + candidate.name) : null;
 
   return (
     <div className="cv2-card">
@@ -672,6 +679,7 @@ function CandidateCard({ candidate, alignmentEntry, userIssues, party, picked, o
         onToggleIssue={(canonicalIssue) =>
           setExpandedIssue(expandedIssue === canonicalIssue ? null : canonicalIssue)}
         anonCtx={anonCtx}
+        research={research}
       />
 
       {/* See all votes — primary "evidence" CTA, always visible right
@@ -904,8 +912,10 @@ function CandidateCardHeader({ candidate, party, blindMode, isRevealed, alias, o
 
    props:
      candidate, alignmentEntry, userIssues, expandedIssue, onToggleIssue */
-function AlignmentScoreBanner({ candidate, alignmentEntry, userIssues, expandedIssue, onToggleIssue, anonCtx }) {
-  // No legislative record case
+function AlignmentScoreBanner({ candidate, alignmentEntry, userIssues, expandedIssue, onToggleIssue, anonCtx, research }) {
+  // No legislative record case. When the candidate is revealed and a web-research
+  // fallback has resolved, surface it (clearly labeled, NOT a verified record);
+  // otherwise the honest "judge on public statements" backstop.
   if (alignmentEntry?.scores === null && alignmentEntry?.unavailable) {
     return (
       <div className="cv2-issues">
@@ -914,7 +924,18 @@ function AlignmentScoreBanner({ candidate, alignmentEntry, userIssues, expandedI
         </div>
         <div className="cv2-norecord">
           <p>{alignmentEntry.unavailable.reason}.</p>
-          <p>Judge instead on the <a>policy statements they’ve made publicly</a> and the donor base below.</p>
+          {research && research.status === 'loading' ? (
+            <p style={{ fontStyle: 'italic', opacity: 0.7 }}>Researching the web…</p>
+          ) : research && research.status === 'done' && research.summary ? (
+            <div style={{ marginTop: '8px' }}>
+              <div style={{ fontSize: '10.5px', textTransform: 'uppercase', letterSpacing: '0.12em', opacity: 0.6, marginBottom: '4px' }}>
+                Web research · not a verified record
+              </div>
+              <div style={{ whiteSpace: 'pre-line', fontSize: '13.5px', lineHeight: 1.5 }}>{research.summary}</div>
+            </div>
+          ) : (
+            <p>Judge instead on the <a>policy statements they’ve made publicly</a> and the donor base below.</p>
+          )}
         </div>
       </div>
     );
@@ -4260,6 +4281,7 @@ function WorkspaceView({ address, issues, decisions, activeRaceId, onDecide, onU
                       onReveal={() => onRevealCandidate(cand.id)}
                       onHide={() => onHideCandidate(cand.id)}
                       peerTotals={peerTotals}
+                      raceId={activeRace.id}
                     />
                   </div>
                 </div>
@@ -4771,6 +4793,42 @@ function App() {
   // user explicitly reveals on a per-candidate basis (sticky).
   const [blindMode, setBlindMode] = useStateA(saved?.blindMode !== false);
   const [revealedCandidates, setRevealedCandidates] = useStateA(new Set(saved?.revealedCandidates || []));
+
+  // Phase 3: on-demand candidate web research. For the ACTIVE race, fetch a
+  // focused web summary for each candidate the voter has REVEALED (or all, when
+  // blind mode is off) who has NO DB record. NEVER fetch for a still-blinded
+  // candidate — the summary is full of the real name and would break anonymity
+  // (the same invariant the blind cards enforce). The attempt is cached
+  // (loading/done/unavailable) so no-record candidates don't re-fire.
+  useEffectA(() => {
+    if (view !== 'workspace') return;
+    const rp = getRacePatternsForRace(activeRaceId);
+    const align = getAlignmentScoresForRace(activeRaceId);
+    (rp?.candidates || []).forEach((cand, i) => {
+      const idn = getCandidateIdentity(cand, { blindMode, revealed: revealedCandidates, index: i });
+      if (idn.isBlind) return; // anonymity gate — only research revealed candidates
+      const entry = (align?.entries || []).find(e => e.candidateId === cand.id);
+      if (entry && entry.scores !== null) return; // already has a real DB record
+      const key = activeRaceId + '::' + cand.name;
+      if (getCandidateResearch(key)) return; // attempt already recorded — never re-fire
+      setCandidateResearch(key, { status: 'loading' });
+      setDataVersion(v => v + 1);
+      const labels = (issues || [])
+        .map(x => x.interpretation || x.name || x.canonicalIssue)
+        .filter(Boolean)
+        .join(', ');
+      const sc = getRealStateCode();
+      fetchCandidateResearch({
+        candidateName: cand.name,
+        jurisdiction: (rp?.race || activeRaceId) + (sc ? ', ' + sc : ''),
+        topic: 'positions and record relevant to: ' + (labels || "the voter's priorities") + '; plus major campaign funding and notable endorsements',
+      }).then(res => {
+        setCandidateResearch(key, res && res.summary ? { status: 'done', summary: res.summary } : { status: 'unavailable' });
+        setDataVersion(v => v + 1);
+      });
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeRaceId, blindMode, revealedCandidates, view]);
 
   const [tweaks, setTweaks] = useStateA(loadTweaks);
   const [tweaksOpen, setTweaksOpen] = useStateA(false);

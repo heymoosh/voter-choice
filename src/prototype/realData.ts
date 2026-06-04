@@ -488,3 +488,31 @@ export async function streamChatReply(
   // failure — without this the in-flight bubble would hang empty forever.
   if (!sawAny && !errored) cb.onError("empty");
 }
+
+/* ─── Phase 3: on-demand candidate web research (card fallback) ───
+   When /api/race-data has no DB record for a candidate, the workspace can fall
+   back to a focused web search. MUST only be called for a REVEALED candidate —
+   the returned summary is keyed on (and full of) the real name, so rendering it
+   inside a still-blinded "Candidate A" card would break anonymity. */
+export interface CandidateResearchResult {
+  summary?: string;
+  unavailable?: boolean;
+}
+
+export async function fetchCandidateResearch(input: {
+  candidateName: string;
+  jurisdiction: string;
+  topic: string;
+}): Promise<CandidateResearchResult | null> {
+  try {
+    const res = await fetch("/api/research-candidate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    });
+    if (!res.ok) return null;
+    return (await res.json()) as CandidateResearchResult;
+  } catch {
+    return null;
+  }
+}

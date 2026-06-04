@@ -891,6 +891,19 @@ export function applyRaceData(raceId, racePatterns, alignmentScores) {
   if (alignmentScores)
     ALIGNMENT_SCORES = { ...ALIGNMENT_SCORES, [raceId]: alignmentScores };
 }
+
+// Per-candidate web-research cache — card fallback when the DB has no record.
+// Keyed by `${raceId}::${candidateName}` → { status: 'loading'|'done'|
+// 'unavailable', summary? }. Caching the ATTEMPT (not just successes) stops
+// no-record candidates from re-firing forever. Populated ONLY for revealed
+// (non-blind) candidates; see the App's research effect.
+let CANDIDATE_RESEARCH = {};
+export function getCandidateResearch(key) {
+  return CANDIDATE_RESEARCH[key];
+}
+export function setCandidateResearch(key, value) {
+  CANDIDATE_RESEARCH = { ...CANDIDATE_RESEARCH, [key]: value };
+}
 export function setRealStateCode(code) {
   REAL_STATE_CODE = code;
 }
