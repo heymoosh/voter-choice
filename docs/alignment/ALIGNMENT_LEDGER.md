@@ -14,6 +14,31 @@ Running log of eval runs, findings, and decisions for the alignment scoring engi
 
 ## Runs
 
+### 2026-06-04 — First re-tag WRITE: `gun_rights_safety` batch 1 (50 bills)
+**What:** first real pole-anchored re-tag written to the DB. Written to a **new,
+separate table `issue_tags_pole_v1`** on the `alignment-work` Neon branch — because
+`issue_tags` has a UNIQUE index on `(bill_id, canonical_issue)`, version-rows in the
+same table are impossible, so the re-tag lives in its own table; **`issue_tags` is
+never modified** and the whole thing is reversible by `DROP TABLE`. `pole_stance` ∈
+{in_favor, opposed, no_score}.
+
+**Settings:** 1 Agent-tool subagent (Claude; exact id not captured — see M1),
+pole-anchored `gun_rights_safety` prompt, 50 with-summary bills (of 692 gun tags;
+306 have summaries). `tagger_version='pole-anchored-v1'`, `source_run='gun-batch-1'`.
+
+**Result vs. old tags:** **14 sign-flips (inversions fixed) · 17 →no_score (old forced
+guesses) · 19 unchanged** — i.e. **31/50 (62%) of the old gun tags were wrong or
+unsupported**, consistent with the audit's ~55% gun error. Fixed examples (all old
+`in_favor` → correctly `opposed`): "Declaring gun violence a public health crisis,"
+"Safe gun storage," "Handguns in unattended motor vehicle… penalty." Integrity check:
+old `issue_tags` still has 692 gun rows, untouched.
+
+**Decision / next:** scale to the rest of guns (642 left, incl. 386 null-summary →
+expect mostly no_score, the coverage tradeoff), then the other contested issues. Use
+**multi-tagger consensus** for the at-scale write (not single-tagger). Cutover to
+production is a later, separate, gated step (point `lookupAlignment` at the new tags
+via a migration).
+
 ### 2026-06-04 — Real-data methodology validation (3-tagger, 49 real bills)
 **Question:** does the (issue, side) pole approach fix inversions on the *real* bill
 text — including the ~40% of state bills with no summary — or only on hand-written
