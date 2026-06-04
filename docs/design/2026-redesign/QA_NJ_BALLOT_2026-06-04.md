@@ -28,14 +28,33 @@ workspace→pick→print).
 - **F8 — chat markdown.** AI bubbles run through `stripChatMd` (strips
   `**bold**`/`*italic*`/`` `code` ``/`# headings`). *Verified* on sample inputs.
 
-### Still outstanding (need a focused follow-up / authorization)
-- **F1 — extraction misreads the dense R-Senate column.** DIAGNOSED as a vision-OCR
-  resolution problem on a large-format trifold (NOT a cache bug — see below). Fix =
-  tile/raise render scale + prompt hardening; a renderer-pipeline change with
-  regression risk, left for a focused session.
-- **F5 — Norcross unmatched.** Needs a prod-DB read (blocked without authorization)
-  to confirm whether Donald Norcross is missing from the `candidates` table or sits
-  under a mismatched `jurisdiction`; likely a data/ingest gap, not a frontend fix.
+### Session 2 follow-ups (commits 23389ea, 0930183)
+- **F5 — Norcross unmatched → FIXED + verified (commit 0930183).** Root cause was a
+  name-parse bug, NOT a data gap: House members are stored `"Rep. Donald Norcross
+  [D-NJ1]"` (state + district digit) but `alignment.ts` regexes required exactly two
+  letters before `]`, so the surname read as `[d-nj1]` and resolveCandidateId
+  returned null (breaking alignment AND donors via the shared helper). Widened both
+  regexes with `\d*` (mirrors the ingest side). Re-driven: Norcross now returns real
+  voting-record alignment + FEC funding. Added a House-format regression test.
+- **Per-state voter ID → SHIPPED (commit 0930183).** `src/lib/voter-id-rules.ts`
+  (NCSL-classified, 50 states + DC) folded into getFallbackStateData; print + bar
+  branch 3 ways (no-ID + note / verified list (TX,GA) / requirement + "confirm at
+  your state office"). NJ now shows "No ID required for most voters" + the exception.
+
+- **F1 — extraction misreads the dense R-Senate column. STILL OPEN; tiling attempt
+  REVERTED.** DIAGNOSED (not a cache bug): the vision model caps images at 1568px
+  long edge, so this large-format 17.5×23" trifold downscales until candidate text
+  is ~20px → misread. A full tiling implementation (render large pages → overlapping
+  crops → `mergeTiles`) was built + unit-tested, but a live re-extract showed it
+  **REGRESSES this ballot**: cropped tiles lose the office-header/row context, so the
+  model invents offices from whatever text is in the crop (party slogans like
+  "America First Always" become the office; the return-address line becomes a race;
+  candidates scatter into phantom "State Senator" races) — extraction fragmented from
+  ~8 coherent races to **30**. Names improved (MURPHY/ZDAN/TABOR read correctly) but
+  structure broke. WIP preserved at `.scratch-ballot/f1-wip/` (patch + test). A
+  working fix needs a **header-aware split** (every tile must carry the office-label
+  column + row structure) or a **two-pass** approach (whole-page for race STRUCTURE,
+  high-res tiles for NAMES, then reconcile) — a real redesign, not a tuning tweak.
 
 ---
 
