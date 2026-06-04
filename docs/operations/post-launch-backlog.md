@@ -117,6 +117,23 @@ C3 was disqualified as v1 winner because it returned `{"sections": []}` on the N
 
 ## Data Quality
 
+### [P1] ~47% of state bills have no summary — confirm whether OpenStates abstracts are recoverable, then backfill
+**Status:** Open (flagged 2026-06-04, during alignment re-tag methodology validation on the `alignment-work` Neon branch)
+
+**Finding (read-only DB audit):** `bills.summary` is missing on **47.4% of OpenStates (state) bills** — 31,813 of 67,048 — vs. only **7.5% of federal** (govtrack) bills. The text is **not hidden in our DB**: for these bills `raw_metadata->'openstates'` stores only a 4-field skeleton (`classification`, `id`, `identifier`, `session_id`); there is **no** `abstracts` / `summary` / `description` field anywhere (0 of 31,813). So this is an **ingest gap, not an extraction gap** — we never fetched/stored the abstract; it is not "present but unmapped."
+
+**Impact:** The bill-tagger (and the new pole-anchored alignment approach) reads `title` + `summary`. With no summary, ~half of state bills can only be judged on title, forcing low-confidence tags or honest "no-score" abstentions. In a 49-bill real-data eval the title-only state bills largely went to no-score (accurate, but it **thins alignment coverage on state/local races** — the bulk of the candidate universe).
+
+**To investigate (the open question):** does the **OpenStates v3 API** actually return `abstracts` for these bills/states?
+- **(a) If yes** → enrich the ingest to fetch + store `abstracts`, then backfill the `summary` column for the 31,813 affected bills. Likely the single biggest lever for state-race alignment coverage.
+- **(b) If no** (many state legislatures don't publish abstracts) → derive a short summary from bill full-text (an LLM pass) or another source, or accept title-only + abstain.
+
+**Where to look:** the OpenStates ingest path under `scripts/ingest/` (whatever populates `bills.summary` / `bills.raw_metadata`); compare against the OpenStates v3 `/bills` response shape (`abstracts[]`).
+
+**Related:** the "Issue taxonomy too broad" item directly below, and the alignment pole-vocabulary work (`alignment/pole-vocabulary` branch).
+
+---
+
 ### [P1] Issue taxonomy is too broad for precise alignment matching
 **Status:** Open (flagged 2026-05-15)
 
