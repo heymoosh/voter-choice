@@ -5279,7 +5279,10 @@ function App() {
   // fetches before showing the workspace; this covers the return visit.
   useEffectA(() => {
     if ((saved?.view === 'workspace') && (saved?.issues || []).length > 0) {
-      loadAllRaceData(RACES, saved.issues).then(() => setDataVersion((v) => v + 1));
+      loadAllRaceData(RACES, saved.issues).then(() => {
+        setDataVersion((v) => v + 1);
+        preloadAllCandidateResearch(saved.issues);
+      });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -5369,6 +5372,54 @@ function App() {
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeRaceId, blindMode, revealedCandidates, view]);
+
+  // F-A: pre-load research for ALL races' research_pending candidates
+  // immediately after loadAllRaceData completes (instead of lazy-firing only
+  // for the active race on navigation). Fires in the background — no await —
+  // so it never blocks the workspace mount. The cache key dedup guard and
+  // `entry.scores !== null` skip prevent duplicate requests.
+  //
+  // NOTE: No blind-mode gate here. The request sends the real name server-side
+  // only; the returned scores are name-free. The per-candidate RENDER still
+  // gates on !blindMode (line 666) — the result is simply cached and ready
+  // the moment the card is revealed.
+  function preloadAllCandidateResearch(resolvedIssues) {
+    const sc = getRealStateCode();
+    const structuredIssues = (resolvedIssues || [])
+      .filter(x => x && x.canonicalIssue)
+      .map(x => ({
+        canonicalIssue: x.canonicalIssue,
+        issueLabel: x.interpretation || x.name || x.canonicalIssue,
+      }));
+    if (structuredIssues.length === 0) return; // nothing to research without issues
+
+    (RACES || []).forEach(race => {
+      const rp = getRacePatternsForRace(race.id);
+      const align = getAlignmentScoresForRace(race.id);
+      (rp?.candidates || []).forEach(cand => {
+        if (!cand || !cand.name) return;
+        const entry = (align?.entries || []).find(e => e.candidateId === cand.id);
+        if (entry && entry.scores !== null) return; // already has a real DB record
+        const key = race.id + '::' + cand.name;
+        if (getCandidateResearch(key)) return; // already cached or in flight — skip
+        setCandidateResearch(key, { status: 'loading' });
+        setDataVersion(v => v + 1);
+        fetchCandidateResearch({
+          candidateName: cand.name,
+          jurisdiction: (rp?.race || race.id) + (sc ? ', ' + sc : ''),
+          issues: structuredIssues,
+          cycle: '2026',
+        }).then(res => {
+          if (res && res.scores && res.scores.length > 0) {
+            setCandidateResearch(key, { status: 'done', scores: res.scores });
+          } else {
+            setCandidateResearch(key, { status: 'unavailable' });
+          }
+          setDataVersion(v => v + 1);
+        });
+      });
+    });
+  }
 
   const [tweaks, setTweaks] = useStateA(loadTweaks);
   const [tweaksOpen, setTweaksOpen] = useStateA(false);
@@ -5464,6 +5515,10 @@ function App() {
     }
     setActiveRaceId(RACES[0].id);
     setView('workspace');
+    // F-A: kick off background research for all research_pending candidates
+    // across ALL races immediately after the workspace mounts — results will
+    // be cached and ready when the user navigates to each race's card.
+    preloadAllCandidateResearch(newIssues);
     // Scroll to top so the user lands at the top of the workspace,
     // not wherever ColdOpenView left them (which on mobile was often
     // the bottom of the issue list).
