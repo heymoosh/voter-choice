@@ -15,6 +15,7 @@ import {
   getCandidateResearch, setCandidateResearch,
   getBallotLogistics, setBallotLogistics,
   getLowConfidenceExtraction, setLowConfidenceExtraction,
+  getRealStateResources,
 } from "./data";
 import {
   loadAllRaceData,
@@ -29,6 +30,7 @@ import {
   fetchCandidateResearch,
   deriveDistrictCode,
   PROP_SECTIONS,
+  applyRealStateResources,
 } from "./realData";
 import { getFallbackStateData } from "../lib/getStateData";
 import {
@@ -5413,6 +5415,10 @@ function App() {
       applyRealRaces(result.races);
       setView(issues.length ? 'workspace' : 'coldopen');
     } else {
+      // Fix C: pre-load real state resources before mounting NoContestedView
+      // so its links use the real per-state URLs, not vote.gov. Awaited here
+      // to guarantee the resources are set before the first render.
+      if (result.stateCode) await applyRealStateResources(result.stateCode);
       // Civic couldn't pull the ballot → ask the voter to upload/paste it.
       setView('nocontested');
     }
@@ -5778,11 +5784,20 @@ function handleRevealCandidate(candidateId) {
           <AppNav />
           <main id="main-content">
             <NoContestedView
-              stateData={
-                getRealStateCode()
+              stateData={(() => {
+                // Fix C: overlay real state resources onto the fallback shape
+                // when available (loaded before this view mounted). vote.gov
+                // remains the fallback for any URL not covered by the real data.
+                const base = getRealStateCode()
                   ? getFallbackStateData(getRealStateCode())
-                  : STATE_ELECTION_DATA
-              }
+                  : STATE_ELECTION_DATA;
+                const real = getRealStateResources();
+                if (!real) return base;
+                return {
+                  ...base,
+                  resources: { ...base.resources, ...real },
+                };
+              })()}
               county={'your county'}
               onBack={() => setView('home')}
               onBallotConfirmed={() => {
