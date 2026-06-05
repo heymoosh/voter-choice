@@ -45,6 +45,11 @@ import {
 } from "../../../lib/server/extract-vision";
 import { buildPostProcessorPrompt } from "../../../lib/server/extract-prompt";
 import {
+  reconcilePageSamples,
+  isLargeFormatPage,
+  SAMPLE_COUNT,
+} from "../../../lib/server/extract-sampler";
+import {
   stitchPages,
   type PageExtraction,
 } from "../../../lib/server/extract-stitcher";
@@ -342,12 +347,49 @@ async function runVisionPath(
   if (pages.length === 0) {
     return { error: { error: "PDF has no pages to render" } };
   }
-  const vision = await extractWithVision(
-    client,
-    pages.map((p) => ({ pageIndex: p.pageIndex, pngBuffer: p.pngBuffer })),
+  const images = pages.map((p) => ({
+    pageIndex: p.pageIndex,
+    pngBuffer: p.pngBuffer,
+  }));
+
+  // Large-format ballots (e.g. a 17.5×23" trifold) downscale past the vision
+  // API's ~1.15MP cap, so candidate names misread NONDETERMINISTICALLY. Extract
+  // N times and reconcile by majority (extract-sampler) — keeps agreed names,
+  // marks disagreements illegible, kills fabrication. Normal ballots: single shot.
+  const sampleCount = pages.some((p) =>
+    isLargeFormatPage(p.width, p.height, 2.0),
+  )
+    ? SAMPLE_COUNT
+    : 1;
+
+  if (sampleCount === 1) {
+    const vision = await extractWithVision(client, images);
+    if (vision.overallOutcome === "failed") {
+      const firstError = vision.pageResults.find((r) => r.error)?.error;
+      return {
+        error: {
+          error: firstError ?? "All pages failed extraction",
+          outcome: "all_failed",
+        },
+      };
+    }
+    return {
+      error: null,
+      pages: vision.pageResults.map((r) => r.page),
+      inputTokens: vision.totalInputTokens,
+      outputTokens: vision.totalOutputTokens,
+      retries: vision.totalRetries,
+    };
+  }
+
+  const samples = await Promise.all(
+    Array.from({ length: sampleCount }, () =>
+      extractWithVision(client, images),
+    ),
   );
-  if (vision.overallOutcome === "failed") {
-    const firstError = vision.pageResults.find((r) => r.error)?.error;
+  const usable = samples.filter((s) => s.overallOutcome !== "failed");
+  if (usable.length === 0) {
+    const firstError = samples[0]?.pageResults.find((r) => r.error)?.error;
     return {
       error: {
         error: firstError ?? "All pages failed extraction",
@@ -355,12 +397,16 @@ async function runVisionPath(
       },
     };
   }
+  // Reconcile the N samples by majority vote; mark disagreements illegible.
+  const reconciled = reconcilePageSamples(
+    usable.map((s) => s.pageResults.map((r) => r.page)),
+  );
   return {
     error: null,
-    pages: vision.pageResults.map((r) => r.page),
-    inputTokens: vision.totalInputTokens,
-    outputTokens: vision.totalOutputTokens,
-    retries: vision.totalRetries,
+    pages: reconciled,
+    inputTokens: samples.reduce((s, v) => s + v.totalInputTokens, 0),
+    outputTokens: samples.reduce((s, v) => s + v.totalOutputTokens, 0),
+    retries: samples.reduce((s, v) => s + v.totalRetries, 0),
   };
 }
 
