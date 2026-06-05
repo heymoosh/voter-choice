@@ -248,13 +248,29 @@ describe("NJ accuracy oracle", () => {
       },
     );
 
-    // [WS3 C3 / Phase B] The zero-forbidden-strings check requires rendering
-    // the full React component tree and inspecting the DOM — not unit-testable.
-    // This is verified in the Phase B E2E drive (Playwright, dev :3000).
-    // The unit-testable part: confirmed that all seam constants in data.tsx and
-    // VoterChoiceApp.tsx have been neutralized (TX/Harris/Houston/handgun removed
-    // from POLLING_INFO, STATE_ELECTION_DATA, i18n strings, dev links,
-    // NoContestedView defaults, GeocodeFailView tips, handoff prompt).
+    // [Phase B] Flipped (unit portion): the seam constants that feed the
+    // rendered workspace must not contain forbidden strings. This locks in the
+    // Pillar-3 leak sweep against regression. The full rendered-DOM zero-
+    // forbidden-strings assertion requires Playwright (noted below).
+    it(
+      "[WS3 C3 / Phase B] POLLING_INFO and STATE_ELECTION_DATA constants contain ZERO forbidden strings",
+      async () => {
+        const { POLLING_INFO, STATE_ELECTION_DATA } = await import("../../prototype/data");
+        const serialized = JSON.stringify({ POLLING_INFO, STATE_ELECTION_DATA });
+        for (const forbidden of NJ_GROUND_TRUTH.forbiddenForNj) {
+          expect(serialized).not.toContain(forbidden);
+        }
+      },
+    );
+
+    // [WS3 C3 / Phase B] Full rendered-workspace + print zero-forbidden-strings
+    // check requires rendering the React tree and inspecting the DOM — not unit-
+    // testable without JSDOM rendering the full prototype bundle.
+    // NOTE: The methodology page (lines 3564/3571) contains "Texas Legislature"
+    // and "Texas Ethics Commission" as editorial examples of state data sources.
+    // These are in generic reference content, not voter-derived data surfaces
+    // (workspace/print). They are NOT workspace strings and are excluded from the
+    // oracle's scope. This decision is noted here so it is not silently bypassed.
     it.todo(
       "[WS3 C3 / Phase B] rendered workspace + print contain ZERO forbidden TX/Harris strings for an NJ voter (E2E / Playwright only)",
     );

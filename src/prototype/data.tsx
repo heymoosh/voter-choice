@@ -609,32 +609,37 @@ let ALIGNMENT_SCORES = {
    These are injected into ALIGNMENT_SCORES and overridden by the real
    /api/race-data response when the seam fires (applyRaceData). */
 (function injectNJWebSearchMocks() {
-  var webSearchEntry = function(candidateId, resolvedStance, confidence) {
+  // resolvedStance uses the structured enum from the sub-agent:
+  //   "in_favor" | "opposed" | "mixed" | "unclear"
+  // This is the CANDIDATE'S position relative to the voter's issue framing.
+  // "in_favor" = candidate supports what the voter cares about (ALIGNED).
+  // "opposed"  = candidate is against what the voter cares about (OPPOSED).
+  var webSearchEntry = function(candidateId, hcStance, hcConf, housingStance, caStance) {
     return {
       candidateId: candidateId,
       scores: [
         {
           canonicalIssue: 'healthcare_affordability',
           issueLabel: 'Healthcare Affordability',
-          resolvedStance: resolvedStance,
+          resolvedStance: hcStance,
           sourceType: 'web_search',
-          confidence: confidence,
+          confidence: hcConf,
           evidence: [
-            { summary: 'Campaign platform supports expanding healthcare access', url: 'https://vote.gov/' },
+            { summary: 'Campaign platform on healthcare access and affordability', url: 'https://vote.gov/' },
           ],
         },
         {
           canonicalIssue: 'housing_affordability',
           issueLabel: 'Housing Affordability',
-          resolvedStance: 'voter favors stronger rent protections',
+          resolvedStance: housingStance,
           sourceType: 'web_search',
-          confidence: confidence,
+          confidence: 'medium',
           evidence: [],
         },
         {
           canonicalIssue: 'congressional_accountability',
           issueLabel: 'Congressional Accountability',
-          resolvedStance: 'voter favors banning congressional stock trading',
+          resolvedStance: caStance,
           sourceType: 'web_search',
           confidence: 'low',
           evidence: [],
@@ -647,9 +652,12 @@ let ALIGNMENT_SCORES = {
     race: 'County Commissioners',
     entries: [
       { candidateId: 'cappelli', scores: null, unavailable: { reason: 'research_pending' } },
-      webSearchEntry('young', 'voter favors affordable healthcare for families', 'medium'),
-      webSearchEntry('hawkins', 'voter favors expanded Medicaid access', 'medium'),
-      webSearchEntry('mercedes', 'voter favors community healthcare centers', 'low'),
+      // young: in_favor on HC/housing, unclear on congressional
+      webSearchEntry('young', 'in_favor', 'medium', 'in_favor', 'unclear'),
+      // hawkins: in_favor on HC, opposed on housing (tests OPPOSED branch), unclear on CA
+      webSearchEntry('hawkins', 'in_favor', 'medium', 'opposed', 'unclear'),
+      // mercedes: unclear on HC (tests unclear branch), in_favor on housing
+      webSearchEntry('mercedes', 'unclear', 'low', 'in_favor', 'low'),
     ],
   };
 })();

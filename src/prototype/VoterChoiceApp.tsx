@@ -1047,12 +1047,34 @@ function AlignmentIssueRow({ issue, score, candidate, isOpen, onToggle, anonCtx 
   // web_search scores have no kept/total voting record. Instead we show a
   // directional indicator keyed to resolvedStance + confidence chip + evidence.
   // Visually distinct from voting_record bars (no %, no vote count).
+  //
+  // resolvedStance from the structured sub-agent is a 4-value enum:
+  //   "in_favor"  → candidate supports the voter's issue   → ALIGNED (green)
+  //   "opposed"   → candidate opposes the voter's issue    → OPPOSED (red)
+  //   "mixed"     → mixed record                           → MIXED (neutral)
+  //   "unclear"   → insufficient evidence                  → no direction badge
   if (score && score.sourceType === 'web_search') {
-    const stanceAligns = !/\b(oppos|against|repeal|block|ban|cut)\b/i.test(score.resolvedStance || '');
-    const directionLabel = stanceAligns ? 'ALIGNED' : 'OPPOSED';
-    const directionColor = stanceAligns
-      ? 'oklch(0.40 0.12 145)'   // green-ish
-      : 'oklch(0.50 0.15 25)';   // red-ish
+    const stance = (score.resolvedStance || '').toLowerCase();
+    // Structured enum first; fall back to prose heuristic for legacy data.
+    var directionLabel = null;
+    var directionColor = 'oklch(0.55 0.05 260)'; // neutral blue
+    if (stance === 'in_favor') {
+      directionLabel = 'ALIGNED';
+      directionColor = 'oklch(0.40 0.12 145)'; // green
+    } else if (stance === 'opposed') {
+      directionLabel = 'OPPOSED';
+      directionColor = 'oklch(0.50 0.15 25)'; // red
+    } else if (stance === 'mixed') {
+      directionLabel = 'MIXED';
+      // neutral — no strong directional signal
+    } else if (stance === 'unclear') {
+      directionLabel = null; // no direction badge — insufficient evidence
+    } else {
+      // Legacy prose fallback: scan for negative verbs
+      var proseAligns = !/\b(oppos|against|repeal|block|ban|cut)\b/i.test(score.resolvedStance || '');
+      directionLabel = proseAligns ? 'ALIGNED' : 'OPPOSED';
+      directionColor = proseAligns ? 'oklch(0.40 0.12 145)' : 'oklch(0.50 0.15 25)';
+    }
     const confidenceChip = score.confidence
       ? score.confidence.charAt(0).toUpperCase() + score.confidence.slice(1)
       : null;
@@ -1070,19 +1092,26 @@ function AlignmentIssueRow({ issue, score, candidate, isOpen, onToggle, anonCtx 
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <div className="topic" style={{ flex: 1 }}>
               <div className="name">{issue.interpretation}</div>
-              <div className="meta" style={{ marginTop: '3px' }}>
-                {score.resolvedStance}
+              <div className="meta" style={{ marginTop: '3px', opacity: 0.75, fontSize: '12px' }}>
+                {stance === 'in_favor' ? 'Supports this position'
+                  : stance === 'opposed' ? 'Opposes this position'
+                  : stance === 'mixed' ? 'Mixed record on this issue'
+                  : stance === 'unclear' ? 'Position unclear — limited public record'
+                  : score.resolvedStance}
               </div>
             </div>
-            {/* Directional indicator instead of a voting-record % bar */}
+            {/* Directional indicator instead of a voting-record % bar.
+                directionLabel===null means unclear — no badge rendered. */}
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px', flexShrink: 0 }}>
-              <span style={{
-                padding: '2px 7px', borderRadius: '9999px', fontSize: '10px',
-                fontWeight: 700, letterSpacing: '0.06em', color: '#fff',
-                background: directionColor,
-              }}>
-                {directionLabel}
-              </span>
+              {directionLabel && (
+                <span style={{
+                  padding: '2px 7px', borderRadius: '9999px', fontSize: '10px',
+                  fontWeight: 700, letterSpacing: '0.06em', color: '#fff',
+                  background: directionColor,
+                }}>
+                  {directionLabel}
+                </span>
+              )}
               {confidenceChip && (
                 <span style={{
                   fontSize: '10px', color: 'var(--ink-3, #888)',
@@ -2193,6 +2222,12 @@ function PollingStatusBar({ pollingInfo, stateData, rows }) {
             <>
               <span className="pb-sep" aria-hidden="true">·</span>
               <span className="pb-precinct">Precinct {pollingInfo.precinct}</span>
+            </>
+          )}
+          {pollingInfo.district && (
+            <>
+              <span className="pb-sep" aria-hidden="true">·</span>
+              <span className="pb-district" data-testid="district-label">{pollingInfo.district}</span>
             </>
           )}
         </div>
@@ -4385,6 +4420,7 @@ function WorkspaceView({ address, issues, decisions, activeRaceId, onDecide, onU
     hours: logistics.pollingPlace.hours || '',
     notes: logistics.pollingPlace.notes || '',
     precinct: '',
+    district: districtCodeWs || '',
     bring: '',
     earlyWindow: earlyWindowWs,
   } : {
@@ -4394,6 +4430,7 @@ function WorkspaceView({ address, issues, decisions, activeRaceId, onDecide, onU
     hours: '',
     notes: '',
     precinct: '',
+    district: districtCodeWs || '',
     bring: '',
     earlyWindow: earlyWindowWs,
   };
