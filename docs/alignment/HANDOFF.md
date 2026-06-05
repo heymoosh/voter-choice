@@ -46,7 +46,12 @@ a **separate table so production never changes** until a deliberate, gated cutov
    `(bill_id,canonical_issue)` blocks version-rows → UPDATE in place / add a column / swap), or
    (b) repoint `lookupAlignment`. **Either way, exclude `no_score` votes from scoring (like abstains).**
    `alignment.ts` is shared with the redesign — coordinate.
-3. **Missing-summary recovery** — biggest coverage lever (see below).
+3. ~~**Missing-summary recovery**~~ — **✅ DONE 2026-06-05** (`source_run='summary-recovery-1'`).
+   Recovered full text for **9,408/16,841 (56%)** null-summary tagged bills from Muxin's **local
+   OpenStates pgdump** (`searchablebill.raw_text` — no API/PDF/OCR); wrote 9,405 `bills.summary` +
+   re-tagged 7,828 contested pairs → **1,598 recovered no_score→confident, 93 inversions fixed, 516
+   false-confident removed**. Residual ~6,868 are `is_error` in OpenStates' own extraction (scanned
+   PDFs). See the ledger's `summary-recovery-1` entry.
 4. **CAN2026 ingest** — still NOT done (design-only). Optional federal enrichment.
 5. **Apply parked granularity at cutover** (touches `canonicalIssues.ts` + prompt — redesign-coordinated):
    border→immigration merge (F7); public_safety+crime→one `criminal_justice` axis (already tagged with

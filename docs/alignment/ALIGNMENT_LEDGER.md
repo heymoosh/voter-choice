@@ -9,7 +9,7 @@ Running log of eval runs, findings, and decisions for the alignment scoring engi
 | **F1** | `criminal_justice` Pole B ("oversight that reduces incarceration") is too broad — it pulled a neutral Corrections Ombudsman to "opposed." Tighten to reform/leniency; route neutral oversight → no-score. | open |
 | **F2** | Environment poles miss **climate adaptation/resilience** (wildfire / insurance-hardening bills fit neither "climate action" nor "deregulation"). Add an adaptation rule or explicit no-score. | open |
 | **F3** | `border_security`'s strict relevance gate drops state **immigration-enforcement** bills (they should route to `immigration`, not vanish). | open |
-| **F4** | ~47% of state bills have no summary (ingest gap, not extraction). Filed in `post-launch-backlog.md` → Data Quality. Biggest single lever for state-race coverage. | open → backlog |
+| **F4** | ~47% of state bills have no summary (ingest gap, not extraction). Biggest single lever for state-race coverage. **Partially RESOLVED 2026-06-05 (summary-recovery-1):** recovered full bill text for **9,408 / 16,841** null-summary tagged bills (56%) from Muxin's **local OpenStates pgdump** (`opencivicdata_searchablebill.raw_text`) — no API, no PDF/OCR. The residual ~6,868 are `is_error` in OpenStates' own extraction (scanned PDFs); recovering them needs OCR OpenStates already failed at → leave for a later OCR pass if ever. | partially resolved |
 | **M1** (meta) | The eval runner must **auto-capture model id + settings** — the 2026-06-04 run did not. | open |
 | **F5** | Internal `in_favor`/`opposed` labels do NOT need renaming — the UI never shows them (it renders "voted with your side N of M" + the bill/vote). Presentation is redesign-owned. | closed (Muxin) |
 | **F6** | Incentive-vs-mandate "safety" bills (e.g. a tax credit for a gun safe) are genuinely ambiguous in direction. Keep them **low-confidence + show the vote**; don't force a pole. | accepted (Muxin) |
@@ -18,6 +18,29 @@ Running log of eval runs, findings, and decisions for the alignment scoring engi
 | **F8** | `public_safety` (84% →no_score) and `election_integrity` (85% →no_score) are over-tagged grab-bags like `border` — the old tagger had high recall but low precision, forcing off-topic bills in. Real counts are small (~870 policing, ~258 ballot-access). Reproductive (43%) had the same over-tag pattern with off-topic gender/health bills. **Net: ~60% of contested tags are now no_score — alignment coverage on contested issues is much thinner. Lever: recover bill summaries (Data-Quality backlog item).** | open (Muxin) |
 
 ## Runs
+
+### 2026-06-05 — Missing-summary recovery from the local OpenStates dump (`source_run='summary-recovery-1'`)
+**On subscription.** Recovered bill **full text** for the null-summary tagged corpus straight from
+Muxin's **local 9.8 GB OpenStates pgdump** — `opencivicdata_searchablebill.raw_text` (OpenStates'
+pre-extracted full-text-search column) — so **no API, no rate limit, no PDF download/OCR**. Disk-safe
+stream-filter (`pg_restore --data-only -t opencivicdata_searchablebill | line-filter`) of just our
+16,841 ids. **Yield: 9,408 / 16,841 (56%)** have usable text; the other 6,868 are `is_error` in
+OpenStates' own extraction (scanned PDFs — see F4). Then **1 background Workflow, 717 length-batches,
+Sonnet, one pass = summary + (contested) pole_stance**, single-issue batches so the
+`environment_climate`↔`energy_grid` *opposite* orientation can't cross-contaminate. File-based
+M2-safe: **717/717 batches, 0 missing/incomplete**.
+
+- **`bills.summary`:** 9,405 written (durable; helps the app + all future tagging).
+- **`issue_tags_pole_v1` re-tag (7,828 contested pairs, now text-informed):**
+  **1,598 RECOVERED `no_score`→confident** (1,083 in_favor / 515 opposed) · **93 sign-inversions
+  corrected** (text flipped what title-only got backwards) · **516 demoted →no_score** (text showed
+  they were off-topic — false-confident removed) · 3,753 stayed no_score (genuinely non-directional).
+  Net **~+1,080 confident contested tags and ~600 wrong ones fixed**.
+
+**Tooling:** `_summary-{idset,stream-filter,issuemap,batch,recover.workflow,persist,flipcheck}`.
+**Decision:** this completes the "recover summaries first" gate before cutover. The contested pole_v1
+corpus is now denser AND more accurate. **Next:** Step 3 — build + validate the staged data-only
+cutover. Production still untouched.
 
 ### 2026-06-05 — Remaining 4 contested issues re-tagged → ALL 12 done (15,593 tags, `source_run='big-2'`)
 **On subscription.** 1 background `Workflow`, **155 batches**, **Sonnet** taggers (per Muxin —
