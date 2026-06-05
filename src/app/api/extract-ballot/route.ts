@@ -92,11 +92,15 @@ function pdfBytesHash(buffer: Buffer): string {
 
 // Cache key version. Bumped to v2 (2026-05-28) to invalidate every
 // pre-fix cache entry after the P0 Harris County TX metadata-leakage
-// fix. Reusable: any future incident where the extraction shape could
-// be quietly malformed (model regression, schema migration, etc.)
-// should bump this counter to evict stale entries rather than patch
-// validation onto reads.
-const EXTRACTION_CACHE_VERSION = "v2";
+// fix. Bumped to v3 (2026-06-04) for the F1 fix: large-format ballots
+// had fabricated candidate names cached (and re-cached during diagnosis)
+// under their PDF SHA — those poisoned entries MUST be evicted so uploads
+// hit the new sample-and-reconcile pipeline instead of the stale read.
+// Reusable: any future incident where the extraction shape could be
+// quietly malformed (model regression, schema migration, etc.) should
+// bump this counter to evict stale entries rather than patch validation
+// onto reads.
+const EXTRACTION_CACHE_VERSION = "v3";
 
 function extractionCacheKey(hash: string): string {
   return `voter-choice:extraction:${EXTRACTION_CACHE_VERSION}:${hash}`;
@@ -382,6 +386,10 @@ async function runVisionPath(
     };
   }
 
+  // NOTE: this fans out sampleCount × pages concurrent vision calls. Large-format
+  // ballots are near-always 1-2 pages (the gate is page SIZE), so this stays well
+  // under maxDuration. If a large-format AND many-page ballot ever appears, cap
+  // concurrency or sample only the large pages.
   const samples = await Promise.all(
     Array.from({ length: sampleCount }, () =>
       extractWithVision(client, images),

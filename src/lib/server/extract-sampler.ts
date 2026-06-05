@@ -177,6 +177,12 @@ function reconcileRace(races: ExtractRace[], versions: number): ExtractRace {
   // surfacing as the lone name amid 4 illegible R-Senate slots). Distrust those
   // lone names and blank them, so we never show a fabricated candidate as the
   // sole/dominant entry. Healthy races (0 illegible slots) are untouched.
+  //
+  // NOTE (residual): this does NOT fire when a hard column resolves to MORE names
+  // than illegibles with a fake among them (e.g. [illegible, MEISSNER, MURPHY,
+  // ZDAN, illegible] — 3 names / 2 illegible). A stricter `>= 2 illegible` rule
+  // would catch it but also blanks the real MURPHY/ZDAN — a safety-vs-completeness
+  // product call left to the user (see F1_EXTRACTION_HANDOFF.md residual note).
   const named = candidates.filter((c) => c.name).length;
   const illegibleSlots = candidates.filter(
     (c) => c.placeholder_reason === "illegible",
