@@ -1,5 +1,7 @@
 import { describe, it, expect } from "vitest";
-import { stateCodeFrom } from "./realData";
+import { stateCodeFrom, racesSpanMultipleParties, filterRacesByParty } from "./realData";
+import { extractionToRaces } from "../lib/extractionToRaces";
+import type { BallotExtraction } from "../lib/server/extract-types";
 
 /**
  * Tests for stateCodeFrom — best-effort 2-letter state/territory code from an
@@ -99,5 +101,194 @@ describe("stateCodeFrom", () => {
       expect(stateCodeFrom("   ")).toBe("");
       expect(stateCodeFrom(undefined as unknown as string)).toBe("");
     });
+  });
+});
+
+/**
+ * Party-gate regression tests (R1).
+ *
+ * CONFIRMED BUG: after uploading a PRIMARY ballot, racesSpanMultipleParties
+ * returned false because it read candidate.party (the ballot DESIGNATION)
+ * and partyLetter() only matched strings starting with "d"/"r". Real Textract
+ * output sets candidate.party to values like "Camden County Democrat Committee,
+ * Inc." / "America First Always" / "Camden County Regular Republican Party" —
+ * none start with d/r, so every heuristic check returned "" and the Set stayed
+ * empty → racesSpanMultipleParties() === false → party gate never fired.
+ *
+ * The fixture below mirrors the REAL Textract output: races carry party_context
+ * "Democratic Primary" / "Republican Primary" (the reliable race-level signal)
+ * while candidate.party holds the ballot designations.
+ *
+ * These tests pass through extractionToRaces (which attaches partyLane) so
+ * we're testing the full stack from extraction → gate/filter, not just the
+ * utility functions in isolation.
+ */
+
+/** NJ Camden fixture with REAL Textract-style ballot designations in candidate.party */
+function njCamdenDesignationFixture(): BallotExtraction {
+  return {
+    election_metadata: {
+      election_date: "2026-06-03",
+      election_type: "primary",
+      jurisdiction: "Camden County, NJ",
+    },
+    sections: [
+      {
+        section_name: "Federal",
+        races: [
+          {
+            office: "U.S. Senator",
+            vote_for_n: 1,
+            party_context: "Democratic Primary",
+            candidates: [
+              {
+                name: "Cory Booker",
+                // Real designation from the Textract extraction, NOT "Democratic"
+                party: "South Jersey Progressive Democrats",
+                placeholder_reason: null,
+              },
+            ],
+          },
+          {
+            office: "U.S. Senator",
+            vote_for_n: 1,
+            party_context: "Republican Primary",
+            candidates: [
+              {
+                name: "John Bramnick",
+                // Real designation from the Textract extraction, NOT "Republican"
+                party: "Camden County Regular Republican Party",
+                placeholder_reason: null,
+              },
+            ],
+          },
+        ],
+      },
+      {
+        section_name: "County",
+        races: [
+          {
+            office: "County Commissioner",
+            vote_for_n: 2,
+            party_context: "Democratic Primary",
+            candidates: [
+              {
+                name: "Louis Cappelli Jr",
+                party: "Camden County Democrat Committee, Inc.",
+                placeholder_reason: null,
+              },
+              {
+                name: "Jonathan Young",
+                party: "Camden County Democrat Committee, Inc.",
+                placeholder_reason: null,
+              },
+            ],
+          },
+          {
+            office: "County Commissioner",
+            vote_for_n: 2,
+            party_context: "Republican Primary",
+            candidates: [
+              {
+                name: "Alice Rep",
+                // A designation that doesn't start with d/r (this is the killer case)
+                party: "America First Always",
+                placeholder_reason: null,
+              },
+              {
+                name: "Bob Rep",
+                party: "The People, For The People",
+                placeholder_reason: null,
+              },
+            ],
+          },
+        ],
+      },
+    ],
+    _meta: {
+      extraction_path: "vision",
+      pages: 1,
+      latency_ms: 0,
+      cost_usd: 0,
+    },
+  };
+}
+
+describe("party gate — real Textract designation regression (R1)", () => {
+  it("racesSpanMultipleParties returns TRUE when races have partyLane (even though designations don't start with d/r)", () => {
+    // Build races via extractionToRaces (GENERAL tag so all 4 races come through)
+    const races = extractionToRaces(njCamdenDesignationFixture(), "GENERAL");
+    // Sanity: 4 races should be present
+    expect(races).toHaveLength(4);
+
+    // KEY ASSERTION: the gate must fire.
+    // Old code returned false here because it read candidate.party =
+    // "Camden County Democrat Committee, Inc." / "America First Always" /
+    // "Camden County Regular Republican Party" / "The People, For The People"
+    // — none start with d/r → partyLetter() = "" → seen empty → false.
+    // New code reads race.partyLane ("D" or "R") from the reliable
+    // party_context field → seen = {"D","R"} → true.
+    expect(racesSpanMultipleParties(races)).toBe(true);
+  });
+
+  it("filterRacesByParty keeps Dem-lane races and drops Rep-lane ones (via partyLane)", () => {
+    const races = extractionToRaces(njCamdenDesignationFixture(), "GENERAL");
+    const demRaces = filterRacesByParty(races, "Democratic");
+
+    // Should have only the 2 DEM-lane races (Senate + County Commissioner)
+    expect(demRaces).toHaveLength(2);
+
+    // DEM senate race is present
+    const candidateNames = demRaces.flatMap((r) => r.candidates.map((c) => c.name));
+    expect(candidateNames).toContain("Cory Booker");
+    expect(candidateNames).toContain("Louis Cappelli Jr");
+
+    // REP candidates are gone
+    expect(candidateNames).not.toContain("John Bramnick");
+    expect(candidateNames).not.toContain("Alice Rep");
+    expect(candidateNames).not.toContain("Bob Rep");
+  });
+
+  it("filterRacesByParty keeps Rep-lane races and drops Dem-lane ones (via partyLane)", () => {
+    const races = extractionToRaces(njCamdenDesignationFixture(), "GENERAL");
+    const repRaces = filterRacesByParty(races, "Republican");
+
+    expect(repRaces).toHaveLength(2);
+    const candidateNames = repRaces.flatMap((r) => r.candidates.map((c) => c.name));
+    expect(candidateNames).toContain("John Bramnick");
+    expect(candidateNames).toContain("Alice Rep");
+    expect(candidateNames).not.toContain("Cory Booker");
+  });
+
+  it("non-partisan (null partyLane) races are always kept by filterRacesByParty regardless of lane", () => {
+    const ballotWithProp: BallotExtraction = {
+      election_metadata: {
+        election_date: "2026-06-03",
+        election_type: "primary",
+        jurisdiction: "Camden County, NJ",
+      },
+      sections: [
+        ...njCamdenDesignationFixture().sections,
+        {
+          section_name: "Propositions",
+          races: [
+            {
+              office: "Proposition 1",
+              vote_for_n: 1,
+              party_context: null,
+              candidates: [],
+            },
+          ],
+        },
+      ],
+      _meta: { extraction_path: "vision", pages: 1, latency_ms: 0, cost_usd: 0 },
+    };
+
+    const races = extractionToRaces(ballotWithProp, "GENERAL");
+    const demRaces = filterRacesByParty(races, "Democratic");
+
+    // 2 DEM-lane races + 1 Proposition (partyLane null → always kept)
+    expect(demRaces).toHaveLength(3);
+    expect(demRaces.some((r) => r.label === "Proposition 1")).toBe(true);
   });
 });
