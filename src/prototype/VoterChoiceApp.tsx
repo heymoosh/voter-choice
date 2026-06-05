@@ -994,7 +994,18 @@ function AlignmentScoreBanner({ candidate, alignmentEntry, userIssues, expandedI
           <div className="lab">Aligns with your issues</div>
         </div>
         <div className="cv2-norecord">
-          {isPending ? (
+          {research &&
+          (research.status === 'unavailable' ||
+            (research.status === 'done' &&
+              (!research.scores || research.scores.length === 0))) ? (
+            // Research ran but found no citable public statements (the honesty
+            // guard drops any source-less claims — common for county-level
+            // candidates). Show the honest fallback, NOT a perpetual spinner.
+            <>
+              <p>We couldn't find citable public statements for this candidate on your issues.</p>
+              <p>Judge instead on the candidate's own materials and the donor base below.</p>
+            </>
+          ) : isPending ? (
             <p>Looking up public statements on your issues…</p>
           ) : (
             <>
