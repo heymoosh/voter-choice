@@ -972,7 +972,7 @@ function AlignmentScoreBanner({ candidate, alignmentEntry, userIssues, expandedI
           <div className="cv2-block-head">
             <div className="lab">Aligns with your issues</div>
             <div style={{ fontSize: '10px', color: 'var(--ink-3, #888)', fontStyle: 'italic' }}>
-              Based on public statements
+              Based on public statements — not a voting record
             </div>
           </div>
           {rowsData.map(({ issue, score }) => (
@@ -1096,68 +1096,59 @@ function AlignmentIssueRow({ issue, score, candidate, isOpen, onToggle, anonCtx 
     const hasEvidence = evidenceLinks.length > 0;
 
     return (
-      <div className="cv2-iss-row web-search-row" data-testid="web-search-alignment-row">
-        <div className="cv2-iss-head" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-          {/* Source label — visually distinct from voting_record rows */}
-          <div style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.12em',
-              color: 'var(--ink-3, #888)', fontWeight: 600 }}>
-            Based on public statements — not a voting record
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div className="topic" style={{ flex: 1 }}>
-              <div className="name">{issue.interpretation}</div>
-              <div className="meta" style={{ marginTop: '3px', opacity: 0.75, fontSize: '12px' }}>
-                {stance === 'in_favor' ? 'Supports this position'
-                  : stance === 'opposed' ? 'Opposes this position'
-                  : stance === 'mixed' ? 'Mixed record on this issue'
-                  : stance === 'unclear' ? 'Position unclear — limited public record'
-                  : score.resolvedStance}
+      <div className="cv2-iss-row" data-testid="web-search-alignment-row">
+        {/* Same grid structure as the voting_record path — topic left,
+            directional badge right (replaces the % pct column). */}
+        <div className="cv2-iss-head">
+          <div className="topic">
+            <div className="name">{issue.interpretation}</div>
+            <div className="meta">
+              {stance === 'in_favor' ? 'Supports this position'
+                : stance === 'opposed' ? 'Opposes this position'
+                : stance === 'mixed' ? 'Mixed record on this issue'
+                : stance === 'unclear' ? 'Position unclear — limited public record'
+                : score.resolvedStance}
+            </div>
+            {/* Evidence URLs inline below the meta — keeps the grid clean */}
+            {hasEvidence && (
+              <div className="meta" style={{ marginTop: '4px', display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                {evidenceLinks.map((ev, i) => (
+                  <a
+                    key={i}
+                    href={ev.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="cv2-evidence-link"
+                    data-testid="web-search-evidence-link"
+                  >
+                    {ev.summary || `Source ${i + 1}`} →
+                  </a>
+                ))}
               </div>
-            </div>
-            {/* Directional indicator instead of a voting-record % bar.
-                directionLabel===null means unclear — no badge rendered. */}
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px', flexShrink: 0 }}>
-              {directionLabel && (
-                <span style={{
-                  padding: '2px 7px', borderRadius: '9999px', fontSize: '10px',
-                  fontWeight: 700, letterSpacing: '0.06em', color: '#fff',
-                  background: directionColor,
-                }}>
-                  {directionLabel}
-                </span>
-              )}
-              {confidenceChip && (
-                <span style={{
-                  fontSize: '10px', color: 'var(--ink-3, #888)',
-                  border: '1px solid var(--rule, #ddd)', borderRadius: '4px',
-                  padding: '1px 5px',
-                }}>
-                  {confidenceChip} confidence
-                </span>
-              )}
-            </div>
+            )}
           </div>
-
-          {/* Evidence URLs — clickable, opens in new tab */}
-          {hasEvidence && (
-            <div style={{ marginTop: '2px', display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-              {evidenceLinks.map((ev, i) => (
-                <a
-                  key={i}
-                  href={ev.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    fontSize: '11px', color: 'var(--civic, #3a6ea8)',
-                    textDecoration: 'underline', lineHeight: 1.4,
-                  }}
-                  data-testid="web-search-evidence-link"
-                >
-                  {ev.summary || `Source ${i + 1}`} →
-                </a>
-              ))}
-            </div>
-          )}
+          {/* Right column: directional badge + confidence chip, matching the
+              position/size of the voting_record .pct column. */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px', flexShrink: 0 }}>
+            {directionLabel && (
+              <span style={{
+                padding: '2px 7px', borderRadius: '9999px', fontSize: '10px',
+                fontWeight: 700, letterSpacing: '0.06em', color: '#fff',
+                background: directionColor,
+              }}>
+                {directionLabel}
+              </span>
+            )}
+            {confidenceChip && (
+              <span style={{
+                fontSize: '10px', color: 'var(--ink-3, #888)',
+                border: '1px solid var(--rule, #ddd)', borderRadius: '4px',
+                padding: '1px 5px',
+              }}>
+                {confidenceChip} conf.
+              </span>
+            )}
+          </div>
         </div>
       </div>
     );
@@ -3506,6 +3497,31 @@ function NoContestedView({ stateData, county = 'your county', onBallotConfirmed,
       applyRealRaces(result.races);
       if (result.stateCode) setRealStateCode(result.stateCode);
     }
+    // F-E: load real per-state resources (polling-place lookup URL, county
+    // election link) so NoContestedView / logistics bar shows the real
+    // state URLs instead of the vote.gov fallback. Mirrors handleSubmitAddress.
+    if (result.stateCode) await applyRealStateResources(result.stateCode);
+    // F-E: derive the congressional district from the ballot's House race
+    // label and persist it in BALLOT_LOGISTICS so both the workspace bar
+    // and the print view show "NJ-01" instead of "—". Merge defensively
+    // so existing civic-sourced logistics fields are preserved.
+    if (result.stateCode && result.races && result.races.length > 0) {
+      const houseRace = result.races.find(r => /house/i.test(r.label || ''));
+      if (houseRace) {
+        const district = deriveDistrictCode(houseRace.label, result.stateCode);
+        if (district) {
+          const cur = getBallotLogistics();
+          setBallotLogistics({
+            ...(cur || {}),
+            congressionalDistrict: district,
+            fallbackUrl: 'https://vote.gov/',
+            source: (cur && cur.source) || 'fallback',
+            pollingPlace: (cur && cur.pollingPlace) || null,
+            earlyVoting: (cur && cur.earlyVoting) || null,
+          });
+        }
+      }
+    }
     // Pillar 1: propagate low-confidence flag (large-format ballot warning).
     setLowConfidenceExtraction(!!result.lowConfidence);
     setProcessing(false);
@@ -4302,7 +4318,7 @@ function resolveChatBlock(code) {
   return { budget: false, message: (code && CHAT_BLOCK_MESSAGES[code]) || null };
 }
 
-function WorkspaceView({ address, issues, decisions, activeRaceId, onDecide, onUnpick, onSelectRace, onPrint, onEditIssues, onSaveProfile, onContinueElsewhere, budgetExhausted, onOpenByok, onNavigate, chatMessages, onSendChat, chatTimeouts, onRetryChat, onCompare, onSeeAllVotes, amendDeltas, onClearDelta, onViewPartyGate, blindMode, revealedCandidates, onRevealCandidate, onHideCandidate, onToggleBlindMode }) {
+function WorkspaceView({ address, issues, decisions, activeRaceId, onDecide, onUnpick, onSelectRace, onPrint, onEditIssues, onSaveProfile, onContinueElsewhere, budgetExhausted, onOpenByok, onNavigate, chatMessages, onSendChat, chatTimeouts, onRetryChat, onCompare, onSeeAllVotes, amendDeltas, onClearDelta, blindMode, revealedCandidates, onRevealCandidate, onHideCandidate, onToggleBlindMode }) {
   const races = RACES;
   const activeRace = races.find(r => r.id === activeRaceId) || races[0];
   const activeIdx = races.findIndex(r => r.id === activeRace.id);
@@ -4453,7 +4469,8 @@ function WorkspaceView({ address, issues, decisions, activeRaceId, onDecide, onU
     // Honest fallback — no civic data; direct voter to vote.gov
     name: 'Find your polling place at vote.gov',
     address: '',
-    hours: '',
+    // Use statutory hours from state data when available (upload/paste path).
+    hours: sd?.votingRules?.pollingHours || '',
     notes: '',
     precinct: '',
     district: districtCodeWs || '',
@@ -4516,7 +4533,6 @@ function WorkspaceView({ address, issues, decisions, activeRaceId, onDecide, onU
           <div className="foot">
             <a onClick={() => { if (confirm('Restart session? This clears your draft ballot and issues.')) window.__voterChoiceReset && window.__voterChoiceReset(); }} role="link" tabIndex={0}>Restart session</a>
             <a onClick={() => { const nav = window.__navigate; nav && nav('methodology'); }} role="link" tabIndex={0}>Methodology</a>
-            <a onClick={onViewPartyGate} style={{ cursor: 'pointer' }} role="link" tabIndex={0}>See party-gate (demo)</a>
           </div>
         </aside>
 
@@ -5263,7 +5279,10 @@ function App() {
   // fetches before showing the workspace; this covers the return visit.
   useEffectA(() => {
     if ((saved?.view === 'workspace') && (saved?.issues || []).length > 0) {
-      loadAllRaceData(RACES, saved.issues).then(() => setDataVersion((v) => v + 1));
+      loadAllRaceData(RACES, saved.issues).then(() => {
+        setDataVersion((v) => v + 1);
+        preloadAllCandidateResearch(saved.issues);
+      });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -5353,6 +5372,54 @@ function App() {
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeRaceId, blindMode, revealedCandidates, view]);
+
+  // F-A: pre-load research for ALL races' research_pending candidates
+  // immediately after loadAllRaceData completes (instead of lazy-firing only
+  // for the active race on navigation). Fires in the background — no await —
+  // so it never blocks the workspace mount. The cache key dedup guard and
+  // `entry.scores !== null` skip prevent duplicate requests.
+  //
+  // NOTE: No blind-mode gate here. The request sends the real name server-side
+  // only; the returned scores are name-free. The per-candidate RENDER still
+  // gates on !blindMode (line 666) — the result is simply cached and ready
+  // the moment the card is revealed.
+  function preloadAllCandidateResearch(resolvedIssues) {
+    const sc = getRealStateCode();
+    const structuredIssues = (resolvedIssues || [])
+      .filter(x => x && x.canonicalIssue)
+      .map(x => ({
+        canonicalIssue: x.canonicalIssue,
+        issueLabel: x.interpretation || x.name || x.canonicalIssue,
+      }));
+    if (structuredIssues.length === 0) return; // nothing to research without issues
+
+    (RACES || []).forEach(race => {
+      const rp = getRacePatternsForRace(race.id);
+      const align = getAlignmentScoresForRace(race.id);
+      (rp?.candidates || []).forEach(cand => {
+        if (!cand || !cand.name) return;
+        const entry = (align?.entries || []).find(e => e.candidateId === cand.id);
+        if (entry && entry.scores !== null) return; // already has a real DB record
+        const key = race.id + '::' + cand.name;
+        if (getCandidateResearch(key)) return; // already cached or in flight — skip
+        setCandidateResearch(key, { status: 'loading' });
+        setDataVersion(v => v + 1);
+        fetchCandidateResearch({
+          candidateName: cand.name,
+          jurisdiction: (rp?.race || race.id) + (sc ? ', ' + sc : ''),
+          issues: structuredIssues,
+          cycle: '2026',
+        }).then(res => {
+          if (res && res.scores && res.scores.length > 0) {
+            setCandidateResearch(key, { status: 'done', scores: res.scores });
+          } else {
+            setCandidateResearch(key, { status: 'unavailable' });
+          }
+          setDataVersion(v => v + 1);
+        });
+      });
+    });
+  }
 
   const [tweaks, setTweaks] = useStateA(loadTweaks);
   const [tweaksOpen, setTweaksOpen] = useStateA(false);
@@ -5448,6 +5515,10 @@ function App() {
     }
     setActiveRaceId(RACES[0].id);
     setView('workspace');
+    // F-A: kick off background research for all research_pending candidates
+    // across ALL races immediately after the workspace mounts — results will
+    // be cached and ready when the user navigates to each race's card.
+    preloadAllCandidateResearch(newIssues);
     // Scroll to top so the user lands at the top of the workspace,
     // not wherever ColdOpenView left them (which on mobile was often
     // the bottom of the issue list).
@@ -5877,7 +5948,6 @@ function handleRevealCandidate(candidateId) {
           // Amend delta + rescore offer
           amendDeltas={amendDeltas}
           onClearDelta={handleClearDelta}
-          onViewPartyGate={() => setView('partygate')}
           blindMode={blindMode}
           revealedCandidates={revealedCandidates}
           onRevealCandidate={handleRevealCandidate}
