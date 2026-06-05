@@ -254,7 +254,7 @@ let RACE_PATTERNS = {
         id: 'hartman',
         name: 'Jordan Hartman',
         incumbent: true,
-        priorRole: 'House Rep (TX-7) since 2022 · Energy & Commerce',
+        priorRole: 'House Rep since 2022 · Energy & Commerce',
         platformAlignment: { kept: 67, total: 84 },
         donorCoalition: [
           { label: 'EMILY’s List', fullName: 'EMILY’s List',
@@ -652,14 +652,19 @@ Honestly I'm also sick of watching Congress do nothing while we all just absorb 
      and a real port should source it from the county-resources API
      once that lands. Today it is hidden from the bar if not present.
    - electionDate: comes from StateElectionData.elections[0].date. */
+// POLLING_INFO: the real polling place comes from toBallotLogistics() via
+// getBallotLogistics() in the App seam (Pillar 3). This constant is a safe
+// placeholder that renders an honest fallback if the seam hasn't fired yet.
+// It must NOT contain any TX/Harris/Houston/mock constants — those are
+// forbidden strings for any NJ voter.
 const POLLING_INFO = {
   // Civic-API shape (PollingLocation)
-  name: 'Trini Mendell Elementary',
-  address: '5750 Hartwick Rd, Houston, TX 77057',
-  hours: '7:00 AM – 7:00 PM',
+  name: 'Find your polling place at vote.gov',
+  address: '',
+  hours: '',
   notes: '',
   // Out-of-API extras (sourced separately at port time)
-  precinct: '0364',
+  precinct: '',
 };
 
 /* ────────── HELPERS ──────────
@@ -748,18 +753,18 @@ Object.assign(window, {
      green  (>14 days)   — election day */
 const TODAY_ISO = '2026-09-29';
 
-/* Matches src/types/election.ts → StateElectionData (subset).
-   The TX data file in the repo at src/data/states/TX.json is the
-   canonical source — this mirrors its shape for the surfaces the
-   prototype renders. */
+/* STATE_ELECTION_DATA: a neutral placeholder used only as a last-resort
+   fallback when getRealStateCode() returns nothing. The real app path uses
+   getFallbackStateData(getRealStateCode()) for every state-aware surface.
+   This constant must NOT contain any TX/Harris/Houston/handgun strings. */
 const STATE_ELECTION_DATA = {
-  stateCode: 'TX',
-  stateName: 'Texas',
-  lastUpdated: '2026-08-14',
-  coverageStatus: 'confirmed',
+  stateCode: '',
+  stateName: 'Your State',
+  lastUpdated: '2026-01-01',
+  coverageStatus: 'unconfirmed',
   elections: [
     {
-      id: 'tx-general-2026',
+      id: 'general-2026',
       name: '2026 General Election',
       date: '2026-11-03',
       type: 'general',
@@ -770,71 +775,51 @@ const STATE_ELECTION_DATA = {
   registration: {
     online: {
       available: true,
-      deadline: '2026-10-05', // ~6 days from TODAY_ISO → "yellow"
-      url: 'https://www.votetexas.gov/register-to-vote/',
+      deadline: null,
+      url: 'https://vote.gov/register/',
     },
     byMail: {
-      deadline: '2026-10-05 (postmarked)',
-      sincePostmarked: true,
+      deadline: 'Check your state election website',
+      sincePostmarked: false,
     },
     inPerson: {
-      deadline: '2026-10-05',
+      deadline: 'Check your state election website',
       sincePostmarked: false,
     },
     sameDayRegistration: false,
-    registrationCheckUrl: 'https://teamrv-mvp.sos.texas.gov/MVP/mvp.do',
+    registrationCheckUrl: 'https://vote.gov/',
   },
   earlyVoting: {
-    available: true,
-    startDate: '2026-10-19', // 20 days from TODAY_ISO → "green"
-    endDate: '2026-10-30',
-    notes: 'In-person early voting only. Times vary by location.',
+    available: false,
+    startDate: null,
+    endDate: null,
+    notes: 'Check vote.gov or your state election website for early voting details.',
   },
   votingRules: {
-    idRequired: true,
-    acceptedIds: [
-      'TX driver license',
-      'TX election ID certificate',
-      'TX personal ID card',
-      'TX concealed handgun license',
-      'US passport',
-      'US military ID',
-      'US citizenship certificate w/ photo',
-    ],
-    phonesAtPolls: 'prohibited',
-    phonesAtPollsDetail:
-      'Phones are prohibited within 100 feet of the polling place. Print or write down your ballot beforehand.',
+    idRequired: false,
+    acceptedIds: [],
+    phonesAtPolls: 'varies',
+    phonesAtPollsDetail: 'Check your state election office for phone rules.',
     additionalRules: [],
   },
   resources: {
-    stateElectionWebsite: 'https://www.votetexas.gov/',
-    countyElectionLookup: 'https://www.harrisvotes.com/',
-    sampleBallotLookup: 'https://www.harrisvotes.com/Voter/sample-ballot',
-    pollingPlaceLookup: 'https://www.harrisvotes.com/Voter/polling-locations',
+    stateElectionWebsite: 'https://vote.gov/',
+    countyElectionLookup: 'https://vote.gov/',
+    sampleBallotLookup: 'https://vote.gov/',
+    pollingPlaceLookup: 'https://vote.gov/',
   },
   runoffRules: {
-    hasRunoff: true,
-    partyLockedToFirstRoundPrimary: true,
-    ruleExplanation:
-      'In a Texas primary runoff, you can only vote in the runoff for whichever party\u2019s primary you voted in. The general election is unaffected.',
+    hasRunoff: false,
+    partyLockedToFirstRoundPrimary: false,
+    ruleExplanation: '',
   },
   primaryParticipation: {
-    type: 'closed',
+    type: 'open',
     behavior: 'advisory',
-    ruleExplanationEn:
-      'Texas runs a closed primary. Pick a party in March and you\u2019re locked to that party for any May runoff.',
-    ruleExplanationEs:
-      'Texas tiene una primaria cerrada. Si eliges un partido en marzo, quedas vinculado a ese partido para cualquier segunda vuelta en mayo.',
+    ruleExplanationEn: 'Check your state election website for primary rules.',
+    ruleExplanationEs: 'Consulta el sitio web de elecciones de tu estado para conocer las reglas de la primaria.',
   },
-  countyResources: {
-    'Harris County': {
-      name: 'Harris County',
-      ballotLookup: 'https://www.harrisvotes.com/Voter/sample-ballot',
-      pollingPlaces: 'https://www.harrisvotes.com/Voter/polling-locations',
-      earlyVotingLocations: 'https://www.harrisvotes.com/Voter/polling-locations',
-      electionsWebsite: 'https://www.harrisvotes.com/',
-    },
-  },
+  countyResources: {},
 };
 
 /* Computed deadline rows for rendering. Each row matches what
@@ -894,9 +879,9 @@ export function applyRaceData(raceId, racePatterns, alignmentScores) {
 
 // Per-candidate web-research cache — card fallback when the DB has no record.
 // Keyed by `${raceId}::${candidateName}` → { status: 'loading'|'done'|
-// 'unavailable', summary? }. Caching the ATTEMPT (not just successes) stops
-// no-record candidates from re-firing forever. Populated ONLY for revealed
-// (non-blind) candidates; see the App's research effect.
+// 'unavailable', summary?, scores? }. Caching the ATTEMPT (not just successes)
+// stops no-record candidates from re-firing forever. Populated ONLY for
+// revealed (non-blind) candidates; see the App's research effect.
 let CANDIDATE_RESEARCH = {};
 export function getCandidateResearch(key) {
   return CANDIDATE_RESEARCH[key];
@@ -904,6 +889,18 @@ export function getCandidateResearch(key) {
 export function setCandidateResearch(key, value) {
   CANDIDATE_RESEARCH = { ...CANDIDATE_RESEARCH, [key]: value };
 }
+
+// ─── Pillar 3: live ballot logistics (BallotLogistics from civic-logistics.ts)
+// Null until the civic response arrives or the no-contest path resolves.
+// The UI renders a vote.gov honest fallback when this is null.
+let BALLOT_LOGISTICS = null;
+export function getBallotLogistics() {
+  return BALLOT_LOGISTICS;
+}
+export function setBallotLogistics(logistics) {
+  BALLOT_LOGISTICS = logistics;
+}
+
 export function setRealStateCode(code) {
   REAL_STATE_CODE = code;
 }

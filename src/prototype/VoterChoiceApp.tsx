@@ -13,6 +13,7 @@ import {
   computeDeadlineRow, getDeadlineRows,
   applyRealRaces, setRealStateCode, getRealStateCode, getRealElectionType,
   getCandidateResearch, setCandidateResearch,
+  getBallotLogistics, setBallotLogistics,
 } from "./data";
 import {
   loadAllRaceData,
@@ -25,6 +26,7 @@ import {
   buildRaceChatSystemPrompt,
   getChatSessionId,
   fetchCandidateResearch,
+  deriveDistrictCode,
 } from "./realData";
 import { getFallbackStateData } from "../lib/getStateData";
 import {
@@ -256,7 +258,7 @@ const TRANSLATIONS = {
       sampleBallot: 'Sample ballot',
       precinct: 'Precinct',
       earlyVotingWindow: 'Early voting window',
-      cardSource: 'Source · Harris County Elections',
+      cardSource: 'Source · Google Civic',
     },
   },
   es: {
@@ -350,7 +352,7 @@ const TRANSLATIONS = {
       sampleBallot: 'Boleta de muestra',
       precinct: 'Precinto',
       earlyVotingWindow: 'Ventana de votación anticipada',
-      cardSource: 'Fuente · Elecciones del Condado de Harris',
+      cardSource: 'Fuente · Google Civic',
     },
   },
 };
@@ -2627,7 +2629,13 @@ function buildPortablePrompt({ address, issues, decisions, racesRemaining }) {
     return `  • [${r.section}] ${r.label} — ${cands}`;
   }).join('\n');
 
-  return `I'm researching my Nov 3, 2026 ballot for Harris County, TX.
+  // Use the real address / state code — never the TX demo constants.
+  const sc = getRealStateCode();
+  const locationLine = address
+    ? `my ballot${sc ? ' in ' + sc : ''} (address: ${address})`
+    : sc ? `my ballot in ${sc}` : 'my ballot';
+
+  return `I'm researching ${locationLine}.
 
 I started in Voter Choice (a non-partisan tool that scores candidates on actual voting + donor records). Their AI budget is exhausted — I want to continue this conversation with you.
 
@@ -3247,7 +3255,7 @@ function GeocodeFailView({ address, onEditAddress, onContinueWithZip }) {
             <button className="gf-secondary" onClick={onContinueWithZip}>{t('errors.geocodeFailSkip')} →</button>
           </div>
           <p className="gf-tip">
-            <b>Tip:</b> if you just typed a ZIP, add a street like <code>5750 Hartwick Rd, Houston TX 77057</code>. If you typed a full address, double-check the state abbreviation and ZIP.
+            <b>Tip:</b> if you just typed a ZIP, add a street like <code>123 Main St, Springfield, IL 62701</code>. If you typed a full address, double-check the state abbreviation and ZIP.
           </p>
         </div>
       </div>
@@ -3261,7 +3269,7 @@ function GeocodeFailView({ address, onEditAddress, onContinueWithZip }) {
    Shown when Civic returns zero contests. Lets the user paste / upload
    their sample ballot text. Mock-only here — file parsing is the repo's
    job via /api/extract-ballot. */
-function NoContestedView({ stateData, county = 'Harris County', onBallotConfirmed, onBack }) {
+function NoContestedView({ stateData, county = 'your county', onBallotConfirmed, onBack }) {
   const { t } = useI18n();
   const [text, setText] = useStateSC('');
   const [uploadedFile, setUploadedFile] = useStateSC(null);
@@ -4205,12 +4213,53 @@ function WorkspaceView({ address, issues, decisions, activeRaceId, onDecide, onU
 
   const showResumeBar = !decision && activeRace;
 
+  // Pillar 3: build polling info from live BallotLogistics. When civic
+  // returned nothing (no-contest NJ path) logistics.pollingPlace is null →
+  // show the honest "Find your polling place at vote.gov" fallback.
+  // The congressional district is derived from the ballot extraction's House
+  // race label when civic didn't carry a House contest (the NJ case).
+  const logistics = getBallotLogistics();
+  const sd = getFallbackStateData(getRealStateCode() || '');
+  // District: prefer logistics (civic), fall back to ballot extraction.
+  const houseRaceWs = races.find(r => /house/i.test(r.label || ''));
+  const districtCodeWs = (logistics && logistics.congressionalDistrict)
+    || (houseRaceWs ? deriveDistrictCode(houseRaceWs.label, getRealStateCode() || '') : null)
+    || '';
+  // Early window: prefer logistics, fall back to stateData.
+  const earlyWindowWs = (() => {
+    if (logistics && logistics.earlyVoting) {
+      return `${logistics.earlyVoting.start} – ${logistics.earlyVoting.end}`;
+    }
+    if (sd.earlyVoting && sd.earlyVoting.available && sd.earlyVoting.startDate) {
+      return `${sd.earlyVoting.startDate} – ${sd.earlyVoting.endDate || ''}`;
+    }
+    return '';
+  })();
+  const pollingInfoWs = logistics && logistics.pollingPlace ? {
+    name: logistics.pollingPlace.name,
+    address: logistics.pollingPlace.address,
+    hours: logistics.pollingPlace.hours || '',
+    notes: logistics.pollingPlace.notes || '',
+    precinct: '',
+    bring: '',
+    earlyWindow: earlyWindowWs,
+  } : {
+    // Honest fallback — no civic data; direct voter to vote.gov
+    name: 'Find your polling place at vote.gov',
+    address: '',
+    hours: '',
+    notes: '',
+    precinct: '',
+    bring: '',
+    earlyWindow: earlyWindowWs,
+  };
+
   return (
     <div className="ws-shell">
       <AppNav />
       <PollingStatusBar
-        pollingInfo={{ name: 'Find your polling place', precinct: '', hours: '', address: '', bring: '', earlyWindow: '' }}
-        stateData={getFallbackStateData(getRealStateCode() || '')}
+        pollingInfo={pollingInfoWs}
+        stateData={sd}
         rows={[]}
       />
       <div className="ws-wrap" data-mobile-chat={mobileChatOpen ? 'open' : 'closed'}>
@@ -4260,7 +4309,7 @@ function WorkspaceView({ address, issues, decisions, activeRaceId, onDecide, onU
           <div className="foot">
             <a onClick={() => { if (confirm('Restart session? This clears your draft ballot and issues.')) window.__voterChoiceReset && window.__voterChoiceReset(); }} role="link" tabIndex={0}>Restart session</a>
             <a onClick={() => { const nav = window.__navigate; nav && nav('methodology'); }} role="link" tabIndex={0}>Methodology</a>
-            <a onClick={onViewPartyGate} style={{ cursor: 'pointer' }} role="link" tabIndex={0}>See party-gate (TX primary)</a>
+            <a onClick={onViewPartyGate} style={{ cursor: 'pointer' }} role="link" tabIndex={0}>See party-gate (demo)</a>
           </div>
         </aside>
 
@@ -4680,13 +4729,17 @@ function PrintView({ address, issues, decisions, onBack }) {
   const undecided = races.filter(r => !decisions[r.id]);
 
   // F12: drive the printed logistics from the REAL state (not the TX demo
-  // constants). We have no polling-place / precinct / ID / early-voting data
-  // source yet, so show honest "look it up" guidance rather than fabricated
-  // wrong-state specifics. getFallbackStateData returns honest per-state copy
-  // (real stateName, empty acceptedIds, vote.gov links).
+  // constants). getFallbackStateData returns honest per-state copy (real
+  // stateName, empty acceptedIds, vote.gov links).
   const sd = getFallbackStateData(getRealStateCode() || '');
   const houseRace = races.find(r => /house/i.test(r.label || ''));
-  const districtLabel = houseRace ? houseRace.label.replace(/^U\.S\.\s*/i, '') : '';
+  // Pillar 3: derive the formatted "NJ-01" style district code from the
+  // ballot extraction's House race label. Prefer logistics.congressionalDistrict
+  // when available (civic carried it); fall back to ballot label extraction.
+  const logisticsPrint = getBallotLogistics();
+  const districtLabel = (logisticsPrint && logisticsPrint.congressionalDistrict)
+    || (houseRace ? deriveDistrictCode(houseRace.label, getRealStateCode() || '') : null)
+    || '';
   const lookupHost = ((sd?.resources?.pollingPlaceLookup || sd?.resources?.stateElectionWebsite || 'https://vote.gov/')
     .replace(/^https?:\/\//, '').replace(/\/$/, ''));
   const acceptedIds = sd?.votingRules?.acceptedIds || [];
@@ -5389,7 +5442,7 @@ function handleRevealCandidate(candidateId) {
                   ? getFallbackStateData(getRealStateCode())
                   : STATE_ELECTION_DATA
               }
-              county={getRealStateCode() ? 'your county' : 'Harris County'}
+              county={'your county'}
               onBack={() => setView('home')}
               onBallotConfirmed={() => {
                 // Phase 2b: races + state already applied by NoContestedView's
