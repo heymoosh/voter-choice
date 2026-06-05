@@ -3483,7 +3483,7 @@ function NoContestedProcessing({ file, steps, currentStep }) {
    center when an AI call times out or errors. Doesn't kill state.
    Repo target: pattern lives in ChatPanel.tsx today as plain text;
    this gives it a proper component. */
-function AITimeoutBanner({ onRetry, onHandoff }) {
+function AITimeoutBanner({ onRetry, onHandoff, message }) {
   const { t } = useI18n();
   return (
     <div className="msg ai-error" role="alert">
@@ -3492,7 +3492,7 @@ function AITimeoutBanner({ onRetry, onHandoff }) {
         <ErrorBanner
           tone="warn"
           title={t('errors.aiTimeoutTitle')}
-          body={t('errors.aiTimeoutBody')}
+          body={message || t('errors.aiTimeoutBody')}
           primary={{ label: t('errors.aiTimeoutRetry'), onClick: onRetry }}
           secondary={{ label: t('errors.aiTimeoutHandoff'), onClick: onHandoff }}
         />
@@ -4074,6 +4074,30 @@ function stripChatMd(s) {
     .replace(/^\s{0,3}#{1,6}\s+/gm, '');
 }
 
+// Pass-C: map a server block `code` (surfaced by streamChatReply's onError meta)
+// to a chat-specific banner message. Codes NOT in this map (AI_ERROR, unknown,
+// missing) intentionally resolve to null → caller keeps the generic
+// "AI is taking longer" retry banner. English-only by design (the banner's
+// title/retry stay localized via t(); only this body is block-specific).
+const CHAT_BLOCK_MESSAGES = {
+  RATE_LIMIT_UNAVAILABLE: 'Chat is briefly unavailable — please try again in a moment.',
+  DAILY_LIMIT: "You've reached today's chat session limit. Copy your prompt to continue in another chatbot.",
+  SESSION_LIMIT: "You've reached this session's message limit.",
+  CONCURRENT_LIMIT: 'Too many chat sessions open at once — close other tabs and retry.',
+  API_OVERLOADED: 'The AI is busy right now — try again in a moment.',
+  API_RATE_LIMIT: 'The AI is busy right now — try again in a moment.',
+};
+
+// Budget block codes route to the BudgetExhaustedModal (handoff), not a banner.
+const CHAT_BUDGET_CODES = new Set(['BUDGET_SOFT_CLOSE', 'BUDGET_HANDOFF', 'BUDGET_EXHAUSTED']);
+
+// Resolve a block `code` → { budget } (open the budget modal) OR a banner
+// `message` string (null = generic retry banner).
+function resolveChatBlock(code) {
+  if (code && CHAT_BUDGET_CODES.has(code)) return { budget: true, message: null };
+  return { budget: false, message: (code && CHAT_BLOCK_MESSAGES[code]) || null };
+}
+
 function WorkspaceView({ address, issues, decisions, activeRaceId, onDecide, onUnpick, onSelectRace, onPrint, onEditIssues, onSaveProfile, onContinueElsewhere, budgetExhausted, onOpenByok, onNavigate, chatMessages, onSendChat, chatTimeouts, onRetryChat, onCompare, onSeeAllVotes, amendDeltas, onClearDelta, onViewPartyGate, blindMode, revealedCandidates, onRevealCandidate, onHideCandidate, onToggleBlindMode }) {
   const races = RACES;
   const activeRace = races.find(r => r.id === activeRaceId) || races[0];
@@ -4379,6 +4403,7 @@ function WorkspaceView({ address, issues, decisions, activeRaceId, onDecide, onU
               <AITimeoutBanner
                 onRetry={() => onRetryChat && onRetryChat(activeRace.id)}
                 onHandoff={onContinueElsewhere}
+                message={typeof chatTimeouts[activeRace.id] === 'string' ? chatTimeouts[activeRace.id] : undefined}
               />
             )}
 
@@ -5228,13 +5253,23 @@ function handleRevealCandidate(candidateId) {
             m._id === aiId ? { ...m, text: m.text + chunk } : m,
           ),
         })),
-        onError: () => {
-          // Drop the (empty/partial) AI bubble and surface the retry banner.
+        onError: (_reason, meta) => {
+          // Drop the (empty/partial) AI bubble first — whichever surface shows.
           setChatMessages(prev => ({
             ...prev,
             [raceId]: (prev[raceId] || []).filter(m => m._id !== aiId),
           }));
-          setChatTimeouts(prev => ({ ...prev, [raceId]: true }));
+          // Route by the server block `code` (surfaced via streamChatReply meta).
+          const blk = resolveChatBlock(meta?.code);
+          if (blk.budget) {
+            // Budget block → the existing handoff modal, not an inline banner.
+            setBudgetExhausted(true);
+            setBudgetOpen(true);
+            return;
+          }
+          // Else show the inline banner: a block-specific message string, or
+          // `true` to fall back to the generic "AI is taking longer" body.
+          setChatTimeouts(prev => ({ ...prev, [raceId]: blk.message || true }));
         },
       },
     );

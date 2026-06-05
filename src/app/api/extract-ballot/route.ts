@@ -28,6 +28,7 @@ import {
   isDurableStoreConfigured,
   redisCommand,
 } from "../../../lib/server/durable-store";
+import { recordBlock } from "../../../lib/server/usage-telemetry";
 import {
   decideExtractionPath,
   scoreExtractedText,
@@ -499,6 +500,10 @@ interface PreflightOk {
   buffer: Buffer;
   sizeBytes: number;
   client: Anthropic;
+  // Surfaced so POST's later EXTRACTION_FAILED (500/502) telemetry has the
+  // same client context the preflight gates used.
+  ip: string;
+  sessionId: string;
 }
 interface PreflightFail {
   ok: false;
@@ -508,20 +513,41 @@ interface PreflightFail {
 async function preflight(
   request: NextRequest,
 ): Promise<PreflightOk | PreflightFail> {
+  // Compute IP + sessionId up front (behavior-neutral) so every gate below —
+  // including ORIGIN_MISMATCH and the 413/400 upload-parse failures — records
+  // telemetry with full context.
+  const ip = getClientIP(request);
+  const sessionId =
+    request.headers.get("x-session-id")?.slice(0, MAX_SESSION_ID_CHARS) ??
+    "anon";
+
   if (!validateOrigin(request)) {
+    recordBlock("ORIGIN_MISMATCH", { route: "extract-ballot", ip, sessionId });
     return {
       ok: false,
       response: jsonError(403, { error: "Origin not allowed" }),
     };
   }
-  const ip = getClientIP(request);
   const parsed = await parseUpload(request);
-  if ("error" in parsed) return { ok: false, response: parsed.error };
-  const sessionId =
-    request.headers.get("x-session-id")?.slice(0, MAX_SESSION_ID_CHARS) ??
-    "anon";
+  if ("error" in parsed) {
+    // parseUpload returns 413 for an oversized PDF, else 400 for a malformed
+    // / missing multipart upload. Distinguish by the response status.
+    const status = parsed.error.status;
+    recordBlock(status === 413 ? "PDF_TOO_LARGE" : "INVALID_REQUEST", {
+      route: "extract-ballot",
+      ip,
+      sessionId,
+      detail: { status },
+    });
+    return { ok: false, response: parsed.error };
+  }
   const rateLimit = await checkRateLimitAsync(ip, sessionId, 1);
   if (!rateLimit.allowed) {
+    recordBlock(rateLimit.code ?? "RATE_LIMIT_UNAVAILABLE", {
+      route: "extract-ballot",
+      ip,
+      sessionId,
+    });
     return {
       ok: false,
       response: jsonError(429, {
@@ -534,6 +560,14 @@ async function preflight(
   try {
     client = getAnthropicClient();
   } catch (err) {
+    // Misconfiguration (missing API key) — surface as an extraction failure so
+    // it's tallied alongside the pipeline 500/502s.
+    recordBlock("EXTRACTION_FAILED", {
+      route: "extract-ballot",
+      ip,
+      sessionId,
+      detail: { status: 500, stage: "client_init" },
+    });
     return {
       ok: false,
       response: jsonError(500, {
@@ -546,6 +580,8 @@ async function preflight(
     buffer: parsed.buffer,
     sizeBytes: parsed.sizeBytes,
     client,
+    ip,
+    sessionId,
   };
 }
 
@@ -605,7 +641,7 @@ function buildResponse(
 export async function POST(request: NextRequest) {
   const pre = await preflight(request);
   if (!pre.ok) return pre.response;
-  const { buffer, sizeBytes, client } = pre;
+  const { buffer, sizeBytes, client, ip, sessionId } = pre;
 
   const t0 = Date.now();
 
@@ -649,6 +685,12 @@ export async function POST(request: NextRequest) {
   try {
     pdfjsText = await extractTextFromPdf(new Uint8Array(buffer));
   } catch (err) {
+    recordBlock("EXTRACTION_FAILED", {
+      route: "extract-ballot",
+      ip,
+      sessionId,
+      detail: { status: 500, stage: "pdf_read" },
+    });
     return jsonError(500, {
       error: `Failed to read PDF: ${(err as Error).message}`,
     });
@@ -689,6 +731,12 @@ export async function POST(request: NextRequest) {
       retries: dispatch.retries,
       outcome: dispatch.outcome,
     } satisfies TelemetryCompletedLog);
+    recordBlock("EXTRACTION_FAILED", {
+      route: "extract-ballot",
+      ip,
+      sessionId,
+      detail: { status: 502, stage: "dispatch", outcome: dispatch.outcome },
+    });
     return jsonError(502, dispatch.errorBody);
   }
 

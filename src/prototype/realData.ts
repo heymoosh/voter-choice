@@ -82,7 +82,10 @@ export async function fetchRaceData(
  * load-once model — switching races in the workspace then reads already-loaded
  * data (no per-race loader, which was the drifted app's bug).
  */
-export async function loadAllRaceData(races: ProtoRace[], issues: ProtoIssue[]) {
+export async function loadAllRaceData(
+  races: ProtoRace[],
+  issues: ProtoIssue[],
+) {
   const stateCode = getRealStateCode() || "NJ";
   await Promise.all(
     (races || []).map(async (race) => {
@@ -138,19 +141,57 @@ function parsedTextToContests(text: string): ContestLike[] {
 // Full state-name / abbreviation → 2-letter code (for stateCode detection
 // from an address string or a ballot jurisdiction like "Camden County, NJ").
 const STATE_NAME_TO_CODE: Record<string, string> = {
-  alabama: "AL", alaska: "AK", arizona: "AZ", arkansas: "AR", california: "CA",
-  colorado: "CO", connecticut: "CT", delaware: "DE", "district of columbia": "DC",
-  florida: "FL", georgia: "GA", hawaii: "HI", idaho: "ID", illinois: "IL",
-  indiana: "IN", iowa: "IA", kansas: "KS", kentucky: "KY", louisiana: "LA",
-  maine: "ME", maryland: "MD", massachusetts: "MA", michigan: "MI",
-  minnesota: "MN", mississippi: "MS", missouri: "MO", montana: "MT",
-  nebraska: "NE", nevada: "NV", "new hampshire": "NH", "new jersey": "NJ",
-  "new mexico": "NM", "new york": "NY", "north carolina": "NC",
-  "north dakota": "ND", ohio: "OH", oklahoma: "OK", oregon: "OR",
-  pennsylvania: "PA", "rhode island": "RI", "south carolina": "SC",
-  "south dakota": "SD", tennessee: "TN", texas: "TX", utah: "UT",
-  vermont: "VT", virginia: "VA", washington: "WA", "west virginia": "WV",
-  wisconsin: "WI", wyoming: "WY",
+  alabama: "AL",
+  alaska: "AK",
+  arizona: "AZ",
+  arkansas: "AR",
+  california: "CA",
+  colorado: "CO",
+  connecticut: "CT",
+  delaware: "DE",
+  "district of columbia": "DC",
+  florida: "FL",
+  georgia: "GA",
+  hawaii: "HI",
+  idaho: "ID",
+  illinois: "IL",
+  indiana: "IN",
+  iowa: "IA",
+  kansas: "KS",
+  kentucky: "KY",
+  louisiana: "LA",
+  maine: "ME",
+  maryland: "MD",
+  massachusetts: "MA",
+  michigan: "MI",
+  minnesota: "MN",
+  mississippi: "MS",
+  missouri: "MO",
+  montana: "MT",
+  nebraska: "NE",
+  nevada: "NV",
+  "new hampshire": "NH",
+  "new jersey": "NJ",
+  "new mexico": "NM",
+  "new york": "NY",
+  "north carolina": "NC",
+  "north dakota": "ND",
+  ohio: "OH",
+  oklahoma: "OK",
+  oregon: "OR",
+  pennsylvania: "PA",
+  "rhode island": "RI",
+  "south carolina": "SC",
+  "south dakota": "SD",
+  tennessee: "TN",
+  texas: "TX",
+  utah: "UT",
+  vermont: "VT",
+  virginia: "VA",
+  washington: "WA",
+  "west virginia": "WV",
+  wisconsin: "WI",
+  wyoming: "WY",
 };
 
 // Name entries sorted longest-first so a compound name wins over a substring
@@ -207,7 +248,9 @@ export async function fetchBallotFromAddress(
     if (res.ok) {
       const data = await res.json();
       const contests = data?.contests;
-      const stateCode = stateCodeFrom(data?.county || data?.normalizedAddress || address);
+      const stateCode = stateCodeFrom(
+        data?.county || data?.normalizedAddress || address,
+      );
       if (Array.isArray(contests) && contests.length > 0) {
         return { races: deriveRaces({ contests }), stateCode };
       }
@@ -231,7 +274,10 @@ export async function fetchBallotFromFile(file: File): Promise<BallotResult> {
   try {
     const fd = new FormData();
     fd.append("file", file);
-    const res = await fetch("/api/extract-ballot", { method: "POST", body: fd });
+    const res = await fetch("/api/extract-ballot", {
+      method: "POST",
+      body: fd,
+    });
     if (!res.ok) return { races: [], stateCode: "" };
     const extraction = await res.json();
     // BallotExtraction nests these under `election_metadata` — the old top-level
@@ -376,7 +422,9 @@ export function buildRaceChatSystemPrompt(input: ChatPromptInput): string {
   const priorities = (issues || [])
     .map((i, idx) => {
       const label = i.interpretation || i.name || i.canonicalIssue || "";
-      return label ? `${idx + 1}. ${label}${i.stance ? ` — ${i.stance}` : ""}` : "";
+      return label
+        ? `${idx + 1}. ${label}${i.stance ? ` — ${i.stance}` : ""}`
+        : "";
     })
     .filter((s) => s.length > 0)
     .join("\n");
@@ -415,12 +463,27 @@ export interface ChatHistoryMsg {
   content: string;
 }
 
+/** Structured detail about a server-side block, surfaced to `onError` so the
+ *  client can show a message specific to the block code instead of a generic
+ *  "AI is taking longer" banner. Only populated on the non-OK / non-SSE-200
+ *  path (where there's an HTTP response + JSON body to read); the network /
+ *  mid-stream / empty-stream failure paths pass no meta. */
+export interface ChatErrorMeta {
+  /** HTTP status of the failing response (e.g. 429, 503, 403, 500, 200). */
+  status?: number;
+  /** The `code` from the error body (rate-limit / budget / upstream code), or
+   *  a code derived from a structured 200 (`budget_exhausted` → BUDGET_EXHAUSTED). */
+  code?: string;
+}
+
 export interface ChatStreamCallbacks {
   onText: (text: string) => void;
   onDone?: () => void;
   /** Fired on ANY failure: non-OK, non-SSE 200 (budget/structured), mid-stream
-   *  error event, network/read throw, or a stream that emitted nothing. */
-  onError: (reason: string) => void;
+   *  error event, network/read throw, or a stream that emitted nothing. The
+   *  optional `meta` carries the HTTP status + block code when the failure came
+   *  from a server response with a JSON body. */
+  onError: (reason: string, meta?: ChatErrorMeta) => void;
 }
 
 /**
@@ -458,9 +521,26 @@ export async function streamChatReply(
   // Any non-OK (local 500 "Chat service is not configured", 403, 503, …) OR any
   // 200 that isn't an SSE stream (the structured budget_exhausted 200) routes to
   // the error UI. Don't key to a specific status — gates can fail many ways.
+  // Read the JSON body (best-effort) to surface the block `code` so the client
+  // can render a message specific to *why* it was blocked.
   const ctype = res.headers.get("content-type") || "";
   if (!res.ok || !ctype.includes("text/event-stream") || !res.body) {
-    cb.onError("unavailable");
+    let code: string | undefined;
+    try {
+      const body = (await res.json()) as {
+        code?: string;
+        status?: string;
+      };
+      // The budget-exhausted continuity payload is a structured 200 with
+      // `status: "budget_exhausted"` and no `code` — map it so it reaches the
+      // budget modal like the explicit BUDGET_* codes do.
+      code =
+        body?.code ??
+        (body?.status === "budget_exhausted" ? "BUDGET_EXHAUSTED" : undefined);
+    } catch {
+      // No / non-JSON body — fall back to a bare "unavailable" with status only.
+    }
+    cb.onError("unavailable", { status: res.status, code });
     return;
   }
 

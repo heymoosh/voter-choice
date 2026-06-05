@@ -13,6 +13,10 @@ import {
   resolveCandidateId,
   lookupAlignment,
 } from "../../../lib/server/alignment";
+import {
+  recordBlock,
+  type BlockReason,
+} from "../../../lib/server/usage-telemetry";
 import { lookupDonorCoalition } from "../../../lib/server/donors";
 import { runResearchSubAgent } from "../../../lib/server/research-sub-agent";
 import {
@@ -1437,26 +1441,74 @@ function validateBody(body: ChatRequest): Response | null {
   );
 }
 
+/**
+ * Map a budget tier to the BlockReason recorded for telemetry. The
+ * finer-grained tier (soft_close vs handoff vs exhausted) is logged here even
+ * though the HTTP response body's `code` is coarser (the gate's 503 branch
+ * always reports `BUDGET_SOFT_CLOSE` regardless of which of soft_close/handoff
+ * triggered it). Logging the exact tier gives better observability without
+ * changing the wire response.
+ */
+function budgetTierBlockReason(tier: BudgetTier): BlockReason | null {
+  switch (tier) {
+    case "soft_close":
+      return "BUDGET_SOFT_CLOSE";
+    case "handoff":
+      return "BUDGET_HANDOFF";
+    case "exhausted":
+      return "BUDGET_EXHAUSTED";
+    default:
+      return null;
+  }
+}
+
 async function checkGates(
   request: NextRequest,
   body: ChatRequest,
 ): Promise<Response | null> {
+  const ip = getClientIP(request);
   const rateResult = await checkRateLimitAsync(
-    getClientIP(request),
+    ip,
     body.sessionId,
     body.messageCount ?? 1,
   );
   if (!rateResult.allowed) {
+    // code is always set when allowed === false; default defensively.
+    recordBlock(rateResult.code ?? "RATE_LIMIT_UNAVAILABLE", {
+      route: "chat",
+      ip,
+      sessionId: body.sessionId,
+      detail: { messageCount: body.messageCount ?? 1 },
+    });
     return Response.json(
       { error: rateResult.error, code: rateResult.code },
       { status: 429 },
     );
   }
   const budget = await getBudgetStatusAsync();
-  return budgetGateResponse(budget.tier, body.isNewSession, budget);
+  const budgetResponse = budgetGateResponse(
+    budget.tier,
+    body.isNewSession,
+    budget,
+  );
+  if (budgetResponse) {
+    const reason = budgetTierBlockReason(budget.tier);
+    if (reason) {
+      recordBlock(reason, {
+        route: "chat",
+        ip,
+        sessionId: body.sessionId,
+        detail: { percent: budget.percent },
+      });
+    }
+  }
+  return budgetResponse;
 }
 
-async function handleAnthropicError(err: unknown): Promise<Response> {
+async function handleAnthropicError(
+  err: unknown,
+  ctx: { ip: string; sessionId: string },
+): Promise<Response> {
   if (err instanceof Anthropic.APIError) {
     console.error(`Anthropic API error: ${err.status} ${err.message}`);
     if (err.status === 429) {
@@ -1468,6 +1520,17 @@ async function handleAnthropicError(err: unknown): Promise<Response> {
         // gate path produces. A 429 from Anthropic that coincides with
         // exhausted community budget must NOT surface as a 503 error;
         // the client renders the BudgetExhausted screen from this body.
+        // Record as BUDGET_EXHAUSTED, not API_RATE_LIMIT: this is a budget
+        // state. The budget gate did NOT count it — to reach this handler the
+        // gate returned null, which for an exhausted budget only happens when
+        // the handoff hasn't been served yet (so this completion is the
+        // reserved handoff). Counting here keeps the tally complete.
+        recordBlock("BUDGET_EXHAUSTED", {
+          route: "chat",
+          ip: ctx.ip,
+          sessionId: ctx.sessionId,
+          detail: { percent: budget.percent, via: "anthropic_429" },
+        });
         return Response.json(
           {
             status: "budget_exhausted",
@@ -1478,6 +1541,12 @@ async function handleAnthropicError(err: unknown): Promise<Response> {
           { status: 200 },
         );
       }
+      recordBlock("API_RATE_LIMIT", {
+        route: "chat",
+        ip: ctx.ip,
+        sessionId: ctx.sessionId,
+        detail: { status: 429 },
+      });
       return Response.json(
         {
           error:
@@ -1488,6 +1557,12 @@ async function handleAnthropicError(err: unknown): Promise<Response> {
       );
     }
     if (err.status === 529) {
+      recordBlock("API_OVERLOADED", {
+        route: "chat",
+        ip: ctx.ip,
+        sessionId: ctx.sessionId,
+        detail: { status: 529 },
+      });
       return Response.json(
         {
           error:
@@ -1500,6 +1575,15 @@ async function handleAnthropicError(err: unknown): Promise<Response> {
   } else {
     console.error("Chat error:", err);
   }
+  // Catch-all: any other APIError status or a non-APIError throw → 500.
+  recordBlock("AI_ERROR", {
+    route: "chat",
+    ip: ctx.ip,
+    sessionId: ctx.sessionId,
+    detail: {
+      status: err instanceof Anthropic.APIError ? err.status : 500,
+    },
+  });
   return Response.json({ error: "Chat service error" }, { status: 500 });
 }
 
@@ -1508,7 +1592,9 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  const ip = getClientIP(request);
   if (!validateOrigin(request)) {
+    recordBlock("ORIGIN_MISMATCH", { route: "chat", ip });
     return Response.json(
       { error: "Forbidden", code: "ORIGIN_MISMATCH" },
       { status: 403 },
@@ -1516,11 +1602,29 @@ export async function POST(request: NextRequest) {
   }
 
   const bodyOrError = await parseBody(request);
-  if (bodyOrError instanceof Response) return bodyOrError;
+  if (bodyOrError instanceof Response) {
+    // Malformed JSON body (parseBody returns a 400). sessionId isn't parseable
+    // here, so record without it.
+    recordBlock("INVALID_REQUEST", {
+      route: "chat",
+      ip,
+      detail: { stage: "parse" },
+    });
+    return bodyOrError;
+  }
   const body = bodyOrError;
 
   const validationError = validateBody(body);
-  if (validationError) return validationError;
+  if (validationError) {
+    recordBlock("INVALID_REQUEST", {
+      route: "chat",
+      ip,
+      sessionId:
+        typeof body.sessionId === "string" ? body.sessionId : undefined,
+      detail: { stage: "validate" },
+    });
+    return validationError;
+  }
 
   const gateError = await checkGates(request, body);
   if (gateError) return gateError;
@@ -1610,6 +1714,6 @@ export async function POST(request: NextRequest) {
       },
     );
   } catch (err) {
-    return handleAnthropicError(err);
+    return handleAnthropicError(err, { ip, sessionId: body.sessionId });
   }
 }

@@ -13,3 +13,8 @@ playwright-report.json
 # prettier reformatting would strip the leading 2-space indents
 # inside the prompt blocks and break the golden tests.
 src/lib/prompts/__tests__/*.golden.md
+
+# Auto-generated verbatim-concat bundle (@ts-nocheck). Edited surgically only;
+# a wholesale prettier reformat produces a multi-thousand-line churn over the
+# generated source. Never auto-format.
+src/prototype/VoterChoiceApp.tsx
