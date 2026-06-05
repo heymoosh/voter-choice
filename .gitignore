@@ -64,3 +64,6 @@ reports/
 
 # Drizzle Kit journal / meta (generated, not committed)
 db/migrations/meta/
+
+# local QA scratch (ballot images, venv, harness output) — never deploy/commit
+.scratch-ballot/
