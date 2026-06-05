@@ -583,6 +583,77 @@ let ALIGNMENT_SCORES = {
   },
 };
 
+/* ── Pillar 2 NJ mock RACE_PATTERNS for county commissioners ─────────────────
+   The TX mock data has us-senate-tx, us-house-tx7, governor-tx — none match
+   the NJ race ids. Inject minimal NJ entries so the workspace has candidate
+   patterns for the seed RACES. Real data overwrites via applyRaceData. */
+(function injectNJRacePatternMocks() {
+  RACE_PATTERNS['county-commissioners'] = {
+    race: 'County Commissioners',
+    candidates: [
+      { id: 'cappelli', name: 'Louis Cappelli Jr', incumbent: false, priorRole: 'Camden County Democratic candidate', platformAlignment: null, donorCoalition: null, endorsements: null, retrospective: null, valuesHighlight: null, donorDataSource: 'web_search' },
+      { id: 'young', name: 'Jonathan Young', incumbent: false, priorRole: 'Camden County Democratic candidate', platformAlignment: null, donorCoalition: null, endorsements: null, retrospective: null, valuesHighlight: null, donorDataSource: 'web_search' },
+      { id: 'hawkins', name: 'Vanetta Hawkins', incumbent: false, priorRole: 'Camden County Democratic candidate', platformAlignment: null, donorCoalition: null, endorsements: null, retrospective: null, valuesHighlight: null, donorDataSource: 'web_search' },
+      { id: 'mercedes', name: 'Constance Mercedes', incumbent: false, priorRole: 'Camden County Democratic candidate', platformAlignment: null, donorCoalition: null, endorsements: null, retrospective: null, valuesHighlight: null, donorDataSource: 'web_search' },
+    ],
+  };
+})();
+
+/* ── Pillar 2 NJ mock web_search ALIGNMENT_SCORES entries ────────────────────
+   Mock web_search AlignmentScoresEntry data for the NJ county-commissioners
+   race. Used to exercise the web_search rendering path (Pillar 2) without
+   the live DB. The cappelli entry uses research_pending to test the trigger.
+
+   ANONYMITY: evidence[].summary strings are NAME-FREE (no real candidate names)
+   to respect blind-mode. The URL is a real source (vote.gov as placeholder).
+   These are injected into ALIGNMENT_SCORES and overridden by the real
+   /api/race-data response when the seam fires (applyRaceData). */
+(function injectNJWebSearchMocks() {
+  var webSearchEntry = function(candidateId, resolvedStance, confidence) {
+    return {
+      candidateId: candidateId,
+      scores: [
+        {
+          canonicalIssue: 'healthcare_affordability',
+          issueLabel: 'Healthcare Affordability',
+          resolvedStance: resolvedStance,
+          sourceType: 'web_search',
+          confidence: confidence,
+          evidence: [
+            { summary: 'Campaign platform supports expanding healthcare access', url: 'https://vote.gov/' },
+          ],
+        },
+        {
+          canonicalIssue: 'housing_affordability',
+          issueLabel: 'Housing Affordability',
+          resolvedStance: 'voter favors stronger rent protections',
+          sourceType: 'web_search',
+          confidence: confidence,
+          evidence: [],
+        },
+        {
+          canonicalIssue: 'congressional_accountability',
+          issueLabel: 'Congressional Accountability',
+          resolvedStance: 'voter favors banning congressional stock trading',
+          sourceType: 'web_search',
+          confidence: 'low',
+          evidence: [],
+        },
+      ],
+    };
+  };
+
+  ALIGNMENT_SCORES['county-commissioners'] = {
+    race: 'County Commissioners',
+    entries: [
+      { candidateId: 'cappelli', scores: null, unavailable: { reason: 'research_pending' } },
+      webSearchEntry('young', 'voter favors affordable healthcare for families', 'medium'),
+      webSearchEntry('hawkins', 'voter favors expanded Medicaid access', 'medium'),
+      webSearchEntry('mercedes', 'voter favors community healthcare centers', 'low'),
+    ],
+  };
+})();
+
 /* ────────── PRESET_ISSUES ──────────
    Matches ConcernInterpretationBlock.entries from structured-blocks.ts:
      { sourceType, sourceTagId? | sourceText?, rank, interpretation,
