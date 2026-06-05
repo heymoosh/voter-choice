@@ -8,8 +8,15 @@ Issues, monitoring gaps, data quality concerns, and enhancement ideas identified
 
 ## Pre-Launch Must-Fix (lower before opening to real users)
 
-### [P1] Election DATA must include the upcoming GENERAL so the (state × election) gate transitions correctly
-**Status:** Open (flagged 2026-06-03)
+### [P1] Election DATA must cover ANY upcoming election for the address, and gate logic must follow each state's rules
+**Status:** Open (flagged 2026-06-03; scope broadened by Muxin 2026-06-05)
+
+**Broader requirement (Muxin, 2026-06-05):** this is not just "include the November general." The
+election data resolved for a given ADDRESS must include ANY/ALL upcoming elections (primary,
+runoff, general, special, municipal), and the app must decide which gate to apply — *if any* —
+from that `(state × electionType)`'s rules (closed primary → party gate; general → no gate; open
+primary → different ask; etc.). Make it fully address- + date- + rule-driven, never assuming one
+election type. The original (narrower) note follows.
 
 The *architecture* is correct and already (state × election)-aware: `src/lib/state-rules/`
 is keyed by `(state, electionType)` (closed / semi-closed / open / top-two / runoff), and a
@@ -44,6 +51,40 @@ already calls returns `pollingLocations` + `earlyVoteSites` + division/district 
 keep the vote.gov line only as the fallback when civic returns nothing. Supersedes the older
 "state-specific SOS links + real county" note in REBUILD_STATUS. Honesty bar: never show an address
 or polling place we didn't actually resolve.
+
+### [P1] Hardcoded location/state data still leaks into the UI — make EVERYTHING address-derived
+**Status:** Open (flagged 2026-06-05, from Muxin's preview test)
+
+Same class as the F12 "hardcoded Texas" fix, but more instances remain. On a NEW JERSEY address the
+UI still showed Texas/Harris-County leftovers: the left-panel footer link **"See party-gate (TX
+primary)"**, and the election-info "Show details" panel **"SOURCE · HARRIS COUNTY ELECTIONS"**.
+
+**Requirement (Muxin):** ALL locations, states, counties, jurisdictions, election-types must be
+**variables populated after we ingest the address + ballot — never hardcoded.**
+**Action:** sweep UI + data layers for literal "TX"/"Texas"/"Harris"/"primary"/county/state
+constants and replace each with an address/ballot-derived value. The "See party-gate (TX primary)"
+link is a dev affordance — remove or make dynamic for production.
+
+### [P1] "Community AI budget used up" modal misfires when the budget is NOT exhausted
+**Status:** Open (flagged 2026-06-05, from Muxin's preview test)
+
+A voter who barely clicked around and NEVER used the chatbot was shown the "Community AI budget
+used up" continuity modal. Confirmed against live data: the community budget is at
+**estimatedSpendUSD ≈ $0.87 (1.7% of the $50 cap)** — nowhere near exhausted — and the new block
+tracker (`voter-choice:blocks:<day>:*`) recorded **zero** blocks, so no server-side budget gate
+fired. The modal is therefore a **client-side misfire**, likely introduced/exposed by the
+2026-06-05 observability deploy's budget derivation (`realData.ts streamChatReply` maps a
+`status:"budget_exhausted"` 200 → BUDGET_EXHAUSTED; `resolveChatBlock`/`setBudgetExhausted` route
+to the modal). **Investigate:** what sets `budgetExhausted=true` on the client without a real
+server exhaustion (e.g. a per-race chat-intro response mis-parsed as budget_exhausted, or a stale
+flag). Same "blocking message that doesn't match reality" family as the rate-limit fail-closed.
+
+### [P2] Tip Jar link is unpopulated
+**Status:** Open (flagged 2026-06-05, from Muxin's preview test)
+
+The "TIP JAR" link (budget-exhausted continuity footer + "A tip keeps the budget alive for the next
+voter…") has no real destination/page yet. Populate it (tip/payment page or external link) before
+launch — a dead tip-jar link at the budget-exhaustion moment is a poor experience.
 
 ### [P1] Party-primary FILTERING of the ballot ("2 Senate races")
 **Status:** Open (flagged 2026-06-03) · rebuild task #25
