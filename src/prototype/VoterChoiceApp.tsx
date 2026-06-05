@@ -3584,7 +3584,10 @@ function NoContestedView({ stateData, county = 'your county', onBallotConfirmed,
                   type="file"
                   accept=".txt,.pdf,text/plain,application/pdf"
                   onChange={onFileChange}
-                  style={{ display: 'none' }}
+                  /* Visually hidden but still rendered (NOT display:none) — Safari
+                     won't open the picker on a programmatic .click() of a
+                     display:none file input; this keeps it in the layout. */
+                  style={{ position: 'absolute', width: '1px', height: '1px', opacity: 0, overflow: 'hidden', pointerEvents: 'none', margin: '-1px' }}
                 />
               </div>
 
