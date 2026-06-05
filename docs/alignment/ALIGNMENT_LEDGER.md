@@ -14,10 +14,41 @@ Running log of eval runs, findings, and decisions for the alignment scoring engi
 | **F5** | Internal `in_favor`/`opposed` labels do NOT need renaming — the UI never shows them (it renders "voted with your side N of M" + the bill/vote). Presentation is redesign-owned. | closed (Muxin) |
 | **F6** | Incentive-vs-mandate "safety" bills (e.g. a tax credit for a gun safe) are genuinely ambiguous in direction. Keep them **low-confidence + show the vote**; don't force a pole. | accepted (Muxin) |
 | **F7** | `border_security` is ~93% mis-tagged — after correction only ~11 of 155 are genuine physical-border bills. **Resolved (Muxin): MERGE into `immigration`.** At cutover, drop `border_security` as a canonical issue; genuine border content scores under `immigration` (border-enforcement = `opposed`/restrictive). The big-issue workflow therefore does NOT re-tag border separately. | resolved (Muxin) |
-| **M2** (meta) | The at-scale tagging runner needs **retry-on-transient-error**. **Confirmed at scale: 36 of 141 workflow batches (25%) reported "completed" but never wrote a result file** — the workflow's completion signal ≠ file written. A production run MUST verify each result file exists + valid and auto-retry the missing. Handled this run with a manual verify-and-retry pass. | open |
+| **M2** (meta) | The at-scale tagging runner needs **retry-on-transient-error**. **Confirmed at scale: 36 of 141 workflow batches (25%) reported "completed" but never wrote a result file** — the workflow's completion signal ≠ file written. A production run MUST verify each result file exists + valid and auto-retry the missing. **Largely FIXED 2026-06-05 (big-2):** agents write results to **in-repo files** and the gate is a file-by-file coverage check (`_pole-assemble.ts`), not the completion signal — so the 2/157 batches that failed to return their structured summary still had complete files → **0 data loss**. The remaining residue is occasional single-bill `bill_id` transcription slips (~1 per 5–15k), caught by the same coverage check and patched. | mitigated |
 | **F8** | `public_safety` (84% →no_score) and `election_integrity` (85% →no_score) are over-tagged grab-bags like `border` — the old tagger had high recall but low precision, forcing off-topic bills in. Real counts are small (~870 policing, ~258 ballot-access). Reproductive (43%) had the same over-tag pattern with off-topic gender/health bills. **Net: ~60% of contested tags are now no_score — alignment coverage on contested issues is much thinner. Lever: recover bill summaries (Data-Quality backlog item).** | open (Muxin) |
 
 ## Runs
+
+### 2026-06-05 — Remaining 4 contested issues re-tagged → ALL 12 done (15,593 tags, `source_run='big-2'`)
+**On subscription.** 1 background `Workflow`, **155 batches**, **Sonnet** taggers (per Muxin —
+Opus orchestrates, Sonnet executes; captures model per **M1**). `issue_tags` untouched; written to
+`issue_tags_pole_v1` (`tagger_version='pole-anchored-v1'`). **1:1 coverage verified** for all four
+(pole_v1 count == old `issue_tags` count). Orchestration scripts: `scripts/ingest/_pole-*.{ts,workflow.js}`.
+
+- **`energy_grid` (1824) — the near-miss.** Was **never re-tagged** (RETAG_PLAN lists 12 contested
+  issues; the prior handoff accounted for only 11). Surfaced in the Step-0 audit. **580 flips (32%!)**
+  · 1,092 →no_score (60%) · 152 unchanged → new 183/549/1092. The big driver: the **means-trap** —
+  "funds/expands clean energy" that the old tagger read as pro-production `in_favor` is correctly
+  `opposed` (537 `in_favor→opposed`). Had we cut over without it, energy alignment would have shipped
+  ~32% inverted.
+- **economy_jobs (5675):** 530 flips (9%) · 2,963 →no_score (52%) · 2,182 unchanged → new 2140/572/2963.
+  481 `in_favor→opposed` (deregulation/tax-cut bills the old tagger defaulted to `in_favor`).
+- **property_taxes (2343):** 215 flips (9%) · 1,504 →no_score (64%) · 624 unchanged → new 790/49/1504.
+- **education_funding (5751):** 180 flips (3%) · 3,629 →no_score (63%) · 1,942 unchanged → new
+  1898/224/3629. Lowest flip rate — audit's "mostly fine" confirmed; the no_score is over-tag cleanup.
+
+**Method note (M2 fix in practice):** Sonnet agents READ a ~100-bill batch file and WRITE a result
+JSON in-repo; the integrity gate re-reads every file (`_pole-assemble.ts`), not the workflow's
+completion signal. 2/157 batches failed to return a structured summary but had written complete
+files → **0 data loss**; 1 single-bill `bill_id` transcription slip was caught by the coverage check
+and patched. Pole prompts inlined from `POLE_VOCABULARY.md` with the repeal/CRA **net-effect** rule
+(e.g. nullifying a rule that restricted oil/gas leasing → `in_favor`) and the energy means-trap;
+dry-run on 4 batches validated these before the full run.
+
+**Milestone: all 12 launch-blocking contested issues are now re-tagged** (prior 8 = 15,887 + these
+4 = 15,593 → **31,480 corrected tags** in `issue_tags_pole_v1`). **Next:** missing-summary recovery
+(the coverage lever, per Muxin's "recover summaries first" decision), then the gated data-only
+cutover. Production still untouched.
 
 ### 2026-06-05 — Big launch-blocking issues re-tagged via background workflow (14,014 tags)
 **On subscription**, 2 background workflows (141 batches + a 36-batch retry — the first

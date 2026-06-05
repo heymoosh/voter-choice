@@ -34,8 +34,12 @@ a **separate table so production never changes** until a deliberate, gated cutov
 
 ## LEFT (finish what we started)
 
-1. **Re-tag** `economy_jobs` (5675), `education_funding` (5751), `property_taxes` (2343) — ~13.8k,
-   lower priority (audit had them mostly fine). Poles in `POLE_VOCABULARY.md`; same pattern below.
+1. ~~**Re-tag** `economy_jobs`/`education_funding`/`property_taxes`~~ **+ `energy_grid` — ✅ DONE
+   2026-06-05** (`source_run='big-2'`, **15,593 tags**, Sonnet via 1 background Workflow; 1:1 coverage
+   verified). `energy_grid` was the **un-re-tagged 12th contested issue** (RETAG_PLAN lists 12; the
+   prior handoff accounted for 11) — surfaced in the Step-0 audit, **32% inversions** (means-trap:
+   clean-energy funding read as pro-production). **All 12 launch-blocking contested issues are now
+   corrected in `issue_tags_pole_v1` (31,480 tags total).** See the ledger's `big-2` entry.
 2. **Cutover (gated)** — point the live app at the corrected tags. Single read point:
    `src/lib/server/alignment.ts` → `lookupAlignment()` (innerJoin on `schema.issueTags`, ~L215–239).
    Options: (a) migrate `issue_tags_pole_v1` into production `issue_tags` (the unique index on

@@ -64,3 +64,6 @@ reports/
 
 # Drizzle Kit journal / meta (generated, not committed)
 db/migrations/meta/
+
+# Alignment re-tag working data (ephemeral batch + result files; tags live on the Neon branch)
+scripts/ingest/_pole-batches/
