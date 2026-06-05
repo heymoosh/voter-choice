@@ -8,6 +8,21 @@ Issues, monitoring gaps, data quality concerns, and enhancement ideas identified
 
 ## Pre-Launch Must-Fix (lower before opening to real users)
 
+### [P2 / idea] Open-primary party-selection flexibility + pre-print party confirmation
+**Status:** Open (flagged 2026-06-05 from R4 multi-state verification; DEFERRED by Muxin — core ballot accuracy is higher priority)
+
+The party gate currently fires for ANY primary whose ballot spans multiple party lanes
+(`isPrimaryLike && racesSpanMultipleParties` in `VoterChoiceApp.tsx`), regardless of
+`getStateRule`. R4 testing on a WI open-primary ballot confirmed it fires for open primaries
+too. **Muxin's intended flow (scope creep, deferred):** at the gate, ask "which party do you
+want to vote for?"; if the voter doesn't know / wants to browse, let them **see BOTH parties**;
+then add a step **before printing the final ballot** that helps them choose which party to
+commit to (based on their answers/picks) and **confirm before the printout** — so an
+open-primary voter can browse everything and commit to one party only at print time (you may
+legally vote only one party's primary). Likely also wires `getStateRule` into the gate COPY
+(closed → "your registered party" + unaffiliated-voter notice; open → free choice; top-two →
+no gate). Not for this session.
+
 ### [P1] Election DATA must cover ANY upcoming election for the address, and gate logic must follow each state's rules
 **Status:** Open (flagged 2026-06-03; scope broadened by Muxin 2026-06-05)
 
