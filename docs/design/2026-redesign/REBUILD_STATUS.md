@@ -119,12 +119,18 @@ state-specific SOS links + real county.
   carry category-level notes (no fabricated specifics — deliberate). Backlog: give
   every state with a wide variety of accepted IDs its own per-state-sourced list
   (state SoS sites), with `lastVerified`/source tracking. Not urgent.
-- **F1 — large-format extraction misread. ✅ RESOLVED** (commit `ed36368`) via
-  sampling-with-abstention (`extract-sampler.ts`): large-format ballots extract N=3×
-  and reconcile by majority → ZERO fabrication, honest `illegible` gaps for genuinely
-  unreadable dense names. See `F1_EXTRACTION_HANDOFF.md` top banner. Optional follow-up:
-  raise `SAMPLE_COUNT` to 5 for stricter consensus; true resolution (tiling) only if the
-  residual illegible dense names must be recovered (data does not currently justify it).
+- **F1 — large-format extraction misread. INTERIM stopgap shipped; ROOT-CAUSE FIX
+  DEFERRED TO BACKLOG (user, 2026-06-04 — "doesn't affect the majority of ballots/users").**
+  Interim: sampling-with-abstention (`extract-sampler.ts`, commits `ed36368`/`2611f48`) —
+  large-format ballots extract N=3× + reconcile by majority → mostly honest gaps, but a
+  semi-stable hallucination can still leak in the densest column (residual). This is the
+  KNOWN limitation of the bake-off's C2 (Sonnet-vision-direct) winner: on NJ Camden it hit
+  only 87% candidate completeness, "missing names on the dense REP slates." The PLANNED
+  root-cause fix is already in `docs/operations/post-launch-backlog.md`:
+  **[P0] run Contender 1 (AWS Textract Forms + Sonnet)** — form-native, the intended v2
+  architecture (skipped only for missing AWS creds) — plus the **per-race confidence signal
+  + voter-facing "low-confidence extraction" warning**. Sampling stopgap to be revisited
+  (likely reverted) once Textract lands. Not urgent; deferred.
 
 > **⚠️ Blind-mode anonymity invariant (commit `c5fae03`).** Candidate names must
 > NEVER appear outside the candidate card's reveal control. Two wiring leaks were
