@@ -41,8 +41,15 @@ workspace→pick→print).
   branch 3 ways (no-ID + note / verified list (TX,GA) / requirement + "confirm at
   your state office"). NJ now shows "No ID required for most voters" + the exception.
 
-- **F1 — extraction misreads the dense R-Senate column. STILL OPEN; tiling attempt
-  REVERTED.** DIAGNOSED (not a cache bug): the vision model caps images at 1568px
+- **F1 — extraction misreads the dense R-Senate column. ✅ RESOLVED 2026-06-04
+  (commit `ed36368`) via sampling-with-abstention** (`extract-sampler.ts`): large-format
+  ballots are extracted N=3× and reconciled by majority — names kept only on ≥2-run
+  agreement, disagreements → honest `illegible` gaps. A 5× stability experiment proved
+  the misreads are nondeterministic (so consensus catches them; tiling — tried + reverted
+  — was unnecessary). Live-verified ZERO fabrication; details in `F1_EXTRACTION_HANDOFF.md`
+  (top banner). Historical diagnosis (incl. the rejected tiling path) follows. ⬇️
+- ~~**F1 — extraction misreads the dense R-Senate column. STILL OPEN; tiling attempt
+  REVERTED.**~~ DIAGNOSED (not a cache bug): the vision model caps images at 1568px
   long edge, so this large-format 17.5×23" trifold downscales until candidate text
   is ~20px → misread. A full tiling implementation (render large pages → overlapping
   crops → `mergeTiles`) was built + unit-tested, but a live re-extract showed it

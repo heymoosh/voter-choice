@@ -1,15 +1,25 @@
-# F1 — large-format ballot extraction misreads dense columns — HANDOFF
+# F1 — large-format ballot extraction misreads dense columns
 
-**Start a fresh session here.** Self-contained. F1 is the one open item from the
-2026-06-04 NJ QA pass (`QA_NJ_BALLOT_2026-06-04.md`).
-
-**Status:** OPEN. **Step 1 (anti-inference prompt guard) is LANDED + live-verified** —
-it helps but does NOT fix (see the Step 1 callout below). A naive tiling fix was built
-and **reverted (regressed)**. **Next = Step 2 (resolution / header-preserving band
-tiling).** F1 is **gated to large-format ballots** and does NOT block the app launch, but
-the live runs showed the misread is **broader than one column** (the cache was masking
-it) — names on a large-format ballot are nondeterministically unreliable; structure is
-solid. Federal D races (Booker/Norcross) read correctly every run.
+> ## ✅ RESOLVED (2026-06-04, commit `ed36368`) — sampling-with-abstention, NOT tiling
+> The fix is **`src/lib/server/extract-sampler.ts`**: for large-format ballots only
+> (logical area > 1.0M pt²), `/api/extract-ballot` now extracts **N=3×** and reconciles
+> by majority — a name is kept only when ≥2 runs agree (strict majority); disagreements,
+> lone reads, and mostly-illegible races become honest `illegible` gaps. **Live-verified:
+> the NJ R-Senate column went from 4-6 fabricated names → the names a majority agree on
+> (MURPHY, ZDAN) + honest gaps, ZERO fabrication.** Everything legible (Booker, Norcross,
+> all commissioners, Stone) reads correctly; structure stays intact (8 races).
+>
+> **Why this and not the tiling below:** a 5× stability experiment proved the misreads are
+> NONDETERMINISTIC (a different wrong name each run) and the errors are essentially never
+> stably-wrong — so consensus catches them, and resolution/tiling (which regressed when
+> tried) isn't even needed. **Residual (acceptable):** genuinely unreadable dense names
+> (e.g. LEBOVICS, TABOR) sometimes show as `illegible` rather than recovered — an honest
+> gap, the correct floor for a voting tool. To recover those last names you'd need true
+> resolution; the data does NOT justify that build. Knobs: `SAMPLE_COUNT` (raise to 5 for
+> stricter consensus), the large-format gate, and the low-confidence-race guard.
+>
+> Everything below is the original handoff / diagnosis, kept as the record of how we got
+> here (incl. the rejected tiling approach). It is NO LONGER the plan.
 
 **Worktree/branch:** `…/.claude/worktrees/design-integration` @ `feat/prototype-rebuild`.
 NOT deployed. Operate via absolute paths into that worktree.

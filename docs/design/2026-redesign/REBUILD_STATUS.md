@@ -119,8 +119,12 @@ state-specific SOS links + real county.
   carry category-level notes (no fabricated specifics — deliberate). Backlog: give
   every state with a wide variety of accepted IDs its own per-state-sourced list
   (state SoS sites), with `lastVerified`/source tracking. Not urgent.
-- **F1 — large-format extraction misread.** See `F1_EXTRACTION_HANDOFF.md` (own
-  fresh session). Diagnosed; naive tiling reverted; staged fix recommended.
+- **F1 — large-format extraction misread. ✅ RESOLVED** (commit `ed36368`) via
+  sampling-with-abstention (`extract-sampler.ts`): large-format ballots extract N=3×
+  and reconcile by majority → ZERO fabrication, honest `illegible` gaps for genuinely
+  unreadable dense names. See `F1_EXTRACTION_HANDOFF.md` top banner. Optional follow-up:
+  raise `SAMPLE_COUNT` to 5 for stricter consensus; true resolution (tiling) only if the
+  residual illegible dense names must be recovered (data does not currently justify it).
 
 > **⚠️ Blind-mode anonymity invariant (commit `c5fae03`).** Candidate names must
 > NEVER appear outside the candidate card's reveal control. Two wiring leaks were
