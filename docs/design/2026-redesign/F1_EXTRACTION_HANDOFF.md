@@ -1,22 +1,37 @@
 # F1 — large-format ballot extraction misreads dense columns
 
-> ## ✅ RESOLVED (2026-06-04, commit `ed36368`) — sampling-with-abstention, NOT tiling
+> ## ✅ LARGELY FIXED (2026-06-04, commits `ed36368` + `2611f48`) — sampling-with-abstention
 > The fix is **`src/lib/server/extract-sampler.ts`**: for large-format ballots only
 > (logical area > 1.0M pt²), `/api/extract-ballot` now extracts **N=3×** and reconciles
 > by majority — a name is kept only when ≥2 runs agree (strict majority); disagreements,
-> lone reads, and mostly-illegible races become honest `illegible` gaps. **Live-verified:
-> the NJ R-Senate column went from 4-6 fabricated names → the names a majority agree on
-> (MURPHY, ZDAN) + honest gaps, ZERO fabrication.** Everything legible (Booker, Norcross,
-> all commissioners, Stone) reads correctly; structure stays intact (8 races).
+> lone reads, and mostly-illegible races become honest `illegible` gaps. No tiling (it
+> regressed; a 5× stability experiment proved the misreads are NONDETERMINISTIC, so
+> consensus catches them).
 >
-> **Why this and not the tiling below:** a 5× stability experiment proved the misreads are
-> NONDETERMINISTIC (a different wrong name each run) and the errors are essentially never
-> stably-wrong — so consensus catches them, and resolution/tiling (which regressed when
-> tried) isn't even needed. **Residual (acceptable):** genuinely unreadable dense names
-> (e.g. LEBOVICS, TABOR) sometimes show as `illegible` rather than recovered — an honest
-> gap, the correct floor for a voting tool. To recover those last names you'd need true
-> resolution; the data does NOT justify that build. Knobs: `SAMPLE_COUNT` (raise to 5 for
-> stricter consensus), the large-format gate, and the low-confidence-race guard.
+> **VERIFIED END-TO-END through the real route** (commit `2611f48` bumped the cache to v3
+> to evict the poisoned entries — without that the route serves the old fabrication
+> forever): cache-miss → `runVisionPath` → N=3 sampling → `stitchPages`, `extraction_path:
+> vision` (~29s). **Democratic path is 100% correct** (Booker, Norcross, all 4
+> commissioners, Stone); structure intact (8 races). The bulk of the fabrication is gone
+> (4-6 fake R-Senate names → mostly honest gaps + the real MURPHY/ZDAN where they agree).
+>
+> ### ⚠️ KNOWN RESIDUAL + two OPEN DECISIONS (the honest seams)
+> 1. **A semi-stable hallucination can still leak in the densest column.** `MEISSNER`
+>    (a recurring fake) reaches a bare 2/3 majority sometimes, so a *Republican* voter may
+>    still see one fabricated R-Senate name among the real ones. This is the analytically
+>    predicted limit of sampling (it cannot catch a misread that recurs). Mitigations, your
+>    call: (a) flip the guard to `>= 2 illegible → blank the race` (one line in
+>    `reconcileRace`; kills the leak but also blanks real names like MURPHY/ZDAN → shows
+>    the race as "couldn't read, verify your ballot"); (b) raise `SAMPLE_COUNT` to 5
+>    (reduces, doesn't eliminate); (c) true resolution / tiling for the dense column (heavy,
+>    only thing that can actually *read* it). Recommended: (a) — it matches the
+>    honesty-over-completeness bar set everywhere else in this app.
+> 2. **Downstream silently DROPS `illegible` candidates** (`extractionToRaces.ts:253`
+>    filters to `placeholder_reason === null && c.name`). So a flagged R-Senate reaches the
+>    UI as a *short or empty* race with NO "we couldn't read N candidates — verify your
+>    official ballot" affordance. The `illegible` honesty built into extraction never
+>    surfaces to the voter. Decide whether that affordance is needed before deploy
+>    (especially if you pick mitigation 1a, which makes empty races common on hard ballots).
 >
 > Everything below is the original handoff / diagnosis, kept as the record of how we got
 > here (incl. the rejected tiling approach). It is NO LONGER the plan.
