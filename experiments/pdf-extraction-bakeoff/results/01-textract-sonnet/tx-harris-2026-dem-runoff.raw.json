@@ -1,0 +1,4876 @@
+[
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "ebb33015-7620-4a17-9733-581897735a3e",
+    "Text": "Sample Ballot",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "b755f263-eda8-43ba-8962-6ec827ac5c35",
+          "bcf94802-058f-4753-8783-f48948da8311"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "a2af255d-bcc0-488f-80d4-13ea8b310269",
+    "Text": "Primary Runoff Elections",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "ed7683d3-47a2-4e8d-b62d-77cf4104d3ce",
+          "01f80687-5b8e-4ce8-a8d8-2ff05d398117",
+          "efa1e15b-5ab4-4e0e-955d-377765dacad0"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "10ba42f5-232b-404c-9e6f-4df33140ee34",
+    "Text": "Precinct 0865-DEM",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "f69ab631-9e19-4aba-8ea3-bd8c45f38d9b",
+          "52ba60f5-3a62-4f46-bfa5-1a1fc0b7eb1c"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "84039766-9724-487f-9afd-085d5ce8a428",
+    "Text": "May 26, 2026",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "79f39491-5daa-4c05-94c2-c5c99debbad4",
+          "34edf9de-6e1b-4af3-ac63-7067ca0fa656",
+          "6a1b72dd-f7e3-4710-a23a-255a4dba7c0c"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "235801bc-246f-4a41-9ca0-790e3d2ee3e7",
+    "Text": "Democratic Party Primary Runoff Election",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "cfd63c30-193b-445b-a649-b515425df1f6",
+          "42468116-5b56-4838-8787-14ff9811276f",
+          "28f3e158-84e7-4d74-81a9-770c30d05bd7",
+          "840ecbf7-6d4b-42ba-b8a4-7d4d1b50898e",
+          "38b60096-2b8a-496a-a949-f397093daf92"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "b1b63175-243a-48f9-a4d7-0828c80485ce",
+    "Text": "Precinto 0865-DEM",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "908f667c-b63d-4905-b429-e191dedd64c7",
+          "7a5e624f-e40d-4c8a-ad1c-39573b2b5163"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "a3e795d4-9695-40f2-b8d6-53520e72b989",
+    "Text": "Harris County, Texas",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "4ea00b6e-91a2-4c29-b72d-4f0b596a1181",
+          "2729e8c0-69c3-4073-87d6-3a4719dcce5d",
+          "2ee4f199-a031-4ae3-94b8-a322d90aac30"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "5f9cfd17-d812-41fc-8e94-d9c5169d383d",
+    "Text": "Elecciónes Primarias Decisivas",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "d15892f4-9dfd-463a-8418-4065a58e3471",
+          "94a6768a-b4ce-45de-a359-2879787171b6",
+          "25f9cace-0c00-4cdf-a8f9-e2ca811536e3"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "3dd3aafb-141c-41de-8798-db9156408dd2",
+    "Text": "Page 1 of 1",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "5bf5b767-55a8-40fe-85c7-d441289e7973",
+          "18fd81cb-65d0-4aee-9545-8d59f8cfa030",
+          "9e4aefe1-8bac-4689-b175-f53911510398",
+          "2609f39b-9f2e-4980-9da5-0f1ed232ad3b"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "d64f5515-881d-4e87-b56f-a4a032b8cf62",
+    "Text": "26 de mayo de 2026",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "70e9f1f4-73c0-4ed0-8508-c5a52fc9ad04",
+          "acc1dfbd-8d25-40e8-985e-9f7e0f091903",
+          "4f0d3a98-8d9a-4562-b50f-a47d5381b0ad",
+          "bec7910a-e4aa-4be1-9fa3-5dc5e9e314f8",
+          "6bc30934-0977-4f38-81b9-a032bed5728f"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "83aea80d-130e-45af-9fdf-69edece1ad43",
+    "Text": "Elección Primaria Decisiva del Partido Demócrata",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "0a1667a1-5765-437a-922a-68dd26ca88bd",
+          "e2efac64-b81a-4974-b6be-4fead0a45f98",
+          "21d66f92-9790-42c3-8a3f-da9f297b6d85",
+          "a3d226cd-a5ee-4be2-98ea-0cb2b17295b8",
+          "e79d8b5e-16ce-4a75-b932-195dbfffb9ef",
+          "889ddf49-f1ad-4fc9-9c77-6f1a9b1acfb5"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "2cc6852a-9e85-499e-aaf2-5ddf43351be0",
+    "Text": "Condado Harris, Texas",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "9b94ab58-7f35-41d5-addd-8507571f90c9",
+          "fb37fac2-8940-4d54-9d3f-c01e956fa32d",
+          "9f8fb07e-63f4-45cc-9c0a-817b850b93ce"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "b9d9a1ec-184a-4410-9207-7a573e2d010d",
+    "Text": "Página 1 de 1",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "b84ab8ec-4d0d-4258-9278-aeeae1acfe9a",
+          "987f9ac5-235c-4e84-bc9a-19845d2d1eee",
+          "5e203487-54d0-4b1e-8e0b-6d40c1b6b404",
+          "efec9ceb-a186-4e8a-bc3e-9fff055816bc"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "99a115a5-d2a3-48fd-8279-1258f48675a2",
+    "Text": "Please use a black or blue",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "1fec901a-29a1-4f28-8cc0-a7ac29bb197a",
+          "112c1934-50d8-441c-99e0-c6bf9f576936",
+          "65b8f753-aa4c-4be3-ae0c-1ee819ae450b",
+          "25836e14-7dda-46cc-bcd6-14de3388885f",
+          "fb25016f-1e72-41a2-88a0-7983a0a05aca",
+          "d429add7-b1c6-4727-bfa8-22e8ea2a6c9f"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "2fb65c41-0fda-4f7c-b03e-9d1f6730e4cb",
+    "Text": "Dem Lieutenant",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "580cb887-5b97-4d4f-80fc-b774eb15470f",
+          "bd3373a1-1616-477c-8343-213d80a28bdd"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "2eb397ed-ec03-498f-bc78-ab7e723b5b7b",
+    "Text": "Dem Justice, 14th",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "e5bb42b7-c75e-455a-a072-ac7f2331edd3",
+          "8424f005-151c-4f8e-a8a0-12af0cbff610",
+          "790d92a3-be13-4807-9043-de34f75f2304"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "6928953c-f3b4-4f9f-bed5-ba52d57622f5",
+    "Text": "Dem - - County Judge",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "7dfcca9e-4bc1-40fe-8356-f97cdca0cb5b",
+          "ec7a90ec-5980-49d0-9230-253a0db121e1",
+          "8f0fa2ea-8b5b-45e5-b30e-3b9fd9d3edc2",
+          "01d28e37-7302-420b-a6a7-fcb9488478f3"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "6cb7f85d-935a-4f76-8325-e1c9b691b5b3",
+    "Text": "ink pen to mark your",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "0378ec9b-2e61-4b0e-8d6a-feddc4b84379",
+          "70b59847-56ab-4b73-aea0-4d10f20c1e55",
+          "65b92f89-cac1-450d-b3bc-46a11850e193",
+          "6641b97e-3ab7-4378-9f1e-929b36af3a91",
+          "736debf3-a349-477e-80ad-ffb0e484398b"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "cc9f9a83-28a9-472c-9308-7183fab42a02",
+    "Text": "Governor",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "1f0b9f5d-1738-44f0-b3de-77387f3d2ac2"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "75bcdcb6-7bb3-4988-ba16-4320011e95e6",
+    "Text": "Court of Appeals",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "c687a1d0-16a3-4d7b-87eb-1da734742207",
+          "32fce74a-2e77-4d37-8f78-b96578921b9e",
+          "9d178d3e-f29b-4cfd-af9c-972693269070"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "0c0b323f-0be0-4b9c-a3a6-11d5ee0e2429",
+    "Text": "Dem Juez del Condado",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "ffce98ca-0581-4884-8469-ee299fe78c5d",
+          "1b22e0a3-3ec0-480a-8457-51e0b96be34e",
+          "feaa6694-2be0-4237-80c2-c02dbfbe3998",
+          "24e43ca2-cbb4-47ec-9feb-5a951cdb1f2a"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "c918ec7e-c709-4b83-a226-165454c4ab6a",
+    "Text": "ballot. To vote for your",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "3fc1506e-df27-4803-9f47-4e0e1af4a43c",
+          "13b5682c-3527-41dd-94fe-7cea59273831",
+          "2dc3ff72-5ed6-45f7-aab0-866abcd51464",
+          "60b43304-9a73-4adf-aee5-ef12c0cf4aa5",
+          "b85a0faa-eac9-43c9-be69-65ebea4b6a84"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "2628be3d-0882-4dd2-8da6-6271bc4062f5",
+    "Text": "Dem Gobernador",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "b755d914-b35a-4f4b-bf3b-91983e6303e9",
+          "39c0c310-b78a-492d-bb3b-87139990c98c"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "aac7f926-a8f1-4e96-8bff-64c5be84d894",
+    "Text": "District, Place 7",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "33978062-e55e-47c1-b49d-e94623fc1165",
+          "a7d2e87e-201a-44c9-a864-9099d17a2e21",
+          "2ad3c4f3-6b1f-4478-bff4-ed228a5d16cf"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "b6599e94-c1ba-4954-9472-37c5096dfdc8",
+    "Text": "choice in each contest,",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "d20832c4-2475-4ddd-b0ac-7c95c76d3d9e",
+          "9dc45d3d-52bd-4775-a1ae-4112c8f3f0c8",
+          "2edee900-7cde-406f-a107-29261f16be19",
+          "73770abd-abde-4e3b-affe-790c5802d3ce"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "79fb1db4-4ff3-458c-b3b2-454dabd49ddf",
+    "Text": "Vote for none or one",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "16a158c7-8ecf-4788-859e-90a2864eb6be",
+          "0f4f30fb-d171-40d8-8401-95825211d174",
+          "ed529239-f4c7-478d-ac86-dbf0eeca2a37",
+          "d50cd5a0-ff50-4dba-8278-5874579644ff",
+          "1a30bcb8-d4f5-45a1-9790-e0f3bc0cdd36"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "ab628784-0ef8-4508-a9b6-ba1fda517853",
+    "Text": "Teniente",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "b74dbe3a-911a-45c0-ac7c-62c2996baab2"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "b420887c-33c8-475e-940f-6352b323a3a3",
+    "Text": "Dem Juez, Corte de",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "e5e88a7f-85a1-422e-99ce-f3a3691c296e",
+          "9e17ef25-5ac1-47af-9239-8e1c82089720",
+          "ce376a7e-d77e-4c87-947e-148892441e0e",
+          "8865020f-a472-4e1c-9a29-a972758973a4"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "032f7e40-49b6-4c0e-91cb-008394a0691f",
+    "Text": "completely fill in the box",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "8d9aef1f-de68-475a-b886-dc52de767074",
+          "66cf3fa6-55ae-461d-9607-da6b3f16d635",
+          "0cc82213-91e4-4546-ae39-6bc0527e8b91",
+          "178fda61-9906-4e61-bca5-09402f12ab08",
+          "18db0727-227f-45fe-bef7-e80c34585381"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "1b2cdf9f-ca94-4b33-8ee7-dc1fffce6a85",
+    "Text": "Apelaciones, Distrito Núm.",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "c8628a2b-e2d8-4bbc-86a6-fbf9544bd312",
+          "ebf2327e-2522-40c8-bcc2-9457205fa923",
+          "3223df6e-5559-45e0-b27f-9bb5e544ad35"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "fd438a40-fb5a-4d0d-8350-38a6ca520342",
+    "Text": "Vote por ninguno O uno",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "3009f28d-f5e5-4112-a572-11e1cb38ac41",
+          "555120db-3e0b-4a71-bbc6-963f8bace1dc",
+          "d1504321-3749-4720-8a96-1e9762242eb1",
+          "348e870e-25f5-4799-83de-e47581207073",
+          "df7e95df-9348-438f-9bb4-48236d589644"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "43cd5e89-53c5-498b-8f27-471e1b4a0735",
+    "Text": "next to your choice.",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "e96a6fb2-e055-4e30-9fce-489000ec6f4d",
+          "2cadcc23-1c9a-4364-8ccd-302c2fd5a5b8",
+          "95baf3d3-4659-4b8d-bd57-92976cecebed",
+          "91186566-22bf-4c96-8371-57c638a500e8"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "80d8d1fb-8be8-4834-9310-990d9eeb6b72",
+    "Text": "Vote for none or one",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "361867c2-9a37-468a-bbdf-9b2ffbff54ac",
+          "9c429697-4277-4a1a-8da4-29d0e9bbd9d0",
+          "04e8ed4e-edae-4656-95aa-4f278adef16b",
+          "0528ec59-af35-4339-8d08-2ad431f8c728",
+          "16ca0865-b510-4fe0-a778-1f01f8ba9e62"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "5643ac62-b47c-46ea-9f6b-e429788fe6f0",
+    "Text": "14, Lugar Núm. 7",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "751f3c86-e975-4f61-9640-08271935e12b",
+          "cc1c743d-4160-4c91-a8b9-ceadbab42e38",
+          "1c9eb7d4-0d30-4ae3-8f73-e700121e9890",
+          "7e0a8b0b-5ae6-425a-a20f-71b1cf62421e"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "a472985b-c32a-4bde-8e56-fd18602bf4d5",
+    "Text": "LETITIA PLUMMER",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "85c2f7e4-1719-4022-b374-4597799d3807",
+          "00bbdbea-b6a2-4dee-ba33-b8ed707ae36b"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "a2b343cb-8cf8-47cd-9eae-55461e4c959f",
+    "Text": "Por favor, utilice un",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "e9e8f6f4-4172-4f4c-9b75-6119d0c82cc5",
+          "f43be824-3ea2-4b54-b71c-ed3acd3a3eca",
+          "f0c40055-86d6-49b6-8846-a48d21bf2860",
+          "a9cd6808-afdc-4b31-b9a1-a3e1c4f5bdfc"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "dd30bc39-1ef6-444d-8924-d11e6df370ea",
+    "Text": "Vote por ninguno O uno",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "a9c22427-81f2-47eb-886e-9254c94315a7",
+          "5b28cddd-7cb6-40c4-b6b3-18c5a0d8bdeb",
+          "85d59fe1-d4b9-41d5-ae3e-971ce7732099",
+          "628e6dd5-6216-45d2-9a1c-efd626f00cde",
+          "32ff6004-980f-4fd3-8bc6-8b67c83382f4"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "0c07a3d9-febb-40d2-adee-73c25a1d5350",
+    "Text": "lapicero de tinta negra O",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "c272caf8-124b-4272-bde7-1864c8e5a49d",
+          "56dd1554-edea-438b-a5dd-7e06a9ce5f7f",
+          "b878c54c-036b-49f2-9d88-a582a1967113",
+          "f330efe3-ef17-46f6-81a6-ad18fa929f79",
+          "13ad9691-f3c7-4c06-b3e8-2ce4116c10ca"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "d43408ad-36ad-4b0d-b142-bcb9f5db3e9a",
+    "Text": "Vote for none or one",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "2c211317-ef1c-4768-a942-3f839c0abe4b",
+          "8e7b15c0-32e9-4fdf-b470-f5fe31060e7f",
+          "7d035fe1-fcb2-4090-8d02-e2472fb83fa5",
+          "d8754311-a4cd-4468-8a44-4cff48bec45e",
+          "82beb61d-4de8-4183-9df7-1f8a8e9b8b84"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "e2f8bbc6-f913-4d34-bc73-b78af3934a4d",
+    "Text": "Democratic Party",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "00f79e0b-5e9a-4513-9f1e-5440e20bb4ff",
+          "7ecc6fc8-6ba9-4938-a0ed-7dec75da8de0"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "29676c97-9828-44a7-b130-d612c1c6a33b",
+    "Text": "MARCOS ISAIAS",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "bdbcdc78-14c8-4be4-b1d1-9be1feafde2b",
+          "416db046-b68c-4be9-9f11-f157198954f1"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "8dfafc18-4234-47e1-b195-612fafe1ead5",
+    "Text": "Partido Demócrata",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "8668cb4f-dd3e-4413-af05-0cf3283a4e36",
+          "0140c9a3-adfc-480f-a0d0-8e8c9bd45096"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "c3e13dd4-03dd-4557-90fb-e71908264619",
+    "Text": "azul para marcar su",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "dd869aff-c7df-4cb2-94cc-381c20d723ad",
+          "40e4da0f-ee68-45ab-958d-488b802541b9",
+          "84198590-5da0-4b38-ac6d-950ac06d90fe",
+          "0d71e827-ed57-40a3-9e92-22855cea99bf"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "de919c40-b0cb-41e2-9bcd-63a3c0fa1325",
+    "Text": "Vote por ninguno 0 uno",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "b3e7523c-92e4-4167-ba75-fc84576f5479",
+          "286a2c38-62fa-4d1c-9287-ec25398c9262",
+          "0c5b462c-de34-4a8a-8e77-3b2edbfabe6f",
+          "3a4c7a5e-f4d0-4adf-b864-7888fc777df5",
+          "8414c0a8-64c5-42c4-9a78-80ebdc29ba53"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "70d1e025-2c6c-4ad1-8a48-9a6497ba619b",
+    "Text": "VELEZ",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "39d50050-f72e-4564-8c7f-8301f5191339"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "12a26d6d-af3d-4477-8df4-3d55c5152f5b",
+    "Text": "boleta. Para votar por su",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "ac9779b4-50b6-49fe-b304-10ce7cb33aa1",
+          "62c29bdc-fcd8-42b9-8a99-16a0a4108e33",
+          "e50602cf-70d5-4bbf-98c2-45e7fc5541e3",
+          "5bd71ddd-112d-4a29-bd86-20952c2b45a2",
+          "91b2f301-a3ea-4a00-a88e-538a029e7216"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "b9e8be91-3a4d-4ac0-8060-ac84fbfb230f",
+    "Text": "Democratic Party",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "d56b55c2-d444-49ed-8812-f083d4702e6a",
+          "29dcc3de-b3c3-432d-b0b4-37e1ea9ba830"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "e570709c-f12b-4f80-9207-568dce7c86bc",
+    "Text": "MICHAEL ADAMS-",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "c1cc6e80-8b2b-4e1e-a998-ebb13ad7fd2d",
+          "6f3ebc6e-514c-4e73-9dc8-232c54c7538d"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "6fc91493-63ed-49ed-94dd-83cc1f6354c0",
+    "Text": "ANNISE PARKER",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "3fd113fc-f346-4a41-bfe7-2b0a55d03ec2",
+          "48603c58-afb3-4007-8451-ae6fcae172b1"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "f02c5a56-740d-425c-892a-17faf1cd9ade",
+    "Text": "elección en cada",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "dae21bf8-9254-4904-84ac-0e2e63390385",
+          "97190dd6-77f1-40e1-8f10-61cb521f547c",
+          "d266f709-f1dc-4484-9148-ffe146f7b9e6"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "d0ea97a0-6822-4df9-8949-fdbd2b81edfe",
+    "Text": "Partido Demócrata",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "7de9e743-8d18-4e76-aef1-0135d1bbc661",
+          "44f52e1e-880c-4331-b79d-08b14d8c2a36"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "359ad1f0-c64b-4263-baef-7677360cb5d3",
+    "Text": "HURTA",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "f9bbf755-15af-4ea3-889c-9413dff0a469"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "949a5701-0405-4e1b-bfdf-0da637ed5567",
+    "Text": "concurso, llene",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "49c21cf5-c723-42e5-8c06-9c48a283bbe6",
+          "fac87441-960c-49df-bf35-6133c38ac9a6"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "53566d67-4b49-413f-8c35-5d4beb368994",
+    "Text": "Democratic Party",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "574c4620-41e4-4a94-adcc-04c1a52c6564",
+          "1ce8db68-a34d-4389-aa0f-46e29151d36d"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "e3a956d7-f892-4e16-af7b-f2cc6bbd4c00",
+    "Text": "Democratic Party",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "ff369f9b-f1b5-4589-8b2f-16a0968f5a7e",
+          "7b0776fc-6536-454e-9652-f8f2432dc5c7"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "bf29b115-0b6b-4d30-b481-14105527b47c",
+    "Text": "Partido Demócrata",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "77fbeaa3-2697-4ec9-a2d3-c89fa4a825ad",
+          "c7334c2c-2fd4-4ee9-815e-156d63f2e1a4"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "779cf606-37cb-40e4-a9a8-766e48711974",
+    "Text": "completamente la casilla",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "57caee34-0d80-4c81-8903-070c21e82379",
+          "b6e8f8a6-6e15-4feb-9535-6a41650792ca",
+          "85351202-8d17-47c2-8656-5447560e4593"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "d808ccbd-945b-4151-83e4-2325e9025c7a",
+    "Text": "VIKKI GOODWIN",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "24227200-82b7-47f7-9ea5-41003e67fd51",
+          "1f00d14d-108d-44ed-a245-29c55a9e64c0"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "e45b1cd6-83c5-4cbf-92fe-7e54d5d9b7ba",
+    "Text": "Partido Demócrata",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "c3a91979-5631-4a00-b125-d988410bf81a",
+          "5629ca74-0eb2-46d5-81aa-2075634e528f"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "694973df-ecea-46c5-91d3-db3497c63be3",
+    "Text": "junto a su selección.",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "1174fc04-5627-4275-a766-c2db5153826f",
+          "5fb6c4a8-a2e3-4cf7-9847-e0efb9c91422",
+          "8f40b62a-65ea-447b-b382-186c3cf7e73f",
+          "6f9abf73-0c6c-441c-8cc3-18f623fb113f"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "c3e08d22-5cca-4f2f-a614-690f0d1fccf0",
+    "Text": "Democratic Party",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "8ad7afec-d262-4d2b-8f1e-061cbbee6693",
+          "db1b5eb6-5333-4c80-9330-15160e07c6e5"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "96149216-9364-4697-86e0-b02ac177f895",
+    "Text": "Democratic Party",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "524a514e-392b-4a48-986e-73b31b7794f6",
+          "7dc9eeaf-811e-4bc0-991f-2c8cb2dc46ff"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "892cac4e-912e-43f4-9176-1094a482835e",
+    "Text": "Partido Demócrata",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "55c56194-ce20-4971-8b0e-8bed72de1fda",
+          "3a1eb010-e01b-49ad-9650-8337c2858709"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "cca29650-e238-4815-b5cf-666964324c18",
+    "Text": "WILLIAM DEMOND",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "65508c09-7008-4dd4-9ca6-0fc55caffba9",
+          "7d7c65ce-eed4-4164-8e95-010b100e4b27"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "7ff877f5-5c5e-412e-bb13-455cdf002036",
+    "Text": "Dem District Clerk",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "8e50e8f5-52f7-460b-8432-105405afcb2d",
+          "df5b77fc-4033-41b5-b9f4-03729396d507",
+          "fc9d9e4c-2645-4253-aca3-1b05b8342295"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "679cfb6d-1f18-448b-93f9-8b22d9f73caa",
+    "Text": "Primary Runoff Election",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "dbda2ed8-2a46-4c0a-aa94-ee9f4505ec30",
+          "52a5ec67-3368-4e63-81f0-6aac375e4532",
+          "51bf0b4e-0938-48a1-a0cc-cb80df3111ef"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "f4e3e860-042e-45db-beec-e7cd8bfa5cd0",
+    "Text": "Democratic Party",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "ca0b5dfe-4ee2-4080-a293-60bf98ed09c3",
+          "b6aed9fd-5ea8-42d9-967c-bf578074a722"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "ca7614ac-356c-4802-a0db-1ada83b522b4",
+    "Text": "Dem Secretario del",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "b9c8667c-eadc-4778-8f4e-7d0db4da8d3e",
+          "b54d53cb-36b5-417b-b8b3-24aa2f9b2470",
+          "72c9dc50-88b1-4d36-b603-bd0e30b462c3"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "616d4c1b-a12e-430a-8e1d-1d4d54ed13d2",
+    "Text": "Elección Primaria Decisiva",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "44909989-d415-43cd-b45a-60ee222a079a",
+          "093b4ba7-49f6-4c38-b462-c620fc6a0863",
+          "800ae998-58c9-47aa-9456-905263f6ae29"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "d20feb62-fbf1-45ec-bfe0-8c35bec044af",
+    "Text": "Partido Demócrata",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "d86663d9-50e8-4f1d-bf39-f248237ed07e",
+          "f4834df2-7ec3-4769-b33c-930a4ab5b3a1"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "0069db73-33b1-4d33-832b-b3d3fd68d19e",
+    "Text": "Distrito",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "a03f97f8-d181-42fd-b5d9-3a41b0f6fd85"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "8ef2dba0-7252-4073-8e34-337ce332850a",
+    "Text": "del Partido Demócrata",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "6a7c970c-0c36-47c7-b386-75161e5b672d",
+          "285f1451-90c4-40ea-89bd-2a4c6831c527",
+          "734c9a92-9c33-48fc-8a75-f7febb473bef"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "08018308-c126-4ddf-8d4a-7e17ad1e2f0f",
+    "Text": "Dem Attorney General",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "65022124-a872-4304-8621-46bc9d5d6ecc",
+          "f58eefac-f667-41d0-a389-acc5821f6294",
+          "1034acd3-b771-4aa0-82b5-9e4e8afcd71a"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "e648474f-1101-4205-96cb-58eac70b856a",
+    "Text": "Dem Procurador General",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "ccee2ffd-521a-45a2-a896-bf0684f87666",
+          "0aebcbe2-e6fb-4bfe-99f4-9e9874cec008",
+          "78590499-52bd-4bff-b599-3d9a628b7d08"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "1feac72b-772c-4bf2-9d95-38c4c869b0ed",
+    "Text": "Vote for none or one",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "df27bbe3-c3e9-4e78-9c70-37dd51ff235f",
+          "d7591826-ae13-4876-8e30-92aecc811d1b",
+          "01141658-c726-4ee6-84f3-bbc7f85d8038",
+          "caab7c41-61c5-4068-960d-eb42fa650b4e",
+          "23e8067f-baea-4129-b28b-882b29f7d5c4"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "b3568928-526d-4018-af5c-42b4d477ae57",
+    "Text": "I am a Democrat and",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "f78bdfd0-c8a4-470d-968d-a02f19a06499",
+          "29e95ee2-4e87-4574-bd6c-c4d329310e5e",
+          "4631cfea-140f-4609-8aa8-3345f1231bcc",
+          "236b749c-cabf-4e5f-99d7-3939b5020bdc",
+          "a5134a64-f86d-48d9-af9c-c32da39cea06"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "690a22a2-d5c3-4b70-8000-e369e2414644",
+    "Text": "Dem - Criminal District",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "a6453811-d511-46fe-893f-4ee25a0d5460",
+          "c0568651-a57c-4ebd-89c1-bb60d9f7fe01",
+          "69f6faee-46e2-4130-8bc4-a8298cce047e",
+          "369cf2aa-298d-48da-9cfe-9f046cdb8238"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "419fe803-1b4d-475b-8721-684d40833140",
+    "Text": "Vote por ninguno O uno",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "ac72ea9f-225a-488f-9933-906d38df8c5d",
+          "9aa1a242-0c0f-4b0c-be63-2c033f168a7b",
+          "c2112e74-6a13-4bff-b54d-463fbbc5026a",
+          "86f05084-a8b6-47e7-b040-d96df2dd6850",
+          "82651894-6137-4ad0-b4c0-48cc714d8630"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "dee999bb-1ef9-4d11-8365-957e6350874a",
+    "Text": "understand that I am",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "213b0640-66fc-452f-9f9f-aa7e5531c545",
+          "08a6c34a-af2f-4f17-82cf-bf359cff7579",
+          "afd1d660-86ea-43cd-b804-a05ec3056a11",
+          "bfaee6dd-b892-48da-bab3-b78efde7cc62"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "18148424-4dbc-48c2-9ed9-2810d1b62ed3",
+    "Text": "Vote for none or one",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "64f8901c-e0f2-4355-8b57-9d465259c7b5",
+          "05a856a5-31ce-45c8-9da5-676d3aebcf25",
+          "ef496db6-e60d-47ac-8499-403f54a74878",
+          "34de2b9d-c1a6-4667-8537-39c04f8746cd",
+          "d48804d1-48b9-45ab-8997-16aee52d9ff8"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "d5cacff5-1491-4da8-b824-471dbb58a8a8",
+    "Text": "Judge,",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "1327a597-8ded-4a15-a011-3a5e12b4a7bf"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "8cbec4b4-2bda-4f1e-b4d1-2c4683457c0c",
+    "Text": "JOSE \"ALEX\"",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "96a9cbf3-b0d6-4e30-a166-114e20ce0cad",
+          "634d671d-00bb-4e12-ae0a-4f981c717221"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "3d5c609f-b6a1-4f2a-8d2b-06e8886f311f",
+    "Text": "ineligible to vote or",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "e3428561-d347-4497-8257-65e37c51ab46",
+          "5171537e-de8a-4452-9588-2c066a8e0052",
+          "c71842d8-7877-4dba-9726-d4ccfc85aa9a",
+          "00ae8ab4-9bcd-4699-84c4-976a9fd127ab"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "8afad096-60d0-4e1d-a847-dce373be672d",
+    "Text": "Vote por ninguno O uno",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "83a67737-11c3-47be-a65d-67c7a2c72983",
+          "1480fb89-b380-4069-9a20-e318c2104b79",
+          "6edfe4a3-aaaf-4d94-8030-f9a4a4bdb406",
+          "159ff63d-27ec-4103-b4af-2539785c7c30",
+          "a1965670-a871-48cb-ab3e-40b3dad4cabe"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "8c9ea42c-dd86-4c3e-9bf8-27152d5caa13",
+    "Text": "209th Judicial District",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "44a06636-f6b7-46b6-b430-37f75b17aae7",
+          "a65b7068-657e-468c-8225-242e29122c10",
+          "98c2e8d2-9c5b-438d-9df8-a1576d178f7b"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "84077b0d-d4f2-480f-af35-925b5115612a",
+    "Text": "MALDONADO",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "2e50b776-deb2-4199-921f-73b9020474a7"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "aa11bdea-bcfd-4ed6-9038-4d50d189231c",
+    "Text": "participate in another",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "19f934f1-d335-4de4-a131-bcb8bf14e369",
+          "42833683-a41f-490c-bef6-e0ef5ff3b77f",
+          "6415d230-6b1b-4d4c-90be-4020e6c4fdad"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "82bd8bfa-216a-4df2-955c-a7d0ccef2865",
+    "Text": "NATHAN JOHNSON",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "3551afcc-008a-4510-b175-4946e2898c6f",
+          "7ced9970-b74f-4af0-a9d6-c1fa919d27dd"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "dd206632-b45d-4899-bd51-9d45c91bb79f",
+    "Text": "Dem Juez Criminal del",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "7bb02889-5327-44a1-b241-21b37eee5335",
+          "fc414ad5-c62b-4daf-9515-2a6b6d299ccf",
+          "91805d9b-eec5-41d6-82ae-42d754464dde",
+          "2c552d88-4953-472c-a202-dce75e3302ff"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "327e878a-75f5-4ef4-8f86-6ca3a0ad6fb4",
+    "Text": "Democratic Party",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "08174fb7-fdcd-4340-9af4-3c8c95514764",
+          "fadf7797-28fe-4e25-8bca-d22b3b26c5eb"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "3b0355bb-8c1b-4377-ba2d-7099f00e44ed",
+    "Text": "political party's primary",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "45b984ed-7f1d-47af-bff3-60a4c6490c6c",
+          "51f63b3c-c772-41bd-9b82-bd2834789194",
+          "bcb0b253-d0e1-46dc-91ff-76948debaff4"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "90491e22-7a48-4d55-9af2-45371e8a39aa",
+    "Text": "Democratic Party",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "69a268c6-f4a7-421f-9550-aaec9aca1d9c",
+          "3c48df1c-ba44-4749-bbc8-f5ac8a934a33"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "8428f98d-7983-4c8f-aea0-a22cff36c2ed",
+    "Text": "Distrito,",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "bb306e32-b54e-4a3d-89f2-5cf2c9605f18"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "3a5a3bcb-139b-410d-915c-5eff184f561e",
+    "Text": "Partido Demócrata",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "fcc8f28d-9493-46d7-b3eb-aeb2349608f3",
+          "ec8b0f9e-9f1a-4efc-891a-a3f1aef1090a"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "2a67cf1d-d203-414f-b5f9-84577d5d351e",
+    "Text": "election or convention",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "9ee0f37b-60a1-40e6-8780-d93a96774da0",
+          "04df0242-a452-4c39-9576-8215bd047765",
+          "d94f9496-e1c4-40bf-af59-e1d063c69592"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "9547df18-08a1-42a6-b23b-a475dce285f8",
+    "Text": "Partido Demócrata",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "dfde0aa6-eb2e-4d63-bf5b-a6a4323dbe04",
+          "bd3ca6cc-da8d-49c1-9914-9173fd7892dc"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "55bf2b0f-483c-4009-b473-d84590016d26",
+    "Text": "Distrito Judicial Núm. 209",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "0398e272-aa4e-4657-a24c-4a1b8d49ebae",
+          "02516d79-4fbc-44b3-b0e5-d32d59cc2784",
+          "d9578c0e-e834-48a6-86a7-2592fb92ce07",
+          "d3f5de3d-dc28-496b-af18-57b89c3a346f"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "033fbd95-7358-4c41-9aee-f54bec709488",
+    "Text": "during this voting year.",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "e0ecae6b-2c6e-4a38-b236-c4f3598519af",
+          "c3867621-0576-4dc8-aad1-c1df06963cc9",
+          "1b8af85f-9ebd-4578-89fa-903394dbe1e7",
+          "621aa67f-9788-4b9a-aaa7-0917f1d150c3"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "eaa944e2-b344-472f-b481-eb45e55efd2c",
+    "Text": "DARRELL JORDAN,",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "22010b96-8acb-4533-af2c-2bc63814ae9a",
+          "1fc27bdd-fe9d-4cb5-8b2d-5e12e7c81be4"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "c407c75a-3605-4d58-b602-2bd1b2180410",
+    "Text": "Yo soy Demócrata y",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "b8f4cca6-b065-460c-926f-8f47b2129c8d",
+          "73008a1e-d202-4d46-ab80-34bdea69daff",
+          "0b483fbd-e27f-4fef-b88f-19b83ebc2f1a",
+          "9e4cf5a5-f098-4a6f-9f6e-9de472bb4e51"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "4aaa7ece-1d41-4baf-b5db-49c1cef1c9cb",
+    "Text": "Vote for none or one",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "e8616a81-6655-4a29-85f2-a817cba3f01c",
+          "fd74b8d9-871e-4025-a7e5-db3b5f82cc03",
+          "6bb927a6-e678-49b5-a8fe-aab5d7000e6f",
+          "febe2979-d56c-4078-9f22-8c9d78aa043c",
+          "31e4906f-ebf2-4ee0-95c9-c51a7e77b135"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "c60f45a5-def0-4d94-9db0-19b108ac84c8",
+    "Text": "JOE JAWORSKI",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "16f88ca8-3b37-4f7c-994c-01e797c62541",
+          "1ceb49f1-6c5a-4740-af06-ad4d8833cf8f"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "9dc9693b-23f4-4577-bd20-6fb6a8f9def8",
+    "Text": "JR",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "107d4f42-c7e9-4ce0-8ab4-59d159fd07fc"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "22e5868d-ae69-4b1f-ab9b-cc76fbeaaaeb",
+    "Text": "comprendo que soy",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "948f5f0a-84f8-4d7c-a006-91bf94371247",
+          "c9a5488c-2e88-4449-9f5e-320c1f2f0cfa",
+          "5285b7a3-fa27-40f4-8b31-2a99b4d58d1f"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "39bd2db6-2466-46c5-9e73-634f45282d79",
+    "Text": "Vote por ninguno O uno",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "602fa794-0eb3-4657-8b77-5d2223be1ee6",
+          "90f83c2d-0383-4612-9a75-d719beb4921e",
+          "4092b668-26de-4eb2-be78-45b07a82fa04",
+          "fbced8f4-ec2a-48cb-a9bb-9a77994915f6",
+          "7b0386ea-df4c-4f20-a161-a6cc97d03a54"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "6a4a86ba-aca6-4c2b-8c6c-80c8f8d9969f",
+    "Text": "Democratic Party",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "dc3418f4-0564-4781-8989-664c99bfdf5b",
+          "ccaf0efd-5092-4818-a3ae-ecf241bed298"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "7f2f8ce6-7659-46ea-b1be-2cb602dcf9a5",
+    "Text": "Democratic Party",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "d569c62c-4099-4d5d-b50b-e70f6d8e6cee",
+          "914bfd4f-013b-4efd-8948-8f23d36f2640"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "27d7d994-bfdf-4c35-bfd0-5927cdca23a1",
+    "Text": "inelegible para votar O",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "e4d1bef8-fe19-4684-81e6-06bf2b4cd6a2",
+          "44397171-1050-4f17-b654-b91b75afb55c",
+          "631c4f39-d9cb-4998-abb2-c7a97e0f7e0c",
+          "57cab620-467d-4e39-8043-b4f5db924658"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "a405a1ee-9a29-4850-aec0-9d2f78f30351",
+    "Text": "Partido Demócrata",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "d14865b6-f35a-44ed-8ecb-f39d2524dc62",
+          "beef2130-1802-4093-a425-785b14ada353"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "eaf7feec-b9e5-4ac6-84b6-dc76e18e594d",
+    "Text": "BRIAN EDWARD",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "e6d93c7f-35a6-44c8-8e02-22c092a89d37",
+          "e01f2d27-dd4b-4d8e-9725-838424a91723"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "3865070e-0185-4bfa-b226-d8d0be0add88",
+    "Text": "Partido Demócrata",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "aba67dd2-8d01-4d12-9bc5-251f01331910",
+          "ab393b3f-724e-47c0-9a49-a8d2b7014fe0"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "5129c80a-9c1e-41fa-8307-eec5fb471769",
+    "Text": "participar en la elección",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "9adf9066-ad2b-462f-bae3-940f2ccfadcf",
+          "cfbef7c5-89e6-474a-8483-4052fcca4824",
+          "0aa104c1-4648-4d2b-893b-cfc30b8d7dcc",
+          "2306cebe-e831-4cc0-b917-9dc4f67de90d"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "dfc8c022-b3e6-4ebf-8bc1-1d2fd6685a70",
+    "Text": "WARREN",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "4d9481d0-ca77-4695-b695-c0bd7407a776"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "9eff445e-522a-4f44-bb5a-2dc22286ac77",
+    "Text": "primaria O la convención",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "7b83ae95-ad5d-4f48-b719-70ead4b0d2bb",
+          "30706384-e2d6-4f62-81eb-741900cf7ff5",
+          "efa15ea8-afab-4bf1-ad5b-1db9851b3d2f",
+          "ed77096f-c6d4-46d2-b21e-93e5fae58b4f"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "db4396c7-3a5c-4f9d-b1dc-b1afe2fc330e",
+    "Text": "Democratic Party",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "bb8296ae-2e15-43c7-bc5c-02082eb377d3",
+          "a36f30bf-32c5-4544-9c98-5511a8ea9329"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "5e2b73e5-8190-4126-958e-1a1b150aa1a3",
+    "Text": "de algún otro partido",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "ce2dabaf-9fa4-4757-8a0a-33cb40edd164",
+          "f071c4b9-d504-4636-a925-de2d3059d319",
+          "84569d8c-e658-4759-b858-8d998fdc5f33",
+          "bf68f5c8-4d3d-482c-a865-15a93a427ae9"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "13aa9711-3e44-4d39-91e5-08a9745b40a5",
+    "Text": "Partido Demócrata",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "bdd02326-9a53-42be-8133-a366c234edff",
+          "378dd8b9-4645-4a45-ba4d-64bda34da8b2"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "29e091ba-6ec0-4a99-847b-40ce0fded60b",
+    "Text": "politico durante este",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "03245359-7669-40fd-9999-9dd172898dcf",
+          "9f6f01ce-e424-449d-90b2-6c64a7931b8a",
+          "44f8ad04-f0af-40c6-be84-a2806095f435"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "dfa01365-c527-4160-9898-982a30a6c2bc",
+    "Text": "año electoral.",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "32a5961a-057c-4177-8b05-289f0f5e35c7",
+          "740b6a60-5cb6-4fe6-bbb9-99362b797e5c"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "8b991ecf-4443-42eb-8ec4-e59825c817ca",
+    "Text": "YSIDRA \"SISSY\"",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "26049138-ae8e-4c3e-9eb0-6008cd57a7d6",
+          "c35faebf-4219-4cfb-a0bb-f5e43dbdc9fb"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "725a0dbb-5fa7-4e13-bb19-c28db498555e",
+    "Text": "KYLES",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "142ddea7-33ba-49b6-bd5b-baeda7c4585a"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "425fa6f2-b45a-407b-ad5f-a2f1455e6c5b",
+    "Text": "Democratic Party",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "5bb42bd7-ff8f-4f01-be01-9bef567490c8",
+          "436db847-ad31-4fc6-bdd5-44fe8140688b"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "LINE",
+    "Page": 1,
+    "Id": "a9dfa399-7097-47a1-a37a-47e718394e90",
+    "Text": "Partido Demócrata",
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "88c03a32-7d71-473e-8bc1-d4e173edd6d8",
+          "6ca06969-c69a-4181-8b84-ecd3af8b2a50"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "b755f263-eda8-43ba-8962-6ec827ac5c35",
+    "Text": "Sample"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "bcf94802-058f-4753-8783-f48948da8311",
+    "Text": "Ballot"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "ed7683d3-47a2-4e8d-b62d-77cf4104d3ce",
+    "Text": "Primary"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "01f80687-5b8e-4ce8-a8d8-2ff05d398117",
+    "Text": "Runoff"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "efa1e15b-5ab4-4e0e-955d-377765dacad0",
+    "Text": "Elections"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "f69ab631-9e19-4aba-8ea3-bd8c45f38d9b",
+    "Text": "Precinct"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "52ba60f5-3a62-4f46-bfa5-1a1fc0b7eb1c",
+    "Text": "0865-DEM"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "79f39491-5daa-4c05-94c2-c5c99debbad4",
+    "Text": "May"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "34edf9de-6e1b-4af3-ac63-7067ca0fa656",
+    "Text": "26,"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "6a1b72dd-f7e3-4710-a23a-255a4dba7c0c",
+    "Text": "2026"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "cfd63c30-193b-445b-a649-b515425df1f6",
+    "Text": "Democratic"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "42468116-5b56-4838-8787-14ff9811276f",
+    "Text": "Party"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "28f3e158-84e7-4d74-81a9-770c30d05bd7",
+    "Text": "Primary"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "840ecbf7-6d4b-42ba-b8a4-7d4d1b50898e",
+    "Text": "Runoff"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "38b60096-2b8a-496a-a949-f397093daf92",
+    "Text": "Election"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "908f667c-b63d-4905-b429-e191dedd64c7",
+    "Text": "Precinto"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "7a5e624f-e40d-4c8a-ad1c-39573b2b5163",
+    "Text": "0865-DEM"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "4ea00b6e-91a2-4c29-b72d-4f0b596a1181",
+    "Text": "Harris"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "2729e8c0-69c3-4073-87d6-3a4719dcce5d",
+    "Text": "County,"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "2ee4f199-a031-4ae3-94b8-a322d90aac30",
+    "Text": "Texas"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "d15892f4-9dfd-463a-8418-4065a58e3471",
+    "Text": "Elecciónes"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "94a6768a-b4ce-45de-a359-2879787171b6",
+    "Text": "Primarias"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "25f9cace-0c00-4cdf-a8f9-e2ca811536e3",
+    "Text": "Decisivas"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "5bf5b767-55a8-40fe-85c7-d441289e7973",
+    "Text": "Page"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "18fd81cb-65d0-4aee-9545-8d59f8cfa030",
+    "Text": "1"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "9e4aefe1-8bac-4689-b175-f53911510398",
+    "Text": "of"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "2609f39b-9f2e-4980-9da5-0f1ed232ad3b",
+    "Text": "1"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "70e9f1f4-73c0-4ed0-8508-c5a52fc9ad04",
+    "Text": "26"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "acc1dfbd-8d25-40e8-985e-9f7e0f091903",
+    "Text": "de"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "4f0d3a98-8d9a-4562-b50f-a47d5381b0ad",
+    "Text": "mayo"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "bec7910a-e4aa-4be1-9fa3-5dc5e9e314f8",
+    "Text": "de"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "6bc30934-0977-4f38-81b9-a032bed5728f",
+    "Text": "2026"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "0a1667a1-5765-437a-922a-68dd26ca88bd",
+    "Text": "Elección"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "e2efac64-b81a-4974-b6be-4fead0a45f98",
+    "Text": "Primaria"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "21d66f92-9790-42c3-8a3f-da9f297b6d85",
+    "Text": "Decisiva"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "a3d226cd-a5ee-4be2-98ea-0cb2b17295b8",
+    "Text": "del"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "e79d8b5e-16ce-4a75-b932-195dbfffb9ef",
+    "Text": "Partido"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "889ddf49-f1ad-4fc9-9c77-6f1a9b1acfb5",
+    "Text": "Demócrata"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "9b94ab58-7f35-41d5-addd-8507571f90c9",
+    "Text": "Condado"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "fb37fac2-8940-4d54-9d3f-c01e956fa32d",
+    "Text": "Harris,"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "9f8fb07e-63f4-45cc-9c0a-817b850b93ce",
+    "Text": "Texas"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "b84ab8ec-4d0d-4258-9278-aeeae1acfe9a",
+    "Text": "Página"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "987f9ac5-235c-4e84-bc9a-19845d2d1eee",
+    "Text": "1"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "5e203487-54d0-4b1e-8e0b-6d40c1b6b404",
+    "Text": "de"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "efec9ceb-a186-4e8a-bc3e-9fff055816bc",
+    "Text": "1"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "1fec901a-29a1-4f28-8cc0-a7ac29bb197a",
+    "Text": "Please"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "112c1934-50d8-441c-99e0-c6bf9f576936",
+    "Text": "use"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "65b8f753-aa4c-4be3-ae0c-1ee819ae450b",
+    "Text": "a"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "25836e14-7dda-46cc-bcd6-14de3388885f",
+    "Text": "black"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "fb25016f-1e72-41a2-88a0-7983a0a05aca",
+    "Text": "or"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "d429add7-b1c6-4727-bfa8-22e8ea2a6c9f",
+    "Text": "blue"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "580cb887-5b97-4d4f-80fc-b774eb15470f",
+    "Text": "Dem"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "bd3373a1-1616-477c-8343-213d80a28bdd",
+    "Text": "Lieutenant"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "e5bb42b7-c75e-455a-a072-ac7f2331edd3",
+    "Text": "Dem"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "8424f005-151c-4f8e-a8a0-12af0cbff610",
+    "Text": "Justice,"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "790d92a3-be13-4807-9043-de34f75f2304",
+    "Text": "14th"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "7dfcca9e-4bc1-40fe-8356-f97cdca0cb5b",
+    "Text": "Dem -"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "ec7a90ec-5980-49d0-9230-253a0db121e1",
+    "Text": "-"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "8f0fa2ea-8b5b-45e5-b30e-3b9fd9d3edc2",
+    "Text": "County"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "01d28e37-7302-420b-a6a7-fcb9488478f3",
+    "Text": "Judge"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "0378ec9b-2e61-4b0e-8d6a-feddc4b84379",
+    "Text": "ink"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "70b59847-56ab-4b73-aea0-4d10f20c1e55",
+    "Text": "pen"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "65b92f89-cac1-450d-b3bc-46a11850e193",
+    "Text": "to"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "6641b97e-3ab7-4378-9f1e-929b36af3a91",
+    "Text": "mark"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "736debf3-a349-477e-80ad-ffb0e484398b",
+    "Text": "your"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "1f0b9f5d-1738-44f0-b3de-77387f3d2ac2",
+    "Text": "Governor"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "c687a1d0-16a3-4d7b-87eb-1da734742207",
+    "Text": "Court"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "32fce74a-2e77-4d37-8f78-b96578921b9e",
+    "Text": "of"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "9d178d3e-f29b-4cfd-af9c-972693269070",
+    "Text": "Appeals"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "ffce98ca-0581-4884-8469-ee299fe78c5d",
+    "Text": "Dem"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "1b22e0a3-3ec0-480a-8457-51e0b96be34e",
+    "Text": "Juez"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "feaa6694-2be0-4237-80c2-c02dbfbe3998",
+    "Text": "del"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "24e43ca2-cbb4-47ec-9feb-5a951cdb1f2a",
+    "Text": "Condado"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "3fc1506e-df27-4803-9f47-4e0e1af4a43c",
+    "Text": "ballot."
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "13b5682c-3527-41dd-94fe-7cea59273831",
+    "Text": "To"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "2dc3ff72-5ed6-45f7-aab0-866abcd51464",
+    "Text": "vote"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "60b43304-9a73-4adf-aee5-ef12c0cf4aa5",
+    "Text": "for"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "b85a0faa-eac9-43c9-be69-65ebea4b6a84",
+    "Text": "your"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "b755d914-b35a-4f4b-bf3b-91983e6303e9",
+    "Text": "Dem"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "39c0c310-b78a-492d-bb3b-87139990c98c",
+    "Text": "Gobernador"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "33978062-e55e-47c1-b49d-e94623fc1165",
+    "Text": "District,"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "a7d2e87e-201a-44c9-a864-9099d17a2e21",
+    "Text": "Place"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "2ad3c4f3-6b1f-4478-bff4-ed228a5d16cf",
+    "Text": "7"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "d20832c4-2475-4ddd-b0ac-7c95c76d3d9e",
+    "Text": "choice"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "9dc45d3d-52bd-4775-a1ae-4112c8f3f0c8",
+    "Text": "in"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "2edee900-7cde-406f-a107-29261f16be19",
+    "Text": "each"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "73770abd-abde-4e3b-affe-790c5802d3ce",
+    "Text": "contest,"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "16a158c7-8ecf-4788-859e-90a2864eb6be",
+    "Text": "Vote"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "0f4f30fb-d171-40d8-8401-95825211d174",
+    "Text": "for"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "ed529239-f4c7-478d-ac86-dbf0eeca2a37",
+    "Text": "none"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "d50cd5a0-ff50-4dba-8278-5874579644ff",
+    "Text": "or"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "1a30bcb8-d4f5-45a1-9790-e0f3bc0cdd36",
+    "Text": "one"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "b74dbe3a-911a-45c0-ac7c-62c2996baab2",
+    "Text": "Teniente"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "e5e88a7f-85a1-422e-99ce-f3a3691c296e",
+    "Text": "Dem"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "9e17ef25-5ac1-47af-9239-8e1c82089720",
+    "Text": "Juez,"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "ce376a7e-d77e-4c87-947e-148892441e0e",
+    "Text": "Corte"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "8865020f-a472-4e1c-9a29-a972758973a4",
+    "Text": "de"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "8d9aef1f-de68-475a-b886-dc52de767074",
+    "Text": "completely"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "66cf3fa6-55ae-461d-9607-da6b3f16d635",
+    "Text": "fill"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "0cc82213-91e4-4546-ae39-6bc0527e8b91",
+    "Text": "in"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "178fda61-9906-4e61-bca5-09402f12ab08",
+    "Text": "the"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "18db0727-227f-45fe-bef7-e80c34585381",
+    "Text": "box"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "c8628a2b-e2d8-4bbc-86a6-fbf9544bd312",
+    "Text": "Apelaciones,"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "ebf2327e-2522-40c8-bcc2-9457205fa923",
+    "Text": "Distrito"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "3223df6e-5559-45e0-b27f-9bb5e544ad35",
+    "Text": "Núm."
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "3009f28d-f5e5-4112-a572-11e1cb38ac41",
+    "Text": "Vote"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "555120db-3e0b-4a71-bbc6-963f8bace1dc",
+    "Text": "por"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "d1504321-3749-4720-8a96-1e9762242eb1",
+    "Text": "ninguno"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "348e870e-25f5-4799-83de-e47581207073",
+    "Text": "O"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "df7e95df-9348-438f-9bb4-48236d589644",
+    "Text": "uno"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "e96a6fb2-e055-4e30-9fce-489000ec6f4d",
+    "Text": "next"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "2cadcc23-1c9a-4364-8ccd-302c2fd5a5b8",
+    "Text": "to"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "95baf3d3-4659-4b8d-bd57-92976cecebed",
+    "Text": "your"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "91186566-22bf-4c96-8371-57c638a500e8",
+    "Text": "choice."
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "361867c2-9a37-468a-bbdf-9b2ffbff54ac",
+    "Text": "Vote"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "9c429697-4277-4a1a-8da4-29d0e9bbd9d0",
+    "Text": "for"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "04e8ed4e-edae-4656-95aa-4f278adef16b",
+    "Text": "none"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "0528ec59-af35-4339-8d08-2ad431f8c728",
+    "Text": "or"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "16ca0865-b510-4fe0-a778-1f01f8ba9e62",
+    "Text": "one"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "751f3c86-e975-4f61-9640-08271935e12b",
+    "Text": "14,"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "cc1c743d-4160-4c91-a8b9-ceadbab42e38",
+    "Text": "Lugar"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "1c9eb7d4-0d30-4ae3-8f73-e700121e9890",
+    "Text": "Núm."
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "7e0a8b0b-5ae6-425a-a20f-71b1cf62421e",
+    "Text": "7"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "85c2f7e4-1719-4022-b374-4597799d3807",
+    "Text": "LETITIA"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "00bbdbea-b6a2-4dee-ba33-b8ed707ae36b",
+    "Text": "PLUMMER"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "e9e8f6f4-4172-4f4c-9b75-6119d0c82cc5",
+    "Text": "Por"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "f43be824-3ea2-4b54-b71c-ed3acd3a3eca",
+    "Text": "favor,"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "f0c40055-86d6-49b6-8846-a48d21bf2860",
+    "Text": "utilice"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "a9cd6808-afdc-4b31-b9a1-a3e1c4f5bdfc",
+    "Text": "un"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "a9c22427-81f2-47eb-886e-9254c94315a7",
+    "Text": "Vote"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "5b28cddd-7cb6-40c4-b6b3-18c5a0d8bdeb",
+    "Text": "por"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "85d59fe1-d4b9-41d5-ae3e-971ce7732099",
+    "Text": "ninguno"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "628e6dd5-6216-45d2-9a1c-efd626f00cde",
+    "Text": "O"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "32ff6004-980f-4fd3-8bc6-8b67c83382f4",
+    "Text": "uno"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "c272caf8-124b-4272-bde7-1864c8e5a49d",
+    "Text": "lapicero"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "56dd1554-edea-438b-a5dd-7e06a9ce5f7f",
+    "Text": "de"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "b878c54c-036b-49f2-9d88-a582a1967113",
+    "Text": "tinta"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "f330efe3-ef17-46f6-81a6-ad18fa929f79",
+    "Text": "negra"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "13ad9691-f3c7-4c06-b3e8-2ce4116c10ca",
+    "Text": "O"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "2c211317-ef1c-4768-a942-3f839c0abe4b",
+    "Text": "Vote"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "8e7b15c0-32e9-4fdf-b470-f5fe31060e7f",
+    "Text": "for"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "7d035fe1-fcb2-4090-8d02-e2472fb83fa5",
+    "Text": "none"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "d8754311-a4cd-4468-8a44-4cff48bec45e",
+    "Text": "or"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "82beb61d-4de8-4183-9df7-1f8a8e9b8b84",
+    "Text": "one"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "00f79e0b-5e9a-4513-9f1e-5440e20bb4ff",
+    "Text": "Democratic"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "7ecc6fc8-6ba9-4938-a0ed-7dec75da8de0",
+    "Text": "Party"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "bdbcdc78-14c8-4be4-b1d1-9be1feafde2b",
+    "Text": "MARCOS"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "416db046-b68c-4be9-9f11-f157198954f1",
+    "Text": "ISAIAS"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "8668cb4f-dd3e-4413-af05-0cf3283a4e36",
+    "Text": "Partido"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "0140c9a3-adfc-480f-a0d0-8e8c9bd45096",
+    "Text": "Demócrata"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "dd869aff-c7df-4cb2-94cc-381c20d723ad",
+    "Text": "azul"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "40e4da0f-ee68-45ab-958d-488b802541b9",
+    "Text": "para"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "84198590-5da0-4b38-ac6d-950ac06d90fe",
+    "Text": "marcar"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "0d71e827-ed57-40a3-9e92-22855cea99bf",
+    "Text": "su"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "b3e7523c-92e4-4167-ba75-fc84576f5479",
+    "Text": "Vote"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "286a2c38-62fa-4d1c-9287-ec25398c9262",
+    "Text": "por"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "0c5b462c-de34-4a8a-8e77-3b2edbfabe6f",
+    "Text": "ninguno"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "3a4c7a5e-f4d0-4adf-b864-7888fc777df5",
+    "Text": "0"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "8414c0a8-64c5-42c4-9a78-80ebdc29ba53",
+    "Text": "uno"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "39d50050-f72e-4564-8c7f-8301f5191339",
+    "Text": "VELEZ"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "ac9779b4-50b6-49fe-b304-10ce7cb33aa1",
+    "Text": "boleta."
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "62c29bdc-fcd8-42b9-8a99-16a0a4108e33",
+    "Text": "Para"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "e50602cf-70d5-4bbf-98c2-45e7fc5541e3",
+    "Text": "votar"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "5bd71ddd-112d-4a29-bd86-20952c2b45a2",
+    "Text": "por"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "91b2f301-a3ea-4a00-a88e-538a029e7216",
+    "Text": "su"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "d56b55c2-d444-49ed-8812-f083d4702e6a",
+    "Text": "Democratic"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "29dcc3de-b3c3-432d-b0b4-37e1ea9ba830",
+    "Text": "Party"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "c1cc6e80-8b2b-4e1e-a998-ebb13ad7fd2d",
+    "Text": "MICHAEL"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "6f3ebc6e-514c-4e73-9dc8-232c54c7538d",
+    "Text": "ADAMS-"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "3fd113fc-f346-4a41-bfe7-2b0a55d03ec2",
+    "Text": "ANNISE"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "48603c58-afb3-4007-8451-ae6fcae172b1",
+    "Text": "PARKER"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "dae21bf8-9254-4904-84ac-0e2e63390385",
+    "Text": "elección"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "97190dd6-77f1-40e1-8f10-61cb521f547c",
+    "Text": "en"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "d266f709-f1dc-4484-9148-ffe146f7b9e6",
+    "Text": "cada"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "7de9e743-8d18-4e76-aef1-0135d1bbc661",
+    "Text": "Partido"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "44f52e1e-880c-4331-b79d-08b14d8c2a36",
+    "Text": "Demócrata"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "f9bbf755-15af-4ea3-889c-9413dff0a469",
+    "Text": "HURTA"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "49c21cf5-c723-42e5-8c06-9c48a283bbe6",
+    "Text": "concurso,"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "fac87441-960c-49df-bf35-6133c38ac9a6",
+    "Text": "llene"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "574c4620-41e4-4a94-adcc-04c1a52c6564",
+    "Text": "Democratic"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "1ce8db68-a34d-4389-aa0f-46e29151d36d",
+    "Text": "Party"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "ff369f9b-f1b5-4589-8b2f-16a0968f5a7e",
+    "Text": "Democratic"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "7b0776fc-6536-454e-9652-f8f2432dc5c7",
+    "Text": "Party"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "77fbeaa3-2697-4ec9-a2d3-c89fa4a825ad",
+    "Text": "Partido"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "c7334c2c-2fd4-4ee9-815e-156d63f2e1a4",
+    "Text": "Demócrata"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "57caee34-0d80-4c81-8903-070c21e82379",
+    "Text": "completamente"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "b6e8f8a6-6e15-4feb-9535-6a41650792ca",
+    "Text": "la"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "85351202-8d17-47c2-8656-5447560e4593",
+    "Text": "casilla"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "24227200-82b7-47f7-9ea5-41003e67fd51",
+    "Text": "VIKKI"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "1f00d14d-108d-44ed-a245-29c55a9e64c0",
+    "Text": "GOODWIN"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "c3a91979-5631-4a00-b125-d988410bf81a",
+    "Text": "Partido"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "5629ca74-0eb2-46d5-81aa-2075634e528f",
+    "Text": "Demócrata"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "1174fc04-5627-4275-a766-c2db5153826f",
+    "Text": "junto"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "5fb6c4a8-a2e3-4cf7-9847-e0efb9c91422",
+    "Text": "a"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "8f40b62a-65ea-447b-b382-186c3cf7e73f",
+    "Text": "su"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "6f9abf73-0c6c-441c-8cc3-18f623fb113f",
+    "Text": "selección."
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "8ad7afec-d262-4d2b-8f1e-061cbbee6693",
+    "Text": "Democratic"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "db1b5eb6-5333-4c80-9330-15160e07c6e5",
+    "Text": "Party"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "524a514e-392b-4a48-986e-73b31b7794f6",
+    "Text": "Democratic"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "7dc9eeaf-811e-4bc0-991f-2c8cb2dc46ff",
+    "Text": "Party"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "55c56194-ce20-4971-8b0e-8bed72de1fda",
+    "Text": "Partido"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "3a1eb010-e01b-49ad-9650-8337c2858709",
+    "Text": "Demócrata"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "65508c09-7008-4dd4-9ca6-0fc55caffba9",
+    "Text": "WILLIAM"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "7d7c65ce-eed4-4164-8e95-010b100e4b27",
+    "Text": "DEMOND"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "8e50e8f5-52f7-460b-8432-105405afcb2d",
+    "Text": "Dem"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "df5b77fc-4033-41b5-b9f4-03729396d507",
+    "Text": "District"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "fc9d9e4c-2645-4253-aca3-1b05b8342295",
+    "Text": "Clerk"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "dbda2ed8-2a46-4c0a-aa94-ee9f4505ec30",
+    "Text": "Primary"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "52a5ec67-3368-4e63-81f0-6aac375e4532",
+    "Text": "Runoff"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "51bf0b4e-0938-48a1-a0cc-cb80df3111ef",
+    "Text": "Election"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "ca0b5dfe-4ee2-4080-a293-60bf98ed09c3",
+    "Text": "Democratic"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "b6aed9fd-5ea8-42d9-967c-bf578074a722",
+    "Text": "Party"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "b9c8667c-eadc-4778-8f4e-7d0db4da8d3e",
+    "Text": "Dem"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "b54d53cb-36b5-417b-b8b3-24aa2f9b2470",
+    "Text": "Secretario"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "72c9dc50-88b1-4d36-b603-bd0e30b462c3",
+    "Text": "del"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "44909989-d415-43cd-b45a-60ee222a079a",
+    "Text": "Elección"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "093b4ba7-49f6-4c38-b462-c620fc6a0863",
+    "Text": "Primaria"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "800ae998-58c9-47aa-9456-905263f6ae29",
+    "Text": "Decisiva"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "d86663d9-50e8-4f1d-bf39-f248237ed07e",
+    "Text": "Partido"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "f4834df2-7ec3-4769-b33c-930a4ab5b3a1",
+    "Text": "Demócrata"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "a03f97f8-d181-42fd-b5d9-3a41b0f6fd85",
+    "Text": "Distrito"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "6a7c970c-0c36-47c7-b386-75161e5b672d",
+    "Text": "del"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "285f1451-90c4-40ea-89bd-2a4c6831c527",
+    "Text": "Partido"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "734c9a92-9c33-48fc-8a75-f7febb473bef",
+    "Text": "Demócrata"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "65022124-a872-4304-8621-46bc9d5d6ecc",
+    "Text": "Dem"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "f58eefac-f667-41d0-a389-acc5821f6294",
+    "Text": "Attorney"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "1034acd3-b771-4aa0-82b5-9e4e8afcd71a",
+    "Text": "General"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "ccee2ffd-521a-45a2-a896-bf0684f87666",
+    "Text": "Dem"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "0aebcbe2-e6fb-4bfe-99f4-9e9874cec008",
+    "Text": "Procurador"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "78590499-52bd-4bff-b599-3d9a628b7d08",
+    "Text": "General"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "df27bbe3-c3e9-4e78-9c70-37dd51ff235f",
+    "Text": "Vote"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "d7591826-ae13-4876-8e30-92aecc811d1b",
+    "Text": "for"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "01141658-c726-4ee6-84f3-bbc7f85d8038",
+    "Text": "none"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "caab7c41-61c5-4068-960d-eb42fa650b4e",
+    "Text": "or"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "23e8067f-baea-4129-b28b-882b29f7d5c4",
+    "Text": "one"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "f78bdfd0-c8a4-470d-968d-a02f19a06499",
+    "Text": "I"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "29e95ee2-4e87-4574-bd6c-c4d329310e5e",
+    "Text": "am"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "4631cfea-140f-4609-8aa8-3345f1231bcc",
+    "Text": "a"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "236b749c-cabf-4e5f-99d7-3939b5020bdc",
+    "Text": "Democrat"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "a5134a64-f86d-48d9-af9c-c32da39cea06",
+    "Text": "and"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "a6453811-d511-46fe-893f-4ee25a0d5460",
+    "Text": "Dem"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "c0568651-a57c-4ebd-89c1-bb60d9f7fe01",
+    "Text": "-"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "69f6faee-46e2-4130-8bc4-a8298cce047e",
+    "Text": "Criminal"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "369cf2aa-298d-48da-9cfe-9f046cdb8238",
+    "Text": "District"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "ac72ea9f-225a-488f-9933-906d38df8c5d",
+    "Text": "Vote"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "9aa1a242-0c0f-4b0c-be63-2c033f168a7b",
+    "Text": "por"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "c2112e74-6a13-4bff-b54d-463fbbc5026a",
+    "Text": "ninguno"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "86f05084-a8b6-47e7-b040-d96df2dd6850",
+    "Text": "O"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "82651894-6137-4ad0-b4c0-48cc714d8630",
+    "Text": "uno"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "213b0640-66fc-452f-9f9f-aa7e5531c545",
+    "Text": "understand"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "08a6c34a-af2f-4f17-82cf-bf359cff7579",
+    "Text": "that"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "afd1d660-86ea-43cd-b804-a05ec3056a11",
+    "Text": "I"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "bfaee6dd-b892-48da-bab3-b78efde7cc62",
+    "Text": "am"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "64f8901c-e0f2-4355-8b57-9d465259c7b5",
+    "Text": "Vote"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "05a856a5-31ce-45c8-9da5-676d3aebcf25",
+    "Text": "for"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "ef496db6-e60d-47ac-8499-403f54a74878",
+    "Text": "none"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "34de2b9d-c1a6-4667-8537-39c04f8746cd",
+    "Text": "or"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "d48804d1-48b9-45ab-8997-16aee52d9ff8",
+    "Text": "one"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "1327a597-8ded-4a15-a011-3a5e12b4a7bf",
+    "Text": "Judge,"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "96a9cbf3-b0d6-4e30-a166-114e20ce0cad",
+    "Text": "JOSE"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "634d671d-00bb-4e12-ae0a-4f981c717221",
+    "Text": "\"ALEX\""
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "e3428561-d347-4497-8257-65e37c51ab46",
+    "Text": "ineligible"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "5171537e-de8a-4452-9588-2c066a8e0052",
+    "Text": "to"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "c71842d8-7877-4dba-9726-d4ccfc85aa9a",
+    "Text": "vote"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "00ae8ab4-9bcd-4699-84c4-976a9fd127ab",
+    "Text": "or"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "83a67737-11c3-47be-a65d-67c7a2c72983",
+    "Text": "Vote"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "1480fb89-b380-4069-9a20-e318c2104b79",
+    "Text": "por"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "6edfe4a3-aaaf-4d94-8030-f9a4a4bdb406",
+    "Text": "ninguno"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "159ff63d-27ec-4103-b4af-2539785c7c30",
+    "Text": "O"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "a1965670-a871-48cb-ab3e-40b3dad4cabe",
+    "Text": "uno"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "44a06636-f6b7-46b6-b430-37f75b17aae7",
+    "Text": "209th"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "a65b7068-657e-468c-8225-242e29122c10",
+    "Text": "Judicial"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "98c2e8d2-9c5b-438d-9df8-a1576d178f7b",
+    "Text": "District"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "2e50b776-deb2-4199-921f-73b9020474a7",
+    "Text": "MALDONADO"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "19f934f1-d335-4de4-a131-bcb8bf14e369",
+    "Text": "participate"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "42833683-a41f-490c-bef6-e0ef5ff3b77f",
+    "Text": "in"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "6415d230-6b1b-4d4c-90be-4020e6c4fdad",
+    "Text": "another"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "3551afcc-008a-4510-b175-4946e2898c6f",
+    "Text": "NATHAN"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "7ced9970-b74f-4af0-a9d6-c1fa919d27dd",
+    "Text": "JOHNSON"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "7bb02889-5327-44a1-b241-21b37eee5335",
+    "Text": "Dem"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "fc414ad5-c62b-4daf-9515-2a6b6d299ccf",
+    "Text": "Juez"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "91805d9b-eec5-41d6-82ae-42d754464dde",
+    "Text": "Criminal"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "2c552d88-4953-472c-a202-dce75e3302ff",
+    "Text": "del"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "08174fb7-fdcd-4340-9af4-3c8c95514764",
+    "Text": "Democratic"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "fadf7797-28fe-4e25-8bca-d22b3b26c5eb",
+    "Text": "Party"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "45b984ed-7f1d-47af-bff3-60a4c6490c6c",
+    "Text": "political"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "51f63b3c-c772-41bd-9b82-bd2834789194",
+    "Text": "party's"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "bcb0b253-d0e1-46dc-91ff-76948debaff4",
+    "Text": "primary"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "69a268c6-f4a7-421f-9550-aaec9aca1d9c",
+    "Text": "Democratic"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "3c48df1c-ba44-4749-bbc8-f5ac8a934a33",
+    "Text": "Party"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "bb306e32-b54e-4a3d-89f2-5cf2c9605f18",
+    "Text": "Distrito,"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "fcc8f28d-9493-46d7-b3eb-aeb2349608f3",
+    "Text": "Partido"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "ec8b0f9e-9f1a-4efc-891a-a3f1aef1090a",
+    "Text": "Demócrata"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "9ee0f37b-60a1-40e6-8780-d93a96774da0",
+    "Text": "election"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "04df0242-a452-4c39-9576-8215bd047765",
+    "Text": "or"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "d94f9496-e1c4-40bf-af59-e1d063c69592",
+    "Text": "convention"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "dfde0aa6-eb2e-4d63-bf5b-a6a4323dbe04",
+    "Text": "Partido"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "bd3ca6cc-da8d-49c1-9914-9173fd7892dc",
+    "Text": "Demócrata"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "0398e272-aa4e-4657-a24c-4a1b8d49ebae",
+    "Text": "Distrito"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "02516d79-4fbc-44b3-b0e5-d32d59cc2784",
+    "Text": "Judicial"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "d9578c0e-e834-48a6-86a7-2592fb92ce07",
+    "Text": "Núm."
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "d3f5de3d-dc28-496b-af18-57b89c3a346f",
+    "Text": "209"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "e0ecae6b-2c6e-4a38-b236-c4f3598519af",
+    "Text": "during"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "c3867621-0576-4dc8-aad1-c1df06963cc9",
+    "Text": "this"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "1b8af85f-9ebd-4578-89fa-903394dbe1e7",
+    "Text": "voting"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "621aa67f-9788-4b9a-aaa7-0917f1d150c3",
+    "Text": "year."
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "22010b96-8acb-4533-af2c-2bc63814ae9a",
+    "Text": "DARRELL"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "1fc27bdd-fe9d-4cb5-8b2d-5e12e7c81be4",
+    "Text": "JORDAN,"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "b8f4cca6-b065-460c-926f-8f47b2129c8d",
+    "Text": "Yo"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "73008a1e-d202-4d46-ab80-34bdea69daff",
+    "Text": "soy"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "0b483fbd-e27f-4fef-b88f-19b83ebc2f1a",
+    "Text": "Demócrata"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "9e4cf5a5-f098-4a6f-9f6e-9de472bb4e51",
+    "Text": "y"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "e8616a81-6655-4a29-85f2-a817cba3f01c",
+    "Text": "Vote"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "fd74b8d9-871e-4025-a7e5-db3b5f82cc03",
+    "Text": "for"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "6bb927a6-e678-49b5-a8fe-aab5d7000e6f",
+    "Text": "none"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "febe2979-d56c-4078-9f22-8c9d78aa043c",
+    "Text": "or"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "31e4906f-ebf2-4ee0-95c9-c51a7e77b135",
+    "Text": "one"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "16f88ca8-3b37-4f7c-994c-01e797c62541",
+    "Text": "JOE"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "1ceb49f1-6c5a-4740-af06-ad4d8833cf8f",
+    "Text": "JAWORSKI"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "107d4f42-c7e9-4ce0-8ab4-59d159fd07fc",
+    "Text": "JR"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "948f5f0a-84f8-4d7c-a006-91bf94371247",
+    "Text": "comprendo"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "c9a5488c-2e88-4449-9f5e-320c1f2f0cfa",
+    "Text": "que"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "5285b7a3-fa27-40f4-8b31-2a99b4d58d1f",
+    "Text": "soy"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "602fa794-0eb3-4657-8b77-5d2223be1ee6",
+    "Text": "Vote"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "90f83c2d-0383-4612-9a75-d719beb4921e",
+    "Text": "por"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "4092b668-26de-4eb2-be78-45b07a82fa04",
+    "Text": "ninguno"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "fbced8f4-ec2a-48cb-a9bb-9a77994915f6",
+    "Text": "O"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "7b0386ea-df4c-4f20-a161-a6cc97d03a54",
+    "Text": "uno"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "dc3418f4-0564-4781-8989-664c99bfdf5b",
+    "Text": "Democratic"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "ccaf0efd-5092-4818-a3ae-ecf241bed298",
+    "Text": "Party"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "d569c62c-4099-4d5d-b50b-e70f6d8e6cee",
+    "Text": "Democratic"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "914bfd4f-013b-4efd-8948-8f23d36f2640",
+    "Text": "Party"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "e4d1bef8-fe19-4684-81e6-06bf2b4cd6a2",
+    "Text": "inelegible"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "44397171-1050-4f17-b654-b91b75afb55c",
+    "Text": "para"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "631c4f39-d9cb-4998-abb2-c7a97e0f7e0c",
+    "Text": "votar"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "57cab620-467d-4e39-8043-b4f5db924658",
+    "Text": "O"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "d14865b6-f35a-44ed-8ecb-f39d2524dc62",
+    "Text": "Partido"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "beef2130-1802-4093-a425-785b14ada353",
+    "Text": "Demócrata"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "e6d93c7f-35a6-44c8-8e02-22c092a89d37",
+    "Text": "BRIAN"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "e01f2d27-dd4b-4d8e-9725-838424a91723",
+    "Text": "EDWARD"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "aba67dd2-8d01-4d12-9bc5-251f01331910",
+    "Text": "Partido"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "ab393b3f-724e-47c0-9a49-a8d2b7014fe0",
+    "Text": "Demócrata"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "9adf9066-ad2b-462f-bae3-940f2ccfadcf",
+    "Text": "participar"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "cfbef7c5-89e6-474a-8483-4052fcca4824",
+    "Text": "en"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "0aa104c1-4648-4d2b-893b-cfc30b8d7dcc",
+    "Text": "la"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "2306cebe-e831-4cc0-b917-9dc4f67de90d",
+    "Text": "elección"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "4d9481d0-ca77-4695-b695-c0bd7407a776",
+    "Text": "WARREN"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "7b83ae95-ad5d-4f48-b719-70ead4b0d2bb",
+    "Text": "primaria"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "30706384-e2d6-4f62-81eb-741900cf7ff5",
+    "Text": "O"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "efa15ea8-afab-4bf1-ad5b-1db9851b3d2f",
+    "Text": "la"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "ed77096f-c6d4-46d2-b21e-93e5fae58b4f",
+    "Text": "convención"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "bb8296ae-2e15-43c7-bc5c-02082eb377d3",
+    "Text": "Democratic"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "a36f30bf-32c5-4544-9c98-5511a8ea9329",
+    "Text": "Party"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "ce2dabaf-9fa4-4757-8a0a-33cb40edd164",
+    "Text": "de"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "f071c4b9-d504-4636-a925-de2d3059d319",
+    "Text": "algún"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "84569d8c-e658-4759-b858-8d998fdc5f33",
+    "Text": "otro"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "bf68f5c8-4d3d-482c-a865-15a93a427ae9",
+    "Text": "partido"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "bdd02326-9a53-42be-8133-a366c234edff",
+    "Text": "Partido"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "378dd8b9-4645-4a45-ba4d-64bda34da8b2",
+    "Text": "Demócrata"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "03245359-7669-40fd-9999-9dd172898dcf",
+    "Text": "politico"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "9f6f01ce-e424-449d-90b2-6c64a7931b8a",
+    "Text": "durante"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "44f8ad04-f0af-40c6-be84-a2806095f435",
+    "Text": "este"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "32a5961a-057c-4177-8b05-289f0f5e35c7",
+    "Text": "año"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "740b6a60-5cb6-4fe6-bbb9-99362b797e5c",
+    "Text": "electoral."
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "26049138-ae8e-4c3e-9eb0-6008cd57a7d6",
+    "Text": "YSIDRA"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "c35faebf-4219-4cfb-a0bb-f5e43dbdc9fb",
+    "Text": "\"SISSY\""
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "142ddea7-33ba-49b6-bd5b-baeda7c4585a",
+    "Text": "KYLES"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "5bb42bd7-ff8f-4f01-be01-9bef567490c8",
+    "Text": "Democratic"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "436db847-ad31-4fc6-bdd5-44fe8140688b",
+    "Text": "Party"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "88c03a32-7d71-473e-8bc1-d4e173edd6d8",
+    "Text": "Partido"
+  },
+  {
+    "BlockType": "WORD",
+    "Page": 1,
+    "Id": "6ca06969-c69a-4181-8b84-ecd3af8b2a50",
+    "Text": "Demócrata"
+  },
+  {
+    "BlockType": "KEY_VALUE_SET",
+    "Page": 1,
+    "Id": "ad41abc0-7116-4829-8e79-c2a6f6951284",
+    "EntityTypes": [
+      "KEY"
+    ],
+    "Relationships": [
+      {
+        "Type": "VALUE",
+        "Ids": [
+          "e4d05b04-187a-41b7-9f51-d06e788f30d3"
+        ]
+      },
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "65508c09-7008-4dd4-9ca6-0fc55caffba9",
+          "7d7c65ce-eed4-4164-8e95-010b100e4b27",
+          "ca0b5dfe-4ee2-4080-a293-60bf98ed09c3",
+          "b6aed9fd-5ea8-42d9-967c-bf578074a722",
+          "d86663d9-50e8-4f1d-bf39-f248237ed07e",
+          "f4834df2-7ec3-4769-b33c-930a4ab5b3a1"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "KEY_VALUE_SET",
+    "Page": 1,
+    "Id": "e4d05b04-187a-41b7-9f51-d06e788f30d3",
+    "EntityTypes": [
+      "VALUE"
+    ],
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "98e8ff43-db7e-43f4-9cb2-7f2aac173758"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "KEY_VALUE_SET",
+    "Page": 1,
+    "Id": "2002add3-2544-42a4-9d74-f1742e21a7bc",
+    "EntityTypes": [
+      "KEY"
+    ],
+    "Relationships": [
+      {
+        "Type": "VALUE",
+        "Ids": [
+          "a3286ea9-16b8-4f74-870e-8738dcf0fdbd"
+        ]
+      },
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "85c2f7e4-1719-4022-b374-4597799d3807",
+          "00bbdbea-b6a2-4dee-ba33-b8ed707ae36b",
+          "00f79e0b-5e9a-4513-9f1e-5440e20bb4ff",
+          "7ecc6fc8-6ba9-4938-a0ed-7dec75da8de0",
+          "8668cb4f-dd3e-4413-af05-0cf3283a4e36",
+          "0140c9a3-adfc-480f-a0d0-8e8c9bd45096"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "KEY_VALUE_SET",
+    "Page": 1,
+    "Id": "a3286ea9-16b8-4f74-870e-8738dcf0fdbd",
+    "EntityTypes": [
+      "VALUE"
+    ],
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "bbbb94d8-3512-4334-be80-39afcdd8c595"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "KEY_VALUE_SET",
+    "Page": 1,
+    "Id": "3c820966-188b-4ae1-818e-9f2fd06ec710",
+    "EntityTypes": [
+      "KEY"
+    ],
+    "Relationships": [
+      {
+        "Type": "VALUE",
+        "Ids": [
+          "19653f35-47cc-46b2-8c0b-bab24461e31b"
+        ]
+      },
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "26049138-ae8e-4c3e-9eb0-6008cd57a7d6",
+          "c35faebf-4219-4cfb-a0bb-f5e43dbdc9fb",
+          "142ddea7-33ba-49b6-bd5b-baeda7c4585a",
+          "5bb42bd7-ff8f-4f01-be01-9bef567490c8",
+          "436db847-ad31-4fc6-bdd5-44fe8140688b",
+          "88c03a32-7d71-473e-8bc1-d4e173edd6d8",
+          "6ca06969-c69a-4181-8b84-ecd3af8b2a50"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "KEY_VALUE_SET",
+    "Page": 1,
+    "Id": "19653f35-47cc-46b2-8c0b-bab24461e31b",
+    "EntityTypes": [
+      "VALUE"
+    ],
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "14b23549-9a07-45d2-8bb0-5caf3077d478"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "KEY_VALUE_SET",
+    "Page": 1,
+    "Id": "757afaca-e1b9-4ee0-8777-993153300cb2",
+    "EntityTypes": [
+      "KEY"
+    ],
+    "Relationships": [
+      {
+        "Type": "VALUE",
+        "Ids": [
+          "d64e3810-b2f8-4d1a-a7df-60b63a0ff4d1"
+        ]
+      },
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "96a9cbf3-b0d6-4e30-a166-114e20ce0cad",
+          "634d671d-00bb-4e12-ae0a-4f981c717221",
+          "2e50b776-deb2-4199-921f-73b9020474a7",
+          "08174fb7-fdcd-4340-9af4-3c8c95514764",
+          "fadf7797-28fe-4e25-8bca-d22b3b26c5eb",
+          "fcc8f28d-9493-46d7-b3eb-aeb2349608f3",
+          "ec8b0f9e-9f1a-4efc-891a-a3f1aef1090a"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "KEY_VALUE_SET",
+    "Page": 1,
+    "Id": "d64e3810-b2f8-4d1a-a7df-60b63a0ff4d1",
+    "EntityTypes": [
+      "VALUE"
+    ],
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "2edeab6a-4816-4051-b999-6a5e8eeaeb80"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "KEY_VALUE_SET",
+    "Page": 1,
+    "Id": "1e3fe3da-0eb1-42c7-89a5-c988ee2f84ea",
+    "EntityTypes": [
+      "KEY"
+    ],
+    "Relationships": [
+      {
+        "Type": "VALUE",
+        "Ids": [
+          "6bb1d707-ad18-4523-a08b-82b53b4ede7a"
+        ]
+      },
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "e6d93c7f-35a6-44c8-8e02-22c092a89d37",
+          "e01f2d27-dd4b-4d8e-9725-838424a91723",
+          "4d9481d0-ca77-4695-b695-c0bd7407a776",
+          "bb8296ae-2e15-43c7-bc5c-02082eb377d3",
+          "a36f30bf-32c5-4544-9c98-5511a8ea9329",
+          "bdd02326-9a53-42be-8133-a366c234edff",
+          "378dd8b9-4645-4a45-ba4d-64bda34da8b2"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "KEY_VALUE_SET",
+    "Page": 1,
+    "Id": "6bb1d707-ad18-4523-a08b-82b53b4ede7a",
+    "EntityTypes": [
+      "VALUE"
+    ],
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "e78c82e9-e354-46f2-a2f3-b93bccefae05"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "KEY_VALUE_SET",
+    "Page": 1,
+    "Id": "5c1accd2-e45b-4a3a-a552-a4b0dc0aaa95",
+    "EntityTypes": [
+      "KEY"
+    ],
+    "Relationships": [
+      {
+        "Type": "VALUE",
+        "Ids": [
+          "168edc6b-ce1e-4ecc-b41e-6640c6cbab04"
+        ]
+      },
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "16f88ca8-3b37-4f7c-994c-01e797c62541",
+          "1ceb49f1-6c5a-4740-af06-ad4d8833cf8f",
+          "dc3418f4-0564-4781-8989-664c99bfdf5b",
+          "ccaf0efd-5092-4818-a3ae-ecf241bed298",
+          "d14865b6-f35a-44ed-8ecb-f39d2524dc62",
+          "beef2130-1802-4093-a425-785b14ada353"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "KEY_VALUE_SET",
+    "Page": 1,
+    "Id": "168edc6b-ce1e-4ecc-b41e-6640c6cbab04",
+    "EntityTypes": [
+      "VALUE"
+    ],
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "d8e79fd4-c584-48c6-b020-b96c9097fbfa"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "KEY_VALUE_SET",
+    "Page": 1,
+    "Id": "891d7604-a744-4216-b17b-90d003971a61",
+    "EntityTypes": [
+      "KEY"
+    ],
+    "Relationships": [
+      {
+        "Type": "VALUE",
+        "Ids": [
+          "1ce922be-90fa-4846-b7ef-03e3d9f2b4c1"
+        ]
+      },
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "24227200-82b7-47f7-9ea5-41003e67fd51",
+          "1f00d14d-108d-44ed-a245-29c55a9e64c0",
+          "8ad7afec-d262-4d2b-8f1e-061cbbee6693",
+          "db1b5eb6-5333-4c80-9330-15160e07c6e5",
+          "55c56194-ce20-4971-8b0e-8bed72de1fda",
+          "3a1eb010-e01b-49ad-9650-8337c2858709"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "KEY_VALUE_SET",
+    "Page": 1,
+    "Id": "1ce922be-90fa-4846-b7ef-03e3d9f2b4c1",
+    "EntityTypes": [
+      "VALUE"
+    ],
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "eae65ff2-05b4-4fa8-b5f2-218a97013ec6"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "KEY_VALUE_SET",
+    "Page": 1,
+    "Id": "b0af3cce-37d0-4dd1-9ec1-2b9fd00f2ffd",
+    "EntityTypes": [
+      "KEY"
+    ],
+    "Relationships": [
+      {
+        "Type": "VALUE",
+        "Ids": [
+          "c40d8f08-a49b-4fe6-89a8-de3abbf80e5b"
+        ]
+      },
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "22010b96-8acb-4533-af2c-2bc63814ae9a",
+          "1fc27bdd-fe9d-4cb5-8b2d-5e12e7c81be4",
+          "107d4f42-c7e9-4ce0-8ab4-59d159fd07fc",
+          "d569c62c-4099-4d5d-b50b-e70f6d8e6cee",
+          "914bfd4f-013b-4efd-8948-8f23d36f2640",
+          "aba67dd2-8d01-4d12-9bc5-251f01331910",
+          "ab393b3f-724e-47c0-9a49-a8d2b7014fe0"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "KEY_VALUE_SET",
+    "Page": 1,
+    "Id": "c40d8f08-a49b-4fe6-89a8-de3abbf80e5b",
+    "EntityTypes": [
+      "VALUE"
+    ],
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "72c68f15-39d4-4128-8de8-db14d0b3e5d4"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "KEY_VALUE_SET",
+    "Page": 1,
+    "Id": "387c2c92-400a-44f0-8461-f2a8c92784f5",
+    "EntityTypes": [
+      "KEY"
+    ],
+    "Relationships": [
+      {
+        "Type": "VALUE",
+        "Ids": [
+          "82a29019-0d9b-41da-a7bf-7ae72a21fe07"
+        ]
+      },
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "3fd113fc-f346-4a41-bfe7-2b0a55d03ec2",
+          "48603c58-afb3-4007-8451-ae6fcae172b1",
+          "574c4620-41e4-4a94-adcc-04c1a52c6564",
+          "1ce8db68-a34d-4389-aa0f-46e29151d36d",
+          "77fbeaa3-2697-4ec9-a2d3-c89fa4a825ad",
+          "c7334c2c-2fd4-4ee9-815e-156d63f2e1a4"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "KEY_VALUE_SET",
+    "Page": 1,
+    "Id": "82a29019-0d9b-41da-a7bf-7ae72a21fe07",
+    "EntityTypes": [
+      "VALUE"
+    ],
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "a3131d6b-6745-4325-91c9-9026e28276c2"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "KEY_VALUE_SET",
+    "Page": 1,
+    "Id": "2fdc7963-2a3a-4dda-a6b1-d4b84c40060d",
+    "EntityTypes": [
+      "KEY"
+    ],
+    "Relationships": [
+      {
+        "Type": "VALUE",
+        "Ids": [
+          "1c2c34aa-a556-4ad9-949f-9c32e859098b"
+        ]
+      },
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "c1cc6e80-8b2b-4e1e-a998-ebb13ad7fd2d",
+          "6f3ebc6e-514c-4e73-9dc8-232c54c7538d",
+          "f9bbf755-15af-4ea3-889c-9413dff0a469",
+          "ff369f9b-f1b5-4589-8b2f-16a0968f5a7e",
+          "7b0776fc-6536-454e-9652-f8f2432dc5c7",
+          "c3a91979-5631-4a00-b125-d988410bf81a",
+          "5629ca74-0eb2-46d5-81aa-2075634e528f"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "KEY_VALUE_SET",
+    "Page": 1,
+    "Id": "1c2c34aa-a556-4ad9-949f-9c32e859098b",
+    "EntityTypes": [
+      "VALUE"
+    ],
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "6ec0568b-91a2-4ae6-9d71-91c236cc672f"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "KEY_VALUE_SET",
+    "Page": 1,
+    "Id": "ce33de08-b1a9-45d1-8eba-b9e6e95b3333",
+    "EntityTypes": [
+      "KEY"
+    ],
+    "Relationships": [
+      {
+        "Type": "VALUE",
+        "Ids": [
+          "0d8d36af-9d9d-4011-b113-f296cee0845a"
+        ]
+      },
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "bdbcdc78-14c8-4be4-b1d1-9be1feafde2b",
+          "416db046-b68c-4be9-9f11-f157198954f1",
+          "39d50050-f72e-4564-8c7f-8301f5191339",
+          "d56b55c2-d444-49ed-8812-f083d4702e6a",
+          "29dcc3de-b3c3-432d-b0b4-37e1ea9ba830",
+          "7de9e743-8d18-4e76-aef1-0135d1bbc661",
+          "44f52e1e-880c-4331-b79d-08b14d8c2a36"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "KEY_VALUE_SET",
+    "Page": 1,
+    "Id": "0d8d36af-9d9d-4011-b113-f296cee0845a",
+    "EntityTypes": [
+      "VALUE"
+    ],
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "6c213b9b-639a-4937-9232-fe04b9378349"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "KEY_VALUE_SET",
+    "Page": 1,
+    "Id": "78373e41-96e2-481a-84c4-6b7cb0243e3b",
+    "EntityTypes": [
+      "KEY"
+    ],
+    "Relationships": [
+      {
+        "Type": "VALUE",
+        "Ids": [
+          "647bfdeb-7e1e-4bfa-a04b-744dc605c17b"
+        ]
+      },
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "3551afcc-008a-4510-b175-4946e2898c6f",
+          "7ced9970-b74f-4af0-a9d6-c1fa919d27dd",
+          "69a268c6-f4a7-421f-9550-aaec9aca1d9c",
+          "3c48df1c-ba44-4749-bbc8-f5ac8a934a33",
+          "dfde0aa6-eb2e-4d63-bf5b-a6a4323dbe04",
+          "bd3ca6cc-da8d-49c1-9914-9173fd7892dc"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "KEY_VALUE_SET",
+    "Page": 1,
+    "Id": "647bfdeb-7e1e-4bfa-a04b-744dc605c17b",
+    "EntityTypes": [
+      "VALUE"
+    ],
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "517eb252-ab32-44f9-b8c9-536279ae7d31"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "KEY_VALUE_SET",
+    "Page": 1,
+    "Id": "0d90b549-c719-4913-9343-875b6502a5e6",
+    "EntityTypes": [
+      "KEY"
+    ],
+    "Relationships": [
+      {
+        "Type": "VALUE",
+        "Ids": [
+          "dc6b4d5d-b985-4e8e-8577-e44b274f2574"
+        ]
+      },
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "5bf5b767-55a8-40fe-85c7-d441289e7973"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "KEY_VALUE_SET",
+    "Page": 1,
+    "Id": "dc6b4d5d-b985-4e8e-8577-e44b274f2574",
+    "EntityTypes": [
+      "VALUE"
+    ],
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "18fd81cb-65d0-4aee-9545-8d59f8cfa030",
+          "9e4aefe1-8bac-4689-b175-f53911510398",
+          "2609f39b-9f2e-4980-9da5-0f1ed232ad3b"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "KEY_VALUE_SET",
+    "Page": 1,
+    "Id": "310db064-f602-4b48-8be6-6990563846d1",
+    "EntityTypes": [
+      "KEY"
+    ],
+    "Relationships": [
+      {
+        "Type": "VALUE",
+        "Ids": [
+          "10939aef-4819-4fc4-810b-ca73b7e7f9b6"
+        ]
+      },
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "b84ab8ec-4d0d-4258-9278-aeeae1acfe9a"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "KEY_VALUE_SET",
+    "Page": 1,
+    "Id": "10939aef-4819-4fc4-810b-ca73b7e7f9b6",
+    "EntityTypes": [
+      "VALUE"
+    ],
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "987f9ac5-235c-4e84-bc9a-19845d2d1eee",
+          "5e203487-54d0-4b1e-8e0b-6d40c1b6b404",
+          "efec9ceb-a186-4e8a-bc3e-9fff055816bc"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "KEY_VALUE_SET",
+    "Page": 1,
+    "Id": "15538555-9902-47cc-b448-428e82a8bb52",
+    "EntityTypes": [
+      "KEY"
+    ],
+    "Relationships": [
+      {
+        "Type": "VALUE",
+        "Ids": [
+          "73afe53d-9d84-4736-882b-602f4b317b91"
+        ]
+      },
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "f69ab631-9e19-4aba-8ea3-bd8c45f38d9b"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "KEY_VALUE_SET",
+    "Page": 1,
+    "Id": "73afe53d-9d84-4736-882b-602f4b317b91",
+    "EntityTypes": [
+      "VALUE"
+    ],
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "52ba60f5-3a62-4f46-bfa5-1a1fc0b7eb1c"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "KEY_VALUE_SET",
+    "Page": 1,
+    "Id": "ab14793d-03fe-40dd-9302-e168ff69e887",
+    "EntityTypes": [
+      "KEY"
+    ],
+    "Relationships": [
+      {
+        "Type": "VALUE",
+        "Ids": [
+          "cf05835e-3a3f-41ce-b98a-a904897ed775"
+        ]
+      },
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "908f667c-b63d-4905-b429-e191dedd64c7"
+        ]
+      }
+    ]
+  },
+  {
+    "BlockType": "KEY_VALUE_SET",
+    "Page": 1,
+    "Id": "cf05835e-3a3f-41ce-b98a-a904897ed775",
+    "EntityTypes": [
+      "VALUE"
+    ],
+    "Relationships": [
+      {
+        "Type": "CHILD",
+        "Ids": [
+          "7a5e624f-e40d-4c8a-ad1c-39573b2b5163"
+        ]
+      }
+    ]
+  }
+]

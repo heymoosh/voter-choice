@@ -1,5 +1,5 @@
 {
-  "scored_at": "2026-05-27T19:19:17.366Z",
+  "scored_at": "2026-06-05T16:47:10.768Z",
   "rubric_version": "v1",
   "judgment_calls": [
     "Race-match key: (normalized_office, normalized_district, normalized_position, party_context). District/position are part of the key with nullable wildcard semantics so 'State Representative district 35' does not collide with district 37 while still allowing GT-with-district vs EX-with-null cases to match.",
@@ -26,89 +26,1100 @@
       "contender": "01-textract-sonnet",
       "fixture": "tx-harris-2026-dem-runoff.pdf",
       "weight": 1,
-      "outcome": "skipped",
+      "outcome": "scored",
       "ground_truth_path": "ground-truth/tx-harris-2026-dem-runoff.json",
-      "extraction_path": null,
-      "metrics_path": null,
+      "extraction_path": "results/01-textract-sonnet/tx-harris-2026-dem-runoff.json",
+      "metrics_path": "results/01-textract-sonnet/tx-harris-2026-dem-runoff.metrics.json",
       "criteria": {
-        "1_race_coverage": null,
-        "2_candidate_completeness": null,
-        "3_structural_accuracy": null,
-        "4_non_ballot_filtering": null,
-        "5_schema_compliance": null,
-        "6_cost_usd": null,
-        "7_latency_ms": null,
+        "1_race_coverage": {
+          "score": 1,
+          "raw_pct": 83.33,
+          "matched": 5,
+          "total": 6,
+          "matched_pairs": [
+            {
+              "gt_index": 0,
+              "ex_index": 0
+            },
+            {
+              "gt_index": 1,
+              "ex_index": 2
+            },
+            {
+              "gt_index": 2,
+              "ex_index": 5
+            },
+            {
+              "gt_index": 4,
+              "ex_index": 3
+            },
+            {
+              "gt_index": 5,
+              "ex_index": 4
+            }
+          ]
+        },
+        "2_candidate_completeness": {
+          "score": 0,
+          "raw_pct": 25,
+          "per_race": [
+            {
+              "office": "lieutenant governor",
+              "party_context": "",
+              "matched": 1,
+              "total": 2,
+              "pct": 50
+            },
+            {
+              "office": "attorney general",
+              "party_context": "",
+              "matched": 1,
+              "total": 2,
+              "pct": 50
+            },
+            {
+              "office": "justice 14th court of appeals district",
+              "party_context": "",
+              "matched": 0,
+              "total": 2,
+              "pct": 0
+            },
+            {
+              "office": "criminal district judge 209th judicial district",
+              "party_context": "",
+              "matched": 0,
+              "total": 2,
+              "pct": 0
+            },
+            {
+              "office": "county judge",
+              "party_context": "",
+              "matched": 0,
+              "total": 2,
+              "pct": 0
+            },
+            {
+              "office": "district clerk",
+              "party_context": "",
+              "matched": 1,
+              "total": 2,
+              "pct": 50
+            }
+          ]
+        },
+        "3_structural_accuracy": {
+          "score": 1,
+          "suggested_by": "auto",
+          "confidence": "medium",
+          "reasoning": "section_match=100%, vote_for_n_match=100%, placeholder_count_match=100%, party_context_exact=0% across 5 matched races",
+          "sub_checks": {
+            "section_match_pct": 100,
+            "vote_for_n_match_pct": 100,
+            "placeholder_count_match_pct": 100,
+            "party_context_exact_match_pct": 0
+          }
+        },
+        "4_non_ballot_filtering": {
+          "score": 1,
+          "suggested_by": "auto",
+          "confidence": "high",
+          "extras": 2,
+          "extra_office_keys": [
+            "lieutenant governor (democratic primary)",
+            "judge criminal district court (democratic primary)"
+          ]
+        },
+        "5_schema_compliance": {
+          "score": 2,
+          "valid": true,
+          "warnings": [],
+          "errors": []
+        },
+        "6_cost_usd": 0.2003,
+        "7_latency_ms": 20687,
         "8_bilingual_handling": null
       },
-      "weighted_total": null,
-      "max_possible_for_cell": null,
-      "note": "Contender skipped — no AWS credentials"
+      "weighted_total": 5,
+      "max_possible_for_cell": 10
     },
     {
       "contender": "01-textract-sonnet",
       "fixture": "fl-orange-2026-composite.pdf",
       "weight": 1.5,
-      "outcome": "skipped",
+      "outcome": "scored",
       "ground_truth_path": "ground-truth/fl-orange-2026-composite.json",
-      "extraction_path": null,
-      "metrics_path": null,
+      "extraction_path": "results/01-textract-sonnet/fl-orange-2026-composite.json",
+      "metrics_path": "results/01-textract-sonnet/fl-orange-2026-composite.metrics.json",
       "criteria": {
-        "1_race_coverage": null,
-        "2_candidate_completeness": null,
-        "3_structural_accuracy": null,
-        "4_non_ballot_filtering": null,
-        "5_schema_compliance": null,
-        "6_cost_usd": null,
-        "7_latency_ms": null,
+        "1_race_coverage": {
+          "score": 0,
+          "raw_pct": 0,
+          "matched": 0,
+          "total": 49,
+          "matched_pairs": []
+        },
+        "2_candidate_completeness": {
+          "score": 0,
+          "raw_pct": 0,
+          "per_race": [
+            {
+              "office": "president and vice president",
+              "party_context": "",
+              "matched": 0,
+              "total": 8,
+              "pct": 0
+            },
+            {
+              "office": "united states senator",
+              "party_context": "",
+              "matched": 0,
+              "total": 6,
+              "pct": 0
+            },
+            {
+              "office": "representative in congress",
+              "party_context": "",
+              "matched": 0,
+              "total": 2,
+              "pct": 0
+            },
+            {
+              "office": "representative in congress",
+              "party_context": "",
+              "matched": 0,
+              "total": 3,
+              "pct": 0
+            },
+            {
+              "office": "representative in congress",
+              "party_context": "",
+              "matched": 0,
+              "total": 2,
+              "pct": 0
+            },
+            {
+              "office": "representative in congress",
+              "party_context": "",
+              "matched": 0,
+              "total": 2,
+              "pct": 0
+            },
+            {
+              "office": "state attorney 9th judicial circuit",
+              "party_context": "",
+              "matched": 0,
+              "total": 2,
+              "pct": 0
+            },
+            {
+              "office": "state senator",
+              "party_context": "",
+              "matched": 0,
+              "total": 2,
+              "pct": 0
+            },
+            {
+              "office": "state senator",
+              "party_context": "",
+              "matched": 0,
+              "total": 2,
+              "pct": 0
+            },
+            {
+              "office": "state representative",
+              "party_context": "",
+              "matched": 0,
+              "total": 2,
+              "pct": 0
+            },
+            {
+              "office": "state representative",
+              "party_context": "",
+              "matched": 0,
+              "total": 2,
+              "pct": 0
+            },
+            {
+              "office": "state representative",
+              "party_context": "",
+              "matched": 0,
+              "total": 2,
+              "pct": 0
+            },
+            {
+              "office": "state representative",
+              "party_context": "",
+              "matched": 0,
+              "total": 2,
+              "pct": 0
+            },
+            {
+              "office": "state representative",
+              "party_context": "",
+              "matched": 0,
+              "total": 2,
+              "pct": 0
+            },
+            {
+              "office": "state representative",
+              "party_context": "",
+              "matched": 0,
+              "total": 2,
+              "pct": 0
+            },
+            {
+              "office": "state representative",
+              "party_context": "",
+              "matched": 0,
+              "total": 2,
+              "pct": 0
+            },
+            {
+              "office": "state representative",
+              "party_context": "",
+              "matched": 0,
+              "total": 2,
+              "pct": 0
+            },
+            {
+              "office": "supervisor of elections special election",
+              "party_context": "",
+              "matched": 0,
+              "total": 4,
+              "pct": 0
+            },
+            {
+              "office": "county commissioner",
+              "party_context": "",
+              "matched": 0,
+              "total": 2,
+              "pct": 0
+            },
+            {
+              "office": "county commissioner",
+              "party_context": "",
+              "matched": 0,
+              "total": 2,
+              "pct": 0
+            },
+            {
+              "office": "county commissioner",
+              "party_context": "",
+              "matched": 0,
+              "total": 2,
+              "pct": 0
+            },
+            {
+              "office": "school board member",
+              "party_context": "",
+              "matched": 0,
+              "total": 2,
+              "pct": 0
+            },
+            {
+              "office": "soil and water conservation district supervisor",
+              "party_context": "",
+              "matched": 0,
+              "total": 3,
+              "pct": 0
+            },
+            {
+              "office": "soil and water conservation district supervisor",
+              "party_context": "",
+              "matched": 0,
+              "total": 2,
+              "pct": 0
+            },
+            {
+              "office": "florida supreme court retention justice renatha francis",
+              "party_context": "",
+              "matched": 0,
+              "total": 2,
+              "pct": 0
+            },
+            {
+              "office": "florida supreme court retention justice meredith sasso",
+              "party_context": "",
+              "matched": 0,
+              "total": 2,
+              "pct": 0
+            },
+            {
+              "office": "sixth district court of appeal retention judge paetra brownlee",
+              "party_context": "",
+              "matched": 0,
+              "total": 2,
+              "pct": 0
+            },
+            {
+              "office": "sixth district court of appeal retention judge roger gannam",
+              "party_context": "",
+              "matched": 0,
+              "total": 2,
+              "pct": 0
+            },
+            {
+              "office": "sixth district court of appeal retention judge joshua mize",
+              "party_context": "",
+              "matched": 0,
+              "total": 2,
+              "pct": 0
+            },
+            {
+              "office": "sixth district court of appeal retention judge jared smith",
+              "party_context": "",
+              "matched": 0,
+              "total": 2,
+              "pct": 0
+            },
+            {
+              "office": "sixth district court of appeal retention judge keith white",
+              "party_context": "",
+              "matched": 0,
+              "total": 2,
+              "pct": 0
+            },
+            {
+              "office": "circuit judge 9th judicial circuit",
+              "party_context": "",
+              "matched": 0,
+              "total": 2,
+              "pct": 0
+            },
+            {
+              "office": "no 1 constitutional amendment partisan election of members of district school boards article ix section 4 and article xii",
+              "party_context": "",
+              "matched": 0,
+              "total": 2,
+              "pct": 0
+            },
+            {
+              "office": "no 2 constitutional amendment right to fish and hunt article i section 28",
+              "party_context": "",
+              "matched": 0,
+              "total": 2,
+              "pct": 0
+            },
+            {
+              "office": "no 3 constitutional amendment adult personal use of marijuana article x section 29",
+              "party_context": "",
+              "matched": 0,
+              "total": 2,
+              "pct": 0
+            },
+            {
+              "office": "no 4 constitutional amendment amendment to limit government interference with abortion article 1 new section",
+              "party_context": "",
+              "matched": 0,
+              "total": 2,
+              "pct": 0
+            },
+            {
+              "office": "no 5 constitutional amendment annual adjustments to the value of certain homestead exemptions article vii section 6 and article xii",
+              "party_context": "",
+              "matched": 0,
+              "total": 2,
+              "pct": 0
+            },
+            {
+              "office": "no 6 constitutional amendment repeal of public campaign financing requirement article vi section 7",
+              "party_context": "",
+              "matched": 0,
+              "total": 2,
+              "pct": 0
+            },
+            {
+              "office": "county charter amendment #1 amendment revising orange county charter initiative petition process",
+              "party_context": "",
+              "matched": 0,
+              "total": 2,
+              "pct": 0
+            },
+            {
+              "office": "county charter amendment #2 orange county charter amendment requiring continued existence of affordable housing trust fund",
+              "party_context": "",
+              "matched": 0,
+              "total": 2,
+              "pct": 0
+            },
+            {
+              "office": "county charter amendment #3 write in candidate effect on timing of charter officer elections",
+              "party_context": "",
+              "matched": 0,
+              "total": 2,
+              "pct": 0
+            },
+            {
+              "office": "county charter amendment #4 orange county charter amendment requiring adoption of a fiscal sustainability analysis tool",
+              "party_context": "",
+              "matched": 0,
+              "total": 2,
+              "pct": 0
+            },
+            {
+              "office": "county charter amendment #5 orange county charter amendment establishing charter office of county attorney",
+              "party_context": "",
+              "matched": 0,
+              "total": 2,
+              "pct": 0
+            },
+            {
+              "office": "county charter amendment #6 orange county charter amendment increasing number of county commission districts",
+              "party_context": "",
+              "matched": 0,
+              "total": 2,
+              "pct": 0
+            },
+            {
+              "office": "county charter amendment #7 charter amendment creating transportation mobility advisory commission",
+              "party_context": "",
+              "matched": 0,
+              "total": 2,
+              "pct": 0
+            },
+            {
+              "office": "county charter amendment #8 supermajority county commission vote to dispose of or change use of county protected lands",
+              "party_context": "",
+              "matched": 0,
+              "total": 2,
+              "pct": 0
+            },
+            {
+              "office": "county charter amendment #9 orange county charter amendment establishing rural boundary and rural area area",
+              "party_context": "",
+              "matched": 0,
+              "total": 2,
+              "pct": 0
+            },
+            {
+              "office": "county charter amendment #10 charter amendment establishing a process for voluntary municipal annexations and land use in rural areas",
+              "party_context": "",
+              "matched": 0,
+              "total": 2,
+              "pct": 0
+            },
+            {
+              "office": "school sales surtax referendum one half cent sales surtax for school facilities construction improvement land acquisition and technology implementation",
+              "party_context": "",
+              "matched": 0,
+              "total": 2,
+              "pct": 0
+            }
+          ]
+        },
+        "3_structural_accuracy": {
+          "score": 0,
+          "suggested_by": "auto",
+          "confidence": "high",
+          "reasoning": "no matched races to score against",
+          "sub_checks": {
+            "section_match_pct": 0,
+            "vote_for_n_match_pct": 0,
+            "placeholder_count_match_pct": 0,
+            "party_context_exact_match_pct": 0
+          }
+        },
+        "4_non_ballot_filtering": {
+          "score": 2,
+          "suggested_by": "auto",
+          "confidence": "high",
+          "extras": 0,
+          "extra_office_keys": []
+        },
+        "5_schema_compliance": {
+          "score": 0,
+          "valid": false,
+          "warnings": [],
+          "errors": [
+            "missing election_metadata"
+          ]
+        },
+        "6_cost_usd": 0.195,
+        "7_latency_ms": 9382,
         "8_bilingual_handling": null
       },
-      "weighted_total": null,
-      "max_possible_for_cell": null,
-      "note": "Contender skipped — no AWS credentials"
+      "weighted_total": 3,
+      "max_possible_for_cell": 15
     },
     {
       "contender": "01-textract-sonnet",
       "fixture": "tx-hidalgo-2026-bilingual.pdf",
       "weight": 2,
-      "outcome": "skipped",
+      "outcome": "scored",
       "ground_truth_path": "ground-truth/tx-hidalgo-2026-bilingual.json",
-      "extraction_path": null,
-      "metrics_path": null,
+      "extraction_path": "results/01-textract-sonnet/tx-hidalgo-2026-bilingual.json",
+      "metrics_path": "results/01-textract-sonnet/tx-hidalgo-2026-bilingual.metrics.json",
       "criteria": {
-        "1_race_coverage": null,
-        "2_candidate_completeness": null,
-        "3_structural_accuracy": null,
-        "4_non_ballot_filtering": null,
-        "5_schema_compliance": null,
-        "6_cost_usd": null,
-        "7_latency_ms": null,
-        "8_bilingual_handling": null
+        "1_race_coverage": {
+          "score": 2,
+          "raw_pct": 100,
+          "matched": 34,
+          "total": 34,
+          "matched_pairs": [
+            {
+              "gt_index": 0,
+              "ex_index": 0
+            },
+            {
+              "gt_index": 1,
+              "ex_index": 1
+            },
+            {
+              "gt_index": 2,
+              "ex_index": 2
+            },
+            {
+              "gt_index": 3,
+              "ex_index": 3
+            },
+            {
+              "gt_index": 4,
+              "ex_index": 4
+            },
+            {
+              "gt_index": 5,
+              "ex_index": 5
+            },
+            {
+              "gt_index": 6,
+              "ex_index": 6
+            },
+            {
+              "gt_index": 7,
+              "ex_index": 7
+            },
+            {
+              "gt_index": 8,
+              "ex_index": 13
+            },
+            {
+              "gt_index": 9,
+              "ex_index": 14
+            },
+            {
+              "gt_index": 10,
+              "ex_index": 15
+            },
+            {
+              "gt_index": 11,
+              "ex_index": 8
+            },
+            {
+              "gt_index": 12,
+              "ex_index": 9
+            },
+            {
+              "gt_index": 13,
+              "ex_index": 10
+            },
+            {
+              "gt_index": 14,
+              "ex_index": 11
+            },
+            {
+              "gt_index": 15,
+              "ex_index": 12
+            },
+            {
+              "gt_index": 16,
+              "ex_index": 16
+            },
+            {
+              "gt_index": 17,
+              "ex_index": 17
+            },
+            {
+              "gt_index": 18,
+              "ex_index": 18
+            },
+            {
+              "gt_index": 19,
+              "ex_index": 19
+            },
+            {
+              "gt_index": 20,
+              "ex_index": 22
+            },
+            {
+              "gt_index": 21,
+              "ex_index": 23
+            },
+            {
+              "gt_index": 22,
+              "ex_index": 24
+            },
+            {
+              "gt_index": 23,
+              "ex_index": 25
+            },
+            {
+              "gt_index": 24,
+              "ex_index": 26
+            },
+            {
+              "gt_index": 25,
+              "ex_index": 27
+            },
+            {
+              "gt_index": 26,
+              "ex_index": 28
+            },
+            {
+              "gt_index": 27,
+              "ex_index": 20
+            },
+            {
+              "gt_index": 28,
+              "ex_index": 21
+            },
+            {
+              "gt_index": 29,
+              "ex_index": 29
+            },
+            {
+              "gt_index": 30,
+              "ex_index": 30
+            },
+            {
+              "gt_index": 31,
+              "ex_index": 31
+            },
+            {
+              "gt_index": 32,
+              "ex_index": 32
+            },
+            {
+              "gt_index": 33,
+              "ex_index": 33
+            }
+          ]
+        },
+        "2_candidate_completeness": {
+          "score": 1,
+          "raw_pct": 87.44,
+          "per_race": [
+            {
+              "office": "united states representative",
+              "party_context": "",
+              "matched": 3,
+              "total": 7,
+              "pct": 42.86
+            },
+            {
+              "office": "governor",
+              "party_context": "",
+              "matched": 5,
+              "total": 5,
+              "pct": 100
+            },
+            {
+              "office": "lieutenant governor",
+              "party_context": "",
+              "matched": 3,
+              "total": 3,
+              "pct": 100
+            },
+            {
+              "office": "attorney general",
+              "party_context": "",
+              "matched": 5,
+              "total": 5,
+              "pct": 100
+            },
+            {
+              "office": "comptroller of public accounts",
+              "party_context": "",
+              "matched": 3,
+              "total": 3,
+              "pct": 100
+            },
+            {
+              "office": "commissioner of the general land office",
+              "party_context": "",
+              "matched": 3,
+              "total": 4,
+              "pct": 75
+            },
+            {
+              "office": "commissioner of agriculture",
+              "party_context": "",
+              "matched": 2,
+              "total": 2,
+              "pct": 100
+            },
+            {
+              "office": "railroad commissioner",
+              "party_context": "",
+              "matched": 1,
+              "total": 1,
+              "pct": 100
+            },
+            {
+              "office": "member state board of education",
+              "party_context": "",
+              "matched": 4,
+              "total": 5,
+              "pct": 80
+            },
+            {
+              "office": "state senator",
+              "party_context": "",
+              "matched": 1,
+              "total": 4,
+              "pct": 25
+            },
+            {
+              "office": "state representative",
+              "party_context": "",
+              "matched": 0,
+              "total": 1,
+              "pct": 0
+            },
+            {
+              "office": "justice supreme court",
+              "party_context": "",
+              "matched": 1,
+              "total": 1,
+              "pct": 100
+            },
+            {
+              "office": "justice supreme court",
+              "party_context": "",
+              "matched": 1,
+              "total": 1,
+              "pct": 100
+            },
+            {
+              "office": "justice supreme court",
+              "party_context": "",
+              "matched": 1,
+              "total": 1,
+              "pct": 100
+            },
+            {
+              "office": "judge court of criminal appeals",
+              "party_context": "",
+              "matched": 1,
+              "total": 1,
+              "pct": 100
+            },
+            {
+              "office": "judge court of criminal appeals",
+              "party_context": "",
+              "matched": 1,
+              "total": 1,
+              "pct": 100
+            },
+            {
+              "office": "justice 13th court of appeals district",
+              "party_context": "",
+              "matched": 0,
+              "total": 1,
+              "pct": 0
+            },
+            {
+              "office": "district judge 206th judicial district",
+              "party_context": "",
+              "matched": 1,
+              "total": 1,
+              "pct": 100
+            },
+            {
+              "office": "district judge 275th judicial district",
+              "party_context": "",
+              "matched": 1,
+              "total": 1,
+              "pct": 100
+            },
+            {
+              "office": "district judge 370th judicial district",
+              "party_context": "",
+              "matched": 1,
+              "total": 1,
+              "pct": 100
+            },
+            {
+              "office": "judge county court at law",
+              "party_context": "",
+              "matched": 1,
+              "total": 1,
+              "pct": 100
+            },
+            {
+              "office": "judge county court at law",
+              "party_context": "",
+              "matched": 1,
+              "total": 1,
+              "pct": 100
+            },
+            {
+              "office": "judge county court at law",
+              "party_context": "",
+              "matched": 1,
+              "total": 1,
+              "pct": 100
+            },
+            {
+              "office": "judge county court at law",
+              "party_context": "",
+              "matched": 1,
+              "total": 1,
+              "pct": 100
+            },
+            {
+              "office": "judge county court at law",
+              "party_context": "",
+              "matched": 1,
+              "total": 1,
+              "pct": 100
+            },
+            {
+              "office": "judge county court at law",
+              "party_context": "",
+              "matched": 1,
+              "total": 1,
+              "pct": 100
+            },
+            {
+              "office": "judge county probate court",
+              "party_context": "",
+              "matched": 1,
+              "total": 1,
+              "pct": 100
+            },
+            {
+              "office": "criminal district attorney",
+              "party_context": "",
+              "matched": 1,
+              "total": 2,
+              "pct": 50
+            },
+            {
+              "office": "county judge",
+              "party_context": "",
+              "matched": 3,
+              "total": 3,
+              "pct": 100
+            },
+            {
+              "office": "district clerk",
+              "party_context": "",
+              "matched": 1,
+              "total": 1,
+              "pct": 100
+            },
+            {
+              "office": "county clerk",
+              "party_context": "",
+              "matched": 1,
+              "total": 1,
+              "pct": 100
+            },
+            {
+              "office": "county treasurer",
+              "party_context": "",
+              "matched": 1,
+              "total": 1,
+              "pct": 100
+            },
+            {
+              "office": "justice of the peace",
+              "party_context": "",
+              "matched": 1,
+              "total": 1,
+              "pct": 100
+            },
+            {
+              "office": "county chairman",
+              "party_context": "",
+              "matched": 2,
+              "total": 2,
+              "pct": 100
+            }
+          ]
+        },
+        "3_structural_accuracy": {
+          "score": 1,
+          "suggested_by": "auto",
+          "confidence": "medium",
+          "reasoning": "section_match=65%, vote_for_n_match=100%, placeholder_count_match=100%, party_context_exact=100% across 34 matched races",
+          "sub_checks": {
+            "section_match_pct": 64.71,
+            "vote_for_n_match_pct": 100,
+            "placeholder_count_match_pct": 100,
+            "party_context_exact_match_pct": 100
+          }
+        },
+        "4_non_ballot_filtering": {
+          "score": 2,
+          "suggested_by": "auto",
+          "confidence": "high",
+          "extras": 0,
+          "extra_office_keys": []
+        },
+        "5_schema_compliance": {
+          "score": 2,
+          "valid": true,
+          "warnings": [],
+          "errors": []
+        },
+        "6_cost_usd": 0.530827,
+        "7_latency_ms": 58258,
+        "8_bilingual_handling": {
+          "score": 2,
+          "suggested_by": "auto",
+          "confidence": "high",
+          "reasoning": "no duplication (ex=34, gt=34), no Spanish leakage",
+          "gt_race_count": 34,
+          "ex_race_count": 34,
+          "spanish_chars_detected": false
+        }
       },
-      "weighted_total": null,
-      "max_possible_for_cell": null,
-      "note": "Contender skipped — no AWS credentials"
+      "weighted_total": 20,
+      "max_possible_for_cell": 24
     },
     {
       "contender": "01-textract-sonnet",
       "fixture": "nj-camden-2026-primary.pdf",
       "weight": 2,
-      "outcome": "skipped",
+      "outcome": "scored",
       "ground_truth_path": "ground-truth/nj-camden-2026-primary.json",
-      "extraction_path": null,
-      "metrics_path": null,
+      "extraction_path": "results/01-textract-sonnet/nj-camden-2026-primary.json",
+      "metrics_path": "results/01-textract-sonnet/nj-camden-2026-primary.metrics.json",
       "criteria": {
-        "1_race_coverage": null,
-        "2_candidate_completeness": null,
-        "3_structural_accuracy": null,
-        "4_non_ballot_filtering": null,
-        "5_schema_compliance": null,
-        "6_cost_usd": null,
-        "7_latency_ms": null,
+        "1_race_coverage": {
+          "score": 2,
+          "raw_pct": 100,
+          "matched": 8,
+          "total": 8,
+          "matched_pairs": [
+            {
+              "gt_index": 0,
+              "ex_index": 0
+            },
+            {
+              "gt_index": 1,
+              "ex_index": 1
+            },
+            {
+              "gt_index": 2,
+              "ex_index": 2
+            },
+            {
+              "gt_index": 3,
+              "ex_index": 3
+            },
+            {
+              "gt_index": 4,
+              "ex_index": 4
+            },
+            {
+              "gt_index": 5,
+              "ex_index": 5
+            },
+            {
+              "gt_index": 6,
+              "ex_index": 6
+            },
+            {
+              "gt_index": 7,
+              "ex_index": 7
+            }
+          ]
+        },
+        "2_candidate_completeness": {
+          "score": 2,
+          "raw_pct": 97.5,
+          "per_race": [
+            {
+              "office": "united states senator",
+              "party_context": "democratic primary",
+              "matched": 2,
+              "total": 2,
+              "pct": 100
+            },
+            {
+              "office": "member of the house of representatives",
+              "party_context": "democratic primary",
+              "matched": 2,
+              "total": 2,
+              "pct": 100
+            },
+            {
+              "office": "united states senator",
+              "party_context": "republican primary",
+              "matched": 4,
+              "total": 5,
+              "pct": 80
+            },
+            {
+              "office": "member of the house of representatives",
+              "party_context": "republican primary",
+              "matched": 2,
+              "total": 2,
+              "pct": 100
+            },
+            {
+              "office": "members of the board of county commissioners",
+              "party_context": "democratic primary",
+              "matched": 6,
+              "total": 6,
+              "pct": 100
+            },
+            {
+              "office": "members of the board of county commissioners",
+              "party_context": "republican primary",
+              "matched": 4,
+              "total": 4,
+              "pct": 100
+            },
+            {
+              "office": "female members of county committee",
+              "party_context": "republican primary",
+              "matched": 8,
+              "total": 8,
+              "pct": 100
+            },
+            {
+              "office": "male members of county committee",
+              "party_context": "republican primary",
+              "matched": 8,
+              "total": 8,
+              "pct": 100
+            }
+          ]
+        },
+        "3_structural_accuracy": {
+          "score": 2,
+          "suggested_by": "auto",
+          "confidence": "high",
+          "reasoning": "section_match=100%, vote_for_n_match=100%, placeholder_count_match=100%, party_context_exact=100% across 8 matched races",
+          "sub_checks": {
+            "section_match_pct": 100,
+            "vote_for_n_match_pct": 100,
+            "placeholder_count_match_pct": 100,
+            "party_context_exact_match_pct": 100
+          }
+        },
+        "4_non_ballot_filtering": {
+          "score": 2,
+          "suggested_by": "auto",
+          "confidence": "high",
+          "extras": 0,
+          "extra_office_keys": []
+        },
+        "5_schema_compliance": {
+          "score": 2,
+          "valid": true,
+          "warnings": [],
+          "errors": []
+        },
+        "6_cost_usd": 0.683383,
+        "7_latency_ms": 35342,
         "8_bilingual_handling": null
       },
-      "weighted_total": null,
-      "max_possible_for_cell": null,
-      "note": "Contender skipped — no AWS credentials"
+      "weighted_total": 20,
+      "max_possible_for_cell": 20
     },
     {
       "contender": "02-sonnet-vision",
@@ -2666,14 +3677,13 @@
   ],
   "per_contender_summary": {
     "01-textract-sonnet": {
-      "fixtures_scored": 0,
-      "total_weighted_score": 0,
-      "max_possible_weighted_score": 0,
-      "score_pct": 0,
-      "total_cost_usd": 0,
-      "mean_latency_ms": 0,
-      "p95_latency_ms": 0,
-      "status": "SKIPPED — no AWS credentials"
+      "fixtures_scored": 4,
+      "total_weighted_score": 48,
+      "max_possible_weighted_score": 69,
+      "score_pct": 69.57,
+      "total_cost_usd": 1.60951,
+      "mean_latency_ms": 30917,
+      "p95_latency_ms": 54821
     },
     "02-sonnet-vision": {
       "fixtures_scored": 4,

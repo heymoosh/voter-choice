@@ -731,12 +731,10 @@ function scoreCell(contender: string, fixture: string): Cell {
     max_possible_for_cell: null,
   };
 
-  // Skipped contender (01-textract-sonnet has no runs)
-  if (contender === "01-textract-sonnet") {
-    cell.outcome = "skipped";
-    cell.note = "Contender skipped — no AWS credentials";
-    return cell;
-  }
+  // C1 now has real runs (AWS Textract creds provisioned 2026-06-05) — score it
+  // like any other contender. The generic "extraction file missing" guard below
+  // covers fixtures where the C1 runner produced no output (e.g. FL Orange token
+  // overflow).
 
   if (!cell.extraction_path) {
     cell.outcome = "missing";
@@ -750,7 +748,12 @@ function scoreCell(contender: string, fixture: string): Cell {
   }
 
   const gt = JSON.parse(readFileSync(gtPath, "utf8")) as Ballot;
-  const ex = JSON.parse(readFileSync(exPath, "utf8")) as Ballot;
+  // A failed C1 fixture (e.g. FL Orange token overflow) writes `null` — coerce to
+  // an empty ballot so it scores 0 (honest) instead of crashing the scorer.
+  const exRaw = JSON.parse(readFileSync(exPath, "utf8"));
+  const ex = (
+    exRaw && Array.isArray(exRaw.sections) ? exRaw : { sections: [] }
+  ) as Ballot;
 
   const c1 = scoreCriterion1(gt, ex);
   const c2 = scoreCriterion2(gt, ex, c1);
