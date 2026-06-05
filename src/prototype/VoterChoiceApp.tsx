@@ -2434,7 +2434,7 @@ function AmendRescoreOffer({ revisitCount, onWalkthrough, onDismiss }) {
    Renders a portable prompt the user can paste into any
    chatbot (Claude, ChatGPT, Gemini) to continue without losing
    their place. */
-function BudgetExhaustedModal({ open, address, issues, decisions, racesRemaining, onClose }) {
+function BudgetExhaustedModal({ open, address, issues, decisions, racesRemaining, onClose, onPrint, onSaveProfile }) {
   const [copied, setCopied] = useStateS(false);
   const textareaRef = useRefS(null);
 
@@ -2484,11 +2484,11 @@ function BudgetExhaustedModal({ open, address, issues, decisions, racesRemaining
         </div>
 
         <div className="be-extras">
-          <button className="be-ext-btn">
+          <button className="be-ext-btn" onClick={() => onSaveProfile && onSaveProfile()}>
             <span className="be-ext-ic">↓</span>
             Also download my profile as .txt
           </button>
-          <button className="be-ext-btn">
+          <button className="be-ext-btn" onClick={() => { onClose(); onPrint && onPrint(); }}>
             <span className="be-ext-ic" aria-hidden="true">
               <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="6 9 6 2 18 2 18 9" />
@@ -5497,6 +5497,8 @@ function handleRevealCandidate(candidateId) {
         decisions={decisions}
         racesRemaining={RACES.length - Object.keys(decisions).length}
         onClose={() => setBudgetOpen(false)}
+        onPrint={handlePrint}
+        onSaveProfile={handleExportProfile}
       />
       <ProfileResumeModal
         open={resumeOpen}
