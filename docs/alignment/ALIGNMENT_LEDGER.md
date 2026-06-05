@@ -16,6 +16,31 @@ Running log of eval runs, findings, and decisions for the alignment scoring engi
 
 ## Runs
 
+### 2026-06-04 — `gun_rights_safety` FULL re-tag complete (692 bills, on subscription)
+**What:** finished the gun issue. The remaining 642 bills were tagged by **9 parallel
+subagents on the Claude Code subscription (no API cost)** and written to
+`issue_tags_pole_v1`. `issue_tags` untouched.
+
+**Full-issue result vs. old (692):** **136 sign-flips (20%, inversions fixed) · 285
+→no_score (41%, old forced guesses) · 271 unchanged (39%)**. Confirms the audit's
+~55% gun error at full scale. New distribution **151 rights / 256 regulation / 285
+can't-tell** vs. old **504 / 188 / 0** — the "default to in_favor" bias is gone;
+regulation now correctly outnumbers rights.
+
+**Coverage tradeoff (quantified):** 41% →no_score means gun alignment now rests on
+~407 confident tags, not 692. Driven heavily by the 386 null-summary bills (see
+backlog: *recover OpenStates abstracts*) plus genuine ambiguity. More honest, but
+thinner — **recovering summaries is the lever to win coverage back.**
+
+**Settings:** 9 Agent-tool subagents (Claude; ids not captured — M1), pole-anchored
+gun prompt, 80/batch, `source_run='gun-rem'`. Quality: subagents correctly abstained
+on criminal-penalty, hunting/sport, technical, and safety-*incentive* (F6) bills, and
+scored repeals by net effect.
+
+**Next:** the other contested issues; for the big ones (public_safety ~5.5k, crime
+~3.8k, economy/education/property ~5–6k) run as a **background workflow** on the
+subscription.
+
 ### 2026-06-04 — First re-tag WRITE: `gun_rights_safety` batch 1 (50 bills)
 **What:** first real pole-anchored re-tag written to the DB. Written to a **new,
 separate table `issue_tags_pole_v1`** on the `alignment-work` Neon branch — because
