@@ -111,7 +111,9 @@ function pdfBytesHash(buffer: Buffer): string {
 // quietly malformed (model regression, schema migration, etc.) should
 // bump this counter to evict stale entries rather than patch validation
 // onto reads.
-const EXTRACTION_CACHE_VERSION = "v4";
+// Bumped v4→v5 (2026-06-05): evict stale sampling-stopgap extractions so
+// large-format ballots re-run through the now-wired Textract path.
+const EXTRACTION_CACHE_VERSION = "v5";
 
 function extractionCacheKey(hash: string): string {
   return `voter-choice:extraction:${EXTRACTION_CACHE_VERSION}:${hash}`;
