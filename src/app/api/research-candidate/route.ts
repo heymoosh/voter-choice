@@ -1,17 +1,21 @@
 /**
  * POST /api/research-candidate
  *
- * On-demand web research for ONE candidate, used as a card-level fallback when
- * the deterministic /api/race-data has no DB record (voting record / funding)
- * for them. Wraps `runResearchSubAgent` (Haiku + web_search) and returns a
- * distilled 3-bullet summary + sources line — qualitative context only, never
- * the structured alignment-% or funding bars (those stay DB-only by design).
+ * On-demand structured web research for ONE candidate, used as a card-level
+ * fallback when the deterministic /api/race-data has no DB record (voting
+ * record / funding) for them. Drives `researchAndPersistCandidate` (structured
+ * Haiku + web_search) which returns per-issue AlignmentScore[] and persists
+ * them to `candidate_data` for future lookups.
+ *
+ * The response shape changed from the old prose summary to structured scores:
+ *   { scores: AlignmentScore[] }    — one or more issues found
+ *   { unavailable: true }           — no citable sources found for any issue
+ *   { error: string, code: string } — request error / service not configured
  *
  * ANONYMITY: the caller (workspace) MUST only invoke this for a candidate the
  * voter has revealed (blind mode off, or that card individually revealed). The
- * summary is keyed on the real name and is full of it — rendering it inside a
- * still-blinded "Candidate A" card would blow anonymity. This route trusts the
- * caller's gate; it does not re-derive blind state.
+ * scores are keyed on the real name and contain it — rendering inside a
+ * still-blinded card would blow anonymity. This route trusts the caller's gate.
  *
  * Rate-limited by IP (fail-open, same as /api/race-data). Budget usage is
  * recorded inside the sub-agent (recordUsageAsync), so spend stays visible.
@@ -19,9 +23,10 @@
 import { NextRequest } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { checkRaceDataRateLimit } from "../../../lib/server/race-data-rate-limit";
-import { runResearchSubAgent } from "../../../lib/server/research-sub-agent";
+import { researchAndPersistCandidate } from "../../../lib/server/candidate-data";
 
 const MAX_FIELD = 300;
+const MAX_ISSUES = 10;
 
 function getClientIP(request: NextRequest): string {
   return (
@@ -53,14 +58,31 @@ export async function POST(request: NextRequest) {
   const b = (body ?? {}) as Record<string, unknown>;
   const candidateName = str(b.candidateName);
   const jurisdiction = str(b.jurisdiction);
-  const topic = str(b.topic);
+  const cycle = str(b.cycle) || "2026";
+
   if (
     !candidateName ||
     candidateName.length > MAX_FIELD ||
     jurisdiction.length > MAX_FIELD ||
-    topic.length > MAX_FIELD
+    cycle.length > MAX_FIELD
   ) {
     return Response.json({ error: "Invalid fields" }, { status: 400 });
+  }
+
+  // issues: [{ canonicalIssue, issueLabel? }]
+  const rawIssues = Array.isArray(b.issues) ? b.issues : [];
+  const issues = rawIssues
+    .slice(0, MAX_ISSUES)
+    .filter(
+      (i): i is { canonicalIssue: string; issueLabel?: string } =>
+        i !== null &&
+        typeof i === "object" &&
+        typeof (i as Record<string, unknown>).canonicalIssue === "string" &&
+        (i as Record<string, unknown>).canonicalIssue !== "",
+    );
+
+  if (issues.length === 0) {
+    return Response.json({ error: "At least one issue is required" }, { status: 400 });
   }
 
   const apiKey = process.env.ANTHROPIC_VOTER_API;
@@ -73,18 +95,17 @@ export async function POST(request: NextRequest) {
 
   try {
     const client = new Anthropic({ apiKey });
-    const result = await runResearchSubAgent(
-      {
-        candidateName,
-        jurisdiction: jurisdiction || "this race",
-        topic: topic || "policy positions, record, and major campaign funding",
-      },
+    const scores = await researchAndPersistCandidate(
+      candidateName,
+      jurisdiction || "unknown",
+      cycle,
+      issues,
       client,
     );
-    if (result.unavailable) {
+    if (scores.length === 0) {
       return Response.json({ unavailable: true });
     }
-    return Response.json({ summary: result.summary });
+    return Response.json({ scores });
   } catch {
     return Response.json(
       { error: "Research failed", code: "RESEARCH_ERROR" },

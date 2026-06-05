@@ -158,6 +158,38 @@ export const donorAggregates = pgTable(
 );
 
 // ---------------------------------------------------------------------------
+// candidate_data  — web-research-derived positions for no-record candidates
+// ---------------------------------------------------------------------------
+export const candidateData = pgTable(
+  "candidate_data",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    // Normalized "name|jurisdiction|cycle" key (lowercase, trimmed)
+    candidateKey: text("candidate_key").notNull(),
+    // Joins to canonical issue ids in src/lib/canonicalIssues.ts
+    canonicalIssue: text("canonical_issue").notNull(),
+    // Candidate's researched position: "in_favor" | "opposed" | "mixed" | "unclear"
+    resolvedStance: text("resolved_stance").notNull(),
+    // Research confidence: "high" | "medium" | "low"
+    confidence: text("confidence").notNull(),
+    // Array of { summary: string, url: string } — only items with real https?:// URLs
+    evidence: jsonb("evidence").notNull(),
+    // e.g. "claude-haiku-4-5-20251001"
+    modelVersion: text("model_version").notNull(),
+    researchedAt: timestamp("researched_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("candidate_data_key_issue_uidx").on(
+      table.candidateKey,
+      table.canonicalIssue,
+    ),
+    index("candidate_data_key_idx").on(table.candidateKey),
+  ],
+);
+
+// ---------------------------------------------------------------------------
 // scorecard_meta  — metadata only; no per-vote scorecard records
 // ---------------------------------------------------------------------------
 export const scorecardMeta = pgTable("scorecard_meta", {

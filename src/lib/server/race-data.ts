@@ -31,6 +31,7 @@ import {
   type AlignmentLookupResult,
 } from "./alignment";
 import { lookupDonorCoalition, FUNDING_MIX_LABELS } from "./donors";
+import { lookupCandidateData, buildCandidateKey } from "./candidate-data";
 import { getIssueLabel } from "../canonicalIssues";
 import type {
   RacePatternsBlock,
@@ -392,6 +393,8 @@ export async function assembleRaceData(
 
     // Alignment scores (only when we have issues).
     if (hasIssues) {
+      // Step 1: attempt voting-record lookup for candidates we can resolve.
+      let votingEntry: AlignmentScoresEntry | null = null;
       if (candidateId) {
         const perIssue = [];
         for (const issue of input.issues) {
@@ -404,17 +407,42 @@ export async function assembleRaceData(
           );
           perIssue.push({ issue, result });
         }
-        alignmentEntries.push(alignmentEntryFromResults(id, perIssue));
+        votingEntry = alignmentEntryFromResults(id, perIssue);
+      }
+
+      // Step 2: if no voting record (unresolved candidate OR resolved but
+      // no scores), fall back to stored web_search positions.
+      if (votingEntry && votingEntry.scores !== null) {
+        // Happy path — voting record found.
+        alignmentEntries.push(votingEntry);
       } else {
-        alignmentEntries.push({
-          candidateId: id,
-          scores: null,
-          unavailable: {
-            reason: jurisdiction
-              ? "Couldn't match this candidate in our voting-record data"
-              : "No voting record for this office in our data",
-          },
-        });
+        // Build the candidateKey for the web_search lookup.
+        // For non-legislative offices (jurisdiction===null), use the race
+        // section + stateCode so the key stays meaningful.
+        const webKey = buildCandidateKey(
+          cand.name,
+          effectiveJurisdiction ?? `${input.section}-${input.stateCode}`.toLowerCase(),
+          input.electionCycle ?? "2026",
+        );
+        const webScores = await lookupCandidateData(
+          webKey,
+          input.issues.map((i) => i.canonicalIssue),
+        );
+
+        if (webScores.length > 0) {
+          // Stored web_search positions available.
+          alignmentEntries.push({ candidateId: id, scores: webScores });
+        } else {
+          // Nothing stored yet — signal that research is pending. The client
+          // uses this reason string to trigger a POST /api/research-candidate.
+          alignmentEntries.push({
+            candidateId: id,
+            scores: null,
+            unavailable: {
+              reason: "research_pending",
+            },
+          });
+        }
       }
     }
   }
