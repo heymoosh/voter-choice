@@ -28,6 +28,7 @@ import {
   getChatSessionId,
   fetchCandidateResearch,
   deriveDistrictCode,
+  PROP_SECTIONS,
 } from "./realData";
 import { getFallbackStateData } from "../lib/getStateData";
 import {
@@ -4384,8 +4385,13 @@ function WorkspaceView({ address, issues, decisions, activeRaceId, onDecide, onU
     onSelectRace(races[nextIdx].id);
   }
 
-  // Determine race type: empty candidates => proposition
-  const isProposition = !activeRace.candidates || activeRace.candidates.length === 0;
+  // Determine race type: a race is a proposition ONLY when its section is a
+  // proposition-type section. An empty candidate list on a Federal/State/County
+  // race means the extraction couldn't read the candidates — show an honest
+  // "couldn't read" branch instead of mislabelling it a proposition (Fix A).
+  const isProposition = PROP_SECTIONS.has(activeRace.section);
+  // True when: not a proposition AND the candidate list is empty (extraction gap).
+  const isEmptyNonPropRace = !isProposition && (!activeRace.candidates || activeRace.candidates.length === 0);
 
   // Local state for the chat input field
   const [chatInput, setChatInput] = useStateV('');
@@ -4660,6 +4666,18 @@ function WorkspaceView({ address, issues, decisions, activeRaceId, onDecide, onU
                     onVote={(v) => voteProp(v)}
                     onUnvote={() => onUnpick(activeRace.id)}
                   />
+                </div>
+              </div>
+            )}
+
+            {isEmptyNonPropRace && (
+              <div className="msg ai">
+                <div className="who">Voter Choice · AI</div>
+                <div className="bubble">
+                  <p>We couldn't read the candidates for <b>{activeRace.label}</b> — the ballot text for this race may be unclear or missing. Please check your{' '}
+                    <a href="https://vote.gov/" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'underline' }}>official sample ballot</a>{' '}
+                    to see who's running.
+                  </p>
                 </div>
               </div>
             )}

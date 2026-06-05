@@ -347,7 +347,8 @@ export function racesSpanMultipleParties(races: Race[]): boolean {
 // judicial retentions). A zero-candidate race survives the party filter only
 // if it belongs to one of these — otherwise it's an empty candidate-office
 // (e.g. an all-"no petition filed" committee race) and is dropped (F3).
-const PROP_SECTIONS = new Set<string>([
+// Exported so VoterChoiceApp.tsx can reuse it for isProposition detection (Fix A).
+export const PROP_SECTIONS = new Set<string>([
   "Propositions",
   "Constitutional Amendments",
   "County Questions",
