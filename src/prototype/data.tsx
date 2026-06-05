@@ -901,6 +901,17 @@ export function setBallotLogistics(logistics) {
   BALLOT_LOGISTICS = logistics;
 }
 
+// ─── Pillar 1: low-confidence extraction flag ───────────────────────────────
+// Set when /api/extract-ballot returns _meta.low_confidence=true (large-format
+// ballot). Triggers a non-blocking caution banner in the workspace.
+let LOW_CONFIDENCE_EXTRACTION = false;
+export function getLowConfidenceExtraction() {
+  return LOW_CONFIDENCE_EXTRACTION;
+}
+export function setLowConfidenceExtraction(val) {
+  LOW_CONFIDENCE_EXTRACTION = !!val;
+}
+
 export function setRealStateCode(code) {
   REAL_STATE_CODE = code;
 }

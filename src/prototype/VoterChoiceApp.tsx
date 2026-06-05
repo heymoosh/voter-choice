@@ -14,6 +14,7 @@ import {
   applyRealRaces, setRealStateCode, getRealStateCode, getRealElectionType,
   getCandidateResearch, setCandidateResearch,
   getBallotLogistics, setBallotLogistics,
+  getLowConfidenceExtraction, setLowConfidenceExtraction,
 } from "./data";
 import {
   loadAllRaceData,
@@ -3315,6 +3316,8 @@ function NoContestedView({ stateData, county = 'your county', onBallotConfirmed,
       applyRealRaces(result.races);
       if (result.stateCode) setRealStateCode(result.stateCode);
     }
+    // Pillar 1: propagate low-confidence flag (large-format ballot warning).
+    setLowConfidenceExtraction(!!result.lowConfidence);
     setProcessing(false);
     onBallotConfirmed(source);
   }
@@ -4353,6 +4356,39 @@ function WorkspaceView({ address, issues, decisions, activeRaceId, onDecide, onU
               {!isProposition && <button onClick={onCompare}>Compare</button>}
             </div>
           </header>
+
+          {/* Pillar 1: non-blocking low-confidence caution. Shown only when the
+              uploaded PDF was large-format (dense/tabloid layout) where
+              candidate text may be less reliable. Never blocks the ballot. */}
+          {getLowConfidenceExtraction() && (
+            <div
+              className="low-confidence-caution"
+              role="status"
+              data-testid="low-confidence-caution"
+              style={{
+                background: 'oklch(0.97 0.04 85)',
+                borderLeft: '3px solid oklch(0.75 0.12 85)',
+                padding: '10px 14px',
+                margin: '0 0 4px',
+                fontSize: '13px',
+                lineHeight: '1.55',
+                color: 'var(--ink-2, #555)',
+              }}
+            >
+              <b>Low confidence — verify names:</b> this ballot's layout is
+              large-format or dense, which can affect text recognition. Please
+              double-check candidate names against your{' '}
+              <a
+                href="https://vote.gov/"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ color: 'inherit', textDecoration: 'underline' }}
+              >
+                official sample ballot
+              </a>
+              {' '}before deciding.
+            </div>
+          )}
 
           <div className="body">
             {!isProposition && richCandidates.map((cand, idx) => {

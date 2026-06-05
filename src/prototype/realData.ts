@@ -111,6 +111,10 @@ import { extractionToRaces } from "../lib/extractionToRaces";
 export interface BallotResult {
   races: Race[];
   stateCode: string;
+  /** True when /api/extract-ballot set low_confidence on the extraction meta.
+   *  Signals a large-format ballot where candidate text may be unreliable —
+   *  the UI shows a non-blocking "verify against your official ballot" caution. */
+  lowConfidence?: boolean;
 }
 
 /** text → contests. Group every candidate of an office under ONE contest.
@@ -280,7 +284,9 @@ export async function fetchBallotFromText(text: string): Promise<BallotResult> {
   return { races: deriveRaces({ contests }), stateCode: stateCodeFrom(text) };
 }
 
-/** Uploaded PDF/file → /api/extract-ballot → races (needs Anthropic key). */
+/** Uploaded PDF/file → /api/extract-ballot → races (needs Anthropic key).
+ *  Returns `lowConfidence: true` when the extraction meta signals a large-format
+ *  ballot — the UI should show a "verify against your official ballot" caution. */
 export async function fetchBallotFromFile(file: File): Promise<BallotResult> {
   try {
     const fd = new FormData();
@@ -302,9 +308,13 @@ export async function fetchBallotFromFile(file: File): Promise<BallotResult> {
         extraction?.election_type ||
         detectElectionType(jurisdiction),
     );
+    // Pillar 1: low_confidence lives on `_meta` (PublicExtractMeta) not top-level.
+    const publicMeta = extraction?._meta ?? {};
+    const lowConfidence = publicMeta.low_confidence === true;
     return {
       races: extractionToRaces(extraction, null),
       stateCode: stateCodeFrom(jurisdiction),
+      ...(lowConfidence ? { lowConfidence: true } : {}),
     };
   } catch {
     return { races: [], stateCode: "" };
