@@ -13,7 +13,7 @@ Running log of eval runs, findings, and decisions for the alignment scoring engi
 | **M1** (meta) | The eval runner must **auto-capture model id + settings** — the 2026-06-04 run did not. | open |
 | **F5** | Internal `in_favor`/`opposed` labels do NOT need renaming — the UI never shows them (it renders "voted with your side N of M" + the bill/vote). Presentation is redesign-owned. | closed (Muxin) |
 | **F6** | Incentive-vs-mandate "safety" bills (e.g. a tax credit for a gun safe) are genuinely ambiguous in direction. Keep them **low-confidence + show the vote**; don't force a pole. | accepted (Muxin) |
-| **F7** | `border_security` is ~93% mis-tagged — after correction only ~11 of 155 are genuine physical-border bills; the rest are interior-immigration / foreign-land-ownership. **Decide: merge into `immigration`, or keep as a thin federal-only issue.** | open (Muxin) |
+| **F7** | `border_security` is ~93% mis-tagged — after correction only ~11 of 155 are genuine physical-border bills. **Resolved (Muxin): MERGE into `immigration`.** At cutover, drop `border_security` as a canonical issue; genuine border content scores under `immigration` (border-enforcement = `opposed`/restrictive). The big-issue workflow therefore does NOT re-tag border separately. | resolved (Muxin) |
 | **M2** (meta) | The at-scale tagging runner needs **retry-on-transient-error** — 1 of 12 subagents hit a socket error and had to be re-run by hand. The background workflow must auto-retry failed batches. | open |
 
 ## Runs
