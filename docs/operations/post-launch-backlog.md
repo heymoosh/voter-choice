@@ -28,6 +28,23 @@ cause of the NJ primary gate still appearing on/after 2026-06-03.**
 runoff) with correct dates/types; add a test asserting that on a post-primary date the resolved
 election is the general and the gate is skipped.
 
+### [P1] Printable ballot shows generic placeholders, not real ADDRESS-based voting logistics
+**Status:** Open (flagged 2026-06-05, from Muxin's preview test)
+
+The print/header logistics block is honestly driven by the real STATE (the voter-ID rule is
+correct — e.g. NJ "No ID required for most in-person voters…"), but the ADDRESS-specific fields
+are still placeholders: **DISTRICT** renders `—`, and **polling place / hours / early voting**
+show the generic "Look up your polling place, hours & early voting at vote.gov." This is the
+deliberate honest interim from the F12 fix (don't fabricate logistics we haven't resolved).
+
+**Action:** populate from the voter's address — congressional/legislative **district**, **polling
+place**, **hours**, and **early-voting locations**. The Google Civic `voterinfo` response the app
+already calls returns `pollingLocations` + `earlyVoteSites` + division/district info (`POST /api/civic`
+→ `{contests, pollingLocations, …}`); surface those into the print + workspace logistics block, and
+keep the vote.gov line only as the fallback when civic returns nothing. Supersedes the older
+"state-specific SOS links + real county" note in REBUILD_STATUS. Honesty bar: never show an address
+or polling place we didn't actually resolve.
+
 ### [P1] Party-primary FILTERING of the ballot ("2 Senate races")
 **Status:** Open (flagged 2026-06-03) · rebuild task #25
 
