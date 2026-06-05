@@ -271,6 +271,13 @@ describe("NJ accuracy oracle", () => {
     // These are in generic reference content, not voter-derived data surfaces
     // (workspace/print). They are NOT workspace strings and are excluded from the
     // oracle's scope. This decision is noted here so it is not silently bypassed.
+    //
+    // 2026-06-05 Playwright E2E status:
+    //   - Workspace DOM (full outerHTML): ZERO forbidden strings ✓
+    //   - data-testid="district-label" = "NJ-01" ✓
+    //   - Rail/sidebar: zero candidate names ✓
+    //   - Print view: VERIFIED (see nj-print-view.png screenshot) ✓
+    // The it.todo remains until a repeatable automated test covers this path.
     it.todo(
       "[WS3 C3 / Phase B] rendered workspace + print contain ZERO forbidden TX/Harris strings for an NJ voter (E2E / Playwright only)",
     );
