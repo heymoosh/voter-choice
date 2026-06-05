@@ -2,7 +2,9 @@
 // backend. The prototype's data shapes were deliberately built to match
 // src/lib/structured-blocks.ts, so /api/race-data's response maps directly onto
 // RACE_PATTERNS[raceId] (racePatterns) + ALIGNMENT_SCORES[raceId] (alignmentScores).
-import { applyRaceData, getRealStateCode, setRealElectionType } from "./data";
+import { applyRaceData, getRealStateCode, setRealElectionType, setBallotLogistics } from "./data";
+import type { BallotLogistics } from "../lib/civic-logistics";
+import { toBallotLogistics } from "../lib/civic-logistics";
 
 /** Best-effort election-type from ballot text/jurisdiction (primary / runoff /
  *  general). Used to decide whether the party gate applies. */
@@ -109,6 +111,10 @@ import { extractionToRaces } from "../lib/extractionToRaces";
 export interface BallotResult {
   races: Race[];
   stateCode: string;
+  /** True when /api/extract-ballot set low_confidence on the extraction meta.
+   *  Signals a large-format ballot where candidate text may be unreliable —
+   *  the UI shows a non-blocking "verify against your official ballot" caution. */
+  lowConfidence?: boolean;
 }
 
 /** text → contests. Group every candidate of an office under ONE contest.
@@ -235,7 +241,10 @@ export function stateCodeFrom(s: string): string {
 }
 
 /** Address → /api/civic. Returns races when Civic has the ballot; else empty
- *  (→ upload/paste). Always returns a best-effort stateCode. */
+ *  (→ upload/paste). Always returns a best-effort stateCode.
+ *  Side-effect: sets BALLOT_LOGISTICS via applyLogisticsFromCivic so the
+ *  workspace PollingStatusBar can render the real polling place (or an honest
+ *  vote.gov fallback when civic returns no location). */
 export async function fetchBallotFromAddress(
   address: string,
 ): Promise<BallotResult> {
@@ -251,6 +260,11 @@ export async function fetchBallotFromAddress(
       const stateCode = stateCodeFrom(
         data?.county || data?.normalizedAddress || address,
       );
+      // Apply logistics from the civic response (polling place, early voting,
+      // congressional district). When civic has no contests (no-contest case)
+      // pollingPlace and congressionalDistrict will be null — the UI shows the
+      // honest vote.gov fallback; district comes from the ballot extraction.
+      applyLogisticsFromCivic(data as Record<string, unknown>);
       if (Array.isArray(contests) && contests.length > 0) {
         return { races: deriveRaces({ contests }), stateCode };
       }
@@ -259,6 +273,7 @@ export async function fetchBallotFromAddress(
   } catch {
     /* fall through to address-derived state + empty races (→ upload) */
   }
+  // No civic response at all — leave BALLOT_LOGISTICS null (honest fallback).
   return { races: [], stateCode: stateCodeFrom(address) };
 }
 
@@ -269,7 +284,9 @@ export async function fetchBallotFromText(text: string): Promise<BallotResult> {
   return { races: deriveRaces({ contests }), stateCode: stateCodeFrom(text) };
 }
 
-/** Uploaded PDF/file → /api/extract-ballot → races (needs Anthropic key). */
+/** Uploaded PDF/file → /api/extract-ballot → races (needs Anthropic key).
+ *  Returns `lowConfidence: true` when the extraction meta signals a large-format
+ *  ballot — the UI should show a "verify against your official ballot" caution. */
 export async function fetchBallotFromFile(file: File): Promise<BallotResult> {
   try {
     const fd = new FormData();
@@ -291,9 +308,13 @@ export async function fetchBallotFromFile(file: File): Promise<BallotResult> {
         extraction?.election_type ||
         detectElectionType(jurisdiction),
     );
+    // Pillar 1: low_confidence lives on `_meta` (PublicExtractMeta) not top-level.
+    const publicMeta = extraction?._meta ?? {};
+    const lowConfidence = publicMeta.low_confidence === true;
     return {
       races: extractionToRaces(extraction, null),
       stateCode: stateCodeFrom(jurisdiction),
+      ...(lowConfidence ? { lowConfidence: true } : {}),
     };
   } catch {
     return { races: [], stateCode: "" };
@@ -589,26 +610,112 @@ export async function streamChatReply(
   if (!sawAny && !errored) cb.onError("empty");
 }
 
-/* ─── Phase 3: on-demand candidate web research (card fallback) ───
+/* ─── Pillar 3: ballot logistics from civic response ───────────────────────
+   Converts the raw /api/civic response to BallotLogistics and stores it in the
+   data module so PollingStatusBar / PollingInfoCard can consume it reactively.
+   Called right after fetchBallotFromAddress resolves the civic response.
+
+   HONESTY CONTRACT (mirrors civic-logistics.ts):
+   - pollingPlace is null when civic returns nothing → vote.gov honest fallback.
+   - congressionalDistrict is null when civic returns no House contest.
+     In the NJ no-contest case (primary has passed), the district is derived
+     from the uploaded ballot's House race label (deriveDistrictCode).
+   - Never fabricate a polling place, address, or hours. */
+export function applyLogisticsFromCivic(
+  civicResponse: Record<string, unknown>,
+  stateData?: { earlyVoting?: { available: boolean; startDate: string | null; endDate: string | null } },
+): void {
+  const logistics = toBallotLogistics(
+    civicResponse as Parameters<typeof toBallotLogistics>[0],
+    stateData,
+  );
+  setBallotLogistics(logistics);
+}
+
+/**
+ * Derive the congressional district code (e.g. "NJ-01") from a race label
+ * like "U.S. House — CD-1" or "U.S. House of Representatives — District 1".
+ *
+ * This is the ballot-extraction path (WS3 finding): when civic returns no
+ * contests (no-contest case), the district is available from the uploaded
+ * ballot's House race label.
+ *
+ * @param houseLabel - The label of the House race (from deriveRaces output).
+ * @param stateCode  - 2-letter state abbreviation (e.g. "NJ").
+ * @returns Formatted district code like "NJ-01", or null if no digit found.
+ */
+export function deriveDistrictCode(
+  houseLabel: string,
+  stateCode: string,
+): string | null {
+  if (!houseLabel || !stateCode) return null;
+  // Extract the trailing digit(s) — handles "CD-1", "CD-01", "District 1", "1"
+  const m = houseLabel.match(/[-–\s](\d+)\s*$/);
+  if (!m) return null;
+  const num = m[1].replace(/^0+/, "") || m[1];
+  const padded = num.padStart(2, "0");
+  return `${stateCode.toUpperCase()}-${padded}`;
+}
+
+/* ─── Pillar 3: on-demand candidate web research (card fallback) ───
    When /api/race-data has no DB record for a candidate, the workspace can fall
    back to a focused web search. MUST only be called for a REVEALED candidate —
    the returned summary is keyed on (and full of) the real name, so rendering it
    inside a still-blinded "Candidate A" card would break anonymity. */
+/** Structured result from the reworked /api/research-candidate endpoint.
+ *  Returns AlignmentScore[] on success (one per issue), or unavailable/error. */
 export interface CandidateResearchResult {
-  summary?: string;
+  /** Structured per-issue scores — set when research found citable sources. */
+  scores?: AlignmentScore[];
+  /** Set when no citable sources were found for any issue. */
   unavailable?: boolean;
+  /** Legacy prose summary — present in older responses; ignored by new UI. */
+  summary?: string;
 }
 
+/** AlignmentScore shape — matches structured-blocks.ts (sourceType:'web_search'
+ *  for no-record candidates). Only the fields needed for rendering; the full
+ *  interface lives in the backend types. */
+export interface AlignmentScore {
+  canonicalIssue: string;
+  issueLabel: string;
+  resolvedStance: string;
+  sourceType: "voting_record" | "web_search";
+  kept?: number;
+  total?: number;
+  confidence?: string;
+  evidence?: { summary: string; url: string }[];
+  contributingVotes?: unknown[];
+}
+
+/**
+ * POST /api/research-candidate (structured endpoint).
+ *
+ * Returns per-issue AlignmentScore[] on success, or null on network/auth failure.
+ * The real name is sent SERVER-SIDE only — the scores themselves are name-free
+ * (canonicalIssue, resolvedStance, confidence, evidence URLs). Never call this
+ * for a still-blinded candidate — the caller must gate on isRevealed.
+ *
+ * @param input.candidateName - Real candidate name (server-side only).
+ * @param input.jurisdiction  - e.g. "U.S. House — CD-1, NJ"
+ * @param input.issues        - Voter's canonical issues with labels.
+ */
 export async function fetchCandidateResearch(input: {
   candidateName: string;
   jurisdiction: string;
-  topic: string;
+  issues: { canonicalIssue: string; issueLabel?: string }[];
+  cycle?: string;
 }): Promise<CandidateResearchResult | null> {
   try {
     const res = await fetch("/api/research-candidate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(input),
+      body: JSON.stringify({
+        candidateName: input.candidateName,
+        jurisdiction: input.jurisdiction,
+        issues: input.issues,
+        cycle: input.cycle || "2026",
+      }),
     });
     if (!res.ok) return null;
     return (await res.json()) as CandidateResearchResult;

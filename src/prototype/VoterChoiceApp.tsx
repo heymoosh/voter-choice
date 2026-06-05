@@ -13,6 +13,8 @@ import {
   computeDeadlineRow, getDeadlineRows,
   applyRealRaces, setRealStateCode, getRealStateCode, getRealElectionType,
   getCandidateResearch, setCandidateResearch,
+  getBallotLogistics, setBallotLogistics,
+  getLowConfidenceExtraction, setLowConfidenceExtraction,
 } from "./data";
 import {
   loadAllRaceData,
@@ -25,6 +27,7 @@ import {
   buildRaceChatSystemPrompt,
   getChatSessionId,
   fetchCandidateResearch,
+  deriveDistrictCode,
 } from "./realData";
 import { getFallbackStateData } from "../lib/getStateData";
 import {
@@ -256,7 +259,7 @@ const TRANSLATIONS = {
       sampleBallot: 'Sample ballot',
       precinct: 'Precinct',
       earlyVotingWindow: 'Early voting window',
-      cardSource: 'Source · Harris County Elections',
+      cardSource: 'Source · Google Civic',
     },
   },
   es: {
@@ -350,7 +353,7 @@ const TRANSLATIONS = {
       sampleBallot: 'Boleta de muestra',
       precinct: 'Precinto',
       earlyVotingWindow: 'Ventana de votación anticipada',
-      cardSource: 'Fuente · Elecciones del Condado de Harris',
+      cardSource: 'Fuente · Google Civic',
     },
   },
 };
@@ -913,28 +916,91 @@ function CandidateCardHeader({ candidate, party, blindMode, isRevealed, alias, o
    props:
      candidate, alignmentEntry, userIssues, expandedIssue, onToggleIssue */
 function AlignmentScoreBanner({ candidate, alignmentEntry, userIssues, expandedIssue, onToggleIssue, anonCtx, research }) {
-  // No legislative record case. When the candidate is revealed and a web-research
-  // fallback has resolved, surface it (clearly labeled, NOT a verified record);
-  // otherwise the honest "judge on public statements" backstop.
+  // ── Pillar 2: research_pending + web_search scores rendering ─────────────
+  // Three cases for no-record candidates:
+  //   (a) research.status === 'loading' → skeleton spinner
+  //   (b) research.status === 'done' && research.scores → render web_search rows
+  //       in the SAME alignment surface as voting_record rows (via AlignmentIssueRow)
+  //   (c) research unavailable / no scores → honest "judge on public statements"
+  //
+  // The unavailable.reason === 'research_pending' signals the App to fire the
+  // POST request (handled in the research useEffect); here we just render the
+  // appropriate skeleton/result state.
   if (alignmentEntry?.scores === null && alignmentEntry?.unavailable) {
+    const reason = alignmentEntry.unavailable.reason;
+    const isPending = reason === 'research_pending';
+
+    // Case (a): loading skeleton
+    if (research && research.status === 'loading') {
+      return (
+        <div className="cv2-issues" data-testid="research-pending-skeleton">
+          <div className="cv2-block-head">
+            <div className="lab">Aligns with your issues</div>
+          </div>
+          <div className="cv2-norecord" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{
+              display: 'inline-block', width: '14px', height: '14px',
+              border: '2px solid var(--rule, #ddd)',
+              borderTopColor: 'var(--civic, #3a6ea8)',
+              borderRadius: '50%',
+              animation: 'spin 0.8s linear infinite',
+            }} aria-hidden="true" />
+            <span style={{ fontStyle: 'italic', opacity: 0.7, fontSize: '13px' }}>
+              Researching public statements…
+            </span>
+          </div>
+        </div>
+      );
+    }
+
+    // Case (b): research done with structured web_search scores
+    if (research && research.status === 'done' && research.scores && research.scores.length > 0) {
+      // Build a synthetic alignment entry using the returned structured scores.
+      // These are AlignmentScore[] with sourceType:'web_search' — we render
+      // them through the same AlignmentIssueRow as voting_record scores, but
+      // AlignmentIssueRow handles the visual distinction internally.
+      const rowsData = (userIssues || []).map(iss => {
+        const score = research.scores.find(s => s.canonicalIssue === iss.canonicalIssue)
+          || null;
+        return { issue: iss, score };
+      });
+      return (
+        <div className="cv2-issues" data-testid="web-search-alignment-banner">
+          <div className="cv2-block-head">
+            <div className="lab">Aligns with your issues</div>
+            <div style={{ fontSize: '10px', color: 'var(--ink-3, #888)', fontStyle: 'italic' }}>
+              Based on public statements
+            </div>
+          </div>
+          {rowsData.map(({ issue, score }) => (
+            <AlignmentIssueRow
+              key={issue.canonicalIssue}
+              issue={issue}
+              score={score}
+              candidate={candidate}
+              isOpen={expandedIssue === issue.canonicalIssue}
+              onToggle={() => onToggleIssue(issue.canonicalIssue)}
+              anonCtx={anonCtx}
+            />
+          ))}
+        </div>
+      );
+    }
+
+    // Case (c): no record + not loading → honest fallback
     return (
       <div className="cv2-issues">
         <div className="cv2-block-head">
           <div className="lab">Aligns with your issues</div>
         </div>
         <div className="cv2-norecord">
-          <p>{alignmentEntry.unavailable.reason}.</p>
-          {research && research.status === 'loading' ? (
-            <p style={{ fontStyle: 'italic', opacity: 0.7 }}>Researching the web…</p>
-          ) : research && research.status === 'done' && research.summary ? (
-            <div style={{ marginTop: '8px' }}>
-              <div style={{ fontSize: '10.5px', textTransform: 'uppercase', letterSpacing: '0.12em', opacity: 0.6, marginBottom: '4px' }}>
-                Web research · not a verified record
-              </div>
-              <div style={{ whiteSpace: 'pre-line', fontSize: '13.5px', lineHeight: 1.5 }}>{research.summary}</div>
-            </div>
+          {isPending ? (
+            <p>Looking up public statements on your issues…</p>
           ) : (
-            <p>Judge instead on the <a>policy statements they’ve made publicly</a> and the donor base below.</p>
+            <>
+              <p>{reason}.</p>
+              <p>Judge instead on the public statements they've made and the donor base below.</p>
+            </>
           )}
         </div>
       </div>
@@ -977,6 +1043,113 @@ function AlignmentScoreBanner({ candidate, alignmentEntry, userIssues, expandedI
 
 /* ── single row of the banner (private to AlignmentScoreBanner) ── */
 function AlignmentIssueRow({ issue, score, candidate, isOpen, onToggle, anonCtx }) {
+  // ── Pillar 2: web_search branch ──────────────────────────────────────────
+  // web_search scores have no kept/total voting record. Instead we show a
+  // directional indicator keyed to resolvedStance + confidence chip + evidence.
+  // Visually distinct from voting_record bars (no %, no vote count).
+  //
+  // resolvedStance from the structured sub-agent is a 4-value enum:
+  //   "in_favor"  → candidate supports the voter's issue   → ALIGNED (green)
+  //   "opposed"   → candidate opposes the voter's issue    → OPPOSED (red)
+  //   "mixed"     → mixed record                           → MIXED (neutral)
+  //   "unclear"   → insufficient evidence                  → no direction badge
+  if (score && score.sourceType === 'web_search') {
+    const stance = (score.resolvedStance || '').toLowerCase();
+    // Structured enum first; fall back to prose heuristic for legacy data.
+    var directionLabel = null;
+    var directionColor = 'oklch(0.55 0.05 260)'; // neutral blue
+    if (stance === 'in_favor') {
+      directionLabel = 'ALIGNED';
+      directionColor = 'oklch(0.40 0.12 145)'; // green
+    } else if (stance === 'opposed') {
+      directionLabel = 'OPPOSED';
+      directionColor = 'oklch(0.50 0.15 25)'; // red
+    } else if (stance === 'mixed') {
+      directionLabel = 'MIXED';
+      // neutral — no strong directional signal
+    } else if (stance === 'unclear') {
+      directionLabel = null; // no direction badge — insufficient evidence
+    } else {
+      // Legacy prose fallback: scan for negative verbs
+      var proseAligns = !/\b(oppos|against|repeal|block|ban|cut)\b/i.test(score.resolvedStance || '');
+      directionLabel = proseAligns ? 'ALIGNED' : 'OPPOSED';
+      directionColor = proseAligns ? 'oklch(0.40 0.12 145)' : 'oklch(0.50 0.15 25)';
+    }
+    const confidenceChip = score.confidence
+      ? score.confidence.charAt(0).toUpperCase() + score.confidence.slice(1)
+      : null;
+    const evidenceLinks = (score.evidence || []).filter(e => e && e.url);
+    const hasEvidence = evidenceLinks.length > 0;
+
+    return (
+      <div className="cv2-iss-row web-search-row" data-testid="web-search-alignment-row">
+        <div className="cv2-iss-head" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          {/* Source label — visually distinct from voting_record rows */}
+          <div style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.12em',
+              color: 'var(--ink-3, #888)', fontWeight: 600 }}>
+            Based on public statements — not a voting record
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div className="topic" style={{ flex: 1 }}>
+              <div className="name">{issue.interpretation}</div>
+              <div className="meta" style={{ marginTop: '3px', opacity: 0.75, fontSize: '12px' }}>
+                {stance === 'in_favor' ? 'Supports this position'
+                  : stance === 'opposed' ? 'Opposes this position'
+                  : stance === 'mixed' ? 'Mixed record on this issue'
+                  : stance === 'unclear' ? 'Position unclear — limited public record'
+                  : score.resolvedStance}
+              </div>
+            </div>
+            {/* Directional indicator instead of a voting-record % bar.
+                directionLabel===null means unclear — no badge rendered. */}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px', flexShrink: 0 }}>
+              {directionLabel && (
+                <span style={{
+                  padding: '2px 7px', borderRadius: '9999px', fontSize: '10px',
+                  fontWeight: 700, letterSpacing: '0.06em', color: '#fff',
+                  background: directionColor,
+                }}>
+                  {directionLabel}
+                </span>
+              )}
+              {confidenceChip && (
+                <span style={{
+                  fontSize: '10px', color: 'var(--ink-3, #888)',
+                  border: '1px solid var(--rule, #ddd)', borderRadius: '4px',
+                  padding: '1px 5px',
+                }}>
+                  {confidenceChip} confidence
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Evidence URLs — clickable, opens in new tab */}
+          {hasEvidence && (
+            <div style={{ marginTop: '2px', display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+              {evidenceLinks.map((ev, i) => (
+                <a
+                  key={i}
+                  href={ev.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    fontSize: '11px', color: 'var(--civic, #3a6ea8)',
+                    textDecoration: 'underline', lineHeight: 1.4,
+                  }}
+                  data-testid="web-search-evidence-link"
+                >
+                  {ev.summary || `Source ${i + 1}`} →
+                </a>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // ── voting_record branch (original) ──────────────────────────────────────
   const pct = score && score.total > 0 ? Math.round((score.kept / score.total) * 100) : null;
   const tone = pct === null ? '' : pct >= 65 ? '' : pct >= 50 ? 'mid' : 'low';
   const hasVotes = !!(score?.contributingVotes?.length);
@@ -2051,6 +2224,12 @@ function PollingStatusBar({ pollingInfo, stateData, rows }) {
               <span className="pb-precinct">Precinct {pollingInfo.precinct}</span>
             </>
           )}
+          {pollingInfo.district && (
+            <>
+              <span className="pb-sep" aria-hidden="true">·</span>
+              <span className="pb-district" data-testid="district-label">{pollingInfo.district}</span>
+            </>
+          )}
         </div>
         <div className="pb-right">
           <span className={"pb-count " + (electionRow ? electionRow.color : '')}>
@@ -2627,7 +2806,13 @@ function buildPortablePrompt({ address, issues, decisions, racesRemaining }) {
     return `  • [${r.section}] ${r.label} — ${cands}`;
   }).join('\n');
 
-  return `I'm researching my Nov 3, 2026 ballot for Harris County, TX.
+  // Use the real address / state code — never the TX demo constants.
+  const sc = getRealStateCode();
+  const locationLine = address
+    ? `my ballot${sc ? ' in ' + sc : ''} (address: ${address})`
+    : sc ? `my ballot in ${sc}` : 'my ballot';
+
+  return `I'm researching ${locationLine}.
 
 I started in Voter Choice (a non-partisan tool that scores candidates on actual voting + donor records). Their AI budget is exhausted — I want to continue this conversation with you.
 
@@ -2995,7 +3180,7 @@ function AllVotesPanel({ open, candidate, alignmentEntry, blindMode, alias, onCl
         <footer className="av-method">
           <div className="av-method-head">How we know</div>
           <p>
-            <b>“With you” / “against you”</b> is computed by comparing each roll-call vote to your stated stance on the issue this bill touches.
+            <b>"With you" / "against you"</b> is computed by comparing each roll-call vote to your stated stance on the issue this bill touches.
           </p>
           <ul className="av-method-sources">
             <li>
@@ -3015,7 +3200,7 @@ function AllVotesPanel({ open, candidate, alignmentEntry, blindMode, alias, onCl
             </li>
           </ul>
           <p className="av-method-disclaim">
-            We don’t generate vote claims from AI — if a vote isn’t in our database, we don’t show it. Every claim on every card links to a primary source.
+            We don't generate vote claims from AI — if a vote isn't in our database, we don't show it. Every claim on every card links to a primary source.
           </p>
         </footer>
       </div>
@@ -3247,7 +3432,7 @@ function GeocodeFailView({ address, onEditAddress, onContinueWithZip }) {
             <button className="gf-secondary" onClick={onContinueWithZip}>{t('errors.geocodeFailSkip')} →</button>
           </div>
           <p className="gf-tip">
-            <b>Tip:</b> if you just typed a ZIP, add a street like <code>5750 Hartwick Rd, Houston TX 77057</code>. If you typed a full address, double-check the state abbreviation and ZIP.
+            <b>Tip:</b> if you just typed a ZIP, add a street like <code>123 Main St, Springfield, IL 62701</code>. If you typed a full address, double-check the state abbreviation and ZIP.
           </p>
         </div>
       </div>
@@ -3261,7 +3446,7 @@ function GeocodeFailView({ address, onEditAddress, onContinueWithZip }) {
    Shown when Civic returns zero contests. Lets the user paste / upload
    their sample ballot text. Mock-only here — file parsing is the repo's
    job via /api/extract-ballot. */
-function NoContestedView({ stateData, county = 'Harris County', onBallotConfirmed, onBack }) {
+function NoContestedView({ stateData, county = 'your county', onBallotConfirmed, onBack }) {
   const { t } = useI18n();
   const [text, setText] = useStateSC('');
   const [uploadedFile, setUploadedFile] = useStateSC(null);
@@ -3307,6 +3492,8 @@ function NoContestedView({ stateData, county = 'Harris County', onBallotConfirme
       applyRealRaces(result.races);
       if (result.stateCode) setRealStateCode(result.stateCode);
     }
+    // Pillar 1: propagate low-confidence flag (large-format ballot warning).
+    setLowConfidenceExtraction(!!result.lowConfidence);
     setProcessing(false);
     onBallotConfirmed(source);
   }
@@ -4205,12 +4392,55 @@ function WorkspaceView({ address, issues, decisions, activeRaceId, onDecide, onU
 
   const showResumeBar = !decision && activeRace;
 
+  // Pillar 3: build polling info from live BallotLogistics. When civic
+  // returned nothing (no-contest NJ path) logistics.pollingPlace is null →
+  // show the honest "Find your polling place at vote.gov" fallback.
+  // The congressional district is derived from the ballot extraction's House
+  // race label when civic didn't carry a House contest (the NJ case).
+  const logistics = getBallotLogistics();
+  const sd = getFallbackStateData(getRealStateCode() || '');
+  // District: prefer logistics (civic), fall back to ballot extraction.
+  const houseRaceWs = races.find(r => /house/i.test(r.label || ''));
+  const districtCodeWs = (logistics && logistics.congressionalDistrict)
+    || (houseRaceWs ? deriveDistrictCode(houseRaceWs.label, getRealStateCode() || '') : null)
+    || '';
+  // Early window: prefer logistics, fall back to stateData.
+  const earlyWindowWs = (() => {
+    if (logistics && logistics.earlyVoting) {
+      return `${logistics.earlyVoting.start} – ${logistics.earlyVoting.end}`;
+    }
+    if (sd.earlyVoting && sd.earlyVoting.available && sd.earlyVoting.startDate) {
+      return `${sd.earlyVoting.startDate} – ${sd.earlyVoting.endDate || ''}`;
+    }
+    return '';
+  })();
+  const pollingInfoWs = logistics && logistics.pollingPlace ? {
+    name: logistics.pollingPlace.name,
+    address: logistics.pollingPlace.address,
+    hours: logistics.pollingPlace.hours || '',
+    notes: logistics.pollingPlace.notes || '',
+    precinct: '',
+    district: districtCodeWs || '',
+    bring: '',
+    earlyWindow: earlyWindowWs,
+  } : {
+    // Honest fallback — no civic data; direct voter to vote.gov
+    name: 'Find your polling place at vote.gov',
+    address: '',
+    hours: '',
+    notes: '',
+    precinct: '',
+    district: districtCodeWs || '',
+    bring: '',
+    earlyWindow: earlyWindowWs,
+  };
+
   return (
     <div className="ws-shell">
       <AppNav />
       <PollingStatusBar
-        pollingInfo={{ name: 'Find your polling place', precinct: '', hours: '', address: '', bring: '', earlyWindow: '' }}
-        stateData={getFallbackStateData(getRealStateCode() || '')}
+        pollingInfo={pollingInfoWs}
+        stateData={sd}
         rows={[]}
       />
       <div className="ws-wrap" data-mobile-chat={mobileChatOpen ? 'open' : 'closed'}>
@@ -4260,7 +4490,7 @@ function WorkspaceView({ address, issues, decisions, activeRaceId, onDecide, onU
           <div className="foot">
             <a onClick={() => { if (confirm('Restart session? This clears your draft ballot and issues.')) window.__voterChoiceReset && window.__voterChoiceReset(); }} role="link" tabIndex={0}>Restart session</a>
             <a onClick={() => { const nav = window.__navigate; nav && nav('methodology'); }} role="link" tabIndex={0}>Methodology</a>
-            <a onClick={onViewPartyGate} style={{ cursor: 'pointer' }} role="link" tabIndex={0}>See party-gate (TX primary)</a>
+            <a onClick={onViewPartyGate} style={{ cursor: 'pointer' }} role="link" tabIndex={0}>See party-gate (demo)</a>
           </div>
         </aside>
 
@@ -4304,6 +4534,39 @@ function WorkspaceView({ address, issues, decisions, activeRaceId, onDecide, onU
               {!isProposition && <button onClick={onCompare}>Compare</button>}
             </div>
           </header>
+
+          {/* Pillar 1: non-blocking low-confidence caution. Shown only when the
+              uploaded PDF was large-format (dense/tabloid layout) where
+              candidate text may be less reliable. Never blocks the ballot. */}
+          {getLowConfidenceExtraction() && (
+            <div
+              className="low-confidence-caution"
+              role="status"
+              data-testid="low-confidence-caution"
+              style={{
+                background: 'oklch(0.97 0.04 85)',
+                borderLeft: '3px solid oklch(0.75 0.12 85)',
+                padding: '10px 14px',
+                margin: '0 0 4px',
+                fontSize: '13px',
+                lineHeight: '1.55',
+                color: 'var(--ink-2, #555)',
+              }}
+            >
+              <b>Low confidence — verify names:</b> this ballot's layout is
+              large-format or dense, which can affect text recognition. Please
+              double-check candidate names against your{' '}
+              <a
+                href="https://vote.gov/"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ color: 'inherit', textDecoration: 'underline' }}
+              >
+                official sample ballot
+              </a>
+              {' '}before deciding.
+            </div>
+          )}
 
           <div className="body">
             {!isProposition && richCandidates.map((cand, idx) => {
@@ -4680,13 +4943,17 @@ function PrintView({ address, issues, decisions, onBack }) {
   const undecided = races.filter(r => !decisions[r.id]);
 
   // F12: drive the printed logistics from the REAL state (not the TX demo
-  // constants). We have no polling-place / precinct / ID / early-voting data
-  // source yet, so show honest "look it up" guidance rather than fabricated
-  // wrong-state specifics. getFallbackStateData returns honest per-state copy
-  // (real stateName, empty acceptedIds, vote.gov links).
+  // constants). getFallbackStateData returns honest per-state copy (real
+  // stateName, empty acceptedIds, vote.gov links).
   const sd = getFallbackStateData(getRealStateCode() || '');
   const houseRace = races.find(r => /house/i.test(r.label || ''));
-  const districtLabel = houseRace ? houseRace.label.replace(/^U\.S\.\s*/i, '') : '';
+  // Pillar 3: derive the formatted "NJ-01" style district code from the
+  // ballot extraction's House race label. Prefer logistics.congressionalDistrict
+  // when available (civic carried it); fall back to ballot label extraction.
+  const logisticsPrint = getBallotLogistics();
+  const districtLabel = (logisticsPrint && logisticsPrint.congressionalDistrict)
+    || (houseRace ? deriveDistrictCode(houseRace.label, getRealStateCode() || '') : null)
+    || '';
   const lookupHost = ((sd?.resources?.pollingPlaceLookup || sd?.resources?.stateElectionWebsite || 'https://vote.gov/')
     .replace(/^https?:\/\//, '').replace(/\/$/, ''));
   const acceptedIds = sd?.votingRules?.acceptedIds || [];
@@ -4919,12 +5186,18 @@ function App() {
   const [blindMode, setBlindMode] = useStateA(saved?.blindMode !== false);
   const [revealedCandidates, setRevealedCandidates] = useStateA(new Set(saved?.revealedCandidates || []));
 
-  // Phase 3: on-demand candidate web research. For the ACTIVE race, fetch a
-  // focused web summary for each candidate the voter has REVEALED (or all, when
-  // blind mode is off) who has NO DB record. NEVER fetch for a still-blinded
-  // candidate — the summary is full of the real name and would break anonymity
-  // (the same invariant the blind cards enforce). The attempt is cached
-  // (loading/done/unavailable) so no-record candidates don't re-fire.
+  // Pillar 2: on-demand candidate web research (structured endpoint).
+  // For the ACTIVE race, POST /api/research-candidate for each REVEALED
+  // candidate who has NO DB record (scores === null). Returns per-issue
+  // AlignmentScore[] (sourceType:'web_search') — rendered in the same
+  // alignment surface as voting_record rows, but with distinct styling.
+  //
+  // ANONYMITY INVARIANT: NEVER fire for a still-blinded candidate.
+  // The request sends the real name server-side only; the returned scores
+  // contain no names — they carry canonicalIssue, resolvedStance, confidence,
+  // and evidence URLs (which must also be name-free in our mock/test data).
+  // The research cache is keyed by `${raceId}::${candidateName}` — this key
+  // is never rendered; only the retrieved scores appear in the UI.
   useEffectA(() => {
     if (view !== 'workspace') return;
     const rp = getRacePatternsForRace(activeRaceId);
@@ -4938,17 +5211,30 @@ function App() {
       if (getCandidateResearch(key)) return; // attempt already recorded — never re-fire
       setCandidateResearch(key, { status: 'loading' });
       setDataVersion(v => v + 1);
-      const labels = (issues || [])
-        .map(x => x.interpretation || x.name || x.canonicalIssue)
-        .filter(Boolean)
-        .join(', ');
       const sc = getRealStateCode();
+      // Pass structured issues (canonicalIssue + issueLabel) — the structured
+      // endpoint returns per-issue AlignmentScore[] keyed on canonicalIssue.
+      const structuredIssues = (issues || [])
+        .filter(x => x && x.canonicalIssue)
+        .map(x => ({
+          canonicalIssue: x.canonicalIssue,
+          issueLabel: x.interpretation || x.name || x.canonicalIssue,
+        }));
+      if (structuredIssues.length === 0) {
+        setCandidateResearch(key, { status: 'unavailable' });
+        return;
+      }
       fetchCandidateResearch({
         candidateName: cand.name,
         jurisdiction: (rp?.race || activeRaceId) + (sc ? ', ' + sc : ''),
-        topic: 'positions and record relevant to: ' + (labels || "the voter's priorities") + '; plus major campaign funding and notable endorsements',
+        issues: structuredIssues,
+        cycle: '2026',
       }).then(res => {
-        setCandidateResearch(key, res && res.summary ? { status: 'done', summary: res.summary } : { status: 'unavailable' });
+        if (res && res.scores && res.scores.length > 0) {
+          setCandidateResearch(key, { status: 'done', scores: res.scores });
+        } else {
+          setCandidateResearch(key, { status: 'unavailable' });
+        }
         setDataVersion(v => v + 1);
       });
     });
@@ -5389,7 +5675,7 @@ function handleRevealCandidate(candidateId) {
                   ? getFallbackStateData(getRealStateCode())
                   : STATE_ELECTION_DATA
               }
-              county={getRealStateCode() ? 'your county' : 'Harris County'}
+              county={'your county'}
               onBack={() => setView('home')}
               onBallotConfirmed={() => {
                 // Phase 2b: races + state already applied by NoContestedView's
