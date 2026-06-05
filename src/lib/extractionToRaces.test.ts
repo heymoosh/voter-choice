@@ -447,6 +447,59 @@ describe("extractionToRaces", () => {
       const races = extractionToRaces(ballot, null);
       expect(races[0].candidates).toEqual([{ name: "Alice", party: "D" }]);
     });
+
+    it("counts write_in placeholders as writeInSlots and excludes them from candidates (Fix B)", () => {
+      const ballot: BallotExtraction = {
+        election_metadata: META,
+        sections: [
+          {
+            section_name: "County",
+            races: [
+              {
+                // vote-for-2 with one real candidate + one write-in slot
+                office: "County Commissioner",
+                vote_for_n: 2,
+                party_context: null,
+                candidates: [
+                  { name: "Stone", party: "Republican", placeholder_reason: null },
+                  { name: null, party: null, placeholder_reason: "write_in" },
+                ],
+              },
+            ],
+          },
+        ],
+        _meta: njCamdenDemRepFixture()._meta,
+      };
+      const races = extractionToRaces(ballot, null);
+      expect(races[0].candidates).toEqual([{ name: "Stone", party: "Republican" }]);
+      expect(races[0].writeInSlots).toBe(1);
+    });
+
+    it("emits no writeInSlots when there are no write_in placeholders", () => {
+      const ballot: BallotExtraction = {
+        election_metadata: META,
+        sections: [
+          {
+            section_name: "Federal",
+            races: [
+              {
+                office: "U.S. Senate",
+                vote_for_n: 1,
+                party_context: null,
+                candidates: [
+                  { name: "Alice", party: "D", placeholder_reason: null },
+                ],
+              },
+            ],
+          },
+        ],
+        _meta: njCamdenDemRepFixture()._meta,
+      };
+      const races = extractionToRaces(ballot, null);
+      expect(races[0].candidates).toEqual([{ name: "Alice", party: "D" }]);
+      // No write_in placeholder → writeInSlots should be absent or 0
+      expect(races[0].writeInSlots ?? 0).toBe(0);
+    });
   });
 
   describe("label normalization", () => {
