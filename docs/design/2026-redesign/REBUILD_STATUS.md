@@ -17,8 +17,38 @@ Everything below is the durable plan. This block is the stuff that's NOT in the
 commits — machine state + gotchas a fresh session needs.
 
 **Where to work:** worktree `…/.claude/worktrees/design-integration`, branch
-`feat/prototype-rebuild`. ~18 commits, `tsc` clean. **NOT deployed**;
-`launch/production` untouched.
+`feat/prototype-rebuild`. `tsc` clean. **NOT deployed to launch/production**; a
+Vercel PREVIEW exists for testing (below). Branch is **local-only — never pushed to
+origin** (a same-machine new session inherits all commits from this worktree directly).
+
+### ▶▶ Session 2026-06-05 — shipped + read-this-first
+**Shipped (committed, gated green, NOT on launch/production):**
+- **F1 large-format misread — fixed via sample-and-reconcile** (`extract-sampler.ts`;
+  commits `ed36368`/`2611f48`), verified end-to-end through the real route. Cache
+  version bumped to **v3** (evicted poisoned entries). Residual + the rejected tiling
+  path documented in `F1_EXTRACTION_HANDOFF.md`.
+- **Handoff-modal Print + Save-profile buttons wired** (`a8b864c`) — were dead.
+- **Usage-block observability** (`d52dbd9`): `usage-telemetry.ts` `recordBlock` logs a
+  `usage.blocked` line + per-reason daily Redis counter (`voter-choice:blocks:<day>:<reason>`)
+  at EVERY block point in chat + extract; client now shows distinct messages per code.
+- **Backlog heavily updated** from Muxin's preview test — see `docs/operations/post-launch-backlog.md`
+  (address-based logistics, hardcoded-TX/Harris sweep, budget-misfire, tip-jar, broadened
+  election-data, extraction accuracy).
+- **Preview URL (behind Vercel SSO — log in as muxinli):**
+  `https://voter-choice-97lt6tilk-mooshs-projects-0635287d.vercel.app`
+
+**⚠️ DO THIS FIRST (likely a regression I introduced):** the **"Community AI budget used
+up" modal MISFIRES** — shown to a voter who never chatted. Live budget is only **$0.87
+(1.7% of $50)** and the new tracker logged **zero** server blocks → it's a CLIENT-SIDE
+misfire, most likely from this session's observability deploy (the `budget_exhausted`
+derivation in `realData.ts streamChatReply` / `resolveChatBlock` → `setBudgetExhausted`).
+Full write-up in the backlog `[P1] "Community AI budget used up" modal misfires`.
+
+**Deploy mechanics (so the gate doesn't block you):** preview = `vercel deploy --yes --force`
+from this worktree. Vercel REJECTS deploys whose HEAD commit author email isn't a linked
+account — author deploy-bound commits as `Muxin Li <muxin.li.pro@gmail.com>` (the build-agent
+default email is rejected). Pushing `feat/prototype-rebuild` does NOT deploy; only
+`launch/production` does.
 
 **Machine state (NOT in git — current as of 2026-06-04):**
 - `.env.local` (symlinked → repo-root `.env.local`) now has REAL values for ALL
