@@ -2,9 +2,10 @@
 // backend. The prototype's data shapes were deliberately built to match
 // src/lib/structured-blocks.ts, so /api/race-data's response maps directly onto
 // RACE_PATTERNS[raceId] (racePatterns) + ALIGNMENT_SCORES[raceId] (alignmentScores).
-import { applyRaceData, getRealStateCode, setRealElectionType, setBallotLogistics } from "./data";
+import { applyRaceData, getRealStateCode, setRealElectionType, setBallotLogistics, setRealStateResources } from "./data";
 import type { BallotLogistics } from "../lib/civic-logistics";
 import { toBallotLogistics } from "../lib/civic-logistics";
+import { getStateData } from "../lib/getStateData";
 
 /** Best-effort election-type from ballot text/jurisdiction (primary / runoff /
  *  general). Used to decide whether the party gate applies. */
@@ -347,7 +348,8 @@ export function racesSpanMultipleParties(races: Race[]): boolean {
 // judicial retentions). A zero-candidate race survives the party filter only
 // if it belongs to one of these — otherwise it's an empty candidate-office
 // (e.g. an all-"no petition filed" committee race) and is dropped (F3).
-const PROP_SECTIONS = new Set<string>([
+// Exported so VoterChoiceApp.tsx can reuse it for isProposition detection (Fix A).
+export const PROP_SECTIONS = new Set<string>([
   "Propositions",
   "Constitutional Amendments",
   "County Questions",
@@ -630,6 +632,25 @@ export function applyLogisticsFromCivic(
     stateData,
   );
   setBallotLogistics(logistics);
+}
+
+/**
+ * Fix C: load the real state resources (sampleBallotLookup + countyElectionLookup)
+ * from the state JSON file and store them in REAL_STATE_RESOURCES so
+ * NoContestedView can use them instead of the hardcoded vote.gov fallback.
+ * Must be awaited BEFORE setView('nocontested') so the resources are ready
+ * when the view first mounts. Falls back gracefully if getStateData fails.
+ */
+export async function applyRealStateResources(stateCode: string): Promise<void> {
+  if (!stateCode) return;
+  try {
+    const data = await getStateData(stateCode);
+    if (data?.resources) {
+      setRealStateResources(data.resources);
+    }
+  } catch {
+    // Leave REAL_STATE_RESOURCES null — NoContestedView will use vote.gov fallback.
+  }
 }
 
 /**

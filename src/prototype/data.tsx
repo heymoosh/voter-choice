@@ -980,6 +980,18 @@ export function setBallotLogistics(logistics) {
   BALLOT_LOGISTICS = logistics;
 }
 
+// ─── Fix C: real state resources (sampleBallotLookup + countyElectionLookup)
+// Null until populated by setRealStateResources() via getStateData() async
+// (called from realData.ts when the state code becomes known, before
+// NoContestedView mounts). When null, NoContestedView falls back to vote.gov.
+let REAL_STATE_RESOURCES = null;
+export function getRealStateResources() {
+  return REAL_STATE_RESOURCES;
+}
+export function setRealStateResources(resources) {
+  REAL_STATE_RESOURCES = resources || null;
+}
+
 // ─── Pillar 1: low-confidence extraction flag ───────────────────────────────
 // Set when /api/extract-ballot returns _meta.low_confidence=true (large-format
 // ballot). Triggers a non-blocking caution banner in the workspace.

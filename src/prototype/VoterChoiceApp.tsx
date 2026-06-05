@@ -15,6 +15,7 @@ import {
   getCandidateResearch, setCandidateResearch,
   getBallotLogistics, setBallotLogistics,
   getLowConfidenceExtraction, setLowConfidenceExtraction,
+  getRealStateResources,
 } from "./data";
 import {
   loadAllRaceData,
@@ -28,6 +29,8 @@ import {
   getChatSessionId,
   fetchCandidateResearch,
   deriveDistrictCode,
+  PROP_SECTIONS,
+  applyRealStateResources,
 } from "./realData";
 import { getFallbackStateData } from "../lib/getStateData";
 import {
@@ -4310,6 +4313,10 @@ function WorkspaceView({ address, issues, decisions, activeRaceId, onDecide, onU
     return false;
   });
 
+  // Fix B: write-in text inputs keyed by "raceId::slotName" so each slot
+  // has its own controlled value without hooks inside map callbacks.
+  const [writeInTexts, setWriteInTexts] = useStateV({});
+
   useEffectV(() => { setMobileChatOpen(false); }, [activeRace.id]);
 
   function selectAndOpenChat(raceId) {
@@ -4384,8 +4391,13 @@ function WorkspaceView({ address, issues, decisions, activeRaceId, onDecide, onU
     onSelectRace(races[nextIdx].id);
   }
 
-  // Determine race type: empty candidates => proposition
-  const isProposition = !activeRace.candidates || activeRace.candidates.length === 0;
+  // Determine race type: a race is a proposition ONLY when its section is a
+  // proposition-type section. An empty candidate list on a Federal/State/County
+  // race means the extraction couldn't read the candidates — show an honest
+  // "couldn't read" branch instead of mislabelling it a proposition (Fix A).
+  const isProposition = PROP_SECTIONS.has(activeRace.section);
+  // True when: not a proposition AND the candidate list is empty (extraction gap).
+  const isEmptyNonPropRace = !isProposition && (!activeRace.candidates || activeRace.candidates.length === 0);
 
   // Local state for the chat input field
   const [chatInput, setChatInput] = useStateV('');
@@ -4649,6 +4661,81 @@ function WorkspaceView({ address, issues, decisions, activeRaceId, onDecide, onU
               );
             })}
 
+            {/* Fix B: write-in affordance for vote-for-N races with open seats.
+                Show one selectable "Write-in" entry per remaining open seat
+                when the extraction included write_in slots. Each slot has a
+                distinct key ("Write-in 1", "Write-in 2") so commitPick's
+                toggle logic doesn't conflate them. writeInTexts state is
+                declared at WorkspaceView level (no hooks inside map). */}
+            {!isProposition && !isEmptyNonPropRace && (activeRace.writeInSlots > 0) && (() => {
+              const seats = activeRace.voteForN || 1;
+              const writeInSlots = activeRace.writeInSlots;
+              // Build distinct write-in slot names so toggle dedup works correctly.
+              const writeInNames = Array.from({ length: writeInSlots }, (_, i) =>
+                writeInSlots === 1 ? 'Write-in' : `Write-in ${i + 1}`
+              );
+              return writeInNames.map((wiName) => {
+                const isPicked = decision?.picks
+                  ? decision.picks.some(p => p.candidateName === wiName)
+                  : decision?.candidateName === wiName;
+                const wiKey = `${activeRace.id}::${wiName}`;
+                const wiText = writeInTexts[wiKey] || '';
+                return (
+                  <div className="msg ai" key={wiName}>
+                    <div className="who">Voter Choice · AI</div>
+                    <div className="bubble">
+                      <p>
+                        <b>✎ Write-in</b> — this race has {seats > 1 ? `${seats} seats` : 'a seat'} open for a write-in candidate.
+                        {seats > 1 && ` You can fill up to ${seats} picks total.`}
+                      </p>
+                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap', marginTop: '6px' }}>
+                        <input
+                          type="text"
+                          placeholder="Candidate name…"
+                          value={wiText}
+                          onChange={e => setWriteInTexts(prev => ({ ...prev, [wiKey]: e.target.value }))}
+                          style={{
+                            flex: '1 1 160px',
+                            padding: '6px 10px',
+                            borderRadius: '6px',
+                            border: '1px solid var(--border, #ddd)',
+                            fontSize: '14px',
+                          }}
+                          aria-label={`Write-in name for ${activeRace.label}`}
+                        />
+                        <button
+                          style={{
+                            padding: '6px 14px',
+                            borderRadius: '6px',
+                            border: '1px solid var(--border, #ddd)',
+                            background: isPicked ? 'var(--accent, #2563eb)' : 'transparent',
+                            color: isPicked ? '#fff' : 'inherit',
+                            cursor: 'pointer',
+                            fontSize: '13px',
+                            fontWeight: 600,
+                          }}
+                          onClick={() => {
+                            const name = wiText.trim() || wiName;
+                            commitPick({ id: wiName, name }, `${name} — write-in pick.`);
+                          }}
+                        >
+                          {isPicked ? 'Selected ✓' : 'Select write-in'}
+                        </button>
+                        {isPicked && (
+                          <button
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '12px', color: 'var(--ink-2)' }}
+                            onClick={() => onUnpick(activeRace.id, wiName)}
+                          >
+                            Remove
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              });
+            })()}
+
             {isProposition && (
               <div className="msg ai">
                 <div className="who">Voter Choice · AI</div>
@@ -4660,6 +4747,18 @@ function WorkspaceView({ address, issues, decisions, activeRaceId, onDecide, onU
                     onVote={(v) => voteProp(v)}
                     onUnvote={() => onUnpick(activeRace.id)}
                   />
+                </div>
+              </div>
+            )}
+
+            {isEmptyNonPropRace && (
+              <div className="msg ai">
+                <div className="who">Voter Choice · AI</div>
+                <div className="bubble">
+                  <p>We couldn't read the candidates for <b>{activeRace.label}</b> — the ballot text for this race may be unclear or missing. Please check your{' '}
+                    <a href="https://vote.gov/" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'underline' }}>official sample ballot</a>{' '}
+                    to see who's running.
+                  </p>
                 </div>
               </div>
             )}
@@ -5316,6 +5415,10 @@ function App() {
       applyRealRaces(result.races);
       setView(issues.length ? 'workspace' : 'coldopen');
     } else {
+      // Fix C: pre-load real state resources before mounting NoContestedView
+      // so its links use the real per-state URLs, not vote.gov. Awaited here
+      // to guarantee the resources are set before the first render.
+      if (result.stateCode) await applyRealStateResources(result.stateCode);
       // Civic couldn't pull the ballot → ask the voter to upload/paste it.
       setView('nocontested');
     }
@@ -5681,11 +5784,20 @@ function handleRevealCandidate(candidateId) {
           <AppNav />
           <main id="main-content">
             <NoContestedView
-              stateData={
-                getRealStateCode()
+              stateData={(() => {
+                // Fix C: overlay real state resources onto the fallback shape
+                // when available (loaded before this view mounted). vote.gov
+                // remains the fallback for any URL not covered by the real data.
+                const base = getRealStateCode()
                   ? getFallbackStateData(getRealStateCode())
-                  : STATE_ELECTION_DATA
-              }
+                  : STATE_ELECTION_DATA;
+                const real = getRealStateResources();
+                if (!real) return base;
+                return {
+                  ...base,
+                  resources: { ...base.resources, ...real },
+                };
+              })()}
               county={'your county'}
               onBack={() => setView('home')}
               onBallotConfirmed={() => {
