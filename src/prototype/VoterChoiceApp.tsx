@@ -4302,7 +4302,7 @@ function resolveChatBlock(code) {
   return { budget: false, message: (code && CHAT_BLOCK_MESSAGES[code]) || null };
 }
 
-function WorkspaceView({ address, issues, decisions, activeRaceId, onDecide, onUnpick, onSelectRace, onPrint, onEditIssues, onSaveProfile, onContinueElsewhere, budgetExhausted, onOpenByok, onNavigate, chatMessages, onSendChat, chatTimeouts, onRetryChat, onCompare, onSeeAllVotes, amendDeltas, onClearDelta, onViewPartyGate, blindMode, revealedCandidates, onRevealCandidate, onHideCandidate, onToggleBlindMode }) {
+function WorkspaceView({ address, issues, decisions, activeRaceId, onDecide, onUnpick, onSelectRace, onPrint, onEditIssues, onSaveProfile, onContinueElsewhere, budgetExhausted, onOpenByok, onNavigate, chatMessages, onSendChat, chatTimeouts, onRetryChat, onCompare, onSeeAllVotes, amendDeltas, onClearDelta, blindMode, revealedCandidates, onRevealCandidate, onHideCandidate, onToggleBlindMode }) {
   const races = RACES;
   const activeRace = races.find(r => r.id === activeRaceId) || races[0];
   const activeIdx = races.findIndex(r => r.id === activeRace.id);
@@ -4516,7 +4516,6 @@ function WorkspaceView({ address, issues, decisions, activeRaceId, onDecide, onU
           <div className="foot">
             <a onClick={() => { if (confirm('Restart session? This clears your draft ballot and issues.')) window.__voterChoiceReset && window.__voterChoiceReset(); }} role="link" tabIndex={0}>Restart session</a>
             <a onClick={() => { const nav = window.__navigate; nav && nav('methodology'); }} role="link" tabIndex={0}>Methodology</a>
-            <a onClick={onViewPartyGate} style={{ cursor: 'pointer' }} role="link" tabIndex={0}>See party-gate (demo)</a>
           </div>
         </aside>
 
@@ -5877,7 +5876,6 @@ function handleRevealCandidate(candidateId) {
           // Amend delta + rescore offer
           amendDeltas={amendDeltas}
           onClearDelta={handleClearDelta}
-          onViewPartyGate={() => setView('partygate')}
           blindMode={blindMode}
           revealedCandidates={revealedCandidates}
           onRevealCandidate={handleRevealCandidate}
