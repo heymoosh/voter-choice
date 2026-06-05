@@ -3497,6 +3497,31 @@ function NoContestedView({ stateData, county = 'your county', onBallotConfirmed,
       applyRealRaces(result.races);
       if (result.stateCode) setRealStateCode(result.stateCode);
     }
+    // F-E: load real per-state resources (polling-place lookup URL, county
+    // election link) so NoContestedView / logistics bar shows the real
+    // state URLs instead of the vote.gov fallback. Mirrors handleSubmitAddress.
+    if (result.stateCode) await applyRealStateResources(result.stateCode);
+    // F-E: derive the congressional district from the ballot's House race
+    // label and persist it in BALLOT_LOGISTICS so both the workspace bar
+    // and the print view show "NJ-01" instead of "—". Merge defensively
+    // so existing civic-sourced logistics fields are preserved.
+    if (result.stateCode && result.races && result.races.length > 0) {
+      const houseRace = result.races.find(r => /house/i.test(r.label || ''));
+      if (houseRace) {
+        const district = deriveDistrictCode(houseRace.label, result.stateCode);
+        if (district) {
+          const cur = getBallotLogistics();
+          setBallotLogistics({
+            ...(cur || {}),
+            congressionalDistrict: district,
+            fallbackUrl: 'https://vote.gov/',
+            source: (cur && cur.source) || 'fallback',
+            pollingPlace: (cur && cur.pollingPlace) || null,
+            earlyVoting: (cur && cur.earlyVoting) || null,
+          });
+        }
+      }
+    }
     // Pillar 1: propagate low-confidence flag (large-format ballot warning).
     setLowConfidenceExtraction(!!result.lowConfidence);
     setProcessing(false);
@@ -4444,7 +4469,8 @@ function WorkspaceView({ address, issues, decisions, activeRaceId, onDecide, onU
     // Honest fallback — no civic data; direct voter to vote.gov
     name: 'Find your polling place at vote.gov',
     address: '',
-    hours: '',
+    // Use statutory hours from state data when available (upload/paste path).
+    hours: sd?.votingRules?.pollingHours || '',
     notes: '',
     precinct: '',
     district: districtCodeWs || '',

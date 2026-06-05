@@ -45,6 +45,11 @@ export interface VotingRules {
   phonesAtPolls: "prohibited" | "allowed" | "varies";
   phonesAtPollsDetail: string;
   additionalRules: string[];
+  /** Statutory polling hours for Election Day, e.g. "6:00 AM – 8:00 PM".
+   *  Surfaced in the logistics/print "hours" slot on the upload/paste path
+   *  when civic polling-place data is not available. Present only for states
+   *  where hours have been verified; absent means hours are unknown. */
+  pollingHours?: string;
 }
 
 export interface VoteByMail {
