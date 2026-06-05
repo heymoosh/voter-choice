@@ -334,9 +334,50 @@ function partyLetter(p?: string): string {
   return "";
 }
 
+/**
+ * A race augmented with the partyLane field emitted by extractionToRaces.
+ * Defined locally because raceDeriver.ts (off-limits) can't be extended.
+ * RaceWithWriteIns from extractionToRaces.ts is assignment-compatible here
+ * because partyLane is optional.
+ */
+type RaceWithLane = Race & { partyLane?: "D" | "R" | null };
+
+/**
+ * Returns true when the ballot carries contests from more than one party lane.
+ *
+ * PRIMARY SIGNAL (preferred): reads race.partyLane — the D/R/null lane
+ * attached by extractionToRaces from the race-level party_context field.
+ * party_context is set by Textract to "Democratic Primary" / "Republican
+ * Primary" etc., which is reliable on real sample ballots.
+ *
+ * FALLBACK (legacy): when no race has a partyLane field (undefined), falls
+ * back to the old candidate-party heuristic (partyLetter). This preserves
+ * the existing behaviour for races derived from civic / text paths where
+ * partyLane is not attached.
+ *
+ * The old heuristic FAILS on real Textract output because candidate.party
+ * carries the ballot designation ("Camden County Democrat Committee, Inc.",
+ * "America First Always") — neither starts with "d" or "r", so the old
+ * code always returned false → party gate never fired.
+ */
 export function racesSpanMultipleParties(races: Race[]): boolean {
+  const raceList = (races || []) as RaceWithLane[];
+
+  // Use partyLane if ANY race has it defined (even null is defined).
+  const hasLaneInfo = raceList.some((r) => r.partyLane !== undefined);
+  if (hasLaneInfo) {
+    const seen = new Set<string>();
+    for (const r of raceList) {
+      if (r.partyLane !== null && r.partyLane !== undefined) {
+        seen.add(r.partyLane);
+      }
+    }
+    return seen.size > 1;
+  }
+
+  // Fallback: legacy candidate-party heuristic (text / civic path).
   const seen = new Set<string>();
-  for (const r of races || [])
+  for (const r of raceList)
     for (const c of r.candidates || []) {
       const l = partyLetter(c.party);
       if (l) seen.add(l);
@@ -358,18 +399,66 @@ export const PROP_SECTIONS = new Set<string>([
   "Bond Measures",
 ]);
 
+/**
+ * Filter races to the voter's chosen party lane.
+ *
+ * PRIMARY SIGNAL (preferred): filters on race.partyLane when the field is
+ * defined (attached by extractionToRaces from the reliable party_context).
+ * A race whose partyLane matches the chosen lane OR whose partyLane is null
+ * (non-partisan — propositions, judicial retentions) is kept; the opposite
+ * party lane is dropped.
+ *
+ * The candidate strip (.map) is kept for the fallback path (where candidates
+ * carry real party strings). Under the partyLane path, candidate.party holds
+ * ballot designations ("Camden County Democrat Committee, Inc."), so
+ * partyLetter() returns "" for all of them — they all pass through the strip
+ * unchanged, which is the correct behaviour (designations are display-only).
+ *
+ * FALLBACK: when no race has partyLane defined, uses the legacy candidate-
+ * party heuristic so civic / text-path races are still filtered correctly.
+ */
 export function filterRacesByParty(races: Race[], party: string): Race[] {
   const want = partyLetter(party);
   if (!want) return races || [];
-  return (races || [])
+
+  const raceList = (races || []) as RaceWithLane[];
+  const hasLaneInfo = raceList.some((r) => r.partyLane !== undefined);
+
+  if (hasLaneInfo) {
+    return raceList
+      .filter((r) => {
+        const cands = r.candidates || [];
+        // Non-partisan races (partyLane === null) are always included.
+        if (r.partyLane === null) {
+          // For zero-candidate non-partisan races, apply the PROP_SECTIONS
+          // guard (same as the legacy path) to drop empty candidate-offices.
+          if (cands.length === 0) return PROP_SECTIONS.has(r.section);
+          return true;
+        }
+        // Partisan race: keep only the matching lane.
+        if (r.partyLane !== want) return false;
+        // DROP empty candidate-offices in the matching lane too (e.g. a
+        // county-committee seat where every slot is "no petition filed").
+        // Those carry nothing to research or pick (same guard as legacy path).
+        if (cands.length === 0) return PROP_SECTIONS.has(r.section);
+        return true;
+      })
+      .map((r) => ({
+        ...r,
+        // Candidate strip: partyLetter of a designation → "" → kept.
+        // Belt-and-suspenders for mixed inputs.
+        candidates: (r.candidates || []).filter((c) => {
+          const l = partyLetter(c.party);
+          return l === "" || l === want;
+        }),
+      }));
+  }
+
+  // Fallback: legacy candidate-party heuristic (text / civic path).
+  return raceList
     .filter((r) => {
       const cands = r.candidates || [];
       if (cands.length === 0) {
-        // Keep genuine propositions/measures/questions (candidate-free by
-        // nature). DROP empty candidate-offices — e.g. a county-committee race
-        // where every slot is "no petition filed". Those carry nothing to
-        // research or pick, and a wrong-party empty office otherwise leaks
-        // across the party filter onto the voter's ballot (F3).
         return PROP_SECTIONS.has(r.section);
       }
       return cands.some((c) => partyLetter(c.party) === want);

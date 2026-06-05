@@ -32,14 +32,47 @@ import type { Race, RaceSection } from "./raceDeriver";
 import { makeRaceId } from "./raceDeriver";
 
 /**
- * Race shape augmented with write-in slot count from the extraction.
+ * Race shape augmented with write-in slot count from the extraction and a
+ * clean party lane derived from race-level party_context.
+ *
  * The base Race interface is not modified (raceDeriver.ts is off-limits).
- * writeInSlots === number of write_in placeholder candidates in the source
- * extraction; the UI uses this to offer write-in affordances for any
- * remaining open seats (Fix B).
+ *
+ * writeInSlots  — number of write_in placeholder candidates in the source
+ *                 extraction; the UI uses this to offer write-in affordances
+ *                 for any remaining open seats (Fix B).
+ *
+ * partyLane     — the party lane this race belongs to, derived from
+ *                 party_context via partyLaneFromContext():
+ *                   "D" → Democratic Primary (or runoff variant)
+ *                   "R" → Republican Primary (or runoff variant)
+ *                   null → non-partisan / universal (propositions, judicial
+ *                          retentions, general-election races)
+ *                 undefined is never emitted — every race gets an explicit
+ *                 D / R / null value so callers can distinguish "no lane"
+ *                 (null) from "field missing" (undefined).
  */
 export interface RaceWithWriteIns extends Race {
   writeInSlots?: number;
+  partyLane?: "D" | "R" | null;
+}
+
+/**
+ * Derive the two-letter party lane from a race-level party_context string.
+ * Uses substring matching (same style as inferBallotTagFromExtraction) so
+ * runoff variants like "Democratic Primary Runoff" / "Republican Runoff"
+ * map correctly — exact-token matching via partyContextTag would return
+ * "ALL" for those and lose the lane.
+ *
+ * Returns null for non-partisan / universal contexts (propositions,
+ * judicial retentions, general-election races whose party_context is null).
+ */
+function partyLaneFromContext(
+  partyContext: ExtractRace["party_context"],
+): "D" | "R" | null {
+  if (!partyContext) return null;
+  if (/democratic/i.test(partyContext)) return "D";
+  if (/republican/i.test(partyContext)) return "R";
+  return null;
 }
 import { normalizeRaceLabel } from "./normalizeRaceLabel";
 import type {
@@ -304,6 +337,7 @@ function buildSectionRaces(
       candidates,
       voteForN: race.vote_for_n > 0 ? race.vote_for_n : 1,
       ...(writeInSlots > 0 ? { writeInSlots } : {}),
+      partyLane: partyLaneFromContext(race.party_context),
     });
   }
   return out;
