@@ -14,9 +14,26 @@ Running log of eval runs, findings, and decisions for the alignment scoring engi
 | **F5** | Internal `in_favor`/`opposed` labels do NOT need renaming — the UI never shows them (it renders "voted with your side N of M" + the bill/vote). Presentation is redesign-owned. | closed (Muxin) |
 | **F6** | Incentive-vs-mandate "safety" bills (e.g. a tax credit for a gun safe) are genuinely ambiguous in direction. Keep them **low-confidence + show the vote**; don't force a pole. | accepted (Muxin) |
 | **F7** | `border_security` is ~93% mis-tagged — after correction only ~11 of 155 are genuine physical-border bills. **Resolved (Muxin): MERGE into `immigration`.** At cutover, drop `border_security` as a canonical issue; genuine border content scores under `immigration` (border-enforcement = `opposed`/restrictive). The big-issue workflow therefore does NOT re-tag border separately. | resolved (Muxin) |
-| **M2** (meta) | The at-scale tagging runner needs **retry-on-transient-error** — 1 of 12 subagents hit a socket error and had to be re-run by hand. The background workflow must auto-retry failed batches. | open |
+| **M2** (meta) | The at-scale tagging runner needs **retry-on-transient-error**. **Confirmed at scale: 36 of 141 workflow batches (25%) reported "completed" but never wrote a result file** — the workflow's completion signal ≠ file written. A production run MUST verify each result file exists + valid and auto-retry the missing. Handled this run with a manual verify-and-retry pass. | open |
+| **F8** | `public_safety` (84% →no_score) and `election_integrity` (85% →no_score) are over-tagged grab-bags like `border` — the old tagger had high recall but low precision, forcing off-topic bills in. Real counts are small (~870 policing, ~258 ballot-access). Reproductive (43%) had the same over-tag pattern with off-topic gender/health bills. **Net: ~60% of contested tags are now no_score — alignment coverage on contested issues is much thinner. Lever: recover bill summaries (Data-Quality backlog item).** | open (Muxin) |
 
 ## Runs
+
+### 2026-06-05 — Big launch-blocking issues re-tagged via background workflow (14,014 tags)
+**On subscription**, 2 background workflows (141 batches + a 36-batch retry — the first
+run reported 141/141 "completed" but 36 never wrote their result file → **M2**).
+`issue_tags` untouched. `source_run='big-1'`.
+- **public_safety (5499):** 308 flips · **4,629 →no_score (84%)** · 562 unchanged → new 524/346/4629. Over-tagged with non-policing bills (like border); only ~870 real policing/sentencing bills.
+- **crime_public_safety (3800):** **613 flips** · 1,854 →no_score (49%) · 1,333 unchanged → new 1280/666/1854. Genuinely populated; large enforcement↔reform inversion fix (audit's ~50% confirmed).
+- **environment_climate (2941):** 88 flips · 749 →no_score (25%) · **2,104 unchanged (72%)** → new 1930/262/749. Healthiest — old tags mostly right.
+- **election_integrity (1774):** 55 flips · **1,516 →no_score (85%)** · 203 unchanged → new 189/69/1516. Over-tagged like border; only ~258 real ballot-access bills.
+
+**Milestone: all 8 launch-blocking contested issues re-tagged = 15,887 tags.** Across
+them **~60% are now no_score** — the corrected contested corpus is far thinner but
+trustworthy (it traded confidently-wrong coverage for correct coverage). Coverage
+levers: recover bill summaries (backlog); the over-tagging cleanup is permanent/correct.
+**Next:** reclassified economy/education/property (~13.8k, lower priority — audit had
+them mostly fine), then the gated cutover.
 
 ### 2026-06-04 — 3 small contested issues re-tagged: border, immigration, reproductive
 **On subscription** (12 tagger subagents + 1 re-run after a transient socket error).
