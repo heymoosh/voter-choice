@@ -13,8 +13,21 @@ Running log of eval runs, findings, and decisions for the alignment scoring engi
 | **M1** (meta) | The eval runner must **auto-capture model id + settings** — the 2026-06-04 run did not. | open |
 | **F5** | Internal `in_favor`/`opposed` labels do NOT need renaming — the UI never shows them (it renders "voted with your side N of M" + the bill/vote). Presentation is redesign-owned. | closed (Muxin) |
 | **F6** | Incentive-vs-mandate "safety" bills (e.g. a tax credit for a gun safe) are genuinely ambiguous in direction. Keep them **low-confidence + show the vote**; don't force a pole. | accepted (Muxin) |
+| **F7** | `border_security` is ~93% mis-tagged — after correction only ~11 of 155 are genuine physical-border bills; the rest are interior-immigration / foreign-land-ownership. **Decide: merge into `immigration`, or keep as a thin federal-only issue.** | open (Muxin) |
+| **M2** (meta) | The at-scale tagging runner needs **retry-on-transient-error** — 1 of 12 subagents hit a socket error and had to be re-run by hand. The background workflow must auto-retry failed batches. | open |
 
 ## Runs
+
+### 2026-06-04 — 3 small contested issues re-tagged: border, immigration, reproductive
+**On subscription** (12 tagger subagents + 1 re-run after a transient socket error).
+`issue_tags` untouched. `source_run='small-1'`.
+- **border_security (155):** 1 flip · **144 →no_score** · 10 unchanged → new: 11 in_favor / 0 opposed / 144 no_score. **93% of its tags were never about the physical border** (interior-immigration-enforcement & foreign-land-ownership bills the old tagger forced in). See **F7**.
+- **immigration (407):** **88 flips (22%)** · 92 →no_score · 227 unchanged → new: 187 / 128 / 92. Old was a ~50/50 coin-flip; now decisive.
+- **reproductive_rights (619):** 16 flips (3%) · **265 →no_score (43%)** · 338 unchanged → new: 244 / 110 / 265. The high no_score is **relevance cleanup** (off-topic gender-affirming-care / trans-sports / aid-in-dying / menstrual bills were mis-tagged here), NOT inversions.
+
+**Cumulative re-tagged: 1,873 contested tags** (guns + these three). **Next:** the big issues
+(public_safety ~5.5k, crime ~3.8k, environment ~2.9k, election ~1.8k, + reclassified
+economy/education/property ~14k) via a **background workflow** on the subscription.
 
 ### 2026-06-04 — `gun_rights_safety` FULL re-tag complete (692 bills, on subscription)
 **What:** finished the gun issue. The remaining 642 bills were tagged by **9 parallel
