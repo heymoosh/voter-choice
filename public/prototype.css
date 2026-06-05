@@ -1945,6 +1945,15 @@ body[data-treatment="inkwell"] .proto-banner {
 }
 .cv2-iss-head .meta.thin { font-style: italic; color: var(--ink-3); }
 .cv2-iss-head .meta b { color: var(--ink-2); font-weight: 600; }
+/* Web-search evidence links inside alignment rows */
+.cv2-evidence-link {
+  font-size: 11px;
+  color: var(--civic);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+  line-height: 1.4;
+}
 
 .cv2-iss-head .pct {
   font-family: var(--serif);

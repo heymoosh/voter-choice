@@ -972,7 +972,7 @@ function AlignmentScoreBanner({ candidate, alignmentEntry, userIssues, expandedI
           <div className="cv2-block-head">
             <div className="lab">Aligns with your issues</div>
             <div style={{ fontSize: '10px', color: 'var(--ink-3, #888)', fontStyle: 'italic' }}>
-              Based on public statements
+              Based on public statements — not a voting record
             </div>
           </div>
           {rowsData.map(({ issue, score }) => (
@@ -1096,68 +1096,59 @@ function AlignmentIssueRow({ issue, score, candidate, isOpen, onToggle, anonCtx 
     const hasEvidence = evidenceLinks.length > 0;
 
     return (
-      <div className="cv2-iss-row web-search-row" data-testid="web-search-alignment-row">
-        <div className="cv2-iss-head" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-          {/* Source label — visually distinct from voting_record rows */}
-          <div style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.12em',
-              color: 'var(--ink-3, #888)', fontWeight: 600 }}>
-            Based on public statements — not a voting record
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div className="topic" style={{ flex: 1 }}>
-              <div className="name">{issue.interpretation}</div>
-              <div className="meta" style={{ marginTop: '3px', opacity: 0.75, fontSize: '12px' }}>
-                {stance === 'in_favor' ? 'Supports this position'
-                  : stance === 'opposed' ? 'Opposes this position'
-                  : stance === 'mixed' ? 'Mixed record on this issue'
-                  : stance === 'unclear' ? 'Position unclear — limited public record'
-                  : score.resolvedStance}
+      <div className="cv2-iss-row" data-testid="web-search-alignment-row">
+        {/* Same grid structure as the voting_record path — topic left,
+            directional badge right (replaces the % pct column). */}
+        <div className="cv2-iss-head">
+          <div className="topic">
+            <div className="name">{issue.interpretation}</div>
+            <div className="meta">
+              {stance === 'in_favor' ? 'Supports this position'
+                : stance === 'opposed' ? 'Opposes this position'
+                : stance === 'mixed' ? 'Mixed record on this issue'
+                : stance === 'unclear' ? 'Position unclear — limited public record'
+                : score.resolvedStance}
+            </div>
+            {/* Evidence URLs inline below the meta — keeps the grid clean */}
+            {hasEvidence && (
+              <div className="meta" style={{ marginTop: '4px', display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                {evidenceLinks.map((ev, i) => (
+                  <a
+                    key={i}
+                    href={ev.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="cv2-evidence-link"
+                    data-testid="web-search-evidence-link"
+                  >
+                    {ev.summary || `Source ${i + 1}`} →
+                  </a>
+                ))}
               </div>
-            </div>
-            {/* Directional indicator instead of a voting-record % bar.
-                directionLabel===null means unclear — no badge rendered. */}
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px', flexShrink: 0 }}>
-              {directionLabel && (
-                <span style={{
-                  padding: '2px 7px', borderRadius: '9999px', fontSize: '10px',
-                  fontWeight: 700, letterSpacing: '0.06em', color: '#fff',
-                  background: directionColor,
-                }}>
-                  {directionLabel}
-                </span>
-              )}
-              {confidenceChip && (
-                <span style={{
-                  fontSize: '10px', color: 'var(--ink-3, #888)',
-                  border: '1px solid var(--rule, #ddd)', borderRadius: '4px',
-                  padding: '1px 5px',
-                }}>
-                  {confidenceChip} confidence
-                </span>
-              )}
-            </div>
+            )}
           </div>
-
-          {/* Evidence URLs — clickable, opens in new tab */}
-          {hasEvidence && (
-            <div style={{ marginTop: '2px', display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-              {evidenceLinks.map((ev, i) => (
-                <a
-                  key={i}
-                  href={ev.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    fontSize: '11px', color: 'var(--civic, #3a6ea8)',
-                    textDecoration: 'underline', lineHeight: 1.4,
-                  }}
-                  data-testid="web-search-evidence-link"
-                >
-                  {ev.summary || `Source ${i + 1}`} →
-                </a>
-              ))}
-            </div>
-          )}
+          {/* Right column: directional badge + confidence chip, matching the
+              position/size of the voting_record .pct column. */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px', flexShrink: 0 }}>
+            {directionLabel && (
+              <span style={{
+                padding: '2px 7px', borderRadius: '9999px', fontSize: '10px',
+                fontWeight: 700, letterSpacing: '0.06em', color: '#fff',
+                background: directionColor,
+              }}>
+                {directionLabel}
+              </span>
+            )}
+            {confidenceChip && (
+              <span style={{
+                fontSize: '10px', color: 'var(--ink-3, #888)',
+                border: '1px solid var(--rule, #ddd)', borderRadius: '4px',
+                padding: '1px 5px',
+              }}>
+                {confidenceChip} conf.
+              </span>
+            )}
+          </div>
         </div>
       </div>
     );
