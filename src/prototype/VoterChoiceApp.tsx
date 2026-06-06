@@ -766,7 +766,6 @@ function CandidateCard({ candidate, alignmentEntry, userIssues, party, picked, o
           </button>
         ) : (
           <button className="pick" onClick={onPick}>
-            <span className="ck">☐</span>
             <span>Pick {blindMode ? alias : candidate.name.split(' ').pop()}</span>
           </button>
         )}
