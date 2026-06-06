@@ -21,7 +21,66 @@ commits — machine state + gotchas a fresh session needs.
 Vercel PREVIEW exists for testing (below). Branch is **local-only — never pushed to
 origin** (a same-machine new session inherits all commits from this worktree directly).
 
-### ▶▶▶ Session 2026-06-05 (PM) — accuracy program Rounds 1–4 COMPLETE · LATEST · READ FIRST
+### ▶▶▶ Session 2026-06-06 — UX / logistics / research-timing fixes · LATEST · READ FIRST
+**HEAD `60f6b09` · `feat/prototype-rebuild` · tsc clean · prod `next build` green. Every commit
+authored `Muxin Li <muxin.li.pro@gmail.com>` (Vercel rejects the build-agent email — keep doing
+this for any deploy-bound commit).**
+
+**Live preview (behind Vercel SSO — log in as `muxinli`):**
+`https://voter-choice-32xoaljuv-mooshs-projects-0635287d.vercel.app`
+Each `vercel deploy --yes --force` from this worktree mints a NEW URL — this is the newest. The
+deployed preview gates ALL routes + assets behind SSO (401), so it can't be Playwright-driven
+directly; **today's verification was a local `next build` + `next start -p 3100` + Playwright MCP.**
+
+**Shipped today (6 commits, all verified live on the local prod build):**
+- **`3b71b62` F-A throttle** — pre-load marks every no-record candidate `loading` synchronously,
+  then drains `/api/research-candidate` at concurrency **3** (was a 12+ burst). Pre-loads
+  everything incl. committee seats (Muxin's call; no skip). Lazy on-reveal path unchanged.
+- **`0271b36` F-D pick-control flatten** — removed the redundant nested checkbox box (a `☐` glyph
+  inside a 2px-bordered square) on the unchecked "Pick {name}" button; selection still shown by the
+  picked-state flip (✓ + color). (F-D had already flattened `.cv2-issues`/`.cv2-funding`; the pick
+  control was the remaining "box within a box" Muxin flagged.)
+- **`d7cd1d8` F-B mobile parity** — the web_search badge column (ALIGNED/OPPOSED + confidence) was
+  inline-styled with no class → didn't scale at the 767/380px breakpoints like `.pct`. Extracted to
+  `.cv2-ws-col / .cv2-ws-badge / .cv2-ws-conf` + matching `@media` rules (verified 9px @375px).
+- **`e57914d` blind-mode analysis (Pillar 2)** — no-record candidates were gated `!blindMode`, so a
+  blinded card sat on a PERMANENT "Looking up public statements…" that never resolved even after the
+  lookup finished. Now the name-free analysis renders while blinded (like voting records do);
+  evidence links (their URLs/summaries can carry the name) are held back → "Sources shown when you
+  reveal the candidate". `research` is now read regardless of blind mode (`CandidateCard` ~line 666).
+- **`60f6b09` logistics URLs + research timing** (two fixes in one):
+  - **vote.gov → real state URLs.** `getFallbackStateData()` hardcodes vote.gov for ALL resources
+    (sync fallback, never reads the per-state JSON). Workspace now merges `getRealStateResources()`;
+    polling-lookup + "official sample ballot" → `voter.svrs.nj.gov`; bar label no longer says
+    vote.gov. **Also calls `applyRealStateResources` on the RESUME path** — `REAL_STATE_RESOURCES`
+    is a module `let` that resets to null on reload, so it reverted to vote.gov on every refresh.
+    Registration-check link intentionally stays vote.gov (that's vote.gov's actual purpose).
+  - **Research runs on the 'analyzing' loading screen** (was: fired AFTER `setView('workspace')` →
+    on-click loading). `preloadAllCandidateResearch` now returns a settle-promise; `handleLockIssues`
+    awaits it before painting the workspace, **capped at 18s** so a slow cold-start can't strand the
+    user. `fetchCandidateResearch` got a 20s per-call AbortController timeout (one hung call can't
+    hold a concurrency slot forever). Verified: 6/6 calls fire before paint; **0** new fetches when
+    navigating to County Commissioners. ⚠️ **TRADEOFF flagged to Muxin:** the analyzing screen can
+    now take up to ~18s when research is slow; fallback if it reads as too long = start-early-but-
+    don't-block (and let the now-working skeletons cover stragglers).
+
+**Open / next:**
+- ⏳ **AWS Textract → Vercel Preview env — NOT done.** The CLI won't persist to all-preview-branches
+  non-interactively (branch is local-only/never-pushed → branch-scoped fails; `-e` per-deploy
+  injection is classifier-blocked). Creds ARE in the app `.env.local` (local dev uses Textract). For
+  the DEPLOYED preview to use Textract on NEW/uncached dense ballots, add the 3 `AWS_*` vars via the
+  Vercel dashboard (Settings → Env Vars → Preview, all branches; copy from `.env.local`) + redeploy.
+  NJ is a CACHED Textract result so the NJ upload reads correct without it.
+- Parked/GATED (need Muxin): full federal **funding sweep** + destructive `--drop-legacy` cleanup;
+  per-state polling **hours** (only NJ added); open-primary flow; delete drifted old frontend (#27).
+- Known/minor: party-gate eligibility link (`VoterChoiceApp.tsx:2400`) still points to vote.gov
+  (eligibility info, not polling logistics — left as-is).
+- Cleanup: merged temp worktrees (`ws1-/ws2-/ws3-/phase-b-/round3-/round4-…`) can be
+  `git worktree remove`'d (keep the branches).
+- Full Round-1→4 detail: `~/.claude/plans/hi-are-you-on-glimmering-whisper.md`; backlog:
+  `docs/operations/post-launch-backlog.md`.
+
+### ▶▶ Session 2026-06-05 (PM) — accuracy program Rounds 1–4 COMPLETE
 **HEAD `6b1a5aa` · `feat/prototype-rebuild` · tsc clean · oracle 12 pass / 5 todo. The 14
 suite failures are the KNOWN prototype-rebuild cleanup debt (#27), not regressions.**
 
@@ -51,20 +110,6 @@ suite failures are the KNOWN prototype-rebuild cleanup debt (#27), not regressio
 **Verified:** NJ end-to-end (Playwright: gate, all candidates, NJ-01, no leaks); multi-state
 EXTRACTION generalization on PA(closed)/WI(open)/CA(top-two).
 
-**✅ 2026-06-06 — preview DEPLOYED + F-A throttle DONE.** Live preview (behind Vercel SSO, log in
-as muxinli): `https://voter-choice-egwbyrgdb-mooshs-projects-0635287d.vercel.app` (HEAD `3b71b62`,
-authored Muxin Li, ● Ready). F-A throttle committed (`3b71b62`): the pre-load now marks every
-no-record candidate `loading` synchronously, then drains `/api/research-candidate` at concurrency
-**3** (was a 12+ simultaneous burst). Decision (Muxin): pre-load EVERYTHING incl. committee seats
-(no skip); lazy on-reveal path unchanged. Throttle is committed+deployed but NOT runtime-verified
-(`VoterChoiceApp.tsx` is `@ts-nocheck`) — confirm by watching skeletons resolve in waves of ~3.
-⚠️ **AWS Textract creds: confirmed in app `.env.local`, but NOT in Vercel env.** The CLI won't
-persist to all-preview-branches non-interactively (branch is local-only/never-pushed → branch-
-scoped fails; `-e` per-deploy injection is classifier-blocked). New/uncached dense ballots on the
-preview fall back to the sampling stopgap until the 3 `AWS_*` vars are added via the Vercel
-dashboard (Settings → Env Vars → Preview, all branches; copy from `.env.local`) + a redeploy.
-NJ is a CACHED Textract result, so the NJ upload should still read correct.
-
 **⚠️ LOCAL TESTING IS PAINFUL → DEPLOY A VERCEL PREVIEW.** `next dev` keeps getting reaped, and
 F-A's pre-load fires a burst of 12+ `/api/research-candidate` calls on workspace load that
 stresses it. **Recommended first step for the new session:** `cd design-integration` → ensure
@@ -72,18 +117,8 @@ HEAD authored as `Muxin Li <muxin.li.pro@gmail.com>` → `vercel deploy --yes --
 behind Vercel SSO). Gives a stable URL + proper asset caching — the right way to confirm the R4
 visuals (Muxin had NOT yet visually confirmed F-B/F-D; local kept breaking).
 
-**Open / next:**
-- ✅ **THROTTLE F-A** research pre-load — DONE 2026-06-06 (`3b71b62`; concurrency 3; pre-load all,
-  no committee skip per Muxin).
-- ✅ AWS creds confirmed in app `.env.local`. ⏳ TODO: add 3 `AWS_*` to Vercel **Preview** env
-  (dashboard, all branches) + redeploy so NEW/uncached dense ballots use Textract on the preview.
-- Parked/GATED (need Muxin): full federal **funding sweep** + destructive `--drop-legacy`
-  cleanup; per-state polling **hours** (only NJ added); open-primary flow; delete drifted old
-  frontend (#27).
-- Cleanup: merged temp worktrees (`ws1-/ws2-/ws3-/phase-b-/round3-/round4-…`) can be
-  `git worktree remove`'d (keep the branches).
-- Full Round-1→4 detail: `~/.claude/plans/hi-are-you-on-glimmering-whisper.md`; backlog:
-  `docs/operations/post-launch-backlog.md`.
+**Open / next:** see the **2026-06-06** block at the top — it carries the current Open/next
+(AWS→Vercel, parked/gated items, cleanup, and the detail/backlog pointers).
 
 ### ▶▶ Session 2026-06-05 — shipped + read-this-first
 **Shipped (committed, gated green, NOT on launch/production):**
