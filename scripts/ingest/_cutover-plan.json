@@ -1,0 +1,19 @@
+{
+  "_note": "Cutover decision (Muxin, 2026-06-06). All 12 contested issues PASS the <=5% inversion gate against the independent Opus panel, so all migrate; none blank. education's 1 inversion was fixed in pole_v1 (gold-adjudication-1); public_safety re-validated at 0/41 and shipped despite over-confidence. Consumed by _cutover-fire.ts.",
+  "threshold": 0.05,
+  "migrate": [
+    "gun_rights_safety",
+    "immigration",
+    "border_security",
+    "reproductive_rights",
+    "public_safety",
+    "crime_public_safety",
+    "environment_climate",
+    "election_integrity",
+    "economy_jobs",
+    "education_funding",
+    "property_taxes",
+    "energy_grid"
+  ],
+  "blank": []
+}

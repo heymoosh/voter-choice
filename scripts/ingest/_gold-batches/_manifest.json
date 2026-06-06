@@ -136,5 +136,17 @@
     "issue": "energy_grid",
     "batchId": "energy_grid-002",
     "count": 2
+  },
+  {
+    "path": "/Users/Muxin/Documents/GitHub/voter-choice/.claude/worktrees/launch-production-federal/scripts/ingest/_gold-batches/public_safety-003.json",
+    "issue": "public_safety",
+    "batchId": "public_safety-003",
+    "count": 50
+  },
+  {
+    "path": "/Users/Muxin/Documents/GitHub/voter-choice/.claude/worktrees/launch-production-federal/scripts/ingest/_gold-batches/public_safety-004.json",
+    "issue": "public_safety",
+    "batchId": "public_safety-004",
+    "count": 50
   }
 ]

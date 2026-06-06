@@ -5440,5 +5440,905 @@
       "no_score",
       "no_score"
     ]
+  },
+  "openstates-ocd-bill-c0631a03-e15f-48fe-aeb5-b35220e6f854|public_safety": {
+    "oracle": "in_favor",
+    "agreement": 3,
+    "jurors": [
+      "in_favor",
+      "in_favor",
+      "in_favor"
+    ]
+  },
+  "openstates-ocd-bill-cbc28abd-1690-4827-9c47-7fa76a3f166d|public_safety": {
+    "oracle": "in_favor",
+    "agreement": 2,
+    "jurors": [
+      "no_score",
+      "in_favor",
+      "in_favor"
+    ]
+  },
+  "openstates-ocd-bill-012aedb4-d810-49ec-8939-00b37fe82d6f|public_safety": {
+    "oracle": "no_score",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ]
+  },
+  "openstates-ocd-bill-be8dcf00-5b84-4582-8539-3e0c0e5cfac0|public_safety": {
+    "oracle": "no_score",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ]
+  },
+  "openstates-ocd-bill-6c4503ec-78c0-4c7c-be4b-b67f62fb2570|public_safety": {
+    "oracle": "no_score",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ]
+  },
+  "openstates-ocd-bill-22dd4e8d-6f0f-43b3-9645-3cd7fc137bfd|public_safety": {
+    "oracle": "in_favor",
+    "agreement": 2,
+    "jurors": [
+      "no_score",
+      "in_favor",
+      "in_favor"
+    ]
+  },
+  "openstates-ocd-bill-46b0d9ac-450c-4c32-a263-52b9d7b1c63b|public_safety": {
+    "oracle": "no_score",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ]
+  },
+  "openstates-ocd-bill-cceddfbd-3a96-40c6-8567-45b5c3b87e4c|public_safety": {
+    "oracle": "in_favor",
+    "agreement": 2,
+    "jurors": [
+      "no_score",
+      "in_favor",
+      "in_favor"
+    ]
+  },
+  "openstates-ocd-bill-54a44426-6c09-4809-adcc-1e6e02adf6a3|public_safety": {
+    "oracle": "in_favor",
+    "agreement": 2,
+    "jurors": [
+      "no_score",
+      "in_favor",
+      "in_favor"
+    ]
+  },
+  "openstates-ocd-bill-f835fd91-b4b6-4330-a5d5-7f5d036a16d1|public_safety": {
+    "oracle": "in_favor",
+    "agreement": 3,
+    "jurors": [
+      "in_favor",
+      "in_favor",
+      "in_favor"
+    ]
+  },
+  "openstates-ocd-bill-3c0feee7-c3b1-4c6c-8d85-1a9f9dcc9268|public_safety": {
+    "oracle": "no_score",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ]
+  },
+  "openstates-ocd-bill-fce8e61b-4c07-4913-b16a-bbd9584c1e4d|public_safety": {
+    "oracle": "no_score",
+    "agreement": 2,
+    "jurors": [
+      "no_score",
+      "in_favor",
+      "no_score"
+    ]
+  },
+  "openstates-ocd-bill-79bec69e-87c8-47cb-9f24-20cf84e828c4|public_safety": {
+    "oracle": "no_score",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ]
+  },
+  "openstates-ocd-bill-2399ee03-81a1-4a1e-a47e-016918977eaa|public_safety": {
+    "oracle": "in_favor",
+    "agreement": 3,
+    "jurors": [
+      "in_favor",
+      "in_favor",
+      "in_favor"
+    ]
+  },
+  "openstates-ocd-bill-3882c4c0-9f1c-4536-91ae-f0706f4f5aef|public_safety": {
+    "oracle": "no_score",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ]
+  },
+  "openstates-ocd-bill-257d64ee-65a3-401e-8405-613c48654521|public_safety": {
+    "oracle": "in_favor",
+    "agreement": 3,
+    "jurors": [
+      "in_favor",
+      "in_favor",
+      "in_favor"
+    ]
+  },
+  "openstates-ocd-bill-1c1a4a91-92fb-4e23-907e-11d8d2165188|public_safety": {
+    "oracle": "no_score",
+    "agreement": 2,
+    "jurors": [
+      "no_score",
+      "in_favor",
+      "no_score"
+    ]
+  },
+  "openstates-ocd-bill-f301e6a2-d9ba-45d0-b223-fdfb3c2c59c2|public_safety": {
+    "oracle": "no_score",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ]
+  },
+  "openstates-ocd-bill-67992b56-f021-492c-a3ca-aef7db317a78|public_safety": {
+    "oracle": "no_score",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ]
+  },
+  "openstates-ocd-bill-fdf5e624-5153-414e-878a-86984f1bf7eb|public_safety": {
+    "oracle": "no_score",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ]
+  },
+  "openstates-ocd-bill-c99db3b6-8a34-45fa-8871-49000a1c330b|public_safety": {
+    "oracle": "in_favor",
+    "agreement": 3,
+    "jurors": [
+      "in_favor",
+      "in_favor",
+      "in_favor"
+    ]
+  },
+  "openstates-ocd-bill-6e2271e2-766b-43e3-b1c1-50bf1e60ae69|public_safety": {
+    "oracle": "no_score",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ]
+  },
+  "openstates-ocd-bill-fa7bc716-11c5-4dee-931a-6fe81db6d21e|public_safety": {
+    "oracle": "no_score",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ]
+  },
+  "openstates-ocd-bill-b610f219-faa9-4d49-9caf-35d02c03f2bc|public_safety": {
+    "oracle": "no_score",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ]
+  },
+  "openstates-ocd-bill-99db3b31-768d-4936-bd84-ac76bf07da9b|public_safety": {
+    "oracle": "no_score",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ]
+  },
+  "openstates-ocd-bill-4a38291a-9df6-4f5b-86e1-bf389348650d|public_safety": {
+    "oracle": "no_score",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ]
+  },
+  "openstates-ocd-bill-dbe834a8-5fb6-4d9f-98f8-825f7f649009|public_safety": {
+    "oracle": "in_favor",
+    "agreement": 3,
+    "jurors": [
+      "in_favor",
+      "in_favor",
+      "in_favor"
+    ]
+  },
+  "openstates-ocd-bill-b9910d24-c561-4476-90bc-207f992f7ded|public_safety": {
+    "oracle": "no_score",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ]
+  },
+  "openstates-ocd-bill-5b78b792-5ce3-490a-92dc-89b3c82d2908|public_safety": {
+    "oracle": "in_favor",
+    "agreement": 3,
+    "jurors": [
+      "in_favor",
+      "in_favor",
+      "in_favor"
+    ]
+  },
+  "openstates-ocd-bill-afbcff7d-8f15-4048-9a22-46f1a1ccf940|public_safety": {
+    "oracle": "in_favor",
+    "agreement": 3,
+    "jurors": [
+      "in_favor",
+      "in_favor",
+      "in_favor"
+    ]
+  },
+  "openstates-ocd-bill-3336d397-0e56-4617-a367-c7ab95218bb6|public_safety": {
+    "oracle": "no_score",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ]
+  },
+  "openstates-ocd-bill-aca4a7a3-10f5-4030-93b3-e3b7cc3bed6e|public_safety": {
+    "oracle": "in_favor",
+    "agreement": 3,
+    "jurors": [
+      "in_favor",
+      "in_favor",
+      "in_favor"
+    ]
+  },
+  "openstates-ocd-bill-8b123398-bd2e-4aae-aad4-1a0bd5d58c3a|public_safety": {
+    "oracle": "in_favor",
+    "agreement": 2,
+    "jurors": [
+      "no_score",
+      "in_favor",
+      "in_favor"
+    ]
+  },
+  "openstates-ocd-bill-cdf8f95e-5918-4c69-bb66-5f03fe47982e|public_safety": {
+    "oracle": "no_score",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ]
+  },
+  "govtrack-hr875-119|public_safety": {
+    "oracle": "no_score",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ]
+  },
+  "openstates-ocd-bill-9b23e9b9-2ab3-4876-b6eb-30f46ba71704|public_safety": {
+    "oracle": "in_favor",
+    "agreement": 3,
+    "jurors": [
+      "in_favor",
+      "in_favor",
+      "in_favor"
+    ]
+  },
+  "openstates-ocd-bill-03004dc0-d93e-423e-8be0-1c04abbd17ee|public_safety": {
+    "oracle": "no_score",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ]
+  },
+  "openstates-ocd-bill-5c81ea3a-ccc9-4e1b-8080-d641f8051ab6|public_safety": {
+    "oracle": "no_score",
+    "agreement": 2,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "opposed"
+    ]
+  },
+  "openstates-ocd-bill-f6aedd20-2ab9-4c10-8421-a8cbb37889f3|public_safety": {
+    "oracle": "in_favor",
+    "agreement": 3,
+    "jurors": [
+      "in_favor",
+      "in_favor",
+      "in_favor"
+    ]
+  },
+  "openstates-ocd-bill-4fd0e124-dfc5-4302-a8a9-f2b44933bd56|public_safety": {
+    "oracle": "no_score",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ]
+  },
+  "openstates-ocd-bill-0dab3528-910d-46b4-81be-cfb15d9da21b|public_safety": {
+    "oracle": "opposed",
+    "agreement": 3,
+    "jurors": [
+      "opposed",
+      "opposed",
+      "opposed"
+    ]
+  },
+  "openstates-ocd-bill-fff45e90-e8c4-46bf-893d-abd00964ddfd|public_safety": {
+    "oracle": "opposed",
+    "agreement": 2,
+    "jurors": [
+      "no_score",
+      "opposed",
+      "opposed"
+    ]
+  },
+  "openstates-ocd-bill-09c6f154-a7e5-489a-bb30-44904cdb0dd7|public_safety": {
+    "oracle": "opposed",
+    "agreement": 3,
+    "jurors": [
+      "opposed",
+      "opposed",
+      "opposed"
+    ]
+  },
+  "openstates-ocd-bill-f3e01594-a31f-4ed8-be09-cc417d18c19f|public_safety": {
+    "oracle": "opposed",
+    "agreement": 3,
+    "jurors": [
+      "opposed",
+      "opposed",
+      "opposed"
+    ]
+  },
+  "openstates-ocd-bill-48f067c1-cf92-4a67-9fe2-96390830383d|public_safety": {
+    "oracle": "opposed",
+    "agreement": 2,
+    "jurors": [
+      "no_score",
+      "opposed",
+      "opposed"
+    ]
+  },
+  "openstates-ocd-bill-ed81c4cc-9a36-4ceb-9ef4-250e10e54129|public_safety": {
+    "oracle": "no_score",
+    "agreement": 2,
+    "jurors": [
+      "no_score",
+      "opposed",
+      "no_score"
+    ]
+  },
+  "openstates-ocd-bill-49689bba-9a48-4b8e-8da5-75d605251fd0|public_safety": {
+    "oracle": "no_score",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ]
+  },
+  "openstates-ocd-bill-29c82588-9ae0-4f1c-a90a-90fc5750e37a|public_safety": {
+    "oracle": "no_score",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ]
+  },
+  "openstates-ocd-bill-5099f88f-e02a-47f9-ae4d-8fe4a20a1a22|public_safety": {
+    "oracle": "opposed",
+    "agreement": 3,
+    "jurors": [
+      "opposed",
+      "opposed",
+      "opposed"
+    ]
+  },
+  "openstates-ocd-bill-40963371-4924-4456-85c9-275fb635adc5|public_safety": {
+    "oracle": "opposed",
+    "agreement": 3,
+    "jurors": [
+      "opposed",
+      "opposed",
+      "opposed"
+    ]
+  },
+  "openstates-ocd-bill-3f7401e6-47e3-4d82-8a35-292638ceadba|public_safety": {
+    "oracle": "no_score",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ]
+  },
+  "openstates-ocd-bill-2d18a7a6-699a-4767-b06a-335291482ee0|public_safety": {
+    "oracle": "no_score",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ]
+  },
+  "openstates-ocd-bill-a6d79def-2933-48de-9957-9dba401c85ed|public_safety": {
+    "oracle": "no_score",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ]
+  },
+  "openstates-ocd-bill-fe9e8780-1395-4fe2-9129-da15f9682155|public_safety": {
+    "oracle": "no_score",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ]
+  },
+  "openstates-ocd-bill-7c6946f7-02c4-40b4-b028-7aee521875e9|public_safety": {
+    "oracle": "no_score",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ]
+  },
+  "openstates-ocd-bill-7d718864-8a6c-4c54-b8f8-e1a6331aaf53|public_safety": {
+    "oracle": "opposed",
+    "agreement": 3,
+    "jurors": [
+      "opposed",
+      "opposed",
+      "opposed"
+    ]
+  },
+  "openstates-ocd-bill-d8c65eb7-3d43-4896-a1e4-7b6c573e423f|public_safety": {
+    "oracle": "no_score",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ]
+  },
+  "openstates-ocd-bill-674ed94e-eef4-4c8f-aa6b-0714a486ab8b|public_safety": {
+    "oracle": "no_score",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ]
+  },
+  "openstates-ocd-bill-fa4f17f0-37ac-41e4-8db6-bcb8fc0d8763|public_safety": {
+    "oracle": "no_score",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ]
+  },
+  "openstates-ocd-bill-c910631b-23e0-4c54-a585-0a853523e5b2|public_safety": {
+    "oracle": "no_score",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ]
+  },
+  "openstates-ocd-bill-d20c49e7-95b5-4f7b-9632-cd60b1b67be0|public_safety": {
+    "oracle": "no_score",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ]
+  },
+  "openstates-ocd-bill-09f9d36a-683e-41c9-8090-b3dc5704cd5b|public_safety": {
+    "oracle": "opposed",
+    "agreement": 3,
+    "jurors": [
+      "opposed",
+      "opposed",
+      "opposed"
+    ]
+  },
+  "openstates-ocd-bill-9e41a3f3-ba77-4286-a083-d80522e231b5|public_safety": {
+    "oracle": "no_score",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ]
+  },
+  "openstates-ocd-bill-3d74887a-4728-4261-a031-6e8f62e26fe5|public_safety": {
+    "oracle": "opposed",
+    "agreement": 3,
+    "jurors": [
+      "opposed",
+      "opposed",
+      "opposed"
+    ]
+  },
+  "openstates-ocd-bill-0101f8f2-f22d-41fd-ade4-f8565a477ba0|public_safety": {
+    "oracle": "opposed",
+    "agreement": 2,
+    "jurors": [
+      "opposed",
+      "opposed",
+      "no_score"
+    ]
+  },
+  "openstates-ocd-bill-5d8b00b4-b9a5-4007-9cf3-68bdeca1f9c3|public_safety": {
+    "oracle": "no_score",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ]
+  },
+  "openstates-ocd-bill-f773dedc-6928-4f83-a935-dde894d88127|public_safety": {
+    "oracle": "opposed",
+    "agreement": 3,
+    "jurors": [
+      "opposed",
+      "opposed",
+      "opposed"
+    ]
+  },
+  "openstates-ocd-bill-9fbe280c-9ff0-4799-853b-5ebd3156f097|public_safety": {
+    "oracle": "no_score",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ]
+  },
+  "openstates-ocd-bill-4e89aa6b-4c81-4252-8639-c4ddf6cc5b2e|public_safety": {
+    "oracle": "no_score",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ]
+  },
+  "openstates-ocd-bill-835e37d6-c9d3-4ad1-9102-d0c305c77b03|public_safety": {
+    "oracle": "no_score",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ]
+  },
+  "openstates-ocd-bill-b00cfaaa-6733-4b17-b39a-d54a645f7bf8|public_safety": {
+    "oracle": "no_score",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ]
+  },
+  "openstates-ocd-bill-0e92d608-94b5-4cba-bf03-b6442626725a|public_safety": {
+    "oracle": "no_score",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ]
+  },
+  "openstates-ocd-bill-505949e6-7033-4cd5-9775-ab2358fa7f7e|public_safety": {
+    "oracle": "no_score",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ]
+  },
+  "openstates-ocd-bill-bedac1ce-7d31-48cc-8d4f-5ad41acdb0fb|public_safety": {
+    "oracle": "no_score",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ]
+  },
+  "openstates-ocd-bill-bf2226bf-d92c-465d-92ef-dd9c53f246f8|public_safety": {
+    "oracle": "opposed",
+    "agreement": 3,
+    "jurors": [
+      "opposed",
+      "opposed",
+      "opposed"
+    ]
+  },
+  "openstates-ocd-bill-927ed069-8118-4137-a723-8e4f7054c14b|public_safety": {
+    "oracle": "no_score",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ]
+  },
+  "openstates-ocd-bill-6ef72f57-2625-4a96-bffb-32db7835eec9|public_safety": {
+    "oracle": "opposed",
+    "agreement": 3,
+    "jurors": [
+      "opposed",
+      "opposed",
+      "opposed"
+    ]
+  },
+  "openstates-ocd-bill-539b3419-b2e5-49a6-97e4-79ae6510ded4|public_safety": {
+    "oracle": "no_score",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ]
+  },
+  "openstates-ocd-bill-3d62c3f2-e08f-411c-9f51-b95ccf437793|public_safety": {
+    "oracle": "no_score",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ]
+  },
+  "openstates-ocd-bill-9f24be30-d5ae-457e-b812-0dc9b4c4a43b|public_safety": {
+    "oracle": "opposed",
+    "agreement": 3,
+    "jurors": [
+      "opposed",
+      "opposed",
+      "opposed"
+    ]
+  },
+  "openstates-ocd-bill-83c8536d-df3d-41fb-bd3d-96e8e271e883|public_safety": {
+    "oracle": "no_score",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ]
+  },
+  "openstates-ocd-bill-09f2f307-84ad-4c86-b8b6-104c6db4a200|public_safety": {
+    "oracle": "no_score",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ]
+  },
+  "openstates-ocd-bill-ce40bfc2-277a-4bf6-90ff-bc35e5e9300f|public_safety": {
+    "oracle": "no_score",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ]
+  },
+  "openstates-ocd-bill-83859b43-ed80-4795-b7a3-4ea7b45d2292|public_safety": {
+    "oracle": "no_score",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ]
+  },
+  "openstates-ocd-bill-aea7fa65-99ce-44af-b940-f86064946b48|public_safety": {
+    "oracle": "no_score",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ]
+  },
+  "openstates-ocd-bill-30b34846-fd22-40d0-be7e-0b7ffb211403|public_safety": {
+    "oracle": "no_score",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ]
+  },
+  "openstates-ocd-bill-03606db5-9f89-4bc3-9a61-0cfeb0e16e4b|public_safety": {
+    "oracle": "no_score",
+    "agreement": 2,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "in_favor"
+    ]
+  },
+  "openstates-ocd-bill-ef185cba-bb28-4ac5-a1b9-e2db1cd9d608|public_safety": {
+    "oracle": "no_score",
+    "agreement": 2,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "in_favor"
+    ]
+  },
+  "openstates-ocd-bill-93335f88-e04c-425b-be1d-93f026a3d0be|public_safety": {
+    "oracle": "in_favor",
+    "agreement": 2,
+    "jurors": [
+      "no_score",
+      "in_favor",
+      "in_favor"
+    ]
+  },
+  "openstates-ocd-bill-281fad99-2680-4e62-a808-094f0b961ecd|public_safety": {
+    "oracle": "in_favor",
+    "agreement": 3,
+    "jurors": [
+      "in_favor",
+      "in_favor",
+      "in_favor"
+    ]
+  },
+  "openstates-ocd-bill-1d2d48c4-6e22-42b2-95fb-beb17816bcee|public_safety": {
+    "oracle": "no_score",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ]
+  },
+  "openstates-ocd-bill-a5fc7b81-f8f0-4677-99c4-85720da69c91|public_safety": {
+    "oracle": "no_score",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ]
+  },
+  "openstates-ocd-bill-55e40e6b-305c-44c9-8d82-33bf767b5b66|public_safety": {
+    "oracle": "no_score",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ]
+  },
+  "openstates-ocd-bill-47a15fc8-2dcb-4824-9fb1-7c591dd2e625|public_safety": {
+    "oracle": "no_score",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ]
+  },
+  "openstates-ocd-bill-abfc0a2a-f81c-47f7-8ccc-676fefdf7021|public_safety": {
+    "oracle": "no_score",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ]
+  },
+  "openstates-ocd-bill-3362ba9f-d231-43f7-ba39-0d91b5c0652b|public_safety": {
+    "oracle": "no_score",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ]
+  },
+  "openstates-ocd-bill-57ba5a36-5485-4273-8386-9a6dc48b40eb|public_safety": {
+    "oracle": "no_score",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ]
+  },
+  "openstates-ocd-bill-14c42b41-33c1-4726-b66d-e18f75b812c8|public_safety": {
+    "oracle": "in_favor",
+    "agreement": 3,
+    "jurors": [
+      "in_favor",
+      "in_favor",
+      "in_favor"
+    ]
+  },
+  "openstates-ocd-bill-3066a112-93e7-4b82-b7dc-8abc7eff0e8d|public_safety": {
+    "oracle": "no_score",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ]
+  },
+  "openstates-ocd-bill-201c9089-e735-4914-b56b-9c629b49c5de|public_safety": {
+    "oracle": "no_score",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ]
   }
 }

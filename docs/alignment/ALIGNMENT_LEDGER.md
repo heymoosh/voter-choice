@@ -60,11 +60,17 @@ untouched. Tooling: `scripts/ingest/_gold-{sample,oracle.workflow,assemble}`,
 - **Disagreements for Muxin:** 144 → `_gold-disagreements.json` (1 INVERSION — a TN teacher-bonus
   bill amending a school-choice act, oracle unanimously in_favor vs pole_v1 opposed; 7 pv-abstains;
   136 oracle-abstains).
-- **Decision / next.** Gate passes. **Gated cutover awaits Muxin:** threshold confirm, production
-  `DATABASE_URL`, per-issue calls (esp. ship-vs-hold **public_safety**; optional fix of the 1
-  education tag), and a throwaway prod branch for the fire-time literal rehearsal. Per-issue,
-  transactional, backup-first; failing/held issues **blank to "no data"** (Muxin's decision), not
-  left on the inverted status quo.
+- **Muxin's calls (2026-06-06).** Threshold **≤5%** confirmed. **education** 1-inversion **fixed**
+  in pole_v1 (`source_run='gold-adjudication-1'`: that TN teacher-bonus row opposed→in_favor;
+  education now 0/28). **public_safety re-sampled** (+100 bills, `_gold-sample-more.ts`) → **0/41
+  inversion (robust, was n=10)**, 100% direction agreement; over-confidence confirmed and is the
+  real signal (panel abstains on **79** of pole_v1's confident public_safety calls, **31 at
+  `high`**) but **non-inverting** → Muxin: **SHIP** (stricter public_safety re-tag = post-cutover
+  follow-up). **All 12 issues PASS → all migrate, none blank.**
+- **Next: the gated cutover.** Plan = `_cutover-plan.json` (migrate all 12). Awaiting from Muxin:
+  production `DATABASE_URL` + a throwaway Neon branch off prod (no neonctl/API key locally) to run
+  the literal `_cutover-fire.ts` rehearsal, then fire against prod (per-issue txn, backup-first,
+  anti-join + freeze preflight), verify, and log the cutover entry. Production still untouched.
 
 ### 2026-06-05 — Missing-summary recovery from the local OpenStates dump (`source_run='summary-recovery-1'`)
 **On subscription.** Recovered bill **full text** for the null-summary tagged corpus straight from

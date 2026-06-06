@@ -1168,6 +1168,838 @@
     "summary": "Amends the Law Enforcement Camera Grant Act. In provisions relating to the annual report that is required for each law enforcement agency receiving a grant for officer-work body cameras, removes requirements that the report must include specified information relating to each recording used in prosecutions of conservation, criminal, or traffic offenses or municipal ordinance violations and specified information related to recordings used in a civil proceeding or internal affairs investigation."
   },
   {
+    "issue": "public_safety",
+    "bill_id": "openstates-ocd-bill-012aedb4-d810-49ec-8939-00b37fe82d6f",
+    "oracle": "no_score",
+    "pole_v1": "in_favor",
+    "kind": "ORACLE_ABSTAINED_PV_CONFIDENT",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ],
+    "pv_conf": "medium",
+    "title": "Addressing reckless driving in cases involving excessive speed.",
+    "summary": "Amends Washington's negligent driving statute to add driving more than 30 mph over the posted speed limit as an independent basis for first-degree negligent driving, with repeat violations elevated to a gross misdemeanor."
+  },
+  {
+    "issue": "public_safety",
+    "bill_id": "openstates-ocd-bill-be8dcf00-5b84-4582-8539-3e0c0e5cfac0",
+    "oracle": "no_score",
+    "pole_v1": "in_favor",
+    "kind": "ORACLE_ABSTAINED_PV_CONFIDENT",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ],
+    "pv_conf": "high",
+    "title": "unlawful flight; reckless endangerment; violation.",
+    "summary": "Upgrades the penalties for fleeing or eluding a law enforcement vehicle in Arizona: the base offense remains a class 5 felony, reckless endangerment elevates it to a class 4 felony, and causing serious injury, transporting a minor under 15, or committing the offense while DUI elevates it to a class 2 felony."
+  },
+  {
+    "issue": "public_safety",
+    "bill_id": "openstates-ocd-bill-6c4503ec-78c0-4c7c-be4b-b67f62fb2570",
+    "oracle": "no_score",
+    "pole_v1": "in_favor",
+    "kind": "ORACLE_ABSTAINED_PV_CONFIDENT",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ],
+    "pv_conf": "low",
+    "title": "Provides for certain presumptions for reckless driving and the implementation of a reckless driving and vehicular violence awareness component of the pre-licensing course for driver's licenses",
+    "summary": "Provides for certain presumptions for reckless driving and the implementation of a reckless driving and vehicular violence awareness component of the pre-licensing course for driver's licenses."
+  },
+  {
+    "issue": "public_safety",
+    "bill_id": "openstates-ocd-bill-46b0d9ac-450c-4c32-a263-52b9d7b1c63b",
+    "oracle": "no_score",
+    "pole_v1": "in_favor",
+    "kind": "ORACLE_ABSTAINED_PV_CONFIDENT",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ],
+    "pv_conf": "high",
+    "title": "RELATING TO BRIBERY.",
+    "summary": "Establishes the offense of failure to report bribery as a misdemeanor.  Effective 7/1/2050.  (SD1)"
+  },
+  {
+    "issue": "public_safety",
+    "bill_id": "openstates-ocd-bill-3c0feee7-c3b1-4c6c-8d85-1a9f9dcc9268",
+    "oracle": "no_score",
+    "pole_v1": "in_favor",
+    "kind": "ORACLE_ABSTAINED_PV_CONFIDENT",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ],
+    "pv_conf": "medium",
+    "title": "Increasing the penalty for hazing.",
+    "summary": "Increases the criminal penalty for hazing at postsecondary institutions, elevating violations causing substantial bodily harm from a gross misdemeanor to a class C felony, and imposes strict liability on student organizations that permit hazing."
+  },
+  {
+    "issue": "public_safety",
+    "bill_id": "openstates-ocd-bill-fce8e61b-4c07-4913-b16a-bbd9584c1e4d",
+    "oracle": "no_score",
+    "pole_v1": "in_favor",
+    "kind": "ORACLE_ABSTAINED_PV_CONFIDENT",
+    "agreement": 2,
+    "jurors": [
+      "no_score",
+      "in_favor",
+      "no_score"
+    ],
+    "pv_conf": "medium",
+    "title": "DISTRICTS/CRIME PREVENT: Creates the Real Timbers Crime Prevention and Security District in Orleans Parish",
+    "summary": "Creates the Real Timbers Crime Prevention and Improvement District in Orleans Parish, Louisiana, as a political subdivision governed by a homeowners association-controlled board, with authority to fund and contract for enhanced security patrols, lighting, and neighborhood beautification, financed by a voter-approved parcel fee of up to $315 per year."
+  },
+  {
+    "issue": "public_safety",
+    "bill_id": "openstates-ocd-bill-79bec69e-87c8-47cb-9f24-20cf84e828c4",
+    "oracle": "no_score",
+    "pole_v1": "in_favor",
+    "kind": "ORACLE_ABSTAINED_PV_CONFIDENT",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ],
+    "pv_conf": "high",
+    "title": "RELATING TO PROPERTY DAMAGE OF CRITICAL INFRASTRUCTURE FACILITIES.",
+    "summary": "Establishes the class C felony offense of criminal property damage to critical infrastructure facilities.  Expands the term \"critical infrastructure\" to include broadband, wireless, and cable networks.  Effective 7/1/3000.  (HD1)"
+  },
+  {
+    "issue": "public_safety",
+    "bill_id": "openstates-ocd-bill-3882c4c0-9f1c-4536-91ae-f0706f4f5aef",
+    "oracle": "no_score",
+    "pole_v1": "in_favor",
+    "kind": "ORACLE_ABSTAINED_PV_CONFIDENT",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ],
+    "pv_conf": "medium",
+    "title": "Mental Illness - As introduced, establishes a rebuttable presumption that a person poses an imminent substantial likelihood of serious harm and needs emergency detention and examination if the person was charged with one of certain criminal offenses and ordered by the criminal, circuit, or general sessions court to undergo an evaluation to determine whether the person is incompetent to stand trial or the person's mental capacity at the time of the commission of the crime; requires clear and convincing evidence to rebut the presumption. - Amends TCA Title 33; Title 40 and Title 52.",
+    "summary": "Creates a rebuttable presumption that a person charged with a serious offense (requiring at least 85% of sentence before parole eligibility) and ordered to undergo a competency or mental capacity evaluation meets the standard for emergency detention and examination, rebuttable only by clear and convincing evidence of no imminent substantial likelihood of serious harm."
+  },
+  {
+    "issue": "public_safety",
+    "bill_id": "openstates-ocd-bill-1c1a4a91-92fb-4e23-907e-11d8d2165188",
+    "oracle": "no_score",
+    "pole_v1": "in_favor",
+    "kind": "ORACLE_ABSTAINED_PV_CONFIDENT",
+    "agreement": 2,
+    "jurors": [
+      "no_score",
+      "in_favor",
+      "no_score"
+    ],
+    "pv_conf": "medium",
+    "title": "missing; kidnapped children; reporting requirements",
+    "summary": "Strengthens Arizona law enforcement duties for missing, kidnapped, or runaway children by adding requirements to post information on social media within 24 hours, enter data into additional national databases, and mandates regular agency training on these procedures; also restricts characterizing a child as a runaway in public communications unless necessary for safety or investigation."
+  },
+  {
+    "issue": "public_safety",
+    "bill_id": "openstates-ocd-bill-f301e6a2-d9ba-45d0-b223-fdfb3c2c59c2",
+    "oracle": "no_score",
+    "pole_v1": "in_favor",
+    "kind": "ORACLE_ABSTAINED_PV_CONFIDENT",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ],
+    "pv_conf": "high",
+    "title": "Oral threat to kill or to do bodily harm; employees of local or state dept. of social serv. penalty.",
+    "summary": "Oral threat to kill or to do bodily harm; employees of local or state department of social services; penalty. Creates a Class 1 misdemeanor for any person who orally makes a threat to kill or do bodily injury to any employee the Department of Social Services or a local department of social services, as those terms as defined in relevant law, who is engaged in the performance of his duties."
+  },
+  {
+    "issue": "public_safety",
+    "bill_id": "openstates-ocd-bill-67992b56-f021-492c-a3ca-aef7db317a78",
+    "oracle": "no_score",
+    "pole_v1": "in_favor",
+    "kind": "ORACLE_ABSTAINED_PV_CONFIDENT",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ],
+    "pv_conf": "medium",
+    "title": "Establish the offense of trespass by unmanned aerial vehicle",
+    "summary": "Creates the new criminal offense of trespass by unmanned aerial vehicle in Montana, making it unlawful to fly a drone 200 feet or lower over another person's property or residence without authorization, punishable by a $500 fine, with exceptions for government, law enforcement, utility, and FAA-licensed commercial operators."
+  },
+  {
+    "issue": "public_safety",
+    "bill_id": "openstates-ocd-bill-fdf5e624-5153-414e-878a-86984f1bf7eb",
+    "oracle": "no_score",
+    "pole_v1": "in_favor",
+    "kind": "ORACLE_ABSTAINED_PV_CONFIDENT",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ],
+    "pv_conf": "high",
+    "title": "An Act amending Title 42 (Judiciary and Judicial Procedure) of the Pennsylvania Consolidated Statutes, in bonds and recognizances, providing for bail of persons posing threat to public safety.",
+    "summary": "Amends Pennsylvania bail law to prohibit release on recognizance or unsecured bond for defendants deemed to pose a threat to public safety, including those charged with assault of law enforcement, repeat violent offenders, and large-quantity fentanyl trafficking."
+  },
+  {
+    "issue": "public_safety",
+    "bill_id": "openstates-ocd-bill-6e2271e2-766b-43e3-b1c1-50bf1e60ae69",
+    "oracle": "no_score",
+    "pole_v1": "in_favor",
+    "kind": "ORACLE_ABSTAINED_PV_CONFIDENT",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ],
+    "pv_conf": "medium",
+    "title": "Relating to: operation of drones over certain utility facilities and providing a penalty.",
+    "summary": "This Wisconsin bill prohibits operating a drone below 300 feet or within 500 feet of critical utility infrastructure (water, power, telecommunications) without authorization, with exceptions for facility owners, local governments, and FAA-compliant commercial operators, and requires law enforcement to seize and transfer drone imagery captured during violations."
+  },
+  {
+    "issue": "public_safety",
+    "bill_id": "openstates-ocd-bill-fa7bc716-11c5-4dee-931a-6fe81db6d21e",
+    "oracle": "no_score",
+    "pole_v1": "in_favor",
+    "kind": "ORACLE_ABSTAINED_PV_CONFIDENT",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ],
+    "pv_conf": "low",
+    "title": "Urge designation of illicit fentanyl a weapon of mass destruction",
+    "summary": "To urge the 119th Congress to introduce and pass legislation similar to the Stop Our Scourge Act of 2023, directing the Secretary of Homeland Security to designate illicit fentanyl as a weapon of mass destruction."
+  },
+  {
+    "issue": "public_safety",
+    "bill_id": "openstates-ocd-bill-b610f219-faa9-4d49-9caf-35d02c03f2bc",
+    "oracle": "no_score",
+    "pole_v1": "in_favor",
+    "kind": "ORACLE_ABSTAINED_PV_CONFIDENT",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ],
+    "pv_conf": "high",
+    "title": "Kratom; manufacturing, selling, giving, distributing, or possessing, penalties.",
+    "summary": "Manufacturing, selling, giving, distributing, or possessing  with intent kratom; Virginia Consumer Protection Act; penalties. Provides  that any person who knowingly manufactures, sells, gives, distributes, or  possesses with the intent to manufacture, sell, give, or distribute kratom,  when intended for human consumption, is guilty of a Class 1 misdemeanor. The  bill defines kratom as any part of the leaf of the plant Mitragyna speciosa or any extract thereof.  The bill also amends the existing provisions related to kratom  in the Virginia Consumer Protection Act to prohibit selling or offeri"
+  },
+  {
+    "issue": "public_safety",
+    "bill_id": "openstates-ocd-bill-99db3b31-768d-4936-bd84-ac76bf07da9b",
+    "oracle": "no_score",
+    "pole_v1": "in_favor",
+    "kind": "ORACLE_ABSTAINED_PV_CONFIDENT",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ],
+    "pv_conf": "medium",
+    "title": "Cities and towns; prohibiting political subdivisions from spending public funds to pay nonprofit organizations to pay defendants' bail. Effective date.",
+    "summary": "Prohibits Oklahoma political subdivisions from spending public funds to pay nonprofit charitable bail organizations that post bail for defendants, and provides for injunctive relief and attorney fees against violations."
+  },
+  {
+    "issue": "public_safety",
+    "bill_id": "openstates-ocd-bill-4a38291a-9df6-4f5b-86e1-bf389348650d",
+    "oracle": "no_score",
+    "pole_v1": "in_favor",
+    "kind": "ORACLE_ABSTAINED_PV_CONFIDENT",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ],
+    "pv_conf": "medium",
+    "title": "An Act amending the act of March 10, 1949 (P.L.30, No.14), known as the Public School Code of 1949, in student supports, providing for\r\n parental and employee notification of weapon incidents.",
+    "summary": "Requires Pennsylvania school entities, nonpublic schools, and private schools to notify parents, guardians, and employees within 24 hours of certain incidents on school property, including weapon possession, repeated bullying violations, harassment, serious bodily injury, and intentional property damage exceeding $1,000."
+  },
+  {
+    "issue": "public_safety",
+    "bill_id": "openstates-ocd-bill-b9910d24-c561-4476-90bc-207f992f7ded",
+    "oracle": "no_score",
+    "pole_v1": "in_favor",
+    "kind": "ORACLE_ABSTAINED_PV_CONFIDENT",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ],
+    "pv_conf": "high",
+    "title": "TELECOMMUNICATIONS THEFT",
+    "summary": "Amends the Recyclable Metal Purchase Registration Law. Provides that it is a violation of the Act for any person to possess, purchase, attempt to purchase, sell, or attempt to sell, or for any recyclable metal dealer to purchase or attempt to purchase, telecommunications wire in any amount unless the seller is an authorized agent, a representative or employee of a licensed contractor of a public utility, a provider of telecommunications services, as described in the Public Utilities Act, or a provider of broadband service, interconnected VoIP services, or wireless services, as described in the"
+  },
+  {
+    "issue": "public_safety",
+    "bill_id": "openstates-ocd-bill-3336d397-0e56-4617-a367-c7ab95218bb6",
+    "oracle": "no_score",
+    "pole_v1": "in_favor",
+    "kind": "ORACLE_ABSTAINED_PV_CONFIDENT",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ],
+    "pv_conf": "low",
+    "title": "Prohibits the operation of unmanned aircraft over school grounds or critical infrastructure",
+    "summary": "Prohibits the operation of unmanned aircraft, including drones, over school grounds or critical infrastructure; provides penalties for violations."
+  },
+  {
+    "issue": "public_safety",
+    "bill_id": "openstates-ocd-bill-cdf8f95e-5918-4c69-bb66-5f03fe47982e",
+    "oracle": "no_score",
+    "pole_v1": "in_favor",
+    "kind": "ORACLE_ABSTAINED_PV_CONFIDENT",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ],
+    "pv_conf": "medium",
+    "title": "Unauthorized Public Camping and Sleeping.",
+    "summary": "Prohibits North Carolina local governments from authorizing public camping or sleeping on public property, with a narrow exception allowing temporarily designated camping sites subject to state health department certification and specified minimum standards for safety, sanitation, and behavioral health services."
+  },
+  {
+    "issue": "public_safety",
+    "bill_id": "govtrack-hr875-119",
+    "oracle": "no_score",
+    "pole_v1": "in_favor",
+    "kind": "ORACLE_ABSTAINED_PV_CONFIDENT",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ],
+    "pv_conf": "low",
+    "title": "Jeremy and Angel Seay and Sergeant Brandon Mendoza Protect Our Communities from DUIs Act of 2025",
+    "summary": "<p><b>Protect Our Communities from DUIs Act</b></p> <p>This bill makes driving while intoxicated or impaired a ground for (1) barring a non-U.S. national (<em>alien</em> under federal law) from admission into the United States, or (2) deporting the individual.</p> <p>The bar to admission shall apply to an individual who has been convicted of the offense or has admitted to having committed the acts which constitute the elements of the offense. As a ground for deportability, the individual must have been convicted of the offense.</p>"
+  },
+  {
+    "issue": "public_safety",
+    "bill_id": "openstates-ocd-bill-03004dc0-d93e-423e-8be0-1c04abbd17ee",
+    "oracle": "no_score",
+    "pole_v1": "in_favor",
+    "kind": "ORACLE_ABSTAINED_PV_CONFIDENT",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ],
+    "pv_conf": "medium",
+    "title": "A bill for an act authorizing length of service award programs for volunteer fire fighters, volunteer emergency medical care providers, and reserve peace officers, and making appropriations.",
+    "summary": "Authorizes Iowa municipalities to establish length-of-service award (retirement incentive) programs for volunteer firefighters, volunteer EMS providers, and reserve peace officers, and creates a grant fund seeded with $1 million annually from lottery revenues to provide dollar-for-dollar matching grants to municipalities that establish such programs."
+  },
+  {
+    "issue": "public_safety",
+    "bill_id": "openstates-ocd-bill-5c81ea3a-ccc9-4e1b-8080-d641f8051ab6",
+    "oracle": "no_score",
+    "pole_v1": "in_favor",
+    "kind": "ORACLE_ABSTAINED_PV_CONFIDENT",
+    "agreement": 2,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "opposed"
+    ],
+    "pv_conf": "medium",
+    "title": "PEACE OFFICER STANDARDS AND TRAINING COUNCIL – Amends existing law to provide for the rejection of certain applicants due to certain criminal histories.",
+    "summary": "Amends Idaho's Peace Officer Standards and Training Council statute to add provisions for rejecting peace officer certification applicants based on certain criminal history."
+  },
+  {
+    "issue": "public_safety",
+    "bill_id": "openstates-ocd-bill-4fd0e124-dfc5-4302-a8a9-f2b44933bd56",
+    "oracle": "no_score",
+    "pole_v1": "in_favor",
+    "kind": "ORACLE_ABSTAINED_PV_CONFIDENT",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ],
+    "pv_conf": "high",
+    "title": "RIOTS – Amends existing law to provide a penalty for a riot that results in physical injury to a person.",
+    "summary": "Adds a new felony category to Idaho's riot statute: a riot that results in physical injury to any person is now a felony punishable by up to five years in prison or a $10,000 fine, in addition to the existing felony categories for riots occurring at penal facilities or causing property damage over $500. The bill expands criminal penalties for rioting."
+  },
+  {
+    "issue": "public_safety",
+    "bill_id": "openstates-ocd-bill-ed81c4cc-9a36-4ceb-9ef4-250e10e54129",
+    "oracle": "no_score",
+    "pole_v1": "opposed",
+    "kind": "ORACLE_ABSTAINED_PV_CONFIDENT",
+    "agreement": 2,
+    "jurors": [
+      "no_score",
+      "opposed",
+      "no_score"
+    ],
+    "pv_conf": "low",
+    "title": "DJJ; transfer of responsibility to Secretary of Health and Human Resources.",
+    "summary": "Department of Juvenile Justice; transfer of responsibility  from Secretary of Public Safety and Homeland Security to Secretary of Health  and Human Resources; stakeholder work group. Directs the Office of the  Secretary of Public Safety and Homeland Security and the Office of the Secretary  of Health and Human Resources to convene a stakeholder work group to create a plan  and recommended timeline for transferring responsibility for the Department of  Juvenile Justice from the Secretary of Public Safety and Homeland Security to  the Secretary of Health and Human Resources. The bill requires th"
+  },
+  {
+    "issue": "public_safety",
+    "bill_id": "openstates-ocd-bill-49689bba-9a48-4b8e-8da5-75d605251fd0",
+    "oracle": "no_score",
+    "pole_v1": "opposed",
+    "kind": "ORACLE_ABSTAINED_PV_CONFIDENT",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ],
+    "pv_conf": "high",
+    "title": "RELATING TO CANNABIS.",
+    "summary": "Establishes the Hawaii Cannabis and Hemp Office within the Department of Commerce and Consumer Affairs to regulate all aspects of the cannabis plant.  Beginning 1/1/2026, legalizes the personal adult use of cannabis.  Establishes taxes on the retail sale of adult-use cannabis and the sale of medical cannabis.  Adds new traffic offenses relating to the consumption or possession of marijuana or marijuana concentrate.  Makes conforming amendments related to the legalization of personal adult use of cannabis.  Beginning 1/1/2026, decriminalizes certain drug offenses related to marijuana and mariju"
+  },
+  {
+    "issue": "public_safety",
+    "bill_id": "openstates-ocd-bill-29c82588-9ae0-4f1c-a90a-90fc5750e37a",
+    "oracle": "no_score",
+    "pole_v1": "opposed",
+    "kind": "ORACLE_ABSTAINED_PV_CONFIDENT",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ],
+    "pv_conf": "low",
+    "title": "Employees, Employers - As introduced, requires a public safety employer to provide an employee or prospective employee with reasonable access to the employee's or prospective employee's full employment record, including the results of any mental health evaluation or screening; makes certain other changes relative to employment by a public safety employer. - Amends TCA Title 4; Title 8; Title 38; Title 50; Title 62 and Title 68.",
+    "summary": "Requires Tennessee public safety employers to provide employees and prospective employees with access to their full employment records including mental health evaluation results, and mandates that applicants denied employment based on mental health evaluations receive access to results and the right to submit an alternative evaluation from a qualified professional."
+  },
+  {
+    "issue": "public_safety",
+    "bill_id": "openstates-ocd-bill-3f7401e6-47e3-4d82-8a35-292638ceadba",
+    "oracle": "no_score",
+    "pole_v1": "opposed",
+    "kind": "ORACLE_ABSTAINED_PV_CONFIDENT",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ],
+    "pv_conf": "high",
+    "title": "Requires the department of corrections and community supervision to establish discharge plans and reentry services for wrongfully convicted individuals upon their discharge",
+    "summary": "Requires the department of corrections and community supervision to establish discharge plans and reentry services for wrongfully convicted individuals upon their discharge which includes housing needs, educational needs, employment needs, medical needs, and specific social service needs."
+  },
+  {
+    "issue": "public_safety",
+    "bill_id": "openstates-ocd-bill-2d18a7a6-699a-4767-b06a-335291482ee0",
+    "oracle": "no_score",
+    "pole_v1": "opposed",
+    "kind": "ORACLE_ABSTAINED_PV_CONFIDENT",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ],
+    "pv_conf": "high",
+    "title": "Establishes a drug checking services program",
+    "summary": "Establishes through the department of health, in conjunction with the office of addiction services and supports, a drug checking services program to allow individuals to bring drugs or controlled substances and have them tested for contaminants, toxic substances, or hazardous compounds."
+  },
+  {
+    "issue": "public_safety",
+    "bill_id": "openstates-ocd-bill-a6d79def-2933-48de-9957-9dba401c85ed",
+    "oracle": "no_score",
+    "pole_v1": "opposed",
+    "kind": "ORACLE_ABSTAINED_PV_CONFIDENT",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ],
+    "pv_conf": "high",
+    "title": "RELATING TO YOUTH PENALTIES.",
+    "summary": "Prohibits the assessment of any fees, fines, or court costs against a person who was adjudicated for an offense committed during the person's minority, or against the person's parent or guardian, and discharges all related debt obligations assessed before the effective date of the Act.  Encourages the use of community service and other programs that employ aina-based principles.  Repeals certain penalties imposed on parents, guardians, or other persons associated with unaccompanied children in streets and unmarried minors in dance halls.  Effective 7/1/2027.  (SD1)"
+  },
+  {
+    "issue": "public_safety",
+    "bill_id": "openstates-ocd-bill-fe9e8780-1395-4fe2-9129-da15f9682155",
+    "oracle": "no_score",
+    "pole_v1": "opposed",
+    "kind": "ORACLE_ABSTAINED_PV_CONFIDENT",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ],
+    "pv_conf": "medium",
+    "title": "Memorials, Government Officials - Urges the Tennessee opioid abatement council and each participating county to allocate 25 percent of approved expenditures from the opioid abatement fund to initiatives that distribute and promote overdose reversal medications. -",
+    "summary": "Urges the Tennessee Opioid Abatement Council and participating counties to allocate at least 25% of opioid settlement fund expenditures to overdose reversal medication distribution and promotion initiatives until the state's overdose death rate drops by at least 25%."
+  },
+  {
+    "issue": "public_safety",
+    "bill_id": "openstates-ocd-bill-7c6946f7-02c4-40b4-b028-7aee521875e9",
+    "oracle": "no_score",
+    "pole_v1": "opposed",
+    "kind": "ORACLE_ABSTAINED_PV_CONFIDENT",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ],
+    "pv_conf": "high",
+    "title": "Home/electronic incarceration program; court shall assign pregnant/postpartum persons to program.",
+    "summary": "Home/electronic incarceration program. Provides that any court having jurisdiction for the trial of a pregnant person or a postpartum person who still has contact with their infant child and is charged with certain offenses shall assign the offender to a home/electronic incarceration program unless there is probable cause to believe that (i) the offender will not appear for trial or hearing or at such other time and place as may be directed or (ii) the offender's liberty will constitute an unreasonable danger to such person, such person's family or household members, or the public. The bill al"
+  },
+  {
+    "issue": "public_safety",
+    "bill_id": "openstates-ocd-bill-d8c65eb7-3d43-4896-a1e4-7b6c573e423f",
+    "oracle": "no_score",
+    "pole_v1": "opposed",
+    "kind": "ORACLE_ABSTAINED_PV_CONFIDENT",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ],
+    "pv_conf": "high",
+    "title": "DHS-OVERDOSE PREVENTION SITES",
+    "summary": "Amends the Substance Use Disorder Act. Requires the Department of Human Services to establish a mechanism to collect research and data regarding overdose prevention sites (OPSs) and prepare a report for the General Assembly within 12 months after the effective date of the amendatory Act. Provides that the report shall contain information on (1) current research on the effectiveness of an OPS as an overdose prevention strategy; (2) OPS best practices for staffing, placement, and activities; and (3) the benefits and challenges of different OPS models - structures and settings. Requires the Depar"
+  },
+  {
+    "issue": "public_safety",
+    "bill_id": "openstates-ocd-bill-674ed94e-eef4-4c8f-aa6b-0714a486ab8b",
+    "oracle": "no_score",
+    "pole_v1": "opposed",
+    "kind": "ORACLE_ABSTAINED_PV_CONFIDENT",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ],
+    "pv_conf": "low",
+    "title": "Regards school policies on administering overdose reversal drugs",
+    "summary": "To enact sections 3313.7118, 3313.7119, 3314.148, 3326.62, and 3328.40 of the Revised Code regarding school policies on the administration of overdose reversal drugs."
+  },
+  {
+    "issue": "public_safety",
+    "bill_id": "openstates-ocd-bill-fa4f17f0-37ac-41e4-8db6-bcb8fc0d8763",
+    "oracle": "no_score",
+    "pole_v1": "opposed",
+    "kind": "ORACLE_ABSTAINED_PV_CONFIDENT",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ],
+    "pv_conf": "high",
+    "title": "Misdemeanor proceedings; competency treatment.",
+    "summary": "Competency treatment in misdemeanor proceedings.  Provides that in cases where the defendant has been charged with a misdemeanor  offense, the court may (i) order outpatient treatment or (ii) dismiss the charges.  Where a defendant is found to be incompetent, the bill permits a court to (a) order that such defendant receive treatment to  restore his competency on an outpatient basis in a local correctional facility  or at a location determined by the appropriate community services board or  behavioral health authority, (b) order that such  defendant be evaluated to determine whether he meets t"
+  },
+  {
+    "issue": "public_safety",
+    "bill_id": "openstates-ocd-bill-c910631b-23e0-4c54-a585-0a853523e5b2",
+    "oracle": "no_score",
+    "pole_v1": "opposed",
+    "kind": "ORACLE_ABSTAINED_PV_CONFIDENT",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ],
+    "pv_conf": "low",
+    "title": "AN ACT RELATING TO HEALTH AND SAFETY -- PREVENTION AND SUPPRESSION OF CONTAGIOUS DISEASES -- HIV/AIDS",
+    "summary": "Repeals the required HIV testing for an individual convicted under chapter 34.1 of title 11 and allows the option for HIV testing for any person convicted under this chapter."
+  },
+  {
+    "issue": "public_safety",
+    "bill_id": "openstates-ocd-bill-d20c49e7-95b5-4f7b-9632-cd60b1b67be0",
+    "oracle": "no_score",
+    "pole_v1": "opposed",
+    "kind": "ORACLE_ABSTAINED_PV_CONFIDENT",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ],
+    "pv_conf": "low",
+    "title": "Permissible unsupervised activity.",
+    "summary": "Defines \"independent activity\". Provides that a child is not a child in need of services solely because a parent, guardian, or custodian allows the child to engage in an independent activity unless the parent, guardian, or custodian is so reckless in allowing the child to engage in the independent activity that it endangers the child's health or safety given the child's maturity, condition, and ability. Provides a defense for neglect of a dependent that the accused person reasonably believed that an independent activity was not dangerous."
+  },
+  {
+    "issue": "public_safety",
+    "bill_id": "openstates-ocd-bill-9e41a3f3-ba77-4286-a083-d80522e231b5",
+    "oracle": "no_score",
+    "pole_v1": "opposed",
+    "kind": "ORACLE_ABSTAINED_PV_CONFIDENT",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ],
+    "pv_conf": "low",
+    "title": "Planning and zoning: detention facilities.",
+    "summary": "Existing law authorizes the legislative body of any county or city to adopt ordinances that, among other things, regulate the use of buildings, structures, and land as between industry, business, residences, open space, including agriculture, recreation, enjoyment of scenic beauty, use of natural resources, and other purposes.\n\nThis bill would prohibit a city or county from approving new land uses in a manner that authorize construction of a detention facility or changes of use that permit use of an existing building as a detention facility, as defined for purposes of these provisions. By addi"
+  },
+  {
+    "issue": "public_safety",
+    "bill_id": "openstates-ocd-bill-5d8b00b4-b9a5-4007-9cf3-68bdeca1f9c3",
+    "oracle": "no_score",
+    "pole_v1": "opposed",
+    "kind": "ORACLE_ABSTAINED_PV_CONFIDENT",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ],
+    "pv_conf": "medium",
+    "title": "PUBLIC DEFENSE – Amends existing law to revise provisions regarding the Office of the State Public Defender and indigent public defense in this state.",
+    "summary": "Amends Idaho's public defense statutes to strengthen the Office of the State Public Defender by requiring a facilities transition plan and a cost-effectiveness analysis for FY2027 budget requests, and makes technical corrections to provisions governing indigent defense services and the roles of district public defenders."
+  },
+  {
+    "issue": "public_safety",
+    "bill_id": "openstates-ocd-bill-9fbe280c-9ff0-4799-853b-5ebd3156f097",
+    "oracle": "no_score",
+    "pole_v1": "opposed",
+    "kind": "ORACLE_ABSTAINED_PV_CONFIDENT",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ],
+    "pv_conf": "high",
+    "title": "Prohibits correctional facilities from denying entry to certain peer support advocates based on such advocates' prior history of incarceration",
+    "summary": "Prohibits correctional facilities from denying entry to peer support advocates who are certified or licensed and are participating in the provision of corrections-based substance use disorder treatment and transition services based on such advocates' prior history of incarceration."
+  },
+  {
+    "issue": "public_safety",
+    "bill_id": "openstates-ocd-bill-4e89aa6b-4c81-4252-8639-c4ddf6cc5b2e",
+    "oracle": "no_score",
+    "pole_v1": "opposed",
+    "kind": "ORACLE_ABSTAINED_PV_CONFIDENT",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ],
+    "pv_conf": "medium",
+    "title": "Domestic Violence Fatality Review Board; create within Department of Health.",
+    "summary": "Creates a Domestic Violence Fatality Review Board within Mississippi's State Department of Health to review domestic violence deaths, develop prevention strategies, and submit biennial reports to the legislature with findings and policy recommendations."
+  },
+  {
+    "issue": "public_safety",
+    "bill_id": "openstates-ocd-bill-835e37d6-c9d3-4ad1-9102-d0c305c77b03",
+    "oracle": "no_score",
+    "pole_v1": "opposed",
+    "kind": "ORACLE_ABSTAINED_PV_CONFIDENT",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ],
+    "pv_conf": "low",
+    "title": "FAMILY RECOVERY PLANS",
+    "summary": "Creates the Family Recovery Plans Implementation Task Force Act. Provides that it is the General Assembly's intent to require a coordinated, public health, and service-integrated response by various agencies within the State's health and child welfare systems to address the substance use treatment needs of infants born with prenatal substance exposure, as well as the treatment needs of their caregivers and families, by requiring the development, provision, and monitoring of family recovery plans. Creates the Family Recovery Plans Implementation Task Force within the Department of Human Service"
+  },
+  {
+    "issue": "public_safety",
+    "bill_id": "openstates-ocd-bill-b00cfaaa-6733-4b17-b39a-d54a645f7bf8",
+    "oracle": "no_score",
+    "pole_v1": "opposed",
+    "kind": "ORACLE_ABSTAINED_PV_CONFIDENT",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ],
+    "pv_conf": "medium",
+    "title": "Reinstating the indigent defense task force.",
+    "summary": "Reinstates Washington's indigent defense task force to study the current system for providing legal representation to those who cannot afford counsel, requiring a report by January 1, 2028, with findings on delivery models, caseload compliance, funding adequacy, and recommendations for reform, expiring June 30, 2029."
+  },
+  {
+    "issue": "public_safety",
+    "bill_id": "openstates-ocd-bill-0e92d608-94b5-4cba-bf03-b6442626725a",
+    "oracle": "no_score",
+    "pole_v1": "opposed",
+    "kind": "ORACLE_ABSTAINED_PV_CONFIDENT",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ],
+    "pv_conf": "high",
+    "title": "An Act providing for the regulation and treatment of cannabis, for exemption from criminal or civil penalties, for effect on cannabis convictions and expungements and for membership and duties of the Liquor Control Board; establishing Pennsylvania Cannabis Stores; providing for social and economic equity, for license, permit or other authorization, for packaging, labeling, advertising and testing, for recordkeeping and inspection, for prohibitions and penalties and for tax and tax administration; establishing the Cannabis Revenue Fund, the Communities Reimagined and Reinvestment Restricted Account and the Substance Use Disorder Prevention, Treatment and Education Restricted Account; providing for the issuance of bonds; imposing duties on the Department of Agriculture and the Department of Revenue; and making repeals.",
+    "summary": "Legalizes and regulates recreational cannabis in Pennsylvania through a state-run retail system, exempts adults from criminal or civil penalties for cannabis possession and use, and vacates prior cannabis convictions while requiring expungement of records."
+  },
+  {
+    "issue": "public_safety",
+    "bill_id": "openstates-ocd-bill-505949e6-7033-4cd5-9775-ab2358fa7f7e",
+    "oracle": "no_score",
+    "pole_v1": "opposed",
+    "kind": "ORACLE_ABSTAINED_PV_CONFIDENT",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ],
+    "pv_conf": "high",
+    "title": "RELATING TO PUBLIC SAFETY.",
+    "summary": "Requires the Department of Corrections and Rehabilitation to submit an annual report to the Legislature.  Appropriates funds to the Department of Corrections and Rehabilitation for reentry services to connect offenders with community-based services.  Effective 7/1/3000.  (SD1)"
+  },
+  {
+    "issue": "public_safety",
+    "bill_id": "openstates-ocd-bill-bedac1ce-7d31-48cc-8d4f-5ad41acdb0fb",
+    "oracle": "no_score",
+    "pole_v1": "opposed",
+    "kind": "ORACLE_ABSTAINED_PV_CONFIDENT",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ],
+    "pv_conf": "low",
+    "title": "Interjurisdictional law-enforcement agreements; development of behavioral health co-response teams.",
+    "summary": "Interjurisdictional law-enforcement agreements; behavioral health co-response teams. Provides that interjurisdictional law-enforcement agreements may allow for the development of co-response teams staffed by one or more law-enforcement agencies that respond to behavioral health-related calls in multiple jurisdictions. This bill is a recommendation of the Behavioral Health Commission. This bill is identical to SB 317."
+  },
+  {
+    "issue": "public_safety",
+    "bill_id": "openstates-ocd-bill-927ed069-8118-4137-a723-8e4f7054c14b",
+    "oracle": "no_score",
+    "pole_v1": "opposed",
+    "kind": "ORACLE_ABSTAINED_PV_CONFIDENT",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ],
+    "pv_conf": "medium",
+    "title": "Health: pharmaceuticals; distribution of opioid antagonists by employees and agents of agencies under the administration of opioid antagonists act; provide for. Amends sec. 17744b of 1978 PA 368 (MCL 333.17744b).",
+    "summary": "Expands Michigan law to allow opioid antagonists (such as naloxone) to be prescribed and dispensed to individuals, family members, friends, agencies, and other persons who may assist overdose victims, and provides liability protection for prescribers and dispensers acting in good faith."
+  },
+  {
+    "issue": "public_safety",
+    "bill_id": "openstates-ocd-bill-539b3419-b2e5-49a6-97e4-79ae6510ded4",
+    "oracle": "no_score",
+    "pole_v1": "opposed",
+    "kind": "ORACLE_ABSTAINED_PV_CONFIDENT",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ],
+    "pv_conf": "low",
+    "title": "CD CORR-MED RELEASE-HEARINGS",
+    "summary": "Amends the Unified Code of Corrections. Provides that the Prisoner Review Board shall place no additional restrictions, limitations, or requirements than that provided by the statute creating the procedure for medical release. Provides that upon a determination that the petitioner is eligible for a hearing on medical release, the Prisoner Review Board shall: (1) provide public notice of the petitioner's name, docket number, counsel, and hearing date; and (2) provide a copy of the evaluation and any medical records provided by the Department of Corrections to the petitioner or the petitioner's "
+  },
+  {
+    "issue": "public_safety",
+    "bill_id": "openstates-ocd-bill-3d62c3f2-e08f-411c-9f51-b95ccf437793",
+    "oracle": "no_score",
+    "pole_v1": "opposed",
+    "kind": "ORACLE_ABSTAINED_PV_CONFIDENT",
+    "agreement": 3,
+    "jurors": [
+      "no_score",
+      "no_score",
+      "no_score"
+    ],
+    "pv_conf": "medium",
+    "title": "POLICE/MUNICIPAL: Provides for the abolition of the office of police chief and the police department in the village of Edgefield",
+    "summary": "Authorizes the village of Edgefield, Louisiana to abolish its office of police chief and municipal police department, and allows the village to contract with other law enforcement entities within Red River Parish for police services."
+  },
+  {
+    "issue": "public_safety",
+    "bill_id": "openstates-ocd-bill-93335f88-e04c-425b-be1d-93f026a3d0be",
+    "oracle": "in_favor",
+    "pole_v1": "no_score",
+    "kind": "PV_ABSTAINED_ON_CONFIDENT",
+    "agreement": 2,
+    "jurors": [
+      "no_score",
+      "in_favor",
+      "in_favor"
+    ],
+    "old": "in_favor",
+    "title": "Makes appropriations to the Peace Officers' Standards and Training Commission for the replacement and updating of certain technology. (BDR S-1191)",
+    "summary": "Appropriates approximately $180,000 to Nevada's Peace Officers' Standards and Training Commission for replacement of computer hardware and updating of a records management and tracking system."
+  },
+  {
+    "issue": "public_safety",
+    "bill_id": "openstates-ocd-bill-281fad99-2680-4e62-a808-094f0b961ecd",
+    "oracle": "in_favor",
+    "pole_v1": "no_score",
+    "kind": "PV_ABSTAINED_ON_CONFIDENT",
+    "agreement": 3,
+    "jurors": [
+      "in_favor",
+      "in_favor",
+      "in_favor"
+    ],
+    "old": "in_favor",
+    "title": "Authorizes the county of Clinton to employ retired former members of the division of state police as special patrol officers",
+    "summary": "Authorizes the county of Clinton to employ retired former members of the division of state police as special patrol officers."
+  },
+  {
+    "issue": "public_safety",
+    "bill_id": "openstates-ocd-bill-14c42b41-33c1-4726-b66d-e18f75b812c8",
+    "oracle": "in_favor",
+    "pole_v1": "no_score",
+    "kind": "PV_ABSTAINED_ON_CONFIDENT",
+    "agreement": 3,
+    "jurors": [
+      "in_favor",
+      "in_favor",
+      "in_favor"
+    ],
+    "old": "in_favor",
+    "title": "AN ACT relating to public safety.",
+    "summary": "Amend KRS 15.382, relating to peace officer professional standards certification, to provide that a person who has previously been employed as a peace officer in another state and who meets certain criteria, shall not be required to pass a physical agility test; make technical corrections."
+  },
+  {
     "issue": "crime_public_safety",
     "bill_id": "openstates-ocd-bill-2b85cd1d-206b-4a20-ac9c-3319aa2f1251",
     "oracle": "no_score",
