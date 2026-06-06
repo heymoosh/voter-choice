@@ -26,9 +26,12 @@ deploy (only `launch/production` does; Vercel auto-deploy is off). Still: no
 force-push / rebase / history rewrite — branches are experiment data.
 
 ### ▶▶▶ Session 2026-06-06 — UX / logistics / research-timing fixes · LATEST · READ FIRST
-**HEAD `60f6b09` · `feat/prototype-rebuild` · tsc clean · prod `next build` green. Every commit
-authored `Muxin Li <muxin.li.pro@gmail.com>` (Vercel rejects the build-agent email — keep doing
-this for any deploy-bound commit).**
+**Branch `feat/prototype-rebuild`, PUSHED to `origin`** — on a fresh machine/mobile:
+`git fetch origin && git checkout feat/prototype-rebuild` (run `git log --oneline -8` for the
+exact tip; this handoff + the fix commits below are at the top). `tsc` clean · prod `next build`
+green. **Author every deploy-bound commit as `Muxin Li <muxin.li.pro@gmail.com>`** (Vercel rejects
+the build-agent email). **Verify on a LOCAL prod build** (`npm run build && npx next start -p 3100
+-H 127.0.0.1` + Playwright) — the preview is behind Vercel SSO and can't be driven directly.
 
 **Live preview (behind Vercel SSO — log in as `muxinli`):**
 `https://voter-choice-32xoaljuv-mooshs-projects-0635287d.vercel.app`
