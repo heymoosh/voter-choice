@@ -5572,17 +5572,15 @@ function App() {
       /* leave races on their fallback; never block the workspace */
     }
     setActiveRaceId(RACES[0].id);
-    // F-A: run candidate web-research DURING the analyzing screen — before the
-    // workspace paints — so cards land already-researched and navigating to a
-    // race fires no on-click fetch. Capped (~18s) so a slow serverless
-    // cold-start can't strand the user on 'analyzing'; any stragglers resolve
-    // in place (skeletons resolve correctly after the blind-mode fix).
-    try {
-      await Promise.race([
-        preloadAllCandidateResearch(newIssues),
-        new Promise((r) => setTimeout(r, 18000)),
-      ]);
-    } catch (e) { /* never block the workspace on research */ }
+    // F-A: kick off candidate web-research but DON'T block the workspace paint
+    // on it. preloadAllCandidateResearch's synchronous first pass marks every
+    // no-record candidate { status: 'loading' }, so cards mount with skeletons
+    // immediately; the throttled second pass drains in the background and
+    // resolves each card in place (correct since the blind-mode fix). We used to
+    // await this (capped 18s), which could strand the user on 'analyzing'
+    // through a slow serverless cold-start. fetchCandidateResearch swallows its
+    // own errors (returns null) so this fire-and-forget can never reject.
+    void preloadAllCandidateResearch(newIssues);
     setView('workspace');
     // Scroll to top so the user lands at the top of the workspace,
     // not wherever ColdOpenView left them (which on mobile was often
