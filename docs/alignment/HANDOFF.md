@@ -40,12 +40,16 @@ a **separate table so production never changes** until a deliberate, gated cutov
    prior handoff accounted for 11) — surfaced in the Step-0 audit, **32% inversions** (means-trap:
    clean-energy funding read as pro-production). **All 12 launch-blocking contested issues are now
    corrected in `issue_tags_pole_v1` (31,480 tags total).** See the ledger's `big-2` entry.
-2. **Cutover (gated)** — point the live app at the corrected tags. Single read point:
-   `src/lib/server/alignment.ts` → `lookupAlignment()` (innerJoin on `schema.issueTags`, ~L215–239).
-   Options: (a) migrate `issue_tags_pole_v1` into production `issue_tags` (the unique index on
-   `(bill_id,canonical_issue)` blocks version-rows → UPDATE in place / add a column / swap), or
-   (b) repoint `lookupAlignment`. **Either way, exclude `no_score` votes from scoring (like abstains).**
-   `alignment.ts` is shared with the redesign — coordinate.
+2. **Cutover (gated)** — **VALIDATED 2026-06-06; staged, awaiting prod URL to fire.** Approach
+   chosen: **data-only migrate-with-deletes** into production `issue_tags` under existing keys
+   (upsert confident; DELETE `no_score` so the innerJoin excludes them like abstains) — **no
+   app-code change** (confirmed against the deployed `lookupAlignment`, innerJoin on
+   `issue_tags.canonical_issue`, no `stance_lens` filter). Offline gold-sample gate (independent
+   3-juror Opus panel): **all 12 issues PASS ≤5% inversion** (11 at 0%, education 0/28 after a
+   1-tag fix) vs old tagger 13–53% inverted; SQL mechanics rehearsed on a clone. Plan +
+   tooling: `scripts/ingest/_cutover-{plan.json,fire,verify,rehearse}.ts`. **All 12 migrate, none
+   blank.** **To fire, need from Muxin:** production `DATABASE_URL` + a throwaway Neon branch off
+   prod for the literal-script rehearsal. See the ledger's 2026-06-06 entry.
 3. ~~**Missing-summary recovery**~~ — **✅ DONE 2026-06-05** (`source_run='summary-recovery-1'`).
    Recovered full text for **9,408/16,841 (56%)** null-summary tagged bills from Muxin's **local
    OpenStates pgdump** (`searchablebill.raw_text` — no API/PDF/OCR); wrote 9,405 `bills.summary` +
