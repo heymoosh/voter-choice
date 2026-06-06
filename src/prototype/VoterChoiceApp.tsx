@@ -5383,6 +5383,12 @@ function App() {
   // only; the returned scores are name-free. The per-candidate RENDER still
   // gates on !blindMode (line 666) — the result is simply cached and ready
   // the moment the card is revealed.
+  // F-A throttle: pre-load research for ALL no-record candidates, but cap how
+  // many /api/research-candidate requests are in flight at once. Un-throttled
+  // this fired a burst of 12+ simultaneous LLM web-search calls on workspace
+  // load, which hammered the dev server (and the community budget).
+  const RESEARCH_PRELOAD_CONCURRENCY = 3;
+
   function preloadAllCandidateResearch(resolvedIssues) {
     const sc = getRealStateCode();
     const structuredIssues = (resolvedIssues || [])
@@ -5393,6 +5399,12 @@ function App() {
       }));
     if (structuredIssues.length === 0) return; // nothing to research without issues
 
+    // Pass 1 (SYNCHRONOUS, before any await): mark every eligible candidate
+    // { status: 'loading' } and build the work queue. Marking up front is what
+    // makes the dedup guards correct — both here (line above) and the
+    // active-race useEffect skip on `getCandidateResearch(key)` see a queued
+    // candidate as in-flight, so navigating to its race never double-fires.
+    const queue = [];
     (RACES || []).forEach(race => {
       const rp = getRacePatternsForRace(race.id);
       const align = getAlignmentScoresForRace(race.id);
@@ -5403,22 +5415,38 @@ function App() {
         const key = race.id + '::' + cand.name;
         if (getCandidateResearch(key)) return; // already cached or in flight — skip
         setCandidateResearch(key, { status: 'loading' });
-        setDataVersion(v => v + 1);
-        fetchCandidateResearch({
+        queue.push({
+          key,
           candidateName: cand.name,
           jurisdiction: (rp?.race || race.id) + (sc ? ', ' + sc : ''),
-          issues: structuredIssues,
-          cycle: '2026',
-        }).then(res => {
-          if (res && res.scores && res.scores.length > 0) {
-            setCandidateResearch(key, { status: 'done', scores: res.scores });
-          } else {
-            setCandidateResearch(key, { status: 'unavailable' });
-          }
-          setDataVersion(v => v + 1);
         });
       });
     });
+    if (queue.length === 0) return;
+    setDataVersion(v => v + 1); // one re-render for all the 'loading' marks
+
+    // Pass 2 (THROTTLED): drain the queue with at most N requests in flight.
+    // Each finished request pulls the next task, so concurrency stays capped.
+    let cursor = 0;
+    function runNext() {
+      if (cursor >= queue.length) return;
+      const task = queue[cursor++];
+      fetchCandidateResearch({
+        candidateName: task.candidateName,
+        jurisdiction: task.jurisdiction,
+        issues: structuredIssues,
+        cycle: '2026',
+      }).then(res => {
+        if (res && res.scores && res.scores.length > 0) {
+          setCandidateResearch(task.key, { status: 'done', scores: res.scores });
+        } else {
+          setCandidateResearch(task.key, { status: 'unavailable' });
+        }
+        setDataVersion(v => v + 1);
+      }).finally(runNext); // free slot → pull the next task
+    }
+    const workers = Math.min(RESEARCH_PRELOAD_CONCURRENCY, queue.length);
+    for (let i = 0; i < workers; i++) runNext();
   }
 
   const [tweaks, setTweaks] = useStateA(loadTweaks);
