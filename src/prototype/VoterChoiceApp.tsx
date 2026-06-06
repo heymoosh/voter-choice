@@ -660,10 +660,13 @@ function CandidateCard({ candidate, alignmentEntry, userIssues, party, picked, o
   // text doesn't leak the candidate's last name in blind mode.
   const anonCtx = { blindMode, realLastName: candidate.name?.split(' ').pop(), alias };
 
-  // Web-research fallback for the alignment block. Gated on !blindMode so a
-  // revealed-then-rehidden candidate never re-exposes their name via the cached
-  // summary. Null → the card shows its honest "no record" backstop.
-  const research = !blindMode ? getCandidateResearch(raceId + '::' + candidate.name) : null;
+  // Web-research fallback for the alignment block. Read REGARDLESS of blind mode
+  // so a no-record candidate's name-free position analysis shows while blinded,
+  // exactly like voting records do — otherwise the card sat on a permanent
+  // "Looking up public statements…" that never resolved in blind mode. The only
+  // name-leak vector, the evidence links (their URLs/summaries can carry the
+  // name), is hidden while blinded inside AlignmentIssueRow.
+  const research = getCandidateResearch(raceId + '::' + candidate.name);
 
   return (
     <div className="cv2-card">
@@ -1109,7 +1112,13 @@ function AlignmentIssueRow({ issue, score, candidate, isOpen, onToggle, anonCtx 
                 : score.resolvedStance}
             </div>
             {/* Evidence URLs inline below the meta — keeps the grid clean */}
-            {hasEvidence && (
+            {hasEvidence && (anonCtx?.blindMode ? (
+              // Blinded: the analysis (name-free) shows, but evidence URLs/summaries
+              // can carry the candidate's name — hold them back until reveal.
+              <div className="meta" style={{ marginTop: '4px', fontStyle: 'italic', opacity: 0.7 }}>
+                Sources shown when you reveal the candidate
+              </div>
+            ) : (
               <div className="meta" style={{ marginTop: '4px', display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                 {evidenceLinks.map((ev, i) => (
                   <a
@@ -1124,7 +1133,7 @@ function AlignmentIssueRow({ issue, score, candidate, isOpen, onToggle, anonCtx 
                   </a>
                 ))}
               </div>
-            )}
+            ))}
           </div>
           {/* Right column: directional badge + confidence chip, matching the
               position/size of the voting_record .pct column. */}
