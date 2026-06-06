@@ -51,6 +51,20 @@ suite failures are the KNOWN prototype-rebuild cleanup debt (#27), not regressio
 **Verified:** NJ end-to-end (Playwright: gate, all candidates, NJ-01, no leaks); multi-state
 EXTRACTION generalization on PA(closed)/WI(open)/CA(top-two).
 
+**✅ 2026-06-06 — preview DEPLOYED + F-A throttle DONE.** Live preview (behind Vercel SSO, log in
+as muxinli): `https://voter-choice-egwbyrgdb-mooshs-projects-0635287d.vercel.app` (HEAD `3b71b62`,
+authored Muxin Li, ● Ready). F-A throttle committed (`3b71b62`): the pre-load now marks every
+no-record candidate `loading` synchronously, then drains `/api/research-candidate` at concurrency
+**3** (was a 12+ simultaneous burst). Decision (Muxin): pre-load EVERYTHING incl. committee seats
+(no skip); lazy on-reveal path unchanged. Throttle is committed+deployed but NOT runtime-verified
+(`VoterChoiceApp.tsx` is `@ts-nocheck`) — confirm by watching skeletons resolve in waves of ~3.
+⚠️ **AWS Textract creds: confirmed in app `.env.local`, but NOT in Vercel env.** The CLI won't
+persist to all-preview-branches non-interactively (branch is local-only/never-pushed → branch-
+scoped fails; `-e` per-deploy injection is classifier-blocked). New/uncached dense ballots on the
+preview fall back to the sampling stopgap until the 3 `AWS_*` vars are added via the Vercel
+dashboard (Settings → Env Vars → Preview, all branches; copy from `.env.local`) + a redeploy.
+NJ is a CACHED Textract result, so the NJ upload should still read correct.
+
 **⚠️ LOCAL TESTING IS PAINFUL → DEPLOY A VERCEL PREVIEW.** `next dev` keeps getting reaped, and
 F-A's pre-load fires a burst of 12+ `/api/research-candidate` calls on workspace load that
 stresses it. **Recommended first step for the new session:** `cd design-integration` → ensure
@@ -59,9 +73,10 @@ behind Vercel SSO). Gives a stable URL + proper asset caching — the right way 
 visuals (Muxin had NOT yet visually confirmed F-B/F-D; local kept breaking).
 
 **Open / next:**
-- **THROTTLE F-A** research pre-load (cap concurrency — it bursts) — flagged, NOT done. Scope Q
-  for Muxin: skip trivial committee seats?
-- Confirm AWS-creds-in-app-env (above).
+- ✅ **THROTTLE F-A** research pre-load — DONE 2026-06-06 (`3b71b62`; concurrency 3; pre-load all,
+  no committee skip per Muxin).
+- ✅ AWS creds confirmed in app `.env.local`. ⏳ TODO: add 3 `AWS_*` to Vercel **Preview** env
+  (dashboard, all branches) + redeploy so NEW/uncached dense ballots use Textract on the preview.
 - Parked/GATED (need Muxin): full federal **funding sweep** + destructive `--drop-legacy`
   cleanup; per-state polling **hours** (only NJ added); open-primary flow; delete drifted old
   frontend (#27).
