@@ -18,8 +18,12 @@ commits — machine state + gotchas a fresh session needs.
 
 **Where to work:** worktree `…/.claude/worktrees/design-integration`, branch
 `feat/prototype-rebuild`. `tsc` clean. **NOT deployed to launch/production**; a
-Vercel PREVIEW exists for testing (below). Branch is **local-only — never pushed to
-origin** (a same-machine new session inherits all commits from this worktree directly).
+Vercel PREVIEW exists for testing (below). **Branch is now PUSHED to `origin`
+(2026-06-06) so mobile/other sessions can pull it** — `git fetch && git checkout
+feat/prototype-rebuild` (or `git pull` if already on it). **Pull before pushing**
+now that more than one machine may commit. Pushing this branch does NOT trigger a
+deploy (only `launch/production` does; Vercel auto-deploy is off). Still: no
+force-push / rebase / history rewrite — branches are experiment data.
 
 ### ▶▶▶ Session 2026-06-06 — UX / logistics / research-timing fixes · LATEST · READ FIRST
 **HEAD `60f6b09` · `feat/prototype-rebuild` · tsc clean · prod `next build` green. Every commit
