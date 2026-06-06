@@ -2257,16 +2257,30 @@ function PollingStatusBar({ pollingInfo, stateData, rows }) {
               <span className="pbp-act-ico" aria-hidden="true">↓</span>
               {t('polling.addedToCalendar')}
             </button>
-            <a
-              className="pbp-act"
-              href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(pollingInfo.address)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              title={`Directions to ${pollingInfo.name}`}
-            >
-              <span className="pbp-act-ico" aria-hidden="true">→</span>
-              {t('polling.directions')}
-            </a>
+            {pollingInfo.address ? (
+              <a
+                className="pbp-act"
+                href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(pollingInfo.address)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                title={`Directions to ${pollingInfo.name}`}
+              >
+                <span className="pbp-act-ico" aria-hidden="true">→</span>
+                {t('polling.directions')}
+              </a>
+            ) : (
+              // No civic polling place → link to the real per-state lookup
+              // (county/state site), never the vote.gov register-only page.
+              <a
+                className="pbp-act"
+                href={stateData.resources?.pollingPlaceLookup || stateData.resources?.countyElectionLookup || stateData.resources?.stateElectionWebsite || 'https://vote.gov/'}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <span className="pbp-act-ico" aria-hidden="true">→</span>
+                Find your polling place
+              </a>
+            )}
             <span className="pbp-source">{t('polling.cardSource')}</span>
           </div>
 
@@ -4438,7 +4452,11 @@ function WorkspaceView({ address, issues, decisions, activeRaceId, onDecide, onU
   // The congressional district is derived from the ballot extraction's House
   // race label when civic didn't carry a House contest (the NJ case).
   const logistics = getBallotLogistics();
-  const sd = getFallbackStateData(getRealStateCode() || '');
+  const sdBase = getFallbackStateData(getRealStateCode() || '');
+  // Prefer the real per-state resources (voter.svrs.nj.gov, county lookup) loaded
+  // by applyRealStateResources over getFallbackStateData's vote.gov placeholders.
+  const realResWs = getRealStateResources();
+  const sd = realResWs ? { ...sdBase, resources: { ...sdBase.resources, ...realResWs } } : sdBase;
   // District: prefer logistics (civic), fall back to ballot extraction.
   const houseRaceWs = races.find(r => /house/i.test(r.label || ''));
   const districtCodeWs = (logistics && logistics.congressionalDistrict)
@@ -4464,8 +4482,9 @@ function WorkspaceView({ address, issues, decisions, activeRaceId, onDecide, onU
     bring: '',
     earlyWindow: earlyWindowWs,
   } : {
-    // Honest fallback — no civic data; direct voter to vote.gov
-    name: 'Find your polling place at vote.gov',
+    // Honest fallback — no civic place; the panel links to the real per-state
+    // polling-place lookup (sd.resources.pollingPlaceLookup), NOT vote.gov.
+    name: 'Look up your polling place',
     address: '',
     // Use statutory hours from state data when available (upload/paste path).
     hours: sd?.votingRules?.pollingHours || '',
@@ -4597,7 +4616,7 @@ function WorkspaceView({ address, issues, decisions, activeRaceId, onDecide, onU
               large-format or dense, which can affect text recognition. Please
               double-check candidate names against your{' '}
               <a
-                href="https://vote.gov/"
+                href={sd.resources?.sampleBallotLookup || 'https://vote.gov/'}
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{ color: 'inherit', textDecoration: 'underline' }}
@@ -4773,7 +4792,7 @@ function WorkspaceView({ address, issues, decisions, activeRaceId, onDecide, onU
                 <div className="who">Voter Choice · AI</div>
                 <div className="bubble">
                   <p>We couldn't read the candidates for <b>{activeRace.label}</b> — the ballot text for this race may be unclear or missing. Please check your{' '}
-                    <a href="https://vote.gov/" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'underline' }}>official sample ballot</a>{' '}
+                    <a href={sd.resources?.sampleBallotLookup || 'https://vote.gov/'} target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'underline' }}>official sample ballot</a>{' '}
                     to see who's running.
                   </p>
                 </div>
@@ -5277,6 +5296,11 @@ function App() {
   // fetches before showing the workspace; this covers the return visit.
   useEffectA(() => {
     if ((saved?.view === 'workspace') && (saved?.issues || []).length > 0) {
+      // REAL_STATE_RESOURCES is a module let that resets to null on reload, so
+      // re-load the real per-state resources or the workspace logistics revert
+      // to the vote.gov fallback on every resume.
+      const sc = getRealStateCode();
+      if (sc) applyRealStateResources(sc).then(() => setDataVersion((v) => v + 1));
       loadAllRaceData(RACES, saved.issues).then(() => {
         setDataVersion((v) => v + 1);
         preloadAllCandidateResearch(saved.issues);
@@ -5395,7 +5419,7 @@ function App() {
         canonicalIssue: x.canonicalIssue,
         issueLabel: x.interpretation || x.name || x.canonicalIssue,
       }));
-    if (structuredIssues.length === 0) return; // nothing to research without issues
+    if (structuredIssues.length === 0) return Promise.resolve(); // nothing to research
 
     // Pass 1 (SYNCHRONOUS, before any await): mark every eligible candidate
     // { status: 'loading' } and build the work queue. Marking up front is what
@@ -5420,31 +5444,39 @@ function App() {
         });
       });
     });
-    if (queue.length === 0) return;
+    if (queue.length === 0) return Promise.resolve();
     setDataVersion(v => v + 1); // one re-render for all the 'loading' marks
 
     // Pass 2 (THROTTLED): drain the queue with at most N requests in flight.
-    // Each finished request pulls the next task, so concurrency stays capped.
-    let cursor = 0;
-    function runNext() {
-      if (cursor >= queue.length) return;
-      const task = queue[cursor++];
-      fetchCandidateResearch({
-        candidateName: task.candidateName,
-        jurisdiction: task.jurisdiction,
-        issues: structuredIssues,
-        cycle: '2026',
-      }).then(res => {
-        if (res && res.scores && res.scores.length > 0) {
-          setCandidateResearch(task.key, { status: 'done', scores: res.scores });
-        } else {
-          setCandidateResearch(task.key, { status: 'unavailable' });
-        }
-        setDataVersion(v => v + 1);
-      }).finally(runNext); // free slot → pull the next task
-    }
-    const workers = Math.min(RESEARCH_PRELOAD_CONCURRENCY, queue.length);
-    for (let i = 0; i < workers; i++) runNext();
+    // Returns a promise that resolves once every task has SETTLED, so the
+    // lock-in handler can await it on the loading screen before painting cards.
+    return new Promise((resolve) => {
+      let cursor = 0;
+      let completed = 0;
+      function runNext() {
+        if (cursor >= queue.length) return;
+        const task = queue[cursor++];
+        fetchCandidateResearch({
+          candidateName: task.candidateName,
+          jurisdiction: task.jurisdiction,
+          issues: structuredIssues,
+          cycle: '2026',
+        }).then(res => {
+          if (res && res.scores && res.scores.length > 0) {
+            setCandidateResearch(task.key, { status: 'done', scores: res.scores });
+          } else {
+            setCandidateResearch(task.key, { status: 'unavailable' });
+          }
+          setDataVersion(v => v + 1);
+        }).finally(() => {
+          completed++;
+          if (completed >= queue.length) { resolve(); return; }
+          runNext(); // free slot → pull the next task
+        });
+      }
+      const workers = Math.min(RESEARCH_PRELOAD_CONCURRENCY, queue.length);
+      for (let i = 0; i < workers; i++) runNext();
+    });
   }
 
   const [tweaks, setTweaks] = useStateA(loadTweaks);
@@ -5540,11 +5572,18 @@ function App() {
       /* leave races on their fallback; never block the workspace */
     }
     setActiveRaceId(RACES[0].id);
+    // F-A: run candidate web-research DURING the analyzing screen — before the
+    // workspace paints — so cards land already-researched and navigating to a
+    // race fires no on-click fetch. Capped (~18s) so a slow serverless
+    // cold-start can't strand the user on 'analyzing'; any stragglers resolve
+    // in place (skeletons resolve correctly after the blind-mode fix).
+    try {
+      await Promise.race([
+        preloadAllCandidateResearch(newIssues),
+        new Promise((r) => setTimeout(r, 18000)),
+      ]);
+    } catch (e) { /* never block the workspace on research */ }
     setView('workspace');
-    // F-A: kick off background research for all research_pending candidates
-    // across ALL races immediately after the workspace mounts — results will
-    // be cached and ready when the user navigates to each race's card.
-    preloadAllCandidateResearch(newIssues);
     // Scroll to top so the user lands at the top of the workspace,
     // not wherever ColdOpenView left them (which on mobile was often
     // the bottom of the issue list).

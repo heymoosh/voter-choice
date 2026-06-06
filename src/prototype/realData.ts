@@ -816,6 +816,10 @@ export async function fetchCandidateResearch(input: {
   issues: { canonicalIssue: string; issueLabel?: string }[];
   cycle?: string;
 }): Promise<CandidateResearchResult | null> {
+  // Per-call timeout: a hung request would otherwise hold a concurrency slot in
+  // the pre-load queue indefinitely and stall later candidates. Abort after 20s.
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 20000);
   try {
     const res = await fetch("/api/research-candidate", {
       method: "POST",
@@ -826,10 +830,13 @@ export async function fetchCandidateResearch(input: {
         issues: input.issues,
         cycle: input.cycle || "2026",
       }),
+      signal: controller.signal,
     });
     if (!res.ok) return null;
     return (await res.json()) as CandidateResearchResult;
   } catch {
-    return null;
+    return null; // network error or AbortError (timeout)
+  } finally {
+    clearTimeout(timer);
   }
 }
