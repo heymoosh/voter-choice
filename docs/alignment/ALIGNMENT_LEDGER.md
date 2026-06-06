@@ -19,6 +19,53 @@ Running log of eval runs, findings, and decisions for the alignment scoring engi
 
 ## Runs
 
+### 2026-06-06 — Cutover GATE: offline gold-sample validation (independent Opus panel) — 12/12 PASS
+**The pre-cutover gate (`RETAG_PLAN.md` §Validation), built + run this session.** Production
+untouched. Tooling: `scripts/ingest/_gold-{sample,oracle.workflow,assemble}`,
+`_cutover-{validate,precision-check,rehearse,fire,verify}`.
+
+- **Method.** Stratified **604-bill gold sample** (≈50/issue, weighted by pole_v1's hidden
+  in_favor/opposed/no_score classes; 100% with-summary), labeled **BLIND** by an **independent
+  3-juror Opus panel** (independent of the Sonnet that produced pole_v1) against
+  `POLE_VOCABULARY.md`. Consensus = majority; pole_v1's answers held aside in `_gold-pv.json`.
+  File-based + M2 retry. **Settings (M1):** jurors=`opus` (workflow `model:'opus'`), Sonnet NOT
+  used for the oracle; SEED `gold-2026-06-06`; threshold 5%.
+- **Reliability.** 88% unanimous (3/3), 12% majority, 1 split. **Direction agreement = 100% on
+  ALL 12 issues** (when jurors make a confident call they agree on sign) — consistent with the
+  2026-06-04 run's 96%.
+- **GATE RESULT — all 12 PASS at ≤5% inversion** (inversion = confident-both off-diagonal vs the
+  panel). 11 issues **0%**; education_funding **3.6% (1/28)**. The **old tagger** on the same
+  bills was inverted **13–53%** (crime 50, energy 53, property 46, education 39, immigration 34,
+  economy 35, public_safety 36, election 33, gun 21, border 20, environment 13, reproductive 0) —
+  i.e. the re-tag fixes the audited inversion decisively on the measured set.
+- **Honest limits (so the green light means something).** (1) The rate is measured ONLY on
+  confident-both bills. The panel **abstained on 136 bills pole_v1 tagged confidently**
+  (over-confidence, NOT inversions/safe), concentrated in **public_safety (30; 13 at pole_v1
+  `high`)** and **border_security (15; 11 `high`)** — public_safety also has the smallest
+  validated denominator (n=10), so it has the weakest evidence + the strongest over-confidence
+  signal. (2) The sample was 100% with-summary, but **16% of confident tags that will ship are
+  null-summary** (title-only, un-validated here) — highest reproductive 30%, gun 23%. (3)
+  Shared-orientation circularity: this proves inversion-fixing + consistency, NOT that the poles
+  match product intent.
+- **Coverage collapse (candidate-level, 4yr window).** Distinct candidates scored before→after
+  (pv-confident): mostly −1% to −16% (crime 0%, economy −1%, public_safety −3%); **border −62%**
+  (the F7 grab-bag). The row-level delete is larger: contested rows 31,480 → ~13,840 confident.
+- **SQL rehearsal (mechanics, separate from tag correctness).** Cloned `issue_tags` →
+  `issue_tags_rehearsal` on the branch, applied the EXACT migrate-with-deletes: **42,506 →
+  24,866 (Δ −17,640)**; every issue's post-count == its confident pole_v1 count; **0 `no_score`
+  leak**; `lookupAlignment` before/after replay shows the fix (e.g. energy_grid cand 30/60 →
+  1/28). The literal `_cutover-fire.ts` will additionally be rehearsed against a throwaway branch
+  off **production** at fire time (catches snapshot drift) — needs a Neon branch (no
+  neonctl/API key locally).
+- **Disagreements for Muxin:** 144 → `_gold-disagreements.json` (1 INVERSION — a TN teacher-bonus
+  bill amending a school-choice act, oracle unanimously in_favor vs pole_v1 opposed; 7 pv-abstains;
+  136 oracle-abstains).
+- **Decision / next.** Gate passes. **Gated cutover awaits Muxin:** threshold confirm, production
+  `DATABASE_URL`, per-issue calls (esp. ship-vs-hold **public_safety**; optional fix of the 1
+  education tag), and a throwaway prod branch for the fire-time literal rehearsal. Per-issue,
+  transactional, backup-first; failing/held issues **blank to "no data"** (Muxin's decision), not
+  left on the inverted status quo.
+
 ### 2026-06-05 — Missing-summary recovery from the local OpenStates dump (`source_run='summary-recovery-1'`)
 **On subscription.** Recovered bill **full text** for the null-summary tagged corpus straight from
 Muxin's **local 9.8 GB OpenStates pgdump** — `opencivicdata_searchablebill.raw_text` (OpenStates'

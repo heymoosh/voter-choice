@@ -67,3 +67,10 @@ db/migrations/meta/
 
 # Alignment re-tag working data (ephemeral batch + result files; tags live on the Neon branch)
 scripts/ingest/_pole-batches/
+
+# Cutover gold-sample: ignore bulky reproducible intermediates (batch inputs, juror files,
+# prod backup dumps); KEEP the audit evidence (_manifest / _gold-consensus / _gold-disagreements
+# / _gold-pv), which do not match the batch-id pattern below.
+scripts/ingest/_gold-batches/*-[0-9][0-9][0-9].json
+scripts/ingest/_gold-batches/_results/
+scripts/ingest/_cutover-backup-*.json
