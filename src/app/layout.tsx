@@ -7,6 +7,23 @@ import type { Metadata, Viewport } from "next";
 // browser parses it leniently, identical to the prototype.
 // Printable-ballot stylesheet (scoped to .print-sheet / .no-print).
 import "../styles/print.css";
+import { statSync } from "node:fs";
+import { join } from "node:path";
+
+// Dev-only cache-bust for the static prototype stylesheets. They're served via
+// <link> (not Next's CSS pipeline), so browsers — Safari especially — cache them
+// across edits, making CSS tweaks look like they "didn't apply." Key the URL to
+// the file's mtime: refetches exactly when the CSS changes, deterministic per
+// render (no hydration mismatch). Prod gets no query (normal static caching;
+// redeploys ship a fresh build).
+function cssBust(file: string): string {
+  if (process.env.NODE_ENV === "production") return "";
+  try {
+    return `?v=${Math.floor(statSync(join(process.cwd(), "public", file)).mtimeMs)}`;
+  } catch {
+    return "";
+  }
+}
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -54,8 +71,11 @@ export default function RootLayout({
           rel="stylesheet"
         />
         {/* Prototype design system — served static + browser-parsed (verbatim). */}
-        <link rel="stylesheet" href="/prototype.css" />
-        <link rel="stylesheet" href="/prototype-c.css" />
+        <link rel="stylesheet" href={`/prototype.css${cssBust("prototype.css")}`} />
+        <link
+          rel="stylesheet"
+          href={`/prototype-c.css${cssBust("prototype-c.css")}`}
+        />
       </head>
       {/* Prototype visual defaults — Civic mood / Civic palette / Daylight
           treatment. prototype.css consumes these via body[data-mood="civic"]. */}
