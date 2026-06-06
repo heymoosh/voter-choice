@@ -21,6 +21,55 @@ commits — machine state + gotchas a fresh session needs.
 Vercel PREVIEW exists for testing (below). Branch is **local-only — never pushed to
 origin** (a same-machine new session inherits all commits from this worktree directly).
 
+### ▶▶▶ Session 2026-06-05 (PM) — accuracy program Rounds 1–4 COMPLETE · LATEST · READ FIRST
+**HEAD `6b1a5aa` · `feat/prototype-rebuild` · tsc clean · oracle 12 pass / 5 todo. The 14
+suite failures are the KNOWN prototype-rebuild cleanup debt (#27), not regressions.**
+
+**What shipped — the full "accurate ballot after upload" program (verified NJ + multi-state):**
+- **Extraction:** Textract = large-format fallback (reads NJ's dense R-Senate 4/4 where vision
+  hallucinated); per-race low-confidence "verify names" banner. ⚠️ **VERIFY:** AWS creds in the
+  **app** `.env.local` decide whether NEW large-format ballots hit Textract vs the sampling
+  stopgap — the NJ fixture is a CACHED Textract result; creds currently live in
+  `…/pdf-bakeoff/.env.local`, may need copying into the app env for fresh states.
+- **Party gate (R3):** decided off `race.partyLane` (from `party_context`), NOT candidate
+  `party` designation — fixes gate firing for every Textract primary. KNOWN/BACKLOGGED: doesn't
+  consult `getStateRule`, so OPEN primaries (WI) also gate — Muxin's "browse both → pick party
+  before print" flow is deferred (backlog P2).
+- **Candidate analysis:** real voting records (Booker 61% / Norcross 53%); no-record candidates
+  get `web_search` positions (honest "based on public statements" + evidence + confidence),
+  persisted to prod `candidate_data` (migration `0001_add_candidate_data.sql`, **APPLIED to prod
+  Neon 2026-06-05**). Honesty guard drops citation-less scores → county candidates often show "no
+  citable statements" (correct).
+- **Logistics:** NJ-01 district (from ballot House race), voter-ID, real NJ links
+  (voter.svrs.nj.gov), NJ hours (6am–8pm), ZERO TX/Harris leaks (workspace + print). Upload path
+  self-populates resources + district (`beginProcessing`).
+- **UX (R4):** research PRE-LOADS after lock-in; web_search rows styled like voting-record rows;
+  box-within-box flattened; demo party-gate link removed. **Fixes:** Safari file-upload
+  (visually-hidden input); `findDeepInput` null-guard; dev-only **CSS cache-bust by mtime**
+  (`layout.tsx`) so Safari stops serving stale `prototype.css`.
+
+**Verified:** NJ end-to-end (Playwright: gate, all candidates, NJ-01, no leaks); multi-state
+EXTRACTION generalization on PA(closed)/WI(open)/CA(top-two).
+
+**⚠️ LOCAL TESTING IS PAINFUL → DEPLOY A VERCEL PREVIEW.** `next dev` keeps getting reaped, and
+F-A's pre-load fires a burst of 12+ `/api/research-candidate` calls on workspace load that
+stresses it. **Recommended first step for the new session:** `cd design-integration` → ensure
+HEAD authored as `Muxin Li <muxin.li.pro@gmail.com>` → `vercel deploy --yes --force` (preview,
+behind Vercel SSO). Gives a stable URL + proper asset caching — the right way to confirm the R4
+visuals (Muxin had NOT yet visually confirmed F-B/F-D; local kept breaking).
+
+**Open / next:**
+- **THROTTLE F-A** research pre-load (cap concurrency — it bursts) — flagged, NOT done. Scope Q
+  for Muxin: skip trivial committee seats?
+- Confirm AWS-creds-in-app-env (above).
+- Parked/GATED (need Muxin): full federal **funding sweep** + destructive `--drop-legacy`
+  cleanup; per-state polling **hours** (only NJ added); open-primary flow; delete drifted old
+  frontend (#27).
+- Cleanup: merged temp worktrees (`ws1-/ws2-/ws3-/phase-b-/round3-/round4-…`) can be
+  `git worktree remove`'d (keep the branches).
+- Full Round-1→4 detail: `~/.claude/plans/hi-are-you-on-glimmering-whisper.md`; backlog:
+  `docs/operations/post-launch-backlog.md`.
+
 ### ▶▶ Session 2026-06-05 — shipped + read-this-first
 **Shipped (committed, gated green, NOT on launch/production):**
 - **F1 large-format misread — fixed via sample-and-reconcile** (`extract-sampler.ts`;
