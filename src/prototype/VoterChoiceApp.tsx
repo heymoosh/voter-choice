@@ -1128,24 +1128,14 @@ function AlignmentIssueRow({ issue, score, candidate, isOpen, onToggle, anonCtx 
           </div>
           {/* Right column: directional badge + confidence chip, matching the
               position/size of the voting_record .pct column. */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px', flexShrink: 0 }}>
+          <div className="cv2-ws-col">
             {directionLabel && (
-              <span style={{
-                padding: '2px 7px', borderRadius: '9999px', fontSize: '10px',
-                fontWeight: 700, letterSpacing: '0.06em', color: '#fff',
-                background: directionColor,
-              }}>
+              <span className="cv2-ws-badge" style={{ background: directionColor }}>
                 {directionLabel}
               </span>
             )}
             {confidenceChip && (
-              <span style={{
-                fontSize: '10px', color: 'var(--ink-3, #888)',
-                border: '1px solid var(--rule, #ddd)', borderRadius: '4px',
-                padding: '1px 5px',
-              }}>
-                {confidenceChip} conf.
-              </span>
+              <span className="cv2-ws-conf">{confidenceChip} conf.</span>
             )}
           </div>
         </div>

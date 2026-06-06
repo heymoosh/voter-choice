@@ -1968,6 +1968,33 @@ body[data-treatment="inkwell"] .proto-banner {
 }
 .cv2-iss-head .pct.mid { color: var(--ink-2); }
 .cv2-iss-head .pct.low { color: var(--vote-red); }
+/* web_search alignment right column (directional badge + confidence chip).
+   Classed instead of inline so it scales with the breakpoints below, matching
+   the voting-record .pct column. Background color stays inline (data-driven). */
+.cv2-iss-head .cv2-ws-col {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.cv2-iss-head .cv2-ws-badge {
+  padding: 2px 7px;
+  border-radius: 9999px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #fff;
+  white-space: nowrap;
+}
+.cv2-iss-head .cv2-ws-conf {
+  font-size: 10px;
+  color: var(--ink-3, #888);
+  border: 1px solid var(--rule, #ddd);
+  border-radius: 4px;
+  padding: 1px 5px;
+  white-space: nowrap;
+}
 .cv2-iss-head .pct small {
   font-size: 14px;
   font-weight: 500;
@@ -2560,6 +2587,8 @@ body[data-treatment="inkwell"] .cv2-iss-row.open { background: var(--paper); }
   .cv2-iss-row.open { margin: 0 -18px; padding: 0 18px; }
   .cv2-iss-head .pct { font-size: 26px; }
   .cv2-iss-head .pct small { font-size: 12.5px; }
+  .cv2-iss-head .cv2-ws-badge { font-size: 9.5px; padding: 2px 6px; }
+  .cv2-iss-head .cv2-ws-conf { font-size: 9.5px; }
   .cv2-actions { padding: 14px 18px 16px; }
   .cv2-actions .pick { font-size: 14px; padding: 14px 14px; }
   .cv2-actions .see { padding: 14px 14px; }
@@ -2692,6 +2721,8 @@ body[data-treatment="inkwell"] .cv2-iss-row.open { background: var(--paper); }
   .cv2-iss-head { gap: 10px; }
   .cv2-iss-head .name { font-size: 14.5px; }
   .cv2-iss-head .pct { font-size: 24px; }
+  .cv2-iss-head .cv2-ws-badge { font-size: 9px; padding: 1px 5px; letter-spacing: 0.04em; }
+  .cv2-iss-head .cv2-ws-conf { font-size: 9px; padding: 1px 4px; }
   .cv2-money-map .seg .pct { font-size: 16px; }
   .cv2-money-map .seg .lab { font-size: 9.5px; }
 }
