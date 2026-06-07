@@ -2,91 +2,43 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
+import React from "react";
+
+// Mock the prototype component so the test doesn't pull in its full dep tree.
+vi.mock("../prototype/VoterChoiceApp", () => ({
+  default: () => <div data-testid="voter-choice-app" />,
+}));
+
+// Mock next/dynamic to synchronously return the imported component, since
+// jsdom can't execute the lazy chunk loader and would otherwise render null.
+vi.mock("next/dynamic", () => ({
+  default: (loader: () => Promise<{ default: React.ComponentType }>) => {
+    // Capture the resolved module synchronously via a closure trick:
+    // we return a component that calls the loader on first render and
+    // immediately renders whatever it resolves to (synchronously in
+    // the test environment because the mock module is already in cache).
+    let Resolved: React.ComponentType | null = null;
+    loader().then((mod) => {
+      Resolved = mod.default;
+    });
+    return function DynamicStub(props: Record<string, unknown>) {
+      if (!Resolved) return null;
+      return React.createElement(Resolved, props);
+    };
+  },
+}));
+
 import Home from "./page";
 
-// Mock client components to isolate page layout tests
-vi.mock("../components/BallotToolClient", () => ({
-  BallotToolClient: () => <div data-testid="ballot-tool-client" />,
-}));
-vi.mock("../components/LanguageToggle", () => ({
-  LanguageToggle: () => <button data-testid="language-toggle">Español</button>,
-}));
-vi.mock("./PageContent", () => ({
-  PageContent: ({ children }: { children?: React.ReactNode }) => (
-    <div data-testid="page-content" data-tips="true">
-      {/* PR A2: AppNav (rendered inside the real PageContent) owns the
-          LanguageToggle. The mock simulates that placement so page.test.tsx
-          asserts on the same DOM contract as production. */}
-      <button data-testid="language-toggle">Español</button>
-      <h1>Free AI Ballot Research Tool</h1>
-      <section data-testid="tips-section">
-        <p>AI can make mistakes</p>
-        <p>don&apos;t know</p>
-      </section>
-      {children}
-      <footer role="contentinfo">
-        <p>Created by a human using AI tools</p>
-      </footer>
-      <a href="https://claude.ai">Claude</a>
-      <a href="https://chatgpt.com">ChatGPT</a>
-    </div>
-  ),
-}));
-vi.mock("../lib/i18n", () => ({
-  LanguageProvider: ({ children }: { children: React.ReactNode }) => (
-    <div data-testid="language-provider">{children}</div>
-  ),
-}));
-
 describe("Home page", () => {
-  it("renders the h1 headline", () => {
-    render(<Home />);
-    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
-      "Free AI Ballot Research Tool",
-    );
+  it("renders the #root container", () => {
+    const { container } = render(<Home />);
+    const root = container.querySelector("#root");
+    expect(root).toBeInTheDocument();
   });
 
-  it("renders the BallotToolClient", () => {
+  it("renders the VoterChoiceApp inside #root", () => {
     render(<Home />);
-    expect(screen.getByTestId("ballot-tool-client")).toBeInTheDocument();
-  });
-
-  it("renders a tips section with AI disclaimer", () => {
-    render(<Home />);
-    const tips = screen.getByTestId("tips-section");
-    expect(tips).toBeInTheDocument();
-    expect(tips.textContent).toMatch(/AI can make mistakes|important/i);
-  });
-
-  it("tips section contains at least one tip about saying 'I don't know'", () => {
-    render(<Home />);
-    expect(screen.getByTestId("tips-section").textContent).toContain("don");
-  });
-
-  it("renders footer with attribution text", () => {
-    render(<Home />);
-    const footer = screen.getByRole("contentinfo");
-    expect(footer.textContent).toContain("Created by a human using AI tools");
-  });
-
-  it("renders chatbot links in hero", () => {
-    render(<Home />);
-    expect(screen.getByRole("link", { name: /Claude/i })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /ChatGPT/i })).toBeInTheDocument();
-  });
-
-  it("renders LanguageToggle with data-testid='language-toggle'", () => {
-    render(<Home />);
-    expect(screen.getByTestId("language-toggle")).toBeInTheDocument();
-  });
-
-  it("wraps content in LanguageProvider", () => {
-    render(<Home />);
-    expect(screen.getByTestId("language-provider")).toBeInTheDocument();
-  });
-
-  it("renders PageContent component", () => {
-    render(<Home />);
-    expect(screen.getByTestId("page-content")).toBeInTheDocument();
+    expect(screen.getByTestId("voter-choice-app")).toBeInTheDocument();
   });
 });

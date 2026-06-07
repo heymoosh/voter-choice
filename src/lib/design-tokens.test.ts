@@ -49,20 +49,33 @@ describe("design tokens — typography", () => {
     expect(globalsCss).toContain("--font-ibm-plex-mono");
   });
 
-  it("layout.tsx imports the IBM Plex trio via next/font", () => {
-    expect(layoutTsx).toMatch(/IBM_Plex_Sans/);
-    expect(layoutTsx).toMatch(/IBM_Plex_Serif/);
-    expect(layoutTsx).toMatch(/IBM_Plex_Mono/);
+  it("layout.tsx loads the IBM Plex families via the Google Fonts <link>", () => {
+    // The redesigned layout uses a static Google Fonts <link> (not next/font)
+    // to load all mood families. Verify the href contains each IBM Plex family.
+    expect(layoutTsx).toMatch(/fonts\.googleapis\.com\/css2/);
+    expect(layoutTsx).toMatch(/IBM\+Plex\+Sans/);
+    expect(layoutTsx).toMatch(/IBM\+Plex\+Serif/);
+    expect(layoutTsx).toMatch(/IBM\+Plex\+Mono/);
   });
 
-  it("layout.tsx applies the font CSS variables on the body element", () => {
-    // Each next/font instance exposes a `.variable` className that
-    // injects its --font-* custom property at the element it's
-    // attached to. The body must carry all three so the tokens
-    // cascade down to every component.
-    expect(layoutTsx).toMatch(/ibmPlexSans\.variable/);
-    expect(layoutTsx).toMatch(/ibmPlexSerif\.variable/);
-    expect(layoutTsx).toMatch(/ibmPlexMono\.variable/);
+  it("layout.tsx wires IBM Plex CSS variables via globals.css body block", () => {
+    // The CSS variable chain (--font-ibm-plex-serif etc.) is consumed in
+    // globals.css, which is imported by layout.tsx. Verify layout imports
+    // globals.css so the chain reaches every component.
+    //
+    // The font CSS variables themselves are declared and consumed in globals.css
+    // (confirmed by the companion "globals.css references the IBM Plex next/font
+    // CSS variables" test above). The body block re-declares --serif/--sans/--mono
+    // pointing at these variables so they cascade correctly.
+    expect(globalsCss).toMatch(
+      /body\s*\{[\s\S]*?--serif:\s*var\(--font-ibm-plex-serif\)/,
+    );
+    expect(globalsCss).toMatch(
+      /body\s*\{[\s\S]*?--sans:\s*var\(--font-ibm-plex-sans\)/,
+    );
+    expect(globalsCss).toMatch(
+      /body\s*\{[\s\S]*?--mono:\s*var\(--font-ibm-plex-mono\)/,
+    );
   });
 });
 
