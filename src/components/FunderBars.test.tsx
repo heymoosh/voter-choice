@@ -125,16 +125,12 @@ describe("FunderBars — normal multi-bucket industry breakdown (regression guar
   ];
 
   it("renders the 'Industry breakdown' section for real sector labels", () => {
-    render(
-      <FunderBars funders={multiBucketFunders} totalRaised={2_000_000} />,
-    );
+    render(<FunderBars funders={multiBucketFunders} totalRaised={2_000_000} />);
     expect(screen.getByText(/industry breakdown/i)).toBeInTheDocument();
   });
 
   it("does NOT render the no-sector-breakdown fallback for real sector labels", () => {
-    render(
-      <FunderBars funders={multiBucketFunders} totalRaised={2_000_000} />,
-    );
+    render(<FunderBars funders={multiBucketFunders} totalRaised={2_000_000} />);
     expect(
       screen.queryByTestId("funder-bars-no-sector-breakdown"),
     ).not.toBeInTheDocument();

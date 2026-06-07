@@ -461,7 +461,11 @@ describe("extractionToRaces", () => {
                 vote_for_n: 2,
                 party_context: null,
                 candidates: [
-                  { name: "Stone", party: "Republican", placeholder_reason: null },
+                  {
+                    name: "Stone",
+                    party: "Republican",
+                    placeholder_reason: null,
+                  },
                   { name: null, party: null, placeholder_reason: "write_in" },
                 ],
               },
@@ -471,7 +475,9 @@ describe("extractionToRaces", () => {
         _meta: njCamdenDemRepFixture()._meta,
       };
       const races = extractionToRaces(ballot, null);
-      expect(races[0].candidates).toEqual([{ name: "Stone", party: "Republican" }]);
+      expect(races[0].candidates).toEqual([
+        { name: "Stone", party: "Republican" },
+      ]);
       expect(races[0].writeInSlots).toBe(1);
     });
 
@@ -584,8 +590,10 @@ describe("extractionToRaces", () => {
       };
       const races = extractionToRaces(ballot, "GENERAL");
       expect(races).toHaveLength(2);
-      const retentionRace = races.find((r) =>
-        r.label.includes("Paetra Brownlee") || r.label.includes("retained in office"),
+      const retentionRace = races.find(
+        (r) =>
+          r.label.includes("Paetra Brownlee") ||
+          r.label.includes("retained in office"),
       );
       expect(retentionRace).toBeDefined();
       expect(retentionRace!.section).toBe("Judicial Retention");
