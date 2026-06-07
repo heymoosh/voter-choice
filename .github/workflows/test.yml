@@ -58,10 +58,10 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Run Playwright e2e tests (flag off — legacy specs)
+      # The app IS the prototype (src/prototype/VoterChoiceApp.tsx, rendered by
+      # src/app/page.tsx). These specs drive that shipped app with mocked data
+      # seams. The old legacy specs (old UI) and the abandoned re-port specs
+      # (PageContent/BallotToolClient, behind PROMPT_FLEET_V2) were removed —
+      # they tested code no route renders. The flag no longer gates any UI.
+      - name: Run Playwright e2e tests (prototype suite)
         run: npm run e2e
-
-      - name: Run cold-open + workspace + state-gates + print-ballot + theme-amend + polis-view + budget-exhausted e2e (flag on — Phase 2 + 3 + 5 + 6 + 7 + 8 + 9 paths)
-        env:
-          PROMPT_FLEET_V2: "1"
-        run: npx playwright test e2e/cold-open.spec.ts e2e/workspace.spec.ts e2e/state-gates.spec.ts e2e/print-ballot.spec.ts e2e/theme-amend.spec.ts e2e/polis-view.spec.ts e2e/budget-exhausted.spec.ts --project=chromium-desktop

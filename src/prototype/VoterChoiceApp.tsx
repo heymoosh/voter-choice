@@ -669,7 +669,7 @@ function CandidateCard({ candidate, alignmentEntry, userIssues, party, picked, o
   const research = getCandidateResearch(raceId + '::' + candidate.name);
 
   return (
-    <div className="cv2-card">
+    <div className="cv2-card" data-testid="candidate-card">
       <CandidateCardHeader
         candidate={candidate}
         party={party}
@@ -717,7 +717,7 @@ function CandidateCard({ candidate, alignmentEntry, userIssues, party, picked, o
             <span className="cv2-disclose-title">Money trail</span>
             {/* Two-line summary so the user sees the bottom line
                 (total + peer comparison) before the mix breakdown. */}
-            <span className="cv2-disclose-summary">
+            <span className="cv2-disclose-summary" data-testid="funding-summary">
               {(typeof candidate.totalRaised === 'number') && (
                 <span className="cv2-disclose-stat">
                   <b>{formatDollars(candidate.totalRaised)}</b> raised
@@ -768,7 +768,7 @@ function CandidateCard({ candidate, alignmentEntry, userIssues, party, picked, o
             <span>Picked — undo</span>
           </button>
         ) : (
-          <button className="pick" onClick={onPick}>
+          <button className="pick" onClick={onPick} data-testid="pick-candidate">
             <span>Pick {blindMode ? alias : candidate.name.split(' ').pop()}</span>
           </button>
         )}
@@ -1158,7 +1158,7 @@ function AlignmentIssueRow({ issue, score, candidate, isOpen, onToggle, anonCtx 
   const hasVotes = !!(score?.contributingVotes?.length);
 
   return (
-    <div className={"cv2-iss-row" + (isOpen ? " open" : "") + (hasVotes ? " has-drill" : "")}>
+    <div className={"cv2-iss-row" + (isOpen ? " open" : "") + (hasVotes ? " has-drill" : "")} data-testid="voting-record-alignment-row">
       <button className="cv2-iss-head" onClick={hasVotes ? onToggle : undefined} aria-expanded={isOpen}>
         <div className="topic">
           <div className="name">{issue.interpretation}</div>
@@ -1294,7 +1294,7 @@ function ContributingVoteCard({ vote, anonCtx }) {
 function FunderBars({ donorCoalition, totalRaised, donorDataSource, donorSource, donorUnavailable, fundingMix, userIssues, peerTotals }) {
   if (!donorCoalition && donorUnavailable) {
     return (
-      <div className="cv2-funding">
+      <div className="cv2-funding" data-testid="funding-unavailable">
         <div className="cv2-block-head"><div className="lab">Funding mix</div></div>
         <p style={{ fontSize: 14, color: 'var(--ink-3)', fontStyle: 'italic', margin: 0 }}>
           {donorUnavailable.reason}.
@@ -1646,7 +1646,7 @@ function PropositionCard({ race, decision, onVote, onUnvote }) {
   // stays clean.
   if (!detail && race.section === 'Judicial Retention') {
     return (
-      <div className="prop-card">
+      <div className="prop-card" data-testid="judicial-retention">
         <div className="ttl">{race.label}</div>
         {/* NEEDS KEY: static retention explanation — translate when i18n lands */}
         <p className="sub">
@@ -1675,7 +1675,7 @@ function PropositionCard({ race, decision, onVote, onUnvote }) {
   // Renders the official summary verbatim — no AI derivation, no If-yes/If-no grid.
   if (!detail && race.measureBody) {
     return (
-      <div className="prop-card">
+      <div className="prop-card" data-testid="measure-body">
         <div className="ttl">{race.label}</div>
         <p className="sub" style={{ whiteSpace: 'pre-wrap' }}>{race.measureBody}</p>
         <div className="twobtn">
