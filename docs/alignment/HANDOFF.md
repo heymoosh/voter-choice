@@ -40,7 +40,11 @@ a **separate table so production never changes** until a deliberate, gated cutov
    prior handoff accounted for 11) — surfaced in the Step-0 audit, **32% inversions** (means-trap:
    clean-energy funding read as pro-production). **All 12 launch-blocking contested issues are now
    corrected in `issue_tags_pole_v1` (31,480 tags total).** See the ledger's `big-2` entry.
-2. **Cutover (gated)** — **VALIDATED 2026-06-06; staged, awaiting prod URL to fire.** Approach
+2. **Cutover (gated)** — **✅ DONE 2026-06-06. Corrected tags are LIVE in production** (`issue_tags`
+   42,506 → 24,866; backup `issue_tags_backup_precutover`; see the ledger's "🔥 CUTOVER FIRED"
+   entry). Follow-ups: stricter public_safety re-tag, the parked granularity/vocab code changes,
+   null-summary recovery, optional read-path `no_score` guard. Original approach below for record. —
+   **VALIDATED 2026-06-06; staged, awaiting prod URL to fire.** Approach
    chosen: **data-only migrate-with-deletes** into production `issue_tags` under existing keys
    (upsert confident; DELETE `no_score` so the innerJoin excludes them like abstains) — **no
    app-code change** (confirmed against the deployed `lookupAlignment`, innerJoin on

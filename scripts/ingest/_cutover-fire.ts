@@ -45,6 +45,22 @@ function loadAlignmentUrl(): string {
 function hostOf(url: string): string {
   try { return new URL(url).host; } catch { return "?"; }
 }
+/** Read a var from process.env, else parse it out of the gitignored .env.cutover file. */
+function cutoverVar(key: string): string | undefined {
+  if (process.env[key]) return process.env[key];
+  let raw = "";
+  try { raw = readFileSync(".env.cutover", "utf8"); } catch { return undefined; }
+  for (const line of raw.split("\n")) {
+    const t = line.trim();
+    if (t.startsWith("#") || !t.includes("=")) continue;
+    const [k, ...rest] = t.split("=");
+    if (k.trim() === key) {
+      const v = rest.join("=").trim().replace(/^["']|["']$/g, "");
+      return v || undefined;
+    }
+  }
+  return undefined;
+}
 
 async function main() {
   const planPath = process.argv[2];
@@ -58,8 +74,8 @@ async function main() {
   const overlap = migrate.filter((i) => blank.includes(i));
   if (overlap.length) throw new Error(`issue in BOTH migrate and blank: ${overlap.join(", ")}`);
 
-  const prodUrl = process.env.CUTOVER_PROD_DATABASE_URL;
-  if (!prodUrl) throw new Error("CUTOVER_PROD_DATABASE_URL is not set (required even for dry-run preflight)");
+  const prodUrl = cutoverVar("CUTOVER_PROD_DATABASE_URL");
+  if (!prodUrl) throw new Error("CUTOVER_PROD_DATABASE_URL not set (env or .env.cutover) — required even for dry-run preflight");
   const srcUrl = loadAlignmentUrl();
   if (hostOf(prodUrl) === hostOf(srcUrl))
     throw new Error("PROD url host == alignment-branch host — refusing (point CUTOVER_PROD_DATABASE_URL at PRODUCTION)");

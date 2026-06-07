@@ -19,6 +19,36 @@ Running log of eval runs, findings, and decisions for the alignment scoring engi
 
 ## Runs
 
+### 2026-06-06 — 🔥 CUTOVER FIRED — corrected tags live in PRODUCTION (data-only)
+**Production `issue_tags` migrated** to the corrected pole-anchored tags. **42,506 → 24,866.**
+Muxin approved after a clean preflight; prod identity confirmed in the Neon console (default
+branch `production` = `ep-silent-dew-aqnmly1g`; `alignment-work` = its child `ep-small-bar-aqsuy9w0`).
+
+- **Method.** `_cutover-fire.ts --fire` (`_cutover-plan.json`, all 12 migrate, none blank), reading
+  pole_v1 from the `alignment-work` branch and writing prod via a dedicated `CUTOVER_PROD_DATABASE_URL`
+  (never `.env.local` autoload). Preflight (read-only): prod total **42,506**, per-issue anti-join
+  **prodNotInPv=0 / pvNotInProd=0** (no drift, freeze held). **Backup first:**
+  `issue_tags_backup_precutover` (31,480 contested rows) + JSON dump. Then **one transaction per
+  issue**: UPSERT confident stance (high/med/low → 0.900/0.650/0.400) under existing keys; DELETE
+  `no_score`. **13,840 upserts, 17,640 deletes.** No app-code change (deployed `lookupAlignment`
+  innerJoins `issue_tags` on `canonical_issue`; deleted `no_score` rows fall out like abstains).
+- **Per-issue prod result (confident kept):** gun 455 · immigration 325 · border 35 · reproductive
+  351 · public_safety 1163 · crime 2155 · environment 2211 · election 394 · economy 2856 · education
+  2224 · property 889 · energy 782. Valence issues (healthcare 6019, housing 2789, water 2218)
+  untouched.
+- **Post-fire verify (`_cutover-verify.ts`).** Every issue count == its confident pole_v1 count;
+  **0 `stance_lens='no_score'` rows** in prod; shipped `lookupAlignment` replay returns correctly
+  differentiated scores (energy_grid/in_favor: candidates 26/27…1/28, not the old inverted mush).
+- **Rollback** = restore contested rows from `issue_tags_backup_precutover` (kept in prod) +
+  the local JSON dump. **Reversible.**
+- **Follow-ups (NOT blocking; tracked):** (1) stricter **public_safety** re-tag — it ships at 0
+  inversion but is over-eager (panel abstained on 79 of its confident calls, 31 `high`); (2) the
+  parked **granularity/vocab** code changes — border→immigration (F7), public_safety+crime→
+  criminal_justice, election_integrity→voting_access — now safe to do as redesign-coordinated code;
+  (3) the ~16% **null-summary confident tags** ride along un-validated (highest reproductive 30%,
+  gun 23%) — summary recovery is the lever; (4) optional **defensive `stance_lens<>'no_score'`
+  guard** in the read path so future ingest can't reintroduce the hazard.
+
 ### 2026-06-06 — Cutover GATE: offline gold-sample validation (independent Opus panel) — 12/12 PASS
 **The pre-cutover gate (`RETAG_PLAN.md` §Validation), built + run this session.** Production
 untouched. Tooling: `scripts/ingest/_gold-{sample,oracle.workflow,assemble}`,

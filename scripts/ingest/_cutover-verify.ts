@@ -37,12 +37,24 @@ function fourYearsAgo(): string {
   d.setFullYear(d.getFullYear() - 4);
   return d.toISOString().slice(0, 10);
 }
+function cutoverVar(key: string): string | undefined {
+  if (process.env[key]) return process.env[key];
+  let raw = "";
+  try { raw = readFileSync(".env.cutover", "utf8"); } catch { return undefined; }
+  for (const line of raw.split("\n")) {
+    const t = line.trim();
+    if (t.startsWith("#") || !t.includes("=")) continue;
+    const [k, ...rest] = t.split("=");
+    if (k.trim() === key) return rest.join("=").trim().replace(/^["']|["']$/g, "") || undefined;
+  }
+  return undefined;
+}
 
 async function main() {
   const issue = process.argv[2] || "energy_grid";
   const stance = (process.argv[3] as "in_favor" | "opposed") || "in_favor";
-  const url = process.env.CUTOVER_PROD_DATABASE_URL;
-  if (!url) throw new Error("CUTOVER_PROD_DATABASE_URL is not set");
+  const url = cutoverVar("CUTOVER_PROD_DATABASE_URL");
+  if (!url) throw new Error("CUTOVER_PROD_DATABASE_URL not set (env or .env.cutover)");
   const sql = neon(url);
   console.log(`target host: ${(() => { try { return new URL(url).host; } catch { return "?"; } })()}\n`);
 
