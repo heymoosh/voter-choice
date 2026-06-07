@@ -102,8 +102,12 @@ export function attachLimitedDataNotice(
  */
 export function cleanCandidateName(raw: string): string {
   let s = (raw ?? "").trim();
-  // Trailing "[D-NJ]" / "[ID-VT]" party-state tag.
-  s = s.replace(/\s*\[[A-Za-z]+-[A-Za-z]{2}\]\s*$/u, "");
+  // Trailing party-state tag. Senators are "[D-NJ]" (state only); House members
+  // carry a district digit — "[D-NJ1]" / "[R-NC12]". The trailing \d* matches
+  // both so a House surname parses (mirrors the ingest side's \d* in
+  // federal-donors.ts); without it Norcross's last name read as "[d-nj1]" and
+  // resolveCandidateId missed him (breaking BOTH alignment and donors).
+  s = s.replace(/\s*\[[A-Za-z]+-[A-Za-z]{2}\d*\]\s*$/u, "");
   // Sortname "Collins, Susan (Sen.) [R-ME]" → "Susan Collins".
   const sortname = s.match(
     /^([^,]+),\s*(.+?)(?:\s*\((?:Sen|Rep|Del|Res|Com)\.?\))?$/u,
@@ -121,9 +125,9 @@ export function cleanCandidateName(raw: string): string {
   return s.replace(/\s+/g, " ").trim();
 }
 
-/** Extract the 2-letter state from a "[D-NJ]" decoration, or null. */
+/** Extract the 2-letter state from a "[D-NJ]" or House "[D-NJ1]" decoration. */
 export function stateFromCandidateName(raw: string): string | null {
-  const m = (raw ?? "").match(/\[[A-Za-z]+-([A-Za-z]{2})\]/u);
+  const m = (raw ?? "").match(/\[[A-Za-z]+-([A-Za-z]{2})\d*\]/u);
   return m ? m[1].toUpperCase() : null;
 }
 

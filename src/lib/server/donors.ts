@@ -94,6 +94,28 @@ function pickMostCommon(values: string[]): string {
  * used only as a defensive cross-check against the jurisdiction prefix; the
  * authoritative candidate lookup runs on (name, jurisdiction).
  */
+/**
+ * Canonical donor-bucket labels that compose the small/large/PAC funding mix.
+ * These MUST stay byte-identical to the labels the ingest writes
+ * (scripts/ingest/_bucket-mapping.ts → DONOR_BUCKET_LABELS) — the read-time
+ * funding-mix aggregation matches on them. Duplicated here (not imported) to
+ * respect the src/ ↔ scripts/ boundary.
+ */
+export const FUNDING_MIX_LABELS = {
+  small: "Small individual donors (under $200)",
+  large: "Large individual donors ($200+)",
+  pac: "PACs",
+} as const;
+
+/** True for the totals-derived buckets that compose the funding mix. */
+export function isFundingMixBucket(label: string): boolean {
+  return (
+    label === FUNDING_MIX_LABELS.small ||
+    label === FUNDING_MIX_LABELS.large ||
+    label === FUNDING_MIX_LABELS.pac
+  );
+}
+
 export async function lookupDonorCoalition(
   candidateName: string,
   stateCode: string,
@@ -147,11 +169,21 @@ export async function lookupDonorCoalition(
   // 3. Aggregate.
   // amount_total is numeric(15,2) → returned as string by drizzle/neon.
   // Coerce to Number before any arithmetic, otherwise we'd concatenate.
-  const buckets: DonorBucket[] = rows.map((r) => ({
+  const rawBuckets: DonorBucket[] = rows.map((r) => ({
     label: r.bucketLabel,
     amount: Number(r.amountTotal),
     percent: 0, // filled in below once we know totalRaised
   }));
+
+  // Non-destructive total_receipts handling: once a candidate has the real
+  // small/large/PAC breakdown, drop the stale single "total_receipts" bucket
+  // (left by the older ingest) so it neither inflates the total nor shows as a
+  // bogus 100% bar. Candidates NOT yet re-ingested keep total_receipts as their
+  // fallback — so a partial ingest never strips a candidate's only funding data.
+  const hasBreakdown = rawBuckets.some((b) => isFundingMixBucket(b.label));
+  const buckets = hasBreakdown
+    ? rawBuckets.filter((b) => b.label !== "total_receipts")
+    : rawBuckets;
 
   const totalRaised = buckets.reduce((sum, b) => sum + b.amount, 0);
 

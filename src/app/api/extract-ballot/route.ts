@@ -28,6 +28,7 @@ import {
   isDurableStoreConfigured,
   redisCommand,
 } from "../../../lib/server/durable-store";
+import { recordBlock } from "../../../lib/server/usage-telemetry";
 import {
   decideExtractionPath,
   scoreExtractedText,
@@ -42,8 +43,19 @@ import {
   getAnthropicClient,
   sonnetCostUsd,
   SONNET_MODEL,
+  type PageImage,
 } from "../../../lib/server/extract-vision";
 import { buildPostProcessorPrompt } from "../../../lib/server/extract-prompt";
+import {
+  reconcilePageSamples,
+  isLargeFormatPage,
+  SAMPLE_COUNT,
+} from "../../../lib/server/extract-sampler";
+import {
+  extractWithTextract,
+  getTextractClient,
+  TEXTRACT_COST_PER_PAGE_USD,
+} from "../../../lib/server/extract-textract";
 import {
   stitchPages,
   type PageExtraction,
@@ -87,11 +99,23 @@ function pdfBytesHash(buffer: Buffer): string {
 
 // Cache key version. Bumped to v2 (2026-05-28) to invalidate every
 // pre-fix cache entry after the P0 Harris County TX metadata-leakage
-// fix. Reusable: any future incident where the extraction shape could
-// be quietly malformed (model regression, schema migration, etc.)
-// should bump this counter to evict stale entries rather than patch
-// validation onto reads.
-const EXTRACTION_CACHE_VERSION = "v2";
+// fix. Bumped to v3 (2026-06-04) for the F1 fix: large-format ballots
+// had fabricated candidate names cached (and re-cached during diagnosis)
+// under their PDF SHA — those poisoned entries MUST be evicted so uploads
+// hit the new sample-and-reconcile pipeline instead of the stale read.
+// Bumped to v4 (2026-06-05) for WS1: Textract large-format path +
+// `low_confidence` field added to ExtractMeta/PublicExtractMeta. Output
+// shape changed → stale v3 entries must be evicted so the new confidence
+// flag is correctly populated on cache reads.
+// Reusable: any future incident where the extraction shape could be
+// quietly malformed (model regression, schema migration, etc.) should
+// bump this counter to evict stale entries rather than patch validation
+// onto reads.
+// Bumped v4→v5 (2026-06-05): evict stale sampling-stopgap extractions so
+// large-format ballots re-run through the now-wired Textract path.
+// Bumped v5→v6 (2026-06-07): measure_text added to ExtractRace schema;
+// evict cached extractions that lack ballot measure body text.
+const EXTRACTION_CACHE_VERSION = "v6";
 
 function extractionCacheKey(hash: string): string {
   return `voter-choice:extraction:${EXTRACTION_CACHE_VERSION}:${hash}`;
@@ -320,9 +344,36 @@ interface VisionRunSuccess {
   inputTokens: number;
   outputTokens: number;
   retries: number;
+  usedTextract: boolean;
+  isLargeFormat: boolean;
 }
 interface VisionRunFailure {
   error: Record<string, unknown>;
+}
+
+/**
+ * Per-page vision fallback helper used by the Textract overflow handler.
+ * Extracts a single page via Sonnet vision and returns the PageVisionResult.
+ */
+async function visionFallbackForPage(
+  anthropicClient: Anthropic,
+  page: PageImage,
+  _totalPages: number,
+): Promise<import("../../../lib/server/extract-vision").PageVisionResult> {
+  const { extractWithVision: _ev } = await import(
+    "../../../lib/server/extract-vision"
+  );
+  const result = await _ev(anthropicClient, [page]);
+  return (
+    result.pageResults[0] ?? {
+      page: { election_metadata: {}, sections: [] },
+      inputTokens: 0,
+      outputTokens: 0,
+      attempts: 0,
+      outcome: "failed" as const,
+      error: `page ${page.pageIndex}: vision fallback returned no result`,
+    }
+  );
 }
 
 async function runVisionPath(
@@ -342,10 +393,92 @@ async function runVisionPath(
   if (pages.length === 0) {
     return { error: { error: "PDF has no pages to render" } };
   }
-  const vision = await extractWithVision(
-    client,
-    pages.map((p) => ({ pageIndex: p.pageIndex, pngBuffer: p.pngBuffer })),
+  const images: PageImage[] = pages.map((p) => ({
+    pageIndex: p.pageIndex,
+    pngBuffer: p.pngBuffer,
+  }));
+
+  const hasLargeFormat = pages.some((p) =>
+    isLargeFormatPage(p.width, p.height, 2.0),
   );
+
+  // Large-format ballots → try Textract path (the real fix).
+  // Fall back to the sampling-with-abstention stopgap if AWS creds are
+  // absent or Textract throws, so the route never crashes.
+  if (hasLargeFormat) {
+    let textractClient;
+    try {
+      textractClient = getTextractClient();
+    } catch (credErr) {
+      // AWS creds missing → fall through to sampling stopgap below.
+      console.warn(
+        `[extract-ballot] Textract unavailable (${(credErr as Error).message}); falling back to sampling stopgap`,
+      );
+    }
+
+    if (textractClient) {
+      try {
+        const textractResult = await extractWithTextract(
+          textractClient,
+          client,
+          images,
+          (p) => visionFallbackForPage(client, p, images.length),
+        );
+        if (textractResult.overallOutcome !== "failed") {
+          return {
+            error: null,
+            pages: textractResult.pageResults.map((r) => r.page),
+            inputTokens: textractResult.totalInputTokens,
+            outputTokens: textractResult.totalOutputTokens,
+            retries: textractResult.totalTextractRetries,
+            usedTextract: true,
+            isLargeFormat: true,
+          };
+        }
+        // Textract failed → fall through to sampling stopgap.
+        console.warn(
+          "[extract-ballot] Textract extraction failed; falling back to sampling stopgap",
+        );
+      } catch (textractErr) {
+        console.warn(
+          `[extract-ballot] Textract threw (${(textractErr as Error).message}); falling back to sampling stopgap`,
+        );
+      }
+    }
+
+    // Sampling-with-abstention fallback (original stopgap for large-format).
+    // NOTE: fans out SAMPLE_COUNT × pages concurrent vision calls.
+    const samples = await Promise.all(
+      Array.from({ length: SAMPLE_COUNT }, () =>
+        extractWithVision(client, images),
+      ),
+    );
+    const usable = samples.filter((s) => s.overallOutcome !== "failed");
+    if (usable.length === 0) {
+      const firstError = samples[0]?.pageResults.find((r) => r.error)?.error;
+      return {
+        error: {
+          error: firstError ?? "All pages failed extraction",
+          outcome: "all_failed",
+        },
+      };
+    }
+    const reconciled = reconcilePageSamples(
+      usable.map((s) => s.pageResults.map((r) => r.page)),
+    );
+    return {
+      error: null,
+      pages: reconciled,
+      inputTokens: samples.reduce((s, v) => s + v.totalInputTokens, 0),
+      outputTokens: samples.reduce((s, v) => s + v.totalOutputTokens, 0),
+      retries: samples.reduce((s, v) => s + v.totalRetries, 0),
+      usedTextract: false,
+      isLargeFormat: true,
+    };
+  }
+
+  // Normal (non-large-format) ballots: single-shot vision.
+  const vision = await extractWithVision(client, images);
   if (vision.overallOutcome === "failed") {
     const firstError = vision.pageResults.find((r) => r.error)?.error;
     return {
@@ -361,6 +494,8 @@ async function runVisionPath(
     inputTokens: vision.totalInputTokens,
     outputTokens: vision.totalOutputTokens,
     retries: vision.totalRetries,
+    usedTextract: false,
+    isLargeFormat: false,
   };
 }
 
@@ -372,6 +507,8 @@ interface DispatchResult {
   finalPath: ExtractionPath;
   outcome: TelemetryCompletedLog["outcome"];
   errorBody: Record<string, unknown> | null;
+  /** Set to true when the ballot has large-format pages (triggers voter-facing warning). */
+  isLargeFormat: boolean;
 }
 
 async function dispatchExtraction(
@@ -391,9 +528,10 @@ async function dispatchExtraction(
         finalPath: "pdfjs",
         outcome: "success",
         errorBody: null,
+        isLargeFormat: false,
       };
     }
-    // Cheap path failed — try vision as fallback before giving up.
+    // Cheap path failed — try vision (may route to Textract) as fallback.
     const vision = await runVisionPath(client, buffer);
     if (vision.error) {
       return {
@@ -404,6 +542,7 @@ async function dispatchExtraction(
         finalPath: "vision",
         outcome: "all_failed",
         errorBody: vision.error,
+        isLargeFormat: false,
       };
     }
     return {
@@ -411,12 +550,13 @@ async function dispatchExtraction(
       inputTokens: vision.inputTokens,
       outputTokens: vision.outputTokens,
       retries: vision.retries,
-      finalPath: "vision",
+      finalPath: vision.usedTextract ? "textract" : "vision",
       outcome: "pdfjs_failed_then_vision_succeeded",
       errorBody: null,
+      isLargeFormat: vision.isLargeFormat,
     };
   }
-  // Direct vision dispatch.
+  // Direct vision dispatch (routes to Textract internally when large-format).
   const vision = await runVisionPath(client, buffer);
   if (vision.error) {
     return {
@@ -427,6 +567,7 @@ async function dispatchExtraction(
       finalPath: "vision",
       outcome: "vision_failed",
       errorBody: vision.error,
+      isLargeFormat: false,
     };
   }
   return {
@@ -434,9 +575,10 @@ async function dispatchExtraction(
     inputTokens: vision.inputTokens,
     outputTokens: vision.outputTokens,
     retries: vision.retries,
-    finalPath: "vision",
+    finalPath: vision.usedTextract ? "textract" : "vision",
     outcome: "success",
     errorBody: null,
+    isLargeFormat: vision.isLargeFormat,
   };
 }
 
@@ -445,6 +587,10 @@ interface PreflightOk {
   buffer: Buffer;
   sizeBytes: number;
   client: Anthropic;
+  // Surfaced so POST's later EXTRACTION_FAILED (500/502) telemetry has the
+  // same client context the preflight gates used.
+  ip: string;
+  sessionId: string;
 }
 interface PreflightFail {
   ok: false;
@@ -454,20 +600,41 @@ interface PreflightFail {
 async function preflight(
   request: NextRequest,
 ): Promise<PreflightOk | PreflightFail> {
+  // Compute IP + sessionId up front (behavior-neutral) so every gate below —
+  // including ORIGIN_MISMATCH and the 413/400 upload-parse failures — records
+  // telemetry with full context.
+  const ip = getClientIP(request);
+  const sessionId =
+    request.headers.get("x-session-id")?.slice(0, MAX_SESSION_ID_CHARS) ??
+    "anon";
+
   if (!validateOrigin(request)) {
+    recordBlock("ORIGIN_MISMATCH", { route: "extract-ballot", ip, sessionId });
     return {
       ok: false,
       response: jsonError(403, { error: "Origin not allowed" }),
     };
   }
-  const ip = getClientIP(request);
   const parsed = await parseUpload(request);
-  if ("error" in parsed) return { ok: false, response: parsed.error };
-  const sessionId =
-    request.headers.get("x-session-id")?.slice(0, MAX_SESSION_ID_CHARS) ??
-    "anon";
+  if ("error" in parsed) {
+    // parseUpload returns 413 for an oversized PDF, else 400 for a malformed
+    // / missing multipart upload. Distinguish by the response status.
+    const status = parsed.error.status;
+    recordBlock(status === 413 ? "PDF_TOO_LARGE" : "INVALID_REQUEST", {
+      route: "extract-ballot",
+      ip,
+      sessionId,
+      detail: { status },
+    });
+    return { ok: false, response: parsed.error };
+  }
   const rateLimit = await checkRateLimitAsync(ip, sessionId, 1);
   if (!rateLimit.allowed) {
+    recordBlock(rateLimit.code ?? "RATE_LIMIT_UNAVAILABLE", {
+      route: "extract-ballot",
+      ip,
+      sessionId,
+    });
     return {
       ok: false,
       response: jsonError(429, {
@@ -480,6 +647,14 @@ async function preflight(
   try {
     client = getAnthropicClient();
   } catch (err) {
+    // Misconfiguration (missing API key) — surface as an extraction failure so
+    // it's tallied alongside the pipeline 500/502s.
+    recordBlock("EXTRACTION_FAILED", {
+      route: "extract-ballot",
+      ip,
+      sessionId,
+      detail: { status: 500, stage: "client_init" },
+    });
     return {
       ok: false,
       response: jsonError(500, {
@@ -492,6 +667,8 @@ async function preflight(
     buffer: parsed.buffer,
     sizeBytes: parsed.sizeBytes,
     client,
+    ip,
+    sessionId,
   };
 }
 
@@ -512,6 +689,7 @@ function buildResponse(
     latency_ms: latencyMs,
     cost_usd: Number(costUsd.toFixed(6)),
     detector_score: decision.score,
+    ...(dispatch.isLargeFormat ? { low_confidence: true } : {}),
   };
   // Public meta — strip cost_usd + detector_score from what reaches the
   // browser. Keep extraction_path / pages / latency_ms / (optional)
@@ -551,7 +729,7 @@ function buildResponse(
 export async function POST(request: NextRequest) {
   const pre = await preflight(request);
   if (!pre.ok) return pre.response;
-  const { buffer, sizeBytes, client } = pre;
+  const { buffer, sizeBytes, client, ip, sessionId } = pre;
 
   const t0 = Date.now();
 
@@ -595,6 +773,12 @@ export async function POST(request: NextRequest) {
   try {
     pdfjsText = await extractTextFromPdf(new Uint8Array(buffer));
   } catch (err) {
+    recordBlock("EXTRACTION_FAILED", {
+      route: "extract-ballot",
+      ip,
+      sessionId,
+      detail: { status: 500, stage: "pdf_read" },
+    });
     return jsonError(500, {
       error: `Failed to read PDF: ${(err as Error).message}`,
     });
@@ -622,7 +806,18 @@ export async function POST(request: NextRequest) {
   );
 
   const latencyMs = Date.now() - t0;
-  const costUsd = sonnetCostUsd(dispatch.inputTokens, dispatch.outputTokens);
+  // For Textract path, include per-page Textract cost ($0.065/page) in addition
+  // to Sonnet post-processor tokens. pdfjs/vision paths: Sonnet tokens only.
+  const textractPageCost =
+    dispatch.finalPath === "textract"
+      ? Number((pdfjsText.numPages * TEXTRACT_COST_PER_PAGE_USD).toFixed(6))
+      : 0;
+  const costUsd = Number(
+    (
+      sonnetCostUsd(dispatch.inputTokens, dispatch.outputTokens) +
+      textractPageCost
+    ).toFixed(6),
+  );
 
   if (dispatch.errorBody) {
     logJson({
@@ -635,6 +830,12 @@ export async function POST(request: NextRequest) {
       retries: dispatch.retries,
       outcome: dispatch.outcome,
     } satisfies TelemetryCompletedLog);
+    recordBlock("EXTRACTION_FAILED", {
+      route: "extract-ballot",
+      ip,
+      sessionId,
+      detail: { status: 502, stage: "dispatch", outcome: dispatch.outcome },
+    });
     return jsonError(502, dispatch.errorBody);
   }
 
@@ -663,6 +864,7 @@ export async function POST(request: NextRequest) {
         latency_ms: latencyMs,
         cost_usd: Number(costUsd.toFixed(6)),
         detector_score: decision.score,
+        ...(dispatch.isLargeFormat ? { low_confidence: true } : {}),
       },
     });
   }

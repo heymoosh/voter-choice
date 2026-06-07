@@ -5,8 +5,12 @@ import type { MutableRefObject, RefObject } from "react";
 
 /** Recursively search through nested shadow DOMs for an <input>. */
 export function findDeepInput(
-  root: Element | DocumentFragment,
+  root: Element | DocumentFragment | null,
 ): HTMLInputElement | null {
+  // Guard: the poll loop can fire after the address container unmounts (user
+  // navigated away to the workspace), making root null → "null is not an object
+  // (evaluating 'root.querySelector')". Bail safely instead of crashing.
+  if (!root) return null;
   const input = root.querySelector("input");
   if (input) return input;
   for (const child of root.querySelectorAll("*")) {
@@ -126,7 +130,7 @@ export function useGooglePlacesAutocomplete({
 
       let retries = 0;
       const poll = () => {
-        const input = findDeepInput(el) ?? findDeepInput(containerRef.current!);
+        const input = findDeepInput(el) ?? findDeepInput(containerRef.current);
         if (input) {
           innerInputRef.current = input;
           if (onInputChangeRef.current) {

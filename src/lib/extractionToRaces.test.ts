@@ -447,6 +447,65 @@ describe("extractionToRaces", () => {
       const races = extractionToRaces(ballot, null);
       expect(races[0].candidates).toEqual([{ name: "Alice", party: "D" }]);
     });
+
+    it("counts write_in placeholders as writeInSlots and excludes them from candidates (Fix B)", () => {
+      const ballot: BallotExtraction = {
+        election_metadata: META,
+        sections: [
+          {
+            section_name: "County",
+            races: [
+              {
+                // vote-for-2 with one real candidate + one write-in slot
+                office: "County Commissioner",
+                vote_for_n: 2,
+                party_context: null,
+                candidates: [
+                  {
+                    name: "Stone",
+                    party: "Republican",
+                    placeholder_reason: null,
+                  },
+                  { name: null, party: null, placeholder_reason: "write_in" },
+                ],
+              },
+            ],
+          },
+        ],
+        _meta: njCamdenDemRepFixture()._meta,
+      };
+      const races = extractionToRaces(ballot, null);
+      expect(races[0].candidates).toEqual([
+        { name: "Stone", party: "Republican" },
+      ]);
+      expect(races[0].writeInSlots).toBe(1);
+    });
+
+    it("emits no writeInSlots when there are no write_in placeholders", () => {
+      const ballot: BallotExtraction = {
+        election_metadata: META,
+        sections: [
+          {
+            section_name: "Federal",
+            races: [
+              {
+                office: "U.S. Senate",
+                vote_for_n: 1,
+                party_context: null,
+                candidates: [
+                  { name: "Alice", party: "D", placeholder_reason: null },
+                ],
+              },
+            ],
+          },
+        ],
+        _meta: njCamdenDemRepFixture()._meta,
+      };
+      const races = extractionToRaces(ballot, null);
+      expect(races[0].candidates).toEqual([{ name: "Alice", party: "D" }]);
+      // No write_in placeholder → writeInSlots should be absent or 0
+      expect(races[0].writeInSlots ?? 0).toBe(0);
+    });
   });
 
   describe("label normalization", () => {
@@ -494,6 +553,78 @@ describe("extractionToRaces", () => {
       expect(labels).toContain("U.S. House — CD-1");
       expect(labels).toContain("U.S. Senate");
       expect(labels).toContain("County Commissioners");
+    });
+  });
+
+  describe("judicial retention section reclassification", () => {
+    it("reclassifies a retention office in a 'Judicial' section to 'Judicial Retention'", () => {
+      // Root cause: the LLM files retention under "Judicial" section_name.
+      // buildSectionRaces must override the section per-race using the office string.
+      const ballot: BallotExtraction = {
+        election_metadata: META,
+        sections: [
+          {
+            section_name: "Judicial",
+            races: [
+              {
+                office:
+                  "Shall Judge Paetra Brownlee of the Sixth District Court of Appeal be retained in office?",
+                vote_for_n: 1,
+                party_context: null,
+                candidates: [],
+              },
+              {
+                // Normal judicial election in the same section — must stay "Judicial".
+                office: "Circuit Judge, 9th Judicial Circuit Group 15",
+                vote_for_n: 1,
+                party_context: null,
+                candidates: [
+                  { name: "Alice", party: "", placeholder_reason: null },
+                  { name: "Bob", party: "", placeholder_reason: null },
+                ],
+              },
+            ],
+          },
+        ],
+        _meta: njCamdenDemRepFixture()._meta,
+      };
+      const races = extractionToRaces(ballot, "GENERAL");
+      expect(races).toHaveLength(2);
+      const retentionRace = races.find(
+        (r) =>
+          r.label.includes("Paetra Brownlee") ||
+          r.label.includes("retained in office"),
+      );
+      expect(retentionRace).toBeDefined();
+      expect(retentionRace!.section).toBe("Judicial Retention");
+
+      const judgeRace = races.find((r) => r.label.includes("Circuit Judge"));
+      expect(judgeRace).toBeDefined();
+      expect(judgeRace!.section).toBe("Judicial");
+    });
+
+    it("reclassifies a retention office even when section_name is 'Nonpartisan Judicial Offices'", () => {
+      const ballot: BallotExtraction = {
+        election_metadata: META,
+        sections: [
+          {
+            section_name: "Nonpartisan Judicial Offices",
+            races: [
+              {
+                office:
+                  "Shall Justice Renatha Francis of the Supreme Court be retained in office?",
+                vote_for_n: 1,
+                party_context: null,
+                candidates: [],
+              },
+            ],
+          },
+        ],
+        _meta: njCamdenDemRepFixture()._meta,
+      };
+      const races = extractionToRaces(ballot, "GENERAL");
+      expect(races).toHaveLength(1);
+      expect(races[0].section).toBe("Judicial Retention");
     });
   });
 
@@ -720,6 +851,60 @@ describe("extractionToRaces", () => {
    * asks for a metadata-blocklist guard so these never reach the
    * workspace rail even when the model produces them.
    */
+  describe("measureBody forwarding (WP3 ballot measure body text)", () => {
+    it("forwards measure_text from ExtractRace to race.measureBody for a 'County Questions' section", () => {
+      const ballot: BallotExtraction = {
+        election_metadata: META,
+        sections: [
+          {
+            section_name: "County Questions",
+            races: [
+              {
+                office: "County Question No. 1",
+                vote_for_n: 1,
+                party_context: null,
+                candidates: [],
+                measure_text:
+                  "Establishing a Rural Area of Critical State Concern in Collier County to protect natural resources and manage growth.",
+              },
+            ],
+          },
+        ],
+        _meta: njCamdenDemRepFixture()._meta,
+      };
+      const races = extractionToRaces(ballot, "GENERAL");
+      expect(races).toHaveLength(1);
+      expect(races[0].measureBody).toBe(
+        "Establishing a Rural Area of Critical State Concern in Collier County to protect natural resources and manage growth.",
+      );
+    });
+
+    it("does not set measureBody when measure_text is absent (candidate race)", () => {
+      const ballot: BallotExtraction = {
+        election_metadata: META,
+        sections: [
+          {
+            section_name: "Federal",
+            races: [
+              {
+                office: "U.S. Senator",
+                vote_for_n: 1,
+                party_context: null,
+                candidates: [
+                  { name: "Alice", party: "D", placeholder_reason: null },
+                ],
+              },
+            ],
+          },
+        ],
+        _meta: njCamdenDemRepFixture()._meta,
+      };
+      const races = extractionToRaces(ballot, "GENERAL");
+      expect(races).toHaveLength(1);
+      expect(races[0].measureBody).toBeUndefined();
+    });
+  });
+
   describe("metadata-leakage blocklist (P0 defensive guard)", () => {
     it("filters out races whose office is a generic metadata field (case-insensitive)", () => {
       const ballot: BallotExtraction = {

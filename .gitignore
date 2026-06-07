@@ -65,6 +65,9 @@ reports/
 # Drizzle Kit journal / meta (generated, not committed)
 db/migrations/meta/
 
+# local QA scratch (ballot images, venv, harness output) — never deploy/commit
+.scratch-ballot/
+
 # Alignment re-tag working data (ephemeral batch + result files; tags live on the Neon branch)
 scripts/ingest/_pole-batches/
 

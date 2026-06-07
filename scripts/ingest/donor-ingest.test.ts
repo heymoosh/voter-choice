@@ -117,11 +117,12 @@ describe("DONOR_BUCKET_LABELS", () => {
     expect(DONOR_BUCKET_LABELS).toContain("Large individual donors ($200+)");
     expect(DONOR_BUCKET_LABELS).toContain("Self-funded");
     expect(DONOR_BUCKET_LABELS).toContain("Party committees");
+    expect(DONOR_BUCKET_LABELS).toContain("PACs");
     expect(DONOR_BUCKET_LABELS).toContain("Other");
   });
 
-  it("has 18 fixed entries", () => {
-    expect(DONOR_BUCKET_LABELS).toHaveLength(18);
+  it("has 19 fixed entries", () => {
+    expect(DONOR_BUCKET_LABELS).toHaveLength(19);
   });
 });
 
@@ -654,7 +655,8 @@ describe("fetchFecTotals", () => {
     expect(buckets.get("Small individual donors (under $200)")).toBe(5000);
     expect(buckets.get("Large individual donors ($200+)")).toBe(25000);
     expect(buckets.get("Party committees")).toBe(3000);
-    expect(buckets.get("Other")).toBe(10000); // unclassified PAC contributions
+    expect(buckets.get("PACs")).toBe(10000); // PAC (non-party committee) contributions
+    expect(buckets.get("Other")).toBeUndefined(); // PAC no longer lumped into Other
   });
 
   it("maps self-funded contributions to Self-funded bucket", async () => {

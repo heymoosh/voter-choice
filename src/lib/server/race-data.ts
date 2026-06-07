@@ -30,7 +30,8 @@ import {
   attachLimitedDataNotice,
   type AlignmentLookupResult,
 } from "./alignment";
-import { lookupDonorCoalition } from "./donors";
+import { lookupDonorCoalition, FUNDING_MIX_LABELS } from "./donors";
+import { lookupCandidateData, buildCandidateKey } from "./candidate-data";
 import { getIssueLabel } from "../canonicalIssues";
 import type {
   RacePatternsBlock,
@@ -162,6 +163,38 @@ export function priorRoleLabelFor(jurisdiction: string): string {
  * Map a `lookupDonorCoalition` result onto the donor-related fields of a
  * RacePatternsCandidate. Pure — no DB access.
  */
+/**
+ * Compute the small/large/PAC funding mix from a found donor lookup. Reads the
+ * three totals-derived buckets by their canonical labels and expresses each as a
+ * share of their sum. `total` is deliberately `small + large + pac` (NOT the
+ * sum of ALL buckets) so the mix and its headline stay internally consistent and
+ * immune to any industry/aggregate double-count in `totalRaised`. Returns
+ * undefined when none of the three buckets are present (e.g. a candidate still
+ * on the legacy single `total_receipts` row) so the card shows its fallback.
+ */
+function computeFundingMix(
+  result: Extract<
+    Awaited<ReturnType<typeof lookupDonorCoalition>>,
+    { found: true }
+  >,
+): RacePatternsCandidate["fundingMix"] | undefined {
+  const amountFor = (label: string) =>
+    result.buckets.find((b) => b.label === label)?.amount ?? 0;
+  const small = amountFor(FUNDING_MIX_LABELS.small);
+  const large = amountFor(FUNDING_MIX_LABELS.large);
+  const pac = amountFor(FUNDING_MIX_LABELS.pac);
+  const total = small + large + pac;
+  if (total <= 0) return undefined;
+  const pct = (v: number) => Math.round((v / total) * 100);
+  return {
+    small: pct(small),
+    large: pct(large),
+    pac: pct(pac),
+    total,
+    cycle: `${result.electionCycle} cycle`,
+  };
+}
+
 export function donorFieldsFromResult(
   result: Awaited<ReturnType<typeof lookupDonorCoalition>>,
 ): Pick<
@@ -171,6 +204,7 @@ export function donorFieldsFromResult(
   | "donorUnavailable"
   | "totalRaised"
   | "donorDataSource"
+  | "fundingMix"
 > {
   if (!result.found) {
     const reason =
@@ -190,6 +224,7 @@ export function donorFieldsFromResult(
     totalRaised: result.totalRaised,
     donorDataSource: "voting_record",
     donorSource: { name: result.source, url: result.sourceUrl },
+    fundingMix: computeFundingMix(result),
   };
 }
 
@@ -331,6 +366,7 @@ export async function assembleRaceData(
       ...(donorFields.donorDataSource
         ? { donorDataSource: donorFields.donorDataSource }
         : {}),
+      ...(donorFields.fundingMix ? { fundingMix: donorFields.fundingMix } : {}),
       // Endorsements + retrospective: no canonical DB source. The prototype
       // nulls these for every candidate, so we match it.
       endorsements: null,
@@ -355,6 +391,8 @@ export async function assembleRaceData(
 
     // Alignment scores (only when we have issues).
     if (hasIssues) {
+      // Step 1: attempt voting-record lookup for candidates we can resolve.
+      let votingEntry: AlignmentScoresEntry | null = null;
       if (candidateId) {
         const perIssue = [];
         for (const issue of input.issues) {
@@ -367,17 +405,43 @@ export async function assembleRaceData(
           );
           perIssue.push({ issue, result });
         }
-        alignmentEntries.push(alignmentEntryFromResults(id, perIssue));
+        votingEntry = alignmentEntryFromResults(id, perIssue);
+      }
+
+      // Step 2: if no voting record (unresolved candidate OR resolved but
+      // no scores), fall back to stored web_search positions.
+      if (votingEntry && votingEntry.scores !== null) {
+        // Happy path — voting record found.
+        alignmentEntries.push(votingEntry);
       } else {
-        alignmentEntries.push({
-          candidateId: id,
-          scores: null,
-          unavailable: {
-            reason: jurisdiction
-              ? "Couldn't match this candidate in our voting-record data"
-              : "No voting record for this office in our data",
-          },
-        });
+        // Build the candidateKey for the web_search lookup.
+        // For non-legislative offices (jurisdiction===null), use the race
+        // section + stateCode so the key stays meaningful.
+        const webKey = buildCandidateKey(
+          cand.name,
+          effectiveJurisdiction ??
+            `${input.section}-${input.stateCode}`.toLowerCase(),
+          input.electionCycle ?? "2026",
+        );
+        const webScores = await lookupCandidateData(
+          webKey,
+          input.issues.map((i) => i.canonicalIssue),
+        );
+
+        if (webScores.length > 0) {
+          // Stored web_search positions available.
+          alignmentEntries.push({ candidateId: id, scores: webScores });
+        } else {
+          // Nothing stored yet — signal that research is pending. The client
+          // uses this reason string to trigger a POST /api/research-candidate.
+          alignmentEntries.push({
+            candidateId: id,
+            scores: null,
+            unavailable: {
+              reason: "research_pending",
+            },
+          });
+        }
       }
     }
   }

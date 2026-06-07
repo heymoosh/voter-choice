@@ -127,7 +127,7 @@ export function GeocodeFailNotice({
         <p className="text-[13px] text-ink-3 m-[14px_0_0] px-[14px] py-3 bg-paper rounded-md border-l-[3px] border-l-gold leading-[1.55]">
           <b>Tip:</b> if you just typed a ZIP, add a street like{" "}
           <code className="font-mono text-[12px] bg-tag-bg px-[5px] py-[2px] rounded-sm">
-            5750 Hartwick Rd, Houston TX 77057
+            123 Main St, Springfield, IL 62701
           </code>
           . If you typed a full address, double-check the state abbreviation and
           ZIP.

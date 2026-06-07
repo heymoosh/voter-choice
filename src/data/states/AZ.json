@@ -10,6 +10,14 @@
       "type": "primary",
       "isPrimary": true,
       "primaryType": "closed"
+    },
+    {
+      "id": "az-2026-general",
+      "name": "2026 Arizona General Election",
+      "date": "2026-11-03",
+      "type": "general",
+      "isPrimary": false,
+      "primaryType": null
     }
   ],
   "registration": {

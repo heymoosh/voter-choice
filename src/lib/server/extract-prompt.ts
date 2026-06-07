@@ -30,21 +30,26 @@ const TARGET_SCHEMA = `Target schema:
           "position": "string (optional)",
           "vote_for_n": 1,
           "party_context": "Democratic Primary" | "Republican Primary" | null,
+          "measure_text": "string (optional — see instructions below)",
           "candidates": [
             {
               "name": "string | null",
               "party": "string | null",
               "ballot_position": "string (optional)",
-              "placeholder_reason": "no_petition_filed" | "write_in" | null
+              "placeholder_reason": "no_petition_filed" | "write_in" | "illegible" | null
             }
           ]
         }
       ]
     }
   ]
-}`;
+}
+
+measure_text field instructions: For NON-candidate contests — constitutional amendments, county/charter questions, bond measures, referenda, and judicial retention questions — populate measure_text with the official ballot summary or body text exactly as printed on the ballot, capped at ~1500 characters. Transcribe faithfully; do NOT summarize, paraphrase, or derive "if yes / if no" framing. For candidate races, omit measure_text entirely.`;
 
 const SHARED_INSTRUCTIONS = `Produce JSON that conforms to the target schema below. Extract every race and every candidate visible on the ballot — do NOT filter based on party affiliation or voting rules; the presentation layer handles that.
+
+Accuracy over completeness — transcribe, never invent. Read every name, office, party, and slogan as carefully as you can and write down EXACTLY the letters printed; small text is fine to transcribe. NEVER infer, autocomplete, or "correct" a name toward a known or expected politician, and NEVER invent or pad a plausible name to fill a slot. Only when the letters are genuinely impossible to make out should you emit that candidate with name=null and placeholder_reason="illegible" — a marked gap is always better than a guessed or invented name. Emit exactly the candidate slots printed; do not add slots that are not there.
 
 If the upstream output is incomplete or unreliable, prefer to mark a field as null rather than guess. Mark "NO PETITION FILED" rows as placeholder_reason="no_petition_filed", not as candidates. Mark write-in slots as placeholder_reason="write_in" with name=null. For multi-seat races (vote_for_n > 1), emit one write-in placeholder PER SEAT (so vote_for_n=2 → 2 write-in placeholders, vote_for_n=4 → 4 write-in placeholders).
 

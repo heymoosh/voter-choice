@@ -17,9 +17,18 @@
  *   than silently dropping it.
  * - `"write_in"`: write-in slots. For multi-seat races (vote_for_n > 1) we
  *   emit one write-in placeholder PER SEAT.
+ * - `"illegible"`: a real candidate slot whose name could not be read reliably
+ *   (e.g. dense/low-resolution large-format ballots). We emit the slot with
+ *   `name: null` so the model never FABRICATES a plausible name — an honest gap
+ *   beats a wrong name. Filtered out of the selectable candidate list like the
+ *   other placeholders; the raw count is preserved for telemetry / future UX.
  * - `null`: a real candidate.
  */
-export type PlaceholderReason = "no_petition_filed" | "write_in" | null;
+export type PlaceholderReason =
+  | "no_petition_filed"
+  | "write_in"
+  | "illegible"
+  | null;
 
 /**
  * Section names — kept open to a fixed list per the bake-off's section_name
@@ -56,6 +65,14 @@ export interface ExtractRace {
   vote_for_n: number;
   party_context: "Democratic Primary" | "Republican Primary" | null;
   candidates: ExtractCandidate[];
+  /**
+   * Official ballot summary/body text for non-candidate contests
+   * (constitutional amendments, county/charter questions, bond measures,
+   * referenda, judicial retention). Populated verbatim from the ballot as
+   * printed — NO AI summarization or derivation. Capped at ~1500 characters.
+   * Omitted for candidate races.
+   */
+  measure_text?: string;
 }
 
 export interface ExtractSection {
@@ -86,10 +103,12 @@ export interface DetectorScore {
  * response:
  *   - `"pdfjs"`: the cheap text-layer + Sonnet post-processor path.
  *   - `"vision"`: the per-page Sonnet vision fan-out.
+ *   - `"textract"`: AWS Textract form/table OCR + Sonnet post-processor
+ *     (large-format fallback).
  *   - `"cached"`: a previously computed extraction served from the
  *     content-addressed cache (SHA-256 of the PDF bytes).
  */
-export type ExtractionPath = "pdfjs" | "vision" | "cached";
+export type ExtractionPath = "pdfjs" | "vision" | "textract" | "cached";
 
 export interface ExtractMeta {
   extraction_path: ExtractionPath;
@@ -104,6 +123,19 @@ export interface ExtractMeta {
    * earlier" UI and lets us tail-scrape cache hit rate post-launch.
    */
   cache_hit?: boolean;
+  /**
+   * Set to `true` when the ballot is large-format (page area > 1 MP at the
+   * rendered scale). Large-format pages downscale past the vision API's
+   * ~1.15 MP cap, making candidate text unreliable even with the Textract
+   * or sampling path — a voter-facing "verify against your official ballot"
+   * warning should be shown. Present only when `true`; absent otherwise.
+   *
+   * Note: `low_confidence` signals large-format geometry, not a per-race
+   * accuracy grade. Fully confident Textract extractions (e.g. NJ R-Senate
+   * 4/4) still set this flag because the *ballot* is large-format, so the
+   * downstream UX can always show the caution regardless of which path ran.
+   */
+  low_confidence?: boolean;
 }
 
 /**
@@ -120,12 +152,15 @@ export interface ExtractMeta {
  *   - `cache_hit` — same; also useful for client-side telemetry hooks
  *   - `pages` — generic ballot-size hint, not sensitive
  *   - `latency_ms` — generic timing hint, not sensitive
+ *   - `low_confidence` — voter-facing "verify against your official ballot"
+ *     flag; set when the ballot is large-format (see `ExtractMeta`)
  */
 export interface PublicExtractMeta {
   extraction_path: ExtractionPath;
   pages: number;
   latency_ms: number;
   cache_hit?: boolean;
+  low_confidence?: boolean;
 }
 
 /**
@@ -141,6 +176,9 @@ export function toPublicExtractMeta(meta: ExtractMeta): PublicExtractMeta {
   };
   if (meta.cache_hit !== undefined) {
     out.cache_hit = meta.cache_hit;
+  }
+  if (meta.low_confidence) {
+    out.low_confidence = true;
   }
   return out;
 }

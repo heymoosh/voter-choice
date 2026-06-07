@@ -29,7 +29,51 @@
  */
 
 import type { Race, RaceSection } from "./raceDeriver";
-import { makeRaceId } from "./raceDeriver";
+import { makeRaceId, isJudicialRetentionOffice } from "./raceDeriver";
+
+/**
+ * Race shape augmented with write-in slot count from the extraction and a
+ * clean party lane derived from race-level party_context.
+ *
+ * The base Race interface is not modified (raceDeriver.ts is off-limits).
+ *
+ * writeInSlots  — number of write_in placeholder candidates in the source
+ *                 extraction; the UI uses this to offer write-in affordances
+ *                 for any remaining open seats (Fix B).
+ *
+ * partyLane     — the party lane this race belongs to, derived from
+ *                 party_context via partyLaneFromContext():
+ *                   "D" → Democratic Primary (or runoff variant)
+ *                   "R" → Republican Primary (or runoff variant)
+ *                   null → non-partisan / universal (propositions, judicial
+ *                          retentions, general-election races)
+ *                 undefined is never emitted — every race gets an explicit
+ *                 D / R / null value so callers can distinguish "no lane"
+ *                 (null) from "field missing" (undefined).
+ */
+export interface RaceWithWriteIns extends Race {
+  writeInSlots?: number;
+  partyLane?: "D" | "R" | null;
+}
+
+/**
+ * Derive the two-letter party lane from a race-level party_context string.
+ * Uses substring matching (same style as inferBallotTagFromExtraction) so
+ * runoff variants like "Democratic Primary Runoff" / "Republican Runoff"
+ * map correctly — exact-token matching via partyContextTag would return
+ * "ALL" for those and lose the lane.
+ *
+ * Returns null for non-partisan / universal contexts (propositions,
+ * judicial retentions, general-election races whose party_context is null).
+ */
+function partyLaneFromContext(
+  partyContext: ExtractRace["party_context"],
+): "D" | "R" | null {
+  if (!partyContext) return null;
+  if (/democratic/i.test(partyContext)) return "D";
+  if (/republican/i.test(partyContext)) return "R";
+  return null;
+}
 import { normalizeRaceLabel } from "./normalizeRaceLabel";
 import type {
   BallotExtraction,
@@ -247,36 +291,60 @@ function buildId(race: ExtractRace): string {
  * Filter the candidate roster to real entries (drop write-in and
  * no-petition-filed placeholders) and map to the `Race.candidates`
  * shape consumed by the chat ground-truth builder and ChatPanel.
+ * Returns real candidates plus the count of write-in placeholder slots.
+ * The write-in count is additive — the existing candidate shape is unchanged.
  */
-function buildCandidates(race: ExtractRace): { name: string; party: string }[] {
-  return race.candidates
-    .filter((c) => c.placeholder_reason === null && c.name)
+function buildCandidates(race: ExtractRace): {
+  candidates: { name: string; party: string }[];
+  writeInSlots: number;
+} {
+  let writeInSlots = 0;
+  const candidates = race.candidates
+    .filter((c) => {
+      if (c.placeholder_reason === "write_in") {
+        writeInSlots++;
+        return false; // keep the count but don't emit as a candidate entry
+      }
+      return c.placeholder_reason === null && c.name;
+    })
     .map((c) => ({ name: c.name ?? "", party: c.party ?? "" }));
+  return { candidates, writeInSlots };
 }
 
 /**
- * Materialize the eligible races of one ExtractSection into `Race[]`,
+ * Materialize the eligible races of one ExtractSection into RaceWithWriteIns[],
  * already filtered by ballotTag and tagged with the canonical section
  * name. Pure / synchronous — no allocations beyond the output.
  */
 function buildSectionRaces(
   section: ExtractSection,
   ballotTag: string | null,
-): Race[] {
+): RaceWithWriteIns[] {
   const canonical = normalizeSection(section.section_name);
-  const out: Race[] = [];
+  const out: RaceWithWriteIns[] = [];
   for (const race of section.races ?? []) {
     // P0 defensive guard: drop metadata-shaped offices BEFORE the party
     // filter so a "race" with office "Election" never reaches the rail
     // regardless of party_context.
     if (isMetadataLeakage(race.office)) continue;
     if (!passesPartyFilter(race, ballotTag)) continue;
+    const { candidates, writeInSlots } = buildCandidates(race);
+    // Per-race section override: the LLM may file a retention question under
+    // "Judicial" (or a non-canonical section name). Deterministically
+    // reclassify based on the office string — no LLM trust required.
+    const raceSection: RaceSection = isJudicialRetentionOffice(race.office)
+      ? "Judicial Retention"
+      : canonical;
     out.push({
       id: buildId(race),
-      section: canonical,
+      section: raceSection,
       label: buildLabel(race),
       decided: false,
-      candidates: buildCandidates(race),
+      candidates,
+      voteForN: race.vote_for_n > 0 ? race.vote_for_n : 1,
+      ...(writeInSlots > 0 ? { writeInSlots } : {}),
+      partyLane: partyLaneFromContext(race.party_context),
+      ...(race.measure_text ? { measureBody: race.measure_text } : {}),
     });
   }
   return out;
@@ -285,7 +353,7 @@ function buildSectionRaces(
 export function extractionToRaces(
   extraction: BallotExtraction | null,
   ballotTag: string | null,
-): Race[] {
+): RaceWithWriteIns[] {
   if (!extraction?.sections?.length) return [];
 
   // P0 just-passed-election fix (Option B): when ballotContext is null
@@ -299,7 +367,7 @@ export function extractionToRaces(
 
   // Group eligible races by canonical section name so we can emit them
   // in the canonical SECTION_ORDER regardless of the input order.
-  const bySection = new Map<RaceSection, Race[]>();
+  const bySection = new Map<RaceSection, RaceWithWriteIns[]>();
   for (const section of extraction.sections as ExtractSection[]) {
     const races = buildSectionRaces(section, effectiveBallotTag);
     for (const race of races) {
@@ -309,7 +377,7 @@ export function extractionToRaces(
     }
   }
 
-  const out: Race[] = [];
+  const out: RaceWithWriteIns[] = [];
   for (const section of KNOWN_SECTIONS) {
     const races = bySection.get(section);
     if (races) out.push(...races);

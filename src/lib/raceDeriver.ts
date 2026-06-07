@@ -15,6 +15,8 @@ export interface ContestLike {
   district?: string;
   type?: string;
   candidates: { name: string; party: string }[];
+  /** Seats to fill (vote-for-N); civic supplies this as numberElected. */
+  voteForN?: number;
 }
 
 /** Input shape: anything that may have a `contests` array. */
@@ -68,6 +70,22 @@ export interface Race {
    * inputs that didn't supply a roster.
    */
   candidates: { name: string; party: string }[];
+  /**
+   * Number of seats to fill (vote-for-N). 1 for single-winner races, >1 for
+   * multi-seat offices (e.g. "Board of County Commissioners — Vote for Two").
+   * Defaults to 1 when the source doesn't specify. The workspace caps the
+   * voter's picks at this count so multi-seat ballots can be marked fully.
+   */
+  voteForN?: number;
+  /**
+   * Official ballot summary/body text for non-candidate contests
+   * (constitutional amendments, county/charter questions, bond measures,
+   * referenda, judicial retention). Sourced verbatim from the ballot as
+   * printed via `measure_text` in the extraction schema — NO AI summarization.
+   * Absent for candidate races and for measures where the extractor produced
+   * no body text.
+   */
+  measureBody?: string;
 }
 
 const SECTION_ORDER: RaceSection[] = [
@@ -136,7 +154,23 @@ const JUDICIAL_RETENTION_PATTERNS: RegExp[] = [
   /\bretention\b/i,
   /\bmerit\s+retention\b/i,
   /\bretain\s+(?:judge|justice)\b/i,
+  /\bretained\b/i,
 ];
+
+/**
+ * Pure predicate: does this office string describe a judicial retention
+ * question rather than a competitive judicial election?
+ *
+ * Reuses JUDICIAL_RETENTION_PATTERNS as the single source of truth so
+ * classifyRaceSection and extractionToRaces stay in sync.
+ *
+ * Exported so extractionToRaces can override the section derived from the
+ * LLM's section_name (which may be "Judicial" for a retention question).
+ */
+export function isJudicialRetentionOffice(office: string): boolean {
+  const text = office ?? "";
+  return JUDICIAL_RETENTION_PATTERNS.some((re) => re.test(text));
+}
 
 // Generic propositions and measures — checked AFTER the specific measure
 // types above so "Constitutional Amendment", "County Question", "Bond
@@ -203,7 +237,7 @@ export function classifyRaceSection(office: string): RaceSection {
     return "County Questions";
   }
   if (BOND_MEASURE_PATTERNS.some((re) => re.test(text))) return "Bond Measures";
-  if (JUDICIAL_RETENTION_PATTERNS.some((re) => re.test(text))) {
+  if (isJudicialRetentionOffice(text)) {
     return "Judicial Retention";
   }
 
@@ -248,6 +282,8 @@ export function deriveRaces(input: RaceDeriverInput | null): Race[] {
       label,
       decided: false,
       candidates,
+      voteForN:
+        typeof c.voteForN === "number" && c.voteForN > 0 ? c.voteForN : 1,
     };
   });
 

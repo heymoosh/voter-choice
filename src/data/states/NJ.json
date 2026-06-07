@@ -98,6 +98,7 @@
   "votingRules": {
     "idRequired": false,
     "acceptedIds": [],
+    "pollingHours": "6:00 AM – 8:00 PM",
     "phonesAtPolls": "allowed",
     "phonesAtPollsDetail": "New Jersey does not prohibit phones inside polling places. Voters may not photograph their ballot or other voters. Campaigning is prohibited within 100 feet of a polling place.",
     "additionalRules": [

@@ -1,5 +1,6 @@
 import type { StateElectionData, Election } from "../types/election";
 import { getTodayInLatestUsZone } from "./electionToday";
+import { getVoterIdRule } from "./voter-id-rules";
 
 type JsonImport = () => Promise<{ default: unknown }>;
 
@@ -144,6 +145,7 @@ function resolveStateData(raw: Record<string, unknown>): StateElectionData {
 export function getFallbackStateData(stateCode: string): StateElectionData {
   const code = stateCode.toUpperCase();
   const stateName = STATE_NAMES[code] ?? stateCode;
+  const idRule = getVoterIdRule(code);
   const today = getTodayInLatestUsZone();
   // Place the general election in the future so the app doesn't treat this as "no election"
   const generalDate = today < "2026-11-03" ? "2026-11-03" : "2027-11-02";
@@ -187,8 +189,12 @@ export function getFallbackStateData(stateCode: string): StateElectionData {
       notes: `We don't have specific early voting dates for ${stateName} yet. Check vote.gov or your state election website for details.`,
     },
     votingRules: {
-      idRequired: false,
-      acceptedIds: [],
+      idRequired: idRule?.required ?? false,
+      // Only surface a list when it's officially verified (TX/GA today);
+      // otherwise the per-state `idNote` carries the requirement and the UI
+      // points the voter to their state election office for the exact list.
+      acceptedIds: idRule?.verified ? idRule.acceptedIds : [],
+      idNote: idRule?.note,
       phonesAtPolls: "varies",
       phonesAtPollsDetail: `Phone rules vary by state. Check your ${stateName} county election office for details.`,
       additionalRules: [

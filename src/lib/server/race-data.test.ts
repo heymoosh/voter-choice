@@ -111,6 +111,53 @@ describe("donorFieldsFromResult", () => {
     expect(fields.donorUnavailable).toBeUndefined();
   });
 
+  it("computes fundingMix from small/large/PAC buckets (total = their sum)", () => {
+    const fields = donorFieldsFromResult({
+      found: true,
+      candidateId: "uuid-booker",
+      totalRaised: 13617405,
+      buckets: [
+        {
+          label: "Small individual donors (under $200)",
+          amount: 8145568,
+          percent: 60,
+        },
+        {
+          label: "Large individual donors ($200+)",
+          amount: 4984307,
+          percent: 37,
+        },
+        { label: "PACs", amount: 487530, percent: 4 },
+      ],
+      source: "fec_api",
+      sourceUrl: "https://www.fec.gov/data/candidate/S4NJ00185",
+      electionCycle: "2026",
+    });
+    expect(fields.fundingMix).toEqual({
+      small: 60,
+      large: 37,
+      pac: 4,
+      total: 13617405,
+      cycle: "2026 cycle",
+    });
+  });
+
+  it("omits fundingMix when no small/large/PAC buckets are present (legacy total_receipts only)", () => {
+    const fields = donorFieldsFromResult({
+      found: true,
+      candidateId: "uuid-legacy",
+      totalRaised: 16808282,
+      buckets: [{ label: "total_receipts", amount: 16808282, percent: 100 }],
+      source: "fec",
+      sourceUrl: "https://www.fec.gov/x",
+      electionCycle: "2026",
+    });
+    expect(fields.fundingMix).toBeUndefined();
+    // donorCoalition still passes through unchanged (the read-time
+    // total_receipts filter lives in lookupDonorCoalition, upstream of this).
+    expect(fields.donorCoalition).toHaveLength(1);
+  });
+
   it("maps a not-resolved result to a backstop note", () => {
     const fields = donorFieldsFromResult({
       found: false,

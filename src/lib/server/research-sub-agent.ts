@@ -25,13 +25,25 @@ import {
   buildResearchCandidatePrompt,
   type ResearchCandidateInput,
 } from "../prompts/research-candidate";
+import {
+  buildStructuredResearchPrompt,
+  type StructuredResearchInput,
+  type StructuredIssueResult,
+} from "../prompts/research-candidate-structured";
 import { recordUsageAsync } from "./budget";
 
-export type { ResearchCandidateInput };
+export type {
+  ResearchCandidateInput,
+  StructuredResearchInput,
+  StructuredIssueResult,
+};
 
 const RESEARCH_SUB_AGENT_MODEL = "claude-haiku-4-5-20251001";
 const RESEARCH_SUB_AGENT_MAX_TOKENS = 400; // distilled output; not raw pages.
 const RESEARCH_SUB_AGENT_MAX_WEB_SEARCH = 3;
+// Structured research produces JSON — allow more tokens so the array fits
+// (each issue ~150 tokens × N issues). 6 issues × 200 = 1200, cap at 1500.
+const STRUCTURED_RESEARCH_MAX_TOKENS = 1500;
 // Threshold below which we consider the sub-call's text "no useful info".
 // Three bullets at ≤30 words each ≈ 200–400 chars; anything well under that
 // can't be a valid distilled answer.
@@ -165,5 +177,135 @@ export async function runResearchSubAgent(
       searchCount,
     },
     ...(unavailable ? { unavailable: true } : {}),
+  };
+}
+
+/**
+ * Result of a structured research call.
+ *
+ * `issues` contains one entry per issue in the request (some may have empty
+ * evidence when the model couldn't find reliable sources — callers must drop
+ * those before persisting). `usage` mirrors the prose sub-agent's shape for
+ * uniform budget accounting.
+ */
+export interface StructuredResearchResult {
+  issues: StructuredIssueResult[];
+  usage: { input: number; output: number; searchCount: number };
+}
+
+/**
+ * Run the structured research sub-agent for one candidate × N issues.
+ *
+ * Returns per-issue resolvedStance + confidence + evidence[]. Evidence items
+ * with no real URL are left in the raw output; the caller (candidate-data.ts)
+ * filters them before persisting.
+ *
+ * Budget accounting: same recordUsageAsync pattern as `runResearchSubAgent`.
+ */
+export async function runStructuredCandidateResearch(
+  input: StructuredResearchInput,
+  client: Anthropic,
+): Promise<StructuredResearchResult> {
+  const systemText = prependSafetyHeader(buildStructuredResearchPrompt(input));
+
+  const tools = [
+    {
+      type: "web_search_20250305" as const,
+      name: "web_search",
+      max_uses: RESEARCH_SUB_AGENT_MAX_WEB_SEARCH,
+    },
+  ] as unknown as Anthropic.Tool[];
+
+  const message = (await client.messages.create({
+    model: RESEARCH_SUB_AGENT_MODEL,
+    max_tokens: STRUCTURED_RESEARCH_MAX_TOKENS,
+    temperature: 0.1, // lower temp for structured JSON output
+    system: systemText,
+    tools,
+    messages: [
+      {
+        role: "user",
+        content: "Begin research and return the JSON array.",
+      },
+    ],
+    stream: false,
+  })) as Anthropic.Message;
+
+  // Extract text-only blocks; discard raw web content blocks.
+  const rawText = message.content
+    .filter(
+      (block): block is Anthropic.TextBlock =>
+        (block as { type: string }).type === "text",
+    )
+    .map((block) => block.text)
+    .join("\n")
+    .trim();
+
+  const usage = message.usage ?? null;
+  const input_tokens =
+    (usage as { input_tokens?: number } | null)?.input_tokens ?? 0;
+  const output_tokens =
+    (usage as { output_tokens?: number } | null)?.output_tokens ?? 0;
+  const cached_input_tokens =
+    (usage as { cache_read_input_tokens?: number } | null)
+      ?.cache_read_input_tokens ?? 0;
+  const cache_write_tokens =
+    (usage as { cache_creation_input_tokens?: number } | null)
+      ?.cache_creation_input_tokens ?? 0;
+  const searchCount = extractSearchCount(usage as UsageWithServerTools);
+
+  if (
+    input_tokens > 0 ||
+    output_tokens > 0 ||
+    cached_input_tokens > 0 ||
+    cache_write_tokens > 0 ||
+    searchCount > 0
+  ) {
+    await recordUsageAsync({
+      inputTokens: input_tokens,
+      outputTokens: output_tokens,
+      cachedInputTokens: cached_input_tokens,
+      cacheWriteTokens: cache_write_tokens,
+      searchCount,
+    });
+  }
+
+  // Parse JSON — be permissive about leading/trailing text the model may emit.
+  let issues: StructuredIssueResult[] = [];
+  const jsonMatch = rawText.match(/\[[\s\S]*\]/);
+  if (jsonMatch) {
+    try {
+      const parsed: unknown = JSON.parse(jsonMatch[0]);
+      if (Array.isArray(parsed)) {
+        issues = parsed
+          .filter(
+            (item): item is StructuredIssueResult =>
+              item !== null &&
+              typeof item === "object" &&
+              typeof (item as Record<string, unknown>).canonicalIssue ===
+                "string" &&
+              typeof (item as Record<string, unknown>).issueLabel ===
+                "string" &&
+              typeof (item as Record<string, unknown>).resolvedStance ===
+                "string" &&
+              typeof (item as Record<string, unknown>).confidence === "string",
+          )
+          .map((item) => ({
+            ...item,
+            evidence: Array.isArray(item.evidence) ? item.evidence : [],
+          }));
+      }
+    } catch {
+      // JSON parse failed — return empty array; caller handles gracefully.
+    }
+  }
+
+  return {
+    issues,
+    usage: {
+      input: input_tokens,
+      output: output_tokens,
+      searchCount,
+    },
   };
 }

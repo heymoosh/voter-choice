@@ -93,6 +93,50 @@ describe("FunderBars — text list (percent-only mode)", () => {
   });
 });
 
+describe("FunderBars — legacy total_receipts sentinel (degenerate case)", () => {
+  const sentinelFunders: DonorBucketSlice[] = [
+    { label: "total_receipts", amount: 2_800_000, percent: 100 },
+  ];
+
+  it("does NOT render the text 'total_receipts' anywhere", () => {
+    const { container } = render(
+      <FunderBars funders={sentinelFunders} totalRaised={2_800_000} />,
+    );
+    expect(container.textContent).not.toMatch(/total_receipts/i);
+  });
+
+  it("does NOT render the 'Industry breakdown' sub-heading", () => {
+    render(<FunderBars funders={sentinelFunders} totalRaised={2_800_000} />);
+    expect(screen.queryByText(/industry breakdown/i)).not.toBeInTheDocument();
+  });
+
+  it("renders an honest fallback note with testid funder-bars-no-sector-breakdown", () => {
+    render(<FunderBars funders={sentinelFunders} totalRaised={2_800_000} />);
+    const note = screen.getByTestId("funder-bars-no-sector-breakdown");
+    expect(note).toBeInTheDocument();
+    expect(note.textContent).toMatch(/sector breakdown not available/i);
+  });
+});
+
+describe("FunderBars — normal multi-bucket industry breakdown (regression guard)", () => {
+  const multiBucketFunders: DonorBucketSlice[] = [
+    { label: "Finance, banking & insurance", percent: 55, amount: 1_100_000 },
+    { label: "Technology", percent: 45, amount: 900_000 },
+  ];
+
+  it("renders the 'Industry breakdown' section for real sector labels", () => {
+    render(<FunderBars funders={multiBucketFunders} totalRaised={2_000_000} />);
+    expect(screen.getByText(/industry breakdown/i)).toBeInTheDocument();
+  });
+
+  it("does NOT render the no-sector-breakdown fallback for real sector labels", () => {
+    render(<FunderBars funders={multiBucketFunders} totalRaised={2_000_000} />);
+    expect(
+      screen.queryByTestId("funder-bars-no-sector-breakdown"),
+    ).not.toBeInTheDocument();
+  });
+});
+
 describe("FunderBars — donor data unavailable", () => {
   it("renders 'donor data unavailable' message when funders is an empty array", () => {
     render(<FunderBars funders={[]} />);

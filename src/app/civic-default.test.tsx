@@ -8,10 +8,11 @@ import { describe, it, expect } from "vitest";
  * These tests pin the production default to:
  *   data-mood="civic" · data-palette="civic" · data-treatment="daylight"
  *
- * The full prototype Tweaks panel (with editorial / manifesto moods,
- * constitutional / newsprint palettes, inkwell treatment) is deferred —
- * see PR description. Civic mood swaps `--serif` from Newsreader to
- * IBM Plex Serif, so production no longer needs the Newsreader webfont.
+ * The redesigned layout loads all mood families (Newsreader, IBM Plex trio,
+ * Space Grotesk, JetBrains Mono) via a single Google Fonts <link> so the
+ * in-app mood/palette switcher can flip between them at runtime without an
+ * additional network request per mood. This supersedes the previous
+ * next/font per-family import pattern.
  *
  * jsdom + Vitest cannot import the real `src/app/layout.tsx` here
  * because importing it pulls in `./globals.css`, which trips Vitest's
@@ -43,33 +44,25 @@ describe("PR A1 — Civic mood is the hardcoded production default", () => {
     expect(layoutSrc).toMatch(/data-treatment=["']daylight["']/);
   });
 
-  it("layout.tsx imports IBM_Plex_Serif via next/font (Civic mood headline family)", () => {
-    expect(layoutSrc).toMatch(/IBM_Plex_Serif/);
-    // The font instance is mapped to the --font-ibm-plex-serif CSS
-    // variable so globals.css can chain through it for var(--serif).
-    expect(layoutSrc).toMatch(/--font-ibm-plex-serif/);
+  it("layout.tsx loads IBM Plex Serif via the Google Fonts <link> (Civic mood headline family)", () => {
+    // The redesigned layout uses a static Google Fonts <link> instead of
+    // next/font. IBM Plex Serif is the Civic mood headline family and must
+    // be present in the link href.
+    expect(layoutSrc).toMatch(/fonts\.googleapis\.com\/css2/);
+    expect(layoutSrc).toMatch(/IBM\+Plex\+Serif/);
   });
 
-  it("layout.tsx attaches the IBM Plex Serif font variable to <body>", () => {
-    // The next/font instance must be applied to the body className so
-    // its CSS variable is in scope where globals.css consumes it.
-    expect(layoutSrc).toMatch(/ibmPlexSerif\.variable/);
-  });
-
-  it("layout.tsx does NOT import the non-Civic display fonts via next/font", () => {
-    // Newsreader is editorial mood; Space Grotesk + JetBrains Mono are
-    // manifesto mood. Production boots Civic only — none of these
-    // should be fetched on page load. We assert no `next/font/google`
-    // imports name them, not the literal absence of the words (which
-    // can legitimately appear in deferral-context comments).
-    const importMatches = layoutSrc.match(
-      /import\s+\{([^}]+)\}\s+from\s+["']next\/font\/google["']/g,
-    );
-    expect(importMatches).not.toBeNull();
-    const allImports = (importMatches ?? []).join(" ");
-    expect(allImports).not.toMatch(/Newsreader/);
-    expect(allImports).not.toMatch(/Space_Grotesk/);
-    expect(allImports).not.toMatch(/JetBrains_Mono/);
+  it("layout.tsx Google Fonts <link> includes the full mood font set", () => {
+    // The redesigned layout intentionally loads all mood families so the
+    // in-app mood/palette switcher (future ?tweaks=1 path) can switch between
+    // Civic (IBM Plex), Editorial (Newsreader), and Manifesto
+    // (Space Grotesk / JetBrains Mono) moods without additional network requests.
+    expect(layoutSrc).toMatch(/Newsreader/);
+    expect(layoutSrc).toMatch(/IBM\+Plex\+Sans/);
+    expect(layoutSrc).toMatch(/IBM\+Plex\+Serif/);
+    expect(layoutSrc).toMatch(/IBM\+Plex\+Mono/);
+    expect(layoutSrc).toMatch(/Space\+Grotesk/);
+    expect(layoutSrc).toMatch(/JetBrains\+Mono/);
   });
 
   it("globals.css has a body[data-mood='civic'] selector wiring IBM Plex Serif", () => {
@@ -83,8 +76,8 @@ describe("PR A1 — Civic mood is the hardcoded production default", () => {
 
   it("globals.css no longer references the --font-newsreader CSS variable", () => {
     // Civic is now the production default, so the default --serif must
-    // reference IBM Plex Serif (not Newsreader). The Newsreader webfont
-    // is no longer loaded by next/font.
+    // reference IBM Plex Serif (not Newsreader). The --font-newsreader
+    // CSS variable (which next/font would have injected) is not used.
     expect(globalsCss).not.toMatch(/--font-newsreader/);
   });
 });

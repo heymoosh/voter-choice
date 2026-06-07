@@ -190,6 +190,66 @@ export function extractFecCandidateId(candidate: UnknownRecord): string | null {
   return null;
 }
 
+/** FEC office letter from our federal jurisdiction, else null. */
+function fecOfficeFromJurisdiction(
+  jurisdiction: string | null,
+): "H" | "S" | null {
+  if (jurisdiction === "federal-senate") return "S";
+  if (jurisdiction === "federal-house") return "H";
+  return null;
+}
+
+/** State from a GovTrack-formatted name: "Sen. Cory Booker [D-NJ]" → "NJ",
+ *  "Rep. Donald Norcross [D-NJ1]" → "NJ". Empty when not present. */
+function stateFromGovTrackName(name: string): string {
+  const m = name.match(/\[[A-Z]+-([A-Z]{2})\d*\]/u);
+  return m?.[1] ?? "";
+}
+
+/** Last name from a GovTrack-formatted name, stripping the title prefix and the
+ *  trailing "[party-state]" tag: "Sen. Cory Booker [D-NJ]" → "Booker". */
+function lastNameFromGovTrackName(name: string): string {
+  const stripped = name
+    .replace(/^(Rep\.|Sen\.|Del\.|Com\.)\s+/iu, "")
+    .replace(/\s*\[.*\]\s*$/u, "");
+  const parts = stripped.trim().split(/\s+/u);
+  return parts[parts.length - 1] ?? name;
+}
+
+/**
+ * Resolve an FEC candidate id by name+office+state search when none is stored
+ * (mirrors fix-federal-fec-ids.ts). FEC sorts by receipts desc, so the
+ * principal/active campaign wins. NOTE: name search is inherently fuzzy — safe
+ * for verified/scoped candidates; a full federal sweep should confirm matches
+ * (common surnames, esp. without a state, can mis-resolve).
+ */
+async function resolveFecIdByName(
+  candidate: UnknownRecord,
+  config: FederalDonorConfig,
+  fetcher: Fetcher,
+): Promise<string | null> {
+  const name = getString(candidate, "fullName");
+  const office = fecOfficeFromJurisdiction(getString(candidate, "jurisdiction"));
+  if (!name || !office) return null;
+  const lastName = lastNameFromGovTrackName(name);
+  const state = stateFromGovTrackName(name);
+  const url = new URL(`${config.fecBaseUrl}/candidates/`);
+  url.searchParams.set("q", lastName);
+  url.searchParams.set("office", office);
+  if (state) url.searchParams.set("state", state);
+  url.searchParams.set("per_page", "5");
+  url.searchParams.set("sort", "-receipts");
+  try {
+    const json = await fetchFecJson(url.href, fetcher, config.fecApiKey);
+    const results = getArray(asRecord(json)?.results)
+      .map((v) => asRecord(v))
+      .filter((v): v is UnknownRecord => Boolean(v));
+    return getString(results[0] ?? null, "candidate_id");
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Fetch aggregated totals for a candidate from FEC.
  * Returns bucket → amount mappings derived from the totals endpoint.
@@ -237,10 +297,11 @@ export async function fetchFecTotals(
       accumulate(buckets, "Self-funded", candidateContributions);
     }
 
-    // PAC contributions are split into issue-aligned and other in Phase F+.
-    // For now, put unclassified PAC contributions into "Other".
+    // PAC (non-party committee) contributions get their own bucket so the
+    // read-time funding-mix (small/large/PAC) can read it cleanly. Issue-aligned
+    // PAC classification is a later enhancement; this is the unclassified total.
     if (pacContributions > 0) {
-      accumulate(buckets, "Other", pacContributions);
+      accumulate(buckets, "PACs", pacContributions);
     }
   }
 
@@ -322,7 +383,13 @@ export async function buildDonorRows(
   const candidateId = getString(candidate, "id");
   if (!candidateId) return [];
 
-  const fecId = extractFecCandidateId(candidate);
+  // Prefer a stored FEC id; fall back to an FEC name+office+state search when
+  // absent (our federal candidates carry bioguide ids + GovTrack-formatted
+  // names like "Sen. Cory Booker [D-NJ]" but no stored FEC candidate id).
+  let fecId = extractFecCandidateId(candidate);
+  if (!fecId) {
+    fecId = await resolveFecIdByName(candidate, config, fetcher);
+  }
   if (!fecId) {
     console.warn(
       `[federal-donors] no_fec_id candidate=${candidateId} — skipping`,
@@ -396,6 +463,25 @@ export async function buildDonorRows(
 // DB upsert
 // ---------------------------------------------------------------------------
 
+/**
+ * Delete the legacy single 'total_receipts' bucket for a candidate (all cycles).
+ * The new small/large/PAC breakdown supersedes it; removing it prevents the
+ * live app (old code, no read-time filter) from double-counting it against the
+ * breakdown. Scoped to one candidate; callers run this only AFTER a successful
+ * breakdown upsert so the replacement always exists first.
+ */
+export async function deleteLegacyTotalReceipts(
+  db: DbClient,
+  candidateId: string,
+): Promise<void> {
+  if (!candidateId) return;
+  await db
+    .delete(donorAggregates)
+    .where(
+      sql`${donorAggregates.candidateId} = ${candidateId} AND ${donorAggregates.bucketLabel} = 'total_receipts'`,
+    );
+}
+
 export async function upsertDonorRows(
   db: DbClient,
   rows: DonorAggregateRow[],
@@ -464,18 +550,40 @@ export async function ingestFederalDonors({
     apiErrors: 0,
   };
 
-  // Fetch federal candidates from DB
-  const federalCandidates = await db
+  // --dry-run: resolve + build rows but DON'T upsert (read-only verification of
+  // FEC-id resolution + would-write rows). --name a,b: scope to candidates whose
+  // name contains any of the comma-separated substrings (case-insensitive) — for
+  // a small, verifiable first write instead of the full federal sweep.
+  const dryRun = argv.includes("--dry-run");
+  // --drop-legacy: after writing a candidate's small/large/PAC breakdown, delete
+  // their stale single 'total_receipts' bucket. The breakdown supersedes it;
+  // removing it keeps BOTH the rebuild AND the live app (which lacks the
+  // read-time total_receipts filter) from summing/double-counting. Scoped to
+  // each just-processed candidate, run strictly AFTER their upsert.
+  const dropLegacy = argv.includes("--drop-legacy");
+  const nameFilter = parseNameFilter(argv);
+
+  // Fetch federal candidates from DB. A name filter is pushed into the SQL so it
+  // matches across ALL federal candidates — there are >500, so filtering in JS
+  // after `.limit()` would silently miss anyone outside the first page.
+  const baseWhere = sql`${candidates.jurisdiction} IN ('federal-house', 'federal-senate')`;
+  const where = nameFilter
+    ? sql`${baseWhere} AND (${sql.join(
+        nameFilter.map((f) => sql`${candidates.fullName} ILIKE ${`%${f}%`}`),
+        sql` OR `,
+      )})`
+    : baseWhere;
+  const federalCandidates = (await db
     .select()
     .from(candidates)
-    .where(
-      sql`${candidates.jurisdiction} IN ('federal-house', 'federal-senate')`,
-    )
-    .limit(config.limit);
+    .where(where)
+    .limit(config.limit)) as UnknownRecord[];
 
   counts.candidatesQueried = federalCandidates.length;
   console.log(
-    `[federal-donors] found ${federalCandidates.length} federal candidates`,
+    `[federal-donors] found ${federalCandidates.length} federal candidates` +
+      (nameFilter ? ` (name filter: ${nameFilter.join(",")})` : "") +
+      (dryRun ? " [DRY RUN — no writes]" : ""),
   );
 
   // Process in chunks of 25 with 1-second delay between chunks
@@ -492,11 +600,41 @@ export async function ingestFederalDonors({
         const rows = await buildDonorRows(candidate, config, fetcher);
         if (rows.length === 0) {
           counts.candidatesSkipped += 1;
+          if (dryRun) {
+            const meta = asRecord(candidate.rawMetadata);
+            const fecMeta = asRecord(meta?.fec);
+            console.log(
+              `[federal-donors] dry-run SKIP name="${getString(candidate, "fullName")}" id=${getString(candidate, "id")} sourceId=${getString(candidate, "sourceId")} fecMetaId=${getString(fecMeta, "candidate_id") ?? "—"} (no_fec_id)`,
+            );
+          }
+          continue;
+        }
+        if (dryRun) {
+          const resolvedFec = getString(
+            asRecord(rows[0]?.rawMetadata),
+            "fecCandidateId",
+          );
+          console.log(
+            `[federal-donors] dry-run RESOLVE name=${getString(candidate, "fullName")} fec=${resolvedFec} rows=${rows.length} → ` +
+              rows
+                .map(
+                  (r) =>
+                    `${r.electionCycle}:${r.bucketLabel}=$${Math.round(Number(r.amountTotal)).toLocaleString()}`,
+                )
+                .join(" | "),
+          );
+          counts.candidatesProcessed += 1;
           continue;
         }
         const upserted = await upsertDonorRows(db, rows);
         counts.rowsUpserted += upserted;
         counts.candidatesProcessed += 1;
+        if (dropLegacy) {
+          await deleteLegacyTotalReceipts(db, getString(candidate, "id") ?? "");
+          console.log(
+            `[federal-donors] dropped legacy total_receipts (if any) for ${getString(candidate, "id")}`,
+          );
+        }
       } catch (error) {
         console.warn(
           `[federal-donors] candidate_error candidate=${getString(candidate, "id")} error=${safeErrorMessage(error)}`,
@@ -595,6 +733,19 @@ function parseLimitFlag(argv: string[]): number | null {
   const value = argv[idx + 1];
   const parsed = Number.parseInt(value ?? "", 10);
   return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+}
+
+/** `--name booker,norcross` → ["booker","norcross"] (lowercased), else null. */
+function parseNameFilter(argv: string[]): string[] | null {
+  const idx = argv.indexOf("--name");
+  if (idx === -1) return null;
+  const value = argv[idx + 1];
+  if (!value) return null;
+  const parts = value
+    .split(",")
+    .map((s) => s.trim().toLowerCase())
+    .filter(Boolean);
+  return parts.length > 0 ? parts : null;
 }
 
 function parsePositiveInteger(
