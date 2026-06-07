@@ -79,7 +79,8 @@ function leanBlock(b: Block, pageIndex: number): LeanBlock | null {
   const out: LeanBlock = { BlockType: b.BlockType, Page: pageIndex };
   if (b.Id) out.Id = b.Id;
   if (b.Text) out.Text = b.Text;
-  if (b.EntityTypes && b.EntityTypes.length > 0) out.EntityTypes = b.EntityTypes;
+  if (b.EntityTypes && b.EntityTypes.length > 0)
+    out.EntityTypes = b.EntityTypes;
   if (b.Relationships && b.Relationships.length > 0) {
     out.Relationships = b.Relationships.map((r) => ({
       Type: r.Type,
@@ -89,7 +90,8 @@ function leanBlock(b: Block, pageIndex: number): LeanBlock | null {
   if (b.RowIndex !== undefined) out.RowIndex = b.RowIndex;
   if (b.ColumnIndex !== undefined) out.ColumnIndex = b.ColumnIndex;
   if (b.RowSpan !== undefined && b.RowSpan > 1) out.RowSpan = b.RowSpan;
-  if (b.ColumnSpan !== undefined && b.ColumnSpan > 1) out.ColumnSpan = b.ColumnSpan;
+  if (b.ColumnSpan !== undefined && b.ColumnSpan > 1)
+    out.ColumnSpan = b.ColumnSpan;
   return out;
 }
 
@@ -150,7 +152,12 @@ function parseSonnetJson(raw: string): unknown {
 async function callSonnetPostProcessor(
   client: Anthropic,
   blocksJson: string,
-): Promise<{ page: PageExtraction; inputTokens: number; outputTokens: number; attempts: number }> {
+): Promise<{
+  page: PageExtraction;
+  inputTokens: number;
+  outputTokens: number;
+  attempts: number;
+}> {
   const prompt = buildPostProcessorPrompt(blocksJson);
   let attempt = 0;
   let lastErr: unknown = null;
@@ -181,10 +188,13 @@ async function callSonnetPostProcessor(
         const resp2 = await client.messages.create({
           model: SONNET_MODEL as Anthropic.Messages.Model,
           max_tokens: SONNET_MAX_TOKENS,
-          messages: [{ role: "user", content: [{ type: "text", text: strictPrompt }] }],
+          messages: [
+            { role: "user", content: [{ type: "text", text: strictPrompt }] },
+          ],
         });
         const tb2 = resp2.content.find((b) => b.type === "text");
-        if (!tb2 || tb2.type !== "text") throw new Error("Sonnet returned no text on retry");
+        if (!tb2 || tb2.type !== "text")
+          throw new Error("Sonnet returned no text on retry");
         const parsed2 = parseSonnetJson(tb2.text) as PageExtraction;
         return {
           page: parsed2,
@@ -308,7 +318,10 @@ async function extractSinglePageWithTextract(
 
   // Step 4: Sonnet post-processor.
   try {
-    const sonnetResult = await callSonnetPostProcessor(anthropicClient, blocksJson);
+    const sonnetResult = await callSonnetPostProcessor(
+      anthropicClient,
+      blocksJson,
+    );
     return {
       page: sonnetResult.page,
       inputTokens: sonnetResult.inputTokens,
@@ -374,7 +387,10 @@ export async function extractWithTextract(
 
   const totalInputTokens = pageResults.reduce((s, r) => s + r.inputTokens, 0);
   const totalOutputTokens = pageResults.reduce((s, r) => s + r.outputTokens, 0);
-  const totalTextractRetries = pageResults.reduce((s, r) => s + r.textractRetries, 0);
+  const totalTextractRetries = pageResults.reduce(
+    (s, r) => s + r.textractRetries,
+    0,
+  );
 
   const successes = pageResults.filter(
     (r) => r.outcome === "success" || r.outcome === "overflow_vision_fallback",

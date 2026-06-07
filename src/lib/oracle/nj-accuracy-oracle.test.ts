@@ -91,23 +91,23 @@ describe("NJ accuracy oracle", () => {
     // [Phase B] Flipped: filterRacesByParty drops empty offices whose section
     // is not in PROP_SECTIONS, leaving exactly the 3 real DEM scored races.
     // Uses filterRacesByParty from realData.ts + the NJ extraction fixture.
-    it(
-      "[Phase B] DEM ballot renders exactly 3 scored races (empty no-petition committee dropped)",
-      async () => {
-        const { filterRacesByParty } = await import("../../prototype/realData");
-        // extractionToRaces gives us both-party races; filter to DEM.
-        const allRaces = extractionToRaces(njRealExtractionFixture(), "DEM-primary");
-        const demRaces = filterRacesByParty(allRaces, "Democratic");
-        // The NJ DEM primary has exactly 3 races with candidates:
-        //   U.S. Senate (Booker), U.S. House (Norcross), County Commissioner (4 cands)
-        // County Committee (no_petition_filed) should be dropped.
-        expect(demRaces).toHaveLength(3);
-        const labels = demRaces.map((r) => r.label);
-        expect(labels.some((l) => /senator|senate/i.test(l))).toBe(true);
-        expect(labels.some((l) => /house|representative/i.test(l))).toBe(true);
-        expect(labels.some((l) => /commissioner/i.test(l))).toBe(true);
-      },
-    );
+    it("[Phase B] DEM ballot renders exactly 3 scored races (empty no-petition committee dropped)", async () => {
+      const { filterRacesByParty } = await import("../../prototype/realData");
+      // extractionToRaces gives us both-party races; filter to DEM.
+      const allRaces = extractionToRaces(
+        njRealExtractionFixture(),
+        "DEM-primary",
+      );
+      const demRaces = filterRacesByParty(allRaces, "Democratic");
+      // The NJ DEM primary has exactly 3 races with candidates:
+      //   U.S. Senate (Booker), U.S. House (Norcross), County Commissioner (4 cands)
+      // County Committee (no_petition_filed) should be dropped.
+      expect(demRaces).toHaveLength(3);
+      const labels = demRaces.map((r) => r.label);
+      expect(labels.some((l) => /senator|senate/i.test(l))).toBe(true);
+      expect(labels.some((l) => /house|representative/i.test(l))).toBe(true);
+      expect(labels.some((l) => /commissioner/i.test(l))).toBe(true);
+    });
     it.todo(
       "[WS1 A3/A4] real PDF extraction of the R-Senate dense column returns the 4 ground-truth names (Textract) or flags low confidence",
     );
@@ -115,22 +115,26 @@ describe("NJ accuracy oracle", () => {
     // [Phase B] Pillar 1: low_confidence flag is read from _meta.low_confidence
     // (not top-level) — PublicExtractMeta shape. The UI renders a non-blocking
     // caution when this is true. Unit-testable via the extraction fixture.
-    it(
-      "[Phase B] low_confidence=true on _meta triggers the non-blocking caution (extraction fixture)",
-      () => {
-        // A fixture where _meta.low_confidence is true (simulates large-format ballot)
-        const extractionWithLowConf = {
-          ...njRealExtractionFixture(),
-          _meta: { extraction_path: "vision", pages: 2, latency_ms: 1000, low_confidence: true },
-        };
-        // The UI reads extraction._meta.low_confidence — verify the field exists
-        // at that path (not top-level), matching PublicExtractMeta.
-        expect(extractionWithLowConf._meta.low_confidence).toBe(true);
-        // Without the flag it should be absent/false
-        const normalExtraction = njRealExtractionFixture();
-        expect((normalExtraction._meta as { low_confidence?: boolean }).low_confidence).toBeUndefined();
-      },
-    );
+    it("[Phase B] low_confidence=true on _meta triggers the non-blocking caution (extraction fixture)", () => {
+      // A fixture where _meta.low_confidence is true (simulates large-format ballot)
+      const extractionWithLowConf = {
+        ...njRealExtractionFixture(),
+        _meta: {
+          extraction_path: "vision",
+          pages: 2,
+          latency_ms: 1000,
+          low_confidence: true,
+        },
+      };
+      // The UI reads extraction._meta.low_confidence — verify the field exists
+      // at that path (not top-level), matching PublicExtractMeta.
+      expect(extractionWithLowConf._meta.low_confidence).toBe(true);
+      // Without the flag it should be absent/false
+      const normalExtraction = njRealExtractionFixture();
+      expect(
+        (normalExtraction._meta as { low_confidence?: boolean }).low_confidence,
+      ).toBeUndefined();
+    });
   });
 
   // ── Pillar 2 — candidate analysis ────────────────────────────────────────
@@ -162,60 +166,55 @@ describe("NJ accuracy oracle", () => {
 
     // [Phase B] Flipped: deriveDistrictCode extracts the CD number from the
     // ballot extraction's House race label and formats it as "NJ-01".
-    it(
-      "[WS3 C1] logistics block shows congressional district NJ-01 from the ballot extraction's House race label, not '—'",
-      () => {
-        // The ballot extraction's House race label after deriveRaces is e.g.
-        // "U.S. House — CD-1" or "U.S. House of Representatives — District 1"
-        // deriveDistrictCode strips the prefix, extracts the digit, and formats.
-        expect(deriveDistrictCode("U.S. House — CD-1", "NJ")).toBe("NJ-01");
-        expect(deriveDistrictCode("U.S. House of Representatives — District 1", "NJ")).toBe("NJ-01");
-        expect(deriveDistrictCode("House — CD-01", "NJ")).toBe("NJ-01");
-        // Must match the ground-truth congressional district.
-        expect(deriveDistrictCode("U.S. House — CD-1", "NJ")).toBe(
-          NJ_GROUND_TRUTH.meta.congressionalDistrict,
-        );
-      },
-    );
+    it("[WS3 C1] logistics block shows congressional district NJ-01 from the ballot extraction's House race label, not '—'", () => {
+      // The ballot extraction's House race label after deriveRaces is e.g.
+      // "U.S. House — CD-1" or "U.S. House of Representatives — District 1"
+      // deriveDistrictCode strips the prefix, extracts the digit, and formats.
+      expect(deriveDistrictCode("U.S. House — CD-1", "NJ")).toBe("NJ-01");
+      expect(
+        deriveDistrictCode("U.S. House of Representatives — District 1", "NJ"),
+      ).toBe("NJ-01");
+      expect(deriveDistrictCode("House — CD-01", "NJ")).toBe("NJ-01");
+      // Must match the ground-truth congressional district.
+      expect(deriveDistrictCode("U.S. House — CD-1", "NJ")).toBe(
+        NJ_GROUND_TRUTH.meta.congressionalDistrict,
+      );
+    });
 
     // [Phase B] Flipped: toBallotLogistics on an empty civic response (no
     // contests, no pollingLocations — the NJ no-contest case after the primary)
     // returns null pollingPlace and the honest vote.gov fallback URL.
-    it(
-      "[WS3 C1] polling place is null + vote.gov fallback when civic returns no location (never the TX mock)",
-      () => {
-        const emptyResponse = {
-          pollingLocations: [],
-          earlyVoteSites: [],
-          contests: [],
-        };
-        const logistics = toBallotLogistics(emptyResponse);
-        expect(logistics.pollingPlace).toBeNull();
-        expect(logistics.congressionalDistrict).toBeNull();
-        expect(logistics.fallbackUrl).toBe("https://vote.gov/");
-        expect(logistics.source).toBe("fallback");
-        // Honesty: none of the forbidden TX strings appear in the logistics.
-        const logisticsStr = JSON.stringify(logistics);
-        for (const forbidden of NJ_GROUND_TRUTH.forbiddenForNj) {
-          expect(logisticsStr).not.toContain(forbidden);
-        }
-      },
-    );
+    it("[WS3 C1] polling place is null + vote.gov fallback when civic returns no location (never the TX mock)", () => {
+      const emptyResponse = {
+        pollingLocations: [],
+        earlyVoteSites: [],
+        contests: [],
+      };
+      const logistics = toBallotLogistics(emptyResponse);
+      expect(logistics.pollingPlace).toBeNull();
+      expect(logistics.congressionalDistrict).toBeNull();
+      expect(logistics.fallbackUrl).toBe("https://vote.gov/");
+      expect(logistics.source).toBe("fallback");
+      // Honesty: none of the forbidden TX strings appear in the logistics.
+      const logisticsStr = JSON.stringify(logistics);
+      for (const forbidden of NJ_GROUND_TRUTH.forbiddenForNj) {
+        expect(logisticsStr).not.toContain(forbidden);
+      }
+    });
 
     // [Phase B] Flipped (unit portion): the seam constants that feed the
     // rendered workspace must not contain forbidden strings. This locks in the
     // Pillar-3 leak sweep against regression. The full rendered-DOM zero-
     // forbidden-strings assertion requires Playwright (noted below).
-    it(
-      "[WS3 C3 / Phase B] POLLING_INFO and STATE_ELECTION_DATA constants contain ZERO forbidden strings",
-      async () => {
-        const { POLLING_INFO, STATE_ELECTION_DATA } = await import("../../prototype/data");
-        const serialized = JSON.stringify({ POLLING_INFO, STATE_ELECTION_DATA });
-        for (const forbidden of NJ_GROUND_TRUTH.forbiddenForNj) {
-          expect(serialized).not.toContain(forbidden);
-        }
-      },
-    );
+    it("[WS3 C3 / Phase B] POLLING_INFO and STATE_ELECTION_DATA constants contain ZERO forbidden strings", async () => {
+      const { POLLING_INFO, STATE_ELECTION_DATA } = await import(
+        "../../prototype/data"
+      );
+      const serialized = JSON.stringify({ POLLING_INFO, STATE_ELECTION_DATA });
+      for (const forbidden of NJ_GROUND_TRUTH.forbiddenForNj) {
+        expect(serialized).not.toContain(forbidden);
+      }
+    });
 
     // [WS3 C3 / Phase B] Full rendered-workspace + print zero-forbidden-strings
     // check requires rendering the React tree and inspecting the DOM — not unit-

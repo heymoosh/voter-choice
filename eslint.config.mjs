@@ -10,6 +10,13 @@ const compat = new FlatCompat({
 });
 
 const eslintConfig = [
+  {
+    // src/prototype/** is verbatim-ported design code — the app runs the
+    // prototype directly; it carries @ts-nocheck and intentionally does not
+    // conform to the project's lint rules. Don't lint vendored/ported code we
+    // didn't author and won't hand-maintain.
+    ignores: ["src/prototype/**"],
+  },
   ...compat.extends(
     "next/core-web-vitals",
     "next/typescript",

@@ -8,7 +8,11 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { toBallotLogistics, type CivicApiInput, type StateDataInput } from "./civic-logistics";
+import {
+  toBallotLogistics,
+  type CivicApiInput,
+  type StateDataInput,
+} from "./civic-logistics";
 import { NJ_GROUND_TRUTH } from "./oracle/nj-ground-truth";
 
 // ---------------------------------------------------------------------------
@@ -140,7 +144,11 @@ describe("toBallotLogistics – empty civic response", () => {
 
   it("sets source to state when no civic pollingPlace but stateData earlyVoting present", () => {
     const stateData: StateDataInput = {
-      earlyVoting: { available: true, startDate: "2026-05-26", endDate: "2026-05-31" },
+      earlyVoting: {
+        available: true,
+        startDate: "2026-05-26",
+        endDate: "2026-05-31",
+      },
     };
     const result = toBallotLogistics(emptyCivic, stateData);
     expect(result.source).toBe("state");

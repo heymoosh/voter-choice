@@ -71,7 +71,10 @@ export default function RootLayout({
           rel="stylesheet"
         />
         {/* Prototype design system — served static + browser-parsed (verbatim). */}
-        <link rel="stylesheet" href={`/prototype.css${cssBust("prototype.css")}`} />
+        <link
+          rel="stylesheet"
+          href={`/prototype.css${cssBust("prototype.css")}`}
+        />
         <link
           rel="stylesheet"
           href={`/prototype-c.css${cssBust("prototype-c.css")}`}

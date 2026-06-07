@@ -11,17 +11,19 @@
  *   4. low_confidence flag → set for large-format extractions in extract-types
  */
 
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import type { Block } from "@aws-sdk/client-textract";
 
 // ---------- Mocks ----------
 
 // Mock the Textract SDK before importing the module under test.
 vi.mock("@aws-sdk/client-textract", () => {
-  const AnalyzeDocumentCommand = vi.fn().mockImplementation((input: unknown) => ({
-    input,
-    __type: "AnalyzeDocumentCommand",
-  }));
+  const AnalyzeDocumentCommand = vi
+    .fn()
+    .mockImplementation((input: unknown) => ({
+      input,
+      __type: "AnalyzeDocumentCommand",
+    }));
 
   const TextractClient = vi.fn().mockImplementation(() => ({
     send: vi.fn(),
@@ -40,7 +42,7 @@ vi.mock("@anthropic-ai/sdk", () => {
   return { default: Anthropic };
 });
 
-import { TextractClient, AnalyzeDocumentCommand } from "@aws-sdk/client-textract";
+import { TextractClient } from "@aws-sdk/client-textract";
 import Anthropic from "@anthropic-ai/sdk";
 import {
   extractWithTextract,
@@ -169,7 +171,9 @@ describe("extractWithTextract", () => {
     expect(result.pageResults).toHaveLength(1);
     expect(result.pageResults[0].outcome).toBe("success");
     expect(result.pageResults[0].page.sections).toHaveLength(1);
-    expect(result.pageResults[0].page.sections[0].races[0].candidates).toHaveLength(4);
+    expect(
+      result.pageResults[0].page.sections[0].races[0].candidates,
+    ).toHaveLength(4);
     // Vision fallback should NOT have been called for a normal-size page
     expect(visionFallback).not.toHaveBeenCalled();
   });
@@ -222,7 +226,11 @@ describe("extractWithTextract", () => {
               {
                 type: "text",
                 text: JSON.stringify({
-                  election_metadata: { election_date: "", election_type: "primary", jurisdiction: "" },
+                  election_metadata: {
+                    election_date: "",
+                    election_type: "primary",
+                    jurisdiction: "",
+                  },
                   sections: [
                     {
                       section_name: "State",
@@ -359,7 +367,8 @@ describe("getTextractClient", () => {
     delete process.env.AWS_SECRET_ACCESS_KEY;
     expect(() => getTextractClient()).toThrow(/Missing AWS credentials/);
     if (origKey !== undefined) process.env.AWS_ACCESS_KEY_ID = origKey;
-    if (origSecret !== undefined) process.env.AWS_SECRET_ACCESS_KEY = origSecret;
+    if (origSecret !== undefined)
+      process.env.AWS_SECRET_ACCESS_KEY = origSecret;
   });
 });
 

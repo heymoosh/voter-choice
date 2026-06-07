@@ -50,7 +50,9 @@ export const NJ_GROUND_TRUTH = {
     {
       office: "U.S. Senator",
       voteForN: 1,
-      candidates: [{ name: "Cory Booker", party: "Democratic", record: "in_db" }],
+      candidates: [
+        { name: "Cory Booker", party: "Democratic", record: "in_db" },
+      ],
     },
     {
       office: "U.S. House of Representatives",
@@ -67,7 +69,11 @@ export const NJ_GROUND_TRUTH = {
         { name: "Louis Cappelli", party: "Democratic", record: "no_record" },
         { name: "Jonathan Young", party: "Democratic", record: "no_record" },
         { name: "Vonetta Hawkins", party: "Democratic", record: "no_record" },
-        { name: "Constance Mercedes", party: "Democratic", record: "no_record" },
+        {
+          name: "Constance Mercedes",
+          party: "Democratic",
+          record: "no_record",
+        },
       ],
     },
     // County Committee (male/female): mostly NO PETITION FILED → not a scored race.
@@ -90,12 +96,16 @@ export const NJ_GROUND_TRUTH = {
       office: "U.S. House of Representatives",
       district: "1",
       voteForN: 1,
-      candidates: [{ name: "Damon Galdo", party: "Republican", record: "no_record" }],
+      candidates: [
+        { name: "Damon Galdo", party: "Republican", record: "no_record" },
+      ],
     },
     {
       office: "County Commissioner",
       voteForN: 2,
-      candidates: [{ name: "Robert Stone", party: "Republican", record: "no_record" }],
+      candidates: [
+        { name: "Robert Stone", party: "Republican", record: "no_record" },
+      ],
     },
   ] satisfies GtRace[],
 
@@ -149,7 +159,11 @@ export function njRealExtractionFixture(): BallotExtraction {
             vote_for_n: 1,
             party_context: "Democratic Primary",
             candidates: [
-              { name: "Cory Booker", party: "Democratic", placeholder_reason: null },
+              {
+                name: "Cory Booker",
+                party: "Democratic",
+                placeholder_reason: null,
+              },
             ],
           },
           {
@@ -157,10 +171,26 @@ export function njRealExtractionFixture(): BallotExtraction {
             vote_for_n: 1,
             party_context: "Republican Primary",
             candidates: [
-              { name: "Robert Lebovics", party: "Republican", placeholder_reason: null },
-              { name: "Justin Murphy", party: "Republican", placeholder_reason: null },
-              { name: "Alex Zdan", party: "Republican", placeholder_reason: null },
-              { name: "Richard Tabor", party: "Republican", placeholder_reason: null },
+              {
+                name: "Robert Lebovics",
+                party: "Republican",
+                placeholder_reason: null,
+              },
+              {
+                name: "Justin Murphy",
+                party: "Republican",
+                placeholder_reason: null,
+              },
+              {
+                name: "Alex Zdan",
+                party: "Republican",
+                placeholder_reason: null,
+              },
+              {
+                name: "Richard Tabor",
+                party: "Republican",
+                placeholder_reason: null,
+              },
             ],
           },
           {
@@ -169,7 +199,11 @@ export function njRealExtractionFixture(): BallotExtraction {
             vote_for_n: 1,
             party_context: "Democratic Primary",
             candidates: [
-              { name: "Donald Norcross", party: "Democratic", placeholder_reason: null },
+              {
+                name: "Donald Norcross",
+                party: "Democratic",
+                placeholder_reason: null,
+              },
             ],
           },
           {
@@ -178,7 +212,11 @@ export function njRealExtractionFixture(): BallotExtraction {
             vote_for_n: 1,
             party_context: "Republican Primary",
             candidates: [
-              { name: "Damon Galdo", party: "Republican", placeholder_reason: null },
+              {
+                name: "Damon Galdo",
+                party: "Republican",
+                placeholder_reason: null,
+              },
             ],
           },
         ],
@@ -191,10 +229,26 @@ export function njRealExtractionFixture(): BallotExtraction {
             vote_for_n: 2,
             party_context: "Democratic Primary",
             candidates: [
-              { name: "Louis Cappelli", party: "Democratic", placeholder_reason: null },
-              { name: "Jonathan Young", party: "Democratic", placeholder_reason: null },
-              { name: "Vonetta Hawkins", party: "Democratic", placeholder_reason: null },
-              { name: "Constance Mercedes", party: "Democratic", placeholder_reason: null },
+              {
+                name: "Louis Cappelli",
+                party: "Democratic",
+                placeholder_reason: null,
+              },
+              {
+                name: "Jonathan Young",
+                party: "Democratic",
+                placeholder_reason: null,
+              },
+              {
+                name: "Vonetta Hawkins",
+                party: "Democratic",
+                placeholder_reason: null,
+              },
+              {
+                name: "Constance Mercedes",
+                party: "Democratic",
+                placeholder_reason: null,
+              },
             ],
           },
           {
@@ -202,7 +256,11 @@ export function njRealExtractionFixture(): BallotExtraction {
             vote_for_n: 2,
             party_context: "Republican Primary",
             candidates: [
-              { name: "Robert Stone", party: "Republican", placeholder_reason: null },
+              {
+                name: "Robert Stone",
+                party: "Republican",
+                placeholder_reason: null,
+              },
             ],
           },
         ],
@@ -215,7 +273,11 @@ export function njRealExtractionFixture(): BallotExtraction {
             vote_for_n: 1,
             party_context: "Democratic Primary",
             candidates: [
-              { name: null, party: null, placeholder_reason: "no_petition_filed" },
+              {
+                name: null,
+                party: null,
+                placeholder_reason: "no_petition_filed",
+              },
             ],
           },
         ],

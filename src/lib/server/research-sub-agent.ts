@@ -32,7 +32,11 @@ import {
 } from "../prompts/research-candidate-structured";
 import { recordUsageAsync } from "./budget";
 
-export type { ResearchCandidateInput, StructuredResearchInput, StructuredIssueResult };
+export type {
+  ResearchCandidateInput,
+  StructuredResearchInput,
+  StructuredIssueResult,
+};
 
 const RESEARCH_SUB_AGENT_MODEL = "claude-haiku-4-5-20251001";
 const RESEARCH_SUB_AGENT_MAX_TOKENS = 400; // distilled output; not raw pages.
@@ -280,7 +284,8 @@ export async function runStructuredCandidateResearch(
               typeof item === "object" &&
               typeof (item as Record<string, unknown>).canonicalIssue ===
                 "string" &&
-              typeof (item as Record<string, unknown>).issueLabel === "string" &&
+              typeof (item as Record<string, unknown>).issueLabel ===
+                "string" &&
               typeof (item as Record<string, unknown>).resolvedStance ===
                 "string" &&
               typeof (item as Record<string, unknown>).confidence === "string",

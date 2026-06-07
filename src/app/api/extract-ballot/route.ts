@@ -358,20 +358,22 @@ interface VisionRunFailure {
 async function visionFallbackForPage(
   anthropicClient: Anthropic,
   page: PageImage,
-  totalPages: number,
+  _totalPages: number,
 ): Promise<import("../../../lib/server/extract-vision").PageVisionResult> {
   const { extractWithVision: _ev } = await import(
     "../../../lib/server/extract-vision"
   );
   const result = await _ev(anthropicClient, [page]);
-  return result.pageResults[0] ?? {
-    page: { election_metadata: {}, sections: [] },
-    inputTokens: 0,
-    outputTokens: 0,
-    attempts: 0,
-    outcome: "failed" as const,
-    error: `page ${page.pageIndex}: vision fallback returned no result`,
-  };
+  return (
+    result.pageResults[0] ?? {
+      page: { election_metadata: {}, sections: [] },
+      inputTokens: 0,
+      outputTokens: 0,
+      attempts: 0,
+      outcome: "failed" as const,
+      error: `page ${page.pageIndex}: vision fallback returned no result`,
+    }
+  );
 }
 
 async function runVisionPath(
@@ -811,7 +813,10 @@ export async function POST(request: NextRequest) {
       ? Number((pdfjsText.numPages * TEXTRACT_COST_PER_PAGE_USD).toFixed(6))
       : 0;
   const costUsd = Number(
-    (sonnetCostUsd(dispatch.inputTokens, dispatch.outputTokens) + textractPageCost).toFixed(6),
+    (
+      sonnetCostUsd(dispatch.inputTokens, dispatch.outputTokens) +
+      textractPageCost
+    ).toFixed(6),
   );
 
   if (dispatch.errorBody) {

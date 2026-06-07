@@ -200,7 +200,10 @@ export async function researchAndPersistCandidate(
     confidence: item.confidence,
     evidence: (item.evidence ?? [])
       .filter(hasRealUrl)
-      .slice(0, 3) as unknown as typeof schema.candidateData.$inferInsert["evidence"],
+      .slice(
+        0,
+        3,
+      ) as unknown as (typeof schema.candidateData.$inferInsert)["evidence"],
     modelVersion: RESEARCH_MODEL_VERSION,
     researchedAt: new Date(),
   }));

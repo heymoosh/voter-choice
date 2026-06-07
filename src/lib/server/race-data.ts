@@ -366,9 +366,7 @@ export async function assembleRaceData(
       ...(donorFields.donorDataSource
         ? { donorDataSource: donorFields.donorDataSource }
         : {}),
-      ...(donorFields.fundingMix
-        ? { fundingMix: donorFields.fundingMix }
-        : {}),
+      ...(donorFields.fundingMix ? { fundingMix: donorFields.fundingMix } : {}),
       // Endorsements + retrospective: no canonical DB source. The prototype
       // nulls these for every candidate, so we match it.
       endorsements: null,
@@ -421,7 +419,8 @@ export async function assembleRaceData(
         // section + stateCode so the key stays meaningful.
         const webKey = buildCandidateKey(
           cand.name,
-          effectiveJurisdiction ?? `${input.section}-${input.stateCode}`.toLowerCase(),
+          effectiveJurisdiction ??
+            `${input.section}-${input.stateCode}`.toLowerCase(),
           input.electionCycle ?? "2026",
         );
         const webScores = await lookupCandidateData(

@@ -82,7 +82,10 @@ export async function POST(request: NextRequest) {
     );
 
   if (issues.length === 0) {
-    return Response.json({ error: "At least one issue is required" }, { status: 400 });
+    return Response.json(
+      { error: "At least one issue is required" },
+      { status: 400 },
+    );
   }
 
   const apiKey = process.env.ANTHROPIC_VOTER_API;

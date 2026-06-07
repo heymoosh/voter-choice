@@ -155,9 +155,7 @@ function extractCongressionalDistrict(
   // Find a US House contest. civic `office` is typically "U.S. House" or
   // "United States House of Representatives" with a district name.
   const houseContest = contests.find(
-    (c) =>
-      /house/i.test(c.office) &&
-      /u\.?s\.?|united states/i.test(c.office),
+    (c) => /house/i.test(c.office) && /u\.?s\.?|united states/i.test(c.office),
   );
 
   if (!houseContest || !houseContest.district) return null;
@@ -188,9 +186,7 @@ function extractCongressionalDistrict(
  * Pick the most useful polling place from the civic response.
  * Returns null when no location is available.
  */
-function pickPollingPlace(
-  civic: CivicApiInput,
-): PollingPlace | null {
+function pickPollingPlace(civic: CivicApiInput): PollingPlace | null {
   const locs = civic.pollingLocations ?? [];
   if (locs.length === 0) return null;
 
