@@ -171,7 +171,10 @@ export function FunderBars({
   // that exists in our taxonomy but raised nothing this cycle).
   const isRichMode =
     totalRaised !== undefined || funders.some((f) => f.amount !== undefined);
-  const topFunders = funders.slice(0, TOP_LIST_CAP);
+  // Exclude the sentinel bucket from the top-3 list — it carries no
+  // meaningful label and the dollar total is already shown in the header.
+  const displayFunders = funders.filter((f) => f.label !== "total_receipts");
+  const topFunders = displayFunders.slice(0, TOP_LIST_CAP);
 
   // Cast to the extended slice type to access PAC-specific fields.
   const extFunders = funders as DonorBucketSliceExtended[];
@@ -179,6 +182,12 @@ export function FunderBars({
   // Split donorCoalition into issue-PACs vs industry slices.
   const issuePACs = extFunders.filter((s) => s.isIssuePAC);
   const industries = extFunders.filter((s) => !s.isIssuePAC);
+
+  // Detect the degenerate "legacy sentinel" case: the only non-issue-PAC bucket
+  // is the raw aggregate row whose label is the internal field name
+  // `total_receipts`. In this case we have no real sector breakdown to show.
+  const isSentinelOnly =
+    industries.length === 1 && industries[0].label === "total_receipts";
 
   // Peer comparison — single source of truth via shared peerComparison module.
   // Thresholds: ratio < 0.85 → less, ratio > 1.18 → more (same as prototype).
@@ -485,8 +494,22 @@ export function FunderBars({
       {/* ── Industry breakdown ──────────────────────────────────────
        * Proportional color-keyed bar + chip list, max 4 named rows.
        * An "Outside named sectors" tail appended when rows < 100%.
+       *
+       * Degenerate case: when the only non-issue-PAC bucket is the legacy
+       * sentinel `total_receipts`, we have no real sector data. Render an
+       * honest fallback note instead of leaking the internal field name.
        */}
-      {industries.length > 0 && (
+      {isSentinelOnly && (
+        <div className="mt-[28px] pt-[26px] border-t border-rule">
+          <p
+            data-testid="funder-bars-no-sector-breakdown"
+            className="text-xs italic text-ink-3"
+          >
+            Sector breakdown not available
+          </p>
+        </div>
+      )}
+      {industries.length > 0 && !isSentinelOnly && (
         <div className="mt-[28px] pt-[26px] border-t border-rule">
           <div className="font-mono text-[13px] uppercase tracking-[0.10em] text-ink font-bold mb-[10px]">
             {/* NEEDS KEY: t.research.industryBreakdown = EN:'Industry breakdown' ES:'Desglose por industria' */}
