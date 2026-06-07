@@ -39,8 +39,18 @@ branch `production` = `ep-silent-dew-aqnmly1g`; `alignment-work` = its child `ep
 - **Post-fire verify (`_cutover-verify.ts`).** Every issue count == its confident pole_v1 count;
   **0 `stance_lens='no_score'` rows** in prod; shipped `lookupAlignment` replay returns correctly
   differentiated scores (energy_grid/in_favor: candidates 26/27…1/28, not the old inverted mush).
-- **Rollback** = restore contested rows from `issue_tags_backup_precutover` (kept in prod) +
-  the local JSON dump. **Reversible.**
+- **Rollback (exact SQL, in one transaction on prod)** — restores the pre-cutover state from the
+  backup table (kept in prod): `BEGIN; DELETE FROM issue_tags WHERE canonical_issue = ANY(<the 12>);
+  INSERT INTO issue_tags SELECT * FROM issue_tags_backup_precutover; COMMIT;` (the backup has all
+  31,480 original contested rows incl. the original `stance_lens`/`tagger_confidence`/ids). Local
+  JSON dump `_cutover-backup-31480rows.json` is a second copy. **Reversible.**
+- **Cache:** the chat flow (`/api/chat`, `Cache-Control: no-cache`) serves corrected scores
+  immediately; the `/api/alignment` HTTP route CDN-caches positive results `s-maxage=3600` (≤1h) —
+  cleared by the cutover-commit production deploy and/or TTL.
+- **⚠ `issue_tags_pole_v1` lives only on the `alignment-work` branch, which AUTO-DELETES 2026-07-04.**
+  The prod backup (old tags) is independent of it, but the full corrected tagset (incl. no_score +
+  confidences — the source for the follow-ups) needs preserving before then (dump to repo / extend
+  the Neon branch expiry).
 - **Follow-ups (NOT blocking; tracked):** (1) stricter **public_safety** re-tag — it ships at 0
   inversion but is over-eager (panel abstained on 79 of its confident calls, 31 `high`); (2) the
   parked **granularity/vocab** code changes — border→immigration (F7), public_safety+crime→
