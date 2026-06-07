@@ -25,7 +25,42 @@ now that more than one machine may commit. Pushing this branch does NOT trigger 
 deploy (only `launch/production` does; Vercel auto-deploy is off). Still: no
 force-push / rebase / history rewrite — branches are experiment data.
 
-### ▶▶▶ Session 2026-06-06 — UX / logistics / research-timing fixes · LATEST · READ FIRST
+### ▶▶▶▶ Session 2026-06-07 — MERGE-READY + handoff · LATEST · READ FIRST
+
+**This branch is now genuinely merge-ready for the prod cutover. Fresh session: read this, then
+`MERGE_TO_PROD_PLAN.md` (same folder) — that is the canonical cutover plan.**
+
+**State of PR #65 (`feat/prototype-rebuild` → `launch/production`, DRAFT):**
+- Branch tip is the back-merge `71d2c07`. The branch is now **0 behind / 103 ahead** of
+  `origin/launch/production` — I back-merged `origin/launch/production` (absorbing the 19 alignment
+  commits) and resolved the only conflict (`.gitignore`, as a union of both sides). So the eventual
+  `feat/prototype-rebuild → launch/production` merge is now **clean** (no conflicts).
+- **Gate GREEN on the merge result:** `npm run lint` 0 errors (only pre-existing complexity
+  warnings) · `npm run test` **2133 passed** · `npm run build` green.
+- **CI now fires on PR #65** because its base is `launch/production` (triggers `test.yml`
+  = lint+test+build+e2e, plus the required `mutation` check). Note: CI does **not** run `tsc`
+  (`next build` has `ignoreBuildErrors`), so the gate is the four commands above.
+
+**Canonical cutover plan → `MERGE_TO_PROD_PLAN.md`.** It absorbs: alignment is already LIVE in prod
+`issue_tags` (the 19 commits are pushed and are tooling/ledger/docs only — zero `src`/test); two hard
+constraints (never overwrite `issue_tags` — backup `issue_tags_backup_precutover`; apply the additive
+`candidate_data` migration `0001` to prod at deploy); and **ignore the other session's local
+99-commit test-merge** (unpushed, redundant with PR #65 — deferred follow-ups are already in the
+pushed `ALIGNMENT_LEDGER.md`).
+
+**To resume the cutover (fresh session, gated — pushing `launch/production` deploys to Vercel):**
+1. `git fetch && git checkout feat/prototype-rebuild` (tip `71d2c07`); confirm the gate is still green.
+2. Follow `MERGE_TO_PROD_PLAN.md`: apply migration `0001` to prod Neon → merge PR #65 → push
+   `launch/production` (deploys) → verify both alignment paths + the new ballot behaviors live →
+   prune the merged app worktrees.
+3. Then pick up the backlog: `docs/operations/post-launch-backlog.md`. Most user-visible next item =
+   President/VP card design consistency.
+
+**Known non-blocking nit:** `scripts/ingest/_summary-inspect.ts:19` has a pre-existing `tsc` error —
+an alignment tooling script already on `launch/production`, not in the app build/CI path. Fix it when
+next touching alignment tooling; it does not block the merge.
+
+### ▶▶▶ Session 2026-06-06 — UX / logistics / research-timing fixes · READ FIRST
 **Branch `feat/prototype-rebuild`, PUSHED to `origin`** — on a fresh machine/mobile:
 `git fetch origin && git checkout feat/prototype-rebuild` (run `git log --oneline -8` for the
 exact tip; this handoff + the fix commits below are at the top). `tsc` clean · prod `next build`
