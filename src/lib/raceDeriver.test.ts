@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, it, expect } from "vitest";
-import { deriveRaces, classifyRaceSection, type Race } from "./raceDeriver";
+import { deriveRaces, classifyRaceSection, isJudicialRetentionOffice, type Race } from "./raceDeriver";
 
 describe("raceDeriver", () => {
   describe("classifyRaceSection", () => {
@@ -117,6 +117,28 @@ describe("raceDeriver", () => {
       );
     });
 
+    it("classifies 'be retained in office' retention questions as Judicial Retention", () => {
+      // Real-world retention question format from CA Court of Appeal ballots.
+      expect(
+        classifyRaceSection(
+          "Shall Judge Paetra Brownlee of the Sixth District Court of Appeal be retained in office?",
+        ),
+      ).toBe("Judicial Retention");
+      expect(
+        classifyRaceSection(
+          "Shall Justice Renatha Francis of the Supreme Court be retained in office?",
+        ),
+      ).toBe("Judicial Retention");
+    });
+
+    it("does NOT misclassify ordinary judicial election offices as retention", () => {
+      // Regression guard: group-numbered judicial races must stay "Judicial".
+      expect(classifyRaceSection("Circuit Judge, 9th Judicial Circuit Group 15")).toBe(
+        "Judicial",
+      );
+      expect(classifyRaceSection("County Judge, Group 4")).toBe("Judicial");
+    });
+
     it("classifies judicial races", () => {
       expect(classifyRaceSection("Circuit Court Judge")).toBe("Judicial");
       expect(classifyRaceSection("Justice of the Supreme Court")).toBe(
@@ -145,6 +167,35 @@ describe("raceDeriver", () => {
       expect(classifyRaceSection("Soil & Water Conservation Board")).toBe(
         "Local",
       );
+    });
+  });
+
+  describe("isJudicialRetentionOffice", () => {
+    it("returns true for 'be retained in office' retention questions", () => {
+      expect(
+        isJudicialRetentionOffice(
+          "Shall Judge Paetra Brownlee of the Sixth District Court of Appeal be retained in office?",
+        ),
+      ).toBe(true);
+      expect(
+        isJudicialRetentionOffice(
+          "Shall Justice Renatha Francis of the Supreme Court be retained in office?",
+        ),
+      ).toBe(true);
+    });
+
+    it("returns true for other retention forms already covered by classifyRaceSection", () => {
+      expect(isJudicialRetentionOffice("Justice Smith — Retention")).toBe(true);
+      expect(isJudicialRetentionOffice("Retain Judge Doe?")).toBe(true);
+      expect(isJudicialRetentionOffice("Merit Retention: Judge Lee")).toBe(true);
+    });
+
+    it("returns false for ordinary judicial election offices", () => {
+      expect(
+        isJudicialRetentionOffice("Circuit Judge, 9th Judicial Circuit Group 15"),
+      ).toBe(false);
+      expect(isJudicialRetentionOffice("County Judge, Group 4")).toBe(false);
+      expect(isJudicialRetentionOffice("Justice of the Supreme Court")).toBe(false);
     });
   });
 

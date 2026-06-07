@@ -145,7 +145,23 @@ const JUDICIAL_RETENTION_PATTERNS: RegExp[] = [
   /\bretention\b/i,
   /\bmerit\s+retention\b/i,
   /\bretain\s+(?:judge|justice)\b/i,
+  /\bretained\b/i,
 ];
+
+/**
+ * Pure predicate: does this office string describe a judicial retention
+ * question rather than a competitive judicial election?
+ *
+ * Reuses JUDICIAL_RETENTION_PATTERNS as the single source of truth so
+ * classifyRaceSection and extractionToRaces stay in sync.
+ *
+ * Exported so extractionToRaces can override the section derived from the
+ * LLM's section_name (which may be "Judicial" for a retention question).
+ */
+export function isJudicialRetentionOffice(office: string): boolean {
+  const text = office ?? "";
+  return JUDICIAL_RETENTION_PATTERNS.some((re) => re.test(text));
+}
 
 // Generic propositions and measures — checked AFTER the specific measure
 // types above so "Constitutional Amendment", "County Question", "Bond
@@ -212,7 +228,7 @@ export function classifyRaceSection(office: string): RaceSection {
     return "County Questions";
   }
   if (BOND_MEASURE_PATTERNS.some((re) => re.test(text))) return "Bond Measures";
-  if (JUDICIAL_RETENTION_PATTERNS.some((re) => re.test(text))) {
+  if (isJudicialRetentionOffice(text)) {
     return "Judicial Retention";
   }
 

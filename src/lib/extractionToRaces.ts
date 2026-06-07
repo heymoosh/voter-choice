@@ -29,7 +29,7 @@
  */
 
 import type { Race, RaceSection } from "./raceDeriver";
-import { makeRaceId } from "./raceDeriver";
+import { makeRaceId, isJudicialRetentionOffice } from "./raceDeriver";
 
 /**
  * Race shape augmented with write-in slot count from the extraction and a
@@ -329,9 +329,15 @@ function buildSectionRaces(
     if (isMetadataLeakage(race.office)) continue;
     if (!passesPartyFilter(race, ballotTag)) continue;
     const { candidates, writeInSlots } = buildCandidates(race);
+    // Per-race section override: the LLM may file a retention question under
+    // "Judicial" (or a non-canonical section name). Deterministically
+    // reclassify based on the office string — no LLM trust required.
+    const raceSection: RaceSection = isJudicialRetentionOffice(race.office)
+      ? "Judicial Retention"
+      : canonical;
     out.push({
       id: buildId(race),
-      section: canonical,
+      section: raceSection,
       label: buildLabel(race),
       decided: false,
       candidates,

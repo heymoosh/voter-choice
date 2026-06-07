@@ -1638,6 +1638,39 @@ function industrySwatch(label) {
    if propositions get richer than a yes/no toggle. */
 function PropositionCard({ race, decision, onVote, onUnvote }) {
   const detail = PROPOSITION_DETAIL[race.id];
+
+  // Judicial retention: one named judge, Yes = retain / No = remove.
+  // No mock detail needed — show the question label and a static explanation.
+  // A later packet (WP3) will add a similar no-detail branch for non-retention
+  // measures using race.measureBody; keep the else-null below so that slot
+  // stays clean.
+  if (!detail && race.section === 'Judicial Retention') {
+    return (
+      <div className="prop-card">
+        <div className="ttl">{race.label}</div>
+        {/* NEEDS KEY: static retention explanation — translate when i18n lands */}
+        <p className="sub">
+          A retention vote asks whether this judge should stay in office.
+          Vote <b>Yes</b> to keep them, <b>No</b> to remove them.
+        </p>
+        <div className="twobtn">
+          <button
+            className={decision === 'Yes' ? 'yes-picked' : ''}
+            onClick={() => decision === 'Yes' ? onUnvote() : onVote('Yes')}
+          >
+            {decision === 'Yes' ? '☑ Yes' : 'Yes'}
+          </button>
+          <button
+            className={decision === 'No' ? 'no-picked' : ''}
+            onClick={() => decision === 'No' ? onUnvote() : onVote('No')}
+          >
+            {decision === 'No' ? '☑ No' : 'No'}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (!detail) return null;
   const kindMeta = (window.PROPOSITION_KIND_META || {})[detail.kind] || null;
   return (
@@ -4776,7 +4809,11 @@ function WorkspaceView({ address, issues, decisions, activeRaceId, onDecide, onU
               <div className="msg ai">
                 <div className="who">Voter Choice · AI</div>
                 <div className="bubble">
-                  <p>This is <b>{activeRace.label}</b>, a ballot proposition. Here's what's at stake:</p>
+                  {activeRace.section === 'Judicial Retention' ? (
+                    <p>This is a judicial retention question — should this judge stay in office?</p>
+                  ) : (
+                    <p>This is <b>{activeRace.label}</b>, a ballot proposition. Here's what's at stake:</p>
+                  )}
                   <PropositionCard
                     race={activeRace}
                     decision={decision?.pick}
