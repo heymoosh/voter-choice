@@ -472,6 +472,51 @@ The exhaustion message read as if the voter's personal Anthropic API key had hit
 
 ---
 
+## Frontend / Redesign (post prototype-rebuild merge)
+
+### [P2] President/VP candidate card design does not match the standard card design
+**Status:** Open (flagged 2026-06-07, from FL ballot preview test)
+
+The President & Vice President candidate card renders with a visibly different design from the other
+candidate cards. All candidate cards should share the exact same design/layout regardless of data
+mode (voting-record vs `web_search` "based on public statements" vs no-record). Audit `CandidateCard`
+in `src/prototype/VoterChoiceApp.tsx` so the modes are visually consistent. Presidential candidates
+correctly fall into `web_search` mode (no congressional voting record), but that must not change the
+card's design.
+
+### [P2] `/terms` (full AI disclaimer) is not reachable from the app
+**Status:** Open (flagged 2026-06-07)
+
+The prototype nav exposes How-it-works / Methodology / About / Privacy but not **Terms**, where the
+full "AI Can Make Mistakes" + "Verify with Official Sources" disclaimer lives (`src/app/terms/page.tsx`).
+The disclaimer is NOT dropped — it's also surfaced contextually in the research UI (`RacePatterns`,
+`AllVotesPanel`, `AlignmentDrilldown`) and on `/methodology` — but the dedicated Terms page should be
+linked (e.g. in the prototype footer beside Privacy) so it's reachable. Add a Terms link in
+`src/prototype/VoterChoiceApp.tsx`.
+
+### [P2] Delete drifted legacy frontend (supersedes #27)
+**Status:** Open (flagged 2026-06-07; the app IS the prototype now)
+
+`src/app/page.tsx` now renders `<VoterChoiceApp/>` directly; `src/app/PageContent.tsx`,
+`src/components/BallotToolClient.tsx`, and related pre-rebuild landing code are dead. Remove them in a
+dedicated cleanup pass (the stale landing tests were already rewritten to the new shell). Perf
+follow-up: `src/app/layout.tsx` loads 6 Google Font families via `<link>` for the in-app
+mood/palette switcher, but production hardcodes `data-mood='civic'` — consider trimming to the Civic
+families (IBM Plex Sans/Serif/Mono) for the prod default to cut font payload.
+
+### [idea] AI plain-language "what's at stake" for ballot measures — alongside the official text
+**Status:** Flagged 2026-06-07 — deferred by Muxin (verbatim measure body shipped in PR #65)
+
+Build on `race.measureBody` (official ballot summary now captured verbatim during extraction —
+`extract-prompt.ts` → `Race.measureBody`, rendered in `PropositionCard`, `src/prototype/VoterChoiceApp.tsx`).
+Add an AI-generated plain-language summary + "If yes / If no" outcomes, fed the captured `measure_text`
+as its source. **Hard constraint (Muxin): render the AI summary IN ADDITION to the verbatim official
+text — never hide or replace the original.** Needs an honesty guard (no claims beyond the source) and
+adds a summarization call + token cost. The existing `PROPOSITION_DETAIL` mock path already shows the
+summary + If-yes/If-no shape this would populate from real data.
+
+---
+
 ## Product Ideas (not yet scoped)
 
 ### [idea] Web-search-based alignment scoring as fallback when DB has no data
