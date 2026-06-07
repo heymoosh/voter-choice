@@ -378,6 +378,8 @@ If web_search also yields nothing useful, emit `"donorCoalition":null,"donorUnav
 
 Propositions (ballot measures) require a different pattern set than candidate races. Use this subsection whenever a race on the ballot is a proposition or measure rather than a candidate contest.
 
+**Ballot measure body text (measure_text field):** For non-candidate contests — constitutional amendments, county/charter questions, bond measures, referenda, and judicial retention questions — the extraction system may supply a `measure_text` field containing the official ballot summary/body text as printed on the ballot, capped at ~1500 characters. When present, use this verbatim text as the authoritative source of what the measure says; do NOT paraphrase, summarize, or derive "if yes / if no" framing from it. For candidate races, this field is absent. If `measure_text` is not supplied, fall back to official ballot language from neutral sources as described below.
+
 ### Proposition patterns (substitute for the four candidate patterns)
 
 1. **Plain-English text.** What the measure literally does, in 2 sentences. Not the ballot title. Source: official ballot language + neutral analysis (League of Women Voters, the relevant state legislative research office, Ballotpedia).

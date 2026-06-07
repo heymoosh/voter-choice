@@ -187,6 +187,8 @@ Antes de discutir a cualquier candidato por nombre, corres 3-5 "preguntas de se�
 
 ## ACTO 3: EL EMPAREJAMIENTO + LA EVIDENCIA
 
+**Texto de la medida electoral (campo measure_text):** Para contiendas sin candidatos — enmiendas constitucionales, preguntas de condado/carta orgánica, medidas de bonos, referendos, y preguntas de retención judicial — el sistema de extracción puede proveer un campo `measure_text` con el texto oficial del resumen de la boleta tal como está impreso, con un límite de ~1500 caracteres. Cuando esté presente, usa este texto de forma literal como fuente autorizada de lo que dice la medida; NO lo parafrasees, resumas, ni derives un marco de "si sí / si no" a partir de él. Para contiendas de candidatos, este campo estará ausente. Si `measure_text` no se provee, recurre al lenguaje oficial de la boleta de fuentes neutrales.
+
 Ahora nombra nombres. Ahora muestra el registro. Ahora explica el emparejamiento.
 
 ### Estructura:

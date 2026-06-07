@@ -30,6 +30,7 @@ const TARGET_SCHEMA = `Target schema:
           "position": "string (optional)",
           "vote_for_n": 1,
           "party_context": "Democratic Primary" | "Republican Primary" | null,
+          "measure_text": "string (optional — see instructions below)",
           "candidates": [
             {
               "name": "string | null",
@@ -42,7 +43,9 @@ const TARGET_SCHEMA = `Target schema:
       ]
     }
   ]
-}`;
+}
+
+measure_text field instructions: For NON-candidate contests — constitutional amendments, county/charter questions, bond measures, referenda, and judicial retention questions — populate measure_text with the official ballot summary or body text exactly as printed on the ballot, capped at ~1500 characters. Transcribe faithfully; do NOT summarize, paraphrase, or derive "if yes / if no" framing. For candidate races, omit measure_text entirely.`;
 
 const SHARED_INSTRUCTIONS = `Produce JSON that conforms to the target schema below. Extract every race and every candidate visible on the ballot — do NOT filter based on party affiliation or voting rules; the presentation layer handles that.
 

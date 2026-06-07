@@ -113,7 +113,9 @@ function pdfBytesHash(buffer: Buffer): string {
 // onto reads.
 // Bumped v4→v5 (2026-06-05): evict stale sampling-stopgap extractions so
 // large-format ballots re-run through the now-wired Textract path.
-const EXTRACTION_CACHE_VERSION = "v5";
+// Bumped v5→v6 (2026-06-07): measure_text added to ExtractRace schema;
+// evict cached extractions that lack ballot measure body text.
+const EXTRACTION_CACHE_VERSION = "v6";
 
 function extractionCacheKey(hash: string): string {
   return `voter-choice:extraction:${EXTRACTION_CACHE_VERSION}:${hash}`;

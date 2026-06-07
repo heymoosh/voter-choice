@@ -344,6 +344,7 @@ function buildSectionRaces(
       voteForN: race.vote_for_n > 0 ? race.vote_for_n : 1,
       ...(writeInSlots > 0 ? { writeInSlots } : {}),
       partyLane: partyLaneFromContext(race.party_context),
+      ...(race.measure_text ? { measureBody: race.measure_text } : {}),
     });
   }
   return out;

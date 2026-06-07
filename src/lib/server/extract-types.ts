@@ -65,6 +65,14 @@ export interface ExtractRace {
   vote_for_n: number;
   party_context: "Democratic Primary" | "Republican Primary" | null;
   candidates: ExtractCandidate[];
+  /**
+   * Official ballot summary/body text for non-candidate contests
+   * (constitutional amendments, county/charter questions, bond measures,
+   * referenda, judicial retention). Populated verbatim from the ballot as
+   * printed — NO AI summarization or derivation. Capped at ~1500 characters.
+   * Omitted for candidate races.
+   */
+  measure_text?: string;
 }
 
 export interface ExtractSection {

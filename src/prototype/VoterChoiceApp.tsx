@@ -1671,6 +1671,31 @@ function PropositionCard({ race, decision, onVote, onUnvote }) {
     );
   }
 
+  // Non-retention ballot measure with extracted body text (WP3).
+  // Renders the official summary verbatim — no AI derivation, no If-yes/If-no grid.
+  if (!detail && race.measureBody) {
+    return (
+      <div className="prop-card">
+        <div className="ttl">{race.label}</div>
+        <p className="sub" style={{ whiteSpace: 'pre-wrap' }}>{race.measureBody}</p>
+        <div className="twobtn">
+          <button
+            className={decision === 'Yes' ? 'yes-picked' : ''}
+            onClick={() => decision === 'Yes' ? onUnvote() : onVote('Yes')}
+          >
+            {decision === 'Yes' ? '☑ Yes' : 'Yes'}
+          </button>
+          <button
+            className={decision === 'No' ? 'no-picked' : ''}
+            onClick={() => decision === 'No' ? onUnvote() : onVote('No')}
+          >
+            {decision === 'No' ? '☑ No' : 'No'}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (!detail) return null;
   const kindMeta = (window.PROPOSITION_KIND_META || {})[detail.kind] || null;
   return (

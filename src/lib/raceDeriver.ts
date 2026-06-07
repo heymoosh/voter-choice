@@ -77,6 +77,15 @@ export interface Race {
    * voter's picks at this count so multi-seat ballots can be marked fully.
    */
   voteForN?: number;
+  /**
+   * Official ballot summary/body text for non-candidate contests
+   * (constitutional amendments, county/charter questions, bond measures,
+   * referenda, judicial retention). Sourced verbatim from the ballot as
+   * printed via `measure_text` in the extraction schema — NO AI summarization.
+   * Absent for candidate races and for measures where the extractor produced
+   * no body text.
+   */
+  measureBody?: string;
 }
 
 const SECTION_ORDER: RaceSection[] = [

@@ -843,6 +843,60 @@ describe("extractionToRaces", () => {
    * asks for a metadata-blocklist guard so these never reach the
    * workspace rail even when the model produces them.
    */
+  describe("measureBody forwarding (WP3 ballot measure body text)", () => {
+    it("forwards measure_text from ExtractRace to race.measureBody for a 'County Questions' section", () => {
+      const ballot: BallotExtraction = {
+        election_metadata: META,
+        sections: [
+          {
+            section_name: "County Questions",
+            races: [
+              {
+                office: "County Question No. 1",
+                vote_for_n: 1,
+                party_context: null,
+                candidates: [],
+                measure_text:
+                  "Establishing a Rural Area of Critical State Concern in Collier County to protect natural resources and manage growth.",
+              },
+            ],
+          },
+        ],
+        _meta: njCamdenDemRepFixture()._meta,
+      };
+      const races = extractionToRaces(ballot, "GENERAL");
+      expect(races).toHaveLength(1);
+      expect(races[0].measureBody).toBe(
+        "Establishing a Rural Area of Critical State Concern in Collier County to protect natural resources and manage growth.",
+      );
+    });
+
+    it("does not set measureBody when measure_text is absent (candidate race)", () => {
+      const ballot: BallotExtraction = {
+        election_metadata: META,
+        sections: [
+          {
+            section_name: "Federal",
+            races: [
+              {
+                office: "U.S. Senator",
+                vote_for_n: 1,
+                party_context: null,
+                candidates: [
+                  { name: "Alice", party: "D", placeholder_reason: null },
+                ],
+              },
+            ],
+          },
+        ],
+        _meta: njCamdenDemRepFixture()._meta,
+      };
+      const races = extractionToRaces(ballot, "GENERAL");
+      expect(races).toHaveLength(1);
+      expect(races[0].measureBody).toBeUndefined();
+    });
+  });
+
   describe("metadata-leakage blocklist (P0 defensive guard)", () => {
     it("filters out races whose office is a generic metadata field (case-insensitive)", () => {
       const ballot: BallotExtraction = {
