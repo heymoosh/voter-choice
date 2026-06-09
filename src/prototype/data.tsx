@@ -10,7 +10,7 @@
    VOTER CHOICE · mock data
    ====================================================
 
-   PORTABILITY CONTRACT (see prototype/COMPONENT_MAP.md):
+   PORTABILITY CONTRACT (originally documented in the design prototype's COMPONENT_MAP.md; see git history):
 
    Data here is shaped to match the repo's existing
    TypeScript interfaces from src/lib/structured-blocks.ts

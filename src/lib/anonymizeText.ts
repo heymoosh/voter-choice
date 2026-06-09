@@ -2,7 +2,7 @@
  * anonymizeText — replace a candidate's real last name with their alias
  * in AI-generated narrative text when blind mode is active.
  *
- * Ported from docs/design/2026-redesign/prototype/prototype-shared.jsx.
+ * Ported from the original design prototype's `prototype-shared.jsx` (preserved in git history).
  * Whole-word regex only, so unrelated text containing the name fragment
  * is not modified.
  */
