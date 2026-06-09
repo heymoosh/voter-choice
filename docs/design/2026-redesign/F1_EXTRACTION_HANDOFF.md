@@ -36,8 +36,8 @@
 > Everything below is the original handoff / diagnosis, kept as the record of how we got
 > here (incl. the rejected tiling approach). It is NO LONGER the plan.
 
-**Worktree/branch:** `…/.claude/worktrees/design-integration` @ `feat/prototype-rebuild`.
-NOT deployed. Operate via absolute paths into that worktree.
+**Historical branch:** `feat/prototype-rebuild`. NOT deployed. If this work is
+resumed, use a fresh current worktree or branch rather than the old handoff path.
 
 ---
 

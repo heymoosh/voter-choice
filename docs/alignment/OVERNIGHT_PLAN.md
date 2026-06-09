@@ -22,8 +22,8 @@ exactly as they are.
 
 ## Provenance (author against these — do not drift)
 
-- **Branch:** `alignment/pole-vocabulary`, in worktree
-  `.claude/worktrees/alignment-pole-vocab`, based off `launch/production` @ `db3b63d`.
+- **Branch:** `alignment/pole-vocabulary`, originally in a separate
+  `alignment-pole-vocab` worktree based off `launch/production` @ `db3b63d`.
 - **Canonical issue set (16):** keyed to the **redesign** branch
   `feat/design-integration` @ `782a0f8` (`src/lib/canonicalIssues.ts`):
   healthcare_affordability, border_security, economy_jobs, education_funding,
@@ -69,9 +69,9 @@ exactly as they are.
 
 All work is local commits on `alignment/pole-vocabulary` — **nothing is pushed
 or deployed.** To stop: interrupt the session / tell me "stop the loop," or just
-let it finish (it stops itself when the checklist is done). To discard entirely:
-`git worktree remove .claude/worktrees/alignment-pole-vocab` and delete the
-branch. To adopt: review, then merge/cherry-pick toward the redesign deliberately.
+let it finish (it stops itself when the checklist is done). To discard entirely,
+remove the temporary `alignment-pole-vocab` worktree and delete the branch. To
+adopt: review, then merge/cherry-pick toward the redesign deliberately.
 
 ---
 

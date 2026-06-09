@@ -194,11 +194,11 @@ The PDF extraction bakeoff (Phases 0–6 on `experiment/pdf-extraction-bakeoff`)
 
 Textract is purpose-built for forms — it may handle BOTH the NJ broken-text layer (form-native extraction) AND the FL multi-district perception errors (designed for structured tabular content). If C1 results justify, the v2 architecture may be **Textract-first with C2 as fallback**, not the other way around.
 
-**Worktree:** all C1 bakeoff work happens in `.claude/worktrees/pdf-bakeoff/` on branch `experiment/pdf-extraction-bakeoff` — NOT in the production worktree. This branch never merges to `launch/production`; only the eventual v2 architecture PR (if results justify) would be a fresh branch off `launch/production` that ports the chosen production code.
+**Worktree:** all C1 bakeoff work should happen on branch `experiment/pdf-extraction-bakeoff` or a fresh experiment branch, not in the production worktree. This branch never merges to `launch/production`; only the eventual v2 architecture PR (if results justify) would be a fresh branch off `launch/production` that ports the chosen production code.
 
 **Action when AWS credentials are available:**
 
-1. AWS account + IAM scoped user already provisioned via `experiments/pdf-extraction-bakeoff/infra/provision-scoped-user.mjs`. Scoped credentials should already be in `.claude/worktrees/pdf-bakeoff/.env.local`. Verify with `node experiments/pdf-extraction-bakeoff/infra/verify-aws-creds.mjs`.
+1. AWS account + IAM scoped user already provisioned via `experiments/pdf-extraction-bakeoff/infra/provision-scoped-user.mjs`. Put scoped credentials in the active experiment worktree's `.env.local`. Verify with `node experiments/pdf-extraction-bakeoff/infra/verify-aws-creds.mjs`.
 2. Run the C1 runner against the 4 fixtures (`nj-camden-2026-primary.pdf`, `tx-harris-2026-dem-runoff.pdf`, `tx-hidalgo-2026-bilingual.pdf`, `fl-orange-2026-composite.pdf`). Runner exists at `experiments/pdf-extraction-bakeoff/runners/01-textract-sonnet.ts` (committed `da7d915`).
 3. Re-run `npx tsx experiments/pdf-extraction-bakeoff/score.ts` to score the C1 cells.
 4. If C1 outperforms C2 on FL Orange AND ties/wins on NJ Camden, file a v2 architecture PR off `launch/production`. Otherwise, C2 stays as production extraction path.
@@ -809,7 +809,7 @@ Same root cause as the existing streaming-skeleton fix, but for a code path that
 
 The bake-off declared C2 (Sonnet vision) the v1 winner but **skipped C1 entirely** because no AWS credentials were available locally. C1 (Textract Forms + Sonnet post-processor) is the spec's named escape hatch and may handle BOTH the NJ broken-text fixture (form-native extraction) AND the FL Orange multi-district perception errors (Textract is purpose-built for tabular layouts). If C1 outperforms C2 on the same 4 fixtures, the v2 architecture may be Textract-first with C2 as the fallback.
 
-**Action:** Get AWS Textract credentials → run the existing `01-textract-sonnet.ts` runner in `experiments/pdf-extraction-bakeoff/` (the worktree at `.claude/worktrees/pdf-bakeoff/`) → re-score against the 4 fixtures.
+**Action:** Get AWS Textract credentials → run the existing `01-textract-sonnet.ts` runner in `experiments/pdf-extraction-bakeoff/` from the active experiment worktree → re-score against the 4 fixtures.
 
 **Doesn't block v1 ship of C2.** Filed as P0 because the spec marked it as a structural completeness gap.
 

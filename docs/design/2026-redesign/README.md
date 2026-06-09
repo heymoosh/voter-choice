@@ -1,6 +1,6 @@
 # Voter Choice — 2026 Redesign Handoff
 
-This folder is a complete design brief for a multi-phase rebuild of the Voter Choice flow, intended to be groomed into work packets per `AGENTS.md` and executed under the existing Next.js / TypeScript / Tailwind app.
+This folder is a historical design brief for the Voter Choice flow. Treat it as product/design context, not as a mandatory work-packet workflow.
 
 Read this README first, then the linked artifacts in the order given.
 
@@ -73,7 +73,10 @@ There is **no greenfield** here. Don't rebuild — extend.
 
 ## 5 · Build sequence
 
-Run `/groom` on this section per `AGENTS.md`. Each entry below is a work-packet intent. **Do not jump ahead.** Phases land cleanly when sequenced; out of order, they collide with each other.
+This section records the intended phase order for the redesign. The `.ai`
+packets are retained as planning history, but the old packet workflow is no
+longer mandatory agent process. **Do not jump ahead.** Phases land cleanly when
+sequenced; out of order, they collide with each other.
 
 ### Phase 1 — Prompt refactor (data layer)
 
@@ -201,13 +204,10 @@ Implementation-level decisions (state management library, routing patterns, API 
 
 ## 7 · Verification expectations
 
-Per `AGENTS.md`:
-
 - `npm run lint` — clean
 - `npm run test` — passing
 - `npm run build` — successful
 - `npm run e2e` — when browser behavior changes
-- `bash scripts/ai-verify.sh` — for kit-aware routing
 
 For Phase 1 specifically: add unit tests for prompt routing logic (which prompt gets selected for each view) and golden-file tests for the rendered prompt output (input state → exact text sent to Anthropic). The current prompt module has heavy test coverage in `generatePrompt.test.ts`; mirror that posture.
 
@@ -266,10 +266,7 @@ visual fidelity and interaction model.
 Then read docs/design/2026-redesign/prompts.md — the new in-app
 prompt fleet that replaces BALLOT_PROMPT.md.
 
-Do not write any code yet. Run /groom on the Build Sequence in the
-README (section 5) and draft work packets for each of the nine
-phases under .ai/work-packets/. Order matters — do not flatten or
-reorder.
+Use the Build Sequence in README section 5 as the implementation order.
 
 Two non-negotiables I won't accept changes to without discussion:
   1. No pre-built issue picker. The cold open is free-form text
@@ -277,8 +274,7 @@ Two non-negotiables I won't accept changes to without discussion:
   2. State rules live as data, not code. Adding a state is a row
      in getStateData.ts, not new if-branches.
 
-When the packets are drafted, surface them for review before
-executing /work-next.
 ```
 
-That's the entire handoff. Paste it once Claude Code is open in this repo, and the rest follows your existing AGENTS.md workflow.
+The original packet-based workflow for this handoff is retained in `.ai/work-packets/`
+as planning history.

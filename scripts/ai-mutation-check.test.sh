@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # ai-mutation-check.test.sh — bash self-tests for scripts/ai-mutation-check.sh.
 #
-# Covers the two behaviors required by the work packet
-# (.ai/work-packets/tdd-phase-2-mutation-testing.md, Test Plan section):
+# Covers the two behaviors required by the mutation-check wrapper contract in
+# docs/testing.md:
 #   1. given a Stryker config whose break threshold is BELOW the observed
 #      baseline score: wrapper exits 0 (mutation pass)
 #   2. given a Stryker config whose break threshold is ABOVE the observed

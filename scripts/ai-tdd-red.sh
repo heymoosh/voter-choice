@@ -20,7 +20,7 @@
 #                  Production callers should leave it unset; the project's
 #                  vitest.config.ts already covers src/**/*.test.ts.
 #
-# Spec: .ai/work-packets/tdd-phase-1-core-discipline.md — TDD infrastructure.
+# See docs/testing.md.
 
 set -u
 

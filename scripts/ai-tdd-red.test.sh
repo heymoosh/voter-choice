@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # ai-tdd-red.test.sh — bash self-tests for scripts/ai-tdd-red.sh.
 #
-# Covers three behaviors required by the work packet
-# (.ai/work-packets/tdd-phase-1-core-discipline.md, Test Plan section):
+# Covers three behaviors required by the red-phase helper contract in
+# docs/testing.md:
 #   1. given a fixture test file with all-passing tests:
 #      expect exit 1 + the "isn't testing" message
 #   2. given a fixture test file with at least one failing test:
