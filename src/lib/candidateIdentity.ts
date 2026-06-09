@@ -2,7 +2,7 @@
  * getCandidateIdentity — the single source of truth for how a candidate
  * is named given blind-mode state.
  *
- * Ported from docs/design/2026-redesign/prototype/prototype-shared.jsx.
+ * Ported from the original design prototype's `prototype-shared.jsx` (preserved in git history).
  * Every surface (candidate card, compare, all-votes, chat intro, ballot
  * pane) must use this function so the alias never leaks.
  *

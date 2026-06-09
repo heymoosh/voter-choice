@@ -1,7 +1,7 @@
 /**
  * getPeerComparison — "2.0× more / less raised than Candidate B"
  *
- * Ported from docs/design/2026-redesign/prototype/prototype-shared.jsx.
+ * Ported from the original design prototype's `prototype-shared.jsx` (preserved in git history).
  * Canonical thresholds used across all money-trail surfaces:
  *   ratio < 0.85 → 'less'
  *   ratio > 1.18 → 'more'
