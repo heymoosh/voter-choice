@@ -27,10 +27,10 @@ Full rationale and screen-by-screen mocks: `Voter Choice Redesign.html`.
 In order:
 
 1. **`Voter Choice Redesign.html`** — Open in a browser. Read end to end. 15 sections; every annotation explains the *why* behind a decision. Don't skim. This is the spec.
-2. **`prototype/Voter Choice Prototype.html`** — Open in a browser (no server needed; uses inline Babel). Click through the happy path: home → loading → cold open → workspace → print. This is what "done" looks like for visual fidelity and interaction model. State persists in `localStorage`, so refresh and you keep your place.
+2. **`prototype/Voter Choice Prototype.html`** — _Removed._ The standalone React/Babel mockup was deleted after it was ported into the live app. The interaction reference is now the running app itself (`src/prototype/VoterChoiceApp.tsx`); the original mockup (happy path: home → loading → cold open → workspace → print) is recoverable from git history.
 3. **`prompts.md`** — Six task prompts plus a routing table mapping view → prompt. Read this before touching `src/lib/generatePrompt.ts` or the chat route.
 
-The prototype is React 18 + inline Babel, intentionally separate from the real Next.js stack so it loads offline. Don't port it directly; it's a reference, not source code.
+The prototype mockup has since been ported into the live Next.js app at `src/prototype/VoterChoiceApp.tsx` and removed from this folder; treat the running app as the interaction reference.
 
 ---
 
@@ -237,17 +237,10 @@ The prototype uses fake data to demonstrate interaction. Production wires these 
 docs/design/2026-redesign/
 ├── README.md                           ← this file
 ├── Voter Choice Redesign.html          ← the design brief (15 sections)
-├── prompts.md                          ← refactored chat prompts + routing table
-└── prototype/
-    ├── Voter Choice Prototype.html     ← entry point — open in browser
-    ├── prototype.css                   ← reference styles
-    ├── prototype-data.jsx              ← mock data shape (the data contract)
-    ├── prototype-components.jsx        ← shared components
-    ├── prototype-views.jsx             ← Home / Loading / ColdOpen / Workspace / Print
-    └── prototype-app.jsx               ← state machine + persistence
+└── prompts.md                          ← refactored chat prompts + routing table
 ```
 
-The prototype is React 18 + inline Babel + ~1.5KB CSS variables. It is **not** a port target — it's a visual and interaction reference. The real app stays Next.js 15 / React 19 / Tailwind.
+The `prototype/` subfolder — the React 18 + inline-Babel mockup (`Voter Choice Prototype.html`, `prototype-*.jsx`, `prototype.css`) — was **removed** once it was ported into the live app. It was never a port target, only a visual/interaction reference; recover it from git history if needed. The real app is Next.js 15 / React 19 / Tailwind at `src/prototype/VoterChoiceApp.tsx`.
 
 ---
 
@@ -258,10 +251,10 @@ Read docs/design/2026-redesign/README.md, then the design brief at
 docs/design/2026-redesign/Voter Choice Redesign.html (15 sections,
 end to end).
 
-Then open docs/design/2026-redesign/prototype/Voter Choice Prototype.html
-in a browser and click through the happy path: address → loading →
-cold open → workspace → print. This is what "done" looks like for
-visual fidelity and interaction model.
+The standalone prototype mockup this step used to reference has been
+ported into the live app (src/prototype/VoterChoiceApp.tsx) and removed;
+run the app to see the happy path (address → loading → cold open →
+workspace → print) and the intended visual/interaction model.
 
 Then read docs/design/2026-redesign/prompts.md — the new in-app
 prompt fleet that replaces BALLOT_PROMPT.md.

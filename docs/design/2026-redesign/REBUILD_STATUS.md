@@ -16,6 +16,12 @@ ACTUAL code as the app** and wire its marked data seams to the real backend.
 Everything below is the durable plan. This block is the stuff that's NOT in the
 commits — machine state + gotchas a fresh session needs.
 
+> **Note (prototype mockup removed):** references below to `prototype-app.jsx`,
+> `prototype-data.jsx`, `prototype-screens-c.jsx`, etc. are to the standalone
+> React/Babel mockup that was deleted once it was ported into the live app
+> (`src/prototype/VoterChoiceApp.tsx`). They are historical build narrative;
+> recover the mockup from git history if you need it.
+
 **Where to work:** historical branch `feat/prototype-rebuild`. If resurrecting
 this work, use a fresh current worktree or branch. `tsc` clean. **NOT deployed to launch/production**; a
 Vercel PREVIEW exists for testing (below). **Branch is now PUSHED to `origin`

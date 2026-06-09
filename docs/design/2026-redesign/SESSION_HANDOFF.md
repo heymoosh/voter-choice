@@ -42,7 +42,7 @@ reload → empty workspace; must persist the ballot source).
 - Work on branch **`feat/design-integration`**. **Deploy = push `feat/design-integration:launch/production`** (live-on-push via GitHub Actions → Vercel). Pushing other branches does NOT deploy.
 - **Gate manually before every deploy:** `next.config.ts` has `ignoreBuildErrors` + `ignoreDuringBuilds`, so `next build` skips tsc+lint. Run all four: `npx tsc --noEmit`, `npx eslint`, `npx vitest run`, `npx next build`. Also `npx prettier --write` changed files (lint fails on format).
 - **Commit attribution:** `--author="Muxin \"Moosh\" Li <muxin.li.pro@gmail.com>"`, committer stays `Build Agent`, trailer `Co-authored-by: Claude <noreply@anthropic.com>`. Author-email gate rejects `*@experiment`.
-- **Faithful port:** prototype at `docs/design/2026-redesign/prototype/` is the source of truth. Never reinterpret — "the answer is always in the JSX." (Cards-first design confirmed in `prototype-views.jsx` WorkspaceView + `prototype-components.jsx` CandidateCard/AlignmentScoreBanner.)
+- **Faithful port:** the prototype mockup (formerly at `docs/design/2026-redesign/prototype/`) has been ported into the live app at `src/prototype/VoterChoiceApp.tsx` and removed — that file is now the source of truth. The principle stands: never reinterpret. (Cards-first design was confirmed in the mockup's `prototype-views.jsx` WorkspaceView + `prototype-components.jsx` CandidateCard/AlignmentScoreBanner; recover them from git history if needed.)
 
 ## Verification reality
 - **Cards-first is PROD-ONLY verifiable** — local `/api/chat` has no key, so the scoring/cards

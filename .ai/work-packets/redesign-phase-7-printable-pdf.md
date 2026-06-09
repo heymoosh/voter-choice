@@ -176,6 +176,7 @@ Files/modules/docs inspected:
 - `docs/design/2026-redesign/README.md` §5 Phase 7
 - `docs/design/2026-redesign/Voter Choice Redesign.html` §5 (printable ballot mock)
 - `docs/design/2026-redesign/Voter Choice Redesign.html` §9 (polling logistics; appears in header)
+- _The `prototype/` mockup below was removed after being ported into the live app (`src/prototype/VoterChoiceApp.tsx`); recover from git history if needed._
 - `docs/design/2026-redesign/prototype/prototype-views.jsx` (PrintView)
 - `src/components/HandoffPackage.tsx`
 - `src/components/PollingLocationCard.tsx`

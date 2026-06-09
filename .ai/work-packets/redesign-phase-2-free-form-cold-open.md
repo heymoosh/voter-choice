@@ -168,6 +168,7 @@ Files/modules/docs inspected:
 - `docs/design/2026-redesign/README.md` §3 (keep-vs-remove table) and §5 Phase 2
 - `docs/design/2026-redesign/prompts.md` §1 (theme extraction prompt)
 - `docs/design/2026-redesign/Voter Choice Redesign.html` §7
+- _The `prototype/` mockup files below were removed after being ported into the live app (`src/prototype/VoterChoiceApp.tsx`); recover from git history if needed._
 - `docs/design/2026-redesign/prototype/prototype-views.jsx` (ColdOpenView)
 - `docs/design/2026-redesign/prototype/prototype-components.jsx` (ThemeRow)
 - `src/components/ValuesTagSelector.tsx`
