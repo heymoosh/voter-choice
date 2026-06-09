@@ -1,7 +1,7 @@
 name: Mutation
 
 # Stryker mutation testing on the high-stakes paths only. Workflow ALWAYS
-# fires on PRs to launch/production so the `mutation` job can be a required
+# fires on PRs to main so the `mutation` job can be a required
 # status check without deadlocking docs-only PRs. The actual Stryker run is
 # gated by a paths-filter step inside the job — Stryker runs when scoped
 # paths change, otherwise the job exits 0 with a "skipped" notice.
@@ -17,7 +17,7 @@ name: Mutation
 on:
   pull_request:
     branches:
-      - launch/production
+      - main
   schedule:
     # Nightly at 04:00 UTC — low-traffic window; surfaces drift even when
     # no scoped-path PRs are open.

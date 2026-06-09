@@ -3,10 +3,10 @@ name: Test
 on:
   pull_request:
     branches:
-      - launch/production
+      - main
   push:
     branches:
-      - launch/production
+      - main
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
