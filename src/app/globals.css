@@ -2,8 +2,8 @@
 
 /* ============================================================
    2026-REDESIGN VISUAL FOUNDATION
-   Tokens copied verbatim from
-   docs/design/2026-redesign/prototype/prototype.css :root block.
+   Tokens copied verbatim from the original design prototype's
+   prototype.css :root block (preserved in git history).
    Legacy --color-* names are kept as aliases so the 46 components
    that reference Tailwind utilities like bg-primary / text-on-primary
    continue to compile without a component sweep. Subsequent PRs

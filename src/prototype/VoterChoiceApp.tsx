@@ -419,8 +419,8 @@ Object.assign(window, { I18nProvider, useI18n, TRANSLATIONS, I18N_STORAGE_KEY, N
 /* ====================================================
    VOTER CHOICE · components
    ====================================================
-   See prototype/COMPONENT_MAP.md for the repo target of each
-   component. Inline headers reference the matching file.
+   See the original design prototype's COMPONENT_MAP.md (git history) for the
+   repo target of each component. Inline headers reference the matching file.
 
    Pattern: each component accepts props shaped like the
    repo's parsed structured-block payload. Design-delta fields
@@ -3991,7 +3991,7 @@ Object.assign(window, {
 /* ====================================================
    VOTER CHOICE · views
    ====================================================
-   See prototype/COMPONENT_MAP.md for repo targets.
+   See the original design prototype's COMPONENT_MAP.md (git history) for repo targets.
 
    Views own state-shape orchestration and pass repo-shaped
    props down to leaf components (CandidateCard, FunderBars,
