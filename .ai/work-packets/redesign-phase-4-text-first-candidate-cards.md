@@ -160,6 +160,7 @@ Files/modules/docs inspected:
 
 - `docs/design/2026-redesign/README.md` §5 Phase 4
 - `docs/design/2026-redesign/Voter Choice Redesign.html` §1 critique, §4 annotation A·05
+- _The `prototype/` mockup below was removed after being ported into the live app (`src/prototype/VoterChoiceApp.tsx`); recover from git history if needed._
 - `docs/design/2026-redesign/prototype/prototype-components.jsx` (CandidateCard, PropositionCard)
 - `src/components/AlignmentScoreBanner.tsx`
 - `src/components/AlignmentDrilldown.tsx`

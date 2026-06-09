@@ -171,6 +171,7 @@ Files/modules/docs inspected:
 
 - `docs/design/2026-redesign/README.md` §5 Phase 3
 - `docs/design/2026-redesign/Voter Choice Redesign.html` §4 (workspace)
+- _The `prototype/` mockup files below were removed after being ported into the live app (`src/prototype/VoterChoiceApp.tsx`); recover from git history if needed._
 - `docs/design/2026-redesign/prototype/prototype-views.jsx` (WorkspaceView)
 - `docs/design/2026-redesign/prototype/prototype-components.jsx` (BallotPane)
 - `src/components/BallotToolClient.tsx`
