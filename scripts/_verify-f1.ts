@@ -3,16 +3,15 @@
  * test ballot (page 1, uncached): render → N× extractWithVision → reconcilePageSamples,
  * then prints the reconciled ballot and flags any fabricated name vs ground truth.
  *
- * Run: npx tsx scripts/_verify-f1.ts          (SAMPLE_COUNT real Sonnet calls)
- *      RUNS=3 npx tsx scripts/_verify-f1.ts    (override sample count)
+ * Run: F1_VERIFY_PDF=/path/to/ballot.pdf npx tsx scripts/_verify-f1.ts
+ *      F1_VERIFY_PDF=/path/to/ballot.pdf RUNS=3 npx tsx scripts/_verify-f1.ts
  * Throwaway dev harness. Writes nothing.
  */
 // @ts-nocheck — dev-only harness; not part of the typed build.
 import fs from "node:fs";
 import path from "node:path";
 
-const PDF =
-  "/Users/Muxin/Documents/GitHub/voter-choice/.claude/worktrees/agitated-shockley-cda6b6/.playwright-mcp/nj-june2-2026-ballot.pdf";
+const PDF = process.env.F1_VERIFY_PDF;
 
 // Ground truth (surname-only, verified from the PDF).
 const TRUTH: Record<string, string[]> = {
@@ -36,6 +35,17 @@ const TRUTH: Record<string, string[]> = {
 const norm = (s) => (s ?? "").toUpperCase().replace(/[^A-Z]/g, "");
 
 async function main() {
+  if (!PDF) {
+    console.error(
+      "Usage: F1_VERIFY_PDF=/path/to/ballot.pdf npx tsx scripts/_verify-f1.ts",
+    );
+    process.exit(2);
+  }
+  if (!fs.existsSync(PDF)) {
+    console.error(`[verify-f1] PDF not found: ${PDF}`);
+    process.exit(2);
+  }
+
   const envPath = path.join(process.cwd(), ".env.local");
   for (const line of fs.readFileSync(envPath, "utf8").split("\n")) {
     const m = line.match(/^\s*([A-Z0-9_]+)\s*=\s*"?([^"]*)"?\s*$/);

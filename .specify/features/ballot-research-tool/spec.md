@@ -1,1 +1,0 @@
-/workspace/specs/002-ballot-research-tool/spec.md

@@ -24,32 +24,12 @@ npm run build
 npm run e2e
 ```
 
-Kit-aware verification:
+Additional test helpers for red-phase TDD and mutation testing are documented in
+`docs/testing.md`.
 
-```bash
-bash scripts/ai-verify.sh
-```
+## Agent Notes
 
-## AI Coding Practices
-
-This repo uses the AI Coding Practices operating model.
-
-Start here:
-
-```text
-AI_AGENT_START_HERE.md
-AGENTS.md
-CLAUDE.md
-CODEX.md
-TRACKER.md
-docs/ai-coding-practices/
-```
-
-For first-run setup:
-
-```bash
-bash scripts/ai-bootstrap.sh
-```
+Repo-specific coding-agent guidance lives in `AGENTS.md`.
 
 ## Deployment
 

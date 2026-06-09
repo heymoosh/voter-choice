@@ -31,7 +31,7 @@ Verify that EVERY reference in the codebase uses ANTHROPIC_VOTER_API, not ANTHRO
 1. src/app/api/chat/route.ts — process.env.ANTHROPIC_VOTER_API
 2. .github/workflows/deploy.yml — bws secret get ANTHROPIC_VOTER_API, echo to GITHUB_ENV, vercel env add
 3. .env.example — ANTHROPIC_VOTER_API=sk-ant-your-key-here
-4. .claude/CLAUDE.md — references ANTHROPIC_VOTER_API
+4. AGENTS.md — references the repo's secret-handling policy
 
 Search the entire codebase for any remaining "ANTHROPIC_API_KEY" references and replace with "ANTHROPIC_VOTER_API". There should be ZERO occurrences of the old name when done.
 

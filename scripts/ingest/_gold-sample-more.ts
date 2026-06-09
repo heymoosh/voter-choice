@@ -14,7 +14,8 @@ import { neon } from "@neondatabase/serverless";
 const SEED = "gold-2026-06-06";
 const SUMMARY_CAP = 4000;
 const BATCH_SIZE = 50;
-const BASE = resolve("scripts/ingest/_gold-batches");
+const OUT_DIR = "scripts/ingest/_gold-batches";
+const BASE = resolve(OUT_DIR);
 
 function loadUrl(): string {
   const raw = readFileSync(".env.alignment", "utf8");
@@ -73,8 +74,8 @@ async function main() {
       bill_id: b.bill_id, title: b.title, summary: b.summary ? b.summary.slice(0, SUMMARY_CAP) : null,
     }));
     const batchId = `${issue}-${String(nextN++).padStart(3, "0")}`;
-    const path = `${BASE}/${batchId}.json`;
-    writeFileSync(path, JSON.stringify({ issue, batchId, bills: slice }));
+    const path = `${OUT_DIR}/${batchId}.json`;
+    writeFileSync(`${BASE}/${batchId}.json`, JSON.stringify({ issue, batchId, bills: slice }));
     newBatches.push({ path, issue, batchId, count: slice.length });
   }
 

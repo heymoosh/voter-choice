@@ -1,150 +1,150 @@
 [
   {
-    "path": "/Users/Muxin/Documents/GitHub/voter-choice/.claude/worktrees/launch-production-federal/scripts/ingest/_gold-batches/gun_rights_safety-001.json",
+    "path": "scripts/ingest/_gold-batches/gun_rights_safety-001.json",
     "issue": "gun_rights_safety",
     "batchId": "gun_rights_safety-001",
     "count": 50
   },
   {
-    "path": "/Users/Muxin/Documents/GitHub/voter-choice/.claude/worktrees/launch-production-federal/scripts/ingest/_gold-batches/gun_rights_safety-002.json",
+    "path": "scripts/ingest/_gold-batches/gun_rights_safety-002.json",
     "issue": "gun_rights_safety",
     "batchId": "gun_rights_safety-002",
     "count": 2
   },
   {
-    "path": "/Users/Muxin/Documents/GitHub/voter-choice/.claude/worktrees/launch-production-federal/scripts/ingest/_gold-batches/immigration-001.json",
+    "path": "scripts/ingest/_gold-batches/immigration-001.json",
     "issue": "immigration",
     "batchId": "immigration-001",
     "count": 50
   },
   {
-    "path": "/Users/Muxin/Documents/GitHub/voter-choice/.claude/worktrees/launch-production-federal/scripts/ingest/_gold-batches/immigration-002.json",
+    "path": "scripts/ingest/_gold-batches/immigration-002.json",
     "issue": "immigration",
     "batchId": "immigration-002",
     "count": 2
   },
   {
-    "path": "/Users/Muxin/Documents/GitHub/voter-choice/.claude/worktrees/launch-production-federal/scripts/ingest/_gold-batches/border_security-001.json",
+    "path": "scripts/ingest/_gold-batches/border_security-001.json",
     "issue": "border_security",
     "batchId": "border_security-001",
     "count": 32
   },
   {
-    "path": "/Users/Muxin/Documents/GitHub/voter-choice/.claude/worktrees/launch-production-federal/scripts/ingest/_gold-batches/reproductive_rights-001.json",
+    "path": "scripts/ingest/_gold-batches/reproductive_rights-001.json",
     "issue": "reproductive_rights",
     "batchId": "reproductive_rights-001",
     "count": 50
   },
   {
-    "path": "/Users/Muxin/Documents/GitHub/voter-choice/.claude/worktrees/launch-production-federal/scripts/ingest/_gold-batches/reproductive_rights-002.json",
+    "path": "scripts/ingest/_gold-batches/reproductive_rights-002.json",
     "issue": "reproductive_rights",
     "batchId": "reproductive_rights-002",
     "count": 2
   },
   {
-    "path": "/Users/Muxin/Documents/GitHub/voter-choice/.claude/worktrees/launch-production-federal/scripts/ingest/_gold-batches/public_safety-001.json",
+    "path": "scripts/ingest/_gold-batches/public_safety-001.json",
     "issue": "public_safety",
     "batchId": "public_safety-001",
     "count": 50
   },
   {
-    "path": "/Users/Muxin/Documents/GitHub/voter-choice/.claude/worktrees/launch-production-federal/scripts/ingest/_gold-batches/public_safety-002.json",
+    "path": "scripts/ingest/_gold-batches/public_safety-002.json",
     "issue": "public_safety",
     "batchId": "public_safety-002",
     "count": 2
   },
   {
-    "path": "/Users/Muxin/Documents/GitHub/voter-choice/.claude/worktrees/launch-production-federal/scripts/ingest/_gold-batches/crime_public_safety-001.json",
+    "path": "scripts/ingest/_gold-batches/crime_public_safety-001.json",
     "issue": "crime_public_safety",
     "batchId": "crime_public_safety-001",
     "count": 50
   },
   {
-    "path": "/Users/Muxin/Documents/GitHub/voter-choice/.claude/worktrees/launch-production-federal/scripts/ingest/_gold-batches/crime_public_safety-002.json",
+    "path": "scripts/ingest/_gold-batches/crime_public_safety-002.json",
     "issue": "crime_public_safety",
     "batchId": "crime_public_safety-002",
     "count": 2
   },
   {
-    "path": "/Users/Muxin/Documents/GitHub/voter-choice/.claude/worktrees/launch-production-federal/scripts/ingest/_gold-batches/environment_climate-001.json",
+    "path": "scripts/ingest/_gold-batches/environment_climate-001.json",
     "issue": "environment_climate",
     "batchId": "environment_climate-001",
     "count": 50
   },
   {
-    "path": "/Users/Muxin/Documents/GitHub/voter-choice/.claude/worktrees/launch-production-federal/scripts/ingest/_gold-batches/environment_climate-002.json",
+    "path": "scripts/ingest/_gold-batches/environment_climate-002.json",
     "issue": "environment_climate",
     "batchId": "environment_climate-002",
     "count": 2
   },
   {
-    "path": "/Users/Muxin/Documents/GitHub/voter-choice/.claude/worktrees/launch-production-federal/scripts/ingest/_gold-batches/election_integrity-001.json",
+    "path": "scripts/ingest/_gold-batches/election_integrity-001.json",
     "issue": "election_integrity",
     "batchId": "election_integrity-001",
     "count": 50
   },
   {
-    "path": "/Users/Muxin/Documents/GitHub/voter-choice/.claude/worktrees/launch-production-federal/scripts/ingest/_gold-batches/election_integrity-002.json",
+    "path": "scripts/ingest/_gold-batches/election_integrity-002.json",
     "issue": "election_integrity",
     "batchId": "election_integrity-002",
     "count": 2
   },
   {
-    "path": "/Users/Muxin/Documents/GitHub/voter-choice/.claude/worktrees/launch-production-federal/scripts/ingest/_gold-batches/economy_jobs-001.json",
+    "path": "scripts/ingest/_gold-batches/economy_jobs-001.json",
     "issue": "economy_jobs",
     "batchId": "economy_jobs-001",
     "count": 50
   },
   {
-    "path": "/Users/Muxin/Documents/GitHub/voter-choice/.claude/worktrees/launch-production-federal/scripts/ingest/_gold-batches/economy_jobs-002.json",
+    "path": "scripts/ingest/_gold-batches/economy_jobs-002.json",
     "issue": "economy_jobs",
     "batchId": "economy_jobs-002",
     "count": 2
   },
   {
-    "path": "/Users/Muxin/Documents/GitHub/voter-choice/.claude/worktrees/launch-production-federal/scripts/ingest/_gold-batches/education_funding-001.json",
+    "path": "scripts/ingest/_gold-batches/education_funding-001.json",
     "issue": "education_funding",
     "batchId": "education_funding-001",
     "count": 50
   },
   {
-    "path": "/Users/Muxin/Documents/GitHub/voter-choice/.claude/worktrees/launch-production-federal/scripts/ingest/_gold-batches/education_funding-002.json",
+    "path": "scripts/ingest/_gold-batches/education_funding-002.json",
     "issue": "education_funding",
     "batchId": "education_funding-002",
     "count": 2
   },
   {
-    "path": "/Users/Muxin/Documents/GitHub/voter-choice/.claude/worktrees/launch-production-federal/scripts/ingest/_gold-batches/property_taxes-001.json",
+    "path": "scripts/ingest/_gold-batches/property_taxes-001.json",
     "issue": "property_taxes",
     "batchId": "property_taxes-001",
     "count": 50
   },
   {
-    "path": "/Users/Muxin/Documents/GitHub/voter-choice/.claude/worktrees/launch-production-federal/scripts/ingest/_gold-batches/property_taxes-002.json",
+    "path": "scripts/ingest/_gold-batches/property_taxes-002.json",
     "issue": "property_taxes",
     "batchId": "property_taxes-002",
     "count": 2
   },
   {
-    "path": "/Users/Muxin/Documents/GitHub/voter-choice/.claude/worktrees/launch-production-federal/scripts/ingest/_gold-batches/energy_grid-001.json",
+    "path": "scripts/ingest/_gold-batches/energy_grid-001.json",
     "issue": "energy_grid",
     "batchId": "energy_grid-001",
     "count": 50
   },
   {
-    "path": "/Users/Muxin/Documents/GitHub/voter-choice/.claude/worktrees/launch-production-federal/scripts/ingest/_gold-batches/energy_grid-002.json",
+    "path": "scripts/ingest/_gold-batches/energy_grid-002.json",
     "issue": "energy_grid",
     "batchId": "energy_grid-002",
     "count": 2
   },
   {
-    "path": "/Users/Muxin/Documents/GitHub/voter-choice/.claude/worktrees/launch-production-federal/scripts/ingest/_gold-batches/public_safety-003.json",
+    "path": "scripts/ingest/_gold-batches/public_safety-003.json",
     "issue": "public_safety",
     "batchId": "public_safety-003",
     "count": 50
   },
   {
-    "path": "/Users/Muxin/Documents/GitHub/voter-choice/.claude/worktrees/launch-production-federal/scripts/ingest/_gold-batches/public_safety-004.json",
+    "path": "scripts/ingest/_gold-batches/public_safety-004.json",
     "issue": "public_safety",
     "batchId": "public_safety-004",
     "count": 50

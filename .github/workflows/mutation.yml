@@ -9,10 +9,8 @@ name: Mutation
 # Cron (nightly) and workflow_dispatch always run full Stryker — both are
 # explicit signals to do the heavy work.
 #
-# Scoped paths mirror stryker.config.json's `mutate` array. Update both
-# files together as redesign Phases 1/5/9 land their new prompt/state-rules/
-# BYOK files. See .ai/work-packets/tdd-phase-2-mutation-testing.md and
-# .ai/work-packets/tdd-phase-2b-mutation-gate-deadlock-fix.md.
+# Scoped paths mirror stryker.config.json's `mutate` array. Update both files
+# together as new high-stakes prompt/state-rules/BYOK paths land.
 
 on:
   pull_request:

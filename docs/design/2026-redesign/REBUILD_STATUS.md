@@ -16,8 +16,8 @@ ACTUAL code as the app** and wire its marked data seams to the real backend.
 Everything below is the durable plan. This block is the stuff that's NOT in the
 commits — machine state + gotchas a fresh session needs.
 
-**Where to work:** worktree `…/.claude/worktrees/design-integration`, branch
-`feat/prototype-rebuild`. `tsc` clean. **NOT deployed to launch/production**; a
+**Where to work:** historical branch `feat/prototype-rebuild`. If resurrecting
+this work, use a fresh current worktree or branch. `tsc` clean. **NOT deployed to launch/production**; a
 Vercel PREVIEW exists for testing (below). **Branch is now PUSHED to `origin`
 (2026-06-06) so mobile/other sessions can pull it** — `git fetch && git checkout
 feat/prototype-rebuild` (or `git pull` if already on it). **Pull before pushing**
@@ -119,7 +119,7 @@ directly; **today's verification was a local `next build` + `next start -p 3100`
   (eligibility info, not polling logistics — left as-is).
 - Cleanup: merged temp worktrees (`ws1-/ws2-/ws3-/phase-b-/round3-/round4-…`) can be
   `git worktree remove`'d (keep the branches).
-- Full Round-1→4 detail: `~/.claude/plans/hi-are-you-on-glimmering-whisper.md`; backlog:
+- Full Round-1→4 detail was captured in the user-local Claude plan history; backlog:
   `docs/operations/post-launch-backlog.md`.
 
 ### ▶▶ Session 2026-06-05 (PM) — accuracy program Rounds 1–4 COMPLETE

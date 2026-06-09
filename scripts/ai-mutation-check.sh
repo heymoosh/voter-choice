@@ -26,7 +26,7 @@
 #                   production one. Production callers should leave it
 #                   unset; the wrapper falls back to stryker.config.json.
 #
-# Spec: .ai/work-packets/tdd-phase-2-mutation-testing.md — Stryker setup.
+# See docs/testing.md.
 
 set -u
 

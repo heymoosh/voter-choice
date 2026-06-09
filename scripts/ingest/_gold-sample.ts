@@ -115,8 +115,8 @@ async function main() {
       }));
       n++;
       const batchId = `${issue}-${String(n).padStart(3, "0")}`;
-      const path = `${absDir}/${batchId}.json`;
-      writeFileSync(path, JSON.stringify({ issue, batchId, bills: slice }));
+      const path = `${OUT_DIR}/${batchId}.json`;
+      writeFileSync(`${absDir}/${batchId}.json`, JSON.stringify({ issue, batchId, bills: slice }));
       manifest.push({ path, issue, batchId, count: slice.length });
     }
     grand += picked.length;
