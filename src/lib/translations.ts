@@ -1005,7 +1005,7 @@ const en: Translations = {
     coldOpenAutoSavingHint:
       "Auto-saving to your device \u00b7 nothing leaves your browser yet",
     coldOpenAiOpenerLead:
-      "I've pulled your sample ballot. Before I walk you through races, I want to know what you're judging candidates on \u2014 in your words, not from a pre-built list.",
+      "I've pulled your representatives names. Before I walk you through their performance, I want to know what you're judging them on",
     coldOpenAiOpenerPrompt:
       "What's been on your mind this year? Things you wish Congress would actually do something about. Frustrations, hopes, fights you've watched in your community. Type as much or as little as you want.",
     coldOpenContextRaceCount: (n: number) =>
@@ -1710,7 +1710,7 @@ const es: Translations = {
     coldOpenAutoSavingHint:
       "Auto-saving to your device \u00b7 nothing leaves your browser yet",
     coldOpenAiOpenerLead:
-      "I've pulled your sample ballot. Before I walk you through races, I want to know what you're judging candidates on \u2014 in your words, not from a pre-built list.",
+      "I've pulled your representatives names. Before I walk you through their performance, I want to know what you're judging them on",
     coldOpenAiOpenerPrompt:
       "What's been on your mind this year? Things you wish Congress would actually do something about. Frustrations, hopes, fights you've watched in your community. Type as much or as little as you want.",
     coldOpenContextRaceCount: (n: number) =>
