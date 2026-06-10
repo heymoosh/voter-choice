@@ -331,7 +331,7 @@ export async function goToWorkspace(page: Page): Promise<void> {
   await page
     .getByPlaceholder("1600 Pennsylvania Ave NW, Washington DC 20500")
     .fill("1100 Congress Ave, Austin, TX 78701");
-  await page.getByRole("button", { name: "Pull my ballot →" }).click();
+  await page.getByRole("button", { name: "Pull my representatives →" }).click();
   // Cold-open: free-text issues → preset interpretation list → lock.
   await page.locator(".coldopen textarea").waitFor({ timeout: 15000 });
   await page

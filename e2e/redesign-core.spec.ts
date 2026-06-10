@@ -182,13 +182,13 @@ test.describe("honest failure states", () => {
     await page
       .getByPlaceholder("1600 Pennsylvania Ave NW, Washington DC 20500")
       .fill("asdf qwerty");
-    await page.getByRole("button", { name: "Pull my ballot →" }).click();
+    await page.getByRole("button", { name: "Pull my representatives →" }).click();
     await expect(page.locator(".err-banner")).toContainText(
       "couldn't place that address",
     );
     await page.getByRole("button", { name: "Edit address" }).click();
     await expect(
-      page.getByRole("button", { name: "Pull my ballot →" }),
+      page.getByRole("button", { name: "Pull my representatives →" }),
     ).toBeVisible();
   });
 
@@ -200,7 +200,7 @@ test.describe("honest failure states", () => {
     await page
       .getByPlaceholder("1600 Pennsylvania Ave NW, Washington DC 20500")
       .fill("1600 Pennsylvania Ave NW");
-    await page.getByRole("button", { name: "Pull my ballot →" }).click();
+    await page.getByRole("button", { name: "Pull my representatives →" }).click();
     await expect(page.locator(".err-banner")).toContainText(
       "no voting member of Congress",
     );
