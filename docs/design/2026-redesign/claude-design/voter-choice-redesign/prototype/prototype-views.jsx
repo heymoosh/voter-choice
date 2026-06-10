@@ -134,7 +134,7 @@ function LoadingView({ address, onDone }) {
       <div className="loading-screen">
         <div className="loading-card">
           <div className="pulse"></div>
-          <h2>Pulling your ballot.</h2>
+          <h2>Pulling your representatives.</h2>
           <div className="addr">{address}</div>
           <ul>
             {steps.map((s, i) => (

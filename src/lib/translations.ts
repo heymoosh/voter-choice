@@ -1259,7 +1259,7 @@ const en: Translations = {
     aboutLink: "About Voter Choice \u2192",
   },
   loadingSteps: {
-    pullBallotHeading: "Pulling your ballot.",
+    pullBallotHeading: "Pulling your representatives.",
     stepGeocode: "Geocoding address",
     stepPrecinct: "Looking up your precinct",
     stepRaces: "Pulling federal & state races",
@@ -1967,7 +1967,7 @@ const es: Translations = {
     aboutLink: "Acerca de Voter Choice \u2192",
   },
   loadingSteps: {
-    pullBallotHeading: "Buscando tu boleta.",
+    pullBallotHeading: "Buscando tus representantes.",
     stepGeocode: "Geocodificando direcci\u00f3n",
     stepPrecinct: "Buscando tu precinto",
     stepRaces: "Cargando contiendas federales y estatales",
