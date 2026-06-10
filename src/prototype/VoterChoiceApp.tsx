@@ -1307,6 +1307,39 @@ function FunderBars({ donorCoalition, totalRaised, donorDataSource, donorSource,
   // Separate issue-PACs (named) from generic industry slices.
   const issuePACs = donorCoalition.filter(s => s.isIssuePAC);
   const industries = donorCoalition.filter(s => !s.isIssuePAC);
+  const onlyTotalReceipts =
+    !fundingMix &&
+    issuePACs.length === 0 &&
+    industries.length === 1 &&
+    industries[0]?.label === 'total_receipts';
+
+  if (onlyTotalReceipts) {
+    const total = typeof totalRaised === 'number'
+      ? totalRaised
+      : industries[0]?.amount;
+    return (
+      <div className="cv2-funding" data-testid="funding-sparse">
+        <div className="cv2-block-head">
+          <div className="lab">Funding mix <small className="cv2-sub-lab">details pending</small></div>
+          <div className="overall">
+            {typeof total === 'number' && <b>{formatDollars(total)}</b>}
+          </div>
+        </div>
+        <p style={{ fontSize: 14, color: 'var(--ink-3)', margin: 0 }}>
+          Detailed donor breakdown is not available yet for this candidate. We have total receipts from filings, but not small donor, large donor, PAC, or sector buckets.
+        </p>
+        {donorSource && (
+          <div style={{
+            fontFamily: 'var(--mono)', fontSize: 10.5, color: 'var(--ink-3)',
+            letterSpacing: '0.04em', marginTop: 12, textAlign: 'left',
+          }}>
+            Source: {donorSource.name}
+            {donorDataSource === 'web_search' && ' · web search'}
+          </div>
+        )}
+      </div>
+    );
+  }
 
   // ── PAC partial-coverage math ─────────────────────────────
   // Three cases:
