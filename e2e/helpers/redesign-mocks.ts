@@ -339,5 +339,8 @@ export async function goToWorkspace(page: Page): Promise<void> {
     .fill("Insulin prices are insane and rent went up again.");
   await page.locator("button.send").click();
   await page.locator("button.lock").click({ timeout: 15000 });
-  await page.locator(".rep-card").first().waitFor({ timeout: 20000 });
+  // Workspace is ready once the scorecard rows appear. On mobile the center
+  // pane (rep-card) starts hidden until a row is tapped; the scorecard rows
+  // are always visible and are the safe signal for both viewports.
+  await page.locator(".b-row").first().waitFor({ timeout: 20000 });
 }

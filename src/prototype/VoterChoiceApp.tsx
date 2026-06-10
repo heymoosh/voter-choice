@@ -4011,6 +4011,7 @@ function HomeView({ savedAddress, savedSession, onSubmit, onResumeFromProfile, o
   // last time (or it's stale enough that they'd rather retype). The
   // placeholder shows a realistic example.
   const [addr, setAddr] = useStateV('');
+  const [addrWhyOpen, setAddrWhyOpen] = useStateV(false);
   const { t } = useI18n();
   // Phase 2b: restore Google Places autocomplete (the prototype's plain input
   // had none). With the key present the hook mounts a PlaceAutocompleteElement
@@ -4046,7 +4047,27 @@ function HomeView({ savedAddress, savedSession, onSubmit, onResumeFromProfile, o
           <p className="lede">All 435 House seats and 34 Senate seats are on the ballot. Before you vote, see how your incumbents actually voted — and who paid for the campaign.</p>
 
           <div className="addr-card">
-            <label><span>Your registered address</span> <span className="privacy">Stays on this device</span></label>
+            <label>
+              <span className="addr-label-left">
+                <span>Your registered address</span>
+                <button
+                  className="addr-why-btn"
+                  onClick={() => setAddrWhyOpen(true)}
+                  aria-label="Why do we need your address?"
+                  type="button"
+                >?</button>
+              </span>
+              <span className="privacy">Stays on this device</span>
+            </label>
+            {addrWhyOpen && (
+              <div className="be-modal-overlay" onClick={() => setAddrWhyOpen(false)}>
+                <div className="addr-why-modal" onClick={(e) => e.stopPropagation()}>
+                  <button className="addr-why-close" onClick={() => setAddrWhyOpen(false)} aria-label="Close">×</button>
+                  <h4>Why do we need your address?</h4>
+                  <p>We use your address to pull local voting information so you know exactly when and where to go vote and what IDs are needed. So you have all the information you need to support or vote against your representative and make a change.</p>
+                </div>
+              </div>
+            )}
             <div className="row">
               {hasPlacesKey && (
                 <div
@@ -4164,7 +4185,7 @@ function LoadingView({ address, onDone, variant = 'ballot' }) {
       <div className="loading-screen">
         <div className="loading-card">
           <div className="pulse"></div>
-          <h2>{analyzing ? 'Analyzing the candidates.' : 'Pulling your ballot.'}</h2>
+          <h2>{analyzing ? 'Analyzing the candidates.' : 'Pulling your representatives.'}</h2>
           <div className="addr">
             {analyzing ? 'Matching their records to your priorities' : address}
           </div>
@@ -4263,7 +4284,7 @@ function ColdOpenView({ address, onLock, savedIssues, contextNote }) {
         <div className="msg ai">
           <div className="who">Voter Choice · AI</div>
           <div className="bubble">
-            <p>I've pulled your sample ballot. Before I walk you through races, I want to know what <i>you're</i> judging candidates on — in your words, not from a pre-built list.</p>
+            <p>I've pulled your representatives names. Before I walk you through their performance, I want to know what you're judging them on</p>
             <p style={{ marginTop: '10px' }}><b>What's been on your mind this year?</b> Things you wish Congress would actually do something about. Frustrations, hopes, fights you've watched in your community. Type as much or as little as you want.</p>
           </div>
         </div>

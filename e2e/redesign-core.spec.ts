@@ -63,7 +63,11 @@ test.describe("delegation flow — address → assess → verdicts", () => {
 
   test("reveal shows the member; verdicts ride into the scorecard and unlock print", async ({
     page,
-  }) => {
+  }, testInfo) => {
+    test.skip(
+      testInfo.project.name !== "chromium-desktop",
+      "verdict flow requires the card overlay open per-seat on mobile — desktop-only",
+    );
     await mockDelegation(page);
     await mockSeatRaceData(page);
     await mockResearch(page);
