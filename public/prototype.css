@@ -192,6 +192,80 @@ input, textarea { font: inherit; color: inherit; }
   color: var(--ink-3);
 }
 .addr-card .resume a { font-weight: 500; text-decoration: underline; text-underline-offset: 2px; }
+.addr-label-left { display: inline-flex; align-items: center; gap: 6px; }
+.addr-why-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1px solid var(--ink-3);
+  background: transparent;
+  color: var(--ink-3);
+  font-family: var(--sans);
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  text-transform: none;
+  letter-spacing: 0;
+  opacity: 0.7;
+  transition: opacity 0.15s, border-color 0.15s, color 0.15s;
+  flex-shrink: 0;
+}
+.addr-why-btn:hover, .addr-why-btn:focus-visible {
+  opacity: 1;
+  border-color: var(--civic);
+  color: var(--civic);
+  outline: none;
+}
+.addr-why-modal {
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 14px;
+  box-shadow: var(--shadow-card);
+  max-width: 380px;
+  width: calc(100% - 40px);
+  padding: 28px 28px 24px;
+  position: relative;
+  animation: be-fadein 0.15s ease;
+}
+.addr-why-modal h4 {
+  font-family: var(--serif);
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  margin: 0 0 12px;
+  padding-right: 24px;
+}
+.addr-why-modal p {
+  font-size: 14.5px;
+  line-height: 1.6;
+  color: var(--ink-2);
+  margin: 0;
+}
+.addr-why-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: transparent;
+  border: 0;
+  font-size: 20px;
+  line-height: 1;
+  color: var(--ink-3);
+  cursor: pointer;
+  padding: 4px;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  transition: background 0.12s, color 0.12s;
+}
+.addr-why-close:hover { background: var(--rule-2); color: var(--ink); }
 
 .stat-stack {
   display: flex;
