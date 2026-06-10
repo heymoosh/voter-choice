@@ -4185,7 +4185,7 @@ function LoadingView({ address, onDone, variant = 'ballot' }) {
       <div className="loading-screen">
         <div className="loading-card">
           <div className="pulse"></div>
-          <h2>{analyzing ? 'Analyzing the candidates.' : 'Pulling your ballot.'}</h2>
+          <h2>{analyzing ? 'Analyzing the candidates.' : 'Pulling your representatives.'}</h2>
           <div className="addr">
             {analyzing ? 'Matching their records to your priorities' : address}
           </div>
