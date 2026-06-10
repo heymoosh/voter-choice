@@ -12,6 +12,11 @@
  */
 
 import { getStateData, getFallbackStateData } from "../../lib/getStateData";
+import {
+  toBallotLogistics,
+  type BallotLogistics,
+  type LogisticsSource,
+} from "../../lib/civic-logistics";
 import type { StateElectionData } from "../../types/election";
 import {
   resolveSeatEligibility,
@@ -396,20 +401,75 @@ export function deadlineRowsFor(
   ].filter((r): r is DeadlineRow => r !== null);
 }
 
-/** Honest polling fallback — the delegation flow makes no civic call. */
-export function pollingFallback(): {
+export interface PollingInfoVM {
   name: string;
   address: string;
   hours: string;
   notes: string;
   precinct: string;
-} {
+  /** Provenance: "civic" (real Google Civic data) | "state" | "fallback". */
+  source: LogisticsSource;
+}
+
+/** Honest polling fallback — shown until/unless civic resolves real data. */
+export function pollingFallback(): PollingInfoVM {
   return {
     name: "Look up your polling place",
     address: "",
     hours: "",
     notes: "",
     precinct: "",
+    source: "fallback",
+  };
+}
+
+/**
+ * Address → real voting logistics via /api/civic (Google Civic voterinfo),
+ * mapped through the honest toBallotLogistics contract. Best-effort: any
+ * failure returns null and the caller keeps the fallback. The address is
+ * sent to the same /api/civic proxy the ballot flow already uses and is
+ * never persisted.
+ */
+export async function fetchBallotLogistics(
+  address: string,
+  stateData: StateElectionData | null,
+): Promise<BallotLogistics | null> {
+  try {
+    const res = await fetch("/api/civic", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ address }),
+    });
+    if (!res.ok) return null;
+    const body = await res.json();
+    if (!body || body.error) return null;
+    return toBallotLogistics(body, stateData ?? undefined);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * BallotLogistics → the pollingInfo shape the workspace bar + print sheet
+ * render. Civic polling place wins; statutory per-state hours fill the
+ * hours slot when civic carries none; otherwise the honest fallback.
+ */
+export function pollingInfoFromLogistics(
+  logistics: BallotLogistics | null,
+  stateData: StateElectionData | null,
+): PollingInfoVM {
+  const statutoryHours = stateData?.votingRules?.pollingHours ?? "";
+  if (!logistics || !logistics.pollingPlace) {
+    return { ...pollingFallback(), hours: statutoryHours };
+  }
+  const place = logistics.pollingPlace;
+  return {
+    name: place.name || "Your polling place",
+    address: place.address || "",
+    hours: place.hours || statutoryHours,
+    notes: place.notes || "",
+    precinct: "",
+    source: logistics.source,
   };
 }
 

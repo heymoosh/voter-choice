@@ -32,7 +32,7 @@ import {
   PROP_SECTIONS,
   applyRealStateResources,
 } from "./realData";
-import { getFallbackStateData, findUpcomingElection } from "../lib/getStateData";
+import { getFallbackStateData, getStateData, findUpcomingElection } from "../lib/getStateData";
 import { getStateRule } from "../lib/state-rules/lookup";
 import {
   useGooglePlacesAutocomplete,
@@ -2384,7 +2384,9 @@ function PollingStatusBar({ pollingInfo, stateData, rows }) {
                   <span>{stateData.votingRules.idNote || 'ID required.'} Confirm the accepted-ID list at your state election office.</span>
                 )}
               </div>
-              <div className="pbp-sub">Phones prohibited within 100 ft</div>
+              {stateData.votingRules?.phonesAtPollsDetail && (
+                <div className="pbp-sub">{stateData.votingRules.phonesAtPollsDetail}</div>
+              )}
             </div>
             <div className="pbp-cell pbp-deadlines">
               <div className="pbp-k">Deadlines</div>
@@ -4555,7 +4557,18 @@ function WorkspaceView({ address, issues, decisions, activeRaceId, onDecide, onU
   // The congressional district is derived from the ballot extraction's House
   // race label when civic didn't carry a House contest (the NJ case).
   const logistics = getBallotLogistics();
-  const sdBase = getFallbackStateData(getRealStateCode() || '');
+  // Real per-state election data (verified deadlines, early voting, voter
+  // ID, statutory polling hours). Async — the fallback shape renders until
+  // it resolves; resources overlay applies to both.
+  const [realStateData, setRealStateData] = useStateV(null);
+  useEffectV(() => {
+    let active = true;
+    const sc = getRealStateCode();
+    if (!sc) { setRealStateData(null); return undefined; }
+    getStateData(sc).then((d) => { if (active && d) setRealStateData(d); });
+    return () => { active = false; };
+  }, [getRealStateCode()]);
+  const sdBase = realStateData || getFallbackStateData(getRealStateCode() || '');
   // Prefer the real per-state resources (voter.svrs.nj.gov, county lookup) loaded
   // by applyRealStateResources over getFallbackStateData's vote.gov placeholders.
   const realResWs = getRealStateResources();
