@@ -2,12 +2,12 @@
   "_sources": {
     "primary": "https://sos.wyo.gov/elections/",
     "secondary": "https://www.ncsl.org/elections-and-campaigns/voter-id",
-    "checked": "2026-05-10",
-    "discrepancies": "NCSL classifies Wyoming as photo ID required. Wyoming passed HB 238 in 2022 strengthening ID requirements. Wyoming's primary is typically in August (third Tuesday in August); estimated 2026-08-18. Wyoming offers same-day voter registration at the polls. 2026 registration deadlines estimated from Wyoming statute (14 days before election for standard registration; Election Day for same-day registration). TODO verify exact 2026 cycle dates with Wyoming SoS."
+    "checked": "2026-06-10",
+    "discrepancies": "NCSL classifies Wyoming as photo ID required. Wyoming passed HB 238 in 2022 strengthening ID requirements. Wyoming offers same-day voter registration at the polls. 2026-06-10 verification: August 18, 2026 primary CONFIRMED (third Tuesday in August; FVAP 2026 primary calendar current as of May 2026). Wyoming enacted sweeping election-law changes effective for 2026: the absentee window (request and in-person absentee at the county clerk) was cut from 45 to 28 days before the election and in-person absentee is NOT available on Election Day — early-voting windows corrected accordingly (primary July 21-Aug 17; general Oct 6-Nov 2). Party-affiliation rule verified: existing voters had to declare/change party by May 13, 2026 for the primary (2023 crossover-voting law); the file's old claim that voters could change party at the polls on primary day was removed as outdated. New registrants may still declare a party when registering, including at the polls."
   },
   "stateCode": "WY",
   "stateName": "Wyoming",
-  "lastUpdated": "2026-05-10",
+  "lastUpdated": "2026-06-10",
   "coverageStatus": "confirmed",
   "elections": [
     {
@@ -36,10 +36,12 @@
       },
       "earlyVoting": {
         "available": true,
-        "startDate": "2026-07-20",
-        "endDate": "2026-08-14",
-        "notes": "Wyoming offers absentee in-person voting at county clerk offices approximately 30 days before Election Day. Absentee ballots may be requested by any registered voter. TODO verify exact 2026 dates."
-      }
+        "startDate": "2026-07-21",
+        "endDate": "2026-08-17",
+        "notes": "Absentee in-person voting at county clerk offices begins 28 days before Election Day (July 21, 2026) and is not available on Election Day. The absentee window was shortened from 45 to 28 days by 2025 legislation — confirm hours with your county clerk: https://sos.wyo.gov/elections/countycontacts.aspx"
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://sos.wyo.gov/elections/state/absenteevoting.aspx"
     },
     {
       "id": "wy-2026-general",
@@ -67,10 +69,12 @@
       },
       "earlyVoting": {
         "available": true,
-        "startDate": "2026-10-05",
+        "startDate": "2026-10-06",
         "endDate": "2026-11-02",
-        "notes": "Absentee in-person voting available at county clerk offices. Any registered voter may request an absentee ballot without providing a reason. Same-day voter registration available at the polls with valid photo ID and proof of Wyoming residency."
-      }
+        "notes": "Absentee in-person voting at county clerk offices begins 28 days before Election Day (October 6, 2026) and is not available on Election Day. Any registered voter may request an absentee ballot without providing a reason. Same-day voter registration available at the polls with valid photo ID and proof of Wyoming residency."
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://sos.wyo.gov/elections/state/absenteevoting.aspx"
     }
   ],
   "registration": {
@@ -92,9 +96,9 @@
   },
   "earlyVoting": {
     "available": true,
-    "startDate": "2026-10-05",
+    "startDate": "2026-10-06",
     "endDate": "2026-11-02",
-    "notes": "Wyoming offers absentee voting for any registered voter without requiring a reason. Absentee in-person voting is available at county clerk offices. No online voter registration — register by mail or in person at the county clerk's office."
+    "notes": "Wyoming offers absentee voting for any registered voter without requiring a reason. Absentee in-person voting is available at county clerk offices starting 28 days before Election Day (not on Election Day itself). No online voter registration — register by mail or in person at the county clerk's office."
   },
   "votingRules": {
     "idRequired": true,
@@ -109,7 +113,7 @@
     "phonesAtPolls": "varies",
     "phonesAtPollsDetail": "Wyoming law prohibits photographing marked ballots. Cell phones may generally be brought into polling places but must not be used to photograph the ballot or other voters. Contact your county clerk for local polling place rules.",
     "additionalRules": [
-      "Wyoming has a closed primary — only voters registered with a party may vote in that party's primary. Voters may change party registration at the polls on primary day.",
+      "Wyoming has a closed primary — only voters registered with a party may vote in that party's primary. Existing voters had to declare or change party affiliation by May 13, 2026 to vote in the August 18 primary; new registrants may declare a party when registering, including at the polls.",
       "Same-day voter registration is available at the polls with valid photo ID and proof of Wyoming residency.",
       "Wyoming does not offer online voter registration — register by mail or at your county clerk's office.",
       "Any registered voter may request an absentee ballot without providing a reason (no-excuse absentee).",

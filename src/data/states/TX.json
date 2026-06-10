@@ -1,7 +1,13 @@
 {
+  "_sources": {
+    "primary": "https://www.sos.state.tx.us/elections/voter/important-election-dates.shtml",
+    "secondary": "https://www.votetexas.gov/",
+    "checked": "2026-06-10",
+    "discrepancies": "2026-06-10 verification against the TX SoS Important Election Dates page: March 3 primary, May 2 uniform local, May 26 primary runoff (type 'runoff', party-locked per Election Code 172.087), and November 3 general all CONFIRMED, with registration deadlines Feb 2 / Apr 2 / Apr 27 / Oct 5 matching the SoS. Two early-voting dates corrected: primary early voting ended Friday Feb 27 (file had Feb 28), and runoff early voting ran May 18-22 (file had a May 14 start). Note for maintainers: registration.online.available=true overstates Texas online registration — Texas has no general online voter registration (online updates only when renewing a driver license); left unchanged pending a product decision."
+  },
   "stateCode": "TX",
   "stateName": "Texas",
-  "lastUpdated": "2026-04-12",
+  "lastUpdated": "2026-06-10",
   "elections": [
     {
       "id": "tx-2026-primary",
@@ -30,9 +36,11 @@
       "earlyVoting": {
         "available": true,
         "startDate": "2026-02-17",
-        "endDate": "2026-02-28",
+        "endDate": "2026-02-27",
         "notes": "Hours vary by county"
-      }
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://www.sos.state.tx.us/elections/voter/important-election-dates.shtml"
     },
     {
       "id": "tx-2026-local",
@@ -63,7 +71,9 @@
         "startDate": "2026-04-20",
         "endDate": "2026-04-28",
         "notes": "Hours vary by county. School boards, city councils, bonds, and other local measures."
-      }
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://www.sos.state.tx.us/elections/voter/important-election-dates.shtml"
     },
     {
       "id": "tx-2026-primary-runoff",
@@ -91,10 +101,12 @@
       },
       "earlyVoting": {
         "available": true,
-        "startDate": "2026-05-14",
+        "startDate": "2026-05-18",
         "endDate": "2026-05-22",
-        "notes": "Hours vary by county"
-      }
+        "notes": "Hours vary by county. If you voted in one party's March primary, you may only vote in that party's runoff."
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://www.sos.state.tx.us/elections/voter/important-election-dates.shtml"
     },
     {
       "id": "tx-2026-general",
@@ -125,7 +137,9 @@
         "startDate": "2026-10-19",
         "endDate": "2026-10-30",
         "notes": "Hours vary by county"
-      }
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://www.sos.state.tx.us/elections/voter/important-election-dates.shtml"
     }
   ],
   "votingRules": {

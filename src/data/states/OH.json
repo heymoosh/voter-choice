@@ -2,12 +2,12 @@
   "_sources": {
     "primary": "https://www.ohiosos.gov/elections/voters/",
     "secondary": "https://www.ncsl.org/elections-and-campaigns/voter-id",
-    "checked": "2026-05-10",
-    "discrepancies": "Ohio enacted HB 458 (2023) which changed the ID requirement from 'non-photo' to 'photo ID' effective 2024. NCSL categorizes Ohio as 'strict non-photo ID' in some versions — as of 2026 the correct characterization is photo ID required per the 2023 law change. Voters without acceptable photo ID may use the last four digits of their SSN plus address verification as an alternative (unique Ohio provision). TODO verify for 2026 cycle whether the HB 458 photo ID rules remain unchanged. Ohio primary is the first Tuesday after the first Monday in May. Ohio does offer early in-person voting starting 28 days before the election."
+    "checked": "2026-06-10",
+    "discrepancies": "Ohio enacted HB 458 (2023) which changed the ID requirement from 'non-photo' to 'photo ID' effective 2024. NCSL categorizes Ohio as 'strict non-photo ID' in some versions — as of 2026 the correct characterization is photo ID required per the 2023 law change. Ohio primary is the first Tuesday after the first Monday in May. Ohio does offer early in-person voting starting 28 days before the election. 2026-06-10 verification: HB 458 photo-ID rules CONFIRMED still in effect for 2026 (ohiosos.gov voter ID requirements; an effort to add a photo-ID constitutional amendment was advancing in the legislature in June 2026 but does not change current rules). Early-voting END dates corrected: under HB 458 there is no early voting the Monday before Election Day — in-person early voting ends the Sunday before (general: Oct 6-Nov 1 per SoS 2026 voting schedule; primary ended Sunday May 3). The earlier in-person no-ID description (SSN last four = regular ballot) was the pre-HB 458 rule; corrected to provisional-ballot procedure."
   },
   "stateCode": "OH",
   "stateName": "Ohio",
-  "lastUpdated": "2026-05-10",
+  "lastUpdated": "2026-06-10",
   "coverageStatus": "confirmed",
   "elections": [
     {
@@ -37,9 +37,11 @@
       "earlyVoting": {
         "available": true,
         "startDate": "2026-04-07",
-        "endDate": "2026-05-04",
-        "notes": "Early voting available at county board of elections offices starting 28 days before the election. TODO verify for 2026 cycle."
-      }
+        "endDate": "2026-05-03",
+        "notes": "Early voting at county board of elections offices began 28 days before the election and ended the Sunday before Election Day (no Monday early voting under HB 458)."
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://www.ohiosos.gov/elections/voting-schedule-text-only"
     },
     {
       "id": "oh-2026-general",
@@ -68,9 +70,11 @@
       "earlyVoting": {
         "available": true,
         "startDate": "2026-10-06",
-        "endDate": "2026-11-02",
-        "notes": "Early voting available at county board of elections starting 28 days before Election Day. Hours expand in final days before the election. TODO verify for 2026 cycle."
-      }
+        "endDate": "2026-11-01",
+        "notes": "Early voting available at the county board of elections October 6 through Sunday, November 1 (includes the two Saturdays and the Sunday before Election Day; no early voting the Monday before). Hours expand in the final week."
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://www.ohiosos.gov/elections/voting-schedule-text-only"
     }
   ],
   "registration": {
@@ -93,8 +97,8 @@
   "earlyVoting": {
     "available": true,
     "startDate": "2026-10-06",
-    "endDate": "2026-11-02",
-    "notes": "Early voting at county board of elections offices starts 28 days before the general election. Hours expand in the final week. TODO verify for 2026 cycle."
+    "endDate": "2026-11-01",
+    "notes": "Early voting at county board of elections offices starts 28 days before the general election (October 6) and ends the Sunday before Election Day (November 1). Hours expand in the final week."
   },
   "votingRules": {
     "idRequired": true,
@@ -105,15 +109,15 @@
       "U.S. government-issued photo ID",
       "Ohio bureau of motor vehicles photo ID"
     ],
-    "expirationRule": "Photo ID must not be expired. TODO verify for 2026 cycle — Ohio HB 458 (2023) rules apply.",
-    "impedimentDeclaration": "Voters without acceptable photo ID may provide the last four digits of their Social Security number and their address, and cast a regular ballot. Voters who cannot provide either may cast a provisional ballot.",
+    "expirationRule": "Photo ID must not be expired. Ohio's photo ID requirement (HB 458, effective April 2023) remains in effect for the 2026 cycle.",
+    "impedimentDeclaration": "In-person voters without acceptable photo ID may cast a provisional ballot; to have it counted, provide acceptable ID (or the required affirmation) to the county board of elections within four days after the election. For absentee voting by mail, an Ohio license/ID number or the last four digits of your SSN may be used for identity verification.",
     "phonesAtPolls": "prohibited",
     "phonesAtPollsDetail": "Ohio prohibits use of electronic devices, including phones, in a way that would capture images inside the voting booth or of another voter's ballot. Devices must be silenced in the polling place.",
     "additionalRules": [
       "Semi-open primary: registered party members vote in their party's primary. Voters registered as 'independent' or with no party may choose either party's primary ballot.",
       "No runoffs in Ohio — the candidate with the most votes wins.",
       "Any registered voter may request an absentee (mail) ballot without a reason.",
-      "NOTE: Ohio photo ID law changed in 2023 (HB 458); previously non-photo ID was accepted. TODO verify current rules for 2026 cycle."
+      "NOTE: Ohio's photo ID law changed in 2023 (HB 458) and remains in effect for the 2026 cycle; previously non-photo ID was accepted for in-person voting."
     ]
   },
   "voteByMail": {

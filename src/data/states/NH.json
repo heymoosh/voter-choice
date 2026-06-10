@@ -1,8 +1,13 @@
 {
+  "_sources": {
+    "primary": "https://www.sos.nh.gov/elections",
+    "secondary": "https://www.fvap.gov/uploads/FVAP/VAO/PrimaryElectionsCalendar.pdf",
+    "checked": "2026-06-10",
+    "discrepancies": "[2026-06-10] State primary Sept 8, 2026 and general Nov 3, 2026 confirmed (FVAP 2026 primary calendar; sos.nh.gov). NH has no online voter registration and no early voting; same-day registration is available at the polls on Election Day. Pre-election registration deadlines vary by town (6-13 days before the election, set by local supervisors of the checklist) - the by-mail/pre-registration dates in this file use a conservative estimate; voters should confirm with their town/city clerk. Added per-election registration and earlyVoting blocks that were previously missing."
+  },
   "stateCode": "NH",
   "stateName": "New Hampshire",
-  "lastUpdated": "2026-03-01",
-
+  "lastUpdated": "2026-06-10",
   "elections": [
     {
       "id": "nh-2026-primary",
@@ -10,7 +15,32 @@
       "date": "2026-09-08",
       "type": "primary",
       "isPrimary": true,
-      "primaryType": "semi-open"
+      "primaryType": "semi-open",
+      "registration": {
+        "online": {
+          "available": false,
+          "deadline": null,
+          "url": "https://www.sos.nh.gov/elections/register-vote"
+        },
+        "byMail": {
+          "deadline": "2026-08-29",
+          "sincePostmarked": false
+        },
+        "inPerson": {
+          "deadline": "2026-09-08",
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": true,
+        "registrationCheckUrl": "https://app.sos.nh.gov/viphome"
+      },
+      "earlyVoting": {
+        "available": false,
+        "startDate": null,
+        "endDate": null,
+        "notes": "New Hampshire does not offer early voting. Absentee ballots are available for voters who will be absent on Election Day, have a disability, observe a religious holiday, or cannot vote in person due to employment. Pre-election registration deadlines are set locally (6-13 days before the election, varies by town); you can also register at the polls on Election Day. Confirm with your town or city clerk: https://www.sos.nh.gov/elections/register-vote/registration-deadlines"
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://www.fvap.gov/uploads/FVAP/VAO/PrimaryElectionsCalendar.pdf"
     },
     {
       "id": "nh-2026-general",
@@ -18,35 +48,57 @@
       "date": "2026-11-03",
       "type": "general",
       "isPrimary": false,
-      "primaryType": null
+      "primaryType": null,
+      "registration": {
+        "online": {
+          "available": false,
+          "deadline": null,
+          "url": "https://www.sos.nh.gov/elections/register-vote"
+        },
+        "byMail": {
+          "deadline": "2026-10-21",
+          "sincePostmarked": false
+        },
+        "inPerson": {
+          "deadline": "2026-11-03",
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": true,
+        "registrationCheckUrl": "https://app.sos.nh.gov/viphome"
+      },
+      "earlyVoting": {
+        "available": false,
+        "startDate": null,
+        "endDate": null,
+        "notes": "New Hampshire does not offer early voting. Absentee ballots are available for voters who will be absent on Election Day, have a disability, observe a religious holiday, or cannot vote in person due to employment. Pre-election registration deadlines are set locally (6-13 days before the election, varies by town); you can also register at the polls on Election Day. Confirm with your town or city clerk: https://www.sos.nh.gov/elections/register-vote/registration-deadlines"
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://www.fvap.gov/uploads/FVAP/VAO/PrimaryElectionsCalendar.pdf"
     }
   ],
-
   "registration": {
     "online": {
       "available": false,
       "deadline": null,
-      "url": null
+      "url": "https://www.sos.nh.gov/elections/register-vote"
     },
     "byMail": {
-      "deadline": "2026-08-29",
+      "deadline": "2026-10-21",
       "sincePostmarked": false
     },
     "inPerson": {
-      "deadline": "2026-09-08",
+      "deadline": "2026-11-03",
       "sincePostmarked": false
     },
     "sameDayRegistration": true,
     "registrationCheckUrl": "https://app.sos.nh.gov/viphome"
   },
-
   "earlyVoting": {
     "available": false,
     "startDate": null,
     "endDate": null,
-    "notes": "New Hampshire does not offer early voting. Absentee voting is available for voters who will be absent on Election Day, have a disability, or have a religious observance."
+    "notes": "New Hampshire does not offer early voting. Absentee ballots are available for voters who will be absent on Election Day, have a disability, observe a religious holiday, or cannot vote in person due to employment. Pre-election registration deadlines are set locally (6-13 days before the election, varies by town); you can also register at the polls on Election Day. Confirm with your town or city clerk: https://www.sos.nh.gov/elections/register-vote/registration-deadlines"
   },
-
   "votingRules": {
     "idRequired": true,
     "acceptedIds": [
@@ -65,7 +117,6 @@
       "Registered party voters may only vote in their party's primary"
     ]
   },
-
   "runoffRules": {
     "hasRunoff": false,
     "partyLockedToFirstRoundPrimary": false

@@ -100,6 +100,21 @@ describe("computeVoteAlignment", () => {
       "abstain",
     );
   });
+
+  // Read-path no_score guard: a stance_lens outside in_favor/opposed (e.g. a
+  // "no_score" row leaked by a future re-tag) must NEVER score — without the
+  // guard it silently reads as the "opposed" direction and inverts scores.
+  it("no_score stance_lens → abstain regardless of vote", () => {
+    expect(computeVoteAlignment("yea", "no_score", "in_favor")).toBe("abstain");
+    expect(computeVoteAlignment("nay", "no_score", "in_favor")).toBe("abstain");
+    expect(computeVoteAlignment("yea", "no_score", "opposed")).toBe("abstain");
+    expect(computeVoteAlignment("nay", "no_score", "opposed")).toBe("abstain");
+  });
+
+  it("unknown/garbage stance_lens → abstain (defensive)", () => {
+    expect(computeVoteAlignment("yea", "", "in_favor")).toBe("abstain");
+    expect(computeVoteAlignment("nay", "IN_FAVOR", "opposed")).toBe("abstain");
+  });
 });
 
 // ---------------------------------------------------------------------------

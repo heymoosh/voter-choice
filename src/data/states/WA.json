@@ -2,12 +2,12 @@
   "_sources": {
     "primary": "https://www.sos.wa.gov/elections/",
     "secondary": "https://www.ncsl.org/elections-and-campaigns/voter-id",
-    "checked": "2026-05-10",
-    "discrepancies": "Washington is a universal vote-by-mail state (all active registered voters automatically receive a mail ballot since 2011). NCSL classifies Washington as no document required — identity is verified via signature on the ballot return envelope; no ID is needed at any point in the voting process. Washington's primary is typically in August (first Tuesday after the third Monday); estimated 2026-08-04. General election November 3. 2026 registration deadlines estimated from Washington statute (8 days before election online/mail; Election Day with online account). TODO verify exact 2026 dates."
+    "checked": "2026-06-10",
+    "discrepancies": "Washington is a universal vote-by-mail state (all active registered voters automatically receive a mail ballot since 2011). NCSL classifies Washington as no document required — identity is verified via signature on the ballot return envelope; no ID is needed at any point in the voting process. 2026-06-10 verification: primary CONFIRMED for August 4, 2026 (FVAP 2026 primary calendar current as of May 2026; RCW 29A.04.311 first Tuesday in August). Registration deadlines follow the 8-day rule for online/mail (July 27 / October 26) with in-person registration available through 8 p.m. Election Day (RCW 29A.08.140) — sameDayRegistration corrected to true (was false despite in-person Election Day deadlines already in the file). Ballot mailing start for the primary corrected from July 14 to July 17 (statutory 18 days before, RCW 29A.40.070)."
   },
   "stateCode": "WA",
   "stateName": "Washington",
-  "lastUpdated": "2026-05-10",
+  "lastUpdated": "2026-06-10",
   "coverageStatus": "confirmed",
   "elections": [
     {
@@ -31,15 +31,17 @@
           "deadline": "2026-08-04",
           "sincePostmarked": false
         },
-        "sameDayRegistration": false,
+        "sameDayRegistration": true,
         "registrationCheckUrl": "https://voter.votewa.gov/WhereToVote.aspx"
       },
       "earlyVoting": {
         "available": true,
-        "startDate": "2026-07-14",
+        "startDate": "2026-07-17",
         "endDate": "2026-08-03",
-        "notes": "Ballots mailed to all active registered voters approximately 18 days before Election Day. Drop boxes open during this period. No traditional polling places in Washington. TODO verify exact 2026 dates."
-      }
+        "notes": "Ballots are mailed to all active registered voters at least 18 days before Election Day (by July 17, 2026). Drop boxes open during this period. No traditional polling places in Washington. Register or update your registration in person through 8 p.m. on Election Day."
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://www.sos.wa.gov/elections/"
     },
     {
       "id": "wa-2026-general",
@@ -62,7 +64,7 @@
           "deadline": "2026-11-03",
           "sincePostmarked": false
         },
-        "sameDayRegistration": false,
+        "sameDayRegistration": true,
         "registrationCheckUrl": "https://voter.votewa.gov/WhereToVote.aspx"
       },
       "earlyVoting": {
@@ -70,7 +72,9 @@
         "startDate": "2026-10-16",
         "endDate": "2026-11-02",
         "notes": "Washington mails ballots to all active registered voters approximately 18 days before Election Day. Ballots may be returned by mail (postmarked by Election Day) or at any official drop box by 8 p.m. on Election Day. County auditor offices available for in-person assistance and ballot drop-off."
-      }
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://www.sos.wa.gov/elections/"
     }
   ],
   "registration": {
@@ -87,7 +91,7 @@
       "deadline": "2026-11-03",
       "sincePostmarked": false
     },
-    "sameDayRegistration": false,
+    "sameDayRegistration": true,
     "registrationCheckUrl": "https://voter.votewa.gov/WhereToVote.aspx"
   },
   "earlyVoting": {
@@ -138,7 +142,7 @@
   "primaryParticipation": {
     "type": "top-two",
     "ruleExplanationEn": "Washington uses a top-two nonpartisan primary (I-872, 2004). All registered voters may vote for any candidate regardless of party. The top two vote-getters advance to the general election (RCW 29A.36.170).",
-    "ruleExplanationEs": "Washington utiliza una primaria no partidista de los dos primeros (I-872, 2004). Todos los votantes registrados pueden votar por cualquier candidato sin importar el partido. Los dos candidatos con más votos avanzan a las elecciones generales (RCW 29A.36.170).",
+    "ruleExplanationEs": "Washington utiliza una primaria no partidista de los dos primeros (I-872, 2004). Cualquier votante registrado puede votar por cualquier candidato sin importar el partido. Los dos candidatos con más votos avanzan a las elecciones generales (RCW 29A.36.170).",
     "behavior": "advisory"
   }
 }

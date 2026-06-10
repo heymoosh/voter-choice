@@ -2,12 +2,12 @@
   "_sources": {
     "primary": "https://www.elections.alaska.gov/",
     "secondary": "https://www.ncsl.org/elections-and-campaigns/voter-id",
-    "checked": "2026-05-10",
-    "discrepancies": "Alaska uses ranked-choice voting (RCV) for general elections for federal and statewide offices since Ballot Measure 2 passed in 2020. NCSL classifies Alaska as non-photo ID (ID requested but not strictly required if voter is known). No separate runoff election exists because RCV functions as an instant-runoff system. 2026 primary and general registration deadlines estimated from Alaska statutes (30 days before election); TODO verify exact 2026 cycle dates with elections.alaska.gov."
+    "checked": "2026-06-10",
+    "discrepancies": "Alaska uses ranked-choice voting (RCV) for general elections for federal and statewide offices since Ballot Measure 2 passed in 2020. NCSL classifies Alaska as non-photo ID (ID requested but not strictly required if voter is known). No separate runoff election exists because RCV functions as an instant-runoff system. 2026-06-10: Primary confirmed as August 18, 2026 and general as November 3, 2026 (elections.alaska.gov / Ballotpedia); registration deadlines follow Alaska's 30-day rule. Early voting begins 15 days before Election Day (Aug 3 primary / Oct 19 general). Corrected an earlier claim that Alaska mails ballots to all registered voters — absentee by-mail requires an application."
   },
   "stateCode": "AK",
   "stateName": "Alaska",
-  "lastUpdated": "2026-05-10",
+  "lastUpdated": "2026-06-10",
   "coverageStatus": "confirmed",
   "elections": [
     {
@@ -36,10 +36,12 @@
       },
       "earlyVoting": {
         "available": true,
-        "startDate": "2026-07-20",
-        "endDate": "2026-08-14",
-        "notes": "Absentee in-person voting available from approximately 15 days before the election at regional offices. Mail ballots sent to all active registered voters. TODO verify exact 2026 dates."
-      }
+        "startDate": "2026-08-03",
+        "endDate": "2026-08-17",
+        "notes": "Early voting begins 15 days before Election Day (August 3, 2026) at early voting locations; absentee in-person voting is available at Division of Elections regional offices through the day before the election. Absentee by-mail ballots require an application — they are not sent automatically."
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://www.elections.alaska.gov/election-information/"
     },
     {
       "id": "ak-2026-general",
@@ -67,10 +69,12 @@
       },
       "earlyVoting": {
         "available": true,
-        "startDate": "2026-10-05",
-        "endDate": "2026-10-30",
-        "notes": "Mail ballots sent to all active registered voters approximately 15 days before Election Day. In-person early voting available at Division of Elections regional offices. RCV ballots used for general election — rank candidates 1st through 4th."
-      }
+        "startDate": "2026-10-19",
+        "endDate": "2026-11-02",
+        "notes": "Early voting begins 15 days before Election Day (October 19, 2026) at early voting locations and Division of Elections regional offices. RCV ballots used for the general election — rank candidates 1st through 4th."
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://www.elections.alaska.gov/election-information/"
     }
   ],
   "registration": {
@@ -92,9 +96,9 @@
   },
   "earlyVoting": {
     "available": true,
-    "startDate": "2026-10-05",
-    "endDate": "2026-10-30",
-    "notes": "Alaska mails ballots to all active registered voters. Absentee in-person voting available at Division of Elections regional offices statewide. Alaska uses ranked-choice voting (RCV) for general elections — voters rank up to 4 candidates."
+    "startDate": "2026-10-19",
+    "endDate": "2026-11-02",
+    "notes": "Early voting begins 15 days before Election Day at early voting locations and Division of Elections regional offices statewide. Absentee by-mail voting requires an application. Alaska uses ranked-choice voting (RCV) for general elections — voters rank up to 4 candidates."
   },
   "votingRules": {
     "idRequired": false,
@@ -116,10 +120,10 @@
   "voteByMail": {
     "universal": false,
     "eligibility": [
-      "All active registered voters automatically receive a mail ballot for most elections",
-      "Voters may also vote in-person at polling places or regional offices"
+      "Any registered voter may apply for an absentee by-mail ballot — no excuse required",
+      "Voters may also vote early/absentee in person at Division of Elections regional offices or vote at their polling place on Election Day"
     ],
-    "applicationDeadline": "Ballots mailed automatically to active registered voters; no application required in most cases",
+    "applicationDeadline": "Absentee by-mail applications must be received by the Division of Elections 10 days before Election Day",
     "returnDeadline": "Must be received by 8:00 p.m. on Election Day, or postmarked by Election Day and received within 10 days",
     "returnDeadlinePlain": "Return by 8 p.m. Election Day in person, or mail postmarked by Election Day and received within 10 days.",
     "applicationUrl": "https://www.elections.alaska.gov/AbsenteeVoting.php",
@@ -140,7 +144,7 @@
   "primaryParticipation": {
     "type": "top-two",
     "ruleExplanationEn": "Alaska uses a top-four nonpartisan primary (Ballot Measure 2, 2020). All registered voters may vote for any candidate regardless of party. The top four advance to the general election, which uses ranked-choice voting.",
-    "ruleExplanationEs": "Alaska utiliza una primaria no partidista de los cuatro primeros (Medida 2, 2020). Todos los votantes registrados pueden votar por cualquier candidato sin importar el partido. Los cuatro candidatos con más votos avanzan a las elecciones generales, que utilizan votación por orden de preferencia.",
+    "ruleExplanationEs": "Alaska utiliza una primaria no partidista de los cuatro primeros (Medida 2, 2020). Cualquier votante registrado puede votar por cualquier candidato sin importar el partido. Los cuatro candidatos con más votos avanzan a las elecciones generales, que utilizan votación por orden de preferencia.",
     "behavior": "advisory"
   }
 }

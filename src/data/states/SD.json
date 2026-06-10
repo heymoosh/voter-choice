@@ -2,12 +2,12 @@
   "_sources": {
     "primary": "https://sdsos.gov/elections-voting/",
     "secondary": "https://www.ncsl.org/elections-and-campaigns/voter-id",
-    "checked": "2026-05-10",
-    "discrepancies": "South Dakota requests photo ID — NCSL categorizes SD as 'photo ID requested'. Voters without photo ID may provide last four digits of SSN, sign a poll book affidavit, or be vouched for by an election judge. SD has a party-locked primary runoff: if no candidate receives 35% of the vote in the primary, the top two advance to a runoff. A voter who participated in one party's primary may only vote in that party's runoff (similar to TX and GA). Primary is set by statute as the first Tuesday after the first Monday in June."
+    "checked": "2026-06-10",
+    "discrepancies": "South Dakota requests photo ID — NCSL categorizes SD as 'photo ID requested'. Voters without photo ID may provide last four digits of SSN, sign a poll book affidavit, or be vouched for by an election judge. Primary is set by statute as the first Tuesday after the first Monday in June. 2026-06-10 verification: the 35% runoff provision was TRIGGERED for the first time in state history — no Republican candidate for Governor reached 35% in the June 2, 2026 primary, so a Republican gubernatorial runoff (secondary election) is scheduled for JULY 28, 2026 (file previously carried an Aug 4 estimate). Registration deadline for the runoff is July 13, 2026 (5 p.m.); absentee voting for the runoff began June 12, 2026 per the SD SoS. Note: because SD primaries are closed, the Republican runoff is open to voters eligible for the Republican primary — the earlier description of SD runoffs as open to any voter regardless of party was corrected. Primary absentee start corrected to the statutory 46th day (April 17, 2026; file previously had May 4). primaryParticipation.type aligned to 'closed' to match elections[].primaryType and the closed-primary reality (it was 'open', contradicting the rest of the file)."
   },
   "stateCode": "SD",
   "stateName": "South Dakota",
-  "lastUpdated": "2026-05-10",
+  "lastUpdated": "2026-06-10",
   "coverageStatus": "confirmed",
   "elections": [
     {
@@ -36,30 +36,32 @@
       },
       "earlyVoting": {
         "available": true,
-        "startDate": "2026-05-04",
+        "startDate": "2026-04-17",
         "endDate": "2026-06-01",
-        "notes": "Absentee in-person voting available at county auditor offices starting 46 days before the primary. TODO verify for 2026 cycle."
-      }
+        "notes": "Absentee in-person voting was available at county auditor offices starting 46 days before the primary (April 17, 2026) through 5 p.m. the day before."
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://sdsos.gov/elections-voting/upcoming-elections/general-information/default.aspx"
     },
     {
       "id": "sd-2026-primary-runoff",
-      "name": "2026 South Dakota Primary Runoff Election",
-      "date": "2026-08-04",
+      "name": "2026 South Dakota Republican Gubernatorial Primary Runoff (Secondary Election)",
+      "date": "2026-07-28",
       "type": "runoff",
       "isPrimary": false,
       "primaryType": null,
       "registration": {
         "online": {
           "available": true,
-          "deadline": "2026-07-20",
+          "deadline": "2026-07-13",
           "url": "https://sdsos.gov/elections-voting/voting/register-to-vote/default.aspx"
         },
         "byMail": {
-          "deadline": "2026-07-20",
+          "deadline": "2026-07-13",
           "sincePostmarked": false
         },
         "inPerson": {
-          "deadline": "2026-07-20",
+          "deadline": "2026-07-13",
           "sincePostmarked": false
         },
         "sameDayRegistration": false,
@@ -67,10 +69,12 @@
       },
       "earlyVoting": {
         "available": true,
-        "startDate": "2026-07-06",
-        "endDate": "2026-08-03",
-        "notes": "Absentee in-person voting available at county auditor offices before the runoff. TODO verify for 2026 cycle."
-      }
+        "startDate": "2026-06-12",
+        "endDate": "2026-07-27",
+        "notes": "This runoff is the Republican gubernatorial secondary election (no candidate reached 35% on June 2). Absentee voting began June 12, 2026 at county auditor offices and runs through 5 p.m. the day before. Closed-primary rules apply — it is open to voters eligible to vote in the Republican primary."
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://sdsos.gov/elections-voting/upcoming-elections/general-information/default.aspx"
     },
     {
       "id": "sd-2026-general",
@@ -100,8 +104,10 @@
         "available": true,
         "startDate": "2026-09-18",
         "endDate": "2026-11-02",
-        "notes": "Absentee in-person voting available at county auditor offices starting 46 days before the general election. TODO verify for 2026 cycle."
-      }
+        "notes": "Absentee in-person voting available at county auditor offices starting 46 days before the general election (September 18, 2026) through 5 p.m. the day before."
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://sdsos.gov/elections-voting/upcoming-elections/general-information/default.aspx"
     }
   ],
   "registration": {
@@ -125,7 +131,7 @@
     "available": true,
     "startDate": "2026-09-18",
     "endDate": "2026-11-02",
-    "notes": "Absentee in-person voting available at county auditor offices starting 46 days before the general election. TODO verify for 2026 cycle."
+    "notes": "Absentee in-person voting available at county auditor offices starting 46 days before the general election (September 18, 2026)."
   },
   "votingRules": {
     "idRequired": true,
@@ -137,13 +143,13 @@
       "Photo ID issued by a South Dakota accredited university or college",
       "Other U.S. government-issued photo ID"
     ],
-    "expirationRule": "Photo ID should not be expired. If voter lacks photo ID, they may provide the last four digits of their SSN and sign an election judge affidavit. TODO verify for 2026 cycle.",
+    "expirationRule": "Photo ID should not be expired. If a voter lacks photo ID, they may sign a personal identification affidavit and vote a regular ballot.",
     "impedimentDeclaration": "Voters without acceptable photo ID may provide the last four digits of their SSN plus sign a poll book affidavit, or be vouched for by an election judge who knows the voter.",
     "phonesAtPolls": "varies",
     "phonesAtPollsDetail": "South Dakota does not have a statewide prohibition on phones at polling places, but voters may not photograph their ballot or interfere with other voters. Check with your county auditor for local rules.",
     "additionalRules": [
       "Closed primary: only voters registered with a party may vote in that party's primary.",
-      "Runoff rule: if no candidate receives 35% of the primary vote, the top two candidates advance to a primary runoff. A voter who voted in one party's primary may only vote in that party's runoff.",
+      "Runoff (secondary election) rule: if no candidate for Governor, U.S. Senate, or U.S. House receives 35% of the primary vote, the top two advance to a runoff. The 2026 Republican gubernatorial runoff is July 28, 2026; closed-primary eligibility rules apply.",
       "No runoffs in South Dakota general elections — the candidate with the most votes wins."
     ]
   },
@@ -161,7 +167,7 @@
   "runoffRules": {
     "hasRunoff": true,
     "partyLockedToFirstRoundPrimary": false,
-    "ruleExplanation": "South Dakota rule (SDCL §12-6-4): if no candidate receives 35% of the primary vote, the top two candidates advance to a runoff. South Dakota runoffs are open — any registered voter may choose which party's runoff to vote in, regardless of how they voted in the primary."
+    "ruleExplanation": "South Dakota rule: if no candidate for Governor, U.S. Senate, or U.S. House receives 35% of the primary vote, the top two advance to a runoff (secondary election). You are not locked to the runoff by having voted in the primary, but South Dakota primaries are closed, so a party's runoff is open only to voters eligible to vote in that party's primary. The 2026 Republican gubernatorial runoff is July 28, 2026."
   },
   "resources": {
     "stateElectionWebsite": "https://sdsos.gov/elections-voting/",
@@ -173,9 +179,9 @@
     "earlyVotingInfo": "https://sdsos.gov/elections-voting/voting/absentee-voting/default.aspx"
   },
   "primaryParticipation": {
-    "type": "open",
-    "ruleExplanationEn": "South Dakota has an open primary where any registered voter may request either party's primary ballot (SDCL §12-6-4). If no candidate receives 35% of the vote, the top two advance to a runoff. South Dakota runoffs do not enforce party-lock — any voter may choose which party's runoff to vote in.",
-    "ruleExplanationEs": "Dakota del Sur tiene una primaria abierta donde cualquier votante registrado puede solicitar la boleta de primaria de cualquier partido (SDCL §12-6-4). Si ningún candidato obtiene el 35% de los votos, los dos primeros avanzan a una segunda vuelta. Las segundas vueltas de Dakota del Sur no aplican bloqueo de partido: cualquier votante puede elegir en qué segunda vuelta de partido votar.",
+    "type": "closed",
+    "ruleExplanationEn": "South Dakota primaries are closed: only voters registered with a party (or independents, where the party allows it) may vote that party's primary ballot. If no candidate for Governor, U.S. Senate, or U.S. House receives 35% of the vote, the top two advance to a runoff (secondary election); the same party eligibility rules apply to the runoff.",
+    "ruleExplanationEs": "Las primarias de Dakota del Sur son cerradas: solo los votantes registrados con un partido (o independientes, cuando el partido lo permite) pueden votar la boleta primaria de ese partido. Si ningún candidato para Gobernador, Senado de EE. UU. o Cámara de EE. UU. obtiene el 35% de los votos, los dos primeros avanzan a una segunda vuelta (elección secundaria); las mismas reglas de elegibilidad de partido se aplican a la segunda vuelta.",
     "behavior": "advisory"
   }
 }

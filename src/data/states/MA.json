@@ -2,32 +2,32 @@
   "_sources": {
     "primary": "https://www.sec.state.ma.us/ele/eleidx.htm",
     "secondary": "https://www.ncsl.org/elections-and-campaigns/voter-id",
-    "checked": "2026-05-10",
-    "discrepancies": "No major discrepancies found. MA uses Secretary of the Commonwealth (not SoS) as elections authority. NCSL classifies MA as no-document-required for ID. Massachusetts has no-excuse absentee voting and early in-person voting. 2026 primary date (Sept 15) is the standard first Tuesday after second Monday in September per MA law; TODO verify for 2026 cycle. Registration deadline is 10 days before each election per MA law."
+    "checked": "2026-06-10",
+    "discrepancies": "MA uses Secretary of the Commonwealth (not SoS) as elections authority. NCSL classifies MA as no-document-required for ID. Massachusetts has no-excuse absentee voting and early in-person voting. Registration deadline is 10 days before each election per MA law. [2026-06-10] Corrected the 2026 state primary from Sept 15 to Tuesday, September 1, 2026 - the date set by the Legislature and published by the Secretary of the Commonwealth (registration deadline Aug 22; early voting Aug 22-28). General election Nov 3 confirmed (registration deadline Oct 24; early voting Oct 17-30)."
   },
   "stateCode": "MA",
   "stateName": "Massachusetts",
-  "lastUpdated": "2026-05-10",
+  "lastUpdated": "2026-06-10",
   "elections": [
     {
       "id": "ma-2026-primary",
       "name": "2026 Massachusetts State Primary",
-      "date": "2026-09-15",
+      "date": "2026-09-01",
       "type": "primary",
       "isPrimary": true,
       "primaryType": "semi-closed",
       "registration": {
         "online": {
           "available": true,
-          "deadline": "2026-09-05",
+          "deadline": "2026-08-22",
           "url": "https://www.sec.state.ma.us/ovr/"
         },
         "byMail": {
-          "deadline": "2026-09-05",
+          "deadline": "2026-08-22",
           "sincePostmarked": false
         },
         "inPerson": {
-          "deadline": "2026-09-05",
+          "deadline": "2026-08-22",
           "sincePostmarked": false
         },
         "sameDayRegistration": false,
@@ -35,10 +35,12 @@
       },
       "earlyVoting": {
         "available": true,
-        "startDate": "2026-08-29",
-        "endDate": "2026-09-11",
-        "notes": "In-person early voting available at local election offices for primaries. TODO verify exact 2026 dates."
-      }
+        "startDate": "2026-08-22",
+        "endDate": "2026-08-28",
+        "notes": "Early voting for the September 1, 2026 state primary runs August 22-28, 2026. Locations and hours set by each city/town: https://www.sec.state.ma.us/divisions/elections/recent-updates/upcoming-elections.htm"
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://www.sec.state.ma.us/divisions/elections/recent-updates/upcoming-elections.htm"
     },
     {
       "id": "ma-2026-general",
@@ -68,8 +70,10 @@
         "available": true,
         "startDate": "2026-10-17",
         "endDate": "2026-10-30",
-        "notes": "In-person early voting at local election offices. Hours vary by municipality. TODO verify exact 2026 dates."
-      }
+        "notes": "Early voting for the November 3, 2026 state election runs October 17-30, 2026. Locations and hours vary by municipality."
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://www.sec.state.ma.us/divisions/elections/recent-updates/upcoming-elections.htm"
     }
   ],
   "registration": {
@@ -93,7 +97,7 @@
     "available": true,
     "startDate": "2026-10-17",
     "endDate": "2026-10-30",
-    "notes": "Massachusetts offers in-person early voting at local election offices. Dates and hours vary by city/town. TODO verify exact 2026 dates."
+    "notes": "Massachusetts offers in-person early voting: October 17-30, 2026 for the state election. Locations and hours vary by city/town."
   },
   "votingRules": {
     "idRequired": false,

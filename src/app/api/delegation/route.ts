@@ -25,9 +25,27 @@ import { NextRequest } from "next/server";
 import { checkRaceDataRateLimit } from "../../../lib/server/race-data-rate-limit";
 import { geocodeAddressToDistrict } from "../../../lib/server/census-geocode";
 import { resolveDelegation } from "../../../lib/server/delegation";
+import {
+  lookupChallengers,
+  type SeatChallengers,
+} from "../../../lib/server/races";
+import {
+  lookupCanSeatContext,
+  type CanSeatContext,
+} from "../../../lib/server/can-context";
+import { CAN_ATTRIBUTION } from "../../../lib/canAttribution";
 
 const MIN_ADDRESS = 4;
 const MAX_ADDRESS = 300;
+
+// CAN2026 curated-context display is gated until can2026.org attribution terms
+// are confirmed with the maintainer. Off by default — set the env var to any
+// non-empty value to surface the "Race ratings & key votes" section. Read on
+// every call so test stubs take effect without re-importing the module.
+function isCan2026DisplayEnabled(): boolean {
+  const v = process.env.CAN2026_DISPLAY_ENABLED;
+  return typeof v === "string" && v.length > 0;
+}
 
 function getClientIP(request: NextRequest): string {
   return (
@@ -98,6 +116,55 @@ export async function POST(request: NextRequest) {
     });
   }
 
+  // 2026 challengers for the voter's seats (FEC roster ingest). Best-effort:
+  // a failure here never degrades the delegation itself.
+  let challengers: SeatChallengers = { house: [], senate: [] };
+  try {
+    challengers = await lookupChallengers(stateCode, district);
+  } catch (err) {
+    console.error("[delegation] challenger lookup failed:", err);
+  }
+  // CAN2026 curated context (race ratings, donor trails, key-vote prose) —
+  // display-side only, never a scoring input. Empty until the CAN ingest
+  // runs; failures degrade to no context. Gated off until attribution terms
+  // are confirmed — when disabled, skip the DB lookups entirely.
+  const canContexts = isCan2026DisplayEnabled()
+    ? await Promise.all(
+        delegation.seats.map(async (seat): Promise<CanSeatContext | null> => {
+          try {
+            const ctx = await lookupCanSeatContext(
+              stateCode,
+              seat.chamber,
+              district,
+              seat.candidate?.id ?? null,
+            );
+            const empty =
+              ctx.ratings.length === 0 &&
+              !ctx.donorTrail &&
+              ctx.keyVotes.length === 0;
+            return empty ? null : ctx;
+          } catch (err) {
+            console.error("[delegation] CAN context lookup failed:", err);
+            return null;
+          }
+        }),
+      )
+    : delegation.seats.map(() => null);
+
+  const seats = delegation.seats.map((seat, i) => ({
+    ...seat,
+    challengers:
+      seat.chamber === "house"
+        ? challengers.house
+        : // Senate filers are statewide — only attach to seats actually up.
+          seat.onBallot2026 === true
+          ? challengers.senate
+          : [],
+    canContext: canContexts[i]
+      ? { ...canContexts[i], attribution: CAN_ATTRIBUTION }
+      : null,
+  }));
+
   return Response.json({
     status: "ok",
     stateCode,
@@ -105,7 +172,7 @@ export async function POST(request: NextRequest) {
     county,
     districtLabel:
       district !== null ? districtLabel(stateCode, district) : null,
-    seats: delegation.seats,
+    seats,
   });
 }
 

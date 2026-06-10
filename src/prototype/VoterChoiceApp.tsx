@@ -32,7 +32,8 @@ import {
   PROP_SECTIONS,
   applyRealStateResources,
 } from "./realData";
-import { getFallbackStateData } from "../lib/getStateData";
+import { getFallbackStateData, getStateData, findUpcomingElection } from "../lib/getStateData";
+import { getStateRule } from "../lib/state-rules/lookup";
 import {
   useGooglePlacesAutocomplete,
   getPlacesApiKey,
@@ -2062,7 +2063,10 @@ function PollingInfoCard({ pollingInfo, stateData, rows, compact }) {
    on Election Day. Without LOCATION the event is useless on a
    phone — earlier version omitted it. */
 function downloadIcsForElection(stateData, pollingInfo) {
-  const el = stateData.elections[0];
+  // Always export the UPCOMING election — elections[0] is whatever the
+  // JSON lists first (often a past primary).
+  const el = findUpcomingElection(stateData.elections) || stateData.elections[0];
+  if (!el) return;
   const date = el.date.replace(/-/g, '');
   const acceptedId = stateData.votingRules.acceptedIds?.[0] || 'photo ID';
   const placeLine = pollingInfo?.name && pollingInfo?.address
@@ -2413,7 +2417,9 @@ function PollingStatusBar({ pollingInfo, stateData, rows }) {
                   <span>{stateData.votingRules.idNote || 'ID required.'} Confirm the accepted-ID list at your state election office.</span>
                 )}
               </div>
-              <div className="pbp-sub">Phones prohibited within 100 ft</div>
+              {stateData.votingRules?.phonesAtPollsDetail && (
+                <div className="pbp-sub">{stateData.votingRules.phonesAtPollsDetail}</div>
+              )}
             </div>
             <div className="pbp-cell pbp-deadlines">
               <div className="pbp-k">Deadlines</div>
@@ -2463,7 +2469,24 @@ const { useState: useStateS, useEffect: useEffectS, useRef: useRefS } = React;
    Demo trigger: the Tweaks panel has a "Show party gate" toggle
    (added below) so the screen is reachable end-to-end without
    changing the demo election to a primary. */
-function PartyGate({ stateName, electionDate, onPick, onSkip }) {
+function PartyGate({ stateName, electionDate, rule, onPick, onSkip }) {
+  // Rule-driven copy (src/lib/state-rules): closed → registered-party only;
+  // semi-closed → unaffiliated voters may choose; runoff rows → party-lock.
+  // The gate only renders when a rule row exists, but keep a generic
+  // fallback lede so a missing rule can never produce broken copy.
+  const ruleLede = (() => {
+    if (!rule) return null;
+    if (rule.electionType === 'runoff') {
+      return <>This runoff is <b>party-locked</b>: if you voted in a party's first-round primary, you may only vote in that party's runoff. Pick the runoff you're eligible for and we'll research those races.</>;
+    }
+    if (rule.category === 'closed') {
+      return <>{stateName || 'Your state'} holds <b>closed primaries</b> — you vote in the primary of the party you're registered with. Pick your registered party and we'll research those races. The general election is unaffected.</>;
+    }
+    if (rule.category === 'semi-closed') {
+      return <>{stateName || 'Your state'} holds <b>semi-closed primaries</b> — registered party members vote their own party's primary; unaffiliated voters may choose one. Pick the primary you'll vote in and we'll research those races. The general election is unaffected.</>;
+    }
+    return null;
+  })();
   return (
     <>
       <AppNav />
@@ -2472,7 +2495,9 @@ function PartyGate({ stateName, electionDate, onPick, onSkip }) {
           <div className="pg-eyebrow">{stateName || 'Primary'} primary{electionDate ? ' · ' + electionDate : ''}</div>
           <h2>Pick a party to research.</h2>
           <p className="pg-lede">
-            Your ballot includes <b>both parties' primary contests</b>. A primary is party-specific — choose the primary you're eligible to vote in and we'll research only those races. The general election is unaffected.
+            {ruleLede ?? (
+              <>Your ballot includes <b>both parties' primary contests</b>. A primary is party-specific — choose the primary you're eligible to vote in and we'll research only those races. The general election is unaffected.</>
+            )}
           </p>
 
           <div className="pg-options">
@@ -2501,8 +2526,30 @@ function PartyGate({ stateName, electionDate, onPick, onSkip }) {
             </button>
           </div>
 
+          {rule?.unaffiliatedPath && (
+            <p className="pg-foot">
+              {rule.unaffiliatedPath.message}{' '}
+              <a href={rule.unaffiliatedPath.reregistrationUrl} target="_blank" rel="noopener noreferrer" className="pg-src">Update your registration</a>
+            </p>
+          )}
           <p className="pg-foot">
-            Eligibility rules vary by state. Check your <a href="https://vote.gov/" target="_blank" rel="noopener noreferrer" className="pg-src">state election office</a> if you're unsure which primary you can vote in.
+            {rule?.statute ? (
+              <>
+                {rule.statute.text}{' '}
+                {rule.statute.url ? (
+                  <a href={rule.statute.url} target="_blank" rel="noopener noreferrer" className="pg-src">({rule.statute.code})</a>
+                ) : (
+                  <>({rule.statute.code})</>
+                )}
+              </>
+            ) : (
+              <>Eligibility rules vary by state.</>
+            )}{' '}
+            {rule?.externalResources?.sosVoterLookupUrl ? (
+              <>Unsure? <a href={rule.externalResources.sosVoterLookupUrl} target="_blank" rel="noopener noreferrer" className="pg-src">Look up your registration</a>.</>
+            ) : (
+              <>Check your <a href="https://vote.gov/" target="_blank" rel="noopener noreferrer" className="pg-src">state election office</a> if you're unsure which primary you can vote in.</>
+            )}
           </p>
         </div>
       </div>
@@ -4558,7 +4605,18 @@ function WorkspaceView({ address, issues, decisions, activeRaceId, onDecide, onU
   // The congressional district is derived from the ballot extraction's House
   // race label when civic didn't carry a House contest (the NJ case).
   const logistics = getBallotLogistics();
-  const sdBase = getFallbackStateData(getRealStateCode() || '');
+  // Real per-state election data (verified deadlines, early voting, voter
+  // ID, statutory polling hours). Async — the fallback shape renders until
+  // it resolves; resources overlay applies to both.
+  const [realStateData, setRealStateData] = useStateV(null);
+  useEffectV(() => {
+    let active = true;
+    const sc = getRealStateCode();
+    if (!sc) { setRealStateData(null); return undefined; }
+    getStateData(sc).then((d) => { if (active && d) setRealStateData(d); });
+    return () => { active = false; };
+  }, [getRealStateCode()]);
+  const sdBase = realStateData || getFallbackStateData(getRealStateCode() || '');
   // Prefer the real per-state resources (voter.svrs.nj.gov, county lookup) loaded
   // by applyRealStateResources over getFallbackStateData's vote.gov placeholders.
   const realResWs = getRealStateResources();
@@ -6052,13 +6110,20 @@ function handleRevealCandidate(candidateId) {
                 // extraction (real address kept — no more mock "Harris County,
                 // TX"). If the ballot spans BOTH parties (a primary), show the
                 // party gate to filter; otherwise straight to cold-open.
+                // The gate is rule-driven: getStateRule(state, electionType)
+                // returns null for open/top-two states and ALL generals —
+                // null means no gate (an open-primary voter may pick either
+                // party at the polls; a general ballot is for everyone).
+                // Only states with a real participation rule (closed /
+                // semi-closed / runoff party-lock) gate, with that rule's copy.
                 const et = getRealElectionType();
-                const isPrimaryLike =
-                  et === 'primary' || et === 'runoff' || et === 'primary_runoff';
-                // Only a PRIMARY/runoff ballot gets the party gate. A GENERAL
-                // ballot also has multiple parties (candidates competing for
-                // the same seat) — there you vote for anyone, so NO gate.
-                if (isPrimaryLike && racesSpanMultipleParties(RACES)) {
+                const ruleEt =
+                  et === 'primary_runoff' ? 'runoff' : et;
+                const gateRule =
+                  ruleEt === 'primary' || ruleEt === 'runoff'
+                    ? getStateRule(getRealStateCode() || '', ruleEt)
+                    : null;
+                if (gateRule && racesSpanMultipleParties(RACES)) {
                   setPendingRaces(RACES);
                   setView('partygate');
                 } else {
@@ -6076,6 +6141,13 @@ function handleRevealCandidate(candidateId) {
               ? getFallbackStateData(getRealStateCode()).stateName
               : ''
           }
+          rule={(() => {
+            const et = getRealElectionType();
+            const ruleEt = et === 'primary_runoff' ? 'runoff' : et;
+            return ruleEt === 'primary' || ruleEt === 'runoff'
+              ? getStateRule(getRealStateCode() || '', ruleEt)
+              : null;
+          })()}
           electionDate=""
           onPick={(party) => {
             // Filter the ballot to the chosen party's primary (the "2 Senate

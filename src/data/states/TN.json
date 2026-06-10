@@ -2,12 +2,12 @@
   "_sources": {
     "primary": "https://sos.tn.gov/elections",
     "secondary": "https://ballotpedia.org/Voting_in_Tennessee",
-    "checked": "2026-05-10",
-    "discrepancies": "NCSL lists TN as 'strict photo ID'. SoS confirms voters without acceptable photo ID must vote a provisional ballot; provisional ballot is not counted unless voter presents acceptable ID by the close of business on the second business day after the election. Consistent."
+    "checked": "2026-06-10",
+    "discrepancies": "NCSL lists TN as 'strict photo ID'. SoS confirms voters without acceptable photo ID must vote a provisional ballot; provisional ballot is not counted unless voter presents acceptable ID by the close of business on the second business day after the election. Consistent. 2026-06-10 verification: August 6, 2026 primary and November 3, 2026 general CONFIRMED (TN SoS election schedule; FVAP 2026 primary calendar current as of May 2026 concurs). Early-voting windows match the statutory 20-days-to-5-days rule (primary July 17-Aug 1; general Oct 14-29); registration deadlines match the 30-day rule (July 7 / Oct 5). Corrected accepted-ID list: per sos.tn.gov/elections/photo-id, college student IDs are NOT acceptable in Tennessee (the file previously listed them as acceptable), and TN/federal photo IDs are acceptable even if expired (the file previously said IDs must not be expired)."
   },
   "stateCode": "TN",
   "stateName": "Tennessee",
-  "lastUpdated": "2026-05-10",
+  "lastUpdated": "2026-06-10",
   "coverageStatus": "confirmed",
   "elections": [
     {
@@ -38,8 +38,10 @@
         "available": true,
         "startDate": "2026-07-17",
         "endDate": "2026-08-01",
-        "notes": "Early voting begins 20 days before the primary and ends 5 days before. Hours and sites set by county. TODO verify for 2026 cycle."
-      }
+        "notes": "Early voting begins 20 days before the primary (July 17, 2026) and ends 5 days before (August 1, 2026). Hours and sites are set by each county election commission."
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://sos.tn.gov/elections/election-dates"
     },
     {
       "id": "tn-2026-general",
@@ -69,8 +71,10 @@
         "available": true,
         "startDate": "2026-10-14",
         "endDate": "2026-10-29",
-        "notes": "Early voting begins 20 days before and ends 5 days before Election Day. TODO verify for 2026 cycle."
-      }
+        "notes": "Early voting begins 20 days before Election Day (October 14, 2026) and ends 5 days before (October 29, 2026). Hours and sites are set by each county election commission."
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://sos.tn.gov/elections/election-dates"
     }
   ],
   "registration": {
@@ -103,10 +107,10 @@
       "U.S. passport or passport card",
       "Photo ID issued by Tennessee or federal government",
       "U.S. military ID with photo",
-      "Tennessee handgun carry permit with photo",
-      "Photo ID issued by a Tennessee college or university"
+      "Tennessee handgun carry permit with photo"
     ],
-    "expirationRule": "Photo ID must not be expired at time of voting. TODO verify for 2026 cycle.",
+    "idNote": "College student IDs and photo IDs not issued by the federal or Tennessee state government (such as county or city IDs and library cards) are NOT acceptable: https://sos.tn.gov/elections/photo-id",
+    "expirationRule": "A Tennessee or federal photo ID may be used even if expired, except student IDs are not acceptable. Confirm details with the TN Secretary of State: https://sos.tn.gov/elections/photo-id",
     "impedimentDeclaration": "Strict photo ID state: voters without acceptable photo ID must cast a provisional ballot and present acceptable ID to the county election commission by close of business on the second business day after the election for it to be counted.",
     "phonesAtPolls": "prohibited",
     "phonesAtPollsDetail": "Tennessee prohibits the use of mobile phones in the voting booth. You may not photograph your marked ballot.",

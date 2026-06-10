@@ -2,44 +2,46 @@
   "_sources": {
     "primary": "https://vote.utah.gov/",
     "secondary": "https://www.ncsl.org/elections-and-campaigns/voter-id",
-    "checked": "2026-05-10",
-    "discrepancies": "Utah is largely a vote-by-mail state under HB37 (2012) and subsequent legislation — most counties conduct elections entirely by mail. NCSL classifies Utah as non-photo ID requested (utility bill, paycheck, bank statement, or other documentation with name and address). The Utah primary is typically the last Tuesday in June; estimated 2026-06-30. 2026 registration deadlines estimated from Utah statute (30 days before for online/mail; 7 days before for late in-person via DMV-linked process). TODO verify exact 2026 cycle dates."
+    "checked": "2026-06-10",
+    "discrepancies": "Utah is largely a vote-by-mail state under HB37 (2012) and subsequent legislation — most counties conduct elections entirely by mail. NCSL classifies Utah as non-photo ID requested (utility bill, paycheck, bank statement, or other documentation with name and address). 2026-06-10 verification: the primary date estimate of June 30 was WRONG — vote.utah.gov confirms the 2026 Regular Primary Election is JUNE 23, 2026 (fourth Tuesday in June). Registration deadline corrected from the estimated 30-day rule to Utah's 11-day rule: county clerk must receive registration by 5 p.m. Friday, June 12, 2026 for the primary (general: October 23, 2026); voters who miss it may register and vote provisionally in person during early voting or on Election Day with two forms of ID, so sameDayRegistration set to true. Primary mail ballots go out starting June 2, 2026 per vote.utah.gov."
   },
   "stateCode": "UT",
   "stateName": "Utah",
-  "lastUpdated": "2026-05-10",
+  "lastUpdated": "2026-06-10",
   "coverageStatus": "confirmed",
   "elections": [
     {
       "id": "ut-2026-primary",
       "name": "2026 Utah Primary Election",
-      "date": "2026-06-30",
+      "date": "2026-06-23",
       "type": "primary",
       "isPrimary": true,
       "primaryType": "closed",
       "registration": {
         "online": {
           "available": true,
-          "deadline": "2026-05-31",
+          "deadline": "2026-06-12",
           "url": "https://vote.utah.gov/vote/menu/index.html"
         },
         "byMail": {
-          "deadline": "2026-05-31",
+          "deadline": "2026-06-12",
           "sincePostmarked": false
         },
         "inPerson": {
           "deadline": "2026-06-23",
           "sincePostmarked": false
         },
-        "sameDayRegistration": false,
+        "sameDayRegistration": true,
         "registrationCheckUrl": "https://vote.utah.gov/vote/menu/index.html"
       },
       "earlyVoting": {
         "available": true,
         "startDate": "2026-06-02",
-        "endDate": "2026-06-29",
-        "notes": "Most Utah counties are vote-by-mail — ballots mailed to all active registered voters. Some counties may have in-person voting locations. TODO verify exact 2026 dates and county-by-county details."
-      }
+        "endDate": "2026-06-22",
+        "notes": "Most Utah counties are vote-by-mail — primary ballots are mailed to active registered voters starting June 2, 2026. Some counties offer in-person early voting or vote centers; check with your county clerk for locations and dates."
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://vote.utah.gov/"
     },
     {
       "id": "ut-2026-general",
@@ -51,18 +53,18 @@
       "registration": {
         "online": {
           "available": true,
-          "deadline": "2026-10-04",
+          "deadline": "2026-10-23",
           "url": "https://vote.utah.gov/vote/menu/index.html"
         },
         "byMail": {
-          "deadline": "2026-10-04",
+          "deadline": "2026-10-23",
           "sincePostmarked": false
         },
         "inPerson": {
-          "deadline": "2026-10-27",
+          "deadline": "2026-11-03",
           "sincePostmarked": false
         },
-        "sameDayRegistration": false,
+        "sameDayRegistration": true,
         "registrationCheckUrl": "https://vote.utah.gov/vote/menu/index.html"
       },
       "earlyVoting": {
@@ -70,24 +72,26 @@
         "startDate": "2026-10-13",
         "endDate": "2026-11-02",
         "notes": "Most Utah counties conduct elections entirely by mail — ballots sent to all active registered voters approximately 21 days before Election Day. Vote centers may be available in some counties for in-person voting."
-      }
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://vote.utah.gov/"
     }
   ],
   "registration": {
     "online": {
       "available": true,
-      "deadline": "2026-10-04",
+      "deadline": "2026-10-23",
       "url": "https://vote.utah.gov/vote/menu/index.html"
     },
     "byMail": {
-      "deadline": "2026-10-04",
+      "deadline": "2026-10-23",
       "sincePostmarked": false
     },
     "inPerson": {
-      "deadline": "2026-10-27",
+      "deadline": "2026-11-03",
       "sincePostmarked": false
     },
-    "sameDayRegistration": false,
+    "sameDayRegistration": true,
     "registrationCheckUrl": "https://vote.utah.gov/vote/menu/index.html"
   },
   "earlyVoting": {

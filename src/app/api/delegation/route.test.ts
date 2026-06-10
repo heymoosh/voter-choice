@@ -5,7 +5,7 @@
  * mocked.
  */
 
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import type { NextRequest } from "next/server";
 
 vi.mock("../../../lib/server/race-data-rate-limit", () => ({
@@ -20,14 +20,20 @@ vi.mock("../../../lib/server/delegation", () => ({
   resolveDelegation: vi.fn(),
 }));
 
+vi.mock("../../../lib/server/can-context", () => ({
+  lookupCanSeatContext: vi.fn(),
+}));
+
 import { checkRaceDataRateLimit } from "../../../lib/server/race-data-rate-limit";
 import { geocodeAddressToDistrict } from "../../../lib/server/census-geocode";
 import { resolveDelegation } from "../../../lib/server/delegation";
+import { lookupCanSeatContext } from "../../../lib/server/can-context";
 import { POST } from "./route";
 
 const mockedRateLimit = vi.mocked(checkRaceDataRateLimit);
 const mockedGeocode = vi.mocked(geocodeAddressToDistrict);
 const mockedResolve = vi.mocked(resolveDelegation);
+const mockedCanContext = vi.mocked(lookupCanSeatContext);
 
 function makeRequest(body: unknown): NextRequest {
   return new Request("http://localhost/api/delegation", {
@@ -201,5 +207,57 @@ describe("POST /api/delegation — resolution outcomes", () => {
     const text = JSON.stringify(await res.json());
     expect(text).not.toContain("123 Main St");
     expect(text).not.toContain("123 MAIN ST");
+  });
+});
+
+describe("POST /api/delegation — CAN2026 display gate", () => {
+  // A non-empty context the lookup would return if it ran.
+  const CTX = {
+    ratings: [
+      {
+        rater: "Cook Political",
+        raterType: "forecaster",
+        rating: "Lean D",
+        ratingRaw: "Lean D",
+      },
+    ],
+    donorTrail: null,
+    keyVotes: [],
+    snapshotDate: "2026-01-01",
+    sourceUrl: "https://can2026.org",
+  };
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it("does not attach canContext or query CAN when the flag is unset", async () => {
+    vi.stubEnv("CAN2026_DISPLAY_ENABLED", "");
+    mockedGeocode.mockResolvedValue(GEO_OK);
+    mockedResolve.mockResolvedValue({ status: "ok", seats: SEATS });
+    mockedCanContext.mockResolvedValue(CTX);
+
+    const res = await POST(makeRequest({ address: "123 Main St Trenton NJ" }));
+    const body = await res.json();
+    expect(body.seats[0].canContext).toBeNull();
+    expect(mockedCanContext).not.toHaveBeenCalled();
+  });
+
+  it("attaches canContext with attribution when the flag is set", async () => {
+    vi.stubEnv("CAN2026_DISPLAY_ENABLED", "1");
+    mockedGeocode.mockResolvedValue(GEO_OK);
+    mockedResolve.mockResolvedValue({ status: "ok", seats: SEATS });
+    mockedCanContext.mockResolvedValue(CTX);
+
+    const res = await POST(makeRequest({ address: "123 Main St Trenton NJ" }));
+    const body = await res.json();
+    expect(mockedCanContext).toHaveBeenCalled();
+    expect(body.seats[0].canContext).toMatchObject({
+      ratings: CTX.ratings,
+      attribution: {
+        label: "Context from CAN2026",
+        url: "https://can2026.org",
+      },
+    });
   });
 });

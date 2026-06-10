@@ -15,20 +15,42 @@ import {
 // ---------------------------------------------------------------------------
 // candidates
 // ---------------------------------------------------------------------------
-export const candidates = pgTable("candidates", {
-  id: text("id").primaryKey(),
-  fullName: text("full_name").notNull(),
-  sourceId: text("source_id").notNull(),
-  jurisdiction: text("jurisdiction").notNull(), // e.g. "federal-house" | "federal-senate" | "state-TX-house"
-  isIncumbent: boolean("is_incumbent").notNull().default(false),
-  rawMetadata: jsonb("raw_metadata"),
-  insertedAt: timestamp("inserted_at", { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-});
+export const candidates = pgTable(
+  "candidates",
+  {
+    id: text("id").primaryKey(),
+    fullName: text("full_name").notNull(),
+    sourceId: text("source_id").notNull(),
+    jurisdiction: text("jurisdiction").notNull(), // e.g. "federal-house" | "federal-senate" | "state-TX-house"
+    isIncumbent: boolean("is_incumbent").notNull().default(false),
+    // Structured seat columns (nullable — populated for federal rows by the
+    // FEC 2026 roster ingest + incumbent backfill; a "race" is the group key
+    // (state, district, office, electionYear)).
+    party: text("party"), // verbatim FEC party code: "REP" | "DEM" | "LIB" | …
+    state: text("state"), // USPS code, "TX"
+    district: text("district"), // zero-padded House district, "07"; null for senate
+    office: text("office"), // "house" | "senate"
+    electionYear: integer("election_year"), // cycle the candidate filed for, e.g. 2026
+    fecCandidateId: text("fec_candidate_id"),
+    totalReceipts: numeric("total_receipts", { precision: 15, scale: 2 }), // cycle receipts (viability/ranking)
+    rawMetadata: jsonb("raw_metadata"),
+    insertedAt: timestamp("inserted_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    index("candidates_seat_idx").on(
+      t.state,
+      t.district,
+      t.office,
+      t.electionYear,
+    ),
+    index("candidates_fec_id_idx").on(t.fecCandidateId),
+  ],
+);
 
 // ---------------------------------------------------------------------------
 // candidate_offices
@@ -232,3 +254,341 @@ export const scorecardMeta = pgTable("scorecard_meta", {
   contact: text("contact"), // nullable
   notes: text("notes"), // nullable
 });
+
+// ===========================================================================
+// CAN2026 enrichment tables (docs/CAN2026_ENRICHMENT_SCHEMA.md §3)
+//
+// Distinct, attributed source (Constitutional Accountability Now /
+// can2026.org). Namespaced `can_*`; crosswalked — never merged — into our
+// candidates/bills/votes via nullable FKs + match_method. Populated by
+// scripts/ingest/can2026.ts.
+// ===========================================================================
+
+// ---------------------------------------------------------------------------
+// can_ingest_runs — provenance header (§3.1)
+// ---------------------------------------------------------------------------
+export const canIngestRuns = pgTable("can_ingest_runs", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  sourceUrl: text("source_url").notNull(), // "https://can2026.org/2026-elections"
+  contentUpdatedLabel: text("content_updated_label"), // CAN's own stamp, "Updated May 22, 2026"
+  fetchedAt: timestamp("fetched_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  snapshotDate: date("snapshot_date").notNull(), // date this run's rows are stamped with
+  rowsParsed: jsonb("rows_parsed"), // {senateRaces, houseRaces, candidates, votes, ratings, donorTrails, ...}
+  templateVersion: text("template_version"), // "aigenerated v201" — detect builder upgrades
+  contentChecksum: text("content_checksum"), // hash of decoded payload; detect rebuilds
+  notes: text("notes"),
+  // Snapshot retention: gzip of the decoded props payload, base64-encoded.
+  // The ingester keeps this on the latest 5 runs and nulls it on older ones.
+  rawPayloadGzip: text("raw_payload_gzip"),
+});
+
+// ---------------------------------------------------------------------------
+// can_races — one row per federal seat (Senate or House district); also holds
+// pending profiles (§3.2)
+// ---------------------------------------------------------------------------
+export const canRaces = pgTable(
+  "can_races",
+  {
+    // Deterministic key: "<state>-<chamber>[-<district>]", e.g. "AL-senate", "AZ-house-06"
+    id: text("id").primaryKey(),
+    state: text("state").notNull(), // USPS code, "AL"
+    chamber: text("chamber").notNull(), // "house" | "senate"
+    district: text("district"), // nullable; null for senate
+    senateClass: text("senate_class"), // "I" | "II" | "III" | null
+    raceSummary: text("race_summary"), // curated race line: "Dan Sullivan (R, Inc) vs. Mary Peltola (D) · Toss-Up"
+    raceStatus: text("race_status"), // "general"|"open_seat"|"runoff"|"special_election"|"pending_profile"
+    isOpenSeat: boolean("is_open_seat").notNull().default(false),
+    // CAN's own state/race rating chip + the overall state-grid rating (incl. not-on-ballot codes "D -- 2028")
+    canOwnRating: text("can_own_rating"), // normalized: "toss_up"|"lean_d"|...|"safe_r"
+    canOwnRatingRaw: text("can_own_rating_raw"),
+    overallStateRating: text("overall_state_rating"), // "Safe Republican"|"Pending"|"D -- 2028"|...
+    // House-only classification tags (Dataset B). text[] of: committee_power, watch_list, redistricted,
+    // money_network, fairshake_watch, crypto_funded, leadership_pac_flow, tier3_outside_spending, special_election
+    flags: jsonb("flags"),
+    retirementContext: text("retirement_context"), // "Tuberville not seeking reelection, ran for governor"
+    electoralBaseline: text("electoral_baseline"), // "Harris +13 (2024)" / "Trump won by 29 points"
+    electionDate: date("election_date"),
+    primaryDate: date("primary_date"),
+    primaryResults: jsonb("primary_results"), // [{name, party, pct}, ...]
+    buttonColorHex: text("button_color_hex"), // BTN_COLORS["XX"] — presentational, party/lean-coded
+    snapshotDate: date("snapshot_date").notNull(),
+    sourceUrl: text("source_url").notNull(),
+    rawHtml: text("raw_html"), // decoded CARDS[state] fragment for this race
+  },
+  (t) => [
+    index("can_races_state_idx").on(t.state),
+    index("can_races_chamber_idx").on(t.chamber),
+  ],
+);
+
+// ---------------------------------------------------------------------------
+// can_race_ratings — one row per (race, rater) (§3.3)
+// ---------------------------------------------------------------------------
+export const canRaceRatings = pgTable(
+  "can_race_ratings",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    raceId: text("race_id")
+      .notNull()
+      .references(() => canRaces.id),
+    rater: text("rater").notNull(), // "cook"|"sabato"|"inside_elections"|"270towin"|"can_own"|"<pollster>"
+    raterType: text("rater_type").notNull(), // "forecaster"|"pollster"|"can_own"
+    rating: text("rating").notNull(), // normalized: "toss_up"|"lean_d"|"lean_r"|"likely_d"|"likely_r"|"safe_d"|"safe_r"
+    ratingRaw: text("rating_raw"), // verbatim label before normalization ("Solid R", "Lean D")
+    snapshotDate: date("snapshot_date").notNull(),
+    sourceUrl: text("source_url").notNull(),
+  },
+  (t) => [
+    uniqueIndex("can_race_ratings_race_rater_snap_uidx").on(
+      t.raceId,
+      t.rater,
+      t.snapshotDate,
+    ),
+    index("can_race_ratings_race_idx").on(t.raceId),
+  ],
+);
+
+// ---------------------------------------------------------------------------
+// can_candidates — profiled people (ballot candidates AND sitting members)
+// + crosswalk to our candidates (§3.4)
+// ---------------------------------------------------------------------------
+export const canCandidates = pgTable(
+  "can_candidates",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    raceId: text("race_id").references(() => canRaces.id), // nullable; null for sitting members tied only to a state
+    recordType: text("record_type").notNull(), // "ballot_2026" | "current_member_not_on_ballot"
+    canName: text("can_name").notNull(), // name as printed on CAN
+    party: text("party"), // "R" | "D" | "I"
+    state: text("state"),
+    // "incumbent"|"incumbent_appointed"|"challenger"|"primary_challenger"|"open_seat_nominee"|"retiring"|"current_not_on_ballot"
+    incumbentStatus: text("incumbent_status"),
+    nextElectionYear: integer("next_election_year"), // 2028 | 2030, for current_member_not_on_ballot
+    primaryResultPct: numeric("primary_result_pct", {
+      precision: 5,
+      scale: 2,
+    }),
+    narrativeSummary: text("narrative_summary"), // bio-text / member-panel prose (education, career, LCV score, etc.)
+    dataStatus: text("data_status"), // "complete"|"proxy"|"pending"|"profile_pending"
+    // --- crosswalk to our data ---
+    ourCandidateId: text("our_candidate_id").references(() => candidates.id), // nullable
+    matchMethod: text("match_method"), // "exact_name_jurisdiction"|"fuzzy"|"manual"|"unmatched"
+    matchConfidence: numeric("match_confidence", { precision: 4, scale: 3 }),
+    snapshotDate: date("snapshot_date").notNull(),
+    sourceUrl: text("source_url").notNull(),
+  },
+  (t) => [
+    index("can_candidates_our_cand_idx").on(t.ourCandidateId),
+    index("can_candidates_race_idx").on(t.raceId),
+    index("can_candidates_record_type_idx").on(t.recordType),
+  ],
+);
+
+// ---------------------------------------------------------------------------
+// can_donor_trails — donor-trail header + curated note per (person, cycle
+// window) (§3.5)
+// ---------------------------------------------------------------------------
+export const canDonorTrails = pgTable(
+  "can_donor_trails",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    canCandidateId: uuid("can_candidate_id")
+      .notNull()
+      .references(() => canCandidates.id),
+    cycleWindow: text("cycle_window").notNull(), // "2025-2026" | "2019-2024" | "data pending"
+    totalRaised: numeric("total_raised", { precision: 15, scale: 2 }),
+    cashOnHand: numeric("cash_on_hand", { precision: 15, scale: 2 }),
+    cashOnHandAsOf: date("cash_on_hand_as_of"), // the "(March 31, 2026)" glued to the figure
+    pacSharePct: numeric("pac_share_pct", { precision: 5, scale: 2 }),
+    note: text("note"), // donor-note PROSE: dark-money + issue-PAC narrative (AIPAC/Fairshake/crypto)
+    dataStatus: text("data_status"), // "complete"|"proxy"|"pending" (proxy = House figures shown while Senate profile pending)
+    snapshotDate: date("snapshot_date").notNull(),
+    sourceUrl: text("source_url").notNull(),
+  },
+  (t) => [
+    uniqueIndex("can_donor_trails_cand_window_uidx").on(
+      t.canCandidateId,
+      t.cycleWindow,
+    ),
+  ],
+);
+
+// ---------------------------------------------------------------------------
+// can_donor_sectors — OpenSecrets-sector line items (§3.6)
+// ---------------------------------------------------------------------------
+export const canDonorSectors = pgTable(
+  "can_donor_sectors",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    donorTrailId: uuid("donor_trail_id")
+      .notNull()
+      .references(() => canDonorTrails.id),
+    sectorLabelRaw: text("sector_label_raw").notNull(), // verbatim, spellings vary ("Securities & Investment" vs "Securities and Investment")
+    sectorLabel: text("sector_label"), // normalized to a canonical OpenSecrets sector
+    amount: numeric("amount", { precision: 15, scale: 2 }).notNull(),
+    rankInTrail: numeric("rank_in_trail", { precision: 4, scale: 0 }), // display ordering (top-5 per candidate)
+  },
+  (t) => [
+    uniqueIndex("can_donor_sectors_trail_sector_uidx").on(
+      t.donorTrailId,
+      t.sectorLabelRaw,
+    ),
+  ],
+);
+
+// ---------------------------------------------------------------------------
+// can_finance_metrics — free-form FEC / finance line-items (§3.7)
+// ---------------------------------------------------------------------------
+export const canFinanceMetrics = pgTable(
+  "can_finance_metrics",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    canCandidateId: uuid("can_candidate_id")
+      .notNull()
+      .references(() => canCandidates.id),
+    metricLabelRaw: text("metric_label_raw").notNull(), // bespoke per card: "Total raised (cycle)", "Unitemized small-dollar donations"
+    metricLabel: text("metric_label"), // optional normalized key, nullable
+    amount: numeric("amount", { precision: 15, scale: 2 }),
+    asOfDate: date("as_of_date"), // nullable
+    snapshotDate: date("snapshot_date").notNull(),
+    sourceUrl: text("source_url").notNull(),
+  },
+  (t) => [index("can_finance_metrics_cand_idx").on(t.canCandidateId)],
+);
+
+// ---------------------------------------------------------------------------
+// can_issue_pac_contributions — named issue-PAC tracking (AIPAC, Fairshake, …)
+// (§3.8)
+// ---------------------------------------------------------------------------
+export const canIssuePacContributions = pgTable(
+  "can_issue_pac_contributions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    canCandidateId: uuid("can_candidate_id")
+      .notNull()
+      .references(() => canCandidates.id),
+    pacName: text("pac_name").notNull(), // "AIPAC" | "Fairshake" | ...
+    pacCategory: text("pac_category"), // "pro_israel" | "crypto" | ... (descriptive free text)
+    amount: numeric("amount", { precision: 15, scale: 2 }), // nullable when only a flag/negative is known
+    windowType: text("window_type").notNull(), // "career" | "cycle"
+    cycleWindow: text("cycle_window"), // nullable; set when windowType="cycle"
+    confirmed: boolean("confirmed").notNull().default(true), // false stores CAN's negative assertions
+    note: text("note"), // "No Fairshake/crypto confirmed 2026"
+    snapshotDate: date("snapshot_date").notNull(),
+    sourceUrl: text("source_url").notNull(),
+  },
+  (t) => [
+    uniqueIndex("can_issue_pac_cand_pac_window_uidx").on(
+      t.canCandidateId,
+      t.pacName,
+      t.windowType,
+      t.cycleWindow,
+    ),
+  ],
+);
+
+// ---------------------------------------------------------------------------
+// can_bill_narratives — the 10-bill curated dictionary + crosswalk to our
+// bills (§3.9)
+// ---------------------------------------------------------------------------
+export const canBillNarratives = pgTable(
+  "can_bill_narratives",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    // CAN's clickable key from `var BILLS`: one of tcja, ahca, cares, arp, iija, ira, kavanaugh, fra, obbb, genius
+    canKey: text("can_key").notNull(),
+    title: text("title").notNull(), // "Tax Cuts and Jobs Act (H.R. 1) — Dec. 19, 2017"
+    billType: text("bill_type"), // "legislation"|"nomination"|"resolution"|"impeachment"
+    narrative: text("narrative"), // "What it did:" — shared bill-level template, NOT per-vote
+    proceduralNote: text("procedural_note"), // "RC176/RC178 were motions to table; Yea = tactical maneuver…"
+    // --- crosswalk to our data ---
+    ourBillId: text("our_bill_id").references(() => bills.id), // nullable; CAN covers resolutions/PNs we may lack
+    matchMethod: text("match_method"), // "exact"|"manual"|"unmatched"
+    snapshotDate: date("snapshot_date").notNull(),
+    sourceUrl: text("source_url").notNull(),
+  },
+  (t) => [
+    uniqueIndex("can_bill_narratives_key_snap_uidx").on(
+      t.canKey,
+      t.snapshotDate,
+    ),
+    index("can_bill_narratives_our_bill_idx").on(t.ourBillId),
+  ],
+);
+
+// ---------------------------------------------------------------------------
+// can_candidate_key_votes — a person's key votes (the 1,160-row Key Votes
+// tables) (§3.10)
+// ---------------------------------------------------------------------------
+export const canCandidateKeyVotes = pgTable(
+  "can_candidate_key_votes",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    canCandidateId: uuid("can_candidate_id")
+      .notNull()
+      .references(() => canCandidates.id),
+    billLabel: text("bill_label").notNull(), // printed name, always present ("Inflation Reduction Act (H.R. 5376)")
+    dataBillKey: text("data_bill_key"), // nullable; one of the 10 BILLS keys when the row is clickable
+    billNarrativeId: uuid("bill_narrative_id").references(
+      () => canBillNarratives.id,
+    ), // nullable; set only for keyed bills
+    voteCast: text("vote_cast"), // normalized: "yea"|"nay"|"present"|"not_voting"|"na"
+    voteCastRaw: text("vote_cast_raw"), // verbatim incl. qualifiers: "Yea (procedural)", "N/A -- Not yet senator"
+    voteDateRaw: text("vote_date_raw"), // verbatim, irregular: "Aug. 7, 2022", "Jul. 2017", "No floor vote yet"
+    voteDate: date("vote_date"), // parsed when possible, nullable
+    context: text("context"), // the curated Notes/Context column — the per-vote prose
+    proceduralNote: text("procedural_note"), // "Live Pair", "motion to table — tactical maneuver"
+    source: text("source"), // per-vote Source column, usually "--"
+    // --- crosswalk to our votes ---
+    ourVoteId: uuid("our_vote_id").references(() => votes.id), // nullable
+    snapshotDate: date("snapshot_date").notNull(),
+    sourceUrl: text("source_url").notNull(),
+  },
+  (t) => [
+    index("can_key_votes_cand_idx").on(t.canCandidateId),
+    index("can_key_votes_billnarr_idx").on(t.billNarrativeId),
+  ],
+);
+
+// ---------------------------------------------------------------------------
+// can_annotations — polymorphic curated-prose blocks (§3.11)
+// ---------------------------------------------------------------------------
+export const canAnnotations = pgTable(
+  "can_annotations",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    entityType: text("entity_type").notNull(), // "race"|"candidate"|"donor_trail"|"key_vote"
+    entityId: text("entity_id").notNull(), // referenced row id (text form)
+    // "data_gap"|"race_notes"|"observable_correlation"|"pending_what_we_know"|"pending_what_is_pending"|"pending_eta"
+    annotationType: text("annotation_type").notNull(),
+    body: text("body").notNull(), // the curated prose
+    disclaimer: text("disclaimer"), // e.g. correlation finding's "not evidence of quid pro quo"
+    snapshotDate: date("snapshot_date").notNull(),
+    sourceUrl: text("source_url").notNull(),
+  },
+  (t) => [
+    index("can_annotations_entity_idx").on(t.entityType, t.entityId),
+    index("can_annotations_type_idx").on(t.annotationType),
+  ],
+);
+
+// ---------------------------------------------------------------------------
+// can_citations — source citations attached to any CAN entity (§3.12)
+// ---------------------------------------------------------------------------
+export const canCitations = pgTable(
+  "can_citations",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    entityType: text("entity_type").notNull(), // "race"|"candidate"|"donor_trail"|"bill_narrative"|"key_vote"
+    entityId: text("entity_id").notNull(),
+    sourceOrg: text("source_org").notNull(), // "FEC.gov"|"OpenSecrets"|"Cook Political Report"|"NPR"|...
+    fecCommitteeId: text("fec_committee_id"), // when present, e.g. "C00835959" (Fairshake)
+    citationUrl: text("citation_url"),
+    citationDate: date("citation_date"), // "NPR May 21 2026" -> 2026-05-21
+    rawText: text("raw_text"), // verbatim source string (per-vote source OR pipe-delimited source-box)
+    snapshotDate: date("snapshot_date").notNull(),
+  },
+  (t) => [index("can_citations_entity_idx").on(t.entityType, t.entityId)],
+);

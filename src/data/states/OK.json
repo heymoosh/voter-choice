@@ -2,12 +2,12 @@
   "_sources": {
     "primary": "https://www.elections.ok.gov/",
     "secondary": "https://ballotpedia.org/Voting_in_Oklahoma",
-    "checked": "2026-05-10",
-    "discrepancies": "NCSL lists OK as 'photo ID requested' (non-strict). SoS confirms voters without photo ID may execute a personal affidavit and vote a regular ballot. Consistent."
+    "checked": "2026-06-10",
+    "discrepancies": "NCSL lists OK as 'photo ID requested' (non-strict). SoS confirms voters without photo ID may execute a personal affidavit and vote a regular ballot. Consistent. 2026-06-10 verification: the verification tracker suggested the 2026 primary might be June 30; the Oklahoma State Election Board confirms the primary is JUNE 16, 2026 with the runoff primary August 25, 2026. Registration deadlines corrected to the statutory 25-day rule per the State Election Board (primary: May 22, 2026 — file previously had May 15; runoff: July 31, 2026 — previously July 24). General-election early voting includes the preceding Wednesday (Oct 28-31, 2026); primaries/runoffs are Thursday-Saturday. State Election Board also confirms no recognized party has opened its 2026-2027 primaries to independents."
   },
   "stateCode": "OK",
   "stateName": "Oklahoma",
-  "lastUpdated": "2026-05-10",
+  "lastUpdated": "2026-06-10",
   "coverageStatus": "confirmed",
   "elections": [
     {
@@ -20,15 +20,15 @@
       "registration": {
         "online": {
           "available": true,
-          "deadline": "2026-05-15",
+          "deadline": "2026-05-22",
           "url": "https://okvoterportal.okelections.us/"
         },
         "byMail": {
-          "deadline": "2026-05-15",
+          "deadline": "2026-05-22",
           "sincePostmarked": true
         },
         "inPerson": {
-          "deadline": "2026-05-15",
+          "deadline": "2026-05-22",
           "sincePostmarked": false
         },
         "sameDayRegistration": false,
@@ -38,8 +38,10 @@
         "available": true,
         "startDate": "2026-06-11",
         "endDate": "2026-06-13",
-        "notes": "Early voting available Thursday through Saturday before Election Day. Hours vary by county. TODO verify for 2026 cycle."
-      }
+        "notes": "Early voting Thursday and Friday 8 a.m.-6 p.m. and Saturday 8 a.m.-2 p.m. before Election Day at your county's designated early voting location."
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://oklahoma.gov/elections/voters/military-overseas-voters/2026-election-notice-primary-election.html"
     },
     {
       "id": "ok-2026-primary-runoff",
@@ -51,15 +53,15 @@
       "registration": {
         "online": {
           "available": true,
-          "deadline": "2026-07-24",
+          "deadline": "2026-07-31",
           "url": "https://okvoterportal.okelections.us/"
         },
         "byMail": {
-          "deadline": "2026-07-24",
+          "deadline": "2026-07-31",
           "sincePostmarked": true
         },
         "inPerson": {
-          "deadline": "2026-07-24",
+          "deadline": "2026-07-31",
           "sincePostmarked": false
         },
         "sameDayRegistration": false,
@@ -69,8 +71,10 @@
         "available": true,
         "startDate": "2026-08-20",
         "endDate": "2026-08-22",
-        "notes": "Early voting for runoff. TODO verify for 2026 cycle."
-      }
+        "notes": "Early voting for the runoff: Thursday and Friday 8 a.m.-6 p.m. and Saturday 8 a.m.-2 p.m. before Election Day. If you voted in one party's primary, you may only vote in that party's runoff."
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://oklahoma.gov/elections/voters/early-voting.html"
     },
     {
       "id": "ok-2026-general",
@@ -98,10 +102,12 @@
       },
       "earlyVoting": {
         "available": true,
-        "startDate": "2026-10-29",
+        "startDate": "2026-10-28",
         "endDate": "2026-10-31",
-        "notes": "Early voting available Thursday through Saturday before Election Day. TODO verify for 2026 cycle."
-      }
+        "notes": "Early voting for the general election runs Wednesday through Friday 8 a.m.-6 p.m. and Saturday 8 a.m.-2 p.m. (October 28-31, 2026)."
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://oklahoma.gov/elections/voters/early-voting.html"
     }
   ],
   "registration": {
@@ -123,9 +129,9 @@
   },
   "earlyVoting": {
     "available": true,
-    "startDate": "2026-10-29",
+    "startDate": "2026-10-28",
     "endDate": "2026-10-31",
-    "notes": "Early voting is available Thursday through Saturday before Election Day at county election board offices."
+    "notes": "Early voting for the November general election is available Wednesday through Saturday before Election Day (October 28-31, 2026) at your county's designated early voting location."
   },
   "votingRules": {
     "idRequired": true,
@@ -133,10 +139,10 @@
       "Oklahoma driver's license or ID card",
       "U.S. passport",
       "U.S. military ID with photo",
-      "Voter registration card (photo on card issued after 2012)",
+      "Oklahoma voter identification card (free, issued by your county election board; no photo required)",
       "Any government-issued photo ID"
     ],
-    "expirationRule": "Photo ID must not be expired. Voter registration card with photo is acceptable if it was issued after 2012. TODO verify for 2026 cycle.",
+    "expirationRule": "Photo ID must not be expired. The free voter identification card issued by your county election board is also acceptable (it has no photo and does not expire).",
     "impedimentDeclaration": "Voters without acceptable photo ID may sign an affidavit and cast a regular (non-provisional) ballot.",
     "phonesAtPolls": "prohibited",
     "phonesAtPollsDetail": "Oklahoma prohibits use of mobile phones and electronic devices in the voting booth.",

@@ -12,6 +12,11 @@
  */
 
 import { getStateData, getFallbackStateData } from "../../lib/getStateData";
+import {
+  toBallotLogistics,
+  type BallotLogistics,
+  type LogisticsSource,
+} from "../../lib/civic-logistics";
 import type { StateElectionData } from "../../types/election";
 import {
   resolveSeatEligibility,
@@ -30,6 +35,41 @@ import {
 // /api/delegation response (mirrors src/app/api/delegation/route.ts)
 // ---------------------------------------------------------------------------
 
+export interface ApiCanSeatContext {
+  ratings: Array<{
+    rater: string;
+    raterType: string;
+    rating: string;
+    ratingRaw: string | null;
+  }>;
+  donorTrail: {
+    cycleWindow: string;
+    totalRaised: number | null;
+    cashOnHand: number | null;
+    pacSharePct: number | null;
+    note: string | null;
+  } | null;
+  keyVotes: Array<{
+    billLabel: string;
+    voteCast: string | null;
+    voteCastRaw: string | null;
+    voteDateRaw: string | null;
+    context: string | null;
+    proceduralNote: string | null;
+    billNarrative: string | null;
+  }>;
+  snapshotDate: string | null;
+  sourceUrl: string | null;
+  attribution: { label: string; url: string };
+}
+
+export interface ApiSeatChallenger {
+  id: string;
+  name: string;
+  party: string | null;
+  totalReceipts: number | null;
+}
+
 export interface ApiDelegationSeat {
   seatId: string;
   office: "U.S. House" | "U.S. Senate";
@@ -45,6 +85,10 @@ export interface ApiDelegationSeat {
   attendance: { missedPct: number; of: string; band: string } | null;
   onBallot2026: boolean | null;
   nextElectionYear: number | null;
+  /** 2026 FEC filers for this seat (empty when seat isn't up / no roster). */
+  challengers?: ApiSeatChallenger[];
+  /** CAN2026 curated context — display-side only, always attributed. */
+  canContext?: ApiCanSeatContext | null;
 }
 
 export type DelegationResult =
@@ -229,6 +273,10 @@ export interface DelegationSeatVM {
     donorCoalition: unknown[] | null;
   } | null;
   alignmentEntry: SeatCardData["alignmentEntry"];
+  /** 2026 filers running for this seat ("Running for this seat in 2026"). */
+  challengers: ApiSeatChallenger[];
+  /** CAN2026 curated context (null until the CAN ingest runs). */
+  canContext: ApiCanSeatContext | null;
 }
 
 /** Donor-source codes from /api/donors → reader-facing names. */
@@ -303,6 +351,8 @@ export function buildSeats(
           }
         : null,
       alignmentEntry: card?.alignmentEntry ?? null,
+      challengers: seat.challengers ?? [],
+      canContext: seat.canContext ?? null,
     };
   });
 }
@@ -385,20 +435,75 @@ export function deadlineRowsFor(
   ].filter((r): r is DeadlineRow => r !== null);
 }
 
-/** Honest polling fallback — the delegation flow makes no civic call. */
-export function pollingFallback(): {
+export interface PollingInfoVM {
   name: string;
   address: string;
   hours: string;
   notes: string;
   precinct: string;
-} {
+  /** Provenance: "civic" (real Google Civic data) | "state" | "fallback". */
+  source: LogisticsSource;
+}
+
+/** Honest polling fallback — shown until/unless civic resolves real data. */
+export function pollingFallback(): PollingInfoVM {
   return {
     name: "Look up your polling place",
     address: "",
     hours: "",
     notes: "",
     precinct: "",
+    source: "fallback",
+  };
+}
+
+/**
+ * Address → real voting logistics via /api/civic (Google Civic voterinfo),
+ * mapped through the honest toBallotLogistics contract. Best-effort: any
+ * failure returns null and the caller keeps the fallback. The address is
+ * sent to the same /api/civic proxy the ballot flow already uses and is
+ * never persisted.
+ */
+export async function fetchBallotLogistics(
+  address: string,
+  stateData: StateElectionData | null,
+): Promise<BallotLogistics | null> {
+  try {
+    const res = await fetch("/api/civic", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ address }),
+    });
+    if (!res.ok) return null;
+    const body = await res.json();
+    if (!body || body.error) return null;
+    return toBallotLogistics(body, stateData ?? undefined);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * BallotLogistics → the pollingInfo shape the workspace bar + print sheet
+ * render. Civic polling place wins; statutory per-state hours fill the
+ * hours slot when civic carries none; otherwise the honest fallback.
+ */
+export function pollingInfoFromLogistics(
+  logistics: BallotLogistics | null,
+  stateData: StateElectionData | null,
+): PollingInfoVM {
+  const statutoryHours = stateData?.votingRules?.pollingHours ?? "";
+  if (!logistics || !logistics.pollingPlace) {
+    return { ...pollingFallback(), hours: statutoryHours };
+  }
+  const place = logistics.pollingPlace;
+  return {
+    name: place.name || "Your polling place",
+    address: place.address || "",
+    hours: place.hours || statutoryHours,
+    notes: place.notes || "",
+    precinct: "",
+    source: logistics.source,
   };
 }
 
@@ -462,6 +567,69 @@ export function preloadSeatResearch(
       onUpdate();
     });
   }
+  onUpdate();
+}
+
+// ---------------------------------------------------------------------------
+// Challenger research — ON-DEMAND only (Muxin, 2026-06-10): fires when the
+// voter taps "Research positions" on a challenger row, never preloaded.
+// Results persist server-side in candidate_data, so a researched challenger
+// renders instantly for every later voter (lookupCandidateData read path).
+// ---------------------------------------------------------------------------
+
+const challengerResearchStore = new Map<string, SeatResearch>();
+
+export function getChallengerResearch(
+  challengerId: string,
+): SeatResearch | undefined {
+  return challengerResearchStore.get(challengerId);
+}
+
+/** Reset hook for tests/start-over. */
+export function _resetChallengerResearchForTesting(): void {
+  challengerResearchStore.clear();
+}
+
+/**
+ * Research one challenger's positions on the voter's issues (web search →
+ * structured, cited scores; persisted server-side). Same name-handling
+ * contract as preloadSeatResearch: the real name goes server-side only and
+ * the stored result is name-free issue scores.
+ */
+export function researchChallenger(
+  challenger: ApiSeatChallenger,
+  seat: { office: string; districtLabel: string },
+  issues: UserIssue[],
+  stateCode: string,
+  onUpdate: () => void,
+): void {
+  const structuredIssues = (issues || [])
+    .filter((i) => i.canonicalIssue)
+    .map((i) => ({
+      canonicalIssue: i.canonicalIssue as string,
+      issueLabel: i.interpretation,
+    }));
+  if (structuredIssues.length === 0) return;
+  const existing = challengerResearchStore.get(challenger.id);
+  if (existing && existing.status !== "unavailable") return;
+
+  challengerResearchStore.set(challenger.id, { status: "loading" });
+  fetchCandidateResearch({
+    candidateName: challenger.name,
+    jurisdiction: `${seat.office} — ${seat.districtLabel}, ${stateCode}`,
+    issues: structuredIssues,
+    cycle: "2026",
+  }).then((res) => {
+    if (res && res.scores && res.scores.length > 0) {
+      challengerResearchStore.set(challenger.id, {
+        status: "done",
+        scores: res.scores,
+      });
+    } else {
+      challengerResearchStore.set(challenger.id, { status: "unavailable" });
+    }
+    onUpdate();
+  });
   onUpdate();
 }
 

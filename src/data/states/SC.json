@@ -2,12 +2,12 @@
   "_sources": {
     "primary": "https://www.scvotes.net/",
     "secondary": "https://ballotpedia.org/Voting_in_South_Carolina",
-    "checked": "2026-05-10",
-    "discrepancies": "NCSL lists SC as 'photo ID requested' (non-strict). SoS confirms voters without photo ID may vote a provisional ballot and return with photo ID within 48 hours, or sign an affidavit with a reasonable impediment. Consistent."
+    "checked": "2026-06-10",
+    "discrepancies": "NCSL lists SC as 'photo ID requested' (non-strict). SoS confirms voters without photo ID may vote a provisional ballot and return with photo ID within 48 hours, or sign an affidavit with a reasonable impediment. Consistent. 2026-06-10 verification (scvotes.gov 2026prep): primary June 9, 2026 CONFIRMED (held yesterday) and runoff June 23, 2026 CONFIRMED for contests where no candidate won a majority. Early-voting windows corrected per SEC: statewide primaries May 26-June 5 (file previously ended June 6); runoff early voting is Wednesday June 17 through Friday June 19 (file previously had June 9-20); general early voting Oct 19-31 excluding Sundays."
   },
   "stateCode": "SC",
   "stateName": "South Carolina",
-  "lastUpdated": "2026-05-10",
+  "lastUpdated": "2026-06-10",
   "coverageStatus": "confirmed",
   "elections": [
     {
@@ -37,9 +37,11 @@
       "earlyVoting": {
         "available": true,
         "startDate": "2026-05-26",
-        "endDate": "2026-06-06",
-        "notes": "Early voting (in-person absentee) is available at county election offices. Hours and locations vary. TODO verify for 2026 cycle."
-      }
+        "endDate": "2026-06-05",
+        "notes": "Early voting for the statewide primaries ran Tuesday, May 26 through Friday, June 5 (excluding Sunday), 8:30 a.m.-5 p.m. at county early voting centers."
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://scvotes.gov/voters/2026prep/"
     },
     {
       "id": "sc-2026-primary-runoff",
@@ -67,10 +69,12 @@
       },
       "earlyVoting": {
         "available": true,
-        "startDate": "2026-06-09",
-        "endDate": "2026-06-20",
-        "notes": "Early voting for runoff. TODO verify for 2026 cycle."
-      }
+        "startDate": "2026-06-17",
+        "endDate": "2026-06-19",
+        "notes": "Early voting for the June 23 runoff runs Wednesday, June 17 through Friday, June 19, 8:30 a.m.-5 p.m. at county early voting centers. If you voted in one party's primary, you may only vote in that party's runoff."
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://scvotes.gov/voters/2026prep/"
     },
     {
       "id": "sc-2026-general",
@@ -100,8 +104,10 @@
         "available": true,
         "startDate": "2026-10-19",
         "endDate": "2026-10-31",
-        "notes": "Early voting available at county election offices. TODO verify for 2026 cycle."
-      }
+        "notes": "Early voting for the general election runs the two weeks before Election Day (October 19-31, excluding Sundays) at county early voting centers."
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://scvotes.gov/voters/upcoming-elections/"
     }
   ],
   "registration": {
@@ -138,7 +144,7 @@
       "Employee badge or ID card issued by a state or federal government agency",
       "Student photo ID from a South Carolina public college or university"
     ],
-    "expirationRule": "Photo ID must not be expired. TODO verify for 2026 cycle.",
+    "expirationRule": "Photo ID must be current (not expired).",
     "impedimentDeclaration": "Voters without acceptable photo ID may cast a provisional ballot and either present ID within 2 business days, or sign an affidavit stating a reasonable impediment to obtaining photo ID.",
     "phonesAtPolls": "prohibited",
     "phonesAtPollsDetail": "South Carolina prohibits use of wireless communication devices in the voting booth. You may not photograph your ballot.",

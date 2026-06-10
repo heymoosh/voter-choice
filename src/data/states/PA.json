@@ -2,12 +2,12 @@
   "_sources": {
     "primary": "https://www.vote.pa.gov/",
     "secondary": "https://www.ncsl.org/elections-and-campaigns/voter-id",
-    "checked": "2026-05-10",
-    "discrepancies": "NCSL classifies PA as 'no document required' for ID, though first-time voters who registered by mail may need to show ID. Pennsylvania has no-excuse absentee/mail voting (Act 77, 2019) and no early in-person voting separate from absentee. PA's 2026 primary is typically the third Tuesday in May; TODO verify exact 2026 date. Registration deadline is 15 days before the election per PA law. PA does not have same-day registration."
+    "checked": "2026-06-10",
+    "discrepancies": "NCSL classifies PA as 'no document required' for ID, though first-time voters who registered by mail may need to show ID. Pennsylvania has no-excuse absentee/mail voting (Act 77, 2019) and no early in-person voting separate from absentee. Registration deadline is 15 days before the election per PA law. PA does not have same-day registration. 2026-06-10 verification: the May 19, 2026 primary date is CONFIRMED (third Tuesday in May, 25 P.S. 2753; FVAP 2026 primary calendar current as of May 2026 concurs); the election was held as scheduled. November 3, 2026 general confirmed; registration deadlines follow the 15-day rule (May 4 / October 19)."
   },
   "stateCode": "PA",
   "stateName": "Pennsylvania",
-  "lastUpdated": "2026-05-10",
+  "lastUpdated": "2026-06-10",
   "elections": [
     {
       "id": "pa-2026-primary",
@@ -38,7 +38,9 @@
         "startDate": null,
         "endDate": null,
         "notes": "Pennsylvania does not have traditional early in-person voting. No-excuse mail voting (absentee) is available. Mail ballot applications open as soon as the primary is announced."
-      }
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://www.vote.pa.gov/"
     },
     {
       "id": "pa-2026-general",
@@ -69,7 +71,9 @@
         "startDate": null,
         "endDate": null,
         "notes": "Pennsylvania does not have traditional early in-person voting. No-excuse mail (absentee) voting is available for all registered voters."
-      }
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://www.vote.pa.gov/"
     }
   ],
   "registration": {

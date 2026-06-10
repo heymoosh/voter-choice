@@ -2,12 +2,12 @@
   "_sources": {
     "primary": "https://www.elections.il.gov/",
     "secondary": "https://www.ncsl.org/elections-and-campaigns/voter-id",
-    "checked": "2026-05-10",
-    "discrepancies": "Illinois has no voter ID requirement — voters affirm identity by signing the poll book. NCSL confirms 'no document required'. Voter registration deadline is 28 days before election by mail/online; same-day registration available during early voting and on Election Day."
+    "checked": "2026-06-10",
+    "discrepancies": "Illinois has no voter ID requirement — voters affirm identity by signing the poll book. NCSL confirms 'no document required'. Voter registration deadline is 28 days before election by mail/online; same-day registration available during early voting and on Election Day. 2026-06-10: Primary confirmed as March 17, 2026 and general as November 3, 2026 (VOTE411). Early-voting start dates corrected to the statutory 40th day before each election (10 ILCS 5/19A-15); the file previously listed later start dates inconsistent with its own 40-day note."
   },
   "stateCode": "IL",
   "stateName": "Illinois",
-  "lastUpdated": "2026-05-10",
+  "lastUpdated": "2026-06-10",
   "coverageStatus": "confirmed",
   "elections": [
     {
@@ -36,10 +36,12 @@
       },
       "earlyVoting": {
         "available": true,
-        "startDate": "2026-02-19",
+        "startDate": "2026-02-05",
         "endDate": "2026-03-16",
-        "notes": "Early voting begins 40 days before the election. Hours and locations vary by county. TODO verify for 2026 cycle."
-      }
+        "notes": "Early voting began at election authority offices 40 days before the primary (February 5, 2026) and ran through March 16; additional permanent sites open from the 15th day before. Hours and locations vary by election authority."
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://www.vote411.org/primaries2026"
     },
     {
       "id": "il-2026-general",
@@ -67,10 +69,12 @@
       },
       "earlyVoting": {
         "available": true,
-        "startDate": "2026-10-15",
+        "startDate": "2026-09-24",
         "endDate": "2026-11-02",
-        "notes": "Early voting begins 40 days before the election. Hours and locations vary by county. TODO verify for 2026 cycle."
-      }
+        "notes": "Early voting begins at election authority main offices 40 days before the election (September 24, 2026) and runs through November 2; additional permanent early voting sites open from the 15th day before (October 19). Hours and locations vary — check your county clerk or board of elections."
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://www.vote411.org/primaries2026"
     }
   ],
   "registration": {
@@ -92,9 +96,9 @@
   },
   "earlyVoting": {
     "available": true,
-    "startDate": "2026-10-15",
+    "startDate": "2026-09-24",
     "endDate": "2026-11-02",
-    "notes": "Early voting begins 40 days before the general election. Permanent early voting sites and hours set by county clerks. TODO verify for 2026 cycle."
+    "notes": "Early voting begins at election authority main offices 40 days before the general election (September 24, 2026); permanent early voting sites and hours are set by county clerks and boards of election."
   },
   "votingRules": {
     "idRequired": false,

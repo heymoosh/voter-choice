@@ -49,6 +49,13 @@ export interface DelegationSeat {
   onBallot2026: boolean | null;
   /** Calendar year of the seat's next general election; null = unknown. */
   nextElectionYear: number | null;
+  /**
+   * 2026 FEC filers running for this seat (challengers + open-seat
+   * candidates). Attached by the /api/delegation route from
+   * `lookupChallengers` (src/lib/server/races.ts); absent/empty when the
+   * roster isn't ingested or the seat isn't up this cycle.
+   */
+  challengers?: import("./races").SeatChallenger[];
 }
 
 export type DelegationLookupResult =

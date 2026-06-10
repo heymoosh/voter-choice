@@ -2,12 +2,12 @@
   "_sources": {
     "primary": "https://www.nvsos.gov/sos/elections",
     "secondary": "https://www.ncsl.org/elections-and-campaigns/voter-id",
-    "checked": "2026-05-10",
-    "discrepancies": "NCSL classifies Nevada as no document required — Nevada verifies voter identity through signature comparison on mail ballots and does not require ID to vote in person (voter states name and address). Nevada is not a universal vote-by-mail state but all active registered voters receive a mail ballot automatically for primary and general elections under AB 321 (2021). 2026 Nevada primary estimated June 9 (second Tuesday in June). TODO verify exact 2026 cycle dates with Nevada SoS."
+    "checked": "2026-06-10",
+    "discrepancies": "NCSL classifies Nevada as no document required - Nevada verifies voter identity through signature comparison on mail ballots. Nevada is not a universal vote-by-mail state by name, but all active registered voters receive a mail ballot automatically for primary and general elections under AB 321 (2021). [2026-06-10] Primary date June 9, 2026 confirmed (FVAP 2026 primary calendar); general Nov 3 confirmed. Early voting windows (May 23 - Jun 5; Oct 17-30, 2026) follow Nevada's statutory two-week early voting period ending the Friday before Election Day - confirm sites with your county election office."
   },
   "stateCode": "NV",
   "stateName": "Nevada",
-  "lastUpdated": "2026-05-10",
+  "lastUpdated": "2026-06-10",
   "coverageStatus": "confirmed",
   "elections": [
     {
@@ -38,8 +38,10 @@
         "available": true,
         "startDate": "2026-05-23",
         "endDate": "2026-06-05",
-        "notes": "All active registered voters receive a mail ballot automatically. In-person early voting available at polling locations statewide. TODO verify exact 2026 dates."
-      }
+        "notes": "All active registered voters receive a mail ballot automatically. In-person early voting for the June 9, 2026 primary ran May 23 - June 5, 2026 at sites statewide."
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://www.fvap.gov/uploads/FVAP/VAO/PrimaryElectionsCalendar.pdf"
     },
     {
       "id": "nv-2026-general",
@@ -70,7 +72,9 @@
         "startDate": "2026-10-17",
         "endDate": "2026-10-30",
         "notes": "All active registered voters receive a mail ballot automatically approximately 2 weeks before the election. In-person early voting locations available statewide. Same-day registration available through Election Day."
-      }
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://www.fvap.gov/uploads/FVAP/VAO/PrimaryElectionsCalendar.pdf"
     }
   ],
   "registration": {

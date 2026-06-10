@@ -10,7 +10,8 @@ Full run-by-run log + decisions: **`docs/alignment/ALIGNMENT_LEDGER.md`** (read 
 - **Next action:** none required. Follow-ups (non-blocking): stricter `public_safety` re-tag
   (over-eager); parked granularity/vocab code (border→immigration F7, public_safety+crime→
   criminal_justice, election→voting_access); recover the ~16% null-summary tags that shipped
-  unvalidated; optional read-path `no_score` guard.
+  unvalidated. ~~Optional read-path `no_score` guard~~ — **DONE 2026-06-10** (ledger entry;
+  `computeVoteAlignment` abstains on any stance_lens outside in_favor/opposed).
 - **Blockers / awaiting:** none.
 - **Key constraints:** alignment changes run the eval + append the ledger before merge (`AGENTS.md`).
   The corrected tagset is snapshotted at `scripts/ingest/_polev1-snapshot.jsonl.gz` because the

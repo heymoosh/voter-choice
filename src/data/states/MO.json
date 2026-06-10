@@ -2,12 +2,12 @@
   "_sources": {
     "primary": "https://www.sos.mo.gov/elections",
     "secondary": "https://www.ncsl.org/elections-and-campaigns/voter-id",
-    "checked": "2026-05-10",
-    "discrepancies": "Missouri enacted a strict photo ID law (Amendment 6, 2016; implemented 2017). NCSL confirms Missouri as 'photo ID required'. Voters without ID may cast a provisional ballot and sign an affidavit — the provisional ballot counts unless the election authority has evidence of fraud. Missouri primary is the first Tuesday after the first Monday in August per statute. No early voting in Missouri — absentee is the alternative."
+    "checked": "2026-06-10",
+    "discrepancies": "Missouri enacted a strict photo ID law (Amendment 6, 2016; implemented 2017). NCSL confirms Missouri as 'photo ID required'. Voters without ID may cast a provisional ballot and sign an affidavit — the provisional ballot counts unless the election authority has evidence of fraud. Missouri primary is the first Tuesday after the first Monday in August per statute. No early voting in Missouri — absentee is the alternative. [2026-06-10] Primary date August 4, 2026 confirmed (FVAP 2026 primary calendar); general Nov 3 confirmed."
   },
   "stateCode": "MO",
   "stateName": "Missouri",
-  "lastUpdated": "2026-05-10",
+  "lastUpdated": "2026-06-10",
   "coverageStatus": "confirmed",
   "elections": [
     {
@@ -39,7 +39,9 @@
         "startDate": null,
         "endDate": null,
         "notes": "Missouri does not offer early in-person voting. Voters may vote by absentee ballot without providing a reason."
-      }
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://www.fvap.gov/uploads/FVAP/VAO/PrimaryElectionsCalendar.pdf"
     },
     {
       "id": "mo-2026-general",
@@ -70,7 +72,9 @@
         "startDate": null,
         "endDate": null,
         "notes": "Missouri does not offer early in-person voting. Voters may vote by absentee ballot without providing a reason."
-      }
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://www.fvap.gov/uploads/FVAP/VAO/PrimaryElectionsCalendar.pdf"
     }
   ],
   "registration": {
@@ -105,7 +109,7 @@
       "ID issued by any Missouri or federal agency with photo, name, and expiration date",
       "Concealed carry permit with photo"
     ],
-    "expirationRule": "Photo ID must not be expired (must be current or have been issued by Missouri within the preceding 25 years if the voter is age 62 or older). TODO verify for 2026 cycle.",
+    "expirationRule": "Photo ID generally must be current; Missouri law allows certain recently expired IDs. Confirm current rules with the Secretary of State: https://www.sos.mo.gov/elections",
     "impedimentDeclaration": "Voters without acceptable photo ID may cast a provisional ballot and sign an affidavit. The provisional ballot is counted unless the election authority finds evidence of fraud.",
     "phonesAtPolls": "prohibited",
     "phonesAtPollsDetail": "Missouri prohibits use of wireless communication devices inside the voting booth. Voters may have phones on their person but must not use them while voting.",

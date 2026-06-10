@@ -2,12 +2,12 @@
   "_sources": {
     "primary": "https://www.maine.gov/sos/cec/elec/index.html",
     "secondary": "https://www.ncsl.org/elections-and-campaigns/voter-id",
-    "checked": "2026-05-10",
-    "discrepancies": "No major discrepancies found. Maine uses ranked-choice voting for federal and statewide offices. 2026 registration deadlines estimated based on Maine statute (15 business days before election); TODO verify exact 2026 dates. NCSL classifies Maine as no-document-required for ID."
+    "checked": "2026-06-10",
+    "discrepancies": "No major discrepancies found. Maine uses ranked-choice voting for federal and statewide offices. NCSL classifies Maine as no-document-required for ID. [2026-06-10] Primary date June 9, 2026 confirmed (FVAP 2026 primary calendar; Maine SoS). General Nov 3 confirmed. Registration deadlines remain statutory estimates (15 business days before the election) - confirm exact dates with your town clerk."
   },
   "stateCode": "ME",
   "stateName": "Maine",
-  "lastUpdated": "2026-05-10",
+  "lastUpdated": "2026-06-10",
   "elections": [
     {
       "id": "me-2026-primary",
@@ -35,10 +35,12 @@
       },
       "earlyVoting": {
         "available": true,
-        "startDate": "2026-05-25",
+        "startDate": "2026-05-10",
         "endDate": "2026-06-08",
-        "notes": "Absentee voting available; in-person absentee starts ~30 days before Election Day. TODO verify exact 2026 dates."
-      }
+        "notes": "In-person absentee voting at your town/city clerk's office begins once ballots are available (about 30 days before Election Day). Confirm exact dates with your town or city clerk: https://www.maine.gov/sos/cec/elec/index.html"
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://www.fvap.gov/uploads/FVAP/VAO/PrimaryElectionsCalendar.pdf"
     },
     {
       "id": "me-2026-general",
@@ -68,8 +70,10 @@
         "available": true,
         "startDate": "2026-10-05",
         "endDate": "2026-11-02",
-        "notes": "Absentee voting (in-person and by mail) available from approximately 30 days before Election Day. TODO verify exact 2026 dates."
-      }
+        "notes": "In-person absentee voting (Maine's form of early voting) begins once ballots are available, about 30 days before Election Day, at town/city clerks' offices. Confirm exact dates with your town or city clerk: https://www.maine.gov/sos/cec/elec/index.html"
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://www.fvap.gov/uploads/FVAP/VAO/PrimaryElectionsCalendar.pdf"
     }
   ],
   "registration": {
@@ -93,7 +97,7 @@
     "available": true,
     "startDate": "2026-10-05",
     "endDate": "2026-11-02",
-    "notes": "Maine offers in-person absentee voting at town/city clerks' offices beginning approximately 30 days before the election. TODO verify exact 2026 dates."
+    "notes": "Maine offers in-person absentee voting at town/city clerks' offices beginning about 30 days before the election. Confirm exact dates with your town or city clerk: https://www.maine.gov/sos/cec/elec/index.html"
   },
   "votingRules": {
     "idRequired": false,

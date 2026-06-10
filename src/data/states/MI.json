@@ -2,12 +2,12 @@
   "_sources": {
     "primary": "https://mvic.sos.state.mi.us/",
     "secondary": "https://www.ncsl.org/elections-and-campaigns/voter-id",
-    "checked": "2026-05-10",
-    "discrepancies": "Michigan enacted Proposal 2 (2022) which added same-day registration, 9 days of early voting, and other provisions. NCSL categorizes Michigan as 'photo ID requested' — voters without ID sign an affidavit. The Michigan SoS confirms photo ID is requested but not strictly required: voters may sign a statement of identity instead. Michigan's 2026 primary date is set by statute as the first Tuesday after the second Monday in August."
+    "checked": "2026-06-10",
+    "discrepancies": "Michigan enacted Proposal 2 (2022) which added same-day registration, 9 days of early voting, and other provisions. NCSL categorizes Michigan as 'photo ID requested' — voters without ID sign an affidavit. The Michigan SoS confirms photo ID is requested but not strictly required: voters may sign a statement of identity instead. Michigan's 2026 primary date is set by statute as the first Tuesday after the second Monday in August. [2026-06-10] Primary date August 4, 2026 confirmed (FVAP 2026 primary calendar); general Nov 3 confirmed. Early voting windows shown are the statutory minimum 9-day periods; local jurisdictions may offer more days - confirm with your clerk."
   },
   "stateCode": "MI",
   "stateName": "Michigan",
-  "lastUpdated": "2026-05-10",
+  "lastUpdated": "2026-06-10",
   "coverageStatus": "confirmed",
   "elections": [
     {
@@ -38,8 +38,10 @@
         "available": true,
         "startDate": "2026-07-25",
         "endDate": "2026-08-02",
-        "notes": "Michigan requires 9 days of early voting (Proposal 2, 2022). Exact locations set by local clerks. TODO verify for 2026 cycle."
-      }
+        "notes": "Michigan requires at least 9 days of early voting ending the Sunday before Election Day (July 25 - August 2, 2026 for the primary). Locations and hours set by local clerks: https://mvic.sos.state.mi.us/"
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://www.fvap.gov/uploads/FVAP/VAO/PrimaryElectionsCalendar.pdf"
     },
     {
       "id": "mi-2026-general",
@@ -69,8 +71,10 @@
         "available": true,
         "startDate": "2026-10-24",
         "endDate": "2026-11-01",
-        "notes": "Michigan requires at least 9 days of early voting before Election Day. Locations and hours set by local clerks. TODO verify for 2026 cycle."
-      }
+        "notes": "Michigan requires at least 9 days of early voting ending the Sunday before Election Day (October 24 - November 1, 2026 for the general). Locations and hours set by local clerks: https://mvic.sos.state.mi.us/"
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://www.fvap.gov/uploads/FVAP/VAO/PrimaryElectionsCalendar.pdf"
     }
   ],
   "registration": {
@@ -94,7 +98,7 @@
     "available": true,
     "startDate": "2026-10-24",
     "endDate": "2026-11-01",
-    "notes": "Michigan requires at least 9 days of early in-person voting, ending the Sunday before Election Day. Locations set by local clerks. Same-day registration available through Election Day at your local clerk's office. TODO verify for 2026 cycle."
+    "notes": "Michigan requires at least 9 days of early in-person voting, ending the Sunday before Election Day. Locations set by local clerks. Same-day registration available through Election Day at your local clerk's office. Find your early voting site: https://mvic.sos.state.mi.us/"
   },
   "votingRules": {
     "idRequired": true,
@@ -106,7 +110,7 @@
       "Student ID from a Michigan college or university",
       "Tribal ID"
     ],
-    "expirationRule": "Photo ID should not be expired. If a voter does not have an acceptable photo ID, they may sign a statement of identity (affidavit) and their ballot will be counted. TODO verify for 2026 cycle.",
+    "expirationRule": "Photo ID should not be expired. Voters without an acceptable photo ID may sign an affidavit of identity and cast a regular ballot. Details: https://mvic.sos.state.mi.us/",
     "impedimentDeclaration": "Voters without photo ID may sign an affidavit (statement of identity) and vote a regular ballot — no provisional ballot required.",
     "phonesAtPolls": "allowed",
     "phonesAtPollsDetail": "Michigan does not prohibit phones at polling places. Voters may not photograph their ballot in a way that reveals how they voted. No electioneering within 100 feet of the polling place.",

@@ -2,12 +2,12 @@
   "_sources": {
     "primary": "https://www.coloradosos.gov/voter/pages/pub/olvr/verifyNewVoter.xhtml",
     "secondary": "https://www.ncsl.org/elections-and-campaigns/voter-id",
-    "checked": "2026-05-10",
-    "discrepancies": "Colorado is a universal vote-by-mail state — all registered voters automatically receive a mail ballot. NCSL classifies Colorado as non-photo ID (ID requested but signature verification on mail ballots is primary security mechanism). Colorado offers same-day voter registration at a voter service and polling center through Election Day. 2026 primary date estimated as June 30 per Colorado statute (last Tuesday in June); general election November 3. TODO verify exact 2026 cycle dates with Colorado SoS."
+    "checked": "2026-06-10",
+    "discrepancies": "Colorado is a universal vote-by-mail state — all registered voters automatically receive a mail ballot. NCSL classifies Colorado as non-photo ID (ID requested but signature verification on mail ballots is primary security mechanism). Colorado offers same-day voter registration at a voter service and polling center through Election Day. 2026-06-10: Primary confirmed as June 30, 2026 and general as November 3, 2026 per the Colorado SoS 2026 election calendar. Register by June 22 (primary) / October 26 (general) to receive a mail ballot — corrected the primary deadline from June 15 to the statutory 8-day rule (June 22); same-day registration at VSPCs thereafter."
   },
   "stateCode": "CO",
   "stateName": "Colorado",
-  "lastUpdated": "2026-05-10",
+  "lastUpdated": "2026-06-10",
   "coverageStatus": "confirmed",
   "elections": [
     {
@@ -20,11 +20,11 @@
       "registration": {
         "online": {
           "available": true,
-          "deadline": "2026-06-15",
+          "deadline": "2026-06-22",
           "url": "https://www.coloradosos.gov/voter/pages/pub/olvr/verifyNewVoter.xhtml"
         },
         "byMail": {
-          "deadline": "2026-06-15",
+          "deadline": "2026-06-22",
           "sincePostmarked": false
         },
         "inPerson": {
@@ -38,8 +38,10 @@
         "available": true,
         "startDate": "2026-06-08",
         "endDate": "2026-06-29",
-        "notes": "All voters receive a mail ballot automatically. Voter service and polling centers (VSPCs) open for in-person voting and same-day registration. TODO verify exact 2026 dates."
-      }
+        "notes": "All voters receive a mail ballot automatically (county clerks mail primary ballots June 8–12, 2026). Voter service and polling centers (VSPCs) open for in-person voting and same-day registration through 7 p.m. on Election Day."
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://www.sos.state.co.us/pubs/elections/calendars/2026ElectionCalendar.pdf"
     },
     {
       "id": "co-2026-general",
@@ -70,7 +72,9 @@
         "startDate": "2026-10-19",
         "endDate": "2026-11-02",
         "notes": "All registered voters receive a mail ballot automatically by mid-October. Voter service and polling centers open for in-person voting starting approximately 15 days before Election Day."
-      }
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://www.sos.state.co.us/pubs/elections/calendars/2026ElectionCalendar.pdf"
     }
   ],
   "registration": {

@@ -1,7 +1,13 @@
 {
+  "_sources": {
+    "primary": "https://elections.ny.gov/",
+    "secondary": "https://www.ncsl.org/elections-and-campaigns/voter-id",
+    "checked": "2026-06-10",
+    "discrepancies": "2026-06-10 verification: NYSBOE confirms the June 23, 2026 primary (registration deadline June 13; early voting June 13-21) and the November 3, 2026 general. The general-election registration deadline previously carried forward as 2026-10-09 (old 25-day rule) was corrected to 2026-10-24 per NYSBOE registration-and-voting-deadlines (10-day rule). Party enrollment rule verified: changes after February 14, 2026 take effect June 30, 2026, one week after the primary (NY Election Law 5-304(3)); the prior '25 days before the general' description was outdated and replaced."
+  },
   "stateCode": "NY",
   "stateName": "New York",
-  "lastUpdated": "2026-05-09",
+  "lastUpdated": "2026-06-10",
 
   "elections": [
     {
@@ -32,8 +38,10 @@
         "available": true,
         "startDate": "2026-06-13",
         "endDate": "2026-06-21",
-        "notes": "Early voting hours vary by county. At least 9 days of early voting required by law. TODO verify for 2026 cycle."
-      }
+        "notes": "Early voting hours vary by county. New York provides at least 9 days of early voting, the 10th day through the 2nd day before Election Day."
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://elections.ny.gov/registration-and-voting-deadlines"
     },
     {
       "id": "ny-2026-general",
@@ -45,15 +53,15 @@
       "registration": {
         "online": {
           "available": true,
-          "deadline": "2026-10-09",
+          "deadline": "2026-10-24",
           "url": "https://www.elections.ny.gov/register.html"
         },
         "byMail": {
-          "deadline": "2026-10-09",
+          "deadline": "2026-10-24",
           "sincePostmarked": true
         },
         "inPerson": {
-          "deadline": "2026-10-09",
+          "deadline": "2026-10-24",
           "sincePostmarked": false
         },
         "sameDayRegistration": false,
@@ -63,23 +71,25 @@
         "available": true,
         "startDate": "2026-10-24",
         "endDate": "2026-11-01",
-        "notes": "Early voting hours vary by county. TODO verify for 2026 cycle."
-      }
+        "notes": "Early voting hours vary by county. New York provides at least 9 days of early voting, the 10th day through the 2nd day before Election Day."
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://elections.ny.gov/registration-and-voting-deadlines"
     }
   ],
 
   "registration": {
     "online": {
       "available": true,
-      "deadline": "2026-10-09",
+      "deadline": "2026-10-24",
       "url": "https://www.elections.ny.gov/register.html"
     },
     "byMail": {
-      "deadline": "2026-10-09",
+      "deadline": "2026-10-24",
       "sincePostmarked": true
     },
     "inPerson": {
-      "deadline": "2026-10-09",
+      "deadline": "2026-10-24",
       "sincePostmarked": false
     },
     "sameDayRegistration": false,
@@ -90,7 +100,7 @@
     "available": true,
     "startDate": "2026-10-24",
     "endDate": "2026-11-01",
-    "notes": "Early voting is required by law; at least 9 days. Hours vary by county. TODO verify exact 2026 dates."
+    "notes": "Early voting is required by law; at least 9 days (the 10th through the 2nd day before Election Day). Hours vary by county."
   },
 
   "votingRules": {
@@ -100,7 +110,7 @@
     "phonesAtPollsDetail": "New York voters may use phones to refer to voting information. Taking photos inside the voting booth is not permitted.",
     "additionalRules": [
       "Closed primary: only voters enrolled in a party may vote in that party's primary. Unaffiliated voters may not vote in partisan primaries.",
-      "Party enrollment change deadline is 25 days before the general election to take effect for the following year's primary. TODO verify for 2026 cycle."
+      "To vote in a 2026 partisan primary you must have been enrolled in that party by February 14, 2026 — party enrollment changes made after that date take effect June 30, 2026, one week after the primary (NY Election Law 5-304)."
     ]
   },
 

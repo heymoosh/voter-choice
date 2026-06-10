@@ -2,33 +2,33 @@
   "_sources": {
     "primary": "https://www.sos.arkansas.gov/elections/voter-information/",
     "secondary": "https://ballotpedia.org/Voting_in_Arkansas",
-    "checked": "2026-05-10",
-    "discrepancies": "NCSL lists AR as 'photo ID requested' (non-strict); SoS site confirms voters without photo ID may sign an affidavit and cast a regular ballot. Consistent."
+    "checked": "2026-06-10",
+    "discrepancies": "NCSL lists AR as 'photo ID requested' (non-strict); SoS site confirms voters without photo ID may sign an affidavit and cast a regular ballot. Consistent. 2026-06-10: Corrected the 2026 primary to March 3, 2026 and the primary runoff to March 31, 2026 (this file previously listed May 19 / June 16) per the Arkansas SoS 2026 election calendar; registration deadline for the primary was February 2, 2026. Note: beginning in 2026 voters registered with one party may not vote in the other party's primary (per the Association of Arkansas Counties), tightening Arkansas's traditionally open primary."
   },
   "stateCode": "AR",
   "stateName": "Arkansas",
-  "lastUpdated": "2026-05-10",
+  "lastUpdated": "2026-06-10",
   "coverageStatus": "confirmed",
   "elections": [
     {
       "id": "ar-2026-primary",
       "name": "2026 Arkansas Primary Election",
-      "date": "2026-05-19",
+      "date": "2026-03-03",
       "type": "primary",
       "isPrimary": true,
       "primaryType": "open",
       "registration": {
         "online": {
           "available": true,
-          "deadline": "2026-04-20",
+          "deadline": "2026-02-02",
           "url": "https://www.sos.arkansas.gov/elections/voter-information/voter-registration-information/"
         },
         "byMail": {
-          "deadline": "2026-04-20",
+          "deadline": "2026-02-02",
           "sincePostmarked": true
         },
         "inPerson": {
-          "deadline": "2026-04-20",
+          "deadline": "2026-02-02",
           "sincePostmarked": false
         },
         "sameDayRegistration": false,
@@ -36,30 +36,32 @@
       },
       "earlyVoting": {
         "available": true,
-        "startDate": "2026-05-04",
-        "endDate": "2026-05-16",
-        "notes": "Early voting begins 15 days before the election and ends the Saturday before. Hours vary by county. TODO verify for 2026 cycle."
-      }
+        "startDate": "2026-02-17",
+        "endDate": "2026-03-02",
+        "notes": "Early voting for the March 3 preferential primary ran February 17 – March 2, 2026 (early voting ends at 5:00 p.m. on the Monday before Election Day). Hours vary by county."
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://www.sos.arkansas.gov/uploads/elections/2026_Election_Calendar_Rev._6-2025_.pdf"
     },
     {
       "id": "ar-2026-primary-runoff",
       "name": "2026 Arkansas Primary Runoff Election",
-      "date": "2026-06-16",
+      "date": "2026-03-31",
       "type": "runoff",
       "isPrimary": false,
       "primaryType": null,
       "registration": {
         "online": {
           "available": true,
-          "deadline": "2026-05-18",
+          "deadline": "2026-03-02",
           "url": "https://www.sos.arkansas.gov/elections/voter-information/voter-registration-information/"
         },
         "byMail": {
-          "deadline": "2026-05-18",
+          "deadline": "2026-03-02",
           "sincePostmarked": true
         },
         "inPerson": {
-          "deadline": "2026-05-18",
+          "deadline": "2026-03-02",
           "sincePostmarked": false
         },
         "sameDayRegistration": false,
@@ -67,10 +69,12 @@
       },
       "earlyVoting": {
         "available": true,
-        "startDate": "2026-06-01",
-        "endDate": "2026-06-13",
-        "notes": "Early voting for runoff. TODO verify for 2026 cycle."
-      }
+        "startDate": "2026-03-24",
+        "endDate": "2026-03-30",
+        "notes": "Early voting for the March 31 primary runoff ran March 24–30, 2026 (runoff early voting begins 7 days before the election and ends the Monday before)."
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://www.sos.arkansas.gov/uploads/elections/2026_Election_Calendar_Rev._6-2025_.pdf"
     },
     {
       "id": "ar-2026-general",
@@ -99,9 +103,11 @@
       "earlyVoting": {
         "available": true,
         "startDate": "2026-10-19",
-        "endDate": "2026-10-31",
-        "notes": "Early voting begins 15 days before the election and ends the Saturday before. TODO verify for 2026 cycle."
-      }
+        "endDate": "2026-11-02",
+        "notes": "Early voting begins 15 days before the general election (October 19, 2026) and ends at 5:00 p.m. on the Monday before Election Day (November 2). Hours vary by county."
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://www.sos.arkansas.gov/uploads/elections/2026_Election_Calendar_Rev._6-2025_.pdf"
     }
   ],
   "registration": {
@@ -124,8 +130,8 @@
   "earlyVoting": {
     "available": true,
     "startDate": "2026-10-19",
-    "endDate": "2026-10-31",
-    "notes": "Early voting runs for 15 days before the election and ends the Saturday before Election Day. Hours vary by county."
+    "endDate": "2026-11-02",
+    "notes": "Early voting runs for 15 days before the general election and ends at 5:00 p.m. on the Monday before Election Day. Hours vary by county."
   },
   "votingRules": {
     "idRequired": true,
@@ -137,7 +143,7 @@
       "Concealed carry handgun license",
       "Any document issued by the federal, state, or local government that shows name and photo"
     ],
-    "expirationRule": "Photo ID must not be expired at time of voting. TODO verify for 2026 cycle.",
+    "expirationRule": "Photo ID may be used if it is unexpired or has been expired no more than 4 years before the date of the election.",
     "impedimentDeclaration": "If a voter does not have an acceptable photo ID, they may sign an affidavit and cast a regular (non-provisional) ballot.",
     "phonesAtPolls": "prohibited",
     "phonesAtPollsDetail": "Arkansas prohibits use of wireless communication devices in the polling area. Voters may not photograph their ballot.",

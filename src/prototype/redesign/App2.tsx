@@ -35,6 +35,8 @@ import {
   fetchDelegation,
   loadAllSeatCardData,
   loadStateElectionData,
+  fetchBallotLogistics,
+  pollingInfoFromLogistics,
   buildSeats,
   decorateIssues,
   deadlineRowsFor,
@@ -169,6 +171,7 @@ function App2Inner() {
   // Fetched (not persisted — refetched on resume)
   const [delegation, setDelegation] = useState(null);
   const [stateData, setStateData] = useState(null);
+  const [pollingInfo, setPollingInfo] = useState(null);
   const [seats, setSeats] = useState([]);
   const [failure, setFailure] = useState(null);
   const [polisScopes, setPolisScopes] = useState(null);
@@ -258,6 +261,11 @@ function App2Inner() {
       county: result.county,
     });
     setStateData(sd);
+    // Real address-based logistics (polling place / hours / early voting)
+    // via /api/civic — best-effort; the honest fallback renders meanwhile.
+    void fetchBallotLogistics(addr, sd).then((logistics) => {
+      if (logistics) setPollingInfo(pollingInfoFromLogistics(logistics, sd));
+    });
     if (resuming && issues.length > 0) {
       await analyze(result, sd, issues);
     } else {
@@ -359,6 +367,7 @@ function App2Inner() {
     setVerdicts({});
     setRevealed(new Set());
     setDelegation(null);
+    setPollingInfo(null);
     setSeats([]);
     setStage("home");
   }
@@ -464,7 +473,7 @@ function App2Inner() {
           issues={issues}
           verdicts={verdicts}
           stateData={stateData}
-          pollingInfo={pollingFallback()}
+          pollingInfo={pollingInfo ?? pollingFallback()}
           districtsLine={districtsLine}
           onBack={() => setStage("workspace")}
         />
@@ -513,7 +522,7 @@ function App2Inner() {
           stateName={delegation?.stateName}
           seats={seats}
           userIssues={issues}
-          pollingInfo={pollingFallback()}
+          pollingInfo={pollingInfo ?? pollingFallback()}
           stateData={stateData}
           deadlineRows={
             stateData

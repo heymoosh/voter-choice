@@ -2,16 +2,16 @@
   "_sources": {
     "primary": "https://dcboe.org/",
     "secondary": "https://www.ncsl.org/elections-and-campaigns/voter-id",
-    "checked": "2026-05-10",
-    "discrepancies": "DC uses the Board of Elections (DCBOE), not a Secretary of State. NCSL classifies DC as 'no document required' for ID. DC is a universal vote-by-mail jurisdiction — all registered voters automatically receive a mail ballot. DC also has automatic voter registration via DMV. DC's 2026 primary is typically in late June; TODO verify exact 2026 date. DC voters elect non-voting delegate to Congress (Eleanor Holmes Norton), DC Council, Mayor, and other local offices. DC has same-day registration. No statewide runoff rule."
+    "checked": "2026-06-10",
+    "discrepancies": "DC uses the Board of Elections (DCBOE), not a Secretary of State. NCSL classifies DC as 'no document required' for ID. DC is a universal vote-by-mail jurisdiction — all registered voters automatically receive a mail ballot. DC also has automatic voter registration via DMV. DC voters elect a non-voting delegate to Congress, DC Council, Mayor, and other local offices. DC has same-day registration. No runoff rule. 2026-06-10: Primary confirmed as June 16, 2026 (DCBOE 2026 primary calendar) — ranked-choice voting debuts in this primary. Early voting June 8–14 (primary) and October 26 – November 1 (general); advance registration deadline is 21 days before each election (May 26 / October 13), with same-day registration afterward."
   },
   "stateCode": "DC",
   "stateName": "Washington, D.C.",
-  "lastUpdated": "2026-05-10",
+  "lastUpdated": "2026-06-10",
   "elections": [
     {
       "id": "dc-2026-primary",
-      "name": "2026 DC Democratic Primary",
+      "name": "2026 DC Primary Election",
       "date": "2026-06-16",
       "type": "primary",
       "isPrimary": true,
@@ -19,11 +19,11 @@
       "registration": {
         "online": {
           "available": true,
-          "deadline": "2026-06-16",
+          "deadline": "2026-05-26",
           "url": "https://dcboe.org/Voters/Register-To-Vote/Online-Voter-Registration"
         },
         "byMail": {
-          "deadline": "2026-05-27",
+          "deadline": "2026-05-26",
           "sincePostmarked": false
         },
         "inPerson": {
@@ -35,10 +35,12 @@
       },
       "earlyVoting": {
         "available": true,
-        "startDate": "2026-06-06",
+        "startDate": "2026-06-08",
         "endDate": "2026-06-14",
-        "notes": "DC offers early in-person voting at vote centers across the District. All active registered voters also receive mail ballots automatically. TODO verify exact 2026 dates."
-      }
+        "notes": "Early Vote Centers are open Monday, June 8 through Sunday, June 14, 2026 (8:30 a.m.–7 p.m.). All active registered voters receive mail ballots automatically (mailed from May 11); drop boxes open from May 22. Same-day registration is available at vote centers. This primary uses ranked-choice voting."
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://www.dcboe.org/getmedia/3a7e75bc-4a1b-4aa6-9fc3-f30163beb2b5/2026-Primary-Election-Calendar-Version-08072025.pdf"
     },
     {
       "id": "dc-2026-general",
@@ -50,11 +52,11 @@
       "registration": {
         "online": {
           "available": true,
-          "deadline": "2026-11-03",
+          "deadline": "2026-10-13",
           "url": "https://dcboe.org/Voters/Register-To-Vote/Online-Voter-Registration"
         },
         "byMail": {
-          "deadline": "2026-10-14",
+          "deadline": "2026-10-13",
           "sincePostmarked": false
         },
         "inPerson": {
@@ -66,20 +68,22 @@
       },
       "earlyVoting": {
         "available": true,
-        "startDate": "2026-10-24",
+        "startDate": "2026-10-26",
         "endDate": "2026-11-01",
-        "notes": "DC offers early in-person voting at vote centers. All active registered voters receive mail ballots automatically. TODO verify exact 2026 dates."
-      }
+        "notes": "Early Vote Centers are open Monday, October 26 through Sunday, November 1, 2026 (8:30 a.m.–7 p.m.). All active registered voters receive mail ballots automatically. Same-day registration is available at vote centers."
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://dcboe.org/getmedia/4d04f4a1-fb2a-4f8a-809f-d3f708f232df/2026-General-Election-Calendar-Version-08072025.pdf"
     }
   ],
   "registration": {
     "online": {
       "available": true,
-      "deadline": "2026-11-03",
+      "deadline": "2026-10-13",
       "url": "https://dcboe.org/Voters/Register-To-Vote/Online-Voter-Registration"
     },
     "byMail": {
-      "deadline": "2026-10-14",
+      "deadline": "2026-10-13",
       "sincePostmarked": false
     },
     "inPerson": {
@@ -91,9 +95,9 @@
   },
   "earlyVoting": {
     "available": true,
-    "startDate": "2026-10-24",
+    "startDate": "2026-10-26",
     "endDate": "2026-11-01",
-    "notes": "DC is a universal vote-by-mail jurisdiction. All active registered voters automatically receive a mail ballot. Early in-person voting also available at vote centers. TODO verify exact 2026 dates."
+    "notes": "DC is a universal vote-by-mail jurisdiction. All active registered voters automatically receive a mail ballot. Early in-person voting is also available at vote centers October 26 – November 1, 2026 for the general election."
   },
   "votingRules": {
     "idRequired": false,

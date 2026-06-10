@@ -2,12 +2,12 @@
   "_sources": {
     "primary": "https://www.state.nj.us/state/elections/voter-registration.shtml",
     "secondary": "https://www.ncsl.org/elections-and-campaigns/voter-id",
-    "checked": "2026-05-10",
-    "discrepancies": "NCSL classifies NJ as 'no document required' for ID. New Jersey has no-excuse vote-by-mail and mails every registered voter an absentee ballot application before each election. NJ's 2026 primary is typically the first Tuesday in June; TODO verify exact 2026 primary date. Registration deadline is 21 days before the election per NJ law. NJ has online voter registration via the MVC portal."
+    "checked": "2026-06-10",
+    "discrepancies": "NCSL classifies NJ as 'no document required' for ID. New Jersey has no-excuse vote-by-mail. Registration deadline is 21 days before the election per NJ law. NJ has online voter registration via the state portal. [2026-06-10] Primary date June 2, 2026 confirmed (FVAP; nj.gov): registration deadline May 12, early voting May 26-31, 2026. General Nov 3 confirmed: registration deadline Oct 13, early voting Oct 24 - Nov 1, 2026 (statutory nine-day window)."
   },
   "stateCode": "NJ",
   "stateName": "New Jersey",
-  "lastUpdated": "2026-05-10",
+  "lastUpdated": "2026-06-10",
   "elections": [
     {
       "id": "nj-2026-primary",
@@ -37,8 +37,10 @@
         "available": true,
         "startDate": "2026-05-26",
         "endDate": "2026-05-31",
-        "notes": "New Jersey requires 6 days of early in-person voting before each election. TODO verify exact 2026 dates."
-      }
+        "notes": "Early in-person voting for the June 2, 2026 primary ran May 26-31, 2026. Locations vary by county."
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://www.nj.gov/state/elections/election-information-2026.shtml"
     },
     {
       "id": "nj-2026-general",
@@ -68,8 +70,10 @@
         "available": true,
         "startDate": "2026-10-24",
         "endDate": "2026-11-01",
-        "notes": "New Jersey requires 6 days of early in-person voting. Additional early voting hours may be required. TODO verify exact 2026 dates."
-      }
+        "notes": "Nine days of early in-person voting before the general election: October 24 - November 1, 2026. Locations vary by county: https://www.nj.gov/state/elections/election-information-2026.shtml"
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://www.nj.gov/state/elections/election-information-2026.shtml"
     }
   ],
   "registration": {
@@ -93,7 +97,7 @@
     "available": true,
     "startDate": "2026-10-24",
     "endDate": "2026-11-01",
-    "notes": "New Jersey mandates at least 6 days of early in-person voting before each election. Locations vary by county. No-excuse vote-by-mail is also available. TODO verify exact 2026 dates."
+    "notes": "New Jersey provides early in-person voting before each election (nine days before a general election: October 24 - November 1, 2026). Locations vary by county. No-excuse vote-by-mail is also available."
   },
   "votingRules": {
     "idRequired": false,

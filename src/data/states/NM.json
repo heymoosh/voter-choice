@@ -1,7 +1,13 @@
 {
+  "_sources": {
+    "primary": "https://www.sos.nm.gov/voting-and-elections/",
+    "secondary": "https://www.fvap.gov/uploads/FVAP/VAO/PrimaryElectionsCalendar.pdf",
+    "checked": "2026-06-10",
+    "discrepancies": "[2026-06-10] Primary June 2, 2026 and general Nov 3, 2026 confirmed (FVAP; NM SoS). Updated sameDayRegistration to true: New Mexico offers same-day registration at county clerk offices, at some early voting sites, and at the polls on Election Day (NM SoS voter-registration FAQ) - the file previously said false. Standard (online/mail) registration deadline is 28 days before the election (May 5 / Oct 6, 2026). Early voting: May 5-30, 2026 (primary) and Oct 6-31, 2026 (general); expanded early voting sites open later in the window - confirm locations with your county clerk. Added per-election registration and earlyVoting blocks that were previously missing."
+  },
   "stateCode": "NM",
   "stateName": "New Mexico",
-  "lastUpdated": "2026-03-01",
+  "lastUpdated": "2026-06-10",
   "elections": [
     {
       "id": "nm-2026-primary",
@@ -9,7 +15,32 @@
       "date": "2026-06-02",
       "type": "primary",
       "isPrimary": true,
-      "primaryType": "closed"
+      "primaryType": "closed",
+      "registration": {
+        "online": {
+          "available": true,
+          "deadline": "2026-05-05",
+          "url": "https://portal.sos.state.nm.us/OVR/WebPages/InstructionsStep1.aspx"
+        },
+        "byMail": {
+          "deadline": "2026-05-05",
+          "sincePostmarked": false
+        },
+        "inPerson": {
+          "deadline": "2026-06-02",
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": true,
+        "registrationCheckUrl": "https://voterportal.servis.sos.nm.gov/WhereToVote.aspx"
+      },
+      "earlyVoting": {
+        "available": true,
+        "startDate": "2026-05-05",
+        "endDate": "2026-05-30",
+        "notes": "Early in-person voting for the June 2, 2026 primary ran May 5-30, 2026, beginning at county clerk offices (expanded sites open later in the window). Same-day registration is available at early voting sites and on Election Day."
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://www.sos.nm.gov/voting-and-elections/voting-faqs/voter-registration/"
     },
     {
       "id": "nm-2026-general",
@@ -17,38 +48,65 @@
       "date": "2026-11-03",
       "type": "general",
       "isPrimary": false,
-      "primaryType": null
+      "primaryType": null,
+      "registration": {
+        "online": {
+          "available": true,
+          "deadline": "2026-10-06",
+          "url": "https://portal.sos.state.nm.us/OVR/WebPages/InstructionsStep1.aspx"
+        },
+        "byMail": {
+          "deadline": "2026-10-06",
+          "sincePostmarked": false
+        },
+        "inPerson": {
+          "deadline": "2026-11-03",
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": true,
+        "registrationCheckUrl": "https://voterportal.servis.sos.nm.gov/WhereToVote.aspx"
+      },
+      "earlyVoting": {
+        "available": true,
+        "startDate": "2026-10-06",
+        "endDate": "2026-10-31",
+        "notes": "Early in-person voting runs October 6-31, 2026, beginning at county clerk offices (expanded locations open later in the window). Same-day registration is available. Find locations: https://voterportal.servis.sos.nm.gov/WhereToVote.aspx"
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://www.sos.nm.gov/voting-and-elections/voting-faqs/voter-registration/"
     }
   ],
   "registration": {
     "online": {
       "available": true,
-      "deadline": "2026-05-05",
+      "deadline": "2026-10-06",
       "url": "https://portal.sos.state.nm.us/OVR/WebPages/InstructionsStep1.aspx"
     },
     "byMail": {
-      "deadline": "2026-05-05",
+      "deadline": "2026-10-06",
       "sincePostmarked": false
     },
     "inPerson": {
-      "deadline": "2026-05-30",
+      "deadline": "2026-11-03",
       "sincePostmarked": false
     },
-    "sameDayRegistration": false,
+    "sameDayRegistration": true,
     "registrationCheckUrl": "https://voterportal.servis.sos.nm.gov/WhereToVote.aspx"
   },
   "earlyVoting": {
     "available": true,
-    "startDate": "2026-05-14",
-    "endDate": "2026-05-30",
-    "notes": "Early voting available at designated locations"
+    "startDate": "2026-10-06",
+    "endDate": "2026-10-31",
+    "notes": "Early voting for the general election runs October 6-31, 2026 at county clerk offices and expanded early voting locations. Same-day registration available."
   },
   "votingRules": {
     "idRequired": false,
     "acceptedIds": [],
     "phonesAtPolls": "allowed",
     "phonesAtPollsDetail": "Phones are permitted at New Mexico polling places.",
-    "additionalRules": ["Voters without ID may vote by affidavit"]
+    "additionalRules": [
+      "Voters without ID may vote by affidavit"
+    ]
   },
   "runoffRules": {
     "hasRunoff": false,
