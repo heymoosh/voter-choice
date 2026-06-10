@@ -37,40 +37,10 @@ jobs:
       - name: Build
         run: npm run build
 
+  # The REQUIRED e2e check covers the prod default: the congress-assessment
+  # experience (flag unset). The parked legacy ballot experience keeps its own
+  # non-required leg below.
   e2e:
-    runs-on: ubuntu-latest
-    # Build-time inlined: the whole job (build + specs) runs the legacy flavor.
-    env:
-      NEXT_PUBLIC_BALLOT_ENABLED: "true"
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-
-      - name: Setup Node
-        uses: actions/setup-node@v6
-        with:
-          node-version: "22"
-          cache: "npm"
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
-
-      - name: Build
-        run: npm run build
-
-      # The legacy ballot experience (src/prototype/VoterChoiceApp.tsx) only
-      # renders when the build inlines NEXT_PUBLIC_BALLOT_ENABLED=true; the
-      # congress-assessment experience (src/prototype/redesign/) is the
-      # default. This required check covers the legacy suite until the PR-3
-      # cutover swaps the legs. The flag is BUILD-time inlined, so each leg
-      # builds its own flavor.
-      - name: Run Playwright e2e tests (legacy ballot suite)
-        run: npm run e2e
-
-  e2e-redesign:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -93,4 +63,34 @@ jobs:
         run: npm run build
 
       - name: Run Playwright e2e tests (redesign suite)
+        run: npm run e2e
+
+  # The parked legacy ballot experience (src/prototype/VoterChoiceApp.tsx,
+  # behind NEXT_PUBLIC_BALLOT_ENABLED=true — Phase-3 reuse). Not a required
+  # check, but keeps the parked code exercised so it doesn't rot.
+  e2e-ballot-legacy:
+    runs-on: ubuntu-latest
+    # Build-time inlined: the whole job (build + specs) runs the legacy flavor.
+    env:
+      NEXT_PUBLIC_BALLOT_ENABLED: "true"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Build (legacy ballot experience)
+        run: npm run build
+
+      - name: Run Playwright e2e tests (legacy ballot suite)
         run: npm run e2e
