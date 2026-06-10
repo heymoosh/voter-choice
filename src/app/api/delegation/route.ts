@@ -29,6 +29,11 @@ import {
   lookupChallengers,
   type SeatChallengers,
 } from "../../../lib/server/races";
+import {
+  lookupCanSeatContext,
+  type CanSeatContext,
+} from "../../../lib/server/can-context";
+import { CAN_ATTRIBUTION } from "../../../lib/canAttribution";
 
 const MIN_ADDRESS = 4;
 const MAX_ADDRESS = 300;
@@ -110,7 +115,31 @@ export async function POST(request: NextRequest) {
   } catch (err) {
     console.error("[delegation] challenger lookup failed:", err);
   }
-  const seats = delegation.seats.map((seat) => ({
+  // CAN2026 curated context (race ratings, donor trails, key-vote prose) —
+  // display-side only, never a scoring input. Empty until the CAN ingest
+  // runs; failures degrade to no context.
+  const canContexts = await Promise.all(
+    delegation.seats.map(async (seat): Promise<CanSeatContext | null> => {
+      try {
+        const ctx = await lookupCanSeatContext(
+          stateCode,
+          seat.chamber,
+          district,
+          seat.candidate?.id ?? null,
+        );
+        const empty =
+          ctx.ratings.length === 0 &&
+          !ctx.donorTrail &&
+          ctx.keyVotes.length === 0;
+        return empty ? null : ctx;
+      } catch (err) {
+        console.error("[delegation] CAN context lookup failed:", err);
+        return null;
+      }
+    }),
+  );
+
+  const seats = delegation.seats.map((seat, i) => ({
     ...seat,
     challengers:
       seat.chamber === "house"
@@ -119,6 +148,9 @@ export async function POST(request: NextRequest) {
           seat.onBallot2026 === true
           ? challengers.senate
           : [],
+    canContext: canContexts[i]
+      ? { ...canContexts[i], attribution: CAN_ATTRIBUTION }
+      : null,
   }));
 
   return Response.json({

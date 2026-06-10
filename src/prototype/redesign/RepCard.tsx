@@ -362,6 +362,130 @@ export function ChallengersStrip({ seat, userIssues, stateCode }) {
   );
 }
 
+/* ---- CAN2026 curated context [Δ new section] — race ratings, donor-trail
+   prose, key-vote context from can2026.org (Constitutional Accountability
+   Now). DISPLAY ONLY: never feeds any score. Renders nothing until the CAN
+   ingest has run; every block carries the structural attribution. ---- */
+const RATING_LABELS = {
+  toss_up: "Toss-up",
+  lean_d: "Lean D",
+  lean_r: "Lean R",
+  likely_d: "Likely D",
+  likely_r: "Likely R",
+  safe_d: "Safe D",
+  safe_r: "Safe R",
+};
+
+export function CanContextSection({ canContext }) {
+  const [open, setOpen] = useState(false);
+  if (!canContext) return null;
+  const { ratings, donorTrail, keyVotes, attribution, snapshotDate } =
+    canContext;
+  return (
+    <div className={"cv2-disclose can-context " + (open ? "open" : "")}>
+      <button
+        className="cv2-disclose-toggle"
+        aria-expanded={open}
+        onClick={() => setOpen((v) => !v)}
+      >
+        <span className="cv2-disclose-lab">
+          <span className="cv2-disclose-eyebrow">Curated context</span>
+          <span className="cv2-disclose-title">
+            Race ratings &amp; key votes
+          </span>
+          <span className="cv2-disclose-summary">
+            {ratings.length > 0 && (
+              <span className="cv2-disclose-stat">
+                {ratings
+                  .filter((r) => r.raterType === "forecaster")
+                  .slice(0, 3)
+                  .map(
+                    (r) =>
+                      `${r.rater.replace(/_/g, " ")}: ${r.ratingRaw || RATING_LABELS[r.rating] || r.rating}`,
+                  )
+                  .join(" · ") || null}
+              </span>
+            )}
+          </span>
+        </span>
+        <span className="cv2-disclose-chev" aria-hidden="true">
+          {open ? (
+            <>
+              Hide <span className="cv2-disclose-arrow">▴</span>
+            </>
+          ) : (
+            <>
+              Show details <span className="cv2-disclose-arrow">▾</span>
+            </>
+          )}
+        </span>
+      </button>
+      {open && (
+        <div className="cv2-disclose-body">
+          {donorTrail && (
+            <div className="cv2-vote">
+              <div className="cv2-vote-head">
+                <div className="bill">
+                  <span className="num">DONOR TRAIL</span>
+                  <span className="ttl">{donorTrail.cycleWindow}</span>
+                </div>
+              </div>
+              <p className="cv2-vote-narr">
+                {typeof donorTrail.totalRaised === "number" && (
+                  <>
+                    Raised <b>{formatDollars(donorTrail.totalRaised)}</b>
+                    {typeof donorTrail.pacSharePct === "number" && (
+                      <> · ~{donorTrail.pacSharePct}% from PACs</>
+                    )}
+                    {donorTrail.note ? ". " : "."}
+                  </>
+                )}
+                {donorTrail.note}
+              </p>
+            </div>
+          )}
+          {keyVotes.map((v, i) => (
+            <div className="cv2-vote" key={i}>
+              <div className="cv2-vote-head">
+                <div className="bill">
+                  <span className="num">
+                    {(v.voteCastRaw || v.voteCast || "").toUpperCase()}
+                  </span>
+                  <span className="ttl">{v.billLabel}</span>
+                </div>
+                {v.voteDateRaw && <span className="meta">{v.voteDateRaw}</span>}
+              </div>
+              {v.context && <p className="cv2-vote-narr">{v.context}</p>}
+              {v.proceduralNote && (
+                <p className="cv2-vote-narr">
+                  <i>{v.proceduralNote}</i>
+                </p>
+              )}
+              {v.billNarrative && (
+                <p className="cv2-vote-narr">{v.billNarrative}</p>
+              )}
+            </div>
+          ))}
+          <div className="cv2-vote-cite">
+            <span className="src-chip">
+              {attribution.label}
+              {snapshotDate ? ` · snapshot ${snapshotDate}` : ""}
+            </span>
+            <a
+              href={attribution.url}
+              className="src-link"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              can2026.org →
+            </a>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ---- Honest state for a seat we couldn't resolve to a sitting member ---- */
 function UnresolvedSeatCard({ seat, userIssues, stateCode }) {
   return (
@@ -560,6 +684,8 @@ export function RepCard({
           />
         </div>
       </div>
+
+      <CanContextSection canContext={seat.canContext} />
 
       <EligibilityNote2 e={seat.eligibility} />
 

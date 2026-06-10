@@ -35,6 +35,34 @@ import {
 // /api/delegation response (mirrors src/app/api/delegation/route.ts)
 // ---------------------------------------------------------------------------
 
+export interface ApiCanSeatContext {
+  ratings: Array<{
+    rater: string;
+    raterType: string;
+    rating: string;
+    ratingRaw: string | null;
+  }>;
+  donorTrail: {
+    cycleWindow: string;
+    totalRaised: number | null;
+    cashOnHand: number | null;
+    pacSharePct: number | null;
+    note: string | null;
+  } | null;
+  keyVotes: Array<{
+    billLabel: string;
+    voteCast: string | null;
+    voteCastRaw: string | null;
+    voteDateRaw: string | null;
+    context: string | null;
+    proceduralNote: string | null;
+    billNarrative: string | null;
+  }>;
+  snapshotDate: string | null;
+  sourceUrl: string | null;
+  attribution: { label: string; url: string };
+}
+
 export interface ApiSeatChallenger {
   id: string;
   name: string;
@@ -59,6 +87,8 @@ export interface ApiDelegationSeat {
   nextElectionYear: number | null;
   /** 2026 FEC filers for this seat (empty when seat isn't up / no roster). */
   challengers?: ApiSeatChallenger[];
+  /** CAN2026 curated context — display-side only, always attributed. */
+  canContext?: ApiCanSeatContext | null;
 }
 
 export type DelegationResult =
@@ -245,6 +275,8 @@ export interface DelegationSeatVM {
   alignmentEntry: SeatCardData["alignmentEntry"];
   /** 2026 filers running for this seat ("Running for this seat in 2026"). */
   challengers: ApiSeatChallenger[];
+  /** CAN2026 curated context (null until the CAN ingest runs). */
+  canContext: ApiCanSeatContext | null;
 }
 
 /** Donor-source codes from /api/donors → reader-facing names. */
@@ -319,6 +351,7 @@ export function buildSeats(
         : null,
       alignmentEntry: card?.alignmentEntry ?? null,
       challengers: seat.challengers ?? [],
+      canContext: seat.canContext ?? null,
     };
   });
 }
