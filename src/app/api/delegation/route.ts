@@ -25,6 +25,10 @@ import { NextRequest } from "next/server";
 import { checkRaceDataRateLimit } from "../../../lib/server/race-data-rate-limit";
 import { geocodeAddressToDistrict } from "../../../lib/server/census-geocode";
 import { resolveDelegation } from "../../../lib/server/delegation";
+import {
+  lookupChallengers,
+  type SeatChallengers,
+} from "../../../lib/server/races";
 
 const MIN_ADDRESS = 4;
 const MAX_ADDRESS = 300;
@@ -98,6 +102,25 @@ export async function POST(request: NextRequest) {
     });
   }
 
+  // 2026 challengers for the voter's seats (FEC roster ingest). Best-effort:
+  // a failure here never degrades the delegation itself.
+  let challengers: SeatChallengers = { house: [], senate: [] };
+  try {
+    challengers = await lookupChallengers(stateCode, district);
+  } catch (err) {
+    console.error("[delegation] challenger lookup failed:", err);
+  }
+  const seats = delegation.seats.map((seat) => ({
+    ...seat,
+    challengers:
+      seat.chamber === "house"
+        ? challengers.house
+        : // Senate filers are statewide — only attach to seats actually up.
+          seat.onBallot2026 === true
+          ? challengers.senate
+          : [],
+  }));
+
   return Response.json({
     status: "ok",
     stateCode,
@@ -105,7 +128,7 @@ export async function POST(request: NextRequest) {
     county,
     districtLabel:
       district !== null ? districtLabel(stateCode, district) : null,
-    seats: delegation.seats,
+    seats,
   });
 }
 

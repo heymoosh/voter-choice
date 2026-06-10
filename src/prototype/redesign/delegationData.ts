@@ -30,6 +30,13 @@ import {
 // /api/delegation response (mirrors src/app/api/delegation/route.ts)
 // ---------------------------------------------------------------------------
 
+export interface ApiSeatChallenger {
+  id: string;
+  name: string;
+  party: string | null;
+  totalReceipts: number | null;
+}
+
 export interface ApiDelegationSeat {
   seatId: string;
   office: "U.S. House" | "U.S. Senate";
@@ -45,6 +52,8 @@ export interface ApiDelegationSeat {
   attendance: { missedPct: number; of: string; band: string } | null;
   onBallot2026: boolean | null;
   nextElectionYear: number | null;
+  /** 2026 FEC filers for this seat (empty when seat isn't up / no roster). */
+  challengers?: ApiSeatChallenger[];
 }
 
 export type DelegationResult =
@@ -229,6 +238,8 @@ export interface DelegationSeatVM {
     donorCoalition: unknown[] | null;
   } | null;
   alignmentEntry: SeatCardData["alignmentEntry"];
+  /** 2026 filers running for this seat ("Running for this seat in 2026"). */
+  challengers: ApiSeatChallenger[];
 }
 
 /** Donor-source codes from /api/donors → reader-facing names. */
@@ -302,6 +313,7 @@ export function buildSeats(
           }
         : null,
       alignmentEntry: card?.alignmentEntry ?? null,
+      challengers: seat.challengers ?? [],
     };
   });
 }
@@ -461,6 +473,69 @@ export function preloadSeatResearch(
       onUpdate();
     });
   }
+  onUpdate();
+}
+
+// ---------------------------------------------------------------------------
+// Challenger research — ON-DEMAND only (Muxin, 2026-06-10): fires when the
+// voter taps "Research positions" on a challenger row, never preloaded.
+// Results persist server-side in candidate_data, so a researched challenger
+// renders instantly for every later voter (lookupCandidateData read path).
+// ---------------------------------------------------------------------------
+
+const challengerResearchStore = new Map<string, SeatResearch>();
+
+export function getChallengerResearch(
+  challengerId: string,
+): SeatResearch | undefined {
+  return challengerResearchStore.get(challengerId);
+}
+
+/** Reset hook for tests/start-over. */
+export function _resetChallengerResearchForTesting(): void {
+  challengerResearchStore.clear();
+}
+
+/**
+ * Research one challenger's positions on the voter's issues (web search →
+ * structured, cited scores; persisted server-side). Same name-handling
+ * contract as preloadSeatResearch: the real name goes server-side only and
+ * the stored result is name-free issue scores.
+ */
+export function researchChallenger(
+  challenger: ApiSeatChallenger,
+  seat: { office: string; districtLabel: string },
+  issues: UserIssue[],
+  stateCode: string,
+  onUpdate: () => void,
+): void {
+  const structuredIssues = (issues || [])
+    .filter((i) => i.canonicalIssue)
+    .map((i) => ({
+      canonicalIssue: i.canonicalIssue as string,
+      issueLabel: i.interpretation,
+    }));
+  if (structuredIssues.length === 0) return;
+  const existing = challengerResearchStore.get(challenger.id);
+  if (existing && existing.status !== "unavailable") return;
+
+  challengerResearchStore.set(challenger.id, { status: "loading" });
+  fetchCandidateResearch({
+    candidateName: challenger.name,
+    jurisdiction: `${seat.office} — ${seat.districtLabel}, ${stateCode}`,
+    issues: structuredIssues,
+    cycle: "2026",
+  }).then((res) => {
+    if (res && res.scores && res.scores.length > 0) {
+      challengerResearchStore.set(challenger.id, {
+        status: "done",
+        scores: res.scores,
+      });
+    } else {
+      challengerResearchStore.set(challenger.id, { status: "unavailable" });
+    }
+    onUpdate();
+  });
   onUpdate();
 }
 

@@ -22,6 +22,7 @@ import {
   FunderBars,
   formatDollars,
 } from "../VoterChoiceApp";
+import { getChallengerResearch, researchChallenger } from "./delegationData";
 
 export const PARTY_META2 = {
   Republican: { name: "Republican", code: "R", pipClass: "rep" },
@@ -266,8 +267,103 @@ export function CardSources({ seat }) {
   );
 }
 
+/* ---- Challengers — 2026 FEC filers for this seat [Δ new section].
+   ON-DEMAND research only (Muxin 2026-06-10): positions load when the voter
+   taps the row's research button; results are the same cited web_search
+   surface the no-record card uses (ResearchedPositions). Names come from
+   public FEC filings — they are different people from the (possibly
+   blinded) sitting member, so they render regardless of blind mode. ---- */
+function ChallengerRow({ challenger, seat, userIssues, stateCode }) {
+  // Module-level cache holds results across re-mounts; tick re-renders this
+  // row when the research promise settles.
+  const [, setTick] = useState(0);
+  const research = getChallengerResearch(challenger.id);
+  const party = PARTY_META2[challenger.party] || {
+    name: challenger.party || "Party unknown",
+    code: "?",
+    pipClass: "ind",
+  };
+  const raised =
+    typeof challenger.totalReceipts === "number" &&
+    challenger.totalReceipts > 0
+      ? `${formatDollars(challenger.totalReceipts)} raised`
+      : "No funds reported";
+
+  return (
+    <div className={"cv2-iss-row" + (research ? " open" : "")}>
+      <div className="cv2-iss-head">
+        <div className="topic">
+          <div className="name">
+            <span className={"pip " + party.pipClass} aria-hidden="true" />{" "}
+            {challenger.name}
+          </div>
+          <div className="meta">
+            {party.name} · {raised} · FEC filing
+          </div>
+        </div>
+        {!research || research.status === "unavailable" ? (
+          <button
+            className="cv2-disclose-toggle"
+            onClick={() =>
+              researchChallenger(challenger, seat, userIssues, stateCode, () =>
+                setTick((t) => t + 1),
+              )
+            }
+          >
+            {research?.status === "unavailable"
+              ? "Retry research"
+              : "Research positions"}
+          </button>
+        ) : research.status === "loading" ? (
+          <span className="meta">Looking up public statements…</span>
+        ) : null}
+      </div>
+      {research?.status === "done" && (
+        <ResearchedPositions
+          positions={research.scores}
+          userIssues={userIssues}
+        />
+      )}
+      {research?.status === "unavailable" && (
+        <div className="cv2-norecord">
+          <p>
+            No citable public statements found on your issues — we'd rather
+            say so than guess.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export function ChallengersStrip({ seat, userIssues, stateCode }) {
+  const list = seat.challengers || [];
+  if (list.length === 0) return null;
+  return (
+    <div className="cv2-issues challengers-strip">
+      <div className="cv2-block-head">
+        <div className="lab">Running for this seat in 2026</div>
+        <div className="overall">
+          <span className="rp-src-note">
+            FEC filings · ranked by funds raised
+          </span>
+        </div>
+      </div>
+      {list.map((ch) => (
+        <ChallengerRow
+          key={ch.id}
+          challenger={ch}
+          seat={seat}
+          userIssues={userIssues}
+          stateCode={stateCode}
+        />
+      ))}
+    </div>
+  );
+}
+
 /* ---- Honest state for a seat we couldn't resolve to a sitting member ---- */
-function UnresolvedSeatCard({ seat }) {
+function UnresolvedSeatCard({ seat, userIssues, stateCode }) {
   return (
     <div className="cv2-card rep-card">
       <div className="seat-strip">
@@ -306,6 +402,11 @@ function UnresolvedSeatCard({ seat }) {
         </div>
       </div>
       <EligibilityNote2 e={seat.eligibility} />
+      <ChallengersStrip
+        seat={seat}
+        userIssues={userIssues}
+        stateCode={stateCode}
+      />
     </div>
   );
 }
@@ -314,6 +415,7 @@ function UnresolvedSeatCard({ seat }) {
 export function RepCard({
   seat,
   userIssues,
+  stateCode,
   research,
   blindMode,
   isRevealed,
@@ -330,7 +432,14 @@ export function RepCard({
   );
 
   const cand = seat.candidate;
-  if (!cand) return <UnresolvedSeatCard seat={seat} />;
+  if (!cand)
+    return (
+      <UnresolvedSeatCard
+        seat={seat}
+        userIssues={userIssues}
+        stateCode={stateCode}
+      />
+    );
 
   const blind = blindMode && !isRevealed;
   const party = PARTY_META2[seat.partyName] || {
@@ -453,6 +562,12 @@ export function RepCard({
       </div>
 
       <EligibilityNote2 e={seat.eligibility} />
+
+      <ChallengersStrip
+        seat={seat}
+        userIssues={userIssues}
+        stateCode={stateCode}
+      />
 
       {/* Verdict — assessment, not selection. Rides to the scorecard + print.
          .ck is the shipped bordered checkbox; the border IS the box, so we

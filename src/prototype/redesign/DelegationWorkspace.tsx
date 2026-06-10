@@ -403,6 +403,7 @@ export function DelegationWorkspace({
             key={activeSeat.id}
             seat={activeSeat}
             userIssues={issuesForLevel(userIssues, activeSeat.level)}
+            stateCode={stateData?.stateCode || ""}
             research={researchFor ? researchFor(activeSeat.id) : undefined}
             blindMode={blindMode}
             isRevealed={revealed.has(activeSeat.id)}
