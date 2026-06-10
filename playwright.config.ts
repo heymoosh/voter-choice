@@ -51,8 +51,24 @@ export default defineConfig({
     // runner doesn't reach the `next start` subprocess.
     //
     // See .ai/work-packets/redesign-phase-2-free-form-cold-open.md.
-    ...(process.env.PROMPT_FLEET_V2
-      ? { env: { PROMPT_FLEET_V2: process.env.PROMPT_FLEET_V2 } }
+    ...(process.env.PROMPT_FLEET_V2 || process.env.NEXT_PUBLIC_BALLOT_ENABLED
+      ? {
+          env: {
+            ...(process.env.PROMPT_FLEET_V2
+              ? { PROMPT_FLEET_V2: process.env.PROMPT_FLEET_V2 }
+              : {}),
+            // Experience flag. NOTE: NEXT_PUBLIC_* is inlined at BUILD time —
+            // forwarding it to `next start` is for consistency only; the CI
+            // legs must BUILD with the right flag value. Specs gate on the
+            // runner env (prototype-* need =true, redesign-* need unset).
+            ...(process.env.NEXT_PUBLIC_BALLOT_ENABLED
+              ? {
+                  NEXT_PUBLIC_BALLOT_ENABLED:
+                    process.env.NEXT_PUBLIC_BALLOT_ENABLED,
+                }
+              : {}),
+          },
+        }
       : {}),
   },
 });

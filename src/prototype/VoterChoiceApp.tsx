@@ -4187,7 +4187,7 @@ function LoadingView({ address, onDone, variant = 'ballot' }) {
 
    onLock receives an array of ConcernInterpretationEntry-shaped
    objects (with the design-delta `quotes` field). */
-function ColdOpenView({ address, onLock, savedIssues }) {
+function ColdOpenView({ address, onLock, savedIssues, contextNote }) {
   const [phase, setPhase] = useStateV(savedIssues && savedIssues.length ? 'review' : 'prompt');
   const [draft, setDraft] = useStateV('');
   const [submittedText, setSubmittedText] = useStateV('');
@@ -4258,7 +4258,7 @@ function ColdOpenView({ address, onLock, savedIssues }) {
     <>
       <AppNav />
       <div className="coldopen">
-        <div className="co-context"><b>{address}</b> · {RACES.length} {RACES.length === 1 ? 'race' : 'races'} on your ballot</div>
+        <div className="co-context"><b>{address}</b> · {contextNote || `${RACES.length} ${RACES.length === 1 ? 'race' : 'races'} on your ballot`}</div>
 
         <div className="msg ai">
           <div className="who">Voter Choice · AI</div>
@@ -6216,3 +6216,32 @@ function handleRevealCandidate(candidateId) {
 }
 
 export default App;
+
+/* ─── Shipped-surface exports for the 2026 redesign ──────────────────────────
+   Consumed by src/prototype/redesign/ (the congress-assessment experience
+   behind NEXT_PUBLIC_BALLOT_ENABLED). These components are the vetted design
+   system both experiences share — keep their prop contracts stable. Adding
+   exports here is behavior-neutral for the legacy app. */
+export {
+  formatDollars,
+  getCandidateIdentity,
+  anonymizeText,
+  I18nProvider,
+  useI18n,
+  NavProvider,
+  useNav,
+  AppNav,
+  AppNavWithChrome,
+  PollingStatusBar,
+  CandidateCardHeader,
+  AlignmentScoreBanner,
+  FunderBars,
+  ErrorBanner,
+  HomeView,
+  LoadingView,
+  ColdOpenView,
+  AboutPage,
+  MethodologyPage,
+  PrivacyPage,
+  TipJarPage,
+};

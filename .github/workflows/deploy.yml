@@ -101,6 +101,11 @@ jobs:
           set_env UPSTASH_REDIS_REST_URL           "$UPSTASH_REDIS_REST_URL"
           set_env UPSTASH_REDIS_REST_TOKEN         "$UPSTASH_REDIS_REST_TOKEN"
           set_env DATABASE_URL                     "$DATABASE_URL"
+          # Experience flag (BUILD-time inlined by Vercel): "true" = legacy
+          # ballot experience; anything else = congress-assessment experience.
+          # Sourced from the repo variable NEXT_PUBLIC_BALLOT_ENABLED so the
+          # PR-3 cutover is a one-line change of the default here.
+          set_env NEXT_PUBLIC_BALLOT_ENABLED       "${{ vars.NEXT_PUBLIC_BALLOT_ENABLED || 'true' }}"
 
       - name: Deploy to Vercel
         env:

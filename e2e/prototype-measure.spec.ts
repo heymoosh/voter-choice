@@ -3,6 +3,15 @@
 // "sample ballot needed" → upload a file (extraction mocked) → cold-open → workspace →
 // the measure renders its verbatim body text (PropositionCard measureBody branch).
 import { test, expect } from "@playwright/test";
+
+// Legacy ballot experience — only rendered when the build sets
+// NEXT_PUBLIC_BALLOT_ENABLED=true (the congress-assessment experience is the
+// default). The e2e-ballot-legacy CI leg builds with the flag.
+test.skip(
+  process.env.NEXT_PUBLIC_BALLOT_ENABLED !== "true",
+  "legacy specs need the ballot-experience build (flag=true)",
+);
+
 import {
   mockChat,
   mockRaceData,
@@ -14,7 +23,10 @@ import {
 } from "./helpers/prototype-mocks";
 
 test.beforeEach(({}, testInfo) => {
-  test.skip(testInfo.project.name !== "chromium-desktop", "prototype e2e is desktop-only for now");
+  test.skip(
+    testInfo.project.name !== "chromium-desktop",
+    "prototype e2e is desktop-only for now",
+  );
 });
 
 test("ballot measure renders its verbatim body text", async ({ page }) => {
@@ -24,11 +36,15 @@ test("ballot measure renders its verbatim body text", async ({ page }) => {
   await mockExtractBallot(page, EXTRACTION_WITH_MEASURE);
 
   await page.goto("/");
-  await page.getByPlaceholder(/1600 Pennsylvania/i).fill("50 Park Pl, Newark, NJ 07102");
+  await page
+    .getByPlaceholder(/1600 Pennsylvania/i)
+    .fill("50 Park Pl, Newark, NJ 07102");
   await page.getByRole("button", { name: /Pull my ballot/i }).click();
 
   // Civic returned no contests → the upload/paste screen.
-  await page.getByTestId("ballot-lookup-needed").waitFor({ state: "visible", timeout: 30000 });
+  await page
+    .getByTestId("ballot-lookup-needed")
+    .waitFor({ state: "visible", timeout: 30000 });
 
   // Upload a (dummy) file — extraction is mocked, so the bytes don't matter.
   await page.locator('input[type="file"]').setInputFiles({
