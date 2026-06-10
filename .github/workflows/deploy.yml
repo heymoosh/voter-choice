@@ -102,10 +102,11 @@ jobs:
           set_env UPSTASH_REDIS_REST_TOKEN         "$UPSTASH_REDIS_REST_TOKEN"
           set_env DATABASE_URL                     "$DATABASE_URL"
           # Experience flag (BUILD-time inlined by Vercel): "true" = legacy
-          # ballot experience; anything else = congress-assessment experience.
-          # Sourced from the repo variable NEXT_PUBLIC_BALLOT_ENABLED so the
-          # PR-3 cutover is a one-line change of the default here.
-          set_env NEXT_PUBLIC_BALLOT_ENABLED       "${{ vars.NEXT_PUBLIC_BALLOT_ENABLED || 'true' }}"
+          # ballot experience; anything else = congress-assessment experience
+          # (the prod default since the Phase-1 cutover). Override via the
+          # repo variable NEXT_PUBLIC_BALLOT_ENABLED to roll back without a
+          # code change.
+          set_env NEXT_PUBLIC_BALLOT_ENABLED       "${{ vars.NEXT_PUBLIC_BALLOT_ENABLED || 'false' }}"
 
       - name: Deploy to Vercel
         env:
