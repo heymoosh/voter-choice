@@ -15,20 +15,42 @@ import {
 // ---------------------------------------------------------------------------
 // candidates
 // ---------------------------------------------------------------------------
-export const candidates = pgTable("candidates", {
-  id: text("id").primaryKey(),
-  fullName: text("full_name").notNull(),
-  sourceId: text("source_id").notNull(),
-  jurisdiction: text("jurisdiction").notNull(), // e.g. "federal-house" | "federal-senate" | "state-TX-house"
-  isIncumbent: boolean("is_incumbent").notNull().default(false),
-  rawMetadata: jsonb("raw_metadata"),
-  insertedAt: timestamp("inserted_at", { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-});
+export const candidates = pgTable(
+  "candidates",
+  {
+    id: text("id").primaryKey(),
+    fullName: text("full_name").notNull(),
+    sourceId: text("source_id").notNull(),
+    jurisdiction: text("jurisdiction").notNull(), // e.g. "federal-house" | "federal-senate" | "state-TX-house"
+    isIncumbent: boolean("is_incumbent").notNull().default(false),
+    // Structured seat columns (nullable — populated for federal rows by the
+    // FEC 2026 roster ingest + incumbent backfill; a "race" is the group key
+    // (state, district, office, electionYear)).
+    party: text("party"), // verbatim FEC party code: "REP" | "DEM" | "LIB" | …
+    state: text("state"), // USPS code, "TX"
+    district: text("district"), // zero-padded House district, "07"; null for senate
+    office: text("office"), // "house" | "senate"
+    electionYear: integer("election_year"), // cycle the candidate filed for, e.g. 2026
+    fecCandidateId: text("fec_candidate_id"),
+    totalReceipts: numeric("total_receipts", { precision: 15, scale: 2 }), // cycle receipts (viability/ranking)
+    rawMetadata: jsonb("raw_metadata"),
+    insertedAt: timestamp("inserted_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    index("candidates_seat_idx").on(
+      t.state,
+      t.district,
+      t.office,
+      t.electionYear,
+    ),
+    index("candidates_fec_id_idx").on(t.fecCandidateId),
+  ],
+);
 
 // ---------------------------------------------------------------------------
 // candidate_offices
