@@ -15,7 +15,7 @@
  * This module is server-only. Never import it from client components.
  */
 
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import { getDb, DB_NOT_CONFIGURED } from "../../../db/client";
 import * as schema from "../../../db/schema";
 import { cleanCandidateName } from "./alignment";
@@ -158,13 +158,22 @@ function buildCandidate(
   row: IncumbentRow,
   roleLabel: "U.S. Senator" | "U.S. Representative",
   firstTermYear: number | null,
+  coverageFloorYear: number | null,
 ): DelegationCandidate {
+  // "since YYYY" is only claimed when the member's earliest known term
+  // starts AFTER our office data's coverage floor. A member sitting at the
+  // floor may have served longer (Cornyn reads "since 2023" from a 2023-only
+  // ingest) — omit the year rather than understate tenure.
+  const sinceIsReliable =
+    firstTermYear !== null &&
+    (coverageFloorYear === null || firstTermYear > coverageFloorYear);
   return {
     id: row.id,
     name: cleanCandidateName(row.fullName),
     party: row.facts.party,
-    priorRole:
-      firstTermYear !== null ? `${roleLabel} since ${firstTermYear}` : null,
+    priorRole: sinceIsReliable
+      ? `${roleLabel} since ${firstTermYear}`
+      : roleLabel,
   };
 }
 
@@ -250,14 +259,26 @@ export async function resolveDelegation(
   if (houseMember) memberIds.push(houseMember.id);
 
   const firstTermYear = new Map<string, number>();
+  let coverageFloorYear: number | null = null;
   if (memberIds.length > 0) {
-    const officeRows = await db
-      .select({
-        candidateId: schema.candidateOffices.candidateId,
-        termStart: schema.candidateOffices.termStart,
-      })
-      .from(schema.candidateOffices)
-      .where(inArray(schema.candidateOffices.candidateId, memberIds));
+    const [officeRows, floorRows] = await Promise.all([
+      db
+        .select({
+          candidateId: schema.candidateOffices.candidateId,
+          termStart: schema.candidateOffices.termStart,
+        })
+        .from(schema.candidateOffices)
+        .where(inArray(schema.candidateOffices.candidateId, memberIds)),
+      // How far back our office data reaches at all — "since YYYY" claims
+      // are only reliable for members whose first term starts after this.
+      db
+        .select({
+          minTermStart: sql<
+            string | null
+          >`min(${schema.candidateOffices.termStart})`,
+        })
+        .from(schema.candidateOffices),
+    ]);
     for (const office of officeRows) {
       const year = Number(String(office.termStart).slice(0, 4));
       if (!Number.isFinite(year)) continue;
@@ -265,6 +286,11 @@ export async function resolveDelegation(
       if (prev === undefined || year < prev) {
         firstTermYear.set(office.candidateId, year);
       }
+    }
+    const floorRaw = floorRows[0]?.minTermStart;
+    if (floorRaw) {
+      const y = Number(String(floorRaw).slice(0, 4));
+      if (Number.isFinite(y)) coverageFloorYear = y;
     }
   }
 
@@ -301,6 +327,7 @@ export async function resolveDelegation(
           houseMember,
           "U.S. Representative",
           firstTermYear.get(houseMember.id) ?? null,
+          coverageFloorYear,
         )
       : null,
     attendance: houseMember
@@ -330,6 +357,7 @@ export async function resolveDelegation(
             senator,
             "U.S. Senator",
             firstTermYear.get(senator.id) ?? null,
+            coverageFloorYear,
           )
         : null,
       attendance: senatorStats?.attendance ?? null,

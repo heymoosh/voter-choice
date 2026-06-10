@@ -24,18 +24,23 @@ const mockedGetDb = vi.mocked(getDb);
 const mockedStats = vi.mocked(lookupMemberStats);
 
 /**
- * The resolver issues two selects (candidates, then candidate_offices).
- * Each select() call consumes the next row set in order.
+ * The resolver issues selects in order: candidates, candidate_offices
+ * (filtered), then the offices coverage-floor aggregate. Each select() call
+ * consumes the next row set in order. The chain is thenable so queries with
+ * no .where() (the floor aggregate) resolve too.
  */
 function makeDbMock(rowSets: Record<string, unknown>[][]) {
   let call = 0;
   const select = vi.fn().mockImplementation(() => {
     const rows = rowSets[call] ?? [];
     call += 1;
-    return {
-      from: vi.fn().mockReturnThis(),
+    const chain = {
+      from: vi.fn(),
       where: vi.fn().mockResolvedValue(rows),
+      then: (resolve: (v: unknown) => void) => resolve(rows),
     };
+    chain.from.mockReturnValue(chain);
+    return chain;
   });
   return { select } as unknown as ReturnType<typeof getDb>;
 }
@@ -145,6 +150,28 @@ describe("resolveDelegation — decorated rows", () => {
     expect(senA.districtLabel).toBe("New Jersey (statewide)");
     expect(senB.candidate?.id).toBe("s1");
     expect(senB.blindLabel).toBe("Your Junior U.S. Senator");
+  });
+
+  it("suppresses 'since YYYY' for members at the office-data coverage floor", async () => {
+    // Floor = 2023 (how far back our office rows reach). A member whose
+    // earliest known term IS the floor may have served longer — no claim.
+    mockedGetDb.mockReturnValue(
+      makeDbMock([
+        CANDIDATES,
+        [
+          { candidateId: "p1", termStart: "2023-01-03" }, // at floor → suppress
+          { candidateId: "s1", termStart: "2025-01-03" }, // after floor → claim
+          { candidateId: "s2", termStart: "2023-01-03" },
+        ],
+        [{ minTermStart: "2023-01-03" }],
+      ]),
+    );
+
+    const out = await resolveDelegation("NJ", "New Jersey", 6);
+    if (out.status !== "ok") return;
+    expect(out.seats[0].candidate?.priorRole).toBe("U.S. Representative");
+    const kim = out.seats.find((s) => s.candidate?.id === "s1");
+    expect(kim?.candidate?.priorRole).toBe("U.S. Senator since 2025");
   });
 
   it("leaves the House seat unresolved for a district with no match", async () => {
