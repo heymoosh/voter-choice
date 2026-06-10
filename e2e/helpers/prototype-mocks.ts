@@ -306,7 +306,7 @@ export async function installCoreMocks(page: Page): Promise<void> {
 
 /**
  * Drive the prototype from the landing page to the workspace:
- * address → Pull my ballot → cold-open "show me an example" → Send → Lock these in.
+ * address → Pull my representatives → cold-open "show me an example" → Send → Lock these in.
  * Assumes mocks are already installed. Leaves the page on the workspace.
  */
 export async function gotoWorkspace(
@@ -317,7 +317,7 @@ export async function gotoWorkspace(
   await page
     .getByPlaceholder(/1600 Pennsylvania/i)
     .fill("50 Park Pl, Newark, NJ 07102");
-  await page.getByRole("button", { name: /Pull my ballot/i }).click();
+  await page.getByRole("button", { name: /Pull my representatives/i }).click();
   // Cold-open: deterministic sample → preset issues → lock.
   await completeColdOpenAndLock(page);
   // Workspace mounts with the requested surface (candidate card / proposition / measure).

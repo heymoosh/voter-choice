@@ -39,7 +39,7 @@ test("ballot measure renders its verbatim body text", async ({ page }) => {
   await page
     .getByPlaceholder(/1600 Pennsylvania/i)
     .fill("50 Park Pl, Newark, NJ 07102");
-  await page.getByRole("button", { name: /Pull my ballot/i }).click();
+  await page.getByRole("button", { name: /Pull my representatives/i }).click();
 
   // Civic returned no contests → the upload/paste screen.
   await page

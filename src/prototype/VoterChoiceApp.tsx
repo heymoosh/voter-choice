@@ -191,7 +191,7 @@ const TRANSLATIONS = {
       howItWorksSubtext: 'Three steps. A few minutes. No account.',
       step1Title: 'Enter your address',
       step1Desc:
-        "We pull the exact races on your ballot. The address never leaves your device — we look up your ballot via the Civic API server-side and discard it.",
+        "We pull your representative's history based on address. The address never leaves your device — we look up your representative and discard it.",
       step2Title: 'See what they actually did',
       step2Desc:
         "Voting record on the issues you care about. Donor list. How much they raised and from whom. No news articles, no ads — just the record.",
@@ -285,7 +285,7 @@ const TRANSLATIONS = {
       howItWorksSubtext: 'Tres pasos. Unos minutos. Sin cuenta.',
       step1Title: 'Ingresa tu dirección',
       step1Desc:
-        'Buscamos las carreras exactas en tu boleta. Tu dirección no sale de tu dispositivo — consultamos tu boleta vía Civic API y la descartamos.',
+        'Obtenemos el historial de tu representante según tu dirección. Tu dirección no sale de tu dispositivo — consultamos tu representante y la descartamos.',
       step2Title: 'Mira lo que realmente hicieron',
       step2Desc:
         'Registro de votación sobre los temas que te importan. Lista de donantes. Cuánto recaudaron y de quién. Sin artículos, sin anuncios — solo el registro.',
@@ -4089,7 +4089,7 @@ function HomeView({ savedAddress, savedSession, onSubmit, onResumeFromProfile, o
                     : undefined
                 }
               />
-              <button className="go" onClick={submit} disabled={!addr.trim()}>Pull my ballot →</button>
+              <button className="go" onClick={submit} disabled={!addr.trim()}>Pull my representatives →</button>
             </div>
             <div className="hint">
               <span><span className="dot"></span>No account</span>
