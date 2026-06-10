@@ -26,6 +26,8 @@ export interface MemberStatsEntry {
   attendance: MemberAttendance | null;
   /** True when the member's seat is up in the 2026 general; null = unknown. */
   onBallot2026: boolean | null;
+  /** Calendar year of the seat's next general election; null = unknown. */
+  nextElectionYear: number | null;
   senateClass: string | null;
   /** Authoritative geography from the GovTrack role API (ingest-populated). */
   state: string | null;
@@ -74,6 +76,18 @@ export function onBallot2026FromTermEnd(
 }
 
 /**
+ * The seat's next general-election year: terms end the January after the
+ * November election (term end 2029-01-03 → elected Nov 2028).
+ */
+export function nextElectionYearFromTermEnd(
+  termEnd: string | null,
+): number | null {
+  if (!termEnd) return null;
+  const year = Number(termEnd.slice(0, 4));
+  return Number.isFinite(year) ? year - 1 : null;
+}
+
+/**
  * Fetch member stats for a set of candidate ids. Missing rows (member not
  * ingested yet) simply don't appear in the result — callers render the honest
  * "not tracked" state. DB-not-configured returns an empty map for the same
@@ -88,20 +102,28 @@ export async function lookupMemberStats(
   const db = getDb();
   if (db === DB_NOT_CONFIGURED) return result;
 
-  const rows = await db
-    .select({
-      candidateId: schema.memberStats.candidateId,
-      missedVotesPct: schema.memberStats.missedVotesPct,
-      votesEligible: schema.memberStats.votesEligible,
-      chamberMedianPct: schema.memberStats.chamberMedianPct,
-      currentTermEnd: schema.memberStats.currentTermEnd,
-      senateClass: schema.memberStats.senateClass,
-      state: schema.memberStats.state,
-      district: schema.memberStats.district,
-      senatorRank: schema.memberStats.senatorRank,
-    })
-    .from(schema.memberStats)
-    .where(inArray(schema.memberStats.candidateId, candidateIds));
+  // member_stats is an optional enrichment: a missing table (migration not
+  // applied yet) or query failure must never take down delegation resolution.
+  let rows;
+  try {
+    rows = await db
+      .select({
+        candidateId: schema.memberStats.candidateId,
+        missedVotesPct: schema.memberStats.missedVotesPct,
+        votesEligible: schema.memberStats.votesEligible,
+        chamberMedianPct: schema.memberStats.chamberMedianPct,
+        currentTermEnd: schema.memberStats.currentTermEnd,
+        senateClass: schema.memberStats.senateClass,
+        state: schema.memberStats.state,
+        district: schema.memberStats.district,
+        senatorRank: schema.memberStats.senatorRank,
+      })
+      .from(schema.memberStats)
+      .where(inArray(schema.memberStats.candidateId, candidateIds));
+  } catch (err) {
+    console.error("[member-stats] lookup failed (degrading to empty):", err);
+    return result;
+  }
 
   for (const row of rows) {
     const missedPct = toNumber(row.missedVotesPct);
@@ -124,6 +146,7 @@ export async function lookupMemberStats(
       candidateId: row.candidateId,
       attendance,
       onBallot2026: onBallot2026FromTermEnd(row.currentTermEnd),
+      nextElectionYear: nextElectionYearFromTermEnd(row.currentTermEnd),
       senateClass: row.senateClass,
       state: row.state,
       district: row.district,

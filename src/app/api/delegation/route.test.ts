@@ -63,6 +63,7 @@ const SEATS = [
     },
     attendance: null,
     onBallot2026: true,
+    nextElectionYear: null,
   },
 ];
 
@@ -178,6 +179,18 @@ describe("POST /api/delegation — resolution outcomes", () => {
       county: "Mercer County",
       districtLabel: "NJ-12",
     });
+  });
+
+  it("degrades to db_unavailable when the resolver throws", async () => {
+    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    mockedGeocode.mockResolvedValue(GEO_OK);
+    mockedResolve.mockRejectedValue(new Error("relation does not exist"));
+
+    const res = await POST(makeRequest({ address: "123 Main St Trenton NJ" }));
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.status).toBe("db_unavailable");
+    consoleSpy.mockRestore();
   });
 
   it("never echoes the input address back", async () => {

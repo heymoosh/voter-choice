@@ -100,6 +100,24 @@ describe("lookupMemberStats", () => {
     expect(mockedGetDb).not.toHaveBeenCalled();
   });
 
+  it("degrades to an empty map when the query throws (e.g. table missing)", async () => {
+    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    mockedGetDb.mockReturnValue({
+      select: vi.fn().mockReturnValue({
+        from: vi.fn().mockReturnThis(),
+        where: vi
+          .fn()
+          .mockRejectedValue(
+            new Error('relation "member_stats" does not exist'),
+          ),
+      }),
+    } as unknown as ReturnType<typeof getDb>);
+
+    const out = await lookupMemberStats(["p1"]);
+    expect(out.size).toBe(0);
+    consoleSpy.mockRestore();
+  });
+
   it("maps numeric strings into attendance + ballot fields", async () => {
     mockedGetDb.mockReturnValue(
       makeDbMock([
