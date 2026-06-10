@@ -38,6 +38,15 @@ import { CAN_ATTRIBUTION } from "../../../lib/canAttribution";
 const MIN_ADDRESS = 4;
 const MAX_ADDRESS = 300;
 
+// CAN2026 curated-context display is gated until can2026.org attribution terms
+// are confirmed with the maintainer. Off by default — set the env var to any
+// non-empty value to surface the "Race ratings & key votes" section. Read on
+// every call so test stubs take effect without re-importing the module.
+function isCan2026DisplayEnabled(): boolean {
+  const v = process.env.CAN2026_DISPLAY_ENABLED;
+  return typeof v === "string" && v.length > 0;
+}
+
 function getClientIP(request: NextRequest): string {
   return (
     request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
@@ -117,27 +126,30 @@ export async function POST(request: NextRequest) {
   }
   // CAN2026 curated context (race ratings, donor trails, key-vote prose) —
   // display-side only, never a scoring input. Empty until the CAN ingest
-  // runs; failures degrade to no context.
-  const canContexts = await Promise.all(
-    delegation.seats.map(async (seat): Promise<CanSeatContext | null> => {
-      try {
-        const ctx = await lookupCanSeatContext(
-          stateCode,
-          seat.chamber,
-          district,
-          seat.candidate?.id ?? null,
-        );
-        const empty =
-          ctx.ratings.length === 0 &&
-          !ctx.donorTrail &&
-          ctx.keyVotes.length === 0;
-        return empty ? null : ctx;
-      } catch (err) {
-        console.error("[delegation] CAN context lookup failed:", err);
-        return null;
-      }
-    }),
-  );
+  // runs; failures degrade to no context. Gated off until attribution terms
+  // are confirmed — when disabled, skip the DB lookups entirely.
+  const canContexts = isCan2026DisplayEnabled()
+    ? await Promise.all(
+        delegation.seats.map(async (seat): Promise<CanSeatContext | null> => {
+          try {
+            const ctx = await lookupCanSeatContext(
+              stateCode,
+              seat.chamber,
+              district,
+              seat.candidate?.id ?? null,
+            );
+            const empty =
+              ctx.ratings.length === 0 &&
+              !ctx.donorTrail &&
+              ctx.keyVotes.length === 0;
+            return empty ? null : ctx;
+          } catch (err) {
+            console.error("[delegation] CAN context lookup failed:", err);
+            return null;
+          }
+        }),
+      )
+    : delegation.seats.map(() => null);
 
   const seats = delegation.seats.map((seat, i) => ({
     ...seat,
