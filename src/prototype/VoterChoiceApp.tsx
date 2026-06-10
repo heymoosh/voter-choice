@@ -4129,12 +4129,6 @@ function HomeView({ savedAddress, savedSession, onSubmit, onResumeFromProfile, o
               <span><span className="dot"></span>No tracking</span>
               <span><span className="dot"></span>Civic API · address never stored</span>
             </div>
-            <div className="resume">
-              Been here before?{' '}
-              <a onClick={onResumeFromProfile} style={{ cursor: 'pointer' }} role="link" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') onResumeFromProfile(); }}>
-                Drop your saved .txt profile →
-              </a>
-            </div>
           </div>
 
           {hasDraft && (
