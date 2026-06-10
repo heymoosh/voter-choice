@@ -136,10 +136,17 @@
 /* ---- tier intro (center column, above card) ----
    .ws-chat is a flex column with overflow:hidden (built for the chat
    thread). The redesign center is a document, not a chat — let it flow
-   and let the page scroll. */
-.ws-chat.rep-center {
-  display: block; overflow-y: auto; min-height: 0;
-  padding: 22px 28px 60px;
+   and let the page scroll.
+   Scoped to desktop only: on mobile, prototype.css hides .ws-chat by
+   default and the [data-mobile-chat="open"] rule below shows it as an
+   overlay. Without the @media guard, the more-specific .ws-chat.rep-center
+   selector overrides the prototype's display:none and the card bleeds into
+   the scorecard-only view. */
+@media (min-width: 768px) {
+  .ws-chat.rep-center {
+    display: block; overflow-y: auto; min-height: 0;
+    padding: 22px 28px 60px;
+  }
 }
 /* center-pane head: back control is mobile-only (shipped class hides it
    on desktop); the label gives the overlay a title bar on phones */
