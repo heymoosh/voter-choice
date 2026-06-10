@@ -47,6 +47,8 @@ export interface DelegationSeat {
   attendance: MemberAttendance | null;
   /** True when this seat is up in the Nov 2026 general; null = unknown. */
   onBallot2026: boolean | null;
+  /** Calendar year of the seat's next general election; null = unknown. */
+  nextElectionYear: number | null;
 }
 
 export type DelegationLookupResult =
@@ -306,6 +308,7 @@ export async function resolveDelegation(
       : null,
     // House terms are two years: every seat is up in the 2026 general.
     onBallot2026: true,
+    nextElectionYear: 2026,
   });
 
   const senateBlindLabels =
@@ -331,6 +334,7 @@ export async function resolveDelegation(
         : null,
       attendance: senatorStats?.attendance ?? null,
       onBallot2026: senatorStats?.onBallot2026 ?? null,
+      nextElectionYear: senatorStats?.nextElectionYear ?? null,
     });
   }
 

@@ -80,7 +80,14 @@ export async function POST(request: NextRequest) {
     });
   }
 
-  const delegation = await resolveDelegation(stateCode, stateName, district);
+  let delegation;
+  try {
+    delegation = await resolveDelegation(stateCode, stateName, district);
+  } catch (err) {
+    // A DB failure mid-query degrades to the same honest state as no-DB.
+    console.error("[delegation] resolver failed:", err);
+    delegation = { status: "db_unavailable" as const };
+  }
   if (delegation.status === "db_unavailable") {
     return Response.json({
       status: "db_unavailable",
