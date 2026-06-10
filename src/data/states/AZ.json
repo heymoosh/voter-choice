@@ -1,15 +1,46 @@
 {
+  "_sources": {
+    "primary": "https://azsos.gov/elections/election-information/2026-election-info",
+    "secondary": "https://ballotpedia.org/Statewide_primary_elections_calendar",
+    "checked": "2026-06-10",
+    "discrepancies": "2026-06-10: Arizona's 2026 primary was moved from August 4 to July 21, 2026 (now permanently the second-to-last Tuesday in July) by bipartisan 2026 legislation signed by Gov. Hobbs; this file previously listed August 4. Per the azsos.gov 2026 calendar: primary registration deadline June 22, early voting begins June 24; general (Nov 3) registration deadline October 5, early voting begins October 7. Per-election registration and early-voting blocks added 2026-06-10."
+  },
   "stateCode": "AZ",
   "stateName": "Arizona",
-  "lastUpdated": "2026-03-01",
+  "lastUpdated": "2026-06-10",
   "elections": [
     {
       "id": "az-2026-primary",
       "name": "2026 Arizona Primary Election",
-      "date": "2026-08-04",
+      "date": "2026-07-21",
       "type": "primary",
       "isPrimary": true,
-      "primaryType": "closed"
+      "primaryType": "closed",
+      "registration": {
+        "online": {
+          "available": true,
+          "deadline": "2026-06-22",
+          "url": "https://servicearizona.com/VoterRegistration"
+        },
+        "byMail": {
+          "deadline": "2026-06-22",
+          "sincePostmarked": false
+        },
+        "inPerson": {
+          "deadline": "2026-06-22",
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": false,
+        "registrationCheckUrl": "https://my.arizona.vote/PortalList.aspx"
+      },
+      "earlyVoting": {
+        "available": true,
+        "startDate": "2026-06-24",
+        "endDate": "2026-07-17",
+        "notes": "Early voting begins June 24, 2026, when early ballots are mailed; voters on the Active Early Voting List (AEVL) receive ballots automatically. In-person early voting runs through the Friday before Election Day (July 17)."
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://azsos.gov/elections/election-information/2026-election-info"
     },
     {
       "id": "az-2026-general",
@@ -17,21 +48,46 @@
       "date": "2026-11-03",
       "type": "general",
       "isPrimary": false,
-      "primaryType": null
+      "primaryType": null,
+      "registration": {
+        "online": {
+          "available": true,
+          "deadline": "2026-10-05",
+          "url": "https://servicearizona.com/VoterRegistration"
+        },
+        "byMail": {
+          "deadline": "2026-10-05",
+          "sincePostmarked": false
+        },
+        "inPerson": {
+          "deadline": "2026-10-05",
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": false,
+        "registrationCheckUrl": "https://my.arizona.vote/PortalList.aspx"
+      },
+      "earlyVoting": {
+        "available": true,
+        "startDate": "2026-10-07",
+        "endDate": "2026-10-30",
+        "notes": "Early voting begins October 7, 2026, when early ballots are mailed; voters on the Active Early Voting List (AEVL) receive ballots automatically. In-person early voting runs through the Friday before Election Day (October 30)."
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://azsos.gov/elections/election-information/2026-election-info"
     }
   ],
   "registration": {
     "online": {
       "available": true,
-      "deadline": "2026-07-06",
+      "deadline": "2026-10-05",
       "url": "https://servicearizona.com/VoterRegistration"
     },
     "byMail": {
-      "deadline": "2026-07-06",
+      "deadline": "2026-10-05",
       "sincePostmarked": false
     },
     "inPerson": {
-      "deadline": "2026-07-06",
+      "deadline": "2026-10-05",
       "sincePostmarked": false
     },
     "sameDayRegistration": false,
@@ -39,9 +95,9 @@
   },
   "earlyVoting": {
     "available": true,
-    "startDate": "2026-07-08",
-    "endDate": "2026-07-31",
-    "notes": "Mail ballots automatically sent to all registered voters"
+    "startDate": "2026-10-07",
+    "endDate": "2026-10-30",
+    "notes": "Early ballots are mailed automatically to voters on the Active Early Voting List (AEVL); any voter may request an early ballot or vote early in person."
   },
   "votingRules": {
     "idRequired": true,

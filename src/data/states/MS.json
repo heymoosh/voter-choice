@@ -2,18 +2,18 @@
   "_sources": {
     "primary": "https://www.sos.ms.gov/elections-voting",
     "secondary": "https://ballotpedia.org/Voting_in_Mississippi",
-    "checked": "2026-05-10",
-    "discrepancies": "NCSL lists MS as 'strict photo ID' — one of the strictest categories. SoS site confirms voters without photo ID must vote a provisional ballot and present ID before a set deadline or it will not be counted. Consistent."
+    "checked": "2026-06-10",
+    "discrepancies": "NCSL lists MS as 'strict photo ID' — one of the strictest categories. SoS site confirms voters without photo ID must vote a provisional ballot and present ID before a set deadline or it will not be counted. Consistent. [2026-06-10] Corrected the 2026 primary from June 2 to Tuesday, March 10, 2026 and the primary runoff from June 23 to Tuesday, April 7, 2026, per the MS SoS 2026 Elections Calendar and FVAP (Mississippi holds its federal/state primaries in March in even years). Registration deadlines: Feb 9, 2026 (primary) and Mar 9, 2026 (runoff) per SoS. General Nov 3 confirmed (registration deadline Oct 5)."
   },
   "stateCode": "MS",
   "stateName": "Mississippi",
-  "lastUpdated": "2026-05-10",
+  "lastUpdated": "2026-06-10",
   "coverageStatus": "confirmed",
   "elections": [
     {
       "id": "ms-2026-primary",
       "name": "2026 Mississippi Primary Election",
-      "date": "2026-06-02",
+      "date": "2026-03-10",
       "type": "primary",
       "isPrimary": true,
       "primaryType": "open",
@@ -24,11 +24,11 @@
           "url": "https://www.sos.ms.gov/elections-voting/voter-registration"
         },
         "byMail": {
-          "deadline": "2026-05-03",
+          "deadline": "2026-02-09",
           "sincePostmarked": true
         },
         "inPerson": {
-          "deadline": "2026-05-03",
+          "deadline": "2026-02-09",
           "sincePostmarked": false
         },
         "sameDayRegistration": false,
@@ -39,12 +39,14 @@
         "startDate": null,
         "endDate": null,
         "notes": "Mississippi does not have early voting. Absentee voting is available for qualifying voters."
-      }
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://www.sos.ms.gov/content/documents/elections/2026%20Elections%20Calendar.pdf"
     },
     {
       "id": "ms-2026-primary-runoff",
       "name": "2026 Mississippi Primary Runoff Election",
-      "date": "2026-06-23",
+      "date": "2026-04-07",
       "type": "runoff",
       "isPrimary": false,
       "primaryType": null,
@@ -55,11 +57,11 @@
           "url": "https://www.sos.ms.gov/elections-voting/voter-registration"
         },
         "byMail": {
-          "deadline": "2026-05-24",
+          "deadline": "2026-03-09",
           "sincePostmarked": true
         },
         "inPerson": {
-          "deadline": "2026-05-24",
+          "deadline": "2026-03-09",
           "sincePostmarked": false
         },
         "sameDayRegistration": false,
@@ -69,8 +71,10 @@
         "available": false,
         "startDate": null,
         "endDate": null,
-        "notes": "No early voting for runoffs. TODO verify runoff date for 2026 cycle."
-      }
+        "notes": "Mississippi does not have early voting. A primary runoff is held only in contests where no candidate won a majority in the March 10, 2026 primary; the 2026 runoff date was April 7, 2026 (MS SoS 2026 elections calendar). Absentee voting is available for qualifying voters."
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://www.sos.ms.gov/content/documents/elections/2026%20Elections%20Calendar.pdf"
     },
     {
       "id": "ms-2026-general",
@@ -101,7 +105,9 @@
         "startDate": null,
         "endDate": null,
         "notes": "Mississippi does not have early voting. Absentee voting is available for qualifying voters."
-      }
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://www.sos.ms.gov/content/documents/elections/2026%20Elections%20Calendar.pdf"
     }
   ],
   "registration": {
@@ -138,7 +144,7 @@
       "Tribal photo ID",
       "Mississippi firearms license with photo"
     ],
-    "expirationRule": "Photo ID must not be expired except for Mississippi driver's licenses which may be used if expired within 10 years. TODO verify for 2026 cycle.",
+    "expirationRule": "Photo ID must not be expired, with limited exceptions allowed under Mississippi law. Details: https://www.sos.ms.gov/elections-voting/voter-id",
     "impedimentDeclaration": "Voters without photo ID must vote provisionally and present a valid photo ID to the circuit clerk's office by noon 5 business days after the election. Alternatively, they may cast a provisional ballot and sign an affidavit at a circuit court within that window.",
     "phonesAtPolls": "prohibited",
     "phonesAtPollsDetail": "Mississippi prohibits use of mobile phones and other communication devices in the polling booth.",

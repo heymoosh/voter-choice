@@ -2,32 +2,32 @@
   "_sources": {
     "primary": "https://vote.sos.ri.gov/",
     "secondary": "https://www.ncsl.org/elections-and-campaigns/voter-id",
-    "checked": "2026-05-10",
-    "discrepancies": "NCSL classifies RI as 'photo ID requested' (not required). Rhode Island requests but does not require photo ID; voters without an acceptable photo ID may cast a regular ballot after providing their name, address, and signature. Rhode Island enacted no-excuse absentee voting in 2021. 2026 primary date (Sept 8) follows standard RI schedule; TODO verify for 2026 cycle. Registration deadline is 30 days before the election per RI law."
+    "checked": "2026-06-10",
+    "discrepancies": "NCSL classifies RI as 'photo ID requested' (not required). Rhode Island requests but does not require photo ID; voters without an acceptable photo ID may cast a regular ballot after providing their name, address, and signature. Rhode Island enacted no-excuse absentee voting in 2021. Registration deadline is 30 days before the election per RI law. 2026-06-10 verification: the 2024-carry-forward primary date of Sept 8 was WRONG — the RI Board of Elections lists the 2026 Statewide Primary as WEDNESDAY, September 9, 2026 (registration deadline 8/10/26; mail ballot application deadline 8/19/26; early voting begins 8/20/26). General 11/3/26: registration deadline 10/4/26; mail ballot application 10/13/26; early voting 10/14/26 through the day before. Early-voting windows corrected from 2024 carry-forwards."
   },
   "stateCode": "RI",
   "stateName": "Rhode Island",
-  "lastUpdated": "2026-05-10",
+  "lastUpdated": "2026-06-10",
   "elections": [
     {
       "id": "ri-2026-primary",
       "name": "2026 Rhode Island Primary Election",
-      "date": "2026-09-08",
+      "date": "2026-09-09",
       "type": "primary",
       "isPrimary": true,
       "primaryType": "semi-closed",
       "registration": {
         "online": {
           "available": true,
-          "deadline": "2026-08-09",
+          "deadline": "2026-08-10",
           "url": "https://vote.sos.ri.gov/"
         },
         "byMail": {
-          "deadline": "2026-08-09",
+          "deadline": "2026-08-10",
           "sincePostmarked": false
         },
         "inPerson": {
-          "deadline": "2026-08-09",
+          "deadline": "2026-08-10",
           "sincePostmarked": false
         },
         "sameDayRegistration": false,
@@ -35,10 +35,12 @@
       },
       "earlyVoting": {
         "available": true,
-        "startDate": "2026-08-25",
-        "endDate": "2026-09-07",
-        "notes": "In-person early voting available. TODO verify exact 2026 dates."
-      }
+        "startDate": "2026-08-20",
+        "endDate": "2026-09-08",
+        "notes": "In-person early voting at your local board of canvassers begins August 20, 2026 and runs through 4 p.m. the day before the primary. The 2026 statewide primary is on a Wednesday (September 9)."
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://elections.ri.gov/elections/upcoming-elections"
     },
     {
       "id": "ri-2026-general",
@@ -66,10 +68,12 @@
       },
       "earlyVoting": {
         "available": true,
-        "startDate": "2026-10-19",
-        "endDate": "2026-11-01",
-        "notes": "In-person early voting at local boards of canvassers. TODO verify exact 2026 dates."
-      }
+        "startDate": "2026-10-14",
+        "endDate": "2026-11-02",
+        "notes": "In-person early voting at local boards of canvassers begins October 14, 2026 and runs through 4 p.m. the day before Election Day."
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://elections.ri.gov/elections/upcoming-elections"
     }
   ],
   "registration": {
@@ -91,9 +95,9 @@
   },
   "earlyVoting": {
     "available": true,
-    "startDate": "2026-10-19",
-    "endDate": "2026-11-01",
-    "notes": "Rhode Island offers in-person early voting at local boards of canvassers. No-excuse absentee mail voting is also available. TODO verify exact 2026 dates."
+    "startDate": "2026-10-14",
+    "endDate": "2026-11-02",
+    "notes": "Rhode Island offers in-person early voting at local boards of canvassers from 20 days before the election through 4 p.m. the day before. No-excuse absentee mail voting is also available."
   },
   "votingRules": {
     "idRequired": false,

@@ -2,12 +2,12 @@
   "_sources": {
     "primary": "https://elections.hawaii.gov/",
     "secondary": "https://www.ncsl.org/elections-and-campaigns/voter-id",
-    "checked": "2026-05-10",
-    "discrepancies": "Hawaii is a universal vote-by-mail state since 2020 (Act 136). NCSL classifies Hawaii as photo ID requested but not strictly required — signature verification on mail ballots is the primary security mechanism. The Hawaii primary is typically the second Saturday in August. TODO verify exact 2026 primary date; estimated 2026-08-08. Conditional same-day registration is available only for voters who missed the regular deadline due to a qualifying reason."
+    "checked": "2026-06-10",
+    "discrepancies": "Hawaii is a universal vote-by-mail state since 2020 (Act 136). NCSL classifies Hawaii as photo ID requested but not strictly required — signature verification on mail ballots is the primary security mechanism. 2026-06-10: Primary confirmed as Saturday, August 8, 2026 per elections.hawaii.gov; voter service centers open July 27 – August 8 (primary) and October 20 – November 3 (general). Hawaii offers same-day registration at voter service centers through Election Day — corrected earlier 30-day registration deadlines; the paper-application deadline is July 29, 2026 (primary) / October 26, 2026 (general), while online and in-person registration remain open through Election Day."
   },
   "stateCode": "HI",
   "stateName": "Hawaii",
-  "lastUpdated": "2026-05-10",
+  "lastUpdated": "2026-06-10",
   "coverageStatus": "confirmed",
   "elections": [
     {
@@ -20,26 +20,28 @@
       "registration": {
         "online": {
           "available": true,
-          "deadline": "2026-07-09",
+          "deadline": "2026-08-08",
           "url": "https://olvr.hawaii.gov/"
         },
         "byMail": {
-          "deadline": "2026-07-09",
+          "deadline": "2026-07-29",
           "sincePostmarked": false
         },
         "inPerson": {
-          "deadline": "2026-07-09",
+          "deadline": "2026-08-08",
           "sincePostmarked": false
         },
-        "sameDayRegistration": false,
+        "sameDayRegistration": true,
         "registrationCheckUrl": "https://olvr.hawaii.gov/"
       },
       "earlyVoting": {
         "available": true,
-        "startDate": "2026-07-25",
-        "endDate": "2026-08-07",
-        "notes": "All registered voters receive a mail ballot. In-person voter service centers (VSCs) open for in-person voting and assistance. TODO verify exact 2026 dates."
-      }
+        "startDate": "2026-07-27",
+        "endDate": "2026-08-08",
+        "notes": "All registered voters receive a mail ballot (mailed around July 21, 2026). Voter service centers are open July 27 – August 8, 2026 (except Sundays) for in-person voting, accessible voting and same-day registration."
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://elections.hawaii.gov/"
     },
     {
       "id": "hi-2026-general",
@@ -51,50 +53,52 @@
       "registration": {
         "online": {
           "available": true,
-          "deadline": "2026-10-06",
+          "deadline": "2026-11-03",
           "url": "https://olvr.hawaii.gov/"
         },
         "byMail": {
-          "deadline": "2026-10-06",
+          "deadline": "2026-10-26",
           "sincePostmarked": false
         },
         "inPerson": {
-          "deadline": "2026-10-06",
+          "deadline": "2026-11-03",
           "sincePostmarked": false
         },
-        "sameDayRegistration": false,
+        "sameDayRegistration": true,
         "registrationCheckUrl": "https://olvr.hawaii.gov/"
       },
       "earlyVoting": {
         "available": true,
         "startDate": "2026-10-20",
-        "endDate": "2026-11-02",
-        "notes": "All registered voters receive a mail ballot automatically approximately 18 days before the election. Voter service centers open for in-person voting. TODO verify exact 2026 dates."
-      }
+        "endDate": "2026-11-03",
+        "notes": "All registered voters receive a mail ballot (mailed around October 16, 2026). Voter service centers are open October 20 – November 3, 2026 (except Sundays) for in-person voting and same-day registration."
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://elections.hawaii.gov/"
     }
   ],
   "registration": {
     "online": {
       "available": true,
-      "deadline": "2026-10-06",
+      "deadline": "2026-11-03",
       "url": "https://olvr.hawaii.gov/"
     },
     "byMail": {
-      "deadline": "2026-10-06",
+      "deadline": "2026-10-26",
       "sincePostmarked": false
     },
     "inPerson": {
-      "deadline": "2026-10-06",
+      "deadline": "2026-11-03",
       "sincePostmarked": false
     },
-    "sameDayRegistration": false,
+    "sameDayRegistration": true,
     "registrationCheckUrl": "https://olvr.hawaii.gov/"
   },
   "earlyVoting": {
     "available": true,
     "startDate": "2026-10-20",
-    "endDate": "2026-11-02",
-    "notes": "Hawaii is a universal vote-by-mail state. All registered voters automatically receive a mail ballot. Voter service centers open for in-person voting and ballot drop-off. No traditional polling places — vote from home or at a voter service center."
+    "endDate": "2026-11-03",
+    "notes": "Hawaii is a universal vote-by-mail state. All registered voters automatically receive a mail ballot. Voter service centers open October 20 – November 3, 2026 for the general election for in-person voting, same-day registration and ballot drop-off. No traditional polling places — vote from home or at a voter service center."
   },
   "votingRules": {
     "idRequired": false,

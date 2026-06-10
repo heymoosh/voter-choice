@@ -2,12 +2,12 @@
   "_sources": {
     "primary": "https://myvote.wi.gov/en-us/",
     "secondary": "https://www.ncsl.org/elections-and-campaigns/voter-id",
-    "checked": "2026-05-10",
-    "discrepancies": "Wisconsin has a strict photo ID requirement per NCSL. The Wisconsin Elections Commission (WEC) confirms a wide range of acceptable photo IDs including Wisconsin ID cards, driver licenses, military IDs, tribal IDs, and student IDs from Wisconsin accredited schools. Voters without ID may receive a free Wisconsin voter ID from the DMV. Wisconsin primary is the second Tuesday in August per statute. Same-day registration is available in Wisconsin through Election Day."
+    "checked": "2026-06-10",
+    "discrepancies": "Wisconsin has a strict photo ID requirement per NCSL. The Wisconsin Elections Commission (WEC) confirms a wide range of acceptable photo IDs including Wisconsin ID cards, driver licenses, military IDs, tribal IDs, and student IDs from Wisconsin accredited schools. Voters without ID may receive a free Wisconsin voter ID from the DMV. Wisconsin primary is the second Tuesday in August per statute. Same-day registration is available in Wisconsin through Election Day. 2026-06-10 verification: August 11, 2026 primary CONFIRMED (FVAP calendar current as of May 2026). Online registration deadline corrected — online (like mail) registration closes 20 days before the election per myvote.wi.gov (July 22 / October 14); the file previously showed online open through Election Day. In-person absentee window corrected to the statutory rule: begins no earlier than 14 days before the election and ends no later than the Sunday before (primary July 28-Aug 9; general Oct 20-Nov 1); exact days/hours are set by each municipal clerk."
   },
   "stateCode": "WI",
   "stateName": "Wisconsin",
-  "lastUpdated": "2026-05-10",
+  "lastUpdated": "2026-06-10",
   "coverageStatus": "confirmed",
   "elections": [
     {
@@ -20,7 +20,7 @@
       "registration": {
         "online": {
           "available": true,
-          "deadline": "2026-08-11",
+          "deadline": "2026-07-22",
           "url": "https://myvote.wi.gov/en-us/RegisterToVote"
         },
         "byMail": {
@@ -36,10 +36,12 @@
       },
       "earlyVoting": {
         "available": true,
-        "startDate": "2026-07-14",
+        "startDate": "2026-07-28",
         "endDate": "2026-08-09",
-        "notes": "In-person absentee voting available at municipal clerk offices starting 14 business days before the primary. Weekend hours vary. TODO verify for 2026 cycle."
-      }
+        "notes": "In-person absentee voting at municipal clerk offices may begin no earlier than 14 days before the primary (July 28, 2026) and ends no later than the Sunday before (August 9, 2026). Days and hours are set by each municipal clerk — check myvote.wi.gov."
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://myvote.wi.gov/en-us/Voter-Deadlines"
     },
     {
       "id": "wi-2026-general",
@@ -51,7 +53,7 @@
       "registration": {
         "online": {
           "available": true,
-          "deadline": "2026-11-03",
+          "deadline": "2026-10-14",
           "url": "https://myvote.wi.gov/en-us/RegisterToVote"
         },
         "byMail": {
@@ -67,16 +69,18 @@
       },
       "earlyVoting": {
         "available": true,
-        "startDate": "2026-10-13",
+        "startDate": "2026-10-20",
         "endDate": "2026-11-01",
-        "notes": "In-person absentee voting begins 14 business days before Election Day at the municipal clerk's office. Weekend hours required in final weeks. TODO verify for 2026 cycle."
-      }
+        "notes": "In-person absentee voting at municipal clerk offices may begin no earlier than 14 days before Election Day (October 20, 2026) and ends no later than the Sunday before (November 1, 2026). Days and hours are set by each municipal clerk — check myvote.wi.gov."
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://myvote.wi.gov/en-us/Voter-Deadlines"
     }
   ],
   "registration": {
     "online": {
       "available": true,
-      "deadline": "2026-11-03",
+      "deadline": "2026-10-14",
       "url": "https://myvote.wi.gov/en-us/RegisterToVote"
     },
     "byMail": {
@@ -92,14 +96,14 @@
   },
   "earlyVoting": {
     "available": true,
-    "startDate": "2026-10-13",
+    "startDate": "2026-10-20",
     "endDate": "2026-11-01",
-    "notes": "In-person absentee voting at municipal clerk offices begins 14 business days before Election Day. Weekend hours required in the two weeks before the election. Same-day registration available through Election Day. TODO verify for 2026 cycle."
+    "notes": "In-person absentee voting at municipal clerk offices runs from no earlier than 14 days before Election Day through the Sunday before; days and hours are set by each municipal clerk. Same-day registration is available at the polls on Election Day with proof of residence."
   },
   "votingRules": {
     "idRequired": true,
     "acceptedIds": [
-      "Wisconsin driver's license or state ID card (including expired within 2 years)",
+      "Wisconsin driver's license or state ID card (unexpired, or expired after the most recent general election)",
       "U.S. military ID with expiration date or issuance date within 2 years",
       "U.S. passport or passport card",
       "Tribal ID",
@@ -108,7 +112,7 @@
       "Naturalization certificate issued within 2 years",
       "Wisconsin voter ID card (free from the DMV)"
     ],
-    "expirationRule": "IDs must generally not be expired more than 2 years. Student IDs must not be expired. Wisconsin driver's licenses and state IDs may be expired up to 2 years. TODO verify for 2026 cycle.",
+    "expirationRule": "A Wisconsin driver's license or state ID may be used if it expired after the most recent general election. Student IDs must be unexpired or expired no more than 2 years. Details: https://elections.wi.gov/voters/photo-id-law",
     "impedimentDeclaration": "Voters without acceptable ID may obtain a free Wisconsin voter ID card from any DMV service center before Election Day.",
     "phonesAtPolls": "allowed",
     "phonesAtPollsDetail": "Wisconsin allows phones at polling places but prohibits photography that reveals how a voter marked their ballot. No electioneering within 100 feet of the polling place entrance.",

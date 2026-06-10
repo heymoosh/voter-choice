@@ -2,12 +2,12 @@
   "_sources": {
     "primary": "https://elect.ky.gov/voters/Pages/default.aspx",
     "secondary": "https://ballotpedia.org/Voting_in_Kentucky",
-    "checked": "2026-05-10",
-    "discrepancies": "NCSL lists KY as 'non-photo ID requested'. SoS site confirms Kentucky requires a document showing name and address (non-photo acceptable) or a photo ID. Consistent."
+    "checked": "2026-06-10",
+    "discrepancies": "NCSL lists KY as 'non-photo ID requested'. SoS site confirms Kentucky requires a document showing name and address (non-photo acceptable) or a photo ID. Consistent. [2026-06-10] Primary date May 19, 2026 confirmed (elect.ky.gov; FVAP). Corrected early voting to Kentucky's statutory 3-day no-excuse window (Thursday-Saturday before Election Day: May 14-16 and Oct 29-31, 2026) per the State Board of Elections; file previously showed a 5-day window."
   },
   "stateCode": "KY",
   "stateName": "Kentucky",
-  "lastUpdated": "2026-05-10",
+  "lastUpdated": "2026-06-10",
   "coverageStatus": "confirmed",
   "elections": [
     {
@@ -36,10 +36,12 @@
       },
       "earlyVoting": {
         "available": true,
-        "startDate": "2026-05-12",
+        "startDate": "2026-05-14",
         "endDate": "2026-05-16",
-        "notes": "In-person absentee voting (early voting) available the week before the election at the county clerk's office. Hours and locations set by county. TODO verify for 2026 cycle."
-      }
+        "notes": "No-excuse early in-person voting was available Thursday-Saturday before Election Day (May 14-16, 2026). Excused in-person absentee voting is available earlier for qualifying voters. Locations and hours set by your county clerk: https://govote.ky.gov"
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://elect.ky.gov/Resources/Pages/Election-Calendar.aspx"
     },
     {
       "id": "ky-2026-general",
@@ -67,10 +69,12 @@
       },
       "earlyVoting": {
         "available": true,
-        "startDate": "2026-10-27",
+        "startDate": "2026-10-29",
         "endDate": "2026-10-31",
-        "notes": "In-person absentee (early voting) at county clerk's office the week before Election Day. TODO verify for 2026 cycle."
-      }
+        "notes": "No-excuse early in-person voting runs Thursday-Saturday before Election Day (October 29-31, 2026). Excused in-person absentee voting is available earlier for qualifying voters. Locations and hours set by your county clerk: https://govote.ky.gov"
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://elect.ky.gov/Resources/Pages/Election-Calendar.aspx"
     }
   ],
   "registration": {
@@ -92,9 +96,9 @@
   },
   "earlyVoting": {
     "available": true,
-    "startDate": "2026-10-27",
+    "startDate": "2026-10-29",
     "endDate": "2026-10-31",
-    "notes": "In-person absentee (early voting) available at the county clerk's office the week before Election Day. Contact your county clerk for hours and locations."
+    "notes": "No-excuse early in-person voting runs Thursday-Saturday before Election Day (October 29-31, 2026). Contact your county clerk for locations and hours: https://govote.ky.gov"
   },
   "votingRules": {
     "idRequired": true,
@@ -105,7 +109,7 @@
       "Medicare or Medicaid card",
       "Utility bill, bank statement, government check, paycheck, or other government document showing name and address"
     ],
-    "expirationRule": "Photo ID should be current. Non-photo documents showing name and address are acceptable even if not expired. TODO verify for 2026 cycle.",
+    "expirationRule": "Photo ID should be current. Non-photo documents showing name and address are also acceptable. Details: https://elect.ky.gov/voters/Pages/Voter-ID.aspx",
     "impedimentDeclaration": "If a voter cannot provide an acceptable ID, they may cast a provisional ballot and return with ID before 6 p.m. on the second business day after the election to have it counted.",
     "phonesAtPolls": "prohibited",
     "phonesAtPollsDetail": "Kentucky prohibits the use of mobile phones inside polling booths. Phones may generally be used in waiting areas only.",

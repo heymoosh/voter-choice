@@ -2,12 +2,12 @@
   "_sources": {
     "primary": "https://sos.idaho.gov/elections-division/",
     "secondary": "https://www.ncsl.org/elections-and-campaigns/voter-id",
-    "checked": "2026-05-10",
-    "discrepancies": "NCSL classifies Idaho as photo ID required. Idaho's primary is typically the third Tuesday in May; estimated 2026-05-19 for 2026. Idaho offers same-day voter registration at the polls. Idaho does not have a statewide early voting law but counties may offer absentee in-person voting. 2026 registration deadlines estimated from Idaho statute (25 days before election for online/mail); TODO verify exact dates."
+    "checked": "2026-06-10",
+    "discrepancies": "NCSL classifies Idaho as photo ID required. Idaho offers same-day voter registration at the polls. Idaho does not have a uniform statewide early voting schedule — counties may offer early/absentee in-person voting on their own calendars. 2026-06-10: Primary confirmed as May 19, 2026 and general as November 3, 2026 (VOTE411 / The Green Papers). Registration deadlines follow Idaho's 25-day rule (April 24 primary / October 9 general), with same-day registration at the polls. County early-voting dates are not pinned here because they vary by county."
   },
   "stateCode": "ID",
   "stateName": "Idaho",
-  "lastUpdated": "2026-05-10",
+  "lastUpdated": "2026-06-10",
   "coverageStatus": "confirmed",
   "elections": [
     {
@@ -36,10 +36,12 @@
       },
       "earlyVoting": {
         "available": true,
-        "startDate": "2026-04-20",
-        "endDate": "2026-05-18",
-        "notes": "Absentee in-person voting available at county clerk offices before Election Day. Hours vary by county. TODO verify exact 2026 dates."
-      }
+        "startDate": null,
+        "endDate": null,
+        "notes": "Early (absentee in-person) voting availability varies by county — many county clerk offices offer it in the weeks before Election Day. Confirm dates and hours with your county clerk: https://sos.idaho.gov/elections-division/county-clerks/"
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://www.vote411.org/primaries2026"
     },
     {
       "id": "id-2026-general",
@@ -70,7 +72,9 @@
         "startDate": "2026-10-05",
         "endDate": "2026-11-02",
         "notes": "Absentee in-person voting available at county clerk offices. No uniform statewide early voting law — availability and hours vary by county. Contact your county clerk for details."
-      }
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://www.vote411.org/primaries2026"
     }
   ],
   "registration": {

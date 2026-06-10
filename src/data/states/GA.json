@@ -1,7 +1,13 @@
 {
+  "_sources": {
+    "primary": "https://sos.ga.gov/page/election-calendar-and-events",
+    "secondary": "https://ballotpedia.org/Georgia_elections,_2026",
+    "checked": "2026-06-10",
+    "discrepancies": "2026-06-10: Corrected the primary runoff date to June 16, 2026 (was listed as July 7) — under SB 202 runoffs are held 28 days after the primary. Corrected the primary advance-voting window to April 27 – May 15 (fourth-Monday rule; file previously said May 4). Runoff registration deadline equals the primary deadline (April 20, 2026) — no new registration window before a runoff. Runoff advance voting June 8–12 statewide (some counties from June 6). General advance voting begins the week of October 12, 2026."
+  },
   "stateCode": "GA",
   "stateName": "Georgia",
-  "lastUpdated": "2026-05-09",
+  "lastUpdated": "2026-06-10",
   "elections": [
     {
       "id": "ga-2026-primary",
@@ -29,30 +35,32 @@
       },
       "earlyVoting": {
         "available": true,
-        "startDate": "2026-05-04",
+        "startDate": "2026-04-27",
         "endDate": "2026-05-15",
-        "notes": "Early voting period runs from the 4th Monday prior to the election through the Friday before Election Day. TODO verify for 2026 cycle."
-      }
+        "notes": "Advance (early) voting for the May 19 primary ran April 27 – May 15, 2026 — it begins the fourth Monday before the election and ends the Friday before Election Day."
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://sos.ga.gov/page/election-calendar-and-events"
     },
     {
       "id": "ga-2026-primary-runoff",
       "name": "2026 Georgia Primary Runoff Election",
-      "date": "2026-07-07",
+      "date": "2026-06-16",
       "type": "runoff",
       "isPrimary": false,
       "primaryType": null,
       "registration": {
         "online": {
           "available": true,
-          "deadline": "2026-06-08",
+          "deadline": "2026-04-20",
           "url": "https://registertovote.sos.ga.gov/"
         },
         "byMail": {
-          "deadline": "2026-06-08",
+          "deadline": "2026-04-20",
           "sincePostmarked": false
         },
         "inPerson": {
-          "deadline": "2026-06-08",
+          "deadline": "2026-04-20",
           "sincePostmarked": false
         },
         "sameDayRegistration": false,
@@ -60,10 +68,12 @@
       },
       "earlyVoting": {
         "available": true,
-        "startDate": "2026-06-22",
-        "endDate": "2026-07-03",
-        "notes": "Early voting for runoff. TODO verify for 2026 cycle."
-      }
+        "startDate": "2026-06-08",
+        "endDate": "2026-06-12",
+        "notes": "Advance voting for the June 16 primary runoff runs June 8–12, 2026 in all counties; some counties opened as early as Saturday, June 6. You must have been registered by the primary registration deadline (April 20, 2026) to vote in the runoff — there is no new registration window."
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://sos.ga.gov/page/election-calendar-and-events"
     },
     {
       "id": "ga-2026-general",
@@ -91,10 +101,12 @@
       },
       "earlyVoting": {
         "available": true,
-        "startDate": "2026-10-17",
+        "startDate": "2026-10-12",
         "endDate": "2026-10-30",
-        "notes": "Early voting begins the 4th Monday before the election. Saturday early voting is required; additional Saturday and Sunday hours are at county discretion. TODO verify for 2026 cycle."
-      }
+        "notes": "Advance voting begins the fourth Monday before the general election (week of October 12, 2026; if that Monday is a state holiday voting may begin the next business day) and runs through Friday, October 30. Two Saturdays of voting are required; Sunday hours are at county discretion. Confirm your county's schedule: https://mvp.sos.ga.gov/"
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://sos.ga.gov/page/election-calendar-and-events"
     }
   ],
   "registration": {
@@ -116,9 +128,9 @@
   },
   "earlyVoting": {
     "available": true,
-    "startDate": "2026-10-17",
+    "startDate": "2026-10-12",
     "endDate": "2026-10-30",
-    "notes": "Early voting begins the 4th Monday before the election. Saturday early voting is required. TODO verify for 2026 cycle."
+    "notes": "Advance voting begins the fourth Monday before the general election (week of October 12, 2026) and runs through the Friday before Election Day. Saturday early voting is required. Confirm your county's schedule: https://mvp.sos.ga.gov/"
   },
   "votingRules": {
     "idRequired": true,
@@ -130,7 +142,7 @@
       "U.S. military ID",
       "Tribal ID"
     ],
-    "expirationRule": "Photo ID must not be expired, with the exception of Georgia driver's licenses expired within the past 4 years. TODO verify for 2026 cycle.",
+    "expirationRule": "A Georgia driver's license or state-issued ID may be used even if expired. Other accepted photo IDs (passport, military ID, student ID, government employee ID) must be valid.",
     "impedimentDeclaration": "Voters without an acceptable photo ID may cast a provisional ballot and present acceptable ID to the county registrar by the third day after the election.",
     "phonesAtPolls": "allowed",
     "phonesAtPollsDetail": "Georgia does not prohibit phones inside the polling place. Voters may not photograph their own ballot or others' ballots. No electioneering within 150 feet of the polling place.",

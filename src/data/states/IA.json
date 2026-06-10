@@ -2,12 +2,12 @@
   "_sources": {
     "primary": "https://sos.iowa.gov/elections/",
     "secondary": "https://www.ncsl.org/elections-and-campaigns/voter-id",
-    "checked": "2026-05-10",
-    "discrepancies": "Iowa's voter ID law: photo ID is requested but not strictly required — voters without ID may use the poll book affidavit as an alternative. NCSL categorizes Iowa as 'photo ID requested'. Iowa enacted same-day registration; voters may register through Election Day. Iowa 2026 primary date set by statute as the first Tuesday after the first Monday in June."
+    "checked": "2026-06-10",
+    "discrepancies": "Iowa's voter ID law: photo ID is requested but not strictly required — voters without ID may use the poll book affidavit as an alternative. NCSL categorizes Iowa as 'photo ID requested'. Iowa enacted same-day registration; voters may register through Election Day. Iowa 2026 primary date set by statute as the first Tuesday after the first Monday in June. 2026-06-10: Corrected the early-voting window from 29 to 20 days and the pre-registration (mail) deadline to Iowa's 15-day rule (May 18 primary / October 19 general) per sos.iowa.gov / Voter Ready Iowa — the 2021 law (SF 413) shortened both. Primary confirmed as June 2, 2026."
   },
   "stateCode": "IA",
   "stateName": "Iowa",
-  "lastUpdated": "2026-05-10",
+  "lastUpdated": "2026-06-10",
   "coverageStatus": "confirmed",
   "elections": [
     {
@@ -24,7 +24,7 @@
           "url": "https://mymvd.iowadot.gov/Account/Login?redirect=VoterRegistration"
         },
         "byMail": {
-          "deadline": "2026-05-22",
+          "deadline": "2026-05-18",
           "sincePostmarked": false
         },
         "inPerson": {
@@ -36,10 +36,12 @@
       },
       "earlyVoting": {
         "available": true,
-        "startDate": "2026-05-04",
+        "startDate": "2026-05-13",
         "endDate": "2026-06-01",
-        "notes": "Early voting (in-person absentee) begins 29 days before the election at county auditor offices. TODO verify for 2026 cycle."
-      }
+        "notes": "In-person absentee (early) voting ran May 13 – June 1, 2026 at county auditor offices — it begins 20 days before the election."
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://voterready.iowa.gov/"
     },
     {
       "id": "ia-2026-general",
@@ -55,7 +57,7 @@
           "url": "https://mymvd.iowadot.gov/Account/Login?redirect=VoterRegistration"
         },
         "byMail": {
-          "deadline": "2026-10-24",
+          "deadline": "2026-10-19",
           "sincePostmarked": false
         },
         "inPerson": {
@@ -67,10 +69,12 @@
       },
       "earlyVoting": {
         "available": true,
-        "startDate": "2026-10-05",
+        "startDate": "2026-10-14",
         "endDate": "2026-11-02",
-        "notes": "Early voting (in-person absentee) begins 29 days before the election. Satellite sites may be available. TODO verify for 2026 cycle."
-      }
+        "notes": "In-person absentee (early) voting runs October 14 – November 2, 2026 at county auditor offices — it begins 20 days before the election. Satellite sites may be available."
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://voterready.iowa.gov/"
     }
   ],
   "registration": {
@@ -80,7 +84,7 @@
       "url": "https://mymvd.iowadot.gov/Account/Login?redirect=VoterRegistration"
     },
     "byMail": {
-      "deadline": "2026-10-24",
+      "deadline": "2026-10-19",
       "sincePostmarked": false
     },
     "inPerson": {
@@ -92,9 +96,9 @@
   },
   "earlyVoting": {
     "available": true,
-    "startDate": "2026-10-05",
+    "startDate": "2026-10-14",
     "endDate": "2026-11-02",
-    "notes": "Early voting (in-person absentee) begins 29 days before the general election at county auditor offices. Satellite early voting locations may be available. TODO verify for 2026 cycle."
+    "notes": "In-person absentee (early) voting begins 20 days before the general election (October 14, 2026) at county auditor offices. Satellite early voting locations may be available."
   },
   "votingRules": {
     "idRequired": true,
@@ -106,7 +110,7 @@
       "Tribal ID",
       "Iowa voter ID card (free from county auditor)"
     ],
-    "expirationRule": "Photo ID must not be expired. Iowa voter ID cards do not expire. TODO verify for 2026 cycle.",
+    "expirationRule": "An Iowa driver's license or non-operator ID may be used if not expired more than 90 days. Iowa Voter ID PIN cards do not expire.",
     "impedimentDeclaration": "Voters without an acceptable photo ID may sign an election day affidavit attesting to their identity. A poll worker who knows the voter may also attest to their identity.",
     "phonesAtPolls": "allowed",
     "phonesAtPollsDetail": "Iowa does not prohibit phones at polling places. Voters may not photograph their ballot in a way that reveals how they voted. No electioneering within 300 feet of the polling place.",

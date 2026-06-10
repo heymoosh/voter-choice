@@ -2,12 +2,12 @@
   "_sources": {
     "primary": "https://sos.wv.gov/elections/Pages/default.aspx",
     "secondary": "https://ballotpedia.org/Voting_in_West_Virginia",
-    "checked": "2026-05-10",
-    "discrepancies": "NCSL lists WV as 'photo ID requested'. SoS confirms voters without photo ID may present a non-photo ID (utility bill, bank statement, government check, paycheck, student ID) or vote a provisional ballot. WV offers a free voter ID card. Consistent."
+    "checked": "2026-06-10",
+    "discrepancies": "NCSL lists WV as 'photo ID requested'. SoS confirms voters without photo ID may present a non-photo ID (utility bill, bank statement, government check, paycheck, student ID) or vote a provisional ballot. WV offers a free voter ID card. Consistent. 2026-06-10 verification: May 12, 2026 primary CONFIRMED (FVAP 2026 primary calendar current as of May 2026; election held as scheduled) with registration deadline April 21 (21-day rule) and early voting April 29-May 9 (statutory 13th day through 3rd day before, including Saturdays). November 3, 2026 general confirmed: registration deadline October 13; early voting October 21-31."
   },
   "stateCode": "WV",
   "stateName": "West Virginia",
-  "lastUpdated": "2026-05-10",
+  "lastUpdated": "2026-06-10",
   "coverageStatus": "confirmed",
   "elections": [
     {
@@ -38,8 +38,10 @@
         "available": true,
         "startDate": "2026-04-29",
         "endDate": "2026-05-09",
-        "notes": "Early voting available at the county clerk's office. TODO verify dates for 2026 cycle."
-      }
+        "notes": "Early voting ran at the county clerk's office (or designated location) from the 13th day through the 3rd day before the election, including Saturdays."
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://sos.wv.gov/elections/Pages/default.aspx"
     },
     {
       "id": "wv-2026-general",
@@ -69,8 +71,10 @@
         "available": true,
         "startDate": "2026-10-21",
         "endDate": "2026-10-31",
-        "notes": "Early voting at the county clerk's office. Hours vary by county. TODO verify for 2026 cycle."
-      }
+        "notes": "Early voting at the county clerk's office (or designated location) runs October 21-31, 2026 — the 13th day through the 3rd day before the election, including Saturdays. Hours vary by county."
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://sos.wv.gov/elections/Pages/default.aspx"
     }
   ],
   "registration": {
@@ -106,7 +110,7 @@
       "Military ID with photo",
       "Utility bill, bank statement, government check, paycheck, or other government document showing name and address"
     ],
-    "expirationRule": "Photo ID must not be expired. West Virginia provides a free voter ID card to any registered voter who does not have another form of acceptable ID. TODO verify for 2026 cycle.",
+    "expirationRule": "IDs must be valid (unexpired). West Virginia provides a free voter ID card to any registered voter who does not have another form of acceptable ID: https://sos.wv.gov/elections/Pages/VoterID.aspx",
     "impedimentDeclaration": "If a voter does not present an acceptable ID, they may vote a provisional ballot. The ballot is counted if the voter provides acceptable ID to the county clerk within 10 days after the election.",
     "phonesAtPolls": "prohibited",
     "phonesAtPollsDetail": "West Virginia prohibits use of wireless communication devices in the polling booth. You may bring written notes.",

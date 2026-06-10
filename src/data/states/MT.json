@@ -2,12 +2,12 @@
   "_sources": {
     "primary": "https://sosmt.gov/elections/",
     "secondary": "https://www.ncsl.org/elections-and-campaigns/voter-id",
-    "checked": "2026-05-10",
-    "discrepancies": "NCSL classifies Montana as photo ID required as of 2023 (HB 176 took effect). Montana's primary is typically the first Tuesday after the third Monday in June; estimated 2026-06-02. Montana offers same-day voter registration only for municipal elections, not partisan primary elections — verify with SoS for 2026 cycle. 2026 registration deadlines estimated from Montana statute (30 days before for mail/online, Election Day for in-person non-partisan). TODO verify exact dates."
+    "checked": "2026-06-10",
+    "discrepancies": "NCSL classifies Montana as photo ID required as of 2023 (HB 176 took effect). Montana offers same-day voter registration only for limited circumstances - verify with your county election office. [2026-06-10] Primary date June 2, 2026 confirmed (FVAP 2026 primary calendar); general Nov 3 confirmed. Registration deadlines shown are statutory computations (30 days before for mail/online; late registration in person) - confirm exact dates with your county election office: https://sosmt.gov/elections/"
   },
   "stateCode": "MT",
   "stateName": "Montana",
-  "lastUpdated": "2026-05-10",
+  "lastUpdated": "2026-06-10",
   "coverageStatus": "confirmed",
   "elections": [
     {
@@ -38,8 +38,10 @@
         "available": true,
         "startDate": "2026-05-04",
         "endDate": "2026-06-01",
-        "notes": "Montana offers absentee voting (in-person at county election offices) beginning 30 days before the election. All voters may request an absentee ballot without a reason. TODO verify exact 2026 dates."
-      }
+        "notes": "Montana offers absentee/early in-person voting at county election offices beginning 30 days before the election. All voters may request an absentee ballot without a reason. Confirm exact dates with your county election office: https://sosmt.gov/elections/"
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://www.fvap.gov/uploads/FVAP/VAO/PrimaryElectionsCalendar.pdf"
     },
     {
       "id": "mt-2026-general",
@@ -70,7 +72,9 @@
         "startDate": "2026-10-02",
         "endDate": "2026-11-02",
         "notes": "Absentee in-person voting available at county election offices starting 30 days before Election Day. Absentee ballots may be returned by mail or in person. Late registration (in-person at election office) may be available through noon the day before the election — check with your county."
-      }
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://www.fvap.gov/uploads/FVAP/VAO/PrimaryElectionsCalendar.pdf"
     }
   ],
   "registration": {

@@ -1,8 +1,13 @@
 {
+  "_sources": {
+    "primary": "https://www.sos.ca.gov/elections",
+    "secondary": "https://www.vote411.org/primaries2026",
+    "checked": "2026-06-10",
+    "discrepancies": "2026-06-10: Primary confirmed as June 2, 2026 and general as November 3, 2026 (VOTE411 / The Green Papers). Per-election registration and early-voting blocks added; California's registration deadline is 15 days before each election (October 19, 2026 for the general), with same-day conditional registration through Election Day."
+  },
   "stateCode": "CA",
   "stateName": "California",
-  "lastUpdated": "2026-03-01",
-
+  "lastUpdated": "2026-06-10",
   "elections": [
     {
       "id": "ca-2026-primary",
@@ -10,7 +15,32 @@
       "date": "2026-06-02",
       "type": "primary",
       "isPrimary": true,
-      "primaryType": "semi-closed"
+      "primaryType": "semi-closed",
+      "registration": {
+        "online": {
+          "available": true,
+          "deadline": "2026-05-18",
+          "url": "https://registertovote.ca.gov/"
+        },
+        "byMail": {
+          "deadline": "2026-05-18",
+          "sincePostmarked": true
+        },
+        "inPerson": {
+          "deadline": "2026-06-02",
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": true,
+        "registrationCheckUrl": "https://voterstatus.sos.ca.gov/"
+      },
+      "earlyVoting": {
+        "available": true,
+        "startDate": "2026-05-04",
+        "endDate": "2026-06-01",
+        "notes": "All registered voters receive a mail ballot automatically, mailed starting 29 days before the election (May 4, 2026). Early in-person voting locations and vote centers open on county-specific schedules; same-day conditional registration available through Election Day."
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://www.vote411.org/primaries2026"
     },
     {
       "id": "ca-2026-general",
@@ -18,35 +48,57 @@
       "date": "2026-11-03",
       "type": "general",
       "isPrimary": false,
-      "primaryType": null
+      "primaryType": null,
+      "registration": {
+        "online": {
+          "available": true,
+          "deadline": "2026-10-19",
+          "url": "https://registertovote.ca.gov/"
+        },
+        "byMail": {
+          "deadline": "2026-10-19",
+          "sincePostmarked": true
+        },
+        "inPerson": {
+          "deadline": "2026-11-03",
+          "sincePostmarked": false
+        },
+        "sameDayRegistration": true,
+        "registrationCheckUrl": "https://voterstatus.sos.ca.gov/"
+      },
+      "earlyVoting": {
+        "available": true,
+        "startDate": "2026-10-05",
+        "endDate": "2026-11-02",
+        "notes": "All registered voters receive a mail ballot automatically, mailed starting 29 days before the election (October 5, 2026). Early in-person voting locations and vote centers open on county-specific schedules; same-day conditional registration available through Election Day."
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://www.vote411.org/primaries2026"
     }
   ],
-
   "registration": {
     "online": {
       "available": true,
-      "deadline": "2026-05-18",
+      "deadline": "2026-10-19",
       "url": "https://registertovote.ca.gov/"
     },
     "byMail": {
-      "deadline": "2026-05-18",
+      "deadline": "2026-10-19",
       "sincePostmarked": true
     },
     "inPerson": {
-      "deadline": "2026-06-02",
+      "deadline": "2026-11-03",
       "sincePostmarked": false
     },
     "sameDayRegistration": true,
     "registrationCheckUrl": "https://voterstatus.sos.ca.gov/"
   },
-
   "earlyVoting": {
     "available": true,
-    "startDate": "2026-05-04",
-    "endDate": "2026-06-01",
-    "notes": "All registered voters receive a mail ballot automatically. Vote centers open starting 29 days before the election."
+    "startDate": "2026-10-05",
+    "endDate": "2026-11-02",
+    "notes": "All registered voters receive a mail ballot automatically. Vote centers open starting 29 days before the election in Voter's Choice Act counties; schedules vary by county."
   },
-
   "votingRules": {
     "idRequired": false,
     "acceptedIds": [],
@@ -57,19 +109,16 @@
       "Top-two primary system: all candidates appear on one ballot regardless of party; top two advance to the general election"
     ]
   },
-
   "runoffRules": {
     "hasRunoff": false,
     "partyLockedToFirstRoundPrimary": false
   },
-
   "primaryParticipation": {
     "type": "top-two",
     "ruleExplanationEn": "California uses a top-two nonpartisan primary (Proposition 14, 2010). All registered voters may vote for any candidate regardless of party. The top two vote-getters advance to the general election.",
-    "ruleExplanationEs": "California utiliza una primaria no partidista de los dos primeros (Proposición 14, 2010). Todos los votantes registrados pueden votar por cualquier candidato sin importar el partido. Los dos candidatos con más votos avanzan a las elecciones generales.",
+    "ruleExplanationEs": "California utiliza una primaria no partidista de los dos primeros (Proposición 14, 2010). Cualquier votante registrado puede votar por cualquier candidato sin importar el partido. Los dos candidatos con más votos avanzan a las elecciones generales.",
     "behavior": "advisory"
   },
-
   "resources": {
     "stateElectionWebsite": "https://www.sos.ca.gov/elections",
     "countyElectionLookup": "https://www.sos.ca.gov/elections/voting-resources/county-elections-offices",

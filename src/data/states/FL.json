@@ -1,8 +1,13 @@
 {
+  "_sources": {
+    "primary": "https://dos.fl.gov/elections/",
+    "secondary": "https://www.vote411.org/primaries2026",
+    "checked": "2026-06-10",
+    "discrepancies": "2026-06-10: Primary confirmed as August 18, 2026 and general as November 3, 2026 (VOTE411 / Ballotpedia / FVAP). Early-voting windows shown are the statutory bounds — exact county schedules vary; confirm with your county supervisor of elections."
+  },
   "stateCode": "FL",
   "stateName": "Florida",
-  "lastUpdated": "2026-05-09",
-
+  "lastUpdated": "2026-06-10",
   "elections": [
     {
       "id": "fl-2026-primary",
@@ -32,8 +37,10 @@
         "available": true,
         "startDate": "2026-08-08",
         "endDate": "2026-08-16",
-        "notes": "Early voting is at least 8 days and up to 14 days before the election. Exact dates and hours set by each county supervisor of elections. TODO verify for 2026 cycle."
-      }
+        "notes": "Mandatory early voting runs August 8–15, 2026 (the 10th through the 3rd day before the election); counties may offer additional early voting through August 16. Exact dates, hours and locations are set by each county supervisor of elections."
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://www.vote411.org/primaries2026"
     },
     {
       "id": "fl-2026-general",
@@ -63,11 +70,12 @@
         "available": true,
         "startDate": "2026-10-24",
         "endDate": "2026-11-01",
-        "notes": "Early voting is at least 8 days before the election. Exact dates and hours set by each county supervisor of elections. TODO verify for 2026 cycle."
-      }
+        "notes": "Mandatory early voting runs October 24–31, 2026 (the 10th through the 3rd day before the election); counties may offer additional days from October 19 through November 1. Exact dates, hours and locations are set by each county supervisor of elections."
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://www.vote411.org/primaries2026"
     }
   ],
-
   "registration": {
     "online": {
       "available": true,
@@ -85,14 +93,12 @@
     "sameDayRegistration": false,
     "registrationCheckUrl": "https://registration.elections.myflorida.com/CheckVoterStatus"
   },
-
   "earlyVoting": {
     "available": true,
     "startDate": "2026-10-24",
     "endDate": "2026-11-01",
-    "notes": "Early voting is at least 8 days before the election. Exact dates and hours set by each county supervisor of elections. TODO verify for 2026 cycle."
+    "notes": "Mandatory early voting runs October 24–31, 2026 for the general election; counties may offer additional days from October 19 through November 1. Exact dates, hours and locations are set by each county supervisor of elections."
   },
-
   "votingRules": {
     "idRequired": true,
     "acceptedIds": [
@@ -107,7 +113,7 @@
       "Public assistance ID",
       "Veteran health identification card issued by the U.S. Department of Veterans Affairs"
     ],
-    "expirationRule": "Photo ID must not be expired, unless it is a U.S. military ID, in which case it need not contain an expiration date. TODO verify for 2026 cycle.",
+    "expirationRule": "Photo ID must be current and valid (Fla. Stat. §101.043). Voters without an acceptable ID may vote a provisional ballot.",
     "impedimentDeclaration": "If a voter does not have an acceptable photo ID, they may cast a provisional ballot and present acceptable ID to the supervisor of elections by 5 p.m. on the second day after the election.",
     "phonesAtPolls": "allowed",
     "phonesAtPollsDetail": "Florida does not prohibit phones at polling places, but voters may not use phones in a way that interferes with the election process. Photography that reveals another voter's ballot is prohibited.",
@@ -116,7 +122,6 @@
       "No runoffs in Florida general elections — the candidate with the most votes wins."
     ]
   },
-
   "voteByMail": {
     "universal": false,
     "eligibility": [
@@ -128,19 +133,16 @@
     "applicationUrl": "https://dos.myflorida.com/elections/for-voters/voting/vote-by-mail/",
     "officialRulesUrl": "https://dos.myflorida.com/elections/for-voters/voting/vote-by-mail/"
   },
-
   "runoffRules": {
     "hasRunoff": false,
     "partyLockedToFirstRoundPrimary": false
   },
-
   "primaryParticipation": {
     "type": "closed",
     "ruleExplanationEn": "Florida has a closed primary (F.S. §101.021). Only voters registered with a political party may vote in that party's primary. Voters registered with no party affiliation (NPA) or a minor party may not vote in the Republican or Democratic primary unless no other candidates qualify for the general election in that race.",
     "ruleExplanationEs": "Florida tiene una primaria cerrada (F.S. §101.021). Solo los votantes registrados en un partido político pueden votar en la primaria de ese partido. Los votantes registrados sin afiliación de partido (NPA) o con un partido minoritario no pueden votar en la primaria Republicana o Demócrata, a menos que ningún otro candidato califique para las elecciones generales en esa contienda.",
     "behavior": "advisory"
   },
-
   "resources": {
     "stateElectionWebsite": "https://dos.myflorida.com/elections/",
     "countyElectionLookup": "https://dos.myflorida.com/elections/for-voters/election-offices/",

@@ -2,12 +2,12 @@
   "_sources": {
     "primary": "https://sos.oregon.gov/voting/",
     "secondary": "https://www.ncsl.org/elections-and-campaigns/voter-id",
-    "checked": "2026-05-10",
-    "discrepancies": "Oregon is the original universal vote-by-mail state (since 2000). NCSL classifies Oregon as no document required — identity is verified via signature on ballot return envelope. Oregon does not require photo ID or any ID at polling locations because there are essentially no traditional polling places (drop boxes and county election offices are the in-person options). Oregon primary is typically the third Tuesday in May; estimated 2026-05-19. TODO verify exact 2026 cycle dates with Oregon SoS."
+    "checked": "2026-06-10",
+    "discrepancies": "Oregon is the original universal vote-by-mail state (since 2000). NCSL classifies Oregon as no document required — identity is verified via signature on ballot return envelope. Oregon does not require photo ID or any ID at polling locations because there are essentially no traditional polling places (drop boxes and county election offices are the in-person options). 2026-06-10 verification: the May 19, 2026 primary date (previously an estimate from the third-Tuesday-in-May rule) is CONFIRMED by the Oregon SoS 2026 Primary Election Voters' Pamphlet; ballots were mailed April 29, 2026 and the election was held as scheduled. FVAP 2026 primary calendar (May 2026) concurs."
   },
   "stateCode": "OR",
   "stateName": "Oregon",
-  "lastUpdated": "2026-05-10",
+  "lastUpdated": "2026-06-10",
   "coverageStatus": "confirmed",
   "elections": [
     {
@@ -38,8 +38,10 @@
         "available": true,
         "startDate": "2026-04-29",
         "endDate": "2026-05-18",
-        "notes": "Oregon mails ballots to all registered voters approximately 2-3 weeks before Election Day. Drop boxes open through 8 p.m. on Election Day. No traditional polling places."
-      }
+        "notes": "Oregon mails ballots to all registered voters approximately 2-3 weeks before Election Day (2026 primary ballots were mailed April 29). Drop boxes open through 8 p.m. on Election Day. No traditional polling places."
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://sos.oregon.gov/elections/Pages/Voters-Pamphlet.aspx"
     },
     {
       "id": "or-2026-general",
@@ -70,7 +72,9 @@
         "startDate": "2026-10-14",
         "endDate": "2026-11-02",
         "notes": "Oregon mails ballots approximately 14-18 days before Election Day. Ballots may be returned by mail (must be postmarked by Election Day) or dropped in an official drop box by 8 p.m. on Election Day. Same-day voter registration available at county election offices."
-      }
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://sos.oregon.gov/voting/Pages/upcoming.aspx"
     }
   ],
   "registration": {

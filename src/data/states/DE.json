@@ -2,43 +2,45 @@
   "_sources": {
     "primary": "https://elections.delaware.gov/",
     "secondary": "https://www.ncsl.org/elections-and-campaigns/voter-id",
-    "checked": "2026-05-10",
-    "discrepancies": "NCSL classifies DE as 'non-photo ID requested' — voters provide name and address; poll workers may ask for a document showing name and address but it is not strictly required. Delaware does not have early in-person voting but offers no-excuse absentee voting. 2026 primary date (Sept 12) follows standard DE schedule; TODO verify exact 2026 date. Registration deadline is 24 days before the election per DE law."
+    "checked": "2026-06-10",
+    "discrepancies": "NCSL classifies DE as 'non-photo ID requested' — voters provide name and address; poll workers may ask for a document showing name and address but it is not strictly required. Registration deadline is the fourth Saturday before the election per DE law. 2026-06-10: Corrected the primary date to September 15, 2026 (was listed as September 12, a Saturday) and the primary registration deadline to August 22 per elections.delaware.gov. Corrected early voting: Delaware HAS offered early in-person voting since 2022 (upheld after the Higgin litigation) — this file previously said it had none; primary early voting September 2–13, general October 22 – November 1. Also corrected absentee rules: the 2022 no-excuse vote-by-mail statute was struck down (Higgin v. Albence, Del. 2022), so absentee voting requires a constitutional excuse."
   },
   "stateCode": "DE",
   "stateName": "Delaware",
-  "lastUpdated": "2026-05-10",
+  "lastUpdated": "2026-06-10",
   "elections": [
     {
       "id": "de-2026-primary",
       "name": "2026 Delaware Primary Election",
-      "date": "2026-09-12",
+      "date": "2026-09-15",
       "type": "primary",
       "isPrimary": true,
       "primaryType": "closed",
       "registration": {
         "online": {
           "available": true,
-          "deadline": "2026-08-19",
+          "deadline": "2026-08-22",
           "url": "https://ivote.de.gov/"
         },
         "byMail": {
-          "deadline": "2026-08-19",
+          "deadline": "2026-08-22",
           "sincePostmarked": false
         },
         "inPerson": {
-          "deadline": "2026-08-19",
+          "deadline": "2026-08-22",
           "sincePostmarked": false
         },
         "sameDayRegistration": false,
         "registrationCheckUrl": "https://ivote.de.gov/voterlogin.aspx"
       },
       "earlyVoting": {
-        "available": false,
-        "startDate": null,
-        "endDate": null,
-        "notes": "Delaware does not offer traditional early in-person voting. No-excuse absentee (mail) voting is available for all registered voters."
-      }
+        "available": true,
+        "startDate": "2026-09-02",
+        "endDate": "2026-09-13",
+        "notes": "Early voting for the September 15 primary runs September 2–13, 2026 (closed September 6–7 for the Labor Day holiday; hours vary by day — schedule per the Department of Elections, subject to change). Early voting sites: https://elections.delaware.gov/elections/votinglocations.shtml"
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://elections.delaware.gov/elections/primary/primary.html"
     },
     {
       "id": "de-2026-general",
@@ -65,11 +67,13 @@
         "registrationCheckUrl": "https://ivote.de.gov/voterlogin.aspx"
       },
       "earlyVoting": {
-        "available": false,
-        "startDate": null,
-        "endDate": null,
-        "notes": "Delaware does not offer traditional early in-person voting. No-excuse absentee (mail) voting is available for all registered voters."
-      }
+        "available": true,
+        "startDate": "2026-10-22",
+        "endDate": "2026-11-01",
+        "notes": "Early voting for the November 3 general election runs October 22 – November 1, 2026 (hours vary by day) at designated early voting sites in each county. Sites: https://elections.delaware.gov/elections/votinglocations.shtml"
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://elections.delaware.gov/elections/general/general.shtml"
     }
   ],
   "registration": {
@@ -90,10 +94,10 @@
     "registrationCheckUrl": "https://ivote.de.gov/voterlogin.aspx"
   },
   "earlyVoting": {
-    "available": false,
-    "startDate": null,
-    "endDate": null,
-    "notes": "Delaware does not offer traditional early in-person voting. No-excuse absentee voting (mail or in-person at county election offices) is available for all registered voters."
+    "available": true,
+    "startDate": "2026-10-22",
+    "endDate": "2026-11-01",
+    "notes": "Delaware offers early in-person voting for at least 10 days before an election at designated sites in each county. Absentee voting requires a qualifying reason under the Delaware Constitution."
   },
   "votingRules": {
     "idRequired": false,
@@ -108,13 +112,17 @@
     "additionalRules": [
       "Non-photo ID requested but not required. Poll workers may ask for a document showing name and address.",
       "Closed primary: only voters registered with a party may vote in that party's primary. Unregistered or independent voters may not participate.",
-      "No-excuse absentee voting available; voters may also return ballots in person at county election offices."
+      "Absentee voting requires a qualifying reason under the Delaware Constitution (e.g., work or occupation, sickness or disability, vacation absence, religious tenets). Early in-person voting is available for at least 10 days before an election."
     ]
   },
   "voteByMail": {
     "universal": false,
     "eligibility": [
-      "Any registered voter may request an absentee ballot without providing a reason (no-excuse absentee)"
+      "In the public service of the United States or Delaware (or a spouse/dependent residing with them)",
+      "Cannot appear at the polls because of the nature of their business or occupation",
+      "Sick or physically disabled",
+      "Absent from the district while on vacation",
+      "Religious tenets or teachings conflict with voting in person"
     ],
     "applicationDeadline": "4 days before the election (received by county department of elections)",
     "returnDeadline": "Must be received by the county department of elections by 8 p.m. on Election Day",

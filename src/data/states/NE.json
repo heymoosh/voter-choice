@@ -2,12 +2,12 @@
   "_sources": {
     "primary": "https://sos.nebraska.gov/elections/elections-division",
     "secondary": "https://www.ncsl.org/elections-and-campaigns/voter-id",
-    "checked": "2026-05-10",
-    "discrepancies": "Nebraska enacted photo ID requirement (LB 514, 2023; effective 2024 general). NCSL confirms Nebraska as requiring photo ID. Voters without ID may cast provisional ballot and return with ID by the second Friday after the election. IMPORTANT: Nebraska's unicameral state legislature (the Legislature) is officially nonpartisan — legislative primaries do not have party lanes. Candidates file without party affiliation; top-two advance to the general. Consequently runoffRules.partyLockedToFirstRoundPrimary is false, not because Nebraska lacks a runoff structure, but because the Legislature's nonpartisan nature means party-lock is inapplicable for those races. Statewide and federal races are partisan with a standard plurality result (no runoffs). Primary date is set by statute as the second Tuesday in May."
+    "checked": "2026-06-10",
+    "discrepancies": "Nebraska enacted photo ID requirement (LB 514, 2023; effective 2024 general). NCSL confirms Nebraska as requiring photo ID. Voters without ID may cast provisional ballot and return with ID by the second Friday after the election. IMPORTANT: Nebraska's unicameral state legislature (the Legislature) is officially nonpartisan — legislative primaries do not have party lanes. Candidates file without party affiliation; top-two advance to the general. Consequently runoffRules.partyLockedToFirstRoundPrimary is false, not because Nebraska lacks a runoff structure, but because the Legislature's nonpartisan nature means party-lock is inapplicable for those races. Statewide and federal races are partisan with a standard plurality result (no runoffs). Primary date is set by statute as the second Tuesday in May. [2026-06-10] Primary date May 12, 2026 confirmed (FVAP 2026 primary calendar); general Nov 3 confirmed."
   },
   "stateCode": "NE",
   "stateName": "Nebraska",
-  "lastUpdated": "2026-05-10",
+  "lastUpdated": "2026-06-10",
   "coverageStatus": "confirmed",
   "elections": [
     {
@@ -38,8 +38,10 @@
         "available": true,
         "startDate": "2026-04-13",
         "endDate": "2026-05-11",
-        "notes": "Early voting (in-person) begins 30 days before the primary at county election offices. TODO verify for 2026 cycle."
-      }
+        "notes": "Early voting (in-person) begins 30 days before the primary at county election offices. Confirm hours with your county election office: https://sos.nebraska.gov/elections/elections-division"
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://www.fvap.gov/uploads/FVAP/VAO/PrimaryElectionsCalendar.pdf"
     },
     {
       "id": "ne-2026-general",
@@ -69,8 +71,10 @@
         "available": true,
         "startDate": "2026-10-05",
         "endDate": "2026-11-02",
-        "notes": "Early in-person voting begins 30 days before the general election at county election offices. TODO verify for 2026 cycle."
-      }
+        "notes": "Early in-person voting begins 30 days before the general election at county election offices. Confirm hours with your county election office: https://sos.nebraska.gov/elections/elections-division"
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://www.fvap.gov/uploads/FVAP/VAO/PrimaryElectionsCalendar.pdf"
     }
   ],
   "registration": {
@@ -94,7 +98,7 @@
     "available": true,
     "startDate": "2026-10-05",
     "endDate": "2026-11-02",
-    "notes": "Early in-person voting available starting 30 days before the general election at county election commissioner or clerk offices. Mail ballots also available on request. TODO verify for 2026 cycle."
+    "notes": "Early in-person voting is available starting 30 days before the general election at county election commissioner or clerk offices. Mail ballots are also available on request. Confirm hours with your county election office: https://sos.nebraska.gov/elections/elections-division"
   },
   "votingRules": {
     "idRequired": true,
@@ -106,7 +110,7 @@
       "Student ID from a Nebraska accredited college or university with photo",
       "Nebraska voter ID card (free from county election office)"
     ],
-    "expirationRule": "Photo ID must not be expired. Nebraska voter ID cards do not expire. TODO verify for 2026 cycle.",
+    "expirationRule": "Photo ID must not be expired. Nebraska state voter ID cards do not expire. Details: https://sos.nebraska.gov/elections/voter-id",
     "impedimentDeclaration": "Voters without acceptable photo ID may cast a provisional ballot and return with acceptable ID by the second Friday after the election (canvass deadline).",
     "phonesAtPolls": "varies",
     "phonesAtPollsDetail": "Nebraska does not have a statewide prohibition on phones at polling places, but county rules may apply. Voters may not photograph their marked ballot. Check with your county election office.",

@@ -2,32 +2,32 @@
   "_sources": {
     "primary": "https://elections.maryland.gov/",
     "secondary": "https://www.ncsl.org/elections-and-campaigns/voter-id",
-    "checked": "2026-05-10",
-    "discrepancies": "NCSL classifies MD as 'no document required' for ID. Maryland has same-day voter registration and early in-person voting. No-excuse absentee voting is available. 2026 primary date (July 21) follows standard MD schedule for midterm primaries; TODO verify exact 2026 date per State Board of Elections calendar. Registration deadline is 21 days before the election (online/mail) or same-day in person per MD law."
+    "checked": "2026-06-10",
+    "discrepancies": "NCSL classifies MD as 'no document required' for ID. Maryland has same-day voter registration and early in-person voting. No-excuse mail-in voting is available. Registration deadline is 21 days before the election (online/mail) or same-day in person per MD law. [2026-06-10] Corrected the 2026 primary from July 21 to Tuesday, June 23, 2026 per the Maryland State Board of Elections (early voting June 11-18, 2026; online/mail registration deadline June 2). General election Nov 3 confirmed; general early voting dates (Oct 22-29) are the statutory window - confirm centers with your local board."
   },
   "stateCode": "MD",
   "stateName": "Maryland",
-  "lastUpdated": "2026-05-10",
+  "lastUpdated": "2026-06-10",
   "elections": [
     {
       "id": "md-2026-primary",
       "name": "2026 Maryland Primary Election",
-      "date": "2026-07-21",
+      "date": "2026-06-23",
       "type": "primary",
       "isPrimary": true,
       "primaryType": "closed",
       "registration": {
         "online": {
           "available": true,
-          "deadline": "2026-06-30",
+          "deadline": "2026-06-02",
           "url": "https://voterservices.elections.maryland.gov/OnlineVoterRegistration/InstructionsStep1"
         },
         "byMail": {
-          "deadline": "2026-06-30",
+          "deadline": "2026-06-02",
           "sincePostmarked": false
         },
         "inPerson": {
-          "deadline": "2026-07-21",
+          "deadline": "2026-06-23",
           "sincePostmarked": false
         },
         "sameDayRegistration": true,
@@ -35,10 +35,12 @@
       },
       "earlyVoting": {
         "available": true,
-        "startDate": "2026-07-09",
-        "endDate": "2026-07-16",
-        "notes": "Maryland provides 8 days of early in-person voting before primary elections. TODO verify exact 2026 dates."
-      }
+        "startDate": "2026-06-11",
+        "endDate": "2026-06-18",
+        "notes": "Early voting for the June 23, 2026 gubernatorial primary runs Thursday, June 11 through Thursday, June 18, 2026, 7 a.m.-8 p.m., at any early voting center in your county (Maryland State Board of Elections)."
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://elections.maryland.gov/elections/2026/index.html"
     },
     {
       "id": "md-2026-general",
@@ -68,8 +70,10 @@
         "available": true,
         "startDate": "2026-10-22",
         "endDate": "2026-10-29",
-        "notes": "Maryland provides 8 days of early in-person voting before general elections. TODO verify exact 2026 dates."
-      }
+        "notes": "Maryland provides 8 days of early in-person voting, the second Thursday before through the Thursday before Election Day (October 22-29, 2026, per Md. Election Law). Confirm your early voting center: https://elections.maryland.gov/elections/2026/index.html"
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://elections.maryland.gov/elections/2026/index.html"
     }
   ],
   "registration": {
@@ -93,7 +97,7 @@
     "available": true,
     "startDate": "2026-10-22",
     "endDate": "2026-10-29",
-    "notes": "Maryland offers 8 days of early in-person voting at designated vote centers. No-excuse absentee (mail) voting also available. TODO verify exact 2026 dates."
+    "notes": "Maryland offers 8 days of early in-person voting at designated early voting centers (October 22-29, 2026 for the general election). No-excuse mail-in voting is also available. Confirm locations: https://elections.maryland.gov/elections/2026/index.html"
   },
   "votingRules": {
     "idRequired": false,

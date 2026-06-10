@@ -2,12 +2,12 @@
   "_sources": {
     "primary": "https://sos.ks.gov/elections/elections-home.html",
     "secondary": "https://www.ncsl.org/elections-and-campaigns/voter-id",
-    "checked": "2026-05-10",
-    "discrepancies": "Kansas has a strict photo ID requirement per NCSL. Voters without ID may cast a provisional ballot and return by the close of polls on the Monday following Election Day. Kansas primary is the first Tuesday in August per statute. Advanced (early in-person) voting available at county election offices."
+    "checked": "2026-06-10",
+    "discrepancies": "Kansas has a strict photo ID requirement per NCSL. Voters without ID may cast a provisional ballot and return by the close of polls on the Monday following Election Day. Kansas primary is the first Tuesday in August per statute. Advanced (early in-person) voting available at county election offices. 2026-06-10: Primary confirmed as August 4, 2026 and general as November 3, 2026 (VOTE411 / Ballotpedia). Registration deadline corrected to Kansas's uniform 21-day rule for all methods (July 14 primary / October 13 general) — in-person was previously listed at 14 days."
   },
   "stateCode": "KS",
   "stateName": "Kansas",
-  "lastUpdated": "2026-05-10",
+  "lastUpdated": "2026-06-10",
   "coverageStatus": "confirmed",
   "elections": [
     {
@@ -28,7 +28,7 @@
           "sincePostmarked": false
         },
         "inPerson": {
-          "deadline": "2026-07-21",
+          "deadline": "2026-07-14",
           "sincePostmarked": false
         },
         "sameDayRegistration": false,
@@ -38,8 +38,10 @@
         "available": true,
         "startDate": "2026-07-15",
         "endDate": "2026-08-03",
-        "notes": "Advance voting in person at county election offices starting 20 days before the election. TODO verify for 2026 cycle."
-      }
+        "notes": "Advance voting in person at county election offices begins up to 20 days before the election (July 15, 2026) and ends at noon the day before Election Day. Start dates vary by county."
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://www.vote411.org/primaries2026"
     },
     {
       "id": "ks-2026-general",
@@ -59,7 +61,7 @@
           "sincePostmarked": false
         },
         "inPerson": {
-          "deadline": "2026-10-20",
+          "deadline": "2026-10-13",
           "sincePostmarked": false
         },
         "sameDayRegistration": false,
@@ -69,8 +71,10 @@
         "available": true,
         "startDate": "2026-10-14",
         "endDate": "2026-11-02",
-        "notes": "Advance voting in person at county election offices starting 20 days before the election. TODO verify for 2026 cycle."
-      }
+        "notes": "Advance voting in person at county election offices begins up to 20 days before the election (October 14, 2026) and ends at noon the day before Election Day. Advance mail ballots are sent to voters who request them."
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://www.vote411.org/primaries2026"
     }
   ],
   "registration": {
@@ -84,7 +88,7 @@
       "sincePostmarked": false
     },
     "inPerson": {
-      "deadline": "2026-10-20",
+      "deadline": "2026-10-13",
       "sincePostmarked": false
     },
     "sameDayRegistration": false,
@@ -94,7 +98,7 @@
     "available": true,
     "startDate": "2026-10-14",
     "endDate": "2026-11-02",
-    "notes": "Advance in-person voting at county election offices beginning 20 days before the general election. Mail ballot automatically sent to advance voters who have requested it. TODO verify for 2026 cycle."
+    "notes": "Advance in-person voting at county election offices begins up to 20 days before the general election (October 14, 2026) and ends at noon the day before Election Day. Advance mail ballots are sent to voters who have requested them."
   },
   "votingRules": {
     "idRequired": true,
@@ -107,7 +111,7 @@
       "Student ID from a Kansas university, college, or technical school (with signature)",
       "Government-issued photo ID"
     ],
-    "expirationRule": "Photo ID must not be expired. Exception: voters aged 65 or older may use an expired Kansas-issued photo ID. TODO verify for 2026 cycle.",
+    "expirationRule": "Photo ID must not be expired. Exception: voters aged 65 or older may use an expired Kansas-issued photo ID (K.S.A. 25-2908).",
     "impedimentDeclaration": "Voters without acceptable photo ID may cast a provisional ballot. The ballot will be counted if the voter returns with acceptable ID by the close of polls on the Monday following the election.",
     "phonesAtPolls": "varies",
     "phonesAtPollsDetail": "Kansas does not have a statewide prohibition on phones in polling places, but individual county election offices may have rules. Photographing your ballot is generally not permitted. Check with your county election office.",

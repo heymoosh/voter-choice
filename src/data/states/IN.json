@@ -2,12 +2,12 @@
   "_sources": {
     "primary": "https://www.in.gov/sos/elections/",
     "secondary": "https://www.ncsl.org/elections-and-campaigns/voter-id",
-    "checked": "2026-05-10",
-    "discrepancies": "Indiana has strict photo ID requirement per NCSL. SoS confirms: must present government-issued photo ID with name and expiration date. Voters without ID may cast provisional ballot and return with ID by noon on the Monday after Election Day. No early voting in Indiana — the state calls it 'in-person absentee voting' available at county clerk offices."
+    "checked": "2026-06-10",
+    "discrepancies": "Indiana has strict photo ID requirement per NCSL. SoS confirms: must present government-issued photo ID with name and expiration date. Voters without ID may cast provisional ballot and return with ID by noon on the Monday after Election Day. No early voting in Indiana — the state calls it 'in-person absentee voting' available at county clerk offices. 2026-06-10: Primary confirmed as May 5, 2026 and general as November 3, 2026 (VOTE411); registration deadlines follow Indiana's 29-day rule (April 6 / October 5), and in-person absentee voting begins 28 days before each election."
   },
   "stateCode": "IN",
   "stateName": "Indiana",
-  "lastUpdated": "2026-05-10",
+  "lastUpdated": "2026-06-10",
   "coverageStatus": "confirmed",
   "elections": [
     {
@@ -38,8 +38,10 @@
         "available": true,
         "startDate": "2026-04-07",
         "endDate": "2026-05-04",
-        "notes": "Indiana calls this 'in-person absentee voting' — available at county clerk offices starting 28 days before the election. No separate early voting locations. TODO verify for 2026 cycle."
-      }
+        "notes": "Indiana calls this 'in-person absentee voting' — available at county clerk offices starting 28 days before the election (April 7 – May 4, 2026 for the primary). Satellite locations vary by county."
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://www.vote411.org/primaries2026"
     },
     {
       "id": "in-2026-general",
@@ -69,8 +71,10 @@
         "available": true,
         "startDate": "2026-10-06",
         "endDate": "2026-11-02",
-        "notes": "In-person absentee voting at county clerk offices. Satellite sites may be available. TODO verify for 2026 cycle."
-      }
+        "notes": "In-person absentee voting at county clerk offices from 28 days before Election Day (October 6 – November 2, 2026). Satellite sites may be available; hours vary by county."
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://www.vote411.org/primaries2026"
     }
   ],
   "registration": {
@@ -94,7 +98,7 @@
     "available": true,
     "startDate": "2026-10-06",
     "endDate": "2026-11-02",
-    "notes": "Indiana offers in-person absentee voting at county clerk offices from 28 days before Election Day. Hours and satellite locations vary by county. TODO verify for 2026 cycle."
+    "notes": "Indiana offers in-person absentee voting at county clerk offices from 28 days before Election Day. Hours and satellite locations vary by county."
   },
   "votingRules": {
     "idRequired": true,

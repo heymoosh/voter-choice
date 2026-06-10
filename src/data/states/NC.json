@@ -1,27 +1,33 @@
 {
+  "_sources": {
+    "primary": "https://www.ncsbe.gov/",
+    "secondary": "https://www.fvap.gov/uploads/FVAP/VAO/PrimaryElectionsCalendar.pdf",
+    "checked": "2026-06-10",
+    "discrepancies": "[2026-06-10] Corrected the 2026 primary date from 2026-05-05 to Tuesday, March 3, 2026 (NCSBE): registration deadline Feb 6, one-stop early voting Feb 12-28. Removed the previously listed 2026-07-07 'primary runoff' entry: North Carolina's reserved second-primary date was May 12, 2026, held only if a runoff-eligible candidate requested one; as of 2026-06-10 NCSBE's Upcoming Election page lists the Nov 3, 2026 general as the next statewide election, so no second-primary entry is carried. General: registration deadline Oct 9, early voting Oct 15-31 (NCSBE). In-person registration deadlines are set to the last day of one-stop early voting because NC same-day registration is not available on Election Day."
+  },
   "stateCode": "NC",
   "stateName": "North Carolina",
-  "lastUpdated": "2026-05-09",
+  "lastUpdated": "2026-06-10",
   "elections": [
     {
       "id": "nc-2026-primary",
       "name": "2026 North Carolina Primary Election",
-      "date": "2026-05-05",
+      "date": "2026-03-03",
       "type": "primary",
       "isPrimary": true,
       "primaryType": "semi-closed",
       "registration": {
         "online": {
           "available": true,
-          "deadline": "2026-04-10",
+          "deadline": "2026-02-06",
           "url": "https://www.ncsbe.gov/registering/how-register"
         },
         "byMail": {
-          "deadline": "2026-04-10",
+          "deadline": "2026-02-06",
           "sincePostmarked": true
         },
         "inPerson": {
-          "deadline": "2026-05-05",
+          "deadline": "2026-02-28",
           "sincePostmarked": false
         },
         "sameDayRegistration": true,
@@ -29,41 +35,12 @@
       },
       "earlyVoting": {
         "available": true,
-        "startDate": "2026-04-16",
-        "endDate": "2026-05-02",
-        "notes": "One-stop early voting (with same-day registration). Hours and locations set by county boards of elections. TODO verify for 2026 cycle."
-      }
-    },
-    {
-      "id": "nc-2026-primary-runoff",
-      "name": "2026 North Carolina Primary Runoff",
-      "date": "2026-07-07",
-      "type": "runoff",
-      "isPrimary": false,
-      "primaryType": null,
-      "registration": {
-        "online": {
-          "available": true,
-          "deadline": "2026-06-12",
-          "url": "https://www.ncsbe.gov/registering/how-register"
-        },
-        "byMail": {
-          "deadline": "2026-06-12",
-          "sincePostmarked": true
-        },
-        "inPerson": {
-          "deadline": "2026-07-07",
-          "sincePostmarked": false
-        },
-        "sameDayRegistration": true,
-        "registrationCheckUrl": "https://vt.ncsbe.gov/RegLkup/"
+        "startDate": "2026-02-12",
+        "endDate": "2026-02-28",
+        "notes": "One-stop early voting with same-day registration ran February 12-28, 2026 for the March 3 primary. Hours and locations set by county boards of elections (NCSBE)."
       },
-      "earlyVoting": {
-        "available": true,
-        "startDate": "2026-06-18",
-        "endDate": "2026-07-04",
-        "notes": "One-stop early voting for runoff. TODO verify for 2026 cycle."
-      }
+      "lastVerified": "2026-06-10",
+      "source": "https://www.ncsbe.gov/voting/upcoming-election"
     },
     {
       "id": "nc-2026-general",
@@ -83,7 +60,7 @@
           "sincePostmarked": true
         },
         "inPerson": {
-          "deadline": "2026-11-03",
+          "deadline": "2026-10-31",
           "sincePostmarked": false
         },
         "sameDayRegistration": true,
@@ -93,8 +70,10 @@
         "available": true,
         "startDate": "2026-10-15",
         "endDate": "2026-10-31",
-        "notes": "One-stop early voting with same-day registration. Hours and locations set by county boards of elections. TODO verify for 2026 cycle."
-      }
+        "notes": "One-stop early voting with same-day registration runs October 15-31, 2026 (ends 3 p.m. Oct 31). Regular registration deadline is October 9; same-day registration is available only during early voting, not on Election Day. Hours and locations set by county boards: https://www.ncsbe.gov/voting/vote-early-person"
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://www.ncsbe.gov/voting/upcoming-election"
     }
   ],
   "registration": {
@@ -108,7 +87,7 @@
       "sincePostmarked": true
     },
     "inPerson": {
-      "deadline": "2026-11-03",
+      "deadline": "2026-10-31",
       "sincePostmarked": false
     },
     "sameDayRegistration": true,
@@ -118,7 +97,7 @@
     "available": true,
     "startDate": "2026-10-15",
     "endDate": "2026-10-31",
-    "notes": "One-stop early voting includes same-day registration. Exact locations and hours set by each county board of elections. TODO verify for 2026 cycle."
+    "notes": "One-stop early voting includes same-day registration and runs October 15-31, 2026 for the general election. Exact locations and hours set by each county board of elections: https://www.ncsbe.gov/voting/vote-early-person"
   },
   "votingRules": {
     "idRequired": true,
@@ -130,7 +109,7 @@
       "Tribal enrollment card issued by a federally recognized tribe",
       "Student ID from a North Carolina university or college (public or private)"
     ],
-    "expirationRule": "Photo ID must not be expired. Voters with an expired photo ID may use it if they became 65 on or after the date it expired. TODO verify for 2026 cycle.",
+    "expirationRule": "Photo ID must not be expired. Voters aged 65+ may use an expired ID if it was unexpired on their 65th birthday. Details: https://www.ncsbe.gov/voting/voter-id",
     "impedimentDeclaration": "Voters without an acceptable photo ID may cast a provisional ballot by completing a reasonable impediment form citing a reasonable impediment to obtaining ID.",
     "phonesAtPolls": "allowed",
     "phonesAtPollsDetail": "North Carolina allows voters to bring phones into the polling place. Voters may not use phones to take photos of their own or others' ballots. No electioneering within 50 feet of the entrance to a voting place.",

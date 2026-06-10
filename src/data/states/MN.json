@@ -2,12 +2,12 @@
   "_sources": {
     "primary": "https://www.sos.state.mn.us/elections-voting/",
     "secondary": "https://www.ncsl.org/elections-and-campaigns/voter-id",
-    "checked": "2026-05-10",
-    "discrepancies": "Minnesota has no photo ID requirement — voters sign the poll book (vouching system also available). NCSL categorizes MN as 'no document required'. First-time voters who register on Election Day must present proof of residence; this is not a photo ID requirement per se. Minnesota's same-day registration is a long-standing feature. Primary is set by statute as the second Tuesday in August."
+    "checked": "2026-06-10",
+    "discrepancies": "Minnesota has no photo ID requirement — voters sign the poll book (vouching system also available). NCSL categorizes MN as 'no document required'. First-time voters who register on Election Day must present proof of residence; this is not a photo ID requirement per se. Minnesota's same-day registration is a long-standing feature. Primary is set by statute as the second Tuesday in August. [2026-06-10] Primary date August 11, 2026 confirmed (FVAP 2026 primary calendar); general Nov 3 confirmed. Corrected the primary early-voting start to the statutory 46-day window (June 26, 2026); file previously showed July 17."
   },
   "stateCode": "MN",
   "stateName": "Minnesota",
-  "lastUpdated": "2026-05-10",
+  "lastUpdated": "2026-06-10",
   "coverageStatus": "confirmed",
   "elections": [
     {
@@ -36,10 +36,12 @@
       },
       "earlyVoting": {
         "available": true,
-        "startDate": "2026-07-17",
+        "startDate": "2026-06-26",
         "endDate": "2026-08-10",
-        "notes": "Early (absentee in-person) voting available starting 46 days before the primary at county auditor or city clerk offices. TODO verify for 2026 cycle."
-      }
+        "notes": "Early (absentee in-person) voting begins 46 days before the election - June 26, 2026 for the August 11 primary - at county auditor or city clerk offices. Find locations: https://www.sos.state.mn.us/elections-voting/"
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://www.fvap.gov/uploads/FVAP/VAO/PrimaryElectionsCalendar.pdf"
     },
     {
       "id": "mn-2026-general",
@@ -69,8 +71,10 @@
         "available": true,
         "startDate": "2026-09-18",
         "endDate": "2026-11-02",
-        "notes": "Early in-person absentee voting starts 46 days before the general election. Sites and hours vary by county/city. TODO verify for 2026 cycle."
-      }
+        "notes": "Early in-person absentee voting begins 46 days before the general election (September 18, 2026). Sites and hours vary by county/city: https://www.sos.state.mn.us/elections-voting/"
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://www.fvap.gov/uploads/FVAP/VAO/PrimaryElectionsCalendar.pdf"
     }
   ],
   "registration": {
@@ -94,7 +98,7 @@
     "available": true,
     "startDate": "2026-09-18",
     "endDate": "2026-11-02",
-    "notes": "Early in-person absentee voting begins 46 days before the general election and is available at county auditor and city/township clerk offices. Same-day registration available through Election Day. TODO verify for 2026 cycle."
+    "notes": "Early in-person absentee voting begins 46 days before the general election (September 18, 2026) at county auditor and city/township clerk offices. Same-day registration available through Election Day."
   },
   "votingRules": {
     "idRequired": false,

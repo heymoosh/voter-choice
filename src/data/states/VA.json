@@ -2,44 +2,46 @@
   "_sources": {
     "primary": "https://www.elections.virginia.gov/",
     "secondary": "https://ballotpedia.org/Voting_in_Virginia",
-    "checked": "2026-05-10",
-    "discrepancies": "NCSL lists VA as 'non-photo ID requested'. SoS confirms voters may show a non-photo document (utility bill, bank statement, paycheck, government document with name and address) or a photo ID. Virginia implemented expanded no-excuse absentee voting (any registered voter may vote absentee)."
+    "checked": "2026-06-10",
+    "discrepancies": "NCSL lists VA as 'non-photo ID requested'. SoS confirms voters may show a non-photo document (utility bill, bank statement, paycheck, government document with name and address) or a photo ID. Virginia implemented expanded no-excuse absentee voting (any registered voter may vote absentee). 2026-06-10 verification (elections.virginia.gov upcoming elections): MAJOR CHANGE — Virginia moved its 2026 primary from June to AUGUST 4, 2026 amid the redistricting push (the file previously had June 9, which was wrong even before the move; the statutory date was June 16). Primary: registration deadline July 24, 2026; early voting June 19-August 1 (offices closed June 19 for Juneteenth open June 18); mail-ballot application deadline July 24. General: registration deadline October 23, 2026 (file previously had Oct 13); early voting Sept 18-Oct 31 confirmed; mail-ballot application deadline Oct 23. Virginia offers same-day registration with a provisional ballot after the deadline through Election Day — sameDayRegistration corrected to true. Mail-ballot application deadline corrected from '5 days' to the official 11-days-before rule."
   },
   "stateCode": "VA",
   "stateName": "Virginia",
-  "lastUpdated": "2026-05-10",
+  "lastUpdated": "2026-06-10",
   "coverageStatus": "confirmed",
   "elections": [
     {
       "id": "va-2026-primary",
       "name": "2026 Virginia Primary Election",
-      "date": "2026-06-09",
+      "date": "2026-08-04",
       "type": "primary",
       "isPrimary": true,
       "primaryType": "open",
       "registration": {
         "online": {
           "available": true,
-          "deadline": "2026-05-18",
+          "deadline": "2026-07-24",
           "url": "https://www.elections.virginia.gov/registration/how-to-register/"
         },
         "byMail": {
-          "deadline": "2026-05-18",
+          "deadline": "2026-07-24",
           "sincePostmarked": true
         },
         "inPerson": {
-          "deadline": "2026-05-18",
+          "deadline": "2026-08-04",
           "sincePostmarked": false
         },
-        "sameDayRegistration": false,
+        "sameDayRegistration": true,
         "registrationCheckUrl": "https://vote.elections.virginia.gov/VoterInformation"
       },
       "earlyVoting": {
         "available": true,
-        "startDate": "2026-05-22",
-        "endDate": "2026-06-06",
-        "notes": "No-excuse in-person absentee (early voting) begins 45 days before the election and ends the Saturday before. TODO verify for 2026 cycle."
-      }
+        "startDate": "2026-06-19",
+        "endDate": "2026-08-01",
+        "notes": "Virginia moved its 2026 primary to August 4. Early in-person voting runs Friday, June 19 through 5 p.m. Saturday, August 1, 2026 (offices closed June 19 for Juneteenth open Thursday, June 18). Voters may register after July 24 and vote with a provisional ballot through Election Day."
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://www.elections.virginia.gov/casting-a-ballot/calendars-schedules/upcoming-elections.html"
     },
     {
       "id": "va-2026-general",
@@ -51,43 +53,45 @@
       "registration": {
         "online": {
           "available": true,
-          "deadline": "2026-10-13",
+          "deadline": "2026-10-23",
           "url": "https://www.elections.virginia.gov/registration/how-to-register/"
         },
         "byMail": {
-          "deadline": "2026-10-13",
+          "deadline": "2026-10-23",
           "sincePostmarked": true
         },
         "inPerson": {
-          "deadline": "2026-10-13",
+          "deadline": "2026-11-03",
           "sincePostmarked": false
         },
-        "sameDayRegistration": false,
+        "sameDayRegistration": true,
         "registrationCheckUrl": "https://vote.elections.virginia.gov/VoterInformation"
       },
       "earlyVoting": {
         "available": true,
         "startDate": "2026-09-18",
         "endDate": "2026-10-31",
-        "notes": "No-excuse in-person absentee voting begins 45 days before Election Day and ends the Saturday before. Saturday early voting is required. TODO verify for 2026 cycle."
-      }
+        "notes": "Early in-person voting runs Friday, September 18 through 5 p.m. Saturday, October 31, 2026. Voters may register after October 23 and vote with a provisional ballot through Election Day."
+      },
+      "lastVerified": "2026-06-10",
+      "source": "https://www.elections.virginia.gov/casting-a-ballot/calendars-schedules/upcoming-elections.html"
     }
   ],
   "registration": {
     "online": {
       "available": true,
-      "deadline": "2026-10-13",
+      "deadline": "2026-10-23",
       "url": "https://www.elections.virginia.gov/registration/how-to-register/"
     },
     "byMail": {
-      "deadline": "2026-10-13",
+      "deadline": "2026-10-23",
       "sincePostmarked": true
     },
     "inPerson": {
-      "deadline": "2026-10-13",
+      "deadline": "2026-11-03",
       "sincePostmarked": false
     },
-    "sameDayRegistration": false,
+    "sameDayRegistration": true,
     "registrationCheckUrl": "https://vote.elections.virginia.gov/VoterInformation"
   },
   "earlyVoting": {
@@ -106,7 +110,7 @@
       "Voter registration confirmation document",
       "Utility bill, bank statement, government check, paycheck, or other government document showing name and address"
     ],
-    "expirationRule": "Photo IDs used for voting should not be expired. Non-photo documents showing name and address are also acceptable. TODO verify for 2026 cycle.",
+    "expirationRule": "Photo IDs used for voting should not be expired. Non-photo documents showing name and address are also acceptable, and voters without ID may sign an ID Confirmation Statement: https://www.elections.virginia.gov/casting-a-ballot/voter-id/",
     "impedimentDeclaration": "If a voter cannot provide an acceptable form of ID, they may cast a provisional ballot and present acceptable ID to the general registrar by noon on the Friday after the election.",
     "phonesAtPolls": "allowed",
     "phonesAtPollsDetail": "Virginia does not prohibit phones in polling places. Voters may not photograph their ballot or otherwise interfere with other voters.",
@@ -120,7 +124,7 @@
     "eligibility": [
       "Any registered Virginia voter may request an absentee ballot without providing a reason"
     ],
-    "applicationDeadline": "Must be received by the local registrar 5 days before the election",
+    "applicationDeadline": "Must be received by the local registrar by 5 p.m. eleven days before the election (October 23, 2026 for the general election)",
     "returnDeadline": "Must be received by the registrar by 7 p.m. on Election Day, or postmarked by Election Day and received within 3 days after",
     "returnDeadlinePlain": "Must arrive by 7 p.m. Election Day, or be postmarked by Election Day and received within 3 days after.",
     "applicationUrl": "https://www.elections.virginia.gov/casting-a-ballot/absentee-voting/",
