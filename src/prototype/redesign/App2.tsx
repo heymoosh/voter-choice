@@ -11,9 +11,7 @@
           → analyzing (per-seat /api/race-data) → workspace
           → print / standing (+ static pages, honest failure states)
 
-   Phase 1 is FEDERAL ONLY: scope is locked to "fed" and the design's
-   Federal/Federal+State segment stays in the code but does not render
-   (SCOPE_TOGGLE_ENABLED) — Phase 3 turns it on with state-seat data. */
+   Phase 1 renders the representatives returned by /api/delegation. */
 
 import React, { useEffect, useRef, useState } from "react";
 import {
@@ -31,6 +29,7 @@ import {
 } from "../VoterChoiceApp";
 import { downloadProfileAsText } from "../../lib/ballot-utils";
 import { DelegationWorkspace } from "./DelegationWorkspace";
+import { HandoffModal } from "./HandoffModal";
 import { ScorecardPrintView } from "./ScorecardPrintView";
 import { PolisClose } from "./PolisClose";
 import {
@@ -49,7 +48,6 @@ import {
 import { loadPolisScopes } from "./polisAdapter";
 
 const STORE_KEY2 = "voter-choice:redesign2";
-const SCOPE_TOGGLE_ENABLED = false; // Phase 3: state seats
 
 function loadState2() {
   try {
@@ -57,53 +55,6 @@ function loadState2() {
   } catch {
     return {};
   }
-}
-
-function Tweaks2({ scope, setScope, blindMode, setBlind }) {
-  return (
-    <div className="tweaks2">
-      <h4>Tweaks</h4>
-      {SCOPE_TOGGLE_ENABLED && (
-        <div className="tweak2">
-          <label>Who to show</label>
-          <div className="seg2">
-            <button
-              className={scope === "fed" ? "on" : ""}
-              onClick={() => setScope("fed")}
-            >
-              Federal only
-            </button>
-            <button
-              className={scope === "both" ? "on" : ""}
-              onClick={() => setScope("both")}
-            >
-              Federal + State
-            </button>
-          </div>
-        </div>
-      )}
-      <div className="tweak2">
-        <label>Assessment</label>
-        <div className="seg2">
-          <button
-            className={blindMode ? "on" : ""}
-            onClick={() => setBlind(true)}
-          >
-            Blind first
-          </button>
-          <button
-            className={!blindMode ? "on" : ""}
-            onClick={() => setBlind(false)}
-          >
-            Names shown
-          </button>
-        </div>
-      </div>
-      <p className="tw-note">
-        Blind-first hides name &amp; party so you judge the record, then reveal.
-      </p>
-    </div>
-  );
 }
 
 /* Honest failure states (geocode / territory / data outage) in the design's
@@ -174,14 +125,12 @@ function App2Inner() {
     return s;
   });
   const [address, setAddress] = useState(saved.address || "");
-  const [scope, setScope] = useState("fed"); // Phase 1: federal only
-  const [blindMode, setBlind] = useState(
-    saved.blindMode !== undefined ? saved.blindMode : true,
-  );
+  const blindMode = true;
   const [verdicts, setVerdicts] = useState(saved.verdicts || {});
   const [activeSeatId, setActiveSeatId] = useState(saved.activeSeatId || null);
   const [revealed, setRevealed] = useState(() => new Set(saved.revealed || []));
   const [issues, setIssues] = useState(saved.issues || []);
+  const [showHandoff, setShowHandoff] = useState(false);
 
   // Fetched (not persisted — refetched on resume)
   const [delegation, setDelegation] = useState(null);
@@ -198,24 +147,13 @@ function App2Inner() {
       JSON.stringify({
         stage,
         address,
-        scope,
-        blindMode,
         verdicts,
         activeSeatId,
         revealed: [...revealed],
         issues,
       }),
     );
-  }, [
-    stage,
-    address,
-    scope,
-    blindMode,
-    verdicts,
-    activeSeatId,
-    revealed,
-    issues,
-  ]);
+  }, [stage, address, verdicts, activeSeatId, revealed, issues]);
 
   // Resume: re-run the pipeline silently for a returning session.
   useEffect(() => {
@@ -346,21 +284,6 @@ function App2Inner() {
     downloadProfileAsText(
       buildScorecardProfileText({ seats, issues, verdicts, districtsLine }),
     );
-  }
-  function continueElsewhere() {
-    const text = buildScorecardProfileText({
-      seats,
-      issues,
-      verdicts,
-      districtsLine,
-    });
-    if (navigator.clipboard?.writeText) {
-      void navigator.clipboard.writeText(text).catch(() => {
-        downloadProfileAsText(text);
-      });
-    } else {
-      downloadProfileAsText(text);
-    }
   }
 
   function startOver() {
@@ -550,15 +473,18 @@ function App2Inner() {
           onSelectSeat={setActiveSeatId}
           onPrint={() => setStage("print")}
           onSaveProfile={saveProfile}
-          onContinueElsewhere={continueElsewhere}
+          onContinueElsewhere={() => setShowHandoff(true)}
           onSeeStanding={seeStanding}
         />
-        <Tweaks2
-          scope={scope}
-          setScope={setScope}
-          blindMode={blindMode}
-          setBlind={setBlind}
-        />
+        {showHandoff && (
+          <HandoffModal
+            seats={seats}
+            issues={issues}
+            verdicts={verdicts}
+            districtsLine={districtsLine}
+            onClose={() => setShowHandoff(false)}
+          />
+        )}
       </>
     );
   }
