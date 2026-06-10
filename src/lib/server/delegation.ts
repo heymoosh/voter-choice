@@ -269,15 +269,27 @@ export async function resolveDelegation(
         })
         .from(schema.candidateOffices)
         .where(inArray(schema.candidateOffices.candidateId, memberIds)),
-      // How far back our office data reaches at all — "since YYYY" claims
+      // How far back our FEDERAL office data reaches — "since YYYY" claims
       // are only reliable for members whose first term starts after this.
+      // (State-legislature office rows reach further back; including them
+      // made a 2023-era federal floor look like real tenure data.)
       db
         .select({
           minTermStart: sql<
             string | null
           >`min(${schema.candidateOffices.termStart})`,
         })
-        .from(schema.candidateOffices),
+        .from(schema.candidateOffices)
+        .innerJoin(
+          schema.candidates,
+          eq(schema.candidateOffices.candidateId, schema.candidates.id),
+        )
+        .where(
+          inArray(schema.candidates.jurisdiction, [
+            "federal-house",
+            "federal-senate",
+          ]),
+        ),
     ]);
     for (const office of officeRows) {
       const year = Number(String(office.termStart).slice(0, 4));
