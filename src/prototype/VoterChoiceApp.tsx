@@ -192,7 +192,7 @@ const TRANSLATIONS = {
       howItWorksSubtext: 'Three steps. A few minutes. No account.',
       step1Title: 'Enter your address',
       step1Desc:
-        "We pull the exact races on your ballot. The address never leaves your device — we look up your ballot via the Civic API server-side and discard it.",
+        "We pull your representative's history based on address. The address never leaves your device — we look up your representative and discard it.",
       step2Title: 'See what they actually did',
       step2Desc:
         "Voting record on the issues you care about. Donor list. How much they raised and from whom. No news articles, no ads — just the record.",
@@ -286,7 +286,7 @@ const TRANSLATIONS = {
       howItWorksSubtext: 'Tres pasos. Unos minutos. Sin cuenta.',
       step1Title: 'Ingresa tu dirección',
       step1Desc:
-        'Buscamos las carreras exactas en tu boleta. Tu dirección no sale de tu dispositivo — consultamos tu boleta vía Civic API y la descartamos.',
+        'Obtenemos el historial de tu representante según tu dirección. Tu dirección no sale de tu dispositivo — consultamos tu representante y la descartamos.',
       step2Title: 'Mira lo que realmente hicieron',
       step2Desc:
         'Registro de votación sobre los temas que te importan. Lista de donantes. Cuánto recaudaron y de quién. Sin artículos, sin anuncios — solo el registro.',
@@ -1308,6 +1308,39 @@ function FunderBars({ donorCoalition, totalRaised, donorDataSource, donorSource,
   // Separate issue-PACs (named) from generic industry slices.
   const issuePACs = donorCoalition.filter(s => s.isIssuePAC);
   const industries = donorCoalition.filter(s => !s.isIssuePAC);
+  const onlyTotalReceipts =
+    !fundingMix &&
+    issuePACs.length === 0 &&
+    industries.length === 1 &&
+    industries[0]?.label === 'total_receipts';
+
+  if (onlyTotalReceipts) {
+    const total = typeof totalRaised === 'number'
+      ? totalRaised
+      : industries[0]?.amount;
+    return (
+      <div className="cv2-funding" data-testid="funding-sparse">
+        <div className="cv2-block-head">
+          <div className="lab">Funding mix <small className="cv2-sub-lab">details pending</small></div>
+          <div className="overall">
+            {typeof total === 'number' && <b>{formatDollars(total)}</b>}
+          </div>
+        </div>
+        <p style={{ fontSize: 14, color: 'var(--ink-3)', margin: 0 }}>
+          Detailed donor breakdown is not available yet for this candidate. We have total receipts from filings, but not small donor, large donor, PAC, or sector buckets.
+        </p>
+        {donorSource && (
+          <div style={{
+            fontFamily: 'var(--mono)', fontSize: 10.5, color: 'var(--ink-3)',
+            letterSpacing: '0.04em', marginTop: 12, textAlign: 'left',
+          }}>
+            Source: {donorSource.name}
+            {donorDataSource === 'web_search' && ' · web search'}
+          </div>
+        )}
+      </div>
+    );
+  }
 
   // ── PAC partial-coverage math ─────────────────────────────
   // Three cases:
@@ -3995,10 +4028,10 @@ function PrivacyPage({ onBack }) {
       <p className="sp-meta">Effective April 12, 2026 · Gray Bird LLC</p>
 
       <h2>Minimal data collection</h2>
-      <p>We do not use analytics, telemetry, tracking pixels, accounts, or sign-ups. The app stores your <b>language preference</b>, <b>draft ballot picks</b>, and (optionally) a <b>bring-your-own Anthropic key</b> in your browser's localStorage. None of this leaves your device unless you take an action that explicitly sends it.</p>
+      <p>We do not use analytics, telemetry, tracking pixels, accounts, or sign-ups. Across visits, your browser's localStorage keeps only your <b>language preference</b>, your <b>issues</b>, a <b>county-level location</b> (never your street address), and (optionally) a <b>bring-your-own Anthropic key</b>. Your <b>precise address</b> and your <b>in-progress assessment</b> are kept only for the current browser tab and are cleared when you close it. None of this leaves your device unless you take an action that explicitly sends it.</p>
 
       <h2>Your address</h2>
-      <p>If you enter your street address, it may be used for autocomplete (Google Places) in your browser and is sent to the <b>Google Civic Information API</b> through our server for polling-place and contest lookup. We do not intentionally log or store your address, and we do not include it in the AI chat prompt.</p>
+      <p>If you enter your street address, it may be used for autocomplete (Google Places) in your browser and is sent to the <b>Google Civic Information API</b> through our server for polling-place and contest lookup. We do not intentionally log or store your address on our servers, and we do not include it in the AI chat prompt. In your browser it is held only for the current tab and cleared when you close it — only a county-level location is kept across visits.</p>
 
       <h2>Chat conversations</h2>
       <p>Chat exists in browser memory while the page is open. It is not intentionally stored, logged, or persisted by our servers. Messages are sent to the <b>Anthropic API</b> for processing. Don't type your name, exact address, phone, email, or other identifying details into chat. See <a href="https://www.anthropic.com/policies/privacy" target="_blank" rel="noopener noreferrer">Anthropic's privacy policy</a>.</p>
@@ -4058,6 +4091,7 @@ function HomeView({ savedAddress, savedSession, onSubmit, onResumeFromProfile, o
   // last time (or it's stale enough that they'd rather retype). The
   // placeholder shows a realistic example.
   const [addr, setAddr] = useStateV('');
+  const [addrWhyOpen, setAddrWhyOpen] = useStateV(false);
   const { t } = useI18n();
   // Phase 2b: restore Google Places autocomplete (the prototype's plain input
   // had none). With the key present the hook mounts a PlaceAutocompleteElement
@@ -4093,7 +4127,27 @@ function HomeView({ savedAddress, savedSession, onSubmit, onResumeFromProfile, o
           <p className="lede">All 435 House seats and 34 Senate seats are on the ballot. Before you vote, see how your incumbents actually voted — and who paid for the campaign.</p>
 
           <div className="addr-card">
-            <label><span>Your registered address</span> <span className="privacy">Stays on this device</span></label>
+            <label>
+              <span className="addr-label-left">
+                <span>Your registered address</span>
+                <button
+                  className="addr-why-btn"
+                  onClick={() => setAddrWhyOpen(true)}
+                  aria-label="Why do we need your address?"
+                  type="button"
+                >?</button>
+              </span>
+              <span className="privacy">Stays on this device</span>
+            </label>
+            {addrWhyOpen && (
+              <div className="be-modal-overlay" onClick={() => setAddrWhyOpen(false)}>
+                <div className="addr-why-modal" onClick={(e) => e.stopPropagation()}>
+                  <button className="addr-why-close" onClick={() => setAddrWhyOpen(false)} aria-label="Close">×</button>
+                  <h4>Why do we need your address?</h4>
+                  <p>We use your address to pull local voting information so you know exactly when and where to go vote and what IDs are needed. So you have all the information you need to support or vote against your representative and make a change.</p>
+                </div>
+              </div>
+            )}
             <div className="row">
               {hasPlacesKey && (
                 <div
@@ -4115,18 +4169,12 @@ function HomeView({ savedAddress, savedSession, onSubmit, onResumeFromProfile, o
                     : undefined
                 }
               />
-              <button className="go" onClick={submit} disabled={!addr.trim()}>Pull my ballot →</button>
+              <button className="go" onClick={submit} disabled={!addr.trim()}>Pull my representatives →</button>
             </div>
             <div className="hint">
               <span><span className="dot"></span>No account</span>
               <span><span className="dot"></span>No tracking</span>
               <span><span className="dot"></span>Civic API · address never stored</span>
-            </div>
-            <div className="resume">
-              Been here before?{' '}
-              <a onClick={onResumeFromProfile} style={{ cursor: 'pointer' }} role="link" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') onResumeFromProfile(); }}>
-                Drop your saved .txt profile →
-              </a>
             </div>
           </div>
 
@@ -4211,7 +4259,7 @@ function LoadingView({ address, onDone, variant = 'ballot' }) {
       <div className="loading-screen">
         <div className="loading-card">
           <div className="pulse"></div>
-          <h2>{analyzing ? 'Analyzing the candidates.' : 'Pulling your ballot.'}</h2>
+          <h2>{analyzing ? 'Analyzing the candidates.' : 'Pulling your representatives.'}</h2>
           <div className="addr">
             {analyzing ? 'Matching their records to your priorities' : address}
           </div>
@@ -4310,7 +4358,7 @@ function ColdOpenView({ address, onLock, savedIssues, contextNote }) {
         <div className="msg ai">
           <div className="who">Voter Choice · AI</div>
           <div className="bubble">
-            <p>I've pulled your sample ballot. Before I walk you through races, I want to know what <i>you're</i> judging candidates on — in your words, not from a pre-built list.</p>
+            <p>I've pulled your representatives names. Before I walk you through their performance, I want to know what you're judging them on</p>
             <p style={{ marginTop: '10px' }}><b>What's been on your mind this year?</b> Things you wish Congress would actually do something about. Frustrations, hopes, fights you've watched in your community. Type as much or as little as you want.</p>
           </div>
         </div>

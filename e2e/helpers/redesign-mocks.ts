@@ -112,7 +112,11 @@ export async function mockDelegationFailure(
 
 /** Voting-record card data for the first two seats; seat 3 has no DB record
  *  (drives the web_search fallback path). */
-export async function mockSeatRaceData(page: Page): Promise<void> {
+export async function mockSeatRaceData(
+  page: Page,
+  options: { donorMode?: "rich" | "totalReceiptsOnly" } = {},
+): Promise<void> {
+  const donorMode = options.donorMode ?? "rich";
   const aligned = (
     seatId: string,
     candidateId: string,
@@ -127,23 +131,29 @@ export async function mockSeatRaceData(page: Page): Promise<void> {
           id: candidateId,
           name,
           incumbent: true,
-          donorCoalition: [
-            {
-              label: "Small individual donors (under $200)",
-              percent: 40,
-              amount: 2_000_000,
-            },
-            { label: "PACs", percent: 60, amount: 3_000_000 },
-          ],
+          donorCoalition:
+            donorMode === "totalReceiptsOnly"
+              ? [{ label: "total_receipts", percent: 100, amount: 5_000_000 }]
+              : [
+                  {
+                    label: "Small individual donors (under $200)",
+                    percent: 40,
+                    amount: 2_000_000,
+                  },
+                  { label: "PACs", percent: 60, amount: 3_000_000 },
+                ],
           donorSource: { name: "fec", url: "https://www.fec.gov/" },
           totalRaised: 5_000_000,
-          fundingMix: {
-            small: 40,
-            large: 0,
-            pac: 60,
-            total: 5_000_000,
-            cycle: "2026 cycle",
-          },
+          fundingMix:
+            donorMode === "totalReceiptsOnly"
+              ? undefined
+              : {
+                  small: 40,
+                  large: 0,
+                  pac: 60,
+                  total: 5_000_000,
+                  cycle: "2026 cycle",
+                },
           endorsements: null,
           platformAlignment: null,
           retrospective: null,
@@ -331,7 +341,7 @@ export async function goToWorkspace(page: Page): Promise<void> {
   await page
     .getByPlaceholder("1600 Pennsylvania Ave NW, Washington DC 20500")
     .fill("1100 Congress Ave, Austin, TX 78701");
-  await page.getByRole("button", { name: "Pull my ballot →" }).click();
+  await page.getByRole("button", { name: "Pull my representatives →" }).click();
   // Cold-open: free-text issues → preset interpretation list → lock.
   await page.locator(".coldopen textarea").waitFor({ timeout: 15000 });
   await page
@@ -339,5 +349,8 @@ export async function goToWorkspace(page: Page): Promise<void> {
     .fill("Insulin prices are insane and rent went up again.");
   await page.locator("button.send").click();
   await page.locator("button.lock").click({ timeout: 15000 });
-  await page.locator(".rep-card").first().waitFor({ timeout: 20000 });
+  // Workspace is ready once the scorecard rows appear. On mobile the center
+  // pane (rep-card) starts hidden until a row is tapped; the scorecard rows
+  // are always visible and are the safe signal for both viewports.
+  await page.locator(".b-row").first().waitFor({ timeout: 20000 });
 }

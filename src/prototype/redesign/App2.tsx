@@ -11,9 +11,7 @@
           → analyzing (per-seat /api/race-data) → workspace
           → print / standing (+ static pages, honest failure states)
 
-   Phase 1 is FEDERAL ONLY: scope is locked to "fed" and the design's
-   Federal/Federal+State segment stays in the code but does not render
-   (SCOPE_TOGGLE_ENABLED) — Phase 3 turns it on with state-seat data. */
+   Phase 1 renders the representatives returned by /api/delegation. */
 
 import React, { useEffect, useRef, useState } from "react";
 import {
@@ -29,8 +27,8 @@ import {
   PrivacyPage,
   TipJarPage,
 } from "../VoterChoiceApp";
-import { downloadProfileAsText } from "../../lib/ballot-utils";
 import { DelegationWorkspace } from "./DelegationWorkspace";
+import { HandoffModal } from "./HandoffModal";
 import { ScorecardPrintView } from "./ScorecardPrintView";
 import { PolisClose } from "./PolisClose";
 import {
@@ -46,66 +44,33 @@ import {
   preloadSeatResearch,
   getSeatResearch,
   submitSessionCounters,
-  buildScorecardProfileText,
 } from "./delegationData";
 import { loadPolisScopes } from "./polisAdapter";
 
-const STORE_KEY2 = "voter-choice:redesign2";
-const SCOPE_TOGGLE_ENABLED = false; // Phase 3: state seats
+// Durable (localStorage): the only thing kept across a tab close — the user's
+// issues ("Polis" data) plus a county-level-at-most location. Never the precise
+// address.
+const POLIS_KEY = "voter-choice:polis-v1";
+// Session working state (sessionStorage): precise address + in-progress
+// assessment. Survives a same-tab reload, wiped when the tab closes.
+const SESSION_KEY = "voter-choice:session-v1";
+// Legacy key that durably stored the precise address — purged on mount.
+const LEGACY_KEY = "voter-choice:redesign2";
 
-function loadState2() {
+function loadPolis() {
   try {
-    return JSON.parse(localStorage.getItem(STORE_KEY2)) || {};
+    return JSON.parse(localStorage.getItem(POLIS_KEY)) || {};
   } catch {
     return {};
   }
 }
 
-function Tweaks2({ scope, setScope, blindMode, setBlind }) {
-  return (
-    <div className="tweaks2">
-      <h4>Tweaks</h4>
-      {SCOPE_TOGGLE_ENABLED && (
-        <div className="tweak2">
-          <label>Who to show</label>
-          <div className="seg2">
-            <button
-              className={scope === "fed" ? "on" : ""}
-              onClick={() => setScope("fed")}
-            >
-              Federal only
-            </button>
-            <button
-              className={scope === "both" ? "on" : ""}
-              onClick={() => setScope("both")}
-            >
-              Federal + State
-            </button>
-          </div>
-        </div>
-      )}
-      <div className="tweak2">
-        <label>Assessment</label>
-        <div className="seg2">
-          <button
-            className={blindMode ? "on" : ""}
-            onClick={() => setBlind(true)}
-          >
-            Blind first
-          </button>
-          <button
-            className={!blindMode ? "on" : ""}
-            onClick={() => setBlind(false)}
-          >
-            Names shown
-          </button>
-        </div>
-      </div>
-      <p className="tw-note">
-        Blind-first hides name &amp; party so you judge the record, then reveal.
-      </p>
-    </div>
-  );
+function loadSession() {
+  try {
+    return JSON.parse(sessionStorage.getItem(SESSION_KEY)) || {};
+  } catch {
+    return {};
+  }
 }
 
 /* Honest failure states (geocode / territory / data outage) in the design's
@@ -157,10 +122,19 @@ function StandingLocked({ countToUnlock, onBack }) {
 }
 
 function App2Inner() {
-  const saved = loadState2();
+  // Purge any precise address left by the old single-localStorage-record scheme.
+  if (typeof window !== "undefined") {
+    try {
+      localStorage.removeItem(LEGACY_KEY);
+    } catch {}
+  }
+  const savedSession = loadSession();
+  const savedPolis = loadPolis();
   const [stage, setStage] = useState(() => {
-    // Workspace-family stages need refetched data — resume via loading.
-    const s = saved.stage || "home";
+    // Workspace-family stages need refetched data — resume via loading. After a
+    // tab close sessionStorage is empty, so address is absent and this falls back
+    // to "home"; on a same-tab reload the address survives and we resume.
+    const s = savedSession.stage || "home";
     if (
       [
         "workspace",
@@ -171,19 +145,28 @@ function App2Inner() {
         "loading",
       ].includes(s)
     ) {
-      return saved.address ? "resume" : "home";
+      return savedSession.address ? "resume" : "home";
     }
     return s;
   });
-  const [address, setAddress] = useState(saved.address || "");
-  const [scope, setScope] = useState("fed"); // Phase 1: federal only
-  const [blindMode, setBlind] = useState(
-    saved.blindMode !== undefined ? saved.blindMode : true,
+  const [address, setAddress] = useState(savedSession.address || "");
+  const blindMode = true;
+  const [verdicts, setVerdicts] = useState(savedSession.verdicts || {});
+  const [activeSeatId, setActiveSeatId] = useState(
+    savedSession.activeSeatId || null,
   );
-  const [verdicts, setVerdicts] = useState(saved.verdicts || {});
-  const [activeSeatId, setActiveSeatId] = useState(saved.activeSeatId || null);
-  const [revealed, setRevealed] = useState(() => new Set(saved.revealed || []));
-  const [issues, setIssues] = useState(saved.issues || []);
+  const [revealed, setRevealed] = useState(
+    () => new Set(savedSession.revealed || []),
+  );
+  const [issues, setIssues] = useState(savedPolis.issues || []);
+  // County-level-at-most location, kept durably with the issues so the Polis
+  // aggregate survives a tab close without ever storing the precise address.
+  const [coarseLoc, setCoarseLoc] = useState(() => ({
+    stateCode: savedPolis.stateCode ?? null,
+    stateName: savedPolis.stateName ?? null,
+    county: savedPolis.county ?? null,
+  }));
+  const [showHandoff, setShowHandoff] = useState(false);
 
   // Fetched (not persisted — refetched on resume)
   const [delegation, setDelegation] = useState(null);
@@ -195,30 +178,37 @@ function App2Inner() {
   const [, setResearchTick] = useState(0);
   const submittedRef = useRef(false);
 
+  // Durable: issues + county-level location only. Survives tab close.
   useEffect(() => {
-    localStorage.setItem(
-      STORE_KEY2,
-      JSON.stringify({
-        stage,
-        address,
-        scope,
-        blindMode,
-        verdicts,
-        activeSeatId,
-        revealed: [...revealed],
-        issues,
-      }),
-    );
-  }, [
-    stage,
-    address,
-    scope,
-    blindMode,
-    verdicts,
-    activeSeatId,
-    revealed,
-    issues,
-  ]);
+    try {
+      localStorage.setItem(
+        POLIS_KEY,
+        JSON.stringify({
+          issues,
+          stateCode: coarseLoc.stateCode,
+          stateName: coarseLoc.stateName,
+          county: coarseLoc.county,
+        }),
+      );
+    } catch {}
+  }, [issues, coarseLoc]);
+
+  // Session working state: precise address + in-progress assessment. Survives a
+  // same-tab reload, cleared by the browser when the tab closes.
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(
+        SESSION_KEY,
+        JSON.stringify({
+          stage,
+          address,
+          verdicts,
+          activeSeatId,
+          revealed: [...revealed],
+        }),
+      );
+    } catch {}
+  }, [stage, address, verdicts, activeSeatId, revealed]);
 
   // Resume: re-run the pipeline silently for a returning session.
   useEffect(() => {
@@ -230,6 +220,15 @@ function App2Inner() {
 
   async function startLookup(addr, { resuming = false } = {}) {
     setFailure(null);
+    if (!resuming) {
+      // A fresh address means a fresh assessment: clear any prior session's
+      // issues/verdicts so the cold open runs its intake (the AI asks about
+      // your issues) instead of jumping straight to ranking saved issues.
+      setIssues([]);
+      setVerdicts({});
+      setRevealed(new Set());
+      setActiveSeatId(null);
+    }
     setStage("loading");
     const result = await fetchDelegation(addr);
     if (result.status === "geocode_failed") {
@@ -256,6 +255,11 @@ function App2Inner() {
       return;
     }
     setDelegation(result);
+    setCoarseLoc({
+      stateCode: result.stateCode,
+      stateName: result.stateName,
+      county: result.county,
+    });
     setStateData(sd);
     // Real address-based logistics (polling place / hours / early voting)
     // via /api/civic — best-effort; the honest fallback renders meanwhile.
@@ -350,35 +354,16 @@ function App2Inner() {
         .join(" · ")
     : "";
 
-  function saveProfile() {
-    downloadProfileAsText(
-      buildScorecardProfileText({ seats, issues, verdicts, districtsLine }),
-    );
-  }
-  function continueElsewhere() {
-    const text = buildScorecardProfileText({
-      seats,
-      issues,
-      verdicts,
-      districtsLine,
-    });
-    if (navigator.clipboard?.writeText) {
-      void navigator.clipboard.writeText(text).catch(() => {
-        downloadProfileAsText(text);
-      });
-    } else {
-      downloadProfileAsText(text);
-    }
-  }
-
   function startOver() {
     try {
-      localStorage.removeItem(STORE_KEY2);
+      localStorage.removeItem(POLIS_KEY);
+      sessionStorage.removeItem(SESSION_KEY);
     } catch {
       /* ignore */
     }
     setAddress("");
     setIssues([]);
+    setCoarseLoc({ stateCode: null, stateName: null, county: null });
     setVerdicts({});
     setRevealed(new Set());
     setDelegation(null);
@@ -558,16 +543,18 @@ function App2Inner() {
           onVerdict={setVerdict}
           onSelectSeat={setActiveSeatId}
           onPrint={() => setStage("print")}
-          onSaveProfile={saveProfile}
-          onContinueElsewhere={continueElsewhere}
+          onContinueElsewhere={() => setShowHandoff(true)}
           onSeeStanding={seeStanding}
         />
-        <Tweaks2
-          scope={scope}
-          setScope={setScope}
-          blindMode={blindMode}
-          setBlind={setBlind}
-        />
+        {showHandoff && (
+          <HandoffModal
+            seats={seats}
+            issues={issues}
+            verdicts={verdicts}
+            districtsLine={districtsLine}
+            onClose={() => setShowHandoff(false)}
+          />
+        )}
       </>
     );
   }

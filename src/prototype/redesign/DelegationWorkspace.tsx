@@ -12,8 +12,10 @@
      - The standing CTA's neighbor count renders only when the polis scope
        is above its privacy threshold (polisPreview prop), with the design's
        copy otherwise generic.
-     - onSaveProfile / onContinueElsewhere come WIRED via props (the design
-       file had alert() stubs; HANDOFF directs them to ballot-utils). */
+     - onContinueElsewhere comes WIRED via props (the design file had an
+       alert() stub; it opens the HandoffModal). The design's "save voting
+       plan" CTA was dropped — voting-plan/profile export is no longer part
+       of the congress-assessment flow. */
 
 import React, { useState, useEffect } from "react";
 import { AppNav, PollingStatusBar } from "../VoterChoiceApp";
@@ -89,7 +91,6 @@ export function ScorecardPane({
   polisPreview,
   onSelectSeat,
   onPrint,
-  onSaveProfile,
   onContinueElsewhere,
   onSeeStanding,
 }) {
@@ -221,13 +222,6 @@ export function ScorecardPane({
           <span>Print my scorecard (PDF)</span>
           <span className="arrow">→</span>
         </button>
-        <button onClick={onSaveProfile}>
-          <span>Save my voting plan (.txt)</span>
-          <span className="arrow">↓</span>
-        </button>
-        <small className="b-foot-note">
-          Your issues and verdicts — no personal info collected.
-        </small>
         <button onClick={onContinueElsewhere}>
           <span>Continue in another chatbot</span>
           <span className="arrow">↗</span>
@@ -257,7 +251,6 @@ export function DelegationWorkspace({
   onVerdict,
   onSelectSeat,
   onPrint,
-  onSaveProfile,
   onContinueElsewhere,
   onSeeStanding,
 }) {
@@ -435,7 +428,6 @@ export function DelegationWorkspace({
             polisPreview={polisPreview}
             onSelectSeat={selectAndOpen}
             onPrint={onPrint}
-            onSaveProfile={onSaveProfile}
             onContinueElsewhere={onContinueElsewhere}
             onSeeStanding={onSeeStanding}
           />

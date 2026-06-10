@@ -56,14 +56,67 @@ test.describe("delegation flow — address → assess → verdicts", () => {
     await expect(page.locator(".cv2-disclose-summary")).toContainText(
       "$5M raised",
     );
+    await expect(page.locator(".tweaks2")).toHaveCount(0);
 
     // Scorecard rail shows the issues with jurisdiction tags.
     await expect(page.locator(".ws-rail .lvl-tag").first()).toBeVisible();
   });
 
-  test("reveal shows the member; verdicts ride into the scorecard and unlock print", async ({
+  test("continue elsewhere opens a handoff modal with a portable prompt", async ({
     page,
   }) => {
+    await mockDelegation(page);
+    await mockSeatRaceData(page);
+    await mockResearch(page);
+    await mockPolis(page);
+    await mockCounters(page);
+    await goToWorkspace(page);
+
+    await page
+      .getByRole("button", { name: /Continue in another chatbot/ })
+      .click();
+    await expect(page.locator(".be-modal")).toContainText(
+      "Take your scorecard with you",
+    );
+    await expect(page.locator(".be-prompt-text")).toContainText(
+      "MY CONGRESSIONAL SCORECARD",
+    );
+    await expect(page.locator(".be-prompt-text")).toContainText(
+      "Continue from this scorecard",
+    );
+  });
+
+  test("total-receipts-only donor data renders as pending detail, not an industry breakdown", async ({
+    page,
+  }, testInfo) => {
+    test.skip(
+      testInfo.project.name !== "chromium-desktop",
+      "card assertions are desktop-only",
+    );
+    await mockDelegation(page);
+    await mockSeatRaceData(page, { donorMode: "totalReceiptsOnly" });
+    await mockResearch(page);
+    await mockPolis(page);
+    await mockCounters(page);
+    await goToWorkspace(page);
+
+    const sparseFunding = page
+      .locator('[data-testid="funding-sparse"]')
+      .first();
+    await expect(sparseFunding).toContainText(
+      "Detailed donor breakdown is not available yet",
+    );
+    await expect(page.locator(".cv2-industry").first()).toHaveCount(0);
+    await expect(sparseFunding).not.toContainText("total_receipts");
+  });
+
+  test("reveal shows the member; verdicts ride into the scorecard and unlock print", async ({
+    page,
+  }, testInfo) => {
+    test.skip(
+      testInfo.project.name !== "chromium-desktop",
+      "verdict flow requires the card overlay open per-seat on mobile — desktop-only",
+    );
     await mockDelegation(page);
     await mockSeatRaceData(page);
     await mockResearch(page);
@@ -182,13 +235,15 @@ test.describe("honest failure states", () => {
     await page
       .getByPlaceholder("1600 Pennsylvania Ave NW, Washington DC 20500")
       .fill("asdf qwerty");
-    await page.getByRole("button", { name: "Pull my ballot →" }).click();
+    await page
+      .getByRole("button", { name: "Pull my representatives →" })
+      .click();
     await expect(page.locator(".err-banner")).toContainText(
       "couldn't place that address",
     );
     await page.getByRole("button", { name: "Edit address" }).click();
     await expect(
-      page.getByRole("button", { name: "Pull my ballot →" }),
+      page.getByRole("button", { name: "Pull my representatives →" }),
     ).toBeVisible();
   });
 
@@ -200,7 +255,9 @@ test.describe("honest failure states", () => {
     await page
       .getByPlaceholder("1600 Pennsylvania Ave NW, Washington DC 20500")
       .fill("1600 Pennsylvania Ave NW");
-    await page.getByRole("button", { name: "Pull my ballot →" }).click();
+    await page
+      .getByRole("button", { name: "Pull my representatives →" })
+      .click();
     await expect(page.locator(".err-banner")).toContainText(
       "no voting member of Congress",
     );

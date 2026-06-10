@@ -282,6 +282,7 @@ export interface DelegationSeatVM {
 /** Donor-source codes from /api/donors → reader-facing names. */
 const DONOR_SOURCE_NAMES: Record<string, string> = {
   fec: "FEC filings",
+  fec_api: "FEC filings",
   followthemoney: "FollowTheMoney",
   "tx-tec": "Texas Ethics Commission",
 };
