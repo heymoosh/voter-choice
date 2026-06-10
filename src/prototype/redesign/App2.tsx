@@ -163,6 +163,15 @@ function App2Inner() {
 
   async function startLookup(addr, { resuming = false } = {}) {
     setFailure(null);
+    if (!resuming) {
+      // A fresh address means a fresh assessment: clear any prior session's
+      // issues/verdicts so the cold open runs its intake (the AI asks about
+      // your issues) instead of jumping straight to ranking saved issues.
+      setIssues([]);
+      setVerdicts({});
+      setRevealed(new Set());
+      setActiveSeatId(null);
+    }
     setStage("loading");
     const result = await fetchDelegation(addr);
     if (result.status === "geocode_failed") {
