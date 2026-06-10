@@ -4263,7 +4263,7 @@ function ColdOpenView({ address, onLock, savedIssues, contextNote }) {
         <div className="msg ai">
           <div className="who">Voter Choice · AI</div>
           <div className="bubble">
-            <p>I've pulled your sample ballot. Before I walk you through races, I want to know what <i>you're</i> judging candidates on — in your words, not from a pre-built list.</p>
+            <p>I've pulled your representatives names. Before I walk you through their performance, I want to know what you're judging them on</p>
             <p style={{ marginTop: '10px' }}><b>What's been on your mind this year?</b> Things you wish Congress would actually do something about. Frustrations, hopes, fights you've watched in your community. Type as much or as little as you want.</p>
           </div>
         </div>
