@@ -36,10 +36,12 @@ function makeDbMock(rowSets: Record<string, unknown>[][]) {
     call += 1;
     const chain = {
       from: vi.fn(),
+      innerJoin: vi.fn(),
       where: vi.fn().mockResolvedValue(rows),
       then: (resolve: (v: unknown) => void) => resolve(rows),
     };
     chain.from.mockReturnValue(chain);
+    chain.innerJoin.mockReturnValue(chain);
     return chain;
   });
   return { select } as unknown as ReturnType<typeof getDb>;
