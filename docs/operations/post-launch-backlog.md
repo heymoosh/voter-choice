@@ -351,7 +351,12 @@ no gate). Not for this session.
 
 ### [P1] Election DATA must cover ANY upcoming election for the address, and gate logic must follow each state's rules
 
-**Status:** Open (flagged 2026-06-03; scope broadened by Muxin 2026-06-05)
+**Status:** RESOLVED 2026-06-10 (branch claude/alignment-election-data-rules-smlqus) — all 51
+state JSONs verified against 2026 SoS sources (every election stamped lastVerified+source; the
+2026-11-03 general everywhere; LA rebuilt; runoffs added for AL/AR/GA/MS/OK/SC/SD/TX), a
+completeness test asserts post-primary dates resolve a FUTURE election, and the party gate now
+consults getStateRule (open/top-two/general → no gate; closed/semi-closed/runoff-lock → statute-
+cited copy). Original note kept below for context.
 
 **Broader requirement (Muxin, 2026-06-05):** this is not just "include the November general." The
 election data resolved for a given ADDRESS must include ANY/ALL upcoming elections (primary,
@@ -379,7 +384,12 @@ election is the general and the gate is skipped.
 
 ### [P1] Printable ballot shows generic placeholders, not real ADDRESS-based voting logistics
 
-**Status:** Open (flagged 2026-06-05, from Muxin's preview test)
+**Status:** LARGELY RESOLVED 2026-06-10 (branch claude/alignment-election-data-rules-smlqus) —
+the congress-assessment flow now fires a best-effort /api/civic lookup from the address and
+surfaces the real polling place/hours (honest source labels) into the workspace bar + printable
+scorecard; the legacy workspace loads the real per-state JSON (verified deadlines, voter-ID,
+statutory hours) instead of the fallback shape. Remaining: early-vote SITE addresses and
+precinct numbers when civic carries them. Original note kept below for context.
 
 The print/header logistics block is honestly driven by the real STATE (the voter-ID rule is
 correct — e.g. NJ "No ID required for most in-person voters…"), but the ADDRESS-specific fields
