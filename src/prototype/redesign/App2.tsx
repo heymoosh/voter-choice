@@ -27,7 +27,6 @@ import {
   PrivacyPage,
   TipJarPage,
 } from "../VoterChoiceApp";
-import { downloadProfileAsText } from "../../lib/ballot-utils";
 import { DelegationWorkspace } from "./DelegationWorkspace";
 import { HandoffModal } from "./HandoffModal";
 import { ScorecardPrintView } from "./ScorecardPrintView";
@@ -43,7 +42,6 @@ import {
   preloadSeatResearch,
   getSeatResearch,
   submitSessionCounters,
-  buildScorecardProfileText,
 } from "./delegationData";
 import { loadPolisScopes } from "./polisAdapter";
 
@@ -280,12 +278,6 @@ function App2Inner() {
         .join(" · ")
     : "";
 
-  function saveProfile() {
-    downloadProfileAsText(
-      buildScorecardProfileText({ seats, issues, verdicts, districtsLine }),
-    );
-  }
-
   function startOver() {
     try {
       localStorage.removeItem(STORE_KEY2);
@@ -472,7 +464,6 @@ function App2Inner() {
           onVerdict={setVerdict}
           onSelectSeat={setActiveSeatId}
           onPrint={() => setStage("print")}
-          onSaveProfile={saveProfile}
           onContinueElsewhere={() => setShowHandoff(true)}
           onSeeStanding={seeStanding}
         />
