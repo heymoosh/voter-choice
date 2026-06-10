@@ -1,0 +1,343 @@
+// Shared Playwright mocks for the congress-assessment experience
+// (src/prototype/redesign/, served when NEXT_PUBLIC_BALLOT_ENABLED is unset).
+//
+// Data seam is src/prototype/redesign/delegationData.ts + polisAdapter.ts:
+//   POST /api/delegation         → sitting members for the address
+//   POST /api/race-data          → { racePatterns, alignmentScores } per seat
+//   POST /api/research-candidate → web-research fallback (no-record member)
+//   GET  /api/polis(+/bridges)   → standing-stage aggregates
+//   POST /api/counters           → anonymous session-end increment
+//
+// State election data (eligibility, deadlines, accepted IDs) is bundled
+// client-side (src/data/states/TX.json) — no mock needed.
+
+import { type Page } from "@playwright/test";
+
+type Json = Record<string, unknown>;
+
+export const TX_SEATS = [
+  {
+    seatId: "house-TX-37",
+    office: "U.S. House",
+    chamber: "house",
+    districtLabel: "TX-37",
+    blindLabel: "Your U.S. Representative",
+    candidate: {
+      id: "federal-TEST1",
+      name: "Alex Rivera",
+      party: "Democrat",
+      priorRole: "U.S. Representative since 2019",
+    },
+    attendance: { missedPct: 1.4, of: "612 floor votes", band: "good" },
+    onBallot2026: true,
+    nextElectionYear: 2026,
+  },
+  {
+    seatId: "senate-TX-a",
+    office: "U.S. Senate",
+    chamber: "senate",
+    districtLabel: "Texas (statewide)",
+    blindLabel: "Your Senior U.S. Senator",
+    candidate: {
+      id: "federal-TEST2",
+      name: "Morgan Hale",
+      party: "Republican",
+      priorRole: "U.S. Senator since 2015",
+    },
+    attendance: { missedPct: 11.2, of: "486 floor votes", band: "bad" },
+    onBallot2026: true,
+    nextElectionYear: 2026,
+  },
+  {
+    seatId: "senate-TX-b",
+    office: "U.S. Senate",
+    chamber: "senate",
+    districtLabel: "Texas (statewide)",
+    blindLabel: "Your Junior U.S. Senator",
+    candidate: {
+      id: "federal-TEST3",
+      name: "Jordan Okafor",
+      party: "Republican",
+      priorRole: "U.S. Senator since 2021",
+    },
+    attendance: null,
+    onBallot2026: false,
+    nextElectionYear: 2028,
+  },
+] as const;
+
+export async function mockDelegation(page: Page): Promise<void> {
+  await page.route("**/api/delegation", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        status: "ok",
+        stateCode: "TX",
+        stateName: "Texas",
+        county: "Travis County",
+        districtLabel: "TX-37",
+        seats: TX_SEATS,
+      }),
+    });
+  });
+}
+
+export async function mockDelegationFailure(
+  page: Page,
+  status: "geocode_failed" | "no_representation" | "db_unavailable",
+): Promise<void> {
+  const bodies: Record<string, Json> = {
+    geocode_failed: { status: "geocode_failed" },
+    no_representation: {
+      status: "no_representation",
+      stateCode: "DC",
+      territoryName: "District of Columbia",
+    },
+    db_unavailable: {
+      status: "db_unavailable",
+      stateCode: "TX",
+      county: "Travis County",
+      districtLabel: "TX-37",
+    },
+  };
+  await page.route("**/api/delegation", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify(bodies[status]),
+    });
+  });
+}
+
+/** Voting-record card data for the first two seats; seat 3 has no DB record
+ *  (drives the web_search fallback path). */
+export async function mockSeatRaceData(page: Page): Promise<void> {
+  const aligned = (
+    seatId: string,
+    candidateId: string,
+    name: string,
+    kept: number,
+    total: number,
+  ) => ({
+    racePatterns: {
+      race: seatId,
+      candidates: [
+        {
+          id: candidateId,
+          name,
+          incumbent: true,
+          donorCoalition: [
+            {
+              label: "Small individual donors (under $200)",
+              percent: 40,
+              amount: 2_000_000,
+            },
+            { label: "PACs", percent: 60, amount: 3_000_000 },
+          ],
+          donorSource: { name: "fec", url: "https://www.fec.gov/" },
+          totalRaised: 5_000_000,
+          fundingMix: {
+            small: 40,
+            large: 0,
+            pac: 60,
+            total: 5_000_000,
+            cycle: "2026 cycle",
+          },
+          endorsements: null,
+          platformAlignment: null,
+          retrospective: null,
+          valuesHighlight: null,
+        },
+      ],
+    },
+    alignmentScores: {
+      race: seatId,
+      entries: [
+        {
+          candidateId,
+          scores: [
+            {
+              canonicalIssue: "healthcare_affordability",
+              issueLabel: "Lower insulin & drug prices",
+              resolvedStance: "in_favor",
+              sourceType: "voting_record",
+              kept,
+              total,
+              contributingVotes: [
+                {
+                  billTitle: "S 1339 · Insulin Price Cap Act",
+                  voteCast: kept > total / 2 ? "with" : "against",
+                  date: "2025-06-12",
+                  source: { name: "GovTrack", url: "https://www.govtrack.us/" },
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+  });
+
+  await page.route("**/api/race-data", async (route) => {
+    const body = route.request().postDataJSON() as { raceId?: string };
+    let data: Json;
+    if (body?.raceId === "house-TX-37") {
+      data = aligned("house-TX-37", "federal-TEST1", "Alex Rivera", 5, 6);
+    } else if (body?.raceId === "senate-TX-a") {
+      data = aligned("senate-TX-a", "federal-TEST2", "Morgan Hale", 1, 6);
+    } else {
+      // Junior senator: resolved member but NO DB record → research fallback.
+      data = {
+        racePatterns: {
+          race: "senate-TX-b",
+          candidates: [
+            {
+              id: "federal-TEST3",
+              name: "Jordan Okafor",
+              incumbent: true,
+              donorCoalition: null,
+              donorUnavailable: { reason: "No donor data on file" },
+              endorsements: null,
+              platformAlignment: null,
+              retrospective: null,
+              valuesHighlight: null,
+            },
+          ],
+        },
+        alignmentScores: {
+          race: "senate-TX-b",
+          entries: [
+            {
+              candidateId: "federal-TEST3",
+              scores: null,
+              unavailable: { reason: "research_pending" },
+            },
+          ],
+        },
+      };
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify(data),
+    });
+  });
+}
+
+export async function mockResearch(page: Page): Promise<void> {
+  await page.route("**/api/research-candidate", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        scores: [
+          {
+            canonicalIssue: "healthcare_affordability",
+            issueLabel: "Lower insulin & drug prices",
+            resolvedStance: "in_favor",
+            sourceType: "web_search",
+            confidence: "medium",
+            evidence: [
+              {
+                summary:
+                  "Said insulin pricing needs federal caps at a town hall",
+                url: "https://example.org/source",
+              },
+            ],
+          },
+        ],
+      }),
+    });
+  });
+}
+
+/** Polis above threshold for the state scope; bridges sentinel-empty. */
+export async function mockPolis(
+  page: Page,
+  thresholdMet = true,
+): Promise<void> {
+  await page.route("**/api/polis?*", async (route) => {
+    const url = new URL(route.request().url());
+    const sampleSize = thresholdMet ? 412 : 12;
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        scope:
+          url.searchParams.get("scope") === "national" ? "national" : "state",
+        sampleSize,
+        thresholdMet,
+        ...(thresholdMet ? {} : { countToUnlock: 200 - sampleSize }),
+        dots: thresholdMet
+          ? Array.from({ length: 60 }, (_, i) => ({
+              x: (i % 10) / 10 - 0.5,
+              y: Math.floor(i / 10) / 10 - 0.3,
+              primary: i % 2 ? "GENERAL" : "DEM",
+            }))
+          : [],
+        you: thresholdMet ? { x: 0.1, y: 0.05 } : null,
+        consensus: [],
+        groups: thresholdMet
+          ? [
+              {
+                primary: "GENERAL",
+                count: 220,
+                topIssues: ["healthcare_affordability"],
+              },
+              {
+                primary: "DEM",
+                count: 192,
+                topIssues: ["housing_affordability"],
+              },
+            ]
+          : [],
+      }),
+    });
+  });
+  await page.route("**/api/polis/bridges?*", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        scope: "county",
+        threshold: 200,
+        count: 0,
+        status: "no_bridges_yet",
+        bridges: [],
+      }),
+    });
+  });
+}
+
+export async function mockCounters(page: Page): Promise<{ calls: Json[] }> {
+  const calls: Json[] = [];
+  await page.route("**/api/counters", async (route) => {
+    calls.push(route.request().postDataJSON() as Json);
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ ok: true, alreadyCounted: false }),
+    });
+  });
+  return { calls };
+}
+
+/** Drive home → cold-open → workspace over the installed mocks. */
+export async function goToWorkspace(page: Page): Promise<void> {
+  await page.goto("/");
+  await page.evaluate(() => localStorage.clear());
+  await page.goto("/");
+  await page
+    .getByPlaceholder("1600 Pennsylvania Ave NW, Washington DC 20500")
+    .fill("1100 Congress Ave, Austin, TX 78701");
+  await page.getByRole("button", { name: "Pull my ballot →" }).click();
+  // Cold-open: free-text issues → preset interpretation list → lock.
+  await page.locator(".coldopen textarea").waitFor({ timeout: 15000 });
+  await page
+    .locator(".coldopen textarea")
+    .fill("Insulin prices are insane and rent went up again.");
+  await page.locator("button.send").click();
+  await page.locator("button.lock").click({ timeout: 15000 });
+  await page.locator(".rep-card").first().waitFor({ timeout: 20000 });
+}

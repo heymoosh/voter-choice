@@ -79,6 +79,13 @@ export default function RootLayout({
           rel="stylesheet"
           href={`/prototype-c.css${cssBust("prototype-c.css")}`}
         />
+        {/* 2026 redesign surfaces (seat strip, attendance band, eligibility
+            note, scorecard verdicts, polis). New class names only — loaded
+            unconditionally; inert when the redesign isn't rendered. */}
+        <link
+          rel="stylesheet"
+          href={`/redesign2.css${cssBust("redesign2.css")}`}
+        />
       </head>
       {/* Prototype visual defaults — Civic mood / Civic palette / Daylight
           treatment. prototype.css consumes these via body[data-mood="civic"]. */}
