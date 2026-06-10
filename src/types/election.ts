@@ -7,6 +7,11 @@ export interface Election {
   primaryType: "open" | "closed" | "semi-closed" | "semi-open" | null;
   registration?: Registration;
   earlyVoting?: EarlyVoting;
+  /** ISO date this election's dates/deadlines were last checked against an
+   *  authoritative source (state election office / SoS). */
+  lastVerified?: string;
+  /** URL of the authoritative source used for verification. */
+  source?: string;
 }
 
 export interface Registration {

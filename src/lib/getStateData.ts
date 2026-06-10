@@ -107,7 +107,7 @@ const STATE_NAMES: Record<string, string> = {
   DC: "Washington, D.C.",
 };
 
-function findUpcomingElection(elections: Election[]): Election | null {
+export function findUpcomingElection(elections: Election[]): Election | null {
   const today = getTodayInLatestUsZone();
   const upcoming = elections.filter((e) => e.date >= today);
   if (upcoming.length > 0) {
