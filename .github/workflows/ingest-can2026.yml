@@ -1,0 +1,93 @@
+name: Ingest CAN2026 Enrichment
+
+# ⚠️ ToS gate: confirm CAN's terms permit programmatic ingest with the
+# maintainer (Paul Zurav) BEFORE the first live run — see
+# docs/CAN2026_ENRICHMENT_SCHEMA.md §6.7 and the header of
+# scripts/ingest/can2026.ts. Until confirmed, trigger manually only.
+
+on:
+  # Monthly — 3rd of the month 08:00 UTC (CAN updates roughly monthly)
+  schedule:
+    - cron: "0 8 3 * *"
+  # Allow manual trigger for testing / re-snapshot
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Parse + report only; write nothing to the database."
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Bitwarden Secrets Manager CLI
+        run: |
+          curl -sSLo bws.zip "https://github.com/bitwarden/sdk-sm/releases/download/bws-v2.0.0/bws-x86_64-unknown-linux-musl-2.0.0.zip"
+          unzip -o bws.zip bws
+          sudo install -m 755 bws /usr/local/bin/bws
+          bws --version
+
+      - name: Pull secrets from Bitwarden SM
+        env:
+          BWS_ACCESS_TOKEN: ${{ secrets.BW_ACCESS_TOKEN }}
+        run: |
+          # ---------------------------------------------------------------
+          # DATABASE_URL — Neon Postgres connection string
+          # ---------------------------------------------------------------
+          DATABASE_URL=$(bws secret get 90abeeed-130e-4707-86ff-b446003770c2 --access-token "$BWS_ACCESS_TOKEN" --output json | jq -r '.value')
+          echo "DATABASE_URL=$DATABASE_URL" >> "$GITHUB_ENV"
+          echo "::add-mask::$DATABASE_URL"
+
+          # ---------------------------------------------------------------
+          # INGEST_FAILURE_WEBHOOK_URL — optional; webhook for ingest failure alerts.
+          # UUID: <INGEST_FAILURE_WEBHOOK_BWS_SECRET_ID>
+          # Replace the placeholder with the real BWS secret UUID once provisioned.
+          # Supports any webhook that accepts a JSON POST (Slack, Discord, generic).
+          # ---------------------------------------------------------------
+          set +e
+          WEBHOOK_SECRET=$(bws secret get <INGEST_FAILURE_WEBHOOK_BWS_SECRET_ID> --access-token "$BWS_ACCESS_TOKEN" --output json 2>/dev/null)
+          WEBHOOK_STATUS=$?
+          set -e
+          if [ "$WEBHOOK_STATUS" -eq 0 ]; then
+            INGEST_FAILURE_WEBHOOK_URL=$(echo "$WEBHOOK_SECRET" | jq -r '.value // empty')
+            if [ -n "$INGEST_FAILURE_WEBHOOK_URL" ]; then
+              echo "INGEST_FAILURE_WEBHOOK_URL=$INGEST_FAILURE_WEBHOOK_URL" >> "$GITHUB_ENV"
+              echo "::add-mask::$INGEST_FAILURE_WEBHOOK_URL"
+            fi
+          fi
+
+      - name: Run CAN2026 enrichment ingest
+        run: |
+          if [ "${{ github.event_name == 'workflow_dispatch' && inputs.dry_run || false }}" = "true" ]; then
+            npx tsx scripts/ingest/can2026.ts --dry-run
+          else
+            npx tsx scripts/ingest/can2026.ts
+          fi
+
+      - name: Notify on ingest failure
+        if: failure()
+        env:
+          WEBHOOK: ${{ env.INGEST_FAILURE_WEBHOOK_URL }}
+        run: |
+          if [ -z "$WEBHOOK" ]; then
+            echo "INGEST_FAILURE_WEBHOOK_URL not set — skipping alert"
+            exit 0
+          fi
+          curl -fsS -X POST "$WEBHOOK" \
+            -H "Content-Type: application/json" \
+            -d "$(jq -n --arg job "${{ github.job }}" --arg run "${{ github.run_id }}" --arg repo "${{ github.repository }}" \
+              '{text: "[voter-choice ingest failure] job=\($job) repo=\($repo) run_id=\($run)"}')"
