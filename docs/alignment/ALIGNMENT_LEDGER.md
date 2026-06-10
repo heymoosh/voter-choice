@@ -19,6 +19,21 @@ Running log of eval runs, findings, and decisions for the alignment scoring engi
 
 ## Runs
 
+### 2026-06-10 — Read-path no_score guard shipped (cutover follow-up #4)
+**What:** `computeVoteAlignment` (`src/lib/server/alignment.ts`) now returns
+`abstain` for ANY `stance_lens` outside `in_favor`/`opposed`. Closes cutover
+follow-up (4): a `no_score` row reintroduced by future ingest previously read
+as the "opposed" direction for yea votes (and "not-opposed" for nay) —
+a silent score corruption. Now such rows fall out of totals like abstains.
+
+**Eval evidence (in lieu of a DB run):** the change is a provable no-op on the
+current corpus — `_cutover-verify.ts` confirmed **0 `stance_lens='no_score'`
+rows** in prod (2026-06-06), and the full 8-row truth table for valid lenses
+is pinned unchanged in `alignment.test.ts` (54/54 green, incl. 6 new guard
+cases). No tagger, pole, or resolver change; pure read-path hardening. The
+`alignment-work` Neon branch was not touched. If a fresh eval run is wanted
+anyway, it can run unchanged per `ALIGNMENT_EVAL.md` — expected delta: zero.
+
 ### 2026-06-06 — 🔥 CUTOVER FIRED — corrected tags live in PRODUCTION (data-only)
 **Production `issue_tags` migrated** to the corrected pole-anchored tags. **42,506 → 24,866.**
 Muxin approved after a clean preflight; prod identity confirmed in the Neon console (default

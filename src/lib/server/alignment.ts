@@ -297,12 +297,20 @@ export async function resolveCandidateId(
  *
  * "present", "absent", "not_voting" are non-votes and are excluded from
  * contributing votes (they neither help nor hurt alignment).
+ *
+ * Read-path no_score guard (HANDOFF follow-up, 2026-06): any stance_lens
+ * that is not exactly "in_favor"/"opposed" — e.g. a "no_score" row leaked by
+ * a future re-tag — is treated as an abstain and excluded from totals.
+ * Without this, a leaked no_score row silently reads as "opposed" direction
+ * and corrupts the score. The 2026-06-06 cutover verified zero such rows in
+ * prod (`_cutover-verify.ts`), so this is purely defensive today.
  */
 export function computeVoteAlignment(
   voteCast: string,
   stanceLens: string,
   resolvedStance: "in_favor" | "opposed",
 ): "with" | "against" | "abstain" {
+  if (stanceLens !== "in_favor" && stanceLens !== "opposed") return "abstain";
   const yea = voteCast === "yea";
   const nay = voteCast === "nay";
   if (!yea && !nay) return "abstain"; // present / absent / not_voting
