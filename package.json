@@ -27,6 +27,7 @@
     "db:tag-bills": "npx tsx scripts/ingest/tag-bills.ts",
     "db:donors-federal": "npx tsx scripts/ingest/federal-donors.ts",
     "db:donors-state": "npx tsx scripts/ingest/state-donors.ts",
+    "db:member-stats": "npx tsx scripts/ingest/member-stats.ts",
     "db:audit-tags": "npx tsx scripts/ingest/_audit-tags.ts"
   },
   "dependencies": {

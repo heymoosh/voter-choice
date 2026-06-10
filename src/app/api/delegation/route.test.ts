@@ -1,0 +1,205 @@
+/**
+ * src/app/api/delegation/route.test.ts
+ *
+ * Tests for POST /api/delegation. Geocoder, resolver, and rate limit are
+ * mocked.
+ */
+
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import type { NextRequest } from "next/server";
+
+vi.mock("../../../lib/server/race-data-rate-limit", () => ({
+  checkRaceDataRateLimit: vi.fn().mockResolvedValue(true),
+}));
+
+vi.mock("../../../lib/server/census-geocode", () => ({
+  geocodeAddressToDistrict: vi.fn(),
+}));
+
+vi.mock("../../../lib/server/delegation", () => ({
+  resolveDelegation: vi.fn(),
+}));
+
+import { checkRaceDataRateLimit } from "../../../lib/server/race-data-rate-limit";
+import { geocodeAddressToDistrict } from "../../../lib/server/census-geocode";
+import { resolveDelegation } from "../../../lib/server/delegation";
+import { POST } from "./route";
+
+const mockedRateLimit = vi.mocked(checkRaceDataRateLimit);
+const mockedGeocode = vi.mocked(geocodeAddressToDistrict);
+const mockedResolve = vi.mocked(resolveDelegation);
+
+function makeRequest(body: unknown): NextRequest {
+  return new Request("http://localhost/api/delegation", {
+    method: "POST",
+    headers: { "content-type": "application/json", "x-real-ip": "127.0.0.1" },
+    body: JSON.stringify(body),
+  }) as unknown as NextRequest;
+}
+
+const GEO_OK = {
+  status: "ok" as const,
+  result: {
+    stateCode: "NJ",
+    stateName: "New Jersey",
+    county: "Mercer County",
+    district: 12,
+    matchedAddress: "123 MAIN ST",
+  },
+};
+
+const SEATS = [
+  {
+    seatId: "house-NJ-12",
+    office: "U.S. House" as const,
+    chamber: "house" as const,
+    districtLabel: "NJ-12",
+    blindLabel: "Your U.S. Representative",
+    candidate: {
+      id: "p1",
+      name: "Bonnie Watson Coleman",
+      party: "Democrat" as const,
+      priorRole: "U.S. Representative since 2015",
+    },
+    attendance: null,
+    onBallot2026: true,
+    nextElectionYear: null,
+  },
+];
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  mockedRateLimit.mockResolvedValue(true);
+});
+
+describe("POST /api/delegation — validation", () => {
+  it("returns 429 when rate limited", async () => {
+    mockedRateLimit.mockResolvedValue(false);
+    const res = await POST(makeRequest({ address: "123 Main St" }));
+    expect(res.status).toBe(429);
+  });
+
+  it("returns 400 on invalid JSON", async () => {
+    const req = new Request("http://localhost/api/delegation", {
+      method: "POST",
+      body: "{nope",
+    }) as unknown as NextRequest;
+    const res = await POST(req);
+    expect(res.status).toBe(400);
+  });
+
+  it("returns 400 on a too-short address", async () => {
+    const res = await POST(makeRequest({ address: "ab" }));
+    expect(res.status).toBe(400);
+  });
+
+  it("returns 400 on a missing address", async () => {
+    const res = await POST(makeRequest({}));
+    expect(res.status).toBe(400);
+  });
+});
+
+describe("POST /api/delegation — geocode outcomes", () => {
+  it("maps no_match to a 200 geocode_failed", async () => {
+    mockedGeocode.mockResolvedValue({ status: "no_match" });
+    const res = await POST(makeRequest({ address: "asdf qwerty" }));
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ status: "geocode_failed" });
+  });
+
+  it("maps geocoder errors to a 502 geocode_failed (retryable)", async () => {
+    mockedGeocode.mockResolvedValue({ status: "error" });
+    const res = await POST(makeRequest({ address: "123 Main St" }));
+    expect(res.status).toBe(502);
+    expect(await res.json()).toEqual({ status: "geocode_failed" });
+  });
+
+  it("returns no_representation for DC", async () => {
+    mockedGeocode.mockResolvedValue({
+      status: "ok",
+      result: {
+        stateCode: "DC",
+        stateName: "District of Columbia",
+        county: "District of Columbia",
+        district: null,
+        matchedAddress: "1600 PENNSYLVANIA AVE NW",
+      },
+    });
+    const res = await POST(makeRequest({ address: "1600 Penn Ave NW" }));
+    expect(await res.json()).toEqual({
+      status: "no_representation",
+      stateCode: "DC",
+      territoryName: "District of Columbia",
+    });
+    expect(mockedResolve).not.toHaveBeenCalled();
+  });
+});
+
+describe("POST /api/delegation — resolution outcomes", () => {
+  it("passes geography through and returns seats on ok", async () => {
+    mockedGeocode.mockResolvedValue(GEO_OK);
+    mockedResolve.mockResolvedValue({ status: "ok", seats: SEATS });
+
+    const res = await POST(makeRequest({ address: "123 Main St Trenton NJ" }));
+    const body = await res.json();
+    expect(body.status).toBe("ok");
+    expect(body.stateCode).toBe("NJ");
+    expect(body.county).toBe("Mercer County");
+    expect(body.districtLabel).toBe("NJ-12");
+    expect(body.seats).toHaveLength(1);
+    expect(mockedResolve).toHaveBeenCalledWith("NJ", "New Jersey", 12);
+  });
+
+  it("formats an at-large district label", async () => {
+    mockedGeocode.mockResolvedValue({
+      status: "ok",
+      result: {
+        stateCode: "WY",
+        stateName: "Wyoming",
+        county: "Laramie County",
+        district: 0,
+        matchedAddress: "X",
+      },
+    });
+    mockedResolve.mockResolvedValue({ status: "ok", seats: [] });
+
+    const res = await POST(makeRequest({ address: "Cheyenne WY 82001" }));
+    const body = await res.json();
+    expect(body.districtLabel).toBe("WY — At-large");
+  });
+
+  it("returns db_unavailable with geography intact", async () => {
+    mockedGeocode.mockResolvedValue(GEO_OK);
+    mockedResolve.mockResolvedValue({ status: "db_unavailable" });
+
+    const res = await POST(makeRequest({ address: "123 Main St Trenton NJ" }));
+    expect(await res.json()).toEqual({
+      status: "db_unavailable",
+      stateCode: "NJ",
+      county: "Mercer County",
+      districtLabel: "NJ-12",
+    });
+  });
+
+  it("degrades to db_unavailable when the resolver throws", async () => {
+    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    mockedGeocode.mockResolvedValue(GEO_OK);
+    mockedResolve.mockRejectedValue(new Error("relation does not exist"));
+
+    const res = await POST(makeRequest({ address: "123 Main St Trenton NJ" }));
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.status).toBe("db_unavailable");
+    consoleSpy.mockRestore();
+  });
+
+  it("never echoes the input address back", async () => {
+    mockedGeocode.mockResolvedValue(GEO_OK);
+    mockedResolve.mockResolvedValue({ status: "ok", seats: [] });
+
+    const res = await POST(makeRequest({ address: "123 Main St Trenton NJ" }));
+    const text = JSON.stringify(await res.json());
+    expect(text).not.toContain("123 Main St");
+    expect(text).not.toContain("123 MAIN ST");
+  });
+});

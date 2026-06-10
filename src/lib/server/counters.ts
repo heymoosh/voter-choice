@@ -32,7 +32,7 @@ export interface IncrementResult {
 
 export interface PolisAggregate {
   /** Which level we aggregated at. */
-  scope: "county" | "state";
+  scope: "county" | "state" | "national";
   sampleSize: number;
   /** True when sample >= THRESHOLD. */
   thresholdMet: boolean;
@@ -538,6 +538,148 @@ async function durableFetchNationalOverlapCounts(
   }
 
   return { count, issueCounts };
+}
+
+// ---------------------------------------------------------------------------
+// National polis aggregate (2026 redesign — "see where you stand" national zoom)
+// ---------------------------------------------------------------------------
+
+/**
+ * Fetch the nation-wide polis aggregate: per-primary totals and per-issue
+ * counts summed across every state-level counter, in the same
+ * `PolisAggregate` shape the polis route renders.
+ *
+ * Privacy: aggregate counts only — same guarantee as everything else here.
+ */
+export async function fetchNationalPolisAggregate(): Promise<PolisAggregate> {
+  if (isDurableStoreConfigured()) {
+    try {
+      return await durableFetchNationalPolisAggregate();
+    } catch (err) {
+      console.error("[counters] Redis national aggregate fetch failed:", err);
+      return { ...EMPTY_AGGREGATE, scope: "national" };
+    }
+  }
+  return memFetchNationalPolisAggregate();
+}
+
+async function durableFetchNationalPolisAggregate(): Promise<PolisAggregate> {
+  // Nation-wide session count: sum exact state-level :total keys.
+  const totalKeys = await redisCommand<string[]>([
+    "KEYS",
+    `${NS}:state:*:total`,
+  ]);
+  const stateTotalKeys = (totalKeys ?? []).filter(
+    (k) => !k.includes(":primary:"),
+  );
+  let sampleSize = 0;
+  if (stateTotalKeys.length > 0) {
+    const values = await Promise.all(
+      stateTotalKeys.map((k) => redisCommand<string>(["GET", k])),
+    );
+    for (const v of values) sampleSize += Number(v ?? 0);
+  }
+
+  // Per-primary totals across states.
+  const primaryTotalsMap = new Map<string, number>();
+  const primaryKeys = (totalKeys ?? []).filter((k) => k.includes(":primary:"));
+  if (primaryKeys.length > 0) {
+    const values = await Promise.all(
+      primaryKeys.map((k) => redisCommand<string>(["GET", k])),
+    );
+    for (let i = 0; i < primaryKeys.length; i++) {
+      const m = primaryKeys[i].match(/:primary:(DEM|REP|OPEN|GENERAL):total$/);
+      if (!m) continue;
+      const v = Number(values[i] ?? 0);
+      if (v === 0) continue;
+      primaryTotalsMap.set(m[1], (primaryTotalsMap.get(m[1]) ?? 0) + v);
+    }
+  }
+
+  // Per-(primary, issue) counts across states.
+  const issueKeys = await redisCommand<string[]>([
+    "KEYS",
+    `${NS}:state:*:primary:*:issue:*`,
+  ]);
+  const issueCountsMap = new Map<string, number>();
+  if (issueKeys && issueKeys.length > 0) {
+    const values = await Promise.all(
+      issueKeys.map((k) => redisCommand<string>(["GET", k])),
+    );
+    for (let i = 0; i < issueKeys.length; i++) {
+      const m = issueKeys[i].match(
+        /:primary:(DEM|REP|OPEN|GENERAL):issue:(.+)$/,
+      );
+      if (!m) continue;
+      const v = Number(values[i] ?? 0);
+      if (v === 0) continue;
+      const key = `${m[1]}|${m[2]}`;
+      issueCountsMap.set(key, (issueCountsMap.get(key) ?? 0) + v);
+    }
+  }
+
+  return buildNationalAggregate(sampleSize, primaryTotalsMap, issueCountsMap);
+}
+
+function memFetchNationalPolisAggregate(): PolisAggregate {
+  let sampleSize = 0;
+  const primaryTotalsMap = new Map<string, number>();
+  const issueCountsMap = new Map<string, number>();
+
+  for (const [key, value] of memCounters) {
+    if (value === 0) continue;
+    if (!key.startsWith(`${NS}:state:`)) continue;
+    if (key.endsWith(":total") && !key.includes(":primary:")) {
+      sampleSize += value;
+      continue;
+    }
+    const totalMatch = key.match(/:primary:(DEM|REP|OPEN|GENERAL):total$/);
+    if (totalMatch) {
+      primaryTotalsMap.set(
+        totalMatch[1],
+        (primaryTotalsMap.get(totalMatch[1]) ?? 0) + value,
+      );
+      continue;
+    }
+    const issueMatch = key.match(
+      /^.*:state:[^:]+:primary:(DEM|REP|OPEN|GENERAL):issue:(.+)$/,
+    );
+    if (issueMatch) {
+      const k = `${issueMatch[1]}|${issueMatch[2]}`;
+      issueCountsMap.set(k, (issueCountsMap.get(k) ?? 0) + value);
+    }
+  }
+
+  return buildNationalAggregate(sampleSize, primaryTotalsMap, issueCountsMap);
+}
+
+function buildNationalAggregate(
+  sampleSize: number,
+  primaryTotalsMap: Map<string, number>,
+  issueCountsMap: Map<string, number>,
+): PolisAggregate {
+  const primaryTotals = PRIMARIES.map((p) => ({
+    primary: p,
+    count: primaryTotalsMap.get(p) ?? 0,
+  })).filter((pt) => pt.count > 0);
+
+  const issueCounts: PolisAggregate["issueCounts"] = [];
+  for (const [key, count] of issueCountsMap) {
+    const [primary, canonicalIssue] = key.split("|");
+    issueCounts.push({
+      canonicalIssue,
+      primary: primary as "DEM" | "REP" | "OPEN" | "GENERAL",
+      count,
+    });
+  }
+
+  return {
+    scope: "national",
+    sampleSize,
+    thresholdMet: sampleSize >= THRESHOLD,
+    issueCounts,
+    primaryTotals,
+  };
 }
 
 function memFetchNationalOverlapCounts(

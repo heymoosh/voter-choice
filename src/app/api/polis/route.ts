@@ -1,11 +1,14 @@
 /**
  * GET /api/polis?stateCode=TX&county=Harris&userConcerns=healthcare_affordability,education_funding
+ * GET /api/polis?scope=national&userConcerns=…   (2026 redesign — national zoom)
  *
  * Returns the polis visualization aggregate:
  *  - scope and threshold status
  *  - synthetic dots (one per sample, colored by primary) from aggregate distribution
  *  - "you" dot projected into the same 2D space (or null)
  *  - consensus panel (top 5 issues by total count)
+ *  - groups: per-primary session counts with their top issues (lets the
+ *    client name clusters by shared priority instead of party)
  *
  * Dimension reduction: simplified 2D projection using issue-share vectors.
  * Each primary's distribution is projected into 2D using the top-2 PCA components
@@ -19,6 +22,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
   fetchPolisAggregate,
+  fetchNationalPolisAggregate,
   type PolisAggregate,
 } from "../../../lib/server/counters";
 import { getIssueLabel } from "../../../lib/canonicalIssues";
@@ -27,8 +31,15 @@ import { getIssueLabel } from "../../../lib/canonicalIssues";
 // Types
 // ---------------------------------------------------------------------------
 
+export interface PolisGroup {
+  primary: string;
+  count: number;
+  /** Top canonical issues for this group, most-confirmed first (≤3). */
+  topIssues: string[];
+}
+
 export interface PolisResponse {
-  scope: "county" | "state";
+  scope: "county" | "state" | "national";
   sampleSize: number;
   thresholdMet: boolean;
   countToUnlock?: number;
@@ -39,6 +50,7 @@ export interface PolisResponse {
     issueLabel: string;
     percent: number;
   }>;
+  groups: PolisGroup[];
 }
 
 // ---------------------------------------------------------------------------
@@ -436,6 +448,21 @@ interface ConsensusItem {
   percent: number;
 }
 
+/** Per-primary session counts with their top issues (cluster naming basis). */
+function computeGroups(agg: PolisAggregate): PolisGroup[] {
+  return agg.primaryTotals
+    .filter((pt) => pt.count > 0)
+    .map((pt) => {
+      const topIssues = agg.issueCounts
+        .filter((ic) => ic.primary === pt.primary)
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 3)
+        .map((ic) => ic.canonicalIssue);
+      return { primary: pt.primary, count: pt.count, topIssues };
+    })
+    .sort((a, b) => b.count - a.count);
+}
+
 function computeConsensus(agg: PolisAggregate): ConsensusItem[] {
   const totalSessions = agg.primaryTotals.reduce((s, pt) => s + pt.count, 0);
   if (totalSessions === 0) return [];
@@ -466,12 +493,13 @@ function computeConsensus(agg: PolisAggregate): ConsensusItem[] {
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   const { searchParams } = new URL(request.url);
+  const scopeParam = searchParams.get("scope");
   const stateCode =
     searchParams.get("stateCode")?.toUpperCase().slice(0, 4) ?? "";
   const county = searchParams.get("county")?.slice(0, 64) ?? null;
   const userConcernsParam = searchParams.get("userConcerns") ?? "";
 
-  if (!stateCode) {
+  if (scopeParam !== "national" && !stateCode) {
     return NextResponse.json(
       { error: "stateCode is required." },
       { status: 400 },
@@ -485,7 +513,10 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         .filter(Boolean)
     : [];
 
-  const agg = await fetchPolisAggregate(stateCode, county || null);
+  const agg =
+    scopeParam === "national"
+      ? await fetchNationalPolisAggregate()
+      : await fetchPolisAggregate(stateCode, county || null);
 
   const centers = projectPrimaries(agg);
   const dots = generateDots(agg, centers);
@@ -499,6 +530,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     dots,
     you,
     consensus,
+    groups: computeGroups(agg),
   };
 
   if (!agg.thresholdMet) {

@@ -1,0 +1,55 @@
+name: Ingest Member Stats
+
+on:
+  # Monday 07:00 UTC — weekly refresh of attendance + term/geography facts
+  schedule:
+    - cron: "0 7 * * 1"
+  # Allow manual trigger for the initial backfill / pre-cutover run
+  workflow_dispatch:
+    inputs:
+      congress:
+        description: "Override congress number (default: derived from current roles)."
+        required: false
+        type: string
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Bitwarden Secrets Manager CLI
+        run: |
+          curl -sSLo bws.zip "https://github.com/bitwarden/sdk-sm/releases/download/bws-v2.0.0/bws-x86_64-unknown-linux-musl-2.0.0.zip"
+          unzip -o bws.zip bws
+          sudo install -m 755 bws /usr/local/bin/bws
+          bws --version
+
+      - name: Pull secrets from Bitwarden SM
+        env:
+          BWS_ACCESS_TOKEN: ${{ secrets.BW_ACCESS_TOKEN }}
+        run: |
+          # ---------------------------------------------------------------
+          # DATABASE_URL — Neon Postgres connection string
+          # ---------------------------------------------------------------
+          DATABASE_URL=$(bws secret get 90abeeed-130e-4707-86ff-b446003770c2 --access-token "$BWS_ACCESS_TOKEN" --output json | jq -r '.value')
+          echo "DATABASE_URL=$DATABASE_URL" >> "$GITHUB_ENV"
+          echo "::add-mask::$DATABASE_URL"
+
+      - name: Run member stats ingest
+        run: |
+          if [ -n "${{ inputs.congress }}" ]; then
+            npx tsx scripts/ingest/member-stats.ts --congress "${{ inputs.congress }}"
+          else
+            npx tsx scripts/ingest/member-stats.ts
+          fi

@@ -287,4 +287,82 @@ describe("GET /api/polis", () => {
     expect(json.consensus).toEqual([]);
     expect(json.you).toBeNull();
   });
+
+  it("groups: per-primary counts with top issues, largest first", async () => {
+    await seedSessions(
+      "TX",
+      "Harris",
+      "DEM",
+      ["healthcare_affordability", "housing_affordability"],
+      150,
+      "polis-grp-d",
+    );
+    await seedSessions(
+      "TX",
+      "Harris",
+      "REP",
+      ["border_security"],
+      100,
+      "polis-grp-r",
+    );
+
+    const res = await GET(makeRequest({ stateCode: "TX", county: "Harris" }));
+    const json = await res.json();
+
+    expect(json.groups).toHaveLength(2);
+    expect(json.groups[0]).toMatchObject({ primary: "DEM", count: 150 });
+    expect(json.groups[0].topIssues[0]).toBe("healthcare_affordability");
+    expect(json.groups[1]).toMatchObject({ primary: "REP", count: 100 });
+    expect(json.groups[1].topIssues).toEqual(["border_security"]);
+  });
+
+  it("scope=national aggregates across states without requiring stateCode", async () => {
+    await seedSessions(
+      "TX",
+      null,
+      "GENERAL",
+      ["healthcare_affordability"],
+      120,
+      "polis-nat-tx",
+    );
+    await seedSessions(
+      "NJ",
+      null,
+      "GENERAL",
+      ["healthcare_affordability", "immigration"],
+      120,
+      "polis-nat-nj",
+    );
+
+    const res = await GET(makeRequest({ scope: "national" }));
+    expect(res.status).toBe(200);
+
+    const json = await res.json();
+    expect(json.scope).toBe("national");
+    expect(json.sampleSize).toBe(240);
+    expect(json.thresholdMet).toBe(true);
+    expect(json.groups[0]).toMatchObject({ primary: "GENERAL", count: 240 });
+    const consensusIssues = json.consensus.map(
+      (c: { canonicalIssue: string }) => c.canonicalIssue,
+    );
+    expect(consensusIssues).toContain("healthcare_affordability");
+  });
+
+  it("scope=national below threshold reports countToUnlock", async () => {
+    await seedSessions(
+      "TX",
+      null,
+      "GENERAL",
+      ["healthcare_affordability"],
+      10,
+      "polis-nat-low",
+    );
+
+    const res = await GET(makeRequest({ scope: "national" }));
+    const json = await res.json();
+    expect(json.scope).toBe("national");
+    expect(json.sampleSize).toBe(10);
+    expect(json.thresholdMet).toBe(false);
+    expect(json.countToUnlock).toBe(190);
+  });
 });

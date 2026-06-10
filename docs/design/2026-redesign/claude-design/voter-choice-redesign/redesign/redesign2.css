@@ -1,0 +1,227 @@
+/* ====================================================
+   VOTER CHOICE · 2026 redesign — overrides
+   ====================================================
+   ONLY the new surfaces. Everything else (cards, workspace grid,
+   ballot pane, print sheet, responsive breakpoints) comes from the
+   shipped prototype.css / prototype-c.css untouched.
+   ==================================================== */
+
+/* ---- seat strip (top of RepCard) ---- */
+.seat-strip {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 10px 18px; border-bottom: 1px solid var(--rule-2);
+  background: var(--paper);
+}
+.seat-office {
+  font-family: var(--mono); font-size: 10.5px; font-weight: 600;
+  letter-spacing: 0.08em; text-transform: uppercase; white-space: nowrap;
+  background: var(--tag-bg); color: var(--ink-2);
+  padding: 3px 8px; border-radius: 5px;
+}
+.seat-district { font-size: 12.5px; color: var(--ink-3); }
+.seat-next {
+  margin-left: auto; font-family: var(--mono); font-size: 10.5px;
+  color: var(--ink-3); letter-spacing: 0.03em;
+}
+.seat-next.up { color: var(--civic-2); font-weight: 600; }
+
+/* ---- attendance band [Δ] ---- */
+.att-band {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  margin: 12px 18px 0; padding: 10px 13px; border-radius: 9px;
+  background: var(--paper); border: 1px solid var(--rule-2); font-size: 13px;
+}
+.att-band .txt { color: var(--ink-2); }
+.att-band .txt b { color: var(--ink); }
+.att-band.na .txt { font-style: italic; color: var(--ink-3); font-size: 12.5px; }
+.att-chip {
+  margin-left: auto; font-family: var(--mono); font-size: 10px; font-weight: 700;
+  letter-spacing: 0.05em; text-transform: uppercase;
+  padding: 3px 9px; border-radius: 999px; white-space: nowrap;
+}
+.att-chip.good { background: oklch(0.90 0.025 170); color: var(--civic-2); }
+.att-chip.mid  { background: oklch(0.93 0.045 80); color: oklch(0.5 0.09 70); }
+.att-chip.bad  { background: oklch(0.93 0.04 28); color: var(--vote-red); }
+.att-src { font-family: var(--mono); font-size: 10px; }
+
+/* ---- researched positions (executive) ---- */
+.rp-row .cv2-iss-head { cursor: default; }
+.rp-row .meta { display: grid; gap: 4px; margin-top: 6px; }
+.rp-src-note { font-family: var(--mono); font-size: 10px; color: var(--ink-3); letter-spacing: 0.04em; }
+.cv2-iss-head .cv2-ws-col { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex-shrink: 0; }
+
+/* ---- eligibility note [Δ] (evolved PartyGate) ---- */
+.elig {
+  margin: 14px 18px; border-radius: 10px; padding: 12px 14px;
+  border: 1px solid var(--rule); background: var(--paper);
+}
+.elig.warn { background: oklch(0.93 0.045 80 / 0.5); border-color: oklch(0.84 0.07 80); }
+.elig-when { display: flex; align-items: baseline; gap: 9px; flex-wrap: wrap; }
+.elig-when .lab { font-size: 12.5px; font-weight: 700; color: var(--ink); }
+.elig-when .date { font-family: var(--mono); font-size: 11px; color: var(--ink-2); white-space: nowrap; }
+.elig-rule { font-size: 13px; color: var(--ink-2); margin-top: 4px; line-height: 1.5; }
+.elig-rule b { color: var(--ink); }
+.elig-todo { font-size: 12.5px; margin-top: 7px; }
+.elig-todo a { color: var(--civic); font-weight: 600; cursor: pointer; }
+
+/* ---- verdict buttons (evolve .cv2-actions .pick) ---- */
+.cv2-actions.verdicts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.cv2-actions .pick.replace {
+  background: transparent; color: var(--vote-red);
+  border: 1.5px solid oklch(0.80 0.07 28); box-shadow: none;
+}
+.cv2-actions .pick.replace:hover { border-color: var(--vote-red); background: oklch(0.97 0.015 28); }
+.cv2-actions .pick.picked-replace {
+  background: oklch(0.93 0.04 28); border-color: var(--vote-red); color: var(--vote-red);
+}
+/* checkbox box on the (light-bg) replace button needs a visible border */
+.cv2-actions .pick.replace .ck { border-color: oklch(0.70 0.10 28); }
+.cv2-actions .pick.picked-replace .ck { border-color: var(--vote-red); background: var(--vote-red); color: var(--paper-2); }
+@media (max-width: 640px) { .cv2-actions.verdicts { grid-template-columns: 1fr; } }
+
+/* ---- verdict chips (scorecard + print) ---- */
+.verdict-chip {
+  font-family: var(--mono); font-size: 9.5px; font-weight: 700; letter-spacing: 0.05em;
+  padding: 2px 7px; border-radius: 999px; vertical-align: 1px;
+}
+.verdict-chip.keep { background: oklch(0.90 0.025 170); color: var(--civic-2); }
+.verdict-chip.replace { background: oklch(0.93 0.04 28); color: var(--vote-red); }
+.verdict-print.keep { color: var(--civic-2); }
+.verdict-print.replace { color: var(--vote-red); }
+
+/* ---- jurisdiction level tags [Δ] ---- */
+.lvl-tag {
+  font-family: var(--mono); font-size: 8.5px; font-weight: 700; letter-spacing: 0.06em;
+  padding: 2px 6px; border-radius: 999px; margin-left: 7px; vertical-align: 1px;
+}
+.lvl-tag.federal { background: oklch(0.94 0.022 250); color: oklch(0.42 0.07 250); }
+.lvl-tag.state { background: oklch(0.95 0.03 50); color: oklch(0.46 0.08 40); }
+.lvl-tag.both { background: var(--tag-bg); color: var(--ink-2); }
+
+/* ---- rail done-check centering (shipped tick is pinned low-left) ---- */
+.ws-rail .race-list li.done .ind::after {
+  left: 50%; top: 46%; width: 5.5px; height: 2.5px;
+  transform: translate(-50%, -50%) rotate(-45deg);
+}
+
+/* ---- per-card source transparency footer ---- */
+.card-sources {
+  display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: baseline;
+  padding: 11px 20px 16px; border-top: 1px solid var(--rule-2);
+  font-family: var(--mono); font-size: 10.5px; color: var(--ink-3); letter-spacing: 0.02em;
+}
+.card-sources .lab { text-transform: uppercase; letter-spacing: 0.1em; font-weight: 600; }
+.card-sources a { color: var(--ink-2); text-decoration: underline; text-underline-offset: 2px; text-decoration-color: var(--rule); }
+.card-sources a:hover { color: var(--civic); }
+.card-sources .sep { color: var(--rule); }
+.elig-src { font-family: var(--mono); font-size: 10.5px; margin-top: 8px; display: inline-block; }
+
+/* ---- elevated "where you stand" invitation in the scorecard ---- */
+.standing-cta {
+  margin: 4px 0 0; padding: 15px 16px; border-radius: 11px;
+  background: var(--civic-wash, oklch(0.95 0.018 170)); border: 1px solid oklch(0.88 0.03 170);
+}
+.standing-cta .kick { font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--civic-2); font-weight: 700; }
+.standing-cta .dots { display: flex; gap: 3px; margin: 8px 0 6px; }
+.standing-cta .dots i { width: 7px; height: 7px; border-radius: 50%; display: block; }
+.standing-cta h4 { font-family: var(--serif); font-size: 17px; font-weight: 600; margin: 0 0 4px; letter-spacing: -0.01em; color: var(--ink); }
+.standing-cta p { font-size: 12.5px; color: var(--ink-2); margin: 0 0 11px; line-height: 1.45; }
+.standing-cta button {
+  width: 100%; background: var(--civic); color: var(--paper-2); border: none; border-radius: 8px;
+  font-family: var(--sans); font-size: 13px; font-weight: 600; padding: 11px 14px; min-height: 42px;
+  cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.standing-cta button:hover { background: var(--civic-2); }
+
+/* ---- tier intro (center column, above card) ----
+   .ws-chat is a flex column with overflow:hidden (built for the chat
+   thread). The redesign center is a document, not a chat — let it flow
+   and let the page scroll. */
+.ws-chat.rep-center {
+  display: block; overflow-y: auto; min-height: 0;
+  padding: 22px 28px 60px;
+}
+/* center-pane head: back control is mobile-only (shipped class hides it
+   on desktop); the label gives the overlay a title bar on phones */
+.rep-center-head { display: flex; align-items: center; gap: 10px; padding: 0 0 10px; }
+.rep-center-head-lab {
+  font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--ink-3); font-weight: 600;
+}
+@media (min-width: 768px) { .ws-chat .rep-center-head, .rep-center-head { display: none; } }
+/* When the shipped mobile-overlay rule flips .ws-chat to display:flex,
+   keep the redesign center a scrolling document instead. */
+@media (max-width: 767px) {
+  .ws-wrap[data-mobile-chat="open"] .ws-chat.rep-center {
+    display: block; overflow-y: auto; background: var(--paper);
+    padding: 14px 16px 80px;
+  }
+}
+.tier-intro {
+  display: flex; gap: 14px; align-items: flex-start;
+  padding: 0 2px 16px; margin-bottom: 18px; border-bottom: 1px solid var(--rule);
+}
+.ti-place {
+  font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.16em; font-weight: 700;
+  color: var(--civic); padding-top: 6px; white-space: nowrap;
+}
+.ti-copy h2 { font-family: var(--serif); font-size: 23px; font-weight: 600; letter-spacing: -0.015em; margin: 0 0 4px; }
+.ti-copy p { font-size: 14px; color: var(--ink-2); margin: 0; max-width: 560px; line-height: 1.5; }
+.all-done {
+  margin-top: 18px; padding: 14px 16px; border-radius: 10px;
+  background: oklch(0.95 0.018 170); border: 1px solid oklch(0.88 0.03 170);
+  font-size: 14px; color: var(--ink-2);
+}
+.linklike { background: none; border: none; color: var(--civic); font-weight: 600; font-size: 14px; cursor: pointer; padding: 0 0 0 6px; }
+
+/* ---- standing (polis) stage ---- */
+.standing2-wrap { max-width: 1040px; margin: 0 auto; padding: 24px 28px 100px; }
+.back2 { background: none; border: none; color: var(--civic); font-weight: 600; font-size: 13.5px; cursor: pointer; padding: 6px 0; }
+.standing2 .polis { border-top: none; margin-top: 8px; padding-top: 10px; }
+
+.polis-lede .kick { font-family: var(--mono); font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--civic); font-weight: 600; }
+.polis-lede h2 { font-family: var(--serif); font-size: clamp(26px, 3.4vw, 36px); font-weight: 600; letter-spacing: -0.02em; margin: 10px 0 10px; line-height: 1.12; text-wrap: balance; }
+.polis-lede p { font-size: 15.5px; color: var(--ink-2); margin: 0; max-width: 640px; }
+.polis-grid { display: grid; grid-template-columns: 1.35fr 1fr; gap: 28px; margin-top: 28px; align-items: start; }
+@media (max-width: 880px) { .polis-grid { grid-template-columns: 1fr; } }
+.scatter-wrap {
+  background: var(--paper-2); border: 1px solid var(--rule); border-radius: 13px;
+  padding: 16px; box-shadow: var(--shadow-soft);
+}
+.scatter { width: 100%; display: block; border-radius: 8px; background: var(--paper); }
+.scatter-legend { display: flex; flex-wrap: wrap; gap: 8px 14px; margin-top: 12px; }
+.scatter-legend .lg { display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--ink-2); }
+.scatter-legend .lg .sw { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.scatter-legend .lg.you .sw { border-radius: 2px; outline: 2px solid var(--ink); outline-offset: 1px; }
+.scatter-cap { font-size: 12px; color: var(--ink-3); margin-top: 10px; line-height: 1.45; }
+.bridges h3 { font-family: var(--serif); font-size: 19px; font-weight: 600; margin: 0 0 4px; }
+.bridges .sub { font-size: 13px; color: var(--ink-3); margin: 0 0 16px; }
+.bridge { border-left: 3px solid var(--civic); padding: 4px 0 4px 15px; margin-bottom: 18px; }
+.bridge .stmt { font-family: var(--serif); font-size: 17px; line-height: 1.35; color: var(--ink); }
+.bridge .agree { margin-top: 7px; font-size: 12px; color: var(--ink-2); display: flex; align-items: center; gap: 9px; }
+.bridge .agree .pct { font-family: var(--mono); font-weight: 700; color: var(--civic-2); font-size: 13px; }
+.agree-bar { flex: 1; height: 5px; background: oklch(0.93 0.014 85); border-radius: 999px; overflow: hidden; max-width: 130px; }
+.agree-bar span { display: block; height: 100%; background: var(--civic); }
+.polis-scope { display: flex; align-items: center; gap: 12px; margin-top: 24px; flex-wrap: wrap; }
+.polis-scope .scope-lab { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-3); font-weight: 600; }
+.polis-scope .scope-n { font-family: var(--mono); font-size: 11px; color: var(--ink-3); }
+.polis-scope .seg, .seg2 { display: flex; gap: 4px; background: oklch(0.93 0.014 85); padding: 3px; border-radius: 8px; }
+.polis-scope .seg { width: 320px; }
+.polis-scope .seg button, .seg2 button {
+  flex: 1; border: none; background: none; border-radius: 6px; padding: 7px 8px;
+  font-family: var(--sans); font-size: 12px; font-weight: 600; color: var(--ink-3); cursor: pointer;
+}
+.polis-scope .seg button.on, .seg2 button.on { background: var(--paper-2); color: var(--ink); box-shadow: var(--shadow-soft); }
+
+/* ---- tweaks panel ---- */
+.tweaks2 {
+  position: fixed; right: 18px; bottom: 18px; width: 264px; z-index: 60;
+  background: var(--paper-2); border: 1px solid var(--rule); border-radius: 12px;
+  box-shadow: 0 24px 60px -24px oklch(0.18 0.018 240 / 0.30); padding: 14px 15px;
+}
+.tweaks2 h4 { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-3); margin: 0 0 12px; font-weight: 600; }
+.tweak2 { margin-bottom: 13px; }
+.tweak2 > label { display: block; font-weight: 600; font-size: 12.5px; margin-bottom: 7px; color: var(--ink-2); }
+.tw-note { color: var(--ink-3); font-size: 11.5px; margin: 0; line-height: 1.45; }
+@media (max-width: 900px) { .tweaks2 { display: none; } }
+@media print { .tweaks2 { display: none; } }
