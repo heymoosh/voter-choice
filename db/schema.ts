@@ -6,6 +6,7 @@ import {
   timestamp,
   uuid,
   date,
+  integer,
   numeric,
   index,
   uniqueIndex,
@@ -188,6 +189,37 @@ export const candidateData = pgTable(
     index("candidate_data_key_idx").on(table.candidateKey),
   ],
 );
+
+// ---------------------------------------------------------------------------
+// member_stats  — per-incumbent GovTrack stats (attendance, term, class)
+// ---------------------------------------------------------------------------
+// One row per sitting federal member. Populated by scripts/ingest/member-stats.ts.
+// Attendance comes from GovTrack's full missed-votes stat — never derived from
+// our partial issue-tagged `votes` table (see redesign HANDOFF.md).
+export const memberStats = pgTable("member_stats", {
+  candidateId: text("candidate_id")
+    .primaryKey()
+    .references(() => candidates.id),
+  chamber: text("chamber").notNull(), // "house" | "senate"
+  // Authoritative geography from the GovTrack role API — the delegation
+  // resolver prefers these over the mixed-format name decorations.
+  state: text("state"), // 2-letter code
+  district: integer("district"), // House only; 0 = at-large; null for senators
+  senatorRank: text("senator_rank"), // "senior" | "junior" | null for House
+  missedVotesPct: numeric("missed_votes_pct", { precision: 5, scale: 2 }),
+  // Total eligible floor votes behind the percentage (display: "of N floor votes")
+  votesEligible: numeric("votes_eligible", { precision: 7, scale: 0 }),
+  // Chamber median missed-votes pct from the same ingest run — band thresholds
+  chamberMedianPct: numeric("chamber_median_pct", { precision: 5, scale: 2 }),
+  // End of the member's current term (drives "on the 2026 ballot")
+  currentTermEnd: date("current_term_end"),
+  senateClass: text("senate_class"), // "1" | "2" | "3" | null for House
+  source: text("source").notNull().default("govtrack"),
+  sourceUrl: text("source_url").notNull(),
+  fetchedAt: timestamp("fetched_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
 
 // ---------------------------------------------------------------------------
 // scorecard_meta  — metadata only; no per-vote scorecard records
