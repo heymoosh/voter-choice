@@ -4,7 +4,7 @@ Voter Choice is a free AI-powered ballot research tool for U.S. voters across al
 
 Stack: Next.js 15 App Router, TypeScript, Tailwind CSS, Vercel.
 
-Production branch: `launch/production`.
+Production branch: `main`.
 
 ## Development
 
@@ -18,14 +18,12 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 ## Verification
 
 ```bash
-npm run lint
-npm run test
-npm run build
-npm run e2e
+npm run check   # inner loop: lint + typecheck + unit tests
+npm run e2e     # once, when UI behavior or visible copy changed
 ```
 
-Additional test helpers for red-phase TDD and mutation testing are documented in
-`docs/testing.md`.
+The full tiered contract (including CI-only heavy checks) and the test helpers
+for red-phase TDD and mutation testing are documented in `docs/testing.md`.
 
 ## Agent Notes
 
@@ -33,7 +31,7 @@ Repo-specific coding-agent guidance lives in `AGENTS.md`.
 
 ## Deployment
 
-Pushes to `launch/production` run `.github/workflows/deploy.yml`, which runs tests, pulls secrets from Bitwarden Secrets Manager, and deploys to Vercel.
+Pushes to `main` run `.github/workflows/deploy.yml`, which runs tests, pulls secrets from Bitwarden Secrets Manager, and deploys to Vercel.
 
 ## Production Safeguards
 
@@ -81,4 +79,4 @@ New databases default to primary region `us-west-1`. The script stores
 `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` in GitHub Actions
 secrets. If `VERCEL_TOKEN` is set, it also updates Vercel production env
 directly; otherwise the existing deploy workflow syncs the secrets to Vercel on
-the next `launch/production` deploy.
+the next `main` deploy.
