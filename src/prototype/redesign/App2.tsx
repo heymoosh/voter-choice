@@ -47,9 +47,12 @@ import {
   issuesForLevel,
 } from "./delegationData";
 import { loadPolisScopes } from "./polisAdapter";
-import { streamChatReply, getChatSessionId } from "../realData";
+import { getChatSessionId } from "../realData";
 import { buildSeatChatSystemPrompt } from "./seatChatPrompt";
 import { resolveChatBlock } from "./chatBlocks";
+import { sendChatTurn, activateByok } from "./chatTransport";
+import { BudgetModal } from "./BudgetModal";
+import { buildHandoffPrompt } from "./HandoffModal";
 
 // Durable (localStorage): the only thing kept across a tab close — the user's
 // issues ("Polis" data) plus a county-level-at-most location. Never the precise
@@ -178,6 +181,10 @@ function App2Inner() {
   const [chatTimeouts, setChatTimeouts] = useState({});
   const [budgetTier, setBudgetTier] = useState(null);
   const prevChatSeatRef = useRef(null);
+  // Budget modal: null | { blocked } — blocked=true means a turn was refused
+  // (the refused turn waits in pendingChatRetryRef for "Retry with my key").
+  const [budgetModal, setBudgetModal] = useState(null);
+  const pendingChatRetryRef = useRef(null);
 
   // Fetched (not persisted — refetched on resume)
   const [delegation, setDelegation] = useState(null);
@@ -371,7 +378,7 @@ function App2Inner() {
     const prevSeat = prevChatSeatRef.current;
     prevChatSeatRef.current = seatId;
 
-    streamChatReply(
+    sendChatTurn(
       {
         messages: apiMessages,
         systemPrompt,
@@ -390,31 +397,52 @@ function App2Inner() {
               m._id === aiId ? { ...m, text: m.text + chunk } : m,
             ),
           })),
-        onError: (_reason, meta) => {
+        onBudgetBlock: () => {
+          // Drop the empty bubble, stash the refused turn for "Retry with my
+          // key", and open the budget modal in its blocked framing.
+          setChatMessages((prev) => ({
+            ...prev,
+            [seatId]: (prev[seatId] || []).filter((m) => m._id !== aiId),
+          }));
+          pendingChatRetryRef.current = { seatId, apiMessages };
+          setBudgetModal({ blocked: true });
+        },
+        onError: (reason, meta) => {
           // Drop the (empty/partial) AI bubble first — whichever surface shows.
           setChatMessages((prev) => ({
             ...prev,
             [seatId]: (prev[seatId] || []).filter((m) => m._id !== aiId),
           }));
           const blk = resolveChatBlock(meta?.code);
-          if (blk.budget) {
-            handleBudgetBlock();
-            return;
-          }
-          // Block-specific message string, or `true` → generic retry banner.
+          // BYOK errors arrive as user-facing sentences (auth, quota) — show
+          // them verbatim; transport codes ("network", "stream") fall back to
+          // the generic retry banner.
+          const sentence =
+            typeof reason === "string" && reason.includes(" ") ? reason : null;
           setChatTimeouts((prev) => ({
             ...prev,
-            [seatId]: blk.message || true,
+            [seatId]: blk.message || sentence || true,
           }));
         },
       },
     );
   }
 
-  // Budget gate hit: surface the continue-elsewhere options. (PR-1: the
-  // handoff modal; the dedicated budget/BYOK modal replaces this target.)
+  // Soft-tier "See options →" (nothing refused yet) → informational framing.
   function handleBudgetBlock() {
-    setShowHandoff(true);
+    setBudgetModal({ blocked: false });
+  }
+
+  // "Retry with my key": explicit BYOK opt-in, then replay the refused turn
+  // through the transport (now BYOK-direct, sticky for this session).
+  function handleRetryWithKey() {
+    const pending = pendingChatRetryRef.current;
+    activateByok();
+    setBudgetModal(null);
+    if (pending) {
+      pendingChatRetryRef.current = null;
+      runChatStream(pending.seatId, pending.apiMessages);
+    }
   }
 
   function handleSendChat(seatId, text) {
@@ -702,6 +730,23 @@ function App2Inner() {
             verdicts={verdicts}
             districtsLine={districtsLine}
             onClose={() => setShowHandoff(false)}
+          />
+        )}
+        {budgetModal && (
+          <BudgetModal
+            blocked={budgetModal.blocked}
+            prompt={buildHandoffPrompt({
+              seats,
+              issues,
+              verdicts,
+              districtsLine,
+            })}
+            onClose={() => setBudgetModal(null)}
+            onRetryWithKey={
+              budgetModal.blocked && pendingChatRetryRef.current
+                ? handleRetryWithKey
+                : undefined
+            }
           />
         )}
       </>

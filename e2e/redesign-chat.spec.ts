@@ -137,7 +137,7 @@ test.describe("seat chat — ask anything about this seat", () => {
     ).toContainText("(recovered reply)");
   });
 
-  test("routes a budget block to the continue-elsewhere modal with the scorecard intact", async ({
+  test("routes a budget block to the budget modal with the scorecard intact", async ({
     page,
   }, testInfo) => {
     test.skip(
@@ -150,14 +150,95 @@ test.describe("seat chat — ask anything about this seat", () => {
     await page.getByTestId("seat-chat-input").fill("One more question");
     await page.getByTestId("seat-chat-send").click();
 
-    // Budget gate → the handoff modal (continue-elsewhere options), no banner.
-    await expect(page.locator(".be-modal")).toContainText(
-      "Take your scorecard with you",
-    );
+    // Budget gate → the budget modal (BYOK + continue elsewhere), no banner.
+    const modal = page.getByTestId("budget-modal");
+    await expect(modal).toContainText("Keep going — your scorecard is safe.");
+    await expect(modal).toContainText("community AI budget");
+    await expect(modal.getByTestId("byok-input")).toBeVisible();
+    await expect(modal.getByTestId("handoff-actions")).toBeVisible();
     await expect(page.locator(".msg.ai-error")).toHaveCount(0);
 
     // The assessment is untouched behind the modal.
     await page.locator(".be-x").click();
     await expect(page.locator(".b-row")).toHaveCount(3);
+  });
+
+  test("BYOK: save a key, retry the refused turn browser-direct to Anthropic", async ({
+    page,
+  }, testInfo) => {
+    test.skip(
+      testInfo.project.name !== "chromium-desktop",
+      "center-pane chat assertions are desktop-only",
+    );
+    await setupWorkspace(page);
+    await mockChatBlocked(page, { kind: "budget" });
+
+    // Intercept the browser-direct Anthropic call BEFORE the retry.
+    const anthropicHeaders: Record<string, string>[] = [];
+    await page.route("https://api.anthropic.com/v1/messages", async (route) => {
+      anthropicHeaders.push(route.request().headers());
+      await route.fulfill({
+        status: 200,
+        contentType: "text/event-stream",
+        body:
+          'data: {"type":"content_block_delta","delta":{"type":"text_delta","text":"(byok reply)"}}\n\n' +
+          'data: {"type":"message_stop"}\n\n',
+      });
+    });
+
+    await page.getByTestId("seat-chat-input").fill("Needs my own key");
+    await page.getByTestId("seat-chat-send").click();
+
+    const modal = page.getByTestId("budget-modal");
+    await modal.getByTestId("byok-input").fill("sk-ant-test-1234567890");
+    await modal.getByTestId("byok-save").click();
+    await modal.getByTestId("budget-retry-key").click();
+
+    // The refused turn replays browser-direct with the key; the modal closes
+    // and the reply streams into the same seat's log.
+    await expect(
+      page.getByTestId("seat-chat").locator(".msg.ai .bubble"),
+    ).toContainText("(byok reply)");
+    expect(anthropicHeaders[0]["x-api-key"]).toBe("sk-ant-test-1234567890");
+    expect(
+      anthropicHeaders[0]["anthropic-dangerous-direct-browser-access"],
+    ).toBe("true");
+  });
+
+  test("soft budget tier shows the ribbon; See options opens the informational modal", async ({
+    page,
+  }, testInfo) => {
+    test.skip(
+      testInfo.project.name !== "chromium-desktop",
+      "center-pane chat assertions are desktop-only",
+    );
+    await setupWorkspace(page);
+    // Successful SSE reply that carries the soft-tier headers.
+    await page.route("**/api/chat", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "text/event-stream",
+        headers: {
+          "X-Budget-Tier": "notice",
+          "X-Budget-Percent": "74",
+        },
+        body: 'data: {"type":"text","text":"(tiered reply)"}\n\ndata: {"type":"done"}\n\n',
+      });
+    });
+
+    await page.getByTestId("seat-chat-input").fill("Anything");
+    await page.getByTestId("seat-chat-send").click();
+    await expect(page.getByTestId("budget-ribbon")).toContainText(
+      "Community AI budget is 70%+ used",
+    );
+
+    await page
+      .getByTestId("budget-ribbon")
+      .getByRole("button", { name: /see options/i })
+      .click();
+    const modal = page.getByTestId("budget-modal");
+    await expect(modal).toContainText("running low");
+    // Informational framing: nothing was refused, so no retry CTA.
+    await expect(modal.getByTestId("budget-retry-key")).toHaveCount(0);
   });
 });

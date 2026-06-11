@@ -24,6 +24,7 @@ import { NextRequest } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { checkRaceDataRateLimit } from "../../../lib/server/race-data-rate-limit";
 import { researchAndPersistCandidate } from "../../../lib/server/candidate-data";
+import { getBudgetStatusAsync } from "../../../lib/server/budget";
 
 const MAX_FIELD = 300;
 const MAX_ISSUES = 10;
@@ -46,6 +47,17 @@ export async function POST(request: NextRequest) {
     return Response.json(
       { error: "Too many requests", code: "RATE_LIMITED" },
       { status: 429 },
+    );
+  }
+
+  // Budget gate: research spawns a web_search sub-agent (real spend). At the
+  // handoff/exhausted tiers it must surface the SAME BUDGET_EXHAUSTED code the
+  // chat route uses so the client routes to the budget modal, not a retry.
+  const budget = await getBudgetStatusAsync();
+  if (budget.tier === "exhausted" || budget.tier === "handoff") {
+    return Response.json(
+      { error: "Community AI budget exhausted", code: "BUDGET_EXHAUSTED" },
+      { status: 503 },
     );
   }
 
