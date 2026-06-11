@@ -371,6 +371,14 @@ describe("lookupDonorCoalition — happy path", () => {
         source: "fec_api",
         sourceUrl: "https://fec.gov/x",
       },
+      {
+        // Federal "Other" is the unmatched-employer remainder of the SAME
+        // by-employer pass — also a re-cut, so it must be excluded too.
+        bucketLabel: "Other",
+        amountTotal: "250000.00",
+        source: "fec_api",
+        sourceUrl: "https://fec.gov/x",
+      },
     ]);
 
     const result = await lookupDonorCoalition(
@@ -382,15 +390,16 @@ describe("lookupDonorCoalition — happy path", () => {
     expect(result.found).toBe(true);
     if (result.found !== true) return;
 
-    // Only the non-sector buckets count toward the headline total.
+    // Only the /totals/-derived buckets count: sectors AND federal "Other" drop.
     expect(result.totalRaised).toBe(500000 + 800000 + 200000); // 1,500,000
 
-    // Sector buckets are still returned for the coalition display.
+    // Re-cut buckets are still returned for the coalition display.
     const labels = result.buckets.map((b) => b.label);
     expect(labels).toContain("Technology");
     expect(labels).toContain("Finance, banking & insurance");
+    expect(labels).toContain("Other");
 
-    // Sector-bucket percent is its share of the (non-sector) total raised.
+    // Sector-bucket percent is its share of the (non-re-cut) total raised.
     const tech = result.buckets.find((b) => b.label === "Technology")!;
     expect(tech.percent).toBe(Math.round((300000 / 1500000) * 100)); // 20
   });
@@ -430,6 +439,14 @@ describe("lookupDonorCoalition — happy path", () => {
         source: "tx_tec_bulk",
         sourceUrl: "https://tec.texas.gov/x",
       },
+      {
+        // State "Other" is disjoint org money (unmatched-employer organization
+        // donors), NOT a re-cut — it must stay in the total.
+        bucketLabel: "Other",
+        amountTotal: "100000.00",
+        source: "tx_tec_bulk",
+        sourceUrl: "https://tec.texas.gov/x",
+      },
     ]);
 
     const result = await lookupDonorCoalition(
@@ -441,8 +458,10 @@ describe("lookupDonorCoalition — happy path", () => {
     expect(result.found).toBe(true);
     if (result.found !== true) return;
 
-    // ALL buckets count — state sectors are real distinct dollars.
-    expect(result.totalRaised).toBe(500000 + 800000 + 300000 + 150000); // 1,750,000
+    // ALL buckets count — state sectors and "Other" are real distinct dollars.
+    expect(result.totalRaised).toBe(
+      500000 + 800000 + 300000 + 150000 + 100000,
+    ); // 1,850,000
   });
 
   it("defaults electionCycle to '2026' when omitted", async () => {

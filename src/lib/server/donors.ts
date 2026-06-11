@@ -227,7 +227,7 @@ export async function lookupDonorCoalition(
 
   // Per-label source. donor_aggregates is unique on (candidate, cycle, label),
   // so each label maps to exactly one row → one source. Used to scope the
-  // federal-only sector double-count fix below.
+  // federal-only by-employer double-count fix below.
   const sourceByLabel = new Map(rows.map((r) => [r.bucketLabel, r.source]));
 
   // Non-destructive total_receipts handling: once a candidate has the real
@@ -240,23 +240,32 @@ export async function lookupDonorCoalition(
     ? rawBuckets.filter((b) => b.label !== "total_receipts")
     : rawBuckets;
 
-  // A federal sector bucket double-counts iff the funding-mix breakdown it
-  // re-cuts is also present (federal-donors adds Schedule-A by-employer sectors
-  // on top of the FEC /totals/ individual dollars). Drop those from the headline
-  // so it tracks real receipts (Jon Bonck TX House 2026: ≈$1.95M bucket-sum →
-  // ≈$1.5M). The guards matter: STATE sectors are disjoint org money (kept), and
-  // a federal candidate with sectors but no breakdown keeps them as its only
-  // funding signal rather than collapsing to $0.
-  const isDoubleCountedSector = (b: DonorBucket) =>
+  // federal-donors builds its sector AND "Other" buckets from one Schedule-A
+  // by-employer pass (fetchEmployerBuckets: matched employer → sector, unmatched
+  // → "Other") and ADDS them on top of the FEC /totals/ funding-mix. Both are
+  // therefore a re-cut of the itemized individual dollars already counted in
+  // large-individual — so a federal "Other" double-counts exactly like a federal
+  // sector (for Jon Bonck TX House 2026 it's the bigger share: $731k "Other" +
+  // $130k sectors over a $1.09M /totals/ base → a $1.95M inflated headline).
+  //
+  // Drop both from the headline, but only for FEDERAL rows that also carry the
+  // funding-mix breakdown they re-cut. The guards matter:
+  //   • STATE "Other"/sectors are DISJOINT org money — each contribution is
+  //     bucketed once (individual → funding-mix, org → sector, unmatched org →
+  //     "Other") — so a different source keeps them in the total.
+  //   • A federal candidate with no breakdown keeps these as its only funding
+  //     signal rather than collapsing to $0.
+  const isFederalEmployerRecut = (b: DonorBucket) =>
     hasBreakdown &&
-    isSectorBucket(b.label) &&
+    (isSectorBucket(b.label) || b.label === "Other") &&
     sourceByLabel.get(b.label) === FEDERAL_DONOR_SOURCE;
 
   // totalRaised (and the percent denominator) excludes those double-counted
-  // sector buckets. The buckets themselves stay in `buckets` for the sector
-  // display; a federal sector bar then reads as its share of real receipts.
+  // re-cut buckets. The buckets themselves stay in `buckets` for the coalition
+  // display; a federal sector/"Other" bar then reads as its share of real
+  // receipts.
   const totalRaised = buckets.reduce(
-    (sum, b) => (isDoubleCountedSector(b) ? sum : sum + b.amount),
+    (sum, b) => (isFederalEmployerRecut(b) ? sum : sum + b.amount),
     0,
   );
 
