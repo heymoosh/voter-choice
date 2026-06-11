@@ -52,7 +52,7 @@ export function AttendanceBand2({ attendance, researched, level }) {
   return (
     <div className="att-band">
       <span className="txt">
-        Shows up — missed <b>{attendance.missedPct}%</b> of {attendance.of}.
+        Attendance — missed <b>{attendance.missedPct}%</b> of {attendance.of}.
       </span>
       <span className={"att-chip " + attendance.band}>{bandLabel}</span>
       <a

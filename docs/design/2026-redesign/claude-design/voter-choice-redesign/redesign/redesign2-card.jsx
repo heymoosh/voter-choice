@@ -29,7 +29,7 @@ function AttendanceBand2({ attendance, researched }) {
   return (
     <div className="att-band">
       <span className="txt">
-        Shows up — missed <b>{attendance.missedPct}%</b> of {attendance.of}.
+        Attendance — missed <b>{attendance.missedPct}%</b> of {attendance.of}.
       </span>
       <span className={"att-chip " + attendance.band}>{bandLabel}</span>
       <a className="att-src cv2-evidence-link" href="https://www.govtrack.us/" target="_blank" rel="noopener noreferrer">GovTrack ↗</a>
