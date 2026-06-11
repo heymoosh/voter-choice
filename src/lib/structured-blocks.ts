@@ -119,6 +119,8 @@ export interface DonorBucketSlice {
   isIssuePAC?: boolean;
   /** Design-delta: canonical issue id this PAC aligns with (e.g. "healthcare_affordability"). */
   alignsWith?: string;
+  /** PAC agenda stance relative to the canonical issue, when known. */
+  issuePacStance?: "in_favor" | "opposed";
 }
 
 /**
@@ -270,6 +272,9 @@ function sanitizeDonorCoalition(
       }
       if (isNonEmptyString(e.alignsWith)) {
         slice.alignsWith = e.alignsWith;
+      }
+      if (e.issuePacStance === "in_favor" || e.issuePacStance === "opposed") {
+        slice.issuePacStance = e.issuePacStance;
       }
       out.push(slice);
     }

@@ -24,6 +24,8 @@ export interface DonorBucket {
   amount: number;
   /** 0-100 integer, computed from total (may sum to 99 or 101 due to rounding) */
   percent: number;
+  /** Issue-PAC agenda stance relative to the canonical issue, when known. */
+  issuePacStance?: "in_favor" | "opposed";
 }
 
 export interface DonorCoalitionResult {
@@ -176,6 +178,20 @@ export function isIssuePacBucket(label: string): boolean {
   return label.startsWith("Issue-aligned PACs");
 }
 
+function asRecord(value: unknown): Record<string, unknown> | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  return value as Record<string, unknown>;
+}
+
+function issuePacStanceFromMetadata(
+  rawMetadata: unknown,
+): "in_favor" | "opposed" | undefined {
+  const metadata = asRecord(rawMetadata);
+  const issuePac = asRecord(metadata?.issuePac);
+  const stance = issuePac?.stance;
+  return stance === "in_favor" || stance === "opposed" ? stance : undefined;
+}
+
 export async function lookupDonorCoalition(
   candidateName: string,
   stateCode: string,
@@ -213,6 +229,7 @@ export async function lookupDonorCoalition(
       amountTotal: schema.donorAggregates.amountTotal,
       source: schema.donorAggregates.source,
       sourceUrl: schema.donorAggregates.sourceUrl,
+      rawMetadata: schema.donorAggregates.rawMetadata,
     })
     .from(schema.donorAggregates)
     .where(
@@ -233,6 +250,9 @@ export async function lookupDonorCoalition(
     label: r.bucketLabel,
     amount: Number(r.amountTotal),
     percent: 0, // filled in below once we know totalRaised
+    ...(isIssuePacBucket(r.bucketLabel)
+      ? { issuePacStance: issuePacStanceFromMetadata(r.rawMetadata) }
+      : {}),
   }));
 
   // Per-label source. donor_aggregates is unique on (candidate, cycle, label),
@@ -270,12 +290,21 @@ export async function lookupDonorCoalition(
     (isSectorBucket(b.label) || b.label === "Other") &&
     sourceByLabel.get(b.label) === FEDERAL_DONOR_SOURCE;
 
+  // Named issue-PAC buckets are a classified subset of the existing "PACs"
+  // funding-mix total. Keep them for display, but do not add them to
+  // totalRaised when the base funding mix is present.
+  const isNamedIssuePacRecut = (b: DonorBucket) =>
+    hasBreakdown && isIssuePacBucket(b.label);
+
   // totalRaised (and the percent denominator) excludes those double-counted
   // re-cut buckets. The buckets themselves stay in `buckets` for the coalition
-  // display; a federal sector/"Other" bar then reads as its share of real
-  // receipts.
+  // display; a federal sector/"Other" or issue-PAC bar then reads as its share
+  // of real receipts.
   const totalRaised = buckets.reduce(
-    (sum, b) => (isFederalEmployerRecut(b) ? sum : sum + b.amount),
+    (sum, b) =>
+      isFederalEmployerRecut(b) || isNamedIssuePacRecut(b)
+        ? sum
+        : sum + b.amount,
     0,
   );
 
