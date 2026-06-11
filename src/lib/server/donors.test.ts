@@ -330,6 +330,121 @@ describe("lookupDonorCoalition — happy path", () => {
     expect(Math.abs(totalPercent - 100)).toBeLessThanOrEqual(1);
   });
 
+  it("excludes FEDERAL sector buckets from totalRaised (they re-cut already-counted itemized dollars)", async () => {
+    mockedResolve.mockResolvedValue("federal-bonck");
+    const { select, _chain } = makeSelectMock([]);
+    mockedGetDb.mockReturnValue({ select } as never);
+
+    // Mirrors the Jon Bonck-style shape: a real small/large/PAC funding mix plus
+    // industry re-cut buckets (Technology, Finance) the FEDERAL ingest derives
+    // from the SAME Schedule-A employer rows that fed the large-individual total
+    // (source "fec_api"). totalRaised must count only the non-sector buckets;
+    // summing the sectors would double-count.
+    _chain.where.mockResolvedValue([
+      {
+        bucketLabel: "Small individual donors (under $200)",
+        amountTotal: "500000.00",
+        source: "fec_api",
+        sourceUrl: "https://fec.gov/x",
+      },
+      {
+        bucketLabel: "Large individual donors ($200+)",
+        amountTotal: "800000.00",
+        source: "fec_api",
+        sourceUrl: "https://fec.gov/x",
+      },
+      {
+        bucketLabel: "PACs",
+        amountTotal: "200000.00",
+        source: "fec_api",
+        sourceUrl: "https://fec.gov/x",
+      },
+      {
+        bucketLabel: "Technology",
+        amountTotal: "300000.00",
+        source: "fec_api",
+        sourceUrl: "https://fec.gov/x",
+      },
+      {
+        bucketLabel: "Finance, banking & insurance",
+        amountTotal: "150000.00",
+        source: "fec_api",
+        sourceUrl: "https://fec.gov/x",
+      },
+    ]);
+
+    const result = await lookupDonorCoalition(
+      "Jon Bonck",
+      "TX",
+      "federal-house",
+    );
+
+    expect(result.found).toBe(true);
+    if (result.found !== true) return;
+
+    // Only the non-sector buckets count toward the headline total.
+    expect(result.totalRaised).toBe(500000 + 800000 + 200000); // 1,500,000
+
+    // Sector buckets are still returned for the coalition display.
+    const labels = result.buckets.map((b) => b.label);
+    expect(labels).toContain("Technology");
+    expect(labels).toContain("Finance, banking & insurance");
+
+    // Sector-bucket percent is its share of the (non-sector) total raised.
+    const tech = result.buckets.find((b) => b.label === "Technology")!;
+    expect(tech.percent).toBe(Math.round((300000 / 1500000) * 100)); // 20
+  });
+
+  it("KEEPS state sector buckets in totalRaised (each contribution bucketed once — sectors are disjoint org money)", async () => {
+    mockedResolve.mockResolvedValue("openstates-tx-999");
+    const { select, _chain } = makeSelectMock([]);
+    mockedGetDb.mockReturnValue({ select } as never);
+
+    // Same labels as the federal case, but a STATE source (e.g. tx-tec). State
+    // ingests bucket each contribution exactly once: individuals → funding-mix,
+    // organizations → a sector bucket. The sectors are NOT a re-cut of the
+    // individual dollars, so they must stay in the headline total — otherwise we
+    // would silently drop every org donor (regressing ~344 state candidates).
+    _chain.where.mockResolvedValue([
+      {
+        bucketLabel: "Small individual donors (under $200)",
+        amountTotal: "500000.00",
+        source: "tx_tec_bulk",
+        sourceUrl: "https://tec.texas.gov/x",
+      },
+      {
+        bucketLabel: "Large individual donors ($200+)",
+        amountTotal: "800000.00",
+        source: "tx_tec_bulk",
+        sourceUrl: "https://tec.texas.gov/x",
+      },
+      {
+        bucketLabel: "Technology",
+        amountTotal: "300000.00",
+        source: "tx_tec_bulk",
+        sourceUrl: "https://tec.texas.gov/x",
+      },
+      {
+        bucketLabel: "Finance, banking & insurance",
+        amountTotal: "150000.00",
+        source: "tx_tec_bulk",
+        sourceUrl: "https://tec.texas.gov/x",
+      },
+    ]);
+
+    const result = await lookupDonorCoalition(
+      "Statehouse Candidate",
+      "TX",
+      "state-TX-house",
+    );
+
+    expect(result.found).toBe(true);
+    if (result.found !== true) return;
+
+    // ALL buckets count — state sectors are real distinct dollars.
+    expect(result.totalRaised).toBe(500000 + 800000 + 300000 + 150000); // 1,750,000
+  });
+
   it("defaults electionCycle to '2026' when omitted", async () => {
     mockedResolve.mockResolvedValue("openstates-tx-123");
     const { select, _chain } = makeSelectMock([]);
