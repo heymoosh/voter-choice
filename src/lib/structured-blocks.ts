@@ -200,6 +200,8 @@ export interface RacePatternsCandidate {
     pac: number;
     total: number;
     cycle: string;
+    /** Set when funding data came from a different-chamber candidacy (e.g. a House rep running for Senate). */
+    chamberSwitchLabel?: string;
   };
 }
 
@@ -289,10 +291,15 @@ function sanitizeTotalRaised(value: unknown): number | undefined {
   return value;
 }
 
-function sanitizeFundingMix(
-  value: unknown,
-):
-  | { small: number; large: number; pac: number; total: number; cycle: string }
+function sanitizeFundingMix(value: unknown):
+  | {
+      small: number;
+      large: number;
+      pac: number;
+      total: number;
+      cycle: string;
+      chamberSwitchLabel?: string;
+    }
   | undefined {
   if (!value || typeof value !== "object") return undefined;
   const v = value as Record<string, unknown>;
@@ -324,6 +331,9 @@ function sanitizeFundingMix(
     pac: Math.max(0, Math.min(100, v.pac)),
     total: v.total,
     cycle: v.cycle,
+    ...(isNonEmptyString(v.chamberSwitchLabel)
+      ? { chamberSwitchLabel: v.chamberSwitchLabel }
+      : {}),
   };
 }
 
