@@ -2,15 +2,10 @@ export interface ThemeExtractionInput {
   userInput: string;
 }
 
-export function buildThemeExtractionPrompt(
-  input: ThemeExtractionInput,
-): string {
-  return `You extract civic themes from a voter's own words.
-
-The user just wrote a free-form message about what they care about
-politically. Return a JSON array of 1–5 themes. Each theme:
-
-  "name":   a short neutral noun phrase (3–7 words).
+/** The theme JSON contract shared by extraction (turn 1) and the
+ *  conversational refinement builder (turns 2+) — kept as one block so the
+ *  two prompts can never drift apart on field semantics. */
+export const THEME_FIELDS_PROMPT_BLOCK = `  "name":   a short neutral noun phrase (3–7 words).
             No advocacy verbs ("fight against", "stand up for").
             No party labels.
   "quotes": 1–2 short verbatim phrases from the user's message
@@ -25,9 +20,10 @@ politically. Return a JSON array of 1–5 themes. Each theme:
             unclear. Most priorities are aspirational ("I want lower
             drug prices") → "in_favor". Use "opposed" only when the
             voter clearly wants LESS of something ("stop the new
-            highway", "against the bond").
+            highway", "against the bond").`;
 
-CANONICAL ISSUES (id — what it covers):
+/** Canonical-issue vocabulary, shared verbatim by both theme builders. */
+export const CANONICAL_ISSUES_PROMPT_BLOCK = `CANONICAL ISSUES (id — what it covers):
   healthcare_affordability — drug/insulin prices, ACA, Medicare/Medicaid, care costs
   housing_affordability — rent, home prices, housing supply, zoning
   economy_jobs — jobs, wages, inflation, small business
@@ -43,7 +39,19 @@ CANONICAL ISSUES (id — what it covers):
   water_infrastructure — water access, treatment, dams
   property_taxes — property tax rates, assessments
   election_integrity — voting rights, voter ID, election administration
-  congressional_accountability — stock-trading bans, term limits, ethics
+  congressional_accountability — stock-trading bans, term limits, ethics`;
+
+export function buildThemeExtractionPrompt(
+  input: ThemeExtractionInput,
+): string {
+  return `You extract civic themes from a voter's own words.
+
+The user just wrote a free-form message about what they care about
+politically. Return a JSON array of 1–5 themes. Each theme:
+
+${THEME_FIELDS_PROMPT_BLOCK}
+
+${CANONICAL_ISSUES_PROMPT_BLOCK}
 
 Rules:
   · Don't pad to a fixed count. One thing, one theme.

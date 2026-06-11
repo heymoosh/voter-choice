@@ -526,6 +526,14 @@ export function getSeatResearch(seatId: string): SeatResearch | undefined {
   return seatResearch.get(seatId);
 }
 
+/** Clear the attempt cache so a re-analyze re-fires research. Called when the
+ *  voter's canonical-issue set actually changes (an edit-issues apply) —
+ *  rerank/rename-only edits must NOT reset, or they'd re-burn research spend
+ *  for identical queries. */
+export function resetSeatResearch(): void {
+  seatResearch.clear();
+}
+
 /** Reset hook for tests/start-over. */
 export function _resetSeatResearchForTesting(): void {
   seatResearch.clear();
@@ -590,6 +598,11 @@ export function getChallengerResearch(
   return challengerResearchStore.get(challengerId);
 }
 
+/** Clear the challenger attempt cache (same contract as resetSeatResearch). */
+export function resetChallengerResearch(): void {
+  challengerResearchStore.clear();
+}
+
 /** Reset hook for tests/start-over. */
 export function _resetChallengerResearchForTesting(): void {
   challengerResearchStore.clear();
@@ -643,6 +656,68 @@ export function researchChallenger(
     onUpdate();
   });
   onUpdate();
+}
+
+// ---------------------------------------------------------------------------
+// Re-score deltas — how each seat's aggregate alignment moved after an
+// edit-issues apply. Deterministic math over the re-fetched card data (the
+// old app's amend deltas were mocked; this is the first real implementation).
+// ---------------------------------------------------------------------------
+
+/** Aggregate voting-record alignment for a seat: Σkept/Σtotal across scoreable
+ *  rows, as a 0–100 percent. null = no scoreable record (honest gap). */
+export function seatAlignmentPct(seat: {
+  alignmentEntry: { scores: unknown[] | null } | null;
+}): number | null {
+  const scores = seat.alignmentEntry?.scores;
+  if (!Array.isArray(scores)) return null;
+  let kept = 0;
+  let total = 0;
+  for (const row of scores as Array<Record<string, unknown>>) {
+    if (
+      row &&
+      typeof row.kept === "number" &&
+      typeof row.total === "number" &&
+      row.total > 0
+    ) {
+      kept += row.kept;
+      total += row.total;
+    }
+  }
+  if (total === 0) return null;
+  return Math.round((kept / total) * 100);
+}
+
+export interface SeatDelta {
+  seatId: string;
+  label: string;
+  oldPct: number | null;
+  newPct: number | null;
+  /** Worth a revisit: moved past the 5-point noise floor, or flipped between
+   *  scoreable and no-record. */
+  significant: boolean;
+}
+
+/** Compare per-seat alignment before/after a re-score. `before` is the
+ *  snapshot taken from the OLD seats (seatAlignmentPct per seat id). */
+export function computeSeatDeltas(
+  before: Map<string, number | null>,
+  seats: DelegationSeatVM[],
+): SeatDelta[] {
+  return seats.map((seat) => {
+    const oldPct = before.has(seat.id) ? (before.get(seat.id) ?? null) : null;
+    const newPct = seatAlignmentPct(seat);
+    const flipped = (oldPct === null) !== (newPct === null);
+    const moved =
+      oldPct !== null && newPct !== null && Math.abs(newPct - oldPct) > 5;
+    return {
+      seatId: seat.id,
+      label: `${seat.office} · ${seat.districtLabel}`,
+      oldPct,
+      newPct,
+      significant: flipped || moved,
+    };
+  });
 }
 
 // ---------------------------------------------------------------------------
