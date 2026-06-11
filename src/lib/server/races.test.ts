@@ -31,8 +31,9 @@ function row(
   office: "house" | "senate",
   district: string | null,
   totalReceipts: string | null,
+  rawMetadata: unknown = null,
 ) {
-  return { id, fullName, party, office, district, totalReceipts };
+  return { id, fullName, party, office, district, totalReceipts, rawMetadata };
 }
 
 beforeEach(() => {
@@ -118,5 +119,38 @@ describe("lookupChallengers", () => {
     );
     const out = await lookupChallengers("TX", null);
     expect(out.house).toEqual([]);
+  });
+
+  it("excludes the seat incumbent (FEC incumbent_challenge='I') from both lists", async () => {
+    const inc = { fec: { incumbent_challenge: "I" } };
+    mockedGetDb.mockReturnValue(
+      makeDbMock([
+        // Sitting incumbents filed for their own seats — already shown as the
+        // seat card; must not reappear as challengers.
+        row("h-inc", "Rep Incumbent", "REP", "house", "07", "900000.00", inc),
+        row("s-inc", "Sen Incumbent", "REP", "senate", null, "5000000.00", inc),
+        // Genuine challengers (incumbent_challenge='C' or absent) stay.
+        row("h1", "Jane Doe", "DEM", "house", "07", "50000.00", {
+          fec: { incumbent_challenge: "C" },
+        }),
+        row("s1", "Rich Roe", "DEM", "senate", null, "1200000.00"),
+      ]),
+    );
+    const out = await lookupChallengers("TX", 7);
+    expect(out.house.map((c) => c.id)).toEqual(["h1"]);
+    expect(out.senate.map((c) => c.id)).toEqual(["s1"]);
+  });
+
+  it("collapses same-name filers in a seat, keeping the higher-receipts row", async () => {
+    mockedGetDb.mockReturnValue(
+      makeDbMock([
+        row("dup-a", "Sarah Eckhardt", "DEM", "house", "07", "50000.00"),
+        row("dup-b", "Sarah Eckhardt", "DEM", "house", "07", "113000.00"),
+        row("other", "Someone Else", "REP", "house", "07", "20000.00"),
+      ]),
+    );
+    const out = await lookupChallengers("TX", 7);
+    // One Eckhardt, the $113k row; plus the distinct filer.
+    expect(out.house.map((c) => c.id)).toEqual(["dup-b", "other"]);
   });
 });
