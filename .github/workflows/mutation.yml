@@ -9,8 +9,14 @@ name: Mutation
 # Cron (nightly) and workflow_dispatch always run full Stryker — both are
 # explicit signals to do the heavy work.
 #
-# Scoped paths mirror stryker.config.json's `mutate` array. Update both files
-# together as new high-stakes prompt/state-rules/BYOK paths land.
+# PR filter vs nightly scope: the PR-time paths filter below covers only
+# LOGIC paths — pure-template prompt files (string-template exports under
+# src/lib/prompts/ with no branching) are deliberately excluded so
+# prompt-copy-only PRs skip the ~45-min Stryker run. stryker.config.json's
+# `mutate` array still includes ALL prompt files, so the nightly/dispatch
+# runs keep full coverage; template drift is caught that night instead of
+# at PR time. When adding a prompt file with real logic (parsing,
+# branching), add it AND its test here as well as to the mutate array.
 
 on:
   pull_request:
@@ -46,7 +52,15 @@ jobs:
               - 'src/lib/generatePrompt.ts'
               - 'src/lib/getStateData.ts'
               - 'src/lib/server/alignment.ts'
-              - 'src/lib/prompts/**'
+              - 'src/lib/prompts/router.ts'
+              - 'src/lib/prompts/router.test.ts'
+              - 'src/lib/prompts/pii-strip.ts'
+              - 'src/lib/prompts/pii-strip.test.ts'
+              - 'src/lib/prompts/parse-theme-amendment.ts'
+              - 'src/lib/prompts/parse-theme-amendment.test.ts'
+              - 'src/lib/prompts/parse-theme-extraction.ts'
+              - 'src/lib/prompts/parse-theme-extraction.test.ts'
+              - 'src/lib/prompts/__tests__/**'
               - 'src/lib/state-rules/**'
               - 'src/lib/anthropic-client-byok.ts'
               - 'src/lib/server/budget.test.ts'
@@ -62,7 +76,7 @@ jobs:
         if: github.event_name == 'pull_request' && steps.filter.outputs.scoped == 'false'
         run: |
           echo "::notice::No scoped paths changed in this PR; Stryker skipped. Mutation gate reports passed."
-          echo "Scoped paths are defined in this workflow file and in stryker.config.json. Update both if expanding scope."
+          echo "PR filter covers logic paths only (see header comment); nightly runs mutate the full stryker.config.json scope."
 
       - name: Setup Node
         if: github.event_name != 'pull_request' || steps.filter.outputs.scoped == 'true'

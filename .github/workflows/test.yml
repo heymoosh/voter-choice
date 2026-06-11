@@ -31,6 +31,11 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      # next.config.ts sets typescript.ignoreBuildErrors (build skips tsc),
+      # so this step is the only CI typecheck gate.
+      - name: Typecheck
+        run: npm run typecheck
+
       - name: Unit tests
         run: npm run test
 
@@ -38,59 +43,62 @@ jobs:
         run: npm run build
 
   # The REQUIRED e2e check covers the prod default: the congress-assessment
-  # experience (flag unset). The parked legacy ballot experience keeps its own
-  # non-required leg below.
+  # experience (flag unset). The job ALWAYS fires on PRs so it can stay a
+  # required status check without deadlocking docs-only PRs — the actual
+  # Playwright run is gated by a paths-filter step inside the job (same
+  # pattern as mutation.yml). Pushes to main always run the full leg.
+  #
+  # The parked legacy ballot experience runs nightly in
+  # .github/workflows/e2e-legacy-nightly.yml.
   e2e:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v6
 
+      - name: Detect e2e-relevant changes (PR only)
+        id: filter
+        if: github.event_name == 'pull_request'
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            scoped:
+              - 'src/**'
+              - 'e2e/**'
+              - 'public/**'
+              - 'package.json'
+              - 'package-lock.json'
+              - 'next.config.ts'
+              - 'playwright.config.ts'
+              - 'tsconfig.json'
+              - 'scripts/generate-ballot-prompt-module.mjs'
+              - '.github/workflows/test.yml'
+
+      - name: Note skip when no e2e-relevant changes
+        if: github.event_name == 'pull_request' && steps.filter.outputs.scoped == 'false'
+        run: |
+          echo "::notice::No e2e-relevant paths changed in this PR; Playwright skipped. e2e gate reports passed."
+
       - name: Setup Node
+        if: github.event_name != 'pull_request' || steps.filter.outputs.scoped == 'true'
         uses: actions/setup-node@v6
         with:
           node-version: "22"
           cache: "npm"
 
       - name: Install dependencies
+        if: github.event_name != 'pull_request' || steps.filter.outputs.scoped == 'true'
         run: npm ci
 
       - name: Install Playwright browsers
+        if: github.event_name != 'pull_request' || steps.filter.outputs.scoped == 'true'
         run: npx playwright install --with-deps chromium
 
       # Flag unset → the congress-assessment experience builds as default.
       - name: Build (congress-assessment experience)
+        if: github.event_name != 'pull_request' || steps.filter.outputs.scoped == 'true'
         run: npm run build
 
       - name: Run Playwright e2e tests (redesign suite)
-        run: npm run e2e
-
-  # The parked legacy ballot experience (src/prototype/VoterChoiceApp.tsx,
-  # behind NEXT_PUBLIC_BALLOT_ENABLED=true — Phase-3 reuse). Not a required
-  # check, but keeps the parked code exercised so it doesn't rot.
-  e2e-ballot-legacy:
-    runs-on: ubuntu-latest
-    # Build-time inlined: the whole job (build + specs) runs the legacy flavor.
-    env:
-      NEXT_PUBLIC_BALLOT_ENABLED: "true"
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-
-      - name: Setup Node
-        uses: actions/setup-node@v6
-        with:
-          node-version: "22"
-          cache: "npm"
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
-
-      - name: Build (legacy ballot experience)
-        run: npm run build
-
-      - name: Run Playwright e2e tests (legacy ballot suite)
+        if: github.event_name != 'pull_request' || steps.filter.outputs.scoped == 'true'
         run: npm run e2e
