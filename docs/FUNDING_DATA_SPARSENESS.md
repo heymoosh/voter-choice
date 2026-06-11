@@ -141,16 +141,53 @@ It classifies every candidate into the three layers — `none` / `top_line`
 (the sparse-UI fallback) / `breakdown` (small/large/PAC), and within
 `breakdown` flags how many also have sector and named-issue-PAC data — overall
 and per federal/state geo. This turns "sparse" into a number and decides where
-P1–P3 effort actually goes. (Could not be executed here: no `DATABASE_URL` in
-the build container — run it against the live DB.)
+P1–P3 effort actually goes.
 
-### P1 — Backfill the FEC breakdown (Layer 2)
+**P0 results (cycle 2026, run 2026-06-11) — 10,810 candidates:**
 
-Run `scripts/ingest/federal-candidates.ts` (FEC ID resolution + 2026 roster)
-then `scripts/ingest/federal-donors.ts` across all federal House/Senate
-candidates in the active cycle. This upgrades the common case from top-line to
-small/large/PAC + sectors **with no UI change** — the existing `FunderBars`
-branches light up automatically.
+| Layer                       | Count | %   |
+| --------------------------- | ----- | --- |
+| none (no donor data)        | 9,832 | 91% |
+| top-line only (sparse UI)   | 581   | 5%  |
+| breakdown (small/large/PAC) | 397   | 4%  |
+| ↳ with sectors              | 344   |     |
+| ↳ with named issue-PACs     | 0     |     |
+
+Three findings that set the priority:
+
+1. **Federal breakdown is effectively zero (2 of 2,929).** 562 federal
+   candidates are top-line-only, 2,365 are `none`. `federal-donors.ts` is the
+   script meant to produce the small/large/PAC split, so breakdown≈0 means that
+   step has never completed federally — this is exactly why the (federal) Texas
+   House race in the screenshot shows an empty money trail. **Anomaly to chase in
+   P1:** 562 federal candidates have `total_receipts` but no mix, so the breakdown
+   step may be failing where it runs (API key / endpoint), not merely un-run.
+2. **State coverage exists in only ~6 states** (CA, WA, CO, TX, HI, MN). 40+
+   states are 100% `none` — their `state-donors.ts` ingests have never run.
+3. **`issue-PACs: 0` everywhere** — Layer 3 is greenfield; P2 is entirely net-new.
+
+So the sparseness is overwhelmingly **unrun/failing ingests, not UI** — and the
+highest-value, screenshot-fixing lever is P1 (federal), starting with a
+diagnostic rather than a blind re-run.
+
+### P1 — Backfill the FEC breakdown (Layer 2) ← highest-value next step
+
+P0 shows federal breakdown is ~0 despite 562 federal top-line rows, so P1 is
+**diagnose-then-backfill**, not a blind re-run:
+
+1. **Verify the breakdown step works** — run `scripts/ingest/federal-donors.ts`
+   for a handful of known federal incumbents and confirm small/large/PAC + sector
+   rows actually land in `donor_aggregates` (not just `total_receipts`). If they
+   don't, fix the cause first (FEC API key, totals/`by_employer` endpoint, or
+   committee resolution).
+2. **Backfill at scale** — `scripts/ingest/federal-candidates.ts` (FEC ID
+   resolution + 2026 roster) then `federal-donors.ts` across all federal
+   House/Senate candidates in the cycle.
+
+This upgrades the common federal case from top-line to small/large/PAC + sectors
+**with no UI change** — the existing `FunderBars` branches light up automatically
+— and directly fixes the screenshot. Re-run `_coverage-by-layer.ts` after to
+confirm federal `breakdown` climbs.
 
 ### P2 — Named issue-PACs from FEC directly (recommended over CAN2026)
 
