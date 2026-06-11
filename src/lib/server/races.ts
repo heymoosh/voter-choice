@@ -139,6 +139,7 @@ export async function lookupChallengers(
       office: schema.candidates.office,
       district: schema.candidates.district,
       totalReceipts: schema.candidates.totalReceipts,
+      rawMetadata: schema.candidates.rawMetadata,
     })
     .from(schema.candidates)
     .where(
@@ -152,16 +153,53 @@ export async function lookupChallengers(
   const districtKey =
     district !== null ? String(district).padStart(2, "0") : null;
 
+  // The FEC roster includes the sitting incumbent as a filer for their own
+  // seat (incumbent_challenge === "I"). Those whose name didn't match our
+  // GovTrack incumbent record land here as is_incumbent=false rows — but the
+  // incumbent is already shown as their own seat card, so listing them again
+  // would double-list the incumbent (often under a raw FEC name). Drop them.
+  const isIncumbentFiler = (r: { rawMetadata: unknown }): boolean => {
+    const fec = (r.rawMetadata as { fec?: { incumbent_challenge?: string } })
+      ?.fec;
+    return fec?.incumbent_challenge === "I";
+  };
+
   const houseRows = rows.filter(
     (r) =>
       r.office === "house" &&
       districtKey !== null &&
-      r.district === districtKey,
+      r.district === districtKey &&
+      !isIncumbentFiler(r),
   );
-  const senateRows = rows.filter((r) => r.office === "senate");
+  const senateRows = rows.filter(
+    (r) => r.office === "senate" && !isIncumbentFiler(r),
+  );
 
   return {
-    house: applyViabilityFilter(houseRows),
-    senate: applyViabilityFilter(senateRows),
+    house: applyViabilityFilter(dedupeByName(houseRows)),
+    senate: applyViabilityFilter(dedupeByName(senateRows)),
   };
+}
+
+/**
+ * Collapse same-person filers within a seat. A handful of filers register
+ * under multiple FEC candidate ids for the same race (e.g. a refiling); the
+ * roster returns each as its own row, which would list the name twice. Keep
+ * the highest-receipts row per normalized name.
+ */
+function dedupeByName<
+  T extends { fullName: string; totalReceipts: string | null },
+>(rows: T[]): T[] {
+  const best = new Map<string, T>();
+  for (const r of rows) {
+    const key = r.fullName.trim().toLowerCase();
+    const existing = best.get(key);
+    if (
+      !existing ||
+      Number(r.totalReceipts ?? 0) > Number(existing.totalReceipts ?? 0)
+    ) {
+      best.set(key, r);
+    }
+  }
+  return [...best.values()];
 }

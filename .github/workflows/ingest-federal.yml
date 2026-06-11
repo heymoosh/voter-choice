@@ -104,6 +104,11 @@ jobs:
         run: npx tsx scripts/ingest/federal-votes.ts
 
       - name: Run FEC 2026 candidate roster ingest
+        # Decoupled from the votes step: the candidate roster (which seats the
+        # voter's challenger cards) must refresh even if the GovTrack vote
+        # ingest above fails for an unrelated reason. Runs unless the job was
+        # cancelled.
+        if: ${{ !cancelled() }}
         run: npx tsx scripts/ingest/federal-candidates.ts --year 2026
 
       - name: Notify on ingest failure
