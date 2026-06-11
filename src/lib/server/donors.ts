@@ -24,6 +24,8 @@ export interface DonorBucket {
   amount: number;
   /** 0-100 integer, computed from total (may sum to 99 or 101 due to rounding) */
   percent: number;
+  /** Issue-PAC agenda stance relative to the canonical issue, when known. */
+  issuePacStance?: "in_favor" | "opposed";
 }
 
 export interface DonorCoalitionResult {
@@ -59,6 +61,14 @@ export type DonorLookupResult = DonorCoalitionResult | DonorCoalitionNotFound;
  * Jan 1 in a way that surprises consumers.
  */
 const DEFAULT_ELECTION_CYCLE = "2026";
+
+/**
+ * donor_aggregates.source written by the federal ingest
+ * (scripts/ingest/federal-donors.ts). The sector double-count is federal-only —
+ * see SECTOR_LABELS — so the read-time fix is scoped to this source. Keep
+ * byte-identical to the ingest's `source: "fec_api"`.
+ */
+const FEDERAL_DONOR_SOURCE = "fec_api";
 
 /** Pick the most frequently occurring string in `values`; ties broken by first occurrence. */
 function pickMostCommon(values: string[]): string {
@@ -116,6 +126,72 @@ export function isFundingMixBucket(label: string): boolean {
   );
 }
 
+/**
+ * Industry/sector bucket labels.
+ *
+ * In the FEDERAL ingest these are an ADDITIVE re-cut of dollars already counted
+ * in the individual-donor buckets: federal-donors.ts adds Schedule-A
+ * by-employer buckets (fetchEmployerBuckets, mapped via _bucket-mapping.ts) ON
+ * TOP of the FEC /totals/ funding-mix, so the sector dollars duplicate the
+ * itemized large-individual total. Summing them inflates totalRaised — hence
+ * the federal-scoped exclusion in lookupDonorCoalition.
+ *
+ * In STATE ingests they are DISJOINT money, not a re-cut: each contribution is
+ * bucketed exactly once (individuals → funding-mix, organizations → a sector
+ * bucket), so state sector dollars are real distinct totals that MUST stay in
+ * the headline. That is why the exclusion checks the row source rather than
+ * dropping every sector bucket.
+ *
+ * Mirrors SECTOR_LABELS in scripts/ingest/_coverage-by-layer.ts: the canonical
+ * DONOR_BUCKET_LABELS vocabulary minus the funding-mix / Self-funded /
+ * Party committees / Other rows. Duplicated here (not imported) to respect the
+ * src/ ↔ scripts/ boundary — keep byte-identical to the ingest labels.
+ */
+const SECTOR_LABELS: ReadonlySet<string> = new Set([
+  "Real estate & development",
+  "Oil, gas & energy",
+  "Healthcare industry",
+  "Pharmaceutical & medical device",
+  "Finance, banking & insurance",
+  "Technology",
+  "Legal industry",
+  "Agriculture",
+  "Telecom & utilities",
+  "Retail & hospitality",
+  "Trade unions (non-public-safety)",
+  "Public safety unions",
+  "Education employees",
+]);
+
+/** True for industry/sector buckets that re-cut already-counted individual dollars. */
+export function isSectorBucket(label: string): boolean {
+  return SECTOR_LABELS.has(label);
+}
+
+/**
+ * True for named issue-aligned PAC buckets, written by the ingest with a dynamic
+ * suffix: "Issue-aligned PACs — <issue>" (see _bucket-mapping.ts IssuePacLabel).
+ * Not yet ingested, but the coalition display already routes these to the
+ * issue-PAC teaser, so the read layer recognizes them for forward-compat.
+ */
+export function isIssuePacBucket(label: string): boolean {
+  return label.startsWith("Issue-aligned PACs");
+}
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  return value as Record<string, unknown>;
+}
+
+function issuePacStanceFromMetadata(
+  rawMetadata: unknown,
+): "in_favor" | "opposed" | undefined {
+  const metadata = asRecord(rawMetadata);
+  const issuePac = asRecord(metadata?.issuePac);
+  const stance = issuePac?.stance;
+  return stance === "in_favor" || stance === "opposed" ? stance : undefined;
+}
+
 export async function lookupDonorCoalition(
   candidateName: string,
   stateCode: string,
@@ -153,6 +229,7 @@ export async function lookupDonorCoalition(
       amountTotal: schema.donorAggregates.amountTotal,
       source: schema.donorAggregates.source,
       sourceUrl: schema.donorAggregates.sourceUrl,
+      rawMetadata: schema.donorAggregates.rawMetadata,
     })
     .from(schema.donorAggregates)
     .where(
@@ -173,7 +250,15 @@ export async function lookupDonorCoalition(
     label: r.bucketLabel,
     amount: Number(r.amountTotal),
     percent: 0, // filled in below once we know totalRaised
+    ...(isIssuePacBucket(r.bucketLabel)
+      ? { issuePacStance: issuePacStanceFromMetadata(r.rawMetadata) }
+      : {}),
   }));
+
+  // Per-label source. donor_aggregates is unique on (candidate, cycle, label),
+  // so each label maps to exactly one row → one source. Used to scope the
+  // federal-only by-employer double-count fix below.
+  const sourceByLabel = new Map(rows.map((r) => [r.bucketLabel, r.source]));
 
   // Non-destructive total_receipts handling: once a candidate has the real
   // small/large/PAC breakdown, drop the stale single "total_receipts" bucket
@@ -185,7 +270,43 @@ export async function lookupDonorCoalition(
     ? rawBuckets.filter((b) => b.label !== "total_receipts")
     : rawBuckets;
 
-  const totalRaised = buckets.reduce((sum, b) => sum + b.amount, 0);
+  // federal-donors builds its sector AND "Other" buckets from one Schedule-A
+  // by-employer pass (fetchEmployerBuckets: matched employer → sector, unmatched
+  // → "Other") and ADDS them on top of the FEC /totals/ funding-mix. Both are
+  // therefore a re-cut of the itemized individual dollars already counted in
+  // large-individual — so a federal "Other" double-counts exactly like a federal
+  // sector (for Jon Bonck TX House 2026 it's the bigger share: $731k "Other" +
+  // $130k sectors over a $1.09M /totals/ base → a $1.95M inflated headline).
+  //
+  // Drop both from the headline, but only for FEDERAL rows that also carry the
+  // funding-mix breakdown they re-cut. The guards matter:
+  //   • STATE "Other"/sectors are DISJOINT org money — each contribution is
+  //     bucketed once (individual → funding-mix, org → sector, unmatched org →
+  //     "Other") — so a different source keeps them in the total.
+  //   • A federal candidate with no breakdown keeps these as its only funding
+  //     signal rather than collapsing to $0.
+  const isFederalEmployerRecut = (b: DonorBucket) =>
+    hasBreakdown &&
+    (isSectorBucket(b.label) || b.label === "Other") &&
+    sourceByLabel.get(b.label) === FEDERAL_DONOR_SOURCE;
+
+  // Named issue-PAC buckets are a classified subset of the existing "PACs"
+  // funding-mix total. Keep them for display, but do not add them to
+  // totalRaised when the base funding mix is present.
+  const isNamedIssuePacRecut = (b: DonorBucket) =>
+    hasBreakdown && isIssuePacBucket(b.label);
+
+  // totalRaised (and the percent denominator) excludes those double-counted
+  // re-cut buckets. The buckets themselves stay in `buckets` for the coalition
+  // display; a federal sector/"Other" or issue-PAC bar then reads as its share
+  // of real receipts.
+  const totalRaised = buckets.reduce(
+    (sum, b) =>
+      isFederalEmployerRecut(b) || isNamedIssuePacRecut(b)
+        ? sum
+        : sum + b.amount,
+    0,
+  );
 
   for (const b of buckets) {
     b.percent =

@@ -1,11 +1,7 @@
-Think Before Coding
-Don't assume. Don't hide confusion. Surface tradeoffs.
+# voter-choice — agent notes
 
-Simplicity First
-Minimum code that solves the problem. Nothing speculative.
-
-Surgical Changes
-Touch only what you must. Clean up only your own mess.
-
-Goal-Driven Execution
-Define success criteria. Loop until verified.
+- Verify changes with `npm run check` (lint + typecheck + unit). For one file's logic, `npx vitest run <file>.test.ts` is faster.
+- Run `npm run e2e` once, only when UI behavior or user-visible copy changed.
+- Never run Stryker/mutation locally — CI gates it (path-filtered on PRs, full run nightly). See docs/testing.md.
+- After pushing, check CI once with `gh pr checks` — don't poll.
+- Commit with a valid GitHub-linked author email; the deploy gate rejects `*.local` authors.

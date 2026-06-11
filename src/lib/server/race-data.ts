@@ -30,7 +30,12 @@ import {
   attachLimitedDataNotice,
   type AlignmentLookupResult,
 } from "./alignment";
-import { lookupDonorCoalition, FUNDING_MIX_LABELS } from "./donors";
+import {
+  lookupDonorCoalition,
+  FUNDING_MIX_LABELS,
+  isSectorBucket,
+  isIssuePacBucket,
+} from "./donors";
 import { lookupCandidateData, buildCandidateKey } from "./candidate-data";
 import { getIssueLabel } from "../canonicalIssues";
 import type {
@@ -215,17 +220,41 @@ export function donorFieldsFromResult(
           : "No donor data available for this candidate yet";
     return { donorCoalition: null, donorUnavailable: { reason } };
   }
-  return {
-    donorCoalition: result.buckets.map((b) => ({
+  // donorCoalition feeds the UI's "Industry breakdown" (sector slices) and the
+  // issue-PAC teaser, so it must carry ONLY sector + issue-PAC buckets. The
+  // funding mix (small/large/PAC) is surfaced separately via `fundingMix`, and
+  // the non-sector buckets (Self-funded, Party committees, Other, total_receipts)
+  // form the implicit "outside named sectors" remainder the UI computes as
+  // totalRaised − Σ(sector amounts). Including them here made the breakdown's
+  // percentages — which are shares of totalRaised — sum past 100%.
+  const coalition = result.buckets
+    .filter((b) => isSectorBucket(b.label) || isIssuePacBucket(b.label))
+    .map((b) => ({
       label: b.label,
       percent: b.percent,
       amount: b.amount,
-    })),
+      ...(isIssuePacBucket(b.label)
+        ? {
+            isIssuePAC: true,
+            alignsWith: issueFromIssuePacLabel(b.label),
+            ...(b.issuePacStance ? { issuePacStance: b.issuePacStance } : {}),
+          }
+        : {}),
+    }));
+  return {
+    donorCoalition: coalition,
     totalRaised: result.totalRaised,
     donorDataSource: "voting_record",
     donorSource: { name: result.source, url: result.sourceUrl },
     fundingMix: computeFundingMix(result),
   };
+}
+
+function issueFromIssuePacLabel(label: string): string | undefined {
+  const prefix = "Issue-aligned PACs — ";
+  if (!label.startsWith(prefix)) return undefined;
+  const issue = label.slice(prefix.length).trim();
+  return issue || undefined;
 }
 
 /**

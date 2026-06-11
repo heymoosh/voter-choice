@@ -1524,7 +1524,7 @@ describe("design-delta: DonorBucketSlice.isIssuePAC + alignsWith", () => {
   it("passes through isIssuePAC and alignsWith when present on a coalition slice", () => {
     const block = [
       '[RACE_PATTERNS race="US Senate TX"]',
-      '{"id":"A","name":"Alice","incumbent":true,"donorCoalition":[{"label":"PhRMA","percent":4,"amount":340000,"isIssuePAC":true,"alignsWith":"healthcare_affordability"},{"label":"Oil & Gas","percent":14,"amount":1200000}],"donorSource":{"name":"FEC","url":"https://www.fec.gov/"},"donorDataSource":"voting_record","totalRaised":1540000,"endorsements":null,"platformAlignment":null,"retrospective":null,"valuesHighlight":null}',
+      '{"id":"A","name":"Alice","incumbent":true,"donorCoalition":[{"label":"PhRMA","percent":4,"amount":340000,"isIssuePAC":true,"alignsWith":"healthcare_affordability","issuePacStance":"opposed"},{"label":"Oil & Gas","percent":14,"amount":1200000}],"donorSource":{"name":"FEC","url":"https://www.fec.gov/"},"donorDataSource":"voting_record","totalRaised":1540000,"endorsements":null,"platformAlignment":null,"retrospective":null,"valuesHighlight":null}',
       '{"id":"B","name":"Bob","incumbent":false,"donorCoalition":null,"endorsements":null,"platformAlignment":null,"retrospective":null,"valuesHighlight":null}',
       "[/RACE_PATTERNS]",
     ].join("\n");
@@ -1532,6 +1532,7 @@ describe("design-delta: DonorBucketSlice.isIssuePAC + alignsWith", () => {
     const sliceA0 = result?.candidates[0].donorCoalition?.[0];
     expect(sliceA0?.isIssuePAC).toBe(true);
     expect(sliceA0?.alignsWith).toBe("healthcare_affordability");
+    expect(sliceA0?.issuePacStance).toBe("opposed");
     // Slice without the fields should not have them defined
     const sliceA1 = result?.candidates[0].donorCoalition?.[1];
     expect(sliceA1?.isIssuePAC).toBeUndefined();

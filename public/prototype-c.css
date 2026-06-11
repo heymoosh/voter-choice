@@ -1496,6 +1496,17 @@
   font-size: 13px;
   color: var(--ink-3);
 }
+.cv2-disclose-issue-pacs {
+  align-self: flex-start;
+  display: inline-flex;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: var(--civic-soft);
+  color: var(--civic-2);
+  font-size: 12.5px;
+  font-weight: 700;
+  line-height: 1.25;
+}
 .cv2-disclose-arrow {
   font-size: 11px;
   display: inline-block;

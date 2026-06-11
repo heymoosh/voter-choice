@@ -675,6 +675,7 @@ function CandidateCard({ candidate, alignmentEntry, userIssues, party, picked, o
   // name-leak vector, the evidence links (their URLs/summaries can carry the
   // name), is hidden while blinded inside AlignmentIssueRow.
   const research = getCandidateResearch(raceId + '::' + candidate.name);
+  const issuePacTeaser = namedIssuePacSummary(candidate.donorCoalition);
 
   return (
     <div className="cv2-card" data-testid="candidate-card">
@@ -738,6 +739,11 @@ function CandidateCard({ candidate, alignmentEntry, userIssues, party, picked, o
               {candidate.fundingMix && (
                 <span className="cv2-disclose-mix">
                   {fundingMixSummary(candidate.fundingMix)}
+                </span>
+              )}
+              {issuePacTeaser && (
+                <span className="cv2-disclose-issue-pacs">
+                  {issuePacTeaser}
                 </span>
               )}
             </span>
@@ -837,6 +843,17 @@ function fundingMixSummary(mix) {
   if (mix.large != null) parts.push(`${mix.large}% large donors`);
   if (mix.pac   != null) parts.push(`${mix.pac}% PACs`);
   return parts.join(' · ');
+}
+
+function namedIssuePacSummary(donorCoalition) {
+  const issuePACs = (donorCoalition || []).filter(slice => slice && slice.isIssuePAC);
+  if (issuePACs.length === 0) return null;
+  const total = issuePACs.reduce((sum, slice) => (
+    sum + (typeof slice.amount === 'number' ? slice.amount : 0)
+  ), 0);
+  const plural = issuePACs.length === 1 ? 'named issue PAC' : 'named issue PACs';
+  const amount = total > 0 ? `${formatDollars(total)} from ` : '';
+  return `${amount}${issuePACs.length} ${plural} identified`;
 }
 
 /* ============ computePeerLabel ============
@@ -1485,15 +1502,19 @@ function FunderBars({ donorCoalition, totalRaised, donorDataSource, donorSource,
             <small className="cv2-sub-lab">organized groups we&rsquo;ve vetted, each with a publicly stated agenda</small>
           </div>
           {issuePACs.map((p, i) => {
+            const relevantIssue = p.alignsWith || p.relevantToIssue;
             const userIssue = (userIssues || []).find(
-              iss => iss.canonicalIssue === p.relevantToIssue
+              iss => iss.canonicalIssue === relevantIssue
             );
-            const showAlignment = !!userIssue && !!p.pacStance;
-            const conflictsWithUser = showAlignment && p.pacStance === 'against';
+            const derivedPacStance = userIssue?.stance && p.issuePacStance
+              ? (p.issuePacStance === userIssue.stance ? 'with' : 'against')
+              : p.pacStance;
+            const showAlignment = !!userIssue && !!derivedPacStance;
+            const conflictsWithUser = showAlignment && derivedPacStance === 'against';
             return (
               <div className="cv2-pac-row v2" key={i}>
                 <div className="cv2-pac-top">
-                  <span className="sw" style={{ background: issuePACSwatch(p.relevantToIssue) }} />
+                  <span className="sw" style={{ background: issuePACSwatch(relevantIssue) }} />
                   <span className="name">{p.label}</span>
                   <span className="amt">{formatDollars(p.amount)}</span>
                 </div>
