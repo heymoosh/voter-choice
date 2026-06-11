@@ -94,13 +94,12 @@ describe("donorFieldsFromResult", () => {
       sourceUrl: "https://www.fec.gov/data/candidate/x",
       electionCycle: "2026",
     });
+    // donorCoalition carries ONLY sector (+ issue-PAC) slices for the Industry
+    // breakdown. The funding-mix bucket is dropped here — it's surfaced via
+    // `fundingMix` and would otherwise push the breakdown's percentages past
+    // 100%.
     expect(fields.donorCoalition).toEqual([
       { label: "Healthcare industry", percent: 18, amount: 83077 },
-      {
-        label: "Small individual donors (under $200)",
-        percent: 52,
-        amount: 240000,
-      },
     ]);
     expect(fields.totalRaised).toBe(461539);
     expect(fields.donorDataSource).toBe("voting_record");
@@ -153,9 +152,54 @@ describe("donorFieldsFromResult", () => {
       electionCycle: "2026",
     });
     expect(fields.fundingMix).toBeUndefined();
-    // donorCoalition still passes through unchanged (the read-time
-    // total_receipts filter lives in lookupDonorCoalition, upstream of this).
-    expect(fields.donorCoalition).toHaveLength(1);
+    // total_receipts is neither a sector nor an issue-PAC, so it's excluded from
+    // donorCoalition (it's part of the "outside named sectors" remainder). The
+    // headline still shows via totalRaised.
+    expect(fields.donorCoalition).toHaveLength(0);
+  });
+
+  it("keeps only sector + issue-PAC buckets in donorCoalition (drops funding-mix / Self / Party / Other)", () => {
+    const fields = donorFieldsFromResult({
+      found: true,
+      candidateId: "uuid-bonck",
+      totalRaised: 1091385,
+      buckets: [
+        {
+          label: "Large individual donors ($200+)",
+          amount: 908099,
+          percent: 83,
+        },
+        { label: "Other", amount: 731152, percent: 67 },
+        { label: "PACs", amount: 138125, percent: 13 },
+        { label: "Real estate & development", amount: 46182, percent: 4 },
+        { label: "Legal industry", amount: 36317, percent: 3 },
+        { label: "Self-funded", amount: 21231, percent: 2 },
+        { label: "Party committees", amount: 2500, percent: 0 },
+        {
+          label: "Issue-aligned PACs — healthcare_affordability",
+          amount: 50000,
+          percent: 5,
+        },
+      ],
+      source: "fec_api",
+      sourceUrl: "https://www.fec.gov/x",
+      electionCycle: "2026",
+    });
+    // Only the two sectors + the issue-PAC survive; funding-mix, Self-funded,
+    // Party committees, and Other are excluded.
+    expect(fields.donorCoalition).toEqual([
+      { label: "Real estate & development", percent: 4, amount: 46182 },
+      { label: "Legal industry", percent: 3, amount: 36317 },
+      {
+        label: "Issue-aligned PACs — healthcare_affordability",
+        percent: 5,
+        amount: 50000,
+        isIssuePAC: true,
+      },
+    ]);
+    // Headline + funding mix are unaffected by the coalition filter.
+    expect(fields.totalRaised).toBe(1091385);
+    expect(fields.fundingMix?.total).toBe(908099 + 138125);
   });
 
   it("maps a not-resolved result to a backstop note", () => {

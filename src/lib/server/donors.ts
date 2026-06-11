@@ -166,6 +166,16 @@ export function isSectorBucket(label: string): boolean {
   return SECTOR_LABELS.has(label);
 }
 
+/**
+ * True for named issue-aligned PAC buckets, written by the ingest with a dynamic
+ * suffix: "Issue-aligned PACs — <issue>" (see _bucket-mapping.ts IssuePacLabel).
+ * Not yet ingested, but the coalition display already routes these to the
+ * issue-PAC teaser, so the read layer recognizes them for forward-compat.
+ */
+export function isIssuePacBucket(label: string): boolean {
+  return label.startsWith("Issue-aligned PACs");
+}
+
 export async function lookupDonorCoalition(
   candidateName: string,
   stateCode: string,
