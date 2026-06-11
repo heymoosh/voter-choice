@@ -320,6 +320,46 @@ export async function mockPolis(
   });
 }
 
+/** Cold-open theme-extraction SSE: a JSON theme array (canonical ids so the
+ *  locked issues carry jurisdiction tags + score) in the chat route's SSE frames. */
+const THEME_EXTRACTION_SSE =
+  `data: ${JSON.stringify({
+    type: "text",
+    text: JSON.stringify([
+      {
+        name: "Lower insulin & drug prices",
+        quotes: ["insulin"],
+        canonicalIssue: "healthcare_affordability",
+        stance: "in_favor",
+      },
+      {
+        name: "Rent & cost-of-living protections",
+        quotes: ["rent"],
+        canonicalIssue: "housing_affordability",
+        stance: "in_favor",
+      },
+    ]),
+  })}\n\n` + 'data: {"type":"done"}\n\n';
+
+/** POST /api/chat → SSE. The cold-open issue-extraction call (its systemPrompt
+ *  asks the model to "extract civic themes") gets a theme JSON array; any other
+ *  call gets a minimal reply so it never hits the real model. */
+export async function mockChat(page: Page): Promise<void> {
+  await page.route("**/api/chat", async (route) => {
+    const sysPrompt =
+      (route.request().postDataJSON() as { systemPrompt?: string })
+        ?.systemPrompt || "";
+    const body = sysPrompt.includes("extract civic themes")
+      ? THEME_EXTRACTION_SSE
+      : 'data: {"type":"text","text":"(mocked reply)"}\n\ndata: {"type":"done"}\n\n';
+    await route.fulfill({
+      status: 200,
+      contentType: "text/event-stream",
+      body,
+    });
+  });
+}
+
 export async function mockCounters(page: Page): Promise<{ calls: Json[] }> {
   const calls: Json[] = [];
   await page.route("**/api/counters", async (route) => {
@@ -335,6 +375,9 @@ export async function mockCounters(page: Page): Promise<{ calls: Json[] }> {
 
 /** Drive home → cold-open → workspace over the installed mocks. */
 export async function goToWorkspace(page: Page): Promise<void> {
+  // Cold-open issue extraction now streams from /api/chat; mock it so Send
+  // produces the locked issues (otherwise button.lock never appears).
+  await mockChat(page);
   await page.goto("/");
   await page.evaluate(() => localStorage.clear());
   await page.goto("/");
