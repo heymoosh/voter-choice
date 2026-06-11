@@ -63,12 +63,13 @@ export type DonorLookupResult = DonorCoalitionResult | DonorCoalitionNotFound;
 const DEFAULT_ELECTION_CYCLE = "2026";
 
 /**
- * donor_aggregates.source written by the federal ingest
- * (scripts/ingest/federal-donors.ts). The sector double-count is federal-only —
- * see SECTOR_LABELS — so the read-time fix is scoped to this source. Keep
- * byte-identical to the ingest's `source: "fec_api"`.
+ * donor_aggregates.source values written by the federal ingests
+ * (scripts/ingest/federal-donors.ts → "fec_api",
+ * scripts/ingest/federal-sectors-bulk.ts → "fec_bulk"). The sector
+ * double-count is federal-only — see SECTOR_LABELS — so the read-time fix is
+ * scoped to these sources. Keep byte-identical to the ingests' `source`.
  */
-const FEDERAL_DONOR_SOURCE = "fec_api";
+const FEDERAL_DONOR_SOURCES = new Set(["fec_api", "fec_bulk"]);
 
 /** Pick the most frequently occurring string in `values`; ties broken by first occurrence. */
 function pickMostCommon(values: string[]): string {
@@ -288,7 +289,7 @@ export async function lookupDonorCoalition(
   const isFederalEmployerRecut = (b: DonorBucket) =>
     hasBreakdown &&
     (isSectorBucket(b.label) || b.label === "Other") &&
-    sourceByLabel.get(b.label) === FEDERAL_DONOR_SOURCE;
+    FEDERAL_DONOR_SOURCES.has(sourceByLabel.get(b.label) ?? "");
 
   // Named issue-PAC buckets are a classified subset of the existing "PACs"
   // funding-mix total. Keep them for display, but do not add them to
