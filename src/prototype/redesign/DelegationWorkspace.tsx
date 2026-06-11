@@ -411,6 +411,7 @@ export function DelegationWorkspace({
             onHide={() => onHide(activeSeat.id)}
             verdict={verdicts[activeSeat.id] || null}
             onVerdict={commitVerdict}
+            onShowBudgetOptions={onShowBudgetOptions}
           />
 
           {doneCount === seats.length && (

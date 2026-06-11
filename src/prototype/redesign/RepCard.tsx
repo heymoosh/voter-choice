@@ -273,7 +273,13 @@ export function CardSources({ seat }) {
    surface the no-record card uses (ResearchedPositions). Names come from
    public FEC filings — they are different people from the (possibly
    blinded) sitting member, so they render regardless of blind mode. ---- */
-function ChallengerRow({ challenger, seat, userIssues, stateCode }) {
+function ChallengerRow({
+  challenger,
+  seat,
+  userIssues,
+  stateCode,
+  onShowBudgetOptions,
+}) {
   // Module-level cache holds results across re-mounts; tick re-renders this
   // row when the research promise settles.
   const [, setTick] = useState(0);
@@ -284,8 +290,7 @@ function ChallengerRow({ challenger, seat, userIssues, stateCode }) {
     pipClass: "ind",
   };
   const raised =
-    typeof challenger.totalReceipts === "number" &&
-    challenger.totalReceipts > 0
+    typeof challenger.totalReceipts === "number" && challenger.totalReceipts > 0
       ? `${formatDollars(challenger.totalReceipts)} raised`
       : "No funds reported";
 
@@ -327,8 +332,21 @@ function ChallengerRow({ challenger, seat, userIssues, stateCode }) {
       {research?.status === "unavailable" && (
         <div className="cv2-norecord">
           <p>
-            No citable public statements found on your issues — we'd rather
-            say so than guess.
+            No citable public statements found on your issues — we'd rather say
+            so than guess.
+          </p>
+        </div>
+      )}
+      {research?.status === "budget_blocked" && (
+        <div className="cv2-norecord" data-testid="challenger-budget-blocked">
+          <p>
+            Live research is paused — the community AI budget for this month is
+            used up.{" "}
+            {onShowBudgetOptions && (
+              <button className="linklike" onClick={onShowBudgetOptions}>
+                More options →
+              </button>
+            )}
           </p>
         </div>
       )}
@@ -336,7 +354,12 @@ function ChallengerRow({ challenger, seat, userIssues, stateCode }) {
   );
 }
 
-export function ChallengersStrip({ seat, userIssues, stateCode }) {
+export function ChallengersStrip({
+  seat,
+  userIssues,
+  stateCode,
+  onShowBudgetOptions,
+}) {
   const list = seat.challengers || [];
   if (list.length === 0) return null;
   return (
@@ -356,6 +379,7 @@ export function ChallengersStrip({ seat, userIssues, stateCode }) {
           seat={seat}
           userIssues={userIssues}
           stateCode={stateCode}
+          onShowBudgetOptions={onShowBudgetOptions}
         />
       ))}
     </div>
@@ -487,7 +511,12 @@ export function CanContextSection({ canContext }) {
 }
 
 /* ---- Honest state for a seat we couldn't resolve to a sitting member ---- */
-function UnresolvedSeatCard({ seat, userIssues, stateCode }) {
+function UnresolvedSeatCard({
+  seat,
+  userIssues,
+  stateCode,
+  onShowBudgetOptions,
+}) {
   return (
     <div className="cv2-card rep-card">
       <div className="seat-strip">
@@ -530,6 +559,7 @@ function UnresolvedSeatCard({ seat, userIssues, stateCode }) {
         seat={seat}
         userIssues={userIssues}
         stateCode={stateCode}
+        onShowBudgetOptions={onShowBudgetOptions}
       />
     </div>
   );
@@ -547,6 +577,7 @@ export function RepCard({
   onHide,
   verdict,
   onVerdict,
+  onShowBudgetOptions,
 }) {
   const [expandedIssue, setExpandedIssue] = useState(null);
   const [moneyOpen, setMoneyOpen] = useState(
@@ -562,6 +593,7 @@ export function RepCard({
         seat={seat}
         userIssues={userIssues}
         stateCode={stateCode}
+        onShowBudgetOptions={onShowBudgetOptions}
       />
     );
 
@@ -693,6 +725,7 @@ export function RepCard({
         seat={seat}
         userIssues={userIssues}
         stateCode={stateCode}
+        onShowBudgetOptions={onShowBudgetOptions}
       />
 
       {/* Verdict — assessment, not selection. Rides to the scorecard + print.

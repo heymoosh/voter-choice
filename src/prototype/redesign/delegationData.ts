@@ -515,7 +515,10 @@ export function pollingInfoFromLogistics(
 export type SeatResearch =
   | { status: "loading" }
   | { status: "done"; scores: AlignmentScore[] }
-  | { status: "unavailable" };
+  | { status: "unavailable" }
+  /** The server refused on the community-budget gate — research is paused,
+   *  not failed; the UI offers the budget options instead of a retry. */
+  | { status: "budget_blocked" };
 
 const seatResearch = new Map<string, SeatResearch>();
 
@@ -561,6 +564,8 @@ export function preloadSeatResearch(
     }).then((res) => {
       if (res && res.scores && res.scores.length > 0) {
         seatResearch.set(seat.id, { status: "done", scores: res.scores });
+      } else if (res?.blocked) {
+        seatResearch.set(seat.id, { status: "budget_blocked" });
       } else {
         seatResearch.set(seat.id, { status: "unavailable" });
       }
@@ -611,7 +616,12 @@ export function researchChallenger(
     }));
   if (structuredIssues.length === 0) return;
   const existing = challengerResearchStore.get(challenger.id);
-  if (existing && existing.status !== "unavailable") return;
+  if (
+    existing &&
+    existing.status !== "unavailable" &&
+    existing.status !== "budget_blocked"
+  )
+    return;
 
   challengerResearchStore.set(challenger.id, { status: "loading" });
   fetchCandidateResearch({
@@ -625,6 +635,8 @@ export function researchChallenger(
         status: "done",
         scores: res.scores,
       });
+    } else if (res?.blocked) {
+      challengerResearchStore.set(challenger.id, { status: "budget_blocked" });
     } else {
       challengerResearchStore.set(challenger.id, { status: "unavailable" });
     }
