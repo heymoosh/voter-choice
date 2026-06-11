@@ -196,7 +196,10 @@ function computeFundingMix(
     large: pct(large),
     pac: pct(pac),
     total,
-    cycle: `${result.electionCycle} cycle`,
+    cycle: result.chamberSwitchLabel ?? `${result.electionCycle} cycle`,
+    ...(result.chamberSwitchLabel
+      ? { chamberSwitchLabel: result.chamberSwitchLabel }
+      : {}),
   };
 }
 

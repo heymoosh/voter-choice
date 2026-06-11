@@ -38,6 +38,12 @@ export interface DonorCoalitionResult {
   /** first/most-common source_url among rows for this candidate+cycle */
   sourceUrl: string;
   electionCycle: string;
+  /**
+   * Set when this candidate's 2026 fundraising is attributed to a different-
+   * chamber candidacy (e.g. a House member running for Senate). Intended for
+   * display as the cycle label: "$2.07M raised · 2026 U.S. Senate campaign".
+   */
+  chamberSwitchLabel?: string;
 }
 
 export interface DonorCoalitionNotFound {
@@ -199,8 +205,6 @@ export async function lookupDonorCoalition(
   jurisdiction: string,
   electionCycle?: string,
 ): Promise<DonorLookupResult> {
-  void stateCode; // accepted for API symmetry; jurisdiction is authoritative
-
   const cycle = electionCycle?.trim() || DEFAULT_ELECTION_CYCLE;
 
   // 1. Resolve candidate via the shared alignment matcher. Pass stateCode so
@@ -224,7 +228,7 @@ export async function lookupDonorCoalition(
   }
 
   // 2. Query donor_aggregates for this candidate + cycle.
-  const rows = await db
+  let rows = await db
     .select({
       bucketLabel: schema.donorAggregates.bucketLabel,
       amountTotal: schema.donorAggregates.amountTotal,
@@ -239,6 +243,60 @@ export async function lookupDonorCoalition(
         eq(schema.donorAggregates.electionCycle, cycle),
       ),
     );
+
+  // 3a. Chamber-switch fallback (federal only).
+  //
+  // A House member running for Senate (or vice versa) files a NEW FEC
+  // candidacy for their target chamber. The FEC attributes all 2026
+  // fundraising to that new candidacy — so querying the seat's incumbent
+  // House ID either returns nothing (no 2026 rows) or only a legacy
+  // total_receipts row (no small/large/PAC breakdown).
+  //
+  // In either case: check whether the same person has breakdown data under
+  // the sibling chamber. If so, use those rows and label the result
+  // (e.g. "2026 U.S. Senate campaign") so the voter understands they're
+  // seeing money raised to leave this seat.
+  let chamberSwitchLabel: string | undefined;
+  const needsChamberSwitch =
+    rows.length === 0 ||
+    !rows.some((r) => isFundingMixBucket(r.bucketLabel));
+  if (
+    needsChamberSwitch &&
+    (jurisdiction === "federal-house" || jurisdiction === "federal-senate")
+  ) {
+    const siblingJurisdiction =
+      jurisdiction === "federal-house" ? "federal-senate" : "federal-house";
+    const siblingCandidateId = await resolveCandidateId(
+      candidateName,
+      siblingJurisdiction,
+      stateCode,
+    );
+    if (siblingCandidateId && siblingCandidateId !== candidateId) {
+      const siblingRows = await db
+        .select({
+          bucketLabel: schema.donorAggregates.bucketLabel,
+          amountTotal: schema.donorAggregates.amountTotal,
+          source: schema.donorAggregates.source,
+          sourceUrl: schema.donorAggregates.sourceUrl,
+          rawMetadata: schema.donorAggregates.rawMetadata,
+        })
+        .from(schema.donorAggregates)
+        .where(
+          and(
+            eq(schema.donorAggregates.candidateId, siblingCandidateId),
+            eq(schema.donorAggregates.electionCycle, cycle),
+          ),
+        );
+      if (siblingRows.some((r) => isFundingMixBucket(r.bucketLabel))) {
+        rows = siblingRows;
+        const chamberName =
+          siblingJurisdiction === "federal-senate"
+            ? "U.S. Senate"
+            : "U.S. House";
+        chamberSwitchLabel = `${cycle} ${chamberName} campaign`;
+      }
+    }
+  }
 
   if (rows.length === 0) {
     return { found: false, reason: "no_donor_data" };
@@ -329,5 +387,6 @@ export async function lookupDonorCoalition(
     source,
     sourceUrl,
     electionCycle: cycle,
+    ...(chamberSwitchLabel ? { chamberSwitchLabel } : {}),
   };
 }
