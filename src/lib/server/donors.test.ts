@@ -404,6 +404,64 @@ describe("lookupDonorCoalition — happy path", () => {
     expect(tech.percent).toBe(Math.round((300000 / 1500000) * 100)); // 20
   });
 
+  it("excludes named issue-PAC buckets from totalRaised when PAC funding mix exists", async () => {
+    mockedResolve.mockResolvedValue("federal-issue-pac-candidate");
+    const { select, _chain } = makeSelectMock([]);
+    mockedGetDb.mockReturnValue({ select } as never);
+
+    _chain.where.mockResolvedValue([
+      {
+        bucketLabel: "Small individual donors (under $200)",
+        amountTotal: "100000.00",
+        source: "fec_api",
+        sourceUrl: "https://fec.gov/x",
+      },
+      {
+        bucketLabel: "Large individual donors ($200+)",
+        amountTotal: "300000.00",
+        source: "fec_api",
+        sourceUrl: "https://fec.gov/x",
+      },
+      {
+        bucketLabel: "PACs",
+        amountTotal: "50000.00",
+        source: "fec_api",
+        sourceUrl: "https://fec.gov/x",
+      },
+      {
+        bucketLabel: "Issue-aligned PACs — gun_rights_safety",
+        amountTotal: "10000.00",
+        source: "fec_bulk",
+        sourceUrl: "https://www.fec.gov/files/bulk-downloads/2026/pas226.zip",
+        rawMetadata: {
+          issuePac: {
+            canonicalIssue: "gun_rights_safety",
+            stance: "in_favor",
+          },
+        },
+      },
+    ]);
+
+    const result = await lookupDonorCoalition(
+      "Issue Pac Candidate",
+      "TX",
+      "federal-house",
+    );
+
+    expect(result.found).toBe(true);
+    if (result.found !== true) return;
+    expect(result.totalRaised).toBe(450000);
+    const issuePac = result.buckets.find((b) =>
+      b.label.startsWith("Issue-aligned PACs"),
+    );
+    expect(issuePac).toMatchObject({
+      label: "Issue-aligned PACs — gun_rights_safety",
+      amount: 10000,
+      percent: Math.round((10000 / 450000) * 100),
+      issuePacStance: "in_favor",
+    });
+  });
+
   it("KEEPS state sector buckets in totalRaised (each contribution bucketed once — sectors are disjoint org money)", async () => {
     mockedResolve.mockResolvedValue("openstates-tx-999");
     const { select, _chain } = makeSelectMock([]);

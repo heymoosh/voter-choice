@@ -233,7 +233,13 @@ export function donorFieldsFromResult(
       label: b.label,
       percent: b.percent,
       amount: b.amount,
-      ...(isIssuePacBucket(b.label) ? { isIssuePAC: true } : {}),
+      ...(isIssuePacBucket(b.label)
+        ? {
+            isIssuePAC: true,
+            alignsWith: issueFromIssuePacLabel(b.label),
+            ...(b.issuePacStance ? { issuePacStance: b.issuePacStance } : {}),
+          }
+        : {}),
     }));
   return {
     donorCoalition: coalition,
@@ -242,6 +248,13 @@ export function donorFieldsFromResult(
     donorSource: { name: result.source, url: result.sourceUrl },
     fundingMix: computeFundingMix(result),
   };
+}
+
+function issueFromIssuePacLabel(label: string): string | undefined {
+  const prefix = "Issue-aligned PACs — ";
+  if (!label.startsWith(prefix)) return undefined;
+  const issue = label.slice(prefix.length).trim();
+  return issue || undefined;
 }
 
 /**

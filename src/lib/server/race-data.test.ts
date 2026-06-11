@@ -179,6 +179,7 @@ describe("donorFieldsFromResult", () => {
           label: "Issue-aligned PACs — healthcare_affordability",
           amount: 50000,
           percent: 5,
+          issuePacStance: "opposed",
         },
       ],
       source: "fec_api",
@@ -195,6 +196,8 @@ describe("donorFieldsFromResult", () => {
         percent: 5,
         amount: 50000,
         isIssuePAC: true,
+        alignsWith: "healthcare_affordability",
+        issuePacStance: "opposed",
       },
     ]);
     // Headline + funding mix are unaffected by the coalition filter.
