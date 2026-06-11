@@ -9,7 +9,7 @@
  * vocabulary, and upserts the results into `donor_aggregates`.
  *
  * Source: https://api.open.fec.gov/developers/
- * - No key required for public tier (1 k req/hr); higher with FEC_API_KEY.
+ * - Requires FEC_API_KEY; use `npx tsx --env-file=.env.local ...`.
  * - Endpoints used:
  *   • GET /candidate/{id}/totals/ — aggregated funding buckets
  *   • GET /candidate/{id}/committees/ — find principal campaign committee
@@ -43,6 +43,13 @@ const DEFAULT_LIMIT = 500;
 const CHUNK_SIZE = 25;
 const INTER_CHUNK_DELAY_MS = 1000;
 const FEC_PAGE_SIZE = 100;
+const FEC_MAX_ATTEMPTS = 4;
+const FEC_RETRY_BASE_MS = 1000;
+const FUNDING_MIX_BUCKET_LABELS = [
+  "Small individual donors (under $200)",
+  "Large individual donors ($200+)",
+  "PACs",
+];
 
 // ---------------------------------------------------------------------------
 // Types
@@ -50,12 +57,17 @@ const FEC_PAGE_SIZE = 100;
 
 type Fetcher = typeof fetch;
 type UnknownRecord = Record<string, unknown>;
+type BulkTotalsMap = Map<string, Map<DonorBucketLabel, number>>;
 
 export type FederalDonorConfig = {
   fecApiKey?: string;
   electionCycles: string[];
   limit: number;
   fecBaseUrl: string;
+  includeEmployerBuckets?: boolean;
+  allowNameSearch?: boolean;
+  skipExisting?: boolean;
+  useBulkTotals?: boolean;
 };
 
 export type DonorAggregateRow = {
@@ -89,13 +101,27 @@ export function resolveConfig(
   const currentCycle = currentYear % 2 === 0 ? currentYear : currentYear + 1;
   const priorCycle = currentCycle - 2;
 
+  const fecApiKey = env.FEC_API_KEY?.trim();
+  if (!fecApiKey) {
+    throw new Error(
+      "FEC_API_KEY is required. Run with `npx tsx --env-file=.env.local ...`.",
+    );
+  }
+
   return {
-    fecApiKey: env.FEC_API_KEY || undefined,
-    electionCycles: [String(currentCycle), String(priorCycle)],
+    fecApiKey,
+    electionCycles: parseCycleFlag(argv) ?? [
+      String(currentCycle),
+      String(priorCycle),
+    ],
     limit:
       parseLimitFlag(argv) ??
       parsePositiveInteger(env.DONOR_LIMIT, DEFAULT_LIMIT),
     fecBaseUrl: trimTrailingSlash(env.FEC_BASE_URL ?? FEC_BASE_URL),
+    includeEmployerBuckets: !argv.includes("--skip-employers"),
+    allowNameSearch: !argv.includes("--no-name-search"),
+    skipExisting: argv.includes("--skip-existing"),
+    useBulkTotals: argv.includes("--bulk-totals"),
   };
 }
 
@@ -111,13 +137,29 @@ async function fetchFecJson(
   const parsed = new URL(url);
   if (apiKey) parsed.searchParams.set("api_key", apiKey);
 
-  const response = await fetcher(parsed.href, {
-    headers: { "user-agent": "voter-choice-federal-donor-ingest" },
-  });
-  if (!response.ok) {
-    throw new Error(`FEC HTTP ${response.status} for ${parsed.pathname}`);
+  for (let attempt = 1; attempt <= FEC_MAX_ATTEMPTS; attempt++) {
+    const response = await fetcher(parsed.href, {
+      headers: { "user-agent": "voter-choice-federal-donor-ingest" },
+    });
+    if (response.ok) return response.json();
+
+    if (shouldRetryFecResponse(response.status) && attempt < FEC_MAX_ATTEMPTS) {
+      const retryAfter = response.headers?.get("retry-after");
+      const delayMs =
+        parseRetryAfterMs(retryAfter) ?? FEC_RETRY_BASE_MS * 2 ** (attempt - 1);
+      console.warn(
+        `[federal-donors] fec_retry status=${response.status} attempt=${attempt}/${FEC_MAX_ATTEMPTS} delay_ms=${delayMs} path=${parsed.pathname}`,
+      );
+      await sleep(delayMs);
+      continue;
+    }
+
+    throw new Error(
+      `FEC HTTP ${response.status} for ${parsed.pathname} after ${attempt} attempt${attempt === 1 ? "" : "s"}`,
+    );
   }
-  return response.json();
+
+  throw new Error(`FEC fetch failed for ${parsed.pathname}`);
 }
 
 /**
@@ -170,12 +212,17 @@ async function fetchFecAllPages(
  * It may be stored as source_id / sourceId or inside raw_metadata.fec.candidate_id.
  */
 export function extractFecCandidateId(candidate: UnknownRecord): string | null {
-  // Prefer sourceId / source_id which is typically set to the FEC candidate_id
-  // for federal candidates ingested via federal-votes.ts.
-  // FEC IDs follow the pattern: letter + 8 digits (e.g. H1234567, S0001234).
+  const fromColumn =
+    getString(candidate, "fecCandidateId") ??
+    getString(candidate, "fec_candidate_id");
+  if (fromColumn) return fromColumn;
+
+  // FEC roster rows store candidate ids directly in sourceId/source_id.
+  // House/Senate IDs include state letters (for example H8TX22107), so this
+  // accepts the full FEC alphanumeric shape instead of digit-only IDs.
   const sourceId =
     getString(candidate, "sourceId") ?? getString(candidate, "source_id");
-  if (sourceId && /^[A-Z]\d{7,8}$/u.test(sourceId)) return sourceId;
+  if (sourceId && looksLikeFecCandidateId(sourceId)) return sourceId;
 
   // Fall back to raw_metadata / rawMetadata → fec.candidate_id
   const raw =
@@ -216,6 +263,88 @@ function lastNameFromGovTrackName(name: string): string {
   return parts[parts.length - 1] ?? name;
 }
 
+function firstLastNameKey(name: string): string | null {
+  const stripped = name
+    .replace(/^(Rep\.|Sen\.|Del\.|Com\.)\s+/iu, "")
+    .replace(/\s*\[.*\]\s*$/u, "");
+  const parts = stripped
+    .toLowerCase()
+    .replace(/[^a-z\s-]/gu, " ")
+    .split(/\s+/u)
+    .filter(Boolean);
+  if (parts.length === 0) return null;
+  return `${parts[0]}:${parts[parts.length - 1]}`;
+}
+
+function seatFecLookupKey(candidate: UnknownRecord): string | null {
+  const fullName = getString(candidate, "fullName");
+  const nameKey = fullName ? firstLastNameKey(fullName) : null;
+  if (!nameKey) return null;
+
+  const jurisdiction = getString(candidate, "jurisdiction");
+  const office =
+    getString(candidate, "office") ??
+    (jurisdiction === "federal-senate"
+      ? "senate"
+      : jurisdiction === "federal-house"
+        ? "house"
+        : null);
+  if (office !== "house" && office !== "senate") return null;
+
+  const state = (
+    getString(candidate, "state") ??
+    (fullName ? stateFromGovTrackName(fullName) : "")
+  ).toUpperCase();
+  if (!state) return null;
+
+  const district =
+    office === "senate"
+      ? ""
+      : (getString(candidate, "district") ?? "").padStart(2, "0");
+
+  return `${office}:${state}:${district}:${nameKey}`;
+}
+
+function buildStoredFecIdLookup(
+  candidateRows: UnknownRecord[],
+): Map<string, string> {
+  const lookup = new Map<string, string | null>();
+
+  for (const candidate of candidateRows) {
+    const fecId = extractFecCandidateId(candidate);
+    if (!fecId) continue;
+
+    const key = seatFecLookupKey(candidate);
+    if (!key) continue;
+
+    const existing = lookup.get(key);
+    if (existing && existing !== fecId) {
+      lookup.set(key, null);
+    } else if (existing === undefined) {
+      lookup.set(key, fecId);
+    }
+  }
+
+  return new Map(
+    [...lookup.entries()].filter((entry): entry is [string, string] =>
+      Boolean(entry[1]),
+    ),
+  );
+}
+
+function applyStoredFecIdLookup(
+  candidate: UnknownRecord,
+  lookup: Map<string, string>,
+): UnknownRecord {
+  if (extractFecCandidateId(candidate)) return candidate;
+
+  const key = seatFecLookupKey(candidate);
+  const fecCandidateId = key ? lookup.get(key) : null;
+  if (!fecCandidateId) return candidate;
+
+  return { ...candidate, fecCandidateId };
+}
+
 /**
  * Resolve an FEC candidate id by name+office+state search when none is stored
  * (mirrors fix-federal-fec-ids.ts). FEC sorts by receipts desc, so the
@@ -229,7 +358,9 @@ async function resolveFecIdByName(
   fetcher: Fetcher,
 ): Promise<string | null> {
   const name = getString(candidate, "fullName");
-  const office = fecOfficeFromJurisdiction(getString(candidate, "jurisdiction"));
+  const office = fecOfficeFromJurisdiction(
+    getString(candidate, "jurisdiction"),
+  );
   if (!name || !office) return null;
   const lastName = lastNameFromGovTrackName(name);
   const state = stateFromGovTrackName(name);
@@ -271,6 +402,12 @@ export async function fetchFecTotals(
     .map((v) => asRecord(v))
     .filter((v): v is UnknownRecord => Boolean(v));
 
+  return bucketsFromFecTotalsRows(results);
+}
+
+function bucketsFromFecTotalsRows(
+  results: UnknownRecord[],
+): Map<DonorBucketLabel, number> {
   const buckets = new Map<DonorBucketLabel, number>();
 
   for (const row of results) {
@@ -308,6 +445,40 @@ export async function fetchFecTotals(
   return buckets;
 }
 
+function bulkTotalsKey(fecCandidateId: string, electionCycle: string): string {
+  return `${fecCandidateId}:${electionCycle}`;
+}
+
+export async function fetchFecBulkTotals(
+  config: FederalDonorConfig,
+  fetcher: Fetcher,
+): Promise<BulkTotalsMap> {
+  const totals = new Map<string, Map<DonorBucketLabel, number>>();
+
+  for (const cycle of config.electionCycles) {
+    for (const office of ["H", "S"]) {
+      const url = `${config.fecBaseUrl}/candidates/totals/`;
+      const rows = await fetchFecAllPages(url, fetcher, config, {
+        cycle,
+        election_year: cycle,
+        election_full: "true",
+        office,
+      });
+
+      for (const row of rows) {
+        const fecCandidateId = getString(row, "candidate_id");
+        if (!fecCandidateId) continue;
+
+        const buckets = bucketsFromFecTotalsRows([row]);
+        if (buckets.size === 0) continue;
+        totals.set(bulkTotalsKey(fecCandidateId, cycle), buckets);
+      }
+    }
+  }
+
+  return totals;
+}
+
 /**
  * Find the principal campaign committee ID for an FEC candidate.
  */
@@ -342,8 +513,9 @@ export async function fetchEmployerBuckets(
   config: FederalDonorConfig,
   fetcher: Fetcher,
 ): Promise<Map<DonorBucketLabel, number>> {
-  const url = `${config.fecBaseUrl}/committee/${encodeURIComponent(committeeId)}/schedules/schedule_a/by_employer/`;
+  const url = `${config.fecBaseUrl}/schedules/schedule_a/by_employer/`;
   const rows = await fetchFecAllPages(url, fetcher, config, {
+    committee_id: committeeId,
     cycle: electionCycle,
     sort: "-total",
   });
@@ -379,6 +551,7 @@ export async function buildDonorRows(
   candidate: UnknownRecord,
   config: FederalDonorConfig,
   fetcher: Fetcher,
+  bulkTotals?: BulkTotalsMap,
 ): Promise<DonorAggregateRow[]> {
   const candidateId = getString(candidate, "id");
   if (!candidateId) return [];
@@ -387,7 +560,7 @@ export async function buildDonorRows(
   // absent (our federal candidates carry bioguide ids + GovTrack-formatted
   // names like "Sen. Cory Booker [D-NJ]" but no stored FEC candidate id).
   let fecId = extractFecCandidateId(candidate);
-  if (!fecId) {
+  if (!fecId && config.allowNameSearch !== false) {
     fecId = await resolveFecIdByName(candidate, config, fetcher);
   }
   if (!fecId) {
@@ -404,35 +577,39 @@ export async function buildDonorRows(
       const buckets = new Map<DonorBucketLabel, number>();
 
       // 1. Aggregated FEC totals
-      const totalBuckets = await fetchFecTotals(fecId, cycle, config, fetcher);
+      const totalBuckets = bulkTotals
+        ? new Map(bulkTotals.get(bulkTotalsKey(fecId, cycle)))
+        : await fetchFecTotals(fecId, cycle, config, fetcher);
       for (const [label, amount] of totalBuckets) {
         accumulate(buckets, label, amount);
       }
 
       // 2. Employer-level itemized breakdown (requires committee ID)
-      try {
-        const committeeId = await fetchPrincipalCommitteeId(
-          fecId,
-          cycle,
-          config,
-          fetcher,
-        );
-        if (committeeId) {
-          const employerBuckets = await fetchEmployerBuckets(
-            committeeId,
+      if (config.includeEmployerBuckets !== false) {
+        try {
+          const committeeId = await fetchPrincipalCommitteeId(
+            fecId,
             cycle,
             config,
             fetcher,
           );
-          // Merge employer buckets (additive with totals)
-          for (const [label, amount] of employerBuckets) {
-            accumulate(buckets, label, amount);
+          if (committeeId) {
+            const employerBuckets = await fetchEmployerBuckets(
+              committeeId,
+              cycle,
+              config,
+              fetcher,
+            );
+            // Merge employer buckets (additive with totals)
+            for (const [label, amount] of employerBuckets) {
+              accumulate(buckets, label, amount);
+            }
           }
+        } catch (error) {
+          console.warn(
+            `[federal-donors] employer_fetch_failed candidate=${candidateId} cycle=${cycle} error=${safeErrorMessage(error)}`,
+          );
         }
-      } catch (error) {
-        console.warn(
-          `[federal-donors] employer_fetch_failed candidate=${candidateId} cycle=${cycle} error=${safeErrorMessage(error)}`,
-        );
       }
 
       const sourceUrl = `${config.fecBaseUrl}/candidate/${fecId}/totals/?cycle=${cycle}`;
@@ -539,7 +716,7 @@ export async function ingestFederalDonors({
   const config = resolveConfig(env, argv);
 
   console.log(
-    `[federal-donors] starting cycles=${config.electionCycles.join(",")} limit=${config.limit}`,
+    `[federal-donors] starting cycles=${config.electionCycles.join(",")} limit=${config.limit} employers=${config.includeEmployerBuckets !== false} nameSearch=${config.allowNameSearch !== false} skipExisting=${config.skipExisting === true} bulkTotals=${config.useBulkTotals === true}`,
   );
 
   const counts: FederalDonorCounts = {
@@ -566,7 +743,23 @@ export async function ingestFederalDonors({
   // Fetch federal candidates from DB. A name filter is pushed into the SQL so it
   // matches across ALL federal candidates — there are >500, so filtering in JS
   // after `.limit()` would silently miss anyone outside the first page.
-  const baseWhere = sql`${candidates.jurisdiction} IN ('federal-house', 'federal-senate')`;
+  let baseWhere = sql`${candidates.jurisdiction} IN ('federal-house', 'federal-senate') AND (${candidates.totalReceipts} IS NULL OR ${candidates.totalReceipts} > 0)`;
+  if (config.skipExisting === true) {
+    const cycleList = sql.join(
+      config.electionCycles.map((cycle) => sql`${cycle}`),
+      sql`, `,
+    );
+    const bucketList = sql.join(
+      FUNDING_MIX_BUCKET_LABELS.map((label) => sql`${label}`),
+      sql`, `,
+    );
+    baseWhere = sql`${baseWhere} AND NOT EXISTS (
+      SELECT 1 FROM donor_aggregates existing_donor_aggregate
+      WHERE existing_donor_aggregate.candidate_id = ${candidates.id}
+        AND existing_donor_aggregate.election_cycle IN (${cycleList})
+        AND existing_donor_aggregate.bucket_label IN (${bucketList})
+    )`;
+  }
   const where = nameFilter
     ? sql`${baseWhere} AND (${sql.join(
         nameFilter.map((f) => sql`${candidates.fullName} ILIKE ${`%${f}%`}`),
@@ -580,6 +773,14 @@ export async function ingestFederalDonors({
     .limit(config.limit)) as UnknownRecord[];
 
   counts.candidatesQueried = federalCandidates.length;
+  const storedFecIdLookup = buildStoredFecIdLookup(federalCandidates);
+  const bulkTotals =
+    config.useBulkTotals === true
+      ? await fetchFecBulkTotals(config, fetcher)
+      : undefined;
+  if (bulkTotals) {
+    console.log(`[federal-donors] bulk_totals rows=${bulkTotals.size}`);
+  }
   console.log(
     `[federal-donors] found ${federalCandidates.length} federal candidates` +
       (nameFilter ? ` (name filter: ${nameFilter.join(",")})` : "") +
@@ -597,14 +798,23 @@ export async function ingestFederalDonors({
 
     for (const candidate of chunk) {
       try {
-        const rows = await buildDonorRows(candidate, config, fetcher);
+        const candidateWithStoredFecId = applyStoredFecIdLookup(
+          candidate,
+          storedFecIdLookup,
+        );
+        const rows = await buildDonorRows(
+          candidateWithStoredFecId,
+          config,
+          fetcher,
+          bulkTotals,
+        );
         if (rows.length === 0) {
           counts.candidatesSkipped += 1;
           if (dryRun) {
-            const meta = asRecord(candidate.rawMetadata);
+            const meta = asRecord(candidateWithStoredFecId.rawMetadata);
             const fecMeta = asRecord(meta?.fec);
             console.log(
-              `[federal-donors] dry-run SKIP name="${getString(candidate, "fullName")}" id=${getString(candidate, "id")} sourceId=${getString(candidate, "sourceId")} fecMetaId=${getString(fecMeta, "candidate_id") ?? "—"} (no_fec_id)`,
+              `[federal-donors] dry-run SKIP name="${getString(candidateWithStoredFecId, "fullName")}" id=${getString(candidateWithStoredFecId, "id")} sourceId=${getString(candidateWithStoredFecId, "sourceId")} fecMetaId=${getString(fecMeta, "candidate_id") ?? "—"} (no_fec_id)`,
             );
           }
           continue;
@@ -615,7 +825,7 @@ export async function ingestFederalDonors({
             "fecCandidateId",
           );
           console.log(
-            `[federal-donors] dry-run RESOLVE name=${getString(candidate, "fullName")} fec=${resolvedFec} rows=${rows.length} → ` +
+            `[federal-donors] dry-run RESOLVE name=${getString(candidateWithStoredFecId, "fullName")} fec=${resolvedFec} rows=${rows.length} → ` +
               rows
                 .map(
                   (r) =>
@@ -630,9 +840,12 @@ export async function ingestFederalDonors({
         counts.rowsUpserted += upserted;
         counts.candidatesProcessed += 1;
         if (dropLegacy) {
-          await deleteLegacyTotalReceipts(db, getString(candidate, "id") ?? "");
+          await deleteLegacyTotalReceipts(
+            db,
+            getString(candidateWithStoredFecId, "id") ?? "",
+          );
           console.log(
-            `[federal-donors] dropped legacy total_receipts (if any) for ${getString(candidate, "id")}`,
+            `[federal-donors] dropped legacy total_receipts (if any) for ${getString(candidateWithStoredFecId, "id")}`,
           );
         }
       } catch (error) {
@@ -722,6 +935,23 @@ function trimTrailingSlash(value: string): string {
   return value.replace(/\/+$/u, "");
 }
 
+function looksLikeFecCandidateId(value: string): boolean {
+  return /^[A-Z][A-Z0-9]{7,8}$/u.test(value);
+}
+
+function shouldRetryFecResponse(status: number): boolean {
+  return status === 429 || (status >= 500 && status <= 599);
+}
+
+function parseRetryAfterMs(value: string | null | undefined): number | null {
+  if (!value) return null;
+  const seconds = Number.parseFloat(value);
+  if (Number.isFinite(seconds) && seconds >= 0) return seconds * 1000;
+  const dateMs = Date.parse(value);
+  if (!Number.isNaN(dateMs)) return Math.max(0, dateMs - Date.now());
+  return null;
+}
+
 function safeErrorMessage(error: unknown): string {
   if (error instanceof Error) return error.message.replace(/\s+/gu, " ");
   return "unknown";
@@ -733,6 +963,21 @@ function parseLimitFlag(argv: string[]): number | null {
   const value = argv[idx + 1];
   const parsed = Number.parseInt(value ?? "", 10);
   return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+}
+
+function parseCycleFlag(argv: string[]): string[] | null {
+  const idx = argv.indexOf("--cycle");
+  if (idx === -1) return null;
+  const value = argv[idx + 1];
+  if (!value) throw new Error("--cycle requires an election cycle value");
+  const cycles = value
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  if (cycles.length === 0 || cycles.some((cycle) => !/^\d{4}$/u.test(cycle))) {
+    throw new Error(`Invalid --cycle value: ${value}`);
+  }
+  return cycles;
 }
 
 /** `--name booker,norcross` → ["booker","norcross"] (lowercased), else null. */
