@@ -106,13 +106,42 @@ export async function mockResearchCandidate(
   });
 }
 
-/** POST /api/chat → minimal SSE so the per-race Q&A never hits the real model. */
+/** Cold-open theme-extraction SSE: a JSON theme array (with canonical ids so the
+ *  locked issues score) wrapped in the chat route's SSE frames. */
+const THEME_EXTRACTION_SSE =
+  `data: ${JSON.stringify({
+    type: "text",
+    text: JSON.stringify([
+      {
+        name: "Lower insulin & drug prices",
+        quotes: ["insulin"],
+        canonicalIssue: "healthcare_affordability",
+        stance: "in_favor",
+      },
+      {
+        name: "Rent & cost-of-living protections",
+        quotes: ["rent"],
+        canonicalIssue: "housing_affordability",
+        stance: "in_favor",
+      },
+    ]),
+  })}\n\n` + 'data: {"type":"done"}\n\n';
+
+/** POST /api/chat → SSE. The cold-open issue-extraction call (its systemPrompt
+ *  asks the model to "extract civic themes") gets a theme JSON array; every other
+ *  call (the per-race Q&A) gets a minimal reply so it never hits the real model. */
 export async function mockChat(page: Page): Promise<void> {
   await page.route("**/api/chat", async (route) => {
+    const sysPrompt =
+      (route.request().postDataJSON() as { systemPrompt?: string })
+        ?.systemPrompt || "";
+    const body = sysPrompt.includes("extract civic themes")
+      ? THEME_EXTRACTION_SSE
+      : 'data: {"type":"text","text":"(mocked reply)"}\n\ndata: {"type":"done"}\n\n';
     await route.fulfill({
       status: 200,
       contentType: "text/event-stream",
-      body: 'data: {"type":"text","text":"(mocked reply)"}\n\ndata: {"type":"done"}\n\n',
+      body,
     });
   });
 }

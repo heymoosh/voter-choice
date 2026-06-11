@@ -5,7 +5,7 @@
    can be replaced with real API data. createRoot stripped; App exported. */
 import React from "react";
 import {
-  RACES, RACE_PATTERNS, ALIGNMENT_SCORES, PRESET_ISSUES, PROPOSITION_DETAIL,
+  RACES, RACE_PATTERNS, ALIGNMENT_SCORES, PROPOSITION_DETAIL,
   PROPOSITION_KIND_META, SAMPLE_LONGFORM, POLLING_INFO, PARTY_META,
   STATE_ELECTION_DATA, TODAY_ISO,
   getRacePatternsForRace, getCandidatePatterns, getAlignmentScoresForRace,
@@ -32,6 +32,8 @@ import {
   PROP_SECTIONS,
   applyRealStateResources,
 } from "./realData";
+import { buildThemeExtractionPrompt } from "../lib/prompts/theme-extraction";
+import { parseThemeExtraction } from "../lib/prompts/parse-theme-extraction";
 import { getFallbackStateData, getStateData, findUpcomingElection } from "../lib/getStateData";
 import { getStateRule } from "../lib/state-rules/lookup";
 import {
@@ -609,6 +611,11 @@ function IssueRow({ issue, index, total, onMoveUp, onMoveDown, onRename, onRemov
             </div>
           ))}
         </div>
+        {!issue.canonicalIssue && (
+          <div style={{ marginTop: '6px', fontSize: '12px', color: 'var(--ink-2)', fontStyle: 'italic' }}>
+            tracked, but no voting-record data to score this against
+          </div>
+        )}
       </div>
       <div className="acts">
         <button className="danger" onClick={onRemove}>REMOVE</button>
@@ -4277,6 +4284,26 @@ function LoadingView({ address, onDone, variant = 'ballot' }) {
   );
 }
 
+/* Map the LLM theme-extraction output (parseThemeExtraction → Theme[]) into the
+   issue shape the cold-open UI + scoring already consume:
+   - IssueRow renders `interpretation` + `quotes:[{label,text}]`
+   - toApiIssues() (realData) reads `canonicalIssue` + `interpretation` + `stance`
+     to build the /api/race-data call. `canonicalIssue` may be undefined → that
+     issue is dropped from scoring (and flagged "not scored" in the row).
+   - `stance` stays the model's enum ("in_favor"|"opposed"); toStance() handles it. */
+function themesToIssues(themes, userText) {
+  return themes.map((t, i) => ({
+    sourceType: 'freeText',
+    sourceText: userText,
+    rank: i + 1,
+    interpretation: t.name,
+    canonicalIssue: t.canonicalIssue,
+    stance: t.stance,
+    confidence: 'clear',
+    quotes: (t.quotes || []).map((text, qi) => ({ label: qi === 0 ? 'example' : 'and', text })),
+  }));
+}
+
 /* ============ ColdOpenView ============
    Maps to: src/components/ColdOpenInput.tsx + ConcernInterpretation.tsx
 
@@ -4288,19 +4315,62 @@ function ColdOpenView({ address, onLock, savedIssues, contextNote }) {
   const [submittedText, setSubmittedText] = useStateV('');
   const [issues, setIssues] = useStateV(savedIssues || []);
   const [thinking, setThinking] = useStateV(false);
+  const [error, setError] = useStateV(null);
 
   function fillSample() { setDraft(SAMPLE_LONGFORM); }
 
+  /* Real LLM extraction: stream /api/chat with the theme-extraction prompt,
+     accumulate the reply, parse it to themes, and map them to issues. On ANY
+     failure we return to the 'prompt' phase with `draft` intact and show an
+     honest error banner — the retry is just clicking Send again. No sample
+     fallback (honest-state contract). */
   function send() {
-    if (!draft.trim()) return;
-    setSubmittedText(draft.trim());
+    const userText = draft.trim();
+    if (!userText) return;
+    setSubmittedText(userText);
+    setError(null);
     setThinking(true);
     setPhase('thinking');
-    setTimeout(() => {
-      setIssues(PRESET_ISSUES.map(t => ({ ...t })));
-      setThinking(false);
-      setPhase('review');
-    }, 1200);
+
+    let acc = '';
+    streamChatReply(
+      {
+        messages: [{ role: 'user', content: userText }],
+        systemPrompt: buildThemeExtractionPrompt({ userInput: userText }),
+        sessionId: getChatSessionId(),
+        messageCount: 1,
+      },
+      {
+        onText: (chunk) => { acc += chunk; },
+        onDone: () => {
+          try {
+            const themes = parseThemeExtraction(acc);
+            if (!themes.length) {
+              setError('I couldn’t pull any issues from that — try adding a bit more about what’s on your mind.');
+              setThinking(false);
+              setPhase('prompt');
+              return;
+            }
+            setIssues(themesToIssues(themes, userText));
+            setThinking(false);
+            setPhase('review');
+          } catch {
+            setError('Something went wrong reading that — please try again.');
+            setThinking(false);
+            setPhase('prompt');
+          }
+        },
+        onError: (_reason, meta) => {
+          const blk = meta?.code ? resolveChatBlock(meta.code) : { budget: false, message: null };
+          const msg = blk.budget
+            ? 'The AI usage limit has been reached for now — please try again later.'
+            : (blk.message || 'I couldn’t read your message just now — please try again.');
+          setError(msg);
+          setThinking(false);
+          setPhase('prompt');
+        },
+      },
+    );
   }
 
   function moveIssue(idx, dir) {
@@ -4342,6 +4412,7 @@ function ColdOpenView({ address, onLock, savedIssues, contextNote }) {
     setDraft(submittedText);
     setSubmittedText('');
     setIssues([]);
+    setError(null);
   }
 
   function lockIn() {
@@ -4375,6 +4446,9 @@ function ColdOpenView({ address, onLock, savedIssues, contextNote }) {
                 <span className="hint">Auto-saving to your device · nothing leaves your browser yet</span>
                 <button className="send" onClick={send} disabled={!draft.trim()}>Send →</button>
               </div>
+              {error && (
+                <div style={{ marginTop: '8px', fontSize: '13px', color: 'var(--danger, #b3261e)' }}>{error}</div>
+              )}
             </div>
             <div className="starter-chips" style={{ marginTop: '12px', marginLeft: '4px' }}>
               <button className="sc" onClick={fillSample}>Not sure where to start — show me an example</button>
@@ -4411,7 +4485,7 @@ function ColdOpenView({ address, onLock, savedIssues, contextNote }) {
 
                 {issues.map((iss, i) => (
                   <IssueRow
-                    key={iss.canonicalIssue || iss.sourceText || i}
+                    key={`${i}-${iss.canonicalIssue || iss.interpretation || iss.sourceText}`}
                     issue={iss}
                     index={i}
                     total={issues.length}
