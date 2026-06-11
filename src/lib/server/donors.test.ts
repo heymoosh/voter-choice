@@ -459,9 +459,7 @@ describe("lookupDonorCoalition — happy path", () => {
     if (result.found !== true) return;
 
     // ALL buckets count — state sectors and "Other" are real distinct dollars.
-    expect(result.totalRaised).toBe(
-      500000 + 800000 + 300000 + 150000 + 100000,
-    ); // 1,850,000
+    expect(result.totalRaised).toBe(500000 + 800000 + 300000 + 150000 + 100000); // 1,850,000
   });
 
   it("defaults electionCycle to '2026' when omitted", async () => {
