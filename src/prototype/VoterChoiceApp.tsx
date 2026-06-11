@@ -6459,4 +6459,8 @@ export {
   MethodologyPage,
   PrivacyPage,
   TipJarPage,
+  // Reused by the delegation redesign (seat chat / issue editing / full record).
+  AITimeoutBanner,
+  IssueRow,
+  AllVotesPanel,
 };

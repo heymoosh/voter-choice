@@ -20,6 +20,7 @@
 import React, { useState, useEffect } from "react";
 import { AppNav, PollingStatusBar } from "../VoterChoiceApp";
 import { RepCard } from "./RepCard";
+import { SeatChat } from "./SeatChat";
 import { issuesForLevel } from "./delegationData";
 
 function tierIntro(section, { userIssues, stateName }) {
@@ -253,6 +254,12 @@ export function DelegationWorkspace({
   onPrint,
   onContinueElsewhere,
   onSeeStanding,
+  chatMessages,
+  chatTimeouts,
+  budgetTier,
+  onSendChat,
+  onRetryChat,
+  onShowBudgetOptions,
 }) {
   const activeSeat = seats.find((s) => s.id === activeSeatId) || seats[0];
   const activeIdx = seats.findIndex((s) => s.id === activeSeat.id);
@@ -413,6 +420,22 @@ export function DelegationWorkspace({
                 where you stand among your neighbors →
               </button>
             </div>
+          )}
+
+          {onSendChat && (
+            <SeatChat
+              key={"chat-" + activeSeat.id}
+              seat={activeSeat}
+              isRevealed={!blindMode || revealed.has(activeSeat.id)}
+              userIssues={issuesForLevel(userIssues, activeSeat.level)}
+              messages={chatMessages?.[activeSeat.id]}
+              errorState={chatTimeouts?.[activeSeat.id]}
+              budgetTier={budgetTier}
+              onSend={(text) => onSendChat(activeSeat.id, text)}
+              onRetry={() => onRetryChat(activeSeat.id)}
+              onHandoff={onContinueElsewhere}
+              onShowBudgetOptions={onShowBudgetOptions || onContinueElsewhere}
+            />
           )}
         </section>
 

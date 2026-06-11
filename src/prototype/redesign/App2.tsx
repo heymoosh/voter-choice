@@ -44,8 +44,12 @@ import {
   preloadSeatResearch,
   getSeatResearch,
   submitSessionCounters,
+  issuesForLevel,
 } from "./delegationData";
 import { loadPolisScopes } from "./polisAdapter";
+import { streamChatReply, getChatSessionId } from "../realData";
+import { buildSeatChatSystemPrompt } from "./seatChatPrompt";
+import { resolveChatBlock } from "./chatBlocks";
 
 // Durable (localStorage): the only thing kept across a tab close — the user's
 // issues ("Polis" data) plus a county-level-at-most location. Never the precise
@@ -168,6 +172,13 @@ function App2Inner() {
   }));
   const [showHandoff, setShowHandoff] = useState(false);
 
+  // Seat chat — in browser memory ONLY (never persisted; the privacy contract
+  // is that chat history dies with the tab). Keyed by seat id.
+  const [chatMessages, setChatMessages] = useState({});
+  const [chatTimeouts, setChatTimeouts] = useState({});
+  const [budgetTier, setBudgetTier] = useState(null);
+  const prevChatSeatRef = useRef(null);
+
   // Fetched (not persisted — refetched on resume)
   const [delegation, setDelegation] = useState(null);
   const [stateData, setStateData] = useState(null);
@@ -228,6 +239,9 @@ function App2Inner() {
       setVerdicts({});
       setRevealed(new Set());
       setActiveSeatId(null);
+      setChatMessages({});
+      setChatTimeouts({});
+      prevChatSeatRef.current = null;
     }
     setStage("loading");
     const result = await fetchDelegation(addr);
@@ -301,6 +315,132 @@ function App2Inner() {
       window.scrollTo({ top: 0, behavior: "auto" });
   }
 
+  /* ─── Seat chat (ported from the shipped WorkspaceView's chat handlers) ─── */
+
+  // "New session" for the budget soft-close gate = this tab's chat session has
+  // never sent a turn. Tracked in sessionStorage (like the session id itself)
+  // so a same-tab reload doesn't re-flag an in-progress session as new.
+  const CHAT_STARTED_KEY = "voter-choice:chat-started-v1";
+  function consumeIsNewSession() {
+    try {
+      if (sessionStorage.getItem(CHAT_STARTED_KEY)) return false;
+      sessionStorage.setItem(CHAT_STARTED_KEY, "1");
+    } catch {
+      /* private mode — treat every tab as new */
+    }
+    return true;
+  }
+
+  // Map the {who,text} chat log → the chat route's {role,content}, dropping any
+  // empty in-flight AI bubble so it never leaks into history.
+  function mapChatHistory(seatId) {
+    return (chatMessages[seatId] || [])
+      .filter((m) => !(m.who === "ai" && !m.text))
+      .map((m) => ({
+        role: m.who === "user" ? "user" : "assistant",
+        content: m.text,
+      }));
+  }
+
+  // Append a fresh AI bubble and stream a real /api/chat reply into it. The
+  // bubble is tracked by a unique `_id` (not "last") so concurrent sends to
+  // the same seat never cross-contaminate. `apiMessages` ends on the user turn.
+  function runChatStream(seatId, apiMessages) {
+    setChatTimeouts((prev) => {
+      if (!prev[seatId]) return prev;
+      const next = { ...prev };
+      delete next[seatId];
+      return next;
+    });
+
+    const aiId =
+      "ai-" + Date.now() + "-" + Math.random().toString(36).slice(2, 7);
+    setChatMessages((prev) => ({
+      ...prev,
+      [seatId]: [...(prev[seatId] || []), { who: "ai", text: "", _id: aiId }],
+    }));
+
+    const seat = seats.find((s) => s.id === seatId);
+    const systemPrompt = buildSeatChatSystemPrompt({
+      seat,
+      userIssues: issuesForLevel(issues, seat?.level || "federal"),
+      stateCode: delegation?.stateCode || "",
+      isRevealed: !blindMode || revealed.has(seatId),
+      research: getSeatResearch(seatId),
+    });
+    const prevSeat = prevChatSeatRef.current;
+    prevChatSeatRef.current = seatId;
+
+    streamChatReply(
+      {
+        messages: apiMessages,
+        systemPrompt,
+        sessionId: getChatSessionId(),
+        messageCount: apiMessages.length,
+        isNewSession: consumeIsNewSession(),
+        activeRaceId: seatId,
+        prevActiveRaceId: prevSeat || undefined,
+      },
+      {
+        onBudgetTier: (tier) => setBudgetTier(tier),
+        onText: (chunk) =>
+          setChatMessages((prev) => ({
+            ...prev,
+            [seatId]: (prev[seatId] || []).map((m) =>
+              m._id === aiId ? { ...m, text: m.text + chunk } : m,
+            ),
+          })),
+        onError: (_reason, meta) => {
+          // Drop the (empty/partial) AI bubble first — whichever surface shows.
+          setChatMessages((prev) => ({
+            ...prev,
+            [seatId]: (prev[seatId] || []).filter((m) => m._id !== aiId),
+          }));
+          const blk = resolveChatBlock(meta?.code);
+          if (blk.budget) {
+            handleBudgetBlock();
+            return;
+          }
+          // Block-specific message string, or `true` → generic retry banner.
+          setChatTimeouts((prev) => ({
+            ...prev,
+            [seatId]: blk.message || true,
+          }));
+        },
+      },
+    );
+  }
+
+  // Budget gate hit: surface the continue-elsewhere options. (PR-1: the
+  // handoff modal; the dedicated budget/BYOK modal replaces this target.)
+  function handleBudgetBlock() {
+    setShowHandoff(true);
+  }
+
+  function handleSendChat(seatId, text) {
+    const prior = mapChatHistory(seatId);
+    // Drop dangling trailing user turn(s) — left by a prior FAILED send (no
+    // assistant reply) or a still-empty in-flight send. Without this the
+    // payload would be [..., user, user], which the chat API rejects.
+    while (prior.length && prior[prior.length - 1].role === "user") prior.pop();
+    setChatMessages((prev) => ({
+      ...prev,
+      [seatId]: [...(prev[seatId] || []), { who: "user", text }],
+    }));
+    runChatStream(seatId, [...prior, { role: "user", content: text }]);
+  }
+
+  function handleRetryChat(seatId) {
+    // The failed turn's empty AI bubble was already removed; the log ends on
+    // the user's question. Trim trailing assistant turns so the payload ends
+    // on `user` (the route's contract), then replay.
+    const history = mapChatHistory(seatId);
+    while (history.length && history[history.length - 1].role === "assistant")
+      history.pop();
+    if (history.length === 0) return;
+    runChatStream(seatId, history);
+  }
+
   function setVerdict(seatId, v) {
     setVerdicts((prev) => {
       const next = { ...prev };
@@ -369,6 +509,9 @@ function App2Inner() {
     setDelegation(null);
     setPollingInfo(null);
     setSeats([]);
+    setChatMessages({});
+    setChatTimeouts({});
+    prevChatSeatRef.current = null;
     setStage("home");
   }
 
@@ -545,6 +688,12 @@ function App2Inner() {
           onPrint={() => setStage("print")}
           onContinueElsewhere={() => setShowHandoff(true)}
           onSeeStanding={seeStanding}
+          chatMessages={chatMessages}
+          chatTimeouts={chatTimeouts}
+          budgetTier={budgetTier}
+          onSendChat={handleSendChat}
+          onRetryChat={handleRetryChat}
+          onShowBudgetOptions={handleBudgetBlock}
         />
         {showHandoff && (
           <HandoffModal
