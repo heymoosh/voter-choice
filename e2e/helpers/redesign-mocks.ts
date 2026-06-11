@@ -360,6 +360,36 @@ export async function mockChat(page: Page): Promise<void> {
   });
 }
 
+/** POST /api/chat → a server-side block. `kind: "budget"` is the structured
+ *  200 budget-exhausted continuity payload; `kind: "code"` is a 503 with an
+ *  explicit block code (rate-limit family). Installed AFTER goToWorkspace so
+ *  the cold-open extraction (earlier mockChat) still succeeds — Playwright
+ *  gives the later route priority. */
+export async function mockChatBlocked(
+  page: Page,
+  block: { kind: "budget" } | { kind: "code"; code: string; status?: number },
+): Promise<void> {
+  await page.route("**/api/chat", async (route) => {
+    if (block.kind === "budget") {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          status: "budget_exhausted",
+          resetAt: "2099-01-01T00:00:00Z",
+          budget: { tier: "exhausted", percent: 100 },
+        }),
+      });
+      return;
+    }
+    await route.fulfill({
+      status: block.status ?? 503,
+      contentType: "application/json",
+      body: JSON.stringify({ error: "blocked", code: block.code }),
+    });
+  });
+}
+
 export async function mockCounters(page: Page): Promise<{ calls: Json[] }> {
   const calls: Json[] = [];
   await page.route("**/api/counters", async (route) => {

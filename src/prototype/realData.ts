@@ -2,7 +2,13 @@
 // backend. The prototype's data shapes were deliberately built to match
 // src/lib/structured-blocks.ts, so /api/race-data's response maps directly onto
 // RACE_PATTERNS[raceId] (racePatterns) + ALIGNMENT_SCORES[raceId] (alignmentScores).
-import { applyRaceData, getRealStateCode, setRealElectionType, setBallotLogistics, setRealStateResources } from "./data";
+import {
+  applyRaceData,
+  getRealStateCode,
+  setRealElectionType,
+  setBallotLogistics,
+  setRealStateResources,
+} from "./data";
 import type { BallotLogistics } from "../lib/civic-logistics";
 import { toBallotLogistics } from "../lib/civic-logistics";
 import { getStateData } from "../lib/getStateData";
@@ -519,6 +525,10 @@ export interface ChatPromptInput {
    *  instruct the model never to reveal/guess a real identity — belt-and-
    *  suspenders so a name can't slip out of the chat. */
   blind?: boolean;
+  /** Optional replacement for the default blind-mode instruction — used by
+   *  surfaces whose aliases aren't "Candidate A/B" (the delegation seat chat
+   *  blinds as "Your House Member" etc.). Only read when `blind` is true. */
+  blindClause?: string;
 }
 
 /**
@@ -529,8 +539,15 @@ export interface ChatPromptInput {
  * markdown and block syntax explicitly.
  */
 export function buildRaceChatSystemPrompt(input: ChatPromptInput): string {
-  const { raceLabel, stateCode, racePatterns, alignmentScores, issues, blind } =
-    input;
+  const {
+    raceLabel,
+    stateCode,
+    racePatterns,
+    alignmentScores,
+    issues,
+    blind,
+    blindClause,
+  } = input;
   const priorities = (issues || [])
     .map((i, idx) => {
       const label = i.interpretation || i.name || i.canonicalIssue || "";
@@ -551,7 +568,8 @@ export function buildRaceChatSystemPrompt(input: ChatPromptInput): string {
     ...(blind
       ? [
           "",
-          'BLIND MODE: the voter is judging candidates by record, not by name. Candidates appear ONLY as "Candidate A", "Candidate B", etc. — their real names are deliberately withheld from you. Never state, guess, hint at, or infer any candidate\'s real name or specific identity; refer to each only by their Candidate letter.',
+          blindClause ||
+            'BLIND MODE: the voter is judging candidates by record, not by name. Candidates appear ONLY as "Candidate A", "Candidate B", etc. — their real names are deliberately withheld from you. Never state, guess, hint at, or infer any candidate\'s real name or specific identity; refer to each only by their Candidate letter.',
         ]
       : []),
     "",
@@ -596,6 +614,11 @@ export interface ChatStreamCallbacks {
    *  optional `meta` carries the HTTP status + block code when the failure came
    *  from a server response with a JSON body. */
   onError: (reason: string, meta?: ChatErrorMeta) => void;
+  /** Fired (at most once, before any text) with the budget tier the route
+   *  reports via X-Budget-Tier / X-Budget-Percent response headers — the
+   *  soft-tier signal ("notice" / "soft_close" / "handoff") the redesign
+   *  surfaces as a ribbon. Absent headers → not fired. */
+  onBudgetTier?: (tier: string, percent: number) => void;
 }
 
 /**
@@ -610,6 +633,13 @@ export async function streamChatReply(
     systemPrompt: string;
     sessionId: string;
     messageCount: number;
+    /** First chat call of this tab's session — engages the route's soft-close
+     *  new-session gate (budget.ts design: new sessions blocked at 80% spend). */
+    isNewSession?: boolean;
+    /** Active seat/race scope; the route resets history server-side when this
+     *  changes (belt-and-suspenders under fleet-v2 routing). */
+    activeRaceId?: string;
+    prevActiveRaceId?: string;
   },
   cb: ChatStreamCallbacks,
 ): Promise<void> {
@@ -623,11 +653,27 @@ export async function streamChatReply(
         systemPrompt: args.systemPrompt,
         sessionId: args.sessionId,
         messageCount: args.messageCount,
+        ...(args.isNewSession !== undefined && {
+          isNewSession: args.isNewSession,
+        }),
+        ...(args.activeRaceId && { activeRaceId: args.activeRaceId }),
+        ...(args.prevActiveRaceId && {
+          prevActiveRaceId: args.prevActiveRaceId,
+        }),
       }),
     });
   } catch {
     cb.onError("network");
     return;
+  }
+
+  // Soft-tier signal: the route stamps every response (SSE and blocked alike)
+  // with its budget tier. Surface it before any stream handling so the UI can
+  // show a "budget running low" ribbon even on successful turns.
+  const tierHeader = res.headers.get("X-Budget-Tier");
+  if (tierHeader && cb.onBudgetTier) {
+    const pct = Number(res.headers.get("X-Budget-Percent"));
+    cb.onBudgetTier(tierHeader, Number.isFinite(pct) ? pct : 0);
   }
 
   // Any non-OK (local 500 "Chat service is not configured", 403, 503, …) OR any
@@ -714,7 +760,13 @@ export async function streamChatReply(
    - Never fabricate a polling place, address, or hours. */
 export function applyLogisticsFromCivic(
   civicResponse: Record<string, unknown>,
-  stateData?: { earlyVoting?: { available: boolean; startDate: string | null; endDate: string | null } },
+  stateData?: {
+    earlyVoting?: {
+      available: boolean;
+      startDate: string | null;
+      endDate: string | null;
+    };
+  },
 ): void {
   const logistics = toBallotLogistics(
     civicResponse as Parameters<typeof toBallotLogistics>[0],
@@ -730,7 +782,9 @@ export function applyLogisticsFromCivic(
  * Must be awaited BEFORE setView('nocontested') so the resources are ready
  * when the view first mounts. Falls back gracefully if getStateData fails.
  */
-export async function applyRealStateResources(stateCode: string): Promise<void> {
+export async function applyRealStateResources(
+  stateCode: string,
+): Promise<void> {
   if (!stateCode) return;
   try {
     const data = await getStateData(stateCode);
