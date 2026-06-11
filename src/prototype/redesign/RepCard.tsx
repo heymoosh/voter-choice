@@ -19,6 +19,7 @@ import React, { useState } from "react";
 import {
   CandidateCardHeader,
   AlignmentScoreBanner,
+  AllVotesPanel,
   FunderBars,
   formatDollars,
 } from "../VoterChoiceApp";
@@ -580,6 +581,7 @@ export function RepCard({
   onShowBudgetOptions,
 }) {
   const [expandedIssue, setExpandedIssue] = useState(null);
+  const [allVotesOpen, setAllVotesOpen] = useState(false);
   const [moneyOpen, setMoneyOpen] = useState(
     () =>
       typeof window !== "undefined" &&
@@ -598,6 +600,11 @@ export function RepCard({
     );
 
   const blind = blindMode && !isRevealed;
+  // Curated-vote count across all issues — drives the full-record CTA.
+  const totalVotes = (seat.alignmentEntry?.scores || []).reduce(
+    (n, s) => n + (s?.contributingVotes?.length || 0),
+    0,
+  );
   const party = PARTY_META2[seat.partyName] || {
     name: seat.partyName,
     code: "?",
@@ -661,6 +668,30 @@ export function RepCard({
           research={research}
         />
       )}
+
+      {/* Full voting record — the restored AllVotesPanel (every curated vote
+          across all issues, filterable, with roll-call links). Same primary
+          "evidence" CTA placement the design's CandidateCard used. */}
+      {!seat.researched && totalVotes > 0 && (
+        <div className="cv2-see-all-bridge">
+          <button
+            className="cv2-see-all-inline"
+            onClick={() => setAllVotesOpen(true)}
+            data-testid="see-full-record"
+          >
+            See the full voting record — {totalVotes}{" "}
+            {totalVotes === 1 ? "vote" : "votes"} →
+          </button>
+        </div>
+      )}
+      <AllVotesPanel
+        open={allVotesOpen}
+        candidate={cand}
+        alignmentEntry={seat.alignmentEntry}
+        blindMode={blind}
+        alias={seat.blindLabel}
+        onClose={() => setAllVotesOpen(false)}
+      />
 
       {/* Money trail — same progressive-disclosure contract as CandidateCard. */}
       <div className={"cv2-disclose " + (moneyOpen ? "open" : "")}>
