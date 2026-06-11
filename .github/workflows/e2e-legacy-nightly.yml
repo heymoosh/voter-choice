@@ -1,0 +1,45 @@
+name: E2E Legacy Nightly
+
+# The parked legacy ballot experience (src/prototype/VoterChoiceApp.tsx,
+# behind NEXT_PUBLIC_BALLOT_ENABLED=true — Phase-3 reuse). Not a required
+# check; its purpose is keeping the parked code exercised so it doesn't
+# rot. A nightly run satisfies that at zero PR cost — it used to run on
+# every PR inside test.yml.
+
+on:
+  schedule:
+    # Nightly at 05:00 UTC — offset from mutation.yml's 04:00 run.
+    - cron: "0 5 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e-ballot-legacy:
+    runs-on: ubuntu-latest
+    # Build-time inlined: the whole job (build + specs) runs the legacy flavor.
+    env:
+      NEXT_PUBLIC_BALLOT_ENABLED: "true"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Build (legacy ballot experience)
+        run: npm run build
+
+      - name: Run Playwright e2e tests (legacy ballot suite)
+        run: npm run e2e
