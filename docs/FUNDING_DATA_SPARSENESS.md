@@ -229,6 +229,40 @@ confirm federal `breakdown` climbs.
   small/large/PAC funding mix under OpenFEC rate limits; sector enrichment can
   run separately now that the endpoint path is fixed.
 
+P1 completion via FEC bulk files (2026-06-11 evening, PR #101):
+
+- Per Muxin's direction the pipeline is now **bulk-file-first**: the two
+  genuinely rate-limited API paths (per-candidate FEC-ID name search and the
+  per-committee `by_employer` sector loop) were replaced with local passes over
+  FEC bulk downloads, reusing the streaming pattern PR #94 established.
+  - `scripts/ingest/_fec-bulk.ts` — shared download/unzip-stream/upsert
+    helpers (extracted from `federal-issue-pacs.ts`).
+  - `scripts/ingest/fec-ids-from-bulk.ts` — offline ID backfill from the `cn`
+    candidate master (seat+surname match; same-race same-surname conflicts are
+    reported, never guessed). Live run: 506 matched / 0 ambiguous /
+    123 unmatched — the unmatched are all former members with no active 2026
+    committee, so non-matching is correct.
+  - `scripts/ingest/federal-sectors-bulk.ts` — sectors from one streaming pass
+    over `indiv26.zip` (25.3M lines) via `ccl` principal-committee linkage and
+    the existing `_bucket-mapping.ts` rules. Earmark (15E) itemizations carry
+    the real donor's employer; conduit lumps (ActBlue/WinRed) are excluded
+    three ways. Re-run it after any funding-mix expansion — it scopes to
+    mix-carrying candidates.
+  - Read path: `donors.ts` now excludes federal sector/"Other" re-cuts for
+    BOTH `fec_api` and `fec_bulk` sources (`FEDERAL_DONOR_SOURCES`).
+- Off-cycle senators (e.g. Cruz, class of 2030) are missing from the
+  paginated `/candidates/totals/?cycle=2026` bulk endpoint; a follow-up
+  per-candidate `federal-donors.ts` run WITHOUT `--bulk-totals` (still
+  `--skip-existing --no-name-search --skip-employers`) picked up 238 of them.
+- Post-run coverage (cycle 2026): federal `none` 971 → 605, top-line
+  244 → 93, breakdown 1,714 → 2,231 of 2,929, sectors 40 → 1,478. Verified
+  via the real read path: Cornyn's `totalRaised` equals exactly his
+  funding-mix buckets with $2.4M of bulk sector re-cuts excluded.
+- Known edge case: chamber-switchers like Rep. Wesley Hunt [R-TX38] (House
+  incumbent running for 2026 Senate) — the House FEC ID has no 2026 money, so
+  the House card correctly degrades to top-line-only. Showing the active-race
+  (Senate) money on the House card is a product decision, not a bug.
+
 ### P2 — Named issue-PACs from FEC directly (recommended over CAN2026)
 
 Extend `federal-donors.ts` to pull `schedule_a/by_committee` and the candidate
