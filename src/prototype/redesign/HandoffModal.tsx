@@ -1,41 +1,42 @@
 // @ts-nocheck
 "use client";
+/* "Take your scorecard with you" — restored handoff fidelity for the
+   assess-congress flow. The cutover's version was a bare textarea + copy
+   button; this restores everything the old HandoffPackage offered minus the
+   ballot-specific parts (voting-plan CTA stays dropped by design):
+
+     · rich portable prompt (priorities + verdicts with evidence basis +
+       remaining seats + 2026 filers — handoffText.ts, deterministic)
+     · per-chatbot Copy & open buttons + .txt download (HandoffActions)
+     · BYOK card ("or keep going right here with your own key") */
 
 import React, { useMemo, useRef, useState } from "react";
-import { buildScorecardProfileText } from "./delegationData";
-
-function buildHandoffPrompt({ seats, issues, verdicts, districtsLine }) {
-  const reviewed = seats.filter((seat) => verdicts[seat.id]).length;
-  const base = buildScorecardProfileText({
-    seats,
-    issues,
-    verdicts,
-    districtsLine,
-  });
-
-  return [
-    base,
-    "",
-    "Instructions for the chatbot:",
-    `- I have reviewed ${reviewed} of ${seats.length} members so far.`,
-    "- Continue from this scorecard. Do not ask me to re-enter my address.",
-    "- Help me compare the representatives against my issues using public voting records, donor data, and cited evidence.",
-    "- Be explicit when data is missing or uncertain.",
-  ].join("\n");
-}
+import { buildScorecardHandoffPrompt } from "./handoffText";
+import { HandoffActions } from "./HandoffActions";
+import { ByokCard } from "./ByokCard";
 
 export function HandoffModal({
   seats,
   issues,
   verdicts,
   districtsLine,
+  stateName,
+  researchFor,
   onClose,
 }) {
   const [copied, setCopied] = useState(false);
   const textareaRef = useRef(null);
   const prompt = useMemo(
-    () => buildHandoffPrompt({ seats, issues, verdicts, districtsLine }),
-    [seats, issues, verdicts, districtsLine],
+    () =>
+      buildScorecardHandoffPrompt({
+        seats,
+        issues,
+        verdicts,
+        districtsLine,
+        stateName,
+        researchFor,
+      }),
+    [seats, issues, verdicts, districtsLine, stateName, researchFor],
   );
   const reviewed = seats.filter((seat) => verdicts[seat.id]).length;
 
@@ -74,7 +75,8 @@ export function HandoffModal({
 
         <p className="be-lede">
           You have reviewed <b>{reviewed}</b> of {seats.length} representatives.
-          Copy this prompt into Claude, ChatGPT, Gemini, or another chatbot to
+          The prompt below carries your priorities, your verdicts with the
+          evidence behind them, and what's left — paste it into any chatbot to
           keep working from the same context.
         </p>
 
@@ -92,9 +94,22 @@ export function HandoffModal({
             value={prompt}
           />
         </div>
+
+        <HandoffActions
+          prompt={prompt}
+          downloadFilename="voter-choice-scorecard.txt"
+        />
+
+        <ByokCard onClose={onClose} />
+
+        <footer className="be-foot">
+          Your address never leaves this device. The portable prompt contains
+          your issues + verdicts + public candidate records — no
+          personally-identifying information.
+        </footer>
       </div>
     </div>
   );
 }
 
-export { buildHandoffPrompt };
+export { buildScorecardHandoffPrompt as buildHandoffPrompt };
