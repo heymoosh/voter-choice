@@ -407,13 +407,23 @@ describe("bucketIndividualByAmount", () => {
 // ---------------------------------------------------------------------------
 
 describe("extractFecCandidateId", () => {
+  it("prefers fecCandidateId over sourceId", () => {
+    const candidate = {
+      id: "govtrack-B001288",
+      fecCandidateId: "H8TX22107",
+      sourceId: "B001288",
+      rawMetadata: { fec: { candidate_id: "H0TX00000" } },
+    };
+    expect(extractFecCandidateId(candidate)).toBe("H8TX22107");
+  });
+
   it("extracts from sourceId when it looks like an FEC ID", () => {
     const candidate = {
-      id: "federal-H1234567",
-      sourceId: "H1234567",
+      id: "federal-H8TX22107",
+      sourceId: "H8TX22107",
       rawMetadata: {},
     };
-    expect(extractFecCandidateId(candidate)).toBe("H1234567");
+    expect(extractFecCandidateId(candidate)).toBe("H8TX22107");
   });
 
   it("extracts from rawMetadata.fec.candidate_id", () => {
@@ -552,12 +562,12 @@ describe("parseFtmIndustryResponse", () => {
 
 describe("resolveFederalConfig", () => {
   it("defaults to 500 candidate limit", () => {
-    const config = resolveFederalConfig({}, []);
+    const config = resolveFederalConfig({ FEC_API_KEY: "my-key" }, []);
     expect(config.limit).toBe(500);
   });
 
   it("reads --limit from argv", () => {
-    const config = resolveFederalConfig({}, [
+    const config = resolveFederalConfig({ FEC_API_KEY: "my-key" }, [
       "node",
       "script.ts",
       "--limit",
@@ -567,12 +577,15 @@ describe("resolveFederalConfig", () => {
   });
 
   it("reads DONOR_LIMIT from env", () => {
-    const config = resolveFederalConfig({ DONOR_LIMIT: "100" }, []);
+    const config = resolveFederalConfig(
+      { FEC_API_KEY: "my-key", DONOR_LIMIT: "100" },
+      [],
+    );
     expect(config.limit).toBe(100);
   });
 
   it("includes current and prior election cycles", () => {
-    const config = resolveFederalConfig({}, []);
+    const config = resolveFederalConfig({ FEC_API_KEY: "my-key" }, []);
     expect(config.electionCycles).toHaveLength(2);
     // Both should be even-year strings
     for (const cycle of config.electionCycles) {
@@ -580,14 +593,59 @@ describe("resolveFederalConfig", () => {
     }
   });
 
+  it("uses only --cycle when provided", () => {
+    const config = resolveFederalConfig({ FEC_API_KEY: "my-key" }, [
+      "node",
+      "script.ts",
+      "--cycle",
+      "2026",
+    ]);
+    expect(config.electionCycles).toEqual(["2026"]);
+  });
+
+  it("can skip employer bucket fetches for quota-constrained runs", () => {
+    const config = resolveFederalConfig({ FEC_API_KEY: "my-key" }, [
+      "node",
+      "script.ts",
+      "--skip-employers",
+    ]);
+    expect(config.includeEmployerBuckets).toBe(false);
+  });
+
+  it("can disable FEC name search for deterministic full sweeps", () => {
+    const config = resolveFederalConfig({ FEC_API_KEY: "my-key" }, [
+      "node",
+      "script.ts",
+      "--no-name-search",
+    ]);
+    expect(config.allowNameSearch).toBe(false);
+  });
+
+  it("can skip candidates that already have funding-mix rows", () => {
+    const config = resolveFederalConfig({ FEC_API_KEY: "my-key" }, [
+      "node",
+      "script.ts",
+      "--skip-existing",
+    ]);
+    expect(config.skipExisting).toBe(true);
+  });
+
+  it("can preload FEC totals in bulk", () => {
+    const config = resolveFederalConfig({ FEC_API_KEY: "my-key" }, [
+      "node",
+      "script.ts",
+      "--bulk-totals",
+    ]);
+    expect(config.useBulkTotals).toBe(true);
+  });
+
   it("sets FEC API key when provided", () => {
     const config = resolveFederalConfig({ FEC_API_KEY: "my-key" }, []);
     expect(config.fecApiKey).toBe("my-key");
   });
 
-  it("leaves fecApiKey undefined when not provided", () => {
-    const config = resolveFederalConfig({}, []);
-    expect(config.fecApiKey).toBeUndefined();
+  it("throws when FEC_API_KEY is not provided", () => {
+    expect(() => resolveFederalConfig({}, [])).toThrow("FEC_API_KEY");
   });
 });
 
@@ -634,6 +692,7 @@ describe("fetchFecTotals", () => {
     fecBaseUrl: "https://api.open.fec.gov/v1",
     electionCycles: ["2026", "2024"],
     limit: 500,
+    fecApiKey: "test-key",
   };
 
   it("maps FEC totals to correct buckets", async () => {
@@ -688,6 +747,38 @@ describe("fetchFecTotals", () => {
     const buckets = await fetchFecTotals("H0000000", "2026", config, fetcher);
     expect(buckets.size).toBe(0);
   });
+
+  it("retries FEC rate limits before returning totals", async () => {
+    const fetcher = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 429,
+        headers: new Headers({ "retry-after": "0" }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: () =>
+          Promise.resolve({
+            results: [
+              {
+                individual_unitemized_contributions: 250,
+                individual_itemized_contributions: 750,
+                other_political_committee_contributions: 0,
+                political_party_committee_contributions: 0,
+                candidate_contribution: 0,
+              },
+            ],
+            pagination: { pages: 1 },
+          }),
+      }) as unknown as typeof fetch;
+
+    const buckets = await fetchFecTotals("H1234567", "2026", config, fetcher);
+
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    expect(buckets.get("Small individual donors (under $200)")).toBe(250);
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -699,11 +790,12 @@ describe("fetchEmployerBuckets", () => {
     fecBaseUrl: "https://api.open.fec.gov/v1",
     electionCycles: ["2026"],
     limit: 500,
+    fecApiKey: "test-key",
   };
 
   it("maps employer names to buckets", async () => {
     const fetcher = makeFetcher({
-      "/committee/C00123456/schedules/schedule_a/by_employer/": {
+      "/schedules/schedule_a/by_employer/": {
         results: [
           { employer: "Google LLC", total: 15000 },
           { employer: "First National Bank", total: 8000 },
@@ -718,6 +810,10 @@ describe("fetchEmployerBuckets", () => {
       config,
       fetcher,
     );
+    const calledUrl = new URL(
+      String((fetcher as ReturnType<typeof vi.fn>).mock.calls[0][0]),
+    );
+    expect(calledUrl.searchParams.get("committee_id")).toBe("C00123456");
     expect(buckets.get("Technology")).toBe(15000);
     expect(buckets.get("Finance, banking & insurance")).toBe(8000);
     expect(buckets.get("Other")).toBe(2000);
@@ -725,7 +821,7 @@ describe("fetchEmployerBuckets", () => {
 
   it("returns empty map when schedule_a returns no results", async () => {
     const fetcher = makeFetcher({
-      "/committee/C99999999/schedules/schedule_a/by_employer/": {
+      "/schedules/schedule_a/by_employer/": {
         results: [],
         pagination: { pages: 1 },
       },
@@ -749,6 +845,7 @@ describe("buildFederalDonorRows", () => {
     fecBaseUrl: "https://api.open.fec.gov/v1",
     electionCycles: ["2026"],
     limit: 500,
+    fecApiKey: "test-key",
   };
 
   it("returns empty array when no FEC ID is extractable", async () => {
@@ -760,6 +857,26 @@ describe("buildFederalDonorRows", () => {
     const fetcher = makeFetcher({});
     const rows = await buildFederalDonorRows(candidate, config, fetcher);
     expect(rows).toHaveLength(0);
+  });
+
+  it("does not call FEC name search when disabled", async () => {
+    const candidate = {
+      id: "federal-ABCDE",
+      fullName: "Rep. Jane Example [D-TX1]",
+      jurisdiction: "federal-house",
+      sourceId: "ABCDE",
+      rawMetadata: {},
+    };
+    const fetcher = makeFetcher({});
+
+    const rows = await buildFederalDonorRows(
+      candidate,
+      { ...config, allowNameSearch: false },
+      fetcher,
+    );
+
+    expect(rows).toHaveLength(0);
+    expect(fetcher).not.toHaveBeenCalled();
   });
 
   it("builds donor rows from FEC totals", async () => {
@@ -796,6 +913,45 @@ describe("buildFederalDonorRows", () => {
     expect(smallDonorRow?.source).toBe("fec_api");
     expect(smallDonorRow?.candidateId).toBe("federal-H1234567");
     expect(smallDonorRow?.electionCycle).toBe("2026");
+  });
+
+  it("skips committee and employer requests when employer buckets are disabled", async () => {
+    const candidate = {
+      id: "federal-H1234567",
+      sourceId: "H1234567",
+      rawMetadata: {},
+    };
+    const fetcher = makeFetcher({
+      "/candidate/H1234567/totals/": {
+        results: [
+          {
+            individual_unitemized_contributions: 5000,
+            individual_itemized_contributions: 20000,
+            other_political_committee_contributions: 10000,
+            political_party_committee_contributions: 0,
+            candidate_contribution: 0,
+          },
+        ],
+        pagination: { pages: 1 },
+      },
+      "/candidate/H1234567/committees/": {
+        results: [{ committee_id: "C00123456" }],
+        pagination: { pages: 1 },
+      },
+    });
+
+    const rows = await buildFederalDonorRows(
+      candidate,
+      { ...config, includeEmployerBuckets: false },
+      fetcher,
+    );
+
+    expect(rows).toHaveLength(3);
+    expect(
+      (fetcher as ReturnType<typeof vi.fn>).mock.calls.some(([url]) =>
+        String(url).includes("/committees/"),
+      ),
+    ).toBe(false);
   });
 
   it("continues on API error for one cycle, does not crash", async () => {
@@ -959,7 +1115,7 @@ describe("ingestFederalDonors", () => {
     const counts = await ingestFederalDonors({
       db,
       fetcher,
-      env: {},
+      env: { FEC_API_KEY: "test-key" },
       argv: [],
     });
 
@@ -1009,7 +1165,7 @@ describe("ingestFederalDonors", () => {
     const counts = await ingestFederalDonors({
       db,
       fetcher,
-      env: {},
+      env: { FEC_API_KEY: "test-key" },
       argv: ["node", "script.ts", "--limit", "50"],
     });
 
@@ -1068,7 +1224,7 @@ describe("ingestFederalDonors", () => {
     const counts = await ingestFederalDonors({
       db,
       fetcher,
-      env: {},
+      env: { FEC_API_KEY: "test-key" },
       argv: [],
     });
 
@@ -1080,6 +1236,129 @@ describe("ingestFederalDonors", () => {
     expect(counts.apiErrors).toBe(0);
   });
 
+  it("uses matching stored roster FEC IDs before FEC name search", async () => {
+    const federalCandidates = [
+      {
+        id: "federal-N000026",
+        fullName: "Rep. Troy Nehls [R-TX22]",
+        sourceId: "N000026",
+        jurisdiction: "federal-house",
+        state: "TX",
+        district: "22",
+        office: "house",
+        rawMetadata: {},
+      },
+      {
+        id: "fec-H0TX22302",
+        fullName: "Troy Nehls",
+        sourceId: "H0TX22302",
+        jurisdiction: "federal-house",
+        state: "TX",
+        district: "22",
+        office: "house",
+        fecCandidateId: "H0TX22302",
+        rawMetadata: {},
+      },
+    ];
+
+    const db = makeDbClient({ candidates: federalCandidates });
+    const fetcher = makeFetcher({
+      "/candidate/H0TX22302/totals/": {
+        results: [
+          {
+            individual_unitemized_contributions: 1000,
+            individual_itemized_contributions: 5000,
+            other_political_committee_contributions: 0,
+            political_party_committee_contributions: 0,
+            candidate_contribution: 0,
+          },
+        ],
+        pagination: { pages: 1 },
+      },
+    });
+
+    const counts = await ingestFederalDonors({
+      db,
+      fetcher,
+      env: { FEC_API_KEY: "test-key" },
+      argv: ["node", "script.ts", "--cycle", "2026", "--skip-employers"],
+    });
+
+    expect(counts.candidatesProcessed).toBe(2);
+    expect(
+      (fetcher as ReturnType<typeof vi.fn>).mock.calls.some(([url]) =>
+        String(url).includes("/candidates/"),
+      ),
+    ).toBe(false);
+  });
+
+  it("uses bulk totals instead of per-candidate totals when enabled", async () => {
+    const federalCandidates = [
+      {
+        id: "fec-H1234567",
+        fullName: "Jane Doe",
+        sourceId: "H1234567",
+        jurisdiction: "federal-house",
+        state: "TX",
+        district: "07",
+        office: "house",
+        fecCandidateId: "H1234567",
+        rawMetadata: {},
+      },
+    ];
+
+    const db = makeDbClient({ candidates: federalCandidates });
+    const fetcher = vi.fn().mockImplementation((input: string) => {
+      const url = new URL(String(input));
+      if (url.pathname.endsWith("/candidates/totals/")) {
+        const office = url.searchParams.get("office");
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: () =>
+            Promise.resolve({
+              results:
+                office === "H"
+                  ? [
+                      {
+                        candidate_id: "H1234567",
+                        individual_unitemized_contributions: 1000,
+                        individual_itemized_contributions: 5000,
+                        other_political_committee_contributions: 250,
+                        political_party_committee_contributions: 0,
+                        candidate_contribution: 0,
+                      },
+                    ]
+                  : [],
+              pagination: { pages: 1 },
+            }),
+        });
+      }
+      return Promise.reject(new Error(`unexpected url ${url.href}`));
+    }) as unknown as typeof fetch;
+
+    const counts = await ingestFederalDonors({
+      db,
+      fetcher,
+      env: { FEC_API_KEY: "test-key" },
+      argv: [
+        "node",
+        "script.ts",
+        "--cycle",
+        "2026",
+        "--skip-employers",
+        "--bulk-totals",
+      ],
+    });
+
+    expect(counts.rowsUpserted).toBe(3);
+    expect(
+      (fetcher as ReturnType<typeof vi.fn>).mock.calls.some(([url]) =>
+        String(url).includes("/candidate/H1234567/totals/"),
+      ),
+    ).toBe(false);
+  });
+
   it("--limit flag is honored", async () => {
     const db = makeDbClient({ candidates: [] });
     const fetcher = makeFetcher({});
@@ -1087,7 +1366,7 @@ describe("ingestFederalDonors", () => {
     await ingestFederalDonors({
       db,
       fetcher,
-      env: {},
+      env: { FEC_API_KEY: "test-key" },
       argv: ["node", "script.ts", "--limit", "10"],
     });
 
@@ -1095,6 +1374,21 @@ describe("ingestFederalDonors", () => {
     const limitCall = (db.select as ReturnType<typeof vi.fn>).mock.results[0]
       ?.value?.from.mock.results[0]?.value?.where.mock.results[0]?.value?.limit;
     expect(limitCall).toHaveBeenCalledWith(10);
+  });
+
+  it("fails before querying when FEC_API_KEY is missing", async () => {
+    const db = makeDbClient({ candidates: [] });
+    const fetcher = makeFetcher({});
+
+    await expect(
+      ingestFederalDonors({
+        db,
+        fetcher,
+        env: {},
+        argv: [],
+      }),
+    ).rejects.toThrow("FEC_API_KEY");
+    expect(db.select).not.toHaveBeenCalled();
   });
 });
 
@@ -1165,9 +1459,7 @@ describe("ingestStateDonors", () => {
     ];
     const db = makeDbClient({ candidates: stateCandidates });
 
-    let callCount = 0;
     const fetcher = vi.fn().mockImplementation((url: string) => {
-      callCount += 1;
       if (
         url.includes("can_nam=Alice+TX") ||
         url.includes("can_nam=Alice%20TX")
