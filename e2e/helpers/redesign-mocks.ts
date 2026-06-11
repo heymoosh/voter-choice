@@ -341,9 +341,43 @@ const THEME_EXTRACTION_SSE =
     ]),
   })}\n\n` + 'data: {"type":"done"}\n\n';
 
-/** POST /api/chat → SSE. The cold-open issue-extraction call (its systemPrompt
- *  asks the model to "extract civic themes") gets a theme JSON array; any other
- *  call gets a minimal reply so it never hits the real model. */
+/** Theme-refinement SSE (turns 2+ of the issue conversation): prose + the
+ *  FULL updated array in a fenced block — adds a third theme so specs can
+ *  assert the list actually changed. */
+const REFINED_THEMES = [
+  {
+    name: "Lower insulin & drug prices",
+    quotes: ["insulin"],
+    canonicalIssue: "healthcare_affordability",
+    stance: "in_favor",
+  },
+  {
+    name: "Rent & cost-of-living protections",
+    quotes: ["rent"],
+    canonicalIssue: "housing_affordability",
+    stance: "in_favor",
+  },
+  {
+    name: "Ban congressional stock trading",
+    quotes: ["stock trading"],
+    canonicalIssue: "congressional_accountability",
+    stance: "in_favor",
+  },
+];
+
+const THEME_REFINEMENT_SSE =
+  `data: ${JSON.stringify({
+    type: "text",
+    text:
+      "Got it — accountability matters to you, so I added congressional stock trading.\n\n```json\n" +
+      JSON.stringify(REFINED_THEMES) +
+      "\n```",
+  })}\n\n` + 'data: {"type":"done"}\n\n';
+
+/** POST /api/chat → SSE, dispatched on the builder's marker phrase:
+ *  - "extract civic themes"   → turn-1 theme JSON array
+ *  - "refining a voter's priority themes" → prose + fenced updated array
+ *  - anything else            → minimal reply (never hits the real model) */
 export async function mockChat(page: Page): Promise<void> {
   await page.route("**/api/chat", async (route) => {
     const sysPrompt =
@@ -351,7 +385,9 @@ export async function mockChat(page: Page): Promise<void> {
         ?.systemPrompt || "";
     const body = sysPrompt.includes("extract civic themes")
       ? THEME_EXTRACTION_SSE
-      : 'data: {"type":"text","text":"(mocked reply)"}\n\ndata: {"type":"done"}\n\n';
+      : sysPrompt.includes("refining a voter's priority themes")
+        ? THEME_REFINEMENT_SSE
+        : 'data: {"type":"text","text":"(mocked reply)"}\n\ndata: {"type":"done"}\n\n';
     await route.fulfill({
       status: 200,
       contentType: "text/event-stream",
