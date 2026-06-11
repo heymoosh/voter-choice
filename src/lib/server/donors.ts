@@ -258,8 +258,7 @@ export async function lookupDonorCoalition(
   // seeing money raised to leave this seat.
   let chamberSwitchLabel: string | undefined;
   const needsChamberSwitch =
-    rows.length === 0 ||
-    !rows.some((r) => isFundingMixBucket(r.bucketLabel));
+    rows.length === 0 || !rows.some((r) => isFundingMixBucket(r.bucketLabel));
   if (
     needsChamberSwitch &&
     (jurisdiction === "federal-house" || jurisdiction === "federal-senate")

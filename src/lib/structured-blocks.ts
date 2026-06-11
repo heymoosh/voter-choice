@@ -291,9 +291,7 @@ function sanitizeTotalRaised(value: unknown): number | undefined {
   return value;
 }
 
-function sanitizeFundingMix(
-  value: unknown,
-):
+function sanitizeFundingMix(value: unknown):
   | {
       small: number;
       large: number;
