@@ -248,14 +248,14 @@ function fecOfficeFromJurisdiction(
 
 /** State from a GovTrack-formatted name: "Sen. Cory Booker [D-NJ]" → "NJ",
  *  "Rep. Donald Norcross [D-NJ1]" → "NJ". Empty when not present. */
-function stateFromGovTrackName(name: string): string {
+export function stateFromGovTrackName(name: string): string {
   const m = name.match(/\[[A-Z]+-([A-Z]{2})\d*\]/u);
   return m?.[1] ?? "";
 }
 
 /** Last name from a GovTrack-formatted name, stripping the title prefix and the
  *  trailing "[party-state]" tag: "Sen. Cory Booker [D-NJ]" → "Booker". */
-function lastNameFromGovTrackName(name: string): string {
+export function lastNameFromGovTrackName(name: string): string {
   const stripped = name
     .replace(/^(Rep\.|Sen\.|Del\.|Com\.)\s+/iu, "")
     .replace(/\s*\[.*\]\s*$/u, "");

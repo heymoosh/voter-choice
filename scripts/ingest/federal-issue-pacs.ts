@@ -23,40 +23,36 @@
  * - Committee master columns: https://www.fec.gov/campaign-finance-data/committee-master-file-description/
  */
 
-import * as readline from "node:readline";
-import { spawn } from "node:child_process";
-import { createWriteStream, existsSync } from "node:fs";
 import { mkdir } from "node:fs/promises";
 import { resolve } from "node:path";
-import { Readable } from "node:stream";
-import { pipeline } from "node:stream/promises";
-import type { ReadableStream as NodeReadableStream } from "node:stream/web";
-import { promisify } from "node:util";
-import { execFile } from "node:child_process";
 import { pathToFileURL } from "node:url";
 import { sql } from "drizzle-orm";
 import { requireDb, type DbClient } from "../../db/client";
-import { candidates, donorAggregates } from "../../db/schema";
+import {
+  DEFAULT_FEC_BULK_DIR,
+  FEC_BULK_BASE_URL,
+  FEC_BULK_SOURCE,
+  FUNDING_MIX_BUCKET_LABELS,
+  type DonorAggregateRow,
+  downloadIfMissing,
+  emptyToNull,
+  loadFederalCandidateMapWithFundingMix,
+  parsePositiveInteger,
+  parseValueFlag,
+  streamZipLines,
+  upsertDonorAggregateRows,
+} from "./_fec-bulk";
 import {
   classifyPacCommittee,
   issuePacLabel,
   type IssuePacStance,
 } from "./_pac-issue-mapping";
 
-type UnknownRecord = Record<string, unknown>;
+export type { DonorAggregateRow };
 
-const execFileAsync = promisify(execFile);
+const LOG_PREFIX = "[federal-issue-pacs]";
 
 const DEFAULT_CYCLE = "2026";
-const DEFAULT_DATA_DIR = "/tmp/voter-choice-fec-bulk";
-const SOURCE = "fec_bulk";
-const SOURCE_BASE_URL = "https://www.fec.gov/files/bulk-downloads";
-const UPSERT_CHUNK_SIZE = 100;
-const FUNDING_MIX_BUCKET_LABELS = [
-  "Small individual donors (under $200)",
-  "Large individual donors ($200+)",
-  "PACs",
-] as const;
 
 const DIRECT_CONTRIBUTION_TRANSACTION_TYPES = new Set(["24K", "24P", "24Z"]);
 
@@ -92,13 +88,6 @@ export interface Pas2ContributionRow {
   subId: string | null;
 }
 
-interface CandidateFecRow {
-  id: string;
-  sourceId: string | null;
-  fecCandidateId: string | null;
-  rawMetadata: unknown;
-}
-
 interface CommitteeAggregate {
   name: string;
   stance: IssuePacStance;
@@ -115,16 +104,6 @@ export interface IssuePacAggregate {
   amountTotal: number;
   transactionCount: number;
   committees: Map<string, CommitteeAggregate>;
-}
-
-export interface DonorAggregateRow {
-  candidateId: string;
-  electionCycle: string;
-  bucketLabel: string;
-  amountTotal: string;
-  source: string;
-  sourceUrl: string;
-  rawMetadata: Record<string, unknown>;
 }
 
 export interface FederalIssuePacCounts {
@@ -150,7 +129,7 @@ export function resolveConfig(
   }
 
   const dataDir = resolve(
-    parseValueFlag(argv, "--data-dir") ?? env.FEC_BULK_DIR ?? DEFAULT_DATA_DIR,
+    parseValueFlag(argv, "--data-dir") ?? env.FEC_BULK_DIR ?? DEFAULT_FEC_BULK_DIR,
   );
   const cycleSuffix = cycle.slice(2);
   const pas2ZipPath = resolve(
@@ -280,7 +259,7 @@ export function buildIssuePacRows(
       electionCycle: aggregate.electionCycle,
       bucketLabel: issuePacLabel(aggregate.canonicalIssue),
       amountTotal: aggregate.amountTotal.toFixed(2),
-      source: SOURCE,
+      source: FEC_BULK_SOURCE,
       sourceUrl,
       rawMetadata: {
         issuePac: {
@@ -320,87 +299,15 @@ async function ensureBulkZipFiles(
   await mkdir(config.dataDir, { recursive: true });
   const suffix = config.cycle.slice(2);
   await downloadIfMissing(
-    `${SOURCE_BASE_URL}/${config.cycle}/pas2${suffix}.zip`,
+    `${FEC_BULK_BASE_URL}/${config.cycle}/pas2${suffix}.zip`,
     config.pas2ZipPath,
+    LOG_PREFIX,
   );
   await downloadIfMissing(
-    `${SOURCE_BASE_URL}/${config.cycle}/cm${suffix}.zip`,
+    `${FEC_BULK_BASE_URL}/${config.cycle}/cm${suffix}.zip`,
     config.committeeMasterZipPath,
+    LOG_PREFIX,
   );
-}
-
-async function downloadIfMissing(
-  url: string,
-  destination: string,
-): Promise<void> {
-  if (existsSync(destination)) {
-    console.log(`[federal-issue-pacs] using existing ${destination}`);
-    return;
-  }
-
-  console.log(`[federal-issue-pacs] downloading ${url} -> ${destination}`);
-  const response = await fetch(url, {
-    headers: { "user-agent": "voter-choice-federal-issue-pac-ingest" },
-  });
-  if (!response.ok || !response.body) {
-    throw new Error(`Failed to download ${url}: HTTP ${response.status}`);
-  }
-  await pipeline(
-    Readable.fromWeb(
-      response.body as unknown as NodeReadableStream<Uint8Array>,
-    ),
-    createWriteStream(destination),
-  );
-}
-
-async function resolveZipEntry(zipPath: string): Promise<string> {
-  const { stdout } = await execFileAsync("unzip", ["-Z1", zipPath]);
-  const entries = stdout
-    .split(/\r?\n/u)
-    .map((entry) => entry.trim())
-    .filter(Boolean);
-  const textEntry = entries.find((entry) => /\.txt$/iu.test(entry));
-  const firstEntry = textEntry ?? entries[0];
-  if (!firstEntry) throw new Error(`No entries found in ${zipPath}`);
-  return firstEntry;
-}
-
-function openZipEntry(zipPath: string, entryPath: string): Readable {
-  const child = spawn("unzip", ["-p", zipPath, entryPath], {
-    stdio: ["ignore", "pipe", "pipe"],
-  });
-
-  child.stderr.on("data", (chunk: Buffer) => {
-    const msg = chunk.toString().trim();
-    if (msg) console.warn(`[federal-issue-pacs] unzip stderr: ${msg}`);
-  });
-
-  return child.stdout as unknown as Readable;
-}
-
-async function streamZipLines(
-  zipPath: string,
-  onLine: (line: string) => boolean | void,
-): Promise<void> {
-  const entryPath = await resolveZipEntry(zipPath);
-  const stream = openZipEntry(zipPath, entryPath);
-  const rl = readline.createInterface({ input: stream, crlfDelay: Infinity });
-  let stopped = false;
-
-  return new Promise((resolvePromise, reject) => {
-    rl.on("line", (line) => {
-      if (stopped || !line.trim()) return;
-      const shouldContinue = onLine(line);
-      if (shouldContinue === false) {
-        stopped = true;
-        rl.close();
-        stream.destroy();
-      }
-    });
-    rl.on("close", () => resolvePromise());
-    rl.on("error", reject);
-    stream.on("error", reject);
-  });
 }
 
 async function loadCommitteeMaster(
@@ -409,48 +316,17 @@ async function loadCommitteeMaster(
   const committees = new Map<string, CommitteeInfo>();
   console.log(`[federal-issue-pacs] streaming committee master ${zipPath}`);
 
-  await streamZipLines(zipPath, (line) => {
-    const committee = parseCommitteeMasterLine(line);
-    if (!committee) return;
-    committees.set(committee.committeeId, committee);
-  });
+  await streamZipLines(
+    zipPath,
+    (line) => {
+      const committee = parseCommitteeMasterLine(line);
+      if (!committee) return;
+      committees.set(committee.committeeId, committee);
+    },
+    LOG_PREFIX,
+  );
 
   return committees;
-}
-
-async function loadFederalCandidateMap(
-  db: DbClient,
-  cycle: string,
-): Promise<Map<string, string>> {
-  const fundingMixBucketList = sql.join(
-    FUNDING_MIX_BUCKET_LABELS.map((label) => sql`${label}`),
-    sql`, `,
-  );
-  const rows = (await db
-    .select({
-      id: candidates.id,
-      sourceId: candidates.sourceId,
-      fecCandidateId: candidates.fecCandidateId,
-      rawMetadata: candidates.rawMetadata,
-    })
-    .from(candidates)
-    .where(
-      sql`${candidates.jurisdiction} IN ('federal-house', 'federal-senate')
-        AND EXISTS (
-          SELECT 1 FROM donor_aggregates funding_mix
-          WHERE funding_mix.candidate_id = ${candidates.id}
-            AND funding_mix.election_cycle = ${cycle}
-            AND funding_mix.bucket_label IN (${fundingMixBucketList})
-        )`,
-    )) as CandidateFecRow[];
-
-  const map = new Map<string, string>();
-  for (const row of rows) {
-    for (const fecId of fecCandidateIdsForRow(row)) {
-      if (!map.has(fecId)) map.set(fecId, row.id);
-    }
-  }
-  return map;
 }
 
 async function deleteIssuePacRowsWithoutFundingMix(
@@ -498,35 +374,40 @@ async function aggregatePas2Rows({
   let classifiedRows = 0;
 
   console.log(`[federal-issue-pacs] streaming PAS2 ${config.pas2ZipPath}`);
-  await streamZipLines(config.pas2ZipPath, (line) => {
-    if (config.limit !== null && pas2RowsScanned >= config.limit) return false;
-    pas2RowsScanned += 1;
-    if (pas2RowsScanned % 500_000 === 0) {
-      console.log(
-        `[federal-issue-pacs] pas2_rows=${pas2RowsScanned.toLocaleString()} classified=${classifiedRows}`,
-      );
-    }
+  await streamZipLines(
+    config.pas2ZipPath,
+    (line) => {
+      if (config.limit !== null && pas2RowsScanned >= config.limit)
+        return false;
+      pas2RowsScanned += 1;
+      if (pas2RowsScanned % 500_000 === 0) {
+        console.log(
+          `[federal-issue-pacs] pas2_rows=${pas2RowsScanned.toLocaleString()} classified=${classifiedRows}`,
+        );
+      }
 
-    const row = parsePas2ContributionLine(line);
-    if (!row) return;
-    if (!isDirectPacContribution(row)) return;
-    directContributionRows += 1;
+      const row = parsePas2ContributionLine(line);
+      if (!row) return;
+      if (!isDirectPacContribution(row)) return;
+      directContributionRows += 1;
 
-    const candidateId = candidateByFecId.get(row.candidateFecId);
-    if (!candidateId) return;
-    matchedCandidateRows += 1;
+      const candidateId = candidateByFecId.get(row.candidateFecId);
+      if (!candidateId) return;
+      matchedCandidateRows += 1;
 
-    const committee = committees.get(row.committeeId) ?? null;
-    const classified = aggregateIssuePacContribution({
-      aggregates,
-      row,
-      committee,
-      candidateId,
-      cycle: config.cycle,
-    });
-    if (classified) classifiedRows += 1;
-    return true;
-  });
+      const committee = committees.get(row.committeeId) ?? null;
+      const classified = aggregateIssuePacContribution({
+        aggregates,
+        row,
+        committee,
+        candidateId,
+        cycle: config.cycle,
+      });
+      if (classified) classifiedRows += 1;
+      return true;
+    },
+    LOG_PREFIX,
+  );
 
   return {
     aggregates,
@@ -535,51 +416,6 @@ async function aggregatePas2Rows({
     matchedCandidateRows,
     classifiedRows,
   };
-}
-
-async function upsertRows(
-  db: DbClient,
-  rows: DonorAggregateRow[],
-): Promise<number> {
-  if (rows.length === 0) return 0;
-
-  let total = 0;
-  const now = new Date();
-  for (let i = 0; i < rows.length; i += UPSERT_CHUNK_SIZE) {
-    const chunk = rows.slice(i, i + UPSERT_CHUNK_SIZE);
-    const dbRows = chunk.map((row) => ({
-      candidateId: row.candidateId,
-      electionCycle: row.electionCycle,
-      bucketLabel: row.bucketLabel,
-      amountTotal: row.amountTotal,
-      source: row.source,
-      sourceUrl: row.sourceUrl,
-      rawMetadata: row.rawMetadata,
-      insertedAt: now,
-    }));
-
-    await db
-      .insert(donorAggregates)
-      .values(dbRows)
-      .onConflictDoUpdate({
-        target: [
-          donorAggregates.candidateId,
-          donorAggregates.electionCycle,
-          donorAggregates.bucketLabel,
-        ],
-        set: {
-          amountTotal: sql`excluded.amount_total`,
-          source: sql`excluded.source`,
-          sourceUrl: sql`excluded.source_url`,
-          rawMetadata: sql`excluded.raw_metadata`,
-          insertedAt: sql`excluded.inserted_at`,
-        },
-      });
-
-    total += dbRows.length;
-  }
-
-  return total;
 }
 
 export async function ingestFederalIssuePacs({
@@ -598,14 +434,17 @@ export async function ingestFederalIssuePacs({
 
   await ensureBulkZipFiles(config);
   const committees = await loadCommitteeMaster(config.committeeMasterZipPath);
-  const candidateByFecId = await loadFederalCandidateMap(db, config.cycle);
+  const candidateByFecId = await loadFederalCandidateMapWithFundingMix(
+    db,
+    config.cycle,
+  );
 
   const aggregateResult = await aggregatePas2Rows({
     config,
     committees,
     candidateByFecId,
   });
-  const sourceUrl = `${SOURCE_BASE_URL}/${config.cycle}/pas2${config.cycle.slice(2)}.zip`;
+  const sourceUrl = `${FEC_BULK_BASE_URL}/${config.cycle}/pas2${config.cycle.slice(2)}.zip`;
   const rows = buildIssuePacRows(aggregateResult.aggregates, sourceUrl);
 
   if (config.dryRun) {
@@ -630,7 +469,9 @@ export async function ingestFederalIssuePacs({
     );
   }
 
-  const rowsUpserted = config.dryRun ? 0 : await upsertRows(db, rows);
+  const rowsUpserted = config.dryRun
+    ? 0
+    : await upsertDonorAggregateRows(db, rows);
   const counts: FederalIssuePacCounts = {
     committeesLoaded: committees.size,
     candidatesLoaded: candidateByFecId.size,
@@ -660,58 +501,6 @@ export async function ingestFederalIssuePacs({
   );
 
   return counts;
-}
-
-function fecCandidateIdsForRow(row: CandidateFecRow): string[] {
-  const ids = new Set<string>();
-  if (row.fecCandidateId) ids.add(row.fecCandidateId.trim().toUpperCase());
-  if (row.sourceId && looksLikeFecCandidateId(row.sourceId)) {
-    ids.add(row.sourceId.trim().toUpperCase());
-  }
-
-  const raw = asRecord(row.rawMetadata);
-  const fec = asRecord(raw?.fec);
-  const metadataId = getString(fec, "candidate_id");
-  if (metadataId) ids.add(metadataId.trim().toUpperCase());
-
-  return [...ids].filter(looksLikeFecCandidateId);
-}
-
-function looksLikeFecCandidateId(value: string): boolean {
-  return /^[A-Z][A-Z0-9]{7,8}$/u.test(value.trim());
-}
-
-function emptyToNull(value: string | undefined): string | null {
-  const trimmed = value?.trim();
-  return trimmed ? trimmed : null;
-}
-
-function asRecord(value: unknown): UnknownRecord | null {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
-  return value as UnknownRecord;
-}
-
-function getString(
-  record: UnknownRecord | null | undefined,
-  key: string,
-): string | null {
-  const value = record?.[key];
-  if (typeof value === "string" && value.trim()) return value.trim();
-  return null;
-}
-
-function parseValueFlag(argv: string[], flag: string): string | null {
-  const idx = argv.indexOf(flag);
-  if (idx === -1) return null;
-  const value = argv[idx + 1];
-  if (!value) throw new Error(`${flag} requires a value`);
-  return value;
-}
-
-function parsePositiveInteger(value: string | null): number | null {
-  if (!value) return null;
-  const parsed = Number.parseInt(value, 10);
-  return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {

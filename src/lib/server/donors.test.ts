@@ -404,6 +404,63 @@ describe("lookupDonorCoalition — happy path", () => {
     expect(tech.percent).toBe(Math.round((300000 / 1500000) * 100)); // 20
   });
 
+  it("excludes FEDERAL sector buckets written by the bulk ingest (source fec_bulk) from totalRaised", async () => {
+    mockedResolve.mockResolvedValue("federal-bonck");
+    const { select, _chain } = makeSelectMock([]);
+    mockedGetDb.mockReturnValue({ select } as never);
+
+    // Same re-cut shape as above, but the sectors come from
+    // scripts/ingest/federal-sectors-bulk.ts (source "fec_bulk", streaming the
+    // indiv bulk file) instead of the per-candidate API path. They re-cut the
+    // same itemized dollars, so they must be excluded identically.
+    _chain.where.mockResolvedValue([
+      {
+        bucketLabel: "Small individual donors (under $200)",
+        amountTotal: "500000.00",
+        source: "fec_api",
+        sourceUrl: "https://fec.gov/x",
+      },
+      {
+        bucketLabel: "Large individual donors ($200+)",
+        amountTotal: "800000.00",
+        source: "fec_api",
+        sourceUrl: "https://fec.gov/x",
+      },
+      {
+        bucketLabel: "PACs",
+        amountTotal: "200000.00",
+        source: "fec_api",
+        sourceUrl: "https://fec.gov/x",
+      },
+      {
+        bucketLabel: "Technology",
+        amountTotal: "300000.00",
+        source: "fec_bulk",
+        sourceUrl: "https://www.fec.gov/files/bulk-downloads/2026/indiv26.zip",
+      },
+      {
+        bucketLabel: "Other",
+        amountTotal: "250000.00",
+        source: "fec_bulk",
+        sourceUrl: "https://www.fec.gov/files/bulk-downloads/2026/indiv26.zip",
+      },
+    ]);
+
+    const result = await lookupDonorCoalition(
+      "Jon Bonck",
+      "TX",
+      "federal-house",
+    );
+
+    expect(result.found).toBe(true);
+    if (result.found !== true) return;
+
+    expect(result.totalRaised).toBe(500000 + 800000 + 200000); // 1,500,000
+    const labels = result.buckets.map((b) => b.label);
+    expect(labels).toContain("Technology");
+    expect(labels).toContain("Other");
+  });
+
   it("excludes named issue-PAC buckets from totalRaised when PAC funding mix exists", async () => {
     mockedResolve.mockResolvedValue("federal-issue-pac-candidate");
     const { select, _chain } = makeSelectMock([]);
