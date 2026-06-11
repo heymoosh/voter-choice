@@ -99,6 +99,7 @@ can2026.org. It does not.
   enhancement; this is the unclassified total."_ Today the ingest pulls only the
   aggregate "PACs" bucket plus the employer breakdown. The named-PAC material is
   available directly from FEC via:
+
   - `GET /committee/{id}/schedules/schedule_a/by_committee/` — committees (PACs)
     that contributed _to_ the campaign, by name; and
   - the candidate `independent_expenditures` endpoint — outside spending
@@ -188,6 +189,45 @@ This upgrades the common federal case from top-line to small/large/PAC + sectors
 **with no UI change** — the existing `FunderBars` branches light up automatically
 — and directly fixes the screenshot. Re-run `_coverage-by-layer.ts` after to
 confirm federal `breakdown` climbs.
+
+**P1 execution notes (2026-06-11):**
+
+- Preflight confirmed the FEC key returns HTTP 200 and the production
+  `donor_agg_candidate_cycle_bucket_uidx` unique index exists.
+- Production federal candidate shape before the run: House 2,541 rows
+  (2,021 with `fec_candidate_id`, 1,556 with `total_receipts > 0`, 465 with
+  zero receipts); Senate 388 rows (279 with `fec_candidate_id`, 213 with
+  `total_receipts > 0`, 66 with zero receipts). The two existing federal
+  breakdown candidates were Booker/Norcross smoke-test rows.
+- Diagnosis confirmed `federal-donors.ts` could produce 2026 small/large/PAC
+  rows for Booker, Norcross, Nehls, and Bonck. It also exposed that the
+  employer endpoint path was stale: `/committee/{id}/.../by_employer/` returns
+  404, while `/schedules/schedule_a/by_employer/?committee_id=...` works.
+- Code fixes landed in `federal-donors.ts`: require `FEC_API_KEY`, prefer
+  `candidates.fec_candidate_id`, accept real alphanumeric FEC IDs, retry 429/5xx
+  with `Retry-After`, add `--cycle`, skip zero-receipt rows, fix the employer
+  endpoint, add deterministic local roster FEC-ID matching, and add operational
+  flags for quota-safe backfills (`--skip-employers`, `--no-name-search`,
+  `--skip-existing`, `--bulk-totals`).
+- Scoped live gate wrote 9 Booker/Norcross 2026 funding-mix rows, leaving
+  legacy `total_receipts` rows intact.
+- Final quota-safe 2026 run used:
+  `npx tsx --env-file=.env.local scripts/ingest/federal-donors.ts --cycle 2026 --limit 3000 --skip-employers --no-name-search --skip-existing --bulk-totals`.
+  It bulk-loaded 3,091 FEC total rows, queried 1,698 remaining candidates,
+  processed 1,014, skipped 684 without deterministic FEC IDs, upserted 1,616
+  rows, and ended with `api_errors=0`.
+- Post-run `_coverage-by-layer.ts 2026` verification: overall breakdown rose
+  from 397 to 2,109 candidates; federal breakdown rose from 2 to 1,714 of 2,929
+  federal candidates. Federal top-line-only dropped from 562 to 244; federal
+  none dropped from 2,365 to 971. Overall sector coverage is 384 candidates
+  (federal sectors: 40) and named issue-PAC coverage remains 0.
+- Texas spot-check confirmed 2026 funding-mix rows for Jon Bonck and Rep. Troy
+  Nehls. Bonck also has sector buckets from the corrected employer endpoint;
+  Nehls has the expected small/large/PAC rows plus the preserved legacy
+  `total_receipts` row.
+- The mass run intentionally skipped employer sectors to keep P1 focused on the
+  small/large/PAC funding mix under OpenFEC rate limits; sector enrichment can
+  run separately now that the endpoint path is fixed.
 
 ### P2 — Named issue-PACs from FEC directly (recommended over CAN2026)
 
