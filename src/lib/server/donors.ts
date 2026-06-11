@@ -60,6 +60,14 @@ export type DonorLookupResult = DonorCoalitionResult | DonorCoalitionNotFound;
  */
 const DEFAULT_ELECTION_CYCLE = "2026";
 
+/**
+ * donor_aggregates.source written by the federal ingest
+ * (scripts/ingest/federal-donors.ts). The sector double-count is federal-only —
+ * see SECTOR_LABELS — so the read-time fix is scoped to this source. Keep
+ * byte-identical to the ingest's `source: "fec_api"`.
+ */
+const FEDERAL_DONOR_SOURCE = "fec_api";
+
 /** Pick the most frequently occurring string in `values`; ties broken by first occurrence. */
 function pickMostCommon(values: string[]): string {
   const counts = new Map<string, number>();
@@ -114,6 +122,48 @@ export function isFundingMixBucket(label: string): boolean {
     label === FUNDING_MIX_LABELS.large ||
     label === FUNDING_MIX_LABELS.pac
   );
+}
+
+/**
+ * Industry/sector bucket labels.
+ *
+ * In the FEDERAL ingest these are an ADDITIVE re-cut of dollars already counted
+ * in the individual-donor buckets: federal-donors.ts adds Schedule-A
+ * by-employer buckets (fetchEmployerBuckets, mapped via _bucket-mapping.ts) ON
+ * TOP of the FEC /totals/ funding-mix, so the sector dollars duplicate the
+ * itemized large-individual total. Summing them inflates totalRaised — hence
+ * the federal-scoped exclusion in lookupDonorCoalition.
+ *
+ * In STATE ingests they are DISJOINT money, not a re-cut: each contribution is
+ * bucketed exactly once (individuals → funding-mix, organizations → a sector
+ * bucket), so state sector dollars are real distinct totals that MUST stay in
+ * the headline. That is why the exclusion checks the row source rather than
+ * dropping every sector bucket.
+ *
+ * Mirrors SECTOR_LABELS in scripts/ingest/_coverage-by-layer.ts: the canonical
+ * DONOR_BUCKET_LABELS vocabulary minus the funding-mix / Self-funded /
+ * Party committees / Other rows. Duplicated here (not imported) to respect the
+ * src/ ↔ scripts/ boundary — keep byte-identical to the ingest labels.
+ */
+const SECTOR_LABELS: ReadonlySet<string> = new Set([
+  "Real estate & development",
+  "Oil, gas & energy",
+  "Healthcare industry",
+  "Pharmaceutical & medical device",
+  "Finance, banking & insurance",
+  "Technology",
+  "Legal industry",
+  "Agriculture",
+  "Telecom & utilities",
+  "Retail & hospitality",
+  "Trade unions (non-public-safety)",
+  "Public safety unions",
+  "Education employees",
+]);
+
+/** True for industry/sector buckets that re-cut already-counted individual dollars. */
+export function isSectorBucket(label: string): boolean {
+  return SECTOR_LABELS.has(label);
 }
 
 export async function lookupDonorCoalition(
@@ -175,6 +225,11 @@ export async function lookupDonorCoalition(
     percent: 0, // filled in below once we know totalRaised
   }));
 
+  // Per-label source. donor_aggregates is unique on (candidate, cycle, label),
+  // so each label maps to exactly one row → one source. Used to scope the
+  // federal-only sector double-count fix below.
+  const sourceByLabel = new Map(rows.map((r) => [r.bucketLabel, r.source]));
+
   // Non-destructive total_receipts handling: once a candidate has the real
   // small/large/PAC breakdown, drop the stale single "total_receipts" bucket
   // (left by the older ingest) so it neither inflates the total nor shows as a
@@ -185,7 +240,25 @@ export async function lookupDonorCoalition(
     ? rawBuckets.filter((b) => b.label !== "total_receipts")
     : rawBuckets;
 
-  const totalRaised = buckets.reduce((sum, b) => sum + b.amount, 0);
+  // A federal sector bucket double-counts iff the funding-mix breakdown it
+  // re-cuts is also present (federal-donors adds Schedule-A by-employer sectors
+  // on top of the FEC /totals/ individual dollars). Drop those from the headline
+  // so it tracks real receipts (Jon Bonck TX House 2026: ≈$1.95M bucket-sum →
+  // ≈$1.5M). The guards matter: STATE sectors are disjoint org money (kept), and
+  // a federal candidate with sectors but no breakdown keeps them as its only
+  // funding signal rather than collapsing to $0.
+  const isDoubleCountedSector = (b: DonorBucket) =>
+    hasBreakdown &&
+    isSectorBucket(b.label) &&
+    sourceByLabel.get(b.label) === FEDERAL_DONOR_SOURCE;
+
+  // totalRaised (and the percent denominator) excludes those double-counted
+  // sector buckets. The buckets themselves stay in `buckets` for the sector
+  // display; a federal sector bar then reads as its share of real receipts.
+  const totalRaised = buckets.reduce(
+    (sum, b) => (isDoubleCountedSector(b) ? sum : sum + b.amount),
+    0,
+  );
 
   for (const b of buckets) {
     b.percent =
