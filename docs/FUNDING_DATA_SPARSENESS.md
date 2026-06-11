@@ -8,7 +8,7 @@
 The Money trail looks empty because of a **data-population gap, not a UI gap.**
 The frontend (`FunderBars`) and the database schema (`donorAggregates` + the
 `can*` enrichment tables) are both rich and already degrade gracefully when data
-is missing. What's thin is the *data flowing into them*. In the reference
+is missing. What's thin is the _data flowing into them_. In the reference
 screenshot (a Texas House race, challenger "Jon Bonck · Republican · $1.5M
 raised · FEC filing"), the candidate is sitting on the lowest of three data
 layers — a single top-line FEC receipts figure with no breakdown behind it.
@@ -35,6 +35,7 @@ breakdown. `src/lib/server/race-data.ts` then derives `fundingMix`
 
 **Render path** — `FunderBars` (`src/prototype/VoterChoiceApp.tsx:1302`) renders,
 in increasing order of available data:
+
 - a top-line "$X raised" with a `details pending` sub-label (`funding-sparse`),
 - a small/large/PAC stacked funding-mix bar,
 - a per-sector industry breakdown with color swatches and an "Outside named
@@ -60,7 +61,7 @@ by funds raised", `:339-363`).
 Trace the Jon Bonck row:
 
 1. The challenger has a `totalReceipts` value, so the row prints
-   "$1.5M raised · FEC filing" (`RepCard.tsx:286-302`). That is the *only* funding
+   "$1.5M raised · FEC filing" (`RepCard.tsx:286-302`). That is the _only_ funding
    field challenger rows ever show — intentional.
 2. For the incumbent's Money trail, `donors.ts` finds only the legacy
    `total_receipts` bucket — no small/large/PAC rows. Its non-destructive
@@ -70,15 +71,17 @@ Trace the Jon Bonck row:
    `fundingMix`, so `FunderBars` takes the `onlyTotalReceipts` branch
    (`VoterChoiceApp.tsx:1318-1350`) and shows the "details pending" message.
 
-So the sparseness is structural to *which layer the data is on*, not to the UI.
+So the sparseness is structural to _which layer the data is on_, not to the UI.
 
 ## The three data layers and why each is under-fed
 
 ### Layer 1 — Top-line receipts only (the screenshot)
+
 `donor_aggregates` has a single `total_receipts` bucket for the candidate.
 Sufficient for a headline dollar figure; triggers `funding-sparse`.
 
 ### Layer 2 — FEC breakdown (small/large/PAC + employer/industry)
+
 Implemented in `scripts/ingest/federal-donors.ts` against the OpenFEC API
 (totals → small/large/PAC; `schedule_a/by_employer` → industry buckets via
 `scripts/ingest/_bucket-mapping.ts`). It only populates candidates the script
@@ -88,18 +91,18 @@ candidates fall back to Layer 1 or `no_donor_data`.
 
 ### Layer 3 — Named issue-PACs + curated enrichment
 
-Two facts matter here, because it's easy to assume this layer *requires*
+Two facts matter here, because it's easy to assume this layer _requires_
 can2026.org. It does not.
 
 - **FEC already exposes the named/issue-PAC data.** `federal-donors.ts:300-303`
-  explicitly defers it: *"Issue-aligned PAC classification is a later
-  enhancement; this is the unclassified total."* Today the ingest pulls only the
+  explicitly defers it: _"Issue-aligned PAC classification is a later
+  enhancement; this is the unclassified total."_ Today the ingest pulls only the
   aggregate "PACs" bucket plus the employer breakdown. The named-PAC material is
   available directly from FEC via:
   - `GET /committee/{id}/schedules/schedule_a/by_committee/` — committees (PACs)
-    that contributed *to* the campaign, by name; and
+    that contributed _to_ the campaign, by name; and
   - the candidate `independent_expenditures` endpoint — outside spending
-    *for/against* a candidate by named PACs/super-PACs, which is where groups
+    _for/against_ a candidate by named PACs/super-PACs, which is where groups
     like AIPAC (UDP) and Fairshake actually operate (independent expenditures,
     not direct contributions).
 
@@ -107,14 +110,14 @@ can2026.org. It does not.
   PAC→issue classification map — the exact same pattern `_bucket-mapping.ts`
   already uses for employer→sector.
 
-- **CAN2026 is merely the only *currently-wired* source** for named,
+- **CAN2026 is merely the only _currently-wired_ source** for named,
   issue-classified PACs with alignment flags and dark-money narrative. It is
   fully built (`scripts/ingest/can2026.ts`, schema tables `canDonorTrails`,
   `canDonorSectors`, `canFinanceMetrics`, `canIssuePacContributions` in
   `db/schema.ts`; surfaced via `src/lib/server/can-context.ts`) but **NOT
   deployed**: gated behind a terms-of-use confirmation (script header §6.7) and
   the empty `CAN2026_DISPLAY_ENABLED` flag (`.env.example:13`). Treat it as
-  *optional editorial enrichment*, not a dependency.
+  _optional editorial enrichment_, not a dependency.
 
 ## Coverage gaps that are by design (not bugs)
 
@@ -126,13 +129,23 @@ source covers them.
 
 ## Remediation roadmap (recommendation, sequenced)
 
-### P0 — Measure coverage first
-Run a coverage query against `donor_aggregates`: count candidates with a full
-small/large/PAC breakdown vs. only `total_receipts` vs. none. This turns
-"sparse" into a number and decides where effort actually goes. Cheap; do it
-before anything else.
+### P0 — Measure coverage first ✅ tooling added
+
+Run `scripts/ingest/_coverage-by-layer.ts` (read-only) against the database:
+
+```
+DATABASE_URL=<neon> npx tsx scripts/ingest/_coverage-by-layer.ts [cycle]
+```
+
+It classifies every candidate into the three layers — `none` / `top_line`
+(the sparse-UI fallback) / `breakdown` (small/large/PAC), and within
+`breakdown` flags how many also have sector and named-issue-PAC data — overall
+and per federal/state geo. This turns "sparse" into a number and decides where
+P1–P3 effort actually goes. (Could not be executed here: no `DATABASE_URL` in
+the build container — run it against the live DB.)
 
 ### P1 — Backfill the FEC breakdown (Layer 2)
+
 Run `scripts/ingest/federal-candidates.ts` (FEC ID resolution + 2026 roster)
 then `scripts/ingest/federal-donors.ts` across all federal House/Senate
 candidates in the active cycle. This upgrades the common case from top-line to
@@ -140,6 +153,7 @@ small/large/PAC + sectors **with no UI change** — the existing `FunderBars`
 branches light up automatically.
 
 ### P2 — Named issue-PACs from FEC directly (recommended over CAN2026)
+
 Extend `federal-donors.ts` to pull `schedule_a/by_committee` and the candidate
 `independent_expenditures` endpoint, and add a maintained PAC→issue map
 (mirroring `_bucket-mapping.ts`) plus the alignment logic. This populates the
@@ -147,15 +161,18 @@ named-PAC UI (`isIssuePAC` slices + ✓/⚠ flags) **without** the can2026.org
 terms-of-use gate.
 
 ### P2-alt (optional) — CAN2026 enrichment
+
 If/when terms-of-use is cleared with the maintainer, run `can2026.ts` and set
 `CAN2026_DISPLAY_ENABLED` to add curated narrative, cash-on-hand, and
-OpenSecrets sectors as a *supplement* — not the primary path.
+OpenSecrets sectors as a _supplement_ — not the primary path.
 
 ### P3 — State / down-ballot coverage
+
 Use the existing `scripts/ingest/state-donors.ts` family for state legislative
 races that warrant it. Won't cover executive/judicial/local (by design).
 
 ### P4 (optional UX)
+
 Only if desired: soften the Layer-1 `funding-sparse` copy so partial coverage
 reads as "data being expanded / in progress" rather than "broken."
 
@@ -166,13 +183,13 @@ mix operational work with design-heavy code. Bundling a long, rate-limited
 network ingest with a new classifier in one session makes it brittle and hard to
 review.
 
-| Phase | Kind of work | Session | Suggested model |
-|-------|--------------|---------|-----------------|
-| This doc | Writing | now | Opus |
-| P0 + P1 | Run/verify existing ingest, monitor rate-limited FEC jobs | own session(s) | Sonnet (no new code) |
-| P2 | New FEC endpoints + PAC→issue map + alignment | own session | Opus (design-heavy, review in isolation) |
-| P2-alt | CAN2026 | separate; blocked on human terms-of-use decision | — |
-| P3 | State coverage, per-state | separate session(s) | Sonnet |
+| Phase    | Kind of work                                              | Session                                          | Suggested model                          |
+| -------- | --------------------------------------------------------- | ------------------------------------------------ | ---------------------------------------- |
+| This doc | Writing                                                   | now                                              | Opus                                     |
+| P0 + P1  | Run/verify existing ingest, monitor rate-limited FEC jobs | own session(s)                                   | Sonnet (no new code)                     |
+| P2       | New FEC endpoints + PAC→issue map + alignment             | own session                                      | Opus (design-heavy, review in isolation) |
+| P2-alt   | CAN2026                                                   | separate; blocked on human terms-of-use decision | —                                        |
+| P3       | State coverage, per-state                                 | separate session(s)                              | Sonnet                                   |
 
 Keep CAN2026 off the critical path.
 
