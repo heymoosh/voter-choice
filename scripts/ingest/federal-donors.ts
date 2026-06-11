@@ -738,6 +738,11 @@ export async function ingestFederalDonors({
   // read-time total_receipts filter) from summing/double-counting. Scoped to
   // each just-processed candidate, run strictly AFTER their upsert.
   const dropLegacy = argv.includes("--drop-legacy");
+  // --incumbents-only: restrict to sitting members (is_incumbent = true). Used
+  // for the first-pass backfill that fixes the incumbent gap — the prior mass
+  // run used --no-name-search and only reached candidates with a deterministic
+  // fecCandidateId, systematically skipping incumbents from GovTrack who lack one.
+  const incumbentsOnly = argv.includes("--incumbents-only");
   const nameFilter = parseNameFilter(argv);
 
   // Fetch federal candidates from DB. A name filter is pushed into the SQL so it
@@ -760,12 +765,15 @@ export async function ingestFederalDonors({
         AND existing_donor_aggregate.bucket_label IN (${bucketList})
     )`;
   }
+  const incumbentFilter = incumbentsOnly
+    ? sql`${baseWhere} AND ${candidates.isIncumbent} = true`
+    : baseWhere;
   const where = nameFilter
-    ? sql`${baseWhere} AND (${sql.join(
+    ? sql`${incumbentFilter} AND (${sql.join(
         nameFilter.map((f) => sql`${candidates.fullName} ILIKE ${`%${f}%`}`),
         sql` OR `,
       )})`
-    : baseWhere;
+    : incumbentFilter;
   const federalCandidates = (await db
     .select()
     .from(candidates)
@@ -783,6 +791,7 @@ export async function ingestFederalDonors({
   }
   console.log(
     `[federal-donors] found ${federalCandidates.length} federal candidates` +
+      (incumbentsOnly ? " (incumbents only)" : "") +
       (nameFilter ? ` (name filter: ${nameFilter.join(",")})` : "") +
       (dryRun ? " [DRY RUN — no writes]" : ""),
   );

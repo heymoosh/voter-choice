@@ -6,8 +6,8 @@
    static mocks):
 
      home → loading (delegation + state data fetch)
-          → coldopen (issue intake — the SHIPPED ColdOpenView, kept between
-            loading and workspace exactly as the legacy flow does)
+          → coldopen (conversational issue intake — IntakeView hosts the
+            shared IssueConversation loop: extract → converse → lock)
           → analyzing (per-seat /api/race-data) → workspace
           → print / standing (+ static pages, honest failure states)
 
@@ -21,7 +21,6 @@ import {
   ErrorBanner,
   HomeView,
   LoadingView,
-  ColdOpenView,
   AboutPage,
   MethodologyPage,
   PrivacyPage,
@@ -31,6 +30,8 @@ import { DelegationWorkspace } from "./DelegationWorkspace";
 import { HandoffModal } from "./HandoffModal";
 import { ScorecardPrintView } from "./ScorecardPrintView";
 import { PolisClose } from "./PolisClose";
+import { IntakeView } from "./IntakeView";
+import { EditIssuesModal } from "./EditIssuesModal";
 import {
   fetchDelegation,
   loadAllSeatCardData,
@@ -45,11 +46,18 @@ import {
   getSeatResearch,
   submitSessionCounters,
   issuesForLevel,
+  seatAlignmentPct,
+  computeSeatDeltas,
+  resetSeatResearch,
+  resetChallengerResearch,
 } from "./delegationData";
 import { loadPolisScopes } from "./polisAdapter";
-import { streamChatReply, getChatSessionId } from "../realData";
+import { getChatSessionId } from "../realData";
 import { buildSeatChatSystemPrompt } from "./seatChatPrompt";
 import { resolveChatBlock } from "./chatBlocks";
+import { sendChatTurn, activateByok } from "./chatTransport";
+import { BudgetModal } from "./BudgetModal";
+import { buildScorecardHandoffPrompt } from "./handoffText";
 
 // Durable (localStorage): the only thing kept across a tab close — the user's
 // issues ("Polis" data) plus a county-level-at-most location. Never the precise
@@ -178,6 +186,15 @@ function App2Inner() {
   const [chatTimeouts, setChatTimeouts] = useState({});
   const [budgetTier, setBudgetTier] = useState(null);
   const prevChatSeatRef = useRef(null);
+  // Budget modal: null | { blocked } — blocked=true means a turn was refused.
+  // pendingRetryRef holds a zero-arg replay of the refused turn (seat chat or
+  // an issue-conversation turn) for "Retry with my key".
+  const [budgetModal, setBudgetModal] = useState(null);
+  const pendingRetryRef = useRef(null);
+
+  // Edit-issues loop: modal visibility + post-re-score deltas.
+  const [editIssuesOpen, setEditIssuesOpen] = useState(false);
+  const [issueDeltas, setIssueDeltas] = useState(null);
 
   // Fetched (not persisted — refetched on resume)
   const [delegation, setDelegation] = useState(null);
@@ -313,6 +330,28 @@ function App2Inner() {
     setStage("workspace");
     if (typeof window !== "undefined")
       window.scrollTo({ top: 0, behavior: "auto" });
+    return built;
+  }
+
+  /* ─── Edit issues → deterministic re-score (no LLM: analyze() re-runs the
+     per-seat /api/race-data fetch, so this works even at budget exhaustion).
+     Verdicts are preserved; seats whose aggregate alignment shifts past the
+     noise floor get a REVISIT flag in the delta banner. ─── */
+  async function handleApplyIssues(newIssues) {
+    setEditIssuesOpen(false);
+    const before = new Map(seats.map((s) => [s.id, seatAlignmentPct(s)]));
+    // Re-fire web research only when the SCOREABLE issue set actually changed —
+    // rerank/rename-only edits must not re-burn research spend.
+    const canon = (list) =>
+      JSON.stringify(
+        [...new Set(list.map((i) => i.canonicalIssue).filter(Boolean))].sort(),
+      );
+    if (canon(newIssues) !== canon(issues)) {
+      resetSeatResearch();
+      resetChallengerResearch();
+    }
+    const built = await analyze(delegation, stateData, newIssues);
+    setIssueDeltas(computeSeatDeltas(before, built));
   }
 
   /* ─── Seat chat (ported from the shipped WorkspaceView's chat handlers) ─── */
@@ -371,7 +410,7 @@ function App2Inner() {
     const prevSeat = prevChatSeatRef.current;
     prevChatSeatRef.current = seatId;
 
-    streamChatReply(
+    sendChatTurn(
       {
         messages: apiMessages,
         systemPrompt,
@@ -390,31 +429,59 @@ function App2Inner() {
               m._id === aiId ? { ...m, text: m.text + chunk } : m,
             ),
           })),
-        onError: (_reason, meta) => {
+        onBudgetBlock: () => {
+          // Drop the empty bubble, stash the refused turn for "Retry with my
+          // key", and open the budget modal in its blocked framing.
+          setChatMessages((prev) => ({
+            ...prev,
+            [seatId]: (prev[seatId] || []).filter((m) => m._id !== aiId),
+          }));
+          pendingRetryRef.current = () => runChatStream(seatId, apiMessages);
+          setBudgetModal({ blocked: true });
+        },
+        onError: (reason, meta) => {
           // Drop the (empty/partial) AI bubble first — whichever surface shows.
           setChatMessages((prev) => ({
             ...prev,
             [seatId]: (prev[seatId] || []).filter((m) => m._id !== aiId),
           }));
           const blk = resolveChatBlock(meta?.code);
-          if (blk.budget) {
-            handleBudgetBlock();
-            return;
-          }
-          // Block-specific message string, or `true` → generic retry banner.
+          // BYOK errors arrive as user-facing sentences (auth, quota) — show
+          // them verbatim; transport codes ("network", "stream") fall back to
+          // the generic retry banner.
+          const sentence =
+            typeof reason === "string" && reason.includes(" ") ? reason : null;
           setChatTimeouts((prev) => ({
             ...prev,
-            [seatId]: blk.message || true,
+            [seatId]: blk.message || sentence || true,
           }));
         },
       },
     );
   }
 
-  // Budget gate hit: surface the continue-elsewhere options. (PR-1: the
-  // handoff modal; the dedicated budget/BYOK modal replaces this target.)
+  // Soft-tier "See options →" (nothing refused yet) → informational framing.
   function handleBudgetBlock() {
-    setShowHandoff(true);
+    setBudgetModal({ blocked: false });
+  }
+
+  // An issue-conversation turn (intake or edit modal) hit the budget gate:
+  // the loop preserved its state and handed us a zero-arg replay.
+  function handleConvoBudgetBlock(retry) {
+    pendingRetryRef.current = retry;
+    setBudgetModal({ blocked: true });
+  }
+
+  // "Retry with my key": explicit BYOK opt-in, then replay the refused turn
+  // through the transport (now BYOK-direct, sticky for this session).
+  function handleRetryWithKey() {
+    const retry = pendingRetryRef.current;
+    activateByok();
+    setBudgetModal(null);
+    if (retry) {
+      pendingRetryRef.current = null;
+      retry();
+    }
   }
 
   function handleSendChat(seatId, text) {
@@ -560,11 +627,12 @@ function App2Inner() {
     }
     if (stage === "coldopen") {
       return (
-        <ColdOpenView
+        <IntakeView
           address={address}
           savedIssues={issues.length > 0 ? issues : null}
           contextNote="your 3 members of Congress"
           onLock={(locked) => void analyze(delegation, stateData, locked)}
+          onBudgetBlock={handleConvoBudgetBlock}
         />
       );
     }
@@ -694,6 +762,13 @@ function App2Inner() {
           onSendChat={handleSendChat}
           onRetryChat={handleRetryChat}
           onShowBudgetOptions={handleBudgetBlock}
+          onEditIssues={() => setEditIssuesOpen(true)}
+          issueDeltas={issueDeltas}
+          onRevisitSeat={(seatId) => {
+            setActiveSeatId(seatId);
+            setIssueDeltas(null);
+          }}
+          onDismissDeltas={() => setIssueDeltas(null)}
         />
         {showHandoff && (
           <HandoffModal
@@ -701,14 +776,49 @@ function App2Inner() {
             issues={issues}
             verdicts={verdicts}
             districtsLine={districtsLine}
+            stateName={delegation?.stateName}
+            researchFor={getSeatResearch}
             onClose={() => setShowHandoff(false)}
+          />
+        )}
+        {editIssuesOpen && (
+          <EditIssuesModal
+            issues={issues}
+            onApply={(next) => void handleApplyIssues(next)}
+            onCancel={() => setEditIssuesOpen(false)}
+            onBudgetBlock={handleConvoBudgetBlock}
           />
         )}
       </>
     );
   }
 
-  return <NavProvider value={navValue}>{renderStage()}</NavProvider>;
+  return (
+    <NavProvider value={navValue}>
+      {renderStage()}
+      {/* Budget modal overlays ANY stage — intake conversations hit the gate
+          before the workspace exists. */}
+      {budgetModal && (
+        <BudgetModal
+          blocked={budgetModal.blocked}
+          prompt={buildScorecardHandoffPrompt({
+            seats,
+            issues,
+            verdicts,
+            districtsLine,
+            stateName: delegation?.stateName,
+            researchFor: getSeatResearch,
+          })}
+          onClose={() => setBudgetModal(null)}
+          onRetryWithKey={
+            budgetModal.blocked && pendingRetryRef.current
+              ? handleRetryWithKey
+              : undefined
+          }
+        />
+      )}
+    </NavProvider>
+  );
 }
 
 export default function App2() {

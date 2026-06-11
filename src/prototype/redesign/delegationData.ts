@@ -516,12 +516,23 @@ export function pollingInfoFromLogistics(
 export type SeatResearch =
   | { status: "loading" }
   | { status: "done"; scores: AlignmentScore[] }
-  | { status: "unavailable" };
+  | { status: "unavailable" }
+  /** The server refused on the community-budget gate — research is paused,
+   *  not failed; the UI offers the budget options instead of a retry. */
+  | { status: "budget_blocked" };
 
 const seatResearch = new Map<string, SeatResearch>();
 
 export function getSeatResearch(seatId: string): SeatResearch | undefined {
   return seatResearch.get(seatId);
+}
+
+/** Clear the attempt cache so a re-analyze re-fires research. Called when the
+ *  voter's canonical-issue set actually changes (an edit-issues apply) —
+ *  rerank/rename-only edits must NOT reset, or they'd re-burn research spend
+ *  for identical queries. */
+export function resetSeatResearch(): void {
+  seatResearch.clear();
 }
 
 /** Reset hook for tests/start-over. */
@@ -562,6 +573,8 @@ export function preloadSeatResearch(
     }).then((res) => {
       if (res && res.scores && res.scores.length > 0) {
         seatResearch.set(seat.id, { status: "done", scores: res.scores });
+      } else if (res?.blocked) {
+        seatResearch.set(seat.id, { status: "budget_blocked" });
       } else {
         seatResearch.set(seat.id, { status: "unavailable" });
       }
@@ -584,6 +597,11 @@ export function getChallengerResearch(
   challengerId: string,
 ): SeatResearch | undefined {
   return challengerResearchStore.get(challengerId);
+}
+
+/** Clear the challenger attempt cache (same contract as resetSeatResearch). */
+export function resetChallengerResearch(): void {
+  challengerResearchStore.clear();
 }
 
 /** Reset hook for tests/start-over. */
@@ -612,7 +630,12 @@ export function researchChallenger(
     }));
   if (structuredIssues.length === 0) return;
   const existing = challengerResearchStore.get(challenger.id);
-  if (existing && existing.status !== "unavailable") return;
+  if (
+    existing &&
+    existing.status !== "unavailable" &&
+    existing.status !== "budget_blocked"
+  )
+    return;
 
   challengerResearchStore.set(challenger.id, { status: "loading" });
   fetchCandidateResearch({
@@ -626,12 +649,76 @@ export function researchChallenger(
         status: "done",
         scores: res.scores,
       });
+    } else if (res?.blocked) {
+      challengerResearchStore.set(challenger.id, { status: "budget_blocked" });
     } else {
       challengerResearchStore.set(challenger.id, { status: "unavailable" });
     }
     onUpdate();
   });
   onUpdate();
+}
+
+// ---------------------------------------------------------------------------
+// Re-score deltas — how each seat's aggregate alignment moved after an
+// edit-issues apply. Deterministic math over the re-fetched card data (the
+// old app's amend deltas were mocked; this is the first real implementation).
+// ---------------------------------------------------------------------------
+
+/** Aggregate voting-record alignment for a seat: Σkept/Σtotal across scoreable
+ *  rows, as a 0–100 percent. null = no scoreable record (honest gap). */
+export function seatAlignmentPct(seat: {
+  alignmentEntry: { scores: unknown[] | null } | null;
+}): number | null {
+  const scores = seat.alignmentEntry?.scores;
+  if (!Array.isArray(scores)) return null;
+  let kept = 0;
+  let total = 0;
+  for (const row of scores as Array<Record<string, unknown>>) {
+    if (
+      row &&
+      typeof row.kept === "number" &&
+      typeof row.total === "number" &&
+      row.total > 0
+    ) {
+      kept += row.kept;
+      total += row.total;
+    }
+  }
+  if (total === 0) return null;
+  return Math.round((kept / total) * 100);
+}
+
+export interface SeatDelta {
+  seatId: string;
+  label: string;
+  oldPct: number | null;
+  newPct: number | null;
+  /** Worth a revisit: moved past the 5-point noise floor, or flipped between
+   *  scoreable and no-record. */
+  significant: boolean;
+}
+
+/** Compare per-seat alignment before/after a re-score. `before` is the
+ *  snapshot taken from the OLD seats (seatAlignmentPct per seat id). */
+export function computeSeatDeltas(
+  before: Map<string, number | null>,
+  seats: DelegationSeatVM[],
+): SeatDelta[] {
+  return seats.map((seat) => {
+    const oldPct = before.has(seat.id) ? (before.get(seat.id) ?? null) : null;
+    const newPct = seatAlignmentPct(seat);
+    const flipped = (oldPct === null) !== (newPct === null);
+    const moved =
+      oldPct !== null && newPct !== null && Math.abs(newPct - oldPct) > 5;
+    return {
+      seatId: seat.id,
+      label: `${seat.office} · ${seat.districtLabel}`,
+      oldPct,
+      newPct,
+      significant: flipped || moved,
+    };
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -685,47 +772,6 @@ export async function submitSessionCounters(input: {
  * Plain-text scorecard for download / handoff: issues + per-seat verdicts.
  * Contains no address or personal info beyond what the user typed as issues.
  */
-export function buildScorecardProfileText(input: {
-  seats: DelegationSeatVM[];
-  issues: UserIssue[];
-  verdicts: Record<string, "keep" | "replace">;
-  districtsLine: string;
-}): string {
-  const issueList = input.issues
-    .map(
-      (i, idx) =>
-        `  ${idx + 1}. ${i.interpretation}${i.canonicalIssue ? ` (${i.canonicalIssue})` : ""}`,
-    )
-    .join("\n");
-  const verdictList = input.seats
-    .map((s) => {
-      const v = input.verdicts[s.id];
-      const name = s.candidate?.name ?? s.blindLabel;
-      const verdict = v
-        ? v === "keep"
-          ? "WORTH KEEPING"
-          : "TIME TO REPLACE"
-        : "not yet reviewed";
-      return `  • ${s.office} · ${s.districtLabel}: ${name} — ${verdict}`;
-    })
-    .join("\n");
-
-  return [
-    "MY CONGRESSIONAL SCORECARD — Voter Choice (voterchoice.app)",
-    "",
-    `Districts: ${input.districtsLine}`,
-    "",
-    "My issues (ranked):",
-    issueList,
-    "",
-    "My verdicts on my sitting delegation:",
-    verdictList,
-    "",
-    "Continue helping me from here: I assessed my sitting members of Congress",
-    "against my issues above using their voting records and donor data.",
-  ].join("\n");
-}
-
 // ---------------------------------------------------------------------------
 // Misc formatting shared by the redesign views
 // ---------------------------------------------------------------------------

@@ -78,12 +78,33 @@ test.describe("delegation flow — address → assess → verdicts", () => {
     await expect(page.locator(".be-modal")).toContainText(
       "Take your scorecard with you",
     );
-    await expect(page.locator(".be-prompt-text")).toContainText(
-      "MY CONGRESSIONAL SCORECARD",
+    const promptText = page.locator(".be-modal .be-prompt-text");
+    await expect(promptText).toContainText("MY CONGRESSIONAL SCORECARD");
+    await expect(promptText).toContainText(
+      "MY PRIORITIES (ranked, with the direction I want):",
     );
-    await expect(page.locator(".be-prompt-text")).toContainText(
-      "Continue from this scorecard",
-    );
+    await expect(promptText).toContainText("CONTINUE FROM HERE:");
+    // Evidence basis rides along (5/6 + 1/6 mock rows → not bare verdicts).
+    await expect(promptText).toContainText("scored votes");
+
+    // Restored affordances: chatbot copy & open buttons, .txt download, BYOK.
+    await expect(
+      page.locator(".be-modal").getByRole("button", {
+        name: /Copy & open Claude/,
+      }),
+    ).toBeVisible();
+    await expect(
+      page.locator(".be-modal").getByTestId("handoff-download"),
+    ).toBeVisible();
+    await expect(
+      page.locator(".be-modal").getByTestId("byok-input"),
+    ).toBeVisible();
+
+    // The .txt download carries the same portable prompt.
+    const downloadPromise = page.waitForEvent("download");
+    await page.locator(".be-modal").getByTestId("handoff-download").click();
+    const download = await downloadPromise;
+    expect(download.suggestedFilename()).toBe("voter-choice-scorecard.txt");
   });
 
   test("total-receipts-only donor data renders as pending detail, not an industry breakdown", async ({

@@ -833,6 +833,10 @@ export interface CandidateResearchResult {
   scores?: AlignmentScore[];
   /** Set when no citable sources were found for any issue. */
   unavailable?: boolean;
+  /** Set when the server refused the research on a community-budget gate
+   *  (BUDGET_EXHAUSTED) — distinct from unavailable so the UI can offer the
+   *  budget options instead of a pointless retry. */
+  blocked?: boolean;
   /** Legacy prose summary — present in older responses; ignored by new UI. */
   summary?: string;
 }
@@ -886,7 +890,17 @@ export async function fetchCandidateResearch(input: {
       }),
       signal: controller.signal,
     });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      // Surface the budget gate distinctly (503 + BUDGET_EXHAUSTED); every
+      // other failure keeps the legacy null contract for old-app callers.
+      try {
+        const body = (await res.json()) as { code?: string };
+        if (body?.code === "BUDGET_EXHAUSTED") return { blocked: true };
+      } catch {
+        /* non-JSON error body */
+      }
+      return null;
+    }
     return (await res.json()) as CandidateResearchResult;
   } catch {
     return null; // network error or AbortError (timeout)

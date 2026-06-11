@@ -21,6 +21,7 @@ import React, { useState, useEffect } from "react";
 import { AppNav, PollingStatusBar } from "../VoterChoiceApp";
 import { RepCard } from "./RepCard";
 import { SeatChat } from "./SeatChat";
+import { IssueDeltaBanner } from "./IssueDeltaBanner";
 import { issuesForLevel } from "./delegationData";
 
 function tierIntro(section, { userIssues, stateName }) {
@@ -94,6 +95,7 @@ export function ScorecardPane({
   onPrint,
   onContinueElsewhere,
   onSeeStanding,
+  onEditIssues,
 }) {
   const doneCount = Object.keys(verdicts).filter((id) =>
     seats.some((s) => s.id === id),
@@ -122,6 +124,15 @@ export function ScorecardPane({
       <div className="b-issues-edit">
         <div className="b-issues-head">
           <span className="b-issues-lab">Your issues</span>
+          {onEditIssues && (
+            <button
+              className="b-issues-btn"
+              onClick={onEditIssues}
+              data-testid="edit-issues-scorecard"
+            >
+              Edit
+            </button>
+          )}
         </div>
         <ol className="b-issues-list">
           {issues.map((iss, i) => (
@@ -260,6 +271,10 @@ export function DelegationWorkspace({
   onSendChat,
   onRetryChat,
   onShowBudgetOptions,
+  onEditIssues,
+  issueDeltas,
+  onRevisitSeat,
+  onDismissDeltas,
 }) {
   const activeSeat = seats.find((s) => s.id === activeSeatId) || seats[0];
   const activeIdx = seats.findIndex((s) => s.id === activeSeat.id);
@@ -330,6 +345,15 @@ export function DelegationWorkspace({
           <div className="priorities">
             <div className="top">
               <span className="lab">Your issues</span>
+              {onEditIssues && (
+                <button
+                  className="linklike"
+                  onClick={onEditIssues}
+                  data-testid="edit-issues-rail"
+                >
+                  EDIT
+                </button>
+              )}
             </div>
             <ol>
               {userIssues.map((iss, i) => (
@@ -399,6 +423,14 @@ export function DelegationWorkspace({
             </div>
           </div>
 
+          {issueDeltas && (
+            <IssueDeltaBanner
+              deltas={issueDeltas}
+              onRevisit={onRevisitSeat}
+              onDismiss={onDismissDeltas}
+            />
+          )}
+
           <RepCard
             key={activeSeat.id}
             seat={activeSeat}
@@ -411,6 +443,7 @@ export function DelegationWorkspace({
             onHide={() => onHide(activeSeat.id)}
             verdict={verdicts[activeSeat.id] || null}
             onVerdict={commitVerdict}
+            onShowBudgetOptions={onShowBudgetOptions}
           />
 
           {doneCount === seats.length && (
@@ -453,6 +486,7 @@ export function DelegationWorkspace({
             onPrint={onPrint}
             onContinueElsewhere={onContinueElsewhere}
             onSeeStanding={onSeeStanding}
+            onEditIssues={onEditIssues}
           />
         </aside>
       </div>
