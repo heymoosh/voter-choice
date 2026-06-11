@@ -771,47 +771,6 @@ export async function submitSessionCounters(input: {
  * Plain-text scorecard for download / handoff: issues + per-seat verdicts.
  * Contains no address or personal info beyond what the user typed as issues.
  */
-export function buildScorecardProfileText(input: {
-  seats: DelegationSeatVM[];
-  issues: UserIssue[];
-  verdicts: Record<string, "keep" | "replace">;
-  districtsLine: string;
-}): string {
-  const issueList = input.issues
-    .map(
-      (i, idx) =>
-        `  ${idx + 1}. ${i.interpretation}${i.canonicalIssue ? ` (${i.canonicalIssue})` : ""}`,
-    )
-    .join("\n");
-  const verdictList = input.seats
-    .map((s) => {
-      const v = input.verdicts[s.id];
-      const name = s.candidate?.name ?? s.blindLabel;
-      const verdict = v
-        ? v === "keep"
-          ? "WORTH KEEPING"
-          : "TIME TO REPLACE"
-        : "not yet reviewed";
-      return `  • ${s.office} · ${s.districtLabel}: ${name} — ${verdict}`;
-    })
-    .join("\n");
-
-  return [
-    "MY CONGRESSIONAL SCORECARD — Voter Choice (voterchoice.app)",
-    "",
-    `Districts: ${input.districtsLine}`,
-    "",
-    "My issues (ranked):",
-    issueList,
-    "",
-    "My verdicts on my sitting delegation:",
-    verdictList,
-    "",
-    "Continue helping me from here: I assessed my sitting members of Congress",
-    "against my issues above using their voting records and donor data.",
-  ].join("\n");
-}
-
 // ---------------------------------------------------------------------------
 // Misc formatting shared by the redesign views
 // ---------------------------------------------------------------------------

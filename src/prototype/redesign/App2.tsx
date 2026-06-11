@@ -57,7 +57,7 @@ import { buildSeatChatSystemPrompt } from "./seatChatPrompt";
 import { resolveChatBlock } from "./chatBlocks";
 import { sendChatTurn, activateByok } from "./chatTransport";
 import { BudgetModal } from "./BudgetModal";
-import { buildHandoffPrompt } from "./HandoffModal";
+import { buildScorecardHandoffPrompt } from "./handoffText";
 
 // Durable (localStorage): the only thing kept across a tab close — the user's
 // issues ("Polis" data) plus a county-level-at-most location. Never the precise
@@ -776,6 +776,8 @@ function App2Inner() {
             issues={issues}
             verdicts={verdicts}
             districtsLine={districtsLine}
+            stateName={delegation?.stateName}
+            researchFor={getSeatResearch}
             onClose={() => setShowHandoff(false)}
           />
         )}
@@ -799,11 +801,13 @@ function App2Inner() {
       {budgetModal && (
         <BudgetModal
           blocked={budgetModal.blocked}
-          prompt={buildHandoffPrompt({
+          prompt={buildScorecardHandoffPrompt({
             seats,
             issues,
             verdicts,
             districtsLine,
+            stateName: delegation?.stateName,
+            researchFor: getSeatResearch,
           })}
           onClose={() => setBudgetModal(null)}
           onRetryWithKey={
