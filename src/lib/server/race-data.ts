@@ -38,6 +38,12 @@ import {
 } from "./donors";
 import { lookupCandidateData, buildCandidateKey } from "./candidate-data";
 import { getIssueLabel } from "../canonicalIssues";
+import {
+  ISSUE_PAC_LABEL_PREFIX,
+  issueFromIssuePacLabel,
+  ruleNameFromIssuePacLabel,
+  issuePacDisplayFromRuleName,
+} from "../issuePacRules";
 import type {
   RacePatternsBlock,
   RacePatternsCandidate,
@@ -240,18 +246,39 @@ export function donorFieldsFromResult(
   // percentages — which are shares of totalRaised — sum past 100%.
   const coalition = result.buckets
     .filter((b) => isSectorBucket(b.label) || isIssuePacBucket(b.label))
-    .map((b) => ({
-      label: b.label,
-      percent: b.percent,
-      amount: b.amount,
-      ...(isIssuePacBucket(b.label)
-        ? {
-            isIssuePAC: true,
-            alignsWith: issueFromIssuePacLabel(b.label),
-            ...(b.issuePacStance ? { issuePacStance: b.issuePacStance } : {}),
-          }
-        : {}),
-    }));
+    .map((b) => {
+      if (!isIssuePacBucket(b.label)) {
+        return { label: b.label, percent: b.percent, amount: b.amount };
+      }
+      // Issue-PAC display fields: prefer DB metadata, then fall back to the
+      // editorial mapping (keyed by the ruleName embedded in the bucket label),
+      // then to a humanized last resort. This keeps cards correct even when a
+      // donor_aggregates row predates the rawMetadata.issuePac fields, and never
+      // leaks the raw "Issue-aligned PACs — issue — ruleName" DB key to the UI.
+      const ruleName = ruleNameFromIssuePacLabel(b.label);
+      const mapping = ruleName ? issuePacDisplayFromRuleName(ruleName) : null;
+      const displayName = b.displayName ?? mapping?.displayName;
+      const fullName = b.fullName ?? mapping?.fullName;
+      const advocates = b.advocates ?? mapping?.advocates;
+      const mappedStance =
+        mapping && mapping.stance !== "mixed" ? mapping.stance : undefined;
+      const issuePacStance = b.issuePacStance ?? mappedStance;
+      const alignsWith =
+        b.canonicalIssue ??
+        mapping?.canonicalIssue ??
+        issueFromIssuePacLabel(b.label) ??
+        undefined;
+      return {
+        label: displayName ?? humanizeIssuePacLabel(b.label),
+        percent: b.percent,
+        amount: b.amount,
+        isIssuePAC: true,
+        ...(alignsWith ? { alignsWith } : {}),
+        ...(issuePacStance ? { issuePacStance } : {}),
+        ...(fullName ? { fullName } : {}),
+        ...(advocates ? { advocates } : {}),
+      };
+    });
   return {
     donorCoalition: coalition,
     totalRaised: result.totalRaised,
@@ -261,11 +288,23 @@ export function donorFieldsFromResult(
   };
 }
 
-function issueFromIssuePacLabel(label: string): string | undefined {
-  const prefix = "Issue-aligned PACs — ";
-  if (!label.startsWith(prefix)) return undefined;
-  const issue = label.slice(prefix.length).trim();
-  return issue || undefined;
+/**
+ * Last-resort readable label for an issue-PAC bucket whose ruleName isn't in the
+ * mapping (e.g. a legacy 2-segment label or a since-removed rule). Turns the
+ * machine key into Title Case so the raw "Issue-aligned PACs — …" string is
+ * never shown. Known rules use the mapping's displayName instead.
+ */
+function humanizeIssuePacLabel(label: string): string {
+  const rest = label.startsWith(ISSUE_PAC_LABEL_PREFIX)
+    ? label.slice(ISSUE_PAC_LABEL_PREFIX.length)
+    : label;
+  const parts = rest.split(" — ");
+  const pick = parts.length >= 2 ? parts[parts.length - 1]! : rest;
+  return pick
+    .replace(/[-_]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 /**

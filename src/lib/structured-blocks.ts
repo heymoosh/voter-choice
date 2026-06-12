@@ -121,6 +121,10 @@ export interface DonorBucketSlice {
   alignsWith?: string;
   /** PAC agenda stance relative to the canonical issue, when known. */
   issuePacStance?: "in_favor" | "opposed";
+  /** Full formal name of the lead organization (when different from label). */
+  fullName?: string;
+  /** Plain-English description of what this PAC cluster advocates. */
+  advocates?: string;
 }
 
 /**
@@ -277,6 +281,12 @@ function sanitizeDonorCoalition(
       }
       if (e.issuePacStance === "in_favor" || e.issuePacStance === "opposed") {
         slice.issuePacStance = e.issuePacStance;
+      }
+      if (isNonEmptyString(e.fullName)) {
+        slice.fullName = e.fullName as string;
+      }
+      if (isNonEmptyString(e.advocates)) {
+        slice.advocates = e.advocates as string;
       }
       out.push(slice);
     }
