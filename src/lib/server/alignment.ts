@@ -328,6 +328,113 @@ export function computeVoteAlignment(
 }
 
 // ---------------------------------------------------------------------------
+// Bill-number helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Map raw GovTrack bill type strings to the short canonical form.
+ * Mirrors the ingest-side `normalizeBillType` in scripts/ingest/federal-votes.ts
+ * so that secondary rawMetadata fallback uses the same mapping.
+ * Exported for unit testing.
+ */
+export function normalizeFederalType(raw: unknown): string | null {
+  if (!raw || typeof raw !== "string") return null;
+  const normalized = raw.toLowerCase().replace(/[^a-z]/gu, "");
+  const mapped: Record<string, string> = {
+    hr: "hr",
+    housebill: "hr",
+    s: "s",
+    senatebill: "s",
+    hres: "hres",
+    houseresolution: "hres",
+    sres: "sres",
+    senateresolution: "sres",
+    hjres: "hjres",
+    housejointresolution: "hjres",
+    sjres: "sjres",
+    senatejointresolution: "sjres",
+    hconres: "hconres",
+    houseconcurrentresolution: "hconres",
+    sconres: "sconres",
+    senateconcurrentresolution: "sconres",
+  };
+  return mapped[normalized] ?? (normalized || null);
+}
+
+/**
+ * Extract a compact bill number (e.g. "HR-2", "S-1171", "HB-12") from a bill
+ * row's rawMetadata, id, and source.
+ *
+ * Federal (govtrack):
+ *   Primary — parse the deterministic `bills.id` format "govtrack-<type><number>-<congress>"
+ *   Secondary — rawMetadata.govtrack.bill.{type|bill_type, number}
+ *
+ * State (openstates):
+ *   rawMetadata.openstates.identifier (e.g. "HB 12" → "HB-12")
+ *
+ * Returns null when no number can be determined (cards fall back to title-only).
+ * Exported for unit testing.
+ */
+export function extractBillNumber(
+  rawMetadata: unknown,
+  billId: unknown,
+  source: unknown,
+): string | null {
+  const rm =
+    rawMetadata && typeof rawMetadata === "object"
+      ? (rawMetadata as Record<string, unknown>)
+      : {};
+
+  if (source === "govtrack") {
+    // Primary: parse the deterministic id "govtrack-<type><number>-<congress>"
+    const idStr = typeof billId === "string" ? billId : "";
+    const idMatch = /^govtrack-([a-z]+)(\d+)-\d+$/i.exec(idStr);
+    if (idMatch) {
+      return `${idMatch[1].toUpperCase()}-${idMatch[2]}`;
+    }
+
+    // Secondary: rawMetadata.govtrack.bill.{type|bill_type, number}
+    const gt = rm.govtrack as Record<string, unknown> | undefined;
+    const bill = gt?.bill as Record<string, unknown> | undefined;
+    if (bill) {
+      const rawType = bill.type ?? bill.bill_type;
+      const type = normalizeFederalType(rawType);
+      const num = String(bill.number ?? "").replace(/\D/gu, "");
+      if (type && num) return `${type.toUpperCase()}-${num}`;
+    }
+
+    return null;
+  }
+
+  if (source === "openstates") {
+    const ops = rm.openstates as Record<string, unknown> | undefined;
+    const ident = ops?.identifier;
+    if (ident && typeof ident === "string" && ident.trim()) {
+      return ident.trim().replace(/\s+/gu, "-");
+    }
+    return null;
+  }
+
+  return null;
+}
+
+/**
+ * Remove a leading embedded bill-number prefix that GovTrack sometimes includes
+ * in the bill title (e.g. "H.R. 21 (118th): Strategic Production Response Act").
+ * Only strips when an explicit `:` / `-` / `–` / `—` separator follows the
+ * number token, so real titles starting with a letter+digit token aren't touched.
+ * Falls back to the original title if stripping would produce an empty string.
+ * Exported for unit testing.
+ */
+export function stripLeadingBillNumber(title: string): string {
+  const stripped = title.replace(
+    /^\s*(?:H\.?\s?R\.?|S\.?|H\.?J\.?\s?Res\.?|S\.?J\.?\s?Res\.?|H\.?\s?Res\.?|S\.?\s?Res\.?|H\.?\s?Con\.?\s?Res\.?|S\.?\s?Con\.?\s?Res\.?|HB|SB|HR|SR)\s*\.?\s*\d+\s*(?:\(\d+(?:th|st|nd|rd)?\))?\s*[:\-–—]\s*/iu,
+    "",
+  );
+  return stripped.trim() || title;
+}
+
+// ---------------------------------------------------------------------------
 // Main lookup
 // ---------------------------------------------------------------------------
 
@@ -363,6 +470,8 @@ export async function lookupAlignment(
   const rows = await db
     .select({
       billTitle: schema.bills.title,
+      billId: schema.bills.id,
+      billRawMetadata: schema.bills.rawMetadata,
       billSourceUrl: schema.bills.sourceUrl,
       billSource: schema.bills.source,
       voteCast: schema.votes.voteCast,
@@ -421,15 +530,19 @@ export async function lookupAlignment(
 
   const contributingVotes: ContributingVote[] = sorted
     .slice(0, MAX_CONTRIBUTING_VOTES)
-    .map((r) => ({
-      billTitle: r.billTitle,
-      voteCast: r.alignment as "with" | "against",
-      date: r.voteDate,
-      source: {
-        name: r.billSource,
-        url: r.billSourceUrl,
-      },
-    }));
+    .map((r) => {
+      const num = extractBillNumber(r.billRawMetadata, r.billId, r.billSource);
+      const title = stripLeadingBillNumber(r.billTitle) || r.billTitle;
+      return {
+        billTitle: num ? `${num} · ${title}` : title,
+        voteCast: r.alignment as "with" | "against",
+        date: r.voteDate,
+        source: {
+          name: r.billSource,
+          url: r.billSourceUrl,
+        },
+      };
+    });
 
   const base: AlignmentResult = {
     found: true,

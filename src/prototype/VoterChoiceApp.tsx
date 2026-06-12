@@ -1279,8 +1279,12 @@ function ContributingVoteCard({ vote, anonCtx }) {
     <div className="cv2-vote">
       <div className="cv2-vote-head">
         <div className="bill">
-          <span className="num">{vote.billTitle.split(' · ')[0] || vote.billTitle}</span>
-          <span className="ttl">{vote.billTitle.split(' · ')[1] || ''}</span>
+          {(() => {
+            const hasNum = (vote.billTitle || '').includes(' · ');
+            const billNum = hasNum ? vote.billTitle.split(' · ')[0] : '';
+            const billTtl = hasNum ? vote.billTitle.split(' · ')[1] : (vote.billTitle || '');
+            return (<><span className="num">{billNum}</span><span className="ttl">{billTtl}</span></>);
+          })()}
         </div>
         <div className={"vote-badge " + voteClass}>{voteLabel}</div>
       </div>
@@ -3211,27 +3215,32 @@ function CompareModal({ open, race, issues, blindMode, revealedCandidates, onRev
                       )}
                       {isExpanded && hasVotes && (
                         <div className="cmp-votes">
-                          {score.contributingVotes.map((v, vi) => (
-                            <div className="cmp-vote" key={vi}>
-                              <div className="cmp-vote-head">
-                                <span className="cmp-vote-num">{(v.billTitle || '').split(' · ')[0]}</span>
-                                <span className={"cmp-vote-badge " + (v.voteCast === 'with' ? 'yea' : v.voteCast === 'against' ? 'nay' : 'other')}>
-                                  {v.voteCast === 'with' ? 'WITH YOU' : v.voteCast === 'against' ? 'AGAINST YOU' : '—'}
-                                </span>
+                          {score.contributingVotes.map((v, vi) => {
+                            const cmpHasNum = (v.billTitle || '').includes(' · ');
+                            const cmpNum = cmpHasNum ? v.billTitle.split(' · ')[0] : '';
+                            const cmpTtl = cmpHasNum ? v.billTitle.split(' · ')[1] : (v.billTitle || '');
+                            return (
+                              <div className="cmp-vote" key={vi}>
+                                <div className="cmp-vote-head">
+                                  <span className="cmp-vote-num">{cmpNum}</span>
+                                  <span className={"cmp-vote-badge " + (v.voteCast === 'with' ? 'yea' : v.voteCast === 'against' ? 'nay' : 'other')}>
+                                    {v.voteCast === 'with' ? 'WITH YOU' : v.voteCast === 'against' ? 'AGAINST YOU' : '—'}
+                                  </span>
+                                </div>
+                                <div className="cmp-vote-ttl">{cmpTtl}</div>
+                                {v.narrative && <p className="cmp-vote-narr">{(window.anonymizeText ? window.anonymizeText(v.narrative, { blindMode: lab.isBlind, realLastName: c.name?.split(' ').pop(), alias: lab.primary }) : v.narrative)}</p>}
+                                <div className="cmp-vote-cite">
+                                  {v.source?.url ? (
+                                    <a href={v.source.url} target="_blank" rel="noopener noreferrer">
+                                      {v.source.name} →
+                                    </a>
+                                  ) : (
+                                    <span>{v.source?.name || 'Source pending'}</span>
+                                  )}
+                                </div>
                               </div>
-                              <div className="cmp-vote-ttl">{(v.billTitle || '').split(' · ')[1] || ''}</div>
-                              {v.narrative && <p className="cmp-vote-narr">{(window.anonymizeText ? window.anonymizeText(v.narrative, { blindMode: lab.isBlind, realLastName: c.name?.split(' ').pop(), alias: lab.primary }) : v.narrative)}</p>}
-                              <div className="cmp-vote-cite">
-                                {v.source?.url ? (
-                                  <a href={v.source.url} target="_blank" rel="noopener noreferrer">
-                                    {v.source.name} →
-                                  </a>
-                                ) : (
-                                  <span>{v.source?.name || 'Source pending'}</span>
-                                )}
-                              </div>
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       )}
                     </>
@@ -3335,28 +3344,33 @@ function AllVotesPanel({ open, candidate, alignmentEntry, blindMode, alias, onCl
           {filtered.length === 0 && (
             <p style={{ padding: 20, color: 'var(--ink-3)', fontStyle: 'italic' }}>No votes on this issue yet.</p>
           )}
-          {filtered.map((v, i) => (
-            <div className="av-vote" key={i}>
-              <div className="av-vote-head">
-                <div>
-                  <div className="av-vote-num">{(v.billTitle || '').split(' · ')[0]}</div>
-                  <div className="av-vote-ttl">{(v.billTitle || '').split(' · ')[1] || ''}</div>
+          {filtered.map((v, i) => {
+            const avHasNum = (v.billTitle || '').includes(' · ');
+            const avNum = avHasNum ? v.billTitle.split(' · ')[0] : '';
+            const avTtl = avHasNum ? v.billTitle.split(' · ')[1] : (v.billTitle || '');
+            return (
+              <div className="av-vote" key={i}>
+                <div className="av-vote-head">
+                  <div>
+                    <div className="av-vote-num">{avNum}</div>
+                    <div className="av-vote-ttl">{avTtl}</div>
+                  </div>
+                  <div className={"vote-badge " + (v.voteCast === 'with' ? 'yea' : v.voteCast === 'against' ? 'nay' : 'other')}>
+                    {v.voteCast === 'with' ? 'WITH YOU' : v.voteCast === 'against' ? 'AGAINST YOU' : '—'}
+                  </div>
                 </div>
-                <div className={"vote-badge " + (v.voteCast === 'with' ? 'yea' : v.voteCast === 'against' ? 'nay' : 'other')}>
-                  {v.voteCast === 'with' ? 'WITH YOU' : v.voteCast === 'against' ? 'AGAINST YOU' : '—'}
+                <div className="av-vote-meta">
+                  <span className="av-vote-tag">{v.issueLabel}</span>
+                  <span>{new Date(v.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                </div>
+                {v.narrative && <p className="av-vote-narr">{(window.anonymizeText ? window.anonymizeText(v.narrative, anonCtx) : v.narrative)}</p>}
+                <div className="av-vote-cite">
+                  <span className="src-chip">{v.source.name}</span>
+                  {v.source.url && <a className="src-link" href={v.source.url} target="_blank" rel="noopener noreferrer">View roll call →</a>}
                 </div>
               </div>
-              <div className="av-vote-meta">
-                <span className="av-vote-tag">{v.issueLabel}</span>
-                <span>{new Date(v.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
-              </div>
-              {v.narrative && <p className="av-vote-narr">{(window.anonymizeText ? window.anonymizeText(v.narrative, anonCtx) : v.narrative)}</p>}
-              <div className="av-vote-cite">
-                <span className="src-chip">{v.source.name}</span>
-                {v.source.url && <a className="src-link" href={v.source.url} target="_blank" rel="noopener noreferrer">View roll call →</a>}
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* Methodology footer — how we know "WITH/AGAINST you" */}
