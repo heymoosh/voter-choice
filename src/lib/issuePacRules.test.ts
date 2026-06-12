@@ -15,7 +15,9 @@ describe("ruleNameFromIssuePacLabel", () => {
   });
   it("returns null for the legacy 2-segment format (no ruleName)", () => {
     expect(
-      ruleNameFromIssuePacLabel("Issue-aligned PACs — healthcare_affordability"),
+      ruleNameFromIssuePacLabel(
+        "Issue-aligned PACs — healthcare_affordability",
+      ),
     ).toBeNull();
   });
   it("returns null for a non issue-PAC label", () => {
@@ -51,6 +53,8 @@ describe("issueFromIssuePacLabel", () => {
     ).toBe("healthcare_affordability");
   });
   it("returns null when the issue segment isn't a known canonical issue", () => {
-    expect(issueFromIssuePacLabel("Issue-aligned PACs — not_an_issue")).toBeNull();
+    expect(
+      issueFromIssuePacLabel("Issue-aligned PACs — not_an_issue"),
+    ).toBeNull();
   });
 });

@@ -133,7 +133,9 @@ export function resolveConfig(
   }
 
   const dataDir = resolve(
-    parseValueFlag(argv, "--data-dir") ?? env.FEC_BULK_DIR ?? DEFAULT_FEC_BULK_DIR,
+    parseValueFlag(argv, "--data-dir") ??
+      env.FEC_BULK_DIR ??
+      DEFAULT_FEC_BULK_DIR,
   );
   const cycleSuffix = cycle.slice(2);
   const pas2ZipPath = resolve(
@@ -231,7 +233,9 @@ export function aggregateIssuePacContribution({
       ruleName: classification.ruleName,
       displayName: classification.displayName,
       ...(classification.fullName ? { fullName: classification.fullName } : {}),
-      ...(classification.advocates ? { advocates: classification.advocates } : {}),
+      ...(classification.advocates
+        ? { advocates: classification.advocates }
+        : {}),
       stances: new Set<IssuePacStance>(),
       amountTotal: 0,
       transactionCount: 0,

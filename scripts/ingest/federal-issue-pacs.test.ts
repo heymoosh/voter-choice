@@ -15,14 +15,14 @@ import {
 
 describe("_pac-issue-mapping", () => {
   it("classifies high-confidence issue PACs by FEC committee ID", () => {
-    expect(classifyPacCommittee("C00053553", "Political Victory Fund")).toMatchObject(
-      {
-        canonicalIssue: "gun_rights_safety",
-        stance: "in_favor",
-        ruleName: "nra-pvf-fec-id",
-        displayName: "NRA Political Victory Fund",
-      },
-    );
+    expect(
+      classifyPacCommittee("C00053553", "Political Victory Fund"),
+    ).toMatchObject({
+      canonicalIssue: "gun_rights_safety",
+      stance: "in_favor",
+      ruleName: "nra-pvf-fec-id",
+      displayName: "NRA Political Victory Fund",
+    });
   });
 
   it("classifies high-confidence issue PACs by committee name", () => {

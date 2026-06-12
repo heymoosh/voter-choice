@@ -64,7 +64,8 @@ const PAC_ISSUE_RULES: PacIssueRule[] = [
     name: "emilys-list-fec-id",
     displayName: "EMILY's List",
     fullName: "Early Money Is Like Yeast",
-    advocates: "Funds Democratic women candidates who support reproductive rights.",
+    advocates:
+      "Funds Democratic women candidates who support reproductive rights.",
   },
   {
     match: "C00053553",
@@ -93,7 +94,8 @@ const PAC_ISSUE_RULES: PacIssueRule[] = [
     stance: "opposed",
     name: "reproductive-rights-restriction",
     displayName: "Anti-Abortion PACs",
-    advocates: "Oppose abortion access; support state and federal restrictions.",
+    advocates:
+      "Oppose abortion access; support state and federal restrictions.",
   },
   // Gun rights and safety. The current pole map treats in_favor as gun access.
   {
@@ -112,7 +114,8 @@ const PAC_ISSUE_RULES: PacIssueRule[] = [
     stance: "opposed",
     name: "gun-safety-regulation",
     displayName: "Gun Safety PACs",
-    advocates: "Support background checks, red flag laws, and assault weapon restrictions.",
+    advocates:
+      "Support background checks, red flag laws, and assault weapon restrictions.",
   },
   // Climate/environment and energy.
   {
@@ -122,7 +125,8 @@ const PAC_ISSUE_RULES: PacIssueRule[] = [
     stance: "in_favor",
     name: "environment-climate",
     displayName: "Conservation & Climate PACs",
-    advocates: "Support climate legislation, clean energy, and environmental protections.",
+    advocates:
+      "Support climate legislation, clean energy, and environmental protections.",
   },
   {
     match:
@@ -131,7 +135,8 @@ const PAC_ISSUE_RULES: PacIssueRule[] = [
     stance: "in_favor",
     name: "fossil-energy",
     displayName: "Oil & Gas Industry PACs",
-    advocates: "Represent fossil fuel producers; often oppose climate regulations and clean energy mandates.",
+    advocates:
+      "Represent fossil fuel producers; often oppose climate regulations and clean energy mandates.",
   },
 
   // Healthcare affordability — industry PACs opposing price controls / negotiation.
@@ -145,8 +150,10 @@ const PAC_ISSUE_RULES: PacIssueRule[] = [
     stance: "opposed",
     name: "healthcare-industry-pricing",
     displayName: "PhRMA & Hospital PACs",
-    fullName: "Pharmaceutical Research and Manufacturers of America (PhRMA) and allied health industry PACs",
-    advocates: "Represent pharmaceutical and hospital industries; oppose drug price controls and Medicare negotiation.",
+    fullName:
+      "Pharmaceutical Research and Manufacturers of America (PhRMA) and allied health industry PACs",
+    advocates:
+      "Represent pharmaceutical and hospital industries; oppose drug price controls and Medicare negotiation.",
   },
   {
     match:
@@ -155,7 +162,8 @@ const PAC_ISSUE_RULES: PacIssueRule[] = [
     stance: "opposed",
     name: "pharma-company-pacs",
     displayName: "Pharma Company PACs",
-    advocates: "Major pharmaceutical manufacturers opposing price-cap legislation targeting their products.",
+    advocates:
+      "Major pharmaceutical manufacturers opposing price-cap legislation targeting their products.",
   },
   {
     match:
@@ -164,7 +172,8 @@ const PAC_ISSUE_RULES: PacIssueRule[] = [
     stance: "opposed",
     name: "health-insurer-pacs",
     displayName: "Health Insurer PACs",
-    advocates: "Health insurance industry opposing the public option and broad healthcare reform.",
+    advocates:
+      "Health insurance industry opposing the public option and broad healthcare reform.",
   },
 
   // Education funding and school governance.
@@ -175,7 +184,8 @@ const PAC_ISSUE_RULES: PacIssueRule[] = [
     stance: "in_favor",
     name: "public-education-labor",
     displayName: "Teachers & Education PACs",
-    advocates: "Favor public school funding, teacher pay, and union organizing rights.",
+    advocates:
+      "Favor public school funding, teacher pay, and union organizing rights.",
   },
   {
     match:
@@ -184,7 +194,8 @@ const PAC_ISSUE_RULES: PacIssueRule[] = [
     stance: "opposed",
     name: "school-choice",
     displayName: "School Choice PACs",
-    advocates: "Favor charter schools, vouchers, and alternatives to public school funding.",
+    advocates:
+      "Favor charter schools, vouchers, and alternatives to public school funding.",
   },
 
   // Public safety / law enforcement.
@@ -195,7 +206,8 @@ const PAC_ISSUE_RULES: PacIssueRule[] = [
     stance: "in_favor",
     name: "public-safety-unions",
     displayName: "Police & Firefighter PACs",
-    advocates: "Represent law enforcement and fire unions; favor public safety funding and personnel.",
+    advocates:
+      "Represent law enforcement and fire unions; favor public safety funding and personnel.",
   },
 
   // Labor/economy and anti-labor economic groups.
@@ -206,7 +218,8 @@ const PAC_ISSUE_RULES: PacIssueRule[] = [
     stance: "in_favor",
     name: "labor-economy",
     displayName: "Labor Union PACs",
-    advocates: "Favor worker rights, minimum wage increases, and union organizing.",
+    advocates:
+      "Favor worker rights, minimum wage increases, and union organizing.",
   },
   {
     match:

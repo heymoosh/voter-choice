@@ -179,7 +179,8 @@ describe("donorFieldsFromResult", () => {
           // Stale row: raw 3-segment DB key, no rawMetadata.issuePac display
           // fields. Display name / advocates / stance must be recovered from
           // the editorial mapping via the embedded ruleName.
-          label: "Issue-aligned PACs — healthcare_affordability — pharma-company-pacs",
+          label:
+            "Issue-aligned PACs — healthcare_affordability — pharma-company-pacs",
           amount: 50000,
           percent: 5,
         },
@@ -217,7 +218,8 @@ describe("donorFieldsFromResult", () => {
       totalRaised: 100000,
       buckets: [
         {
-          label: "Issue-aligned PACs — healthcare_affordability — pharma-company-pacs",
+          label:
+            "Issue-aligned PACs — healthcare_affordability — pharma-company-pacs",
           amount: 50000,
           percent: 5,
           // Fresh ingest carried explicit metadata — these win over the mapping.
@@ -253,7 +255,8 @@ describe("donorFieldsFromResult", () => {
       totalRaised: 100000,
       buckets: [
         {
-          label: "Issue-aligned PACs — healthcare_affordability — some-removed-rule",
+          label:
+            "Issue-aligned PACs — healthcare_affordability — some-removed-rule",
           amount: 50000,
           percent: 5,
         },
