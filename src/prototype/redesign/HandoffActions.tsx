@@ -64,21 +64,23 @@ export function HandoffActions({ prompt, downloadFilename }) {
   }
 
   return (
-    <div className="be-extras" data-testid="handoff-actions">
-      {CHATBOTS.map((bot) => (
-        <button
-          key={bot.name}
-          className="be-ext-btn"
-          onClick={() => copyAndOpen(bot)}
-        >
-          <span className="be-ext-ic" aria-hidden="true">
-            ↗
-          </span>
-          {confirmed === bot.name
-            ? "Copied — paste to continue"
-            : `Copy & open ${bot.name}`}
-        </button>
-      ))}
+    <div className="be-extras be-extras--col" data-testid="handoff-actions">
+      <div className="be-extras-bots">
+        {CHATBOTS.map((bot) => (
+          <button
+            key={bot.name}
+            className="be-ext-btn"
+            onClick={() => copyAndOpen(bot)}
+          >
+            <span className="be-ext-ic" aria-hidden="true">
+              ↗
+            </span>
+            {confirmed === bot.name
+              ? "Copied — paste to continue"
+              : `Copy & open ${bot.name}`}
+          </button>
+        ))}
+      </div>
       {downloadFilename && (
         <button
           className="be-ext-btn"

@@ -114,13 +114,12 @@ export function useIssueConversation({ seedIssues, onBudgetBlock }) {
               themes = [];
             }
             if (themes.length === 0) {
-              // Honest retry: restore the draft, drop the dangling user bubble.
-              setLog((prev) => prev.slice(0, -1));
-              setDraft(text);
-              setError(
-                "I couldn't pull any issues from that — try adding a bit more about what's on your mind.",
-              );
-              return;
+              // No canonical match — fall back to the raw text as a custom
+              // issue. The IssueRow faded label ("no voting record data")
+              // communicates the gap; no blocking, no tracking mention.
+              const label =
+                text.length > 60 ? text.slice(0, 60).trim() + "…" : text;
+              themes = [{ name: label, quotes: [text] }];
             }
             sourceTextRef.current = text;
             apiHistoryRef.current = [
