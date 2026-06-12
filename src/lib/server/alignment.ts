@@ -10,6 +10,7 @@
 import { eq, and, gte } from "drizzle-orm";
 import { getDb, DB_NOT_CONFIGURED } from "../../../db/client";
 import * as schema from "../../../db/schema";
+import { isCan2026DisplayEnabled } from "./can-flag";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -21,6 +22,13 @@ export interface ContributingVote {
   voteCast: "with" | "against";
   date: string; // YYYY-MM-DD
   source: { name: string; url: string };
+  /**
+   * Bill-level "What it did" prose from can_bill_narratives.narrative.
+   * Only populated when CAN2026_DISPLAY_ENABLED is set and the bill has a
+   * linked CAN2026 narrative row. Note: this is shared bill-level context,
+   * not candidate-specific color.
+   */
+  narrative?: string;
 }
 
 export interface AlignmentResult {
@@ -464,36 +472,75 @@ export async function lookupAlignment(
     };
   }
 
+  const can2026Enabled = isCan2026DisplayEnabled();
   const cutoff = fourYearsAgo();
 
-  // Join votes → bills → issue_tags filtered by candidate + issue + date window
-  const rows = await db
-    .select({
-      billTitle: schema.bills.title,
-      billId: schema.bills.id,
-      billRawMetadata: schema.bills.rawMetadata,
-      billSourceUrl: schema.bills.sourceUrl,
-      billSource: schema.bills.source,
-      voteCast: schema.votes.voteCast,
-      voteDate: schema.votes.voteDate,
-      stanceLens: schema.issueTags.stanceLens,
-      taggerConfidence: schema.issueTags.taggerConfidence,
-    })
-    .from(schema.votes)
-    .innerJoin(schema.bills, eq(schema.votes.billId, schema.bills.id))
-    .innerJoin(
-      schema.issueTags,
-      and(
-        eq(schema.issueTags.billId, schema.bills.id),
-        eq(schema.issueTags.canonicalIssue, canonicalIssue),
-      ),
-    )
-    .where(
-      and(
-        eq(schema.votes.candidateId, candidateId),
-        gte(schema.votes.voteDate, cutoff),
-      ),
-    );
+  // Join votes → bills → issue_tags filtered by candidate + issue + date window.
+  // When CAN2026_DISPLAY_ENABLED is set, also LEFT JOIN can_bill_narratives so
+  // the "What it did" prose can appear on the contributing-vote cards. The join
+  // is keyed on bills.id = can_bill_narratives.our_bill_id (the crosswalk
+  // populated by scripts/ingest/can2026.ts). When the flag is off, the CAN2026
+  // table is never touched and narrative is always undefined.
+  const rows = can2026Enabled
+    ? await db
+        .select({
+          billTitle: schema.bills.title,
+          billId: schema.bills.id,
+          billRawMetadata: schema.bills.rawMetadata,
+          billSourceUrl: schema.bills.sourceUrl,
+          billSource: schema.bills.source,
+          voteCast: schema.votes.voteCast,
+          voteDate: schema.votes.voteDate,
+          stanceLens: schema.issueTags.stanceLens,
+          taggerConfidence: schema.issueTags.taggerConfidence,
+          narrative: schema.canBillNarratives.narrative,
+        })
+        .from(schema.votes)
+        .innerJoin(schema.bills, eq(schema.votes.billId, schema.bills.id))
+        .innerJoin(
+          schema.issueTags,
+          and(
+            eq(schema.issueTags.billId, schema.bills.id),
+            eq(schema.issueTags.canonicalIssue, canonicalIssue),
+          ),
+        )
+        .leftJoin(
+          schema.canBillNarratives,
+          eq(schema.bills.id, schema.canBillNarratives.ourBillId),
+        )
+        .where(
+          and(
+            eq(schema.votes.candidateId, candidateId),
+            gte(schema.votes.voteDate, cutoff),
+          ),
+        )
+    : await db
+        .select({
+          billTitle: schema.bills.title,
+          billId: schema.bills.id,
+          billRawMetadata: schema.bills.rawMetadata,
+          billSourceUrl: schema.bills.sourceUrl,
+          billSource: schema.bills.source,
+          voteCast: schema.votes.voteCast,
+          voteDate: schema.votes.voteDate,
+          stanceLens: schema.issueTags.stanceLens,
+          taggerConfidence: schema.issueTags.taggerConfidence,
+        })
+        .from(schema.votes)
+        .innerJoin(schema.bills, eq(schema.votes.billId, schema.bills.id))
+        .innerJoin(
+          schema.issueTags,
+          and(
+            eq(schema.issueTags.billId, schema.bills.id),
+            eq(schema.issueTags.canonicalIssue, canonicalIssue),
+          ),
+        )
+        .where(
+          and(
+            eq(schema.votes.candidateId, candidateId),
+            gte(schema.votes.voteDate, cutoff),
+          ),
+        );
 
   if (rows.length === 0) {
     return {
@@ -533,7 +580,7 @@ export async function lookupAlignment(
     .map((r) => {
       const num = extractBillNumber(r.billRawMetadata, r.billId, r.billSource);
       const title = stripLeadingBillNumber(r.billTitle) || r.billTitle;
-      return {
+      const vote: ContributingVote = {
         billTitle: num ? `${num} · ${title}` : title,
         voteCast: r.alignment as "with" | "against",
         date: r.voteDate,
@@ -542,6 +589,12 @@ export async function lookupAlignment(
           url: r.billSourceUrl,
         },
       };
+      // narrative is only present on rows from the CAN2026-enabled query path.
+      // Cast via `as` because the flag-off query type doesn't include the field,
+      // but at runtime the value is simply absent (undefined) in that branch.
+      const narrative = (r as { narrative?: string | null }).narrative;
+      if (narrative) vote.narrative = narrative;
+      return vote;
     });
 
   const base: AlignmentResult = {

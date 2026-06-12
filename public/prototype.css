@@ -1940,8 +1940,8 @@ body[data-treatment="inkwell"] .proto-banner {
 /* ─── Issues block ─── */
 .cv2-issues {
   padding: 18px 20px 20px;
-  background: var(--paper);
-  border-top: 1px solid var(--rule-2);
+  background: var(--paper-2);
+  border-bottom: 1px solid var(--rule-2);
 }
 .cv2-norecord {
   font-size: 14px;
@@ -1965,7 +1965,7 @@ body[data-treatment="inkwell"] .proto-banner {
 }
 .cv2-iss-row:first-of-type { border-top: 0; }
 .cv2-iss-row.open {
-  background: var(--paper-2);
+  background: var(--paper);
   margin: 0 -20px;
   padding: 0 20px;
   border-radius: 0;
@@ -2254,7 +2254,7 @@ body[data-treatment="inkwell"] .proto-banner {
 .cv2-funding {
   padding: 18px 20px 20px;
   background: var(--paper);
-  border-top: 1px solid var(--rule-2);
+  border-bottom: 1px solid var(--rule-2);
 }
 
 /* Money map — small / large / PAC */
@@ -4544,7 +4544,6 @@ body[data-treatment="inkwell"] .be-prompt-text {
   margin-top: 3px;
   line-height: 1.4;
 }
-  font-size: 10.5px;
 /* PAC gloss — single-sentence editorial definition + why-it-matters,
    set as a muted footnote beneath the funding-mix legend. Always
    visible so first-time readers learn the term inline without

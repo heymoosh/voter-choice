@@ -34,18 +34,10 @@ import {
   type CanSeatContext,
 } from "../../../lib/server/can-context";
 import { CAN_ATTRIBUTION } from "../../../lib/canAttribution";
+import { isCan2026DisplayEnabled } from "../../../lib/server/can-flag";
 
 const MIN_ADDRESS = 4;
 const MAX_ADDRESS = 300;
-
-// CAN2026 curated-context display is gated until can2026.org attribution terms
-// are confirmed with the maintainer. Off by default — set the env var to any
-// non-empty value to surface the "Race ratings & key votes" section. Read on
-// every call so test stubs take effect without re-importing the module.
-function isCan2026DisplayEnabled(): boolean {
-  const v = process.env.CAN2026_DISPLAY_ENABLED;
-  return typeof v === "string" && v.length > 0;
-}
 
 function getClientIP(request: NextRequest): string {
   return (

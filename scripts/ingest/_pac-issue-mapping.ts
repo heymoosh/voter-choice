@@ -93,13 +93,30 @@ const PAC_ISSUE_RULES: PacIssueRule[] = [
     name: "fossil-energy",
   },
 
-  // Healthcare affordability.
+  // Healthcare affordability — industry PACs opposing price controls / negotiation.
+  // Covers: PhRMA, big pharma companies (Eli Lilly, Pfizer, J&J, AbbVie,
+  // Merck, Amgen, Bristol-Myers Squibb), health insurers (BCBS, UnitedHealth,
+  // Aetna, Cigna), hospital associations, and biotech lobbies.
   {
     match:
       /\b(phrma|pharmaceutical\s+research|biotechnology\s+innovation|american\s+hospital\s+association|aha\s+pac|health\s+insurance\s+pac)\b/iu,
     canonicalIssue: "healthcare_affordability",
     stance: "opposed",
     name: "healthcare-industry-pricing",
+  },
+  {
+    match:
+      /\b(eli\s+lilly|lilly\s+pac|pfizer\s+pac|johnson\s+&\s+johnson|janssen\s+pac|abbvie\s+pac|merck\s+pac|amgen\s+pac|bristol[- ]myers\s+squibb|bms\s+pac)\b/iu,
+    canonicalIssue: "healthcare_affordability",
+    stance: "opposed",
+    name: "pharma-company-pacs",
+  },
+  {
+    match:
+      /\b(blue\s+cross\s+blue\s+shield|bcbs\s+pac|unitedhealth\s+pac|aetna\s+pac|cigna\s+pac|humana\s+pac|cvs\s+health\s+pac|express\s+scripts)\b/iu,
+    canonicalIssue: "healthcare_affordability",
+    stance: "opposed",
+    name: "health-insurer-pacs",
   },
 
   // Education funding and school governance.
