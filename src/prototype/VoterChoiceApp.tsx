@@ -1068,9 +1068,9 @@ function AlignmentScoreBanner({ candidate, alignmentEntry, userIssues, expandedI
         )}
       </div>
 
-      {rowsData.map(({ issue, score }) => (
+      {rowsData.map(({ issue, score }, i) => (
         <AlignmentIssueRow
-          key={issue.canonicalIssue}
+          key={issue.canonicalIssue || issue.sourceText || i}
           issue={issue}
           score={score}
           candidate={candidate}
