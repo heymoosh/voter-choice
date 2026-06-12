@@ -230,6 +230,10 @@ async function fetchSeatCardData(
           {
             name: seat.candidate.name,
             party: seat.candidate.party ?? undefined,
+            // The delegation already resolved this seat to its vote-bearing DB
+            // row; pass that id so race-data looks up votes by id instead of
+            // re-resolving by name (which can hit a voteless FEC-roster twin).
+            candidateId: seat.candidate.id,
           },
         ],
         issues: toApiIssues(issues),

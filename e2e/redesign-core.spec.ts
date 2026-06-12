@@ -62,6 +62,35 @@ test.describe("delegation flow — address → assess → verdicts", () => {
     await expect(page.locator(".ws-rail .lvl-tag").first()).toBeVisible();
   });
 
+  test("threads the delegation's resolved candidateId into /api/race-data", async ({
+    page,
+  }) => {
+    await mockDelegation(page);
+    const seat = await mockSeatRaceData(page);
+    await mockResearch(page);
+    await mockPolis(page);
+    await mockCounters(page);
+    await goToWorkspace(page);
+
+    // Regression guard for the House-vs-Senate alignment bug: the House card must
+    // request its votes by the resolved DB id the delegation already knows
+    // (federal-TEST1), NOT by forcing a name re-resolution that can hit a
+    // voteless FEC-roster duplicate.
+    type RaceDataReq = {
+      raceId?: string;
+      candidates?: Array<{ candidateId?: string }>;
+    };
+    await expect
+      .poll(() =>
+        (seat.requests as RaceDataReq[]).find((r) => r.raceId === "house-TX-37"),
+      )
+      .toBeTruthy();
+    const houseReq = (seat.requests as RaceDataReq[]).find(
+      (r) => r.raceId === "house-TX-37",
+    );
+    expect(houseReq?.candidates?.[0]?.candidateId).toBe("federal-TEST1");
+  });
+
   test("continue elsewhere opens a handoff modal with a portable prompt", async ({
     page,
   }) => {
