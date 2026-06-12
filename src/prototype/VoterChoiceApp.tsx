@@ -612,8 +612,8 @@ function IssueRow({ issue, index, total, onMoveUp, onMoveDown, onRename, onRemov
           ))}
         </div>
         {!issue.canonicalIssue && (
-          <div style={{ marginTop: '6px', fontSize: '12px', color: 'var(--ink-2)', fontStyle: 'italic' }}>
-            tracked, but no voting-record data to score this against
+          <div style={{ marginTop: '6px', fontSize: '12px', color: 'var(--ink-3)', fontStyle: 'italic' }}>
+            no voting record data for this topic
           </div>
         )}
       </div>

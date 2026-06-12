@@ -1534,6 +1534,19 @@
 }
 .be-prompt-text { min-height: 200px; white-space: pre-wrap; overflow-x: hidden; word-break: break-word; }
 
+/* Chatbot button 2-column grid — matches prototype's 2-button-per-row
+   aesthetic when 4 chatbot buttons sit above a standalone download row. */
+.be-extras--col { flex-direction: column; }
+.be-extras-bots {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.be-extras--col > .be-ext-btn { width: 100%; }
+@media (max-width: 640px) {
+  .be-extras-bots { grid-template-columns: 1fr; }
+}
+
 /* ============ BudgetExhausted inline BYOK card ============
    Sits between the portable prompt and the action buttons inside
    the .be-modal. Styled to match the same paper-2 card pattern but
