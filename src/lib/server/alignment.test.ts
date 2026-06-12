@@ -922,15 +922,17 @@ describe("normalizeFederalType", () => {
 
 describe("stripLeadingBillNumber", () => {
   it("strips 'H.R. 21 (118th): ' prefix", () => {
-    expect(stripLeadingBillNumber("H.R. 21 (118th): Strategic Production Response Act")).toBe(
-      "Strategic Production Response Act",
-    );
+    expect(
+      stripLeadingBillNumber(
+        "H.R. 21 (118th): Strategic Production Response Act",
+      ),
+    ).toBe("Strategic Production Response Act");
   });
 
   it("strips 'S. 5 (117th) - ' prefix", () => {
-    expect(stripLeadingBillNumber("S. 5 (117th) - Inflation Reduction Act")).toBe(
-      "Inflation Reduction Act",
-    );
+    expect(
+      stripLeadingBillNumber("S. 5 (117th) - Inflation Reduction Act"),
+    ).toBe("Inflation Reduction Act");
   });
 
   it("strips 'H.R. 1234 — ' prefix", () => {
@@ -940,11 +942,15 @@ describe("stripLeadingBillNumber", () => {
   });
 
   it("does not strip a plain title with no separator", () => {
-    expect(stripLeadingBillNumber("Lower Drug Costs Act")).toBe("Lower Drug Costs Act");
+    expect(stripLeadingBillNumber("Lower Drug Costs Act")).toBe(
+      "Lower Drug Costs Act",
+    );
   });
 
   it("does not strip a title that starts with a number but has no separator", () => {
-    expect(stripLeadingBillNumber("21 Savage Tax Relief Act")).toBe("21 Savage Tax Relief Act");
+    expect(stripLeadingBillNumber("21 Savage Tax Relief Act")).toBe(
+      "21 Savage Tax Relief Act",
+    );
   });
 
   it("falls back to original when stripping would produce empty string", () => {
@@ -959,15 +965,21 @@ describe("stripLeadingBillNumber", () => {
 
 describe("extractBillNumber", () => {
   it("extracts federal number from bills.id 'govtrack-hr2-118'", () => {
-    expect(extractBillNumber(null, "govtrack-hr2-118", "govtrack")).toBe("HR-2");
+    expect(extractBillNumber(null, "govtrack-hr2-118", "govtrack")).toBe(
+      "HR-2",
+    );
   });
 
   it("extracts federal number from bills.id 'govtrack-s1171-117'", () => {
-    expect(extractBillNumber(null, "govtrack-s1171-117", "govtrack")).toBe("S-1171");
+    expect(extractBillNumber(null, "govtrack-s1171-117", "govtrack")).toBe(
+      "S-1171",
+    );
   });
 
   it("extracts federal number from bills.id 'govtrack-hjres1-118'", () => {
-    expect(extractBillNumber(null, "govtrack-hjres1-118", "govtrack")).toBe("HJRES-1");
+    expect(extractBillNumber(null, "govtrack-hjres1-118", "govtrack")).toBe(
+      "HJRES-1",
+    );
   });
 
   it("falls back to rawMetadata for govtrack when id parse fails", () => {
@@ -980,7 +992,9 @@ describe("extractBillNumber", () => {
 
   it("extracts state number from rawMetadata.openstates.identifier 'HB 12'", () => {
     const rawMetadata = { openstates: { identifier: "HB 12" } };
-    expect(extractBillNumber(rawMetadata, "openstates-ocd-abc", "openstates")).toBe("HB-12");
+    expect(
+      extractBillNumber(rawMetadata, "openstates-ocd-abc", "openstates"),
+    ).toBe("HB-12");
   });
 
   it("normalises 'SB 100' → 'SB-100'", () => {
@@ -989,7 +1003,9 @@ describe("extractBillNumber", () => {
   });
 
   it("returns null for openstates when identifier is missing", () => {
-    expect(extractBillNumber({ openstates: {} }, "openstates-x", "openstates")).toBeNull();
+    expect(
+      extractBillNumber({ openstates: {} }, "openstates-x", "openstates"),
+    ).toBeNull();
   });
 
   it("returns null for unknown source", () => {
@@ -1024,8 +1040,14 @@ describe("lookupAlignment billTitle composition", () => {
       },
     ]);
 
-    const result = await lookupAlignment("federal-A123", "healthcare_affordability", "in_favor");
-    expect(result.contributingVotes[0]!.billTitle).toBe("HR-1234 · Example Accountability Act");
+    const result = await lookupAlignment(
+      "federal-A123",
+      "healthcare_affordability",
+      "in_favor",
+    );
+    expect(result.contributingVotes[0]!.billTitle).toBe(
+      "HR-1234 · Example Accountability Act",
+    );
   });
 
   it("composes 'HB-12 · Title' when openstates identifier is present", async () => {
@@ -1046,8 +1068,14 @@ describe("lookupAlignment billTitle composition", () => {
       },
     ]);
 
-    const result = await lookupAlignment("openstates-X99", "environment_climate", "in_favor");
-    expect(result.contributingVotes[0]!.billTitle).toBe("HB-12 · Clean Energy Act");
+    const result = await lookupAlignment(
+      "openstates-X99",
+      "environment_climate",
+      "in_favor",
+    );
+    expect(result.contributingVotes[0]!.billTitle).toBe(
+      "HB-12 · Clean Energy Act",
+    );
   });
 
   it("strips embedded number prefix from GovTrack-style titles to avoid double-numbering", async () => {
@@ -1068,7 +1096,11 @@ describe("lookupAlignment billTitle composition", () => {
       },
     ]);
 
-    const result = await lookupAlignment("federal-A123", "environment_climate", "in_favor");
+    const result = await lookupAlignment(
+      "federal-A123",
+      "environment_climate",
+      "in_favor",
+    );
     expect(result.contributingVotes[0]!.billTitle).toBe(
       "HR-21 · Strategic Production Response Act",
     );
@@ -1091,8 +1123,14 @@ describe("lookupAlignment billTitle composition", () => {
       },
     ]);
 
-    const result = await lookupAlignment("federal-A123", "healthcare_affordability", "in_favor");
+    const result = await lookupAlignment(
+      "federal-A123",
+      "healthcare_affordability",
+      "in_favor",
+    );
     // No number available → title rendered as-is (no ' · ')
-    expect(result.contributingVotes[0]!.billTitle).toBe("Affordable Care Act Expansion");
+    expect(result.contributingVotes[0]!.billTitle).toBe(
+      "Affordable Care Act Expansion",
+    );
   });
 });
