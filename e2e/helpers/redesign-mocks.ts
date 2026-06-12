@@ -115,8 +115,11 @@ export async function mockDelegationFailure(
 export async function mockSeatRaceData(
   page: Page,
   options: { donorMode?: "rich" | "totalReceiptsOnly" } = {},
-): Promise<void> {
+): Promise<{ requests: Json[] }> {
   const donorMode = options.donorMode ?? "rich";
+  // Captured /api/race-data POST bodies — lets tests assert the client threads
+  // the resolved candidateId instead of forcing a name re-resolution.
+  const requests: Json[] = [];
   const aligned = (
     seatId: string,
     candidateId: string,
@@ -190,7 +193,11 @@ export async function mockSeatRaceData(
   });
 
   await page.route("**/api/race-data", async (route) => {
-    const body = route.request().postDataJSON() as { raceId?: string };
+    const body = route.request().postDataJSON() as {
+      raceId?: string;
+      candidates?: Array<{ candidateId?: string }>;
+    };
+    requests.push(body as Json);
     let data: Json;
     if (body?.raceId === "house-TX-37") {
       data = aligned("house-TX-37", "federal-TEST1", "Alex Rivera", 5, 6);
@@ -233,6 +240,8 @@ export async function mockSeatRaceData(
       body: JSON.stringify(data),
     });
   });
+
+  return { requests };
 }
 
 export async function mockResearch(page: Page): Promise<void> {

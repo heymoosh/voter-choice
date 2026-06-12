@@ -32,7 +32,7 @@ interface ParsedBody {
   raceLabel: string;
   section: string;
   stateCode: string;
-  candidates: { name: string; party?: string }[];
+  candidates: { name: string; party?: string; candidateId?: string }[];
   issues: RaceDataInput["issues"];
   electionCycle?: string;
 }
@@ -60,15 +60,25 @@ function parseBody(body: unknown): ParsedBody | Response {
   if (!Array.isArray(b.candidates) || b.candidates.length > MAX_CANDIDATES) {
     return Response.json({ error: "Invalid candidates" }, { status: 400 });
   }
-  const candidates: { name: string; party?: string }[] = [];
+  const candidates: { name: string; party?: string; candidateId?: string }[] =
+    [];
   for (const c of b.candidates) {
     if (typeof c !== "object" || c === null) continue;
     const rec = c as Record<string, unknown>;
     const name = typeof rec.name === "string" ? rec.name.trim() : "";
     if (!name || name.length > 200) continue;
+    // candidateId is the caller's already-resolved DB id (delegation flow).
+    // Accept only well-formed ids ("federal-…", "fec-…", "state-…"); anything
+    // else degrades to the name-resolution path rather than 400-ing the request.
+    const rawId =
+      typeof rec.candidateId === "string" ? rec.candidateId.trim() : "";
+    const candidateId = /^[A-Za-z0-9_-]{1,128}$/.test(rawId)
+      ? rawId
+      : undefined;
     candidates.push({
       name,
       party: typeof rec.party === "string" ? rec.party : undefined,
+      ...(candidateId ? { candidateId } : {}),
     });
   }
 

@@ -61,7 +61,15 @@ export interface RaceDataInput {
   section: string;
   /** 2-letter state code, uppercase (e.g. "NJ"). */
   stateCode: string;
-  candidates: { name: string; party?: string }[];
+  /**
+   * `candidateId` is the caller's already-resolved DB candidate id. The
+   * delegation flow passes it (delegation.ts resolves each sitting member
+   * authoritatively by state + district + incumbency); we then look up that id
+   * DIRECTLY instead of re-resolving by name — name re-resolution can mis-hit a
+   * same-name FEC-roster duplicate that carries no votes. Other callers (chat
+   * tools, ballot upload) omit it and keep the name-resolution path.
+   */
+  candidates: { name: string; party?: string; candidateId?: string }[];
   /** Ranked issues with canonical ids; empty when the voter skipped ranking. */
   issues: RaceDataIssue[];
   electionCycle?: string;
@@ -327,36 +335,58 @@ export async function assembleRaceData(
     const cand = input.candidates[i];
     const id = rosterIdForIndex(i);
 
-    // Resolve the candidate ONCE, with a prior-role fallback to the sibling
-    // federal chamber. A senator who served in the House (e.g. Andy Kim, NJ —
-    // House 2019–2024, Senate from Dec 2024) has no `federal-senate` record in
-    // our data, but their actual legislative record lives under
-    // `federal-house`. We surface that record and label the card so the voter
-    // knows it's from the prior office. Scoped to federal House↔Senate only;
-    // state-chamber cross-matching is too collision-prone to risk.
+    // Resolve a candidate name within `jur`, falling back to the sibling
+    // federal chamber for a prior-office record. A senator who served in the
+    // House (e.g. Andy Kim, NJ — House 2019–2024, Senate from Dec 2024) may
+    // have no scoreable `federal-senate` record; their legislative record lives
+    // under `federal-house`. We surface that record and label the card so the
+    // voter knows it's from the prior office. Scoped to federal House↔Senate
+    // only; state-chamber cross-matching is too collision-prone to risk.
+    const resolveByName = async (
+      jur: string,
+    ): Promise<{
+      id: string | null;
+      jurisdiction: string;
+      priorRoleLabel?: string;
+    }> => {
+      const primary = await resolveCandidateId(cand.name, jur, input.stateCode);
+      if (primary) return { id: primary, jurisdiction: jur };
+      const sibling = siblingFederalChamber(jur);
+      if (sibling) {
+        const altId = await resolveCandidateId(
+          cand.name,
+          sibling,
+          input.stateCode,
+        );
+        if (altId)
+          return {
+            id: altId,
+            jurisdiction: sibling,
+            priorRoleLabel: priorRoleLabelFor(sibling),
+          };
+      }
+      return { id: null, jurisdiction: jur };
+    };
+
+    // The delegation flow passes the seat's already-resolved DB id
+    // (delegation.ts resolves each sitting member authoritatively by
+    // state + district + incumbency). Use it DIRECTLY — re-resolving a sitting
+    // member by bare name can mis-hit a same-name FEC-roster duplicate that
+    // carries no votes, which is why House incumbents fell through to the
+    // web_search fallback. Callers without a pre-resolved id (chat tools,
+    // ballot upload) keep the name-resolution path.
     let effectiveJurisdiction = jurisdiction;
     let candidateId: string | null = null;
     let priorRoleLabel: string | undefined;
+    const usedProvidedId = Boolean(jurisdiction && cand.candidateId);
     if (jurisdiction) {
-      candidateId = await resolveCandidateId(
-        cand.name,
-        jurisdiction,
-        input.stateCode,
-      );
-      if (!candidateId) {
-        const sibling = siblingFederalChamber(jurisdiction);
-        if (sibling) {
-          const altId = await resolveCandidateId(
-            cand.name,
-            sibling,
-            input.stateCode,
-          );
-          if (altId) {
-            candidateId = altId;
-            effectiveJurisdiction = sibling;
-            priorRoleLabel = priorRoleLabelFor(sibling);
-          }
-        }
+      if (cand.candidateId) {
+        candidateId = cand.candidateId;
+      } else {
+        const resolved = await resolveByName(jurisdiction);
+        candidateId = resolved.id;
+        effectiveJurisdiction = resolved.jurisdiction;
+        priorRoleLabel = resolved.priorRoleLabel;
       }
     }
 
@@ -380,7 +410,7 @@ export async function assembleRaceData(
       };
     }
 
-    candidates.push({
+    const candidateCard: RacePatternsCandidate = {
       id,
       name: cand.name,
       incumbent: false, // unknown from the roster; the DB doesn't flag it here
@@ -419,25 +449,44 @@ export async function assembleRaceData(
         reason: "No performance record available for this office",
       },
       valuesHighlight: null,
-    });
+    };
+    candidates.push(candidateCard);
 
     // Alignment scores (only when we have issues).
     if (hasIssues) {
-      // Step 1: attempt voting-record lookup for candidates we can resolve.
-      let votingEntry: AlignmentScoresEntry | null = null;
-      if (candidateId) {
+      // Score the user's issues against a resolved candidate id.
+      const scoreIssues = async (
+        cid: string,
+      ): Promise<AlignmentScoresEntry> => {
         const perIssue = [];
         for (const issue of input.issues) {
           const result = attachLimitedDataNotice(
-            await lookupAlignment(
-              candidateId,
-              issue.canonicalIssue,
-              issue.stance,
-            ),
+            await lookupAlignment(cid, issue.canonicalIssue, issue.stance),
           );
           perIssue.push({ issue, result });
         }
-        votingEntry = alignmentEntryFromResults(id, perIssue);
+        return alignmentEntryFromResults(id, perIssue);
+      };
+
+      // Step 1: attempt voting-record lookup for candidates we can resolve.
+      let votingEntry: AlignmentScoresEntry | null = candidateId
+        ? await scoreIssues(candidateId)
+        : null;
+
+      // Safety net for the provided-id path: a seat id with no tagged votes on
+      // the user's issues (e.g. a just-switched-chamber member) would otherwise
+      // drop to the web_search fallback. Re-resolve by name (incl. the sibling
+      // federal chamber) once and retry so a real prior-office record surfaces.
+      if (usedProvidedId && (!votingEntry || votingEntry.scores === null)) {
+        const resolved = await resolveByName(jurisdiction as string);
+        if (resolved.id && resolved.id !== candidateId) {
+          const retried = await scoreIssues(resolved.id);
+          if (retried.scores !== null) {
+            votingEntry = retried;
+            if (resolved.priorRoleLabel)
+              candidateCard.priorRole = resolved.priorRoleLabel;
+          }
+        }
       }
 
       // Step 2: if no voting record (unresolved candidate OR resolved but
