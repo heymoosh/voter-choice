@@ -26,6 +26,14 @@ export interface DonorBucket {
   percent: number;
   /** Issue-PAC agenda stance relative to the canonical issue, when known. */
   issuePacStance?: "in_favor" | "opposed";
+  /** For issue-PAC buckets: short display name (e.g. "PhRMA & Hospital PACs"). */
+  displayName?: string;
+  /** For issue-PAC buckets: full formal name of the lead organization. */
+  fullName?: string;
+  /** For issue-PAC buckets: plain-English description of what this PAC advocates. */
+  advocates?: string;
+  /** For issue-PAC buckets: canonical issue key (more reliable than parsing label). */
+  canonicalIssue?: string;
 }
 
 export interface DonorCoalitionResult {
@@ -198,6 +206,29 @@ function issuePacStanceFromMetadata(
   return stance === "in_favor" || stance === "opposed" ? stance : undefined;
 }
 
+function issuePacDisplayFieldsFromMetadata(rawMetadata: unknown): {
+  displayName?: string;
+  fullName?: string;
+  advocates?: string;
+  canonicalIssue?: string;
+} {
+  const metadata = asRecord(rawMetadata);
+  const issuePac = asRecord(metadata?.issuePac);
+  if (!issuePac) return {};
+  const str = (v: unknown): string | undefined =>
+    typeof v === "string" && v.length > 0 ? v : undefined;
+  return {
+    ...(str(issuePac.displayName)
+      ? { displayName: str(issuePac.displayName) }
+      : {}),
+    ...(str(issuePac.fullName) ? { fullName: str(issuePac.fullName) } : {}),
+    ...(str(issuePac.advocates) ? { advocates: str(issuePac.advocates) } : {}),
+    ...(str(issuePac.canonicalIssue)
+      ? { canonicalIssue: str(issuePac.canonicalIssue) }
+      : {}),
+  };
+}
+
 export async function lookupDonorCoalition(
   candidateName: string,
   stateCode: string,
@@ -308,7 +339,10 @@ export async function lookupDonorCoalition(
     amount: Number(r.amountTotal),
     percent: 0, // filled in below once we know totalRaised
     ...(isIssuePacBucket(r.bucketLabel)
-      ? { issuePacStance: issuePacStanceFromMetadata(r.rawMetadata) }
+      ? {
+          issuePacStance: issuePacStanceFromMetadata(r.rawMetadata),
+          ...issuePacDisplayFieldsFromMetadata(r.rawMetadata),
+        }
       : {}),
   }));
 

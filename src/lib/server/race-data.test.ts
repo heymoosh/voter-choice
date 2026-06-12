@@ -176,10 +176,12 @@ describe("donorFieldsFromResult", () => {
         { label: "Self-funded", amount: 21231, percent: 2 },
         { label: "Party committees", amount: 2500, percent: 0 },
         {
-          label: "Issue-aligned PACs — healthcare_affordability",
+          // Stale row: raw 3-segment DB key, no rawMetadata.issuePac display
+          // fields. Display name / advocates / stance must be recovered from
+          // the editorial mapping via the embedded ruleName.
+          label: "Issue-aligned PACs — healthcare_affordability — pharma-company-pacs",
           amount: 50000,
           percent: 5,
-          issuePacStance: "opposed",
         },
       ],
       source: "fec_api",
@@ -187,22 +189,85 @@ describe("donorFieldsFromResult", () => {
       electionCycle: "2026",
     });
     // Only the two sectors + the issue-PAC survive; funding-mix, Self-funded,
-    // Party committees, and Other are excluded.
+    // Party committees, and Other are excluded. The issue-PAC's display fields
+    // are filled from the mapping (NOT the raw "Issue-aligned PACs — …" key).
     expect(fields.donorCoalition).toEqual([
       { label: "Real estate & development", percent: 4, amount: 46182 },
       { label: "Legal industry", percent: 3, amount: 36317 },
       {
-        label: "Issue-aligned PACs — healthcare_affordability",
+        label: "Pharma Company PACs",
         percent: 5,
         amount: 50000,
         isIssuePAC: true,
         alignsWith: "healthcare_affordability",
         issuePacStance: "opposed",
+        advocates:
+          "Major pharmaceutical manufacturers opposing price-cap legislation targeting their products.",
       },
     ]);
     // Headline + funding mix are unaffected by the coalition filter.
     expect(fields.totalRaised).toBe(1091385);
     expect(fields.fundingMix?.total).toBe(908099 + 138125);
+  });
+
+  it("prefers DB-sourced issue-PAC metadata over the mapping when present", () => {
+    const fields = donorFieldsFromResult({
+      found: true,
+      candidateId: "uuid-fresh",
+      totalRaised: 100000,
+      buckets: [
+        {
+          label: "Issue-aligned PACs — healthcare_affordability — pharma-company-pacs",
+          amount: 50000,
+          percent: 5,
+          // Fresh ingest carried explicit metadata — these win over the mapping.
+          displayName: "Custom Pharma Label",
+          fullName: "Custom Full Name",
+          advocates: "Custom advocates text.",
+          canonicalIssue: "healthcare_affordability",
+          issuePacStance: "opposed",
+        },
+      ],
+      source: "fec_api",
+      sourceUrl: "https://www.fec.gov/x",
+      electionCycle: "2026",
+    });
+    expect(fields.donorCoalition).toEqual([
+      {
+        label: "Custom Pharma Label",
+        percent: 5,
+        amount: 50000,
+        isIssuePAC: true,
+        alignsWith: "healthcare_affordability",
+        issuePacStance: "opposed",
+        fullName: "Custom Full Name",
+        advocates: "Custom advocates text.",
+      },
+    ]);
+  });
+
+  it("humanizes an unknown issue-PAC ruleName instead of leaking the raw DB key", () => {
+    const fields = donorFieldsFromResult({
+      found: true,
+      candidateId: "uuid-unknown",
+      totalRaised: 100000,
+      buckets: [
+        {
+          label: "Issue-aligned PACs — healthcare_affordability — some-removed-rule",
+          amount: 50000,
+          percent: 5,
+        },
+      ],
+      source: "fec_api",
+      sourceUrl: "https://www.fec.gov/x",
+      electionCycle: "2026",
+    });
+    const slice = fields.donorCoalition?.[0];
+    expect(slice?.label).toBe("Some Removed Rule");
+    // The raw machine key must never reach the UI.
+    expect(slice?.label).not.toContain("Issue-aligned PACs");
+    // Issue colour still resolves from the label even without a mapping hit.
+    expect(slice?.alignsWith).toBe("healthcare_affordability");
   });
 
   it("maps a not-resolved result to a backstop note", () => {

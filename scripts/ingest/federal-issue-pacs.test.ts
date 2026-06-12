@@ -15,11 +15,12 @@ import {
 
 describe("_pac-issue-mapping", () => {
   it("classifies high-confidence issue PACs by FEC committee ID", () => {
-    expect(classifyPacCommittee("C00053553", "Political Victory Fund")).toEqual(
+    expect(classifyPacCommittee("C00053553", "Political Victory Fund")).toMatchObject(
       {
         canonicalIssue: "gun_rights_safety",
         stance: "in_favor",
         ruleName: "nra-pvf-fec-id",
+        displayName: "NRA Political Victory Fund",
       },
     );
   });
@@ -27,10 +28,11 @@ describe("_pac-issue-mapping", () => {
   it("classifies high-confidence issue PACs by committee name", () => {
     expect(
       classifyPacCommittee("C00999999", "Everytown for Gun Safety Action Fund"),
-    ).toEqual({
+    ).toMatchObject({
       canonicalIssue: "gun_rights_safety",
       stance: "opposed",
       ruleName: "gun-safety-regulation",
+      displayName: "Gun Safety PACs",
     });
   });
 
@@ -199,13 +201,17 @@ describe("federal-issue-pacs aggregation", () => {
       {
         candidateId: "fec-H6TX01111",
         electionCycle: "2026",
-        bucketLabel: "Issue-aligned PACs — gun_rights_safety",
+        bucketLabel: "Issue-aligned PACs — gun_rights_safety — nra-pvf-fec-id",
         amountTotal: "5000.00",
         source: "fec_bulk",
         sourceUrl: "https://www.fec.gov/files/bulk-downloads/2026/pas226.zip",
         rawMetadata: {
           issuePac: {
             canonicalIssue: "gun_rights_safety",
+            ruleName: "nra-pvf-fec-id",
+            displayName: "NRA Political Victory Fund",
+            fullName: "National Rifle Association Political Victory Fund",
+            advocates: "Elects candidates who oppose firearm restrictions.",
             stance: "in_favor",
           },
           transactionCount: 1,
@@ -224,7 +230,7 @@ describe("federal-issue-pacs aggregation", () => {
     ]);
   });
 
-  it("merges conflicting same-issue stances into one mixed bucket", () => {
+  it("produces separate per-rule rows for opposing PACs on the same issue", () => {
     const aggregates = new Map<string, IssuePacAggregate>();
     const nraRow = parsePas2ContributionLine(
       [
@@ -287,16 +293,26 @@ describe("federal-issue-pacs aggregation", () => {
 
     const rows = buildIssuePacRows(aggregates, "https://fec.gov/pas226.zip");
 
-    expect(rows).toHaveLength(1);
-    expect(rows[0]).toMatchObject({
-      bucketLabel: "Issue-aligned PACs — gun_rights_safety",
-      amountTotal: "3000.00",
-      rawMetadata: {
-        issuePac: {
-          canonicalIssue: "gun_rights_safety",
-          stance: "mixed",
-        },
-      },
+    // Per-rule aggregation: NRA (nra-pvf-fec-id) and Everytown (gun-safety-regulation)
+    // each get their own row — the voter sees them separately rather than a single
+    // "mixed" aggregate.
+    expect(rows).toHaveLength(2);
+    const nraBucketRow = rows.find((r) =>
+      r.bucketLabel.includes("nra-pvf-fec-id"),
+    );
+    const everytownBucketRow = rows.find((r) =>
+      r.bucketLabel.includes("gun-safety-regulation"),
+    );
+    expect(nraBucketRow).toMatchObject({
+      bucketLabel: "Issue-aligned PACs — gun_rights_safety — nra-pvf-fec-id",
+      amountTotal: "1000.00",
+      rawMetadata: { issuePac: { stance: "in_favor" } },
+    });
+    expect(everytownBucketRow).toMatchObject({
+      bucketLabel:
+        "Issue-aligned PACs — gun_rights_safety — gun-safety-regulation",
+      amountTotal: "2000.00",
+      rawMetadata: { issuePac: { stance: "opposed" } },
     });
   });
 });

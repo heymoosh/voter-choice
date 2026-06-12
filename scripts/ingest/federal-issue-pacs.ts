@@ -44,7 +44,7 @@ import {
 } from "./_fec-bulk";
 import {
   classifyPacCommittee,
-  issuePacLabel,
+  ISSUE_PAC_LABEL_PREFIX,
   type IssuePacStance,
 } from "./_pac-issue-mapping";
 
@@ -100,6 +100,10 @@ export interface IssuePacAggregate {
   candidateId: string;
   electionCycle: string;
   canonicalIssue: string;
+  ruleName: string;
+  displayName: string;
+  fullName?: string;
+  advocates?: string;
   stances: Set<IssuePacStance>;
   amountTotal: number;
   transactionCount: number;
@@ -212,15 +216,22 @@ export function aggregateIssuePacContribution({
   const classification = classifyPacCommittee(row.committeeId, committeeName);
   if (!classification) return false;
 
-  const aggregateKey = [candidateId, cycle, classification.canonicalIssue].join(
-    "|",
-  );
+  const aggregateKey = [
+    candidateId,
+    cycle,
+    classification.canonicalIssue,
+    classification.ruleName,
+  ].join("|");
   const aggregate =
     aggregates.get(aggregateKey) ??
     ({
       candidateId,
       electionCycle: cycle,
       canonicalIssue: classification.canonicalIssue,
+      ruleName: classification.ruleName,
+      displayName: classification.displayName,
+      ...(classification.fullName ? { fullName: classification.fullName } : {}),
+      ...(classification.advocates ? { advocates: classification.advocates } : {}),
       stances: new Set<IssuePacStance>(),
       amountTotal: 0,
       transactionCount: 0,
@@ -257,13 +268,19 @@ export function buildIssuePacRows(
     .map((aggregate) => ({
       candidateId: aggregate.candidateId,
       electionCycle: aggregate.electionCycle,
-      bucketLabel: issuePacLabel(aggregate.canonicalIssue),
+      // Format: "Issue-aligned PACs — <canonicalIssue> — <ruleName>"
+      // Still satisfies IssuePacLabel (starts with prefix) and LIKE filter.
+      bucketLabel: `${ISSUE_PAC_LABEL_PREFIX}${aggregate.canonicalIssue} — ${aggregate.ruleName}`,
       amountTotal: aggregate.amountTotal.toFixed(2),
       source: FEC_BULK_SOURCE,
       sourceUrl,
       rawMetadata: {
         issuePac: {
           canonicalIssue: aggregate.canonicalIssue,
+          ruleName: aggregate.ruleName,
+          displayName: aggregate.displayName,
+          ...(aggregate.fullName ? { fullName: aggregate.fullName } : {}),
+          ...(aggregate.advocates ? { advocates: aggregate.advocates } : {}),
           stance: aggregateStance(aggregate),
         },
         transactionCount: aggregate.transactionCount,
