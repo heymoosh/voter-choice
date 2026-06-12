@@ -24,6 +24,9 @@ import {
   cleanCandidateName,
   stateFromCandidateName,
   candidateNameParts,
+  extractBillNumber,
+  normalizeFederalType,
+  stripLeadingBillNumber,
 } from "./alignment";
 
 // ---------------------------------------------------------------------------
@@ -872,5 +875,262 @@ describe("attachLimitedDataNotice", () => {
     if (result.found) {
       expect(result.notice ?? "").toBe("");
     }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// normalizeFederalType — maps raw bill-type strings to canonical short form
+// ---------------------------------------------------------------------------
+
+describe("normalizeFederalType", () => {
+  it("maps lowercase 'hr' → 'hr'", () => {
+    expect(normalizeFederalType("hr")).toBe("hr");
+  });
+
+  it("maps 'house_bill' → 'hr'", () => {
+    expect(normalizeFederalType("house_bill")).toBe("hr");
+  });
+
+  it("maps 's' → 's'", () => {
+    expect(normalizeFederalType("s")).toBe("s");
+  });
+
+  it("maps 'senate_bill' → 's'", () => {
+    expect(normalizeFederalType("senate_bill")).toBe("s");
+  });
+
+  it("maps 'hjres' → 'hjres'", () => {
+    expect(normalizeFederalType("hjres")).toBe("hjres");
+  });
+
+  it("returns null for null input", () => {
+    expect(normalizeFederalType(null)).toBeNull();
+  });
+
+  it("returns null for empty string", () => {
+    expect(normalizeFederalType("")).toBeNull();
+  });
+
+  it("returns null for non-string input", () => {
+    expect(normalizeFederalType(42)).toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// stripLeadingBillNumber — removes embedded "H.R. 21 (118th):" prefixes
+// ---------------------------------------------------------------------------
+
+describe("stripLeadingBillNumber", () => {
+  it("strips 'H.R. 21 (118th): ' prefix", () => {
+    expect(
+      stripLeadingBillNumber(
+        "H.R. 21 (118th): Strategic Production Response Act",
+      ),
+    ).toBe("Strategic Production Response Act");
+  });
+
+  it("strips 'S. 5 (117th) - ' prefix", () => {
+    expect(
+      stripLeadingBillNumber("S. 5 (117th) - Inflation Reduction Act"),
+    ).toBe("Inflation Reduction Act");
+  });
+
+  it("strips 'H.R. 1234 — ' prefix", () => {
+    expect(stripLeadingBillNumber("H.R. 1234 — Lower Drug Costs Act")).toBe(
+      "Lower Drug Costs Act",
+    );
+  });
+
+  it("does not strip a plain title with no separator", () => {
+    expect(stripLeadingBillNumber("Lower Drug Costs Act")).toBe(
+      "Lower Drug Costs Act",
+    );
+  });
+
+  it("does not strip a title that starts with a number but has no separator", () => {
+    expect(stripLeadingBillNumber("21 Savage Tax Relief Act")).toBe(
+      "21 Savage Tax Relief Act",
+    );
+  });
+
+  it("falls back to original when stripping would produce empty string", () => {
+    // Pathological: the whole title matches the pattern with no remainder
+    expect(stripLeadingBillNumber("H.R. 1 -")).toBe("H.R. 1 -");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// extractBillNumber — extracts compact number from rawMetadata / billId
+// ---------------------------------------------------------------------------
+
+describe("extractBillNumber", () => {
+  it("extracts federal number from bills.id 'govtrack-hr2-118'", () => {
+    expect(extractBillNumber(null, "govtrack-hr2-118", "govtrack")).toBe(
+      "HR-2",
+    );
+  });
+
+  it("extracts federal number from bills.id 'govtrack-s1171-117'", () => {
+    expect(extractBillNumber(null, "govtrack-s1171-117", "govtrack")).toBe(
+      "S-1171",
+    );
+  });
+
+  it("extracts federal number from bills.id 'govtrack-hjres1-118'", () => {
+    expect(extractBillNumber(null, "govtrack-hjres1-118", "govtrack")).toBe(
+      "HJRES-1",
+    );
+  });
+
+  it("falls back to rawMetadata for govtrack when id parse fails", () => {
+    const rawMetadata = {
+      govtrack: { bill: { type: "house_bill", number: 5376 } },
+    };
+    // No billId provided → id parse fails → uses rawMetadata secondary path
+    expect(extractBillNumber(rawMetadata, null, "govtrack")).toBe("HR-5376");
+  });
+
+  it("extracts state number from rawMetadata.openstates.identifier 'HB 12'", () => {
+    const rawMetadata = { openstates: { identifier: "HB 12" } };
+    expect(
+      extractBillNumber(rawMetadata, "openstates-ocd-abc", "openstates"),
+    ).toBe("HB-12");
+  });
+
+  it("normalises 'SB 100' → 'SB-100'", () => {
+    const rawMetadata = { openstates: { identifier: "SB 100" } };
+    expect(extractBillNumber(rawMetadata, null, "openstates")).toBe("SB-100");
+  });
+
+  it("returns null for openstates when identifier is missing", () => {
+    expect(
+      extractBillNumber({ openstates: {} }, "openstates-x", "openstates"),
+    ).toBeNull();
+  });
+
+  it("returns null for unknown source", () => {
+    expect(extractBillNumber(null, "foo-bar-1", "other")).toBeNull();
+  });
+
+  it("returns null for null rawMetadata and null id with govtrack source", () => {
+    expect(extractBillNumber(null, null, "govtrack")).toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// lookupAlignment — billTitle composition (billId / rawMetadata roundtrip)
+// ---------------------------------------------------------------------------
+
+describe("lookupAlignment billTitle composition", () => {
+  it("composes 'HR-1234 · Title' when billId carries a federal govtrack id", async () => {
+    const { select, _chain } = makeSelectMock([]);
+    mockedGetDb.mockReturnValue({ select } as never);
+
+    _chain.where.mockResolvedValue([
+      {
+        billTitle: "Example Accountability Act",
+        billId: "govtrack-hr1234-118",
+        billRawMetadata: null,
+        billSourceUrl: "https://govtrack.us/bill/hr1234",
+        billSource: "govtrack",
+        voteCast: "yea",
+        voteDate: "2024-03-15",
+        stanceLens: "in_favor",
+        taggerConfidence: "0.95",
+      },
+    ]);
+
+    const result = await lookupAlignment(
+      "federal-A123",
+      "healthcare_affordability",
+      "in_favor",
+    );
+    expect(result.contributingVotes[0]!.billTitle).toBe(
+      "HR-1234 · Example Accountability Act",
+    );
+  });
+
+  it("composes 'HB-12 · Title' when openstates identifier is present", async () => {
+    const { select, _chain } = makeSelectMock([]);
+    mockedGetDb.mockReturnValue({ select } as never);
+
+    _chain.where.mockResolvedValue([
+      {
+        billTitle: "Clean Energy Act",
+        billId: "openstates-ocd-bill-abc123",
+        billRawMetadata: { openstates: { identifier: "HB 12" } },
+        billSourceUrl: "https://openstates.org/bill/123",
+        billSource: "openstates",
+        voteCast: "yea",
+        voteDate: "2024-09-01",
+        stanceLens: "in_favor",
+        taggerConfidence: "0.92",
+      },
+    ]);
+
+    const result = await lookupAlignment(
+      "openstates-X99",
+      "environment_climate",
+      "in_favor",
+    );
+    expect(result.contributingVotes[0]!.billTitle).toBe(
+      "HB-12 · Clean Energy Act",
+    );
+  });
+
+  it("strips embedded number prefix from GovTrack-style titles to avoid double-numbering", async () => {
+    const { select, _chain } = makeSelectMock([]);
+    mockedGetDb.mockReturnValue({ select } as never);
+
+    _chain.where.mockResolvedValue([
+      {
+        billTitle: "H.R. 21 (118th): Strategic Production Response Act",
+        billId: "govtrack-hr21-118",
+        billRawMetadata: null,
+        billSourceUrl: "https://govtrack.us/bill/hr21",
+        billSource: "govtrack",
+        voteCast: "yea",
+        voteDate: "2024-05-01",
+        stanceLens: "in_favor",
+        taggerConfidence: "0.88",
+      },
+    ]);
+
+    const result = await lookupAlignment(
+      "federal-A123",
+      "environment_climate",
+      "in_favor",
+    );
+    expect(result.contributingVotes[0]!.billTitle).toBe(
+      "HR-21 · Strategic Production Response Act",
+    );
+  });
+
+  it("falls back to bare title when no billId and no rawMetadata number available", async () => {
+    const { select, _chain } = makeSelectMock([]);
+    mockedGetDb.mockReturnValue({ select } as never);
+
+    // Existing test rows have no billId/billRawMetadata — backward compat
+    _chain.where.mockResolvedValue([
+      {
+        billTitle: "Affordable Care Act Expansion",
+        billSourceUrl: "https://govtrack.us/bill/1",
+        billSource: "govtrack",
+        voteCast: "yea",
+        voteDate: "2024-03-15",
+        stanceLens: "in_favor",
+        taggerConfidence: "0.95",
+      },
+    ]);
+
+    const result = await lookupAlignment(
+      "federal-A123",
+      "healthcare_affordability",
+      "in_favor",
+    );
+    // No number available → title rendered as-is (no ' · ')
+    expect(result.contributingVotes[0]!.billTitle).toBe(
+      "Affordable Care Act Expansion",
+    );
   });
 });
