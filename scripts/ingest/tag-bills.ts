@@ -45,6 +45,7 @@ import { sql, notInArray } from "drizzle-orm";
 import { requireDb, type DbClient } from "../../db/client";
 import { bills, issueTags } from "../../db/schema";
 import { CANONICAL_ISSUE_LABELS } from "../../src/lib/canonicalIssues";
+import { renderTaggerPoleBlock } from "../../src/lib/alignment/poleVocabulary";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -137,20 +138,13 @@ export type TaggerCounts = {
  * This is sent with every request but cached after the first call.
  */
 export function buildSystemPrompt(): string {
-  const issueList = Object.entries(CANONICAL_ISSUE_LABELS)
-    .map(([id, label]) => `  - ${id}: ${label}`)
-    .join("\n");
-
   return `You are a nonpartisan legislative analyst. Your job is to classify bills by canonical policy issues.
 
-CANONICAL ISSUE IDs AND LABELS:
-${issueList}
+${renderTaggerPoleBlock()}
 
 For each bill you receive, return a JSON array of tag objects. Each object must have exactly these fields:
   - "canonical_issue": one of the canonical issue IDs above (exact string match required)
-  - "stance_lens": "in_favor" or "opposed" — what voting YEA on this bill MEANS for that issue
-    * "in_favor": a YEA vote supports / expands / funds this issue
-    * "opposed": a YEA vote restricts / cuts / opposes this issue
+  - "stance_lens": "in_favor" or "opposed" — what voting YEA on this bill MEANS for that issue, per the POLE DEFINITIONS above
   - "confidence": a number from 0.0 to 1.0 representing your certainty
 
 Rules:
@@ -523,7 +517,8 @@ export function resolveTagBillsConfig(
     parseLimitFlag(argv) ??
     parsePositiveInteger(env.TAGGER_BILL_LIMIT, DEFAULT_LIMIT);
   const dryRun = argv.includes("--dry-run") || env.TAGGER_DRY_RUN === "1";
-  const anthropicApiKey = env.ANTHROPIC_VOTER_API ?? env.ANTHROPIC_API_KEY ?? "";
+  const anthropicApiKey =
+    env.ANTHROPIC_VOTER_API ?? env.ANTHROPIC_API_KEY ?? "";
 
   return {
     limit,
