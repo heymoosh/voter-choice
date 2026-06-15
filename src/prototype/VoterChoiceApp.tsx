@@ -489,6 +489,30 @@ function AppNav({ onBrandClick }) {
   );
 }
 
+/* ============ AppFooter ============
+   Shared footer bar — matches .hp-foot styles used by HomeView.
+   Reads navigation from NavContext so it needs no prop-drilling.
+   Pass `compact` on the workspace (slim pinned bar); omit it on
+   the home page for the full-height layout. */
+function AppFooter({ compact }: { compact?: boolean }) {
+  const nav = (typeof useNav === 'function') ? useNav() : { navigate: () => {} };
+  const { navigate } = nav;
+  return (
+    <footer className={"hp-foot" + (compact ? " hp-foot-slim" : "")}>
+      <div className="l">Voter Choice</div>
+      <ul>
+        <li><a onClick={() => navigate('methodology')} role="link" tabIndex={0}>Methodology</a></li>
+        <li><a onClick={() => navigate('about')} role="link" tabIndex={0}>About</a></li>
+        <li><a onClick={() => navigate('privacy')} role="link" tabIndex={0}>Privacy</a></li>
+        <li><a href="/terms">Terms</a></li>
+        <li><a onClick={() => navigate('tip')} role="link" tabIndex={0}>Tip jar</a></li>
+        <li><a href="mailto:muxin.li.pro@gmail.com">Support</a></li>
+      </ul>
+      <div>© 2026 · Grey Bird LLC</div>
+    </footer>
+  );
+}
+
 /* ============ IssueRow ============
    Used in the cold open to render one inferred issue row
    the user can reorder / rename / remove.
@@ -4084,7 +4108,7 @@ const { useState: useStateV, useEffect: useEffectV, useRef: useRefV } = React;
 /* ============ HomeView ============
    Maps to: src/app/page.tsx + src/components/AddressInput.tsx
    Pass C adds: ResumeNudge, HowItWorksWalkthrough, DeadlineMeter strip. */
-function HomeView({ savedAddress, savedSession, onSubmit, onResumeFromProfile, onResumeSession, onStartOver, onNavigate }) {
+function HomeView({ savedAddress, savedSession, onSubmit, onResumeFromProfile, onResumeSession, onStartOver, onNavigate, totalRaces = RACES.length }) {
   // Always start the address field empty. We DON'T prefill savedAddress
   // because the user might have typed an exploratory / invalid string
   // last time (or it's stale enough that they'd rather retype). The
@@ -4180,7 +4204,7 @@ function HomeView({ savedAddress, savedSession, onSubmit, onResumeFromProfile, o
           {hasDraft && (
             <ResumeNudge
               saved={savedSession}
-              totalRaces={RACES.length}
+              totalRaces={totalRaces}
               onResume={onResumeSession}
               onStartOver={onStartOver}
             />
@@ -4204,18 +4228,7 @@ function HomeView({ savedAddress, savedSession, onSubmit, onResumeFromProfile, o
       <HowItWorksWalkthrough />
       </main>
 
-      <footer className="hp-foot">
-        <div className="l">Voter Choice</div>
-        <ul>
-          <li><a onClick={() => onNavigate && onNavigate('methodology')} role="link" tabIndex={0}>Methodology</a></li>
-          <li><a onClick={() => onNavigate && onNavigate('about')} role="link" tabIndex={0}>About</a></li>
-          <li><a onClick={() => onNavigate && onNavigate('privacy')} role="link" tabIndex={0}>Privacy</a></li>
-          <li><a href="/terms">Terms</a></li>
-          <li><a onClick={() => onNavigate && onNavigate('tip')} role="link" tabIndex={0}>Tip jar</a></li>
-          <li><a href="mailto:muxin.li.pro@gmail.com">Support</a></li>
-        </ul>
-        <div>© 2026 · Grey Bird LLC</div>
-      </footer>
+      <AppFooter />
     </>
   );
 }
@@ -6418,6 +6431,7 @@ export {
   NavProvider,
   useNav,
   AppNav,
+  AppFooter,
   AppNavWithChrome,
   PollingStatusBar,
   CandidateCardHeader,
