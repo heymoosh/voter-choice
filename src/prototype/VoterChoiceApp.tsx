@@ -3990,78 +3990,33 @@ function MethodologyPage({ onBack }) {
   );
 }
 
+const TIP_AMOUNTS = [
+  { label: '$3',  url: 'https://buy.stripe.com/7sY3cvcQ54cxeL34xc00005' },
+  { label: '$5',  url: 'https://buy.stripe.com/4gM6oH6rHdN76exgfU00006' },
+  { label: '$10', url: 'https://buy.stripe.com/fZu14n17n4cxauN1l000007' },
+  { label: '$25', url: 'https://buy.stripe.com/14AfZheYd9wRbyR4xc00008' },
+];
+
 function TipJarPage({ onBack }) {
-  const links = [
-    {
-      label: 'GitHub Sponsors',
-      url: 'https://github.com/sponsors/heymoosh',
-      note: 'One-time or monthly. Card or PayPal. Receipts from GitHub.',
-      preferred: true,
-    },
-    {
-      label: 'Open Collective',
-      url: 'https://opencollective.com/voter-choice',
-      note: 'Transparent ledger — every dollar in & out is public.',
-    },
-    {
-      label: 'Stripe payment link',
-      url: 'https://buy.stripe.com/your-link-here',
-      note: 'Direct one-time card payment. No account needed.',
-    },
-  ];
-
   return (
-    <StaticPage onBack={onBack} eyebrow="Tip jar" title="Voter Choice runs on a small AI budget. Tips keep it free.">
-      <p>
-        Voter Choice is built and operated by <b>Grey Bird LLC</b>. There are
-        no ads, no tracking, no accounts, and no data sales. Server costs, the
-        Anthropic API budget, and the editorial work behind CAN2026 case files
-        are paid for by <b>Grey Bird LLC</b> and small individual contributions.
-      </p>
-      <p>
-        If Voter Choice helped you make a real decision, a tip helps keep the
-        community AI budget alive for the next voter. We&rsquo;d rather pause
-        than monetize you.
-      </p>
-
-      <h2>Where it goes</h2>
-      <ul>
-        <li><b>Anthropic API spend</b> — the chat budget that runs out.</li>
-        <li><b>Server + hosting</b> — Vercel + a small Redis instance for rate-limiting.</li>
-        <li><b>Editorial</b> — CAN2026 case files take real research hours.</li>
-        <li>Anything left over rolls forward to the next election cycle.</li>
-      </ul>
-
-      <h2>How to chip in</h2>
-      <ul className="tip-list">
-        {links.map(link => (
-          <li key={link.label} className={"tip-link " + (link.preferred ? 'preferred' : '')}>
-            <a href={link.url} target="_blank" rel="noopener noreferrer">
-              <span className="tip-link-name">
-                {link.label}
-                {link.preferred && <span className="tip-pref-tag">Preferred</span>}
-              </span>
-              <span className="tip-link-note">{link.note}</span>
-              <span className="tip-link-arrow" aria-hidden="true">→</span>
+    <StaticPage onBack={onBack} eyebrow="Tip jar" title="Keep the community AI budget alive.">
+      <ul className="tip-list tip-list--amounts">
+        {TIP_AMOUNTS.map(({ label, url }) => (
+          <li key={label}>
+            <a href={url} target="_blank" rel="noopener noreferrer" className="tip-amount-btn">
+              {label}
             </a>
           </li>
         ))}
       </ul>
+      <p className="tip-note">One-time card payment · no account needed · Voter Choice never sees your card</p>
 
-      <h2>What we DON&rsquo;T do</h2>
+      <h2>Where it goes</h2>
       <ul>
-        <li><b>No payment processor lives in Voter Choice itself.</b> We don&rsquo;t handle your card data — every link above takes you to a third-party platform you already trust.</li>
-        <li><b>No donor lists, no donor walls.</b> If you tip, you stay anonymous on Voter Choice.</li>
-        <li><b>No editorial influence for tipping.</b> Tips don&rsquo;t buy a say in the methodology, the case files, or the candidate scores.</li>
-        <li><b>No upsell.</b> The tip jar lives in three places: this page, the budget-exhaustion handoff, and the Settings drawer. Nowhere else.</li>
+        <li><b>Anthropic API spend</b> — the AI chat budget that runs out when too many voters use it at once.</li>
+        <li><b>Server + hosting</b> — Vercel + a small Redis instance for rate-limiting.</li>
       </ul>
-
-      <h2>Funding transparency</h2>
-      <p>
-        We publish a quarterly funding statement at <code>voterchoice.app/funding</code>{' '}
-        (rolling out alongside the 2026 launch). It shows every dollar in and
-        out, by category, with no aggregation tricks.
-      </p>
+      <p>Voter Choice is built by <b>Grey Bird LLC</b>. No ads, no tracking, no accounts, no data sales. Tips and small individual contributions are the only revenue.</p>
     </StaticPage>
   );
 }

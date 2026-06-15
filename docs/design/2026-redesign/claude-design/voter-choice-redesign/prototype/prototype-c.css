@@ -1755,6 +1755,42 @@
   border-radius: 4px;
 }
 
+/* tip amount picker */
+.tip-list--amounts {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin: 24px 0 12px !important;
+}
+.tip-list--amounts li {
+  list-style: none;
+}
+.tip-amount-btn {
+  display: block;
+  text-align: center;
+  padding: 18px 0;
+  background: var(--paper-2);
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  font-family: var(--serif);
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--ink);
+  text-decoration: none !important;
+  transition: border-color 0.12s, background 0.12s;
+}
+.tip-amount-btn:hover {
+  border-color: var(--civic);
+  background: oklch(0.97 0.018 170);
+  color: var(--civic);
+}
+.tip-note {
+  font-size: 13px;
+  color: var(--ink-3);
+  text-align: center;
+  margin: 0 0 24px !important;
+}
+
 /* ============ NoContestedView — upload-first redesign ============
    Promotes the file upload to a big dropzone-style button at the
    top, with the paste textarea as the secondary path below. Adds
