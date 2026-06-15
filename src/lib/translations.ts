@@ -683,7 +683,7 @@ const en: Translations = {
     privacyPolicy: "Privacy Policy",
     termsOfUse: "Terms of Use",
     dataLastUpdated: (date: string) => `Data last updated: ${date}`,
-    copyright: "\u00a9 2026 Gray Bird LLC. All Rights Reserved.",
+    copyright: "\u00a9 2026 Grey Bird LLC. All Rights Reserved.",
   },
   polling: {
     addressLabel: "Enter your full street address for polling location",
@@ -1373,7 +1373,7 @@ const es: Translations = {
     privacyPolicy: "Pol\u00edtica de Privacidad",
     termsOfUse: "T\u00e9rminos de Uso",
     dataLastUpdated: (date: string) => `Datos actualizados: ${date}`,
-    copyright: "\u00a9 2026 Gray Bird LLC. Todos los derechos reservados.",
+    copyright: "\u00a9 2026 Grey Bird LLC. Todos los derechos reservados.",
   },
   polling: {
     addressLabel:

@@ -4,7 +4,7 @@ import Link from "next/link";
 export const metadata: Metadata = {
   title: "About — Voter Choice",
   description:
-    "Voter Choice is a free, non-partisan ballot research tool built by Gray Bird LLC.",
+    "Voter Choice is a free, non-partisan ballot research tool built by Grey Bird LLC.",
 };
 
 export default function AboutPage() {
@@ -32,7 +32,7 @@ export default function AboutPage() {
         {/* Article */}
         <article className="font-serif text-[17px] max-sm:text-[15.5px] leading-[1.65] text-ink [&_h2]:font-serif [&_h2]:font-semibold [&_h2]:text-[24px] [&_h2]:mt-10 [&_h2]:mb-[14px] [&_h2]:tracking-[-0.015em] [&_h2]:text-ink [&_p]:mb-4 [&_ul]:mb-4 [&_ul]:pl-[22px] [&_li]:mb-2 [&_a]:text-civic [&_a]:underline [&_a]:underline-offset-[3px] [&_code]:font-mono [&_code]:text-[14px] [&_code]:bg-tag-bg [&_code]:px-[6px] [&_code]:py-[2px] [&_code]:rounded">
           <p>
-            Voter Choice is built and operated by <b>Gray Bird LLC</b>, a small
+            Voter Choice is built and operated by <b>Grey Bird LLC</b>, a small
             independent shop. We made it because the gap between &ldquo;what a
             candidate says in their ads&rdquo; and &ldquo;what they actually
             voted on&rdquo; has gotten wider every cycle. We thought voters
@@ -71,7 +71,7 @@ export default function AboutPage() {
           <h2>Who pays for this?</h2>
           <p>
             Server costs, Anthropic API budget, and the editorial work behind
-            CAN2026 case files are funded by <b>Gray Bird LLC</b> and a small
+            CAN2026 case files are funded by <b>Grey Bird LLC</b> and a small
             set of individual donors who explicitly do not buy a say in
             editorial. We publish a quarterly funding statement.
           </p>
@@ -83,7 +83,7 @@ export default function AboutPage() {
 
           <h2>Get in touch</h2>
           <p>
-            Reach Gray Bird LLC at{" "}
+            Reach Grey Bird LLC at{" "}
             <a href="mailto:muxin.li.pro@gmail.com">
               <code>muxin.li.pro@gmail.com</code>
             </a>
