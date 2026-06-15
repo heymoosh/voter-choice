@@ -309,15 +309,17 @@ describe("budget", () => {
       expect(wasHandoffServed()).toBe(true);
     });
 
-    it("getBudgetStatusAsync defaults to handoffServed=false on Redis error", async () => {
+    it("getBudgetStatusAsync fails open (in-memory state) on Redis error", async () => {
       vi.spyOn(globalThis, "fetch").mockRejectedValue(
         new Error("Redis connection refused"),
       );
 
-      // Error path: budget returns MONTHLY_BUDGET_USD with handoffServed=false
+      // Error path: falls back to in-memory state (starts at 0 on fresh process)
+      // rather than assuming 100% spend. This prevents the budget gate from
+      // misfiring and showing the "used up" modal at 1.7% real spend.
       const status = await getBudgetStatusAsync();
-      // At cap, handoffServed=false → tier is handoff (not exhausted)
-      expect(status.tier).toBe("handoff");
+      expect(status.tier).toBe("normal");
+      expect(status.percent).toBe(0);
     });
   });
 });
