@@ -60,8 +60,8 @@ import { BudgetModal } from "./BudgetModal";
 import { buildScorecardHandoffPrompt } from "./handoffText";
 
 // Durable (localStorage): the only thing kept across a tab close — the user's
-// issues ("Polis" data) plus a county-level-at-most location. Never the precise
-// address.
+// issues ("Polis" data) plus a state-level location. Never a county or the
+// precise address.
 const POLIS_KEY = "voter-choice:polis-v1";
 // Session working state (sessionStorage): precise address + in-progress
 // assessment. Survives a same-tab reload, wiped when the tab closes.
@@ -109,21 +109,20 @@ function DelegationErrorView({ tone, title, body, onEditAddress, onRetry }) {
   );
 }
 
-/* Standing stage lock state — below the privacy threshold there is no map. */
-function StandingLocked({ countToUnlock, onBack }) {
+/* Standing stage empty state — shown only when nobody has finished anywhere
+   yet (genuinely zero sessions). There is no participation threshold; the map
+   renders as soon as a single person has finished. */
+function StandingLocked({ onBack }) {
   return (
     <section className="polis">
       <div className="polis-lede">
         <div className="kick">One last thing</div>
-        <h2>See where you stand — soon.</h2>
+        <h2>You&rsquo;re the first one here.</h2>
         <p>
-          This view unlocks once enough people near you have finished their
-          scorecards
-          {typeof countToUnlock === "number" && countToUnlock > 0
-            ? ` — about ${countToUnlock.toLocaleString("en-US")} more sessions to go.`
-            : "."}{" "}
-          No individual responses are ever stored, so the map only exists in
-          aggregate.
+          No one has finished a scorecard yet, so there&rsquo;s no one to map
+          you against — for now. Check back soon: the map appears the moment
+          someone else finishes. No individual responses are ever stored, so it
+          only ever exists in aggregate.
         </p>
         <button className="back2" onClick={onBack}>
           ← Back to your scorecard
@@ -171,12 +170,12 @@ function App2Inner() {
     () => new Set(savedSession.revealed || []),
   );
   const [issues, setIssues] = useState(savedPolis.issues || []);
-  // County-level-at-most location, kept durably with the issues so the Polis
-  // aggregate survives a tab close without ever storing the precise address.
+  // State-level location only, kept durably with the issues so the Polis
+  // aggregate survives a tab close. County is never stored (privacy) — the
+  // viz shows state + national only.
   const [coarseLoc, setCoarseLoc] = useState(() => ({
     stateCode: savedPolis.stateCode ?? null,
     stateName: savedPolis.stateName ?? null,
-    county: savedPolis.county ?? null,
   }));
   const [showHandoff, setShowHandoff] = useState(false);
 
@@ -206,7 +205,7 @@ function App2Inner() {
   const [, setResearchTick] = useState(0);
   const submittedRef = useRef(false);
 
-  // Durable: issues + county-level location only. Survives tab close.
+  // Durable: issues + state-level location only. Survives tab close.
   useEffect(() => {
     try {
       localStorage.setItem(
@@ -215,7 +214,6 @@ function App2Inner() {
           issues,
           stateCode: coarseLoc.stateCode,
           stateName: coarseLoc.stateName,
-          county: coarseLoc.county,
         }),
       );
     } catch {}
@@ -289,7 +287,6 @@ function App2Inner() {
     setCoarseLoc({
       stateCode: result.stateCode,
       stateName: result.stateName,
-      county: result.county,
     });
     setStateData(sd);
     // Real address-based logistics (polling place / hours / early voting)
@@ -324,7 +321,6 @@ function App2Inner() {
     void loadPolisScopes({
       stateCode: delegationResult.stateCode,
       stateName: delegationResult.stateName,
-      county: delegationResult.county,
       userConcerns: decorated.map((i) => i.canonicalIssue).filter(Boolean),
     }).then(setPolisScopes);
     setStage("workspace");
@@ -523,7 +519,6 @@ function App2Inner() {
         submittedRef.current = true;
         void submitSessionCounters({
           stateCode: delegation.stateCode,
-          county: delegation.county,
           issues,
         });
       }
@@ -543,7 +538,6 @@ function App2Inner() {
       submittedRef.current = true;
       void submitSessionCounters({
         stateCode: delegation.stateCode,
-        county: delegation.county,
         issues,
       });
     }
@@ -570,7 +564,7 @@ function App2Inner() {
     }
     setAddress("");
     setIssues([]);
-    setCoarseLoc({ stateCode: null, stateName: null, county: null });
+    setCoarseLoc({ stateCode: null, stateName: null });
     setVerdicts({});
     setRevealed(new Set());
     setDelegation(null);
@@ -701,14 +695,7 @@ function App2Inner() {
             {unlockedScopes.length > 0 ? (
               <PolisClose polis={{ scopes: unlockedScopes }} />
             ) : (
-              <StandingLocked
-                countToUnlock={
-                  polisScopes && polisScopes.length > 0
-                    ? polisScopes[polisScopes.length - 1].countToUnlock
-                    : null
-                }
-                onBack={() => setStage("workspace")}
-              />
+              <StandingLocked onBack={() => setStage("workspace")} />
             )}
           </div>
         </div>

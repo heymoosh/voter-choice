@@ -26,7 +26,6 @@ const VALID_CONFIDENCE = new Set(["clear", "low", "off_topic"]);
 interface CounterBody {
   sessionId: string;
   stateCode: string;
-  county?: string | null;
   primary: "DEM" | "REP" | "OPEN" | "GENERAL";
   confirmedConcerns?: Array<{ canonicalIssue: string }>;
   concernEvents?: ConcernEvent[];
@@ -46,13 +45,8 @@ function validateBody(body: unknown): CounterBody | null {
   if (typeof b.primary !== "string" || !VALID_PRIMARIES.has(b.primary))
     return null;
 
-  // county: optional string or null
-  const county =
-    b.county === null || b.county === undefined
-      ? null
-      : typeof b.county === "string"
-        ? b.county.slice(0, 64)
-        : null;
+  // county is intentionally NOT read or stored — we collect state-level only
+  // (privacy). Any `county` in the request body is silently dropped here.
 
   // confirmedConcerns: optional array of {canonicalIssue: string}
   let confirmedConcerns: Array<{ canonicalIssue: string }> = [];
@@ -124,7 +118,6 @@ function validateBody(body: unknown): CounterBody | null {
   return {
     sessionId: b.sessionId,
     stateCode: b.stateCode.toUpperCase().slice(0, 4),
-    county,
     primary: b.primary as "DEM" | "REP" | "OPEN" | "GENERAL",
     confirmedConcerns,
     concernEvents,
@@ -176,7 +169,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const result = await incrementSessionCounters({
     sessionId: body.sessionId,
     stateCode: body.stateCode,
-    county: body.county ?? null,
+    // Force state-level only — county location is never collected (privacy).
+    county: null,
     primary: body.primary,
     confirmedConcerns: body.confirmedConcerns ?? [],
     picks: body.picks ?? [],

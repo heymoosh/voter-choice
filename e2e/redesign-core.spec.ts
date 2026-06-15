@@ -253,14 +253,13 @@ test.describe("standing stage (polis)", () => {
     await expect(page.locator(".polis h2")).toContainText(
       "less divided than you think",
     );
-    // Clusters named by shared priority, never party.
-    await expect(page.locator(".scatter-legend")).toContainText("first");
-    await expect(page.locator(".scatter-legend")).not.toContainText("Democrat");
+    // Party-free cloud — scatter renders, no cluster/party labels.
+    await expect(page.locator(".scatter")).toHaveCount(1);
     // Bridges are sentinel-only in v1 → panel hidden.
     await expect(page.locator(".bridges")).toHaveCount(0);
   });
 
-  test("below threshold renders the lock state, never a fake map", async ({
+  test("sparse sample shows early-days framing, cloud still renders", async ({
     page,
   }) => {
     await mockDelegation(page);
@@ -271,8 +270,10 @@ test.describe("standing stage (polis)", () => {
     await goToWorkspace(page);
 
     await page.locator(".standing-cta button").click();
-    await expect(page.locator(".polis-lede")).toContainText("soon");
-    await expect(page.locator(".scatter")).toHaveCount(0);
+    // Low sampleSize (<30) → honest "early days" framing, no participation gate.
+    await expect(page.locator(".polis-lede")).toContainText("Early days");
+    // Scatter still renders — locked only when sampleSize=0.
+    await expect(page.locator(".scatter")).toHaveCount(1);
   });
 });
 

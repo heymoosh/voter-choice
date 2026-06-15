@@ -399,25 +399,22 @@ async function durableFetchPolisAggregate(
       : Promise.resolve(0),
   ]);
 
-  // Determine scope
+  // Determine scope: use the county when it has any finishers, else the state.
+  // No display gate — honesty about thin data is handled in the render (one dot
+  // per real session), not by hiding the map. THRESHOLD now only informs the
+  // non-gating `thresholdMet` flag.
   let scope: "county" | "state";
   let scopeTotal: number;
   let scopePrefix: string;
 
-  if (county && countyTotal >= THRESHOLD) {
+  if (county && countyTotal > 0) {
     scope = "county";
     scopeTotal = countyTotal;
     scopePrefix = countyPrefix(stateCode, county);
-  } else if (stateTotal >= THRESHOLD) {
+  } else {
     scope = "state";
     scopeTotal = stateTotal;
     scopePrefix = stateP;
-  } else {
-    // Below threshold on both — pick whichever has more
-    const useCounty = county && countyTotal > stateTotal;
-    scope = useCounty ? "county" : "state";
-    scopeTotal = useCounty ? countyTotal : stateTotal;
-    scopePrefix = useCounty ? countyPrefix(stateCode, county!) : stateP;
   }
 
   const thresholdMet = scopeTotal >= THRESHOLD;
@@ -793,19 +790,14 @@ function memFetchPolisAggregate(
   let scopeTotal: number;
   let scopePrefix: string;
 
-  if (county && countyTotal >= THRESHOLD) {
+  if (county && countyTotal > 0) {
     scope = "county";
     scopeTotal = countyTotal;
     scopePrefix = countyPrefix(stateCode, county);
-  } else if (stateTotal >= THRESHOLD) {
+  } else {
     scope = "state";
     scopeTotal = stateTotal;
     scopePrefix = stateP;
-  } else {
-    const useCounty = county && countyTotal > stateTotal;
-    scope = useCounty ? "county" : "state";
-    scopeTotal = useCounty ? countyTotal : stateTotal;
-    scopePrefix = useCounty ? countyPrefix(stateCode, county!) : stateP;
   }
 
   const thresholdMet = scopeTotal >= THRESHOLD;
