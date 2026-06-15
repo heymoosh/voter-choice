@@ -80,6 +80,11 @@ const LOOKUP_ALIGNMENT_TOOL: Anthropic.Tool = {
         description:
           "Canonical issue id from the vocabulary the model receives in the system prompt",
       },
+      sub_issue: {
+        type: "string",
+        description:
+          "Optional finer topic beneath canonical_issue from the sub-issue vocabulary; omit when none fits.",
+      },
       resolved_stance: {
         type: "string",
         enum: ["in_favor", "opposed"],
@@ -1055,6 +1060,7 @@ interface LookupAlignmentInput {
   state_code?: string;
   jurisdiction?: string;
   canonical_issue?: string;
+  sub_issue?: string;
   resolved_stance?: string;
 }
 
@@ -1066,6 +1072,7 @@ async function resolveLookupAlignmentTool(
     state_code,
     jurisdiction,
     canonical_issue,
+    sub_issue,
     resolved_stance,
   } = input;
 
@@ -1101,6 +1108,7 @@ async function resolveLookupAlignmentTool(
     candidateId,
     canonical_issue,
     resolved_stance,
+    sub_issue,
   );
   return result as unknown as { found: boolean; [key: string]: unknown };
 }

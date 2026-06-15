@@ -19,6 +19,9 @@ politically. Return a JSON array of 1–5 themes. Each theme:
             drug prices") → "in_favor". Use "opposed" only when the
             voter clearly wants LESS of something ("stop the new
             highway", "against the bond").
+  "subIssue": OPTIONAL — a finer id from the SUB-ISSUES list below,
+            only when one clearly fits the voter's words. Its parent
+            MUST equal canonicalIssue; otherwise omit. Never invent ids.
 
 CANONICAL ISSUES (id — what it covers):
   healthcare_affordability — drug/insulin prices, ACA, Medicare/Medicaid, care costs
@@ -56,6 +59,15 @@ POLE DIRECTIONS (pole-vocab pole-vocab-v1) — when you set "stance", in_favor/o
   election_integrity [contested] — in_favor=Voting access / expand participation; opposed=Voting restrictions / security-first
   congressional_accountability [valence_dominant] — in_favor=Stronger ethics & accountability; opposed=Status quo / weaker rules
 
+SUB-ISSUES (sub-issue sub-issue-v1) — when the voter's concern clearly fits one of these facets of a parent issue, set "subIssue" to its id; if none clearly fits, OMIT "subIssue". A sub-issue inherits the parent issue's pole direction — it never changes the side.
+  healthcare_affordability:
+    drug_prices - the cost of prescription drugs and insulin, and how government negotiates or caps those prices.
+    coverage_access - who can get health insurance and at what cost — ACA subsidies, Medicaid, and coverage rules.
+    provider_costs - what hospitals and providers charge — surprise bills, price transparency, and market consolidation.
+    senior_care - Medicare benefits and care for older adults — Medicare Advantage rules and long-term / nursing-home care.
+    mental_behavioral_health - access to mental-health and addiction care — parity enforcement, treatment funding, and crisis services.
+(sub-issue sub-issue-v1)
+
 Rules:
   · Don't pad to a fixed count. One thing, one theme.
   · Don't generalize the NAME. "ICE detention near my kid's school"
@@ -64,6 +76,8 @@ Rules:
     voter's framing.)
   · Only use a canonicalIssue id from the list above, verbatim. If the
     voter's concern doesn't fit any, omit the field — do not invent ids.
+  · subIssue ids are also verbatim from the SUB-ISSUES list, and only
+    when the parent matches canonicalIssue — otherwise omit.
   · Order doesn't matter — the user will rerank in the UI.
   · No prose. Return JSON only.
 

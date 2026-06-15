@@ -17,7 +17,12 @@ const LIMIT = 1500;
 // here as in the bill tagger — the durable fix for the ~40–55% alignment
 // inversion the audit measured. Those 16 pole-direction lines add ~2.9k chars;
 // they are correctness-critical, so bump the ceiling rather than drop them.
-const THEME_EXTRACTION_LIMIT = 5500;
+// It NOW also carries the SUB-ISSUES block (src/lib/alignment/subIssues.ts)
+// so the model can resolve a finer facet (e.g. healthcare_affordability →
+// drug_prices) for more precise alignment scoring. That block is load-bearing
+// for sub-issue matching, so — per the same convention — the ceiling is raised
+// rather than trimming the load-bearing canonical-issue keyword anchors.
+const THEME_EXTRACTION_LIMIT = 6800;
 // P0 #2 (live audit): the race-deep-dive prompt now carries an explicit
 // candidate-resolution rule so the model resolves surnames against
 // <candidates> instead of bouncing the disambiguation back to the voter.

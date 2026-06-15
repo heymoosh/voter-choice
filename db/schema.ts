@@ -137,6 +137,14 @@ export const issueTags = pgTable(
     // e.g. "claude-opus-4-7-2026-05-09"
     taggerVersion: text("tagger_version").notNull(),
     taggerConfidence: numeric("tagger_confidence", { precision: 4, scale: 3 }), // nullable, 0–1
+    // Optional topic facet beneath canonical_issue (e.g. "drug_prices"); NULL when not sub-tagged
+    subIssue: text("sub_issue"),
+    // Lets a sub-pass be idempotent WITHOUT touching tagger_version, e.g. "claude-opus-4-8-2026-06-15"
+    subTaggerVersion: text("sub_tagger_version"),
+    subTaggerConfidence: numeric("sub_tagger_confidence", {
+      precision: 4,
+      scale: 3,
+    }), // nullable, 0–1
     taggedAt: timestamp("tagged_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -147,6 +155,7 @@ export const issueTags = pgTable(
       table.canonicalIssue,
     ),
     index("issue_tags_canonical_issue_idx").on(table.canonicalIssue),
+    index("issue_tags_sub_issue_idx").on(table.canonicalIssue, table.subIssue),
   ],
 );
 
@@ -609,6 +618,7 @@ export const voterIssueEvents = pgTable(
   {
     id: uuid("id").primaryKey().defaultRandom(),
     canonicalIssue: text("canonical_issue"), // joins to canonicalIssues.ts ids; NULL when off-topic/invented
+    subIssue: text("sub_issue"), // optional topic facet beneath canonical_issue; NULL when not resolved
     offTopicLabel: text("off_topic_label"), // model's short label, ONLY when canonicalIssue is NULL
     resolvedStance: text("resolved_stance"), // short prose stance; NULL when unknown
     rank: integer("rank"), // 1-based priority (serves "care MOST about")
@@ -625,5 +635,9 @@ export const voterIssueEvents = pgTable(
       t.canonicalIssue,
     ),
     index("voter_issue_events_issue_idx").on(t.canonicalIssue),
+    index("voter_issue_events_sub_issue_idx").on(
+      t.canonicalIssue,
+      t.subIssue,
+    ),
   ],
 );

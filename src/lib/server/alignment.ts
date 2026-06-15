@@ -49,6 +49,13 @@ export interface AlignmentResult {
    * silently for unmapped concerns" for the user-impact context.
    */
   notice?: string;
+  /**
+   * The sub-issue facet the score was actually computed from, set ONLY when the
+   * caller passed a `subIssue` AND the sub-issue-specific row set had enough
+   * scorable votes to PREFER it over the parent corpus. Absent when no subIssue
+   * was requested or when the lookup FELL BACK to the parent (sparse sub-rows).
+   */
+  matchedSubIssue?: string;
 }
 
 export interface AlignmentNotFound {
@@ -459,6 +466,7 @@ export async function lookupAlignment(
   candidateId: string,
   canonicalIssue: string,
   resolvedStance: "in_favor" | "opposed",
+  subIssue?: string,
 ): Promise<AlignmentResult> {
   const db = getDb();
   if (db === DB_NOT_CONFIGURED) {
@@ -493,6 +501,7 @@ export async function lookupAlignment(
           voteDate: schema.votes.voteDate,
           stanceLens: schema.issueTags.stanceLens,
           taggerConfidence: schema.issueTags.taggerConfidence,
+          subIssue: schema.issueTags.subIssue,
           narrative: schema.canBillNarratives.narrative,
         })
         .from(schema.votes)
@@ -525,6 +534,7 @@ export async function lookupAlignment(
           voteDate: schema.votes.voteDate,
           stanceLens: schema.issueTags.stanceLens,
           taggerConfidence: schema.issueTags.taggerConfidence,
+          subIssue: schema.issueTags.subIssue,
         })
         .from(schema.votes)
         .innerJoin(schema.bills, eq(schema.votes.billId, schema.bills.id))
@@ -555,8 +565,30 @@ export async function lookupAlignment(
     };
   }
 
+  // Sub-issue prefer/fallback: when the caller passes a sub-issue facet, PREFER
+  // the sub-issue-specific votes if they alone meet the data threshold; else
+  // FALL BACK to the full parent corpus so a score is never worse than today.
+  // The threshold is measured on SCORABLE rows (abstains excluded) so a handful
+  // of present/absent sub-rows can't trip the prefer path. The inner join stays
+  // keyed on (billId AND canonicalIssue) only — sub-issue selection happens here
+  // in app code, not in SQL.
+  let workingRows = rows;
+  let matchedSubIssue: string | undefined;
+  if (subIssue) {
+    const subRows = rows.filter((r) => r.subIssue === subIssue);
+    const scorableSubCount = subRows.filter(
+      (r) =>
+        computeVoteAlignment(r.voteCast, r.stanceLens, resolvedStance) !==
+        "abstain",
+    ).length;
+    if (scorableSubCount >= LIMITED_DATA_THRESHOLD) {
+      workingRows = subRows;
+      matchedSubIssue = subIssue;
+    }
+  }
+
   // Compute alignment for each row (exclude abstains from totals)
-  const scored = rows
+  const scored = workingRows
     .map((r) => ({
       ...r,
       alignment: computeVoteAlignment(r.voteCast, r.stanceLens, resolvedStance),
@@ -603,6 +635,9 @@ export async function lookupAlignment(
     kept,
     total,
     contributingVotes,
+    // Set only when the prefer path fired; undefined keys are omitted by the
+    // discriminated-union consumers, so this stays a no-op for the parent path.
+    ...(matchedSubIssue ? { matchedSubIssue } : {}),
   };
 
   // Surface a "limited data" notice when the tag corpus is too thin for the

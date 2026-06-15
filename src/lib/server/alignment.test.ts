@@ -37,6 +37,7 @@ function makeSelectMock(rows: Record<string, unknown>[]) {
   const chain = {
     from: vi.fn().mockReturnThis(),
     innerJoin: vi.fn().mockReturnThis(),
+    leftJoin: vi.fn().mockReturnThis(),
     where: vi.fn().mockResolvedValue(rows),
     // For the candidate resolution path, `where` is the terminal call.
   };
@@ -808,6 +809,321 @@ describe("lookupAlignment", () => {
     expect(result.total).toBe(0);
     expect(result.unavailable).toBeDefined();
     expect(result.notice ?? "").toBe("");
+  });
+
+  // -------------------------------------------------------------------------
+  // Sub-issue prefer/fallback (TASK T-D).
+  //
+  // A sub-issue is a TOPIC FACET of a (bill, canonical_issue) tag that INHERITS
+  // the parent pole. Scoring PREFERS sub-issue-specific votes when they alone
+  // meet LIMITED_DATA_THRESHOLD (5) SCORABLE rows, else FALLS BACK to the full
+  // parent corpus — so a sub-issue score is never worse than the parent score.
+  //
+  // Fixtures gain a `subIssue` field. The SQL inner join is unchanged (keyed on
+  // billId + canonicalIssue only); sub-issue selection is app-side here.
+  // -------------------------------------------------------------------------
+
+  // Helper: a parent corpus where 5 rows carry the target sub-issue (all
+  // scorable, 3 "with" / 2 "against") plus extra parent rows that would dilute
+  // the score if the fallback fired.
+  function healthcareCorpus() {
+    const drugPrice = (i: number, voteCast: string) => ({
+      billTitle: `Drug Price Bill ${i}`,
+      billSourceUrl: `https://govtrack.us/bill/d${i}`,
+      billSource: "govtrack",
+      voteCast,
+      voteDate: `2024-0${(i % 9) + 1}-01`,
+      stanceLens: "in_favor",
+      taggerConfidence: String(0.9 - i * 0.01),
+      subIssue: "drug_prices",
+    });
+    const otherParent = (i: number, voteCast: string) => ({
+      billTitle: `Coverage Bill ${i}`,
+      billSourceUrl: `https://govtrack.us/bill/c${i}`,
+      billSource: "govtrack",
+      voteCast,
+      voteDate: `2023-0${(i % 9) + 1}-01`,
+      stanceLens: "in_favor",
+      taggerConfidence: String(0.8 - i * 0.01),
+      subIssue: "coverage_access",
+    });
+    return [
+      // 5 scorable drug_prices rows: 3 with (yea), 2 against (nay).
+      drugPrice(1, "yea"),
+      drugPrice(2, "yea"),
+      drugPrice(3, "yea"),
+      drugPrice(4, "nay"),
+      drugPrice(5, "nay"),
+      // Parent dilution: 4 more rows on a different sub-issue, all "with".
+      otherParent(1, "yea"),
+      otherParent(2, "yea"),
+      otherParent(3, "yea"),
+      otherParent(4, "yea"),
+    ];
+  }
+
+  it("prefers sub-issue rows when >=5 are scorable: kept/total from sub-rows only", async () => {
+    const { select, _chain } = makeSelectMock([]);
+    mockedGetDb.mockReturnValue({ select } as never);
+    _chain.where.mockResolvedValue(healthcareCorpus());
+
+    const result = await lookupAlignment(
+      "federal-A123",
+      "healthcare_affordability",
+      "in_favor",
+      "drug_prices",
+    );
+
+    // Sub-rows only: 5 total, 3 with. (Parent would be 9 total / 7 with.)
+    expect(result.total).toBe(5);
+    expect(result.kept).toBe(3);
+    expect(result.matchedSubIssue).toBe("drug_prices");
+  });
+
+  it("falls back to parent when <5 sub-rows are scorable: kept/total == full parent", async () => {
+    const { select, _chain } = makeSelectMock([]);
+    mockedGetDb.mockReturnValue({ select } as never);
+
+    // Only 3 scorable drug_prices rows (under threshold) + 4 parent rows on
+    // another sub-issue → fall back to the full 7-row parent corpus.
+    _chain.where.mockResolvedValue([
+      {
+        billTitle: "Drug Price A",
+        billSourceUrl: "https://govtrack.us/bill/da",
+        billSource: "govtrack",
+        voteCast: "yea",
+        voteDate: "2024-05-01",
+        stanceLens: "in_favor",
+        taggerConfidence: "0.9",
+        subIssue: "drug_prices",
+      },
+      {
+        billTitle: "Drug Price B",
+        billSourceUrl: "https://govtrack.us/bill/db",
+        billSource: "govtrack",
+        voteCast: "yea",
+        voteDate: "2024-04-01",
+        stanceLens: "in_favor",
+        taggerConfidence: "0.85",
+        subIssue: "drug_prices",
+      },
+      {
+        billTitle: "Drug Price C",
+        billSourceUrl: "https://govtrack.us/bill/dc",
+        billSource: "govtrack",
+        voteCast: "nay",
+        voteDate: "2024-03-01",
+        stanceLens: "in_favor",
+        taggerConfidence: "0.8",
+        subIssue: "drug_prices",
+      },
+      {
+        billTitle: "Coverage A",
+        billSourceUrl: "https://govtrack.us/bill/ca",
+        billSource: "govtrack",
+        voteCast: "yea",
+        voteDate: "2023-05-01",
+        stanceLens: "in_favor",
+        taggerConfidence: "0.7",
+        subIssue: "coverage_access",
+      },
+      {
+        billTitle: "Coverage B",
+        billSourceUrl: "https://govtrack.us/bill/cb",
+        billSource: "govtrack",
+        voteCast: "yea",
+        voteDate: "2023-04-01",
+        stanceLens: "in_favor",
+        taggerConfidence: "0.65",
+        subIssue: "coverage_access",
+      },
+      {
+        billTitle: "Coverage C",
+        billSourceUrl: "https://govtrack.us/bill/cc",
+        billSource: "govtrack",
+        voteCast: "yea",
+        voteDate: "2023-03-01",
+        stanceLens: "in_favor",
+        taggerConfidence: "0.6",
+        subIssue: "coverage_access",
+      },
+      {
+        billTitle: "Coverage D",
+        billSourceUrl: "https://govtrack.us/bill/cd",
+        billSource: "govtrack",
+        voteCast: "nay",
+        voteDate: "2023-02-01",
+        stanceLens: "in_favor",
+        taggerConfidence: "0.55",
+        subIssue: "coverage_access",
+      },
+    ]);
+
+    const subResult = await lookupAlignment(
+      "federal-A123",
+      "healthcare_affordability",
+      "in_favor",
+      "drug_prices",
+    );
+
+    // Fell back to full parent: 7 total, 5 with (Drug C + Coverage D are nay →
+    // against; the other 5 yea rows are "with").
+    expect(subResult.total).toBe(7);
+    expect(subResult.kept).toBe(5);
+    expect(subResult.matchedSubIssue).toBeUndefined();
+  });
+
+  it("subIssue undefined is identical to today (regression — no behavior change)", async () => {
+    const corpus = healthcareCorpus();
+
+    const { select: selA, _chain: chainA } = makeSelectMock([]);
+    mockedGetDb.mockReturnValue({ select: selA } as never);
+    chainA.where.mockResolvedValue(corpus);
+    const withoutSub = await lookupAlignment(
+      "federal-A123",
+      "healthcare_affordability",
+      "in_favor",
+    );
+
+    // Whole parent corpus: 9 total, 7 with.
+    expect(withoutSub.total).toBe(9);
+    expect(withoutSub.kept).toBe(7);
+    expect(withoutSub.matchedSubIssue).toBeUndefined();
+  });
+
+  it("unknown subIssue (no rows match) falls back to parent", async () => {
+    const { select, _chain } = makeSelectMock([]);
+    mockedGetDb.mockReturnValue({ select } as never);
+    _chain.where.mockResolvedValue(healthcareCorpus());
+
+    const result = await lookupAlignment(
+      "federal-A123",
+      "healthcare_affordability",
+      "in_favor",
+      "not_a_real_sub_issue",
+    );
+
+    // No sub-rows → 0 scorable → fall back to full parent corpus (9 total / 7).
+    expect(result.total).toBe(9);
+    expect(result.kept).toBe(7);
+    expect(result.matchedSubIssue).toBeUndefined();
+  });
+
+  it("threshold is on SCORABLE rows: abstain sub-rows don't trip the prefer path", async () => {
+    const { select, _chain } = makeSelectMock([]);
+    mockedGetDb.mockReturnValue({ select } as never);
+
+    // 6 drug_prices rows but only 4 are scorable (2 are abstains) → under the
+    // threshold of 5 scorable → fall back to the full 6-row parent corpus.
+    _chain.where.mockResolvedValue([
+      {
+        billTitle: "Drug 1",
+        billSourceUrl: "https://govtrack.us/bill/1",
+        billSource: "govtrack",
+        voteCast: "yea",
+        voteDate: "2024-05-01",
+        stanceLens: "in_favor",
+        taggerConfidence: "0.9",
+        subIssue: "drug_prices",
+      },
+      {
+        billTitle: "Drug 2",
+        billSourceUrl: "https://govtrack.us/bill/2",
+        billSource: "govtrack",
+        voteCast: "yea",
+        voteDate: "2024-04-01",
+        stanceLens: "in_favor",
+        taggerConfidence: "0.85",
+        subIssue: "drug_prices",
+      },
+      {
+        billTitle: "Drug 3",
+        billSourceUrl: "https://govtrack.us/bill/3",
+        billSource: "govtrack",
+        voteCast: "yea",
+        voteDate: "2024-03-01",
+        stanceLens: "in_favor",
+        taggerConfidence: "0.8",
+        subIssue: "drug_prices",
+      },
+      {
+        billTitle: "Drug 4",
+        billSourceUrl: "https://govtrack.us/bill/4",
+        billSource: "govtrack",
+        voteCast: "yea",
+        voteDate: "2024-02-01",
+        stanceLens: "in_favor",
+        taggerConfidence: "0.75",
+        subIssue: "drug_prices",
+      },
+      {
+        billTitle: "Drug 5 (abstain)",
+        billSourceUrl: "https://govtrack.us/bill/5",
+        billSource: "govtrack",
+        voteCast: "present",
+        voteDate: "2024-01-01",
+        stanceLens: "in_favor",
+        taggerConfidence: "0.7",
+        subIssue: "drug_prices",
+      },
+      {
+        billTitle: "Drug 6 (abstain)",
+        billSourceUrl: "https://govtrack.us/bill/6",
+        billSource: "govtrack",
+        voteCast: "absent",
+        voteDate: "2023-12-01",
+        stanceLens: "in_favor",
+        taggerConfidence: "0.65",
+        subIssue: "drug_prices",
+      },
+    ]);
+
+    const result = await lookupAlignment(
+      "federal-A123",
+      "healthcare_affordability",
+      "in_favor",
+      "drug_prices",
+    );
+
+    // 4 scorable sub-rows < 5 → fall back to parent. The 2 abstains drop in the
+    // existing pipeline, so the parent total is 4 (all "with").
+    expect(result.total).toBe(4);
+    expect(result.kept).toBe(4);
+    expect(result.matchedSubIssue).toBeUndefined();
+  });
+
+  it("selects subIssue under BOTH can2026 branches (field flows through each flag state)", async () => {
+    const corpus = healthcareCorpus();
+
+    // Flag OFF (default in this suite): prefer path still fires.
+    const { select: selOff, _chain: chainOff } = makeSelectMock([]);
+    mockedGetDb.mockReturnValue({ select: selOff } as never);
+    chainOff.where.mockResolvedValue(corpus);
+    const off = await lookupAlignment(
+      "federal-A123",
+      "healthcare_affordability",
+      "in_favor",
+      "drug_prices",
+    );
+    expect(off.matchedSubIssue).toBe("drug_prices");
+    expect(off.total).toBe(5);
+
+    // Flag ON: the can2026-enabled select branch also carries subIssue. The
+    // CAN2026 query path adds a `narrative` column but the prefer/fallback logic
+    // reads only `subIssue`, so the same fixture exercises the branch.
+    vi.stubEnv("CAN2026_DISPLAY_ENABLED", "1");
+    const { select: selOn, _chain: chainOn } = makeSelectMock([]);
+    mockedGetDb.mockReturnValue({ select: selOn } as never);
+    chainOn.where.mockResolvedValue(corpus);
+    const on = await lookupAlignment(
+      "federal-A123",
+      "healthcare_affordability",
+      "in_favor",
+      "drug_prices",
+    );
+    expect(on.matchedSubIssue).toBe("drug_prices");
+    expect(on.total).toBe(5);
+    vi.unstubAllEnvs();
   });
 });
 
