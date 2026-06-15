@@ -9,7 +9,11 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { incrementSessionCounters } from "../../../lib/server/counters";
+import {
+  incrementSessionCounters,
+  recordConcernEvents,
+  type ConcernEvent,
+} from "../../../lib/server/counters";
 import { checkCounterRateLimit } from "../../../lib/server/counters-rate-limit";
 
 // ---------------------------------------------------------------------------
@@ -17,6 +21,7 @@ import { checkCounterRateLimit } from "../../../lib/server/counters-rate-limit";
 // ---------------------------------------------------------------------------
 
 const VALID_PRIMARIES = new Set(["DEM", "REP", "OPEN", "GENERAL"]);
+const VALID_CONFIDENCE = new Set(["clear", "low", "off_topic"]);
 
 interface CounterBody {
   sessionId: string;
@@ -24,6 +29,7 @@ interface CounterBody {
   county?: string | null;
   primary: "DEM" | "REP" | "OPEN" | "GENERAL";
   confirmedConcerns?: Array<{ canonicalIssue: string }>;
+  concernEvents?: ConcernEvent[];
   picks?: Array<{ race: string; candidateId: string }>;
 }
 
@@ -62,6 +68,41 @@ function validateBody(body: unknown): CounterBody | null {
       .map((c) => ({ canonicalIssue: c.canonicalIssue.slice(0, 64) }));
   }
 
+  // concernEvents: optional array of per-concern event rows (state + issue
+  // signal only). Defensive parsing mirrors confirmedConcerns above.
+  let concernEvents: ConcernEvent[] = [];
+  if (Array.isArray(b.concernEvents)) {
+    concernEvents = b.concernEvents
+      .filter(
+        (c): c is Record<string, unknown> =>
+          typeof c === "object" && c !== null,
+      )
+      .slice(0, 50) // Guard oversized arrays
+      .map((c) => {
+        const confidence =
+          typeof c.confidence === "string" && VALID_CONFIDENCE.has(c.confidence)
+            ? (c.confidence as ConcernEvent["confidence"])
+            : "clear";
+        return {
+          canonicalIssue:
+            typeof c.canonicalIssue === "string"
+              ? c.canonicalIssue.slice(0, 64)
+              : null,
+          offTopicLabel:
+            typeof c.offTopicLabel === "string"
+              ? c.offTopicLabel.slice(0, 120)
+              : null,
+          stance: typeof c.stance === "string" ? c.stance.slice(0, 64) : null,
+          rank:
+            typeof c.rank === "number" && Number.isFinite(c.rank)
+              ? Math.trunc(c.rank)
+              : null,
+          confidence,
+          wasOffTopic: c.wasOffTopic === true || confidence === "off_topic",
+        };
+      });
+  }
+
   // picks: optional array of {race, candidateId}
   let picks: Array<{ race: string; candidateId: string }> = [];
   if (Array.isArray(b.picks)) {
@@ -86,6 +127,7 @@ function validateBody(body: unknown): CounterBody | null {
     county,
     primary: b.primary as "DEM" | "REP" | "OPEN" | "GENERAL",
     confirmedConcerns,
+    concernEvents,
     picks,
   };
 }
@@ -139,5 +181,17 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     confirmedConcerns: body.confirmedConcerns ?? [],
     picks: body.picks ?? [],
   });
+
+  // Persist anonymous per-concern event rows (best-effort, isolated from the
+  // counter result). Gated on !alreadyCounted so the Redis 1-hour dedupe
+  // doubles as the event-row dedupe — re-POSTs within the window don't
+  // double-write.
+  if (!result.alreadyCounted) {
+    await recordConcernEvents({
+      stateCode: body.stateCode,
+      concernEvents: body.concernEvents ?? [],
+    });
+  }
+
   return NextResponse.json(result, { status: 200 });
 }

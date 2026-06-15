@@ -139,6 +139,7 @@ export interface UserIssue {
   canonicalIssue?: string;
   interpretation: string;
   stance?: string;
+  confidence?: "clear" | "low" | "off_topic";
   rank?: number;
   level: IssueLevel;
   quotes?: { label: string; text: string }[];
@@ -146,7 +147,12 @@ export interface UserIssue {
 
 /** Decorate locked cold-open issues with the jurisdiction-lean level tag. */
 export function decorateIssues(
-  issues: Array<{ canonicalIssue?: string; interpretation?: string }>,
+  issues: Array<{
+    canonicalIssue?: string;
+    interpretation?: string;
+    stance?: string;
+    confidence?: "clear" | "low" | "off_topic";
+  }>,
 ): UserIssue[] {
   return (issues || [])
     .filter((i) => i && (i.interpretation || i.canonicalIssue))
@@ -757,9 +763,22 @@ export async function submitSessionCounters(input: {
         stateCode: input.stateCode,
         county: input.county,
         primary: "GENERAL",
+        // Redis counters: unchanged — mapped issues only.
         confirmedConcerns: (input.issues || [])
           .filter((i) => i.canonicalIssue)
           .map((i) => ({ canonicalIssue: i.canonicalIssue })),
+        // Postgres event rows: every entry, including unmapped/off-topic.
+        // No identifier, no address — state + issue signal only. The model's
+        // short label is sent only for unmapped entries (taxonomy-gap signal);
+        // never the voter's verbatim words.
+        concernEvents: (input.issues || []).map((i) => ({
+          canonicalIssue: i.canonicalIssue ?? null,
+          offTopicLabel: i.canonicalIssue ? null : (i.interpretation ?? null),
+          stance: i.stance ?? null,
+          rank: i.rank ?? null,
+          confidence: i.confidence ?? "clear",
+          wasOffTopic: i.confidence === "off_topic",
+        })),
         picks: [],
       }),
     });

@@ -1,15 +1,23 @@
 /**
  * Anonymous session counters for the Polis-style overlap visualization.
  *
- * Privacy guarantee: NO individual record is ever written. Counters increment
- * at session-end over aggregate keys only. The dedupe token (sessionId-keyed)
- * is an idempotency guard with 1-hour TTL — it is not a user record.
+ * Privacy guarantee (counters path): NO individual record is ever written.
+ * Counters increment at session-end over aggregate keys only. The dedupe token
+ * (sessionId-keyed) is an idempotency guard with 1-hour TTL — it is not a user
+ * record.
+ *
+ * `recordConcernEvents` (below) is a separate, opt-in Postgres write that
+ * persists per-concern event rows for taxonomy analysis. It stores NO
+ * identifier (no session id), NO address, NO free-text verbatim — state +
+ * issue + stance only — so rows remain unlinkable to a person.
  *
  * Key namespace: voter-choice:counters:*
  * Dedupe namespace: voter-choice:dedupe:*
  */
 
 import { isDurableStoreConfigured, redisCommand } from "./durable-store";
+import { getDb, DB_NOT_CONFIGURED } from "../../../db/client";
+import { voterIssueEvents } from "../../../db/schema";
 
 // ---------------------------------------------------------------------------
 // Public types
@@ -216,6 +224,63 @@ export async function incrementSessionCounters(
   }
 
   return { ok: true, alreadyCounted: false };
+}
+
+// ---------------------------------------------------------------------------
+// recordConcernEvents — anonymous per-concern event rows (Postgres)
+// ---------------------------------------------------------------------------
+
+export interface ConcernEvent {
+  canonicalIssue: string | null;
+  offTopicLabel: string | null;
+  stance: string | null;
+  rank: number | null;
+  confidence: "clear" | "low" | "off_topic";
+  wasOffTopic: boolean;
+}
+
+export interface ConcernEventInput {
+  stateCode: string;
+  concernEvents: ConcernEvent[];
+}
+
+/**
+ * Persist anonymous per-concern event rows at session-end.
+ *
+ * Best-effort and fully isolated from the counter path: it never throws and
+ * its outcome never affects the HTTP response. Gated independently on BOTH:
+ *  - VOTER_ISSUE_EVENTS_ENABLED === "true" (kill-switch, default OFF), and
+ *  - DATABASE_URL configured (getDb() !== DB_NOT_CONFIGURED).
+ * Either unset → silent no-op.
+ *
+ * Stores NO identifier (no session id), NO address, NO free-text verbatim.
+ * The caller (route) only invokes this when the session was not already
+ * counted, so the Redis 1-hour dedupe doubles as the event-row dedupe.
+ */
+export async function recordConcernEvents(
+  input: ConcernEventInput,
+): Promise<void> {
+  try {
+    if (process.env.VOTER_ISSUE_EVENTS_ENABLED !== "true") return;
+    if (input.concernEvents.length === 0) return;
+
+    const db = getDb();
+    if (db === DB_NOT_CONFIGURED) return;
+
+    const rows = input.concernEvents.map((e) => ({
+      canonicalIssue: e.canonicalIssue,
+      offTopicLabel: e.offTopicLabel,
+      resolvedStance: e.stance,
+      rank: e.rank,
+      wasOffTopic: e.wasOffTopic,
+      confidenceLevel: e.confidence,
+      stateCode: input.stateCode || null,
+    }));
+
+    await db.insert(voterIssueEvents).values(rows);
+  } catch (err) {
+    console.error("[counters] voter_issue_events insert failed:", err);
+  }
 }
 
 // ---------------------------------------------------------------------------
