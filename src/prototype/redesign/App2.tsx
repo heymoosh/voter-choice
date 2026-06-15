@@ -599,15 +599,21 @@ function App2Inner() {
       return (
         <HomeView
           savedAddress={address}
-          savedSession={null}
+          savedSession={address ? { issues, decisions: verdicts } : null}
           onSubmit={(a) => {
             setAddress(a);
             void startLookup(a);
           }}
           onResumeFromProfile={() => {}}
-          onResumeSession={() => {}}
+          onResumeSession={() => {
+            // In-tab nav: data still in memory — jump straight back.
+            // Post-reload-from-home: issues/verdicts in storage, seats gone — refetch silently.
+            if (seats.length > 0) setStage("workspace");
+            else if (address) void startLookup(address, { resuming: true });
+          }}
           onStartOver={startOver}
           onNavigate={navigate}
+          totalRaces={seats.length || undefined}
         />
       );
     }

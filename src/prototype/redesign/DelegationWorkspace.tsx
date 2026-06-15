@@ -18,7 +18,7 @@
        of the congress-assessment flow. */
 
 import React, { useState, useEffect } from "react";
-import { AppNav, PollingStatusBar } from "../VoterChoiceApp";
+import { AppNav, AppFooter, PollingStatusBar } from "../VoterChoiceApp";
 import { RepCard } from "./RepCard";
 import { SeatChat } from "./SeatChat";
 import { IssueDeltaBanner } from "./IssueDeltaBanner";
@@ -490,6 +490,7 @@ export function DelegationWorkspace({
           />
         </aside>
       </div>
+      <AppFooter compact />
     </div>
   );
 }
