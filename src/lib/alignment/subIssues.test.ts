@@ -117,9 +117,7 @@ describe("validation helpers", () => {
       parseAndValidateSubTag("not_a_real_id", "healthcare_affordability"),
     ).toBeNull();
     expect(parseAndValidateSubTag(123, "healthcare_affordability")).toBeNull();
-    expect(
-      parseAndValidateSubTag(null, "healthcare_affordability"),
-    ).toBeNull();
+    expect(parseAndValidateSubTag(null, "healthcare_affordability")).toBeNull();
     expect(
       parseAndValidateSubTag(undefined, "healthcare_affordability"),
     ).toBeNull();
