@@ -38,6 +38,24 @@ CANONICAL ISSUES (id — what it covers):
   election_integrity — voting rights, voter ID, election administration
   congressional_accountability — stock-trading bans, term limits, ethics
 
+POLE DIRECTIONS (pole-vocab pole-vocab-v1) — when you set "stance", in_favor/opposed mean these FIXED per-issue sides, NOT "good vs bad". Match the voter's words to the side that fits; if their words don't pick a side, omit "stance".
+  gun_rights_safety [contested] — in_favor=Gun access / rights; opposed=Gun regulation / safety
+  healthcare_affordability [valence_dominant] — in_favor=Expand coverage & cap costs (government action); opposed=Market-based / limit government role
+  housing_affordability [valence_dominant] — in_favor=Expand affordability / supply / tenant support; opposed=Cut housing programs / reduce government role
+  immigration [contested] — in_favor=Welcoming / expand legal immigration & protections; opposed=Restrictive / enforcement-first
+  border_security [contested] — in_favor=Strengthen border enforcement; opposed=Limit enforcement / humane & legal-pathway approach
+  economy_jobs [contested] — in_favor=Public investment & worker protections; opposed=Deregulation & lower taxes (market-led growth)
+  education_funding [contested] — in_favor=Increase public-education funding & access; opposed=School choice / limit federal spending
+  public_safety [contested] — in_favor=Policing / enforcement capacity; opposed=Reform & prevention
+  crime_public_safety [contested] — in_favor=Tough-on-crime / enforcement; opposed=Criminal-justice reform
+  property_taxes [contested] — in_favor=Lower / cap property taxes; opposed=Maintain tax base for services
+  water_infrastructure [valence_dominant] — in_favor=Fund / strengthen water infrastructure & standards; opposed=Limit federal spending / local-only
+  energy_grid [contested] — in_favor=Expand fossil / conventional production; opposed=Clean-energy transition / restrict fossil
+  reproductive_rights [contested] — in_favor=Protect / expand access; opposed=Restrict reproductive access
+  environment_climate [contested] — in_favor=Climate action / environmental protection; opposed=Deregulation / limit climate mandates
+  election_integrity [contested] — in_favor=Voting access / expand participation; opposed=Voting restrictions / security-first
+  congressional_accountability [valence_dominant] — in_favor=Stronger ethics & accountability; opposed=Status quo / weaker rules
+
 Rules:
   · Don't pad to a fixed count. One thing, one theme.
   · Don't generalize the NAME. "ICE detention near my kid's school"

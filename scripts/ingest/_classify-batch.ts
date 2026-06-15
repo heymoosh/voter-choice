@@ -7,6 +7,7 @@
 import * as fs from "node:fs";
 import Anthropic from "@anthropic-ai/sdk";
 import { CANONICAL_ISSUE_LABELS } from "../../src/lib/canonicalIssues";
+import { renderTaggerPoleBlock } from "../../src/lib/alignment/poleVocabulary";
 
 interface BillRow {
   id: string;
@@ -39,20 +40,13 @@ const VALID_STANCE_LENSES = new Set(["in_favor", "opposed"]);
 const MAX_SUMMARY_CHARS = 4000;
 
 function buildSystemPrompt(): string {
-  const issueList = Object.entries(CANONICAL_ISSUE_LABELS)
-    .map(([id, label]) => `  - ${id}: ${label}`)
-    .join("\n");
-
   return `You are a nonpartisan legislative analyst. Your job is to classify bills by canonical policy issues.
 
-CANONICAL ISSUE IDs AND LABELS:
-${issueList}
+${renderTaggerPoleBlock()}
 
 For each bill you receive, return a JSON array of tag objects. Each object must have exactly these fields:
   - "canonical_issue": one of the canonical issue IDs above (exact string match required)
-  - "stance_lens": "in_favor" or "opposed" — what voting YEA on this bill MEANS for that issue
-    * "in_favor": a YEA vote supports / expands / funds this issue
-    * "opposed": a YEA vote restricts / cuts / opposes this issue
+  - "stance_lens": "in_favor" or "opposed" — what voting YEA on this bill MEANS for that issue, per the POLE DEFINITIONS above
   - "confidence": a number from 0.0 to 1.0 representing your certainty
 
 Rules:
@@ -112,13 +106,13 @@ function parseAndValidateTags(rawJson: string, billId: string): ValidatedTag[] {
 
     if (typeof canonicalIssue !== "string") {
       console.error(
-        `[classify] drop bill=${billId} reason=non_string_canonical_issue`
+        `[classify] drop bill=${billId} reason=non_string_canonical_issue`,
       );
       continue;
     }
     if (!VALID_CANONICAL_ISSUES.has(canonicalIssue)) {
       console.error(
-        `[classify] drop bill=${billId} canonical_issue=${canonicalIssue} reason=unknown_canonical_issue`
+        `[classify] drop bill=${billId} canonical_issue=${canonicalIssue} reason=unknown_canonical_issue`,
       );
       continue;
     }
@@ -127,7 +121,7 @@ function parseAndValidateTags(rawJson: string, billId: string): ValidatedTag[] {
       !VALID_STANCE_LENSES.has(stanceLens)
     ) {
       console.error(
-        `[classify] drop bill=${billId} stance_lens=${String(stanceLens)} reason=invalid_stance_lens`
+        `[classify] drop bill=${billId} stance_lens=${String(stanceLens)} reason=invalid_stance_lens`,
       );
       continue;
     }
@@ -135,7 +129,7 @@ function parseAndValidateTags(rawJson: string, billId: string): ValidatedTag[] {
       if (typeof confidence === "number") {
         const clamped = Math.min(1, Math.max(0, confidence));
         console.error(
-          `[classify] clamp bill=${billId} canonical_issue=${canonicalIssue} confidence=${confidence} -> ${clamped}`
+          `[classify] clamp bill=${billId} canonical_issue=${canonicalIssue} confidence=${confidence} -> ${clamped}`,
         );
         valid.push({
           canonicalIssue,
@@ -145,7 +139,7 @@ function parseAndValidateTags(rawJson: string, billId: string): ValidatedTag[] {
         continue;
       }
       console.error(
-        `[classify] drop bill=${billId} canonical_issue=${canonicalIssue} reason=invalid_confidence`
+        `[classify] drop bill=${billId} canonical_issue=${canonicalIssue} reason=invalid_confidence`,
       );
       continue;
     }
@@ -163,7 +157,7 @@ function parseAndValidateTags(rawJson: string, billId: string): ValidatedTag[] {
 async function classifyBill(
   bill: BillRow,
   client: Anthropic,
-  systemPrompt: string
+  systemPrompt: string,
 ): Promise<ValidatedTag[]> {
   const response = await client.messages.create({
     model: "claude-haiku-4-5-20251001",
@@ -191,7 +185,7 @@ async function main() {
 
   if (!inputPath || !outputPath) {
     console.error(
-      "Usage: npx tsx _classify-batch.ts <input.json> <output.json>"
+      "Usage: npx tsx _classify-batch.ts <input.json> <output.json>",
     );
     process.exit(1);
   }
@@ -229,16 +223,14 @@ async function main() {
             confidence: Math.round(tag.confidence * 1000) / 1000,
           });
         });
-        console.log(
-          `[classify] bill=${bill.id} tags=${tags.length}`
-        );
+        console.log(`[classify] bill=${bill.id} tags=${tags.length}`);
       } else {
         console.log(`[classify] bill=${bill.id} no_tags`);
       }
     } catch (e) {
       console.error(
         `[classify] error bill=${bill.id}:`,
-        e instanceof Error ? e.message : String(e)
+        e instanceof Error ? e.message : String(e),
       );
     }
 
@@ -250,7 +242,7 @@ async function main() {
 
   fs.writeFileSync(outputPath, JSON.stringify(allTags, null, 2));
   console.log(
-    `[classify] complete bills_processed=${billsProcessed} bills_tagged=${billsTagged} tags_total=${tagsTotal} output=${outputPath}`
+    `[classify] complete bills_processed=${billsProcessed} bills_tagged=${billsTagged} tags_total=${tagsTotal} output=${outputPath}`,
   );
 }
 

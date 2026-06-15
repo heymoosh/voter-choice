@@ -1,3 +1,5 @@
+import { renderResolverPoleDirections } from "../alignment/poleVocabulary";
+
 export interface ThemeExtractionInput {
   userInput: string;
 }
@@ -39,7 +41,9 @@ export const CANONICAL_ISSUES_PROMPT_BLOCK = `CANONICAL ISSUES (id — what it c
   water_infrastructure — water access, treatment, dams
   property_taxes — property tax rates, assessments
   election_integrity — voting rights, voter ID, election administration
-  congressional_accountability — stock-trading bans, term limits, ethics`;
+  congressional_accountability — stock-trading bans, term limits, ethics
+
+${renderResolverPoleDirections()}`;
 
 export function buildThemeExtractionPrompt(
   input: ThemeExtractionInput,

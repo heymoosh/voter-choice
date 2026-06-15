@@ -12,7 +12,12 @@ const LIMIT = 1500;
 // each covers) so the model can map the voter's words → a known issue id at
 // cold-open. That vocab is load-bearing for downstream alignment scoring, so
 // the prompt is intentionally longer than the 1500 baseline.
-const THEME_EXTRACTION_LIMIT = 3500;
+// It ALSO carries the shared POLE DIRECTIONS block (src/lib/alignment/
+// poleVocabulary.ts) so in_favor/opposed mean the same fixed per-issue sides
+// here as in the bill tagger — the durable fix for the ~40–55% alignment
+// inversion the audit measured. Those 16 pole-direction lines add ~2.9k chars;
+// they are correctness-critical, so bump the ceiling rather than drop them.
+const THEME_EXTRACTION_LIMIT = 5500;
 // P0 #2 (live audit): the race-deep-dive prompt now carries an explicit
 // candidate-resolution rule so the model resolves surnames against
 // <candidates> instead of bouncing the disambiguation back to the voter.
