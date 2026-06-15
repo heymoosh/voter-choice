@@ -592,3 +592,38 @@ export const canCitations = pgTable(
   },
   (t) => [index("can_citations_entity_idx").on(t.entityType, t.entityId)],
 );
+
+// ---------------------------------------------------------------------------
+// voter_issue_events — anonymous per-session concern-interpretation events
+//
+// Persisted at session-end from the same path that increments the Polis
+// counters. Privacy: one row per resolved concern entry, with NO identifier
+// linking rows to a person (no session id), NO address, NO free-text verbatim
+// (no sourceText, no quotes, no interpretation for mapped issues). State +
+// issue + stance only — aggregate-analysis inputs, not individual records.
+// `off_topic_label` carries the model's short label ONLY for unmapped/invented
+// concerns (canonical_issue IS NULL), to surface taxonomy gaps.
+// ---------------------------------------------------------------------------
+export const voterIssueEvents = pgTable(
+  "voter_issue_events",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    canonicalIssue: text("canonical_issue"), // joins to canonicalIssues.ts ids; NULL when off-topic/invented
+    offTopicLabel: text("off_topic_label"), // model's short label, ONLY when canonicalIssue is NULL
+    resolvedStance: text("resolved_stance"), // short prose stance; NULL when unknown
+    rank: integer("rank"), // 1-based priority (serves "care MOST about")
+    wasOffTopic: boolean("was_off_topic").notNull().default(false),
+    confidenceLevel: text("confidence_level").notNull(), // "clear" | "low" | "off_topic"
+    stateCode: text("state_code"), // USPS code, e.g. "TX"; NULL when unknown
+    recordedAt: timestamp("recorded_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    index("voter_issue_events_state_issue_idx").on(
+      t.stateCode,
+      t.canonicalIssue,
+    ),
+    index("voter_issue_events_issue_idx").on(t.canonicalIssue),
+  ],
+);

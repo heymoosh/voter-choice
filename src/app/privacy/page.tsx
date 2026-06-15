@@ -124,6 +124,21 @@ export default function PrivacyPolicy() {
             policies.
           </p>
 
+          {/* Anonymous Issue Signals */}
+          <h2 className="font-serif font-semibold text-2xl tracking-[-0.015em] mt-10 mb-3.5 text-ink">
+            Anonymous Issue Signals
+          </h2>
+          <p className="mb-4">
+            To understand which issues matter to voters and to improve how we
+            classify them, we keep anonymous records of the issue preferences
+            you express &mdash; the issue itself, your stance on it, and your
+            state. These signals carry <em>no</em> identifier that links them
+            back to you or to each other, <em>no</em> address, and <em>none</em>{" "}
+            of your verbatim words. They cannot be tied to a person or to any
+            other signal, so they remain aggregate-analysis inputs rather than
+            individual records.
+          </p>
+
           {/* Address Lookup */}
           <h2 className="font-serif font-semibold text-2xl tracking-[-0.015em] mt-10 mb-3.5 text-ink">
             Address Lookup
