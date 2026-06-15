@@ -3991,10 +3991,10 @@ function MethodologyPage({ onBack }) {
 }
 
 const TIP_AMOUNTS = [
-  { label: '$3',  url: 'https://buy.stripe.com/test_7sY9ATdUWfZ1f9F3PZ4ow01' },
-  { label: '$5',  url: 'https://buy.stripe.com/test_8x27sL18acMP3qX1HR4ow02' },
-  { label: '$10', url: 'https://buy.stripe.com/test_bJe8wPcQSeUXf9F3PZ4ow03' },
-  { label: '$25', url: 'https://buy.stripe.com/test_5kQaEX2cefZ1bXt3PZ4ow04' },
+  { label: '$3',  url: 'https://buy.stripe.com/7sY3cvcQ54cxeL34xc00005' },
+  { label: '$5',  url: 'https://buy.stripe.com/4gM6oH6rHdN76exgfU00006' },
+  { label: '$10', url: 'https://buy.stripe.com/fZu14n17n4cxauN1l000007' },
+  { label: '$25', url: 'https://buy.stripe.com/14AfZheYd9wRbyR4xc00008' },
 ];
 
 function TipJarPage({ onBack }) {
