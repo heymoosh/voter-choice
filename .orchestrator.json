@@ -1,0 +1,6 @@
+{
+  "backlog": "docs/operations/voter-choice-backlog.md",
+  "base_branch": "main",
+  "deploy_workflow": "deploy.yml",
+  "ready_statuses": ["To Do"]
+}
