@@ -99,14 +99,14 @@ export default function TermsOfUse() {
           <h2 className="text-xl font-semibold text-on-surface">No Warranty</h2>
           <p className="text-on-surface">
             This tool is provided &quot;as is&quot; without warranty of any
-            kind. Gray Bird LLC is not liable for any errors, omissions, or
+            kind. Grey Bird LLC is not liable for any errors, omissions, or
             consequences arising from the use of this tool.
           </p>
         </section>
       </article>
 
       <footer className="text-sm text-on-surface-muted pt-6 mt-2">
-        <p>&copy; 2026 Gray Bird LLC. All Rights Reserved.</p>
+        <p>&copy; 2026 Grey Bird LLC. All Rights Reserved.</p>
       </footer>
     </main>
   );

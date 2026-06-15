@@ -3935,7 +3935,7 @@ function StaticPage({ title, eyebrow, children, onBack }) {
 function AboutPage({ onBack }) {
   return (
     <StaticPage onBack={onBack} eyebrow="About Voter Choice" title="A free, non-partisan ballot research tool.">
-      <p>Voter Choice is built and operated by <b>Gray Bird LLC</b>, a small independent shop. We made it because the gap between "what a candidate says in their ads" and "what they actually voted on" has gotten wider every cycle. We thought voters deserved a tool that closes it.</p>
+      <p>Voter Choice is built and operated by <b>Grey Bird LLC</b>, a small independent shop. We made it because the gap between "what a candidate says in their ads" and "what they actually voted on" has gotten wider every cycle. We thought voters deserved a tool that closes it.</p>
 
       <h2>What we do</h2>
       <p>For every race on your ballot, we pull the <b>actual voting record</b> of incumbents (Congress.gov, state legislatures), the <b>funding picture</b> (FEC, OpenSecrets, state ethics commissions), and the <b>editorially-curated context</b> behind each vote (CAN2026 case files). We score how each candidate aligns with the issues YOU told us matter, vote by vote.</p>
@@ -3949,11 +3949,11 @@ function AboutPage({ onBack }) {
       </ul>
 
       <h2>Who pays for this?</h2>
-      <p>Server costs, Anthropic API budget, and the editorial work behind CAN2026 case files are funded by <b>Gray Bird LLC</b> and a small set of individual donors who explicitly do not buy a say in editorial. We publish a quarterly funding statement.</p>
+      <p>Server costs, Anthropic API budget, and the editorial work behind CAN2026 case files are funded by <b>Grey Bird LLC</b> and a small set of individual donors who explicitly do not buy a say in editorial. We publish a quarterly funding statement.</p>
       <p>When our community AI budget runs out, you can bring your own Anthropic API key (Settings → BYOK) or hand off to any chatbot with a portable prompt. We'd rather pause than monetize you.</p>
 
       <h2>Get in touch</h2>
-      <p>Reach Gray Bird LLC at <a href="mailto:muxin.li.pro@gmail.com"><code>muxin.li.pro@gmail.com</code></a>. We answer.</p>
+      <p>Reach Grey Bird LLC at <a href="mailto:muxin.li.pro@gmail.com"><code>muxin.li.pro@gmail.com</code></a>. We answer.</p>
     </StaticPage>
   );
 }
@@ -4013,10 +4013,10 @@ function TipJarPage({ onBack }) {
   return (
     <StaticPage onBack={onBack} eyebrow="Tip jar" title="Voter Choice runs on a small AI budget. Tips keep it free.">
       <p>
-        Voter Choice is built and operated by <b>Gray Bird LLC</b>. There are
+        Voter Choice is built and operated by <b>Grey Bird LLC</b>. There are
         no ads, no tracking, no accounts, and no data sales. Server costs, the
         Anthropic API budget, and the editorial work behind CAN2026 case files
-        are paid for by <b>Gray Bird LLC</b> and small individual contributions.
+        are paid for by <b>Grey Bird LLC</b> and small individual contributions.
       </p>
       <p>
         If Voter Choice helped you make a real decision, a tip helps keep the
@@ -4069,7 +4069,7 @@ function TipJarPage({ onBack }) {
 function PrivacyPage({ onBack }) {
   return (
     <StaticPage onBack={onBack} eyebrow="Privacy policy" title="What stays here, what doesn't.">
-      <p className="sp-meta">Effective April 12, 2026 · Gray Bird LLC</p>
+      <p className="sp-meta">Effective April 12, 2026 · Grey Bird LLC</p>
 
       <h2>Minimal data collection</h2>
       <p>We do not use analytics, telemetry, tracking pixels, accounts, or sign-ups. Across visits, your browser's localStorage keeps only your <b>language preference</b>, your <b>issues</b>, a <b>county-level location</b> (never your street address), and (optionally) a <b>bring-your-own Anthropic key</b>. Your <b>precise address</b> and your <b>in-progress assessment</b> are kept only for the current browser tab and are cleared when you close it. None of this leaves your device unless you take an action that explicitly sends it.</p>
@@ -4259,7 +4259,7 @@ function HomeView({ savedAddress, savedSession, onSubmit, onResumeFromProfile, o
           <li><a onClick={() => onNavigate && onNavigate('tip')} role="link" tabIndex={0}>Tip jar</a></li>
           <li><a href="mailto:muxin.li.pro@gmail.com">Support</a></li>
         </ul>
-        <div>© 2026 · Gray Bird LLC</div>
+        <div>© 2026 · Grey Bird LLC</div>
       </footer>
     </>
   );

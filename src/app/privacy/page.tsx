@@ -31,14 +31,14 @@ export default function PrivacyPolicy() {
 
         {/* Meta — effective date */}
         <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-3 mb-6">
-          Effective April 12, 2026 &middot; Gray Bird LLC
+          Effective April 12, 2026 &middot; Grey Bird LLC
         </p>
 
         {/* Article body */}
         <article className="font-serif text-[17px] leading-[1.65] text-ink space-y-0">
           {/* Intro */}
           <p className="mb-4">
-            Voter Choice is operated by Gray Bird LLC. We built this tool to
+            Voter Choice is operated by Grey Bird LLC. We built this tool to
             minimize data collection and to keep your ballot research under your
             control.
           </p>
@@ -176,7 +176,7 @@ export default function PrivacyPolicy() {
           </h2>
           <p className="mb-4">
             Questions about this policy? Reach out at{" "}
-            <strong>Gray Bird LLC</strong>:{" "}
+            <strong>Grey Bird LLC</strong>:{" "}
             <a
               href="mailto:muxin.li.pro@gmail.com"
               className="text-civic underline underline-offset-[3px]"
@@ -191,7 +191,7 @@ export default function PrivacyPolicy() {
 
         {/* Footer */}
         <footer className="font-mono text-[11px] text-ink-3 pt-6 mt-2 border-t border-rule-2">
-          <p>&copy; 2026 Gray Bird LLC. All Rights Reserved.</p>
+          <p>&copy; 2026 Grey Bird LLC. All Rights Reserved.</p>
         </footer>
       </div>
     </main>
