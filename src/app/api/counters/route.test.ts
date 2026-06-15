@@ -1,7 +1,10 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { POST } from "./route";
 import { _resetRateLimitForTesting } from "../../../lib/server/counters-rate-limit";
-import { _resetMemoryForTesting } from "../../../lib/server/counters";
+import {
+  _resetMemoryForTesting,
+  fetchPolisAggregate,
+} from "../../../lib/server/counters";
 import { NextRequest } from "next/server";
 
 // ---------------------------------------------------------------------------
@@ -26,7 +29,6 @@ function makeRequest(
 const VALID_BODY = {
   sessionId: "sess-test-001",
   stateCode: "TX",
-  county: "Harris",
   primary: "DEM",
   confirmedConcerns: [{ canonicalIssue: "healthcare_affordability" }],
   picks: [{ race: "governor", candidateId: "candidate-a" }],
@@ -108,32 +110,22 @@ describe("POST /api/counters", () => {
     expect(res.status).toBe(429);
   });
 
-  it("county=null is accepted and normalized", async () => {
+  it("privacy: a county in the body is silently dropped — never stored", async () => {
+    // Even if a client (or attacker) sends county, the route must collect
+    // state-level only. We verify nothing landed in the county bucket.
     const body = {
       ...VALID_BODY,
-      sessionId: `sess-null-county-${Date.now()}`,
-      county: null,
+      sessionId: `sess-county-drop-${Date.now()}`,
+      county: "Harris",
     };
-    const req = makeRequest(body);
-    const res = await POST(req);
-
+    const res = await POST(makeRequest(body));
     expect(res.status).toBe(200);
-    const json = await res.json();
-    expect(json.ok).toBe(true);
-  });
+    expect((await res.json()).ok).toBe(true);
 
-  it("county omitted is accepted", async () => {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { county: _, ...bodyWithoutCounty } = VALID_BODY;
-    const body = {
-      ...bodyWithoutCounty,
-      sessionId: `sess-no-county-${Date.now()}`,
-    };
-    const req = makeRequest(body);
-    const res = await POST(req);
-
-    expect(res.status).toBe(200);
-    const json = await res.json();
-    expect(json.ok).toBe(true);
+    // The session counted at the STATE level; the Harris county bucket is empty,
+    // so resolution falls back to state (county is never represented).
+    const agg = await fetchPolisAggregate("TX", "Harris");
+    expect(agg.scope).toBe("state");
+    expect(agg.sampleSize).toBe(1);
   });
 });

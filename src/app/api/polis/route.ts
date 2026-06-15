@@ -2,21 +2,28 @@
  * GET /api/polis?stateCode=TX&county=Harris&userConcerns=healthcare_affordability,education_funding
  * GET /api/polis?scope=national&userConcerns=…   (2026 redesign — national zoom)
  *
- * Returns the polis visualization aggregate:
- *  - scope and threshold status
- *  - synthetic dots (one per sample, colored by primary) from aggregate distribution
- *  - "you" dot projected into the same 2D space (or null)
- *  - consensus panel (top 5 issues by total count)
- *  - groups: per-primary session counts with their top issues (lets the
- *    client name clusters by shared priority instead of party)
+ * Returns the party-free "overlap cloud" aggregate:
+ *  - `dots`: one synthetic dot per finished session (capped at MAX_DOTS),
+ *    positioned by the priorities people SHARE — never by party. Below the cap
+ *    the dot count equals the real sample, so the cloud never overstates how
+ *    many people have finished.
+ *  - `you`: the voter projected into the same space from their own concerns
+ *    (or null when issue intake was skipped).
+ *  - `consensus`: the top issues by total count (shared-priority panel).
+ *  - `overlap`: the personalized prevalence stat — how many people share the
+ *    voter's top priority. This is the emotional payoff ("you're less divided
+ *    than you think") and it is computed from real counts.
+ *  - `issueRegions`: anchor positions + weights for the most common priorities,
+ *    used for faint on-cloud labels and the screen-reader summary.
  *
- * Dimension reduction: simplified 2D projection using issue-share vectors.
- * Each primary's distribution is projected into 2D using the top-2 PCA components
- * via power iteration over the covariance of all primary issue-share vectors.
+ * Layout: each canonical issue gets a deterministic anchor on a ring; a dot is
+ * placed near the anchor of a dominant issue sampled in proportion to how many
+ * people prioritize it, then pulled toward the center so the whole thing reads
+ * as ONE overlapping cloud. Positions are arbitrary-but-stable — the visual
+ * goal is shared-priority density and overlap, not axis meaning.
  *
- * If fewer than 2 distinct primaries have data, the projection falls back to
- * a cluster-by-primary layout with random jitter. This is invisible to the user
- * (the visual goal is clusters with overlap, not a specific eigenvector meaning).
+ * Privacy: aggregate counts only — no individual record exists. Dots are a
+ * representative rendering of the aggregate, not stored responses.
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -25,466 +32,256 @@ import {
   fetchNationalPolisAggregate,
   type PolisAggregate,
 } from "../../../lib/server/counters";
-import { getIssueLabel } from "../../../lib/canonicalIssues";
+import {
+  getIssueLabel,
+  CANONICAL_ISSUE_LABELS,
+} from "../../../lib/canonicalIssues";
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
-export interface PolisGroup {
-  primary: string;
-  count: number;
-  /** Top canonical issues for this group, most-confirmed first (≤3). */
-  topIssues: string[];
+export interface IssueStat {
+  canonicalIssue: string;
+  issueLabel: string;
+  /** Share of finished sessions that prioritize this issue (0–100). */
+  percent: number;
+}
+
+export interface IssueRegion extends IssueStat {
+  /** Anchor position in the same [-1,1] space the dots use. */
+  x: number;
+  y: number;
 }
 
 export interface PolisResponse {
   scope: "county" | "state" | "national";
   sampleSize: number;
+  /** Informational only — no longer gates display. */
   thresholdMet: boolean;
-  countToUnlock?: number;
-  dots: Array<{ x: number; y: number; primary: string }>;
+  /** One dot per finished session (capped). Party-free: just positions. */
+  dots: Array<{ x: number; y: number }>;
   you: { x: number; y: number } | null;
-  consensus: Array<{
-    canonicalIssue: string;
-    issueLabel: string;
-    percent: number;
-  }>;
-  groups: PolisGroup[];
+  consensus: IssueStat[];
+  overlap: {
+    /** Most-shared priority across everyone in scope (or null when empty). */
+    mostCommon: IssueStat | null;
+    /** The voter's own priorities + how many share each (≤3, ordered). */
+    youShares: IssueStat[];
+  };
+  /** Top shared priorities with anchor positions, for labels + a11y. */
+  issueRegions: IssueRegion[];
 }
 
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
 
-const THRESHOLD = 200;
-const MAX_DOTS_PER_PRIMARY = 200;
-const MIN_DOTS_PER_PRIMARY = 30;
-
-// Primary cluster centers for the fallback layout (when PCA cannot be computed).
-// These positions are chosen so DEM/REP overlap partially, and OPEN/GENERAL bridge.
-const FALLBACK_CENTERS: Record<string, [number, number]> = {
-  DEM: [-0.6, 0.2],
-  REP: [0.6, -0.2],
-  OPEN: [0.0, 0.3],
-  GENERAL: [0.0, -0.3],
-};
+const THRESHOLD = 200; // informational only (kept for the thresholdMet field)
+const MAX_DOTS = 1200; // render cap; at or below this, one dot per session
+const ISSUE_KEYS = Object.keys(CANONICAL_ISSUE_LABELS);
+const ANCHOR_RADIUS = 0.74; // issue anchors sit on this ring
+const CENTER_PULL = 0.6; // pull anchors toward center → one cohesive cloud
+const JITTER = 0.2; // per-dot Gaussian spread in normalized space
 
 // ---------------------------------------------------------------------------
-// Math utilities (no external deps)
+// Small utilities
 // ---------------------------------------------------------------------------
 
-/** Dot product of two vectors. */
-function dot(a: number[], b: number[]): number {
-  let sum = 0;
-  for (let i = 0; i < a.length; i++) sum += a[i] * b[i];
-  return sum;
-}
+const clamp = (v: number, lo: number, hi: number) =>
+  Math.max(lo, Math.min(hi, v));
+const round3 = (v: number) => Math.round(v * 1000) / 1000;
 
-/** Scale a vector by a scalar. */
-function scale(v: number[], s: number): number[] {
-  return v.map((x) => x * s);
-}
-
-/** Subtract two vectors. */
-function sub(a: number[], b: number[]): number[] {
-  return a.map((x, i) => x - b[i]);
-}
-
-/** L2 norm. */
-function norm(v: number[]): number {
-  return Math.sqrt(dot(v, v));
-}
-
-/** Normalize a vector. Returns zero vector if norm is ~0. */
-function normalize(v: number[]): number[] {
-  const n = norm(v);
-  return n < 1e-10 ? v.map(() => 0) : scale(v, 1 / n);
-}
-
-/** Matrix-vector product: A is rows×cols matrix (row-major), v is cols-length. */
-function matVec(A: number[][], v: number[]): number[] {
-  return A.map((row) => dot(row, v));
-}
-
-/**
- * Power iteration to find the dominant eigenvector of a symmetric matrix.
- * Returns the eigenvector after up to `maxIter` iterations.
- */
-function powerIteration(A: number[][], maxIter = 50): number[] {
-  const n = A.length;
-  let v = Array.from({ length: n }, (_, i) => (i === 0 ? 1 : 0.1 * (i + 1)));
-  v = normalize(v);
-  for (let iter = 0; iter < maxIter; iter++) {
-    const w = matVec(A, v);
-    const wn = normalize(w);
-    // Converged?
-    const diff = norm(sub(wn, v));
-    v = wn;
-    if (diff < 1e-6) break;
-  }
-  return v;
-}
-
-/**
- * Build the covariance matrix of a set of row vectors (each row = one observation).
- * Returns a (cols × cols) symmetric matrix.
- */
-function covarianceMatrix(rows: number[][]): number[][] {
-  const n = rows.length;
-  const d = rows[0].length;
-  const means = Array.from(
-    { length: d },
-    (_, j) => rows.reduce((s, r) => s + r[j], 0) / n,
-  );
-  const centered = rows.map((r) => r.map((x, j) => x - means[j]));
-  // Cov = (1/(n-1)) * centered^T * centered
-  const cov: number[][] = Array.from({ length: d }, () =>
-    new Array<number>(d).fill(0),
-  );
-  for (const row of centered) {
-    for (let i = 0; i < d; i++) {
-      for (let j = 0; j < d; j++) {
-        cov[i][j] += row[i] * row[j];
-      }
-    }
-  }
-  const factor = n > 1 ? n - 1 : 1;
-  for (let i = 0; i < d; i++) for (let j = 0; j < d; j++) cov[i][j] /= factor;
-  return cov;
-}
-
-/**
- * Deflate: subtract the rank-1 component of v from matrix A.
- * Used to find the second eigenvector after finding the first.
- */
-function deflate(A: number[][], v: number[], eigenvalue: number): number[][] {
-  return A.map((row, i) => row.map((val, j) => val - eigenvalue * v[i] * v[j]));
-}
-
-/**
- * Compute top-2 PCA components of the given row matrix.
- * Returns [pc1, pc2] as unit vectors, or null if matrix is too small.
- */
-function pca2(rows: number[][]): [number[], number[]] | null {
-  if (rows.length < 2 || rows[0].length < 2) return null;
-
-  const cov = covarianceMatrix(rows);
-  const pc1 = powerIteration(cov);
-  const lambda1 = dot(pc1, matVec(cov, pc1));
-  const cov2 = deflate(cov, pc1, lambda1);
-  const pc2 = powerIteration(cov2);
-
-  // Sanity: if both components are nearly zero, projection is degenerate
-  if (norm(pc1) < 0.01 || norm(pc2) < 0.01) return null;
-
-  return [pc1, pc2];
-}
-
-// ---------------------------------------------------------------------------
-// Seeded pseudo-random (for deterministic dot placement on the same aggregate)
-// ---------------------------------------------------------------------------
-
+/** Seeded LCG — deterministic dot placement for a given aggregate. */
 function seededRandom(seed: number): () => number {
-  let s = seed;
+  let s = seed >>> 0 || 1;
   return () => {
-    s = (s * 1664525 + 1013904223) & 0xffffffff;
-    return (s >>> 0) / 0xffffffff;
+    s = (s * 1664525 + 1013904223) >>> 0;
+    return s / 0xffffffff;
   };
 }
 
-// ---------------------------------------------------------------------------
-// Dot generation
-// ---------------------------------------------------------------------------
-
-/**
- * Build issue-share vectors per primary from aggregate data.
- * Each vector has one entry per canonical issue, normalized to sum=1.
- */
-function buildIssueShareVectors(
-  agg: PolisAggregate,
-): Map<string, { vector: number[]; issues: string[] }> {
-  // Collect all canonical issues
-  const issueSet = new Set<string>();
-  for (const ic of agg.issueCounts) issueSet.add(ic.canonicalIssue);
-  const issues = Array.from(issueSet).sort();
-
-  if (issues.length === 0) return new Map();
-
-  const result = new Map<string, { vector: number[]; issues: string[] }>();
-
-  for (const pt of agg.primaryTotals) {
-    if (pt.count === 0) continue;
-    const vec = issues.map((issue) => {
-      const entry = agg.issueCounts.find(
-        (ic) => ic.canonicalIssue === issue && ic.primary === pt.primary,
-      );
-      return entry ? entry.count / pt.count : 0;
-    });
-    result.set(pt.primary, { vector: vec, issues });
-  }
-
-  return result;
+/** Box-Muller: uniform pair → ~standard-normal. */
+function gauss(rand: () => number): number {
+  const u1 = Math.max(rand(), 1e-10);
+  const u2 = rand();
+  return Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
 }
 
 /**
- * Project primaries into 2D. Uses PCA when possible, falls back to
- * fixed cluster centers with primary-specific offsets when not.
- *
- * Returns per-primary center coordinates in [-1, 1]^2 space.
+ * Deterministic anchor for a canonical issue: evenly spaced on a ring by its
+ * position in the canonical catalog. Unknown ids hash to a stable angle so they
+ * still land somewhere consistent.
  */
-function projectPrimaries(agg: PolisAggregate): Map<string, [number, number]> {
-  const shareVectors = buildIssueShareVectors(agg);
-  const primariesWithData = Array.from(shareVectors.keys());
+function issueAnchor(issue: string): [number, number] {
+  let idx = ISSUE_KEYS.indexOf(issue);
+  let n = ISSUE_KEYS.length;
+  if (idx < 0) {
+    let h = 0;
+    for (let i = 0; i < issue.length; i++)
+      h = (h * 31 + issue.charCodeAt(i)) | 0;
+    idx = Math.abs(h) % 360;
+    n = 360;
+  }
+  const angle = (2 * Math.PI * idx) / n;
+  return [Math.cos(angle) * ANCHOR_RADIUS, Math.sin(angle) * ANCHOR_RADIUS];
+}
 
-  // Need at least 2 primaries with issue data and at least 2 issues to attempt PCA
-  const firstVectorEntry = Array.from(shareVectors.values())[0];
-  const issueCount = firstVectorEntry?.vector.length ?? 0;
-  if (primariesWithData.length >= 2 && issueCount >= 2) {
-    const rows = primariesWithData.map((p) => shareVectors.get(p)!.vector);
-    const pcaResult = pca2(rows);
+// ---------------------------------------------------------------------------
+// Issue totals (party-free: summed across every primary)
+// ---------------------------------------------------------------------------
 
-    if (pcaResult) {
-      const [pc1, pc2] = pcaResult;
-      const projections = new Map<string, [number, number]>();
+/** canonicalIssue → number of finished sessions that prioritized it. */
+function perIssueTotals(agg: PolisAggregate): Map<string, number> {
+  const totals = new Map<string, number>();
+  for (const ic of agg.issueCounts) {
+    totals.set(
+      ic.canonicalIssue,
+      (totals.get(ic.canonicalIssue) ?? 0) + ic.count,
+    );
+  }
+  return totals;
+}
 
-      // Project each primary's share vector onto (pc1, pc2)
-      const rawCoords = primariesWithData.map((p) => {
-        const { vector } = shareVectors.get(p)!;
-        return { primary: p, x: dot(vector, pc1), y: dot(vector, pc2) };
-      });
+// ---------------------------------------------------------------------------
+// Cloud generation
+// ---------------------------------------------------------------------------
 
-      // Normalize to [-1, 1]
-      const xs = rawCoords.map((c) => c.x);
-      const ys = rawCoords.map((c) => c.y);
-      const xMin = Math.min(...xs);
-      const xMax = Math.max(...xs);
-      const yMin = Math.min(...ys);
-      const yMax = Math.max(...ys);
-      const xRange = xMax - xMin || 1;
-      const yRange = yMax - yMin || 1;
-
-      for (const { primary, x, y } of rawCoords) {
-        projections.set(primary, [
-          ((x - xMin) / xRange) * 2 - 1,
-          ((y - yMin) / yRange) * 2 - 1,
-        ]);
-      }
-      return projections;
+/** Build a weighted issue picker over the totals. Returns null when empty. */
+function makeIssuePicker(
+  totals: Map<string, number>,
+  rand: () => number,
+): () => string | null {
+  const entries = [...totals.entries()].filter(([, c]) => c > 0);
+  const sum = entries.reduce((s, [, c]) => s + c, 0);
+  if (sum === 0) return () => null;
+  return () => {
+    let r = rand() * sum;
+    for (const [issue, c] of entries) {
+      r -= c;
+      if (r <= 0) return issue;
     }
-  }
-
-  // Fallback: fixed cluster positions
-  const fallback = new Map<string, [number, number]>();
-  for (const p of primariesWithData) {
-    fallback.set(p, FALLBACK_CENTERS[p] ?? [0, 0]);
-  }
-  return fallback;
+    return entries[entries.length - 1][0];
+  };
 }
 
 /**
- * Generate synthetic dots from the primary projections.
- * Dots are scattered around each primary's center using Gaussian-like jitter.
- *
- * Up to MAX_DOTS_PER_PRIMARY per primary, scaled by sample share.
- * Minimum MIN_DOTS_PER_PRIMARY per primary if represented at all.
+ * One dot per finished session (capped at MAX_DOTS). Each dot is placed near
+ * the anchor of a dominant issue sampled ∝ how many people prioritize it, then
+ * jittered and pulled toward center so the whole thing reads as one cloud.
  */
-function generateDots(
+function generateCloud(
   agg: PolisAggregate,
-  centers: Map<string, [number, number]>,
-): Array<{ x: number; y: number; primary: string }> {
-  const totalSessions = agg.primaryTotals.reduce((s, pt) => s + pt.count, 0);
-  if (totalSessions === 0) return [];
-
-  const rand = seededRandom(agg.sampleSize * 31 + agg.primaryTotals.length);
-
-  const dots: Array<{ x: number; y: number; primary: string }> = [];
-
-  for (const pt of agg.primaryTotals) {
-    if (pt.count === 0) continue;
-    const center = centers.get(pt.primary);
-    if (!center) continue;
-
-    // Scale dot count by share, clamp to [MIN, MAX]
-    const share = pt.count / totalSessions;
-    const rawCount = Math.round(
-      share * MAX_DOTS_PER_PRIMARY * agg.primaryTotals.length,
-    );
-    const dotCount = Math.max(
-      MIN_DOTS_PER_PRIMARY,
-      Math.min(MAX_DOTS_PER_PRIMARY, rawCount),
-    );
-
-    // Jitter: Box-Muller approximation using uniform random pairs
-    for (let i = 0; i < dotCount; i++) {
-      const u1 = rand();
-      const u2 = rand();
-      // Box-Muller: uniform → ~normal
-      const mag = Math.sqrt(-2 * Math.log(Math.max(u1, 1e-10)));
-      const theta = 2 * Math.PI * u2;
-      const nx = mag * Math.cos(theta);
-      const ny = mag * Math.sin(theta);
-
-      // Jitter spread: 0.25 in normalized space
-      const spread = 0.25;
-      const x = Math.max(-1, Math.min(1, center[0] + nx * spread));
-      const y = Math.max(-1, Math.min(1, center[1] + ny * spread));
-
-      dots.push({
-        x: Math.round(x * 1000) / 1000,
-        y: Math.round(y * 1000) / 1000,
-        primary: pt.primary,
-      });
-    }
+  totals: Map<string, number>,
+  rand: () => number,
+): Array<{ x: number; y: number }> {
+  if (agg.sampleSize === 0) return [];
+  const count = Math.min(agg.sampleSize, MAX_DOTS);
+  const pick = makeIssuePicker(totals, rand);
+  const dots: Array<{ x: number; y: number }> = [];
+  for (let i = 0; i < count; i++) {
+    const issue = pick();
+    const [ax, ay] = issue ? issueAnchor(issue) : [0, 0];
+    const x = clamp(ax * CENTER_PULL + gauss(rand) * JITTER, -1, 1);
+    const y = clamp(ay * CENTER_PULL + gauss(rand) * JITTER, -1, 1);
+    dots.push({ x: round3(x), y: round3(y) });
   }
-
   return dots;
 }
 
 /**
- * Project the "you" dot into the same 2D space.
- *
- * Projects the user's confirmed concerns as a share vector over the same issue
- * basis used for the primary projections, then maps it using the same PCA
- * components (or fallback).
- *
- * Returns null when userConcerns is empty (voter skipped Act 2).
+ * Project "you" as the centroid of the anchors of the voter's own concerns.
+ * A multi-issue voter lands centrally (overlapping many priority regions),
+ * which is exactly the "you overlap" reading. Null when no concerns.
  */
-function projectYou(
-  userConcerns: string[],
-  agg: PolisAggregate,
-  centers: Map<string, [number, number]>,
-): { x: number; y: number } | null {
+function projectYou(userConcerns: string[]): { x: number; y: number } | null {
   if (userConcerns.length === 0) return null;
-
-  const shareVectors = buildIssueShareVectors(agg);
-  if (shareVectors.size === 0) return null;
-
-  // Build the issue basis from the first primary's vector
-  const firstEntry = Array.from(shareVectors.values())[0];
-  if (!firstEntry) return null;
-
-  // Re-derive issue list (same sort as buildIssueShareVectors)
-  const issueSet = new Set<string>();
-  for (const ic of agg.issueCounts) issueSet.add(ic.canonicalIssue);
-  const issues = Array.from(issueSet).sort();
-
-  if (issues.length === 0) return null;
-
-  // Build user share vector
-  const userVec = issues.map((issue) =>
-    userConcerns.includes(issue) ? 1 / userConcerns.length : 0,
-  );
-
-  // Try to recompute PCA components
-  const primariesWithData = Array.from(shareVectors.keys());
-  let youX = 0;
-  let youY = 0;
-
-  if (primariesWithData.length >= 2) {
-    const rows = primariesWithData.map((p) => shareVectors.get(p)!.vector);
-    const pcaResult = pca2(rows);
-
-    if (pcaResult) {
-      const [pc1, pc2] = pcaResult;
-      // Project user vec
-      const rawX = dot(userVec, pc1);
-      const rawY = dot(userVec, pc2);
-
-      // Use same normalization: derive from primary projections
-      // (we re-project all primaries to get xMin/xMax/yMin/yMax)
-      const rawCoords = primariesWithData.map((p) => ({
-        x: dot(shareVectors.get(p)!.vector, pc1),
-        y: dot(shareVectors.get(p)!.vector, pc2),
-      }));
-      const xs = rawCoords.map((c) => c.x);
-      const ys = rawCoords.map((c) => c.y);
-      const xMin = Math.min(...xs);
-      const xMax = Math.max(...xs);
-      const yMin = Math.min(...ys);
-      const yMax = Math.max(...ys);
-      const xRange = xMax - xMin || 1;
-      const yRange = yMax - yMin || 1;
-
-      youX = ((rawX - xMin) / xRange) * 2 - 1;
-      youY = ((rawY - yMin) / yRange) * 2 - 1;
-
-      // Clamp to slightly beyond the scatter to allow "you" to sit in overlap zone
-      youX = Math.max(-1.3, Math.min(1.3, youX));
-      youY = Math.max(-1.3, Math.min(1.3, youY));
-
-      return {
-        x: Math.round(youX * 1000) / 1000,
-        y: Math.round(youY * 1000) / 1000,
-      };
-    }
+  let sx = 0;
+  let sy = 0;
+  for (const c of userConcerns) {
+    const [ax, ay] = issueAnchor(c);
+    sx += ax;
+    sy += ay;
   }
-
-  // Fallback: find the closest primary center to the user's issue profile
-  // (match by which primary has the most overlap with user's concerns)
-  let bestPrimary = "DEM";
-  let bestOverlap = -1;
-  for (const [primary, { vector }] of shareVectors) {
-    const overlap = dot(userVec, vector);
-    if (overlap > bestOverlap) {
-      bestOverlap = overlap;
-      bestPrimary = primary;
-    }
-  }
-  const center = centers.get(bestPrimary) ?? [0, 0];
+  const n = userConcerns.length;
   return {
-    x: Math.round(center[0] * 1000) / 1000,
-    y: Math.round(center[1] * 1000) / 1000,
+    x: round3(clamp((sx / n) * CENTER_PULL, -1.2, 1.2)),
+    y: round3(clamp((sy / n) * CENTER_PULL, -1.2, 1.2)),
   };
 }
 
 // ---------------------------------------------------------------------------
-// Consensus panel
+// Stats
 // ---------------------------------------------------------------------------
 
-interface ConsensusItem {
-  canonicalIssue: string;
-  issueLabel: string;
-  percent: number;
+function statFor(
+  issue: string,
+  totals: Map<string, number>,
+  sampleSize: number,
+): IssueStat {
+  const count = totals.get(issue) ?? 0;
+  return {
+    canonicalIssue: issue,
+    issueLabel: getIssueLabel(issue),
+    percent: sampleSize > 0 ? Math.round((count / sampleSize) * 100) : 0,
+  };
 }
 
-/** Per-primary session counts with their top issues (cluster naming basis). */
-function computeGroups(agg: PolisAggregate): PolisGroup[] {
-  return agg.primaryTotals
-    .filter((pt) => pt.count > 0)
-    .map((pt) => {
-      const topIssues = agg.issueCounts
-        .filter((ic) => ic.primary === pt.primary)
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 3)
-        .map((ic) => ic.canonicalIssue);
-      return { primary: pt.primary, count: pt.count, topIssues };
-    })
-    .sort((a, b) => b.count - a.count);
-}
-
-function computeConsensus(agg: PolisAggregate): ConsensusItem[] {
-  const totalSessions = agg.primaryTotals.reduce((s, pt) => s + pt.count, 0);
-  if (totalSessions === 0) return [];
-
-  // Sum issue counts across all primaries
-  const issueTotals = new Map<string, number>();
-  for (const ic of agg.issueCounts) {
-    issueTotals.set(
-      ic.canonicalIssue,
-      (issueTotals.get(ic.canonicalIssue) ?? 0) + ic.count,
-    );
+function computeOverlap(
+  totals: Map<string, number>,
+  sampleSize: number,
+  userConcerns: string[],
+): PolisResponse["overlap"] {
+  let mostCommon: IssueStat | null = null;
+  let best = 0;
+  for (const [issue, count] of totals) {
+    if (count > best) {
+      best = count;
+      mostCommon = statFor(issue, totals, sampleSize);
+    }
   }
 
-  // Sort by total count descending, take top 5
-  return Array.from(issueTotals.entries())
+  const seen = new Set<string>();
+  const youShares: IssueStat[] = [];
+  for (const c of userConcerns) {
+    if (seen.has(c)) continue;
+    seen.add(c);
+    youShares.push(statFor(c, totals, sampleSize));
+    if (youShares.length >= 3) break;
+  }
+
+  return { mostCommon, youShares };
+}
+
+/** Top shared priorities with anchor positions (faint labels + a11y). */
+function computeRegions(
+  totals: Map<string, number>,
+  sampleSize: number,
+): IssueRegion[] {
+  return [...totals.entries()]
+    .filter(([, c]) => c > 0)
     .sort((a, b) => b[1] - a[1])
     .slice(0, 5)
-    .map(([canonicalIssue, count]) => ({
-      canonicalIssue,
-      issueLabel: getIssueLabel(canonicalIssue),
-      percent: Math.round((count / totalSessions) * 100),
-    }));
+    .map(([issue]) => {
+      const [ax, ay] = issueAnchor(issue);
+      return {
+        ...statFor(issue, totals, sampleSize),
+        x: round3(ax * CENTER_PULL),
+        y: round3(ay * CENTER_PULL),
+      };
+    });
+}
+
+/** Top issues by total count across everyone in scope (party-free). */
+function computeConsensus(
+  totals: Map<string, number>,
+  sampleSize: number,
+): IssueStat[] {
+  if (sampleSize === 0) return [];
+  return [...totals.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([issue]) => statFor(issue, totals, sampleSize));
 }
 
 // ---------------------------------------------------------------------------
@@ -518,24 +315,19 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       ? await fetchNationalPolisAggregate()
       : await fetchPolisAggregate(stateCode, county || null);
 
-  const centers = projectPrimaries(agg);
-  const dots = generateDots(agg, centers);
-  const you = projectYou(userConcerns, agg, centers);
-  const consensus = computeConsensus(agg);
+  const totals = perIssueTotals(agg);
+  const rand = seededRandom(agg.sampleSize * 31 + totals.size + 7);
 
   const response: PolisResponse = {
     scope: agg.scope,
     sampleSize: agg.sampleSize,
-    thresholdMet: agg.thresholdMet,
-    dots,
-    you,
-    consensus,
-    groups: computeGroups(agg),
+    thresholdMet: agg.sampleSize >= THRESHOLD,
+    dots: generateCloud(agg, totals, rand),
+    you: projectYou(userConcerns),
+    consensus: computeConsensus(totals, agg.sampleSize),
+    overlap: computeOverlap(totals, agg.sampleSize, userConcerns),
+    issueRegions: computeRegions(totals, agg.sampleSize),
   };
-
-  if (!agg.thresholdMet) {
-    response.countToUnlock = Math.max(0, THRESHOLD - agg.sampleSize);
-  }
 
   return NextResponse.json(response, { status: 200 });
 }

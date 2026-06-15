@@ -749,7 +749,6 @@ export function _resetCountersForTesting(): void {
  */
 export async function submitSessionCounters(input: {
   stateCode: string;
-  county: string | null;
   issues: UserIssue[];
 }): Promise<void> {
   if (countersSubmitted) return;
@@ -759,9 +758,9 @@ export async function submitSessionCounters(input: {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
+        // County is intentionally never sent — we collect state-level only.
         sessionId: getChatSessionId(),
         stateCode: input.stateCode,
-        county: input.county,
         primary: "GENERAL",
         // Redis counters: unchanged — mapped issues only.
         confirmedConcerns: (input.issues || [])

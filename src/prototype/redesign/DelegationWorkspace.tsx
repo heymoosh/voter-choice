@@ -212,17 +212,17 @@ export function ScorecardPane({
       <div className="standing-cta">
         <div className="kick">You're not alone</div>
         <div className="dots">
-          <i style={{ background: "oklch(0.58 0.10 160)" }}></i>
-          <i style={{ background: "oklch(0.60 0.10 90)" }}></i>
-          <i style={{ background: "oklch(0.58 0.11 40)" }}></i>
-          <i style={{ background: "oklch(0.55 0.10 280)" }}></i>
+          <i style={{ background: "var(--civic)", opacity: 0.35 }}></i>
+          <i style={{ background: "var(--civic)", opacity: 0.55 }}></i>
+          <i style={{ background: "var(--civic)", opacity: 0.8 }}></i>
+          <i style={{ background: "var(--civic)", opacity: 0.55 }}></i>
           <i style={{ background: "var(--gold)" }}></i>
         </div>
         <h4>See where you stand</h4>
         <p>
           {polisPreview
-            ? `Your priorities, mapped against ${polisPreview.sampleSize.toLocaleString("en-US")} neighbors in ${polisPreview.label} — grouped by what they care about, not party. You overlap more than the noise suggests.`
-            : "Your priorities, mapped against everyone who's finished this — grouped by what they care about, not party. You overlap more than the noise suggests."}
+            ? `Your priorities, mapped against ${polisPreview.sampleSize.toLocaleString("en-US")} people in ${polisPreview.label} — placed by what they care about, not party. You overlap more than the noise suggests.`
+            : "Your priorities, mapped against everyone who's finished this — placed by what they care about, not party. You overlap more than the noise suggests."}
         </p>
         <button onClick={onSeeStanding}>
           See where you stand <span aria-hidden="true">→</span>

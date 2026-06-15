@@ -104,8 +104,8 @@ describe("counters — in-memory fallback", () => {
     expect(agg.sampleSize).toBe(200);
   });
 
-  it("aggregate fetch: county thin, state threshold met → returns state scope", async () => {
-    // Add 200 sessions but split across counties so neither county hits threshold
+  it("aggregate fetch: a county with finishers is shown directly (no display gate)", async () => {
+    // Split 200 across two counties so neither alone is large.
     for (let i = 0; i < 100; i++) {
       await incrementSessionCounters(
         makeInput({ sessionId: `sess-h${i}`, county: "Harris" }),
@@ -117,15 +117,15 @@ describe("counters — in-memory fallback", () => {
       );
     }
 
-    // Harris county = 100 (below threshold), state = 200 (at threshold)
+    // Harris county = 100, state = 200. With no minimum to display, the county
+    // is used directly because it has finishers.
     const agg = await fetchPolisAggregate("TX", "Harris");
-    expect(agg.scope).toBe("state");
-    expect(agg.thresholdMet).toBe(true);
-    expect(agg.sampleSize).toBe(200);
+    expect(agg.scope).toBe("county");
+    expect(agg.sampleSize).toBe(100);
+    expect(agg.thresholdMet).toBe(false); // 100 < 200, informational only
   });
 
-  it("aggregate fetch: both below threshold → returns whichever has more, thresholdMet=false", async () => {
-    // 10 county sessions, 0 more state-only sessions (state total = 10 as well since county sessions count state too)
+  it("aggregate fetch: a low-N county still resolves to the county, thresholdMet=false", async () => {
     for (let i = 0; i < 10; i++) {
       await incrementSessionCounters(
         makeInput({ sessionId: `sess-${i}`, county: "Harris" }),
@@ -134,8 +134,8 @@ describe("counters — in-memory fallback", () => {
 
     const agg = await fetchPolisAggregate("TX", "Harris");
     expect(agg.thresholdMet).toBe(false);
-    // State total = 10, county total = 10. County is not strictly > state, so defaults to state.
-    expect(agg.scope).toBe("state");
+    // County has finishers → county scope (there is no minimum to display).
+    expect(agg.scope).toBe("county");
     expect(agg.sampleSize).toBe(10);
   });
 
@@ -318,7 +318,7 @@ describe("counters — durable Redis path", () => {
     expect(agg.sampleSize).toBe(250);
   });
 
-  it("aggregate: county thin, state met → scope=state", async () => {
+  it("aggregate: a county with finishers resolves to county (no gate)", async () => {
     vi.spyOn(globalThis, "fetch").mockImplementation(async (_, init) => {
       const body = JSON.parse(String(init?.body)) as string[];
       const cmd = body[0];
@@ -352,9 +352,9 @@ describe("counters — durable Redis path", () => {
     });
 
     const agg = await fetchPolisAggregate("TX", "Harris");
-    expect(agg.scope).toBe("state");
-    expect(agg.thresholdMet).toBe(true);
-    expect(agg.sampleSize).toBe(300);
+    expect(agg.scope).toBe("county");
+    expect(agg.thresholdMet).toBe(false); // county = 50, informational only
+    expect(agg.sampleSize).toBe(50);
   });
 
   it("aggregate: both below threshold → whichever has more, thresholdMet=false", async () => {
