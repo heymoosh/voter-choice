@@ -3599,6 +3599,7 @@ function SettingsPanel({ open, onClose, onResetAll, onExportProfile, onResumePro
 
         <footer className="sx-foot">
           <a className="sx-foot-link" onClick={() => { window.__navigate && window.__navigate('privacy'); onClose(); }}>{t('settings.privacyLink')}</a>
+          <a className="sx-foot-link" href="/terms">Terms of use →</a>
           <a className="sx-foot-link" onClick={() => { window.__navigate && window.__navigate('methodology'); onClose(); }}>{t('settings.methodologyLink')}</a>
           <a className="sx-foot-link" onClick={() => { window.__navigate && window.__navigate('about'); onClose(); }}>{t('settings.aboutLink')}</a>
         </footer>
@@ -4254,6 +4255,7 @@ function HomeView({ savedAddress, savedSession, onSubmit, onResumeFromProfile, o
           <li><a onClick={() => onNavigate && onNavigate('methodology')} role="link" tabIndex={0}>Methodology</a></li>
           <li><a onClick={() => onNavigate && onNavigate('about')} role="link" tabIndex={0}>About</a></li>
           <li><a onClick={() => onNavigate && onNavigate('privacy')} role="link" tabIndex={0}>Privacy</a></li>
+          <li><a href="/terms">Terms</a></li>
           <li><a onClick={() => onNavigate && onNavigate('tip')} role="link" tabIndex={0}>Tip jar</a></li>
           <li><a href="mailto:muxin.li.pro@gmail.com">Support</a></li>
         </ul>
