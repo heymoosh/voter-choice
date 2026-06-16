@@ -28,55 +28,26 @@ Ballot upload/parse is too much friction for the target user, so the product shi
 #### Resolve before Phase 1 public release — prod-hardening, NOT design-dependent:
 
 **[P0] Design Candidates UX flow**
+- See /Users/Muxin/Documents/GitHub/voter-choice/voter-choice-redesign-delta for front end code - do not port, use the code provided
 - When user decides to replace a rep, what happens? 
 - Right now, candidates are simply listed below the rep if they are running for the seat.
-- STATUS: Backlog
-- DEPENDS ON: Claude Design session needed
+- STATUS: To Do
 <!-- card-id: 6a1fb1fb-b93b-46e7-a2c4-1101a92be631 -->
 
 **[P0] Run /security-review**
 - STATUS: Backlog
 <!-- card-id: 850b1220-9de9-4aee-814f-470b8096f164 -->
 
-**[P0] Backup to CAN2026**
-- Is there an alternative way to provide bill summaries and why rep voted the way they did than using the CAN2026 as a source? In case we don’t hear back quickly enough?
-- Investigate first - look for free, accessible, available data online that is at least as reputable as CAN2026’s sources and interpretation.
-- Flag for user review before executing.
-- STATUS: Backlog
-<!-- card-id: 3d64a71d-68e4-4ebf-b761-91440ff63e56 -->
-
 **[P1] Redesign Polis for effect**
+- See /Users/Muxin/Documents/GitHub/voter-choice/voter-choice-redesign-delta for front end code - do not port, use the code provided
 - Too tiny, too small, too off the side
 - Not impactful enough: We want to depolarize, and this is a thin scatterplot that’s not only hard to read but hard to care about
-- STATUS: Backlog
-- DEPENDS ON: Claude Design session needed
+- STATUS: To Do
 <!-- card-id: bc774728-5153-409e-a13a-a8207dad0836 -->
 
 **[P0] Reset Polis count to 0 before launch**
 - STATUS: Backlog
 <!-- card-id: 1f5e2506-106d-4d72-97ec-d85a2d8c214d -->
-
-**[P1] Header and Footer available on app page (3 panel)**
-- Footer not available once you go to the app page
-- If you navigate back to the home page - without reloading or closing the tab - you lost your place in the app. Didn’t we used to have a resume session? We only remove data if they close a tab.
-- STATUS: Review
-<!-- card-id: abfc2ecf-0cbf-44e8-bf3d-ee1dbe949796 -->
-
-**[P1] "Community AI budget used up" modal misfires when the budget is NOT exhausted**
-- Flagged 2026-06-05, from Muxin's preview test
-- A voter who barely clicked around and NEVER used the chatbot was shown the "Community AI budget used up" continuity modal.
-- Confirmed against live data: the community budget is at **estimatedSpendUSD ≈ $0.87 (1.7% of the $50 cap)** — nowhere near exhausted — and the new block tracker (`voter-choice:blocks:<day>:*`) recorded **zero** blocks, so no server-side budget gate fired.
-- The modal is therefore a **client-side misfire**, likely introduced/exposed by the 2026-06-05 observability deploy's budget derivation (`realData.ts streamChatReply` maps a `status:"budget_exhausted"` 200 → BUDGET_EXHAUSTED; `resolveChatBlock`/`setBudgetExhausted` route to the modal).
-- **Investigate:** what sets `budgetExhausted=true` on the client without a real server exhaustion (e.g. a per-race chat-intro response mis-parsed as budget_exhausted, or a stale flag). Same "blocking message that doesn't match reality" family as the rate-limit fail-closed.
-- STATUS: Review
-<!-- card-id: 46a3d077-02a7-4de5-810a-26625a908b49 -->
-
-**[P2] Tip Jar link is unpopulated**
-- Flagged 2026-06-05, from Muxin's preview test
-- The "TIP JAR" link (budget-exhausted continuity footer + "A tip keeps the budget alive for the next voter…") has no real destination/page yet.
-- Populate it (tip/payment page or external link) before launch — a dead tip-jar link at the budget-exhaustion moment is a poor experience.
-- STATUS: Review
-<!-- card-id: 17b0ac28-91cd-494d-92eb-28d1d96b8bb6 -->
 
 **[P0] Lower `CHAT_DAILY_SESSION_LIMIT` from 100 back to 10 before public launch**
 - Flagged 2026-05-26, raised again 2026-05-28
@@ -128,8 +99,7 @@ Ballot upload/parse is too much friction for the target user, so the product shi
 - **Consistency gate:** enable the flag in the SAME release the privacy copy goes live, so the policy never describes collection that isn't happening (or vice-versa).
 - **Verify:** run a session to all-seats-verdicted, confirm rows in `voter_issue_events` (incl. ≥1 null-`canonical_issue` row carrying an `off_topic_label` if an off-topic concern was raised). Inspect via `npm run db:analytics-concerns`.
 - **Kill-switch:** unset the flag + redeploy to stop collection instantly; counters/Polis are unaffected either way.
-- STATUS: To Do
-- DEPENDS ON: Store voter issue preferences for analysis
+- STATUS: Backlog
 <!-- card-id: 39a6b6e3-2a1c-4277-a295-b1cf44e3a6d6 -->
 
 **[P1] Phase 1 UX/UI finalized (redesign complete)**
@@ -160,6 +130,41 @@ Ballot upload/parse is too much friction for the target user, so the product shi
 - STATUS: Backlog
 <!-- card-id: f474c4b8-e8c0-4129-9a67-4705a1370efe -->
 
+**[P0] Backup to CAN2026**
+- Is there an alternative way to provide bill summaries and why rep voted the way they did than using the CAN2026 as a source? In case we don’t hear back quickly enough?
+- Investigate first - look for free, accessible, available data online that is at least as reputable as CAN2026’s sources and interpretation.
+- Flag for user review before executing.
+- STATUS: Done
+<!-- card-id: 3d64a71d-68e4-4ebf-b761-91440ff63e56 -->
+
+**[P0] Sanity check copy and text formatting**
+- Ensuring that copy reflects what the app actually does
+- Checking on format and layout - ensure consistency
+- STATUS: Done
+<!-- card-id: a4add889-8b50-4aca-8bb6-82441093dd59 -->
+
+**[P1] "Community AI budget used up" modal misfires when the budget is NOT exhausted**
+- Flagged 2026-06-05, from Muxin's preview test
+- A voter who barely clicked around and NEVER used the chatbot was shown the "Community AI budget used up" continuity modal.
+- Confirmed against live data: the community budget is at **estimatedSpendUSD ≈ $0.87 (1.7% of the $50 cap)** — nowhere near exhausted — and the new block tracker (`voter-choice:blocks:<day>:*`) recorded **zero** blocks, so no server-side budget gate fired.
+- The modal is therefore a **client-side misfire**, likely introduced/exposed by the 2026-06-05 observability deploy's budget derivation (`realData.ts streamChatReply` maps a `status:"budget_exhausted"` 200 → BUDGET_EXHAUSTED; `resolveChatBlock`/`setBudgetExhausted` route to the modal).
+- **Investigate:** what sets `budgetExhausted=true` on the client without a real server exhaustion (e.g. a per-race chat-intro response mis-parsed as budget_exhausted, or a stale flag). Same "blocking message that doesn't match reality" family as the rate-limit fail-closed.
+- STATUS: Done
+<!-- card-id: 46a3d077-02a7-4de5-810a-26625a908b49 -->
+
+**[P1] Header and Footer available on app page (3 panel)**
+- Footer not available once you go to the app page
+- If you navigate back to the home page - without reloading or closing the tab - you lost your place in the app. Didn’t we used to have a resume session? We only remove data if they close a tab.
+- STATUS: Done
+<!-- card-id: abfc2ecf-0cbf-44e8-bf3d-ee1dbe949796 -->
+
+**[P2] Tip Jar link is unpopulated**
+- Flagged 2026-06-05, from Muxin's preview test
+- The "TIP JAR" link (budget-exhausted continuity footer + "A tip keeps the budget alive for the next voter…") has no real destination/page yet.
+- Populate it (tip/payment page or external link) before launch — a dead tip-jar link at the budget-exhaustion moment is a poor experience.
+- STATUS: Done
+<!-- card-id: 17b0ac28-91cd-494d-92eb-28d1d96b8bb6 -->
+
 **[P1] Fix Gray Bird to Grey Bird - everywhere**
 - This is the official LLC name - Grey Bird LLC
 - Has to be accurate
@@ -176,26 +181,13 @@ Ballot upload/parse is too much friction for the target user, so the product shi
 
 #### Phase 1 alignment quality — Congress = federal; parallel data work, not redesign-blocking:
 
-**[P1] Issue taxonomy is too broad for precise alignment matching**
-- **Plain English:** Big topics like "healthcare" were too broad — "insulin prices" and "hospital monopolies" got the *same* score. Fix = add mini-topics under each big topic. We built that machine and ran it on healthcare (live in the data now): 4 mini-topics shipped, so a drug-price question now scores only on drug-price votes. Still to do: run the same machine on the other 15 big topics, and fix the messy "insurance" mini-topic (its own card below).
-- Flagged 2026-05-15
-- The 15 canonical issues (`healthcare_affordability`, `economy_jobs`, etc.) are high-level categories. A voter who cares about "insulin prices" and one who cares about "hospital monopolies" both resolve to `healthcare_affordability` and get the same alignment score, even if their actual concerns are distinct. Similarly, "crime" vs. "policing reform" both land in `crime_public_safety` with no way to distinguish stance at query time.
-- **Impact on chat:** Alignment answers can feel generic or off-target for voters with specific policy concerns. The system will return votes that are technically related to the category but not the voter's actual position.
-- **Longer-term fix:** Expand the canonical vocabulary (likely 30–50 issues) and re-tag the 67K bill corpus. **Update (PR #114):** stance-level *directionality* is now handled — `src/lib/alignment/poleVocabulary.ts` pins per-issue `in_favor`/`opposed` poles consumed by both tagger and resolver — so the remaining gap is finer *sub-issue* granularity (e.g. `healthcare_affordability:expand_coverage` vs `cost_containment`), not direction. A change here means coordinated edits to `canonicalIssues.ts` + `poleVocabulary.ts` + the live resolver `src/lib/prompts/theme-extraction.ts` (NOT `BALLOT_PROMPT.md` — off the live path) + a re-tagging run.
-- **SHIPPED — hierarchical sub-issue layer + healthcare pilot (PR #117, 2026-06-15).** Chose layered (parent + optional `sub_issue`) over a flat 30–50 rewrite: `src/lib/alignment/subIssues.ts` (`sub-issue-v1`) adds optional topic facets beneath the 16 issues; facets INHERIT the parent pole (orthogonal to #114's direction work). `lookupAlignment` PREFERS sub-issue votes and FALLS BACK to parent when sparse → never worse than today. Schema: nullable `issue_tags.sub_issue` (+ `sub_tagger_version`/`sub_tagger_confidence`), migration `0006` (additive). Healthcare piloted end-to-end: all 6,494 bills re-tagged (Sonnet), 3-juror Opus gold gate passed (contradiction ≤5% all facets), **912 high-confidence rows cut over to prod** across 4 facets (`drug_prices` / `provider_costs` / `senior_care` / `mental_behavioral_health`). Live proof: a candidate scored 813/842 (parent) vs 29/29 `drug_prices`, 9/9 `provider_costs`. **`coverage_access` dropped (fuzzy — 43% panel agreement even at high confidence) → its own card below.** Prod sub_issue data is invisible to users until PR #117 deploys.
-- **Remaining (keeps this card open):** roll out the other 15 families — data-only per family (sub_issue defs in `subIssues.ts` + `SUB_ISSUE_VOCABULARY.md`, scoped `_subissue-*` re-tag, gold gate); apply a sparsity gate (skip/coarsen families thinned by the June cutover, e.g. border/gun/immigration). Mechanism + tooling already built.
-- **Related:** See "Store voter issue preferences" idea below.
-- STATUS: Review
-<!-- card-id: c9a51f25-70cd-495c-ab5e-0dda3d5765b6 -->
-
 **[P2] Sub-issue v2 — refine `coverage_access` before tagging it**
 - **Plain English:** We split healthcare into 5 mini-topics. Four are sharp; the 5th — insurance/coverage — turned out to be a catch-all mush, so we left it OFF (those questions just use the old broad score — no worse than before). This card = sharpen "coverage" (or split it into Medicaid / Obamacare / uninsured), re-check, then switch it on.
 - Flagged 2026-06-15, from the healthcare sub-issue pilot (PR #117) gold panel.
 - `coverage_access` was the ONE facet the 3-juror Opus panel could not confirm — only **43% agreement even on the tagger's HIGH-confidence assignments** (vs 92–100% for `drug_prices` / `provider_costs` / `senior_care` / `mental_behavioral_health`). The tagger applies it to broad ACA / Medicaid / structural healthcare bills the panel reads as "general," not a specific facet. Zero wrong-facet contradictions — errors are "facet vs. general," so it was safe but imprecise.
 - **Cutover decision (Muxin): shipped NULL** — no `coverage_access` rows on prod, so those concerns fall back to parent-level scoring (never worse). Re-enable only after tightening.
 - **Fix:** tighten the `coverage_access` definition / `billSignals` in `src/lib/alignment/subIssues.ts` (+ `docs/alignment/SUB_ISSUE_VOCABULARY.md`), and/or SPLIT it (e.g. `medicaid` vs `aca_marketplace` vs `the_uninsured`); then re-run the healthcare-scoped `_subissue-*` re-tag + gold gate and insert the passing facet(s). Also reconsider whether to ship the medium-confidence tail of the 4 live facets (currently HIGH-conf only — 912 rows; ~2,449 medium/low left NULL).
-- STATUS: Backlog
-- DEPENDS ON: Issue taxonomy is too broad for precise alignment matching
+- STATUS: To Do
 <!-- card-id: 5d23faba-728a-4c32-a7d1-91878b4711c8 -->
 
 **[P2] `crime_public_safety` and `public_safety` — keep distinct, or deliberately merge? (Muxin call)**
@@ -203,16 +195,7 @@ Ballot upload/parse is too much friction for the target user, so the product shi
 - (Tag counts 5,499 / 3,800 are pre-cutover 2026-05-15; the 2026-06-06 re-tag changed totals.)
 - So this is no longer an automatic "consolidate." Whether to MERGE into one parent with sub-issues is handoff **item 3** — a deliberate, validated mini-cutover (touches `canonicalIssues.ts` + the pole vocab + a targeted re-tag), not a rename-in-place. Decide intent first.
 - STATUS: To Do
-- DEPENDS ON: Issue taxonomy is too broad for precise alignment matching
 <!-- card-id: aab02053-d7dc-41ad-8984-570b6f1a9085 -->
-
-**[P1] Alignment returns `kept: 0` silently for unmapped concerns**
-- Flagged 2026-05-15
-- If Claude maps a voter concern to a canonical id that has very few tagged bills (e.g., `border_security` with only 155 tags, or `immigration` with 407), the alignment lookup will return `found: true` but very low `kept` counts. The voter sees a score like "1 of 47 votes" which looks like the candidate barely addressed the issue — when in reality there just aren't many tagged bills.
-- **Impact:** Misleading sparsity signals, especially for federal-only issues (immigration, border) where state legislators rarely vote on them.
-- **Fix options:** (a) Show a "limited data" notice when `total < 5` — **DONE** (`attachLimitedDataNotice` in `src/lib/server/alignment.ts:80` sets `result.notice`, rendered verbatim by the chat layer). Remaining: (b) fall back to web search when `total` is below a threshold; (c) expand the tag corpus for thin issues (overlaps the thin-coverage + re-tag cards). Narrow this card to (b)/(c), or close if (a) is deemed sufficient.
-- STATUS: To Do
-<!-- card-id: c6263fc9-63ca-488a-926e-4d38d81bb7c6 -->
 
 **[P1] `reproductive_rights` and `immigration` canonical issues have very thin tag coverage**
 - Flagged 2026-05-15
@@ -228,14 +211,14 @@ Ballot upload/parse is too much friction for the target user, so the product shi
 - **The live bug:** `src/lib/prompts/theme-extraction.ts` `THEME_FIELDS_PROMPT_BLOCK` tells the model "Most priorities are aspirational → in_favor." For a **contested** issue + a value-only concern ("I care about guns", "I care about my kid's education"), the model silently assigns `in_favor` (= the Pole-A side — e.g. gun *access*, fossil energy, school *choice*) and scores against a guessed pole. 12 of 16 issues are contested, so this is the central case, not an edge.
 - **Fix:** drive the stance decision off `axis_type` from `poleVocabulary.ts`. For a contested issue whose concern doesn't pick a side, OMIT the stance (honest no-score) instead of defaulting to `in_favor`; for `valence_dominant`, keep matching the consensus pole. Prompt-behavior change in `theme-extraction.ts` (+ `theme-refinement.ts`, which shares the block). No new UI. NOTE: Item 1 deliberately left this heuristic unchanged.
 - **Caveat:** without 2b, a contested value-only concern then yields no alignment score (better than a wrong one) until the voter states a side. Best paired with 2b.
-- STATUS: Backlog
+- STATUS: To Do
 <!-- card-id: d04b101f-123a-43c7-a874-396386ac44ed -->
 
 **[P1] Alignment 2b — theme-card disambiguation UI (let the voter pick the pole)**
 - Flagged 2026-06-15 — follow-up to Item 1 (PR #114) + 2a. When 2a omits the stance for a contested value-only concern, the voter currently has no way to set their side, so the issue stays unscored.
 - **What:** render the pole choice on the theme card — `poleVocabulary.ts` already carries each contested issue's neutral `disambiguation` question + two poled option labels. A tap sets the theme's stance and re-scores. The send-back path exists (`SeatChat` `onSend`); the parse/render layer does NOT — no production component renders the structured concern blocks today (`src/prototype/redesign/SeatChat.tsx` is plain-text).
 - **Scope:** redesign-coupled (theme-card UI in `src/prototype/redesign/`). Larger than 2a.
-- STATUS: Backlog
+- STATUS: To Do
 - DEPENDS ON: Alignment 2a — data-driven disambiguation trigger
 <!-- card-id: c6f8727b-0f81-4307-8451-35a399ba5f4b -->
 
@@ -243,7 +226,7 @@ Ballot upload/parse is too much friction for the target user, so the product shi
 - Flagged 2026-06-15 — handoff item 4, no prior card.
 - A per-contributing-vote rationale on `ContributingVote` / `AlignmentResult` (`src/lib/server/alignment.ts`), surfaced in `AlignmentDrilldown`. Where CAN curated context covers the vote (`can_candidate_key_votes.context`), populate from that prose. (Docs renamed "bridge" → "vote rationale" to avoid colliding with the Polis "bridge statements"; settled in docs, absent from code.)
 - Additive; effectively depends on CAN data being displayed (see the CAN2026 display gate, blocked on attribution terms).
-- STATUS: Backlog
+- STATUS: To Do
 <!-- card-id: 4d2fa4a5-3ee1-4038-8994-c7d489e62000 -->
 
 **[P1] Store voter issue preferences for analysis**
@@ -259,8 +242,28 @@ Ballot upload/parse is too much friction for the target user, so the product shi
   - A simple analytics query interface (even just SQL in the repo) to inspect the data.
 - **Constraint:** Do not collect the voter's free-text verbatim — only the resolved canonical issue id and stance. Free text could be identifying.
 - **Implemented 2026-06-15 (PR `feat/store-voter-issue-events`):** new `voter_issue_events` Postgres table written from the existing session-end `/api/counters` path (`recordConcernEvents` in `src/lib/server/counters.ts`); analytics via `npm run db:analytics-concerns`. **Two decisions refined the spec with Muxin:** (1) **no session id at all** — the original `session_id (hashed)` column was dropped, so rows store state + issue only and are unlinkable (dedup rides the existing Redis idempotency gate). (2) For off-topic/unmapped concerns we store the model's short label (not the voter's words) to surface taxonomy gaps. Privacy copy added. Code merges behind a default-OFF flag — see "Enable voter issue-event persistence in production" above for the go-live steps.
-- STATUS: Review
+- STATUS: Done
 <!-- card-id: ff008bd7-d5ad-422a-bdd9-22bfac6227cc -->
+
+**[P1] Issue taxonomy is too broad for precise alignment matching**
+- **Plain English:** Big topics like "healthcare" were too broad — "insulin prices" and "hospital monopolies" got the *same* score. Fix = add mini-topics under each big topic. We built that machine and ran it on healthcare (live in the data now): 4 mini-topics shipped, so a drug-price question now scores only on drug-price votes. Still to do: run the same machine on the other 15 big topics, and fix the messy "insurance" mini-topic (its own card below).
+- Flagged 2026-05-15
+- The 15 canonical issues (`healthcare_affordability`, `economy_jobs`, etc.) are high-level categories. A voter who cares about "insulin prices" and one who cares about "hospital monopolies" both resolve to `healthcare_affordability` and get the same alignment score, even if their actual concerns are distinct. Similarly, "crime" vs. "policing reform" both land in `crime_public_safety` with no way to distinguish stance at query time.
+- **Impact on chat:** Alignment answers can feel generic or off-target for voters with specific policy concerns. The system will return votes that are technically related to the category but not the voter's actual position.
+- **Longer-term fix:** Expand the canonical vocabulary (likely 30–50 issues) and re-tag the 67K bill corpus. **Update (PR #114):** stance-level *directionality* is now handled — `src/lib/alignment/poleVocabulary.ts` pins per-issue `in_favor`/`opposed` poles consumed by both tagger and resolver — so the remaining gap is finer *sub-issue* granularity (e.g. `healthcare_affordability:expand_coverage` vs `cost_containment`), not direction. A change here means coordinated edits to `canonicalIssues.ts` + `poleVocabulary.ts` + the live resolver `src/lib/prompts/theme-extraction.ts` (NOT `BALLOT_PROMPT.md` — off the live path) + a re-tagging run.
+- **SHIPPED — hierarchical sub-issue layer + healthcare pilot (PR #117, 2026-06-15).** Chose layered (parent + optional `sub_issue`) over a flat 30–50 rewrite: `src/lib/alignment/subIssues.ts` (`sub-issue-v1`) adds optional topic facets beneath the 16 issues; facets INHERIT the parent pole (orthogonal to #114's direction work). `lookupAlignment` PREFERS sub-issue votes and FALLS BACK to parent when sparse → never worse than today. Schema: nullable `issue_tags.sub_issue` (+ `sub_tagger_version`/`sub_tagger_confidence`), migration `0006` (additive). Healthcare piloted end-to-end: all 6,494 bills re-tagged (Sonnet), 3-juror Opus gold gate passed (contradiction ≤5% all facets), **912 high-confidence rows cut over to prod** across 4 facets (`drug_prices` / `provider_costs` / `senior_care` / `mental_behavioral_health`). Live proof: a candidate scored 813/842 (parent) vs 29/29 `drug_prices`, 9/9 `provider_costs`. **`coverage_access` dropped (fuzzy — 43% panel agreement even at high confidence) → its own card below.** Prod sub_issue data is invisible to users until PR #117 deploys.
+- **Remaining (keeps this card open):** roll out the other 15 families — data-only per family (sub_issue defs in `subIssues.ts` + `SUB_ISSUE_VOCABULARY.md`, scoped `_subissue-*` re-tag, gold gate); apply a sparsity gate (skip/coarsen families thinned by the June cutover, e.g. border/gun/immigration). Mechanism + tooling already built.
+- **Related:** See "Store voter issue preferences" idea below.
+- STATUS: Done
+<!-- card-id: c9a51f25-70cd-495c-ab5e-0dda3d5765b6 -->
+
+**[P1] Alignment returns `kept: 0` silently for unmapped concerns**
+- Flagged 2026-05-15
+- If Claude maps a voter concern to a canonical id that has very few tagged bills (e.g., `border_security` with only 155 tags, or `immigration` with 407), the alignment lookup will return `found: true` but very low `kept` counts. The voter sees a score like "1 of 47 votes" which looks like the candidate barely addressed the issue — when in reality there just aren't many tagged bills.
+- **Impact:** Misleading sparsity signals, especially for federal-only issues (immigration, border) where state legislators rarely vote on them.
+- **Fix options:** (a) Show a "limited data" notice when `total < 5` — **DONE** (`attachLimitedDataNotice` in `src/lib/server/alignment.ts:80` sets `result.notice`, rendered verbatim by the chat layer). Remaining: (b) fall back to web search when `total` is below a threshold; (c) expand the tag corpus for thin issues (overlaps the thin-coverage + re-tag cards). Narrow this card to (b)/(c), or close if (a) is deemed sufficient.
+- STATUS: Done
+<!-- card-id: c6263fc9-63ca-488a-926e-4d38d81bb7c6 -->
 
 ---
 
@@ -337,15 +340,6 @@ Expand beyond Congress without full ballot ingestion (non-legislative candidates
 - STATUS: Backlog
 <!-- card-id: f5d6a886-da2c-4f0e-827c-fee3e3ebc035 -->
 
-**[idea] Polis viz dev/preview mode for low-participation areas**
-- Flagged 2026-05-18 — design + QA tooling
-- When `thresholdMet === false` (jurisdictions with too few participants to show the visualization), QA + demos currently have no way to preview what the viz will look like once data fills in.
-- Proposal: gate a mock dataset behind a `?devPolis=1` query param (or `NEXT_PUBLIC_DEV_POLIS` env flag) that renders the viz with a clearly-labeled "preview data" banner.
-- **Useful for:** Pre-launch demos in low-participation states, QA regression-checking the viz layout without waiting for real participation, screenshot/marketing material.
-- **Constraint:** Must be visually distinguishable from real data — banner is non-negotiable, and the env-flag form should be production-disabled by default.
-- STATUS: Review
-<!-- card-id: b762fd4e-2525-4b59-a4f9-6baafc2988ba -->
-
 **[idea] Polis viz: usage tracker + social share**
 - Flagged 2026-05-18 — growth / social-proof
 - Two small additions to the Polis viz surface:
@@ -354,6 +348,15 @@ Expand beyond Congress without full ballot ingestion (non-legislative candidates
 - **Why:** Both are low-cost trust-builders and growth nudges. The counts banner especially helps in counties where the viz is still warming up — even a modest "47 voters in Travis County" reads as legitimacy.
 - STATUS: Backlog
 <!-- card-id: 2269ffae-a02c-4561-83c9-1d9a0661b910 -->
+
+**[idea] Polis viz dev/preview mode for low-participation areas**
+- Flagged 2026-05-18 — design + QA tooling
+- When `thresholdMet === false` (jurisdictions with too few participants to show the visualization), QA + demos currently have no way to preview what the viz will look like once data fills in.
+- Proposal: gate a mock dataset behind a `?devPolis=1` query param (or `NEXT_PUBLIC_DEV_POLIS` env flag) that renders the viz with a clearly-labeled "preview data" banner.
+- **Useful for:** Pre-launch demos in low-participation states, QA regression-checking the viz layout without waiting for real participation, screenshot/marketing material.
+- **Constraint:** Must be visually distinguishable from real data — banner is non-negotiable, and the env-flag form should be production-disabled by default.
+- STATUS: Done
+<!-- card-id: b762fd4e-2525-4b59-a4f9-6baafc2988ba -->
 
 ---
 
@@ -374,7 +377,7 @@ All ballot upload/parse/extraction, party gates, measures, and a reliable ballot
 - Same class as the F12 "hardcoded Texas" fix, but more instances remain. On a NEW JERSEY address the UI still showed Texas/Harris-County leftovers: the left-panel footer link **"See party-gate (TX primary)"**, and the election-info "Show details" panel **"SOURCE · HARRIS COUNTY ELECTIONS"**.
 - **Requirement (Muxin):** ALL locations, states, counties, jurisdictions, election-types must be variables populated after we ingest the address + ballot — never hardcoded.
 - **Action:** sweep UI + data layers for literal "TX"/"Texas"/"Harris"/"primary"/county/state constants and replace each with an address/ballot-derived value. The "See party-gate (TX primary)" link is a dev affordance — remove or make dynamic for production.
-- STATUS: Backlog
+- STATUS: To Do
 <!-- card-id: 054cbdca-c250-4634-b5e3-916a25d5e584 -->
 
 **[P1] Party-primary FILTERING of the ballot ("2 Senate races")**
@@ -529,14 +532,14 @@ All ballot upload/parse/extraction, party gates, measures, and a reliable ballot
   WHERE NOT EXISTS (SELECT 1 FROM issue_tags it WHERE it.bill_id = b.id);
   -- Current: ~29,654 bills — mix of non-issue + untagged
   ```
-- STATUS: Backlog
+- STATUS: To Do
 <!-- card-id: 032d3451-cfa9-4dcf-b6e1-5d54bc82ab2c -->
 
 **[P1] `ingest-states.yml` cron has never fired from main**
 - Partially resolved 2026-05-15
 - Scheduled trigger only fires from default branch (`main`). New `dispatch-state-ingest.yml` on `main` added 2026-05-15 to trigger `workflow_dispatch` on `launch/production` daily at 07:30 UTC. First fire: 2026-05-16 (shard 1: HI ID IL IN IA KS KY LA ME MD).
 - **Monitor:** Check `gh run list --workflow=dispatch-state-ingest.yml` after 2026-05-16 07:30 UTC to confirm it fired and the downstream ingest succeeded.
-- STATUS: Backlog
+- STATUS: To Do
 <!-- card-id: f80ffd2b-5b5d-4274-bd1c-94b03784b5d5 -->
 
 **[P2] `ingest-state-donors-monthly.yml` — ~21 states use best-effort download URLs**
@@ -544,8 +547,71 @@ All ballot upload/parse/extraction, party gates, measures, and a reliable ballot
 - Several state donor download URLs were added as best-effort guesses without verification (AK, AR, CO, FL, HI, IN, KY, MA, MI, MN, MO, MS, NC, ND-cfis, NY, OH, OK, SC, TN, TX). These have `continue-on-error: true` and may silently fail on the monthly run.
 - The existing donor data for these states is from the initial ingest and is correct; only future refreshes are at risk.
 - **Fix:** Verify each URL manually before the first monthly run. Expected: June 2026.
-- STATUS: Backlog
+- STATUS: To Do
 <!-- card-id: bc0e3955-16ad-4ad6-ad31-2ea8d4f10ce2 -->
+
+**[P2] Consolidate duplicate `AlignmentScore` type into one source of truth**
+- Surfaced 2026-06-15 as a follow-up to the limited-data-notice wiring (the `kept: 0` card), which required editing the `AlignmentScore` shape in TWO places.
+- `AlignmentScore` is defined twice: `src/lib/structured-blocks.ts` (server/canonical) and `src/prototype/realData.ts` (client prototype copy). Any field change must be made in both, so they can silently drift.
+- **Fix:** one canonical definition (or a shared types module) that the other file imports — one source of truth for the data shape. Also covers the `redesign/delegationData.ts` consumer.
+- **Constraint to respect:** the prototype is intentionally self-contained; confirm the import doesn't drag server-only code into the client bundle. Pick the canonical home accordingly.
+- STATUS: To Do
+<!-- card-id: dfc934fd-ade1-4974-b781-db1aa9b79419 -->
+
+**[P1] Reframe product copy: "ballot research" → "Congress assessment"**
+- Default live app is the Congress scorecard (ballot flow is behind BALLOT_ENABLED), but ~20 strings still pitch a "research your ballot / printable ballot to take to the polls" tool — copy describes a different product than what loads.
+- Decide the canonical framing (e.g. "Assess your representatives with AI"), then update consistently across surfaces.
+- Site metadata — src/app/layout.tsx: title, openGraph.title, twitter.title, and both descriptions ("Research your ballot with AI…"); drop "printable ballot to take to the polls".
+- About page — src/app/about/page.tsx: "free, non-partisan ballot research tool" framing.
+- In-app strings — VoterChoiceApp.tsx ("Issues you voted on" → "Issues you cared about"), DelegationWorkspace.tsx (scorecard back-labels), BudgetModal.tsx (privacy line).
+- Factual fix bundled here: VoterChoiceApp lede "34 Senate seats are on the ballot" → "33".
+- ~20 flagged locations from the 2026-06-15 copy audit; re-audit those files when implementing.
+- STATUS: To Do
+<!-- card-id: 26b49d49-8dfb-4dbd-ad19-d12046b7b802 -->
+
+**Copy-accuracy cleanup — deferred wording calls**
+- Real wording problems from the copy audit that each need a small judgment (not mechanical). ~22 items.
+- Dead links: VoterChoiceApp.tsx href="#" anchors that go nowhere — point at real targets or remove.
+- "Tap a bill →" → "Tap a vote →" (VoterChoiceApp).
+- IssueConversation / HandoffModal: privacy + progress wording nuance.
+- ByokCard: "Saved. Chat now uses your account." → clarify the retry step.
+- EditIssuesModal: "Re-rank, rename, add" → also mention "remove".
+- Concentrated in VoterChoiceApp.tsx (11), about/page (2), EditIssuesModal, ByokCard.
+- STATUS: To Do
+<!-- card-id: 35ed3262-ec67-494c-9919-4dd719bfa9a1 -->
+
+**Formatting / terminology consistency — deferred**
+- Same concept named differently in different places — pick one term per concept. ~18 items from the copy audit.
+- "Amend your issues" vs "Edit your issues" (EditIssuesModal) — standardize.
+- Nav link ordering: AppNav vs in-page links (VoterChoiceApp).
+- Eyebrow / kick label casing (PolisClose, RepCard confidence label).
+- "Add something I forgot" → "Add something I missed" (IssueConversation).
+- Spread across VoterChoiceApp.tsx (5), data.tsx (3), RepCard, PolisClose, IssueConversation.
+- STATUS: To Do
+<!-- card-id: 0b7a6412-34b0-4274-83ec-b06a3ac3eb6c -->
+
+**Integrate Congress.gov CRS bill summaries (free public-domain backup)**
+- Free, public-domain backup for plain-language bill summaries — replaces CAN2026's summary need (per the [P0] Backup research, 2026-06-15).
+- Source: Congress.gov API CRS summaries — endpoint /bill/{congress}/{type}/{number}/summaries; free api.data.gov key, ~5K req/hr; public domain, NO attribution strings.
+- Hot fallback: GovInfo BILLSTATUS / BILLSUM bulk XML (identical CRS data) when the API is down.
+- Caveats: in the 119th Congress CRS writes summaries for the INTRODUCED version only — some bills return empty, handle gracefully; summary text is HTML, sanitize before display; Congress.gov API had an undocumented multi-day outage (Aug 2025) with no SLA — cache aggressively.
+- STATUS: To Do
+<!-- card-id: e70d609d-9b4b-4ad1-971c-1fbcba09f7bc -->
+
+**Synthesized "member's stated reason" vote-rationale layer**
+- Build a clearly-labeled "why this member voted this way" layer. No FREE structured vote-rationale source exists (CQ Roll Call is the only true one and is enterprise-paywalled; ProPublica's API is dead) — so synthesize it.
+- Approach: ingest Derek Willis's `congress-press` dataset (free bulk JSONL, 670K+ member press releases, daily updates, 2001-present); match releases to roll-call votes by bill number + date; optionally enrich with GovInfo Congressional Record floor statements; LLM-generate a plain-language "what the member said about this vote" blurb.
+- Labeling: present as the member's STATED / inferred reasoning, source-linked — never as authoritative fact or a verified quote unless quoting verbatim.
+- Caveats: coverage is structurally partial (members explain contested/messaging votes, rarely party-line or procedural ones); avoid Congressional Record "Personal Explanations" (those cover MISSED votes, ~half non-substantive); vet the congress-press license + underlying member-site ToS before redistribution.
+- STATUS: To Do
+<!-- card-id: f9cc6279-41ea-463b-a29c-3cf26f617396 -->
+
+**Double-check CAN2026: review the site thoroughly, page by page**
+- Confirm what data CAN2026 (can2026.org) actually provides by going through the site THOROUGHLY, page by page — the initial research only fetched the landing page and may have missed bill summaries / vote-rationale / useful supplemental data living in specific sub-pages.
+- Context: the quick fetch read CAN2026 as a constitutional-oversight documentation archive ("no evaluative conclusions"), but Muxin recalls some relevant data existing in specific parts of the site. CAN2026 could still be useful SUPPLEMENTAL info even if it isn't the primary summary/rationale source.
+- Deliverable: a page-by-page inventory of what CAN2026 offers (summaries? vote rationale? oversight records?), access/format, and whether/how it complements the free backups in cards A/B. Flag for user review before acting.
+- STATUS: To Do
+<!-- card-id: e55381e2-a02a-4b48-bb1f-4667108c7b38 -->
 
 **[P2] Delete drifted legacy frontend (supersedes #27)**
 - Flagged 2026-06-07; the app IS the prototype now
