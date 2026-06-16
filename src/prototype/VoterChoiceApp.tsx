@@ -3419,7 +3419,7 @@ function AllVotesPanel({ open, candidate, alignmentEntry, blindMode, alias, onCl
             <li>
               Vote data:{' '}
               <a href="https://www.congress.gov/roll-call-votes" target="_blank" rel="noopener noreferrer">Congress.gov · federal roll calls</a>{' · '}
-              <a href="https://capitol.texas.gov/Reports/Daily/Default.aspx" target="_blank" rel="noopener noreferrer">TX Legislature daily reports</a>
+              <a href="https://openstates.org" target="_blank" rel="noopener noreferrer">OpenStates · state legislature records</a>
             </li>
             <li>
               Narrative context:{' '}
@@ -4002,14 +4002,14 @@ function MethodologyPage({ onBack }) {
       <h2>Step 2 · Votes come from official roll-call data</h2>
       <ul>
         <li>Federal: <a href="https://www.congress.gov/roll-call-votes" target="_blank" rel="noopener noreferrer">Congress.gov roll-call votes</a>.</li>
-        <li>State: per-state legislative reporting (e.g. <a href="https://capitol.texas.gov" target="_blank" rel="noopener noreferrer">Texas Legislature</a>).</li>
+        <li>State: per-state legislative reporting via <a href="https://openstates.org" target="_blank" rel="noopener noreferrer">OpenStates</a> and your state legislature's official records.</li>
       </ul>
       <p>For each issue, our editorial team selects 2–5 "case file" votes — the bills that most directly test the issue. Every score on a candidate card is computed from these case file votes only. If we don't have a curated case file for an issue × jurisdiction, the score reads <i>"thin record"</i> instead of guessing.</p>
 
       <h2>Step 3 · Donor data comes from FEC + state filings</h2>
       <ul>
         <li>Federal candidates: <a href="https://www.fec.gov" target="_blank" rel="noopener noreferrer">FEC</a> + <a href="https://www.opensecrets.org" target="_blank" rel="noopener noreferrer">OpenSecrets</a>.</li>
-        <li>State candidates: state ethics commissions (e.g. Texas Ethics Commission).</li>
+        <li>State candidates: your state's ethics commission or campaign finance disclosure office.</li>
         <li><b>Named issue PACs</b> are editorially vetted — we only break a PAC out separately if it has a public stated agenda we can cite.</li>
       </ul>
 

@@ -134,7 +134,7 @@ const PROPOSITION_KIND_META = {
     label: 'Constitutional amendment · binding',
     binding: true,
     tone: 'binding',
-    blurb: 'A YES vote changes the Texas constitution. This is binding — if it passes statewide, it becomes law.',
+    blurb: 'A YES vote amends your state constitution. This is binding — if it passes statewide, it becomes law.',
   },
   bond: {
     label: 'Bond authorization · binding',
@@ -152,7 +152,7 @@ const PROPOSITION_KIND_META = {
     label: 'Primary proposition · advisory only',
     binding: false,
     tone: 'advisory',
-    blurb: 'In a Texas primary, propositions are ADVISORY — they signal what the party’s voters care about but don’t become law on their own. They influence the party platform + how legislators prioritize bills.',
+    blurb: "In a primary election, propositions are ADVISORY — they signal what the party’s voters care about but don’t become law on their own. They influence the party platform + how legislators prioritize bills.",
   },
   advisory: {
     label: 'Advisory vote · non-binding',
