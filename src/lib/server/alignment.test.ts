@@ -27,6 +27,7 @@ import {
   extractBillNumber,
   normalizeFederalType,
   stripLeadingBillNumber,
+  buildCongressGovUrl,
 } from "./alignment";
 
 // ---------------------------------------------------------------------------
@@ -1124,6 +1125,285 @@ describe("lookupAlignment", () => {
     expect(on.matchedSubIssue).toBe("drug_prices");
     expect(on.total).toBe(5);
     vi.unstubAllEnvs();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// buildCongressGovUrl — maps govtrack bill ids to Congress.gov URLs
+// ---------------------------------------------------------------------------
+
+describe("buildCongressGovUrl", () => {
+  it("maps govtrack-hr1234-118 → 118th-congress/house-bill/1234", () => {
+    expect(buildCongressGovUrl("govtrack-hr1234-118")).toBe(
+      "https://www.congress.gov/bill/118th-congress/house-bill/1234",
+    );
+  });
+
+  it("maps govtrack-s5-119 → 119th-congress/senate-bill/5", () => {
+    expect(buildCongressGovUrl("govtrack-s5-119")).toBe(
+      "https://www.congress.gov/bill/119th-congress/senate-bill/5",
+    );
+  });
+
+  it("maps govtrack-hjres1-118 → 118th-congress/house-joint-resolution/1", () => {
+    expect(buildCongressGovUrl("govtrack-hjres1-118")).toBe(
+      "https://www.congress.gov/bill/118th-congress/house-joint-resolution/1",
+    );
+  });
+
+  it("maps govtrack-sjres10-117 → 117th-congress/senate-joint-resolution/10", () => {
+    expect(buildCongressGovUrl("govtrack-sjres10-117")).toBe(
+      "https://www.congress.gov/bill/117th-congress/senate-joint-resolution/10",
+    );
+  });
+
+  it("maps govtrack-hres42-118 → 118th-congress/house-resolution/42", () => {
+    expect(buildCongressGovUrl("govtrack-hres42-118")).toBe(
+      "https://www.congress.gov/bill/118th-congress/house-resolution/42",
+    );
+  });
+
+  it("maps govtrack-sres7-119 → 119th-congress/senate-resolution/7", () => {
+    expect(buildCongressGovUrl("govtrack-sres7-119")).toBe(
+      "https://www.congress.gov/bill/119th-congress/senate-resolution/7",
+    );
+  });
+
+  it("maps govtrack-hconres3-118 → 118th-congress/house-concurrent-resolution/3", () => {
+    expect(buildCongressGovUrl("govtrack-hconres3-118")).toBe(
+      "https://www.congress.gov/bill/118th-congress/house-concurrent-resolution/3",
+    );
+  });
+
+  it("returns null for an openstates id (non-govtrack)", () => {
+    expect(buildCongressGovUrl("openstates-ocd-bill-abc123")).toBeNull();
+  });
+
+  it("returns null for null input", () => {
+    expect(buildCongressGovUrl(null)).toBeNull();
+  });
+
+  it("returns null for unknown bill type in govtrack id", () => {
+    // 'xyz' is not in the typeMap
+    expect(buildCongressGovUrl("govtrack-xyz99-118")).toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// lookupAlignment — CRS summary fallback (bills.summary → narrative)
+//
+// When no CAN2026 narrative row exists, the alignment builder should fall back
+// to bills.summary (CRS, public-domain, ungated) as the contributing-vote
+// narrative and append a Congress.gov source entry to vote.sources.
+// ---------------------------------------------------------------------------
+
+describe("lookupAlignment — CRS summary narrative fallback", () => {
+  it("uses bills.summary as narrative when no CAN2026 row exists (flag off)", async () => {
+    const { select, _chain } = makeSelectMock([]);
+    mockedGetDb.mockReturnValue({ select } as never);
+
+    _chain.where.mockResolvedValue([
+      {
+        billTitle: "Lower Drug Costs Now Act",
+        billId: "govtrack-hr3-118",
+        billRawMetadata: null,
+        billSourceUrl: "https://govtrack.us/bill/hr3",
+        billSource: "govtrack",
+        billSummary:
+          "Requires the Secretary of Health and Human Services to negotiate covered insulin prices.",
+        voteCast: "yea",
+        voteDate: "2024-03-15",
+        stanceLens: "in_favor",
+        taggerConfidence: "0.95",
+      },
+    ]);
+
+    const result = await lookupAlignment(
+      "federal-A123",
+      "healthcare_affordability",
+      "in_favor",
+    );
+
+    const vote = result.contributingVotes[0]!;
+    expect(vote.narrative).toBe(
+      "Requires the Secretary of Health and Human Services to negotiate covered insulin prices.",
+    );
+    // A Congress.gov source entry should be appended.
+    expect(vote.sources).toBeDefined();
+    expect(vote.sources).toHaveLength(1);
+    expect(vote.sources![0]!.name).toMatch(/congress\.gov/i);
+    expect(vote.sources![0]!.url).toContain("congress.gov");
+  });
+
+  it("CRS fallback constructs correct Congress.gov URL from the govtrack bill id", async () => {
+    const { select, _chain } = makeSelectMock([]);
+    mockedGetDb.mockReturnValue({ select } as never);
+
+    _chain.where.mockResolvedValue([
+      {
+        billTitle: "Inflation Reduction Act",
+        billId: "govtrack-hr5376-117",
+        billRawMetadata: null,
+        billSourceUrl: "https://govtrack.us/bill/hr5376",
+        billSource: "govtrack",
+        billSummary: "Reconciliation bill covering climate, health, and tax.",
+        voteCast: "yea",
+        voteDate: "2022-08-12",
+        stanceLens: "in_favor",
+        taggerConfidence: "0.92",
+      },
+    ]);
+
+    const result = await lookupAlignment(
+      "federal-A123",
+      "environment_climate",
+      "in_favor",
+    );
+
+    const vote = result.contributingVotes[0]!;
+    expect(vote.sources![0]!.url).toBe(
+      "https://www.congress.gov/bill/117th-congress/house-bill/5376",
+    );
+  });
+
+  it("CRS fallback uses https://www.congress.gov when bill id cannot be parsed (openstates)", async () => {
+    const { select, _chain } = makeSelectMock([]);
+    mockedGetDb.mockReturnValue({ select } as never);
+
+    _chain.where.mockResolvedValue([
+      {
+        billTitle: "State Clean Energy Act",
+        billId: "openstates-ocd-bill-xyz",
+        billRawMetadata: { openstates: { identifier: "HB 42" } },
+        billSourceUrl: "https://openstates.org/tx/bills/HB42",
+        billSource: "openstates",
+        billSummary: "Establishes renewable energy mandates for TX utilities.",
+        voteCast: "yea",
+        voteDate: "2024-05-01",
+        stanceLens: "in_favor",
+        taggerConfidence: "0.88",
+      },
+    ]);
+
+    const result = await lookupAlignment(
+      "openstates-X99",
+      "environment_climate",
+      "in_favor",
+    );
+
+    const vote = result.contributingVotes[0]!;
+    expect(vote.narrative).toBe(
+      "Establishes renewable energy mandates for TX utilities.",
+    );
+    // Fallback URL when bill id can't be parsed
+    expect(vote.sources![0]!.url).toBe("https://www.congress.gov");
+  });
+
+  it("CAN2026 narrative takes precedence over bills.summary when flag is on and row exists", async () => {
+    vi.stubEnv("CAN2026_DISPLAY_ENABLED", "1");
+
+    const { select, _chain } = makeSelectMock([]);
+    mockedGetDb.mockReturnValue({ select } as never);
+
+    _chain.where.mockResolvedValue([
+      {
+        billTitle: "Lower Drug Costs Now Act",
+        billId: "govtrack-hr3-118",
+        billRawMetadata: null,
+        billSourceUrl: "https://govtrack.us/bill/hr3",
+        billSource: "govtrack",
+        billSummary: "CRS: Requires HHS to negotiate insulin prices.",
+        voteCast: "yea",
+        voteDate: "2024-03-15",
+        stanceLens: "in_favor",
+        taggerConfidence: "0.95",
+        // CAN2026 row present:
+        narrative:
+          "CAN2026 curated: Senator voted YES to cap insulin at $35/mo.",
+      },
+    ]);
+
+    const result = await lookupAlignment(
+      "federal-A123",
+      "healthcare_affordability",
+      "in_favor",
+    );
+
+    const vote = result.contributingVotes[0]!;
+    // CAN2026 narrative wins — CRS text must NOT appear.
+    expect(vote.narrative).toBe(
+      "CAN2026 curated: Senator voted YES to cap insulin at $35/mo.",
+    );
+    // No extra sources appended when using the CAN2026 path.
+    expect(vote.sources).toBeUndefined();
+
+    vi.unstubAllEnvs();
+  });
+
+  it("neither CAN2026 nor bills.summary → narrative stays absent", async () => {
+    const { select, _chain } = makeSelectMock([]);
+    mockedGetDb.mockReturnValue({ select } as never);
+
+    _chain.where.mockResolvedValue([
+      {
+        billTitle: "Some Procedural Vote",
+        billId: "govtrack-hr999-118",
+        billRawMetadata: null,
+        billSourceUrl: "https://govtrack.us/bill/hr999",
+        billSource: "govtrack",
+        billSummary: null, // no CRS summary
+        voteCast: "yea",
+        voteDate: "2024-01-10",
+        stanceLens: "in_favor",
+        taggerConfidence: "0.7",
+      },
+    ]);
+
+    const result = await lookupAlignment(
+      "federal-A123",
+      "healthcare_affordability",
+      "in_favor",
+    );
+
+    const vote = result.contributingVotes[0]!;
+    expect(vote.narrative).toBeUndefined();
+    expect(vote.sources).toBeUndefined();
+  });
+
+  it("CRS fallback is ungated — works when CAN2026_DISPLAY_ENABLED is off", async () => {
+    // Confirm flag is off (default in this suite).
+    // The CRS narrative should still populate without the flag.
+    const { select, _chain } = makeSelectMock([]);
+    mockedGetDb.mockReturnValue({ select } as never);
+
+    _chain.where.mockResolvedValue([
+      {
+        billTitle: "Medicare Drug Price Negotiation Act",
+        billId: "govtrack-hr8421-118",
+        billRawMetadata: null,
+        billSourceUrl: "https://govtrack.us/bill/hr8421",
+        billSource: "govtrack",
+        billSummary:
+          "Authorizes Medicare to negotiate prescription drug prices directly.",
+        voteCast: "nay",
+        voteDate: "2024-06-01",
+        stanceLens: "in_favor",
+        taggerConfidence: "0.91",
+      },
+    ]);
+
+    const result = await lookupAlignment(
+      "federal-A123",
+      "healthcare_affordability",
+      "opposed",
+    );
+
+    const vote = result.contributingVotes[0]!;
+    expect(vote.narrative).toBe(
+      "Authorizes Medicare to negotiate prescription drug prices directly.",
+    );
+    expect(vote.sources).toBeDefined();
+    expect(vote.sources![0]!.name).toMatch(/congress\.gov/i);
   });
 });
 
