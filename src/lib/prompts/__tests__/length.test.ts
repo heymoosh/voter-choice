@@ -22,7 +22,11 @@ const LIMIT = 1500;
 // drug_prices) for more precise alignment scoring. That block is load-bearing
 // for sub-issue matching, so — per the same convention — the ceiling is raised
 // rather than trimming the load-bearing canonical-issue keyword anchors.
-const THEME_EXTRACTION_LIMIT = 6800;
+// Bumped 6800 -> 7200 (2026-06-16): the axis-type [contested]/[valence]
+// disambiguation tags (Alignment 2a) plus the tightened coverage_access
+// sub-issue definition are both load-bearing — raise the ceiling per the
+// convention above rather than trimming approved guidance.
+const THEME_EXTRACTION_LIMIT = 7200;
 // P0 #2 (live audit): the race-deep-dive prompt now carries an explicit
 // candidate-resolution rule so the model resolves surnames against
 // <candidates> instead of bouncing the disambiguation back to the voter.
@@ -32,7 +36,7 @@ const THEME_EXTRACTION_LIMIT = 6800;
 const RACE_DEEP_DIVE_LIMIT = 1800;
 
 describe("task-prompt length budget", () => {
-  it("theme-extraction body stays under the 3500-char limit", () => {
+  it("theme-extraction body stays under the 7200-char limit", () => {
     const rendered = buildThemeExtractionPrompt({
       userInput: "I care about healthcare.",
     });
