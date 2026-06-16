@@ -475,6 +475,26 @@ async function enrichBills(
         plan.bills.set(billId, mergeBillEnrichment(bill, enrichment));
         enriched += 1;
       }
+      // CRS BACKUP WIRING POINT (not yet activated):
+      // If the enrichment returned no summary (common for 119th Congress bills),
+      // call resolveCrsSummaryAsBackup() from scripts/ingest/crs-summaries.ts
+      // here.  The function signature matches the RuntimeConfig shape:
+      //
+      //   import { resolveCrsSummaryAsBackup } from "./crs-summaries";
+      //
+      //   const updatedBill = plan.bills.get(billId);
+      //   if (updatedBill && !updatedBill.summary) {
+      //     const crs = await resolveCrsSummaryAsBackup(identity, config, fetcher);
+      //     if (crs) {
+      //       plan.bills.set(billId, { ...updatedBill, summary: crs.text });
+      //     }
+      //   }
+      //
+      // This is intentionally left as a comment rather than active code so that
+      // the ingest rate budget is reviewed before doubling API calls per bill.
+      // (The /summaries endpoint is ALREADY called by fetchCongressGovBillEnrichment;
+      // the CRS client is an alternative path for when the primary returns no text,
+      // not an additional API call — but the comment above is kept for clarity.)
     } catch (error) {
       failures += 1;
       console.warn(
@@ -518,13 +538,25 @@ function parseCongressGovEnrichment(
   if (!bill) return null;
 
   const policyArea = asRecord(bill.policyArea);
-  const summary = firstRecord(getArray(asRecord(summaryJson)?.summaries));
+
+  // Pick the most recently updated CRS summary (the API may return multiple
+  // versions, e.g. "Introduced in House" and "Passed House").  Sort descending
+  // by updateDate so that the most-current summary wins.  An empty summaries
+  // array is normal for 119th-Congress bills and is not an error.
+  const allSummaries = getArray(asRecord(summaryJson)?.summaries);
+  const summary = selectLatestSummary(allSummaries);
+
+  // CRS summary text is HTML — strip tags before storing.
+  const rawSummaryText = getString(summary, "text");
+  const summaryText = rawSummaryText
+    ? stripCongressGovHtml(rawSummaryText)
+    : undefined;
 
   return {
     title: getString(bill, "title") ?? undefined,
     introducedDate: normalizeDate(getString(bill, "introducedDate")),
     policyArea: getString(policyArea, "name") ?? undefined,
-    summary: getString(summary, "text") ?? undefined,
+    summary: summaryText,
     raw: {
       bill: stripUndefined({
         congressGovType: getString(bill, "type"),
@@ -540,6 +572,65 @@ function parseCongressGovEnrichment(
         : null,
     },
   };
+}
+
+/**
+ * Pick the most recently updated summary from the Congress.gov /summaries
+ * array.  Returns null for an empty array (not an error).
+ *
+ * The API can return multiple versions (e.g. "Introduced in House", "Passed
+ * House").  We want the latest one.  Sort descending by updateDate; entries
+ * without a date sort last.
+ */
+function selectLatestSummary(summaries: unknown[]): UnknownRecord | null {
+  const records = summaries.flatMap((s) => {
+    const r = asRecord(s);
+    return r ? [r] : [];
+  });
+  if (records.length === 0) return null;
+
+  const sorted = [...records].sort((a, b) => {
+    const da = getString(a, "updateDate") ?? "";
+    const db = getString(b, "updateDate") ?? "";
+    return db.localeCompare(da);
+  });
+
+  return sorted[0] ?? null;
+}
+
+/**
+ * Strip HTML tags from a Congress.gov CRS summary text field and decode
+ * common HTML entities.  CRS summaries use <p>, <b>, <i>, and similar inline
+ * markup.  We produce clean plain text without adding a parser dependency.
+ */
+function stripCongressGovHtml(html: string): string {
+  let text = html;
+
+  // Replace block-level tags with newlines so paragraphs remain legible.
+  text = text.replace(/<\/?(p|div|br|li|tr|h[1-6])\b[^>]*>/gi, "\n");
+
+  // Strip all remaining tags.
+  text = text.replace(/<[^>]+>/g, "");
+
+  // Decode HTML entities that appear in CRS text.
+  text = text
+    .replace(/&amp;/gi, "&")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;|&apos;/gi, "'")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&#(\d+);/g, (_, code: string) =>
+      String.fromCharCode(Number(code)),
+    );
+
+  // Collapse runs of whitespace and trim.
+  text = text
+    .replace(/[ \t]+/g, " ")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+
+  return text;
 }
 
 function mergeBillEnrichment(
