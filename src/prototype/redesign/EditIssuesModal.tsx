@@ -1,6 +1,6 @@
 // @ts-nocheck
 "use client";
-/* Edit-issues modal — the restored "amend your issues" surface, now
+/* Edit-issues modal — the restored "edit your issues" surface, now
    conversational (same loop as the intake, per the user feedback that drove
    PR-3). Opens any time from the workspace; on Apply the host re-runs the
    deterministic per-seat scoring with the new list. Verdicts are never
@@ -27,7 +27,7 @@ export function EditIssuesModal({ issues, onApply, onCancel, onBudgetBlock }) {
       <div className="amend-card" onClick={(e) => e.stopPropagation()}>
         <header className="be-head">
           <div>
-            <div className="be-eyebrow">Amend your issues</div>
+            <div className="be-eyebrow">Edit your issues</div>
             <h3 id="edit-issues-title">
               Re-rank, rename, add, or remove — or just tell me what's changed.
             </h3>

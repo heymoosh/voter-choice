@@ -1114,7 +1114,7 @@ const en: Translations = {
     closedPrimaryGateContinue: "Continue to research",
     closedPrimaryGateSkip: "Skip \u2014 I'll figure it out",
     // Amendment editor keys
-    amendmentEditorEyebrow: "Amend your issues",
+    amendmentEditorEyebrow: "Edit your issues",
     amendmentEditorTitle: (count: number) =>
       `Re-evaluate ${count} ${count === 1 ? "pick" : "picks"} against new priorities`,
     amendmentEditorHelp:

@@ -2300,8 +2300,8 @@ function AppNavWithChrome({ onBrandClick, onOpenSettings, current, onNavigate })
       </div>
       <div className="links">
         <a onClick={() => onNavigate && onNavigate('howitworks')} role="link" tabIndex={0}>{t('nav.howItWorks')}</a>
-        <a onClick={() => onNavigate && onNavigate('about')} role="link" tabIndex={0}>{t('nav.about')}</a>
         <a onClick={() => onNavigate && onNavigate('methodology')} role="link" tabIndex={0}>{t('nav.methodology')}</a>
+        <a onClick={() => onNavigate && onNavigate('about')} role="link" tabIndex={0}>{t('nav.about')}</a>
         <a onClick={() => onNavigate && onNavigate('privacy')} role="link" tabIndex={0}>{t('nav.privacy')}</a>
       </div>
       <div className="nav-right">
@@ -2629,7 +2629,7 @@ function PartyGate({ stateName, electionDate, rule, onPick, onSkip }) {
    Maps to: ConcernInterpretation.tsx + AmendRescoreOffer.tsx (Phase 6)
 
    Shown as an inline overlay inside the workspace when the user
-   clicks "EDIT" on the issues list in the left rail. Unlike the
+   clicks "Edit" on the issues list in the left rail. Unlike the
    cold open, this version preserves all decided picks and shows
    how many would be affected by an issue change.
 
@@ -2689,7 +2689,7 @@ function AmendmentEditor({ issues, decisionsCount, onApply, onCancel }) {
       <div className="amend-card">
         <header className="amend-head">
           <div>
-            <div className="amend-eyebrow">Amend your issues</div>
+            <div className="amend-eyebrow">Edit your issues</div>
             <h3>Re-evaluate {decisionsCount} {decisionsCount === 1 ? 'pick' : 'picks'} against new priorities</h3>
           </div>
           <button className="amend-x" onClick={onCancel} aria-label="Close">×</button>
@@ -4771,7 +4771,7 @@ function WorkspaceView({ address, issues, decisions, activeRaceId, onDecide, onU
           <div className="priorities">
             <div className="top">
               <span className="lab">Your issues</span>
-              <button className="edit" onClick={onEditIssues}>EDIT</button>
+              <button className="edit" onClick={onEditIssues}>Edit</button>
             </div>
             <ol>
               {issues.map(iss => <li key={iss.canonicalIssue}>{iss.interpretation}</li>)}
@@ -5207,7 +5207,7 @@ function BallotPaneInner({ races, decisions, activeRaceId, address, issues, onEd
       </div>
 
       {/* Mobile/tablet edit-issues entry — the left rail (which holds
-          "Your issues · EDIT" on desktop) is hidden below 1024px, so
+          "Your issues · Edit" on desktop) is hidden below 1024px, so
           surface the same affordance here. Hidden on desktop via CSS. */}
       {onEditIssues && issues && issues.length > 0 && (
         <div className="b-issues-edit">

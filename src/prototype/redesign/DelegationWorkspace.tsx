@@ -351,7 +351,7 @@ export function DelegationWorkspace({
                   onClick={onEditIssues}
                   data-testid="edit-issues-rail"
                 >
-                  EDIT
+                  Edit
                 </button>
               )}
             </div>
