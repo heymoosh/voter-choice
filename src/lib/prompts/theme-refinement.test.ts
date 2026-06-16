@@ -5,7 +5,11 @@ import {
 } from "./theme-refinement";
 
 const THEMES = JSON.stringify([
-  { name: "Healthcare", quotes: ["insulin"], canonicalIssue: "healthcare_affordability" },
+  {
+    name: "Healthcare",
+    quotes: ["insulin"],
+    canonicalIssue: "healthcare_affordability",
+  },
 ]);
 
 describe("buildThemeRefinementPrompt — disambiguation cap", () => {

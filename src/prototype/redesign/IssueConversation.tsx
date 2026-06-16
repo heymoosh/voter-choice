@@ -157,7 +157,10 @@ export function useIssueConversation({ seedIssues, onBudgetBlock }) {
             // counting — the prompt is already in lock-in mode.
             const askedAQuestion =
               !themes && /\?\s*$/.test((prose || "").trim());
-            if (askedAQuestion && clarifyCountRef.current < DISAMBIGUATION_CAP) {
+            if (
+              askedAQuestion &&
+              clarifyCountRef.current < DISAMBIGUATION_CAP
+            ) {
               clarifyCountRef.current += 1;
             }
             if (themes) {
@@ -285,8 +288,8 @@ export function IssueConversation({
             <span className="of">{issues.length} issues · edit freely</span>
           </div>
           <p className="th-sub">
-            Use the arrows to re-rank · click a name to rename · Remove to delete an issue · or keep talking
-            to me below and I'll adjust them.
+            Use the arrows to re-rank · click a name to rename · Remove to
+            delete an issue · or keep talking to me below and I'll adjust them.
           </p>
 
           {issues.map((iss, i) => (
