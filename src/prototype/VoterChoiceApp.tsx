@@ -642,7 +642,7 @@ function IssueRow({ issue, index, total, onMoveUp, onMoveDown, onRename, onRemov
         )}
       </div>
       <div className="acts">
-        <button className="danger" onClick={onRemove}>REMOVE</button>
+        <button className="danger" onClick={onRemove}>Remove</button>
       </div>
     </div>
   );
@@ -2789,7 +2789,7 @@ function AmendDeltaMessage({ deltas, onRevisit }) {
           })}
         </div>
         <p className="ad-foot">
-          Only races where the change is bigger than 5pts get a REVISIT flag. The others stay on your ballot as-is.
+          Only races where the change is bigger than 5 pts get a REVISIT flag. The others stay on your ballot as-is.
         </p>
       </div>
     </div>
@@ -3867,7 +3867,7 @@ function NoContestedView({ stateData, county = 'your county', onBallotConfirmed,
               {onBack && (
                 <div className="nc-foot">
                   <button className="nc-back" onClick={onBack}>← Back to address</button>
-                  <p className="nc-privacy">Privacy: don't paste your name, address, phone, or email — only the ballot text.</p>
+                  <p className="nc-privacy">Privacy: don't paste your name, address, phone number, or email — only the ballot text.</p>
                 </div>
               )}
             </>
@@ -4446,7 +4446,7 @@ function ColdOpenView({ address, onLock, savedIssues, contextNote }) {
         <div className="msg ai">
           <div className="who">Voter Choice · AI</div>
           <div className="bubble">
-            <p>I've pulled your representatives names. Before I walk you through their performance, I want to know what you're judging them on</p>
+            <p>I've pulled your representatives' names. Before I walk you through their record, I want to know what you're judging them on.</p>
             <p style={{ marginTop: '10px' }}><b>What's been on your mind this year?</b> Things you wish Congress would actually do something about. Frustrations, hopes, fights you've watched in your community. Type as much or as little as you want.</p>
           </div>
         </div>
@@ -5328,7 +5328,7 @@ function BudgetExhaustedFoot({ canPrint, onPrint, onSaveProfile, onContinueElsew
 
       <p className="bx-tip">
         Voter Choice is free. A tip keeps the budget alive for the next voter —{' '}
-        <a onClick={() => onNavigate && onNavigate('tip')} role="link" tabIndex={0}>tip jar</a> · not required.
+        <a onClick={() => onNavigate && onNavigate('tip')} role="link" tabIndex={0}>Tip jar</a> · not required.
       </p>
     </div>
   );
