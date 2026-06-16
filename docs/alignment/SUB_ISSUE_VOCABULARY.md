@@ -156,8 +156,16 @@ after the next gold gate confirms the tightened version is working.
 | Voter UX | Fine for most users | Enables "I care about Medicaid specifically" vs. "ACA marketplace" |
 | Recommended order | Ship tightening now, re-tag, run gold gate | Decide split AFTER gold gate confirms tightened version works |
 
-**Recommendation:** Implement the tightening now. If the gold gate passes at
->=75% agreement, decide then whether the volume of `coverage_access` hits
-warrants the split (it's worth it if >500 high-confidence bills tag into it,
-since the three sub-concerns are substantively different). The split is a
+**Recommendation:** Implement the tightening now. Enabling the facet is gated
+only on a *quality* check — the gold gate confirms the tags are accurate (i.e.
+not mislabeling general-healthcare bills as coverage). That is about
+**correctness, not volume.** Decide the split on whether Medicaid /
+ACA-marketplace / the-uninsured read as genuinely distinct voter concerns worth
+separate labels — a qualitative call, **not a data-volume gate.** The split is a
 medium-sized card (enum change + 3 gold panels + re-tag).
+
+**Data-visibility principle (do NOT violate):** a thin record is still signal.
+Always surface the contributing votes that exist, **with the count shown**, and
+let the voter judge — never suppress an issue's record below a vote-count
+threshold. A split only changes which bucket a vote lands in; it must never hide
+votes. If a (sub-)facet is thin, show it thin, with the count.
