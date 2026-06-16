@@ -18,12 +18,17 @@ export const THEME_FIELDS_PROMPT_BLOCK = `  "name":   a short neutral noun phras
             fits. This maps the voter's words to a known issue so the
             app can score candidates' voting records — you are doing
             language understanding, not judging candidates.
-  "stance": "in_favor" or "opposed" — which side of the issue the
-            voter is on, inferred from their words. Omit if genuinely
-            unclear. Most priorities are aspirational ("I want lower
-            drug prices") → "in_favor". Use "opposed" only when the
-            voter clearly wants LESS of something ("stop the new
-            highway", "against the bond").
+  "stance": "in_favor" or "opposed" — the FIXED per-issue side (see
+            POLE DIRECTIONS below; NOT "good vs bad"). Key off the issue's
+            [contested]/[valence] tag there:
+              · [contested]: set "stance" ONLY if the words pick a side
+                ("protect my 2A rights"→in_favor; "fewer guns on the
+                street"→opposed). If value-only and no side ("I care
+                about guns"), OMIT "stance" — an honest no-score beats a
+                guess. Never default a bare contested concern to in_favor.
+              · [valence]: aspirational concerns ("lower drug prices")→
+                in_favor; "opposed" only if they want LESS government
+                action ("government shouldn't run healthcare").
   "subIssue": OPTIONAL — a finer id from the SUB-ISSUES list below,
             only when one clearly fits the voter's words. Its parent
             MUST equal canonicalIssue; otherwise omit. Never invent ids.`;

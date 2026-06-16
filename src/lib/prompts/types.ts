@@ -71,10 +71,17 @@ export interface Theme {
 
   /**
    * The voter's stance on this issue, used by `lookupAlignment` to decide
-   * which votes count as "with" vs "against" the voter. "in_favor" means the
-   * voter wants more of / supports the issue; "opposed" means they want less
-   * of / oppose it. Defaults to "in_favor" downstream when unset (most
-   * voter-named priorities are aspirational, not oppositional).
+   * which votes count as "with" vs "against" the voter. "in_favor"/"opposed"
+   * are the FIXED per-issue poles from `poleVocabulary.ts`, NOT "good vs bad".
+   *
+   * Optional, and deliberately so: for a CONTESTED issue (12 of 16) whose
+   * concern is value-only and doesn't pick a side ("I care about guns"), the
+   * extraction prompt now OMITS stance rather than guessing — alignment for
+   * that issue degrades to an honest no-score instead of being scored against
+   * a guessed pole. For a valence_dominant issue an aspirational concern still
+   * resolves to "in_favor". The live tool path (chat route → lookupAlignment)
+   * treats an absent stance as no-score; do NOT re-introduce an in_favor
+   * default for a missing stance on a contested issue.
    */
   stance?: "in_favor" | "opposed";
 

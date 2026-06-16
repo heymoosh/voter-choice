@@ -23,6 +23,7 @@ import {
   type RaceDataInput,
 } from "../../../lib/server/race-data";
 import { CANONICAL_ISSUE_LABELS } from "../../../lib/canonicalIssues";
+import { isContested } from "../../../lib/alignment/poleVocabulary";
 
 const MAX_CANDIDATES = 20;
 const MAX_ISSUES = 10;
@@ -93,10 +94,23 @@ function parseBody(body: unknown): ParsedBody | Response {
       const canonicalIssue =
         typeof rec.canonicalIssue === "string" ? rec.canonicalIssue : "";
       if (!(canonicalIssue in CANONICAL_ISSUE_LABELS)) continue;
-      const stance =
+      const explicitStance =
         rec.stance === "in_favor" || rec.stance === "opposed"
           ? rec.stance
-          : "in_favor";
+          : undefined;
+      // axis_type gate (Alignment 2a): a CONTESTED issue has two legitimate
+      // poles, so without an explicit side we must NOT guess — drop the issue
+      // (honest no-score) rather than scoring against a defaulted in_favor pole.
+      // A valence_dominant issue has one consensus pole, so a bare concern
+      // still resolves to in_favor.
+      let stance: "in_favor" | "opposed";
+      if (explicitStance) {
+        stance = explicitStance;
+      } else if (isContested(canonicalIssue)) {
+        continue;
+      } else {
+        stance = "in_favor";
+      }
       issues.push({
         canonicalIssue,
         issueLabel:
