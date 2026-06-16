@@ -137,9 +137,8 @@ jobs:
           - state: Colorado
             script: co-tracer-donors.ts
             pre_download: |
-              # TODO: verify exact ZIP filenames at https://tracer.sos.colorado.gov/PublicSite/Docs/BulkDataDownloads/
-              curl -fsSL --insecure "https://tracer.sos.colorado.gov/PublicSite/Docs/BulkDataDownloads/2024_ContributionData.zip" -o /tmp/CO_2024_contributions.zip
-              curl -fsSL --insecure "https://tracer.sos.colorado.gov/PublicSite/Docs/BulkDataDownloads/2026_ContributionData.zip" -o /tmp/CO_2026_contributions.zip
+              curl -fsSL --insecure "https://tracer.sos.colorado.gov/PublicSite/Docs/BulkDataDownloads/2024_ContributionData.csv.zip" -o /tmp/CO_2024_contributions.zip
+              curl -fsSL --insecure "https://tracer.sos.colorado.gov/PublicSite/Docs/BulkDataDownloads/2026_ContributionData.csv.zip" -o /tmp/CO_2026_contributions.zip
 
           - state: Florida
             script: fl-dos-donors.ts
@@ -158,8 +157,7 @@ jobs:
           - state: Indiana
             script: in-cfa-donors.ts
             pre_download: |
-              # TODO: verify exact ZIP filename at https://campaignfinance.in.gov/PublicSite/Docs/BulkDataDownloads/
-              curl -fsSL "https://campaignfinance.in.gov/PublicSite/Docs/BulkDataDownloads/2024_ContributionData.zip" -o /tmp/IN_2024_contributions.zip
+              curl -fsSL "https://campaignfinance.in.gov/PublicSite/Docs/BulkDataDownloads/2024_ContributionData.csv.zip" -o /tmp/IN_2024_contributions.zip
 
           - state: Kentucky
             script: ky-kref-donors.ts
@@ -237,8 +235,7 @@ jobs:
           - state: Oklahoma
             script: ok-ethics-donors.ts
             pre_download: |
-              # TODO: verify exact ZIP filename at https://guardian.ok.gov/PublicSite/Docs/BulkDataDownloads/
-              curl -fsSL "https://guardian.ok.gov/PublicSite/Docs/BulkDataDownloads/2024_ContributionLoanExtract.zip" -o /tmp/OK_2024_contributions.zip
+              curl -fsSLk "https://guardian.ok.gov/PublicSite/Docs/BulkDataDownloads/2024_ContributionLoanExtract.csv.zip" -o /tmp/OK_2024_contributions.zip
 
           - state: "South Carolina"
             script: sc-ethics-donors.ts
@@ -256,8 +253,7 @@ jobs:
           - state: Texas
             script: tx-tec-donors.ts
             pre_download: |
-              # TODO: find correct TEC ZIP URL from https://www.ethics.state.tx.us/data/search/cf/
-              curl -fsSL "https://www.ethics.state.tx.us/data/search/cf/TEC_CF_CSV.zip" -o /tmp/TEC_CF_CSV.zip
+              curl -fsSLk "https://prd.tecprd.ethicsefile.com/public/cf/public/TEC_CF_CSV.zip" -o /tmp/TEC_CF_CSV.zip
 
     steps:
       - name: Checkout
