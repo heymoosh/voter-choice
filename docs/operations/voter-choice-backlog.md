@@ -68,7 +68,7 @@ Ballot upload/parse is too much friction for the target user, so the product shi
   ```
 - **Verification:** after redeploy, `vercel env ls` should NOT list `CHAT_DAILY_SESSION_LIMIT` for Production. The default `process.env.NODE_ENV === "production" ? 10 : 20` in `src/lib/server/rate-limit.ts:4-5` then applies. Env changes only take effect on a _fresh_ deployment.
 - **Why we raised it temporarily:** PR #45 fixed a sessionId regeneration bug (each page reload was consuming a fresh session slot). With that fix landed, a single user's session correctly counts as 1. But during the launch ramp it was practical to give dogfooders headroom rather than tune the cap precisely.
-- **Caveat (noted 2026-05-28, updated same day):** the durable rate-limiter still fails _closed_ on ANY Upstash Redis error (`src/lib/server/rate-limit.ts:256-269`), so a Redis blip denies the request — but it now reports `code: "RATE_LIMIT_UNAVAILABLE"` (not `DAILY_LIMIT`), which the continuity overlay renders as a distinct "temporarily unavailable — try again" message (the `service_unavailable` gate variant) instead of the misleading "Budget exhausted" copy. Raising `CHAT_DAILY_SESSION_LIMIT` won't help a Redis failure: if chat denies while the budget tier is still `normal`, suspect a Redis blip, not the cap.
+- **Caveat (noted 2026-05-28, updated same day):** the durable rate-limiter still fails _closed_ on ANY Upstash Redis error (`src/lib/server/rate-limit.ts:256-269`), so a Redis blip denies the request — but it now reports `code: "RATE_LIMIT_UNAVAILABLE"` (not `DAILY_LIMIT`), which the continuity overlay renders as a distinct "temporarily unavailable — try again" message instead of the misleading "Budget exhausted" copy. Raising `CHAT_DAILY_SESSION_LIMIT` won't help a Redis failure: if chat denies while the budget tier is still `normal`, suspect a Redis blip, not the cap.
 - STATUS: Backlog
 <!-- card-id: 28bf87ec-8587-4d1f-acc7-ab5ff7467cf4 -->
 
@@ -349,12 +349,10 @@ Expand beyond Congress without full ballot ingestion (non-legislative candidates
 - STATUS: Backlog
 <!-- card-id: 2269ffae-a02c-4561-83c9-1d9a0661b910 -->
 
-**[idea] Polis viz dev/preview mode for low-participation areas**
+**[idea] Polis viz no longer gated on participation threshold**
 - Flagged 2026-05-18 — design + QA tooling
-- When `thresholdMet === false` (jurisdictions with too few participants to show the visualization), QA + demos currently have no way to preview what the viz will look like once data fills in.
-- Proposal: gate a mock dataset behind a `?devPolis=1` query param (or `NEXT_PUBLIC_DEV_POLIS` env flag) that renders the viz with a clearly-labeled "preview data" banner.
-- **Useful for:** Pre-launch demos in low-participation states, QA regression-checking the viz layout without waiting for real participation, screenshot/marketing material.
-- **Constraint:** Must be visually distinguishable from real data — banner is non-negotiable, and the env-flag form should be production-disabled by default.
+- **Resolved by removing the gate (PR #116, 2026-06-15):** the original concern was that low-participation jurisdictions saw NO Polis viz (the old `thresholdMet` / 200-user minimum hid it). Rather than build a mock-data "preview mode" to work around the gate, the participation threshold was **removed entirely** — the party-free overlap cloud now renders for everyone regardless of participant count, so there is no longer a blocked state to preview around. This is the desired behavior.
+- The originally-proposed `?devPolis=1` / `NEXT_PUBLIC_DEV_POLIS` mock-data path was therefore **never built and is not needed** (those flags do not exist in code).
 - STATUS: Done
 <!-- card-id: b762fd4e-2525-4b59-a4f9-6baafc2988ba -->
 
@@ -535,10 +533,10 @@ All ballot upload/parse/extraction, party gates, measures, and a reliable ballot
 - STATUS: To Do
 <!-- card-id: 032d3451-cfa9-4dcf-b6e1-5d54bc82ab2c -->
 
-**[P1] `ingest-states.yml` cron has never fired from main**
-- Partially resolved 2026-05-15
-- Scheduled trigger only fires from default branch (`main`). New `dispatch-state-ingest.yml` on `main` added 2026-05-15 to trigger `workflow_dispatch` on `launch/production` daily at 07:30 UTC. First fire: 2026-05-16 (shard 1: HI ID IL IN IA KS KY LA ME MD).
-- **Monitor:** Check `gh run list --workflow=dispatch-state-ingest.yml` after 2026-05-16 07:30 UTC to confirm it fired and the downstream ingest succeeded.
+**[P1] Confirm `ingest-states.yml` cron is actually firing from main**
+- Partially resolved 2026-05-15; mechanism updated 2026-06-15
+- **Resolved (mechanism):** `ingest-states.yml` now self-schedules on `main` (`schedule: cron "30 7 * * *"`, daily 07:30 UTC), sharding 10 states/day by day-of-month % 5 so all 50 cycle every 5 days within the 250 req/day OpenStates limit. The earlier cross-branch `dispatch-state-ingest.yml` dispatcher (which fired `workflow_dispatch` onto `launch/production`) no longer exists — `main` is the canonical deploy branch now, so the dispatcher is unnecessary.
+- **Remaining (monitor):** confirm the on-`main` cron has actually been running and the downstream ingest succeeds — `gh run list --workflow=ingest-states.yml`. Close once a green run is verified.
 - STATUS: To Do
 <!-- card-id: f80ffd2b-5b5d-4274-bd1c-94b03784b5d5 -->
 
