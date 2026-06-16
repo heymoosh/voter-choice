@@ -29,7 +29,7 @@ export function EditIssuesModal({ issues, onApply, onCancel, onBudgetBlock }) {
           <div>
             <div className="be-eyebrow">Amend your issues</div>
             <h3 id="edit-issues-title">
-              Re-rank, rename, add — or just tell me what's changed.
+              Re-rank, rename, add, or remove — or just tell me what's changed.
             </h3>
           </div>
           <button className="be-x" onClick={onCancel} aria-label="Cancel">

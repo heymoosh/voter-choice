@@ -265,7 +265,7 @@ export function IssueConversation({
             <span className="of">{issues.length} issues · edit freely</span>
           </div>
           <p className="th-sub">
-            Use the arrows to re-rank · click a name to rename · or keep talking
+            Use the arrows to re-rank · click a name to rename · Remove to delete an issue · or keep talking
             to me below and I'll adjust them.
           </p>
 
@@ -327,7 +327,7 @@ export function IssueConversation({
         />
         <div className="row">
           <span className="hint">
-            Nothing leaves your browser until you lock these in
+            Your issue list stays in your browser until you lock it in
           </span>
           <button
             className="send"

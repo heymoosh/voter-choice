@@ -46,7 +46,7 @@ export default function AboutPage() {
             legislatures), the <b>funding picture</b> (FEC, OpenSecrets, state
             ethics commissions), and the <b>editorially-curated context</b>{" "}
             behind each vote (CAN2026 case files). We score how each candidate
-            aligns with the issues YOU told us matter, vote by vote.
+            aligns with the issues you told us matter, vote by vote.
           </p>
 
           <h2>What we don&rsquo;t do</h2>

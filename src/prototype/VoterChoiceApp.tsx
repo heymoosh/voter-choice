@@ -1279,7 +1279,7 @@ function AlignmentDrilldown({ score, candidate, anonCtx }) {
     <div className="cv2-drill">
       <div className="cv2-drill-head">
         <span className="lab">Why {pct}%?</span>
-        <span className="meta">Tap a bill →</span>
+        <span className="meta">Tap a vote →</span>
       </div>
 
       <div className="cv2-votes">
@@ -2942,7 +2942,7 @@ function BudgetExhaustedByok({ onClose }) {
     if (window.setByokKey) window.setByokKey(k);
     setSavedKey(k);
     setKeyDraft('');
-    setStatus({ tone: 'ok', text: 'Saved. Chat now uses your account.' });
+    setStatus({ tone: 'ok', text: 'Saved — resend your last message to use your account.' });
   }
   function clearKey() {
     if (window.removeByokKey) window.removeByokKey();
@@ -3424,7 +3424,7 @@ function AllVotesPanel({ open, candidate, alignmentEntry, blindMode, alias, onCl
             <li>
               Narrative context:{' '}
               <a href="https://can2026.org" target="_blank" rel="noopener noreferrer">CAN2026 case files</a>{' · '}
-              <a href="#" target="_blank" rel="noopener noreferrer">our methodology</a>
+              <a href="/methodology">our methodology</a>
             </li>
             <li>
               Donor breakdowns:{' '}
@@ -3973,7 +3973,7 @@ function AboutPage({ onBack }) {
       <p>Voter Choice is built and operated by <b>Grey Bird LLC</b>, a small independent shop. We made it because the gap between "what a candidate says in their ads" and "what they actually voted on" has gotten wider every cycle. We thought voters deserved a tool that closes it.</p>
 
       <h2>What we do</h2>
-      <p>For every race on your ballot, we pull the <b>actual voting record</b> of incumbents (Congress.gov, state legislatures), the <b>funding picture</b> (FEC, OpenSecrets, state ethics commissions), and the <b>editorially-curated context</b> behind each vote (CAN2026 case files). We score how each candidate aligns with the issues YOU told us matter, vote by vote.</p>
+      <p>For every race on your ballot, we pull the <b>actual voting record</b> of incumbents (Congress.gov, state legislatures), the <b>funding picture</b> (FEC, OpenSecrets, state ethics commissions), and the <b>editorially-curated context</b> behind each vote (CAN2026 case files). We score how each candidate aligns with the issues you told us matter, vote by vote.</p>
 
       <h2>What we don't do</h2>
       <ul>
