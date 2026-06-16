@@ -394,6 +394,44 @@ describe("alignmentEntryFromResults", () => {
     expect(entry.scores).toHaveLength(1);
     expect(entry.scores?.[0].canonicalIssue).toBe("healthcare_affordability");
   });
+
+  it("propagates notice from a thin-data result (total < 5)", () => {
+    // Simulates a result already processed by attachLimitedDataNotice.
+    const entry = alignmentEntryFromResults("D", [
+      {
+        issue,
+        result: {
+          found: true,
+          candidateId: "uuid-thin",
+          kept: 1,
+          total: 3,
+          contributingVotes: [],
+          notice:
+            "Limited data: only 3 relevant votes found for this issue (1 aligned with your stance). Score may not reflect the candidate's overall record.",
+        },
+      },
+    ]);
+    expect(entry.scores).toHaveLength(1);
+    expect(entry.scores?.[0].notice).toMatch(/Limited data/);
+    expect(entry.scores?.[0].total).toBe(3);
+  });
+
+  it("omits notice field when the result has no notice (adequate data)", () => {
+    const entry = alignmentEntryFromResults("E", [
+      {
+        issue,
+        result: {
+          found: true,
+          candidateId: "uuid-adequate",
+          kept: 5,
+          total: 7,
+          contributingVotes: [],
+        },
+      },
+    ]);
+    expect(entry.scores).toHaveLength(1);
+    expect(entry.scores?.[0].notice).toBeUndefined();
+  });
 });
 
 // Integration: with no DATABASE_URL in the test env, the DB is unconfigured,

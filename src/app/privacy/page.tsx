@@ -23,7 +23,7 @@ export default function PrivacyPolicy() {
 
         {/* Eyebrow + Title */}
         <div className="font-mono text-[11px] uppercase tracking-[0.14em] text-civic mb-[10px]">
-          Privacy policy
+          Privacy Policy
         </div>
         <h1 className="font-serif font-semibold text-5xl leading-none tracking-[-0.025em] mb-8 text-wrap-balance text-ink md:text-[48px] text-[36px]">
           What stays here, what doesn&apos;t.

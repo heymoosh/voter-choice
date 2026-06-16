@@ -851,6 +851,8 @@ export interface AlignmentScore {
   sourceType: "voting_record" | "web_search";
   kept?: number;
   total?: number;
+  /** Limited-data caveat from attachLimitedDataNotice (0 < total < 5). */
+  notice?: string;
   confidence?: string;
   evidence?: { summary: string; url: string }[];
   contributingVotes?: unknown[];

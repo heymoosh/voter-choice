@@ -328,7 +328,7 @@ export function alignmentEntryFromResults(
   for (const { issue, result } of perIssue) {
     if (!result.found) continue;
     if (result.unavailable) continue; // DB-not-configured / internal-error path
-    scores.push({
+    const score: AlignmentScore = {
       canonicalIssue: issue.canonicalIssue,
       issueLabel: issue.issueLabel || getIssueLabel(issue.canonicalIssue),
       resolvedStance: issue.stance,
@@ -336,7 +336,9 @@ export function alignmentEntryFromResults(
       kept: result.kept,
       total: result.total,
       contributingVotes: result.contributingVotes,
-    });
+    };
+    if (result.notice) score.notice = result.notice;
+    scores.push(score);
   }
   if (scores.length === 0) {
     return {

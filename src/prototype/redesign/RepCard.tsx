@@ -135,7 +135,7 @@ function ResearchedPositionRow({ issue, pos }) {
                 <p className="cv2-vote-narr">“{e.summary}”</p>
                 <div className="cv2-vote-cite">
                   <span className="src-chip">
-                    web search · {pos.confidence} confidence
+                    Web search · {pos.confidence} confidence
                   </span>
                   <a
                     href={e.url}

@@ -77,7 +77,7 @@ export function ScorecardPrintView({
         <div className="print-header">
           <h2>Your printable scorecard</h2>
           <div className="actions">
-            <button onClick={onBack}>← Back to scorecard</button>
+            <button onClick={onBack}>← Back to your scorecard</button>
             <button className="primary" onClick={() => window.print()}>
               Print / save as PDF
             </button>
