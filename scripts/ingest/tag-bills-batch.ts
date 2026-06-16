@@ -26,6 +26,8 @@ import {
   buildBillPrompt,
   parseAndValidateTags,
   fetchUntaggedBills,
+  inferSkipReason,
+  recordSkipReason,
   type BillRow,
   type ValidatedTag,
 } from "./tag-bills";
@@ -175,25 +177,29 @@ async function pollUntilEnded(
 // Collect mode — process results
 // ---------------------------------------------------------------------------
 
-type CollectCounts = {
+export type CollectCounts = {
   billsProcessed: number;
   billsTagged: number;
   billsSkipped: number;
   tagsUpserted: number;
+  /** Bills where the tagger returned [] and we wrote a skip_reason. */
+  billsSkipReasonWritten: number;
   apiErrors: number;
   dbErrors: number;
 };
 
-async function processResults(
+export async function processResults(
   batchId: string,
   client: Anthropic,
   db: DbClient,
+  dryRun = false,
 ): Promise<CollectCounts> {
   const counts: CollectCounts = {
     billsProcessed: 0,
     billsTagged: 0,
     billsSkipped: 0,
     tagsUpserted: 0,
+    billsSkipReasonWritten: 0,
     apiErrors: 0,
     dbErrors: 0,
   };
@@ -233,6 +239,22 @@ async function processResults(
     if (upserted >= 0) {
       counts.tagsUpserted += upserted;
       counts.billsTagged += 1;
+
+      // When the model intentionally returned [] (non-issue bill), record why so
+      // coverage reporting can distinguish "skipped non-issue" from "queued".
+      if (tags.length === 0) {
+        const titleRow = await db.execute(
+          sql`SELECT title FROM bills WHERE id = ${billId} LIMIT 1`,
+        );
+        const title =
+          (titleRow.rows[0] as { title?: string } | undefined)?.title ?? billId;
+        const reason = inferSkipReason(title);
+        process.stderr.write(
+          `[tag-bills-batch] non_issue bill=${billId} skip_reason=${reason}\n`,
+        );
+        await recordSkipReason(db, billId, reason, dryRun);
+        counts.billsSkipReasonWritten += 1;
+      }
     }
   }
 
@@ -354,6 +376,7 @@ async function runCollect(batchIdArg: string | undefined): Promise<void> {
     billsTagged: 0,
     billsSkipped: 0,
     tagsUpserted: 0,
+    billsSkipReasonWritten: 0,
     apiErrors: 0,
     dbErrors: 0,
   };
@@ -378,6 +401,7 @@ async function runCollect(batchIdArg: string | undefined): Promise<void> {
       `bills_tagged=${totals.billsTagged}`,
       `bills_skipped=${totals.billsSkipped}`,
       `tags_upserted=${totals.tagsUpserted}`,
+      `skip_reason_written=${totals.billsSkipReasonWritten}`,
       `api_errors=${totals.apiErrors}`,
       `db_errors=${totals.dbErrors}`,
     ].join(" "),
@@ -409,6 +433,7 @@ function accumulateCounts(totals: CollectCounts, counts: CollectCounts): void {
   totals.billsTagged += counts.billsTagged;
   totals.billsSkipped += counts.billsSkipped;
   totals.tagsUpserted += counts.tagsUpserted;
+  totals.billsSkipReasonWritten += counts.billsSkipReasonWritten;
   totals.apiErrors += counts.apiErrors;
   totals.dbErrors += counts.dbErrors;
 }
