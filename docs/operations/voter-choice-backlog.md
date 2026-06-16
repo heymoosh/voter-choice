@@ -575,7 +575,7 @@ All ballot upload/parse/extraction, party gates, measures, and a reliable ballot
 - ByokCard: "Saved. Chat now uses your account." → clarify the retry step.
 - EditIssuesModal: "Re-rank, rename, add" → also mention "remove".
 - Concentrated in VoterChoiceApp.tsx (11), about/page (2), EditIssuesModal, ByokCard.
-- STATUS: To Do
+- STATUS: Review
 <!-- card-id: 35ed3262-ec67-494c-9919-4dd719bfa9a1 -->
 
 **Formatting / terminology consistency — deferred**
@@ -585,7 +585,7 @@ All ballot upload/parse/extraction, party gates, measures, and a reliable ballot
 - Eyebrow / kick label casing (PolisClose, RepCard confidence label).
 - "Add something I forgot" → "Add something I missed" (IssueConversation).
 - Spread across VoterChoiceApp.tsx (5), data.tsx (3), RepCard, PolisClose, IssueConversation.
-- STATUS: To Do
+- STATUS: In Progress
 <!-- card-id: 0b7a6412-34b0-4274-83ec-b06a3ac3eb6c -->
 
 **Integrate Congress.gov CRS bill summaries (free public-domain backup)**
