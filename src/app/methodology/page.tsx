@@ -54,15 +54,15 @@ export default function MethodologyPage() {
               .
             </li>
             <li>
-              State: per-state legislative reporting (e.g.{" "}
+              State: per-state legislative reporting via{" "}
               <a
-                href="https://capitol.texas.gov"
+                href="https://openstates.org"
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                Texas Legislature
-              </a>
-              ).
+                OpenStates
+              </a>{" "}
+              and your state legislature&rsquo;s official records.
             </li>
           </ul>
           <p>
@@ -96,8 +96,8 @@ export default function MethodologyPage() {
               .
             </li>
             <li>
-              State candidates: state ethics commissions (e.g. Texas Ethics
-              Commission).
+              State candidates: your state&rsquo;s ethics commission or campaign
+              finance disclosure office.
             </li>
             <li>
               <b>Named issue PACs</b> are editorially vetted — we only break a
