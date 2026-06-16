@@ -1333,6 +1333,16 @@ function ContributingVoteCard({ vote, anonCtx }) {
             View roll call →
           </a>
         )}
+        {(vote.sources || []).filter(s => s.url !== vote.source.url).map((s, si) => (
+          <span key={si}>
+            <span className="src-chip">{s.name}</span>
+            {s.url && (
+              <a href={s.url} className="src-link" target="_blank" rel="noopener noreferrer">
+                View summary →
+              </a>
+            )}
+          </span>
+        ))}
       </div>
     </div>
   );
@@ -3273,6 +3283,17 @@ function CompareModal({ open, race, issues, blindMode, revealedCandidates, onRev
                                   ) : (
                                     <span>{v.source?.name || 'Source pending'}</span>
                                   )}
+                                  {(v.sources || []).filter(s => s.url !== v.source?.url).map((s, si) => (
+                                    <span key={si}>
+                                      {s.url ? (
+                                        <a href={s.url} className="src-link" target="_blank" rel="noopener noreferrer">
+                                          {s.name} →
+                                        </a>
+                                      ) : (
+                                        <span className="src-chip">{s.name}</span>
+                                      )}
+                                    </span>
+                                  ))}
                                 </div>
                               </div>
                             );
@@ -3403,6 +3424,12 @@ function AllVotesPanel({ open, candidate, alignmentEntry, blindMode, alias, onCl
                 <div className="av-vote-cite">
                   <span className="src-chip">{v.source.name}</span>
                   {v.source.url && <a className="src-link" href={v.source.url} target="_blank" rel="noopener noreferrer">View roll call →</a>}
+                  {(v.sources || []).filter(s => s.url !== v.source.url).map((s, si) => (
+                    <span key={si}>
+                      <span className="src-chip">{s.name}</span>
+                      {s.url && <a className="src-link" href={s.url} target="_blank" rel="noopener noreferrer">View summary →</a>}
+                    </span>
+                  ))}
                 </div>
               </div>
             );
