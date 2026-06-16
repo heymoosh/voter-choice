@@ -77,6 +77,16 @@ export interface Theme {
    * voter-named priorities are aspirational, not oppositional).
    */
   stance?: "in_favor" | "opposed";
+
+  /**
+   * Optional topic facet beneath `canonicalIssue` (e.g. "drug_prices" under
+   * "healthcare_affordability"). Inherits the parent's pole axis — it adds NO
+   * new direction, only narrows which votes count. Must be a valid sub-issue
+   * for the parent (see `src/lib/alignment/subIssues.ts`); the parser drops it
+   * otherwise. Lets scoring prefer facet-specific votes and fall back to the
+   * parent issue when sparse.
+   */
+  subIssue?: string;
 }
 
 /**

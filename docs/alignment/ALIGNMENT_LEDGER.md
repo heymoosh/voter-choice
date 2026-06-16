@@ -19,6 +19,40 @@ Running log of eval runs, findings, and decisions for the alignment scoring engi
 
 ## Runs
 
+### 2026-06-15 — Sub-issue taxonomy pilot: healthcare cutover (first family)
+**What:** Shipped the optional hierarchical **sub-issue** layer (`src/lib/alignment/subIssues.ts`,
+`sub-issue-v1`) piloted on `healthcare_affordability` (5 facets: drug_prices, coverage_access,
+provider_costs, senior_care, mental_behavioral_health). Sub-issues are topic facets that INHERIT the
+parent pole; scoring PREFERS sub-issue votes and FALLS BACK to the parent when <5 scorable
+(`LIMITED_DATA_THRESHOLD`) — never worse than today. Re-tagged all 6,494 healthcare bills (Sonnet
+workflow, 65 batches) → 3,361 got a facet, 3,132 null (44% of bills are null-summary → null).
+
+**Gold gate (independent 3-juror Opus panel, 250 bills = 50/facet, BLIND):** contradiction
+(panel-confident *different* facet) ≤5% on ALL facets — only **1/250** total. Per-facet **agree**
+(all-conf | HIGH-conf): senior_care 94% | 100% (22/22), mental_behavioral_health 94% | 100% (28/28),
+drug_prices 68% | 92%, provider_costs 52% | 100% (8/8), **coverage_access 38% | 43%**. The errors are
+"facet vs. general," not facet-A vs facet-B.
+
+**Decision (Muxin): cut over HIGH-confidence only, 4 facets, DROP coverage_access.** coverage_access is
+genuinely fuzzy even at high confidence (43% — the tagger treats it ~ "general healthcare"), so it
+ships as NULL (parent fallback) pending a v2 definition. Inserted **912** high-confidence rows
+(mental 451, senior 193, drug 182, provider 86) via UPDATE-only (`_subissue-insert.ts`,
+`sub_tagger_version=healthcare-sub-v1`). Verified: 0 null stance_lens / tagger_version (parent tag
+untouched); 6,494 healthcare rows total, 912 with sub_issue.
+
+**Findings:**
+- **SF1** `coverage_access` low precision even at high confidence (43%) — over-applied to broad
+  ACA/Medicaid/structural bills. Tighten the facet definition (or split) before tagging it. (open)
+- **SF2** Prod DB is **missing `voter_issue_events`** (migration 0005 / PR #113 never applied to this
+  DB) — `0006`'s analytics column + index were skipped. Pre-existing drift; #113 event persistence
+  likely no-ops in prod. Apply 0005 separately. (open)
+- **SF3** 44% of healthcare bills are null-summary (vs ~16% assumed) → null facet → parent fallback.
+  Same summary-recovery lever as F4. (open)
+- Method/tooling: `_subissue-{prep-batches,retag.workflow,assemble,insert}` +
+  `_subissue-gold-{sample,oracle.workflow,score}` (M2-safe, mirrors the pole/gold flow).
+- **Branch:** `worktree-issue-taxonomy` (stacked on `feat/alignment-shared-pole-anchor`/#114, unmerged);
+  code not yet deployed, so prod `sub_issue` data is INVISIBLE to live scoring until this PR ships.
+
 ### 2026-06-10 — Read-path no_score guard shipped (cutover follow-up #4)
 **What:** `computeVoteAlignment` (`src/lib/server/alignment.ts`) now returns
 `abstain` for ANY `stance_lens` outside `in_favor`/`opposed`. Closes cutover

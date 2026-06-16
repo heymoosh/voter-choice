@@ -1,4 +1,5 @@
 import { renderResolverPoleDirections } from "../alignment/poleVocabulary";
+import { renderResolverSubIssues } from "../alignment/subIssues";
 
 export interface ThemeExtractionInput {
   userInput: string;
@@ -22,7 +23,10 @@ export const THEME_FIELDS_PROMPT_BLOCK = `  "name":   a short neutral noun phras
             unclear. Most priorities are aspirational ("I want lower
             drug prices") → "in_favor". Use "opposed" only when the
             voter clearly wants LESS of something ("stop the new
-            highway", "against the bond").`;
+            highway", "against the bond").
+  "subIssue": OPTIONAL — a finer id from the SUB-ISSUES list below,
+            only when one clearly fits the voter's words. Its parent
+            MUST equal canonicalIssue; otherwise omit. Never invent ids.`;
 
 /** Canonical-issue vocabulary, shared verbatim by both theme builders. */
 export const CANONICAL_ISSUES_PROMPT_BLOCK = `CANONICAL ISSUES (id — what it covers):
@@ -43,7 +47,9 @@ export const CANONICAL_ISSUES_PROMPT_BLOCK = `CANONICAL ISSUES (id — what it c
   election_integrity — voting rights, voter ID, election administration
   congressional_accountability — stock-trading bans, term limits, ethics
 
-${renderResolverPoleDirections()}`;
+${renderResolverPoleDirections()}
+
+${renderResolverSubIssues()}`;
 
 export function buildThemeExtractionPrompt(
   input: ThemeExtractionInput,
@@ -65,6 +71,8 @@ Rules:
     voter's framing.)
   · Only use a canonicalIssue id from the list above, verbatim. If the
     voter's concern doesn't fit any, omit the field — do not invent ids.
+  · subIssue ids are also verbatim from the SUB-ISSUES list, and only
+    when the parent matches canonicalIssue — otherwise omit.
   · Order doesn't matter — the user will rerank in the UI.
   · No prose. Return JSON only.
 
