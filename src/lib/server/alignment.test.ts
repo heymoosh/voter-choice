@@ -1128,6 +1128,126 @@ describe("lookupAlignment", () => {
 });
 
 // ---------------------------------------------------------------------------
+// Per-vote rationale from can_candidate_key_votes.context
+//
+// rationale is gated behind CAN2026_DISPLAY_ENABLED exactly like narrative:
+//   - gate ON + can_candidate_key_votes row has context → rationale populated
+//   - gate OFF → query never touches can_candidate_key_votes → rationale undefined
+// The join key is votes.id = can_candidate_key_votes.our_vote_id (ourVoteId).
+// ---------------------------------------------------------------------------
+
+describe("lookupAlignment – per-vote rationale (CAN2026_DISPLAY_ENABLED gate)", () => {
+  it("gate ON + CAN context present → rationale populated on contributing vote", async () => {
+    vi.stubEnv("CAN2026_DISPLAY_ENABLED", "1");
+    const { select, _chain } = makeSelectMock([]);
+    mockedGetDb.mockReturnValue({ select } as never);
+
+    // The CAN2026-enabled query path includes both `narrative` and `rationale`
+    // (= can_candidate_key_votes.context). Simulate a row where context is set.
+    _chain.where.mockResolvedValue([
+      {
+        billTitle: "Inflation Reduction Act",
+        billId: "govtrack-hr5376-117",
+        billRawMetadata: null,
+        billSourceUrl: "https://govtrack.us/bill/hr5376",
+        billSource: "govtrack",
+        voteCast: "yea",
+        voteDate: "2022-08-12",
+        stanceLens: "in_favor",
+        taggerConfidence: "0.92",
+        narrative: "Authorized $369B in climate and energy spending.",
+        rationale:
+          "This was a key vote on drug pricing reform — it caps insulin at $35 for Medicare patients.",
+      },
+    ]);
+
+    const result = await lookupAlignment(
+      "federal-A123",
+      "healthcare_affordability",
+      "in_favor",
+    );
+
+    expect(result.found).toBe(true);
+    if (result.found && result.contributingVotes.length > 0) {
+      expect(result.contributingVotes[0]!.rationale).toBe(
+        "This was a key vote on drug pricing reform — it caps insulin at $35 for Medicare patients.",
+      );
+    }
+
+    vi.unstubAllEnvs();
+  });
+
+  it("gate OFF → rationale is undefined on contributing vote", async () => {
+    // CAN2026_DISPLAY_ENABLED is unset (default in test suite). The non-CAN
+    // query branch never selects rationale; it should be absent.
+    const { select, _chain } = makeSelectMock([]);
+    mockedGetDb.mockReturnValue({ select } as never);
+
+    _chain.where.mockResolvedValue([
+      {
+        billTitle: "Inflation Reduction Act",
+        billId: "govtrack-hr5376-117",
+        billRawMetadata: null,
+        billSourceUrl: "https://govtrack.us/bill/hr5376",
+        billSource: "govtrack",
+        voteCast: "yea",
+        voteDate: "2022-08-12",
+        stanceLens: "in_favor",
+        taggerConfidence: "0.92",
+        // No rationale field on the flag-OFF row (mimics the real SQL path)
+      },
+    ]);
+
+    const result = await lookupAlignment(
+      "federal-A123",
+      "healthcare_affordability",
+      "in_favor",
+    );
+
+    expect(result.found).toBe(true);
+    if (result.found && result.contributingVotes.length > 0) {
+      expect(result.contributingVotes[0]!.rationale).toBeUndefined();
+    }
+  });
+
+  it("gate ON + CAN context null/absent → rationale is undefined (no empty string leaks)", async () => {
+    vi.stubEnv("CAN2026_DISPLAY_ENABLED", "1");
+    const { select, _chain } = makeSelectMock([]);
+    mockedGetDb.mockReturnValue({ select } as never);
+
+    // Row has no CAN key-vote match (LEFT JOIN returned null for context)
+    _chain.where.mockResolvedValue([
+      {
+        billTitle: "Infrastructure Investment Act",
+        billId: "govtrack-hr3684-117",
+        billRawMetadata: null,
+        billSourceUrl: "https://govtrack.us/bill/hr3684",
+        billSource: "govtrack",
+        voteCast: "yea",
+        voteDate: "2021-11-15",
+        stanceLens: "in_favor",
+        taggerConfidence: "0.88",
+        narrative: null,
+        rationale: null, // LEFT JOIN miss → context is null
+      },
+    ]);
+
+    const result = await lookupAlignment(
+      "federal-A123",
+      "environment_climate",
+      "in_favor",
+    );
+
+    expect(result.found).toBe(true);
+    if (result.found && result.contributingVotes.length > 0) {
+      expect(result.contributingVotes[0]!.rationale).toBeUndefined();
+    }
+
+    vi.unstubAllEnvs();
+  });
+});
+
+// ---------------------------------------------------------------------------
 // attachLimitedDataNotice — the pure helper, tested in isolation so the
 // found: false branch (which lookupAlignment never returns directly) is
 // covered without relying on the DB query path.

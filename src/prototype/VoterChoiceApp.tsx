@@ -1311,6 +1311,10 @@ function ContributingVoteCard({ vote, anonCtx }) {
   const voteClass = vote.voteCast === 'with' ? 'yea' : vote.voteCast === 'against' ? 'nay' : 'other';
   const voteLabel = vote.voteCast === 'with' ? 'WITH YOU' : vote.voteCast === 'against' ? 'AGAINST YOU' : '—';
   const narrative = anonymizeText(vote.narrative, anonCtx);
+  // [Δ] Per-vote curated rationale — "Why this vote matters" prose from
+  // can_candidate_key_votes.context. Only present when CAN2026_DISPLAY_ENABLED
+  // is on and the vote is covered by a CAN key-vote row with context set.
+  const rationale = anonymizeText(vote.rationale, anonCtx);
   return (
     <div className="cv2-vote">
       <div className="cv2-vote-head">
@@ -1326,6 +1330,12 @@ function ContributingVoteCard({ vote, anonCtx }) {
       </div>
       <div className="cv2-vote-date">{formatDate(vote.date)}</div>
       {narrative && <p className="cv2-vote-narr">{narrative}</p>}
+      {rationale && (
+        <div className="cv2-vote-rationale">
+          <span className="cv2-vote-rationale-label">Why this vote matters</span>
+          <p className="cv2-vote-rationale-body">{rationale}</p>
+        </div>
+      )}
       <div className="cv2-vote-cite">
         <span className="src-chip">{vote.source.name}</span>
         {vote.source.url && (

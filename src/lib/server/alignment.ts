@@ -29,6 +29,15 @@ export interface ContributingVote {
    * not candidate-specific color.
    */
   narrative?: string;
+  /**
+   * Per-vote curated rationale from can_candidate_key_votes.context — the
+   * "Why this vote matters" prose specific to this candidate's key vote.
+   * Only populated when CAN2026_DISPLAY_ENABLED is set AND the vote is
+   * covered by a CAN key-vote row with a non-empty context value.
+   * When the gate is OFF, this field is always undefined and nothing renders.
+   * See: docs/ALIGNMENT_DATA_MODEL.md §3 + §8 ("vote rationale").
+   */
+  rationale?: string;
 }
 
 export interface AlignmentResult {
@@ -487,8 +496,11 @@ export async function lookupAlignment(
   // When CAN2026_DISPLAY_ENABLED is set, also LEFT JOIN can_bill_narratives so
   // the "What it did" prose can appear on the contributing-vote cards. The join
   // is keyed on bills.id = can_bill_narratives.our_bill_id (the crosswalk
-  // populated by scripts/ingest/can2026.ts). When the flag is off, the CAN2026
-  // table is never touched and narrative is always undefined.
+  // populated by scripts/ingest/can2026.ts). Additionally LEFT JOIN
+  // can_candidate_key_votes via votes.id = can_candidate_key_votes.our_vote_id
+  // to populate per-vote rationale (the "Why this vote matters" curated prose
+  // from can_candidate_key_votes.context). When the flag is off, neither CAN2026
+  // table is touched and narrative/rationale are always undefined.
   const rows = can2026Enabled
     ? await db
         .select({
@@ -503,6 +515,7 @@ export async function lookupAlignment(
           taggerConfidence: schema.issueTags.taggerConfidence,
           subIssue: schema.issueTags.subIssue,
           narrative: schema.canBillNarratives.narrative,
+          rationale: schema.canCandidateKeyVotes.context,
         })
         .from(schema.votes)
         .innerJoin(schema.bills, eq(schema.votes.billId, schema.bills.id))
@@ -516,6 +529,10 @@ export async function lookupAlignment(
         .leftJoin(
           schema.canBillNarratives,
           eq(schema.bills.id, schema.canBillNarratives.ourBillId),
+        )
+        .leftJoin(
+          schema.canCandidateKeyVotes,
+          eq(schema.votes.id, schema.canCandidateKeyVotes.ourVoteId),
         )
         .where(
           and(
@@ -621,11 +638,13 @@ export async function lookupAlignment(
           url: r.billSourceUrl,
         },
       };
-      // narrative is only present on rows from the CAN2026-enabled query path.
-      // Cast via `as` because the flag-off query type doesn't include the field,
-      // but at runtime the value is simply absent (undefined) in that branch.
+      // narrative and rationale are only present on rows from the CAN2026-enabled
+      // query path. Cast via `as` because the flag-off query type doesn't include
+      // these fields, but at runtime the values are simply absent (undefined).
       const narrative = (r as { narrative?: string | null }).narrative;
       if (narrative) vote.narrative = narrative;
+      const rationale = (r as { rationale?: string | null }).rationale;
+      if (rationale) vote.rationale = rationale;
       return vote;
     });
 
