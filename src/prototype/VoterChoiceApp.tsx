@@ -3419,7 +3419,7 @@ function AllVotesPanel({ open, candidate, alignmentEntry, blindMode, alias, onCl
             <li>
               Vote data:{' '}
               <a href="https://www.congress.gov/roll-call-votes" target="_blank" rel="noopener noreferrer">Congress.gov · federal roll calls</a>{' · '}
-              <a href="https://capitol.texas.gov/Reports/Daily/Default.aspx" target="_blank" rel="noopener noreferrer">TX Legislature daily reports</a>
+              <a href="https://openstates.org" target="_blank" rel="noopener noreferrer">OpenStates · state legislature records</a>
             </li>
             <li>
               Narrative context:{' '}
@@ -3969,7 +3969,7 @@ function StaticPage({ title, eyebrow, children, onBack }) {
 
 function AboutPage({ onBack }) {
   return (
-    <StaticPage onBack={onBack} eyebrow="About Voter Choice" title="A free, non-partisan ballot research tool.">
+    <StaticPage onBack={onBack} eyebrow="About Voter Choice" title="A free, non-partisan Congress-assessment tool.">
       <p>Voter Choice is built and operated by <b>Grey Bird LLC</b>, a small independent shop. We made it because the gap between "what a candidate says in their ads" and "what they actually voted on" has gotten wider every cycle. We thought voters deserved a tool that closes it.</p>
 
       <h2>What we do</h2>
@@ -4002,14 +4002,14 @@ function MethodologyPage({ onBack }) {
       <h2>Step 2 · Votes come from official roll-call data</h2>
       <ul>
         <li>Federal: <a href="https://www.congress.gov/roll-call-votes" target="_blank" rel="noopener noreferrer">Congress.gov roll-call votes</a>.</li>
-        <li>State: per-state legislative reporting (e.g. <a href="https://capitol.texas.gov" target="_blank" rel="noopener noreferrer">Texas Legislature</a>).</li>
+        <li>State: per-state legislative reporting via <a href="https://openstates.org" target="_blank" rel="noopener noreferrer">OpenStates</a> and your state legislature's official records.</li>
       </ul>
       <p>For each issue, our editorial team selects 2–5 "case file" votes — the bills that most directly test the issue. Every score on a candidate card is computed from these case file votes only. If we don't have a curated case file for an issue × jurisdiction, the score reads <i>"thin record"</i> instead of guessing.</p>
 
       <h2>Step 3 · Donor data comes from FEC + state filings</h2>
       <ul>
         <li>Federal candidates: <a href="https://www.fec.gov" target="_blank" rel="noopener noreferrer">FEC</a> + <a href="https://www.opensecrets.org" target="_blank" rel="noopener noreferrer">OpenSecrets</a>.</li>
-        <li>State candidates: state ethics commissions (e.g. Texas Ethics Commission).</li>
+        <li>State candidates: your state's ethics commission or campaign finance disclosure office.</li>
         <li><b>Named issue PACs</b> are editorially vetted — we only break a PAC out separately if it has a public stated agenda we can cite.</li>
       </ul>
 
@@ -4158,7 +4158,7 @@ function HomeView({ savedAddress, savedSession, onSubmit, onResumeFromProfile, o
         <div>
           <div className="eyebrow"><span className="star">★</span> November 3, 2026 · America's 250th election</div>
           <h1>Hold Congress to its <em>record.</em></h1>
-          <p className="lede">All 435 House seats and 34 Senate seats are on the ballot. Before you vote, see how your incumbents actually voted — and who paid for the campaign.</p>
+          <p className="lede">All 435 House seats and 33 Senate seats are on the ballot. Before you vote, see how your incumbents actually voted — and who paid for the campaign.</p>
 
           <div className="addr-card">
             <label>
@@ -5458,7 +5458,7 @@ function PrintView({ address, issues, decisions, onBack }) {
             )}
 
             <div className="ballot-group" style={{ marginBottom: 0 }}>
-              <div className="gtitle">Issues you voted on</div>
+              <div className="gtitle">Issues you cared about</div>
               <div style={{ fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.6 }}>
                 {issues.map((iss, i) => (
                   <div key={iss.canonicalIssue}>{i + 1}. {iss.interpretation}</div>
