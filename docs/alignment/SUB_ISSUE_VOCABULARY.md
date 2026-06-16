@@ -55,10 +55,32 @@ parent: healthcare_affordability
 ### coverage_access
 parent: healthcare_affordability
 - label: **Insurance Coverage & Access**
-- description: who can get health insurance and at what cost — ACA subsidies,
-  Medicaid, and coverage rules.
-- bill_signals: ACA subsidies; Medicaid expansion / block-grant; ACA repeal;
-  HSAs (health savings accounts).
+- description: specific insurance-coverage mechanisms — marketplace enrollment
+  windows, premium subsidies for individuals buying on ACA exchanges, Medicaid
+  eligibility for a concrete population, coverage mandates, or protections for
+  the uninsured. NOT general ACA overhaul, broad Medicaid restructuring, or
+  bills primarily about healthcare spending levels.
+- bill_signals:
+  - marketplace / exchange enrollment window or SEP (special enrollment period)
+  - ACA premium-subsidy cliff / APTC (advance premium tax credit) for individual market
+  - Medicaid eligibility expansion to a specific population (e.g. postpartum, childless adults)
+  - individual mandate / coverage requirement
+  - uninsured-rate reduction / coverage gap
+  - short-term / association health plan coverage rules
+- explicit exclusions (stay at parent level, NOT coverage_access):
+  - broad ACA repeal / replace bills
+  - Medicaid block-grant or per-capita cap restructuring
+  - general healthcare spending / omnibus healthcare bills
+
+> **Why tightened (v2):** Original signals ("ACA subsidies", "Medicaid expansion
+> / block-grant", "ACA repeal") fired on every broad ACA/Medicaid structural
+> bill. Gold-panel agreement was only 43% on high-confidence tagger calls —
+> because annotators read those broad bills as "general healthcare," not a
+> specific coverage facet. Tightened signals require a concrete coverage
+> *mechanism* to fire; structural / spending bills now fall back to the parent.
+> Facet remains disabled on prod pending a fresh gold gate.
+
+> **Split recommendation:** see section below.
 
 ### provider_costs
 parent: healthcare_affordability
@@ -87,3 +109,55 @@ parent: healthcare_affordability
 ---
 
 **5 healthcare sub-issues authored,** all with parent `healthcare_affordability`.
+
+---
+
+## Split recommendation for `coverage_access` (decision needed)
+
+The tightening above is a conservative repair — it makes the existing facet
+precise enough to pass a gold gate. But the domain naturally splits into three
+distinct voter concerns. A structural split is recommended for a future card
+after the next gold gate confirms the tightened version is working.
+
+### Candidate split: `coverage_access` → 3 facets
+
+**`medicaid_chip`** — Medicaid & CHIP coverage
+- Who: low-income adults, children, pregnant women, people with disabilities
+- Bill signals: Medicaid eligibility rules; Medicaid block-grant / per-capita
+  cap; CHIP reauthorization; Medicaid expansion population (childless adults,
+  postpartum); unwinding / redetermination of Medicaid enrollment
+- Resolver description: Medicaid and CHIP coverage rules — who qualifies,
+  how the program is funded, and enrollment continuity.
+
+**`aca_marketplace`** — ACA individual-market / marketplace
+- Who: people buying coverage on their own (not employer-sponsored)
+- Bill signals: ACA marketplace / exchange; APTC / premium subsidies for
+  individual market; open enrollment / SEP rules; ACA marketplace plan
+  requirements (essential health benefits, no preexisting-condition exclusions)
+- Resolver description: ACA marketplace rules — premium subsidies, enrollment
+  windows, and plan requirements for people buying individual coverage.
+
+**`coverage_gap_uninsured`** — the uninsured / coverage gap
+- Who: people who fall between Medicaid and marketplace eligibility (coverage
+  gap) or are uninsured for other reasons
+- Bill signals: coverage gap states / Medicaid non-expansion gap; uninsured-rate
+  reduction; individual mandate / penalty for lacking coverage; short-term /
+  association health plans as gap-filler; state reinsurance programs
+- Resolver description: people who lack coverage or fall through eligibility
+  gaps — the uninsured, coverage-gap states, and mandates.
+
+### Tradeoffs: tighten vs. split
+
+| Dimension | Tighten only (this PR) | Full split |
+|---|---|---|
+| Gold-gate cost | 1 panel on tightened `coverage_access` | 3 panels (one per new facet) |
+| Data disruption | None — facet id unchanged | Enum change; existing NULL rows stay NULL; new re-tag needed |
+| Scoring precision | Moderate — single facet for 3 distinct concerns | High — voter concerns map cleanly to one facet |
+| Voter UX | Fine for most users | Enables "I care about Medicaid specifically" vs. "ACA marketplace" |
+| Recommended order | Ship tightening now, re-tag, run gold gate | Decide split AFTER gold gate confirms tightened version works |
+
+**Recommendation:** Implement the tightening now. If the gold gate passes at
+>=75% agreement, decide then whether the volume of `coverage_access` hits
+warrants the split (it's worth it if >500 high-confidence bills tag into it,
+since the three sub-concerns are substantively different). The split is a
+medium-sized card (enum change + 3 gold panels + re-tag).
