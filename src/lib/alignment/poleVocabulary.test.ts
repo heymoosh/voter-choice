@@ -132,7 +132,9 @@ describe("renderers — round-trip", () => {
 
   it("resolver block instructs OMITTING stance (no in_favor default) for a contested issue that doesn't pick a side", () => {
     const block = renderResolverPoleDirections();
-    expect(block).toMatch(/\[contested\][^]*OMIT it \(do NOT default to in_favor\)/);
+    expect(block).toMatch(
+      /\[contested\][^]*OMIT it \(do NOT default to in_favor\)/,
+    );
   });
 });
 
