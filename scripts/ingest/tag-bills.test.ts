@@ -28,6 +28,9 @@ import {
   fetchUntaggedBills,
   upsertTags,
   tagBills,
+  inferSkipReason,
+  recordSkipReason,
+  computeCoverageStats,
   type BillRow,
   type TaggerCounts,
 } from "./tag-bills";
@@ -86,12 +89,17 @@ function makeAnthropicClient(createFn: () => unknown) {
 }
 
 // Minimal mock DB client.
-function makeDbClient(opts?: { selectRows?: BillRow[]; insertError?: Error }) {
+function makeDbClient(opts?: {
+  selectRows?: BillRow[];
+  insertError?: Error;
+  executeRows?: Record<string, unknown>[];
+}) {
   const selectRows = opts?.selectRows ?? [];
   const insertError = opts?.insertError;
+  const executeRows = opts?.executeRows ?? selectRows;
 
   return {
-    execute: vi.fn().mockResolvedValue({ rows: selectRows }),
+    execute: vi.fn().mockResolvedValue({ rows: executeRows }),
     select: vi.fn().mockReturnValue({
       from: vi.fn().mockReturnValue({
         where: vi.fn().mockReturnValue({
@@ -104,6 +112,11 @@ function makeDbClient(opts?: { selectRows?: BillRow[]; insertError?: Error }) {
         onConflictDoUpdate: insertError
           ? vi.fn().mockRejectedValue(insertError)
           : vi.fn().mockResolvedValue(undefined),
+      }),
+    }),
+    update: vi.fn().mockReturnValue({
+      set: vi.fn().mockReturnValue({
+        where: vi.fn().mockResolvedValue(undefined),
       }),
     }),
   } as unknown as import("../../db/client").DbClient;
@@ -406,6 +419,7 @@ describe("processBill", () => {
       billsTagged: 0,
       billsSkipped: 0,
       tagsUpserted: 0,
+      billsSkipReasonWritten: 0,
       apiErrors: 0,
       dbErrors: 0,
       estimatedInputTokens: 0,
@@ -499,7 +513,7 @@ describe("processBill", () => {
     expect(counts.billsTagged).toBe(0);
   });
 
-  it("empty array response: no tags upserted, bill counted as tagged", async () => {
+  it("empty array response: no tags upserted, bill counted as tagged, skip_reason written", async () => {
     const client = makeAnthropicClient(() => makeAnthropicResponse("[]"));
     const db = makeDbClient();
     const counts = makeCounts();
@@ -515,6 +529,9 @@ describe("processBill", () => {
 
     expect(counts.billsTagged).toBe(1);
     expect(counts.tagsUpserted).toBe(0);
+    expect(counts.billsSkipReasonWritten).toBe(1);
+    // DB update was called once for the skip_reason
+    expect(db.update).toHaveBeenCalledOnce();
   });
 
   it("dry run: does not call DB insert", async () => {
@@ -655,5 +672,115 @@ describe("TAGGER_VERSION", () => {
     // Must contain model name and a date-based version suffix.
     expect(TAGGER_VERSION).toMatch(/claude-haiku-\d+-\d+/u);
     expect(TAGGER_VERSION).toContain("v1");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Unit: inferSkipReason
+// ---------------------------------------------------------------------------
+
+describe("inferSkipReason", () => {
+  it("classifies post-office naming bills as 'naming'", () => {
+    expect(
+      inferSkipReason("To designate the post office on Main St as the John Smith Post Office"),
+    ).toBe("naming");
+  });
+
+  it("classifies courthouse renaming bills as 'naming'", () => {
+    expect(inferSkipReason("Renaming the United States Courthouse in Austin, Texas")).toBe(
+      "naming",
+    );
+  });
+
+  it("classifies congratulatory resolutions as 'ceremonial'", () => {
+    expect(
+      inferSkipReason("Congratulating the University of Michigan on winning the national championship"),
+    ).toBe("ceremonial");
+  });
+
+  it("classifies honoring resolutions as 'ceremonial'", () => {
+    expect(inferSkipReason("Honoring the service of veterans in World War II")).toBe(
+      "ceremonial",
+    );
+  });
+
+  it("classifies motion to table as 'procedural'", () => {
+    expect(inferSkipReason("Motion to table S. 1234")).toBe("procedural");
+  });
+
+  it("falls back to 'non_issue' for unrecognized non-issue bills", () => {
+    expect(inferSkipReason("Budget reconciliation technical corrections")).toBe(
+      "non_issue",
+    );
+  });
+
+  it("is case-insensitive", () => {
+    expect(inferSkipReason("CONGRATULATING the city of Springfield")).toBe(
+      "ceremonial",
+    );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Unit: recordSkipReason
+// ---------------------------------------------------------------------------
+
+describe("recordSkipReason", () => {
+  it("calls db.update in non-dry-run mode", async () => {
+    const db = makeDbClient();
+    await recordSkipReason(db, "govtrack-hr1-119", "procedural", false);
+    expect(db.update).toHaveBeenCalledOnce();
+  });
+
+  it("skips db.update in dry-run mode", async () => {
+    const db = makeDbClient();
+    await recordSkipReason(db, "govtrack-hr1-119", "procedural", true);
+    expect(db.update).not.toHaveBeenCalled();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Unit: computeCoverageStats — pure-function seam (mocked DB)
+// ---------------------------------------------------------------------------
+
+describe("computeCoverageStats", () => {
+  it("parses the aggregated row into typed numbers", async () => {
+    const db = makeDbClient({
+      executeRows: [
+        {
+          total_bills: "100",
+          tagged_bills: "53",
+          skipped_non_issue_bills: "17",
+          queued_for_tagging_bills: "30",
+        },
+      ],
+    });
+
+    const stats = await computeCoverageStats(db);
+
+    expect(stats.totalBills).toBe(100);
+    expect(stats.taggedBills).toBe(53);
+    expect(stats.skippedNonIssueBills).toBe(17);
+    expect(stats.queuedForTaggingBills).toBe(30);
+  });
+
+  it("returns zeros when all counts are zero", async () => {
+    const db = makeDbClient({
+      executeRows: [
+        {
+          total_bills: "0",
+          tagged_bills: "0",
+          skipped_non_issue_bills: "0",
+          queued_for_tagging_bills: "0",
+        },
+      ],
+    });
+
+    const stats = await computeCoverageStats(db);
+
+    expect(stats.totalBills).toBe(0);
+    expect(stats.taggedBills).toBe(0);
+    expect(stats.skippedNonIssueBills).toBe(0);
+    expect(stats.queuedForTaggingBills).toBe(0);
   });
 });

@@ -41,7 +41,7 @@
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import Anthropic from "@anthropic-ai/sdk";
-import { sql, notInArray } from "drizzle-orm";
+import { sql, notInArray, eq } from "drizzle-orm";
 import { requireDb, type DbClient } from "../../db/client";
 import { bills, issueTags } from "../../db/schema";
 import { CANONICAL_ISSUE_LABELS } from "../../src/lib/canonicalIssues";
@@ -91,6 +91,22 @@ const HAIKU_OUTPUT_COST_PER_MTK = 4.0;
 
 export type StanceLens = "in_favor" | "opposed";
 
+/**
+ * Values written to bills.skip_reason when the tagger determines a bill is
+ * genuinely non-issue and intentionally leaves it untagged.
+ *
+ * - 'procedural'    — motion to table, motion to proceed, quorum call, etc.
+ * - 'naming'        — post office / courthouse / street renaming bills
+ * - 'ceremonial'    — commemorative resolutions, tributes, holidays
+ * - 'non_issue'     — catch-all: not substantively related to any canonical
+ *                     issue but doesn't fit a narrower category
+ */
+export type SkipReason =
+  | "procedural"
+  | "naming"
+  | "ceremonial"
+  | "non_issue";
+
 export type RawTagEntry = {
   canonical_issue: unknown;
   stance_lens: unknown;
@@ -122,6 +138,8 @@ export type TaggerCounts = {
   billsTagged: number;
   billsSkipped: number;
   tagsUpserted: number;
+  /** Bills where the tagger returned [] and we wrote a skip_reason. */
+  billsSkipReasonWritten: number;
   apiErrors: number;
   dbErrors: number;
   estimatedInputTokens: number;
@@ -414,6 +432,125 @@ export async function upsertTags(
   return rows.length;
 }
 
+/**
+ * Infer the most specific SkipReason from a bill's title.
+ *
+ * The tagger prompt already instructs the model to return [] for procedural,
+ * naming, and unrelated bills, but doesn't distinguish between them in the
+ * response. We derive the reason heuristically from the title so coverage
+ * reports can break down the skipped bucket without an extra LLM call.
+ */
+export function inferSkipReason(title: string): SkipReason {
+  const t = title.toLowerCase();
+
+  // Naming / renaming bills (post office, courthouse, highway, etc.)
+  if (
+    /\b(designat|renaming?|named? (after|for)|post office|courthouse|federal building|highway|street|bridge|station)\b/.test(
+      t,
+    )
+  ) {
+    return "naming";
+  }
+
+  // Ceremonial / commemorative (resolution of tribute, congratulating, honoring)
+  // No trailing \b — these are stems that precede suffixes like -ing/-ion/-ory.
+  if (
+    /\b(congratulat|commend|honor|recogniz|tribut|commemorat|celebrat|proclaim|salut)/.test(
+      t,
+    )
+  ) {
+    return "ceremonial";
+  }
+
+  // Procedural motions
+  if (
+    /\b(motion to (table|proceed|adjourn|recommit)|quorum call|point of order|unanimous consent)\b/.test(
+      t,
+    )
+  ) {
+    return "procedural";
+  }
+
+  return "non_issue";
+}
+
+/**
+ * Write skip_reason to bills table for a bill the tagger intentionally left
+ * untagged. No-op in dry-run mode.
+ */
+export async function recordSkipReason(
+  db: DbClient,
+  billId: string,
+  reason: SkipReason,
+  dryRun: boolean,
+): Promise<void> {
+  if (dryRun) {
+    process.stderr.write(
+      `[tag-bills] dry_run bill=${billId} would_write skip_reason=${reason}\n`,
+    );
+    return;
+  }
+  await db
+    .update(bills)
+    .set({ skipReason: reason })
+    .where(eq(bills.id, billId));
+}
+
+// ---------------------------------------------------------------------------
+// Coverage reporting
+// ---------------------------------------------------------------------------
+
+export type CoverageStats = {
+  totalBills: number;
+  /** Bills with ≥1 issue_tags row. */
+  taggedBills: number;
+  /** Bills where skip_reason IS NOT NULL (tagger decided non-issue). */
+  skippedNonIssueBills: number;
+  /** Bills with no tags AND skip_reason IS NULL (genuinely queued). */
+  queuedForTaggingBills: number;
+};
+
+/**
+ * Compute coverage stats without touching prod — accepts a db client so tests
+ * can inject a mock. The three buckets are mutually exclusive:
+ *   tagged + skipped + queued = total
+ */
+export async function computeCoverageStats(
+  db: DbClient,
+): Promise<CoverageStats> {
+  const result = await db.execute(sql`
+    SELECT
+      COUNT(*)                                                        AS total_bills,
+      COUNT(DISTINCT it.bill_id)                                      AS tagged_bills,
+      COUNT(*) FILTER (WHERE b.skip_reason IS NOT NULL
+                         AND NOT EXISTS (
+                           SELECT 1 FROM issue_tags it2
+                           WHERE it2.bill_id = b.id
+                         ))                                           AS skipped_non_issue_bills,
+      COUNT(*) FILTER (WHERE b.skip_reason IS NULL
+                         AND NOT EXISTS (
+                           SELECT 1 FROM issue_tags it3
+                           WHERE it3.bill_id = b.id
+                         ))                                           AS queued_for_tagging_bills
+    FROM bills b
+    LEFT JOIN issue_tags it ON it.bill_id = b.id
+  `);
+
+  const row = result.rows[0] as {
+    total_bills: string;
+    tagged_bills: string;
+    skipped_non_issue_bills: string;
+    queued_for_tagging_bills: string;
+  };
+
+  return {
+    totalBills: Number(row.total_bills),
+    taggedBills: Number(row.tagged_bills),
+    skippedNonIssueBills: Number(row.skipped_non_issue_bills),
+    queuedForTaggingBills: Number(row.queued_for_tagging_bills),
+  };
+}
+
 // ---------------------------------------------------------------------------
 // Batch processing
 // ---------------------------------------------------------------------------
@@ -482,6 +619,17 @@ export async function processBill(
     const upserted = await upsertTags(db, bill.id, tags, dryRun);
     counts.tagsUpserted += upserted;
     counts.billsTagged += 1;
+
+    // When the model intentionally returned [] (non-issue bill), record why so
+    // coverage reporting can distinguish "skipped non-issue" from "queued".
+    if (tags.length === 0) {
+      const reason = inferSkipReason(bill.title);
+      process.stderr.write(
+        `[tag-bills] non_issue bill=${bill.id} skip_reason=${reason}\n`,
+      );
+      await recordSkipReason(db, bill.id, reason, dryRun);
+      counts.billsSkipReasonWritten += 1;
+    }
   } catch (error) {
     const message =
       error instanceof Error ? error.message.replace(/\s+/gu, " ") : "unknown";
@@ -577,6 +725,7 @@ export async function tagBills({
     billsTagged: 0,
     billsSkipped: 0,
     tagsUpserted: 0,
+    billsSkipReasonWritten: 0,
     apiErrors: 0,
     dbErrors: 0,
     estimatedInputTokens: 0,
@@ -639,6 +788,7 @@ export async function tagBills({
       `bills_tagged=${counts.billsTagged}`,
       `bills_skipped=${counts.billsSkipped}`,
       `tags_upserted=${counts.tagsUpserted}`,
+      `skip_reason_written=${counts.billsSkipReasonWritten}`,
       `api_errors=${counts.apiErrors}`,
       `db_errors=${counts.dbErrors}`,
       `est_total_usd=${finalCost.estimatedUsd.toFixed(4)}`,

@@ -80,6 +80,12 @@ export const bills = pgTable("bills", {
   jurisdiction: text("jurisdiction").notNull(),
   introducedDate: date("introduced_date"),
   rawMetadata: jsonb("raw_metadata"),
+  // Nullable. Set by the tagger when a bill is intentionally not tagged because
+  // it is genuinely non-issue (procedural, naming/renaming, ceremonial, or
+  // non-substantive). NULL means "not yet processed" OR "tagged with ≥1 tag".
+  // Used by coverage reporting to separate "skipped non-issue" from "queued for
+  // tagging". Values: 'procedural' | 'naming' | 'ceremonial' | 'non_issue'
+  skipReason: text("skip_reason"),
   insertedAt: timestamp("inserted_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
