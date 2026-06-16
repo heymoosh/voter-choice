@@ -659,6 +659,8 @@ export interface AlignmentScore {
   kept?: number;
   total?: number;
   contributingVotes?: ContributingVote[];
+  /** Limited-data caveat from attachLimitedDataNotice (0 < total < 5). */
+  notice?: string;
   // web_search fields
   confidence?: AlignmentConfidence;
   evidence?: WebSearchEvidence[];
