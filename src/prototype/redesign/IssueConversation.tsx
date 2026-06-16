@@ -230,7 +230,7 @@ export function IssueConversation({
       ? [
           "That's not quite right — let me explain",
           "Tell me why you picked these",
-          "Add something I forgot",
+          "Add something I missed",
         ]
       : [];
 
