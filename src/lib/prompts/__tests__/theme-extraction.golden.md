@@ -13,12 +13,17 @@ politically. Return a JSON array of 1–5 themes. Each theme:
             fits. This maps the voter's words to a known issue so the
             app can score candidates' voting records — you are doing
             language understanding, not judging candidates.
-  "stance": "in_favor" or "opposed" — which side of the issue the
-            voter is on, inferred from their words. Omit if genuinely
-            unclear. Most priorities are aspirational ("I want lower
-            drug prices") → "in_favor". Use "opposed" only when the
-            voter clearly wants LESS of something ("stop the new
-            highway", "against the bond").
+  "stance": "in_favor" or "opposed" — the FIXED per-issue side (see
+            POLE DIRECTIONS below; NOT "good vs bad"). Key off the issue's
+            [contested]/[valence] tag there:
+              · [contested]: set "stance" ONLY if the words pick a side
+                ("protect my 2A rights"→in_favor; "fewer guns on the
+                street"→opposed). If value-only and no side ("I care
+                about guns"), OMIT "stance" — an honest no-score beats a
+                guess. Never default a bare contested concern to in_favor.
+              · [valence]: aspirational concerns ("lower drug prices")→
+                in_favor; "opposed" only if they want LESS government
+                action ("government shouldn't run healthcare").
   "subIssue": OPTIONAL — a finer id from the SUB-ISSUES list below,
             only when one clearly fits the voter's words. Its parent
             MUST equal canonicalIssue; otherwise omit. Never invent ids.
@@ -41,10 +46,10 @@ CANONICAL ISSUES (id — what it covers):
   election_integrity — voting rights, voter ID, election administration
   congressional_accountability — stock-trading bans, term limits, ethics
 
-POLE DIRECTIONS (pole-vocab pole-vocab-v1) — when you set "stance", in_favor/opposed mean these FIXED per-issue sides, NOT "good vs bad". Match the voter's words to the side that fits; if their words don't pick a side, omit "stance".
+POLE DIRECTIONS (pole-vocab pole-vocab-v1) — in_favor/opposed are these FIXED per-issue sides, NOT "good vs bad". The [contested]/[valence] tag drives "stance": for [contested], set "stance" ONLY if the voter's words pick a side, else OMIT it (do NOT default to in_favor); for [valence], an aspirational concern is in_favor unless they want less government action.
   gun_rights_safety [contested] — in_favor=Gun access / rights; opposed=Gun regulation / safety
-  healthcare_affordability [valence_dominant] — in_favor=Expand coverage & cap costs (government action); opposed=Market-based / limit government role
-  housing_affordability [valence_dominant] — in_favor=Expand affordability / supply / tenant support; opposed=Cut housing programs / reduce government role
+  healthcare_affordability [valence] — in_favor=Expand coverage & cap costs (government action); opposed=Market-based / limit government role
+  housing_affordability [valence] — in_favor=Expand affordability / supply / tenant support; opposed=Cut housing programs / reduce government role
   immigration [contested] — in_favor=Welcoming / expand legal immigration & protections; opposed=Restrictive / enforcement-first
   border_security [contested] — in_favor=Strengthen border enforcement; opposed=Limit enforcement / humane & legal-pathway approach
   economy_jobs [contested] — in_favor=Public investment & worker protections; opposed=Deregulation & lower taxes (market-led growth)
@@ -52,12 +57,12 @@ POLE DIRECTIONS (pole-vocab pole-vocab-v1) — when you set "stance", in_favor/o
   public_safety [contested] — in_favor=Policing / enforcement capacity; opposed=Reform & prevention
   crime_public_safety [contested] — in_favor=Tough-on-crime / enforcement; opposed=Criminal-justice reform
   property_taxes [contested] — in_favor=Lower / cap property taxes; opposed=Maintain tax base for services
-  water_infrastructure [valence_dominant] — in_favor=Fund / strengthen water infrastructure & standards; opposed=Limit federal spending / local-only
+  water_infrastructure [valence] — in_favor=Fund / strengthen water infrastructure & standards; opposed=Limit federal spending / local-only
   energy_grid [contested] — in_favor=Expand fossil / conventional production; opposed=Clean-energy transition / restrict fossil
   reproductive_rights [contested] — in_favor=Protect / expand access; opposed=Restrict reproductive access
   environment_climate [contested] — in_favor=Climate action / environmental protection; opposed=Deregulation / limit climate mandates
   election_integrity [contested] — in_favor=Voting access / expand participation; opposed=Voting restrictions / security-first
-  congressional_accountability [valence_dominant] — in_favor=Stronger ethics & accountability; opposed=Status quo / weaker rules
+  congressional_accountability [valence] — in_favor=Stronger ethics & accountability; opposed=Status quo / weaker rules
 
 SUB-ISSUES (sub-issue sub-issue-v1) — when the voter's concern clearly fits one of these facets of a parent issue, set "subIssue" to its id; if none clearly fits, OMIT "subIssue". A sub-issue inherits the parent issue's pole direction — it never changes the side.
   healthcare_affordability:

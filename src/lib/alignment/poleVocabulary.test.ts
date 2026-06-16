@@ -118,6 +118,24 @@ describe("renderers — round-trip", () => {
     }
     expect(block).toContain(POLE_VOCABULARY_VERSION);
   });
+
+  it("resolver block tags each issue's axis_type so the model can key the stance rule on it", () => {
+    const block = renderResolverPoleDirections();
+    for (const [id, e] of entries) {
+      const tag = e.axisType === "contested" ? "contested" : "valence";
+      expect(block, id).toContain(`${id} [${tag}]`);
+    }
+    // valence_dominant is rendered as the shorter [valence] token that the
+    // stance-rule prose names — the long literal must not leak into the prompt.
+    expect(block).not.toContain("[valence_dominant]");
+  });
+
+  it("resolver block instructs OMITTING stance (no in_favor default) for a contested issue that doesn't pick a side", () => {
+    const block = renderResolverPoleDirections();
+    expect(block).toMatch(
+      /\[contested\][^]*OMIT it \(do NOT default to in_favor\)/,
+    );
+  });
 });
 
 describe("single source of truth — consumers import the shared anchor", () => {
