@@ -1230,6 +1230,17 @@ function AlignmentIssueRow({ issue, score, candidate, isOpen, onToggle, anonCtx 
         </div>
       </button>
 
+      {score?.notice && (
+        <div className="cv2-iss-notice" role="note" style={{
+          fontSize: '11px',
+          color: 'var(--ink-3, #888)',
+          fontStyle: 'italic',
+          padding: '2px 10px 6px',
+        }}>
+          {score.notice}
+        </div>
+      )}
+
       {isOpen && hasVotes && (
         <AlignmentDrilldown score={score} candidate={candidate} anonCtx={anonCtx} />
       )}
