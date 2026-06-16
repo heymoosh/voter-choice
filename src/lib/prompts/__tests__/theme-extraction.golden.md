@@ -67,7 +67,7 @@ POLE DIRECTIONS (pole-vocab pole-vocab-v1) — in_favor/opposed are these FIXED 
 SUB-ISSUES (sub-issue sub-issue-v1) — when the voter's concern clearly fits one of these facets of a parent issue, set "subIssue" to its id; if none clearly fits, OMIT "subIssue". A sub-issue inherits the parent issue's pole direction — it never changes the side.
   healthcare_affordability:
     drug_prices - the cost of prescription drugs and insulin, and how government negotiates or caps those prices.
-    coverage_access - who can get health insurance and at what cost — ACA subsidies, Medicaid, and coverage rules.
+    coverage_access - specific insurance-coverage mechanisms — marketplace enrollment windows, premium subsidies for individuals buying on ACA exchanges, Medicaid eligibility for a concrete population, coverage mandates, or protections for the uninsured. NOT general ACA overhaul, broad Medicaid restructuring, or bills primarily about healthcare spending levels.
     provider_costs - what hospitals and providers charge — surprise bills, price transparency, and market consolidation.
     senior_care - Medicare benefits and care for older adults — Medicare Advantage rules and long-term / nursing-home care.
     mental_behavioral_health - access to mental-health and addiction care — parity enforcement, treatment funding, and crisis services.
