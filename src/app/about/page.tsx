@@ -4,7 +4,7 @@ import Link from "next/link";
 export const metadata: Metadata = {
   title: "About — Voter Choice",
   description:
-    "Voter Choice is a free, non-partisan ballot research tool built by Grey Bird LLC.",
+    "Voter Choice is a free, non-partisan Congress-assessment tool built by Grey Bird LLC.",
 };
 
 export default function AboutPage() {
@@ -26,7 +26,7 @@ export default function AboutPage() {
 
         {/* Title */}
         <h1 className="font-serif font-semibold text-[48px] max-sm:text-[36px] leading-none tracking-[-0.025em] text-ink mb-8 text-balance">
-          A free, non-partisan ballot research tool.
+          A free, non-partisan Congress-assessment tool.
         </h1>
 
         {/* Article */}
