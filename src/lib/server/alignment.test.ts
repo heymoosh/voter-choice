@@ -27,6 +27,7 @@ import {
   extractBillNumber,
   normalizeFederalType,
   stripLeadingBillNumber,
+  buildCongressGovUrl,
 } from "./alignment";
 
 // ---------------------------------------------------------------------------
@@ -1124,6 +1125,293 @@ describe("lookupAlignment", () => {
     expect(on.matchedSubIssue).toBe("drug_prices");
     expect(on.total).toBe(5);
     vi.unstubAllEnvs();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// buildCongressGovUrl — maps govtrack bill ids to Congress.gov URLs
+// ---------------------------------------------------------------------------
+
+describe("buildCongressGovUrl", () => {
+  it("maps govtrack-hr1234-118 → 118th-congress/house-bill/1234", () => {
+    expect(buildCongressGovUrl("govtrack-hr1234-118")).toBe(
+      "https://www.congress.gov/bill/118th-congress/house-bill/1234",
+    );
+  });
+
+  it("maps govtrack-s5-119 → 119th-congress/senate-bill/5", () => {
+    expect(buildCongressGovUrl("govtrack-s5-119")).toBe(
+      "https://www.congress.gov/bill/119th-congress/senate-bill/5",
+    );
+  });
+
+  it("maps govtrack-hjres1-118 → 118th-congress/house-joint-resolution/1", () => {
+    expect(buildCongressGovUrl("govtrack-hjres1-118")).toBe(
+      "https://www.congress.gov/bill/118th-congress/house-joint-resolution/1",
+    );
+  });
+
+  it("maps govtrack-sjres10-117 → 117th-congress/senate-joint-resolution/10", () => {
+    expect(buildCongressGovUrl("govtrack-sjres10-117")).toBe(
+      "https://www.congress.gov/bill/117th-congress/senate-joint-resolution/10",
+    );
+  });
+
+  it("maps govtrack-hres42-118 → 118th-congress/house-resolution/42", () => {
+    expect(buildCongressGovUrl("govtrack-hres42-118")).toBe(
+      "https://www.congress.gov/bill/118th-congress/house-resolution/42",
+    );
+  });
+
+  it("maps govtrack-sres7-119 → 119th-congress/senate-resolution/7", () => {
+    expect(buildCongressGovUrl("govtrack-sres7-119")).toBe(
+      "https://www.congress.gov/bill/119th-congress/senate-resolution/7",
+    );
+  });
+
+  it("maps govtrack-hconres3-118 → 118th-congress/house-concurrent-resolution/3", () => {
+    expect(buildCongressGovUrl("govtrack-hconres3-118")).toBe(
+      "https://www.congress.gov/bill/118th-congress/house-concurrent-resolution/3",
+    );
+  });
+
+  it("returns null for an openstates id (non-govtrack)", () => {
+    expect(buildCongressGovUrl("openstates-ocd-bill-abc123")).toBeNull();
+  });
+
+  it("returns null for null input", () => {
+    expect(buildCongressGovUrl(null)).toBeNull();
+  });
+
+  it("returns null for unknown bill type in govtrack id", () => {
+    // 'xyz' is not in the typeMap
+    expect(buildCongressGovUrl("govtrack-xyz99-118")).toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// lookupAlignment — narrative precedence (plain_summary + CAN2026)
+//
+// New precedence (PR #136): CAN2026 → plain_summary (rendered in full) → absent.
+// The raw CRS bills.summary is NO LONGER shown inline. When no plain_summary
+// exists the card shows only the bill title + roll-call + Congress.gov link.
+// No truncated preview, no ellipsis.
+// ---------------------------------------------------------------------------
+
+describe("lookupAlignment — narrative precedence (plain_summary / CAN2026)", () => {
+  // (a) No plain_summary AND no CAN2026 narrative → narrative absent (no "...")
+  it("no plain_summary + no CAN note → narrative is absent (no ellipsis, no raw CRS)", async () => {
+    const { select, _chain } = makeSelectMock([]);
+    mockedGetDb.mockReturnValue({ select } as never);
+
+    _chain.where.mockResolvedValue([
+      {
+        billTitle: "Some Procedural Vote",
+        billId: "govtrack-hr999-118",
+        billRawMetadata: null,
+        billSourceUrl: "https://govtrack.us/bill/hr999",
+        billSource: "govtrack",
+        // billSummary intentionally omitted (not selected from DB anymore)
+        billPlainSummary: null,
+        voteCast: "yea",
+        voteDate: "2024-01-10",
+        stanceLens: "in_favor",
+        taggerConfidence: "0.7",
+      },
+    ]);
+
+    const result = await lookupAlignment(
+      "federal-A123",
+      "healthcare_affordability",
+      "in_favor",
+    );
+
+    const vote = result.contributingVotes[0]!;
+    // No summary paragraph — user sees bill title + Congress.gov link only.
+    expect(vote.narrative).toBeUndefined();
+    // No sources appended either (sources only attach with narrative).
+    expect(vote.sources).toBeUndefined();
+  });
+
+  // Confirm the above even when raw billSummary data is present in the row
+  // (query still selects it in some tests via mock): the builder must ignore it.
+  it("raw CRS billSummary present but plain_summary null → narrative still absent", async () => {
+    const { select, _chain } = makeSelectMock([]);
+    mockedGetDb.mockReturnValue({ select } as never);
+
+    _chain.where.mockResolvedValue([
+      {
+        billTitle: "Affordable Insulin Act",
+        billId: "govtrack-hr5-118",
+        billRawMetadata: null,
+        billSourceUrl: "https://govtrack.us/bill/hr5",
+        billSource: "govtrack",
+        // Raw CRS with HTML — must NOT be used.
+        billSummary:
+          "<p><b>Affordable Insulin Act</b></p><p>Caps insulin at $35 per month.</p>",
+        billPlainSummary: null,
+        voteCast: "yea",
+        voteDate: "2024-04-01",
+        stanceLens: "in_favor",
+        taggerConfidence: "0.9",
+      },
+    ]);
+
+    const result = await lookupAlignment(
+      "federal-A123",
+      "healthcare_affordability",
+      "in_favor",
+    );
+
+    const vote = result.contributingVotes[0]!;
+    // Raw CRS must NOT surface — no narrative, no HTML, no ellipsis.
+    expect(vote.narrative).toBeUndefined();
+    expect(vote.sources).toBeUndefined();
+  });
+
+  // (b) plain_summary present → rendered IN FULL, no truncation, no ellipsis
+  it("plain_summary present → rendered in full, no ellipsis, Congress.gov source attached", async () => {
+    const { select, _chain } = makeSelectMock([]);
+    mockedGetDb.mockReturnValue({ select } as never);
+
+    const fullSummary =
+      "Lets Medicare negotiate lower drug prices for some medications. Savings are passed to beneficiaries.";
+
+    _chain.where.mockResolvedValue([
+      {
+        billTitle: "Lower Drug Costs Now Act",
+        billId: "govtrack-hr3-118",
+        billRawMetadata: null,
+        billSourceUrl: "https://govtrack.us/bill/hr3",
+        billSource: "govtrack",
+        billPlainSummary: fullSummary,
+        voteCast: "yea",
+        voteDate: "2024-03-15",
+        stanceLens: "in_favor",
+        taggerConfidence: "0.95",
+      },
+    ]);
+
+    const result = await lookupAlignment(
+      "federal-A123",
+      "healthcare_affordability",
+      "in_favor",
+    );
+
+    const vote = result.contributingVotes[0]!;
+    // Exact plain_summary rendered, no trailing ellipsis.
+    expect(vote.narrative).toBe(fullSummary);
+    expect(vote.narrative).not.toMatch(/…|\.\.\.$/);
+    // Congress.gov source chip appended for provenance.
+    expect(vote.sources).toBeDefined();
+    expect(vote.sources).toHaveLength(1);
+    expect(vote.sources![0]!.name).toMatch(/congress\.gov/i);
+    expect(vote.sources![0]!.url).toContain("congress.gov");
+    // No HTML.
+    expect(vote.narrative).not.toMatch(/<[^>]+>/);
+  });
+
+  it("plain_summary constructs correct Congress.gov URL from govtrack bill id", async () => {
+    const { select, _chain } = makeSelectMock([]);
+    mockedGetDb.mockReturnValue({ select } as never);
+
+    _chain.where.mockResolvedValue([
+      {
+        billTitle: "Inflation Reduction Act",
+        billId: "govtrack-hr5376-117",
+        billRawMetadata: null,
+        billSourceUrl: "https://govtrack.us/bill/hr5376",
+        billSource: "govtrack",
+        billPlainSummary:
+          "Addresses climate, healthcare costs, and taxes in a single reconciliation package.",
+        voteCast: "yea",
+        voteDate: "2022-08-12",
+        stanceLens: "in_favor",
+        taggerConfidence: "0.92",
+      },
+    ]);
+
+    const result = await lookupAlignment(
+      "federal-A123",
+      "environment_climate",
+      "in_favor",
+    );
+
+    const vote = result.contributingVotes[0]!;
+    expect(vote.sources![0]!.url).toBe(
+      "https://www.congress.gov/bill/117th-congress/house-bill/5376",
+    );
+  });
+
+  it("CAN2026 narrative takes precedence over plain_summary when flag is on and row exists", async () => {
+    vi.stubEnv("CAN2026_DISPLAY_ENABLED", "1");
+
+    const { select, _chain } = makeSelectMock([]);
+    mockedGetDb.mockReturnValue({ select } as never);
+
+    _chain.where.mockResolvedValue([
+      {
+        billTitle: "Lower Drug Costs Now Act",
+        billId: "govtrack-hr3-118",
+        billRawMetadata: null,
+        billSourceUrl: "https://govtrack.us/bill/hr3",
+        billSource: "govtrack",
+        billPlainSummary: "LLM summary: Medicare negotiates drug prices.",
+        voteCast: "yea",
+        voteDate: "2024-03-15",
+        stanceLens: "in_favor",
+        taggerConfidence: "0.95",
+        // CAN2026 row present:
+        narrative:
+          "CAN2026 curated: Senator voted YES to cap insulin at $35/mo.",
+      },
+    ]);
+
+    const result = await lookupAlignment(
+      "federal-A123",
+      "healthcare_affordability",
+      "in_favor",
+    );
+
+    const vote = result.contributingVotes[0]!;
+    // CAN2026 narrative wins — plain_summary must NOT appear.
+    expect(vote.narrative).toBe(
+      "CAN2026 curated: Senator voted YES to cap insulin at $35/mo.",
+    );
+    // No extra sources appended when using the CAN2026 path.
+    expect(vote.sources).toBeUndefined();
+
+    vi.unstubAllEnvs();
+  });
+
+  it("neither CAN2026 nor plain_summary → narrative stays absent", async () => {
+    const { select, _chain } = makeSelectMock([]);
+    mockedGetDb.mockReturnValue({ select } as never);
+
+    _chain.where.mockResolvedValue([
+      {
+        billTitle: "Some Procedural Vote",
+        billId: "govtrack-hr999-118",
+        billRawMetadata: null,
+        billSourceUrl: "https://govtrack.us/bill/hr999",
+        billSource: "govtrack",
+        billPlainSummary: null,
+        voteCast: "yea",
+        voteDate: "2024-01-10",
+        stanceLens: "in_favor",
+        taggerConfidence: "0.7",
+      },
+    ]);
+
+    const result = await lookupAlignment(
+      "federal-A123",
+      "healthcare_affordability",
+      "in_favor",
+    );
+
+    const vote = result.contributingVotes[0]!;
+    expect(vote.narrative).toBeUndefined();
+    expect(vote.sources).toBeUndefined();
   });
 });
 

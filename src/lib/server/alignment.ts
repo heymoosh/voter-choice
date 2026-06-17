@@ -23,10 +23,21 @@ export interface ContributingVote {
   date: string; // YYYY-MM-DD
   source: { name: string; url: string };
   /**
-   * Bill-level "What it did" prose from can_bill_narratives.narrative.
-   * Only populated when CAN2026_DISPLAY_ENABLED is set and the bill has a
-   * linked CAN2026 narrative row. Note: this is shared bill-level context,
-   * not candidate-specific color.
+   * Additional source attributions beyond the primary `source`. Populated when
+   * the LLM plain_summary (CRS-derived) is used — a Congress.gov entry is
+   * appended so the data provenance is visible in the UI.
+   */
+  sources?: Array<{ name: string; url: string }>;
+  /**
+   * Bill-level "What it did" prose. Always plain text — never HTML.
+   * Populated from two sources, in precedence order:
+   *   1. can_bill_narratives.narrative — when CAN2026_DISPLAY_ENABLED is set
+   *      and the bill has a linked CAN2026 row (curated, gated).
+   *   2. bills.plain_summary — LLM-generated short plain-language summary
+   *      (≤2 sentences) from scripts/ingest/summarize-bills.ts (ungated).
+   *      Rendered in full; never truncated or ellipsized.
+   * Absent when neither source has content — the UI shows the bill title +
+   * roll-call + Congress.gov link but NO inline summary paragraph.
    */
   narrative?: string;
 }
@@ -449,6 +460,79 @@ export function stripLeadingBillNumber(title: string): string {
   return stripped.trim() || title;
 }
 
+/**
+ * Build a Congress.gov bill URL from a govtrack-style bill id.
+ *
+ * The govtrack id format is "govtrack-<type><number>-<congress>", e.g.:
+ *   "govtrack-hr1234-118" → https://www.congress.gov/bill/118th-congress/house-bill/1234
+ *   "govtrack-s5-119"     → https://www.congress.gov/bill/119th-congress/senate-bill/5
+ *
+ * The Congress.gov bill-type path segment mapping:
+ *   hr    → house-bill
+ *   s     → senate-bill
+ *   hres  → house-resolution
+ *   sres  → senate-resolution
+ *   hjres → house-joint-resolution
+ *   sjres → senate-joint-resolution
+ *   hconres → house-concurrent-resolution
+ *   sconres → senate-concurrent-resolution
+ *
+ * Returns null when the id can't be parsed (non-govtrack bills, state bills).
+ * Exported for unit testing.
+ */
+export function buildCongressGovUrl(billId: unknown): string | null {
+  const idStr = typeof billId === "string" ? billId : "";
+  const m = /^govtrack-([a-z]+)(\d+)-(\d+)$/i.exec(idStr);
+  if (!m) return null;
+
+  const typeRaw = m[1].toLowerCase();
+  const number = m[2];
+  const congress = m[3];
+
+  const typeMap: Record<string, string> = {
+    hr: "house-bill",
+    s: "senate-bill",
+    hres: "house-resolution",
+    sres: "senate-resolution",
+    hjres: "house-joint-resolution",
+    sjres: "senate-joint-resolution",
+    hconres: "house-concurrent-resolution",
+    sconres: "senate-concurrent-resolution",
+  };
+
+  const segment = typeMap[typeRaw];
+  if (!segment) return null;
+
+  const suffix =
+    congress === "1"
+      ? "1st"
+      : congress === "2"
+        ? "2nd"
+        : congress === "3"
+          ? "3rd"
+          : `${congress}th`;
+
+  return `https://www.congress.gov/bill/${suffix}-congress/${segment}/${number}`;
+}
+
+/**
+ * Append a Congress.gov source-attribution entry to a contributing-vote when
+ * its narrative comes from the (public-domain) CRS data — either the LLM
+ * `plain_summary` derived from it, or the raw CRS summary fallback.
+ */
+function attachCongressGovSource(
+  vote: ContributingVote,
+  billId: unknown,
+): void {
+  const cgUrl = buildCongressGovUrl(billId);
+  vote.sources = [
+    {
+      name: "Congress.gov (CRS summary)",
+      url: cgUrl ?? "https://www.congress.gov",
+    },
+  ];
+}
+
 // ---------------------------------------------------------------------------
 // Main lookup
 // ---------------------------------------------------------------------------
@@ -497,6 +581,7 @@ export async function lookupAlignment(
           billRawMetadata: schema.bills.rawMetadata,
           billSourceUrl: schema.bills.sourceUrl,
           billSource: schema.bills.source,
+          billPlainSummary: schema.bills.plainSummary,
           voteCast: schema.votes.voteCast,
           voteDate: schema.votes.voteDate,
           stanceLens: schema.issueTags.stanceLens,
@@ -530,6 +615,7 @@ export async function lookupAlignment(
           billRawMetadata: schema.bills.rawMetadata,
           billSourceUrl: schema.bills.sourceUrl,
           billSource: schema.bills.source,
+          billPlainSummary: schema.bills.plainSummary,
           voteCast: schema.votes.voteCast,
           voteDate: schema.votes.voteDate,
           stanceLens: schema.issueTags.stanceLens,
@@ -621,11 +707,28 @@ export async function lookupAlignment(
           url: r.billSourceUrl,
         },
       };
-      // narrative is only present on rows from the CAN2026-enabled query path.
-      // Cast via `as` because the flag-off query type doesn't include the field,
-      // but at runtime the value is simply absent (undefined) in that branch.
-      const narrative = (r as { narrative?: string | null }).narrative;
-      if (narrative) vote.narrative = narrative;
+
+      // Narrative precedence (the narrative is ALWAYS plain text —
+      // never HTML — because the UI renders it as a JSX text node):
+      //   1. CAN2026 narrative (gated — only present in the can2026Enabled query
+      //      branch when a can_bill_narratives row exists for this bill).
+      //   2. bills.plain_summary (LLM-generated short summary, ungated). Rendered
+      //      IN FULL (it's already ≤2 sentences). Appends a Congress.gov entry to
+      //      vote.sources for provenance.
+      //   3. None → narrative stays absent. The user sees the bill title (heading)
+      //      + roll-call + the Congress.gov chip/link to read the full CRS text.
+      //      Do NOT show any truncated or ellipsized preview of raw bills.summary.
+      const can2026Narrative = (r as { narrative?: string | null }).narrative;
+      const plainSummary = (r as { billPlainSummary?: string | null })
+        .billPlainSummary;
+
+      if (can2026Narrative) {
+        vote.narrative = can2026Narrative;
+      } else if (plainSummary && plainSummary.trim()) {
+        vote.narrative = plainSummary.trim();
+        attachCongressGovSource(vote, r.billId);
+      }
+
       return vote;
     });
 
