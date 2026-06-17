@@ -1405,6 +1405,121 @@ describe("lookupAlignment — CRS summary narrative fallback", () => {
     expect(vote.sources).toBeDefined();
     expect(vote.sources![0]!.name).toMatch(/congress\.gov/i);
   });
+
+  it("prefers bills.plain_summary (LLM) over the raw CRS summary", async () => {
+    const { select, _chain } = makeSelectMock([]);
+    mockedGetDb.mockReturnValue({ select } as never);
+
+    _chain.where.mockResolvedValue([
+      {
+        billTitle: "Lower Drug Costs Now Act",
+        billId: "govtrack-hr3-118",
+        billRawMetadata: null,
+        billSourceUrl: "https://govtrack.us/bill/hr3",
+        billSource: "govtrack",
+        // Raw CRS — long + HTML. Must NOT be used because plain_summary exists.
+        billSummary:
+          "<p>This Act <b>requires</b> the Secretary of Health and Human Services to negotiate prices for certain drugs covered under Medicare and to apply the negotiated price across other payers, among many other provisions described over several paragraphs.</p>",
+        billPlainSummary:
+          "Lets Medicare negotiate lower prices for some drugs.",
+        voteCast: "yea",
+        voteDate: "2024-03-15",
+        stanceLens: "in_favor",
+        taggerConfidence: "0.95",
+      },
+    ]);
+
+    const result = await lookupAlignment(
+      "federal-A123",
+      "healthcare_affordability",
+      "in_favor",
+    );
+
+    const vote = result.contributingVotes[0]!;
+    expect(vote.narrative).toBe(
+      "Lets Medicare negotiate lower prices for some drugs.",
+    );
+    // Plain-summary path still attributes Congress.gov (CRS-derived).
+    expect(vote.sources![0]!.name).toMatch(/congress\.gov/i);
+    // No HTML leaked through.
+    expect(vote.narrative).not.toMatch(/<[^>]+>/);
+  });
+
+  it("STRIPS HTML from the raw-CRS fallback so no tags reach the UI", async () => {
+    const { select, _chain } = makeSelectMock([]);
+    mockedGetDb.mockReturnValue({ select } as never);
+
+    _chain.where.mockResolvedValue([
+      {
+        billTitle: "Affordable Insulin Act",
+        billId: "govtrack-hr5-118",
+        billRawMetadata: null,
+        billSourceUrl: "https://govtrack.us/bill/hr5",
+        billSource: "govtrack",
+        billSummary:
+          "<p><b>Affordable Insulin Act</b></p><p>Caps insulin at $35 per month.</p>",
+        billPlainSummary: null, // not generated yet → fall back to raw CRS
+        voteCast: "yea",
+        voteDate: "2024-04-01",
+        stanceLens: "in_favor",
+        taggerConfidence: "0.9",
+      },
+    ]);
+
+    const result = await lookupAlignment(
+      "federal-A123",
+      "healthcare_affordability",
+      "in_favor",
+    );
+
+    const vote = result.contributingVotes[0]!;
+    // The literal tags Muxin saw must be gone.
+    expect(vote.narrative).not.toContain("<p>");
+    expect(vote.narrative).not.toContain("</p>");
+    expect(vote.narrative).not.toContain("<b>");
+    expect(vote.narrative).not.toMatch(/<[^>]+>/);
+    // Readable text preserved.
+    expect(vote.narrative).toContain("Caps insulin at $35 per month.");
+    expect(vote.sources![0]!.name).toMatch(/congress\.gov/i);
+  });
+
+  it("TRUNCATES a giant raw-CRS fallback to a short preview (no full dump)", async () => {
+    const { select, _chain } = makeSelectMock([]);
+    mockedGetDb.mockReturnValue({ select } as never);
+
+    // Many paragraphs of CRS text — the kind that rendered as a giant dump.
+    const giant =
+      "<p>This bill makes sweeping changes to federal health policy. </p>".repeat(
+        40,
+      );
+
+    _chain.where.mockResolvedValue([
+      {
+        billTitle: "Omnibus Health Act",
+        billId: "govtrack-hr7-118",
+        billRawMetadata: null,
+        billSourceUrl: "https://govtrack.us/bill/hr7",
+        billSource: "govtrack",
+        billSummary: giant,
+        billPlainSummary: null,
+        voteCast: "yea",
+        voteDate: "2024-05-01",
+        stanceLens: "in_favor",
+        taggerConfidence: "0.9",
+      },
+    ]);
+
+    const result = await lookupAlignment(
+      "federal-A123",
+      "healthcare_affordability",
+      "in_favor",
+    );
+
+    const vote = result.contributingVotes[0]!;
+    // Preview is far shorter than the full dump.
+    expect(vote.narrative!.length).toBeLessThanOrEqual(245);
+    expect(vote.narrative).not.toMatch(/<[^>]+>/);
+  });
 });
 
 // ---------------------------------------------------------------------------

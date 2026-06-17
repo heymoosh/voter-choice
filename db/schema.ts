@@ -75,6 +75,12 @@ export const bills = pgTable("bills", {
   id: text("id").primaryKey(),
   title: text("title").notNull(),
   summary: text("summary"),
+  // Nullable. LLM-generated short plain-language summary (≤2 sentences,
+  // ≤~240 chars) derived from `summary` (the raw CRS text) by
+  // scripts/ingest/summarize-bills.ts. Additive — `summary` is kept verbatim.
+  // NULL means "not yet generated". The contributing-vote narrative prefers
+  // this over the raw CRS summary so users see a true short summary.
+  plainSummary: text("plain_summary"),
   source: text("source").notNull(), // "govtrack" | "openstates" | …
   sourceUrl: text("source_url").notNull(),
   jurisdiction: text("jurisdiction").notNull(),
@@ -641,9 +647,6 @@ export const voterIssueEvents = pgTable(
       t.canonicalIssue,
     ),
     index("voter_issue_events_issue_idx").on(t.canonicalIssue),
-    index("voter_issue_events_sub_issue_idx").on(
-      t.canonicalIssue,
-      t.subIssue,
-    ),
+    index("voter_issue_events_sub_issue_idx").on(t.canonicalIssue, t.subIssue),
   ],
 );
