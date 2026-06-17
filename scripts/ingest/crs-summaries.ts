@@ -307,43 +307,220 @@ export function parseCrsSummaryResponse(json: unknown): CrsSummary | null {
 }
 
 // ---------------------------------------------------------------------------
-// GovInfo BILLSUM fallback (stubbed — see TODO)
+// GovInfo BILLSTATUS fallback
 // ---------------------------------------------------------------------------
 
 /**
- * GovInfo BILLSUM bulk-XML fallback for extended Congress.gov API outages.
+ * In-run cache for GovInfo fallback results. Separate from summaryCache so
+ * a null from the primary path does not shadow a successful GovInfo fetch.
+ */
+const govInfoCache = new Map<string, CrsSummary | null>();
+
+/**
+ * Build the GovInfo BILLSTATUS bulk-XML URL for a bill.
  *
- * TODO: Implement this when/if the Congress.gov API is down for >24 hours.
+ * Pattern: https://www.govinfo.gov/bulkdata/BILLSTATUS/{congress}/{billType}/BILLSTATUS-{congress}{billType}{number}.xml
  *
- * The GovInfo endpoint is:
- *   https://www.govinfo.gov/bulkdata/BILLSTATUS/{congress}/{billType}/BILLSTATUS-{congress}{billType}{number}.xml
+ * Example (118th Congress, HR 1):
+ *   https://www.govinfo.gov/bulkdata/BILLSTATUS/118/hr/BILLSTATUS-118hr1.xml
+ */
+function buildGovInfoBillStatusUrl(bill: CrsBillIdentity): string {
+  const type = bill.type.toLowerCase();
+  const congress = bill.congress;
+  const number = String(bill.number);
+  return `https://www.govinfo.gov/bulkdata/BILLSTATUS/${congress}/${type}/BILLSTATUS-${congress}${type}${number}.xml`;
+}
+
+/**
+ * Extract the text content of a named XML element using a minimal regex.
+ * Returns null if the element is absent or empty.
  *
- * The BILLSTATUS XML has the same CRS summaries under:
- *   <bill><summaries><billSummaries><item>
- *     <text>…HTML…</text>
- *     <actionDate>…</actionDate>
- *     <actionDesc>…</actionDesc>
- *     <updateDate>…</updateDate>
- *   </item></billSummaries></summaries></bill>
+ * Handles CDATA sections (`<![CDATA[...]]>`) as well as plain text content.
+ * Only intended for simple, non-nested text values as found in BILLSTATUS XML.
+ */
+function extractXmlText(xml: string, tag: string): string | null {
+  const re = new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, "i");
+  const m = re.exec(xml);
+  if (!m || !m[1]) return null;
+
+  let value = m[1].trim();
+
+  // Unwrap CDATA section if present: <![CDATA[...]]>
+  const cdataMatch = /^<!\[CDATA\[([\s\S]*?)\]\]>$/.exec(value);
+  if (cdataMatch) {
+    value = cdataMatch[1] ?? "";
+  }
+
+  value = value.trim();
+  return value || null;
+}
+
+/**
+ * Decode XML/HTML character entities in a string.
+ * Used to unescape entity-encoded HTML text (e.g. from BILLSTATUS v3 XML).
+ */
+function decodeXmlEntities(text: string): string {
+  return text
+    .replace(/&amp;/gi, "&")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;|&apos;/gi, "'")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&#(\d+);/g, (_, code: string) =>
+      String.fromCharCode(Number(code)),
+    );
+}
+
+/**
+ * Extract the summary text from a single BILLSTATUS summary element.
  *
- * That XML is identical in content to the Congress.gov API response.
- * Parse with a minimal XML regex or a lightweight XML parser (fast-xml-parser
- * or node:stream/xml, neither of which is currently in package.json).
+ * The BILLSTATUS v3 schema stores text inside `<cdata><text>` as HTML that is
+ * XML-entity-encoded (e.g. `&lt;p&gt;…&lt;/p&gt;`).  We decode entities
+ * first so the caller receives raw HTML (e.g. `<p>…</p>`) that `stripHtmlTags`
+ * can then process normally.
  *
- * The function below intentionally always returns null so it can be wired in
- * behind the same CrsSummary interface without affecting the primary path.
+ * Older/legacy schemas place the text directly in `<text>` (possibly wrapped
+ * in a CDATA section), where the content is already raw HTML.
+ */
+function extractSummaryText(elementXml: string): string | null {
+  // v3 schema: <cdata><text>…entity-encoded HTML…</text></cdata>
+  const cdataBlock = extractXmlText(elementXml, "cdata");
+  if (cdataBlock) {
+    const t = extractXmlText(cdataBlock, "text");
+    // The text is entity-encoded XML; decode to raw HTML before returning.
+    if (t) return decodeXmlEntities(t);
+  }
+
+  // Older / legacy schema: <text>…possibly CDATA or plain HTML…</text>
+  return extractXmlText(elementXml, "text");
+}
+
+/**
+ * Parse the BILLSTATUS XML `<summaries>` section into a list of raw summary
+ * records.
+ *
+ * Handles two BILLSTATUS schema variants:
+ *  - v3 (current): `<summaries><summary>…</summary></summaries>`
+ *  - Legacy: `<summaries><billSummaries><item>…</item></billSummaries></summaries>`
+ *
+ * Returns an empty array if no summaries element or no items are found.
+ */
+function parseBillStatusSummaries(xml: string): UnknownRecord[] {
+  // Extract the <summaries> block first to limit search scope.
+  const maybeSummariesBlock = extractXmlText(xml, "summaries");
+  if (!maybeSummariesBlock) return [];
+  // Assign to a non-null const so TypeScript can narrow inside the closure.
+  const summariesBlock: string = maybeSummariesBlock;
+
+  const items: UnknownRecord[] = [];
+
+  /**
+   * Try matching a given element tag name inside the summaries block.
+   * The tag may appear directly (v3: <summary>) or nested inside another
+   * wrapper element (legacy: <billSummaries><item>).
+   */
+  function extractItems(tag: string): void {
+    const re = new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, "gi");
+    let match: RegExpExecArray | null;
+    while ((match = re.exec(summariesBlock)) !== null) {
+      const itemXml = match[1];
+      if (!itemXml) continue;
+
+      const text = extractSummaryText(itemXml);
+      if (!text) continue; // skip items with no summary text
+
+      const actionDesc = extractXmlText(itemXml, "actionDesc");
+      const updateDate = extractXmlText(itemXml, "updateDate");
+
+      const record: UnknownRecord = { text };
+      if (actionDesc) record.actionDesc = actionDesc;
+      if (updateDate) record.updateDate = updateDate;
+      items.push(record);
+    }
+  }
+
+  // v3 schema uses <summary>; legacy schema uses <item>.
+  extractItems("summary");
+  if (items.length === 0) {
+    extractItems("item");
+  }
+
+  return items;
+}
+
+/**
+ * GovInfo BILLSTATUS bulk-XML fallback for extended Congress.gov API outages.
+ *
+ * Fetches the BILLSTATUS XML from GovInfo, extracts the `<summaries>` section,
+ * picks the most-recently-updated item (same `selectBestSummary` logic as the
+ * primary path), and returns a `CrsSummary` with HTML stripped.
+ *
+ * Returns null on:
+ *  - Non-200 / 404 (file not yet published by GovInfo)
+ *  - Missing or empty summaries element in the XML
+ *  - Any network or parse error (fail-soft)
+ *
+ * Results are cached in `govInfoCache` for the lifetime of the process.
  */
 export async function fetchCrsSummaryGovInfoFallback(
   bill: CrsBillIdentity,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  _fetcher: Fetcher = fetch,
+  fetcher: Fetcher = fetch,
 ): Promise<CrsSummary | null> {
-  // TODO: implement GovInfo BILLSTATUS/BILLSUM XML fetch + parse.
-  // Until then, return null so callers degrade gracefully.
-  console.warn(
-    `[crs-summaries] govinfo_fallback not yet implemented bill=${bill.congress}/${bill.type}/${bill.number}`,
-  );
-  return null;
+  const key = buildCacheKey(bill);
+
+  if (govInfoCache.has(key)) {
+    return govInfoCache.get(key) ?? null;
+  }
+
+  let result: CrsSummary | null = null;
+
+  try {
+    const url = buildGovInfoBillStatusUrl(bill);
+    const response = await fetcher(url, {
+      headers: { "user-agent": "voter-choice-federal-ingest" },
+    });
+
+    if (!response.ok) {
+      // 404 = not published yet; other non-200 = transient error. Both → null.
+      console.warn(
+        `[crs-summaries] govinfo_fallback HTTP ${response.status} bill=${bill.congress}/${bill.type}/${bill.number} — returning null`,
+      );
+      govInfoCache.set(key, null);
+      return null;
+    }
+
+    const xml = await response.text();
+    const items = parseBillStatusSummaries(xml);
+    const best = selectBestSummary(items);
+
+    if (!best) {
+      govInfoCache.set(key, null);
+      return null;
+    }
+
+    const rawText = getString(best, "text");
+    if (!rawText) {
+      govInfoCache.set(key, null);
+      return null;
+    }
+
+    result = {
+      text: stripHtmlTags(rawText),
+      sourceVersion: getString(best, "actionDesc"),
+      retrievedAt: new Date().toISOString(),
+    };
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
+    console.warn(
+      `[crs-summaries] govinfo_fallback fetch_failed bill=${bill.congress}/${bill.type}/${bill.number} error=${msg} — returning null (fail-soft)`,
+    );
+    // Do not cache network errors; a subsequent call in the same run can retry.
+    return null;
+  }
+
+  govInfoCache.set(key, result);
+  return result;
 }
 
 // ---------------------------------------------------------------------------
