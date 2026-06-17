@@ -1326,6 +1326,45 @@ function ContributingVoteCard({ vote, anonCtx }) {
       </div>
       <div className="cv2-vote-date">{formatDate(vote.date)}</div>
       {narrative && <p className="cv2-vote-narr">{narrative}</p>}
+      {/* Member rationale — synthesized from their press releases via congress-press.
+          Label as stated/inferred; never present as verified fact.
+          Attribution: congress-press by Derek Willis
+          https://github.com/dwillis/congress-press (MIT) */}
+      {vote.memberRationale && vote.memberRationale.text && (
+        <div className="cv2-member-rationale">
+          <div className="cv2-rationale-label">
+            {vote.memberRationale.label === 'stated'
+              ? "Member's stated reason"
+              : "Member's inferred reason"}
+          </div>
+          <p className="cv2-rationale-text">{vote.memberRationale.text}</p>
+          <div className="cv2-rationale-attribution">
+            <span className="cv2-rationale-source-label">Based on their press release</span>
+            {(vote.memberRationale.sourceUrls || []).slice(0, 2).map((url, si) => (
+              <a
+                key={si}
+                href={url}
+                className="cv2-rationale-source-link"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {si === 0 ? 'source' : `source ${si + 1}`} ↗
+              </a>
+            ))}
+            <span className="cv2-rationale-dataset">
+              via{' '}
+              <a
+                href="https://github.com/dwillis/congress-press"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="cv2-rationale-credit"
+              >
+                congress-press by Derek Willis
+              </a>
+            </span>
+          </div>
+        </div>
+      )}
       <div className="cv2-vote-cite">
         <span className="src-chip">{vote.source.name}</span>
         {vote.source.url && (
