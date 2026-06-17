@@ -1190,17 +1190,92 @@ describe("buildCongressGovUrl", () => {
 });
 
 // ---------------------------------------------------------------------------
-// lookupAlignment — CRS summary fallback (bills.summary → narrative)
+// lookupAlignment — narrative precedence (plain_summary + CAN2026)
 //
-// When no CAN2026 narrative row exists, the alignment builder should fall back
-// to bills.summary (CRS, public-domain, ungated) as the contributing-vote
-// narrative and append a Congress.gov source entry to vote.sources.
+// New precedence (PR #136): CAN2026 → plain_summary (rendered in full) → absent.
+// The raw CRS bills.summary is NO LONGER shown inline. When no plain_summary
+// exists the card shows only the bill title + roll-call + Congress.gov link.
+// No truncated preview, no ellipsis.
 // ---------------------------------------------------------------------------
 
-describe("lookupAlignment — CRS summary narrative fallback", () => {
-  it("uses bills.summary as narrative when no CAN2026 row exists (flag off)", async () => {
+describe("lookupAlignment — narrative precedence (plain_summary / CAN2026)", () => {
+  // (a) No plain_summary AND no CAN2026 narrative → narrative absent (no "...")
+  it("no plain_summary + no CAN note → narrative is absent (no ellipsis, no raw CRS)", async () => {
     const { select, _chain } = makeSelectMock([]);
     mockedGetDb.mockReturnValue({ select } as never);
+
+    _chain.where.mockResolvedValue([
+      {
+        billTitle: "Some Procedural Vote",
+        billId: "govtrack-hr999-118",
+        billRawMetadata: null,
+        billSourceUrl: "https://govtrack.us/bill/hr999",
+        billSource: "govtrack",
+        // billSummary intentionally omitted (not selected from DB anymore)
+        billPlainSummary: null,
+        voteCast: "yea",
+        voteDate: "2024-01-10",
+        stanceLens: "in_favor",
+        taggerConfidence: "0.7",
+      },
+    ]);
+
+    const result = await lookupAlignment(
+      "federal-A123",
+      "healthcare_affordability",
+      "in_favor",
+    );
+
+    const vote = result.contributingVotes[0]!;
+    // No summary paragraph — user sees bill title + Congress.gov link only.
+    expect(vote.narrative).toBeUndefined();
+    // No sources appended either (sources only attach with narrative).
+    expect(vote.sources).toBeUndefined();
+  });
+
+  // Confirm the above even when raw billSummary data is present in the row
+  // (query still selects it in some tests via mock): the builder must ignore it.
+  it("raw CRS billSummary present but plain_summary null → narrative still absent", async () => {
+    const { select, _chain } = makeSelectMock([]);
+    mockedGetDb.mockReturnValue({ select } as never);
+
+    _chain.where.mockResolvedValue([
+      {
+        billTitle: "Affordable Insulin Act",
+        billId: "govtrack-hr5-118",
+        billRawMetadata: null,
+        billSourceUrl: "https://govtrack.us/bill/hr5",
+        billSource: "govtrack",
+        // Raw CRS with HTML — must NOT be used.
+        billSummary:
+          "<p><b>Affordable Insulin Act</b></p><p>Caps insulin at $35 per month.</p>",
+        billPlainSummary: null,
+        voteCast: "yea",
+        voteDate: "2024-04-01",
+        stanceLens: "in_favor",
+        taggerConfidence: "0.9",
+      },
+    ]);
+
+    const result = await lookupAlignment(
+      "federal-A123",
+      "healthcare_affordability",
+      "in_favor",
+    );
+
+    const vote = result.contributingVotes[0]!;
+    // Raw CRS must NOT surface — no narrative, no HTML, no ellipsis.
+    expect(vote.narrative).toBeUndefined();
+    expect(vote.sources).toBeUndefined();
+  });
+
+  // (b) plain_summary present → rendered IN FULL, no truncation, no ellipsis
+  it("plain_summary present → rendered in full, no ellipsis, Congress.gov source attached", async () => {
+    const { select, _chain } = makeSelectMock([]);
+    mockedGetDb.mockReturnValue({ select } as never);
+
+    const fullSummary =
+      "Lets Medicare negotiate lower drug prices for some medications. Savings are passed to beneficiaries.";
 
     _chain.where.mockResolvedValue([
       {
@@ -1209,8 +1284,7 @@ describe("lookupAlignment — CRS summary narrative fallback", () => {
         billRawMetadata: null,
         billSourceUrl: "https://govtrack.us/bill/hr3",
         billSource: "govtrack",
-        billSummary:
-          "Requires the Secretary of Health and Human Services to negotiate covered insulin prices.",
+        billPlainSummary: fullSummary,
         voteCast: "yea",
         voteDate: "2024-03-15",
         stanceLens: "in_favor",
@@ -1225,17 +1299,19 @@ describe("lookupAlignment — CRS summary narrative fallback", () => {
     );
 
     const vote = result.contributingVotes[0]!;
-    expect(vote.narrative).toBe(
-      "Requires the Secretary of Health and Human Services to negotiate covered insulin prices.",
-    );
-    // A Congress.gov source entry should be appended.
+    // Exact plain_summary rendered, no trailing ellipsis.
+    expect(vote.narrative).toBe(fullSummary);
+    expect(vote.narrative).not.toMatch(/…|\.\.\.$/);
+    // Congress.gov source chip appended for provenance.
     expect(vote.sources).toBeDefined();
     expect(vote.sources).toHaveLength(1);
     expect(vote.sources![0]!.name).toMatch(/congress\.gov/i);
     expect(vote.sources![0]!.url).toContain("congress.gov");
+    // No HTML.
+    expect(vote.narrative).not.toMatch(/<[^>]+>/);
   });
 
-  it("CRS fallback constructs correct Congress.gov URL from the govtrack bill id", async () => {
+  it("plain_summary constructs correct Congress.gov URL from govtrack bill id", async () => {
     const { select, _chain } = makeSelectMock([]);
     mockedGetDb.mockReturnValue({ select } as never);
 
@@ -1246,7 +1322,8 @@ describe("lookupAlignment — CRS summary narrative fallback", () => {
         billRawMetadata: null,
         billSourceUrl: "https://govtrack.us/bill/hr5376",
         billSource: "govtrack",
-        billSummary: "Reconciliation bill covering climate, health, and tax.",
+        billPlainSummary:
+          "Addresses climate, healthcare costs, and taxes in a single reconciliation package.",
         voteCast: "yea",
         voteDate: "2022-08-12",
         stanceLens: "in_favor",
@@ -1266,40 +1343,7 @@ describe("lookupAlignment — CRS summary narrative fallback", () => {
     );
   });
 
-  it("CRS fallback uses https://www.congress.gov when bill id cannot be parsed (openstates)", async () => {
-    const { select, _chain } = makeSelectMock([]);
-    mockedGetDb.mockReturnValue({ select } as never);
-
-    _chain.where.mockResolvedValue([
-      {
-        billTitle: "State Clean Energy Act",
-        billId: "openstates-ocd-bill-xyz",
-        billRawMetadata: { openstates: { identifier: "HB 42" } },
-        billSourceUrl: "https://openstates.org/tx/bills/HB42",
-        billSource: "openstates",
-        billSummary: "Establishes renewable energy mandates for TX utilities.",
-        voteCast: "yea",
-        voteDate: "2024-05-01",
-        stanceLens: "in_favor",
-        taggerConfidence: "0.88",
-      },
-    ]);
-
-    const result = await lookupAlignment(
-      "openstates-X99",
-      "environment_climate",
-      "in_favor",
-    );
-
-    const vote = result.contributingVotes[0]!;
-    expect(vote.narrative).toBe(
-      "Establishes renewable energy mandates for TX utilities.",
-    );
-    // Fallback URL when bill id can't be parsed
-    expect(vote.sources![0]!.url).toBe("https://www.congress.gov");
-  });
-
-  it("CAN2026 narrative takes precedence over bills.summary when flag is on and row exists", async () => {
+  it("CAN2026 narrative takes precedence over plain_summary when flag is on and row exists", async () => {
     vi.stubEnv("CAN2026_DISPLAY_ENABLED", "1");
 
     const { select, _chain } = makeSelectMock([]);
@@ -1312,7 +1356,7 @@ describe("lookupAlignment — CRS summary narrative fallback", () => {
         billRawMetadata: null,
         billSourceUrl: "https://govtrack.us/bill/hr3",
         billSource: "govtrack",
-        billSummary: "CRS: Requires HHS to negotiate insulin prices.",
+        billPlainSummary: "LLM summary: Medicare negotiates drug prices.",
         voteCast: "yea",
         voteDate: "2024-03-15",
         stanceLens: "in_favor",
@@ -1330,7 +1374,7 @@ describe("lookupAlignment — CRS summary narrative fallback", () => {
     );
 
     const vote = result.contributingVotes[0]!;
-    // CAN2026 narrative wins — CRS text must NOT appear.
+    // CAN2026 narrative wins — plain_summary must NOT appear.
     expect(vote.narrative).toBe(
       "CAN2026 curated: Senator voted YES to cap insulin at $35/mo.",
     );
@@ -1340,7 +1384,7 @@ describe("lookupAlignment — CRS summary narrative fallback", () => {
     vi.unstubAllEnvs();
   });
 
-  it("neither CAN2026 nor bills.summary → narrative stays absent", async () => {
+  it("neither CAN2026 nor plain_summary → narrative stays absent", async () => {
     const { select, _chain } = makeSelectMock([]);
     mockedGetDb.mockReturnValue({ select } as never);
 
@@ -1351,7 +1395,7 @@ describe("lookupAlignment — CRS summary narrative fallback", () => {
         billRawMetadata: null,
         billSourceUrl: "https://govtrack.us/bill/hr999",
         billSource: "govtrack",
-        billSummary: null, // no CRS summary
+        billPlainSummary: null,
         voteCast: "yea",
         voteDate: "2024-01-10",
         stanceLens: "in_favor",
@@ -1368,157 +1412,6 @@ describe("lookupAlignment — CRS summary narrative fallback", () => {
     const vote = result.contributingVotes[0]!;
     expect(vote.narrative).toBeUndefined();
     expect(vote.sources).toBeUndefined();
-  });
-
-  it("CRS fallback is ungated — works when CAN2026_DISPLAY_ENABLED is off", async () => {
-    // Confirm flag is off (default in this suite).
-    // The CRS narrative should still populate without the flag.
-    const { select, _chain } = makeSelectMock([]);
-    mockedGetDb.mockReturnValue({ select } as never);
-
-    _chain.where.mockResolvedValue([
-      {
-        billTitle: "Medicare Drug Price Negotiation Act",
-        billId: "govtrack-hr8421-118",
-        billRawMetadata: null,
-        billSourceUrl: "https://govtrack.us/bill/hr8421",
-        billSource: "govtrack",
-        billSummary:
-          "Authorizes Medicare to negotiate prescription drug prices directly.",
-        voteCast: "nay",
-        voteDate: "2024-06-01",
-        stanceLens: "in_favor",
-        taggerConfidence: "0.91",
-      },
-    ]);
-
-    const result = await lookupAlignment(
-      "federal-A123",
-      "healthcare_affordability",
-      "opposed",
-    );
-
-    const vote = result.contributingVotes[0]!;
-    expect(vote.narrative).toBe(
-      "Authorizes Medicare to negotiate prescription drug prices directly.",
-    );
-    expect(vote.sources).toBeDefined();
-    expect(vote.sources![0]!.name).toMatch(/congress\.gov/i);
-  });
-
-  it("prefers bills.plain_summary (LLM) over the raw CRS summary", async () => {
-    const { select, _chain } = makeSelectMock([]);
-    mockedGetDb.mockReturnValue({ select } as never);
-
-    _chain.where.mockResolvedValue([
-      {
-        billTitle: "Lower Drug Costs Now Act",
-        billId: "govtrack-hr3-118",
-        billRawMetadata: null,
-        billSourceUrl: "https://govtrack.us/bill/hr3",
-        billSource: "govtrack",
-        // Raw CRS — long + HTML. Must NOT be used because plain_summary exists.
-        billSummary:
-          "<p>This Act <b>requires</b> the Secretary of Health and Human Services to negotiate prices for certain drugs covered under Medicare and to apply the negotiated price across other payers, among many other provisions described over several paragraphs.</p>",
-        billPlainSummary:
-          "Lets Medicare negotiate lower prices for some drugs.",
-        voteCast: "yea",
-        voteDate: "2024-03-15",
-        stanceLens: "in_favor",
-        taggerConfidence: "0.95",
-      },
-    ]);
-
-    const result = await lookupAlignment(
-      "federal-A123",
-      "healthcare_affordability",
-      "in_favor",
-    );
-
-    const vote = result.contributingVotes[0]!;
-    expect(vote.narrative).toBe(
-      "Lets Medicare negotiate lower prices for some drugs.",
-    );
-    // Plain-summary path still attributes Congress.gov (CRS-derived).
-    expect(vote.sources![0]!.name).toMatch(/congress\.gov/i);
-    // No HTML leaked through.
-    expect(vote.narrative).not.toMatch(/<[^>]+>/);
-  });
-
-  it("STRIPS HTML from the raw-CRS fallback so no tags reach the UI", async () => {
-    const { select, _chain } = makeSelectMock([]);
-    mockedGetDb.mockReturnValue({ select } as never);
-
-    _chain.where.mockResolvedValue([
-      {
-        billTitle: "Affordable Insulin Act",
-        billId: "govtrack-hr5-118",
-        billRawMetadata: null,
-        billSourceUrl: "https://govtrack.us/bill/hr5",
-        billSource: "govtrack",
-        billSummary:
-          "<p><b>Affordable Insulin Act</b></p><p>Caps insulin at $35 per month.</p>",
-        billPlainSummary: null, // not generated yet → fall back to raw CRS
-        voteCast: "yea",
-        voteDate: "2024-04-01",
-        stanceLens: "in_favor",
-        taggerConfidence: "0.9",
-      },
-    ]);
-
-    const result = await lookupAlignment(
-      "federal-A123",
-      "healthcare_affordability",
-      "in_favor",
-    );
-
-    const vote = result.contributingVotes[0]!;
-    // The literal tags Muxin saw must be gone.
-    expect(vote.narrative).not.toContain("<p>");
-    expect(vote.narrative).not.toContain("</p>");
-    expect(vote.narrative).not.toContain("<b>");
-    expect(vote.narrative).not.toMatch(/<[^>]+>/);
-    // Readable text preserved.
-    expect(vote.narrative).toContain("Caps insulin at $35 per month.");
-    expect(vote.sources![0]!.name).toMatch(/congress\.gov/i);
-  });
-
-  it("TRUNCATES a giant raw-CRS fallback to a short preview (no full dump)", async () => {
-    const { select, _chain } = makeSelectMock([]);
-    mockedGetDb.mockReturnValue({ select } as never);
-
-    // Many paragraphs of CRS text — the kind that rendered as a giant dump.
-    const giant =
-      "<p>This bill makes sweeping changes to federal health policy. </p>".repeat(
-        40,
-      );
-
-    _chain.where.mockResolvedValue([
-      {
-        billTitle: "Omnibus Health Act",
-        billId: "govtrack-hr7-118",
-        billRawMetadata: null,
-        billSourceUrl: "https://govtrack.us/bill/hr7",
-        billSource: "govtrack",
-        billSummary: giant,
-        billPlainSummary: null,
-        voteCast: "yea",
-        voteDate: "2024-05-01",
-        stanceLens: "in_favor",
-        taggerConfidence: "0.9",
-      },
-    ]);
-
-    const result = await lookupAlignment(
-      "federal-A123",
-      "healthcare_affordability",
-      "in_favor",
-    );
-
-    const vote = result.contributingVotes[0]!;
-    // Preview is far shorter than the full dump.
-    expect(vote.narrative!.length).toBeLessThanOrEqual(245);
-    expect(vote.narrative).not.toMatch(/<[^>]+>/);
   });
 });
 

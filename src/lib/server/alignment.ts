@@ -23,23 +23,21 @@ export interface ContributingVote {
   date: string; // YYYY-MM-DD
   source: { name: string; url: string };
   /**
-   * Additional source attributions beyond the primary `source`. Currently
-   * populated when the CRS summary (bills.summary) is used as the narrative
-   * fallback — a Congress.gov entry is appended so the data provenance is
-   * visible in the UI.
+   * Additional source attributions beyond the primary `source`. Populated when
+   * the LLM plain_summary (CRS-derived) is used — a Congress.gov entry is
+   * appended so the data provenance is visible in the UI.
    */
   sources?: Array<{ name: string; url: string }>;
   /**
    * Bill-level "What it did" prose. Always plain text — never HTML.
-   * Populated from three sources, in precedence order:
+   * Populated from two sources, in precedence order:
    *   1. can_bill_narratives.narrative — when CAN2026_DISPLAY_ENABLED is set
    *      and the bill has a linked CAN2026 row (curated, gated).
    *   2. bills.plain_summary — LLM-generated short plain-language summary
    *      (≤2 sentences) from scripts/ingest/summarize-bills.ts (ungated).
-   *   3. bills.summary — raw CRS summary from Congress.gov, HTML-STRIPPED and
-   *      TRUNCATED to a short preview (public-domain, ungated fallback used only
-   *      until the LLM summary is generated).
-   * Absent when none of these has content for the bill.
+   *      Rendered in full; never truncated or ellipsized.
+   * Absent when neither source has content — the UI shows the bill title +
+   * roll-call + Congress.gov link but NO inline summary paragraph.
    */
   narrative?: string;
 }
@@ -517,74 +515,6 @@ export function buildCongressGovUrl(billId: unknown): string | null {
   return `https://www.congress.gov/bill/${suffix}-congress/${segment}/${number}`;
 }
 
-// ---------------------------------------------------------------------------
-// CRS summary sanitization (fallback narrative)
-// ---------------------------------------------------------------------------
-
-/**
- * Maximum length of the stripped+truncated CRS fallback narrative. The raw CRS
- * summary is the FULL multi-paragraph text; we only ever show a short preview
- * until the LLM `plain_summary` is generated.
- */
-const CRS_FALLBACK_MAX_CHARS = 240;
-
-/**
- * Strip HTML tags + decode the handful of entities Congress.gov's CRS text uses.
- *
- * The raw `bills.summary` is HTML (`<p>`, `<b>`, `<i>`, …). The contributing-
- * vote card renders the narrative as a JSX text node, which means any HTML tags
- * appear as LITERAL TEXT (e.g. a visible "<p>"). We MUST strip tags server-side
- * so no markup can ever reach the UI. Kept self-contained (no import from the
- * ingest scripts) so this server module has no script-layer coupling.
- */
-export function stripHtmlForNarrative(html: string): string {
-  let text = html;
-  // Block-level tags → space so words don't run together.
-  text = text.replace(/<\/?(p|div|br|li|tr|h[1-6])\b[^>]*>/gi, " ");
-  // Strip all remaining tags.
-  text = text.replace(/<[^>]+>/g, "");
-  // Decode common HTML entities.
-  text = text
-    .replace(/&amp;/gi, "&")
-    .replace(/&lt;/gi, "<")
-    .replace(/&gt;/gi, ">")
-    .replace(/&quot;/gi, '"')
-    .replace(/&#39;|&apos;/gi, "'")
-    .replace(/&nbsp;/gi, " ")
-    .replace(/&#(\d+);/g, (_, code: string) =>
-      String.fromCharCode(Number(code)),
-    );
-  // Collapse whitespace.
-  return text.replace(/\s+/g, " ").trim();
-}
-
-/**
- * Build the SHORT fallback narrative from the raw CRS `bills.summary`:
- * strip HTML, then truncate to a preview (first ~2 sentences, capped at
- * CRS_FALLBACK_MAX_CHARS). Used only when no LLM `plain_summary` exists yet, so
- * the card never shows the giant multi-paragraph CRS dump and never shows tags.
- * Returns null when the input strips to empty.
- */
-export function buildCrsFallbackNarrative(rawSummary: string): string | null {
-  const clean = stripHtmlForNarrative(rawSummary);
-  if (!clean) return null;
-
-  // Prefer cutting at a sentence boundary within the first ~2 sentences.
-  const sentences = clean.match(/[^.!?]+[.!?]+/g);
-  if (sentences && sentences.length > 0) {
-    const twoSentences = sentences.slice(0, 2).join(" ").trim();
-    if (twoSentences.length <= CRS_FALLBACK_MAX_CHARS) return twoSentences;
-  }
-
-  if (clean.length <= CRS_FALLBACK_MAX_CHARS) return clean;
-
-  // Hard cap: truncate on a word boundary and add an ellipsis.
-  const slice = clean.slice(0, CRS_FALLBACK_MAX_CHARS);
-  const lastSpace = slice.lastIndexOf(" ");
-  const trimmed = (lastSpace > 0 ? slice.slice(0, lastSpace) : slice).trim();
-  return `${trimmed}…`;
-}
-
 /**
  * Append a Congress.gov source-attribution entry to a contributing-vote when
  * its narrative comes from the (public-domain) CRS data — either the LLM
@@ -651,7 +581,6 @@ export async function lookupAlignment(
           billRawMetadata: schema.bills.rawMetadata,
           billSourceUrl: schema.bills.sourceUrl,
           billSource: schema.bills.source,
-          billSummary: schema.bills.summary,
           billPlainSummary: schema.bills.plainSummary,
           voteCast: schema.votes.voteCast,
           voteDate: schema.votes.voteDate,
@@ -686,7 +615,6 @@ export async function lookupAlignment(
           billRawMetadata: schema.bills.rawMetadata,
           billSourceUrl: schema.bills.sourceUrl,
           billSource: schema.bills.source,
-          billSummary: schema.bills.summary,
           billPlainSummary: schema.bills.plainSummary,
           voteCast: schema.votes.voteCast,
           voteDate: schema.votes.voteDate,
@@ -780,33 +708,25 @@ export async function lookupAlignment(
         },
       };
 
-      // Narrative fallback precedence (the narrative is ALWAYS plain text —
+      // Narrative precedence (the narrative is ALWAYS plain text —
       // never HTML — because the UI renders it as a JSX text node):
       //   1. CAN2026 narrative (gated — only present in the can2026Enabled query
       //      branch when a can_bill_narratives row exists for this bill).
-      //   2. bills.plain_summary (LLM-generated short summary, ungated). When
-      //      used, append a Congress.gov entry to vote.sources for provenance.
-      //   3. bills.summary (raw CRS) — HTML-STRIPPED and TRUNCATED to a short
-      //      preview, so the card never shows raw markup or the giant CRS dump.
-      //      Used only until the LLM summary is generated. Same Congress.gov
-      //      attribution as (2).
-      //   4. None → narrative stays absent.
+      //   2. bills.plain_summary (LLM-generated short summary, ungated). Rendered
+      //      IN FULL (it's already ≤2 sentences). Appends a Congress.gov entry to
+      //      vote.sources for provenance.
+      //   3. None → narrative stays absent. The user sees the bill title (heading)
+      //      + roll-call + the Congress.gov chip/link to read the full CRS text.
+      //      Do NOT show any truncated or ellipsized preview of raw bills.summary.
       const can2026Narrative = (r as { narrative?: string | null }).narrative;
       const plainSummary = (r as { billPlainSummary?: string | null })
         .billPlainSummary;
-      const rawCrs = (r as { billSummary?: string | null }).billSummary;
 
       if (can2026Narrative) {
         vote.narrative = can2026Narrative;
       } else if (plainSummary && plainSummary.trim()) {
         vote.narrative = plainSummary.trim();
         attachCongressGovSource(vote, r.billId);
-      } else if (rawCrs) {
-        const fallback = buildCrsFallbackNarrative(rawCrs);
-        if (fallback) {
-          vote.narrative = fallback;
-          attachCongressGovSource(vote, r.billId);
-        }
       }
 
       return vote;
