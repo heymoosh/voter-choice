@@ -7,6 +7,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   fetchCrsSummary,
+  fetchCrsSummaryGovInfoFallback,
   parseCrsSummaryResponse,
   resolveCrsSummaryAsBackup,
   selectBestSummary,
@@ -32,6 +33,18 @@ function mockFetch(
 /** Build a mock fetch that rejects with a network error. */
 function mockNetworkError(message: string): ReturnType<typeof vi.fn> {
   return vi.fn().mockRejectedValue(new Error(message));
+}
+
+/** Build a minimal mock fetch that returns a text body with the given status. */
+function mockFetchText(
+  status: number,
+  body: string,
+): ReturnType<typeof vi.fn> {
+  return vi.fn().mockResolvedValue({
+    ok: status >= 200 && status < 300,
+    status,
+    text: () => Promise.resolve(body),
+  });
 }
 
 const baseConfig = {
@@ -340,7 +353,191 @@ describe("resolveCrsSummaryAsBackup", () => {
       baseConfig,
       fetcher as unknown as typeof fetch,
     );
-    // Primary returns null (empty array); GovInfo stub also returns null.
+    // Primary returns null (empty array); GovInfo fallback also returns null (no XML fetched).
     expect(result).toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// fetchCrsSummaryGovInfoFallback — mocked HTTP
+// ---------------------------------------------------------------------------
+
+// BILLSTATUS XML fixtures.
+
+/**
+ * v3 schema (current GovInfo format): <summary> elements with text inside
+ * <cdata><text> as HTML-entity-encoded content.
+ * Two items: the newer one ("Passed House") should be selected.
+ */
+const billStatusXmlV3TwoItems = `<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<billStatus>
+  <bill>
+    <summaries>
+      <summary>
+        <actionDate>2025-01-15</actionDate>
+        <actionDesc>Introduced in House</actionDesc>
+        <updateDate>2025-01-16T00:00:00Z</updateDate>
+        <cdata>
+          <text>&lt;p&gt;This bill does &lt;b&gt;something important&lt;/b&gt; for the country.&lt;/p&gt;</text>
+        </cdata>
+      </summary>
+      <summary>
+        <actionDate>2025-03-20</actionDate>
+        <actionDesc>Passed House</actionDesc>
+        <updateDate>2025-03-21T00:00:00Z</updateDate>
+        <cdata>
+          <text>&lt;p&gt;As passed by the House, this bill now includes an amendment.&lt;/p&gt;</text>
+        </cdata>
+      </summary>
+    </summaries>
+  </bill>
+</billStatus>`;
+
+/**
+ * Legacy schema: <billSummaries><item> elements with text in <text> CDATA.
+ * Two items: the newer one ("Passed House") should be selected.
+ */
+const billStatusXmlLegacyTwoItems = `<?xml version="1.0" encoding="UTF-8"?>
+<billStatus>
+  <bill>
+    <summaries>
+      <billSummaries>
+        <item>
+          <actionDate>2025-01-15</actionDate>
+          <actionDesc>Introduced in House</actionDesc>
+          <text><![CDATA[<p>This bill does <b>something important</b> for the country.</p>]]></text>
+          <updateDate>2025-01-16T00:00:00Z</updateDate>
+        </item>
+        <item>
+          <actionDate>2025-03-20</actionDate>
+          <actionDesc>Passed House</actionDesc>
+          <text><![CDATA[<p>As passed by the House, this bill now includes an amendment.</p>]]></text>
+          <updateDate>2025-03-21T00:00:00Z</updateDate>
+        </item>
+      </billSummaries>
+    </summaries>
+  </bill>
+</billStatus>`;
+
+// Use the v3 schema fixture as the primary "two items" fixture.
+const billStatusXmlTwoItems = billStatusXmlV3TwoItems;
+
+/** BILLSTATUS XML where <summaries> is present but contains no <summary>/<item> children. */
+const billStatusXmlNoItems = `<?xml version="1.0" encoding="UTF-8"?>
+<billStatus>
+  <bill>
+    <summaries>
+      <billSummaries/>
+    </summaries>
+  </bill>
+</billStatus>`;
+
+/** Malformed/truncated XML — no closing tags. */
+const billStatusXmlMalformed = `<?xml version="1.0" encoding="UTF-8"?>
+<billStatus><bill><summaries><billSummaries><item><text>Truncated with no`;
+
+describe("fetchCrsSummaryGovInfoFallback", () => {
+  it("(a) success — valid BILLSTATUS XML returns the best CrsSummary", async () => {
+    const fetcher = mockFetchText(200, billStatusXmlTwoItems);
+    const result = await fetchCrsSummaryGovInfoFallback(
+      { congress: 118, type: "hr", number: "30001" },
+      fetcher as unknown as typeof fetch,
+    );
+
+    expect(result).not.toBeNull();
+    // Should pick the later item (Passed House, updateDate 2025-03-21).
+    expect(result?.sourceVersion).toBe("Passed House");
+    expect(result?.text).toContain("amendment");
+    // HTML should be stripped.
+    expect(result?.text).not.toContain("<");
+    expect(result?.retrievedAt).toBeTruthy();
+    // Fetcher should have been called exactly once.
+    expect(fetcher).toHaveBeenCalledOnce();
+  });
+
+  it("(b) not found — 404 response → null, no throw", async () => {
+    const fetcher = mockFetchText(404, "Not Found");
+    const result = await fetchCrsSummaryGovInfoFallback(
+      { congress: 118, type: "hr", number: "30002" },
+      fetcher as unknown as typeof fetch,
+    );
+    expect(result).toBeNull();
+  });
+
+  it("(b) non-200 — 500 response → null, no throw", async () => {
+    const fetcher = mockFetchText(500, "Internal Server Error");
+    const result = await fetchCrsSummaryGovInfoFallback(
+      { congress: 118, type: "hr", number: "30003" },
+      fetcher as unknown as typeof fetch,
+    );
+    expect(result).toBeNull();
+  });
+
+  it("(c) malformed XML — truncated XML → null, no throw", async () => {
+    const fetcher = mockFetchText(200, billStatusXmlMalformed);
+    const result = await fetchCrsSummaryGovInfoFallback(
+      { congress: 118, type: "hr", number: "30004" },
+      fetcher as unknown as typeof fetch,
+    );
+    expect(result).toBeNull();
+  });
+
+  it("empty <summaries> block → null", async () => {
+    const fetcher = mockFetchText(200, billStatusXmlNoItems);
+    const result = await fetchCrsSummaryGovInfoFallback(
+      { congress: 118, type: "hr", number: "30005" },
+      fetcher as unknown as typeof fetch,
+    );
+    expect(result).toBeNull();
+  });
+
+  it("network error → null, no throw (fail-soft)", async () => {
+    const fetcher = mockNetworkError("DNS resolution failed");
+    const result = await fetchCrsSummaryGovInfoFallback(
+      { congress: 118, type: "hr", number: "30006" },
+      fetcher as unknown as typeof fetch,
+    );
+    expect(result).toBeNull();
+  });
+
+  it("caches the result — second call does not hit the network", async () => {
+    const fetcher = mockFetchText(200, billStatusXmlTwoItems);
+    const bill = { congress: 118, type: "hr", number: "30007" };
+
+    const first = await fetchCrsSummaryGovInfoFallback(
+      bill,
+      fetcher as unknown as typeof fetch,
+    );
+    const second = await fetchCrsSummaryGovInfoFallback(
+      bill,
+      fetcher as unknown as typeof fetch,
+    );
+
+    expect(first).toEqual(second);
+    expect(fetcher).toHaveBeenCalledOnce();
+  });
+
+  it("(a-legacy) legacy <billSummaries><item> schema also parsed correctly", async () => {
+    const fetcher = mockFetchText(200, billStatusXmlLegacyTwoItems);
+    const result = await fetchCrsSummaryGovInfoFallback(
+      { congress: 118, type: "hr", number: "30009" },
+      fetcher as unknown as typeof fetch,
+    );
+    expect(result).not.toBeNull();
+    expect(result?.sourceVersion).toBe("Passed House");
+    expect(result?.text).toContain("amendment");
+    expect(result?.text).not.toContain("<");
+  });
+
+  it("fetches from the correct GovInfo BILLSTATUS URL", async () => {
+    const fetcher = mockFetchText(200, billStatusXmlTwoItems);
+    await fetchCrsSummaryGovInfoFallback(
+      { congress: 118, type: "hr", number: "30008" },
+      fetcher as unknown as typeof fetch,
+    );
+    const calledUrl = (fetcher as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    expect(calledUrl).toBe(
+      "https://www.govinfo.gov/bulkdata/BILLSTATUS/118/hr/BILLSTATUS-118hr30008.xml",
+    );
   });
 });
