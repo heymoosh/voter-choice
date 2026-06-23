@@ -43,6 +43,33 @@ These three are launchable as a **service or a dataset license** today — no pr
 
 ---
 
+## 1A. What we have that others don't (honest moat — with caveats)
+
+Several of these spaces have real incumbents (Google Civic, Democracy Works/TurboVote, FollowTheMoney/NIMSP, OpenSecrets). The differentiation below is deliberately conservative — where a claim would be commodity or false, it's flagged so we don't sell on a weak point.
+
+### Election-logistics dataset
+- **Commodity (do not sell on this):** the *dates* — registration deadlines, early-voting windows, election dates. Civic API, Democracy Works, Vote.org, Ballotpedia, Vote411 all have these.
+- **Our actual edge — the *eligibility/rules* layer the date-feeds skip:**
+  - **Primary-participation gates as statute-cited structured data** (open/closed/semi-closed/top-two, party-lock-to-first-round, runoff consequences, unaffiliated paths) — answers *"can I vote in this primary and what does it lock me into?"* **Covers 28 jurisdictions.**
+  - **Voter-ID rules with the *fallback/cure path***, not just yes/no (provisional/affidavit, expiration, reasonable-impediment declaration — **24 state files**).
+  - **Bilingual plain-language rule explanations** (`ruleExplanationEn`/`Es`).
+  - **Honest provenance** — per-field `lastVerified`, source URLs, and discrepancy notes (TX flags its own online-registration caveat).
+- **Caveat to disclose:** depth is uneven — all 51 have dates + ID-category (NCSL) + phones-at-polls; ~28 have the party gates; **only TX + GA** have fully-verified accepted-ID lists. Sell as "the rules layer the date-feeds lack," not "complete at full depth for all 50."
+
+### Donor data (clean subset)
+- **Weakest moat — do NOT overclaim.** FollowTheMoney/NIMSP, Transparency USA, and OpenSecrets already have state + federal donor data; we **seeded 18 states from FollowTheMoney**, so we do *not* have "more state donor data than the incumbents." Claiming so is false.
+- **Our actual edge:**
+  - **One sector vocabulary across federal + 50 states, joined to candidates** (`_bucket-mapping.ts` → single `bucket_label`). A buyer pulling raw FEC + state portals gets 51 incompatible schemas; we give one, candidate-keyed.
+  - **Commercial cleanliness** — FEC + direct-state is sourced from public records a commercial buyer can actually use; FollowTheMoney's terms travel with its data.
+  - **Honest coverage ledger** (`donor-data-gaps.md`).
+- **One-line pitch:** *not more data than OpenSecrets/FTM — cleaner, single-schema, candidate-joined, commercially usable.*
+
+### Services
+- **Commodity:** generic "build me an AI app" shops.
+- **Our edge:** a *shipped*, civic-specific, privacy-and-liability-hardened reference build (budget caps, two-threshold graceful handoff, durable safeguards, rate limiting, BYOK, nonpartisan citation discipline) plus proven brittle-portal scraping muscle. For an election office/library, the guardrails *are* the project.
+
+---
+
 ## 2. Needs a build before it can sell ⛔ (roadmap, not launch)
 
 ### 2.1 Donor / finance **metered API** (SaaS)
