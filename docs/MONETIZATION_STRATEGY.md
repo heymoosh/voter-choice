@@ -127,6 +127,29 @@ All-rights-reserved to Grey Bird LLC (no OSS license granted). Direct dependenci
 
 ---
 
+## 4A. Maturity & validation risks — **read before promising anything "automatic"**
+
+The data assets are real and populated; the *automation* around them is a well-architected scaffold that is **largely unvalidated**. Do not let a sales conversation promise self-maintaining freshness — it doesn't work today.
+
+| Claim | Reality (verified in repo) | Honest to sell? |
+|---|---|---|
+| Donor data exists (~81% coverage) | ✅ True — populated in `donor_aggregates`; one-time delivery is real | ✅ Yes (after FTM filter, §3.2) |
+| "Automatic scraper maintenance / freshness" | ⚠️ Mostly aspirational — see failures below | ⚠️ Only as **managed labor**, not automation |
+| Per-state scrapers are tested | ❌ **Zero** of the 50+ state scrapers have a test; only federal/generic helpers are tested (`donor-ingest`, `fec-ids-from-bulk`, `federal-candidates`, `member-stats`, `state-votes`) | ❌ No |
+| Scheduled ingest runs green | ❌ `ingest-state-donors-monthly.yml` covers 29 states, but a labeled block (AK, AR, FL, HI, KY, MA, MI, MN, MO, MS, NC, ND, NY, OH, SC, TN) is *"will fail until URL is confirmed"* | ❌ No |
+| All states automated | ❌ ~11 states are "run locally" (OR, KS Playwright; DE, GA, IL, LA, NM, NV, RI, SD, WY Python) | ❌ No |
+| We're alerted when a scraper breaks | ❌ Failure-webhook secret is still a placeholder (`<INGEST_FAILURE_WEBHOOK_BWS_SECRET_ID>`) — alert silently no-ops | ❌ No |
+| Pipeline is current-cycle ready | ❌ Download URLs hardcoded to `2024`; 2026 needs every URL updated | ❌ No |
+
+**Implication for offers:**
+- **One-time delivery (1.2):** honest now.
+- **Freshness retainer (1.3):** sell as *managed maintenance* (labor-priced), never as "automated/self-healing/alerting."
+- **Donor SaaS API (2.1):** its "always current" promise rests on this unvalidated pipeline — treat hardening as a **real build cost**, not packaging.
+
+**Minimum hardening before promising automated freshness:** (a) per-state scraper smoke tests; (b) wire the failure webhook for real; (c) prove one full green scheduled run on 2026 URLs; (d) move the ~11 local-only states into CI or explicitly scope them out. Tracked as a checklist issue.
+
+---
+
 ## 5. Guardrails (non-negotiable)
 
 - Never weaken the consumer site's privacy promise or sell consumer-side user data.
@@ -138,4 +161,4 @@ All-rights-reserved to Grey Bird LLC (no OSS license granted). Direct dependenci
 
 ## 6. One-line summary
 
-> Three things are sellable **now** — the 50-state election-logistics dataset (rights-clean), the setup/freshness **retainer**, and the **clean donor subset** (FEC + direct-state, minus the FollowTheMoney rows). Everything with "API/SaaS" in the name is one build away; everything touching bill-tagging is a fix away; and the only hard rights blockers are FollowTheMoney (filterable) and CAN2026 (exclude).
+> Three things are sellable **now** — the 50-state election-logistics dataset (rights-clean), a **managed-maintenance retainer** (labor, *not* "automated freshness" — the pipeline is unvalidated, §4A), and the **clean donor subset** (FEC + direct-state, minus the FollowTheMoney rows). Everything with "API/SaaS" in the name is one build away; everything touching bill-tagging is a fix away; the automation needs hardening before any "always current" promise; and the only hard rights blockers are FollowTheMoney (filterable) and CAN2026 (exclude).
