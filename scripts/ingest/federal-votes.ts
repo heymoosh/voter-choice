@@ -70,8 +70,110 @@ type BillEnrichment = {
   summary?: string;
   introducedDate?: string;
   policyArea?: string;
+  /** Latest lifecycle stage text from Congress.gov latestAction.text. */
+  billStatus?: string;
   raw: UnknownRecord;
 };
+
+/**
+ * Roll-call tally extracted from a GovTrack vote object.
+ * All counts are nullable — they may be absent in older or partial records.
+ */
+export type RollCallTally = {
+  yea: number | null;
+  nay: number | null;
+  present: number | null;
+  notVoting: number | null;
+  result: string | null;
+};
+
+/**
+ * Extract the roll-call tally from a GovTrack vote object.
+ *
+ * GovTrack supplies aggregate counts at the vote level (not per-voter):
+ *   total_plus       → yea
+ *   total_minus      → nay
+ *   total_present    → present
+ *   total_not_voting → not_voting
+ *   result           → human-readable outcome ("Passed", "Failed", …)
+ *
+ * When the vote uses the older grouped `votes` format, the counts can also be
+ * derived by summing the groups — but GovTrack always supplies `total_*` when
+ * available, so we prefer those and only fall back to group-counting when the
+ * top-level fields are absent.
+ *
+ * Returns null counts for any field not present in the source data (e.g. older
+ * records, procedural votes). Callers should treat null as "unavailable" and
+ * hide the field rather than showing a zero.
+ */
+export function extractRollCallTally(vote: unknown): RollCallTally {
+  const v = asRecord(vote);
+  if (!v)
+    return {
+      yea: null,
+      nay: null,
+      present: null,
+      notVoting: null,
+      result: null,
+    };
+
+  // Prefer GovTrack's pre-computed totals.
+  const totalPlus = getNumber(v, "total_plus");
+  const totalMinus = getNumber(v, "total_minus");
+  const totalPresent = getNumber(v, "total_present");
+  const totalNotVoting = getNumber(v, "total_not_voting");
+  const result = getString(v, "result");
+
+  // If the primary total fields are absent, count from the grouped votes map.
+  if (totalPlus === null && totalMinus === null) {
+    const grouped = asRecord(v.votes);
+    if (grouped) {
+      const counts = countGroupedVotes(grouped);
+      return { ...counts, result };
+    }
+  }
+
+  return {
+    yea: totalPlus,
+    nay: totalMinus,
+    present: totalPresent,
+    notVoting: totalNotVoting,
+    result,
+  };
+}
+
+/**
+ * Count yea/nay/present/not_voting from a GovTrack grouped-votes object.
+ * Keys are vote labels ("Aye", "Yea", "No", "Nay", "Present", "Not Voting", …).
+ */
+function countGroupedVotes(
+  grouped: UnknownRecord,
+): Omit<RollCallTally, "result"> {
+  let yea = 0;
+  let nay = 0;
+  let present = 0;
+  let notVoting = 0;
+
+  for (const [label, value] of Object.entries(grouped)) {
+    const members = Array.isArray(value)
+      ? value
+      : getArray(asRecord(value)?.members ?? asRecord(value)?.people);
+    const count = members.length;
+    const normalized = normalizeVoteCast(label);
+    if (normalized === "yea") yea += count;
+    else if (normalized === "nay") nay += count;
+    else if (normalized === "present") present += count;
+    else if (normalized === "not_voting" || normalized === "absent")
+      notVoting += count;
+  }
+
+  // Only return counts when we actually found something.
+  const total = yea + nay + present + notVoting;
+  if (total === 0)
+    return { yea: null, nay: null, present: null, notVoting: null };
+
+  return { yea, nay, present, notVoting };
+}
 
 export function normalizeVoteCast(value: unknown): NormalizedVoteCast | null {
   const raw = typeof value === "string" ? value : String(value ?? "");
@@ -175,6 +277,7 @@ export function planGovTrackVote(
   const voteDate = extractVoteDate(vote);
   const sourceUrl = getString(vote, "source_url") ?? options.dataUrl;
   const billRecord = extractBillRecord(vote);
+  const tally = extractRollCallTally(vote);
 
   plan.counts.billRollCalls = 1;
   plan.bills.set(
@@ -208,6 +311,7 @@ export function planGovTrackVote(
       voteCast,
       voteDate,
       sourceUrl,
+      tally,
     });
 
     plan.candidates.set(candidateId, candidate);
@@ -552,11 +656,20 @@ function parseCongressGovEnrichment(
     ? stripCongressGovHtml(rawSummaryText)
     : undefined;
 
+  // Extract bill lifecycle status from latestAction.text (Congress.gov).
+  // Example: "Passed House (232-193)" or "Became Public Law No: 117-169".
+  // This is the most recent action text and serves as the bill status line.
+  const latestAction = asRecord(bill.latestAction);
+  const latestActionText = getString(latestAction, "text") ?? undefined;
+  const latestActionDate = getString(latestAction, "actionDate") ?? undefined;
+  const billStatus = deriveBillStatus(latestActionText, latestActionDate);
+
   return {
     title: getString(bill, "title") ?? undefined,
     introducedDate: normalizeDate(getString(bill, "introducedDate")),
     policyArea: getString(policyArea, "name") ?? undefined,
     summary: summaryText,
+    billStatus,
     raw: {
       bill: stripUndefined({
         congressGovType: getString(bill, "type"),
@@ -572,6 +685,42 @@ function parseCongressGovEnrichment(
         : null,
     },
   };
+}
+
+/**
+ * Derive a concise bill status string from a Congress.gov latestAction.
+ *
+ * Congress.gov `latestAction.text` is already human-readable ("Passed House
+ * (232-193)"), but it can be verbose ("Placed on Senate Legislative Calendar
+ * under General Orders. Calendar No. 42."). We use the text verbatim when
+ * short (≤80 chars) and append the date when available to give temporal
+ * context ("Signed into law 2022-08-16").
+ *
+ * Returns undefined when there is no action text (NULL → omit from bill row).
+ */
+export function deriveBillStatus(
+  actionText: string | undefined,
+  actionDate: string | undefined,
+): string | undefined {
+  if (!actionText || actionText.trim() === "") return undefined;
+  const text = actionText.trim();
+  if (!actionDate) return text;
+  const normalizedDate = normalizeCongressGovDate(actionDate);
+  if (!normalizedDate) return text;
+  return `${text} (${normalizedDate})`;
+}
+
+/**
+ * Normalize a Congress.gov date string to YYYY-MM-DD.
+ * Returns null when the string can't be parsed.
+ */
+function normalizeCongressGovDate(raw: string): string | null {
+  if (!raw) return null;
+  // Already YYYY-MM-DD
+  const direct = /^\d{4}-\d{2}-\d{2}/.exec(raw);
+  if (direct) return direct[0];
+  const d = new Date(raw);
+  return Number.isNaN(d.getTime()) ? null : d.toISOString().slice(0, 10);
 }
 
 /**
@@ -643,6 +792,7 @@ function mergeBillEnrichment(
     title: enrichment.title ?? bill.title,
     summary: enrichment.summary ?? bill.summary,
     introducedDate: enrichment.introducedDate ?? bill.introducedDate,
+    billStatus: enrichment.billStatus ?? bill.billStatus,
     rawMetadata: stripUndefined({
       ...raw,
       congressGov: enrichment.raw,
@@ -792,6 +942,7 @@ async function writeFederalPlan(
               sourceUrl: sql`excluded.source_url`,
               jurisdiction: sql`excluded.jurisdiction`,
               introducedDate: sql`excluded.introduced_date`,
+              billStatus: sql`excluded.bill_status`,
               rawMetadata: sql`excluded.raw_metadata`,
               updatedAt: now,
             },
@@ -817,6 +968,11 @@ async function writeFederalPlan(
               voteDate: sql`excluded.vote_date`,
               sourceUrl: sql`excluded.source_url`,
               rawMetadata: sql`excluded.raw_metadata`,
+              tallyYea: sql`excluded.tally_yea`,
+              tallyNay: sql`excluded.tally_nay`,
+              tallyPresent: sql`excluded.tally_present`,
+              tallyNotVoting: sql`excluded.tally_not_voting`,
+              tallyResult: sql`excluded.tally_result`,
             },
             setWhere: sql`excluded.vote_date >= ${votes.voteDate}`,
           }),
@@ -910,12 +1066,14 @@ function buildVoteRow({
   voteCast,
   voteDate,
   sourceUrl,
+  tally,
 }: {
   billId: string;
   candidateId: string;
   voteCast: NormalizedVoteCast;
   voteDate: string;
   sourceUrl: string;
+  tally?: RollCallTally;
 }): VoteRow {
   return {
     billId,
@@ -924,6 +1082,11 @@ function buildVoteRow({
     voteDate,
     sourceUrl,
     rawMetadata: null,
+    tallyYea: tally?.yea ?? null,
+    tallyNay: tally?.nay ?? null,
+    tallyPresent: tally?.present ?? null,
+    tallyNotVoting: tally?.notVoting ?? null,
+    tallyResult: tally?.result ?? null,
   };
 }
 

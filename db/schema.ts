@@ -92,6 +92,12 @@ export const bills = pgTable("bills", {
   // Used by coverage reporting to separate "skipped non-issue" from "queued for
   // tagging". Values: 'procedural' | 'naming' | 'ceremonial' | 'non_issue'
   skipReason: text("skip_reason"),
+  // Nullable. Latest lifecycle stage for the bill, e.g.
+  // "Passed House, stalled in Senate" or "Signed into law 2022-08-16".
+  // Sourced from Congress.gov latestAction.text during bill enrichment.
+  // NULL for state bills or bills not yet enriched. Hide this line in the UI
+  // when NULL (honest fallback — never display a placeholder or stub).
+  billStatus: text("bill_status"),
   insertedAt: timestamp("inserted_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
@@ -118,6 +124,16 @@ export const votes = pgTable(
     voteDate: date("vote_date").notNull(),
     sourceUrl: text("source_url").notNull(),
     rawMetadata: jsonb("raw_metadata"),
+    // Roll-call tally: chamber-wide headcount for this specific roll call.
+    // NULL for old rows or state votes. Populated by federal-votes ingest
+    // from GovTrack total_plus / total_minus / total_present / total_not_voting.
+    tallyYea: integer("tally_yea"),
+    tallyNay: integer("tally_nay"),
+    tallyPresent: integer("tally_present"),
+    tallyNotVoting: integer("tally_not_voting"),
+    // Human-readable roll-call outcome, e.g. "Passed", "Failed", "Agreed to".
+    // Sourced from GovTrack's `result` field. NULL when unavailable.
+    tallyResult: text("tally_result"),
     insertedAt: timestamp("inserted_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

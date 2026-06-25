@@ -11,6 +11,7 @@ import { eq, and, gte } from "drizzle-orm";
 import { getDb, DB_NOT_CONFIGURED } from "../../../db/client";
 import * as schema from "../../../db/schema";
 import { isCan2026DisplayEnabled } from "./can-flag";
+import { formatTallyLine } from "../rollcall-tally";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -40,6 +41,19 @@ export interface ContributingVote {
    * roll-call + Congress.gov link but NO inline summary paragraph.
    */
   narrative?: string;
+  /**
+   * Formatted roll-call tally line for this vote, e.g. "Passed 232–193".
+   * Absent (undefined) when tally data is not yet ingested for this vote.
+   * UI should hide the tally line when absent — never show a placeholder.
+   */
+  tally?: string;
+  /**
+   * Latest lifecycle stage for the bill, e.g. "Passed House, stalled in Senate"
+   * or "Signed into law (2022-08-16)". Sourced from Congress.gov latestAction.
+   * Absent when not yet ingested for this bill (state bills, older rows).
+   * UI should hide the status line when absent — never show a placeholder.
+   */
+  billStatus?: string;
 }
 
 export interface AlignmentResult {
@@ -582,8 +596,12 @@ export async function lookupAlignment(
           billSourceUrl: schema.bills.sourceUrl,
           billSource: schema.bills.source,
           billPlainSummary: schema.bills.plainSummary,
+          billStatus: schema.bills.billStatus,
           voteCast: schema.votes.voteCast,
           voteDate: schema.votes.voteDate,
+          tallyYea: schema.votes.tallyYea,
+          tallyNay: schema.votes.tallyNay,
+          tallyResult: schema.votes.tallyResult,
           stanceLens: schema.issueTags.stanceLens,
           taggerConfidence: schema.issueTags.taggerConfidence,
           subIssue: schema.issueTags.subIssue,
@@ -616,8 +634,12 @@ export async function lookupAlignment(
           billSourceUrl: schema.bills.sourceUrl,
           billSource: schema.bills.source,
           billPlainSummary: schema.bills.plainSummary,
+          billStatus: schema.bills.billStatus,
           voteCast: schema.votes.voteCast,
           voteDate: schema.votes.voteDate,
+          tallyYea: schema.votes.tallyYea,
+          tallyNay: schema.votes.tallyNay,
+          tallyResult: schema.votes.tallyResult,
           stanceLens: schema.issueTags.stanceLens,
           taggerConfidence: schema.issueTags.taggerConfidence,
           subIssue: schema.issueTags.subIssue,
@@ -728,6 +750,25 @@ export async function lookupAlignment(
         vote.narrative = plainSummary.trim();
         attachCongressGovSource(vote, r.billId);
       }
+
+      // Roll-call tally: format "Passed 232–193" from stored counts.
+      // Omit the field entirely when data is not yet available (honest fallback).
+      const tallyYea =
+        "tallyYea" in r && r.tallyYea != null ? Number(r.tallyYea) : null;
+      const tallyNay =
+        "tallyNay" in r && r.tallyNay != null ? Number(r.tallyNay) : null;
+      const tallyResult =
+        "tallyResult" in r
+          ? (r.tallyResult as string | null | undefined)
+          : null;
+      const tallyLine = formatTallyLine(tallyResult, tallyYea, tallyNay);
+      if (tallyLine) vote.tally = tallyLine;
+
+      // Bill lifecycle status: e.g. "Passed House, stalled in Senate".
+      // Omit when NULL — never render a placeholder.
+      const billStatus =
+        "billStatus" in r ? (r.billStatus as string | null | undefined) : null;
+      if (billStatus && billStatus.trim()) vote.billStatus = billStatus.trim();
 
       return vote;
     });
