@@ -1738,3 +1738,177 @@ describe("lookupAlignment billTitle composition", () => {
     );
   });
 });
+
+// ---------------------------------------------------------------------------
+// lookupAlignment — memberRationale confidence gate
+//
+// Owner-approved display rule: only rows with matchConfidence === "high" are
+// surfaced as memberRationale. Medium / low / null rows must NEVER appear.
+// The gate is enforced via SQL WHERE (eq matchConfidence "high"); these tests
+// verify the end-to-end behaviour through the mocked DB layer.
+// ---------------------------------------------------------------------------
+
+describe("lookupAlignment — memberRationale high-confidence gate", () => {
+  /** Build a mock db whose first select() call returns voteRows and whose
+   *  second select() call (the rationale query) returns rationaleRows. */
+  function makeDoubleMock(
+    voteRows: Record<string, unknown>[],
+    rationaleRows: Record<string, unknown>[],
+  ) {
+    const rationaleChain = {
+      from: vi.fn().mockReturnThis(),
+      innerJoin: vi.fn().mockReturnThis(),
+      leftJoin: vi.fn().mockReturnThis(),
+      where: vi.fn().mockResolvedValue(rationaleRows),
+    };
+    const voteChain = {
+      from: vi.fn().mockReturnThis(),
+      innerJoin: vi.fn().mockReturnThis(),
+      leftJoin: vi.fn().mockReturnThis(),
+      where: vi.fn().mockResolvedValue(voteRows),
+    };
+    const selectMock = vi
+      .fn()
+      .mockReturnValueOnce(voteChain)
+      .mockReturnValue(rationaleChain);
+    return { select: selectMock };
+  }
+
+  const baseVoteRow = {
+    billTitle: "Drug Price Negotiation Act",
+    billId: "govtrack-hr3-119",
+    billRawMetadata: null,
+    billSourceUrl: "https://govtrack.us/bill/hr3",
+    billSource: "govtrack",
+    billPlainSummary: null,
+    voteCast: "yea",
+    voteDate: "2024-06-01",
+    stanceLens: "in_favor",
+    taggerConfidence: "0.92",
+  };
+
+  it("surfaces memberRationale when matchConfidence is 'high'", async () => {
+    const db = makeDoubleMock(
+      [baseVoteRow],
+      [
+        {
+          billId: "govtrack-hr3-119",
+          rationaleText:
+            "The Senator championed lower drug prices in this vote.",
+          label: "stated",
+          pressReleaseSources: [
+            {
+              url: "https://example.gov/press/1",
+              publishedAt: "2024-06-01",
+              title: "Senator supports bill",
+            },
+          ],
+          modelVersion: "claude-haiku-20240307",
+          matchConfidence: "high",
+        },
+      ],
+    );
+    mockedGetDb.mockReturnValue(db as never);
+
+    const result = await lookupAlignment(
+      "federal-A123",
+      "healthcare_affordability",
+      "in_favor",
+    );
+
+    const vote = result.contributingVotes[0]!;
+    expect(vote.memberRationale).toBeDefined();
+    expect(vote.memberRationale!.text).toBe(
+      "The Senator championed lower drug prices in this vote.",
+    );
+    expect(vote.memberRationale!.label).toBe("stated");
+    expect(vote.memberRationale!.sourceUrls).toContain(
+      "https://example.gov/press/1",
+    );
+  });
+
+  it("does NOT surface memberRationale when matchConfidence is 'medium'", async () => {
+    // The SQL WHERE clause filters medium out at the DB layer; the rationale
+    // query returns [] (simulating what the DB returns after the WHERE filter).
+    const db = makeDoubleMock(
+      [baseVoteRow],
+      [], // DB returns no rows because matchConfidence != 'high'
+    );
+    mockedGetDb.mockReturnValue(db as never);
+
+    const result = await lookupAlignment(
+      "federal-A123",
+      "healthcare_affordability",
+      "in_favor",
+    );
+
+    const vote = result.contributingVotes[0]!;
+    expect(vote.memberRationale).toBeUndefined();
+  });
+
+  it("does NOT surface memberRationale when matchConfidence is 'low'", async () => {
+    const db = makeDoubleMock(
+      [baseVoteRow],
+      [], // DB returns no rows because matchConfidence != 'high'
+    );
+    mockedGetDb.mockReturnValue(db as never);
+
+    const result = await lookupAlignment(
+      "federal-A123",
+      "healthcare_affordability",
+      "in_favor",
+    );
+
+    const vote = result.contributingVotes[0]!;
+    expect(vote.memberRationale).toBeUndefined();
+  });
+
+  it("does NOT surface memberRationale when matchConfidence is null", async () => {
+    const db = makeDoubleMock(
+      [baseVoteRow],
+      [], // DB returns no rows because matchConfidence != 'high'
+    );
+    mockedGetDb.mockReturnValue(db as never);
+
+    const result = await lookupAlignment(
+      "federal-A123",
+      "healthcare_affordability",
+      "in_favor",
+    );
+
+    const vote = result.contributingVotes[0]!;
+    expect(vote.memberRationale).toBeUndefined();
+  });
+
+  it("remains fail-soft when rationale query throws (e.g. table not migrated yet)", async () => {
+    const brokenRationaleChain = {
+      from: vi.fn().mockReturnThis(),
+      innerJoin: vi.fn().mockReturnThis(),
+      leftJoin: vi.fn().mockReturnThis(),
+      where: vi.fn().mockRejectedValue(new Error("relation does not exist")),
+    };
+    const voteChain = {
+      from: vi.fn().mockReturnThis(),
+      innerJoin: vi.fn().mockReturnThis(),
+      leftJoin: vi.fn().mockReturnThis(),
+      where: vi.fn().mockResolvedValue([baseVoteRow]),
+    };
+    const selectMock = vi
+      .fn()
+      .mockReturnValueOnce(voteChain)
+      .mockReturnValue(brokenRationaleChain);
+    mockedGetDb.mockReturnValue({ select: selectMock } as never);
+
+    const result = await lookupAlignment(
+      "federal-A123",
+      "healthcare_affordability",
+      "in_favor",
+    );
+
+    // Alignment result is still returned; no memberRationale attached.
+    expect(result.found).toBe(true);
+    expect(result.total).toBe(1);
+    const vote = result.contributingVotes[0]!;
+    expect(vote.memberRationale).toBeUndefined();
+  });
+});
