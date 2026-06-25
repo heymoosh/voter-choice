@@ -11,6 +11,7 @@ import {
   extractStateCode,
   matchesKeywords,
   matchesWordBoundary,
+  matchesWordBoundaryPattern,
   billMatchesRetagFilter,
   selectRetagBillIds,
   isRetagIssue,
@@ -71,7 +72,12 @@ describe("buildKeywordList", () => {
     const kw = buildKeywordList("immigration");
     expect(kw).toContain("asylum");
     expect(kw).toContain("deport");
-    expect(kw).toContain("border");
+    // bare "border" was replaced with precise phrases to avoid false positives
+    // on transportation bills; check that at least one phrase is present.
+    expect(kw).toContain("border security");
+    expect(kw).toContain("border patrol");
+    // bare "border" must NOT be in the keyword list any more
+    expect(kw).not.toContain("border");
   });
 
   it("is de-duplicated and all-lowercase", () => {
@@ -167,6 +173,100 @@ describe("matchesWordBoundary", () => {
   });
   it("returns false when terms array is empty", () => {
     expect(matchesWordBoundary("ICE arrested the suspect", [])).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// matchesWordBoundaryPattern — suffix-aware word-boundary helper
+// ---------------------------------------------------------------------------
+
+describe("matchesWordBoundaryPattern", () => {
+  // roe → \broe\b: matches "Roe" / "Roe v. Wade" but NOT "heroes"/"Heroes"
+  it('matches "Roe v. Wade"', () => {
+    expect(
+      matchesWordBoundaryPattern("Roe v. Wade protection act", ["roe"]),
+    ).toBe(true);
+  });
+  it('matches standalone "roe" (lowercase)', () => {
+    expect(
+      matchesWordBoundaryPattern("codifying roe nationwide", ["roe"]),
+    ).toBe(true);
+  });
+  it('does NOT match "heroes" (K-9 Heroes Act)', () => {
+    expect(
+      matchesWordBoundaryPattern("K-9 Heroes Act for public safety", ["roe"]),
+    ).toBe(false);
+  });
+  it('does NOT match "Heroes" (capitalised)', () => {
+    expect(
+      matchesWordBoundaryPattern("Fallen Heroes Memorial Fund", ["roe"]),
+    ).toBe(false);
+  });
+
+  // clinic → \bclinics?\b: matches "clinic"/"clinics" but NOT "clinical"/"clinically"
+  it('matches "abortion clinic"', () => {
+    expect(
+      matchesWordBoundaryPattern("abortion clinic access act", ["clinics?"]),
+    ).toBe(true);
+  });
+  it('matches "clinics" (plural)', () => {
+    expect(
+      matchesWordBoundaryPattern("women's health clinics funding", [
+        "clinics?",
+      ]),
+    ).toBe(true);
+  });
+  it('does NOT match "clinical" (autism pilot)', () => {
+    expect(
+      matchesWordBoundaryPattern("clinical trial for autism treatment", [
+        "clinics?",
+      ]),
+    ).toBe(false);
+  });
+  it('does NOT match "clinically"', () => {
+    expect(
+      matchesWordBoundaryPattern("clinically validated mental health pilot", [
+        "clinics?",
+      ]),
+    ).toBe(false);
+  });
+
+  // alien → \baliens?\b: matches "alien"/"aliens" but NOT "alienation"/"alienate"
+  it('matches "illegal aliens"', () => {
+    expect(
+      matchesWordBoundaryPattern("illegal aliens employment restrictions", [
+        "aliens?",
+      ]),
+    ).toBe(true);
+  });
+  it('matches singular "alien"', () => {
+    expect(
+      matchesWordBoundaryPattern("alien registration requirements", [
+        "aliens?",
+      ]),
+    ).toBe(true);
+  });
+  it('does NOT match "alienation" (parental alienation)', () => {
+    expect(
+      matchesWordBoundaryPattern("parental alienation prevention act", [
+        "aliens?",
+      ]),
+    ).toBe(false);
+  });
+  it('does NOT match "alienate"', () => {
+    expect(
+      matchesWordBoundaryPattern("policies that alienate communities", [
+        "aliens?",
+      ]),
+    ).toBe(false);
+  });
+
+  it("returns false for null/empty text", () => {
+    expect(matchesWordBoundaryPattern(null, ["roe"])).toBe(false);
+    expect(matchesWordBoundaryPattern("", ["clinics?"])).toBe(false);
+  });
+  it("returns false when patterns array is empty", () => {
+    expect(matchesWordBoundaryPattern("Roe v. Wade", [])).toBe(false);
   });
 });
 
@@ -367,6 +467,119 @@ describe("billMatchesRetagFilter", () => {
         {
           title: "Texas ICE cooperation restrictions",
           summary: "Limits local law enforcement cooperation with ICE.",
+          jurisdiction: "ocd-jurisdiction/country:us/state:tx/government",
+        },
+        "immigration",
+      ),
+    ).toBe(true);
+  });
+
+  // roe word-boundary regression — "heroes" must NOT match reproductive_rights
+  it('does NOT select a TX "K-9 Heroes Act" as a reproductive_rights bill', () => {
+    expect(
+      billMatchesRetagFilter(
+        {
+          title: "Texas K-9 Heroes Act for Law Enforcement",
+          summary: "Provides benefits to K-9 Heroes in public safety.",
+          jurisdiction: "ocd-jurisdiction/country:us/state:tx/government",
+        },
+        "reproductive_rights",
+      ),
+    ).toBe(false);
+  });
+
+  // roe true-positive — "Roe v. Wade" MUST match
+  it('selects a TX "Roe v. Wade" bill as a reproductive_rights bill', () => {
+    expect(
+      billMatchesRetagFilter(
+        {
+          title: "Texas Women's Health Protection Act",
+          summary: "Codifies the rights established in Roe v. Wade.",
+          jurisdiction: "ocd-jurisdiction/country:us/state:tx/government",
+        },
+        "reproductive_rights",
+      ),
+    ).toBe(true);
+  });
+
+  // clinic word-boundary regression — "clinical" must NOT match reproductive_rights
+  it('does NOT select a TX foster-care "clinical pilot" as a reproductive_rights bill', () => {
+    expect(
+      billMatchesRetagFilter(
+        {
+          title: "Texas Foster Care Clinical Pilot Program",
+          summary: "Establishes a clinical trial for mental health services.",
+          jurisdiction: "ocd-jurisdiction/country:us/state:tx/government",
+        },
+        "reproductive_rights",
+      ),
+    ).toBe(false);
+  });
+
+  // clinic true-positive — "abortion clinic" MUST match
+  it('selects a TX "abortion clinic" bill as a reproductive_rights bill', () => {
+    expect(
+      billMatchesRetagFilter(
+        {
+          title: "Texas Abortion Clinic Regulations Act",
+          summary: "Imposes facility standards on abortion clinics.",
+          jurisdiction: "ocd-jurisdiction/country:us/state:tx/government",
+        },
+        "reproductive_rights",
+      ),
+    ).toBe(true);
+  });
+
+  // alien word-boundary regression — "alienation" must NOT match immigration
+  it('does NOT select a TX "parental alienation" bill as an immigration bill', () => {
+    expect(
+      billMatchesRetagFilter(
+        {
+          title: "Texas Parental Alienation Prevention Act",
+          summary: "Addresses parental alienation in custody disputes.",
+          jurisdiction: "ocd-jurisdiction/country:us/state:tx/government",
+        },
+        "immigration",
+      ),
+    ).toBe(false);
+  });
+
+  // alien true-positive — "illegal aliens" MUST match
+  it('selects a TX "illegal aliens" employment bill as an immigration bill', () => {
+    expect(
+      billMatchesRetagFilter(
+        {
+          title: "Texas Illegal Aliens Employment Verification Act",
+          summary: "Requires employers to verify status of aliens.",
+          jurisdiction: "ocd-jurisdiction/country:us/state:tx/government",
+        },
+        "immigration",
+      ),
+    ).toBe(true);
+  });
+
+  // border phrase regression — generic transportation "border" must NOT match
+  it('does NOT select a FL motor-carrier transportation "border" bill as immigration', () => {
+    expect(
+      billMatchesRetagFilter(
+        {
+          title: "Florida Motor Carrier Transportation Act",
+          summary:
+            "Regulates commercial vehicles crossing the state border for transportation purposes.",
+          jurisdiction: "ocd-jurisdiction/country:us/state:fl/government",
+        },
+        "immigration",
+      ),
+    ).toBe(false);
+  });
+
+  // border phrase true-positive — "border security funding" MUST match
+  it('selects a TX "border security funding" bill as an immigration bill', () => {
+    expect(
+      billMatchesRetagFilter(
+        {
+          title: "Texas Border Security Funding Appropriations Act",
+          summary: "Appropriates funds for border security operations.",
           jurisdiction: "ocd-jurisdiction/country:us/state:tx/government",
         },
         "immigration",

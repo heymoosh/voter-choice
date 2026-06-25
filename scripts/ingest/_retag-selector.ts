@@ -87,7 +87,10 @@ const EXTRA_KEYWORDS: Record<RetagIssue, readonly string[]> = {
     "fetal",
     "fetus",
     "unborn",
-    "clinic",
+    // NOTE: "clinic" and "roe" are omitted from plain substring keywords.
+    // They are handled via WORD_BOUNDARY_PATTERNS below:
+    //   "clinic" → \bclinics?\b so "clinical"/"clinically" do NOT match.
+    //   "roe"    → \broe\b     so "heroes"/"Heroes" do NOT match.
     "contracept",
     "ivf",
     "in vitro",
@@ -101,17 +104,24 @@ const EXTRA_KEYWORDS: Record<RetagIssue, readonly string[]> = {
     "personhood",
     "mifepristone",
     "medication abortion",
-    "roe",
   ],
   immigration: [
     "immigra", // immigration, immigrant
-    "border",
+    // NOTE: bare "border" is intentionally omitted — too many false positives
+    // (e.g. FL/TX transportation motor-carrier bills mentioning "border" with
+    // no immigration content). Immigration-specific border phrases are captured
+    // via EXTRA_KEYWORDS multi-word phrases below and WORD_BOUNDARY_PATTERNS.
+    "border security",
+    "border patrol",
+    "border crossing",
+    "border wall",
+    "border enforcement",
     "asylum",
     "deport",
     "e-verify",
     "everify",
     // NOTE: "ice" is intentionally omitted from plain substring keywords.
-    // It is handled via WORD_BOUNDARY_KEYWORDS below with regex word-boundary
+    // It is handled via WORD_BOUNDARY_PATTERNS below with regex word-boundary
     // matching so it matches standalone "ICE" / "I.C.E." but NOT "police",
     // "service", "office", "device", "notice", "license", "price", etc.
     "detention",
@@ -120,11 +130,12 @@ const EXTRA_KEYWORDS: Record<RetagIssue, readonly string[]> = {
     "daca",
     "dreamer",
     "undocumented",
-    "alien",
+    // NOTE: "alien" is omitted from plain substring keywords.
+    // Handled via WORD_BOUNDARY_PATTERNS: \baliens?\b matches "alien"/"aliens"
+    // (immigration noun) but NOT "alienation"/"alienate".
     "citizenship",
     "naturaliz",
     "remain in mexico",
-    "border patrol",
     "migrant",
     "sanctuary",
   ],
@@ -141,11 +152,36 @@ const EXTRA_KEYWORDS: Record<RetagIssue, readonly string[]> = {
  *     with `\b` word boundaries.
  *   - In SQL (buildRetagWhere): via Postgres POSIX regex `~*` with `\y`
  *     word-boundary anchors (Postgres uses `\y`, not `\b`).
+ *
+ * For terms that need suffix-aware boundary matching (e.g. "aliens?" to catch
+ * the plural but exclude "alienation"), use WORD_BOUNDARY_PATTERNS instead.
  */
 export const WORD_BOUNDARY_KEYWORDS: Record<RetagIssue, readonly string[]> = {
   reproductive_rights: [], // no ambiguous short terms for repro rights
   immigration: [
     "ice", // matches standalone "ICE" / "I.C.E." — not "police"/"service"/etc.
+  ],
+};
+
+/**
+ * Raw regex fragments (no anchors) for terms that need suffix-aware word
+ * boundary matching beyond what a plain `\b<term>\b` provides.
+ *
+ * Each fragment is wrapped in `\b...\b` (JS) / `\y...\y` (Postgres) at
+ * query time, so these should NOT include their own anchors.
+ *
+ * Examples:
+ *   "aliens?"   → \baliens?\b   matches "alien"/"aliens" but NOT "alienation"
+ *   "clinics?"  → \bclinics?\b  matches "clinic"/"clinics" but NOT "clinical"
+ *   "roe"       → \broe\b       matches "Roe"/"roe" but NOT "heroes"/"Heroes"
+ */
+export const WORD_BOUNDARY_PATTERNS: Record<RetagIssue, readonly string[]> = {
+  reproductive_rights: [
+    "roe", // \broe\b — matches "Roe v. Wade" but NOT "heroes"
+    "clinics?", // \bclinics?\b — matches "clinic"/"clinics" but NOT "clinical"
+  ],
+  immigration: [
+    "aliens?", // \baliens?\b — matches "alien"/"aliens" but NOT "alienation"/"alienate"
   ],
 };
 
@@ -218,6 +254,24 @@ export function matchesWordBoundary(
 }
 
 /**
+ * True iff `text` matches any of the raw regex `patterns` wrapped in `\b`
+ * word boundaries (case-insensitive). Unlike `matchesWordBoundary`, the
+ * patterns are NOT escaped — they may include regex syntax like `?`, `(`,
+ * `)` for suffix-aware matching (e.g. "aliens?" → \baliens?\b matches
+ * "alien"/"aliens" but NOT "alienation").
+ *
+ * Patterns should NOT include their own anchors; they are wrapped here.
+ */
+export function matchesWordBoundaryPattern(
+  text: string | null | undefined,
+  patterns: readonly string[],
+): boolean {
+  if (!text || patterns.length === 0) return false;
+  const combined = new RegExp(`\\b(${patterns.join("|")})\\b`, "i");
+  return combined.test(text);
+}
+
+/**
  * Pure predicate: does this bill belong in the targeted subset for `issue`?
  * Exported so the selector logic can be tested without a database.
  */
@@ -229,9 +283,13 @@ export function billMatchesRetagFilter(
   if (!state || !RETAG_TARGET_STATES[issue].includes(state)) return false;
   const keywords = buildKeywordList(issue);
   const wbTerms = WORD_BOUNDARY_KEYWORDS[issue];
+  const wbPatterns = WORD_BOUNDARY_PATTERNS[issue];
   const textFields = [bill.title, bill.summary ?? ""];
   return textFields.some(
-    (t) => matchesKeywords(t, keywords) || matchesWordBoundary(t, wbTerms),
+    (t) =>
+      matchesKeywords(t, keywords) ||
+      matchesWordBoundary(t, wbTerms) ||
+      matchesWordBoundaryPattern(t, wbPatterns),
   );
 }
 
@@ -260,6 +318,7 @@ export function buildRetagWhere(issue: RetagIssue) {
   // case-insensitive so casing of the keyword does not matter).
   const substrKeywords = buildKeywordList(issue);
   const wbTerms = WORD_BOUNDARY_KEYWORDS[issue];
+  const wbPatterns = WORD_BOUNDARY_PATTERNS[issue];
 
   // BUG2 FIX — Extract the state code in SQL, mirroring extractStateCode()
   // which handles BOTH jurisdiction shapes:
@@ -298,12 +357,24 @@ export function buildRetagWhere(issue: RetagIssue) {
         `
       : sql``;
 
+  // Word-boundary PATTERN terms (raw regex with optional suffix quantifiers,
+  // e.g. "aliens?" "clinics?" "roe") also use Postgres POSIX regex ~* with
+  // \y anchors. Patterns are trusted (not user input) so no escaping needed.
+  const wbPatternClause =
+    wbPatterns.length > 0
+      ? sql`
+          OR b.title ~* ${`\\y(${wbPatterns.join("|")})\\y`}
+          OR coalesce(b.summary, '') ~* ${`\\y(${wbPatterns.join("|")})\\y`}
+        `
+      : sql``;
+
   return sql`
     ${stateExpr} = ANY(${statesArray})
     AND (
       b.title ILIKE ANY(${patternsArray})
       OR coalesce(b.summary, '') ILIKE ANY(${patternsArray})
       ${wbClause}
+      ${wbPatternClause}
     )
   `;
 }
