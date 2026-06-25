@@ -4220,11 +4220,11 @@ function HomeView({ savedAddress, savedSession, onSubmit, onResumeFromProfile, o
     <>
       <AppNav />
       <main id="main-content">
-      <section className="hp-hero">
+      <section className="hp-hero hp-hero-solo">
         <div>
           <div className="eyebrow"><span className="star">★</span> November 3, 2026 · America's 250th election</div>
-          <h1>Hold Congress to its <em>record.</em></h1>
-          <p className="lede">All 435 House seats and 33 Senate seats are on the ballot. Before you vote, see how your incumbents actually voted — and who paid for the campaign.</p>
+          <h1>See how your members of Congress <em>actually voted</em> — before you vote.</h1>
+          <p className="lede">Hold Congress to its record. All 435 House seats and 33 Senate seats are on the ballot — compare what your incumbents say with how they voted, and who funded the campaign.</p>
 
           <div className="addr-card">
             <label>
@@ -4286,19 +4286,6 @@ function HomeView({ savedAddress, savedSession, onSubmit, onResumeFromProfile, o
               onStartOver={onStartOver}
             />
           )}
-        </div>
-
-        <div className="stat-stack">
-          <div className="stat">
-            <div className="v">6<small>hrs / day</small></div>
-            <div className="l">average time a member of Congress spends fundraising, per training materials shown to incoming freshmen.</div>
-            <div className="cite">Source · Issue One, 2024 · CBS 60 Minutes</div>
-          </div>
-          <div className="stat alt">
-            <div className="v">94<small>%</small></div>
-            <div className="l">of House incumbents who ran for re-election in 2024 won. Without a record check, every November is a coin flip.</div>
-            <div className="cite">Source · OpenSecrets · FEC filings</div>
-          </div>
         </div>
       </section>
 
