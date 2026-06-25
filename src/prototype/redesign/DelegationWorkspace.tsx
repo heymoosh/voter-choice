@@ -86,6 +86,7 @@ function tierIntro(section, { userIssues, stateName }) {
 export function ScorecardPane({
   seats,
   verdicts,
+  picks,
   activeSeatId,
   address,
   issues,
@@ -184,6 +185,18 @@ export function ScorecardPane({
                           <span className={"verdict-chip " + v}>
                             {v === "keep" ? "WORTH KEEPING" : "TIME TO REPLACE"}
                           </span>
+                          {v === "replace" &&
+                            (() => {
+                              const pick = (s.challengers || []).find(
+                                (c) => c.id === picks?.[s.id],
+                              );
+                              return pick ? (
+                                <span className="pick-successor">
+                                  {" → "}
+                                  {pick.name}
+                                </span>
+                              ) : null;
+                            })()}
                         </>
                       ) : isActive ? (
                         "Reviewing now…"
@@ -249,11 +262,13 @@ export function DelegationWorkspace({
   polisPreview,
   blindMode,
   verdicts,
+  picks,
   activeSeatId,
   revealed,
   onReveal,
   onHide,
   onVerdict,
+  onOpenDuel,
   onSelectSeat,
   onPrint,
   onContinueElsewhere,
@@ -426,7 +441,9 @@ export function DelegationWorkspace({
             onReveal={() => onReveal(activeSeat.id)}
             onHide={() => onHide(activeSeat.id)}
             verdict={verdicts[activeSeat.id] || null}
+            pickId={picks?.[activeSeat.id] || null}
             onVerdict={commitVerdict}
+            onOpenDuel={onOpenDuel}
             onShowBudgetOptions={onShowBudgetOptions}
           />
 
@@ -461,6 +478,7 @@ export function DelegationWorkspace({
           <ScorecardPane
             seats={seats}
             verdicts={verdicts}
+            picks={picks}
             activeSeatId={activeSeat.id}
             address={address}
             issues={userIssues}

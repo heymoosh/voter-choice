@@ -578,7 +578,9 @@ export function RepCard({
   onReveal,
   onHide,
   verdict,
+  pickId,
   onVerdict,
+  onOpenDuel,
   onShowBudgetOptions,
 }) {
   const [expandedIssue, setExpandedIssue] = useState(null);
@@ -778,42 +780,65 @@ export function RepCard({
 
       <EligibilityNote2 e={seat.eligibility} />
 
-      <ChallengersStrip
-        seat={seat}
-        userIssues={userIssues}
-        stateCode={stateCode}
-        onShowBudgetOptions={onShowBudgetOptions}
-      />
+      {/* The old inline "candidates simply listed below the rep"
+          (ChallengersStrip) is retired: choosing "Time to replace" now opens
+          the full-screen head-to-head duel (HeadToHead) where the real
+          challengers are compared per-issue. The duel is the single
+          candidate-evaluation surface. ChallengersStrip remains exported for
+          the unresolved-seat fallback only. */}
 
       {/* Verdict — assessment, not selection. Rides to the scorecard + print.
          .ck is the shipped bordered checkbox; the border IS the box, so we
-         leave it empty when unselected and fill it with a mark when set. */}
-      <div className="cv2-actions verdicts">
-        <button
-          className={"pick " + (verdict === "keep" ? "picked" : "")}
-          onClick={() => onVerdict(verdict === "keep" ? null : "keep")}
-        >
-          <span className="ck">{verdict === "keep" ? "✓" : ""}</span>
-          <span>
-            {verdict === "keep"
-              ? "Worth keeping — undo"
-              : `Worth keeping${blind ? "" : " · " + last}`}
-          </span>
-        </button>
-        <button
-          className={
-            "pick replace " + (verdict === "replace" ? "picked-replace" : "")
-          }
-          onClick={() => onVerdict(verdict === "replace" ? null : "replace")}
-        >
-          <span className="ck">{verdict === "replace" ? "✕" : ""}</span>
-          <span>
-            {verdict === "replace"
-              ? "Time to replace — undo"
-              : "Time to replace"}
-          </span>
-        </button>
-      </div>
+         leave it empty when unselected and fill it with a mark when set.
+         "Time to replace" routes to the duel when challengers exist (the duel
+         records the verdict + successor); with no challenger it degrades to
+         the inline verdict toggle. */}
+      {(() => {
+        const hasChallengers = (seat.challengers || []).length > 0;
+        const successor = hasChallengers
+          ? (seat.challengers || []).find((c) => c.id === pickId)
+          : null;
+        return (
+          <div className="cv2-actions verdicts">
+            <button
+              className={"pick " + (verdict === "keep" ? "picked" : "")}
+              onClick={() => onVerdict(verdict === "keep" ? null : "keep")}
+            >
+              <span className="ck">{verdict === "keep" ? "✓" : ""}</span>
+              <span>
+                {verdict === "keep"
+                  ? "Worth keeping — undo"
+                  : `Worth keeping${blind ? "" : " · " + last}`}
+              </span>
+            </button>
+            <button
+              className={
+                "pick replace " +
+                (verdict === "replace" ? "picked-replace" : "")
+              }
+              data-testid="open-duel"
+              onClick={() => {
+                if (hasChallengers && onOpenDuel) {
+                  onOpenDuel(seat.id);
+                } else {
+                  onVerdict(verdict === "replace" ? null : "replace");
+                }
+              }}
+            >
+              <span className="ck">{verdict === "replace" ? "✕" : ""}</span>
+              <span>
+                {verdict === "replace"
+                  ? successor
+                    ? `Replacing with ${successor.name} — change`
+                    : "Time to replace — change"
+                  : hasChallengers
+                    ? "Time to replace — compare who's running →"
+                    : "Time to replace"}
+              </span>
+            </button>
+          </div>
+        );
+      })()}
 
       <CardSources seat={seat} />
     </div>

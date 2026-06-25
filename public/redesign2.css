@@ -228,6 +228,14 @@
   color: var(--vote-red);
 }
 
+/* the successor chosen in the head-to-head duel, shown next to a "replace"
+   verdict on the scorecard + print sheet */
+.pick-successor {
+  font-family: var(--serif);
+  font-weight: 600;
+  color: var(--ink);
+}
+
 /* ---- jurisdiction level tags [Δ] ---- */
 .lvl-tag {
   font-family: var(--mono);
