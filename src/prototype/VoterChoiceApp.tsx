@@ -181,6 +181,8 @@ const TRANSLATIONS = {
       about: 'About',
       methodology: 'Methodology',
       privacy: 'Privacy',
+      support: 'Support',
+      tipJar: 'Tip jar',
       settings: 'Settings',
     },
     landing: {
@@ -275,6 +277,8 @@ const TRANSLATIONS = {
       about: 'Acerca de',
       methodology: 'Metodología',
       privacy: 'Privacidad',
+      support: 'Soporte',
+      tipJar: 'Propinas',
       settings: 'Ajustes',
     },
     landing: {
@@ -470,9 +474,12 @@ function AppNav({ onBrandClick }) {
         <a onClick={() => navigate('howitworks')} role="link" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') navigate('howitworks'); }}>{t('nav.howItWorks')}</a>
         <a onClick={() => navigate('methodology')} role="link" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') navigate('methodology'); }}>{t('nav.methodology')}</a>
         <a onClick={() => navigate('about')} role="link" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') navigate('about'); }}>{t('nav.about')}</a>
+        <a onClick={() => navigate('privacy')} role="link" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') navigate('privacy'); }}>{t('nav.privacy')}</a>
+        <a href="mailto:muxin.li.pro@gmail.com">{t('nav.support')}</a>
       </div>
       <div className="nav-right">
         {typeof LanguageToggle === 'function' && <LanguageToggle />}
+        <a className="nav-tip" onClick={() => navigate('tip')} role="link" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') navigate('tip'); }}>{t('nav.tipJar')}</a>
         <button
           className="nav-cog"
           onClick={openSettings}
@@ -491,24 +498,14 @@ function AppNav({ onBrandClick }) {
 
 /* ============ AppFooter ============
    Shared footer bar — matches .hp-foot styles used by HomeView.
-   Reads navigation from NavContext so it needs no prop-drilling.
+   Brand + copyright only; all nav links live in the header (AppNav).
    Pass `compact` on the workspace (slim pinned bar); omit it on
    the home page for the full-height layout. */
 function AppFooter({ compact }: { compact?: boolean }) {
-  const nav = (typeof useNav === 'function') ? useNav() : { navigate: () => {} };
-  const { navigate } = nav;
   return (
     <footer className={"hp-foot" + (compact ? " hp-foot-slim" : "")}>
       <div className="l">Voter Choice</div>
-      <ul>
-        <li><a onClick={() => navigate('methodology')} role="link" tabIndex={0}>Methodology</a></li>
-        <li><a onClick={() => navigate('about')} role="link" tabIndex={0}>About</a></li>
-        <li><a onClick={() => navigate('privacy')} role="link" tabIndex={0}>Privacy</a></li>
-        <li><a href="/terms">Terms</a></li>
-        <li><a onClick={() => navigate('tip')} role="link" tabIndex={0}>Tip jar</a></li>
-        <li><a href="mailto:muxin.li.pro@gmail.com">Support</a></li>
-      </ul>
-      <div>© 2026 · Grey Bird LLC</div>
+      <div>© 2026 Grey Bird LLC. All Rights Reserved.</div>
     </footer>
   );
 }
@@ -2352,9 +2349,11 @@ function AppNavWithChrome({ onBrandClick, onOpenSettings, current, onNavigate })
         <a onClick={() => onNavigate && onNavigate('methodology')} role="link" tabIndex={0}>{t('nav.methodology')}</a>
         <a onClick={() => onNavigate && onNavigate('about')} role="link" tabIndex={0}>{t('nav.about')}</a>
         <a onClick={() => onNavigate && onNavigate('privacy')} role="link" tabIndex={0}>{t('nav.privacy')}</a>
+        <a href="mailto:muxin.li.pro@gmail.com">{t('nav.support')}</a>
       </div>
       <div className="nav-right">
         <LanguageToggle />
+        <a className="nav-tip" onClick={() => onNavigate && onNavigate('tip')} role="link" tabIndex={0}>{t('nav.tipJar')}</a>
         <button className="nav-cog" onClick={onOpenSettings} aria-label={t('nav.settings')} title={t('nav.settings')}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <circle cx="12" cy="12" r="3" />
