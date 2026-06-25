@@ -75,7 +75,12 @@ function ResearchedPositionRow({ issue, pos }) {
   const [open, setOpen] = useState(false);
   const supports = pos.resolvedStance === "in_favor";
   const opposes = pos.resolvedStance === "opposed";
-  const verb = supports ? "SUPPORTS" : opposes ? "OPPOSES" : "MIXED";
+  // Canonical directional label — same pair the voting-record card uses
+  // ("WITH YOU" / "AGAINST YOU"), so House-style researched cards read
+  // identically to Senate-style voting-record cards.
+  const verb = supports ? "WITH YOU" : opposes ? "AGAINST YOU" : "MIXED";
+  // Descriptive verb for the cited-source title (reads as prose, not a badge).
+  const titleVerb = supports ? "Supports" : opposes ? "Opposes" : "Mixed on";
   const badgeColor = supports
     ? "var(--civic)"
     : opposes
@@ -127,8 +132,7 @@ function ResearchedPositionRow({ issue, pos }) {
                   <div className="bill">
                     <span className="num">WEB RESEARCH</span>
                     <span className="ttl">
-                      {verb.charAt(0) + verb.slice(1).toLowerCase()}{" "}
-                      {issue.interpretation.toLowerCase()}
+                      {titleVerb} {issue.interpretation.toLowerCase()}
                     </span>
                   </div>
                   <div className={"vote-badge " + voteCls}>{verb}</div>
