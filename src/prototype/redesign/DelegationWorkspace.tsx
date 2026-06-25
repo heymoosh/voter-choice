@@ -24,29 +24,26 @@ import { SeatChat } from "./SeatChat";
 import { IssueDeltaBanner } from "./IssueDeltaBanner";
 import { issuesForLevel } from "./delegationData";
 
-function tierIntro(section, { userIssues, stateName }) {
-  const fedIssues = issuesForLevel(userIssues || [], "federal")
-    .filter((i) => i.level === "federal")
-    .map((i) => i.interpretation);
-  const stateIssues = issuesForLevel(userIssues || [], "state")
-    .filter((i) => i.level === "state")
-    .map((i) => i.interpretation);
-  const list = (xs) => xs.join(" and ");
+/* Plain-language jurisdiction note shown inline beside each issue (replaces the
+   removed FED/STATE/BOTH chips — clearer phrasing per user feedback, and folds
+   the per-seat "Your seat at the national table" mapping onto the issues list). */
+function levelPhrase(level) {
+  return level === "federal"
+    ? "decided federally"
+    : level === "state"
+      ? "decided at the state level"
+      : "federal + state";
+}
 
+function tierIntro(section, { stateName }) {
   const TIERS = {
     "Washington — Federal": {
       place: "WASHINGTON",
-      title: "Your seat at the national table",
+      title: "Your federal delegation",
       what: () => (
         <>
           Three people who write <b>federal</b> law — and answer for it on
           roll-call votes.
-          {fedIssues.length > 0 && (
-            <>
-              {" "}
-              Of your priorities, Washington decides <b>{list(fedIssues)}</b>.
-            </>
-          )}
         </>
       ),
     },
@@ -57,13 +54,6 @@ function tierIntro(section, { userIssues, stateName }) {
         <>
           Your state legislature decides what Washington doesn't — schools,
           infrastructure, and state law.
-          {stateIssues.length > 0 && (
-            <>
-              {" "}
-              Of your priorities, your statehouse holds the pen on{" "}
-              <b>{list(stateIssues)}</b>.
-            </>
-          )}
         </>
       ),
     },
@@ -139,6 +129,7 @@ export function ScorecardPane({
             <li key={i}>
               <span className="n">{i + 1}</span>
               {iss.interpretation}
+              <span className="iss-jx">{levelPhrase(iss.level)}</span>
             </li>
           ))}
         </ol>
@@ -275,7 +266,7 @@ export function DelegationWorkspace({
     seats.some((s) => s.id === id),
   ).length;
   const progressPct = Math.round((doneCount / seats.length) * 100);
-  const intro = tierIntro(activeSeat.section, { userIssues, stateName });
+  const intro = tierIntro(activeSeat.section, { stateName });
 
   /* Mobile: same contract as the shipped WorkspaceView — the center pane
      is hidden <768px until a row is tapped, then opens as a fixed overlay
@@ -350,7 +341,10 @@ export function DelegationWorkspace({
             </div>
             <ol>
               {userIssues.map((iss, i) => (
-                <li key={iss.canonicalIssue || i}>{iss.interpretation}</li>
+                <li key={iss.canonicalIssue || i}>
+                  {iss.interpretation}
+                  <span className="iss-jx">{levelPhrase(iss.level)}</span>
+                </li>
               ))}
             </ol>
           </div>
