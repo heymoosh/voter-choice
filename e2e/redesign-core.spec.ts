@@ -58,8 +58,10 @@ test.describe("delegation flow — address → assess → verdicts", () => {
     );
     await expect(page.locator(".tweaks2")).toHaveCount(0);
 
-    // Scorecard rail shows the issues with jurisdiction tags.
-    await expect(page.locator(".ws-rail .lvl-tag").first()).toBeVisible();
+    // Scorecard rail renders the issues; the confusing Fed/Both/State
+    // jurisdiction tags were removed ([P0]) — assert they no longer appear.
+    await expect(page.locator(".ws-rail")).toBeVisible();
+    await expect(page.locator(".ws-rail .lvl-tag")).toHaveCount(0);
   });
 
   test("threads the delegation's resolved candidateId into /api/race-data", async ({
