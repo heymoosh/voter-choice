@@ -250,13 +250,13 @@ export async function getBudgetStatusAsync(): Promise<{
     return budgetStatusFromSpend(Number(spend ?? 0), handoffServed);
   } catch (err) {
     console.error("Durable budget status failed:", err);
-    // On error, fail open: return the in-memory state rather than assuming
-    // 100% spend. The previous fallback (MONTHLY_BUDGET_USD) caused the gate
-    // to fire at tier="handoff" during transient Redis outages, showing the
-    // "Community AI budget used up" modal to users at 1.7% real spend. The
-    // block recorder also uses Redis and fails silently in the same outage,
-    // leaving zero evidence in the block tracker.
-    return getBudgetStatus();
+    // Fail CLOSED (owner-approved while self-testing): if we cannot confirm
+    // remaining budget (Redis error), treat the community budget as exhausted
+    // and stop spending on the shared key rather than risk uncapped spend.
+    // Tradeoff: a transient Redis outage will show the "budget used up" handoff
+    // to users until Redis recovers. Default handoffServed=false so the voter
+    // still gets the handoff completion rather than a hard 503.
+    return budgetStatusFromSpend(MONTHLY_BUDGET_USD, false);
   }
 }
 
