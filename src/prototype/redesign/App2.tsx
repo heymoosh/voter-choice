@@ -25,6 +25,7 @@ import {
   MethodologyPage,
   PrivacyPage,
   TipJarPage,
+  SettingsPanel,
 } from "../VoterChoiceApp";
 import { DelegationWorkspace } from "./DelegationWorkspace";
 import { HandoffModal } from "./HandoffModal";
@@ -576,6 +577,9 @@ function App2Inner() {
     setStage("home");
   }
 
+  // Settings panel
+  const [settingsOpen, setSettingsOpen] = useState(false);
+
   // Nav context — wires AppNav brand/links + footer links to stages.
   const PAGE_STAGES = { about: 1, methodology: 1, privacy: 1, tip: 1 };
   function navigate(page) {
@@ -583,7 +587,11 @@ function App2Inner() {
     if (page === "howitworks") return setStage("home");
     if (PAGE_STAGES[page]) return setStage(page);
   }
-  const navValue = { openSettings: () => {}, navigate, current: stage };
+  const navValue = {
+    openSettings: () => setSettingsOpen(true),
+    navigate,
+    current: stage,
+  };
 
   const unlockedScopes = (polisScopes || []).filter((s) => !s.locked);
   const polisPreview =
@@ -810,6 +818,13 @@ function App2Inner() {
           }
         />
       )}
+      <SettingsPanel
+        open={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        onResetAll={startOver}
+        onExportProfile={undefined}
+        onResumeProfile={undefined}
+      />
     </NavProvider>
   );
 }
