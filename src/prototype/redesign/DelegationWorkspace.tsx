@@ -162,13 +162,15 @@ export function ScorecardPane({
             {ss.map((s) => {
               const v = verdicts[s.id];
               const isActive = s.id === activeSeatId;
+              const notUp2026 = s.nextElection?.onBallot2026 === false;
               return (
                 <div
                   key={s.id}
                   className={
                     "b-row " +
                     (v ? "done " : "pending ") +
-                    (isActive ? "active " : "")
+                    (isActive ? "active " : "") +
+                    (notUp2026 ? "not-up-2026 " : "")
                   }
                   onClick={() => onSelectSeat(s.id)}
                 >
@@ -177,6 +179,11 @@ export function ScorecardPane({
                     <div className="race">
                       {s.office} · {s.districtLabel}
                     </div>
+                    {notUp2026 && (
+                      <div className="b-not-up">
+                        Not up for election in 2026
+                      </div>
+                    )}
                     <div className="pick">
                       {v ? (
                         <>
