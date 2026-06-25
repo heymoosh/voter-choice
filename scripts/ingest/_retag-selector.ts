@@ -110,7 +110,10 @@ const EXTRA_KEYWORDS: Record<RetagIssue, readonly string[]> = {
     "deport",
     "e-verify",
     "everify",
-    "ice ", // trailing space — avoid "office"/"service"/"price"
+    // NOTE: "ice" is intentionally omitted from plain substring keywords.
+    // It is handled via WORD_BOUNDARY_KEYWORDS below with regex word-boundary
+    // matching so it matches standalone "ICE" / "I.C.E." but NOT "police",
+    // "service", "office", "device", "notice", "license", "price", etc.
     "detention",
     "refugee",
     "visa",
@@ -128,8 +131,29 @@ const EXTRA_KEYWORDS: Record<RetagIssue, readonly string[]> = {
 };
 
 /**
+ * Ambiguous short terms that must match as whole tokens (word boundaries) to
+ * avoid substring false-positives.  E.g. "ice" must NOT match "police",
+ * "service", "office", "device", "notice", "license".
+ *
+ * These are NOT passed through `buildKeywordList` (which feeds ILIKE
+ * `%kw%` matching).  Instead they are handled separately:
+ *   - In-process (matchesKeywords / billMatchesRetagFilter): via a JS regex
+ *     with `\b` word boundaries.
+ *   - In SQL (buildRetagWhere): via Postgres POSIX regex `~*` with `\y`
+ *     word-boundary anchors (Postgres uses `\y`, not `\b`).
+ */
+export const WORD_BOUNDARY_KEYWORDS: Record<RetagIssue, readonly string[]> = {
+  reproductive_rights: [], // no ambiguous short terms for repro rights
+  immigration: [
+    "ice", // matches standalone "ICE" / "I.C.E." — not "police"/"service"/etc.
+  ],
+};
+
+/**
  * Build the full, de-duplicated, lower-cased keyword list for an issue:
  * pole `bill_signals` (both poles) + the plain-language EXTRA_KEYWORDS.
+ * Word-boundary terms (WORD_BOUNDARY_KEYWORDS) are excluded here; they are
+ * handled separately via regex matching.
  */
 export function buildKeywordList(issue: RetagIssue): string[] {
   const pole = getPoleEntry(issue);
@@ -177,6 +201,23 @@ export function matchesKeywords(
 }
 
 /**
+ * True iff `text` contains any of `terms` as whole words (JS `\b` word
+ * boundaries, case-insensitive). Used for short ambiguous terms like "ice"
+ * that would produce false positives with plain substring matching.
+ */
+export function matchesWordBoundary(
+  text: string | null | undefined,
+  terms: readonly string[],
+): boolean {
+  if (!text || terms.length === 0) return false;
+  const pattern = new RegExp(
+    `\\b(${terms.map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")})\\b`,
+    "i",
+  );
+  return pattern.test(text);
+}
+
+/**
  * Pure predicate: does this bill belong in the targeted subset for `issue`?
  * Exported so the selector logic can be tested without a database.
  */
@@ -187,9 +228,10 @@ export function billMatchesRetagFilter(
   const state = extractStateCode(bill.jurisdiction);
   if (!state || !RETAG_TARGET_STATES[issue].includes(state)) return false;
   const keywords = buildKeywordList(issue);
-  return (
-    matchesKeywords(bill.title, keywords) ||
-    matchesKeywords(bill.summary, keywords)
+  const wbTerms = WORD_BOUNDARY_KEYWORDS[issue];
+  const textFields = [bill.title, bill.summary ?? ""];
+  return textFields.some(
+    (t) => matchesKeywords(t, keywords) || matchesWordBoundary(t, wbTerms),
   );
 }
 
@@ -216,17 +258,52 @@ export function buildRetagWhere(issue: RetagIssue) {
   const states = RETAG_TARGET_STATES[issue];
   // ILIKE patterns: %keyword% (keywords are already lower-cased; ILIKE is
   // case-insensitive so casing of the keyword does not matter).
-  const patterns = buildKeywordList(issue).map((k) => `%${k}%`);
+  const substrKeywords = buildKeywordList(issue);
+  const wbTerms = WORD_BOUNDARY_KEYWORDS[issue];
 
-  // Extract the state code in SQL, mirroring extractStateCode():
-  //   substring(jurisdiction from '/state:([a-z]{2})')  -> 'tx'
-  const stateExpr = sql`upper(substring(b.jurisdiction from '/state:([a-z]{2})'))`;
+  // BUG2 FIX — Extract the state code in SQL, mirroring extractStateCode()
+  // which handles BOTH jurisdiction shapes:
+  //   OCD shape:    "ocd-jurisdiction/country:us/state:tx/government"
+  //                 -> substring(jurisdiction from '/state:([a-z]{2})')  -> 'tx'
+  //   Legacy shape: "state-XX-chamber"
+  //                 -> substring(jurisdiction from '^state-([a-z]{2})-') -> 'xx'
+  // COALESCE picks whichever extraction succeeds.
+  const stateExpr = sql`
+    upper(coalesce(
+      nullif(substring(b.jurisdiction from '/state:([a-z]{2})'), ''),
+      nullif(substring(b.jurisdiction from '^state-([a-zA-Z]{2})-'), '')
+    ))
+  `;
+
+  const statesArray = sql.raw(
+    `ARRAY[${states.map((s) => `'${s}'`).join(",")}]`,
+  );
+
+  // BUG3 FIX — ILIKE ANY requires a Postgres text[] literal, not a bare JS
+  // array binding.  Build the array literal via sql.raw so the driver emits
+  // the correct  ARRAY['%kw1%','%kw2%',...]  syntax.
+  const substrPatterns = substrKeywords.map((k) => `%${k}%`);
+  const patternsArray = sql.raw(
+    `ARRAY[${substrPatterns.map((p) => `'${p.replace(/'/g, "''")}'`).join(",")}]`,
+  );
+
+  // BUG1 FIX — Word-boundary terms (e.g. "ice") use Postgres POSIX regex
+  // ~* with \y word-boundary markers so "ICE" matches but "police"/"service"/
+  // "office"/"device"/"notice"/"license" do NOT.
+  const wbClause =
+    wbTerms.length > 0
+      ? sql`
+          OR b.title ~* ${`\\y(${wbTerms.join("|")})\\y`}
+          OR coalesce(b.summary, '') ~* ${`\\y(${wbTerms.join("|")})\\y`}
+        `
+      : sql``;
 
   return sql`
-    ${stateExpr} = ANY(${sql.raw(`ARRAY[${states.map((s) => `'${s}'`).join(",")}]`)})
+    ${stateExpr} = ANY(${statesArray})
     AND (
-      b.title ILIKE ANY(${patterns})
-      OR coalesce(b.summary, '') ILIKE ANY(${patterns})
+      b.title ILIKE ANY(${patternsArray})
+      OR coalesce(b.summary, '') ILIKE ANY(${patternsArray})
+      ${wbClause}
     )
   `;
 }
