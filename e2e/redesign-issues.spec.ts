@@ -115,7 +115,7 @@ test.describe("edit issues from the workspace", () => {
   }, testInfo) => {
     test.skip(
       testInfo.project.name !== "chromium-desktop",
-      "rail + verdict flow is desktop-only",
+      "scorecard edit + verdict flow is desktop-only",
     );
     await installDataMocks(page);
     await goToWorkspace(page);
@@ -125,9 +125,9 @@ test.describe("edit issues from the workspace", () => {
     await page.waitForTimeout(900);
     await expect(page.locator(".ws-ballot")).toContainText("1/3");
 
-    // EDIT lives in the left rail on desktop (the scorecard's .b-issues-edit
-    // container is the design's mobile-only edit surface).
-    await page.getByTestId("edit-issues-rail").click();
+    // EDIT now lives only in the right scorecard pane ([P1] removed the left
+    // rail that previously carried the desktop Edit control).
+    await page.getByTestId("edit-issues-scorecard").click();
     const modal = page.getByTestId("edit-issues-modal");
     await expect(modal).toContainText("verdicts you've already made are kept");
     // Seeded with the locked issues.

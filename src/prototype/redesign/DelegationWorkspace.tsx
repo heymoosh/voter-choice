@@ -90,11 +90,9 @@ export function ScorecardPane({
   address,
   issues,
   precinct,
-  polisPreview,
   onSelectSeat,
   onPrint,
   onContinueElsewhere,
-  onSeeStanding,
   onEditIssues,
 }) {
   const doneCount = Object.keys(verdicts).filter((id) =>
@@ -202,26 +200,6 @@ export function ScorecardPane({
         ))}
       </div>
 
-      <div className="standing-cta">
-        <div className="kick">You're not alone</div>
-        <div className="dots">
-          <i style={{ background: "var(--civic)", opacity: 0.35 }}></i>
-          <i style={{ background: "var(--civic)", opacity: 0.55 }}></i>
-          <i style={{ background: "var(--civic)", opacity: 0.8 }}></i>
-          <i style={{ background: "var(--civic)", opacity: 0.55 }}></i>
-          <i style={{ background: "var(--gold)" }}></i>
-        </div>
-        <h4>See where you stand</h4>
-        <p>
-          {polisPreview
-            ? `Your priorities, mapped against ${polisPreview.sampleSize.toLocaleString("en-US")} people in ${polisPreview.label} — placed by what they care about, not party. You overlap more than the noise suggests.`
-            : "Your priorities, mapped against everyone who's finished this — placed by what they care about, not party. You overlap more than the noise suggests."}
-        </p>
-        <button onClick={onSeeStanding}>
-          See where you stand <span aria-hidden="true">→</span>
-        </button>
-      </div>
-
       <div className="b-foot">
         <button className="primary" disabled={!canPrint} onClick={onPrint}>
           <span>Print my scorecard (PDF)</span>
@@ -274,7 +252,6 @@ export function DelegationWorkspace({
   const doneCount = Object.keys(verdicts).filter((id) =>
     seats.some((s) => s.id === id),
   ).length;
-  const progressPct = Math.round((doneCount / seats.length) * 100);
   const intro = tierIntro(activeSeat.section, { userIssues, stateName });
 
   /* Mobile: same contract as the shipped WorkspaceView — the center pane
@@ -288,11 +265,6 @@ export function DelegationWorkspace({
     onSelectSeat(seatId);
     setTimeout(() => setMobileChatOpen(true), 0);
   }
-
-  const sections = {};
-  seats.forEach((s) => {
-    (sections[s.section] = sections[s.section] || []).push(s);
-  });
 
   function commitVerdict(v) {
     onVerdict(activeSeat.id, v);
@@ -320,71 +292,6 @@ export function DelegationWorkspace({
         className="ws-wrap"
         data-mobile-chat={mobileChatOpen ? "open" : "closed"}
       >
-        {/* LEFT RAIL */}
-        <aside className="ws-rail">
-          <div className="progress">
-            <div className="top">
-              <span>Progress</span>
-              <span>
-                {doneCount} / {seats.length}
-              </span>
-            </div>
-            <div className="big">{progressPct}% reviewed</div>
-            <div className="bar">
-              <div className="fill" style={{ width: progressPct + "%" }}></div>
-            </div>
-          </div>
-
-          <div className="priorities">
-            <div className="top">
-              <span className="lab">Your issues</span>
-              {onEditIssues && (
-                <button
-                  className="linklike"
-                  onClick={onEditIssues}
-                  data-testid="edit-issues-rail"
-                >
-                  Edit
-                </button>
-              )}
-            </div>
-            <ol>
-              {userIssues.map((iss, i) => (
-                <li key={iss.canonicalIssue || i}>{iss.interpretation}</li>
-              ))}
-            </ol>
-          </div>
-
-          {Object.entries(sections).map(([section, ss]) => (
-            <div key={section}>
-              <div className="seclabel">{section}</div>
-              <ul className="race-list">
-                {ss.map((s) => (
-                  <li
-                    key={s.id}
-                    className={
-                      (verdicts[s.id] ? "done " : "") +
-                      (s.id === activeSeat.id ? "active" : "")
-                    }
-                    onClick={() => selectAndOpen(s.id)}
-                  >
-                    <span className="ind"></span>
-                    <span>
-                      {blindMode && !revealed.has(s.id)
-                        ? s.blindLabel.replace(/^Your /, "")
-                        : s.candidate
-                          ? s.candidate.name.split(" ").pop() +
-                            " · " +
-                            s.office.replace(/^U\.S\.\s+/, "")
-                          : s.blindLabel.replace(/^Your /, "")}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </aside>
-
         {/* CENTER — active seat */}
         <section className="ws-chat rep-center">
           <header className="head rep-center-head">
@@ -465,11 +372,9 @@ export function DelegationWorkspace({
             address={address}
             issues={userIssues}
             precinct={pollingInfo?.precinct || ""}
-            polisPreview={polisPreview}
             onSelectSeat={selectAndOpen}
             onPrint={onPrint}
             onContinueElsewhere={onContinueElsewhere}
-            onSeeStanding={onSeeStanding}
             onEditIssues={onEditIssues}
           />
         </aside>
