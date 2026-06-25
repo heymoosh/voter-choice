@@ -467,6 +467,9 @@ export async function goToWorkspace(page: Page): Promise<void> {
     .fill("Insulin prices are insane and rent went up again.");
   await page.locator("button.send").click();
   await page.locator("button.lock").click({ timeout: 15000 });
+  // Guided orientation interstitial sits between locking issues and the first
+  // representative; click through it to reach the workspace.
+  await page.getByTestId("orientation-continue").click({ timeout: 15000 });
   // Workspace is ready once the scorecard rows appear. On mobile the center
   // pane (rep-card) starts hidden until a row is tapped; the scorecard rows
   // are always visible and are the safe signal for both viewports.
