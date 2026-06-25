@@ -105,6 +105,22 @@ export function ScorecardPane({
   seats.forEach((s) => {
     (sections[s.section] = sections[s.section] || []).push(s);
   });
+  // Lead with a percentage (B): same kept/total roll-up as the print sheet,
+  // shown as "% aligned" with the raw count as secondary. Null when there's
+  // no scored voting record so the row stays honest (handles total 0 → no NaN).
+  const alignFor = (s) => {
+    if (s.researched || !s.alignmentEntry?.scores) return null;
+    const kept = s.alignmentEntry.scores.reduce(
+      (n, sc) => n + (sc.kept ?? 0),
+      0,
+    );
+    const total = s.alignmentEntry.scores.reduce(
+      (n, sc) => n + (sc.total ?? 0),
+      0,
+    );
+    if (total === 0) return null;
+    return `${Math.round((kept / total) * 100)}% aligned (${kept}/${total} votes)`;
+  };
 
   return (
     <>
@@ -182,7 +198,7 @@ export function ScorecardPane({
                         <>
                           {s.candidate?.name ?? s.blindLabel} —{" "}
                           <span className={"verdict-chip " + v}>
-                            {v === "keep" ? "WORTH KEEPING" : "TIME TO REPLACE"}
+                            {v === "keep" ? "✓ KEEP" : "⇄ REPLACE"}
                           </span>
                         </>
                       ) : isActive ? (
@@ -191,8 +207,12 @@ export function ScorecardPane({
                         "Not yet reviewed"
                       )}
                     </div>
-                    {v && s.nextElection && (
-                      <div className="why">{s.nextElection.label}</div>
+                    {v && (alignFor(s) || s.nextElection) && (
+                      <div className="why">
+                        {[alignFor(s), s.nextElection?.label]
+                          .filter(Boolean)
+                          .join(" · ")}
+                      </div>
                     )}
                   </div>
                 </div>
