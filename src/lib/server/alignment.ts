@@ -830,6 +830,7 @@ export async function lookupAlignment(
     label: string | null;
     pressReleaseSources: unknown;
     modelVersion: string | null;
+    matchConfidence: string | null;
   };
   const rationalesByBillId = new Map<string, RationaleRow>();
 
@@ -842,13 +843,16 @@ export async function lookupAlignment(
           label: schema.voteRationales.label,
           pressReleaseSources: schema.voteRationales.pressReleaseSources,
           modelVersion: schema.voteRationales.modelVersion,
+          matchConfidence: schema.voteRationales.matchConfidence,
         })
         .from(schema.voteRationales)
         .where(
           and(
             eq(schema.voteRationales.candidateId, candidateId),
-            // Only fetch for the bills we're actually displaying
-            // (inArray import already available in this file)
+            // Display gate (owner-approved): only high-confidence matches surface
+            // publicly. Medium/low rows may be stored but must never reach the UI —
+            // this SQL filter is the safest enforcement point.
+            eq(schema.voteRationales.matchConfidence, "high"),
           ),
         );
       // Filter in JS since inArray would require an import we'd need to add
