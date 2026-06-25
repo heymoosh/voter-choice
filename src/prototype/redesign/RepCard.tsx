@@ -24,6 +24,7 @@ import {
   formatDollars,
 } from "../VoterChoiceApp";
 import { getChallengerResearch, researchChallenger } from "./delegationData";
+import { MedianChip, MoneyGapScale } from "./MoneyGap";
 
 export const PARTY_META2 = {
   Republican: { name: "Republican", code: "R", pipClass: "rep" },
@@ -712,6 +713,16 @@ export function RepCard({
                   <b>{formatDollars(cand.totalRaised)}</b> raised
                 </span>
               )}
+              {/* Collapsed glance — "Raised vs. the median". Renders the dollar
+                  amount only (no fabricated baseline) when peerComparison is
+                  null. */}
+              {typeof cand.totalRaised === "number" &&
+                cand.peerComparison != null && (
+                  <MedianChip
+                    raised={cand.totalRaised}
+                    peer={cand.peerComparison}
+                  />
+                )}
               {cand.fundingMix && (
                 <span className="cv2-disclose-mix">
                   {cand.fundingMix.small}% small donors ·{" "}
@@ -738,6 +749,21 @@ export function RepCard({
           className="cv2-disclose-body"
           hidden={!moneyOpen}
         >
+          {/* "Raised vs. the median" — the full scale REPLACES the flat
+              "≈3× the median House campaign" string. Renders nothing when
+              peerComparison is null, so the dollar-only FunderBars below stays
+              the honest fallback. */}
+          {cand.peerComparison != null &&
+            typeof cand.totalRaised === "number" && (
+              <MoneyGapScale
+                subject={{
+                  name: blind ? seat.blindLabel : cand.name,
+                  raised: cand.totalRaised,
+                  pip: party.pipClass,
+                }}
+                peer={cand.peerComparison}
+              />
+            )}
           <FunderBars
             donorCoalition={cand.donorCoalition}
             totalRaised={cand.totalRaised}
