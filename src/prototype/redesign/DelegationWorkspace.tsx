@@ -18,13 +18,19 @@
        of the congress-assessment flow. */
 
 import React, { useState, useEffect } from "react";
-import { AppNav, AppFooter, PollingStatusBar } from "../VoterChoiceApp";
+import {
+  AppNav,
+  AppFooter,
+  PollingStatusBar,
+  useI18n,
+} from "../VoterChoiceApp";
 import { RepCard } from "./RepCard";
 import { SeatChat } from "./SeatChat";
 import { IssueDeltaBanner } from "./IssueDeltaBanner";
 import { issuesForLevel } from "./delegationData";
 
-function tierIntro(section, { userIssues, stateName }) {
+function tierIntro(section, { userIssues, stateName, t }) {
+  const tr = t || ((k) => k);
   const fedIssues = issuesForLevel(userIssues || [], "federal")
     .filter((i) => i.level === "federal")
     .map((i) => i.interpretation);
@@ -36,7 +42,7 @@ function tierIntro(section, { userIssues, stateName }) {
   const TIERS = {
     "Washington — Federal": {
       place: "WASHINGTON",
-      title: "Your seat at the national table",
+      title: tr("scorecard.tierFedTitle"),
       what: () => (
         <>
           Three people who write <b>federal</b> law — and answer for it on
@@ -52,11 +58,10 @@ function tierIntro(section, { userIssues, stateName }) {
     },
     "State legislature — State": {
       place: (stateName || "STATE").toUpperCase(),
-      title: "Closer to home",
+      title: tr("scorecard.tierStatTitle"),
       what: () => (
         <>
-          Your state legislature decides what Washington doesn't — schools,
-          infrastructure, and state law.
+          {tr("scorecard.tierStatWhat")}
           {stateIssues.length > 0 && (
             <>
               {" "}
@@ -69,7 +74,7 @@ function tierIntro(section, { userIssues, stateName }) {
     },
     "Statewide — Executive": {
       place: "STATEWIDE",
-      title: "Offices that don't take roll-call votes",
+      title: tr("scorecard.tierExecTitle"),
       what: () => (
         <>
           A governor signs and vetoes — there's no voting record to score. So we
@@ -97,6 +102,7 @@ export function ScorecardPane({
   onSeeStanding,
   onEditIssues,
 }) {
+  const { t } = useI18n();
   const doneCount = Object.keys(verdicts).filter((id) =>
     seats.some((s) => s.id === id),
   ).length;
@@ -110,27 +116,27 @@ export function ScorecardPane({
     <>
       <div className="b-head">
         <div className="row">
-          <h3>Your scorecard</h3>
+          <h3>{t("scorecard.heading")}</h3>
           <span className="sub">
-            {doneCount}/{seats.length} · Draft
+            {doneCount}/{seats.length} · {t("scorecard.draft")}
           </span>
         </div>
         <address>
           {address || "—"}
-          {precinct ? ` · Precinct ${precinct}` : ""}
+          {precinct ? ` · ${t("scorecard.precinct")} ${precinct}` : ""}
         </address>
       </div>
 
       <div className="b-issues-edit">
         <div className="b-issues-head">
-          <span className="b-issues-lab">Your issues</span>
+          <span className="b-issues-lab">{t("scorecard.yourIssues")}</span>
           {onEditIssues && (
             <button
               className="b-issues-btn"
               onClick={onEditIssues}
               data-testid="edit-issues-scorecard"
             >
-              Edit
+              {t("scorecard.edit")}
             </button>
           )}
         </div>
@@ -182,13 +188,15 @@ export function ScorecardPane({
                         <>
                           {s.candidate?.name ?? s.blindLabel} —{" "}
                           <span className={"verdict-chip " + v}>
-                            {v === "keep" ? "WORTH KEEPING" : "TIME TO REPLACE"}
+                            {v === "keep"
+                              ? t("scorecard.worthKeeping")
+                              : t("scorecard.timeToReplace")}
                           </span>
                         </>
                       ) : isActive ? (
-                        "Reviewing now…"
+                        t("scorecard.reviewingNow")
                       ) : (
-                        "Not yet reviewed"
+                        t("scorecard.notYetReviewed")
                       )}
                     </div>
                     {v && s.nextElection && (
@@ -203,7 +211,7 @@ export function ScorecardPane({
       </div>
 
       <div className="standing-cta">
-        <div className="kick">You're not alone</div>
+        <div className="kick">{t("scorecard.standingKick")}</div>
         <div className="dots">
           <i style={{ background: "var(--civic)", opacity: 0.35 }}></i>
           <i style={{ background: "var(--civic)", opacity: 0.55 }}></i>
@@ -211,24 +219,24 @@ export function ScorecardPane({
           <i style={{ background: "var(--civic)", opacity: 0.55 }}></i>
           <i style={{ background: "var(--gold)" }}></i>
         </div>
-        <h4>See where you stand</h4>
+        <h4>{t("scorecard.standingHeading")}</h4>
         <p>
           {polisPreview
-            ? `Your priorities, mapped against ${polisPreview.sampleSize.toLocaleString("en-US")} people in ${polisPreview.label} — placed by what they care about, not party. You overlap more than the noise suggests.`
-            : "Your priorities, mapped against everyone who's finished this — placed by what they care about, not party. You overlap more than the noise suggests."}
+            ? t("scorecard.standingBodyPolis")
+                .replace("{n}", polisPreview.sampleSize.toLocaleString("en-US"))
+                .replace("{label}", polisPreview.label)
+            : t("scorecard.standingBodyGeneric")}
         </p>
-        <button onClick={onSeeStanding}>
-          See where you stand <span aria-hidden="true">→</span>
-        </button>
+        <button onClick={onSeeStanding}>{t("scorecard.standingBtn")}</button>
       </div>
 
       <div className="b-foot">
         <button className="primary" disabled={!canPrint} onClick={onPrint}>
-          <span>Print my scorecard (PDF)</span>
+          <span>{t("scorecard.printBtn")}</span>
           <span className="arrow">→</span>
         </button>
         <button onClick={onContinueElsewhere}>
-          <span>Continue in another chatbot</span>
+          <span>{t("scorecard.handoffBtn")}</span>
           <span className="arrow">↗</span>
         </button>
       </div>
@@ -269,13 +277,14 @@ export function DelegationWorkspace({
   onRevisitSeat,
   onDismissDeltas,
 }) {
+  const { t } = useI18n();
   const activeSeat = seats.find((s) => s.id === activeSeatId) || seats[0];
   const activeIdx = seats.findIndex((s) => s.id === activeSeat.id);
   const doneCount = Object.keys(verdicts).filter((id) =>
     seats.some((s) => s.id === id),
   ).length;
   const progressPct = Math.round((doneCount / seats.length) * 100);
-  const intro = tierIntro(activeSeat.section, { userIssues, stateName });
+  const intro = tierIntro(activeSeat.section, { userIssues, stateName, t });
 
   /* Mobile: same contract as the shipped WorkspaceView — the center pane
      is hidden <768px until a row is tapped, then opens as a fixed overlay
@@ -324,12 +333,15 @@ export function DelegationWorkspace({
         <aside className="ws-rail">
           <div className="progress">
             <div className="top">
-              <span>Progress</span>
+              <span>{t("scorecard.progress")}</span>
               <span>
                 {doneCount} / {seats.length}
               </span>
             </div>
-            <div className="big">{progressPct}% reviewed</div>
+            <div className="big">
+              {progressPct}
+              {t("scorecard.reviewed")}
+            </div>
             <div className="bar">
               <div className="fill" style={{ width: progressPct + "%" }}></div>
             </div>
@@ -337,14 +349,14 @@ export function DelegationWorkspace({
 
           <div className="priorities">
             <div className="top">
-              <span className="lab">Your issues</span>
+              <span className="lab">{t("scorecard.yourIssues")}</span>
               {onEditIssues && (
                 <button
                   className="linklike"
                   onClick={onEditIssues}
                   data-testid="edit-issues-rail"
                 >
-                  Edit
+                  {t("scorecard.edit")}
                 </button>
               )}
             </div>
@@ -391,7 +403,7 @@ export function DelegationWorkspace({
             <button
               className="ws-mobile-back ws-mobile-back-hide-desktop"
               onClick={() => setMobileChatOpen(false)}
-              aria-label="Back to scorecard"
+              aria-label={t("scorecard.backToScorecard")}
             >
               ←
             </button>
@@ -432,9 +444,9 @@ export function DelegationWorkspace({
 
           {doneCount === seats.length && (
             <div className="all-done">
-              <b>That's your whole delegation.</b> One more thing worth seeing —
+              <b>{t("scorecard.allDone")}</b> One more thing worth seeing —
               <button className="linklike" onClick={onSeeStanding}>
-                where you stand among your neighbors →
+                {t("scorecard.allDoneSeeStanding")}
               </button>
             </div>
           )}
