@@ -467,8 +467,9 @@ function AppNav({ onBrandClick }) {
         <span>Voter Choice</span>
       </div>
       <div className="links">
-        <a onClick={() => navigate('howitworks')} role="link" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') navigate('howitworks'); }}>{t('nav.howItWorks')}</a>
-        <a onClick={() => navigate('methodology')} role="link" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') navigate('methodology'); }}>{t('nav.methodology')}</a>
+        {/* "How it works" points at the methodology explainer — the brand/logo
+            above is the home affordance, so a separate home link would be redundant. */}
+        <a onClick={() => navigate('methodology')} role="link" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') navigate('methodology'); }}>{t('nav.howItWorks')}</a>
         <a onClick={() => navigate('about')} role="link" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') navigate('about'); }}>{t('nav.about')}</a>
       </div>
       <div className="nav-right">
@@ -500,13 +501,12 @@ function AppFooter({ compact }: { compact?: boolean }) {
   return (
     <footer className={"hp-foot" + (compact ? " hp-foot-slim" : "")}>
       <div className="l">Voter Choice</div>
+      {/* Footer is trimmed to links that don't duplicate the top-bar nav:
+          About, Contact, and Privacy Policy. */}
       <ul>
-        <li><a onClick={() => navigate('methodology')} role="link" tabIndex={0}>Methodology</a></li>
         <li><a onClick={() => navigate('about')} role="link" tabIndex={0}>About</a></li>
-        <li><a onClick={() => navigate('privacy')} role="link" tabIndex={0}>Privacy</a></li>
-        <li><a href="/terms">Terms</a></li>
-        <li><a onClick={() => navigate('tip')} role="link" tabIndex={0}>Tip jar</a></li>
-        <li><a href="mailto:muxin.li.pro@gmail.com">Support</a></li>
+        <li><a href="mailto:muxin.li.pro@gmail.com">Contact</a></li>
+        <li><a onClick={() => navigate('privacy')} role="link" tabIndex={0}>Privacy Policy</a></li>
       </ul>
       <div>© 2026 · Grey Bird LLC</div>
     </footer>
@@ -4061,7 +4061,7 @@ function AboutPage({ onBack }) {
 
 function MethodologyPage({ onBack }) {
   return (
-    <StaticPage onBack={onBack} eyebrow="Methodology" title="How we score candidates.">
+    <StaticPage onBack={onBack} eyebrow="How it works" title="How we score candidates.">
       <h2>Step 1 · Issues come from you</h2>
       <p>Every score in this app traces back to <b>your own words</b>. When you type your concerns in the cold open, we extract canonical issues + a directional stance ("favors lower drug prices"). You confirm, rename, or remove before any scoring happens. We don't pre-bake an issue list and check boxes against it.</p>
 
