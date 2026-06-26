@@ -17,6 +17,7 @@ import React, { useRef, useState } from "react";
 import { ByokCard } from "./ByokCard";
 import { HandoffActions } from "./HandoffActions";
 import { hasByokKey } from "../../lib/anthropic-client-byok";
+import { useNav } from "../VoterChoiceApp";
 
 export function BudgetModal({
   /** true → a turn was actually refused; false → opened from the soft ribbon. */
@@ -30,6 +31,7 @@ export function BudgetModal({
   const [copied, setCopied] = useState(false);
   const textareaRef = useRef(null);
   const [keyReady, setKeyReady] = useState(hasByokKey());
+  const nav = useNav();
 
   function copyToClipboard() {
     if (!textareaRef.current) return;
@@ -56,7 +58,11 @@ export function BudgetModal({
         <header className="be-head">
           <div>
             <div className="be-eyebrow">Community AI budget</div>
-            <h3 id="budget-title">Keep going — your scorecard is safe.</h3>
+            <h3 id="budget-title">
+              {blocked
+                ? "The shared budget is used up — here's how to keep going."
+                : "Keep going — your scorecard is safe."}
+            </h3>
           </div>
           <button className="be-x" onClick={onClose} aria-label="Close">
             ×
@@ -65,7 +71,7 @@ export function BudgetModal({
 
         <p className="be-lede">
           {blocked
-            ? "The community AI budget for this month is used up. Everything you've reviewed stays on this device — nothing is lost. Two ways to keep going:"
+            ? "The shared community AI budget is used up for this month — this site runs on a fixed monthly pool that everyone shares, and it’s hit its limit. Everything you’ve reviewed is still safe on this device. The budget resets on the 1st of next month. To keep going right now, paste your own Anthropic API key below — free to create, you only pay for what you use."
             : "The community AI budget is running low. Your scorecard is safe either way — here are your options if it runs out:"}
         </p>
 
@@ -103,6 +109,25 @@ export function BudgetModal({
         </div>
 
         <HandoffActions prompt={prompt} />
+
+        {blocked && (
+          <p className="be-tipjar be-tipjar-modal">
+            Voter Choice is free and community-funded. If this helped you,
+            consider{" "}
+            <a
+              onClick={() => {
+                nav?.navigate?.("tip");
+                onClose?.();
+              }}
+              role="link"
+              tabIndex={0}
+              style={{ cursor: "pointer" }}
+            >
+              leaving a tip
+            </a>{" "}
+            — it helps keep the shared budget running for others. No pressure.
+          </p>
+        )}
 
         <footer className="be-foot">
           Your address never leaves this device. The portable prompt contains
