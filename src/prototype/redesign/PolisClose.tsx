@@ -90,7 +90,9 @@ export function PolisClose({ polis }) {
 
       {/* Solo layout: no bridges → cloud takes left 62%, stat panel takes right 38%.
           With bridges: original 1.35fr / 1fr split, stat stays inside scatter-wrap. */}
-      <div className={`polis-grid${scope.bridges.length === 0 ? " polis-grid--solo" : ""}`}>
+      <div
+        className={`polis-grid${scope.bridges.length === 0 ? " polis-grid--solo" : ""}`}
+      >
         <div className="scatter-wrap">
           <svg
             className="scatter"
@@ -191,8 +193,8 @@ export function PolisClose({ polis }) {
               )}
               {extraShares.length > 0 && (
                 <ul className="you-shares">
-                  {extraShares.map((s) => (
-                    <li key={s.canonicalIssue}>
+                  {extraShares.map((s, i) => (
+                    <li key={`${i}-${s.canonicalIssue}`}>
                       {s.issueLabel}
                       <span className="pct">{s.percent}%</span>
                     </li>
@@ -230,7 +232,7 @@ export function PolisClose({ polis }) {
               </div>
             ))}
           </div>
-        ) : (headlineStat || mostCommon) ? (
+        ) : headlineStat || mostCommon ? (
           <div className="overlap-stat">
             {headlineStat ? (
               <div className="overlap-head">
@@ -244,14 +246,14 @@ export function PolisClose({ polis }) {
             ) : (
               <p className="overlap-alt">
                 The priority people share most {scope.scopePhrase} is{" "}
-                <strong>{mostCommon.issueLabel}</strong> —{" "}
-                {mostCommon.percent}% of {fmtN(scope.sampleSize)} finishers.
+                <strong>{mostCommon.issueLabel}</strong> — {mostCommon.percent}%
+                of {fmtN(scope.sampleSize)} finishers.
               </p>
             )}
             {extraShares.length > 0 && (
               <ul className="you-shares">
-                {extraShares.map((s) => (
-                  <li key={s.canonicalIssue}>
+                {extraShares.map((s, i) => (
+                  <li key={`${i}-${s.canonicalIssue}`}>
                     {s.issueLabel}
                     <span className="pct">{s.percent}%</span>
                   </li>

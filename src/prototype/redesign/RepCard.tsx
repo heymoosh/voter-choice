@@ -175,9 +175,9 @@ export function ResearchedPositions({ positions, userIssues }) {
           </span>
         </div>
       </div>
-      {rows.map(({ issue, pos }) => (
+      {rows.map(({ issue, pos }, i) => (
         <ResearchedPositionRow
-          key={issue.canonicalIssue}
+          key={`${i}-${issue.canonicalIssue || issue.interpretation}`}
           issue={issue}
           pos={pos}
         />

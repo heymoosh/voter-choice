@@ -350,7 +350,9 @@ export function DelegationWorkspace({
             </div>
             <ol>
               {userIssues.map((iss, i) => (
-                <li key={iss.canonicalIssue || i}>{iss.interpretation}</li>
+                <li key={`${i}-${iss.canonicalIssue || iss.interpretation}`}>
+                  {iss.interpretation}
+                </li>
               ))}
             </ol>
           </div>

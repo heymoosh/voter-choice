@@ -1027,9 +1027,9 @@ function AlignmentScoreBanner({ candidate, alignmentEntry, userIssues, expandedI
               Based on public statements — not a voting record
             </div>
           </div>
-          {rowsData.map(({ issue, score }) => (
+          {rowsData.map(({ issue, score }, i) => (
             <AlignmentIssueRow
-              key={issue.canonicalIssue}
+              key={`${i}-${issue.canonicalIssue || issue.interpretation || issue.sourceText}`}
               issue={issue}
               score={score}
               candidate={candidate}
@@ -1094,7 +1094,7 @@ function AlignmentScoreBanner({ candidate, alignmentEntry, userIssues, expandedI
 
       {rowsData.map(({ issue, score }, i) => (
         <AlignmentIssueRow
-          key={issue.canonicalIssue || issue.sourceText || i}
+          key={`${i}-${issue.canonicalIssue || issue.interpretation || issue.sourceText}`}
           issue={issue}
           score={score}
           candidate={candidate}
