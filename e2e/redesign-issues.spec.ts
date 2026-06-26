@@ -110,6 +110,59 @@ test.describe("conversational issue intake", () => {
 });
 
 test.describe("edit issues from the workspace", () => {
+  test("scorecard Edit button is reachable on mobile and tablet (no rail)", async ({
+    page,
+  }, testInfo) => {
+    // The desktop left rail (ws-rail) is hidden at ≤1023px, so the only
+    // edit-issues affordance at tablet/mobile is the Edit button inside
+    // ws-ballot (.b-issues-edit, shown by CSS at ≤1023px).
+    test.skip(
+      testInfo.project.name !== "chromium-mobile",
+      "this test targets the mobile/tablet edit path; desktop uses the rail",
+    );
+    await installDataMocks(page);
+    await goToWorkspace(page);
+
+    // ws-ballot is the primary surface on mobile; b-issues-edit sits right
+    // below the scorecard header so it's immediately visible without scrolling.
+    const editBtn = page.getByTestId("edit-issues-scorecard");
+    await expect(editBtn).toBeVisible();
+    await editBtn.click();
+
+    // Modal should open and show the two seeded issues.
+    const modal = page.getByTestId("edit-issues-modal");
+    await expect(modal).toBeVisible();
+    await expect(modal.locator(".theme-row")).toHaveCount(2);
+
+    // Dismiss to confirm close works cleanly.
+    await modal.getByRole("button", { name: "Cancel" }).click();
+    await expect(modal).not.toBeVisible();
+  });
+
+  // Re-check at a tablet viewport (768–1023px: rail hidden, ballot + chat visible).
+  // Playwright has no built-in tablet project, so we set the viewport inline.
+  test("scorecard Edit button is reachable at tablet viewport (768px)", async ({
+    page,
+  }, testInfo) => {
+    test.skip(
+      testInfo.project.name !== "chromium-desktop",
+      "tablet viewport test runs on the desktop project (viewport overridden inline)",
+    );
+    await page.setViewportSize({ width: 900, height: 768 });
+    await installDataMocks(page);
+    await goToWorkspace(page);
+
+    // At 768-1023px prototype.css hides ws-rail. The ballot stays visible
+    // (340px right column) and b-issues-edit shows via @media (max-width:1023px).
+    const editBtn = page.getByTestId("edit-issues-scorecard");
+    await expect(editBtn).toBeVisible();
+    await editBtn.click();
+
+    const modal = page.getByTestId("edit-issues-modal");
+    await expect(modal).toBeVisible();
+    await expect(modal.locator(".theme-row")).toHaveCount(2);
+  });
+
   test("conversational edit → Apply & re-score keeps verdicts and shows the delta banner", async ({
     page,
   }, testInfo) => {
@@ -126,7 +179,7 @@ test.describe("edit issues from the workspace", () => {
     await expect(page.locator(".ws-ballot")).toContainText("1/3");
 
     // EDIT lives in the left rail on desktop (the scorecard's .b-issues-edit
-    // container is the design's mobile-only edit surface).
+    // container is the mobile/tablet edit surface, tested separately above).
     await page.getByTestId("edit-issues-rail").click();
     const modal = page.getByTestId("edit-issues-modal");
     await expect(modal).toContainText("verdicts you've already made are kept");
