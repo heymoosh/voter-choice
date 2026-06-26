@@ -2,6 +2,7 @@ import {
   THEME_FIELDS_PROMPT_BLOCK,
   CANONICAL_ISSUES_PROMPT_BLOCK,
 } from "./theme-extraction";
+import { renderDisambiguationQuestions } from "../alignment/poleVocabulary";
 
 export interface ThemeRefinementInput {
   /** The voter's CURRENT working themes (Theme[] shape), serialized. The
@@ -67,6 +68,30 @@ export function buildThemeRefinementPrompt(
   · The moment you have spent ${DISAMBIGUATION_CAP} questions, STOP asking and
     lock the concept in using EVERY answer the voter has given so far.`;
 
+  // Pole-disambiguation block (Alignment 2b): for CONTESTED issues whose theme
+  // has no "stance" yet, the model should ask the matching question from the
+  // pole vocabulary instead of silently no-scoring. The block is only injected
+  // when the question budget is still open (atCap → lock in, don't ask more).
+  const poleDisambiguationBlock = atCap
+    ? ""
+    : `
+POLE DISAMBIGUATION (contested issues with no stance yet):
+  · Scan the voter's CURRENT THEMES (JSON below). Any theme where
+    "canonicalIssue" is a contested issue AND "stance" is absent means the
+    voter's words didn't pick a side.
+  · For ONE such theme per turn, ask the matching question from the block below.
+    Phrase it exactly as written, and end it open-ended: "…or is it something
+    else?" so the voter isn't boxed into our two buckets.
+  · If the voter's answer picks a side (the option labels or clear paraphrase
+    of one pole): set "stance" in the updated theme JSON for that issue.
+  · If the voter's answer does NOT pick a side (different framing, off-pallet
+    concern, or "something else"): KEEP the theme without "stance" — an honest
+    no-score for that issue. NEVER fabricate a stance. NEVER drop the theme.
+  · Only ONE pole-disambiguation question per turn (same as novel-concept cap).
+    Count it against your ${remaining} remaining question budget above.
+
+${renderDisambiguationQuestions()}`;
+
   return `You are refining a voter's priority themes in conversation.
 
 The voter already has a working list of themes (below). They're now giving
@@ -93,7 +118,7 @@ ${THEME_FIELDS_PROMPT_BLOCK}
 ${CANONICAL_ISSUES_PROMPT_BLOCK}
 
 ${disambiguationBlock}
-
+${poleDisambiguationBlock}
 Rules:
   · NEVER advocate, judge candidates, or suggest who to vote for.
   · Don't pad the list — one thing, one theme. Merge duplicates.
