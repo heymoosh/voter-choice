@@ -64,6 +64,42 @@ import {
      anonymizeText        → src/lib/anonymizeText.ts (if not already present)
    ==================================================== */
 
+/* ---------- ticket / presidential name helpers ----------
+   Presidential candidates appear as ticket pairs in civic data:
+   "Donald Trump / JD Vance" — one candidate entry covering both
+   President AND Vice President. The slash-separated format breaks
+   `.split(' ').pop()` (which would yield "Vance" instead of "Trump")
+   and makes the full string too long for the standard cv2-name grid.
+
+   These helpers parse the primary (presidential) and VP portions so
+   the card header and Pick button render correctly for all candidate types. */
+
+/** Returns the presidential-candidate portion of a potentially ticket-formatted
+ *  name, or the whole name when no ticket separator is present.
+ *  "Donald Trump / JD Vance" → "Donald Trump"
+ *  "Kamala Harris" → "Kamala Harris" */
+function ticketPrimaryName(name) {
+  if (!name) return '';
+  const slashIdx = name.indexOf(' / ');
+  return slashIdx >= 0 ? name.slice(0, slashIdx).trim() : name;
+}
+
+/** Returns the VP portion of a ticket-formatted name, or null for non-tickets.
+ *  "Donald Trump / JD Vance" → "JD Vance"
+ *  "Kamala Harris" → null */
+function ticketVpName(name) {
+  if (!name) return null;
+  const slashIdx = name.indexOf(' / ');
+  return slashIdx >= 0 ? name.slice(slashIdx + 3).trim() : null;
+}
+
+/** Last name of the PRIMARY candidate from a potentially ticket-formatted name.
+ *  Replaces the raw `.split(' ').pop()` pattern so "Donald Trump / JD Vance"
+ *  yields "Trump" rather than "Vance". */
+function candidateDisplayLast(name) {
+  return (ticketPrimaryName(name) || '').split(' ').pop() || '';
+}
+
 /* ---------- money formatting ----------
    $1.2M / $340k / $512. Used by FunderBars, the Money-trail teaser,
    CompareModal, the print sheet — anywhere a dollar amount renders. */
@@ -96,7 +132,7 @@ function getCandidateIdentity(candidate, opts) {
       : !!(revealed.has && revealed.has(candidate.id));
   }
   const isBlind = !!blindMode && !isRevealed;
-  const lastName = (candidate.name || '').split(' ').pop();
+  const lastName = candidateDisplayLast(candidate.name || '');
   return {
     isBlind,
     alias,
@@ -832,7 +868,9 @@ function CandidateCard({ candidate, alignmentEntry, userIssues, party, picked, o
 
   // Anonymization context — passed all the way down so narrative
   // text doesn't leak the candidate's last name in blind mode.
-  const anonCtx = { blindMode, realLastName: candidate.name?.split(' ').pop(), alias };
+  // candidateDisplayLast handles ticket names like "Trump / JD Vance"
+  // so we redact "Trump", not "Vance".
+  const anonCtx = { blindMode, realLastName: candidateDisplayLast(candidate.name || ''), alias };
 
   // Web-research fallback for the alignment block. Read REGARDLESS of blind mode
   // so a no-record candidate's name-free position analysis shows while blinded,
@@ -950,7 +988,7 @@ function CandidateCard({ candidate, alignmentEntry, userIssues, party, picked, o
         ) : (
           <button className="pick" onClick={onPick} data-testid="pick-candidate">
             <span className="ck">☐</span>
-            <span>Pick {blindMode ? alias : candidate.name.split(' ').pop()}</span>
+            <span>Pick {blindMode ? alias : candidateDisplayLast(candidate.name)}</span>
           </button>
         )}
       </div>
@@ -1037,6 +1075,11 @@ function CandidateCardHeader({ candidate, party, blindMode, isRevealed, alias, o
   const years = yearsMatch ? new Date().getFullYear() - parseInt(yearsMatch[1], 10) : 0;
   const isFirstTime = /first-time/i.test(candidate.priorRole || '') || (!yearsMatch && !candidate.incumbent);
 
+  // Presidential ticket support: "Donald Trump / JD Vance" →
+  // primary name shown large, VP name shown as a sub-line.
+  const primaryName = ticketPrimaryName(candidate.name || '');
+  const vpName = ticketVpName(candidate.name || '');
+
   // In blind mode, hide name + party + role + tenure. Show only an alias
   // and a "Reveal who this is" button. Everything below stays visible.
   if (blindMode) {
@@ -1064,7 +1107,11 @@ function CandidateCardHeader({ candidate, party, blindMode, isRevealed, alias, o
     <div className="cv2-head">
       <div className="cv2-photo" />
       <div className="cv2-id">
-        <div className="cv2-name">{candidate.name}</div>
+        <div className="cv2-name">{primaryName}</div>
+        {/* VP running-mate line — only present for ticket-pair names */}
+        {vpName && (
+          <div className="cv2-vp-name">w/ {vpName}</div>
+        )}
         <div className="cv2-sub">
           {party && <span className={"cv2-pip " + party.pipClass} />}
           {party && <span>{party.name}</span>}
@@ -1471,7 +1518,7 @@ function AlignmentDrilldown({ score, candidate, anonCtx }) {
   // Anonymize the candidate label used in "Issue PACs funding X on this"
   const candidateLabel = anonCtx?.blindMode
     ? (anonCtx.alias || 'this candidate')
-    : candidate.name.split(' ').pop();
+    : candidateDisplayLast(candidate.name);
 
   return (
     <div className="cv2-drill">
@@ -3520,7 +3567,7 @@ function CompareModal({ open, race, issues, blindMode, revealedCandidates, onRev
                                   </span>
                                 </div>
                                 <div className="cmp-vote-ttl">{cmpTtl}</div>
-                                {v.narrative && <p className="cmp-vote-narr">{(window.anonymizeText ? window.anonymizeText(v.narrative, { blindMode: lab.isBlind, realLastName: c.name?.split(' ').pop(), alias: lab.primary }) : v.narrative)}</p>}
+                                {v.narrative && <p className="cmp-vote-narr">{(window.anonymizeText ? window.anonymizeText(v.narrative, { blindMode: lab.isBlind, realLastName: candidateDisplayLast(c.name || ''), alias: lab.primary }) : v.narrative)}</p>}
                                 <div className="cmp-vote-cite">
                                   {v.source?.url ? (
                                     <a href={v.source.url} target="_blank" rel="noopener noreferrer">
@@ -3603,7 +3650,7 @@ function AllVotesPanel({ open, candidate, alignmentEntry, blindMode, alias, onCl
   const [filter, setFilter] = useStateS('all');
   if (!open || !candidate) return null;
 
-  const anonCtx = { blindMode, realLastName: candidate?.name?.split(' ').pop(), alias };
+  const anonCtx = { blindMode, realLastName: candidateDisplayLast(candidate?.name || ''), alias };
 
   const allVotes = [];
   (alignmentEntry?.scores || []).forEach(score => {
@@ -5227,7 +5274,7 @@ function WorkspaceView({ address, issues, decisions, activeRaceId, onDecide, onU
                   id: c.id,
                   total: c.totalRaised || 0,
                   fundingMix: c.fundingMix || null,
-                  aliasOrName: peerBlind ? `Candidate ${String.fromCharCode(65 + i)}` : c.name.split(' ').pop(),
+                  aliasOrName: peerBlind ? `Candidate ${String.fromCharCode(65 + i)}` : candidateDisplayLast(c.name),
                 };
               });
 
@@ -5257,7 +5304,7 @@ function WorkspaceView({ address, issues, decisions, activeRaceId, onDecide, onU
                         // never a fabricated "strongest record on X".
                         const hasRecord = !!(alignmentEntry && alignmentEntry.scores && alignmentEntry.scores.length > 0);
                         const topIssue = issues[0]?.interpretation || 'my priorities';
-                        const label = isBlind ? `Candidate ${alias}` : cand.name.split(' ').pop();
+                        const label = isBlind ? `Candidate ${alias}` : candidateDisplayLast(cand.name);
                         const why = hasRecord
                           ? `${label} — strongest record on ${topIssue}.`
                           : `${label} — my pick; no voting record on file to score.`;
@@ -5448,7 +5495,7 @@ function WorkspaceView({ address, issues, decisions, activeRaceId, onDecide, onU
                 if (!firstC) return 'the incumbent';
                 const isFirstBlind = blindMode && !revealedCandidates?.has(firstC.id);
                 if (isFirstBlind) return 'Candidate A';
-                return firstC.name?.split(' ').pop() || 'the incumbent';
+                return candidateDisplayLast(firstC.name || '') || 'the incumbent';
               })()}'s key votes</button>
               <button className="chip">Compare donor bases</button>
               <button className="chip" onClick={skipRace}>Skip — I've decided</button>

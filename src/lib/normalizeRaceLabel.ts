@@ -58,6 +58,14 @@ export function normalizeRaceLabel(office: string, district?: string): string {
   }
 
   // ── Executive ────────────────────────────────────────────────────────
+  // Combined presidential ticket race (FL + most general-election ballots).
+  // Must be checked BEFORE the bare "President" rule so the longer phrase wins.
+  if (
+    /^president(\s+of\s+the\s+united\s+states)?\s+(and|&)\s+vice\s+president(\s+of\s+the\s+united\s+states)?$/i.test(
+      raw,
+    )
+  )
+    return "President & Vice President";
   if (/^president(\s+of\s+the\s+united\s+states)?$/i.test(raw))
     return "President";
   if (/^vice\s+president$/i.test(raw)) return "Vice President";
