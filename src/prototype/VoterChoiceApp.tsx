@@ -2499,8 +2499,14 @@ function PollingStatusBar({ pollingInfo, stateData, rows }) {
           <div className="pbp-grid">
             <div className="pbp-cell">
               <div className="pbp-k">Address</div>
-              <div className="pbp-v">{pollingInfo.address}</div>
-              {pollingInfo.notes && <div className="pbp-sub">{pollingInfo.notes}</div>}
+              {pollingInfo.address ? (
+                <>
+                  <div className="pbp-v">{pollingInfo.address}</div>
+                  {pollingInfo.notes && <div className="pbp-sub">{pollingInfo.notes}</div>}
+                </>
+              ) : (
+                <div className="pbp-v pbp-not-published">{t('polling.addressNotPublished')(days)}</div>
+              )}
             </div>
             <div className="pbp-cell">
               <div className="pbp-k">{t('polling.hours')}</div>
