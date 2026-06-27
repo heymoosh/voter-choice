@@ -31,6 +31,9 @@ import {
   inferSkipReason,
   recordSkipReason,
   computeCoverageStats,
+  parseIdsFlag,
+  assertForceRetagSelector,
+  fetchBillsByIds,
   type BillRow,
   type TaggerCounts,
 } from "./tag-bills";
@@ -594,9 +597,7 @@ describe("tagBills", () => {
 
     // fetchUntaggedBills now uses db.execute with a raw SQL NOT EXISTS query.
     // Verify execute was called exactly once (confirming limit flows to the query).
-    expect(
-      (db.execute as ReturnType<typeof vi.fn>).mock.calls,
-    ).toHaveLength(1);
+    expect((db.execute as ReturnType<typeof vi.fn>).mock.calls).toHaveLength(1);
   });
 
   it("processes multiple bills: remaining bills still processed after one API error", async () => {
@@ -682,26 +683,30 @@ describe("TAGGER_VERSION", () => {
 describe("inferSkipReason", () => {
   it("classifies post-office naming bills as 'naming'", () => {
     expect(
-      inferSkipReason("To designate the post office on Main St as the John Smith Post Office"),
+      inferSkipReason(
+        "To designate the post office on Main St as the John Smith Post Office",
+      ),
     ).toBe("naming");
   });
 
   it("classifies courthouse renaming bills as 'naming'", () => {
-    expect(inferSkipReason("Renaming the United States Courthouse in Austin, Texas")).toBe(
-      "naming",
-    );
+    expect(
+      inferSkipReason("Renaming the United States Courthouse in Austin, Texas"),
+    ).toBe("naming");
   });
 
   it("classifies congratulatory resolutions as 'ceremonial'", () => {
     expect(
-      inferSkipReason("Congratulating the University of Michigan on winning the national championship"),
+      inferSkipReason(
+        "Congratulating the University of Michigan on winning the national championship",
+      ),
     ).toBe("ceremonial");
   });
 
   it("classifies honoring resolutions as 'ceremonial'", () => {
-    expect(inferSkipReason("Honoring the service of veterans in World War II")).toBe(
-      "ceremonial",
-    );
+    expect(
+      inferSkipReason("Honoring the service of veterans in World War II"),
+    ).toBe("ceremonial");
   });
 
   it("classifies motion to table as 'procedural'", () => {
@@ -782,5 +787,141 @@ describe("computeCoverageStats", () => {
     expect(stats.taggedBills).toBe(0);
     expect(stats.skippedNonIssueBills).toBe(0);
     expect(stats.queuedForTaggingBills).toBe(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Force-retag flag (targeted re-tag without a TAGGER_VERSION bump)
+// ---------------------------------------------------------------------------
+
+describe("parseIdsFlag", () => {
+  it("returns [] when --ids absent", () => {
+    expect(parseIdsFlag(["node", "tag-bills.ts"])).toEqual([]);
+  });
+
+  it("parses an inline comma-separated id list", () => {
+    expect(parseIdsFlag(["node", "tag-bills.ts", "--ids", "a,b,c"])).toEqual([
+      "a",
+      "b",
+      "c",
+    ]);
+  });
+
+  it("trims blanks and whitespace separators", () => {
+    expect(
+      parseIdsFlag(["node", "tag-bills.ts", "--ids", " a , ,b  c "]),
+    ).toEqual(["a", "b", "c"]);
+  });
+});
+
+describe("assertForceRetagSelector", () => {
+  it("refuses an empty id set (no force-retag-everything path)", () => {
+    expect(() => assertForceRetagSelector([])).toThrow(
+      /explicit non-empty --ids/u,
+    );
+  });
+
+  it("accepts an explicit non-empty id list", () => {
+    expect(() => assertForceRetagSelector(["bill-1"])).not.toThrow();
+  });
+});
+
+describe("resolveTagBillsConfig — force-retag", () => {
+  it("defaults forceRetag=false with no targetBillIds", () => {
+    const config = resolveTagBillsConfig(
+      { ANTHROPIC_VOTER_API: "key" } as NodeJS.ProcessEnv,
+      [],
+    );
+    expect(config.forceRetag).toBe(false);
+    expect(config.targetBillIds).toEqual([]);
+  });
+
+  it("reads --force and --ids", () => {
+    const config = resolveTagBillsConfig(
+      { ANTHROPIC_VOTER_API: "key" } as NodeJS.ProcessEnv,
+      ["node", "tag-bills.ts", "--force", "--ids", "x,y"],
+    );
+    expect(config.forceRetag).toBe(true);
+    expect(config.targetBillIds).toEqual(["x", "y"]);
+  });
+});
+
+describe("fetchBillsByIds", () => {
+  it("returns [] for an empty id list without hitting the DB", async () => {
+    const db = makeDbClient();
+    const rows = await fetchBillsByIds(db, []);
+    expect(rows).toEqual([]);
+    expect(db.execute).not.toHaveBeenCalled();
+  });
+
+  it("queries by id, bypassing the tagger-version skip", async () => {
+    const billRows: BillRow[] = [
+      {
+        id: "openstates-tx-1",
+        title: "Texas abortion restrictions",
+        summary: null,
+        jurisdiction: "ocd-jurisdiction/country:us/state:tx/government",
+      },
+    ];
+    const db = makeDbClient({ executeRows: billRows });
+    const rows = await fetchBillsByIds(db, ["openstates-tx-1"]);
+    expect(rows).toEqual(billRows);
+    expect(db.execute).toHaveBeenCalledOnce();
+  });
+});
+
+describe("tagBills — force-retag path", () => {
+  it("refuses --force with no --ids (never re-tags the corpus)", async () => {
+    const db = makeDbClient();
+    const client = makeAnthropicClient(() => makeAnthropicResponse("[]"));
+    await expect(
+      tagBills({
+        db,
+        client,
+        env: { ANTHROPIC_VOTER_API: "test-key" } as NodeJS.ProcessEnv,
+        argv: ["node", "tag-bills.ts", "--force"],
+      }),
+    ).rejects.toThrow(/explicit non-empty --ids/u);
+    // No bills queried — the guard fired before any DB read.
+    expect(
+      (client.messages.create as ReturnType<typeof vi.fn>).mock.calls,
+    ).toHaveLength(0);
+  });
+
+  it("re-tags an explicit id set even though it is already tagged", async () => {
+    // executeRows is what fetchBillsByIds returns — i.e. the already-tagged bill
+    // is still returned (the NOT-EXISTS skip is bypassed for the explicit ids).
+    const targetBill: BillRow = {
+      id: "openstates-tx-1",
+      title: "Texas abortion restrictions",
+      summary: "Bans abortion after six weeks.",
+      jurisdiction: "ocd-jurisdiction/country:us/state:tx/government",
+    };
+    const responseJson = JSON.stringify([
+      {
+        canonical_issue: "reproductive_rights",
+        stance_lens: "opposed",
+        confidence: 0.95,
+      },
+    ]);
+    const client = makeAnthropicClient(() =>
+      makeAnthropicResponse(responseJson),
+    );
+    const db = makeDbClient({ executeRows: [targetBill] });
+
+    const counts = await tagBills({
+      db,
+      client,
+      env: { ANTHROPIC_VOTER_API: "test-key" } as NodeJS.ProcessEnv,
+      argv: ["node", "tag-bills.ts", "--force", "--ids", "openstates-tx-1"],
+    });
+
+    expect(counts.billsQueried).toBe(1);
+    expect(counts.billsTagged).toBe(1);
+    expect(counts.tagsUpserted).toBe(1);
+    // The bill WAS sent to Claude despite "already tagged" — skip was bypassed.
+    expect(
+      (client.messages.create as ReturnType<typeof vi.fn>).mock.calls,
+    ).toHaveLength(1);
   });
 });
