@@ -78,6 +78,20 @@ input, textarea { font: inherit; color: inherit; }
   color: var(--ink-2);
 }
 .app-nav .links a:hover { color: var(--ink); }
+.app-nav .links a { cursor: pointer; }
+.app-nav .nav-right { display: flex; align-items: center; gap: 14px; }
+.app-nav .nav-tip {
+  font-size: 13px;
+  font-weight: 600;
+  padding: 7px 14px;
+  border: 1px solid var(--civic);
+  border-radius: 999px;
+  color: var(--civic);
+  background: transparent;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.app-nav .nav-tip:hover { background: var(--civic); color: var(--paper); }
 .app-nav .lang {
   font-family: var(--mono);
   font-size: 11px;
@@ -100,6 +114,11 @@ input, textarea { font: inherit; color: inherit; }
   align-items: center;
   max-width: 1280px;
   margin: 0 auto;
+}
+/* Single-column hero (no stat-stack sibling): keep the content from stretching
+   the full 1280px and leaving an empty right half. */
+.hp-hero.hp-hero-solo {
+  grid-template-columns: minmax(0, 760px);
 }
 .eyebrow {
   display: inline-flex;
@@ -310,7 +329,7 @@ input, textarea { font: inherit; color: inherit; }
   padding: 36px 56px;
   border-top: 1px solid var(--rule);
   display: grid;
-  grid-template-columns: 1fr auto auto;
+  grid-template-columns: 1fr auto;
   gap: 36px;
   align-items: center;
   font-size: 13px;
@@ -319,7 +338,6 @@ input, textarea { font: inherit; color: inherit; }
   margin: 64px auto 0;
 }
 .hp-foot .l { font-family: var(--serif); font-weight: 600; font-size: 15px; color: var(--ink); }
-.hp-foot ul { list-style: none; margin: 0; padding: 0; display: flex; gap: 20px; }
 
 /* ============ LOADING SCREEN ============ */
 .loading-screen {
@@ -2557,9 +2575,30 @@ body[data-treatment="inkwell"] .cv2-iss-row.open { background: var(--paper); }
 /* Mobile — ≤ 767 — ballot-first; chat as full-screen sheet */
 @media (max-width: 767px) {
   .app-nav {
+    flex-wrap: wrap;
+    row-gap: 4px;
     padding: 14px 18px;
   }
-  .app-nav .links { display: none; }
+  /* All nav links now live only in the header (the footer was stripped
+     to brand + copyright), so they must stay reachable on phones. Keep
+     the brand + tip/settings cluster on the top row and drop the link
+     group to its own full-width second row. */
+  .app-nav .brand { order: 1; }
+  .app-nav .nav-right { order: 2; }
+  .app-nav .links {
+    order: 3;
+    flex-basis: 100%;
+    flex-wrap: wrap;
+    gap: 0 22px;
+    margin-top: 4px;
+    padding-top: 6px;
+    border-top: 1px solid var(--rule-2);
+  }
+  .app-nav .links a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 40px;
+  }
   .app-nav .lang { display: none; }
 
   /* Ballot is the primary surface */
