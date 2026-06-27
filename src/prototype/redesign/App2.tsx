@@ -25,6 +25,7 @@ import {
   MethodologyPage,
   PrivacyPage,
   TipJarPage,
+  WhyNowPage,
 } from "../VoterChoiceApp";
 import { DelegationWorkspace } from "./DelegationWorkspace";
 import { HandoffModal } from "./HandoffModal";
@@ -620,7 +621,13 @@ function App2Inner() {
   }
 
   // Nav context — wires AppNav brand/links + footer links to stages.
-  const PAGE_STAGES = { about: 1, methodology: 1, privacy: 1, tip: 1 };
+  const PAGE_STAGES = {
+    about: 1,
+    methodology: 1,
+    privacy: 1,
+    tip: 1,
+    whynow: 1,
+  };
   function navigate(page) {
     if (page === "home") return setStage("home");
     if (page === "howitworks") return setStage("home");
@@ -730,6 +737,8 @@ function App2Inner() {
       );
     }
     if (stage === "about") return <AboutPage onBack={() => setStage("home")} />;
+    if (stage === "whynow")
+      return <WhyNowPage onBack={() => setStage("home")} />;
     if (stage === "methodology")
       return <MethodologyPage onBack={() => setStage("home")} />;
     if (stage === "privacy")
