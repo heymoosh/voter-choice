@@ -337,66 +337,84 @@
   display: inline-block;
 }
 
-/* ---- elevated "where you stand" invitation in the scorecard ---- */
-.standing-cta {
-  margin: 4px 0 0;
-  padding: 15px 16px;
-  border-radius: 11px;
-  background: var(--civic-wash, oklch(0.95 0.018 170));
-  border: 1px solid oklch(0.88 0.03 170);
-}
-.standing-cta .kick {
-  font-family: var(--mono);
-  font-size: 9.5px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--civic-2);
-  font-weight: 700;
-}
-.standing-cta .dots {
-  display: flex;
-  gap: 3px;
-  margin: 8px 0 6px;
-}
-.standing-cta .dots i {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  display: block;
-}
-.standing-cta h4 {
-  font-family: var(--serif);
-  font-size: 17px;
-  font-weight: 600;
-  margin: 0 0 4px;
-  letter-spacing: -0.01em;
-  color: var(--ink);
-}
-.standing-cta p {
-  font-size: 12.5px;
-  color: var(--ink-2);
-  margin: 0 0 11px;
-  line-height: 1.45;
-}
-.standing-cta button {
-  width: 100%;
-  background: var(--civic);
-  color: var(--paper-2);
-  border: none;
-  border-radius: 8px;
-  font-family: var(--sans);
-  font-size: 13px;
-  font-weight: 600;
-  padding: 11px 14px;
-  min-height: 42px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-}
-.standing-cta button:hover {
-  background: var(--civic-2);
+/* ---- single-panel results layout [P1] ----
+   The redesign drops the shipped left rail (its progress bar + duplicate
+   seat list / issue list now live entirely in the right scorecard pane).
+   With the rail gone, the workspace is center + right only. Scoped to
+   .delegation so the legacy 3-pane workspace keeps its 240px rail. Desktop
+   only (≥1024px): below that, the shipped prototype.css already hides the
+   rail (tablet 1fr 340px, phone single column), so no override is needed
+   — and forcing one there would clobber the tablet's tuned ballot width. */
+@media (min-width: 1024px) {
+  .delegation .ws-wrap {
+    grid-template-columns: 1fr 380px;
+  }
+  /* Relocate the issues + Edit control onto the desktop scorecard. It used
+     to live in the now-removed left rail; the ballot pane's .b-issues-edit
+     surface (shipped by prototype-c.css) is hidden ≥1024px specifically
+     because the rail duplicated it. With the rail gone it's the ONLY issues
+     surface, so reveal it on desktop and mirror prototype-c.css's mobile
+     styling here. Scoped to .delegation so the legacy workspace is untouched. */
+  .delegation .ws-ballot .b-issues-edit {
+    display: block;
+    padding: 14px 20px 16px;
+    border-bottom: 1px solid var(--rule);
+    background: var(--paper-2);
+  }
+  .delegation .ws-ballot .b-issues-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+  .delegation .ws-ballot .b-issues-lab {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--ink-3);
+  }
+  .delegation .ws-ballot .b-issues-btn {
+    background: var(--paper);
+    border: 1px solid var(--civic-soft);
+    color: var(--civic);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 9px 15px;
+    border-radius: 999px;
+    min-height: 40px;
+    white-space: nowrap;
+  }
+  .delegation .ws-ballot .b-issues-btn:hover {
+    background: var(--civic);
+    color: var(--paper-2);
+    border-color: var(--civic);
+  }
+  .delegation .ws-ballot .b-issues-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .delegation .ws-ballot .b-issues-list li {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    font-size: 14px;
+    color: var(--ink);
+    line-height: 1.35;
+  }
+  .delegation .ws-ballot .b-issues-list li .n {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--civic);
+    font-weight: 600;
+    flex: 0 0 auto;
+  }
 }
 
 /* ---- tier intro (center column, above card) ----
@@ -776,20 +794,6 @@
   background: var(--paper-2);
   color: var(--ink);
   box-shadow: var(--shadow-soft);
-}
-
-/* ---- integration fix (not in the design ZIP): on mobile the shipped
-   prototype.css makes .b-foot position:fixed and pads .b-list to clear it.
-   The redesign's standing-cta sits AFTER .b-list, so it needs the clearance
-   instead — otherwise the CTA is stuck under the fixed footer and can never
-   be tapped. Scoped to .delegation so the legacy workspace is untouched. ---- */
-@media (max-width: 767px) {
-  .delegation .ws-ballot .b-list {
-    padding-bottom: 4px;
-  }
-  .delegation .standing-cta {
-    margin: 10px 18px calc(216px + env(safe-area-inset-bottom, 0px));
-  }
 }
 
 /* ====================================================
@@ -1332,4 +1336,46 @@
     display: inline;
     margin-left: 8px;
   }
+}
+
+/* ---- orientation interstitial (after lock-issues, before first rep) ---- */
+.coldopen.orientation {
+  padding-top: 64px;
+}
+.orient-lede .kick {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--civic);
+  font-weight: 600;
+}
+.orient-lede h2 {
+  font-family: var(--serif);
+  font-size: clamp(28px, 4vw, 44px);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  margin: 10px 0 16px;
+  line-height: 1.1;
+  text-wrap: balance;
+}
+.orient-lede p {
+  font-size: 17px;
+  color: var(--ink-2);
+  margin: 0;
+  max-width: 640px;
+  line-height: 1.6;
+}
+.orient-foot {
+  margin-top: 28px;
+}
+.orient-foot .lock {
+  background: var(--civic);
+  color: var(--paper-2);
+  border: 0;
+  padding: 12px 22px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14.5px;
+  cursor: pointer;
 }
