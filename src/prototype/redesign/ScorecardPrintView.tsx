@@ -36,12 +36,19 @@ export function ScorecardPrintView({
   districtsLine,
   onBack,
 }) {
+  // Reps not up for election in 2026 are excluded from the printed scorecard —
+  // they stay visible (greyed + labeled) in the workspace, but the takeaway
+  // sheet is about who's on your 2026 ballot. onBallot2026 === false only;
+  // unverified (null) seats are kept (honest-state rule).
+  const scorecardSeats = seats.filter(
+    (s) => s.nextElection?.onBallot2026 !== false,
+  );
   const sections = {};
-  seats.forEach((s) => {
+  scorecardSeats.forEach((s) => {
     if (!verdicts[s.id]) return;
     (sections[s.section] = sections[s.section] || []).push(s);
   });
-  const unreviewed = seats.filter((s) => !verdicts[s.id]);
+  const unreviewed = scorecardSeats.filter((s) => !verdicts[s.id]);
   const fracFor = (s) => {
     if (s.researched || !s.alignmentEntry?.scores) return null;
     const kept = s.alignmentEntry.scores.reduce(
