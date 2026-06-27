@@ -78,6 +78,20 @@ input, textarea { font: inherit; color: inherit; }
   color: var(--ink-2);
 }
 .app-nav .links a:hover { color: var(--ink); }
+.app-nav .links a { cursor: pointer; }
+.app-nav .nav-right { display: flex; align-items: center; gap: 14px; }
+.app-nav .nav-tip {
+  font-size: 13px;
+  font-weight: 600;
+  padding: 7px 14px;
+  border: 1px solid var(--civic);
+  border-radius: 999px;
+  color: var(--civic);
+  background: transparent;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.app-nav .nav-tip:hover { background: var(--civic); color: var(--paper); }
 .app-nav .lang {
   font-family: var(--mono);
   font-size: 11px;
@@ -100,6 +114,11 @@ input, textarea { font: inherit; color: inherit; }
   align-items: center;
   max-width: 1280px;
   margin: 0 auto;
+}
+/* Single-column hero (no stat-stack sibling): keep the content from stretching
+   the full 1280px and leaving an empty right half. */
+.hp-hero.hp-hero-solo {
+  grid-template-columns: minmax(0, 760px);
 }
 .eyebrow {
   display: inline-flex;
@@ -363,7 +382,7 @@ input, textarea { font: inherit; color: inherit; }
   padding: 36px 56px;
   border-top: 1px solid var(--rule);
   display: grid;
-  grid-template-columns: 1fr auto auto;
+  grid-template-columns: 1fr auto;
   gap: 36px;
   align-items: center;
   font-size: 13px;
@@ -372,7 +391,6 @@ input, textarea { font: inherit; color: inherit; }
   margin: 64px auto 0;
 }
 .hp-foot .l { font-family: var(--serif); font-weight: 600; font-size: 15px; color: var(--ink); }
-.hp-foot ul { list-style: none; margin: 0; padding: 0; display: flex; gap: 20px; }
 
 /* ============ LOADING SCREEN ============ */
 .loading-screen {
@@ -581,10 +599,12 @@ input, textarea { font: inherit; color: inherit; }
 /* Themes card */
 .themes-card {
   background: var(--paper-2);
-  border: 1px solid var(--rule);
+  border: 1px solid var(--civic-soft);
+  border-top: 3px solid var(--civic);
   border-radius: 12px;
-  padding: 18px 20px;
-  margin-top: 12px;
+  padding: 22px 24px;
+  margin-top: 16px;
+  box-shadow: var(--shadow-soft);
 }
 .themes-card .th-head {
   display: flex;
@@ -594,10 +614,10 @@ input, textarea { font: inherit; color: inherit; }
 }
 .themes-card .th-head h4 {
   font-family: var(--serif);
-  font-size: 18px;
-  font-weight: 600;
+  font-size: 21px;
+  font-weight: 700;
   margin: 0;
-  letter-spacing: -0.005em;
+  letter-spacing: -0.01em;
 }
 .themes-card .th-head .of {
   font-family: var(--mono);
@@ -731,13 +751,13 @@ input, textarea { font: inherit; color: inherit; }
 .theme-row .acts button.danger:hover { color: var(--vote-red); }
 
 .themes-card .th-foot {
-  margin-top: 16px;
-  padding-top: 14px;
+  margin-top: 18px;
+  padding-top: 16px;
   border-top: 1px solid var(--rule-2);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
 }
 .themes-card .th-foot .secondary {
   background: transparent;
@@ -752,11 +772,26 @@ input, textarea { font: inherit; color: inherit; }
   background: var(--civic);
   color: var(--paper-2);
   border: 0;
-  padding: 10px 20px;
-  border-radius: 8px;
-  font-weight: 600;
-  font-size: 13.5px;
+  padding: 14px 26px;
+  border-radius: 9px;
+  font-weight: 700;
+  font-size: 15.5px;
+  letter-spacing: 0.005em;
   cursor: pointer;
+  box-shadow: var(--shadow-soft);
+  transition:
+    background 0.15s ease,
+    transform 0.05s ease;
+}
+.themes-card .th-foot .lock:hover:not(:disabled) {
+  background: var(--civic-2);
+}
+.themes-card .th-foot .lock:active:not(:disabled) {
+  transform: translateY(1px);
+}
+.themes-card .th-foot .lock:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* ============ WORKSPACE ============ */
@@ -1447,6 +1482,7 @@ body[data-treatment="inkwell"] .b-row.active { background: oklch(0.28 0.04 170);
   max-width: 900px;
   margin: 0 auto;
   padding: 32px 32px 80px;
+  background: #fff;
 }
 .print-header {
   display: flex;
@@ -1457,7 +1493,7 @@ body[data-treatment="inkwell"] .b-row.active { background: oklch(0.28 0.04 170);
 }
 .print-header h2 {
   font-family: var(--serif);
-  font-size: 28px;
+  font-size: 34px;
   font-weight: 600;
   margin: 0;
   letter-spacing: -0.015em;
@@ -1483,7 +1519,7 @@ body[data-treatment="inkwell"] .b-row.active { background: oklch(0.28 0.04 170);
 }
 
 .print-sheet {
-  background: var(--paper-2);
+  background: #fff;
   border: 1px solid var(--rule);
   box-shadow: var(--shadow-card);
   padding: 56px 56px 48px;
@@ -1499,7 +1535,7 @@ body[data-treatment="inkwell"] .b-row.active { background: oklch(0.28 0.04 170);
 .print-sheet .ph-head .l {
   font-family: var(--serif);
   font-weight: 600;
-  font-size: 28px;
+  font-size: 34px;
   letter-spacing: -0.015em;
 }
 .print-sheet .ph-head .l small {
@@ -1533,6 +1569,24 @@ body[data-treatment="inkwell"] .b-row.active { background: oklch(0.28 0.04 170);
   padding-bottom: 18px;
   border-bottom: 1px solid var(--rule);
 }
+/* Logistics block now trails the decisions (D): a top rule + section title
+   separate it from the verdicts above; no bottom rule needed. */
+.logistics-title {
+  margin-top: 28px;
+  padding-top: 18px;
+  border-top: 1px solid var(--rule);
+  font-family: var(--mono);
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--ink-3);
+  margin-bottom: 12px;
+}
+.voter-meta.voter-meta-logistics {
+  margin-top: 0;
+  padding-bottom: 0;
+  border-bottom: 0;
+}
 .voter-meta .cell .k {
   font-family: var(--mono);
   font-size: 9.5px;
@@ -1551,7 +1605,7 @@ body[data-treatment="inkwell"] .b-row.active { background: oklch(0.28 0.04 170);
 .ballot-group { margin-bottom: 28px; }
 .ballot-group .gtitle {
   font-family: var(--mono);
-  font-size: 11px;
+  font-size: 13px;
   text-transform: uppercase;
   letter-spacing: 0.18em;
   color: var(--vote-red);
@@ -1581,6 +1635,31 @@ body[data-treatment="inkwell"] .b-row.active { background: oklch(0.28 0.04 170);
   border-bottom: 2.5px solid var(--ink);
   transform: rotate(-45deg);
 }
+/* Differentiate the verdict at a glance (A): KEEP = green box + green check,
+   REPLACE = red box + a red swap-arrow glyph instead of the check. */
+.br.verdict-row.keep .bx {
+  border-color: var(--civic);
+  background: oklch(0.96 0.02 170);
+}
+.br.verdict-row.keep .bx::after {
+  border-left-color: var(--civic-2);
+  border-bottom-color: var(--civic-2);
+}
+.br.verdict-row.replace .bx {
+  border-color: var(--vote-red);
+  background: oklch(0.97 0.02 28);
+}
+.br.verdict-row.replace .bx::after {
+  content: "\21C4"; /* ⇄ swap-arrow — distinct from the keep check */
+  left: 0; top: -2px;
+  width: auto; height: auto;
+  border: 0;
+  transform: none;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 18px;
+  color: var(--vote-red);
+}
 .br .race-name {
   font-family: var(--mono);
   font-size: 10.5px;
@@ -1590,7 +1669,7 @@ body[data-treatment="inkwell"] .b-row.active { background: oklch(0.28 0.04 170);
 }
 .br .pick-name {
   font-family: var(--serif);
-  font-size: 18px;
+  font-size: 21px;
   font-weight: 600;
   letter-spacing: -0.005em;
 }
@@ -2566,9 +2645,30 @@ body[data-treatment="inkwell"] .cv2-iss-row.open { background: var(--paper); }
 /* Mobile — ≤ 767 — ballot-first; chat as full-screen sheet */
 @media (max-width: 767px) {
   .app-nav {
+    flex-wrap: wrap;
+    row-gap: 4px;
     padding: 14px 18px;
   }
-  .app-nav .links { display: none; }
+  /* All nav links now live only in the header (the footer was stripped
+     to brand + copyright), so they must stay reachable on phones. Keep
+     the brand + tip/settings cluster on the top row and drop the link
+     group to its own full-width second row. */
+  .app-nav .brand { order: 1; }
+  .app-nav .nav-right { order: 2; }
+  .app-nav .links {
+    order: 3;
+    flex-basis: 100%;
+    flex-wrap: wrap;
+    gap: 0 22px;
+    margin-top: 4px;
+    padding-top: 6px;
+    border-top: 1px solid var(--rule-2);
+  }
+  .app-nav .links a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 40px;
+  }
   .app-nav .lang { display: none; }
 
   /* Ballot is the primary surface */
