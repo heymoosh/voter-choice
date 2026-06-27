@@ -2526,9 +2526,30 @@ body[data-treatment="inkwell"] .cv2-iss-row.open { background: var(--paper); }
 /* Mobile — ≤ 767 — ballot-first; chat as full-screen sheet */
 @media (max-width: 767px) {
   .app-nav {
+    flex-wrap: wrap;
+    row-gap: 4px;
     padding: 14px 18px;
   }
-  .app-nav .links { display: none; }
+  /* All nav links now live only in the header (the footer was stripped
+     to brand + copyright), so they must stay reachable on phones. Keep
+     the brand + tip/settings cluster on the top row and drop the link
+     group to its own full-width second row. */
+  .app-nav .brand { order: 1; }
+  .app-nav .nav-right { order: 2; }
+  .app-nav .links {
+    order: 3;
+    flex-basis: 100%;
+    flex-wrap: wrap;
+    gap: 0 22px;
+    margin-top: 4px;
+    padding-top: 6px;
+    border-top: 1px solid var(--rule-2);
+  }
+  .app-nav .links a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 40px;
+  }
   .app-nav .lang { display: none; }
 
   /* Ballot is the primary surface */
