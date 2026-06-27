@@ -37,13 +37,22 @@ export function ScorecardPrintView({
   districtsLine,
   onBack,
 }) {
+  // Reps not up for election in 2026 are excluded from the printed scorecard —
+  // they stay visible (greyed + labeled) in the workspace, but the takeaway
+  // sheet is about who's on your 2026 ballot. onBallot2026 === false only;
+  // unverified (null) seats are kept (honest-state rule).
+  const scorecardSeats = seats.filter(
+    (s) => s.nextElection?.onBallot2026 !== false,
+  );
   const sections = {};
-  seats.forEach((s) => {
+  scorecardSeats.forEach((s) => {
     if (!verdicts[s.id]) return;
     (sections[s.section] = sections[s.section] || []).push(s);
   });
-  const unreviewed = seats.filter((s) => !verdicts[s.id]);
-  const fracFor = (s) => {
+  const unreviewed = scorecardSeats.filter((s) => !verdicts[s.id]);
+  // Lead with a percentage (B). Falls back to null when there's no scored
+  // voting record (researched seats / total 0) so the row stays honest.
+  const alignFor = (s) => {
     if (s.researched || !s.alignmentEntry?.scores) return null;
     const kept = s.alignmentEntry.scores.reduce(
       (n, sc) => n + (sc.kept ?? 0),
@@ -54,7 +63,8 @@ export function ScorecardPrintView({
       0,
     );
     if (total === 0) return null;
-    return `${kept}/${total} votes matched you`;
+    const pct = Math.round((kept / total) * 100);
+    return `${pct}% aligned (${kept}/${total} votes)`;
   };
 
   const todayIso = new Date().toISOString().slice(0, 10);
@@ -106,50 +116,18 @@ export function ScorecardPrintView({
             </div>
           </header>
 
-          <div className="voter-meta">
-            <div className="cell">
-              <div className="k">Address</div>
-              <div className="v" style={{ fontSize: "12px" }}>
-                {address}
-              </div>
-            </div>
-            <div className="cell">
-              <div className="k">Your districts</div>
-              <div className="v" style={{ fontSize: "12px" }}>
-                {districtsLine || "—"}
-              </div>
-            </div>
-            <div className="cell cell-bring">
-              <div className="k">Bring (any one)</div>
-              <ul className="v print-id-list">
-                {(stateData?.votingRules?.acceptedIds || []).map((id) => (
-                  <li key={id}>{id}</li>
-                ))}
-                {!stateData?.votingRules?.idRequired && (
-                  <li>
-                    {stateData?.votingRules?.idNote ||
-                      "No ID required for most voters."}
-                  </li>
-                )}
-              </ul>
-            </div>
-            <div className="cell">
-              <div className="k">Early voting</div>
-              <div className="v">
-                {earlyVoting || "Check your state's site"}
-              </div>
-            </div>
-          </div>
-
+          {/* Decisions first (D): the per-seat keep/replace verdicts lead the
+              sheet; the logistics block (address, districts, where/when to
+              vote) follows below. */}
           <div className="ballot-list">
             {Object.entries(sections).map(([section, ss]) => (
               <div className="ballot-group" key={section}>
                 <div className="gtitle">{section}</div>
                 {ss.map((s) => {
                   const v = verdicts[s.id];
-                  const frac = fracFor(s);
+                  const align = alignFor(s);
                   return (
-                    <div className="br checked" key={s.id}>
+                    <div className={"br checked verdict-row " + v} key={s.id}>
                       <div className="bx"></div>
                       <div>
                         <div className="race-name">
@@ -158,7 +136,7 @@ export function ScorecardPrintView({
                         <div className="pick-name">
                           {s.candidate?.name ?? s.blindLabel}
                           <span className={"party verdict-print " + v}>
-                            {v === "keep" ? "WORTH KEEPING" : "TIME TO REPLACE"}
+                            {v === "keep" ? "✓ KEEP" : "⇄ REPLACE"}
                           </span>
                           {v === "replace" &&
                             (() => {
@@ -174,7 +152,7 @@ export function ScorecardPrintView({
                             })()}
                         </div>
                         <div className="my-note">
-                          {frac ? frac + " · " : ""}
+                          {align ? align + " · " : ""}
                           {s.nextElection ? s.nextElection.label : ""}
                         </div>
                       </div>
@@ -233,6 +211,43 @@ export function ScorecardPrintView({
                     </span>
                   </div>
                 ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Logistics last (D): where/when to vote sits below the decisions. */}
+          <div className="logistics-title">Where &amp; when to vote</div>
+          <div className="voter-meta voter-meta-logistics">
+            <div className="cell">
+              <div className="k">Address</div>
+              <div className="v" style={{ fontSize: "12px" }}>
+                {address}
+              </div>
+            </div>
+            <div className="cell">
+              <div className="k">Your districts</div>
+              <div className="v" style={{ fontSize: "12px" }}>
+                {districtsLine || "—"}
+              </div>
+            </div>
+            <div className="cell cell-bring">
+              <div className="k">Bring (any one)</div>
+              <ul className="v print-id-list">
+                {(stateData?.votingRules?.acceptedIds || []).map((id) => (
+                  <li key={id}>{id}</li>
+                ))}
+                {!stateData?.votingRules?.idRequired && (
+                  <li>
+                    {stateData?.votingRules?.idNote ||
+                      "No ID required for most voters."}
+                  </li>
+                )}
+              </ul>
+            </div>
+            <div className="cell">
+              <div className="k">Early voting</div>
+              <div className="v">
+                {earlyVoting || "Check your state's site"}
               </div>
             </div>
           </div>

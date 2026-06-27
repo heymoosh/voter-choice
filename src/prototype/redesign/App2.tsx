@@ -25,6 +25,7 @@ import {
   MethodologyPage,
   PrivacyPage,
   TipJarPage,
+  WhyNowPage,
 } from "../VoterChoiceApp";
 import { DelegationWorkspace } from "./DelegationWorkspace";
 import { HeadToHead } from "./HeadToHead";
@@ -133,6 +134,45 @@ function StandingLocked({ onBack }) {
   );
 }
 
+/* Guided orientation interstitial — shown once, AFTER the user locks in their
+   issues and BEFORE the first representative is shown for review. Sets
+   expectations for the per-rep review loop (record · money · alternatives →
+   keep/replace → scorecard). Not skippable/remembered: it's a single click on
+   the happy path, and the edit-issues re-score path bypasses it entirely
+   (analyze() is called directly there), so a returning reviewer never sees it
+   again within a session unless they re-run the cold open. */
+function OrientationView({ onContinue }) {
+  return (
+    <>
+      <AppNav />
+      <div className="coldopen orientation">
+        <div className="orient-lede">
+          <div className="kick">Before you begin</div>
+          <h2>Here&rsquo;s how the review works.</h2>
+          <p>
+            Next, you&rsquo;ll be shown your three representatives — where they
+            stand on the issues you care about, and how they&rsquo;re funded and
+            influenced. You can also find alternative candidates running for the
+            seat. At the bottom of each page you&rsquo;ll be asked to{" "}
+            <b>replace or keep</b> the current representative. You&rsquo;ll do
+            this for all of your representatives, and can then print out your
+            scorecard.
+          </p>
+        </div>
+        <div className="orient-foot">
+          <button
+            className="lock"
+            onClick={onContinue}
+            data-testid="orientation-continue"
+          >
+            Let&rsquo;s move to the first candidate →
+          </button>
+        </div>
+      </div>
+    </>
+  );
+}
+
 function App2Inner() {
   // Purge any precise address left by the old single-localStorage-record scheme.
   if (typeof window !== "undefined") {
@@ -153,6 +193,7 @@ function App2Inner() {
         "print",
         "standing",
         "coldopen",
+        "orientation",
         "analyzing",
         "loading",
       ].includes(s)
@@ -212,6 +253,9 @@ function App2Inner() {
   const [polisScopes, setPolisScopes] = useState(null);
   const [, setResearchTick] = useState(0);
   const submittedRef = useRef(false);
+  // Issues locked at the cold open, held while the orientation interstitial is
+  // shown; consumed by its CTA, which kicks off analyze() into the workspace.
+  const pendingLockedIssuesRef = useRef(null);
 
   // Durable: issues + state-level location only. Survives tab close.
   useEffect(() => {
@@ -620,7 +664,13 @@ function App2Inner() {
   }
 
   // Nav context — wires AppNav brand/links + footer links to stages.
-  const PAGE_STAGES = { about: 1, methodology: 1, privacy: 1, tip: 1 };
+  const PAGE_STAGES = {
+    about: 1,
+    methodology: 1,
+    privacy: 1,
+    tip: 1,
+    whynow: 1,
+  };
   function navigate(page) {
     if (page === "home") return setStage("home");
     if (page === "howitworks") return setStage("home");
@@ -674,8 +724,24 @@ function App2Inner() {
           address={address}
           savedIssues={issues.length > 0 ? issues : null}
           contextNote="your 3 members of Congress"
-          onLock={(locked) => void analyze(delegation, stateData, locked)}
+          onLock={(locked) => {
+            // Issues are locked → show the guided orientation interstitial
+            // before the first representative. Its CTA runs analyze().
+            pendingLockedIssuesRef.current = locked;
+            setStage("orientation");
+          }}
           onBudgetBlock={handleConvoBudgetBlock}
+        />
+      );
+    }
+    if (stage === "orientation") {
+      return (
+        <OrientationView
+          onContinue={() => {
+            const locked = pendingLockedIssuesRef.current ?? issues;
+            pendingLockedIssuesRef.current = null;
+            void analyze(delegation, stateData, locked);
+          }}
         />
       );
     }
@@ -714,6 +780,8 @@ function App2Inner() {
       );
     }
     if (stage === "about") return <AboutPage onBack={() => setStage("home")} />;
+    if (stage === "whynow")
+      return <WhyNowPage onBack={() => setStage("home")} />;
     if (stage === "methodology")
       return <MethodologyPage onBack={() => setStage("home")} />;
     if (stage === "privacy")

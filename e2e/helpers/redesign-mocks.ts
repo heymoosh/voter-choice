@@ -506,8 +506,43 @@ export async function goToWorkspace(page: Page): Promise<void> {
     .fill("Insulin prices are insane and rent went up again.");
   await page.locator("button.send").click();
   await page.locator("button.lock").click({ timeout: 15000 });
+  // Guided orientation interstitial sits between locking issues and the first
+  // representative; click through it to reach the workspace.
+  await page.getByTestId("orientation-continue").click({ timeout: 15000 });
   // Workspace is ready once the scorecard rows appear. On mobile the center
   // pane (rep-card) starts hidden until a row is tapped; the scorecard rows
   // are always visible and are the safe signal for both viewports.
   await page.locator(".b-row").first().waitFor({ timeout: 20000 });
+}
+
+/**
+ * Drive the workspace to the standing (polis) stage. With the [P1] declutter
+ * the "see where you stand" teaser was removed; the only remaining entry to
+ * standing is the `.all-done` completion link, which appears in the center
+ * (rep) column once every seat has a verdict. Verdict each scorecard row in
+ * turn (selecting the row first makes this deterministic across the
+ * auto-advance and works on both desktop inline cards and the mobile center
+ * overlay), then open a seat so the center column is visible and follow the
+ * link. On mobile the center is a tap-to-open overlay that closes after each
+ * verdict, so the final row click is what surfaces `.all-done`.
+ */
+export async function goToStanding(page: Page): Promise<void> {
+  const rows = page.locator(".b-row");
+  const count = await rows.count();
+  for (let i = 0; i < count; i++) {
+    await rows.nth(i).click();
+    const keep = page.getByRole("button", { name: /Worth keeping/ }).first();
+    await keep.waitFor({ timeout: 15000 });
+    await keep.click();
+    // Let the verdict commit (commitVerdict defers the auto-advance ~600ms).
+    await page.waitForTimeout(700);
+  }
+  // Re-open a seat so the center column (which holds .all-done) is on screen;
+  // on mobile the last verdict closed the overlay.
+  await rows.first().click();
+  const standingLink = page
+    .locator(".all-done")
+    .getByRole("button", { name: /where you stand/ });
+  await standingLink.waitFor({ timeout: 15000 });
+  await standingLink.click();
 }
