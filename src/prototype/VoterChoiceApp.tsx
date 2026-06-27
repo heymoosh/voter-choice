@@ -178,6 +178,7 @@ const TRANSLATIONS = {
     nav: {
       howItWorks: 'How it works',
       theRecord: 'The record',
+      whyNow: 'Why now?',
       about: 'About',
       methodology: 'Methodology',
       privacy: 'Privacy',
@@ -272,6 +273,7 @@ const TRANSLATIONS = {
     nav: {
       howItWorks: 'Cómo funciona',
       theRecord: 'El registro',
+      whyNow: '¿Por qué ahora?',
       about: 'Acerca de',
       methodology: 'Metodología',
       privacy: 'Privacidad',
@@ -468,6 +470,7 @@ function AppNav({ onBrandClick }) {
       </div>
       <div className="links">
         <a onClick={() => navigate('howitworks')} role="link" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') navigate('howitworks'); }}>{t('nav.howItWorks')}</a>
+        <a onClick={() => navigate('whynow')} role="link" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') navigate('whynow'); }}>{t('nav.whyNow')}</a>
         <a onClick={() => navigate('methodology')} role="link" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') navigate('methodology'); }}>{t('nav.methodology')}</a>
         <a onClick={() => navigate('about')} role="link" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') navigate('about'); }}>{t('nav.about')}</a>
       </div>
@@ -501,6 +504,7 @@ function AppFooter({ compact }: { compact?: boolean }) {
     <footer className={"hp-foot" + (compact ? " hp-foot-slim" : "")}>
       <div className="l">Voter Choice</div>
       <ul>
+        <li><a onClick={() => navigate('whynow')} role="link" tabIndex={0}>Why now?</a></li>
         <li><a onClick={() => navigate('methodology')} role="link" tabIndex={0}>Methodology</a></li>
         <li><a onClick={() => navigate('about')} role="link" tabIndex={0}>About</a></li>
         <li><a onClick={() => navigate('privacy')} role="link" tabIndex={0}>Privacy</a></li>
@@ -2349,6 +2353,7 @@ function AppNavWithChrome({ onBrandClick, onOpenSettings, current, onNavigate })
       </div>
       <div className="links">
         <a onClick={() => onNavigate && onNavigate('howitworks')} role="link" tabIndex={0}>{t('nav.howItWorks')}</a>
+        <a onClick={() => onNavigate && onNavigate('whynow')} role="link" tabIndex={0}>{t('nav.whyNow')}</a>
         <a onClick={() => onNavigate && onNavigate('methodology')} role="link" tabIndex={0}>{t('nav.methodology')}</a>
         <a onClick={() => onNavigate && onNavigate('about')} role="link" tabIndex={0}>{t('nav.about')}</a>
         <a onClick={() => onNavigate && onNavigate('privacy')} role="link" tabIndex={0}>{t('nav.privacy')}</a>
@@ -4020,6 +4025,32 @@ function AITimeoutBanner({ onRetry, onHandoff, message }) {
    Static in-prototype pages. Repo target: src/app/about/page.tsx,
    src/app/methodology/page.tsx, src/app/privacy/page.tsx
    (privacy/page.tsx exists in repo already — content mirrors that). */
+/* ============ WHY_NOW_SNIPPETS ============
+   The "fact snippets" — short, cited civic facts that make the case for
+   checking the record. Single source of truth: HomeView renders the first
+   two as the hero stat-stack; WhyNowPage renders the full set. Keep every
+   entry cited (no uncited stats) and non-partisan. */
+const WHY_NOW_SNIPPETS = [
+  {
+    value: '6',
+    unit: 'hrs / day',
+    label: 'average time a member of Congress spends fundraising, per training materials shown to incoming freshmen.',
+    cite: 'Source · Issue One, 2024 · CBS 60 Minutes',
+  },
+  {
+    value: '94',
+    unit: '%',
+    label: 'of House incumbents who ran for re-election in 2024 won. Without a record check, every November is a coin flip.',
+    cite: 'Source · OpenSecrets · FEC filings',
+  },
+  {
+    value: '468',
+    unit: 'seats',
+    label: 'all 435 House seats and 33 Senate seats are on the November 3, 2026 ballot — America’s 250th election.',
+    cite: 'Source · U.S. Constitution, Art. I · clerk.house.gov',
+  },
+];
+
 function StaticPage({ title, eyebrow, children, onBack }) {
   return (
     <div className="sp-wrap">
@@ -4154,6 +4185,32 @@ function PrivacyPage({ onBack }) {
   );
 }
 
+function WhyNowPage({ onBack }) {
+  return (
+    <StaticPage onBack={onBack} eyebrow="Why now" title="Why this election, this year.">
+      <p>2026 is America’s 250th election. Every voting seat in the House and a third of the Senate is on the ballot at once — the widest the choice ever gets. The catch is that incumbents almost always win, and most voters never see the one thing that should decide it: the record.</p>
+
+      <div className="stat-stack stat-stack--page">
+        {WHY_NOW_SNIPPETS.map((s, i) => (
+          <div key={i} className={'stat' + (i % 2 === 1 ? ' alt' : '')}>
+            <div className="v">{s.value}<small>{s.unit}</small></div>
+            <div className="l">{s.label}</div>
+            <div className="cite">{s.cite}</div>
+          </div>
+        ))}
+      </div>
+
+      <h2>The larger case</h2>
+      <p>Campaigns are built to be persuasive. Ads, mailers, and debate soundbites are written to win your vote, not to report what a candidate actually did with the power they already held. The gap between the pitch and the record is where most surprises live — and it widens every cycle.</p>
+      <p>A voting record is the one thing a candidate can’t rewrite. Roll-call votes are public, dated, and final. So is who funded the campaign. Read together, they tell you more about how someone will govern than any slogan can — because they’re a record of how that person already governed.</p>
+      <p>This isn’t about a party. Both sides run incumbents, and both sides count on you not checking. The fix is the same regardless of who you support: spend a few minutes matching the record to the issues you actually care about, before you fill in the bubble. That’s the whole idea behind this site.</p>
+
+      <h2>What to do with it</h2>
+      <p>Tell us your address and what’s on your mind. We’ll pull your representatives’ real votes and funding, score them against your own words — never a pre-baked checklist — and show you the receipts. You decide. We don’t endorse anyone; we just close the gap between the ad and the record.</p>
+    </StaticPage>
+  );
+}
+
 Object.assign(window, {
   SettingsPanel,
   GeocodeFailView,
@@ -4163,6 +4220,7 @@ Object.assign(window, {
   MethodologyPage,
   PrivacyPage,
   TipJarPage,
+  WhyNowPage,
   // BYOK helpers — exposed for app wiring
   getByokKey, setByokKey, removeByokKey, BYOK_STORAGE_KEY,
 });
@@ -6509,6 +6567,7 @@ export {
   MethodologyPage,
   PrivacyPage,
   TipJarPage,
+  WhyNowPage,
   // Reused by the delegation redesign (seat chat / issue editing / full record).
   AITimeoutBanner,
   IssueRow,
