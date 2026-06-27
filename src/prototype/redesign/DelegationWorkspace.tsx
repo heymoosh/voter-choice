@@ -24,17 +24,6 @@ import { SeatChat } from "./SeatChat";
 import { IssueDeltaBanner } from "./IssueDeltaBanner";
 import { issuesForLevel } from "./delegationData";
 
-/* Plain-language jurisdiction note shown inline beside each issue (replaces the
-   removed FED/STATE/BOTH chips — clearer phrasing per user feedback, and folds
-   the per-seat "Your seat at the national table" mapping onto the issues list). */
-function levelPhrase(level) {
-  return level === "federal"
-    ? "decided federally"
-    : level === "state"
-      ? "decided at the state level"
-      : "federal + state";
-}
-
 function tierIntro(section, { stateName }) {
   const TIERS = {
     "Washington — Federal": {
@@ -129,7 +118,6 @@ export function ScorecardPane({
             <li key={i}>
               <span className="n">{i + 1}</span>
               {iss.interpretation}
-              <span className="iss-jx">{levelPhrase(iss.level)}</span>
             </li>
           ))}
         </ol>
@@ -341,10 +329,7 @@ export function DelegationWorkspace({
             </div>
             <ol>
               {userIssues.map((iss, i) => (
-                <li key={iss.canonicalIssue || i}>
-                  {iss.interpretation}
-                  <span className="iss-jx">{levelPhrase(iss.level)}</span>
-                </li>
+                <li key={iss.canonicalIssue || i}>{iss.interpretation}</li>
               ))}
             </ol>
           </div>

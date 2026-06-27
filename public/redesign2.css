@@ -252,21 +252,6 @@
   color: var(--ink-2);
 }
 
-/* Inline plain-language jurisdiction note on the "Your issues" list — replaces
-   the removed FED/STATE/BOTH chips with a quieter, readable per-issue label. */
-.iss-jx {
-  display: block;
-  font-family: var(--mono);
-  font-size: 9.5px;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--ink-3);
-  margin-top: 1px;
-}
-.b-issues-list li .iss-jx {
-  margin-left: 22px;
-}
-
 /* ---- rail done-check centering (shipped tick is pinned low-left) ---- */
 .ws-rail .race-list li.done .ind::after {
   left: 50%;
