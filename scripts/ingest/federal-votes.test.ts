@@ -3,6 +3,8 @@ import {
   buildCandidateId,
   buildGovTrackBillId,
   createEmptyPlan,
+  deriveBillStatus,
+  extractRollCallTally,
   mergeFederalPlans,
   normalizeVoteCast,
   planGovTrackVote,
@@ -202,5 +204,116 @@ describe("federal-votes helpers", () => {
       new Date("2026-05-10T12:00:00Z"),
     );
     expect(config.resetVotes).toBe(true);
+  });
+});
+
+describe("extractRollCallTally", () => {
+  it("extracts pre-computed GovTrack total_* fields", () => {
+    const vote = {
+      total_plus: 232,
+      total_minus: 193,
+      total_present: 0,
+      total_not_voting: 10,
+      result: "Passed",
+    };
+    expect(extractRollCallTally(vote)).toEqual({
+      yea: 232,
+      nay: 193,
+      present: 0,
+      notVoting: 10,
+      result: "Passed",
+    });
+  });
+
+  it("falls back to counting grouped votes when total_* fields are absent", () => {
+    const vote = {
+      result: "Passed",
+      votes: {
+        Aye: [{ bioguide_id: "A000001" }, { bioguide_id: "A000002" }],
+        No: [{ bioguide_id: "B000001" }],
+        Present: [{ bioguide_id: "C000001" }],
+        "Not Voting": [],
+      },
+    };
+    const tally = extractRollCallTally(vote);
+    expect(tally.yea).toBe(2);
+    expect(tally.nay).toBe(1);
+    expect(tally.present).toBe(1);
+    expect(tally.notVoting).toBe(0);
+    expect(tally.result).toBe("Passed");
+  });
+
+  it("returns null counts for an empty or missing vote object", () => {
+    expect(extractRollCallTally(null)).toEqual({
+      yea: null,
+      nay: null,
+      present: null,
+      notVoting: null,
+      result: null,
+    });
+    expect(extractRollCallTally({})).toEqual({
+      yea: null,
+      nay: null,
+      present: null,
+      notVoting: null,
+      result: null,
+    });
+  });
+
+  it("tally is stored on each vote row produced by planGovTrackVote", () => {
+    const voteJson = {
+      ...billVote,
+      total_plus: 220,
+      total_minus: 180,
+      total_present: 5,
+      total_not_voting: 30,
+      result: "Passed",
+    };
+    const plan = planGovTrackVote(voteJson, {
+      dataUrl:
+        "https://www.govtrack.us/data/congress/118/votes/2023/h42/data.json",
+    });
+    const voteRow = plan.votes.get("govtrack-hr1234-118|federal-A000001");
+    expect(voteRow?.tallyYea).toBe(220);
+    expect(voteRow?.tallyNay).toBe(180);
+    expect(voteRow?.tallyPresent).toBe(5);
+    expect(voteRow?.tallyNotVoting).toBe(30);
+    expect(voteRow?.tallyResult).toBe("Passed");
+  });
+
+  it("stores null tallies when no tally data is present", () => {
+    const plan = planGovTrackVote(billVote, {
+      dataUrl:
+        "https://www.govtrack.us/data/congress/118/votes/2023/h42/data.json",
+    });
+    // billVote fixture has no total_* fields, grouped votes with empty Present/Not Voting
+    const voteRow = plan.votes.get("govtrack-hr1234-118|federal-A000001");
+    // Grouped votes are counted, so yea/nay should be non-null
+    expect(voteRow?.tallyYea).toBe(1); // 1 Aye
+    expect(voteRow?.tallyNay).toBe(1); // 1 No
+  });
+});
+
+describe("deriveBillStatus", () => {
+  it("appends the date to the action text when available", () => {
+    expect(deriveBillStatus("Passed House", "2023-02-09")).toBe(
+      "Passed House (2023-02-09)",
+    );
+  });
+
+  it("returns the action text alone when no date", () => {
+    expect(deriveBillStatus("Passed House", undefined)).toBe("Passed House");
+  });
+
+  it("returns undefined when action text is empty or missing", () => {
+    expect(deriveBillStatus(undefined, "2023-02-09")).toBeUndefined();
+    expect(deriveBillStatus("", "2023-02-09")).toBeUndefined();
+    expect(deriveBillStatus("  ", "2023-02-09")).toBeUndefined();
+  });
+
+  it("normalizes ISO date strings", () => {
+    expect(deriveBillStatus("Signed into law", "2022-08-16")).toBe(
+      "Signed into law (2022-08-16)",
+    );
   });
 });

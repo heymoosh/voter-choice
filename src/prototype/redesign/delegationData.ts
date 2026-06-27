@@ -30,6 +30,7 @@ import {
   getChatSessionId,
   type AlignmentScore,
 } from "../realData";
+import { derivePeerComparison, type PeerComparison } from "./peerComparison";
 
 // ---------------------------------------------------------------------------
 // /api/delegation response (mirrors src/app/api/delegation/route.ts)
@@ -205,6 +206,13 @@ interface RaceDataCandidate {
     total: number;
     cycle: string;
   };
+  /**
+   * Median total raised across this chamber/cycle (House or Senate), from
+   * /api/race-data (src/lib/server/chamber-median.ts). Omitted when the sample
+   * is too thin to be an honest baseline — drives the "Raised vs. the median"
+   * comparison (null ⇒ dollar-only, no fabricated baseline).
+   */
+  chamberMedian?: number;
   [k: string]: unknown;
 }
 
@@ -281,6 +289,12 @@ export interface DelegationSeatVM {
     fundingMix?: RaceDataCandidate["fundingMix"];
     donorSource?: { name: string; url: string };
     donorCoalition: unknown[] | null;
+    /**
+     * "Raised vs. the median" — derived from totalRaised + the chamber median.
+     * null ⇒ no usable baseline; the UI shows the dollar amount only and never
+     * fabricates a baseline (honest-state rule, same as attendance: null).
+     */
+    peerComparison: PeerComparison | null;
   } | null;
   alignmentEntry: SeatCardData["alignmentEntry"];
   /** 2026 filers running for this seat ("Running for this seat in 2026"). */
@@ -359,6 +373,13 @@ export function buildSeats(
             fundingMix: cardCand?.fundingMix,
             donorSource: prettyDonorSource(cardCand?.donorSource),
             donorCoalition: cardCand?.donorCoalition ?? null,
+            // "Raised vs. the median" — null when there is no usable baseline.
+            peerComparison: derivePeerComparison({
+              totalRaised: cardCand?.totalRaised,
+              chamberMedian: cardCand?.chamberMedian,
+              office: seat.office,
+              cycle: cardCand?.fundingMix?.cycle ?? "2025–26",
+            }),
           }
         : null,
       alignmentEntry: card?.alignmentEntry ?? null,

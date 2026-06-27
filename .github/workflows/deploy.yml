@@ -100,7 +100,6 @@ jobs:
           set_env KV_REST_API_TOKEN                "$KV_REST_API_TOKEN"
           set_env UPSTASH_REDIS_REST_URL           "$UPSTASH_REDIS_REST_URL"
           set_env UPSTASH_REDIS_REST_TOKEN         "$UPSTASH_REDIS_REST_TOKEN"
-          set_env DATABASE_URL                     "$DATABASE_URL"
           # Experience flag (BUILD-time inlined by Vercel): "true" = legacy
           # ballot experience; anything else = congress-assessment experience
           # (the prod default since the Phase-1 cutover). Override via the

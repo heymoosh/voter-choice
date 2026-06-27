@@ -75,6 +75,9 @@ SUB-ISSUES (sub-issue sub-issue-v1) — when the voter's concern clearly fits on
 
 Rules:
   · Don't pad to a fixed count. One thing, one theme.
+  · SPLIT distinct concerns joined by "and"/commas into a SEPARATE
+    theme each — even one with no canonicalIssue (omit that field).
+    Never merge distinct concerns into one literal-named theme.
   · Don't generalize the NAME. "ICE detention near my kid's school"
     stays specific in "name". (canonicalIssue may still be
     "border_security" — that field is for matching, the name is the

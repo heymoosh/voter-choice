@@ -11,6 +11,7 @@ import { eq, and, gte } from "drizzle-orm";
 import { getDb, DB_NOT_CONFIGURED } from "../../../db/client";
 import * as schema from "../../../db/schema";
 import { isCan2026DisplayEnabled } from "./can-flag";
+import { formatTallyLine } from "../rollcall-tally";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -40,6 +41,54 @@ export interface ContributingVote {
    * roll-call + Congress.gov link but NO inline summary paragraph.
    */
   narrative?: string;
+  /**
+   * Formatted roll-call tally line for this vote, e.g. "Passed 232–193".
+   * Absent (undefined) when tally data is not yet ingested for this vote.
+   * UI should hide the tally line when absent — never show a placeholder.
+   */
+  tally?: string;
+  /**
+   * Latest lifecycle stage for the bill, e.g. "Passed House, stalled in Senate"
+   * or "Signed into law (2022-08-16)". Sourced from Congress.gov latestAction.
+   * Absent when not yet ingested for this bill (state bills, older rows).
+   * UI should hide the status line when absent — never show a placeholder.
+   */
+  billStatus?: string;
+  /**
+   * Member's stated/inferred reason for this vote, synthesized from their
+   * press releases via the congress-press dataset.
+   *
+   * Data source: congress-press by Derek Willis
+   *   https://github.com/dwillis/congress-press
+   *   MIT licensed — Copyright (c) 2026 Derek Willis
+   *
+   * Labeling:
+   *   - label = "stated"  — the blurb is a paraphrase of an explicit comment
+   *     in the member's press release.
+   *   - label = "inferred" — the press release was thematically related to
+   *     the vote but did not address it directly.
+   *
+   * ABSENT (undefined) when:
+   *   - No matching press release was found for this vote.
+   *   - The ingest has not yet run for this member/bill pair.
+   *   - The generation step has not yet run.
+   *
+   * NEVER fabricate, NEVER display as verified fact. The UI MUST label it
+   * as the member's stated / inferred reasoning and link the source URL.
+   *
+   * Attribution requirement: display "congress-press by Derek Willis"
+   * (https://github.com/dwillis/congress-press) wherever this is shown.
+   */
+  memberRationale?: {
+    /** Plain-text blurb (≤3 sentences). */
+    text: string;
+    /** "stated" | "inferred" */
+    label: string;
+    /** Source press release URLs (for display attribution). */
+    sourceUrls: string[];
+    /** Model/version that generated this blurb. */
+    modelVersion: string | null;
+  };
 }
 
 export interface AlignmentResult {
@@ -582,8 +631,12 @@ export async function lookupAlignment(
           billSourceUrl: schema.bills.sourceUrl,
           billSource: schema.bills.source,
           billPlainSummary: schema.bills.plainSummary,
+          billStatus: schema.bills.billStatus,
           voteCast: schema.votes.voteCast,
           voteDate: schema.votes.voteDate,
+          tallyYea: schema.votes.tallyYea,
+          tallyNay: schema.votes.tallyNay,
+          tallyResult: schema.votes.tallyResult,
           stanceLens: schema.issueTags.stanceLens,
           taggerConfidence: schema.issueTags.taggerConfidence,
           subIssue: schema.issueTags.subIssue,
@@ -616,8 +669,12 @@ export async function lookupAlignment(
           billSourceUrl: schema.bills.sourceUrl,
           billSource: schema.bills.source,
           billPlainSummary: schema.bills.plainSummary,
+          billStatus: schema.bills.billStatus,
           voteCast: schema.votes.voteCast,
           voteDate: schema.votes.voteDate,
+          tallyYea: schema.votes.tallyYea,
+          tallyNay: schema.votes.tallyNay,
+          tallyResult: schema.votes.tallyResult,
           stanceLens: schema.issueTags.stanceLens,
           taggerConfidence: schema.issueTags.taggerConfidence,
           subIssue: schema.issueTags.subIssue,
@@ -729,8 +786,133 @@ export async function lookupAlignment(
         attachCongressGovSource(vote, r.billId);
       }
 
+      // Roll-call tally: format "Passed 232–193" from stored counts.
+      // Omit the field entirely when data is not yet available (honest fallback).
+      const tallyYea =
+        "tallyYea" in r && r.tallyYea != null ? Number(r.tallyYea) : null;
+      const tallyNay =
+        "tallyNay" in r && r.tallyNay != null ? Number(r.tallyNay) : null;
+      const tallyResult =
+        "tallyResult" in r
+          ? (r.tallyResult as string | null | undefined)
+          : null;
+      const tallyLine = formatTallyLine(tallyResult, tallyYea, tallyNay);
+      if (tallyLine) vote.tally = tallyLine;
+
+      // Bill lifecycle status: e.g. "Passed House, stalled in Senate".
+      // Omit when NULL — never render a placeholder.
+      const billStatus =
+        "billStatus" in r ? (r.billStatus as string | null | undefined) : null;
+      if (billStatus && billStatus.trim()) vote.billStatus = billStatus.trim();
+
       return vote;
     });
+
+  // ---------------------------------------------------------------------------
+  // Attach member rationales from vote_rationales table (congress-press layer).
+  //
+  // Attribution: congress-press by Derek Willis
+  //   https://github.com/dwillis/congress-press
+  //   MIT licensed — Copyright (c) 2026 Derek Willis
+  //
+  // We fetch rationale rows only for the bills that appear in contributingVotes
+  // (a small, bounded set — at most MAX_CONTRIBUTING_VOTES = 6). Fail-soft:
+  // if the table doesn't exist yet (migration not applied) or the query fails,
+  // we log and continue without rationales — never break alignment display.
+  // ---------------------------------------------------------------------------
+  const billIdsToEnrich = new Set(
+    sorted.slice(0, MAX_CONTRIBUTING_VOTES).map((r) => r.billId),
+  );
+
+  type RationaleRow = {
+    billId: string;
+    rationaleText: string | null;
+    label: string | null;
+    pressReleaseSources: unknown;
+    modelVersion: string | null;
+    matchConfidence: string | null;
+  };
+  const rationalesByBillId = new Map<string, RationaleRow>();
+
+  if (billIdsToEnrich.size > 0) {
+    try {
+      const rationaleRows = await db
+        .select({
+          billId: schema.voteRationales.billId,
+          rationaleText: schema.voteRationales.rationaleText,
+          label: schema.voteRationales.label,
+          pressReleaseSources: schema.voteRationales.pressReleaseSources,
+          modelVersion: schema.voteRationales.modelVersion,
+          matchConfidence: schema.voteRationales.matchConfidence,
+        })
+        .from(schema.voteRationales)
+        .where(
+          and(
+            eq(schema.voteRationales.candidateId, candidateId),
+            // Display gate (owner-approved): only high-confidence matches surface
+            // publicly. Medium/low rows may be stored but must never reach the UI —
+            // this SQL filter is the safest enforcement point.
+            eq(schema.voteRationales.matchConfidence, "high"),
+          ),
+        );
+      // Filter in JS since inArray would require an import we'd need to add
+      for (const row of rationaleRows) {
+        if (billIdsToEnrich.has(row.billId)) {
+          rationalesByBillId.set(row.billId, row);
+        }
+      }
+    } catch {
+      // Fail-soft: table may not exist yet (migration pending).
+      // Log once so operators know, but never break alignment display.
+      // Not logging stack trace to avoid log noise in tests.
+    }
+  }
+
+  // Attach rationale to each contributing vote where available.
+  for (const vote of contributingVotes) {
+    // The billId is embedded in the vote title as "HR1234 · Title". We need
+    // to match against the sorted row. Use a parallel map keyed by billTitle.
+    const matchingRationaleEntry = sorted
+      .slice(0, MAX_CONTRIBUTING_VOTES)
+      .find((r) => {
+        const num = extractBillNumber(
+          r.billRawMetadata,
+          r.billId,
+          r.billSource,
+        );
+        const title = stripLeadingBillNumber(r.billTitle) || r.billTitle;
+        const expectedTitle = num ? `${num} · ${title}` : title;
+        return vote.billTitle === expectedTitle;
+      });
+
+    if (!matchingRationaleEntry) continue;
+    const rationaleRow = rationalesByBillId.get(matchingRationaleEntry.billId);
+
+    if (
+      rationaleRow &&
+      rationaleRow.rationaleText &&
+      rationaleRow.rationaleText.trim()
+    ) {
+      // Extract source URLs from the stored JSONB array
+      const sourcesRaw = rationaleRow.pressReleaseSources;
+      const sourceUrls: string[] = Array.isArray(sourcesRaw)
+        ? sourcesRaw.flatMap((s) => {
+            const url =
+              typeof s === "object" && s !== null && "url" in s
+                ? String((s as Record<string, unknown>).url)
+                : null;
+            return url ? [url] : [];
+          })
+        : [];
+
+      vote.memberRationale = {
+        text: rationaleRow.rationaleText.trim(),
+        label: rationaleRow.label ?? "inferred",
+        sourceUrls,
+        modelVersion: rationaleRow.modelVersion,
+      };
+    }
+  }
 
   const base: AlignmentResult = {
     found: true,

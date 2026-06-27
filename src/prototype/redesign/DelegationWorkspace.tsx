@@ -139,13 +139,6 @@ export function ScorecardPane({
             <li key={i}>
               <span className="n">{i + 1}</span>
               {iss.interpretation}
-              <span className={"lvl-tag " + iss.level}>
-                {iss.level === "federal"
-                  ? "FED"
-                  : iss.level === "state"
-                    ? "STATE"
-                    : "BOTH"}
-              </span>
             </li>
           ))}
         </ol>
@@ -357,16 +350,7 @@ export function DelegationWorkspace({
             </div>
             <ol>
               {userIssues.map((iss, i) => (
-                <li key={iss.canonicalIssue || i}>
-                  {iss.interpretation}
-                  <span className={"lvl-tag " + iss.level}>
-                    {iss.level === "federal"
-                      ? "FED"
-                      : iss.level === "state"
-                        ? "STATE"
-                        : "BOTH"}
-                  </span>
-                </li>
+                <li key={iss.canonicalIssue || i}>{iss.interpretation}</li>
               ))}
             </ol>
           </div>
