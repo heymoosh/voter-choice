@@ -523,11 +523,15 @@ function UnresolvedSeatCard({
   stateCode,
   onShowBudgetOptions,
 }) {
+  const notUp2026 = seat.nextElection?.onBallot2026 === false;
   return (
-    <div className="cv2-card rep-card">
+    <div className={"cv2-card rep-card" + (notUp2026 ? " not-up-2026" : "")}>
       <div className="seat-strip">
         <span className="seat-office">{seat.office}</span>
         <span className="seat-district">{seat.districtLabel}</span>
+        {notUp2026 && (
+          <span className="seat-not-up">Not up for election in 2026</span>
+        )}
         {seat.nextElection && (
           <span
             className={
@@ -621,13 +625,17 @@ export function RepCard({
     alias: seat.blindLabel,
   };
   const last = cand.name.split(" ").pop();
+  const notUp2026 = seat.nextElection?.onBallot2026 === false;
 
   return (
-    <div className="cv2-card rep-card">
+    <div className={"cv2-card rep-card" + (notUp2026 ? " not-up-2026" : "")}>
       {/* Seat strip — office + district + when you can act on it. */}
       <div className="seat-strip">
         <span className="seat-office">{seat.office}</span>
         <span className="seat-district">{seat.districtLabel}</span>
+        {notUp2026 && (
+          <span className="seat-not-up">Not up for election in 2026</span>
+        )}
         {seat.nextElection && (
           <span
             className={

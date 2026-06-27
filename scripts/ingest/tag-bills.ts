@@ -38,6 +38,7 @@
  *   DATABASE_URL=<neon> ANTHROPIC_VOTER_API=<key> npx tsx scripts/ingest/tag-bills.ts --dry-run
  */
 
+import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import Anthropic from "@anthropic-ai/sdk";
@@ -101,11 +102,7 @@ export type StanceLens = "in_favor" | "opposed";
  * - 'non_issue'     — catch-all: not substantively related to any canonical
  *                     issue but doesn't fit a narrower category
  */
-export type SkipReason =
-  | "procedural"
-  | "naming"
-  | "ceremonial"
-  | "non_issue";
+export type SkipReason = "procedural" | "naming" | "ceremonial" | "non_issue";
 
 export type RawTagEntry = {
   canonical_issue: unknown;
@@ -131,6 +128,23 @@ export type TaggerRuntimeConfig = {
   batchSize: number;
   dryRun: boolean;
   anthropicApiKey: string;
+  /**
+   * Force-retag opt-in (additive; default false). When true, the tagger
+   * re-tags an EXPLICIT, non-empty set of bill ids (`targetBillIds`) even though
+   * they already have a row for the current TAGGER_VERSION — bypassing the usual
+   * NOT-EXISTS skip. Used for targeted coverage lifts (e.g. thin reproductive_
+   * rights / immigration subsets) WITHOUT bumping TAGGER_VERSION.
+   *
+   * GUARD: force-retag is meaningless (and refused) without an explicit
+   * `targetBillIds` list — there is intentionally NO "force-retag everything"
+   * path, so a targeted run can never accidentally re-tag the whole corpus.
+   */
+  forceRetag: boolean;
+  /**
+   * Explicit bill ids to (re)tag when forceRetag is true. Empty unless a
+   * `--ids` selector was provided. Ignored when forceRetag is false.
+   */
+  targetBillIds: string[];
 };
 
 export type TaggerCounts = {
@@ -386,6 +400,43 @@ export async function fetchUntaggedBills(
     LIMIT ${limit}
   `);
 
+  return rows.rows as BillRow[];
+}
+
+/**
+ * Guard for force-retag: ensure an EXPLICIT, non-empty id set was supplied.
+ *
+ * This is the safety rail that makes force-retag targeted-only — it throws on an
+ * empty/missing id list so there is no "force-retag the whole corpus" path. The
+ * caller (tagBills) invokes this before any DB read when forceRetag is on.
+ */
+export function assertForceRetagSelector(targetBillIds: string[]): void {
+  if (!targetBillIds || targetBillIds.length === 0) {
+    throw new Error(
+      "[tag-bills] --force requires an explicit non-empty --ids selector. " +
+        "Force-retag never re-tags the whole corpus; pass the targeted bill ids " +
+        "(e.g. from scripts/ingest/_retag-selector.ts).",
+    );
+  }
+}
+
+/**
+ * Fetch bills by explicit id, REGARDLESS of existing TAGGER_VERSION rows.
+ *
+ * Unlike fetchUntaggedBills (which skips already-tagged bills), this is the
+ * force-retag path: it returns exactly the requested bills so their tags can be
+ * recomputed for the same TAGGER_VERSION. Read-only.
+ */
+export async function fetchBillsByIds(
+  db: DbClient,
+  ids: string[],
+): Promise<BillRow[]> {
+  if (ids.length === 0) return [];
+  const rows = await db.execute(sql`
+    SELECT b.id, b.title, b.summary, b.jurisdiction
+    FROM bills b
+    WHERE b.id = ANY(${ids})
+  `);
   return rows.rows as BillRow[];
 }
 
@@ -668,12 +719,42 @@ export function resolveTagBillsConfig(
   const anthropicApiKey =
     env.ANTHROPIC_VOTER_API ?? env.ANTHROPIC_API_KEY ?? "";
 
+  // Force-retag opt-in: additive, off by default. Requires an explicit id list
+  // (--ids) — there is no "force everything" path on purpose.
+  const targetBillIds = parseIdsFlag(argv);
+  const forceRetag = argv.includes("--force") || env.TAGGER_FORCE_RETAG === "1";
+
   return {
     limit,
     batchSize: BATCH_SIZE,
     dryRun,
     anthropicApiKey,
+    forceRetag,
+    targetBillIds,
   };
+}
+
+/**
+ * Parse the `--ids` selector into an explicit bill-id list. Accepts either an
+ * inline comma-separated list (`--ids a,b,c`) or a file reference
+ * (`--ids @path/to/ids.txt`, one id per line or comma-separated). Empty/blank
+ * entries are dropped. Returns [] when no `--ids` flag is present.
+ */
+export function parseIdsFlag(argv: string[]): string[] {
+  const idx = argv.indexOf("--ids");
+  if (idx === -1) return [];
+  const value = argv[idx + 1];
+  if (!value) return [];
+
+  let raw = value;
+  if (value.startsWith("@")) {
+    // Read-only file load; deferred so the function stays pure when inline.
+    raw = readFileSync(value.slice(1), "utf8");
+  }
+  return raw
+    .split(/[\s,]+/u)
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
 }
 
 function parseLimitFlag(argv: string[]): number | null {
@@ -734,10 +815,24 @@ export async function tagBills({
   };
 
   process.stderr.write(
-    `[tag-bills] starting tagger_version=${TAGGER_VERSION} limit=${config.limit} dry_run=${config.dryRun}\n`,
+    `[tag-bills] starting tagger_version=${TAGGER_VERSION} limit=${config.limit} ` +
+      `dry_run=${config.dryRun} force_retag=${config.forceRetag}\n`,
   );
 
-  const untagged = await fetchUntaggedBills(db, config.limit);
+  // Force-retag path (additive): re-tag an EXPLICIT id set even if already
+  // tagged for TAGGER_VERSION. Guarded against an empty/"all" set. Default
+  // behavior (untagged-only) is unchanged when forceRetag is false.
+  let untagged: BillRow[];
+  if (config.forceRetag) {
+    assertForceRetagSelector(config.targetBillIds);
+    process.stderr.write(
+      `[tag-bills] FORCE-RETAG enabled for ${config.targetBillIds.length} explicit bill id(s) ` +
+        `(bypassing the already-tagged skip for THIS subset only)\n`,
+    );
+    untagged = await fetchBillsByIds(db, config.targetBillIds);
+  } else {
+    untagged = await fetchUntaggedBills(db, config.limit);
+  }
   counts.billsQueried = untagged.length;
 
   process.stderr.write(`[tag-bills] found ${untagged.length} bills to tag\n`);
