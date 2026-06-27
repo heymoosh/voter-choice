@@ -15,7 +15,7 @@
  * TODO (follow-up card): wire `collectPolisVector` into the counters route
  *   (src/app/api/counters/route.ts) alongside `recordConcernEvents` — call it
  *   after the session counter is incremented successfully and dedupe passed.
- *   Apply migration 0009_add_polis_response_vectors.sql first. Verify that
+ *   Apply migration 0012_add_polis_response_vectors.sql first. Verify that
  *   POLIS_VECTOR_COLLECTION_ENABLED is in the Vercel env config before enabling.
  *
  * PRIVACY GUARANTEES (enforced here):

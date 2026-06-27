@@ -55,7 +55,7 @@ export const chatUsageMetrics = pgTable(
 // ---------------------------------------------------------------------------
 // polis_response_vectors — de-identified per-session Polis answer vectors
 //
-// PRIVACY CONTRACT (see also db/migrations/0009_add_polis_response_vectors.sql):
+// PRIVACY CONTRACT (see also db/migrations/0012_add_polis_response_vectors.sql):
 //   • session_token is a random UUID per Polis session, discarded by the
 //     browser at tab close. It is NOT stored elsewhere in the DB and is NOT
 //     the same as the Redis dedupe sessionId.
@@ -77,10 +77,9 @@ export const polisResponseVectors = pgTable(
     // Absent keys = voter did not answer that statement (not the same as "pass").
     responses: jsonb("responses").notNull(),
     // Truncated to the hour (UTC) to prevent time-based re-identification.
+    // No full-precision inserted_at: a millisecond insert time would undermine
+    // the coarse-hour guarantee by allowing single-row time linkage.
     recordedHour: timestamp("recorded_hour", { withTimezone: true }).notNull(),
-    insertedAt: timestamp("inserted_at", { withTimezone: true })
-      .notNull()
-      .defaultNow(),
   },
   (t) => [
     uniqueIndex("polis_response_vectors_token_uidx").on(t.sessionToken),

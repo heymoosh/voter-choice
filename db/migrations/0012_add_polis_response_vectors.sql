@@ -1,4 +1,4 @@
--- Migration 0009: de-identified per-session Polis response vectors
+-- Migration 0012: de-identified per-session Polis response vectors
 --
 -- PRIVACY RATIONALE:
 --   This table stores what each voter answered on Polis statements so we can
@@ -31,9 +31,10 @@
 --   OFF via POLIS_VECTOR_COLLECTION_ENABLED env flag. This migration should be
 --   applied only when that flag is ready to be turned on in production.
 --
--- COLLISION NOTE: migration 0009 may conflict with in-flight PRs that also
--- add a migration at this number. Verify with `git log --oneline main -- db/migrations/`
--- before applying.
+-- RENUMBERED 0009 -> 0012: main already carries 0009 (rollcall tally) and 0010
+-- (vote rationales), and 0011 is held by the chat-usage-metrics PR (#151), so
+-- this migration was renumbered to 0012. Verify the next free number with
+-- `git log --oneline main -- db/migrations/` before applying on prod.
 
 CREATE TABLE "polis_response_vectors" (
   -- Opaque random token generated per-session in the browser; never persisted
@@ -48,8 +49,9 @@ CREATE TABLE "polis_response_vectors" (
   -- function can distinguish "skipped" from "actively passed".
   "responses"       jsonb NOT NULL,
   -- Timestamp truncated to the hour (UTC). Prevents time-based re-identification.
-  "recorded_hour"   timestamp with time zone NOT NULL,
-  "inserted_at"     timestamp with time zone DEFAULT now() NOT NULL
+  -- (No full-precision inserted_at column: a millisecond insert time would
+  -- undermine the coarse-hour guarantee above by allowing single-row time linkage.)
+  "recorded_hour"   timestamp with time zone NOT NULL
 );
 --> statement-breakpoint
 -- Unique on (session_token): one vector row per Polis session. Re-submissions
