@@ -221,9 +221,7 @@ test.describe("delegation flow — address → assess → verdicts", () => {
     await expect(page.locator(".print-sheet")).toContainText(
       "U.S. House TX-37",
     );
-    await expect(page.locator(".verdict-print").first()).toContainText(
-      "WORTH KEEPING",
-    );
+    await expect(page.locator(".verdict-print").first()).toContainText("KEEP");
   });
 
   test("no-DB-record member renders the web_search card in the same surface", async ({

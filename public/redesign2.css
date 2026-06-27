@@ -252,19 +252,45 @@
   border-radius: 999px;
   vertical-align: 1px;
 }
+/* Keep = green check, Replace = red swap-arrow. Distinct icon + color + label
+   so the voter can tell at a glance (the glyph rides in the JSX label). */
 .verdict-chip.keep {
   background: oklch(0.9 0.025 170);
   color: var(--civic-2);
+  border: 1px solid var(--civic);
 }
 .verdict-chip.replace {
   background: oklch(0.93 0.04 28);
   color: var(--vote-red);
+  border: 1px solid var(--vote-red);
+}
+/* Print sheet: tinted chip so keep/replace read as distinct even in grayscale;
+   the verdict-row class also tints the checkbox glyph (see prototype.css). */
+.verdict-print {
+  font-family: var(--mono);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  padding: 1px 7px;
+  border-radius: 999px;
+  border: 1.2px solid currentColor;
 }
 .verdict-print.keep {
   color: var(--civic-2);
+  background: oklch(0.95 0.02 170);
 }
 .verdict-print.replace {
   color: var(--vote-red);
+  background: oklch(0.96 0.025 28);
+}
+
+/* ---- Bigger scorecard headings [Δ] — bump the workspace scorecard heading
+   hierarchy a step up for legibility. Scoped to .delegation so the legacy
+   workspace is untouched. ---- */
+.delegation .ws-ballot .b-head h3 {
+  font-size: 24px;
+}
+.delegation .standing-cta h4 {
+  font-size: 22px;
 }
 
 /* ---- jurisdiction level tags [Δ] ---- */
