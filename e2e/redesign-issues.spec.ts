@@ -135,7 +135,7 @@ test.describe("edit issues from the workspace", () => {
     await expect(modal.locator(".theme-row")).toHaveCount(2);
 
     // Dismiss to confirm close works cleanly.
-    await modal.getByRole("button", { name: "Cancel" }).click();
+    await modal.getByRole("button", { name: "Cancel — keep my current issues" }).click();
     await expect(modal).not.toBeVisible();
   });
 
