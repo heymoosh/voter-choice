@@ -83,7 +83,7 @@ test.describe("seat chat — ask anything about this seat", () => {
   test("keeps chat history isolated per seat", async ({ page }, testInfo) => {
     test.skip(
       testInfo.project.name !== "chromium-desktop",
-      "rail navigation is desktop-only",
+      "scorecard seat navigation is desktop-only",
     );
     await setupWorkspace(page);
 
@@ -93,12 +93,13 @@ test.describe("seat chat — ask anything about this seat", () => {
       page.getByTestId("seat-chat").locator(".msg.ai .bubble"),
     ).toContainText("(mocked reply)");
 
-    // Switch to the senior senator's seat — fresh, empty log.
-    await page.locator(".ws-rail .race-list li").nth(1).click();
+    // Switch to the senior senator's seat — fresh, empty log. Seat rows live
+    // only in the right scorecard pane now (the left rail was removed [P1]).
+    await page.locator(".ws-ballot .b-row").nth(1).click();
     await expect(page.getByTestId("seat-chat").locator(".msg")).toHaveCount(0);
 
     // Back to the House seat — the conversation survives the switch.
-    await page.locator(".ws-rail .race-list li").nth(0).click();
+    await page.locator(".ws-ballot .b-row").nth(0).click();
     await expect(
       page.getByTestId("seat-chat").locator(".msg.user .bubble"),
     ).toContainText("Question for seat one");
