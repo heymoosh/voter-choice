@@ -344,11 +344,29 @@ export function DelegationWorkspace({
           />
 
           {doneCount === seats.length && (
-            <div className="all-done">
-              <b>That's your whole delegation.</b> One more thing worth seeing —
-              <button className="linklike" onClick={onSeeStanding}>
-                where you stand among your neighbors →
+            <div className="all-done" data-testid="all-done">
+              <div className="all-done-kick">You're done</div>
+              <b>You've reviewed all your representatives.</b>
+              <p className="all-done-sub">
+                Take your verdicts with you — print a scorecard you can bring to
+                the ballot box.
+              </p>
+              <button
+                className="all-done-print"
+                onClick={onPrint}
+                data-testid="all-done-print"
+              >
+                <span>Print My Scorecard</span>
+                <span className="arrow" aria-hidden="true">
+                  →
+                </span>
               </button>
+              <div className="all-done-also">
+                One more thing worth seeing —
+                <button className="linklike" onClick={onSeeStanding}>
+                  where you stand among your neighbors →
+                </button>
+              </div>
             </div>
           )}
 
