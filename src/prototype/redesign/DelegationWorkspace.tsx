@@ -24,29 +24,15 @@ import { SeatChat } from "./SeatChat";
 import { IssueDeltaBanner } from "./IssueDeltaBanner";
 import { issuesForLevel } from "./delegationData";
 
-function tierIntro(section, { userIssues, stateName }) {
-  const fedIssues = issuesForLevel(userIssues || [], "federal")
-    .filter((i) => i.level === "federal")
-    .map((i) => i.interpretation);
-  const stateIssues = issuesForLevel(userIssues || [], "state")
-    .filter((i) => i.level === "state")
-    .map((i) => i.interpretation);
-  const list = (xs) => xs.join(" and ");
-
+function tierIntro(section, { stateName }) {
   const TIERS = {
     "Washington — Federal": {
       place: "WASHINGTON",
-      title: "Your seat at the national table",
+      title: "Your federal delegation",
       what: () => (
         <>
           Three people who write <b>federal</b> law — and answer for it on
           roll-call votes.
-          {fedIssues.length > 0 && (
-            <>
-              {" "}
-              Of your priorities, Washington decides <b>{list(fedIssues)}</b>.
-            </>
-          )}
         </>
       ),
     },
@@ -57,13 +43,6 @@ function tierIntro(section, { userIssues, stateName }) {
         <>
           Your state legislature decides what Washington doesn't — schools,
           infrastructure, and state law.
-          {stateIssues.length > 0 && (
-            <>
-              {" "}
-              Of your priorities, your statehouse holds the pen on{" "}
-              <b>{list(stateIssues)}</b>.
-            </>
-          )}
         </>
       ),
     },
@@ -275,7 +254,7 @@ export function DelegationWorkspace({
     seats.some((s) => s.id === id),
   ).length;
   const progressPct = Math.round((doneCount / seats.length) * 100);
-  const intro = tierIntro(activeSeat.section, { userIssues, stateName });
+  const intro = tierIntro(activeSeat.section, { stateName });
 
   /* Mobile: same contract as the shipped WorkspaceView — the center pane
      is hidden <768px until a row is tapped, then opens as a fixed overlay
