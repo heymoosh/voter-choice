@@ -4278,11 +4278,11 @@ function HomeView({ savedAddress, savedSession, onSubmit, onResumeFromProfile, o
     <>
       <AppNav />
       <main id="main-content">
-      <section className="hp-hero">
+      <section className="hp-hero hp-hero-solo">
         <div>
           <div className="eyebrow"><span className="star">★</span> November 3, 2026 · America's 250th election</div>
-          <h1>Hold Congress to its <em>record.</em></h1>
-          <p className="lede">All 435 House seats and 33 Senate seats are on the ballot. Before you vote, see how your incumbents actually voted — and who paid for the campaign.</p>
+          <h1>See how your members of Congress <em>actually voted</em> — before you vote.</h1>
+          <p className="lede">Hold Congress to its record. All 435 House seats and 33 Senate seats are on the ballot — compare what your incumbents say with how they voted, and who funded the campaign.</p>
 
           <div className="addr-card">
             <label>
@@ -4344,18 +4344,6 @@ function HomeView({ savedAddress, savedSession, onSubmit, onResumeFromProfile, o
               onStartOver={onStartOver}
             />
           )}
-        </div>
-
-        <div className="stat-stack">
-          {/* Hero shows the first two fact snippets; the full set lives on the
-              Why Now? page (WHY_NOW_SNIPPETS is the shared source of truth). */}
-          {WHY_NOW_SNIPPETS.slice(0, 2).map((s, i) => (
-            <div key={i} className={'stat' + (i % 2 === 1 ? ' alt' : '')}>
-              <div className="v">{s.value}<small>{s.unit}</small></div>
-              <div className="l">{s.label}</div>
-              <div className="cite">{s.cite}</div>
-            </div>
-          ))}
         </div>
       </section>
 

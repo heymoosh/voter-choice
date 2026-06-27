@@ -101,6 +101,11 @@ input, textarea { font: inherit; color: inherit; }
   max-width: 1280px;
   margin: 0 auto;
 }
+/* Single-column hero (no stat-stack sibling): keep the content from stretching
+   the full 1280px and leaving an empty right half. */
+.hp-hero.hp-hero-solo {
+  grid-template-columns: minmax(0, 760px);
+}
 .eyebrow {
   display: inline-flex;
   align-items: center;
