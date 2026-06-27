@@ -32,6 +32,8 @@
     "db:donors-state": "npx tsx scripts/ingest/state-donors.ts",
     "db:member-stats": "npx tsx scripts/ingest/member-stats.ts",
     "db:audit-tags": "npx tsx scripts/ingest/_audit-tags.ts",
+    "db:retag-selector": "npx tsx scripts/ingest/_retag-selector.ts",
+    "db:retag-gold-check": "npx tsx scripts/ingest/_retag-gold-check.ts",
     "db:analytics-concerns": "npx tsx scripts/analytics/voter-concerns.ts"
   },
   "dependencies": {
