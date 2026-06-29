@@ -28,6 +28,14 @@ Ballot upload/parse is too much friction for the target user, so the product shi
 
 #### Resolve before Phase 1 public release — prod-hardening, NOT design-dependent:
 
+**[P0] Golden-address alignment smoke test — fail when alignment silently goes blank (BUILD FIRST)**
+- The 2026-06-26 prod incident (empty `DATABASE_URL` + unapplied migration lines) silently blanked ALL alignment and only surfaced via manual testing — e2e stayed green because it asserts UI structure, not real data. This card adds a test that fails when a known address returns empty alignment. Complements the schema-vs-migrations drift guard deferred in `claude-code-handoff/conductor-resume-2026-06-28.md`.
+- Anchor on verified real data: John Cornyn (TX Senator) + `healthcare_affordability` — post-fix `lookupAlignment()` returns a non-empty result (≈18 healthcare votes observed at incident time). Assert `{ found: true, total >= 1, contributingVotes.length > 0 }` — a real WITH/AGAINST badge backed by actual votes, not just a rendered DOM node. `resolveCandidateId()` already handles "Cornyn."
+- WHERE it must run: a PR-time test against a fresh CI DB would NOT catch this class (CI applies the migration → column exists → green, while prod sits behind). Run the assertion post-deploy against live prod, and/or add a deploy-time schema-vs-migrations drift check. A PR-time migrate+seed test only guards "code references a column no migration creates" — useful, but false confidence for THIS bug.
+- Current e2e is 100% mock-based (no test DB), so this is NEW infra, not a quick add.
+- STATUS: To Do
+- DECISION (Muxin, 2026-06-28): build the deploy-time schema-vs-migrations drift check as the PRIMARY guard — cheapest, deterministic, and it targets this exact bug (prod sitting behind a migration). Layer the golden-address smoke (Cornyn / `healthcare_affordability` non-empty) on top as defense-in-depth once the drift check lands. (Alternatives weighed: post-deploy prod smoke — needs prod creds + a fail/rollback story; PR-time migrate+seed — cheapest but misses prod drift.)
+
 **[P0] Replace the Sunday bill-tagging cron with a /schedule cloud cron (off the front-end API key)**
   - Also double check if any other backend work is using up the API key. API key should ONLY be used for front end user chat in the app.
   - WHY: `ingest-tag-bills.yml` still runs `schedule: cron: "0 9 * * 0"` on
@@ -1068,14 +1076,6 @@ All ballot upload/parse/extraction, party gates, measures, and a reliable ballot
 - Perf follow-up: `src/app/layout.tsx` loads 6 Google Font families via `<link>` for the in-app mood/palette switcher, but production hardcodes `data-mood='civic'` — consider trimming to the Civic families (IBM Plex Sans/Serif/Mono) for the prod default to cut font payload.
 - STATUS: Done
 <!-- card-id: f3bfe5e0-dc5e-403b-bc38-2306e5c0965f -->
-
-**[P1] Golden-address alignment smoke test — fail when alignment silently goes blank**
-- The 2026-06-26 prod incident (empty `DATABASE_URL` + unapplied migration lines) silently blanked ALL alignment and only surfaced via manual testing — e2e stayed green because it asserts UI structure, not real data. This card adds a test that fails when a known address returns empty alignment. Complements (does not duplicate) the [P0] "Prod `DATABASE_URL` was EMPTY" migration audit and the schema-vs-migrations drift guard deferred in `claude-code-handoff/conductor-resume-2026-06-28.md`.
-- Anchor on verified real data: John Cornyn (TX Senator) + `healthcare_affordability` — post-fix `lookupAlignment()` returns a non-empty result (≈18 healthcare votes observed at incident time). Assert `{ found: true, total >= 1, contributingVotes.length > 0 }` — a real WITH/AGAINST badge backed by actual votes, not just a rendered DOM node. `resolveCandidateId()` already handles "Cornyn."
-- WHERE it must run: a PR-time test against a fresh CI DB would NOT catch this class (CI applies the migration → column exists → green, while prod sits behind). Run the assertion post-deploy against live prod, and/or add a deploy-time schema-vs-migrations drift check. A PR-time migrate+seed test only guards "code references a column no migration creates" — useful, but false confidence for THIS bug.
-- Current e2e is 100% mock-based (no test DB), so this is NEW infra, not a quick add.
-- STATUS: To Do
-- DECISION (Muxin, 2026-06-28): build the deploy-time schema-vs-migrations drift check as the PRIMARY guard — cheapest, deterministic, and it targets this exact bug (prod sitting behind a migration). Layer the golden-address smoke (Cornyn / `healthcare_affordability` non-empty) on top as defense-in-depth once the drift check lands. (Alternatives weighed: post-deploy prod smoke — needs prod creds + a fail/rollback story; PR-time migrate+seed — cheapest but misses prod drift.)
 
 **[P2] Add Playwright visual snapshots to key redesign surfaces**
 - Catch unintended visual regressions automatically so manual review can focus only on intended design changes.
