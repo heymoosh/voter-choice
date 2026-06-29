@@ -23,37 +23,38 @@ Ballot upload/parse is too much friction for the target user, so the product shi
 
 ---
 
-## 🚨 HANDLE FIRST — fallout from the 2026-06-26 session (do these before resuming normal work)
-
-**Context for a fresh session (read this first):** A long debug of the issue-event-persistence go-live uncovered that the **production app's database was effectively disconnected**. Root cause was THREE stacked, silent prod-config gaps: (1) `VOTER_ISSUE_EVENTS_ENABLED` was set but EMPTY; (2) Vercel **Production `DATABASE_URL` was EMPTY for ~42 days** → `getDb()` returned not-configured → the ENTIRE prod Postgres layer silently no-op'd (writes swallowed, reads empty) while the app still returned HTTP 200; (3) the prod `voter_issue_events` table was missing the `sub_issue` column. All three were FIXED 2026-06-26 (flag → `true`; `DATABASE_URL` → the `production` Neon branch + a fresh `vercel --prod`; `sub_issue` column+index applied). Issue-event persistence is now LIVE & verified. **No data was lost** (verified — see first card). Full gotchas live in memory `project_prod_deploy_db_gotchas.md`. KEY trap learned: `vercel redeploy` reuses the old env snapshot — env changes need a fresh `vercel --prod`.
-
-**[P0] Confirm NO prod data was lost (the data-deletion worry) — then close**
-- Worry (Muxin, 2026-06-26): did our changes delete data? **Verified 2026-06-26: NO.** The empty `DATABASE_URL` was a CONNECTION problem, never a data problem — the data sat untouched on the `production` Neon branch the entire time. This session's only writes were ADDITIVE: the `sub_issue` column + 2 diagnostic test rows (since deleted). Re-counted post-change, identical to pre-change: **bills 68,002 · candidates 10,940 · votes 5,655,437 · members 534 · issue_tags 43,527 · voter_issue_events 0**.
-- Re "I recall seeing real data <42 days ago": consistent — the data always existed; the prod APP just couldn't reach it once `DATABASE_URL` was emptied. You likely saw it via local/preview (`.env.local` points at the real prod DB), or on prod before it was emptied.
-- **TASK (low-effort confirm):** now that prod is reconnected, load the live app, enter one address, confirm real reps + alignment render. If anything looks short vs. expectation, deep-audit; otherwise close this card.
-- STATUS: To Do
-<!-- card-id: fe26165f-56f6-46ab-8137-71a4a645eb55 -->
-
-**[P0] Prod `DATABASE_URL` was EMPTY ~42 days — stabilize, root-cause how it emptied, audit migrations**
-- 2026-06-26: Vercel **Production `DATABASE_URL` was an empty value** (Encrypted var, last modified ~42d prior). With it empty, `db/client.ts` `getDb()` returns `DB_NOT_CONFIGURED`, so EVERY prod Postgres op silently no-ops — not just issue-events but rep records / alignment / votes. Fixed by pointing it at the `production` Neon branch (`ep-silent-dew-aqnmly1g…/neondb`) + a fresh `vercel --prod`.
-- **HOW DID IT EMPTY? (root-cause so it can't recur):** both `DATABASE_URL` and `VOTER_ISSUE_EVENTS_ENABLED` were present-but-empty. `deploy.yml`'s `set_env DATABASE_URL "$DATABASE_URL"` is a LATENT BUG — `$DATABASE_URL` isn't in the workflow's env block, so it's always empty → `set_env` skips it → CI never sets/restores `DATABASE_URL`. So a manual clear (or a botched dashboard edit) won't self-heal. **FIX the workflow** (provide `DATABASE_URL` via a GitHub secret, or drop the line) so prod's DB URL is managed + restorable.
-- **AUDIT prod migrations (no drizzle journal → drift risk):** prod was missing `0005` (applied manually this session) AND `0006`'s `voter_issue_events` lines (applied this session). **Confirm `0007`–`0010` (bill skip_reason, plain_summary, rollcall tally/status, vote rationales) are actually applied to the `production` branch** — verify each column/table directly, since the deployed code's schema expects them and a gap = the same silent-failure pattern.
-- **2-branch hygiene:** project has `production` + `alignment-work` (child, identical copy-on-write data — indistinguishable by row counts). Ensure prod env always points to `production`; never let it drift to `alignment-work`.
-- STATUS: To Do
-<!-- card-id: 02686df1-59ae-422a-847e-d285a3fa7d35 -->
-
-**[P0] Navigate the held PR backlog SAFELY (~23 open PRs) — don't merge onto a broken prod**
-- State (2026-06-26): ~23 open PRs await review. **14 held draft PRs #154–#167** (overnight redesign UX: nav rename, why-now page, homepage hero, address box, lock-these-in, jurisdiction context, orientation screen, results one-panel, print-scorecard, de-emphasize non-2026, scorecard overhaul, unify candidate cards, header/footer, candidates duel). **8 new draft PRs #168–#175** from this session: #168 Spanish body i18n, #169 settings panel wired, #170 budget-exhausted copy, #171 polling-place note, #172 issue-key fix (subsumes the dup-keys card 08e091a4), #173 tablet edit-issues e2e (P0 may already be resolved — discoverability call), #174 President/VP card, #175 alignment-2b. Plus ready PRs **#141** (targeted re-tag), **#146** (Polis clustering), **#151** (anon usage).
-- **Safe order (suggested):** (1) Land the two prod-DB P0s above + confirm prod renders real data FIRST — do not merge features onto a broken prod. (2) Merge low-risk/independent first (bug + isolated copy/UI: #170, #171, #172, #174, #168); watch each `deploy.yml` run go green before the next. (3) The overlapping redesign PRs #154–#167 last, in dependency order — several touch the same files (`VoterChoiceApp.tsx`, layout/CSS) so expect rebase chains: merge one, rebase the rest. (4) #173 is test-only — decide the tablet edit-issues discoverability question. Use `/babysit-prs` per PR to rebase + fix CI; merge via auto-merge once green.
-- Held drafts were AI-built (overnight + this session) and **need your eyes** — don't bulk-merge blind. Per-PR ELI5 + repro steps are in each PR body.
-- STATUS: To Do
-<!-- card-id: eda61324-6b70-460a-8828-8d2eea2f25ab -->
-
----
 
 ## Phase 1 — Assess Congress (no ballot)
 
 #### Resolve before Phase 1 public release — prod-hardening, NOT design-dependent:
+
+**[P0] Replace the Sunday bill-tagging cron with a /schedule cloud cron (off the front-end API key)**
+  - Also double check if any other backend work is using up the API key. API key should ONLY be used for front end user chat in the app.
+  - WHY: `ingest-tag-bills.yml` still runs `schedule: cron: "0 9 * * 0"` on
+  `origin/main`, calling the Anthropic **Batch API** with `ANTHROPIC_VOTER_API`
+  (the *front-end* key). This drained the monthly budget (spikes 6/21 + 6/28).
+  Verified 2026-06-28: nothing was ever switched — PR #177 (comments out the
+  cron) is OPEN/unmerged, the `tagging-reminder.sh` SessionStart hook is NOT
+  wired into settings, and no cloud cron exists.
+  - DEPENDS ON: PR #177 merging first (disables the API cron). Until then, a
+  new cloud cron would DOUBLE-run alongside the live API cron. (Muxin is
+  handling the #177 merge separately.)
+  - TASK: stand up a `/schedule` cloud cron (weekly, ~Sun) that runs the
+  **subscription-based** tagger — the subagent/Max path
+  (`scripts/ingest/tag-bills.ts`), NOT `tag-bills-batch.ts` and NOT
+  `ANTHROPIC_VOTER_API`. Goal: automatic + free against the subscription,
+  matching the owner directive that the front-end key is user-usage-only.
+  - OPEN QUESTIONS to resolve at grooming/exec:
+    - DB access from the cloud agent — does the scheduled cloud env get the
+  prod `production` Neon `DATABASE_URL`? (tagging reads untagged bills + writes
+  `issue_tags`.) Confirm secret plumbing before first run.
+    - Scope/limit per run (untagged backlog ≈ 31.7k bills; honor
+  `skip_reason`/migration 0007 so non-issue bills aren't re-submitted weekly).
+    - Idempotency + a green/failure signal (replace the old workflow's failure
+  webhook).
+  - ON SUCCESS: delete the dead Sunday `schedule:` block entirely (keep
+  `workflow_dispatch` for manual backfill), and either wire or retire
+  `scripts/ops/tagging-reminder.sh` since the cadence is automated again.
 
 **[P1] EPIC: Claude Design session — results-flow clarity, visual hierarchy & color system (user test 2026-06-16)**
 - User found the results page "extremely overwhelming" with no guidance: "I entered this page with no idea of what you wanted me
@@ -67,6 +68,16 @@ to do. While the information is there, it took me a long time to understand what
 
 ### General
 
+**[P1] API usage hits limits but no details why**
+- 2x in June I’ve received unexpected Anthropic emails that the monthly credits were used up. It’s uncertain whether these are real users (just more traffic), a bot, or something else.
+- It could even be higher usage than we expected for the app. My core assumption is most people will NOT engage with the research chatbot (which appears on the candidate cards page). So most usage should only be at the issues step, where users describe their concerns and have Haiku parse their concerns.
+- We need to be able to understand how Haiku is being used in each session to understand if its usage is related to behaviors.
+- I am open to other suggestions and hypotheses for why I'm seeing unexpected usage, because I have not heavily marketed this app yet. I've only mentioned it in random blue sky replies or in small community forums for early testing. I was not expecting a lot of users, but I do not know if that could also be the case.
+- Either way, I do not know if we have a built-in system to track this information automatically and be able to understand what's happening and where.
+- It's also possible that my API key was compromised somehow, which means that we have not done due diligence in making sure that it's not exposed. 
+- STATUS: Backlog
+<!-- card-id: c160abf1-890d-4222-a8f6-6ee21b70ea29 -->
+
 **[P1] Spanish translation covers only the top bar**
 - "Spanish translation only translates top bar"
 - i18n bug — es strings exist in `src/lib/translations.ts` but aren't applied to the app body. Mechanical, not design-coupled.
@@ -79,13 +90,6 @@ to do. While the information is there, it took me a long time to understand what
 - Mechanical bug — renders but is a no-op. Wire a settings panel or remove before launch.
 - STATUS: Review
 <!-- card-id: 403ed2a6-1ddd-4c17-ba12-fed04efa32d1 -->
-
-**[P2] Reconsider color scheme for emotional activation**
-- "I think the color scheme is too subdued. You want to activate people. I think US Flag colors or variations therefore could
-really bring the concept home."
-- FOLDED 2026-06-26 (Muxin): the design session already answered this — the Bold Flag palette IS the flag-forward / emotional-activation color system. Tracked by the "Implement the Keystone redesign" EPIC (palette = default); no standalone color work. Closed.
-- STATUS: Done
-<!-- card-id: ffb7a832-6284-4f6d-92f3-497dee03c62a -->
 
 **Finish Spanish coverage for remaining redesign surfaces**
 - After PR #168 wired the main body, these still render English: tier-intro paragraphs (Federal/Executive), SeatChat / RepCard / HandoffModal / ScorecardPrintView, App2 stage error strings (geocodefail/norep/dberror), IssueConversation refinement fallbacks. Add t() keys + ES.
@@ -103,6 +107,13 @@ really bring the concept home."
 - Edit IS reachable via the scorecard "Edit" button (PR #173) but a tester could not find it — discoverability, not a missing feature. Decide whether to make it more prominent; likely fold into held layout PRs #161 (results one-panel) / #164 (scorecard overhaul).
 - STATUS: Backlog
 <!-- card-id: 05b9ca68-e9ff-4701-aa1b-0ab86041871c -->
+
+**[P2] Reconsider color scheme for emotional activation**
+- "I think the color scheme is too subdued. You want to activate people. I think US Flag colors or variations therefore could
+really bring the concept home."
+- FOLDED 2026-06-26 (Muxin): the design session already answered this — the Bold Flag palette IS the flag-forward / emotional-activation color system. Tracked by the "Implement the Keystone redesign" EPIC (palette = default); no standalone color work. Closed.
+- STATUS: Done
+<!-- card-id: ffb7a832-6284-4f6d-92f3-497dee03c62a -->
 
 ### Top Bar
 
@@ -295,6 +306,7 @@ Candidates UX flow".
   - Fix: key every row by a stable unique id, never the concern text or the "(prior session)" literal.
 - RESOLVED by PR #172 (draft — stable React keys; subsumed this card). Close when #172 merges.
 - STATUS: To Do
+- DECISION: defer — already built in held PR #172; rides with it, close when #172 merges.
 <!-- card-id: 08e091a4-65ab-45b8-96c9-7b384ff46a43 -->
 
 **[P0] Edit Issues missing in Tablet Mode**
@@ -311,10 +323,12 @@ Candidates UX flow".
 
 **[P0] Run /security-review**
 - STATUS: To Do
+- DECISION: defer — Muxin skipped the evidence batch; do not run /security-review overnight.
 <!-- card-id: 850b1220-9de9-4aee-814f-470b8096f164 -->
 
 **[P0] Reset Polis count to 0 before launch**
 - STATUS: To Do
+- DECISION: defer — do NOT execute. Pin the exact reset mechanism (store/keys/script) read-only and surface a one-command action for launch. No prod mutation overnight.
 <!-- card-id: 1f5e2506-106d-4d72-97ec-d85a2d8c214d -->
 
 **[P0] Lower `CHAT_DAILY_SESSION_LIMIT` from 100 back to 10 before public launch**
@@ -338,6 +352,7 @@ Candidates UX flow".
 - **Why we raised it temporarily:** PR #45 fixed a sessionId regeneration bug (each page reload was consuming a fresh session slot). With that fix landed, a single user's session correctly counts as 1. But during the launch ramp it was practical to give dogfooders headroom rather than tune the cap precisely.
 - **Caveat (noted 2026-05-28, updated same day):** the durable rate-limiter still fails _closed_ on ANY Upstash Redis error (`src/lib/server/rate-limit.ts:256-269`), so a Redis blip denies the request — but it now reports `code: "RATE_LIMIT_UNAVAILABLE"` (not `DAILY_LIMIT`), which the continuity overlay renders as a distinct "temporarily unavailable — try again" message instead of the misleading "Budget exhausted" copy. Raising `CHAT_DAILY_SESSION_LIMIT` won't help a Redis failure: if chat denies while the budget tier is still `normal`, suspect a Redis blip, not the cap.
 - STATUS: To Do
+- DECISION: defer — out-of-band Vercel env change; surface the `vercel env rm CHAT_DAILY_SESSION_LIMIT production` + redeploy commands for Muxin to run at launch.
 <!-- card-id: 28bf87ec-8587-4d1f-acc7-ab5ff7467cf4 -->
 
 **[P2] President/VP candidate card design does not match the standard card design**
@@ -355,21 +370,6 @@ Candidates UX flow".
 - STATUS: To Do
 - DEPENDS ON: Phase 1 UX/UI finalized (redesign complete)
 <!-- card-id: 2b325135-bafc-454f-b253-5bce21e05a13 -->
-
-**[P1] Enable voter issue-event persistence in production (go-live steps)**
-- Flagged 2026-06-15 — Muxin. Code shipped via PR (`feat/store-voter-issue-events`); these are the deploy-time actions to turn it ON. Until they run, the feature is **inert** — counters/Polis are unaffected and zero rows are written.
-- Persists anonymous issue signals at session-end (state + canonical issue + stance + confidence + rank; the model's short label for off-topic/unmapped concerns). **NO session id, NO address, NO verbatim text** — rows are unlinkable. Gated behind `VOTER_ISSUE_EVENTS_ENABLED` (default OFF) and requires the `voter_issue_events` table.
-- **Steps, in order:**
-  1. **Apply the migration** `db/migrations/0005_add_voter_issue_events.sql` to the prod Neon DB. There is no drizzle journal — apply the raw SQL via the Neon SQL editor / psql. Confirm the table + two indexes exist.
-  2. **Confirm the privacy copy is live** — the "Anonymous Issue Signals" section (`src/app/privacy/page.tsx`) describes this collection in the present tense, so it must be deployed before/with enabling.
-  3. **Set the flag + redeploy** — `VOTER_ISSUE_EVENTS_ENABLED=true` in Vercel Production, then redeploy (env changes only take effect on a fresh deploy — same caveat as the `CHAT_DAILY_SESSION_LIMIT` card).
-- **Status check (2026-06-15) — Plain English:** this feature needs a database table that was never actually created on the live DB, so it's silently doing nothing. I confirmed it's still missing while doing the sub-issue work — the `voter_issue_events` table doesn't exist in prod, i.e. **migration `0005` was never applied** (migration `0006` tried to add a column to it and got `relation "voter_issue_events" does not exist`). To turn the feature on, run `0005` on prod — and re-run `0006`'s two `voter_issue_events` lines too (column + index), since they were skipped for the same reason.
-- **Consistency gate:** enable the flag in the SAME release the privacy copy goes live, so the policy never describes collection that isn't happening (or vice-versa).
-- **Verify:** run a session to all-seats-verdicted, confirm rows in `voter_issue_events` (incl. ≥1 null-`canonical_issue` row carrying an `off_topic_label` if an off-topic concern was raised). Inspect via `npm run db:analytics-concerns`.
-- **Kill-switch:** unset the flag + redeploy to stop collection instantly; counters/Polis are unaffected either way.
-- ✅ DONE 2026-06-26 — LIVE & verified: rows persist for both the mapped-issue and off-topic-label paths, with only the 9 privacy-safe columns. Root cause was THREE compounding prod-config gaps, all fixed: (1) `VOTER_ISSUE_EVENTS_ENABLED` existed but was set to an EMPTY value (gate is `=== "true"`); (2) Vercel prod `DATABASE_URL` was EMPTY → the live app had no DB connection at runtime (`getDb()`→not-configured → silent return); (3) prod `voter_issue_events` lacked the `sub_issue` column — 0006's two `voter_issue_events` lines (column + index) applied to the production branch 2026-06-26. KEY gotcha: `vercel redeploy` reuses the original deployment's env snapshot — a fresh `vercel --prod` is required for env changes to take effect.
-- STATUS: Done
-<!-- card-id: 39a6b6e3-2a1c-4277-a295-b1cf44e3a6d6 -->
 
 **[P1] EPIC: Phase 1 UX/UI finalized (redesign complete)**
 - Flagged 2026-06-12 — Muxin. Milestone/umbrella card; rename or fold into your redesign tracking if you keep it elsewhere.
@@ -398,7 +398,23 @@ Candidates UX flow".
   - Second candidate missing alignment block when first has one (Backlog)
   - Web-search-based alignment scoring as fallback (idea)
 - STATUS: To Do
+- DECISION: defer — umbrella tracker, not a code task; surface, do not build.
 <!-- card-id: f474c4b8-e8c0-4129-9a67-4705a1370efe -->
+
+**[P1] Enable voter issue-event persistence in production (go-live steps)**
+- Flagged 2026-06-15 — Muxin. Code shipped via PR (`feat/store-voter-issue-events`); these are the deploy-time actions to turn it ON. Until they run, the feature is **inert** — counters/Polis are unaffected and zero rows are written.
+- Persists anonymous issue signals at session-end (state + canonical issue + stance + confidence + rank; the model's short label for off-topic/unmapped concerns). **NO session id, NO address, NO verbatim text** — rows are unlinkable. Gated behind `VOTER_ISSUE_EVENTS_ENABLED` (default OFF) and requires the `voter_issue_events` table.
+- **Steps, in order:**
+  1. **Apply the migration** `db/migrations/0005_add_voter_issue_events.sql` to the prod Neon DB. There is no drizzle journal — apply the raw SQL via the Neon SQL editor / psql. Confirm the table + two indexes exist.
+  2. **Confirm the privacy copy is live** — the "Anonymous Issue Signals" section (`src/app/privacy/page.tsx`) describes this collection in the present tense, so it must be deployed before/with enabling.
+  3. **Set the flag + redeploy** — `VOTER_ISSUE_EVENTS_ENABLED=true` in Vercel Production, then redeploy (env changes only take effect on a fresh deploy — same caveat as the `CHAT_DAILY_SESSION_LIMIT` card).
+- **Status check (2026-06-15) — Plain English:** this feature needs a database table that was never actually created on the live DB, so it's silently doing nothing. I confirmed it's still missing while doing the sub-issue work — the `voter_issue_events` table doesn't exist in prod, i.e. **migration `0005` was never applied** (migration `0006` tried to add a column to it and got `relation "voter_issue_events" does not exist`). To turn the feature on, run `0005` on prod — and re-run `0006`'s two `voter_issue_events` lines too (column + index), since they were skipped for the same reason.
+- **Consistency gate:** enable the flag in the SAME release the privacy copy goes live, so the policy never describes collection that isn't happening (or vice-versa).
+- **Verify:** run a session to all-seats-verdicted, confirm rows in `voter_issue_events` (incl. ≥1 null-`canonical_issue` row carrying an `off_topic_label` if an off-topic concern was raised). Inspect via `npm run db:analytics-concerns`.
+- **Kill-switch:** unset the flag + redeploy to stop collection instantly; counters/Polis are unaffected either way.
+- ✅ DONE 2026-06-26 — LIVE & verified: rows persist for both the mapped-issue and off-topic-label paths, with only the 9 privacy-safe columns. Root cause was THREE compounding prod-config gaps, all fixed: (1) `VOTER_ISSUE_EVENTS_ENABLED` existed but was set to an EMPTY value (gate is `=== "true"`); (2) Vercel prod `DATABASE_URL` was EMPTY → the live app had no DB connection at runtime (`getDb()`→not-configured → silent return); (3) prod `voter_issue_events` lacked the `sub_issue` column — 0006's two `voter_issue_events` lines (column + index) applied to the production branch 2026-06-26. KEY gotcha: `vercel redeploy` reuses the original deployment's env snapshot — a fresh `vercel --prod` is required for env changes to take effect.
+- STATUS: Done
+<!-- card-id: 39a6b6e3-2a1c-4277-a295-b1cf44e3a6d6 -->
 
 **[P0] Remove Fed Both and State labels from Issues**
 - These tags labeled ‘both’ or ‘fed’ on Your Issues (on the screen where you evaluate candidates) are confusing - just remove the little tags entirely, not needed.
@@ -912,6 +928,13 @@ All ballot upload/parse/extraction, party gates, measures, and a reliable ballot
 - STATUS: Backlog
 <!-- card-id: 1ec90ed1-9222-4e81-a15e-2460767f0581 -->
 
+**[P2] Remove dead Bitwarden DATABASE_URL fetch in deploy.yml**
+- - Follow-up from the deploy.yml DATABASE_URL fix (02686df1). After dropping the `set_env DATABASE_URL "$DATABASE_URL"` push line, the workflow's "Pull secrets" step (deploy.yml ~lines 69-71) still fetches `DATABASE_URL` from Bitwarden Secrets Manager (secret id 90abeeed-130e-4707-86ff-b446003770c2) into `$GITHUB_ENV`, but nothing consumes it anymore (the test job at ~line 44 runs before the pull).
+- ACTION: remove the dead Bitwarden DATABASE_URL fetch so CI stops pulling a prod DB secret it no longer uses. Verify no other step consumes `$DATABASE_URL` first.
+- Low risk, cleanup-only. Blocked on the parent PR landing so the diffs don't conflict.
+- STATUS: Backlog
+<!-- card-id: babd56b0-73ff-4928-9f8f-c4e08bb4610f -->
+
 **Double-check CAN2026: review the site thoroughly, page by page**
 - Confirm what data CAN2026 (can2026.org) actually provides by going through the site THOROUGHLY, page by page — the initial research only fetched the landing page and may have missed bill summaries / vote-rationale / useful supplemental data living in specific sub-pages.
 - Context: the quick fetch read CAN2026 as a constitutional-oversight documentation archive ("no evaluative conclusions"), but Muxin recalls some relevant data existing in specific parts of the site. CAN2026 could still be useful SUPPLEMENTAL info even if it isn't the primary summary/rationale source.
@@ -1045,3 +1068,17 @@ All ballot upload/parse/extraction, party gates, measures, and a reliable ballot
 - Perf follow-up: `src/app/layout.tsx` loads 6 Google Font families via `<link>` for the in-app mood/palette switcher, but production hardcodes `data-mood='civic'` — consider trimming to the Civic families (IBM Plex Sans/Serif/Mono) for the prod default to cut font payload.
 - STATUS: Done
 <!-- card-id: f3bfe5e0-dc5e-403b-bc38-2306e5c0965f -->
+
+**[P1] Golden-address alignment smoke test — fail when alignment silently goes blank**
+- The 2026-06-26 prod incident (empty `DATABASE_URL` + unapplied migration lines) silently blanked ALL alignment and only surfaced via manual testing — e2e stayed green because it asserts UI structure, not real data. This card adds a test that fails when a known address returns empty alignment. Complements (does not duplicate) the [P0] "Prod `DATABASE_URL` was EMPTY" migration audit and the schema-vs-migrations drift guard deferred in `claude-code-handoff/conductor-resume-2026-06-28.md`.
+- Anchor on verified real data: John Cornyn (TX Senator) + `healthcare_affordability` — post-fix `lookupAlignment()` returns a non-empty result (≈18 healthcare votes observed at incident time). Assert `{ found: true, total >= 1, contributingVotes.length > 0 }` — a real WITH/AGAINST badge backed by actual votes, not just a rendered DOM node. `resolveCandidateId()` already handles "Cornyn."
+- WHERE it must run: a PR-time test against a fresh CI DB would NOT catch this class (CI applies the migration → column exists → green, while prod sits behind). Run the assertion post-deploy against live prod, and/or add a deploy-time schema-vs-migrations drift check. A PR-time migrate+seed test only guards "code references a column no migration creates" — useful, but false confidence for THIS bug.
+- Current e2e is 100% mock-based (no test DB), so this is NEW infra, not a quick add.
+- STATUS: To Do
+- DATA PATH — pick before building (approval-worthy: touches prod creds / CI / deploy): primary = deploy-time schema-vs-migrations drift check (deterministic, directly targets prod-behind-migrations, no mirror DB to maintain); defense-in-depth = post-deploy golden-address smoke vs live prod (needs prod read creds + a fail/rollback story); cheap fallback = PR-time migrate+seed (misses prod drift). Record the verdict as a `DECISION:` line once chosen (left off deliberately so the conductor's preflight surfaces the choice).
+
+**[P2] Add Playwright visual snapshots to key redesign surfaces**
+- Catch unintended visual regressions automatically so manual review can focus only on intended design changes.
+- Add `toHaveScreenshot()` baselines for the delegation workspace, rep card, scorecard, and home hero; gate by extending the existing e2e job in `.github/workflows/test.yml`.
+- Caveat: visual snapshots are maintenance-heavy and flaky across CI environments — keep scope tight. Lower value than the golden-address data smoke test above; sequence it after that by priority, not as a hard dependency.
+- STATUS: Backlog
