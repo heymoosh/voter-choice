@@ -207,6 +207,12 @@ export interface RacePatternsCandidate {
     /** Set when funding data came from a different-chamber candidacy (e.g. a House rep running for Senate). */
     chamberSwitchLabel?: string;
   };
+  /**
+   * Median total raised by all candidates in this chamber/cycle (House or Senate),
+   * derived from candidates.total_receipts. Used to contextualise the candidate's
+   * fundraising ("~3× the median House campaign"). Omitted when insufficient data.
+   */
+  chamberMedian?: number;
 }
 
 export interface RacePatternsBlock {
@@ -659,6 +665,8 @@ export interface AlignmentScore {
   kept?: number;
   total?: number;
   contributingVotes?: ContributingVote[];
+  /** Limited-data caveat from attachLimitedDataNotice (0 < total < 5). */
+  notice?: string;
   // web_search fields
   confidence?: AlignmentConfidence;
   evidence?: WebSearchEvidence[];

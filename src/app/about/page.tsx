@@ -4,7 +4,7 @@ import Link from "next/link";
 export const metadata: Metadata = {
   title: "About — Voter Choice",
   description:
-    "Voter Choice is a free, non-partisan ballot research tool built by Grey Bird LLC.",
+    "Voter Choice is a free, non-partisan Congress-assessment tool built by Grey Bird LLC.",
 };
 
 export default function AboutPage() {
@@ -26,7 +26,7 @@ export default function AboutPage() {
 
         {/* Title */}
         <h1 className="font-serif font-semibold text-[48px] max-sm:text-[36px] leading-none tracking-[-0.025em] text-ink mb-8 text-balance">
-          A free, non-partisan ballot research tool.
+          A free, non-partisan Congress-assessment tool.
         </h1>
 
         {/* Article */}
@@ -46,7 +46,7 @@ export default function AboutPage() {
             legislatures), the <b>funding picture</b> (FEC, OpenSecrets, state
             ethics commissions), and the <b>editorially-curated context</b>{" "}
             behind each vote (CAN2026 case files). We score how each candidate
-            aligns with the issues YOU told us matter, vote by vote.
+            aligns with the issues you told us matter, vote by vote.
           </p>
 
           <h2>What we don&rsquo;t do</h2>
@@ -55,7 +55,8 @@ export default function AboutPage() {
               <b>No accounts.</b> No sign-up, no email, no password.
             </li>
             <li>
-              <b>No tracking.</b> No analytics, no telemetry, no pixels.
+              <b>No tracking.</b> No third-party analytics, no ad pixels, no
+              cross-site profiling.
             </li>
             <li>
               <b>No endorsement.</b> We don&rsquo;t tell you who to vote for. We
@@ -63,8 +64,11 @@ export default function AboutPage() {
             </li>
             <li>
               <b>No data hoarding.</b> Your address, draft picks, and chat
-              history live in your browser. If you close the tab and
-              didn&rsquo;t save a profile, it&rsquo;s gone.
+              history live in your browser &mdash; close the tab without saving
+              and they&rsquo;re gone. The one thing we keep is anonymous and
+              aggregate: the issues you pick and your state &mdash; never your
+              address, county, or anything that identifies you &mdash; used to
+              show how priorities overlap across the country.
             </li>
           </ul>
 
@@ -73,7 +77,7 @@ export default function AboutPage() {
             Server costs, Anthropic API budget, and the editorial work behind
             CAN2026 case files are funded by <b>Grey Bird LLC</b> and a small
             set of individual donors who explicitly do not buy a say in
-            editorial. We publish a quarterly funding statement.
+            editorial.
           </p>
           <p>
             When our community AI budget runs out, you can bring your own

@@ -153,6 +153,108 @@ describe("parseThemeExtraction", () => {
     expect(result[0].stance).toBe("opposed");
   });
 
+  // --- subIssue two-gate validation (sub-issue layer) ---
+  //
+  // A subIssue is a topic facet beneath canonicalIssue; it inherits the
+  // parent pole axis. The parser keeps it ONLY when it's a string, the theme
+  // already has a canonicalIssue, and the id is a valid facet of that parent —
+  // otherwise it drops silently (an orphaned/mismatched facet would narrow
+  // scoring against the wrong axis).
+
+  it("keeps a valid subIssue when its parent matches the canonicalIssue", () => {
+    const raw = JSON.stringify([
+      {
+        name: "Insulin costs",
+        quotes: ["insulin keeps going up"],
+        canonicalIssue: "healthcare_affordability",
+        stance: "in_favor",
+        subIssue: "drug_prices",
+      },
+    ]);
+    const result = parseThemeExtraction(raw);
+    expect(result).toEqual([
+      {
+        name: "Insulin costs",
+        quotes: ["insulin keeps going up"],
+        canonicalIssue: "healthcare_affordability",
+        stance: "in_favor",
+        subIssue: "drug_prices",
+      },
+    ]);
+  });
+
+  it("drops a subIssue when the theme has no canonicalIssue", () => {
+    const raw = JSON.stringify([
+      {
+        name: "Insulin costs",
+        quotes: ["insulin keeps going up"],
+        subIssue: "drug_prices",
+      },
+    ]);
+    const result = parseThemeExtraction(raw);
+    expect(result).toEqual([
+      { name: "Insulin costs", quotes: ["insulin keeps going up"] },
+    ]);
+  });
+
+  it("drops a subIssue whose parent mismatches the canonicalIssue", () => {
+    const raw = JSON.stringify([
+      {
+        name: "Drug prices but wrong parent",
+        quotes: ["drugs cost too much"],
+        canonicalIssue: "economy_jobs",
+        subIssue: "drug_prices",
+      },
+    ]);
+    const result = parseThemeExtraction(raw);
+    expect(result).toEqual([
+      {
+        name: "Drug prices but wrong parent",
+        quotes: ["drugs cost too much"],
+        canonicalIssue: "economy_jobs",
+      },
+    ]);
+  });
+
+  it("drops an unknown subIssue id but keeps the theme", () => {
+    const raw = JSON.stringify([
+      {
+        name: "Healthcare",
+        quotes: ["healthcare matters"],
+        canonicalIssue: "healthcare_affordability",
+        subIssue: "not_a_real_sub_issue",
+      },
+    ]);
+    const result = parseThemeExtraction(raw);
+    expect(result).toEqual([
+      {
+        name: "Healthcare",
+        quotes: ["healthcare matters"],
+        canonicalIssue: "healthcare_affordability",
+      },
+    ]);
+  });
+
+  it("parses a theme with a valid canonicalIssue but no subIssue unchanged", () => {
+    const raw = JSON.stringify([
+      {
+        name: "Healthcare",
+        quotes: ["healthcare matters"],
+        canonicalIssue: "healthcare_affordability",
+        stance: "in_favor",
+      },
+    ]);
+    const result = parseThemeExtraction(raw);
+    expect(result).toEqual([
+      {
+        name: "Healthcare",
+        quotes: ["healthcare matters"],
+        canonicalIssue: "healthcare_affordability",
+        stance: "in_favor",
+      },
+    ]);
+  });
+
   it("returns [] for an empty array input", () => {
     const result = parseThemeExtraction("[]");
     expect(result).toEqual([]);

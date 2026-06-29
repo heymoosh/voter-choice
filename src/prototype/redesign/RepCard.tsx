@@ -24,6 +24,7 @@ import {
   formatDollars,
 } from "../VoterChoiceApp";
 import { getChallengerResearch, researchChallenger } from "./delegationData";
+import { MedianChip, MoneyGapScale } from "./MoneyGap";
 
 export const PARTY_META2 = {
   Republican: { name: "Republican", code: "R", pipClass: "rep" },
@@ -135,7 +136,7 @@ function ResearchedPositionRow({ issue, pos }) {
                 <p className="cv2-vote-narr">“{e.summary}”</p>
                 <div className="cv2-vote-cite">
                   <span className="src-chip">
-                    web search · {pos.confidence} confidence
+                    Web search · {pos.confidence} confidence
                   </span>
                   <a
                     href={e.url}
@@ -518,11 +519,15 @@ function UnresolvedSeatCard({
   stateCode,
   onShowBudgetOptions,
 }) {
+  const notUp2026 = seat.nextElection?.onBallot2026 === false;
   return (
-    <div className="cv2-card rep-card">
+    <div className={"cv2-card rep-card" + (notUp2026 ? " not-up-2026" : "")}>
       <div className="seat-strip">
         <span className="seat-office">{seat.office}</span>
         <span className="seat-district">{seat.districtLabel}</span>
+        {notUp2026 && (
+          <span className="seat-not-up">Not up for election in 2026</span>
+        )}
         {seat.nextElection && (
           <span
             className={
@@ -616,13 +621,17 @@ export function RepCard({
     alias: seat.blindLabel,
   };
   const last = cand.name.split(" ").pop();
+  const notUp2026 = seat.nextElection?.onBallot2026 === false;
 
   return (
-    <div className="cv2-card rep-card">
+    <div className={"cv2-card rep-card" + (notUp2026 ? " not-up-2026" : "")}>
       {/* Seat strip — office + district + when you can act on it. */}
       <div className="seat-strip">
         <span className="seat-office">{seat.office}</span>
         <span className="seat-district">{seat.districtLabel}</span>
+        {notUp2026 && (
+          <span className="seat-not-up">Not up for election in 2026</span>
+        )}
         {seat.nextElection && (
           <span
             className={
@@ -712,6 +721,16 @@ export function RepCard({
                   <b>{formatDollars(cand.totalRaised)}</b> raised
                 </span>
               )}
+              {/* Collapsed glance — "Raised vs. the median". Renders the dollar
+                  amount only (no fabricated baseline) when peerComparison is
+                  null. */}
+              {typeof cand.totalRaised === "number" &&
+                cand.peerComparison != null && (
+                  <MedianChip
+                    raised={cand.totalRaised}
+                    peer={cand.peerComparison}
+                  />
+                )}
               {cand.fundingMix && (
                 <span className="cv2-disclose-mix">
                   {cand.fundingMix.small}% small donors ·{" "}
@@ -738,6 +757,21 @@ export function RepCard({
           className="cv2-disclose-body"
           hidden={!moneyOpen}
         >
+          {/* "Raised vs. the median" — the full scale REPLACES the flat
+              "≈3× the median House campaign" string. Renders nothing when
+              peerComparison is null, so the dollar-only FunderBars below stays
+              the honest fallback. */}
+          {cand.peerComparison != null &&
+            typeof cand.totalRaised === "number" && (
+              <MoneyGapScale
+                subject={{
+                  name: blind ? seat.blindLabel : cand.name,
+                  raised: cand.totalRaised,
+                  pip: party.pipClass,
+                }}
+                peer={cand.peerComparison}
+              />
+            )}
           <FunderBars
             donorCoalition={cand.donorCoalition}
             totalRaised={cand.totalRaised}

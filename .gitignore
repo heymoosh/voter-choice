@@ -68,6 +68,10 @@ db/migrations/meta/
 # Alignment re-tag working data (ephemeral batch + result files; tags live on the Neon branch)
 scripts/ingest/_pole-batches/
 
+# Sub-issue re-tag + gold working data (ephemeral; sub_issue tags live on the DB)
+scripts/ingest/_subissue-batches/
+scripts/ingest/_subissue-gold/
+
 # Cutover gold-sample: ignore bulky reproducible intermediates (batch inputs, juror files,
 # prod backup dumps); KEEP the audit evidence (_manifest / _gold-consensus / _gold-disagreements
 # / _gold-pv), which do not match the batch-id pattern below.

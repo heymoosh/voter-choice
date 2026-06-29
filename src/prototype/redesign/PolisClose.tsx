@@ -88,13 +88,15 @@ export function PolisClose({ polis }) {
         </span>
       </div>
 
-      <div className="polis-grid">
+      {/* Solo layout: no bridges → cloud takes left 62%, stat panel takes right 38%.
+          With bridges: original 1.35fr / 1fr split, stat stays inside scatter-wrap. */}
+      <div className={`polis-grid${scope.bridges.length === 0 ? " polis-grid--solo" : ""}`}>
         <div className="scatter-wrap">
           <svg
             className="scatter"
             viewBox="0 0 100 100"
             preserveAspectRatio="xMidYMid meet"
-            style={{ aspectRatio: "1.25 / 1" }}
+            style={{ aspectRatio: "5 / 4" }}
             role="img"
             aria-labelledby={`${titleId} ${descId}`}
           >
@@ -118,9 +120,9 @@ export function PolisClose({ polis }) {
                 key={scope.id + i}
                 cx={proj(d.x)}
                 cy={proj(-d.y)}
-                r="1.15"
+                r="1.5"
                 fill="var(--civic)"
-                opacity="0.42"
+                opacity="0.45"
               />
             ))}
 
@@ -130,7 +132,7 @@ export function PolisClose({ polis }) {
                 key={scope.id + "r" + i}
                 x={proj(r.x)}
                 y={proj(-r.y)}
-                fontSize="2.6"
+                fontSize="3.2"
                 fontFamily="var(--mono)"
                 fill="var(--ink-3)"
                 opacity="0.65"
@@ -144,19 +146,19 @@ export function PolisClose({ polis }) {
             {scope.you && (
               <>
                 <rect
-                  x={proj(scope.you[0]) - 2.2}
-                  y={proj(-scope.you[1]) - 2.2}
-                  width="4.4"
-                  height="4.4"
-                  rx="0.8"
+                  x={proj(scope.you[0]) - 3.0}
+                  y={proj(-scope.you[1]) - 3.0}
+                  width="6.0"
+                  height="6.0"
+                  rx="1.0"
                   fill="var(--gold)"
                   stroke="var(--ink)"
-                  strokeWidth="1.1"
+                  strokeWidth="1.4"
                 />
                 <text
-                  x={proj(scope.you[0]) + 4}
-                  y={proj(-scope.you[1]) + 1.4}
-                  fontSize="3.4"
+                  x={proj(scope.you[0]) + 5.2}
+                  y={proj(-scope.you[1]) + 1.8}
+                  fontSize="4.5"
                   fontFamily="var(--mono)"
                   fill="var(--ink)"
                   fontWeight="600"
@@ -167,7 +169,9 @@ export function PolisClose({ polis }) {
             )}
           </svg>
 
-          {(headlineStat || mostCommon) && (
+          {/* When bridges are present, stat stays inside the scatter card (original layout).
+              When solo, stat moves to the right column (rendered below the grid). */}
+          {scope.bridges.length > 0 && (headlineStat || mostCommon) && (
             <div className="overlap-stat">
               {headlineStat ? (
                 <div className="overlap-head">
@@ -206,7 +210,8 @@ export function PolisClose({ polis }) {
           </p>
         </div>
 
-        {scope.bridges.length > 0 && (
+        {/* Right column: bridges when present, else the big stat panel */}
+        {scope.bridges.length > 0 ? (
           <div className="bridges">
             <h3>Common ground</h3>
             <p className="sub">
@@ -225,7 +230,36 @@ export function PolisClose({ polis }) {
               </div>
             ))}
           </div>
-        )}
+        ) : (headlineStat || mostCommon) ? (
+          <div className="overlap-stat">
+            {headlineStat ? (
+              <div className="overlap-head">
+                <span className="num">{headlineStat.percent}%</span>
+                <p>
+                  of the {fmtN(scope.sampleSize)} people who finished{" "}
+                  {scope.scopePhrase} share your top priority —{" "}
+                  <strong>{headlineStat.issueLabel}</strong>.
+                </p>
+              </div>
+            ) : (
+              <p className="overlap-alt">
+                The priority people share most {scope.scopePhrase} is{" "}
+                <strong>{mostCommon.issueLabel}</strong> —{" "}
+                {mostCommon.percent}% of {fmtN(scope.sampleSize)} finishers.
+              </p>
+            )}
+            {extraShares.length > 0 && (
+              <ul className="you-shares">
+                {extraShares.map((s) => (
+                  <li key={s.canonicalIssue}>
+                    {s.issueLabel}
+                    <span className="pct">{s.percent}%</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        ) : null}
       </div>
     </section>
   );

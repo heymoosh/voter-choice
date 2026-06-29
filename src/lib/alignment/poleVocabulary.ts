@@ -783,12 +783,16 @@ CROSS-CUTTING RULES:
  */
 export function renderResolverPoleDirections(): string {
   const lines = Object.entries(POLE_VOCABULARY)
-    .map(
-      ([id, e]) =>
-        `  ${id} [${e.axisType}] — in_favor=${e.in_favor.name}; opposed=${e.opposed.name}`,
-    )
+    .map(([id, e]) => {
+      // axis_type drives the stance rule: [contested] issues have two
+      // legitimate poles, so a value-only concern that doesn't pick a side
+      // must OMIT stance (honest no-score); [valence] issues have one broadly
+      // shared direction, so an aspirational concern resolves to in_favor.
+      const axis = e.axisType === "contested" ? "contested" : "valence";
+      return `  ${id} [${axis}] — in_favor=${e.in_favor.name}; opposed=${e.opposed.name}`;
+    })
     .join("\n");
 
-  return `POLE DIRECTIONS (pole-vocab ${POLE_VOCABULARY_VERSION}) — when you set "stance", in_favor/opposed mean these FIXED per-issue sides, NOT "good vs bad". Match the voter's words to the side that fits; if their words don't pick a side, omit "stance".
+  return `POLE DIRECTIONS (pole-vocab ${POLE_VOCABULARY_VERSION}) — in_favor/opposed are these FIXED per-issue sides, NOT "good vs bad". The [contested]/[valence] tag drives "stance": for [contested], set "stance" ONLY if the voter's words pick a side, else OMIT it (do NOT default to in_favor); for [valence], an aspirational concern is in_favor unless they want less government action.
 ${lines}`;
 }

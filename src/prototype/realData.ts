@@ -12,6 +12,8 @@ import {
 import type { BallotLogistics } from "../lib/civic-logistics";
 import { toBallotLogistics } from "../lib/civic-logistics";
 import { getStateData } from "../lib/getStateData";
+import type { AlignmentScore } from "../lib/structured-blocks";
+export type { AlignmentScore };
 
 /** Best-effort election-type from ballot text/jurisdiction (primary / runoff /
  *  general). Used to decide whether the party gate applies. */
@@ -839,21 +841,6 @@ export interface CandidateResearchResult {
   blocked?: boolean;
   /** Legacy prose summary — present in older responses; ignored by new UI. */
   summary?: string;
-}
-
-/** AlignmentScore shape — matches structured-blocks.ts (sourceType:'web_search'
- *  for no-record candidates). Only the fields needed for rendering; the full
- *  interface lives in the backend types. */
-export interface AlignmentScore {
-  canonicalIssue: string;
-  issueLabel: string;
-  resolvedStance: string;
-  sourceType: "voting_record" | "web_search";
-  kept?: number;
-  total?: number;
-  confidence?: string;
-  evidence?: { summary: string; url: string }[];
-  contributingVotes?: unknown[];
 }
 
 /**

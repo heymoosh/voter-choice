@@ -1,4 +1,5 @@
 import { renderResolverPoleDirections } from "../alignment/poleVocabulary";
+import { renderResolverSubIssues } from "../alignment/subIssues";
 
 export interface ThemeExtractionInput {
   userInput: string;
@@ -17,12 +18,20 @@ export const THEME_FIELDS_PROMPT_BLOCK = `  "name":   a short neutral noun phras
             fits. This maps the voter's words to a known issue so the
             app can score candidates' voting records — you are doing
             language understanding, not judging candidates.
-  "stance": "in_favor" or "opposed" — which side of the issue the
-            voter is on, inferred from their words. Omit if genuinely
-            unclear. Most priorities are aspirational ("I want lower
-            drug prices") → "in_favor". Use "opposed" only when the
-            voter clearly wants LESS of something ("stop the new
-            highway", "against the bond").`;
+  "stance": "in_favor" or "opposed" — the FIXED per-issue side (see
+            POLE DIRECTIONS below; NOT "good vs bad"). Key off the issue's
+            [contested]/[valence] tag there:
+              · [contested]: set "stance" ONLY if the words pick a side
+                ("protect my 2A rights"→in_favor; "fewer guns on the
+                street"→opposed). If value-only and no side ("I care
+                about guns"), OMIT "stance" — an honest no-score beats a
+                guess. Never default a bare contested concern to in_favor.
+              · [valence]: aspirational concerns ("lower drug prices")→
+                in_favor; "opposed" only if they want LESS government
+                action ("government shouldn't run healthcare").
+  "subIssue": OPTIONAL — a finer id from the SUB-ISSUES list below,
+            only when one clearly fits the voter's words. Its parent
+            MUST equal canonicalIssue; otherwise omit. Never invent ids.`;
 
 /** Canonical-issue vocabulary, shared verbatim by both theme builders. */
 export const CANONICAL_ISSUES_PROMPT_BLOCK = `CANONICAL ISSUES (id — what it covers):
@@ -43,7 +52,9 @@ export const CANONICAL_ISSUES_PROMPT_BLOCK = `CANONICAL ISSUES (id — what it c
   election_integrity — voting rights, voter ID, election administration
   congressional_accountability — stock-trading bans, term limits, ethics
 
-${renderResolverPoleDirections()}`;
+${renderResolverPoleDirections()}
+
+${renderResolverSubIssues()}`;
 
 export function buildThemeExtractionPrompt(
   input: ThemeExtractionInput,
@@ -59,12 +70,17 @@ ${CANONICAL_ISSUES_PROMPT_BLOCK}
 
 Rules:
   · Don't pad to a fixed count. One thing, one theme.
+  · SPLIT distinct concerns joined by "and"/commas into a SEPARATE
+    theme each — even one with no canonicalIssue (omit that field).
+    Never merge distinct concerns into one literal-named theme.
   · Don't generalize the NAME. "ICE detention near my kid's school"
     stays specific in "name". (canonicalIssue may still be
     "border_security" — that field is for matching, the name is the
     voter's framing.)
   · Only use a canonicalIssue id from the list above, verbatim. If the
     voter's concern doesn't fit any, omit the field — do not invent ids.
+  · subIssue ids are also verbatim from the SUB-ISSUES list, and only
+    when the parent matches canonicalIssue — otherwise omit.
   · Order doesn't matter — the user will rerank in the UI.
   · No prose. Return JSON only.
 

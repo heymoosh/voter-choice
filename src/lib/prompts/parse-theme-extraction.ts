@@ -1,5 +1,6 @@
 import type { Theme } from "./types";
 import { CANONICAL_ISSUE_LABELS } from "../canonicalIssues";
+import { isValidSubIssueForParent } from "../alignment/subIssues";
 
 // UTF-8 BOM that occasionally prepends model output when piped through tools.
 const BOM = "﻿";
@@ -71,6 +72,17 @@ export function parseThemeExtraction(rawJson: string): Theme[] {
       }
       if (record.stance === "in_favor" || record.stance === "opposed") {
         theme.stance = record.stance;
+      }
+      // Two-gate sub-issue validation (mirrors the drop-unknown-issue pattern):
+      // keep subIssue only if it's a string AND the theme has a canonicalIssue
+      // AND the id is a valid facet of that parent. Otherwise drop it silently —
+      // a bad/orphaned facet would only narrow scoring against the wrong axis.
+      if (
+        typeof record.subIssue === "string" &&
+        theme.canonicalIssue !== undefined &&
+        isValidSubIssueForParent(record.subIssue, theme.canonicalIssue)
+      ) {
+        theme.subIssue = record.subIssue;
       }
       valid.push(theme);
     } else {

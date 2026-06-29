@@ -75,11 +75,29 @@ export const bills = pgTable("bills", {
   id: text("id").primaryKey(),
   title: text("title").notNull(),
   summary: text("summary"),
+  // Nullable. LLM-generated short plain-language summary (≤2 sentences,
+  // ≤~240 chars) derived from `summary` (the raw CRS text) by
+  // scripts/ingest/summarize-bills.ts. Additive — `summary` is kept verbatim.
+  // NULL means "not yet generated". The contributing-vote narrative prefers
+  // this over the raw CRS summary so users see a true short summary.
+  plainSummary: text("plain_summary"),
   source: text("source").notNull(), // "govtrack" | "openstates" | …
   sourceUrl: text("source_url").notNull(),
   jurisdiction: text("jurisdiction").notNull(),
   introducedDate: date("introduced_date"),
   rawMetadata: jsonb("raw_metadata"),
+  // Nullable. Set by the tagger when a bill is intentionally not tagged because
+  // it is genuinely non-issue (procedural, naming/renaming, ceremonial, or
+  // non-substantive). NULL means "not yet processed" OR "tagged with ≥1 tag".
+  // Used by coverage reporting to separate "skipped non-issue" from "queued for
+  // tagging". Values: 'procedural' | 'naming' | 'ceremonial' | 'non_issue'
+  skipReason: text("skip_reason"),
+  // Nullable. Latest lifecycle stage for the bill, e.g.
+  // "Passed House, stalled in Senate" or "Signed into law 2022-08-16".
+  // Sourced from Congress.gov latestAction.text during bill enrichment.
+  // NULL for state bills or bills not yet enriched. Hide this line in the UI
+  // when NULL (honest fallback — never display a placeholder or stub).
+  billStatus: text("bill_status"),
   insertedAt: timestamp("inserted_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
@@ -106,6 +124,16 @@ export const votes = pgTable(
     voteDate: date("vote_date").notNull(),
     sourceUrl: text("source_url").notNull(),
     rawMetadata: jsonb("raw_metadata"),
+    // Roll-call tally: chamber-wide headcount for this specific roll call.
+    // NULL for old rows or state votes. Populated by federal-votes ingest
+    // from GovTrack total_plus / total_minus / total_present / total_not_voting.
+    tallyYea: integer("tally_yea"),
+    tallyNay: integer("tally_nay"),
+    tallyPresent: integer("tally_present"),
+    tallyNotVoting: integer("tally_not_voting"),
+    // Human-readable roll-call outcome, e.g. "Passed", "Failed", "Agreed to".
+    // Sourced from GovTrack's `result` field. NULL when unavailable.
+    tallyResult: text("tally_result"),
     insertedAt: timestamp("inserted_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -137,6 +165,14 @@ export const issueTags = pgTable(
     // e.g. "claude-opus-4-7-2026-05-09"
     taggerVersion: text("tagger_version").notNull(),
     taggerConfidence: numeric("tagger_confidence", { precision: 4, scale: 3 }), // nullable, 0–1
+    // Optional topic facet beneath canonical_issue (e.g. "drug_prices"); NULL when not sub-tagged
+    subIssue: text("sub_issue"),
+    // Lets a sub-pass be idempotent WITHOUT touching tagger_version, e.g. "claude-opus-4-8-2026-06-15"
+    subTaggerVersion: text("sub_tagger_version"),
+    subTaggerConfidence: numeric("sub_tagger_confidence", {
+      precision: 4,
+      scale: 3,
+    }), // nullable, 0–1
     taggedAt: timestamp("tagged_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -147,6 +183,7 @@ export const issueTags = pgTable(
       table.canonicalIssue,
     ),
     index("issue_tags_canonical_issue_idx").on(table.canonicalIssue),
+    index("issue_tags_sub_issue_idx").on(table.canonicalIssue, table.subIssue),
   ],
 );
 
@@ -594,6 +631,62 @@ export const canCitations = pgTable(
 );
 
 // ---------------------------------------------------------------------------
+// vote_rationales — member-stated reasoning synthesized from congress-press
+//
+// Data source: Derek Willis's congress-press dataset (MIT-licensed bulk JSONL,
+// 670K+ member press releases, 2001-present).
+// Attribution: "congress-press by Derek Willis" (https://github.com/dwillis/congress-press)
+// must appear wherever rationale text is displayed.
+// MIT copyright notice: Copyright (c) 2026 Derek Willis
+//
+// Coverage caveat: members explain contested / messaging votes; party-line and
+// procedural votes are rarely commented on. Rationale is absent for ~80% of rows.
+// ---------------------------------------------------------------------------
+export const voteRationales = pgTable(
+  "vote_rationales",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    // One rationale per (candidate, bill)
+    candidateId: text("candidate_id")
+      .notNull()
+      .references(() => candidates.id),
+    billId: text("bill_id")
+      .notNull()
+      .references(() => bills.id),
+    // LLM-generated "stated reason" blurb (plain text, ≤3 sentences).
+    // Labeled as stated/inferred — NEVER presented as verified fact.
+    // NULL until the generation step runs.
+    rationaleText: text("rationale_text"),
+    // "stated" (direct quote / paraphrase) | "inferred" (thematically related).
+    // NULL when rationaleText is NULL.
+    label: text("label"),
+    // Press release source URLs — array stored as JSONB.
+    // Each element: { url: string, publishedAt: string, title: string }.
+    pressReleaseSources: jsonb("press_release_sources").notNull().default([]),
+    // Model/version that generated the rationale. NULL until generated.
+    modelVersion: text("model_version"),
+    // Confidence in press-release→vote match:
+    // "high"   = bill number appears verbatim in press release
+    // "medium" = bill title keyword + date window match
+    // "low"    = date window only (weakest signal)
+    matchConfidence: text("match_confidence"),
+    // When the rationale was last generated. NULL until generated.
+    generatedAt: timestamp("generated_at", { withTimezone: true }),
+    insertedAt: timestamp("inserted_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("vote_rationales_cand_bill_uidx").on(t.candidateId, t.billId),
+    index("vote_rationales_candidate_idx").on(t.candidateId),
+    index("vote_rationales_bill_idx").on(t.billId),
+  ],
+);
+
+// ---------------------------------------------------------------------------
 // voter_issue_events — anonymous per-session concern-interpretation events
 //
 // Persisted at session-end from the same path that increments the Polis
@@ -609,6 +702,7 @@ export const voterIssueEvents = pgTable(
   {
     id: uuid("id").primaryKey().defaultRandom(),
     canonicalIssue: text("canonical_issue"), // joins to canonicalIssues.ts ids; NULL when off-topic/invented
+    subIssue: text("sub_issue"), // optional topic facet beneath canonical_issue; NULL when not resolved
     offTopicLabel: text("off_topic_label"), // model's short label, ONLY when canonicalIssue is NULL
     resolvedStance: text("resolved_stance"), // short prose stance; NULL when unknown
     rank: integer("rank"), // 1-based priority (serves "care MOST about")
@@ -625,5 +719,6 @@ export const voterIssueEvents = pgTable(
       t.canonicalIssue,
     ),
     index("voter_issue_events_issue_idx").on(t.canonicalIssue),
+    index("voter_issue_events_sub_issue_idx").on(t.canonicalIssue, t.subIssue),
   ],
 );

@@ -178,9 +178,12 @@ const TRANSLATIONS = {
     nav: {
       howItWorks: 'How it works',
       theRecord: 'The record',
+      whyNow: 'Why now?',
       about: 'About',
       methodology: 'Methodology',
       privacy: 'Privacy',
+      support: 'Support',
+      tipJar: 'Tip jar',
       settings: 'Settings',
     },
     landing: {
@@ -272,9 +275,12 @@ const TRANSLATIONS = {
     nav: {
       howItWorks: 'Cómo funciona',
       theRecord: 'El registro',
+      whyNow: '¿Por qué ahora?',
       about: 'Acerca de',
       methodology: 'Metodología',
       privacy: 'Privacidad',
+      support: 'Soporte',
+      tipJar: 'Propinas',
       settings: 'Ajustes',
     },
     landing: {
@@ -468,11 +474,15 @@ function AppNav({ onBrandClick }) {
       </div>
       <div className="links">
         <a onClick={() => navigate('howitworks')} role="link" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') navigate('howitworks'); }}>{t('nav.howItWorks')}</a>
+        <a onClick={() => navigate('whynow')} role="link" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') navigate('whynow'); }}>{t('nav.whyNow')}</a>
         <a onClick={() => navigate('methodology')} role="link" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') navigate('methodology'); }}>{t('nav.methodology')}</a>
         <a onClick={() => navigate('about')} role="link" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') navigate('about'); }}>{t('nav.about')}</a>
+        <a onClick={() => navigate('privacy')} role="link" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') navigate('privacy'); }}>{t('nav.privacy')}</a>
+        <a href="mailto:muxin.li.pro@gmail.com">{t('nav.support')}</a>
       </div>
       <div className="nav-right">
         {typeof LanguageToggle === 'function' && <LanguageToggle />}
+        <a className="nav-tip" onClick={() => navigate('tip')} role="link" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') navigate('tip'); }}>{t('nav.tipJar')}</a>
         <button
           className="nav-cog"
           onClick={openSettings}
@@ -491,24 +501,14 @@ function AppNav({ onBrandClick }) {
 
 /* ============ AppFooter ============
    Shared footer bar — matches .hp-foot styles used by HomeView.
-   Reads navigation from NavContext so it needs no prop-drilling.
+   Brand + copyright only; all nav links live in the header (AppNav).
    Pass `compact` on the workspace (slim pinned bar); omit it on
    the home page for the full-height layout. */
 function AppFooter({ compact }: { compact?: boolean }) {
-  const nav = (typeof useNav === 'function') ? useNav() : { navigate: () => {} };
-  const { navigate } = nav;
   return (
     <footer className={"hp-foot" + (compact ? " hp-foot-slim" : "")}>
       <div className="l">Voter Choice</div>
-      <ul>
-        <li><a onClick={() => navigate('methodology')} role="link" tabIndex={0}>Methodology</a></li>
-        <li><a onClick={() => navigate('about')} role="link" tabIndex={0}>About</a></li>
-        <li><a onClick={() => navigate('privacy')} role="link" tabIndex={0}>Privacy</a></li>
-        <li><a href="/terms">Terms</a></li>
-        <li><a onClick={() => navigate('tip')} role="link" tabIndex={0}>Tip jar</a></li>
-        <li><a href="mailto:muxin.li.pro@gmail.com">Support</a></li>
-      </ul>
-      <div>© 2026 · Grey Bird LLC</div>
+      <div>© 2026 Grey Bird LLC. All Rights Reserved.</div>
     </footer>
   );
 }
@@ -642,7 +642,7 @@ function IssueRow({ issue, index, total, onMoveUp, onMoveDown, onRename, onRemov
         )}
       </div>
       <div className="acts">
-        <button className="danger" onClick={onRemove}>REMOVE</button>
+        <button className="danger" onClick={onRemove}>Remove</button>
       </div>
     </div>
   );
@@ -1230,6 +1230,17 @@ function AlignmentIssueRow({ issue, score, candidate, isOpen, onToggle, anonCtx 
         </div>
       </button>
 
+      {score?.notice && (
+        <div className="cv2-iss-notice" role="note" style={{
+          fontSize: '11px',
+          color: 'var(--ink-3, #888)',
+          fontStyle: 'italic',
+          padding: '2px 10px 6px',
+        }}>
+          {score.notice}
+        </div>
+      )}
+
       {isOpen && hasVotes && (
         <AlignmentDrilldown score={score} candidate={candidate} anonCtx={anonCtx} />
       )}
@@ -1268,7 +1279,7 @@ function AlignmentDrilldown({ score, candidate, anonCtx }) {
     <div className="cv2-drill">
       <div className="cv2-drill-head">
         <span className="lab">Why {pct}%?</span>
-        <span className="meta">Tap a bill →</span>
+        <span className="meta">Tap a vote →</span>
       </div>
 
       <div className="cv2-votes">
@@ -1315,6 +1326,45 @@ function ContributingVoteCard({ vote, anonCtx }) {
       </div>
       <div className="cv2-vote-date">{formatDate(vote.date)}</div>
       {narrative && <p className="cv2-vote-narr">{narrative}</p>}
+      {/* Member rationale — synthesized from their press releases via congress-press.
+          Label as stated/inferred; never present as verified fact.
+          Attribution: congress-press by Derek Willis
+          https://github.com/dwillis/congress-press (MIT) */}
+      {vote.memberRationale && vote.memberRationale.text && (
+        <div className="cv2-member-rationale">
+          <div className="cv2-rationale-label">
+            {vote.memberRationale.label === 'stated'
+              ? "Member's stated reason"
+              : "Member's inferred reason"}
+          </div>
+          <p className="cv2-rationale-text">{vote.memberRationale.text}</p>
+          <div className="cv2-rationale-attribution">
+            <span className="cv2-rationale-source-label">Based on their press release</span>
+            {(vote.memberRationale.sourceUrls || []).slice(0, 2).map((url, si) => (
+              <a
+                key={si}
+                href={url}
+                className="cv2-rationale-source-link"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {si === 0 ? 'source' : `source ${si + 1}`} ↗
+              </a>
+            ))}
+            <span className="cv2-rationale-dataset">
+              via{' '}
+              <a
+                href="https://github.com/dwillis/congress-press"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="cv2-rationale-credit"
+              >
+                congress-press by Derek Willis
+              </a>
+            </span>
+          </div>
+        </div>
+      )}
       <div className="cv2-vote-cite">
         <span className="src-chip">{vote.source.name}</span>
         {vote.source.url && (
@@ -1322,6 +1372,16 @@ function ContributingVoteCard({ vote, anonCtx }) {
             View roll call →
           </a>
         )}
+        {(vote.sources || []).filter(s => s.url !== vote.source.url).map((s, si) => (
+          <span key={si}>
+            <span className="src-chip">{s.name}</span>
+            {s.url && (
+              <a href={s.url} className="src-link" target="_blank" rel="noopener noreferrer">
+                View summary →
+              </a>
+            )}
+          </span>
+        ))}
       </div>
     </div>
   );
@@ -2289,12 +2349,15 @@ function AppNavWithChrome({ onBrandClick, onOpenSettings, current, onNavigate })
       </div>
       <div className="links">
         <a onClick={() => onNavigate && onNavigate('howitworks')} role="link" tabIndex={0}>{t('nav.howItWorks')}</a>
-        <a onClick={() => onNavigate && onNavigate('about')} role="link" tabIndex={0}>{t('nav.about')}</a>
+        <a onClick={() => onNavigate && onNavigate('whynow')} role="link" tabIndex={0}>{t('nav.whyNow')}</a>
         <a onClick={() => onNavigate && onNavigate('methodology')} role="link" tabIndex={0}>{t('nav.methodology')}</a>
+        <a onClick={() => onNavigate && onNavigate('about')} role="link" tabIndex={0}>{t('nav.about')}</a>
         <a onClick={() => onNavigate && onNavigate('privacy')} role="link" tabIndex={0}>{t('nav.privacy')}</a>
+        <a href="mailto:muxin.li.pro@gmail.com">{t('nav.support')}</a>
       </div>
       <div className="nav-right">
         <LanguageToggle />
+        <a className="nav-tip" onClick={() => onNavigate && onNavigate('tip')} role="link" tabIndex={0}>{t('nav.tipJar')}</a>
         <button className="nav-cog" onClick={onOpenSettings} aria-label={t('nav.settings')} title={t('nav.settings')}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <circle cx="12" cy="12" r="3" />
@@ -2618,7 +2681,7 @@ function PartyGate({ stateName, electionDate, rule, onPick, onSkip }) {
    Maps to: ConcernInterpretation.tsx + AmendRescoreOffer.tsx (Phase 6)
 
    Shown as an inline overlay inside the workspace when the user
-   clicks "EDIT" on the issues list in the left rail. Unlike the
+   clicks "Edit" on the issues list in the left rail. Unlike the
    cold open, this version preserves all decided picks and shows
    how many would be affected by an issue change.
 
@@ -2678,7 +2741,7 @@ function AmendmentEditor({ issues, decisionsCount, onApply, onCancel }) {
       <div className="amend-card">
         <header className="amend-head">
           <div>
-            <div className="amend-eyebrow">Amend your issues</div>
+            <div className="amend-eyebrow">Edit your issues</div>
             <h3>Re-evaluate {decisionsCount} {decisionsCount === 1 ? 'pick' : 'picks'} against new priorities</h3>
           </div>
           <button className="amend-x" onClick={onCancel} aria-label="Close">×</button>
@@ -2778,7 +2841,7 @@ function AmendDeltaMessage({ deltas, onRevisit }) {
           })}
         </div>
         <p className="ad-foot">
-          Only races where the change is bigger than 5pts get a REVISIT flag. The others stay on your ballot as-is.
+          Only races where the change is bigger than 5 pts get a REVISIT flag. The others stay on your ballot as-is.
         </p>
       </div>
     </div>
@@ -2931,7 +2994,7 @@ function BudgetExhaustedByok({ onClose }) {
     if (window.setByokKey) window.setByokKey(k);
     setSavedKey(k);
     setKeyDraft('');
-    setStatus({ tone: 'ok', text: 'Saved. Chat now uses your account.' });
+    setStatus({ tone: 'ok', text: 'Saved — resend your last message to use your account.' });
   }
   function clearKey() {
     if (window.removeByokKey) window.removeByokKey();
@@ -3262,6 +3325,17 @@ function CompareModal({ open, race, issues, blindMode, revealedCandidates, onRev
                                   ) : (
                                     <span>{v.source?.name || 'Source pending'}</span>
                                   )}
+                                  {(v.sources || []).filter(s => s.url !== v.source?.url).map((s, si) => (
+                                    <span key={si}>
+                                      {s.url ? (
+                                        <a href={s.url} className="src-link" target="_blank" rel="noopener noreferrer">
+                                          {s.name} →
+                                        </a>
+                                      ) : (
+                                        <span className="src-chip">{s.name}</span>
+                                      )}
+                                    </span>
+                                  ))}
                                 </div>
                               </div>
                             );
@@ -3392,6 +3466,12 @@ function AllVotesPanel({ open, candidate, alignmentEntry, blindMode, alias, onCl
                 <div className="av-vote-cite">
                   <span className="src-chip">{v.source.name}</span>
                   {v.source.url && <a className="src-link" href={v.source.url} target="_blank" rel="noopener noreferrer">View roll call →</a>}
+                  {(v.sources || []).filter(s => s.url !== v.source.url).map((s, si) => (
+                    <span key={si}>
+                      <span className="src-chip">{s.name}</span>
+                      {s.url && <a className="src-link" href={s.url} target="_blank" rel="noopener noreferrer">View summary →</a>}
+                    </span>
+                  ))}
                 </div>
               </div>
             );
@@ -3408,12 +3488,12 @@ function AllVotesPanel({ open, candidate, alignmentEntry, blindMode, alias, onCl
             <li>
               Vote data:{' '}
               <a href="https://www.congress.gov/roll-call-votes" target="_blank" rel="noopener noreferrer">Congress.gov · federal roll calls</a>{' · '}
-              <a href="https://capitol.texas.gov/Reports/Daily/Default.aspx" target="_blank" rel="noopener noreferrer">TX Legislature daily reports</a>
+              <a href="https://openstates.org" target="_blank" rel="noopener noreferrer">OpenStates · state legislature records</a>
             </li>
             <li>
               Narrative context:{' '}
               <a href="https://can2026.org" target="_blank" rel="noopener noreferrer">CAN2026 case files</a>{' · '}
-              <a href="#" target="_blank" rel="noopener noreferrer">our methodology</a>
+              <a href="/methodology">our methodology</a>
             </li>
             <li>
               Donor breakdowns:{' '}
@@ -3856,7 +3936,7 @@ function NoContestedView({ stateData, county = 'your county', onBallotConfirmed,
               {onBack && (
                 <div className="nc-foot">
                   <button className="nc-back" onClick={onBack}>← Back to address</button>
-                  <p className="nc-privacy">Privacy: don't paste your name, address, phone, or email — only the ballot text.</p>
+                  <p className="nc-privacy">Privacy: don't paste your name, address, phone number, or email — only the ballot text.</p>
                 </div>
               )}
             </>
@@ -3943,6 +4023,32 @@ function AITimeoutBanner({ onRetry, onHandoff, message }) {
    Static in-prototype pages. Repo target: src/app/about/page.tsx,
    src/app/methodology/page.tsx, src/app/privacy/page.tsx
    (privacy/page.tsx exists in repo already — content mirrors that). */
+/* ============ WHY_NOW_SNIPPETS ============
+   The "fact snippets" — short, cited civic facts that make the case for
+   checking the record. Single source of truth: HomeView renders the first
+   two as the hero stat-stack; WhyNowPage renders the full set. Keep every
+   entry cited (no uncited stats) and non-partisan. */
+const WHY_NOW_SNIPPETS = [
+  {
+    value: '6',
+    unit: 'hrs / day',
+    label: 'average time a member of Congress spends fundraising, per training materials shown to incoming freshmen.',
+    cite: 'Source · Issue One, 2024 · CBS 60 Minutes',
+  },
+  {
+    value: '94',
+    unit: '%',
+    label: 'of House incumbents who ran for re-election in 2024 won. Without a record check, every November is a coin flip.',
+    cite: 'Source · OpenSecrets · FEC filings',
+  },
+  {
+    value: '468',
+    unit: 'seats',
+    label: 'all 435 House seats and 33 Senate seats are on the November 3, 2026 ballot — America’s 250th election.',
+    cite: 'Source · U.S. Constitution, Art. I · clerk.house.gov',
+  },
+];
+
 function StaticPage({ title, eyebrow, children, onBack }) {
   return (
     <div className="sp-wrap">
@@ -3958,11 +4064,11 @@ function StaticPage({ title, eyebrow, children, onBack }) {
 
 function AboutPage({ onBack }) {
   return (
-    <StaticPage onBack={onBack} eyebrow="About Voter Choice" title="A free, non-partisan ballot research tool.">
+    <StaticPage onBack={onBack} eyebrow="About Voter Choice" title="A free, non-partisan Congress-assessment tool.">
       <p>Voter Choice is built and operated by <b>Grey Bird LLC</b>, a small independent shop. We made it because the gap between "what a candidate says in their ads" and "what they actually voted on" has gotten wider every cycle. We thought voters deserved a tool that closes it.</p>
 
       <h2>What we do</h2>
-      <p>For every race on your ballot, we pull the <b>actual voting record</b> of incumbents (Congress.gov, state legislatures), the <b>funding picture</b> (FEC, OpenSecrets, state ethics commissions), and the <b>editorially-curated context</b> behind each vote (CAN2026 case files). We score how each candidate aligns with the issues YOU told us matter, vote by vote.</p>
+      <p>For every race on your ballot, we pull the <b>actual voting record</b> of incumbents (Congress.gov, state legislatures), the <b>funding picture</b> (FEC, OpenSecrets, state ethics commissions), and the <b>editorially-curated context</b> behind each vote (CAN2026 case files). We score how each candidate aligns with the issues you told us matter, vote by vote.</p>
 
       <h2>What we don't do</h2>
       <ul>
@@ -3991,14 +4097,14 @@ function MethodologyPage({ onBack }) {
       <h2>Step 2 · Votes come from official roll-call data</h2>
       <ul>
         <li>Federal: <a href="https://www.congress.gov/roll-call-votes" target="_blank" rel="noopener noreferrer">Congress.gov roll-call votes</a>.</li>
-        <li>State: per-state legislative reporting (e.g. <a href="https://capitol.texas.gov" target="_blank" rel="noopener noreferrer">Texas Legislature</a>).</li>
+        <li>State: per-state legislative reporting via <a href="https://openstates.org" target="_blank" rel="noopener noreferrer">OpenStates</a> and your state legislature's official records.</li>
       </ul>
       <p>For each issue, our editorial team selects 2–5 "case file" votes — the bills that most directly test the issue. Every score on a candidate card is computed from these case file votes only. If we don't have a curated case file for an issue × jurisdiction, the score reads <i>"thin record"</i> instead of guessing.</p>
 
       <h2>Step 3 · Donor data comes from FEC + state filings</h2>
       <ul>
         <li>Federal candidates: <a href="https://www.fec.gov" target="_blank" rel="noopener noreferrer">FEC</a> + <a href="https://www.opensecrets.org" target="_blank" rel="noopener noreferrer">OpenSecrets</a>.</li>
-        <li>State candidates: state ethics commissions (e.g. Texas Ethics Commission).</li>
+        <li>State candidates: your state's ethics commission or campaign finance disclosure office.</li>
         <li><b>Named issue PACs</b> are editorially vetted — we only break a PAC out separately if it has a public stated agenda we can cite.</li>
       </ul>
 
@@ -4077,6 +4183,32 @@ function PrivacyPage({ onBack }) {
   );
 }
 
+function WhyNowPage({ onBack }) {
+  return (
+    <StaticPage onBack={onBack} eyebrow="Why now" title="Why this election, this year.">
+      <p>2026 is America’s 250th election. Every voting seat in the House and a third of the Senate is on the ballot at once — the widest the choice ever gets. The catch is that incumbents almost always win, and most voters never see the one thing that should decide it: the record.</p>
+
+      <div className="stat-stack stat-stack--page">
+        {WHY_NOW_SNIPPETS.map((s, i) => (
+          <div key={i} className={'stat' + (i % 2 === 1 ? ' alt' : '')}>
+            <div className="v">{s.value}<small>{s.unit}</small></div>
+            <div className="l">{s.label}</div>
+            <div className="cite">{s.cite}</div>
+          </div>
+        ))}
+      </div>
+
+      <h2>The larger case</h2>
+      <p>Campaigns are built to be persuasive. Ads, mailers, and debate soundbites are written to win your vote, not to report what a candidate actually did with the power they already held. The gap between the pitch and the record is where most surprises live — and it widens every cycle.</p>
+      <p>A voting record is the one thing a candidate can’t rewrite. Roll-call votes are public, dated, and final. So is who funded the campaign. Read together, they tell you more about how someone will govern than any slogan can — because they’re a record of how that person already governed.</p>
+      <p>This isn’t about a party. Both sides run incumbents, and both sides count on you not checking. The fix is the same regardless of who you support: spend a few minutes matching the record to the issues you actually care about, before you fill in the bubble. That’s the whole idea behind this site.</p>
+
+      <h2>What to do with it</h2>
+      <p>Tell us your address and what’s on your mind. We’ll pull your representatives’ real votes and funding, score them against your own words — never a pre-baked checklist — and show you the receipts. You decide. We don’t endorse anyone; we just close the gap between the ad and the record.</p>
+    </StaticPage>
+  );
+}
+
 Object.assign(window, {
   SettingsPanel,
   GeocodeFailView,
@@ -4086,6 +4218,7 @@ Object.assign(window, {
   MethodologyPage,
   PrivacyPage,
   TipJarPage,
+  WhyNowPage,
   // BYOK helpers — exposed for app wiring
   getByokKey, setByokKey, removeByokKey, BYOK_STORAGE_KEY,
 });
@@ -4143,11 +4276,11 @@ function HomeView({ savedAddress, savedSession, onSubmit, onResumeFromProfile, o
     <>
       <AppNav />
       <main id="main-content">
-      <section className="hp-hero">
+      <section className="hp-hero hp-hero-solo">
         <div>
           <div className="eyebrow"><span className="star">★</span> November 3, 2026 · America's 250th election</div>
-          <h1>Hold Congress to its <em>record.</em></h1>
-          <p className="lede">All 435 House seats and 34 Senate seats are on the ballot. Before you vote, see how your incumbents actually voted — and who paid for the campaign.</p>
+          <h1>See how your members of Congress <em>actually voted</em> — before you vote.</h1>
+          <p className="lede">Hold Congress to its record. All 435 House seats and 33 Senate seats are on the ballot — compare what your incumbents say with how they voted, and who funded the campaign.</p>
 
           <div className="addr-card">
             <label>
@@ -4209,19 +4342,6 @@ function HomeView({ savedAddress, savedSession, onSubmit, onResumeFromProfile, o
               onStartOver={onStartOver}
             />
           )}
-        </div>
-
-        <div className="stat-stack">
-          <div className="stat">
-            <div className="v">6<small>hrs / day</small></div>
-            <div className="l">average time a member of Congress spends fundraising, per training materials shown to incoming freshmen.</div>
-            <div className="cite">Source · Issue One, 2024 · CBS 60 Minutes</div>
-          </div>
-          <div className="stat alt">
-            <div className="v">94<small>%</small></div>
-            <div className="l">of House incumbents who ran for re-election in 2024 won. Without a record check, every November is a coin flip.</div>
-            <div className="cite">Source · OpenSecrets · FEC filings</div>
-          </div>
         </div>
       </section>
 
@@ -4435,7 +4555,7 @@ function ColdOpenView({ address, onLock, savedIssues, contextNote }) {
         <div className="msg ai">
           <div className="who">Voter Choice · AI</div>
           <div className="bubble">
-            <p>I've pulled your representatives names. Before I walk you through their performance, I want to know what you're judging them on</p>
+            <p>I've pulled your representatives' names. Before I walk you through their record, I want to know what you're judging them on.</p>
             <p style={{ marginTop: '10px' }}><b>What's been on your mind this year?</b> Things you wish Congress would actually do something about. Frustrations, hopes, fights you've watched in your community. Type as much or as little as you want.</p>
           </div>
         </div>
@@ -4760,7 +4880,7 @@ function WorkspaceView({ address, issues, decisions, activeRaceId, onDecide, onU
           <div className="priorities">
             <div className="top">
               <span className="lab">Your issues</span>
-              <button className="edit" onClick={onEditIssues}>EDIT</button>
+              <button className="edit" onClick={onEditIssues}>Edit</button>
             </div>
             <ol>
               {issues.map(iss => <li key={iss.canonicalIssue}>{iss.interpretation}</li>)}
@@ -5196,7 +5316,7 @@ function BallotPaneInner({ races, decisions, activeRaceId, address, issues, onEd
       </div>
 
       {/* Mobile/tablet edit-issues entry — the left rail (which holds
-          "Your issues · EDIT" on desktop) is hidden below 1024px, so
+          "Your issues · Edit" on desktop) is hidden below 1024px, so
           surface the same affordance here. Hidden on desktop via CSS. */}
       {onEditIssues && issues && issues.length > 0 && (
         <div className="b-issues-edit">
@@ -5317,7 +5437,7 @@ function BudgetExhaustedFoot({ canPrint, onPrint, onSaveProfile, onContinueElsew
 
       <p className="bx-tip">
         Voter Choice is free. A tip keeps the budget alive for the next voter —{' '}
-        <a onClick={() => onNavigate && onNavigate('tip')} role="link" tabIndex={0}>tip jar</a> · not required.
+        <a onClick={() => onNavigate && onNavigate('tip')} role="link" tabIndex={0}>Tip jar</a> · not required.
       </p>
     </div>
   );
@@ -5447,7 +5567,7 @@ function PrintView({ address, issues, decisions, onBack }) {
             )}
 
             <div className="ballot-group" style={{ marginBottom: 0 }}>
-              <div className="gtitle">Issues you voted on</div>
+              <div className="gtitle">Issues you cared about</div>
               <div style={{ fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.6 }}>
                 {issues.map((iss, i) => (
                   <div key={iss.canonicalIssue}>{i + 1}. {iss.interpretation}</div>
@@ -6445,6 +6565,7 @@ export {
   MethodologyPage,
   PrivacyPage,
   TipJarPage,
+  WhyNowPage,
   // Reused by the delegation redesign (seat chat / issue editing / full record).
   AITimeoutBanner,
   IssueRow,

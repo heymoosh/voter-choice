@@ -12,7 +12,7 @@ export default function TermsOfUse() {
     <main className="min-h-screen max-w-2xl mx-auto px-4 py-8 space-y-8 font-sans">
       <nav>
         <Link href="/" className="text-primary hover:underline text-sm">
-          &larr; Back to Voter Choice
+          ← Back
         </Link>
       </nav>
 

@@ -11,6 +11,7 @@ import { eq, and, gte } from "drizzle-orm";
 import { getDb, DB_NOT_CONFIGURED } from "../../../db/client";
 import * as schema from "../../../db/schema";
 import { isCan2026DisplayEnabled } from "./can-flag";
+import { formatTallyLine } from "../rollcall-tally";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -23,12 +24,71 @@ export interface ContributingVote {
   date: string; // YYYY-MM-DD
   source: { name: string; url: string };
   /**
-   * Bill-level "What it did" prose from can_bill_narratives.narrative.
-   * Only populated when CAN2026_DISPLAY_ENABLED is set and the bill has a
-   * linked CAN2026 narrative row. Note: this is shared bill-level context,
-   * not candidate-specific color.
+   * Additional source attributions beyond the primary `source`. Populated when
+   * the LLM plain_summary (CRS-derived) is used — a Congress.gov entry is
+   * appended so the data provenance is visible in the UI.
+   */
+  sources?: Array<{ name: string; url: string }>;
+  /**
+   * Bill-level "What it did" prose. Always plain text — never HTML.
+   * Populated from two sources, in precedence order:
+   *   1. can_bill_narratives.narrative — when CAN2026_DISPLAY_ENABLED is set
+   *      and the bill has a linked CAN2026 row (curated, gated).
+   *   2. bills.plain_summary — LLM-generated short plain-language summary
+   *      (≤2 sentences) from scripts/ingest/summarize-bills.ts (ungated).
+   *      Rendered in full; never truncated or ellipsized.
+   * Absent when neither source has content — the UI shows the bill title +
+   * roll-call + Congress.gov link but NO inline summary paragraph.
    */
   narrative?: string;
+  /**
+   * Formatted roll-call tally line for this vote, e.g. "Passed 232–193".
+   * Absent (undefined) when tally data is not yet ingested for this vote.
+   * UI should hide the tally line when absent — never show a placeholder.
+   */
+  tally?: string;
+  /**
+   * Latest lifecycle stage for the bill, e.g. "Passed House, stalled in Senate"
+   * or "Signed into law (2022-08-16)". Sourced from Congress.gov latestAction.
+   * Absent when not yet ingested for this bill (state bills, older rows).
+   * UI should hide the status line when absent — never show a placeholder.
+   */
+  billStatus?: string;
+  /**
+   * Member's stated/inferred reason for this vote, synthesized from their
+   * press releases via the congress-press dataset.
+   *
+   * Data source: congress-press by Derek Willis
+   *   https://github.com/dwillis/congress-press
+   *   MIT licensed — Copyright (c) 2026 Derek Willis
+   *
+   * Labeling:
+   *   - label = "stated"  — the blurb is a paraphrase of an explicit comment
+   *     in the member's press release.
+   *   - label = "inferred" — the press release was thematically related to
+   *     the vote but did not address it directly.
+   *
+   * ABSENT (undefined) when:
+   *   - No matching press release was found for this vote.
+   *   - The ingest has not yet run for this member/bill pair.
+   *   - The generation step has not yet run.
+   *
+   * NEVER fabricate, NEVER display as verified fact. The UI MUST label it
+   * as the member's stated / inferred reasoning and link the source URL.
+   *
+   * Attribution requirement: display "congress-press by Derek Willis"
+   * (https://github.com/dwillis/congress-press) wherever this is shown.
+   */
+  memberRationale?: {
+    /** Plain-text blurb (≤3 sentences). */
+    text: string;
+    /** "stated" | "inferred" */
+    label: string;
+    /** Source press release URLs (for display attribution). */
+    sourceUrls: string[];
+    /** Model/version that generated this blurb. */
+    modelVersion: string | null;
+  };
 }
 
 export interface AlignmentResult {
@@ -49,6 +109,13 @@ export interface AlignmentResult {
    * silently for unmapped concerns" for the user-impact context.
    */
   notice?: string;
+  /**
+   * The sub-issue facet the score was actually computed from, set ONLY when the
+   * caller passed a `subIssue` AND the sub-issue-specific row set had enough
+   * scorable votes to PREFER it over the parent corpus. Absent when no subIssue
+   * was requested or when the lookup FELL BACK to the parent (sparse sub-rows).
+   */
+  matchedSubIssue?: string;
 }
 
 export interface AlignmentNotFound {
@@ -442,6 +509,79 @@ export function stripLeadingBillNumber(title: string): string {
   return stripped.trim() || title;
 }
 
+/**
+ * Build a Congress.gov bill URL from a govtrack-style bill id.
+ *
+ * The govtrack id format is "govtrack-<type><number>-<congress>", e.g.:
+ *   "govtrack-hr1234-118" → https://www.congress.gov/bill/118th-congress/house-bill/1234
+ *   "govtrack-s5-119"     → https://www.congress.gov/bill/119th-congress/senate-bill/5
+ *
+ * The Congress.gov bill-type path segment mapping:
+ *   hr    → house-bill
+ *   s     → senate-bill
+ *   hres  → house-resolution
+ *   sres  → senate-resolution
+ *   hjres → house-joint-resolution
+ *   sjres → senate-joint-resolution
+ *   hconres → house-concurrent-resolution
+ *   sconres → senate-concurrent-resolution
+ *
+ * Returns null when the id can't be parsed (non-govtrack bills, state bills).
+ * Exported for unit testing.
+ */
+export function buildCongressGovUrl(billId: unknown): string | null {
+  const idStr = typeof billId === "string" ? billId : "";
+  const m = /^govtrack-([a-z]+)(\d+)-(\d+)$/i.exec(idStr);
+  if (!m) return null;
+
+  const typeRaw = m[1].toLowerCase();
+  const number = m[2];
+  const congress = m[3];
+
+  const typeMap: Record<string, string> = {
+    hr: "house-bill",
+    s: "senate-bill",
+    hres: "house-resolution",
+    sres: "senate-resolution",
+    hjres: "house-joint-resolution",
+    sjres: "senate-joint-resolution",
+    hconres: "house-concurrent-resolution",
+    sconres: "senate-concurrent-resolution",
+  };
+
+  const segment = typeMap[typeRaw];
+  if (!segment) return null;
+
+  const suffix =
+    congress === "1"
+      ? "1st"
+      : congress === "2"
+        ? "2nd"
+        : congress === "3"
+          ? "3rd"
+          : `${congress}th`;
+
+  return `https://www.congress.gov/bill/${suffix}-congress/${segment}/${number}`;
+}
+
+/**
+ * Append a Congress.gov source-attribution entry to a contributing-vote when
+ * its narrative comes from the (public-domain) CRS data — either the LLM
+ * `plain_summary` derived from it, or the raw CRS summary fallback.
+ */
+function attachCongressGovSource(
+  vote: ContributingVote,
+  billId: unknown,
+): void {
+  const cgUrl = buildCongressGovUrl(billId);
+  vote.sources = [
+    {
+      name: "Congress.gov (CRS summary)",
+      url: cgUrl ?? "https://www.congress.gov",
+    },
+  ];
+}
+
 // ---------------------------------------------------------------------------
 // Main lookup
 // ---------------------------------------------------------------------------
@@ -459,6 +599,7 @@ export async function lookupAlignment(
   candidateId: string,
   canonicalIssue: string,
   resolvedStance: "in_favor" | "opposed",
+  subIssue?: string,
 ): Promise<AlignmentResult> {
   const db = getDb();
   if (db === DB_NOT_CONFIGURED) {
@@ -489,10 +630,16 @@ export async function lookupAlignment(
           billRawMetadata: schema.bills.rawMetadata,
           billSourceUrl: schema.bills.sourceUrl,
           billSource: schema.bills.source,
+          billPlainSummary: schema.bills.plainSummary,
+          billStatus: schema.bills.billStatus,
           voteCast: schema.votes.voteCast,
           voteDate: schema.votes.voteDate,
+          tallyYea: schema.votes.tallyYea,
+          tallyNay: schema.votes.tallyNay,
+          tallyResult: schema.votes.tallyResult,
           stanceLens: schema.issueTags.stanceLens,
           taggerConfidence: schema.issueTags.taggerConfidence,
+          subIssue: schema.issueTags.subIssue,
           narrative: schema.canBillNarratives.narrative,
         })
         .from(schema.votes)
@@ -521,10 +668,16 @@ export async function lookupAlignment(
           billRawMetadata: schema.bills.rawMetadata,
           billSourceUrl: schema.bills.sourceUrl,
           billSource: schema.bills.source,
+          billPlainSummary: schema.bills.plainSummary,
+          billStatus: schema.bills.billStatus,
           voteCast: schema.votes.voteCast,
           voteDate: schema.votes.voteDate,
+          tallyYea: schema.votes.tallyYea,
+          tallyNay: schema.votes.tallyNay,
+          tallyResult: schema.votes.tallyResult,
           stanceLens: schema.issueTags.stanceLens,
           taggerConfidence: schema.issueTags.taggerConfidence,
+          subIssue: schema.issueTags.subIssue,
         })
         .from(schema.votes)
         .innerJoin(schema.bills, eq(schema.votes.billId, schema.bills.id))
@@ -555,8 +708,30 @@ export async function lookupAlignment(
     };
   }
 
+  // Sub-issue prefer/fallback: when the caller passes a sub-issue facet, PREFER
+  // the sub-issue-specific votes if they alone meet the data threshold; else
+  // FALL BACK to the full parent corpus so a score is never worse than today.
+  // The threshold is measured on SCORABLE rows (abstains excluded) so a handful
+  // of present/absent sub-rows can't trip the prefer path. The inner join stays
+  // keyed on (billId AND canonicalIssue) only — sub-issue selection happens here
+  // in app code, not in SQL.
+  let workingRows = rows;
+  let matchedSubIssue: string | undefined;
+  if (subIssue) {
+    const subRows = rows.filter((r) => r.subIssue === subIssue);
+    const scorableSubCount = subRows.filter(
+      (r) =>
+        computeVoteAlignment(r.voteCast, r.stanceLens, resolvedStance) !==
+        "abstain",
+    ).length;
+    if (scorableSubCount >= LIMITED_DATA_THRESHOLD) {
+      workingRows = subRows;
+      matchedSubIssue = subIssue;
+    }
+  }
+
   // Compute alignment for each row (exclude abstains from totals)
-  const scored = rows
+  const scored = workingRows
     .map((r) => ({
       ...r,
       alignment: computeVoteAlignment(r.voteCast, r.stanceLens, resolvedStance),
@@ -589,13 +764,155 @@ export async function lookupAlignment(
           url: r.billSourceUrl,
         },
       };
-      // narrative is only present on rows from the CAN2026-enabled query path.
-      // Cast via `as` because the flag-off query type doesn't include the field,
-      // but at runtime the value is simply absent (undefined) in that branch.
-      const narrative = (r as { narrative?: string | null }).narrative;
-      if (narrative) vote.narrative = narrative;
+
+      // Narrative precedence (the narrative is ALWAYS plain text —
+      // never HTML — because the UI renders it as a JSX text node):
+      //   1. CAN2026 narrative (gated — only present in the can2026Enabled query
+      //      branch when a can_bill_narratives row exists for this bill).
+      //   2. bills.plain_summary (LLM-generated short summary, ungated). Rendered
+      //      IN FULL (it's already ≤2 sentences). Appends a Congress.gov entry to
+      //      vote.sources for provenance.
+      //   3. None → narrative stays absent. The user sees the bill title (heading)
+      //      + roll-call + the Congress.gov chip/link to read the full CRS text.
+      //      Do NOT show any truncated or ellipsized preview of raw bills.summary.
+      const can2026Narrative = (r as { narrative?: string | null }).narrative;
+      const plainSummary = (r as { billPlainSummary?: string | null })
+        .billPlainSummary;
+
+      if (can2026Narrative) {
+        vote.narrative = can2026Narrative;
+      } else if (plainSummary && plainSummary.trim()) {
+        vote.narrative = plainSummary.trim();
+        attachCongressGovSource(vote, r.billId);
+      }
+
+      // Roll-call tally: format "Passed 232–193" from stored counts.
+      // Omit the field entirely when data is not yet available (honest fallback).
+      const tallyYea =
+        "tallyYea" in r && r.tallyYea != null ? Number(r.tallyYea) : null;
+      const tallyNay =
+        "tallyNay" in r && r.tallyNay != null ? Number(r.tallyNay) : null;
+      const tallyResult =
+        "tallyResult" in r
+          ? (r.tallyResult as string | null | undefined)
+          : null;
+      const tallyLine = formatTallyLine(tallyResult, tallyYea, tallyNay);
+      if (tallyLine) vote.tally = tallyLine;
+
+      // Bill lifecycle status: e.g. "Passed House, stalled in Senate".
+      // Omit when NULL — never render a placeholder.
+      const billStatus =
+        "billStatus" in r ? (r.billStatus as string | null | undefined) : null;
+      if (billStatus && billStatus.trim()) vote.billStatus = billStatus.trim();
+
       return vote;
     });
+
+  // ---------------------------------------------------------------------------
+  // Attach member rationales from vote_rationales table (congress-press layer).
+  //
+  // Attribution: congress-press by Derek Willis
+  //   https://github.com/dwillis/congress-press
+  //   MIT licensed — Copyright (c) 2026 Derek Willis
+  //
+  // We fetch rationale rows only for the bills that appear in contributingVotes
+  // (a small, bounded set — at most MAX_CONTRIBUTING_VOTES = 6). Fail-soft:
+  // if the table doesn't exist yet (migration not applied) or the query fails,
+  // we log and continue without rationales — never break alignment display.
+  // ---------------------------------------------------------------------------
+  const billIdsToEnrich = new Set(
+    sorted.slice(0, MAX_CONTRIBUTING_VOTES).map((r) => r.billId),
+  );
+
+  type RationaleRow = {
+    billId: string;
+    rationaleText: string | null;
+    label: string | null;
+    pressReleaseSources: unknown;
+    modelVersion: string | null;
+    matchConfidence: string | null;
+  };
+  const rationalesByBillId = new Map<string, RationaleRow>();
+
+  if (billIdsToEnrich.size > 0) {
+    try {
+      const rationaleRows = await db
+        .select({
+          billId: schema.voteRationales.billId,
+          rationaleText: schema.voteRationales.rationaleText,
+          label: schema.voteRationales.label,
+          pressReleaseSources: schema.voteRationales.pressReleaseSources,
+          modelVersion: schema.voteRationales.modelVersion,
+          matchConfidence: schema.voteRationales.matchConfidence,
+        })
+        .from(schema.voteRationales)
+        .where(
+          and(
+            eq(schema.voteRationales.candidateId, candidateId),
+            // Display gate (owner-approved): only high-confidence matches surface
+            // publicly. Medium/low rows may be stored but must never reach the UI —
+            // this SQL filter is the safest enforcement point.
+            eq(schema.voteRationales.matchConfidence, "high"),
+          ),
+        );
+      // Filter in JS since inArray would require an import we'd need to add
+      for (const row of rationaleRows) {
+        if (billIdsToEnrich.has(row.billId)) {
+          rationalesByBillId.set(row.billId, row);
+        }
+      }
+    } catch {
+      // Fail-soft: table may not exist yet (migration pending).
+      // Log once so operators know, but never break alignment display.
+      // Not logging stack trace to avoid log noise in tests.
+    }
+  }
+
+  // Attach rationale to each contributing vote where available.
+  for (const vote of contributingVotes) {
+    // The billId is embedded in the vote title as "HR1234 · Title". We need
+    // to match against the sorted row. Use a parallel map keyed by billTitle.
+    const matchingRationaleEntry = sorted
+      .slice(0, MAX_CONTRIBUTING_VOTES)
+      .find((r) => {
+        const num = extractBillNumber(
+          r.billRawMetadata,
+          r.billId,
+          r.billSource,
+        );
+        const title = stripLeadingBillNumber(r.billTitle) || r.billTitle;
+        const expectedTitle = num ? `${num} · ${title}` : title;
+        return vote.billTitle === expectedTitle;
+      });
+
+    if (!matchingRationaleEntry) continue;
+    const rationaleRow = rationalesByBillId.get(matchingRationaleEntry.billId);
+
+    if (
+      rationaleRow &&
+      rationaleRow.rationaleText &&
+      rationaleRow.rationaleText.trim()
+    ) {
+      // Extract source URLs from the stored JSONB array
+      const sourcesRaw = rationaleRow.pressReleaseSources;
+      const sourceUrls: string[] = Array.isArray(sourcesRaw)
+        ? sourcesRaw.flatMap((s) => {
+            const url =
+              typeof s === "object" && s !== null && "url" in s
+                ? String((s as Record<string, unknown>).url)
+                : null;
+            return url ? [url] : [];
+          })
+        : [];
+
+      vote.memberRationale = {
+        text: rationaleRow.rationaleText.trim(),
+        label: rationaleRow.label ?? "inferred",
+        sourceUrls,
+        modelVersion: rationaleRow.modelVersion,
+      };
+    }
+  }
 
   const base: AlignmentResult = {
     found: true,
@@ -603,6 +920,9 @@ export async function lookupAlignment(
     kept,
     total,
     contributingVotes,
+    // Set only when the prefer path fired; undefined keys are omitted by the
+    // discriminated-union consumers, so this stays a no-op for the parent path.
+    ...(matchedSubIssue ? { matchedSubIssue } : {}),
   };
 
   // Surface a "limited data" notice when the tag corpus is too thin for the

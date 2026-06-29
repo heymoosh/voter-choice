@@ -23,7 +23,10 @@ import React, { useRef, useState } from "react";
 import { IssueRow } from "../VoterChoiceApp";
 import { getChatSessionId } from "../realData";
 import { buildThemeExtractionPrompt } from "../../lib/prompts/theme-extraction";
-import { buildThemeRefinementPrompt } from "../../lib/prompts/theme-refinement";
+import {
+  buildThemeRefinementPrompt,
+  DISAMBIGUATION_CAP,
+} from "../../lib/prompts/theme-refinement";
 import { parseThemeExtraction } from "../../lib/prompts/parse-theme-extraction";
 import { parseThemeRefinement } from "../../lib/prompts/parse-theme-refinement";
 import { sendChatTurn } from "./chatTransport";
@@ -65,6 +68,12 @@ export function useIssueConversation({ seedIssues, onBudgetBlock }) {
   const [error, setError] = useState(null);
   const [draft, setDraft] = useState("");
   const apiHistoryRef = useRef([]);
+  // How many clarifying/disambiguation questions the assistant has asked this
+  // conversation. Re-injected into every refinement prompt so the model caps
+  // at DISAMBIGUATION_CAP and locks the concept in instead of looping (the
+  // "6+ annoying turns" bug). Counted client-side too, so the cap holds even
+  // if the model drifts past the prompt instruction.
+  const clarifyCountRef = useRef(0);
   const sourceTextRef = useRef(seedIssues?.length ? "(prior session)" : "");
   // Latest issues for the refinement prompt — sends read the ref, not the
   // closure, so manual edits between turns always reach the model.
@@ -87,6 +96,7 @@ export function useIssueConversation({ seedIssues, onBudgetBlock }) {
       ? buildThemeExtractionPrompt({ userInput: text })
       : buildThemeRefinementPrompt({
           currentThemesJson: JSON.stringify(issuesToThemes(issuesRef.current)),
+          clarifyingQuestionsAsked: clarifyCountRef.current,
         });
     const messages = isExtraction
       ? [{ role: "user", content: text }]
@@ -140,6 +150,19 @@ export function useIssueConversation({ seedIssues, onBudgetBlock }) {
               ...messages,
               { role: "assistant", content: acc },
             ];
+            // Count a clarifying/disambiguation question: a prose reply that
+            // ends in a question mark and didn't lock anything new in (no theme
+            // array change). The re-injected count caps the loop at
+            // DISAMBIGUATION_CAP on the next turn. Once at the cap we stop
+            // counting — the prompt is already in lock-in mode.
+            const askedAQuestion =
+              !themes && /\?\s*$/.test((prose || "").trim());
+            if (
+              askedAQuestion &&
+              clarifyCountRef.current < DISAMBIGUATION_CAP
+            ) {
+              clarifyCountRef.current += 1;
+            }
             if (themes) {
               applyIssueList(
                 themesToIssues(themes, sourceTextRef.current || text),
@@ -230,7 +253,7 @@ export function IssueConversation({
       ? [
           "That's not quite right — let me explain",
           "Tell me why you picked these",
-          "Add something I forgot",
+          "Add something I missed",
         ]
       : [];
 
@@ -265,8 +288,8 @@ export function IssueConversation({
             <span className="of">{issues.length} issues · edit freely</span>
           </div>
           <p className="th-sub">
-            Use the arrows to re-rank · click a name to rename · or keep talking
-            to me below and I'll adjust them.
+            Use the arrows to re-rank · click a name to rename · Remove to
+            delete an issue · or keep talking to me below and I'll adjust them.
           </p>
 
           {issues.map((iss, i) => (
@@ -327,7 +350,7 @@ export function IssueConversation({
         />
         <div className="row">
           <span className="hint">
-            Nothing leaves your browser until you lock these in
+            Your issue list stays in your browser until you lock it in
           </span>
           <button
             className="send"

@@ -596,7 +596,7 @@ const en: Translations = {
   },
   zipForm: {
     label: "Enter your address",
-    placeholder: "e.g. 123 Main St, Houston, TX 77057",
+    placeholder: "e.g. 123 Main St, Springfield, IL 62701",
     submit: "Find My Ballot",
     privacy:
       "Privacy: your address may be sent to Google Places/Civic to find your ballot and polling places. We do not store it or send it to the AI chat, so we do not have a combined record of where you live and what you say.",
@@ -605,7 +605,7 @@ const en: Translations = {
   errors: {
     empty: "Please enter your address",
     invalid:
-      "Please include your 5-digit zip code (e.g. 123 Main St, Houston, TX 77057)",
+      "Please include your 5-digit zip code (e.g. 123 Main St, Springfield, IL 62701)",
     notFound:
       "We don\u2019t have data for this zip code yet. We\u2019re working on adding all U.S. zip codes.",
     noElection: (stateName: string) =>
@@ -687,7 +687,7 @@ const en: Translations = {
   },
   polling: {
     addressLabel: "Enter your full street address for polling location",
-    addressPlaceholder: "e.g. 123 Main St, Houston, TX 77001",
+    addressPlaceholder: "e.g. 123 Main St, Springfield, IL 62701",
     lookUpButton: "Look up my polling place",
     skipLink: "Skip \u2014 I\u2019ll find it myself",
     loadingLocations: "Looking up your polling place\u2026",
@@ -728,7 +728,7 @@ const en: Translations = {
     sampleBallot: "Sample ballot",
     precinct: "Precinct",
     earlyVotingWindow: "Early voting window",
-    cardSource: "Source \u00b7 Harris County Elections",
+    cardSource: "Source \u00b7 Google Civic",
   },
   budget: {
     notice:
@@ -1114,7 +1114,7 @@ const en: Translations = {
     closedPrimaryGateContinue: "Continue to research",
     closedPrimaryGateSkip: "Skip \u2014 I'll figure it out",
     // Amendment editor keys
-    amendmentEditorEyebrow: "Amend your issues",
+    amendmentEditorEyebrow: "Edit your issues",
     amendmentEditorTitle: (count: number) =>
       `Re-evaluate ${count} ${count === 1 ? "pick" : "picks"} against new priorities`,
     amendmentEditorHelp:
@@ -1285,7 +1285,7 @@ const es: Translations = {
   },
   zipForm: {
     label: "Ingresa tu direcci\u00f3n",
-    placeholder: "ej. 123 Main St, Houston, TX 77057",
+    placeholder: "ej. 123 Main St, Springfield, IL 62701",
     submit: "Buscar mi informaci\u00f3n electoral",
     privacy:
       "Privacidad: tu direcci\u00f3n puede enviarse a Google Places/Civic para encontrar tu boleta y casillas. No la almacenamos ni la enviamos al chat de IA, as\u00ed que no tenemos un registro combinado de d\u00f3nde vives y lo que dices.",
@@ -1294,7 +1294,7 @@ const es: Translations = {
   errors: {
     empty: "Por favor ingresa tu direcci\u00f3n",
     invalid:
-      "Por favor incluye tu c\u00f3digo postal de 5 d\u00edgitos (ej. 123 Main St, Houston, TX 77057)",
+      "Por favor incluye tu c\u00f3digo postal de 5 d\u00edgitos (ej. 123 Main St, Springfield, IL 62701)",
     notFound:
       "A\u00fan no tenemos datos para este c\u00f3digo postal. Estamos trabajando para agregar todos los c\u00f3digos postales de EE. UU.",
     noElection: (stateName: string) =>
@@ -1378,7 +1378,7 @@ const es: Translations = {
   polling: {
     addressLabel:
       "Ingresa tu direcci\u00f3n completa para encontrar tu casilla",
-    addressPlaceholder: "ej. 123 Main St, Houston, TX 77001",
+    addressPlaceholder: "ej. 123 Main St, Springfield, IL 62701",
     lookUpButton: "Buscar mi casilla electoral",
     skipLink: "Omitir \u2014 la buscar\u00e9 yo mismo/a",
     loadingLocations: "Buscando tu casilla electoral\u2026",
@@ -1418,7 +1418,7 @@ const es: Translations = {
     sampleBallot: "Boleta de muestra",
     precinct: "Precinto",
     earlyVotingWindow: "Ventana de votaci\u00f3n anticipada",
-    cardSource: "Fuente \u00b7 Elecciones del Condado de Harris",
+    cardSource: "Fuente \u00b7 Google Civic",
   },
   budget: {
     notice:

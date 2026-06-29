@@ -32,22 +32,22 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "Voter Choice — Free AI Ballot Research Tool",
+  title: "Voter Choice — Assess Your Representatives with AI",
   description:
-    "Research your ballot with AI. Enter your address, see how your incumbents actually voted and who funds them, and get a printable ballot to take to the polls. Free, private, nonpartisan.",
+    "Assess your representatives with AI. Enter your address, see how your incumbents actually voted and who funds them. Free, private, nonpartisan.",
   openGraph: {
-    title: "Voter Choice — Free AI Ballot Research Tool",
+    title: "Voter Choice — Assess Your Representatives with AI",
     description:
-      "Research your ballot with AI. See how your incumbents actually voted and who funds them, then get a printable ballot to take to the polls.",
+      "Assess your representatives with AI. See how your incumbents actually voted and who funds them.",
     type: "website",
     locale: "en_US",
     siteName: "Voter Choice",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Voter Choice — Free AI Ballot Research Tool",
+    title: "Voter Choice — Assess Your Representatives with AI",
     description:
-      "Research your ballot with AI. See how your incumbents actually voted and who funds them, then get a printable ballot to take to the polls.",
+      "Assess your representatives with AI. See how your incumbents actually voted and who funds them.",
   },
   robots: { index: true, follow: true },
 };

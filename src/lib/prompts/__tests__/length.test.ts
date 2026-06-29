@@ -17,7 +17,22 @@ const LIMIT = 1500;
 // here as in the bill tagger — the durable fix for the ~40–55% alignment
 // inversion the audit measured. Those 16 pole-direction lines add ~2.9k chars;
 // they are correctness-critical, so bump the ceiling rather than drop them.
-const THEME_EXTRACTION_LIMIT = 5500;
+// It NOW also carries the SUB-ISSUES block (src/lib/alignment/subIssues.ts)
+// so the model can resolve a finer facet (e.g. healthcare_affordability →
+// drug_prices) for more precise alignment scoring. That block is load-bearing
+// for sub-issue matching, so — per the same convention — the ceiling is raised
+// rather than trimming the load-bearing canonical-issue keyword anchors.
+// Bumped 6800 -> 7200 (2026-06-16): the axis-type [contested]/[valence]
+// disambiguation tags (Alignment 2a) plus the tightened coverage_access
+// sub-issue definition are both load-bearing — raise the ceiling per the
+// convention above rather than trimming approved guidance.
+// Bumped 7200 -> 7300 (2026-06-16): added an explicit SPLIT rule so a
+// compound first message ("AI safety and healthcare costs") yields a
+// SEPARATE theme per concern instead of collapsing into one literal-named
+// theme that matches no canonicalIssue (PR #114 regression that broke vote
+// evaluation). The rule is correctness-critical — raise the ceiling per the
+// same convention rather than dropping it.
+const THEME_EXTRACTION_LIMIT = 7300;
 // P0 #2 (live audit): the race-deep-dive prompt now carries an explicit
 // candidate-resolution rule so the model resolves surnames against
 // <candidates> instead of bouncing the disambiguation back to the voter.
@@ -27,7 +42,7 @@ const THEME_EXTRACTION_LIMIT = 5500;
 const RACE_DEEP_DIVE_LIMIT = 1800;
 
 describe("task-prompt length budget", () => {
-  it("theme-extraction body stays under the 3500-char limit", () => {
+  it("theme-extraction body stays under the 7200-char limit", () => {
     const rendered = buildThemeExtractionPrompt({
       userInput: "I care about healthcare.",
     });

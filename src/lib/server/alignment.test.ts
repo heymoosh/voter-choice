@@ -27,6 +27,7 @@ import {
   extractBillNumber,
   normalizeFederalType,
   stripLeadingBillNumber,
+  buildCongressGovUrl,
 } from "./alignment";
 
 // ---------------------------------------------------------------------------
@@ -37,6 +38,7 @@ function makeSelectMock(rows: Record<string, unknown>[]) {
   const chain = {
     from: vi.fn().mockReturnThis(),
     innerJoin: vi.fn().mockReturnThis(),
+    leftJoin: vi.fn().mockReturnThis(),
     where: vi.fn().mockResolvedValue(rows),
     // For the candidate resolution path, `where` is the terminal call.
   };
@@ -809,6 +811,608 @@ describe("lookupAlignment", () => {
     expect(result.unavailable).toBeDefined();
     expect(result.notice ?? "").toBe("");
   });
+
+  // -------------------------------------------------------------------------
+  // Sub-issue prefer/fallback (TASK T-D).
+  //
+  // A sub-issue is a TOPIC FACET of a (bill, canonical_issue) tag that INHERITS
+  // the parent pole. Scoring PREFERS sub-issue-specific votes when they alone
+  // meet LIMITED_DATA_THRESHOLD (5) SCORABLE rows, else FALLS BACK to the full
+  // parent corpus — so a sub-issue score is never worse than the parent score.
+  //
+  // Fixtures gain a `subIssue` field. The SQL inner join is unchanged (keyed on
+  // billId + canonicalIssue only); sub-issue selection is app-side here.
+  // -------------------------------------------------------------------------
+
+  // Helper: a parent corpus where 5 rows carry the target sub-issue (all
+  // scorable, 3 "with" / 2 "against") plus extra parent rows that would dilute
+  // the score if the fallback fired.
+  function healthcareCorpus() {
+    const drugPrice = (i: number, voteCast: string) => ({
+      billTitle: `Drug Price Bill ${i}`,
+      billSourceUrl: `https://govtrack.us/bill/d${i}`,
+      billSource: "govtrack",
+      voteCast,
+      voteDate: `2024-0${(i % 9) + 1}-01`,
+      stanceLens: "in_favor",
+      taggerConfidence: String(0.9 - i * 0.01),
+      subIssue: "drug_prices",
+    });
+    const otherParent = (i: number, voteCast: string) => ({
+      billTitle: `Coverage Bill ${i}`,
+      billSourceUrl: `https://govtrack.us/bill/c${i}`,
+      billSource: "govtrack",
+      voteCast,
+      voteDate: `2023-0${(i % 9) + 1}-01`,
+      stanceLens: "in_favor",
+      taggerConfidence: String(0.8 - i * 0.01),
+      subIssue: "coverage_access",
+    });
+    return [
+      // 5 scorable drug_prices rows: 3 with (yea), 2 against (nay).
+      drugPrice(1, "yea"),
+      drugPrice(2, "yea"),
+      drugPrice(3, "yea"),
+      drugPrice(4, "nay"),
+      drugPrice(5, "nay"),
+      // Parent dilution: 4 more rows on a different sub-issue, all "with".
+      otherParent(1, "yea"),
+      otherParent(2, "yea"),
+      otherParent(3, "yea"),
+      otherParent(4, "yea"),
+    ];
+  }
+
+  it("prefers sub-issue rows when >=5 are scorable: kept/total from sub-rows only", async () => {
+    const { select, _chain } = makeSelectMock([]);
+    mockedGetDb.mockReturnValue({ select } as never);
+    _chain.where.mockResolvedValue(healthcareCorpus());
+
+    const result = await lookupAlignment(
+      "federal-A123",
+      "healthcare_affordability",
+      "in_favor",
+      "drug_prices",
+    );
+
+    // Sub-rows only: 5 total, 3 with. (Parent would be 9 total / 7 with.)
+    expect(result.total).toBe(5);
+    expect(result.kept).toBe(3);
+    expect(result.matchedSubIssue).toBe("drug_prices");
+  });
+
+  it("falls back to parent when <5 sub-rows are scorable: kept/total == full parent", async () => {
+    const { select, _chain } = makeSelectMock([]);
+    mockedGetDb.mockReturnValue({ select } as never);
+
+    // Only 3 scorable drug_prices rows (under threshold) + 4 parent rows on
+    // another sub-issue → fall back to the full 7-row parent corpus.
+    _chain.where.mockResolvedValue([
+      {
+        billTitle: "Drug Price A",
+        billSourceUrl: "https://govtrack.us/bill/da",
+        billSource: "govtrack",
+        voteCast: "yea",
+        voteDate: "2024-05-01",
+        stanceLens: "in_favor",
+        taggerConfidence: "0.9",
+        subIssue: "drug_prices",
+      },
+      {
+        billTitle: "Drug Price B",
+        billSourceUrl: "https://govtrack.us/bill/db",
+        billSource: "govtrack",
+        voteCast: "yea",
+        voteDate: "2024-04-01",
+        stanceLens: "in_favor",
+        taggerConfidence: "0.85",
+        subIssue: "drug_prices",
+      },
+      {
+        billTitle: "Drug Price C",
+        billSourceUrl: "https://govtrack.us/bill/dc",
+        billSource: "govtrack",
+        voteCast: "nay",
+        voteDate: "2024-03-01",
+        stanceLens: "in_favor",
+        taggerConfidence: "0.8",
+        subIssue: "drug_prices",
+      },
+      {
+        billTitle: "Coverage A",
+        billSourceUrl: "https://govtrack.us/bill/ca",
+        billSource: "govtrack",
+        voteCast: "yea",
+        voteDate: "2023-05-01",
+        stanceLens: "in_favor",
+        taggerConfidence: "0.7",
+        subIssue: "coverage_access",
+      },
+      {
+        billTitle: "Coverage B",
+        billSourceUrl: "https://govtrack.us/bill/cb",
+        billSource: "govtrack",
+        voteCast: "yea",
+        voteDate: "2023-04-01",
+        stanceLens: "in_favor",
+        taggerConfidence: "0.65",
+        subIssue: "coverage_access",
+      },
+      {
+        billTitle: "Coverage C",
+        billSourceUrl: "https://govtrack.us/bill/cc",
+        billSource: "govtrack",
+        voteCast: "yea",
+        voteDate: "2023-03-01",
+        stanceLens: "in_favor",
+        taggerConfidence: "0.6",
+        subIssue: "coverage_access",
+      },
+      {
+        billTitle: "Coverage D",
+        billSourceUrl: "https://govtrack.us/bill/cd",
+        billSource: "govtrack",
+        voteCast: "nay",
+        voteDate: "2023-02-01",
+        stanceLens: "in_favor",
+        taggerConfidence: "0.55",
+        subIssue: "coverage_access",
+      },
+    ]);
+
+    const subResult = await lookupAlignment(
+      "federal-A123",
+      "healthcare_affordability",
+      "in_favor",
+      "drug_prices",
+    );
+
+    // Fell back to full parent: 7 total, 5 with (Drug C + Coverage D are nay →
+    // against; the other 5 yea rows are "with").
+    expect(subResult.total).toBe(7);
+    expect(subResult.kept).toBe(5);
+    expect(subResult.matchedSubIssue).toBeUndefined();
+  });
+
+  it("subIssue undefined is identical to today (regression — no behavior change)", async () => {
+    const corpus = healthcareCorpus();
+
+    const { select: selA, _chain: chainA } = makeSelectMock([]);
+    mockedGetDb.mockReturnValue({ select: selA } as never);
+    chainA.where.mockResolvedValue(corpus);
+    const withoutSub = await lookupAlignment(
+      "federal-A123",
+      "healthcare_affordability",
+      "in_favor",
+    );
+
+    // Whole parent corpus: 9 total, 7 with.
+    expect(withoutSub.total).toBe(9);
+    expect(withoutSub.kept).toBe(7);
+    expect(withoutSub.matchedSubIssue).toBeUndefined();
+  });
+
+  it("unknown subIssue (no rows match) falls back to parent", async () => {
+    const { select, _chain } = makeSelectMock([]);
+    mockedGetDb.mockReturnValue({ select } as never);
+    _chain.where.mockResolvedValue(healthcareCorpus());
+
+    const result = await lookupAlignment(
+      "federal-A123",
+      "healthcare_affordability",
+      "in_favor",
+      "not_a_real_sub_issue",
+    );
+
+    // No sub-rows → 0 scorable → fall back to full parent corpus (9 total / 7).
+    expect(result.total).toBe(9);
+    expect(result.kept).toBe(7);
+    expect(result.matchedSubIssue).toBeUndefined();
+  });
+
+  it("threshold is on SCORABLE rows: abstain sub-rows don't trip the prefer path", async () => {
+    const { select, _chain } = makeSelectMock([]);
+    mockedGetDb.mockReturnValue({ select } as never);
+
+    // 6 drug_prices rows but only 4 are scorable (2 are abstains) → under the
+    // threshold of 5 scorable → fall back to the full 6-row parent corpus.
+    _chain.where.mockResolvedValue([
+      {
+        billTitle: "Drug 1",
+        billSourceUrl: "https://govtrack.us/bill/1",
+        billSource: "govtrack",
+        voteCast: "yea",
+        voteDate: "2024-05-01",
+        stanceLens: "in_favor",
+        taggerConfidence: "0.9",
+        subIssue: "drug_prices",
+      },
+      {
+        billTitle: "Drug 2",
+        billSourceUrl: "https://govtrack.us/bill/2",
+        billSource: "govtrack",
+        voteCast: "yea",
+        voteDate: "2024-04-01",
+        stanceLens: "in_favor",
+        taggerConfidence: "0.85",
+        subIssue: "drug_prices",
+      },
+      {
+        billTitle: "Drug 3",
+        billSourceUrl: "https://govtrack.us/bill/3",
+        billSource: "govtrack",
+        voteCast: "yea",
+        voteDate: "2024-03-01",
+        stanceLens: "in_favor",
+        taggerConfidence: "0.8",
+        subIssue: "drug_prices",
+      },
+      {
+        billTitle: "Drug 4",
+        billSourceUrl: "https://govtrack.us/bill/4",
+        billSource: "govtrack",
+        voteCast: "yea",
+        voteDate: "2024-02-01",
+        stanceLens: "in_favor",
+        taggerConfidence: "0.75",
+        subIssue: "drug_prices",
+      },
+      {
+        billTitle: "Drug 5 (abstain)",
+        billSourceUrl: "https://govtrack.us/bill/5",
+        billSource: "govtrack",
+        voteCast: "present",
+        voteDate: "2024-01-01",
+        stanceLens: "in_favor",
+        taggerConfidence: "0.7",
+        subIssue: "drug_prices",
+      },
+      {
+        billTitle: "Drug 6 (abstain)",
+        billSourceUrl: "https://govtrack.us/bill/6",
+        billSource: "govtrack",
+        voteCast: "absent",
+        voteDate: "2023-12-01",
+        stanceLens: "in_favor",
+        taggerConfidence: "0.65",
+        subIssue: "drug_prices",
+      },
+    ]);
+
+    const result = await lookupAlignment(
+      "federal-A123",
+      "healthcare_affordability",
+      "in_favor",
+      "drug_prices",
+    );
+
+    // 4 scorable sub-rows < 5 → fall back to parent. The 2 abstains drop in the
+    // existing pipeline, so the parent total is 4 (all "with").
+    expect(result.total).toBe(4);
+    expect(result.kept).toBe(4);
+    expect(result.matchedSubIssue).toBeUndefined();
+  });
+
+  it("selects subIssue under BOTH can2026 branches (field flows through each flag state)", async () => {
+    const corpus = healthcareCorpus();
+
+    // Flag OFF (default in this suite): prefer path still fires.
+    const { select: selOff, _chain: chainOff } = makeSelectMock([]);
+    mockedGetDb.mockReturnValue({ select: selOff } as never);
+    chainOff.where.mockResolvedValue(corpus);
+    const off = await lookupAlignment(
+      "federal-A123",
+      "healthcare_affordability",
+      "in_favor",
+      "drug_prices",
+    );
+    expect(off.matchedSubIssue).toBe("drug_prices");
+    expect(off.total).toBe(5);
+
+    // Flag ON: the can2026-enabled select branch also carries subIssue. The
+    // CAN2026 query path adds a `narrative` column but the prefer/fallback logic
+    // reads only `subIssue`, so the same fixture exercises the branch.
+    vi.stubEnv("CAN2026_DISPLAY_ENABLED", "1");
+    const { select: selOn, _chain: chainOn } = makeSelectMock([]);
+    mockedGetDb.mockReturnValue({ select: selOn } as never);
+    chainOn.where.mockResolvedValue(corpus);
+    const on = await lookupAlignment(
+      "federal-A123",
+      "healthcare_affordability",
+      "in_favor",
+      "drug_prices",
+    );
+    expect(on.matchedSubIssue).toBe("drug_prices");
+    expect(on.total).toBe(5);
+    vi.unstubAllEnvs();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// buildCongressGovUrl — maps govtrack bill ids to Congress.gov URLs
+// ---------------------------------------------------------------------------
+
+describe("buildCongressGovUrl", () => {
+  it("maps govtrack-hr1234-118 → 118th-congress/house-bill/1234", () => {
+    expect(buildCongressGovUrl("govtrack-hr1234-118")).toBe(
+      "https://www.congress.gov/bill/118th-congress/house-bill/1234",
+    );
+  });
+
+  it("maps govtrack-s5-119 → 119th-congress/senate-bill/5", () => {
+    expect(buildCongressGovUrl("govtrack-s5-119")).toBe(
+      "https://www.congress.gov/bill/119th-congress/senate-bill/5",
+    );
+  });
+
+  it("maps govtrack-hjres1-118 → 118th-congress/house-joint-resolution/1", () => {
+    expect(buildCongressGovUrl("govtrack-hjres1-118")).toBe(
+      "https://www.congress.gov/bill/118th-congress/house-joint-resolution/1",
+    );
+  });
+
+  it("maps govtrack-sjres10-117 → 117th-congress/senate-joint-resolution/10", () => {
+    expect(buildCongressGovUrl("govtrack-sjres10-117")).toBe(
+      "https://www.congress.gov/bill/117th-congress/senate-joint-resolution/10",
+    );
+  });
+
+  it("maps govtrack-hres42-118 → 118th-congress/house-resolution/42", () => {
+    expect(buildCongressGovUrl("govtrack-hres42-118")).toBe(
+      "https://www.congress.gov/bill/118th-congress/house-resolution/42",
+    );
+  });
+
+  it("maps govtrack-sres7-119 → 119th-congress/senate-resolution/7", () => {
+    expect(buildCongressGovUrl("govtrack-sres7-119")).toBe(
+      "https://www.congress.gov/bill/119th-congress/senate-resolution/7",
+    );
+  });
+
+  it("maps govtrack-hconres3-118 → 118th-congress/house-concurrent-resolution/3", () => {
+    expect(buildCongressGovUrl("govtrack-hconres3-118")).toBe(
+      "https://www.congress.gov/bill/118th-congress/house-concurrent-resolution/3",
+    );
+  });
+
+  it("returns null for an openstates id (non-govtrack)", () => {
+    expect(buildCongressGovUrl("openstates-ocd-bill-abc123")).toBeNull();
+  });
+
+  it("returns null for null input", () => {
+    expect(buildCongressGovUrl(null)).toBeNull();
+  });
+
+  it("returns null for unknown bill type in govtrack id", () => {
+    // 'xyz' is not in the typeMap
+    expect(buildCongressGovUrl("govtrack-xyz99-118")).toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// lookupAlignment — narrative precedence (plain_summary + CAN2026)
+//
+// New precedence (PR #136): CAN2026 → plain_summary (rendered in full) → absent.
+// The raw CRS bills.summary is NO LONGER shown inline. When no plain_summary
+// exists the card shows only the bill title + roll-call + Congress.gov link.
+// No truncated preview, no ellipsis.
+// ---------------------------------------------------------------------------
+
+describe("lookupAlignment — narrative precedence (plain_summary / CAN2026)", () => {
+  // (a) No plain_summary AND no CAN2026 narrative → narrative absent (no "...")
+  it("no plain_summary + no CAN note → narrative is absent (no ellipsis, no raw CRS)", async () => {
+    const { select, _chain } = makeSelectMock([]);
+    mockedGetDb.mockReturnValue({ select } as never);
+
+    _chain.where.mockResolvedValue([
+      {
+        billTitle: "Some Procedural Vote",
+        billId: "govtrack-hr999-118",
+        billRawMetadata: null,
+        billSourceUrl: "https://govtrack.us/bill/hr999",
+        billSource: "govtrack",
+        // billSummary intentionally omitted (not selected from DB anymore)
+        billPlainSummary: null,
+        voteCast: "yea",
+        voteDate: "2024-01-10",
+        stanceLens: "in_favor",
+        taggerConfidence: "0.7",
+      },
+    ]);
+
+    const result = await lookupAlignment(
+      "federal-A123",
+      "healthcare_affordability",
+      "in_favor",
+    );
+
+    const vote = result.contributingVotes[0]!;
+    // No summary paragraph — user sees bill title + Congress.gov link only.
+    expect(vote.narrative).toBeUndefined();
+    // No sources appended either (sources only attach with narrative).
+    expect(vote.sources).toBeUndefined();
+  });
+
+  // Confirm the above even when raw billSummary data is present in the row
+  // (query still selects it in some tests via mock): the builder must ignore it.
+  it("raw CRS billSummary present but plain_summary null → narrative still absent", async () => {
+    const { select, _chain } = makeSelectMock([]);
+    mockedGetDb.mockReturnValue({ select } as never);
+
+    _chain.where.mockResolvedValue([
+      {
+        billTitle: "Affordable Insulin Act",
+        billId: "govtrack-hr5-118",
+        billRawMetadata: null,
+        billSourceUrl: "https://govtrack.us/bill/hr5",
+        billSource: "govtrack",
+        // Raw CRS with HTML — must NOT be used.
+        billSummary:
+          "<p><b>Affordable Insulin Act</b></p><p>Caps insulin at $35 per month.</p>",
+        billPlainSummary: null,
+        voteCast: "yea",
+        voteDate: "2024-04-01",
+        stanceLens: "in_favor",
+        taggerConfidence: "0.9",
+      },
+    ]);
+
+    const result = await lookupAlignment(
+      "federal-A123",
+      "healthcare_affordability",
+      "in_favor",
+    );
+
+    const vote = result.contributingVotes[0]!;
+    // Raw CRS must NOT surface — no narrative, no HTML, no ellipsis.
+    expect(vote.narrative).toBeUndefined();
+    expect(vote.sources).toBeUndefined();
+  });
+
+  // (b) plain_summary present → rendered IN FULL, no truncation, no ellipsis
+  it("plain_summary present → rendered in full, no ellipsis, Congress.gov source attached", async () => {
+    const { select, _chain } = makeSelectMock([]);
+    mockedGetDb.mockReturnValue({ select } as never);
+
+    const fullSummary =
+      "Lets Medicare negotiate lower drug prices for some medications. Savings are passed to beneficiaries.";
+
+    _chain.where.mockResolvedValue([
+      {
+        billTitle: "Lower Drug Costs Now Act",
+        billId: "govtrack-hr3-118",
+        billRawMetadata: null,
+        billSourceUrl: "https://govtrack.us/bill/hr3",
+        billSource: "govtrack",
+        billPlainSummary: fullSummary,
+        voteCast: "yea",
+        voteDate: "2024-03-15",
+        stanceLens: "in_favor",
+        taggerConfidence: "0.95",
+      },
+    ]);
+
+    const result = await lookupAlignment(
+      "federal-A123",
+      "healthcare_affordability",
+      "in_favor",
+    );
+
+    const vote = result.contributingVotes[0]!;
+    // Exact plain_summary rendered, no trailing ellipsis.
+    expect(vote.narrative).toBe(fullSummary);
+    expect(vote.narrative).not.toMatch(/…|\.\.\.$/);
+    // Congress.gov source chip appended for provenance.
+    expect(vote.sources).toBeDefined();
+    expect(vote.sources).toHaveLength(1);
+    expect(vote.sources![0]!.name).toMatch(/congress\.gov/i);
+    expect(vote.sources![0]!.url).toContain("congress.gov");
+    // No HTML.
+    expect(vote.narrative).not.toMatch(/<[^>]+>/);
+  });
+
+  it("plain_summary constructs correct Congress.gov URL from govtrack bill id", async () => {
+    const { select, _chain } = makeSelectMock([]);
+    mockedGetDb.mockReturnValue({ select } as never);
+
+    _chain.where.mockResolvedValue([
+      {
+        billTitle: "Inflation Reduction Act",
+        billId: "govtrack-hr5376-117",
+        billRawMetadata: null,
+        billSourceUrl: "https://govtrack.us/bill/hr5376",
+        billSource: "govtrack",
+        billPlainSummary:
+          "Addresses climate, healthcare costs, and taxes in a single reconciliation package.",
+        voteCast: "yea",
+        voteDate: "2022-08-12",
+        stanceLens: "in_favor",
+        taggerConfidence: "0.92",
+      },
+    ]);
+
+    const result = await lookupAlignment(
+      "federal-A123",
+      "environment_climate",
+      "in_favor",
+    );
+
+    const vote = result.contributingVotes[0]!;
+    expect(vote.sources![0]!.url).toBe(
+      "https://www.congress.gov/bill/117th-congress/house-bill/5376",
+    );
+  });
+
+  it("CAN2026 narrative takes precedence over plain_summary when flag is on and row exists", async () => {
+    vi.stubEnv("CAN2026_DISPLAY_ENABLED", "1");
+
+    const { select, _chain } = makeSelectMock([]);
+    mockedGetDb.mockReturnValue({ select } as never);
+
+    _chain.where.mockResolvedValue([
+      {
+        billTitle: "Lower Drug Costs Now Act",
+        billId: "govtrack-hr3-118",
+        billRawMetadata: null,
+        billSourceUrl: "https://govtrack.us/bill/hr3",
+        billSource: "govtrack",
+        billPlainSummary: "LLM summary: Medicare negotiates drug prices.",
+        voteCast: "yea",
+        voteDate: "2024-03-15",
+        stanceLens: "in_favor",
+        taggerConfidence: "0.95",
+        // CAN2026 row present:
+        narrative:
+          "CAN2026 curated: Senator voted YES to cap insulin at $35/mo.",
+      },
+    ]);
+
+    const result = await lookupAlignment(
+      "federal-A123",
+      "healthcare_affordability",
+      "in_favor",
+    );
+
+    const vote = result.contributingVotes[0]!;
+    // CAN2026 narrative wins — plain_summary must NOT appear.
+    expect(vote.narrative).toBe(
+      "CAN2026 curated: Senator voted YES to cap insulin at $35/mo.",
+    );
+    // No extra sources appended when using the CAN2026 path.
+    expect(vote.sources).toBeUndefined();
+
+    vi.unstubAllEnvs();
+  });
+
+  it("neither CAN2026 nor plain_summary → narrative stays absent", async () => {
+    const { select, _chain } = makeSelectMock([]);
+    mockedGetDb.mockReturnValue({ select } as never);
+
+    _chain.where.mockResolvedValue([
+      {
+        billTitle: "Some Procedural Vote",
+        billId: "govtrack-hr999-118",
+        billRawMetadata: null,
+        billSourceUrl: "https://govtrack.us/bill/hr999",
+        billSource: "govtrack",
+        billPlainSummary: null,
+        voteCast: "yea",
+        voteDate: "2024-01-10",
+        stanceLens: "in_favor",
+        taggerConfidence: "0.7",
+      },
+    ]);
+
+    const result = await lookupAlignment(
+      "federal-A123",
+      "healthcare_affordability",
+      "in_favor",
+    );
+
+    const vote = result.contributingVotes[0]!;
+    expect(vote.narrative).toBeUndefined();
+    expect(vote.sources).toBeUndefined();
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -1132,5 +1736,179 @@ describe("lookupAlignment billTitle composition", () => {
     expect(result.contributingVotes[0]!.billTitle).toBe(
       "Affordable Care Act Expansion",
     );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// lookupAlignment — memberRationale confidence gate
+//
+// Owner-approved display rule: only rows with matchConfidence === "high" are
+// surfaced as memberRationale. Medium / low / null rows must NEVER appear.
+// The gate is enforced via SQL WHERE (eq matchConfidence "high"); these tests
+// verify the end-to-end behaviour through the mocked DB layer.
+// ---------------------------------------------------------------------------
+
+describe("lookupAlignment — memberRationale high-confidence gate", () => {
+  /** Build a mock db whose first select() call returns voteRows and whose
+   *  second select() call (the rationale query) returns rationaleRows. */
+  function makeDoubleMock(
+    voteRows: Record<string, unknown>[],
+    rationaleRows: Record<string, unknown>[],
+  ) {
+    const rationaleChain = {
+      from: vi.fn().mockReturnThis(),
+      innerJoin: vi.fn().mockReturnThis(),
+      leftJoin: vi.fn().mockReturnThis(),
+      where: vi.fn().mockResolvedValue(rationaleRows),
+    };
+    const voteChain = {
+      from: vi.fn().mockReturnThis(),
+      innerJoin: vi.fn().mockReturnThis(),
+      leftJoin: vi.fn().mockReturnThis(),
+      where: vi.fn().mockResolvedValue(voteRows),
+    };
+    const selectMock = vi
+      .fn()
+      .mockReturnValueOnce(voteChain)
+      .mockReturnValue(rationaleChain);
+    return { select: selectMock };
+  }
+
+  const baseVoteRow = {
+    billTitle: "Drug Price Negotiation Act",
+    billId: "govtrack-hr3-119",
+    billRawMetadata: null,
+    billSourceUrl: "https://govtrack.us/bill/hr3",
+    billSource: "govtrack",
+    billPlainSummary: null,
+    voteCast: "yea",
+    voteDate: "2024-06-01",
+    stanceLens: "in_favor",
+    taggerConfidence: "0.92",
+  };
+
+  it("surfaces memberRationale when matchConfidence is 'high'", async () => {
+    const db = makeDoubleMock(
+      [baseVoteRow],
+      [
+        {
+          billId: "govtrack-hr3-119",
+          rationaleText:
+            "The Senator championed lower drug prices in this vote.",
+          label: "stated",
+          pressReleaseSources: [
+            {
+              url: "https://example.gov/press/1",
+              publishedAt: "2024-06-01",
+              title: "Senator supports bill",
+            },
+          ],
+          modelVersion: "claude-haiku-20240307",
+          matchConfidence: "high",
+        },
+      ],
+    );
+    mockedGetDb.mockReturnValue(db as never);
+
+    const result = await lookupAlignment(
+      "federal-A123",
+      "healthcare_affordability",
+      "in_favor",
+    );
+
+    const vote = result.contributingVotes[0]!;
+    expect(vote.memberRationale).toBeDefined();
+    expect(vote.memberRationale!.text).toBe(
+      "The Senator championed lower drug prices in this vote.",
+    );
+    expect(vote.memberRationale!.label).toBe("stated");
+    expect(vote.memberRationale!.sourceUrls).toContain(
+      "https://example.gov/press/1",
+    );
+  });
+
+  it("does NOT surface memberRationale when matchConfidence is 'medium'", async () => {
+    // The SQL WHERE clause filters medium out at the DB layer; the rationale
+    // query returns [] (simulating what the DB returns after the WHERE filter).
+    const db = makeDoubleMock(
+      [baseVoteRow],
+      [], // DB returns no rows because matchConfidence != 'high'
+    );
+    mockedGetDb.mockReturnValue(db as never);
+
+    const result = await lookupAlignment(
+      "federal-A123",
+      "healthcare_affordability",
+      "in_favor",
+    );
+
+    const vote = result.contributingVotes[0]!;
+    expect(vote.memberRationale).toBeUndefined();
+  });
+
+  it("does NOT surface memberRationale when matchConfidence is 'low'", async () => {
+    const db = makeDoubleMock(
+      [baseVoteRow],
+      [], // DB returns no rows because matchConfidence != 'high'
+    );
+    mockedGetDb.mockReturnValue(db as never);
+
+    const result = await lookupAlignment(
+      "federal-A123",
+      "healthcare_affordability",
+      "in_favor",
+    );
+
+    const vote = result.contributingVotes[0]!;
+    expect(vote.memberRationale).toBeUndefined();
+  });
+
+  it("does NOT surface memberRationale when matchConfidence is null", async () => {
+    const db = makeDoubleMock(
+      [baseVoteRow],
+      [], // DB returns no rows because matchConfidence != 'high'
+    );
+    mockedGetDb.mockReturnValue(db as never);
+
+    const result = await lookupAlignment(
+      "federal-A123",
+      "healthcare_affordability",
+      "in_favor",
+    );
+
+    const vote = result.contributingVotes[0]!;
+    expect(vote.memberRationale).toBeUndefined();
+  });
+
+  it("remains fail-soft when rationale query throws (e.g. table not migrated yet)", async () => {
+    const brokenRationaleChain = {
+      from: vi.fn().mockReturnThis(),
+      innerJoin: vi.fn().mockReturnThis(),
+      leftJoin: vi.fn().mockReturnThis(),
+      where: vi.fn().mockRejectedValue(new Error("relation does not exist")),
+    };
+    const voteChain = {
+      from: vi.fn().mockReturnThis(),
+      innerJoin: vi.fn().mockReturnThis(),
+      leftJoin: vi.fn().mockReturnThis(),
+      where: vi.fn().mockResolvedValue([baseVoteRow]),
+    };
+    const selectMock = vi
+      .fn()
+      .mockReturnValueOnce(voteChain)
+      .mockReturnValue(brokenRationaleChain);
+    mockedGetDb.mockReturnValue({ select: selectMock } as never);
+
+    const result = await lookupAlignment(
+      "federal-A123",
+      "healthcare_affordability",
+      "in_favor",
+    );
+
+    // Alignment result is still returned; no memberRationale attached.
+    expect(result.found).toBe(true);
+    expect(result.total).toBe(1);
+    const vote = result.contributingVotes[0]!;
+    expect(vote.memberRationale).toBeUndefined();
   });
 });

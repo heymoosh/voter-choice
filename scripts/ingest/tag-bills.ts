@@ -38,10 +38,11 @@
  *   DATABASE_URL=<neon> ANTHROPIC_VOTER_API=<key> npx tsx scripts/ingest/tag-bills.ts --dry-run
  */
 
+import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import Anthropic from "@anthropic-ai/sdk";
-import { sql, notInArray } from "drizzle-orm";
+import { sql, notInArray, eq } from "drizzle-orm";
 import { requireDb, type DbClient } from "../../db/client";
 import { bills, issueTags } from "../../db/schema";
 import { CANONICAL_ISSUE_LABELS } from "../../src/lib/canonicalIssues";
@@ -91,6 +92,18 @@ const HAIKU_OUTPUT_COST_PER_MTK = 4.0;
 
 export type StanceLens = "in_favor" | "opposed";
 
+/**
+ * Values written to bills.skip_reason when the tagger determines a bill is
+ * genuinely non-issue and intentionally leaves it untagged.
+ *
+ * - 'procedural'    — motion to table, motion to proceed, quorum call, etc.
+ * - 'naming'        — post office / courthouse / street renaming bills
+ * - 'ceremonial'    — commemorative resolutions, tributes, holidays
+ * - 'non_issue'     — catch-all: not substantively related to any canonical
+ *                     issue but doesn't fit a narrower category
+ */
+export type SkipReason = "procedural" | "naming" | "ceremonial" | "non_issue";
+
 export type RawTagEntry = {
   canonical_issue: unknown;
   stance_lens: unknown;
@@ -115,6 +128,23 @@ export type TaggerRuntimeConfig = {
   batchSize: number;
   dryRun: boolean;
   anthropicApiKey: string;
+  /**
+   * Force-retag opt-in (additive; default false). When true, the tagger
+   * re-tags an EXPLICIT, non-empty set of bill ids (`targetBillIds`) even though
+   * they already have a row for the current TAGGER_VERSION — bypassing the usual
+   * NOT-EXISTS skip. Used for targeted coverage lifts (e.g. thin reproductive_
+   * rights / immigration subsets) WITHOUT bumping TAGGER_VERSION.
+   *
+   * GUARD: force-retag is meaningless (and refused) without an explicit
+   * `targetBillIds` list — there is intentionally NO "force-retag everything"
+   * path, so a targeted run can never accidentally re-tag the whole corpus.
+   */
+  forceRetag: boolean;
+  /**
+   * Explicit bill ids to (re)tag when forceRetag is true. Empty unless a
+   * `--ids` selector was provided. Ignored when forceRetag is false.
+   */
+  targetBillIds: string[];
 };
 
 export type TaggerCounts = {
@@ -122,6 +152,8 @@ export type TaggerCounts = {
   billsTagged: number;
   billsSkipped: number;
   tagsUpserted: number;
+  /** Bills where the tagger returned [] and we wrote a skip_reason. */
+  billsSkipReasonWritten: number;
   apiErrors: number;
   dbErrors: number;
   estimatedInputTokens: number;
@@ -372,6 +404,43 @@ export async function fetchUntaggedBills(
 }
 
 /**
+ * Guard for force-retag: ensure an EXPLICIT, non-empty id set was supplied.
+ *
+ * This is the safety rail that makes force-retag targeted-only — it throws on an
+ * empty/missing id list so there is no "force-retag the whole corpus" path. The
+ * caller (tagBills) invokes this before any DB read when forceRetag is on.
+ */
+export function assertForceRetagSelector(targetBillIds: string[]): void {
+  if (!targetBillIds || targetBillIds.length === 0) {
+    throw new Error(
+      "[tag-bills] --force requires an explicit non-empty --ids selector. " +
+        "Force-retag never re-tags the whole corpus; pass the targeted bill ids " +
+        "(e.g. from scripts/ingest/_retag-selector.ts).",
+    );
+  }
+}
+
+/**
+ * Fetch bills by explicit id, REGARDLESS of existing TAGGER_VERSION rows.
+ *
+ * Unlike fetchUntaggedBills (which skips already-tagged bills), this is the
+ * force-retag path: it returns exactly the requested bills so their tags can be
+ * recomputed for the same TAGGER_VERSION. Read-only.
+ */
+export async function fetchBillsByIds(
+  db: DbClient,
+  ids: string[],
+): Promise<BillRow[]> {
+  if (ids.length === 0) return [];
+  const rows = await db.execute(sql`
+    SELECT b.id, b.title, b.summary, b.jurisdiction
+    FROM bills b
+    WHERE b.id = ANY(${ids})
+  `);
+  return rows.rows as BillRow[];
+}
+
+/**
  * Upsert valid tags into issue_tags. Returns the number of rows upserted.
  */
 export async function upsertTags(
@@ -412,6 +481,125 @@ export async function upsertTags(
     });
 
   return rows.length;
+}
+
+/**
+ * Infer the most specific SkipReason from a bill's title.
+ *
+ * The tagger prompt already instructs the model to return [] for procedural,
+ * naming, and unrelated bills, but doesn't distinguish between them in the
+ * response. We derive the reason heuristically from the title so coverage
+ * reports can break down the skipped bucket without an extra LLM call.
+ */
+export function inferSkipReason(title: string): SkipReason {
+  const t = title.toLowerCase();
+
+  // Naming / renaming bills (post office, courthouse, highway, etc.)
+  if (
+    /\b(designat|renaming?|named? (after|for)|post office|courthouse|federal building|highway|street|bridge|station)\b/.test(
+      t,
+    )
+  ) {
+    return "naming";
+  }
+
+  // Ceremonial / commemorative (resolution of tribute, congratulating, honoring)
+  // No trailing \b — these are stems that precede suffixes like -ing/-ion/-ory.
+  if (
+    /\b(congratulat|commend|honor|recogniz|tribut|commemorat|celebrat|proclaim|salut)/.test(
+      t,
+    )
+  ) {
+    return "ceremonial";
+  }
+
+  // Procedural motions
+  if (
+    /\b(motion to (table|proceed|adjourn|recommit)|quorum call|point of order|unanimous consent)\b/.test(
+      t,
+    )
+  ) {
+    return "procedural";
+  }
+
+  return "non_issue";
+}
+
+/**
+ * Write skip_reason to bills table for a bill the tagger intentionally left
+ * untagged. No-op in dry-run mode.
+ */
+export async function recordSkipReason(
+  db: DbClient,
+  billId: string,
+  reason: SkipReason,
+  dryRun: boolean,
+): Promise<void> {
+  if (dryRun) {
+    process.stderr.write(
+      `[tag-bills] dry_run bill=${billId} would_write skip_reason=${reason}\n`,
+    );
+    return;
+  }
+  await db
+    .update(bills)
+    .set({ skipReason: reason })
+    .where(eq(bills.id, billId));
+}
+
+// ---------------------------------------------------------------------------
+// Coverage reporting
+// ---------------------------------------------------------------------------
+
+export type CoverageStats = {
+  totalBills: number;
+  /** Bills with ≥1 issue_tags row. */
+  taggedBills: number;
+  /** Bills where skip_reason IS NOT NULL (tagger decided non-issue). */
+  skippedNonIssueBills: number;
+  /** Bills with no tags AND skip_reason IS NULL (genuinely queued). */
+  queuedForTaggingBills: number;
+};
+
+/**
+ * Compute coverage stats without touching prod — accepts a db client so tests
+ * can inject a mock. The three buckets are mutually exclusive:
+ *   tagged + skipped + queued = total
+ */
+export async function computeCoverageStats(
+  db: DbClient,
+): Promise<CoverageStats> {
+  const result = await db.execute(sql`
+    SELECT
+      COUNT(*)                                                        AS total_bills,
+      COUNT(DISTINCT it.bill_id)                                      AS tagged_bills,
+      COUNT(*) FILTER (WHERE b.skip_reason IS NOT NULL
+                         AND NOT EXISTS (
+                           SELECT 1 FROM issue_tags it2
+                           WHERE it2.bill_id = b.id
+                         ))                                           AS skipped_non_issue_bills,
+      COUNT(*) FILTER (WHERE b.skip_reason IS NULL
+                         AND NOT EXISTS (
+                           SELECT 1 FROM issue_tags it3
+                           WHERE it3.bill_id = b.id
+                         ))                                           AS queued_for_tagging_bills
+    FROM bills b
+    LEFT JOIN issue_tags it ON it.bill_id = b.id
+  `);
+
+  const row = result.rows[0] as {
+    total_bills: string;
+    tagged_bills: string;
+    skipped_non_issue_bills: string;
+    queued_for_tagging_bills: string;
+  };
+
+  return {
+    totalBills: Number(row.total_bills),
+    taggedBills: Number(row.tagged_bills),
+    skippedNonIssueBills: Number(row.skipped_non_issue_bills),
+    queuedForTaggingBills: Number(row.queued_for_tagging_bills),
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -482,6 +670,17 @@ export async function processBill(
     const upserted = await upsertTags(db, bill.id, tags, dryRun);
     counts.tagsUpserted += upserted;
     counts.billsTagged += 1;
+
+    // When the model intentionally returned [] (non-issue bill), record why so
+    // coverage reporting can distinguish "skipped non-issue" from "queued".
+    if (tags.length === 0) {
+      const reason = inferSkipReason(bill.title);
+      process.stderr.write(
+        `[tag-bills] non_issue bill=${bill.id} skip_reason=${reason}\n`,
+      );
+      await recordSkipReason(db, bill.id, reason, dryRun);
+      counts.billsSkipReasonWritten += 1;
+    }
   } catch (error) {
     const message =
       error instanceof Error ? error.message.replace(/\s+/gu, " ") : "unknown";
@@ -520,12 +719,42 @@ export function resolveTagBillsConfig(
   const anthropicApiKey =
     env.ANTHROPIC_VOTER_API ?? env.ANTHROPIC_API_KEY ?? "";
 
+  // Force-retag opt-in: additive, off by default. Requires an explicit id list
+  // (--ids) — there is no "force everything" path on purpose.
+  const targetBillIds = parseIdsFlag(argv);
+  const forceRetag = argv.includes("--force") || env.TAGGER_FORCE_RETAG === "1";
+
   return {
     limit,
     batchSize: BATCH_SIZE,
     dryRun,
     anthropicApiKey,
+    forceRetag,
+    targetBillIds,
   };
+}
+
+/**
+ * Parse the `--ids` selector into an explicit bill-id list. Accepts either an
+ * inline comma-separated list (`--ids a,b,c`) or a file reference
+ * (`--ids @path/to/ids.txt`, one id per line or comma-separated). Empty/blank
+ * entries are dropped. Returns [] when no `--ids` flag is present.
+ */
+export function parseIdsFlag(argv: string[]): string[] {
+  const idx = argv.indexOf("--ids");
+  if (idx === -1) return [];
+  const value = argv[idx + 1];
+  if (!value) return [];
+
+  let raw = value;
+  if (value.startsWith("@")) {
+    // Read-only file load; deferred so the function stays pure when inline.
+    raw = readFileSync(value.slice(1), "utf8");
+  }
+  return raw
+    .split(/[\s,]+/u)
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
 }
 
 function parseLimitFlag(argv: string[]): number | null {
@@ -577,6 +806,7 @@ export async function tagBills({
     billsTagged: 0,
     billsSkipped: 0,
     tagsUpserted: 0,
+    billsSkipReasonWritten: 0,
     apiErrors: 0,
     dbErrors: 0,
     estimatedInputTokens: 0,
@@ -585,10 +815,24 @@ export async function tagBills({
   };
 
   process.stderr.write(
-    `[tag-bills] starting tagger_version=${TAGGER_VERSION} limit=${config.limit} dry_run=${config.dryRun}\n`,
+    `[tag-bills] starting tagger_version=${TAGGER_VERSION} limit=${config.limit} ` +
+      `dry_run=${config.dryRun} force_retag=${config.forceRetag}\n`,
   );
 
-  const untagged = await fetchUntaggedBills(db, config.limit);
+  // Force-retag path (additive): re-tag an EXPLICIT id set even if already
+  // tagged for TAGGER_VERSION. Guarded against an empty/"all" set. Default
+  // behavior (untagged-only) is unchanged when forceRetag is false.
+  let untagged: BillRow[];
+  if (config.forceRetag) {
+    assertForceRetagSelector(config.targetBillIds);
+    process.stderr.write(
+      `[tag-bills] FORCE-RETAG enabled for ${config.targetBillIds.length} explicit bill id(s) ` +
+        `(bypassing the already-tagged skip for THIS subset only)\n`,
+    );
+    untagged = await fetchBillsByIds(db, config.targetBillIds);
+  } else {
+    untagged = await fetchUntaggedBills(db, config.limit);
+  }
   counts.billsQueried = untagged.length;
 
   process.stderr.write(`[tag-bills] found ${untagged.length} bills to tag\n`);
@@ -639,6 +883,7 @@ export async function tagBills({
       `bills_tagged=${counts.billsTagged}`,
       `bills_skipped=${counts.billsSkipped}`,
       `tags_upserted=${counts.tagsUpserted}`,
+      `skip_reason_written=${counts.billsSkipReasonWritten}`,
       `api_errors=${counts.apiErrors}`,
       `db_errors=${counts.dbErrors}`,
       `est_total_usd=${finalCost.estimatedUsd.toFixed(4)}`,
