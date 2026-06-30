@@ -65,6 +65,16 @@ export interface ParseResult {
   schema: SchemaShape;
   /** Count of statements we could not classify (informational). */
   skipped: number;
+  /**
+   * Schema-DECLARING statements (CREATE TABLE / ADD COLUMN / CREATE INDEX) that
+   * we recognised by keyword but FAILED to fully parse — e.g. a schema-qualified
+   * or unquoted identifier, or a statement corrupted by a `;` / `--` inside a
+   * string literal. These are the dangerous skips: the object they declare is
+   * absent from `schema`, so the guard would fail OPEN on it. Each entry is the
+   * statement's leading snippet, for a loud warning. Benign skips (FK
+   * constraints, RENAME, etc.) are NOT included.
+   */
+  unparsedDdl: string[];
 }
 
 // ---------------------------------------------------------------------------
@@ -170,10 +180,29 @@ function applyStatement(stmt: string, schema: SchemaShape): boolean {
 }
 
 /**
+ * True if a statement DECLARES a schema object we assert on (a table, a column
+ * via ADD COLUMN, or an index) — recognised purely by leading keyword, looser
+ * than applyStatement's strict identifier match. Used to distinguish a
+ * *dangerous* parse miss (a CREATE TABLE we couldn't read → object absent from
+ * expected → guard fails open) from a *benign* skip (ADD CONSTRAINT, RENAME,
+ * DROP, etc.) that we never assert on anyway.
+ */
+function declaresSchemaObject(stmt: string): boolean {
+  return (
+    /^CREATE\s+TABLE\b/i.test(stmt) ||
+    /^ALTER\s+TABLE\b[\s\S]*\bADD\s+COLUMN\b/i.test(stmt) ||
+    /^CREATE\s+(?:UNIQUE\s+)?INDEX\b/i.test(stmt)
+  );
+}
+
+/**
  * Parse all migration .sql files (sorted) and build the cumulative EXPECTED
  * schema. Statements we can't classify (ALTER ... ADD CONSTRAINT, etc.) are
  * counted as skipped — that's expected; we only assert presence of
- * tables/columns/indexes.
+ * tables/columns/indexes. Any schema-DECLARING statement we fail to fully parse
+ * is additionally recorded in `unparsedDdl` so the caller can warn loudly: such
+ * a miss leaves the object out of the expected schema and would make the guard
+ * fail open on it.
  */
 export function parseMigrations(
   files: { name: string; sql: string }[],
@@ -184,14 +213,22 @@ export function parseMigrations(
     indexes: new Set(),
   };
   let skipped = 0;
+  const unparsedDdl: string[] = [];
 
   const sorted = [...files].sort((a, b) => a.name.localeCompare(b.name));
   for (const file of sorted) {
     for (const stmt of splitStatements(file.sql)) {
-      if (!applyStatement(stmt, schema)) skipped++;
+      if (!applyStatement(stmt, schema)) {
+        skipped++;
+        if (declaresSchemaObject(stmt)) {
+          unparsedDdl.push(
+            `${file.name}: ${stmt.slice(0, 80).replace(/\s+/g, " ")}`,
+          );
+        }
+      }
     }
   }
-  return { schema, skipped };
+  return { schema, skipped, unparsedDdl };
 }
 
 /** Read db/migrations/*.sql from disk and parse them. */
@@ -302,7 +339,9 @@ export async function introspectDb(sql: SqlQuery): Promise<SchemaShape> {
 /**
  * Resolve db/migrations relative to this file. Lazy (not a module-level const)
  * so that importing this module under a non-file: loader (e.g. vitest) never
- * evaluates fileURLToPath at import time — only main() needs the path.
+ * evaluates fileURLToPath at import time — only main() needs the path. Not
+ * exported: under vitest this module's import.meta.url is not a file: URL, so
+ * the test re-derives the dir from its OWN file location instead.
  */
 function migrationsDir(): string {
   return fileURLToPath(new URL("../../db/migrations", import.meta.url));
@@ -334,10 +373,29 @@ export async function main(
   const dbUrl = process.env.DATABASE_URL ?? "";
   const hasDbUrl = dbUrl.trim().length > 0;
 
-  const { schema: expected, skipped } = parseMigrationDir(migrationsDir());
+  const {
+    schema: expected,
+    skipped,
+    unparsedDdl,
+  } = parseMigrationDir(migrationsDir());
   console.log(
     `Parsed migrations: ${expected.tables.size} tables, ${expected.columns.size} columns, ${expected.indexes.size} indexes expected (${skipped} statements skipped/unclassified).`,
   );
+
+  // A schema-DECLARING statement we couldn't fully parse means the expected
+  // schema is incomplete — the guard would fail OPEN on that object. Surface it
+  // loudly; when we actually have a DB to check, treat it as a hard failure so
+  // a parser blind spot can't silently let real drift through.
+  if (unparsedDdl.length > 0) {
+    console.error(
+      `✗ ${unparsedDdl.length} schema-declaring statement(s) could not be parsed — expected schema is INCOMPLETE:`,
+    );
+    for (const s of unparsedDdl) console.error(`  - ${s}`);
+    console.error(
+      "Extend the parser in scripts/ops/check-schema-drift.ts to cover these forms.",
+    );
+    if (hasDbUrl) return 1;
+  }
 
   if (!hasDbUrl) {
     console.warn("⚠ schema-drift check SKIPPED: DATABASE_URL not set");

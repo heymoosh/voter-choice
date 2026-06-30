@@ -11,12 +11,17 @@ import { describe, expect, it } from "vitest";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
+  parseMigrations,
   parseMigrationDir,
   diff,
   computeExitCode,
   type SchemaShape,
 } from "./check-schema-drift";
 
+// NOTE: resolve the migrations dir from the TEST file's own location, not via
+// the exported migrationsDir(). Under vitest the source module's
+// import.meta.url is not a file: URL, so calling migrationsDir() at load time
+// throws "URL must be of scheme file" — the path is duplicated here on purpose.
 const MIGRATIONS_DIR = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
   "../../db/migrations",
@@ -65,6 +70,38 @@ describe("parseMigrations (against real db/migrations)", () => {
     expect(expected.indexes.size).toBeGreaterThan(5);
     // Some constraint/ALTER statements are legitimately unclassified.
     expect(skipped).toBeGreaterThanOrEqual(0);
+  });
+
+  it("flags no unparsed schema-declaring DDL in the real migrations", () => {
+    // The current corpus is all double-quoted, non-schema-qualified DDL the
+    // parser fully understands. If a future migration uses a form the parser
+    // can't read, unparsedDdl must catch it (see the synthetic test below).
+    const { unparsedDdl } = parseMigrationDir(MIGRATIONS_DIR);
+    expect(unparsedDdl).toEqual([]);
+  });
+});
+
+describe("unparsedDdl (fail-open guard against parser blind spots)", () => {
+  it("records a schema-declaring statement the parser can't fully read", () => {
+    // Schema-qualified table name — recognised as a CREATE TABLE by keyword but
+    // NOT captured by applyStatement, so it would otherwise be silently absent
+    // from the expected schema (the guard would fail open on `foo`).
+    const { schema, unparsedDdl } = parseMigrations([
+      { name: "9999_x.sql", sql: `CREATE TABLE "public"."foo" ("id" text);` },
+    ]);
+    expect(schema.tables.has("foo")).toBe(false);
+    expect(unparsedDdl.length).toBe(1);
+    expect(unparsedDdl[0]).toContain("9999_x.sql");
+  });
+
+  it("does NOT record benign non-asserted statements (ADD CONSTRAINT)", () => {
+    const { unparsedDdl } = parseMigrations([
+      {
+        name: "9999_y.sql",
+        sql: `ALTER TABLE "votes" ADD CONSTRAINT "votes_fk" FOREIGN KEY ("bill_id") REFERENCES "bills"("id");`,
+      },
+    ]);
+    expect(unparsedDdl).toEqual([]);
   });
 });
 
