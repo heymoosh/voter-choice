@@ -457,7 +457,7 @@ const TRANSLATIONS = {
       chip2: 'Dime por qué escogiste estos',
       chip3: 'Agrega algo que se te haya pasado',
       errorMsg: 'No pude leer tu mensaje ahora mismo — por favor intenta de nuevo.',
-      starterAck: 'Aquí hay {n} {temas} para empezar — reordénalos, renómbralos, elimínalos, o sigue contándome lo que valoras y los ajustaré.',
+      starterAck: 'Aquí hay {n} {themes} para empezar — reordénalos, renómbralos, elimínalos, o sigue contándome lo que valoras y los ajustaré.',
       starterThemeSingular: 'tema',
       starterThemePlural: 'temas',
     },
