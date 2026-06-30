@@ -269,6 +269,10 @@ const TRANSLATIONS = {
       precinct: 'Precinct',
       earlyVotingWindow: 'Early voting window',
       cardSource: 'Source · Google Civic',
+      addressNotPublished: (days) =>
+        days != null && days > 0
+          ? `Polling places aren’t published this far out (${days} days to go) — check back closer to Election Day, or use “Find your polling place” above.`
+          : `Polling place not yet published — check back closer to Election Day, or use “Find your polling place” above.`,
     },
   },
   es: {
@@ -366,6 +370,10 @@ const TRANSLATIONS = {
       precinct: 'Precinto',
       earlyVotingWindow: 'Ventana de votación anticipada',
       cardSource: 'Fuente · Google Civic',
+      addressNotPublished: (days) =>
+        days != null && days > 0
+          ? `Las casillas electorales no se publican con tanta anticipación (faltan ${days} días) — revisa más cerca del día de elecciones, o usa "Encuentra tu casilla" arriba.`
+          : `La casilla electoral aún no está publicada — revisa más cerca del día de elecciones, o usa "Encuentra tu casilla" arriba.`,
     },
   },
 };
