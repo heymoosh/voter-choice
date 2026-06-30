@@ -75,10 +75,12 @@ jobs:
       # alignment quietly returned nothing. This fails the deploy LOUDLY if the
       # target DB is missing any table/column/index the migrations declare.
       # DATABASE_URL is written to $GITHUB_ENV by the Bitwarden step above, so
-      # this is a LIVE gate: it introspects that DB and exits 1 on drift. It
-      # self-SKIPS (exit 0) only if the resolved DATABASE_URL is empty.
+      # this is a LIVE gate: it introspects that DB and exits 1 on drift.
+      # --require-db means a MISSING/empty DATABASE_URL also fails the deploy
+      # (rather than silently skipping) — so the gate can never silently no-op.
+      # Prod confirmed in-sync 2026-06-30 before enabling --require-db.
       - name: Schema drift check
-        run: npx tsx scripts/ops/check-schema-drift.ts
+        run: npx tsx scripts/ops/check-schema-drift.ts --require-db
 
       - name: Install Vercel CLI
         run: npm install -g vercel
