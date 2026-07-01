@@ -129,7 +129,7 @@ export function ScorecardPane({
         </div>
         <ol className="b-issues-list">
           {issues.map((iss, i) => (
-            <li key={i}>
+            <li key={`${i}-${iss.canonicalIssue || iss.interpretation}`}>
               <span className="n">{i + 1}</span>
               {iss.interpretation}
             </li>

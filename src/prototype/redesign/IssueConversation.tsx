@@ -294,7 +294,7 @@ export function IssueConversation({
 
           {issues.map((iss, i) => (
             <IssueRow
-              key={`${i}-${iss.canonicalIssue || iss.interpretation || iss.sourceText}`}
+              key={`${i}-${iss.canonicalIssue || iss.interpretation}`}
               issue={iss}
               index={i}
               total={issues.length}
