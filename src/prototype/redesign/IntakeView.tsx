@@ -6,7 +6,7 @@
    is the shared IssueConversation (extract → converse → lock). */
 
 import React from "react";
-import { AppNav } from "../VoterChoiceApp";
+import { AppNav, useI18n } from "../VoterChoiceApp";
 import { IssueConversation, useIssueConversation } from "./IssueConversation";
 
 export function IntakeView({
@@ -16,9 +16,16 @@ export function IntakeView({
   onLock,
   onBudgetBlock,
 }) {
+  const { t } = useI18n();
   const convo = useIssueConversation({
     seedIssues: savedIssues && savedIssues.length ? savedIssues : null,
     onBudgetBlock,
+    strings: {
+      starterAck: t("intake.starterAck"),
+      starterThemeSingular: t("intake.starterThemeSingular"),
+      starterThemePlural: t("intake.starterThemePlural"),
+      errorMsg: t("intake.errorMsg"),
+    },
   });
 
   return (
@@ -30,27 +37,21 @@ export function IntakeView({
         </div>
 
         <div className="msg ai">
-          <div className="who">Voter Choice · AI</div>
+          <div className="who">{t("intake.aiWho")}</div>
           <div className="bubble">
-            <p>
-              I've pulled your representatives' names. Before I walk you through
-              their performance, I want to know what you're judging them on.
-            </p>
+            <p>{t("intake.openerP1")}</p>
             <p style={{ marginTop: "10px" }}>
-              <b>What's been on your mind this year?</b> Things you wish
-              Congress would actually do something about. Frustrations, hopes,
-              fights you've watched in your community. Type as much or as little
-              as you want — and once I propose a list, keep talking to me until
-              it matches what you value.
+              <b>{t("intake.openerP2Bold")}</b>
+              {t("intake.openerP2Rest")}
             </p>
           </div>
         </div>
 
         <IssueConversation
           convo={convo}
-          primaryLabel="Lock these in & meet your delegation →"
+          primaryLabel={t("intake.primaryBtn")}
           onPrimary={onLock}
-          placeholder="Things that have been on your mind. Frustrations, hopes, fights you've watched in your community…"
+          placeholder={t("intake.placeholderFirst")}
         />
       </div>
     </>

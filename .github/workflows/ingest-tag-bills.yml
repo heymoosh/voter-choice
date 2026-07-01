@@ -1,10 +1,15 @@
 name: Tag Bills with Issues
 
 on:
-  # Sunday 09:00 UTC — after both ingest jobs have had time to complete
-  schedule:
-    - cron: "0 9 * * 0"
-  # Allow manual trigger for re-tagging or backfill
+  # DISABLED 2026-06-28: the weekly schedule submitted ~29k untagged bills to the
+  # Anthropic Batch API using the app's front-end API key (ANTHROPIC_VOTER_API),
+  # draining the monthly budget (usage spikes observed 6/21 & 6/28, both Sundays).
+  # Per owner directive, that key is for front-end user usage ONLY — no unattended
+  # backend jobs. Tagging is now owner-initiated (run on demand via the manual
+  # trigger below); a Claude Code / Max re-architecture is the planned follow-up.
+  #   schedule:
+  #     - cron: "0 9 * * 0"   # Sunday 09:00 UTC (was: after both ingest jobs complete)
+  # Allow manual trigger for re-tagging or backfill (kept)
   workflow_dispatch:
 
 jobs:

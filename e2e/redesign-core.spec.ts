@@ -15,6 +15,7 @@ import {
   mockPolis,
   mockCounters,
   goToWorkspace,
+  goToStanding,
 } from "./helpers/redesign-mocks";
 
 test.skip(
@@ -58,8 +59,16 @@ test.describe("delegation flow — address → assess → verdicts", () => {
     );
     await expect(page.locator(".tweaks2")).toHaveCount(0);
 
-    // Scorecard rail shows the issues with jurisdiction tags.
-    await expect(page.locator(".ws-rail .lvl-tag").first()).toBeVisible();
+    // Single right panel ([P1]): the left rail was removed, so the scorecard
+    // pane is the only side panel and it renders the issues. The confusing
+    // Fed/Both/State jurisdiction tags were removed ([P0]) — assert they no
+    // longer appear, and that the dropped rail is truly gone.
+    await expect(page.locator(".ws-ballot")).toBeVisible();
+    await expect(
+      page.locator(".ws-ballot .b-issues-list li").first(),
+    ).toBeVisible();
+    await expect(page.locator(".ws-rail")).toHaveCount(0);
+    await expect(page.locator(".lvl-tag")).toHaveCount(0);
   });
 
   test("threads the delegation's resolved candidateId into /api/race-data", async ({
@@ -82,7 +91,9 @@ test.describe("delegation flow — address → assess → verdicts", () => {
     };
     await expect
       .poll(() =>
-        (seat.requests as RaceDataReq[]).find((r) => r.raceId === "house-TX-37"),
+        (seat.requests as RaceDataReq[]).find(
+          (r) => r.raceId === "house-TX-37",
+        ),
       )
       .toBeTruthy();
     const houseReq = (seat.requests as RaceDataReq[]).find(
@@ -210,9 +221,7 @@ test.describe("delegation flow — address → assess → verdicts", () => {
     await expect(page.locator(".print-sheet")).toContainText(
       "U.S. House TX-37",
     );
-    await expect(page.locator(".verdict-print").first()).toContainText(
-      "WORTH KEEPING",
-    );
+    await expect(page.locator(".verdict-print").first()).toContainText("KEEP");
   });
 
   test("no-DB-record member renders the web_search card in the same surface", async ({
@@ -220,7 +229,7 @@ test.describe("delegation flow — address → assess → verdicts", () => {
   }, testInfo) => {
     test.skip(
       testInfo.project.name !== "chromium-desktop",
-      "seat selection via the rail is desktop-only",
+      "scorecard seat selection is desktop-only",
     );
     await mockDelegation(page);
     await mockSeatRaceData(page);
@@ -229,8 +238,9 @@ test.describe("delegation flow — address → assess → verdicts", () => {
     await mockCounters(page);
     await goToWorkspace(page);
 
-    // Open the junior senator's card (research fallback path).
-    await page.locator(".ws-rail .race-list li").nth(2).click();
+    // Open the junior senator's card (research fallback path) — seat rows now
+    // live only in the right scorecard pane (the left rail was removed).
+    await page.locator(".ws-ballot .b-row").nth(2).click();
     await expect(
       page.locator('[data-testid="web-search-alignment-banner"]'),
     ).toBeVisible({ timeout: 15000 });
@@ -249,7 +259,9 @@ test.describe("standing stage (polis)", () => {
     await mockCounters(page);
     await goToWorkspace(page);
 
-    await page.locator(".standing-cta button").click();
+    // The "see where you stand" teaser was removed ([P1]); reach standing via
+    // the completion link that appears once the whole delegation is verdicted.
+    await goToStanding(page);
     await expect(page.locator(".polis h2")).toContainText(
       "less divided than you think",
     );
@@ -269,7 +281,7 @@ test.describe("standing stage (polis)", () => {
     await mockCounters(page);
     await goToWorkspace(page);
 
-    await page.locator(".standing-cta button").click();
+    await goToStanding(page);
     // Low sampleSize (<30) → honest "early days" framing, no participation gate.
     await expect(page.locator(".polis-lede")).toContainText("Early days");
     // Scatter still renders — locked only when sampleSize=0.
