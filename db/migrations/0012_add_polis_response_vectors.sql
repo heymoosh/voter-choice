@@ -37,14 +37,14 @@
 -- `git log --oneline main -- db/migrations/` before applying on prod.
 
 CREATE TABLE "polis_response_vectors" (
-  -- Opaque random token generated per-session in the browser; never persisted
-  -- to any other table; NOT the same as the Redis dedupe sessionId.
+  -- Opaque random token generated per-session in the browser — never persisted
+  -- to any other table — NOT the same as the Redis dedupe sessionId.
   "session_token"   text NOT NULL,
   -- ISO 3166-2 state code (e.g. "TX"). Kept to allow state-scoped clustering.
   -- NULL when the voter skipped location.
   "state_code"      text,
   -- JSON object: { [statementId: string]: "agree" | "disagree" | "pass" }
-  -- Only statements the voter actually answered are included; unanswered
+  -- Only statements the voter actually answered are included — unanswered
   -- statements are simply absent (not stored as "pass") so the clustering
   -- function can distinguish "skipped" from "actively passed".
   "responses"       jsonb NOT NULL,
