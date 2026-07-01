@@ -18,17 +18,23 @@
        of the congress-assessment flow. */
 
 import React, { useState, useEffect } from "react";
-import { AppNav, AppFooter, PollingStatusBar } from "../VoterChoiceApp";
+import {
+  AppNav,
+  AppFooter,
+  PollingStatusBar,
+  useI18n,
+} from "../VoterChoiceApp";
 import { RepCard } from "./RepCard";
 import { SeatChat } from "./SeatChat";
 import { IssueDeltaBanner } from "./IssueDeltaBanner";
 import { issuesForLevel } from "./delegationData";
 
-function tierIntro(section, { stateName }) {
+function tierIntro(section, { stateName, t }) {
+  const tr = t || ((k) => k);
   const TIERS = {
     "Washington — Federal": {
       place: "WASHINGTON",
-      title: "Your federal delegation",
+      title: tr("scorecard.tierFedTitle"),
       what: () => (
         <>
           Three people who write <b>federal</b> law — and answer for it on
@@ -38,17 +44,12 @@ function tierIntro(section, { stateName }) {
     },
     "State legislature — State": {
       place: (stateName || "STATE").toUpperCase(),
-      title: "Closer to home",
-      what: () => (
-        <>
-          Your state legislature decides what Washington doesn't — schools,
-          infrastructure, and state law.
-        </>
-      ),
+      title: tr("scorecard.tierStatTitle"),
+      what: () => <>{tr("scorecard.tierStatWhat")}</>,
     },
     "Statewide — Executive": {
       place: "STATEWIDE",
-      title: "Offices that don't take roll-call votes",
+      title: tr("scorecard.tierExecTitle"),
       what: () => (
         <>
           A governor signs and vetoes — there's no voting record to score. So we
@@ -74,6 +75,7 @@ export function ScorecardPane({
   onContinueElsewhere,
   onEditIssues,
 }) {
+  const { t } = useI18n();
   const doneCount = Object.keys(verdicts).filter((id) =>
     seats.some((s) => s.id === id),
   ).length;
@@ -103,33 +105,33 @@ export function ScorecardPane({
     <>
       <div className="b-head">
         <div className="row">
-          <h3>Your scorecard</h3>
+          <h3>{t("scorecard.heading")}</h3>
           <span className="sub">
-            {doneCount}/{seats.length} · Draft
+            {doneCount}/{seats.length} · {t("scorecard.draft")}
           </span>
         </div>
         <address>
           {address || "—"}
-          {precinct ? ` · Precinct ${precinct}` : ""}
+          {precinct ? ` · ${t("scorecard.precinct")} ${precinct}` : ""}
         </address>
       </div>
 
       <div className="b-issues-edit">
         <div className="b-issues-head">
-          <span className="b-issues-lab">Your issues</span>
+          <span className="b-issues-lab">{t("scorecard.yourIssues")}</span>
           {onEditIssues && (
             <button
               className="b-issues-btn"
               onClick={onEditIssues}
               data-testid="edit-issues-scorecard"
             >
-              Edit
+              {t("scorecard.edit")}
             </button>
           )}
         </div>
         <ol className="b-issues-list">
           {issues.map((iss, i) => (
-            <li key={i}>
+            <li key={`${i}-${iss.canonicalIssue || iss.interpretation}`}>
               <span className="n">{i + 1}</span>
               {iss.interpretation}
             </li>
@@ -182,13 +184,15 @@ export function ScorecardPane({
                         <>
                           {s.candidate?.name ?? s.blindLabel} —{" "}
                           <span className={"verdict-chip " + v}>
-                            {v === "keep" ? "✓ KEEP" : "⇄ REPLACE"}
+                            {v === "keep"
+                              ? t("scorecard.worthKeeping")
+                              : t("scorecard.timeToReplace")}
                           </span>
                         </>
                       ) : isActive ? (
-                        "Reviewing now…"
+                        t("scorecard.reviewingNow")
                       ) : (
-                        "Not yet reviewed"
+                        t("scorecard.notYetReviewed")
                       )}
                     </div>
                     {v && (alignFor(s) || s.nextElection) && (
@@ -208,11 +212,11 @@ export function ScorecardPane({
 
       <div className="b-foot">
         <button className="primary" disabled={!canPrint} onClick={onPrint}>
-          <span>Print my scorecard (PDF)</span>
+          <span>{t("scorecard.printBtn")}</span>
           <span className="arrow">→</span>
         </button>
         <button onClick={onContinueElsewhere}>
-          <span>Continue in another chatbot</span>
+          <span>{t("scorecard.handoffBtn")}</span>
           <span className="arrow">↗</span>
         </button>
       </div>
@@ -253,12 +257,13 @@ export function DelegationWorkspace({
   onRevisitSeat,
   onDismissDeltas,
 }) {
+  const { t } = useI18n();
   const activeSeat = seats.find((s) => s.id === activeSeatId) || seats[0];
   const activeIdx = seats.findIndex((s) => s.id === activeSeat.id);
   const doneCount = Object.keys(verdicts).filter((id) =>
     seats.some((s) => s.id === id),
   ).length;
-  const intro = tierIntro(activeSeat.section, { stateName });
+  const intro = tierIntro(activeSeat.section, { stateName, t });
 
   /* Mobile: same contract as the shipped WorkspaceView — the center pane
      is hidden <768px until a row is tapped, then opens as a fixed overlay
@@ -304,7 +309,7 @@ export function DelegationWorkspace({
             <button
               className="ws-mobile-back ws-mobile-back-hide-desktop"
               onClick={() => setMobileChatOpen(false)}
-              aria-label="Back to scorecard"
+              aria-label={t("scorecard.backToScorecard")}
             >
               ←
             </button>
