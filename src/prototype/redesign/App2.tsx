@@ -29,6 +29,7 @@ import {
   WhyNowPage,
 } from "../VoterChoiceApp";
 import { DelegationWorkspace } from "./DelegationWorkspace";
+import { HeadToHead } from "./HeadToHead";
 import { HandoffModal } from "./HandoffModal";
 import { ScorecardPrintView } from "./ScorecardPrintView";
 import { PolisClose } from "./PolisClose";
@@ -205,6 +206,13 @@ function App2Inner() {
   const [address, setAddress] = useState(savedSession.address || "");
   const blindMode = true;
   const [verdicts, setVerdicts] = useState(savedSession.verdicts || {});
+  // Successor picks — the challenger chosen in the head-to-head duel when a
+  // seat is verdicted "replace". Keyed by seat id → challenger id. Rides to the
+  // scorecard/print alongside the verdict (the answer to "what happens when you
+  // replace?"). Cleared whenever the verdict leaves "replace".
+  const [picks, setPicks] = useState(savedSession.picks || {});
+  // Which seat's full-screen head-to-head duel is open (null = none).
+  const [duelSeatId, setDuelSeatId] = useState(null);
   const [activeSeatId, setActiveSeatId] = useState(
     savedSession.activeSeatId || null,
   );
@@ -274,12 +282,13 @@ function App2Inner() {
           stage,
           address,
           verdicts,
+          picks,
           activeSeatId,
           revealed: [...revealed],
         }),
       );
     } catch {}
-  }, [stage, address, verdicts, activeSeatId, revealed]);
+  }, [stage, address, verdicts, picks, activeSeatId, revealed]);
 
   // Resume: re-run the pipeline silently for a returning session.
   useEffect(() => {
@@ -297,6 +306,8 @@ function App2Inner() {
       // your issues) instead of jumping straight to ranking saved issues.
       setIssues([]);
       setVerdicts({});
+      setPicks({});
+      setDuelSeatId(null);
       setRevealed(new Set());
       setActiveSeatId(null);
       setChatMessages({});
@@ -549,7 +560,20 @@ function App2Inner() {
     runChatStream(seatId, history);
   }
 
-  function setVerdict(seatId, v) {
+  function setVerdict(seatId, v, pickId) {
+    // Keep the successor pick in sync with the verdict: a non-"replace" verdict
+    // (keep / undo) clears any pick; a "replace" with a chosen challenger
+    // records it. pickId === undefined leaves the existing pick untouched.
+    setPicks((prev) => {
+      const next = { ...prev };
+      if (v !== "replace") {
+        delete next[seatId];
+      } else if (pickId !== undefined) {
+        if (pickId) next[seatId] = pickId;
+        else delete next[seatId];
+      }
+      return next;
+    });
     setVerdicts((prev) => {
       const next = { ...prev };
       if (v) next[seatId] = v;
@@ -569,6 +593,23 @@ function App2Inner() {
       }
       return next;
     });
+  }
+
+  // Head-to-head duel: open from a seat's "Time to replace", record from its
+  // Keep / Replace foot. Replace records the verdict AND the chosen successor.
+  function openDuel(seatId) {
+    setActiveSeatId(seatId);
+    setDuelSeatId(seatId);
+    if (typeof window !== "undefined")
+      window.scrollTo({ top: 0, behavior: "auto" });
+  }
+  function duelKeep(seatId) {
+    setVerdict(seatId, "keep");
+    setDuelSeatId(null);
+  }
+  function duelReplace(seatId, pickId) {
+    setVerdict(seatId, "replace", pickId ?? null);
+    setDuelSeatId(null);
   }
   const reveal = (id) => setRevealed((p) => new Set([...p, id]));
   const hide = (id) =>
@@ -611,6 +652,8 @@ function App2Inner() {
     setIssues([]);
     setCoarseLoc({ stateCode: null, stateName: null });
     setVerdicts({});
+    setPicks({});
+    setDuelSeatId(null);
     setRevealed(new Set());
     setDelegation(null);
     setPollingInfo(null);
@@ -759,6 +802,7 @@ function App2Inner() {
           seats={seats}
           issues={issues}
           verdicts={verdicts}
+          picks={picks}
           stateData={stateData}
           pollingInfo={pollingInfo ?? pollingFallback()}
           districtsLine={districtsLine}
@@ -795,6 +839,30 @@ function App2Inner() {
         />
       );
     }
+    // Full-screen head-to-head duel — replaces the workspace surface while open
+    // (reached from a seat's "Time to replace"). Records keep/replace + the
+    // chosen successor via the existing verdict flow, then returns here.
+    const duelSeat =
+      duelSeatId && seats.find((s) => s.id === duelSeatId)
+        ? seats.find((s) => s.id === duelSeatId)
+        : null;
+    if (duelSeat) {
+      return (
+        <>
+          <HeadToHead
+            seat={duelSeat}
+            userIssues={issuesForLevel(issues, duelSeat.level)}
+            stateCode={delegation?.stateCode || ""}
+            verdict={verdicts[duelSeat.id] || null}
+            pickId={picks[duelSeat.id] || null}
+            onKeep={() => duelKeep(duelSeat.id)}
+            onReplace={(pickId) => duelReplace(duelSeat.id, pickId)}
+            onClose={() => setDuelSeatId(null)}
+            onShowBudgetOptions={handleBudgetBlock}
+          />
+        </>
+      );
+    }
     return (
       <>
         <DelegationWorkspace
@@ -816,11 +884,13 @@ function App2Inner() {
           polisPreview={polisPreview}
           blindMode={blindMode}
           verdicts={verdicts}
+          picks={picks}
           activeSeatId={activeSeatId}
           revealed={revealed}
           onReveal={reveal}
           onHide={hide}
           onVerdict={setVerdict}
+          onOpenDuel={openDuel}
           onSelectSeat={setActiveSeatId}
           onPrint={() => setStage("print")}
           onContinueElsewhere={() => setShowHandoff(true)}

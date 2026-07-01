@@ -86,6 +86,13 @@ export default function RootLayout({
           rel="stylesheet"
           href={`/redesign2.css${cssBust("redesign2.css")}`}
         />
+        {/* Head-to-head candidate duel ("Time to replace" flow). Ported from
+            the design session's candidates.css; new class names only, inert
+            until the duel renders. */}
+        <link
+          rel="stylesheet"
+          href={`/candidates.css${cssBust("candidates.css")}`}
+        />
       </head>
       {/* Prototype visual defaults — Civic mood / Civic palette / Daylight
           treatment. prototype.css consumes these via body[data-mood="civic"]. */}

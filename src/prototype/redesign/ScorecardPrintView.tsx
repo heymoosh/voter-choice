@@ -31,6 +31,7 @@ export function ScorecardPrintView({
   seats,
   issues,
   verdicts,
+  picks,
   stateData,
   pollingInfo,
   districtsLine,
@@ -137,6 +138,18 @@ export function ScorecardPrintView({
                           <span className={"party verdict-print " + v}>
                             {v === "keep" ? "✓ KEEP" : "⇄ REPLACE"}
                           </span>
+                          {v === "replace" &&
+                            (() => {
+                              const pick = (s.challengers || []).find(
+                                (c) => c.id === picks?.[s.id],
+                              );
+                              return pick ? (
+                                <span className="pick-successor">
+                                  {" → "}
+                                  {pick.name}
+                                </span>
+                              ) : null;
+                            })()}
                         </div>
                         <div className="my-note">
                           {align ? align + " · " : ""}
