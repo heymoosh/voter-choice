@@ -28,34 +28,46 @@ Ballot upload/parse is too much friction for the target user, so the product shi
 
 #### Resolve before Phase 1 public release — prod-hardening, NOT design-dependent:
 
-**[P0] Golden-address alignment smoke test — fail when alignment silently goes blank (BUILD FIRST)**
-- The 2026-06-26 prod incident (empty `DATABASE_URL` + unapplied migration lines) silently blanked ALL alignment and only surfaced via manual testing — e2e stayed green because it asserts UI structure, not real data. This card adds a test that fails when a known address returns empty alignment. Complements the schema-vs-migrations drift guard deferred in `claude-code-handoff/conductor-resume-2026-06-28.md`.
-- Anchor on verified real data: John Cornyn (TX Senator) + `healthcare_affordability` — post-fix `lookupAlignment()` returns a non-empty result (≈18 healthcare votes observed at incident time). Assert `{ found: true, total >= 1, contributingVotes.length > 0 }` — a real WITH/AGAINST badge backed by actual votes, not just a rendered DOM node. `resolveCandidateId()` already handles "Cornyn."
-- WHERE it must run: a PR-time test against a fresh CI DB would NOT catch this class (CI applies the migration → column exists → green, while prod sits behind). Run the assertion post-deploy against live prod, and/or add a deploy-time schema-vs-migrations drift check. A PR-time migrate+seed test only guards "code references a column no migration creates" — useful, but false confidence for THIS bug.
-- Current e2e is 100% mock-based (no test DB), so this is NEW infra, not a quick add.
+**[P0] We need a deployment/test environment/server/branch?**
+- Don’t know how to do this, but essentially how do we test the app’s new features without deploying it to the live app?
+- SPEC (2026-06-30, approved): **Vercel Preview Deployments + a Neon test branch.** Each feature branch builds to an isolated preview URL (behind Vercel SSO); the preview env gets its own `DATABASE_URL` → a **Neon test branch** (child of prod, copy-on-write — same mechanism as the existing `alignment-work` branch), so feature testing + migrations NEVER touch prod data or live users.
+- Build steps: (1) create a Neon `test`/`staging` branch; (2) set preview-scoped Vercel env (`DATABASE_URL` → test branch + non-prod flag defaults); (3) confirm preview deploys are enabled per-branch; (4) document the workflow + a re-branch cadence to refresh test data. ATTENDED (needs Vercel + Neon dashboard access).
+- Enables: safe DB-migration testing (apply to the test branch first), the golden-address smoke (run against the test branch), pre-launch dogfooding on a private URL.
+- Trade-offs (accepted): extra env surface (guard against a preview pointing at prod DB); Neon branch drifts from prod until re-branched; preview ≠ 100% prod mirror (Redis/rate-limit/cold-starts differ); SSO-gated so external testers need access.
 - STATUS: To Do
-- DECISION (Muxin, 2026-06-28): build the deploy-time schema-vs-migrations drift check as the PRIMARY guard — cheapest, deterministic, and it targets this exact bug (prod sitting behind a migration). Layer the golden-address smoke (Cornyn / `healthcare_affordability` non-empty) on top as defense-in-depth once the drift check lands. (Alternatives weighed: post-deploy prod smoke — needs prod creds + a fail/rollback story; PR-time migrate+seed — cheapest but misses prod drift.)
+- DECISION: defer (unattended) — ATTENDED (Vercel + Neon dashboard setup); do not auto-run.
+<!-- card-id: 446b9327-0e99-42ae-9924-589749281854 -->
 
 **[P0] Replace the Sunday bill-tagging cron with a /schedule cloud cron (off the front-end API key)**
   - Also double check if any other backend work is using up the API key. API key should ONLY be used for front end user chat in the app.
   - WHY: `ingest-tag-bills.yml` still runs `schedule: cron: "0 9 * * 0"` on
   `origin/main`, calling the Anthropic **Batch API** with `ANTHROPIC_VOTER_API`
   (the *front-end* key). This drained the monthly budget (spikes 6/21 + 6/28).
-  Verified 2026-06-28: nothing was ever switched — PR #177 (comments out the
-  cron) is OPEN/unmerged, the `tagging-reminder.sh` SessionStart hook is NOT
-  wired into settings, and no cloud cron exists.
-  - DEPENDS ON: PR #177 merging first (disables the API cron). Until then, a
-  new cloud cron would DOUBLE-run alongside the live API cron. (Muxin is
-  handling the #177 merge separately.)
-  - TASK: stand up a `/schedule` cloud cron (weekly, ~Sun) that runs the
-  **subscription-based** tagger — the subagent/Max path
-  (`scripts/ingest/tag-bills.ts`), NOT `tag-bills-batch.ts` and NOT
-  `ANTHROPIC_VOTER_API`. Goal: automatic + free against the subscription,
-  matching the owner directive that the front-end key is user-usage-only.
-  - OPEN QUESTIONS to resolve at grooming/exec:
-    - DB access from the cloud agent — does the scheduled cloud env get the
-  prod `production` Neon `DATABASE_URL`? (tagging reads untagged bills + writes
-  `issue_tags`.) Confirm secret plumbing before first run.
+  Verified 2026-06-28: PR #177 (disables the cron) was OPEN/unmerged. UPDATE
+  2026-06-30: **PR #177 MERGED** — the Sunday `schedule:` API cron is now OFF on
+  main, so the front-end-key drain is stopped. (`tagging-reminder.sh` hook still
+  unwired; no cloud cron yet.)
+  - WAS blocked on PR #177 (now MERGED 2026-06-30, so the double-run risk is
+  gone). Remaining blocker before the cloud cron: the OPEN QUESTION below — can
+  the /schedule cloud runner auth as the subscription + reach the prod Neon DB?
+  - TASK: stand up a `/schedule` cloud routine (weekly, ~Sun) that tags on the
+  **subscription** via the SUBAGENT/Workflow path (port `_pole-retag.workflow.js`'s
+  one-Sonnet-agent-per-~100-bill-batch logic) — NOT by running `tag-bills.ts` or
+  `tag-bills-batch.ts`: VERIFIED 2026-06-30 both call the metered API key
+  (`new Anthropic({apiKey})` + `messages.create`), so running them inside a
+  routine would STILL burn metered credits. Only the agent's OWN subagent work
+  bills to the subscription. DB I/O via the pure scripts
+  `_export-untagged-batches.ts` + `insert-issue-tags.ts`.
+  - VERIFIED 2026-06-30 (Claude Code docs): routines run on the SUBSCRIPTION by
+  default (not metered API), and CAN reach the prod DB — set `DATABASE_URL` as a
+  routine env var + switch the environment's Network access to Custom and
+  allowlist the Neon host (default "Trusted" blocks outbound with a 403). ⚠ No
+  secrets store yet: env vars are visible to anyone who can edit the environment,
+  so use a LEAST-PRIVILEGE Neon role/branch for the routine, not the full prod URL.
+  - REMAINING (exec):
+    - Routine limits: 4 vCPU / 16 GB, min schedule interval 1hr (weekly OK),
+  per-account daily run cap, max-runtime UNDOCUMENTED — design bounded-batch-per-run
+  + resume so a 31.7k-bill backfill survives a cutoff.
     - Scope/limit per run (untagged backlog ≈ 31.7k bills; honor
   `skip_reason`/migration 0007 so non-issue bills aren't re-submitted weekly).
     - Idempotency + a green/failure signal (replace the old workflow's failure
@@ -63,6 +75,19 @@ Ballot upload/parse is too much friction for the target user, so the product shi
   - ON SUCCESS: delete the dead Sunday `schedule:` block entirely (keep
   `workflow_dispatch` for manual backfill), and either wire or retire
   `scripts/ops/tagging-reminder.sh` since the cadence is automated again.
+- DECISION (2026-07-01): write target = DIRECT to prod `issue_tags`, gated by the `_retag-gold-check.ts` gold gate before persisting each batch. Scope INCLUDES writing a net-new general untagged-bill tagging workflow (subagent path, modeled on `_pole-retag.workflow.js`) — the existing workflows are specific re-tags, and the only general tagger today is the metered `tag-bills.ts`, which we are NOT using.
+- STATUS: To Do
+- DECISION: defer (unattended) — ATTENDED build (cloud routine + Neon role/network setup needs your Claude/Neon dashboards); do not auto-run.
+<!-- card-id: c86714c6-d3d7-4019-a03d-4d4c6816f7e4 -->
+
+**[P0] Golden-address alignment smoke test — fail when alignment silently goes blank (BUILD FIRST)**
+- The 2026-06-26 prod incident (empty `DATABASE_URL` + unapplied migration lines) silently blanked ALL alignment and only surfaced via manual testing — e2e stayed green because it asserts UI structure, not real data. This card adds a test that fails when a known address returns empty alignment. Complements the schema-vs-migrations drift guard deferred in `claude-code-handoff/conductor-resume-2026-06-28.md`.
+- Anchor on verified real data: John Cornyn (TX Senator) + `healthcare_affordability` — post-fix `lookupAlignment()` returns a non-empty result (≈18 healthcare votes observed at incident time). Assert `{ found: true, total >= 1, contributingVotes.length > 0 }` — a real WITH/AGAINST badge backed by actual votes, not just a rendered DOM node. `resolveCandidateId()` already handles "Cornyn."
+- WHERE it must run: a PR-time test against a fresh CI DB would NOT catch this class (CI applies the migration → column exists → green, while prod sits behind). Run the assertion post-deploy against live prod, and/or add a deploy-time schema-vs-migrations drift check. A PR-time migrate+seed test only guards "code references a column no migration creates" — useful, but false confidence for THIS bug.
+- Current e2e is 100% mock-based (no test DB), so this is NEW infra, not a quick add.
+- DECISION (Muxin, 2026-06-28): build the deploy-time schema-vs-migrations drift check as the PRIMARY guard — cheapest, deterministic, and it targets this exact bug (prod sitting behind a migration). Layer the golden-address smoke (Cornyn / `healthcare_affordability` non-empty) on top as defense-in-depth once the drift check lands. (Alternatives weighed: post-deploy prod smoke — needs prod creds + a fail/rollback story; PR-time migrate+seed — cheapest but misses prod drift.)
+- STATUS: Done
+<!-- card-id: df3fc703-4cf5-41e7-a338-195645f1d5c9 -->
 
 **[P1] EPIC: Claude Design session — results-flow clarity, visual hierarchy & color system (user test 2026-06-16)**
 - User found the results page "extremely overwhelming" with no guidance: "I entered this page with no idea of what you wanted me
@@ -83,15 +108,12 @@ to do. While the information is there, it took me a long time to understand what
 - I am open to other suggestions and hypotheses for why I'm seeing unexpected usage, because I have not heavily marketed this app yet. I've only mentioned it in random blue sky replies or in small community forums for early testing. I was not expecting a lot of users, but I do not know if that could also be the case.
 - Either way, I do not know if we have a built-in system to track this information automatically and be able to understand what's happening and where.
 - It's also possible that my API key was compromised somehow, which means that we have not done due diligence in making sure that it's not exposed. 
-- STATUS: Backlog
+- GROOMED (2026-06-30): startable unit is an ANALYSIS first — define which per-session Haiku metrics we can capture WITHOUT violating the privacy policy (aggregate per-session call counts / tokens / endpoint / timestamp; NO concern-text content, NO PII), THEN instrument from that spec. The "key compromised / exposed" hypothesis overlaps the retrospective security audit — share findings.
+- DECISION (2026-07-01, Muxin): APPROVED to record content-free per-session Haiku usage — call counts, token totals, endpoint, timestamp; NO message text, NO PII — AND update the privacy-page copy ("no analytics/telemetry" / "IPs not logged") so it stays truthful. Instrument-half should COORDINATE with held PR #151 (which adds `chat_usage_metrics` but misses the research sub-agent — see cross-cutting card), not build a parallel path.
+- AGENT-FIRST (reclassified 2026-07-01): an agent RUNS the metric spec + builds the content-free per-session instrumentation (stacking on / folding into #151's `chat_usage_metrics`, incl. the research sub-agent path) + drafts the privacy-copy edit, all in a PR. Your step = review that PR, especially the privacy-page wording — a PR review, NOT a mid-run stall. Must NOT deploy or mutate prod.
+- GOAL_CONDITION: a PR adds per-session content-free usage capture (call count / tokens / endpoint / timestamp; NO text, NO PII) covering the chat + research-sub-agent paths, plus the matching privacy-page copy edit; tsc/tests green; nothing deployed. (Sequenced with #151 — don't fork a parallel metrics path.)
+- STATUS: To Do
 <!-- card-id: c160abf1-890d-4222-a8f6-6ee21b70ea29 -->
-
-**[P1] Spanish translation covers only the top bar**
-- "Spanish translation only translates top bar"
-- i18n bug — es strings exist in `src/lib/translations.ts` but aren't applied to the app body. Mechanical, not design-coupled.
-- NOTE: prerequisite to "[P1] Translations to major languages" — confirm dependency direction at grooming.
-- STATUS: Review
-<!-- card-id: d8059e2e-2cfd-4933-b2e9-fc3012ebb591 -->
 
 **[P1] Settings button has no functionality**
 - "Settings button does not show any functionality"
@@ -101,20 +123,30 @@ to do. While the information is there, it took me a long time to understand what
 
 **Finish Spanish coverage for remaining redesign surfaces**
 - After PR #168 wired the main body, these still render English: tier-intro paragraphs (Federal/Executive), SeatChat / RepCard / HandoffModal / ScorecardPrintView, App2 stage error strings (geocodefail/norep/dberror), IssueConversation refinement fallbacks. Add t() keys + ES.
-- STATUS: Backlog
+- STATUS: To Do
 - DEPENDS ON: Spanish translation covers only the top bar
 <!-- card-id: 7855fddd-e389-483c-9e55-163a4c011870 -->
 
-**Wire "Export profile" in the App2 settings drawer**
-- The settings drawer's Export button is inert in App2 (handler passed undefined). Adapt VoterChoiceApp's handleExportProfile to the App2 data model. (Surfaced building PR #169.)
-- STATUS: Backlog
-- DEPENDS ON: Settings button has no functionality
-<!-- card-id: 79cfa416-df1d-4059-8f30-06bee50455fc -->
-
-**Decide tablet/mobile Edit-Issues prominence**
-- Edit IS reachable via the scorecard "Edit" button (PR #173) but a tester could not find it — discoverability, not a missing feature. Decide whether to make it more prominent; likely fold into held layout PRs #161 (results one-panel) / #164 (scorecard overhaul).
+**[P3] Decide tablet/mobile Edit-Issues prominence**
+- Edit IS reachable via the scorecard "Edit" button (PR #173) but a tester could not find it — discoverability, not a missing feature.
+- DEFERRED to P3 (2026-06-30): re-evaluate AFTER the redesign lands — may be moot once the new layout ships. Parked in Backlog until then.
 - STATUS: Backlog
 <!-- card-id: 05b9ca68-e9ff-4701-aa1b-0ab86041871c -->
+
+**[P1] Spanish translation covers only the top bar**
+- "Spanish translation only translates top bar"
+- i18n bug — es strings exist in `src/lib/translations.ts` but aren't applied to the app body. Mechanical, not design-coupled.
+- NOTE: prerequisite to "[P1] Translations to major languages" — confirm dependency direction at grooming.
+- DONE (2026-07-01): the app-body wiring shipped in PR #168 (merged to main, squash 0b57244) — the inline TRANSLATIONS body copy is now applied. Follow-on surfaces tracked by "Finish Spanish coverage for remaining redesign surfaces". Flipped Review→Done for board accuracy (was stale).
+- STATUS: Done
+<!-- card-id: d8059e2e-2cfd-4933-b2e9-fc3012ebb591 -->
+
+**Wire "Export profile" in the App2 settings drawer**
+- The settings drawer's Export button is inert in App2 (handler passed undefined). Adapt VoterChoiceApp's handleExportProfile to the App2 data model. (Surfaced building PR #169.)
+- CLOSED (2026-07-01, Muxin): WON'T DO — the redesign deliberately dropped profile export and the HandoffModal already provides a scorecard `.txt` export (`buildScorecardHandoffPrompt`). App2 also has no settings drawer today (`openSettings` is a no-op). Superseded by the scorecard export; not re-adding a separate Export profile.
+- STATUS: Done
+- DEPENDS ON: Settings button has no functionality
+<!-- card-id: 79cfa416-df1d-4059-8f30-06bee50455fc -->
 
 **[P2] Reconsider color scheme for emotional activation**
 - "I think the color scheme is too subdued. You want to activate people. I think US Flag colors or variations therefore could
@@ -162,13 +194,6 @@ address in addition to the text that was in the popup, then followed by steps 2 
 
 ### Issues / Lock-in
 
-**[P1] Chat fails when community budget used up - unclear**
-- After entering address, when sharing details about issues user cares about: An error message in small red text is displayed when community budget is completely used up (API calls Haiku for chatbot).
-- This is unclear and doesn’t help the user: Understand why this is happening, or how to resolve it.
-- The message needs to be much more clear that the budget is used up and resets (when) - and how to proceed if they want to use it ASAP (use their own API key). A CTA to the tip jar (secondary) to support others to keep using the website.
-- STATUS: Review
-<!-- card-id: 3fcf5217-758c-497b-aae4-69133fcf0b78 -->
-
 **[P2] Make the "Lock These In" box bigger / more prominent**
 - "I think the Lock Theses In box could be bigger."
 - STATUS: Review
@@ -183,6 +208,13 @@ level), etc."
 - STATUS: Review
 - DEPENDS ON: Claude Design session — results-flow clarity, visual hierarchy & color system (user test 2026-06-16)
 <!-- card-id: 9143a622-82fc-4ab1-8a19-90823453856a -->
+
+**[P1] Chat fails when community budget used up - unclear**
+- After entering address, when sharing details about issues user cares about: An error message in small red text is displayed when community budget is completely used up (API calls Haiku for chatbot).
+- This is unclear and doesn’t help the user: Understand why this is happening, or how to resolve it.
+- The message needs to be much more clear that the budget is used up and resets (when) - and how to proceed if they want to use it ASAP (use their own API key). A CTA to the tip jar (secondary) to support others to keep using the website.
+- STATUS: Done
+<!-- card-id: 3fcf5217-758c-497b-aae4-69133fcf0b78 -->
 
 ### Results flow
 
@@ -227,7 +259,10 @@ white and state earlier that they are not up for election. I would also not incl
   - Track A — civic-org memberships / positions (per-member, feasible): the annual Financial Disclosure "Positions Held Outside U.S. Government" schedule lists board/officer/trustee roles in orgs incl. non-profits/civic groups, paid or not. Source: House Clerk / Senate EFD FDs (PDF-heavy); OpenSecrets has FD-derived data (ProPublica API is dead). Cleanly attributable to one member.
   - Track B — lobbying (issue/industry-level, coarser): Lobbying Disclosure Act LD-2 quarterly filings name client/issues/chamber lobbied — rarely a specific member, so per-member attribution is weak. Senate LDA bulk XML/API + OpenSecrets aggregates. Better at issue/industry level than per-member.
   - Recommendation: small research SPIKE first to confirm source formats (structured vs FD-PDF parsing), licensing, per-member match feasibility — THEN scope. Likely ship Track A first; treat Track B as issue-level context, source-linked, labeled disclosure (not accusation).
-- STATUS: Backlog
+- GROOMED (2026-06-30): CONFIRMED — do the research SPIKE first; the ingest BUILD is a follow-on card scoped from the spike's output. Build deferred to spike findings.
+- AGENT-FIRST (reclassified 2026-07-01): the spike RUNS unattended — an agent produces the two-track source inventory (formats, license/terms found, per-member match feasibility) + a go/no-go recommendation per track, in a PR. The licensing/product judgment (redistribution OK? surface lobbying?) rides on the FOLLOW-ON build card the spike scopes, not here — so nothing stalls waiting on you until that build card.
+- GOAL_CONDITION: a findings doc inventories Track A (FD "Positions Held") + Track B (LDA LD-2) — source format, license/terms, per-member match feasibility each answered — with a go/no-go per track + a drafted follow-on build card. Research only; no ingest, no prod write.
+- STATUS: To Do
 <!-- card-id: 797088b2-4667-4835-ad6c-a2b59a8cac06 -->
 
 **[P2] Include stock transactions**
@@ -240,7 +275,8 @@ white and state earlier that they are not up for election. I would also not incl
   - Honesty/labeling: show amount RANGES (e.g. "$1,001–$15,000"), txn + disclosure dates; mark self-reported + lagged; link the official filing; never imply a vote↔trade causal link or wrongdoing.
   - Validate before building (fail-open, like congress-press): confirm the Stock Watcher datasets are still live + license permits redistribution.
   - Scope: ingest job + member_stock_transactions table + a scorecard influence-section render. Incumbents only.
-- STATUS: Backlog
+- GROOMED (2026-07-01): AUTO may BUILD (migration + ingest code) + open a PR, but must NOT apply the migration or run the ingest against prod unattended — the prod write + Stock Watcher fetch is a human step. GOAL_CONDITION: `member_stock_transactions` migration + ingest script exist + tsc/tests green (no prod mutation).
+- STATUS: To Do
 <!-- card-id: f4ed7ab6-bc45-482d-84d6-6bf014b2d355 -->
 
 **[P1] Scorecard layout + print-quality overhaul**
@@ -303,39 +339,40 @@ Candidates UX flow".
 - STATUS: Review
 <!-- card-id: 8e4ef0f3-8475-404e-b54d-cbe1153e6bf0 -->
 
-**[P2] React duplicate-key warnings in issue list + prior-session seed**
-  - Found 2026-06-16 (Muxin, during #134 review). Two console errors:
-  - (a) `same key, 'AI safety, extreme wealth inequality, and lack of universal healthcare.'` — an issue concern/sourceText string
-  used directly as a React key. Candidate sites: PolisClose.tsx:195 & :254 (`key={s.canonicalIssue}`), DelegationWorkspace.tsx:360,
-  RepCard.tsx:179.
-  - (b) `same key, '(prior session)'` — IssueConversation.tsx:68 sets every prior-session-seeded issue's sourceText to the literal
-  "(prior session)"; if that feeds a list key, all seeded issues collide.
-  - Impact: React drops/duplicates non-unique-keyed children → likely the proximate cause of the P1 above.
-  - Fix: key every row by a stable unique id, never the concern text or the "(prior session)" literal.
-- RESOLVED by PR #172 (draft — stable React keys; subsumed this card). Close when #172 merges.
-- STATUS: To Do
-- DECISION: defer — already built in held PR #172; rides with it, close when #172 merges.
-<!-- card-id: 08e091a4-65ab-45b8-96c9-7b384ff46a43 -->
-
 **[P0] Edit Issues missing in Tablet Mode**
 - In both mobile and tablet screens, I cannot find the ‘left panel’ anywhere -no ability to edit my issues
 - STATUS: Review
 <!-- card-id: ef8d602c-223a-4188-828c-ed8126e404ab -->
 
-**[P0] Design Candidates UX flow**
-- Design is settled — see claude-code-handoff/design-session/screens-candidates.jsx + candidates.css; DECISIONS.md "Session 2" down-selected B · dedicated head-to-head (full-screen duel, challenger switcher, per-issue Δ ledger, Keep/Replace at foot). Do not port; use the design provided.
-- When user decides to replace a rep, what happens? 
-- Right now, candidates are simply listed below the rep if they are running for the seat.
-- STATUS: Review
-<!-- card-id: 6a1fb1fb-b93b-46e7-a2c4-1101a92be631 -->
-
-**[P0] Run /security-review**
+**[P0] Retrospective whole-app security audit**
+- NOT `/security-review` — that command (and `/review`) only scans the current branch's pending diff, which the orchestrator already runs per-PR. This is the retrospective we never did after shipping a lot: step back, threat-model the whole app, poke holes, reinforce.
+- Surfaces to cover: Anthropic API key exposure/usage (ties to "[P1] API usage hits limits") · chat/Haiku endpoints (rate-limit, input validation, prompt-injection, cost-abuse) · secrets in CI/deploy.yml (DATABASE_URL via Bitwarden → GITHUB_ENV) · address/geocode + DB query paths (PII, injection) · session + durable rate-limiter · public API routes (/api/counters, /api/delegation).
+- AGENT-FIRST (reclassified 2026-07-01): an agent RUNS the whole threat-model pass unattended and opens a PR carrying a findings report + drafted follow-up cards. Your only step = review that PR and triage the follow-ups — a PR review at the end, NOT a mid-run stall.
+- GOAL_CONDITION: a findings report doc (e.g. `docs/security/audit-2026-07.md`) exists covering every listed surface, each finding rated + paired with a proposed follow-up card; tsc/tests unaffected (analysis only — no app-code fix, no prod access).
+- DECISION (updated 2026-07-01): AUTO MAY run the analysis pass + open the report PR; it must NOT fix-as-you-find and must NOT access prod. The per-PR /security-review stays as-is in the orchestrator.
+- DECISION (2026-07-01): deliverable = findings REPORT + one triaged follow-up card per real issue; do NOT fix-as-you-find (keeps the orchestrator light, fixes reviewed individually). METHOD (attended single-pass vs multi-agent fan-out) is NOT pre-decided — Step 1 is to scope/triage the attack surface, and that breadth decides the method.
 - STATUS: To Do
-- DECISION: defer — Muxin skipped the evidence batch; do not run /security-review overnight.
 <!-- card-id: 850b1220-9de9-4aee-814f-470b8096f164 -->
 
-**[P0] Reset Polis count to 0 before launch**
+**[P1] EPIC: Go-live launch gate (do these ONLY when flipping to public)**
+- Umbrella — NOT in-scope work until we're ready to launch. Rolls up the final "flip to public" toggles so they don't get mistaken for normal work. Each member points a dependency at this card, so the AUTO lane never picks them early. Closes at go-live when all members are done.
+- Members: Lower CHAT_DAILY_SESSION_LIMIT 100→10 · Reset Polis count to 0 · Translations to major languages.
+- STATUS: Backlog
+<!-- card-id: 0054bb72-cb87-46a6-987d-9cebaeb3e0eb -->
+
+**[P1] Establish a launch-flag convention for pre-launch features**
+- Make the ad-hoc env-flag pattern coherent so unfinished features can ship to prod but stay DARK to live users until a coordinated go-live flip (like a real product launch).
+- Today it's ad-hoc — `NEXT_PUBLIC_BALLOT_ENABLED`, `CAN2026_DISPLAY_ENABLED`, `VOTER_ISSUE_EVENTS_ENABLED`, budget flags — with no single convention or inventory.
+- TASK: (1) define a `LAUNCH_*` (or similar) flag convention, default OFF in prod; (2) inventory every not-yet-launched surface and give each a flag; (3) document the flip-list; (4) tie the flips into the "[P1] EPIC: Go-live launch gate" so go-live is one coordinated step.
+- Pairs with the test-env card (test OFF prod) and the Go-live launch gate EPIC (the checklist); this is the on-prod "keep it dark" layer.
+- AGENT-FIRST (reclassified 2026-07-01): an agent RUNS the codebase inventory + defines the `LAUNCH_*` convention (default-OFF) + drafts the flip-list in a PR, flagging each surface it's unsure is "pre-launch". Your step = confirm/prune the pre-launch set in that PR review — NOT a mid-run stall.
+- GOAL_CONDITION: a PR adds a single `LAUNCH_*` flag helper/module (default-OFF in prod) + a documented flip-list enumerating every candidate not-yet-launched surface (each marked confirmed/uncertain), wired to the Go-live gate EPIC; tsc/tests green; no flag flipped ON.
 - STATUS: To Do
+<!-- card-id: a09a77c8-b3b7-4315-a1b3-dbc03a881cff -->
+
+**[P0] Reset Polis count to 0 before launch**
+- STATUS: Backlog
+- DEPENDS ON: [P1] EPIC: Go-live launch gate (do these ONLY when flipping to public)
 - DECISION: defer — do NOT execute. Pin the exact reset mechanism (store/keys/script) read-only and surface a one-command action for launch. No prod mutation overnight.
 <!-- card-id: 1f5e2506-106d-4d72-97ec-d85a2d8c214d -->
 
@@ -359,23 +396,18 @@ Candidates UX flow".
 - **Verification:** after redeploy, `vercel env ls` should NOT list `CHAT_DAILY_SESSION_LIMIT` for Production. The default `process.env.NODE_ENV === "production" ? 10 : 20` in `src/lib/server/rate-limit.ts:4-5` then applies. Env changes only take effect on a _fresh_ deployment.
 - **Why we raised it temporarily:** PR #45 fixed a sessionId regeneration bug (each page reload was consuming a fresh session slot). With that fix landed, a single user's session correctly counts as 1. But during the launch ramp it was practical to give dogfooders headroom rather than tune the cap precisely.
 - **Caveat (noted 2026-05-28, updated same day):** the durable rate-limiter still fails _closed_ on ANY Upstash Redis error (`src/lib/server/rate-limit.ts:256-269`), so a Redis blip denies the request — but it now reports `code: "RATE_LIMIT_UNAVAILABLE"` (not `DAILY_LIMIT`), which the continuity overlay renders as a distinct "temporarily unavailable — try again" message instead of the misleading "Budget exhausted" copy. Raising `CHAT_DAILY_SESSION_LIMIT` won't help a Redis failure: if chat denies while the budget tier is still `normal`, suspect a Redis blip, not the cap.
-- STATUS: To Do
+- STATUS: Backlog
+- DEPENDS ON: [P1] EPIC: Go-live launch gate (do these ONLY when flipping to public)
 - DECISION: defer — out-of-band Vercel env change; surface the `vercel env rm CHAT_DAILY_SESSION_LIMIT production` + redeploy commands for Muxin to run at launch.
 <!-- card-id: 28bf87ec-8587-4d1f-acc7-ab5ff7467cf4 -->
-
-**[P2] President/VP candidate card design does not match the standard card design**
-- Flagged 2026-06-07, from FL ballot preview test
-- The President & Vice President candidate card renders with a visibly different design from the other candidate cards.
-- All candidate cards should share the exact same design/layout regardless of data mode (voting-record vs `web_search` "based on public statements" vs no-record). Audit `CandidateCard` in `src/prototype/VoterChoiceApp.tsx` so the modes are visually consistent. Presidential candidates
-- STATUS: Review
-<!-- card-id: 31145699-6396-44b3-915c-c30976551085 -->
 
 **[P1] Translations to major languages**
 - Flagged 2026-06-12 (pre-launch) — Muxin. DRAFT card; confirm the language set + wording.
 - The app currently ships English + Spanish. Before public launch, add translations to major languages. The i18n plumbing already exists: `src/lib/translations.ts` (UI strings, en/es) and the en/es system-prompt variants (`ballotPromptEn.generated.ts` / `ballotPromptEs.generated.ts`, synced via `npm run sync:ballot-prompt`).
 - **Language set (TBD — confirm):** a defensible starting point is the federally-relevant ballot languages under Voting Rights Act §203 — Spanish (done), plus Chinese, Vietnamese, Korean, Tagalog, and the Native American / Alaska Native language groups where covered jurisdictions require them. Choose the set deliberately rather than "all major world languages." (Suggested by Claude — confirm.)
 - **Sequencing note:** Translation work depends on the final Phase 1 UX/UI — don't translate strings that are still changing. Blocks on the "[P1] Phase 1 UX/UI finalized (redesign complete)" milestone above (this carries forward the old "no translations until the UX is ironed out" instruction from the retired ES-locale card).
-- STATUS: To Do
+- GO-LIVE GATE (2026-06-30): also a member of "[P1] EPIC: Go-live launch gate" — do NOT translate until launch prep. (Machine dep stays on Phase-1-UX since a card carries only one; the EPIC link is organizational.)
+- STATUS: Backlog
 - DEPENDS ON: Phase 1 UX/UI finalized (redesign complete)
 <!-- card-id: 2b325135-bafc-454f-b253-5bce21e05a13 -->
 
@@ -384,7 +416,7 @@ Candidates UX flow".
 - The phasing model says Phase 1 is "largely built; needs prod-hardening + redesign UX." This card represents that redesign / UX-and-UI finalization as a single gate, so downstream work that can't start until the surface is stable has something concrete to block on.
 - Added new Polis UI changes 6/15
 - Not a code task in itself — it closes when the Phase 1 redesign UX/UI is locked.
-- STATUS: To Do
+- STATUS: Backlog
 - DEPENDS ON: [P1] EPIC: Implement the Keystone redesign (port design_handoff) — BACKEND-GATED
 <!-- card-id: e18e65fd-faf8-4aaf-8c4f-cee2111725c6 -->
 
@@ -405,9 +437,36 @@ Candidates UX flow".
   - No alignment data for non-legislative candidates (Backlog)
   - Second candidate missing alignment block when first has one (Backlog)
   - Web-search-based alignment scoring as fallback (idea)
-- STATUS: To Do
+- STATUS: Backlog
 - DECISION: defer — umbrella tracker, not a code task; surface, do not build.
 <!-- card-id: f474c4b8-e8c0-4129-9a67-4705a1370efe -->
+
+**[P2] President/VP candidate card design does not match the standard card design**
+- Flagged 2026-06-07, from FL ballot preview test
+- The President & Vice President candidate card renders with a visibly different design from the other candidate cards.
+- All candidate cards should share the exact same design/layout regardless of data mode (voting-record vs `web_search` "based on public statements" vs no-record). Audit `CandidateCard` in `src/prototype/VoterChoiceApp.tsx` so the modes are visually consistent. Presidential candidates
+- STATUS: Done
+<!-- card-id: 31145699-6396-44b3-915c-c30976551085 -->
+
+**[P0] Design Candidates UX flow**
+- Design is settled — see claude-code-handoff/design-session/screens-candidates.jsx + candidates.css; DECISIONS.md "Session 2" down-selected B · dedicated head-to-head (full-screen duel, challenger switcher, per-issue Δ ledger, Keep/Replace at foot). Do not port; use the design provided.
+- When user decides to replace a rep, what happens? 
+- Right now, candidates are simply listed below the rep if they are running for the seat.
+- STATUS: Done
+<!-- card-id: 6a1fb1fb-b93b-46e7-a2c4-1101a92be631 -->
+
+**[P2] React duplicate-key warnings in issue list + prior-session seed**
+  - Found 2026-06-16 (Muxin, during #134 review). Two console errors:
+  - (a) `same key, 'AI safety, extreme wealth inequality, and lack of universal healthcare.'` — an issue concern/sourceText string
+  used directly as a React key. Candidate sites: PolisClose.tsx:195 & :254 (`key={s.canonicalIssue}`), DelegationWorkspace.tsx:360,
+  RepCard.tsx:179.
+  - (b) `same key, '(prior session)'` — IssueConversation.tsx:68 sets every prior-session-seeded issue's sourceText to the literal
+  "(prior session)"; if that feeds a list key, all seeded issues collide.
+  - Impact: React drops/duplicates non-unique-keyed children → likely the proximate cause of the P1 above.
+  - Fix: key every row by a stable unique id, never the concern text or the "(prior session)" literal.
+- RESOLVED by PR #172 — MERGED 2026-07-01 (stable React keys; subsumed this card).
+- STATUS: Done
+<!-- card-id: 08e091a4-65ab-45b8-96c9-7b384ff46a43 -->
 
 **[P1] Enable voter issue-event persistence in production (go-live steps)**
 - Flagged 2026-06-15 — Muxin. Code shipped via PR (`feat/store-voter-issue-events`); these are the deploy-time actions to turn it ON. Until they run, the feature is **inert** — counters/Polis are unaffected and zero rows are written.
@@ -547,7 +606,7 @@ data).
 disambiguate; wire poleVocabulary's `disambiguation` question + pole labels into the chat turn and parse the answer back to a 
 stance. No new theme-card component.
 - Supersedes & replaces the old "Alignment 2b — in-chat pole disambiguation (not a theme-card)" card.
-- STATUS: Review
+- STATUS: Done
 - DEPENDS ON: Alignment 2a — data-driven disambiguation trigger
 <!-- card-id: c6f8727b-0f81-4307-8451-35a399ba5f4b -->
 
@@ -637,6 +696,7 @@ Expand beyond Congress without full ballot ingestion (non-legislative candidates
 - **Where to look:** `scripts/ingest/state-votes.ts` (`buildBillRow`, `fetchOpenStatesJson`); the OpenStates v3 `/bills` response shape (`versions`, `sources`).
 - **Related:** the "Issue taxonomy too broad" item, and the alignment pole-anchor work — now SHIPPED as `src/lib/alignment/poleVocabulary.ts` (PR #114), which the tagger reads alongside `title` + `summary`. Title-only state bills still go to honest no-score per the vocab's fall-through rule, so this summary gap remains the biggest lever for state-race coverage.
 - STATUS: Backlog
+- DEPENDS ON: [GATE] Phase 1 complete → open Phase 2
 <!-- card-id: 0338a55a-ee3f-4867-9611-2518a6ae9266 -->
 
 **[P2] IL bill coverage lagging (31.8% — worst of high-volume states)**
@@ -644,6 +704,7 @@ Expand beyond Congress without full ballot ingestion (non-legislative candidates
 - Illinois has 8,379 bills — the largest state corpus — but only 31.8% are tagged. Sunday cron will close this slowly.
 - If IL is a priority, a targeted manual tagging run (100 batches × 300 bills) would close it in one session.
 - STATUS: Backlog
+- DEPENDS ON: [GATE] Phase 1 complete → open Phase 2
 <!-- card-id: d16de86e-3e7d-4f59-bd63-15e7825344cc -->
 
 **[Phase 2] [P1] No alignment data for non-legislative candidates (executive, judicial, local)**
@@ -652,6 +713,7 @@ Expand beyond Congress without full ballot ingestion (non-legislative candidates
 - **Impact:** For ballots that are entirely or mostly non-legislative (primaries, runoffs, off-cycle local elections), `lookup_alignment` returns `found: false` for every candidate. The entire chat session falls back to web search. Our proprietary voting record data plays no role. The May 26, 2026 Texas DEM runoff ballot is an example: Lt. Governor, AG, Court of Appeals, County Judge, District Clerk — none covered.
 - **Partial mitigation:** Web-search-based alignment scoring (see idea below). Full fix requires new data sources (executive campaign finance, AG actions, bill signing records) — significant scope.
 - STATUS: Backlog
+- DEPENDS ON: [GATE] Phase 1 complete → open Phase 2
 <!-- card-id: f52273a5-38ee-4f58-a6fa-edb1d4b43c2b -->
 
 **[P1] Second candidate missing alignment block when first has one**
@@ -660,6 +722,7 @@ Expand beyond Congress without full ballot ingestion (non-legislative candidates
 - **Suspected cause:** The prompt path that routes to `web_search` for non-legislative candidates isn't being taken reliably. The model may be short-circuiting after the first candidate's lookup succeeds, or the per-candidate iteration may be silently skipping the fallback branch.
 - **Verification needed:** Spot-check a session with a Texas non-legislative race (Lt. Governor, AG, Court of Appeals are all good test cases). Capture the AI's tool calls and confirm whether `lookup_alignment` falls through to web-search emission for each candidate that returns `found: false`. If it doesn't, file as a separate P1 with the tool-call transcript.
 - STATUS: Backlog
+- DEPENDS ON: [GATE] Phase 1 complete → open Phase 2
 <!-- card-id: f21e0941-57d0-42b4-b1b7-1c5a1f1a5705 -->
 
 **[idea] Web-search-based alignment scoring as fallback when DB has no data**
@@ -693,6 +756,7 @@ Expand beyond Congress without full ballot ingestion (non-legislative candidates
 - **Implementation path:** Primarily a system prompt change + a UI change to render `sourceType: "web_search"` scores differently from `sourceType: "voting_record"` scores. No new backend required. Moderate prompt engineering effort. Low infrastructure cost.
 - **Related:** Addresses "No alignment data for non-legislative candidates" [P1] above and "thin tag coverage" [P1] above.
 - STATUS: Backlog
+- DEPENDS ON: [GATE] Phase 1 complete → open Phase 2
 <!-- card-id: f5d6a886-da2c-4f0e-827c-fee3e3ebc035 -->
 
 **[idea] Polis viz: usage tracker + social share**
@@ -702,6 +766,7 @@ Expand beyond Congress without full ballot ingestion (non-legislative candidates
   2. "Share this tool" CTA next to the viz, with prefilled copy and OG image.
 - **Why:** Both are low-cost trust-builders and growth nudges. The counts banner especially helps in counties where the viz is still warming up — even a modest "47 voters in Travis County" reads as legitimacy.
 - STATUS: Backlog
+- DEPENDS ON: [GATE] Phase 1 complete → open Phase 2
 <!-- card-id: 2269ffae-a02c-4561-83c9-1d9a0661b910 -->
 
 **[idea] Polis viz no longer gated on participation threshold**
@@ -723,6 +788,7 @@ All ballot upload/parse/extraction, party gates, measures, and a reliable ballot
 - **Muxin's intended flow (scope creep, deferred):** at the gate, ask "which party do you want to vote for?"; if the voter doesn't know / wants to browse, let them **see BOTH parties**; then add a step **before printing the final ballot** that helps them choose which party to commit to (based on their answers/picks) and **confirm before the printout** — so an open-primary voter can browse everything and commit to one party only at print time (you may legally vote only one party's primary).
 - Likely also wires `getStateRule` into the gate COPY (closed → "your registered party" + unaffiliated-voter notice; open → free choice; top-two → no gate). Not for this session.
 - STATUS: Backlog
+- DEPENDS ON: [GATE] Phase 2 complete → open Phase 3
 <!-- card-id: 8bc7e9e5-f4c1-4b70-bc71-347b06a9c9ff -->
 
 **[P1] Party-primary FILTERING of the ballot ("2 Senate races")**
@@ -732,6 +798,7 @@ All ballot upload/parse/extraction, party gates, measures, and a reliable ballot
 - Fix: thread the gate selection (registered_dem / registered_rep / unaffiliated→chosen party) into ballot derivation and filter partisan contests to the selected primary; keep non-partisan races. In a GENERAL election, show ALL candidates (no filter, no gate).
 - Verify end-to-end with the real NJ June primary PDF (registered Dem → only DEM races) AND a November general scenario (all candidates, no gate).
 - STATUS: Backlog
+- DEPENDS ON: [GATE] Phase 2 complete → open Phase 3
 <!-- card-id: 2a68bab6-4dd7-4f21-817b-de9446085dac -->
 
 **[P1] Google Civic `voterinfo` rarely returns the ballot (contests) — heavy reliance on upload/paste**
@@ -739,6 +806,7 @@ All ballot upload/parse/extraction, party gates, measures, and a reliable ballot
 - We DO request the ballot: `/api/civic` calls Google `civicinfo/v2/voterinfo` for `contests` (not just polling-location logistics). But Google's Civic election/ballot data is sparse and unreliable — Google deprecated much of it (the `representatives` endpoint shut down in 2025; `voterinfo` contest data is populated only for some elections, often only near election day, and is spotty by state). So for many addresses (incl. NJ) it returns 0 contests and the app correctly falls back to the upload/paste `BallotLookupNeeded` screen. This is a Google limitation, not our bug — but it means we **cannot rely on Civic for the ballot**.
 - **Action (evaluate pre-launch):** add a more reliable ballot-contest source (e.g. BallotReady / Democracy Works, Ballotpedia, or per-state SOS feeds) so most users get an auto-pulled ballot instead of having to upload a sample ballot. Keep upload/paste as the universal fallback.
 - STATUS: Backlog
+- DEPENDS ON: [GATE] Phase 2 complete → open Phase 3
 <!-- card-id: fceacf73-1bd9-4120-9b5b-6fb27b39dbb2 -->
 
 **[P1] "Pull my ballot →" submit button overflows the address card at desktop widths**
@@ -751,6 +819,7 @@ All ballot upload/parse/extraction, party gates, measures, and a reliable ballot
   - Reduce the card's internal padding so the row fits cleanly
 - **Scope:** part of the broader mobile responsiveness pass — verify against the prototype's responsive breakpoints in `prototype.css` (look for `@media` queries on `.addr-card`).
 - STATUS: Backlog
+- DEPENDS ON: [GATE] Phase 2 complete → open Phase 3
 <!-- card-id: e6d1fdd3-425a-4700-b1d8-b01dc1901b99 -->
 
 **[P0] Run Contender 1 (Textract + Sonnet) on the bakeoff fixtures before locking C2 as the long-term extraction architecture**
@@ -772,6 +841,7 @@ All ballot upload/parse/extraction, party gates, measures, and a reliable ballot
   - Design spec: `experiments/pdf-extraction-bakeoff/decision-design.md`
   - Skipped C1 runner: `experiments/pdf-extraction-bakeoff/results/01-textract-sonnet/SKIPPED.md` on the bakeoff branch
 - STATUS: Backlog
+- DEPENDS ON: [GATE] Phase 2 complete → open Phase 3
 <!-- card-id: 31cbba83-eb2c-461c-99f6-1767a359bbfe -->
 
 **[P1] C2 prompt engineering for multi-district disambiguation (post-launch)**
@@ -789,6 +859,7 @@ All ballot upload/parse/extraction, party gates, measures, and a reliable ballot
   - Bakeoff decision: `experiments/pdf-extraction-bakeoff/decision.md` § "Honest caveats" caveat 1
   - Bakeoff design: `experiments/pdf-extraction-bakeoff/decision-design.md` § "Known limitations of C2 (v1 winner as of 2026-05-27)"
 - STATUS: Backlog
+- DEPENDS ON: [GATE] Phase 2 complete → open Phase 3
 <!-- card-id: c107390e-0e28-4423-aaf3-9526aaff9d14 -->
 
 **[idea / P2] Add Contender 3 (docling) as opt-in second path for amendment-heavy ballots**
@@ -801,6 +872,7 @@ All ballot upload/parse/extraction, party gates, measures, and a reliable ballot
   - Bakeoff decision: `experiments/pdf-extraction-bakeoff/decision.md` § "Future levers"
   - C3 runner + results: `experiments/pdf-extraction-bakeoff/runners/03-docling-sonnet/` and `experiments/pdf-extraction-bakeoff/results/03-docling-sonnet/` on the bakeoff branch.
 - STATUS: Backlog
+- DEPENDS ON: [GATE] Phase 2 complete → open Phase 3
 <!-- card-id: 1ed1c65b-c4ed-4b3a-a5cd-53128c053ab8 -->
 
 **[P1] Google Civic ballot lookup unreliable for Texas (and likely other states)**
@@ -809,6 +881,7 @@ All ballot upload/parse/extraction, party gates, measures, and a reliable ballot
 - **Mitigation in place:** PDF upload is surfaced in the UI with a `<details>` section and clear instructions. pdfjs-dist extraction confirmed working.
 - **Remaining gap:** No proactive prompt to upload when Civic lookup fails — user must discover the `<details>` section themselves.
 - STATUS: Backlog
+- DEPENDS ON: [GATE] Phase 2 complete → open Phase 3
 <!-- card-id: 7f8a78f3-9ef9-4d6e-bb3a-af3df78b7e4e -->
 
 **[idea] AI plain-language "what's at stake" for ballot measures — alongside the official text**
@@ -817,6 +890,7 @@ All ballot upload/parse/extraction, party gates, measures, and a reliable ballot
 - Add an AI-generated plain-language summary + "If yes / If no" outcomes, fed the captured `measure_text` as its source. **Hard constraint (Muxin): render the AI summary IN ADDITION to the verbatim official text — never hide or replace the original.**
 - Needs an honesty guard (no claims beyond the source) and adds a summarization call + token cost. The existing `PROPOSITION_DETAIL` mock path already shows the summary + If-yes/If-no shape this would populate from real data.
 - STATUS: Backlog
+- DEPENDS ON: [GATE] Phase 2 complete → open Phase 3
 <!-- card-id: a0405729-9a8f-461e-8bfd-49b145752925 -->
 
 **[P1] PDF OCR fallback fires but still surfaces "scanned" message in some cases**
@@ -830,6 +904,7 @@ All ballot upload/parse/extraction, party gates, measures, and a reliable ballot
   - Distinct error message `pdfOcrFailed` for "OCR threw" vs. `pdfScannedError` for "OCR ran but returned nothing."
 - **Next step:** voter retries upload, reports browser-console logs. Based on what fails, either tune the OCR parameters (PSM mode, character whitelist, scale), preprocess the image (binarize/contrast), or accept OCR as best-effort and prioritize the paste-fallback path.
 - STATUS: Backlog
+- DEPENDS ON: [GATE] Phase 2 complete → open Phase 3
 <!-- card-id: b1a14253-12ad-4030-9446-f4275f3b4c24 -->
 
 **[P2] Detector threshold tuning from production telemetry**
@@ -837,6 +912,7 @@ All ballot upload/parse/extraction, party gates, measures, and a reliable ballot
 - `extract.detector_decision` telemetry is logged for every routing decision. Once we have ~100 real ballots through the route, pull the logs and tune `EXTRACTION_DETECTOR_DICT_FLOOR` / `_VOCAB_FLOOR` / `_PROPER_NOUN_FLOOR` in Vercel env without redeploying.
 - Defaults are 0.6 / 5 / 5; the right floor depends on what real ballots look like in pdfjs's output.
 - STATUS: Backlog
+- DEPENDS ON: [GATE] Phase 2 complete → open Phase 3
 <!-- card-id: 69ed6fcd-09d9-47cc-b64f-8157e046cb89 -->
 
 **[P2] Progressive UX during multi-page extraction**
@@ -844,6 +920,7 @@ All ballot upload/parse/extraction, party gates, measures, and a reliable ballot
 - Worst-case 14-page Hidalgo bilingual ballots take ~90s wall-clock even with per-page parallelism. A single spinner reads as broken.
 - Stream race results into the UI as each page's Sonnet call returns — the route returns once all pages stitch, but the client can show "found 5 races so far…" instead of waiting silently.
 - STATUS: Backlog
+- DEPENDS ON: [GATE] Phase 2 complete → open Phase 3
 <!-- card-id: 0708be5c-b49f-4183-b165-aac379e131f1 -->
 
 **[P2] Hash-based caching for repeat PDF uploads**
@@ -851,6 +928,7 @@ All ballot upload/parse/extraction, party gates, measures, and a reliable ballot
 - If a voter uploads the same PDF twice (page reload, tab close), the route currently re-spends $0.04–$0.55 of Sonnet vision.
 - Hash the PDF on upload, cache by hash → JSON result (Redis with 7d TTL). Saves cost + latency on repeat uploads. Out of scope for v1 ship.
 - STATUS: Backlog
+- DEPENDS ON: [GATE] Phase 2 complete → open Phase 3
 <!-- card-id: 25d56ebf-9589-4e75-a36e-cf9c9b4d78f8 -->
 
 **[P2] Surface early-vote site addresses + precinct numbers from Google Civic**
@@ -858,6 +936,7 @@ All ballot upload/parse/extraction, party gates, measures, and a reliable ballot
 - Remaining from the 2026-06-10 address-logistics work (branch claude/alignment-election-data-rules-smlqus): the congress-assessment flow surfaces real polling place/hours, but early-vote SITE addresses and precinct numbers are not yet pulled through from the Google Civic `voterinfo` response when it carries them.
 - Populate them into the workspace bar + printable scorecard. Honesty bar: never show a site or precinct we didn't actually resolve.
 - STATUS: Backlog
+- DEPENDS ON: [GATE] Phase 2 complete → open Phase 3
 <!-- card-id: 937407c8-a38d-4a1e-bdb5-ba53460ecb14 -->
 
 **[P1] Hardcoded location/state data still leaks into the UI — make EVERYTHING address-derived**
@@ -872,27 +951,60 @@ All ballot upload/parse/extraction, party gates, measures, and a reliable ballot
 
 ## Cross-cutting / Operations (any phase)
 
+**[P1] #151 usage metrics miss the research sub-agent (the likely spike source)**
+- Found 2026-06-30 reviewing held PR #151 (anon chat usage metrics). `recordChatUsage` only fires in the main chat SSE stream (`callKind:"chat"`, `src/app/api/chat/route.ts:1394`). The research sub-agent (`research-sub-agent.ts:161`) makes its OWN Haiku + web_search call and records only to the budget, never to `chat_usage_metrics` — so `call_kind:"research"` is never written and the most likely budget-spike driver is INVISIBLE in the table. As-is the metrics only partially answer "where is the Haiku spend going."
+- Fix: also record the research sub-agent's model + token + web-search cost with `call_kind:"research"`. Do BEFORE relying on #151 to diagnose the budget.
+- STATUS: Backlog
+<!-- card-id: 69d3e007-48b8-4ca0-ad65-b652fbb2aea4 -->
+
+**[P2] #175 pole-disambiguation questions don't count against the question cap**
+- Found 2026-06-30 reviewing held PR #175 (in-chat pole disambiguation). The shared question-cap counter (`IssueConversation.tsx:159-165`) only increments when the model reply has NO theme fence (`askedAQuestion = !themes && /\?\s*$/`), but the refinement prompt ALWAYS returns the full theme array. So a turn that asks a pole question leaves `themes` non-null → the counter never increments → `atCap` never trips → the pole-disambiguation block is never suppressed. The advertised "count against budget / lock in at cap" hard-stop likely never engages — risking the exact "6+ annoying turns" failure the cap was built to prevent (only the soft one-per-turn / never-re-ask guard remains).
+- Fix: make pole-disambiguation questions increment the cap counter. Prereq for shipping #175 safely.
+- GROOMED (2026-07-01): CONFIRMED live bug — the `!themes` gate at `IssueConversation.tsx:158-165` means the cap counter never increments; this ALSO breaks the existing novel-concept disambiguation cap in shipped code. Ship as a STANDALONE PR against `IssueConversation.tsx` (NOT folded into #175, whose diff doesn't touch that file). This fix UNBLOCKS held PR #175. Auto-eligible.
+- STATUS: To Do
+<!-- card-id: 5d124201-b1ef-4065-a0a2-88d2004155a9 -->
+
+**[P2] #146 empty k-means cluster silently suppresses all consensus statements**
+- Found 2026-06-30 reviewing held PR #146 (polis clustering). `findConsensusStatements` (`src/lib/polis/clustering.ts:342-345`) treats an empty cluster (size 0) as a hard consensus failure (`allClear=false; break`), so with `DEFAULT_K=3` any empty cluster silently suppresses ALL consensus statements — the report's headline feature. Inconsistent with `detectDividedState` (`clustering.ts:412`) which correctly filters `c.size > 0`. Inert today (surface unwired); fix BEFORE wiring the Polis report surface. (Also `reportAssembly.ts:194` emits size-0 phantom clusters.)
+- STATUS: Backlog
+<!-- card-id: 174c8798-b17b-4d40-b17f-a317810ab423 -->
+
+**[P0] Fix #171 polling-place note crash — `t(...) is not a function`**
+- Found 2026-06-30 reviewing held PR #171. PR #171 added `polling.addressNotPublished` to `src/lib/translations.ts`, but the prototype renders from a SEPARATE inline `TRANSLATIONS` object in `VoterChoiceApp.tsx` whose `t()` reads that object, not `src/lib/translations.ts`. So `t('polling.addressNotPublished')` returned the literal path string, and the call site `t('polling.addressNotPublished')(days)` invoked a string as a function → `TypeError: t(...) is not a function`, crashing the polling panel whenever it's expanded with an empty address (real users, not dev-only).
+- ✅ FIXED 2026-06-30 in the PR #171 branch (commit `0a42a7f`): added `addressNotPublished` as a `(days) => string` to the inline `TRANSLATIONS.polling` EN + ES blocks. tsc + lint clean, 2370 tests green. Rides with PR #171 — close when #171 merges.
+- STATUS: Review
+<!-- card-id: 4ebc2b68-8741-4def-8198-51de2cabb9c1 -->
+
+**[P1] Fix #168 Spanish `{temas}` placeholder leak on the themes card**
+- Found 2026-06-30 reviewing held PR #168. The Spanish themes card rendered the literal token: "Aquí hay 2 {temas} para empezar…". The ES `intake.starterAck` template used `{temas}` but `IssueConversation.tsx` substitutes the English token `{themes}`, so the ES token was never replaced.
+- ✅ FIXED 2026-06-30 in the PR #168 branch (commit `cd4d63f`): changed the ES template token `{temas}` → `{themes}` so the existing `.replace("{themes}", themeWord)` substitutes it (themeWord = ES "temas"/"tema"). Now renders "Aquí hay 2 temas para empezar…". tsc + lint clean, 2370 tests green. Rides with PR #168 — close when #168 merges.
+- STATUS: Review
+<!-- card-id: da52c9b3-9c45-43d0-b619-464bdcd29506 -->
+
+**[P2] Budget modal: link to the Anthropic Console for BYOK key creation**
+- Surfaced 2026-06-30 reviewing PR #170 (budget-exhausted modal). The "Have an Anthropic API key? Use it directly in Voter Choice" section asks users to paste a key but doesn't link where to get one. Add a link to where users create a key — https://console.anthropic.com/settings/keys (label e.g. "Get a key →") — keeping the existing "free to create, you only pay for what you use" framing.
+- GROOMED (2026-07-01): READY — add the link to BOTH BYOK sections (live `redesign/ByokCard.tsx` + legacy `VoterChoiceApp.tsx`). NOTE: the exact "free to create, you only pay for what you use" wording doesn't exist in code today; just add the link near the current sub-copy. Auto-eligible.
+- STATUS: To Do
+<!-- card-id: a4a5215e-c5bd-4b52-89af-0b4d2e862873 -->
+
 **[P1] Bill-summary generation pipeline - subscription subagents, batched, ongoing**
 - Generate `bills.plain_summary` (plain-language <=2-sentence summaries) so the vote card shows a real summary. The WIRING + a seed script (`scripts/ingest/summarize-bills.ts`, metered-API version) shipped in #136; THIS card is the generation RUN + ongoing pipeline.
 - Mechanism (Muxin): run via Claude Code SUBSCRIPTION + subagents in BATCHES (zero metered-API cost; same approach as bill-tagging), NOT the metered API. Prioritize vote-referenced bills first, then the rest of the corpus.
 - PIPELINE, not a one-off: make it repeatable / auto-run for newly-ingested bills so new vote-bills get summaries automatically.
 - IMPORTANT - the per-vote DISPLAYED summary must combine BOTH pieces to be USEFUL: (1) what the bill is about (this card) AND (2) how/why the rep voted = the synthesized rationale (f9cc6279). They're composed in the Unified vote explainer (8ea00aad). The same subscription-subagent batched-pipeline approach applies to f9cc6279's rationale generation.
 - Style: plain language, active voice, <=2 sentences, no title repetition, no trailing ellipsis, self-contained (rendering shows it in full or shows nothing).
-- STATUS: Backlog
+- NOTE (automation only): the auto-run/ongoing piece reuses the /schedule cloud-cron-runs-subscription-with-DB pattern proven by the tagging-cron card (formal dep below). The one-time generation RUN does NOT block on this — run it via subscription subagents anytime.
+- STATUS: To Do
+- DEPENDS ON: [P0] Replace the Sunday bill-tagging cron with a /schedule cloud cron (off the front-end API key)
 <!-- card-id: cf55573b-7d28-467e-b15b-3e07a0f5202f -->
-
-**[P1] BACKEND: Polis report data — per-session response vectors + clustering**
-- Gates the redesigned Polis REPORT (claude-code-handoff/screens-polis.jsx PolisReport). The new report leads with a PCA-style cluster map ('voters who answer alike sit together'), shows consensus statements that cleared 60%+ in EVERY cluster, and an honest 'divided' state.
-- BLOCKER: our Polis currently stores only party x issue MARGINALS, not per-session answer vectors — so we cannot cluster. Needs: (a) store de-identified per-session response vectors, (b) PCA-style clustering, (c) per-group 60%+ consensus + divided-state logic. (Same schema gap flagged in the Phase-1 Polis viz work; bridges endpoint returns [] until this lands.)
-- Privacy: de-identified aggregates only; never name who voted which way (design neutrality contract).
-- STATUS: Review
-<!-- card-id: 1d3d1843-34ed-4c66-ba9e-e20707900ed0 -->
 
 **Unified vote explainer - bill summary + how they voted + why**
 - One block in the vote detail combining: (1) what the bill was about - plain-language summary (bills.plain_summary, from #136); (2) how the member voted - roll-call; (3) why - the synthesized stated rationale (from f9cc6279), clearly labeled + source-linked.
 - Degrade gracefully: when no rationale exists for a vote (common - members explain contested/messaging votes, rarely party-line/procedural ones), show 'no stated reason found' - never imply silence = no position (show-thin-records principle).
-- DEPENDS ON both the bill-summary work (#136, 'Surface the bill summary in the vote detail') and the rationale layer (f9cc6279); formal dep below is the rationale layer (the long pole).
-- STATUS: Backlog
+- DEPENDS ON both the bill-summary work and the rationale layer (f9cc6279). The rationale layer is DONE (PR #145); the open upstream is the bill-summary RUN — formal dep below.
+- RESCOPED (2026-07-01, Muxin): the 3-part composition (bill summary + WITH/AGAINST roll-call badge + labeled memberRationale with source links) is ALREADY LIVE in `ContributingVoteCard` (`VoterChoiceApp.tsx` ~1310-1390). ONLY remaining piece = render an explicit "no stated reason found" element when a vote has no rationale (today the block is silently omitted). Reduce this card to that small UI addition. The bill-summary DEPENDS ON only affects the "what the bill was about" line for un-summarized bills — soft, non-blocking.
+- STATUS: To Do
+- DEPENDS ON: Bill-summary generation pipeline - subscription subagents, batched, ongoing
 <!-- card-id: 8ea00aad-bbaf-4482-875b-eb65d57b895a -->
 
 **[P1] EPIC: Implement the Keystone redesign (port design_handoff) — BACKEND-GATED**
@@ -908,17 +1020,10 @@ All ballot upload/parse/extraction, party gates, measures, and a reliable ballot
 - STATUS: Review
 <!-- card-id: c44193cf-134d-4685-8e98-159ab411cbd7 -->
 
-**[P1] Header links unreachable on mobile after footer strip**
-- Surfaced by PR #166 (header/footer consolidation).
-- A pre-existing rule `.app-nav .links { display: none }` at <=767px hides the header link group. With the footer stripped to brand + copyright, Privacy / Support / About become unreachable on mobile.
-- Add a mobile nav affordance (hamburger / overflow menu) so those links stay reachable on small screens. Applies to whichever nav design lands (#154 or #166).
-- STATUS: Backlog
-<!-- card-id: 23687b66-d005-44dd-86a3-d93664160f9b -->
-
-**[P2] De-dup inline address steps vs the existing three-step walkthrough**
+**[P3] De-dup inline address steps vs the existing three-step walkthrough**
 - Surfaced by PR #157 (simplify address box).
 - The new inline 01/02/03 steps under the address box overlap in intent with the existing full-width HowItWorksWalkthrough ("From address to printed ballot in three steps") that also renders below the hero.
-- Decide: keep both, fold one into the other, or i18n the new inline copy (currently EN-only).
+- DEFERRED to P3 (2026-06-30): re-evaluate AFTER the redesign lands — the inline steps + walkthrough may both change, so this de-dup may resolve itself. Parked in Backlog until then.
 - STATUS: Backlog
 - DEPENDS ON: [P2] Simplify the Registered Address entry box
 <!-- card-id: 8807920f-0f26-4430-878e-6c012f03835b -->
@@ -927,21 +1032,100 @@ All ballot upload/parse/extraction, party gates, measures, and a reliable ballot
 - Surfaced by PRs #155 (Why Now? page) and #160 (orientation screen).
 - New page/screen body copy is English-only; nav labels were translated (en+es) but page bodies were not, matching existing static pages.
 - Add ES (and other supported locales) when the redesign adopts t() keys for body copy.
-- STATUS: Backlog
+- STATUS: To Do
 <!-- card-id: 694cfc22-9c20-47e9-b559-4667b9923bf7 -->
 
 **[P2] CSS housekeeping: prune orphaned .addr-why-* and unused .lvl-tag rules**
 - Surfaced by PRs #157 (address box) and #159 (jurisdiction inline).
 - The (?) popup classes (.addr-why-btn/.addr-why-modal/.addr-why-close, .addr-card label .privacy) and the removed jurisdiction-chip .lvl-tag rules are now unused. Left in place to stay surgical; prune in a cleanup pass.
-- STATUS: Backlog
+- STATUS: To Do
 <!-- card-id: 1ec90ed1-9222-4e81-a15e-2460767f0581 -->
+
+**[P2] Add Playwright visual snapshots to key redesign surfaces**
+- Catch unintended visual regressions automatically so manual review can focus only on intended design changes.
+- Add `toHaveScreenshot()` baselines for the delegation workspace, rep card, scorecard, and home hero; gate by extending the existing e2e job in `.github/workflows/test.yml`.
+- Caveat: visual snapshots are maintenance-heavy and flaky across CI environments — keep scope tight. Lower value than the golden-address data smoke test above; sequence it after that by priority, not as a hard dependency.
+- GROOMED (2026-07-01): parked in Backlog — attended by nature (first-generated baselines need a human to eyeball) and the e2e job is a REQUIRED status check, so flaky visual specs would deadlock PRs (add as a NON-required leg; generate baselines in the Ubuntu CI runner). Honors the card's own "after the golden-address smoke" ordering (that card is Backlog, blocked on the test-env).
+- STATUS: Backlog
+<!-- card-id: d1d54852-fcda-40d1-9487-f0910383a8a2 -->
+
+**[P0] Golden-address alignment smoke test (Cornyn / healthcare_affordability) — defense-in-depth on the drift guard**
+- The defense-in-depth layer Muxin sequenced AFTER the deploy-time drift check (DECISION 2026-06-28: "layer the golden-address smoke on top once the drift check lands"). The drift check shipped in PR #179.
+- Assert that a known real address/candidate returns NON-EMPTY alignment so a silent data-blank is caught even when the schema is technically present. Anchor: John Cornyn (TX Senator) + healthcare_affordability — lookupAlignment() should return { found: true, total >= 1, contributingVotes.length > 0 } (~18 healthcare votes observed at incident time). resolveCandidateId() already handles "Cornyn."
+- WHERE it runs — RESOLVED 2026-06-30: run against the **Neon test branch** in the new test-env (the "seeded test DB" option; that's why this card DEPENDS ON the test-env card). The heavier alternative (post-deploy prod smoke) is set aside. The drift check (PR #179) already covers the "prod behind a migration" class; this catches "schema present but data empty."
+- NEW infra, not a quick add.
+- STATUS: Backlog
+- DEPENDS ON: We need a deployment/test environment/server/branch?
+<!-- card-id: 2baacd7e-901d-4407-8dcb-26ce56ed9fbc -->
+
+**[P2] Harden check-schema-drift parser: strip SQL comments before splitting on `;`**
+- - `scripts/ops/check-schema-drift.ts` `splitStatements()` splits each migration on `;` BEFORE `stripSqlComments()` runs, so a semicolon inside a `-- comment` fragments the statement. This split `0012_add_polis_response_vectors.sql`'s `CREATE TABLE` at a comment's `;`, tripped the unparsed-DDL guard, and would fail the deploy-time drift check. Worked around in PR #146 by removing the semicolons from the migration's comment prose.
+- Fix: in `splitStatements`, strip comments FIRST, then split on `--> statement-breakpoint` and `;` (reorder the pipeline). Add a regression test: a migration whose `CREATE TABLE` body comment contains a `;` must parse to a complete statement.
+- Why it matters: a mis-parsed `CREATE TABLE` leaves that object out of the expected schema, so the drift guard FAILS OPEN on it — the exact prod-behind failure the guard exists to catch.
+- STATUS: Backlog
+<!-- card-id: a06b360f-5017-45fc-b6c8-5ca67126b72d -->
+
+**[P1] Set up phase gating — gate Phase 2/3 behind [GATE] epic cards**
+- Make the orchestrator work ONLY Phase 1 + Cross-cutting until a phase is explicitly opened. Full spec: docs/operations/PHASE-GATING-HANDOFF.md.
+- WHY: today's picker only draws from `To Do`, so Backlog is already safe — but the planned auto-promote loop (simple-kanban card 0da3916b) will auto-move *ready* Backlog cards into To Do. The `DEPENDS ON` gate is what stops it jumping ahead into Phase 2/3 once that loop ships.
+- PLAN: (1) create 2 gate epics in Backlog — `[GATE] Phase 1 complete → open Phase 2` and `[GATE] Phase 2 complete → open Phase 3` (keep titles EXACT/stable). (2) Wire `- DEPENDS ON: <gate>` onto each genuinely-phase-2 card (→P1 gate) and each genuinely-phase-3 card (→P2 gate). (3) Audit the To Do column — move any real Phase 2/3 card back to Backlog. Cross-cutting + Phase 1 cards get NO gate.
+- To open a phase later: drag its gate card to Done (once the auto-promote loop ships, that one move promotes the unblocked cards).
+- STATE (verified 2026-07-01): the Phase 2 (6) + Phase 3 (14) sections are CLEAN — all 20 non-Done cards sit in Backlog and none carry an existing `DEPENDS ON`, so wiring is mechanical: every Phase 2 card → `[GATE] Phase 1 complete → open Phase 2`, every Phase 3 card → `[GATE] Phase 2 complete → open Phase 3`.
+- Do NOT gate the `## Cross-cutting / Operations` section — that's where the live To Do/Review work is (Keystone redesign, Spanish/i18n, #171 crash fix, budget-modal BYOK, #175, CSS housekeeping, etc.); cross-cutting runs regardless of phase.
+- NOT urgent today: auto mode ALREADY only works Phase 1 + Cross-cutting — all 14 To Do cards are Phase 1 (8) or Cross-cutting (6), zero Phase 2/3 cards are in To Do, and the picker only draws from To Do. This gate is future-proofing for the coming auto-promote loop (Backlog→To Do), the only path that could promote a ready Phase 2/3 Backlog card early.
+- Apply via the prose_kanban helpers (o.append_card for the gates, o.apply_dependency for each link) — avoid hand-editing the md — and do it while no orchestrator is running / the board file isn't open, so live STATUS lines aren't clobbered.
+- ATTENDED / not an AUTO build — board restructure needs product judgment on the mislabeled Phase 3 cards. Kept in Backlog.
+- STATUS: Backlog
+<!-- card-id: 6970765b-bce5-4850-94a5-f0e7e662f77e -->
+
+**[GATE] Phase 1 complete → open Phase 2**
+- Milestone GATE — NOT a buildable task; keep in Backlog. Stays here until Phase 1 is shippable and you decide to open Phase 2.
+- Marking this Done unblocks every Phase 2 card that DEPENDS ON it (and, once the auto-promote loop ships, lets them flow Backlog→To Do). Keep the title EXACT/stable — DEPENDS ON matches on it.
+- STATUS: Backlog
+<!-- card-id: b5ecb804-6403-4c95-b7e0-4c7e8e99b3c9 -->
+
+**[GATE] Phase 2 complete → open Phase 3**
+- Milestone GATE — same idea, one phase up. NOT a buildable task; keep in Backlog until you open Phase 3.
+- Marking this Done unblocks every Phase 3 card that DEPENDS ON it. Keep the title EXACT/stable.
+- STATUS: Backlog
+<!-- card-id: 726d732a-9c49-4e1f-9473-0266ba78994b -->
+
+**[P3] President/VP blind-mode redaction uses a raw last-name split (ticket names)**
+- Surfaced 2026-06-30 reviewing PR #174. `RepCard.tsx:620,623` derive the blind-mode redacted last name via `cand.name?.split(" ").pop()`, which yields "Vance" not "Trump" for a President/VP ticket. PR #174 fixed the visible card header (`VoterChoiceApp.tsx`) but not these RepCard call sites.
+- Fix: derive the ticket's primary last name consistently for blind-mode redaction. Low priority — only matters if blind-mode shows on the President/VP card.
+- CLOSED (2026-07-01, Muxin): NOT APPLICABLE — RepCard is the redesign component and the redesign path (App2 → /api/delegation) renders only U.S. House/Senate seats; a President/VP "A / B" ticket never routes through RepCard, so `split(" ").pop()` already returns the correct last name there. Dead-code hardening with no observable behavior — closing.
+- STATUS: Done
+<!-- card-id: 1309dd21-4116-4230-b270-fb83c26312de -->
+
+**[P1] BACKEND: Polis report data — per-session response vectors + clustering**
+- Gates the redesigned Polis REPORT (claude-code-handoff/screens-polis.jsx PolisReport). The new report leads with a PCA-style cluster map ('voters who answer alike sit together'), shows consensus statements that cleared 60%+ in EVERY cluster, and an honest 'divided' state.
+- BLOCKER: our Polis currently stores only party x issue MARGINALS, not per-session answer vectors — so we cannot cluster. Needs: (a) store de-identified per-session response vectors, (b) PCA-style clustering, (c) per-group 60%+ consensus + divided-state logic. (Same schema gap flagged in the Phase-1 Polis viz work; bridges endpoint returns [] until this lands.)
+- Privacy: de-identified aggregates only; never name who voted which way (design neutrality contract).
+- STATUS: Done
+<!-- card-id: 1d3d1843-34ed-4c66-ba9e-e20707900ed0 -->
+
+**[P1] Header links unreachable on mobile after footer strip**
+- Surfaced by PR #166 (header/footer consolidation).
+- A pre-existing rule `.app-nav .links { display: none }` at <=767px hides the header link group. With the footer stripped to brand + copyright, Privacy / Support / About become unreachable on mobile.
+- Add a mobile nav affordance (hamburger / overflow menu) so those links stay reachable on small screens. Applies to whichever nav design lands (#154 or #166).
+- CLOSED (2026-07-01, Muxin): ALREADY FIXED by merged PR #166 — the same commit removed the `.app-nav .links { display:none }` rule and wraps the link group to a full-width second row at <=767px, so Privacy/About/Support are reachable on mobile today (verified on origin/main). Optional quick mobile spot-check.
+- STATUS: Done
+<!-- card-id: 23687b66-d005-44dd-86a3-d93664160f9b -->
 
 **[P2] Remove dead Bitwarden DATABASE_URL fetch in deploy.yml**
 - - Follow-up from the deploy.yml DATABASE_URL fix (02686df1). After dropping the `set_env DATABASE_URL "$DATABASE_URL"` push line, the workflow's "Pull secrets" step (deploy.yml ~lines 69-71) still fetches `DATABASE_URL` from Bitwarden Secrets Manager (secret id 90abeeed-130e-4707-86ff-b446003770c2) into `$GITHUB_ENV`, but nothing consumes it anymore (the test job at ~line 44 runs before the pull).
 - ACTION: remove the dead Bitwarden DATABASE_URL fetch so CI stops pulling a prod DB secret it no longer uses. Verify no other step consumes `$DATABASE_URL` first.
 - Low risk, cleanup-only. Blocked on the parent PR landing so the diffs don't conflict.
-- STATUS: Backlog
+- CLOSED 2026-07-01 — OBSOLETE, do NOT do. Premise flipped: main's deploy.yml (~lines 77-83) now runs `check-schema-drift.ts --require-db`, which CONSUMES this `DATABASE_URL` from `$GITHUB_ENV`. The fetch is no longer dead — removing it would fail every deploy (--require-db fails on a missing DATABASE_URL). (This branch is 4 commits behind main, which added the gate.)
+- STATUS: Done
 <!-- card-id: babd56b0-73ff-4928-9f8f-c4e08bb4610f -->
+
+**[P1] Make the schema-drift check a hard deploy gate (DATABASE_URL secret + prod audit + --require-db)**
+- PR #179 added scripts/ops/check-schema-drift.ts wired into deploy.yml. As shipped it fails the deploy ONLY when DATABASE_URL resolves AND drift exists; it self-skips (exit 0) when DATABASE_URL is empty so it can never break a deploy today.
+- To make it a real, always-on gate: (1) confirm the deploy job actually populates DATABASE_URL (deploy.yml pulls secrets from Bitwarden into $GITHUB_ENV above the step — verify the value is non-empty in a deploy run); (2) run a ONE-TIME prod drift audit first — DATABASE_URL=<prod-neon> npx tsx scripts/ops/check-schema-drift.ts — and confirm zero drift before flipping it on (else the next deploy fails by design); (3) add --require-db to the deploy step so a missing secret is a hard failure rather than a silent skip.
+- Optional hardening (low priority): the parser ignores ALTER ... ADD CONSTRAINT and does not flag DB-only extra objects (it is fail-closed on unparsed schema-DECLARING statements, which is the important case). A future version could surface unexpected divergence.
+- STATUS: Done
+<!-- card-id: aadd9bec-9db1-4ab0-bf97-7d429f0ac773 -->
 
 **Double-check CAN2026: review the site thoroughly, page by page**
 - Confirm what data CAN2026 (can2026.org) actually provides by going through the site THOROUGHLY, page by page — the initial research only fetched the landing page and may have missed bill summaries / vote-rationale / useful supplemental data living in specific sub-pages.
@@ -1076,9 +1260,3 @@ All ballot upload/parse/extraction, party gates, measures, and a reliable ballot
 - Perf follow-up: `src/app/layout.tsx` loads 6 Google Font families via `<link>` for the in-app mood/palette switcher, but production hardcodes `data-mood='civic'` — consider trimming to the Civic families (IBM Plex Sans/Serif/Mono) for the prod default to cut font payload.
 - STATUS: Done
 <!-- card-id: f3bfe5e0-dc5e-403b-bc38-2306e5c0965f -->
-
-**[P2] Add Playwright visual snapshots to key redesign surfaces**
-- Catch unintended visual regressions automatically so manual review can focus only on intended design changes.
-- Add `toHaveScreenshot()` baselines for the delegation workspace, rep card, scorecard, and home hero; gate by extending the existing e2e job in `.github/workflows/test.yml`.
-- Caveat: visual snapshots are maintenance-heavy and flaky across CI environments — keep scope tight. Lower value than the golden-address data smoke test above; sequence it after that by priority, not as a hard dependency.
-- STATUS: Backlog
