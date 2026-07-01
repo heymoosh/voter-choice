@@ -53,6 +53,42 @@ export const chatUsageMetrics = pgTable(
 );
 
 // ---------------------------------------------------------------------------
+// polis_response_vectors — de-identified per-session Polis answer vectors
+//
+// PRIVACY CONTRACT (see also db/migrations/0012_add_polis_response_vectors.sql):
+//   • session_token is a random UUID per Polis session, discarded by the
+//     browser at tab close. It is NOT stored elsewhere in the DB and is NOT
+//     the same as the Redis dedupe sessionId.
+//   • No user_id, IP, email, name, or cross-table joinable key.
+//   • recorded_hour is truncated to the hour (UTC) to prevent exact-time
+//     re-identification.
+//   • Outputs of clustering functions over this table are aggregate-only.
+//
+// COLLECTION STATUS: NOT ACTIVE — gated by POLIS_VECTOR_COLLECTION_ENABLED.
+// ---------------------------------------------------------------------------
+export const polisResponseVectors = pgTable(
+  "polis_response_vectors",
+  {
+    // Opaque random token, one per Polis session.
+    sessionToken: text("session_token").notNull(),
+    // ISO 3166-2 state code, e.g. "TX"; NULL when voter skipped location.
+    stateCode: text("state_code"),
+    // { [statementId: string]: "agree" | "disagree" | "pass" }
+    // Absent keys = voter did not answer that statement (not the same as "pass").
+    responses: jsonb("responses").notNull(),
+    // Truncated to the hour (UTC) to prevent time-based re-identification.
+    // No full-precision inserted_at: a millisecond insert time would undermine
+    // the coarse-hour guarantee by allowing single-row time linkage.
+    recordedHour: timestamp("recorded_hour", { withTimezone: true }).notNull(),
+  },
+  (t) => [
+    uniqueIndex("polis_response_vectors_token_uidx").on(t.sessionToken),
+    index("polis_response_vectors_state_idx").on(t.stateCode),
+    index("polis_response_vectors_hour_idx").on(t.recordedHour),
+  ],
+);
+
+// ---------------------------------------------------------------------------
 // candidates
 // ---------------------------------------------------------------------------
 export const candidates = pgTable(
