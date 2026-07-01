@@ -86,9 +86,7 @@ test.describe("head-to-head candidate duel", () => {
     // chosen successor (the answer to "what happens when you replace?").
     await expect(page.locator(".ws-ballot")).toBeVisible();
     const houseRow = page.locator(".b-row").first();
-    await expect(houseRow.locator(".verdict-chip")).toHaveText(
-      "TIME TO REPLACE",
-    );
+    await expect(houseRow.locator(".verdict-chip")).toHaveText("⇄ REPLACE");
     await expect(houseRow.locator(".pick-successor")).toContainText(
       "Elena Reyes",
     );
@@ -118,7 +116,7 @@ test.describe("head-to-head candidate duel", () => {
     await expect(page.locator(".ws-ballot")).toBeVisible();
     await expect(
       page.locator(".b-row").first().locator(".verdict-chip"),
-    ).toHaveText("WORTH KEEPING");
+    ).toHaveText("✓ KEEP");
     // No successor on a keep.
     await expect(
       page.locator(".b-row").first().locator(".pick-successor"),
