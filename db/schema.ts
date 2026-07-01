@@ -13,6 +13,82 @@ import {
 } from "drizzle-orm/pg-core";
 
 // ---------------------------------------------------------------------------
+// chat_usage_metrics — anonymous per-request AI cost telemetry
+//
+// Privacy: NO identifier of any kind. No IP address, no session id, no user
+// id, no address, no request body, no prompt text. Operational numbers only:
+// model, token counts, estimated cost, and an optional call_kind
+// discriminator. Mirrors the voter_issue_events privacy contract ("NO
+// identifier linking rows to a person, NO address, NO free-text verbatim").
+// Use for aggregate cost monitoring and volume/spike detection only — never
+// for tracing or profiling individual users or sessions.
+// ---------------------------------------------------------------------------
+export const chatUsageMetrics = pgTable(
+  "chat_usage_metrics",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    recordedAt: timestamp("recorded_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    model: text("model").notNull(),
+    /** 'chat' | 'research' — distinguishes main conversation vs sub-agent calls. */
+    callKind: text("call_kind").default("chat"),
+    inputTokens: integer("input_tokens").notNull().default(0),
+    cacheReadTokens: integer("cache_read_tokens").notNull().default(0),
+    cacheWriteTokens: integer("cache_write_tokens").notNull().default(0),
+    outputTokens: integer("output_tokens").notNull().default(0),
+    webSearchCount: integer("web_search_count").notNull().default(0),
+    /** Computed from model rates at record time; stored as numeric for query aggregation. */
+    estimatedCostUsd: numeric("estimated_cost_usd", {
+      precision: 10,
+      scale: 8,
+    })
+      .notNull()
+      .default("0"),
+  },
+  (t) => [
+    index("chat_usage_metrics_recorded_at_idx").on(t.recordedAt),
+    index("chat_usage_metrics_model_idx").on(t.model),
+  ],
+);
+
+// ---------------------------------------------------------------------------
+// polis_response_vectors — de-identified per-session Polis answer vectors
+//
+// PRIVACY CONTRACT (see also db/migrations/0012_add_polis_response_vectors.sql):
+//   • session_token is a random UUID per Polis session, discarded by the
+//     browser at tab close. It is NOT stored elsewhere in the DB and is NOT
+//     the same as the Redis dedupe sessionId.
+//   • No user_id, IP, email, name, or cross-table joinable key.
+//   • recorded_hour is truncated to the hour (UTC) to prevent exact-time
+//     re-identification.
+//   • Outputs of clustering functions over this table are aggregate-only.
+//
+// COLLECTION STATUS: NOT ACTIVE — gated by POLIS_VECTOR_COLLECTION_ENABLED.
+// ---------------------------------------------------------------------------
+export const polisResponseVectors = pgTable(
+  "polis_response_vectors",
+  {
+    // Opaque random token, one per Polis session.
+    sessionToken: text("session_token").notNull(),
+    // ISO 3166-2 state code, e.g. "TX"; NULL when voter skipped location.
+    stateCode: text("state_code"),
+    // { [statementId: string]: "agree" | "disagree" | "pass" }
+    // Absent keys = voter did not answer that statement (not the same as "pass").
+    responses: jsonb("responses").notNull(),
+    // Truncated to the hour (UTC) to prevent time-based re-identification.
+    // No full-precision inserted_at: a millisecond insert time would undermine
+    // the coarse-hour guarantee by allowing single-row time linkage.
+    recordedHour: timestamp("recorded_hour", { withTimezone: true }).notNull(),
+  },
+  (t) => [
+    uniqueIndex("polis_response_vectors_token_uidx").on(t.sessionToken),
+    index("polis_response_vectors_state_idx").on(t.stateCode),
+    index("polis_response_vectors_hour_idx").on(t.recordedHour),
+  ],
+);
+
+// ---------------------------------------------------------------------------
 // candidates
 // ---------------------------------------------------------------------------
 export const candidates = pgTable(

@@ -83,6 +83,45 @@ export async function mockDelegation(page: Page): Promise<void> {
   });
 }
 
+/** 2026 FEC filers running against the House incumbent — drives the
+ *  head-to-head duel ("Time to replace" flow). Ranked by funds raised. */
+export const HOUSE_CHALLENGERS = [
+  {
+    id: "ch-reyes",
+    name: "Elena Reyes",
+    party: "Democrat",
+    totalReceipts: 1_340_000,
+  },
+  {
+    id: "ch-whitfield",
+    name: "Sam Whitfield",
+    party: "Independent",
+    totalReceipts: 95_000,
+  },
+] as const;
+
+/** Same as mockDelegation but the House seat carries 2026 challengers, so the
+ *  "Time to replace" CTA opens the duel instead of toggling an inline verdict. */
+export async function mockDelegationWithChallengers(page: Page): Promise<void> {
+  const seats = TX_SEATS.map((s) =>
+    s.seatId === "house-TX-37" ? { ...s, challengers: HOUSE_CHALLENGERS } : s,
+  );
+  await page.route("**/api/delegation", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        status: "ok",
+        stateCode: "TX",
+        stateName: "Texas",
+        county: "Travis County",
+        districtLabel: "TX-37",
+        seats,
+      }),
+    });
+  });
+}
+
 export async function mockDelegationFailure(
   page: Page,
   status: "geocode_failed" | "no_representation" | "db_unavailable",

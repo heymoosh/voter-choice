@@ -776,6 +776,41 @@ CROSS-CUTTING RULES:
 }
 
 /**
+ * Render the per-issue pole-disambiguation block for the theme-refinement
+ * prompt (Alignment 2b). Called when at least one theme in the current list is
+ * a contested issue with no resolved stance — the refinement prompt uses this
+ * block to know WHICH question to ask and what the two labeled options mean.
+ *
+ * Only contested issues are included (valence-dominant issues never need
+ * disambiguation). The block is compact — one question + two option labels
+ * per issue. The open-ended tail ("…or is it something else?") is rendered
+ * here so the prompt instruction and the display string stay in sync.
+ */
+export function renderDisambiguationQuestions(): string {
+  const contested = Object.entries(POLE_VOCABULARY).filter(
+    ([, e]) => e.axisType === "contested" && e.disambiguation,
+  );
+  if (contested.length === 0) return "";
+
+  const lines = contested.map(([id, e]) => {
+    const d = e.disambiguation!;
+    return (
+      `  ${id}:\n` +
+      `    question: "${d.question} …or is it something else?"\n` +
+      `    option_in_favor: "${d.options[0].label}" → stance=in_favor\n` +
+      `    option_opposed:  "${d.options[1].label}" → stance=opposed`
+    );
+  });
+
+  return (
+    `POLE DISAMBIGUATION QUESTIONS (pole-vocab ${POLE_VOCABULARY_VERSION})\n` +
+    `One entry per contested issue. Use the matching question when a theme for\n` +
+    `that issue has no "stance" field yet.\n\n` +
+    lines.join("\n\n")
+  );
+}
+
+/**
  * Concise per-issue pole directions for the live concern-RESOLVER (the theme
  * builders). One line per issue, no bill_signals (those are tagger-only), so the
  * prompt stays within its length budget. Pins the meaning of in_favor/opposed so

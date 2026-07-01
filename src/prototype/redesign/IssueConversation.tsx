@@ -20,7 +20,7 @@
    conversation and bubble up to the host (which opens the budget modal). */
 
 import React, { useRef, useState } from "react";
-import { IssueRow } from "../VoterChoiceApp";
+import { IssueRow, useI18n } from "../VoterChoiceApp";
 import { getChatSessionId } from "../realData";
 import { buildThemeExtractionPrompt } from "../../lib/prompts/theme-extraction";
 import {
@@ -61,7 +61,11 @@ function issuesToThemes(issues) {
   }));
 }
 
-export function useIssueConversation({ seedIssues, onBudgetBlock }) {
+export function useIssueConversation({
+  seedIssues,
+  onBudgetBlock,
+  strings = {},
+}) {
   const [issues, setIssues] = useState(seedIssues || []);
   const [log, setLog] = useState([]);
   const [busy, setBusy] = useState(false);
@@ -137,11 +141,21 @@ export function useIssueConversation({ seedIssues, onBudgetBlock }) {
               { role: "assistant", content: acc },
             ];
             applyIssueList(themesToIssues(themes, text));
+            const themeWord =
+              themes.length !== 1
+                ? strings.starterThemePlural || "issues"
+                : strings.starterThemeSingular || "issue";
+            const starterAck = (
+              strings.starterAck ||
+              "Here are {n} starter {themes} to work from — re-rank, rename, remove, or keep telling me what you value and I'll adjust them."
+            )
+              .replace("{n}", String(themes.length))
+              .replace("{themes}", themeWord);
             setLog((prev) => [
               ...prev,
               {
                 who: "ai",
-                text: `Here are ${themes.length} starter issue${themes.length !== 1 ? "s" : ""} to work from — re-rank, rename, remove, or keep telling me what you value and I'll adjust them.`,
+                text: starterAck,
               },
             ]);
           } else {
@@ -195,6 +209,7 @@ export function useIssueConversation({ seedIssues, onBudgetBlock }) {
             typeof reason === "string" && reason.includes(" ") ? reason : null;
           setError(
             sentence ||
+              strings.errorMsg ||
               "I couldn't read your message just now — please try again.",
           );
         },
@@ -230,6 +245,7 @@ export function IssueConversation({
   /** Composer placeholder for the first message. */
   placeholder,
 }) {
+  const { t } = useI18n();
   const { issues, setIssues, log, busy, error, draft, setDraft, send } = convo;
 
   function moveIssue(idx, dir) {
@@ -250,11 +266,7 @@ export function IssueConversation({
 
   const chips =
     issues.length > 0
-      ? [
-          "That's not quite right — let me explain",
-          "Tell me why you picked these",
-          "Add something I missed",
-        ]
+      ? [t("intake.chip1"), t("intake.chip2"), t("intake.chip3")]
       : [];
 
   return (
@@ -262,7 +274,7 @@ export function IssueConversation({
       {log.map((msg, i) => (
         <div key={"ic-" + i} className={"msg " + msg.who}>
           <div className="who">
-            {msg.who === "user" ? "You" : "Voter Choice · AI"}
+            {msg.who === "user" ? t("intake.userWho") : t("intake.aiWho")}
           </div>
           <div className="bubble">{msg.text}</div>
         </div>
@@ -270,12 +282,12 @@ export function IssueConversation({
 
       {busy && (
         <div className="msg ai">
-          <div className="who">Voter Choice · AI</div>
+          <div className="who">{t("intake.aiWho")}</div>
           <div className="bubble">
             <p style={{ color: "var(--ink-2)", fontStyle: "italic" }}>
               {issues.length === 0
-                ? "Reading what you wrote — pulling out the issues I hear…"
-                : "Thinking about that — adjusting your list…"}
+                ? t("intake.thinkingExtract")
+                : t("intake.thinkingRefine")}
             </p>
           </div>
         </div>
@@ -284,17 +296,16 @@ export function IssueConversation({
       {issues.length > 0 && (
         <div className="themes-card" data-testid="issue-themes-card">
           <div className="th-head">
-            <h4>Your issues — make them yours.</h4>
-            <span className="of">{issues.length} issues · edit freely</span>
+            <h4>{t("intake.issueHeading")}</h4>
+            <span className="of">
+              {t("intake.issueSubOf").replace("{n}", String(issues.length))}
+            </span>
           </div>
-          <p className="th-sub">
-            Use the arrows to re-rank · click a name to rename · Remove to
-            delete an issue · or keep talking to me below and I'll adjust them.
-          </p>
+          <p className="th-sub">{t("intake.issueInstruction")}</p>
 
           {issues.map((iss, i) => (
             <IssueRow
-              key={`${i}-${iss.canonicalIssue || iss.interpretation || iss.sourceText}`}
+              key={`${i}-${iss.canonicalIssue || iss.interpretation}`}
               issue={iss}
               index={i}
               total={issues.length}
@@ -340,25 +351,21 @@ export function IssueConversation({
         )}
         <textarea
           placeholder={
-            issues.length === 0
-              ? placeholder
-              : "Tell me more about what you value, ask why I picked these, or add what I missed…"
+            issues.length === 0 ? placeholder : t("intake.placeholderFollow")
           }
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           data-testid="issue-convo-input"
         />
         <div className="row">
-          <span className="hint">
-            Your issue list stays in your browser until you lock it in
-          </span>
+          <span className="hint">{t("intake.inputHint")}</span>
           <button
             className="send"
             onClick={() => send(draft)}
             disabled={!draft.trim() || busy}
             data-testid="issue-convo-send"
           >
-            Send →
+            {t("intake.sendBtn")}
           </button>
         </div>
         {error && (

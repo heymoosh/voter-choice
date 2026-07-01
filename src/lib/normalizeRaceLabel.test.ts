@@ -94,6 +94,27 @@ describe("normalizeRaceLabel", () => {
       expect(normalizeRaceLabel("Vice President", "")).toBe("Vice President");
     });
 
+    it("normalizes combined presidential ticket race (FL-style)", () => {
+      expect(normalizeRaceLabel("President and Vice President", "")).toBe(
+        "President & Vice President",
+      );
+    });
+
+    it("normalizes combined ticket with full office name", () => {
+      expect(
+        normalizeRaceLabel(
+          "President of the United States and Vice President of the United States",
+          "",
+        ),
+      ).toBe("President & Vice President");
+    });
+
+    it("normalizes combined ticket with ampersand", () => {
+      expect(normalizeRaceLabel("President & Vice President", "")).toBe(
+        "President & Vice President",
+      );
+    });
+
     it("normalizes 'Governor'", () => {
       expect(normalizeRaceLabel("Governor", "")).toBe("Governor");
     });
