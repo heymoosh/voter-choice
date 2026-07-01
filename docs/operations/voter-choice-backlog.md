@@ -28,6 +28,10 @@ Ballot upload/parse is too much friction for the target user, so the product shi
 
 #### Resolve before Phase 1 public release — prod-hardening, NOT design-dependent:
 
+**[P2] Refactor the codebase**
+- Do it if it makes sense for code maintainability - I’m assuming doing this will make the app more foolproof, run faster, be easier to audit and work better.
+- DECISION: Auto run the deployment - if it’s not destructive (and it shouldn’t be), I accept all recommendations on the approach. 
+
 **[P0] We need a deployment/test environment/server/branch?**
 - Don’t know how to do this, but essentially how do we test the app’s new features without deploying it to the live app?
 - SPEC (2026-06-30, approved): **Vercel Preview Deployments + a Neon test branch.** Each feature branch builds to an isolated preview URL (behind Vercel SSO); the preview env gets its own `DATABASE_URL` → a **Neon test branch** (child of prod, copy-on-write — same mechanism as the existing `alignment-work` branch), so feature testing + migrations NEVER touch prod data or live users.
