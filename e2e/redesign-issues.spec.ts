@@ -97,9 +97,9 @@ test.describe("conversational issue intake", () => {
       .fill("And one more thing about schools");
     await page.getByTestId("issue-convo-send").click();
 
-    await expect(page.getByTestId("budget-modal")).toContainText(
-      "Keep going — your scorecard is safe.",
-    );
+    const budgetModal = page.getByTestId("budget-modal");
+    await expect(budgetModal).toContainText("The shared budget is used up");
+    await expect(budgetModal).toContainText("still safe on this device.");
     // The working list survives; the refused message is back in the composer.
     await page.locator(".be-x").click();
     await expect(

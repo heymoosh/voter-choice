@@ -153,7 +153,8 @@ test.describe("seat chat — ask anything about this seat", () => {
 
     // Budget gate → the budget modal (BYOK + continue elsewhere), no banner.
     const modal = page.getByTestId("budget-modal");
-    await expect(modal).toContainText("Keep going — your scorecard is safe.");
+    await expect(modal).toContainText("The shared budget is used up");
+    await expect(modal).toContainText("still safe on this device.");
     await expect(modal).toContainText("community AI budget");
     await expect(modal.getByTestId("byok-input")).toBeVisible();
     await expect(modal.getByTestId("handoff-actions")).toBeVisible();

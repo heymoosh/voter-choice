@@ -139,6 +139,22 @@ export default function PrivacyPolicy() {
             individual records.
           </p>
 
+          {/* Anonymous Usage Metrics */}
+          <h2 className="font-serif font-semibold text-2xl tracking-[-0.015em] mt-10 mb-3.5 text-ink">
+            Anonymous Usage Metrics
+          </h2>
+          <p className="mb-4">
+            To monitor operating cost and detect unusual volume or spending
+            spikes, we keep anonymous per-request operational metrics for AI
+            chat calls &mdash; the model used, token counts, and an estimated
+            cost figure. These records carry <em>no</em> identifier of any kind:
+            no IP address, no session id, no user id, no address, and{" "}
+            <em>none</em> of your words. They cannot be tied to a person or to
+            any other record. They are used only to understand aggregate cost
+            and to catch abuse patterns; they are never used to profile,
+            identify, or track individual users.
+          </p>
+
           {/* Address Lookup */}
           <h2 className="font-serif font-semibold text-2xl tracking-[-0.015em] mt-10 mb-3.5 text-ink">
             Address Lookup
