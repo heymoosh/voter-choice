@@ -211,6 +211,59 @@ input, textarea { font: inherit; color: inherit; }
   color: var(--ink-3);
 }
 .addr-card .resume a { font-weight: 500; text-decoration: underline; text-underline-offset: 2px; }
+.addr-steps {
+  max-width: 560px;
+  margin-top: 16px;
+}
+.addr-steps-lead {
+  font-size: 13.5px;
+  color: var(--ink-2);
+  margin: 0 0 14px;
+}
+.addr-steps-link {
+  color: var(--civic);
+  font-weight: 500;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+.addr-steps-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.addr-steps-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+.addr-step-num {
+  flex: 0 0 auto;
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--civic);
+  line-height: 1.5;
+}
+.addr-step-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.addr-step-ttl {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.addr-step-desc {
+  font-size: 13px;
+  color: var(--ink-3);
+  line-height: 1.5;
+}
 .addr-label-left { display: inline-flex; align-items: center; gap: 6px; }
 .addr-why-btn {
   display: inline-flex;

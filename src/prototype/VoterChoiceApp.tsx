@@ -4247,7 +4247,6 @@ function HomeView({ savedAddress, savedSession, onSubmit, onResumeFromProfile, o
   // last time (or it's stale enough that they'd rather retype). The
   // placeholder shows a realistic example.
   const [addr, setAddr] = useStateV('');
-  const [addrWhyOpen, setAddrWhyOpen] = useStateV(false);
   const { t } = useI18n();
   // Phase 2b: restore Google Places autocomplete (the prototype's plain input
   // had none). With the key present the hook mounts a PlaceAutocompleteElement
@@ -4285,25 +4284,9 @@ function HomeView({ savedAddress, savedSession, onSubmit, onResumeFromProfile, o
           <div className="addr-card">
             <label>
               <span className="addr-label-left">
-                <span>Your registered address</span>
-                <button
-                  className="addr-why-btn"
-                  onClick={() => setAddrWhyOpen(true)}
-                  aria-label="Why do we need your address?"
-                  type="button"
-                >?</button>
+                <span>Enter Your Registered Address</span>
               </span>
-              <span className="privacy">Stays on this device</span>
             </label>
-            {addrWhyOpen && (
-              <div className="be-modal-overlay" onClick={() => setAddrWhyOpen(false)}>
-                <div className="addr-why-modal" onClick={(e) => e.stopPropagation()}>
-                  <button className="addr-why-close" onClick={() => setAddrWhyOpen(false)} aria-label="Close">×</button>
-                  <h4>Why do we need your address?</h4>
-                  <p>We use your address to pull local voting information so you know exactly when and where to go vote and what IDs are needed. So you have all the information you need to support or vote against your representative and make a change.</p>
-                </div>
-              </div>
-            )}
             <div className="row">
               {hasPlacesKey && (
                 <div
@@ -4327,11 +4310,42 @@ function HomeView({ savedAddress, savedSession, onSubmit, onResumeFromProfile, o
               />
               <button className="go" onClick={submit} disabled={!addr.trim()}>Pull my representatives →</button>
             </div>
-            <div className="hint">
-              <span><span className="dot"></span>No account</span>
-              <span><span className="dot"></span>No tracking</span>
-              <span><span className="dot"></span>Civic API · address never stored</span>
-            </div>
+          </div>
+
+          <div className="addr-steps">
+            <p className="addr-steps-lead">
+              Unsure?{' '}
+              <a
+                className="addr-steps-link"
+                onClick={() => onNavigate && onNavigate('howitworks')}
+                role="link"
+                tabIndex={0}
+                onKeyDown={(e) => { if (e.key === 'Enter' && onNavigate) onNavigate('howitworks'); }}
+              >Read about how it works and how we use your data</a>
+            </p>
+            <ol className="addr-steps-list">
+              <li>
+                <span className="addr-step-num">01</span>
+                <span className="addr-step-body">
+                  <span className="addr-step-ttl">Enter your address</span>
+                  <span className="addr-step-desc">We use your address to pull local voting information so you know exactly when and where to go vote and what IDs are needed — so you have everything you need to support or vote against your representative and make a change. It stays on this device and is never stored.</span>
+                </span>
+              </li>
+              <li>
+                <span className="addr-step-num">02</span>
+                <span className="addr-step-body">
+                  <span className="addr-step-ttl">See what they actually did</span>
+                  <span className="addr-step-desc">We pull your representatives and their record on the issues you care about — voting history, donors, and how much they raised and from whom. No news articles, no ads — just the record.</span>
+                </span>
+              </li>
+              <li>
+                <span className="addr-step-num">03</span>
+                <span className="addr-step-body">
+                  <span className="addr-step-ttl">Take it with you</span>
+                  <span className="addr-step-desc">Download a one-page ballot for the polling booth. Many polls don't allow phones — print it or write it down before you go.</span>
+                </span>
+              </li>
+            </ol>
           </div>
 
           {hasDraft && (
