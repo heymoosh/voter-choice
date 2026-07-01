@@ -178,9 +178,12 @@ const TRANSLATIONS = {
     nav: {
       howItWorks: 'How it works',
       theRecord: 'The record',
+      whyNow: 'Why now?',
       about: 'About',
       methodology: 'Methodology',
       privacy: 'Privacy',
+      support: 'Support',
+      tipJar: 'Tip jar',
       settings: 'Settings',
     },
     landing: {
@@ -266,15 +269,89 @@ const TRANSLATIONS = {
       precinct: 'Precinct',
       earlyVotingWindow: 'Early voting window',
       cardSource: 'Source · Google Civic',
+      addressNotPublished: (days) =>
+        days != null && days > 0
+          ? `Polling places aren’t published this far out (${days} days to go) — check back closer to Election Day, or use “Find your polling place” above.`
+          : `Polling place not yet published — check back closer to Election Day, or use “Find your polling place” above.`,
+    },
+    intake: {
+      aiWho: 'Voter Choice · AI',
+      userWho: 'You',
+      openerP1:
+        "I've pulled your representatives' names. Before I walk you through their performance, I want to know what you're judging them on.",
+      openerP2Bold: "What's been on your mind this year?",
+      openerP2Rest:
+        " Things you wish Congress would actually do something about. Frustrations, hopes, fights you've watched in your community. Type as much or as little as you want — and once I propose a list, keep talking to me until it matches what you value.",
+      primaryBtn: 'Lock these in & meet your delegation →',
+      thinkingExtract: 'Reading what you wrote — pulling out the issues I hear…',
+      thinkingRefine: 'Thinking about that — adjusting your list…',
+      issueHeading: 'Your issues — make them yours.',
+      issueSubOf: '{n} issues · edit freely',
+      issueInstruction:
+        'Use the arrows to re-rank · click a name to rename · Remove to delete an issue · or keep talking to me below and I\'ll adjust them.',
+      sendBtn: 'Send →',
+      inputHint: 'Your issue list stays in your browser until you lock it in',
+      placeholderFirst: "Things that have been on your mind. Frustrations, hopes, fights you've watched in your community…",
+      placeholderFollow: "Tell me more about what you value, ask why I picked these, or add what I missed…",
+      chip1: "That's not quite right — let me explain",
+      chip2: 'Tell me why you picked these',
+      chip3: 'Add something I missed',
+      errorMsg: "I couldn't read your message just now — please try again.",
+      starterAck: "Here are {n} starter {themes} to work from — re-rank, rename, remove, or keep telling me what you value and I'll adjust them.",
+      starterThemeSingular: 'issue',
+      starterThemePlural: 'issues',
+    },
+    scorecard: {
+      heading: 'Your scorecard',
+      draft: 'Draft',
+      yourIssues: 'Your issues',
+      edit: 'Edit',
+      worthKeeping: '✓ KEEP',
+      timeToReplace: '⇄ REPLACE',
+      reviewingNow: 'Reviewing now…',
+      notYetReviewed: 'Not yet reviewed',
+      progress: 'Progress',
+      reviewed: '% reviewed',
+      standingKick: "You're not alone",
+      standingHeading: 'See where you stand',
+      standingBodyPolis: 'Your priorities, mapped against {n} people in {label} — placed by what they care about, not party. You overlap more than the noise suggests.',
+      standingBodyGeneric: "Your priorities, mapped against everyone who's finished this — placed by what they care about, not party. You overlap more than the noise suggests.",
+      standingBtn: 'See where you stand →',
+      printBtn: 'Print my scorecard (PDF)',
+      handoffBtn: 'Continue in another chatbot',
+      allDone: "That's your whole delegation.",
+      allDoneSeeStanding: 'where you stand among your neighbors →',
+      precinct: 'Precinct',
+      backToScorecard: '← Back to your scorecard',
+      tierFedTitle: 'Your federal delegation',
+      tierFedWhat: 'Three people who write <b>federal</b> law — and answer for it on roll-call votes.',
+      tierFedWhatIssues: 'Of your priorities, Washington decides <b>{issues}</b>.',
+      tierStatTitle: 'Closer to home',
+      tierStatWhat: "Your state legislature decides what Washington doesn't — schools, infrastructure, and state law.",
+      tierStatWhatIssues: 'Of your priorities, your statehouse holds the pen on <b>{issues}</b>.',
+      tierExecTitle: "Offices that don't take roll-call votes",
+      tierExecWhat: "A governor signs and vetoes — there's no voting record to score. So we research positions and <b>show the receipts</b> instead of faking an alignment number.",
+    },
+    editIssues: {
+      eyebrow: 'Edit your issues',
+      heading: "Re-rank, rename, add, or remove — or just tell me what's changed.",
+      lede: "The verdicts you've already made are kept. When you apply, I re-score every member against the new list and flag any whose alignment shifts past the noise floor.",
+      primaryBtn: 'Apply & re-score →',
+      placeholder: "What's changed? More context about what you value, a new issue, a different priority order…",
+      cancelLink: 'Cancel — keep my current issues',
+      cancelAriaLabel: 'Cancel',
     },
   },
   es: {
     nav: {
       howItWorks: 'Cómo funciona',
       theRecord: 'El registro',
+      whyNow: '¿Por qué ahora?',
       about: 'Acerca de',
       methodology: 'Metodología',
       privacy: 'Privacidad',
+      support: 'Soporte',
+      tipJar: 'Propinas',
       settings: 'Ajustes',
     },
     landing: {
@@ -360,6 +437,77 @@ const TRANSLATIONS = {
       precinct: 'Precinto',
       earlyVotingWindow: 'Ventana de votación anticipada',
       cardSource: 'Fuente · Google Civic',
+      addressNotPublished: (days) =>
+        days != null && days > 0
+          ? `Las casillas electorales no se publican con tanta anticipación (faltan ${days} días) — revisa más cerca del día de elecciones, o usa "Encuentra tu casilla" arriba.`
+          : `La casilla electoral aún no está publicada — revisa más cerca del día de elecciones, o usa "Encuentra tu casilla" arriba.`,
+    },
+    intake: {
+      aiWho: 'Voter Choice · AI',
+      userWho: 'Tú',
+      openerP1:
+        'Ya tengo los nombres de tus representantes. Antes de mostrarte su historial, quiero saber con qué criterio los vas a juzgar.',
+      openerP2Bold: '¿Qué ha estado en tu mente este año?',
+      openerP2Rest:
+        ' Las cosas que desearías que el Congreso hiciera algo al respecto. Frustraciones, esperanzas, peleas que has visto en tu comunidad. Escribe tanto o tan poco como quieras — y una vez que proponga una lista, sigue hablando conmigo hasta que refleje lo que valoras.',
+      primaryBtn: 'Confirmar estos temas y conocer a tu delegación →',
+      thinkingExtract: 'Leyendo lo que escribiste — identificando los temas que escucho…',
+      thinkingRefine: 'Pensando en eso — ajustando tu lista…',
+      issueHeading: 'Tus temas — hazlos tuyos.',
+      issueSubOf: '{n} temas · edita libremente',
+      issueInstruction:
+        'Usa las flechas para reordenar · haz clic en un nombre para renombrar · Eliminar para borrar un tema · o sigue hablando conmigo abajo y los ajustaré.',
+      sendBtn: 'Enviar →',
+      inputHint: 'Tu lista de temas queda en tu navegador hasta que la confirmes',
+      placeholderFirst: 'Las cosas que han estado en tu mente. Frustraciones, esperanzas, peleas que has visto en tu comunidad…',
+      placeholderFollow: 'Cuéntame más sobre lo que valoras, pregunta por qué elegí estos, o agrega lo que olvidé…',
+      chip1: 'Eso no está del todo bien — déjame explicar',
+      chip2: 'Dime por qué escogiste estos',
+      chip3: 'Agrega algo que se te haya pasado',
+      errorMsg: 'No pude leer tu mensaje ahora mismo — por favor intenta de nuevo.',
+      starterAck: 'Aquí hay {n} {themes} para empezar — reordénalos, renómbralos, elimínalos, o sigue contándome lo que valoras y los ajustaré.',
+      starterThemeSingular: 'tema',
+      starterThemePlural: 'temas',
+    },
+    scorecard: {
+      heading: 'Tu tarjeta de puntuación',
+      draft: 'Borrador',
+      yourIssues: 'Tus temas',
+      edit: 'Editar',
+      worthKeeping: '✓ MANTENER',
+      timeToReplace: '⇄ REEMPLAZAR',
+      reviewingNow: 'Revisando ahora…',
+      notYetReviewed: 'Aún no revisado',
+      progress: 'Progreso',
+      reviewed: '% revisado',
+      standingKick: 'No estás solo/a',
+      standingHeading: 'Mira dónde estás parado/a',
+      standingBodyPolis: 'Tus prioridades, mapeadas contra {n} personas en {label} — ubicadas por lo que les importa, no por partido. Tienes más en común de lo que el ruido sugiere.',
+      standingBodyGeneric: 'Tus prioridades, mapeadas contra todos los que terminaron esto — ubicadas por lo que les importa, no por partido. Tienes más en común de lo que el ruido sugiere.',
+      standingBtn: 'Mira dónde estás parado/a →',
+      printBtn: 'Imprimir mi tarjeta (PDF)',
+      handoffBtn: 'Continuar en otro chatbot',
+      allDone: 'Esa es toda tu delegación.',
+      allDoneSeeStanding: 'Mira dónde estás entre tus vecinos →',
+      precinct: 'Precinto',
+      backToScorecard: '← Volver a tu tarjeta',
+      tierFedTitle: 'Tu delegación federal',
+      tierFedWhat: 'Tres personas que redactan leyes <b>federales</b> — y responden por ellas en votaciones nominales.',
+      tierFedWhatIssues: 'De tus prioridades, Washington decide <b>{issues}</b>.',
+      tierStatTitle: 'Más cerca de casa',
+      tierStatWhat: 'Tu legislatura estatal decide lo que Washington no — escuelas, infraestructura y leyes estatales.',
+      tierStatWhatIssues: 'De tus prioridades, tu legislatura estatal tiene la pluma en <b>{issues}</b>.',
+      tierExecTitle: 'Cargos sin votaciones nominales',
+      tierExecWhat: 'Un gobernador firma y veta — no hay historial de votación que puntuar. Así que investigamos posiciones y <b>mostramos las fuentes</b> en lugar de inventar un número de alineación.',
+    },
+    editIssues: {
+      eyebrow: 'Modifica tus temas',
+      heading: 'Re-ordena, renombra, agrega o elimina — o simplemente cuéntame qué ha cambiado.',
+      lede: 'Los veredictos que ya tomaste se conservan. Al aplicar, re-puntúo a cada miembro con la nueva lista y señalo cualquiera cuya alineación cambie significativamente.',
+      primaryBtn: 'Aplicar y re-puntuar →',
+      placeholder: '¿Qué cambió? Más contexto sobre lo que valoras, un tema nuevo, un orden de prioridades diferente…',
+      cancelLink: 'Cancelar — mantener mis temas actuales',
+      cancelAriaLabel: 'Cancelar',
     },
   },
 };
@@ -468,11 +616,15 @@ function AppNav({ onBrandClick }) {
       </div>
       <div className="links">
         <a onClick={() => navigate('howitworks')} role="link" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') navigate('howitworks'); }}>{t('nav.howItWorks')}</a>
+        <a onClick={() => navigate('whynow')} role="link" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') navigate('whynow'); }}>{t('nav.whyNow')}</a>
         <a onClick={() => navigate('methodology')} role="link" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') navigate('methodology'); }}>{t('nav.methodology')}</a>
         <a onClick={() => navigate('about')} role="link" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') navigate('about'); }}>{t('nav.about')}</a>
+        <a onClick={() => navigate('privacy')} role="link" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') navigate('privacy'); }}>{t('nav.privacy')}</a>
+        <a href="mailto:muxin.li.pro@gmail.com">{t('nav.support')}</a>
       </div>
       <div className="nav-right">
         {typeof LanguageToggle === 'function' && <LanguageToggle />}
+        <a className="nav-tip" onClick={() => navigate('tip')} role="link" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') navigate('tip'); }}>{t('nav.tipJar')}</a>
         <button
           className="nav-cog"
           onClick={openSettings}
@@ -491,24 +643,14 @@ function AppNav({ onBrandClick }) {
 
 /* ============ AppFooter ============
    Shared footer bar — matches .hp-foot styles used by HomeView.
-   Reads navigation from NavContext so it needs no prop-drilling.
+   Brand + copyright only; all nav links live in the header (AppNav).
    Pass `compact` on the workspace (slim pinned bar); omit it on
    the home page for the full-height layout. */
 function AppFooter({ compact }: { compact?: boolean }) {
-  const nav = (typeof useNav === 'function') ? useNav() : { navigate: () => {} };
-  const { navigate } = nav;
   return (
     <footer className={"hp-foot" + (compact ? " hp-foot-slim" : "")}>
       <div className="l">Voter Choice</div>
-      <ul>
-        <li><a onClick={() => navigate('methodology')} role="link" tabIndex={0}>Methodology</a></li>
-        <li><a onClick={() => navigate('about')} role="link" tabIndex={0}>About</a></li>
-        <li><a onClick={() => navigate('privacy')} role="link" tabIndex={0}>Privacy</a></li>
-        <li><a href="/terms">Terms</a></li>
-        <li><a onClick={() => navigate('tip')} role="link" tabIndex={0}>Tip jar</a></li>
-        <li><a href="mailto:muxin.li.pro@gmail.com">Support</a></li>
-      </ul>
-      <div>© 2026 · Grey Bird LLC</div>
+      <div>© 2026 Grey Bird LLC. All Rights Reserved.</div>
     </footer>
   );
 }
@@ -1027,9 +1169,9 @@ function AlignmentScoreBanner({ candidate, alignmentEntry, userIssues, expandedI
               Based on public statements — not a voting record
             </div>
           </div>
-          {rowsData.map(({ issue, score }) => (
+          {rowsData.map(({ issue, score }, i) => (
             <AlignmentIssueRow
-              key={issue.canonicalIssue}
+              key={`${i}-${issue.canonicalIssue || issue.interpretation || issue.sourceText}`}
               issue={issue}
               score={score}
               candidate={candidate}
@@ -1094,7 +1236,7 @@ function AlignmentScoreBanner({ candidate, alignmentEntry, userIssues, expandedI
 
       {rowsData.map(({ issue, score }, i) => (
         <AlignmentIssueRow
-          key={issue.canonicalIssue || issue.sourceText || i}
+          key={`${i}-${issue.canonicalIssue || issue.interpretation || issue.sourceText}`}
           issue={issue}
           score={score}
           candidate={candidate}
@@ -1107,98 +1249,154 @@ function AlignmentScoreBanner({ candidate, alignmentEntry, userIssues, expandedI
   );
 }
 
-/* ── single row of the banner (private to AlignmentScoreBanner) ── */
-function AlignmentIssueRow({ issue, score, candidate, isOpen, onToggle, anonCtx }) {
-  // ── Pillar 2: web_search branch ──────────────────────────────────────────
-  // web_search scores have no kept/total voting record. Instead we show a
-  // directional indicator keyed to resolvedStance + confidence chip + evidence.
-  // Visually distinct from voting_record bars (no %, no vote count).
-  //
-  // resolvedStance from the structured sub-agent is a 4-value enum:
-  //   "in_favor"  → candidate supports the voter's issue   → ALIGNED (green)
-  //   "opposed"   → candidate opposes the voter's issue    → OPPOSED (red)
-  //   "mixed"     → mixed record                           → MIXED (neutral)
-  //   "unclear"   → insufficient evidence                  → no direction badge
-  if (score && score.sourceType === 'web_search') {
-    const stance = (score.resolvedStance || '').toLowerCase();
-    // Structured enum first; fall back to prose heuristic for legacy data.
-    var directionLabel = null;
-    var directionColor = 'oklch(0.55 0.05 260)'; // neutral blue
-    if (stance === 'in_favor') {
-      directionLabel = 'ALIGNED';
-      directionColor = 'oklch(0.40 0.12 145)'; // green
-    } else if (stance === 'opposed') {
-      directionLabel = 'OPPOSED';
-      directionColor = 'oklch(0.50 0.15 25)'; // red
-    } else if (stance === 'mixed') {
-      directionLabel = 'MIXED';
-      // neutral — no strong directional signal
-    } else if (stance === 'unclear') {
-      directionLabel = null; // no direction badge — insufficient evidence
-    } else {
-      // Legacy prose fallback: scan for negative verbs
-      var proseAligns = !/\b(oppos|against|repeal|block|ban|cut)\b/i.test(score.resolvedStance || '');
-      directionLabel = proseAligns ? 'ALIGNED' : 'OPPOSED';
-      directionColor = proseAligns ? 'oklch(0.40 0.12 145)' : 'oklch(0.50 0.15 25)';
-    }
-    const confidenceChip = score.confidence
-      ? score.confidence.charAt(0).toUpperCase() + score.confidence.slice(1)
-      : null;
-    const evidenceLinks = (score.evidence || []).filter(e => e && e.url);
-    const hasEvidence = evidenceLinks.length > 0;
+/* ── web_search alignment row (private to AlignmentScoreBanner) ──
+   No kept/total roll-call record. Same canonical labels ("WITH YOU" /
+   "AGAINST YOU") and the same progressive-disclosure drill pattern as the
+   voting_record path: a clean summary by default, the cited public-statement
+   sources revealed on demand — so House-style researched cards behave exactly
+   like Senate-style voting-record cards (one unified candidate-card IA).
 
-    return (
-      <div className="cv2-iss-row" data-testid="web-search-alignment-row">
-        {/* Same grid structure as the voting_record path — topic left,
-            directional badge right (replaces the % pct column). */}
-        <div className="cv2-iss-head">
-          <div className="topic">
-            <div className="name">{issue.interpretation}</div>
-            <div className="meta">
-              {stance === 'in_favor' ? 'Supports this position'
-                : stance === 'opposed' ? 'Opposes this position'
-                : stance === 'mixed' ? 'Mixed record on this issue'
-                : stance === 'unclear' ? 'Position unclear — limited public record'
-                : score.resolvedStance}
-            </div>
-            {/* Evidence URLs inline below the meta — keeps the grid clean */}
-            {hasEvidence && (anonCtx?.blindMode ? (
-              // Blinded: the analysis (name-free) shows, but evidence URLs/summaries
-              // can carry the candidate's name — hold them back until reveal.
-              <div className="meta" style={{ marginTop: '4px', fontStyle: 'italic', opacity: 0.7 }}>
-                Sources shown when you reveal the candidate
-              </div>
-            ) : (
-              <div className="meta" style={{ marginTop: '4px', display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                {evidenceLinks.map((ev, i) => (
+   resolvedStance from the structured sub-agent is a 4-value enum:
+     "in_favor"  → candidate votes/stands with the voter → WITH YOU (green)
+     "opposed"   → candidate stands against the voter     → AGAINST YOU (red)
+     "mixed"     → mixed record                           → MIXED (neutral)
+     "unclear"   → insufficient evidence                  → no direction badge */
+function WebSearchAlignmentRow({ issue, score, anonCtx }) {
+  const [open, setOpen] = useState(false);
+  const stance = (score.resolvedStance || '').toLowerCase();
+  // Structured enum first; fall back to prose heuristic for legacy data.
+  var directionLabel = null;
+  var directionColor = 'oklch(0.55 0.05 260)'; // neutral blue
+  if (stance === 'in_favor') {
+    directionLabel = 'WITH YOU';
+    directionColor = 'oklch(0.40 0.12 145)'; // green
+  } else if (stance === 'opposed') {
+    directionLabel = 'AGAINST YOU';
+    directionColor = 'oklch(0.50 0.15 25)'; // red
+  } else if (stance === 'mixed') {
+    directionLabel = 'MIXED';
+    // neutral — no strong directional signal
+  } else if (stance === 'unclear') {
+    directionLabel = null; // no direction badge — insufficient evidence
+  } else {
+    // Legacy prose fallback: scan for negative verbs
+    var proseAligns = !/\b(oppos|against|repeal|block|ban|cut)\b/i.test(score.resolvedStance || '');
+    directionLabel = proseAligns ? 'WITH YOU' : 'AGAINST YOU';
+    directionColor = proseAligns ? 'oklch(0.40 0.12 145)' : 'oklch(0.50 0.15 25)';
+  }
+  const confidenceChip = score.confidence
+    ? score.confidence.charAt(0).toUpperCase() + score.confidence.slice(1)
+    : null;
+  const evidenceLinks = (score.evidence || []).filter(e => e && e.url);
+  const hasEvidence = evidenceLinks.length > 0;
+  // Blind mode: the name-free analysis shows, but evidence URLs/summaries can
+  // carry the candidate's name — keep the row non-expandable until reveal.
+  const canDrill = hasEvidence && !anonCtx?.blindMode;
+  const summaryMeta =
+    stance === 'in_favor' ? 'From public statements'
+      : stance === 'opposed' ? 'From public statements'
+      : stance === 'mixed' ? 'Mixed record on this issue'
+      : stance === 'unclear' ? 'Position unclear — limited public record'
+      : score.resolvedStance;
+
+  return (
+    <div
+      className={
+        'cv2-iss-row' + (open ? ' open' : '') + (canDrill ? ' has-drill' : '')
+      }
+      data-testid="web-search-alignment-row"
+    >
+      {/* Same grid structure as the voting_record path — topic left,
+          directional badge right (replaces the % pct column). */}
+      <button
+        className="cv2-iss-head"
+        onClick={canDrill ? () => setOpen(!open) : undefined}
+        aria-expanded={canDrill ? open : undefined}
+      >
+        <div className="topic">
+          <div className="name">{issue.interpretation}</div>
+          <div className="meta">
+            {summaryMeta}
+            {hasEvidence
+              ? anonCtx?.blindMode
+                ? ' · sources shown when you reveal the candidate'
+                : open
+                  ? ' · cited source shown below'
+                  : ' · tap for the cited source'
+              : ' · no source curated'}
+          </div>
+        </div>
+        {/* Right column: directional badge + confidence chip, matching the
+            position/size of the voting_record .pct column. */}
+        <div className="cv2-ws-col">
+          {directionLabel && (
+            <span className="cv2-ws-badge" style={{ background: directionColor }}>
+              {directionLabel}
+            </span>
+          )}
+          {confidenceChip && (
+            <span className="cv2-ws-conf">{confidenceChip} conf.</span>
+          )}
+        </div>
+      </button>
+      {open && canDrill && (
+        <div className="cv2-drill">
+          <div className="cv2-drill-head">
+            <span className="lab">Why this read?</span>
+            <span className="meta">No votes — researched &amp; cited</span>
+          </div>
+          <div className="cv2-votes">
+            {evidenceLinks.map((ev, i) => (
+              <div className="cv2-vote" key={i}>
+                <div className="cv2-vote-head">
+                  <div className="bill">
+                    <span className="num">WEB RESEARCH</span>
+                    <span className="ttl">{issue.interpretation}</span>
+                  </div>
+                  {directionLabel && (
+                    <div
+                      className={
+                        'vote-badge ' +
+                        (stance === 'in_favor'
+                          ? 'yea'
+                          : stance === 'opposed'
+                            ? 'nay'
+                            : 'other')
+                      }
+                    >
+                      {directionLabel}
+                    </div>
+                  )}
+                </div>
+                {ev.summary && <p className="cv2-vote-narr">“{ev.summary}”</p>}
+                <div className="cv2-vote-cite">
+                  <span className="src-chip">
+                    Web search{confidenceChip ? ` · ${confidenceChip} confidence` : ''}
+                  </span>
                   <a
-                    key={i}
                     href={ev.url}
+                    className="src-link"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="cv2-evidence-link"
                     data-testid="web-search-evidence-link"
                   >
-                    {ev.summary || `Source ${i + 1}`} →
+                    View source →
                   </a>
-                ))}
+                </div>
               </div>
             ))}
           </div>
-          {/* Right column: directional badge + confidence chip, matching the
-              position/size of the voting_record .pct column. */}
-          <div className="cv2-ws-col">
-            {directionLabel && (
-              <span className="cv2-ws-badge" style={{ background: directionColor }}>
-                {directionLabel}
-              </span>
-            )}
-            {confidenceChip && (
-              <span className="cv2-ws-conf">{confidenceChip} conf.</span>
-            )}
-          </div>
         </div>
-      </div>
+      )}
+    </div>
+  );
+}
+
+/* ── single row of the banner (private to AlignmentScoreBanner) ── */
+function AlignmentIssueRow({ issue, score, candidate, isOpen, onToggle, anonCtx }) {
+  if (score && score.sourceType === 'web_search') {
+    return (
+      <WebSearchAlignmentRow issue={issue} score={score} anonCtx={anonCtx} />
     );
   }
 
@@ -2349,12 +2547,15 @@ function AppNavWithChrome({ onBrandClick, onOpenSettings, current, onNavigate })
       </div>
       <div className="links">
         <a onClick={() => onNavigate && onNavigate('howitworks')} role="link" tabIndex={0}>{t('nav.howItWorks')}</a>
+        <a onClick={() => onNavigate && onNavigate('whynow')} role="link" tabIndex={0}>{t('nav.whyNow')}</a>
         <a onClick={() => onNavigate && onNavigate('methodology')} role="link" tabIndex={0}>{t('nav.methodology')}</a>
         <a onClick={() => onNavigate && onNavigate('about')} role="link" tabIndex={0}>{t('nav.about')}</a>
         <a onClick={() => onNavigate && onNavigate('privacy')} role="link" tabIndex={0}>{t('nav.privacy')}</a>
+        <a href="mailto:muxin.li.pro@gmail.com">{t('nav.support')}</a>
       </div>
       <div className="nav-right">
         <LanguageToggle />
+        <a className="nav-tip" onClick={() => onNavigate && onNavigate('tip')} role="link" tabIndex={0}>{t('nav.tipJar')}</a>
         <button className="nav-cog" onClick={onOpenSettings} aria-label={t('nav.settings')} title={t('nav.settings')}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <circle cx="12" cy="12" r="3" />
@@ -2499,8 +2700,14 @@ function PollingStatusBar({ pollingInfo, stateData, rows }) {
           <div className="pbp-grid">
             <div className="pbp-cell">
               <div className="pbp-k">Address</div>
-              <div className="pbp-v">{pollingInfo.address}</div>
-              {pollingInfo.notes && <div className="pbp-sub">{pollingInfo.notes}</div>}
+              {pollingInfo.address ? (
+                <>
+                  <div className="pbp-v">{pollingInfo.address}</div>
+                  {pollingInfo.notes && <div className="pbp-sub">{pollingInfo.notes}</div>}
+                </>
+              ) : (
+                <div className="pbp-v pbp-not-published">{t('polling.addressNotPublished')(days)}</div>
+              )}
             </div>
             <div className="pbp-cell">
               <div className="pbp-k">{t('polling.hours')}</div>
@@ -4020,6 +4227,32 @@ function AITimeoutBanner({ onRetry, onHandoff, message }) {
    Static in-prototype pages. Repo target: src/app/about/page.tsx,
    src/app/methodology/page.tsx, src/app/privacy/page.tsx
    (privacy/page.tsx exists in repo already — content mirrors that). */
+/* ============ WHY_NOW_SNIPPETS ============
+   The "fact snippets" — short, cited civic facts that make the case for
+   checking the record. Single source of truth: HomeView renders the first
+   two as the hero stat-stack; WhyNowPage renders the full set. Keep every
+   entry cited (no uncited stats) and non-partisan. */
+const WHY_NOW_SNIPPETS = [
+  {
+    value: '6',
+    unit: 'hrs / day',
+    label: 'average time a member of Congress spends fundraising, per training materials shown to incoming freshmen.',
+    cite: 'Source · Issue One, 2024 · CBS 60 Minutes',
+  },
+  {
+    value: '94',
+    unit: '%',
+    label: 'of House incumbents who ran for re-election in 2024 won. Without a record check, every November is a coin flip.',
+    cite: 'Source · OpenSecrets · FEC filings',
+  },
+  {
+    value: '468',
+    unit: 'seats',
+    label: 'all 435 House seats and 33 Senate seats are on the November 3, 2026 ballot — America’s 250th election.',
+    cite: 'Source · U.S. Constitution, Art. I · clerk.house.gov',
+  },
+];
+
 function StaticPage({ title, eyebrow, children, onBack }) {
   return (
     <div className="sp-wrap">
@@ -4154,6 +4387,32 @@ function PrivacyPage({ onBack }) {
   );
 }
 
+function WhyNowPage({ onBack }) {
+  return (
+    <StaticPage onBack={onBack} eyebrow="Why now" title="Why this election, this year.">
+      <p>2026 is America’s 250th election. Every voting seat in the House and a third of the Senate is on the ballot at once — the widest the choice ever gets. The catch is that incumbents almost always win, and most voters never see the one thing that should decide it: the record.</p>
+
+      <div className="stat-stack stat-stack--page">
+        {WHY_NOW_SNIPPETS.map((s, i) => (
+          <div key={i} className={'stat' + (i % 2 === 1 ? ' alt' : '')}>
+            <div className="v">{s.value}<small>{s.unit}</small></div>
+            <div className="l">{s.label}</div>
+            <div className="cite">{s.cite}</div>
+          </div>
+        ))}
+      </div>
+
+      <h2>The larger case</h2>
+      <p>Campaigns are built to be persuasive. Ads, mailers, and debate soundbites are written to win your vote, not to report what a candidate actually did with the power they already held. The gap between the pitch and the record is where most surprises live — and it widens every cycle.</p>
+      <p>A voting record is the one thing a candidate can’t rewrite. Roll-call votes are public, dated, and final. So is who funded the campaign. Read together, they tell you more about how someone will govern than any slogan can — because they’re a record of how that person already governed.</p>
+      <p>This isn’t about a party. Both sides run incumbents, and both sides count on you not checking. The fix is the same regardless of who you support: spend a few minutes matching the record to the issues you actually care about, before you fill in the bubble. That’s the whole idea behind this site.</p>
+
+      <h2>What to do with it</h2>
+      <p>Tell us your address and what’s on your mind. We’ll pull your representatives’ real votes and funding, score them against your own words — never a pre-baked checklist — and show you the receipts. You decide. We don’t endorse anyone; we just close the gap between the ad and the record.</p>
+    </StaticPage>
+  );
+}
+
 Object.assign(window, {
   SettingsPanel,
   GeocodeFailView,
@@ -4163,6 +4422,7 @@ Object.assign(window, {
   MethodologyPage,
   PrivacyPage,
   TipJarPage,
+  WhyNowPage,
   // BYOK helpers — exposed for app wiring
   getByokKey, setByokKey, removeByokKey, BYOK_STORAGE_KEY,
 });
@@ -4191,7 +4451,6 @@ function HomeView({ savedAddress, savedSession, onSubmit, onResumeFromProfile, o
   // last time (or it's stale enough that they'd rather retype). The
   // placeholder shows a realistic example.
   const [addr, setAddr] = useStateV('');
-  const [addrWhyOpen, setAddrWhyOpen] = useStateV(false);
   const { t } = useI18n();
   // Phase 2b: restore Google Places autocomplete (the prototype's plain input
   // had none). With the key present the hook mounts a PlaceAutocompleteElement
@@ -4220,34 +4479,18 @@ function HomeView({ savedAddress, savedSession, onSubmit, onResumeFromProfile, o
     <>
       <AppNav />
       <main id="main-content">
-      <section className="hp-hero">
+      <section className="hp-hero hp-hero-solo">
         <div>
           <div className="eyebrow"><span className="star">★</span> November 3, 2026 · America's 250th election</div>
-          <h1>Hold Congress to its <em>record.</em></h1>
-          <p className="lede">All 435 House seats and 33 Senate seats are on the ballot. Before you vote, see how your incumbents actually voted — and who paid for the campaign.</p>
+          <h1>See how your members of Congress <em>actually voted</em> — before you vote.</h1>
+          <p className="lede">Hold Congress to its record. All 435 House seats and 33 Senate seats are on the ballot — compare what your incumbents say with how they voted, and who funded the campaign.</p>
 
           <div className="addr-card">
             <label>
               <span className="addr-label-left">
-                <span>Your registered address</span>
-                <button
-                  className="addr-why-btn"
-                  onClick={() => setAddrWhyOpen(true)}
-                  aria-label="Why do we need your address?"
-                  type="button"
-                >?</button>
+                <span>Enter Your Registered Address</span>
               </span>
-              <span className="privacy">Stays on this device</span>
             </label>
-            {addrWhyOpen && (
-              <div className="be-modal-overlay" onClick={() => setAddrWhyOpen(false)}>
-                <div className="addr-why-modal" onClick={(e) => e.stopPropagation()}>
-                  <button className="addr-why-close" onClick={() => setAddrWhyOpen(false)} aria-label="Close">×</button>
-                  <h4>Why do we need your address?</h4>
-                  <p>We use your address to pull local voting information so you know exactly when and where to go vote and what IDs are needed. So you have all the information you need to support or vote against your representative and make a change.</p>
-                </div>
-              </div>
-            )}
             <div className="row">
               {hasPlacesKey && (
                 <div
@@ -4271,11 +4514,42 @@ function HomeView({ savedAddress, savedSession, onSubmit, onResumeFromProfile, o
               />
               <button className="go" onClick={submit} disabled={!addr.trim()}>Pull my representatives →</button>
             </div>
-            <div className="hint">
-              <span><span className="dot"></span>No account</span>
-              <span><span className="dot"></span>No tracking</span>
-              <span><span className="dot"></span>Civic API · address never stored</span>
-            </div>
+          </div>
+
+          <div className="addr-steps">
+            <p className="addr-steps-lead">
+              Unsure?{' '}
+              <a
+                className="addr-steps-link"
+                onClick={() => onNavigate && onNavigate('howitworks')}
+                role="link"
+                tabIndex={0}
+                onKeyDown={(e) => { if (e.key === 'Enter' && onNavigate) onNavigate('howitworks'); }}
+              >Read about how it works and how we use your data</a>
+            </p>
+            <ol className="addr-steps-list">
+              <li>
+                <span className="addr-step-num">01</span>
+                <span className="addr-step-body">
+                  <span className="addr-step-ttl">Enter your address</span>
+                  <span className="addr-step-desc">We use your address to pull local voting information so you know exactly when and where to go vote and what IDs are needed — so you have everything you need to support or vote against your representative and make a change. It stays on this device and is never stored.</span>
+                </span>
+              </li>
+              <li>
+                <span className="addr-step-num">02</span>
+                <span className="addr-step-body">
+                  <span className="addr-step-ttl">See what they actually did</span>
+                  <span className="addr-step-desc">We pull your representatives and their record on the issues you care about — voting history, donors, and how much they raised and from whom. No news articles, no ads — just the record.</span>
+                </span>
+              </li>
+              <li>
+                <span className="addr-step-num">03</span>
+                <span className="addr-step-body">
+                  <span className="addr-step-ttl">Take it with you</span>
+                  <span className="addr-step-desc">Download a one-page ballot for the polling booth. Many polls don't allow phones — print it or write it down before you go.</span>
+                </span>
+              </li>
+            </ol>
           </div>
 
           {hasDraft && (
@@ -4286,19 +4560,6 @@ function HomeView({ savedAddress, savedSession, onSubmit, onResumeFromProfile, o
               onStartOver={onStartOver}
             />
           )}
-        </div>
-
-        <div className="stat-stack">
-          <div className="stat">
-            <div className="v">6<small>hrs / day</small></div>
-            <div className="l">average time a member of Congress spends fundraising, per training materials shown to incoming freshmen.</div>
-            <div className="cite">Source · Issue One, 2024 · CBS 60 Minutes</div>
-          </div>
-          <div className="stat alt">
-            <div className="v">94<small>%</small></div>
-            <div className="l">of House incumbents who ran for re-election in 2024 won. Without a record check, every November is a coin flip.</div>
-            <div className="cite">Source · OpenSecrets · FEC filings</div>
-          </div>
         </div>
       </section>
 
@@ -6522,8 +6783,10 @@ export {
   MethodologyPage,
   PrivacyPage,
   TipJarPage,
+  WhyNowPage,
   // Reused by the delegation redesign (seat chat / issue editing / full record).
   AITimeoutBanner,
   IssueRow,
   AllVotesPanel,
+  SettingsPanel,
 };

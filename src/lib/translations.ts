@@ -127,6 +127,7 @@ export interface Translations {
     precinct: string;
     earlyVotingWindow: string;
     cardSource: string;
+    addressNotPublished: (days: number | null) => string;
   };
   budget: {
     notice: string;
@@ -729,6 +730,10 @@ const en: Translations = {
     precinct: "Precinct",
     earlyVotingWindow: "Early voting window",
     cardSource: "Source \u00b7 Google Civic",
+    addressNotPublished: (days: number | null) =>
+      days != null && days > 0
+        ? `Polling places aren\u2019t published this far out (${days} days to go) \u2014 check back closer to Election Day, or use \u201cFind your polling place\u201d above.`
+        : `Polling place not yet published \u2014 check back closer to Election Day, or use \u201cFind your polling place\u201d above.`,
   },
   budget: {
     notice:
@@ -1419,6 +1424,10 @@ const es: Translations = {
     precinct: "Precinto",
     earlyVotingWindow: "Ventana de votaci\u00f3n anticipada",
     cardSource: "Fuente \u00b7 Google Civic",
+    addressNotPublished: (days: number | null) =>
+      days != null && days > 0
+        ? `Las casillas electorales no se publican con tanta anticipaci\u00f3n (faltan ${days} d\u00edas) \u2014 revisa m\u00e1s cerca del d\u00eda de elecciones, o usa "Encuentra tu casilla" arriba.`
+        : `La casilla electoral a\u00fan no est\u00e1 publicada \u2014 revisa m\u00e1s cerca del d\u00eda de elecciones, o usa "Encuentra tu casilla" arriba.`,
   },
   budget: {
     notice:

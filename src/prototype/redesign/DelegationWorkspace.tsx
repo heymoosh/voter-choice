@@ -18,58 +18,38 @@
        of the congress-assessment flow. */
 
 import React, { useState, useEffect } from "react";
-import { AppNav, AppFooter, PollingStatusBar } from "../VoterChoiceApp";
+import {
+  AppNav,
+  AppFooter,
+  PollingStatusBar,
+  useI18n,
+} from "../VoterChoiceApp";
 import { RepCard } from "./RepCard";
 import { SeatChat } from "./SeatChat";
 import { IssueDeltaBanner } from "./IssueDeltaBanner";
 import { issuesForLevel } from "./delegationData";
 
-function tierIntro(section, { userIssues, stateName }) {
-  const fedIssues = issuesForLevel(userIssues || [], "federal")
-    .filter((i) => i.level === "federal")
-    .map((i) => i.interpretation);
-  const stateIssues = issuesForLevel(userIssues || [], "state")
-    .filter((i) => i.level === "state")
-    .map((i) => i.interpretation);
-  const list = (xs) => xs.join(" and ");
-
+function tierIntro(section, { stateName, t }) {
+  const tr = t || ((k) => k);
   const TIERS = {
     "Washington — Federal": {
       place: "WASHINGTON",
-      title: "Your seat at the national table",
+      title: tr("scorecard.tierFedTitle"),
       what: () => (
         <>
           Three people who write <b>federal</b> law — and answer for it on
           roll-call votes.
-          {fedIssues.length > 0 && (
-            <>
-              {" "}
-              Of your priorities, Washington decides <b>{list(fedIssues)}</b>.
-            </>
-          )}
         </>
       ),
     },
     "State legislature — State": {
       place: (stateName || "STATE").toUpperCase(),
-      title: "Closer to home",
-      what: () => (
-        <>
-          Your state legislature decides what Washington doesn't — schools,
-          infrastructure, and state law.
-          {stateIssues.length > 0 && (
-            <>
-              {" "}
-              Of your priorities, your statehouse holds the pen on{" "}
-              <b>{list(stateIssues)}</b>.
-            </>
-          )}
-        </>
-      ),
+      title: tr("scorecard.tierStatTitle"),
+      what: () => <>{tr("scorecard.tierStatWhat")}</>,
     },
     "Statewide — Executive": {
       place: "STATEWIDE",
-      title: "Offices that don't take roll-call votes",
+      title: tr("scorecard.tierExecTitle"),
       what: () => (
         <>
           A governor signs and vetoes — there's no voting record to score. So we
@@ -90,13 +70,12 @@ export function ScorecardPane({
   address,
   issues,
   precinct,
-  polisPreview,
   onSelectSeat,
   onPrint,
   onContinueElsewhere,
-  onSeeStanding,
   onEditIssues,
 }) {
+  const { t } = useI18n();
   const doneCount = Object.keys(verdicts).filter((id) =>
     seats.some((s) => s.id === id),
   ).length;
@@ -105,38 +84,54 @@ export function ScorecardPane({
   seats.forEach((s) => {
     (sections[s.section] = sections[s.section] || []).push(s);
   });
+  // Lead with a percentage (B): same kept/total roll-up as the print sheet,
+  // shown as "% aligned" with the raw count as secondary. Null when there's
+  // no scored voting record so the row stays honest (handles total 0 → no NaN).
+  const alignFor = (s) => {
+    if (s.researched || !s.alignmentEntry?.scores) return null;
+    const kept = s.alignmentEntry.scores.reduce(
+      (n, sc) => n + (sc.kept ?? 0),
+      0,
+    );
+    const total = s.alignmentEntry.scores.reduce(
+      (n, sc) => n + (sc.total ?? 0),
+      0,
+    );
+    if (total === 0) return null;
+    return `${Math.round((kept / total) * 100)}% aligned (${kept}/${total} votes)`;
+  };
 
   return (
     <>
       <div className="b-head">
         <div className="row">
-          <h3>Your scorecard</h3>
+          <h3>{t("scorecard.heading")}</h3>
           <span className="sub">
-            {doneCount}/{seats.length} · Draft
+            {doneCount}/{seats.length} · {t("scorecard.draft")}
           </span>
         </div>
         <address>
           {address || "—"}
-          {precinct ? ` · Precinct ${precinct}` : ""}
+          {precinct ? ` · ${t("scorecard.precinct")} ${precinct}` : ""}
         </address>
       </div>
 
       <div className="b-issues-edit">
         <div className="b-issues-head">
-          <span className="b-issues-lab">Your issues</span>
+          <span className="b-issues-lab">{t("scorecard.yourIssues")}</span>
           {onEditIssues && (
             <button
               className="b-issues-btn"
               onClick={onEditIssues}
               data-testid="edit-issues-scorecard"
             >
-              Edit
+              {t("scorecard.edit")}
             </button>
           )}
         </div>
         <ol className="b-issues-list">
           {issues.map((iss, i) => (
-            <li key={i}>
+            <li key={`${i}-${iss.canonicalIssue || iss.interpretation}`}>
               <span className="n">{i + 1}</span>
               {iss.interpretation}
             </li>
@@ -162,13 +157,15 @@ export function ScorecardPane({
             {ss.map((s) => {
               const v = verdicts[s.id];
               const isActive = s.id === activeSeatId;
+              const notUp2026 = s.nextElection?.onBallot2026 === false;
               return (
                 <div
                   key={s.id}
                   className={
                     "b-row " +
                     (v ? "done " : "pending ") +
-                    (isActive ? "active " : "")
+                    (isActive ? "active " : "") +
+                    (notUp2026 ? "not-up-2026 " : "")
                   }
                   onClick={() => onSelectSeat(s.id)}
                 >
@@ -177,22 +174,33 @@ export function ScorecardPane({
                     <div className="race">
                       {s.office} · {s.districtLabel}
                     </div>
+                    {notUp2026 && (
+                      <div className="b-not-up">
+                        Not up for election in 2026
+                      </div>
+                    )}
                     <div className="pick">
                       {v ? (
                         <>
                           {s.candidate?.name ?? s.blindLabel} —{" "}
                           <span className={"verdict-chip " + v}>
-                            {v === "keep" ? "WORTH KEEPING" : "TIME TO REPLACE"}
+                            {v === "keep"
+                              ? t("scorecard.worthKeeping")
+                              : t("scorecard.timeToReplace")}
                           </span>
                         </>
                       ) : isActive ? (
-                        "Reviewing now…"
+                        t("scorecard.reviewingNow")
                       ) : (
-                        "Not yet reviewed"
+                        t("scorecard.notYetReviewed")
                       )}
                     </div>
-                    {v && s.nextElection && (
-                      <div className="why">{s.nextElection.label}</div>
+                    {v && (alignFor(s) || s.nextElection) && (
+                      <div className="why">
+                        {[alignFor(s), s.nextElection?.label]
+                          .filter(Boolean)
+                          .join(" · ")}
+                      </div>
                     )}
                   </div>
                 </div>
@@ -202,33 +210,13 @@ export function ScorecardPane({
         ))}
       </div>
 
-      <div className="standing-cta">
-        <div className="kick">You're not alone</div>
-        <div className="dots">
-          <i style={{ background: "var(--civic)", opacity: 0.35 }}></i>
-          <i style={{ background: "var(--civic)", opacity: 0.55 }}></i>
-          <i style={{ background: "var(--civic)", opacity: 0.8 }}></i>
-          <i style={{ background: "var(--civic)", opacity: 0.55 }}></i>
-          <i style={{ background: "var(--gold)" }}></i>
-        </div>
-        <h4>See where you stand</h4>
-        <p>
-          {polisPreview
-            ? `Your priorities, mapped against ${polisPreview.sampleSize.toLocaleString("en-US")} people in ${polisPreview.label} — placed by what they care about, not party. You overlap more than the noise suggests.`
-            : "Your priorities, mapped against everyone who's finished this — placed by what they care about, not party. You overlap more than the noise suggests."}
-        </p>
-        <button onClick={onSeeStanding}>
-          See where you stand <span aria-hidden="true">→</span>
-        </button>
-      </div>
-
       <div className="b-foot">
         <button className="primary" disabled={!canPrint} onClick={onPrint}>
-          <span>Print my scorecard (PDF)</span>
+          <span>{t("scorecard.printBtn")}</span>
           <span className="arrow">→</span>
         </button>
         <button onClick={onContinueElsewhere}>
-          <span>Continue in another chatbot</span>
+          <span>{t("scorecard.handoffBtn")}</span>
           <span className="arrow">↗</span>
         </button>
       </div>
@@ -269,13 +257,13 @@ export function DelegationWorkspace({
   onRevisitSeat,
   onDismissDeltas,
 }) {
+  const { t } = useI18n();
   const activeSeat = seats.find((s) => s.id === activeSeatId) || seats[0];
   const activeIdx = seats.findIndex((s) => s.id === activeSeat.id);
   const doneCount = Object.keys(verdicts).filter((id) =>
     seats.some((s) => s.id === id),
   ).length;
-  const progressPct = Math.round((doneCount / seats.length) * 100);
-  const intro = tierIntro(activeSeat.section, { userIssues, stateName });
+  const intro = tierIntro(activeSeat.section, { stateName, t });
 
   /* Mobile: same contract as the shipped WorkspaceView — the center pane
      is hidden <768px until a row is tapped, then opens as a fixed overlay
@@ -288,11 +276,6 @@ export function DelegationWorkspace({
     onSelectSeat(seatId);
     setTimeout(() => setMobileChatOpen(true), 0);
   }
-
-  const sections = {};
-  seats.forEach((s) => {
-    (sections[s.section] = sections[s.section] || []).push(s);
-  });
 
   function commitVerdict(v) {
     onVerdict(activeSeat.id, v);
@@ -320,78 +303,13 @@ export function DelegationWorkspace({
         className="ws-wrap"
         data-mobile-chat={mobileChatOpen ? "open" : "closed"}
       >
-        {/* LEFT RAIL */}
-        <aside className="ws-rail">
-          <div className="progress">
-            <div className="top">
-              <span>Progress</span>
-              <span>
-                {doneCount} / {seats.length}
-              </span>
-            </div>
-            <div className="big">{progressPct}% reviewed</div>
-            <div className="bar">
-              <div className="fill" style={{ width: progressPct + "%" }}></div>
-            </div>
-          </div>
-
-          <div className="priorities">
-            <div className="top">
-              <span className="lab">Your issues</span>
-              {onEditIssues && (
-                <button
-                  className="linklike"
-                  onClick={onEditIssues}
-                  data-testid="edit-issues-rail"
-                >
-                  Edit
-                </button>
-              )}
-            </div>
-            <ol>
-              {userIssues.map((iss, i) => (
-                <li key={iss.canonicalIssue || i}>{iss.interpretation}</li>
-              ))}
-            </ol>
-          </div>
-
-          {Object.entries(sections).map(([section, ss]) => (
-            <div key={section}>
-              <div className="seclabel">{section}</div>
-              <ul className="race-list">
-                {ss.map((s) => (
-                  <li
-                    key={s.id}
-                    className={
-                      (verdicts[s.id] ? "done " : "") +
-                      (s.id === activeSeat.id ? "active" : "")
-                    }
-                    onClick={() => selectAndOpen(s.id)}
-                  >
-                    <span className="ind"></span>
-                    <span>
-                      {blindMode && !revealed.has(s.id)
-                        ? s.blindLabel.replace(/^Your /, "")
-                        : s.candidate
-                          ? s.candidate.name.split(" ").pop() +
-                            " · " +
-                            s.office.replace(/^U\.S\.\s+/, "")
-                          : s.blindLabel.replace(/^Your /, "")}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </aside>
-
         {/* CENTER — active seat */}
         <section className="ws-chat rep-center">
           <header className="head rep-center-head">
             <button
               className="ws-mobile-back ws-mobile-back-hide-desktop"
               onClick={() => setMobileChatOpen(false)}
-              aria-label="Back to scorecard"
+              aria-label={t("scorecard.backToScorecard")}
             >
               ←
             </button>
@@ -431,11 +349,29 @@ export function DelegationWorkspace({
           />
 
           {doneCount === seats.length && (
-            <div className="all-done">
-              <b>That's your whole delegation.</b> One more thing worth seeing —
-              <button className="linklike" onClick={onSeeStanding}>
-                where you stand among your neighbors →
+            <div className="all-done" data-testid="all-done">
+              <div className="all-done-kick">You're done</div>
+              <b>You've reviewed all your representatives.</b>
+              <p className="all-done-sub">
+                Take your verdicts with you — print a scorecard you can bring to
+                the ballot box.
+              </p>
+              <button
+                className="all-done-print"
+                onClick={onPrint}
+                data-testid="all-done-print"
+              >
+                <span>Print My Scorecard</span>
+                <span className="arrow" aria-hidden="true">
+                  →
+                </span>
               </button>
+              <div className="all-done-also">
+                One more thing worth seeing —
+                <button className="linklike" onClick={onSeeStanding}>
+                  where you stand among your neighbors →
+                </button>
+              </div>
             </div>
           )}
 
@@ -465,11 +401,9 @@ export function DelegationWorkspace({
             address={address}
             issues={userIssues}
             precinct={pollingInfo?.precinct || ""}
-            polisPreview={polisPreview}
             onSelectSeat={selectAndOpen}
             onPrint={onPrint}
             onContinueElsewhere={onContinueElsewhere}
-            onSeeStanding={onSeeStanding}
             onEditIssues={onEditIssues}
           />
         </aside>
