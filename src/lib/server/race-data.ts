@@ -37,6 +37,7 @@ import {
   isIssuePacBucket,
 } from "./donors";
 import { lookupCandidateData, buildCandidateKey } from "./candidate-data";
+import { lookupChamberMedian, type FederalChamber } from "./chamber-median";
 import { getIssueLabel } from "../canonicalIssues";
 import {
   ISSUE_PAC_LABEL_PREFIX,
@@ -353,6 +354,19 @@ export function alignmentEntryFromResults(
 }
 
 /**
+ * Derive the FederalChamber from a jurisdiction string, or return null for
+ * non-federal / state / null jurisdictions. Used to look up the chamber-wide
+ * funding median.
+ */
+function federalChamberFromJurisdiction(
+  jurisdiction: string | null,
+): FederalChamber | null {
+  if (jurisdiction === "federal-house") return "house";
+  if (jurisdiction === "federal-senate") return "senate";
+  return null;
+}
+
+/**
  * Assemble the full race-data payload by fanning out to the DB lookups.
  *
  * Orchestration only — the mapping logic lives in the pure helpers above so
@@ -368,6 +382,16 @@ export async function assembleRaceData(
   );
   const legislativeCoverage = jurisdiction !== null;
   const hasIssues = input.issues.length > 0;
+
+  // Chamber-median lookup — one DB call per race (not per candidate), cached
+  // at the caller level via /api/race-data's s-maxage=3600. Only fires for
+  // federal House and Senate races; state/local gets undefined (omit line).
+  const federalChamber = federalChamberFromJurisdiction(jurisdiction);
+  const cycle = input.electionCycle ?? "2026";
+  const chamberMedian =
+    federalChamber !== null
+      ? await lookupChamberMedian(federalChamber, cycle)
+      : undefined;
 
   const candidates: RacePatternsCandidate[] = [];
   const alignmentEntries: AlignmentScoresEntry[] = [];
@@ -470,6 +494,10 @@ export async function assembleRaceData(
         ? { donorDataSource: donorFields.donorDataSource }
         : {}),
       ...(donorFields.fundingMix ? { fundingMix: donorFields.fundingMix } : {}),
+      // Chamber-median: same value for every candidate in the race (it is a
+      // per-chamber aggregate, not per-candidate). Omitted when undefined so
+      // callers can gate the comparison line on presence rather than truthiness.
+      ...(chamberMedian !== undefined ? { chamberMedian } : {}),
       // Endorsements + retrospective: no canonical DB source. The prototype
       // nulls these for every candidate, so we match it.
       endorsements: null,

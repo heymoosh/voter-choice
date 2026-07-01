@@ -26,7 +26,13 @@ const LIMIT = 1500;
 // disambiguation tags (Alignment 2a) plus the tightened coverage_access
 // sub-issue definition are both load-bearing — raise the ceiling per the
 // convention above rather than trimming approved guidance.
-const THEME_EXTRACTION_LIMIT = 7200;
+// Bumped 7200 -> 7300 (2026-06-16): added an explicit SPLIT rule so a
+// compound first message ("AI safety and healthcare costs") yields a
+// SEPARATE theme per concern instead of collapsing into one literal-named
+// theme that matches no canonicalIssue (PR #114 regression that broke vote
+// evaluation). The rule is correctness-critical — raise the ceiling per the
+// same convention rather than dropping it.
+const THEME_EXTRACTION_LIMIT = 7300;
 // P0 #2 (live audit): the race-deep-dive prompt now carries an explicit
 // candidate-resolution rule so the model resolves surnames against
 // <candidates> instead of bouncing the disambiguation back to the voter.

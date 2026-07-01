@@ -309,17 +309,21 @@ describe("budget", () => {
       expect(wasHandoffServed()).toBe(true);
     });
 
-    it("getBudgetStatusAsync fails open (in-memory state) on Redis error", async () => {
+    it("getBudgetStatusAsync fails CLOSED (exhausted/handoff) on Redis error", async () => {
       vi.spyOn(globalThis, "fetch").mockRejectedValue(
         new Error("Redis connection refused"),
       );
 
-      // Error path: falls back to in-memory state (starts at 0 on fresh process)
-      // rather than assuming 100% spend. This prevents the budget gate from
-      // misfiring and showing the "used up" modal at 1.7% real spend.
+      // Fail-closed: when Redis is unreadable we cannot confirm remaining budget,
+      // so we treat the community key as fully spent (MONTHLY_BUDGET_USD) with
+      // handoffServed=false. This stops new LLM spend on the shared key while
+      // still allowing the voter to receive the handoff completion (tier="handoff",
+      // not "exhausted"), rather than serving an open/zero-spend status that risks
+      // uncapped spend during an outage.
       const status = await getBudgetStatusAsync();
-      expect(status.tier).toBe("normal");
-      expect(status.percent).toBe(0);
+      expect(status.tier).toBe("handoff"); // handoffServed=false → handoff not exhausted
+      expect(status.percent).toBe(100);
+      expect(status.estimatedSpendUSD).toBe(50);
     });
   });
 });
