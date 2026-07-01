@@ -13,6 +13,46 @@ import {
 } from "drizzle-orm/pg-core";
 
 // ---------------------------------------------------------------------------
+// chat_usage_metrics — anonymous per-request AI cost telemetry
+//
+// Privacy: NO identifier of any kind. No IP address, no session id, no user
+// id, no address, no request body, no prompt text. Operational numbers only:
+// model, token counts, estimated cost, and an optional call_kind
+// discriminator. Mirrors the voter_issue_events privacy contract ("NO
+// identifier linking rows to a person, NO address, NO free-text verbatim").
+// Use for aggregate cost monitoring and volume/spike detection only — never
+// for tracing or profiling individual users or sessions.
+// ---------------------------------------------------------------------------
+export const chatUsageMetrics = pgTable(
+  "chat_usage_metrics",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    recordedAt: timestamp("recorded_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    model: text("model").notNull(),
+    /** 'chat' | 'research' — distinguishes main conversation vs sub-agent calls. */
+    callKind: text("call_kind").default("chat"),
+    inputTokens: integer("input_tokens").notNull().default(0),
+    cacheReadTokens: integer("cache_read_tokens").notNull().default(0),
+    cacheWriteTokens: integer("cache_write_tokens").notNull().default(0),
+    outputTokens: integer("output_tokens").notNull().default(0),
+    webSearchCount: integer("web_search_count").notNull().default(0),
+    /** Computed from model rates at record time; stored as numeric for query aggregation. */
+    estimatedCostUsd: numeric("estimated_cost_usd", {
+      precision: 10,
+      scale: 8,
+    })
+      .notNull()
+      .default("0"),
+  },
+  (t) => [
+    index("chat_usage_metrics_recorded_at_idx").on(t.recordedAt),
+    index("chat_usage_metrics_model_idx").on(t.model),
+  ],
+);
+
+// ---------------------------------------------------------------------------
 // candidates
 // ---------------------------------------------------------------------------
 export const candidates = pgTable(
