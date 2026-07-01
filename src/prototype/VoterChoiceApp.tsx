@@ -6774,4 +6774,5 @@ export {
   AITimeoutBanner,
   IssueRow,
   AllVotesPanel,
+  SettingsPanel,
 };
