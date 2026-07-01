@@ -1107,98 +1107,154 @@ function AlignmentScoreBanner({ candidate, alignmentEntry, userIssues, expandedI
   );
 }
 
-/* ── single row of the banner (private to AlignmentScoreBanner) ── */
-function AlignmentIssueRow({ issue, score, candidate, isOpen, onToggle, anonCtx }) {
-  // ── Pillar 2: web_search branch ──────────────────────────────────────────
-  // web_search scores have no kept/total voting record. Instead we show a
-  // directional indicator keyed to resolvedStance + confidence chip + evidence.
-  // Visually distinct from voting_record bars (no %, no vote count).
-  //
-  // resolvedStance from the structured sub-agent is a 4-value enum:
-  //   "in_favor"  → candidate supports the voter's issue   → ALIGNED (green)
-  //   "opposed"   → candidate opposes the voter's issue    → OPPOSED (red)
-  //   "mixed"     → mixed record                           → MIXED (neutral)
-  //   "unclear"   → insufficient evidence                  → no direction badge
-  if (score && score.sourceType === 'web_search') {
-    const stance = (score.resolvedStance || '').toLowerCase();
-    // Structured enum first; fall back to prose heuristic for legacy data.
-    var directionLabel = null;
-    var directionColor = 'oklch(0.55 0.05 260)'; // neutral blue
-    if (stance === 'in_favor') {
-      directionLabel = 'ALIGNED';
-      directionColor = 'oklch(0.40 0.12 145)'; // green
-    } else if (stance === 'opposed') {
-      directionLabel = 'OPPOSED';
-      directionColor = 'oklch(0.50 0.15 25)'; // red
-    } else if (stance === 'mixed') {
-      directionLabel = 'MIXED';
-      // neutral — no strong directional signal
-    } else if (stance === 'unclear') {
-      directionLabel = null; // no direction badge — insufficient evidence
-    } else {
-      // Legacy prose fallback: scan for negative verbs
-      var proseAligns = !/\b(oppos|against|repeal|block|ban|cut)\b/i.test(score.resolvedStance || '');
-      directionLabel = proseAligns ? 'ALIGNED' : 'OPPOSED';
-      directionColor = proseAligns ? 'oklch(0.40 0.12 145)' : 'oklch(0.50 0.15 25)';
-    }
-    const confidenceChip = score.confidence
-      ? score.confidence.charAt(0).toUpperCase() + score.confidence.slice(1)
-      : null;
-    const evidenceLinks = (score.evidence || []).filter(e => e && e.url);
-    const hasEvidence = evidenceLinks.length > 0;
+/* ── web_search alignment row (private to AlignmentScoreBanner) ──
+   No kept/total roll-call record. Same canonical labels ("WITH YOU" /
+   "AGAINST YOU") and the same progressive-disclosure drill pattern as the
+   voting_record path: a clean summary by default, the cited public-statement
+   sources revealed on demand — so House-style researched cards behave exactly
+   like Senate-style voting-record cards (one unified candidate-card IA).
 
-    return (
-      <div className="cv2-iss-row" data-testid="web-search-alignment-row">
-        {/* Same grid structure as the voting_record path — topic left,
-            directional badge right (replaces the % pct column). */}
-        <div className="cv2-iss-head">
-          <div className="topic">
-            <div className="name">{issue.interpretation}</div>
-            <div className="meta">
-              {stance === 'in_favor' ? 'Supports this position'
-                : stance === 'opposed' ? 'Opposes this position'
-                : stance === 'mixed' ? 'Mixed record on this issue'
-                : stance === 'unclear' ? 'Position unclear — limited public record'
-                : score.resolvedStance}
-            </div>
-            {/* Evidence URLs inline below the meta — keeps the grid clean */}
-            {hasEvidence && (anonCtx?.blindMode ? (
-              // Blinded: the analysis (name-free) shows, but evidence URLs/summaries
-              // can carry the candidate's name — hold them back until reveal.
-              <div className="meta" style={{ marginTop: '4px', fontStyle: 'italic', opacity: 0.7 }}>
-                Sources shown when you reveal the candidate
-              </div>
-            ) : (
-              <div className="meta" style={{ marginTop: '4px', display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                {evidenceLinks.map((ev, i) => (
+   resolvedStance from the structured sub-agent is a 4-value enum:
+     "in_favor"  → candidate votes/stands with the voter → WITH YOU (green)
+     "opposed"   → candidate stands against the voter     → AGAINST YOU (red)
+     "mixed"     → mixed record                           → MIXED (neutral)
+     "unclear"   → insufficient evidence                  → no direction badge */
+function WebSearchAlignmentRow({ issue, score, anonCtx }) {
+  const [open, setOpen] = useState(false);
+  const stance = (score.resolvedStance || '').toLowerCase();
+  // Structured enum first; fall back to prose heuristic for legacy data.
+  var directionLabel = null;
+  var directionColor = 'oklch(0.55 0.05 260)'; // neutral blue
+  if (stance === 'in_favor') {
+    directionLabel = 'WITH YOU';
+    directionColor = 'oklch(0.40 0.12 145)'; // green
+  } else if (stance === 'opposed') {
+    directionLabel = 'AGAINST YOU';
+    directionColor = 'oklch(0.50 0.15 25)'; // red
+  } else if (stance === 'mixed') {
+    directionLabel = 'MIXED';
+    // neutral — no strong directional signal
+  } else if (stance === 'unclear') {
+    directionLabel = null; // no direction badge — insufficient evidence
+  } else {
+    // Legacy prose fallback: scan for negative verbs
+    var proseAligns = !/\b(oppos|against|repeal|block|ban|cut)\b/i.test(score.resolvedStance || '');
+    directionLabel = proseAligns ? 'WITH YOU' : 'AGAINST YOU';
+    directionColor = proseAligns ? 'oklch(0.40 0.12 145)' : 'oklch(0.50 0.15 25)';
+  }
+  const confidenceChip = score.confidence
+    ? score.confidence.charAt(0).toUpperCase() + score.confidence.slice(1)
+    : null;
+  const evidenceLinks = (score.evidence || []).filter(e => e && e.url);
+  const hasEvidence = evidenceLinks.length > 0;
+  // Blind mode: the name-free analysis shows, but evidence URLs/summaries can
+  // carry the candidate's name — keep the row non-expandable until reveal.
+  const canDrill = hasEvidence && !anonCtx?.blindMode;
+  const summaryMeta =
+    stance === 'in_favor' ? 'From public statements'
+      : stance === 'opposed' ? 'From public statements'
+      : stance === 'mixed' ? 'Mixed record on this issue'
+      : stance === 'unclear' ? 'Position unclear — limited public record'
+      : score.resolvedStance;
+
+  return (
+    <div
+      className={
+        'cv2-iss-row' + (open ? ' open' : '') + (canDrill ? ' has-drill' : '')
+      }
+      data-testid="web-search-alignment-row"
+    >
+      {/* Same grid structure as the voting_record path — topic left,
+          directional badge right (replaces the % pct column). */}
+      <button
+        className="cv2-iss-head"
+        onClick={canDrill ? () => setOpen(!open) : undefined}
+        aria-expanded={canDrill ? open : undefined}
+      >
+        <div className="topic">
+          <div className="name">{issue.interpretation}</div>
+          <div className="meta">
+            {summaryMeta}
+            {hasEvidence
+              ? anonCtx?.blindMode
+                ? ' · sources shown when you reveal the candidate'
+                : open
+                  ? ' · cited source shown below'
+                  : ' · tap for the cited source'
+              : ' · no source curated'}
+          </div>
+        </div>
+        {/* Right column: directional badge + confidence chip, matching the
+            position/size of the voting_record .pct column. */}
+        <div className="cv2-ws-col">
+          {directionLabel && (
+            <span className="cv2-ws-badge" style={{ background: directionColor }}>
+              {directionLabel}
+            </span>
+          )}
+          {confidenceChip && (
+            <span className="cv2-ws-conf">{confidenceChip} conf.</span>
+          )}
+        </div>
+      </button>
+      {open && canDrill && (
+        <div className="cv2-drill">
+          <div className="cv2-drill-head">
+            <span className="lab">Why this read?</span>
+            <span className="meta">No votes — researched &amp; cited</span>
+          </div>
+          <div className="cv2-votes">
+            {evidenceLinks.map((ev, i) => (
+              <div className="cv2-vote" key={i}>
+                <div className="cv2-vote-head">
+                  <div className="bill">
+                    <span className="num">WEB RESEARCH</span>
+                    <span className="ttl">{issue.interpretation}</span>
+                  </div>
+                  {directionLabel && (
+                    <div
+                      className={
+                        'vote-badge ' +
+                        (stance === 'in_favor'
+                          ? 'yea'
+                          : stance === 'opposed'
+                            ? 'nay'
+                            : 'other')
+                      }
+                    >
+                      {directionLabel}
+                    </div>
+                  )}
+                </div>
+                {ev.summary && <p className="cv2-vote-narr">“{ev.summary}”</p>}
+                <div className="cv2-vote-cite">
+                  <span className="src-chip">
+                    Web search{confidenceChip ? ` · ${confidenceChip} confidence` : ''}
+                  </span>
                   <a
-                    key={i}
                     href={ev.url}
+                    className="src-link"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="cv2-evidence-link"
                     data-testid="web-search-evidence-link"
                   >
-                    {ev.summary || `Source ${i + 1}`} →
+                    View source →
                   </a>
-                ))}
+                </div>
               </div>
             ))}
           </div>
-          {/* Right column: directional badge + confidence chip, matching the
-              position/size of the voting_record .pct column. */}
-          <div className="cv2-ws-col">
-            {directionLabel && (
-              <span className="cv2-ws-badge" style={{ background: directionColor }}>
-                {directionLabel}
-              </span>
-            )}
-            {confidenceChip && (
-              <span className="cv2-ws-conf">{confidenceChip} conf.</span>
-            )}
-          </div>
         </div>
-      </div>
+      )}
+    </div>
+  );
+}
+
+/* ── single row of the banner (private to AlignmentScoreBanner) ── */
+function AlignmentIssueRow({ issue, score, candidate, isOpen, onToggle, anonCtx }) {
+  if (score && score.sourceType === 'web_search') {
+    return (
+      <WebSearchAlignmentRow issue={issue} score={score} anonCtx={anonCtx} />
     );
   }
 
