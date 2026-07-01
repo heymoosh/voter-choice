@@ -70,6 +70,18 @@ jobs:
           echo "DATABASE_URL=$DATABASE_URL" >> "$GITHUB_ENV"
           echo "::add-mask::$DATABASE_URL"
 
+      # Guards the 2026-06-26 silent-blank bug: prod sat BEHIND its migrations
+      # (0005/0006 unapplied) so voter_issue_events / sub_issue were missing and
+      # alignment quietly returned nothing. This fails the deploy LOUDLY if the
+      # target DB is missing any table/column/index the migrations declare.
+      # DATABASE_URL is written to $GITHUB_ENV by the Bitwarden step above, so
+      # this is a LIVE gate: it introspects that DB and exits 1 on drift.
+      # --require-db means a MISSING/empty DATABASE_URL also fails the deploy
+      # (rather than silently skipping) — so the gate can never silently no-op.
+      # Prod confirmed in-sync 2026-06-30 before enabling --require-db.
+      - name: Schema drift check
+        run: npx tsx scripts/ops/check-schema-drift.ts --require-db
+
       - name: Install Vercel CLI
         run: npm install -g vercel
 

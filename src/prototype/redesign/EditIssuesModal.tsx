@@ -7,12 +7,20 @@
    touched — the delta banner flags seats worth revisiting instead. */
 
 import React from "react";
+import { useI18n } from "../VoterChoiceApp";
 import { IssueConversation, useIssueConversation } from "./IssueConversation";
 
 export function EditIssuesModal({ issues, onApply, onCancel, onBudgetBlock }) {
+  const { t } = useI18n();
   const convo = useIssueConversation({
     seedIssues: issues,
     onBudgetBlock,
+    strings: {
+      starterAck: t("intake.starterAck"),
+      starterThemeSingular: t("intake.starterThemeSingular"),
+      starterThemePlural: t("intake.starterThemePlural"),
+      errorMsg: t("intake.errorMsg"),
+    },
   });
 
   return (
@@ -27,32 +35,30 @@ export function EditIssuesModal({ issues, onApply, onCancel, onBudgetBlock }) {
       <div className="amend-card" onClick={(e) => e.stopPropagation()}>
         <header className="be-head">
           <div>
-            <div className="be-eyebrow">Edit your issues</div>
-            <h3 id="edit-issues-title">
-              Re-rank, rename, add, or remove — or just tell me what's changed.
-            </h3>
+            <div className="be-eyebrow">{t("editIssues.eyebrow")}</div>
+            <h3 id="edit-issues-title">{t("editIssues.heading")}</h3>
           </div>
-          <button className="be-x" onClick={onCancel} aria-label="Cancel">
+          <button
+            className="be-x"
+            onClick={onCancel}
+            aria-label={t("editIssues.cancelAriaLabel")}
+          >
             ×
           </button>
         </header>
 
-        <p className="be-lede">
-          The verdicts you've already made are kept. When you apply, I re-score
-          every member against the new list and flag any whose alignment shifts
-          past the noise floor.
-        </p>
+        <p className="be-lede">{t("editIssues.lede")}</p>
 
         <IssueConversation
           convo={convo}
-          primaryLabel="Apply & re-score →"
+          primaryLabel={t("editIssues.primaryBtn")}
           onPrimary={onApply}
-          placeholder="What's changed? More context about what you value, a new issue, a different priority order…"
+          placeholder={t("editIssues.placeholder")}
         />
 
         <footer className="be-foot">
           <button className="linklike" onClick={onCancel}>
-            Cancel — keep my current issues
+            {t("editIssues.cancelLink")}
           </button>
         </footer>
       </div>

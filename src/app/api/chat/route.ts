@@ -17,6 +17,7 @@ import {
   recordBlock,
   type BlockReason,
 } from "../../../lib/server/usage-telemetry";
+import { recordChatUsage } from "../../../lib/server/chat-usage-metrics";
 import { lookupDonorCoalition } from "../../../lib/server/donors";
 import { runResearchSubAgent } from "../../../lib/server/research-sub-agent";
 import {
@@ -1216,6 +1217,7 @@ interface CreateSSEStreamOptions {
   initialStream: AsyncIterable<Anthropic.MessageStreamEvent>;
   requestTier: BudgetTier;
   client: Anthropic;
+  model: string;
   createContinuationStream: (
     assistantContent: Anthropic.MessageParam["content"],
     toolResults: Anthropic.ToolResultBlockParam[],
@@ -1225,8 +1227,13 @@ interface CreateSSEStreamOptions {
 function createSSEStream(
   options: CreateSSEStreamOptions,
 ): ReadableStream<Uint8Array> {
-  const { initialStream, requestTier, createContinuationStream, client } =
-    options;
+  const {
+    initialStream,
+    requestTier,
+    createContinuationStream,
+    client,
+    model,
+  } = options;
   const encoder = new TextEncoder();
   const usage: StreamUsage = {
     input: 0,
@@ -1381,6 +1388,19 @@ function createSSEStream(
             cacheWriteTokens: usage.cacheWrite,
             searchCount: usage.searchCount,
           });
+          // Anonymous per-request cost telemetry. Fail-soft — a metrics
+          // write failure never affects the chat response. Stores NO
+          // identifier (no session, no IP, no address, no prompt text).
+          await recordChatUsage(
+            {
+              inputTokens: usage.input,
+              cacheReadTokens: usage.cachedInput,
+              cacheWriteTokens: usage.cacheWrite,
+              outputTokens: usage.output,
+              webSearchCount: usage.searchCount,
+            },
+            { model, callKind: "chat" },
+          );
         }
         // If this was a handoff-tier request, mark it served so the next
         // request at exhaustion returns 503 instead of another handoff.
@@ -1709,6 +1729,7 @@ export async function POST(request: NextRequest) {
         initialStream,
         requestTier: budget.tier,
         client: anthropic,
+        model,
         createContinuationStream,
       }),
       {
