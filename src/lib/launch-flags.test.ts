@@ -22,7 +22,6 @@ afterEach(() => {
 
 describe("isLaunchFlagEnabled — default-OFF behavior", () => {
   it("is OFF when the env var is unset", () => {
-    vi.stubEnv("LAUNCH_TEST_EXAMPLE", "");
     delete process.env.LAUNCH_TEST_EXAMPLE;
     expect(isLaunchFlagEnabled("LAUNCH_TEST_EXAMPLE")).toBe(false);
   });
