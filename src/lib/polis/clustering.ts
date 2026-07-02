@@ -321,8 +321,14 @@ export function clusterVectors(
  * threshold). This is the strictest interpretation: "at least X% of the
  * cluster actively agreed."
  *
- * Returns an empty array when clusters is null/empty, or when no statement
- * clears the threshold in every cluster.
+ * Empty (size-0) clusters are excluded before the agreement check, mirroring
+ * `detectDividedState`'s `c.size > 0` filter — a phantom cluster with no
+ * members carries no signal and must not veto consensus among clusters that
+ * do have members.
+ *
+ * Returns an empty array when clusters is null/empty (or every cluster is
+ * empty), or when no statement clears the threshold in every non-empty
+ * cluster.
  */
 export function findConsensusStatements(
   vectors: ResponseVector[],
@@ -331,6 +337,9 @@ export function findConsensusStatements(
 ): ConsensusStatement[] {
   if (!clusters || clusters.length === 0) return [];
 
+  const nonEmptyClusters = clusters.filter((c) => c.size > 0);
+  if (nonEmptyClusters.length === 0) return [];
+
   const statementIds = collectStatementIds(vectors);
   const consensus: ConsensusStatement[] = [];
 
@@ -338,12 +347,7 @@ export function findConsensusStatements(
     const clusterAgreement: Array<{ clusterId: number; agreePct: number }> = [];
     let allClear = true;
 
-    for (const cluster of clusters) {
-      if (cluster.size === 0) {
-        // Empty cluster: cannot clear threshold — no consensus possible
-        allClear = false;
-        break;
-      }
+    for (const cluster of nonEmptyClusters) {
       const agreeCount = cluster.memberIndices.reduce((acc, idx) => {
         return acc + (vectors[idx][stmtId] === "agree" ? 1 : 0);
       }, 0);
