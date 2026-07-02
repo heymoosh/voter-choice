@@ -81,3 +81,30 @@ describe("parseThemeRefinement", () => {
     expect(out.themes).toHaveLength(2);
   });
 });
+
+// #175 — the parser surfaces whether THIS turn asked a disambiguation question
+// (pole or novel-concept), so the client can count it against the cap without
+// re-inferring from prose. The signal is the open-ended tail the prompt appends
+// to every disambiguation question and to nothing else — NOT a bare trailing
+// "?" (which would over-count ordinary questions).
+describe("parseThemeRefinement — askedDisambiguationQuestion (#175)", () => {
+  it("flags a reply whose prose ends with the open-ended disambiguation tail", () => {
+    const raw = `On guns, are you focused on protecting access, or on tightening laws? …or is it something else?\n\`\`\`json\n${THEMES_JSON}\n\`\`\``;
+    expect(parseThemeRefinement(raw).askedDisambiguationQuestion).toBe(true);
+  });
+
+  it("does NOT flag an ordinary closing question ('want to add anything else?')", () => {
+    const raw = `Got it — want to add anything else?\n\`\`\`json\n${THEMES_JSON}\n\`\`\``;
+    expect(parseThemeRefinement(raw).askedDisambiguationQuestion).toBe(false);
+  });
+
+  it("does NOT flag a plain statement reply", () => {
+    const raw = `Updated your list.\n\`\`\`json\n${THEMES_JSON}\n\`\`\``;
+    expect(parseThemeRefinement(raw).askedDisambiguationQuestion).toBe(false);
+  });
+
+  it("only flags when the tail is the LAST thing in the prose (not mid-prose)", () => {
+    const raw = `…or is it something else? Either way I kept it.\n\`\`\`json\n${THEMES_JSON}\n\`\`\``;
+    expect(parseThemeRefinement(raw).askedDisambiguationQuestion).toBe(false);
+  });
+});
