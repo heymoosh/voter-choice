@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { getDeadlineStatus } from "./getDeadlineStatus";
+import { translations, type Language } from "./translations";
 
 describe("getDeadlineStatus", () => {
   const today = "2026-03-30";
@@ -75,7 +76,7 @@ describe("getDeadlineStatus — Spanish mode", () => {
 
   it("returns Spanish label for 0 days left", () => {
     const result = getDeadlineStatus("2026-03-30", today, "es");
-    expect(result.label).toMatch(/Hoy|hoy/);
+    expect(result.label).toBe("Hoy (último día)");
   });
 
   it("English label unchanged when lang is 'en'", () => {
@@ -83,4 +84,21 @@ describe("getDeadlineStatus — Spanish mode", () => {
     const defaultResult = getDeadlineStatus("2026-04-20", today);
     expect(enResult.label).toBe(defaultResult.label);
   });
+});
+
+describe("getDeadlineStatus — locale registry", () => {
+  const today = "2026-03-30";
+  const languages = Object.keys(translations) as Language[];
+
+  it.each(languages)(
+    "labels for '%s' come from the locale registry",
+    (lang) => {
+      const t = translations[lang].deadline;
+      expect(getDeadlineStatus("2026-03-01", today, lang).label).toBe(t.passed);
+      expect(getDeadlineStatus("2026-03-30", today, lang).label).toBe(t.today);
+      expect(getDeadlineStatus("2026-04-20", today, lang).label).toBe(
+        t.daysLeft(21),
+      );
+    },
+  );
 });
