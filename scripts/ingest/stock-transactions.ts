@@ -31,8 +31,10 @@
  *         HONESTY CONTRACT on the table), representative (plain name, no
  *         bioguide id), district ("TN07" = state + zero-padded district),
  *         owner, filing_id, source_url (PTR PDF on disclosures-clerk.house.gov).
- *       No bioguide id, so House rows match on (state, district) — see
- *       matchHouseCandidate.
+ *       No bioguide id, so House rows match on (state, district) PLUS a
+ *       name cross-check against the seat's incumbent — a seat key alone
+ *       would misattribute a departed member's filings to their successor.
+ *       See matchHouseCandidate / memberNamesMatch.
  *
  *   • Senate — https://github.com/timothycarambat/senate-stock-watcher-data
  *       GET https://raw.githubusercontent.com/timothycarambat/senate-stock-watcher-data/master/aggregate/all_transactions_for_senators.json
@@ -467,21 +469,146 @@ export function parseSenateFilingGroup(
 
 export interface FederalCandidateRow {
   id: string;
+  fullName: string;
   jurisdiction: string;
   state: string | null;
   district: string | null;
   isIncumbent: boolean;
 }
 
-/** Key: "STATE|DD" (zero-padded district) → candidateId. House only, incumbents only. */
+export interface HouseSeatCandidate {
+  id: string;
+  fullName: string;
+}
+
+/** Title tokens stripped only from the FRONT of a name ("Hon. Nancy Pelosi",
+ *  GovTrack's "Rep./Sen./Del./Com."). Front-only so surname particles like
+ *  "Del Rio" survive. */
+const NAME_TITLE_TOKENS = new Set([
+  "hon",
+  "rep",
+  "sen",
+  "del",
+  "com",
+  "dr",
+  "mr",
+  "mrs",
+  "ms",
+]);
+
+/** Generational suffixes stripped from the END of a name (or a trailing
+ *  comma segment). "v" is deliberately excluded — too ambiguous with an
+ *  initial. */
+const NAME_SUFFIX_TOKENS = new Set(["jr", "sr", "ii", "iii", "iv"]);
+
+/**
+ * Normalizes a member name from ANY of the formats seen across our sources
+ * into lowercase tokens, given names first, surname last:
+ *   • House Stock Watcher: "Hon. Matthew Robert Van Epps"
+ *   • GovTrack display (DB fullName): "Rep. Matthew Van Epps [R-TN7]"
+ *   • FEC-normalized (DB fullName): "Van Epps, Matthew"
+ * Handles "Last, First" reordering, leading titles, trailing suffixes
+ * (incl. ", Jr."), diacritics (NFD strip), hyphens (split), apostrophes
+ * (removed), and the GovTrack "[party-state]" tag. Returns [] when nothing
+ * usable remains.
+ */
+export function normalizeMemberNameTokens(
+  raw: string | null | undefined,
+): string[] {
+  if (!raw) return [];
+  const base = raw
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "") // diacritics → ASCII
+    .replace(/\[[^\]]*\]/g, " ") // GovTrack "[D-NJ1]" tag
+    .toLowerCase()
+    .replace(/'/g, "") // O'Rourke → orourke (both sides)
+    .replace(/-/g, " "); // hyphenated names → separate tokens
+
+  const tokenize = (s: string): string[] =>
+    s
+      .replace(/[^a-z\s]/g, " ")
+      .split(/\s+/)
+      .filter(Boolean);
+
+  // "Last, First [Middle][, Jr.]" → "First [Middle] Last"; drop trailing
+  // comma segments that are purely suffixes.
+  const segments = base
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  let reordered: string;
+  if (segments.length >= 2) {
+    const rest = segments
+      .slice(1)
+      .filter((seg) => !tokenize(seg).every((t) => NAME_SUFFIX_TOKENS.has(t)));
+    reordered = [...rest, segments[0]].join(" ");
+  } else {
+    reordered = base;
+  }
+
+  const tokens = tokenize(reordered);
+  while (tokens.length > 0 && NAME_TITLE_TOKENS.has(tokens[0])) tokens.shift();
+  while (
+    tokens.length > 0 &&
+    NAME_SUFFIX_TOKENS.has(tokens[tokens.length - 1])
+  ) {
+    tokens.pop();
+  }
+  return tokens;
+}
+
+/** First-name candidates: the first given token, plus the one after it when
+ *  the first is a bare initial ("K. Michael Conaway" → ["k", "michael"]). */
+function firstNameCandidates(given: string[]): string[] {
+  if (given.length === 0) return [];
+  const out = [given[0]];
+  if (given[0].length === 1 && given.length > 1) out.push(given[1]);
+  return out;
+}
+
+function firstNamePairCompatible(a: string, b: string): boolean {
+  if (a === b) return true;
+  // Bare initial vs full name: "m" ~ "matthew".
+  if (a.length === 1 || b.length === 1) return a[0] === b[0];
+  // Short-form prefix: "greg" ~ "gregory", "ed" ~ "edward". Irregular
+  // nicknames ("bill"/"william") are NOT mapped — a miss is a counted,
+  // fail-open skip (unmatchedMember), never a misattribution; add a
+  // nickname table only if unmatched counts run high in practice.
+  return a.startsWith(b) || b.startsWith(a);
+}
+
+/**
+ * True when two member-name strings plausibly refer to the same person:
+ * surnames (last tokens) must be equal, AND the first given names must be
+ * compatible. Requires a given name on BOTH sides — a bare surname is never
+ * enough, because seat + surname alone misattributes family successions in
+ * the same district (e.g. LA-05's Letlow → Letlow succession in 2021).
+ */
+export function memberNamesMatch(
+  sourceName: string | null | undefined,
+  dbFullName: string | null | undefined,
+): boolean {
+  const a = normalizeMemberNameTokens(sourceName);
+  const b = normalizeMemberNameTokens(dbFullName);
+  if (a.length < 2 || b.length < 2) return false;
+  if (a[a.length - 1] !== b[b.length - 1]) return false;
+  const aFirst = firstNameCandidates(a.slice(0, -1));
+  const bFirst = firstNameCandidates(b.slice(0, -1));
+  return aFirst.some((x) => bFirst.some((y) => firstNamePairCompatible(x, y)));
+}
+
+/** Key: "STATE|DD" (zero-padded district) → incumbent {id, fullName}. House only. */
 export function buildHouseCandidateIndex(
   rows: FederalCandidateRow[],
-): Map<string, string> {
-  const index = new Map<string, string>();
+): Map<string, HouseSeatCandidate> {
+  const index = new Map<string, HouseSeatCandidate>();
   for (const row of rows) {
     if (row.jurisdiction !== "federal-house" || !row.isIncumbent) continue;
     if (!row.state || !row.district) continue;
-    index.set(`${row.state.toUpperCase()}|${row.district}`, row.id);
+    index.set(`${row.state.toUpperCase()}|${row.district}`, {
+      id: row.id,
+      fullName: row.fullName,
+    });
   }
   return index;
 }
@@ -498,13 +625,38 @@ export function buildSenateCandidateIdSet(
   return set;
 }
 
+/**
+ * House rows carry only a SEAT key (state+district) plus the member's name —
+ * and a seat is not an identity: districts change hands mid-cycle
+ * (resignation, death, special election), and the source file is a
+ * multi-year archive, so a departed member's old filings would otherwise be
+ * attributed to whoever holds the seat NOW. The seat lookup therefore only
+ * nominates a candidate; the dataset's `representative` name must ALSO match
+ * that candidate's name. Name missing or mismatched → null (counted as
+ * unmatchedMember by the caller) — never attribute on seat alone.
+ */
 export function matchHouseCandidate(
   parsed: ParsedHouseTransaction,
-  index: Map<string, string>,
+  index: Map<string, HouseSeatCandidate>,
 ): string | null {
-  return index.get(`${parsed.state}|${parsed.district}`) ?? null;
+  const seatMatch = index.get(`${parsed.state}|${parsed.district}`);
+  if (!seatMatch) return null;
+  if (!memberNamesMatch(parsed.representativeName, seatMatch.fullName)) {
+    return null;
+  }
+  return seatMatch.id;
 }
 
+/**
+ * No name cross-check here, deliberately: `bioguide` is a per-PERSON id from
+ * the Biographical Directory of Congress — never reassigned, never a seat
+ * key — so the House failure mode (a successor inheriting a departed
+ * member's seat key) cannot occur; a departed senator's row simply loses
+ * is_incumbent and the lookup misses. The dataset's first_name/last_name
+ * come from the same filer record as `bioguide`, so a name check would only
+ * re-verify the aggregator against itself while adding nickname false-drops
+ * ("Bill" vs "William").
+ */
 export function matchSenateCandidate(
   parsed: ParsedSenateTransaction,
   idSet: Set<string>,
@@ -561,7 +713,7 @@ function toRow(
 /** Builds upsert-ready House rows from raw source rows. FAIL-OPEN per row. */
 export function buildHouseTransactionRows(
   rawRows: HouseWatcherRow[],
-  candidateIndex: Map<string, string>,
+  candidateIndex: Map<string, HouseSeatCandidate>,
 ): { rows: StockTransactionRow[]; counts: BuildCounts } {
   const counts: BuildCounts = {
     read: 0,
@@ -670,6 +822,7 @@ async function loadFederalCandidateRows(
   const rows = await db
     .select({
       id: candidates.id,
+      fullName: candidates.fullName,
       jurisdiction: candidates.jurisdiction,
       state: candidates.state,
       district: candidates.district,

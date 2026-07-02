@@ -18,6 +18,8 @@ import {
   buildExternalId,
   parseHouseRow,
   parseSenateFilingGroup,
+  normalizeMemberNameTokens,
+  memberNamesMatch,
   buildHouseCandidateIndex,
   buildSenateCandidateIdSet,
   matchHouseCandidate,
@@ -387,6 +389,7 @@ describe("parseSenateFilingGroup", () => {
 const CANDIDATE_ROWS: FederalCandidateRow[] = [
   {
     id: "federal-V000135",
+    fullName: "Rep. Matthew Van Epps [R-TN7]", // GovTrack display format
     jurisdiction: "federal-house",
     state: "TN",
     district: "07",
@@ -394,6 +397,7 @@ const CANDIDATE_ROWS: FederalCandidateRow[] = [
   },
   {
     id: "federal-C001035",
+    fullName: "Sen. Susan M. Collins [R-ME]",
     jurisdiction: "federal-senate",
     state: "ME",
     district: null,
@@ -402,6 +406,7 @@ const CANDIDATE_ROWS: FederalCandidateRow[] = [
   // A former House member's row: not incumbent — must NOT be matchable.
   {
     id: "federal-OLD000",
+    fullName: "Rep. Old Member [R-TN8]",
     jurisdiction: "federal-house",
     state: "TN",
     district: "08",
@@ -410,6 +415,7 @@ const CANDIDATE_ROWS: FederalCandidateRow[] = [
   // A challenger sharing a name pattern with no district/state resolved yet.
   {
     id: "federal-CHALLENGER1",
+    fullName: "Some Challenger",
     jurisdiction: "federal-house",
     state: null,
     district: null,
@@ -417,12 +423,151 @@ const CANDIDATE_ROWS: FederalCandidateRow[] = [
   },
 ];
 
+// ---------------------------------------------------------------------------
+// normalizeMemberNameTokens / memberNamesMatch
+// ---------------------------------------------------------------------------
+
+describe("normalizeMemberNameTokens", () => {
+  it("strips titles, GovTrack tags, and lowercases", () => {
+    expect(normalizeMemberNameTokens("Rep. Matthew Van Epps [R-TN7]")).toEqual([
+      "matthew",
+      "van",
+      "epps",
+    ]);
+    expect(normalizeMemberNameTokens("Hon. Nancy Pelosi")).toEqual([
+      "nancy",
+      "pelosi",
+    ]);
+  });
+
+  it("reorders 'Last, First' (FEC-normalized DB names)", () => {
+    expect(normalizeMemberNameTokens("Van Epps, Matthew")).toEqual([
+      "matthew",
+      "van",
+      "epps",
+    ]);
+  });
+
+  it("drops generational suffixes, incl. as a trailing comma segment", () => {
+    expect(normalizeMemberNameTokens("James French Hill Jr.")).toEqual([
+      "james",
+      "french",
+      "hill",
+    ]);
+    expect(normalizeMemberNameTokens("Hill, James French, Jr.")).toEqual([
+      "james",
+      "french",
+      "hill",
+    ]);
+  });
+
+  it("strips diacritics and splits hyphenated names", () => {
+    expect(normalizeMemberNameTokens("José Vargas-Ramírez")).toEqual([
+      "jose",
+      "vargas",
+      "ramirez",
+    ]);
+  });
+
+  it("keeps surname particles that collide with title tokens off the front", () => {
+    expect(normalizeMemberNameTokens("Maria Del Rio")).toEqual([
+      "maria",
+      "del",
+      "rio",
+    ]);
+  });
+});
+
+describe("memberNamesMatch", () => {
+  it("matches across source formats for the same person", () => {
+    expect(
+      memberNamesMatch(
+        "Hon. Matthew Robert Van Epps",
+        "Rep. Matthew Van Epps [R-TN7]",
+      ),
+    ).toBe(true);
+    expect(
+      memberNamesMatch("Van Epps, Matthew", "Rep. Matthew Van Epps [R-TN7]"),
+    ).toBe(true);
+  });
+
+  it("tolerates middle initials and leading initials", () => {
+    expect(memberNamesMatch("Susan M. Collins", "Susan Collins")).toBe(true);
+    expect(memberNamesMatch("K. Michael Conaway", "Michael Conaway")).toBe(
+      true,
+    );
+    expect(memberNamesMatch("M. Van Epps", "Matthew Van Epps")).toBe(true);
+  });
+
+  it("tolerates short-form first names (prefix rule)", () => {
+    expect(memberNamesMatch("W. Gregory Steube", "Greg Steube")).toBe(true);
+  });
+
+  it("rejects a different person on the same surname (family succession)", () => {
+    // LA-05 2021: Julia Letlow succeeded Luke Letlow — same seat, same
+    // surname, different person. Seat+surname alone must NOT match.
+    expect(memberNamesMatch("Luke Letlow", "Rep. Julia Letlow [R-LA5]")).toBe(
+      false,
+    );
+    // Shared surname particles ("Van") must not bridge different first names.
+    expect(memberNamesMatch("Luke Van Epps", "Julia Van Epps")).toBe(false);
+  });
+
+  it("rejects a bare surname or missing name — never enough to attribute", () => {
+    expect(memberNamesMatch("Pelosi", "Rep. Nancy Pelosi [D-CA11]")).toBe(
+      false,
+    );
+    expect(memberNamesMatch(null, "Rep. Nancy Pelosi [D-CA11]")).toBe(false);
+    expect(memberNamesMatch("", "Rep. Nancy Pelosi [D-CA11]")).toBe(false);
+  });
+
+  it("rejects different surnames outright", () => {
+    expect(memberNamesMatch("Nancy Pelosi", "Rep. Kevin Hern [R-OK1]")).toBe(
+      false,
+    );
+  });
+});
+
 describe("buildHouseCandidateIndex / matchHouseCandidate", () => {
   const index = buildHouseCandidateIndex(CANDIDATE_ROWS);
 
-  it("matches an incumbent House member by state+district", () => {
+  it("matches an incumbent House member by state+district + name cross-check", () => {
     const parsed = parseHouseRow(GOOD_HOUSE_ROW)!;
     expect(matchHouseCandidate(parsed, index)).toBe("federal-V000135");
+  });
+
+  it("matches when the source name uses 'Last, First' format", () => {
+    const parsed = parseHouseRow({
+      ...GOOD_HOUSE_ROW,
+      representative: "Van Epps, Matthew Robert",
+    })!;
+    expect(matchHouseCandidate(parsed, index)).toBe("federal-V000135");
+  });
+
+  it("matches when the source name carries a suffix", () => {
+    const parsed = parseHouseRow({
+      ...GOOD_HOUSE_ROW,
+      representative: "Matthew Van Epps Jr.",
+    })!;
+    expect(matchHouseCandidate(parsed, index)).toBe("federal-V000135");
+  });
+
+  it("does NOT match a departed member's filing to the seat's current incumbent", () => {
+    // Same seat (TN-07), different person: a historical filing by the
+    // previous holder must be unmatched, not attributed to the successor.
+    const parsed = parseHouseRow({
+      ...GOOD_HOUSE_ROW,
+      representative: "Hon. Mark Green",
+    })!;
+    expect(matchHouseCandidate(parsed, index)).toBeNull();
+  });
+
+  it("does NOT match when the source row has no representative name (seat alone is not identity)", () => {
+    const parsed = parseHouseRow({
+      ...GOOD_HOUSE_ROW,
+      representative: undefined,
+    })!;
+    expect(matchHouseCandidate(parsed, index)).toBeNull();
   });
 
   it("does not match a non-incumbent (departed member / challenger)", () => {
