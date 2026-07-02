@@ -165,12 +165,18 @@ export function useIssueConversation({
               { role: "assistant", content: acc },
             ];
             // Count a clarifying/disambiguation question: a prose reply that
-            // ends in a question mark and didn't lock anything new in (no theme
-            // array change). The re-injected count caps the loop at
-            // DISAMBIGUATION_CAP on the next turn. Once at the cap we stop
-            // counting — the prompt is already in lock-in mode.
-            const askedAQuestion =
-              !themes && /\?\s*$/.test((prose || "").trim());
+            // ends in a question mark. The refinement prompt ALWAYS returns
+            // the full theme array (even on a conversational-only turn — "if
+            // their message changes nothing... still include the fence"), so
+            // `themes` is non-null on effectively every turn and can't be
+            // used as a proxy for "this turn only asked, it didn't update
+            // anything" (that used to gate this check and silently broke the
+            // cap — #175). The trailing "?" is the real, themes-independent
+            // signal a disambiguation/pole question was asked. The
+            // re-injected count caps the loop at DISAMBIGUATION_CAP on the
+            // next turn. Once at the cap we stop counting — the prompt is
+            // already in lock-in mode.
+            const askedAQuestion = /\?\s*$/.test((prose || "").trim());
             if (
               askedAQuestion &&
               clarifyCountRef.current < DISAMBIGUATION_CAP
