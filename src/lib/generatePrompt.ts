@@ -9,8 +9,7 @@ import type {
 } from "../types/election";
 import type { BallotSourceSummary } from "../types/ballotSource";
 import type { Language } from "./translations";
-import { BALLOT_PROMPT_EN } from "./generated/ballotPromptEn.generated";
-import { BALLOT_PROMPT_ES } from "./generated/ballotPromptEs.generated";
+import { BALLOT_PROMPTS } from "./generated/ballotPrompts.generated";
 
 export interface PollingLocationData {
   name: string;
@@ -35,8 +34,6 @@ export interface PollingDataForPrompt {
 }
 
 const MAX_USER_BALLOT_TEXT_CHARS = 12000;
-
-const BASE_PROMPT = BALLOT_PROMPT_EN;
 
 function findUpcomingElection(
   elections: Election[],
@@ -448,6 +445,42 @@ ${sourceBlock}${contestsBlock}${userSampleBallotBlock}${countyBlock}${mailBlock}
 Ayúdame con mi boleta.`;
 }
 
+type ContextBlockBuilder = (
+  state: StateElectionData,
+  zipCode: string,
+  election: Election,
+  polling?: PollingDataForPrompt,
+  countyName?: string,
+  userSampleBallotText?: string,
+  preResearchContext?: string,
+) => string;
+
+interface PromptLocaleConfig {
+  /** Generated ballot prompt variant (docs/BALLOT_PROMPT*.md via sync:ballot-prompt). */
+  ballotPrompt: string;
+  /** Localized prefix for the "Today's date: <ISO>" header line. */
+  dateHeaderPrefix: string;
+  /** Localized context-block builder; omitted locales fall back to English. */
+  buildContextBlock?: ContextBlockBuilder;
+}
+
+// Prompt locale registry — the single registration point for prompt variants.
+// Keyed exhaustively by Language, so registering a new locale in
+// translations.ts forces (only) a new data entry here; generatePrompt itself
+// and its consumers need no edits.
+const PROMPT_LOCALES: Record<Language, PromptLocaleConfig> = {
+  en: {
+    ballotPrompt: BALLOT_PROMPTS.en,
+    dateHeaderPrefix: "Today's date: ",
+    buildContextBlock,
+  },
+  es: {
+    ballotPrompt: BALLOT_PROMPTS.es,
+    dateHeaderPrefix: "Fecha de hoy: ",
+    buildContextBlock: buildContextBlockEs,
+  },
+};
+
 export function generatePrompt(
   state: StateElectionData,
   zipCode: string,
@@ -461,30 +494,23 @@ export function generatePrompt(
   const today = todayISO ?? new Date().toISOString().slice(0, 10);
   const election = findUpcomingElection(state.elections, today);
 
-  const dateHeader =
-    lang === "es" ? `Fecha de hoy: ${today}\n\n` : `Today's date: ${today}\n\n`;
-  const basePrompt =
-    dateHeader + (lang === "es" ? BALLOT_PROMPT_ES : BASE_PROMPT);
-  const contextBlock =
-    lang === "es"
-      ? buildContextBlockEs(
-          state,
-          zipCode,
-          election,
-          polling,
-          countyName,
-          userSampleBallotText,
-          preResearchContext,
-        )
-      : buildContextBlock(
-          state,
-          zipCode,
-          election,
-          polling,
-          countyName,
-          userSampleBallotText,
-          preResearchContext,
-        );
+  // Defensive fallback: `lang` is typed Language, but runtime callers may
+  // pass an unregistered string (e.g. stale localStorage) — degrade to en.
+  const locale: PromptLocaleConfig | undefined = PROMPT_LOCALES[lang];
+  const config = locale ?? PROMPT_LOCALES.en;
+
+  const dateHeader = `${config.dateHeaderPrefix}${today}\n\n`;
+  const basePrompt = dateHeader + config.ballotPrompt;
+  const buildContext = config.buildContextBlock ?? buildContextBlock;
+  const contextBlock = buildContext(
+    state,
+    zipCode,
+    election,
+    polling,
+    countyName,
+    userSampleBallotText,
+    preResearchContext,
+  );
 
   const fullText = basePrompt + "\n\n" + contextBlock;
 
