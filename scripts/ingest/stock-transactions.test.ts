@@ -90,6 +90,15 @@ describe("parseSourceDate", () => {
     expect(parseSourceDate(undefined)).toBeNull();
     expect(parseSourceDate("")).toBeNull();
   });
+
+  it("returns null for a calendar-invalid date that passes the range check (e.g. Feb 30)", () => {
+    expect(parseSourceDate("02/30/2026")).toBeNull();
+    expect(parseSourceDate("04/31/2026")).toBeNull();
+  });
+
+  it("accepts a valid leap-day date", () => {
+    expect(parseSourceDate("02/29/2024")).toBe("2024-02-29");
+  });
 });
 
 // ---------------------------------------------------------------------------

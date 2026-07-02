@@ -248,14 +248,29 @@ export function parseAmountRange(
   return null;
 }
 
-/** "MM/DD/YYYY" → "YYYY-MM-DD". Anything else → null (never guess a date). */
+/**
+ * "MM/DD/YYYY" → "YYYY-MM-DD". Anything else → null (never guess a date).
+ * Validates the date actually exists on the calendar (e.g. rejects
+ * "02/30/2026") — a garbled scrape can pass the month/day range check while
+ * still being invalid, and Postgres' `date` type rejects it at insert time,
+ * which would fail the whole upsert batch rather than just this one row.
+ */
 export function parseSourceDate(raw: string | null | undefined): string | null {
   if (!raw) return null;
   const m = raw.trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
   if (!m) return null;
   const month = Number(m[1]);
   const day = Number(m[2]);
+  const year = Number(m[3]);
   if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+  const roundTrip = new Date(Date.UTC(year, month - 1, day));
+  if (
+    roundTrip.getUTCFullYear() !== year ||
+    roundTrip.getUTCMonth() !== month - 1 ||
+    roundTrip.getUTCDate() !== day
+  ) {
+    return null;
+  }
   return `${m[3]}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 }
 
