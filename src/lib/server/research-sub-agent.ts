@@ -31,6 +31,7 @@ import {
   type StructuredIssueResult,
 } from "../prompts/research-candidate-structured";
 import { recordUsageAsync } from "./budget";
+import { recordChatUsage } from "./chat-usage-metrics";
 
 export type {
   ResearchCandidateInput,
@@ -165,6 +166,20 @@ export async function runResearchSubAgent(
       cacheWriteTokens: cache_write_tokens,
       searchCount,
     });
+    // Anonymous per-request cost telemetry — same fail-soft helper the chat
+    // route uses, discriminated as call_kind:'research' so the sub-call's
+    // spend is visible in chat_usage_metrics. Stores NO identifier
+    // (no session, no IP, no address, no prompt text).
+    await recordChatUsage(
+      {
+        inputTokens: input_tokens,
+        cacheReadTokens: cached_input_tokens,
+        cacheWriteTokens: cache_write_tokens,
+        outputTokens: output_tokens,
+        webSearchCount: searchCount,
+      },
+      { model: RESEARCH_SUB_AGENT_MODEL, callKind: "research" },
+    );
   }
 
   const unavailable = summary.length < UNAVAILABLE_MIN_CHARS;
@@ -268,6 +283,18 @@ export async function runStructuredCandidateResearch(
       cacheWriteTokens: cache_write_tokens,
       searchCount,
     });
+    // Anonymous per-request cost telemetry — same content-free policy as the
+    // prose sub-agent above (call_kind:'research', counts only, NO PII).
+    await recordChatUsage(
+      {
+        inputTokens: input_tokens,
+        cacheReadTokens: cached_input_tokens,
+        cacheWriteTokens: cache_write_tokens,
+        outputTokens: output_tokens,
+        webSearchCount: searchCount,
+      },
+      { model: RESEARCH_SUB_AGENT_MODEL, callKind: "research" },
+    );
   }
 
   // Parse JSON — be permissive about leading/trailing text the model may emit.
