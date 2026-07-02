@@ -518,6 +518,43 @@ const TRANSLATIONS = {
       pageOf: 'Page 1 of 1',
       aligned: '{pct}% aligned ({kept}/{total} votes)',
     },
+    whyNowPage: {
+      eyebrow: 'Why now',
+      title: 'Why this election, this year.',
+      intro: '2026 is America’s 250th election. Every voting seat in the House and a third of the Senate is on the ballot at once — the widest the choice ever gets. The catch is that incumbents almost always win, and most voters never see the one thing that should decide it: the record.',
+      snippets: [
+        {
+          value: '6',
+          unit: 'hrs / day',
+          label: 'average time a member of Congress spends fundraising, per training materials shown to incoming freshmen.',
+          cite: 'Source · Issue One, 2024 · CBS 60 Minutes',
+        },
+        {
+          value: '94',
+          unit: '%',
+          label: 'of House incumbents who ran for re-election in 2024 won. Without a record check, every November is a coin flip.',
+          cite: 'Source · OpenSecrets · FEC filings',
+        },
+        {
+          value: '468',
+          unit: 'seats',
+          label: 'all 435 House seats and 33 Senate seats are on the November 3, 2026 ballot — America’s 250th election.',
+          cite: 'Source · U.S. Constitution, Art. I · clerk.house.gov',
+        },
+      ],
+      largerCaseHeading: 'The larger case',
+      largerCase1: 'Campaigns are built to be persuasive. Ads, mailers, and debate soundbites are written to win your vote, not to report what a candidate actually did with the power they already held. The gap between the pitch and the record is where most surprises live — and it widens every cycle.',
+      largerCase2: 'A voting record is the one thing a candidate can’t rewrite. Roll-call votes are public, dated, and final. So is who funded the campaign. Read together, they tell you more about how someone will govern than any slogan can — because they’re a record of how that person already governed.',
+      largerCase3: 'This isn’t about a party. Both sides run incumbents, and both sides count on you not checking. The fix is the same regardless of who you support: spend a few minutes matching the record to the issues you actually care about, before you fill in the bubble. That’s the whole idea behind this site.',
+      whatToDoHeading: 'What to do with it',
+      whatToDo: 'Tell us your address and what’s on your mind. We’ll pull your representatives’ real votes and funding, score them against your own words — never a pre-baked checklist — and show you the receipts. You decide. We don’t endorse anyone; we just close the gap between the ad and the record.',
+    },
+    orientation: {
+      kick: 'Before you begin',
+      heading: 'Here’s how the review works.',
+      body: 'Next, you’ll be shown your three representatives — where they stand on the issues you care about, and how they’re funded and influenced. You can also find alternative candidates running for the seat. At the bottom of each page you’ll be asked to <b>replace or keep</b> the current representative. You’ll do this for all of your representatives, and can then print out your scorecard.',
+      continueLabel: 'Let’s move to the first candidate →',
+    },
   },
   es: {
     nav: {
@@ -828,6 +865,43 @@ const TRANSLATIONS = {
       generated: 'Generado {datetime}',
       pageOf: 'Página 1 de 1',
       aligned: '{pct}% alineado ({kept}/{total} votos)',
+    },
+    whyNowPage: {
+      eyebrow: 'Por qué ahora',
+      title: 'Por qué esta elección, este año.',
+      intro: '2026 es la elección número 250 de Estados Unidos. Cada escaño con derecho a voto en la Cámara y un tercio del Senado están en la boleta a la vez — la elección más amplia que jamás se ha dado. El problema es que los titulares casi siempre ganan, y la mayoría de los votantes nunca ve lo único que debería decidirlo: el historial.',
+      snippets: [
+        {
+          value: '6',
+          unit: 'hrs/día',
+          label: 'tiempo promedio que un miembro del Congreso dedica a recaudar fondos, según los materiales de capacitación que se muestran a los legisladores novatos.',
+          cite: 'Fuente · Issue One, 2024 · CBS 60 Minutes',
+        },
+        {
+          value: '94',
+          unit: '%',
+          label: 'de los titulares de la Cámara que se postularon para la reelección en 2024 ganaron. Sin revisar el historial, cada noviembre es como lanzar una moneda al aire.',
+          cite: 'Fuente · OpenSecrets · FEC filings',
+        },
+        {
+          value: '468',
+          unit: 'escaños',
+          label: 'los 435 escaños de la Cámara y 33 del Senado están en la boleta del 3 de noviembre de 2026 — la elección número 250 de Estados Unidos.',
+          cite: 'Fuente · Constitución de EE. UU., Art. I · clerk.house.gov',
+        },
+      ],
+      largerCaseHeading: 'El caso más amplio',
+      largerCase1: 'Las campañas están diseñadas para persuadir. Los anuncios, los folletos y las frases de los debates se escriben para ganar tu voto, no para informar lo que un candidato realmente hizo con el poder que ya tenía. La brecha entre el discurso y el historial es donde viven la mayoría de las sorpresas — y se amplía en cada ciclo.',
+      largerCase2: 'Un historial de votación es lo único que un candidato no puede reescribir. Las votaciones nominales son públicas, tienen fecha y son definitivas. Lo mismo ocurre con quién financió la campaña. Leídos juntos, te dicen más sobre cómo alguien va a gobernar que cualquier eslogan — porque son un registro de cómo esa persona ya gobernó.',
+      largerCase3: 'Esto no se trata de un partido. Ambos bandos postulan titulares, y ambos cuentan con que tú no lo revises. La solución es la misma sin importar a quién apoyes: dedica unos minutos a comparar el historial con los temas que realmente te importan, antes de rellenar el óvalo. Esa es toda la idea detrás de este sitio.',
+      whatToDoHeading: 'Qué hacer con esto',
+      whatToDo: 'Cuéntanos tu dirección y qué tienes en mente. Buscaremos los votos y el financiamiento reales de tus representantes, los puntuaremos con tus propias palabras — nunca con una lista prearmada — y te mostraremos las pruebas. Tú decides. No respaldamos a nadie; solo cerramos la brecha entre el anuncio y el historial.',
+    },
+    orientation: {
+      kick: 'Antes de empezar',
+      heading: 'Así funciona la revisión.',
+      body: 'A continuación, verás a tus tres representantes — dónde se ubican en los temas que te importan, y cómo se financian y quién los influye. También puedes encontrar candidatos alternativos que compiten por el puesto. Al final de cada página se te pedirá que <b>reemplaces o mantengas</b> al representante actual. Harás esto con todos tus representantes, y luego podrás imprimir tu tarjeta de puntuación.',
+      continueLabel: 'Vamos con el primer candidato →',
     },
   },
 };
@@ -4558,31 +4632,11 @@ function AITimeoutBanner({ onRetry, onHandoff, message }) {
    Static in-prototype pages. Repo target: src/app/about/page.tsx,
    src/app/methodology/page.tsx, src/app/privacy/page.tsx
    (privacy/page.tsx exists in repo already — content mirrors that). */
-/* ============ WHY_NOW_SNIPPETS ============
+/* ============ WhyNowPage fact snippets ============
    The "fact snippets" — short, cited civic facts that make the case for
-   checking the record. Single source of truth: HomeView renders the first
-   two as the hero stat-stack; WhyNowPage renders the full set. Keep every
-   entry cited (no uncited stats) and non-partisan. */
-const WHY_NOW_SNIPPETS = [
-  {
-    value: '6',
-    unit: 'hrs / day',
-    label: 'average time a member of Congress spends fundraising, per training materials shown to incoming freshmen.',
-    cite: 'Source · Issue One, 2024 · CBS 60 Minutes',
-  },
-  {
-    value: '94',
-    unit: '%',
-    label: 'of House incumbents who ran for re-election in 2024 won. Without a record check, every November is a coin flip.',
-    cite: 'Source · OpenSecrets · FEC filings',
-  },
-  {
-    value: '468',
-    unit: 'seats',
-    label: 'all 435 House seats and 33 Senate seats are on the November 3, 2026 ballot — America’s 250th election.',
-    cite: 'Source · U.S. Constitution, Art. I · clerk.house.gov',
-  },
-];
+   checking the record — live in TRANSLATIONS as whyNowPage.snippets (en +
+   es) so WhyNowPage can render a localized set via t(). Keep every entry
+   cited (no uncited stats) and non-partisan. */
 
 function StaticPage({ title, eyebrow, children, onBack }) {
   return (
@@ -4719,12 +4773,14 @@ function PrivacyPage({ onBack }) {
 }
 
 function WhyNowPage({ onBack }) {
+  const { t } = useI18n();
+  const snippets = t('whyNowPage.snippets');
   return (
-    <StaticPage onBack={onBack} eyebrow="Why now" title="Why this election, this year.">
-      <p>2026 is America’s 250th election. Every voting seat in the House and a third of the Senate is on the ballot at once — the widest the choice ever gets. The catch is that incumbents almost always win, and most voters never see the one thing that should decide it: the record.</p>
+    <StaticPage onBack={onBack} eyebrow={t('whyNowPage.eyebrow')} title={t('whyNowPage.title')}>
+      <p>{t('whyNowPage.intro')}</p>
 
       <div className="stat-stack stat-stack--page">
-        {WHY_NOW_SNIPPETS.map((s, i) => (
+        {snippets.map((s, i) => (
           <div key={i} className={'stat' + (i % 2 === 1 ? ' alt' : '')}>
             <div className="v">{s.value}<small>{s.unit}</small></div>
             <div className="l">{s.label}</div>
@@ -4733,13 +4789,13 @@ function WhyNowPage({ onBack }) {
         ))}
       </div>
 
-      <h2>The larger case</h2>
-      <p>Campaigns are built to be persuasive. Ads, mailers, and debate soundbites are written to win your vote, not to report what a candidate actually did with the power they already held. The gap between the pitch and the record is where most surprises live — and it widens every cycle.</p>
-      <p>A voting record is the one thing a candidate can’t rewrite. Roll-call votes are public, dated, and final. So is who funded the campaign. Read together, they tell you more about how someone will govern than any slogan can — because they’re a record of how that person already governed.</p>
-      <p>This isn’t about a party. Both sides run incumbents, and both sides count on you not checking. The fix is the same regardless of who you support: spend a few minutes matching the record to the issues you actually care about, before you fill in the bubble. That’s the whole idea behind this site.</p>
+      <h2>{t('whyNowPage.largerCaseHeading')}</h2>
+      <p>{t('whyNowPage.largerCase1')}</p>
+      <p>{t('whyNowPage.largerCase2')}</p>
+      <p>{t('whyNowPage.largerCase3')}</p>
 
-      <h2>What to do with it</h2>
-      <p>Tell us your address and what’s on your mind. We’ll pull your representatives’ real votes and funding, score them against your own words — never a pre-baked checklist — and show you the receipts. You decide. We don’t endorse anyone; we just close the gap between the ad and the record.</p>
+      <h2>{t('whyNowPage.whatToDoHeading')}</h2>
+      <p>{t('whyNowPage.whatToDo')}</p>
     </StaticPage>
   );
 }
