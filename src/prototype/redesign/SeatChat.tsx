@@ -69,7 +69,8 @@ export function SeatChat({
   const subjectLabel = isRevealed
     ? seat.candidate?.name || seat.blindLabel
     : seat.blindLabel;
-  const ribbon = budgetTier && t(RIBBON_TIER_KEYS[budgetTier]);
+  const ribbonKey = budgetTier && RIBBON_TIER_KEYS[budgetTier];
+  const ribbon = ribbonKey && t(ribbonKey);
 
   return (
     <div className="seat-chat" data-testid="seat-chat">
