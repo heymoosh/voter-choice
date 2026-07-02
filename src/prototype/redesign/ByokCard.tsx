@@ -71,6 +71,14 @@ export function ByokCard({
         chat answers from the records already on the cards — live web lookups
         and challenger research stay paused.
       </p>
+      <a
+        href="https://console.anthropic.com/settings/keys"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="be-byok-getkey"
+      >
+        Get a key →
+      </a>
       {savedKey ? (
         <div className="be-byok-saved">
           <div className="be-byok-mask">

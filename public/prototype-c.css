@@ -2495,6 +2495,16 @@ Bumps
   margin: 0 0 14px;
   line-height: 1.5;
 }
+.be-byok-getkey {
+  display: inline-block;
+  margin: 0 0 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--civic);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.be-byok-getkey:hover { color: var(--civic-2); }
 .be-byok-row {
   display: flex;
   gap: 10px;

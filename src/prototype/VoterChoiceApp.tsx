@@ -3635,6 +3635,7 @@ function BudgetExhaustedByok({ onClose }) {
     <section className="be-byok" aria-labelledby="be-byok-ttl">
       <h4 id="be-byok-ttl" className="be-byok-ttl">Have an Anthropic API key? Use it directly in Voter Choice.</h4>
       <p className="be-byok-sub">Your key stays in your browser. Never sent to our server.</p>
+      <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener noreferrer" className="be-byok-getkey">Get a key →</a>
       {savedKey ? (
         <div className="be-byok-saved">
           <div className="be-byok-mask">
