@@ -10,7 +10,7 @@
      - Election date comes from the next upcoming election, not [0]. */
 
 import React from "react";
-import { AppNav } from "../VoterChoiceApp";
+import { AppNav, useI18n } from "../VoterChoiceApp";
 
 function fmtLong(dateIso) {
   return new Date(dateIso + "T00:00:00").toLocaleDateString("en-US", {
@@ -37,6 +37,7 @@ export function ScorecardPrintView({
   districtsLine,
   onBack,
 }) {
+  const { t } = useI18n();
   // Reps not up for election in 2026 are excluded from the printed scorecard —
   // they stay visible (greyed + labeled) in the workspace, but the takeaway
   // sheet is about who's on your 2026 ballot. onBallot2026 === false only;
@@ -64,7 +65,7 @@ export function ScorecardPrintView({
     );
     if (total === 0) return null;
     const pct = Math.round((kept / total) * 100);
-    return `${pct}% aligned (${kept}/${total} votes)`;
+    return t("scorecardPrint.aligned", { pct, kept, total });
   };
 
   const todayIso = new Date().toISOString().slice(0, 10);
@@ -86,11 +87,13 @@ export function ScorecardPrintView({
       <AppNav onBrandClick={onBack} />
       <div className="print-wrap">
         <div className="print-header">
-          <h2>Your printable scorecard</h2>
+          <h2>{t("scorecardPrint.heading")}</h2>
           <div className="actions">
-            <button onClick={onBack}>← Back to your scorecard</button>
+            <button onClick={onBack}>
+              {t("scorecardPrint.backToScorecard")}
+            </button>
             <button className="primary" onClick={() => window.print()}>
-              Print / save as PDF
+              {t("scorecardPrint.printSave")}
             </button>
           </div>
         </div>
@@ -98,12 +101,16 @@ export function ScorecardPrintView({
         <div className="print-sheet">
           <header className="ph-head">
             <div className="l">
-              My Scorecard
+              {t("scorecardPrint.myScorecard")}
               {nextElection ? ` · ${fmtLong(nextElection.date)}` : ""}
-              <small>Voter Choice · voterchoice.app</small>
+              <small>{t("scorecardPrint.brand")}</small>
             </div>
             <div className="r">
-              {pollingInfo?.precinct && <b>Precinct {pollingInfo.precinct}</b>}
+              {pollingInfo?.precinct && (
+                <b>
+                  {t("scorecardPrint.precinct", { n: pollingInfo.precinct })}
+                </b>
+              )}
               {pollingInfo?.name}
               <br />
               {pollingInfo?.address && (
@@ -112,7 +119,11 @@ export function ScorecardPrintView({
                   <br />
                 </>
               )}
-              {pollingInfo?.hours && <>Polls {pollingInfo.hours}</>}
+              {pollingInfo?.hours && (
+                <>
+                  {t("scorecardPrint.pollsHours", { hours: pollingInfo.hours })}
+                </>
+              )}
             </div>
           </header>
 
@@ -136,7 +147,9 @@ export function ScorecardPrintView({
                         <div className="pick-name">
                           {s.candidate?.name ?? s.blindLabel}
                           <span className={"party verdict-print " + v}>
-                            {v === "keep" ? "✓ KEEP" : "⇄ REPLACE"}
+                            {v === "keep"
+                              ? t("scorecard.worthKeeping")
+                              : t("scorecard.timeToReplace")}
                           </span>
                           {v === "replace" &&
                             (() => {
@@ -165,7 +178,7 @@ export function ScorecardPrintView({
             {unreviewed.length > 0 && (
               <div className="ballot-group">
                 <div className="gtitle" style={{ color: "var(--ink-3)" }}>
-                  Not yet reviewed
+                  {t("scorecard.notYetReviewed")}
                 </div>
                 {unreviewed.map((s) => (
                   <div className="br" key={s.id}>
@@ -183,8 +196,12 @@ export function ScorecardPrintView({
                         }}
                       >
                         {s.nextElection
-                          ? `Review before ${s.nextElection.label.charAt(0).toLowerCase()}${s.nextElection.label.slice(1)}`
-                          : "Review before you vote"}
+                          ? t("scorecardPrint.reviewBefore", {
+                              label:
+                                s.nextElection.label.charAt(0).toLowerCase() +
+                                s.nextElection.label.slice(1),
+                            })
+                          : t("scorecardPrint.reviewBeforeYouVote")}
                       </div>
                     </div>
                   </div>
@@ -193,7 +210,9 @@ export function ScorecardPrintView({
             )}
 
             <div className="ballot-group" style={{ marginBottom: 0 }}>
-              <div className="gtitle">Judged against your issues</div>
+              <div className="gtitle">
+                {t("scorecardPrint.judgedAgainstIssues")}
+              </div>
               <div
                 style={{ fontSize: 13, color: "var(--ink-2)", lineHeight: 1.6 }}
               >
@@ -207,7 +226,7 @@ export function ScorecardPrintView({
                         color: "var(--ink-3)",
                       }}
                     >
-                      ({iss.level === "both" ? "federal + state" : iss.level})
+                      {`(${iss.level === "both" ? t("scorecardPrint.federalPlusState") : iss.level})`}
                     </span>
                   </div>
                 ))}
@@ -216,22 +235,24 @@ export function ScorecardPrintView({
           </div>
 
           {/* Logistics last (D): where/when to vote sits below the decisions. */}
-          <div className="logistics-title">Where &amp; when to vote</div>
+          <div className="logistics-title">
+            {t("scorecardPrint.whereWhenToVote")}
+          </div>
           <div className="voter-meta voter-meta-logistics">
             <div className="cell">
-              <div className="k">Address</div>
+              <div className="k">{t("scorecardPrint.address")}</div>
               <div className="v" style={{ fontSize: "12px" }}>
                 {address}
               </div>
             </div>
             <div className="cell">
-              <div className="k">Your districts</div>
+              <div className="k">{t("scorecardPrint.yourDistricts")}</div>
               <div className="v" style={{ fontSize: "12px" }}>
                 {districtsLine || "—"}
               </div>
             </div>
             <div className="cell cell-bring">
-              <div className="k">Bring (any one)</div>
+              <div className="k">{t("scorecardPrint.bringAnyOne")}</div>
               <ul className="v print-id-list">
                 {(stateData?.votingRules?.acceptedIds || []).map((id) => (
                   <li key={id}>{id}</li>
@@ -239,37 +260,38 @@ export function ScorecardPrintView({
                 {!stateData?.votingRules?.idRequired && (
                   <li>
                     {stateData?.votingRules?.idNote ||
-                      "No ID required for most voters."}
+                      t("scorecardPrint.noIdRequired")}
                   </li>
                 )}
               </ul>
             </div>
             <div className="cell">
-              <div className="k">Early voting</div>
+              <div className="k">{t("scorecardPrint.earlyVoting")}</div>
               <div className="v">
-                {earlyVoting || "Check your state's site"}
+                {earlyVoting || t("scorecardPrint.checkStateSite")}
               </div>
             </div>
           </div>
 
           <footer className="print-foot">
             <div className="l">
-              <b>Built with Voter Choice</b>
-              Free · non-partisan · voterchoice.app
+              <b>{t("scorecardPrint.builtWith")}</b>
+              {t("scorecardPrint.freeNonpartisan")}
             </div>
           </footer>
           <div className="print-serial">
             <span>
-              Generated{" "}
-              {new Date().toLocaleString("en-US", {
-                dateStyle: "medium",
-                timeStyle: "short",
+              {t("scorecardPrint.generated", {
+                datetime: new Date().toLocaleString("en-US", {
+                  dateStyle: "medium",
+                  timeStyle: "short",
+                }),
               })}
             </span>
             <span>
               Ref · VC-{Math.random().toString(36).slice(2, 8).toUpperCase()}
             </span>
-            <span>Page 1 of 1</span>
+            <span>{t("scorecardPrint.pageOf")}</span>
           </div>
         </div>
       </div>

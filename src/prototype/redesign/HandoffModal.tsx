@@ -11,6 +11,7 @@
      · BYOK card ("or keep going right here with your own key") */
 
 import React, { useMemo, useRef, useState } from "react";
+import { useI18n } from "../VoterChoiceApp";
 import { buildScorecardHandoffPrompt } from "./handoffText";
 import { HandoffActions } from "./HandoffActions";
 import { ByokCard } from "./ByokCard";
@@ -24,6 +25,7 @@ export function HandoffModal({
   researchFor,
   onClose,
 }) {
+  const { t } = useI18n();
   const [copied, setCopied] = useState(false);
   const textareaRef = useRef(null);
   const prompt = useMemo(
@@ -63,28 +65,35 @@ export function HandoffModal({
       <div className="be-modal" onClick={(e) => e.stopPropagation()}>
         <header className="be-head">
           <div>
-            <div className="be-eyebrow">
-              Continue elsewhere · context handoff
-            </div>
-            <h3 id="handoff-title">Take your scorecard with you.</h3>
+            <div className="be-eyebrow">{t("handoffModal.eyebrow")}</div>
+            <h3 id="handoff-title">{t("handoffModal.title")}</h3>
           </div>
-          <button className="be-x" onClick={onClose} aria-label="Close">
+          <button
+            className="be-x"
+            onClick={onClose}
+            aria-label={t("handoffModal.close")}
+          >
             ×
           </button>
         </header>
 
-        <p className="be-lede">
-          You have reviewed <b>{reviewed}</b> of {seats.length} representatives.
-          The prompt below carries your priorities, your verdicts with the
-          evidence behind them, and what's left — paste it into any chatbot to
-          keep working from the same context.
-        </p>
+        <p
+          className="be-lede"
+          dangerouslySetInnerHTML={{
+            __html: t("handoffModal.lede", {
+              reviewed,
+              total: seats.length,
+            }),
+          }}
+        />
 
         <div className="be-prompt">
           <div className="be-prompt-head">
-            <span className="be-prompt-lab">Portable prompt</span>
+            <span className="be-prompt-lab">
+              {t("handoffModal.portablePrompt")}
+            </span>
             <button className="be-copy" onClick={copyToClipboard}>
-              {copied ? "✓ Copied" : "Copy →"}
+              {copied ? t("handoffModal.copied") : t("handoffModal.copy")}
             </button>
           </div>
           <textarea
@@ -102,11 +111,7 @@ export function HandoffModal({
 
         <ByokCard onClose={onClose} />
 
-        <footer className="be-foot">
-          Your address never leaves this device. The portable prompt contains
-          your issues + verdicts + public candidate records — no
-          personally-identifying information.
-        </footer>
+        <footer className="be-foot">{t("handoffModal.footer")}</footer>
       </div>
     </div>
   );

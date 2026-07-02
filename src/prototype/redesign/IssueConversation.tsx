@@ -188,7 +188,9 @@ export function useIssueConversation({
                 who: "ai",
                 text:
                   stripChatMd(prose) ||
-                  (themes ? "Updated your list below." : "Noted."),
+                  (themes
+                    ? strings.updatedFallback || "Updated your list below."
+                    : strings.notedFallback || "Noted."),
               },
             ]);
           }
