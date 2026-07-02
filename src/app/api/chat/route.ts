@@ -36,7 +36,7 @@ import { buildRaceDeepDivePrompt } from "../../../lib/prompts/race-deep-dive";
 import { buildPropositionPrompt } from "../../../lib/prompts/proposition";
 import { buildThemeAmendmentPrompt } from "../../../lib/prompts/theme-amendment";
 import { buildHandoffPrompt } from "../../../lib/prompts/handoff";
-import { BALLOT_PROMPT_EN } from "../../../lib/generated/ballotPromptEn.generated";
+import { BALLOT_PROMPTS } from "../../../lib/generated/ballotPrompts.generated";
 
 // Server-side tools: Anthropic's hosted web_search runs on their infra; we
 // just declare the tool and Claude orchestrates the calls server-side. Billed
@@ -830,15 +830,15 @@ function budgetGateResponse(
   if (tier === "exhausted" && wasHandoffServed()) {
     // Phase 9 — structured 200 instead of 503. The client renders the
     // continuity screen (BudgetExhausted) from this payload. The
-    // handoffPrompt body is the canonical legacy BALLOT_PROMPT_EN — Phase
-    // 1 explicitly retained it as the handoff template; we forward the
+    // handoffPrompt body is the canonical legacy English ballot prompt —
+    // Phase 1 explicitly retained it as the handoff template; we forward the
     // full text so the screen can pre-populate a copyable textarea
     // without an extra round-trip.
     return Response.json(
       {
         status: "budget_exhausted",
         resetAt: defaultBudgetResetAtISO(),
-        handoffPrompt: BALLOT_PROMPT_EN,
+        handoffPrompt: BALLOT_PROMPTS.en,
         budget,
       },
       { status: 200 },
@@ -1563,7 +1563,7 @@ async function handleAnthropicError(
           {
             status: "budget_exhausted",
             resetAt: defaultBudgetResetAtISO(),
-            handoffPrompt: BALLOT_PROMPT_EN,
+            handoffPrompt: BALLOT_PROMPTS.en,
             budget,
           },
           { status: 200 },

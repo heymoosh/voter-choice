@@ -154,3 +154,44 @@ describe("useLanguage", () => {
     expect(screen.getByTestId("lang").textContent).toBe("en");
   });
 });
+
+describe("registry-driven language validation", () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  it("accepts a third locale once it is registered in translations (no hardcoded en/es list)", async () => {
+    // Register a fake "fr" locale purely as data — the exact step a real new
+    // locale takes — and assert the provider accepts it with zero edits to
+    // i18n.tsx: VALID_LANGUAGES must be derived from the registry keys.
+    vi.resetModules();
+    vi.doMock("./translations", async (importOriginal) => {
+      const actual = await importOriginal<typeof import("./translations")>();
+      return {
+        ...actual,
+        translations: { ...actual.translations, fr: actual.translations.en },
+      };
+    });
+    try {
+      localStorage.setItem("ballot-tool-lang", "fr");
+      const { LanguageProvider: MockedProvider, useLanguage: useMocked } =
+        await import("./i18n");
+      function Probe() {
+        const { lang } = useMocked();
+        return <span data-testid="mock-lang">{lang}</span>;
+      }
+      render(
+        <MockedProvider>
+          <Probe />
+        </MockedProvider>,
+      );
+      await act(async () => {});
+      expect(screen.getByTestId("mock-lang").textContent).toBe("fr");
+      expect(document.documentElement.lang).toBe("fr");
+    } finally {
+      vi.doUnmock("./translations");
+      vi.resetModules();
+      document.documentElement.lang = "en";
+    }
+  });
+});

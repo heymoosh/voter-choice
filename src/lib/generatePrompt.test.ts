@@ -690,3 +690,30 @@ describe("generatePrompt — Spanish mode", () => {
     );
   });
 });
+
+describe("prompt locale registry", () => {
+  it("selects the registered variant per locale (en/es byte-identical to the generated prompts)", () => {
+    const en = generatePrompt(txData, "73301", "2026-03-30", "en");
+    const es = generatePrompt(txData, "73301", "2026-03-30", "es");
+    expect(en.basePrompt).toBe(
+      `Today's date: 2026-03-30\n\n${BALLOT_PROMPT_EN}`,
+    );
+    expect(es.basePrompt).toBe(
+      `Fecha de hoy: 2026-03-30\n\n${BALLOT_PROMPT_ES}`,
+    );
+  });
+
+  it("degrades an unregistered runtime locale value to English instead of crashing", () => {
+    // lang is typed Language, but runtime callers (stale localStorage, query
+    // params) can smuggle in an unknown code — the registry lookup must fall
+    // back to English.
+    const unknown = generatePrompt(
+      txData,
+      "73301",
+      "2026-03-30",
+      "xx" as unknown as Parameters<typeof generatePrompt>[3],
+    );
+    const en = generatePrompt(txData, "73301", "2026-03-30", "en");
+    expect(unknown.fullText).toBe(en.fullText);
+  });
+});
