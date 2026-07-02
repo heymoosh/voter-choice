@@ -2504,7 +2504,9 @@ Bumps
   text-decoration: underline;
   text-underline-offset: 3px;
 }
-.be-byok-getkey:hover { color: var(--civic-2); }
+.be-byok-getkey:hover {
+  color: var(--civic-2);
+}
 .be-byok-row {
   display: flex;
   gap: 10px;
