@@ -179,8 +179,12 @@ export function assemblePolisReport(
     };
   }
 
-  // Sort clusters by size descending
-  const sortedClusters = [...rawClusters].sort((a, b) => b.size - a.size);
+  // Sort clusters by size descending, dropping empty (size-0) phantom
+  // clusters — k-means++ init can seed a centroid no point ever lands on,
+  // and reporting it would show a 0-member group in the cluster map.
+  const sortedClusters = [...rawClusters]
+    .filter((c) => c.size > 0)
+    .sort((a, b) => b.size - a.size);
 
   // Consensus
   const rawConsensus = findConsensusStatements(vectors, rawClusters);

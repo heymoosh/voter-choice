@@ -297,6 +297,111 @@ describe("findConsensusStatements — unanimous fixture", () => {
 });
 
 // ---------------------------------------------------------------------------
+// findConsensusStatements — empty cluster (card 174c8798)
+// ---------------------------------------------------------------------------
+
+/**
+ * Two clean groups (5 sessions each) that fully disagree with each other on
+ * s1/s2, but unanimously agree on s3. Requesting k=3 clusters on this data
+ * naturally yields one empty cluster (k-means++ can seed a centroid that no
+ * point is ever closer to than the two real clusters) — this reproduces the
+ * bug from real `clusterVectors` output, not just a hand-built fixture.
+ */
+const TWO_GROUPS_WITH_SHARED_CONSENSUS: ResponseVector[] = [
+  { s1: "agree", s2: "disagree", s3: "agree" },
+  { s1: "agree", s2: "disagree", s3: "agree" },
+  { s1: "agree", s2: "disagree", s3: "agree" },
+  { s1: "agree", s2: "disagree", s3: "agree" },
+  { s1: "agree", s2: "disagree", s3: "agree" },
+  { s1: "disagree", s2: "agree", s3: "agree" },
+  { s1: "disagree", s2: "agree", s3: "agree" },
+  { s1: "disagree", s2: "agree", s3: "agree" },
+  { s1: "disagree", s2: "agree", s3: "agree" },
+  { s1: "disagree", s2: "agree", s3: "agree" },
+];
+
+describe("findConsensusStatements — empty cluster does not suppress consensus", () => {
+  it("clusterVectors(..., 3) on the fixture actually produces an empty cluster (precondition)", () => {
+    const clusters = clusterVectors(TWO_GROUPS_WITH_SHARED_CONSENSUS, 3);
+    expect(clusters).not.toBeNull();
+    expect(clusters!.length).toBe(3);
+    expect(clusters!.some((c) => c.size === 0)).toBe(true);
+  });
+
+  it("still finds s3 as consensus when one of the 3 clusters is empty", () => {
+    const clusters = clusterVectors(TWO_GROUPS_WITH_SHARED_CONSENSUS, 3);
+    expect(clusters).not.toBeNull();
+    expect(clusters!.some((c) => c.size === 0)).toBe(true); // precondition
+
+    const consensus = findConsensusStatements(
+      TWO_GROUPS_WITH_SHARED_CONSENSUS,
+      clusters,
+    );
+    const stmtIds = consensus.map((c) => c.statementId);
+    // Pre-fix: the empty cluster sets allClear=false for every statement,
+    // so consensus is [] and s3 (100% agreement in both real clusters) is
+    // wrongly excluded. Post-fix: the empty cluster is filtered out before
+    // the agreement check, so s3 clears the threshold.
+    expect(stmtIds).toContain("s3");
+  });
+
+  it("clusterAgreement on the consensus statement only covers the non-empty clusters", () => {
+    const clusters = clusterVectors(TWO_GROUPS_WITH_SHARED_CONSENSUS, 3);
+    expect(clusters).not.toBeNull();
+    const nonEmptyCount = clusters!.filter((c) => c.size > 0).length;
+
+    const consensus = findConsensusStatements(
+      TWO_GROUPS_WITH_SHARED_CONSENSUS,
+      clusters,
+    );
+    const s3 = consensus.find((c) => c.statementId === "s3");
+    expect(s3).toBeDefined();
+    expect(s3!.clusterAgreement.length).toBe(nonEmptyCount);
+    expect(s3!.clusterAgreement.every((ca) => ca.agreePct === 100)).toBe(true);
+  });
+
+  it("directly-constructed clusters: an empty cluster among agreeing non-empty clusters does not block consensus", () => {
+    // Hand-built Cluster[] (no dependency on k-means internals) mirroring the
+    // shape clusterVectors would produce: 2 clusters that fully agree on s1,
+    // 1 empty cluster in between.
+    const vectors: ResponseVector[] = Array.from({ length: 8 }, () => ({
+      s1: "agree" as const,
+    }));
+    const clustersWithEmpty: Cluster[] = [
+      { id: 0, size: 4, centroid: { s1: 1 }, memberIndices: [0, 1, 2, 3] },
+      { id: 1, size: 0, centroid: { s1: 0 }, memberIndices: [] },
+      { id: 2, size: 4, centroid: { s1: 1 }, memberIndices: [4, 5, 6, 7] },
+    ];
+
+    const consensus = findConsensusStatements(vectors, clustersWithEmpty);
+    expect(consensus.map((c) => c.statementId)).toContain("s1");
+    const s1 = consensus.find((c) => c.statementId === "s1")!;
+    expect(s1.clusterAgreement.length).toBe(2); // only the 2 non-empty clusters
+    expect(s1.minAgreePct).toBe(100);
+  });
+
+  it("an all-empty cluster list yields no consensus (not a crash)", () => {
+    const vectors: ResponseVector[] = Array.from({ length: 4 }, () => ({
+      s1: "agree" as const,
+    }));
+    const allEmpty: Cluster[] = [
+      { id: 0, size: 0, centroid: { s1: 0 }, memberIndices: [] },
+      { id: 1, size: 0, centroid: { s1: 0 }, memberIndices: [] },
+    ];
+    expect(findConsensusStatements(vectors, allEmpty)).toEqual([]);
+  });
+
+  it("all-nonempty clusters still behave exactly as before (regression guard)", () => {
+    const clusters = clusterVectors(UNANIMOUS_FIXTURE, 2);
+    expect(clusters).not.toBeNull();
+    expect(clusters!.every((c) => c.size > 0)).toBe(true); // precondition
+    const consensus = findConsensusStatements(UNANIMOUS_FIXTURE, clusters);
+    expect(consensus.map((c) => c.statementId)).toContain("s1");
+    expect(consensus.map((c) => c.statementId)).not.toContain("s2");
+  });
+});
+
+// ---------------------------------------------------------------------------
 // detectDividedState — divided fixture
 // ---------------------------------------------------------------------------
 
