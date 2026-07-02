@@ -1,5 +1,5 @@
 import type { DeadlineStatus } from "../types/election";
-import type { Language } from "./translations";
+import { translations, type Language } from "./translations";
 import { getTodayInLatestUsZone } from "./electionToday";
 
 type StatusColor = DeadlineStatus["color"];
@@ -12,14 +12,10 @@ function computeColor(daysLeft: number): StatusColor {
 }
 
 function computeLabel(daysLeft: number, lang: Language): string {
-  if (lang === "es") {
-    if (daysLeft < 0) return "Pasado";
-    if (daysLeft === 0) return "Hoy (último día)";
-    return `Quedan ${daysLeft} días`;
-  }
-  if (daysLeft < 0) return "Passed";
-  if (daysLeft === 0) return "Today (last day)";
-  return `${daysLeft} days left`;
+  const t = translations[lang].deadline;
+  if (daysLeft < 0) return t.passed;
+  if (daysLeft === 0) return t.today;
+  return t.daysLeft(daysLeft);
 }
 
 export function getDeadlineStatus(
