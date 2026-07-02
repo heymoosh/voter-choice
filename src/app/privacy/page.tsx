@@ -48,14 +48,18 @@ export default function PrivacyPolicy() {
             Minimal Data Collection
           </h2>
           <p className="mb-4">
-            We do not use analytics, telemetry, tracking pixels, user accounts,
-            or sign-ups. The app stores your{" "}
-            <strong>language preference</strong> in your browser&apos;s
-            localStorage so the interface can stay in English or Spanish across
-            visits. It also stores your <strong>draft ballot picks</strong> and
-            (optionally) a <strong>bring-your-own Anthropic key</strong> in
-            localStorage. None of this leaves your device unless you take an
-            action that explicitly sends it.
+            We do not use third-party analytics, tracking pixels, user accounts,
+            or sign-ups. We do record anonymous, content-free usage counts for
+            AI calls to monitor operating cost (see{" "}
+            <strong>Anonymous Usage Metrics</strong> below) &mdash; those
+            records never include your words, your address, or your IP address.
+            The app stores your <strong>language preference</strong> in your
+            browser&apos;s localStorage so the interface can stay in English or
+            Spanish across visits. It also stores your{" "}
+            <strong>draft ballot picks</strong> and (optionally) a{" "}
+            <strong>bring-your-own Anthropic key</strong> in localStorage. None
+            of this leaves your device unless you take an action that explicitly
+            sends it.
           </p>
 
           {/* Zip Code Processing */}
@@ -145,12 +149,15 @@ export default function PrivacyPolicy() {
           </h2>
           <p className="mb-4">
             To monitor operating cost and detect unusual volume or spending
-            spikes, we keep anonymous per-request operational metrics for AI
-            chat calls &mdash; the model used, token counts, and an estimated
-            cost figure. These records carry <em>no</em> identifier of any kind:
-            no IP address, no session id, no user id, no address, and{" "}
-            <em>none</em> of your words. They cannot be tied to a person or to
-            any other record. They are used only to understand aggregate cost
+            spikes, we keep anonymous per-request operational metrics for every
+            AI call the app makes &mdash; both the chat conversation and the
+            background candidate-research calls (used to fill in candidates with
+            no voting record) &mdash; covering the model used, call counts,
+            token totals, and an estimated cost figure. These records carry{" "}
+            <em>no</em> identifier of any kind: no IP address, no session id, no
+            user id, no address, and <em>none</em> of your words or the
+            candidate/topic being researched. They cannot be tied to a person or
+            to any other record. They are used only to understand aggregate cost
             and to catch abuse patterns; they are never used to profile,
             identify, or track individual users.
           </p>
