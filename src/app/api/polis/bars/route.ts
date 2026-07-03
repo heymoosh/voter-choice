@@ -30,6 +30,10 @@ import {
 } from "../../../../lib/server/counters";
 import { getIssueLabel } from "../../../../lib/canonicalIssues";
 import { computeOverlapBars } from "../../../../lib/server/polis/aggregates";
+import {
+  guardPolisRequest,
+  cachedPolisJson,
+} from "../../../../lib/server/polis/route-guard";
 
 /** Minimum session count before bars are surfaced (applies to both scopes). */
 const BARS_PER_READING_MIN = 50;
@@ -105,6 +109,9 @@ function resolveScope(searchParams: URLSearchParams): "national" | "county" {
 }
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
+  const blocked = await guardPolisRequest(request);
+  if (blocked) return blocked;
+
   const { searchParams } = new URL(request.url);
   const scope = resolveScope(searchParams);
   const userConcernsParam = searchParams.get("userConcerns") ?? "";
@@ -139,7 +146,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         status: "below_threshold",
         bars: [],
       };
-      return NextResponse.json(body, { status: 200 });
+      return cachedPolisJson(body);
     }
 
     if (overlap.count === 0) {
@@ -150,7 +157,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         count: 0,
         bars: [],
       };
-      return NextResponse.json(body, { status: 200 });
+      return cachedPolisJson(body);
     }
 
     const bars = barsFromCounts(overlap, userThemes);
@@ -161,7 +168,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       count: overlap.count,
       bars,
     };
-    return NextResponse.json(body, { status: 200 });
+    return cachedPolisJson(body);
   }
 
   // scope === "national"
@@ -175,7 +182,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       status: "below_threshold",
       bars: [],
     };
-    return NextResponse.json(body, { status: 200 });
+    return cachedPolisJson(body);
   }
 
   if (overlap.count === 0) {
@@ -185,7 +192,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       count: 0,
       bars: [],
     };
-    return NextResponse.json(body, { status: 200 });
+    return cachedPolisJson(body);
   }
 
   const bars = barsFromCounts(overlap, userThemes);
@@ -195,5 +202,5 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     count: overlap.count,
     bars,
   };
-  return NextResponse.json(body, { status: 200 });
+  return cachedPolisJson(body);
 }

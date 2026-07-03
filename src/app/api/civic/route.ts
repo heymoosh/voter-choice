@@ -3,6 +3,7 @@ import {
   isDurableStoreConfigured,
   redisCommand,
 } from "../../../lib/server/durable-store";
+import { getClientIP } from "../../../lib/server/client-ip";
 import { stateHintsFromAddress } from "../../../lib/stateHints";
 import type {
   BallotSourceAttempt,
@@ -65,14 +66,6 @@ function sanitizeAddress(raw: string): string | null {
   if (!trimmed) return null;
   if (trimmed.length > 200) return null;
   return trimmed;
-}
-
-function getClientIP(request: NextRequest): string {
-  return (
-    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-    request.headers.get("x-real-ip") ??
-    "unknown"
-  );
 }
 
 function validateOrigin(request: NextRequest): boolean {

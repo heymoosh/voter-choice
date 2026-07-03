@@ -23,6 +23,7 @@
 
 import { NextRequest } from "next/server";
 import { checkRaceDataRateLimit } from "../../../lib/server/race-data-rate-limit";
+import { getClientIP } from "../../../lib/server/client-ip";
 import { geocodeAddressToDistrict } from "../../../lib/server/census-geocode";
 import { resolveDelegation } from "../../../lib/server/delegation";
 import {
@@ -38,14 +39,6 @@ import { isCan2026DisplayEnabled } from "../../../lib/server/can-flag";
 
 const MIN_ADDRESS = 4;
 const MAX_ADDRESS = 300;
-
-function getClientIP(request: NextRequest): string {
-  return (
-    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-    request.headers.get("x-real-ip") ??
-    "unknown"
-  );
-}
 
 export async function POST(request: NextRequest) {
   const ip = getClientIP(request);

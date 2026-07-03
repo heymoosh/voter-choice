@@ -20,7 +20,7 @@ const CACHE_WRITE_COST_PER_MILLION = 1.25;
 // Anthropic's web_search server tool is billed per 1000 searches (model-agnostic).
 const SEARCH_COST_PER_THOUSAND = 10.0;
 
-const MONTHLY_BUDGET_USD = 50.0;
+export const MONTHLY_BUDGET_USD = 50.0;
 
 export type BudgetTier =
   | "normal"
@@ -49,7 +49,38 @@ let state: BudgetState = createFreshState();
 // Redis hash field name for the handoff flag.
 const HANDOFF_SERVED_FIELD = "handoffServed";
 
-function budgetKey(date = new Date()): string {
+// Per-instance counters for durable spend-write failures. A dropped
+// HINCRBYFLOAT/HINCRBY spend write means the durable spend under-counts what
+// Anthropic actually billed, so the shared budget cap quietly leaks. These
+// counters turn the previously-silent swallow into a structured, countable
+// signal (see recordUsageAsync). Serverless: each instance tracks its own
+// counts and logs them — no shared storage, no external alerting cost.
+interface BudgetWriteFailureStats {
+  // Total durable spend-write failures seen by this instance this process.
+  totalFailures: number;
+  // Consecutive failures since the last SUCCESSFUL durable spend write. A high
+  // value means the durable store has been unwritable for a sustained run —
+  // the drift indicator that matters for cap leakage.
+  consecutiveFailures: number;
+  // Epoch ms of the most recent failure, or null if none.
+  lastFailureAt: number | null;
+}
+
+let writeFailureStats: BudgetWriteFailureStats = {
+  totalFailures: 0,
+  consecutiveFailures: 0,
+  lastFailureAt: null,
+};
+
+/**
+ * Read this instance's durable spend-write failure counters. Exposed for
+ * observability/reconciliation (ops surfaces) and tests. Returns a copy.
+ */
+export function getBudgetWriteFailureStats(): BudgetWriteFailureStats {
+  return { ...writeFailureStats };
+}
+
+export function budgetKey(date = new Date()): string {
   const month = `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}`;
   return `voter-choice:budget:${month}`;
 }
@@ -112,6 +143,33 @@ function estimateUsageCost(record: UsageRecord): number {
   );
 }
 
+/** Cumulative token/search totals as stored in the durable budget hash. */
+export interface UsageTotals {
+  totalInputTokens: number;
+  totalOutputTokens: number;
+  totalCachedInputTokens: number;
+  totalCacheWriteTokens: number;
+  totalSearchCount: number;
+}
+
+/**
+ * Re-derive spend from cumulative token/search totals using the same pricing as
+ * live tracking. Single source of truth for the cost formula, so the ops
+ * reconciliation script can recompute expected spend from the stored token
+ * counts and compare it against the stored `estimatedSpendUSD` — a divergence
+ * means some spend writes were dropped (partial durable write).
+ */
+export function estimateSpendFromTotals(totals: UsageTotals): number {
+  return (
+    (totals.totalInputTokens / 1_000_000) * INPUT_COST_PER_MILLION +
+    (totals.totalOutputTokens / 1_000_000) * OUTPUT_COST_PER_MILLION +
+    (totals.totalCachedInputTokens / 1_000_000) *
+      CACHED_INPUT_COST_PER_MILLION +
+    (totals.totalCacheWriteTokens / 1_000_000) * CACHE_WRITE_COST_PER_MILLION +
+    (totals.totalSearchCount / 1000) * SEARCH_COST_PER_THOUSAND
+  );
+}
+
 export function recordUsage(
   inputOrRecord: number | UsageRecord,
   outputTokens?: number,
@@ -126,12 +184,7 @@ export function recordUsage(
   state.totalCacheWriteTokens += record.cacheWriteTokens ?? 0;
   state.totalSearchCount += record.searchCount ?? 0;
 
-  state.estimatedSpendUSD =
-    (state.totalInputTokens / 1_000_000) * INPUT_COST_PER_MILLION +
-    (state.totalOutputTokens / 1_000_000) * OUTPUT_COST_PER_MILLION +
-    (state.totalCachedInputTokens / 1_000_000) * CACHED_INPUT_COST_PER_MILLION +
-    (state.totalCacheWriteTokens / 1_000_000) * CACHE_WRITE_COST_PER_MILLION +
-    (state.totalSearchCount / 1000) * SEARCH_COST_PER_THOUSAND;
+  state.estimatedSpendUSD = estimateSpendFromTotals(state);
 }
 
 export async function recordUsageAsync(
@@ -172,8 +225,25 @@ export async function recordUsageAsync(
       ]),
       redisCommand(["EXPIRE", key, monthlyResetSeconds()]),
     ]);
+    // Durable write succeeded — clear the consecutive-failure streak.
+    writeFailureStats.consecutiveFailures = 0;
   } catch (err) {
-    console.error("Durable budget usage record failed:", err);
+    writeFailureStats.totalFailures += 1;
+    writeFailureStats.consecutiveFailures += 1;
+    writeFailureStats.lastFailureAt = Date.now();
+    // Structured, countable signal instead of a bare swallow. A dropped spend
+    // write means durable spend under-counts real billed usage, so the shared
+    // cap leaks with no visibility. The running counts let log-based alerting
+    // (and scripts/ops/budget-reconcile.ts) spot a sustained failure. Emitted
+    // as a single JSON line so it's greppable by `event`.
+    console.error(
+      JSON.stringify({
+        event: "budget_write_failed",
+        consecutiveFailures: writeFailureStats.consecutiveFailures,
+        totalFailures: writeFailureStats.totalFailures,
+        error: err instanceof Error ? err.message : String(err),
+      }),
+    );
   }
 }
 
@@ -329,4 +399,12 @@ export function _setSpendForTesting(usd: number): void {
 
 export function _setHandoffServedForTesting(value: boolean): void {
   state.handoffServed = value;
+}
+
+export function _resetWriteFailureStatsForTesting(): void {
+  writeFailureStats = {
+    totalFailures: 0,
+    consecutiveFailures: 0,
+    lastFailureAt: null,
+  };
 }

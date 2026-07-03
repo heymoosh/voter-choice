@@ -1,5 +1,6 @@
 import type { Theme } from "./types";
 import { parseThemeExtraction } from "./parse-theme-extraction";
+import { proseEndsWithDisambiguationTail } from "../alignment/poleVocabulary";
 
 export interface ThemeRefinementResult {
   /** The model's conversational reply (fence removed). May be empty when the
@@ -9,6 +10,14 @@ export interface ThemeRefinementResult {
    *  parseable fence — a conversational-only turn; the caller keeps the
    *  prior themes. */
   themes: Theme[] | null;
+  /** True when the prose ends with the open-ended disambiguation tail — the
+   *  precise signal that THIS turn asked a pole/novel-concept disambiguation
+   *  question (#175). The client counts it against DISAMBIGUATION_CAP. Because
+   *  the refinement prompt always returns the theme array and a reply may end
+   *  in an ordinary "?", this is derived from the specific tail, NOT from
+   *  `themes === null` (the old, always-false proxy) or a bare trailing "?"
+   *  (which over-counts everyday questions). */
+  askedDisambiguationQuestion: boolean;
 }
 
 const FENCE_RE = /```(?:json)?\s*\n?([\s\S]*?)\n?```/g;
@@ -30,7 +39,11 @@ export function parseThemeRefinement(raw: string): ThemeRefinementResult {
   const text = (raw || "").trim();
   const fences = [...text.matchAll(FENCE_RE)];
   if (fences.length === 0) {
-    return { prose: text, themes: null };
+    return {
+      prose: text,
+      themes: null,
+      askedDisambiguationQuestion: proseEndsWithDisambiguationTail(text),
+    };
   }
 
   const last = fences[fences.length - 1];
@@ -46,5 +59,9 @@ export function parseThemeRefinement(raw: string): ThemeRefinementResult {
     themes = null; // malformed fence → conversational-only turn
   }
 
-  return { prose, themes };
+  return {
+    prose,
+    themes,
+    askedDisambiguationQuestion: proseEndsWithDisambiguationTail(prose),
+  };
 }

@@ -301,30 +301,6 @@
   color: var(--ink);
 }
 
-/* ---- jurisdiction level tags [Δ] ---- */
-.lvl-tag {
-  font-family: var(--mono);
-  font-size: 8.5px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  padding: 2px 6px;
-  border-radius: 999px;
-  margin-left: 7px;
-  vertical-align: 1px;
-}
-.lvl-tag.federal {
-  background: oklch(0.94 0.022 250);
-  color: oklch(0.42 0.07 250);
-}
-.lvl-tag.state {
-  background: oklch(0.95 0.03 50);
-  color: oklch(0.46 0.08 40);
-}
-.lvl-tag.both {
-  background: var(--tag-bg);
-  color: var(--ink-2);
-}
-
 /* ---- rail done-check centering (shipped tick is pinned low-left) ---- */
 .ws-rail .race-list li.done .ind::after {
   left: 50%;

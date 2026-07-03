@@ -776,6 +776,43 @@ CROSS-CUTTING RULES:
 }
 
 /**
+ * The open-ended tail appended to EVERY disambiguation/clarifying question the
+ * refinement prompt asks (pole-disambiguation AND novel-concept). Exported as a
+ * single source of truth so the prompt that renders it and the client that
+ * detects it can't drift.
+ *
+ * WHY THIS IS THE QUESTION-CAP SIGNAL (#175): the client caps how many
+ * clarifying questions the flow may ask (DISAMBIGUATION_CAP). It must count a
+ * turn iff the model actually asked such a question — but the refinement prompt
+ * ALWAYS returns the full theme array and a reply may end in "?" for perfectly
+ * ordinary reasons ("want to add anything else?", "does that sound right?"), so
+ * neither `!themes` nor a bare trailing "?" is a valid signal. The prompt
+ * instructs the model to end ONLY its disambiguation/clarifying questions with
+ * this exact tail, so a reply whose prose ends with it is — by construction —
+ * a disambiguation question and nothing else is. `proseEndsWithDisambiguationTail`
+ * is the detector; both live here next to the renderer that emits the tail.
+ */
+export const DISAMBIGUATION_OPEN_ENDED_TAIL = "…or is it something else?";
+
+/**
+ * True when a model reply's prose ends with the open-ended disambiguation tail
+ * — the precise, drift-proof signal that THIS turn asked a pole/novel-concept
+ * disambiguation question (as opposed to an ordinary conversational question).
+ *
+ * Tolerances: the leading ellipsis may render as "…" or "..." or be dropped,
+ * and trailing whitespace is ignored. Anchored to the END so only a reply that
+ * *closes* on the question counts — a mid-prose "?" that the reply moves past
+ * does not (the soft one-question-per-turn guard). The distinctive
+ * "or is it something else?" phrase never appears at the end of ordinary
+ * refinement prose, so this does not over-count.
+ */
+export function proseEndsWithDisambiguationTail(prose: string): boolean {
+  return /(?:(?:…|\.\.\.)\s*)?or is it something else\s*\?\s*$/i.test(
+    (prose || "").trim(),
+  );
+}
+
+/**
  * Render the per-issue pole-disambiguation block for the theme-refinement
  * prompt (Alignment 2b). Called when at least one theme in the current list is
  * a contested issue with no resolved stance — the refinement prompt uses this
@@ -796,7 +833,7 @@ export function renderDisambiguationQuestions(): string {
     const d = e.disambiguation!;
     return (
       `  ${id}:\n` +
-      `    question: "${d.question} …or is it something else?"\n` +
+      `    question: "${d.question} ${DISAMBIGUATION_OPEN_ENDED_TAIL}"\n` +
       `    option_in_favor: "${d.options[0].label}" → stance=in_favor\n` +
       `    option_opposed:  "${d.options[1].label}" → stance=opposed`
     );
