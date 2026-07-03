@@ -798,3 +798,65 @@ export const voterIssueEvents = pgTable(
     index("voter_issue_events_sub_issue_idx").on(t.canonicalIssue, t.subIssue),
   ],
 );
+
+// ---------------------------------------------------------------------------
+// member_stock_transactions — STOCK Act Periodic Transaction Report (PTR)
+// disclosures for sitting House/Senate members. Populated by
+// scripts/ingest/stock-transactions.ts. INCUMBENTS ONLY — a transaction only
+// gets a row here once it is matched to a `candidates` row with
+// is_incumbent = true (House: state+district; Senate: bioguide id).
+//
+// HONESTY CONTRACT: the STOCK Act discloses dollar bands, never exact
+// amounts. amount_low/amount_high are the parsed bounds of that band
+// (amount_high is NULL for the open-ended top band, e.g. "Over
+// $50,000,000") — never fabricate a point estimate. amount_range_label
+// keeps the verbatim source string for display. Both transaction_date and
+// disclosure_date are stored (STOCK Act filings can lag the trade by weeks),
+// plus filing_url — the official House Clerk / Senate eFD PTR filing — so
+// every row is independently verifiable.
+// ---------------------------------------------------------------------------
+export const memberStockTransactions = pgTable(
+  "member_stock_transactions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    candidateId: text("candidate_id")
+      .notNull()
+      .references(() => candidates.id),
+    // Authoritative for Senate rows (source dataset provides it directly);
+    // derived from candidateId ("federal-<BIOGUIDE>") for House rows.
+    bioguideId: text("bioguide_id"),
+    chamber: text("chamber").notNull(), // "house" | "senate"
+    ticker: text("ticker"), // NULL for non-ticker assets (bonds, etc.) or unresolved ("--")
+    assetDescription: text("asset_description").notNull(),
+    assetType: text("asset_type"), // source verbatim: "Stock" | "Corporate Bond" | "Other Securities" | ...
+    // Normalized bucket for filtering/display; rawTransactionType keeps the
+    // verbatim source label (e.g. "Sale (Partial)") for full fidelity.
+    transactionType: text("transaction_type").notNull(), // "purchase" | "sale" | "sale_partial" | "exchange" | "other"
+    rawTransactionType: text("raw_transaction_type").notNull(),
+    // STOCK Act range bounds — see HONESTY CONTRACT above. Never exact amounts.
+    amountLow: numeric("amount_low", { precision: 14, scale: 2 }).notNull(),
+    amountHigh: numeric("amount_high", { precision: 14, scale: 2 }), // NULL = open-ended top band
+    amountRangeLabel: text("amount_range_label").notNull(), // verbatim source label, e.g. "$1,001 - $15,000"
+    transactionDate: date("transaction_date").notNull(),
+    disclosureDate: date("disclosure_date"), // NULL when the source omitted/couldn't parse it
+    owner: text("owner"), // "Self" | "Spouse" | "Joint" | "Child" | null
+    filingUrl: text("filing_url").notNull(), // official PTR filing (House Clerk PDF / Senate eFD)
+    sourceDataset: text("source_dataset").notNull(), // "house_stock_watcher" | "senate_stock_watcher"
+    // Idempotency key computed by the ingest (no per-row id in either source
+    // dataset) — see buildExternalId in stock-transactions.ts.
+    externalId: text("external_id").notNull(),
+    rawMetadata: jsonb("raw_metadata"), // source-specific extras (comment, filing_id, raw member name, ...)
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("member_stock_transactions_external_id_uidx").on(t.externalId),
+    index("member_stock_transactions_candidate_idx").on(t.candidateId),
+    index("member_stock_transactions_txn_date_idx").on(t.transactionDate),
+    index("member_stock_transactions_chamber_idx").on(t.chamber),
+  ],
+);
