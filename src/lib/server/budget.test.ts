@@ -8,14 +8,18 @@ import {
   shouldTriggerHandoff,
   markHandoffServed,
   wasHandoffServed,
+  getBudgetWriteFailureStats,
+  estimateSpendFromTotals,
   _resetForTesting,
   _setSpendForTesting,
   _setHandoffServedForTesting,
+  _resetWriteFailureStatsForTesting,
 } from "./budget";
 
 describe("budget", () => {
   beforeEach(() => {
     _resetForTesting();
+    _resetWriteFailureStatsForTesting();
   });
 
   afterEach(() => {
@@ -102,6 +106,90 @@ describe("budget", () => {
           String(init?.body).includes("HINCRBYFLOAT"),
         ),
       ).toBe(true);
+    });
+  });
+
+  describe("durable write-failure signal", () => {
+    beforeEach(() => {
+      vi.stubEnv("KV_REST_API_URL", "https://redis.example.test");
+      vi.stubEnv("KV_REST_API_TOKEN", "test-token");
+    });
+
+    it("emits a structured budget_write_failed signal with an increasing count on persistent failure", async () => {
+      vi.spyOn(globalThis, "fetch").mockRejectedValue(
+        new Error("Redis connection refused"),
+      );
+      const errSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+      // recordUsageAsync must NOT throw even when the durable write fails.
+      await expect(
+        recordUsageAsync({ inputTokens: 1_000_000, outputTokens: 0 }),
+      ).resolves.toBeUndefined();
+      await expect(
+        recordUsageAsync({ inputTokens: 1_000_000, outputTokens: 0 }),
+      ).resolves.toBeUndefined();
+
+      // Both failures logged a JSON structured signal.
+      const signals = errSpy.mock.calls
+        .map((c) => c[0])
+        .filter((s): s is string => typeof s === "string")
+        .map((s) => {
+          try {
+            return JSON.parse(s) as Record<string, unknown>;
+          } catch {
+            return null;
+          }
+        })
+        .filter(
+          (o): o is Record<string, unknown> =>
+            !!o && o.event === "budget_write_failed",
+        );
+
+      expect(signals).toHaveLength(2);
+      // Count increases across consecutive failures.
+      expect(signals[0].consecutiveFailures).toBe(1);
+      expect(signals[0].totalFailures).toBe(1);
+      expect(signals[1].consecutiveFailures).toBe(2);
+      expect(signals[1].totalFailures).toBe(2);
+
+      // Counters are also readable for observability/reconciliation.
+      const stats = getBudgetWriteFailureStats();
+      expect(stats.totalFailures).toBe(2);
+      expect(stats.consecutiveFailures).toBe(2);
+      expect(stats.lastFailureAt).toBeTypeOf("number");
+    });
+
+    it("resets the consecutive-failure streak after a successful durable write", async () => {
+      let succeed = false;
+      vi.spyOn(globalThis, "fetch").mockImplementation(async () => {
+        if (!succeed) throw new Error("Redis connection refused");
+        return new Response(JSON.stringify({ result: "OK" }), { status: 200 });
+      });
+      vi.spyOn(console, "error").mockImplementation(() => {});
+
+      await recordUsageAsync({ inputTokens: 1_000_000, outputTokens: 0 }); // fail 1
+      expect(getBudgetWriteFailureStats().consecutiveFailures).toBe(1);
+
+      succeed = true;
+      await recordUsageAsync({ inputTokens: 1_000_000, outputTokens: 0 }); // success
+      const stats = getBudgetWriteFailureStats();
+      expect(stats.consecutiveFailures).toBe(0); // streak reset
+      expect(stats.totalFailures).toBe(1); // total preserved
+    });
+  });
+
+  describe("estimateSpendFromTotals", () => {
+    it("re-derives spend from token totals using the live pricing", () => {
+      // 1M input @ $1/M + 1M output @ $5/M = $6.
+      expect(
+        estimateSpendFromTotals({
+          totalInputTokens: 1_000_000,
+          totalOutputTokens: 1_000_000,
+          totalCachedInputTokens: 0,
+          totalCacheWriteTokens: 0,
+          totalSearchCount: 0,
+        }),
+      ).toBe(6);
     });
   });
 
