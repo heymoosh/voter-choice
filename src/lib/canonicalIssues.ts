@@ -28,6 +28,24 @@ export const CANONICAL_ISSUE_LABELS: Record<string, string> = {
 };
 
 /**
+ * Own-key set of canonical issue ids. Built from `Object.keys` so membership
+ * checks never inherit from the prototype — a raw `id in CANONICAL_ISSUE_LABELS`
+ * would report `true` for `"toString"`, `"constructor"`, etc.
+ */
+const CANONICAL_ISSUE_IDS: ReadonlySet<string> = new Set(
+  Object.keys(CANONICAL_ISSUE_LABELS),
+);
+
+/**
+ * True only for a known canonical issue id. Use this — not `in` — anywhere an
+ * untrusted value gates a canonical issue (e.g. the /api/counters write path,
+ * where the id becomes a Redis key segment).
+ */
+export function isCanonicalIssueId(id: string): boolean {
+  return CANONICAL_ISSUE_IDS.has(id);
+}
+
+/**
  * Return a human-readable label for a canonical issue id.
  * Falls back to a title-cased version of the id if not found.
  */

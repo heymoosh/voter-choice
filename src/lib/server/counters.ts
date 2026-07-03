@@ -15,7 +15,11 @@
  * Dedupe namespace: voter-choice:dedupe:*
  */
 
-import { isDurableStoreConfigured, redisCommand } from "./durable-store";
+import {
+  isDurableStoreConfigured,
+  redisCommand,
+  redisScanKeys,
+} from "./durable-store";
 import { getDb, DB_NOT_CONFIGURED } from "../../../db/client";
 import { voterIssueEvents } from "../../../db/schema";
 
@@ -163,23 +167,19 @@ export async function incrementSessionCounters(
         commands.push(redisCommand(["INCRBY", `${countyPrimaryP}:total`, 1]));
       }
 
-      // Issue-level counters
+      // Issue-level counters. The canonicalIssue is sanitized before it forms
+      // a key segment — the route already allow-lists to canonical ids, this
+      // is defense-in-depth against any other caller.
       for (const { canonicalIssue } of confirmedConcerns) {
         if (!canonicalIssue) continue;
+        const issueSeg = sanitizeKeySegment(canonicalIssue);
+        if (!issueSeg) continue;
         commands.push(
-          redisCommand([
-            "INCRBY",
-            `${statePrimaryP}:issue:${canonicalIssue}`,
-            1,
-          ]),
+          redisCommand(["INCRBY", `${statePrimaryP}:issue:${issueSeg}`, 1]),
         );
         if (countyPrimaryP) {
           commands.push(
-            redisCommand([
-              "INCRBY",
-              `${countyPrimaryP}:issue:${canonicalIssue}`,
-              1,
-            ]),
+            redisCommand(["INCRBY", `${countyPrimaryP}:issue:${issueSeg}`, 1]),
           );
         }
       }
@@ -213,13 +213,17 @@ export async function incrementSessionCounters(
 
     for (const { canonicalIssue } of confirmedConcerns) {
       if (!canonicalIssue) continue;
-      memIncr(`${statePrimaryP}:issue:${canonicalIssue}`);
-      memIncr(`${cpp}:issue:${canonicalIssue}`);
+      const issueSeg = sanitizeKeySegment(canonicalIssue);
+      if (!issueSeg) continue;
+      memIncr(`${statePrimaryP}:issue:${issueSeg}`);
+      memIncr(`${cpp}:issue:${issueSeg}`);
     }
   } else {
     for (const { canonicalIssue } of confirmedConcerns) {
       if (!canonicalIssue) continue;
-      memIncr(`${statePrimaryP}:issue:${canonicalIssue}`);
+      const issueSeg = sanitizeKeySegment(canonicalIssue);
+      if (!issueSeg) continue;
+      memIncr(`${statePrimaryP}:issue:${issueSeg}`);
     }
   }
 
@@ -304,10 +308,8 @@ async function durableGetPrimaryTotal(
 }
 
 /**
- * Fetch issue counts for a given prefix (state or county) using KEYS.
- *
- * NOTE: KEYS is acceptable here because the namespace is small and
- * state/county-scoped. Flag for future SCAN optimization when namespaces grow.
+ * Fetch issue counts for a given prefix (state or county) via non-blocking
+ * SCAN iteration over the issue counters in that scope.
  */
 async function durableGetIssueCounts(scopePrefix: string): Promise<
   Array<{
@@ -317,8 +319,8 @@ async function durableGetIssueCounts(scopePrefix: string): Promise<
   }>
 > {
   const pattern = `${scopePrefix}:primary:*:issue:*`;
-  const keys = await redisCommand<string[]>(["KEYS", pattern]);
-  if (!keys || keys.length === 0) return [];
+  const keys = await redisScanKeys(pattern);
+  if (keys.length === 0) return [];
 
   // Fetch all values in parallel
   const values = await Promise.all(
@@ -558,10 +560,7 @@ async function durableFetchNationalOverlapCounts(
     : `${NS}:state:*`;
 
   // Sum every state-level :total counter for the national session count.
-  const totalKeys = await redisCommand<string[]>([
-    "KEYS",
-    `${stateGlob}:total`,
-  ]);
+  const totalKeys = await redisScanKeys(`${stateGlob}:total`);
   // Filter out per-primary subtotals (which match :primary:X:total too).
   // The exact state-level :total pattern is `${NS}:state:<code>:total`
   // with no :primary: segment in between.
@@ -578,12 +577,9 @@ async function durableFetchNationalOverlapCounts(
   }
 
   // Sum every state-level per-issue counter across primaries.
-  const issueKeys = await redisCommand<string[]>([
-    "KEYS",
-    `${stateGlob}:primary:*:issue:*`,
-  ]);
+  const issueKeys = await redisScanKeys(`${stateGlob}:primary:*:issue:*`);
   const issueCounts: Record<string, number> = {};
-  if (issueKeys && issueKeys.length > 0) {
+  if (issueKeys.length > 0) {
     const values = await Promise.all(
       issueKeys.map((k) => redisCommand<string>(["GET", k])),
     );
@@ -627,13 +623,8 @@ export async function fetchNationalPolisAggregate(): Promise<PolisAggregate> {
 
 async function durableFetchNationalPolisAggregate(): Promise<PolisAggregate> {
   // Nation-wide session count: sum exact state-level :total keys.
-  const totalKeys = await redisCommand<string[]>([
-    "KEYS",
-    `${NS}:state:*:total`,
-  ]);
-  const stateTotalKeys = (totalKeys ?? []).filter(
-    (k) => !k.includes(":primary:"),
-  );
+  const totalKeys = await redisScanKeys(`${NS}:state:*:total`);
+  const stateTotalKeys = totalKeys.filter((k) => !k.includes(":primary:"));
   let sampleSize = 0;
   if (stateTotalKeys.length > 0) {
     const values = await Promise.all(
@@ -644,7 +635,7 @@ async function durableFetchNationalPolisAggregate(): Promise<PolisAggregate> {
 
   // Per-primary totals across states.
   const primaryTotalsMap = new Map<string, number>();
-  const primaryKeys = (totalKeys ?? []).filter((k) => k.includes(":primary:"));
+  const primaryKeys = totalKeys.filter((k) => k.includes(":primary:"));
   if (primaryKeys.length > 0) {
     const values = await Promise.all(
       primaryKeys.map((k) => redisCommand<string>(["GET", k])),
@@ -659,12 +650,9 @@ async function durableFetchNationalPolisAggregate(): Promise<PolisAggregate> {
   }
 
   // Per-(primary, issue) counts across states.
-  const issueKeys = await redisCommand<string[]>([
-    "KEYS",
-    `${NS}:state:*:primary:*:issue:*`,
-  ]);
+  const issueKeys = await redisScanKeys(`${NS}:state:*:primary:*:issue:*`);
   const issueCountsMap = new Map<string, number>();
-  if (issueKeys && issueKeys.length > 0) {
+  if (issueKeys.length > 0) {
     const values = await Promise.all(
       issueKeys.map((k) => redisCommand<string>(["GET", k])),
     );

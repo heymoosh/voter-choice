@@ -17,31 +17,44 @@
  * scores are keyed on the real name and contain it — rendering inside a
  * still-blinded card would blow anonymity. This route trusts the caller's gate.
  *
- * Rate-limited by IP (fail-open, same as /api/race-data). Budget usage is
- * recorded inside the sub-agent (recordUsageAsync), so spend stays visible.
+ * Cross-origin POSTs are rejected (same-origin gate, like the sibling AI
+ * routes). Rate-limited by IP (fail-open, same as /api/race-data), then gated
+ * by a fail-closed per-caller spend limit before any billable research runs.
+ * Budget usage is recorded inside the sub-agent (recordUsageAsync), so spend
+ * stays visible.
  */
 import { NextRequest } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { checkRaceDataRateLimit } from "../../../lib/server/race-data-rate-limit";
+import { checkResearchSpendLimit } from "../../../lib/server/research-spend-limit";
+import { getClientIP } from "../../../lib/server/client-ip";
 import { researchAndPersistCandidate } from "../../../lib/server/candidate-data";
 import { getBudgetStatusAsync } from "../../../lib/server/budget";
 
 const MAX_FIELD = 300;
 const MAX_ISSUES = 10;
 
-function getClientIP(request: NextRequest): string {
-  return (
-    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-    request.headers.get("x-real-ip") ??
-    "unknown"
-  );
-}
-
 function str(v: unknown): string {
   return typeof v === "string" ? v.trim() : "";
 }
 
+/** Same-origin gate, mirroring /api/civic, /api/chat, /api/extract-ballot. */
+function validateOrigin(request: NextRequest): boolean {
+  const origin = request.headers.get("origin");
+  const host = request.headers.get("host");
+  if (!origin || !host) return false;
+  try {
+    return new URL(origin).host === host;
+  } catch {
+    return false;
+  }
+}
+
 export async function POST(request: NextRequest) {
+  if (!validateOrigin(request)) {
+    return Response.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   const ip = getClientIP(request);
   if (!(await checkRaceDataRateLimit(ip))) {
     return Response.json(
@@ -105,6 +118,15 @@ export async function POST(request: NextRequest) {
     return Response.json(
       { error: "Research service is not configured" },
       { status: 500 },
+    );
+  }
+
+  // Fail-closed per-caller spend cap: this path can spawn a billable research
+  // sub-agent, so if the limit can't be enforced we deny rather than spend.
+  if (!(await checkResearchSpendLimit(ip))) {
+    return Response.json(
+      { error: "Research limit reached", code: "SPEND_LIMITED" },
+      { status: 429 },
     );
   }
 

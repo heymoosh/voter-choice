@@ -21,6 +21,7 @@
  */
 import type Anthropic from "@anthropic-ai/sdk";
 import { prependSafetyHeader } from "../prompts/safety-header";
+import { frameUntrustedRetrievedData } from "../prompts/untrusted-framing";
 import {
   buildResearchCandidatePrompt,
   type ResearchCandidateInput,
@@ -31,6 +32,7 @@ import {
   type StructuredIssueResult,
 } from "../prompts/research-candidate-structured";
 import { recordUsageAsync } from "./budget";
+import { recordChatUsage } from "./chat-usage-metrics";
 
 export type {
   ResearchCandidateInput,
@@ -75,7 +77,12 @@ function extractSearchCount(usage: UsageWithServerTools): number {
  * back to "no public record found" language.
  */
 export interface ResearchResult {
-  /** 3-bullet distilled summary plus sources line. Plain text. */
+  /**
+   * 3-bullet distilled summary plus sources line, wrapped in untrusted-data
+   * delimiters (see frameUntrustedRetrievedData). This is web-derived content
+   * fed back to the main model as tool_result, so it carries the framing at its
+   * source. Empty string when the sub-call produced nothing (unavailable).
+   */
   summary: string;
   /** Token / search usage from the sub-call. */
   usage: { input: number; output: number; searchCount: number };
@@ -165,12 +172,34 @@ export async function runResearchSubAgent(
       cacheWriteTokens: cache_write_tokens,
       searchCount,
     });
+    // Anonymous per-request cost telemetry — same fail-soft helper the chat
+    // route uses, discriminated as call_kind:'research' so the sub-call's
+    // spend is visible in chat_usage_metrics. Stores NO identifier
+    // (no session, no IP, no address, no prompt text).
+    await recordChatUsage(
+      {
+        inputTokens: input_tokens,
+        cacheReadTokens: cached_input_tokens,
+        cacheWriteTokens: cache_write_tokens,
+        outputTokens: output_tokens,
+        webSearchCount: searchCount,
+      },
+      { model: RESEARCH_SUB_AGENT_MODEL, callKind: "research" },
+    );
   }
 
   const unavailable = summary.length < UNAVAILABLE_MIN_CHARS;
 
+  // Indirect prompt injection defense: this text is distilled from arbitrary
+  // web pages and is fed straight back into the main model as tool_result
+  // content. Frame it as untrusted data so embedded instructions can't steer
+  // the main conversation. Unavailability is computed on the raw length above,
+  // before framing inflates it.
+  const framedSummary =
+    summary.length > 0 ? frameUntrustedRetrievedData(summary) : summary;
+
   return {
-    summary,
+    summary: framedSummary,
     usage: {
       input: input_tokens,
       output: output_tokens,
@@ -268,6 +297,18 @@ export async function runStructuredCandidateResearch(
       cacheWriteTokens: cache_write_tokens,
       searchCount,
     });
+    // Anonymous per-request cost telemetry — same content-free policy as the
+    // prose sub-agent above (call_kind:'research', counts only, NO PII).
+    await recordChatUsage(
+      {
+        inputTokens: input_tokens,
+        cacheReadTokens: cached_input_tokens,
+        cacheWriteTokens: cache_write_tokens,
+        outputTokens: output_tokens,
+        webSearchCount: searchCount,
+      },
+      { model: RESEARCH_SUB_AGENT_MODEL, callKind: "research" },
+    );
   }
 
   // Parse JSON — be permissive about leading/trailing text the model may emit.

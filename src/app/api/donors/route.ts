@@ -15,6 +15,7 @@
 
 import { NextRequest } from "next/server";
 import { checkCounterRateLimit } from "../../../lib/server/counters-rate-limit";
+import { getClientIP } from "../../../lib/server/client-ip";
 import { lookupDonorCoalition } from "../../../lib/server/donors";
 
 // ---------------------------------------------------------------------------
@@ -38,14 +39,6 @@ const ELECTION_CYCLE_RE = /^\d{4}$/;
 
 function isValidElectionCycle(s: string): boolean {
   return ELECTION_CYCLE_RE.test(s);
-}
-
-function getClientIP(request: NextRequest): string {
-  return (
-    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-    request.headers.get("x-real-ip") ??
-    "unknown"
-  );
 }
 
 // ---------------------------------------------------------------------------

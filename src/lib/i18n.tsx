@@ -7,10 +7,12 @@ import React, {
   useEffect,
   useState,
 } from "react";
-import type { Language } from "./translations";
+import { translations, type Language } from "./translations";
 
 const STORAGE_KEY = "ballot-tool-lang";
-const VALID_LANGUAGES: Language[] = ["en", "es"];
+// Derived from the locale registry — registering a new locale in
+// translations.ts makes it valid here with no edits to this file.
+const VALID_LANGUAGES = Object.keys(translations) as Language[];
 
 interface LanguageContextValue {
   lang: Language;
