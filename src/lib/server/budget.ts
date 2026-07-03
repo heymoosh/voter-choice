@@ -1,4 +1,8 @@
-import { isDurableStoreConfigured, redisCommand } from "./durable-store";
+import {
+  isDurableStoreConfigured,
+  durableStoreUnconfiguredInProd,
+  redisCommand,
+} from "./durable-store";
 
 // Anthropic pricing for Claude Haiku 4.5 (per 1M tokens). Must stay in sync
 // with the model used in src/app/api/chat/route.ts (DEFAULT_ANTHROPIC_CHAT_MODEL).
@@ -191,6 +195,12 @@ export async function recordUsageAsync(
   inputOrRecord: number | UsageRecord,
   outputTokens?: number,
 ): Promise<void> {
+  if (durableStoreUnconfiguredInProd()) {
+    // Fail closed: no durable store to write to, and per-instance memory is
+    // meaningless across serverless instances. The read/gate path fails closed
+    // independently, so drop the write rather than pretend to track spend.
+    return;
+  }
   if (!isDurableStoreConfigured()) {
     recordUsage(inputOrRecord, outputTokens);
     return;
@@ -306,6 +316,13 @@ export async function getBudgetStatusAsync(): Promise<{
   percent: number;
   estimatedSpendUSD: number;
 }> {
+  if (durableStoreUnconfiguredInProd()) {
+    // Fail closed: cannot confirm shared spend, so treat the community budget
+    // as exhausted rather than reading per-instance in-memory state (which
+    // every fresh serverless instance sees as $0). handoffServed=false so the
+    // voter still gets the handoff completion — mirrors the Redis-error path.
+    return budgetStatusFromSpend(MONTHLY_BUDGET_USD, false);
+  }
   if (!isDurableStoreConfigured()) return getBudgetStatus();
 
   try {
