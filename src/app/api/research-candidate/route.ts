@@ -23,19 +23,12 @@
 import { NextRequest } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { checkRaceDataRateLimit } from "../../../lib/server/race-data-rate-limit";
+import { getClientIP } from "../../../lib/server/client-ip";
 import { researchAndPersistCandidate } from "../../../lib/server/candidate-data";
 import { getBudgetStatusAsync } from "../../../lib/server/budget";
 
 const MAX_FIELD = 300;
 const MAX_ISSUES = 10;
-
-function getClientIP(request: NextRequest): string {
-  return (
-    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-    request.headers.get("x-real-ip") ??
-    "unknown"
-  );
-}
 
 function str(v: unknown): string {
   return typeof v === "string" ? v.trim() : "";
