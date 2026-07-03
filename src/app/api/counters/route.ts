@@ -15,6 +15,7 @@ import {
   type ConcernEvent,
 } from "../../../lib/server/counters";
 import { checkCounterRateLimit } from "../../../lib/server/counters-rate-limit";
+import { getClientIP } from "../../../lib/server/client-ip";
 
 // ---------------------------------------------------------------------------
 // Validation
@@ -128,14 +129,6 @@ function validateBody(body: unknown): CounterBody | null {
 // ---------------------------------------------------------------------------
 // Route handler
 // ---------------------------------------------------------------------------
-
-function getClientIP(request: NextRequest): string {
-  return (
-    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-    request.headers.get("x-real-ip") ??
-    "unknown"
-  );
-}
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   const ip = getClientIP(request);

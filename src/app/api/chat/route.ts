@@ -1,6 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { NextRequest } from "next/server";
 import { checkRateLimitAsync } from "../../../lib/server/rate-limit";
+import { getClientIP } from "../../../lib/server/client-ip";
 import {
   recordUsageAsync,
   getBudgetStatusAsync,
@@ -288,14 +289,6 @@ interface ChatRequest {
   raceContext?: RaceContextPayload;
   /** Phase 5 — session-global ballot context from the state party gate. */
   ballotContext?: BallotContextPayload;
-}
-
-function getClientIP(request: NextRequest): string {
-  return (
-    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-    request.headers.get("x-real-ip") ??
-    "unknown"
-  );
 }
 
 function validateOrigin(request: NextRequest): boolean {

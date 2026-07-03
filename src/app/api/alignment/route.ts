@@ -15,6 +15,7 @@
 
 import { NextRequest } from "next/server";
 import { checkCounterRateLimit } from "../../../lib/server/counters-rate-limit";
+import { getClientIP } from "../../../lib/server/client-ip";
 import {
   resolveCandidateId,
   lookupAlignment,
@@ -48,14 +49,6 @@ const CANONICAL_ISSUE_RE = /^[a-z][a-z0-9_]{0,63}$/;
 
 function isValidCanonicalIssue(s: string): boolean {
   return CANONICAL_ISSUE_RE.test(s);
-}
-
-function getClientIP(request: NextRequest): string {
-  return (
-    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-    request.headers.get("x-real-ip") ??
-    "unknown"
-  );
 }
 
 // ---------------------------------------------------------------------------

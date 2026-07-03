@@ -24,6 +24,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { createHash } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { checkRateLimitAsync } from "../../../lib/server/rate-limit";
+import { getClientIP } from "../../../lib/server/client-ip";
 import {
   isDurableStoreConfigured,
   redisCommand,
@@ -173,14 +174,6 @@ function writeExtractionCache(hash: string, payload: BallotExtraction): void {
       });
     }
   })();
-}
-
-function getClientIP(request: NextRequest): string {
-  return (
-    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-    request.headers.get("x-real-ip") ??
-    "unknown"
-  );
 }
 
 function validateOrigin(request: NextRequest): boolean {
