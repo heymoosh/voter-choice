@@ -923,6 +923,32 @@ describe("POST /api/chat — Phase 9 budget exhaustion returns structured 200", 
     // retained this as the canonical handoff target.
     expect(body.handoffPrompt ?? "").toContain("BALLOT RESEARCH TOOL");
   });
+
+  // Cold-lambda hard-stop: the durable tier is the deciding signal, NOT the
+  // per-instance in-memory wasHandoffServed() flag. A fresh/cold lambda has the
+  // in-memory flag unset (false) even though the durable store already recorded
+  // the handoff as served (which is exactly why getBudgetStatusAsync resolves
+  // tier="exhausted"). The exhausted branch must still be taken so the user is
+  // NOT billed for another completion. Pre-fix, the gate ANDed in the in-memory
+  // flag, so a cold lambda fell through and called the model.
+  it("still blocks (no billing) when durable tier is exhausted but the in-memory handoff flag is unset (cold lambda)", async () => {
+    vi.mocked(getBudgetStatusAsync).mockResolvedValue({
+      tier: "exhausted",
+      percent: 100,
+      estimatedSpendUSD: 50.5,
+    });
+    // Cold/fresh lambda: in-memory flag never got set in this process.
+    vi.mocked(wasHandoffServed).mockReturnValue(false);
+
+    const req = makeChatRequest();
+    const res = await POST(req as never);
+
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { status?: string };
+    expect(body.status).toBe("budget_exhausted");
+    // The hard-stop must prevent any model call (no billing).
+    expect(messagesCreateMock).not.toHaveBeenCalled();
+  });
 });
 
 // ---------------------------------------------------------------------------
