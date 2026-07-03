@@ -7,7 +7,6 @@ import {
   getBudgetStatusAsync,
   shouldTriggerHandoffAsync,
   markHandoffServed,
-  wasHandoffServed,
   type BudgetTier,
 } from "../../../lib/server/budget";
 import {
@@ -815,12 +814,13 @@ function budgetGateResponse(
   isNewSession: boolean | undefined,
   budget: Awaited<ReturnType<typeof getBudgetStatusAsync>>,
 ): Response | null {
-  // The tier logic in budget.ts already withholds "exhausted" until the handoff
-  // has been served (returning "handoff" instead). This belt-and-suspenders check
-  // ensures we never surface the budget-exhausted continuity state unless the
-  // handoff is confirmed served — guarding against any future path that could
-  // bypass the tier coercion.
-  if (tier === "exhausted" && wasHandoffServed()) {
+  // `tier` here is the DURABLE tier from getBudgetStatusAsync: budget.ts only
+  // coerces it to "exhausted" once the durable handoffServed flag is set (see
+  // budgetStatusFromSpend). That durable signal — not the per-instance in-memory
+  // wasHandoffServed() flag — is what decides the hard-stop. A cold/fresh lambda
+  // has the in-memory flag unset even when the handoff was already served, so
+  // gating on it let an exhausted-budget user slip past the hard-stop and bill.
+  if (tier === "exhausted") {
     // Phase 9 — structured 200 instead of 503. The client renders the
     // continuity screen (BudgetExhausted) from this payload. The
     // handoffPrompt body is the canonical legacy English ballot prompt —
