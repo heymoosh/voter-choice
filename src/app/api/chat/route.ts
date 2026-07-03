@@ -488,7 +488,10 @@ function prependBallotContext(
  */
 function buildLegacySystemPrompt(body: ChatRequest): string {
   return appendVoterProfile(
-    prependBallotContext(body.systemPrompt, body.ballotContext),
+    prependBallotContext(
+      prependSafetyHeader(body.systemPrompt),
+      body.ballotContext,
+    ),
     body.voterProfile,
   );
 }
@@ -496,9 +499,10 @@ function buildLegacySystemPrompt(body: ChatRequest): string {
 /**
  * Compose the outgoing system prompt.
  *
- * Flag-OFF path: bit-identical to the historical behavior — body's
- * `systemPrompt` field is passed through, with an optional voter-profile
- * suffix. This preserves every legacy assertion until the rollout completes.
+ * Flag-OFF path: body's `systemPrompt` field is wrapped with the shared
+ * safety header (same as the flag-on path), with an optional voter-profile
+ * suffix. Wrapping here keeps the fallback/out-of-budget prompt consistent
+ * with the live v2 path so the safety framing is never dropped.
  *
  * Flag-ON path: route on (view, raceType, trigger) → builder key, render the
  * task-specific body from `raceContext`, prepend the shared safety header,
