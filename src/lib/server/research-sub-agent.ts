@@ -18,6 +18,12 @@
  * `recordUsageAsync` so the community budget tier sees both the main
  * conversation AND the sub-call. Without this, the tool would hide
  * spend below the dashboard.
+ *
+ * Usage-metrics accounting: usage is ALSO recorded via `recordChatUsage`
+ * (chat_usage_metrics, callKind "research") — the content-free, per-call
+ * instrumentation that lets us see WHY the community budget drained
+ * (call counts / token totals / model / timestamp over time) without
+ * storing any message text, candidate name, or other identifying content.
  */
 import type Anthropic from "@anthropic-ai/sdk";
 import { prependSafetyHeader } from "../prompts/safety-header";
