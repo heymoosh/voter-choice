@@ -85,6 +85,18 @@ function makeInsertChain(): {
   };
 }
 
+// A db mock that supports BOTH the cache-lookup select (returns `selectRows`)
+// and the persist insert. Used by researchAndPersistCandidate tests, which now
+// consult the cache before spending on the sub-agent.
+function makeResearchDbMock(selectRows: Record<string, unknown>[]): {
+  db: { select: ReturnType<typeof vi.fn>; insert: ReturnType<typeof vi.fn> };
+  insertChain: MockChain;
+} {
+  const { select } = makeSelectChain(selectRows);
+  const { insert, _chain } = makeInsertChain();
+  return { db: { select, insert }, insertChain: _chain };
+}
+
 const mockedGetDb = vi.mocked(getDb);
 const mockedResearch = vi.mocked(runStructuredCandidateResearch);
 
@@ -253,8 +265,9 @@ describe("researchAndPersistCandidate", () => {
   });
 
   it("calls research sub-agent and persists valid issues", async () => {
-    const { insert, _chain } = makeInsertChain();
-    mockedGetDb.mockReturnValue({ insert } as never);
+    // Empty cache → sub-agent runs.
+    const { db, insertChain: _chain } = makeResearchDbMock([]);
+    mockedGetDb.mockReturnValue(db as never);
     mockedResearch.mockResolvedValue({
       issues: [
         {
@@ -292,7 +305,7 @@ describe("researchAndPersistCandidate", () => {
     );
 
     // Should have persisted to DB
-    expect(insert).toHaveBeenCalledTimes(1);
+    expect(db.insert).toHaveBeenCalledTimes(1);
     expect(_chain.values).toHaveBeenCalledTimes(1);
     expect(_chain.onConflictDoUpdate).toHaveBeenCalledTimes(1);
 
@@ -308,8 +321,8 @@ describe("researchAndPersistCandidate", () => {
   });
 
   it("DROPS issues whose evidence has no real URL (honesty bar)", async () => {
-    const { insert } = makeInsertChain();
-    mockedGetDb.mockReturnValue({ insert } as never);
+    const { db } = makeResearchDbMock([]);
+    mockedGetDb.mockReturnValue(db as never);
     mockedResearch.mockResolvedValue({
       issues: [
         {
@@ -360,8 +373,8 @@ describe("researchAndPersistCandidate", () => {
   });
 
   it("returns [] when ALL research issues have no real URL", async () => {
-    const { insert } = makeInsertChain();
-    mockedGetDb.mockReturnValue({ insert } as never);
+    const { db } = makeResearchDbMock([]);
+    mockedGetDb.mockReturnValue(db as never);
     mockedResearch.mockResolvedValue({
       issues: [
         {
@@ -385,7 +398,81 @@ describe("researchAndPersistCandidate", () => {
 
     expect(result).toEqual([]);
     // Should NOT call insert when nothing valid to persist
-    expect(insert).not.toHaveBeenCalled();
+    expect(db.insert).not.toHaveBeenCalled();
+  });
+
+  it("SHORT-CIRCUITS with cached data — no sub-agent spend when all issues are cached", async () => {
+    // The cache already has valid, citation-backed rows for every requested
+    // issue, so the billable research sub-agent must NOT be invoked.
+    const cachedRows = [
+      {
+        canonicalIssue: "healthcare_affordability",
+        resolvedStance: "in_favor",
+        confidence: "high",
+        evidence: [{ summary: "Supports Medicaid", url: "https://a.com" }],
+      },
+    ];
+    const { db } = makeResearchDbMock(cachedRows);
+    mockedGetDb.mockReturnValue(db as never);
+
+    const result = await researchAndPersistCandidate(
+      "Jane Doe",
+      "county-nj",
+      "2026",
+      [{ canonicalIssue: "healthcare_affordability" }],
+      fakeClient,
+    );
+
+    // Zero spend: the sub-agent was never called.
+    expect(mockedResearch).not.toHaveBeenCalled();
+    // Nothing to re-persist on a cache hit.
+    expect(db.insert).not.toHaveBeenCalled();
+    // Returns the cached scores.
+    expect(result).toHaveLength(1);
+    expect(result[0]).toMatchObject({
+      canonicalIssue: "healthcare_affordability",
+      sourceType: "web_search",
+      resolvedStance: "in_favor",
+    });
+  });
+
+  it("still researches when the cache only partially covers the requested issues", async () => {
+    // Only one of two requested issues is cached → cache miss → sub-agent runs.
+    const cachedRows = [
+      {
+        canonicalIssue: "healthcare_affordability",
+        resolvedStance: "in_favor",
+        confidence: "high",
+        evidence: [{ summary: "Supports Medicaid", url: "https://a.com" }],
+      },
+    ];
+    const { db } = makeResearchDbMock(cachedRows);
+    mockedGetDb.mockReturnValue(db as never);
+    mockedResearch.mockResolvedValue({
+      issues: [
+        {
+          canonicalIssue: "education_funding",
+          issueLabel: "Education Funding",
+          resolvedStance: "opposed",
+          confidence: "medium",
+          evidence: [{ summary: "Against bond", url: "https://b.com" }],
+        },
+      ],
+      usage: { input: 100, output: 80, searchCount: 2 },
+    });
+
+    await researchAndPersistCandidate(
+      "Jane Doe",
+      "county-nj",
+      "2026",
+      [
+        { canonicalIssue: "healthcare_affordability" },
+        { canonicalIssue: "education_funding" },
+      ],
+      fakeClient,
+    );
+
+    expect(mockedResearch).toHaveBeenCalledTimes(1);
   });
 });
 
