@@ -96,10 +96,20 @@ jobs:
       - name: Decide state scope
         id: scope
         shell: bash
+        env:
+          SCOPE: ${{ inputs.scope }}
+          STATE_INPUT: ${{ inputs.state }}
+          EVENT_NAME: ${{ github.event_name }}
+          MATRIX_STATE: ${{ matrix.state }}
         run: |
+          # Validate manual inputs before any use.
+          if [ -n "$STATE_INPUT" ] && ! [[ "$STATE_INPUT" =~ ^[A-Za-z]{2}$ ]]; then
+            echo "::error::Invalid state input '$STATE_INPUT' — must be a two-letter abbreviation (^[A-Za-z]{2}$)."
+            exit 1
+          fi
           SHOULD_RUN=false
-          SELECTED_STATE=$(echo "${{ inputs.state }}" | tr '[:lower:]' '[:upper:]')
-          if [[ "${{ github.event_name }}" == "schedule" ]]; then
+          SELECTED_STATE=$(echo "$STATE_INPUT" | tr '[:lower:]' '[:upper:]')
+          if [[ "$EVENT_NAME" == "schedule" ]]; then
             # Shard by day-of-month % 5 — 10 states/day, full cycle every 5 days.
             # At ~20 API calls/state this stays under the 250 req/day OpenStates limit.
             DAY=$(date -u +%-d)
@@ -112,9 +122,9 @@ jobs:
               4) SHARD_STATES="SD TN TX UT VT VA WA WV WI WY" ;;
             esac
             case " $SHARD_STATES " in
-              *" ${{ matrix.state }} "*) SHOULD_RUN=true ;;
+              *" $MATRIX_STATE "*) SHOULD_RUN=true ;;
             esac
-          elif [[ "${{ inputs.scope }}" == "shard" ]]; then
+          elif [[ "$SCOPE" == "shard" ]]; then
             # Same day-of-month shard logic as schedule — used by external cron dispatcher.
             DAY=$(date -u +%-d)
             SHARD=$((DAY % 5))
@@ -126,15 +136,15 @@ jobs:
               4) SHARD_STATES="SD TN TX UT VT VA WA WV WI WY" ;;
             esac
             case " $SHARD_STATES " in
-              *" ${{ matrix.state }} "*) SHOULD_RUN=true ;;
+              *" $MATRIX_STATE "*) SHOULD_RUN=true ;;
             esac
-          elif [[ "${{ inputs.scope }}" == "all" ]]; then
+          elif [[ "$SCOPE" == "all" ]]; then
             SHOULD_RUN=true
-          elif [[ "${{ inputs.scope }}" == "canary" ]]; then
+          elif [[ "$SCOPE" == "canary" ]]; then
             case " TX CA NY FL GA NC " in
-              *" ${{ matrix.state }} "*) SHOULD_RUN=true ;;
+              *" $MATRIX_STATE "*) SHOULD_RUN=true ;;
             esac
-          elif [[ "${{ inputs.scope }}" == "single" && "${{ matrix.state }}" == "$SELECTED_STATE" ]]; then
+          elif [[ "$SCOPE" == "single" && "$MATRIX_STATE" == "$SELECTED_STATE" ]]; then
             SHOULD_RUN=true
           fi
           echo "run=$SHOULD_RUN" >> "$GITHUB_OUTPUT"
