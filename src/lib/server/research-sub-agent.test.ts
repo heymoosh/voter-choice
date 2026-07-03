@@ -11,6 +11,11 @@
  *
  * Budget accounting is verified by spying on `recordUsageAsync` from
  * budget.ts so the sub-call's tokens count against the community budget.
+ *
+ * Content-free usage-metrics accounting (chat_usage_metrics, callKind
+ * "research") is verified by spying on `recordChatUsage` from
+ * chat-usage-metrics.ts — this is the research-sub-agent half of the
+ * per-session usage instrumentation (the chat route covers the other half).
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
@@ -382,15 +387,53 @@ describe("runResearchSubAgent", () => {
   });
 });
 
+// ---------------------------------------------------------------------------
+// runStructuredCandidateResearch — the "research chatbot" auto-populate path
+// driving /api/research-candidate (candidate-card fallback for no-record
+// candidates). Same budget + content-free-metrics contract as the prose
+// sub-agent above, just a different call site / callKind.
+// ---------------------------------------------------------------------------
+
+const STRUCTURED_JSON = JSON.stringify([
+  {
+    canonicalIssue: "healthcare",
+    issueLabel: "Healthcare",
+    resolvedStance: "in_favor",
+    confidence: "medium",
+    evidence: [
+      { summary: "Supports expansion.", url: "https://example.com/a" },
+    ],
+  },
+]);
+
 describe("runStructuredCandidateResearch", () => {
-  it("records an anonymous chat_usage_metrics row with call_kind 'research'", async () => {
+  it("parses the JSON array response into issues", async () => {
+    const client = makeMockClient();
+    client.messages.create.mockResolvedValue(fakeMessage(STRUCTURED_JSON));
+
+    const result = await runStructuredCandidateResearch(
+      {
+        candidateName: "Jane Doe",
+        jurisdiction: "TX-governor",
+        cycle: "2026",
+        issues: [{ canonicalIssue: "healthcare", issueLabel: "Healthcare" }],
+      },
+      client as never,
+    );
+
+    expect(result.issues).toHaveLength(1);
+    expect(result.issues[0].canonicalIssue).toBe("healthcare");
+    expect(result.issues[0].resolvedStance).toBe("in_favor");
+  });
+
+  it("records usage from the sub-call so it counts against the community budget", async () => {
     const client = makeMockClient();
     client.messages.create.mockResolvedValue(
-      fakeMessage("[]", {
+      fakeMessage(STRUCTURED_JSON, {
         inputTokens: 200,
         outputTokens: 150,
         cachedInputTokens: 0,
-        cacheWriteTokens: 0,
+        cacheWriteTokens: 300,
         searchCount: 3,
       }),
     );
@@ -399,17 +442,88 @@ describe("runStructuredCandidateResearch", () => {
       {
         candidateName: "X",
         jurisdiction: "Y",
+        cycle: "2026",
         issues: [{ canonicalIssue: "healthcare", issueLabel: "Healthcare" }],
-      } as never,
+      },
+      client as never,
+    );
+
+    expect(recordUsageAsync).toHaveBeenCalledTimes(1);
+    const recorded = vi.mocked(recordUsageAsync).mock.calls[0][0] as {
+      inputTokens?: number;
+      outputTokens?: number;
+      cacheWriteTokens?: number;
+      searchCount?: number;
+    };
+    expect(recorded.inputTokens).toBe(200);
+    expect(recorded.outputTokens).toBe(150);
+    expect(recorded.cacheWriteTokens).toBe(300);
+    expect(recorded.searchCount).toBe(3);
+  });
+
+  it("records content-free usage metrics (chat_usage_metrics) with callKind 'research'", async () => {
+    const client = makeMockClient();
+    client.messages.create.mockResolvedValue(
+      fakeMessage(STRUCTURED_JSON, {
+        inputTokens: 200,
+        outputTokens: 150,
+        cachedInputTokens: 10,
+        cacheWriteTokens: 300,
+        searchCount: 3,
+      }),
+    );
+
+    await runStructuredCandidateResearch(
+      {
+        candidateName: "Jane Doe",
+        jurisdiction: "TX-governor",
+        cycle: "2026",
+        issues: [{ canonicalIssue: "healthcare", issueLabel: "Healthcare" }],
+      },
       client as never,
     );
 
     expect(recordChatUsage).toHaveBeenCalledTimes(1);
     const [usage, opts] = vi.mocked(recordChatUsage).mock.calls[0];
-    expect(usage.inputTokens).toBe(200);
-    expect(usage.outputTokens).toBe(150);
-    expect(usage.webSearchCount).toBe(3);
-    expect(opts.callKind).toBe("research");
-    expect(opts.model).toBe("claude-haiku-4-5-20251001");
+    expect(usage).toEqual({
+      inputTokens: 200,
+      outputTokens: 150,
+      cacheReadTokens: 10,
+      cacheWriteTokens: 300,
+      webSearchCount: 3,
+    });
+    expect(opts).toEqual({
+      model: "claude-haiku-4-5-20251001",
+      callKind: "research",
+    });
+    // Content-free: no candidate name / jurisdiction / issue text anywhere.
+    const serialized = JSON.stringify([usage, opts]);
+    expect(serialized).not.toContain("Jane Doe");
+    expect(serialized).not.toContain("healthcare");
+  });
+
+  it("does not call recordChatUsage when the sub-call reports zero usage", async () => {
+    const client = makeMockClient();
+    client.messages.create.mockResolvedValue(
+      fakeMessage(STRUCTURED_JSON, {
+        inputTokens: 0,
+        outputTokens: 0,
+        cachedInputTokens: 0,
+        cacheWriteTokens: 0,
+        searchCount: 0,
+      }),
+    );
+
+    await runStructuredCandidateResearch(
+      {
+        candidateName: "X",
+        jurisdiction: "Y",
+        cycle: "2026",
+        issues: [{ canonicalIssue: "healthcare", issueLabel: "Healthcare" }],
+      },
+      client as never,
+    );
+
+    expect(recordChatUsage).not.toHaveBeenCalled();
   });
 });
