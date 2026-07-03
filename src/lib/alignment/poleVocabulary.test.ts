@@ -7,6 +7,9 @@ import {
   CROSS_CUTTING_TAGGER_RULES,
   renderTaggerPoleBlock,
   renderResolverPoleDirections,
+  renderDisambiguationQuestions,
+  DISAMBIGUATION_OPEN_ENDED_TAIL,
+  proseEndsWithDisambiguationTail,
   isContested,
 } from "./poleVocabulary";
 import { CANONICAL_ISSUE_LABELS } from "../canonicalIssues";
@@ -163,5 +166,51 @@ describe("single source of truth — consumers import the shared anchor", () => 
   it("neither tagger re-inlines the old issue-agnostic stance definition", () => {
     expect(tagger).not.toContain("a YEA vote supports / expands / funds");
     expect(classify).not.toContain("a YEA vote supports / expands / funds");
+  });
+});
+
+// #175 — the open-ended disambiguation tail is the shared signal the
+// theme-refinement prompt renders and the client's question-cap counter
+// detects. These guard the two from drifting apart.
+describe("disambiguation open-ended tail (#175 question-cap signal)", () => {
+  it("the detector matches the exact rendered tail constant", () => {
+    expect(
+      proseEndsWithDisambiguationTail(DISAMBIGUATION_OPEN_ENDED_TAIL),
+    ).toBe(true);
+  });
+
+  it("every rendered pole-disambiguation question ends with the tail", () => {
+    const block = renderDisambiguationQuestions();
+    for (const line of block.split("\n")) {
+      const m = line.match(/^\s*question: "(.+)"\s*$/);
+      if (m) {
+        expect(proseEndsWithDisambiguationTail(m[1])).toBe(true);
+      }
+    }
+  });
+
+  it("does NOT match ordinary closing questions or statements", () => {
+    expect(proseEndsWithDisambiguationTail("Want to add anything else?")).toBe(
+      false,
+    );
+    expect(proseEndsWithDisambiguationTail("Does that sound right?")).toBe(
+      false,
+    );
+    expect(proseEndsWithDisambiguationTail("I updated your list.")).toBe(false);
+    // Present but not at the end → not a closing question.
+    expect(
+      proseEndsWithDisambiguationTail(
+        "…or is it something else? Either way I kept it.",
+      ),
+    ).toBe(false);
+  });
+
+  it("tolerates a '...' ellipsis and a missing ellipsis", () => {
+    expect(proseEndsWithDisambiguationTail("...or is it something else?")).toBe(
+      true,
+    );
+    expect(
+      proseEndsWithDisambiguationTail("guns — or is it something else?"),
+    ).toBe(true);
   });
 });

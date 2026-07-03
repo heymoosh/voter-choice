@@ -159,20 +159,25 @@ export function useIssueConversation({
               },
             ]);
           } else {
-            const { prose, themes } = parseThemeRefinement(acc);
+            const { prose, themes, askedDisambiguationQuestion } =
+              parseThemeRefinement(acc);
             apiHistoryRef.current = [
               ...messages,
               { role: "assistant", content: acc },
             ];
-            // Count a clarifying/disambiguation question: a prose reply that
-            // ends in a question mark and didn't lock anything new in (no theme
-            // array change). The re-injected count caps the loop at
-            // DISAMBIGUATION_CAP on the next turn. Once at the cap we stop
-            // counting — the prompt is already in lock-in mode.
-            const askedAQuestion =
-              !themes && /\?\s*$/.test((prose || "").trim());
+            // Count a clarifying/disambiguation question against the cap.
+            // The signal is the parser's `askedDisambiguationQuestion` flag —
+            // true iff the prose ends with the open-ended disambiguation tail
+            // ("…or is it something else?") that the prompt appends to EVERY
+            // pole/novel-concept question. We can't use `themes === null` (the
+            // prompt always returns the full array, so it's always false —
+            // #175) nor a bare trailing "?" (an ordinary "want to add anything
+            // else?" would wrongly burn a slot and force early lock-in). The
+            // re-injected count caps the loop at DISAMBIGUATION_CAP on the next
+            // turn; once at the cap we stop counting — the prompt is already in
+            // lock-in mode.
             if (
-              askedAQuestion &&
+              askedDisambiguationQuestion &&
               clarifyCountRef.current < DISAMBIGUATION_CAP
             ) {
               clarifyCountRef.current += 1;
