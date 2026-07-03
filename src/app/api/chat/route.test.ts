@@ -96,6 +96,7 @@ vi.mock("@anthropic-ai/sdk", async () => {
 // ---------------------------------------------------------------------------
 
 import { POST } from "./route";
+import { SAFETY_HEADER } from "../../../lib/prompts/safety-header";
 import { checkRateLimitAsync } from "../../../lib/server/rate-limit";
 import { getBudgetStatusAsync } from "../../../lib/server/budget";
 import {
@@ -405,7 +406,7 @@ afterEach(() => {
 // ---------------------------------------------------------------------------
 
 describe("POST /api/chat — flag off (legacy parity)", () => {
-  it("passes systemPrompt through unchanged when PROMPT_FLEET_V2 is empty", async () => {
+  it("wraps systemPrompt with the SAFETY_HEADER when PROMPT_FLEET_V2 is empty", async () => {
     vi.stubEnv("PROMPT_FLEET_V2", "");
     queueStreams(simpleTextStream());
 
@@ -418,7 +419,7 @@ describe("POST /api/chat — flag off (legacy parity)", () => {
     expect(firstCallParams.system).toEqual([
       expect.objectContaining({
         type: "text",
-        text: "LEGACY-PROMPT-BODY",
+        text: `${SAFETY_HEADER}\n\nLEGACY-PROMPT-BODY`,
       }),
     ]);
   });
@@ -834,7 +835,43 @@ describe("POST /api/chat — ballotContext injection (Phase 5)", () => {
     const params = messagesCreateMock.mock.calls[0][0];
     const systemText: string = params.system[0].text;
     expect(systemText).not.toContain("<ballot_context>");
-    expect(systemText).toBe("LEGACY-PROMPT-BODY");
+    expect(systemText).toBe(`${SAFETY_HEADER}\n\nLEGACY-PROMPT-BODY`);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// SAFETY_HEADER wraps BOTH prompt paths (card 3ca1698a)
+// ---------------------------------------------------------------------------
+
+describe("POST /api/chat — SAFETY_HEADER on both prompt paths", () => {
+  it("begins the legacy (flag-off) system prompt with the SAFETY_HEADER", async () => {
+    vi.stubEnv("PROMPT_FLEET_V2", "");
+    queueStreams(simpleTextStream());
+
+    const req = makeChatRequest({ systemPrompt: "LEGACY-PROMPT-BODY" });
+    const res = await POST(req as never);
+    await drainResponseBody(res);
+
+    const systemText: string = messagesCreateMock.mock.calls[0][0].system[0]
+      .text as string;
+    expect(systemText.startsWith(SAFETY_HEADER)).toBe(true);
+  });
+
+  it("begins the v2 (flag-on) system prompt with the SAFETY_HEADER", async () => {
+    vi.stubEnv("PROMPT_FLEET_V2", "1");
+    queueStreams(simpleTextStream());
+
+    const req = makeChatRequest({
+      view: "cold-open",
+      raceContext: { userInput: "i care about housing" },
+      messages: [{ role: "user", content: "i care about housing" }],
+    });
+    const res = await POST(req as never);
+    await drainResponseBody(res);
+
+    const systemText: string = messagesCreateMock.mock.calls[0][0].system[0]
+      .text as string;
+    expect(systemText.startsWith(SAFETY_HEADER)).toBe(true);
   });
 });
 
