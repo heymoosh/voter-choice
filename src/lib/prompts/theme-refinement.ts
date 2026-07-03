@@ -2,7 +2,10 @@ import {
   THEME_FIELDS_PROMPT_BLOCK,
   CANONICAL_ISSUES_PROMPT_BLOCK,
 } from "./theme-extraction";
-import { renderDisambiguationQuestions } from "../alignment/poleVocabulary";
+import {
+  renderDisambiguationQuestions,
+  DISAMBIGUATION_OPEN_ENDED_TAIL,
+} from "../alignment/poleVocabulary";
 
 export interface ThemeRefinementInput {
   /** The voter's CURRENT working themes (Theme[] shape), serialized. The
@@ -65,6 +68,9 @@ export function buildThemeRefinementPrompt(
   · You MAY ask ONE short clarifying question ONLY if a single answer would let
     you map it to a canonical id or sharpen it — but never re-ask something the
     voter already answered; treat every prior answer as settled.
+  · When you DO ask that clarifying question, end it with the open-ended tail
+    "${DISAMBIGUATION_OPEN_ENDED_TAIL}" (exactly as the pole questions do) so the
+    voter is never boxed in — and so the turn is counted against your budget.
   · The moment you have spent ${DISAMBIGUATION_CAP} questions, STOP asking and
     lock the concept in using EVERY answer the voter has given so far.`;
 
@@ -80,8 +86,8 @@ POLE DISAMBIGUATION (contested issues with no stance yet):
     "canonicalIssue" is a contested issue AND "stance" is absent means the
     voter's words didn't pick a side.
   · For ONE such theme per turn, ask the matching question from the block below.
-    Phrase it exactly as written, and end it open-ended: "…or is it something
-    else?" so the voter isn't boxed into our two buckets.
+    Phrase it exactly as written, and end it open-ended:
+    "${DISAMBIGUATION_OPEN_ENDED_TAIL}" so the voter isn't boxed into our two buckets.
   · If the voter's answer picks a side (the option labels or clear paraphrase
     of one pole): set "stance" in the updated theme JSON for that issue.
   · If the voter's answer does NOT pick a side (different framing, off-pallet
