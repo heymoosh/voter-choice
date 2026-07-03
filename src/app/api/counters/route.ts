@@ -16,6 +16,7 @@ import {
 } from "../../../lib/server/counters";
 import { checkCounterRateLimit } from "../../../lib/server/counters-rate-limit";
 import { getClientIP } from "../../../lib/server/client-ip";
+import { isCanonicalIssueId } from "../../../lib/canonicalIssues";
 
 // ---------------------------------------------------------------------------
 // Validation
@@ -60,7 +61,14 @@ function validateBody(body: unknown): CounterBody | null {
           typeof (c as Record<string, unknown>).canonicalIssue === "string",
       )
       .slice(0, 50) // Guard oversized arrays
-      .map((c) => ({ canonicalIssue: c.canonicalIssue.slice(0, 64) }));
+      .map((c) => ({ canonicalIssue: c.canonicalIssue.slice(0, 64) }))
+      // Allow-list: only known canonical issue ids ever reach the Redis-key
+      // path. An unknown value, or one bearing key metacharacters (":", "*",
+      // …), fails this check and is silently dropped — valid siblings in the
+      // same POST are kept. Legit clients only ever send ids the resolver has
+      // already validated against CANONICAL_ISSUE_LABELS, so no real traffic
+      // is lost.
+      .filter((c) => isCanonicalIssueId(c.canonicalIssue));
   }
 
   // concernEvents: optional array of per-concern event rows (state + issue
