@@ -22,6 +22,7 @@ import {
   AllVotesPanel,
   FunderBars,
   formatDollars,
+  useI18n,
 } from "../VoterChoiceApp";
 import { getChallengerResearch, researchChallenger } from "./delegationData";
 import { MedianChip, MoneyGapScale } from "./MoneyGap";
@@ -34,28 +35,35 @@ export const PARTY_META2 = {
 
 /* ---- Attendance band [Δ] — honest omission when not tracked ---- */
 export function AttendanceBand2({ attendance, researched, level }) {
+  const { t } = useI18n();
   if (researched) return null;
   if (!attendance) {
     return (
       <div className="att-band na">
         <span className="txt">
           {level === "federal"
-            ? "Attendance isn't available for this member yet — we don't fake it."
-            : "Attendance isn't reliably tracked at the state level — we don't fake it."}
+            ? t("repCard.attendanceUnavailableFederal")
+            : t("repCard.attendanceUnavailableState")}
         </span>
       </div>
     );
   }
   const bandLabel = {
-    good: "Rarely misses",
-    mid: "About average",
-    bad: "Misses a lot",
+    good: t("repCard.attendanceGood"),
+    mid: t("repCard.attendanceMid"),
+    bad: t("repCard.attendanceBad"),
   }[attendance.band];
   return (
     <div className="att-band">
-      <span className="txt">
-        Shows up — missed <b>{attendance.missedPct}%</b> of {attendance.of}.
-      </span>
+      <span
+        className="txt"
+        dangerouslySetInnerHTML={{
+          __html: t("repCard.attendanceShowsUp", {
+            pct: attendance.missedPct,
+            of: attendance.of,
+          }),
+        }}
+      />
       <span className={"att-chip " + attendance.band}>{bandLabel}</span>
       <a
         className="att-src cv2-evidence-link"
@@ -72,15 +80,24 @@ export function AttendanceBand2({ attendance, researched, level }) {
 /* ---- Researched positions — no roll calls; same structure as the
    voting card so both modes are visually identical. ---- */
 function ResearchedPositionRow({ issue, pos }) {
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const supports = pos.resolvedStance === "in_favor";
   const opposes = pos.resolvedStance === "opposed";
   // Canonical directional label — same pair the voting-record card uses
   // ("WITH YOU" / "AGAINST YOU"), so House-style researched cards read
   // identically to Senate-style voting-record cards.
-  const verb = supports ? "WITH YOU" : opposes ? "AGAINST YOU" : "MIXED";
+  const verb = supports
+    ? t("repCard.withYou")
+    : opposes
+      ? t("repCard.againstYou")
+      : t("repCard.mixed");
   // Descriptive verb for the cited-source title (reads as prose, not a badge).
-  const titleVerb = supports ? "Supports" : opposes ? "Opposes" : "Mixed on";
+  const titleVerb = supports
+    ? t("repCard.supports")
+    : opposes
+      ? t("repCard.opposes")
+      : t("repCard.mixedOn");
   const badgeColor = supports
     ? "var(--civic)"
     : opposes
@@ -104,33 +121,35 @@ function ResearchedPositionRow({ issue, pos }) {
         <div className="topic">
           <div className="name">{issue.interpretation}</div>
           <div className="meta">
-            From public statements
+            {t("repCard.fromPublicStatements")}
             {hasEvidence
               ? open
-                ? " · source shown below"
-                : " · tap for the cited source"
-              : " · no source curated"}
+                ? t("repCard.sourceShownBelow")
+                : t("repCard.tapForCitedSource")
+              : t("repCard.noSourceCurated")}
           </div>
         </div>
         <div className="cv2-ws-col">
           <span className="cv2-ws-badge" style={{ background: badgeColor }}>
             {verb}
           </span>
-          <span className="cv2-ws-conf">{pos.confidence} confidence</span>
+          <span className="cv2-ws-conf">
+            {t("repCard.confidenceSuffix", { level: pos.confidence })}
+          </span>
         </div>
       </button>
       {open && hasEvidence && (
         <div className="cv2-drill">
           <div className="cv2-drill-head">
-            <span className="lab">Why this read?</span>
-            <span className="meta">No votes — researched &amp; cited</span>
+            <span className="lab">{t("repCard.whyThisRead")}</span>
+            <span className="meta">{t("repCard.noVotesResearched")}</span>
           </div>
           <div className="cv2-votes">
             {pos.evidence.map((e, i) => (
               <div className="cv2-vote" key={i}>
                 <div className="cv2-vote-head">
                   <div className="bill">
-                    <span className="num">WEB RESEARCH</span>
+                    <span className="num">{t("repCard.webResearch")}</span>
                     <span className="ttl">
                       {titleVerb} {issue.interpretation.toLowerCase()}
                     </span>
@@ -140,7 +159,9 @@ function ResearchedPositionRow({ issue, pos }) {
                 <p className="cv2-vote-narr">“{e.summary}”</p>
                 <div className="cv2-vote-cite">
                   <span className="src-chip">
-                    Web search · {pos.confidence} confidence
+                    {t("repCard.webSearchConfidence", {
+                      level: pos.confidence,
+                    })}
                   </span>
                   <a
                     href={e.url}
@@ -148,7 +169,7 @@ function ResearchedPositionRow({ issue, pos }) {
                     target="_blank"
                     rel="noopener noreferrer"
                   >
-                    View source →
+                    {t("repCard.viewSource")}
                   </a>
                 </div>
               </div>
@@ -161,6 +182,7 @@ function ResearchedPositionRow({ issue, pos }) {
 }
 
 export function ResearchedPositions({ positions, userIssues }) {
+  const { t } = useI18n();
   const rows = (userIssues || [])
     .map((iss) => {
       const pos = positions.find(
@@ -172,10 +194,10 @@ export function ResearchedPositions({ positions, userIssues }) {
   return (
     <div className="cv2-issues">
       <div className="cv2-block-head">
-        <div className="lab">Where they stand on your issues</div>
+        <div className="lab">{t("repCard.whereTheyStand")}</div>
         <div className="overall">
           <span className="rp-src-note">
-            researched &amp; cited — no roll-call record
+            {t("repCard.researchedCitedNote")}
           </span>
         </div>
       </div>
@@ -194,6 +216,7 @@ export function ResearchedPositions({ positions, userIssues }) {
    Source line binds to the resolver's sourceLabel/sourceUrl (the design's
    hardcoded Texas SoS line was mock data). ---- */
 export function EligibilityNote2({ e }) {
+  const { t } = useI18n();
   if (!e) return null;
   return (
     <div className={"elig " + (e.severity || "info")}>
@@ -211,7 +234,7 @@ export function EligibilityNote2({ e }) {
           <a href={e.todo.href} target="_blank" rel="noopener noreferrer">
             {e.todo.text}
           </a>{" "}
-          so you're not turned away at the polls.
+          {t("repCard.eligibilitySoNotTurnedAway")}
         </div>
       )}
       {e.sourceUrl && (
@@ -221,7 +244,7 @@ export function EligibilityNote2({ e }) {
           target="_blank"
           rel="noopener noreferrer"
         >
-          Source: {e.sourceLabel} ↗
+          {t("repCard.eligibilitySource", { label: e.sourceLabel })}
         </a>
       )}
     </div>
@@ -230,30 +253,41 @@ export function EligibilityNote2({ e }) {
 
 /* ---- Per-card source transparency — bound to what actually fed the card. ---- */
 export function CardSources({ seat }) {
+  const { t } = useI18n();
   const cand = seat.candidate;
   const record = seat.researched
-    ? { n: "Web search", d: "positions, cited per claim", u: null }
+    ? {
+        n: t("repCard.webSearchSourceName"),
+        d: t("repCard.positionsCitedPerClaim"),
+        u: null,
+      }
     : {
         n: "GovTrack",
-        d: "voting record" + (seat.attendance ? " & attendance" : ""),
+        d:
+          t("repCard.votingRecord") +
+          (seat.attendance ? t("repCard.andAttendance") : ""),
         u: "https://www.govtrack.us/",
       };
   const items = [
     record,
     cand?.donorSource
-      ? { n: cand.donorSource.name, d: "funding", u: cand.donorSource.url }
+      ? {
+          n: cand.donorSource.name,
+          d: t("repCard.funding"),
+          u: cand.donorSource.url,
+        }
       : null,
     seat.eligibility?.sourceUrl
       ? {
           n: seat.eligibility.sourceLabel,
-          d: "election rules",
+          d: t("repCard.electionRules"),
           u: seat.eligibility.sourceUrl,
         }
       : null,
   ].filter(Boolean);
   return (
     <div className="card-sources">
-      <span className="lab">Sources</span>
+      <span className="lab">{t("repCard.sourcesLabel")}</span>
       {items.map((it, i) => (
         <React.Fragment key={i}>
           {i > 0 && <span className="sep">·</span>}
@@ -286,19 +320,22 @@ function ChallengerRow({
   stateCode,
   onShowBudgetOptions,
 }) {
+  const { t } = useI18n();
   // Module-level cache holds results across re-mounts; tick re-renders this
   // row when the research promise settles.
   const [, setTick] = useState(0);
   const research = getChallengerResearch(challenger.id);
   const party = PARTY_META2[challenger.party] || {
-    name: challenger.party || "Party unknown",
+    name: challenger.party || t("repCard.partyUnknown"),
     code: "?",
     pipClass: "ind",
   };
   const raised =
     typeof challenger.totalReceipts === "number" && challenger.totalReceipts > 0
-      ? `${formatDollars(challenger.totalReceipts)} raised`
-      : "No funds reported";
+      ? t("repCard.raisedSuffix", {
+          amount: formatDollars(challenger.totalReceipts),
+        })
+      : t("repCard.noFundsReported");
 
   return (
     <div className={"cv2-iss-row" + (research ? " open" : "")}>
@@ -309,7 +346,7 @@ function ChallengerRow({
             {challenger.name}
           </div>
           <div className="meta">
-            {party.name} · {raised} · FEC filing
+            {t("repCard.fecFiling", { party: party.name, raised })}
           </div>
         </div>
         {!research || research.status === "unavailable" ? (
@@ -322,11 +359,11 @@ function ChallengerRow({
             }
           >
             {research?.status === "unavailable"
-              ? "Retry research"
-              : "Research positions"}
+              ? t("repCard.retryResearch")
+              : t("repCard.researchPositions")}
           </button>
         ) : research.status === "loading" ? (
-          <span className="meta">Looking up public statements…</span>
+          <span className="meta">{t("repCard.lookingUpStatements")}</span>
         ) : null}
       </div>
       {research?.status === "done" && (
@@ -337,20 +374,16 @@ function ChallengerRow({
       )}
       {research?.status === "unavailable" && (
         <div className="cv2-norecord">
-          <p>
-            No citable public statements found on your issues — we'd rather say
-            so than guess.
-          </p>
+          <p>{t("repCard.noCitableStatements")}</p>
         </div>
       )}
       {research?.status === "budget_blocked" && (
         <div className="cv2-norecord" data-testid="challenger-budget-blocked">
           <p>
-            Live research is paused — the community AI budget for this month is
-            used up.{" "}
+            {t("repCard.liveResearchPaused")}{" "}
             {onShowBudgetOptions && (
               <button className="linklike" onClick={onShowBudgetOptions}>
-                More options →
+                {t("repCard.moreOptions")}
               </button>
             )}
           </p>
@@ -366,16 +399,15 @@ export function ChallengersStrip({
   stateCode,
   onShowBudgetOptions,
 }) {
+  const { t } = useI18n();
   const list = seat.challengers || [];
   if (list.length === 0) return null;
   return (
     <div className="cv2-issues challengers-strip">
       <div className="cv2-block-head">
-        <div className="lab">Running for this seat in 2026</div>
+        <div className="lab">{t("repCard.runningForSeat")}</div>
         <div className="overall">
-          <span className="rp-src-note">
-            FEC filings · ranked by funds raised
-          </span>
+          <span className="rp-src-note">{t("repCard.fecRankedByFunds")}</span>
         </div>
       </div>
       {list.map((ch) => (
@@ -523,6 +555,7 @@ function UnresolvedSeatCard({
   stateCode,
   onShowBudgetOptions,
 }) {
+  const { t } = useI18n();
   const notUp2026 = seat.nextElection?.onBallot2026 === false;
   return (
     <div className={"cv2-card rep-card" + (notUp2026 ? " not-up-2026" : "")}>
@@ -530,7 +563,7 @@ function UnresolvedSeatCard({
         <span className="seat-office">{seat.office}</span>
         <span className="seat-district">{seat.districtLabel}</span>
         {notUp2026 && (
-          <span className="seat-not-up">Not up for election in 2026</span>
+          <span className="seat-not-up">{t("repCard.notUp2026")}</span>
         )}
         {seat.nextElection && (
           <span
@@ -547,12 +580,9 @@ function UnresolvedSeatCard({
           <div className="lab">{seat.blindLabel}</div>
         </div>
         <div className="cv2-norecord">
+          <p>{t("repCard.unresolvedNoMatch")}</p>
           <p>
-            We couldn't match this seat to a sitting member in our records —
-            we'd rather say so than guess.
-          </p>
-          <p>
-            Look them up directly at{" "}
+            {t("repCard.lookThemUpAt")}{" "}
             <a
               href="https://www.govtrack.us/congress/members"
               target="_blank"
@@ -591,6 +621,7 @@ export function RepCard({
   onOpenDuel,
   onShowBudgetOptions,
 }) {
+  const { t } = useI18n();
   const [expandedIssue, setExpandedIssue] = useState(null);
   const [allVotesOpen, setAllVotesOpen] = useState(false);
   const [moneyOpen, setMoneyOpen] = useState(
@@ -636,7 +667,7 @@ export function RepCard({
         <span className="seat-office">{seat.office}</span>
         <span className="seat-district">{seat.districtLabel}</span>
         {notUp2026 && (
-          <span className="seat-not-up">Not up for election in 2026</span>
+          <span className="seat-not-up">{t("repCard.notUp2026")}</span>
         )}
         {seat.nextElection && (
           <span
@@ -694,8 +725,10 @@ export function RepCard({
             onClick={() => setAllVotesOpen(true)}
             data-testid="see-full-record"
           >
-            See the full voting record — {totalVotes}{" "}
-            {totalVotes === 1 ? "vote" : "votes"} →
+            {t("repCard.seeFullRecord", {
+              n: totalVotes,
+              votes: t(totalVotes === 1 ? "repCard.vote" : "repCard.votes"),
+            })}
           </button>
         </div>
       )}
@@ -718,13 +751,16 @@ export function RepCard({
         >
           <span className="cv2-disclose-lab">
             <span className="cv2-disclose-eyebrow">
-              Funding &amp; influence
+              {t("repCard.fundingInfluence")}
             </span>
-            <span className="cv2-disclose-title">Money trail</span>
+            <span className="cv2-disclose-title">
+              {t("repCard.moneyTrail")}
+            </span>
             <span className="cv2-disclose-summary">
               {typeof cand.totalRaised === "number" && (
                 <span className="cv2-disclose-stat">
-                  <b>{formatDollars(cand.totalRaised)}</b> raised
+                  <b>{formatDollars(cand.totalRaised)}</b>{" "}
+                  {t("repCard.raisedWord")}
                 </span>
               )}
               {/* Collapsed glance — "Raised vs. the median". Renders the dollar
@@ -739,9 +775,11 @@ export function RepCard({
                 )}
               {cand.fundingMix && (
                 <span className="cv2-disclose-mix">
-                  {cand.fundingMix.small}% small donors ·{" "}
-                  {cand.fundingMix.large}% large donors · {cand.fundingMix.pac}%
-                  PACs
+                  {t("repCard.smallDonorsMix", {
+                    small: cand.fundingMix.small,
+                    large: cand.fundingMix.large,
+                    pac: cand.fundingMix.pac,
+                  })}
                 </span>
               )}
             </span>
@@ -749,11 +787,13 @@ export function RepCard({
           <span className="cv2-disclose-chev" aria-hidden="true">
             {moneyOpen ? (
               <>
-                Hide <span className="cv2-disclose-arrow">▴</span>
+                {t("repCard.hide")}{" "}
+                <span className="cv2-disclose-arrow">▴</span>
               </>
             ) : (
               <>
-                Show details <span className="cv2-disclose-arrow">▾</span>
+                {t("repCard.showDetails")}{" "}
+                <span className="cv2-disclose-arrow">▾</span>
               </>
             )}
           </span>
@@ -819,8 +859,8 @@ export function RepCard({
               <span className="ck">{verdict === "keep" ? "✓" : ""}</span>
               <span>
                 {verdict === "keep"
-                  ? "Worth keeping — undo"
-                  : `Worth keeping${blind ? "" : " · " + last}`}
+                  ? t("repCard.worthKeepingUndo")
+                  : `${t("repCard.worthKeeping")}${blind ? "" : " · " + last}`}
               </span>
             </button>
             <button
@@ -841,11 +881,11 @@ export function RepCard({
               <span>
                 {verdict === "replace"
                   ? successor
-                    ? `Replacing with ${successor.name} — change`
-                    : "Time to replace — change"
+                    ? t("repCard.replacingWith", { name: successor.name })
+                    : t("repCard.timeToReplaceChange")
                   : hasChallengers
-                    ? "Time to replace — compare who's running →"
-                    : "Time to replace"}
+                    ? t("repCard.timeToReplaceCompare")
+                    : t("repCard.timeToReplace")}
               </span>
             </button>
           </div>

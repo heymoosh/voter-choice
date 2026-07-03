@@ -11,24 +11,25 @@
    page's contract). */
 
 import React, { useEffect, useRef, useState } from "react";
-import { AITimeoutBanner } from "../VoterChoiceApp";
+import { AITimeoutBanner, useI18n } from "../VoterChoiceApp";
 import { stripChatMd } from "./chatBlocks";
 
 /** Soft budget tiers that warrant a ribbon (hard blocks open the modal). */
-const RIBBON_TIERS = {
-  notice: "Community AI budget is 70%+ used this month.",
-  soft_close: "Budget running low — your scorecard is safe either way.",
-  handoff: "Budget nearly spent — your scorecard is safe either way.",
+const RIBBON_TIER_KEYS = {
+  notice: "seatChat.budgetNotice",
+  soft_close: "seatChat.budgetSoftClose",
+  handoff: "seatChat.budgetHandoff",
 };
 
-function chipPrompts(seat, userIssues, isRevealed) {
+function chipPrompts(seat, userIssues, isRevealed, t) {
   const chips = [];
   const top = userIssues?.[0]?.interpretation;
   const second = userIssues?.[1]?.interpretation;
-  if (top) chips.push(`What's their record on ${top.toLowerCase()}?`);
-  chips.push("Who funds them?");
-  if (second) chips.push(`What have they done about ${second.toLowerCase()}?`);
-  else chips.push("What should I know about their record?");
+  if (top) chips.push(t("seatChat.chipRecordOn", { issue: top.toLowerCase() }));
+  chips.push(t("seatChat.chipWhoFunds"));
+  if (second)
+    chips.push(t("seatChat.chipDoneAbout", { issue: second.toLowerCase() }));
+  else chips.push(t("seatChat.chipRecordGeneric"));
   return chips;
 }
 
@@ -45,6 +46,7 @@ export function SeatChat({
   onHandoff,
   onShowBudgetOptions,
 }) {
+  const { t } = useI18n();
   const [draft, setDraft] = useState("");
   const endRef = useRef(null);
   const log = messages || [];
@@ -58,27 +60,28 @@ export function SeatChat({
   }, [log.length, lastLen]);
 
   function send(text) {
-    const t = (text ?? draft).trim();
-    if (!t) return;
+    const trimmed = (text ?? draft).trim();
+    if (!trimmed) return;
     setDraft("");
-    onSend(t);
+    onSend(trimmed);
   }
 
   const subjectLabel = isRevealed
     ? seat.candidate?.name || seat.blindLabel
     : seat.blindLabel;
-  const ribbon = budgetTier && RIBBON_TIERS[budgetTier];
+  const ribbonKey = budgetTier && RIBBON_TIER_KEYS[budgetTier];
+  const ribbon = ribbonKey && t(ribbonKey);
 
   return (
     <div className="seat-chat" data-testid="seat-chat">
       <div className="cv2-block-head" style={{ marginTop: 24 }}>
-        <div className="lab">Ask anything</div>
+        <div className="lab">{t("seatChat.askAnything")}</div>
       </div>
 
       {log.map((msg, i) => (
         <div key={msg._id || "cm-" + i} className={"msg " + msg.who}>
           <div className="who">
-            {msg.who === "user" ? "You" : "Voter Choice · AI"}
+            {msg.who === "user" ? t("intake.userWho") : t("intake.aiWho")}
           </div>
           <div className="bubble">
             {msg.who === "user" ? msg.text : stripChatMd(msg.text) || "…"}
@@ -97,7 +100,7 @@ export function SeatChat({
 
       <div className="ws-input">
         <div className="chips">
-          {chipPrompts(seat, userIssues, isRevealed).map((c) => (
+          {chipPrompts(seat, userIssues, isRevealed, t).map((c) => (
             <button key={c} className="chip" onClick={() => send(c)}>
               {c}
             </button>
@@ -107,7 +110,9 @@ export function SeatChat({
           <input
             type="text"
             data-testid="seat-chat-input"
-            placeholder={`Ask anything about ${subjectLabel}…`}
+            placeholder={t("seatChat.inputPlaceholder", {
+              subject: subjectLabel,
+            })}
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={(e) => {
@@ -120,18 +125,16 @@ export function SeatChat({
             onClick={() => send()}
             disabled={!draft.trim()}
           >
-            Send
+            {t("seatChat.sendBtn")}
           </button>
         </div>
         <div className="meta">
-          <span>
-            Chat stays in this browser tab · don't type your name or address
-          </span>
+          <span>{t("seatChat.chatHint")}</span>
           {ribbon && (
             <span data-testid="budget-ribbon">
               {ribbon}{" "}
               <button className="linklike" onClick={onShowBudgetOptions}>
-                See options →
+                {t("seatChat.seeOptions")}
               </button>
             </span>
           )}

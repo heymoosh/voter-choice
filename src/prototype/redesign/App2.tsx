@@ -16,6 +16,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import {
   I18nProvider,
+  useI18n,
   NavProvider,
   AppNav,
   ErrorBanner,
@@ -91,6 +92,7 @@ function loadSession() {
 /* Honest failure states (geocode / territory / data outage) in the design's
    visual language — AppNav + the shipped ErrorBanner. */
 function DelegationErrorView({ tone, title, body, onEditAddress, onRetry }) {
+  const { t } = useI18n();
   return (
     <>
       <AppNav />
@@ -102,9 +104,14 @@ function DelegationErrorView({ tone, title, body, onEditAddress, onRetry }) {
           tone={tone}
           title={title}
           body={body}
-          primary={{ label: "Edit address", onClick: onEditAddress }}
+          primary={{
+            label: t("delegationError.editAddress"),
+            onClick: onEditAddress,
+          }}
           secondary={
-            onRetry ? { label: "Try again", onClick: onRetry } : undefined
+            onRetry
+              ? { label: t("delegationError.tryAgain"), onClick: onRetry }
+              : undefined
           }
         />
       </main>
@@ -175,6 +182,7 @@ function OrientationView({ onContinue }) {
 }
 
 function App2Inner() {
+  const { t } = useI18n();
   // Purge any precise address left by the old single-localStorage-record scheme.
   if (typeof window !== "undefined") {
     try {
@@ -757,8 +765,8 @@ function App2Inner() {
       return (
         <DelegationErrorView
           tone="warn"
-          title="We couldn't place that address"
-          body="Try the full street address, city, and ZIP — the district lookup needs a real street address to find your representatives."
+          title={t("delegationError.geocodeFailTitle")}
+          body={t("delegationError.geocodeFailBody")}
           onEditAddress={() => setStage("home")}
           onRetry={
             failure?.retryable ? () => void startLookup(address) : undefined
@@ -770,8 +778,11 @@ function App2Inner() {
       return (
         <DelegationErrorView
           tone="warn"
-          title={`${failure?.territoryName || "Your area"} has no voting member of Congress`}
-          body="Residents here aren't represented by a voting House member or Senators — that's a fact about the system, not your address. We'd rather say so than fake a delegation."
+          title={t("delegationError.noRepTitle", {
+            territory:
+              failure?.territoryName || t("delegationError.noRepTitleFallback"),
+          })}
+          body={t("delegationError.noRepBody")}
           onEditAddress={() => setStage("home")}
         />
       );
@@ -780,8 +791,8 @@ function App2Inner() {
       return (
         <DelegationErrorView
           tone="error"
-          title="Our records are unavailable right now"
-          body="We found your district but couldn't load the delegation records. Try again in a minute."
+          title={t("delegationError.dbErrorTitle")}
+          body={t("delegationError.dbErrorBody")}
           onEditAddress={() => setStage("home")}
           onRetry={() => void startLookup(address)}
         />

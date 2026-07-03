@@ -36,10 +36,9 @@ function tierIntro(section, { stateName, t }) {
       place: "WASHINGTON",
       title: tr("scorecard.tierFedTitle"),
       what: () => (
-        <>
-          Three people who write <b>federal</b> law — and answer for it on
-          roll-call votes.
-        </>
+        <span
+          dangerouslySetInnerHTML={{ __html: tr("scorecard.tierFedWhat") }}
+        />
       ),
     },
     "State legislature — State": {
@@ -51,11 +50,9 @@ function tierIntro(section, { stateName, t }) {
       place: "STATEWIDE",
       title: tr("scorecard.tierExecTitle"),
       what: () => (
-        <>
-          A governor signs and vetoes — there's no voting record to score. So we
-          research positions and <b>show the receipts</b> instead of faking an
-          alignment number.
-        </>
+        <span
+          dangerouslySetInnerHTML={{ __html: tr("scorecard.tierExecWhat") }}
+        />
       ),
     },
   };

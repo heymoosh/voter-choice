@@ -25,6 +25,8 @@ export function IntakeView({
       starterThemeSingular: t("intake.starterThemeSingular"),
       starterThemePlural: t("intake.starterThemePlural"),
       errorMsg: t("intake.errorMsg"),
+      updatedFallback: t("intake.updatedFallback"),
+      notedFallback: t("intake.notedFallback"),
     },
   });
 
