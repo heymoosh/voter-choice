@@ -145,7 +145,9 @@ export async function streamWithByok(
     } catch {
       detail = (await response.text().catch(() => "")) || "";
     }
-    const sanitized = detail.replace(key, "[redacted]");
+    // replaceAll (not replace) so a key echoed more than once in the error
+    // detail is FULLY redacted — a single .replace would leak the 2nd+ copy.
+    const sanitized = detail.replaceAll(key, "[redacted]");
     cb.onError(sanitized || `Anthropic API error (status ${response.status}).`);
     return;
   }
@@ -160,7 +162,7 @@ export async function streamWithByok(
     cb.onDone();
   } catch (err) {
     const msg = err instanceof Error ? err.message : "stream error";
-    cb.onError(msg.replace(key, "[redacted]"));
+    cb.onError(msg.replaceAll(key, "[redacted]"));
   }
 }
 
