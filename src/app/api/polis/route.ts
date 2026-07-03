@@ -36,6 +36,10 @@ import {
   getIssueLabel,
   CANONICAL_ISSUE_LABELS,
 } from "../../../lib/canonicalIssues";
+import {
+  guardPolisRequest,
+  cachedPolisJson,
+} from "../../../lib/server/polis/route-guard";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -289,6 +293,9 @@ function computeConsensus(
 // ---------------------------------------------------------------------------
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
+  const blocked = await guardPolisRequest(request);
+  if (blocked) return blocked;
+
   const { searchParams } = new URL(request.url);
   const scopeParam = searchParams.get("scope");
   const stateCode =
@@ -329,5 +336,5 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     issueRegions: computeRegions(totals, agg.sampleSize),
   };
 
-  return NextResponse.json(response, { status: 200 });
+  return cachedPolisJson(response);
 }

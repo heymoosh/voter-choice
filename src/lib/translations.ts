@@ -1,4 +1,9 @@
-export type Language = "en" | "es";
+// The set of supported locales is derived from the registry at the bottom of
+// this file. Adding a locale = add a strings object satisfying `Translations`
+// (inline or imported from its own file) + one entry in `localeRegistry`. No
+// consumer edits needed: `Language`, the language switcher validation, and
+// per-locale test iteration all widen automatically.
+export type Language = keyof typeof localeRegistry;
 
 export interface Translations {
   nav: {
@@ -1984,4 +1989,9 @@ const es: Translations = {
   },
 };
 
-export const translations: Record<Language, Translations> = { en, es };
+// Locale registry — the single registration point for UI string locales.
+// `satisfies` checks every entry against the full Translations interface
+// while letting `Language` be inferred from the keys.
+const localeRegistry = { en, es } satisfies Record<string, Translations>;
+
+export const translations: Record<Language, Translations> = localeRegistry;

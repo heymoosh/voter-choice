@@ -46,10 +46,22 @@ jobs:
           echo "DATABASE_URL=$DATABASE_URL" >> "$GITHUB_ENV"
           echo "::add-mask::$DATABASE_URL"
 
-      - name: Run member stats ingest
+      - name: Validate manual inputs
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          CONGRESS: ${{ inputs.congress }}
         run: |
-          if [ -n "${{ inputs.congress }}" ]; then
-            npx tsx scripts/ingest/member-stats.ts --congress "${{ inputs.congress }}"
+          if [ -n "$CONGRESS" ] && ! [[ "$CONGRESS" =~ ^[0-9]+$ ]]; then
+            echo "::error::Invalid congress input '$CONGRESS' — must be numeric (^[0-9]+$)."
+            exit 1
+          fi
+
+      - name: Run member stats ingest
+        env:
+          CONGRESS: ${{ inputs.congress }}
+        run: |
+          if [ -n "$CONGRESS" ]; then
+            npx tsx scripts/ingest/member-stats.ts --congress "$CONGRESS"
           else
             npx tsx scripts/ingest/member-stats.ts
           fi

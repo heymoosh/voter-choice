@@ -37,6 +37,10 @@ import {
   fetchNationalOverlapCounts,
 } from "../../../../lib/server/counters";
 import { resolveCompassThreshold } from "../../../../lib/server/polis/clusters";
+import {
+  guardPolisRequest,
+  cachedPolisJson,
+} from "../../../../lib/server/polis/route-guard";
 
 interface CompassResponseBody {
   scope: "national" | "county";
@@ -64,6 +68,9 @@ function resolveScope(searchParams: URLSearchParams): "national" | "county" {
 }
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
+  const blocked = await guardPolisRequest(request);
+  if (blocked) return blocked;
+
   const { searchParams } = new URL(request.url);
   const scope = resolveScope(searchParams);
   const threshold = resolveCompassThreshold(
@@ -98,7 +105,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       clusters: [],
       dots: [],
     };
-    return NextResponse.json(body, { status: 200 });
+    return cachedPolisJson(body);
   }
 
   // scope === "national"
@@ -111,5 +118,5 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     clusters: [],
     dots: [],
   };
-  return NextResponse.json(body, { status: 200 });
+  return cachedPolisJson(body);
 }

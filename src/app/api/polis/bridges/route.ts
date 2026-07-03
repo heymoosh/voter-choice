@@ -28,6 +28,10 @@ import {
   fetchCountyOverlapCounts,
   fetchNationalOverlapCounts,
 } from "../../../../lib/server/counters";
+import {
+  guardPolisRequest,
+  cachedPolisJson,
+} from "../../../../lib/server/polis/route-guard";
 
 /** Minimum session count before the bridges reading is surfaced. */
 const BRIDGES_PER_READING_MIN = 50;
@@ -55,6 +59,9 @@ function resolveScope(searchParams: URLSearchParams): "national" | "county" {
 }
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
+  const blocked = await guardPolisRequest(request);
+  if (blocked) return blocked;
+
   const { searchParams } = new URL(request.url);
   const scope = resolveScope(searchParams);
 
@@ -86,7 +93,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         count: 0,
         bridges: [],
       };
-      return NextResponse.json(body, { status: 200 });
+      return cachedPolisJson(body);
     }
 
     if (overlap.count < BRIDGES_PER_READING_MIN) {
@@ -98,7 +105,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         status: "below_threshold",
         bridges: [],
       };
-      return NextResponse.json(body, { status: 200 });
+      return cachedPolisJson(body);
     }
 
     const body: BridgesResponseBody = {
@@ -109,7 +116,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       status: "no_bridges_yet",
       bridges: [],
     };
-    return NextResponse.json(body, { status: 200 });
+    return cachedPolisJson(body);
   }
 
   // scope === "national"
@@ -122,7 +129,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       count: 0,
       bridges: [],
     };
-    return NextResponse.json(body, { status: 200 });
+    return cachedPolisJson(body);
   }
 
   if (overlap.count < BRIDGES_PER_READING_MIN) {
@@ -133,7 +140,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       status: "below_threshold",
       bridges: [],
     };
-    return NextResponse.json(body, { status: 200 });
+    return cachedPolisJson(body);
   }
 
   const body: BridgesResponseBody = {
@@ -143,5 +150,5 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     status: "no_bridges_yet",
     bridges: [],
   };
-  return NextResponse.json(body, { status: 200 });
+  return cachedPolisJson(body);
 }
