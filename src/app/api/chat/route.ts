@@ -879,6 +879,20 @@ interface LookupToolBlock {
 // Maximum number of lookup_alignment tool call rounds to prevent runaway loops
 const MAX_TOOL_ROUNDS = 10;
 
+// Denial-of-wallet cap: the maximum number of BILLABLE tool calls the model may
+// fan out to within a single round. research_candidate is billable because it
+// spawns a web_search-backed sub-agent; a crafted turn could otherwise request
+// hundreds in parallel. Excess billable calls are not executed — they return a
+// polite error tool_result so the API contract (one result per tool_use) holds.
+const MAX_BILLABLE_TOOL_CALLS_PER_ROUND = 4;
+
+// Tools whose resolution spends real money (web_search-backed sub-agents). Only
+// these count against MAX_BILLABLE_TOOL_CALLS_PER_ROUND; DB-backed lookups
+// (lookup_alignment, lookup_donor_coalition) are free and uncapped.
+function isBillableTool(name: string): boolean {
+  return name === "research_candidate";
+}
+
 // The SDK's usage type (0.39.0) doesn't know about server tool counts yet.
 type UsageWithServerTools =
   | { server_tool_use?: { web_search_requests?: number } }
@@ -1306,6 +1320,24 @@ function createSSEStream(
 
           if (toolUseBlocks.length === 0) break;
 
+          // In-flight budget circuit-breaker: the admission gate only checks
+          // the budget once, at the start. Re-check between rounds and abort
+          // before dispatching any further (billable) tool calls if the
+          // community budget flipped to exhausted mid-request. This also closes
+          // the admission TOCTOU window where many rounds race a stale check.
+          const midRunBudget = await getBudgetStatusAsync();
+          if (midRunBudget.tier === "exhausted") break;
+
+          // Per-round fan-out cap: mark billable calls beyond the cap so they
+          // are skipped (not executed) while still receiving a tool_result.
+          let billableSeen = 0;
+          const dispatchPlan = toolUseBlocks.map((block) => ({
+            block,
+            overCap:
+              isBillableTool(block.name) &&
+              ++billableSeen > MAX_BILLABLE_TOOL_CALLS_PER_ROUND,
+          }));
+
           // Resolve all tool calls in parallel. lookup_alignment,
           // lookup_donor_coalition, and research_candidate all share the
           // round-trip cap (MAX_TOOL_ROUNDS) because they accumulate in
@@ -1313,7 +1345,21 @@ function createSSEStream(
           // loop — each round can dispatch many of any of them.
           const toolResults: Anthropic.ToolResultBlockParam[] =
             await Promise.all(
-              toolUseBlocks.map(async (block) => {
+              dispatchPlan.map(async ({ block, overCap }) => {
+                // Over-cap billable calls are not executed — return a polite
+                // error result so the model can retry with fewer at once.
+                if (overCap) {
+                  return {
+                    type: "tool_result" as const,
+                    tool_use_id: block.id,
+                    content: JSON.stringify({
+                      found: false,
+                      unavailable: {
+                        reason: `Research limit reached for this step (max ${MAX_BILLABLE_TOOL_CALLS_PER_ROUND} candidate lookups per turn). Ask about fewer candidates at once.`,
+                      },
+                    }),
+                  };
+                }
                 // Parse accumulated input string into object
                 let parsedInput: Record<string, unknown> = {};
                 try {
