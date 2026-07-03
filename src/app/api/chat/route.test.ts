@@ -244,6 +244,72 @@ function toolUseStream(
   ]);
 }
 
+/** A stream that emits MANY tool_use blocks of the same tool in a single
+ * assistant turn, then stops with stop_reason="tool_use". Used to exercise the
+ * per-round fan-out cap: the route must dispatch at most N billable calls and
+ * return a polite error tool_result for the excess. */
+function multiToolUseStream(
+  toolName:
+    | "lookup_alignment"
+    | "lookup_donor_coalition"
+    | "research_candidate",
+  inputs: Record<string, unknown>[],
+): AsyncIterable<Anthropic.MessageStreamEvent> {
+  const events: Anthropic.MessageStreamEvent[] = [
+    {
+      type: "message_start",
+      message: {
+        id: "msg_multi_tool",
+        type: "message",
+        role: "assistant",
+        content: [],
+        model: "claude-haiku-4-5-20251001",
+        stop_reason: null,
+        stop_sequence: null,
+        usage: {
+          input_tokens: 20,
+          output_tokens: 0,
+          cache_creation_input_tokens: 0,
+          cache_read_input_tokens: 0,
+        },
+      },
+    } as unknown as Anthropic.MessageStreamEvent,
+  ];
+  inputs.forEach((input, i) => {
+    events.push({
+      type: "content_block_start",
+      index: i,
+      content_block: {
+        type: "tool_use",
+        id: `${toolName}_${i}`,
+        name: toolName,
+        input: {},
+      },
+    } as unknown as Anthropic.MessageStreamEvent);
+    events.push({
+      type: "content_block_delta",
+      index: i,
+      delta: {
+        type: "input_json_delta",
+        partial_json: JSON.stringify(input),
+      },
+    } as unknown as Anthropic.MessageStreamEvent);
+    events.push({
+      type: "content_block_stop",
+      index: i,
+    } as unknown as Anthropic.MessageStreamEvent);
+  });
+  events.push({
+    type: "message_delta",
+    delta: { stop_reason: "tool_use", stop_sequence: null },
+    usage: { output_tokens: 8 },
+  } as unknown as Anthropic.MessageStreamEvent);
+  events.push({
+    type: "message_stop",
+  } as unknown as Anthropic.MessageStreamEvent);
+  return mockAnthropicStream(events);
+}
+
 interface MakeChatRequestInput {
   messages?: Array<{ role: "user" | "assistant"; content: string }>;
   systemPrompt?: string;
@@ -923,6 +989,32 @@ describe("POST /api/chat — Phase 9 budget exhaustion returns structured 200", 
     // retained this as the canonical handoff target.
     expect(body.handoffPrompt ?? "").toContain("BALLOT RESEARCH TOOL");
   });
+
+  // Cold-lambda hard-stop: the durable tier is the deciding signal, NOT the
+  // per-instance in-memory wasHandoffServed() flag. A fresh/cold lambda has the
+  // in-memory flag unset (false) even though the durable store already recorded
+  // the handoff as served (which is exactly why getBudgetStatusAsync resolves
+  // tier="exhausted"). The exhausted branch must still be taken so the user is
+  // NOT billed for another completion. Pre-fix, the gate ANDed in the in-memory
+  // flag, so a cold lambda fell through and called the model.
+  it("still blocks (no billing) when durable tier is exhausted but the in-memory handoff flag is unset (cold lambda)", async () => {
+    vi.mocked(getBudgetStatusAsync).mockResolvedValue({
+      tier: "exhausted",
+      percent: 100,
+      estimatedSpendUSD: 50.5,
+    });
+    // Cold/fresh lambda: in-memory flag never got set in this process.
+    vi.mocked(wasHandoffServed).mockReturnValue(false);
+
+    const req = makeChatRequest();
+    const res = await POST(req as never);
+
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { status?: string };
+    expect(body.status).toBe("budget_exhausted");
+    // The hard-stop must prevent any model call (no billing).
+    expect(messagesCreateMock).not.toHaveBeenCalled();
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -1237,5 +1329,113 @@ describe("POST /api/chat — v2 misroute defensive fallback", () => {
     const firstCallParams = messagesCreateMock.mock.calls[0][0];
     const systemText: string = firstCallParams.system[0].text;
     expect(systemText).toContain("LEGACY-ROUTER-THROW");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Denial-of-wallet hardening: per-round tool fan-out cap + in-flight budget
+// circuit-breaker (card de208d84).
+// ---------------------------------------------------------------------------
+
+/** Context that routes to the workspace-race builder so research_candidate is
+ * an available tool and the dispatch loop fires. */
+function raceRequest(): Request {
+  return makeChatRequest({
+    view: "workspace-race",
+    activeRaceType: "choice",
+    raceContext: {
+      raceLabel: "Local Race",
+      state: "TX",
+      county: "Travis",
+      themesList: "healthcare",
+      candidatesJson: "[]",
+      decidedSummary: "",
+    },
+  });
+}
+
+describe("POST /api/chat — per-round tool fan-out cap", () => {
+  it("dispatches at most 4 billable research_candidate calls per round and returns a polite error for the excess", async () => {
+    vi.stubEnv("PROMPT_FLEET_V2", "1");
+
+    // One assistant turn that fans out to 6 research_candidate calls. The cap
+    // is 4, so only 4 may actually spawn a (billable) research sub-agent; the
+    // other 2 must come back as a polite error tool_result WITHOUT running.
+    const inputs = Array.from({ length: 6 }, (_, i) => ({
+      candidate_name: `Candidate ${i}`,
+      jurisdiction: "TX-governor",
+      topic: "background",
+    }));
+
+    queueStreams(
+      multiToolUseStream("research_candidate", inputs),
+      simpleTextStream("done"),
+    );
+
+    const res = await POST(raceRequest() as never);
+    await drainResponseBody(res);
+
+    // Only 4 of the 6 candidate lookups actually spent budget.
+    expect(runResearchSubAgent).toHaveBeenCalledTimes(4);
+
+    // Every tool_use still gets a tool_result (Anthropic API contract), so the
+    // continuation carries 6 results — 2 of them the over-cap error.
+    const continuationParams = messagesCreateMock.mock.calls[1][0];
+    const lastMessage =
+      continuationParams.messages[continuationParams.messages.length - 1];
+    const results = lastMessage.content as Array<{ content: string }>;
+    expect(results).toHaveLength(6);
+    const overCap = results.filter(
+      (r) =>
+        r.content.includes('"found":false') &&
+        r.content.toLowerCase().includes("limit reached"),
+    );
+    expect(overCap).toHaveLength(2);
+  });
+});
+
+describe("POST /api/chat — in-flight budget circuit-breaker", () => {
+  it("aborts the round loop with no further research calls once the budget flips to exhausted mid-run", async () => {
+    vi.stubEnv("PROMPT_FLEET_V2", "1");
+
+    // Budget starts healthy (admission passes) and flips to exhausted the
+    // moment the first research sub-agent runs — modelling spend crossing the
+    // cap mid-request.
+    let tier: "normal" | "exhausted" = "normal";
+    vi.mocked(getBudgetStatusAsync).mockImplementation(async () => ({
+      tier,
+      percent: tier === "exhausted" ? 100 : 12,
+      estimatedSpendUSD: tier === "exhausted" ? 50 : 6,
+    }));
+    vi.mocked(runResearchSubAgent).mockImplementation(async () => {
+      tier = "exhausted";
+      return {
+        summary: "first-round summary",
+        usage: { input: 0, output: 0, searchCount: 0 },
+      };
+    });
+
+    // Round 1 dispatches one research_candidate (flips the budget); round 2
+    // would dispatch another, but the circuit-breaker must abort before it.
+    queueStreams(
+      toolUseStream("research_candidate", "toolu_round1", {
+        candidate_name: "First",
+        jurisdiction: "TX-governor",
+        topic: "background",
+      }),
+      toolUseStream("research_candidate", "toolu_round2", {
+        candidate_name: "Second",
+        jurisdiction: "TX-governor",
+        topic: "background",
+      }),
+      simpleTextStream("should not be reached"),
+    );
+
+    const res = await POST(raceRequest() as never);
+    await drainResponseBody(res);
+
+    // Exactly one research call ran — the flip aborted the loop before round 2
+    // could spend any more budget.
+    expect(runResearchSubAgent).toHaveBeenCalledTimes(1);
   });
 });

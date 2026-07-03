@@ -1,13 +1,31 @@
 import { describe, it, expect } from "vitest";
 import { translations } from "./translations";
-import type { Language } from "./translations";
+import type { Language, Translations } from "./translations";
 
-const LANGUAGES: Language[] = ["en", "es"];
+// Derived from the registry: every registered locale — including any future
+// one — is automatically covered by the structural assertions below.
+const LANGUAGES = Object.keys(translations) as Language[];
 
 describe("translations", () => {
   it("has entries for both languages", () => {
     expect(translations.en).toBeDefined();
     expect(translations.es).toBeDefined();
+  });
+
+  it("derives the language list from the locale registry", () => {
+    expect(LANGUAGES).toEqual(["en", "es"]);
+  });
+
+  it("registers a locale as data only — a Translations-shaped strings object", () => {
+    // Adding a locale = one registry entry whose value satisfies the
+    // Translations interface. This mirrors that contract at runtime: an
+    // extended registry stays a valid Record<string, Translations>.
+    const extendedRegistry: Record<string, Translations> = {
+      ...translations,
+      fr: translations.en,
+    };
+    expect(Object.keys(extendedRegistry)).toEqual([...LANGUAGES, "fr"]);
+    expect(extendedRegistry.fr.hero.title).toBeTruthy();
   });
 
   LANGUAGES.forEach((lang) => {

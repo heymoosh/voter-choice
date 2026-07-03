@@ -1,12 +1,12 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { NextRequest } from "next/server";
 import { checkRateLimitAsync } from "../../../lib/server/rate-limit";
+import { getClientIP } from "../../../lib/server/client-ip";
 import {
   recordUsageAsync,
   getBudgetStatusAsync,
   shouldTriggerHandoffAsync,
   markHandoffServed,
-  wasHandoffServed,
   type BudgetTier,
 } from "../../../lib/server/budget";
 import {
@@ -36,7 +36,7 @@ import { buildRaceDeepDivePrompt } from "../../../lib/prompts/race-deep-dive";
 import { buildPropositionPrompt } from "../../../lib/prompts/proposition";
 import { buildThemeAmendmentPrompt } from "../../../lib/prompts/theme-amendment";
 import { buildHandoffPrompt } from "../../../lib/prompts/handoff";
-import { BALLOT_PROMPT_EN } from "../../../lib/generated/ballotPromptEn.generated";
+import { BALLOT_PROMPTS } from "../../../lib/generated/ballotPrompts.generated";
 
 // Server-side tools: Anthropic's hosted web_search runs on their infra; we
 // just declare the tool and Claude orchestrates the calls server-side. Billed
@@ -288,14 +288,6 @@ interface ChatRequest {
   raceContext?: RaceContextPayload;
   /** Phase 5 — session-global ballot context from the state party gate. */
   ballotContext?: BallotContextPayload;
-}
-
-function getClientIP(request: NextRequest): string {
-  return (
-    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-    request.headers.get("x-real-ip") ??
-    "unknown"
-  );
 }
 
 function validateOrigin(request: NextRequest): boolean {
@@ -822,23 +814,24 @@ function budgetGateResponse(
   isNewSession: boolean | undefined,
   budget: Awaited<ReturnType<typeof getBudgetStatusAsync>>,
 ): Response | null {
-  // The tier logic in budget.ts already withholds "exhausted" until the handoff
-  // has been served (returning "handoff" instead). This belt-and-suspenders check
-  // ensures we never surface the budget-exhausted continuity state unless the
-  // handoff is confirmed served — guarding against any future path that could
-  // bypass the tier coercion.
-  if (tier === "exhausted" && wasHandoffServed()) {
+  // `tier` here is the DURABLE tier from getBudgetStatusAsync: budget.ts only
+  // coerces it to "exhausted" once the durable handoffServed flag is set (see
+  // budgetStatusFromSpend). That durable signal — not the per-instance in-memory
+  // wasHandoffServed() flag — is what decides the hard-stop. A cold/fresh lambda
+  // has the in-memory flag unset even when the handoff was already served, so
+  // gating on it let an exhausted-budget user slip past the hard-stop and bill.
+  if (tier === "exhausted") {
     // Phase 9 — structured 200 instead of 503. The client renders the
     // continuity screen (BudgetExhausted) from this payload. The
-    // handoffPrompt body is the canonical legacy BALLOT_PROMPT_EN — Phase
-    // 1 explicitly retained it as the handoff template; we forward the
+    // handoffPrompt body is the canonical legacy English ballot prompt —
+    // Phase 1 explicitly retained it as the handoff template; we forward the
     // full text so the screen can pre-populate a copyable textarea
     // without an extra round-trip.
     return Response.json(
       {
         status: "budget_exhausted",
         resetAt: defaultBudgetResetAtISO(),
-        handoffPrompt: BALLOT_PROMPT_EN,
+        handoffPrompt: BALLOT_PROMPTS.en,
         budget,
       },
       { status: 200 },
@@ -885,6 +878,20 @@ interface LookupToolBlock {
 
 // Maximum number of lookup_alignment tool call rounds to prevent runaway loops
 const MAX_TOOL_ROUNDS = 10;
+
+// Denial-of-wallet cap: the maximum number of BILLABLE tool calls the model may
+// fan out to within a single round. research_candidate is billable because it
+// spawns a web_search-backed sub-agent; a crafted turn could otherwise request
+// hundreds in parallel. Excess billable calls are not executed — they return a
+// polite error tool_result so the API contract (one result per tool_use) holds.
+const MAX_BILLABLE_TOOL_CALLS_PER_ROUND = 4;
+
+// Tools whose resolution spends real money (web_search-backed sub-agents). Only
+// these count against MAX_BILLABLE_TOOL_CALLS_PER_ROUND; DB-backed lookups
+// (lookup_alignment, lookup_donor_coalition) are free and uncapped.
+function isBillableTool(name: string): boolean {
+  return name === "research_candidate";
+}
 
 // The SDK's usage type (0.39.0) doesn't know about server tool counts yet.
 type UsageWithServerTools =
@@ -1313,6 +1320,24 @@ function createSSEStream(
 
           if (toolUseBlocks.length === 0) break;
 
+          // In-flight budget circuit-breaker: the admission gate only checks
+          // the budget once, at the start. Re-check between rounds and abort
+          // before dispatching any further (billable) tool calls if the
+          // community budget flipped to exhausted mid-request. This also closes
+          // the admission TOCTOU window where many rounds race a stale check.
+          const midRunBudget = await getBudgetStatusAsync();
+          if (midRunBudget.tier === "exhausted") break;
+
+          // Per-round fan-out cap: mark billable calls beyond the cap so they
+          // are skipped (not executed) while still receiving a tool_result.
+          let billableSeen = 0;
+          const dispatchPlan = toolUseBlocks.map((block) => ({
+            block,
+            overCap:
+              isBillableTool(block.name) &&
+              ++billableSeen > MAX_BILLABLE_TOOL_CALLS_PER_ROUND,
+          }));
+
           // Resolve all tool calls in parallel. lookup_alignment,
           // lookup_donor_coalition, and research_candidate all share the
           // round-trip cap (MAX_TOOL_ROUNDS) because they accumulate in
@@ -1320,7 +1345,21 @@ function createSSEStream(
           // loop — each round can dispatch many of any of them.
           const toolResults: Anthropic.ToolResultBlockParam[] =
             await Promise.all(
-              toolUseBlocks.map(async (block) => {
+              dispatchPlan.map(async ({ block, overCap }) => {
+                // Over-cap billable calls are not executed — return a polite
+                // error result so the model can retry with fewer at once.
+                if (overCap) {
+                  return {
+                    type: "tool_result" as const,
+                    tool_use_id: block.id,
+                    content: JSON.stringify({
+                      found: false,
+                      unavailable: {
+                        reason: `Research limit reached for this step (max ${MAX_BILLABLE_TOOL_CALLS_PER_ROUND} candidate lookups per turn). Ask about fewer candidates at once.`,
+                      },
+                    }),
+                  };
+                }
                 // Parse accumulated input string into object
                 let parsedInput: Record<string, unknown> = {};
                 try {
@@ -1563,7 +1602,7 @@ async function handleAnthropicError(
           {
             status: "budget_exhausted",
             resetAt: defaultBudgetResetAtISO(),
-            handoffPrompt: BALLOT_PROMPT_EN,
+            handoffPrompt: BALLOT_PROMPTS.en,
             budget,
           },
           { status: 200 },

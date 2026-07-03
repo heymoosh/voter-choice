@@ -89,21 +89,29 @@ function unquote(ident: string): string {
 /**
  * Split a migration file's text into individual statements.
  * drizzle separates statements with `--> statement-breakpoint`; hand-written
- * migrations may rely on plain `;`. Split on both, then drop empties.
+ * migrations may rely on plain `;`. Comments are stripped FIRST so a `;`
+ * inside a `-- comment` (e.g. prose in a CREATE TABLE body) can't fragment a
+ * statement — only THEN do we split on the breakpoint marker and `;`, and
+ * drop empties.
  */
 export function splitStatements(sql: string): string[] {
-  return sql
+  return stripSqlComments(sql)
     .split(/-->\s*statement-breakpoint/i)
     .flatMap((chunk) => chunk.split(";"))
-    .map((s) => stripSqlComments(s).trim())
+    .map((s) => s.trim())
     .filter((s) => s.length > 0);
 }
 
-/** Remove `-- line comments` so they can't swallow real tokens on a line. */
+/**
+ * Remove `-- line comments` so they can't swallow real tokens (or a stray
+ * `;`) on a line. Deliberately does NOT touch `--> statement-breakpoint`: the
+ * negative lookahead excludes `--` immediately followed by `>`, so drizzle's
+ * breakpoint marker survives comment-stripping intact for the later split.
+ */
 function stripSqlComments(sql: string): string {
   return sql
     .split("\n")
-    .map((line) => line.replace(/--.*$/, ""))
+    .map((line) => line.replace(/--(?!>).*$/, ""))
     .join("\n");
 }
 

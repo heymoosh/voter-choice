@@ -13,6 +13,7 @@ import { fileURLToPath } from "node:url";
 import {
   parseMigrations,
   parseMigrationDir,
+  splitStatements,
   diff,
   computeExitCode,
   type SchemaShape,
@@ -102,6 +103,61 @@ describe("unparsedDdl (fail-open guard against parser blind spots)", () => {
       },
     ]);
     expect(unparsedDdl).toEqual([]);
+  });
+});
+
+describe("splitStatements (regression: `;` inside a `--` comment)", () => {
+  // 2026-06: 0012_add_polis_response_vectors.sql had a CREATE TABLE body
+  // comment containing a `;`. Because splitStatements used to split on `;`
+  // BEFORE stripping comments, that `;` fragmented the statement mid-body,
+  // which tripped the unparsed-DDL guard (worked around at the time by
+  // rewriting the migration's prose). This is the regression test for the
+  // real fix: strip comments FIRST, then split.
+  const sql = `
+CREATE TABLE "widgets" (
+  "id" text NOT NULL,
+  -- note: default is 5; see docs for details
+  "name" text NOT NULL
+);
+--> statement-breakpoint
+CREATE INDEX "widgets_name_idx" ON "widgets" ("name");
+`;
+
+  it("parses the CREATE TABLE as ONE complete statement, not fragmented", () => {
+    const statements = splitStatements(sql);
+    const createTable = statements.find((s) => /^CREATE\s+TABLE\b/i.test(s));
+    expect(createTable).toBeDefined();
+    // A complete statement contains BOTH columns and closes its own paren —
+    // pre-fix, the `;` inside the comment splits this into two dangling
+    // fragments (`...NOT NULL,\n  -- note: default is 5` and `see docs...`),
+    // neither of which is a parseable CREATE TABLE on its own.
+    expect(createTable).toContain('"id" text NOT NULL');
+    expect(createTable).toContain('"name" text NOT NULL');
+    expect(createTable!.trim().endsWith(")")).toBe(true);
+  });
+
+  it("still splits the following statement on the `--> statement-breakpoint` marker", () => {
+    const statements = splitStatements(sql);
+    expect(statements.some((s) => /^CREATE\s+INDEX\b/i.test(s))).toBe(true);
+  });
+
+  it("end-to-end: the table + both columns parse, and the guard does NOT trip", () => {
+    const { schema, unparsedDdl } = parseMigrations([
+      { name: "9999_widgets.sql", sql },
+    ]);
+    expect(schema.tables.has("widgets")).toBe(true);
+    expect(schema.columns.has("widgets.id")).toBe(true);
+    expect(schema.columns.has("widgets.name")).toBe(true);
+    expect(schema.indexes.has("widgets_name_idx")).toBe(true);
+    expect(unparsedDdl).toEqual([]);
+  });
+
+  it("does not corrupt the `--> statement-breakpoint` marker itself", () => {
+    // Sanity check on the reorder: comments are stripped BEFORE the
+    // breakpoint split, so stripSqlComments must not treat `-->` as a `--`
+    // line comment (it would erase the marker and merge statements).
+    const statements = splitStatements(sql);
+    expect(statements.length).toBe(2);
   });
 });
 

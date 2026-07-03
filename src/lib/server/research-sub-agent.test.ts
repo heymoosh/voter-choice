@@ -19,8 +19,16 @@ vi.mock("./budget", () => ({
   recordUsageAsync: vi.fn().mockResolvedValue(undefined),
 }));
 
-import { runResearchSubAgent } from "./research-sub-agent";
+vi.mock("./chat-usage-metrics", () => ({
+  recordChatUsage: vi.fn().mockResolvedValue(undefined),
+}));
+
+import {
+  runResearchSubAgent,
+  runStructuredCandidateResearch,
+} from "./research-sub-agent";
 import { recordUsageAsync } from "./budget";
+import { recordChatUsage } from "./chat-usage-metrics";
 
 interface MockClient {
   messages: {
@@ -228,6 +236,65 @@ describe("runResearchSubAgent", () => {
     expect(recorded.searchCount).toBe(2);
   });
 
+  it("records an anonymous chat_usage_metrics row with call_kind 'research'", async () => {
+    const client = makeMockClient();
+    client.messages.create.mockResolvedValue(
+      fakeMessage("· One.\n· Two.\n· Three.\nsources: https://x", {
+        inputTokens: 120,
+        outputTokens: 65,
+        cachedInputTokens: 800,
+        cacheWriteTokens: 40,
+        searchCount: 2,
+      }),
+    );
+
+    await runResearchSubAgent(
+      { candidateName: "X", jurisdiction: "Y", topic: "Z" },
+      client as never,
+    );
+
+    expect(recordChatUsage).toHaveBeenCalledTimes(1);
+    const [usage, opts] = vi.mocked(recordChatUsage).mock.calls[0];
+    // Content-free counts only — token counts + web-search count.
+    expect(usage.inputTokens).toBe(120);
+    expect(usage.outputTokens).toBe(65);
+    expect(usage.cacheReadTokens).toBe(800);
+    expect(usage.cacheWriteTokens).toBe(40);
+    expect(usage.webSearchCount).toBe(2);
+    // Discriminator + model so the metrics table can attribute the spike.
+    expect(opts.callKind).toBe("research");
+    expect(opts.model).toBe("claude-haiku-4-5-20251001");
+    // Privacy contract: no message text, no PII fields anywhere in the call.
+    expect(Object.keys(usage).sort()).toEqual([
+      "cacheReadTokens",
+      "cacheWriteTokens",
+      "inputTokens",
+      "outputTokens",
+      "webSearchCount",
+    ]);
+    expect(Object.keys(opts).sort()).toEqual(["callKind", "model"]);
+  });
+
+  it("skips the metrics row when the sub-call reports zero usage", async () => {
+    const client = makeMockClient();
+    client.messages.create.mockResolvedValue(
+      fakeMessage("· One.\n· Two.\n· Three.\nsources: https://x", {
+        inputTokens: 0,
+        outputTokens: 0,
+        cachedInputTokens: 0,
+        cacheWriteTokens: 0,
+        searchCount: 0,
+      }),
+    );
+
+    await runResearchSubAgent(
+      { candidateName: "X", jurisdiction: "Y", topic: "Z" },
+      client as never,
+    );
+
+    expect(recordChatUsage).not.toHaveBeenCalled();
+  });
+
   it("returns the searchCount from the sub-call in the result", async () => {
     const client = makeMockClient();
     client.messages.create.mockResolvedValue(
@@ -286,5 +353,37 @@ describe("runResearchSubAgent", () => {
     expect(Array.isArray(params.messages)).toBe(true);
     expect(params.messages.length).toBeGreaterThanOrEqual(1);
     expect(params.messages[0].role).toBe("user");
+  });
+});
+
+describe("runStructuredCandidateResearch", () => {
+  it("records an anonymous chat_usage_metrics row with call_kind 'research'", async () => {
+    const client = makeMockClient();
+    client.messages.create.mockResolvedValue(
+      fakeMessage("[]", {
+        inputTokens: 200,
+        outputTokens: 150,
+        cachedInputTokens: 0,
+        cacheWriteTokens: 0,
+        searchCount: 3,
+      }),
+    );
+
+    await runStructuredCandidateResearch(
+      {
+        candidateName: "X",
+        jurisdiction: "Y",
+        issues: [{ canonicalIssue: "healthcare", issueLabel: "Healthcare" }],
+      } as never,
+      client as never,
+    );
+
+    expect(recordChatUsage).toHaveBeenCalledTimes(1);
+    const [usage, opts] = vi.mocked(recordChatUsage).mock.calls[0];
+    expect(usage.inputTokens).toBe(200);
+    expect(usage.outputTokens).toBe(150);
+    expect(usage.webSearchCount).toBe(3);
+    expect(opts.callKind).toBe("research");
+    expect(opts.model).toBe("claude-haiku-4-5-20251001");
   });
 });
