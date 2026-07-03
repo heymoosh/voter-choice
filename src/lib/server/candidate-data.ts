@@ -169,6 +169,17 @@ export async function researchAndPersistCandidate(
 
   const candidateKey = buildCandidateKey(name, jurisdiction, cycle);
 
+  // Cache short-circuit: if every requested issue already has stored,
+  // citation-backed web_search data, return it WITHOUT spawning the billable
+  // research sub-agent. Only a FULL hit short-circuits — a partial hit still
+  // re-researches (the sub-agent researches all requested issues at once).
+  const issueIds = issues.map((i) => i.canonicalIssue);
+  const cached = await lookupCandidateData(candidateKey, issueIds);
+  const cachedIssues = new Set(cached.map((s) => s.canonicalIssue));
+  if (issueIds.every((id) => cachedIssues.has(id))) {
+    return cached;
+  }
+
   const researchInput = {
     candidateName: name,
     jurisdiction,
