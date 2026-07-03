@@ -167,23 +167,19 @@ export async function incrementSessionCounters(
         commands.push(redisCommand(["INCRBY", `${countyPrimaryP}:total`, 1]));
       }
 
-      // Issue-level counters
+      // Issue-level counters. The canonicalIssue is sanitized before it forms
+      // a key segment — the route already allow-lists to canonical ids, this
+      // is defense-in-depth against any other caller.
       for (const { canonicalIssue } of confirmedConcerns) {
         if (!canonicalIssue) continue;
+        const issueSeg = sanitizeKeySegment(canonicalIssue);
+        if (!issueSeg) continue;
         commands.push(
-          redisCommand([
-            "INCRBY",
-            `${statePrimaryP}:issue:${canonicalIssue}`,
-            1,
-          ]),
+          redisCommand(["INCRBY", `${statePrimaryP}:issue:${issueSeg}`, 1]),
         );
         if (countyPrimaryP) {
           commands.push(
-            redisCommand([
-              "INCRBY",
-              `${countyPrimaryP}:issue:${canonicalIssue}`,
-              1,
-            ]),
+            redisCommand(["INCRBY", `${countyPrimaryP}:issue:${issueSeg}`, 1]),
           );
         }
       }
@@ -217,13 +213,17 @@ export async function incrementSessionCounters(
 
     for (const { canonicalIssue } of confirmedConcerns) {
       if (!canonicalIssue) continue;
-      memIncr(`${statePrimaryP}:issue:${canonicalIssue}`);
-      memIncr(`${cpp}:issue:${canonicalIssue}`);
+      const issueSeg = sanitizeKeySegment(canonicalIssue);
+      if (!issueSeg) continue;
+      memIncr(`${statePrimaryP}:issue:${issueSeg}`);
+      memIncr(`${cpp}:issue:${issueSeg}`);
     }
   } else {
     for (const { canonicalIssue } of confirmedConcerns) {
       if (!canonicalIssue) continue;
-      memIncr(`${statePrimaryP}:issue:${canonicalIssue}`);
+      const issueSeg = sanitizeKeySegment(canonicalIssue);
+      if (!issueSeg) continue;
+      memIncr(`${statePrimaryP}:issue:${issueSeg}`);
     }
   }
 
