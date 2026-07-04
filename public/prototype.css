@@ -27,6 +27,9 @@
   --vote-red: oklch(0.53 0.205 27);
   --gold: oklch(0.72 0.125 76);
   --keep: oklch(0.44 0.115 159);
+  --keep-2: oklch(
+    0.35 0.105 159
+  ); /* darker keep — hover/contrast, mirrors --civic-2's darkening off --civic */
   --keep-soft: oklch(0.93 0.045 159);
   --replace-soft: oklch(0.94 0.05 27);
   --tag-bg: oklch(0.95 0.006 260);
@@ -1845,12 +1848,12 @@ body[data-treatment="inkwell"] .b-row.active {
 /* Differentiate the verdict at a glance (A): KEEP = green box + green check,
    REPLACE = red box + a red swap-arrow glyph instead of the check. */
 .br.verdict-row.keep .bx {
-  border-color: var(--civic);
-  background: oklch(0.96 0.02 170);
+  border-color: var(--keep);
+  background: var(--keep-soft);
 }
 .br.verdict-row.keep .bx::after {
-  border-left-color: var(--civic-2);
-  border-bottom-color: var(--civic-2);
+  border-left-color: var(--keep-2);
+  border-bottom-color: var(--keep-2);
 }
 .br.verdict-row.replace .bx {
   border-color: var(--vote-red);
@@ -2741,7 +2744,7 @@ body[data-treatment="inkwell"] .proto-banner {
   letter-spacing: -0.01em;
 }
 .cv2-money-map .seg.small {
-  background: var(--civic);
+  background: var(--keep);
   color: var(--paper-2);
 }
 .cv2-money-map .seg.large {
@@ -2785,7 +2788,7 @@ body[data-treatment="inkwell"] .proto-banner {
   flex-shrink: 0;
 }
 .cv2-money-legend .sw.small {
-  background: var(--civic);
+  background: var(--keep);
 }
 .cv2-money-legend .sw.large {
   background: var(--gold);
@@ -2914,7 +2917,7 @@ body[data-treatment="inkwell"] .proto-banner {
   border-color: var(--ink-3);
 }
 .cv2-actions .pick {
-  background: var(--civic);
+  background: var(--keep);
   color: var(--paper-2);
   border: 0;
   padding: 12px 20px;
@@ -2931,7 +2934,7 @@ body[data-treatment="inkwell"] .proto-banner {
   min-width: 220px;
 }
 .cv2-actions .pick:hover {
-  background: var(--civic-2);
+  background: var(--keep-2);
 }
 .cv2-actions .pick .ck {
   width: 18px;
@@ -2946,11 +2949,11 @@ body[data-treatment="inkwell"] .proto-banner {
 .cv2-actions .pick.picked {
   background: var(--paper-2);
   color: var(--ink);
-  border: 1px solid var(--civic);
+  border: 1px solid var(--keep);
 }
 .cv2-actions .pick.picked .ck {
-  border-color: var(--civic);
-  background: var(--civic);
+  border-color: var(--keep);
+  background: var(--keep);
   color: var(--paper-2);
 }
 
@@ -3168,7 +3171,7 @@ body[data-treatment="inkwell"] .cv2-iss-row.open {
     padding: 12px 16px;
     background: var(--civic-soft);
     border-left: 3px solid var(--civic);
-    border-bottom: 1px solid oklch(0.85 0.025 170);
+    border-bottom: 1px solid oklch(0.85 0.025 262);
   }
   .ws-mobile-resume .l {
     min-width: 0;
@@ -4792,7 +4795,7 @@ body[data-treatment="inkwell"] .be-prompt-text {
   min-width: 0;
 }
 .cmp-money-bar .seg.small {
-  background: var(--civic);
+  background: var(--keep);
   color: var(--paper-2);
 }
 .cmp-money-bar .seg.large {
@@ -4866,7 +4869,7 @@ body[data-treatment="inkwell"] .be-prompt-text {
   font-weight: 600;
 }
 .av-filter.active .av-filter-ct {
-  background: oklch(0.3 0.075 170);
+  background: var(--civic-2);
   color: var(--paper-2);
 }
 
@@ -4963,7 +4966,7 @@ body[data-treatment="inkwell"] .be-prompt-text {
   color: var(--paper-2);
   border-color: var(--civic);
   font-weight: 600;
-  box-shadow: 0 1px 0 oklch(0.32 0.075 170);
+  box-shadow: 0 1px 0 oklch(0.32 0.075 262);
 }
 
 /* ── Compare modal · per-issue vote drill-downs ──── */
@@ -5307,7 +5310,7 @@ body[data-treatment="inkwell"] .be-prompt-text {
   letter-spacing: -0.01em;
 }
 .cv2-h2h-bar .seg.small {
-  background: var(--civic);
+  background: var(--keep);
   color: var(--paper-2);
 }
 .cv2-h2h-bar .seg.large {
@@ -5568,7 +5571,7 @@ body[data-treatment="inkwell"] .be-prompt-text {
   letter-spacing: -0.01em;
 }
 .cv2-cr-rail.this-rail .seg.small {
-  background: var(--civic);
+  background: var(--keep);
   color: var(--paper-2);
 }
 .cv2-cr-rail.this-rail .seg.large {
