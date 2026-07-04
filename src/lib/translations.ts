@@ -1243,7 +1243,7 @@ const en: Translations = {
     electionDay: "Election Day",
     passed: "Passed",
     today: "Today (last day)",
-    daysLeft: (n: number) => `${n} days left`,
+    daysLeft: (n: number) => `${n} day${n === 1 ? "" : "s"} left`,
     sameDayAvailable: "Same-day registration available",
     checkRegistration: "Check your registration \u2192",
   },
@@ -1955,7 +1955,8 @@ const es: Translations = {
     electionDay: "D\u00eda de las elecciones",
     passed: "Pasado",
     today: "Hoy (\u00faltimo d\u00eda)",
-    daysLeft: (n: number) => `Quedan ${n} d\u00edas`,
+    daysLeft: (n: number) =>
+      n === 1 ? `Queda ${n} d\u00eda` : `Quedan ${n} d\u00edas`,
     sameDayAvailable: "Registro el mismo d\u00eda disponible",
     checkRegistration: "Verifica tu registro \u2192",
   },

@@ -161,6 +161,20 @@ describe("translations", () => {
     });
   });
 
+  describe("deadline.daysLeft pluralization", () => {
+    it("renders the singular form at n=1", () => {
+      expect(translations.en.deadline.daysLeft(1)).toBe("1 day left");
+      expect(translations.es.deadline.daysLeft(1)).toBe("Queda 1 día");
+    });
+
+    it("renders the plural form unchanged at n!=1", () => {
+      expect(translations.en.deadline.daysLeft(3)).toBe("3 days left");
+      expect(translations.es.deadline.daysLeft(3)).toBe("Quedan 3 días");
+      expect(translations.en.deadline.daysLeft(21)).toBe("21 days left");
+      expect(translations.es.deadline.daysLeft(21)).toBe("Quedan 21 días");
+    });
+  });
+
   describe("privacy copy", () => {
     it("says address is not sent to AI chat", () => {
       expect(translations.en.zipForm.privacy).toContain("send it to the AI");
