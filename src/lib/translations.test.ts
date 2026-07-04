@@ -73,14 +73,11 @@ describe("translations", () => {
         expect(
           translations[lang].stateInfo.earlyVotingNotAvailable,
         ).toBeTruthy();
-        expect(translations[lang].stateInfo.deadlinePassed).toBeTruthy();
-        expect(typeof translations[lang].stateInfo.deadlineStatus).toBe(
-          "function",
-        );
-        expect(translations[lang].stateInfo.deadlineStatus(5)).toContain("5");
         expect(
           translations[lang].stateInfo.registrationDeadlinePassed,
         ).toBeTruthy();
+        expect("deadlinePassed" in translations[lang].stateInfo).toBe(false);
+        expect("deadlineStatus" in translations[lang].stateInfo).toBe(false);
       });
 
       it("has stateSelector translations", () => {
