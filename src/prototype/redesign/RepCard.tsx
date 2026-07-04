@@ -23,6 +23,7 @@ import {
   FunderBars,
   formatDollars,
   useI18n,
+  escapeHtml,
 } from "../VoterChoiceApp";
 import { getChallengerResearch, researchChallenger } from "./delegationData";
 import { MedianChip, MoneyGapScale } from "./MoneyGap";
@@ -59,8 +60,8 @@ export function AttendanceBand2({ attendance, researched, level }) {
         className="txt"
         dangerouslySetInnerHTML={{
           __html: t("repCard.attendanceShowsUp", {
-            pct: attendance.missedPct,
-            of: attendance.of,
+            pct: escapeHtml(attendance.missedPct),
+            of: escapeHtml(attendance.of),
           }),
         }}
       />

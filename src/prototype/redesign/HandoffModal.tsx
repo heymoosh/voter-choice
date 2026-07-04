@@ -11,7 +11,7 @@
      · BYOK card ("or keep going right here with your own key") */
 
 import React, { useMemo, useRef, useState } from "react";
-import { useI18n } from "../VoterChoiceApp";
+import { useI18n, escapeHtml } from "../VoterChoiceApp";
 import { buildScorecardHandoffPrompt } from "./handoffText";
 import { HandoffActions } from "./HandoffActions";
 import { ByokCard } from "./ByokCard";
@@ -81,8 +81,8 @@ export function HandoffModal({
           className="be-lede"
           dangerouslySetInnerHTML={{
             __html: t("handoffModal.lede", {
-              reviewed,
-              total: seats.length,
+              reviewed: escapeHtml(reviewed),
+              total: escapeHtml(seats.length),
             }),
           }}
         />

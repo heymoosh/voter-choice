@@ -908,6 +908,22 @@ const TRANSLATIONS = {
 
 const I18nContext = React.createContext({ lang: 'en', setLang: () => {}, t: (k) => k });
 
+// Some redesign surfaces (HandoffModal, RepCard's attendance line) render
+// t()'s output via dangerouslySetInnerHTML so the translation string can
+// embed <b> formatting. t() itself must NOT escape interpolated {vars} —
+// most call sites render the result as plain React text, which already
+// handles HTML-significant characters safely, so escaping here would
+// double-escape them (e.g. "&" -> "&amp;" shown literally on screen). The
+// call sites that actually use dangerouslySetInnerHTML instead escape their
+// own vars before calling t() — see escapeHtml below.
+function escapeHtml(value) {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
 function I18nProvider({ children }) {
   const [lang, setLangState] = React.useState('en');
   React.useEffect(() => {
@@ -7154,6 +7170,7 @@ export {
   I18nProvider,
   useI18n,
   TRANSLATIONS,
+  escapeHtml,
   NavProvider,
   useNav,
   AppNav,
