@@ -5,15 +5,17 @@
  * "Raised vs. the median" — the money-gap primitive, ported from the reviewed
  * design (claude-code-handoff/design-session/screens-funding.jsx + funding.css).
  *
- * Two surfaces, one shared scale:
- *   - <MedianChip>   the collapsed glance on a money line / card row
- *   - <MoneyGapScale> the full field/scale that REPLACES the flat
- *                     "≈3× the median House campaign" string in the funder
- *                     disclosure
+ * Three surfaces, one shared scale:
+ *   - <MedianChip>      the collapsed glance on a money line / card row
+ *   - <FundingHeadline> the expanded-detail "$X raised · cycle" heading +
+ *                       median-multiple comparison pill
+ *   - <MoneyGapScale>   the full field/scale that REPLACES the flat
+ *                       "≈3× the median House campaign" string in the funder
+ *                       disclosure
  *
  * Honest-state discipline (NON-NEGOTIABLE): when there is no `PeerComparison`
- * baseline, the chip shows the dollar amount only and the scale hides the
- * comparison. Never a fabricated baseline, multiple, or scale.
+ * baseline, the chip shows the dollar amount only and the scale/headline hide
+ * the comparison. Never a fabricated baseline, multiple, or scale.
  *
  * Neutral palette: gold = "how much more" (above the median); muted navy =
  * "raised". Keep/replace red/green mean alignment, never money.
@@ -23,6 +25,7 @@
  */
 
 import React from "react";
+import { useI18n } from "../VoterChoiceApp";
 import {
   type PeerComparison,
   peerBand,
@@ -87,6 +90,59 @@ export function MedianChip({ raised, peer }: MedianChipProps) {
         <b>{formatMultiple(m)}</b> median
       </span>
     </span>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// FundingHeadline — the expanded-detail "$X raised · cycle" heading + the
+// rose "≈Nx the median {chamber} campaign" comparison pill [Δ] item H.1.
+//
+// The peerComparison data has always been on the candidate (same object
+// MedianChip/MoneyGapScale already read) — this component is the missing
+// UI surface for it in the funding disclosure's EXPANDED body, replacing
+// MoneyGapScale there (a richer multi-candidate axis scale that doesn't
+// match the reference's much simpler treatment for a single card).
+// Honest-state: renders no pill when peer is null (never fabricates a
+// baseline), matching every other money-gap surface in this file.
+// ---------------------------------------------------------------------------
+
+export interface FundingHeadlineProps {
+  totalRaised: number | null | undefined;
+  cycle: string | null | undefined;
+  peer: PeerComparison | null;
+}
+
+export function FundingHeadline({
+  totalRaised,
+  cycle,
+  peer,
+}: FundingHeadlineProps) {
+  // useI18n()'s context default value (VoterChoiceApp.tsx) infers a 1-arg
+  // `t`; every real caller (incl. the Provider) passes a 2nd `vars` arg —
+  // the other redesign files just don't surface this since they carry
+  // `// @ts-nocheck`. Widen the local type rather than touch the shared
+  // context declaration.
+  const { t } = useI18n() as {
+    t: (key: string, vars?: Record<string, string | number>) => string;
+  };
+  if (typeof totalRaised !== "number") return null;
+  return (
+    <div className="fp-top">
+      <div className="fp-tot">
+        <span className="fp-amt">{formatUsd(totalRaised)}</span>
+        <span className="fp-lab">
+          {t("repCard.raisedCycle", { cycle: cycle || "" })}
+        </span>
+      </div>
+      {peer != null && (
+        <span className="fp-peer">
+          {t("repCard.medianMultiplePill", {
+            mult: formatMultiple(peer.multiple),
+            chamber: peer.office,
+          })}
+        </span>
+      )}
+    </div>
   );
 }
 

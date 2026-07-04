@@ -60,8 +60,11 @@ test.describe("full voting record", () => {
     await expect(panel.locator(".av-filter").first()).toContainText("All");
 
     // Close, reveal the member, reopen — the header now shows the real name.
+    // [Δ] item D of the Bold Flag redesign: the blind state's "Reveal name"
+    // is now custom-rendered (.rcard-reveal), not the shared
+    // CandidateCardHeader's .cv2-reveal.
     await panel.locator(".be-x").click();
-    await page.locator(".cv2-reveal").first().click();
+    await page.locator(".rcard-reveal").first().click();
     await page.getByTestId("see-full-record").click();
     await expect(page.locator(".av-panel")).toContainText("Alex Rivera");
   });

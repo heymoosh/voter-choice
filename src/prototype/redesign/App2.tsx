@@ -955,6 +955,7 @@ function App2Inner() {
           onRetryChat={handleRetryChat}
           onShowBudgetOptions={handleBudgetBlock}
           onEditIssues={() => setEditIssuesOpen(true)}
+          onBackToSeats={startOver}
           issueDeltas={issueDeltas}
           onRevisitSeat={(seatId) => {
             setActiveSeatId(seatId);

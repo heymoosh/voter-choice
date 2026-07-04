@@ -39,16 +39,18 @@ test.describe("delegation flow — address → assess → verdicts", () => {
     await mockCounters(page);
     await goToWorkspace(page);
 
-    // Blind-first: identity hidden, judged by record.
-    await expect(page.locator(".cv2-name.blind").first()).toContainText(
-      "Your U.S. Representative",
+    // Blind-first: identity hidden, judged by record (item D of the Bold
+    // Flag redesign — a generic "This seat's incumbent" heading, not the
+    // seat's verbose blindLabel).
+    await expect(page.locator(".rcard-who .blind").first()).toContainText(
+      "This seat's incumbent",
     );
 
     // Seat strip + attendance band + eligibility + sources are all present.
     await expect(page.locator(".seat-strip")).toContainText("TX-37");
-    await expect(page.locator(".att-band")).toContainText("missed 1.4%");
+    await expect(page.locator(".att-band")).toContainText("Missed 1.4%");
     await expect(page.locator(".att-band .att-chip")).toHaveText(
-      "Rarely misses",
+      "Above average",
     );
     await expect(page.locator(".elig")).toContainText("2026");
     await expect(page.locator(".card-sources")).toContainText("GovTrack");
@@ -59,13 +61,14 @@ test.describe("delegation flow — address → assess → verdicts", () => {
     );
     await expect(page.locator(".tweaks2")).toHaveCount(0);
 
-    // Single right panel ([P1]): the left rail was removed, so the scorecard
-    // pane is the only side panel and it renders the issues. The confusing
+    // Single right panel ([P1]): the left rail was removed. Issues + Edit
+    // now live in the top context strip on desktop (item A of the Bold Flag
+    // redesign), not duplicated in the scorecard rail. The confusing
     // Fed/Both/State jurisdiction tags were removed ([P0]) — assert they no
     // longer appear, and that the dropped rail is truly gone.
     await expect(page.locator(".ws-ballot")).toBeVisible();
     await expect(
-      page.locator(".ws-ballot .b-issues-list li").first(),
+      page.locator(".res-context .chip-issue").first(),
     ).toBeVisible();
     await expect(page.locator(".ws-rail")).toHaveCount(0);
     await expect(page.locator(".lvl-tag")).toHaveCount(0);
@@ -190,7 +193,10 @@ test.describe("delegation flow — address → assess → verdicts", () => {
       page.getByRole("button", { name: /Print my scorecard/ }),
     ).toBeDisabled();
 
-    await page.locator(".cv2-reveal").first().click();
+    // [Δ] item D of the Bold Flag redesign: the blind state's "Reveal name"
+    // button is now custom-rendered (.rcard-reveal), not the shared
+    // CandidateCardHeader's .cv2-reveal (which only renders once revealed).
+    await page.locator(".rcard-reveal").first().click();
     await expect(page.locator(".cv2-name").first()).toHaveText("Alex Rivera");
 
     // Verdict all three seats. The card auto-advances ~600ms after each
@@ -204,7 +210,7 @@ test.describe("delegation flow — address → assess → verdicts", () => {
       await page.waitForTimeout(900);
     }
 
-    await expect(page.locator(".ws-ballot")).toContainText("3/3");
+    await expect(page.locator(".ws-ballot")).toContainText("3 of 3 decided");
     await expect(page.locator(".verdict-chip").first()).toBeVisible();
     await expect(
       page.getByRole("button", { name: /Print my scorecard/ }),

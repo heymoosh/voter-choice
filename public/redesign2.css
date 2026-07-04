@@ -6,7 +6,9 @@
    shipped prototype.css / prototype-c.css untouched.
    ==================================================== */
 
-/* ---- seat strip (top of RepCard) ---- */
+/* ---- seat strip (top of RepCard) [Δ] item C ----
+   "{chamber} · {district}" badge + "Your Representative · N terms" grey
+   text (left), "UP {MON YEAR}" bold red (right) — matches the reference. */
 .seat-strip {
   display: flex;
   align-items: center;
@@ -28,7 +30,7 @@
   padding: 3px 8px;
   border-radius: 5px;
 }
-.seat-district {
+.seat-role {
   font-size: 12.5px;
   color: var(--ink-3);
 }
@@ -40,8 +42,8 @@
   letter-spacing: 0.03em;
 }
 .seat-next.up {
-  color: var(--civic-2);
-  font-weight: 600;
+  color: var(--vote-red);
+  font-weight: 700;
 }
 
 /* ---- non-2026 reps: de-emphasized + labeled, excluded from print ---- */
@@ -81,6 +83,173 @@
   text-transform: uppercase;
   color: var(--ink-3);
   margin-bottom: 2px;
+}
+
+/* ---- blind-state header [Δ] item D — ported from
+   claude-code-handoff/design-session/screens.css (.rcard-head/.rcard-avatar/
+   .rcard-who/.rcard-reveal). Square light-blue "?" avatar, "This seat's
+   incumbent" heading, plain grey subtitle, outlined top-right "Reveal name"
+   button. Only used while blind — CandidateCardHeader (shared with the
+   /candidates surface) renders the revealed state unchanged. ---- */
+.rcard-head {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 20px 14px;
+}
+.rcard-avatar {
+  width: 54px;
+  height: 54px;
+  border-radius: 12px;
+  background: var(--civic-soft);
+  border: 1px solid var(--rule-2);
+  display: grid;
+  place-items: center;
+  font-family: var(--serif);
+  font-weight: 600;
+  font-size: 22px;
+  color: var(--civic-2);
+  flex-shrink: 0;
+}
+.rcard-who {
+  flex: 1;
+  min-width: 0;
+}
+.rcard-who .blind {
+  font-family: var(--serif);
+  font-size: 21px;
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+}
+.rcard-who .sub {
+  font-size: 12.5px;
+  color: var(--ink-3);
+  margin-top: 1px;
+}
+.rcard-reveal {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--civic);
+  border: 1px solid var(--rule);
+  background: var(--paper);
+  border-radius: 8px;
+  padding: 7px 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.rcard-reveal:hover {
+  border-color: var(--civic);
+  background: var(--civic-soft);
+}
+
+/* ---- score block [Δ] item E — bordered "VOTED WITH YOU" box: a big
+   aggregate percentage (colored good/bad) + fraction, then one row per
+   issue with a bar colored per THAT issue's own ratio (green ≥50%, red
+   otherwise) — not one uniform color for every issue. Ported from
+   screens.css's .align-band/.align-top/.align-rows (renamed the inner row
+   to .score-row — .align-row already exists in prototype.css for the
+   legacy left rail's unrelated progress bars, and this avoids clobbering
+   it). ---- */
+.align-band {
+  margin: 4px 20px 0;
+  padding: 13px 16px;
+  border-radius: 11px;
+  background: var(--paper);
+  border: 1px solid var(--rule-2);
+}
+.align-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+.align-top > span {
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: baseline;
+}
+.align-top .at-lab {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  font-weight: 600;
+}
+.align-top .at-pct {
+  font-family: var(--serif);
+  font-weight: 600;
+  font-size: 30px;
+  line-height: 1;
+}
+.align-top .at-pct.good {
+  color: var(--keep);
+}
+.align-top .at-pct.bad {
+  color: var(--vote-red);
+}
+.align-top .at-frac {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-3);
+  margin-left: 4px;
+}
+.align-rows {
+  margin-top: 12px;
+  display: grid;
+  gap: 8px;
+}
+.score-row {
+  display: grid;
+  grid-template-columns: 1fr 96px 40px;
+  gap: 12px;
+  align-items: center;
+  cursor: default;
+}
+.score-row.has-drill {
+  cursor: pointer;
+}
+.score-row.sel {
+  background: var(--civic-soft);
+  margin: 0 -8px;
+  padding: 6px 8px;
+  border-radius: 8px;
+}
+.score-row .ai {
+  font-size: 13px;
+  color: var(--ink-2);
+}
+.score-row .align-track {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--rule-2);
+  overflow: hidden;
+}
+.score-row .align-track i {
+  display: block;
+  height: 100%;
+}
+.score-row .align-track i.good {
+  background: var(--keep);
+}
+.score-row .align-track i.bad {
+  background: var(--vote-red);
+}
+.score-row .av {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  text-align: right;
+  color: var(--ink-2);
+}
+.score-row .av .caret {
+  font-size: 8px;
+  color: var(--civic);
+  margin-left: 3px;
+}
+.score-row .av .caret.dim {
+  color: var(--ink-3);
 }
 
 /* ---- attendance band [Δ] ---- */
@@ -133,6 +302,125 @@
 .att-src {
   font-family: var(--mono);
   font-size: 10px;
+}
+
+/* ---- funding — collapsed summary [Δ] item G ----
+   Ported from screens.css's .money-line/.money-top/.money-detail: a
+   compact segmented small/large/PAC bar + total (still visible before
+   "Money trail" is expanded), then a "{pac}% PAC-funded · top: sectors"
+   caption. */
+.money-line {
+  display: flex;
+  flex-wrap: wrap;
+  row-gap: 8px;
+  align-items: center;
+  gap: 12px;
+  margin: 12px 20px 0;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: var(--paper);
+  border: 1px solid var(--rule-2);
+}
+.money-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+.money-line .ml-lab {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  font-weight: 600;
+}
+.money-bars {
+  flex: 1;
+  display: flex;
+  height: 9px;
+  border-radius: 999px;
+  overflow: hidden;
+  border: 1px solid var(--rule-2);
+}
+.money-bars i.small {
+  background: var(--keep);
+}
+.money-bars i.large {
+  background: var(--gold);
+}
+.money-bars i.pac {
+  background: var(--vote-red);
+}
+.money-line .ml-tot {
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.money-detail {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-top: 8px;
+  margin-top: 2px;
+  border-top: 1px dashed var(--rule-2);
+}
+.money-detail .md-who {
+  font-size: 12px;
+  color: var(--ink-3);
+}
+
+/* ---- funding — expanded fp-top [Δ] item H.1 ----
+   Ported from funding.css's .fp-top/.fp-tot/.fp-peer: the "$X raised ·
+   cycle" heading + a rose "≈Nx the median {chamber} campaign" pill,
+   rendered by <FundingHeadline> (src/prototype/redesign/MoneyGap.tsx)
+   ahead of the existing FunderBars mix/industry/PAC-honesty detail. */
+.fp-top {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+.fp-tot {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.fp-tot .fp-amt {
+  font-family: var(--serif);
+  font-weight: 600;
+  font-size: 28px;
+  line-height: 1;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+}
+.fp-tot .fp-lab {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  color: var(--ink-3);
+}
+.fp-peer {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--vote-red);
+  background: oklch(0.95 0.03 20);
+  padding: 4px 9px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+/* FunderBars (shared with /candidates) repeats "$X · cycle" in its own
+   .cv2-block-head once <FundingHeadline> already shows it above — scoped
+   here (not touching FunderBars' shared JSX) to drop the dupe on the rep
+   card only; the "Funding mix · by source type" label stays. */
+.rep-card .cv2-funding .cv2-block-head .overall {
+  display: none;
 }
 
 /* ---- researched positions (executive) ---- */
@@ -301,6 +589,202 @@
   color: var(--ink);
 }
 
+/* ---- right rail — grouped progress [Δ] item J ----
+   Ported from screens.css's .rail-head/.rail-list/.rseat/.rail-foot. The
+   rail's rows keep the shipped .b-row class (and .ws-ballot's flex-column
+   shell) so the redesign's existing click/select/verdict wiring and the
+   e2e suite's .b-row-based helpers keep working — only the layout inside
+   is replaced (the old checkbox+text grid → avatar tile + meta + status
+   tag), scoped under the new .rail-list wrapper so the legacy 3-pane
+   workspace's .b-list rows are untouched. */
+.delegation .ws-ballot .rail-head {
+  padding: 18px 20px 12px;
+  border-bottom: 1px solid var(--rule-2);
+}
+.delegation .ws-ballot .rail-head .rh-t {
+  font-family: var(--serif);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.delegation .ws-ballot .rail-head .rh-prog {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+.delegation .ws-ballot .rail-head .rh-dots {
+  display: flex;
+  gap: 5px;
+}
+.delegation .ws-ballot .rail-head .rh-dots i {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--rule);
+  display: block;
+}
+.delegation .ws-ballot .rail-head .rh-dots i.done {
+  background: var(--keep);
+}
+.delegation .ws-ballot .rail-head .rh-dots i.active {
+  background: var(--civic);
+  box-shadow: 0 0 0 3px var(--civic-soft);
+}
+.delegation .ws-ballot .rail-head .rh-count {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-3);
+}
+.delegation .ws-ballot .rail-list {
+  flex: 1;
+  overflow: auto;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  min-height: 0;
+}
+.delegation .ws-ballot .rail-group-lab {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  font-weight: 700;
+  padding: 4px 6px 2px;
+}
+.delegation .ws-ballot .rail-list .b-row {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 11px 12px;
+  margin: 0;
+  border-radius: 11px;
+  border: 1px solid var(--rule-2);
+  background: var(--paper);
+  cursor: pointer;
+}
+.delegation .ws-ballot .rail-list .b-row.active {
+  border-color: var(--civic);
+  box-shadow: 0 0 0 2px var(--civic-soft);
+  background: var(--paper-2);
+}
+.delegation .ws-ballot .rail-list .b-row .ri {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+  background: var(--tag-bg);
+  color: var(--ink-2);
+}
+.delegation .ws-ballot .rail-list .b-row.done .ri {
+  background: var(--keep);
+  color: oklch(0.98 0.01 162);
+}
+.delegation .ws-ballot .rail-list .b-row.done.replace .ri {
+  background: var(--vote-red);
+  color: oklch(0.98 0.01 27);
+}
+.delegation .ws-ballot .rail-list .b-row .rmeta {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.delegation .ws-ballot .rail-list .b-row .ro {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.delegation .ws-ballot .rail-list .b-row .rn {
+  font-family: var(--serif);
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.delegation .ws-ballot .rail-list .b-row .rstatus {
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+.delegation .ws-ballot .rail-list .b-row.active .rstatus {
+  color: var(--civic);
+}
+.delegation .ws-ballot .rail-list .b-row.notup {
+  background: var(--tag-bg);
+  opacity: 0.78;
+  cursor: default;
+}
+.delegation .ws-ballot .rail-list .b-row.notup .ri {
+  background: var(--rule);
+  color: var(--ink-3);
+}
+.delegation .ws-ballot .rail-list .b-row.notup .rn {
+  color: var(--ink-2);
+}
+.delegation .ws-ballot .rail-foot {
+  border-top: 1px solid var(--rule-2);
+  padding: 14px;
+  background: var(--paper-2);
+  display: grid;
+  gap: 9px;
+}
+.delegation .ws-ballot .rail-foot button {
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--rule);
+  background: var(--paper);
+  color: var(--ink);
+  font-weight: 500;
+  font-size: 13.5px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 46px;
+}
+.delegation .ws-ballot .rail-foot button .arrow {
+  color: var(--ink-3);
+}
+.delegation .ws-ballot .rail-foot button.primary {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--paper);
+}
+.delegation .ws-ballot .rail-foot button.primary .arrow {
+  color: var(--paper);
+}
+.delegation .ws-ballot .rail-foot button.primary:disabled {
+  background: var(--rule);
+  border-color: var(--rule);
+  color: var(--ink-3);
+  cursor: not-allowed;
+  box-shadow: none;
+}
+.delegation .ws-ballot .rail-foot .rf-hint {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ink-3);
+  text-align: center;
+  letter-spacing: 0.02em;
+}
+
 /* ---- rail done-check centering (shipped tick is pinned low-left) ---- */
 .ws-rail .race-list li.done .ind::after {
   left: 50%;
@@ -359,72 +843,12 @@
   .delegation .ws-wrap {
     grid-template-columns: 1fr 380px;
   }
-  /* Relocate the issues + Edit control onto the desktop scorecard. It used
-     to live in the now-removed left rail; the ballot pane's .b-issues-edit
-     surface (shipped by prototype-c.css) is hidden ≥1024px specifically
-     because the rail duplicated it. With the rail gone it's the ONLY issues
-     surface, so reveal it on desktop and mirror prototype-c.css's mobile
-     styling here. Scoped to .delegation so the legacy workspace is untouched. */
-  .delegation .ws-ballot .b-issues-edit {
-    display: block;
-    padding: 14px 20px 16px;
-    border-bottom: 1px solid var(--rule);
-    background: var(--paper-2);
-  }
-  .delegation .ws-ballot .b-issues-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    margin-bottom: 10px;
-  }
-  .delegation .ws-ballot .b-issues-lab {
-    font-family: var(--mono);
-    font-size: 10.5px;
-    text-transform: uppercase;
-    letter-spacing: 0.14em;
-    color: var(--ink-3);
-  }
-  .delegation .ws-ballot .b-issues-btn {
-    background: var(--paper);
-    border: 1px solid var(--civic-soft);
-    color: var(--civic);
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    padding: 9px 15px;
-    border-radius: 999px;
-    min-height: 40px;
-    white-space: nowrap;
-  }
-  .delegation .ws-ballot .b-issues-btn:hover {
-    background: var(--civic);
-    color: var(--paper-2);
-    border-color: var(--civic);
-  }
-  .delegation .ws-ballot .b-issues-list {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-  .delegation .ws-ballot .b-issues-list li {
-    display: flex;
-    align-items: baseline;
-    gap: 8px;
-    font-size: 14px;
-    color: var(--ink);
-    line-height: 1.35;
-  }
-  .delegation .ws-ballot .b-issues-list li .n {
-    font-family: var(--mono);
-    font-size: 11px;
-    color: var(--civic);
-    font-weight: 600;
-    flex: 0 0 auto;
-  }
+  /* [Δ] item A/J: issues + Edit now live in the top .res-context strip on
+     desktop (not duplicated in the scorecard rail), so the ballot pane's
+     .b-issues-edit reverts to prototype-c.css's default ≥1024px behavior
+     (hidden) instead of the override this redesign previously added here.
+     It stays visible ≤1023px (mobile/tablet, unchanged) — that's still the
+     only edit-issues affordance at those widths. */
 }
 
 /* ---- tier intro (center column, above card) ----
@@ -507,6 +931,101 @@
   max-width: 560px;
   line-height: 1.5;
 }
+/* [Δ] item B — the "FEDERAL" pill next to the seat heading. A different,
+   unambiguous per-SEAT office badge (not the removed per-ISSUE
+   Fed/Both/State jurisdiction tags, `.lvl-tag`, the e2e suite already
+   asserts are gone). */
+.ti-copy h2 .lvl {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--civic-soft);
+  color: var(--civic-2);
+  margin-left: 10px;
+  vertical-align: 3px;
+  white-space: nowrap;
+}
+
+/* ---- top context strip [Δ] item A ----
+   Back-link + address (left), "YOUR ISSUES" chips + Edit (right) — sits
+   between the polling-place banner (a separate, still-needed feature) and
+   the two-pane workspace. Replaces the desktop-only copy of the issues
+   list that used to live in the scorecard rail (see the .b-issues-edit
+   @media override removed below, item J). */
+.res-context {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 12px 28px;
+  border-bottom: 1px solid var(--rule-2);
+  background: var(--paper-2);
+}
+.res-context .rc-back {
+  font-size: 12.5px;
+  color: var(--civic);
+  font-weight: 600;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  white-space: nowrap;
+}
+.res-context .rc-back:disabled {
+  color: var(--ink-3);
+  cursor: default;
+}
+.res-context .rc-addr {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-3);
+}
+.res-context .rc-issues {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.res-context .rc-lab {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  font-weight: 600;
+}
+.chip-issue {
+  font-size: 12px;
+  background: var(--tag-bg);
+  color: var(--ink-2);
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--rule-2);
+  white-space: nowrap;
+}
+.chip-issue.edit {
+  color: var(--civic);
+  border-color: var(--civic-soft);
+  background: var(--civic-soft);
+  cursor: pointer;
+}
+/* The strip is a desktop layout (matches the reference); at narrower
+   widths it wraps to two lines rather than truncating the address. */
+@media (max-width: 640px) {
+  .res-context {
+    padding: 10px 16px;
+  }
+  .res-context .rc-issues {
+    margin-left: 0;
+    width: 100%;
+  }
+}
+
 .all-done {
   margin-top: 18px;
   padding: 18px 20px 20px;

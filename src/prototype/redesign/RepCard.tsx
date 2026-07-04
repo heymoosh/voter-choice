@@ -19,6 +19,7 @@ import React, { useState } from "react";
 import {
   CandidateCardHeader,
   AlignmentScoreBanner,
+  AlignmentDrilldown,
   AllVotesPanel,
   FunderBars,
   formatDollars,
@@ -26,7 +27,19 @@ import {
   escapeHtml,
 } from "../VoterChoiceApp";
 import { getChallengerResearch, researchChallenger } from "./delegationData";
-import { MedianChip, MoneyGapScale } from "./MoneyGap";
+import { MedianChip, FundingHeadline } from "./MoneyGap";
+
+/** Top 3 donor-industry labels by their existing order (data is already
+ *  percent-sorted upstream) — for the collapsed funding summary's "top:
+ *  {sectors}" caption [Δ] item G. Excludes named issue-PACs and the
+ *  totalReceipts-only placeholder (not a real sector). */
+function topIndustries(donorCoalition, n = 3) {
+  if (!Array.isArray(donorCoalition)) return [];
+  return donorCoalition
+    .filter((d) => !d?.isIssuePAC && d?.label !== "total_receipts")
+    .slice(0, n)
+    .map((d) => d.label);
+}
 
 /** Party display metadata, keyed by the raw party name from the data source.
  * A function (not a module-level const) because the display name needs
@@ -39,8 +52,49 @@ export function getPartyMeta2(t) {
   };
 }
 
-/* ---- Attendance band [Δ] — honest omission when not tracked ---- */
-export function AttendanceBand2({ attendance, researched, level }) {
+/* ---- seat-strip helpers [Δ] item C — "{chamber} · {district}" badge +
+   "Your Representative · N terms" + "UP {MON YEAR}". Pure presentational
+   derivations off fields already on the seat/candidate — no data-layer
+   change. Term length is only known for federal House (2yr) / Senate (6yr)
+   seats; state legislature seats degrade honestly (role, no term count). */
+function seatRoleLabel(seat, t) {
+  const isSenate = /senate/i.test(seat.office || "");
+  const role = isSenate
+    ? t("repCard.roleSenator")
+    : t("repCard.roleRepresentative");
+  const m = (seat.candidate?.priorRole || "").match(/since (\d{4})/i);
+  let terms = null;
+  if (m) {
+    const years = new Date().getFullYear() - parseInt(m[1], 10);
+    const termYears = isSenate
+      ? 6
+      : /house/i.test(seat.office || "")
+        ? 2
+        : null;
+    if (termYears && years >= 0)
+      terms = Math.max(1, Math.round(years / termYears) || 1);
+  }
+  const label = `${t("repCard.yourPrefix")} ${role}`;
+  if (!terms) return label;
+  const termWord = terms === 1 ? t("repCard.termWord") : t("repCard.termsWord");
+  return `${label} · ${terms} ${termWord}`;
+}
+function seatUpLabel(nextElection) {
+  if (!nextElection?.onBallot2026) return null;
+  const m = (nextElection.label || "").match(
+    /([A-Za-z]{3})[a-z]*\.?\s+\d+,?\s*(\d{4})/,
+  );
+  return m ? `${m[1].toUpperCase()} ${m[2]}` : null;
+}
+
+/* ---- Attendance band [Δ] — honest omission when not tracked ----
+   item F: reframed as a comparison-to-median sentence + a pill verdict
+   (matching the reference) rather than a standalone "rarely misses" chip.
+   The chamber median PERCENTAGE itself isn't threaded through the current
+   member_stats → delegation data contract (only the derived good/mid/bad
+   band is) — so the sentence names the direction ("above"/"below"/"near"
+   the median) without fabricating a number the backend doesn't expose. */
+export function AttendanceBand2({ attendance, researched, level, office }) {
   const { t } = useI18n();
   if (researched) return null;
   if (!attendance) {
@@ -54,23 +108,38 @@ export function AttendanceBand2({ attendance, researched, level }) {
       </div>
     );
   }
-  const bandLabel = {
-    good: t("repCard.attendanceGood"),
-    mid: t("repCard.attendanceMid"),
-    bad: t("repCard.attendanceBad"),
-  }[attendance.band];
+  const chamber = /senate/i.test(office || "")
+    ? "Senate"
+    : /house/i.test(office || "")
+      ? "House"
+      : "chamber";
+  const cmpKey =
+    attendance.band === "good"
+      ? "attCmpBelow"
+      : attendance.band === "bad"
+        ? "attCmpAbove"
+        : "attCmpNear";
+  const pillKey =
+    attendance.band === "good"
+      ? "attPillAbove"
+      : attendance.band === "bad"
+        ? "attPillBelow"
+        : "attPillNear";
   return (
     <div className="att-band">
       <span
         className="txt"
         dangerouslySetInnerHTML={{
-          __html: t("repCard.attendanceShowsUp", {
+          __html: t("repCard.attendanceCompareLine", {
             pct: escapeHtml(attendance.missedPct),
-            of: escapeHtml(attendance.of),
+            cmp: escapeHtml(t(`repCard.${cmpKey}`)),
+            chamber: escapeHtml(chamber),
           }),
         }}
       />
-      <span className={"att-chip " + attendance.band}>{bandLabel}</span>
+      <span className={"att-chip " + attendance.band}>
+        {t(`repCard.${pillKey}`)}
+      </span>
       <a
         className="att-src cv2-evidence-link"
         href="https://www.govtrack.us/"
@@ -79,6 +148,131 @@ export function AttendanceBand2({ attendance, researched, level }) {
       >
         GovTrack ↗
       </a>
+    </div>
+  );
+}
+
+/* ---- Score block [Δ] item E — bordered "VOTED WITH YOU" box: an aggregate
+   percentage (colored good/bad) + fraction, then one row per issue with a
+   bar colored per THAT issue's own ratio (green ≥50%, else red) — replacing
+   the old uniform-navy-bar "Aligns with your issues" banner for the common
+   scored-voting-record case. Honest-degradation states (no curated votes
+   yet — loading / web-search fallback / no record) delegate straight to the
+   shared AlignmentScoreBanner, unchanged, since no reference screenshot
+   covers those states and it's also used by the /candidates surface. */
+function ScoreBlock({
+  candidate,
+  alignmentEntry,
+  userIssues,
+  expandedIssue,
+  onToggleIssue,
+  anonCtx,
+  research,
+}) {
+  const { t } = useI18n();
+
+  if (alignmentEntry?.scores === null) {
+    return (
+      <AlignmentScoreBanner
+        candidate={candidate}
+        alignmentEntry={alignmentEntry}
+        userIssues={userIssues}
+        expandedIssue={expandedIssue}
+        onToggleIssue={onToggleIssue}
+        anonCtx={anonCtx}
+        research={research}
+      />
+    );
+  }
+
+  const rows = (userIssues || []).map((iss) => {
+    const score =
+      (alignmentEntry?.scores || []).find(
+        (s) => s.canonicalIssue === iss.canonicalIssue,
+      ) || null;
+    return { issue: iss, score };
+  });
+  const scoredRows = rows.filter((r) => r.score && r.score.total > 0);
+  const kept = scoredRows.reduce((n, r) => n + r.score.kept, 0);
+  const total = scoredRows.reduce((n, r) => n + r.score.total, 0);
+  const overallPct = total > 0 ? Math.round((kept / total) * 100) : null;
+  const overallGood = overallPct !== null && overallPct >= 50;
+
+  return (
+    <div className="align-band" data-testid="score-block">
+      <div className="align-top">
+        <span className="at-lab">{t("repCard.votedWithYouLabel")}</span>
+        {overallPct !== null ? (
+          <span>
+            <span className={"at-pct " + (overallGood ? "good" : "bad")}>
+              {overallPct}%
+            </span>
+            <span className="at-frac">
+              {t("repCard.keyVotesFraction", { n: kept, m: total })}
+            </span>
+          </span>
+        ) : (
+          <span className="at-frac">{t("repCard.noVotesResearched")}</span>
+        )}
+      </div>
+      <div className="align-rows">
+        {rows.map(({ issue, score }, i) => {
+          const pct =
+            score && score.total > 0
+              ? Math.round((score.kept / score.total) * 100)
+              : null;
+          const good = pct !== null && pct >= 50;
+          const hasVotes = !!score?.contributingVotes?.length;
+          const isOpen = expandedIssue === issue.canonicalIssue;
+          return (
+            <React.Fragment
+              key={`${i}-${issue.canonicalIssue || issue.interpretation}`}
+            >
+              <div
+                className={
+                  "score-row" +
+                  (isOpen ? " sel" : "") +
+                  (hasVotes ? " has-drill" : "")
+                }
+                onClick={
+                  hasVotes
+                    ? () => onToggleIssue(issue.canonicalIssue)
+                    : undefined
+                }
+                role={hasVotes ? "button" : undefined}
+                tabIndex={hasVotes ? 0 : undefined}
+              >
+                <span className="ai">{issue.interpretation}</span>
+                <span className="align-track">
+                  {pct !== null && (
+                    <i
+                      className={good ? "good" : "bad"}
+                      style={{ width: pct + "%" }}
+                    />
+                  )}
+                </span>
+                <span className="av">
+                  {score && score.total > 0
+                    ? `${score.kept}/${score.total}`
+                    : "—"}
+                  {hasVotes && (
+                    <span className={"caret" + (isOpen ? "" : " dim")}>
+                      {isOpen ? "▾" : "▸"}
+                    </span>
+                  )}
+                </span>
+              </div>
+              {isOpen && hasVotes && (
+                <AlignmentDrilldown
+                  score={score}
+                  candidate={candidate}
+                  anonCtx={anonCtx}
+                />
+              )}
+            </React.Fragment>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -566,20 +760,21 @@ function UnresolvedSeatCard({
   return (
     <div className={"cv2-card rep-card" + (notUp2026 ? " not-up-2026" : "")}>
       <div className="seat-strip">
-        <span className="seat-office">{seat.office}</span>
-        <span className="seat-district">{seat.districtLabel}</span>
+        <span className="seat-office">
+          {seat.office} · {seat.districtLabel}
+        </span>
+        <span className="seat-role">{seatRoleLabel(seat, t)}</span>
         {notUp2026 && (
           <span className="seat-not-up">{t("repCard.notUp2026")}</span>
         )}
-        {seat.nextElection && (
-          <span
-            className={
-              "seat-next " + (seat.nextElection.onBallot2026 ? "up" : "")
-            }
-          >
-            {seat.nextElection.label}
-          </span>
-        )}
+        {seat.nextElection &&
+          (seatUpLabel(seat.nextElection) ? (
+            <span className="seat-next up">
+              UP {seatUpLabel(seat.nextElection)}
+            </span>
+          ) : (
+            <span className="seat-next">{seat.nextElection.label}</span>
+          ))}
       </div>
       <div className="cv2-issues">
         <div className="cv2-block-head">
@@ -670,36 +865,58 @@ export function RepCard({
     <div className={"cv2-card rep-card" + (notUp2026 ? " not-up-2026" : "")}>
       {/* Seat strip — office + district + when you can act on it. */}
       <div className="seat-strip">
-        <span className="seat-office">{seat.office}</span>
-        <span className="seat-district">{seat.districtLabel}</span>
+        <span className="seat-office">
+          {seat.office} · {seat.districtLabel}
+        </span>
+        <span className="seat-role">{seatRoleLabel(seat, t)}</span>
         {notUp2026 && (
           <span className="seat-not-up">{t("repCard.notUp2026")}</span>
         )}
-        {seat.nextElection && (
-          <span
-            className={
-              "seat-next " + (seat.nextElection.onBallot2026 ? "up" : "")
-            }
-          >
-            {seat.nextElection.label}
-          </span>
-        )}
+        {seat.nextElection &&
+          (seatUpLabel(seat.nextElection) ? (
+            <span className="seat-next up">
+              UP {seatUpLabel(seat.nextElection)}
+            </span>
+          ) : (
+            <span className="seat-next">{seat.nextElection.label}</span>
+          ))}
       </div>
 
-      <CandidateCardHeader
-        candidate={cand}
-        party={party}
-        blindMode={blind}
-        isRevealed={blindMode && isRevealed}
-        alias={seat.blindLabel}
-        onReveal={onReveal}
-        onHide={onHide}
-      />
+      {/* [Δ] item D — the blind state gets its own presentation (square
+          light-blue "?" avatar, "This seat's incumbent" heading, outlined
+          top-right "Reveal name" button) matching the reference exactly;
+          the shared CandidateCardHeader (also used by the /candidates
+          compare surface) still renders the revealed state unchanged. */}
+      {blind ? (
+        <div className="rcard-head">
+          <div className="rcard-avatar" aria-hidden="true">
+            ?
+          </div>
+          <div className="rcard-who">
+            <div className="blind">{t("repCard.seatIncumbentHeading")}</div>
+            <div className="sub">{t("repCard.seatIncumbentSub")}</div>
+          </div>
+          <button className="rcard-reveal" onClick={onReveal}>
+            {t("repCard.revealNameBtn")}
+          </button>
+        </div>
+      ) : (
+        <CandidateCardHeader
+          candidate={cand}
+          party={party}
+          blindMode={blind}
+          isRevealed={blindMode && isRevealed}
+          alias={seat.blindLabel}
+          onReveal={onReveal}
+          onHide={onHide}
+        />
+      )}
 
       <AttendanceBand2
         attendance={seat.attendance}
         researched={seat.researched}
         level={seat.level}
+        office={seat.office}
       />
 
       {seat.researched ? (
@@ -708,7 +925,7 @@ export function RepCard({
           userIssues={userIssues}
         />
       ) : (
-        <AlignmentScoreBanner
+        <ScoreBlock
           candidate={cand}
           alignmentEntry={seat.alignmentEntry}
           userIssues={userIssues}
@@ -746,6 +963,37 @@ export function RepCard({
         alias={seat.blindLabel}
         onClose={() => setAllVotesOpen(false)}
       />
+
+      {/* [Δ] item G — the compact FUNDING summary (segmented small/large/PAC
+          bar + total, then "{pac}% PAC-funded · top: sectors") stays visible
+          even before "Money trail" is expanded, matching the reference. */}
+      {cand.fundingMix && typeof cand.totalRaised === "number" && (
+        <div className="money-line">
+          <div className="money-top">
+            <span className="ml-lab">{t("repCard.fundingLabel")}</span>
+            <span className="money-bars">
+              <i
+                className="small"
+                style={{ width: cand.fundingMix.small + "%" }}
+              />
+              <i
+                className="large"
+                style={{ width: cand.fundingMix.large + "%" }}
+              />
+              <i className="pac" style={{ width: cand.fundingMix.pac + "%" }} />
+            </span>
+            <span className="ml-tot">{formatDollars(cand.totalRaised)}</span>
+          </div>
+          <div className="money-detail">
+            <span className="md-who">
+              {t("repCard.pacFundedTop", {
+                pct: cand.fundingMix.pac,
+                sectors: topIndustries(cand.donorCoalition).join(", "),
+              })}
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* Money trail — same progressive-disclosure contract as CandidateCard. */}
       <div className={"cv2-disclose " + (moneyOpen ? "open" : "")}>
@@ -809,21 +1057,15 @@ export function RepCard({
           className="cv2-disclose-body"
           hidden={!moneyOpen}
         >
-          {/* "Raised vs. the median" — the full scale REPLACES the flat
-              "≈3× the median House campaign" string. Renders nothing when
-              peerComparison is null, so the dollar-only FunderBars below stays
-              the honest fallback. */}
-          {cand.peerComparison != null &&
-            typeof cand.totalRaised === "number" && (
-              <MoneyGapScale
-                subject={{
-                  name: blind ? seat.blindLabel : cand.name,
-                  raised: cand.totalRaised,
-                  pip: party.pipClass,
-                }}
-                peer={cand.peerComparison}
-              />
-            )}
+          {/* [Δ] item H.1 — "$X raised · cycle" heading + the rose "≈Nx the
+              median {chamber} campaign" pill. Renders nothing when
+              peerComparison is null (honest — never fabricates a baseline),
+              so the dollar-only FunderBars below stays the fallback. */}
+          <FundingHeadline
+            totalRaised={cand.totalRaised}
+            cycle={cand.fundingMix?.cycle}
+            peer={cand.peerComparison}
+          />
           <FunderBars
             donorCoalition={cand.donorCoalition}
             totalRaised={cand.totalRaised}

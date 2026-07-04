@@ -29,22 +29,21 @@ import { SeatChat } from "./SeatChat";
 import { IssueDeltaBanner } from "./IssueDeltaBanner";
 import { issuesForLevel } from "./delegationData";
 
-function tierIntro(section, { stateName, t }) {
+/* [Δ] item B (Bold Flag redesign): the federal House/Senate branch now
+   renders a SEAT-specific header ("SEAT n OF total" + "Your U.S.
+   House/Senate seat" + a FEDERAL pill) instead of the old tier-wide
+   "Washington — three people who write federal law" framing, matching the
+   reference (.keystone-canvas-refs/02a-results-main.png). State-legislature
+   and statewide-executive tiers are untouched — no reference covers them. */
+function tierIntro(activeSeat, { stateName, t, seatIdx, totalSeats }) {
   const tr = t || ((k) => k);
-  const TIERS = {
-    "Washington — Federal": {
-      place: "WASHINGTON",
-      title: tr("scorecard.tierFedTitle"),
-      what: () => (
-        <span
-          dangerouslySetInnerHTML={{ __html: tr("scorecard.tierFedWhat") }}
-        />
-      ),
-    },
+  const section = activeSeat.section;
+  const STATE_TIERS = {
     "State legislature — State": {
       place: (stateName || "STATE").toUpperCase(),
       title: tr("scorecard.tierStatTitle"),
       what: () => <>{tr("scorecard.tierStatWhat")}</>,
+      pill: null,
     },
     "Statewide — Executive": {
       place: "STATEWIDE",
@@ -54,9 +53,47 @@ function tierIntro(section, { stateName, t }) {
           dangerouslySetInnerHTML={{ __html: tr("scorecard.tierExecWhat") }}
         />
       ),
+      pill: null,
     },
   };
-  return TIERS[section] || TIERS["Washington — Federal"];
+  if (STATE_TIERS[section]) return STATE_TIERS[section];
+
+  const isSenate = /senate/i.test(activeSeat.office || "");
+  return {
+    place: tr("scorecard.seatOfTotal", { n: seatIdx + 1, total: totalSeats }),
+    title: isSenate
+      ? tr("scorecard.yourSenateSeatTitle")
+      : tr("scorecard.yourHouseSeatTitle"),
+    what: () => (
+      <>
+        {isSenate
+          ? tr("scorecard.senateSeatDesc", { state: stateName || "your state" })
+          : tr("scorecard.houseSeatDesc", {
+              district: activeSeat.districtLabel || "your district",
+            })}
+      </>
+    ),
+    pill: tr("scorecard.federalPill"),
+  };
+}
+
+/** Last 4-digit year found in a label string ("Jan 3, 2029" → 2029). Pure
+ *  presentational parse — no data-layer change — for the rail's "not up for
+ *  election" row, which shows the seat's next election YEAR instead of a
+ *  status tag (item J of the Bold Flag redesign). */
+function yearFromLabel(label) {
+  const m = (label || "").match(/(20\d{2})/);
+  return m ? m[1] : "";
+}
+
+/** Two-letter seat-avatar code for the rail ("HR" / "SE"), item J. */
+function seatAvatarCode(office) {
+  if (/senate/i.test(office || "")) return "SE";
+  if (/house/i.test(office || "")) return "HR";
+  return (office || "")
+    .replace(/[^A-Za-z]/g, "")
+    .slice(0, 2)
+    .toUpperCase();
 }
 
 /* ---- Scorecard pane (BallotPaneInner evolved) ---- */
@@ -65,9 +102,9 @@ export function ScorecardPane({
   verdicts,
   picks,
   activeSeatId,
-  address,
   issues,
-  precinct,
+  revealed,
+  blindMode,
   onSelectSeat,
   onPrint,
   onContinueElsewhere,
@@ -78,42 +115,70 @@ export function ScorecardPane({
     seats.some((s) => s.id === id),
   ).length;
   const canPrint = doneCount > 0;
-  const sections = {};
-  seats.forEach((s) => {
-    (sections[s.section] = sections[s.section] || []).push(s);
-  });
-  // Lead with a percentage (B): same kept/total roll-up as the print sheet,
-  // shown as "% aligned" with the raw count as secondary. Null when there's
-  // no scored voting record so the row stays honest (handles total 0 → no NaN).
-  const alignFor = (s) => {
-    if (s.researched || !s.alignmentEntry?.scores) return null;
-    const kept = s.alignmentEntry.scores.reduce(
-      (n, sc) => n + (sc.kept ?? 0),
-      0,
-    );
-    const total = s.alignmentEntry.scores.reduce(
-      (n, sc) => n + (sc.total ?? 0),
-      0,
-    );
-    if (total === 0) return null;
-    return `${Math.round((kept / total) * 100)}% aligned (${kept}/${total} votes)`;
-  };
+
+  // [Δ] item J: the rail IS the progress — three groups (Reviewing now / Not
+  // yet reviewed / Not up for election) instead of the old grouping by
+  // section (which just repeated "Washington — Federal" for every federal
+  // seat). "Reviewing now" is always exactly the active seat; "not up" seats
+  // are excluded from "not yet reviewed" even if one happens to be active.
+  const reviewingNow = seats.filter((s) => s.id === activeSeatId);
+  const notUpForElection = seats.filter(
+    (s) => s.nextElection?.onBallot2026 === false && s.id !== activeSeatId,
+  );
+  const notYetReviewed = seats.filter(
+    (s) => s.id !== activeSeatId && s.nextElection?.onBallot2026 !== false,
+  );
+  const firstUndecidedIdx = notYetReviewed.findIndex((s) => !verdicts[s.id]);
+  const groups = [
+    {
+      key: "reviewing",
+      label: t("scorecard.groupReviewingNow"),
+      rows: reviewingNow,
+    },
+    {
+      key: "notyet",
+      label: t("scorecard.notYetReviewed"),
+      rows: notYetReviewed,
+    },
+    {
+      key: "notup",
+      label: t("scorecard.groupNotUpForElection"),
+      rows: notUpForElection,
+    },
+  ].filter((g) => g.rows.length > 0);
+
+  const printWord = t(
+    seats.length === 2 ? "scorecard.bothSeats" : "scorecard.allSeats",
+  );
 
   return (
     <>
-      <div className="b-head">
-        <div className="row">
-          <h3>{t("scorecard.heading")}</h3>
-          <span className="sub">
-            {doneCount}/{seats.length} · {t("scorecard.draft")}
+      <div className="rail-head">
+        <div className="rh-t">{t("scorecard.heading")}</div>
+        <div className="rh-prog">
+          <span className="rh-dots">
+            {seats.map((s) => (
+              <i
+                key={s.id}
+                className={
+                  verdicts[s.id]
+                    ? "done"
+                    : s.id === activeSeatId
+                      ? "active"
+                      : ""
+                }
+              />
+            ))}
+          </span>
+          <span className="rh-count">
+            {t("scorecard.decidedCount", { n: doneCount, total: seats.length })}
           </span>
         </div>
-        <address>
-          {address || "—"}
-          {precinct ? ` · ${t("scorecard.precinct")} ${precinct}` : ""}
-        </address>
       </div>
 
+      {/* Mobile/tablet only (≤1023px, shipped by prototype-c.css) — on
+          desktop the issues + Edit control live in the new top context
+          strip (item A) so they aren't duplicated here (item J). */}
       <div className="b-issues-edit">
         <div className="b-issues-head">
           <span className="b-issues-lab">{t("scorecard.yourIssues")}</span>
@@ -137,82 +202,65 @@ export function ScorecardPane({
         </ol>
       </div>
 
-      <div className="b-list">
-        {Object.entries(sections).map(([section, ss]) => (
-          <div key={section}>
-            <div
-              style={{
-                fontFamily: "var(--mono)",
-                fontSize: 11,
-                textTransform: "uppercase",
-                letterSpacing: "0.14em",
-                color: "var(--ink-3)",
-                padding: "14px 0 4px",
-              }}
-            >
-              {section}
-            </div>
-            {ss.map((s) => {
+      <div className="rail-list">
+        {groups.map((g) => (
+          <div key={g.key}>
+            <div className="rail-group-lab">{g.label}</div>
+            {g.rows.map((s, idxInGroup) => {
               const v = verdicts[s.id];
               const isActive = s.id === activeSeatId;
-              const notUp2026 = s.nextElection?.onBallot2026 === false;
+              const notUp = s.nextElection?.onBallot2026 === false;
+              const isRevealedSeat = !blindMode || !!revealed?.has?.(s.id);
+              const displayName = isRevealedSeat
+                ? (s.candidate?.name ?? s.blindLabel)
+                : "This seat";
+              const successor =
+                v === "replace"
+                  ? (s.challengers || []).find((c) => c.id === picks?.[s.id])
+                  : null;
               return (
                 <div
                   key={s.id}
+                  data-testid={`seat-row-${s.id}`}
                   className={
-                    "b-row " +
+                    "b-row rseat " +
                     (v ? "done " : "pending ") +
+                    (v === "replace" ? "replace " : "") +
                     (isActive ? "active " : "") +
-                    (notUp2026 ? "not-up-2026 " : "")
+                    (notUp ? "not-up-2026 notup " : "")
                   }
                   onClick={() => onSelectSeat(s.id)}
                 >
-                  <div className="ck" />
-                  <div>
-                    <div className="race">
+                  <span className="ri">{seatAvatarCode(s.office)}</span>
+                  <span className="rmeta">
+                    <span className="ro">
                       {s.office} · {s.districtLabel}
-                    </div>
-                    {notUp2026 && (
-                      <div className="b-not-up">
-                        Not up for election in 2026
-                      </div>
-                    )}
-                    <div className="pick">
-                      {v ? (
-                        <>
-                          {s.candidate?.name ?? s.blindLabel} —{" "}
-                          <span className={"verdict-chip " + v}>
-                            {v === "keep"
-                              ? t("scorecard.worthKeeping")
-                              : t("scorecard.timeToReplace")}
+                    </span>
+                    <span className="rn">{displayName}</span>
+                  </span>
+                  <span className={"rstatus " + (v || "")}>
+                    {v ? (
+                      <>
+                        <span className={"verdict-chip " + v}>
+                          {v === "keep"
+                            ? t("scorecard.worthKeeping")
+                            : t("scorecard.timeToReplace")}
+                        </span>
+                        {successor && (
+                          <span className="pick-successor">
+                            {" → "}
+                            {successor.name}
                           </span>
-                          {v === "replace" &&
-                            (() => {
-                              const pick = (s.challengers || []).find(
-                                (c) => c.id === picks?.[s.id],
-                              );
-                              return pick ? (
-                                <span className="pick-successor">
-                                  {" → "}
-                                  {pick.name}
-                                </span>
-                              ) : null;
-                            })()}
-                        </>
-                      ) : isActive ? (
-                        t("scorecard.reviewingNow")
-                      ) : (
-                        t("scorecard.notYetReviewed")
-                      )}
-                    </div>
-                    {v && (alignFor(s) || s.nextElection) && (
-                      <div className="why">
-                        {[alignFor(s), s.nextElection?.label]
-                          .filter(Boolean)
-                          .join(" · ")}
-                      </div>
-                    )}
-                  </div>
+                        )}
+                      </>
+                    ) : isActive ? (
+                      t("scorecard.tagNow")
+                    ) : notUp ? (
+                      yearFromLabel(s.nextElection?.label)
+                    ) : idxInGroup === firstUndecidedIdx ? (
+                      t("scorecard.tagUpNext")
+                    ) : null}
+                  </span>
                 </div>
               );
             })}
@@ -220,11 +268,18 @@ export function ScorecardPane({
         ))}
       </div>
 
-      <div className="b-foot">
+      <div className="rail-foot">
         <button className="primary" disabled={!canPrint} onClick={onPrint}>
           <span>{t("scorecard.printBtn")}</span>
           <span className="arrow">→</span>
         </button>
+        <div className="rf-hint">
+          {t("scorecard.printCaption", {
+            word: printWord,
+            n: doneCount,
+            total: seats.length,
+          })}
+        </div>
         <button onClick={onContinueElsewhere}>
           <span>{t("scorecard.handoffBtn")}</span>
           <span className="arrow">↗</span>
@@ -265,6 +320,7 @@ export function DelegationWorkspace({
   onRetryChat,
   onShowBudgetOptions,
   onEditIssues,
+  onBackToSeats,
   issueDeltas,
   onRevisitSeat,
   onDismissDeltas,
@@ -275,7 +331,12 @@ export function DelegationWorkspace({
   const doneCount = Object.keys(verdicts).filter((id) =>
     seats.some((s) => s.id === id),
   ).length;
-  const intro = tierIntro(activeSeat.section, { stateName, t });
+  const intro = tierIntro(activeSeat, {
+    stateName,
+    t,
+    seatIdx: activeIdx,
+    totalSeats: seats.length,
+  });
 
   /* Mobile: same contract as the shipped WorkspaceView — the center pane
      is hidden <768px until a row is tapped, then opens as a fixed overlay
@@ -311,6 +372,44 @@ export function DelegationWorkspace({
         stateData={stateData}
         rows={deadlineRows}
       />
+      {/* [Δ] item A (Bold Flag redesign): back-link + address (left) and the
+          issues chips + Edit (right) — replaces the desktop copy of the
+          issues list that used to live only in the scorecard rail (moved
+          here per the reference; the mobile/tablet copy inside
+          ScorecardPane's .b-issues-edit is untouched). The polling-place
+          banner above is a separate, still-needed feature (deadlines/ID
+          requirements/early voting) — this strip doesn't replace it. */}
+      <div className="res-context">
+        <button
+          className="rc-back"
+          onClick={onBackToSeats}
+          disabled={!onBackToSeats}
+          data-testid="back-to-seats"
+        >
+          {t("scorecard.backToSeats")}
+        </button>
+        <span className="rc-addr">{address || "—"}</span>
+        <span className="rc-issues">
+          <span className="rc-lab">{t("scorecard.yourIssues")}</span>
+          {userIssues.map((iss, i) => (
+            <span
+              className="chip-issue"
+              key={`${i}-${iss.canonicalIssue || iss.interpretation}`}
+            >
+              {iss.interpretation}
+            </span>
+          ))}
+          {onEditIssues && (
+            <button
+              className="chip-issue edit"
+              onClick={onEditIssues}
+              data-testid="edit-issues-topstrip"
+            >
+              {t("scorecard.edit")}
+            </button>
+          )}
+        </span>
+      </div>
       <div
         className="ws-wrap"
         data-mobile-chat={mobileChatOpen ? "open" : "closed"}
@@ -332,7 +431,10 @@ export function DelegationWorkspace({
           <div className="tier-intro">
             <span className="ti-place">{intro.place}</span>
             <div className="ti-copy">
-              <h2>{intro.title}</h2>
+              <h2>
+                {intro.title}
+                {intro.pill && <span className="lvl">{intro.pill}</span>}
+              </h2>
               <p>{intro.what()}</p>
             </div>
           </div>
@@ -413,9 +515,9 @@ export function DelegationWorkspace({
             verdicts={verdicts}
             picks={picks}
             activeSeatId={activeSeat.id}
-            address={address}
             issues={userIssues}
-            precinct={pollingInfo?.precinct || ""}
+            revealed={revealed}
+            blindMode={blindMode}
             onSelectSeat={selectAndOpen}
             onPrint={onPrint}
             onContinueElsewhere={onContinueElsewhere}
