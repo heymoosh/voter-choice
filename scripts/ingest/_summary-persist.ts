@@ -25,43 +25,76 @@ function env(n: string): string {
     const t = l.trim();
     if (t.startsWith("#") || !t.includes("=")) continue;
     const [k, ...v] = t.split("=");
-    if (k.trim() === n) return v.join("=").trim().replace(/^["']|["']$/g, "");
+    if (k.trim() === n)
+      return v
+        .join("=")
+        .trim()
+        .replace(/^["']|["']$/g, "");
   }
   throw new Error(n);
 }
 
 async function main() {
   const only = process.argv.slice(2);
-  const manifest = JSON.parse(readFileSync(`${WORK}/_manifest.json`, "utf8")) as Array<{
-    batchId: string; issue: string | null; resultPath: string; count: number;
+  const manifest = JSON.parse(
+    readFileSync(`${WORK}/_manifest.json`, "utf8"),
+  ) as Array<{
+    batchId: string;
+    issue: string | null;
+    resultPath: string;
+    count: number;
   }>;
-  const entries = only.length ? manifest.filter((m) => only.includes(m.batchId)) : manifest;
+  const entries = only.length
+    ? manifest.filter((m) => only.includes(m.batchId))
+    : manifest;
 
   const summaries = new Map<string, string>(); // bill_id → summary (last wins)
-  const tags = new Map<string, { issue: string; stance: string; conf: string }>(); // bill_id|issue → tag
-  let missing = 0, dropped = 0;
+  const tags = new Map<
+    string,
+    { issue: string; stance: string; conf: string }
+  >(); // bill_id|issue → tag
+  let missing = 0,
+    dropped = 0;
 
   for (const m of entries) {
-    if (!existsSync(m.resultPath)) { missing++; continue; }
+    if (!existsSync(m.resultPath)) {
+      missing++;
+      continue;
+    }
     const result = JSON.parse(readFileSync(m.resultPath, "utf8")) as {
-      results: Array<{ bill_id: string; summary?: string; pole_stance?: string; confidence?: string }>;
+      results: Array<{
+        bill_id: string;
+        summary?: string;
+        pole_stance?: string;
+        confidence?: string;
+      }>;
     };
-    const batch = JSON.parse(readFileSync(`${WORK}/${m.batchId}.json`, "utf8")) as { bills: { id: string }[] };
+    const batch = JSON.parse(
+      readFileSync(`${WORK}/${m.batchId}.json`, "utf8"),
+    ) as { bills: { id: string }[] };
     const ids = new Set(batch.bills.map((b) => b.id));
     for (const r of result.results) {
-      if (!ids.has(r.bill_id)) { dropped++; continue; }
-      if (r.summary && r.summary.trim()) summaries.set(r.bill_id, r.summary.trim());
+      if (!ids.has(r.bill_id)) {
+        dropped++;
+        continue;
+      }
+      if (r.summary && r.summary.trim())
+        summaries.set(r.bill_id, r.summary.trim());
       if (m.issue && r.pole_stance && VALID_STANCE.has(r.pole_stance)) {
         tags.set(`${r.bill_id}|${m.issue}`, {
           issue: m.issue,
           stance: r.pole_stance,
-          conf: VALID_CONF.has(r.confidence ?? "") ? (r.confidence as string) : "low",
+          conf: VALID_CONF.has(r.confidence ?? "")
+            ? (r.confidence as string)
+            : "low",
         });
       }
     }
   }
 
-  console.log(`results: ${summaries.size} summaries · ${tags.size} contested tags · missing files ${missing} · dropped ${dropped}`);
+  console.log(
+    `results: ${summaries.size} summaries · ${tags.size} contested tags · missing files ${missing} · dropped ${dropped}`,
+  );
   const sql = neon(env("ALIGNMENT_DATABASE_URL"));
 
   // 1) bills.summary
@@ -80,7 +113,12 @@ async function main() {
   console.log("");
 
   // 2) issue_tags_pole_v1 upserts
-  const tagRows = [...tags.entries()].map(([key, t]) => ({ bill_id: key.split("|")[0], issue: t.issue, stance: t.stance, conf: t.conf }));
+  const tagRows = [...tags.entries()].map(([key, t]) => ({
+    bill_id: key.split("|")[0],
+    issue: t.issue,
+    stance: t.stance,
+    conf: t.conf,
+  }));
   let tu = 0;
   for (let i = 0; i < tagRows.length; i += CHUNK) {
     const c = tagRows.slice(i, i + CHUNK);
@@ -96,6 +134,11 @@ async function main() {
     tu += c.length;
     process.stdout.write(`\r  pole_v1 upserted ${tu}/${tagRows.length}`);
   }
-  console.log(`\nDONE: ${su} summaries written, ${tu} contested tags upserted (source_run=${SOURCE_RUN}).`);
+  console.log(
+    `\nDONE: ${su} summaries written, ${tu} contested tags upserted (source_run=${SOURCE_RUN}).`,
+  );
 }
-main().catch((e) => { console.error("PERSIST FAILED:", e.message); process.exit(1); });
+main().catch((e) => {
+  console.error("PERSIST FAILED:", e.message);
+  process.exit(1);
+});

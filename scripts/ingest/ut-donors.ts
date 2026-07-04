@@ -81,9 +81,7 @@ function extractFirstInitialFromDbName(fullName: string): string {
 /**
  * Parse UT PCC name: "Last, First [Middle]"
  */
-function parsePccName(
-  name: string,
-): { last: string; first: string } | null {
+function parsePccName(name: string): { last: string; first: string } | null {
   const raw = name.trim();
   const commaIdx = raw.indexOf(",");
   if (commaIdx > 0) {

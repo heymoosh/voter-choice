@@ -29,7 +29,10 @@ function loadUrl(): string {
     if (t.startsWith("#") || !t.includes("=")) continue;
     const [k, ...rest] = t.split("=");
     if (k.trim() === "ALIGNMENT_DATABASE_URL")
-      return rest.join("=").trim().replace(/^["']|["']$/g, "");
+      return rest
+        .join("=")
+        .trim()
+        .replace(/^["']|["']$/g, "");
   }
   throw new Error("ALIGNMENT_DATABASE_URL not found");
 }
@@ -102,7 +105,9 @@ async function main() {
       count: slice.length,
     });
   }
-  console.log(`${PARENT_ISSUE.padEnd(24)} ${bills.length} bills → ${n} batches`);
+  console.log(
+    `${PARENT_ISSUE.padEnd(24)} ${bills.length} bills → ${n} batches`,
+  );
 
   writeFileSync(`${absDir}/_manifest.json`, JSON.stringify(manifest, null, 2));
   console.log(

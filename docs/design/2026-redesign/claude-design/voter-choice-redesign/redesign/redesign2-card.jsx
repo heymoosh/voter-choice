@@ -21,18 +21,32 @@ function AttendanceBand2({ attendance, researched }) {
   if (!attendance) {
     return (
       <div className="att-band na">
-        <span className="txt">Attendance isn't reliably tracked at the state level — we don't fake it.</span>
+        <span className="txt">
+          Attendance isn't reliably tracked at the state level — we don't fake
+          it.
+        </span>
       </div>
     );
   }
-  const bandLabel = { good: "Rarely misses", mid: "About average", bad: "Misses a lot" }[attendance.band];
+  const bandLabel = {
+    good: "Rarely misses",
+    mid: "About average",
+    bad: "Misses a lot",
+  }[attendance.band];
   return (
     <div className="att-band">
       <span className="txt">
         Shows up — missed <b>{attendance.missedPct}%</b> of {attendance.of}.
       </span>
       <span className={"att-chip " + attendance.band}>{bandLabel}</span>
-      <a className="att-src cv2-evidence-link" href="https://www.govtrack.us/" target="_blank" rel="noopener noreferrer">GovTrack ↗</a>
+      <a
+        className="att-src cv2-evidence-link"
+        href="https://www.govtrack.us/"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        GovTrack ↗
+      </a>
     </div>
   );
 }
@@ -48,18 +62,41 @@ function ResearchedPositionRow({ issue, pos }) {
   const supports = pos.resolvedStance === "in_favor";
   const opposes = pos.resolvedStance === "opposed";
   const verb = supports ? "SUPPORTS" : opposes ? "OPPOSES" : "MIXED";
-  const badgeColor = supports ? "var(--civic)" : opposes ? "var(--vote-red)" : "var(--gold)";
+  const badgeColor = supports
+    ? "var(--civic)"
+    : opposes
+      ? "var(--vote-red)"
+      : "var(--gold)";
   const voteCls = supports ? "yea" : opposes ? "nay" : "other";
   const hasEvidence = (pos.evidence || []).length > 0;
   return (
-    <div className={"cv2-iss-row" + (open ? " open" : "") + (hasEvidence ? " has-drill" : "")}>
-      <button className="cv2-iss-head" onClick={hasEvidence ? () => setOpen(!open) : undefined} aria-expanded={open}>
+    <div
+      className={
+        "cv2-iss-row" +
+        (open ? " open" : "") +
+        (hasEvidence ? " has-drill" : "")
+      }
+    >
+      <button
+        className="cv2-iss-head"
+        onClick={hasEvidence ? () => setOpen(!open) : undefined}
+        aria-expanded={open}
+      >
         <div className="topic">
           <div className="name">{issue.interpretation}</div>
-          <div className="meta">From public statements{hasEvidence ? (open ? " · source shown below" : " · tap for the cited source") : " · no source curated"}</div>
+          <div className="meta">
+            From public statements
+            {hasEvidence
+              ? open
+                ? " · source shown below"
+                : " · tap for the cited source"
+              : " · no source curated"}
+          </div>
         </div>
         <div className="cv2-ws-col">
-          <span className="cv2-ws-badge" style={{ background: badgeColor }}>{verb}</span>
+          <span className="cv2-ws-badge" style={{ background: badgeColor }}>
+            {verb}
+          </span>
           <span className="cv2-ws-conf">{pos.confidence} confidence</span>
         </div>
       </button>
@@ -75,14 +112,26 @@ function ResearchedPositionRow({ issue, pos }) {
                 <div className="cv2-vote-head">
                   <div className="bill">
                     <span className="num">WEB RESEARCH</span>
-                    <span className="ttl">{(verb.charAt(0) + verb.slice(1).toLowerCase())} {issue.interpretation.toLowerCase()}</span>
+                    <span className="ttl">
+                      {verb.charAt(0) + verb.slice(1).toLowerCase()}{" "}
+                      {issue.interpretation.toLowerCase()}
+                    </span>
                   </div>
                   <div className={"vote-badge " + voteCls}>{verb}</div>
                 </div>
                 <p className="cv2-vote-narr">“{e.summary}”</p>
                 <div className="cv2-vote-cite">
-                  <span className="src-chip">web search · {pos.confidence} confidence</span>
-                  <a href={e.url} className="src-link" target="_blank" rel="noopener noreferrer">View source →</a>
+                  <span className="src-chip">
+                    web search · {pos.confidence} confidence
+                  </span>
+                  <a
+                    href={e.url}
+                    className="src-link"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    View source →
+                  </a>
                 </div>
               </div>
             ))}
@@ -96,7 +145,9 @@ function ResearchedPositionRow({ issue, pos }) {
 function ResearchedPositions({ positions, userIssues }) {
   const rows = (userIssues || [])
     .map((iss) => {
-      const pos = positions.find((p) => p.canonicalIssue === iss.canonicalIssue);
+      const pos = positions.find(
+        (p) => p.canonicalIssue === iss.canonicalIssue,
+      );
       return pos ? { issue: iss, pos } : null;
     })
     .filter(Boolean);
@@ -104,9 +155,19 @@ function ResearchedPositions({ positions, userIssues }) {
     <div className="cv2-issues">
       <div className="cv2-block-head">
         <div className="lab">Where they stand on your issues</div>
-        <div className="overall"><span className="rp-src-note">researched &amp; cited — no roll-call record</span></div>
+        <div className="overall">
+          <span className="rp-src-note">
+            researched &amp; cited — no roll-call record
+          </span>
+        </div>
       </div>
-      {rows.map(({ issue, pos }) => <ResearchedPositionRow key={issue.canonicalIssue} issue={issue} pos={pos} />)}
+      {rows.map(({ issue, pos }) => (
+        <ResearchedPositionRow
+          key={issue.canonicalIssue}
+          issue={issue}
+          pos={pos}
+        />
+      ))}
     </div>
   );
 }
@@ -114,26 +175,46 @@ function ResearchedPositions({ positions, userIssues }) {
 /* ---- Eligibility note [Δ] — the evolved PartyGate, attached to the seat ---- */
 function EligibilityNote2({ e }) {
   if (!e) return null;
-  const res = (typeof STATE_ELECTION_DATA !== "undefined" && STATE_ELECTION_DATA.resources) || {};
-  const srcUrl = res.voterIdInfo || res.stateElectionWebsite || "https://www.votetexas.gov/";
+  const res =
+    (typeof STATE_ELECTION_DATA !== "undefined" &&
+      STATE_ELECTION_DATA.resources) ||
+    {};
+  const srcUrl =
+    res.voterIdInfo || res.stateElectionWebsite || "https://www.votetexas.gov/";
   return (
     <div className={"elig " + (e.severity || "info")}>
       <div className="elig-when">
         <span className="lab">{e.nextLabel}</span>
         <span className="date">{e.date}</span>
       </div>
-      <div className="elig-rule" dangerouslySetInnerHTML={{ __html: e.ruleHtml }} />
+      <div
+        className="elig-rule"
+        dangerouslySetInnerHTML={{ __html: e.ruleHtml }}
+      />
       {e.todo && (
-        <div className="elig-todo">→ <a href={e.todo.href} onClick={(ev) => ev.preventDefault()}>{e.todo.text}</a> so you're not turned away at the polls.</div>
+        <div className="elig-todo">
+          →{" "}
+          <a href={e.todo.href} onClick={(ev) => ev.preventDefault()}>
+            {e.todo.text}
+          </a>{" "}
+          so you're not turned away at the polls.
+        </div>
       )}
-      <a className="elig-src cv2-evidence-link" href={srcUrl} target="_blank" rel="noopener noreferrer">Source: Texas Secretary of State · Election Code §172.087 ↗</a>
+      <a
+        className="elig-src cv2-evidence-link"
+        href={srcUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        Source: Texas Secretary of State · Election Code §172.087 ↗
+      </a>
     </div>
   );
 }
 
 /* ---- Per-card source transparency: every datum on the card traces to one. ---- */
 const SOURCE_URLS = {
-  "GovTrack": "https://www.govtrack.us/",
+  GovTrack: "https://www.govtrack.us/",
   "Texas Legislature Online": "https://capitol.texas.gov/",
   "FEC bulk filings": "https://www.fec.gov/data/",
   "Texas Ethics Commission": "https://www.ethics.state.tx.us/",
@@ -142,7 +223,8 @@ const SOURCE_URLS = {
 };
 function CardSources({ seat }) {
   const cand = seat.candidate;
-  const recordSrc = seat.level === "federal" ? "GovTrack" : "Texas Legislature Online";
+  const recordSrc =
+    seat.level === "federal" ? "GovTrack" : "Texas Legislature Online";
   const items = seat.researched
     ? [
         { n: "Web search", d: "positions, cited per claim" },
@@ -150,7 +232,10 @@ function CardSources({ seat }) {
         { n: "Texas Secretary of State", d: "election rules" },
       ]
     : [
-        { n: recordSrc, d: "voting record" + (seat.attendance ? " & attendance" : "") },
+        {
+          n: recordSrc,
+          d: "voting record" + (seat.attendance ? " & attendance" : ""),
+        },
         { n: cand.donorSource.name, d: "funding" },
         { n: "Texas Secretary of State", d: "election rules" },
       ];
@@ -160,7 +245,16 @@ function CardSources({ seat }) {
       {items.map((it, i) => (
         <React.Fragment key={i}>
           {i > 0 && <span className="sep">·</span>}
-          <span><a href={SOURCE_URLS[it.n] || "#"} target="_blank" rel="noopener noreferrer">{it.n}</a> ({it.d})</span>
+          <span>
+            <a
+              href={SOURCE_URLS[it.n] || "#"}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {it.n}
+            </a>{" "}
+            ({it.d})
+          </span>
         </React.Fragment>
       ))}
     </div>
@@ -168,16 +262,35 @@ function CardSources({ seat }) {
 }
 
 /* ---- RepCard ---- */
-function RepCard({ seat, blindMode, isRevealed, onReveal, onHide, verdict, onVerdict }) {
+function RepCard({
+  seat,
+  blindMode,
+  isRevealed,
+  onReveal,
+  onHide,
+  verdict,
+  onVerdict,
+}) {
   const [expandedIssue, setExpandedIssue] = useStateR(null);
-  const [moneyOpen, setMoneyOpen] = useStateR(() =>
-    typeof window !== "undefined" && window.matchMedia("(min-width: 901px)").matches);
+  const [moneyOpen, setMoneyOpen] = useStateR(
+    () =>
+      typeof window !== "undefined" &&
+      window.matchMedia("(min-width: 901px)").matches,
+  );
 
   const cand = seat.candidate;
   const userIssues = issuesForLevel2(seat.level);
   const blind = blindMode && !isRevealed;
-  const party = PARTY_META2[seat.partyName] || { name: seat.partyName, code: "?", pipClass: "ind" };
-  const anonCtx = { blindMode: blind, realLastName: cand.name?.split(" ").pop(), alias: seat.blindLabel };
+  const party = PARTY_META2[seat.partyName] || {
+    name: seat.partyName,
+    code: "?",
+    pipClass: "ind",
+  };
+  const anonCtx = {
+    blindMode: blind,
+    realLastName: cand.name?.split(" ").pop(),
+    alias: seat.blindLabel,
+  };
   const last = cand.name.split(" ").pop();
 
   return (
@@ -186,7 +299,13 @@ function RepCard({ seat, blindMode, isRevealed, onReveal, onHide, verdict, onVer
       <div className="seat-strip">
         <span className="seat-office">{seat.office}</span>
         <span className="seat-district">{seat.districtLabel}</span>
-        <span className={"seat-next " + (seat.nextElection.onBallot2026 ? "up" : "")}>{seat.nextElection.label}</span>
+        <span
+          className={
+            "seat-next " + (seat.nextElection.onBallot2026 ? "up" : "")
+          }
+        >
+          {seat.nextElection.label}
+        </span>
       </div>
 
       <CandidateCardHeader
@@ -199,17 +318,25 @@ function RepCard({ seat, blindMode, isRevealed, onReveal, onHide, verdict, onVer
         onHide={onHide}
       />
 
-      <AttendanceBand2 attendance={seat.attendance} researched={seat.researched} />
+      <AttendanceBand2
+        attendance={seat.attendance}
+        researched={seat.researched}
+      />
 
       {seat.researched ? (
-        <ResearchedPositions positions={seat.positions} userIssues={userIssues} />
+        <ResearchedPositions
+          positions={seat.positions}
+          userIssues={userIssues}
+        />
       ) : (
         <AlignmentScoreBanner
           candidate={cand}
           alignmentEntry={seat.alignmentEntry}
           userIssues={userIssues}
           expandedIssue={expandedIssue}
-          onToggleIssue={(ci) => setExpandedIssue(expandedIssue === ci ? null : ci)}
+          onToggleIssue={(ci) =>
+            setExpandedIssue(expandedIssue === ci ? null : ci)
+          }
           anonCtx={anonCtx}
         />
       )}
@@ -223,24 +350,42 @@ function RepCard({ seat, blindMode, isRevealed, onReveal, onHide, verdict, onVer
           onClick={() => setMoneyOpen((v) => !v)}
         >
           <span className="cv2-disclose-lab">
-            <span className="cv2-disclose-eyebrow">Funding &amp; influence</span>
+            <span className="cv2-disclose-eyebrow">
+              Funding &amp; influence
+            </span>
             <span className="cv2-disclose-title">Money trail</span>
             <span className="cv2-disclose-summary">
               {typeof cand.totalRaised === "number" && (
-                <span className="cv2-disclose-stat"><b>{formatDollars(cand.totalRaised)}</b> raised</span>
+                <span className="cv2-disclose-stat">
+                  <b>{formatDollars(cand.totalRaised)}</b> raised
+                </span>
               )}
               {cand.fundingMix && (
                 <span className="cv2-disclose-mix">
-                  {cand.fundingMix.small}% small donors · {cand.fundingMix.large}% large donors · {cand.fundingMix.pac}% PACs
+                  {cand.fundingMix.small}% small donors ·{" "}
+                  {cand.fundingMix.large}% large donors · {cand.fundingMix.pac}%
+                  PACs
                 </span>
               )}
             </span>
           </span>
           <span className="cv2-disclose-chev" aria-hidden="true">
-            {moneyOpen ? <>Hide <span className="cv2-disclose-arrow">▴</span></> : <>Show details <span className="cv2-disclose-arrow">▾</span></>}
+            {moneyOpen ? (
+              <>
+                Hide <span className="cv2-disclose-arrow">▴</span>
+              </>
+            ) : (
+              <>
+                Show details <span className="cv2-disclose-arrow">▾</span>
+              </>
+            )}
           </span>
         </button>
-        <div id={`mt2-${cand.id}`} className="cv2-disclose-body" hidden={!moneyOpen}>
+        <div
+          id={`mt2-${cand.id}`}
+          className="cv2-disclose-body"
+          hidden={!moneyOpen}
+        >
           <FunderBars
             donorCoalition={cand.donorCoalition}
             totalRaised={cand.totalRaised}
@@ -262,14 +407,24 @@ function RepCard({ seat, blindMode, isRevealed, onReveal, onHide, verdict, onVer
           onClick={() => onVerdict(verdict === "keep" ? null : "keep")}
         >
           <span className="ck">{verdict === "keep" ? "✓" : ""}</span>
-          <span>{verdict === "keep" ? "Worth keeping — undo" : `Worth keeping${blind ? "" : " · " + last}`}</span>
+          <span>
+            {verdict === "keep"
+              ? "Worth keeping — undo"
+              : `Worth keeping${blind ? "" : " · " + last}`}
+          </span>
         </button>
         <button
-          className={"pick replace " + (verdict === "replace" ? "picked-replace" : "")}
+          className={
+            "pick replace " + (verdict === "replace" ? "picked-replace" : "")
+          }
           onClick={() => onVerdict(verdict === "replace" ? null : "replace")}
         >
           <span className="ck">{verdict === "replace" ? "✕" : ""}</span>
-          <span>{verdict === "replace" ? "Time to replace — undo" : "Time to replace"}</span>
+          <span>
+            {verdict === "replace"
+              ? "Time to replace — undo"
+              : "Time to replace"}
+          </span>
         </button>
       </div>
 
@@ -278,4 +433,9 @@ function RepCard({ seat, blindMode, isRevealed, onReveal, onHide, verdict, onVer
   );
 }
 
-Object.assign(window, { RepCard, AttendanceBand2, EligibilityNote2, ResearchedPositions });
+Object.assign(window, {
+  RepCard,
+  AttendanceBand2,
+  EligibilityNote2,
+  ResearchedPositions,
+});

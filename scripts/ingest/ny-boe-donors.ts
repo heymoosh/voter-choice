@@ -379,9 +379,7 @@ async function collectFilers(): Promise<Map<string, FilerInfo>> {
       }
     });
 
-    console.log(
-      `[ny-boe-donors] ${csvEntry}: done — filers_seen=${byId.size}`,
-    );
+    console.log(`[ny-boe-donors] ${csvEntry}: done — filers_seen=${byId.size}`);
   }
 
   return byId;
@@ -662,9 +660,7 @@ export async function ingestNyBoeDonors({
   // Step 2: Load DB candidates (NY state only)
   console.log(`[ny-boe-donors] querying DB for NY state candidates ...`);
   const dbCandidates = await loadDbCandidates(db, config.limit);
-  console.log(
-    `[ny-boe-donors] db_candidates_found=${dbCandidates.length}`,
-  );
+  console.log(`[ny-boe-donors] db_candidates_found=${dbCandidates.length}`);
 
   // Step 3: Match candidates to filers by last name
   const { filerToCandidate, candidateToFilerNames, matchedCandidateCount } =

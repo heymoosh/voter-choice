@@ -46,8 +46,7 @@ const ZIP_PATH = "/tmp/OK_2024_contributions.zip";
 const CSV_ENTRY = "2024_ContributionLoanExtract.csv";
 const ELECTION_CYCLE = "2024";
 const SOURCE = "ok_ethics_bulk";
-const SOURCE_URL =
-  "https://guardian.ok.gov/PublicSite/Docs/BulkDataDownloads/";
+const SOURCE_URL = "https://guardian.ok.gov/PublicSite/Docs/BulkDataDownloads/";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -184,7 +183,10 @@ async function streamZipCsv(
       if (headers === null) {
         // Strip BOM if present on first field
         headers = fields.map((h) =>
-          h.replace(/^﻿/, "").replace(/^\xEF\xBB\xBF/, "").trim(),
+          h
+            .replace(/^﻿/, "")
+            .replace(/^\xEF\xBB\xBF/, "")
+            .trim(),
         );
         return;
       }
@@ -256,9 +258,7 @@ function normalizeStr(name: string): string {
 const NAME_SUFFIXES = new Set(["JR", "SR", "II", "III", "IV"]);
 
 function extractLastNameFromCsvName(candidateName: string): string {
-  const tokens = normalizeStr(candidateName)
-    .split(/\s+/u)
-    .filter(Boolean);
+  const tokens = normalizeStr(candidateName).split(/\s+/u).filter(Boolean);
   if (tokens.length === 0) return "";
 
   for (let i = tokens.length - 1; i >= 0; i--) {
@@ -449,7 +449,10 @@ async function aggregateContributions(
 
     const sourceTypeLower = sourceType.toLowerCase();
 
-    if (sourceTypeLower.includes("candidate") || sourceTypeLower.includes("self")) {
+    if (
+      sourceTypeLower.includes("candidate") ||
+      sourceTypeLower.includes("self")
+    ) {
       // "Candidate (Self)" → Self-funded
       bucket = "Self-funded";
     } else if (sourceTypeLower.startsWith("individual")) {
@@ -468,16 +471,17 @@ async function aggregateContributions(
       sourceTypeLower.includes("political action")
     ) {
       // PAC / Political Action Committee: map by donor name or fall back to Other
-      const orgName = lastName && !firstName ? lastName : `${lastName} ${firstName}`.trim();
+      const orgName =
+        lastName && !firstName ? lastName : `${lastName} ${firstName}`.trim();
       const orgBucket =
-        mapEmployerToBucket(orgName) ??
-        mapEmployerToBucket(description);
+        mapEmployerToBucket(orgName) ?? mapEmployerToBucket(description);
       bucket = orgBucket ?? "Other";
     } else if (sourceTypeLower.includes("party")) {
       bucket = "Party committees";
     } else {
       // Corporations, unions, other orgs: use contributor name or description
-      const orgName = lastName && !firstName ? lastName : `${lastName} ${firstName}`.trim();
+      const orgName =
+        lastName && !firstName ? lastName : `${lastName} ${firstName}`.trim();
       const orgBucket =
         mapEmployerToBucket(orgName) ??
         mapEmployerToBucket(employer) ??
@@ -640,8 +644,11 @@ export async function ingestOkEthicsDonors({
   );
 
   // Step 3: Stream ZIP CSV and aggregate
-  const { agg, candidateMatchedNames, counters } =
-    await aggregateContributions(ZIP_PATH, CSV_ENTRY, byLastName);
+  const { agg, candidateMatchedNames, counters } = await aggregateContributions(
+    ZIP_PATH,
+    CSV_ENTRY,
+    byLastName,
+  );
 
   console.log(
     `[ok-ethics-donors] total_rows_processed=${counters.processed} matched_contributions=${counters.filtered}`,

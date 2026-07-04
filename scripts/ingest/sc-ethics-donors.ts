@@ -40,7 +40,8 @@ import {
 
 const DEFAULT_JSON = "/tmp/SC_2024_contributions.json";
 const SOURCE = "sc_ethics_bulk";
-const SOURCE_URL = "https://ethicsfiling.sc.gov/public/campaign-reports/contributions";
+const SOURCE_URL =
+  "https://ethicsfiling.sc.gov/public/campaign-reports/contributions";
 const ELECTION_CYCLE = "2024";
 
 // ---------------------------------------------------------------------------
@@ -209,20 +210,28 @@ async function main() {
   }
 
   const { house = [], senate = [] } = parsedData;
-  console.log(`[sc-ethics] loaded house=${house.length} senate=${senate.length}`);
+  console.log(
+    `[sc-ethics] loaded house=${house.length} senate=${senate.length}`,
+  );
 
   const db = requireDb();
 
   const scHouse = (await db
     .select()
     .from(candidates)
-    .where(sql`${candidates.jurisdiction} = 'state-SC-house'`)) as DbCandidate[];
+    .where(
+      sql`${candidates.jurisdiction} = 'state-SC-house'`,
+    )) as DbCandidate[];
   const scSenate = (await db
     .select()
     .from(candidates)
-    .where(sql`${candidates.jurisdiction} = 'state-SC-senate'`)) as DbCandidate[];
+    .where(
+      sql`${candidates.jurisdiction} = 'state-SC-senate'`,
+    )) as DbCandidate[];
 
-  console.log(`[sc-ethics] DB: house=${scHouse.length} senate=${scSenate.length}`);
+  console.log(
+    `[sc-ethics] DB: house=${scHouse.length} senate=${scSenate.length}`,
+  );
 
   // Build last-name index
   const lastNameIdx = new Map<string, DbCandidate[]>();
@@ -237,12 +246,22 @@ async function main() {
   const agg = new Map<string, number>();
   const candidateNames = new Map<string, string>();
 
-  const houseResult = processContributions(house, lastNameIdx, agg, candidateNames);
+  const houseResult = processContributions(
+    house,
+    lastNameIdx,
+    agg,
+    candidateNames,
+  );
   console.log(
     `[sc-ethics] house: processed=${houseResult.processed} skipped=${houseResult.skipped}`,
   );
 
-  const senateResult = processContributions(senate, lastNameIdx, agg, candidateNames);
+  const senateResult = processContributions(
+    senate,
+    lastNameIdx,
+    agg,
+    candidateNames,
+  );
   console.log(
     `[sc-ethics] senate: processed=${senateResult.processed} skipped=${senateResult.skipped}`,
   );

@@ -29,7 +29,10 @@ function loadUrl(): string {
     if (t.startsWith("#") || !t.includes("=")) continue;
     const [k, ...rest] = t.split("=");
     if (k.trim() === "ALIGNMENT_DATABASE_URL")
-      return rest.join("=").trim().replace(/^["']|["']$/g, "");
+      return rest
+        .join("=")
+        .trim()
+        .replace(/^["']|["']$/g, "");
   }
   throw new Error("ALIGNMENT_DATABASE_URL not found");
 }

@@ -24,10 +24,11 @@
    $1.2M / $340k / $512. Used by FunderBars, the Money-trail teaser,
    CompareModal, the print sheet — anywhere a dollar amount renders. */
 function formatDollars(n) {
-  if (typeof n !== 'number') return '';
-  if (n >= 1_000_000) return '$' + (n / 1_000_000).toFixed(1).replace(/\.0$/, '') + 'M';
-  if (n >= 1_000)     return '$' + Math.round(n / 1_000) + 'k';
-  return '$' + n;
+  if (typeof n !== "number") return "";
+  if (n >= 1_000_000)
+    return "$" + (n / 1_000_000).toFixed(1).replace(/\.0$/, "") + "M";
+  if (n >= 1_000) return "$" + Math.round(n / 1_000) + "k";
+  return "$" + n;
 }
 
 /* ---------- candidate identity (blind mode) ----------
@@ -44,22 +45,25 @@ function formatDollars(n) {
 function getCandidateIdentity(candidate, opts) {
   const { blindMode = false, revealed, index = 0 } = opts || {};
   const alias = String.fromCharCode(65 + index); // A, B, C…
-  const aliasLabel = 'Candidate ' + alias;
+  const aliasLabel = "Candidate " + alias;
   let isRevealed = false;
   if (revealed) {
-    isRevealed = typeof revealed === 'function'
-      ? !!revealed(candidate.id)
-      : !!(revealed.has && revealed.has(candidate.id));
+    isRevealed =
+      typeof revealed === "function"
+        ? !!revealed(candidate.id)
+        : !!(revealed.has && revealed.has(candidate.id));
   }
   const isBlind = !!blindMode && !isRevealed;
-  const lastName = (candidate.name || '').split(' ').pop();
+  const lastName = (candidate.name || "").split(" ").pop();
   return {
     isBlind,
     alias,
     aliasLabel,
     displayName: isBlind ? aliasLabel : candidate.name,
     displayLast: isBlind ? aliasLabel : lastName,
-    secondary: isBlind ? 'identity hidden' : (candidate.priorRole || candidate.priorRoleOverride || ''),
+    secondary: isBlind
+      ? "identity hidden"
+      : candidate.priorRole || candidate.priorRoleOverride || "",
   };
 }
 
@@ -72,19 +76,29 @@ function getCandidateIdentity(candidate, opts) {
      peers: [{ total, aliasOrName }]  (may include self; self is filtered)
    Returns null, or { kind:'more'|'less', multiplier:'2.0', peer, label }. */
 function getPeerComparison(total, peers) {
-  if (typeof total !== 'number' || total <= 0) return null;
+  if (typeof total !== "number" || total <= 0) return null;
   if (!peers || peers.length < 2) return null;
-  const others = peers.filter(p => p.total !== total && p.total > 0);
+  const others = peers.filter((p) => p.total !== total && p.total > 0);
   if (others.length === 0) return null;
   const peer = others.reduce((a, b) => (b.total > a.total ? b : a), others[0]);
   const ratio = total / peer.total;
   if (ratio < 0.85) {
     const multiplier = (1 / ratio).toFixed(1);
-    return { kind: 'less', multiplier, peer, label: `${multiplier}× less than ${peer.aliasOrName}` };
+    return {
+      kind: "less",
+      multiplier,
+      peer,
+      label: `${multiplier}× less than ${peer.aliasOrName}`,
+    };
   }
   if (ratio > 1.18) {
     const multiplier = ratio.toFixed(1);
-    return { kind: 'more', multiplier, peer, label: `${multiplier}× more than ${peer.aliasOrName}` };
+    return {
+      kind: "more",
+      multiplier,
+      peer,
+      label: `${multiplier}× more than ${peer.aliasOrName}`,
+    };
   }
   return null;
 }
@@ -94,9 +108,9 @@ function getPeerComparison(total, peers) {
    text when blind. Whole-word only so we don't mangle unrelated text. */
 function anonymizeText(text, anonCtx) {
   if (!text || !anonCtx?.blindMode || !anonCtx?.realLastName) return text;
-  const alias = anonCtx.alias || 'this candidate';
-  const safe = anonCtx.realLastName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  return text.replace(new RegExp('\\b' + safe + '\\b', 'g'), alias);
+  const alias = anonCtx.alias || "this candidate";
+  const safe = anonCtx.realLastName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return text.replace(new RegExp("\\b" + safe + "\\b", "g"), alias);
 }
 
 Object.assign(window, {

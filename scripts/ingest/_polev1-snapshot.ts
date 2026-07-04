@@ -15,7 +15,11 @@ function loadUrl(): string {
     const t = line.trim();
     if (t.startsWith("#") || !t.includes("=")) continue;
     const [k, ...rest] = t.split("=");
-    if (k.trim() === "ALIGNMENT_DATABASE_URL") return rest.join("=").trim().replace(/^["']|["']$/g, "");
+    if (k.trim() === "ALIGNMENT_DATABASE_URL")
+      return rest
+        .join("=")
+        .trim()
+        .replace(/^["']|["']$/g, "");
   }
   throw new Error("no url");
 }
@@ -24,8 +28,13 @@ async function main() {
   const sql = neon(loadUrl());
   const rows = (await sql`
     SELECT bill_id, canonical_issue, pole_stance, tagger_version, tagger_confidence, source_run, tagged_at
-    FROM issue_tags_pole_v1 ORDER BY canonical_issue, bill_id`) as Array<Record<string, unknown>>;
+    FROM issue_tags_pole_v1 ORDER BY canonical_issue, bill_id`) as Array<
+    Record<string, unknown>
+  >;
   for (const r of rows) process.stdout.write(JSON.stringify(r) + "\n");
   process.stderr.write(`dumped ${rows.length} pole_v1 rows\n`);
 }
-main().catch((e) => { console.error("SNAPSHOT FAILED:", e.message); process.exit(1); });
+main().catch((e) => {
+  console.error("SNAPSHOT FAILED:", e.message);
+  process.exit(1);
+});

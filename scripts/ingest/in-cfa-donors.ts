@@ -387,9 +387,7 @@ export async function ingestInCfaDonors({
   let contributionsFetched = 0;
   let contributionsFiltered = 0;
 
-  console.log(
-    `[in-cfa-donors] streaming ${ZIP_PATH}!${CSV_ENTRY} ...`,
-  );
+  console.log(`[in-cfa-donors] streaming ${ZIP_PATH}!${CSV_ENTRY} ...`);
 
   const rowsRead = await streamZipEntry(
     ZIP_PATH,
@@ -497,9 +495,7 @@ export async function ingestInCfaDonors({
     if (!candidateId || !cycle || !bucket) continue;
     if (value.totalDollars <= 0) continue;
 
-    const matchedNames = [
-      ...(candidateMatchedNames.get(candidateId) ?? []),
-    ];
+    const matchedNames = [...(candidateMatchedNames.get(candidateId) ?? [])];
 
     rows.push({
       candidateId,
@@ -601,9 +597,7 @@ function isCliExecution(): boolean {
 if (isCliExecution()) {
   ingestInCfaDonors().catch((error: unknown) => {
     const msg =
-      error instanceof Error
-        ? error.message.replace(/\s+/gu, " ")
-        : "unknown";
+      error instanceof Error ? error.message.replace(/\s+/gu, " ") : "unknown";
     console.error("[in-cfa-donors] failed:", msg);
     process.exitCode = 1;
   });

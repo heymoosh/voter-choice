@@ -19,14 +19,20 @@ import { sql } from "drizzle-orm";
 import type { DonorBucketLabel } from "./_bucket-mapping";
 
 const SOURCE = "ms_cfportal_bulk";
-const SOURCE_URL = "https://cfportal.sos.ms.gov/online/portal/cf/page/cf-search/Portal.aspx";
+const SOURCE_URL =
+  "https://cfportal.sos.ms.gov/online/portal/cf/page/cf-search/Portal.aspx";
 const ELECTION_CYCLE = "2023";
 const DATA_FILE = "/tmp/ms_contributions.json";
 
 const DRY_RUN = process.argv.includes("--dry-run");
 
 function norm(s: string): string {
-  return s.toUpperCase().replace(/['']/g, "").replace(/[-]/g, " ").replace(/\s+/g, " ").trim();
+  return s
+    .toUpperCase()
+    .replace(/['']/g, "")
+    .replace(/[-]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 async function main() {
@@ -38,8 +44,13 @@ async function main() {
     process.exit(1);
   }
 
-  const scraped = JSON.parse(fs.readFileSync(DATA_FILE, "utf-8")) as Record<string, Record<string, number>>;
-  console.log(`[ms-cfportal] scraped_candidates=${Object.keys(scraped).length}`);
+  const scraped = JSON.parse(fs.readFileSync(DATA_FILE, "utf-8")) as Record<
+    string,
+    Record<string, number>
+  >;
+  console.log(
+    `[ms-cfportal] scraped_candidates=${Object.keys(scraped).length}`,
+  );
 
   const dbCandidates = await db
     .select({ id: candidates.id, fullName: candidates.fullName })
@@ -48,9 +59,13 @@ async function main() {
 
   console.log(`[ms-cfportal] db_candidates=${dbCandidates.length}`);
 
-  const candByNorm = new Map(dbCandidates.map(c => [norm(c.fullName), c.id]));
+  const candByNorm = new Map(dbCandidates.map((c) => [norm(c.fullName), c.id]));
 
-  const upsertRows: Array<{ candidateId: string; bucketLabel: DonorBucketLabel; amountTotal: number }> = [];
+  const upsertRows: Array<{
+    candidateId: string;
+    bucketLabel: DonorBucketLabel;
+    amountTotal: number;
+  }> = [];
   let matched = 0;
 
   for (const [scrapedName, buckets] of Object.entries(scraped)) {
@@ -62,17 +77,27 @@ async function main() {
     matched++;
     for (const [bucket, total] of Object.entries(buckets)) {
       if (total <= 0) continue;
-      upsertRows.push({ candidateId, bucketLabel: bucket as DonorBucketLabel, amountTotal: total });
+      upsertRows.push({
+        candidateId,
+        bucketLabel: bucket as DonorBucketLabel,
+        amountTotal: total,
+      });
     }
   }
 
-  console.log(`[ms-cfportal] matched=${matched} rows_to_upsert=${upsertRows.length}`);
+  console.log(
+    `[ms-cfportal] matched=${matched} rows_to_upsert=${upsertRows.length}`,
+  );
 
   if (DRY_RUN || upsertRows.length === 0) {
     console.log(`[ms-cfportal] dry_run — skipping upsert`);
-    upsertRows.slice(0, 8).forEach(r => {
-      const name = dbCandidates.find(c => c.id === r.candidateId)?.fullName ?? r.candidateId;
-      console.log(`  ${name} | ${r.bucketLabel} | $${r.amountTotal.toFixed(2)}`);
+    upsertRows.slice(0, 8).forEach((r) => {
+      const name =
+        dbCandidates.find((c) => c.id === r.candidateId)?.fullName ??
+        r.candidateId;
+      console.log(
+        `  ${name} | ${r.bucketLabel} | $${r.amountTotal.toFixed(2)}`,
+      );
     });
     return;
   }
@@ -91,7 +116,11 @@ async function main() {
         insertedAt: new Date(),
       })
       .onConflictDoUpdate({
-        target: [donorAggregates.candidateId, donorAggregates.electionCycle, donorAggregates.bucketLabel],
+        target: [
+          donorAggregates.candidateId,
+          donorAggregates.electionCycle,
+          donorAggregates.bucketLabel,
+        ],
         set: {
           amountTotal: sql`excluded.amount_total`,
           source: sql`excluded.source`,
@@ -102,7 +131,12 @@ async function main() {
     upserted++;
   }
 
-  console.log(`[ms-cfportal] complete matched=${matched} rows_upserted=${upserted} dry_run=${DRY_RUN}`);
+  console.log(
+    `[ms-cfportal] complete matched=${matched} rows_upserted=${upserted} dry_run=${DRY_RUN}`,
+  );
 }
 
-main().catch(err => { console.error(err); process.exit(1); });
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});

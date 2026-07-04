@@ -536,9 +536,7 @@ export async function ingestCoTracerDonors({
   // Step 1: Load DB candidates (CO state only)
   console.log(`[co-tracer-donors] querying DB for CO state candidates ...`);
   const dbCandidates = await loadDbCandidates(db, config.limit);
-  console.log(
-    `[co-tracer-donors] db_candidates_found=${dbCandidates.length}`,
-  );
+  console.log(`[co-tracer-donors] db_candidates_found=${dbCandidates.length}`);
 
   // Step 2: Build last-name index
   const byLastName = buildLastNameIndex(dbCandidates);

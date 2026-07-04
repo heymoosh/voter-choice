@@ -24,11 +24,23 @@ function load(f: string) {
 
 function main() {
   const manifest = load(`${DIR}/_manifest.json`) as Array<{
-    path: string; resultPath: string; issue: string; batchId: string; count: number;
+    path: string;
+    resultPath: string;
+    issue: string;
+    batchId: string;
+    count: number;
   }>;
 
-  const all: Array<{ bill_id: string; canonical_issue: string; pole_stance: string; confidence: string }> = [];
-  const perIssue: Record<string, { tagged: number; missing: number; expected: number }> = {};
+  const all: Array<{
+    bill_id: string;
+    canonical_issue: string;
+    pole_stance: string;
+    confidence: string;
+  }> = [];
+  const perIssue: Record<
+    string,
+    { tagged: number; missing: number; expected: number }
+  > = {};
   const needRetag: string[] = [];
   let droppedExtra = 0;
   let droppedInvalid = 0;
@@ -48,15 +60,31 @@ function main() {
     const taggedHere = new Set<string>();
 
     for (const t of result.tags) {
-      if (!billIds.has(t.bill_id)) { droppedExtra++; continue; }
-      if (!VALID.has(t.pole_stance) || taggedHere.has(t.bill_id)) { droppedInvalid++; continue; }
-      const confidence = ["high", "medium", "low"].includes(t.confidence) ? t.confidence : "low";
-      all.push({ bill_id: t.bill_id, canonical_issue: m.issue, pole_stance: t.pole_stance, confidence });
+      if (!billIds.has(t.bill_id)) {
+        droppedExtra++;
+        continue;
+      }
+      if (!VALID.has(t.pole_stance) || taggedHere.has(t.bill_id)) {
+        droppedInvalid++;
+        continue;
+      }
+      const confidence = ["high", "medium", "low"].includes(t.confidence)
+        ? t.confidence
+        : "low";
+      all.push({
+        bill_id: t.bill_id,
+        canonical_issue: m.issue,
+        pole_stance: t.pole_stance,
+        confidence,
+      });
       taggedHere.add(t.bill_id);
     }
     perIssue[m.issue].tagged += taggedHere.size;
     const miss = billIds.size - taggedHere.size;
-    if (miss > 0) { needRetag.push(m.batchId); perIssue[m.issue].missing += miss; }
+    if (miss > 0) {
+      needRetag.push(m.batchId);
+      perIssue[m.issue].missing += miss;
+    }
   }
 
   writeFileSync(OUT, JSON.stringify(all));
@@ -64,12 +92,18 @@ function main() {
   console.log("=== COVERAGE (per issue) ===");
   for (const issue of Object.keys(perIssue)) {
     const p = perIssue[issue];
-    console.log(`${issue.padEnd(20)} tagged=${p.tagged}/${p.expected} missing=${p.missing}`);
+    console.log(
+      `${issue.padEnd(20)} tagged=${p.tagged}/${p.expected} missing=${p.missing}`,
+    );
   }
   console.log(`\nTotal tags written: ${all.length}`);
-  console.log(`Dropped: ${droppedExtra} extra (id not in batch) · ${droppedInvalid} invalid/dup`);
+  console.log(
+    `Dropped: ${droppedExtra} extra (id not in batch) · ${droppedInvalid} invalid/dup`,
+  );
   if (needRetag.length) {
-    console.log(`\n⚠️  ${needRetag.length} batch(es) need re-tag (missing/incomplete):`);
+    console.log(
+      `\n⚠️  ${needRetag.length} batch(es) need re-tag (missing/incomplete):`,
+    );
     console.log("  " + needRetag.join(", "));
     process.exit(2);
   }

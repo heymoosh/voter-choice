@@ -127,7 +127,8 @@ function resolveConfig(argv: string[] = process.argv): IngestConfig {
     const parsed = Number.parseInt(raw ?? "", 10);
     if (Number.isInteger(parsed) && parsed > 0) limit = parsed;
   }
-  const year = yearIdx !== -1 ? Number.parseInt(argv[yearIdx + 1] ?? "2024", 10) : 2024;
+  const year =
+    yearIdx !== -1 ? Number.parseInt(argv[yearIdx + 1] ?? "2024", 10) : 2024;
   return { dryRun, limit, useLocalFile, year };
 }
 

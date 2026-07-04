@@ -1,16 +1,23 @@
 export const meta = {
-  name: 'gold-oracle-panel',
-  description: 'Independent 3-juror Opus panel labels the gold sample BLIND against the pole defs — the ground-truth anchor for the cutover inversion gate (independent of the Sonnet that produced pole_v1).',
-  phases: [{ title: 'Label', detail: '3 independent Opus jurors per batch, blind to pole_v1; M2 retry', model: 'opus' }],
-}
+  name: "gold-oracle-panel",
+  description:
+    "Independent 3-juror Opus panel labels the gold sample BLIND against the pole defs — the ground-truth anchor for the cutover inversion gate (independent of the Sonnet that produced pole_v1).",
+  phases: [
+    {
+      title: "Label",
+      detail: "3 independent Opus jurors per batch, blind to pole_v1; M2 retry",
+      model: "opus",
+    },
+  ],
+};
 
 // args = { baseDir, batches: [{ issue, batchId, count }, ...], jurors: 3 }
-const input = typeof args === 'string' ? JSON.parse(args) : args
-const baseDir = input.baseDir
-const batches = input.batches
-const JURORS = input.jurors || 3
-const batchPath = (id) => `${baseDir}/${id}.json`
-const resultPath = (id, j) => `${baseDir}/_results/${id}.j${j}.json`
+const input = typeof args === "string" ? JSON.parse(args) : args;
+const baseDir = input.baseDir;
+const batches = input.batches;
+const JURORS = input.jurors || 3;
+const batchPath = (id) => `${baseDir}/${id}.json`;
+const resultPath = (id, j) => `${baseDir}/_results/${id}.j${j}.json`;
 
 // Pole definitions — inlined from docs/alignment/POLE_VOCABULARY.md (the keystone).
 // The 4 marked (verbatim) are copied unchanged from _pole-retag.workflow.js.
@@ -68,7 +75,7 @@ Pole B ≡ opposed = "Clean-energy transition / restrict fossil": shift to renew
 MEANS-TRAP: funding/expanding CLEAN energy (renewables, electrification) advances Pole B (opposed) — do NOT tag in_favor merely because a bill "funds energy".
 RULINGS: nuclear → Pole A (firm conventional baseload); carbon-capture/CCS → Pole A (extends fossil-plant life).
 MIXED: "all-of-the-above"/IRA-style bills funding BOTH → tag by the dominant provision; if genuinely co-equal → no_score. Reliability/cost-only bills (both poles claim them) → no_score. Never cross-score against environment_climate.`,
-}
+};
 
 const RULES = `You are an INDEPENDENT JUROR establishing the GROUND TRUTH for the directional lens of each bill for ONE canonical issue: what does a YEA vote MEAN for that issue? Reason ONLY from the bill's title + summary and the pole definitions below. You have no prior tag to defer to — decide from scratch.
 - pole_stance = "in_favor"  → a YEA vote advances Pole A (the in_favor pole).
@@ -79,21 +86,21 @@ CROSS-CUTTING:
 - Omnibus/multi-topic: tag by the DOMINANT provision for THIS issue; if no dominant direction → no_score.
 - Summaries may contain HTML tags — ignore the markup, read the text.
 - Judge by substance/effect, NOT by the bill's title or marketing name (a restrictive "Integrity Act" is still restrictive).
-confidence: "high" = clear directional signal in title+summary; "medium" = reasonable inference; "low" = thin/ambiguous. Use no_score (not a low-confidence guess) when neither pole is clearly advanced.`
+confidence: "high" = clear directional signal in title+summary; "medium" = reasonable inference; "low" = thin/ambiguous. Use no_score (not a low-confidence guess) when neither pole is clearly advanced.`;
 
 const SCHEMA = {
-  type: 'object',
+  type: "object",
   additionalProperties: false,
   properties: {
-    batchId: { type: 'string' },
-    juror: { type: 'integer' },
-    written: { type: 'integer' },
-    in_favor: { type: 'integer' },
-    opposed: { type: 'integer' },
-    no_score: { type: 'integer' },
+    batchId: { type: "string" },
+    juror: { type: "integer" },
+    written: { type: "integer" },
+    in_favor: { type: "integer" },
+    opposed: { type: "integer" },
+    no_score: { type: "integer" },
   },
-  required: ['batchId', 'juror', 'written'],
-}
+  required: ["batchId", "juror", "written"],
+};
 
 function buildPrompt(m, juror) {
   return `You are juror #${juror} of an independent panel. Label every bill in a batch for the canonical issue "${m.issue}", BLIND (no existing tag is provided).
@@ -112,37 +119,57 @@ TASK:
    — EXACTLY one entry per bill. COPY each bill_id CHARACTER-FOR-CHARACTER from the input (long openstates UUIDs — do not abbreviate, retype, or alter them). No extras, no omissions.
 4. Return the structured summary: { batchId: "${m.batchId}", juror: ${juror}, written: <number written>, in_favor, opposed, no_score }.
 
-The written file is the source of truth; make sure it is valid JSON and complete before returning.`
+The written file is the source of truth; make sure it is valid JSON and complete before returning.`;
 }
 
-phase('Label')
+phase("Label");
 
 async function labelOne(m, juror) {
   const r = await agent(buildPrompt(m, juror), {
     label: `${m.batchId}.j${juror}`,
-    phase: 'Label',
-    model: 'opus',
+    phase: "Label",
+    model: "opus",
     schema: SCHEMA,
-  })
-  return { batchId: m.batchId, issue: m.issue, count: m.count, juror, summary: r }
+  });
+  return {
+    batchId: m.batchId,
+    issue: m.issue,
+    count: m.count,
+    juror,
+    summary: r,
+  };
 }
 
 // Flatten to (batch × juror) tasks; M2 verify-and-retry on written==count.
-let pending = []
-for (const m of batches) for (let j = 1; j <= JURORS; j++) pending.push({ m, j })
-const done = []
+let pending = [];
+for (const m of batches)
+  for (let j = 1; j <= JURORS; j++) pending.push({ m, j });
+const done = [];
 for (let attempt = 1; attempt <= 3 && pending.length > 0; attempt++) {
-  log(`Label attempt ${attempt}: ${pending.length} (batch×juror) task(s), ${done.length} done`)
-  const res = await parallel(pending.map((t) => () => labelOne(t.m, t.j)))
-  const retry = []
+  log(
+    `Label attempt ${attempt}: ${pending.length} (batch×juror) task(s), ${done.length} done`,
+  );
+  const res = await parallel(pending.map((t) => () => labelOne(t.m, t.j)));
+  const retry = [];
   for (let i = 0; i < res.length; i++) {
-    const x = res[i]
-    if (x && x.summary && x.summary.written === x.count) done.push({ batchId: x.batchId, juror: x.juror, written: x.summary.written })
-    else retry.push(pending[i])
+    const x = res[i];
+    if (x && x.summary && x.summary.written === x.count)
+      done.push({
+        batchId: x.batchId,
+        juror: x.juror,
+        written: x.summary.written,
+      });
+    else retry.push(pending[i]);
   }
-  pending = retry
+  pending = retry;
 }
 
-const totalWritten = done.reduce((s, b) => s + b.written, 0)
-log(`Panel complete: ${done.length} juror-files, ${totalWritten} labels; ${pending.length} still failing`)
-return { done, stillFailing: pending.map((t) => `${t.m.batchId}.j${t.j}`), totalWritten }
+const totalWritten = done.reduce((s, b) => s + b.written, 0);
+log(
+  `Panel complete: ${done.length} juror-files, ${totalWritten} labels; ${pending.length} still failing`,
+);
+return {
+  done,
+  stillFailing: pending.map((t) => `${t.m.batchId}.j${t.j}`),
+  totalWritten,
+};
