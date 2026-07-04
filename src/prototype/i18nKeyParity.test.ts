@@ -2,9 +2,10 @@ import { describe, it, expect } from "vitest";
 import { TRANSLATIONS } from "./VoterChoiceApp";
 
 /* Recursively collects every leaf key path in a TRANSLATIONS[lang] object,
-   e.g. "repCard.attendanceShowsUp". Used to assert en/es stay in lockstep —
-   every surface that calls t("some.key") must have a real string on both
-   sides, or the surface silently falls back to (broken) English. */
+   e.g. "repCard.attendanceShowsUp" or "whyNowPage.snippets.0.label". Used
+   to assert en/es stay in lockstep — every surface that calls
+   t("some.key") must have a real string on both sides, or the surface
+   silently falls back to (broken) English. */
 function collectKeyPaths(obj: unknown, prefix = ""): string[] {
   if (obj === null || typeof obj !== "object") return [prefix];
   return Object.entries(obj as Record<string, unknown>).flatMap(
@@ -43,6 +44,11 @@ describe("VoterChoiceApp TRANSLATIONS (redesign i18n)", () => {
   // Surfaces wired up for "Finish Spanish coverage for remaining redesign
   // surfaces": tier-intro paragraphs, SeatChat, RepCard, HandoffModal,
   // ScorecardPrintView, App2 stage errors, IssueConversation fallbacks.
+  // Also covers "Spanish/i18n for new redesign copy (Why Now? page,
+  // orientation screen)": the WhyNowPage static page (PR #155) and the
+  // guided OrientationView interstitial (PR #160), both previously
+  // hardcoded in English despite the shared useI18n() mechanism already
+  // being in scope for nav labels.
   const newSurfaceKeys: Array<[string, string]> = [
     ["scorecard", "tierFedWhat"],
     ["scorecard", "tierExecWhat"],
@@ -63,6 +69,19 @@ describe("VoterChoiceApp TRANSLATIONS (redesign i18n)", () => {
     ["delegationError", "dbErrorTitle"],
     ["intake", "updatedFallback"],
     ["intake", "notedFallback"],
+    ["whyNowPage", "eyebrow"],
+    ["whyNowPage", "title"],
+    ["whyNowPage", "intro"],
+    ["whyNowPage", "largerCaseHeading"],
+    ["whyNowPage", "largerCase1"],
+    ["whyNowPage", "largerCase2"],
+    ["whyNowPage", "largerCase3"],
+    ["whyNowPage", "whatToDoHeading"],
+    ["whyNowPage", "whatToDo"],
+    ["orientation", "kick"],
+    ["orientation", "heading"],
+    ["orientation", "body"],
+    ["orientation", "continueLabel"],
   ];
 
   it.each(newSurfaceKeys)(
@@ -88,5 +107,34 @@ describe("VoterChoiceApp TRANSLATIONS (redesign i18n)", () => {
     expect(TRANSLATIONS.es.handoffModal.lede).toContain("{reviewed}");
     expect(TRANSLATIONS.en.delegationError.noRepTitle).toContain("{territory}");
     expect(TRANSLATIONS.es.delegationError.noRepTitle).toContain("{territory}");
+  });
+
+  it("has 3 whyNowPage fact snippets (value/unit/label/cite) in en and es", () => {
+    for (const lang of ["en", "es"] as const) {
+      const snippets = (TRANSLATIONS[lang] as any).whyNowPage.snippets;
+      expect(Array.isArray(snippets)).toBe(true);
+      expect(snippets).toHaveLength(3);
+      for (const s of snippets) {
+        expect(typeof s.value).toBe("string");
+        expect(s.value.length).toBeGreaterThan(0);
+        expect(typeof s.unit).toBe("string");
+        expect(s.unit.length).toBeGreaterThan(0);
+        expect(typeof s.label).toBe("string");
+        expect(s.label.length).toBeGreaterThan(0);
+        expect(typeof s.cite).toBe("string");
+        expect(s.cite.length).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  it("keeps the orientation.body <b> markup usable via dangerouslySetInnerHTML", () => {
+    // OrientationView renders orientation.body via dangerouslySetInnerHTML
+    // (matching the tierFedWhat/tierExecWhat pattern) so the embedded
+    // "replace or keep" emphasis survives translation.
+    expect(TRANSLATIONS.en.orientation.body).toContain(
+      "<b>replace or keep</b>",
+    );
+    expect(TRANSLATIONS.es.orientation.body).toContain("<b>");
+    expect(TRANSLATIONS.es.orientation.body).toContain("</b>");
   });
 });

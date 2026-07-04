@@ -150,22 +150,15 @@ function StandingLocked({ onBack }) {
    (analyze() is called directly there), so a returning reviewer never sees it
    again within a session unless they re-run the cold open. */
 function OrientationView({ onContinue }) {
+  const { t } = useI18n();
   return (
     <>
       <AppNav />
       <div className="coldopen orientation">
         <div className="orient-lede">
-          <div className="kick">Before you begin</div>
-          <h2>Here&rsquo;s how the review works.</h2>
-          <p>
-            Next, you&rsquo;ll be shown your three representatives — where they
-            stand on the issues you care about, and how they&rsquo;re funded and
-            influenced. You can also find alternative candidates running for the
-            seat. At the bottom of each page you&rsquo;ll be asked to{" "}
-            <b>replace or keep</b> the current representative. You&rsquo;ll do
-            this for all of your representatives, and can then print out your
-            scorecard.
-          </p>
+          <div className="kick">{t("orientation.kick")}</div>
+          <h2>{t("orientation.heading")}</h2>
+          <p dangerouslySetInnerHTML={{ __html: t("orientation.body") }} />
         </div>
         <div className="orient-foot">
           <button
@@ -173,7 +166,7 @@ function OrientationView({ onContinue }) {
             onClick={onContinue}
             data-testid="orientation-continue"
           >
-            Let&rsquo;s move to the first candidate →
+            {t("orientation.continueLabel")}
           </button>
         </div>
       </div>
