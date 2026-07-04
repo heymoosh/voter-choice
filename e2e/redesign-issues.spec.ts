@@ -180,11 +180,13 @@ test.describe("edit issues from the workspace", () => {
     // Verdict the first seat so we can prove verdicts survive the re-score.
     await page.getByRole("button", { name: /Worth keeping/ }).click();
     await page.waitForTimeout(900);
-    await expect(page.locator(".ws-ballot")).toContainText("1/3");
+    await expect(page.locator(".ws-ballot")).toContainText("1 of 3 decided");
 
-    // EDIT now lives only in the right scorecard pane ([P1] removed the left
-    // rail that previously carried the desktop Edit control).
-    await page.getByTestId("edit-issues-scorecard").click();
+    // [Δ] item A/J of the Bold Flag redesign: on desktop, Edit now lives in
+    // the top context strip (data-testid="edit-issues-topstrip"); the
+    // scorecard rail's own edit-issues-scorecard control reverted to
+    // mobile/tablet-only (see the other tests in this file).
+    await page.getByTestId("edit-issues-topstrip").click();
     const modal = page.getByTestId("edit-issues-modal");
     await expect(modal).toContainText("verdicts you've already made are kept");
     // Seeded with the locked issues.
@@ -203,7 +205,7 @@ test.describe("edit issues from the workspace", () => {
 
     // Verdict survived; the rail now carries three issues; the delta banner
     // reports honestly (mock data scores identically → nothing significant).
-    await expect(page.locator(".ws-ballot")).toContainText("1/3");
+    await expect(page.locator(".ws-ballot")).toContainText("1 of 3 decided");
     await expect(page.locator(".verdict-chip").first()).toBeVisible();
     await expect(page.locator(".ws-ballot .b-issues-list li")).toHaveCount(3);
     await expect(page.getByTestId("issue-delta-banner")).toContainText(

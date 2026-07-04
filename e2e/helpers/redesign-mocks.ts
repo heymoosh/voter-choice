@@ -529,8 +529,16 @@ export async function goToWorkspace(page: Page): Promise<void> {
 export async function goToStanding(page: Page): Promise<void> {
   const rows = page.locator(".b-row");
   const count = await rows.count();
+  // [Δ] item J of the Bold Flag redesign: the rail now groups rows into
+  // Reviewing now / Not yet reviewed / Not up for election, so a seat's DOM
+  // position moves once it's decided (the newly-active seat becomes
+  // "reviewing now"). A fixed nth(i) index would drift after the first
+  // verdict; ".b-row.active" always resolves to whichever seat the redesign
+  // currently marks "reviewing now", so re-querying it each iteration stays
+  // correct regardless of reordering. The loop count is unchanged (one
+  // verdict per seat, same as before).
   for (let i = 0; i < count; i++) {
-    await rows.nth(i).click();
+    await page.locator(".b-row.active").first().click();
     const keep = page.getByRole("button", { name: /Worth keeping/ }).first();
     await keep.waitFor({ timeout: 15000 });
     await keep.click();

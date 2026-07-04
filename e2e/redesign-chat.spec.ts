@@ -95,11 +95,16 @@ test.describe("seat chat — ask anything about this seat", () => {
 
     // Switch to the senior senator's seat — fresh, empty log. Seat rows live
     // only in the right scorecard pane now (the left rail was removed [P1]).
-    await page.locator(".ws-ballot .b-row").nth(1).click();
+    // Rows are addressed by seat id (data-testid="seat-row-{id}"), not
+    // position: the [Δ] Bold Flag redesign's rail groups rows into
+    // Reviewing now / Not yet reviewed / Not up for election and reorders
+    // them as the active seat changes (whichever seat is active always
+    // renders first, under "Reviewing now").
+    await page.getByTestId("seat-row-senate-TX-a").click();
     await expect(page.getByTestId("seat-chat").locator(".msg")).toHaveCount(0);
 
     // Back to the House seat — the conversation survives the switch.
-    await page.locator(".ws-ballot .b-row").nth(0).click();
+    await page.getByTestId("seat-row-house-TX-37").click();
     await expect(
       page.getByTestId("seat-chat").locator(".msg.user .bubble"),
     ).toContainText("Question for seat one");
