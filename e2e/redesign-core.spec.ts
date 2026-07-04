@@ -55,10 +55,9 @@ test.describe("delegation flow — address → assess → verdicts", () => {
     await expect(page.locator(".elig")).toContainText("2026");
     await expect(page.locator(".card-sources")).toContainText("GovTrack");
 
-    // Money trail summary carries the donor total (core thesis).
-    await expect(page.locator(".cv2-disclose-summary")).toContainText(
-      "$5M raised",
-    );
+    // Compact funding glance carries the donor total without expanding
+    // (item G of the Bold Flag redesign — visible before "Money trail" opens).
+    await expect(page.locator(".money-line")).toContainText("$5M");
     await expect(page.locator(".tweaks2")).toHaveCount(0);
 
     // Single right panel ([P1]): the left rail was removed. Issues + Edit
@@ -201,12 +200,10 @@ test.describe("delegation flow — address → assess → verdicts", () => {
 
     // Verdict all three seats. The card auto-advances ~600ms after each
     // verdict — wait it out so the next click lands on the NEXT seat.
-    await page.getByRole("button", { name: /Worth keeping/ }).click();
+    await page.getByRole("button", { name: /Keep/ }).click();
     await page.waitForTimeout(900);
     for (let i = 0; i < 2; i++) {
-      await page
-        .getByRole("button", { name: "Time to replace", exact: true })
-        .click();
+      await page.getByRole("button", { name: "Replace", exact: true }).click();
       await page.waitForTimeout(900);
     }
 

@@ -539,7 +539,7 @@ export async function goToStanding(page: Page): Promise<void> {
   // verdict per seat, same as before).
   for (let i = 0; i < count; i++) {
     await page.locator(".b-row.active").first().click();
-    const keep = page.getByRole("button", { name: /Worth keeping/ }).first();
+    const keep = page.getByRole("button", { name: /Keep/ }).first();
     await keep.waitFor({ timeout: 15000 });
     await keep.click();
     // Let the verdict commit (commitVerdict defers the auto-advance ~600ms).

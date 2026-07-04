@@ -178,7 +178,7 @@ test.describe("edit issues from the workspace", () => {
     await goToWorkspace(page);
 
     // Verdict the first seat so we can prove verdicts survive the re-score.
-    await page.getByRole("button", { name: /Worth keeping/ }).click();
+    await page.getByRole("button", { name: /Keep/ }).click();
     await page.waitForTimeout(900);
     await expect(page.locator(".ws-ballot")).toContainText("1 of 3 decided");
 
