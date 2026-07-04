@@ -81,7 +81,15 @@ describe("VoterChoiceApp TRANSLATIONS (redesign i18n)", () => {
     ["orientation", "kick"],
     ["orientation", "heading"],
     ["orientation", "body"],
+    ["orientation", "step1Title"],
+    ["orientation", "step1Body"],
+    ["orientation", "step2Title"],
+    ["orientation", "step2Body"],
+    ["orientation", "step3Title"],
+    ["orientation", "step3Body"],
     ["orientation", "continueLabel"],
+    ["orientation", "meta"],
+    ["orientation", "metaOne"],
   ];
 
   it.each(newSurfaceKeys)(
@@ -107,6 +115,10 @@ describe("VoterChoiceApp TRANSLATIONS (redesign i18n)", () => {
     expect(TRANSLATIONS.es.handoffModal.lede).toContain("{reviewed}");
     expect(TRANSLATIONS.en.delegationError.noRepTitle).toContain("{territory}");
     expect(TRANSLATIONS.es.delegationError.noRepTitle).toContain("{territory}");
+    expect(TRANSLATIONS.en.orientation.meta).toContain("{seats}");
+    expect(TRANSLATIONS.es.orientation.meta).toContain("{seats}");
+    expect(TRANSLATIONS.en.orientation.metaOne).toContain("{seats}");
+    expect(TRANSLATIONS.es.orientation.metaOne).toContain("{seats}");
   });
 
   it("has 3 whyNowPage fact snippets (value/unit/label/cite) in en and es", () => {
@@ -127,14 +139,13 @@ describe("VoterChoiceApp TRANSLATIONS (redesign i18n)", () => {
     }
   });
 
-  it("keeps the orientation.body <b> markup usable via dangerouslySetInnerHTML", () => {
-    // OrientationView renders orientation.body via dangerouslySetInnerHTML
-    // (matching the tierFedWhat/tierExecWhat pattern) so the embedded
-    // "replace or keep" emphasis survives translation.
-    expect(TRANSLATIONS.en.orientation.body).toContain(
-      "<b>replace or keep</b>",
-    );
-    expect(TRANSLATIONS.es.orientation.body).toContain("<b>");
-    expect(TRANSLATIONS.es.orientation.body).toContain("</b>");
+  it("keeps the orientation.heading <em> markup usable via dangerouslySetInnerHTML", () => {
+    // OrientationView renders orientation.heading via dangerouslySetInnerHTML
+    // (ported from the Keystone design's `OrientationActivated` h1, whose
+    // accent clause is an <em>) so the italic emphasis survives translation.
+    expect(TRANSLATIONS.en.orientation.heading).toContain("<em>");
+    expect(TRANSLATIONS.en.orientation.heading).toContain("</em>");
+    expect(TRANSLATIONS.es.orientation.heading).toContain("<em>");
+    expect(TRANSLATIONS.es.orientation.heading).toContain("</em>");
   });
 });

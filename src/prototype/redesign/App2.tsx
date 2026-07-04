@@ -148,29 +148,73 @@ function StandingLocked({ onBack }) {
    keep/replace → scorecard). Not skippable/remembered: it's a single click on
    the happy path, and the edit-issues re-score path bypasses it entirely
    (analyze() is called directly there), so a returning reviewer never sees it
-   again within a session unless they re-run the cold open. */
-function OrientationView({ onContinue }) {
+   again within a session unless they re-run the cold open.
+   Structure ported verbatim from the Keystone design's `OrientationActivated`
+   (claude-code-handoff/design-session/DECISIONS.md + HANDOFF-EXACT-MATCH.md
+   §1): flagbar hairline, `ori-card activated` card, 3-step numbered list, CTA
+   + meta line — see public/redesign2.css's `.ori`/`.flagbar`/`.ori-card`/
+   `.ori-step` rules (ported from screens.css) for the exact class contract. */
+function OrientationView({ onContinue, seatsUpCount }) {
   const { t } = useI18n();
+  const metaKey =
+    seatsUpCount === 1 ? "orientation.metaOne" : "orientation.meta";
   return (
-    <>
+    <div className="ori">
+      <div className="flagbar">
+        <i />
+        <i />
+        <i />
+      </div>
       <AppNav />
-      <div className="coldopen orientation">
-        <div className="orient-lede">
-          <div className="kick">{t("orientation.kick")}</div>
-          <h2>{t("orientation.heading")}</h2>
-          <p dangerouslySetInnerHTML={{ __html: t("orientation.body") }} />
-        </div>
-        <div className="orient-foot">
-          <button
-            className="lock"
-            onClick={onContinue}
-            data-testid="orientation-continue"
-          >
-            {t("orientation.continueLabel")}
-          </button>
+      <div className="ori-body">
+        <div className="ori-card activated">
+          <div className="ori-ey">
+            <div className="kick">
+              <span className="star">★</span> {t("orientation.kick")}
+            </div>
+          </div>
+          <h1 dangerouslySetInnerHTML={{ __html: t("orientation.heading") }} />
+          <p className="ori-lede">{t("orientation.body")}</p>
+          <div className="ori-steps">
+            <div className="ori-step">
+              <div className="n">1</div>
+              <div>
+                <div className="st-t">{t("orientation.step1Title")}</div>
+                <div className="st-d">{t("orientation.step1Body")}</div>
+              </div>
+            </div>
+            <div className="ori-step">
+              <div className="n">2</div>
+              <div>
+                <div className="st-t">{t("orientation.step2Title")}</div>
+                <div className="st-d">{t("orientation.step2Body")}</div>
+              </div>
+            </div>
+            <div className="ori-step">
+              <div className="n">3</div>
+              <div>
+                <div className="st-t">{t("orientation.step3Title")}</div>
+                <div className="st-d">{t("orientation.step3Body")}</div>
+              </div>
+            </div>
+          </div>
+          <div className="ori-cta">
+            <button
+              className="lock"
+              onClick={onContinue}
+              data-testid="orientation-continue"
+            >
+              {t("orientation.continueLabel")}
+            </button>
+            {seatsUpCount !== undefined && (
+              <span className="ori-meta">
+                {t(metaKey, { seats: seatsUpCount })}
+              </span>
+            )}
+          </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }
 
@@ -744,8 +788,13 @@ function App2Inner() {
       );
     }
     if (stage === "orientation") {
+      const seatsUpCount =
+        delegation && delegation.status === "ok"
+          ? delegation.seats.filter((s) => s.onBallot2026).length
+          : undefined;
       return (
         <OrientationView
+          seatsUpCount={seatsUpCount}
           onContinue={() => {
             const locked = pendingLockedIssuesRef.current ?? issues;
             pendingLockedIssuesRef.current = null;
