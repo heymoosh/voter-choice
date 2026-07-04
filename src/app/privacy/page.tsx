@@ -168,8 +168,12 @@ export default function PrivacyPolicy() {
           </h2>
           <p className="mb-4">
             If you choose to enter your street address to find your polling
-            place, the app may use <strong>Google Places</strong> in your
-            browser for address autocomplete and sends the address to the{" "}
+            place and elected officials, the app may use{" "}
+            <strong>Google Places</strong> in your browser for address
+            autocomplete; sends the address to the{" "}
+            <strong>US Census Bureau</strong> geocoder (free, keyless) through
+            our server to look up your voting district &mdash; your state,
+            county, and congressional district; and sends the address to the{" "}
             <strong>Google Civic Information API</strong> through our server for
             polling-place and contest lookup. We do not intentionally log or
             store your address, and we do not include it in the AI chat prompt.
