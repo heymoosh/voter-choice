@@ -27,7 +27,7 @@ import {
   escapeHtml,
 } from "../VoterChoiceApp";
 import { getChallengerResearch, researchChallenger } from "./delegationData";
-import { MedianChip, FundingHeadline } from "./MoneyGap";
+import { FundingHeadline } from "./MoneyGap";
 
 /** Top 3 donor-industry labels by their existing order (data is already
  *  percent-sorted upstream) — for the collapsed funding summary's "top:
@@ -1009,33 +1009,6 @@ export function RepCard({
             </span>
             <span className="cv2-disclose-title">
               {t("repCard.moneyTrail")}
-            </span>
-            <span className="cv2-disclose-summary">
-              {typeof cand.totalRaised === "number" && (
-                <span className="cv2-disclose-stat">
-                  <b>{formatDollars(cand.totalRaised)}</b>{" "}
-                  {t("repCard.raisedWord")}
-                </span>
-              )}
-              {/* Collapsed glance — "Raised vs. the median". Renders the dollar
-                  amount only (no fabricated baseline) when peerComparison is
-                  null. */}
-              {typeof cand.totalRaised === "number" &&
-                cand.peerComparison != null && (
-                  <MedianChip
-                    raised={cand.totalRaised}
-                    peer={cand.peerComparison}
-                  />
-                )}
-              {cand.fundingMix && (
-                <span className="cv2-disclose-mix">
-                  {t("repCard.smallDonorsMix", {
-                    small: cand.fundingMix.small,
-                    large: cand.fundingMix.large,
-                    pac: cand.fundingMix.pac,
-                  })}
-                </span>
-              )}
             </span>
           </span>
           <span className="cv2-disclose-chev" aria-hidden="true">
