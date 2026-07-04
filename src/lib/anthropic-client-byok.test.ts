@@ -242,6 +242,32 @@ describe("streamWithByok — direct browser-to-Anthropic", () => {
     expect(errMessage).not.toContain("sk-ant-secret-leak");
   });
 
+  it("fully redacts the key even when it appears MULTIPLE times in a non-401 error", async () => {
+    const key = "sk-ant-multileak-9999";
+    setByokKey(key);
+
+    // Anthropic (or an upstream proxy) echoes the key more than once in the
+    // error detail. A single-occurrence .replace() would leak the 2nd+ copy.
+    const leaky = `bad request for key ${key}; retry with ${key} removed (${key})`;
+
+    global.fetch = (async () =>
+      jsonResponse(400, {
+        error: { type: "invalid_request_error", message: leaky },
+      })) as unknown as typeof fetch;
+
+    const onError = vi.fn();
+    await streamWithByok(
+      { systemPrompt: "x", messages: [{ role: "user", content: "y" }] },
+      { onText: vi.fn(), onError, onDone: vi.fn() },
+    );
+
+    expect(onError).toHaveBeenCalledTimes(1);
+    const errMessage: string = onError.mock.calls[0][0];
+    // CRITICAL: NO occurrence of the key may survive sanitization.
+    expect(errMessage).not.toContain(key);
+    expect(errMessage.includes(key)).toBe(false);
+  });
+
   it("uses claude-haiku-4-5-20251001 as the default model", async () => {
     setByokKey("sk-ant-default-model");
 
