@@ -4,6 +4,7 @@ import {
   redisCommand,
 } from "../../../lib/server/durable-store";
 import { getClientIP } from "../../../lib/server/client-ip";
+import { validateOrigin } from "../../../lib/server/validate-origin";
 import { stateHintsFromAddress } from "../../../lib/stateHints";
 import type {
   BallotSourceAttempt,
@@ -66,17 +67,6 @@ function sanitizeAddress(raw: string): string | null {
   if (!trimmed) return null;
   if (trimmed.length > 200) return null;
   return trimmed;
-}
-
-function validateOrigin(request: NextRequest): boolean {
-  const origin = request.headers.get("origin");
-  const host = request.headers.get("host");
-  if (!origin || !host) return false;
-  try {
-    return new URL(origin).host === host;
-  } catch {
-    return false;
-  }
 }
 
 function checkLookupLimit(ip: string): boolean {
