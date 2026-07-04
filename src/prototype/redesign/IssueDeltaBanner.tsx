@@ -6,25 +6,27 @@
    apply; "Revisit →" jumps to the seat, verdicts are never cleared. */
 
 import React from "react";
+import { useI18n } from "../VoterChoiceApp";
 
 export function IssueDeltaBanner({ deltas, onRevisit, onDismiss }) {
+  const { t } = useI18n();
   if (!deltas || deltas.length === 0) return null;
   const significant = deltas.filter((d) => d.significant);
 
   return (
     <div className="msg ai" data-testid="issue-delta-banner">
-      <div className="who">Voter Choice · AI</div>
+      <div className="who">{t("issueDeltaBanner.who")}</div>
       <div className="bubble amend-delta">
         {significant.length === 0 ? (
           <p>
-            <b>Re-scored against your new issues.</b> No member's alignment
-            moved past the noise floor — your verdicts stand as-is.
+            <b>{t("issueDeltaBanner.noChangeTitle")}</b>{" "}
+            {t("issueDeltaBanner.noChangeBody")}
           </p>
         ) : (
           <>
             <p>
-              <b>Re-scored.</b> Here's how your delegation shifts against the
-              new issue list:
+              <b>{t("issueDeltaBanner.rescoredTitle")}</b>{" "}
+              {t("issueDeltaBanner.rescoredBody")}
             </p>
             <div className="ad-list">
               {significant.map((d) => {
@@ -42,40 +44,42 @@ export function IssueDeltaBanner({ deltas, onRevisit, onDismiss }) {
                     key={d.seatId}
                   >
                     <div className="ad-race">
-                      <div className="ad-tag">REVISIT</div>
+                      <div className="ad-tag">
+                        {t("issueDeltaBanner.revisitTag")}
+                      </div>
                       <div className="ad-name">{d.label}</div>
                     </div>
                     <div className="ad-score">
                       <div className="ad-old">
-                        {d.oldPct === null ? "no record" : d.oldPct + "%"}
+                        {d.oldPct === null
+                          ? t("issueDeltaBanner.noRecord")
+                          : d.oldPct + "%"}
                       </div>
                       <div className="ad-arrow">
                         {dir === "up" ? "↑" : dir === "down" ? "↓" : "→"}
                       </div>
                       <div className="ad-new">
-                        {d.newPct === null ? "no record" : d.newPct + "%"}
+                        {d.newPct === null
+                          ? t("issueDeltaBanner.noRecord")
+                          : d.newPct + "%"}
                       </div>
                     </div>
                     <button
                       className="ad-revisit"
                       onClick={() => onRevisit(d.seatId)}
                     >
-                      Revisit →
+                      {t("issueDeltaBanner.revisitBtn")}
                     </button>
                   </div>
                 );
               })}
             </div>
-            <p className="ad-foot">
-              Only members whose alignment moved more than 5 points (or gained
-              or lost a scoreable record) get a REVISIT flag. Your verdicts are
-              unchanged either way.
-            </p>
+            <p className="ad-foot">{t("issueDeltaBanner.footNote")}</p>
           </>
         )}
         <div style={{ marginTop: 8 }}>
           <button className="linklike" onClick={onDismiss}>
-            Dismiss
+            {t("issueDeltaBanner.dismiss")}
           </button>
         </div>
       </div>

@@ -10,6 +10,7 @@
    behaviors. */
 
 import React, { useState } from "react";
+import { useI18n } from "../VoterChoiceApp";
 
 const CHATBOTS = [
   { name: "Claude", url: "https://claude.ai/new" },
@@ -54,6 +55,7 @@ export function downloadTextFile(text, filename) {
 }
 
 export function HandoffActions({ prompt, downloadFilename }) {
+  const { t } = useI18n();
   const [confirmed, setConfirmed] = useState(null);
 
   async function copyAndOpen(bot) {
@@ -76,8 +78,8 @@ export function HandoffActions({ prompt, downloadFilename }) {
               ↗
             </span>
             {confirmed === bot.name
-              ? "Copied — paste to continue"
-              : `Copy & open ${bot.name}`}
+              ? t("handoffModal.copiedPasteToContinue")
+              : t("handoffModal.copyAndOpen", { bot: bot.name })}
           </button>
         ))}
       </div>
@@ -88,7 +90,7 @@ export function HandoffActions({ prompt, downloadFilename }) {
           data-testid="handoff-download"
         >
           <span className="be-ext-ic">↓</span>
-          Download as .txt
+          {t("handoffModal.downloadTxt")}
         </button>
       )}
     </div>
