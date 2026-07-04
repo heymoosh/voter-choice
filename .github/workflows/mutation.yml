@@ -35,7 +35,10 @@ concurrency:
 jobs:
   mutation:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    # Stryker's scoped run takes ~45 min, so a 45-min cap left zero headroom —
+    # any run that ran a hair long was cancelled at the wall, turning the
+    # required `mutation` check red and jamming auto-merge. 60 gives margin.
+    timeout-minutes: 60
     steps:
       - name: Checkout
         uses: actions/checkout@v6
