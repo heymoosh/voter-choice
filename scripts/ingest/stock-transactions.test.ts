@@ -11,6 +11,7 @@ import { describe, expect, it } from "vitest";
 import {
   parseAmountRange,
   parseSourceDate,
+  isValidFilingUrl,
   stripHtml,
   normalizeTicker,
   normalizeTransactionType,
@@ -70,6 +71,20 @@ describe("parseAmountRange", () => {
 
   it("returns null when high < low (inverted/corrupt range)", () => {
     expect(parseAmountRange("$15,000 - $1,001")).toBeNull();
+  });
+
+  it("returns null when a bound exceeds the numeric(14,2) column capacity — never overflows the DB", () => {
+    expect(parseAmountRange("$1,001 - $9,999,999,999,999")).toBeNull();
+    expect(parseAmountRange("Over $9,999,999,999,999")).toBeNull();
+    expect(parseAmountRange("$9,999,999,999,999+")).toBeNull();
+  });
+
+  it("accepts a value at the top of the valid range", () => {
+    expect(parseAmountRange("$1,001 - $999,999,999,999")).toEqual({
+      low: 1001,
+      high: 999999999999,
+      label: "$1,001 - $999,999,999,999",
+    });
   });
 });
 
@@ -298,6 +313,44 @@ describe("parseHouseRow", () => {
     expect(parsed).not.toBeNull();
     expect(parsed?.assetDescription).not.toMatch(/\u0000/);
   });
+
+  it("returns null when source_url is not a well-formed http(s) URL", () => {
+    expect(
+      parseHouseRow({ ...GOOD_HOUSE_ROW, source_url: "not a url" }),
+    ).toBeNull();
+    expect(
+      parseHouseRow({
+        ...GOOD_HOUSE_ROW,
+        source_url: "javascript:alert(1)",
+      }),
+    ).toBeNull();
+    expect(
+      parseHouseRow({ ...GOOD_HOUSE_ROW, source_url: "/relative/path.pdf" }),
+    ).toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// isValidFilingUrl
+// ---------------------------------------------------------------------------
+
+describe("isValidFilingUrl", () => {
+  it("accepts well-formed http(s) URLs", () => {
+    expect(
+      isValidFilingUrl(
+        "https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2026/20034807.pdf",
+      ),
+    ).toBe(true);
+    expect(isValidFilingUrl("http://example.com/filing")).toBe(true);
+  });
+
+  it("rejects malformed, non-http(s), relative, or empty values", () => {
+    expect(isValidFilingUrl("not a url")).toBe(false);
+    expect(isValidFilingUrl("javascript:alert(1)")).toBe(false);
+    expect(isValidFilingUrl("/relative/path.pdf")).toBe(false);
+    expect(isValidFilingUrl("")).toBe(false);
+    expect(isValidFilingUrl(undefined)).toBe(false);
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -379,6 +432,17 @@ describe("parseSenateFilingGroup", () => {
     };
     const parsed = parseSenateFilingGroup(mixed);
     expect(parsed).toHaveLength(1);
+  });
+
+  it("skips a transaction whose ptr_link is not a well-formed http(s) URL", () => {
+    const badLink: SenateWatcherFilingGroup = {
+      ...GOOD_SENATE_GROUP,
+      ptr_link: "not a url",
+      transactions: [
+        { ...GOOD_SENATE_GROUP.transactions![0], ptr_link: undefined },
+      ],
+    };
+    expect(parseSenateFilingGroup(badLink)).toEqual([]);
   });
 });
 

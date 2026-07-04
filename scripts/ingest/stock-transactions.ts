@@ -218,11 +218,23 @@ export interface BuildCounts {
 // ---------------------------------------------------------------------------
 
 /**
+ * Exclusive upper bound a value may take in the `amount_low`/`amount_high`
+ * columns (`numeric(14, 2)` — 12 integer digits). A garbled source value that
+ * still parses as a number (e.g. a scrape glitch producing an extra digit
+ * run) would otherwise overflow the column and abort the whole multi-row
+ * upsert batch at insert time — same failure mode `parseSourceDate` already
+ * guards against for dates, applied here for amounts.
+ */
+const MAX_STOCK_AMOUNT = 10 ** 12;
+
+/**
  * "$1,001 - $15,000" → { low: 1001, high: 15000 }. STOCK Act bands are
  * always ranges except the open-ended top band ("Over $50,000,000" /
  * "$50,000,000+"), where high is null. Anything else (blank, prose, garbled
- * text) → null, so the caller treats the row as malformed and skips it —
- * NEVER fabricate a point estimate from an unparsable band.
+ * text, or a value too large for the `numeric(14,2)` column) → null, so the
+ * caller treats the row as malformed and skips it — NEVER fabricate a point
+ * estimate from an unparsable band, and never let an oversized value reach
+ * the DB.
  */
 export function parseAmountRange(
   raw: string | null | undefined,
@@ -237,6 +249,7 @@ export function parseAmountRange(
     const high = Number(range[2].replace(/,/g, ""));
     if (!Number.isFinite(low) || !Number.isFinite(high)) return null;
     if (low <= 0 || high < low) return null;
+    if (low >= MAX_STOCK_AMOUNT || high >= MAX_STOCK_AMOUNT) return null;
     return { low, high, label };
   }
 
@@ -244,6 +257,7 @@ export function parseAmountRange(
     const m = label.match(/([\d,]+)/);
     const low = m ? Number(m[1].replace(/,/g, "")) : NaN;
     if (!Number.isFinite(low) || low <= 0) return null;
+    if (low >= MAX_STOCK_AMOUNT) return null;
     return { low, high: null, label };
   }
 
@@ -290,6 +304,27 @@ export function stripHtml(raw: string | null | undefined): string | null {
     .replace(/\s+/g, " ")
     .trim();
   return cleaned || null;
+}
+
+/**
+ * True when `raw` is a well-formed absolute http(s) URL. The filing_url
+ * column is the reader's only way to independently verify a row against the
+ * official House Clerk / Senate eFD filing, so a garbled or non-http(s)
+ * value (relative path, javascript: scheme, empty host) is rejected here —
+ * same fail-open contract as the other field parsers: reject the row rather
+ * than store a link nobody can follow.
+ */
+export function isValidFilingUrl(raw: string | null | undefined): boolean {
+  if (!raw) return false;
+  try {
+    const url = new URL(raw);
+    return (
+      (url.protocol === "http:" || url.protocol === "https:") &&
+      url.hostname.length > 0
+    );
+  } catch {
+    return false;
+  }
 }
 
 /** "--" (both source datasets' "no ticker" sentinel) → null. */
@@ -371,6 +406,7 @@ export function parseHouseRow(
   if (
     !assetDescription ||
     !filingUrl ||
+    !isValidFilingUrl(filingUrl) ||
     !transactionDate ||
     !district ||
     !amount
@@ -431,7 +467,13 @@ export function parseSenateFilingGroup(
     const amount = parseAmountRange(txn.amount);
     const filingUrl = (txn.ptr_link ?? "").trim() || groupFilingUrl;
 
-    if (!assetDescription || !transactionDate || !amount || !filingUrl) {
+    if (
+      !assetDescription ||
+      !transactionDate ||
+      !amount ||
+      !filingUrl ||
+      !isValidFilingUrl(filingUrl)
+    ) {
       continue;
     }
 
@@ -862,7 +904,12 @@ export async function upsertStockTransactionRows(
         transactionDate: sql`excluded.transaction_date`,
         disclosureDate: sql`excluded.disclosure_date`,
         owner: sql`excluded.owner`,
-        filingUrl: sql`excluded.filing_url`,
+        // filingUrl deliberately omitted: it is NOT part of the externalId
+        // dedupe key (two rows can collide on externalId while carrying
+        // different filing_urls), so leaving it out of this SET clause makes
+        // whichever value was inserted FIRST permanent — a later divergent
+        // row updates every other field but can never clobber the official
+        // filing link.
         sourceDataset: sql`excluded.source_dataset`,
         rawMetadata: sql`excluded.raw_metadata`,
         updatedAt: sql`excluded.updated_at`,
