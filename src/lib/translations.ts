@@ -60,8 +60,6 @@ export interface Translations {
     sampleBallot: string;
     countyElectionOffice: string;
     earlyVotingNotAvailable: string;
-    deadlinePassed: string;
-    deadlineStatus: (days: number) => string;
     registrationDeadlinePassed: string;
   };
   stateSelector: {
@@ -651,8 +649,6 @@ const en: Translations = {
     sampleBallot: "Sample ballot",
     countyElectionOffice: "County election office",
     earlyVotingNotAvailable: "Not available \u2014 absentee voting only",
-    deadlinePassed: "Passed",
-    deadlineStatus: (days: number) => `${days} days left`,
     registrationDeadlinePassed:
       "Registration deadlines for this election have passed. Check your registration status.",
   },
@@ -1345,8 +1341,6 @@ const es: Translations = {
     countyElectionOffice: "Oficina electoral del condado",
     earlyVotingNotAvailable:
       "No disponible \u2014 solo votaci\u00f3n en ausencia",
-    deadlinePassed: "Pasado",
-    deadlineStatus: (days: number) => `Quedan ${days} d\u00edas`,
     registrationDeadlinePassed:
       "Las fechas l\u00edmite de registro para esta elecci\u00f3n ya pasaron. Verifica tu estado de registro.",
   },
