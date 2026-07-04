@@ -2440,7 +2440,10 @@ function FunderBars({ donorCoalition, totalRaised, donorDataSource, donorSource,
               )}
             </div>
             <div className="cv2-industry-list">
-              {industries.slice(0, 4).map((d, i) => (
+              {/* [Δ] Bold Flag reference lists 5 named sectors + "all
+                  other" as a 6th row -- was capped at 4, silently folding
+                  a real 5th sector into the unclassified bucket. */}
+              {industries.slice(0, 5).map((d, i) => (
                 <div className="row" key={i}>
                   <span className="sw" style={{ background: 'var(--civic)' }} />
                   <span className="name">{d.label}</span>
