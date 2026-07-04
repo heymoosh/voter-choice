@@ -5425,6 +5425,10 @@ body[data-treatment="inkwell"] .cv2-industry-list .row .bar-fill.other-fill {
   line-height: 1.5;
   letter-spacing: 0;
   text-transform: none;
+  /* Override the ancestor .cv2-money-legend row's white-space: nowrap
+     (needed there to keep "40% SMALL DONORS <$200" on one line) --
+     without this the tooltip text refuses to wrap inside its own box. */
+  white-space: normal;
   padding: 10px 13px;
   border-radius: 9px;
   box-shadow: 0 16px 36px -18px oklch(0.2 0.03 255 / 0.3);
