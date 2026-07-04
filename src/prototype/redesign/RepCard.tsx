@@ -1077,7 +1077,7 @@ export function RepCard({
               className={"pick " + (verdict === "keep" ? "picked" : "")}
               onClick={() => onVerdict(verdict === "keep" ? null : "keep")}
             >
-              <span className="ck">{verdict === "keep" ? "✓" : ""}</span>
+              <span className="ck">✓</span>
               <span>
                 {verdict === "keep"
                   ? t("repCard.worthKeepingUndo")

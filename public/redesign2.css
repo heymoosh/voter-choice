@@ -384,7 +384,7 @@
   justify-content: space-between;
   gap: 12px;
   flex-wrap: wrap;
-  margin-top: 4px;
+  padding: 14px 20px 0;
 }
 .fp-tot {
   display: flex;
