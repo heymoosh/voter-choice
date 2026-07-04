@@ -2326,11 +2326,17 @@ function FunderBars({ donorCoalition, totalRaised, donorDataSource, donorSource,
           <div className="cv2-money-legend">
             <div><span className="sw small" /> <b>{fundingMix.small}%</b> Small donors <small>&lt;$200</small></div>
             <div><span className="sw large" /> <b>{fundingMix.large}%</b> Large donors <small>≥$200</small></div>
-            <div><span className="sw pac" /> <b>{fundingMix.pac}%</b> PACs <small>groups &amp; lobbies</small></div>
+            <div>
+              <span className="sw pac" /> <b>{fundingMix.pac}%</b>{' '}
+              <span className="cv2-pac-term" tabIndex={0}>
+                PACs
+                <span className="cv2-pac-tip" role="tooltip">
+                  <b>PAC</b> = Political Action Committee — companies, unions, or advocacy groups that pool donations to back candidates. High PAC share signals reliance on organized interests over individual voters.
+                </span>
+              </span>{' '}
+              <small>groups &amp; lobbies</small>
+            </div>
           </div>
-          <p className="cv2-pac-gloss">
-            <b>PAC</b> = Political Action Committee — companies, unions, or advocacy groups that pool donations to back candidates. High PAC share signals reliance on organized interests over individual voters.
-          </p>
         </div>
       )}
 
@@ -2380,33 +2386,6 @@ function FunderBars({ donorCoalition, totalRaised, donorDataSource, donorSource,
         </div>
       )}
 
-      {/* [Δ] PAC coverage callout — moved BELOW the named PACs so readers
-          first see what we DO have, then learn about what we don't. */}
-      {impliedPacTotal !== null && impliedPacTotal > 0 && (
-        issuePACs.length === 0 ? (
-          <div className="cv2-pac-gap">
-            <span className="ic">!</span>
-            <span>
-              About <b>{formatDollars(impliedPacTotal)}</b> ({fundingMix.pac}%) came from PACs,
-              but we haven't yet identified specific issue-PACs behind that money.
-              We only name PACs when we can attribute them to a public agenda
-              — see the industry breakdown below for the categorical view.
-            </span>
-          </div>
-        ) : pctIdentified !== null && pctIdentified < 75 ? (
-          <div className="cv2-pac-gap partial">
-            <span className="ic">!</span>
-            <span>
-              Named PACs above account for <b>{formatDollars(namedPacTotal)}</b> of
-              an estimated <b>{formatDollars(impliedPacTotal)}</b> in total PAC money
-              ({pctIdentified}%). The remaining <b>{formatDollars(uncatPacTotal)}</b> hasn't
-              been editorially curated yet — it may include other issue-PACs we haven't profiled.
-              Don't assume the named PACs are the whole picture.
-            </span>
-          </div>
-        ) : null
-      )}
-
       {/* Industry breakdown — same data but grouped differently.
           [Fix] Industries usually only cover the top sectors; the
           remainder is uncategorized small-dollar / unclassified donors.
@@ -2421,48 +2400,84 @@ function FunderBars({ donorCoalition, totalRaised, donorDataSource, donorSource,
           ? Math.max(0, totalRaised - namedIndustryAmt)
           : null;
         const showOther = otherPct >= 2;
+        const shown = industries.slice(0, 5);
+        // [Δ] Bold Flag reference: each sector gets its OWN bar, sized
+        // relative to the largest bar shown -- not one continuous
+        // stacked/segmented strip (that read as a single money-mix bar,
+        // which this section already has, above).
+        const maxPct = Math.max(...shown.map((d) => d.percent || 0), showOther ? otherPct : 0, 1);
         return (
           <div className="cv2-industry">
+            {/* [Δ] Exact copy from claude-code-handoff/design-session/
+                screens-results.jsx's .fp-sub -- "Where the money comes
+                from" is the label, "industry breakdown" a smaller note. */}
             <div className="lab">
-              Industry breakdown
-              <small className="cv2-sub-lab">all contributions grouped by sector (individuals + PACs combined)</small>
-            </div>
-            <div className="cv2-industry-bar" aria-hidden="true">
-              {/* [Δ] Bold Flag reference: every sector bar is the SAME blue,
-                  differentiated only by length -- not a rainbow per industry
-                  (industrySwatch()'s per-sector palette is no longer called
-                  from here; flat --civic fill matches the canvas). */}
-              {industries.map((d, i) => (
-                <span key={i} style={{ flex: `${d.percent} 1 0`, background: 'var(--civic)' }} />
-              ))}
-              {showOther && (
-                <span className="other-seg" style={{ flex: `${otherPct} 1 0` }} />
-              )}
+              Where the money comes from
+              <small className="cv2-sub-lab">industry breakdown</small>
             </div>
             <div className="cv2-industry-list">
               {/* [Δ] Bold Flag reference lists 5 named sectors + "all
                   other" as a 6th row -- was capped at 4, silently folding
-                  a real 5th sector into the unclassified bucket. */}
-              {industries.slice(0, 5).map((d, i) => (
+                  a real 5th sector into the unclassified bucket. Column
+                  order (name, track, amt, pct) matches screens.css's
+                  .fp-ind grid-template-columns exactly. */}
+              {shown.map((d, i) => (
                 <div className="row" key={i}>
-                  <span className="sw" style={{ background: 'var(--civic)' }} />
                   <span className="name">{d.label}</span>
-                  <span className="pct">{d.percent}%</span>
+                  <span className="bar-track" aria-hidden="true">
+                    <span
+                      className="bar-fill"
+                      style={{ width: ((d.percent || 0) / maxPct) * 100 + '%' }}
+                    />
+                  </span>
                   <span className="amt">{formatDollars(d.amount)}</span>
+                  <span className="pct">{d.percent}%</span>
                 </div>
               ))}
               {showOther && (
                 <div className="row other" key="other">
-                  <span className="sw other-sw" />
                   <span className="name">
                     Outside named sectors
                     <small>Mostly small-dollar &amp; individual donations that don&rsquo;t fit a single sector tag. They&rsquo;re counted in the Funding mix bar above.</small>
                   </span>
-                  <span className="pct">{otherPct}%</span>
+                  <span className="bar-track" aria-hidden="true">
+                    <span
+                      className="bar-fill other-fill"
+                      style={{ width: (otherPct / maxPct) * 100 + '%' }}
+                    />
+                  </span>
                   <span className="amt">{otherAmt !== null ? formatDollars(otherAmt) : '—'}</span>
+                  <span className="pct">{otherPct}%</span>
                 </div>
               )}
             </div>
+            {/* [Δ] PAC coverage callout — moved here, after the industry
+                breakdown, so readers see the categorical view (what we DO
+                have) before learning what's still uncategorized. */}
+            {impliedPacTotal !== null && impliedPacTotal > 0 && (
+              issuePACs.length === 0 ? (
+                <div className="cv2-pac-gap">
+                  <span className="ic">!</span>
+                  <span>
+                    About <b>{formatDollars(impliedPacTotal)}</b> ({fundingMix.pac}%) came from PACs,
+                    but we haven't yet identified specific issue-PACs behind that money.
+                    We only name PACs when we can attribute them to a public agenda
+                    — the industry breakdown above is the categorical view.
+                  </span>
+                </div>
+              ) : pctIdentified !== null && pctIdentified < 75 ? (
+                <div className="cv2-pac-gap partial">
+                  <span className="ic">!</span>
+                  <span>
+                    Named PACs above account for <b>{formatDollars(namedPacTotal)}</b> of
+                    an estimated <b>{formatDollars(impliedPacTotal)}</b> in total PAC money
+                    ({pctIdentified}%). The remaining <b>{formatDollars(uncatPacTotal)}</b> hasn't
+                    been editorially curated yet — it may include other issue-PACs we haven't profiled.
+                    Don't assume the named PACs are the whole picture.
+                  </span>
+                </div>
+              ) : null
+            )}
           </div>
         );
       })()}

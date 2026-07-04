@@ -2840,44 +2840,12 @@ body[data-treatment="inkwell"] .proto-banner {
   color: var(--ink);
 }
 
-/* Industry breakdown.
-   Bar is a visual rhythm strip only — no inline labels (they
-   truncated on narrow slices). Names + amounts live in the
-   chip rows below. */
-.cv2-industry-bar {
-  display: flex;
-  height: 12px;
-  border-radius: 4px;
-  overflow: hidden;
-  margin-bottom: 12px;
-  border: 1px solid var(--rule);
-}
-.cv2-industry-bar > span {
-  min-width: 0;
-}
+/* Industry breakdown — per-row bar chart (see .cv2-industry-list .row
+   further down, the winning cascade rule with the bar-track/bar-fill). */
 .cv2-industry-list {
   display: flex;
   flex-direction: column;
   gap: 5px;
-}
-.cv2-industry-list .row {
-  display: grid;
-  grid-template-columns: 12px 1fr auto;
-  gap: 10px;
-  align-items: center;
-  font-size: 13px;
-  color: var(--ink-2);
-}
-.cv2-industry-list .row .sw {
-  width: 11px;
-  height: 11px;
-  border-radius: 3px;
-}
-.cv2-industry-list .row .amt {
-  font-family: var(--serif);
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--ink);
 }
 
 /* ─── Actions ───
@@ -4545,30 +4513,59 @@ body[data-treatment="inkwell"] .be-prompt-text {
    INDUSTRY % column
    ==================================================== */
 
+/* [Δ] Ported VERBATIM from claude-code-handoff/design-session/screens.css's
+   .fp-ind / .fi-* (a per-row bar chart -- name, then a bar sized relative
+   to the largest row, then amount + pct columns, in that order). */
 .cv2-industry-list .row {
   display: grid;
-  grid-template-columns: 12px 1fr auto auto;
+  grid-template-columns: 138px 1fr 56px 36px;
   gap: 10px;
   align-items: center;
-  font-size: 13px;
+}
+.cv2-industry-list .row .name {
+  font-size: 12.5px;
   color: var(--ink-2);
-  padding: 4px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cv2-industry-list .row .bar-track {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--rule-2);
+  overflow: hidden;
+}
+.cv2-industry-list .row .bar-fill {
+  display: block;
+  height: 100%;
+  background: var(--civic);
+  border-radius: 999px;
+}
+.cv2-industry-list .row .bar-fill.other-fill {
+  background: repeating-linear-gradient(
+    135deg,
+    oklch(0.78 0.012 85) 0 3px,
+    oklch(0.84 0.012 85) 3px 6px
+  );
+}
+body[data-treatment="inkwell"] .cv2-industry-list .row .bar-fill.other-fill {
+  background: repeating-linear-gradient(
+    135deg,
+    oklch(0.32 0.012 85) 0 3px,
+    oklch(0.38 0.012 85) 3px 6px
+  );
+}
+.cv2-industry-list .row .amt {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-2);
+  text-align: right;
 }
 .cv2-industry-list .row .pct {
   font-family: var(--mono);
-  font-size: 12.5px;
-  font-weight: 600;
+  font-size: 11px;
+  font-weight: 700;
   color: var(--ink);
-  letter-spacing: 0.02em;
-  min-width: 38px;
-  text-align: right;
-}
-.cv2-industry-list .row .amt {
-  font-family: var(--serif);
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--ink);
-  min-width: 56px;
   text-align: right;
 }
 
@@ -5128,30 +5125,33 @@ body[data-treatment="inkwell"] .be-prompt-text {
 }
 
 /* ── PAC data-gap callout (when pac% high but no named PACs) ─ */
+/* [Δ] Ported from screens.css's .fp-pacnote / .fp-pacnote-ic -- brand
+   (civic) tint + border, matching the Bold Flag palette (was a hardcoded
+   blue-grey predating the palette port). */
 .cv2-pac-gap {
   display: flex;
   align-items: flex-start;
   gap: 10px;
   margin-bottom: 12px;
-  padding: 10px 14px;
-  background: oklch(0.94 0.018 240 / 0.5);
-  border-left: 3px solid oklch(0.55 0.02 240);
-  border-radius: 0 6px 6px 0;
+  padding: 11px 13px;
+  background: var(--civic-soft);
+  border-left: 3px solid var(--civic);
+  border-radius: 0 9px 9px 0;
   font-size: 12.5px;
   color: var(--ink-2);
   line-height: 1.5;
 }
 .cv2-pac-gap .ic {
-  width: 18px;
-  height: 18px;
+  width: 19px;
+  height: 19px;
   display: grid;
   place-items: center;
-  background: oklch(0.55 0.02 240);
+  background: var(--civic);
   color: var(--paper-2);
   border-radius: 50%;
-  font-family: var(--mono);
+  font-family: var(--serif);
   font-weight: 700;
-  font-size: 11px;
+  font-size: 12px;
   flex-shrink: 0;
   margin-top: 1px;
 }
@@ -5398,6 +5398,73 @@ body[data-treatment="inkwell"] .be-prompt-text {
   font-weight: 700;
   color: var(--ink-2);
   letter-spacing: 0.04em;
+}
+
+/* [Δ] Ported VERBATIM from claude-code-handoff/design-session/screens.css's
+   .pac-term / .pac-tip -- a hover/focus tooltip off the "PACs" word in the
+   funding-mix legend (was an always-visible paragraph before). */
+.cv2-pac-term {
+  position: relative;
+  color: var(--civic);
+  font-weight: 600;
+  border-bottom: 1px dotted var(--civic);
+  cursor: help;
+  outline: none;
+}
+.cv2-pac-tip {
+  position: absolute;
+  left: -6px;
+  top: calc(100% + 9px);
+  width: 270px;
+  background: var(--paper-2);
+  color: var(--ink-2);
+  border: 1px solid var(--rule);
+  font-family: var(--sans);
+  font-weight: 400;
+  font-size: 11.5px;
+  line-height: 1.5;
+  letter-spacing: 0;
+  text-transform: none;
+  padding: 10px 13px;
+  border-radius: 9px;
+  box-shadow: 0 16px 36px -18px oklch(0.2 0.03 255 / 0.3);
+  z-index: 30;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-3px);
+  transition:
+    opacity 0.12s,
+    transform 0.12s;
+  pointer-events: none;
+}
+.cv2-pac-tip::before {
+  content: "";
+  position: absolute;
+  left: 14px;
+  top: -6px;
+  width: 10px;
+  height: 10px;
+  background: var(--paper-2);
+  border-left: 1px solid var(--rule);
+  border-top: 1px solid var(--rule);
+  transform: rotate(45deg);
+  border-radius: 2px 0 0 0;
+}
+.cv2-pac-term:hover .cv2-pac-tip,
+.cv2-pac-term:focus .cv2-pac-tip,
+.cv2-pac-term:focus-within .cv2-pac-tip {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+.cv2-pac-tip b {
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--civic);
+  margin-right: 6px;
 }
 
 /* Peer-comparison chip — clean, visual, NOT a chart */
