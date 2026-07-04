@@ -119,8 +119,8 @@
   white-space: nowrap;
 }
 .att-chip.good {
-  background: oklch(0.9 0.025 170);
-  color: var(--civic-2);
+  background: var(--keep-soft);
+  color: var(--keep);
 }
 .att-chip.mid {
   background: oklch(0.93 0.045 80);
@@ -255,9 +255,9 @@
 /* Keep = green check, Replace = red swap-arrow. Distinct icon + color + label
    so the voter can tell at a glance (the glyph rides in the JSX label). */
 .verdict-chip.keep {
-  background: oklch(0.9 0.025 170);
-  color: var(--civic-2);
-  border: 1px solid var(--civic);
+  background: var(--keep-soft);
+  color: var(--keep);
+  border: 1px solid var(--keep);
 }
 .verdict-chip.replace {
   background: oklch(0.93 0.04 28);
@@ -275,8 +275,8 @@
   border: 1.2px solid currentColor;
 }
 .verdict-print.keep {
-  color: var(--civic-2);
-  background: oklch(0.95 0.02 170);
+  color: var(--keep);
+  background: var(--keep-soft);
 }
 .verdict-print.replace {
   color: var(--vote-red);
@@ -511,9 +511,9 @@
   margin-top: 18px;
   padding: 18px 20px 20px;
   border-radius: 12px;
-  background: oklch(0.95 0.018 170);
-  border: 1px solid oklch(0.84 0.05 170);
-  box-shadow: 0 1px 3px oklch(0.7 0.05 170 / 0.18);
+  background: var(--civic-soft);
+  border: 1px solid oklch(0.84 0.05 262);
+  box-shadow: 0 1px 3px oklch(0.7 0.05 262 / 0.18);
   font-size: 14px;
   color: var(--ink-2);
 }
