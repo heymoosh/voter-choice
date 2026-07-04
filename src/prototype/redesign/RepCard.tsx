@@ -28,11 +28,16 @@ import {
 import { getChallengerResearch, researchChallenger } from "./delegationData";
 import { MedianChip, MoneyGapScale } from "./MoneyGap";
 
-export const PARTY_META2 = {
-  Republican: { name: "Republican", code: "R", pipClass: "rep" },
-  Democrat: { name: "Democrat", code: "D", pipClass: "dem" },
-  Independent: { name: "Independent", code: "I", pipClass: "ind" },
-};
+/** Party display metadata, keyed by the raw party name from the data source.
+ * A function (not a module-level const) because the display name needs
+ * `t()` — party labels are user-facing and must translate. */
+export function getPartyMeta2(t) {
+  return {
+    Republican: { name: t("repCard.partyRepublican"), code: "R", pipClass: "rep" },
+    Democrat: { name: t("repCard.partyDemocrat"), code: "D", pipClass: "dem" },
+    Independent: { name: t("repCard.partyIndependent"), code: "I", pipClass: "ind" },
+  };
+}
 
 /* ---- Attendance band [Δ] — honest omission when not tracked ---- */
 export function AttendanceBand2({ attendance, researched, level }) {
@@ -326,7 +331,7 @@ function ChallengerRow({
   // row when the research promise settles.
   const [, setTick] = useState(0);
   const research = getChallengerResearch(challenger.id);
-  const party = PARTY_META2[challenger.party] || {
+  const party = getPartyMeta2(t)[challenger.party] || {
     name: challenger.party || t("repCard.partyUnknown"),
     code: "?",
     pipClass: "ind",
@@ -648,7 +653,7 @@ export function RepCard({
     (n, s) => n + (s?.contributingVotes?.length || 0),
     0,
   );
-  const party = PARTY_META2[seat.partyName] || {
+  const party = getPartyMeta2(t)[seat.partyName] || {
     name: seat.partyName,
     code: "?",
     pipClass: "ind",
