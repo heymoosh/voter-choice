@@ -2428,8 +2428,12 @@ function FunderBars({ donorCoalition, totalRaised, donorDataSource, donorSource,
               <small className="cv2-sub-lab">all contributions grouped by sector (individuals + PACs combined)</small>
             </div>
             <div className="cv2-industry-bar" aria-hidden="true">
+              {/* [Δ] Bold Flag reference: every sector bar is the SAME blue,
+                  differentiated only by length -- not a rainbow per industry
+                  (industrySwatch()'s per-sector palette is no longer called
+                  from here; flat --civic fill matches the canvas). */}
               {industries.map((d, i) => (
-                <span key={i} style={{ flex: `${d.percent} 1 0`, background: industrySwatch(d.label) }} />
+                <span key={i} style={{ flex: `${d.percent} 1 0`, background: 'var(--civic)' }} />
               ))}
               {showOther && (
                 <span className="other-seg" style={{ flex: `${otherPct} 1 0` }} />
@@ -2438,7 +2442,7 @@ function FunderBars({ donorCoalition, totalRaised, donorDataSource, donorSource,
             <div className="cv2-industry-list">
               {industries.slice(0, 4).map((d, i) => (
                 <div className="row" key={i}>
-                  <span className="sw" style={{ background: industrySwatch(d.label) }} />
+                  <span className="sw" style={{ background: 'var(--civic)' }} />
                   <span className="name">{d.label}</span>
                   <span className="pct">{d.percent}%</span>
                   <span className="amt">{formatDollars(d.amount)}</span>
