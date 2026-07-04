@@ -44,8 +44,12 @@ jobs:
         run: npx vitest run
 
       - name: Install Bitwarden Secrets Manager CLI
+        # Pinned to bws-v2.0.0's published checksum:
+        # https://github.com/bitwarden/sdk-sm/releases/download/bws-v2.0.0/bws-sha256-checksums-2.0.0.txt
+        # On a deliberate version bump, update both the download URL and this hash together.
         run: |
           curl -sSLo bws.zip "https://github.com/bitwarden/sdk-sm/releases/download/bws-v2.0.0/bws-x86_64-unknown-linux-musl-2.0.0.zip"
+          echo "ea6eb18f1270388f12d15a35f919ccb3488d32a777433baefe883d561f46fc73  bws.zip" | sha256sum -c -
           unzip -o bws.zip bws
           sudo install -m 755 bws /usr/local/bin/bws
           bws --version
