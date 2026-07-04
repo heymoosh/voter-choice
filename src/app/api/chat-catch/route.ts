@@ -36,6 +36,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { NextRequest } from "next/server";
 import { getBudgetStatusAsync } from "../../../lib/server/budget";
 import { runChatCatchSubAgent } from "../../../lib/server/chat-catch-sub-agent";
+import { validateOrigin } from "../../../lib/server/validate-origin";
 import type { Theme } from "../../../lib/prompts/types";
 
 // Match /api/chat's caps so a misbehaving / oversized request fails the same
@@ -43,17 +44,6 @@ import type { Theme } from "../../../lib/prompts/types";
 // /api/chat call but we still bound it.
 const MAX_USER_MESSAGE_CHARS = 8000;
 const MAX_THEMES = 50;
-
-function validateOrigin(request: NextRequest): boolean {
-  const origin = request.headers.get("origin");
-  const host = request.headers.get("host");
-  if (!origin || !host) return false;
-  try {
-    return new URL(origin).host === host;
-  } catch {
-    return false;
-  }
-}
 
 /**
  * Neutral fail-closed response. Used on every non-route-error path so the

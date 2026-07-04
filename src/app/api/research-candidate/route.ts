@@ -28,6 +28,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { checkRaceDataRateLimit } from "../../../lib/server/race-data-rate-limit";
 import { checkResearchSpendLimit } from "../../../lib/server/research-spend-limit";
 import { getClientIP } from "../../../lib/server/client-ip";
+import { validateOrigin } from "../../../lib/server/validate-origin";
 import { researchAndPersistCandidate } from "../../../lib/server/candidate-data";
 import { getBudgetStatusAsync } from "../../../lib/server/budget";
 
@@ -36,18 +37,6 @@ const MAX_ISSUES = 10;
 
 function str(v: unknown): string {
   return typeof v === "string" ? v.trim() : "";
-}
-
-/** Same-origin gate, mirroring /api/civic, /api/chat, /api/extract-ballot. */
-function validateOrigin(request: NextRequest): boolean {
-  const origin = request.headers.get("origin");
-  const host = request.headers.get("host");
-  if (!origin || !host) return false;
-  try {
-    return new URL(origin).host === host;
-  } catch {
-    return false;
-  }
 }
 
 export async function POST(request: NextRequest) {

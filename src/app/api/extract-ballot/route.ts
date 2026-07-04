@@ -25,6 +25,7 @@ import { createHash } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { checkRateLimitAsync } from "../../../lib/server/rate-limit";
 import { getClientIP } from "../../../lib/server/client-ip";
+import { validateOrigin } from "../../../lib/server/validate-origin";
 import {
   isDurableStoreConfigured,
   redisCommand,
@@ -174,17 +175,6 @@ function writeExtractionCache(hash: string, payload: BallotExtraction): void {
       });
     }
   })();
-}
-
-function validateOrigin(request: NextRequest): boolean {
-  const origin = request.headers.get("origin");
-  const host = request.headers.get("host");
-  if (!origin || !host) return false;
-  try {
-    return new URL(origin).host === host;
-  } catch {
-    return false;
-  }
 }
 
 interface TelemetryDetectorLog {

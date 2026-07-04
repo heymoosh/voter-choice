@@ -2,6 +2,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { NextRequest } from "next/server";
 import { checkRateLimitAsync } from "../../../lib/server/rate-limit";
 import { getClientIP } from "../../../lib/server/client-ip";
+import { validateOrigin } from "../../../lib/server/validate-origin";
 import {
   recordUsageAsync,
   getBudgetStatusAsync,
@@ -288,17 +289,6 @@ interface ChatRequest {
   raceContext?: RaceContextPayload;
   /** Phase 5 — session-global ballot context from the state party gate. */
   ballotContext?: BallotContextPayload;
-}
-
-function validateOrigin(request: NextRequest): boolean {
-  const origin = request.headers.get("origin");
-  const host = request.headers.get("host");
-  if (!origin || !host) return false;
-  try {
-    return new URL(origin).host === host;
-  } catch {
-    return false;
-  }
 }
 
 /**
