@@ -24,6 +24,9 @@ on:
 #   DE, GA, IL, LA, NM, NV, RI, SD, WY — Python scrapers; run locally
 # -----------------------------------------------------------------------
 
+permissions:
+  contents: read
+
 jobs:
   ingest:
     runs-on: ubuntu-latest
