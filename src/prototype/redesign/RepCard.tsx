@@ -912,13 +912,9 @@ export function RepCard({
         />
       )}
 
-      <AttendanceBand2
-        attendance={seat.attendance}
-        researched={seat.researched}
-        level={seat.level}
-        office={seat.office}
-      />
-
+      {/* [Δ] item B order fix: the reference (02a/02b) shows the score box
+          before the attendance line, not after -- "Voted with you" reads
+          first, attendance is a secondary note beneath it. */}
       {seat.researched ? (
         <ResearchedPositions
           positions={seat.positions}
@@ -937,6 +933,13 @@ export function RepCard({
           research={research}
         />
       )}
+
+      <AttendanceBand2
+        attendance={seat.attendance}
+        researched={seat.researched}
+        level={seat.level}
+        office={seat.office}
+      />
 
       {/* Full voting record — the restored AllVotesPanel (every curated vote
           across all issues, filterable, with roll-call links). Same primary

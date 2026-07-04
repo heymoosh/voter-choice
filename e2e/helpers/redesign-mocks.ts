@@ -177,15 +177,25 @@ export async function mockSeatRaceData(
             donorMode === "totalReceiptsOnly"
               ? [{ label: "total_receipts", percent: 100, amount: 5_000_000 }]
               : [
+                  // Real industry-sector labels (not the small-donor/PAC
+                  // donor-TYPE split -- that's a separate lens, fundingMix
+                  // below) so the "Industry breakdown" section renders
+                  // representative categories, matching the canvas.
                   {
-                    label: "Small individual donors (under $200)",
-                    percent: 40,
-                    amount: 2_000_000,
+                    label: "Energy & utilities",
+                    percent: 28,
+                    amount: 1_400_000,
                   },
-                  { label: "PACs", percent: 60, amount: 3_000_000 },
+                  { label: "Real estate", percent: 22, amount: 1_100_000 },
+                  { label: "Finance & banking", percent: 19, amount: 950_000 },
+                  { label: "Construction", percent: 11, amount: 550_000 },
+                  { label: "Defense", percent: 8, amount: 400_000 },
                 ],
           donorSource: { name: "fec", url: "https://www.fec.gov/" },
           totalRaised: 5_000_000,
+          // Drives derivePeerComparison() -> FundingHeadline's "~Nx the
+          // median {chamber} campaign" pill (delegationData.ts reads this).
+          chamberMedian: 1_400_000,
           fundingMix:
             donorMode === "totalReceiptsOnly"
               ? undefined
