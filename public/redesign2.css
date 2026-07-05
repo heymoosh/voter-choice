@@ -1257,44 +1257,217 @@
   }
 }
 
-/* ---- orientation interstitial (after lock-issues, before first rep) ---- */
-.coldopen.orientation {
-  padding-top: 64px;
+/* ---- orientation interstitial (after lock-issues, before first rep) ----
+   Ported verbatim from design-handoff/keystone-canvas's screens.css — the
+   OrientationActivated artboard (Bold Flag white ground + flag hairline).
+   Scoped to [data-palette="white"] the same way MoneyGap.tsx/HeadToHead.tsx
+   already scope their own Bold Flag token block, since the shipped app's
+   :root palette (prototype.css) is still the older warm/civic default. */
+.ori[data-palette="white"] {
+  --paper: oklch(1 0 0);
+  --paper-2: oklch(0.985 0.003 258);
+  --ink: oklch(0.2 0.035 260);
+  --ink-2: oklch(0.37 0.032 260);
+  --ink-3: oklch(0.54 0.026 260);
+  --rule: oklch(0.88 0.006 260);
+  --rule-2: oklch(0.93 0.005 260);
+  --tag-bg: oklch(0.95 0.006 260);
+  --brand: oklch(0.4 0.155 262);
+  --brand-2: oklch(0.31 0.145 262);
+  --brand-soft: oklch(0.94 0.04 262);
+  --keep: oklch(0.44 0.115 159);
+  --keep-soft: oklch(0.93 0.045 159);
+  --replace: oklch(0.53 0.205 27);
+  --replace-soft: oklch(0.94 0.05 27);
+  --gold: oklch(0.72 0.125 76);
+  /* legacy names — alias so any shared rule still keyed off --civic lands here too */
+  --civic: var(--brand);
+  --civic-2: var(--brand-2);
+  --civic-soft: var(--brand-soft);
+  --vote-red: var(--replace);
 }
-.orient-lede .kick {
+.ori {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+.ori .flagbar {
+  flex: 0 0 auto;
+}
+.flagbar {
+  height: 4px;
+  display: flex;
+}
+.flagbar i {
+  flex: 1;
+}
+.flagbar i:nth-child(1) {
+  background: var(--brand);
+}
+.flagbar i:nth-child(2) {
+  background: var(--paper);
+}
+.flagbar i:nth-child(3) {
+  background: var(--replace);
+}
+.ori-body {
+  flex: 1;
+  display: grid;
+  place-items: center;
+  padding: 40px 32px;
+  min-height: 0;
+}
+.ori-card {
+  width: 100%;
+  max-width: 640px;
+  background: var(--paper-2);
+  border: 1px solid var(--rule);
+  border-radius: 16px;
+  box-shadow: var(--shadow-card);
+  padding: 40px 44px 36px;
+  position: relative;
+  overflow: hidden;
+}
+.ori-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 5px;
+  background: linear-gradient(
+    90deg,
+    var(--brand) 0 38%,
+    transparent 38% 62%,
+    var(--replace) 62% 100%
+  );
+}
+.ori-card.activated::before {
+  height: 6px;
+}
+.ori-ey {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 18px;
+}
+.ori-card .kick {
   font-family: var(--mono);
-  font-size: 11px;
+  font-size: 10.5px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--civic);
   font-weight: 600;
+  color: var(--brand);
+  white-space: nowrap;
 }
-.orient-lede h2 {
+.ori-card .kick .star {
+  color: var(--replace);
+}
+.ori-card h1 {
   font-family: var(--serif);
-  font-size: clamp(28px, 4vw, 44px);
   font-weight: 600;
-  letter-spacing: -0.03em;
-  margin: 10px 0 16px;
-  line-height: 1.1;
+  font-size: 40px;
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  margin: 0 0 14px;
+  color: var(--ink);
   text-wrap: balance;
 }
-.orient-lede p {
-  font-size: 17px;
+.ori-card h1 em {
+  font-style: italic;
+  color: var(--brand);
+}
+.ori-card.activated h1 em {
+  color: var(--brand);
+}
+.ori-lede {
+  font-family: var(--serif);
+  font-size: 18.5px;
+  line-height: 1.5;
   color: var(--ink-2);
-  margin: 0;
-  max-width: 640px;
-  line-height: 1.6;
+  margin: 0 0 28px;
+  max-width: 520px;
 }
-.orient-foot {
-  margin-top: 28px;
+.ori-steps {
+  display: grid;
+  gap: 2px;
+  margin: 0 0 30px;
+  border: 1px solid var(--rule-2);
+  border-radius: 12px;
+  overflow: hidden;
 }
-.orient-foot .lock {
-  background: var(--civic);
+.ori-step {
+  display: grid;
+  grid-template-columns: 34px 1fr;
+  gap: 14px;
+  padding: 15px 18px;
+  background: var(--paper);
+  align-items: start;
+}
+.ori-step + .ori-step {
+  border-top: 1px solid var(--rule-2);
+}
+.ori-step .n {
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 700;
   color: var(--paper-2);
-  border: 0;
-  padding: 12px 22px;
-  border-radius: 8px;
+  background: var(--brand);
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  display: grid;
+  place-items: center;
+}
+.ori-step:last-child .n {
+  background: var(--replace);
+}
+.ori-card.activated .ori-step:last-child .n {
+  background: var(--replace);
+}
+.ori-step .st-t {
   font-weight: 600;
   font-size: 14.5px;
+  color: var(--ink);
+}
+.ori-step .st-d {
+  font-size: 13px;
+  color: var(--ink-3);
+  line-height: 1.45;
+  margin-top: 2px;
+}
+.ori-cta {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.ori .btn-primary {
+  background: var(--brand);
+  color: var(--paper-2);
+  border: none;
+  border-radius: 10px;
+  font-family: var(--sans);
+  font-weight: 600;
+  font-size: 15px;
+  padding: 14px 22px;
+  min-height: 50px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
   cursor: pointer;
+  box-shadow: var(--shadow-soft);
+  white-space: nowrap;
+}
+.ori .btn-primary:hover {
+  background: var(--brand-2);
+}
+.ori-card.activated .btn-primary {
+  font-weight: 700;
+}
+.ori-meta {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-3);
+  letter-spacing: 0.02em;
 }

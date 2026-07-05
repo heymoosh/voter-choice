@@ -149,25 +149,72 @@ function StandingLocked({ onBack }) {
    the happy path, and the edit-issues re-score path bypasses it entirely
    (analyze() is called directly there), so a returning reviewer never sees it
    again within a session unless they re-run the cold open. */
-function OrientationView({ onContinue }) {
+function OrientationView({ onContinue, seatsUpIn2026 }) {
   const { t } = useI18n();
+  const seatsLabel =
+    seatsUpIn2026 === 1
+      ? t("orientation.metaSeatSingular", { n: seatsUpIn2026 })
+      : t("orientation.metaSeatsPlural", { n: seatsUpIn2026 });
   return (
     <>
       <AppNav />
-      <div className="coldopen orientation">
-        <div className="orient-lede">
-          <div className="kick">{t("orientation.kick")}</div>
-          <h2>{t("orientation.heading")}</h2>
-          <p dangerouslySetInnerHTML={{ __html: t("orientation.body") }} />
+      {/* Bold Flag "OrientationActivated" artboard, ported verbatim (markup +
+          classes) from design-handoff/keystone-canvas — see screens.css's
+          .ori/.flagbar/.ori-card/.ori-step rules ported into redesign2.css. */}
+      <div className="ori" data-palette="white">
+        <div className="flagbar">
+          <i />
+          <i />
+          <i />
         </div>
-        <div className="orient-foot">
-          <button
-            className="lock"
-            onClick={onContinue}
-            data-testid="orientation-continue"
-          >
-            {t("orientation.continueLabel")}
-          </button>
+        <div className="ori-body">
+          <div className="ori-card activated">
+            <div className="ori-ey">
+              <span className="kick">
+                <span className="star">★</span> {t("orientation.kicker")}
+              </span>
+            </div>
+            <h1
+              dangerouslySetInnerHTML={{ __html: t("orientation.heading") }}
+            />
+            <p className="ori-lede">{t("orientation.lede")}</p>
+            <div className="ori-steps">
+              <div className="ori-step">
+                <span className="n">1</span>
+                <div>
+                  <div className="st-t">{t("orientation.step1Title")}</div>
+                  <div className="st-d">{t("orientation.step1Body")}</div>
+                </div>
+              </div>
+              <div className="ori-step">
+                <span className="n">2</span>
+                <div>
+                  <div className="st-t">{t("orientation.step2Title")}</div>
+                  <div className="st-d">{t("orientation.step2Body")}</div>
+                </div>
+              </div>
+              <div className="ori-step">
+                <span className="n">3</span>
+                <div>
+                  <div className="st-t">{t("orientation.step3Title")}</div>
+                  <div className="st-d">{t("orientation.step3Body")}</div>
+                </div>
+              </div>
+            </div>
+            <div className="ori-cta">
+              <button
+                className="btn-primary"
+                onClick={onContinue}
+                data-testid="orientation-continue"
+              >
+                {t("orientation.continueLabel")}{" "}
+                <span aria-hidden="true">→</span>
+              </button>
+              <span className="ori-meta">
+                {t("orientation.metaMinutes")} · {seatsLabel}
+              </span>
+            </div>
+          </div>
         </div>
       </div>
     </>
@@ -744,8 +791,11 @@ function App2Inner() {
       );
     }
     if (stage === "orientation") {
+      const seatsUpIn2026 =
+        delegation?.seats?.filter((s) => s.onBallot2026 !== false).length ?? 0;
       return (
         <OrientationView
+          seatsUpIn2026={seatsUpIn2026}
           onContinue={() => {
             const locked = pendingLockedIssuesRef.current ?? issues;
             pendingLockedIssuesRef.current = null;

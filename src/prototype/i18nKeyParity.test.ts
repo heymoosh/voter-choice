@@ -78,10 +78,19 @@ describe("VoterChoiceApp TRANSLATIONS (redesign i18n)", () => {
     ["whyNowPage", "largerCase3"],
     ["whyNowPage", "whatToDoHeading"],
     ["whyNowPage", "whatToDo"],
-    ["orientation", "kick"],
+    ["orientation", "kicker"],
     ["orientation", "heading"],
-    ["orientation", "body"],
+    ["orientation", "lede"],
+    ["orientation", "step1Title"],
+    ["orientation", "step1Body"],
+    ["orientation", "step2Title"],
+    ["orientation", "step2Body"],
+    ["orientation", "step3Title"],
+    ["orientation", "step3Body"],
     ["orientation", "continueLabel"],
+    ["orientation", "metaMinutes"],
+    ["orientation", "metaSeatSingular"],
+    ["orientation", "metaSeatsPlural"],
   ];
 
   it.each(newSurfaceKeys)(
@@ -107,6 +116,10 @@ describe("VoterChoiceApp TRANSLATIONS (redesign i18n)", () => {
     expect(TRANSLATIONS.es.handoffModal.lede).toContain("{reviewed}");
     expect(TRANSLATIONS.en.delegationError.noRepTitle).toContain("{territory}");
     expect(TRANSLATIONS.es.delegationError.noRepTitle).toContain("{territory}");
+    expect(TRANSLATIONS.en.orientation.metaSeatSingular).toContain("{n}");
+    expect(TRANSLATIONS.es.orientation.metaSeatSingular).toContain("{n}");
+    expect(TRANSLATIONS.en.orientation.metaSeatsPlural).toContain("{n}");
+    expect(TRANSLATIONS.es.orientation.metaSeatsPlural).toContain("{n}");
   });
 
   it("has 3 whyNowPage fact snippets (value/unit/label/cite) in en and es", () => {
@@ -127,14 +140,14 @@ describe("VoterChoiceApp TRANSLATIONS (redesign i18n)", () => {
     }
   });
 
-  it("keeps the orientation.body <b> markup usable via dangerouslySetInnerHTML", () => {
-    // OrientationView renders orientation.body via dangerouslySetInnerHTML
-    // (matching the tierFedWhat/tierExecWhat pattern) so the embedded
-    // "replace or keep" emphasis survives translation.
-    expect(TRANSLATIONS.en.orientation.body).toContain(
-      "<b>replace or keep</b>",
-    );
-    expect(TRANSLATIONS.es.orientation.body).toContain("<b>");
-    expect(TRANSLATIONS.es.orientation.body).toContain("</b>");
+  it("keeps the orientation.heading <em> markup usable via dangerouslySetInnerHTML", () => {
+    // OrientationView's ori-card h1 renders orientation.heading via
+    // dangerouslySetInnerHTML (matching the tierFedWhat/tierExecWhat
+    // pattern) so the <em> emphasis from the OrientationActivated artboard
+    // survives translation.
+    expect(TRANSLATIONS.en.orientation.heading).toContain("<em>");
+    expect(TRANSLATIONS.en.orientation.heading).toContain("</em>");
+    expect(TRANSLATIONS.es.orientation.heading).toContain("<em>");
+    expect(TRANSLATIONS.es.orientation.heading).toContain("</em>");
   });
 });
