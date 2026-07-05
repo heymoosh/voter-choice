@@ -4975,7 +4975,7 @@ function HomeView({ savedAddress, savedSession, onSubmit, onResumeFromProfile, o
         <div className="vh-left">
           <span className="vh-eyebrow kick"><span className="star">★</span> Nov 3, 2026 · America's 250th election</span>
           <h1 className="vh-h1">How well are your elected officials really representing you? <em>Get the scorecard.</em></h1>
-          <p className="vh-lede">Voter Choice shows you how your senators and representative actually voted on the issues you choose — and who funded them — then turns your verdicts into a scorecard for the polls.</p>
+          <p className="vh-lede">Voter Choice shows you how your <b>senators and representative</b> actually voted on the issues <i>you</i> choose — and who funded them — then turns your verdicts into a <b>scorecard for the polls</b>.</p>
 
           <div className="vh-addr">
             <div className="vh-addr-lab">
