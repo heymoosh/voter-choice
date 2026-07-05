@@ -498,7 +498,9 @@ export async function goToWorkspace(page: Page): Promise<void> {
   await page
     .getByPlaceholder("1600 Pennsylvania Ave NW, Washington DC 20500")
     .fill("1100 Congress Ave, Austin, TX 78701");
-  await page.getByRole("button", { name: "Pull my representatives →" }).click();
+  // The trailing → is an aria-hidden span, so it's not part of the accessible
+  // name; match on the visible label only (substring, arrow-agnostic).
+  await page.getByRole("button", { name: "Pull my representatives" }).click();
   // Cold-open: free-text issues → preset interpretation list → lock.
   await page.getByTestId("issue-convo-input").waitFor({ timeout: 15000 });
   await page

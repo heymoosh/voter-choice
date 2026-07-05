@@ -1,9 +1,10 @@
 // Congress-assessment experience — full voting record panel.
 //
 // The "See the full voting record" CTA under the alignment surface opens the
-// restored AllVotesPanel: every curated vote across all issues, filterable,
-// with WITH YOU/AGAINST badges and roll-call source links. Blind mode keeps
-// the member's identity out of the panel header.
+// restored AllVotesPanel: every curated vote grouped by issue, filterable,
+// with per-vote collapse (one open by default), ✓/✗ with-you flags and
+// roll-call source links. Blind mode keeps the member's identity out of the
+// panel header. Structure matches the Keystone res-allvotes artboard.
 //
 // All data seams are mocked (e2e/helpers/redesign-mocks.ts) — no network.
 
@@ -42,27 +43,31 @@ test.describe("full voting record", () => {
     await expect(cta).toContainText("See the full voting record — 1 vote");
     await cta.click();
 
-    // Panel: header is the BLIND label (identity hidden until reveal),
-    // vote rows carry the bill, badge, issue tag, and roll-call link.
-    const panel = page.locator(".av-panel");
+    // Panel: header is the BLIND label (identity hidden until reveal). Votes
+    // are grouped under a per-issue subheader; each row carries the bill, a
+    // ✓/✗ with-you flag, and — for the row expanded by default — a roll-call
+    // link inside the detail.
+    const panel = page.locator(".avsheet");
     await expect(panel).toContainText("Your U.S. Representative");
     await expect(panel).not.toContainText("Alex Rivera");
     await expect(panel).toContainText("S 1339");
-    await expect(panel.locator(".vote-badge")).toHaveText("WITH YOU");
-    await expect(panel.locator(".av-vote-tag")).toContainText(
+    await expect(panel.locator(".av-row.with .avr-flag").first()).toHaveText(
+      "✓",
+    );
+    await expect(panel.locator(".avg-name").first()).toContainText(
       "Lower insulin & drug prices",
     );
     await expect(
-      panel.getByRole("link", { name: /View roll call/ }),
+      panel.getByRole("link", { name: /roll-call/i }),
     ).toHaveAttribute("href", "https://www.govtrack.us/");
 
-    // Issue filter chips render with counts.
-    await expect(panel.locator(".av-filter").first()).toContainText("All");
+    // Filter chips render, led by the "All" chip.
+    await expect(panel.locator(".avf").first()).toContainText("All");
 
     // Close, reveal the member, reopen — the header now shows the real name.
-    await panel.locator(".be-x").click();
+    await panel.locator(".av-close").click();
     await page.locator(".cv2-reveal").first().click();
     await page.getByTestId("see-full-record").click();
-    await expect(page.locator(".av-panel")).toContainText("Alex Rivera");
+    await expect(page.locator(".avsheet")).toContainText("Alex Rivera");
   });
 });
