@@ -1700,6 +1700,34 @@ body[data-palette="white"] {
   margin: 0 0 24px;
   max-width: 560px;
 }
+/* cold-open opener — the canvas renders the AI opener inside iq-ask as a mono
+   caps "who" label + borderless serif prose (iq-msg / iq-who / iq-bubble), NOT
+   a chat-bubble card. Ported from the canvas AI-message rules. The running
+   conversation below stays IssueConversation's own .msg bubbles — porting the
+   full iq-msg conversation stream is the separate iq-foot follow-up. */
+.iq-msg {
+  margin-bottom: 16px;
+  max-width: 92%;
+}
+.iq-who {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--ink-3);
+  margin-bottom: 6px;
+}
+.iq-bubble {
+  font-family: var(--serif);
+  font-size: 17px;
+  line-height: 1.5;
+  color: var(--ink);
+}
+.iq-msg.ai .iq-bubble b {
+  color: var(--ink);
+  font-weight: 600;
+}
 /* mobile: let the step marker drop below the address, tighten gutters */
 @media (max-width: 640px) {
   .iq-ctx {

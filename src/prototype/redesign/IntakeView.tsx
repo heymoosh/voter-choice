@@ -65,9 +65,9 @@ export function IntakeView({
                   dangerouslySetInnerHTML={{ __html: t("intake.headline") }}
                 />
                 <p>{t("intake.openerP1")}</p>
-                <div className="msg ai">
-                  <div className="who">{t("intake.aiWho")}</div>
-                  <div className="bubble">
+                <div className="iq-msg ai">
+                  <div className="iq-who">{t("intake.aiWho")}</div>
+                  <div className="iq-bubble">
                     <b>{t("intake.openerP2Bold")}</b>
                     {t("intake.openerP2Rest")}
                   </div>
