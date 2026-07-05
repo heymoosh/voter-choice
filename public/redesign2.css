@@ -307,8 +307,16 @@
   color: var(--vote-red);
   border: 1px solid var(--vote-red);
 }
-/* Print sheet: tinted chip so keep/replace read as distinct even in grayscale;
-   the verdict-row class also tints the checkbox glyph (see prototype.css). */
+/* Print sheet: Keep = filled badge, Replace = outlined badge (canvas
+   "Scorecard" artboard) — not just a hue swap, so the two verdicts still
+   read apart on a black-and-white printer. The previous tints (L 0.95/0.96)
+   sat almost flush with the print sheet's own white background (#fff), so
+   both chips rendered as near-identical pale outlines in grayscale. Keep now
+   pulls a visibly darker fill from --civic-soft (~L 0.9, the same tint the
+   theme already reserves for "filled" civic surfaces); Replace stays
+   transparent — a true outline, border + text only, same as the canvas.
+   The verdict-row class separately tints the checkbox glyph (see
+   prototype.css). */
 .verdict-print {
   font-family: var(--mono);
   font-weight: 700;
@@ -319,11 +327,11 @@
 }
 .verdict-print.keep {
   color: var(--civic-2);
-  background: oklch(0.95 0.02 170);
+  background: var(--civic-soft);
 }
 .verdict-print.replace {
   color: var(--vote-red);
-  background: oklch(0.96 0.025 28);
+  background: transparent;
 }
 
 /* ---- Bigger scorecard headings [Δ] — bump the workspace scorecard heading
