@@ -717,12 +717,9 @@ export function RepCard({
 
       <ProvenanceBadge seat={seat} />
 
-      <AttendanceBand2
-        attendance={seat.attendance}
-        researched={seat.researched}
-        level={seat.level}
-      />
-
+      {/* Score section leads, attendance follows — matches the canvas's
+          res-funding/res-votes artboards (VOTED WITH YOU / issue bars first,
+          "Missed N% of floor votes" attendance line second, funding third). */}
       {seat.researched ? (
         <ResearchedPositions
           positions={seat.positions}
@@ -742,30 +739,10 @@ export function RepCard({
         />
       )}
 
-      {/* Full voting record — the restored AllVotesPanel (every curated vote
-          across all issues, filterable, with roll-call links). Same primary
-          "evidence" CTA placement the design's CandidateCard used. */}
-      {!seat.researched && totalVotes > 0 && (
-        <div className="cv2-see-all-bridge">
-          <button
-            className="cv2-see-all-inline"
-            onClick={() => setAllVotesOpen(true)}
-            data-testid="see-full-record"
-          >
-            {t("repCard.seeFullRecord", {
-              n: totalVotes,
-              votes: t(totalVotes === 1 ? "repCard.vote" : "repCard.votes"),
-            })}
-          </button>
-        </div>
-      )}
-      <AllVotesPanel
-        open={allVotesOpen}
-        candidate={cand}
-        alignmentEntry={seat.alignmentEntry}
-        blindMode={blind}
-        alias={seat.blindLabel}
-        onClose={() => setAllVotesOpen(false)}
+      <AttendanceBand2
+        attendance={seat.attendance}
+        researched={seat.researched}
+        level={seat.level}
       />
 
       {/* Money trail — same progressive-disclosure contract as CandidateCard. */}
@@ -858,6 +835,35 @@ export function RepCard({
       <CanContextSection canContext={seat.canContext} />
 
       <EligibilityNote2 e={seat.eligibility} />
+
+      {/* Full voting record — the restored AllVotesPanel (every curated vote
+          across all issues, filterable, with roll-call links). Paired with
+          the money-trail disclosure as the card's evidence footer, right
+          before the verdict buttons — matches the canvas's res-allvotes/
+          res-funding artboards ("See all N votes" sits alongside "Funders &
+          influence", both after the funding detail, both before Keep/Replace). */}
+      {!seat.researched && totalVotes > 0 && (
+        <div className="cv2-see-all-bridge">
+          <button
+            className="cv2-see-all-inline"
+            onClick={() => setAllVotesOpen(true)}
+            data-testid="see-full-record"
+          >
+            {t("repCard.seeFullRecord", {
+              n: totalVotes,
+              votes: t(totalVotes === 1 ? "repCard.vote" : "repCard.votes"),
+            })}
+          </button>
+        </div>
+      )}
+      <AllVotesPanel
+        open={allVotesOpen}
+        candidate={cand}
+        alignmentEntry={seat.alignmentEntry}
+        blindMode={blind}
+        alias={seat.blindLabel}
+        onClose={() => setAllVotesOpen(false)}
+      />
 
       {/* The old inline "candidates simply listed below the rep"
           (ChallengersStrip) is retired: choosing "Time to replace" now opens
