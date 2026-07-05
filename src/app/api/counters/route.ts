@@ -17,6 +17,10 @@ import {
 import { checkCounterRateLimit } from "../../../lib/server/counters-rate-limit";
 import { getClientIP } from "../../../lib/server/client-ip";
 import { isCanonicalIssueId } from "../../../lib/canonicalIssues";
+import {
+  collectPolisVector,
+  buildVectorInput,
+} from "../../../lib/polis/collectVector";
 
 // ---------------------------------------------------------------------------
 // Validation
@@ -186,6 +190,30 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       stateCode: body.stateCode,
       concernEvents: body.concernEvents ?? [],
     });
+
+    // De-identified Polis response-vector collection (best-effort, isolated
+    // from the counter result — collectPolisVector never throws). Checked
+    // here in addition to collectVector.ts's own internal hard gate so the
+    // wiring itself is visibly and independently flag-controlled.
+    //
+    // sessionToken is a fresh random UUID, deliberately distinct from
+    // body.sessionId (the Redis dedupe key) — see CollectVectorInput's
+    // privacy contract in collectVector.ts.
+    //
+    // STOPGAP MAPPING: the real per-statement agree/disagree/pass UI hasn't
+    // shipped yet (see docs/operations/launch-flip-list.md). Until it does,
+    // each already-validated confirmedConcern is treated as an affirmative
+    // "agree" response keyed by canonicalIssue — the closest per-session
+    // signal this route has today. Replace with real per-statement answers
+    // once that UI exists.
+    if (process.env.POLIS_VECTOR_COLLECTION_ENABLED === "true") {
+      const rawAnswers = Object.fromEntries(
+        (body.confirmedConcerns ?? []).map((c) => [c.canonicalIssue, "agree"]),
+      );
+      await collectPolisVector(
+        buildVectorInput(crypto.randomUUID(), body.stateCode, rawAnswers),
+      );
+    }
   }
 
   return NextResponse.json(result, { status: 200 });
