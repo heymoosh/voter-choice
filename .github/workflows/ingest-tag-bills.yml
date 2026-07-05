@@ -12,6 +12,9 @@ on:
   # Allow manual trigger for re-tagging or backfill (kept)
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   tag:
     runs-on: ubuntu-latest
