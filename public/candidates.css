@@ -3,27 +3,19 @@
    PORT of claude-code-handoff/design-session/candidates.css, DIRECTION B
    (the down-selected dedicated head-to-head compare).
 
-   The design was authored on the Bold Flag white ground with a NEW token set
+   The design was authored on the Bold Flag white ground with a token set
    (--brand / --brand-2 / --brand-soft / --keep / --keep-soft / --replace /
-   --replace-soft) that the shipped app does not define yet (palette rollout is
-   a later session). Following the MoneyGap precedent (redesign2.css "RAISED
-   VS. THE MEDIAN" block), we MAP those tokens onto the existing warm-palette
-   tokens from prototype.css, scoped to .cmp, so the duel rides on the shipped
-   system with no new global palette. Keep = green (alignment), Replace = red
-   (alignment) — never money.
+   --replace-soft). Bold Flag (white ground) is now THE palette, applied
+   everywhere the duel renders — see keystone canvas screens.css
+   [data-palette="white"]. Values below are ported verbatim from that block,
+   scoped to [data-palette="white"] (the attribute HeadToHead.tsx already
+   sets on .cmp-screen), so this screen shows true white, not the shipped
+   app's warm-cream default. Legacy names (--civic*/--vote-red) that a few
+   rules below still key off (pips, flagbar) are aliased to the same values
+   so every rule in this file resolves to the exact canvas colors. Keep =
+   green (alignment), Replace = red (alignment) — never money.
    Loaded via a <link> in src/app/layout.tsx, exactly like redesign2.css.
    ==================================================== */
-
-.cmp {
-  /* design tokens mapped onto the shipped warm palette */
-  --brand: var(--civic);
-  --brand-2: var(--civic-2);
-  --brand-soft: oklch(0.95 0.03 170);
-  --keep: oklch(0.45 0.11 159);
-  --keep-soft: oklch(0.94 0.04 159);
-  --replace: var(--vote-red);
-  --replace-soft: oklch(0.94 0.05 28);
-}
 
 /* full-screen surface */
 .cmp-screen {
@@ -31,6 +23,30 @@
   background: var(--paper);
   display: flex;
   flex-direction: column;
+}
+
+.cmp-screen[data-palette="white"] {
+  --paper: oklch(1 0 0);
+  --paper-2: oklch(0.985 0.003 258);
+  --ink: oklch(0.2 0.035 260);
+  --ink-2: oklch(0.37 0.032 260);
+  --ink-3: oklch(0.54 0.026 260);
+  --rule: oklch(0.88 0.006 260);
+  --rule-2: oklch(0.93 0.005 260);
+  --tag-bg: oklch(0.95 0.006 260);
+  --brand: oklch(0.4 0.155 262);
+  --brand-2: oklch(0.31 0.145 262);
+  --brand-soft: oklch(0.94 0.04 262);
+  --keep: oklch(0.44 0.115 159);
+  --keep-soft: oklch(0.93 0.045 159);
+  --replace: oklch(0.53 0.205 27);
+  --replace-soft: oklch(0.94 0.05 27);
+  --gold: oklch(0.72 0.125 76);
+  /* legacy names — alias so .pip.rep / .flagbar (below) also land on Bold Flag */
+  --civic: var(--brand);
+  --civic-2: var(--brand-2);
+  --civic-soft: var(--brand-soft);
+  --vote-red: var(--replace);
 }
 
 /* ---------- provenance badge — the unifier ---------- */
@@ -100,7 +116,8 @@
   color: var(--ink-3);
 }
 
-/* the red-white-blue hairline at the top of every new screen */
+/* the brand/paper/replace hairline at the top of every new screen — matches
+   the canvas's blue-white-red order (screens.css .flagbar). */
 .cmp .flagbar {
   flex: 0 0 auto;
   display: flex;
@@ -110,13 +127,13 @@
   flex: 1;
 }
 .cmp .flagbar i:nth-child(1) {
-  background: var(--vote-red);
+  background: var(--brand);
 }
 .cmp .flagbar i:nth-child(2) {
-  background: var(--paper-2);
+  background: var(--paper);
 }
 .cmp .flagbar i:nth-child(3) {
-  background: oklch(0.45 0.16 262);
+  background: var(--replace);
 }
 
 /* =========================================================

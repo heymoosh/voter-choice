@@ -863,17 +863,49 @@
 /* ====================================================
    RAISED VS. THE MEDIAN — the money-gap scale [Δ]
    Ported from claude-code-handoff/design-session/funding.css.
-   Design tokens (--brand/--keep/--replace, [data-palette="white"]) are mapped
-   onto the redesign's shipped warm-palette tokens so this rides on the existing
-   prototype.css system (no new palette). Neutral by design: gold = "above the
-   median", muted navy = "raised". Keep/replace red/green mean alignment, not
-   money. ==================================================== */
+   Bold Flag (white ground) is THE palette, applied everywhere — see keystone
+   canvas screens.css [data-palette="white"]. `.mgap`/`.h2hm` already carry
+   that attribute (MoneyGap.tsx); the block below ports the exact oklch
+   values from screens.css into that scope and aliases the legacy
+   --civic*/--vote-red names the rules further down still key off, so this
+   rides on the existing prototype.css cascade with no per-rule rewrite.
+   Neutral by design: gold = "above the median", muted navy = "raised".
+   Keep/replace red/green mean alignment, not money.
+   ==================================================== */
 
-/* local scale colors — muted navy "money", gold "above the typical" */
+/* Bold Flag exact values — scoped to the attribute MoneyGap.tsx already sets */
+.mgap[data-palette="white"],
+.median-chip[data-palette="white"],
+.h2hm[data-palette="white"] {
+  --paper: oklch(1 0 0);
+  --paper-2: oklch(0.985 0.003 258);
+  --ink: oklch(0.2 0.035 260);
+  --ink-2: oklch(0.37 0.032 260);
+  --ink-3: oklch(0.54 0.026 260);
+  --rule: oklch(0.88 0.006 260);
+  --rule-2: oklch(0.93 0.005 260);
+  --tag-bg: oklch(0.95 0.006 260);
+  --brand: oklch(0.4 0.155 262);
+  --brand-2: oklch(0.31 0.145 262);
+  --brand-soft: oklch(0.94 0.04 262);
+  --keep: oklch(0.44 0.115 159);
+  --keep-soft: oklch(0.93 0.045 159);
+  --replace: oklch(0.53 0.205 27);
+  --replace-soft: oklch(0.94 0.05 27);
+  --gold: oklch(0.72 0.125 76);
+  /* legacy names — alias so the rules below (still keyed off --civic*/--vote-red) land on Bold Flag too */
+  --civic: var(--brand);
+  --civic-2: var(--brand-2);
+  --civic-soft: var(--brand-soft);
+  --vote-red: var(--replace);
+}
+
+/* local scale colors — muted navy "money", gold "above the typical".
+   Hue 262 matches --brand exactly (funding.css .mgap/.median-chip). */
 .mgap,
 .median-chip {
-  --mg-base: oklch(0.46 0.075 240); /* money raised, up to the median */
-  --mg-lean: oklch(0.74 0.04 240); /* below-median bar — reads as "less" */
+  --mg-base: oklch(0.58 0.085 262); /* money raised, up to the median */
+  --mg-lean: oklch(0.78 0.045 262); /* below-median bar — reads as "less" */
   --mg-over: var(--gold); /* the excess above the median */
   --mg-overink: oklch(0.5 0.115 74); /* darker gold for readable text */
   --mg-line: var(--ink); /* the median reference line */
