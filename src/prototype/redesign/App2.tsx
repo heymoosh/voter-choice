@@ -307,6 +307,23 @@ function App2Inner() {
   // shown; consumed by its CTA, which kicks off analyze() into the workspace.
   const pendingLockedIssuesRef = useRef(null);
 
+  // Bold Flag palette default for the whole redesign app. layout.tsx ships
+  // <body data-palette="civic"> (the legacy ballot app stays civic); the
+  // redesign flips it to "white" while App2 is mounted so EVERY surface —
+  // workspace, rep cards, scorecard, static pages, intake, polis, nav —
+  // inherits the Bold Flag oklch tokens (redesign2.css body[data-palette=
+  // "white"]). Restored on unmount so nothing else in the document is left on
+  // the redesign palette. Scoped to the mount = never touches the legacy app,
+  // which never mounts App2 (page.tsx picks one or the other at build time).
+  useEffect(() => {
+    const prev = document.body.getAttribute("data-palette");
+    document.body.setAttribute("data-palette", "white");
+    return () => {
+      if (prev === null) document.body.removeAttribute("data-palette");
+      else document.body.setAttribute("data-palette", prev);
+    };
+  }, []);
+
   // Durable: issues + state-level location only. Survives tab close.
   useEffect(() => {
     try {

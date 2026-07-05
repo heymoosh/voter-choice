@@ -6,6 +6,50 @@
    shipped prototype.css / prototype-c.css untouched.
    ==================================================== */
 
+/* ====================================================
+   BOLD FLAG (white ground) — the redesign app's default palette [Δ]
+   ----------------------------------------------------
+   App2 (the congress-assessment redesign) sets data-palette="white" on
+   <body> on mount, so every one of its surfaces — DelegationWorkspace,
+   RepCard, ScorecardPrintView, WhyNow, the static pages, IntakeView, Polis,
+   AppNav — inherits the exact Bold Flag oklch tokens from the keystone canvas
+   (design-handoff/design-session/screens.css [data-palette="white"]).
+   The four sections that already carry their own data-palette="white" wrapper
+   (.cmp-screen / .mgap+.h2hm / .ori / .vh-hero+.flagbar) keep their higher-
+   specificity block — identical values, so no conflict.
+
+   Scoped to body[data-palette="white"]: layout.tsx still ships
+   data-palette="civic" by default, so the LEGACY ballot app (behind
+   NEXT_PUBLIC_BALLOT_ENABLED) never activates this block — only App2's mount
+   flip does. The legacy --civic / --vote-red names are aliased to the Bold
+   Flag values so shared rules still keyed off them land here too.
+   ==================================================== */
+body[data-palette="white"] {
+  --paper: oklch(1 0 0);
+  --paper-2: oklch(0.985 0.003 258);
+  --ink: oklch(0.2 0.035 260);
+  --ink-2: oklch(0.37 0.032 260);
+  --ink-3: oklch(0.54 0.026 260);
+  --rule: oklch(0.88 0.006 260);
+  --rule-2: oklch(0.93 0.005 260);
+  --tag-bg: oklch(0.95 0.006 260);
+  --brand: oklch(0.4 0.155 262);
+  --brand-2: oklch(0.31 0.145 262);
+  --brand-soft: oklch(0.94 0.04 262);
+  --keep: oklch(0.44 0.115 159);
+  --keep-soft: oklch(0.93 0.045 159);
+  --replace: oklch(0.53 0.205 27);
+  --replace-soft: oklch(0.94 0.05 27);
+  --gold: oklch(0.72 0.125 76);
+  /* legacy names — alias so the 8 sections still keyed off --civic / --vote-red
+     (prototype.css :root defaults are the older warm/civic teal) land on Bold
+     Flag too, exactly as the per-section white blocks below already do. */
+  --civic: var(--brand);
+  --civic-2: var(--brand-2);
+  --civic-soft: var(--brand-soft);
+  --vote-red: var(--replace);
+}
+
 /* ---- seat strip (top of RepCard) ---- */
 .seat-strip {
   display: flex;

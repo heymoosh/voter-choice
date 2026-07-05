@@ -5,8 +5,14 @@ import { describe, it, expect } from "vitest";
 /**
  * PR A1 — Civic mood as production default.
  *
- * These tests pin the production default to:
+ * These tests pin the SSR / layout.tsx production default to:
  *   data-mood="civic" · data-palette="civic" · data-treatment="daylight"
+ *
+ * This default is what the LEGACY ballot app (behind NEXT_PUBLIC_BALLOT_ENABLED)
+ * renders. The 2026 congress-assessment redesign (App2) then flips the palette
+ * to Bold Flag "white" on mount — see the "App2 defaults to Bold Flag white"
+ * block below. layout.tsx itself is intentionally left on civic so the legacy
+ * app is untouched; the flip is scoped to the redesign app's mount.
  *
  * The redesigned layout loads all mood families (Newsreader, IBM Plex trio,
  * Space Grotesk, JetBrains Mono) via a single Google Fonts <link> so the
@@ -28,6 +34,14 @@ const layoutSrc = fs.readFileSync(
 );
 const globalsCss = fs.readFileSync(
   path.resolve(projectRoot, "src/app/globals.css"),
+  "utf8",
+);
+const app2Src = fs.readFileSync(
+  path.resolve(projectRoot, "src/prototype/redesign/App2.tsx"),
+  "utf8",
+);
+const redesign2Css = fs.readFileSync(
+  path.resolve(projectRoot, "public/redesign2.css"),
   "utf8",
 );
 
@@ -79,5 +93,38 @@ describe("PR A1 — Civic mood is the hardcoded production default", () => {
     // reference IBM Plex Serif (not Newsreader). The --font-newsreader
     // CSS variable (which next/font would have injected) is not used.
     expect(globalsCss).not.toMatch(/--font-newsreader/);
+  });
+});
+
+describe("Redesign app (App2) defaults to the Bold Flag white palette", () => {
+  // layout.tsx stays on civic (legacy app), but the congress-assessment
+  // redesign flips data-palette to "white" on <body> for the duration of its
+  // mount so all 11 of its surfaces render Bold Flag. Verified as a source
+  // check here (jsdom can't mount App2's data-flow); the rendered-DOM check is
+  // in the Playwright live-verify step.
+
+  it("App2.tsx sets data-palette='white' on document.body", () => {
+    expect(app2Src).toMatch(
+      /document\.body\.setAttribute\(\s*["']data-palette["']\s*,\s*["']white["']\s*\)/,
+    );
+  });
+
+  it("App2.tsx restores the prior palette on unmount (mount-scoped flip)", () => {
+    // The effect captures the previous attribute value and returns a cleanup
+    // that restores it, so the flip never leaks past App2's lifetime.
+    expect(app2Src).toMatch(/getAttribute\(\s*["']data-palette["']\s*\)/);
+    expect(app2Src).toMatch(/removeAttribute\(\s*["']data-palette["']\s*\)/);
+  });
+
+  it("redesign2.css defines Bold Flag tokens under body[data-palette='white']", () => {
+    // The body-scoped block is what makes the 8 previously-teal sections
+    // (workspace, rep card, scorecard, statics, intake, polis, nav) inherit
+    // Bold Flag. It must redefine --brand and alias the legacy --civic name.
+    expect(redesign2Css).toMatch(
+      /body\[data-palette=["']white["']\][\s\S]*?--brand:\s*oklch\(/,
+    );
+    expect(redesign2Css).toMatch(
+      /body\[data-palette=["']white["']\][\s\S]*?--civic:\s*var\(--brand\)/,
+    );
   });
 });
