@@ -69,6 +69,9 @@ describe("VoterChoiceApp TRANSLATIONS (redesign i18n)", () => {
     ["delegationError", "dbErrorTitle"],
     ["intake", "updatedFallback"],
     ["intake", "notedFallback"],
+    ["intake", "kicker"],
+    ["intake", "headline"],
+    ["intake", "stepStrip"],
     ["whyNowPage", "mastKicker"],
     ["whyNowPage", "title"],
     ["whyNowPage", "dek"],
@@ -162,6 +165,16 @@ describe("VoterChoiceApp TRANSLATIONS (redesign i18n)", () => {
     expect(TRANSLATIONS.en.orientation.heading).toContain("</em>");
     expect(TRANSLATIONS.es.orientation.heading).toContain("<em>");
     expect(TRANSLATIONS.es.orientation.heading).toContain("</em>");
+  });
+
+  it("keeps the intake.headline <em> markup usable via dangerouslySetInnerHTML", () => {
+    // IntakeView's iq-ask h1 renders intake.headline via
+    // dangerouslySetInnerHTML (matching orientation.heading) so the <em>
+    // emphasis from the IntakeAsk artboard survives translation.
+    expect(TRANSLATIONS.en.intake.headline).toContain("<em>");
+    expect(TRANSLATIONS.en.intake.headline).toContain("</em>");
+    expect(TRANSLATIONS.es.intake.headline).toContain("<em>");
+    expect(TRANSLATIONS.es.intake.headline).toContain("</em>");
   });
 
   it("keeps the WhyNow inline emphasis markup usable via dangerouslySetInnerHTML", () => {

@@ -500,9 +500,9 @@ export async function goToWorkspace(page: Page): Promise<void> {
     .fill("1100 Congress Ave, Austin, TX 78701");
   await page.getByRole("button", { name: "Pull my representatives →" }).click();
   // Cold-open: free-text issues → preset interpretation list → lock.
-  await page.locator(".coldopen textarea").waitFor({ timeout: 15000 });
+  await page.getByTestId("issue-convo-input").waitFor({ timeout: 15000 });
   await page
-    .locator(".coldopen textarea")
+    .getByTestId("issue-convo-input")
     .fill("Insulin prices are insane and rent went up again.");
   await page.locator("button.send").click();
   await page.locator("button.lock").click({ timeout: 15000 });

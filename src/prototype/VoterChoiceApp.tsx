@@ -313,6 +313,9 @@ const TRANSLATIONS = {
     intake: {
       aiWho: 'Voter Choice · AI',
       userWho: 'You',
+      kicker: 'Before you meet your delegation',
+      headline: 'What should your representatives be <em>working on?</em>',
+      stepStrip: 'Step 1 of 3 · your issues',
       openerP1:
         "I've pulled your representatives' names. Before I walk you through their performance, I want to know what you're judging them on.",
       openerP2Bold: "What's been on your mind this year?",
@@ -718,6 +721,9 @@ const TRANSLATIONS = {
     intake: {
       aiWho: 'Voter Choice · AI',
       userWho: 'Tú',
+      kicker: 'Antes de conocer a tu delegación',
+      headline: '¿En qué deberían estar <em>trabajando</em> tus representantes?',
+      stepStrip: 'Paso 1 de 3 · tus temas',
       openerP1:
         'Ya tengo los nombres de tus representantes. Antes de mostrarte su historial, quiero saber con qué criterio los vas a juzgar.',
       openerP2Bold: '¿Qué ha estado en tu mente este año?',

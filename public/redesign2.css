@@ -1583,6 +1583,142 @@ body[data-palette="white"] {
   letter-spacing: 0.02em;
 }
 
+/* ---- intake cold open — conversational issue intake (the "IntakeAsk"
+   artboard) ----
+   Ported from design-handoff/keystone-canvas's screens-intake.jsx: the flag
+   hairline, the full-bleed step-context strip, and the serif "ask" headline
+   that sits above the chat. The conversation loop + composer below stay the
+   shared IssueConversation (.msg / .co-input / .themes-card) — the canvas's
+   iq-foot composer and per-turn quick-reply chips are a separate follow-up.
+   Scoped to [data-palette="white"] like .ori, since prototype.css's :root is
+   still the older warm/civic default. */
+.iq[data-palette="white"] {
+  --paper: oklch(1 0 0);
+  --paper-2: oklch(0.985 0.003 258);
+  --ink: oklch(0.2 0.035 260);
+  --ink-2: oklch(0.37 0.032 260);
+  --ink-3: oklch(0.54 0.026 260);
+  --rule: oklch(0.88 0.006 260);
+  --rule-2: oklch(0.93 0.005 260);
+  --tag-bg: oklch(0.95 0.006 260);
+  --brand: oklch(0.4 0.155 262);
+  --brand-2: oklch(0.31 0.145 262);
+  --brand-soft: oklch(0.94 0.04 262);
+  --keep: oklch(0.44 0.115 159);
+  --keep-soft: oklch(0.93 0.045 159);
+  --replace: oklch(0.53 0.205 27);
+  --replace-soft: oklch(0.94 0.05 27);
+  --gold: oklch(0.72 0.125 76);
+  /* legacy names — alias so any shared rule still keyed off --civic lands here too */
+  --civic: var(--brand);
+  --civic-2: var(--brand-2);
+  --civic-soft: var(--brand-soft);
+  --vote-red: var(--replace);
+}
+.iq {
+  background: var(--paper);
+}
+/* full-bleed step-context strip: address on the left, step marker on the right */
+.iq-ctx {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 30px;
+  border-bottom: 1px solid var(--rule-2);
+  background: var(--paper-2);
+}
+.iq-ctx .b {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-3);
+}
+.iq-ctx .step {
+  margin-left: auto;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--brand);
+  white-space: nowrap;
+}
+/* centered conversation column — the chat card is wider than the old compact
+   cold open (760px, matching the canvas iq-conv) */
+.iq-stage {
+  display: flex;
+  justify-content: center;
+  padding: 26px 30px 40px;
+}
+.iq-conv {
+  width: 100%;
+  max-width: 760px;
+  display: flex;
+  flex-direction: column;
+}
+/* serif "ask" headline block — cold-open only */
+.iq-ask {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 700px;
+  margin: 0 auto 4px;
+}
+.iq-ask .kick {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--brand);
+  white-space: nowrap;
+}
+.iq-ask .kick .star {
+  color: var(--replace);
+}
+.iq-ask .ask-k {
+  margin-bottom: 16px;
+}
+.iq-ask h1 {
+  font-family: var(--serif);
+  font-weight: 600;
+  font-size: 38px;
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  margin: 0 0 12px;
+  color: var(--ink);
+  text-wrap: balance;
+}
+.iq-ask h1 em {
+  font-style: italic;
+  color: var(--brand);
+}
+.iq-ask p {
+  font-family: var(--serif);
+  font-size: 17px;
+  line-height: 1.5;
+  color: var(--ink-2);
+  margin: 0 0 24px;
+  max-width: 560px;
+}
+/* mobile: let the step marker drop below the address, tighten gutters */
+@media (max-width: 640px) {
+  .iq-ctx {
+    flex-wrap: wrap;
+    gap: 4px 12px;
+    padding: 10px 18px;
+  }
+  .iq-ctx .step {
+    margin-left: 0;
+  }
+  .iq-stage {
+    padding: 22px 18px 32px;
+  }
+  .iq-ask h1 {
+    font-size: 28px;
+    line-height: 1.15;
+  }
+}
+
 /* ====================================================
    HOMEPAGE HERO — de-cluttered, product-preview right rail [Δ]
    Ported verbatim from design-handoff/keystone-canvas's screens-home.jsx
