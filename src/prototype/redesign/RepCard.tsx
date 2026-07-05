@@ -39,6 +39,26 @@ export function getPartyMeta2(t) {
   };
 }
 
+/* ---- Provenance badge — the parity unifier between a roll-call card and a
+   researched card (CandidateParity artboard). Same contract as HeadToHead's
+   private ProvBadge: filled ◆ "Roll-call record" vs. dashed ◇ "Researched ·
+   cited [· confidence]" — CSS glyphs live in redesign2.css's .cv2-prov
+   rules so both surfaces read as one system without duplicating candidates.css's
+   .cmp-scoped tokens. ---- */
+function ProvenanceBadge({ seat }) {
+  const { t } = useI18n();
+  if (seat.researched) {
+    const conf = (seat.positions || []).find((p) => p.confidence)?.confidence;
+    return (
+      <span className="cv2-prov researched">
+        {t("repCard.provResearched")}
+        {conf ? ` · ${conf}` : ""}
+      </span>
+    );
+  }
+  return <span className="cv2-prov rollcall">{t("repCard.provRollCall")}</span>;
+}
+
 /* ---- Attendance band [Δ] — honest omission when not tracked ---- */
 export function AttendanceBand2({ attendance, researched, level }) {
   const { t } = useI18n();
@@ -630,11 +650,10 @@ export function RepCard({
   const { t } = useI18n();
   const [expandedIssue, setExpandedIssue] = useState(null);
   const [allVotesOpen, setAllVotesOpen] = useState(false);
-  const [moneyOpen, setMoneyOpen] = useState(
-    () =>
-      typeof window !== "undefined" &&
-      window.matchMedia("(min-width: 901px)").matches,
-  );
+  // Collapsed by default on every viewport — matches the canvas's res-votes
+  // main state (funding starts collapsed; "Funders & influence ▾" is an
+  // explicit opt-in, not desktop-only auto-expand).
+  const [moneyOpen, setMoneyOpen] = useState(false);
 
   const cand = seat.candidate;
   if (!cand)
@@ -695,6 +714,8 @@ export function RepCard({
         onReveal={onReveal}
         onHide={onHide}
       />
+
+      <ProvenanceBadge seat={seat} />
 
       <AttendanceBand2
         attendance={seat.attendance}

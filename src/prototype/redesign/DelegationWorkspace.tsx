@@ -77,7 +77,10 @@ export function ScorecardPane({
   const doneCount = Object.keys(verdicts).filter((id) =>
     seats.some((s) => s.id === id),
   ).length;
-  const canPrint = doneCount > 0;
+  // Print unlocks only once every seat has a verdict — matches the canvas's
+  // "Decide N of M to print" gate (res-votes/res-funding artboards), not a
+  // single first verdict.
+  const canPrint = seats.length > 0 && doneCount === seats.length;
   const sections = {};
   seats.forEach((s) => {
     (sections[s.section] = sections[s.section] || []).push(s);
@@ -225,6 +228,11 @@ export function ScorecardPane({
           <span>{t("scorecard.printBtn")}</span>
           <span className="arrow">→</span>
         </button>
+        {!canPrint && (
+          <div className="b-print-gate">
+            {t("scorecard.printGate", { done: doneCount, total: seats.length })}
+          </div>
+        )}
         <button onClick={onContinueElsewhere}>
           <span>{t("scorecard.handoffBtn")}</span>
           <span className="arrow">↗</span>

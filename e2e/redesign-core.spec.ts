@@ -185,10 +185,14 @@ test.describe("delegation flow — address → assess → verdicts", () => {
     const counters = await mockCounters(page);
     await goToWorkspace(page);
 
-    // Print is disabled until at least one verdict exists.
+    // Print is disabled until EVERY seat has a verdict (res-votes/res-funding
+    // artboards' "Decide N of M to print" gate) — not just the first one.
     await expect(
       page.getByRole("button", { name: /Print my scorecard/ }),
     ).toBeDisabled();
+    await expect(page.locator(".b-print-gate")).toHaveText(
+      "Decide 0 of 3 to print",
+    );
 
     await page.locator(".cv2-reveal").first().click();
     await expect(page.locator(".cv2-name").first()).toHaveText("Alex Rivera");
@@ -197,6 +201,15 @@ test.describe("delegation flow — address → assess → verdicts", () => {
     // verdict — wait it out so the next click lands on the NEXT seat.
     await page.getByRole("button", { name: /Worth keeping/ }).click();
     await page.waitForTimeout(900);
+
+    // Still gated with one of three decided — the counting copy updates.
+    await expect(
+      page.getByRole("button", { name: /Print my scorecard/ }),
+    ).toBeDisabled();
+    await expect(page.locator(".b-print-gate")).toHaveText(
+      "Decide 1 of 3 to print",
+    );
+
     for (let i = 0; i < 2; i++) {
       await page
         .getByRole("button", { name: "Time to replace", exact: true })
@@ -209,6 +222,7 @@ test.describe("delegation flow — address → assess → verdicts", () => {
     await expect(
       page.getByRole("button", { name: /Print my scorecard/ }),
     ).toBeEnabled();
+    await expect(page.locator(".b-print-gate")).toHaveCount(0);
 
     // Session-end counters fired once, with concerns and WITHOUT verdicts.
     await expect.poll(() => counters.calls.length).toBeGreaterThan(0);
