@@ -4979,7 +4979,15 @@ function HomeView({ savedAddress, savedSession, onSubmit, onResumeFromProfile, o
 
           <div className="vh-addr">
             <div className="vh-addr-lab">
-              <span className="l">Enter Your Registered Address</span>
+              <span className="l">
+                Enter Your Registered Address
+                <button
+                  type="button"
+                  className="why"
+                  aria-label="Why we ask for your address"
+                  onClick={() => onNavigate && onNavigate('howitworks')}
+                >?</button>
+              </span>
               <span className="priv">Stays on this device</span>
             </div>
             <div className="vh-addr-row">
