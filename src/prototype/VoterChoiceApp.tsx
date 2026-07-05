@@ -1091,9 +1091,13 @@ function AppNav({ onBrandClick }) {
         <span>Voter Choice</span>
       </div>
       <div className="links">
+        {/* Labeled "How it works" (nav.howItWorks) and pointed at the methodology
+            stage — see navigate()'s 'howitworks' case. There used to be a second,
+            separately-labeled "Methodology" link to the same stage; removed as a
+            duplicate once this one was repointed (methodology stays reachable via
+            Settings too, so nothing is orphaned). */}
         <a onClick={() => navigate('howitworks')} role="link" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') navigate('howitworks'); }}>{t('nav.howItWorks')}</a>
         <a onClick={() => navigate('whynow')} role="link" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') navigate('whynow'); }}>{t('nav.whyNow')}</a>
-        <a onClick={() => navigate('methodology')} role="link" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') navigate('methodology'); }}>{t('nav.methodology')}</a>
         <a onClick={() => navigate('about')} role="link" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') navigate('about'); }}>{t('nav.about')}</a>
         <a onClick={() => navigate('privacy')} role="link" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') navigate('privacy'); }}>{t('nav.privacy')}</a>
         <a href="mailto:muxin.li.pro@gmail.com">{t('nav.support')}</a>
@@ -1119,14 +1123,31 @@ function AppNav({ onBrandClick }) {
 
 /* ============ AppFooter ============
    Shared footer bar — matches .hp-foot styles used by HomeView.
-   Brand + copyright only; all nav links live in the header (AppNav).
-   Pass `compact` on the workspace (slim pinned bar); omit it on
-   the home page for the full-height layout. */
+   Full (non-compact) variant: brand + "Free · nonpartisan ·" copyright
+   line, plus a trimmed Privacy/Terms link row (keystone canvas's shared
+   vc-foot — Privacy stays reachable from every page, Terms points at the
+   static /terms route). Pass `compact` on the workspace (slim pinned bar,
+   unchanged) — full nav links there would crowd the 3-pane layout. */
 function AppFooter({ compact }: { compact?: boolean }) {
+  const nav = (typeof useNav === 'function') ? useNav() : { navigate: () => {} };
+  if (compact) {
+    return (
+      <footer className="hp-foot hp-foot-slim">
+        <div className="l">Voter Choice</div>
+        <div>© 2026 Grey Bird LLC. All Rights Reserved.</div>
+      </footer>
+    );
+  }
   return (
-    <footer className={"hp-foot" + (compact ? " hp-foot-slim" : "")}>
-      <div className="l">Voter Choice</div>
-      <div>© 2026 Grey Bird LLC. All Rights Reserved.</div>
+    <footer className="hp-foot">
+      <div className="hp-foot-brand">
+        <span className="l">Voter Choice</span>
+        <span className="c">Free · nonpartisan · © 2026 Grey Bird LLC. All Rights Reserved.</span>
+      </div>
+      <nav className="hp-foot-links" aria-label="Footer">
+        <a onClick={() => nav.navigate('privacy')} role="link" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') nav.navigate('privacy'); }}>Privacy</a>
+        <a href="/terms">Terms</a>
+      </nav>
     </footer>
   );
 }
@@ -4947,21 +4968,21 @@ function HomeView({ savedAddress, savedSession, onSubmit, onResumeFromProfile, o
 
   return (
     <>
+      <div className="flagbar" data-palette="white"><i></i><i></i><i></i></div>
       <AppNav />
       <main id="main-content">
-      <section className="hp-hero hp-hero-solo">
-        <div>
-          <div className="eyebrow"><span className="star">★</span> November 3, 2026 · America's 250th election</div>
-          <h1>See how your members of Congress <em>actually voted</em> — before you vote.</h1>
-          <p className="lede">Hold Congress to its record. All 435 House seats and 33 Senate seats are on the ballot — compare what your incumbents say with how they voted, and who funded the campaign.</p>
+      <section className="vh-hero" data-palette="white">
+        <div className="vh-left">
+          <span className="vh-eyebrow kick"><span className="star">★</span> November 3, 2026 · America's 250th election</span>
+          <h1 className="vh-h1">See how your members of Congress <em>actually voted</em> — before you vote.</h1>
+          <p className="vh-lede">Hold Congress to its record. All 435 House seats and 33 Senate seats are on the ballot — compare what your incumbents say with how they voted, and who funded the campaign.</p>
 
-          <div className="addr-card">
-            <label>
-              <span className="addr-label-left">
-                <span>Enter Your Registered Address</span>
-              </span>
-            </label>
-            <div className="row">
+          <div className="vh-addr">
+            <div className="vh-addr-lab">
+              <span className="l">Enter Your Registered Address</span>
+              <span className="priv">Stays on this device</span>
+            </div>
+            <div className="vh-addr-row">
               {hasPlacesKey && (
                 <div
                   ref={placesContainerRef}
@@ -4982,44 +5003,32 @@ function HomeView({ savedAddress, savedSession, onSubmit, onResumeFromProfile, o
                     : undefined
                 }
               />
-              <button className="go" onClick={submit} disabled={!addr.trim()}>Pull my representatives →</button>
+              <button className="vh-go" onClick={submit} disabled={!addr.trim()}>Pull my representatives <span aria-hidden="true">→</span></button>
             </div>
-          </div>
-
-          <div className="addr-steps">
-            <p className="addr-steps-lead">
-              Unsure?{' '}
+            <div className="vh-disclose">
               <a
-                className="addr-steps-link"
+                className="dt"
                 onClick={() => onNavigate && onNavigate('howitworks')}
                 role="link"
                 tabIndex={0}
                 onKeyDown={(e) => { if (e.key === 'Enter' && onNavigate) onNavigate('howitworks'); }}
-              >Read about how it works and how we use your data</a>
-            </p>
-            <ol className="addr-steps-list">
-              <li>
-                <span className="addr-step-num">01</span>
-                <span className="addr-step-body">
-                  <span className="addr-step-ttl">Enter your address</span>
-                  <span className="addr-step-desc">We use your address to pull local voting information so you know exactly when and where to go vote and what IDs are needed — so you have everything you need to support or vote against your representative and make a change. It stays on this device and is never stored.</span>
-                </span>
-              </li>
-              <li>
-                <span className="addr-step-num">02</span>
-                <span className="addr-step-body">
-                  <span className="addr-step-ttl">See what they actually did</span>
-                  <span className="addr-step-desc">We pull your representatives and their record on the issues you care about — voting history, donors, and how much they raised and from whom. No news articles, no ads — just the record.</span>
-                </span>
-              </li>
-              <li>
-                <span className="addr-step-num">03</span>
-                <span className="addr-step-body">
-                  <span className="addr-step-ttl">Take it with you</span>
-                  <span className="addr-step-desc">Download a one-page ballot for the polling booth. Many polls don't allow phones — print it or write it down before you go.</span>
-                </span>
-              </li>
-            </ol>
+              >Unsure? How it works · your data <span aria-hidden="true">▾</span></a>
+              <div className="vh-steps">
+                <span className="vh-step"><span className="n">1</span> Pull your reps</span>
+                <span className="arw">›</span>
+                <span className="vh-step"><span className="n">2</span> Pick your issues</span>
+                <span className="arw">›</span>
+                <span className="vh-step"><span className="n">3</span> Check the record</span>
+                <span className="arw">›</span>
+                <span className="vh-step"><span className="n">4</span> Print &amp; vote</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="vh-trust">
+            <span>No account</span>
+            <span>No tracking</span>
+            <span>Address never stored</span>
           </div>
 
           {hasDraft && (
@@ -5030,6 +5039,59 @@ function HomeView({ savedAddress, savedSession, onSubmit, onResumeFromProfile, o
               onStartOver={onStartOver}
             />
           )}
+        </div>
+
+        <div className="vh-preview">
+          <div className="vh-preview-cap">What you'll get</div>
+          <div className="vh-stack">
+            <div className="vh-sheet">
+              <div className="pflag"><i></i><i></i></div>
+              <div className="vh-sheet-pad">
+                <h5>My Scorecard</h5>
+                <div className="ss-sub">General Election · Nov 3, 2026</div>
+                <div className="ss-row">
+                  <div className="ss-badge replace">⇄</div>
+                  <div className="ss-tx">
+                    <div className="ss-o">U.S. House · TX-21</div>
+                    <div className="ss-n">Replace</div>
+                  </div>
+                  <div className="ss-pct tone-bad">58%</div>
+                </div>
+                <div className="ss-row">
+                  <div className="ss-badge keep">✓</div>
+                  <div className="ss-tx">
+                    <div className="ss-o">U.S. Senate · Class II</div>
+                    <div className="ss-n">Keep</div>
+                  </div>
+                  <div className="ss-pct tone-good">82%</div>
+                </div>
+              </div>
+            </div>
+            <div className="vh-rcard">
+              <div className="vh-rstrip">
+                <span className="o">U.S. House · TX-21</span>
+                <span className="up">Up Nov 2026</span>
+              </div>
+              <div className="vh-rhead">
+                <div className="vh-rav">?</div>
+                <div className="vh-rwho">
+                  <div className="b">This seat's incumbent</div>
+                  <div className="s">Judge the record, not the name</div>
+                </div>
+              </div>
+              <div className="vh-ralign">
+                <div className="vh-ratop"><span className="lab">Voted with you</span><span className="pct">58%</span></div>
+                <div className="vh-rbars">
+                  <div className="vh-rbar"><span className="k">Healthcare access</span><span className="t"><i className="bar-good" style={{ width: '75%' }}></i></span></div>
+                  <div className="vh-rbar"><span className="k">Housing affordability</span><span className="t"><i className="bar-bad" style={{ width: '40%' }}></i></span></div>
+                </div>
+              </div>
+              <div className="vh-rverd">
+                <span className="vh-vb keep">✓ Keep</span>
+                <span className="vh-vb replace">Replace</span>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 

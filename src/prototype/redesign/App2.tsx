@@ -19,6 +19,7 @@ import {
   useI18n,
   NavProvider,
   AppNav,
+  AppFooter,
   ErrorBanner,
   HomeView,
   LoadingView,
@@ -725,7 +726,10 @@ function App2Inner() {
   };
   function navigate(page) {
     if (page === "home") return setStage("home");
-    if (page === "howitworks") return setStage("home");
+    // "How it works" (top nav + the homepage disclosure line) points at the
+    // methodology stage — it used to fall back to home (dead: nothing else
+    // reads a "howitworks" stage).
+    if (page === "howitworks") return setStage("methodology");
     if (PAGE_STAGES[page]) return setStage(page);
   }
   const navValue = {
@@ -742,6 +746,26 @@ function App2Inner() {
           label: unlockedScopes[0].label,
         }
       : null;
+
+  // Static/editorial pages (About, Why Now, methodology, Privacy, Tip jar)
+  // share one shell: flag hairline + the persistent nav + the page's own
+  // StaticPage body + the full footer. They render bare (no nav, no footer)
+  // without this — a gap vs. the keystone canvas's StaticPageVC, which
+  // renders identically on every one of these pages.
+  function withStaticChrome(node) {
+    return (
+      <>
+        <div className="flagbar" data-palette="white">
+          <i></i>
+          <i></i>
+          <i></i>
+        </div>
+        <AppNav />
+        {node}
+        <AppFooter />
+      </>
+    );
+  }
 
   function renderStage() {
     if (stage === "home") {
@@ -841,14 +865,18 @@ function App2Inner() {
         />
       );
     }
-    if (stage === "about") return <AboutPage onBack={() => setStage("home")} />;
+    if (stage === "about")
+      return withStaticChrome(<AboutPage onBack={() => setStage("home")} />);
     if (stage === "whynow")
-      return <WhyNowPage onBack={() => setStage("home")} />;
+      return withStaticChrome(<WhyNowPage onBack={() => setStage("home")} />);
     if (stage === "methodology")
-      return <MethodologyPage onBack={() => setStage("home")} />;
+      return withStaticChrome(
+        <MethodologyPage onBack={() => setStage("home")} />,
+      );
     if (stage === "privacy")
-      return <PrivacyPage onBack={() => setStage("home")} />;
-    if (stage === "tip") return <TipJarPage onBack={() => setStage("home")} />;
+      return withStaticChrome(<PrivacyPage onBack={() => setStage("home")} />);
+    if (stage === "tip")
+      return withStaticChrome(<TipJarPage onBack={() => setStage("home")} />);
     if (stage === "print") {
       return (
         <ScorecardPrintView
