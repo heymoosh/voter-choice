@@ -69,15 +69,25 @@ describe("VoterChoiceApp TRANSLATIONS (redesign i18n)", () => {
     ["delegationError", "dbErrorTitle"],
     ["intake", "updatedFallback"],
     ["intake", "notedFallback"],
-    ["whyNowPage", "eyebrow"],
+    ["whyNowPage", "mastKicker"],
     ["whyNowPage", "title"],
-    ["whyNowPage", "intro"],
-    ["whyNowPage", "largerCaseHeading"],
-    ["whyNowPage", "largerCase1"],
-    ["whyNowPage", "largerCase2"],
-    ["whyNowPage", "largerCase3"],
-    ["whyNowPage", "whatToDoHeading"],
-    ["whyNowPage", "whatToDo"],
+    ["whyNowPage", "dek"],
+    ["whyNowPage", "band1Kicker"],
+    ["whyNowPage", "band1H2"],
+    ["whyNowPage", "band1P1"],
+    ["whyNowPage", "band1P2"],
+    ["whyNowPage", "band1P3"],
+    ["whyNowPage", "band2Kicker"],
+    ["whyNowPage", "band2H2"],
+    ["whyNowPage", "band2P"],
+    ["whyNowPage", "band3Kicker"],
+    ["whyNowPage", "band3Pull"],
+    ["whyNowPage", "howKicker"],
+    ["whyNowPage", "howH2"],
+    ["whyNowPage", "ctaH2"],
+    ["whyNowPage", "ctaP"],
+    ["whyNowPage", "ctaButton"],
+    ["whyNowPage", "ctaSub"],
     ["orientation", "kicker"],
     ["orientation", "heading"],
     ["orientation", "lede"],
@@ -122,11 +132,14 @@ describe("VoterChoiceApp TRANSLATIONS (redesign i18n)", () => {
     expect(TRANSLATIONS.es.orientation.metaSeatsPlural).toContain("{n}");
   });
 
-  it("has 3 whyNowPage fact snippets (value/unit/label/cite) in en and es", () => {
+  it("has 2 whyNowPage fact snippets (value/unit/label/cite) in en and es", () => {
+    // The keystone WhyNow artboard's problem band carries exactly two stats
+    // (6 hrs/day fundraising · 94% incumbents win); the 435/34/1 figures live
+    // in the brand band's .wn-ballot, not as a third stat card.
     for (const lang of ["en", "es"] as const) {
       const snippets = (TRANSLATIONS[lang] as any).whyNowPage.snippets;
       expect(Array.isArray(snippets)).toBe(true);
-      expect(snippets).toHaveLength(3);
+      expect(snippets).toHaveLength(2);
       for (const s of snippets) {
         expect(typeof s.value).toBe("string");
         expect(s.value.length).toBeGreaterThan(0);
@@ -149,5 +162,43 @@ describe("VoterChoiceApp TRANSLATIONS (redesign i18n)", () => {
     expect(TRANSLATIONS.en.orientation.heading).toContain("</em>");
     expect(TRANSLATIONS.es.orientation.heading).toContain("<em>");
     expect(TRANSLATIONS.es.orientation.heading).toContain("</em>");
+  });
+
+  it("keeps the WhyNow inline emphasis markup usable via dangerouslySetInnerHTML", () => {
+    // WhyNowPage renders title / band2H2 / howH2 / band1P* / band3Pull via
+    // dangerouslySetInnerHTML so the keystone WhyNow artboard's <em>/<b>/
+    // lead-in/src emphasis survives translation on both sides.
+    for (const lang of ["en", "es"] as const) {
+      const wn = (TRANSLATIONS[lang] as any).whyNowPage;
+      expect(wn.title).toContain("<em>");
+      expect(wn.band2H2).toContain("<em>");
+      expect(wn.howH2).toContain("<em>");
+      expect(wn.band1P1).toContain('class="lead-in"');
+      expect(wn.band3Pull).toContain('class="src"');
+    }
+  });
+
+  it("has 3 whyNowPage ballot cells and 3 how-it-works steps in en and es", () => {
+    for (const lang of ["en", "es"] as const) {
+      const wn = (TRANSLATIONS[lang] as any).whyNowPage;
+      expect(Array.isArray(wn.ballot)).toBe(true);
+      expect(wn.ballot).toHaveLength(3);
+      for (const c of wn.ballot) {
+        expect(typeof c.value).toBe("string");
+        expect(c.value.length).toBeGreaterThan(0);
+        expect(typeof c.label).toBe("string");
+        expect(c.label.length).toBeGreaterThan(0);
+      }
+      expect(Array.isArray(wn.steps)).toBe(true);
+      expect(wn.steps).toHaveLength(3);
+      for (const s of wn.steps) {
+        expect(typeof s.title).toBe("string");
+        expect(s.title.length).toBeGreaterThan(0);
+        expect(typeof s.body).toBe("string");
+        expect(s.body.length).toBeGreaterThan(0);
+        expect(typeof s.tag).toBe("string");
+        expect(s.tag.length).toBeGreaterThan(0);
+      }
+    }
   });
 });

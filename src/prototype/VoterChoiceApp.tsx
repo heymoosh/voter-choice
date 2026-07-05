@@ -543,14 +543,19 @@ const TRANSLATIONS = {
       aligned: '{pct}% aligned ({kept}/{total} votes)',
     },
     whyNowPage: {
-      eyebrow: 'Why now',
-      title: 'Why this election, this year.',
-      intro: '2026 is America’s 250th election. Every voting seat in the House and a third of the Senate is on the ballot at once — the widest the choice ever gets. The catch is that incumbents almost always win, and most voters never see the one thing that should decide it: the record.',
+      mastKicker: 'The case · America’s 250th election',
+      title: 'Why <em>now</em>',
+      dek: 'We hire Congress to do the work of governing so we can get back to our lives. This year, we get to decide who actually earned the job.',
+      band1Kicker: 'Here’s why',
+      band1H2: 'Your representative spends more time raising money than reading bills.',
+      band1P1: '<span class="lead-in">The job has quietly changed.</span> Members of Congress can spend up to <b>six hours of every working day</b> dialing for dollars — and how much they raise predicts whether they keep their seat better than anything they actually did with it.',
+      band1P2: 'Guess whose calls get returned. The people with the most money to give — donors, PACs, and the handful of industries that can write the biggest checks — buy the one thing every campaign runs on: <b>your attention</b>, repeated until it sticks.',
+      band1P3: 'When fundraising decides elections, representatives answer to their funders, not their constituents. That’s the leak. The good news: it’s plugged at one place money can’t follow — <b>the ballot</b>.',
       snippets: [
         {
           value: '6',
           unit: 'hrs / day',
-          label: 'average time a member of Congress spends fundraising, per training materials shown to incoming freshmen.',
+          label: 'Average time a member of Congress spends fundraising, per call-time guidance shown to incoming freshmen.',
           cite: 'Source · Issue One, 2024 · CBS 60 Minutes',
         },
         {
@@ -559,19 +564,40 @@ const TRANSLATIONS = {
           label: 'of House incumbents who ran for re-election in 2024 won. Without a record check, every November is a coin flip.',
           cite: 'Source · OpenSecrets · FEC filings',
         },
+      ],
+      band2Kicker: 'Why now',
+      band2H2: 'In November, every House seat and a third of the Senate is on the ballot. <em>We decide who keeps the job.</em>',
+      band2P: '2026 isn’t a quiet midterm. It’s the widest opening voters get — the moment the people who’ve been representing you have to come back and ask for the job again. Wouldn’t you want to know who’s actually been working on your behalf before you sign off?',
+      ballot: [
+        { value: '435', label: 'U.S. House seats up — every single one.' },
+        { value: '34', label: 'U.S. Senate seats up — a third of the chamber.' },
+        { value: '1', label: 'scorecard you bring to the polls, built from your own verdicts.' },
+      ],
+      band3Kicker: 'Why it’s hard',
+      band3Pull: 'A ballot asks more than anyone has time for. <em>What do most of us really know about property taxes in our county, or a procedural vote from two years ago?</em> So we fall back on shortcuts — party, yard signs, whatever ad ran the most. Shortcuts are exactly what the money buys.<span class="src">The friction is the whole game — so we cut it.</span>',
+      howKicker: 'Here’s how it works',
+      howH2: 'Judge them on what they <em>did</em> — not what they said.',
+      steps: [
         {
-          value: '468',
-          unit: 'seats',
-          label: 'all 435 House seats and 33 Senate seats are on the November 3, 2026 ballot — America’s 250th election.',
-          cite: 'Source · U.S. Constitution, Art. I · clerk.house.gov',
+          title: 'Pull the record',
+          body: 'For each of your members of Congress: how they voted, what they opposed, and who funded the campaign — straight from the public record.',
+          tag: 'GovTrack · Congress.gov · FEC',
+        },
+        {
+          title: 'Tell us what you value',
+          body: 'A short conversation turns what’s on your mind into the handful of issues you actually want them measured against.',
+          tag: 'Your issues · your ranking',
+        },
+        {
+          title: 'Get your verdict',
+          body: 'We summarize each record against your values — shown blind, so the record speaks first — then turn your keep/replace calls into a printable scorecard for the polls.',
+          tag: 'Blind-first · printable',
         },
       ],
-      largerCaseHeading: 'The larger case',
-      largerCase1: 'Campaigns are built to be persuasive. Ads, mailers, and debate soundbites are written to win your vote, not to report what a candidate actually did with the power they already held. The gap between the pitch and the record is where most surprises live — and it widens every cycle.',
-      largerCase2: 'A voting record is the one thing a candidate can’t rewrite. Roll-call votes are public, dated, and final. So is who funded the campaign. Read together, they tell you more about how someone will govern than any slogan can — because they’re a record of how that person already governed.',
-      largerCase3: 'This isn’t about a party. Both sides run incumbents, and both sides count on you not checking. The fix is the same regardless of who you support: spend a few minutes matching the record to the issues you actually care about, before you fill in the bubble. That’s the whole idea behind this site.',
-      whatToDoHeading: 'What to do with it',
-      whatToDo: 'Tell us your address and what’s on your mind. We’ll pull your representatives’ real votes and funding, score them against your own words — never a pre-baked checklist — and show you the receipts. You decide. We don’t endorse anyone; we just close the gap between the ad and the record.',
+      ctaH2: 'Politicians want one thing: to get re-elected.',
+      ctaP: 'Make that depend on the work — not the war chest. The leverage is yours, and it’s on the ballot.',
+      ctaButton: 'Pull my representatives',
+      ctaSub: 'No account · no tracking · your address never leaves your device',
     },
     orientation: {
       kicker: 'Before you start · step 3 of 3',
@@ -924,14 +950,19 @@ const TRANSLATIONS = {
       aligned: '{pct}% alineado ({kept}/{total} votos)',
     },
     whyNowPage: {
-      eyebrow: 'Por qué ahora',
-      title: 'Por qué esta elección, este año.',
-      intro: '2026 es la elección número 250 de Estados Unidos. Cada escaño con derecho a voto en la Cámara y un tercio del Senado están en la boleta a la vez — la elección más amplia que jamás se ha dado. El problema es que los titulares casi siempre ganan, y la mayoría de los votantes nunca ve lo único que debería decidirlo: el historial.',
+      mastKicker: 'El caso · La elección número 250 de EE. UU.',
+      title: 'Por qué <em>ahora</em>',
+      dek: 'Contratamos al Congreso para que haga el trabajo de gobernar y así poder volver a nuestras vidas. Este año, nos toca decidir quién realmente se ganó el puesto.',
+      band1Kicker: 'Por esto',
+      band1H2: 'Tu representante pasa más tiempo recaudando dinero que leyendo proyectos de ley.',
+      band1P1: '<span class="lead-in">El trabajo ha cambiado en silencio.</span> Los miembros del Congreso pueden dedicar hasta <b>seis horas de cada día laboral</b> a pedir dinero por teléfono — y cuánto recaudan predice si conservan su escaño mejor que cualquier cosa que realmente hayan hecho con él.',
+      band1P2: 'Adivina de quién se devuelven las llamadas. Las personas con más dinero para dar — donantes, comités de acción política y el puñado de industrias que pueden firmar los cheques más grandes — compran lo único que necesita toda campaña: <b>tu atención</b>, repetida hasta que se fija.',
+      band1P3: 'Cuando la recaudación decide las elecciones, los representantes responden a quienes los financian, no a sus electores. Esa es la fuga. La buena noticia: se tapa en el único lugar que el dinero no puede seguir — <b>la boleta</b>.',
       snippets: [
         {
           value: '6',
           unit: 'hrs/día',
-          label: 'tiempo promedio que un miembro del Congreso dedica a recaudar fondos, según los materiales de capacitación que se muestran a los legisladores novatos.',
+          label: 'Tiempo promedio que un miembro del Congreso dedica a recaudar fondos, según la guía de llamadas que se muestra a los legisladores novatos.',
           cite: 'Fuente · Issue One, 2024 · CBS 60 Minutes',
         },
         {
@@ -940,19 +971,40 @@ const TRANSLATIONS = {
           label: 'de los titulares de la Cámara que se postularon para la reelección en 2024 ganaron. Sin revisar el historial, cada noviembre es como lanzar una moneda al aire.',
           cite: 'Fuente · OpenSecrets · FEC filings',
         },
+      ],
+      band2Kicker: 'Por qué ahora',
+      band2H2: 'En noviembre, cada escaño de la Cámara y un tercio del Senado están en la boleta. <em>Nosotros decidimos quién conserva el puesto.</em>',
+      band2P: '2026 no es una elección de medio término cualquiera. Es la apertura más amplia que tienen los votantes — el momento en que quienes te han estado representando tienen que volver y pedir el puesto de nuevo. ¿No querrías saber quién ha estado trabajando realmente en tu nombre antes de dar el visto bueno?',
+      ballot: [
+        { value: '435', label: 'escaños de la Cámara de EE. UU. en juego — todos y cada uno.' },
+        { value: '34', label: 'escaños del Senado de EE. UU. en juego — un tercio de la cámara.' },
+        { value: '1', label: 'boleta de puntuación que llevas a las urnas, hecha con tus propios veredictos.' },
+      ],
+      band3Kicker: 'Por qué es difícil',
+      band3Pull: 'Una boleta pide más de lo que cualquiera tiene tiempo para dar. <em>¿Qué sabemos realmente la mayoría sobre los impuestos a la propiedad en nuestro condado, o sobre una votación de procedimiento de hace dos años?</em> Así que recurrimos a atajos — el partido, los carteles del jardín, el anuncio que más se repitió. Los atajos son exactamente lo que el dinero compra.<span class="src">La fricción es todo el juego — así que la eliminamos.</span>',
+      howKicker: 'Así funciona',
+      howH2: 'Júzgalos por lo que <em>hicieron</em> — no por lo que dijeron.',
+      steps: [
         {
-          value: '468',
-          unit: 'escaños',
-          label: 'los 435 escaños de la Cámara y 33 del Senado están en la boleta del 3 de noviembre de 2026 — la elección número 250 de Estados Unidos.',
-          cite: 'Fuente · Constitución de EE. UU., Art. I · clerk.house.gov',
+          title: 'Obtén el historial',
+          body: 'Para cada uno de tus miembros del Congreso: cómo votaron, a qué se opusieron y quién financió la campaña — directamente del registro público.',
+          tag: 'GovTrack · Congress.gov · FEC',
+        },
+        {
+          title: 'Dinos qué valoras',
+          body: 'Una breve conversación convierte lo que tienes en mente en el puñado de temas con los que realmente quieres que se les mida.',
+          tag: 'Tus temas · tu orden',
+        },
+        {
+          title: 'Obtén tu veredicto',
+          body: 'Resumimos cada historial frente a tus valores — mostrado a ciegas, para que el historial hable primero — y luego convertimos tus decisiones de mantener/reemplazar en una boleta de puntuación imprimible para las urnas.',
+          tag: 'A ciegas primero · imprimible',
         },
       ],
-      largerCaseHeading: 'El caso más amplio',
-      largerCase1: 'Las campañas están diseñadas para persuadir. Los anuncios, los folletos y las frases de los debates se escriben para ganar tu voto, no para informar lo que un candidato realmente hizo con el poder que ya tenía. La brecha entre el discurso y el historial es donde viven la mayoría de las sorpresas — y se amplía en cada ciclo.',
-      largerCase2: 'Un historial de votación es lo único que un candidato no puede reescribir. Las votaciones nominales son públicas, tienen fecha y son definitivas. Lo mismo ocurre con quién financió la campaña. Leídos juntos, te dicen más sobre cómo alguien va a gobernar que cualquier eslogan — porque son un registro de cómo esa persona ya gobernó.',
-      largerCase3: 'Esto no se trata de un partido. Ambos bandos postulan titulares, y ambos cuentan con que tú no lo revises. La solución es la misma sin importar a quién apoyes: dedica unos minutos a comparar el historial con los temas que realmente te importan, antes de rellenar el óvalo. Esa es toda la idea detrás de este sitio.',
-      whatToDoHeading: 'Qué hacer con esto',
-      whatToDo: 'Cuéntanos tu dirección y qué tienes en mente. Buscaremos los votos y el financiamiento reales de tus representantes, los puntuaremos con tus propias palabras — nunca con una lista prearmada — y te mostraremos las pruebas. Tú decides. No respaldamos a nadie; solo cerramos la brecha entre el anuncio y el historial.',
+      ctaH2: 'Los políticos quieren una sola cosa: ser reelegidos.',
+      ctaP: 'Haz que eso dependa del trabajo — no del cofre de guerra. La ventaja es tuya, y está en la boleta.',
+      ctaButton: 'Obtén mis representantes',
+      ctaSub: 'Sin cuenta · sin rastreo · tu dirección nunca sale de tu dispositivo',
     },
     orientation: {
       kicker: 'Antes de empezar · paso 3 de 3',
@@ -4876,31 +4928,99 @@ function PrivacyPage({ onBack }) {
   );
 }
 
+/* Bold Flag "WhyNow" artboard, ported verbatim (markup + classes) from
+   design-handoff/keystone-canvas's screens-whynow.jsx — see the .wn/.wn-sec/
+   .wn-step rules ported into redesign2.css. Three colored movement bands
+   (problem -> the 2026 moment -> why it's hard), a numbered how-it-works
+   3-step block, and a closing CTA. Rendered inside withStaticChrome, which
+   supplies the flagbar + AppNav + AppFooter (the canvas's own .flagbar/.sc-nav
+   are the repo's shared chrome), so .wn carries only the editorial column.
+   Copy + inline emphasis (<em>/<b>/lead-in/src) live in TRANSLATIONS
+   (whyNowPage.*, en + es); markup strings render via dangerouslySetInnerHTML,
+   matching the orientation.heading idiom. */
 function WhyNowPage({ onBack }) {
   const { t } = useI18n();
   const snippets = t('whyNowPage.snippets');
+  const ballot = t('whyNowPage.ballot');
+  const steps = t('whyNowPage.steps');
   return (
-    <StaticPage onBack={onBack} eyebrow={t('whyNowPage.eyebrow')} title={t('whyNowPage.title')}>
-      <p>{t('whyNowPage.intro')}</p>
+    <div className="wn">
+      <div className="wn-main">
+        <div className="wn-mast">
+          <span className="ey kick">
+            <span className="star">★</span> {t('whyNowPage.mastKicker')}
+          </span>
+          <h1 dangerouslySetInnerHTML={{ __html: t('whyNowPage.title') }} />
+          <p className="dek">{t('whyNowPage.dek')}</p>
+        </div>
 
-      <div className="stat-stack stat-stack--page">
-        {snippets.map((s, i) => (
-          <div key={i} className={'stat' + (i % 2 === 1 ? ' alt' : '')}>
-            <div className="v">{s.value}<small>{s.unit}</small></div>
-            <div className="l">{s.label}</div>
-            <div className="cite">{s.cite}</div>
+        <div className="wn-sec">
+          <div className="wn-kicker">{t('whyNowPage.band1Kicker')}</div>
+          <h2 className="wn-h2">{t('whyNowPage.band1H2')}</h2>
+          <div className="wn-cols">
+            <div className="wn-body">
+              <p dangerouslySetInnerHTML={{ __html: t('whyNowPage.band1P1') }} />
+              <p dangerouslySetInnerHTML={{ __html: t('whyNowPage.band1P2') }} />
+              <p dangerouslySetInnerHTML={{ __html: t('whyNowPage.band1P3') }} />
+            </div>
+            <div className="wn-stats">
+              {snippets.map((s, i) => (
+                <div key={i} className={'wn-stat' + (i === 1 ? ' red' : '')}>
+                  <div className="v">{s.value}<small>{s.unit}</small></div>
+                  <div className="l">{s.label}</div>
+                  <div className="cite">{s.cite}</div>
+                </div>
+              ))}
+            </div>
           </div>
-        ))}
+        </div>
+
+        <div className="wn-sec brand">
+          <div className="wn-kicker">{t('whyNowPage.band2Kicker')}</div>
+          <h2 className="wn-h2" dangerouslySetInnerHTML={{ __html: t('whyNowPage.band2H2') }} />
+          <div className="wn-body">
+            <p>{t('whyNowPage.band2P')}</p>
+          </div>
+          <div className="wn-ballot">
+            {ballot.map((c, i) => (
+              <div key={i} className="cell">
+                <div className={'v' + (i === 1 ? ' gold' : '')}>{c.value}</div>
+                <div className="l">{c.label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="wn-sec alt">
+          <div className="wn-kicker">{t('whyNowPage.band3Kicker')}</div>
+          <p className="wn-pull" dangerouslySetInnerHTML={{ __html: t('whyNowPage.band3Pull') }} />
+        </div>
+
+        <div className="wn-sec">
+          <div className="wn-kicker">{t('whyNowPage.howKicker')}</div>
+          <h2 className="wn-h2" dangerouslySetInnerHTML={{ __html: t('whyNowPage.howH2') }} />
+          <div className="wn-steps">
+            {steps.map((s, i) => (
+              <div key={i} className="wn-step">
+                <div className="n">{i + 1}</div>
+                <h3>{s.title}</h3>
+                <p>{s.body}</p>
+                <span className="tag">{s.tag}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="wn-cta">
+          <h2>{t('whyNowPage.ctaH2')}</h2>
+          <p>{t('whyNowPage.ctaP')}</p>
+          <button className="btn-primary" onClick={onBack}>
+            {t('whyNowPage.ctaButton')} <span aria-hidden="true">→</span>
+          </button>
+          <div className="sub">{t('whyNowPage.ctaSub')}</div>
+        </div>
       </div>
-
-      <h2>{t('whyNowPage.largerCaseHeading')}</h2>
-      <p>{t('whyNowPage.largerCase1')}</p>
-      <p>{t('whyNowPage.largerCase2')}</p>
-      <p>{t('whyNowPage.largerCase3')}</p>
-
-      <h2>{t('whyNowPage.whatToDoHeading')}</h2>
-      <p>{t('whyNowPage.whatToDo')}</p>
-    </StaticPage>
+    </div>
   );
 }
 
