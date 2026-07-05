@@ -4804,11 +4804,11 @@ function MethodologyPage({ onBack }) {
       <h2>Step 4 · "With you / against you" is your stance vs. the vote</h2>
       <p>If you said you favor lower drug prices, a vote FOR Medicare drug-price negotiation reads "WITH YOU." A vote AGAINST reads "AGAINST YOU." When the record is mixed, we show the raw vote — never a softened summary.</p>
 
-      <h2>AI's role</h2>
-      <p>The AI's job is to <b>route + summarize</b>, not to invent. It pulls from our structured database (votes, donors, narratives) and presents them. It does not generate vote claims. If a vote isn't in our database, we don't show it.</p>
+      <h2>The AI's role</h2>
+      <p>The AI's job is to <b>route and summarize</b>, not to invent. It pulls from our structured database of votes, donors, and narratives. It does not generate vote claims — if a vote isn't in our database, we don't show it.</p>
 
       <h2>Mistakes</h2>
-      <p>We will make them. When we do, we publish a correction and update the case file. Every claim links to a primary source so you can verify yourself. If you find one, email <a href="mailto:muxin.li.pro@gmail.com"><code>muxin.li.pro@gmail.com</code></a>.</p>
+      <p>We'll make them. When we do, we publish a correction and update the case file. Every claim links to a primary source so you can verify it yourself. Found one? Email <a href="mailto:muxin.li.pro@gmail.com"><code>muxin.li.pro@gmail.com</code></a>.</p>
     </StaticPage>
   );
 }
@@ -4837,7 +4837,7 @@ function TipJarPage({ onBack }) {
       <h2>Where it goes</h2>
       <ul>
         <li><b>Anthropic API spend</b> — the AI chat budget that runs out when too many voters use it at once.</li>
-        <li><b>Server + hosting</b> — Vercel + a small Redis instance for rate-limiting.</li>
+        <li><b>Server + hosting</b> — Vercel plus a small Redis instance for rate-limiting.</li>
       </ul>
       <p>Voter Choice is built by <b>Grey Bird LLC</b>. No ads, no tracking, no accounts, no data sales. Tips and small individual contributions are the only revenue.</p>
     </StaticPage>
@@ -4973,14 +4973,14 @@ function HomeView({ savedAddress, savedSession, onSubmit, onResumeFromProfile, o
       <main id="main-content">
       <section className="vh-hero" data-palette="white">
         <div className="vh-left">
-          <span className="vh-eyebrow kick"><span className="star">★</span> November 3, 2026 · America's 250th election</span>
-          <h1 className="vh-h1">See how your members of Congress <em>actually voted</em> — before you vote.</h1>
-          <p className="vh-lede">Hold Congress to its record. All 435 House seats and 33 Senate seats are on the ballot — compare what your incumbents say with how they voted, and who funded the campaign.</p>
+          <span className="vh-eyebrow kick"><span className="star">★</span> Nov 3, 2026 · America's 250th election</span>
+          <h1 className="vh-h1">How well are your elected officials really representing you? <em>Get the scorecard.</em></h1>
+          <p className="vh-lede">Voter Choice shows you how your senators and representative actually voted on the issues you choose — and who funded them — then turns your verdicts into a scorecard for the polls.</p>
 
           <div className="vh-addr">
             <div className="vh-addr-lab">
               <span className="l">
-                Enter Your Registered Address
+                Your registered address
                 <button
                   type="button"
                   className="why"
