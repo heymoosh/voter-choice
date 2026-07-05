@@ -1,4 +1,8 @@
-import { isDurableStoreConfigured, redisCommand } from "./durable-store";
+import {
+  isDurableStoreConfigured,
+  durableStoreUnconfiguredInProd,
+  redisCommand,
+} from "./durable-store";
 
 const DEFAULT_CONCURRENT_LIMIT = 10;
 const DEFAULT_DAILY_SESSION_LIMIT =
@@ -248,6 +252,17 @@ export async function checkRateLimitAsync(
   sessionId: string,
   messageCount: number,
 ): Promise<RateLimitResult> {
+  if (durableStoreUnconfiguredInProd()) {
+    // Fail closed: with no shared store there is nothing to enforce limits
+    // against, and per-instance memory would grant every serverless instance a
+    // fresh full quota. Deny with the retryable "unavailable" code rather than
+    // silently admitting unlimited sessions.
+    return {
+      allowed: false,
+      error: "Rate limit service is temporarily unavailable.",
+      code: "RATE_LIMIT_UNAVAILABLE",
+    };
+  }
   if (!isDurableStoreConfigured()) {
     return checkRateLimit(ip, sessionId, messageCount);
   }
