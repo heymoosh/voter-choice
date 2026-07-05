@@ -58,7 +58,8 @@ const SOURCE = "mo_mec_bulk";
 const SOURCE_URL =
   "https://www.mec.mo.gov/MEC/Campaign_Finance/CF_ContrCSV.aspx";
 const _moCycleIdx = process.argv.indexOf("--election-cycle");
-const ELECTION_CYCLE = _moCycleIdx !== -1 ? (process.argv[_moCycleIdx + 1] ?? "2024") : "2024";
+const ELECTION_CYCLE =
+  _moCycleIdx !== -1 ? (process.argv[_moCycleIdx + 1] ?? "2024") : "2024";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -98,13 +99,46 @@ function extractFirstInitial(fullName: string): string {
 
 // Missouri city/place names to exclude from last name extraction
 const MO_CITIES = new Set([
-  "MISSOURI", "MO", "HOUSE", "SENATE", "STATE", "DISTRICT", "COUNTY",
-  "JEFFERSON", "SPRINGFIELD", "COLUMBIA", "INDEPENDENCE", "JOPLIN",
-  "LIBERTY", "FLORISSANT", "CHESTERFIELD", "BALLWIN", "WENTZVILLE",
-  "LEES", "SUMMIT", "KIRKWOOD", "MEHLVILLE", "ROLLA", "SEDALIA",
-  "CAPE", "GIRARDEAU", "BRANSON", "NIXA", "OZARK", "REPUBLIC",
-  "RAYTOWN", "LEES", "OFALLON", "OFALLON", "FESTUS", "FARMINGTON",
-  "HANNIBAL", "KIRKSVILLE", "WARRENSBURG", "FULTON", "WAYNESVILLE",
+  "MISSOURI",
+  "MO",
+  "HOUSE",
+  "SENATE",
+  "STATE",
+  "DISTRICT",
+  "COUNTY",
+  "JEFFERSON",
+  "SPRINGFIELD",
+  "COLUMBIA",
+  "INDEPENDENCE",
+  "JOPLIN",
+  "LIBERTY",
+  "FLORISSANT",
+  "CHESTERFIELD",
+  "BALLWIN",
+  "WENTZVILLE",
+  "LEES",
+  "SUMMIT",
+  "KIRKWOOD",
+  "MEHLVILLE",
+  "ROLLA",
+  "SEDALIA",
+  "CAPE",
+  "GIRARDEAU",
+  "BRANSON",
+  "NIXA",
+  "OZARK",
+  "REPUBLIC",
+  "RAYTOWN",
+  "LEES",
+  "OFALLON",
+  "OFALLON",
+  "FESTUS",
+  "FARMINGTON",
+  "HANNIBAL",
+  "KIRKSVILLE",
+  "WARRENSBURG",
+  "FULTON",
+  "WAYNESVILLE",
 ]);
 
 /**
@@ -119,15 +153,26 @@ function extractCandidateLastName(committeeName: string): string | null {
   let name = norm(committeeName);
 
   // Strip trailing "FOR ..." patterns (state, office, city)
-  name = name.replace(/\s+FOR\s+(MISSOURI|MO|STATE|HOUSE|SENATE|REP|SENATE\s+DISTRICT|HOUSE\s+DISTRICT)\b.*$/, "");
+  name = name.replace(
+    /\s+FOR\s+(MISSOURI|MO|STATE|HOUSE|SENATE|REP|SENATE\s+DISTRICT|HOUSE\s+DISTRICT)\b.*$/,
+    "",
+  );
   // Strip trailing digits (district numbers)
   name = name.replace(/\s+\d+$/, "");
   // Strip some trailing city names that might appear
-  for (const city of ["JEFFERSON CITY", "ST LOUIS", "KANSAS CITY", "SPRINGFIELD", "COLUMBIA"]) {
+  for (const city of [
+    "JEFFERSON CITY",
+    "ST LOUIS",
+    "KANSAS CITY",
+    "SPRINGFIELD",
+    "COLUMBIA",
+  ]) {
     name = name.replace(new RegExp("\\s+FOR\\s+" + city + ".*$"), "");
   }
   // Generic "FOR <word>" at end - strip if the word is a city/place
-  name = name.replace(/\s+FOR\s+(\w+)$/, (_, w) => MO_CITIES.has(w) ? "" : " FOR " + w);
+  name = name.replace(/\s+FOR\s+(\w+)$/, (_, w) =>
+    MO_CITIES.has(w) ? "" : " FOR " + w,
+  );
 
   // Strip leading prefixes
   name = name.replace(/^(COMMITTEE|COMM)\s+TO\s+RE-?ELECT\s+/, "");
@@ -178,7 +223,9 @@ function parseCsvLine(line: string): string[] {
   return fields;
 }
 
-async function readCsvLines(filePath: string): Promise<{ headers: string[]; lines: AsyncIterable<string[]> }> {
+async function readCsvLines(
+  filePath: string,
+): Promise<{ headers: string[]; lines: AsyncIterable<string[]> }> {
   const stream = fs.createReadStream(filePath, "utf-8");
   const rl = readline.createInterface({ input: stream, crlfDelay: Infinity });
 
@@ -222,11 +269,18 @@ async function main() {
   const contrIdx = process.argv.indexOf("--contributions");
   const commIdx = process.argv.indexOf("--committees");
   const contrFile =
-    contrIdx !== -1 ? (process.argv[contrIdx + 1] ?? DEFAULT_CONTRIBUTIONS) : DEFAULT_CONTRIBUTIONS;
+    contrIdx !== -1
+      ? (process.argv[contrIdx + 1] ?? DEFAULT_CONTRIBUTIONS)
+      : DEFAULT_CONTRIBUTIONS;
   const commFile =
-    commIdx !== -1 ? (process.argv[commIdx + 1] ?? DEFAULT_COMMITTEES) : DEFAULT_COMMITTEES;
+    commIdx !== -1
+      ? (process.argv[commIdx + 1] ?? DEFAULT_COMMITTEES)
+      : DEFAULT_COMMITTEES;
 
-  for (const [label, f] of [["contributions", contrFile], ["committees", commFile]] as const) {
+  for (const [label, f] of [
+    ["contributions", contrFile],
+    ["committees", commFile],
+  ] as const) {
     if (!fs.existsSync(f)) {
       console.error(`[mo-mec] ${label} file not found: ${f}`);
       process.exitCode = 1;
@@ -239,11 +293,15 @@ async function main() {
   const moHouse = (await db
     .select()
     .from(candidates)
-    .where(sql`${candidates.jurisdiction} = 'state-MO-house'`)) as DbCandidate[];
+    .where(
+      sql`${candidates.jurisdiction} = 'state-MO-house'`,
+    )) as DbCandidate[];
   const moSenate = (await db
     .select()
     .from(candidates)
-    .where(sql`${candidates.jurisdiction} = 'state-MO-senate'`)) as DbCandidate[];
+    .where(
+      sql`${candidates.jurisdiction} = 'state-MO-senate'`,
+    )) as DbCandidate[];
 
   console.log(`[mo-mec] DB: house=${moHouse.length} senate=${moSenate.length}`);
 
@@ -268,10 +326,14 @@ async function main() {
     for await (const line of rl) {
       const trimmed = line.trim();
       if (!trimmed) continue;
-      if (headers === null) { headers = parseCsvLine(trimmed); continue; }
+      if (headers === null) {
+        headers = parseCsvLine(trimmed);
+        continue;
+      }
       const cols = parseCsvLine(trimmed);
       const row: Record<string, string> = {};
-      for (let i = 0; i < (headers?.length ?? 0); i++) row[headers?.[i] ?? ""] = cols[i] ?? "";
+      for (let i = 0; i < (headers?.length ?? 0); i++)
+        row[headers?.[i] ?? ""] = cols[i] ?? "";
 
       if (row["Committee Type"]?.trim() !== "Candidate") continue;
       const mecid = row["MECID"]?.trim();
@@ -289,11 +351,15 @@ async function main() {
         dbMatch = dbCandidates[0]!;
       } else {
         // Try first initial from committee name
-        const nameAfterPrefix = norm(commName).replace(/^(COMMITTEE|COMM|FRIENDS|CITIZENS|ELECT|TEAM|VOTE)\s+(TO\s+)?(ELECT|OF|FOR)?\s*/, "");
+        const nameAfterPrefix = norm(commName).replace(
+          /^(COMMITTEE|COMM|FRIENDS|CITIZENS|ELECT|TEAM|VOTE)\s+(TO\s+)?(ELECT|OF|FOR)?\s*/,
+          "",
+        );
         const firstInitial = nameAfterPrefix[0] ?? "";
         dbMatch =
-          dbCandidates.find((c) => extractFirstInitial(c.fullName) === firstInitial) ??
-          dbCandidates[0]!;
+          dbCandidates.find(
+            (c) => extractFirstInitial(c.fullName) === firstInitial,
+          ) ?? dbCandidates[0]!;
       }
 
       mecidToCandidate.set(mecid, dbMatch);
@@ -317,23 +383,36 @@ async function main() {
     for await (const line of rl) {
       const trimmed = line.trim();
       if (!trimmed) continue;
-      if (headers === null) { headers = parseCsvLine(trimmed); continue; }
+      if (headers === null) {
+        headers = parseCsvLine(trimmed);
+        continue;
+      }
 
       const cols = parseCsvLine(trimmed);
       const row: Record<string, string> = {};
-      for (let i = 0; i < (headers?.length ?? 0); i++) row[headers?.[i] ?? ""] = cols[i] ?? "";
+      for (let i = 0; i < (headers?.length ?? 0); i++)
+        row[headers?.[i] ?? ""] = cols[i] ?? "";
 
       const mecid = row["MECID"]?.trim();
       const dbMatch = mecid ? mecidToCandidate.get(mecid) : undefined;
-      if (!dbMatch) { rowsSkipped++; continue; }
+      if (!dbMatch) {
+        rowsSkipped++;
+        continue;
+      }
 
       const amountStr = (row["Amount"] ?? "").replace(/[$,]/g, "");
       const amount = parseFloat(amountStr);
-      if (!Number.isFinite(amount) || amount <= 0) { rowsSkipped++; continue; }
+      if (!Number.isFinite(amount) || amount <= 0) {
+        rowsSkipped++;
+        continue;
+      }
 
       const contribType = (row["Contribution Type"] ?? "").trim();
       // Skip non-monetary types
-      if (contribType === "Non-Monetary") { rowsSkipped++; continue; }
+      if (contribType === "Non-Monetary") {
+        rowsSkipped++;
+        continue;
+      }
 
       // Classify bucket
       const company = (row["Company"] ?? "").trim();

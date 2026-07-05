@@ -73,7 +73,13 @@ interface DbCandidate {
 const SUFFIXES = new Set(["JR", "SR", "II", "III", "IV"]);
 
 function norm(s: string): string {
-  return s.normalize("NFD").replace(/[̀-ͯ]/gu, "").toUpperCase().replace(/[^A-Z0-9 ]/g, "").replace(/\s+/g, " ").trim();
+  return s
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/gu, "")
+    .toUpperCase()
+    .replace(/[^A-Z0-9 ]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function extractLastFromDbName(fullName: string): string {
@@ -95,7 +101,9 @@ function extractFirstInitialFromDbName(fullName: string): string {
  *   "Last (First) [descriptor]"        → less common
  *   "Friends of First Last"            → rare
  */
-function parseCommitteeName(name: string): { last: string; first: string } | null {
+function parseCommitteeName(
+  name: string,
+): { last: string; first: string } | null {
   const raw = name.trim();
 
   // Format 1: "Last, First ..." (comma-separated)
@@ -106,7 +114,10 @@ function parseCommitteeName(name: string): { last: string; first: string } | nul
     // first name is the first word of the rest
     const firstWord = rest.split(/\s+/)[0] ?? "";
     // Filter out descriptors that aren't names (short conjunctions etc)
-    if (firstWord.length > 1 && !/^(for|of|the|and|by|at|to)$/i.test(firstWord)) {
+    if (
+      firstWord.length > 1 &&
+      !/^(for|of|the|and|by|at|to)$/i.test(firstWord)
+    ) {
       return { last, first: firstWord };
     }
   }
@@ -114,13 +125,22 @@ function parseCommitteeName(name: string): { last: string; first: string } | nul
   // Format 2: "Last (First) ..."
   const parenMatch = /^([^(]+)\s*\(([^)]+)\)/.exec(raw);
   if (parenMatch) {
-    return { last: parenMatch[1]?.trim() ?? "", first: parenMatch[2]?.trim() ?? "" };
+    return {
+      last: parenMatch[1]?.trim() ?? "",
+      first: parenMatch[2]?.trim() ?? "",
+    };
   }
 
   // Format 3: "Friends of First Last" or "Committee for First Last"
-  const friendsMatch = /(?:friends\s+of|committee\s+for|elect)\s+([A-Za-z]+)\s+([A-Za-z]+)/i.exec(raw);
+  const friendsMatch =
+    /(?:friends\s+of|committee\s+for|elect)\s+([A-Za-z]+)\s+([A-Za-z]+)/i.exec(
+      raw,
+    );
   if (friendsMatch) {
-    return { last: friendsMatch[2]?.trim() ?? "", first: friendsMatch[1]?.trim() ?? "" };
+    return {
+      last: friendsMatch[2]?.trim() ?? "",
+      first: friendsMatch[1]?.trim() ?? "",
+    };
   }
 
   return null;
@@ -157,8 +177,10 @@ async function main() {
   const isDryRun = process.argv.includes("--dry-run");
   const fileIdx = process.argv.indexOf("--file");
   const cycleIdx = process.argv.indexOf("--election-cycle");
-  const filePath = fileIdx !== -1 ? (process.argv[fileIdx + 1] ?? DEFAULT_FILE) : DEFAULT_FILE;
-  const ELECTION_CYCLE = cycleIdx !== -1 ? (process.argv[cycleIdx + 1] ?? "2024") : "2024";
+  const filePath =
+    fileIdx !== -1 ? (process.argv[fileIdx + 1] ?? DEFAULT_FILE) : DEFAULT_FILE;
+  const ELECTION_CYCLE =
+    cycleIdx !== -1 ? (process.argv[cycleIdx + 1] ?? "2024") : "2024";
 
   if (!fs.existsSync(filePath)) {
     console.error(`[md-cris] file not found: ${filePath}`);
@@ -171,14 +193,22 @@ async function main() {
   const db = requireDb();
 
   // Load MD state legislative candidates
-  const mdHouse = (await db.select().from(candidates).where(
-    sql`${candidates.jurisdiction} = 'state-MD-house'`
-  )) as DbCandidate[];
-  const mdSenate = (await db.select().from(candidates).where(
-    sql`${candidates.jurisdiction} = 'state-MD-senate'`
-  )) as DbCandidate[];
+  const mdHouse = (await db
+    .select()
+    .from(candidates)
+    .where(
+      sql`${candidates.jurisdiction} = 'state-MD-house'`,
+    )) as DbCandidate[];
+  const mdSenate = (await db
+    .select()
+    .from(candidates)
+    .where(
+      sql`${candidates.jurisdiction} = 'state-MD-senate'`,
+    )) as DbCandidate[];
 
-  console.log(`[md-cris] DB: house=${mdHouse.length} senate=${mdSenate.length}`);
+  console.log(
+    `[md-cris] DB: house=${mdHouse.length} senate=${mdSenate.length}`,
+  );
 
   // Build combined last-name index (both chambers; jurisdiction tracked per candidate)
   const lastNameIdx = new Map<string, DbCandidate[]>();
@@ -226,33 +256,50 @@ async function main() {
 
     // Only process Candidate committee contributions
     const committeeType = row["Committee Type"]?.trim() ?? "";
-    if (committeeType !== "Candidate") { rowsSkipped++; continue; }
+    if (committeeType !== "Candidate") {
+      rowsSkipped++;
+      continue;
+    }
 
     const amountStr = (row["Transaction Amount"] ?? "").replace(/[$,]/g, "");
     const amount = parseFloat(amountStr);
-    if (!Number.isFinite(amount) || amount <= 0) { rowsSkipped++; continue; }
+    if (!Number.isFinite(amount) || amount <= 0) {
+      rowsSkipped++;
+      continue;
+    }
 
     const committeeName = row["Committee Name"]?.trim() ?? "";
     const parsed = parseCommitteeName(committeeName);
-    if (!parsed) { rowsSkipped++; continue; }
+    if (!parsed) {
+      rowsSkipped++;
+      continue;
+    }
 
     const lastKey = norm(parsed.last);
     const firstInitial = norm(parsed.first)[0] ?? "";
     const dbCandidates = lastNameIdx.get(lastKey);
 
-    if (!dbCandidates || dbCandidates.length === 0) { rowsSkipped++; continue; }
+    if (!dbCandidates || dbCandidates.length === 0) {
+      rowsSkipped++;
+      continue;
+    }
 
     let dbMatch: DbCandidate | null = null;
     if (dbCandidates.length === 1) {
       dbMatch = dbCandidates[0] ?? null;
     } else {
       dbMatch =
-        dbCandidates.find((c) => extractFirstInitialFromDbName(c.fullName) === firstInitial) ??
+        dbCandidates.find(
+          (c) => extractFirstInitialFromDbName(c.fullName) === firstInitial,
+        ) ??
         dbCandidates[0] ??
         null;
     }
 
-    if (!dbMatch) { rowsSkipped++; continue; }
+    if (!dbMatch) {
+      rowsSkipped++;
+      continue;
+    }
 
     // Classify contributor into bucket
     const contribType = row["Contributor Type"]?.trim() ?? "";
@@ -284,7 +331,7 @@ async function main() {
   }
 
   const matchedCandidates = new Set(
-    [...agg.keys()].map((k) => k.substring(0, k.indexOf("|")))
+    [...agg.keys()].map((k) => k.substring(0, k.indexOf("|"))),
   );
 
   console.log(

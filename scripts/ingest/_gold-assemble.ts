@@ -30,19 +30,25 @@ function majority(votes: string[]): { oracle: string; agreement: number } {
   for (const v of votes) counts[v] = (counts[v] || 0) + 1;
   let best = "",
     bestN = 0;
-  for (const s of STANCES) if ((counts[s] || 0) > bestN) (best = s), (bestN = counts[s]);
+  for (const s of STANCES)
+    if ((counts[s] || 0) > bestN) (best = s), (bestN = counts[s]);
   // agreement = size of the winning bloc; bestN<2 means a 1/1/1 three-way split.
   return { oracle: bestN >= 2 ? best : "uncertain", agreement: bestN };
 }
 
 function main() {
-  const manifest = JSON.parse(readFileSync(`${BASE}/_manifest.json`, "utf8")) as Array<{
+  const manifest = JSON.parse(
+    readFileSync(`${BASE}/_manifest.json`, "utf8"),
+  ) as Array<{
     issue: string;
     batchId: string;
     count: number;
   }>;
 
-  const consensus: Record<string, { oracle: string; agreement: number; jurors: string[] }> = {};
+  const consensus: Record<
+    string,
+    { oracle: string; agreement: number; jurors: string[] }
+  > = {};
   let totalBills = 0,
     unanimous = 0,
     majorityOnly = 0,
@@ -64,7 +70,9 @@ function main() {
       }
     }
     if (present < MAX_JURORS) {
-      console.error(`⚠ ${b.batchId}: only ${present}/${MAX_JURORS} juror files present`);
+      console.error(
+        `⚠ ${b.batchId}: only ${present}/${MAX_JURORS} juror files present`,
+      );
     }
 
     for (const [bill_id, votes] of Object.entries(jurorTagsById)) {
@@ -87,15 +95,24 @@ function main() {
     }
   }
 
-  writeFileSync(`${BASE}/_gold-consensus.json`, JSON.stringify(consensus, null, 2));
+  writeFileSync(
+    `${BASE}/_gold-consensus.json`,
+    JSON.stringify(consensus, null, 2),
+  );
 
   console.log(`=== ORACLE CONSENSUS (3-juror panel) ===`);
-  console.log(`bills: ${totalBills} · unanimous(3/3): ${unanimous} (${pct(unanimous, totalBills)}) · ` +
-    `majority(2/3): ${majorityOnly} (${pct(majorityOnly, totalBills)}) · split(1/1/1): ${split}`);
+  console.log(
+    `bills: ${totalBills} · unanimous(3/3): ${unanimous} (${pct(unanimous, totalBills)}) · ` +
+      `majority(2/3): ${majorityOnly} (${pct(majorityOnly, totalBills)}) · split(1/1/1): ${split}`,
+  );
   if (missing) console.log(`⚠ ${missing} bills had <3 juror votes`);
-  console.log(`\n=== DIRECTION agreement per issue (jurors with a confident call) ===`);
+  console.log(
+    `\n=== DIRECTION agreement per issue (jurors with a confident call) ===`,
+  );
   for (const [iss, d] of Object.entries(dirAgree).sort()) {
-    console.log(`  ${iss.padEnd(20)} ${d.agree}/${d.tot} agree on direction (${pct(d.agree, d.tot)})`);
+    console.log(
+      `  ${iss.padEnd(20)} ${d.agree}/${d.tot} agree on direction (${pct(d.agree, d.tot)})`,
+    );
   }
   console.log(`\nWrote _gold-consensus.json`);
 }

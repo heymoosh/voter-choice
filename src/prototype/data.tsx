@@ -65,26 +65,38 @@
 // (Phase 2c) replaces this hardcoded value with applyRealRaces(fetchedBallot).
 // stateCode for these is NJ (threaded as REAL_STATE_CODE below).
 let RACES = [
-  { id: 'us-senate',  section: 'Federal', label: 'U.S. Senate', decided: false,
+  {
+    id: "us-senate",
+    section: "Federal",
+    label: "U.S. Senate",
+    decided: false,
+    candidates: [{ name: "Cory Booker", party: "Democratic" }],
+  },
+  {
+    id: "us-house-cd-1",
+    section: "Federal",
+    label: "U.S. House — CD-1",
+    decided: false,
+    candidates: [{ name: "Donald Norcross", party: "Democratic" }],
+  },
+  {
+    id: "county-commissioners",
+    section: "County",
+    label: "County Commissioners",
+    decided: false,
+    voteForN: 2,
     candidates: [
-      { name: 'Cory Booker', party: 'Democratic' },
-    ]},
-  { id: 'us-house-cd-1',  section: 'Federal', label: 'U.S. House — CD-1', decided: false,
-    candidates: [
-      { name: 'Donald Norcross', party: 'Democratic' },
-    ]},
-  { id: 'county-commissioners', section: 'County', label: 'County Commissioners', decided: false, voteForN: 2,
-    candidates: [
-      { name: 'Louis Cappelli Jr', party: 'Democratic' },
-      { name: 'Jonathan Young', party: 'Democratic' },
-      { name: 'Vanetta Hawkins', party: 'Democratic' },
-      { name: 'Constance Mercedes', party: 'Democratic' },
-    ]},
+      { name: "Louis Cappelli Jr", party: "Democratic" },
+      { name: "Jonathan Young", party: "Democratic" },
+      { name: "Vanetta Hawkins", party: "Democratic" },
+      { name: "Constance Mercedes", party: "Democratic" },
+    ],
+  },
 ];
 
 // State code for the active ballot — set by the civic seam later; seeded NJ
 // for the test ballot above. Read by realData.ts when calling /api/race-data.
-let REAL_STATE_CODE = 'NJ';
+let REAL_STATE_CODE = "NJ";
 
 /* ────────── PROPOSITION DETAIL ──────────
    The repo does NOT have a structured block for proposition
@@ -92,37 +104,43 @@ let REAL_STATE_CODE = 'NJ';
    For the prototype we store minimal copy keyed by raceId. */
 
 const PROPOSITION_DETAIL = {
-  'prop-1': {
+  "prop-1": {
     /* `kind` drives state-aware messaging. In TX, constitutional
        amendments on the November ballot are BINDING. By contrast,
        primary-election propositions in TX are ADVISORY — they
        signal voter preference but don't enact law. In production,
        the host sets this from CivicAPI proposition metadata +
        state rules. */
-    kind: 'constitutional',
-    state: 'TX',
-    summary: 'Constitutional amendment to cap property tax increases at 3% per year for homeowners over 65.',
-    ifYes:   'Seniors’ property taxes can rise no more than 3% annually. School districts argue this caps their main funding source.',
-    ifNo:    'Current law stays. Annual increases on senior homestead exemptions follow appraisal district market values.',
+    kind: "constitutional",
+    state: "TX",
+    summary:
+      "Constitutional amendment to cap property tax increases at 3% per year for homeowners over 65.",
+    ifYes:
+      "Seniors’ property taxes can rise no more than 3% annually. School districts argue this caps their main funding source.",
+    ifNo: "Current law stays. Annual increases on senior homestead exemptions follow appraisal district market values.",
   },
-  'prop-4': {
-    kind: 'bond',
-    state: 'TX',
-    summary: '$1.2B bond authorization for Harris County school district maintenance and new construction.',
-    ifYes:   'District issues $1.2B in bonds. Median Harris County homeowner pays ~$84 more per year in property tax over the bond’s life.',
-    ifNo:    'No bond issued. Maintenance backlog of $340M continues. Three planned schools delayed.',
+  "prop-4": {
+    kind: "bond",
+    state: "TX",
+    summary:
+      "$1.2B bond authorization for Harris County school district maintenance and new construction.",
+    ifYes:
+      "District issues $1.2B in bonds. Median Harris County homeowner pays ~$84 more per year in property tax over the bond’s life.",
+    ifNo: "No bond issued. Maintenance backlog of $340M continues. Three planned schools delayed.",
   },
-  'prop-7': {
+  "prop-7": {
     /* [Δ] Advisory variant — demonstrates non-binding banner.
        In real TX ballots, advisory props appear on PRIMARY election
        ballots, not the November general. This is a stand-in for the
        prototype so we can show the advisory framing alongside the
        binding ones. */
-    kind: 'primary_advisory',
-    state: 'TX',
-    summary: 'Should the Texas Legislature expand the list of accepted forms of photo ID for voting?',
-    ifYes:   'Signals to your party that you support expanding accepted ID forms (e.g. student IDs, expired military IDs). Does not change election law on its own — the legislature decides whether to draft a bill.',
-    ifNo:    'Signals to your party that you oppose expanding the ID list. Current law stays unless the legislature acts on its own.',
+    kind: "primary_advisory",
+    state: "TX",
+    summary:
+      "Should the Texas Legislature expand the list of accepted forms of photo ID for voting?",
+    ifYes:
+      "Signals to your party that you support expanding accepted ID forms (e.g. student IDs, expired military IDs). Does not change election law on its own — the legislature decides whether to draft a bill.",
+    ifNo: "Signals to your party that you oppose expanding the ID list. Current law stays unless the legislature acts on its own.",
   },
 };
 
@@ -131,34 +149,39 @@ const PROPOSITION_DETAIL = {
    production this is keyed by (state, electionType, propType). */
 const PROPOSITION_KIND_META = {
   constitutional: {
-    label: 'Constitutional amendment · binding',
+    label: "Constitutional amendment · binding",
     binding: true,
-    tone: 'binding',
-    blurb: 'A YES vote amends your state constitution. This is binding — if it passes statewide, it becomes law.',
+    tone: "binding",
+    blurb:
+      "A YES vote amends your state constitution. This is binding — if it passes statewide, it becomes law.",
   },
   bond: {
-    label: 'Bond authorization · binding',
+    label: "Bond authorization · binding",
     binding: true,
-    tone: 'binding',
-    blurb: 'A YES vote lets the issuing district sell bonds (debt) and raise property taxes to repay them. Binding — if it passes, the bond gets issued.',
+    tone: "binding",
+    blurb:
+      "A YES vote lets the issuing district sell bonds (debt) and raise property taxes to repay them. Binding — if it passes, the bond gets issued.",
   },
   statute: {
-    label: 'Ballot measure · binding',
+    label: "Ballot measure · binding",
     binding: true,
-    tone: 'binding',
-    blurb: 'A YES vote changes state law directly. Binding — if it passes statewide, it becomes law.',
+    tone: "binding",
+    blurb:
+      "A YES vote changes state law directly. Binding — if it passes statewide, it becomes law.",
   },
   primary_advisory: {
-    label: 'Primary proposition · advisory only',
+    label: "Primary proposition · advisory only",
     binding: false,
-    tone: 'advisory',
-    blurb: "In a primary election, propositions are ADVISORY — they signal what the party’s voters care about but don’t become law on their own. They influence the party platform + how legislators prioritize bills.",
+    tone: "advisory",
+    blurb:
+      "In a primary election, propositions are ADVISORY — they signal what the party’s voters care about but don’t become law on their own. They influence the party platform + how legislators prioritize bills.",
   },
   advisory: {
-    label: 'Advisory vote · non-binding',
+    label: "Advisory vote · non-binding",
     binding: false,
-    tone: 'advisory',
-    blurb: 'This is non-binding. A YES vote does NOT enact law. It tells your legislators what voters in your district prioritize — they decide whether to act on it.',
+    tone: "advisory",
+    blurb:
+      "This is non-binding. A YES vote does NOT enact law. It tells your legislators what voters in your district prioritize — they decide whether to act on it.",
   },
 };
 
@@ -184,166 +207,271 @@ const PROPOSITION_KIND_META = {
      donorCoalition[].alignsWith?: string (canonicalIssue) */
 
 let RACE_PATTERNS = {
-  'us-senate-tx': {
-    race: 'U.S. Senate — TX',
+  "us-senate-tx": {
+    race: "U.S. Senate — TX",
     candidates: [
       {
-        id: 'cornyn',
-        name: 'John Cornyn',
+        id: "cornyn",
+        name: "John Cornyn",
         incumbent: true,
-        priorRole: 'Senator since 2002 · former Texas AG',
+        priorRole: "Senator since 2002 · former Texas AG",
         platformAlignment: { kept: 38, total: 91 },
         donorCoalition: [
-          { label: 'AIPAC', fullName: 'American Israel Public Affairs Committee',
-            advocates: 'Pro-Israel foreign policy lobby. Favors continued military aid + opposes restrictions on aid conditions.',
-            percent: 7, amount: 436000, isIssuePAC: true, relevantToIssue: 'foreign_policy', pacStance: 'with' },
-          { label: 'PhRMA', fullName: 'Pharmaceutical Research and Manufacturers of America',
-            advocates: 'Pharmaceutical industry trade group · opposes Medicare drug-price negotiation + price caps.',
-            percent: 4, amount: 340000, isIssuePAC: true, relevantToIssue: 'healthcare_affordability', pacStance: 'against' },
-          { label: 'Eli Lilly PAC', fullName: 'Eli Lilly & Company corporate PAC',
-            advocates: 'Pharma manufacturer (insulin · diabetes drugs). Opposes price-cap legislation that targets their products.',
-            percent: 1, amount: 28000, isIssuePAC: true, relevantToIssue: 'healthcare_affordability', pacStance: 'against' },
-          { label: 'Oil & Gas',      percent: 14, amount: 1200000 },
-          { label: 'Banking',        percent: 8,  amount: 680000 },
-          { label: 'Real Estate',    percent: 5,  amount: 420000 },
-          { label: 'Defense',        percent: 4,  amount: 310000 },
+          {
+            label: "AIPAC",
+            fullName: "American Israel Public Affairs Committee",
+            advocates:
+              "Pro-Israel foreign policy lobby. Favors continued military aid + opposes restrictions on aid conditions.",
+            percent: 7,
+            amount: 436000,
+            isIssuePAC: true,
+            relevantToIssue: "foreign_policy",
+            pacStance: "with",
+          },
+          {
+            label: "PhRMA",
+            fullName: "Pharmaceutical Research and Manufacturers of America",
+            advocates:
+              "Pharmaceutical industry trade group · opposes Medicare drug-price negotiation + price caps.",
+            percent: 4,
+            amount: 340000,
+            isIssuePAC: true,
+            relevantToIssue: "healthcare_affordability",
+            pacStance: "against",
+          },
+          {
+            label: "Eli Lilly PAC",
+            fullName: "Eli Lilly & Company corporate PAC",
+            advocates:
+              "Pharma manufacturer (insulin · diabetes drugs). Opposes price-cap legislation that targets their products.",
+            percent: 1,
+            amount: 28000,
+            isIssuePAC: true,
+            relevantToIssue: "healthcare_affordability",
+            pacStance: "against",
+          },
+          { label: "Oil & Gas", percent: 14, amount: 1200000 },
+          { label: "Banking", percent: 8, amount: 680000 },
+          { label: "Real Estate", percent: 5, amount: 420000 },
+          { label: "Defense", percent: 4, amount: 310000 },
         ],
-        donorDataSource: 'voting_record',
+        donorDataSource: "voting_record",
         totalRaised: 8400000,
-        donorSource: { name: 'FEC · OpenSecrets', url: 'https://www.opensecrets.org' },
+        donorSource: {
+          name: "FEC · OpenSecrets",
+          url: "https://www.opensecrets.org",
+        },
         endorsements: null,
         retrospective: null,
         valuesHighlight: null,
         // [Δ] design-delta
-        fundingMix: { small: 8, large: 32, pac: 60, total: 8400000, cycle: '2020–2024 (last full term)' },
+        fundingMix: {
+          small: 8,
+          large: 32,
+          pac: 60,
+          total: 8400000,
+          cycle: "2020–2024 (last full term)",
+        },
       },
       {
-        id: 'allred',
-        name: 'Colin Allred',
+        id: "allred",
+        name: "Colin Allred",
         incumbent: false,
-        priorRole: 'House Rep (TX-32) since 2019',
+        priorRole: "House Rep (TX-32) since 2019",
         platformAlignment: { kept: 73, total: 91 },
         donorCoalition: [
-          { label: 'EMILY’s List', fullName: 'EMILY’s List',
-            advocates: 'Funds pro-choice Democratic women candidates. Favors codifying Roe-era abortion access.',
-            percent: 6, amount: 252000, isIssuePAC: true, relevantToIssue: 'reproductive_rights', pacStance: 'with' },
-          { label: 'LCV Action Fund', fullName: 'League of Conservation Voters Action Fund',
-            advocates: 'Climate + environmental advocacy. Favors emissions caps, clean-energy subsidies, EPA enforcement.',
-            percent: 3, amount: 130000, isIssuePAC: true, relevantToIssue: 'environment_climate', pacStance: 'with' },
-          { label: 'Trial Lawyers',      percent: 12, amount: 520000 },
-          { label: 'Healthcare',         percent: 8,  amount: 340000 },
-          { label: 'Education',          percent: 6,  amount: 260000 },
-          { label: 'Tech',               percent: 4,  amount: 180000 },
+          {
+            label: "EMILY’s List",
+            fullName: "EMILY’s List",
+            advocates:
+              "Funds pro-choice Democratic women candidates. Favors codifying Roe-era abortion access.",
+            percent: 6,
+            amount: 252000,
+            isIssuePAC: true,
+            relevantToIssue: "reproductive_rights",
+            pacStance: "with",
+          },
+          {
+            label: "LCV Action Fund",
+            fullName: "League of Conservation Voters Action Fund",
+            advocates:
+              "Climate + environmental advocacy. Favors emissions caps, clean-energy subsidies, EPA enforcement.",
+            percent: 3,
+            amount: 130000,
+            isIssuePAC: true,
+            relevantToIssue: "environment_climate",
+            pacStance: "with",
+          },
+          { label: "Trial Lawyers", percent: 12, amount: 520000 },
+          { label: "Healthcare", percent: 8, amount: 340000 },
+          { label: "Education", percent: 6, amount: 260000 },
+          { label: "Tech", percent: 4, amount: 180000 },
         ],
-        donorDataSource: 'voting_record',
+        donorDataSource: "voting_record",
         totalRaised: 4200000,
-        donorSource: { name: 'FEC · OpenSecrets', url: 'https://www.opensecrets.org' },
+        donorSource: {
+          name: "FEC · OpenSecrets",
+          url: "https://www.opensecrets.org",
+        },
         endorsements: null,
         retrospective: null,
         valuesHighlight: null,
         // [Δ] design-delta
-        fundingMix: { small: 38, large: 41, pac: 21, total: 4200000, cycle: '2024 cycle' },
+        fundingMix: {
+          small: 38,
+          large: 41,
+          pac: 21,
+          total: 4200000,
+          cycle: "2024 cycle",
+        },
       },
     ],
   },
 
-  'us-house-tx7': {
-    race: 'U.S. House — TX‑7',
+  "us-house-tx7": {
+    race: "U.S. House — TX‑7",
     candidates: [
       {
-        id: 'hartman',
-        name: 'Jordan Hartman',
+        id: "hartman",
+        name: "Jordan Hartman",
         incumbent: true,
-        priorRole: 'House Rep since 2022 · Energy & Commerce',
+        priorRole: "House Rep since 2022 · Energy & Commerce",
         platformAlignment: { kept: 67, total: 84 },
         donorCoalition: [
-          { label: 'EMILY’s List', fullName: 'EMILY’s List',
-            advocates: 'Funds pro-choice Democratic women candidates. Favors codifying Roe-era abortion access.',
-            percent: 5, amount: 112000, isIssuePAC: true, relevantToIssue: 'reproductive_rights', pacStance: 'with' },
-          { label: 'Healthcare Workers',    percent: 20, amount: 412000 },
-          { label: 'Education · NEA',  percent: 14, amount: 298000 },
-          { label: 'Real Estate',           percent: 10, amount: 214000 },
-          { label: 'Energy',                percent: 7,  amount: 156000 },
+          {
+            label: "EMILY’s List",
+            fullName: "EMILY’s List",
+            advocates:
+              "Funds pro-choice Democratic women candidates. Favors codifying Roe-era abortion access.",
+            percent: 5,
+            amount: 112000,
+            isIssuePAC: true,
+            relevantToIssue: "reproductive_rights",
+            pacStance: "with",
+          },
+          { label: "Healthcare Workers", percent: 20, amount: 412000 },
+          { label: "Education · NEA", percent: 14, amount: 298000 },
+          { label: "Real Estate", percent: 10, amount: 214000 },
+          { label: "Energy", percent: 7, amount: 156000 },
         ],
-        donorDataSource: 'voting_record',
+        donorDataSource: "voting_record",
         totalRaised: 2100000,
-        donorSource: { name: 'FEC', url: 'https://www.fec.gov' },
+        donorSource: { name: "FEC", url: "https://www.fec.gov" },
         endorsements: null,
         retrospective: null,
         valuesHighlight: null,
         // [Δ]
-        fundingMix: { small: 24, large: 51, pac: 25, total: 2100000, cycle: '2024 cycle' },
+        fundingMix: {
+          small: 24,
+          large: 51,
+          pac: 25,
+          total: 2100000,
+          cycle: "2024 cycle",
+        },
       },
       {
-        id: 'olusola',
-        name: 'Marisol Olusola',
+        id: "olusola",
+        name: "Marisol Olusola",
         incumbent: false,
-        priorRole: 'Former Harris County prosecutor · first-time candidate',
+        priorRole: "Former Harris County prosecutor · first-time candidate",
         // No legislative record → null
         platformAlignment: null,
         donorCoalition: [
-          { label: 'Oil & Gas',                percent: 34, amount: 184000 },
-          { label: 'Real Estate',              percent: 21, amount: 112000 },
-          { label: 'Small business assoc',     percent: 14, amount: 78000 },
+          { label: "Oil & Gas", percent: 34, amount: 184000 },
+          { label: "Real Estate", percent: 21, amount: 112000 },
+          { label: "Small business assoc", percent: 14, amount: 78000 },
         ],
-        donorDataSource: 'voting_record',
+        donorDataSource: "voting_record",
         totalRaised: 540000,
-        donorSource: { name: 'FEC', url: 'https://www.fec.gov' },
+        donorSource: { name: "FEC", url: "https://www.fec.gov" },
         endorsements: null,
         retrospective: null,
         valuesHighlight: null,
         // [Δ]
-        fundingMix: { small: 11, large: 47, pac: 42, total: 540000, cycle: '2026 cycle (partial)' },
+        fundingMix: {
+          small: 11,
+          large: 47,
+          pac: 42,
+          total: 540000,
+          cycle: "2026 cycle (partial)",
+        },
       },
     ],
   },
 
-  'governor-tx': {
-    race: 'Governor — TX',
+  "governor-tx": {
+    race: "Governor — TX",
     candidates: [
       {
-        id: 'beto',
-        name: 'Beto O’Rourke',
+        id: "beto",
+        name: "Beto O’Rourke",
         incumbent: false,
-        priorRole: 'Former House Rep (TX-16) · ran for Senate 2018, Governor 2022',
+        priorRole:
+          "Former House Rep (TX-16) · ran for Senate 2018, Governor 2022",
         platformAlignment: { kept: 72, total: 88 },
         donorCoalition: [
-          { label: 'Grassroots Small-Dollar',  percent: 71, amount: 4100000 },
-          { label: 'Education',                percent: 5,  amount: 290000 },
-          { label: 'Tech',                     percent: 4,  amount: 240000 },
+          { label: "Grassroots Small-Dollar", percent: 71, amount: 4100000 },
+          { label: "Education", percent: 5, amount: 290000 },
+          { label: "Tech", percent: 4, amount: 240000 },
         ],
-        donorDataSource: 'voting_record',
+        donorDataSource: "voting_record",
         totalRaised: 5800000,
-        donorSource: { name: 'FEC · OpenSecrets', url: 'https://www.opensecrets.org' },
+        donorSource: {
+          name: "FEC · OpenSecrets",
+          url: "https://www.opensecrets.org",
+        },
         endorsements: null,
         retrospective: null,
         valuesHighlight: null,
         // [Δ]
-        fundingMix: { small: 71, large: 24, pac: 5, total: 5800000, cycle: '2026 cycle (so far)' },
+        fundingMix: {
+          small: 71,
+          large: 24,
+          pac: 5,
+          total: 5800000,
+          cycle: "2026 cycle (so far)",
+        },
       },
       {
-        id: 'abbott',
-        name: 'Greg Abbott',
+        id: "abbott",
+        name: "Greg Abbott",
         incumbent: true,
-        priorRole: 'Governor since 2015 · former TX Supreme Court justice',
+        priorRole: "Governor since 2015 · former TX Supreme Court justice",
         platformAlignment: { kept: 41, total: 88 },
         donorCoalition: [
-          { label: 'PhRMA', fullName: 'Pharmaceutical Research and Manufacturers of America',
-            advocates: 'Pharmaceutical industry trade group · opposes Medicare drug-price negotiation + price caps.',
-            percent: 1, amount: 120000, isIssuePAC: true, relevantToIssue: 'healthcare_affordability', pacStance: 'against' },
-          { label: 'Oil & Gas',      percent: 12, amount: 8400000 },
-          { label: 'Real Estate',    percent: 3,  amount: 2100000 },
-          { label: 'Construction',   percent: 2,  amount: 1400000 },
-          { label: 'Healthcare',     percent: 1,  amount: 640000 },
+          {
+            label: "PhRMA",
+            fullName: "Pharmaceutical Research and Manufacturers of America",
+            advocates:
+              "Pharmaceutical industry trade group · opposes Medicare drug-price negotiation + price caps.",
+            percent: 1,
+            amount: 120000,
+            isIssuePAC: true,
+            relevantToIssue: "healthcare_affordability",
+            pacStance: "against",
+          },
+          { label: "Oil & Gas", percent: 12, amount: 8400000 },
+          { label: "Real Estate", percent: 3, amount: 2100000 },
+          { label: "Construction", percent: 2, amount: 1400000 },
+          { label: "Healthcare", percent: 1, amount: 640000 },
         ],
-        donorDataSource: 'voting_record',
+        donorDataSource: "voting_record",
         totalRaised: 73000000,
-        donorSource: { name: 'TX Ethics Commission', url: 'https://www.ethics.state.tx.us' },
+        donorSource: {
+          name: "TX Ethics Commission",
+          url: "https://www.ethics.state.tx.us",
+        },
         endorsements: null,
         retrospective: null,
         valuesHighlight: null,
         // [Δ]
-        fundingMix: { small: 4, large: 36, pac: 60, total: 73000000, cycle: 'cumulative 2014–2024' },
+        fundingMix: {
+          small: 4,
+          large: 36,
+          pac: 60,
+          total: 73000000,
+          cycle: "cumulative 2014–2024",
+        },
       },
     ],
   },
@@ -370,59 +498,78 @@ let RACE_PATTERNS = {
      Repo's drill-down currently has no equivalent. */
 
 let ALIGNMENT_SCORES = {
-  'us-senate-tx': {
-    race: 'U.S. Senate — TX',
+  "us-senate-tx": {
+    race: "U.S. Senate — TX",
     entries: [
       {
-        candidateId: 'cornyn',
+        candidateId: "cornyn",
         scores: [
           {
-            canonicalIssue: 'healthcare_affordability',
-            issueLabel: 'Healthcare Affordability',
-            resolvedStance: 'voter favors lower drug prices and Medicare drug-price negotiation',
-            sourceType: 'voting_record',
-            kept: 1, total: 5,
+            canonicalIssue: "healthcare_affordability",
+            issueLabel: "Healthcare Affordability",
+            resolvedStance:
+              "voter favors lower drug prices and Medicare drug-price negotiation",
+            sourceType: "voting_record",
+            kept: 1,
+            total: 5,
             contributingVotes: [
               {
-                billTitle: 'HR-2 · Lower Drug Costs Act',
-                voteCast: 'against',
-                date: '2023-07-14',
-                source: { name: 'CAN2026 case file', url: 'https://can2026.org/cases/hr2-2023' },
+                billTitle: "HR-2 · Lower Drug Costs Act",
+                voteCast: "against",
+                date: "2023-07-14",
+                source: {
+                  name: "CAN2026 case file",
+                  url: "https://can2026.org/cases/hr2-2023",
+                },
                 // [Δ] narrative
-                narrative: 'One of 49 GOP senators against. The bill capped insulin at $35/mo for Medicare beneficiaries and let HHS negotiate drug prices. Cornyn gave a 12-minute floor speech opposing price controls.',
+                narrative:
+                  "One of 49 GOP senators against. The bill capped insulin at $35/mo for Medicare beneficiaries and let HHS negotiate drug prices. Cornyn gave a 12-minute floor speech opposing price controls.",
               },
               {
-                billTitle: 'IRA · Inflation Reduction Act',
-                voteCast: 'against',
-                date: '2022-08-07',
-                source: { name: 'Congress.gov roll call', url: 'https://www.congress.gov' },
+                billTitle: "IRA · Inflation Reduction Act",
+                voteCast: "against",
+                date: "2022-08-07",
+                source: {
+                  name: "Congress.gov roll call",
+                  url: "https://www.congress.gov",
+                },
                 // [Δ] narrative
-                narrative: 'Voted against the IRA in a 51–50 party-line vote. Drug pricing provisions in this bill capped Medicare Part D out-of-pocket at $2,000/yr and let Medicare negotiate prices on 10 drugs starting 2026.',
+                narrative:
+                  "Voted against the IRA in a 51–50 party-line vote. Drug pricing provisions in this bill capped Medicare Part D out-of-pocket at $2,000/yr and let Medicare negotiate prices on 10 drugs starting 2026.",
               },
             ],
           },
           {
-            canonicalIssue: 'housing_affordability',
-            issueLabel: 'Housing Affordability',
-            resolvedStance: 'voter favors stronger rent protections',
-            sourceType: 'voting_record',
-            kept: 1, total: 3,
+            canonicalIssue: "housing_affordability",
+            issueLabel: "Housing Affordability",
+            resolvedStance: "voter favors stronger rent protections",
+            sourceType: "voting_record",
+            kept: 1,
+            total: 3,
             contributingVotes: [
               {
-                billTitle: 'S-3692 · Stop Excessive Rent Increases Act',
-                voteCast: 'against',
-                date: '2024-02-22',
-                source: { name: 'CAN2026 case file', url: 'https://can2026.org/cases/s3692-2024' },
+                billTitle: "S-3692 · Stop Excessive Rent Increases Act",
+                voteCast: "against",
+                date: "2024-02-22",
+                source: {
+                  name: "CAN2026 case file",
+                  url: "https://can2026.org/cases/s3692-2024",
+                },
                 // [Δ]
-                narrative: 'Voted to block consideration of a national 5% rent-cap proposal tied to corporate landlords (50+ units). Bill never reached the floor for a full vote.',
+                narrative:
+                  "Voted to block consideration of a national 5% rent-cap proposal tied to corporate landlords (50+ units). Bill never reached the floor for a full vote.",
               },
               {
-                billTitle: 'HR-7160 · SALT Cap Relief',
-                voteCast: 'against',
-                date: '2024-03-14',
-                source: { name: 'Congress.gov roll call', url: 'https://www.congress.gov' },
+                billTitle: "HR-7160 · SALT Cap Relief",
+                voteCast: "against",
+                date: "2024-03-14",
+                source: {
+                  name: "Congress.gov roll call",
+                  url: "https://www.congress.gov",
+                },
                 // [Δ]
-                narrative: 'Voted to lift the $10k SALT cap for married filers. Primary beneficiaries are high-income households in high-tax states. Cornyn argued it offset blue-state-led federal tax burden.',
+                narrative:
+                  "Voted to lift the $10k SALT cap for married filers. Primary beneficiaries are high-income households in high-tax states. Cornyn argued it offset blue-state-led federal tax burden.",
               },
             ],
           },
@@ -430,82 +577,107 @@ let ALIGNMENT_SCORES = {
             // Note: canonicalIssues.ts in the repo flags this list for
             // expansion. "Congressional accountability" is a proposed new
             // canonical id surfaced by this prototype.
-            canonicalIssue: 'congressional_accountability',
-            issueLabel: 'Congressional Accountability',
-            resolvedStance: 'voter favors banning congressional stock trading',
-            sourceType: 'voting_record',
-            kept: 0, total: 2,
+            canonicalIssue: "congressional_accountability",
+            issueLabel: "Congressional Accountability",
+            resolvedStance: "voter favors banning congressional stock trading",
+            sourceType: "voting_record",
+            kept: 0,
+            total: 2,
             contributingVotes: [
               {
-                billTitle: 'S-1171 · PELOSI Act (stock trading ban)',
-                voteCast: 'against',
-                date: '2023-05-09',
-                source: { name: 'CAN2026 case file', url: 'https://can2026.org/cases/s1171-2023' },
+                billTitle: "S-1171 · PELOSI Act (stock trading ban)",
+                voteCast: "against",
+                date: "2023-05-09",
+                source: {
+                  name: "CAN2026 case file",
+                  url: "https://can2026.org/cases/s1171-2023",
+                },
                 // [Δ]
-                narrative: 'Bill never reached a floor vote. Cornyn was a listed co-sponsor of an earlier 2020 version but withdrew. Has publicly opposed full bans, supports disclosure-only.',
+                narrative:
+                  "Bill never reached a floor vote. Cornyn was a listed co-sponsor of an earlier 2020 version but withdrew. Has publicly opposed full bans, supports disclosure-only.",
               },
               {
-                billTitle: 'S-2766 · TRUST in Congress Act',
-                voteCast: 'against',
-                date: '2024-09-18',
-                source: { name: 'CAN2026 case file', url: 'https://can2026.org/cases/s2766-2024' },
+                billTitle: "S-2766 · TRUST in Congress Act",
+                voteCast: "against",
+                date: "2024-09-18",
+                source: {
+                  name: "CAN2026 case file",
+                  url: "https://can2026.org/cases/s2766-2024",
+                },
                 // [Δ]
-                narrative: 'Voted against advancing the bill out of the Senate Homeland Security committee. Bill would have required members to put assets in qualified blind trusts.',
+                narrative:
+                  "Voted against advancing the bill out of the Senate Homeland Security committee. Bill would have required members to put assets in qualified blind trusts.",
               },
             ],
           },
         ],
       },
       {
-        candidateId: 'allred',
+        candidateId: "allred",
         scores: [
           {
-            canonicalIssue: 'healthcare_affordability',
-            issueLabel: 'Healthcare Affordability',
-            resolvedStance: 'voter favors lower drug prices and Medicare drug-price negotiation',
-            sourceType: 'voting_record',
-            kept: 4, total: 4,
+            canonicalIssue: "healthcare_affordability",
+            issueLabel: "Healthcare Affordability",
+            resolvedStance:
+              "voter favors lower drug prices and Medicare drug-price negotiation",
+            sourceType: "voting_record",
+            kept: 4,
+            total: 4,
             contributingVotes: [
               {
-                billTitle: 'HR-2 · Lower Drug Costs Act (House)',
-                voteCast: 'with',
-                date: '2023-07-12',
-                source: { name: 'CAN2026 case file', url: 'https://can2026.org/cases/hr2-2023' },
+                billTitle: "HR-2 · Lower Drug Costs Act (House)",
+                voteCast: "with",
+                date: "2023-07-12",
+                source: {
+                  name: "CAN2026 case file",
+                  url: "https://can2026.org/cases/hr2-2023",
+                },
                 // [Δ]
-                narrative: 'Voted for the House version. Co-signed a colleague letter pushing Senate leadership to bring it up for a floor vote.',
+                narrative:
+                  "Voted for the House version. Co-signed a colleague letter pushing Senate leadership to bring it up for a floor vote.",
               },
               {
-                billTitle: 'IRA · Inflation Reduction Act (House)',
-                voteCast: 'with',
-                date: '2022-08-12',
-                source: { name: 'Congress.gov roll call', url: 'https://www.congress.gov' },
+                billTitle: "IRA · Inflation Reduction Act (House)",
+                voteCast: "with",
+                date: "2022-08-12",
+                source: {
+                  name: "Congress.gov roll call",
+                  url: "https://www.congress.gov",
+                },
                 // [Δ]
-                narrative: 'Voted for the House version. Public statements highlighted the Medicare drug price negotiation provisions.',
+                narrative:
+                  "Voted for the House version. Public statements highlighted the Medicare drug price negotiation provisions.",
               },
             ],
           },
           {
-            canonicalIssue: 'housing_affordability',
-            issueLabel: 'Housing Affordability',
-            resolvedStance: 'voter favors stronger rent protections',
-            sourceType: 'voting_record',
-            kept: 3, total: 4,
+            canonicalIssue: "housing_affordability",
+            issueLabel: "Housing Affordability",
+            resolvedStance: "voter favors stronger rent protections",
+            sourceType: "voting_record",
+            kept: 3,
+            total: 4,
             contributingVotes: [],
           },
           {
-            canonicalIssue: 'congressional_accountability',
-            issueLabel: 'Congressional Accountability',
-            resolvedStance: 'voter favors banning congressional stock trading',
-            sourceType: 'voting_record',
-            kept: 2, total: 2,
+            canonicalIssue: "congressional_accountability",
+            issueLabel: "Congressional Accountability",
+            resolvedStance: "voter favors banning congressional stock trading",
+            sourceType: "voting_record",
+            kept: 2,
+            total: 2,
             contributingVotes: [
               {
-                billTitle: 'HR-336 · PELOSI Act (House companion)',
-                voteCast: 'with',
-                date: '2023-01-31',
-                source: { name: 'CAN2026 case file', url: 'https://can2026.org/cases/hr336-2023' },
+                billTitle: "HR-336 · PELOSI Act (House companion)",
+                voteCast: "with",
+                date: "2023-01-31",
+                source: {
+                  name: "CAN2026 case file",
+                  url: "https://can2026.org/cases/hr336-2023",
+                },
                 // [Δ]
-                narrative: 'Co-sponsored. Voted to advance the House version out of committee. Bill stalled before floor vote.',
+                narrative:
+                  "Co-sponsored. Voted to advance the House version out of committee. Bill stalled before floor vote.",
               },
             ],
           },
@@ -514,69 +686,114 @@ let ALIGNMENT_SCORES = {
     ],
   },
 
-  'us-house-tx7': {
-    race: 'U.S. House — TX‑7',
+  "us-house-tx7": {
+    race: "U.S. House — TX‑7",
     entries: [
       {
-        candidateId: 'hartman',
+        candidateId: "hartman",
         scores: [
           {
-            canonicalIssue: 'healthcare_affordability', issueLabel: 'Healthcare Affordability',
-            resolvedStance: 'voter favors lower drug prices',
-            sourceType: 'voting_record', kept: 5, total: 5,
+            canonicalIssue: "healthcare_affordability",
+            issueLabel: "Healthcare Affordability",
+            resolvedStance: "voter favors lower drug prices",
+            sourceType: "voting_record",
+            kept: 5,
+            total: 5,
             contributingVotes: [],
           },
           {
-            canonicalIssue: 'housing_affordability', issueLabel: 'Housing Affordability',
-            resolvedStance: 'voter favors stronger rent protections',
-            sourceType: 'voting_record', kept: 3, total: 4,
+            canonicalIssue: "housing_affordability",
+            issueLabel: "Housing Affordability",
+            resolvedStance: "voter favors stronger rent protections",
+            sourceType: "voting_record",
+            kept: 3,
+            total: 4,
             contributingVotes: [],
           },
           {
-            canonicalIssue: 'congressional_accountability', issueLabel: 'Congressional Accountability',
-            resolvedStance: 'voter favors banning congressional stock trading',
-            sourceType: 'voting_record', kept: 1, total: 2,
+            canonicalIssue: "congressional_accountability",
+            issueLabel: "Congressional Accountability",
+            resolvedStance: "voter favors banning congressional stock trading",
+            sourceType: "voting_record",
+            kept: 1,
+            total: 2,
             contributingVotes: [],
           },
         ],
       },
       {
-        candidateId: 'olusola',
+        candidateId: "olusola",
         scores: null,
-        unavailable: { reason: 'No legislative record — first-time candidate' },
+        unavailable: { reason: "No legislative record — first-time candidate" },
       },
     ],
   },
 
-  'governor-tx': {
-    race: 'Governor — TX',
+  "governor-tx": {
+    race: "Governor — TX",
     entries: [
       {
-        candidateId: 'beto',
+        candidateId: "beto",
         scores: [
-          { canonicalIssue: 'healthcare_affordability', issueLabel: 'Healthcare Affordability',
-            resolvedStance: 'voter favors lower drug prices', sourceType: 'voting_record',
-            kept: 3, total: 4, contributingVotes: [] },
-          { canonicalIssue: 'housing_affordability', issueLabel: 'Housing Affordability',
-            resolvedStance: 'voter favors stronger rent protections', sourceType: 'voting_record',
-            kept: 2, total: 3, contributingVotes: [] },
-          { canonicalIssue: 'congressional_accountability', issueLabel: 'Congressional Accountability',
-            resolvedStance: 'voter favors banning congressional stock trading', sourceType: 'voting_record',
-            kept: 1, total: 1, contributingVotes: [] },
+          {
+            canonicalIssue: "healthcare_affordability",
+            issueLabel: "Healthcare Affordability",
+            resolvedStance: "voter favors lower drug prices",
+            sourceType: "voting_record",
+            kept: 3,
+            total: 4,
+            contributingVotes: [],
+          },
+          {
+            canonicalIssue: "housing_affordability",
+            issueLabel: "Housing Affordability",
+            resolvedStance: "voter favors stronger rent protections",
+            sourceType: "voting_record",
+            kept: 2,
+            total: 3,
+            contributingVotes: [],
+          },
+          {
+            canonicalIssue: "congressional_accountability",
+            issueLabel: "Congressional Accountability",
+            resolvedStance: "voter favors banning congressional stock trading",
+            sourceType: "voting_record",
+            kept: 1,
+            total: 1,
+            contributingVotes: [],
+          },
         ],
       },
       {
-        candidateId: 'abbott',
+        candidateId: "abbott",
         scores: [
-          { canonicalIssue: 'healthcare_affordability', issueLabel: 'Healthcare Affordability',
-            resolvedStance: 'voter favors lower drug prices', sourceType: 'voting_record',
-            kept: 1, total: 3, contributingVotes: [] },
-          { canonicalIssue: 'housing_affordability', issueLabel: 'Housing Affordability',
-            resolvedStance: 'voter favors stronger rent protections', sourceType: 'voting_record',
-            kept: 2, total: 4, contributingVotes: [] },
-          { canonicalIssue: 'congressional_accountability', issueLabel: 'Congressional Accountability',
-            resolvedStance: 'voter favors banning congressional stock trading', sourceType: 'voting_record',
-            kept: 0, total: 1, contributingVotes: [] },
+          {
+            canonicalIssue: "healthcare_affordability",
+            issueLabel: "Healthcare Affordability",
+            resolvedStance: "voter favors lower drug prices",
+            sourceType: "voting_record",
+            kept: 1,
+            total: 3,
+            contributingVotes: [],
+          },
+          {
+            canonicalIssue: "housing_affordability",
+            issueLabel: "Housing Affordability",
+            resolvedStance: "voter favors stronger rent protections",
+            sourceType: "voting_record",
+            kept: 2,
+            total: 4,
+            contributingVotes: [],
+          },
+          {
+            canonicalIssue: "congressional_accountability",
+            issueLabel: "Congressional Accountability",
+            resolvedStance: "voter favors banning congressional stock trading",
+            sourceType: "voting_record",
+            kept: 0,
+            total: 1,
+            contributingVotes: [],
+          },
         ],
       },
     ],
@@ -595,44 +812,51 @@ let ALIGNMENT_SCORES = {
 
 let PRESET_ISSUES = [
   {
-    sourceType: 'freeText',
-    sourceText: 'my mom’s insulin keeps going up',
+    sourceType: "freeText",
+    sourceText: "my mom’s insulin keeps going up",
     rank: 1,
-    interpretation: 'Lower insulin & drug prices',
-    canonicalIssue: 'healthcare_affordability',
-    stance: 'voter favors lower drug prices and Medicare drug-price negotiation',
-    confidence: 'clear',
+    interpretation: "Lower insulin & drug prices",
+    canonicalIssue: "healthcare_affordability",
+    stance:
+      "voter favors lower drug prices and Medicare drug-price negotiation",
+    confidence: "clear",
     // [Δ] quotes — how we anchor the interpretation back to user's words
     quotes: [
-      { label: 'example', text: 'my mom’s insulin keeps going up' },
-      { label: 'and',        text: 'copays are insane … formulary changes every year' },
+      { label: "example", text: "my mom’s insulin keeps going up" },
+      {
+        label: "and",
+        text: "copays are insane … formulary changes every year",
+      },
     ],
   },
   {
-    sourceType: 'freeText',
-    sourceText: 'rent went up 11% last year',
+    sourceType: "freeText",
+    sourceText: "rent went up 11% last year",
     rank: 2,
-    interpretation: 'Stronger rent + cost-of-living protections',
-    canonicalIssue: 'housing_affordability',
-    stance: 'voter favors stronger rent protections',
-    confidence: 'clear',
+    interpretation: "Stronger rent + cost-of-living protections",
+    canonicalIssue: "housing_affordability",
+    stance: "voter favors stronger rent protections",
+    confidence: "clear",
     quotes: [
-      { label: 'example', text: 'rent went up 11% last year' },
-      { label: 'and',        text: 'the cost of basic stuff' },
+      { label: "example", text: "rent went up 11% last year" },
+      { label: "and", text: "the cost of basic stuff" },
     ],
   },
   {
-    sourceType: 'freeText',
-    sourceText: 'the stock trading thing — how is that still legal',
+    sourceType: "freeText",
+    sourceText: "the stock trading thing — how is that still legal",
     rank: 3,
-    interpretation: 'Ban congressional stock trading',
+    interpretation: "Ban congressional stock trading",
     // Note: canonicalIssues.ts flags expansion needed. This id is proposed.
-    canonicalIssue: 'congressional_accountability',
-    stance: 'voter favors banning congressional stock trading',
-    confidence: 'clear',
+    canonicalIssue: "congressional_accountability",
+    stance: "voter favors banning congressional stock trading",
+    confidence: "clear",
     quotes: [
-      { label: 'example', text: 'the stock trading thing — how is that still legal' },
-      { label: 'and',        text: 'sick of watching Congress do nothing' },
+      {
+        label: "example",
+        text: "the stock trading thing — how is that still legal",
+      },
+      { label: "and", text: "sick of watching Congress do nothing" },
     ],
   },
 ];
@@ -659,12 +883,12 @@ Honestly I'm also sick of watching Congress do nothing while we all just absorb 
 // forbidden strings for any NJ voter.
 const POLLING_INFO = {
   // Civic-API shape (PollingLocation)
-  name: 'Find your polling place at vote.gov',
-  address: '',
-  hours: '',
-  notes: '',
+  name: "Find your polling place at vote.gov",
+  address: "",
+  hours: "",
+  notes: "",
   // Out-of-API extras (sourced separately at port time)
-  precinct: '',
+  precinct: "",
 };
 
 /* ────────── HELPERS ──────────
@@ -677,18 +901,21 @@ function getRacePatternsForRace(raceId) {
 }
 function getCandidatePatterns(raceId, candidateId) {
   const block = RACE_PATTERNS[raceId];
-  return block?.candidates?.find(c => c.id === candidateId) || null;
+  return block?.candidates?.find((c) => c.id === candidateId) || null;
 }
 function getAlignmentScoresForRace(raceId) {
   return ALIGNMENT_SCORES[raceId] || null;
 }
 function getAlignmentEntryForCandidate(raceId, candidateId) {
   const block = ALIGNMENT_SCORES[raceId];
-  return block?.entries?.find(e => e.candidateId === candidateId) || null;
+  return block?.entries?.find((e) => e.candidateId === candidateId) || null;
 }
 function getScoreForIssue(alignmentEntry, canonicalIssue) {
   if (!alignmentEntry?.scores) return null;
-  return alignmentEntry.scores.find(s => s.canonicalIssue === canonicalIssue) || null;
+  return (
+    alignmentEntry.scores.find((s) => s.canonicalIssue === canonicalIssue) ||
+    null
+  );
 }
 
 /* ────────── PARTY METADATA ──────────
@@ -697,19 +924,22 @@ function getScoreForIssue(alignmentEntry, canonicalIssue) {
    party there either — it lives on the deriveRaces Race output). */
 
 const PARTY_META = {
-  Democrat:    { code: 'D', pipClass: 'dem' },
-  Republican:  { code: 'R', pipClass: 'rep' },
-  Independent: { code: 'I', pipClass: 'ind' },
-  Libertarian: { code: 'L', pipClass: 'ind' },
-  Green:       { code: 'G', pipClass: 'ind' },
+  Democrat: { code: "D", pipClass: "dem" },
+  Republican: { code: "R", pipClass: "rep" },
+  Independent: { code: "I", pipClass: "ind" },
+  Libertarian: { code: "L", pipClass: "ind" },
+  Green: { code: "G", pipClass: "ind" },
 };
 
 function getCandidateParty(raceId, candidateName) {
-  const race = RACES.find(r => r.id === raceId);
+  const race = RACES.find((r) => r.id === raceId);
   if (!race) return null;
-  const c = race.candidates.find(x => x.name === candidateName);
+  const c = race.candidates.find((x) => x.name === candidateName);
   if (!c) return null;
-  return { name: c.party, ...(PARTY_META[c.party] || { code: '?', pipClass: 'ind' }) };
+  return {
+    name: c.party,
+    ...(PARTY_META[c.party] || { code: "?", pipClass: "ind" }),
+  };
 }
 
 Object.assign(window, {
@@ -751,23 +981,23 @@ Object.assign(window, {
      red    (≤3 days)    — registration online deadline
      yellow (≤14 days)   — early voting starts
      green  (>14 days)   — election day */
-const TODAY_ISO = '2026-09-29';
+const TODAY_ISO = "2026-09-29";
 
 /* STATE_ELECTION_DATA: a neutral placeholder used only as a last-resort
    fallback when getRealStateCode() returns nothing. The real app path uses
    getFallbackStateData(getRealStateCode()) for every state-aware surface.
    This constant must NOT contain any TX/Harris/Houston/handgun strings. */
 const STATE_ELECTION_DATA = {
-  stateCode: '',
-  stateName: 'Your State',
-  lastUpdated: '2026-01-01',
-  coverageStatus: 'unconfirmed',
+  stateCode: "",
+  stateName: "Your State",
+  lastUpdated: "2026-01-01",
+  coverageStatus: "unconfirmed",
   elections: [
     {
-      id: 'general-2026',
-      name: '2026 General Election',
-      date: '2026-11-03',
-      type: 'general',
+      id: "general-2026",
+      name: "2026 General Election",
+      date: "2026-11-03",
+      type: "general",
       isPrimary: false,
       primaryType: null,
     },
@@ -776,48 +1006,50 @@ const STATE_ELECTION_DATA = {
     online: {
       available: true,
       deadline: null,
-      url: 'https://vote.gov/register/',
+      url: "https://vote.gov/register/",
     },
     byMail: {
-      deadline: 'Check your state election website',
+      deadline: "Check your state election website",
       sincePostmarked: false,
     },
     inPerson: {
-      deadline: 'Check your state election website',
+      deadline: "Check your state election website",
       sincePostmarked: false,
     },
     sameDayRegistration: false,
-    registrationCheckUrl: 'https://vote.gov/',
+    registrationCheckUrl: "https://vote.gov/",
   },
   earlyVoting: {
     available: false,
     startDate: null,
     endDate: null,
-    notes: 'Check vote.gov or your state election website for early voting details.',
+    notes:
+      "Check vote.gov or your state election website for early voting details.",
   },
   votingRules: {
     idRequired: false,
     acceptedIds: [],
-    phonesAtPolls: 'varies',
-    phonesAtPollsDetail: 'Check your state election office for phone rules.',
+    phonesAtPolls: "varies",
+    phonesAtPollsDetail: "Check your state election office for phone rules.",
     additionalRules: [],
   },
   resources: {
-    stateElectionWebsite: 'https://vote.gov/',
-    countyElectionLookup: 'https://vote.gov/',
-    sampleBallotLookup: 'https://vote.gov/',
-    pollingPlaceLookup: 'https://vote.gov/',
+    stateElectionWebsite: "https://vote.gov/",
+    countyElectionLookup: "https://vote.gov/",
+    sampleBallotLookup: "https://vote.gov/",
+    pollingPlaceLookup: "https://vote.gov/",
   },
   runoffRules: {
     hasRunoff: false,
     partyLockedToFirstRoundPrimary: false,
-    ruleExplanation: '',
+    ruleExplanation: "",
   },
   primaryParticipation: {
-    type: 'open',
-    behavior: 'advisory',
-    ruleExplanationEn: 'Check your state election website for primary rules.',
-    ruleExplanationEs: 'Consulta el sitio web de elecciones de tu estado para conocer las reglas de la primaria.',
+    type: "open",
+    behavior: "advisory",
+    ruleExplanationEn: "Check your state election website for primary rules.",
+    ruleExplanationEs:
+      "Consulta el sitio web de elecciones de tu estado para conocer las reglas de la primaria.",
   },
   countyResources: {},
 };
@@ -825,14 +1057,14 @@ const STATE_ELECTION_DATA = {
 /* Computed deadline rows for rendering. Each row matches what
    getDeadlineStatus(dateISO, todayISO, lang) returns in repo. */
 function computeDeadlineRow(labelKey, dateISO) {
-  const today = new Date(TODAY_ISO + 'T00:00:00');
-  const deadline = new Date(dateISO + 'T00:00:00');
+  const today = new Date(TODAY_ISO + "T00:00:00");
+  const deadline = new Date(dateISO + "T00:00:00");
   const daysLeft = Math.round((deadline - today) / 86400000);
   let color;
-  if (daysLeft < 0) color = 'passed';
-  else if (daysLeft <= 3) color = 'red';
-  else if (daysLeft <= 14) color = 'yellow';
-  else color = 'green';
+  if (daysLeft < 0) color = "passed";
+  else if (daysLeft <= 3) color = "red";
+  else if (daysLeft <= 14) color = "yellow";
+  else color = "green";
   return { labelKey, date: dateISO, daysLeft, color };
 }
 
@@ -841,10 +1073,10 @@ function getDeadlineRows() {
   const ev = STATE_ELECTION_DATA.earlyVoting;
   const el = STATE_ELECTION_DATA.elections[0];
   return [
-    computeDeadlineRow('deadline.registerOnline', r.online.deadline),
-    computeDeadlineRow('deadline.earlyVotingStarts', ev.startDate),
-    computeDeadlineRow('deadline.earlyVotingEnds', ev.endDate),
-    computeDeadlineRow('deadline.electionDay', el.date),
+    computeDeadlineRow("deadline.registerOnline", r.online.deadline),
+    computeDeadlineRow("deadline.earlyVotingStarts", ev.startDate),
+    computeDeadlineRow("deadline.earlyVotingEnds", ev.endDate),
+    computeDeadlineRow("deadline.electionDay", el.date),
   ];
 }
 
@@ -856,12 +1088,25 @@ Object.assign(window, {
 });
 
 export {
-  RACES, RACE_PATTERNS, ALIGNMENT_SCORES, PRESET_ISSUES, PROPOSITION_DETAIL,
-  PROPOSITION_KIND_META, SAMPLE_LONGFORM, POLLING_INFO, PARTY_META,
-  STATE_ELECTION_DATA, TODAY_ISO,
-  getRacePatternsForRace, getCandidatePatterns, getAlignmentScoresForRace,
-  getAlignmentEntryForCandidate, getScoreForIssue, getCandidateParty,
-  computeDeadlineRow, getDeadlineRows,
+  RACES,
+  RACE_PATTERNS,
+  ALIGNMENT_SCORES,
+  PRESET_ISSUES,
+  PROPOSITION_DETAIL,
+  PROPOSITION_KIND_META,
+  SAMPLE_LONGFORM,
+  POLLING_INFO,
+  PARTY_META,
+  STATE_ELECTION_DATA,
+  TODAY_ISO,
+  getRacePatternsForRace,
+  getCandidatePatterns,
+  getAlignmentScoresForRace,
+  getAlignmentEntryForCandidate,
+  getScoreForIssue,
+  getCandidateParty,
+  computeDeadlineRow,
+  getDeadlineRows,
 };
 
 /* ─── Phase 2 real-data setters ───────────────────────────────────────────
@@ -872,7 +1117,8 @@ export function applyRealRaces(races) {
   RACES = races;
 }
 export function applyRaceData(raceId, racePatterns, alignmentScores) {
-  if (racePatterns) RACE_PATTERNS = { ...RACE_PATTERNS, [raceId]: racePatterns };
+  if (racePatterns)
+    RACE_PATTERNS = { ...RACE_PATTERNS, [raceId]: racePatterns };
   if (alignmentScores)
     ALIGNMENT_SCORES = { ...ALIGNMENT_SCORES, [raceId]: alignmentScores };
 }

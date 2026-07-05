@@ -291,7 +291,8 @@ async function aggregateContributions(
     const normFirst = normalizeStr(candFirstRaw);
     const cacheKey = `${normLast}|${normFirst}`;
 
-    if (candidateCache.has(cacheKey)) return candidateCache.get(cacheKey) ?? null;
+    if (candidateCache.has(cacheKey))
+      return candidateCache.get(cacheKey) ?? null;
 
     if (!normLast) {
       candidateCache.set(cacheKey, null);
@@ -409,7 +410,8 @@ async function aggregateContributions(
       // Non-individual (organization, PAC, etc.)
       const contributorName = row["Contributor Name"] ?? "";
       const orgName = contributorName || employer;
-      const orgBucket = mapEmployerToBucket(orgName) ?? mapEmployerToBucket(employer);
+      const orgBucket =
+        mapEmployerToBucket(orgName) ?? mapEmployerToBucket(employer);
       bucket = orgBucket ?? "Other";
     }
 
@@ -566,13 +568,13 @@ export async function ingestCtSeecDonors({
 
   // Step 2: Build last-name index
   const { byLastName } = buildNameIndex(dbCandidates);
-  console.log(
-    `[ct-seec-donors] unique_last_names_indexed=${byLastName.size}`,
-  );
+  console.log(`[ct-seec-donors] unique_last_names_indexed=${byLastName.size}`);
 
   // Step 3: Stream CSV and aggregate
-  const { agg, candidateMatchedNames, counters } =
-    await aggregateContributions(CSV_PATH, byLastName);
+  const { agg, candidateMatchedNames, counters } = await aggregateContributions(
+    CSV_PATH,
+    byLastName,
+  );
 
   console.log(
     `[ct-seec-donors] total_rows_processed=${counters.processed} matched_contributions=${counters.filtered}`,

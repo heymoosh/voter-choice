@@ -8,9 +8,18 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { neon } from "@neondatabase/serverless";
 
 const CONTESTED = new Set([
-  "gun_rights_safety", "immigration", "border_security", "public_safety",
-  "crime_public_safety", "energy_grid", "reproductive_rights", "environment_climate",
-  "election_integrity", "economy_jobs", "education_funding", "property_taxes",
+  "gun_rights_safety",
+  "immigration",
+  "border_security",
+  "public_safety",
+  "crime_public_safety",
+  "energy_grid",
+  "reproductive_rights",
+  "environment_climate",
+  "election_integrity",
+  "economy_jobs",
+  "education_funding",
+  "property_taxes",
 ]);
 
 function env(n: string): string {
@@ -19,7 +28,11 @@ function env(n: string): string {
     const t = l.trim();
     if (t.startsWith("#") || !t.includes("=")) continue;
     const [k, ...v] = t.split("=");
-    if (k.trim() === n) return v.join("=").trim().replace(/^["']|["']$/g, "");
+    if (k.trim() === n)
+      return v
+        .join("=")
+        .trim()
+        .replace(/^["']|["']$/g, "");
   }
   throw new Error(n);
 }
@@ -30,22 +43,40 @@ async function main() {
     SELECT it.bill_id, it.canonical_issue
     FROM issue_tags it
     JOIN bills b ON b.id = it.bill_id
-    WHERE b.summary IS NULL AND b.source = 'openstates'`) as Array<{ bill_id: string; canonical_issue: string }>;
+    WHERE b.summary IS NULL AND b.source = 'openstates'`) as Array<{
+    bill_id: string;
+    canonical_issue: string;
+  }>;
 
   const map: Record<string, { contested: string[]; all: string[] }> = {};
   for (const r of rows) {
-    (map[r.bill_id] ??= { contested: [], all: [] });
+    map[r.bill_id] ??= { contested: [], all: [] };
     map[r.bill_id].all.push(r.canonical_issue);
-    if (CONTESTED.has(r.canonical_issue)) map[r.bill_id].contested.push(r.canonical_issue);
+    if (CONTESTED.has(r.canonical_issue))
+      map[r.bill_id].contested.push(r.canonical_issue);
   }
-  writeFileSync("scripts/ingest/_pole-batches/_summary-issuemap.json", JSON.stringify(map));
+  writeFileSync(
+    "scripts/ingest/_pole-batches/_summary-issuemap.json",
+    JSON.stringify(map),
+  );
 
   const bills = Object.keys(map).length;
-  const withContested = Object.values(map).filter((m) => m.contested.length > 0).length;
-  const multiContested = Object.values(map).filter((m) => m.contested.length > 1).length;
+  const withContested = Object.values(map).filter(
+    (m) => m.contested.length > 0,
+  ).length;
+  const multiContested = Object.values(map).filter(
+    (m) => m.contested.length > 1,
+  ).length;
   console.log(`bills: ${bills}`);
-  console.log(`with >=1 contested tag: ${withContested} (${Math.round((withContested / bills) * 100)}%) → these get pole re-tag`);
+  console.log(
+    `with >=1 contested tag: ${withContested} (${Math.round((withContested / bills) * 100)}%) → these get pole re-tag`,
+  );
   console.log(`with >1 contested tag: ${multiContested}`);
-  console.log(`valence-only (summary only, no re-tag): ${bills - withContested}`);
+  console.log(
+    `valence-only (summary only, no re-tag): ${bills - withContested}`,
+  );
 }
-main().catch((e) => { console.error(e.message); process.exit(1); });
+main().catch((e) => {
+  console.error(e.message);
+  process.exit(1);
+});

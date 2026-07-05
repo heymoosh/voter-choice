@@ -40,7 +40,8 @@ import { candidates, donorAggregates } from "../../db/schema";
 // Constants
 // ---------------------------------------------------------------------------
 
-const FL_BASE_URL = "https://dos.elections.myflorida.com/campaign-finance/contributions/";
+const FL_BASE_URL =
+  "https://dos.elections.myflorida.com/campaign-finance/contributions/";
 const DEFAULT_HOUSE_FILE = "/tmp/FL_2024_house_totals.txt";
 const DEFAULT_SENATE_FILE = "/tmp/FL_2024_senate_totals.txt";
 
@@ -109,14 +110,20 @@ function extractFirstInitial(fullName: string): string {
 // File parsing
 // ---------------------------------------------------------------------------
 
-async function parseTotalsFile(filePath: string, office: "STR" | "STS"): Promise<FlEntry[]> {
+async function parseTotalsFile(
+  filePath: string,
+  office: "STR" | "STS",
+): Promise<FlEntry[]> {
   const entries: FlEntry[] = [];
   const stream = fs.createReadStream(filePath, "utf-8");
   const rl = readline.createInterface({ input: stream, crlfDelay: Infinity });
 
   let isHeader = true;
   for await (const line of rl) {
-    if (isHeader) { isHeader = false; continue; }
+    if (isHeader) {
+      isHeader = false;
+      continue;
+    }
     const parts = line.split("\t");
     const candidateName = parts[0]?.trim() ?? "";
     const party = parts[1]?.trim() ?? "";
@@ -128,7 +135,13 @@ async function parseTotalsFile(filePath: string, office: "STR" | "STS"): Promise
     if (!candidateName || totalAmount <= 0) continue;
     if (officeCode !== office) continue;
 
-    entries.push({ candidateName, party, office: officeCode, district, totalAmount });
+    entries.push({
+      candidateName,
+      party,
+      office: officeCode,
+      district,
+      totalAmount,
+    });
   }
 
   return entries;
@@ -143,9 +156,14 @@ async function main() {
   const houseFileIdx = process.argv.indexOf("--house-file");
   const senateFileIdx = process.argv.indexOf("--senate-file");
   const cycleIdx = process.argv.indexOf("--election-cycle");
-  const houseFile = houseFileIdx !== -1 ? process.argv[houseFileIdx + 1] : DEFAULT_HOUSE_FILE;
-  const senateFile = senateFileIdx !== -1 ? process.argv[senateFileIdx + 1] : DEFAULT_SENATE_FILE;
-  const ELECTION_CYCLE = cycleIdx !== -1 ? (process.argv[cycleIdx + 1] ?? "2024") : "2024";
+  const houseFile =
+    houseFileIdx !== -1 ? process.argv[houseFileIdx + 1] : DEFAULT_HOUSE_FILE;
+  const senateFile =
+    senateFileIdx !== -1
+      ? process.argv[senateFileIdx + 1]
+      : DEFAULT_SENATE_FILE;
+  const ELECTION_CYCLE =
+    cycleIdx !== -1 ? (process.argv[cycleIdx + 1] ?? "2024") : "2024";
 
   if (!houseFile || !fs.existsSync(houseFile)) {
     console.error(`[fl-dos] missing house file: ${houseFile}`);
@@ -165,18 +183,26 @@ async function main() {
   // Parse both files
   const houseEntries = await parseTotalsFile(houseFile, "STR");
   const senateEntries = await parseTotalsFile(senateFile, "STS");
-  console.log(`[fl-dos] parsed house=${houseEntries.length} senate=${senateEntries.length} entries`);
+  console.log(
+    `[fl-dos] parsed house=${houseEntries.length} senate=${senateEntries.length} entries`,
+  );
 
   // Load FL candidates from DB
-  const flHouse = await db
+  const flHouse = (await db
     .select()
     .from(candidates)
-    .where(sql`${candidates.jurisdiction} = 'state-FL-house'`) as DbCandidate[];
-  const flSenate = await db
+    .where(
+      sql`${candidates.jurisdiction} = 'state-FL-house'`,
+    )) as DbCandidate[];
+  const flSenate = (await db
     .select()
     .from(candidates)
-    .where(sql`${candidates.jurisdiction} = 'state-FL-senate'`) as DbCandidate[];
-  console.log(`[fl-dos] DB: house=${flHouse.length} senate=${flSenate.length} candidates`);
+    .where(
+      sql`${candidates.jurisdiction} = 'state-FL-senate'`,
+    )) as DbCandidate[];
+  console.log(
+    `[fl-dos] DB: house=${flHouse.length} senate=${flSenate.length} candidates`,
+  );
 
   // Build last-name index for each chamber
   function buildIndex(dbCandidates: DbCandidate[]): Map<string, DbCandidate[]> {
@@ -194,25 +220,44 @@ async function main() {
   const houseIdx = buildIndex(flHouse);
   const senateIdx = buildIndex(flSenate);
 
-  function match(entry: FlEntry, idx: Map<string, DbCandidate[]>): DbCandidate | null {
+  function match(
+    entry: FlEntry,
+    idx: Map<string, DbCandidate[]>,
+  ): DbCandidate | null {
     const last = extractLastName(entry.candidateName);
     const firstInitial = extractFirstInitial(entry.candidateName);
     const candidates = idx.get(last);
     if (!candidates || candidates.length === 0) return null;
     if (candidates.length === 1) return candidates[0] ?? null;
     // Disambiguate by first initial
-    return candidates.find((c) => extractFirstInitial(c.fullName) === firstInitial)
-      ?? candidates[0]
-      ?? null;
+    return (
+      candidates.find(
+        (c) => extractFirstInitial(c.fullName) === firstInitial,
+      ) ??
+      candidates[0] ??
+      null
+    );
   }
 
   let matched = 0;
   let skipped = 0;
   let upserted = 0;
 
-  const allEntries: Array<{ entry: FlEntry; dbMatch: DbCandidate | null; jurisdiction: string }> = [
-    ...houseEntries.map((e) => ({ entry: e, dbMatch: match(e, houseIdx), jurisdiction: "state-FL-house" })),
-    ...senateEntries.map((e) => ({ entry: e, dbMatch: match(e, senateIdx), jurisdiction: "state-FL-senate" })),
+  const allEntries: Array<{
+    entry: FlEntry;
+    dbMatch: DbCandidate | null;
+    jurisdiction: string;
+  }> = [
+    ...houseEntries.map((e) => ({
+      entry: e,
+      dbMatch: match(e, houseIdx),
+      jurisdiction: "state-FL-house",
+    })),
+    ...senateEntries.map((e) => ({
+      entry: e,
+      dbMatch: match(e, senateIdx),
+      jurisdiction: "state-FL-senate",
+    })),
   ];
 
   for (const { entry, dbMatch } of allEntries) {

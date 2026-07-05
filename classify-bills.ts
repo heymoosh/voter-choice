@@ -79,7 +79,7 @@ async function classifyBatch(batchNum: number): Promise<{
       const shouldSkip = SKIP_KEYWORDS.some(
         (kw) =>
           bill.title?.toLowerCase().includes(kw) ||
-          bill.summary?.toLowerCase().includes(kw)
+          bill.summary?.toLowerCase().includes(kw),
       );
       if (shouldSkip) {
         skipped++;
@@ -92,17 +92,14 @@ async function classifyBatch(batchNum: number): Promise<{
     // Skip API call if all bills in batch are skippable
     if (billsToClassify.length === 0) {
       console.log(
-        `  Skipped items ${i + 1}-${Math.min(i + 5, bills.length)} (all procedural/ceremonial)`
+        `  Skipped items ${i + 1}-${Math.min(i + 5, bills.length)} (all procedural/ceremonial)`,
       );
       continue;
     }
 
     // Create prompt for classification
     const billsList = billsToClassify
-      .map(
-        (b) =>
-          `ID: ${b.id}\nTitle: ${b.title}\nSummary: ${b.summary}`
-      )
+      .map((b) => `ID: ${b.id}\nTitle: ${b.title}\nSummary: ${b.summary}`)
       .join("\n\n");
 
     const prompt = `Classify these legislative bills by canonical policy issue.
@@ -148,30 +145,27 @@ ${billsList}`;
             tags.push(...classified);
           }
         } catch (e) {
-          console.error(
-            `Failed to parse response for batch ${i}-${i + 5}:`,
-            e
-          );
+          console.error(`Failed to parse response for batch ${i}-${i + 5}:`, e);
           console.error("Response text:", content.text);
         }
       }
     } catch (error) {
       console.error(
         `API error for batch ${batchNum} items ${i}-${i + 5}:`,
-        error
+        error,
       );
       throw error;
     }
 
     console.log(
-      `  Processed items ${i + 1}-${Math.min(i + 5, bills.length)} (${billsToClassify.length} classified, ${batchSkipped} skipped)`
+      `  Processed items ${i + 1}-${Math.min(i + 5, bills.length)} (${billsToClassify.length} classified, ${batchSkipped} skipped)`,
     );
   }
 
   // Write results
   fs.writeFileSync(outputPath, JSON.stringify(tags, null, 2));
   console.log(
-    `✓ Batch ${batchNum}: ${tags.length} tagged, ${skipped} skipped → ${outputPath}`
+    `✓ Batch ${batchNum}: ${tags.length} tagged, ${skipped} skipped → ${outputPath}`,
   );
 
   return { batchNum, total: bills.length, tagged: tags.length, skipped };
@@ -188,7 +182,7 @@ async function main() {
     } catch (error) {
       console.error(
         `Failed to process batch ${batchNum}:`,
-        error instanceof Error ? error.message : error
+        error instanceof Error ? error.message : error,
       );
       process.exit(1);
     }
@@ -200,14 +194,14 @@ async function main() {
     totalSkipped = 0;
   results.forEach((r) => {
     console.log(
-      `Batch ${r.batchNum}: ${r.total} bills, ${r.tagged} tagged, ${r.skipped} skipped`
+      `Batch ${r.batchNum}: ${r.total} bills, ${r.tagged} tagged, ${r.skipped} skipped`,
     );
     totalBills += r.total;
     totalTagged += r.tagged;
     totalSkipped += r.skipped;
   });
   console.log(
-    `\nTotal: ${totalBills} bills, ${totalTagged} tagged, ${totalSkipped} skipped`
+    `\nTotal: ${totalBills} bills, ${totalTagged} tagged, ${totalSkipped} skipped`,
   );
 }
 

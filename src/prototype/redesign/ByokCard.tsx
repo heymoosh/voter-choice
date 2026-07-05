@@ -48,7 +48,10 @@ export function ByokCard({
     setByokKey(k);
     setSavedKey(k);
     setKeyDraft("");
-    setStatus({ tone: "ok", text: "Saved — resend your last message to use your account." });
+    setStatus({
+      tone: "ok",
+      text: "Saved — resend your last message to use your account.",
+    });
     onKeySaved?.();
   }
 

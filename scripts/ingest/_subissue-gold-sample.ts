@@ -12,7 +12,13 @@
  * Read-only on the DB-free files. No DB.
  *   npx tsx scripts/ingest/_subissue-gold-sample.ts [--per 50]
  */
-import { readFileSync, writeFileSync, mkdirSync, rmSync, existsSync } from "node:fs";
+import {
+  readFileSync,
+  writeFileSync,
+  mkdirSync,
+  rmSync,
+  existsSync,
+} from "node:fs";
 import { resolve } from "node:path";
 
 const SRC = "scripts/ingest/_subissue-batches";
@@ -33,7 +39,9 @@ function arg(name: string, def: number): number {
 
 function main() {
   const per = arg("--per", 50);
-  const manifest = JSON.parse(readFileSync(`${SRC}/_manifest.json`, "utf8")) as Array<{
+  const manifest = JSON.parse(
+    readFileSync(`${SRC}/_manifest.json`, "utf8"),
+  ) as Array<{
     batchId: string;
     count: number;
   }>;
@@ -42,24 +50,32 @@ function main() {
   const meta: Record<string, { title: string; summary: string | null }> = {};
   for (const m of manifest) {
     const batch = JSON.parse(readFileSync(`${SRC}/${m.batchId}.json`, "utf8"));
-    for (const b of batch.bills) meta[b.bill_id] = { title: b.title, summary: b.summary };
+    for (const b of batch.bills)
+      meta[b.bill_id] = { title: b.title, summary: b.summary };
   }
   // tagger labels from the CLEANED assembled output (hallucinated ids already
   // dropped by assemble); restrict to ids that exist in the batch files.
   const all = `${RESULTS}/_all-subtags.json`;
-  if (!existsSync(all)) throw new Error(`missing ${all} — run _subissue-assemble.ts first`);
+  if (!existsSync(all))
+    throw new Error(`missing ${all} — run _subissue-assemble.ts first`);
   const tagger: Record<string, string> = {}; // only non-null facets
   const allTags = JSON.parse(readFileSync(all, "utf8")) as Array<{
     bill_id: string;
     sub_issue: string | null;
   }>;
-  for (const t of allTags) if (t.sub_issue && meta[t.bill_id]) tagger[t.bill_id] = t.sub_issue;
+  for (const t of allTags)
+    if (t.sub_issue && meta[t.bill_id]) tagger[t.bill_id] = t.sub_issue;
 
   // Group sampled bills by facet (deterministic even-stride over sorted ids).
   if (existsSync(OUT)) rmSync(OUT, { recursive: true, force: true });
   mkdirSync(`${OUT}/_results`, { recursive: true });
 
-  const manifestOut: Array<{ path: string; parent: string; batchId: string; count: number }> = [];
+  const manifestOut: Array<{
+    path: string;
+    parent: string;
+    batchId: string;
+    count: number;
+  }> = [];
   const taggerLabels: Record<string, string> = {};
   const summary: Record<string, number> = {};
 
@@ -70,7 +86,10 @@ function main() {
     const picked: string[] =
       ids.length <= per
         ? ids
-        : Array.from({ length: per }, (_, k) => ids[Math.floor((k * ids.length) / per)]);
+        : Array.from(
+            { length: per },
+            (_, k) => ids[Math.floor((k * ids.length) / per)],
+          );
     summary[facet] = picked.length;
     const bills = picked.map((id) => ({
       bill_id: id,
@@ -82,17 +101,32 @@ function main() {
     const path = resolve(`${OUT}/${batchId}.json`);
     writeFileSync(
       path,
-      JSON.stringify({ parent: "healthcare_affordability", batchId, bills }, null, 2),
+      JSON.stringify(
+        { parent: "healthcare_affordability", batchId, bills },
+        null,
+        2,
+      ),
     );
-    manifestOut.push({ path, parent: "healthcare_affordability", batchId, count: bills.length });
+    manifestOut.push({
+      path,
+      parent: "healthcare_affordability",
+      batchId,
+      count: bills.length,
+    });
   }
 
   writeFileSync(`${OUT}/_manifest.json`, JSON.stringify(manifestOut, null, 2));
-  writeFileSync(`${OUT}/_tagger-labels.json`, JSON.stringify(taggerLabels, null, 2));
+  writeFileSync(
+    `${OUT}/_tagger-labels.json`,
+    JSON.stringify(taggerLabels, null, 2),
+  );
 
   console.log("gold sample written to", OUT);
   console.log("per-facet sampled:", summary);
-  console.log("total sampled:", Object.values(summary).reduce((a, b) => a + b, 0));
+  console.log(
+    "total sampled:",
+    Object.values(summary).reduce((a, b) => a + b, 0),
+  );
   console.log("baseDir for oracle:", resolve(OUT));
 }
 

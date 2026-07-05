@@ -234,12 +234,10 @@ async function fetchPage(
   }
 
   const data = (await res.json()) as Record<string, unknown>;
-  const results = (
-    (
-      (data as { result?: { data?: { json?: { results?: unknown } } } })
-        .result?.data?.json as { results?: unknown }
-    )?.results ?? []
-  ) as WiTransaction[];
+  const results = ((
+    (data as { result?: { data?: { json?: { results?: unknown } } } }).result
+      ?.data?.json as { results?: unknown }
+  )?.results ?? []) as WiTransaction[];
 
   return results;
 }
@@ -378,7 +376,9 @@ export async function ingestWiCfisDonors({
   );
 
   const effectiveMaxPages =
-    config.limit !== null ? Math.ceil(config.limit / PAGE_SIZE) : config.maxPages;
+    config.limit !== null
+      ? Math.ceil(config.limit / PAGE_SIZE)
+      : config.maxPages;
 
   for (let page = 1; page <= effectiveMaxPages; page++) {
     const transactions = await fetchPage(page, PAGE_SIZE);
@@ -492,9 +492,7 @@ export async function ingestWiCfisDonors({
     if (!candidateId || !cycle || !bucket) continue;
     if (value.totalDollars <= 0) continue;
 
-    const matchedNames = [
-      ...(candidateMatchedNames.get(candidateId) ?? []),
-    ];
+    const matchedNames = [...(candidateMatchedNames.get(candidateId) ?? [])];
 
     rows.push({
       candidateId,
@@ -598,9 +596,7 @@ function isCliExecution(): boolean {
 if (isCliExecution()) {
   ingestWiCfisDonors().catch((error: unknown) => {
     const msg =
-      error instanceof Error
-        ? error.message.replace(/\s+/gu, " ")
-        : "unknown";
+      error instanceof Error ? error.message.replace(/\s+/gu, " ") : "unknown";
     console.error("[wi-cfis-donors] failed:", msg);
     process.exitCode = 1;
   });

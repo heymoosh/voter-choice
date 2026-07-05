@@ -19,10 +19,7 @@ import {
 // ---------------------------------------------------------------------------
 
 /** Build a minimal mock fetch that returns a JSON body with the given status. */
-function mockFetch(
-  status: number,
-  body: unknown,
-): ReturnType<typeof vi.fn> {
+function mockFetch(status: number, body: unknown): ReturnType<typeof vi.fn> {
   return vi.fn().mockResolvedValue({
     ok: status >= 200 && status < 300,
     status,
@@ -36,10 +33,7 @@ function mockNetworkError(message: string): ReturnType<typeof vi.fn> {
 }
 
 /** Build a minimal mock fetch that returns a text body with the given status. */
-function mockFetchText(
-  status: number,
-  body: string,
-): ReturnType<typeof vi.fn> {
+function mockFetchText(status: number, body: string): ReturnType<typeof vi.fn> {
   return vi.fn().mockResolvedValue({
     ok: status >= 200 && status < 300,
     status,
@@ -123,7 +117,9 @@ describe("stripHtmlTags", () => {
     const html =
       "<p>This bill does <b>something important</b> for the country.</p><p>It also does &amp; other things.</p>";
     const result = stripHtmlTags(html);
-    expect(result).toContain("This bill does something important for the country.");
+    expect(result).toContain(
+      "This bill does something important for the country.",
+    );
     expect(result).toContain("It also does & other things.");
     expect(result).not.toContain("<");
     expect(result).not.toContain("&amp;");
@@ -140,19 +136,31 @@ describe("selectBestSummary", () => {
   });
 
   it("returns the single element when only one exists", () => {
-    const summary = { actionDesc: "Introduced in House", updateDate: "2025-01-01" };
+    const summary = {
+      actionDesc: "Introduced in House",
+      updateDate: "2025-01-01",
+    };
     expect(selectBestSummary([summary])).toEqual(summary);
   });
 
   it("picks the most recently updated summary (highest updateDate)", () => {
-    const older = { actionDesc: "Introduced in House", updateDate: "2025-01-16T00:00:00Z" };
-    const newer = { actionDesc: "Passed House", updateDate: "2025-03-21T00:00:00Z" };
+    const older = {
+      actionDesc: "Introduced in House",
+      updateDate: "2025-01-16T00:00:00Z",
+    };
+    const newer = {
+      actionDesc: "Passed House",
+      updateDate: "2025-03-21T00:00:00Z",
+    };
     const result = selectBestSummary([older, newer]);
     expect(result).toEqual(newer);
   });
 
   it("handles missing updateDate by sorting those entries last", () => {
-    const withDate = { actionDesc: "Introduced in House", updateDate: "2025-01-16T00:00:00Z" };
+    const withDate = {
+      actionDesc: "Introduced in House",
+      updateDate: "2025-01-16T00:00:00Z",
+    };
     const withoutDate = { actionDesc: "No date" };
     const result = selectBestSummary([withoutDate, withDate]);
     // withDate should win since empty string sorts before any date string
@@ -160,8 +168,13 @@ describe("selectBestSummary", () => {
   });
 
   it("ignores non-object entries in the array", () => {
-    const valid = { actionDesc: "Introduced in House", updateDate: "2025-01-01" };
-    expect(selectBestSummary([null, undefined, "string", valid])).toEqual(valid);
+    const valid = {
+      actionDesc: "Introduced in House",
+      updateDate: "2025-01-01",
+    };
+    expect(selectBestSummary([null, undefined, "string", valid])).toEqual(
+      valid,
+    );
   });
 });
 
@@ -313,7 +326,8 @@ describe("fetchCrsSummary", () => {
       baseConfig,
       fetcher as unknown as typeof fetch,
     );
-    const calledUrl = (fetcher as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    const calledUrl = (fetcher as ReturnType<typeof vi.fn>).mock
+      .calls[0][0] as string;
     expect(calledUrl).toContain("api_key=test-api-key");
     expect(calledUrl).toContain("format=json");
   });
@@ -325,7 +339,8 @@ describe("fetchCrsSummary", () => {
       { congressGovBaseUrl: "https://api.congress.gov/v3" }, // no apiKey
       fetcher as unknown as typeof fetch,
     );
-    const calledUrl = (fetcher as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    const calledUrl = (fetcher as ReturnType<typeof vi.fn>).mock
+      .calls[0][0] as string;
     expect(calledUrl).not.toContain("api_key=");
   });
 });
@@ -535,7 +550,8 @@ describe("fetchCrsSummaryGovInfoFallback", () => {
       { congress: 118, type: "hr", number: "30008" },
       fetcher as unknown as typeof fetch,
     );
-    const calledUrl = (fetcher as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    const calledUrl = (fetcher as ReturnType<typeof vi.fn>).mock
+      .calls[0][0] as string;
     expect(calledUrl).toBe(
       "https://www.govinfo.gov/bulkdata/BILLSTATUS/118/hr/BILLSTATUS-118hr30008.xml",
     );

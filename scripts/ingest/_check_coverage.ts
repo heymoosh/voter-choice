@@ -1,9 +1,9 @@
-import { requireDb } from '../../db/client';
-import { sql } from 'drizzle-orm';
+import { requireDb } from "../../db/client";
+import { sql } from "drizzle-orm";
 
 async function main() {
   const db = requireDb();
-  
+
   // Candidates with donor data by state
   const withData = await db.execute(sql`
     SELECT 
@@ -36,22 +36,39 @@ async function main() {
 
   const totalMap = new Map<string, number>();
   allCands.rows.forEach((r: any) => totalMap.set(r.state, Number(r.total)));
-  const dataMap = new Map<string, {cands: number, rows: number}>();
-  withData.rows.forEach((r: any) => dataMap.set(r.state, {cands: Number(r.cands_with_data), rows: Number(r.rows)}));
+  const dataMap = new Map<string, { cands: number; rows: number }>();
+  withData.rows.forEach((r: any) =>
+    dataMap.set(r.state, {
+      cands: Number(r.cands_with_data),
+      rows: Number(r.rows),
+    }),
+  );
 
-  const allStates = [...new Set([...totalMap.keys(), ...dataMap.keys()])].sort();
-  console.log('State | Total | WithData | Rows | %');
-  let totalCands = 0, totalWithData = 0;
+  const allStates = [
+    ...new Set([...totalMap.keys(), ...dataMap.keys()]),
+  ].sort();
+  console.log("State | Total | WithData | Rows | %");
+  let totalCands = 0,
+    totalWithData = 0;
   for (const s of allStates) {
     const tot = totalMap.get(s) || 0;
-    const d = dataMap.get(s) || {cands: 0, rows: 0};
-    const pct = tot > 0 ? Math.round(d.cands * 100 / tot) : 0;
-    console.log(`${s}: ${tot} total, ${d.cands} with data (${pct}%), ${d.rows} rows`);
+    const d = dataMap.get(s) || { cands: 0, rows: 0 };
+    const pct = tot > 0 ? Math.round((d.cands * 100) / tot) : 0;
+    console.log(
+      `${s}: ${tot} total, ${d.cands} with data (${pct}%), ${d.rows} rows`,
+    );
     totalCands += tot;
     totalWithData += d.cands;
   }
-  console.log(`\nTOTAL: ${totalCands} candidates, ${totalWithData} with data (${Math.round(totalWithData*100/totalCands)}%)`);
-  console.log(`States with 0 data: ${allStates.filter(s => !dataMap.has(s)).join(', ')}`);
+  console.log(
+    `\nTOTAL: ${totalCands} candidates, ${totalWithData} with data (${Math.round((totalWithData * 100) / totalCands)}%)`,
+  );
+  console.log(
+    `States with 0 data: ${allStates.filter((s) => !dataMap.has(s)).join(", ")}`,
+  );
 }
 
-main().catch(err => { console.error(err); process.exit(1); });
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});

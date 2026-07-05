@@ -32,16 +32,15 @@ jobs:
       max-parallel: 2
       matrix:
         include:
-
           # ---- States with confirmed working download commands ----
 
           - state: Alabama
             script: al-fcpa-donors.ts
-            pre_download: ""   # auto-downloads from public FCPA page
+            pre_download: "" # auto-downloads from public FCPA page
 
           - state: Arizona
             script: az-seethemoney-donors.ts
-            pre_download: ""   # SeeTheMoney export API
+            pre_download: "" # SeeTheMoney export API
 
           - state: California
             script: ca-calaccess-donors.ts
@@ -62,11 +61,11 @@ jobs:
 
           - state: Iowa
             script: ia-iec-donors.ts
-            pre_download: ""   # Iowa Socrata API
+            pre_download: "" # Iowa Socrata API
 
           - state: Maine
             script: me-cfis-donors.ts
-            pre_download: ""   # Maine CFIS REST API
+            pre_download: "" # Maine CFIS REST API
 
           - state: Maryland
             script: md-cris-donors.ts
@@ -75,7 +74,7 @@ jobs:
 
           - state: Montana
             script: mt-cers-donors.ts
-            pre_download: ""   # CERS session auto-bootstrapped
+            pre_download: "" # CERS session auto-bootstrapped
 
           - state: "New Hampshire"
             script: nh-donors.ts
@@ -84,7 +83,7 @@ jobs:
 
           - state: "New Jersey"
             script: nj-elec-donors.ts
-            pre_download: ""   # NJ ELEC search API
+            pre_download: "" # NJ ELEC search API
 
           - state: Pennsylvania
             script: pa-dos-donors.ts
@@ -103,7 +102,7 @@ jobs:
 
           - state: Virginia
             script: va-sbe-donors.ts
-            pre_download: ""   # VA SBE API
+            pre_download: "" # VA SBE API
 
           - state: Washington
             script: wa-pdc-donors.ts
@@ -113,11 +112,11 @@ jobs:
 
           - state: Wisconsin
             script: wi-cfis-donors.ts
-            pre_download: ""   # Wisconsin CFIS tRPC API
+            pre_download: "" # Wisconsin CFIS tRPC API
 
           - state: "West Virginia"
             script: wv-cfrs-donors.ts
-            pre_download: ""   # WV CFRS two-step S3 API, no auth
+            pre_download: "" # WV CFRS two-step S3 API, no auth
 
           # ---- States where download URL needs verification (will fail until URL is confirmed) ----
           # Each has its best-known source URL. Fix: find direct curl-able file URL and update pre_download.
@@ -220,7 +219,7 @@ jobs:
 
           - state: "North Dakota (Playwright)"
             script: nd-playwright-donors.ts
-            pre_download: ""   # Script uses Playwright directly — no pre-download needed
+            pre_download: "" # Script uses Playwright directly — no pre-download needed
 
           - state: "New York"
             script: ny-boe-donors.ts

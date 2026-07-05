@@ -47,30 +47,38 @@ async function main() {
 
   for (const tag of raw) {
     if (!VALID_STANCES.has(tag.stanceLens)) {
-      console.error(`[insert-tags] skip ${tag.billId}/${tag.canonicalIssue}: invalid stanceLens="${tag.stanceLens}" (must be in_favor|opposed)`);
+      console.error(
+        `[insert-tags] skip ${tag.billId}/${tag.canonicalIssue}: invalid stanceLens="${tag.stanceLens}" (must be in_favor|opposed)`,
+      );
       errors++;
       continue;
     }
     try {
-      await db.insert(issueTags).values({
-        billId: tag.billId,
-        canonicalIssue: tag.canonicalIssue,
-        stanceLens: tag.stanceLens,
-        taggerVersion: TAGGER_VERSION,
-        taggerConfidence: tag.confidence.toFixed(3),
-        taggedAt: new Date(),
-      }).onConflictDoUpdate({
-        target: [issueTags.billId, issueTags.canonicalIssue],
-        set: {
-          stanceLens: sql`excluded.stance_lens`,
-          taggerVersion: sql`excluded.tagger_version`,
-          taggerConfidence: sql`excluded.tagger_confidence`,
-          taggedAt: sql`excluded.tagged_at`,
-        },
-      });
+      await db
+        .insert(issueTags)
+        .values({
+          billId: tag.billId,
+          canonicalIssue: tag.canonicalIssue,
+          stanceLens: tag.stanceLens,
+          taggerVersion: TAGGER_VERSION,
+          taggerConfidence: tag.confidence.toFixed(3),
+          taggedAt: new Date(),
+        })
+        .onConflictDoUpdate({
+          target: [issueTags.billId, issueTags.canonicalIssue],
+          set: {
+            stanceLens: sql`excluded.stance_lens`,
+            taggerVersion: sql`excluded.tagger_version`,
+            taggerConfidence: sql`excluded.tagger_confidence`,
+            taggedAt: sql`excluded.tagged_at`,
+          },
+        });
       upserted++;
     } catch (e) {
-      console.error(`[insert-tags] error on ${tag.billId}/${tag.canonicalIssue}:`, e);
+      console.error(
+        `[insert-tags] error on ${tag.billId}/${tag.canonicalIssue}:`,
+        e,
+      );
       errors++;
     }
   }
@@ -78,4 +86,7 @@ async function main() {
   console.log(`[insert-tags] done upserted=${upserted} errors=${errors}`);
 }
 
-main().catch(e => { console.error(e); process.exit(1); });
+main().catch((e) => {
+  console.error(e);
+  process.exit(1);
+});

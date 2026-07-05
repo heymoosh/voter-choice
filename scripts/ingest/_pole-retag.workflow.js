@@ -1,16 +1,23 @@
 export const meta = {
-  name: 'pole-retag-4issues',
-  description: 'Re-tag economy/education/property/energy bills against (axis,pole) defs on the Neon alignment branch (Sonnet taggers, schema-validated)',
-  phases: [{ title: 'Tag', detail: 'one Sonnet agent per ~100-bill batch; M2 retry on failure', model: 'sonnet' }],
-}
+  name: "pole-retag-4issues",
+  description:
+    "Re-tag economy/education/property/energy bills against (axis,pole) defs on the Neon alignment branch (Sonnet taggers, schema-validated)",
+  phases: [
+    {
+      title: "Tag",
+      detail: "one Sonnet agent per ~100-bill batch; M2 retry on failure",
+      model: "sonnet",
+    },
+  ],
+};
 
 // args = { baseDir, batches: [{ issue, batchId, count }, ...] }
 // Defensive: the harness may deliver args as a JSON string rather than a parsed object.
-const input = typeof args === 'string' ? JSON.parse(args) : args
-const baseDir = input.baseDir
-const batches = input.batches
-const batchPath = (id) => `${baseDir}/${id}.json`
-const resultPath = (id) => `${baseDir}/_results/${id}.json`
+const input = typeof args === "string" ? JSON.parse(args) : args;
+const baseDir = input.baseDir;
+const batches = input.batches;
+const batchPath = (id) => `${baseDir}/${id}.json`;
+const resultPath = (id) => `${baseDir}/_results/${id}.json`;
 
 const POLES = {
   economy_jobs: `Pole A ≡ in_favor = "Public investment & worker protections": government spending/programs and labor protections to create jobs/raise wages (infrastructure spending; jobs programs; minimum-wage increases; pro-union/PRO Act; expanded unemployment).
@@ -30,7 +37,7 @@ MEANS-TRAP: funding/expanding CLEAN energy (renewables, electrification) advance
 RULINGS: nuclear → Pole A (firm conventional baseload); carbon-capture/CCS → Pole A (extends fossil-plant life).
 MIXED: "all-of-the-above"/IRA-style bills funding BOTH → tag by the dominant provision; if genuinely co-equal → no_score.
 Reliability/cost-only bills (both poles claim them) → no_score. Never cross-score against environment_climate.`,
-}
+};
 
 const RULES = `You are tagging the DIRECTIONAL LENS of each bill for ONE canonical issue: what does a YEA vote MEAN for that issue?
 - pole_stance = "in_favor"  → a YEA vote advances Pole A (the in_favor pole).
@@ -41,21 +48,21 @@ CROSS-CUTTING:
 - Omnibus/multi-topic: tag by the DOMINANT provision for THIS issue; if no dominant direction → no_score.
 - Summaries may contain HTML tags — ignore the markup, read the text.
 - Judge by substance/effect, not by the bill's title or marketing name (a restrictive "Integrity Act" is still restrictive).
-confidence: "high" = clear directional signal in title+summary; "medium" = reasonable inference; "low" = thin/ambiguous (kept, because the app shows the underlying vote). Most null/title-only bills should be no_score with low confidence unless the title is itself decisively directional.`
+confidence: "high" = clear directional signal in title+summary; "medium" = reasonable inference; "low" = thin/ambiguous (kept, because the app shows the underlying vote). Most null/title-only bills should be no_score with low confidence unless the title is itself decisively directional.`;
 
 // Agent returns a SMALL summary; the tag data goes to an in-repo result file.
 const SCHEMA = {
-  type: 'object',
+  type: "object",
   additionalProperties: false,
   properties: {
-    batchId: { type: 'string' },
-    written: { type: 'integer' }, // number of tag objects written to the result file
-    in_favor: { type: 'integer' },
-    opposed: { type: 'integer' },
-    no_score: { type: 'integer' },
+    batchId: { type: "string" },
+    written: { type: "integer" }, // number of tag objects written to the result file
+    in_favor: { type: "integer" },
+    opposed: { type: "integer" },
+    no_score: { type: "integer" },
   },
-  required: ['batchId', 'written'],
-}
+  required: ["batchId", "written"],
+};
 
 function buildPrompt(m) {
   return `Tag every bill in a batch for the canonical issue "${m.issue}".
@@ -74,37 +81,46 @@ TASK:
    — EXACTLY one entry per bill. COPY each bill_id CHARACTER-FOR-CHARACTER from the input (the openstates ids are long UUIDs — do not abbreviate, retype, or alter them). No extras, no omissions.
 4. Return the structured summary: { batchId: "${m.batchId}", written: <number of tags written>, in_favor, opposed, no_score }.
 
-The written file is the source of truth; make sure it is valid JSON and complete before returning.`
+The written file is the source of truth; make sure it is valid JSON and complete before returning.`;
 }
 
-phase('Tag')
+phase("Tag");
 
 async function tagOne(m) {
   const r = await agent(buildPrompt(m), {
     label: m.batchId,
-    phase: 'Tag',
-    model: 'sonnet',
+    phase: "Tag",
+    model: "sonnet",
     schema: SCHEMA,
-  })
-  return { ...m, summary: r }
+  });
+  return { ...m, summary: r };
 }
 
 // M2: the workflow's structured return verifies written==count; the MAIN LOOP then
 // re-reads every in-repo result file for authoritative coverage. Retry up to 3x.
-let pending = batches
-const done = []
+let pending = batches;
+const done = [];
 for (let attempt = 1; attempt <= 3 && pending.length > 0; attempt++) {
-  log(`Tag attempt ${attempt}: ${pending.length} batch(es), ${done.length} done`)
-  const res = await parallel(pending.map((m) => () => tagOne(m)))
-  const retry = []
+  log(
+    `Tag attempt ${attempt}: ${pending.length} batch(es), ${done.length} done`,
+  );
+  const res = await parallel(pending.map((m) => () => tagOne(m)));
+  const retry = [];
   for (let i = 0; i < res.length; i++) {
-    const x = res[i]
-    if (x && x.summary && x.summary.written === x.count) done.push({ batchId: x.batchId, issue: x.issue, written: x.summary.written })
-    else retry.push(pending[i])
+    const x = res[i];
+    if (x && x.summary && x.summary.written === x.count)
+      done.push({
+        batchId: x.batchId,
+        issue: x.issue,
+        written: x.summary.written,
+      });
+    else retry.push(pending[i]);
   }
-  pending = retry
+  pending = retry;
 }
 
-const totalWritten = done.reduce((s, b) => s + b.written, 0)
-log(`Tagging complete: ${done.length} batches, ${totalWritten} tags written; ${pending.length} still failing`)
-return { done, stillFailing: pending.map((m) => m.batchId), totalWritten }
+const totalWritten = done.reduce((s, b) => s + b.written, 0);
+log(
+  `Tagging complete: ${done.length} batches, ${totalWritten} tags written; ${pending.length} still failing`,
+);
+return { done, stillFailing: pending.map((m) => m.batchId), totalWritten };

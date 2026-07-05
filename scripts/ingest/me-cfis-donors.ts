@@ -298,7 +298,8 @@ export async function ingestMeCfisDonors({
         const firstToken = normalizeStr(afterComma.split(/\s+/u)[0] ?? "");
         if (firstToken) {
           const firstMatch = lastMatches.find(
-            (c) => normalizeStr(c.fullName.split(/\s+/u)[0] ?? "") === firstToken,
+            (c) =>
+              normalizeStr(c.fullName.split(/\s+/u)[0] ?? "") === firstToken,
           );
           if (firstMatch) {
             nameCache.set(meName, firstMatch);
@@ -311,9 +312,7 @@ export async function ingestMeCfisDonors({
     }
 
     // Fallback: try first-name match (for single-name committee patterns)
-    const firstNameFromMe = normalizeStr(
-      meName.trim().split(/\s+/u)[0] ?? "",
-    );
+    const firstNameFromMe = normalizeStr(meName.trim().split(/\s+/u)[0] ?? "");
     const firstMatches = byFirstName.get(firstNameFromMe);
     if (firstMatches && firstMatches.length === 1) {
       nameCache.set(meName, firstMatches[0] ?? null);
@@ -338,9 +337,7 @@ export async function ingestMeCfisDonors({
     const txs = await fetchPage(pageNumber);
 
     if (txs.length === 0) {
-      console.log(
-        `[me-cfis-donors] empty page at page=${pageNumber} — done`,
-      );
+      console.log(`[me-cfis-donors] empty page at page=${pageNumber} — done`);
       break;
     }
 
@@ -422,20 +419,13 @@ export async function ingestMeCfisDonors({
 
     // Check if we've reached the limit
     if (config.limit !== null && contributionsFetched >= config.limit) {
-      console.log(
-        `[me-cfis-donors] reached limit=${config.limit} — stopping`,
-      );
+      console.log(`[me-cfis-donors] reached limit=${config.limit} — stopping`);
       break;
     }
 
     // Check if we've fetched all rows
-    if (
-      totalRows > 0 &&
-      contributionsFetched >= totalRows
-    ) {
-      console.log(
-        `[me-cfis-donors] fetched all ${totalRows} rows — done`,
-      );
+    if (totalRows > 0 && contributionsFetched >= totalRows) {
+      console.log(`[me-cfis-donors] fetched all ${totalRows} rows — done`);
       break;
     }
 
@@ -576,9 +566,7 @@ function isCliExecution(): boolean {
 if (isCliExecution()) {
   ingestMeCfisDonors().catch((error: unknown) => {
     const msg =
-      error instanceof Error
-        ? error.message.replace(/\s+/gu, " ")
-        : "unknown";
+      error instanceof Error ? error.message.replace(/\s+/gu, " ") : "unknown";
     console.error("[me-cfis-donors] failed:", msg);
     process.exitCode = 1;
   });

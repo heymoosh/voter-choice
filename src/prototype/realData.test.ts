@@ -1,5 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { stateCodeFrom, racesSpanMultipleParties, filterRacesByParty } from "./realData";
+import {
+  stateCodeFrom,
+  racesSpanMultipleParties,
+  filterRacesByParty,
+} from "./realData";
 import { extractionToRaces } from "../lib/extractionToRaces";
 import type { BallotExtraction } from "../lib/server/extract-types";
 
@@ -239,7 +243,9 @@ describe("party gate — real Textract designation regression (R1)", () => {
     expect(demRaces).toHaveLength(2);
 
     // DEM senate race is present
-    const candidateNames = demRaces.flatMap((r) => r.candidates.map((c) => c.name));
+    const candidateNames = demRaces.flatMap((r) =>
+      r.candidates.map((c) => c.name),
+    );
     expect(candidateNames).toContain("Cory Booker");
     expect(candidateNames).toContain("Louis Cappelli Jr");
 
@@ -254,7 +260,9 @@ describe("party gate — real Textract designation regression (R1)", () => {
     const repRaces = filterRacesByParty(races, "Republican");
 
     expect(repRaces).toHaveLength(2);
-    const candidateNames = repRaces.flatMap((r) => r.candidates.map((c) => c.name));
+    const candidateNames = repRaces.flatMap((r) =>
+      r.candidates.map((c) => c.name),
+    );
     expect(candidateNames).toContain("John Bramnick");
     expect(candidateNames).toContain("Alice Rep");
     expect(candidateNames).not.toContain("Cory Booker");
@@ -281,7 +289,12 @@ describe("party gate — real Textract designation regression (R1)", () => {
           ],
         },
       ],
-      _meta: { extraction_path: "vision", pages: 1, latency_ms: 0, cost_usd: 0 },
+      _meta: {
+        extraction_path: "vision",
+        pages: 1,
+        latency_ms: 0,
+        cost_usd: 0,
+      },
     };
 
     const races = extractionToRaces(ballotWithProp, "GENERAL");
