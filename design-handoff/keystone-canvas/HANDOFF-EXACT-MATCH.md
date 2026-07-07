@@ -115,6 +115,17 @@ badge (`◆ Roll-call record` filled vs `◇ Researched · cited` dashed) and
 `HeadToHead`'s challenger-switcher/per-issue-Δ-ledger/funding-contrast layout match
 `CandidateParity` / `HeadToHead` artboards pixel-for-pixel. Verify before sign-off.
 
+### 5a · Delegation overview → drill-down — 🆕 NEW, designed 2026-07-07 (not yet wired)
+New canvas source `screens-delegation.jsx` + `delegation.css` (`DelegationOverview`,
+`SeatCard`, `SeatDeepView`, `SeatRail`, `DelegationFlow`), resolving Muxin's flagged gap
+(canvas's 3-card scored overview vs. the repo's single-seat-at-a-time view) — see
+`GAPS-RECONCILED-FOR-CODE.md` §8. This is a **navigation layer** on top of the existing
+§2 Results/Candidates surfaces, not a redesign: an overview screen renders every seat as
+a scored card (`dg-overview`); clicking one opens the **existing, unchanged** deep
+single-seat view (`dg-deep` = the same `.rcard`/progress-rail surface already built);
+a "← All seats" control returns to the overview; the seat-strip rail stays as
+in-context lateral nav. Wire into `DelegationWorkspace.tsx`. Backlog card `5192287a-...`.
+
 ### 6 · Homepage — ❓ VERIFY + one open decision
 Repo target: `HomeView` in `VoterChoiceApp.tsx` (not read — file is 325KB; locate the
 `HomeView` export and diff against `HomeHero`). Confirm: two fact snippets removed
@@ -262,8 +273,9 @@ pre-compilation source, the PNGs are a rendering of it).
 | `keystone-canvas/src/screens-whynow.jsx` → `WhyNow` | `WhyNowPage` in `VoterChoiceApp.tsx` |
 | `keystone-canvas/src/screens-statics.jsx` → `AboutVC`/`HowItWorksVC`/`PrivacyVC`/`TipJarVC`/`LoadingVC` | `AboutPage`/`MethodologyPage`/`PrivacyPage`/`TipJarPage`/`LoadingView` in `VoterChoiceApp.tsx` |
 | `keystone-canvas/src/screens-intake.jsx` → `IntakeAsk`/`IntakePropose`/`IntakeLocked`/`EditIssues`/`EditRescored` | `IntakeView.tsx`, `IssueConversation.tsx`, `EditIssuesModal.tsx`, `IssueDeltaBanner.tsx` |
-| `keystone-canvas/src/screens-polis.jsx` → `PolisEntry`/`PolisStand`/`PolisReport` | `PolisClose.tsx`, `polisAdapter.ts` |
-| **`design-session/screens-funding.jsx`** (no funding equivalent in the new export — see Phase 1 verification gap in `keystone-canvas/PHASE1-VERIFICATION.md`; this row is the one exception, still sourced from the older `design-session/` copy) → `FieldMoneyGap`/`ScaleStates`/`MoneyGapH2H` | `MoneyGap.tsx`, `peerComparison.ts` |
+| `keystone-canvas/src/screens-polis.jsx` → `PolisEntry`/`PolisStand`/`PolisReport` (all three: **BUILD**, per `GAPS-RECONCILED-FOR-CODE.md` — designed, not yet wired) | `PolisClose.tsx`, `polisAdapter.ts` |
+| `keystone-canvas/src/screens-delegation.jsx` 🆕 → `DelegationOverview`/`SeatDeepView`/`SeatRail` (**BUILD** — see §5a above) | `DelegationWorkspace.tsx` (navigation layer, existing deep view unchanged) |
+| **`design-session/screens-funding.jsx`** (no funding equivalent in the new export — see Phase 1 verification gap in `keystone-canvas/PHASE1-VERIFICATION.md`; this row is the one exception, still sourced from the older `design-session/` copy) → `FieldMoneyGap`/`ScaleStates` (**WON'T BUILD** — chamber-median supersedes, per `GAPS-RECONCILED-FOR-CODE.md` §5) /`MoneyGapH2H` (**REMOVE as dead code**, per §7 — the shipped PAC-% footnote is the intended treatment) | `MoneyGap.tsx`, `peerComparison.ts` |
 | Tokens: `keystone-canvas/src/screens.css` `[data-palette="white"]` | `public/redesign2.css` (confirm same oklch values) |
 
 ---
