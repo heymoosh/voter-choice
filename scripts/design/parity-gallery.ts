@@ -191,16 +191,25 @@ async function startNextDev(
 ): Promise<AppInstance> {
   const logPath = path.join(os.tmpdir(), `parity-gallery-${label}-${port}.log`);
   const logFd = fs.openSync(logPath, "w");
-  const proc = spawn(
-    "npx",
-    ["next", "dev", "--turbopack", "-p", String(port)],
-    {
-      cwd: dir,
-      env: { ...process.env, NEXT_PUBLIC_BALLOT_ENABLED: "" },
-      stdio: ["ignore", logFd, logFd],
-      detached: true,
-    },
-  );
+  // Turbopack refuses to resolve through a symlinked node_modules that
+  // points outside the temp worktree's own filesystem root ("Symlink
+  // node_modules is invalid, it points out of the filesystem root") — the
+  // symlink resolveSide() creates so temp worktrees can reuse this
+  // worktree's installed deps without a fresh `npm install`. Fall back to
+  // the webpack dev server whenever node_modules is a symlink.
+  const nodeModulesPath = path.join(dir, "node_modules");
+  const nodeModulesIsSymlink =
+    fs.existsSync(nodeModulesPath) &&
+    fs.lstatSync(nodeModulesPath).isSymbolicLink();
+  const devArgs = nodeModulesIsSymlink
+    ? ["next", "dev", "-p", String(port)]
+    : ["next", "dev", "--turbopack", "-p", String(port)];
+  const proc = spawn("npx", devArgs, {
+    cwd: dir,
+    env: { ...process.env, NEXT_PUBLIC_BALLOT_ENABLED: "" },
+    stdio: ["ignore", logFd, logFd],
+    detached: true,
+  });
   const url = `http://127.0.0.1:${port}`;
   try {
     await waitForServer(url);
@@ -243,32 +252,47 @@ async function resolveSide(
   const tmpDir = fs.mkdtempSync(
     path.join(os.tmpdir(), `parity-gallery-${label}-`),
   );
-  git(["worktree", "add", "--detach", tmpDir, sha]);
-  // Reuse installed deps rather than a fresh `npm install` — fine for a
-  // same-repo before/after design comparison where deps rarely move.
-  const nodeModules = path.join(REPO_ROOT, "node_modules");
-  if (fs.existsSync(nodeModules)) {
-    fs.symlinkSync(nodeModules, path.join(tmpDir, "node_modules"), "dir");
-  }
-  const envLocal = path.join(REPO_ROOT, ".env.local");
-  if (fs.existsSync(envLocal)) {
-    fs.copyFileSync(envLocal, path.join(tmpDir, ".env.local"));
-  }
-  const port = await getFreePort();
-  const inst = await startNextDev(tmpDir, port, label);
-  return {
-    ...inst,
-    async cleanup() {
-      await inst.cleanup();
+  try {
+    git(["worktree", "add", "--detach", tmpDir, sha]);
+    // Reuse installed deps rather than a fresh `npm install` — fine for a
+    // same-repo before/after design comparison where deps rarely move.
+    const nodeModules = path.join(REPO_ROOT, "node_modules");
+    if (fs.existsSync(nodeModules)) {
+      fs.symlinkSync(nodeModules, path.join(tmpDir, "node_modules"), "dir");
+    }
+    const envLocal = path.join(REPO_ROOT, ".env.local");
+    if (fs.existsSync(envLocal)) {
+      fs.copyFileSync(envLocal, path.join(tmpDir, ".env.local"));
+    }
+    const port = await getFreePort();
+    const inst = await startNextDev(tmpDir, port, label);
+    return {
+      ...inst,
+      async cleanup() {
+        await inst.cleanup();
+        try {
+          git(["worktree", "remove", "--force", tmpDir]);
+        } catch (err) {
+          console.warn(
+            `  ↳ could not remove temp worktree ${tmpDir}: ${String(err)}`,
+          );
+        }
+      },
+    };
+  } catch (err) {
+    // The dev server (or the worktree/symlink setup before it) failed —
+    // don't leave a registered git worktree / temp dir behind.
+    try {
+      git(["worktree", "remove", "--force", tmpDir]);
+    } catch {
       try {
-        git(["worktree", "remove", "--force", tmpDir]);
-      } catch (err) {
-        console.warn(
-          `  ↳ could not remove temp worktree ${tmpDir}: ${String(err)}`,
-        );
+        fs.rmSync(tmpDir, { recursive: true, force: true });
+      } catch {
+        /* best effort */
       }
-    },
-  };
+    }
+    throw err;
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -520,23 +544,38 @@ async function main(): Promise<void> {
 
   let before: AppInstance;
   let after: AppInstance;
-  if (sameCommit) {
-    console.log(
-      `  "${args.before}" and "${args.after}" resolve to the same commit (${beforeSha!.slice(0, 8)}) — ` +
-        `starting ONE server and using it for both sides.`,
-    );
-    before = await resolveSide("before", args.beforeUrl, args.before, headSha);
-    after = { ...before, label: "after" };
-  } else {
-    before = await resolveSide("before", args.beforeUrl, args.before, headSha);
-    after = await resolveSide("after", args.afterUrl, args.after, headSha);
-  }
-
-  const cleanupFns = sameCommit
-    ? [before.cleanup]
-    : [before.cleanup, after.cleanup];
-
+  // Track cleanup fns as each side comes up (rather than after both
+  // resolve) so that if the SECOND side fails to boot, the first side's
+  // dev server + temp worktree still get torn down instead of leaking —
+  // this whole block runs inside the try below so a throw here still hits
+  // the shared `finally`.
+  const cleanupFns: Array<() => Promise<void>> = [];
   try {
+    if (sameCommit) {
+      console.log(
+        `  "${args.before}" and "${args.after}" resolve to the same commit (${beforeSha!.slice(0, 8)}) — ` +
+          `starting ONE server and using it for both sides.`,
+      );
+      before = await resolveSide(
+        "before",
+        args.beforeUrl,
+        args.before,
+        headSha,
+      );
+      cleanupFns.push(before.cleanup);
+      after = { ...before, label: "after" };
+    } else {
+      before = await resolveSide(
+        "before",
+        args.beforeUrl,
+        args.before,
+        headSha,
+      );
+      cleanupFns.push(before.cleanup);
+      after = await resolveSide("after", args.afterUrl, args.after, headSha);
+      cleanupFns.push(after.cleanup);
+    }
+
     console.log(`\nLaunching browser…`);
     const browser = await chromium.launch({ headless: !args.headed });
     try {
