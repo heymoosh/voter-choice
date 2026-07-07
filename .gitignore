@@ -50,6 +50,10 @@ playwright-report.json
 test-results/
 .playwright-browsers/
 
+# Keystone parity-gallery run artifacts (screenshots + generated index.html) —
+# regenerate with `npm run design:parity-gallery`, never commit the output.
+scripts/design/.parity-gallery-out/
+
 # AI Coding Practices local tool state
 .agentic-qe/
 .ai/local-pdfs/
