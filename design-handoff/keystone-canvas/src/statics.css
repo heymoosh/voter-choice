@@ -1,0 +1,82 @@
+/* ====================================================
+   VOTER CHOICE · static / top-level pages (cards b1a5f64a, c9891a1f
+   + "roll the editorial template everywhere")
+   Applies the Why-Now editorial system (masthead + kicker + prose +
+   grounds) to About / How it works / Privacy / Tip jar, plus a Bold
+   Flag loading state and the reorganized footer. White ground.
+   ==================================================== */
+
+.sp { background: var(--paper); color: var(--ink); min-height: 100%; display: flex; flex-direction: column; }
+.sp .flagbar { flex: 0 0 auto; }
+.screen:has(.sp) { height: auto; min-height: 100%; overflow: visible; }
+.sp-body { flex: 1; }
+.sp-wrap { max-width: 840px; margin: 0 auto; padding: 0 40px; }
+
+/* back affordance */
+.sp-back { display: inline-flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 600; color: var(--brand); margin: 28px 0 0; cursor: pointer; }
+
+/* masthead (left-aligned doc variant of the Why-Now mast) */
+.sp-mast { padding: 22px 0 26px; border-bottom: 2px solid var(--ink); margin-bottom: 34px; }
+.sp-kicker { font-family: var(--mono); font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; font-weight: 700; color: var(--replace); margin-bottom: 14px; display: flex; align-items: center; gap: 12px; }
+.sp-kicker::before { content: ""; width: 26px; height: 2px; background: var(--replace); }
+.sp-mast h1 { font-family: var(--serif); font-weight: 600; font-size: 50px; line-height: 1.02; letter-spacing: -0.03em; margin: 0; color: var(--ink); text-wrap: balance; }
+.sp-mast h1 em { font-style: italic; color: var(--brand); }
+.sp-mast .dek { font-family: var(--serif); font-size: 19px; line-height: 1.45; color: var(--ink-2); margin: 16px 0 0; max-width: 640px; }
+
+/* prose */
+.sp-prose { padding-bottom: 50px; }
+.sp-prose > p { font-family: var(--serif); font-size: 17px; line-height: 1.64; color: var(--ink-2); margin: 0 0 18px; }
+.sp-prose > p b, .sp-prose li b { color: var(--ink); font-weight: 600; }
+.sp-prose h2 { font-family: var(--serif); font-weight: 600; font-size: 25px; letter-spacing: -0.015em; color: var(--ink); margin: 34px 0 12px; padding-top: 2px; }
+.sp-prose ul { list-style: none; margin: 0 0 18px; padding: 0; display: grid; gap: 10px; }
+.sp-prose li { font-family: var(--serif); font-size: 16.5px; line-height: 1.55; color: var(--ink-2); padding-left: 26px; position: relative; }
+.sp-prose li::before { content: ""; position: absolute; left: 6px; top: 11px; width: 7px; height: 7px; border-radius: 2px; background: var(--brand); transform: rotate(45deg); }
+.sp-prose a { color: var(--brand); text-decoration: underline; text-underline-offset: 2px; text-decoration-thickness: 1px; }
+.sp-prose code { font-family: var(--mono); font-size: 0.86em; background: var(--tag-bg); padding: 1px 6px; border-radius: 5px; color: var(--ink); }
+.sp-prose .sp-meta { font-family: var(--mono); font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-3); margin: 0 0 24px; }
+
+/* step blocks reuse — a numbered editorial step inside prose */
+.sp-step { display: grid; grid-template-columns: 38px 1fr; gap: 16px; padding: 18px 0; border-top: 1px solid var(--rule-2); }
+.sp-step .n { font-family: var(--mono); font-size: 13px; font-weight: 700; color: var(--paper-2); background: var(--brand); width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; }
+.sp-step:nth-child(even) .n { background: var(--gold); color: var(--ink); }
+.sp-step h3 { font-family: var(--serif); font-weight: 600; font-size: 19px; margin: 4px 0 6px; color: var(--ink); letter-spacing: -0.01em; }
+.sp-step p { font-family: var(--serif); font-size: 16px; line-height: 1.55; color: var(--ink-2); margin: 0; }
+.sp-step a { color: var(--brand); }
+
+/* tip jar amounts */
+.sp-tips { display: flex; gap: 12px; flex-wrap: wrap; margin: 4px 0 12px; }
+.sp-tip { min-width: 96px; text-align: center; padding: 16px 22px; border-radius: 12px; border: 1.5px solid var(--rule); background: var(--paper-2); font-family: var(--serif); font-weight: 600; font-size: 22px; color: var(--ink); cursor: pointer; text-decoration: none; box-shadow: var(--shadow-soft); }
+.sp-prose a.sp-tip { text-decoration: none; }
+.sp-tip:hover { border-color: var(--brand); color: var(--brand); }
+.sp-tip.lead { background: var(--brand); color: var(--paper-2); border-color: var(--brand); }
+.sp-tipnote { font-family: var(--mono); font-size: 11px; color: var(--ink-3); margin: 0 0 8px; }
+
+/* ---------- reorganized footer (b1a5f64a · c9891a1f) ---------- */
+.vc-foot { border-top: 1px solid var(--rule); background: var(--paper-2); padding: 26px 54px; display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
+.vc-foot-brand { display: flex; flex-direction: column; gap: 4px; }
+.vc-foot-brand .b { display: flex; align-items: center; gap: 9px; font-family: var(--serif); font-weight: 600; font-size: 17px; color: var(--ink); white-space: nowrap; }
+.vc-foot-brand .b .mark { width: 22px; height: 22px; background: var(--brand); color: var(--paper-2); display: grid; place-items: center; border-radius: 5px; font-family: var(--serif); font-weight: 600; font-size: 13px; position: relative; overflow: hidden; }
+.vc-foot-brand .b .mark::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 5px; background: var(--replace); }
+.vc-foot-brand .c { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.04em; color: var(--ink-3); }
+.vc-foot-links { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+.vc-foot-links a { font-size: 13px; color: var(--ink-2); text-decoration: none; cursor: pointer; }
+.vc-foot-links a:hover { color: var(--brand); }
+.vc-foot-links .sep { width: 1px; height: 12px; background: var(--rule); }
+
+/* ---------- Bold Flag loading state ---------- */
+.ldg { height: 100%; display: flex; flex-direction: column; background: var(--paper); }
+.ldg .flagbar { flex: 0 0 auto; }
+.ldg-body { flex: 1; display: grid; place-items: center; padding: 40px; min-height: 0; }
+.ldg-card { width: 100%; max-width: 460px; background: var(--paper-2); border: 1px solid var(--rule); border-radius: 16px; box-shadow: var(--shadow-card); padding: 34px 36px; position: relative; overflow: hidden; }
+.ldg-card::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 5px; background: linear-gradient(90deg, var(--brand) 0 50%, var(--replace) 50% 100%); }
+.ldg-pulse { width: 40px; height: 40px; border-radius: 11px; background: var(--brand-soft); border: 1px solid var(--rule-2); display: grid; place-items: center; margin-bottom: 18px; }
+.ldg-pulse i { width: 14px; height: 14px; border-radius: 50%; background: var(--brand); }
+.ldg-card h2 { font-family: var(--serif); font-weight: 600; font-size: 28px; letter-spacing: -0.02em; margin: 0 0 5px; color: var(--ink); }
+.ldg-addr { font-family: var(--mono); font-size: 12px; color: var(--ink-3); margin-bottom: 22px; }
+.ldg-steps { display: grid; gap: 12px; }
+.ldg-step { display: flex; align-items: center; gap: 12px; font-size: 14px; color: var(--ink-3); }
+.ldg-step .ck { width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid var(--rule); flex-shrink: 0; display: grid; place-items: center; font-size: 11px; }
+.ldg-step.done { color: var(--ink-2); }
+.ldg-step.done .ck { background: var(--keep); border-color: var(--keep); color: var(--paper-2); }
+.ldg-step.active { color: var(--ink); font-weight: 600; }
+.ldg-step.active .ck { border-color: var(--brand); box-shadow: 0 0 0 3px var(--brand-soft); }
