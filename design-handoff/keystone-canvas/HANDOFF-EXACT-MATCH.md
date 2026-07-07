@@ -179,15 +179,25 @@ treatment (never reusing the keep/replace green-red), matching `FieldMoneyGap` /
 
 ---
 
-## 2 · Copy policy — the one place you SHOULD deviate
+## 2 · Copy policy — adjudicated per-item, not blanket-verbatim (revised 2026-07-07)
 
-**Our canvas copy is behind the live codebase.** Where the two disagree, prefer
-whichever copy is more current/production-accurate, sourced from the app's real
-`t("...")` i18n strings or prod (`voter-choice.vercel.app`) — but only for copy.
-Never let a copy update justify changing layout, component structure, class names,
-or visual treatment; those come from the canvas, full stop.
+**Superseded 2026-07-07:** the previous rule here ("prefer whichever copy is more
+current") is retired. It let an agent's own judgment decide what ships, which is
+exactly the failure mode this doc's Phase 2 rewrite exists to close. The canvas
+copy is still the **default** source-of-truth, but the repo has also moved since
+the canvas session — so **every divergent string is adjudicated individually, by
+Muxin, before it ships.** No copy change goes out on an agent's read of which
+version is "more current," even when it looks obvious.
 
-Known stale spots to double check against current prod copy before shipping:
+Process (see `docs/operations/keystone-design-source-plan-2026-07.md` Phase 3):
+generate a per-surface copy-diff report — canvas string vs. current repo
+`t("...")`/prod string, side by side, annotated with the git date + PR of the
+repo edit. Muxin rules on each item line-by-line; only ruled-on strings ship.
+Never let a copy question justify changing layout, component structure, class
+names, or visual treatment — those still come from the canvas, full stop.
+
+Known stale spots worth flagging in that diff report first (carried over from
+the pre-Phase-2 pass, not pre-decided — still subject to Muxin's ruling):
 - Overall positioning line — DECISIONS.md notes prod confirmed **"Assess Your
   Representatives with AI"** as of the keystone session; re-check it hasn't moved
   again since.
@@ -209,9 +219,11 @@ back to design rather than guessing.
 
 ## 3 · Genuinely open — do NOT build these as final
 
-1. **Homepage headline voice.** Three options on `HeadlineVoices` (Activation ★ /
-   Accountability / Provocation) — Activation is the working recommendation but the
-   user has not picked. Ask before shipping hero headline copy.
+1. ~~**Homepage headline voice.**~~ **RESOLVED 2026-07-07:** Activation ★ is the
+   chosen homepage headline voice (Muxin, `keystone-design-source-plan-2026-07.md`
+   §2.5). No longer open — build it as final, no further sign-off needed on the
+   voice choice itself (the exact string still goes through the §2 copy-diff
+   adjudication like any other copy).
 2. **"Lock these in" box, bigger/more prominent** (card `4b7e5a66`) — not designed
    yet in this canvas. Don't invent a treatment; it needs its own pass.
 3. **Polis nav placement** was debated (standalone tab vs. post-decision moment) and
@@ -231,19 +243,28 @@ back to design rather than guessing.
 
 ## 4 · Quick file map (canvas file → repo file)
 
+**Updated 2026-07-07 (Phase 2):** the design-source recovery
+(`keystone-design-source-plan-2026-07.md`) landed real JSX/CSS for every screen
+except funding. **`design-handoff/keystone-canvas/src/` is now the porting
+source of truth** for every row below except funding. The `.keystone-canvas-refs/`
+ref PNGs and the compiled standalone HTML bundle are **demoted to
+verification-only** — use them to visually confirm the port, not as the source
+you read code from; where the two disagree, `src/` wins (it's the real
+pre-compilation source, the PNGs are a rendering of it).
+
 | Canvas source | Repo target |
 |---|---|
-| `screens-orientation.jsx` → `OrientationActivated` | `App2.tsx` → `OrientationView` |
-| `screens-results.jsx` → `ResultsScreen` | `DelegationWorkspace.tsx` + `RepCard.tsx` |
-| `screens-scorecard.jsx` → `Scorecard` | `ScorecardPrintView.tsx` |
-| `screens-candidates.jsx` → `CandidateParity`, `HeadToHead` | `RepCard.tsx` (badge), `HeadToHead.tsx` |
-| `screens-home.jsx` → `HomeHero` | `HomeView` in `VoterChoiceApp.tsx` |
-| `screens-whynow.jsx` → `WhyNow` | `WhyNowPage` in `VoterChoiceApp.tsx` |
-| `screens-statics.jsx` → `AboutVC`/`HowItWorksVC`/`PrivacyVC`/`TipJarVC`/`LoadingVC` | `AboutPage`/`MethodologyPage`/`PrivacyPage`/`TipJarPage`/`LoadingView` in `VoterChoiceApp.tsx` |
-| `screens-intake.jsx` → `IntakeAsk`/`IntakePropose`/`IntakeLocked`/`EditIssues`/`EditRescored` | `IntakeView.tsx`, `IssueConversation.tsx`, `EditIssuesModal.tsx`, `IssueDeltaBanner.tsx` |
-| `screens-polis.jsx` → `PolisEntry`/`PolisStand`/`PolisReport` | `PolisClose.tsx`, `polisAdapter.ts` |
-| `screens-funding.jsx` → `FieldMoneyGap`/`ScaleStates`/`MoneyGapH2H` | `MoneyGap.tsx`, `peerComparison.ts` |
-| Tokens: `screens.css` `[data-palette="white"]` | `public/redesign2.css` (confirm same oklch values) |
+| `keystone-canvas/src/screens-orientation.jsx` → `OrientationActivated` | `App2.tsx` → `OrientationView` |
+| `keystone-canvas/src/screens-results.jsx` → `ResultsScreen` | `DelegationWorkspace.tsx` + `RepCard.tsx` |
+| `keystone-canvas/src/screens-scorecard.jsx` → `Scorecard` | `ScorecardPrintView.tsx` |
+| `keystone-canvas/src/screens-candidates.jsx` → `CandidateParity`, `HeadToHead` | `RepCard.tsx` (badge), `HeadToHead.tsx` |
+| `keystone-canvas/src/screens-home.jsx` → `HomeHero` | `HomeView` in `VoterChoiceApp.tsx` |
+| `keystone-canvas/src/screens-whynow.jsx` → `WhyNow` | `WhyNowPage` in `VoterChoiceApp.tsx` |
+| `keystone-canvas/src/screens-statics.jsx` → `AboutVC`/`HowItWorksVC`/`PrivacyVC`/`TipJarVC`/`LoadingVC` | `AboutPage`/`MethodologyPage`/`PrivacyPage`/`TipJarPage`/`LoadingView` in `VoterChoiceApp.tsx` |
+| `keystone-canvas/src/screens-intake.jsx` → `IntakeAsk`/`IntakePropose`/`IntakeLocked`/`EditIssues`/`EditRescored` | `IntakeView.tsx`, `IssueConversation.tsx`, `EditIssuesModal.tsx`, `IssueDeltaBanner.tsx` |
+| `keystone-canvas/src/screens-polis.jsx` → `PolisEntry`/`PolisStand`/`PolisReport` | `PolisClose.tsx`, `polisAdapter.ts` |
+| **`design-session/screens-funding.jsx`** (no funding equivalent in the new export — see Phase 1 verification gap in `keystone-canvas/PHASE1-VERIFICATION.md`; this row is the one exception, still sourced from the older `design-session/` copy) → `FieldMoneyGap`/`ScaleStates`/`MoneyGapH2H` | `MoneyGap.tsx`, `peerComparison.ts` |
+| Tokens: `keystone-canvas/src/screens.css` `[data-palette="white"]` | `public/redesign2.css` (confirm same oklch values) |
 
 ---
 
