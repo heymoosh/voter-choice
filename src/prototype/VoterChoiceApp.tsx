@@ -369,6 +369,12 @@ const TRANSLATIONS = {
       tierStatWhatIssues: 'Of your priorities, your statehouse holds the pen on <b>{issues}</b>.',
       tierExecTitle: "Offices that don't take roll-call votes",
       tierExecWhat: "A governor signs and vetoes — there's no voting record to score. So we research positions and <b>show the receipts</b> instead of faking an alignment number.",
+      allDoneKick: "You're done",
+      allDoneHeadline: "You've reviewed all your representatives.",
+      allDoneSub:
+        'Take your verdicts with you — print a scorecard you can bring to the ballot box.',
+      allDonePrintBtn: 'Print My Scorecard',
+      allDoneAlsoIntro: 'One more thing worth seeing —',
     },
     editIssues: {
       eyebrow: 'Edit your issues',
@@ -392,6 +398,8 @@ const TRANSLATIONS = {
       dbErrorTitle: 'Our records are unavailable right now',
       dbErrorBody:
         "We found your district but couldn't load the delegation records. Try again in a minute.",
+      dataEvaporatedTitle: "Let's start from your address",
+      dataEvaporatedBody: "We couldn't restore your previous session's data.",
     },
     seatChat: {
       askAnything: 'Ask anything',
@@ -483,6 +491,29 @@ const TRANSLATIONS = {
       timeToReplaceChange: 'Time to replace — change',
       timeToReplaceCompare: "Time to replace — compare who's running →",
       timeToReplace: 'Time to replace',
+      mixedRecordOnIssue: 'Mixed record on this issue',
+      positionUnclearLimited: 'Position unclear — limited public record',
+      confidenceConf: '{level} conf.',
+      alignsWithYourIssues: 'Aligns with your issues',
+      thinRecordOnIssue: 'Thin record on this issue',
+      identityHiddenJudgeByRecord: 'Identity hidden · judge by record',
+      revealWhoThisIs: 'Reveal who this is',
+      reveal: 'Reveal',
+      hideThisCandidateAgain: 'Hide this candidate again',
+      candidateFallback: 'Candidate',
+      sourcesShownOnReveal: ' · sources shown when you reveal the candidate',
+      citedSourceShownBelow: ' · cited source shown below',
+      basedOnPublicStatementsNotVoting: 'Based on public statements — not a voting record',
+      researchingPublicStatements: 'Researching public statements…',
+      noCitablePublicStatementsForCandidate:
+        "We couldn't find citable public statements for this candidate on your issues.",
+      judgeOnCandidateMaterials:
+        "Judge instead on the candidate's own materials and the donor base below.",
+      lookingUpPublicStatementsOnIssues: 'Looking up public statements on your issues…',
+      judgeOnPublicStatementsMade:
+        "Judge instead on the public statements they've made and the donor base below.",
+      alignedOnOfVotes: 'Aligned on <b>{kept}</b> of <b>{total}</b> {votes}',
+      detailNotYetCurated: ' · detail not yet curated',
     },
     handoffModal: {
       eyebrow: 'Continue elsewhere · context handoff',
@@ -495,6 +526,74 @@ const TRANSLATIONS = {
       copy: 'Copy →',
       footer:
         'Your address never leaves this device. The portable prompt contains your issues + verdicts + public candidate records — no personally-identifying information.',
+      copiedPasteToContinue: 'Copied — paste to continue',
+      copyAndOpen: 'Copy & open {bot}',
+      downloadTxt: 'Download as .txt',
+    },
+    issueDeltaBanner: {
+      who: 'Voter Choice · AI',
+      noChangeTitle: 'Re-scored against your new issues.',
+      noChangeBody:
+        "No member's alignment moved past the noise floor — your verdicts stand as-is.",
+      rescoredTitle: 'Re-scored.',
+      rescoredBody: "Here's how your delegation shifts against the new issue list:",
+      revisitTag: 'REVISIT',
+      noRecord: 'no record',
+      revisitBtn: 'Revisit →',
+      footNote:
+        'Only members whose alignment moved more than 5 points (or gained or lost a scoreable record) get a REVISIT flag. Your verdicts are unchanged either way.',
+      dismiss: 'Dismiss',
+    },
+    funderBars: {
+      fundingMixLabel: 'Funding mix',
+      detailsPending: 'details pending',
+      sparseBreakdownNote:
+        'Detailed donor breakdown is not available yet for this candidate. We have total receipts from filings, but not small donor, large donor, PAC, or sector buckets.',
+      sourceLabel: 'Source: ',
+      webSearchSuffix: ' · web search',
+      bySourceType: 'by source type',
+      moreLabel: 'MORE',
+      lessLabel: 'LESS',
+      raisedThanPrefix: 'raised than ',
+      smallDonorsLabel: 'Small donors',
+      smallDonorsThreshold: '<$200',
+      largeDonorsLabel: 'Large donors',
+      largeDonorsThreshold: '≥$200',
+      pacsLabel: 'PACs',
+      pacsThreshold: 'groups & lobbies',
+      pacGlossDefinition:
+        ' = Political Action Committee — companies, unions, or advocacy groups that pool donations to back candidates. High PAC share signals reliance on organized interests over individual voters.',
+      namedIssuePacs: 'Named issue PACs',
+      namedIssuePacsSub:
+        'organized groups we’ve vetted, each with a publicly stated agenda',
+      conflictsWithPriority: 'Conflicts with your priority: ',
+      alignsWithPriority: 'Aligns with your priority: ',
+      pacGapNone:
+        "About <b>{amount}</b> ({pct}%) came from PACs, but we haven't yet identified specific issue-PACs behind that money. We only name PACs when we can attribute them to a public agenda — see the industry breakdown below for the categorical view.",
+      pacGapPartial:
+        "Named PACs above account for <b>{named}</b> of an estimated <b>{implied}</b> in total PAC money ({pct}%). The remaining <b>{remaining}</b> hasn't been editorially curated yet — it may include other issue-PACs we haven't profiled. Don't assume the named PACs are the whole picture.",
+      industryBreakdown: 'Industry breakdown',
+      industryBreakdownSub: 'all contributions grouped by sector (individuals + PACs combined)',
+      outsideNamedSectors: 'Outside named sectors',
+      outsideNamedSectorsNote:
+        'Mostly small-dollar & individual donations that don’t fit a single sector tag. They’re counted in the Funding mix bar above.',
+    },
+    homeHero: {
+      eyebrow: "November 3, 2026 · America's 250th election",
+      headline: 'See how your members of Congress <em>actually voted</em> — before you vote.',
+      lede:
+        'Hold Congress to its record. All 435 House seats and 33 Senate seats are on the ballot — compare what your incumbents say with how they voted, and who funded the campaign.',
+      addressLabel: 'Enter Your Registered Address',
+      addressPlaceholder: '1600 Pennsylvania Ave NW, Washington DC 20500',
+      submitBtn: 'Pull my representatives →',
+      unsureLede: 'Unsure?',
+      howItWorksLink: 'Read about how it works and how we use your data',
+      step1Desc:
+        'We use your address to pull local voting information so you know exactly when and where to go vote and what IDs are needed — so you have everything you need to support or vote against your representative and make a change. It stays on this device and is never stored.',
+      step2Desc:
+        'We pull your representatives and their record on the issues you care about — voting history, donors, and how much they raised and from whom. No news articles, no ads — just the record.',
+      step3Desc:
+        "Download a one-page ballot for the polling booth. Many polls don't allow phones — print it or write it down before you go.",
     },
     byokCard: {
       title: 'Have an Anthropic API key? Use it directly in Voter Choice.',
@@ -736,6 +835,12 @@ const TRANSLATIONS = {
       tierStatWhatIssues: 'De tus prioridades, tu legislatura estatal tiene la pluma en <b>{issues}</b>.',
       tierExecTitle: 'Cargos sin votaciones nominales',
       tierExecWhat: 'Un gobernador firma y veta — no hay historial de votación que puntuar. Así que investigamos posiciones y <b>mostramos las fuentes</b> en lugar de inventar un número de alineación.',
+      allDoneKick: 'Terminaste',
+      allDoneHeadline: 'Revisaste a toda tu delegación.',
+      allDoneSub:
+        'Lleva tus veredictos contigo — imprime una tarjeta para llevar a la urna.',
+      allDonePrintBtn: 'Imprimir Mi Tarjeta',
+      allDoneAlsoIntro: 'Una cosa más que vale la pena ver —',
     },
     editIssues: {
       eyebrow: 'Modifica tus temas',
@@ -759,6 +864,8 @@ const TRANSLATIONS = {
       dbErrorTitle: 'Nuestros registros no están disponibles en este momento',
       dbErrorBody:
         'Encontramos tu distrito, pero no pudimos cargar los registros de la delegación. Intenta de nuevo en un minuto.',
+      dataEvaporatedTitle: 'Empecemos desde tu dirección',
+      dataEvaporatedBody: 'No pudimos restaurar los datos de tu sesión anterior.',
     },
     seatChat: {
       askAnything: 'Pregunta lo que quieras',
@@ -852,6 +959,29 @@ const TRANSLATIONS = {
       timeToReplaceChange: 'Hora de reemplazar — cambiar',
       timeToReplaceCompare: 'Hora de reemplazar — comparar quién se postula →',
       timeToReplace: 'Hora de reemplazar',
+      mixedRecordOnIssue: 'Registro mixto en este tema',
+      positionUnclearLimited: 'Postura poco clara — registro público limitado',
+      confidenceConf: 'conf. {level}',
+      alignsWithYourIssues: 'Se alinea con tus temas',
+      thinRecordOnIssue: 'Registro escaso en este tema',
+      identityHiddenJudgeByRecord: 'Identidad oculta · juzga por el historial',
+      revealWhoThisIs: 'Revelar quién es',
+      reveal: 'Revelar',
+      hideThisCandidateAgain: 'Ocultar a este candidato de nuevo',
+      candidateFallback: 'Candidato',
+      sourcesShownOnReveal: ' · fuentes visibles al revelar al candidato',
+      citedSourceShownBelow: ' · fuente citada mostrada abajo',
+      basedOnPublicStatementsNotVoting: 'Basado en declaraciones públicas — no es un historial de votación',
+      researchingPublicStatements: 'Investigando declaraciones públicas…',
+      noCitablePublicStatementsForCandidate:
+        'No pudimos encontrar declaraciones públicas citables de este candidato sobre tus temas.',
+      judgeOnCandidateMaterials:
+        'Juzga en su lugar por los materiales propios del candidato y la base de donantes a continuación.',
+      lookingUpPublicStatementsOnIssues: 'Buscando declaraciones públicas sobre tus temas…',
+      judgeOnPublicStatementsMade:
+        'Juzga en su lugar por las declaraciones públicas que ha hecho y la base de donantes a continuación.',
+      alignedOnOfVotes: 'Alineado en <b>{kept}</b> de <b>{total}</b> {votes}',
+      detailNotYetCurated: ' · detalle aún no revisado',
     },
     handoffModal: {
       eyebrow: 'Continuar en otro lugar · traspaso de contexto',
@@ -864,6 +994,74 @@ const TRANSLATIONS = {
       copy: 'Copiar →',
       footer:
         'Tu dirección nunca sale de este dispositivo. El mensaje portátil contiene tus temas + veredictos + registros públicos de candidatos — sin información de identificación personal.',
+      copiedPasteToContinue: 'Copiado — pega para continuar',
+      copyAndOpen: 'Copiar y abrir {bot}',
+      downloadTxt: 'Descargar como .txt',
+    },
+    issueDeltaBanner: {
+      who: 'Voter Choice · AI',
+      noChangeTitle: 'Vuelto a puntuar con tus nuevos temas.',
+      noChangeBody:
+        'La alineación de ningún miembro se movió más allá del margen de ruido — tus veredictos se mantienen como están.',
+      rescoredTitle: 'Vuelto a puntuar.',
+      rescoredBody: 'Así es como cambia tu delegación con la nueva lista de temas:',
+      revisitTag: 'REVISITAR',
+      noRecord: 'sin registro',
+      revisitBtn: 'Revisitar →',
+      footNote:
+        'Solo los miembros cuya alineación cambió más de 5 puntos (o ganaron o perdieron un registro puntuable) reciben una marca de REVISITAR. Tus veredictos no cambian de cualquier forma.',
+      dismiss: 'Descartar',
+    },
+    funderBars: {
+      fundingMixLabel: 'Mezcla de financiamiento',
+      detailsPending: 'detalles pendientes',
+      sparseBreakdownNote:
+        'El desglose detallado de donantes aún no está disponible para este candidato. Tenemos los ingresos totales de las presentaciones, pero no los grupos de pequeños donantes, grandes donantes, PACs o sectores.',
+      sourceLabel: 'Fuente: ',
+      webSearchSuffix: ' · búsqueda web',
+      bySourceType: 'por tipo de fuente',
+      moreLabel: 'MÁS',
+      lessLabel: 'MENOS',
+      raisedThanPrefix: 'recaudado que ',
+      smallDonorsLabel: 'Pequeños donantes',
+      smallDonorsThreshold: '<$200',
+      largeDonorsLabel: 'Grandes donantes',
+      largeDonorsThreshold: '≥$200',
+      pacsLabel: 'PACs',
+      pacsThreshold: 'grupos y lobbies',
+      pacGlossDefinition:
+        ' = Comité de Acción Política — empresas, sindicatos o grupos de defensa que agrupan donaciones para respaldar candidatos. Una alta participación de PACs indica dependencia de intereses organizados en lugar de votantes individuales.',
+      namedIssuePacs: 'PACs de temas nombrados',
+      namedIssuePacsSub:
+        'grupos organizados que hemos investigado, cada uno con una agenda pública declarada',
+      conflictsWithPriority: 'Está en conflicto con tu prioridad: ',
+      alignsWithPriority: 'Se alinea con tu prioridad: ',
+      pacGapNone:
+        'Cerca de <b>{amount}</b> ({pct}%) provino de PACs, pero aún no hemos identificado PACs de temas específicos detrás de ese dinero. Solo nombramos PACs cuando podemos atribuirlos a una agenda pública — mira el desglose por industria abajo para la vista categórica.',
+      pacGapPartial:
+        'Los PACs nombrados arriba representan <b>{named}</b> de un estimado de <b>{implied}</b> en dinero total de PACs ({pct}%). Los <b>{remaining}</b> restantes aún no han sido curados editorialmente — pueden incluir otros PACs de temas que no hemos perfilado. No asumas que los PACs nombrados son la imagen completa.',
+      industryBreakdown: 'Desglose por industria',
+      industryBreakdownSub: 'todas las contribuciones agrupadas por sector (individuos + PACs combinados)',
+      outsideNamedSectors: 'Fuera de los sectores nombrados',
+      outsideNamedSectorsNote:
+        'Principalmente donaciones individuales y de pequeña cuantía que no encajan en una sola etiqueta de sector. Se cuentan en la barra de mezcla de financiamiento de arriba.',
+    },
+    homeHero: {
+      eyebrow: '3 de noviembre de 2026 · la elección 250 de Estados Unidos',
+      headline: 'Mira cómo <em>votaron realmente</em> tus miembros del Congreso — antes de que votes.',
+      lede:
+        'Haz que el Congreso rinda cuentas por su historial. Los 435 escaños de la Cámara y 33 escaños del Senado están en la boleta — compara lo que dicen tus representantes actuales con cómo votaron, y quién financió la campaña.',
+      addressLabel: 'Ingresa Tu Dirección Registrada',
+      addressPlaceholder: '1600 Pennsylvania Ave NW, Washington DC 20500',
+      submitBtn: 'Consultar mis representantes →',
+      unsureLede: '¿No estás seguro/a?',
+      howItWorksLink: 'Lee cómo funciona y cómo usamos tus datos',
+      step1Desc:
+        'Usamos tu dirección para obtener información de votación local para que sepas exactamente cuándo y dónde votar y qué identificación necesitas — para que tengas todo lo necesario para apoyar o votar en contra de tu representante y generar un cambio. Se queda en este dispositivo y nunca se almacena.',
+      step2Desc:
+        'Obtenemos a tus representantes y su historial en los temas que te importan — historial de votación, donantes, y cuánto recaudaron y de quién. Sin artículos de noticias, sin anuncios — solo el registro.',
+      step3Desc:
+        'Descarga una boleta de una página para la urna. Muchas casillas no permiten teléfonos — imprímela o escríbela antes de ir.',
     },
     byokCard: {
       title: '¿Tienes una clave de API de Anthropic? Úsala directamente en Voter Choice.',
@@ -1488,6 +1686,7 @@ function computePeerLabel(totalRaised, peerTotals) {
 
 /* ============ CandidateCardHeader ============ */
 function CandidateCardHeader({ candidate, party, blindMode, isRevealed, alias, onReveal, onHide }) {
+  const { t } = useI18n();
   const yearsMatch = (candidate.priorRole || '').match(/since (\d{4})/i);
   const years = yearsMatch ? new Date().getFullYear() - parseInt(yearsMatch[1], 10) : 0;
   const isFirstTime = /first-time/i.test(candidate.priorRole || '') || (!yearsMatch && !candidate.incumbent);
@@ -1504,17 +1703,17 @@ function CandidateCardHeader({ candidate, party, blindMode, isRevealed, alias, o
       <div className="cv2-head blind">
         <div className="cv2-photo blind" />
         <div className="cv2-id">
-          <div className="cv2-name blind">{alias || 'Candidate'}</div>
+          <div className="cv2-name blind">{alias || t('repCard.candidateFallback')}</div>
           <div className="cv2-sub blind">
-            <span className="cv2-tag">Identity hidden · judge by record</span>
+            <span className="cv2-tag">{t('repCard.identityHiddenJudgeByRecord')}</span>
           </div>
         </div>
-        <button className="cv2-reveal" onClick={onReveal} title="Reveal who this is">
+        <button className="cv2-reveal" onClick={onReveal} title={t('repCard.revealWhoThisIs')}>
           <svg className="reveal-ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" />
             <circle cx="12" cy="12" r="3" />
           </svg>
-          <span className="lab">Reveal</span>
+          <span className="lab">{t('repCard.reveal')}</span>
         </button>
       </div>
     );
@@ -1544,14 +1743,14 @@ function CandidateCardHeader({ candidate, party, blindMode, isRevealed, alias, o
           revealed-but-not-blinded state, so it occupies the
           same column without disrupting the grid. */}
       {isRevealed ? (
-        <button className="cv2-reveal hide" onClick={onHide} title="Hide this candidate again">
+        <button className="cv2-reveal hide" onClick={onHide} title={t('repCard.hideThisCandidateAgain')}>
           <svg className="reveal-ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-10-7-10-7a18.45 18.45 0 0 1 5.06-5.94" />
             <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 10 7 10 7a18.5 18.5 0 0 1-2.16 3.19" />
             <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24" />
             <line x1="2" y1="2" x2="22" y2="22" />
           </svg>
-          <span className="lab">Hide</span>
+          <span className="lab">{t('repCard.hide')}</span>
         </button>
       ) : years > 0 ? (
         <div className="cv2-tenure">
@@ -1577,6 +1776,7 @@ function CandidateCardHeader({ candidate, party, blindMode, isRevealed, alias, o
    props:
      candidate, alignmentEntry, userIssues, expandedIssue, onToggleIssue */
 function AlignmentScoreBanner({ candidate, alignmentEntry, userIssues, expandedIssue, onToggleIssue, anonCtx, research }) {
+  const { t } = useI18n();
   // ── Pillar 2: research_pending + web_search scores rendering ─────────────
   // Three cases for no-record candidates:
   //   (a) research.status === 'loading' → skeleton spinner
@@ -1596,7 +1796,7 @@ function AlignmentScoreBanner({ candidate, alignmentEntry, userIssues, expandedI
       return (
         <div className="cv2-issues" data-testid="research-pending-skeleton">
           <div className="cv2-block-head">
-            <div className="lab">Aligns with your issues</div>
+            <div className="lab">{t('repCard.alignsWithYourIssues')}</div>
           </div>
           <div className="cv2-norecord" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span style={{
@@ -1607,7 +1807,7 @@ function AlignmentScoreBanner({ candidate, alignmentEntry, userIssues, expandedI
               animation: 'spin 0.8s linear infinite',
             }} aria-hidden="true" />
             <span style={{ fontStyle: 'italic', opacity: 0.7, fontSize: '13px' }}>
-              Researching public statements…
+              {t('repCard.researchingPublicStatements')}
             </span>
           </div>
         </div>
@@ -1628,9 +1828,9 @@ function AlignmentScoreBanner({ candidate, alignmentEntry, userIssues, expandedI
       return (
         <div className="cv2-issues" data-testid="web-search-alignment-banner">
           <div className="cv2-block-head">
-            <div className="lab">Aligns with your issues</div>
+            <div className="lab">{t('repCard.alignsWithYourIssues')}</div>
             <div style={{ fontSize: '10px', color: 'var(--ink-3, #888)', fontStyle: 'italic' }}>
-              Based on public statements — not a voting record
+              {t('repCard.basedOnPublicStatementsNotVoting')}
             </div>
           </div>
           {rowsData.map(({ issue, score }, i) => (
@@ -1652,7 +1852,7 @@ function AlignmentScoreBanner({ candidate, alignmentEntry, userIssues, expandedI
     return (
       <div className="cv2-issues">
         <div className="cv2-block-head">
-          <div className="lab">Aligns with your issues</div>
+          <div className="lab">{t('repCard.alignsWithYourIssues')}</div>
         </div>
         <div className="cv2-norecord">
           {research &&
@@ -1663,15 +1863,15 @@ function AlignmentScoreBanner({ candidate, alignmentEntry, userIssues, expandedI
             // guard drops any source-less claims — common for county-level
             // candidates). Show the honest fallback, NOT a perpetual spinner.
             <>
-              <p>We couldn't find citable public statements for this candidate on your issues.</p>
-              <p>Judge instead on the candidate's own materials and the donor base below.</p>
+              <p>{t('repCard.noCitablePublicStatementsForCandidate')}</p>
+              <p>{t('repCard.judgeOnCandidateMaterials')}</p>
             </>
           ) : isPending ? (
-            <p>Looking up public statements on your issues…</p>
+            <p>{t('repCard.lookingUpPublicStatementsOnIssues')}</p>
           ) : (
             <>
               <p>{reason}.</p>
-              <p>Judge instead on the public statements they've made and the donor base below.</p>
+              <p>{t('repCard.judgeOnPublicStatementsMade')}</p>
             </>
           )}
         </div>
@@ -1692,7 +1892,7 @@ function AlignmentScoreBanner({ candidate, alignmentEntry, userIssues, expandedI
   return (
     <div className="cv2-issues">
       <div className="cv2-block-head">
-        <div className="lab">Aligns with your issues</div>
+        <div className="lab">{t('repCard.alignsWithYourIssues')}</div>
         {overallPct !== null && (
           <div className="overall"><b>{overallPct}%</b> avg</div>
         )}
@@ -1726,26 +1926,27 @@ function AlignmentScoreBanner({ candidate, alignmentEntry, userIssues, expandedI
      "mixed"     → mixed record                           → MIXED (neutral)
      "unclear"   → insufficient evidence                  → no direction badge */
 function WebSearchAlignmentRow({ issue, score, anonCtx }) {
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const stance = (score.resolvedStance || '').toLowerCase();
   // Structured enum first; fall back to prose heuristic for legacy data.
   var directionLabel = null;
   var directionColor = 'oklch(0.55 0.05 260)'; // neutral blue
   if (stance === 'in_favor') {
-    directionLabel = 'WITH YOU';
+    directionLabel = t('repCard.withYou');
     directionColor = 'oklch(0.40 0.12 145)'; // green
   } else if (stance === 'opposed') {
-    directionLabel = 'AGAINST YOU';
+    directionLabel = t('repCard.againstYou');
     directionColor = 'oklch(0.50 0.15 25)'; // red
   } else if (stance === 'mixed') {
-    directionLabel = 'MIXED';
+    directionLabel = t('repCard.mixed');
     // neutral — no strong directional signal
   } else if (stance === 'unclear') {
     directionLabel = null; // no direction badge — insufficient evidence
   } else {
     // Legacy prose fallback: scan for negative verbs
     var proseAligns = !/\b(oppos|against|repeal|block|ban|cut)\b/i.test(score.resolvedStance || '');
-    directionLabel = proseAligns ? 'WITH YOU' : 'AGAINST YOU';
+    directionLabel = proseAligns ? t('repCard.withYou') : t('repCard.againstYou');
     directionColor = proseAligns ? 'oklch(0.40 0.12 145)' : 'oklch(0.50 0.15 25)';
   }
   const confidenceChip = score.confidence
@@ -1757,10 +1958,10 @@ function WebSearchAlignmentRow({ issue, score, anonCtx }) {
   // carry the candidate's name — keep the row non-expandable until reveal.
   const canDrill = hasEvidence && !anonCtx?.blindMode;
   const summaryMeta =
-    stance === 'in_favor' ? 'From public statements'
-      : stance === 'opposed' ? 'From public statements'
-      : stance === 'mixed' ? 'Mixed record on this issue'
-      : stance === 'unclear' ? 'Position unclear — limited public record'
+    stance === 'in_favor' ? t('repCard.fromPublicStatements')
+      : stance === 'opposed' ? t('repCard.fromPublicStatements')
+      : stance === 'mixed' ? t('repCard.mixedRecordOnIssue')
+      : stance === 'unclear' ? t('repCard.positionUnclearLimited')
       : score.resolvedStance;
 
   return (
@@ -1783,11 +1984,11 @@ function WebSearchAlignmentRow({ issue, score, anonCtx }) {
             {summaryMeta}
             {hasEvidence
               ? anonCtx?.blindMode
-                ? ' · sources shown when you reveal the candidate'
+                ? t('repCard.sourcesShownOnReveal')
                 : open
-                  ? ' · cited source shown below'
-                  : ' · tap for the cited source'
-              : ' · no source curated'}
+                  ? t('repCard.citedSourceShownBelow')
+                  : t('repCard.tapForCitedSource')
+              : t('repCard.noSourceCurated')}
           </div>
         </div>
         {/* Right column: directional badge + confidence chip, matching the
@@ -1799,22 +2000,22 @@ function WebSearchAlignmentRow({ issue, score, anonCtx }) {
             </span>
           )}
           {confidenceChip && (
-            <span className="cv2-ws-conf">{confidenceChip} conf.</span>
+            <span className="cv2-ws-conf">{t('repCard.confidenceConf', { level: confidenceChip })}</span>
           )}
         </div>
       </button>
       {open && canDrill && (
         <div className="cv2-drill">
           <div className="cv2-drill-head">
-            <span className="lab">Why this read?</span>
-            <span className="meta">No votes — researched &amp; cited</span>
+            <span className="lab">{t('repCard.whyThisRead')}</span>
+            <span className="meta">{t('repCard.noVotesResearched')}</span>
           </div>
           <div className="cv2-votes">
             {evidenceLinks.map((ev, i) => (
               <div className="cv2-vote" key={i}>
                 <div className="cv2-vote-head">
                   <div className="bill">
-                    <span className="num">WEB RESEARCH</span>
+                    <span className="num">{t('repCard.webResearch')}</span>
                     <span className="ttl">{issue.interpretation}</span>
                   </div>
                   {directionLabel && (
@@ -1835,7 +2036,9 @@ function WebSearchAlignmentRow({ issue, score, anonCtx }) {
                 {ev.summary && <p className="cv2-vote-narr">“{ev.summary}”</p>}
                 <div className="cv2-vote-cite">
                   <span className="src-chip">
-                    Web search{confidenceChip ? ` · ${confidenceChip} confidence` : ''}
+                    {confidenceChip
+                      ? t('repCard.webSearchConfidence', { level: confidenceChip })
+                      : t('repCard.webSearchSourceName')}
                   </span>
                   <a
                     href={ev.url}
@@ -1844,7 +2047,7 @@ function WebSearchAlignmentRow({ issue, score, anonCtx }) {
                     rel="noopener noreferrer"
                     data-testid="web-search-evidence-link"
                   >
-                    View source →
+                    {t('repCard.viewSource')}
                   </a>
                 </div>
               </div>
@@ -1858,6 +2061,7 @@ function WebSearchAlignmentRow({ issue, score, anonCtx }) {
 
 /* ── single row of the banner (private to AlignmentScoreBanner) ── */
 function AlignmentIssueRow({ issue, score, candidate, isOpen, onToggle, anonCtx }) {
+  const { t } = useI18n();
   if (score && score.sourceType === 'web_search') {
     return (
       <WebSearchAlignmentRow issue={issue} score={score} anonCtx={anonCtx} />
@@ -1878,12 +2082,19 @@ function AlignmentIssueRow({ issue, score, candidate, isOpen, onToggle, anonCtx 
             <div className={"fill " + tone} style={{ width: (pct || 0) + '%' }} />
           </div>
           {score && score.total > 0 ? (
-            <div className="meta">
-              Aligned on <b>{score.kept}</b> of <b>{score.total}</b> {score.total === 1 ? 'vote' : 'votes'}
-              {hasVotes ? '' : ' · detail not yet curated'}
-            </div>
+            <div
+              className="meta"
+              dangerouslySetInnerHTML={{
+                __html:
+                  t('repCard.alignedOnOfVotes', {
+                    kept: score.kept,
+                    total: score.total,
+                    votes: t(score.total === 1 ? 'repCard.vote' : 'repCard.votes'),
+                  }) + (hasVotes ? '' : t('repCard.detailNotYetCurated')),
+              }}
+            />
           ) : (
-            <div className="meta thin">Thin record on this issue</div>
+            <div className="meta thin">{t('repCard.thinRecordOnIssue')}</div>
           )}
         </div>
         <div className={"pct " + tone}>
@@ -2068,10 +2279,11 @@ function ContributingVoteCard({ vote, anonCtx }) {
      donorUnavailable:  { reason } | undefined
      fundingMix [Δ]:  { small, large, pac, total, cycle } | undefined */
 function FunderBars({ donorCoalition, totalRaised, donorDataSource, donorSource, donorUnavailable, fundingMix, userIssues, peerTotals }) {
+  const { t } = useI18n();
   if (!donorCoalition && donorUnavailable) {
     return (
       <div className="cv2-funding" data-testid="funding-unavailable">
-        <div className="cv2-block-head"><div className="lab">Funding mix</div></div>
+        <div className="cv2-block-head"><div className="lab">{t('funderBars.fundingMixLabel')}</div></div>
         <p style={{ fontSize: 14, color: 'var(--ink-3)', fontStyle: 'italic', margin: 0 }}>
           {donorUnavailable.reason}.
         </p>
@@ -2096,21 +2308,21 @@ function FunderBars({ donorCoalition, totalRaised, donorDataSource, donorSource,
     return (
       <div className="cv2-funding" data-testid="funding-sparse">
         <div className="cv2-block-head">
-          <div className="lab">Funding mix <small className="cv2-sub-lab">details pending</small></div>
+          <div className="lab">{t('funderBars.fundingMixLabel')} <small className="cv2-sub-lab">{t('funderBars.detailsPending')}</small></div>
           <div className="overall">
             {typeof total === 'number' && <b>{formatDollars(total)}</b>}
           </div>
         </div>
         <p style={{ fontSize: 14, color: 'var(--ink-3)', margin: 0 }}>
-          Detailed donor breakdown is not available yet for this candidate. We have total receipts from filings, but not small donor, large donor, PAC, or sector buckets.
+          {t('funderBars.sparseBreakdownNote')}
         </p>
         {donorSource && (
           <div style={{
             fontFamily: 'var(--mono)', fontSize: 10.5, color: 'var(--ink-3)',
             letterSpacing: '0.04em', marginTop: 12, textAlign: 'left',
           }}>
-            Source: {donorSource.name}
-            {donorDataSource === 'web_search' && ' · web search'}
+            {t('funderBars.sourceLabel')}{donorSource.name}
+            {donorDataSource === 'web_search' && t('funderBars.webSearchSuffix')}
           </div>
         )}
       </div>
@@ -2145,7 +2357,7 @@ function FunderBars({ donorCoalition, totalRaised, donorDataSource, donorSource,
   return (
     <div className="cv2-funding">
       <div className="cv2-block-head">
-        <div className="lab">Funding mix <small className="cv2-sub-lab">by source type</small></div>
+        <div className="lab">{t('funderBars.fundingMixLabel')} <small className="cv2-sub-lab">{t('funderBars.bySourceType')}</small></div>
         <div className="overall">
           {/* When the comparison rails are active, the dollar totals
               live adjacent to their bars — so we drop $$ from the
@@ -2180,8 +2392,8 @@ function FunderBars({ donorCoalition, totalRaised, donorDataSource, donorSource,
                 raising more (or less) is a good thing. */}
             <div className="cv2-cr-headline">
               <span className="cv2-cr-mult">{multiplier}×</span>
-              <span className="cv2-cr-dir">{isMore ? 'MORE' : 'LESS'}</span>
-              <span className="cv2-cr-ctx">raised than {peerCandidate.aliasOrName}</span>
+              <span className="cv2-cr-dir">{isMore ? t('funderBars.moreLabel') : t('funderBars.lessLabel')}</span>
+              <span className="cv2-cr-ctx">{t('funderBars.raisedThanPrefix')}{peerCandidate.aliasOrName}</span>
             </div>
             <div className="cv2-cr-rail-row this">
               <span className="cv2-cr-total">{formatDollars(totalRaised)}</span>
@@ -2206,15 +2418,15 @@ function FunderBars({ donorCoalition, totalRaised, donorDataSource, donorSource,
               </div>
             </div>
             <div className="cv2-money-legend cv2-cr-legend">
-              <div><span className="sw small" /> <b>{fundingMix.small}%</b> Small donors <small>&lt;$200</small></div>
-              <div><span className="sw large" /> <b>{fundingMix.large}%</b> Large donors <small>≥$200</small></div>
-              <div><span className="sw pac" /> <b>{fundingMix.pac}%</b> PACs <small>groups &amp; lobbies</small></div>
+              <div><span className="sw small" /> <b>{fundingMix.small}%</b> {t('funderBars.smallDonorsLabel')} <small>{t('funderBars.smallDonorsThreshold')}</small></div>
+              <div><span className="sw large" /> <b>{fundingMix.large}%</b> {t('funderBars.largeDonorsLabel')} <small>{t('funderBars.largeDonorsThreshold')}</small></div>
+              <div><span className="sw pac" /> <b>{fundingMix.pac}%</b> {t('funderBars.pacsLabel')} <small>{t('funderBars.pacsThreshold')}</small></div>
             </div>
             {/* PAC gloss — plain-English definition that explains both
                 what a PAC is and why a high % matters. Always visible
                 as a muted footnote, single line typographically. */}
             <p className="cv2-pac-gloss">
-              <b>PAC</b> = Political Action Committee — companies, unions, or advocacy groups that pool donations to back candidates. High PAC share signals reliance on organized interests over individual voters.
+              <b>PAC</b>{t('funderBars.pacGlossDefinition')}
             </p>
           </div>
         );
@@ -2235,12 +2447,12 @@ function FunderBars({ donorCoalition, totalRaised, donorDataSource, donorSource,
             </div>
           </div>
           <div className="cv2-money-legend">
-            <div><span className="sw small" /> <b>{fundingMix.small}%</b> Small donors <small>&lt;$200</small></div>
-            <div><span className="sw large" /> <b>{fundingMix.large}%</b> Large donors <small>≥$200</small></div>
-            <div><span className="sw pac" /> <b>{fundingMix.pac}%</b> PACs <small>groups &amp; lobbies</small></div>
+            <div><span className="sw small" /> <b>{fundingMix.small}%</b> {t('funderBars.smallDonorsLabel')} <small>{t('funderBars.smallDonorsThreshold')}</small></div>
+            <div><span className="sw large" /> <b>{fundingMix.large}%</b> {t('funderBars.largeDonorsLabel')} <small>{t('funderBars.largeDonorsThreshold')}</small></div>
+            <div><span className="sw pac" /> <b>{fundingMix.pac}%</b> {t('funderBars.pacsLabel')} <small>{t('funderBars.pacsThreshold')}</small></div>
           </div>
           <p className="cv2-pac-gloss">
-            <b>PAC</b> = Political Action Committee — companies, unions, or advocacy groups that pool donations to back candidates. High PAC share signals reliance on organized interests over individual voters.
+            <b>PAC</b>{t('funderBars.pacGlossDefinition')}
           </p>
         </div>
       )}
@@ -2249,8 +2461,8 @@ function FunderBars({ donorCoalition, totalRaised, donorDataSource, donorSource,
       {issuePACs.length > 0 && (
         <div className="cv2-named-pacs">
           <div className="lab">
-            Named issue PACs
-            <small className="cv2-sub-lab">organized groups we&rsquo;ve vetted, each with a publicly stated agenda</small>
+            {t('funderBars.namedIssuePacs')}
+            <small className="cv2-sub-lab">{t('funderBars.namedIssuePacsSub')}</small>
           </div>
           {issuePACs.map((p, i) => {
             const relevantIssue = p.alignsWith || p.relevantToIssue;
@@ -2280,8 +2492,8 @@ function FunderBars({ donorCoalition, totalRaised, donorDataSource, donorSource,
                     <span className="ic">{conflictsWithUser ? '⚠' : '✓'}</span>
                     <span className="msg">
                       {conflictsWithUser
-                        ? <>Conflicts with your priority: <b>{userIssue.interpretation}</b></>
-                        : <>Aligns with your priority: <b>{userIssue.interpretation}</b></>}
+                        ? <>{t('funderBars.conflictsWithPriority')}<b>{userIssue.interpretation}</b></>
+                        : <>{t('funderBars.alignsWithPriority')}<b>{userIssue.interpretation}</b></>}
                     </span>
                   </div>
                 )}
@@ -2297,23 +2509,28 @@ function FunderBars({ donorCoalition, totalRaised, donorDataSource, donorSource,
         issuePACs.length === 0 ? (
           <div className="cv2-pac-gap">
             <span className="ic">!</span>
-            <span>
-              About <b>{formatDollars(impliedPacTotal)}</b> ({fundingMix.pac}%) came from PACs,
-              but we haven't yet identified specific issue-PACs behind that money.
-              We only name PACs when we can attribute them to a public agenda
-              — see the industry breakdown below for the categorical view.
-            </span>
+            <span
+              dangerouslySetInnerHTML={{
+                __html: t('funderBars.pacGapNone', {
+                  amount: formatDollars(impliedPacTotal),
+                  pct: fundingMix.pac,
+                }),
+              }}
+            />
           </div>
         ) : pctIdentified !== null && pctIdentified < 75 ? (
           <div className="cv2-pac-gap partial">
             <span className="ic">!</span>
-            <span>
-              Named PACs above account for <b>{formatDollars(namedPacTotal)}</b> of
-              an estimated <b>{formatDollars(impliedPacTotal)}</b> in total PAC money
-              ({pctIdentified}%). The remaining <b>{formatDollars(uncatPacTotal)}</b> hasn't
-              been editorially curated yet — it may include other issue-PACs we haven't profiled.
-              Don't assume the named PACs are the whole picture.
-            </span>
+            <span
+              dangerouslySetInnerHTML={{
+                __html: t('funderBars.pacGapPartial', {
+                  named: formatDollars(namedPacTotal),
+                  implied: formatDollars(impliedPacTotal),
+                  pct: pctIdentified,
+                  remaining: formatDollars(uncatPacTotal),
+                }),
+              }}
+            />
           </div>
         ) : null
       )}
@@ -2335,8 +2552,8 @@ function FunderBars({ donorCoalition, totalRaised, donorDataSource, donorSource,
         return (
           <div className="cv2-industry">
             <div className="lab">
-              Industry breakdown
-              <small className="cv2-sub-lab">all contributions grouped by sector (individuals + PACs combined)</small>
+              {t('funderBars.industryBreakdown')}
+              <small className="cv2-sub-lab">{t('funderBars.industryBreakdownSub')}</small>
             </div>
             <div className="cv2-industry-bar" aria-hidden="true">
               {industries.map((d, i) => (
@@ -2359,8 +2576,8 @@ function FunderBars({ donorCoalition, totalRaised, donorDataSource, donorSource,
                 <div className="row other" key="other">
                   <span className="sw other-sw" />
                   <span className="name">
-                    Outside named sectors
-                    <small>Mostly small-dollar &amp; individual donations that don&rsquo;t fit a single sector tag. They&rsquo;re counted in the Funding mix bar above.</small>
+                    {t('funderBars.outsideNamedSectors')}
+                    <small>{t('funderBars.outsideNamedSectorsNote')}</small>
                   </span>
                   <span className="pct">{otherPct}%</span>
                   <span className="amt">{otherAmt !== null ? formatDollars(otherAmt) : '—'}</span>
@@ -2376,8 +2593,8 @@ function FunderBars({ donorCoalition, totalRaised, donorDataSource, donorSource,
           fontFamily: 'var(--mono)', fontSize: 10.5, color: 'var(--ink-3)',
           letterSpacing: '0.04em', marginTop: 12, textAlign: 'left',
         }}>
-          Source: {donorSource.name}
-          {donorDataSource === 'web_search' && ' · web search'}
+          {t('funderBars.sourceLabel')}{donorSource.name}
+          {donorDataSource === 'web_search' && t('funderBars.webSearchSuffix')}
         </div>
       )}
     </div>
@@ -4928,14 +5145,14 @@ function HomeView({ savedAddress, savedSession, onSubmit, onResumeFromProfile, o
       <main id="main-content">
       <section className="hp-hero hp-hero-solo">
         <div>
-          <div className="eyebrow"><span className="star">★</span> November 3, 2026 · America's 250th election</div>
-          <h1>See how your members of Congress <em>actually voted</em> — before you vote.</h1>
-          <p className="lede">Hold Congress to its record. All 435 House seats and 33 Senate seats are on the ballot — compare what your incumbents say with how they voted, and who funded the campaign.</p>
+          <div className="eyebrow"><span className="star">★</span> {t('homeHero.eyebrow')}</div>
+          <h1 dangerouslySetInnerHTML={{ __html: t('homeHero.headline') }} />
+          <p className="lede">{t('homeHero.lede')}</p>
 
           <div className="addr-card">
             <label>
               <span className="addr-label-left">
-                <span>Enter Your Registered Address</span>
+                <span>{t('homeHero.addressLabel')}</span>
               </span>
             </label>
             <div className="row">
@@ -4949,7 +5166,7 @@ function HomeView({ savedAddress, savedSession, onSubmit, onResumeFromProfile, o
               <input
                 type="text"
                 ref={innerInputRef}
-                placeholder="1600 Pennsylvania Ave NW, Washington DC 20500"
+                placeholder={t('homeHero.addressPlaceholder')}
                 value={addr}
                 onChange={(e) => setAddr(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter') submit(); }}
@@ -4959,41 +5176,41 @@ function HomeView({ savedAddress, savedSession, onSubmit, onResumeFromProfile, o
                     : undefined
                 }
               />
-              <button className="go" onClick={submit} disabled={!addr.trim()}>Pull my representatives →</button>
+              <button className="go" onClick={submit} disabled={!addr.trim()}>{t('homeHero.submitBtn')}</button>
             </div>
           </div>
 
           <div className="addr-steps">
             <p className="addr-steps-lead">
-              Unsure?{' '}
+              {t('homeHero.unsureLede')}{' '}
               <a
                 className="addr-steps-link"
                 onClick={() => onNavigate && onNavigate('howitworks')}
                 role="link"
                 tabIndex={0}
                 onKeyDown={(e) => { if (e.key === 'Enter' && onNavigate) onNavigate('howitworks'); }}
-              >Read about how it works and how we use your data</a>
+              >{t('homeHero.howItWorksLink')}</a>
             </p>
             <ol className="addr-steps-list">
               <li>
                 <span className="addr-step-num">01</span>
                 <span className="addr-step-body">
-                  <span className="addr-step-ttl">Enter your address</span>
-                  <span className="addr-step-desc">We use your address to pull local voting information so you know exactly when and where to go vote and what IDs are needed — so you have everything you need to support or vote against your representative and make a change. It stays on this device and is never stored.</span>
+                  <span className="addr-step-ttl">{t('landing.step1Title')}</span>
+                  <span className="addr-step-desc">{t('homeHero.step1Desc')}</span>
                 </span>
               </li>
               <li>
                 <span className="addr-step-num">02</span>
                 <span className="addr-step-body">
-                  <span className="addr-step-ttl">See what they actually did</span>
-                  <span className="addr-step-desc">We pull your representatives and their record on the issues you care about — voting history, donors, and how much they raised and from whom. No news articles, no ads — just the record.</span>
+                  <span className="addr-step-ttl">{t('landing.step2Title')}</span>
+                  <span className="addr-step-desc">{t('homeHero.step2Desc')}</span>
                 </span>
               </li>
               <li>
                 <span className="addr-step-num">03</span>
                 <span className="addr-step-body">
-                  <span className="addr-step-ttl">Take it with you</span>
-                  <span className="addr-step-desc">Download a one-page ballot for the polling booth. Many polls don't allow phones — print it or write it down before you go.</span>
+                  <span className="addr-step-ttl">{t('landing.step3Title')}</span>
+                  <span className="addr-step-desc">{t('homeHero.step3Desc')}</span>
                 </span>
               </li>
             </ol>

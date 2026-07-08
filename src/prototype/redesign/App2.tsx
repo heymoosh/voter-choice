@@ -837,8 +837,8 @@ function App2Inner() {
       return (
         <DelegationErrorView
           tone="warn"
-          title="Let's start from your address"
-          body="We couldn't restore your previous session's data."
+          title={t("delegationError.dataEvaporatedTitle")}
+          body={t("delegationError.dataEvaporatedBody")}
           onEditAddress={startOver}
         />
       );
