@@ -626,6 +626,17 @@ export const SCENARIOS: Scenario[] = [
       "per HANDOFF-EXACT-MATCH.md §1.1: today's OrientationView is a bare div, no flagbar/" +
       "ori-card/3-step list — the screenshot documents that gap, it is not a tooling limitation.",
     async capture(page) {
+      // mockDelegation + mockChatLocal aren't required locally (a dev
+      // .env.local's real DATABASE_URL/API creds let the real /api/delegation
+      // + /api/chat calls succeed) but CI's dev server has neither, so an
+      // unmocked submitAddress() resolves to the "dberror" stage instead of
+      // "coldopen" — issue-convo-input then never renders, and this scenario
+      // (and 09a/09b/09c, the only other reachColdOpen callers) burn the full
+      // 15s waitFor before failing. Every other scenario in this file already
+      // mocks delegation before touching the address form; this just matches
+      // that pattern instead of relying on real network/DB access.
+      await mockDelegation(page);
+      await mockChatLocal(page);
       await reachOrientation(page);
     },
   },
@@ -979,6 +990,9 @@ export const SCENARIOS: Scenario[] = [
     automatable: "yes",
     note: "Fresh cold-open, before any message is sent.",
     async capture(page) {
+      // See 01-orientation-activated's capture() comment: reachColdOpen
+      // needs a delegation mock in any environment without a real DB (CI).
+      await mockDelegation(page);
       await reachColdOpen(page);
     },
   },
@@ -990,6 +1004,11 @@ export const SCENARIOS: Scenario[] = [
     automatable: "yes",
     note: "After the first (extraction) turn — 2 starter issues + quick-reply chips.",
     async capture(page) {
+      // See 01-orientation-activated's capture() comment: reachColdOpen
+      // needs a delegation mock, and sendFirstIssue needs a chat mock, in
+      // any environment without real DB/API creds (CI).
+      await mockDelegation(page);
+      await mockChatLocal(page);
       await reachColdOpen(page);
       await sendFirstIssue(page);
     },
@@ -1013,6 +1032,11 @@ export const SCENARIOS: Scenario[] = [
       "instead: same UI one turn further (3 issues, after a refinement reply), right before " +
       "clicking Lock.",
     async capture(page) {
+      // See 01-orientation-activated's capture() comment: reachColdOpen
+      // needs a delegation mock, and sendFirstIssue/sendFollowUpIssue need a
+      // chat mock, in any environment without real DB/API creds (CI).
+      await mockDelegation(page);
+      await mockChatLocal(page);
       const reachPreLock = async () => {
         // App2.tsx persists in-progress state to sessionStorage (not
         // localStorage — see its SESSION_KEY), which gotoHomeClean() never
