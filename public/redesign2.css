@@ -886,7 +886,7 @@
 
 /* ====================================================
    RAISED VS. THE MEDIAN — the money-gap scale [Δ]
-   Ported from claude-code-handoff/design-session/funding.css.
+   Ported from design-handoff/design-session/funding.css.
    Design tokens (--brand/--keep/--replace, [data-palette="white"]) are mapped
    onto the redesign's shipped warm-palette tokens so this rides on the existing
    prototype.css system (no new palette). Neutral by design: gold = "above the

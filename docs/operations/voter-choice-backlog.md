@@ -1178,43 +1178,6 @@ ORIGIN: parity-gallery fix verification, PR #238, 2026-07-08
 - DECISION: approved (Muxin 2026-07-08, live) — staged execution authorized: Stage A (this scaffolding, including the 4 fix cards) → once verified complete, proceed automatically (no further check-in needed) into Stage B (the actual FE UI fixes: card 466d6efb's 10 gate-flagged gaps + PR #230/#236/#237/#240/#243's own outstanding items) using the completed gate as authority → Stage C is ONE unified review session using the regenerated HTML artifact (docs/design-review/), not piecemeal PR-by-PR review. Do not re-ask at each step; only escalate genuine intent-ambiguity, same as the standing operating rule.
 <!-- card-id: e840c072-1bd9-4dc0-aebe-8a19867aed03 -->
 
-**[P1] Fix stale gate captures: 09c-intake-locked and 10a-polis-entry never reach the new screens they test**
-- - Phase 4 STOP-SHIP re-audit finding (docs/operations/keystone-phase4-audit-2026-07-08.md): both scenarios PASS today but are false-passes. 09c-intake-locked stops one step before clicking "Lock these in", so it never reaches the new IntakeLocked.tsx screen PR #236 ships. 10a-polis-entry still clicks the old one-line "where you stand" link instead of navigating to the new polisEntry stage PR #237 wires into App2.tsx. Both PRs' actual core deliverables are currently unverified by the gate, not confirmed-good.
-- TASK: update both scenario capture() functions in scripts/design/parity-gallery-scenarios.ts to click through to the actual new screens, and update their stale note text.
-- GOAL_CONDITION: 09c-intake-locked's capture reaches the post-lock IntakeLocked screen; 10a-polis-entry's capture reaches the new polisEntry stage; both gate structurally/visually against the real new content.
-- ORIGIN: Phase 4 re-audit, background agent phase4-audit-batch-a, 2026-07-08
-- STATUS: Review
-- DEPENDS ON: [P0][GATE] STOP-SHIP: Fix the design-fidelity pipeline + rebuild the design-review artifact (no Keystone build/merge until Done)
-<!-- card-id: 622fe2dd-f86b-4b07-beb9-903464d8468e -->
-
-**[P1] Fix 10c/10d Polis-report gate mocks (false-fail on PR #240) + document the approved party-free waiver**
-- - Phase 4 STOP-SHIP re-audit finding (docs/operations/keystone-phase4-audit-2026-07-08.md): live-verified PR #240's "where it split" feature is built correctly (population-level %, no D/R/I breakdown, copy matches the approved spec). The gate FAILs 10c/10d anyway because parity-gallery-scenarios.ts's mockBridges() never stubs a divided field, so the gate always tests the feature's absence, not its correctness. Once fixed, the remaining visual diff (~0.38-0.52) is the expected result of the approved party-free divergence from canvas (DECISION #116), not a bug.
-- TASK: update the 10c/10d scenario mocks to feed real divided-statement data; once real content is being tested, add a documented STRUCTURAL_WAIVERS-style entry (or per-scenario threshold note) explaining the expected residual visual diff from the intentional party-free redesign, so it stops reading as an open failure.
-- GOAL_CONDITION: 10c/10d gate against real divided-statement content; any remaining visual diff is either under threshold or carries an explicit waiver citing DECISION #116.
-- ORIGIN: Phase 4 re-audit, background agent phase4-audit-batch-b, 2026-07-08
-- STATUS: Review
-- DEPENDS ON: [P0][GATE] STOP-SHIP: Fix the design-fidelity pipeline + rebuild the design-review artifact (no Keystone build/merge until Done)
-<!-- card-id: 50c20164-6d09-4957-bfd2-a02a20872d70 -->
-
-**[P0] Fix shared reachWorkspace() capture helper before/with PR #243 — breaks ~20 gate scenarios repo-wide once it merges**
-- - Phase 4 STOP-SHIP re-audit finding (docs/operations/keystone-phase4-audit-2026-07-08.md): PR #243 makes the new DelegationOverview screen the default entry point (seatOverviewOpen defaults true), but the shared reachWorkspace() helper in scripts/design/parity-gallery-scenarios.ts (used by ~20 of 27 scenarios) still assumes landing directly on the old single-seat rail (.b-row). Confirmed via a reverted local patch: with a one-line fix (click through the overview's seat card first when present), PR #243 gates identically to the other 4 held PRs (16/27, same baseline failures) - zero new regressions. Without the fix, the ENTIRE gate suite breaks for every future PR the moment #243 merges to main, not just this PR.
-- NEEDS MUXIN: should this fix ship bundled into PR #243 itself, or as a same-day companion PR merged immediately after? Sequencing call, not filed as a decision here - flagging on the STOP-SHIP card.
-- GOAL_CONDITION: reachWorkspace() (and any e2e helper sharing the same assumption) clicks through DelegationOverview's seat card when present before waiting on .b-row; re-running the full gate against a merged #243+tooling branch returns to the same ~16/27 baseline with no new capture-failure regressions.
-- ORIGIN: Phase 4 re-audit, background agent phase4-audit-batch-b, 2026-07-08
-- STATUS: Review
-- DEPENDS ON: [P0][GATE] STOP-SHIP: Fix the design-fidelity pipeline + rebuild the design-review artifact (no Keystone build/merge until Done)
-<!-- card-id: 4b7f2068-f7cb-406f-98b2-94c06e7a4aa4 -->
-
-**Wire a real capture() + export a canvas ref PNG for 05c-candidates-overview**
-- - Phase 4 STOP-SHIP re-audit finding (docs/operations/keystone-phase4-audit-2026-07-08.md): this scenario exists as a placeholder (automatable: "no" hardcoded) with no capture() function AND no canvas ref PNG in .keystone-canvas-refs/ - it cannot be pixel-graded on any branch, ever, until both exist. Manual inspection (temp capture, reverted) shows PR #243's overview screen renders correctly: 2 scored seat cards with roll-call/funding data, third seat shown as "Not on your ballot this year - next up 2030".
-- TASK: export a canvas ref PNG for design-handoff/keystone-canvas/src/screens-delegation.jsx's artboard (may need a Claude Design canvas session - flag if so), then write a real capture() function for 05c-candidates-overview in scripts/design/parity-gallery-scenarios.ts.
-- GOAL_CONDITION: 05c-candidates-overview has both a ref PNG and a working capture(), gates normally like the other scenarios.
-- ORIGIN: Phase 4 re-audit, background agent phase4-audit-batch-b, 2026-07-08
-- STATUS: To Do
-- DEPENDS ON: [P0][GATE] STOP-SHIP: Fix the design-fidelity pipeline + rebuild the design-review artifact (no Keystone build/merge until Done)
-- PARKED: needs Muxin: fresh Claude Design canvas session to export a 05c-candidates-overview ref PNG before this scenario can be gate-verified; capture() itself already committed (worktree wt-keystone-phase4-tooling-fixes) and ready 2026-07-08
-<!-- card-id: 1b4b943d-4229-4896-a129-21e6341820b5 -->
-
 **[P1] Rebuild i18n on a scalable locale pipeline + build out the full VRA §203 language tier**
 - Traces to Muxin's 2026-07-08 ruling on "Muxin sign-off on the shipped translation-set tier(s)" (c981fa96): build every language we reasonably can, not a fixed short list — but the CURRENT architecture (src/lib/translations.ts, ~2000 lines of hand-authored en/es TS objects, Language = "en" | "es" hardcoded, consumed via src/lib/i18n.tsx) can't scale to N languages without linear per-language authoring effort and drift risk.
 - TASK: replace the hardcoded TS objects with a locale-resource pipeline — one canonical source-of-truth (e.g. locales/en.json), a real i18n loader (e.g. next-intl, since this is a Next.js App Router app) instead of the hand-rolled src/lib/i18n.tsx context, and a generation script (mirroring the existing sync:ballot-prompt precedent) that diffs en.json against each target locale and machine-translates only new/changed keys — so adding a language is "run the script," not "hand-write a ~700-line file."
@@ -1246,6 +1209,39 @@ ORIGIN: parity-gallery fix verification, PR #238, 2026-07-08
 - STATUS: To Do
 - GROOMED: ready: two named fixes (bounds/chunking, filing_url allowlist), exact file + GOAL_CONDITION on card + 2026-07-08
 <!-- card-id: a3fbfc79-dc2f-44a8-a9eb-64c33046777e -->
+
+**Wire a real capture() + export a canvas ref PNG for 05c-candidates-overview**
+- - Phase 4 STOP-SHIP re-audit finding (docs/operations/keystone-phase4-audit-2026-07-08.md): this scenario exists as a placeholder (automatable: "no" hardcoded) with no capture() function AND no canvas ref PNG in .keystone-canvas-refs/ - it cannot be pixel-graded on any branch, ever, until both exist. Manual inspection (temp capture, reverted) shows PR #243's overview screen renders correctly: 2 scored seat cards with roll-call/funding data, third seat shown as "Not on your ballot this year - next up 2030".
+- TASK: export a canvas ref PNG for design-handoff/keystone-canvas/src/screens-delegation.jsx's artboard (may need a Claude Design canvas session - flag if so), then write a real capture() function for 05c-candidates-overview in scripts/design/parity-gallery-scenarios.ts.
+- GOAL_CONDITION: 05c-candidates-overview has both a ref PNG and a working capture(), gates normally like the other scenarios.
+- ORIGIN: Phase 4 re-audit, background agent phase4-audit-batch-b, 2026-07-08
+- STATUS: Done
+- PARKED: needs Muxin: fresh Claude Design canvas session to export a 05c-candidates-overview ref PNG before this scenario can be gate-verified; capture() itself already committed (worktree wt-keystone-phase4-tooling-fixes) and ready 2026-07-08
+<!-- card-id: 1b4b943d-4229-4896-a129-21e6341820b5 -->
+
+**[P0] Fix shared reachWorkspace() capture helper before/with PR #243 — breaks ~20 gate scenarios repo-wide once it merges**
+- - Phase 4 STOP-SHIP re-audit finding (docs/operations/keystone-phase4-audit-2026-07-08.md): PR #243 makes the new DelegationOverview screen the default entry point (seatOverviewOpen defaults true), but the shared reachWorkspace() helper in scripts/design/parity-gallery-scenarios.ts (used by ~20 of 27 scenarios) still assumes landing directly on the old single-seat rail (.b-row). Confirmed via a reverted local patch: with a one-line fix (click through the overview's seat card first when present), PR #243 gates identically to the other 4 held PRs (16/27, same baseline failures) - zero new regressions. Without the fix, the ENTIRE gate suite breaks for every future PR the moment #243 merges to main, not just this PR.
+- NEEDS MUXIN: should this fix ship bundled into PR #243 itself, or as a same-day companion PR merged immediately after? Sequencing call, not filed as a decision here - flagging on the STOP-SHIP card.
+- GOAL_CONDITION: reachWorkspace() (and any e2e helper sharing the same assumption) clicks through DelegationOverview's seat card when present before waiting on .b-row; re-running the full gate against a merged #243+tooling branch returns to the same ~16/27 baseline with no new capture-failure regressions.
+- ORIGIN: Phase 4 re-audit, background agent phase4-audit-batch-b, 2026-07-08
+- STATUS: Done
+<!-- card-id: 4b7f2068-f7cb-406f-98b2-94c06e7a4aa4 -->
+
+**[P1] Fix 10c/10d Polis-report gate mocks (false-fail on PR #240) + document the approved party-free waiver**
+- - Phase 4 STOP-SHIP re-audit finding (docs/operations/keystone-phase4-audit-2026-07-08.md): live-verified PR #240's "where it split" feature is built correctly (population-level %, no D/R/I breakdown, copy matches the approved spec). The gate FAILs 10c/10d anyway because parity-gallery-scenarios.ts's mockBridges() never stubs a divided field, so the gate always tests the feature's absence, not its correctness. Once fixed, the remaining visual diff (~0.38-0.52) is the expected result of the approved party-free divergence from canvas (DECISION #116), not a bug.
+- TASK: update the 10c/10d scenario mocks to feed real divided-statement data; once real content is being tested, add a documented STRUCTURAL_WAIVERS-style entry (or per-scenario threshold note) explaining the expected residual visual diff from the intentional party-free redesign, so it stops reading as an open failure.
+- GOAL_CONDITION: 10c/10d gate against real divided-statement content; any remaining visual diff is either under threshold or carries an explicit waiver citing DECISION #116.
+- ORIGIN: Phase 4 re-audit, background agent phase4-audit-batch-b, 2026-07-08
+- STATUS: Done
+<!-- card-id: 50c20164-6d09-4957-bfd2-a02a20872d70 -->
+
+**[P1] Fix stale gate captures: 09c-intake-locked and 10a-polis-entry never reach the new screens they test**
+- - Phase 4 STOP-SHIP re-audit finding (docs/operations/keystone-phase4-audit-2026-07-08.md): both scenarios PASS today but are false-passes. 09c-intake-locked stops one step before clicking "Lock these in", so it never reaches the new IntakeLocked.tsx screen PR #236 ships. 10a-polis-entry still clicks the old one-line "where you stand" link instead of navigating to the new polisEntry stage PR #237 wires into App2.tsx. Both PRs' actual core deliverables are currently unverified by the gate, not confirmed-good.
+- TASK: update both scenario capture() functions in scripts/design/parity-gallery-scenarios.ts to click through to the actual new screens, and update their stale note text.
+- GOAL_CONDITION: 09c-intake-locked's capture reaches the post-lock IntakeLocked screen; 10a-polis-entry's capture reaches the new polisEntry stage; both gate structurally/visually against the real new content.
+- ORIGIN: Phase 4 re-audit, background agent phase4-audit-batch-a, 2026-07-08
+- STATUS: Done
+<!-- card-id: 622fe2dd-f86b-4b07-beb9-903464d8468e -->
 
 **[P2] Add Playwright visual snapshots to key redesign surfaces**
 - Catch unintended visual regressions automatically so manual review can focus only on intended design changes.

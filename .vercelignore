@@ -1,0 +1,11 @@
+# Large local-only artifacts that must never be uploaded to Vercel.
+# (Vercel builds from source; these are dev/data files only.)
+*.pgdump
+.git
+.claude
+.playwright-mcp
+.next
+.lighthouseci
+.ai
+*-report.json
+.vitest-report.json

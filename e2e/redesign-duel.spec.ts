@@ -4,7 +4,7 @@
 // duel (incumbent vs. one challenger, challenger switcher, per-issue Δ ledger,
 // Keep / Replace at the foot). Replace records the verdict AND the chosen
 // successor, which rides to the scorecard. Faithful to the design's DIRECTION
-// B (claude-code-handoff/design-session/screens-candidates.jsx).
+// B (design-handoff/design-session/screens-candidates.jsx).
 //
 // All data seams are mocked (e2e/helpers/redesign-mocks.ts) — no network.
 

@@ -3,7 +3,7 @@
  * src/prototype/redesign/MoneyGap.tsx
  *
  * "Raised vs. the median" — the money-gap primitive, ported from the reviewed
- * design (claude-code-handoff/design-session/screens-funding.jsx + funding.css).
+ * design (design-handoff/design-session/screens-funding.jsx + funding.css).
  *
  * Three surfaces, one shared scale:
  *   - <MedianChip>   the collapsed glance on a money line / card row

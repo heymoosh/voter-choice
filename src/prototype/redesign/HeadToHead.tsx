@@ -1,7 +1,7 @@
 // @ts-nocheck
 "use client";
 /* Head-to-head candidate duel — the "Time to replace" flow (card 6a1fb1fb).
-   PORT of claude-code-handoff/design-session/screens-candidates.jsx → the
+   PORT of design-handoff/design-session/screens-candidates.jsx → the
    down-selected DIRECTION B (`HeadToHead`), brought onto the app's stylesheet
    pipeline (public/candidates.css) and wired to REAL seat data. Per repo
    policy the design is the source of truth — markup/class names are the

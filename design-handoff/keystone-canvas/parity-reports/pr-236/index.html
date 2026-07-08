@@ -1,0 +1,410 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Keystone parity gallery</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; padding: 24px; background: #f6f7f8; color: #1a1a1a; }
+  @media (prefers-color-scheme: dark) { body { background: #14161a; color: #e8e8e8; } }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  .sub { color: #666; font-size: 13px; margin-bottom: 20px; }
+  table { border-collapse: collapse; width: 100%; }
+  th { text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; color: #888; padding: 8px; position: sticky; top: 0; background: #f6f7f8; }
+  @media (prefers-color-scheme: dark) { th { background: #14161a; } }
+  td { border-top: 1px solid #ddd; padding: 10px 8px; vertical-align: top; }
+  @media (prefers-color-scheme: dark) { td { border-top: 1px solid #333; } }
+  td.meta { width: 240px; font-size: 12px; }
+  td.meta .id { font-weight: 600; font-family: ui-monospace, monospace; }
+  td.meta .label { color: #555; margin: 2px 0 6px; }
+  @media (prefers-color-scheme: dark) { td.meta .label { color: #aaa; } }
+  td.meta .note { color: #777; margin-top: 6px; line-height: 1.4; }
+  td.shot { width: 25%; }
+  td.shot img { width: 100%; height: auto; border: 1px solid #ccc; display: block; }
+  @media (prefers-color-scheme: dark) { td.shot img { border-color: #444; } }
+  .missing, .error, .not-automatable { font-size: 12px; padding: 10px; border: 1px dashed #999; color: #999; }
+  .error { color: #b3261e; border-color: #b3261e33; }
+  .badge { display: inline-block; font-size: 11px; padding: 2px 6px; border-radius: 3px; margin-right: 4px; }
+  .badge.changed { background: #ffe1a8; color: #7a4b00; }
+  .badge.unchanged { background: #e5e5e5; color: #666; }
+  @media (prefers-color-scheme: dark) { .badge.unchanged { background: #333; color: #aaa; } }
+  .tag { display: inline-block; font-size: 10px; padding: 1px 5px; border-radius: 3px; margin-right: 4px; text-transform: uppercase; }
+  .tag.yes { background: #d7f0d7; color: #1e6b1e; }
+  .tag.proxy { background: #fff0c2; color: #7a5c00; }
+  .tag.no { background: #f5d5d5; color: #8a1f1f; }
+</style>
+</head>
+<body>
+  <h1>Keystone parity gallery</h1>
+  <div class="sub">before: <code>origin/main (82f180ff)</code> · after: <code>origin/wt/intake-locked-state-ship-as-its-own-screen-c1a43c39 (6343d8b2)</code> · generated 2026-07-08T04:32:14.146Z</div>
+  <table>
+    <thead><tr><th>Artboard</th><th>Reference</th><th>Before</th><th>After</th></tr></thead>
+    <tbody>
+      
+      <tr>
+        <td class="meta">
+          <div class="id">01-orientation-activated</div>
+          <div class="label">Orientation — OrientationActivated</div>
+          <span class="badge changed">changed in this PR</span>
+          <span class="tag yes">automated</span>
+          <div class="note">Reachable directly (lock issues → orientation interstitial). Known confirmed gap per HANDOFF-EXACT-MATCH.md §1.1: today's OrientationView is a bare div, no flagbar/ori-card/3-step list — the screenshot documents that gap, it is not a tooling limitation.</div>
+        </td>
+        <td class="shot"><img src="refs/01-orientation-activated.png" alt="ref"></td>
+        <td class="shot"><img src="before/01-orientation-activated.png" alt="01-orientation-activated"></td>
+        <td class="shot"><img src="after/01-orientation-activated.png" alt="01-orientation-activated"></td>
+      </tr>
+
+      <tr>
+        <td class="meta">
+          <div class="id">02a-results-main</div>
+          <div class="label">Results — main review surface</div>
+          <span class="badge changed">changed in this PR</span>
+          <span class="tag yes">automated</span>
+          <div class="note">Workspace with the money disclosure explicitly collapsed.</div>
+        </td>
+        <td class="shot"><img src="refs/02a-results-main.png" alt="ref"></td>
+        <td class="shot"><img src="before/02a-results-main.png" alt="02a-results-main"></td>
+        <td class="shot"><img src="after/02a-results-main.png" alt="02a-results-main"></td>
+      </tr>
+
+      <tr>
+        <td class="meta">
+          <div class="id">02b-results-funding-expanded</div>
+          <div class="label">Results — funding expanded (FunderBars)</div>
+          <span class="badge changed">changed in this PR</span>
+          <span class="tag yes">automated</span>
+          <div class="note">Money-trail disclosure expanded via its toggle.</div>
+        </td>
+        <td class="shot"><img src="refs/02b-results-funding-expanded.png" alt="ref"></td>
+        <td class="shot"><img src="before/02b-results-funding-expanded.png" alt="02b-results-funding-expanded"></td>
+        <td class="shot"><img src="after/02b-results-funding-expanded.png" alt="02b-results-funding-expanded"></td>
+      </tr>
+
+      <tr>
+        <td class="meta">
+          <div class="id">02c-results-votes-drilldown</div>
+          <div class="label">Results — per-issue vote drilldown</div>
+          <span class="badge changed">changed in this PR</span>
+          <span class="tag yes">automated</span>
+          <div class="note">Clicks the first scoreable issue row to expand AlignmentDrilldown.</div>
+        </td>
+        <td class="shot"><img src="refs/02c-results-votes-drilldown.png" alt="ref"></td>
+        <td class="shot"><img src="before/02c-results-votes-drilldown.png" alt="02c-results-votes-drilldown"></td>
+        <td class="shot"><img src="after/02c-results-votes-drilldown.png" alt="02c-results-votes-drilldown"></td>
+      </tr>
+
+      <tr>
+        <td class="meta">
+          <div class="id">02d-results-allvotes-sheet</div>
+          <div class="label">Results — see all votes (full record sheet)</div>
+          <span class="badge changed">changed in this PR</span>
+          <span class="tag yes">automated</span>
+          <div class="note">Opens the AllVotesPanel overlay via the 'see full record' CTA.</div>
+        </td>
+        <td class="shot"><img src="refs/02d-results-allvotes-sheet.png" alt="ref"></td>
+        <td class="shot"><img src="before/02d-results-allvotes-sheet.png" alt="02d-results-allvotes-sheet"></td>
+        <td class="shot"><img src="after/02d-results-allvotes-sheet.png" alt="02d-results-allvotes-sheet"></td>
+      </tr>
+
+      <tr>
+        <td class="meta">
+          <div class="id">03-color-bold-flag</div>
+          <div class="label">Color — Bold Flag palette confirmation</div>
+          <span class="badge changed">changed in this PR</span>
+          <span class="tag proxy">proxy</span>
+          <div class="note">The canvas artboard is a trimmed side-by-side palette-demo card, not a real app screen — there is no equivalent standalone surface in the repo. Proxy: the results workspace screenshot (02a), which is where the Bold Flag tokens are actually applied in the live app; use it to eyeball the same --brand/--keep/--replace/--gold values.</div>
+        </td>
+        <td class="shot"><img src="refs/03-color-bold-flag.png" alt="ref"></td>
+        <td class="shot"><img src="before/03-color-bold-flag.png" alt="03-color-bold-flag"></td>
+        <td class="shot"><img src="after/03-color-bold-flag.png" alt="03-color-bold-flag"></td>
+      </tr>
+
+      <tr>
+        <td class="meta">
+          <div class="id">04-scorecard</div>
+          <div class="label">Scorecard — printable sheet</div>
+          <span class="badge changed">changed in this PR</span>
+          <span class="tag yes">automated</span>
+          <div class="note">Mixed verdicts (one keep, one replace) so both badge treatments render.</div>
+        </td>
+        <td class="shot"><img src="refs/04-scorecard.png" alt="ref"></td>
+        <td class="shot"><img src="before/04-scorecard.png" alt="04-scorecard"></td>
+        <td class="shot"><img src="after/04-scorecard.png" alt="04-scorecard"></td>
+      </tr>
+
+      <tr>
+        <td class="meta">
+          <div class="id">05a-candidates-parity</div>
+          <div class="label">Candidates — CandidateParity (unified card)</div>
+          <span class="badge unchanged">unchanged</span>
+          <span class="tag yes">automated</span>
+          <div class="note">Captures the junior-senator seat, which has no DB voting record and renders via the research/web_search path (the closest current analog to the canvas's dashed 'RESEARCHED · CITED' provenance treatment). Repo-wide grep found no ROLL-CALL/CITED provenance-badge markup at all — HANDOFF §5 flags the badge distinction as unverified; this screenshot is honest evidence either way, not a forced match.</div>
+        </td>
+        <td class="shot"><img src="refs/05a-candidates-parity.png" alt="ref"></td>
+        <td class="shot"><img src="before/05a-candidates-parity.png" alt="05a-candidates-parity"></td>
+        <td class="shot"><img src="after/05a-candidates-parity.png" alt="05a-candidates-parity"></td>
+      </tr>
+
+      <tr>
+        <td class="meta">
+          <div class="id">05b-headtohead</div>
+          <div class="label">Candidates — HeadToHead duel</div>
+          <span class="badge unchanged">unchanged</span>
+          <span class="tag yes">automated</span>
+          <div class="note">Opens the full-screen duel via 'Time to replace' on the House seat (has 2026 challengers).</div>
+        </td>
+        <td class="shot"><img src="refs/05b-headtohead.png" alt="ref"></td>
+        <td class="shot"><img src="before/05b-headtohead.png" alt="05b-headtohead"></td>
+        <td class="shot"><img src="after/05b-headtohead.png" alt="05b-headtohead"></td>
+      </tr>
+
+      <tr>
+        <td class="meta">
+          <div class="id">06-homehero</div>
+          <div class="label">Homepage — HomeHero</div>
+          <span class="badge changed">changed in this PR</span>
+          <span class="tag yes">automated</span>
+          <div class="note">Fresh home stage, no session.</div>
+        </td>
+        <td class="shot"><img src="refs/06-homehero.png" alt="ref"></td>
+        <td class="shot"><img src="before/06-homehero.png" alt="06-homehero"></td>
+        <td class="shot"><img src="after/06-homehero.png" alt="06-homehero"></td>
+      </tr>
+
+      <tr>
+        <td class="meta">
+          <div class="id">07-whynow</div>
+          <div class="label">Why Now — editorial page</div>
+          <span class="badge changed">changed in this PR</span>
+          <span class="tag yes">automated</span>
+          <div class="note">Nav → 'Why now?'.</div>
+        </td>
+        <td class="shot"><img src="refs/07-whynow.png" alt="ref"></td>
+        <td class="shot"><img src="before/07-whynow.png" alt="07-whynow"></td>
+        <td class="shot"><img src="after/07-whynow.png" alt="07-whynow"></td>
+      </tr>
+
+      <tr>
+        <td class="meta">
+          <div class="id">08a-about</div>
+          <div class="label">Statics — About</div>
+          <span class="badge changed">changed in this PR</span>
+          <span class="tag yes">automated</span>
+          <div class="note">Nav → 'About'.</div>
+        </td>
+        <td class="shot"><img src="refs/08a-about.png" alt="ref"></td>
+        <td class="shot"><img src="before/08a-about.png" alt="08a-about"></td>
+        <td class="shot"><img src="after/08a-about.png" alt="08a-about"></td>
+      </tr>
+
+      <tr>
+        <td class="meta">
+          <div class="id">08b-howitworks</div>
+          <div class="label">Statics — How it works (MethodologyPage)</div>
+          <span class="badge changed">changed in this PR</span>
+          <span class="tag yes">automated</span>
+          <div class="note">Nav → 'Methodology' (confirmed current label — HANDOFF §8 flags the rename to 'How it works' as not yet shipped; the dead navigate('howitworks') branch just falls back to home, per App2.tsx's PAGE_STAGES/navigate()).</div>
+        </td>
+        <td class="shot"><img src="refs/08b-howitworks.png" alt="ref"></td>
+        <td class="shot"><img src="before/08b-howitworks.png" alt="08b-howitworks"></td>
+        <td class="shot"><img src="after/08b-howitworks.png" alt="08b-howitworks"></td>
+      </tr>
+
+      <tr>
+        <td class="meta">
+          <div class="id">08c-privacy</div>
+          <div class="label">Statics — Privacy</div>
+          <span class="badge changed">changed in this PR</span>
+          <span class="tag yes">automated</span>
+          <div class="note">Nav → 'Privacy'.</div>
+        </td>
+        <td class="shot"><img src="refs/08c-privacy.png" alt="ref"></td>
+        <td class="shot"><img src="before/08c-privacy.png" alt="08c-privacy"></td>
+        <td class="shot"><img src="after/08c-privacy.png" alt="08c-privacy"></td>
+      </tr>
+
+      <tr>
+        <td class="meta">
+          <div class="id">08d-tipjar</div>
+          <div class="label">Statics — Tip jar</div>
+          <span class="badge changed">changed in this PR</span>
+          <span class="tag yes">automated</span>
+          <div class="note">Nav → 'Tip jar'.</div>
+        </td>
+        <td class="shot"><img src="refs/08d-tipjar.png" alt="ref"></td>
+        <td class="shot"><img src="before/08d-tipjar.png" alt="08d-tipjar"></td>
+        <td class="shot"><img src="after/08d-tipjar.png" alt="08d-tipjar"></td>
+      </tr>
+
+      <tr>
+        <td class="meta">
+          <div class="id">08e-loading</div>
+          <div class="label">Statics — Loading state</div>
+          <span class="badge changed">changed in this PR</span>
+          <span class="tag yes">automated</span>
+          <div class="note">The checklist is a self-advancing 600ms/step client timer, independent of network timing — /api/delegation is deliberately delayed ~2.5s so the stage doesn't flip away before the screenshot.</div>
+        </td>
+        <td class="shot"><img src="refs/08e-loading.png" alt="ref"></td>
+        <td class="shot"><img src="before/08e-loading.png" alt="08e-loading"></td>
+        <td class="shot"><img src="after/08e-loading.png" alt="08e-loading"></td>
+      </tr>
+
+      <tr>
+        <td class="meta">
+          <div class="id">09a-intake-ask</div>
+          <div class="label">Intake step 1 — the ask</div>
+          <span class="badge changed">changed in this PR</span>
+          <span class="tag yes">automated</span>
+          <div class="note">Fresh cold-open, before any message is sent.</div>
+        </td>
+        <td class="shot"><img src="refs/09a-intake-ask.png" alt="ref"></td>
+        <td class="shot"><img src="before/09a-intake-ask.png" alt="09a-intake-ask"></td>
+        <td class="shot"><img src="after/09a-intake-ask.png" alt="09a-intake-ask"></td>
+      </tr>
+
+      <tr>
+        <td class="meta">
+          <div class="id">09b-intake-propose</div>
+          <div class="label">Intake step 2 — AI proposes + running issues card</div>
+          <span class="badge changed">changed in this PR</span>
+          <span class="tag yes">automated</span>
+          <div class="note">After the first (extraction) turn — 2 starter issues + quick-reply chips.</div>
+        </td>
+        <td class="shot"><img src="refs/09b-intake-propose.png" alt="ref"></td>
+        <td class="shot"><img src="before/09b-intake-propose.png" alt="09b-intake-propose"></td>
+        <td class="shot"><img src="after/09b-intake-propose.png" alt="09b-intake-propose"></td>
+      </tr>
+
+      <tr>
+        <td class="meta">
+          <div class="id">09c-intake-locked</div>
+          <div class="label">Intake step 3 — ready to lock</div>
+          <span class="badge changed">changed in this PR</span>
+          <span class="tag proxy">proxy</span>
+          <div class="note">The canvas's distinct pre-lock confirmation state (green 'Your issues are set' banner, drag-to-rerank) is not built — current UI reuses the same running issues-card for every turn (up/down-arrow rerank, not drag). Proxy: same UI one turn further (3 issues, after a refinement reply), right before clicking Lock.</div>
+        </td>
+        <td class="shot"><img src="refs/09c-intake-locked.png" alt="ref"></td>
+        <td class="shot"><img src="before/09c-intake-locked.png" alt="09c-intake-locked"></td>
+        <td class="shot"><img src="after/09c-intake-locked.png" alt="09c-intake-locked"></td>
+      </tr>
+
+      <tr>
+        <td class="meta">
+          <div class="id">09d-edit-issues</div>
+          <div class="label">Intake step 4 — edit issues from workspace</div>
+          <span class="badge changed">changed in this PR</span>
+          <span class="tag yes">automated</span>
+          <div class="note">Opens the seeded 'Amend your issues' modal from the scorecard's Edit link, then adds a turn.</div>
+        </td>
+        <td class="shot"><img src="refs/09d-edit-issues.png" alt="ref"></td>
+        <td class="shot"><img src="before/09d-edit-issues.png" alt="09d-edit-issues"></td>
+        <td class="shot"><img src="after/09d-edit-issues.png" alt="09d-edit-issues"></td>
+      </tr>
+
+      <tr>
+        <td class="meta">
+          <div class="id">09e-edit-rescored</div>
+          <div class="label">Intake step 5 — apply → re-scored with Revisit flags</div>
+          <span class="badge unchanged">unchanged</span>
+          <span class="tag yes">automated</span>
+          <div class="note">Race-data mock swings the House score hard (83%→17%) once 'congressional accountability' enters the issue list, so Apply produces a real &gt;5pt REVISIT flag instead of the flat 'nothing moved' branch.</div>
+        </td>
+        <td class="shot"><img src="refs/09e-edit-rescored.png" alt="ref"></td>
+        <td class="shot"><img src="before/09e-edit-rescored.png" alt="09e-edit-rescored"></td>
+        <td class="shot"><img src="after/09e-edit-rescored.png" alt="09e-edit-rescored"></td>
+      </tr>
+
+      <tr>
+        <td class="meta">
+          <div class="id">10a-polis-entry</div>
+          <div class="label">Polis — entry point</div>
+          <span class="badge unchanged">unchanged</span>
+          <span class="tag proxy">proxy</span>
+          <div class="note">The canvas's dedicated PolisEntry screen (invite panel + preview scatter) doesn't exist — per e2e/redesign-core.spec.ts's own comment, 'the see where you stand teaser was removed ([P1])'; entry today is only the inline '.all-done … where you stand' link on the completed workspace. Proxy: the completed workspace showing that link.</div>
+        </td>
+        <td class="shot"><img src="refs/10a-polis-entry.png" alt="ref"></td>
+        <td class="shot"><img src="before/10a-polis-entry.png" alt="10a-polis-entry"></td>
+        <td class="shot"><img src="after/10a-polis-entry.png" alt="10a-polis-entry"></td>
+      </tr>
+
+      <tr>
+        <td class="meta">
+          <div class="id">10b-polis-contribute</div>
+          <div class="label">Polis — contribute (blind voting)</div>
+          
+          <span class="tag no">not automatable</span>
+          <div class="note">NOT AUTOMATABLE: no such UI exists in the app to screenshot. Read src/prototype/redesign/PolisClose.tsx in full and grepped the repo for Agree/Disagree/Pass/PolisStand-style markup — the current Polis feature is a passive aggregate REPORT only (opinion-map + common-ground bridges), fed by server-side counters; there is no per-statement blind agree/disagree/pass voting surface anywhere in the codebase. This is a missing feature, not a missing test hook — capturing anything here would misrepresent the app.</div>
+        </td>
+        <td class="shot"><img src="refs/10b-polis-contribute.png" alt="ref"></td>
+        <td class="shot"><div class="not-automatable">not automatable</div></td>
+        <td class="shot"><div class="not-automatable">not automatable</div></td>
+      </tr>
+
+      <tr>
+        <td class="meta">
+          <div class="id">10c-polis-report-consensus</div>
+          <div class="label">Polis — report, common-ground state</div>
+          <span class="badge unchanged">unchanged</span>
+          <span class="tag yes">automated</span>
+          <div class="note">Bridges mock returns several high-agreement statements → 'Common ground' panel renders populated.</div>
+        </td>
+        <td class="shot"><img src="refs/10c-polis-report-consensus.png" alt="ref"></td>
+        <td class="shot"><img src="before/10c-polis-report-consensus.png" alt="10c-polis-report-consensus"></td>
+        <td class="shot"><img src="after/10c-polis-report-consensus.png" alt="10c-polis-report-consensus"></td>
+      </tr>
+
+      <tr>
+        <td class="meta">
+          <div class="id">10d-polis-report-divided</div>
+          <div class="label">Polis — report, divided/no-common-ground state</div>
+          <span class="badge unchanged">unchanged</span>
+          <span class="tag proxy">proxy</span>
+          <div class="note">PolisClose has no computed 'divided/split' branch (only an early-days vs. normal lede, toggled purely by sampleSize&lt;30 — see LOW_N in PolisClose.tsx). There is no 'Where it split' section anywhere in the component. Proxy: bridges mock returns a single, low-agreement statement (vs. 10c's four strong ones) to approximate a thin-consensus cycle within the UI that actually exists; the canvas's dedicated divided narrative is not ported.</div>
+        </td>
+        <td class="shot"><img src="refs/10d-polis-report-divided.png" alt="ref"></td>
+        <td class="shot"><img src="before/10d-polis-report-divided.png" alt="10d-polis-report-divided"></td>
+        <td class="shot"><img src="after/10d-polis-report-divided.png" alt="10d-polis-report-divided"></td>
+      </tr>
+
+      <tr>
+        <td class="meta">
+          <div class="id">11a-fieldmoneygap</div>
+          <div class="label">Money-gap — whole field on one scale</div>
+          <span class="badge unchanged">unchanged</span>
+          <span class="tag proxy">proxy</span>
+          <div class="note">The canvas's 'whole field' (3+ candidates on one scale) is not wired — confirmed by reading RepCard.tsx: it calls &lt;MoneyGapScale subject=... peer=...&gt; WITHOUT a `field` prop, so only the single subject row ever renders in the card. Proxy: same funding-expanded panel as 02b, with a chamberMedian mock so the populated (non-blank) scale shows.</div>
+        </td>
+        <td class="shot"><img src="refs/11a-fieldmoneygap.png" alt="ref"></td>
+        <td class="shot"><img src="before/11a-fieldmoneygap.png" alt="11a-fieldmoneygap"></td>
+        <td class="shot"><img src="after/11a-fieldmoneygap.png" alt="11a-fieldmoneygap"></td>
+      </tr>
+
+      <tr>
+        <td class="meta">
+          <div class="id">11b-scalestates</div>
+          <div class="label">Money-gap — reading the scale, 4 states + honest blank</div>
+          <span class="badge unchanged">unchanged</span>
+          <span class="tag proxy">proxy</span>
+          <div class="note">The canvas artboard is a style-guide-style enumeration of 4 states + the collapsed chip side by side — there is no single app screen that shows all of them at once (the real app renders whichever ONE band the data produces per card). Proxy: the same funding-expanded panel (chamberMedian mock puts this candidate in the 'above median' band); the collapsed MedianChip glance is visible elsewhere on the same card, collapsed.</div>
+        </td>
+        <td class="shot"><img src="refs/11b-scalestates.png" alt="ref"></td>
+        <td class="shot"><img src="before/11b-scalestates.png" alt="11b-scalestates"></td>
+        <td class="shot"><img src="after/11b-scalestates.png" alt="11b-scalestates"></td>
+      </tr>
+
+      <tr>
+        <td class="meta">
+          <div class="id">11c-moneygaph2h</div>
+          <div class="label">Money-gap — in the head-to-head</div>
+          <span class="badge unchanged">unchanged</span>
+          <span class="tag proxy">proxy</span>
+          <div class="note">MoneyGapH2H (exported from MoneyGap.tsx) is not wired into HeadToHead.tsx at all — confirmed by grep: it has zero usages outside MoneyGap.tsx/MoneyGap.test.tsx. The duel screen's actual money treatment is a simpler PAC-percentage footnote (.cmp-fund), not the ratio + shared-scale component the canvas shows. Proxy: same HeadToHead screenshot as 05b, so the gap is visible rather than hidden.</div>
+        </td>
+        <td class="shot"><img src="refs/11c-moneygaph2h.png" alt="ref"></td>
+        <td class="shot"><img src="before/11c-moneygaph2h.png" alt="11c-moneygaph2h"></td>
+        <td class="shot"><img src="after/11c-moneygaph2h.png" alt="11c-moneygaph2h"></td>
+      </tr>
+    </tbody>
+  </table>
+</body>
+</html>
