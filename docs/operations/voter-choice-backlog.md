@@ -1020,6 +1020,7 @@ ORIGIN: Muxin, live conversation 2026-07-04 (supersedes/corrects the Bold Flag p
 - STOP-SHIP 2026-07-08 (Muxin, live review): Phase 5's gate shipped un-enforced (no CI wiring, 3/27 structural probes) and the review artifact failed her page-by-page review (15MB monolith, viewport-cropped shots) — all Keystone work + merges frozen behind card e840c072 ([P0][GATE] STOP-SHIP); plan at docs/operations/keystone-fidelity-fix-plan-2026-07-08.md. Phase 6 resumes only after its Phase 4 re-audit.
 CARD TYPE: EPIC
 - STATUS: Review
+- DEPENDS ON: [P0][GATE] STOP-SHIP: Fix the design-fidelity pipeline + rebuild the design-review artifact (no Keystone build/merge until Done)
 - DECISION: approved (Muxin 2026-07-07, live) — top priority; step 0 is ATTENDED (his canvas export), Phases 1–2 auto-runnable once export-raw.md exists; Phases 3–4 end in Muxin review; no copy ships without his per-item verdicts.
 - GROOMED: ready: full phase-by-phase plan + goal conditions per phase (keystone-design-source-plan-2026-07.md) + 2026-07-07
 <!-- card-id: b7c7178d-a115-4adc-8c7b-3f09ebb94479 -->
@@ -1098,7 +1099,9 @@ CHAIN: 1
 - GOAL_CONDITION: Before: ScorecardPrintView.tsx filters out every seat with onBallot2026 === false so none render on the printed sheet. After: the printed scorecard additionally renders a "Not on your ballot this year" section listing those seats with a distinct non-decision badge/pill matching screens-scorecard.jsx's structure, gated on Muxin's sign-off to reverse the prior exclusion decision; tsc + existing ScorecardPrintView tests green.
 - PARENT: b7c7178d-a115-4adc-8c7b-3f09ebb94479
 - ORIGIN: proposed by propose-cards 2026-07-07 from epic [P0] TOP PRIORITY: Recover the Keystone design source (canvas export) + stand up the parity pipeline (b7c7178d-a115-4adc-8c7b-3f09ebb94479)
+- STOP-SHIP AUDIT 2026-07-08: this card had NO mechanical dependency until now — was sitting in To Do, immediately pickable by claim_next_eligible despite the live STOP-SHIP. Fixed; see e840c072's progress notes for the full audit.
 - STATUS: To Do
+- DEPENDS ON: [P0][GATE] STOP-SHIP: Fix the design-fidelity pipeline + rebuild the design-review artifact (no Keystone build/merge until Done)
 - GROOMED: ready: clear file/section spec + stated GOAL_CONDITION; approval-worthy (reverses a shipped decision) routed to Vet 2026-07-07
 <!-- card-id: e5f379e2-cbb6-4128-af92-0ee3f541d247 -->
 
@@ -1128,6 +1131,7 @@ CHAIN: 1
 - ORIGIN: follow-up from card 0e87d755 (Remove MoneyGapH2H as dead code), 2026-07-08
 - CHAIN: 1
 - STATUS: Backlog
+- DEPENDS ON: [P0][GATE] STOP-SHIP: Fix the design-fidelity pipeline + rebuild the design-review artifact (no Keystone build/merge until Done)
 <!-- card-id: 3cb46afd-e554-4d1f-90ef-cd7afb022ca7 -->
 
 **Keystone Phase 6: close the 10 gate-flagged design gaps + land PR #230 under the new parity gate**
@@ -1140,17 +1144,8 @@ CHAIN: 1
 - PARENT: b7c7178d-a115-4adc-8c7b-3f09ebb94479
 - CHAIN: 1
 - STATUS: Backlog
+- DEPENDS ON: [P0][GATE] STOP-SHIP: Fix the design-fidelity pipeline + rebuild the design-review artifact (no Keystone build/merge until Done)
 <!-- card-id: 466d6efb-0938-40e7-872a-b4529a9deb70 -->
-
-**[P3] Expand parity-gate STRUCTURAL_PROBES coverage beyond the initial 3 scenarios**
-- - Traces to the Phase 5 parity gate (scripts/design/parity-gate.ts, npm run design:parity-gate).
-- CONTEXT: STRUCTURAL_PROBES currently only covers 3 of 27 gated scenarios (01-orientation-activated, 02a-results-main, 02b-results-funding-expanded) — by design, per the file's own header comment: most components predate the Keystone canvas-export recovery and were only ever built to be functionally equivalent, not a literal verbatim class-name port, so asserting literal classNames there would flag noise, not real regressions.
-- TASK: as more surfaces get confirmed as verbatim canvas ports (tracked via the Phase 6 gap-closing work), add their STRUCTURAL_PROBES entries so the gate's structural (className-coverage) check covers them too, not just the visual pixel-diff.
-- GOAL_CONDITION: none yet — this is exploratory/ongoing follow-on work, not a single atomic deliverable; scope it down when picked up.
-- PARENT: b7c7178d-a115-4adc-8c7b-3f09ebb94479
-- CHAIN: 1
-- STATUS: Backlog
-<!-- card-id: af7fa077-6c2a-4748-8f0e-2d5724492e7d -->
 
 **Polis contribute-a-statement screen (10b-polis-contribute): is this still an intended feature to build?**
 - Traces to "[P0] TOP PRIORITY: Recover the Keystone design source (canvas export) + stand up the parity pipeline" (b7c7178d) Phase 4 progress note: of the 28 parity-gallery scenarios, 7 became documented-proxy gap cards and 20 are fully automated — but scenario 10b-polis-contribute is called out separately as "genuinely not automatable ... feature doesn't exist" in the repo today, and it never appears in the later GAP RECONCILIATION pass (design-handoff/keystone-canvas/GAPS-RECONCILED-FOR-CODE.md, PR #235) that resolved the other flagged Polis gaps.
@@ -1182,8 +1177,9 @@ CHAIN: 1
 - Muxin 2026-07-08 (live review): two failures — (1) the repo cannot yet produce 1:1 fidelity to design work: the parity gate (scripts/design/parity-gate.ts, PR #242) merged the same morning the 5 Keystone PRs were called review-ready, is wired into ZERO CI workflows, and structurally covers only 3/27 scenarios; the PRs' 'self-vet clean' verdicts came from code-reading agents that never rendered anything. (2) The page-by-page HTML review artifact (keystone-contact-sheet.html) doesn't properly load: 15MB monolithic file with 56 base64-inlined images, screenshots viewport-cropped at ~900px (Why Now cut off, Results funding invisible below the fold), and missing states (Tip Jar, Loading, candidates overview, interaction sub-states).
 - PLAN (authoritative): docs/operations/keystone-fidelity-fix-plan-2026-07-08.md — Phase 0 live-verify the scares (does funding data actually render? the 0/3-vs-2-issues rail count), Phase 1 rebuild the review artifact (parity-gallery full-page capture engine, per-section pages + index, committed to repo, verified-loadable DoD), Phase 2 enforce design:parity-gate as a required CI check on Keystone-touching PRs + expand STRUCTURAL_PROBES from 3 to all portable scenarios (absorbs card af7fa077's scope), Phase 3 process change (gate-green before PR opens; gate report = required GOAL_EVIDENCE; code-reading review demoted to pre-check), Phase 4 re-audit PRs #230/#236/#237/#240/#243 under the new harness and produce the true per-section gap list.
 - Incident detail + raw findings: docs/operations/keystone-parity-failure-handoff-2026-07-08.md.
-- STOP-SHIP scope: the 5 open Keystone PRs stay held drafts; every other Keystone card DEPENDS ON this card; nothing design-related merges until Phase 4's re-audit is delivered and Muxin lifts the hold.
-- GOAL_CONDITION: parity-gate runs as a required CI check on Keystone-touching PRs; review artifact v2 is committed, full-page, covers all scenarios incl. Tip Jar/Loading, and verified loadable; STRUCTURAL_PROBES cover all portable scenarios (or carry explicit per-scenario waivers); Phase 4 re-audit report delivered with per-section gate results for all 5 open PRs.
+- STOP-SHIP scope: the 5 open Keystone PRs stay held drafts; every other Keystone card DEPENDS ON this card; nothing design-related merges until Phase 4's re-audit is delivered and Muxin lifts the hold. Muxin 2026-07-08 (reaffirmed after Phase 4): the fidelity tooling itself (PRs #244/#245/#246) is NOT yet trustworthy — Phase 4 found real false-pass/false-fail bugs in it — so no FE UI/Keystone work of any kind resumes until the tooling is completely integrated (all 4 tooling-fix cards below reach Done, #244/#245/#246 merged) AND Muxin has reviewed the result; only then does FE UI work continue.
+- GOAL_CONDITION: parity-gate runs as a required CI check on Keystone-touching PRs; review artifact v2 is committed, full-page, covers all scenarios incl. Tip Jar/Loading, and verified loadable; STRUCTURAL_PROBES cover all portable scenarios (or carry explicit per-scenario waivers); Phase 4 re-audit report delivered with per-section gate results for all 5 open PRs; AND the 4 Phase-4-discovered tooling-fix cards (622fe2dd, 50c20164, 4b7f2068, 1b4b943d) are Done, so the gate has no known false-pass/false-fail gaps before it's trusted as Phase 4's final authority.
+- MECHANICAL AUDIT 2026-07-08: verified every Keystone/design card's DEPENDS ON actually resolves through this card (claim_next_eligible only skips a card whose dependency isn't Done — prose alone doesn't block it). Found and fixed 3 cards with no dependency at all (e5f379e2, 466d6efb, 3cb46afd — one, e5f379e2, was sitting in STATUS: To Do and immediately pickable); added a defense-in-depth DEPENDS ON directly on the b7c7178d epic too (close_completed_epics doesn't check an epic's own DEPENDS ON before auto-closing it — only whether its children are Done — so this matters). Also closed af7fa077 as Done/superseded (PR #244 already absorbed its exact scope) so it can't collide with the tooling work. PRs #244/#245/#246 have no backlog cards of their own; they're held via draft status + explicit "(HELD — STOP-SHIP)" PR titles + an explicit PR comment instead, since the self-vet-merge policy's design-experience/tooling classification has no STOP-SHIP-aware carve-out yet — that durable fix is filed on the simple-kanban board (claude-config lane, card 157c48a9 "Self-vet-merge policy needs a design-fidelity-tooling carve-out under an active STOP-SHIP"), which also absorbs Phase 3's 3 remaining conductor-skill bullets. Needs a dedicated claude-config-lane session to build.
 - ORIGIN: Muxin, live review 2026-07-08 ('nothing else gets done or merged until these are addressed')
 - PROGRESS (2026-07-08): Phase 0 done — no live bugs, findings at docs/operations/keystone-phase0-findings-2026-07-08.md. Phase 2 built (parity gate wired into CI, 3→7 structural probes + 20 documented waivers, zero silent skips) — held draft PR #244 for your review (needs a branch-protection setting from you post-merge). Phase 1 done (review artifact rebuilt: docs/design-review/, 28/28 scenarios, scroll-trap capture bug fixed + confirms the funding panel was always rendering fine) — held draft PR #245 for your review. Phase 3's repo-scoped piece done (CI regenerates + comments the review artifact on every Keystone PR; GOAL_CONDITION convention added to this file's cheat sheet above) — held draft PR #246. Phase 3's conductor-skill piece (~/.claude/skills, a separate claude-config repo) is NOT done — needs a separate session against that repo.
 - PROGRESS (2026-07-08, Phase 4 — re-audit complete): full findings at docs/operations/keystone-phase4-audit-2026-07-08.md. Headline: the "10 gate-flagged gaps" from card 466d6efb reproduce identically on all 5 held PRs — none of them the cause, already tracked there (updated with today's severity data). Two things are genuinely new: (1) PR #236 and #237 each ship a new screen the gate's capture scripts never actually reach — both PASS today but are unverified, not confirmed-good; (2) PR #243 will BREAK ~20 gate scenarios repo-wide the moment it merges (a shared helper assumes the old single-seat layout) — confirmed zero *new* regressions once patched, but the fix needs to ship with/before the merge. Filed 4 mechanical tooling-fix cards (622fe2dd, 50c20164, 4b7f2068, 1b4b943d), all Backlog pending grooming. THREE THINGS NEED YOUR CALL, not something I should guess: (a) PR #230 won't even merge with the gate tooling — a genuine conflict between its hardcoded-copy hero + `howitworks` nav target vs. the tooling branch's i18n hero + `methodology` target; (b) whether the reachWorkspace() fix for #243 ships bundled in #243 or as an immediate companion PR; (c) 05c-candidates-overview (PR #243's core screen) has no ref PNG so the gate can't grade it at all — recommend you eyeball it directly, screenshots sitting in the still-live diagnostic worktree voter-choice-worktrees/phase4-audit-243. Nothing merged, nothing fixed beyond the 3 tooling PRs already listed above — STOP-SHIP stays in effect until you review this and say otherwise.
@@ -1225,6 +1221,17 @@ CHAIN: 1
 - STATUS: Backlog
 - DEPENDS ON: [P0][GATE] STOP-SHIP: Fix the design-fidelity pipeline + rebuild the design-review artifact (no Keystone build/merge until Done)
 <!-- card-id: 1b4b943d-4229-4896-a129-21e6341820b5 -->
+
+**[P3] Expand parity-gate STRUCTURAL_PROBES coverage beyond the initial 3 scenarios**
+- - Traces to the Phase 5 parity gate (scripts/design/parity-gate.ts, npm run design:parity-gate).
+- CONTEXT: STRUCTURAL_PROBES currently only covers 3 of 27 gated scenarios (01-orientation-activated, 02a-results-main, 02b-results-funding-expanded) — by design, per the file's own header comment: most components predate the Keystone canvas-export recovery and were only ever built to be functionally equivalent, not a literal verbatim class-name port, so asserting literal classNames there would flag noise, not real regressions.
+- TASK: as more surfaces get confirmed as verbatim canvas ports (tracked via the Phase 6 gap-closing work), add their STRUCTURAL_PROBES entries so the gate's structural (className-coverage) check covers them too, not just the visual pixel-diff.
+- GOAL_CONDITION: none yet — this is exploratory/ongoing follow-on work, not a single atomic deliverable; scope it down when picked up.
+- PARENT: b7c7178d-a115-4adc-8c7b-3f09ebb94479
+- CHAIN: 1
+- SUPERSEDED 2026-07-08: STOP-SHIP Phase 2 (PR #244, held) already expands STRUCTURAL_PROBES from 3 to 7 with 20 documented waivers covering every gateable scenario — this card's exact scope. Closing as superseded rather than leaving it to be picked up separately and collide with #244.
+- STATUS: Done
+<!-- card-id: af7fa077-6c2a-4748-8f0e-2d5724492e7d -->
 
 **[P2] Translate residual English redesign strings outside the 7 finished surfaces**
 - Verification pass inventory: WebSearchAlignmentRow ('From public statements…', 'WITH YOU', 'Medium conf.'); App2's 4th DelegationErrorView call site ('data evaporated' resume fallback); DelegationWorkspace 'all-done' banner + IssueDeltaBanner; HandoffModal provider/BYOK buttons ('Copy & open Claude', 'Download as .txt'); alignment block header 'Aligns with your issues' / 'Thin record on this issue'; blind-mode chrome ('IDENTITY HIDDEN', 'REVEAL'); FundingMixPanel internals; home-hero copy.
