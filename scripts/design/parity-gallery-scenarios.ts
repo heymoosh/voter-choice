@@ -819,6 +819,7 @@ export const SCENARIOS: Scenario[] = [
   },
   {
     id: "05c-candidates-overview",
+    refFile: "05c-candidates-overview.png",
     label:
       "Candidates — DelegationOverview (multi-seat scored cards before drill-down)",
     files: ["src/prototype/redesign/DelegationWorkspace.tsx"],
@@ -829,15 +830,19 @@ export const SCENARIOS: Scenario[] = [
       "multi-seat overview screen first. Backlog card 5192287a; being built on PR #243 (not " +
       "merged to main as of this report) — capture() below is a real, PR #243-verified " +
       "sequence (data-testid=\"delegation-overview\"), ready to flip automatable to 'yes'/" +
-      "'proxy' once #243 merges. STILL BLOCKED separately on a canvas ref PNG: canvas source " +
-      "exists (design-handoff/keystone-canvas/src/screens-delegation.jsx + delegation.css: " +
-      "DelegationOverview/SeatCard/SeatDeepView/SeatRail — HANDOFF-EXACT-MATCH.md §5a, " +
-      "'designed 2026-07-07, not yet wired'), but the standalone canvas viewer that produced " +
-      "every other ref (design-handoff/keystone-canvas/'Voter Choice - Keystone Design Session " +
-      "(Standalone).html') predates this screen (zero references to DelegationOverview/" +
-      "SeatCard found in it) and this repo has no export script — genuinely needs a fresh " +
-      "Claude Design canvas session to produce the artboard PNG, not something this tooling " +
-      "fix can manufacture without risking a self-fabricated, unapproved 'reference'.",
+      "'proxy' once #243 merges. The canvas ref PNG that was previously missing now exists: " +
+      "the real design source turned out to live in a different, newer, untracked folder " +
+      "(design-handoff/design_handoff_voter_choice_redesign/, not design-handoff/" +
+      "keystone-canvas/ which predates this screen) — screens-delegation.jsx's " +
+      "DelegationOverview, wired into that folder's own standalone canvas viewer ('Voter " +
+      "Choice - Keystone Design Session.html') as the 'dg-overview' artboard. Captured " +
+      "2026-07-08 by serving that folder locally and screenshotting the artboard's " +
+      '[data-dc-slot="dg-overview"] .dc-card node at 3x (deviceScaleFactor) — the same ' +
+      "fidelity as the viewer's own Download-PNG export, just driven headlessly. See " +
+      ".keystone-canvas-refs/manifest.json's 05c-candidates-overview entry for what it shows. " +
+      "automatable stays 'no' for now — flips to 'yes'/'proxy' once PR #243 merges and the " +
+      "delegation-overview testid actually exists on main (same pattern as reachWorkspace()'s " +
+      "PR #243 comment above).",
     async capture(page) {
       await mockDelegation(page);
       await mockSeatRaceDataMedian(page);
