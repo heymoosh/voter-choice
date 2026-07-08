@@ -77,9 +77,12 @@ test.describe("conversational issue intake", () => {
       page.getByTestId("issue-themes-card").locator(".theme-row"),
     ).toHaveCount(3);
 
-    // Lock → guided orientation interstitial → workspace, with all three
-    // issues on the rail.
+    // Lock → IntakeLocked pre-lock confirm screen → guided orientation
+    // interstitial → workspace, with all three issues on the rail.
     await page.getByTestId("issue-primary").click();
+    await page
+      .getByTestId("issue-locked-confirm-btn")
+      .click({ timeout: 15000 });
     await page.getByTestId("orientation-continue").click({ timeout: 15000 });
     await page.locator(".b-row").first().waitFor({ timeout: 20000 });
     await expect(page.locator(".ws-ballot .b-issues-list li")).toHaveCount(3);
