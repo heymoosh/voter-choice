@@ -11,6 +11,7 @@ export default defineConfig({
       "db/**/*.test.ts",
       "scripts/ingest/**/*.test.ts",
       "scripts/ops/**/*.test.ts",
+      "scripts/design/**/*.test.ts",
     ],
     globals: true,
     environment: "jsdom",
