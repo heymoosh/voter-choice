@@ -815,6 +815,9 @@ async function runVisualCheck(
   threshold: number,
   pixelmatch: PixelmatchFn,
 ): Promise<VisualResult> {
+  if (!scenario.refFile) {
+    return { ran: false, skipReason: "no canvas export for this scenario" };
+  }
   const refPath = path.join(REFS_DIR, scenario.refFile);
   if (!fs.existsSync(refPath)) {
     return { ran: false, skipReason: `ref PNG missing: ${scenario.refFile}` };
