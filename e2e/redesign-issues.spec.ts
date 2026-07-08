@@ -81,6 +81,12 @@ test.describe("conversational issue intake", () => {
     // issues on the rail.
     await page.getByTestId("issue-primary").click();
     await page.getByTestId("orientation-continue").click({ timeout: 15000 });
+    // Workspace now lands on the delegation overview (one card per seat)
+    // first; click into the first seat to reach its deep view.
+    await page
+      .locator('[data-testid="seat-card"]')
+      .first()
+      .click({ timeout: 15000 });
     await page.locator(".b-row").first().waitFor({ timeout: 20000 });
     await expect(page.locator(".ws-ballot .b-issues-list li")).toHaveCount(3);
   });
