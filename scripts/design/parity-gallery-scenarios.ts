@@ -25,8 +25,11 @@ export type Automatable = "yes" | "proxy" | "no";
 
 export interface Scenario {
   id: string;
-  /** Filename under .keystone-canvas-refs/ */
-  refFile: string;
+  /** Filename under .keystone-canvas-refs/. Absent when no canvas artboard
+   *  was ever exported for this surface (e.g. a screen the canvas designed
+   *  but the repo hasn't built yet) — the gallery renders an explicit
+   *  "no canvas export" note instead of a broken image in that case. */
+  refFile?: string;
   label: string;
   /** Repo-relative substrings — a changed file counts if it CONTAINS one of these. */
   files: string[];
@@ -476,9 +479,7 @@ async function sendFirstIssue(page: Page): Promise<void> {
 async function lockIssues(page: Page): Promise<void> {
   await page.getByTestId("issue-primary").click();
   const confirmBtn = page.getByTestId("issue-locked-confirm-btn");
-  await confirmBtn
-    .waitFor({ state: "visible", timeout: 2000 })
-    .catch(() => {});
+  await confirmBtn.waitFor({ state: "visible", timeout: 2000 }).catch(() => {});
   if (await confirmBtn.isVisible()) {
     await confirmBtn.click();
   }
@@ -770,6 +771,22 @@ export const SCENARIOS: Scenario[] = [
     },
   },
   {
+    id: "05c-candidates-overview",
+    label:
+      "Candidates — DelegationOverview (multi-seat scored cards before drill-down)",
+    files: ["src/prototype/redesign/DelegationWorkspace.tsx"],
+    automatable: "no",
+    note:
+      "NOT BUILT on this branch — no repo screenshot possible, not a tooling gap. Canvas " +
+      "source exists (design-handoff/keystone-canvas/src/screens-delegation.jsx + " +
+      "delegation.css: DelegationOverview/SeatCard/SeatDeepView/SeatRail — HANDOFF-EXACT-" +
+      "MATCH.md §5a, 'designed 2026-07-07, not yet wired'), but no .png artboard was ever " +
+      "exported to .keystone-canvas-refs/, so there's no reference image either. Today the " +
+      "app goes straight to the single-seat deep view (02a-results-main) with no scored " +
+      "multi-seat overview screen first. Backlog card 5192287a; being built on PR #243 " +
+      "(not merged to main as of this report).",
+  },
+  {
     id: "06-homehero",
     refFile: "06-homehero.png",
     label: "Homepage — HomeHero",
@@ -819,12 +836,21 @@ export const SCENARIOS: Scenario[] = [
     files: ["src/prototype/VoterChoiceApp.tsx"],
     automatable: "yes",
     note:
-      "Nav → 'Methodology' (confirmed current label — HANDOFF §8 flags the rename to " +
-      "'How it works' as not yet shipped; the dead navigate('howitworks') branch just " +
-      "falls back to home, per App2.tsx's PAGE_STAGES/navigate()).",
+      "Nav → 'How it works' (label renamed from 'Methodology' by #213, 2026-07-08 — " +
+      "confirmed by reading App2.tsx: it renders the base AppNav, whose link uses " +
+      "t('nav.howItWorks') = 'How it works', not AppNavWithChrome's t('nav.methodology'). " +
+      "Still navigates to the same methodology stage/MethodologyPage. This scenario used to " +
+      "click the old 'Methodology' label and timed out post-rename (Phase 0 finding #8). " +
+      "Scoped to the 'Main' nav landmark — the homepage's own address-box copy also contains " +
+      "an unrelated 'Read about how it works…' link (dead navigate('howitworks') branch) whose " +
+      "accessible name substring-matches 'How it works' too, so an unscoped getByRole hits a " +
+      "strict-mode violation (2 matches).",
     async capture(page) {
       await gotoHomeClean(page);
-      await page.getByRole("link", { name: "Methodology" }).click();
+      await page
+        .getByRole("navigation", { name: "Main" })
+        .getByRole("link", { name: "How it works" })
+        .click();
     },
   },
   {
