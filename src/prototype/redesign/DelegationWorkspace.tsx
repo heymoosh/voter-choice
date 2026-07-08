@@ -279,6 +279,18 @@ export function DelegationWorkspace({
 }) {
   const { t } = useI18n();
 
+  /* Mobile: same contract as the shipped WorkspaceView — the center pane
+     is hidden <768px until a row is tapped, then opens as a fixed overlay
+     with a back control. These hooks must run unconditionally on every
+     render: this component doesn't remount when overviewOpen toggles
+     (App2.tsx renders it at a stable position with no `key`), so calling
+     them after the overviewOpen early-return would violate the Rules of
+     Hooks and crash on the very transition this feature depends on. */
+  const [mobileChatOpen, setMobileChatOpen] = useState(false);
+  useEffect(() => {
+    setMobileChatOpen(false);
+  }, [seats.length]);
+
   if (overviewOpen) {
     return (
       <div className="ws-shell delegation">
@@ -307,13 +319,6 @@ export function DelegationWorkspace({
   ).length;
   const intro = tierIntro(activeSeat.section, { stateName, t });
 
-  /* Mobile: same contract as the shipped WorkspaceView — the center pane
-     is hidden <768px until a row is tapped, then opens as a fixed overlay
-     with a back control. */
-  const [mobileChatOpen, setMobileChatOpen] = useState(false);
-  useEffect(() => {
-    setMobileChatOpen(false);
-  }, [seats.length]);
   function selectAndOpen(seatId) {
     onSelectSeat(seatId);
     setTimeout(() => setMobileChatOpen(true), 0);
