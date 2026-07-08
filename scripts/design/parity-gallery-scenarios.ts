@@ -836,13 +836,20 @@ export const SCENARIOS: Scenario[] = [
     files: ["src/prototype/VoterChoiceApp.tsx"],
     automatable: "yes",
     note:
-      "Nav → 'How it works' (PR #213 renamed the top-bar label from 'Methodology' to " +
-      "'How it works'; the underlying stage/route is still named 'methodology', per " +
-      "App2.tsx's PAGE_STAGES/navigate()).",
+      "Nav → 'How it works' (label renamed from 'Methodology' by #213, 2026-07-08 — " +
+      "confirmed by reading App2.tsx: it renders the base AppNav, whose link uses " +
+      "t('nav.howItWorks') = 'How it works', not AppNavWithChrome's t('nav.methodology'). " +
+      "Still navigates to the same methodology stage/MethodologyPage. This scenario used to " +
+      "click the old 'Methodology' label and timed out post-rename (Phase 0 finding #8). " +
+      "Scoped to the 'Main' nav landmark — the homepage's own address-box copy also contains " +
+      "an unrelated 'Read about how it works…' link (dead navigate('howitworks') branch) whose " +
+      "accessible name substring-matches 'How it works' too, so an unscoped getByRole hits a " +
+      "strict-mode violation (2 matches).",
     async capture(page) {
       await gotoHomeClean(page);
       await page
-        .getByRole("link", { name: "How it works", exact: true })
+        .getByRole("navigation", { name: "Main" })
+        .getByRole("link", { name: "How it works" })
         .click();
     },
   },

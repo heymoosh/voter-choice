@@ -1,0 +1,102 @@
+name: Design Parity
+
+# Keystone design-fidelity gate (scripts/design/parity-gate.ts, PR #242) —
+# was merged 2026-07-08 but never wired into CI, so no PR ever actually ran
+# it (docs/operations/keystone-parity-failure-handoff-2026-07-08.md). This
+# workflow closes that: the `parity-gate` job below is the required check,
+# always firing on PRs to main so it can be required without deadlocking
+# non-Keystone PRs — the actual gate run is gated by a paths-filter step
+# inside the job (same pattern as test.yml's `e2e` job and mutation.yml's
+# `mutation` job). Pushes to main always run the full gate, unfiltered, so
+# main's own parity state stays visible in Actions history.
+#
+# Per docs/operations/keystone-fidelity-fix-plan-2026-07-08.md Phase 2:
+# STOP-SHIP is still in effect while this lands — the gate currently fails
+# on main's own HEAD (real, confirmed design gaps; see that plan doc and
+# scripts/design/parity-gate.ts's STRUCTURAL_WAIVERS for the honest list).
+# A red required check on a Keystone-touching PR is the intended behavior
+# until Phase 4's re-audit fixes land, not a bug in this workflow.
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  parity-gate:
+    runs-on: ubuntu-latest
+    # Dev-server boot + chromium launch + ~27 scenario captures/diffs.
+    # Observed ~4-6 min locally; this leaves real headroom for a cold CI
+    # runner without letting a genuine hang eat the 360-min job default.
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+
+      - name: Detect Keystone-mapped path changes (PR only)
+        id: filter
+        if: github.event_name == 'pull_request'
+        uses: dorny/paths-filter@d1c1ffe0248fe513906c8e24db8ea791d46f8590 # v3
+        with:
+          filters: |
+            scoped:
+              - 'src/prototype/redesign/**'
+              - 'src/prototype/VoterChoiceApp.tsx'
+              - 'src/app/page.tsx'
+              - 'public/*.css'
+              - 'design-handoff/keystone-canvas/**'
+              - 'design-handoff/design-session/**'
+              - '.keystone-canvas-refs/**'
+              - 'scripts/design/**'
+              - 'e2e/helpers/redesign-mocks.ts'
+              - '.github/workflows/design-parity.yml'
+
+      - name: Note skip when no Keystone-mapped changes
+        if: github.event_name == 'pull_request' && steps.filter.outputs.scoped == 'false'
+        run: |
+          echo "::notice::No Keystone-mapped paths changed in this PR; parity gate skipped. Gate reports passed."
+          echo "See design-handoff/keystone-canvas/HANDOFF-EXACT-MATCH.md §4 for the scoped file map."
+
+      - name: Setup Node
+        if: github.event_name != 'pull_request' || steps.filter.outputs.scoped == 'true'
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install dependencies
+        if: github.event_name != 'pull_request' || steps.filter.outputs.scoped == 'true'
+        run: npm ci
+
+      - name: Install Playwright browsers
+        if: github.event_name != 'pull_request' || steps.filter.outputs.scoped == 'true'
+        run: npx playwright install --with-deps chromium
+
+      # parity-gate.ts boots its own `next dev` (scripts/design/dev-server.ts)
+      # and drives it via Playwright route mocks (e2e/helpers/redesign-mocks.ts)
+      # — no build step, no DATABASE_URL/API secrets, no seeded DB needed; every
+      # scenario's data comes from in-process page.route() interception, mirroring
+      # how npm run e2e's own specs work against `next start`.
+      - name: Run Keystone parity gate
+        if: github.event_name != 'pull_request' || steps.filter.outputs.scoped == 'true'
+        run: npm run design:parity-gate -- --all
+
+      - name: Upload parity gate report + diffs
+        if: always() && (github.event_name != 'pull_request' || steps.filter.outputs.scoped == 'true')
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: parity-gate-report
+          path: scripts/design/.parity-gate-out/
+          retention-days: 30
+          if-no-files-found: warn
