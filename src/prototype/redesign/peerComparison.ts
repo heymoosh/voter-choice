@@ -8,7 +8,7 @@
  * on every candidate in a federal race. This module turns that raw dollar
  * figure — together with the candidate's own `totalRaised` — into the
  * `PeerComparison` object the UI reads (`MedianChip`, the funder-disclosure
- * scale, `MoneyGapH2H`).
+ * scale).
  *
  * Honesty rule (NON-NEGOTIABLE, mirrors the attendance `null` case): when there
  * is no usable median baseline, this returns `null` and the UI shows the dollar
