@@ -27,13 +27,13 @@
 // bring-up entirely if you already have two dev servers running.
 
 import { chromium, type Page } from "@playwright/test";
-import { execFileSync, spawn, type ChildProcess } from "node:child_process";
-import { createServer } from "node:net";
+import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
 import { parseArgs } from "node:util";
 import { SCENARIOS, type Scenario } from "./parity-gallery-scenarios";
+import { type AppInstance, getFreePort, startNextDev } from "./dev-server";
 
 const SCRIPT_DIR = path.dirname(new URL(import.meta.url).pathname);
 const REPO_ROOT = path.resolve(SCRIPT_DIR, "../..");
@@ -129,104 +129,10 @@ function changedFiles(beforeSha: string, afterSha: string): string[] {
 }
 
 // ---------------------------------------------------------------------------
-// dev server bring-up
+// dev server bring-up (getFreePort/startNextDev/AppInstance now live in
+// ./dev-server, shared with parity-gate.ts) — resolveSide below is the
+// before/after-specific layer on top: which ref maps to which server.
 // ---------------------------------------------------------------------------
-
-interface AppInstance {
-  url: string;
-  label: string;
-  cleanup(): Promise<void>;
-}
-
-async function getFreePort(): Promise<number> {
-  return new Promise((resolve, reject) => {
-    const srv = createServer();
-    srv.listen(0, "127.0.0.1", () => {
-      const addr = srv.address();
-      if (addr && typeof addr === "object") {
-        const port = addr.port;
-        srv.close(() => resolve(port));
-      } else {
-        srv.close(() => reject(new Error("could not allocate a free port")));
-      }
-    });
-    srv.on("error", reject);
-  });
-}
-
-async function waitForServer(url: string, timeoutMs = 90_000): Promise<void> {
-  const start = Date.now();
-  let lastErr: unknown;
-  while (Date.now() - start < timeoutMs) {
-    try {
-      const res = await fetch(url);
-      if (res.status < 500) return;
-    } catch (err) {
-      lastErr = err;
-    }
-    await new Promise((r) => setTimeout(r, 500));
-  }
-  throw new Error(
-    `Dev server at ${url} never became ready: ${String(lastErr)}`,
-  );
-}
-
-function killProcessTree(proc: ChildProcess): void {
-  if (!proc.pid) return;
-  try {
-    process.kill(-proc.pid, "SIGTERM");
-  } catch {
-    try {
-      proc.kill("SIGTERM");
-    } catch {
-      /* already dead */
-    }
-  }
-}
-
-async function startNextDev(
-  dir: string,
-  port: number,
-  label: string,
-): Promise<AppInstance> {
-  const logPath = path.join(os.tmpdir(), `parity-gallery-${label}-${port}.log`);
-  const logFd = fs.openSync(logPath, "w");
-  // Turbopack refuses to resolve through a symlinked node_modules that
-  // points outside the temp worktree's own filesystem root ("Symlink
-  // node_modules is invalid, it points out of the filesystem root") — the
-  // symlink resolveSide() creates so temp worktrees can reuse this
-  // worktree's installed deps without a fresh `npm install`. Fall back to
-  // the webpack dev server whenever node_modules is a symlink.
-  const nodeModulesPath = path.join(dir, "node_modules");
-  const nodeModulesIsSymlink =
-    fs.existsSync(nodeModulesPath) &&
-    fs.lstatSync(nodeModulesPath).isSymbolicLink();
-  const devArgs = nodeModulesIsSymlink
-    ? ["next", "dev", "-p", String(port)]
-    : ["next", "dev", "--turbopack", "-p", String(port)];
-  const proc = spawn("npx", devArgs, {
-    cwd: dir,
-    env: { ...process.env, NEXT_PUBLIC_BALLOT_ENABLED: "" },
-    stdio: ["ignore", logFd, logFd],
-    detached: true,
-  });
-  const url = `http://127.0.0.1:${port}`;
-  try {
-    await waitForServer(url);
-  } catch (err) {
-    killProcessTree(proc);
-    console.error(`  ↳ server log: ${logPath}`);
-    throw err;
-  }
-  return {
-    url,
-    label,
-    async cleanup() {
-      killProcessTree(proc);
-      fs.closeSync(logFd);
-    },
-  };
-}
 
 async function resolveSide(
   label: "before" | "after",
