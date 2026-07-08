@@ -69,10 +69,11 @@ describe("GET /api/polis/bridges — national (default)", () => {
     // 70 >= 50 → no_bridges_yet (v1: statement persistence missing)
     expect(json.status).toBe("no_bridges_yet");
     expect(json.bridges).toEqual([]);
+    expect(json.divided).toEqual([]);
     expect(json.county).toBeUndefined();
   });
 
-  it("scope=national: count=0 and bridges=[] when nothing seeded", async () => {
+  it("scope=national: count=0 and bridges=[]/divided=[] when nothing seeded", async () => {
     const res = await GET(makeRequest({ scope: "national" }));
     expect(res.status).toBe(200);
     const json = await res.json();
@@ -80,6 +81,7 @@ describe("GET /api/polis/bridges — national (default)", () => {
     expect(json.threshold).toBe(BRIDGES_PER_READING_MIN);
     expect(json.count).toBe(0);
     expect(json.bridges).toEqual([]);
+    expect(json.divided).toEqual([]);
   });
 
   it("scope=national: below_threshold when 0 < count < min", async () => {
@@ -96,6 +98,7 @@ describe("GET /api/polis/bridges — national (default)", () => {
     expect(json.count).toBe(12);
     expect(json.status).toBe("below_threshold");
     expect(json.bridges).toEqual([]);
+    expect(json.divided).toEqual([]);
   });
 
   it("national response shape: only allowlisted top-level keys", async () => {
@@ -108,6 +111,7 @@ describe("GET /api/polis/bridges — national (default)", () => {
       "count",
       "status",
       "bridges",
+      "divided",
     ]);
     for (const key of Object.keys(json)) {
       expect(allowed.has(key)).toBe(true);
@@ -138,9 +142,10 @@ describe("GET /api/polis/bridges — county scope", () => {
     expect(json.county).toBe("Travis");
     expect(json.count).toBe(0);
     expect(json.bridges).toEqual([]);
+    expect(json.divided).toEqual([]);
   });
 
-  it("scope=county: count=0 and bridges=[] for zero-session county", async () => {
+  it("scope=county: count=0 and bridges=[]/divided=[] for zero-session county", async () => {
     const res = await GET(
       makeRequest({ scope: "county", stateCode: "TX", county: "Travis" }),
     );
@@ -151,6 +156,7 @@ describe("GET /api/polis/bridges — county scope", () => {
     expect(json.threshold).toBe(BRIDGES_PER_READING_MIN);
     expect(json.count).toBe(0);
     expect(json.bridges).toEqual([]);
+    expect(json.divided).toEqual([]);
   });
 
   it("scope=county: below_threshold sentinel when 0 < count < per-reading min", async () => {
@@ -170,6 +176,7 @@ describe("GET /api/polis/bridges — county scope", () => {
     expect(json.count).toBe(12);
     expect(json.status).toBe("below_threshold");
     expect(json.bridges).toEqual([]);
+    expect(json.divided).toEqual([]);
   });
 
   it("scope=county: no_bridges_yet when count >= min (v1)", async () => {
@@ -189,6 +196,7 @@ describe("GET /api/polis/bridges — county scope", () => {
     expect(json.count).toBe(80);
     expect(json.status).toBe("no_bridges_yet");
     expect(json.bridges).toEqual([]);
+    expect(json.divided).toEqual([]);
   });
 
   it("county response shape: only allowlisted top-level keys", async () => {
@@ -203,6 +211,7 @@ describe("GET /api/polis/bridges — county scope", () => {
       "count",
       "status",
       "bridges",
+      "divided",
     ]);
     for (const key of Object.keys(json)) {
       expect(allowed.has(key)).toBe(true);

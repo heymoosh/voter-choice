@@ -10,6 +10,11 @@
        (the API returns null when the voter skipped issue intake).
      - The bridges panel renders only when bridge statements exist (the
        bridges API is sentinel-only until statement persistence lands).
+     - The "Where it split" panel is the honest complement: statements that
+       were scored but didn't clear the bridging threshold in every cluster.
+       Never omitted silently — shown distinctly, population-level only (no
+       D/R/I party breakdown, ever). Renders only when divided statements
+       exist (same sentinel-only caveat as bridges).
      - Dots are synthetic, one per session, generated from aggregate
        distributions — the caption says so explicitly (no individual records). */
 
@@ -263,6 +268,35 @@ export function PolisClose({ polis }) {
           </div>
         ) : null}
       </div>
+
+      {/* "Where it split" — the honest complement to Common ground. Statements
+          that were scored but didn't clear the bridging threshold in every
+          cluster. Population-level only (no D/R/I breakdown, ever) — one
+          percent per statement, same as the bridges panel above. Renders
+          only when there are divided statements to show; never a fabricated
+          placeholder. */}
+      {scope.divided.length > 0 && (
+        <div className="divided">
+          <h3>Where it split</h3>
+          <p className="sub">
+            {scope.bridges.length > 0
+              ? `${fmtN(scope.divided.length)} of ${fmtN(scope.bridges.length + scope.divided.length)} statements didn’t reach 80%+ agreement ${scope.scopePhrase} — shown honestly, not smoothed over.`
+              : `None of the ${fmtN(scope.divided.length)} statement${scope.divided.length === 1 ? "" : "s"} scored ${scope.scopePhrase} reached 80%+ agreement yet — the room genuinely split, and we don’t dress that up as consensus.`}
+          </p>
+          {scope.divided.map((d, i) => (
+            <div className="divided-item" key={i}>
+              <div className="stmt">&ldquo;{d.stmt}&rdquo;</div>
+              <div className="agree">
+                <span className="pct">{d.pct}%</span> agreed — short of
+                the 80% bar
+                <span className="agree-bar divided-bar">
+                  <span style={{ width: `${d.pct}%` }} />
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </section>
   );
 }

@@ -12,12 +12,20 @@
  * `no_bridges_yet` sentinel because per-session statement-response
  * persistence + cluster labels don't exist in the production schema yet.
  * When statement persistence lands (Phase 8b), this handler will compose
- * `computeBridges` from `aggregates.ts` and return the actual bridge list.
+ * `computeBridges`/`computeDivided` from `aggregates.ts` and return the
+ * actual bridge + divided lists.
+ *
+ * `divided` is the "where it split" honest-report complement of `bridges` —
+ * statements that were scored but didn't clear the threshold in every
+ * cluster. It ships alongside `bridges` now (always `[]` in this v1
+ * sentinel, same as `bridges`) so the contract is ready the moment
+ * statement persistence lands; the UI only ever renders it when non-empty.
+ * Population-level only — no D/R/I party breakdown (card e2455f56).
  *
  * Response contract:
- *   { scope, threshold, count, bridges[] }                    (v2 success)
- *   { scope, threshold, count, status: "below_threshold",  bridges: [] }
- *   { scope, threshold, count, status: "no_bridges_yet",   bridges: [] }
+ *   { scope, threshold, count, bridges[], divided[] }                    (v2 success)
+ *   { scope, threshold, count, status: "below_threshold",  bridges: [], divided: [] }
+ *   { scope, threshold, count, status: "no_bridges_yet",   bridges: [], divided: [] }
  *   County variant also includes `county: string` in the response body.
  *
  * Privacy: counts only. NO user_id, session_id, name, address, email.
@@ -32,9 +40,12 @@ import {
   guardPolisRequest,
   cachedPolisJson,
 } from "../../../../lib/server/polis/route-guard";
+import type { BridgeStatement } from "../../../../lib/server/polis/aggregates";
 
 /** Minimum session count before the bridges reading is surfaced. */
 const BRIDGES_PER_READING_MIN = 50;
+
+type StatementList = BridgeStatement[];
 
 interface BridgesResponseBody {
   scope: "national" | "county";
@@ -42,10 +53,8 @@ interface BridgesResponseBody {
   threshold: number;
   count: number;
   status?: "below_threshold" | "no_bridges_yet";
-  bridges: Array<{
-    statement: string;
-    clusters: Array<{ name: string; agreementPercent: number }>;
-  }>;
+  bridges: StatementList;
+  divided: StatementList;
 }
 
 function resolveScope(searchParams: URLSearchParams): "national" | "county" {
@@ -92,6 +101,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         threshold: BRIDGES_PER_READING_MIN,
         count: 0,
         bridges: [],
+        divided: [],
       };
       return cachedPolisJson(body);
     }
@@ -104,6 +114,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         count: overlap.count,
         status: "below_threshold",
         bridges: [],
+        divided: [],
       };
       return cachedPolisJson(body);
     }
@@ -115,6 +126,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       count: overlap.count,
       status: "no_bridges_yet",
       bridges: [],
+      divided: [],
     };
     return cachedPolisJson(body);
   }
@@ -128,6 +140,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       threshold: BRIDGES_PER_READING_MIN,
       count: 0,
       bridges: [],
+      divided: [],
     };
     return cachedPolisJson(body);
   }
@@ -139,6 +152,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       count: overlap.count,
       status: "below_threshold",
       bridges: [],
+      divided: [],
     };
     return cachedPolisJson(body);
   }
@@ -149,6 +163,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     count: overlap.count,
     status: "no_bridges_yet",
     bridges: [],
+    divided: [],
   };
   return cachedPolisJson(body);
 }

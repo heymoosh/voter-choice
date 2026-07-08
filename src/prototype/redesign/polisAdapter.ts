@@ -14,6 +14,10 @@
  *    draw). There is no minimum-participation gate — the map renders for anyone.
  *  - Bridges come from /api/polis/bridges; while that endpoint is sentinel-only
  *    its empty list simply hides the panel.
+ *  - `divided` is the "where it split" honest complement of `bridges` —
+ *    statements that were scored but didn't clear the threshold. Same
+ *    endpoint, same sentinel-only caveat, same population-level framing
+ *    (no D/R/I party breakdown — card e2455f56). Empty list hides the panel.
  */
 
 export interface IssueStat {
@@ -36,6 +40,8 @@ export interface PolisScopeVM {
   };
   issueRegions: Array<{ label: string; x: number; y: number; percent: number }>;
   bridges: Array<{ stmt: string; pct: number }>;
+  /** Statements that didn't clear the bridging threshold — "where it split". */
+  divided: Array<{ stmt: string; pct: number }>;
   /** True only when the scope has zero finished sessions (nothing to draw). */
   locked: boolean;
 }
@@ -79,32 +85,49 @@ interface ApiBridge {
   clusters?: Array<{ agreementPercent?: number }>;
 }
 
-async function fetchBridges(
-  stateCode: string,
-): Promise<Array<{ stmt: string; pct: number }>> {
+/**
+ * Reduce a statement-list contract (bridges OR divided — same shape) down to
+ * the single population-level figure the FE renders: one percent per
+ * statement, no per-cluster breakdown, never party (D/R/I). For a statement
+ * that failed to bridge, the weakest (minimum) cluster figure is the honest
+ * number to show — it's the one that kept it out of "common ground".
+ */
+function mapStatementList(
+  list: unknown,
+): Array<{ stmt: string; pct: number }> {
+  const items: ApiBridge[] = Array.isArray(list) ? list : [];
+  return items
+    .map((b) => {
+      const stmt = b.statement ?? b.stmt ?? "";
+      const pcts = (b.clusters ?? [])
+        .map((c) => c.agreementPercent)
+        .filter((p): p is number => typeof p === "number");
+      const pct =
+        typeof b.agreementPercent === "number"
+          ? b.agreementPercent
+          : pcts.length > 0
+            ? Math.min(...pcts)
+            : null;
+      return stmt && pct !== null ? { stmt, pct: Math.round(pct) } : null;
+    })
+    .filter((b): b is { stmt: string; pct: number } => b !== null);
+}
+
+async function fetchBridges(stateCode: string): Promise<{
+  bridges: Array<{ stmt: string; pct: number }>;
+  divided: Array<{ stmt: string; pct: number }>;
+}> {
   try {
     const qs = new URLSearchParams({ stateCode }).toString();
     const res = await fetch(`/api/polis/bridges?${qs}`);
-    if (!res.ok) return [];
+    if (!res.ok) return { bridges: [], divided: [] };
     const body = await res.json();
-    const list: ApiBridge[] = Array.isArray(body?.bridges) ? body.bridges : [];
-    return list
-      .map((b) => {
-        const stmt = b.statement ?? b.stmt ?? "";
-        const pcts = (b.clusters ?? [])
-          .map((c) => c.agreementPercent)
-          .filter((p): p is number => typeof p === "number");
-        const pct =
-          typeof b.agreementPercent === "number"
-            ? b.agreementPercent
-            : pcts.length > 0
-              ? Math.min(...pcts)
-              : null;
-        return stmt && pct !== null ? { stmt, pct: Math.round(pct) } : null;
-      })
-      .filter((b): b is { stmt: string; pct: number } => b !== null);
+    return {
+      bridges: mapStatementList(body?.bridges),
+      divided: mapStatementList(body?.divided),
+    };
   } catch {
-    return [];
+    return { bridges: [], divided: [] };
   }
 }
 
@@ -115,6 +138,7 @@ function toScopeVM(
   dotPhrase: string,
   scopePhrase: string,
   bridges: Array<{ stmt: string; pct: number }>,
+  divided: Array<{ stmt: string; pct: number }>,
 ): PolisScopeVM | null {
   if (!api) return null;
   const locked = api.sampleSize === 0;
@@ -134,6 +158,7 @@ function toScopeVM(
       percent: r.percent,
     })),
     bridges: locked ? [] : bridges,
+    divided: locked ? [] : divided,
     locked,
   };
 }
@@ -153,7 +178,7 @@ export async function loadPolisScopes(input: {
     ? { userConcerns: concerns }
     : {};
 
-  const [stateRes, nationalRes, bridges] = await Promise.all([
+  const [stateRes, nationalRes, statementLists] = await Promise.all([
     fetchPolisScope({ stateCode: input.stateCode, ...base }),
     fetchPolisScope({ scope: "national", ...base }),
     fetchBridges(input.stateCode),
@@ -166,7 +191,8 @@ export async function loadPolisScopes(input: {
       input.stateName,
       `of your fellow ${input.stateName} voters`,
       `across ${input.stateName}`,
-      bridges,
+      statementLists.bridges,
+      statementLists.divided,
     ),
     toScopeVM(
       nationalRes,
@@ -174,7 +200,8 @@ export async function loadPolisScopes(input: {
       "National",
       "person, anywhere in the country,",
       "across the country",
-      // Bridges are state-scoped today; the national zoom hides the panel.
+      // Bridges/divided are state-scoped today; the national zoom hides both panels.
+      [],
       [],
     ),
   ];

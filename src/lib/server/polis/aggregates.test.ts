@@ -8,6 +8,7 @@ import { describe, it, expect } from "vitest";
 import {
   computeOverlapBars,
   computeBridges,
+  computeDivided,
   isBridgeStatement,
   BRIDGE_THRESHOLD,
 } from "./aggregates";
@@ -209,6 +210,103 @@ describe("computeBridges", () => {
       const keys = Object.keys(bridge).sort();
       expect(keys).toEqual(["clusters", "statement"]);
       for (const c of bridge.clusters) {
+        const ckeys = Object.keys(c).sort();
+        expect(ckeys).toEqual(["agreementPercent", "name"]);
+      }
+    }
+  });
+});
+
+/* ── computeDivided (the "where it split" complement) ────────── */
+
+describe("computeDivided", () => {
+  it("returns statements where at least one cluster falls below 80%", () => {
+    const statements = [
+      {
+        statement: "Members of Congress should not trade individual stocks.",
+        clusterAgreement: [
+          { name: "Service-first progressives", agreementPercent: 93 },
+          { name: "Pocketbook moderates", agreementPercent: 89 },
+          { name: "Civic libertarians", agreementPercent: 94 },
+        ],
+      },
+      {
+        statement: "Federal income tax should be abolished.",
+        clusterAgreement: [
+          { name: "Service-first progressives", agreementPercent: 12 },
+          { name: "Pocketbook moderates", agreementPercent: 35 },
+          { name: "Civic libertarians", agreementPercent: 88 },
+        ],
+      },
+    ];
+
+    const divided = computeDivided(statements);
+    expect(divided).toHaveLength(1);
+    expect(divided[0].statement).toMatch(/income tax/);
+    expect(divided[0].clusters).toHaveLength(3);
+  });
+
+  it("is the exact complement of computeBridges over the same input", () => {
+    const statements = [
+      {
+        statement: "A",
+        clusterAgreement: [
+          { name: "X", agreementPercent: 93 },
+          { name: "Y", agreementPercent: 81 },
+        ],
+      },
+      {
+        statement: "B",
+        clusterAgreement: [
+          { name: "X", agreementPercent: 79 },
+          { name: "Y", agreementPercent: 99 },
+        ],
+      },
+      {
+        statement: "C",
+        clusterAgreement: [
+          { name: "X", agreementPercent: 10 },
+          { name: "Y", agreementPercent: 20 },
+        ],
+      },
+    ];
+    const bridges = computeBridges(statements);
+    const divided = computeDivided(statements);
+    expect(bridges.map((b) => b.statement)).toEqual(["A"]);
+    expect(divided.map((d) => d.statement)).toEqual(["B", "C"]);
+    // No party (D/R/I) grouping ever appears — cluster names only.
+    for (const d of divided) {
+      for (const c of d.clusters) {
+        expect(["D", "R", "I"]).not.toContain(c.name);
+      }
+    }
+  });
+
+  it("excludes a statement with no cluster data from both bridges and divided", () => {
+    const statements = [{ statement: "No data", clusterAgreement: [] }];
+    expect(computeBridges(statements)).toEqual([]);
+    expect(computeDivided(statements)).toEqual([]);
+  });
+
+  it("returns an empty array when statements array is empty", () => {
+    expect(computeDivided([])).toEqual([]);
+  });
+
+  it("output records have only allowlisted keys (no identity / session)", () => {
+    const statements = [
+      {
+        statement: "X",
+        clusterAgreement: [
+          { name: "A", agreementPercent: 10 },
+          { name: "B", agreementPercent: 95 },
+        ],
+      },
+    ];
+    const divided = computeDivided(statements);
+    for (const d of divided) {
+      const keys = Object.keys(d).sort();
+      expect(keys).toEqual(["clusters", "statement"]);
+      for (const c of d.clusters) {
         const ckeys = Object.keys(c).sort();
         expect(ckeys).toEqual(["agreementPercent", "name"]);
       }

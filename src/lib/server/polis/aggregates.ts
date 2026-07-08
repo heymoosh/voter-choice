@@ -117,3 +117,34 @@ export function computeBridges(
   }
   return bridges;
 }
+
+/**
+ * The complement of `computeBridges`: statements that were actually scored
+ * (at least one cluster has an agreement figure) but did NOT clear the
+ * threshold in every cluster. This is the "where it split" honest-report
+ * branch — never omit a statement just because it didn't bridge; surface it
+ * distinctly instead. Output records use the same contract shape as
+ * `computeBridges` (statement + per-cluster agreement) so the caller can
+ * render a single population-level figure (e.g. the minimum) without ever
+ * reintroducing party (D/R/I) grouping — clusters here are opinion clusters,
+ * never party. A statement with no cluster data at all is excluded from both
+ * lists (nothing to report either way).
+ */
+export function computeDivided(
+  statements: StatementInput[],
+): BridgeStatement[] {
+  const divided: BridgeStatement[] = [];
+  for (const s of statements) {
+    if (s.clusterAgreement.length === 0) continue;
+    const percents = s.clusterAgreement.map((c) => c.agreementPercent);
+    if (isBridgeStatement(percents)) continue;
+    divided.push({
+      statement: s.statement,
+      clusters: s.clusterAgreement.map((c) => ({
+        name: c.name,
+        agreementPercent: c.agreementPercent,
+      })),
+    });
+  }
+  return divided;
+}
