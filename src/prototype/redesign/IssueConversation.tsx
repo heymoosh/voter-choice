@@ -244,6 +244,64 @@ export function useIssueConversation({
   };
 }
 
+/** The editable "your issues" card — same header copy, sub-instruction, and
+ *  IssueRow list the conversation renders while chatting. Extracted so
+ *  IntakeLocked (the pre-lock confirm screen, card "Intake locked state: is
+ *  IntakeLocked meant to ship as its own screen?") can show the identical
+ *  card — with the same rename/reorder/remove affordances — one more time
+ *  as the thing you're confirming, instead of re-implementing it. */
+export function IssueReviewCard({ issues, setIssues }) {
+  const { t } = useI18n();
+
+  function moveIssue(idx, dir) {
+    const next = [...issues];
+    const j = idx + dir;
+    if (j < 0 || j >= next.length) return;
+    [next[idx], next[j]] = [next[j], next[idx]];
+    setIssues(next);
+  }
+
+  function reorderIssue(from, to) {
+    if (from === to) return;
+    const next = [...issues];
+    const [moved] = next.splice(from, 1);
+    next.splice(to, 0, moved);
+    setIssues(next);
+  }
+
+  if (issues.length === 0) return null;
+
+  return (
+    <div className="themes-card" data-testid="issue-themes-card">
+      <div className="th-head">
+        <h4>{t("intake.issueHeading")}</h4>
+        <span className="of">
+          {t("intake.issueSubOf").replace("{n}", String(issues.length))}
+        </span>
+      </div>
+      <p className="th-sub">{t("intake.issueInstruction")}</p>
+
+      {issues.map((iss, i) => (
+        <IssueRow
+          key={`${i}-${iss.canonicalIssue || iss.interpretation}`}
+          issue={iss}
+          index={i}
+          total={issues.length}
+          onMoveUp={() => moveIssue(i, -1)}
+          onMoveDown={() => moveIssue(i, 1)}
+          onReorderTo={reorderIssue}
+          onRename={(name) => {
+            const next = [...issues];
+            next[i] = { ...next[i], interpretation: name };
+            setIssues(next);
+          }}
+          onRemove={() => setIssues(issues.filter((_, j) => j !== i))}
+        />
+      ))}
+    </div>
+  );
+}
+
 export function IssueConversation({
   convo,
   /** "Lock these in & start →" (intake) / "Apply & re-score →" (edit). */

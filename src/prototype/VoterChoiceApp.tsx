@@ -338,6 +338,10 @@ const TRANSLATIONS = {
       starterThemePlural: 'issues',
       updatedFallback: 'Updated your list below.',
       notedFallback: 'Noted.',
+      lockedIntro: "Perfect. Here's your final list. Re-rank or rename anything; otherwise you're ready to meet your delegation.",
+      lockedBannerTitle: 'Your issues are set.',
+      lockedBannerSub: 'These travel with every record we show you.',
+      lockedBack: '← Keep talking',
     },
     scorecard: {
       heading: 'Your scorecard',
@@ -804,6 +808,10 @@ const TRANSLATIONS = {
       starterThemePlural: 'temas',
       updatedFallback: 'Lista actualizada abajo.',
       notedFallback: 'Anotado.',
+      lockedIntro: 'Perfecto. Aquí está tu lista final. Reordena o renombra lo que quieras; si no, ya estás listo/a para conocer a tu delegación.',
+      lockedBannerTitle: 'Tus temas están definidos.',
+      lockedBannerSub: 'Estos te acompañan en cada historial que te mostramos.',
+      lockedBack: '← Seguir hablando',
     },
     scorecard: {
       heading: 'Tu tarjeta de puntuación',
