@@ -10,6 +10,7 @@ Issues, monitoring gaps, data-quality concerns, and enhancement ideas. **Reorgan
 - Big task? Start the block with a **[P1] Bold title** and bullet the details underneath.
 - `## Headings` group cards into phases (the purple tag on the board).
 - `- DEPENDS ON: <other card title>` marks a blocker (fuzzy-matched; fix mis-matches on the board).
+- **Keystone/design cards:** `GOAL_CONDITION` must name specific `npm run design:parity-gate` scenario IDs the card must pass (e.g. "parity-gate passes 04-scorecard, 09d-edit-issues") — or say explicitly why a scenario is waived — plus full-page before/after screenshots attached (`npm run design:review-gallery`). Prose like "matches the canvas" is not a valid goal condition. Per `docs/operations/keystone-fidelity-fix-plan-2026-07-08.md` Phase 3 — a build worker runs the gate locally and iterates until green *before* opening the PR; the gate report (exit code + per-scenario results) is the required `GOAL_EVIDENCE`, and a code-reading self-vet alone is never sufficient for design work (memory `feedback_visual_selfvet_insufficient`).
 - Resolved work → `voter-choice-backlog-archive.md`. Full format rules: simple-kanban README.
 
 ## 🚦 Phasing model (2026-06-07 pivot)
