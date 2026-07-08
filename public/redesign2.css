@@ -1394,6 +1394,43 @@
 .cd-prov-row {
   padding: 0 16px 12px;
 }
+/* provenance badge (roll-call vs researched) — also not ported by the
+   earlier CSS commit. Mirrors .cmp .prov exactly (candidates.css), the same
+   badge HeadToHead.tsx's ProvBadge already renders under .cmp; SeatCard's
+   DgProv needs it under .delegation instead. */
+.delegation .prov {
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  padding: 3px 8px 3px 7px;
+  border-radius: 5px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+  line-height: 1.4;
+}
+.delegation .prov::before {
+  font-size: 9px;
+}
+.delegation .prov.rollcall {
+  background: var(--brand);
+  color: var(--paper-2);
+  border: 1.5px solid var(--brand);
+}
+.delegation .prov.rollcall::before {
+  content: "\25C6"; /* filled diamond */
+}
+.delegation .prov.researched {
+  background: var(--paper-2);
+  color: var(--brand-2);
+  border: 1.5px dashed var(--brand);
+}
+.delegation .prov.researched::before {
+  content: "\25C7"; /* hollow diamond */
+}
 .cd-align {
   margin: 0 16px;
   padding: 11px 14px;
@@ -1420,6 +1457,22 @@
   font-weight: 600;
   font-size: 27px;
   line-height: 1;
+}
+/* alignment tone helpers for .cd-pct — NOT ported by the earlier CSS commit
+   (only the .bar-* track-fill tones were carried over); added here so
+   SeatCard's big percentage number actually colors by tone, same values as
+   the analogous .cmp .tone-good/.tone-mid/.tone-bad/.tone-na. */
+.delegation .tone-good {
+  color: var(--keep);
+}
+.delegation .tone-mid {
+  color: var(--gold);
+}
+.delegation .tone-bad {
+  color: var(--replace);
+}
+.delegation .tone-na {
+  color: var(--ink-3);
 }
 .cd-issues {
   margin-top: 10px;
@@ -1792,6 +1845,13 @@
 .dg-deep .rc-back:hover {
   background: var(--brand);
   color: var(--paper-2);
+}
+/* wraps the "← All seats" control above .tier-intro — NOT in the source
+   (the design's version sits in a standalone .res-context strip this repo
+   doesn't have); .rep-center-head is desktop-hidden (mobile-only back
+   bar), so the back-to-overview control needs its own always-visible row. */
+.dg-back-row {
+  margin: 0 0 14px;
 }
 
 /* retargeted from the source's ".res-rail .rseat.click" — the real
