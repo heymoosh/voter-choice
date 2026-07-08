@@ -442,21 +442,46 @@ async function submitAddress(page: Page, address = ADDRESS): Promise<void> {
   await page
     .getByPlaceholder("1600 Pennsylvania Ave NW, Washington DC 20500")
     .fill(address);
-  await page.getByRole("button", { name: "Pull my representatives →" }).click();
+  // Match on the visible label only (substring, arrow-agnostic) — some
+  // branches render the trailing → as an aria-hidden span, which drops it
+  // from the accessible name entirely; "Pull my representatives" is a
+  // substring of both variants.
+  await page.getByRole("button", { name: "Pull my representatives" }).click();
 }
 
 async function reachColdOpen(page: Page): Promise<void> {
   await gotoHomeClean(page);
   await submitAddress(page);
-  await page.locator(".coldopen textarea").waitFor({ timeout: 15000 });
+  // getByTestId rather than a literal ".coldopen textarea" class selector —
+  // the cold-open shell's wrapper class has been renamed across redesign
+  // work (e.g. ".coldopen" → ".iq"); the input's data-testid is the stable
+  // contract shared with e2e/helpers/redesign-mocks.ts.
+  await page.getByTestId("issue-convo-input").waitFor({ timeout: 15000 });
 }
 
 async function sendFirstIssue(page: Page): Promise<void> {
   await page
-    .locator(".coldopen textarea")
+    .getByTestId("issue-convo-input")
     .fill("Insulin prices are insane and rent went up again.");
   await page.locator("button.send").click();
   await page.getByTestId("issue-themes-card").waitFor({ timeout: 15000 });
+}
+
+/** Clicks the conversation's primary "Lock these in" button. Some branches
+ *  insert IntakeLocked, a distinct pre-lock confirm interstitial, between
+ *  that click and the lock actually taking effect (see
+ *  src/prototype/redesign/IntakeLocked.tsx's issue-locked-confirm-btn) —
+ *  click through it defensively if it shows up, so this one helper keeps
+ *  working unmodified on branches with and without that screen. */
+async function lockIssues(page: Page): Promise<void> {
+  await page.getByTestId("issue-primary").click();
+  const confirmBtn = page.getByTestId("issue-locked-confirm-btn");
+  await confirmBtn
+    .waitFor({ state: "visible", timeout: 2000 })
+    .catch(() => {});
+  if (await confirmBtn.isVisible()) {
+    await confirmBtn.click();
+  }
 }
 
 async function waitForCountAtLeast(
@@ -493,7 +518,7 @@ async function sendFollowUpIssue(page: Page): Promise<void> {
 async function reachOrientation(page: Page): Promise<void> {
   await reachColdOpen(page);
   await sendFirstIssue(page);
-  await page.getByTestId("issue-primary").click();
+  await lockIssues(page);
   await page.getByTestId("orientation-continue").waitFor({ timeout: 15000 });
 }
 
@@ -503,9 +528,9 @@ async function reachWorkspace(page: Page): Promise<void> {
   await page.evaluate(() => localStorage.clear());
   await page.goto("/");
   await submitAddress(page);
-  await page.locator(".coldopen textarea").waitFor({ timeout: 15000 });
+  await page.getByTestId("issue-convo-input").waitFor({ timeout: 15000 });
   await sendFirstIssue(page);
-  await page.getByTestId("issue-primary").click();
+  await lockIssues(page);
   await page.getByTestId("orientation-continue").click({ timeout: 15000 });
   await page.locator(".b-row").first().waitFor({ timeout: 20000 });
 }
