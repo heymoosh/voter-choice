@@ -54,6 +54,12 @@
     "notes": "3 of 4 (dot-jumped directly; A/C alternates skipped as reference-only per HANDOFF §0). Full-screen duel: challenger-switcher pills top-right (Reyes/Whitfield/Dunne with their %), per-issue Δ-ledger table in the middle (rep% vs challenger% with a '+N' delta chip), PAC-funding contrast + Keep/Replace buttons at the foot. Matches HANDOFF §5's described layout to verify."
   },
   {
+    "id": "05c-candidates-overview",
+    "label": "Candidates — DelegationOverview (multi-seat scored cards before drill-down)",
+    "file": "05c-candidates-overview.png",
+    "notes": "Section 11 · Delegation overview → drill-down (Muxin's Keystone follow-up, 2026-07-07), the 'dg-overview' artboard — captured 2026-07-08 directly from design-handoff/design_handoff_voter_choice_redesign's standalone canvas viewer (screens-delegation.jsx's DelegationOverview, verdicts={{ senate: \"keep\" }}). Three scored seat cards in a row — U.S. House · TX-21 (58%, not yet decided), U.S. Senate · Class II (82%, ✓ Worth keeping — pre-decided to show that state), U.S. President (47%, dashed 'Researched · cited · high' provenance badge vs. the other two's filled 'Roll-call record' badge) — each with per-issue bars (Healthcare access / Housing affordability / Government accountability) and a funding mini-bar (small/large/PAC split + total raised). Below the grid, a separate greyed strip for the non-2026 seat: 'U.S. Senate · Class I — Junior Senator — Not up until 2028 · greyed & excluded from your scorecard', confirming decision 97eda1e0. Header meter reads '1 of 3 decided' with a 'Decide 3 seats to print' CTA. This is the new entry point ahead of the existing single-seat deep review (clicking a card opens that surface unchanged, per screens-delegation.jsx's header comment) — not yet built on main (ships with PR #243)."
+  },
+  {
     "id": "06-homehero",
     "label": "Homepage — HomeHero (Bold Flag, product-preview right rail)",
     "file": "06-homehero.png",
