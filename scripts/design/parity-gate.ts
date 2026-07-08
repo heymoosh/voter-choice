@@ -307,7 +307,199 @@ const STRUCTURAL_PROBES: StructuralProbe[] = [
       "MoneyGapH2H too); its one known non-match is 'mgap-src' vs. the design's 'fund-src' " +
       "(which lives outside .mgap in the page chrome there) — reported as an extra, not a gap.",
   },
+  {
+    scenarioId: "02d-results-allvotes-sheet",
+    domSelector: ".av-panel",
+    designFile: "design-handoff/keystone-canvas/src/screens-results.jsx",
+    componentName: "AllVotesSheet",
+    // The repo has no literal "av-panel" class in its own DOM tree that the
+    // design source also uses (canvas's shell is "avsheet"/"avsheet-scrim"),
+    // so getDesignClasses falls back to AllVotesSheet's whole slice (same
+    // documented fallback orientation's ".orientation" probe relies on) —
+    // that's fine, it's still the honest answer: report every design class
+    // found anywhere under the rendered .av-panel subtree as present, the
+    // rest as missing.
+    note:
+      "VoterChoiceApp.tsx's AllVotesPanel literally reuses av-head/av-filters/active from " +
+      "AllVotesSheet (confirmed by grep — not coincidence, same feature) but flattens the " +
+      "canvas's grouped-by-issue/collapsible-detail structure (av-body/av-group/av-row/" +
+      "avr-*/av-detail/avd-*) into a single flat vote list (av-list/av-vote-*) — a real, " +
+      "confirmed structural divergence, matching Muxin's flagged 'the see all votes sheet " +
+      "doesn't match' finding (docs/operations/keystone-parity-failure-handoff-2026-07-08.md).",
+  },
+  {
+    scenarioId: "05b-headtohead",
+    domSelector: ".cmp",
+    designFile: "design-handoff/keystone-canvas/src/screens-candidates.jsx",
+    componentName: "HeadToHead",
+    // "up" is one of three mutually-exclusive ternary classes on the same
+    // <span className={"arrow " + (d > 0 ? "up" : d < 0 ? "down" : "even")}>
+    // element — verbatim-identical code on both sides (confirmed by reading
+    // both files side by side), so the repo can and would render "up" given
+    // a positive-delta ledger row; this scenario's fixture just never
+    // produces one. Genuine unreached state-variant sibling, same category
+    // as MedianChip's "none" above — not a structural gap. ("cmp-empty" is
+    // the repo's own honest no-challengers-filed state, not a canvas class
+    // at all — HeadToHead.tsx's docstring: "only the data bindings and the
+    // honest empty states are new" — so it never appears as "missing" here
+    // and needs no entry.)
+    ignoreMissing: ["up"],
+    note:
+      "HeadToHead.tsx's own docstring: 'PORT of claude-code-handoff/design-session/" +
+      "screens-candidates.jsx → the down-selected DIRECTION B (HeadToHead) ... markup/class " +
+      "names are the design's' — the clearest documented verbatim-port precedent in the repo " +
+      "alongside MoneyGap.tsx's.",
+  },
+  {
+    scenarioId: "08a-about",
+    domSelector: ".sp-wrap",
+    designFile: "design-handoff/keystone-canvas/src/screens-statics.jsx",
+    componentName: "StaticPageVC",
+    note:
+      "The shared shell every static page (About/How it works/Privacy/Tip jar) renders " +
+      "through — repo's StaticPage (VoterChoiceApp.tsx) reuses '.sp-wrap'/'.sp-back' literally " +
+      "but flattens the canvas's sp-mast/sp-kicker/dek grouping into flat sp-eyebrow/sp-title, " +
+      "and renders 'sp-article' instead of 'sp-prose' for the body — a real, confirmed partial " +
+      "port. Probed once here (rather than once per static-page scenario) since all four share " +
+      "this exact component; see the STRUCTURAL_WAIVERS entries for 08b/08c/08d cross-referencing " +
+      "this probe instead of duplicating it.",
+  },
+  {
+    scenarioId: "09e-edit-rescored",
+    domSelector: ".ad-list",
+    designFile: "design-handoff/keystone-canvas/src/screens-intake.jsx",
+    componentName: "EditRescored",
+    note:
+      "IssueDeltaBanner.tsx's own docstring: 'the shipped AmendDeltaMessage visuals " +
+      "(.amend-delta / .ad-* classes) over REAL deltas' — a confirmed verbatim port of " +
+      "EditRescored's ad-list/ad-row/ad-race/ad-score/ad-revisit ledger, the same documented " +
+      "precedent as MoneyGap.tsx and HeadToHead.tsx.",
+  },
 ];
+
+/**
+ * Scenarios with NO structural probe, and why. Every one of the 27 gateable
+ * scenarios (all of SCENARIOS except 10b-polis-contribute, which isn't
+ * automatable at all — see its own note in parity-gallery-scenarios.ts) now
+ * resolves to exactly one of STRUCTURAL_PROBES above or this map — silently
+ * skipping a scenario (the pre-existing "24 of 27 uncovered, unexplained"
+ * state this file's own header used to describe) is exactly the failure
+ * Phase 2 of docs/operations/keystone-fidelity-fix-plan-2026-07-08.md exists
+ * to close.
+ *
+ * A waiver is NOT a pass and never silences the VISUAL check, which still
+ * runs and gates every waived scenario same as any other — it only means
+ * "no design-source class vocabulary survives to literal-diff against this
+ * repo component," for one of two reasons, always stated explicitly below:
+ *   (a) the repo component was built (or later renamed) with its own class
+ *       convention rather than a verbatim port — confirmed by a full
+ *       class-token diff between the design source and the repo file finding
+ *       ~0 overlap, not assumed from a filename match; or
+ *   (b) the scenario's capture() is a documented proxy that reuses another,
+ *       already-probed scenario's exact DOM (see that scenario's own
+ *       automatable:"proxy" note in parity-gallery-scenarios.ts) — probing it
+ *       separately would just re-report the anchor probe's result under a
+ *       different id, not add new signal.
+ * Extending STRUCTURAL_PROBES later: if a waived surface gets rebuilt as a
+ * literal port, move its entry from here into STRUCTURAL_PROBES rather than
+ * leaving a stale waiver reason next to a probe that would now pass.
+ */
+const STRUCTURAL_WAIVERS: Record<string, string> = {
+  "02c-results-votes-drilldown":
+    "RepCard.tsx's vote-drilldown markup uses its own cv2-drill/cv2-drill-head prefix — " +
+    "confirmed by a full class-token diff against screens-results.jsx's align-band/align-row/" +
+    "align-track/at-* tokens (zero overlap). HANDOFF-EXACT-MATCH.md §2 only ever claims " +
+    "functional equivalence for RepCard, never a literal class port (the same reason 02a/02b's " +
+    "probes above target MedianChip/FieldMoneyGap, not RepCard's own markup).",
+  "03-color-bold-flag":
+    "Proxy scenario (see parity-gallery-scenarios.ts) — its capture() is the same sequence as " +
+    "02a-results-main's (mockSeatRaceDataMedian + setMoneyDisclosure(false)), so a probe here " +
+    "would just re-report 02a's already-covered .median-chip result under a different id. The " +
+    "canvas's own '03-color' artboard is a trimmed side-by-side palette-demo card with no " +
+    "standalone repo surface to compare against anyway.",
+  "04-scorecard":
+    "ScorecardPrintView.tsx uses its own print-sheet/ballot-list/verdict-row/voter-meta-" +
+    "logistics vocabulary — confirmed by a full class-token diff against screens-scorecard.jsx's " +
+    "sheet/dec/dec-badge/sheet-mast/sheet-meta tokens (zero overlap). HANDOFF §4 only claims " +
+    "structural/behavioral parity (decisions lead, percentage copy, non-2026 filter), never a " +
+    "class port. Known real gap this can't localize by class-diffing alone: the 'Not on your " +
+    "ballot this year' section has no repo equivalent — ScorecardPrintView.tsx:43-46 filters " +
+    "non-2026 seats out entirely (Phase 0 finding #4, docs/operations/" +
+    "keystone-phase0-findings-2026-07-08.md).",
+  "05a-candidates-parity":
+    "RepCard.tsx (cv2-* prefix) is the same confirmed-functional-only, non-literal-port " +
+    "component as 02c-results-votes-drilldown above — zero class-token overlap with " +
+    "screens-candidates.jsx's CandidateParity (cd-* prefix).",
+  "06-homehero":
+    "HomeView (VoterChoiceApp.tsx) uses its own hp-hero/addr-*/eyebrow/lede vocabulary — " +
+    "confirmed by a full class-token diff against screens-home.jsx's HomeHero (vh-* prefix): " +
+    "zero overlap.",
+  "07-whynow":
+    "WhyNowPage (VoterChoiceApp.tsx) uses its own stat-stack vocabulary — confirmed by a full " +
+    "class-token diff against screens-whynow.jsx's WhyNow (wn-* prefix): zero overlap beyond " +
+    "single-letter tokens too generic to probe meaningfully (cite/l/v).",
+  "08b-howitworks":
+    "Renders the same shared StaticPage shell (sp-wrap/sp-back) probed via 08a-about — see " +
+    "that probe's note. MethodologyPage's own body content sits outside the probed shell.",
+  "08c-privacy":
+    "Renders the same shared StaticPage shell (sp-wrap/sp-back) probed via 08a-about — see " +
+    "that probe's note.",
+  "08d-tipjar":
+    "Renders the same shared StaticPage shell (sp-wrap/sp-back) probed via 08a-about — see " +
+    "that probe's note. TipJarPage's own tip-list/tip-amount-btn markup has no matching canvas " +
+    "TipJarVC vocabulary to diff against (sp-tip/sp-tips/sp-tipnote — a different prefix, zero " +
+    "overlap), so that part stays unprobed — a real gap for Phase 4 to size, not silenced here.",
+  "08e-loading":
+    "LoadingView (VoterChoiceApp.tsx) uses its own loading-screen/loading-card/pulse " +
+    "vocabulary — confirmed by a full class-token diff against screens-statics.jsx's LoadingVC " +
+    "(ldg-* prefix): zero overlap beyond the generic 'ck' checkmark token. Phase 0 already " +
+    "confirmed the underlying checklist-timing behavior is correct; this waiver is about class " +
+    "vocabulary only, not a behavioral gap.",
+  "09a-intake-ask":
+    "IssueConversation.tsx/IntakeView.tsx use their own co-*/msg/bubble/chip/send vocabulary — " +
+    "confirmed by a full class-token diff against screens-intake.jsx's IqShell/IqMsg/IqRow/" +
+    "IqComposer family (iq-* prefix): zero exact-token overlap (semantically similar names " +
+    "like 'chip'/'iq-chip' don't count as a literal-class match, only identical tokens do).",
+  "09b-intake-propose":
+    "Same IssueConversation.tsx component as 09a-intake-ask — see that waiver's note.",
+  "09c-intake-locked":
+    "Same IssueConversation.tsx component as 09a-intake-ask — see that waiver's note.",
+  "09d-edit-issues":
+    "EditIssuesModal.tsx renamed the canvas's amd-* prefix (screens-intake.jsx's EditIssues) to " +
+    "amend-*/amend-modal/amend-card — not an exact-token match, confirmed by a full class-token " +
+    "diff (zero literal overlap). The one part of this flow that IS a confirmed verbatim port " +
+    "(IssueDeltaBanner's ad-list ledger) is probed separately at 09e-edit-rescored, the scenario " +
+    "where it actually renders.",
+  "10a-polis-entry":
+    "PolisClose.tsx uses its own polis-*/overlap-*/bridge*/scatter* vocabulary — confirmed by a " +
+    "full class-token diff against screens-polis.jsx's PolisReport/PolisEntry (pr-*/pe-* " +
+    "prefixes): zero overlap. Also itself a documented proxy — no dedicated PolisEntry screen " +
+    "exists yet (see this scenario's own note in parity-gallery-scenarios.ts).",
+  "10c-polis-report-consensus":
+    "Same PolisClose.tsx vocabulary gap as 10a-polis-entry — see that waiver's note. Known real " +
+    "gap: no group-clustering/'where it split' section exists at all (Phase 0 finding #5, " +
+    "blocked on a counters-schema change per memory project_polis_viz_phase1 — a pre-existing " +
+    "scope gap, not a regression).",
+  "10d-polis-report-divided":
+    "Same PolisClose.tsx vocabulary gap as 10a-polis-entry — see that waiver's note. Also a " +
+    "documented proxy itself: PolisClose has no computed divided/split branch (see this " +
+    "scenario's own note in parity-gallery-scenarios.ts).",
+  "11a-fieldmoneygap":
+    "Proxy scenario — its capture() renders the same funding-expanded panel DOM as " +
+    "02b-results-funding-expanded, already probed via FieldMoneyGap/.mgap. The canvas's 'whole " +
+    "field' (3+ candidates on one scale) isn't wired in the repo at all (RepCard.tsx never " +
+    "passes MoneyGapScale a `field` prop) — a real, documented gap, but re-probing 02b's " +
+    "identical DOM under this id would add no new signal.",
+  "11b-scalestates":
+    "Proxy scenario — same funding-expanded DOM as 02b-results-funding-expanded and " +
+    "11a-fieldmoneygap; see 11a's waiver note.",
+  "11c-moneygaph2h":
+    "MoneyGapH2H was removed as dead code (#239, 2026-07-08) — the duel screen's money " +
+    "treatment is the '.cmp-fund' PAC-percentage footnote instead, which the 05b-headtohead " +
+    "probe above already covers as a required class (cmp-fund is part of HeadToHead's own " +
+    "canvas markup, not MoneyGapH2H's — confirmed by reading screens-candidates.jsx's " +
+    "HeadToHead directly).",
+};
 
 function probeForScenario(scenarioId: string): StructuralProbe | undefined {
   return STRUCTURAL_PROBES.find((p) => p.scenarioId === scenarioId);
@@ -356,7 +548,16 @@ function extractComponentSlice(source: string, componentName: string): string {
 /** Pulls space-separated class tokens out of literal string parts of a
  *  className value — `"a b"`, `'a b'`, `` `a ${dyn} b` `` (dynamic
  *  ${...} segments are dropped, not treated as a class name), across
- *  string-concatenation (`"a " + expr`) and ternaries (`cond ? "a" : "b"`). */
+ *  string-concatenation (`"a " + expr`) and ternaries (`cond ? "a" : "b"`).
+ *
+ *  Trailing-hyphen fragments (e.g. the `"tone-"` in
+ *  `className={"tone-" + cdTone(p)}`) are dropped too: no real class in
+ *  either the canvas source or the repo ends in a bare "-" — it only ever
+ *  shows up as the literal half of a `"prefix-" + dynamicSuffix`
+ *  concatenation, which this extractor (not a real JS evaluator) can't
+ *  resolve to the actual rendered class. Reporting "tone-" itself as
+ *  missing/found is meaningless noise; observed on the 05b-headtohead probe
+ *  before this filter was added. */
 function extractLiteralTokens(exprText: string): string[] {
   const cleaned = exprText.replace(/\$\{[^}]*\}/g, " ");
   const tokens: string[] = [];
@@ -365,7 +566,7 @@ function extractLiteralTokens(exprText: string): string[] {
   while ((m = stringRe.exec(cleaned))) {
     const literal = m[1] ?? m[2] ?? m[3] ?? "";
     for (const tok of literal.split(/\s+/)) {
-      if (tok) tokens.push(tok);
+      if (tok && !tok.endsWith("-")) tokens.push(tok);
     }
   }
   return tokens;
@@ -618,9 +819,13 @@ async function runStructuralCheck(
 ): Promise<StructuralResult> {
   const probe = probeForScenario(scenario.id);
   if (!probe) {
+    const waiver = STRUCTURAL_WAIVERS[scenario.id];
     return {
       ran: false,
-      skipReason: "no structural probe defined for this scenario yet",
+      skipReason: waiver
+        ? `WAIVED: ${waiver}`
+        : "no structural probe defined for this scenario yet (undocumented — " +
+          "add a STRUCTURAL_PROBES entry or a STRUCTURAL_WAIVERS reason)",
     };
   }
   const designClasses = getDesignClasses(probe);
@@ -815,6 +1020,9 @@ async function runVisualCheck(
   threshold: number,
   pixelmatch: PixelmatchFn,
 ): Promise<VisualResult> {
+  if (!scenario.refFile) {
+    return { ran: false, skipReason: "no canvas export for this scenario" };
+  }
   const refPath = path.join(REFS_DIR, scenario.refFile);
   if (!fs.existsSync(refPath)) {
     return { ran: false, skipReason: `ref PNG missing: ${scenario.refFile}` };
