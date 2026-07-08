@@ -449,6 +449,9 @@ const TRANSLATIONS = {
       noFundsReported: 'No funds reported',
       raisedSuffix: '{amount} raised',
       partyUnknown: 'Party unknown',
+      partyRepublican: 'Republican',
+      partyDemocrat: 'Democrat',
+      partyIndependent: 'Independent',
       fecFiling: '{party} · {raised} · FEC filing',
       retryResearch: 'Retry research',
       researchPositions: 'Research positions',
@@ -492,6 +495,24 @@ const TRANSLATIONS = {
       copy: 'Copy →',
       footer:
         'Your address never leaves this device. The portable prompt contains your issues + verdicts + public candidate records — no personally-identifying information.',
+    },
+    byokCard: {
+      title: 'Have an Anthropic API key? Use it directly in Voter Choice.',
+      subtitle:
+        'Your key stays in your browser. Never sent to our server. With your key, chat answers from the records already on the cards — live web lookups and challenger research stay paused.',
+      getKey: 'Get a key →',
+      savedKeyLabel: 'Saved key',
+      remove: 'Remove',
+      keyAriaLabel: 'Anthropic API key',
+      saveContinue: 'Save & continue',
+      hint: 'Starts with sk-ant-.',
+      invalidKey:
+        "Doesn't look like an Anthropic key (should start with sk-ant-).",
+      savedStatus: 'Saved — resend your last message to use your account.',
+      removedStatus: 'Removed. Back to the community budget.',
+      tipjarLede: 'Voter Choice is free. If it helped, a tip helps keep it free —',
+      tipjarLink: 'TIP JAR',
+      tipjarSuffix: '· not required.',
     },
     scorecardPrint: {
       heading: 'Your printable scorecard',
@@ -797,6 +818,9 @@ const TRANSLATIONS = {
       noFundsReported: 'No se reportaron fondos',
       raisedSuffix: '{amount} recaudado',
       partyUnknown: 'Partido desconocido',
+      partyRepublican: 'Republicano',
+      partyDemocrat: 'Demócrata',
+      partyIndependent: 'Independiente',
       fecFiling: '{party} · {raised} · presentación ante la FEC',
       retryResearch: 'Reintentar investigación',
       researchPositions: 'Investigar posturas',
@@ -840,6 +864,24 @@ const TRANSLATIONS = {
       copy: 'Copiar →',
       footer:
         'Tu dirección nunca sale de este dispositivo. El mensaje portátil contiene tus temas + veredictos + registros públicos de candidatos — sin información de identificación personal.',
+    },
+    byokCard: {
+      title: '¿Tienes una clave de API de Anthropic? Úsala directamente en Voter Choice.',
+      subtitle:
+        'Tu clave se queda en tu navegador. Nunca se envía a nuestro servidor. Con tu clave, las respuestas del chat se basan en los registros que ya están en las tarjetas — las búsquedas web en vivo y la investigación de contrincantes quedan en pausa.',
+      getKey: 'Obtener una clave →',
+      savedKeyLabel: 'Clave guardada',
+      remove: 'Quitar',
+      keyAriaLabel: 'Clave de API de Anthropic',
+      saveContinue: 'Guardar y continuar',
+      hint: 'Empieza con sk-ant-.',
+      invalidKey:
+        'No parece una clave de Anthropic (debe empezar con sk-ant-).',
+      savedStatus: 'Guardada — reenvía tu último mensaje para usar tu cuenta.',
+      removedStatus: 'Eliminada. De vuelta al presupuesto comunitario.',
+      tipjarLede: 'Voter Choice es gratis. Si te ayudó, una propina ayuda a mantenerlo gratis —',
+      tipjarLink: 'CAJA DE PROPINAS',
+      tipjarSuffix: '· no es obligatorio.',
     },
     scorecardPrint: {
       heading: 'Tu tarjeta imprimible',
@@ -3635,6 +3677,7 @@ function BudgetExhaustedByok({ onClose }) {
     <section className="be-byok" aria-labelledby="be-byok-ttl">
       <h4 id="be-byok-ttl" className="be-byok-ttl">Have an Anthropic API key? Use it directly in Voter Choice.</h4>
       <p className="be-byok-sub">Your key stays in your browser. Never sent to our server.</p>
+      <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener noreferrer" className="be-byok-getkey">Get a key →</a>
       {savedKey ? (
         <div className="be-byok-saved">
           <div className="be-byok-mask">

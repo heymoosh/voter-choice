@@ -14,7 +14,7 @@ import {
   setByokKey,
   removeByokKey,
 } from "../../lib/anthropic-client-byok";
-import { useNav } from "../VoterChoiceApp";
+import { useNav, useI18n } from "../VoterChoiceApp";
 
 function maskKey(k) {
   if (!k) return "";
@@ -31,6 +31,7 @@ export function ByokCard({
   const [savedKey, setSavedKey] = useState(null);
   const [status, setStatus] = useState(null);
   const nav = useNav();
+  const { t } = useI18n();
 
   useEffect(() => {
     setSavedKey(getByokKey());
@@ -41,7 +42,7 @@ export function ByokCard({
     if (!k.startsWith("sk-ant-")) {
       setStatus({
         tone: "error",
-        text: "Doesn't look like an Anthropic key (should start with sk-ant-).",
+        text: t("byokCard.invalidKey"),
       });
       return;
     }
@@ -50,7 +51,7 @@ export function ByokCard({
     setKeyDraft("");
     setStatus({
       tone: "ok",
-      text: "Saved — resend your last message to use your account.",
+      text: t("byokCard.savedStatus"),
     });
     onKeySaved?.();
   }
@@ -58,27 +59,31 @@ export function ByokCard({
   function clearKey() {
     removeByokKey();
     setSavedKey(null);
-    setStatus({ tone: "ok", text: "Removed. Back to the community budget." });
+    setStatus({ tone: "ok", text: t("byokCard.removedStatus") });
   }
 
   return (
     <section className="be-byok" aria-labelledby="be-byok-ttl">
       <h4 id="be-byok-ttl" className="be-byok-ttl">
-        Have an Anthropic API key? Use it directly in Voter Choice.
+        {t("byokCard.title")}
       </h4>
-      <p className="be-byok-sub">
-        Your key stays in your browser. Never sent to our server. With your key,
-        chat answers from the records already on the cards — live web lookups
-        and challenger research stay paused.
-      </p>
+      <p className="be-byok-sub">{t("byokCard.subtitle")}</p>
+      <a
+        href="https://console.anthropic.com/settings/keys"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="be-byok-getkey"
+      >
+        {t("byokCard.getKey")}
+      </a>
       {savedKey ? (
         <div className="be-byok-saved">
           <div className="be-byok-mask">
-            <span className="be-byok-lab">Saved key</span>
+            <span className="be-byok-lab">{t("byokCard.savedKeyLabel")}</span>
             <code>{maskKey(savedKey)}</code>
           </div>
           <button className="be-byok-clear" onClick={clearKey}>
-            Remove
+            {t("byokCard.remove")}
           </button>
         </div>
       ) : (
@@ -94,7 +99,7 @@ export function ByokCard({
               }}
               spellCheck="false"
               autoComplete="off"
-              aria-label="Anthropic API key"
+              aria-label={t("byokCard.keyAriaLabel")}
               data-testid="byok-input"
             />
             <span className="be-byok-icon" aria-hidden="true">
@@ -118,17 +123,17 @@ export function ByokCard({
             disabled={!keyDraft.trim()}
             data-testid="byok-save"
           >
-            Save &amp; continue
+            {t("byokCard.saveContinue")}
           </button>
         </div>
       )}
-      <p className="be-byok-hint">Starts with sk-ant-.</p>
+      <p className="be-byok-hint">{t("byokCard.hint")}</p>
       {status && (
         <p className={"be-byok-status " + status.tone}>{status.text}</p>
       )}
 
       <p className="be-tipjar">
-        Voter Choice is free. If it helped, a tip helps keep it free —{" "}
+        {t("byokCard.tipjarLede")}{" "}
         <a
           onClick={() => {
             nav?.navigate?.("tip");
@@ -137,9 +142,9 @@ export function ByokCard({
           role="link"
           tabIndex={0}
         >
-          TIP JAR
+          {t("byokCard.tipjarLink")}
         </a>{" "}
-        · not required.
+        {t("byokCard.tipjarSuffix")}
       </p>
     </section>
   );
