@@ -40,7 +40,7 @@ async function goToIntakeReview(page: Page) {
   await page
     .getByPlaceholder("1600 Pennsylvania Ave NW, Washington DC 20500")
     .fill("1100 Congress Ave, Austin, TX 78701");
-  await page.getByRole("button", { name: "Pull my representatives →" }).click();
+  await page.getByRole("button", { name: "Pull my representatives" }).click();
   await page.getByTestId("issue-convo-input").waitFor({ timeout: 15000 });
   await page
     .getByTestId("issue-convo-input")
