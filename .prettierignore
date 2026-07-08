@@ -9,6 +9,15 @@ playwright-report.json
 .eslint-report.json
 .vitest-report.json
 
+# Prettier mis-parses snake_case identifiers sitting next to italic-asterisk
+# emphasis on the same line (e.g. `axis_type: **contested** *(reclassified)*`
+# becomes `axis*type: **contested** *(reclassified)_`) — real content
+# corruption, not cosmetic (found 2026-07-08, PR #221 sweep). No code path
+# reads these docs at runtime (confirmed: BALLOT_PROMPT.md is the only one
+# consumed by the app, via a separate generated-TS sync, not a live .md read),
+# so there's no functional upside to formatting them — excluded permanently.
+*.md
+
 # Golden prompt fixtures are byte-identical reference renderings —
 # prettier reformatting would strip the leading 2-space indents
 # inside the prompt blocks and break the golden tests.

@@ -268,9 +268,10 @@ the X/Y votes matched you would be better made into a percentage."
 <!-- card-id: 0054bb72-cb87-46a6-987d-9cebaeb3e0eb -->
 
 **[P0] Reset Polis count to 0 before launch**
-- STATUS: Backlog
+- STATUS: To Do
 - DEPENDS ON: [P1] EPIC: Go-live launch gate (do these ONLY when flipping to public)
 - DECISION: defer — do NOT execute. Pin the exact reset mechanism (store/keys/script) read-only and surface a one-command action for launch. No prod mutation overnight.
+- GROOMED: ready: DECISION already narrows scope to pin-mechanism-only/no-prod-mutation; go-live gate dep already linked + 2026-07-08
 <!-- card-id: 1f5e2506-106d-4d72-97ec-d85a2d8c214d -->
 
 **[P0] Lower `CHAT_DAILY_SESSION_LIMIT` from 100 back to 10 before public launch**
@@ -293,15 +294,16 @@ the X/Y votes matched you would be better made into a percentage."
 - **Verification:** after redeploy, `vercel env ls` should NOT list `CHAT_DAILY_SESSION_LIMIT` for Production. The default `process.env.NODE_ENV === "production" ? 10 : 20` in `src/lib/server/rate-limit.ts:4-5` then applies. Env changes only take effect on a _fresh_ deployment.
 - **Why we raised it temporarily:** PR #45 fixed a sessionId regeneration bug (each page reload was consuming a fresh session slot). With that fix landed, a single user's session correctly counts as 1. But during the launch ramp it was practical to give dogfooders headroom rather than tune the cap precisely.
 - **Caveat (noted 2026-05-28, updated same day):** the durable rate-limiter still fails _closed_ on ANY Upstash Redis error (`src/lib/server/rate-limit.ts:256-269`), so a Redis blip denies the request — but it now reports `code: "RATE_LIMIT_UNAVAILABLE"` (not `DAILY_LIMIT`), which the continuity overlay renders as a distinct "temporarily unavailable — try again" message instead of the misleading "Budget exhausted" copy. Raising `CHAT_DAILY_SESSION_LIMIT` won't help a Redis failure: if chat denies while the budget tier is still `normal`, suspect a Redis blip, not the cap.
-- STATUS: Backlog
+- STATUS: To Do
 - DEPENDS ON: [P1] EPIC: Go-live launch gate (do these ONLY when flipping to public)
 - DECISION: defer — out-of-band Vercel env change; surface the `vercel env rm CHAT_DAILY_SESSION_LIMIT production` + redeploy commands for Muxin to run at launch.
+- GROOMED: ready: exact commands + verification steps on card; go-live gate dep already linked + 2026-07-08
 <!-- card-id: 28bf87ec-8587-4d1f-acc7-ab5ff7467cf4 -->
 
 **[P1] Translations to major languages**
-- Flagged 2026-06-12 (pre-launch) — Muxin. DRAFT card; confirm the language set + wording.
-- The app currently ships English + Spanish. Before public launch, add translations to major languages. The i18n plumbing already exists: `src/lib/translations.ts` (UI strings, en/es) and the en/es system-prompt variants (`ballotPromptEn.generated.ts` / `ballotPromptEs.generated.ts`, synced via `npm run sync:ballot-prompt`).
-- **Language set (TBD — confirm):** a defensible starting point is the federally-relevant ballot languages under Voting Rights Act §203 — Spanish (done), plus Chinese, Vietnamese, Korean, Tagalog, and the Native American / Alaska Native language groups where covered jurisdictions require them. Choose the set deliberately rather than "all major world languages." (Suggested by Claude — confirm.)
+- Flagged 2026-06-12 (pre-launch) — Muxin.
+- The app currently ships English + Spanish via hand-authored TS objects (`src/lib/translations.ts`) — not a scalable pattern for adding languages.
+- **RESOLVED (Muxin, 2026-07-08):** build every language we reasonably can, not a fixed short list. This now splits into two cards: "[P1] Rebuild i18n on a scalable locale pipeline + build out the full VRA §203 language tier" (Spanish + Chinese/Vietnamese/Korean/Tagalog, curated/reviewed) and "[P2] Add a machine-translate fallback (e.g. Google Translate widget) for languages beyond the curated tier" (everything else, so the app isn't EN-only for anyone). This card is now an umbrella over those two.
 - **Sequencing note:** Translation work depends on the final Phase 1 UX/UI — don't translate strings that are still changing. Blocks on the "[P1] Phase 1 UX/UI finalized (redesign complete)" milestone above (this carries forward the old "no translations until the UX is ironed out" instruction from the retired ES-locale card).
 - GO-LIVE GATE (2026-06-30): also a member of "[P1] EPIC: Go-live launch gate" — do NOT translate until launch prep. (Machine dep stays on Phase-1-UX since a card carries only one; the EPIC link is organizational.)
 - STATUS: Backlog
@@ -734,21 +736,14 @@ All ballot upload/parse/extraction, party gates, measures, and a reliable ballot
 - STATUS: Backlog
 <!-- card-id: 8807920f-0f26-4430-878e-6c012f03835b -->
 
-**[P2] Add Playwright visual snapshots to key redesign surfaces**
-- Catch unintended visual regressions automatically so manual review can focus only on intended design changes.
-- Add `toHaveScreenshot()` baselines for the delegation workspace, rep card, scorecard, and home hero; gate by extending the existing e2e job in `.github/workflows/test.yml`.
-- Caveat: visual snapshots are maintenance-heavy and flaky across CI environments — keep scope tight. Lower value than the golden-address data smoke test above; sequence it after that by priority, not as a hard dependency.
-- GROOMED (2026-07-01): parked in Backlog — attended by nature (first-generated baselines need a human to eyeball) and the e2e job is a REQUIRED status check, so flaky visual specs would deadlock PRs (add as a NON-required leg; generate baselines in the Ubuntu CI runner). Honors the card's own "after the golden-address smoke" ordering (that card is Backlog, blocked on the test-env).
-- STATUS: Backlog
-<!-- card-id: d1d54852-fcda-40d1-9487-f0910383a8a2 -->
-
 **[P0] Golden-address alignment smoke test (Cornyn / healthcare_affordability) — defense-in-depth on the drift guard**
 - The defense-in-depth layer Muxin sequenced AFTER the deploy-time drift check (DECISION 2026-06-28: "layer the golden-address smoke on top once the drift check lands"). The drift check shipped in PR #179.
 - Assert that a known real address/candidate returns NON-EMPTY alignment so a silent data-blank is caught even when the schema is technically present. Anchor: John Cornyn (TX Senator) + healthcare_affordability — lookupAlignment() should return { found: true, total >= 1, contributingVotes.length > 0 } (~18 healthcare votes observed at incident time). resolveCandidateId() already handles "Cornyn."
 - WHERE it runs — RESOLVED 2026-06-30: run against the **Neon test branch** in the new test-env (the "seeded test DB" option; that's why this card DEPENDS ON the test-env card). The heavier alternative (post-deploy prod smoke) is set aside. The drift check (PR #179) already covers the "prod behind a migration" class; this catches "schema present but data empty."
 - NEW infra, not a quick add.
-- STATUS: Backlog
+- STATUS: To Do
 - DEPENDS ON: We need a deployment/test environment/server/branch?
+- GROOMED: ready: exact assertion spec (Cornyn/healthcare_affordability) on card; test-env dep already linked + 2026-07-08
 <!-- card-id: 2baacd7e-901d-4407-8dcb-26ce56ed9fbc -->
 
 **[GATE] Phase 1 complete → open Phase 2**
@@ -765,57 +760,71 @@ All ballot upload/parse/extraction, party gates, measures, and a reliable ballot
 
 **Verify CHAT_USAGE_METRICS_ENABLED is actually turned on in prod**
 - recordChatUsage (chat route + research paths) is a no-op unless CHAT_USAGE_METRICS_ENABLED=true in the deploy env. Confirm on Vercel prod, else chat_usage_metrics stays empty despite migration 0011 being applied.
-- ATTENDED: Vercel dashboard check (out-of-band).
+- DECISION (Muxin, 2026-07-08, via card 6aa18301): this is an ops toggle, not go-live-gated — flip it ON now. ACTION: set `CHAT_USAGE_METRICS_ENABLED=true` in Vercel prod env, then redeploy (env changes only take effect on a fresh deployment) — then confirm rows start appearing in `chat_usage_metrics`.
+- ATTENDED: Vercel dashboard check + env flip (out-of-band).
 - Follow-up from card c160abf1-890d-4222-a8f6-6ee21b70ea29 '[P1] API usage hits limits but no details why' (auto-filed 2026-07-01).
-- STATUS: Backlog
+- STATUS: To Do
+- GROOMED: ready: single clear Vercel-dashboard check, ATTENDED + 2026-07-08
 <!-- card-id: 7eb03d21-f494-4bd8-8ea7-7cc2409786a5 -->
 
 **Build a lightweight admin/ops view over chat_usage_metrics**
 - Data is captured (chat + research, content-free) but there is no dashboard/query surface to see call counts / token totals / spend-by-callKind over time.
 - The original 'no visibility into why usage spikes' complaint is not closed until Muxin can look at this without hand-writing SQL via db-exec.ts.
 - Follow-up from card c160abf1-890d-4222-a8f6-6ee21b70ea29 '[P1] API usage hits limits but no details why' (auto-filed 2026-07-01).
-- STATUS: Backlog
+- STATUS: To Do
 - DEPENDS ON: Verify CHAT_USAGE_METRICS_ENABLED is actually turned on in prod
+- GROOMED: ready: clear scope (query surface over chat_usage_metrics), dep already linked + 2026-07-08
 <!-- card-id: 6247a0dd-a376-402e-95c4-f27dd8682448 -->
 
 **[P2] Translate CAN2026 curated-context section in RepCard (CanContextSection/RATING_LABELS)**
 - English-only today; renders nothing until the CAN2026 ingest runs (display also gated by CAN2026_DISPLAY_ENABLED). Translate when that surface ships.
 - Follow-up from card 7855fddd 'Finish Spanish coverage for remaining redesign surfaces' (auto-filed 2026-07-01).
-- STATUS: Backlog
+- STATUS: To Do
+- GROOMED: ready: narrow translation task, named component/strings + 2026-07-08
 <!-- card-id: 2c177f54-c10f-422c-be20-1e9d28d578a3 -->
 
 **[P2] BUILD: Civic-org positions (Track A) + lobbying issue-context (Track B)**
 - Ingest FD 'Positions Held Outside U.S. Government' per member (bioguide-keyed) and LDA LD-2 issue-level lobbying context (client x issue x chamber, NOT member-keyed).
-- Carries three explicit OPEN DECISIONS for Muxin (deliberately not decided by the spike): (1) EIGA statutory fit for redistributing FD-derived data, (2) OpenSecrets currency fallback for Track A, (3) whether/how to surface non-member-attributable lobbying for Track B.
-- Scope from docs/research/civic-orgs-lobbying-spike.md (spike card 797088b2, auto-filed 2026-07-01).
-- STATUS: Backlog
+- RESOLVED (Muxin, 2026-07-08): the spike (docs/research/civic-orgs-lobbying-spike.md, 2026-07-01) already found data we CAN use for both tracks — this isn't blocked on new legal research, it already has a safe path:
+  - **Track B (lobbying issue-context) ships first, no legal question at all** — the LDA API (lda.gov) is a statutorily-mandated public dataset with a clean attribution-only license, no EIGA/commercial restriction. Only open item is labeling: always frame as "X lobbied the [chamber] on [issue]," never implying a specific member was contacted (LD-2 filings never name an individual member).
+  - **Track A (civic-org positions) ships citation-linked** — 5 U.S.C. app. 4 § 105(c) restricts commercial/solicitation use of FD data, which is genuinely ambiguous for this app; the spike's own mitigation is to build read-only and always link back to the official filing (never claim to be the disclosure of record) — the same "disclosure not accusation" pattern already used for donor/stock-transaction data elsewhere in this app. Source: Senate EFD e-filed HTML (cleanest, no OCR) + House Clerk PDF text-extraction as fallback. Do ONE live check of OpenSecrets Personal Finances currency (a `memPFDprofile` API call or bulk-CSV pull) before deciding whether to use it instead of raw-portal parsing — public evidence suggests it may be stale (no 118th/119th Congress data found).
+  - Housekeeping: docs/research/civic-orgs-lobbying-spike.md exists only in a side worktree, never committed to main — re-add it when building this so the citations above are traceable.
+- GOAL_CONDITION: Track B — `lobbying_issue_activity` table (client × issue-area × chamber × quarter) populated from lda.gov, rendered as issue-level context only, never attached to an individual member. Track A — `member_civic_positions` table (bioguide-keyed) populated from Senate EFD/House Clerk filings, every surfaced position links to its official source filing.
+- STATUS: To Do
+- GROOMED: ready: spike already found a usable path for both tracks (Track B clean/no-legal-question, Track A citation-linked mitigation) — no longer blocked on undecided legal research + 2026-07-08
 <!-- card-id: f5eaa16c-a84e-4a38-8ea2-31cf23d4e156 -->
 
 **Apply migration 0013 and run stock-transactions ingest live (ATTENDED)**
 - Apply db/migrations/0013_add_member_stock_transactions.sql to prod (additive — db-exec.ts --file ... --yes per convention), then DATABASE_URL=<neon> npx tsx scripts/ingest/stock-transactions.ts --live; verify row counts + spot-check members against official filings.
-- SETTLE FIRST (security review, PR for f4ed7ab6): (a) batch upsert aborts wholesale on one oversized/out-of-range row (numeric(14,2) overflow, btree external_id size) — add per-row bounds/chunking; (b) filing_url is dataset-controlled and silently overwritable on upsert conflict — consider host allowlist / URL-change alerting.
 - Follow-up from card f4ed7ab6 '[P2] Include stock transactions' (auto-filed 2026-07-02).
-- STATUS: Backlog
+- GOAL_CONDITION: member_stock_transactions populated in prod (count > 0), spot-checked sample matches source PTRs, no batch aborts in the run log.
+- STATUS: To Do
+- DEPENDS ON: Add per-row bounds/chunking + filing_url host allowlist to the stock-transactions ingest (security-review follow-up)
+- DECISION: approved (Muxin, 2026-07-08) — run the migration + live ingest. Security hardening (bounds/chunking, filing_url allowlist) tracked as its own follow-up card (a3fbfc79) rather than inline prose — depends on it so a bad row can't abort the batch. Consolidates duplicate card 7d78e3d2 (same action, closed as duplicate).
+- GROOMED: ready: migration + ingest steps concrete, dedup + security dependency resolved, DECISION approved + 2026-07-08
 <!-- card-id: 8a1edadb-7e91-4194-a37c-677f6c87e22d -->
 
 **Render member stock transactions in the UI**
 - Member profile / candidate card influence section reading member_stock_transactions: ticker, asset, buy/sell, amount RANGE (never a point estimate), txn + disclosure dates, official filing link. Sanitize/validate filing_url before rendering as href (security review note: value originates from an unauthenticated community dataset).
 - Follow-up from card f4ed7ab6 '[P2] Include stock transactions' (auto-filed 2026-07-02).
-- STATUS: Backlog
+- STATUS: To Do
 - DEPENDS ON: Apply migration 0013 and run stock-transactions ingest live (ATTENDED)
+- GROOMED: ready: specific fields + sanitize-filing_url note on card, dep already linked + 2026-07-08
 <!-- card-id: 8b17a03a-6818-46d0-822f-240b789df27b -->
 
 **Investigate a stronger per-row idempotency key for stock transactions**
 - buildExternalId uses a composite string key (dataset+filing+ticker+description+date+type+amount+owner) — neither source carries a per-row id. Measure real collision rate after first live ingest; decide if parsing official PDFs for a row index is warranted.
 - Follow-up from card f4ed7ab6 '[P2] Include stock transactions' (auto-filed 2026-07-02).
-- STATUS: Backlog
+- STATUS: To Do
 - DEPENDS ON: Apply migration 0013 and run stock-transactions ingest live (ATTENDED)
+- GROOMED: ready: clear measurement task, dep (live ingest) already linked + 2026-07-08
 <!-- card-id: 5b6b24e5-0880-46a7-bd9f-bcff81b62c3b -->
 
 **Monitor Stock Watcher dataset liveness + provenance**
 - Card's original S3 bucket URLs returned 403 (2026-07-02); ingest now points at community GitHub-hosted JSON (mutable branch tips, no pinning/checksums, no LICENSE published). Add a lightweight liveness/anomaly check before this becomes a scheduled job; consider pinning or diff-alerting (security review low findings).
 - Follow-up from card f4ed7ab6 '[P2] Include stock transactions' (auto-filed 2026-07-02).
-- STATUS: Backlog
+- STATUS: To Do
+- GROOMED: ready: clear scope (liveness/anomaly check, pinning or diff-alerting) + 2026-07-08
 <!-- card-id: cde905bb-d0e8-42f9-9e3b-2c3fd64d9246 -->
 
 **[P3][docs] Confirm the privacy notice discloses address egress to the US Census Bureau and Google Civic**
@@ -829,21 +838,10 @@ All ballot upload/parse/extraction, party gates, measures, and a reliable ballot
 **Migrate existing ad-hoc flags onto isLaunchFlagEnabled()**
 - Route CAN2026_DISPLAY_ENABLED / VOTER_ISSUE_EVENTS_ENABLED / POLIS_VECTOR_COLLECTION_ENABLED / CHAT_USAGE_METRICS_ENABLED through the new src/lib/launch-flags.ts helper (LAUNCH_ prefix) for single-source-of-truth reads. Card a09a77c8 deliberately kept the convention additive (no rewire, no behavior change).
 - Do AFTER Muxin confirms the pre-launch set at PR review. Follow-up from card a09a77c8 (auto-filed 2026-07-02).
-- STATUS: Backlog
+- STATUS: To Do
+- DEPENDS ON: Classify CHAT_USAGE_METRICS_ENABLED: go-live flip vs ops toggle
+- GROOMED: ready: 4 named flags + helper module, additive/no-behavior-change + 2026-07-08
 <!-- card-id: 73ed075e-337d-44c3-b853-8124617b6a83 -->
-
-**Classify CHAT_USAGE_METRICS_ENABLED: go-live flip vs ops toggle**
-- DECISION for Muxin: does this internal cost-telemetry flag belong on the go-live flip-list (pre_launch_dark) or is it just an operational toggle? Currently marked UNCERTAIN in LAUNCH_FLAG_REGISTRY + docs/operations/launch-flip-list.md.
-- Overlaps card c160abf1 / PR #181 (which added the metric). Follow-up from card a09a77c8 (auto-filed 2026-07-02).
-- STATUS: Backlog
-- DEPENDS ON: none
-<!-- card-id: 6aa18301-d349-4ee5-9ff4-27ebcde7c33f -->
-
-**Muxin sign-off on the shipped translation-set tier(s)**
-- DECISION for Muxin: which tiers to build. Spike recommends Tier 1 = Chinese/Vietnamese/Korean/Tagalog (all §203-triggered Asian-language groups); Tier 2 = Cambodian/Khmer, Navajo (if AI/AN pursued); Tier 3 = likely skip. Separately decide whether to add population-driven non-§203 languages (Arabic, Russian) as an explicitly-labeled choice.
-- Evidence in docs/research/vra-203-language-set-spike.md. Unblocks the '[P1] Translations to major languages' epic's language-set TBD. Follow-up from spike d885108b (auto-filed 2026-07-02).
-- STATUS: Backlog
-<!-- card-id: c981fa96-a3f4-4596-bf2f-9205858bfdc2 -->
 
 **Re-check the language set against the 2026 VRA §203 determination once published**
 - This spike used the 2021 Census §203 determination (latest as of 2026-07-02). The next determination is expected ~Dec 2026 (5-yr cycle). If the translation BUILD lands after it publishes, re-verify the language list + jurisdiction counts before shipping.
@@ -855,8 +853,8 @@ All ballot upload/parse/extraction, party gates, measures, and a reliable ballot
 **Verify MPI LEP-population figures directly before external citation**
 - migrationpolicy.org's LEP-by-language chart returned HTTP 403 to automated fetch; the Chinese/Vietnamese/Korean LEP figures (1.6M/850K/630K) came from corroborated search snippets, not a primary fetch. Manual browser check before citing externally (PR desc / public doc).
 - Follow-up from spike d885108b (auto-filed 2026-07-02).
-- STATUS: Backlog
-- DEPENDS ON: none
+- STATUS: To Do
+- GROOMED: ready: single manual browser-check task, ATTENDED + 2026-07-08
 <!-- card-id: 4268c35d-e72f-49bf-bd18-b41afde0b67c -->
 
 **[P2] Baseline analysis of chat_usage_metrics — verify the "most usage is the issues step" assumption**
@@ -867,7 +865,8 @@ All ballot upload/parse/extraction, party gates, measures, and a reliable ballot
 - Read-only against prod; no schema change, no deploy, no app code. DEPENDS ON: Verify CHAT_USAGE_METRICS_ENABLED is actually turned on in prod.
 - GOAL_CONDITION: A findings note exists quantifying >=7 days of prod chat_usage_metrics — per-endpoint calls/tokens, research-chat vs issues-step session share, top-N sessions by tokens, anomalies flagged — and explicitly confirms or refutes the "most usage is the issues step" assumption; no app code, schema, or prod data changed.
 - ORIGIN: proposed by propose-cards 2026-07-02 from epic [P1] API usage hits limits but no details why (c160abf1-890d-4222-a8f6-6ee21b70ea29)
-- STATUS: Backlog
+- STATUS: To Do
+- GROOMED: ready: explicit GOAL_CONDITION + dep already on card + 2026-07-08
 <!-- card-id: b36e8fb9-bfdf-4df6-8667-557c537f87c9 -->
 
 **[P2] Spot-check ingested stock transactions against the official House/Senate disclosure portals**
@@ -877,7 +876,8 @@ All ballot upload/parse/extraction, party gates, measures, and a reliable ballot
 - Read-only against prod (scripts/ops/db-exec.ts); no schema change, no app code, no prod write. DEPENDS ON: Apply migration 0013 and run stock-transactions ingest live (ATTENDED).
 - GOAL_CONDITION: A findings note exists comparing >=20 sampled member_stock_transactions rows (>=5 members, both chambers) field-by-field against the official House/Senate portal filings, with per-field match rates, all discrepancies enumerated, and an explicit go/no-go for the UI render card; nothing in prod is modified.
 - ORIGIN: proposed by propose-cards 2026-07-02 from epic [P2] Include stock transactions (f4ed7ab6-bc45-482d-84d6-6bf014b2d355)
-- STATUS: Backlog
+- STATUS: To Do
+- GROOMED: ready: explicit GOAL_CONDITION + dep already on card + 2026-07-08
 <!-- card-id: 997c2d64-7248-49d4-8452-a520396dc386 -->
 
 **[P1] Execute the documented LAUNCH_* flip-list at go-live (member of the Go-live launch gate EPIC)**
@@ -900,20 +900,13 @@ All ballot upload/parse/extraction, party gates, measures, and a reliable ballot
 - STATUS: Backlog
 <!-- card-id: 4a0ff3eb-e0d0-4722-998f-5cda588aaeb0 -->
 
-**[P2] Run the --live STOCK Act PTR ingest against prod (APPROVED)**
-- - DECISION: approved (Muxin 2026-07-02, batched sit-down) — run AFTER the 2 medium findings card is Done and migration 0013 is applied (additive; conductor applies via db-exec.ts per standing policy).
-- TASK: run the ingest script with DATABASE_URL + --live; verify row counts + spot sample; report before→after.
-- GOAL_CONDITION: member_stock_transactions populated in prod (count > 0), spot-checked sample matches source PTRs, no batch aborts in the run log.
-- CHAIN: 1
-- STATUS: Backlog
-<!-- card-id: 7d78e3d2-d815-48b6-b6a8-7711c2f24eab -->
-
 **Fix singular deadline bug in stateInfo.deadlineStatus (n=1)**
 - - stateInfo.deadlineStatus(days) at src/lib/translations.ts:655 (EN) and :1349 (ES) has the identical n=1 pluralization bug fixed in deadline.daysLeft: renders "1 days left"/"Quedan 1 días" at n=1. Currently only asserted with days=5, so untested at n=1.
 - FIX: same n===1 singular branch as deadline.daysLeft; add a unit test at n=1 for both locales.
 - Originating card: 975bc054 Fix singular deadline label copy (found during its build).
 - CHAIN: 3
-- STATUS: Backlog
+- STATUS: To Do
+- GROOMED: ready: exact file/line fix + test spec on card + 2026-07-08
 <!-- card-id: 0400c20b-462e-413f-b27b-d80772e6dc82 -->
 
 **Anonymous chat-cost telemetry undercounts multi-round turns (recordChatUsage sees only the last round)**
@@ -923,16 +916,9 @@ All ballot upload/parse/extraction, party gates, measures, and a reliable ballot
 - GOAL_CONDITION: a simulated 2-round tool-use chat turn records a recordChatUsage total (or per-round sum) equal to round1 + round2 tokens, not just round2 (unit test).
 - Originating card: Record chat usage incrementally per round (close the TOCTOU budget race fully) (9596413f-ebcb-49c0-a3e2-21bb3e3d5bff).
 - CHAIN: 1
-- STATUS: Backlog
+- STATUS: To Do
+- GROOMED: ready: explicit GOAL_CONDITION + fix approach on card + 2026-07-08
 <!-- card-id: 11f15795-97fa-4e3d-a4a0-3dff5d8392dd -->
-
-**[P3] Decide whether to prettier-format Markdown docs, given a demonstrated content-corruption bug**
-- - Discovered while building 843ac43c ([P3] One-time prettier format sweep): prettier mangles snake_case identifiers sitting next to italic-asterisk emphasis on the same line (e.g. `axis_type: **contested** *(reclassified...)*` became `axis*type: **contested** *(reclassified...)_`) — a real content corruption, not cosmetic. Caught in docs/alignment/POLE_VOCABULARY.md only because poleVocabulary.test.ts asserts on it; the identical signature was found (via a scripted grep) in 5 more docs with zero test coverage: docs/ALIGNMENT_DATA_MODEL.md, docs/alignment/ALIGNMENT_LEDGER.md, docs/alignment/FUNDRAISING_POLE_MAP.md, docs/design/2026-redesign/F1_EXTRACTION_HANDOFF.md, docs/operations/BILL_TAG_AUDIT.md.
-- The format sweep (PR #221) excluded ALL Markdown docs from formatting rather than just the ones caught, since the corruption isn't provably confined to what one narrow regex catches.
-- DECIDE: (a) leave Markdown out of format:check/format scope permanently (add a .prettierignore for docs), (b) find/pin a prettier version or markdown-parser config that doesn't mis-parse snake_case-adjacent-emphasis, or (c) manually reformat docs and accept the review burden of checking for corruption each time.
-- CHAIN: 1
-- STATUS: Backlog
-<!-- card-id: 36484268-c4ba-4764-a83b-c781f3ed7fa9 -->
 
 **[P1] EPIC: Match the Keystone design EXACTLY (canvas is the spec, not a moodboard)**
 - - Muxin: my earlier Bold Flag palette pass (public/prototype.css, worktree wt-apply-the-bold-flag-palette-as-the-default) was NOT the real design source -- design-handoff/ (then claude-code-handoff/) was incomplete. The actual spec is "Voter Choice - Keystone Design Session (Standalone).html" (a self-contained, bundled interactive canvas -- must be rendered in a browser to inspect; source is compressed/not greppable as plain text) cross-checked against the repo in HANDOFF-EXACT-MATCH.md (both now under design-handoff/keystone-canvas/, per the new design-handoff root convention -- see the standing-rule card).
@@ -1078,7 +1064,8 @@ ORIGIN: Keystone parity-gallery proxy gap, PR #234 + PR #233 review, 2026-07-07
 SCOPE NOTE: this only helps test what's ALREADY built (the party-free overlap cloud, personalized stat, zoom toggle, low-N/zero-N honest states). It does NOT unlock PolisStand (the blind-voting step - doesn't exist in code regardless of data, see card fb77d0bb) or change the bridging-threshold methodology (60%-per-party-group vs 80%-population, see card e2455f56).
 GOAL_CONDITION: running the seed script against local dev, then loading the Polis screen in a browser, shows the consensus report + personalized stat + zoom toggle with non-zero realistic numbers.
 ORIGIN: Muxin, live review of PR #234, 2026-07-07
-- STATUS: Backlog
+- STATUS: To Do
+- GROOMED: ready: explicit GOAL_CONDITION + scope note on card + 2026-07-08
 <!-- card-id: 337ad25a-56ce-4e4a-9876-5c826a110ca5 -->
 
 **[P2] Port the intake conversation shell (composer/chips/chat) onto the Keystone .iq-* CSS system**
@@ -1110,17 +1097,17 @@ CHAIN: 1
 TASK: find the duplicate "Privacy"-labelled link/element and disambiguate (unique aria-label, or scope the selector/test to one) so exactly one accessible "Privacy" target exists per page.
 GOAL_CONDITION: parity-gallery + e2e can target the Privacy link/page unambiguously; no strict-mode violation.
 ORIGIN: parity-gallery fix verification, PR #238, 2026-07-08
-- STATUS: Backlog
+- STATUS: To Do
+- GROOMED: ready: explicit GOAL_CONDITION + specific scenario named + 2026-07-08
 <!-- card-id: e373b3dc-f248-49bd-9b66-5085bcf860fe -->
 
-**Decide: unify the two Polis consensus/divided backends (aggregates.ts 80%-population vs clustering.ts 60% k-means)**
-- FOLLOW-UP from card e2455f56 (Polis where-it-split section), discovered 2026-07-08: the repo has TWO independent Polis consensus/divided backends with different thresholds:
-1. src/lib/server/polis/aggregates.ts (computeBridges/computeDivided) - 80%+ population-level, party-free. WIRED to /api/polis/bridges + PolisClose.tsx, but v1-sentinel (always returns [] in prod - no per-statement persistence yet).
-2. src/lib/polis/clustering.ts + reportAssembly.ts (from PR #146) - 60%+ k-means cluster-based, already computes dividedState/sharpestDivide against REAL polis_response_vectors data, but NOT wired into PolisClose.tsx.
-e2455f56 built the where-it-split UI on backend #1 (matches the card's explicit "80%+ of the overall population" framing), since that is what actually reaches the UI today. But backend #2 already has real data flowing through it and backend #1 does not (blocked on Phase 8b persistence). Worth a deliberate decision: unify onto one backend, or keep both scoped to different phases/purposes?
-CHAIN: 1
-- STATUS: Backlog
-- DEPENDS ON: Polis report: should a "where it split" section (non-consensus statements) be added, and should the bridging threshold change?
+**[P1] Wire real Polis bridges/divided data instead of the permanent empty sentinel**
+- RESCOPED (Muxin, 2026-07-08): this was framed as "which of two backends to unify onto," but that's already decided — e2455f56 (approved 2026-07-07) picked population-level, party-free (no D/R/I breakdown). The actual reason Polis shows nothing today isn't an undecided product question, it's that no one wired the approved math to real data. Don't block displaying Polis on anything — this is the concrete unblock.
+- CURRENT STATE (verified 2026-07-08 against origin/main): the pieces mostly already exist — `polis_response_vectors` schema is live (migration 0012), and `collectPolisVector()` IS wired into `/api/counters` (gated on `POLIS_VECTOR_COLLECTION_ENABLED`, confirm it's flipped ON in prod — same ops-toggle pattern as `CHAT_USAGE_METRICS_ENABLED`; `src/lib/polis/collectVector.ts`'s own header comment saying "NOT WIRED" is stale, ignore it). `computeBridges`/`computeDivided` in `src/lib/server/polis/aggregates.ts` are written and unit-tested, but `/api/polis/bridges` and `/api/polis/compass` still hard-return the `no_bridges_yet`/`below_threshold` sentinel — they were never updated to query real data. A separate module (`src/lib/polis/clustering.ts` + `reportAssembly.ts`, from PR #146) already knows how to turn raw response vectors into per-statement agreement percentages, but computes per-k-means-cluster (60% each), not population-level (80%, no clusters) — don't wire that one in as-is; it doesn't match the approved design.
+- TASK: (1) confirm `POLIS_VECTOR_COLLECTION_ENABLED=true` in Vercel prod; (2) write a population-level aggregation (tally agree/disagree/pass per statement across ALL response vectors, no cluster split) over `polis_response_vectors` and feed it into `computeBridges`/`computeDivided`; (3) wire `/api/polis/bridges` and `/api/polis/compass` to call it instead of the hardcoded sentinel.
+- GOAL_CONDITION: with real rows in `polis_response_vectors` (e.g. via the synthetic-seed card 337ad25a locally), `/api/polis/bridges` and `/api/polis/compass` return actual bridge/divided statements instead of `no_bridges_yet`/`below_threshold`.
+- STATUS: To Do
+- GROOMED: ready: rescoped from an undecided-backend question to a concrete wiring task — schema/collection/compute functions already exist, just need the population-level query + two routes wired + 2026-07-08
 <!-- card-id: 840a9ed2-20db-4876-9142-7caecb44a387 -->
 
 **Tidy stale MoneyGapH2H comment references left after dead-code removal**
@@ -1130,8 +1117,9 @@ CHAIN: 1
 - GOAL_CONDITION: grep -rn MoneyGapH2H scripts/design/parity-gallery-scenarios.ts returns no results.
 - ORIGIN: follow-up from card 0e87d755 (Remove MoneyGapH2H as dead code), 2026-07-08
 - CHAIN: 1
-- STATUS: Backlog
+- STATUS: To Do
 - DEPENDS ON: [P0][GATE] STOP-SHIP: Fix the design-fidelity pipeline + rebuild the design-review artifact (no Keystone build/merge until Done)
+- GROOMED: ready: exact grep-based GOAL_CONDITION on card, STOP-SHIP dep already linked + 2026-07-08
 <!-- card-id: 3cb46afd-e554-4d1f-90ef-cd7afb022ca7 -->
 
 **Keystone Phase 6: close the 10 gate-flagged design gaps + land PR #230 under the new parity gate**
@@ -1143,8 +1131,9 @@ CHAIN: 1
 - PROGRESS (2026-07-08, STOP-SHIP Phase 4 re-audit): confirmed reproducible — this exact 10-scenario list fails identically across all 5 held PRs (#230/#236/#237/#240/#243), none of them the cause. Full severity/diff-ratio data + per-PR cross-reference: docs/operations/keystone-phase4-audit-2026-07-08.md. One correction: 10c/10d's failure on PR #240 is partly a stale test mock (false-fail, tracked separately), not pure design divergence — see that doc before treating 10c/10d as a straight design gap.
 - PARENT: b7c7178d-a115-4adc-8c7b-3f09ebb94479
 - CHAIN: 1
-- STATUS: Backlog
+- STATUS: To Do
 - DEPENDS ON: [P0][GATE] STOP-SHIP: Fix the design-fidelity pipeline + rebuild the design-review artifact (no Keystone build/merge until Done)
+- GROOMED: ready: sequencing confirmed (Muxin, 2026-07-08) — standing Stage A->B->C flow already authorized on card e840c072, no per-PR check-in needed; STOP-SHIP dependency already holds it until Stage A finishes + 2026-07-08
 <!-- card-id: 466d6efb-0938-40e7-872a-b4529a9deb70 -->
 
 **Polis contribute-a-statement screen (10b-polis-contribute): is this still an intended feature to build?**
@@ -1185,8 +1174,8 @@ CHAIN: 1
 - PROGRESS (2026-07-08, Phase 4 — re-audit complete): full findings at docs/operations/keystone-phase4-audit-2026-07-08.md. Headline: the "10 gate-flagged gaps" from card 466d6efb reproduce identically on all 5 held PRs — none of them the cause, already tracked there (updated with today's severity data). Two things are genuinely new: (1) PR #236 and #237 each ship a new screen the gate's capture scripts never actually reach — both PASS today but are unverified, not confirmed-good; (2) PR #243 will BREAK ~20 gate scenarios repo-wide the moment it merges (a shared helper assumes the old single-seat layout) — confirmed zero *new* regressions once patched, but the fix needs to ship with/before the merge. Filed 4 mechanical tooling-fix cards (622fe2dd, 50c20164, 4b7f2068, 1b4b943d).
 - RESOLVED 2026-07-08: the #230 nav/hero "conflict" was a false alarm — it was a diagnostic-worktree artifact (test-merging #230 into the not-yet-merged tooling branch), not a real product decision; resolves itself via ordinary rebase once #230 is up for real review. The reachWorkspace() sequencing question is answered below (own tooling PR, not bundled into #243). 05c-candidates-overview eyeball stays deferred until #243 itself is under review.
 - PROGRESS (2026-07-08, scaffolding merged): PRs #244, #245, #246 all merged to main (in that dependency order, 2 rebase conflicts resolved — both the same known 08b-howitworks scenario collision, resolved consistently each time). The parity-gate CI check is live but not yet marked "required" in GitHub branch protection (Muxin action, still pending). Now building the 4 tooling-fix cards (622fe2dd, 50c20164, 4b7f2068, 1b4b943d) in worktree wt-keystone-phase4-tooling-fixes as the last piece of Stage A.
-- DECISION: approved (Muxin 2026-07-08, live) — staged execution authorized: Stage A (this scaffolding, including the 4 fix cards) → once verified complete, proceed automatically (no further check-in needed) into Stage B (the actual FE UI fixes: card 466d6efb's 10 gate-flagged gaps + PR #230/#236/#237/#240/#243's own outstanding items) using the completed gate as authority → Stage C is ONE unified review session using the regenerated HTML artifact (docs/design-review/), not piecemeal PR-by-PR review. Do not re-ask at each step; only escalate genuine intent-ambiguity, same as the standing operating rule.
 - STATUS: Review
+- DECISION: approved (Muxin 2026-07-08, live) — staged execution authorized: Stage A (this scaffolding, including the 4 fix cards) → once verified complete, proceed automatically (no further check-in needed) into Stage B (the actual FE UI fixes: card 466d6efb's 10 gate-flagged gaps + PR #230/#236/#237/#240/#243's own outstanding items) using the completed gate as authority → Stage C is ONE unified review session using the regenerated HTML artifact (docs/design-review/), not piecemeal PR-by-PR review. Do not re-ask at each step; only escalate genuine intent-ambiguity, same as the standing operating rule.
 <!-- card-id: e840c072-1bd9-4dc0-aebe-8a19867aed03 -->
 
 **[P1] Fix stale gate captures: 09c-intake-locked and 10a-polis-entry never reach the new screens they test**
@@ -1194,7 +1183,7 @@ CHAIN: 1
 - TASK: update both scenario capture() functions in scripts/design/parity-gallery-scenarios.ts to click through to the actual new screens, and update their stale note text.
 - GOAL_CONDITION: 09c-intake-locked's capture reaches the post-lock IntakeLocked screen; 10a-polis-entry's capture reaches the new polisEntry stage; both gate structurally/visually against the real new content.
 - ORIGIN: Phase 4 re-audit, background agent phase4-audit-batch-a, 2026-07-08
-- STATUS: In Progress
+- STATUS: Review
 - DEPENDS ON: [P0][GATE] STOP-SHIP: Fix the design-fidelity pipeline + rebuild the design-review artifact (no Keystone build/merge until Done)
 <!-- card-id: 622fe2dd-f86b-4b07-beb9-903464d8468e -->
 
@@ -1203,7 +1192,7 @@ CHAIN: 1
 - TASK: update the 10c/10d scenario mocks to feed real divided-statement data; once real content is being tested, add a documented STRUCTURAL_WAIVERS-style entry (or per-scenario threshold note) explaining the expected residual visual diff from the intentional party-free redesign, so it stops reading as an open failure.
 - GOAL_CONDITION: 10c/10d gate against real divided-statement content; any remaining visual diff is either under threshold or carries an explicit waiver citing DECISION #116.
 - ORIGIN: Phase 4 re-audit, background agent phase4-audit-batch-b, 2026-07-08
-- STATUS: In Progress
+- STATUS: Review
 - DEPENDS ON: [P0][GATE] STOP-SHIP: Fix the design-fidelity pipeline + rebuild the design-review artifact (no Keystone build/merge until Done)
 <!-- card-id: 50c20164-6d09-4957-bfd2-a02a20872d70 -->
 
@@ -1212,7 +1201,7 @@ CHAIN: 1
 - NEEDS MUXIN: should this fix ship bundled into PR #243 itself, or as a same-day companion PR merged immediately after? Sequencing call, not filed as a decision here - flagging on the STOP-SHIP card.
 - GOAL_CONDITION: reachWorkspace() (and any e2e helper sharing the same assumption) clicks through DelegationOverview's seat card when present before waiting on .b-row; re-running the full gate against a merged #243+tooling branch returns to the same ~16/27 baseline with no new capture-failure regressions.
 - ORIGIN: Phase 4 re-audit, background agent phase4-audit-batch-b, 2026-07-08
-- STATUS: In Progress
+- STATUS: Review
 - DEPENDS ON: [P0][GATE] STOP-SHIP: Fix the design-fidelity pipeline + rebuild the design-review artifact (no Keystone build/merge until Done)
 <!-- card-id: 4b7f2068-f7cb-406f-98b2-94c06e7a4aa4 -->
 
@@ -1221,9 +1210,84 @@ CHAIN: 1
 - TASK: export a canvas ref PNG for design-handoff/keystone-canvas/src/screens-delegation.jsx's artboard (may need a Claude Design canvas session - flag if so), then write a real capture() function for 05c-candidates-overview in scripts/design/parity-gallery-scenarios.ts.
 - GOAL_CONDITION: 05c-candidates-overview has both a ref PNG and a working capture(), gates normally like the other scenarios.
 - ORIGIN: Phase 4 re-audit, background agent phase4-audit-batch-b, 2026-07-08
-- STATUS: In Progress
+- STATUS: To Do
 - DEPENDS ON: [P0][GATE] STOP-SHIP: Fix the design-fidelity pipeline + rebuild the design-review artifact (no Keystone build/merge until Done)
+- PARKED: needs Muxin: fresh Claude Design canvas session to export a 05c-candidates-overview ref PNG before this scenario can be gate-verified; capture() itself already committed (worktree wt-keystone-phase4-tooling-fixes) and ready 2026-07-08
 <!-- card-id: 1b4b943d-4229-4896-a129-21e6341820b5 -->
+
+**[P1] Rebuild i18n on a scalable locale pipeline + build out the full VRA §203 language tier**
+- Traces to Muxin's 2026-07-08 ruling on "Muxin sign-off on the shipped translation-set tier(s)" (c981fa96): build every language we reasonably can, not a fixed short list — but the CURRENT architecture (src/lib/translations.ts, ~2000 lines of hand-authored en/es TS objects, Language = "en" | "es" hardcoded, consumed via src/lib/i18n.tsx) can't scale to N languages without linear per-language authoring effort and drift risk.
+- TASK: replace the hardcoded TS objects with a locale-resource pipeline — one canonical source-of-truth (e.g. locales/en.json), a real i18n loader (e.g. next-intl, since this is a Next.js App Router app) instead of the hand-rolled src/lib/i18n.tsx context, and a generation script (mirroring the existing sync:ballot-prompt precedent) that diffs en.json against each target locale and machine-translates only new/changed keys — so adding a language is "run the script," not "hand-write a ~700-line file."
+- SCOPE: build out the full VRA §203 tier once the pipeline exists — Chinese, Vietnamese, Korean, Tagalog (Spanish already ships). The AI system-prompt variants (ballotPromptEn.generated.ts / ballotPromptEs.generated.ts) are HIGHER-STAKES than UI copy (they're instructions to the model, not just display strings). Muxin will NOT be reviewing translations by hand (2026-07-08) — so build an automated fidelity check into the generation script itself (e.g. back-translate each generated prompt variant to English and diff against the original for meaning-preserving equivalence, or a dedicated LLM-judge pass checking the translated instructions still say the same thing) rather than gating on a human eyeball.
+- Sequencing: still blocked on the redesign landing (don't extract/translate strings that are still changing) — same as the parent "Translations to major languages" epic.
+- GOAL_CONDITION: en.json is the single source of strings (no duplicate hand-authored per-language TS objects); adding Chinese/Vietnamese/Korean/Tagalog requires running one script, not hand-editing N files; app renders correctly end-to-end in at least one newly-added language.
+- ORIGIN: Muxin, 2026-07-08 (language-tier + i18n-architecture ruling)
+- STATUS: To Do
+- DEPENDS ON: Phase 1 UX/UI finalized (redesign complete)
+- GROOMED: ready: concrete architecture + scope + GOAL_CONDITION, blocked on redesign landing (normal dependency wait) + 2026-07-08
+<!-- card-id: c846efa0-c6ab-4cea-a04f-398674069470 -->
+
+**[P2] Add a machine-translate fallback (e.g. Google Translate widget) for languages beyond the curated tier**
+- Traces to Muxin's 2026-07-08 ruling: for any language outside the curated/reviewed tier (VRA §203 set), don't hand-build a dedicated locale — offer a lightweight machine-translate affordance instead (e.g. the embeddable Google Translate widget, or an on-demand call to a translation API) so the app isn't EN-only for everyone else.
+- TASK: evaluate the Google Translate "Website Translator" widget (or an equivalent client-side/API approach) for coverage, quality caveats on civic/legal terminology, accessibility (ARIA/screen-reader interplay), and whether it can be scoped to skip the AI chat surfaces (machine pre-translating a live LLM conversation is a different, riskier problem than translating static UI copy).
+- Explicitly NOT a substitute for the curated §203 tier — those get real, reviewed translations via the new i18n pipeline; this is the safety net for everything else.
+- GOAL_CONDITION: a visitor whose browser/OS language isn't in the curated tier sees a visible, working "translate this page" affordance; the curated-tier languages are unaffected (no double-translation).
+- ORIGIN: Muxin, 2026-07-08 (language-tier ruling)
+- STATUS: To Do
+- DEPENDS ON: Rebuild i18n on a scalable locale pipeline + build out the full VRA §203 language tier
+- GROOMED: ready: concrete scope + GOAL_CONDITION, blocked on the i18n-architecture card (normal dependency wait) + 2026-07-08
+<!-- card-id: 78d00750-2a39-4c3b-8330-0f89ca46e2f8 -->
+
+**Add per-row bounds/chunking + filing_url host allowlist to the stock-transactions ingest (security-review follow-up)**
+- Traces to the security-review findings on card f4ed7ab6 that were never split into their own card: (a) batch upsert aborts wholesale on one oversized/out-of-range row (numeric(14,2) overflow, btree external_id size) — add per-row bounds checking + chunking so one bad row doesn't drop the whole batch; (b) filing_url is dataset-controlled and silently overwritable on upsert conflict — add a host allowlist and/or change-alerting before it's trusted for rendering (also referenced on card 8b17a03a, "Render member stock transactions in the UI").
+- TASK: (a) add per-row validation/bounds-checking + chunked upserts to scripts/ingest/stock-transactions.ts; (b) add a host allowlist (or equivalent validation) for filing_url before persisting/rendering it.
+- GOAL_CONDITION: a synthetic oversized/out-of-range row no longer aborts the whole batch (only that row is skipped/logged); filing_url is validated against an allowlist (or otherwise sanitized) before being persisted.
+- ORIGIN: split out from "Apply migration 0013 and run stock-transactions ingest live" per Muxin's 2026-07-08 ruling (fix it, but track separately as its own follow-up).
+- STATUS: To Do
+- GROOMED: ready: two named fixes (bounds/chunking, filing_url allowlist), exact file + GOAL_CONDITION on card + 2026-07-08
+<!-- card-id: a3fbfc79-dc2f-44a8-a9eb-64c33046777e -->
+
+**[P2] Add Playwright visual snapshots to key redesign surfaces**
+- Catch unintended visual regressions automatically so manual review can focus only on intended design changes.
+- Add `toHaveScreenshot()` baselines for the delegation workspace, rep card, scorecard, and home hero; gate by extending the existing e2e job in `.github/workflows/test.yml`.
+- Caveat: visual snapshots are maintenance-heavy and flaky across CI environments — keep scope tight. Lower value than the golden-address data smoke test above; sequence it after that by priority, not as a hard dependency.
+- GROOMED (2026-07-01): parked in Backlog — attended by nature (first-generated baselines need a human to eyeball) and the e2e job is a REQUIRED status check, so flaky visual specs would deadlock PRs (add as a NON-required leg; generate baselines in the Ubuntu CI runner). Honors the card's own "after the golden-address smoke" ordering (that card is Backlog, blocked on the test-env).
+- STATUS: Done
+- DECISION: declined (Muxin, 2026-07-08) — redundant now that the Keystone design:parity-gate does the more rigorous version of this (canvas-fidelity checking, not just self-referential regression diffing); maintenance/CI-deadlock cost not worth it for the uplift. Closed, not building.
+<!-- card-id: d1d54852-fcda-40d1-9487-f0910383a8a2 -->
+
+**[P2] Run the --live STOCK Act PTR ingest against prod (APPROVED)**
+- - DECISION: approved (Muxin 2026-07-02, batched sit-down) — run AFTER the 2 medium findings card is Done and migration 0013 is applied (additive; conductor applies via db-exec.ts per standing policy).
+- TASK: run the ingest script with DATABASE_URL + --live; verify row counts + spot sample; report before→after.
+- GOAL_CONDITION: member_stock_transactions populated in prod (count > 0), spot-checked sample matches source PTRs, no batch aborts in the run log.
+- CHAIN: 1
+- STATUS: Done
+- DECISION: closed as duplicate (2026-07-08) — same action as card 8a1edadb ("Apply migration 0013 and run stock-transactions ingest live"), which is the canonical card (3 other cards already DEPENDS ON its exact title). Approval + GOAL_CONDITION folded into 8a1edadb.
+<!-- card-id: 7d78e3d2-d815-48b6-b6a8-7711c2f24eab -->
+
+**Muxin sign-off on the shipped translation-set tier(s)**
+- DECISION for Muxin: which tiers to build. Spike recommends Tier 1 = Chinese/Vietnamese/Korean/Tagalog (all §203-triggered Asian-language groups); Tier 2 = Cambodian/Khmer, Navajo (if AI/AN pursued); Tier 3 = likely skip. Separately decide whether to add population-driven non-§203 languages (Arabic, Russian) as an explicitly-labeled choice.
+- Evidence in docs/research/vra-203-language-set-spike.md. Unblocks the '[P1] Translations to major languages' epic's language-set TBD. Follow-up from spike d885108b (auto-filed 2026-07-02).
+- STATUS: Done
+- DECISION: resolved (Muxin, 2026-07-08): build every language we can support through the new scalable locale-pipeline (see new i18n-architecture card) — starts with the full VRA-section-203 tier (Spanish done, + Chinese/Vietnamese/Korean/Tagalog). Anything beyond that tier ships via a machine-translate fallback (e.g. Google Translate widget), not hand-authored per-language files — see new fallback card.
+<!-- card-id: c981fa96-a3f4-4596-bf2f-9205858bfdc2 -->
+
+**[P3] Decide whether to prettier-format Markdown docs, given a demonstrated content-corruption bug**
+- - Discovered while building 843ac43c ([P3] One-time prettier format sweep): prettier mangles snake_case identifiers sitting next to italic-asterisk emphasis on the same line (e.g. `axis_type: **contested** *(reclassified...)*` became `axis*type: **contested** *(reclassified...)_`) — a real content corruption, not cosmetic. Caught in docs/alignment/POLE_VOCABULARY.md only because poleVocabulary.test.ts asserts on it; the identical signature was found (via a scripted grep) in 5 more docs with zero test coverage: docs/ALIGNMENT_DATA_MODEL.md, docs/alignment/ALIGNMENT_LEDGER.md, docs/alignment/FUNDRAISING_POLE_MAP.md, docs/design/2026-redesign/F1_EXTRACTION_HANDOFF.md, docs/operations/BILL_TAG_AUDIT.md.
+- The format sweep (PR #221) excluded ALL Markdown docs from formatting rather than just the ones caught, since the corruption isn't provably confined to what one narrow regex catches.
+- DECIDE: (a) leave Markdown out of format:check/format scope permanently (add a .prettierignore for docs), (b) find/pin a prettier version or markdown-parser config that doesn't mis-parse snake_case-adjacent-emphasis, or (c) manually reformat docs and accept the review burden of checking for corruption each time.
+- CHAIN: 1
+- STATUS: Done
+- DECISION: resolved (Muxin, 2026-07-08): no functional need — confirmed no runtime code path reads the corrupted docs (BALLOT_PROMPT.md is the only live-adjacent one, and it goes through a generated-TS sync script, never a live .md read). Excluded *.md permanently via .prettierignore (2026-07-08) instead of leaving this to a one-time PR #221 sweep.
+<!-- card-id: 36484268-c4ba-4764-a83b-c781f3ed7fa9 -->
+
+**Classify CHAT_USAGE_METRICS_ENABLED: go-live flip vs ops toggle**
+- DECISION for Muxin: does this internal cost-telemetry flag belong on the go-live flip-list (pre_launch_dark) or is it just an operational toggle? Currently marked UNCERTAIN in LAUNCH_FLAG_REGISTRY + docs/operations/launch-flip-list.md.
+- Overlaps card c160abf1 / PR #181 (which added the metric). Follow-up from card a09a77c8 (auto-filed 2026-07-02).
+- STATUS: Done
+- DEPENDS ON: none
+- DECISION: resolved (Muxin, 2026-07-08): ops toggle, NOT go-live-gated — flip CHAT_USAGE_METRICS_ENABLED=true in Vercel prod now. Action tracked on card 7eb03d21.
+<!-- card-id: 6aa18301-d349-4ee5-9ff4-27ebcde7c33f -->
 
 **[P3] Expand parity-gate STRUCTURAL_PROBES coverage beyond the initial 3 scenarios**
 - - Traces to the Phase 5 parity gate (scripts/design/parity-gate.ts, npm run design:parity-gate).
