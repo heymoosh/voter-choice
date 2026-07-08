@@ -476,14 +476,21 @@ const STRUCTURAL_WAIVERS: Record<string, string> = {
     "prefixes): zero overlap. Also itself a documented proxy — no dedicated PolisEntry screen " +
     "exists yet (see this scenario's own note in parity-gallery-scenarios.ts).",
   "10c-polis-report-consensus":
-    "Same PolisClose.tsx vocabulary gap as 10a-polis-entry — see that waiver's note. Known real " +
-    "gap: no group-clustering/'where it split' section exists at all (Phase 0 finding #5, " +
-    "blocked on a counters-schema change per memory project_polis_viz_phase1 — a pre-existing " +
-    "scope gap, not a regression).",
+    "Same PolisClose.tsx vocabulary gap as 10a-polis-entry — see that waiver's note. The mock " +
+    "now feeds real bridges + divided data (parity-gallery-scenarios.ts), but PolisClose.tsx " +
+    "doesn't render a divided/'where it split' section at all until PR #240 merges (not yet " +
+    "merged as of this waiver). Once it does, the remaining VISUAL diff against the canvas ref " +
+    "is EXPECTED, not a bug: the canvas's divided panel groups by D/R/I party cluster, while " +
+    "this repo deliberately stays population-level with no party breakdown, ever — the " +
+    "approved party-free pivot (DECISION #116, voter-choice-backlog.md 'KEEP the existing " +
+    "party-free product decision (#116)'). This waiver documents that expected gap; it does not " +
+    "silence the visual check, which still runs and gates this scenario same as any other.",
   "10d-polis-report-divided":
-    "Same PolisClose.tsx vocabulary gap as 10a-polis-entry — see that waiver's note. Also a " +
-    "documented proxy itself: PolisClose has no computed divided/split branch (see this " +
-    "scenario's own note in parity-gallery-scenarios.ts).",
+    "Same PolisClose.tsx vocabulary gap as 10a-polis-entry — see that waiver's note. Same " +
+    "divided-data + party-free-diff reasoning as 10c-polis-report-consensus's waiver above " +
+    "(DECISION #116) — also still a documented proxy itself until PR #240 merges: PolisClose " +
+    "has no computed divided/split branch on main today (see this scenario's own note in " +
+    "parity-gallery-scenarios.ts).",
   "11a-fieldmoneygap":
     "Proxy scenario — its capture() renders the same funding-expanded panel DOM as " +
     "02b-results-funding-expanded, already probed via FieldMoneyGap/.mgap. The canvas's 'whole " +

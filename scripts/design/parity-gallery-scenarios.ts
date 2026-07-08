@@ -390,9 +390,17 @@ async function mockSeatRaceDataDeltaAware(page: Page): Promise<void> {
   });
 }
 
+/** `divided` is the /api/polis/bridges response's "where it split" honest
+ *  complement of `bridges` (same {statement, agreementPercent} shape) — see
+ *  PR #240 (not yet merged to main as of this fix): src/prototype/redesign/
+ *  polisAdapter.ts's mapStatementList() reads both keys off this same
+ *  endpoint. Feeding it here is forward-compatible (harmless no-op today,
+ *  since main's PolisClose.tsx doesn't consume a `divided` field yet) and
+ *  starts working the moment #240 lands. */
 async function mockBridges(
   page: Page,
   bridges: Array<{ statement: string; agreementPercent: number }>,
+  divided: Array<{ statement: string; agreementPercent: number }> = [],
 ): Promise<void> {
   await page.route("**/api/polis/bridges?*", async (route) => {
     await route.fulfill({
@@ -401,9 +409,10 @@ async function mockBridges(
       body: JSON.stringify({
         scope: "state",
         threshold: 200,
-        count: bridges.length,
-        status: bridges.length ? "ok" : "no_bridges_yet",
+        count: bridges.length + divided.length,
+        status: bridges.length || divided.length ? "ok" : "no_bridges_yet",
         bridges,
+        divided,
       }),
     });
   });
@@ -437,7 +446,20 @@ async function mockDelegationSlow(page: Page): Promise<void> {
 async function gotoHomeClean(page: Page): Promise<void> {
   await mockChatLocal(page);
   await page.goto("/");
-  await page.evaluate(() => localStorage.clear());
+  // Clear BOTH storages, not just localStorage: App2.tsx's SESSION_KEY (in-
+  // progress stage/address/verdicts) lives in sessionStorage specifically so
+  // it "survives a same-tab reload" (its own comment) — a real product
+  // feature for users, but it also means a bare localStorage.clear() here
+  // does NOT undo progress within the same Playwright page/tab. Scenarios
+  // that call this (or reachWorkspace below) more than once per capture —
+  // e.g. 09c-intake-locked / 10a-polis-entry's reachPreLock()/reachAllDone()
+  // retry after an irreversible "Lock"/"where you stand" click — need a
+  // genuine fresh start, or the address screen never reappears and
+  // submitAddress() hangs waiting for a placeholder that's no longer there.
+  await page.evaluate(() => {
+    localStorage.clear();
+    sessionStorage.clear();
+  });
   await page.goto("/");
 }
 
@@ -526,14 +548,39 @@ async function reachOrientation(page: Page): Promise<void> {
 async function reachWorkspace(page: Page): Promise<void> {
   await mockChatLocal(page);
   await page.goto("/");
-  await page.evaluate(() => localStorage.clear());
+  // See gotoHomeClean's comment above: clear sessionStorage too, not just
+  // localStorage, so 10a-polis-entry's reachAllDone() retry (called twice in
+  // the same capture when PolisEntry isn't merged yet) actually restarts
+  // from the address screen instead of resuming the already-completed
+  // session.
+  await page.evaluate(() => {
+    localStorage.clear();
+    sessionStorage.clear();
+  });
   await page.goto("/");
   await submitAddress(page);
   await page.getByTestId("issue-convo-input").waitFor({ timeout: 15000 });
   await sendFirstIssue(page);
   await lockIssues(page);
   await page.getByTestId("orientation-continue").click({ timeout: 15000 });
-  await page.locator(".b-row").first().waitFor({ timeout: 20000 });
+  // PR #243 (not yet merged) makes DelegationOverview the default landing
+  // screen (App2.tsx's seatOverviewOpen defaults true) instead of landing
+  // directly on the single-seat rail — its cards carry a shared
+  // data-testid="seat-card" (src/prototype/redesign/DelegationOverview.tsx
+  // on that branch). Race both markers rather than a fixed pre-wait, so a
+  // branch without the overview pays no extra latency (.b-row just wins the
+  // race as before) and a branch with it clicks through the first card
+  // before falling through to the same rail wait every scenario expects.
+  const seatCard = page.getByTestId("seat-card").first();
+  const rail = page.locator(".b-row").first();
+  await Promise.race([
+    seatCard.waitFor({ timeout: 20000 }),
+    rail.waitFor({ timeout: 20000 }),
+  ]).catch(() => {});
+  if (await seatCard.isVisible().catch(() => false)) {
+    await seatCard.click();
+  }
+  await rail.waitFor({ timeout: 20000 });
 }
 
 async function setMoneyDisclosure(page: Page, open: boolean): Promise<void> {
@@ -777,14 +824,32 @@ export const SCENARIOS: Scenario[] = [
     files: ["src/prototype/redesign/DelegationWorkspace.tsx"],
     automatable: "no",
     note:
-      "NOT BUILT on this branch — no repo screenshot possible, not a tooling gap. Canvas " +
-      "source exists (design-handoff/keystone-canvas/src/screens-delegation.jsx + " +
-      "delegation.css: DelegationOverview/SeatCard/SeatDeepView/SeatRail — HANDOFF-EXACT-" +
-      "MATCH.md §5a, 'designed 2026-07-07, not yet wired'), but no .png artboard was ever " +
-      "exported to .keystone-canvas-refs/, so there's no reference image either. Today the " +
+      "NOT BUILT on this branch — no repo screenshot possible, not a tooling gap. Today the " +
       "app goes straight to the single-seat deep view (02a-results-main) with no scored " +
-      "multi-seat overview screen first. Backlog card 5192287a; being built on PR #243 " +
-      "(not merged to main as of this report).",
+      "multi-seat overview screen first. Backlog card 5192287a; being built on PR #243 (not " +
+      "merged to main as of this report) — capture() below is a real, PR #243-verified " +
+      "sequence (data-testid=\"delegation-overview\"), ready to flip automatable to 'yes'/" +
+      "'proxy' once #243 merges. STILL BLOCKED separately on a canvas ref PNG: canvas source " +
+      "exists (design-handoff/keystone-canvas/src/screens-delegation.jsx + delegation.css: " +
+      "DelegationOverview/SeatCard/SeatDeepView/SeatRail — HANDOFF-EXACT-MATCH.md §5a, " +
+      "'designed 2026-07-07, not yet wired'), but the standalone canvas viewer that produced " +
+      "every other ref (design-handoff/keystone-canvas/'Voter Choice - Keystone Design Session " +
+      "(Standalone).html') predates this screen (zero references to DelegationOverview/" +
+      "SeatCard found in it) and this repo has no export script — genuinely needs a fresh " +
+      "Claude Design canvas session to produce the artboard PNG, not something this tooling " +
+      "fix can manufacture without risking a self-fabricated, unapproved 'reference'.",
+    async capture(page) {
+      await mockDelegation(page);
+      await mockSeatRaceDataMedian(page);
+      await mockResearch(page);
+      await mockPolis(page);
+      await mockCounters(page);
+      await reachColdOpen(page);
+      await sendFirstIssue(page);
+      await lockIssues(page);
+      await page.getByTestId("orientation-continue").click({ timeout: 15000 });
+      await page.getByTestId("delegation-overview").waitFor({ timeout: 20000 });
+    },
   },
   {
     id: "06-homehero",
@@ -934,14 +999,37 @@ export const SCENARIOS: Scenario[] = [
     ],
     automatable: "proxy",
     note:
-      "The canvas's distinct pre-lock confirmation state (green 'Your issues are set' banner, " +
-      "drag-to-rerank) is not built — current UI reuses the same running issues-card for every " +
-      "turn (up/down-arrow rerank, not drag). Proxy: same UI one turn further (3 issues, after a " +
-      "refinement reply), right before clicking Lock.",
+      "IntakeLocked.tsx (canvas's distinct pre-lock confirmation screen — green 'Your issues " +
+      "are set' banner, editable review card, Back/Continue — data-testid=\"issue-locked-" +
+      "confirm-btn\") isn't merged to main yet (PR #236). capture() clicks 'Lock these in' and, " +
+      "when that screen appears, stops there to shoot the real thing. Until #236 lands, that " +
+      "click completes the lock instantly with no interstitial to hold on (jumps straight to " +
+      "orientation) — the click can't be undone, so this rebuilds and stops at the prior proxy " +
+      "instead: same UI one turn further (3 issues, after a refinement reply), right before " +
+      "clicking Lock.",
     async capture(page) {
-      await reachColdOpen(page);
-      await sendFirstIssue(page);
-      await sendFollowUpIssue(page);
+      const reachPreLock = async () => {
+        // App2.tsx persists in-progress state to sessionStorage (not
+        // localStorage — see its SESSION_KEY), which gotoHomeClean() never
+        // clears; every other scenario only calls it once per fresh page so
+        // this never mattered, but a second call here (the redo below) would
+        // otherwise resume straight into the stale conversation instead of
+        // reaching a clean home page.
+        await page.evaluate(() => sessionStorage.clear()).catch(() => {});
+        await reachColdOpen(page);
+        await sendFirstIssue(page);
+        await sendFollowUpIssue(page);
+      };
+      await reachPreLock();
+      await page.getByTestId("issue-primary").click();
+      const reachedIntakeLocked = await page
+        .getByTestId("issue-locked-confirm-btn")
+        .waitFor({ state: "visible", timeout: 2000 })
+        .then(() => true)
+        .catch(() => false);
+      if (!reachedIntakeLocked) {
+        await reachPreLock();
+      }
     },
   },
   {
@@ -1004,30 +1092,52 @@ export const SCENARIOS: Scenario[] = [
     ],
     automatable: "proxy",
     note:
-      "The canvas's dedicated PolisEntry screen (invite panel + preview scatter) doesn't exist " +
-      "— per e2e/redesign-core.spec.ts's own comment, 'the see where you stand teaser was " +
-      "removed ([P1])'; entry today is only the inline '.all-done … where you stand' link on " +
-      "the completed workspace. Proxy: the completed workspace showing that link.",
+      "PolisEntry.tsx (canvas's dedicated invite/preview screen — data-testid=\"polis-entry-" +
+      "see-standing\") isn't merged to main yet (PR #237); it replaces today's inline '.all-done " +
+      "… where you stand' link, which currently jumps straight to the standing report with no " +
+      "interstitial (per e2e/redesign-core.spec.ts's comment, 'the see where you stand teaser " +
+      "was removed ([P1])'). capture() clicks that link and, when PolisEntry appears, stops " +
+      "there to shoot the real thing. Until #237 lands the click can't be undone (no screen to " +
+      "hold on), so this rebuilds and stops at the prior proxy instead: the completed workspace " +
+      "showing that link, unclicked.",
     async capture(page) {
-      await mockDelegation(page);
-      await mockSeatRaceDataMedian(page);
-      await mockResearch(page);
-      await mockPolis(page, true);
-      await mockCounters(page);
-      await reachWorkspace(page);
-      const rows = page.locator(".b-row");
-      const count = await rows.count();
-      for (let i = 0; i < count; i++) {
-        await rows.nth(i).click();
-        const keep = page
-          .getByRole("button", { name: /Worth keeping/ })
-          .first();
-        await keep.waitFor({ timeout: 15000 });
-        await keep.click();
-        await page.waitForTimeout(700);
+      const reachAllDone = async () => {
+        // Same sessionStorage gotcha as 09c-intake-locked's reachPreLock —
+        // see its comment. Needed here because the redo below calls
+        // reachWorkspace() a second time within the same page.
+        await page.evaluate(() => sessionStorage.clear()).catch(() => {});
+        await mockDelegation(page);
+        await mockSeatRaceDataMedian(page);
+        await mockResearch(page);
+        await mockPolis(page, true);
+        await mockCounters(page);
+        await reachWorkspace(page);
+        const rows = page.locator(".b-row");
+        const count = await rows.count();
+        for (let i = 0; i < count; i++) {
+          await rows.nth(i).click();
+          const keep = page
+            .getByRole("button", { name: /Worth keeping/ })
+            .first();
+          await keep.waitFor({ timeout: 15000 });
+          await keep.click();
+          await page.waitForTimeout(700);
+        }
+        await rows.first().click();
+        await page.locator(".all-done").waitFor({ timeout: 15000 });
+      };
+      await reachAllDone();
+      await page
+        .getByRole("button", { name: /where you stand among your neighbors/ })
+        .click();
+      const reachedPolisEntry = await page
+        .getByTestId("polis-entry-see-standing")
+        .waitFor({ state: "visible", timeout: 2000 })
+        .then(() => true)
+        .catch(() => false);
+      if (!reachedPolisEntry) {
+        await reachAllDone();
       }
-      await rows.first().click();
-      await page.locator(".all-done").waitFor({ timeout: 15000 });
     },
   },
   {
@@ -1053,30 +1163,47 @@ export const SCENARIOS: Scenario[] = [
       "src/prototype/redesign/polisAdapter.ts",
     ],
     automatable: "yes",
-    note: "Bridges mock returns several high-agreement statements → 'Common ground' panel renders populated.",
+    note:
+      "Bridges mock returns several high-agreement statements → 'Common ground' panel renders " +
+      "populated, plus one divided statement → 'Where it split' renders too (the realistic " +
+      "'mostly consensus, some friction' mix). Bridges/divided rendering is real content today; " +
+      "PolisClose.tsx doesn't consume the divided field yet (PR #240, not merged) so that " +
+      "second panel doesn't show on main until then — see STRUCTURAL_WAIVERS in parity-gate.ts " +
+      "for why the residual visual diff is expected either way (DECISION #116, party-free).",
     async capture(page) {
       await mockDelegation(page);
       await mockSeatRaceDataMedian(page);
       await mockResearch(page);
       await mockPolis(page, true);
-      await mockBridges(page, [
-        {
-          statement: "Congress should cap prescription drug price increases.",
-          agreementPercent: 86,
-        },
-        {
-          statement: "Federal spending needs independent audits every year.",
-          agreementPercent: 79,
-        },
-        {
-          statement: "Members of Congress should not trade individual stocks.",
-          agreementPercent: 71,
-        },
-        {
-          statement: "Rent assistance should scale with local cost of living.",
-          agreementPercent: 82,
-        },
-      ]);
+      await mockBridges(
+        page,
+        [
+          {
+            statement: "Congress should cap prescription drug price increases.",
+            agreementPercent: 86,
+          },
+          {
+            statement: "Federal spending needs independent audits every year.",
+            agreementPercent: 79,
+          },
+          {
+            statement:
+              "Members of Congress should not trade individual stocks.",
+            agreementPercent: 71,
+          },
+          {
+            statement:
+              "Rent assistance should scale with local cost of living.",
+            agreementPercent: 82,
+          },
+        ],
+        [
+          {
+            statement: "Congress should raise the federal minimum wage.",
+            agreementPercent: 52,
+          },
+        ],
+      );
       await mockCounters(page);
       await reachWorkspace(page);
       await goToStanding(page);
@@ -1093,22 +1220,38 @@ export const SCENARIOS: Scenario[] = [
     ],
     automatable: "proxy",
     note:
-      "PolisClose has no computed 'divided/split' branch (only an early-days vs. normal lede, " +
-      "toggled purely by sampleSize<30 — see LOW_N in PolisClose.tsx). There is no 'Where it " +
-      "split' section anywhere in the component. Proxy: bridges mock returns a single, low-" +
-      "agreement statement (vs. 10c's four strong ones) to approximate a thin-consensus cycle " +
-      "within the UI that actually exists; the canvas's dedicated divided narrative is not ported.",
+      "PolisClose has no computed 'divided/split' branch yet (PR #240, not merged to main — " +
+      "only an early-days vs. normal lede, toggled purely by sampleSize<30, see LOW_N in " +
+      "PolisClose.tsx). Bridges mock now returns zero bridges + several real divided " +
+      "statements — on #240 this renders the true 'genuinely split' branch (no Common ground " +
+      "panel, 'Where it split' populated instead); on main today it exercises the existing " +
+      "bridges.length===0 fallback (the 'big stat panel' branch) since divided isn't read yet. " +
+      "Proxy until #240 lands. See STRUCTURAL_WAIVERS in parity-gate.ts for why the residual " +
+      "visual diff is expected either way (DECISION #116, party-free).",
     async capture(page) {
       await mockDelegation(page);
       await mockSeatRaceDataMedian(page);
       await mockResearch(page);
       await mockPolis(page, true);
-      await mockBridges(page, [
-        {
-          statement: "This cycle, almost nothing bridged every group.",
-          agreementPercent: 58,
-        },
-      ]);
+      await mockBridges(
+        page,
+        [],
+        [
+          {
+            statement: "This cycle, almost nothing bridged every group.",
+            agreementPercent: 58,
+          },
+          {
+            statement: "Congress should raise the federal minimum wage.",
+            agreementPercent: 44,
+          },
+          {
+            statement:
+              "The federal government should fund more affordable housing.",
+            agreementPercent: 39,
+          },
+        ],
+      );
       await mockCounters(page);
       await reachWorkspace(page);
       await goToStanding(page);
