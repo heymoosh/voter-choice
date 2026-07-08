@@ -1067,9 +1067,10 @@ function AppNav({ onBrandClick }) {
         <span>Voter Choice</span>
       </div>
       <div className="links">
-        <a onClick={() => navigate('howitworks')} role="link" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') navigate('howitworks'); }}>{t('nav.howItWorks')}</a>
+        {/* "How it works" points at the methodology explainer — the brand/logo
+            above is the home affordance, so a separate direct link would be redundant. */}
+        <a onClick={() => navigate('methodology')} role="link" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') navigate('methodology'); }}>{t('nav.howItWorks')}</a>
         <a onClick={() => navigate('whynow')} role="link" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') navigate('whynow'); }}>{t('nav.whyNow')}</a>
-        <a onClick={() => navigate('methodology')} role="link" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') navigate('methodology'); }}>{t('nav.methodology')}</a>
         <a onClick={() => navigate('about')} role="link" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') navigate('about'); }}>{t('nav.about')}</a>
         <a onClick={() => navigate('privacy')} role="link" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') navigate('privacy'); }}>{t('nav.privacy')}</a>
         <a href="mailto:muxin.li.pro@gmail.com">{t('nav.support')}</a>
