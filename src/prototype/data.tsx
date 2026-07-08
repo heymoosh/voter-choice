@@ -918,6 +918,20 @@ function getScoreForIssue(alignmentEntry, canonicalIssue) {
   );
 }
 
+/* Overall average alignment % across a set of user issues, scored via
+   getScoreForIssue above. Extracted VERBATIM from the inline computation in
+   AlignmentScoreBanner (src/prototype/VoterChoiceApp.tsx) so the candidate
+   card banner and the delegation-overview cards (delegationData.ts) share
+   one formula — behavior-only extraction, math unchanged. */
+export function computeOverallAlignmentPct(alignmentEntry, userIssues) {
+  const scored = (userIssues || [])
+    .map((iss) => getScoreForIssue(alignmentEntry, iss.canonicalIssue))
+    .filter((s) => s && s.total > 0);
+  return scored.length
+    ? Math.round(scored.reduce((sum, s) => sum + (s.kept / s.total) * 100, 0) / scored.length)
+    : null;
+}
+
 /* ────────── PARTY METADATA ──────────
    Used by view-layer to render pip / color / party badge.
    Doesn't ride on RacePatternsCandidate (repo doesn't store
