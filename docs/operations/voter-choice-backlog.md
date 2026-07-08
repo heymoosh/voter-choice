@@ -1183,7 +1183,7 @@ CHAIN: 1
 - STOP-SHIP scope: the 5 open Keystone PRs stay held drafts; every other Keystone card DEPENDS ON this card; nothing design-related merges until Phase 4's re-audit is delivered and Muxin lifts the hold.
 - GOAL_CONDITION: parity-gate runs as a required CI check on Keystone-touching PRs; review artifact v2 is committed, full-page, covers all scenarios incl. Tip Jar/Loading, and verified loadable; STRUCTURAL_PROBES cover all portable scenarios (or carry explicit per-scenario waivers); Phase 4 re-audit report delivered with per-section gate results for all 5 open PRs.
 - ORIGIN: Muxin, live review 2026-07-08 ('nothing else gets done or merged until these are addressed')
-- PROGRESS (2026-07-08): Phase 0 done — no live bugs, findings at docs/operations/keystone-phase0-findings-2026-07-08.md. Phase 2 built (parity gate wired into CI, 3→7 structural probes + 20 documented waivers, zero silent skips) — held draft PR #244 for your review (needs a branch-protection setting from you post-merge). Phase 1 (review-artifact rebuild) in progress.
+- PROGRESS (2026-07-08): Phase 0 done — no live bugs, findings at docs/operations/keystone-phase0-findings-2026-07-08.md. Phase 2 built (parity gate wired into CI, 3→7 structural probes + 20 documented waivers, zero silent skips) — held draft PR #244 for your review (needs a branch-protection setting from you post-merge). Phase 1 done (review artifact rebuilt: docs/design-review/, 28/28 scenarios, scroll-trap capture bug fixed + confirms the funding panel was always rendering fine) — held draft PR #245 for your review. Phase 3 (process change) in progress.
 - STATUS: In Progress
 <!-- card-id: e840c072-1bd9-4dc0-aebe-8a19867aed03 -->
 
