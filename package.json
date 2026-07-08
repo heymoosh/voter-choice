@@ -36,7 +36,9 @@
     "db:retag-gold-check": "npx tsx scripts/ingest/_retag-gold-check.ts",
     "db:analytics-concerns": "npx tsx scripts/analytics/voter-concerns.ts",
     "design:parity-gallery": "npx tsx scripts/design/parity-gallery.ts",
-    "design:parity-gate": "npx tsx scripts/design/parity-gate.ts"
+    "design:parity-gate": "npx tsx scripts/design/parity-gate.ts",
+    "design:review-gallery": "npx tsx scripts/design/review-gallery.ts",
+    "design:gate-summary": "npx tsx scripts/design/gate-summary.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "0.39.0",
