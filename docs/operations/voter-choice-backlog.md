@@ -1182,7 +1182,10 @@ CHAIN: 1
 - MECHANICAL AUDIT 2026-07-08: verified every Keystone/design card's DEPENDS ON actually resolves through this card (claim_next_eligible only skips a card whose dependency isn't Done — prose alone doesn't block it). Found and fixed 3 cards with no dependency at all (e5f379e2, 466d6efb, 3cb46afd — one, e5f379e2, was sitting in STATUS: To Do and immediately pickable); added a defense-in-depth DEPENDS ON directly on the b7c7178d epic too (close_completed_epics doesn't check an epic's own DEPENDS ON before auto-closing it — only whether its children are Done — so this matters). Also closed af7fa077 as Done/superseded (PR #244 already absorbed its exact scope) so it can't collide with the tooling work. PRs #244/#245/#246 have no backlog cards of their own; they're held via draft status + explicit "(HELD — STOP-SHIP)" PR titles + an explicit PR comment instead, since the self-vet-merge policy's design-experience/tooling classification has no STOP-SHIP-aware carve-out yet — that durable fix is filed on the simple-kanban board (claude-config lane, card 157c48a9 "Self-vet-merge policy needs a design-fidelity-tooling carve-out under an active STOP-SHIP"), which also absorbs Phase 3's 3 remaining conductor-skill bullets. Needs a dedicated claude-config-lane session to build.
 - ORIGIN: Muxin, live review 2026-07-08 ('nothing else gets done or merged until these are addressed')
 - PROGRESS (2026-07-08): Phase 0 done — no live bugs, findings at docs/operations/keystone-phase0-findings-2026-07-08.md. Phase 2 built (parity gate wired into CI, 3→7 structural probes + 20 documented waivers, zero silent skips) — held draft PR #244 for your review (needs a branch-protection setting from you post-merge). Phase 1 done (review artifact rebuilt: docs/design-review/, 28/28 scenarios, scroll-trap capture bug fixed + confirms the funding panel was always rendering fine) — held draft PR #245 for your review. Phase 3's repo-scoped piece done (CI regenerates + comments the review artifact on every Keystone PR; GOAL_CONDITION convention added to this file's cheat sheet above) — held draft PR #246. Phase 3's conductor-skill piece (~/.claude/skills, a separate claude-config repo) is NOT done — needs a separate session against that repo.
-- PROGRESS (2026-07-08, Phase 4 — re-audit complete): full findings at docs/operations/keystone-phase4-audit-2026-07-08.md. Headline: the "10 gate-flagged gaps" from card 466d6efb reproduce identically on all 5 held PRs — none of them the cause, already tracked there (updated with today's severity data). Two things are genuinely new: (1) PR #236 and #237 each ship a new screen the gate's capture scripts never actually reach — both PASS today but are unverified, not confirmed-good; (2) PR #243 will BREAK ~20 gate scenarios repo-wide the moment it merges (a shared helper assumes the old single-seat layout) — confirmed zero *new* regressions once patched, but the fix needs to ship with/before the merge. Filed 4 mechanical tooling-fix cards (622fe2dd, 50c20164, 4b7f2068, 1b4b943d), all Backlog pending grooming. THREE THINGS NEED YOUR CALL, not something I should guess: (a) PR #230 won't even merge with the gate tooling — a genuine conflict between its hardcoded-copy hero + `howitworks` nav target vs. the tooling branch's i18n hero + `methodology` target; (b) whether the reachWorkspace() fix for #243 ships bundled in #243 or as an immediate companion PR; (c) 05c-candidates-overview (PR #243's core screen) has no ref PNG so the gate can't grade it at all — recommend you eyeball it directly, screenshots sitting in the still-live diagnostic worktree voter-choice-worktrees/phase4-audit-243. Nothing merged, nothing fixed beyond the 3 tooling PRs already listed above — STOP-SHIP stays in effect until you review this and say otherwise.
+- PROGRESS (2026-07-08, Phase 4 — re-audit complete): full findings at docs/operations/keystone-phase4-audit-2026-07-08.md. Headline: the "10 gate-flagged gaps" from card 466d6efb reproduce identically on all 5 held PRs — none of them the cause, already tracked there (updated with today's severity data). Two things are genuinely new: (1) PR #236 and #237 each ship a new screen the gate's capture scripts never actually reach — both PASS today but are unverified, not confirmed-good; (2) PR #243 will BREAK ~20 gate scenarios repo-wide the moment it merges (a shared helper assumes the old single-seat layout) — confirmed zero *new* regressions once patched, but the fix needs to ship with/before the merge. Filed 4 mechanical tooling-fix cards (622fe2dd, 50c20164, 4b7f2068, 1b4b943d).
+- RESOLVED 2026-07-08: the #230 nav/hero "conflict" was a false alarm — it was a diagnostic-worktree artifact (test-merging #230 into the not-yet-merged tooling branch), not a real product decision; resolves itself via ordinary rebase once #230 is up for real review. The reachWorkspace() sequencing question is answered below (own tooling PR, not bundled into #243). 05c-candidates-overview eyeball stays deferred until #243 itself is under review.
+- PROGRESS (2026-07-08, scaffolding merged): PRs #244, #245, #246 all merged to main (in that dependency order, 2 rebase conflicts resolved — both the same known 08b-howitworks scenario collision, resolved consistently each time). The parity-gate CI check is live but not yet marked "required" in GitHub branch protection (Muxin action, still pending). Now building the 4 tooling-fix cards (622fe2dd, 50c20164, 4b7f2068, 1b4b943d) in worktree wt-keystone-phase4-tooling-fixes as the last piece of Stage A.
+- DECISION: approved (Muxin 2026-07-08, live) — staged execution authorized: Stage A (this scaffolding, including the 4 fix cards) → once verified complete, proceed automatically (no further check-in needed) into Stage B (the actual FE UI fixes: card 466d6efb's 10 gate-flagged gaps + PR #230/#236/#237/#240/#243's own outstanding items) using the completed gate as authority → Stage C is ONE unified review session using the regenerated HTML artifact (docs/design-review/), not piecemeal PR-by-PR review. Do not re-ask at each step; only escalate genuine intent-ambiguity, same as the standing operating rule.
 - STATUS: Review
 <!-- card-id: e840c072-1bd9-4dc0-aebe-8a19867aed03 -->
 
@@ -1191,7 +1194,7 @@ CHAIN: 1
 - TASK: update both scenario capture() functions in scripts/design/parity-gallery-scenarios.ts to click through to the actual new screens, and update their stale note text.
 - GOAL_CONDITION: 09c-intake-locked's capture reaches the post-lock IntakeLocked screen; 10a-polis-entry's capture reaches the new polisEntry stage; both gate structurally/visually against the real new content.
 - ORIGIN: Phase 4 re-audit, background agent phase4-audit-batch-a, 2026-07-08
-- STATUS: Backlog
+- STATUS: In Progress
 - DEPENDS ON: [P0][GATE] STOP-SHIP: Fix the design-fidelity pipeline + rebuild the design-review artifact (no Keystone build/merge until Done)
 <!-- card-id: 622fe2dd-f86b-4b07-beb9-903464d8468e -->
 
@@ -1200,7 +1203,7 @@ CHAIN: 1
 - TASK: update the 10c/10d scenario mocks to feed real divided-statement data; once real content is being tested, add a documented STRUCTURAL_WAIVERS-style entry (or per-scenario threshold note) explaining the expected residual visual diff from the intentional party-free redesign, so it stops reading as an open failure.
 - GOAL_CONDITION: 10c/10d gate against real divided-statement content; any remaining visual diff is either under threshold or carries an explicit waiver citing DECISION #116.
 - ORIGIN: Phase 4 re-audit, background agent phase4-audit-batch-b, 2026-07-08
-- STATUS: Backlog
+- STATUS: In Progress
 - DEPENDS ON: [P0][GATE] STOP-SHIP: Fix the design-fidelity pipeline + rebuild the design-review artifact (no Keystone build/merge until Done)
 <!-- card-id: 50c20164-6d09-4957-bfd2-a02a20872d70 -->
 
@@ -1209,7 +1212,7 @@ CHAIN: 1
 - NEEDS MUXIN: should this fix ship bundled into PR #243 itself, or as a same-day companion PR merged immediately after? Sequencing call, not filed as a decision here - flagging on the STOP-SHIP card.
 - GOAL_CONDITION: reachWorkspace() (and any e2e helper sharing the same assumption) clicks through DelegationOverview's seat card when present before waiting on .b-row; re-running the full gate against a merged #243+tooling branch returns to the same ~16/27 baseline with no new capture-failure regressions.
 - ORIGIN: Phase 4 re-audit, background agent phase4-audit-batch-b, 2026-07-08
-- STATUS: Backlog
+- STATUS: In Progress
 - DEPENDS ON: [P0][GATE] STOP-SHIP: Fix the design-fidelity pipeline + rebuild the design-review artifact (no Keystone build/merge until Done)
 <!-- card-id: 4b7f2068-f7cb-406f-98b2-94c06e7a4aa4 -->
 
@@ -1218,7 +1221,7 @@ CHAIN: 1
 - TASK: export a canvas ref PNG for design-handoff/keystone-canvas/src/screens-delegation.jsx's artboard (may need a Claude Design canvas session - flag if so), then write a real capture() function for 05c-candidates-overview in scripts/design/parity-gallery-scenarios.ts.
 - GOAL_CONDITION: 05c-candidates-overview has both a ref PNG and a working capture(), gates normally like the other scenarios.
 - ORIGIN: Phase 4 re-audit, background agent phase4-audit-batch-b, 2026-07-08
-- STATUS: Backlog
+- STATUS: In Progress
 - DEPENDS ON: [P0][GATE] STOP-SHIP: Fix the design-fidelity pipeline + rebuild the design-review artifact (no Keystone build/merge until Done)
 <!-- card-id: 1b4b943d-4229-4896-a129-21e6341820b5 -->
 
