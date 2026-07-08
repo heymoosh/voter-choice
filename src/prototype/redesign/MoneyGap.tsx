@@ -5,15 +5,14 @@
  * "Raised vs. the median" — the money-gap primitive, ported from the reviewed
  * design (claude-code-handoff/design-session/screens-funding.jsx + funding.css).
  *
- * Three surfaces, one shared scale:
+ * Two surfaces, one shared scale:
  *   - <MedianChip>   the collapsed glance on a money line / card row
  *   - <MoneyGapScale> the full field/scale that REPLACES the flat
  *                     "≈3× the median House campaign" string in the funder
  *                     disclosure
- *   - <MoneyGapH2H>  the head-to-head money comparison (incumbent vs. challenger)
  *
  * Honest-state discipline (NON-NEGOTIABLE): when there is no `PeerComparison`
- * baseline, the chip shows the dollar amount only and the scale/H2H hide the
+ * baseline, the chip shows the dollar amount only and the scale hides the
  * comparison. Never a fabricated baseline, multiple, or scale.
  *
  * Neutral palette: gold = "how much more" (above the median); muted navy =
@@ -23,7 +22,7 @@
  * redesign's existing CSS system; this component invents no styling mechanism.
  */
 
-import React, { useState } from "react";
+import React from "react";
 import {
   type PeerComparison,
   peerBand,
@@ -260,152 +259,6 @@ export function MoneyGapScale({ subject, field, peer }: MoneyGapScaleProps) {
       </div>
       <div className="mgap-src">
         Baseline · {peer.source} · {peer.cycle}.
-      </div>
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// MoneyGapH2H — the head-to-head money comparison
-// ---------------------------------------------------------------------------
-
-export interface H2HCandidate {
-  id: string;
-  name: string;
-  raised: number;
-  pip: PipClass;
-  pac?: number;
-  small?: number;
-}
-
-export interface MoneyGapH2HProps {
-  incumbent: H2HCandidate;
-  challengers: H2HCandidate[];
-  peer: PeerComparison | null;
-  onKeep?: () => void;
-  onReplace?: (challengerId: string) => void;
-}
-
-const lastName = (n: string): string => n.split(" ").slice(-1)[0] ?? n;
-
-/**
- * The head-to-head money gap (the compare/duel flow). Incumbent vs. one
- * challenger on a shared scale, with a challenger switcher. Lead stat is the
- * incumbent-vs-challenger ratio; the median scale gives the absolute context.
- *
- * Honest-state: the median scale is hidden when `peer` is null; the raw ratio
- * (incumbent ÷ challenger) still renders, since it needs no median baseline.
- */
-export function MoneyGapH2H({
-  incumbent,
-  challengers,
-  peer,
-  onKeep,
-  onReplace,
-}: MoneyGapH2HProps) {
-  const [sel, setSel] = useState<string>(challengers[0]?.id ?? "");
-  const ch = challengers.find((c) => c.id === sel) ?? challengers[0];
-
-  if (!ch) return null;
-
-  const ratio = ch.raised > 0 ? incumbent.raised / ch.raised : Infinity;
-  const ratioStr = !Number.isFinite(ratio)
-    ? "—"
-    : ratio >= 10
-      ? Math.round(ratio) + "×"
-      : ratio.toFixed(1).replace(/\.0$/, "") + "×";
-
-  const incMult = peer
-    ? formatMultiple(incumbent.raised / peer.medianRaised)
-    : null;
-
-  return (
-    <div className="h2hm" data-palette="white">
-      <div className="h2hm-top">
-        <div>
-          <h2>The money gap</h2>
-          <div className="ctx">your rep vs. who&apos;s running</div>
-        </div>
-        <div className="h2hm-switch">
-          {challengers.map((c) => (
-            <button
-              key={c.id}
-              className={sel === c.id ? "on" : ""}
-              onClick={() => setSel(c.id)}
-            >
-              <span className={"pip " + c.pip} aria-hidden="true" />
-              {lastName(c.name)}
-              <span className="p">{formatUsd(c.raised)}</span>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="h2hm-ratio">
-        <div className="big">
-          {ratioStr}
-          <small> more</small>
-        </div>
-        <div className="txt">
-          <b>{incumbent.name}</b> has out-raised <b>{ch.name}</b> by {ratioStr}{" "}
-          this cycle
-          {incMult ? (
-            <>
-              {" "}
-              — and sits at{" "}
-              <b>
-                {incMult} the typical {peer!.office} campaign
-              </b>
-            </>
-          ) : null}
-          . That gap, more than any single position, is what an incumbent&apos;s
-          war chest buys: ads, staff, name recognition.
-        </div>
-      </div>
-
-      {peer && (
-        <MoneyGapScale
-          subject={{
-            name: incumbent.name,
-            raised: incumbent.raised,
-            pip: incumbent.pip,
-          }}
-          field={[
-            { name: ch.name, raised: ch.raised, pip: ch.pip, tag: ch.name },
-          ]}
-          peer={peer}
-        />
-      )}
-
-      <div className="h2hm-foot">
-        <div className="h2hm-pac">
-          {typeof incumbent.pac === "number" && (
-            <div className="blk">
-              <span className="v">{incumbent.pac}% PAC</span>
-              <span className="k">
-                {lastName(incumbent.name)} · {formatUsd(incumbent.raised)}
-              </span>
-            </div>
-          )}
-          <span className="vs">vs</span>
-          {typeof ch.pac === "number" && (
-            <div className="blk">
-              <span className="v">{ch.pac}% PAC</span>
-              <span className="k">
-                {lastName(ch.name)} · {formatUsd(ch.raised)}
-                {typeof ch.small === "number" ? ` · ${ch.small}% small` : ""}
-              </span>
-            </div>
-          )}
-        </div>
-        <div className="h2hm-actions">
-          <button className="h2hm-keepbtn" onClick={onKeep}>
-            Keep {lastName(incumbent.name)}
-          </button>
-          <button className="h2hm-repbtn" onClick={() => onReplace?.(ch.id)}>
-            Replace with {lastName(ch.name)} <span aria-hidden="true">→</span>
-          </button>
-        </div>
       </div>
     </div>
   );
