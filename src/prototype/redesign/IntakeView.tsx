@@ -63,7 +63,7 @@ export function IntakeView({
             issues={convo.issues}
             setIssues={convo.setIssues}
             log={convo.log}
-            onConfirm={(locked) => onLock(locked)}
+            onConfirm={onLock}
             onBack={() => setConfirmingLock(false)}
           />
         ) : (
