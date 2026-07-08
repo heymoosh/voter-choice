@@ -26,19 +26,24 @@
 // directly for both sides. Pass --before-url/--after-url to skip server
 // bring-up entirely if you already have two dev servers running.
 
-import { chromium, type Page } from "@playwright/test";
-import { execFileSync } from "node:child_process";
+import { chromium } from "@playwright/test";
 import fs from "node:fs";
 import path from "node:path";
-import os from "node:os";
 import { parseArgs } from "node:util";
 import { SCENARIOS, type Scenario } from "./parity-gallery-scenarios";
-import { type AppInstance, getFreePort, startNextDev } from "./dev-server";
+import { type AppInstance } from "./dev-server";
+import {
+  captureScenarios,
+  changedFiles,
+  git,
+  resolveAppInstance,
+  revParse,
+  type ScenarioResult,
+} from "./capture-shared";
 
 const SCRIPT_DIR = path.dirname(new URL(import.meta.url).pathname);
 const REPO_ROOT = path.resolve(SCRIPT_DIR, "../..");
 const REFS_DIR = path.join(REPO_ROOT, ".keystone-canvas-refs");
-const VIEWPORT = { width: 1180, height: 1000 };
 
 interface Args {
   before: string;
@@ -100,154 +105,6 @@ function parseCliArgs(): Args {
 }
 
 // ---------------------------------------------------------------------------
-// git helpers
-// ---------------------------------------------------------------------------
-
-function git(args: string[], cwd = REPO_ROOT): string {
-  return execFileSync("git", args, { cwd, encoding: "utf8" }).trim();
-}
-
-function revParse(ref: string): string {
-  try {
-    return git(["rev-parse", ref]);
-  } catch {
-    throw new Error(
-      `Could not resolve git ref "${ref}" from ${REPO_ROOT}. Pass --before/--after a valid ` +
-        `ref, or use --before-url/--after-url to bypass ref resolution entirely.`,
-    );
-  }
-}
-
-/** Two-dot diff (direct before/after content diff), not three-dot (merge-base) —
- *  a three-dot diff against the merge-base can mis-attribute a sibling PR's
- *  already-landed change on "before" to this comparison. See PARITY-GALLERY-README.md. */
-function changedFiles(beforeSha: string, afterSha: string): string[] {
-  if (beforeSha === afterSha) return [];
-  return git(["diff", "--name-only", beforeSha, afterSha])
-    .split("\n")
-    .filter(Boolean);
-}
-
-// ---------------------------------------------------------------------------
-// dev server bring-up (getFreePort/startNextDev/AppInstance now live in
-// ./dev-server, shared with parity-gate.ts) — resolveSide below is the
-// before/after-specific layer on top: which ref maps to which server.
-// ---------------------------------------------------------------------------
-
-async function resolveSide(
-  label: "before" | "after",
-  explicitUrl: string | undefined,
-  ref: string,
-  headSha: string,
-): Promise<AppInstance> {
-  if (explicitUrl) {
-    return { url: explicitUrl, label, cleanup: async () => {} };
-  }
-  const sha = revParse(ref);
-  if (sha === headSha) {
-    console.log(
-      `  [${label}] "${ref}" resolves to the current worktree's HEAD — no checkout needed.`,
-    );
-    const port = await getFreePort();
-    return startNextDev(REPO_ROOT, port, label);
-  }
-
-  console.log(
-    `  [${label}] "${ref}" (${sha.slice(0, 8)}) differs from HEAD — checking out a temp worktree…`,
-  );
-  const tmpDir = fs.mkdtempSync(
-    path.join(os.tmpdir(), `parity-gallery-${label}-`),
-  );
-  try {
-    git(["worktree", "add", "--detach", tmpDir, sha]);
-    // Reuse installed deps rather than a fresh `npm install` — fine for a
-    // same-repo before/after design comparison where deps rarely move.
-    const nodeModules = path.join(REPO_ROOT, "node_modules");
-    if (fs.existsSync(nodeModules)) {
-      fs.symlinkSync(nodeModules, path.join(tmpDir, "node_modules"), "dir");
-    }
-    const envLocal = path.join(REPO_ROOT, ".env.local");
-    if (fs.existsSync(envLocal)) {
-      fs.copyFileSync(envLocal, path.join(tmpDir, ".env.local"));
-    }
-    const port = await getFreePort();
-    const inst = await startNextDev(tmpDir, port, label);
-    return {
-      ...inst,
-      async cleanup() {
-        await inst.cleanup();
-        try {
-          git(["worktree", "remove", "--force", tmpDir]);
-        } catch (err) {
-          console.warn(
-            `  ↳ could not remove temp worktree ${tmpDir}: ${String(err)}`,
-          );
-        }
-      },
-    };
-  } catch (err) {
-    // The dev server (or the worktree/symlink setup before it) failed —
-    // don't leave a registered git worktree / temp dir behind.
-    try {
-      git(["worktree", "remove", "--force", tmpDir]);
-    } catch {
-      try {
-        fs.rmSync(tmpDir, { recursive: true, force: true });
-      } catch {
-        /* best effort */
-      }
-    }
-    throw err;
-  }
-}
-
-// ---------------------------------------------------------------------------
-// capture
-// ---------------------------------------------------------------------------
-
-type ScenarioResult =
-  | { status: "ok"; file: string }
-  | { status: "error"; error: string }
-  | { status: "not-automatable" };
-
-async function captureSide(
-  browser: import("@playwright/test").Browser,
-  instance: AppInstance,
-  outDir: string,
-  scenarios: Scenario[],
-): Promise<Record<string, ScenarioResult>> {
-  fs.mkdirSync(outDir, { recursive: true });
-  const results: Record<string, ScenarioResult> = {};
-  for (const scenario of scenarios) {
-    if (scenario.automatable === "no" || !scenario.capture) {
-      results[scenario.id] = { status: "not-automatable" };
-      continue;
-    }
-    const context = await browser.newContext({
-      viewport: VIEWPORT,
-      baseURL: instance.url,
-    });
-    const page: Page = await context.newPage();
-    try {
-      await scenario.capture(page);
-      const file = path.join(outDir, `${scenario.id}.png`);
-      await page.screenshot({ path: file, fullPage: true });
-      results[scenario.id] = { status: "ok", file };
-      console.log(`  [${instance.label}] ${scenario.id} ✓`);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      results[scenario.id] = { status: "error", error: message };
-      console.log(
-        `  [${instance.label}] ${scenario.id} ✗ ${message.split("\n")[0]}`,
-      );
-    } finally {
-      await context.close();
-    }
-  }
-  return results;
-}
-
-// ---------------------------------------------------------------------------
 // gallery HTML
 // ---------------------------------------------------------------------------
 
@@ -264,6 +121,7 @@ function copyRefsIntoOut(outDir: string, scenarios: Scenario[]): void {
   const refsOut = path.join(outDir, "refs");
   fs.mkdirSync(refsOut, { recursive: true });
   for (const s of scenarios) {
+    if (!s.refFile) continue;
     const src = path.join(REFS_DIR, s.refFile);
     if (fs.existsSync(src)) {
       fs.copyFileSync(src, path.join(refsOut, s.refFile));
@@ -281,10 +139,13 @@ function buildGalleryHtml(
 ): string {
   const rows = scenarios
     .map((s) => {
-      const refCopied = fs.existsSync(path.join(outDir, "refs", s.refFile));
+      const refCopied =
+        !!s.refFile && fs.existsSync(path.join(outDir, "refs", s.refFile));
       const refCell = refCopied
         ? `<img src="${esc(`refs/${s.refFile}`)}" alt="ref">`
-        : `<div class="missing">ref PNG missing</div>`;
+        : s.refFile
+          ? `<div class="missing">ref PNG missing</div>`
+          : `<div class="missing">no canvas export — not yet built on this branch</div>`;
 
       const cell = (r: ScenarioResult) => {
         if (r.status === "ok") {
@@ -462,7 +323,7 @@ async function main(): Promise<void> {
         `  "${args.before}" and "${args.after}" resolve to the same commit (${beforeSha!.slice(0, 8)}) — ` +
           `starting ONE server and using it for both sides.`,
       );
-      before = await resolveSide(
+      before = await resolveAppInstance(
         "before",
         args.beforeUrl,
         args.before,
@@ -471,14 +332,19 @@ async function main(): Promise<void> {
       cleanupFns.push(before.cleanup);
       after = { ...before, label: "after" };
     } else {
-      before = await resolveSide(
+      before = await resolveAppInstance(
         "before",
         args.beforeUrl,
         args.before,
         headSha,
       );
       cleanupFns.push(before.cleanup);
-      after = await resolveSide("after", args.afterUrl, args.after, headSha);
+      after = await resolveAppInstance(
+        "after",
+        args.afterUrl,
+        args.after,
+        headSha,
+      );
       cleanupFns.push(after.cleanup);
     }
 
@@ -487,7 +353,7 @@ async function main(): Promise<void> {
     try {
       console.log(`\nCapturing "before" (${before.url})…`);
       const beforeOut = path.join(args.out, "before");
-      const beforeResults = await captureSide(
+      const beforeResults = await captureScenarios(
         browser,
         before,
         beforeOut,
@@ -496,7 +362,7 @@ async function main(): Promise<void> {
 
       console.log(`\nCapturing "after" (${after.url})…`);
       const afterOut = path.join(args.out, "after");
-      const afterResults = await captureSide(
+      const afterResults = await captureScenarios(
         browser,
         after,
         afterOut,
