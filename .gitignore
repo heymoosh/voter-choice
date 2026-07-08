@@ -54,6 +54,10 @@ test-results/
 # regenerate with `npm run design:parity-gallery`, never commit the output.
 scripts/design/.parity-gallery-out/
 
+# Keystone parity-gate run artifacts (screenshots + diff PNGs + report.json) —
+# regenerate with `npm run design:parity-gate`, never commit the output.
+scripts/design/.parity-gate-out/
+
 # AI Coding Practices local tool state
 .agentic-qe/
 .ai/local-pdfs/
